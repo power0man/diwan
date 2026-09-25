@@ -1,0 +1,46 @@
+name: labels
+# مزامنةُ الوسوم والمراحل من .github/labels.json (ك٣٩، ق٦١). لا تُودِع شيئًا، فلا ذيلَ مطلوب؛
+# وصلاحيتُها كتابةُ المسائل وحدها. تُشغَّل يدويًّا أو عند تغيّر الملف على main.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/labels.json"]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          jq -c '.labels[]' .github/labels.json | while read -r item; do
+            gh label create "$(jq -r .name <<<"$item")" --repo "$REPO" --force \
+              --color "$(jq -r .color <<<"$item")" --description "$(jq -r .description <<<"$item")"
+          done
+      - name: Milestones
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          existing="$(gh api "repos/$REPO/milestones?state=all&per_page=100" --jq '.[].title')"
+          jq -c '.milestones[]' .github/labels.json | while read -r item; do
+            title="$(jq -r .title <<<"$item")"
+            if ! grep -qxF -- "$title" <<<"$existing"; then
+              gh api "repos/$REPO/milestones" -f title="$title" \
+                -f description="$(jq -r .description <<<"$item")" -f due_on="$(jq -r .due_on <<<"$item")" >/dev/null
+            fi
+          done
+          gh api "repos/$REPO/milestones?state=all&per_page=100" --jq '.[] | "\(.number)\t\(.title)"'

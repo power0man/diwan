@@ -1,0 +1,32 @@
+name: قرارُ المالك
+description: قرارٌ لا يقضيه إلا المالك (AGENTS.md §٦)، بخياراتٍ وتوصية وموعد
+title: "[ح٠] قرار: "
+labels: ["owner-decision", "family:owner"]
+body:
+  - type: textarea
+    id: options
+    attributes:
+      label: الخيارات
+    validations:
+      required: true
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: التوصيةُ وسببُها
+    validations:
+      required: true
+  - type: input
+    id: deadline
+    attributes:
+      label: الموعد
+      placeholder: "YYYY-MM-DD"
+  - type: dropdown
+    id: reversible
+    attributes:
+      label: هل يُتراجع عنه؟
+      description: القابلُ للتراجع يصير التوصيةَ بعد ٧٢ ساعة بلا ردّ؛ وبنودُ §٦ لا تُقضى تلقائيًّا أبدًا
+      options:
+        - "نعم — قابلٌ للتراجع"
+        - "لا — من بنود AGENTS.md §٦ (تسمية عقدة، حذف، نطاق، قرارٌ في DECISIONS)"
+    validations:
+      required: true
