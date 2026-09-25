@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "prior_candidate_commit": "8ea75e60be10bfef940ed9d80254bb57b0e852d9",
+  "original_gate": {
+    "status": "failed",
+    "pytest_exit_code": 1,
+    "pytest_duration_s": 98.379,
+    "raw_output_retained": false,
+    "push_completed": false,
+    "gate_report_sha256": "c1da000ffdd9d8de790655842c279440ae9bdea8b29ff8748fa4ffa7fb0c6ff0"
+  },
+  "single_diagnostic": {
+    "status": "original_failure_not_reproduced",
+    "diagnostic_attempts": 1,
+    "diagnostic_pytest_exit_code": 0,
+    "quiet_progress_counts": {
+      ".": 2917,
+      "s": 23
+    },
+    "quiet_progress_total": 2940,
+    "raw_log_sha256": "031cd85f0660c39d3ea6a81c482f3fc8e9f4e4aabb80fba8f337887d9405b17b",
+    "input_manifest_sha256": "9882aa33f77b20fd832481745fab0bda03ee5f0a1c36dc7dfd83cdfd341cfc1c"
+  },
+  "root_cause": "unresolved",
+  "focused_tests": {
+    "passed": 73,
+    "scope": "private output capture, gate contract and installer; synthetic Docker client"
+  },
+  "retention_limits": [
+    "private diagnostics; no product certification",
+    "file backed output; no disk quota",
+    "host and Docker remain trusted"
+  ],
+  "product_readiness": false
+}

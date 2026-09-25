@@ -1,0 +1,299 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-24-07-2024\",\n  \"file\": \"kimi_agentic_001.json\",\n  \"judgments\": [\n    {\n      \"id\": \"agentic_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `apply_discount` تعيد قيمة الخصم لا السعر بعد الخصم. يجب أن تعيد `price - (price * percent / 100)`.\",\n      \"reason\": \"المرجع صحيح لأن الدالة الحالية تحسب الخصم فقط لا السعر بعد الخصم، وهو ما يتوافق مع المطلوب في التعليمات والمعايير.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة في `textkit.py` اسمها `normalise_ar` بينما الاختبار يستورد `normalize_ar`. يجب توحيد الاسم إلى `normalize_ar`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عدم تطابق اسم الدالة بين المكتبة والاختبار، والمعايير واضحة في توحيد الاسم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الاستيراد في `shop.py` هو `from utils import fmt_price` بينما الملف اسمه `util.py` (بدون s). يجب تصحيح الاستيراد إلى `from util import fmt_price`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في اسم الوحدة المستوردة، والمعايير واضحة في تشخيص العلة في الاستيراد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `reverse_words` تستخدم `words[1:]` مما يفقد الكلمة الأولى. يجب استخدام `words` كاملة بعد العكس.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في فقدان الكلمة الأولى بسبب التقطيع، والمعايير واضحة في عدم فقدان أي كلمة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `format_total` تحاول دمج نص مع رقم دون تحويل الرقم إلى نص. يجب تحويل الرقم إلى نص باستخدام `str(total)` أو تنسيق السلسلة.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في دمج نص مع رقم دون تحويل، والمعايير واضحة في تحويل الرقم إلى نص.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"السلسلة في `welcome` غير منسقة ببادئة `f`، لذا تظهر `{name}` حرفيًا. يجب إضافة `f` قبل السلسلة.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في غياب بادئة `f` للسلسلة المنسقة، والمعايير واضحة في إدخال قيمة الاسم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `clamp` تعيد `high` عند تجاوز الحد الأدنى و`low` عند تجاوز الحد الأعلى. يجب عكس المنطق لتصبح `return low if value < low else high if value > high else value`.\",\n      \"reason\": \"المرجع صحيح لأن المنطق الحالي مقلوب، والمعايير واضحة في تصحيح المنطق دون حالات خاصة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `collapse_spaces` ترجع قائمة بعد `split()` بينما يجب أن ترجع نصًا. يجب استخدام `' '.join(text.split())`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في نوع القيمة المرجعة، والمعايير واضحة في دمج المسافات وإرجاع نص.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ملف `config.json` يحتوي على `free_shipping_threshold: 1000` بينما الاختبارات تتوقع 200. يجب تعديل القيمة في الملف إلى 200.\",\n      \"reason\": \"المرجع صحيح لأن العتبة الخاطئة مصدرها ملف الإعدادات، والمعايير واضحة في تصحيح القيمة دون تثبيتها في الكود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ملف `grades.csv` يستخدم فاصلة منقوطة (`;`) كفاصل بينما الكود يستخدم فاصلة (`,`). يجب تعديل الكود لاستخدام `delimiter=\\\";\\\"`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عدم تطابق الفاصل بين الكود والملف، والمعايير واضحة في تعديل القارئ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جملة `return result` داخل حلقة `for` مما ينهي الدالة مبكرًا. يجب إزاحتها خارج الحلقة.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في موضع `return`، والمعايير واضحة في إرجاع النتيجة بعد اكتمال الحلقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `load_settings` تستخدم `json.load(f.read())` بينما يجب استخدام `json.load(f)` لأن `json.load` تأخذ ملفًا لا نصًا.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في استخدام `json.loads` بدلاً من `json.load`، والمعايير واضحة في التمييز بينهما.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الكود يطلب مفتاح `db_host` بينما ملف الإعدادات يحتوي على `hostname`. يجب تعديل الكود لاستخدام `cfg[\\\"hostname\\\"]`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عدم تطابق المفتاح بين الكود والملف، والمعايير واضحة في تعديل الكود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `sort_quantities` ترتب النصوص أبجديًا بينما المطلوب ترتيبًا عدديًا. يجب استخدام `sorted(values, key=int)`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في الترتيب الأبجدي للنصوص، والمعايير واضحة في استخدام مفتاح ترتيب عددي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"القاعدة الحالية للسنة الكبيسة غير كاملة. يجب تعديلها لتصبح `return (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)`.\",\n      \"reason\": \"المرجع صحيح لأن القاعدة الحالية لا تعالج السنوات القرنية بشكل صحيح، والمعايير واضحة في تطبيق القاعدة الكاملة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `median` ترجع العنصر الأوسط للقائمة المرتبة، لكن للقوائم الزوجية يجب حساب متوسط العنصرين الأوسطين. يجب تعديلها لتصبح `return (ordered[n//2 - 1] + ordered[n//2]) / 2` للقوائم الزوجية.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عدم معالجة القوائم الزوجية بشكل صحيح، والمعايير واضحة في معالجة الطولين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `to_12h` تعيد `hour % 12` مما يعطي 0 للساعة 12 و0. يجب تعديلها لتصبح `return 12 if hour % 12 == 0 else hour % 12`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في معالجة الساعة 12 و0، والمعايير واضحة في معالجة الحالتين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صيغة التاريخ في `strptime` هي `%d/%m/%Y` بينما التواريخ واردة بصيغة ISO `%Y-%m-%d`. يجب تعديل الصيغة إلى `%Y-%m-%d`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عدم تطابق صيغة التحليل مع الصيغة الواردة، والمعايير واضحة في تصحيح الصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `write_report` لا تنشئ مجلد الإخراج إذا لم يكن موجودًا. يجب استخدام `os.makedirs(out_dir, exist_ok=True)` قبل الكتابة.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عدم إنشاء المجلد عند الحاجة، والمعايير واضحة في إنشاء المجلد تلقائيًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `trim_code` تستخدم `strip(\\\"0\\\")` مما يزيل الأصفار من الطرفين. يجب استخدام `lstrip(\\\"0\\\")` لإزالة الأصفار البادئة فقط.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في إزالة الأصفار من الطرفين، والمعايير واضحة في إزالة الأصفار البادئة فقط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `grade` تستخدم عوامل مقارنة صارمة (`>`) مما يستبعد قيم الحدود نفسها. يجب تعديلها لتصبح `>=` للحدود.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عوامل المقارنة الصارمة، والمعايير واضحة في تصحيحها لتشمل قيم الحدود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الكود يطلب ملف `items.csv` بينما الملف الفعلي اسمه `item.csv` (بدون s). يجب تعديل المسار في الكود إلى `item.csv`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عدم تطابق اسم الملف بين الكود والملف الفعلي، والمعايير واضحة في تعديل المسار.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الثابت في `rates.py` اسمه `TAX_RATE` بينما `payroll.py` يستورد `TAX`. يجب توحيد الاسم إلى `TAX_RATE` في `payroll.py`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عدم تطابق اسم الثابت بين الملفين، والمعايير واضحة في توحيد الاسم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `max_temp` تهيئ `best` بصفر مما يفشل مع القيم السالبة. يجب تهيئتها بأول عنصر من القائمة أو `-float('inf')`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في تهيئة `best` بصفر، والمعايير واضحة في معالجة القيم السالبة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"في `printer.py`، المتغير `reslut` مكتوب خطأً ويجب تصحيحه إلى `result`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في خطأ إملائي في اسم المتغير، والمعايير واضحة في توحيد التسمية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الكود يطلب ملف `input.txt` بينما الملف الفعلي اسمه `inputs.txt`. يجب تعديل المسار في الكود إلى `inputs.txt`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عدم تطابق اسم الملف بين الكود والملف الفعلي، والمعايير واضحة في تعديل المسار.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الكود يستخدم ترميز `ascii` لقراءة ملف يحتوي على نص عربي. يجب تعديل الترميز إلى `utf-8`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عدم تطابق الترميز مع محتوى الملف، والمعايير واضحة في استخدام `utf-8`.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `sort_mixed` تحاول ترتيب قائمة مختلطة من نصوص وأرقام مما يسبب خطأ. يجب استخدام `sorted(items, key=lambda x: int(x))`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في مقارنة أنواع مختلفة، والمعايير واضحة في استخدام مفتاح تحويل عددي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `run` تخرج برمز `1` عند نجاح التحقق (`ok` هو `True`). يجب تعديل الشرط لتصبح `sys.exit(0)` عند النجاح.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عكس منطق الخروج، والمعايير واضحة في تصحيح الشرط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المعالج في `load` يرجع `DEFAULTS[\\\"fallback\\\"]` بينما المفتاح الصحيح هو `fallbacks`. يجب تعديل المفتاح إلى `fallbacks` أو تعريف قيمة افتراضية معقولة.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في مفتاح القيم الافتراضية، والمعايير واضحة في تصحيح المعالج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `build_path` تستخدم `/` في بداية اسم الملف مما يتجاهل المسار الأساس. يجب تعديلها لتصبح `os.path.join(base, name)`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في بناء المسار، والمعايير واضحة في تصحيح الدالة المساعدة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الاسم المستورد في `main.py` هو `caclculate_total` بينما الدالة في `helper.py` اسمها `calculate_total`. يجب تعديل الاسم في `helper.py` ليصبح `caclculate_total` أو إضافة اسم مستعار.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في عدم تطابق الاسم بين الاستيراد والتعريف، والمعايير واضحة في حل الخلل من جهة المكتبة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `average` تنهار عند قائمة فارغة بسبب القسمة على صفر. يجب إضافة حارس يرجع 0 للقائمة الفارغة.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في انهيار القسمة على صفر، والمعايير واضحة في إضافة حارس للقائمة الفارغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `mode` تطلب مفتاح `mode` غير موجود في ملف الإعدادات. يجب استخدام `cfg.get(\\\"mode\\\", \\\"normal\\\")`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في غياب المفتاح، والمعايير واضحة في استخدام وصول آمن بقيمة افتراضية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدالة `fact` تفتقر للحالة القاعدية مما يسبب استدعاءات لا نهائية. يجب إضافة `if n == 0: return 1`.\",\n      \"reason\": \"المرجع صحيح لأن المشكلة هي في غياب الحالة القاعدية، والمعايير واضحة في إضافتها.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 59319,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_d/kimi_agentic_001.json",
+  "file_sha256": "23d40995de87f9f15f152442182f81f2e36bac2abd6f35dd1e107f70f7708c6c",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "agentic_0002",
+      "my_answer": "الدالة `apply_discount` تعيد قيمة الخصم لا السعر بعد الخصم. يجب أن تعيد `price - (price * percent / 100)`.",
+      "reason": "المرجع صحيح لأن الدالة الحالية تحسب الخصم فقط لا السعر بعد الخصم، وهو ما يتوافق مع المطلوب في التعليمات والمعايير.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0012",
+      "my_answer": "الدالة في `textkit.py` اسمها `normalise_ar` بينما الاختبار يستورد `normalize_ar`. يجب توحيد الاسم إلى `normalize_ar`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عدم تطابق اسم الدالة بين المكتبة والاختبار، والمعايير واضحة في توحيد الاسم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0011",
+      "my_answer": "الاستيراد في `shop.py` هو `from utils import fmt_price` بينما الملف اسمه `util.py` (بدون s). يجب تصحيح الاستيراد إلى `from util import fmt_price`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في اسم الوحدة المستوردة، والمعايير واضحة في تشخيص العلة في الاستيراد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0006",
+      "my_answer": "الدالة `reverse_words` تستخدم `words[1:]` مما يفقد الكلمة الأولى. يجب استخدام `words` كاملة بعد العكس.",
+      "reason": "المرجع صحيح لأن المشكلة هي في فقدان الكلمة الأولى بسبب التقطيع، والمعايير واضحة في عدم فقدان أي كلمة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0014",
+      "my_answer": "الدالة `format_total` تحاول دمج نص مع رقم دون تحويل الرقم إلى نص. يجب تحويل الرقم إلى نص باستخدام `str(total)` أو تنسيق السلسلة.",
+      "reason": "المرجع صحيح لأن المشكلة هي في دمج نص مع رقم دون تحويل، والمعايير واضحة في تحويل الرقم إلى نص.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0045",
+      "my_answer": "السلسلة في `welcome` غير منسقة ببادئة `f`، لذا تظهر `{name}` حرفيًا. يجب إضافة `f` قبل السلسلة.",
+      "reason": "المرجع صحيح لأن المشكلة هي في غياب بادئة `f` للسلسلة المنسقة، والمعايير واضحة في إدخال قيمة الاسم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0010",
+      "my_answer": "الدالة `clamp` تعيد `high` عند تجاوز الحد الأدنى و`low` عند تجاوز الحد الأعلى. يجب عكس المنطق لتصبح `return low if value < low else high if value > high else value`.",
+      "reason": "المرجع صحيح لأن المنطق الحالي مقلوب، والمعايير واضحة في تصحيح المنطق دون حالات خاصة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0007",
+      "my_answer": "الدالة `collapse_spaces` ترجع قائمة بعد `split()` بينما يجب أن ترجع نصًا. يجب استخدام `' '.join(text.split())`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في نوع القيمة المرجعة، والمعايير واضحة في دمج المسافات وإرجاع نص.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0049",
+      "my_answer": "ملف `config.json` يحتوي على `free_shipping_threshold: 1000` بينما الاختبارات تتوقع 200. يجب تعديل القيمة في الملف إلى 200.",
+      "reason": "المرجع صحيح لأن العتبة الخاطئة مصدرها ملف الإعدادات، والمعايير واضحة في تصحيح القيمة دون تثبيتها في الكود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0042",
+      "my_answer": "ملف `grades.csv` يستخدم فاصلة منقوطة (`;`) كفاصل بينما الكود يستخدم فاصلة (`,`). يجب تعديل الكود لاستخدام `delimiter=\";\"`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عدم تطابق الفاصل بين الكود والملف، والمعايير واضحة في تعديل القارئ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0046",
+      "my_answer": "جملة `return result` داخل حلقة `for` مما ينهي الدالة مبكرًا. يجب إزاحتها خارج الحلقة.",
+      "reason": "المرجع صحيح لأن المشكلة هي في موضع `return`، والمعايير واضحة في إرجاع النتيجة بعد اكتمال الحلقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0019",
+      "my_answer": "الدالة `load_settings` تستخدم `json.load(f.read())` بينما يجب استخدام `json.load(f)` لأن `json.load` تأخذ ملفًا لا نصًا.",
+      "reason": "المرجع صحيح لأن المشكلة هي في استخدام `json.loads` بدلاً من `json.load`، والمعايير واضحة في التمييز بينهما.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0022",
+      "my_answer": "الكود يطلب مفتاح `db_host` بينما ملف الإعدادات يحتوي على `hostname`. يجب تعديل الكود لاستخدام `cfg[\"hostname\"]`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عدم تطابق المفتاح بين الكود والملف، والمعايير واضحة في تعديل الكود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0041",
+      "my_answer": "الدالة `sort_quantities` ترتب النصوص أبجديًا بينما المطلوب ترتيبًا عدديًا. يجب استخدام `sorted(values, key=int)`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في الترتيب الأبجدي للنصوص، والمعايير واضحة في استخدام مفتاح ترتيب عددي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0044",
+      "my_answer": "القاعدة الحالية للسنة الكبيسة غير كاملة. يجب تعديلها لتصبح `return (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)`.",
+      "reason": "المرجع صحيح لأن القاعدة الحالية لا تعالج السنوات القرنية بشكل صحيح، والمعايير واضحة في تطبيق القاعدة الكاملة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0004",
+      "my_answer": "الدالة `median` ترجع العنصر الأوسط للقائمة المرتبة، لكن للقوائم الزوجية يجب حساب متوسط العنصرين الأوسطين. يجب تعديلها لتصبح `return (ordered[n//2 - 1] + ordered[n//2]) / 2` للقوائم الزوجية.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عدم معالجة القوائم الزوجية بشكل صحيح، والمعايير واضحة في معالجة الطولين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0048",
+      "my_answer": "الدالة `to_12h` تعيد `hour % 12` مما يعطي 0 للساعة 12 و0. يجب تعديلها لتصبح `return 12 if hour % 12 == 0 else hour % 12`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في معالجة الساعة 12 و0، والمعايير واضحة في معالجة الحالتين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0050",
+      "my_answer": "صيغة التاريخ في `strptime` هي `%d/%m/%Y` بينما التواريخ واردة بصيغة ISO `%Y-%m-%d`. يجب تعديل الصيغة إلى `%Y-%m-%d`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عدم تطابق صيغة التحليل مع الصيغة الواردة، والمعايير واضحة في تصحيح الصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0017",
+      "my_answer": "الدالة `write_report` لا تنشئ مجلد الإخراج إذا لم يكن موجودًا. يجب استخدام `os.makedirs(out_dir, exist_ok=True)` قبل الكتابة.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عدم إنشاء المجلد عند الحاجة، والمعايير واضحة في إنشاء المجلد تلقائيًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0047",
+      "my_answer": "الدالة `trim_code` تستخدم `strip(\"0\")` مما يزيل الأصفار من الطرفين. يجب استخدام `lstrip(\"0\")` لإزالة الأصفار البادئة فقط.",
+      "reason": "المرجع صحيح لأن المشكلة هي في إزالة الأصفار من الطرفين، والمعايير واضحة في إزالة الأصفار البادئة فقط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0005",
+      "my_answer": "الدالة `grade` تستخدم عوامل مقارنة صارمة (`>`) مما يستبعد قيم الحدود نفسها. يجب تعديلها لتصبح `>=` للحدود.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عوامل المقارنة الصارمة، والمعايير واضحة في تصحيحها لتشمل قيم الحدود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0016",
+      "my_answer": "الكود يطلب ملف `items.csv` بينما الملف الفعلي اسمه `item.csv` (بدون s). يجب تعديل المسار في الكود إلى `item.csv`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عدم تطابق اسم الملف بين الكود والملف الفعلي، والمعايير واضحة في تعديل المسار.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0013",
+      "my_answer": "الثابت في `rates.py` اسمه `TAX_RATE` بينما `payroll.py` يستورد `TAX`. يجب توحيد الاسم إلى `TAX_RATE` في `payroll.py`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عدم تطابق اسم الثابت بين الملفين، والمعايير واضحة في توحيد الاسم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0009",
+      "my_answer": "الدالة `max_temp` تهيئ `best` بصفر مما يفشل مع القيم السالبة. يجب تهيئتها بأول عنصر من القائمة أو `-float('inf')`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في تهيئة `best` بصفر، والمعايير واضحة في معالجة القيم السالبة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0028",
+      "my_answer": "في `printer.py`، المتغير `reslut` مكتوب خطأً ويجب تصحيحه إلى `result`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في خطأ إملائي في اسم المتغير، والمعايير واضحة في توحيد التسمية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0035",
+      "my_answer": "الكود يطلب ملف `input.txt` بينما الملف الفعلي اسمه `inputs.txt`. يجب تعديل المسار في الكود إلى `inputs.txt`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عدم تطابق اسم الملف بين الكود والملف الفعلي، والمعايير واضحة في تعديل المسار.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0036",
+      "my_answer": "الكود يستخدم ترميز `ascii` لقراءة ملف يحتوي على نص عربي. يجب تعديل الترميز إلى `utf-8`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عدم تطابق الترميز مع محتوى الملف، والمعايير واضحة في استخدام `utf-8`.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0038",
+      "my_answer": "الدالة `sort_mixed` تحاول ترتيب قائمة مختلطة من نصوص وأرقام مما يسبب خطأ. يجب استخدام `sorted(items, key=lambda x: int(x))`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في مقارنة أنواع مختلفة، والمعايير واضحة في استخدام مفتاح تحويل عددي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0031",
+      "my_answer": "الدالة `run` تخرج برمز `1` عند نجاح التحقق (`ok` هو `True`). يجب تعديل الشرط لتصبح `sys.exit(0)` عند النجاح.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عكس منطق الخروج، والمعايير واضحة في تصحيح الشرط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0032",
+      "my_answer": "المعالج في `load` يرجع `DEFAULTS[\"fallback\"]` بينما المفتاح الصحيح هو `fallbacks`. يجب تعديل المفتاح إلى `fallbacks` أو تعريف قيمة افتراضية معقولة.",
+      "reason": "المرجع صحيح لأن المشكلة هي في مفتاح القيم الافتراضية، والمعايير واضحة في تصحيح المعالج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0033",
+      "my_answer": "الدالة `build_path` تستخدم `/` في بداية اسم الملف مما يتجاهل المسار الأساس. يجب تعديلها لتصبح `os.path.join(base, name)`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في بناء المسار، والمعايير واضحة في تصحيح الدالة المساعدة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0023",
+      "my_answer": "الاسم المستورد في `main.py` هو `caclculate_total` بينما الدالة في `helper.py` اسمها `calculate_total`. يجب تعديل الاسم في `helper.py` ليصبح `caclculate_total` أو إضافة اسم مستعار.",
+      "reason": "المرجع صحيح لأن المشكلة هي في عدم تطابق الاسم بين الاستيراد والتعريف، والمعايير واضحة في حل الخلل من جهة المكتبة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0024",
+      "my_answer": "الدالة `average` تنهار عند قائمة فارغة بسبب القسمة على صفر. يجب إضافة حارس يرجع 0 للقائمة الفارغة.",
+      "reason": "المرجع صحيح لأن المشكلة هي في انهيار القسمة على صفر، والمعايير واضحة في إضافة حارس للقائمة الفارغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0037",
+      "my_answer": "الدالة `mode` تطلب مفتاح `mode` غير موجود في ملف الإعدادات. يجب استخدام `cfg.get(\"mode\", \"normal\")`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في غياب المفتاح، والمعايير واضحة في استخدام وصول آمن بقيمة افتراضية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0030",
+      "my_answer": "الدالة `fact` تفتقر للحالة القاعدية مما يسبب استدعاءات لا نهائية. يجب إضافة `if n == 0: return 1`.",
+      "reason": "المرجع صحيح لأن المشكلة هي في غياب الحالة القاعدية، والمعايير واضحة في إضافتها.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T20:30:46Z"
+}

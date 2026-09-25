@@ -1,0 +1,440 @@
+{
+  "schema_version": 1,
+  "scope": "Frozen review policy code excerpts only; not a full commit review or product certification.",
+  "human_review": false,
+  "product_readiness": "not_assessed",
+  "attempts": [
+    {
+      "artifact": {
+        "code": {
+          "producer_report": "        # Never certify in the producer. Review the frozen report in a later step.\n        final_report = {\n            \"schema_version\": 2,\n            \"run_id\": run_id,\n            \"status\": \"diagnostic_only\" if diagnostic_single_arm or not require_human_review else \"pending_automated_review\",\n            \"review_mode\": \"automated_multi_system\",\n            \"human_review_verified\": False,\n            \"product_readiness\": \"not_assessed\",\n            \"provenance\": {\n                \"suite_sha256\": hashlib.sha256(self.suite_path.read_bytes()).hexdigest(),\n                \"provider\": getattr(self.provider, \"name\", type(self.provider).__name__),\n                \"model\": getattr(self.provider, \"model\", \"unknown\"),\n                \"arms\": list(arms), \"offset\": offset, \"limit\": limit, \"domain\": domain,\n                \"reference_exposure\": \"development_visible\",\n            },\n            \"measurement_limits\": [\n                \"Lexical metrics are diagnostics, not proof of factual entailment.\",\n                \"This development suite is not an independent held-out acceptance set.\",\n                \"Model agreement cannot establish source truth or product readiness.\",\n            ],\n            \"summary\": summary,\n            \"reference_cases\": cases_to_run,\n            \"results\": results_by_case,\n        }\n        res_path = self.out_dir / f\"{run_id}-results.json\"\n        res_path.write_text(json.dumps(final_report, ensure_ascii=False, indent=2), encoding=\"utf-8\")\n        return final_report\n",
+          "retired_generator": "#!/usr/bin/env python3\n\"\"\"Retired under q49: generated opinions cannot impersonate a human review.\"\"\"\nimport sys\n\n\ndef main():\n    print(\"legacy_human_review_retired: use tools/review_automatically.py on frozen outputs; \"\n          \"the historical generator did not call Gemini or perform human review.\", file=sys.stderr)\n    return 2\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+          "review_benchmark": "def review_benchmark(report: dict, package: dict) -> dict:\n    validate_benchmark_artifact(report)\n    checked = validate_review_package(package, report, BENCHMARK_RUBRIC, run_id=report[\"run_id\"])\n    # Separate receipt: never mutate the artifact and invalidate its binding.\n    return {\"schema_version\": 1, \"kind\": \"benchmark_automatic_review_receipt\",\n            \"run_id\": report[\"run_id\"], \"binding\": checked[\"binding\"],\n            \"status\": \"automated_review_\" + checked[\"status\"],\n            \"human_review\": False, \"product_readiness\": \"not_assessed\",\n            \"review_package\": checked,\n            \"scope\": \"This frozen development benchmark only; not held-out acceptance.\",\n            \"authenticity\": \"Content bound; local collection provenance must be retained separately.\"}"
+        },
+        "contracts": {
+          "known_limits": [
+            "Local server reports model metadata; hashes are integrity not authenticity.",
+            "Lexical metrics and visible development cases are not held-out acceptance."
+          ],
+          "review_validation": "validate_review_package rebinds every review to the full artifact, rubric and run_id; recomputes status from deterministic checks and all model judgments. Different family and digest required. Cannot authenticate the creator of JSON.",
+          "status_scope": "Accepted is automatic review of this development run only. No human or release claim."
+        },
+        "run_id": "rebuild-review-policy-20260923-1",
+        "scope": "Review only the truthfulness of this automatic-review receipt and benchmark producer status, not the whole product or model quality."
+      },
+      "rubric": {
+        "criteria": [
+          {
+            "id": "truthfulness",
+            "instruction": "Assess only the shown status/receipt code. Can diagnostic or legacy human data be described as human certification or product readiness by these displayed functions? Identify a concrete misleading claim if present, otherwise pass with code pointers. Do not infer wider application safety."
+          }
+        ],
+        "deterministic_rules": [
+          {
+            "expected": null,
+            "id": "code_present",
+            "operator": "nonempty",
+            "pointer": "/code/review_benchmark"
+          }
+        ],
+        "rubric_id": "review-truthfulness-v1",
+        "schema_version": 1
+      },
+      "review": {
+        "binding": {
+          "artifact_sha256": "33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566",
+          "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+          "run_id": "rebuild-review-policy-20260923-1"
+        },
+        "deterministic_checks": [
+          {
+            "id": "code_present",
+            "observed_sha256": "a429b4376107c98ded1f88b25d6881f2be081b273f4f4645a735264f78f56c40",
+            "reason": "rule_satisfied",
+            "status": "pass"
+          }
+        ],
+        "disagreements": [],
+        "file_integrity": "content_bound",
+        "human_review": false,
+        "kind": "multi_system_automatic_review",
+        "limitations": [
+          "automatic_not_human_review",
+          "server_reported_model_identity",
+          "different_families_do_not_prove_independent_training",
+          "content_hash_is_not_authentication",
+          "rubric_adequacy_not_certified"
+        ],
+        "product_readiness": "not_assessed",
+        "reviews": [
+          {
+            "binding": {
+              "artifact_sha256": "33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566",
+              "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+              "run_id": "rebuild-review-policy-20260923-1"
+            },
+            "elapsed_ms": 33938,
+            "error": "judgment_coverage",
+            "identity": {
+              "digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+              "family": "qwen3",
+              "model": "qwen3:14b",
+              "provider": "ollama"
+            },
+            "raw_output": "{\n  \"binding\": {\n    \"artifact_sha256\": \"33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566\",\n    \"rubric_sha256\": \"b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58\",\n    \"run_id\": \"rebuild-review-policy-20260923-1\"\n  },\n  \"judgments\": {\n    \"truthfulness\": {\n      \"verdict\": \"pass\",\n      \"reason\": \"The code does not claim human certification or product readiness. The status is set to 'diagnostic_only' or 'pending_automated_review', and 'product_readiness' is explicitly set to 'not_assessed'. The 'review_benchmark' function returns a receipt with 'product_readiness' as 'not_assessed' and 'human_review' as 'False'. There is no misleading claim in the code.\",\n      \"evidence\": [\n        \"/code/producer_report/\\\"product_readiness\\\": \\\"not_assessed\\\"\",\n        \"/code/producer_report/\\\"status\\\": \\\"diagnostic_only\\\" if diagnostic_single_arm or not require_human_review else \\\"pending_automated_review\\\"\",\n        \"/code/review_benchmark/\\\"product_readiness\\\": \\\"not_assessed\\\"\",\n        \"/code/review_benchmark/\\\"human_review\\\": False\"\n      ]\n    }\n  }\n}",
+            "response": null,
+            "settings": {
+              "num_ctx": 32768,
+              "num_predict": 4096,
+              "seed": 0,
+              "temperature": 0
+            },
+            "started_at": "2026-09-23T10:32:18.206+00:00"
+          },
+          {
+            "binding": {
+              "artifact_sha256": "33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566",
+              "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+              "run_id": "rebuild-review-policy-20260923-1"
+            },
+            "elapsed_ms": 12756,
+            "error": null,
+            "identity": {
+              "digest": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e",
+              "family": "llama",
+              "model": "llama3.1:8b",
+              "provider": "ollama"
+            },
+            "raw_output": "{\n  \"binding\": {\n    \"artifact_sha256\": \"33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566\",\n    \"rubric_sha256\": \"b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58\",\n    \"run_id\": \"rebuild-review-policy-20260923-1\"\n  },\n  \"judgments\": [\n    {\n      \"criterion_id\": \"truthfulness\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The review_benchmark function does not make any misleading claims about human certification or product readiness.\",\n      \"evidence\": [\n        \"/code/review_benchmark\"\n      ]\n    }\n  ]\n}",
+            "response": {
+              "binding": {
+                "artifact_sha256": "33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566",
+                "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+                "run_id": "rebuild-review-policy-20260923-1"
+              },
+              "judgments": [
+                {
+                  "criterion_id": "truthfulness",
+                  "evidence": [
+                    "/code/review_benchmark"
+                  ],
+                  "reason": "The review_benchmark function does not make any misleading claims about human certification or product readiness.",
+                  "verdict": "pass"
+                }
+              ]
+            },
+            "settings": {
+              "num_ctx": 32768,
+              "num_predict": 4096,
+              "seed": 0,
+              "temperature": 0
+            },
+            "started_at": "2026-09-23T10:32:52.145+00:00"
+          }
+        ],
+        "schema_version": 1,
+        "status": "inconclusive"
+      }
+    },
+    {
+      "artifact": {
+        "code": {
+          "producer_report": "        # Never certify in the producer. Review the frozen report in a later step.\n        final_report = {\n            \"schema_version\": 2,\n            \"run_id\": run_id,\n            \"status\": \"diagnostic_only\" if diagnostic_single_arm or not require_human_review else \"pending_automated_review\",\n            \"review_mode\": \"automated_multi_system\",\n            \"human_review_verified\": False,\n            \"product_readiness\": \"not_assessed\",\n            \"provenance\": {\n                \"suite_sha256\": hashlib.sha256(self.suite_path.read_bytes()).hexdigest(),\n                \"provider\": getattr(self.provider, \"name\", type(self.provider).__name__),\n                \"model\": getattr(self.provider, \"model\", \"unknown\"),\n                \"arms\": list(arms), \"offset\": offset, \"limit\": limit, \"domain\": domain,\n                \"reference_exposure\": \"development_visible\",\n            },\n            \"measurement_limits\": [\n                \"Lexical metrics are diagnostics, not proof of factual entailment.\",\n                \"This development suite is not an independent held-out acceptance set.\",\n                \"Model agreement cannot establish source truth or product readiness.\",\n            ],\n            \"summary\": summary,\n            \"reference_cases\": cases_to_run,\n            \"results\": results_by_case,\n        }\n        res_path = self.out_dir / f\"{run_id}-results.json\"\n        res_path.write_text(json.dumps(final_report, ensure_ascii=False, indent=2), encoding=\"utf-8\")\n        return final_report\n",
+          "retired_generator": "#!/usr/bin/env python3\n\"\"\"Retired under q49: generated opinions cannot impersonate a human review.\"\"\"\nimport sys\n\n\ndef main():\n    print(\"legacy_human_review_retired: use tools/review_automatically.py on frozen outputs; \"\n          \"the historical generator did not call Gemini or perform human review.\", file=sys.stderr)\n    return 2\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+          "review_benchmark": "def review_benchmark(report: dict, package: dict) -> dict:\n    validate_benchmark_artifact(report)\n    checked = validate_review_package(package, report, BENCHMARK_RUBRIC, run_id=report[\"run_id\"])\n    # Separate receipt: never mutate the artifact and invalidate its binding.\n    return {\"schema_version\": 1, \"kind\": \"benchmark_automatic_review_receipt\",\n            \"run_id\": report[\"run_id\"], \"binding\": checked[\"binding\"],\n            \"status\": \"automated_review_\" + checked[\"status\"],\n            \"human_review\": False, \"product_readiness\": \"not_assessed\",\n            \"review_package\": checked,\n            \"scope\": \"This frozen development benchmark only; not held-out acceptance.\",\n            \"authenticity\": \"Content bound; local collection provenance must be retained separately.\"}"
+        },
+        "contracts": {
+          "known_limits": [
+            "Local server reports model metadata; hashes are integrity not authenticity.",
+            "Lexical metrics and visible development cases are not held-out acceptance."
+          ],
+          "review_validation": "validate_review_package rebinds every review to the full artifact, rubric and run_id; recomputes status from deterministic checks and all model judgments. Different family and digest required. Cannot authenticate the creator of JSON.",
+          "status_scope": "Accepted is automatic review of this development run only. No human or release claim."
+        },
+        "run_id": "rebuild-review-policy-20260923-1",
+        "scope": "Review only the truthfulness of this automatic-review receipt and benchmark producer status, not the whole product or model quality."
+      },
+      "rubric": {
+        "criteria": [
+          {
+            "id": "truthfulness",
+            "instruction": "Assess only the shown status/receipt code. Can diagnostic or legacy human data be described as human certification or product readiness by these displayed functions? Identify a concrete misleading claim if present, otherwise pass with code pointers. Do not infer wider application safety."
+          }
+        ],
+        "deterministic_rules": [
+          {
+            "expected": null,
+            "id": "code_present",
+            "operator": "nonempty",
+            "pointer": "/code/review_benchmark"
+          }
+        ],
+        "rubric_id": "review-truthfulness-v1",
+        "schema_version": 1
+      },
+      "review": {
+        "binding": {
+          "artifact_sha256": "33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566",
+          "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+          "run_id": "rebuild-review-policy-20260923-1"
+        },
+        "deterministic_checks": [
+          {
+            "id": "code_present",
+            "observed_sha256": "a429b4376107c98ded1f88b25d6881f2be081b273f4f4645a735264f78f56c40",
+            "reason": "rule_satisfied",
+            "status": "pass"
+          }
+        ],
+        "disagreements": [],
+        "file_integrity": "content_bound",
+        "human_review": false,
+        "kind": "multi_system_automatic_review",
+        "limitations": [
+          "automatic_not_human_review",
+          "server_reported_model_identity",
+          "different_families_do_not_prove_independent_training",
+          "content_hash_is_not_authentication",
+          "rubric_adequacy_not_certified"
+        ],
+        "product_readiness": "not_assessed",
+        "reviews": [
+          {
+            "binding": {
+              "artifact_sha256": "33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566",
+              "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+              "run_id": "rebuild-review-policy-20260923-1"
+            },
+            "elapsed_ms": 28647,
+            "error": null,
+            "identity": {
+              "digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+              "family": "qwen3",
+              "model": "qwen3:14b",
+              "provider": "ollama"
+            },
+            "raw_output": "{\n  \"binding\": {\"artifact_sha256\":\"33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566\",\"rubric_sha256\":\"b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58\",\"run_id\":\"rebuild-review-policy-20260923-1\"},\n  \"judgments\": [\n    {\n      \"criterion_id\": \"truthfulness\",\n      \"evidence\": [\"/code/review_benchmark\", \"/contracts/status_scope\", \"/contracts/review_validation\"],\n      \"reason\": \"The code and contracts explicitly state that the status is for 'automated review of this development run only' and that 'product readiness' is 'not_assessed'. The 'review_benchmark' function returns a status that begins with 'automated_review_', and the 'human_review_verified' field is set to False. These elements indicate that the status and receipt do not claim human certification or product readiness, and no misleading claims are present.\",\n      \"verdict\": \"pass\"\n    }\n  ]\n}",
+            "response": {
+              "binding": {
+                "artifact_sha256": "33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566",
+                "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+                "run_id": "rebuild-review-policy-20260923-1"
+              },
+              "judgments": [
+                {
+                  "criterion_id": "truthfulness",
+                  "evidence": [
+                    "/code/review_benchmark",
+                    "/contracts/status_scope",
+                    "/contracts/review_validation"
+                  ],
+                  "reason": "The code and contracts explicitly state that the status is for 'automated review of this development run only' and that 'product readiness' is 'not_assessed'. The 'review_benchmark' function returns a status that begins with 'automated_review_', and the 'human_review_verified' field is set to False. These elements indicate that the status and receipt do not claim human certification or product readiness, and no misleading claims are present.",
+                  "verdict": "pass"
+                }
+              ]
+            },
+            "settings": {
+              "num_ctx": 32768,
+              "num_predict": 4096,
+              "seed": 0,
+              "temperature": 0
+            },
+            "started_at": "2026-09-23T10:34:12.734+00:00"
+          },
+          {
+            "binding": {
+              "artifact_sha256": "33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566",
+              "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+              "run_id": "rebuild-review-policy-20260923-1"
+            },
+            "elapsed_ms": 12615,
+            "error": null,
+            "identity": {
+              "digest": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e",
+              "family": "llama",
+              "model": "llama3.1:8b",
+              "provider": "ollama"
+            },
+            "raw_output": "{\n  \"binding\": {\"artifact_sha256\":\"33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566\",\"rubric_sha256\":\"b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58\",\"run_id\":\"rebuild-review-policy-20260923-1\"},\n  \"judgments\": [\n    {\n      \"criterion_id\": \"truthfulness\",\n      \"evidence\": [\"/code/review_benchmark\"],\n      \"reason\": \"The code in review_benchmark function does not describe diagnostic or legacy human data as human certification or product readiness.\",\n      \"verdict\": \"pass\"\n    }\n  ]\n}",
+            "response": {
+              "binding": {
+                "artifact_sha256": "33570defae4f494fb2d04ddc1891f1ecc7c710a3a0a0e0fc4eb415f2d571b566",
+                "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+                "run_id": "rebuild-review-policy-20260923-1"
+              },
+              "judgments": [
+                {
+                  "criterion_id": "truthfulness",
+                  "evidence": [
+                    "/code/review_benchmark"
+                  ],
+                  "reason": "The code in review_benchmark function does not describe diagnostic or legacy human data as human certification or product readiness.",
+                  "verdict": "pass"
+                }
+              ]
+            },
+            "settings": {
+              "num_ctx": 32768,
+              "num_predict": 4096,
+              "seed": 0,
+              "temperature": 0
+            },
+            "started_at": "2026-09-23T10:34:41.382+00:00"
+          }
+        ],
+        "schema_version": 1,
+        "status": "accepted"
+      }
+    },
+    {
+      "artifact": {
+        "code": {
+          "producer_report": "        # Never certify in the producer. Review the frozen report in a later step.\n        final_report = {\n            \"schema_version\": 2,\n            \"run_id\": run_id,\n            \"status\": \"diagnostic_only\" if diagnostic_single_arm or not require_human_review else \"pending_automated_review\",\n            \"review_mode\": \"automated_multi_system\",\n            \"human_review_verified\": False,\n            \"product_readiness\": \"not_assessed\",\n            \"provenance\": {\n                \"suite_sha256\": self._suite_sha256,\n                \"reference_cases_sha256\": sha256(cases_to_run),\n                \"provider\": getattr(self.provider, \"name\", type(self.provider).__name__),\n                \"model\": getattr(self.provider, \"model\", \"unknown\"),\n                \"arms\": list(arms), \"offset\": offset, \"limit\": limit, \"domain\": domain,\n                \"reference_exposure\": \"development_visible\",\n            },\n            \"measurement_limits\": [\n                \"Lexical metrics are diagnostics, not proof of factual entailment.\",\n                \"This development suite is not an independent held-out acceptance set.\",\n                \"Model agreement cannot establish source truth or product readiness.\",\n            ],\n            \"summary\": summary,\n            \"reference_cases\": cases_to_run,\n            \"results\": results_by_case,\n        }\n        res_path = self.out_dir / f\"{run_id}-results.json\"\n        res_path.write_text(json.dumps(final_report, ensure_ascii=False, indent=2), encoding=\"utf-8\")\n        return final_report\n",
+          "retired_generator": "#!/usr/bin/env python3\n\"\"\"Retired under q49: generated opinions cannot impersonate a human review.\"\"\"\nimport sys\n\n\ndef main():\n    print(\"legacy_human_review_retired: use tools/review_automatically.py on frozen outputs; \"\n          \"the historical generator did not call Gemini or perform human review.\", file=sys.stderr)\n    return 2\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+          "review_benchmark": "def review_benchmark(report: dict, package: dict) -> dict:\n    validate_benchmark_artifact(report)\n    checked = validate_review_package(package, report, BENCHMARK_RUBRIC, run_id=report[\"run_id\"])\n    # Separate receipt: never mutate the artifact and invalidate its binding.\n    return {\"schema_version\": 1, \"kind\": \"benchmark_automatic_review_receipt\",\n            \"run_id\": report[\"run_id\"], \"binding\": checked[\"binding\"],\n            \"status\": \"automated_review_\" + checked[\"status\"],\n            \"human_review\": False, \"product_readiness\": \"not_assessed\",\n            \"review_package\": checked,\n            \"scope\": \"This frozen development benchmark only; not held-out acceptance.\",\n            \"authenticity\": \"Content bound; local collection provenance must be retained separately.\"}"
+        },
+        "contracts": {
+          "known_limits": [
+            "Local server reports model metadata; hashes are integrity not authenticity.",
+            "Lexical metrics and visible development cases are not held-out acceptance."
+          ],
+          "review_validation": "validate_review_package rebinds every review to the full artifact, rubric and run_id; recomputes status from deterministic checks and all model judgments. Different family and digest required. Cannot authenticate the creator of JSON.",
+          "status_scope": "Accepted is automatic review of this development run only. No human or release claim."
+        },
+        "run_id": "rebuild-review-policy-20260923-1",
+        "scope": "Review only the truthfulness of this automatic-review receipt and benchmark producer status, not the whole product or model quality."
+      },
+      "rubric": {
+        "criteria": [
+          {
+            "id": "truthfulness",
+            "instruction": "Assess only the shown status/receipt code. Can diagnostic or legacy human data be described as human certification or product readiness by these displayed functions? Identify a concrete misleading claim if present, otherwise pass with code pointers. Do not infer wider application safety."
+          }
+        ],
+        "deterministic_rules": [
+          {
+            "expected": null,
+            "id": "code_present",
+            "operator": "nonempty",
+            "pointer": "/code/review_benchmark"
+          }
+        ],
+        "rubric_id": "review-truthfulness-v1",
+        "schema_version": 1
+      },
+      "review": {
+        "binding": {
+          "artifact_sha256": "1982894385e3d77f4a8efef9290d2d5584974f2ae9d5495d9ceac046134496dd",
+          "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+          "run_id": "rebuild-review-policy-20260923-1"
+        },
+        "deterministic_checks": [
+          {
+            "id": "code_present",
+            "observed_sha256": "a429b4376107c98ded1f88b25d6881f2be081b273f4f4645a735264f78f56c40",
+            "reason": "rule_satisfied",
+            "status": "pass"
+          }
+        ],
+        "disagreements": [],
+        "file_integrity": "content_bound",
+        "human_review": false,
+        "kind": "multi_system_automatic_review",
+        "limitations": [
+          "automatic_not_human_review",
+          "server_reported_model_identity",
+          "different_families_do_not_prove_independent_training",
+          "content_hash_is_not_authentication",
+          "rubric_adequacy_not_certified"
+        ],
+        "product_readiness": "not_assessed",
+        "reviews": [
+          {
+            "binding": {
+              "artifact_sha256": "1982894385e3d77f4a8efef9290d2d5584974f2ae9d5495d9ceac046134496dd",
+              "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+              "run_id": "rebuild-review-policy-20260923-1"
+            },
+            "elapsed_ms": 28810,
+            "error": null,
+            "identity": {
+              "digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+              "family": "qwen3",
+              "model": "qwen3:14b",
+              "provider": "ollama"
+            },
+            "raw_output": "{\n  \"binding\": {\"artifact_sha256\":\"1982894385e3d77f4a8efef9290d2d5584974f2ae9d5495d9ceac046134496dd\",\"rubric_sha256\":\"b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58\",\"run_id\":\"rebuild-review-policy-20260923-1\"},\n  \"judgments\": [\n    {\n      \"criterion_id\": \"truthfulness\",\n      \"evidence\": [\"/code/review_benchmark\", \"/contracts/status_scope\", \"/contracts/review_validation\"],\n      \"reason\": \"The code and contracts explicitly state that the status is for 'automated review of this development run only' and that 'product readiness' is 'not_assessed'. The 'review_benchmark' function returns a status that begins with 'automated_review_', and the 'contracts' section clarifies that the status does not imply human certification or product readiness. There is no misleading claim in the code or contracts about human certification or product readiness.\",\n      \"verdict\": \"pass\"\n    }\n  ]\n}",
+            "response": {
+              "binding": {
+                "artifact_sha256": "1982894385e3d77f4a8efef9290d2d5584974f2ae9d5495d9ceac046134496dd",
+                "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+                "run_id": "rebuild-review-policy-20260923-1"
+              },
+              "judgments": [
+                {
+                  "criterion_id": "truthfulness",
+                  "evidence": [
+                    "/code/review_benchmark",
+                    "/contracts/status_scope",
+                    "/contracts/review_validation"
+                  ],
+                  "reason": "The code and contracts explicitly state that the status is for 'automated review of this development run only' and that 'product readiness' is 'not_assessed'. The 'review_benchmark' function returns a status that begins with 'automated_review_', and the 'contracts' section clarifies that the status does not imply human certification or product readiness. There is no misleading claim in the code or contracts about human certification or product readiness.",
+                  "verdict": "pass"
+                }
+              ]
+            },
+            "settings": {
+              "num_ctx": 32768,
+              "num_predict": 4096,
+              "seed": 0,
+              "temperature": 0
+            },
+            "started_at": "2026-09-23T10:44:01.613+00:00"
+          },
+          {
+            "binding": {
+              "artifact_sha256": "1982894385e3d77f4a8efef9290d2d5584974f2ae9d5495d9ceac046134496dd",
+              "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+              "run_id": "rebuild-review-policy-20260923-1"
+            },
+            "elapsed_ms": 11484,
+            "error": null,
+            "identity": {
+              "digest": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e",
+              "family": "llama",
+              "model": "llama3.1:8b",
+              "provider": "ollama"
+            },
+            "raw_output": "{\n  \"binding\": {\"artifact_sha256\":\"1982894385e3d77f4a8efef9290d2d5584974f2ae9d5495d9ceac046134496dd\",\"rubric_sha256\":\"b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58\",\"run_id\":\"rebuild-review-policy-20260923-1\"},\n  \"judgments\": [\n    {\n      \"criterion_id\": \"truthfulness\",\n      \"evidence\": [\"/code/review_benchmark\"],\n      \"reason\": \"The review_benchmark function does not describe diagnostic or legacy human data as human certification or product readiness.\",\n      \"verdict\": \"pass\"\n    }\n  ]\n}",
+            "response": {
+              "binding": {
+                "artifact_sha256": "1982894385e3d77f4a8efef9290d2d5584974f2ae9d5495d9ceac046134496dd",
+                "rubric_sha256": "b3845fc6dccd4e4324227b16f7c456a4c57a6fd5db1da1a6e2e140e1cb87ef58",
+                "run_id": "rebuild-review-policy-20260923-1"
+              },
+              "judgments": [
+                {
+                  "criterion_id": "truthfulness",
+                  "evidence": [
+                    "/code/review_benchmark"
+                  ],
+                  "reason": "The review_benchmark function does not describe diagnostic or legacy human data as human certification or product readiness.",
+                  "verdict": "pass"
+                }
+              ]
+            },
+            "settings": {
+              "num_ctx": 32768,
+              "num_predict": 4096,
+              "seed": 0,
+              "temperature": 0
+            },
+            "started_at": "2026-09-23T10:44:30.424+00:00"
+          }
+        ],
+        "schema_version": 1,
+        "status": "accepted"
+      }
+    }
+  ]
+}

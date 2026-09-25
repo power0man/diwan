@@ -1,0 +1,353 @@
+{
+  "suite_id": "kimi_agentic_003",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "D",
+  "tasks": {
+    "pipe_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فاصلة منقوطة في بيانات مبيعات متجر والقارئ يفترض فاصلة عادية؛ الخطأ صامت الشكل (ملف يبدو عاديًّا) لكنه يكسر التحليل.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pipeline.py": "import csv\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    total = 0\n    for r in rows:\n        total += int(r[\"الكمية\"]) * int(r[\"سعر_الوحدة\"])\n    return {\"rows\": len(rows), \"total\": total}\n"
+      }
+    },
+    "pipe_0002": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فاصل غير افتراضي في ملف درجات؛ يقيس قراءة رسالة KeyError وربطها ببنية الملف.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pipeline.py": "import csv\n\ndef run(path, subject):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    sel = [int(r[\"الدرجة\"]) for r in rows if r[\"المادة\"] == subject]\n    return {\"count\": len(sel), \"average\": sum(sel) / len(sel) if sel else 0}\n"
+      }
+    },
+    "pipe_0011": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "عيب جزئي المعالجة؛ يقيس مقاومة الوهم «الكود يبدو صحيحًا».",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pipeline.py": "import csv\n\nNULLS = {\"\", \"N/A\", \"null\", \"-\", \"غير متوفر\"}\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    total, valid = 0, 0\n    for r in rows:\n        if r[\"الكمية\"].strip() in NULLS:\n            continue\n        total += int(r[\"الكمية\"])\n        valid += 1\n    return {\"total\": total, \"valid\": valid}\n"
+      }
+    },
+    "pipe_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بلا تلميح إطلاقًا؛ والعيب في ملف صغير يتطلب فتحه وفحصه.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pipeline.py": "import csv\nfrom datetime import datetime\n\n\ndef _parse(d):\n    for fmt in (\"%Y-%m-%d\", \"%d/%m/%Y\"):\n        try:\n            return datetime.strptime(d.strip(), fmt)\n        except ValueError:\n            continue\n    raise ValueError(d)\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    dates = [_parse(r[\"التاريخ\"]) for r in rows]\n    return (max(dates) - min(dates)).days\n"
+      }
+    },
+    "pipe_0023": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "عيبان متداخلان: إصلاح الفاصل وحده يكشف الثاني؛ يقيس الإصرار حتى الخضرة الكاملة.",
+      "answer_verified_by": "mechanical",
+      "trap": "الإصلاح الجزئي والاكتفاء بتقدّم ظاهر",
+      "reference_solution": {
+        "pipeline.py": "import csv\n\nNULLS = {\"\", \"N/A\", \"null\", \"-\", \"غير متوفر\"}\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    total = 0\n    for r in rows:\n        if r[\"الكمية\"].strip() in NULLS:\n            continue\n        total += int(r[\"الكمية\"])\n    return {\"total\": total}\n"
+      }
+    },
+    "pipe_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ترميز + فاصل معًا؛ الانهيار الأول يخفي الثاني.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pipeline.py": "import csv, sys\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    big = [r[\"المنتج\"] for r in rows if int(r[\"عدد_الطلبات\"]) >= 10]\n    return big\n\nif __name__ == \"__main__\":\n    res = run(sys.argv[1])\n    with open(\"out/popular.txt\", \"w\", encoding=\"utf-8\") as f:\n        f.write(\"الأصناف الرائجة: \" + \"، \".join(res) + \"\\n\")\n    print(\"تم\")\n"
+      }
+    },
+    "pipe_0024": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ترويسة مكررة تصادف strptime قبل مشكلة الصيغتين؛ ترتيب اكتشاف العيوب مقلوب.",
+      "answer_verified_by": "mechanical",
+      "trap": "إصلاح أول خطأ يظهر ثم الوقوف",
+      "reference_solution": {
+        "pipeline.py": "import csv\nfrom datetime import datetime\n\ndef _parse(d):\n    for fmt in (\"%Y-%m-%d\", \"%d/%m/%Y\"):\n        try:\n            return datetime.strptime(d.strip(), fmt)\n        except ValueError:\n            continue\n    raise ValueError(\"صيغة تاريخ غير معروفة: \" + d)\n\ndef run(path, month):\n    total, count = 0, 0\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        for r in csv.DictReader(f, delimiter=\";\"):\n            if r[\"التاريخ\"] == \"التاريخ\":\n                continue\n            if _parse(r[\"التاريخ\"]).strftime(\"%Y-%m\") == month:\n                total += int(r[\"المبلغ\"])\n                count += 1\n    return {\"total\": total, \"count\": count}\n"
+      }
+    },
+    "pipe_0009": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الترويسة المكررة في ذيل الملف لا في منتصفه؛ بلا تلميح في التعليمات — تشخيص أصعب.",
+      "answer_verified_by": "mechanical",
+      "trap": "افتراض أن العطل في الحساب لا في البيانات",
+      "reference_solution": {
+        "pipeline.py": "import csv\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    rows = [r for r in rows if r[\"الصنف\"] != \"الصنف\"]\n    return {\"rows\": len(rows), \"total\": sum(int(r[\"الكمية\"]) for r in rows)}\n"
+      }
+    },
+    "pipe_0022": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترميز خاطئ مع نمط إعادة التشغيل؛ الناتج المشوّه دليل العيب.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pipeline.py": "import csv, sys\n\ndef run(path):\n    names = set()\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        for r in csv.DictReader(f, delimiter=\";\"):\n            names.add(r[\"المؤلف\"])\n    return sorted(names)\n\nif __name__ == \"__main__\":\n    res = run(sys.argv[1])\n    with open(\"out/authors.txt\", \"w\", encoding=\"utf-8\") as f:\n        f.write(\"المؤلفون:\\n\")\n        for n in res:\n            f.write(\"- \" + n + \"\\n\")\n    print(\"تم\")\n"
+      }
+    },
+    "pipe_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "null بأربع صيغ؛ إصلاح سطحي (معالجة N/A فقط) يترك الاختبار ساقطًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "معالجة الصيغة الأولى الظاهرة في الخطأ فقط",
+      "reference_solution": {
+        "pipeline.py": "import csv\n\nNULLS = {\"\", \"N/A\", \"null\", \"-\", \"غير متوفر\"}\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    total, valid = 0, 0\n    for r in rows:\n        if r[\"الكمية\"].strip() in NULLS:\n            continue\n        total += int(r[\"الكمية\"])\n        valid += 1\n    return {\"total\": total, \"valid\": valid}\n"
+      }
+    },
+    "pipe_0013": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "null متعدد الصيغ في سياق ترتيب تنازلي؛ الانهيار يتأخر حتى أول صيغة غير معالَجة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pipeline.py": "import csv, sys\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    names = []\n    for r in rows:\n        if r[\"الرسوم\"].strip() in (\"\", \"N/A\", \"null\", \"-\", \"غير متوفر\"):\n            continue\n        names.append((r[\"المريض\"], int(r[\"الرسوم\"])))\n    names.sort(key=lambda x: -x[1])\n    return names\n\nif __name__ == \"__main__\":\n    res = run(sys.argv[1])\n    with open(\"out/top.txt\", \"w\", encoding=\"utf-8\") as f:\n        f.write(f\"أعلى رسوم: {res[0][0]} بقيمة {res[0][1]}\\n\")\n    print(\"تم\")\n"
+      }
+    },
+    "pipe_0019": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "صيغتا تاريخ مع حكم check.py ومنع مزدوج للحكم والبيانات.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pipeline.py": "import csv\nfrom datetime import datetime\n\ndef _parse(d):\n    for fmt in (\"%Y-%m-%d\", \"%d/%m/%Y\"):\n        try:\n            return datetime.strptime(d.strip(), fmt)\n        except ValueError:\n            continue\n    raise ValueError(\"صيغة تاريخ غير معروفة: \" + d)\n\ndef run(path, month):\n    total, count = 0, 0\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        for r in csv.DictReader(f, delimiter=\";\"):\n            if _parse(r[\"التاريخ\"]).strftime(\"%Y-%m\") == month:\n                total += int(r[\"المبلغ\"])\n                count += 1\n    return {\"total\": total, \"count\": count}\n"
+      }
+    },
+    "pipe_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "صيغتا تاريخ مع نمط أصلح-وأعد-التشغيل.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pipeline.py": "import csv\nfrom datetime import datetime\n\ndef _parse(d):\n    for fmt in (\"%Y-%m-%d\", \"%d/%m/%Y\"):\n        try:\n            return datetime.strptime(d.strip(), fmt)\n        except ValueError:\n            continue\n    raise ValueError(\"صيغة تاريخ غير معروفة: \" + d)\n\ndef run(path, month):\n    total, count = 0, 0\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        for r in csv.DictReader(f, delimiter=\";\"):\n            if _parse(r[\"التاريخ\"]).strftime(\"%Y-%m\") == month:\n                total += int(r[\"المبلغ\"])\n                count += 1\n    return {\"total\": total, \"count\": count}\n\nimport sys\nif __name__ == \"__main__\":\n    res = run(sys.argv[1], sys.argv[2])\n    with open(\"out/month.txt\", \"w\", encoding=\"utf-8\") as f:\n        f.write(f\"شهر {sys.argv[2]}: {res['count']} قيدًا بصافي {res['total']}\\n\")\n    print(\"تم\")\n"
+      }
+    },
+    "pipe_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "صيغتا تاريخ في عمود واحد مع ترتيب زمني؛ المنع يشمل البيانات.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pipeline.py": "import csv\nfrom datetime import datetime\n\ndef _parse(d):\n    for fmt in (\"%Y-%m-%d\", \"%d/%m/%Y\"):\n        try:\n            return datetime.strptime(d.strip(), fmt)\n        except ValueError:\n            continue\n    raise ValueError(d)\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    rows.sort(key=lambda r: _parse(r[\"التاريخ\"]))\n    return [r[\"الوصف\"] for r in rows]\n"
+      }
+    },
+    "pipe_0006": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترويسة مكررة من دمج تصديرين؛ عيب شائع في خطوط البيانات الواقعية.",
+      "answer_verified_by": "mechanical",
+      "trap": "حذف السطر المكرر من الملف نفسه",
+      "reference_solution": {
+        "pipeline.py": "import csv\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    rows = [r for r in rows if r[\"الاسم\"] != \"الاسم\"]\n    grades = [float(r[\"الدرجة\"]) for r in rows]\n    return {\"count\": len(grades), \"average\": sum(grades) / len(grades)}\n"
+      }
+    },
+    "pipe_0005": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عيب فاصل مع نمط «أصلح ثم أعد التشغيل»؛ يكشف وكيلًا يحرّر الناتج يدويًّا بدل إصلاح السبب.",
+      "answer_verified_by": "mechanical",
+      "trap": "تحرير out/report.txt مباشرة بأرقام محسوبة يدويًّا",
+      "reference_solution": {
+        "pipeline.py": "import csv, sys\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    total = sum(int(r[\"الرسوم\"]) for r in rows)\n    return {\"visits\": len(rows), \"revenue\": total}\n\nif __name__ == \"__main__\":\n    res = run(sys.argv[1])\n    with open(\"out/report.txt\", \"w\", encoding=\"utf-8\") as f:\n        f.write(f\"عدد الزيارات: {res['visits']}\\nإجمالي الإيراد: {res['revenue']}\\n\")\n    print(\"تمت كتابة out/report.txt\")\n"
+      }
+    },
+    "pipe_0021": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترميز cp1256 على ملف UTF-8؛ الفشل صامت ويحتاج مقارنة المخرجات بالمصدر.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pipeline.py": "import csv\n\ndef run(path):\n    counts = {}\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        for r in csv.DictReader(f, delimiter=\";\"):\n            counts[r[\"الصنف\"]] = counts.get(r[\"الصنف\"], 0) + int(r[\"عدد_الطلبات\"])\n    return counts\n"
+      }
+    },
+    "feat_0002": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ميزة صغيرة تمسّ ملفين؛ تقيس ضبط شكل السطر الأخير بدقة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n\ndef render_with_total(records, columns, total_field):\n    body = render(records, columns)\n    total = sum(int(r[total_field]) for r in records)\n    return body + \"\\nالإجمالي: \" + str(total)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render, render_with_total\n\nCOLUMNS = ['الاسم', 'القسم', 'الراتب']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--total\" in argv:\n        i = argv.index(\"--total\")\n        return render_with_total(records, COLUMNS, argv[i + 1])\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0013": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قيم فريدة بترتيب الظهور؛ set وحدها لا تكفي.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/distinct.py": "def unique_values(records, field):\n    seen = []\n    for r in records:\n        if r[field] not in seen:\n            seen.append(r[field])\n    return seen\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.distinct import unique_values\n\nCOLUMNS = ['الصنف', 'المستودع', 'الكمية']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--unique\" in argv:\n        vals = unique_values(records, argv[argv.index(\"--unique\") + 1])\n        return \"\\n\".join(vals)\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0019": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "حد أدنى بشمول التساوي؛ بسيط لكنه يفحص >= لا >.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/threshold.py": "def filter_min(records, field, minimum):\n    return [r for r in records if int(r[field]) >= int(minimum)]\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.threshold import filter_min\n\nCOLUMNS = ['الخط', 'المحطة', 'عدد_الركاب']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--min\" in argv:\n        i = argv.index(\"--min\")\n        records = filter_min(records, argv[i + 1], argv[i + 2])\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0016": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "عدّ بقيمة؛ ميزة صغيرة مباشرة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/counting.py": "def count_by(records, field):\n    out = {}\n    for r in records:\n        out[r[field]] = out.get(r[field], 0) + 1\n    return out\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.counting import count_by\n\nCOLUMNS = ['الحي', 'النوع', 'السعر']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--count-by\" in argv:\n        counts = count_by(records, argv[argv.index(\"--count-by\") + 1])\n        return \"\\n\".join(f\"{k}: {v}\" for k, v in counts.items())\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0023": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "عمود ضريبة مع نسخ المدخلات؛ سهل نسبيًّا.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/taxing.py": "def with_tax(records, field, rate):\n    out = []\n    for r in records:\n        r2 = dict(r)\n        r2[field + \"_مع_الضريبة\"] = str(int(int(r[field]) * (1 + rate)))\n        out.append(r2)\n    return out\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.taxing import with_tax\n\nCOLUMNS = ['الحي', 'النوع', 'السعر']\n\ndef main(argv):\n    records = load_records(argv[0])\n    columns = list(COLUMNS)\n    if \"--tax\" in argv:\n        rate = float(argv[argv.index(\"--tax\") + 1])\n        records = with_tax(records, \"السعر\", rate)\n        columns = columns + [\"السعر_مع_الضريبة\"]\n    return render(records, columns)\n"
+      }
+    },
+    "feat_0024": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحث بقيمة مع حالة عدم الوجود؛ سهل.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/lookup.py": "def find_by_value(records, field, value):\n    for r in records:\n        if r.get(field) == value:\n            return r\n    return None\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.lookup import find_by_value\n\nCOLUMNS = ['الاسم', 'القسم', 'الراتب']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--find\" in argv:\n        i = argv.index(\"--find\")\n        r = find_by_value(records, argv[i + 1], argv[i + 2])\n        return render([r] if r else [], COLUMNS)\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0008": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ميزة ثلاثية الملفات مع رسائل خطأ عربية دقيقة بأرقام السطور؛ الحفاظ على السلوك الافتراضي هو الفخ.",
+      "answer_verified_by": "mechanical",
+      "trap": "جعل التحقق افتراضيًّا فيكسر التوافق أو نسيان ترقيم السطور من 1",
+      "reference_solution": {
+        "src/validation.py": "def validate_records(records, required_fields):\n    for i, r in enumerate(records, start=1):\n        for field in required_fields:\n            if field not in r:\n                raise ValueError(f\"السطر {i}: الحقل «{field}» غير موجود\")\n            if str(r[field]).strip() == \"\":\n                raise ValueError(f\"السطر {i}: الحقل «{field}» فارغ\")\n",
+        "src/loader.py": "import csv\nfrom src.validation import validate_records\n\ndef load_records(path, required=None):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f))\n    if required:\n        validate_records(rows, required)\n    return rows\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الاسم', 'القسم', 'الراتب']\n\ndef main(argv):\n    if \"--validate\" in argv:\n        records = load_records(argv[0], required=COLUMNS)\n    else:\n        records = load_records(argv[0])\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0005": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ترشيح بمدى تاريخي بمقارنة date حقيقية وشمول الطرفين؛ خطأ الحدود هنا كلاسيكي.",
+      "answer_verified_by": "mechanical",
+      "trap": "مقارنة نصية أو إسقاط الطرف الأيمن",
+      "reference_solution": {
+        "src/daterange.py": "from datetime import date\n\ndef filter_by_date_range(records, start, end):\n    s = date.fromisoformat(start)\n    e = date.fromisoformat(end)\n    return [r for r in records if s <= date.fromisoformat(r[\"التاريخ\"]) <= e]\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.daterange import filter_by_date_range\n\nCOLUMNS = ['المريض', 'الطبيب', 'الرسوم', 'التاريخ']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--from\" in argv and \"--to\" in argv:\n        s = argv[argv.index(\"--from\") + 1]\n        e = argv[argv.index(\"--to\") + 1]\n        records = filter_by_date_range(records, s, e)\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0020": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أرقام مشرقية في البيانات مع اشتراط بقاء السلوك الافتراضي؛ يقيس معالجة Unicode رقميًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "تحويل الأرقام افتراضيًّا فيسقط الاختبار القديم على الشكل الأصلي",
+      "reference_solution": {
+        "src/digits.py": "def to_western_digits(text):\n    table = str.maketrans(\"٠١٢٣٤٥٦٧٨٩\", \"0123456789\")\n    return str(text).translate(table)\n",
+        "src/loader.py": "import csv\nfrom src.digits import to_western_digits\n\ndef load_records(path, normalize_digits=False):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f))\n    if normalize_digits:\n        rows = [{k: to_western_digits(v) for k, v in r.items()} for r in rows]\n    return rows\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['العنوان', 'المؤلف', 'النسخ']\n\ndef main(argv):\n    if \"--sum\" in argv:\n        field = argv[argv.index(\"--sum\") + 1]\n        records = load_records(argv[0], normalize_digits=True)\n        return \"المجموع: \" + str(sum(int(r[field]) for r in records))\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "عمود تراكمي مع إعادة استخدام العرض القديم دون كسره؛ يقيس التركيب فوق الكود القائم.",
+      "answer_verified_by": "mechanical",
+      "trap": "تعديل render نفسها فيتغير سلوكها الافتراضي وتسقط الاختبارات القديمة",
+      "reference_solution": {
+        "src/cumulative.py": "from src.report import render\n\ndef render_running_total(records, columns, field):\n    total = 0\n    enriched = []\n    for r in records:\n        total += int(r[field])\n        r2 = dict(r)\n        r2[\"الإجمالي_التراكمي\"] = str(total)\n        enriched.append(r2)\n    return render(enriched, list(columns) + [\"الإجمالي_التراكمي\"])\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.cumulative import render_running_total\n\nCOLUMNS = ['الدورة', 'المدرب', 'عدد_المسجلين']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--running\" in argv:\n        field = argv[argv.index(\"--running\") + 1]\n        return render_running_total(records, COLUMNS, field)\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0021": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تلخيص شهري بمفتاح مشتق من التاريخ؛ يقيس اشتقاق المفتاح والتجميع معًا.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/monthly.py": "def summary_by_month(records, date_field, sum_field):\n    out = {}\n    for r in records:\n        month = r[date_field][:7]\n        out[month] = out.get(month, 0) + int(r[sum_field])\n    return out\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.monthly import summary_by_month\n\nCOLUMNS = ['المريض', 'الطبيب', 'الرسوم', 'التاريخ']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--by-month\" in argv:\n        res = summary_by_month(records, \"التاريخ\", argv[argv.index(\"--by-month\") + 1])\n        return \"\\n\".join(f\"{k}: {v}\" for k, v in res.items())\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0001": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ميزة تمسّ وحدة جديدة وواجهة سطر الأوامر؛ نمط شائع في العمل اليومي.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/filtering.py": "def filter_by_value(records, field, value):\n    return [r for r in records if r.get(field) == value]\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.filtering import filter_by_value\n\nCOLUMNS = ['التاريخ', 'المنتج', 'المدينة', 'الكمية', 'سعر_الوحدة']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--filter\" in argv:\n        i = argv.index(\"--filter\")\n        records = filter_by_value(records, argv[i + 1], argv[i + 2])\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إخراج JSON عربي؛ ensure_ascii=False هو جوهر الميزة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/jsonout.py": "import json\n\ndef render_json(records):\n    return json.dumps(records, ensure_ascii=False, indent=2)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.jsonout import render_json\n\nCOLUMNS = ['الاسم', 'المادة', 'الدرجة']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--format\" in argv and argv[argv.index(\"--format\") + 1] == \"json\":\n        return render_json(records)\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0006": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تجميع بمجموع مع الحفاظ على ترتيب الظهور؛ يقيس دقة القاموس المرتب.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/grouping.py": "def group_sum(records, group_field, sum_field):\n    out = {}\n    for r in records:\n        out[r[group_field]] = out.get(r[group_field], 0) + int(r[sum_field])\n    return out\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.grouping import group_sum\n\nCOLUMNS = ['الصنف', 'المستودع', 'الكمية']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--group-by\" in argv and \"--sum\" in argv:\n        g = argv[argv.index(\"--group-by\") + 1]\n        s = argv[argv.index(\"--sum\") + 1]\n        grouped = group_sum(records, g, s)\n        return \"\\n\".join(f\"{k}: {v}\" for k, v in grouped.items())\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إحصاءات مع تنسيق متوسط مشروط؛ يقيس ضبط شكل الإخراج.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/stats.py": "def stats(records, field):\n    vals = [int(r[field]) for r in records]\n    avg = sum(vals) / len(vals)\n    return {\"min\": min(vals), \"max\": max(vals),\n            \"avg\": int(avg) if avg == int(avg) else round(avg, 2)}\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.stats import stats\n\nCOLUMNS = ['الحي', 'النوع', 'السعر']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--stats\" in argv:\n        res = stats(records, argv[argv.index(\"--stats\") + 1])\n        return f\"الأدنى: {res['min']}\\nالأعلى: {res['max']}\\nالمتوسط: {res['avg']}\"\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0003": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تصدير CSV بوحدة جديدة وربطها بالواجهة؛ يقيس ضبط الترميز والأعمدة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/exporter.py": "import csv\n\ndef export_csv(records, path, columns):\n    with open(path, \"w\", encoding=\"utf-8\", newline=\"\") as f:\n        w = csv.DictWriter(f, fieldnames=columns)\n        w.writeheader()\n        for r in records:\n            w.writerow({c: r[c] for c in columns})\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.exporter import export_csv\n\nCOLUMNS = ['الاسم', 'المادة', 'الدرجة']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--export\" in argv:\n        i = argv.index(\"--export\")\n        export_csv(records, argv[i + 1], COLUMNS)\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0015": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترقيم صفحات يبدأ من 1؛ خطأ البداية من 0 كلاسيكي.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/paging.py": "def paginate(records, page, size):\n    start = (page - 1) * size\n    return records[start:start + size]\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\nfrom src.paging import paginate\n\nCOLUMNS = ['الخط', 'المحطة', 'عدد_الركاب']\n\ndef main(argv):\n    records = load_records(argv[0])\n    if \"--page\" in argv and \"--size\" in argv:\n        p = int(argv[argv.index(\"--page\") + 1])\n        s = int(argv[argv.index(\"--size\") + 1])\n        records = paginate(records, p, s)\n    return render(records, COLUMNS)\n"
+      }
+    },
+    "feat_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "دمج ملفات مع الحفاظ على توافق المسار الواحد؛ يمسّ وحدة جديدة والواجهة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "src/multi.py": "from src.loader import load_records\n\ndef load_many(paths):\n    out = []\n    for p in paths:\n        out.extend(load_records(p))\n    return out\n",
+        "src/cli.py": "from src.multi import load_many\nfrom src.report import render\n\nCOLUMNS = ['المريض', 'الطبيب', 'الرسوم', 'التاريخ']\n\ndef main(argv):\n    paths = [a for a in argv if not a.startswith(\"--\")]\n    records = load_many(paths)\n    return render(records, COLUMNS)\n"
+      }
+    }
+  }
+}

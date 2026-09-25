@@ -1,0 +1,410 @@
+{
+  "suite_id": "kimi_logic_a_002",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "fallcy_a_0037": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إثبات المقدم يلزم منه التالي (وضع المقدم) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0041": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إثبات المقدم يلزم منه التالي (وضع المقدم) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0049": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إثبات المقدم يلزم منه التالي (وضع المقدم) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0015": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إثبات المقدم يلزم منه التالي (وضع المقدم) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0066": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إثبات المقدم يلزم منه التالي (وضع المقدم) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0012": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إثبات المقدم يلزم منه التالي (وضع المقدم) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0042": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إثبات المقدم يلزم منه التالي (وضع المقدم) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0072": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إثبات المقدم يلزم منه التالي (وضع المقدم) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0057": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0077": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0064": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0001": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0075": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0060": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0062": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0040": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0022": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0027": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0035": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0019": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0065": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0005": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0011": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0016": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0038": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي"
+    },
+    "fallcy_a_0030": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم"
+    },
+    "fallcy_a_0081": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0051": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الاستدلال استقرائي معقول بعينة ممثلة أو سوابق كافية؛ لا مغالطة فيه، والفخ أن يبالغ النموذج في اصطياد مغالطة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "فخ عكسي: النماذج المدرّبة على اصطياد المغالطات تختلق واحدة هنا"
+    },
+    "fallcy_a_0084": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي"
+    },
+    "fallcy_a_0063": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0006": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة التعميم المتسرّع صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0088": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة التعميم المتسرّع صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0047": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نفي التالي يلزم منه نفي المقدم (نفي التالي) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0031": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0050": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نفي التالي يلزم منه نفي المقدم (نفي التالي) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0074": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة التعميم المتسرّع صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0079": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة رجل القش صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0046": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة التعميم المتسرّع صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0070": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0014": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة الاحتكام إلى الجهل صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة الالتفاف (مصادرة على المطلوب) صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0033": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة التعميم المتسرّع صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نفي التالي يلزم منه نفي المقدم (نفي التالي) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0055": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نفي التالي يلزم منه نفي المقدم (نفي التالي) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0007": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0028": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة الالتفاف (مصادرة على المطلوب) صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0029": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة الاحتكام إلى الجهل صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0004": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0071": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة رجل القش صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0008": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نفي التالي يلزم منه نفي المقدم (نفي التالي) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0089": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نفي التالي يلزم منه نفي المقدم (نفي التالي) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0068": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة رجل القش صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0025": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نفي التالي يلزم منه نفي المقدم (نفي التالي) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0078": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة الاحتكام إلى الجهل صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0058": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة الالتفاف (مصادرة على المطلوب) صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة الالتفاف (مصادرة على المطلوب) صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0039": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نفي التالي يلزم منه نفي المقدم (نفي التالي) — تحقق آلي بفحص كل التقديرات.",
+      "answer_verified_by": "mechanical"
+    },
+    "fallcy_a_0056": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0076": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النص يصوغ مغالطة الاحتكام إلى الجهل صياغة واضحة؛ حُسب حرف الخيار بعد خلط آلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fallcy_a_0082": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "أثبت التالي ثم خلص إلى المقدم، وهذه مغالطة إثبات التالي — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: الحكم ينقلب إن وقع النموذج في المغالطة"
+    },
+    "fallcy_a_0045": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "أنكر المقدم ثم خلص إلى نفي التالي، وهذه مغالطة إنكار المقدم — تحقق آلي أن النتيجة لا تلزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: الحكم ينقلب إن وقع النموذج في المغالطة"
+    }
+  }
+}

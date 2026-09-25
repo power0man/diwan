@@ -1,0 +1,425 @@
+{
+  "suite_id": "kimi_arabic_a_001",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "morph_a_0108": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مصدر فعّل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0101": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فعل ثلاثي مكسور العين؛ مثال قياسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0319": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم مكان مفتوح الميم للفعل المفتوح العين.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0003": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ميم وتاء زائدتان؛ جذر مألوف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0304": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم فاعل بلا إعلال.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0204": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "جمع على أفعال.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0102": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فعل ثلاثي مضموم العين؛ يثبت تمايز فَعِلَ عن فَعُلَ.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0104": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم مفعول قياسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0002": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم مكان بميم زائدة و تاء مربوطة؛ الجذر درس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0103": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم مكان قياسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0216": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "جمع على فُعول.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0301": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم فاعل ثلاثي قياسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0107": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فعل مطاوعة قياسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0106": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الفعل السداسي القياسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0313": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مصدر فعّل القياسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0307": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم مفعول ثلاثي قياسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0113": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "صفة مشبهة قياسية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0205": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "جمع على فُعول.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0213": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "جمع بحذف التاء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0212": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "جمع بحذف التاء والكسرة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0202": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "جمع اسم المكان بالألف والتاء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0218": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "جمع على فواعل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0004": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مصدر استفعل؛ الزوائد معلومة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0317": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مصدر أجوف بقلب الواو ياءً.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0105": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم فاعل من فعّل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0315": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مصدر تفاعل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الزوائد: الألف والسين والتاء والميم؛ جذر شائع لتثبيت القاعدة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0320": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم مكان من مثال واوي؛ مضارعه يَعِد مكسور العين فيكون على مَفْعِل.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يغلب الخلط بينه وبين «ميعاد» المزيدة بالياء."
+    },
+    "morph_a_0120": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم فاعل من تفاعل؛ ضبط الألف والياء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0121": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم مصدر أفعل؛ الهمزة والألف وتاء التأنيث.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0219": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "جمع بقلب الهمزة؛ يختلط بحوائط.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0012": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم مكان/زمان من وعد؛ الميم والياء زائدتان.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يظنّ الجذر «عاد» لتشابه الصوت."
+    },
+    "morph_a_0211": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "جمع على أفعلة؛ غير شائع الضبط.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0007": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم آلة؛ الميم والألف زائدتان.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يغلب ظنّ أن الجذر «يزن» لتقليد خطأ شائع في الكتب المدرسية."
+    },
+    "morph_a_0016": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم آلة من عدا يعدو؛ الميم والتاء المربوطة زائدتان.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يظنّ الجذر «عدي» أو «عدا»."
+    },
+    "morph_a_0122": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم مصدر رباعي على فعلل؛ يختلط بفَعْلَل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0312": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم مفعول من رباعي ناقص مع التعريف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0310": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قلب الواو ياءً لكسرة قبلها.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يظنّها «مَبْوع» بإبقاء الواو."
+    },
+    "morph_a_0117": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم مكان من استفعل؛ قلّة من يضبط حركاته.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يظنّ وزنه «مُسْتَفْعِل» كاسم الفاعل."
+    },
+    "morph_a_0008": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم مكان من قام يقوم؛ همزة الفعل تقلب واوًا في المضارع لكن الجذر قوم.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يغلب ظنّ أن الجذر «قام» أخذًا بصيغة الماضي."
+    },
+    "morph_a_0223": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "جمع قلّة على أفعل؛ المقابل الكثرة «شهور».",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يغلب الجواب «شهور» (جمع الكثرة) رغم أن المطلوب جمع القلة."
+    },
+    "morph_a_0020": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "رباعيّ مزيد بنون زائدة؛ الجذر ترجم.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يظنّ الجذر «رجم» أو يُدخل النونَ في الجذر."
+    },
+    "morph_a_0118": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم آلة على مِفعال بكسر الميم.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يظنّ وزنه «مَفْعَال» كمكتب."
+    },
+    "morph_a_0222": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "جمع قلّة؛ المطلوب القلّة لا الكثرة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يغلب الجواب «ثياب» وهو جمع كثرة، والسؤال يطلب جمع القلة صراحةً."
+    },
+    "morph_a_0123": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فعل خماسي على تفعلل؛ نادر في التدريب.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يظنّ وزنه «تَفْعَلَل» أو «تَفَاعَل»."
+    },
+    "morph_a_0119": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم مكان/مفعول من اجتمع على مُفتعل.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يظنّ وزنه «مَفْعُول» أو «مُجْتَمِع»."
+    },
+    "morph_a_0015": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم مكان من طارَ يطير على وزن مَفْعَل (الجذر طير).",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يظنّ الجذر «طير» أخذًا بالمضارع."
+    },
+    "morph_a_0111": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مصدر استفعل بكسرات متتابعة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0305": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اجتماع همزتين تُقلب الأولى مدّة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يظنّها «أاخِذ» بهمزتين."
+    },
+    "morph_a_0019": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فعلية القياس بلا زيادة ظاهرة؛ التاء للتأنيث.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0316": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تقييد المصدر بوزن المفاعلة يرفع التردد مع «جدال».",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0110": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فعل تفاعل؛ يقيس ضبط الألفات.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0302": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم فاعل ناقص الهمزة؛ يختلط ضبط الهمزة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0321": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم آلة مكسور الميم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0209": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "جمع صفة على فُعلاء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0115": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم على فُعال بضم الفاء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0116": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فعل تفعّل مع شدة العين.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0021": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم مصدر للفعل الرباعي زلزل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0326": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حوار متعدد الأدوار يقيس القياس على مثال سبق دون تسريب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0112": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مصدر فاعل على وزن المفاعلة؛ يختلط بتفعيل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0308": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم مفعول مثال بلا إعلال.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0006": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم مصدر بميم زائدة؛ يتحقق أن الواو أول الجذر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0318": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مصدر ناقص؛ يختلط بجيئة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0208": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "جمع معتلّ الآخر؛ يختلط بأحذاء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم مفعول من استفعل؛ زوائد كثيرة تخفي الجذر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مصدر تفاعل؛ التاء والألف زائدتان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "morph_a_0125": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سياق متعدد الأدوار: يقيس التطبيق بالقياس بعد مثال من الأسرة نفسها دون تسريب الجواب.",
+      "answer_verified_by": "author_reasoned"
+    }
+  }
+}

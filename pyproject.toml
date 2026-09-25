@@ -1,0 +1,20 @@
+[project]
+name = "diwan"
+version = "0.0.1"
+description = "مساحة عمل شخصية: مشروعات ومصادر وتحرير وتقييم"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+dependencies = ["cryptography==50.0.1"]
+
+[project.optional-dependencies]
+dev = ["pytest==9.1.1"]
+# غ١: CAMeL Tools للجذور (ثم `camel_data -i morphology-db-msa-r13`)؛ اختياريٌّ والاحتياطيُّ القالبيُّ مسمًّى
+morphology = ["camel-tools>=1.6"]
+mlx = [
+    "mlx>=0.32.0",
+    "mlx-lm>=0.31.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

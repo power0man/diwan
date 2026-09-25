@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-09-23T11:32:06.174518Z",
+  "status": "accepted_with_limits",
+  "scope": "ephemeral_ci_lifecycle_and_production_cutover",
+  "candidate_sha": "8418ce1874f91f881db5b42ebf5f49f360076c94",
+  "runner_image": "sha256:f81466a556153d8c3911f6912772ebc2c2623858de63dcfbce8253da29058b62",
+  "source_sha256": {
+    "prepare_runtime.py": "52587daa718dae2f8b45842cc02831eb70a13a13f886c935485faec7955107d7",
+    "runner_entrypoint.py": "41b383f771916dd75a78d8bb746c05e1085718f06c1d2f6e33fd7b241a66964c",
+    "run_persistent_runner.py": "1045c3a7e609c1c8f3bf03ea2b2ce0c7fc1898f63ba06386e7943e73623a3d57",
+    "start_isolated_runner.py": "3150ba9b8cfe7b28e0cd4041f6adba7d035851106dc42ed518d0b0f8d64971e8",
+    "Dockerfile.runner": "10eabeb2adc349d6df39324758236f1218ccef835153cca362078c2cc57111f1"
+  },
+  "reviewed_sources_match_foundation_checkout": true,
+  "canary": {
+    "candidate_sha": "49903a9a13b54d72c59e680000cdc2fc0b83607f",
+    "lifecycle": {
+      "url": "https://github.com/power0man/diwan-private/actions/runs/35852683874",
+      "conclusion": "success",
+      "sequential_jobs": 2,
+      "distinct_workers": true,
+      "fresh_temporary_state_verified": true,
+      "uid": 1000,
+      "docker_socket_absent": true,
+      "mac_host_paths_absent": true
+    },
+    "intentional_failure": {
+      "url": "https://github.com/power0man/diwan-private/actions/runs/35852803031",
+      "conclusion": "failure",
+      "expected_failure": true,
+      "job_exit_code": 17,
+      "bootstrap_exit_status": 0,
+      "note": "Successful worker disposal does not change the failed GitHub job conclusion.",
+      "github_exit_code_confirmed_from_log": true
+    },
+    "idle_timeout": {
+      "bootstrap_exit_status": 124,
+      "worker_disposed": true,
+      "in_flight_cancellation_tested": false
+    },
+    "all_probe_containers_removed": true,
+    "probe_registrations_removed": true,
+    "bounded_probe_checkpoints_absent": true
+  },
+  "historical_failure": {
+    "url": "https://github.com/power0man/diwan-private/actions/runs/35853349888",
+    "sha": "49903a9a13b54d72c59e680000cdc2fc0b83607f",
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "failure",
+    "failed_step": "Every commit names its producing agent",
+    "reason": "The earlier manual fallback scanned all history and exposed two post-policy commits lacking Diwan-Agent attribution.",
+    "unresolved_historical_commits": [
+      "4acdc3e26b9753abe455956e08f460f88b6b109c",
+      "27070454c0053fb8eacabc9b9da7bd0447338c36"
+    ],
+    "history_rewritten": false
+  },
+  "acceptance_runs": [
+    {
+      "url": "https://github.com/power0man/diwan-private/actions/runs/35854139630",
+      "sha": "8418ce1874f91f881db5b42ebf5f49f360076c94",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "url": "https://github.com/power0man/diwan-private/actions/runs/35854541274",
+      "sha": "8418ce1874f91f881db5b42ebf5f49f360076c94",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "url": "https://github.com/power0man/diwan-private/actions/runs/35854787675",
+      "sha": "8418ce1874f91f881db5b42ebf5f49f360076c94",
+      "event": "workflow_dispatch",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "production_cutover": {
+    "old_worker_container_absent": true,
+    "old_worker_registration_absent": true,
+    "legacy_mac_service_changed": false,
+    "reviewed_launchd_plist_installed": true,
+    "service_state": "running",
+    "run_at_load": true,
+    "keep_alive": false,
+    "activation_observation": "Bootstrap succeeded; an immediate assertion preceded running state. No second activation was needed.",
+    "permanent_service_verify_job": "success",
+    "completed_worker_container_absent": true,
+    "completed_worker_registration_absent": true,
+    "successor_created_and_started": true,
+    "successor_registered_online": true,
+    "successor_idle_at_observation": true,
+    "successor_image_matches_reviewed": true,
+    "active_checkpoint_matches_successor": true,
+    "docker_lifecycle_events_observed": true,
+    "bounded_acceptance_workers_cleanup_verified": true
+  },
+  "private_evidence_sha256": {
+    "ci-canary.json": "3df933d6adcdcf7efec12fdc4b578792bfa6dbfeabdada52ad93a87aacf8b743",
+    "old-worker-retired.json": "0e86c99d8b72c885ebcf5956a64a4e09d2a6edcefccd8ac254d57911380201cf",
+    "ci-production-cutover.json": "46bce14db3113dd783814229b67817dc94dc8ace2aa84ef556f848542b3c1e95"
+  },
+  "redaction": "Worker and container names/IDs, registration IDs, process IDs, and owner filesystem paths remain in private evidence.",
+  "limits": [
+    "No macOS sleep, reboot, or Docker restart recovery was tested.",
+    "Idle timeout canary is not in-flight job cancellation.",
+    "KeepAlive is false: bounded fatal failure stops the service for investigation.",
+    "Docker VM/kernel and the owner host are trusted.",
+    "This validates CI operation, not product readiness or Stage 3 acceptance."
+  ],
+  "sleep_recovery": "not_run",
+  "reboot_recovery": "not_run",
+  "docker_restart_recovery": "not_run",
+  "product_readiness": "not_assessed",
+  "human_review": false
+}

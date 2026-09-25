@@ -1,0 +1,504 @@
+{
+  "suite_id": "kimi_prog_a_001",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "prog_a_0077": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب الفحوص يقرر مصير الأعداد القابلة للثلاثة والخمسة معًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "فحص 3 أولًا يبتلع 15 و30.",
+      "correct_solution": "def fizzbuzz_value(n):\n    if n % 15 == 0:\n        return 'FizzBuzz'\n    if n % 3 == 0:\n        return 'Fizz'\n    if n % 5 == 0:\n        return 'Buzz'\n    return str(n)",
+      "wrong_solution": "def fizzbuzz_value(n):\n    if n % 3 == 0:\n        return 'Fizz'\n    if n % 5 == 0:\n        return 'Buzz'\n    return str(n)"
+    },
+    "prog_a_0045": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "max(d) يقارن المفاتيح هجائيًّا لا القيم.",
+      "answer_verified_by": "mechanical",
+      "trap": "max على القاموس نفسه يعيد أكبر مفتاح لا مفتاح أكبر قيمة.",
+      "correct_solution": "def top_key(d):\n    return max(d, key=d.get) if d else None",
+      "wrong_solution": "def top_key(d):\n    return max(d) if d else None"
+    },
+    "prog_a_0032": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الصفر على الحد بين السالب والموجب؛ إسقاطه خطأ حدّي.",
+      "answer_verified_by": "mechanical",
+      "trap": "> بدل >= يُسقط الصفر بصمت.",
+      "correct_solution": "def remove_negatives(lst):\n    return [x for x in lst if x >= 0]",
+      "wrong_solution": "def remove_negatives(lst):\n    return [x for x in lst if x > 0]"
+    },
+    "prog_a_0051": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "نسيان معالجة n<2 يجعل 1 أوليًّا زورًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "range(2,1) فارغة فـ all تُرجع True للواحد.",
+      "correct_solution": "def is_prime(n):\n    if n < 2:\n        return False\n    i = 2\n    while i * i <= n:\n        if n % i == 0:\n            return False\n        i += 1\n    return True",
+      "wrong_solution": "def is_prime(n):\n    return all(n % i for i in range(2, n))"
+    },
+    "prog_a_0052": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "باقي قسمة السوالب في بايثون يتبع إشارة المقسوم عليه فيخرج الناتج سالبًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "أقليدس الخام مع مدخلين سالبين يعيد قاسمًا سالبًا.",
+      "correct_solution": "def gcd(a, b):\n    a, b = abs(a), abs(b)\n    while b:\n        a, b = b, a % b\n    return a",
+      "wrong_solution": "def gcd(a, b):\n    while b:\n        a, b = b, a % b\n    return a"
+    },
+    "prog_a_0041": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إعادة نسخة من القاموس ليست عكسًا.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def invert_dict(d):\n    return {v: k for k, v in d.items()}",
+      "wrong_solution": "def invert_dict(d):\n    return dict(d)"
+    },
+    "prog_a_0006": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تطبيع الألف من أساسيات البحث في النصوص العربية.",
+      "answer_verified_by": "mechanical",
+      "trap": "الاكتفاء بالألف بهمزة فوق ونسيان إ آ ٱ.",
+      "correct_solution": "def normalize_alef(s):\n    return s.replace(\"أ\", \"ا\").replace(\"إ\", \"ا\").replace(\"آ\", \"ا\").replace(\"ٱ\", \"ا\")",
+      "wrong_solution": "def normalize_alef(s):\n    return s.replace(\"أ\", \"ا\")"
+    },
+    "prog_a_0074": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "القاعدة الناقصة تعطي فبراير 30 يومًا مستحيلًا.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "import calendar\ndef month_last_day(y, m):\n    return calendar.monthrange(y, m)[1]",
+      "wrong_solution": "def month_last_day(y, m):\n    if m in (1, 3, 5, 7, 8, 10, 12):\n        return 31\n    return 30"
+    },
+    "prog_a_0055": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قلب min و max خطأ صغير يفسد كل الخرج.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def clamp(x, lo, hi):\n    return max(lo, min(x, hi))",
+      "wrong_solution": "def clamp(x, lo, hi):\n    return min(lo, max(x, hi))"
+    },
+    "prog_a_0002": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "حذف التشكيل خطوة معيارية في تطبيع النص العربي.",
+      "answer_verified_by": "mechanical",
+      "trap": "نسيان الشدة أو السكون لأنهما في آخر مجال الحركات.",
+      "correct_solution": "def remove_tashkeel(s):\n    return ''.join(ch for ch in s if not ('\\u064b' <= ch <= '\\u0652' or ch == '\\u0670'))",
+      "wrong_solution": "def remove_tashkeel(s):\n    return ''.join(ch for ch in s if not ('\\u064b' <= ch <= '\\u0650'))"
+    },
+    "prog_a_0044": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "شرط المساواة على الحد هو جوهر السؤال.",
+      "answer_verified_by": "mechanical",
+      "trap": "> بدل >= يستبعد القيم المساوية للعتبة.",
+      "correct_solution": "def filter_by_threshold(d, t):\n    return {k: v for k, v in d.items() if v >= t}",
+      "wrong_solution": "def filter_by_threshold(d, t):\n    return {k: v for k, v in d.items() if v > t}"
+    },
+    "prog_a_0042": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "update يكتب فوق القيمة القديمة بدل جمعها.",
+      "answer_verified_by": "mechanical",
+      "trap": "dict.update يبدو «دمجًا» لكنه استبدال.",
+      "correct_solution": "def merge_sum(a, b):\n    out = dict(a)\n    for k, v in b.items():\n        out[k] = out.get(k, 0) + v\n    return out",
+      "wrong_solution": "def merge_sum(a, b):\n    out = dict(a)\n    out.update(b)\n    return out"
+    },
+    "prog_a_0021": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تكرار المجموع الكلي خطأ فهم شائع للمجموع التراكمي.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def running_sum(lst):\n    out, total = [], 0\n    for x in lst:\n        total += x\n        out.append(total)\n    return out",
+      "wrong_solution": "def running_sum(lst):\n    return [sum(lst)] * len(lst)"
+    },
+    "prog_a_0037": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "عكس اتجاه الاقتران (قيمة→مفتاح) خطأ نمطي.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def zip_to_dict(keys, values):\n    return dict(zip(keys, values))",
+      "wrong_solution": "def zip_to_dict(keys, values):\n    return {v: k for k, v in zip(keys, values)}"
+    },
+    "prog_a_0030": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "خلط المجموع التراكمي بالحد الأقصى التراكمي.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def cumulative_max(lst):\n    out, best = [], None\n    for x in lst:\n        best = x if best is None else max(best, x)\n        out.append(best)\n    return out",
+      "wrong_solution": "def cumulative_max(lst):\n    out, total = [], 0\n    for x in lst:\n        total += x\n        out.append(total)\n    return out"
+    },
+    "prog_a_0010": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "كسر التعادل لصالح الأخيرة بدل الأولى شرط حدّي ماكر.",
+      "answer_verified_by": "mechanical",
+      "trap": "استخدام >= في التحديث يقلب التعادل إلى الكلمة الأخيرة.",
+      "correct_solution": "def longest_word(s):\n    words = s.split()\n    if not words:\n        return ''\n    return max(words, key=len)",
+      "wrong_solution": "def longest_word(s):\n    words = s.split()\n    best = ''\n    for w in words:\n        if len(w) >= len(best):\n            best = w\n    return best"
+    },
+    "prog_a_0058": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إهمال القيمة المطلقة يكسر التحويل عند علامة السالب.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def sum_digits(n):\n    return sum(int(d) for d in str(abs(n)))",
+      "wrong_solution": "def sum_digits(n):\n    return sum(int(d) for d in str(n))"
+    },
+    "prog_a_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "sorted(set) يعيد الترتيب ويغيّر تسلسل العناصر.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def unique_preserve_order(lst):\n    seen = set()\n    out = []\n    for x in lst:\n        if x not in seen:\n            seen.add(x)\n            out.append(x)\n    return out",
+      "wrong_solution": "def unique_preserve_order(lst):\n    return sorted(set(lst))"
+    },
+    "prog_a_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "التمييز بين الأحرف العربية وغيرها في يونيكود مهارة أساسية لمعالجة النص العربي.",
+      "answer_verified_by": "mechanical",
+      "trap": "isalpha() تعيد True للاتينية أيضًا فيسهل الوقوع فيها.",
+      "correct_solution": "def count_arabic_letters(s):\n    return sum(1 for ch in s if '\\u0621' <= ch <= '\\u064a')",
+      "wrong_solution": "def count_arabic_letters(s):\n    return sum(1 for ch in s if ch.isalpha())"
+    },
+    "prog_a_0038": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قلب ترتيب الزوج المعاد خطأ دقيق.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def partition_even_odd(lst):\n    evens = [x for x in lst if x % 2 == 0]\n    odds = [x for x in lst if x % 2 != 0]\n    return evens, odds",
+      "wrong_solution": "def partition_even_odd(lst):\n    evens = [x for x in lst if x % 2 == 0]\n    odds = [x for x in lst if x % 2 != 0]\n    return odds, evens"
+    },
+    "prog_a_0036": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "البدء من الفهرس 1 بدل 0 خطأ إزاحة كلاسيكي.",
+      "answer_verified_by": "mechanical",
+      "trap": "الخلط بين «كل عنصر ثانٍ» و«العناصر في المواضع الفردية».",
+      "correct_solution": "def sum_every_other(lst):\n    return sum(lst[::2])",
+      "wrong_solution": "def sum_every_other(lst):\n    return sum(lst[1::2])"
+    },
+    "prog_a_0059": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "البذرة (1,1) تزيح المتتالية كلها موضعًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "بدء المتتالية من 1,1 شائع في الأمثلة المحفوظة.",
+      "correct_solution": "def fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a",
+      "wrong_solution": "def fibonacci(n):\n    a, b = 1, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a"
+    },
+    "prog_a_0008": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الاقتطاع بالمحارف خطأ شائع يقطع الكلمات.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def truncate_words(s, n):\n    return \" \".join(s.split()[:n])",
+      "wrong_solution": "def truncate_words(s, n):\n    return s[:n]"
+    },
+    "prog_a_0054": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "انفجار القسمة على صفر في حسابات مالية كارثة تشغيلية.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def safe_divide(a, b):\n    return None if b == 0 else a / b",
+      "wrong_solution": "def safe_divide(a, b):\n    return a / b"
+    },
+    "prog_a_0049": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الفهرسة المباشرة تنفجر بـ KeyError عند أول مفتاح غائب.",
+      "answer_verified_by": "mechanical",
+      "trap": "الوصول المتسلسل d[k] دون فحص هو الخطأ المعتاد.",
+      "correct_solution": "def nested_get(d, path, default=None):\n    cur = d\n    for k in path:\n        if isinstance(cur, dict) and k in cur:\n            cur = cur[k]\n        else:\n            return default\n    return cur",
+      "wrong_solution": "def nested_get(d, path, default=None):\n    cur = d\n    for k in path:\n        cur = cur[k]\n    return cur"
+    },
+    "prog_a_0063": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الصيغة الجمعية المحضة تخرج IIII بدل IV.",
+      "answer_verified_by": "mechanical",
+      "trap": "نسيان الأزواج الطرحية ينتج رموزًا غير معيارية.",
+      "correct_solution": "def int_to_roman(n):\n    vals = [(1000, 'M'), (900, 'CM'), (500, 'D'), (400, 'CD'),\n            (100, 'C'), (90, 'XC'), (50, 'L'), (40, 'XL'),\n            (10, 'X'), (9, 'IX'), (5, 'V'), (4, 'IV'), (1, 'I')]\n    out = []\n    for v, sym in vals:\n        while n >= v:\n            out.append(sym)\n            n -= v\n    return ''.join(out)",
+      "wrong_solution": "def int_to_roman(n):\n    vals = [(1000, 'M'), (500, 'D'), (100, 'C'), (50, 'L'),\n            (10, 'X'), (5, 'V'), (1, 'I')]\n    out = []\n    for v, sym in vals:\n        while n >= v:\n            out.append(sym)\n            n -= v\n    return ''.join(out)"
+    },
+    "prog_a_0005": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خلط شائع بين الأكثر تكرارًا والأول غير المكرر.",
+      "answer_verified_by": "mechanical",
+      "trap": "most_common يعيد الأكثر تكرارًا لا الأول الفريد.",
+      "correct_solution": "def first_unique_char(s):\n    from collections import Counter\n    c = Counter(s)\n    for ch in s:\n        if c[ch] == 1:\n            return ch\n    return None",
+      "wrong_solution": "def first_unique_char(s):\n    from collections import Counter\n    return Counter(s).most_common(1)[0][0] if s else None"
+    },
+    "prog_a_0060": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "البدء بالعد من 1 يضخم كل ناتج بواحد.",
+      "answer_verified_by": "mechanical",
+      "trap": "خلط عدد العناصر في المتتالية مع عدد الخطوات.",
+      "correct_solution": "def collatz_steps(n):\n    steps = 0\n    while n != 1:\n        n = n // 2 if n % 2 == 0 else 3 * n + 1\n        steps += 1\n    return steps",
+      "wrong_solution": "def collatz_steps(n):\n    steps = 1\n    while n != 1:\n        n = n // 2 if n % 2 == 0 else 3 * n + 1\n        steps += 1\n    return steps"
+    },
+    "prog_a_0075": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الفحص الشكلي بالتعبير النمطي يقبل تواريخ مستحيلة.",
+      "answer_verified_by": "mechanical",
+      "trap": "شكل صحيح لا يعني تاريخًا موجودًا.",
+      "correct_solution": "from datetime import date\ndef is_valid_date(s):\n    try:\n        date.fromisoformat(s)\n        return True\n    except ValueError:\n        return False",
+      "wrong_solution": "import re\ndef is_valid_date(s):\n    return bool(re.fullmatch(r'\\d{4}-\\d{2}-\\d{2}', s))"
+    },
+    "prog_a_0039": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "max-min يقيس المدى الكلي لا أكبر فجوة بين متتاليين.",
+      "answer_verified_by": "mechanical",
+      "trap": "المدى الكلي يساوي الفجوة القصوى فقط صدفة في بعض القوائم.",
+      "correct_solution": "def max_consecutive_gap(lst):\n    if len(lst) < 2:\n        return 0\n    s = sorted(lst)\n    return max(s[i + 1] - s[i] for i in range(len(s) - 1))",
+      "wrong_solution": "def max_consecutive_gap(lst):\n    if len(lst) < 2:\n        return 0\n    return max(lst) - min(lst)"
+    },
+    "prog_a_0029": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "most_common يكسر التعادل بترتيب الظهور لا بالقيمة.",
+      "answer_verified_by": "mechanical",
+      "trap": "Counter.most_common يعيد أول ظاهر عند التعادل لا الأصغر.",
+      "correct_solution": "def mode_value(lst):\n    if not lst:\n        return None\n    from collections import Counter\n    c = Counter(lst)\n    top = max(c.values())\n    return min(k for k, v in c.items() if v == top)",
+      "wrong_solution": "def mode_value(lst):\n    if not lst:\n        return None\n    from collections import Counter\n    return Counter(lst).most_common(1)[0][0]"
+    },
+    "prog_a_0004": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "التناظر الحقيقي يتطلب تنظيف النص أولًا، وهو ما يغفل عنه كثير من الحلول.",
+      "answer_verified_by": "mechanical",
+      "trap": "المقارنة المباشرة دون تنظيف تنجح مع الأمثلة القصيرة وتفشل مع الجمل الحقيقية.",
+      "correct_solution": "def is_palindrome_clean(s):\n    t = [ch.lower() for ch in s if ch.isalnum()]\n    return t == t[::-1]",
+      "wrong_solution": "def is_palindrome_clean(s):\n    return s == s[::-1]"
+    },
+    "prog_a_0033": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ off-by-one في عدد النوافذ.",
+      "answer_verified_by": "mechanical",
+      "trap": "range(len-k) يفقد النافذة الأخيرة.",
+      "correct_solution": "def sliding_window_max(lst, k):\n    return [max(lst[i:i + k]) for i in range(len(lst) - k + 1)]",
+      "wrong_solution": "def sliding_window_max(lst, k):\n    return [max(lst[i:i + k]) for i in range(len(lst) - k)]"
+    },
+    "prog_a_0056": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "جولة جمع واحدة لا تكفي؛ 9875 مجموعها 29 وليست رقمًا واحدًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "الاكتفاء بجمع واحد يمرّ على الأعداد الصغيرة فقط.",
+      "correct_solution": "def digital_root(n):\n    while n >= 10:\n        n = sum(int(d) for d in str(n))\n    return n",
+      "wrong_solution": "def digital_root(n):\n    return sum(int(d) for d in str(n))"
+    },
+    "prog_a_0017": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الالتفاف الأبجدي والفصل بين الحالتين شرطان يسهل كسرهما.",
+      "answer_verified_by": "mechanical",
+      "trap": "الإزاحة المباشرة دون modulo تخرج عن الأبجدية عند الأحرف الأخيرة.",
+      "correct_solution": "def caesar_encrypt(s, k):\n    out = []\n    for ch in s:\n        if 'a' <= ch <= 'z':\n            out.append(chr((ord(ch) - 97 + k) % 26 + 97))\n        elif 'A' <= ch <= 'Z':\n            out.append(chr((ord(ch) - 65 + k) % 26 + 65))\n        else:\n            out.append(ch)\n    return ''.join(out)",
+      "wrong_solution": "def caesar_encrypt(s, k):\n    return ''.join(chr(ord(ch) + k) if ch.isalpha() else ch for ch in s)"
+    },
+    "prog_a_0007": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "str.count يحصي التطابق الجزئي فيعطي نتائج مضخمة.",
+      "answer_verified_by": "mechanical",
+      "trap": "text.count(word) يبدو أقصر لكنه يحصي «بيت» داخل «البيت» و«بيتي».",
+      "correct_solution": "def count_word_occurrences(text, word):\n    return sum(1 for w in text.split() if w == word)",
+      "wrong_solution": "def count_word_occurrences(text, word):\n    return text.count(word)"
+    },
+    "prog_a_0057": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تثبيت القوة على 3 يفشل مع كل عدد خاناته ليست ثلاثًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "أشهر الأمثلة ثلاثية الخانات فيُنسى تعميم القوة.",
+      "correct_solution": "def is_armstrong(n):\n    digits = str(n)\n    p = len(digits)\n    return sum(int(d) ** p for d in digits) == n",
+      "wrong_solution": "def is_armstrong(n):\n    return sum(int(d) ** 3 for d in str(n)) == n"
+    },
+    "prog_a_0020": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إسقاط العدد 1 للمقطع المفرد يجعل الترميز غير قابل للعكس بلا غموض.",
+      "answer_verified_by": "mechanical",
+      "trap": "حذف العدد عندما يساوي 1 يبدو اقتصادًا لكنه يكسر فك الترميز عند وجود أرقام في النص.",
+      "correct_solution": "def rle_encode(s):\n    if not s:\n        return ''\n    out = []\n    prev, cnt = s[0], 1\n    for ch in s[1:]:\n        if ch == prev:\n            cnt += 1\n        else:\n            out.append(prev + str(cnt))\n            prev, cnt = ch, 1\n    out.append(prev + str(cnt))\n    return ''.join(out)",
+      "wrong_solution": "def rle_encode(s):\n    if not s:\n        return ''\n    out = []\n    prev, cnt = s[0], 1\n    for ch in s[1:]:\n        if ch == prev:\n            cnt += 1\n        else:\n            out.append(prev if cnt == 1 else prev + str(cnt))\n            prev, cnt = ch, 1\n    out.append(prev if cnt == 1 else prev + str(cnt))\n    return ''.join(out)"
+    },
+    "prog_a_0066": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "التكرار [total/n]*n يجعل المجموع ينحرف عن الإجمالي بفلوس عائمة.",
+      "answer_verified_by": "mechanical",
+      "trap": "المجموع الظاهر صحيح للناظر لكن الفلوس تختفي أو تتضاعف عند الترحيل.",
+      "correct_solution": "from decimal import Decimal, ROUND_HALF_UP\ndef split_bill(total, n):\n    cents = int((Decimal(str(total)) * 100).quantize(Decimal('1'), rounding=ROUND_HALF_UP))\n    base, rem = divmod(cents, n)\n    return [(base + (1 if i < rem else 0)) / 100 for i in range(n)]",
+      "wrong_solution": "def split_bill(total, n):\n    return [total / n] * n"
+    },
+    "prog_a_0073": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "طرح السنوات فقط يكبّر الأعمار سنةً كاملة قبل أوانها؛ خطأ له أثر قانوني.",
+      "answer_verified_by": "mechanical",
+      "trap": "فرق السنوات يبدو صحيحًا في نصف السنة وخاطئًا في نصفها الآخر.",
+      "correct_solution": "from datetime import date\ndef age_in_years(birth, today):\n    b = date.fromisoformat(birth)\n    t = date.fromisoformat(today)\n    age = t.year - b.year\n    if (t.month, t.day) < (b.month, b.day):\n        age -= 1\n    return age",
+      "wrong_solution": "from datetime import date\ndef age_in_years(birth, today):\n    return date.fromisoformat(today).year - date.fromisoformat(birth).year"
+    },
+    "prog_a_0014": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل اصطلاحات التسمية مهمة يومية عند التعامل مع JSON وواجهات API.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def camel_to_snake(s):\n    out = []\n    for i, ch in enumerate(s):\n        if ch.isupper() and i > 0:\n            out.append('_')\n        out.append(ch.lower())\n    return ''.join(out)",
+      "wrong_solution": "def camel_to_snake(s):\n    return s.lower()"
+    },
+    "prog_a_0071": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الجمع النصي على اليوم يخرج تواريخ مستحيلة مثل 2024-02-30.",
+      "answer_verified_by": "mechanical",
+      "trap": "معالجة التاريخ كنصوص تنهار عند أول حد شهري.",
+      "correct_solution": "from datetime import date, timedelta\ndef add_days(d, n):\n    return (date.fromisoformat(d) + timedelta(days=n)).isoformat()",
+      "wrong_solution": "def add_days(d, n):\n    y, m, day = map(int, d.split('-'))\n    return f'{y:04d}-{m:02d}-{day + n:02d}'"
+    },
+    "prog_a_0062": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "int(s) العادية تقرأ عشريًّا فتفسر 101 كمئة وواحد.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def binary_to_int(s):\n    if not s or any(c not in '01' for c in s):\n        raise ValueError('نص ثنائي غير صالح')\n    return int(s, 2)",
+      "wrong_solution": "def binary_to_int(s):\n    return int(s)"
+    },
+    "prog_a_0072": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بناء القائمة من الأحد مع weekday() يزيح كل الأيام يومًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "أسبوع بايثون يبدأ بالاثنين لا بالأحد.",
+      "correct_solution": "from datetime import date\ndef weekday_arabic(d):\n    names = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']\n    return names[date.fromisoformat(d).weekday()]",
+      "wrong_solution": "from datetime import date\ndef weekday_arabic(d):\n    names = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']\n    return names[date.fromisoformat(d).weekday()]"
+    },
+    "prog_a_0013": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "علامة الاستفهام العربية ؟ يغفلها من يعتمد النقطة وحدها.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def count_sentences(s):\n    return sum(1 for ch in s if ch in '.!؟?')",
+      "wrong_solution": "def count_sentences(s):\n    return s.count('.')"
+    },
+    "prog_a_0061": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إدخال العدد في قواسمه يجعل المجموع يتجاوزه دائمًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "range(1, n+1) يبدو «أشمل» لكنه يكسر التعريف.",
+      "correct_solution": "def is_perfect(n):\n    if n < 1:\n        return False\n    return sum(i for i in range(1, n) if n % i == 0) == n",
+      "wrong_solution": "def is_perfect(n):\n    if n < 1:\n        return False\n    return sum(i for i in range(1, n + 1) if n % i == 0) == n"
+    },
+    "prog_a_0040": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "العد من البداية بدل النهاية خطأ اتجاه.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def nth_from_end(lst, n):\n    return lst[-n] if 0 < n <= len(lst) else None",
+      "wrong_solution": "def nth_from_end(lst, n):\n    if n > len(lst):\n        return None\n    return lst[n - 1]"
+    },
+    "prog_a_0025": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "sum(lst, []) تنفجر مع العناصر غير القائمية.",
+      "answer_verified_by": "mechanical",
+      "trap": "حيلة sum تفترض أن كل العناصر قوائم.",
+      "correct_solution": "def flatten_once(lst):\n    out = []\n    for x in lst:\n        if isinstance(x, list):\n            out.extend(x)\n        else:\n            out.append(x)\n    return out",
+      "wrong_solution": "def flatten_once(lst):\n    return sum(lst, [])"
+    },
+    "prog_a_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نسيان الحالة الكبيرة خطأ نمطي في ترشيح الحروف.",
+      "answer_verified_by": "mechanical",
+      "trap": "الاكتفاء بالحروف الصغيرة يترك A E I O U.",
+      "correct_solution": "def remove_vowels_en(s):\n    return ''.join(ch for ch in s if ch not in 'aeiouAEIOU')",
+      "wrong_solution": "def remove_vowels_en(s):\n    return ''.join(ch for ch in s if ch not in 'aeiou')"
+    },
+    "prog_a_0043": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "العدّ بالحرف الأخير بدل الأول خطأ انتباه.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def count_by_initial(words):\n    out = {}\n    for w in words:\n        out[w[0]] = out.get(w[0], 0) + 1\n    return out",
+      "wrong_solution": "def count_by_initial(words):\n    out = {}\n    for w in words:\n        out[w[-1]] = out.get(w[-1], 0) + 1\n    return out"
+    },
+    "prog_a_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الفحص بـ in يحذف التكرار كله لا المتجاور فقط.",
+      "answer_verified_by": "mechanical",
+      "trap": "x not in out يحذف كل تكرار لاحق حتى البعيد.",
+      "correct_solution": "def remove_adjacent_duplicates(lst):\n    out = []\n    for x in lst:\n        if not out or out[-1] != x:\n            out.append(x)\n    return out",
+      "wrong_solution": "def remove_adjacent_duplicates(lst):\n    out = []\n    for x in lst:\n        if x not in out:\n            out.append(x)\n    return out"
+    },
+    "prog_a_0068": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "القسمة على صفر في مؤشرات الأداء توقف التقارير كلها.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def percentage_change(old, new):\n    if old == 0:\n        return None\n    return (new - old) / old * 100",
+      "wrong_solution": "def percentage_change(old, new):\n    return (new - old) / old * 100"
+    },
+    "prog_a_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سياسات كلمات السر مسألة أمان؛ إسقاط شرط الرقم يضعفها فعليًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "نسيان شرط الرقم شائع عند كتابة الشروط على عجل.",
+      "correct_solution": "def is_strong_password(s):\n    return (len(s) >= 8\n            and any(c.islower() for c in s)\n            and any(c.isupper() for c in s)\n            and any(c.isdigit() for c in s))",
+      "wrong_solution": "def is_strong_password(s):\n    return (len(s) >= 8\n            and any(c.islower() for c in s)\n            and any(c.isupper() for c in s))"
+    },
+    "prog_a_0011": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إخفاء جزئي للبيانات الحساسة متطلب خصوصية شائع؛ إخفاء الكل يكسر التحقق مع العميل.",
+      "answer_verified_by": "mechanical",
+      "trap": "قناع كل الأرقام يبدو أكثر أمانًا لكنه يمنع التأكد من الرقم مع صاحبه.",
+      "correct_solution": "def mask_phone(s):\n    digits = sum(ch.isdigit() for ch in s)\n    keep = max(0, digits - 4)\n    out, seen = [], 0\n    for ch in s:\n        if ch.isdigit():\n            out.append('*' if seen < keep else ch)\n            seen += 1\n        else:\n            out.append(ch)\n    return ''.join(out)",
+      "wrong_solution": "def mask_phone(s):\n    return ''.join('*' if ch.isdigit() else ch for ch in s)"
+    },
+    "prog_a_0064": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "round المدمجة تستخدم تمثيل الفاصلة الثنائية فتقرّب 2.675 إلى 2.67.",
+      "answer_verified_by": "mechanical",
+      "trap": "round(x, 2) تبدو الحل البديهي وهي مصدر فروقات فعلية في الفواتير.",
+      "correct_solution": "from decimal import Decimal, ROUND_HALF_UP\ndef round_money(amount):\n    return float(Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))",
+      "wrong_solution": "def round_money(amount):\n    return round(amount, 2)"
+    },
+    "prog_a_0078": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إنزال طالب من 90 إلى «جيد جدًّا» بسبب > ظلم تقني له أثر حقيقي.",
+      "answer_verified_by": "mechanical",
+      "trap": "> بدل >= يغيّر مصير كل طالب واقف على الحد.",
+      "correct_solution": "def grade_letter(score):\n    if score >= 90:\n        return 'ممتاز'\n    if score >= 80:\n        return 'جيد جدًّا'\n    if score >= 70:\n        return 'جيد'\n    if score >= 60:\n        return 'مقبول'\n    return 'راسب'",
+      "wrong_solution": "def grade_letter(score):\n    if score > 90:\n        return 'ممتاز'\n    if score > 80:\n        return 'جيد جدًّا'\n    if score > 70:\n        return 'جيد'\n    if score > 60:\n        return 'مقبول'\n    return 'راسب'"
+    },
+    "prog_a_0065": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترك الناتج بلا تقريب مالي يخرج كسور هللة في الفاتورة.",
+      "answer_verified_by": "mechanical",
+      "trap": "38.3295 في الفاتورة مرفوض؛ التقريب جزء من المواصفة لا زينة.",
+      "correct_solution": "from decimal import Decimal, ROUND_HALF_UP\ndef vat_total(price, rate):\n    total = Decimal(str(price)) * (1 + Decimal(str(rate)) / 100)\n    return float(total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))",
+      "wrong_solution": "def vat_total(price, rate):\n    return price * (1 + rate / 100)"
+    }
+  }
+}

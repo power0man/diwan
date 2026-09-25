@@ -1,0 +1,435 @@
+{
+  "suite_id": "kimi_sci_a_002",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "sci_a2_0025": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0041": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0034": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0003": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0029": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0024": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0012": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0047": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0049": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0030": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0039": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0013": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0021": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0027": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0048": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0005": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0046": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0026": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0008": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0043": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0022": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0007": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0040": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0044": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0019": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0045": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0042": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "موازنة معادلة تتطلب عدّ الذرّات لكل عنصر؛ صيغة الإجابة مقيّدة لقياس دقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0050": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "موازنة في سياق حواري؛ ترتيب المواد هنا (H2 قبل N2) يقلب المعتاد ويكشف الحفظ الآلي.",
+      "answer_verified_by": "mechanical",
+      "trap": "ترتيب H2 + N2 → NH3 يجعل المعاملات 3,1,2 لا 1,3,2."
+    },
+    "sci_a2_0092": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تركيز أيونات في محلول ملح؛ الفخّ الإجابة بتركيز الملح نفسه.",
+      "answer_verified_by": "mechanical",
+      "trap": "مساواة تركيز الأيون بتركيز الملح دون ضربه في عدد الأيونات."
+    },
+    "sci_a2_0090": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تركيز أيونات في محلول ملح؛ الفخّ الإجابة بتركيز الملح نفسه.",
+      "answer_verified_by": "mechanical",
+      "trap": "مساواة تركيز الأيون بتركيز الملح دون ضربه في عدد الأيونات."
+    },
+    "sci_a2_0077": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحضير محلول بتركيز معيّن: سلسلة من خطوتين (مولات ثم كتلة).",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0085": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مولات عنصر داخل مركّب؛ الأقواس في Al2(SO4)3 فخّ حقيقي.",
+      "answer_verified_by": "mechanical",
+      "trap": "إهمال ضرب محتوى القوس في دليله الخارجي."
+    },
+    "sci_a2_0088": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مولات عنصر داخل مركّب؛ الأقواس في Al2(SO4)3 فخّ حقيقي.",
+      "answer_verified_by": "mechanical",
+      "trap": "إهمال ضرب محتوى القوس في دليله الخارجي."
+    },
+    "sci_a2_0078": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحضير محلول بتركيز معيّن: سلسلة من خطوتين (مولات ثم كتلة).",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0066": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حساب كتلة مولية من صيغة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0086": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مولات عنصر داخل مركّب؛ الأقواس في Al2(SO4)3 فخّ حقيقي.",
+      "answer_verified_by": "mechanical",
+      "trap": "إهمال ضرب محتوى القوس في دليله الخارجي."
+    },
+    "sci_a2_0089": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تركيز أيونات في محلول ملح؛ الفخّ الإجابة بتركيز الملح نفسه.",
+      "answer_verified_by": "mechanical",
+      "trap": "مساواة تركيز الأيون بتركيز الملح دون ضربه في عدد الأيونات."
+    },
+    "sci_a2_0065": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حساب كتلة مولية؛ الأقواس في Ca(OH)2 فخّ شائع.",
+      "answer_verified_by": "mechanical",
+      "trap": "إهمال مضاعفة ما داخل القوس في Ca(OH)2."
+    },
+    "sci_a2_0055": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب مولات من كتلة؛ يتطلب تركيب الكتلة المولية أولًا.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0083": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تخفيف محاليل؛ تطبيق مباشر لقانون التخفيف.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0076": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب مولات من تركيز وحجم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0062": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب كتلة مولية من صيغة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0072": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "المولية من مولات وحجم بالمليلتر؛ الفخّ نسيان تحويل مل→ل.",
+      "answer_verified_by": "mechanical",
+      "trap": "القسمة على الحجم بالمليلتر مباشرة تعطي قيمة أصغر بألف مرة."
+    },
+    "sci_a2_0067": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب كتلة مولية من صيغة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0052": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب مولات من كتلة؛ يتطلب تركيب الكتلة المولية أولًا.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0056": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب مولات من كتلة؛ يتطلب تركيب الكتلة المولية أولًا.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0054": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب مولات من كتلة؛ يتطلب تركيب الكتلة المولية أولًا.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0094": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عدد الجسيمات بصيغة علمية مقيّدة؛ يقيس الالتزام بشكل الإخراج.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0051": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب مولات من كتلة؛ يتطلب تركيب الكتلة المولية أولًا.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0061": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب كتلة من عدد مولات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0069": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "المولية من مولات وحجم بالمليلتر؛ الفخّ نسيان تحويل مل→ل.",
+      "answer_verified_by": "mechanical",
+      "trap": "القسمة على الحجم بالمليلتر مباشرة تعطي قيمة أصغر بألف مرة."
+    },
+    "sci_a2_0059": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب كتلة من عدد مولات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0075": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب مولات من تركيز وحجم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0074": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب مولات من تركيز وحجم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0068": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "المولية من مولات وحجم بالمليلتر؛ الفخّ نسيان تحويل مل→ل.",
+      "answer_verified_by": "mechanical",
+      "trap": "القسمة على الحجم بالمليلتر مباشرة تعطي قيمة أصغر بألف مرة."
+    },
+    "sci_a2_0096": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حوار يقيس نقل التركيز بين خطوتين؛ الفخّ إعادة الحساب من الصفر خطأً.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0070": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "المولية من مولات وحجم بالمليلتر؛ الفخّ نسيان تحويل مل→ل.",
+      "answer_verified_by": "mechanical",
+      "trap": "القسمة على الحجم بالمليلتر مباشرة تعطي قيمة أصغر بألف مرة."
+    },
+    "sci_a2_0073": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب مولات من تركيز وحجم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0058": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب كتلة من عدد مولات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0082": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تخفيف محاليل؛ تطبيق مباشر لقانون التخفيف.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a2_0097": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "فخّ ضمني: من يقسم على 250 أو يهمل التحويل يخطئ بثلاثة أصفار.",
+      "answer_verified_by": "mechanical",
+      "trap": "نسيان تحويل مل→ل."
+    }
+  }
+}

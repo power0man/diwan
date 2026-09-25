@@ -1,0 +1,413 @@
+{
+  "suite_id": "kimi_logic_a_003",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "constprob_a_0052": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "لغز ترتيب بقيود متشابكة حلّه فريد تحقق منه حلّال brute-force.",
+      "answer_verified_by": "mechanical",
+      "trap": "قرينة «بينهما واحد فقط» تُنسى غالبًا"
+    },
+    "constprob_a_0090": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مسألة تعيين مهام بقيود منع وشرط، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "قيد «إذا تولى فلان كذا» يتطلب تتبعًا شرطيًّا لا تخمينًا"
+    },
+    "constprob_a_0040": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "لغز جلوس بقيود جوار ومواضع، حلّه فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0082": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "لغز ترتيب بقيود متشابكة حلّه فريد تحقق منه حلّال brute-force.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0062": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "لغز جلوس بقيود جوار ومواضع، حلّه فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0033": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مسألة جدولة بقيود ترتيب زمني، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0006": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مسألة جدولة بقيود ترتيب زمني، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0066": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مسألة جدولة بقيود ترتيب زمني، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0048": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مسألة تعيين مهام بقيود منع وشرط، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "قيد «إذا تولى فلان كذا» يتطلب تتبعًا شرطيًّا لا تخمينًا"
+    },
+    "constprob_a_0047": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "لغز ترتيب بقيود متشابكة حلّه فريد تحقق منه حلّال brute-force.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0008": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "لغز جلوس بقيود جوار ومواضع، حلّه فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0074": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة تعيين مهام بقيود منع وشرط، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "قيد «إذا تولى فلان كذا» يتطلب تتبعًا شرطيًّا لا تخمينًا"
+    },
+    "constprob_a_0089": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سؤال موضع من لغز ترتيب فريد الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0068": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "لغز جلوس بقيود جوار ومواضع، حلّه فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0071": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة تعيين مهام بقيود منع وشرط، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "قيد «إذا تولى فلان كذا» يتطلب تتبعًا شرطيًّا لا تخمينًا"
+    },
+    "constprob_a_0086": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سؤال موضع من لغز ترتيب فريد الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0087": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "لغز ترتيب بقيود متشابكة حلّه فريد تحقق منه حلّال brute-force.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0004": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سؤال موضع من لغز ترتيب فريد الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0067": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سؤال موضع من لغز ترتيب فريد الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0056": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "لغز جلوس بقيود جوار ومواضع، حلّه فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سؤال موضع من لغز ترتيب فريد الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0027": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة تعيين مهام بقيود منع وشرط، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "قيد «إذا تولى فلان كذا» يتطلب تتبعًا شرطيًّا لا تخمينًا"
+    },
+    "constprob_a_0064": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة تعيين مهام بقيود منع وشرط، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "قيد «إذا تولى فلان كذا» يتطلب تتبعًا شرطيًّا لا تخمينًا"
+    },
+    "constprob_a_0034": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "لغز ترتيب بقيود متشابكة حلّه فريد تحقق منه حلّال brute-force.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0081": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة تعيين مهام بقيود منع وشرط، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "قيد «إذا تولى فلان كذا» يتطلب تتبعًا شرطيًّا لا تخمينًا"
+    },
+    "constprob_a_0084": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سؤال موضع من لغز ترتيب فريد الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0028": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سؤال موضع من لغز ترتيب فريد الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0077": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة تعيين مهام بقيود منع وشرط، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "قيد «إذا تولى فلان كذا» يتطلب تتبعًا شرطيًّا لا تخمينًا"
+    },
+    "constprob_a_0044": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سؤال موضع من لغز ترتيب فريد الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "لغز جلوس بقيود جوار ومواضع، حلّه فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة تعيين مهام بقيود منع وشرط، حلّها فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "قيد «إذا تولى فلان كذا» يتطلب تتبعًا شرطيًّا لا تخمينًا"
+    },
+    "constprob_a_0083": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "7/8 بالتعداد (كل الاحتمالات إلا كتابة-كتابة-كتابة).",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0054": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "6/36 = 1/6 بالعدّ الآلي.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "6/36 = 1/6 بالعدّ الآلي.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0007": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "5! = 120 محسوبة بتعداد التباديل آليًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0053": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "C(8,4) = 70 محسوبة بتعداد التوافيق آليًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0088": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "3/8 بالتعداد الكامل للرميات الثماني.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0019": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "3/8 بالتعداد الكامل للرميات الثماني.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0069": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "C(7,3) = 35 محسوبة بتعداد التوافيق آليًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "6/36 = 1/6 بالعدّ الآلي.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0014": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "3/8 بالتعداد الكامل للرميات الثماني.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0078": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قاعدة بايز بالتعداد المرجح: 6/11.",
+      "answer_verified_by": "mechanical",
+      "trap": "الجواب الساذج 1/2 يتجاهل اختلاف تركيب الصندوقين"
+    },
+    "constprob_a_0029": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قاعدة بايز بالتعداد المرجح: 9/17.",
+      "answer_verified_by": "mechanical",
+      "trap": "الجواب الساذج 1/2 يتجاهل اختلاف تركيب الصندوقين"
+    },
+    "constprob_a_0059": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قاعدة بايز بالتعداد المرجح: 10/17.",
+      "answer_verified_by": "mechanical",
+      "trap": "الجواب الساذج 1/2 يتجاهل اختلاف تركيب الصندوقين"
+    },
+    "constprob_a_0051": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بعد سحب أبيض الريش بقي 3 من 5؛ حوسب بالكسور البرمجية.",
+      "answer_verified_by": "mechanical",
+      "trap": "الجواب الساذج r/n يتجاهل أن السحب دون إرجاع"
+    },
+    "constprob_a_0060": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بعد سحب أزرق الحبر بقي 5 من 7؛ حوسب بالكسور البرمجية.",
+      "answer_verified_by": "mechanical",
+      "trap": "الجواب الساذج r/n يتجاهل أن السحب دون إرجاع"
+    },
+    "constprob_a_0026": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بعد سحب أزرق الحبر بقي 2 من 4؛ حوسب بالكسور البرمجية.",
+      "answer_verified_by": "mechanical",
+      "trap": "الجواب الساذج r/n يتجاهل أن السحب دون إرجاع"
+    },
+    "constprob_a_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بعد سحب حمراء بقي 5 من 10؛ حوسب بالكسور البرمجية.",
+      "answer_verified_by": "mechanical",
+      "trap": "الجواب الساذج r/n يتجاهل أن السحب دون إرجاع"
+    },
+    "constprob_a_0070": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قاعدة بايز بالتعداد المرجح: 2/3.",
+      "answer_verified_by": "mechanical",
+      "trap": "الجواب الساذج 1/2 يتجاهل اختلاف تركيب الصندوقين"
+    },
+    "constprob_a_0076": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قاعدة بايز بالتعداد المرجح: 5/7.",
+      "answer_verified_by": "mechanical",
+      "trap": "الجواب الساذج 1/2 يتجاهل اختلاف تركيب الصندوقين"
+    },
+    "constprob_a_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "4!/2! = 12 مؤكدة بتعداد التباديل المتميزة (الحمراوان متماثلتان).",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجيب 24 يتجاهل تماثل الخرزتين"
+    },
+    "constprob_a_0075": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مع الإرجاع يستقل السحبان: (b/n)^2.",
+      "answer_verified_by": "mechanical",
+      "trap": "الخلط بين السحب بالإرجاع ودونه"
+    },
+    "constprob_a_0012": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مجموع احتمالي التطابق في اللونين، محسوب بالكسور البرمجية.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0031": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مجموع احتمالي التطابق في اللونين، محسوب بالكسور البرمجية.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0063": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "توافيق C(r,2)/C(n,2) محسوبة برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0005": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "كل اللجان ناقص لجان الرجال فقط = 325 مؤكدة بالتعداد الكامل.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجمع الحالات مباشرة يقع في الازدواج"
+    },
+    "constprob_a_0021": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "4!/2! = 12 مؤكدة بتعداد التباديل المتميزة (الحمراوان متماثلتان).",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجيب 24 يتجاهل تماثل الخرزتين"
+    },
+    "constprob_a_0025": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "4!/2! = 12 مؤكدة بتعداد التباديل المتميزة (الحمراوان متماثلتان).",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجيب 24 يتجاهل تماثل الخرزتين"
+    },
+    "constprob_a_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "C(7,2) = 21 مؤكدة بالتعداد مع اشتراط وجود العضو.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0050": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "كل اللجان ناقص لجان الرجال فقط = 209 مؤكدة بالتعداد الكامل.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجمع الحالات مباشرة يقع في الازدواج"
+    },
+    "constprob_a_0061": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "C(7,2) = 21 مؤكدة بالتعداد مع اشتراط وجود العضو.",
+      "answer_verified_by": "mechanical"
+    },
+    "constprob_a_0020": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "4!/2! = 12 مؤكدة بتعداد التباديل المتميزة (الحمراوان متماثلتان).",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجيب 24 يتجاهل تماثل الخرزتين"
+    },
+    "constprob_a_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "4!/2! = 12 مؤكدة بتعداد التباديل المتميزة (الحمراوان متماثلتان).",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجيب 24 يتجاهل تماثل الخرزتين"
+    }
+  }
+}

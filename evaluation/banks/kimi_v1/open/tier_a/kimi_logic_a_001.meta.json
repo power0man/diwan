@@ -1,0 +1,419 @@
+{
+  "suite_id": "kimi_logic_a_001",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "logic_a_0073": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "سلسلة شرطية من 3 خطوات: المعطى يثبت المقدّم الأول، والنتيجة تلزم بتكرار الاستدلال.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0061": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة للقرائن (1 حلول) ثبت أن المركز في هذا الموضع لا يشغله إلا فهد.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0028": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة صادقة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0058": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة للقرائن (1 حلول) ثبت أن المركز في هذا الموضع لا يشغله إلا حصة.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0082": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "نقيض «بعض التمور في الصندوق فاسدة» هو «لا تمرة في الصندوق فاسدة» وفق قواعد نفي الكلّية والجزئية؛ حُسب بحرف الخيار أ بعد الخلط الآلي.",
+      "answer_verified_by": "mechanical",
+      "trap": "خيار مشتتّ أشد من النقيض (النفي الكلي)"
+    },
+    "logic_a_0075": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "نقيض «بعض المرضى لم يأخذوا الدواء» هو «كل المرضى أخذوا الدواء» وفق قواعد نفي الكلّية والجزئية؛ حُسب بحرف الخيار ج بعد الخلط الآلي.",
+      "answer_verified_by": "mechanical",
+      "trap": "خيار مشتتّ أشد من النقيض (النفي الكلي)"
+    },
+    "logic_a_0087": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة للقرائن (1 حلول) ثبت أن الموقع في هذا الموضع لا يشغله إلا ريم.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0059": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقّق مقدّم الشرطية فيلزم التالي.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0051": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "سلسلة شرطية من 3 خطوات: المعطى يثبت المقدّم الأول، والنتيجة تلزم بتكرار الاستدلال.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0013": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة للقرائن (1 حلول) ثبت أن الموقع في هذا الموضع لا يشغله إلا مريم.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "نقيض «كل المشاركات في المعرض سلّمن أعمالهن» هو «بعض المشاركات في المعرض لم يسلّمن أعمالهن» وفق قواعد نفي الكلّية والجزئية؛ حُسب بحرف الخيار ج بعد الخلط الآلي.",
+      "answer_verified_by": "mechanical",
+      "trap": "خيار مشتتّ أشد من النقيض (النفي الكلي)"
+    },
+    "logic_a_0088": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "يوجد نموذج تصدق فيه المقدمتان والنتيجة، ونموذج تصدق فيه المقدمتان وتكذب النتيجة؛ فلا حسم.",
+      "answer_verified_by": "mechanical",
+      "trap": "قياس حملي بألفاظ مخترعة يمنع الاستعانة بالمعرفة المسبقة"
+    },
+    "logic_a_0040": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "سلسلة شرطية من 5 خطوات: المعطى يثبت المقدّم الأول، والنتيجة تلزم بتكرار الاستدلال.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0008": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بفحص كل احتمال (3 مشتبه بهم) تبين أن احتمال «زياد» هو الوحيد الذي يجعل عدد العبارات الصادقة 1 كما هو معلوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجرب احتمالًا واحدًا دون فحص البقية يقع في الخطأ"
+    },
+    "logic_a_0035": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بنفي النتيجة الأخيرة تنتفي المقدّمة الأولى بعكس السلسلة الشرطية (5 خطوات).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0019": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بفحص كل احتمال (3 مشتبه بهم) تبين أن احتمال «ريم» هو الوحيد الذي يجعل عدد العبارات الصادقة 1 كما هو معلوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجرب احتمالًا واحدًا دون فحص البقية يقع في الخطأ"
+    },
+    "logic_a_0053": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بفحص كل احتمال (3 مشتبه بهم) تبين أن احتمال «صالح» هو الوحيد الذي يجعل عدد العبارات الصادقة 1 كما هو معلوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجرب احتمالًا واحدًا دون فحص البقية يقع في الخطأ"
+    },
+    "logic_a_0076": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بفحص كل احتمال (3 مشتبه بهم) تبين أن احتمال «نورة» هو الوحيد الذي يجعل عدد العبارات الصادقة 1 كما هو معلوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجرب احتمالًا واحدًا دون فحص البقية يقع في الخطأ"
+    },
+    "logic_a_0003": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بحصر جميع الترتيبات (14 حلول) الحكم: لا يمكن الجزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "القرائن تحسم أزواجًا وتترك أخرى"
+    },
+    "logic_a_0057": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "سلسلة شرطية من 5 خطوات: المعطى يثبت المقدّم الأول، والنتيجة تلزم بتكرار الاستدلال.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0015": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "سلسلة شرطية من 5 خطوات: المعطى يثبت المقدّم الأول، والنتيجة تلزم بتكرار الاستدلال.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0030": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "يوجد نموذج تصدق فيه المقدمتان والنتيجة، ونموذج تصدق فيه المقدمتان وتكذب النتيجة؛ فلا حسم.",
+      "answer_verified_by": "mechanical",
+      "trap": "قياس حملي بألفاظ مخترعة يمنع الاستعانة بالمعرفة المسبقة"
+    },
+    "logic_a_0065": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إثبات التالي لا يلزم منه المقدّم؛ قد يكون للإرسال شرط آخر غير مذكور.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي في صيغة حوارية"
+    },
+    "logic_a_0004": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إنكار المقدّم لا ينفي التالي؛ قد يتحقق التالي بطريق آخر، فلا يمكن الجزم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إنكار المقدم: من يظن الشرطية تنقلب يجيب لا"
+    },
+    "logic_a_0052": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "يوجد نموذج تصدق فيه المقدمتان والنتيجة، ونموذج تصدق فيه المقدمتان وتكذب النتيجة؛ فلا حسم.",
+      "answer_verified_by": "mechanical",
+      "trap": "قياس حملي بألفاظ مخترعة يمنع الاستعانة بالمعرفة المسبقة"
+    },
+    "logic_a_0062": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نقيض «بعض الإيصالات فُقدت» هو «لم تفقد أي إيصال» وفق قواعد نفي الكلّية والجزئية؛ حُسب بحرف الخيار ب بعد الخلط الآلي.",
+      "answer_verified_by": "mechanical",
+      "trap": "خيار مشتتّ أشد من النقيض (النفي الكلي)"
+    },
+    "logic_a_0055": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نقيض «لا موظف تأخر اليوم» هو «بعض الموظفين تأخر اليوم» وفق قواعد نفي الكلّية والجزئية؛ حُسب بحرف الخيار أ بعد الخلط الآلي.",
+      "answer_verified_by": "mechanical",
+      "trap": "خيار مشتتّ أشد من النقيض (النفي الكلي)"
+    },
+    "logic_a_0049": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نصب الخيام في الوادي قد يكون لسبب آخر؛ إثبات التالي لا يثبت المقدم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي"
+    },
+    "logic_a_0089": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إثبات التالي لا يثبت المقدّم؛ قد يكون للمرحلة الوسطى سبب آخر، فلا يلزم تحقّق المرحلة الأولى.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخ إثبات التالي: من يظن القاعدة تنعكس يجيب نعم"
+    },
+    "logic_a_0090": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "يوجد نموذج تصدق فيه المقدمتان والنتيجة، ونموذج تصدق فيه المقدمتان وتكذب النتيجة؛ فلا حسم.",
+      "answer_verified_by": "mechanical",
+      "trap": "قياس حملي بألفاظ مخترعة يمنع الاستعانة بالمعرفة المسبقة"
+    },
+    "logic_a_0012": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة صادقة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بنفي النتيجة الأخيرة تنتفي المقدّمة الأولى بعكس السلسلة الشرطية (3 خطوات).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0024": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات (1 حلول) الحكم: نعم.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0034": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نقيض «كل الجسور في المحافظة فُحصت» هو «بعض الجسور في المحافظة لم تُفحص» وفق قواعد نفي الكلّية والجزئية؛ حُسب بحرف الخيار ج بعد الخلط الآلي.",
+      "answer_verified_by": "mechanical",
+      "trap": "خيار مشتتّ أشد من النقيض (النفي الكلي)"
+    },
+    "logic_a_0027": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات (5 حلول) الحكم: لا.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0033": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة صادقة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0086": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات (3 حلول) الحكم: لا.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة صادقة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0060": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة كاذبة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0063": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نفي التالي (لم يُغلق الدكان ظهرًا) يلزم منه نفي المقدم (لم ينفد الهيل).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0070": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "القضية المسؤول عنها لا ترد في أي قاعدة ولا معطى؛ وجود معلومات أخرى لا يحسمها.",
+      "answer_verified_by": "mechanical",
+      "trap": "معلومة زائدة كثيرة قد توهم بوجود صلة"
+    },
+    "logic_a_0081": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة كاذبة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات (18 حلول) الحكم: لا.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0068": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نقيض «لا مركب خرج في هذه العاصفة» هو «بعض المراكب خرجت في هذه العاصفة» وفق قواعد نفي الكلّية والجزئية؛ حُسب بحرف الخيار ب بعد الخلط الآلي.",
+      "answer_verified_by": "mechanical",
+      "trap": "خيار مشتتّ أشد من النقيض (النفي الكلي)"
+    },
+    "logic_a_0091": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بنفي النتيجة الأخيرة تنتفي المقدّمة الأولى بعكس السلسلة الشرطية (3 خطوات).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0077": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة كاذبة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات (3 حلول) الحكم: لا.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0079": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سلسلة شرطية من 4 خطوات: المعطى يثبت المقدّم الأول، والنتيجة تلزم بتكرار الاستدلال.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0054": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بفحص كل احتمال (3 مشتبه بهم) تبين أن احتمال «حمد» هو الوحيد الذي يجعل عدد العبارات الصادقة 2 كما هو معلوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجرب احتمالًا واحدًا دون فحص البقية يقع في الخطأ"
+    },
+    "logic_a_0043": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة صادقة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0045": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بنفي النتيجة الأخيرة تنتفي المقدّمة الأولى بعكس السلسلة الشرطية (4 خطوات).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0031": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بفحص كل احتمال (3 مشتبه بهم) تبين أن احتمال «أمل» هو الوحيد الذي يجعل عدد العبارات الصادقة 2 كما هو معلوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجرب احتمالًا واحدًا دون فحص البقية يقع في الخطأ"
+    },
+    "logic_a_0029": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة صادقة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0037": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة للقرائن (1 حلول) ثبت أن المركز في هذا الموضع لا يشغله إلا طارق.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0044": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سلسلة شرطية من 4 خطوات: المعطى يثبت المقدّم الأول، والنتيجة تلزم بتكرار الاستدلال.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0047": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات (3 حلول) الحكم: لا.",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بفحص كل احتمال (3 مشتبه بهم) تبين أن احتمال «وليد» هو الوحيد الذي يجعل عدد العبارات الصادقة 2 كما هو معلوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجرب احتمالًا واحدًا دون فحص البقية يقع في الخطأ"
+    },
+    "logic_a_0056": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بفحص كل احتمال (3 مشتبه بهم) تبين أن احتمال «خالد» هو الوحيد الذي يجعل عدد العبارات الصادقة 2 كما هو معلوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجرب احتمالًا واحدًا دون فحص البقية يقع في الخطأ"
+    },
+    "logic_a_0042": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة كاذبة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0007": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة كاذبة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النتيجة صادقة في كل نموذج تصدق فيه المقدمتان (تحقق بفحص جميع التوزيعات الممكنة).",
+      "answer_verified_by": "mechanical"
+    },
+    "logic_a_0050": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نقيض «كل الطلاب سلّموا الواجب» هو «بعض الطلاب لم يسلّموا الواجب» وفق قواعد نفي الكلّية والجزئية؛ حُسب بحرف الخيار ج بعد الخلط الآلي.",
+      "answer_verified_by": "mechanical",
+      "trap": "خيار مشتتّ أشد من النقيض (النفي الكلي)"
+    },
+    "logic_a_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نقيض «بعض طلاب الحلقة لم يحفظوا السورة» هو «كل طلاب الحلقة حفظوا السورة» وفق قواعد نفي الكلّية والجزئية؛ حُسب بحرف الخيار أ بعد الخلط الآلي.",
+      "answer_verified_by": "mechanical",
+      "trap": "خيار مشتتّ أشد من النقيض (النفي الكلي)"
+    },
+    "logic_a_0022": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات (9 حلول) الحكم: نعم.",
+      "answer_verified_by": "mechanical"
+    }
+  }
+}

@@ -1,0 +1,414 @@
+{
+  "suite_id": "kimi_logic_a_004",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "dedcond_a_0004": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (4 ترتيبًا): اختلف الأمر بين الترتيبات.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0020": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (4 نموذجًا) كانت القضية المسؤول عنها صادقة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0003": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (12 ترتيبًا): وقع قبله في كل ترتيب.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0052": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (4 نموذجًا) كانت القضية المسؤول عنها صادقة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0092": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (9 ترتيبًا): اختلف الأمر بين الترتيبات.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0019": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (4 نموذجًا) كانت القضية المسؤول عنها صادقة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0079": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (3 ترتيبًا): اختلف الأمر بين الترتيبات.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0082": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (4 ترتيبًا): وقع قبله في كل ترتيب.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0060": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (2 ترتيبًا): وقع بعده في كل ترتيب.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0002": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (2 نموذجًا) كانت القضية المسؤول عنها صادقة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0029": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (4 ترتيبًا): وقع قبله في كل ترتيب.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0056": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (7 ترتيبًا): اختلف الأمر بين الترتيبات.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0006": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (2 نموذجًا) كانت القضية المسؤول عنها صادقة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0053": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (6 ترتيبًا): وقع بعده في كل ترتيب.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0036": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (2 نموذجًا) كانت القضية المسؤول عنها كاذبة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0094": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (3 ترتيبًا): وقع بعده في كل ترتيب.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0015": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (4 نموذجًا) كانت القضية المسؤول عنها صادقة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0091": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (1 نموذجًا) كانت القضية المسؤول عنها صادقة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (1 نموذجًا) كانت القضية المسؤول عنها صادقة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0083": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الترتيب الوحيد المطابق للقرائن بحصر جميع التباديل هو: اندلع الحريق ← وصلت فرقة الإطفاء ← أُخمدت النيران ← أُخليت المحلات ← فُتح التحقيق.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0035": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (1 نموذجًا) كانت القضية المسؤول عنها صادقة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0054": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (1 ترتيبًا): وقع قبله في كل ترتيب.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0055": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الترتيب الوحيد المطابق للقرائن بحصر جميع التباديل هو: أُخمدت النيران ← وصلت فرقة الإطفاء ← أُخليت المحلات ← فُتح التحقيق ← اندلع الحريق.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0032": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (4 نموذجًا) كانت القضية المسؤول عنها صادقة في بعضها وكاذبة في بعضها.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ: سلسلة شرطية متداخلة مقدمها معطوف؛ إثبات حدّ واحد من العطف لا يحرّك السلسلة."
+    },
+    "dedcond_a_0022": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (4 نموذجًا) كانت القضية المسؤول عنها صادقة في بعضها وكاذبة في بعضها.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ: سلسلة شرطية متداخلة مقدمها معطوف؛ إثبات حدّ واحد من العطف لا يحرّك السلسلة."
+    },
+    "dedcond_a_0001": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (4 نموذجًا) كانت القضية المسؤول عنها صادقة في بعضها وكاذبة في بعضها.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ: سلسلة شرطية متداخلة مقدمها معطوف؛ إثبات حدّ واحد من العطف لا يحرّك السلسلة."
+    },
+    "dedcond_a_0005": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (2 نموذجًا) كانت القضية المسؤول عنها كاذبة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (2 ترتيبًا): وقع بعده في كل ترتيب.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0077": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الترتيب الوحيد المطابق للقرائن بحصر جميع التباديل هو: نُصبت الخيام ← شدّت القافلة الرحال ← أُوقدت نار المخيم ← نام القوم ← اجتازت القافلة الوادي.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0072": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (2 نموذجًا) كانت القضية المسؤول عنها كاذبة في كل نموذج.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0061": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (4 نموذجًا) كانت القضية المسؤول عنها صادقة في كل نموذج.",
+      "answer_verified_by": "mechanical",
+      "trap": "التكافؤ يجيز الاستدلال بالاتجاهين، بخلاف الشرطية المجردة."
+    },
+    "dedcond_a_0062": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (3 ترتيبًا): وقع قبله في كل ترتيب.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0034": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بحصر جميع الترتيبات المطابقة (1 ترتيبًا): وقع قبله في كل ترتيب.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0026": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (6 نموذجًا) كانت القضية المسؤول عنها صادقة في بعضها وكاذبة في بعضها.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ: مقدم الشرطية مركّب بعطف، وإثبات نصفه لا يكفي؛ الميل للجزم هنا مغالطة."
+    },
+    "dedcond_a_0031": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "بحصر جميع تقديرات الصدق المطابقة للمقدمات (6 نموذجًا) كانت القضية المسؤول عنها صادقة في بعضها وكاذبة في بعضها.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ: مقدم الشرطية مركّب بعطف، وإثبات نصفه لا يكفي؛ الميل للجزم هنا مغالطة."
+    },
+    "dedcond_a_0023": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0016": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0085": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0051": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0070": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0067": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0089": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0066": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0030": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0028": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0075": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0050": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0063": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0049": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0043": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ: خيار يثبت نصف المقدم المعطوف يبدو كافيًا وهو ليس كذلك."
+    },
+    "dedcond_a_0040": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ: خيار يثبت نصف المقدم المعطوف يبدو كافيًا وهو ليس كذلك."
+    },
+    "dedcond_a_0017": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ: خيار يثبت نصف المقدم المعطوف يبدو كافيًا وهو ليس كذلك."
+    },
+    "dedcond_a_0044": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0007": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0076": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0084": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0046": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0047": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0014": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0064": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0008": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0042": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0033": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: مع الإضافة الصحيحة صار الهدف صادقًا في كل نموذج مطابق، ومع كل مشتّت بقي غير محسوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical"
+    },
+    "dedcond_a_0024": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقق آلي: الأقوال مع الافتراض المنفي لا تقبل أي نموذج متسق، فالخلف يثبت نقيض الافتراض.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ: خيار «لا يثبت شيئًا» تهربي؛ البرهان بالخلف تام هنا."
+    }
+  }
+}

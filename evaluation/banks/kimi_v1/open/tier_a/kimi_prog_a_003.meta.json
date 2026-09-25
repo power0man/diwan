@@ -1,0 +1,432 @@
+{
+  "suite_id": "kimi_prog_a_003",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "prog_c_0065": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل مع وسيطين.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "add = lambda a, b: a + b",
+      "wrong_solution": "add = lambda a, b: a - b"
+    },
+    "prog_c_0078": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل حلقة إلحاق شرطية.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def even_squares(lst):\n    return [x * x for x in lst if x % 2 == 0]",
+      "wrong_solution": "def even_squares(lst):\n    return [x * x for x in lst if x % 2 == 1]"
+    },
+    "prog_c_0066": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل مع عامل أس.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "square = lambda x: x ** 2",
+      "wrong_solution": "square = lambda x: x * 2"
+    },
+    "prog_c_0069": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل مع قسمة عائمة.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "avg2 = lambda a, b: (a + b) / 2",
+      "wrong_solution": "avg2 = lambda a, b: (a + b) // 2"
+    },
+    "prog_c_0056": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل for إلى while مع عدّاد يدوي.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def sum_list(lst):\n    total = 0\n    i = 0\n    while i < len(lst):\n        total += lst[i]\n        i += 1\n    return total",
+      "wrong_solution": "def sum_list(lst):\n    total = 0\n    for x in lst:\n        total += x\n    return total"
+    },
+    "prog_c_0061": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إزاحة البداية إلى 1 تغيّر كل الناتج.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def squares_list(n):\n    out = []\n    i = 0\n    while i < n:\n        out.append(i * i)\n        i += 1\n    return out",
+      "wrong_solution": "def squares_list(n):\n    out = []\n    i = 1\n    while i <= n:\n        out.append(i * i)\n        i += 1\n    return out"
+    },
+    "prog_c_0057": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فقدان العودة المبكرة أثناء التحويل يغيّر النتيجة عند تعدد السوالب.",
+      "answer_verified_by": "mechanical",
+      "trap": "الخاطئ يكمل المسح فيعيد آخر سالب لا أوله.",
+      "correct_solution": "def find_first_negative(lst):\n    i = 0\n    while i < len(lst):\n        if lst[i] < 0:\n            return lst[i]\n        i += 1\n    return None",
+      "wrong_solution": "def find_first_negative(lst):\n    i = 0\n    found = None\n    while i < len(lst):\n        if lst[i] < 0:\n            found = lst[i]\n        i += 1\n    return found"
+    },
+    "prog_c_0063": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحويل مع تتبع فهرس لا قيمة.",
+      "answer_verified_by": "mechanical",
+      "trap": ">= يقلب التعادل إلى آخر فهرس.",
+      "correct_solution": "def index_of_max(lst):\n    best = 0\n    i = 1\n    while i < len(lst):\n        if lst[i] > lst[best]:\n            best = i\n        i += 1\n    return best",
+      "wrong_solution": "def index_of_max(lst):\n    best = 0\n    i = 1\n    while i < len(lst):\n        if lst[i] >= lst[best]:\n            best = i\n        i += 1\n    return best"
+    },
+    "prog_c_0080": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فخ التكرار في تحويل قاموس الفهارس.",
+      "answer_verified_by": "mechanical",
+      "trap": "{w: i ...} المباشرة تبقي آخر فهرس لا أوله.",
+      "correct_solution": "def word_index_map(words):\n    return {w: i for i, w in enumerate(words) if words.index(w) == i}",
+      "wrong_solution": "def word_index_map(words):\n    return {w: i for i, w in enumerate(words)}"
+    },
+    "prog_c_0077": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحويل فيبوناتشي مع الحفاظ على البذور.",
+      "answer_verified_by": "mechanical",
+      "trap": "بذور 1,1 تزيح المتتالية.",
+      "correct_solution": "def fib_iter(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a",
+      "wrong_solution": "def fib_iter(n):\n    a, b = 1, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a"
+    },
+    "prog_c_0059": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "شرط الفاصل هو نقطة الانزلاق في التحويل.",
+      "answer_verified_by": "mechanical",
+      "trap": "الخاطئ يضيف فاصلًا بعد الأخيرة: «أ-ب-ج-».",
+      "correct_solution": "def join_words(words, sep):\n    out = ''\n    i = 0\n    while i < len(words):\n        if out:\n            out += sep\n        out += words[i]\n        i += 1\n    return out",
+      "wrong_solution": "def join_words(words, sep):\n    out = ''\n    i = 0\n    while i < len(words):\n        out += words[i]\n        if i < len(words):\n            out += sep\n        i += 1\n    return out"
+    },
+    "prog_c_0058": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تغيّر الشرط أثناء التحويل خطأ شائع.",
+      "answer_verified_by": "mechanical",
+      "trap": "التحويل اليدوي يغري بتليين الشرط إلى >=.",
+      "correct_solution": "def count_above(lst, t):\n    c = 0\n    i = 0\n    while i < len(lst):\n        if lst[i] > t:\n            c += 1\n        i += 1\n    return c",
+      "wrong_solution": "def count_above(lst, t):\n    c = 0\n    i = 0\n    while i < len(lst):\n        if lst[i] >= t:\n            c += 1\n        i += 1\n    return c"
+    },
+    "prog_c_0073": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل عدّاد تنازلي.",
+      "answer_verified_by": "mechanical",
+      "trap": "range(n-1,...) يفقد قيمة البداية.",
+      "correct_solution": "def countdown_list(n):\n    out = []\n    for i in range(n, 0, -1):\n        out.append(i)\n    return out",
+      "wrong_solution": "def countdown_list(n):\n    out = []\n    for i in range(n - 1, 0, -1):\n        out.append(i)\n    return out"
+    },
+    "prog_c_0060": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "off-by-one في شرط while المكافئ.",
+      "answer_verified_by": "mechanical",
+      "trap": "<= في شرط while يقرأ ما بعد النهاية.",
+      "correct_solution": "def max_list(lst):\n    best = lst[0]\n    i = 1\n    while i < len(lst):\n        if lst[i] > best:\n            best = lst[i]\n        i += 1\n    return best",
+      "wrong_solution": "def max_list(lst):\n    best = lst[0]\n    i = 1\n    while i <= len(lst):\n        if lst[i] > best:\n            best = lst[i]\n        i += 1\n    return best"
+    },
+    "prog_c_0074": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إزالة تكرار ذاتي بسيط.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def factorial_rec(n):\n    result = 1\n    for i in range(2, n + 1):\n        result *= i\n    return result",
+      "wrong_solution": "def factorial_rec(n):\n    if n <= 1:\n        return 1\n    return n * factorial_rec(n - 1)"
+    },
+    "prog_c_0062": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "البدء من 1 يُسقط أول خانة.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def sum_digits_loop(n):\n    total = 0\n    s = str(n)\n    i = 0\n    while i < len(s):\n        total += int(s[i])\n        i += 1\n    return total",
+      "wrong_solution": "def sum_digits_loop(n):\n    total = 0\n    s = str(n)\n    i = 1\n    while i < len(s):\n        total += int(s[i])\n        i += 1\n    return total"
+    },
+    "prog_c_0067": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل شرط حدّي.",
+      "answer_verified_by": "mechanical",
+      "trap": "> بدل >= يخرج الثامنة عشرة.",
+      "correct_solution": "is_adult = lambda age: age >= 18",
+      "wrong_solution": "is_adult = lambda age: age > 18"
+    },
+    "prog_c_0044": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "التمييز بين أسوأ وأحسن حالة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0051": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تجميع بإلحاق خطي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0036": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "وصول قاموس مباشر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0043": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تداخل ثلاثي مباشر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0033": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بحث ثنائي قياسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0032": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تداخل كامل حلقتين.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0048": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تعقيد غير بديهي لخوارزمية كلاسيكية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0049": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فحص الأولية حتى الجذر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0046": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ثابت 1000 يوهم بتعقيد أعلى.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "العدد الكبير يغري بإدخاله في الرتبة."
+    },
+    "prog_c_0054": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خوارزمية القوة بالتنصيف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0042": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مقارنة ضمنية مع نسخة القائمة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0038": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حلقة داخلية ثابتة لا تضخّم الرتبة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "رؤية حلقتين متداخلتين توحي بالتربيعي."
+    },
+    "prog_c_0053": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فخ نسخ الشرائح داخل حلقة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الحلقة تبدو خطية لكن كل دورة تنسخ ما تبقى."
+    },
+    "prog_c_0055": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فخ الحلقتين اللتين تبدوان تربيعيتين وهما توافقية.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "حلقتان متداخلتان لكن الداخلية تتقلص كـ n/i."
+    },
+    "prog_c_0035": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فخ فيبوناتشي الذاتي: يبدو تربيعيًّا وهو أسّي.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "شجرة الاستدعاءات أسّية لا تربيعية."
+    },
+    "prog_c_0047": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تكرار ذاتي منصّف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0037": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فخ جمع حلقتين متتاليتين.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "من يضرب الحلقتين يقول O(n^2)."
+    },
+    "prog_c_0034": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فرز مهيمن على بناء مجموعة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "prog_c_0016": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار لاتجاه القطع.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_last_n():\n    assert get_last_n([1, 2, 3, 4], 2) == [3, 4]",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0006": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار لوسيط مهمل.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_max3_third():\n    assert max3(1, 2, 9) == 9",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0023": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار لعدّ المجموعة لا الطول.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_count_unique():\n    assert count_unique('aab') == 2\n    assert count_unique('') == 0",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0024": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار لفهرس طرف خاطئ.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_first_last():\n    assert first_last_same([1, 2, 1]) is True\n    assert first_last_same([1, 1, 2]) is False",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0027": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار لمعالجة الخطأ المطلوبة.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_safe_parse():\n    assert safe_parse_int('12a') is None\n    assert safe_parse_int('42') == 42",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0004": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار لقيمة مطلقة منسية.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_absolute_sum():\n    assert absolute_sum([-1, -2, 3]) == 6",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0022": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار لنوع القيمة المعادة.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_word_lengths():\n    assert word_lengths('أب جدج') == {'أب': 2, 'جدج': 3}",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0014": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار لشرط مقلوب.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_count_odds():\n    assert count_odds([1, 3, 5, 2]) == 3\n    assert count_odds([2, 4]) == 0",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0009": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قلب الإشارة في حساب خصم يخسر المتجر أو العميل.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_discount():\n    assert discount_price(200, 10) == 180",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0020": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اختبار لتقريب سقفي.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_next_quarter():\n    assert next_quarter_hour(10) == 15\n    assert next_quarter_hour(15) == 15\n    assert next_quarter_hour(0) == 0",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0021": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اختبار لترشيح قبل التجميع.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_average_passing():\n    assert average_passing([90, 30, 80]) == 85.0\n    assert average_passing([10, 20]) is None",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0026": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اختبار لشمول مجال الأحرف العربية.",
+      "answer_verified_by": "mechanical",
+      "trap": "القائمة اليدوية تمرّ على معظم الكلمات الشائعة.",
+      "correct_solution": "def test_missing_letters():\n    assert text_has_arabic('ض') is True\n    assert text_has_arabic('ة') is True\n    assert text_has_arabic('abc') is False",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0019": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "سياسة تقريب الفواتير تغيّر المبالغ المحصّلة فعليًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "الطريقتان تتفقان على معظم الأرقام وتختلفان في هللات قليلة.",
+      "correct_solution": "def test_rounding_policy():\n    assert total_with_tax([1.11, 1.11]) == 2.55",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار لحالة حدّية في معامل الباقي.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_zero_k():\n    assert is_multiple(5, 0) is False\n    assert is_multiple(10, 5) is True",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0007": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار لقاعدة السنة الكبيسة.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_leap_feb():\n    assert days_in_feb(2024) == 29\n    assert days_in_feb(2023) == 28",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0003": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار حدّي للتساوي في الترتيب.",
+      "answer_verified_by": "mechanical",
+      "trap": "< و<= يتفقان على القوائم بلا تكرار.",
+      "correct_solution": "def test_sorted_allows_equal():\n    assert is_sorted([1, 2, 2, 3]) is True",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0030": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اختبار لحدّ البلوغ القانوني.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_eighteen():\n    assert find_adults({'س': 18, 'ص': 17}) == ['س']",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مطابقة كلمات السر بلا حالة تضعف الأمان.",
+      "answer_verified_by": "mechanical",
+      "trap": "lower المقارنة تبدو «تسامحًا لطيفًا» وهي ثغرة.",
+      "correct_solution": "def test_case_sensitive():\n    assert passwords_match('Secret1', 'secret1') is False\n    assert passwords_match('Secret1', 'Secret1') is True",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0028": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "قسط غير مقرّب أو بلا تحقق يفسد جداول السداد.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def test_payment():\n    assert monthly_payment(100, 3) == 33.33\n\ndef test_zero_months():\n    try:\n        monthly_payment(100, 0)\n        assert False, 'لم يرمِ استثناء'\n    except ValueError:\n        pass",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    },
+    "prog_c_0005": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ظلم حدّي في درجة النجاح؛ فحصه واجب.",
+      "answer_verified_by": "mechanical",
+      "trap": "> و>= يتفقان على كل الدرجات عدا 60 نفسها.",
+      "correct_solution": "def test_boundary_sixty():\n    assert is_passing(60) is True",
+      "wrong_solution": "def test_placeholder():\n    assert True"
+    }
+  }
+}

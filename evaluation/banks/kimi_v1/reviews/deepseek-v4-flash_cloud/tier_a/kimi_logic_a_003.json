@@ -1,0 +1,523 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek-v3\",\n  \"file\": \"kimi_logic_a_003.json\",\n  \"judgments\": [\n    {\n      \"id\": \"constprob_a_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نورة، ريم، جواهر، مريم، سارة\",\n      \"reason\": \"حللت القيود: نورة قبل سارة، وبين نورة وجواهر واحد، وسارة خلف مريم مباشرة، وبين سارة وجواهر واحد. يفرض ذلك الترتيب الوحيد المذكور.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0090\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"طارق: استقبال الضيوف، ناصر: طبخ الرز، زياد: إعداد القهوة، فهد: ترتيب المجلس\",\n      \"reason\": \"ناصر طبخ الرز، وطارق لا يجيد القهوة ولا الترتيب فيأخذ الاستقبال، ثم الشرط يمنع فهد من القهوة فيأخذ الترتيب وزياد القهوة. التعيين وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"بدر، خالد، طارق، ناصر، سالم\",\n      \"reason\": \"بين سالم وطارق واحد وبين بدر وطارق واحد يقتضي أن طارق في المنتصف وسالم وبدر على الطرفين، وسالم يلي ناصرًا فيجعل ناصرًا قبله. الترتيب وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0082\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ماجد، جاسم، خالد، زياد، بدر\",\n      \"reason\": \"جاسم قبل خالد قبل زياد، وجاسم قبل بدر، وجاسم ليس أولًا وزياد ليس أخيرًا. يفرض ذلك الترتيب الوحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"خالد، منصور، ماجد، ناصر، جاسم\",\n      \"reason\": \"ماجد بين خالد وجاسم وبعده عن خالد واحد، وماجد قبل ناصر وناصر قبل جاسم. ينتج الترتيب الوحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تدريب اللياقة، تدريب التمرير، مباراة ودية، مراجعة الخطة\",\n      \"reason\": \"اللياقة السبت، والمباراة على بعد يوم واحد منها فالإثنين، والتمرير ليس السبت ولا الثلاثاء فالأحد، والمراجعة الثلاثاء. الجدول وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أمسية الشعر، مسابقة الطبخ، عرض الفرقة الشعبية، ندوة التراث\",\n      \"reason\": \"الندوة الثلاثاء، والعرض يلي الطبخ مباشرة، وبين العرض والشعر يوم واحد. يفرض ذلك الترتيب الوحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ندوة التراث، عرض الفرقة الشعبية، مسابقة الطبخ، أمسية الشعر\",\n      \"reason\": \"الندوة السبت، والطبخ على بعد يوم منها فالإثنين، والطبخ قبل الشعر فالشعر الثلاثاء، والعرض الأحد. الترتيب وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ناصر: طبخ العشاء، فهد: جمع الحطب، سالم: قيادة السيارة، راشد: نصب الخيام\",\n      \"reason\": \"راشد نصب الخيام، وناصر لا يقود ولا يجمع الحطب فيطبخ، وسالم لا يجمع الحطب فيقود، وفهد يجمع الحطب. التعيين وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"راشد، فهد، زياد، ماجد، جاسم\",\n      \"reason\": \"فهد قبل زياد قبل ماجد وقبل جاسم، وفهد ليس أولًا وماجد ليس أخيرًا. يفرض ذلك الترتيب الوحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لطيفة، هند، ريم، أمل\",\n      \"reason\": \"أمل تلي ريم مباشرة، ولطيفة وهند ليستا في الأخير، ولطيفة قبل هند. ينتج الترتيب الوحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سالم: إدارة المقصف، جاسم: تنسيق الملعب، وليد: الإذاعة الصباحية\",\n      \"reason\": \"وليد في الإذاعة، وسالم لا يجيد تنسيق الملعب فيأخذ المقصف، وجاسم التنسيق. التعيين وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"زياد\",\n      \"reason\": \"خالد أولًا، وسالم قبل زياد قبل بدر قبل جاسم، فالترتيب الوحيد خالد، سالم، زياد، بدر، جاسم، والثالث زياد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نورة، جواهر، مريم، ريم\",\n      \"reason\": \"جواهر ليست الأولى ولا الأخيرة، وجواهر قبل مريم قبل ريم. يفرض ذلك الترتيب الوحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"زياد: حدادة الشباك، راشد: خياطة الستائر، ناصر: صيانة المكيف\",\n      \"reason\": \"راشد خياطة الستائر، وناصر لا يجيد الخياطة ولا الحدادة فيصيانة المكيف، وزياد الحدادة. التعيين وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0086\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ريم\",\n      \"reason\": \"نورة ليست أولًا، وأمل بعد نورة وقبل مريم، وريم ليست أخيرة. الترتيب الوحيد ريم، نورة، أمل، مريم، فالأول ريم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0087\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فهد، منصور، زياد، وليد، ناصر\",\n      \"reason\": \"فهد أولًا، وناصر خلف وليد مباشرة، وزياد قبل وليد، ومنصور قبل زياد. يفرض ذلك الترتيب الوحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سارة\",\n      \"reason\": \"مريم أولًا، وسارة قبل حصة قبل أمل، وأمل ليست أخيرة. الترتيب الوحيد مريم، سارة، حصة، أمل، منيرة، فالثاني سارة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"هند\",\n      \"reason\": \"أمل قبل منيرة قبل هند قبل نورة قبل مريم، فالترتيب الوحيد والثالث هند.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0056\",\n      \"reference\": \"ambiguous\",\n      \"rubric\": \"insufficient\",\n      \"my_answer\": \"سارة، حصة، أمل، مريم، منيرة (ويوجد حل آخر: سارة، مريم، أمل، حصة، منيرة)\",\n      \"reason\": \"القرائن لا تفرض ترتيبًا واحدًا: يمكن تبديل حصة ومريم في المقعدين الثاني والرابع مع بقاء أمل بينهما، وكل القرائن تتحقق. لذا الحالة غير فريدة والمرجع ليس الوحيد.\",\n      \"fix\": \"أضف قيدًا يزيل التماثل مثل «مقعد حصة أقرب إلى اليمين من مقعد مريم» أو اقبل أي ترتيب يحقق القرائن.\"\n    },\n    {\n      \"id\": \"constprob_a_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سارة\",\n      \"reason\": \"أمل قبل حصة قبل سارة قبل ريم، فالترتيب الوحيد والثالث سارة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جاسم: جمع الحطب، منصور: طبخ العشاء، طارق: نصب الخيام\",\n      \"reason\": \"طارق لا يطبخ ولا يجمع الحطب فينصب الخيام، والشرط يمنع جاسمًا من الطبخ فيجمع الحطب، ومنصور يطبخ. التعيين وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جاسم: نجارة الباب، فهد: صيانة المكيف، بدر: خياطة الستائر\",\n      \"reason\": \"بدر خياطة الستائر، وفهد لا يجيد النجارة فيصيانة المكيف، وجاسم النجارة. التعيين وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منيرة، مريم، هند، أمل، ريم\",\n      \"reason\": \"ريم أخيرة، وهند خلف مريم مباشرة، ومنيرة قبل مريم قبل أمل. يفرض ذلك الترتيب الوحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0081\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جاسم: طبخ العشاء، سالم: جمع الحطب، منصور: نصب الخيام\",\n      \"reason\": \"منصور نصب الخيام، وسالم لا يجيد النصب، وجاسم لا يجيد جمع الحطب. التعيين وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0084\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نورة\",\n      \"reason\": \"أمل أولًا، ومنيرة قبل مريم قبل نورة قبل ريم، فالترتيب الوحيد والرابع نورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أمل\",\n      \"reason\": \"جواهر قبل سارة قبل أمل قبل لطيفة، فالترتيب الوحيد والثالث أمل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جاسم: حدادة الشباك، ناصر: خياطة الستائر، راشد: نجارة الباب\",\n      \"reason\": \"جاسم حدادة الشباك، وناصر لا يجيد الحدادة ولا النجارة فيخيط الستائر، وراشد النجارة. التعيين وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لطيفة\",\n      \"reason\": \"مريم قبل لطيفة قبل هند قبل جواهر قبل ريم، فالترتيب الوحيد والثاني لطيفة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"زياد، ناصر، طارق، خالد\",\n      \"reason\": \"خالد في الأخير، وناصر يلي زيادًا مباشرة وبينه وبين طارق، فيكون الترتيب زياد، ناصر، طارق، خالد. وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سالم: تنسيق الملعب، راشد: الإذاعة الصباحية، بدر: إدارة المقصف\",\n      \"reason\": \"سالم تنسيق الملعب، وبدر وسالم لا يجيدان الإذاعة فراشد الإذاعة، وبدر المقصف. التعيين وحيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0083\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"7/8\",\n      \"reason\": \"احتمال عدم ظهور الصورة إطلاقًا هو 1/8، فالمطلوب 1 - 1/8 = 7/8.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/6\",\n      \"reason\": \"من 36 نتيجة متساوية، 6 نتائج يظهر فيها العدد نفسه، فالكسر 6/36 = 1/6.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/6\",\n      \"reason\": \"من 36 نتيجة متساوية، 6 نتائج يظهر فيها العدد نفسه، فالكسر 6/36 = 1/6.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"120\",\n      \"reason\": \"ترتيب 5 لوحات مختلفة في صف هو 5! = 120.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"70\",\n      \"reason\": \"اختيار 4 من 8 هو C(8,4) = 70.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/8\",\n      \"reason\": \"من 8 نتائج متساوية، 3 نتائج فيها صورتان بالضبط، فالكسر 3/8.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/8\",\n      \"reason\": \"من 8 نتائج متساوية، 3 نتائج فيها صورتان بالضبط، فالكسر 3/8.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"35\",\n      \"reason\": \"اختيار 3 من 7 هو C(7,3) = 35.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/6\",\n      \"reason\": \"من 36 نتيجة متساوية، 6 نتائج يظهر فيها العدد نفسه، فالكسر 6/36 = 1/6.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/8\",\n      \"reason\": \"من 8 نتائج متساوية، 3 نتائج فيها صورتان بالضبط، فالكسر 3/8.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"6/11\",\n      \"reason\": \"P(أ|حمراء) = (1/2 × 3/5) / (1/2 × 3/5 + 1/2 × 4/8) = 6/11.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"9/17\",\n      \"reason\": \"P(أ|حمراء) = (1/2 × 3/8) / (1/2 × 3/8 + 1/2 × 1/3) = 9/17.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"10/17\",\n      \"reason\": \"P(أ|حمراء) = (1/2 × 4/7) / (1/2 × 4/7 + 1/2 × 2/5) = 10/17.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/5\",\n      \"reason\": \"بعد سحب أبيض بقي 3 بيض من 5، فاحتمال الثاني أبيض 3/5.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"5/7\",\n      \"reason\": \"بعد سحب أزرق بقي 5 زرق من 7، فاحتمال الثاني أزرق 5/7.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/2\",\n      \"reason\": \"بعد سحب أزرق بقي 2 زرق من 4، فاحتمال الثاني أزرق 2/4 = 1/2.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/2\",\n      \"reason\": \"بعد سحب حمراء بقي 5 حمر من 10، فاحتمال الثانية حمراء 5/10 = 1/2.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2/3\",\n      \"reason\": \"P(أ|حمراء) = (1/2 × 3/6) / (1/2 × 3/6 + 1/2 × 1/4) = 2/3.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"5/7\",\n      \"reason\": \"P(أ|حمراء) = (1/2 × 3/6) / (1/2 × 3/6 + 1/2 × 1/5) = 5/7.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"4 خرزات فيها حمراوان متماثلتان: 4!/2! = 12 ترتيبًا متميزًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/4\",\n      \"reason\": \"مع الإرجاع احتمال كل سحب رمادي 3/6 = 1/2، فالاحتمال (1/2)^2 = 1/4.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2/5\",\n      \"reason\": \"احتمال التطابق = (3/6 × 2/5) + (3/6 × 2/5) = 12/30 = 2/5.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4/7\",\n      \"reason\": \"احتمال التطابق = (6/8 × 5/7) + (2/8 × 1/7) = 32/56 = 4/7.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/14\",\n      \"reason\": \"C(4,2)/C(8,2) = 6/28 = 3/14.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"325\",\n      \"reason\": \"كل اللجان C(11,4)=330 ناقص لجان الرجال فقط C(5,4)=5 يعطي 325.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"4 خرزات فيها حمراوان متماثلتان: 4!/2! = 12 ترتيبًا متميزًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"4 خرزات فيها حمراوان متماثلتان: 4!/2! = 12 ترتيبًا متميزًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"21\",\n      \"reason\": \"بعد تثبيت خالد نختار 2 من 7: C(7,2) = 21.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"209\",\n      \"reason\": \"كل اللجان C(10,4)=210 ناقص لجان الرجال فقط C(4,4)=1 يعطي 209.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"21\",\n      \"reason\": \"بعد تثبيت خالد نختار 2 من 7: C(7,2) = 21.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"4 خرزات فيها حمراوان متماثلتان: 4!/2! = 12 ترتيبًا متميزًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"4 خرزات فيها حمراوان متماثلتان: 4!/2! = 12 ترتيبًا متميزًا.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 171016,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_logic_a_003.json",
+  "file_sha256": "5c7cdb802dadd9c3c3c73d5bdd679de7beb78192230af92e7a654b9ca0599272",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "constprob_a_0052",
+      "my_answer": "نورة، ريم، جواهر، مريم، سارة",
+      "reason": "حللت القيود: نورة قبل سارة، وبين نورة وجواهر واحد، وسارة خلف مريم مباشرة، وبين سارة وجواهر واحد. يفرض ذلك الترتيب الوحيد المذكور.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0090",
+      "my_answer": "طارق: استقبال الضيوف، ناصر: طبخ الرز، زياد: إعداد القهوة، فهد: ترتيب المجلس",
+      "reason": "ناصر طبخ الرز، وطارق لا يجيد القهوة ولا الترتيب فيأخذ الاستقبال، ثم الشرط يمنع فهد من القهوة فيأخذ الترتيب وزياد القهوة. التعيين وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0040",
+      "my_answer": "بدر، خالد، طارق، ناصر، سالم",
+      "reason": "بين سالم وطارق واحد وبين بدر وطارق واحد يقتضي أن طارق في المنتصف وسالم وبدر على الطرفين، وسالم يلي ناصرًا فيجعل ناصرًا قبله. الترتيب وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0082",
+      "my_answer": "ماجد، جاسم، خالد، زياد، بدر",
+      "reason": "جاسم قبل خالد قبل زياد، وجاسم قبل بدر، وجاسم ليس أولًا وزياد ليس أخيرًا. يفرض ذلك الترتيب الوحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0062",
+      "my_answer": "خالد، منصور، ماجد، ناصر، جاسم",
+      "reason": "ماجد بين خالد وجاسم وبعده عن خالد واحد، وماجد قبل ناصر وناصر قبل جاسم. ينتج الترتيب الوحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0033",
+      "my_answer": "تدريب اللياقة، تدريب التمرير، مباراة ودية، مراجعة الخطة",
+      "reason": "اللياقة السبت، والمباراة على بعد يوم واحد منها فالإثنين، والتمرير ليس السبت ولا الثلاثاء فالأحد، والمراجعة الثلاثاء. الجدول وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0006",
+      "my_answer": "أمسية الشعر، مسابقة الطبخ، عرض الفرقة الشعبية، ندوة التراث",
+      "reason": "الندوة الثلاثاء، والعرض يلي الطبخ مباشرة، وبين العرض والشعر يوم واحد. يفرض ذلك الترتيب الوحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0066",
+      "my_answer": "ندوة التراث، عرض الفرقة الشعبية، مسابقة الطبخ، أمسية الشعر",
+      "reason": "الندوة السبت، والطبخ على بعد يوم منها فالإثنين، والطبخ قبل الشعر فالشعر الثلاثاء، والعرض الأحد. الترتيب وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0048",
+      "my_answer": "ناصر: طبخ العشاء، فهد: جمع الحطب، سالم: قيادة السيارة، راشد: نصب الخيام",
+      "reason": "راشد نصب الخيام، وناصر لا يقود ولا يجمع الحطب فيطبخ، وسالم لا يجمع الحطب فيقود، وفهد يجمع الحطب. التعيين وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0047",
+      "my_answer": "راشد، فهد، زياد، ماجد، جاسم",
+      "reason": "فهد قبل زياد قبل ماجد وقبل جاسم، وفهد ليس أولًا وماجد ليس أخيرًا. يفرض ذلك الترتيب الوحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0008",
+      "my_answer": "لطيفة، هند، ريم، أمل",
+      "reason": "أمل تلي ريم مباشرة، ولطيفة وهند ليستا في الأخير، ولطيفة قبل هند. ينتج الترتيب الوحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0074",
+      "my_answer": "سالم: إدارة المقصف، جاسم: تنسيق الملعب، وليد: الإذاعة الصباحية",
+      "reason": "وليد في الإذاعة، وسالم لا يجيد تنسيق الملعب فيأخذ المقصف، وجاسم التنسيق. التعيين وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0089",
+      "my_answer": "زياد",
+      "reason": "خالد أولًا، وسالم قبل زياد قبل بدر قبل جاسم، فالترتيب الوحيد خالد، سالم، زياد، بدر، جاسم، والثالث زياد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0068",
+      "my_answer": "نورة، جواهر، مريم، ريم",
+      "reason": "جواهر ليست الأولى ولا الأخيرة، وجواهر قبل مريم قبل ريم. يفرض ذلك الترتيب الوحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0071",
+      "my_answer": "زياد: حدادة الشباك، راشد: خياطة الستائر، ناصر: صيانة المكيف",
+      "reason": "راشد خياطة الستائر، وناصر لا يجيد الخياطة ولا الحدادة فيصيانة المكيف، وزياد الحدادة. التعيين وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0086",
+      "my_answer": "ريم",
+      "reason": "نورة ليست أولًا، وأمل بعد نورة وقبل مريم، وريم ليست أخيرة. الترتيب الوحيد ريم، نورة، أمل، مريم، فالأول ريم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0087",
+      "my_answer": "فهد، منصور، زياد، وليد، ناصر",
+      "reason": "فهد أولًا، وناصر خلف وليد مباشرة، وزياد قبل وليد، ومنصور قبل زياد. يفرض ذلك الترتيب الوحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0004",
+      "my_answer": "سارة",
+      "reason": "مريم أولًا، وسارة قبل حصة قبل أمل، وأمل ليست أخيرة. الترتيب الوحيد مريم، سارة، حصة، أمل، منيرة، فالثاني سارة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0067",
+      "my_answer": "هند",
+      "reason": "أمل قبل منيرة قبل هند قبل نورة قبل مريم، فالترتيب الوحيد والثالث هند.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "أضف قيدًا يزيل التماثل مثل «مقعد حصة أقرب إلى اليمين من مقعد مريم» أو اقبل أي ترتيب يحقق القرائن.",
+      "id": "constprob_a_0056",
+      "my_answer": "سارة، حصة، أمل، مريم، منيرة (ويوجد حل آخر: سارة، مريم، أمل، حصة، منيرة)",
+      "reason": "القرائن لا تفرض ترتيبًا واحدًا: يمكن تبديل حصة ومريم في المقعدين الثاني والرابع مع بقاء أمل بينهما، وكل القرائن تتحقق. لذا الحالة غير فريدة والمرجع ليس الوحيد.",
+      "reference": "ambiguous",
+      "rubric": "insufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0023",
+      "my_answer": "سارة",
+      "reason": "أمل قبل حصة قبل سارة قبل ريم، فالترتيب الوحيد والثالث سارة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0027",
+      "my_answer": "جاسم: جمع الحطب، منصور: طبخ العشاء، طارق: نصب الخيام",
+      "reason": "طارق لا يطبخ ولا يجمع الحطب فينصب الخيام، والشرط يمنع جاسمًا من الطبخ فيجمع الحطب، ومنصور يطبخ. التعيين وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0064",
+      "my_answer": "جاسم: نجارة الباب، فهد: صيانة المكيف، بدر: خياطة الستائر",
+      "reason": "بدر خياطة الستائر، وفهد لا يجيد النجارة فيصيانة المكيف، وجاسم النجارة. التعيين وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0034",
+      "my_answer": "منيرة، مريم، هند، أمل، ريم",
+      "reason": "ريم أخيرة، وهند خلف مريم مباشرة، ومنيرة قبل مريم قبل أمل. يفرض ذلك الترتيب الوحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0081",
+      "my_answer": "جاسم: طبخ العشاء، سالم: جمع الحطب، منصور: نصب الخيام",
+      "reason": "منصور نصب الخيام، وسالم لا يجيد النصب، وجاسم لا يجيد جمع الحطب. التعيين وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0084",
+      "my_answer": "نورة",
+      "reason": "أمل أولًا، ومنيرة قبل مريم قبل نورة قبل ريم، فالترتيب الوحيد والرابع نورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0028",
+      "my_answer": "أمل",
+      "reason": "جواهر قبل سارة قبل أمل قبل لطيفة، فالترتيب الوحيد والثالث أمل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0077",
+      "my_answer": "جاسم: حدادة الشباك، ناصر: خياطة الستائر، راشد: نجارة الباب",
+      "reason": "جاسم حدادة الشباك، وناصر لا يجيد الحدادة ولا النجارة فيخيط الستائر، وراشد النجارة. التعيين وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0044",
+      "my_answer": "لطيفة",
+      "reason": "مريم قبل لطيفة قبل هند قبل جواهر قبل ريم، فالترتيب الوحيد والثاني لطيفة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0032",
+      "my_answer": "زياد، ناصر، طارق، خالد",
+      "reason": "خالد في الأخير، وناصر يلي زيادًا مباشرة وبينه وبين طارق، فيكون الترتيب زياد، ناصر، طارق، خالد. وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0041",
+      "my_answer": "سالم: تنسيق الملعب، راشد: الإذاعة الصباحية، بدر: إدارة المقصف",
+      "reason": "سالم تنسيق الملعب، وبدر وسالم لا يجيدان الإذاعة فراشد الإذاعة، وبدر المقصف. التعيين وحيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0083",
+      "my_answer": "7/8",
+      "reason": "احتمال عدم ظهور الصورة إطلاقًا هو 1/8، فالمطلوب 1 - 1/8 = 7/8.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0054",
+      "my_answer": "1/6",
+      "reason": "من 36 نتيجة متساوية، 6 نتائج يظهر فيها العدد نفسه، فالكسر 6/36 = 1/6.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0035",
+      "my_answer": "1/6",
+      "reason": "من 36 نتيجة متساوية، 6 نتائج يظهر فيها العدد نفسه، فالكسر 6/36 = 1/6.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0007",
+      "my_answer": "120",
+      "reason": "ترتيب 5 لوحات مختلفة في صف هو 5! = 120.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0053",
+      "my_answer": "70",
+      "reason": "اختيار 4 من 8 هو C(8,4) = 70.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0088",
+      "my_answer": "3/8",
+      "reason": "من 8 نتائج متساوية، 3 نتائج فيها صورتان بالضبط، فالكسر 3/8.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0019",
+      "my_answer": "3/8",
+      "reason": "من 8 نتائج متساوية، 3 نتائج فيها صورتان بالضبط، فالكسر 3/8.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0069",
+      "my_answer": "35",
+      "reason": "اختيار 3 من 7 هو C(7,3) = 35.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0001",
+      "my_answer": "1/6",
+      "reason": "من 36 نتيجة متساوية، 6 نتائج يظهر فيها العدد نفسه، فالكسر 6/36 = 1/6.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0014",
+      "my_answer": "3/8",
+      "reason": "من 8 نتائج متساوية، 3 نتائج فيها صورتان بالضبط، فالكسر 3/8.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0078",
+      "my_answer": "6/11",
+      "reason": "P(أ|حمراء) = (1/2 × 3/5) / (1/2 × 3/5 + 1/2 × 4/8) = 6/11.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0029",
+      "my_answer": "9/17",
+      "reason": "P(أ|حمراء) = (1/2 × 3/8) / (1/2 × 3/8 + 1/2 × 1/3) = 9/17.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0059",
+      "my_answer": "10/17",
+      "reason": "P(أ|حمراء) = (1/2 × 4/7) / (1/2 × 4/7 + 1/2 × 2/5) = 10/17.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0051",
+      "my_answer": "3/5",
+      "reason": "بعد سحب أبيض بقي 3 بيض من 5، فاحتمال الثاني أبيض 3/5.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0060",
+      "my_answer": "5/7",
+      "reason": "بعد سحب أزرق بقي 5 زرق من 7، فاحتمال الثاني أزرق 5/7.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0026",
+      "my_answer": "1/2",
+      "reason": "بعد سحب أزرق بقي 2 زرق من 4، فاحتمال الثاني أزرق 2/4 = 1/2.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0018",
+      "my_answer": "1/2",
+      "reason": "بعد سحب حمراء بقي 5 حمر من 10، فاحتمال الثانية حمراء 5/10 = 1/2.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0070",
+      "my_answer": "2/3",
+      "reason": "P(أ|حمراء) = (1/2 × 3/6) / (1/2 × 3/6 + 1/2 × 1/4) = 2/3.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0076",
+      "my_answer": "5/7",
+      "reason": "P(أ|حمراء) = (1/2 × 3/6) / (1/2 × 3/6 + 1/2 × 1/5) = 5/7.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0017",
+      "my_answer": "12",
+      "reason": "4 خرزات فيها حمراوان متماثلتان: 4!/2! = 12 ترتيبًا متميزًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0075",
+      "my_answer": "1/4",
+      "reason": "مع الإرجاع احتمال كل سحب رمادي 3/6 = 1/2، فالاحتمال (1/2)^2 = 1/4.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0012",
+      "my_answer": "2/5",
+      "reason": "احتمال التطابق = (3/6 × 2/5) + (3/6 × 2/5) = 12/30 = 2/5.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0031",
+      "my_answer": "4/7",
+      "reason": "احتمال التطابق = (6/8 × 5/7) + (2/8 × 1/7) = 32/56 = 4/7.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0063",
+      "my_answer": "3/14",
+      "reason": "C(4,2)/C(8,2) = 6/28 = 3/14.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0005",
+      "my_answer": "325",
+      "reason": "كل اللجان C(11,4)=330 ناقص لجان الرجال فقط C(5,4)=5 يعطي 325.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0021",
+      "my_answer": "12",
+      "reason": "4 خرزات فيها حمراوان متماثلتان: 4!/2! = 12 ترتيبًا متميزًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0025",
+      "my_answer": "12",
+      "reason": "4 خرزات فيها حمراوان متماثلتان: 4!/2! = 12 ترتيبًا متميزًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0036",
+      "my_answer": "21",
+      "reason": "بعد تثبيت خالد نختار 2 من 7: C(7,2) = 21.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0050",
+      "my_answer": "209",
+      "reason": "كل اللجان C(10,4)=210 ناقص لجان الرجال فقط C(4,4)=1 يعطي 209.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0061",
+      "my_answer": "21",
+      "reason": "بعد تثبيت خالد نختار 2 من 7: C(7,2) = 21.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0020",
+      "my_answer": "12",
+      "reason": "4 خرزات فيها حمراوان متماثلتان: 4!/2! = 12 ترتيبًا متميزًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0010",
+      "my_answer": "12",
+      "reason": "4 خرزات فيها حمراوان متماثلتان: 4!/2! = 12 ترتيبًا متميزًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T19:01:31Z"
+}

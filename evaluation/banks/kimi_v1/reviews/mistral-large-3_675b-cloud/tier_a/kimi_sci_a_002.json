@@ -1,0 +1,571 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-7b-instruct-v0.3\",\n  \"file\": \"kimi_sci_a_002\",\n  \"judgments\": [\n    {\n      \"id\": \"sci_a2_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,1,1,1\",\n      \"reason\": \"المعادلة موزونة بالفعل بالمعاملات 1,1,1,1، حيث يتساوى عدد الذرات لكل عنصر في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,1,1,1\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,1,1,1، حيث يتساوى عدد الذرات لكل عنصر في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,1,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,1,2، حيث يتساوى عدد ذرات الهيدروجين والكلور في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2,1,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 2,1,2، حيث يتساوى عدد ذرات النيتروجين والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,2,1,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,2,1,2، حيث يتساوى عدد ذرات الكربون والهيدروجين والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,1,1,1\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,1,1,1، حيث يتساوى عدد الذرات لكل عنصر في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2,2,1\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 2,2,1، حيث يتساوى عدد ذرات الهيدروجين والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,2,1,1\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,2,1,1، حيث يتساوى عدد ذرات الزنك والهيدروجين والكلور في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2,1,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 2,1,2، حيث يتساوى عدد ذرات الكربون والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2,1,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 2,1,2، حيث يتساوى عدد ذرات الهيدروجين والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,3,1,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,3,1,2، حيث يتساوى عدد ذرات الكربون والكبريت والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4,5,4,6\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 4,5,4,6، حيث يتساوى عدد ذرات النيتروجين والهيدروجين والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,2,2,1,1\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,2,2,1,1، حيث يتساوى عدد ذرات الصوديوم والكربون والهيدروجين والكلور والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2,6,2,3\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 2,6,2,3، حيث يتساوى عدد ذرات الألمنيوم والهيدروجين والكلور في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,2,1,1,1\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,2,1,1,1، حيث يتساوى عدد ذرات الكالسيوم والكربون والهيدروجين والكلور والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,2,1,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,2,1,2، حيث يتساوى عدد ذرات الحديد والألمنيوم والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2,3,2,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 2,3,2,2، حيث يتساوى عدد ذرات الهيدروجين والكبريت والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,5,3,4\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,5,3,4، حيث يتساوى عدد ذرات الكربون والهيدروجين والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"6,1,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 6,1,2، حيث يتساوى عدد ذرات الليثيوم والنيتروجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,3,2,3\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,3,2,3، حيث يتساوى عدد ذرات الحديد والكربون والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2,5,4,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 2,5,4,2، حيث يتساوى عدد ذرات الكربون والهيدروجين والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3,2,1,6\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 3,2,1,6، حيث يتساوى عدد ذرات الكالسيوم والصوديوم والفوسفور والكلور والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2,3,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 2,3,2، حيث يتساوى عدد ذرات الحديد والكلور في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,1,1,1,1\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,1,1,1,1، حيث يتساوى عدد ذرات الصوديوم والكربون والهيدروجين والكلور والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4,3,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 4,3,2، حيث يتساوى عدد ذرات الألمنيوم والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2,1,1,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 2,1,1,2، حيث يتساوى عدد ذرات الهيدروجين والكلور والكالسيوم والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4,3,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 4,3,2، حيث يتساوى عدد ذرات الحديد والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,3,2,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,3,2,2، حيث يتساوى عدد ذرات الكربون والهيدروجين والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,1,1,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,1,1,2، حيث يتساوى عدد ذرات الباريوم والصوديوم والكبريت والكلور والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,3,1,3\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,3,1,3، حيث يتساوى عدد ذرات الحديد والكلور والصوديوم والهيدروجين والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,3,1,3\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,3,1,3، حيث يتساوى عدد ذرات الهيدروجين والصوديوم والفوسفور والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3,1,1\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 3,1,1، حيث يتساوى عدد ذرات المغنيسيوم والنيتروجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2,2,3\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 2,2,3، حيث يتساوى عدد ذرات البوتاسيوم والكلور والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,2,1,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,2,1,2، حيث يتساوى عدد ذرات الرصاص والبوتاسيوم واليود والنيتروجين والأكسجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1,3,2\",\n      \"reason\": \"المعادلة موزونة بالمعاملات 1,3,2، حيث يتساوى عدد ذرات النيتروجين والهيدروجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3,1,2\",\n      \"reason\": \"المعادلة الثانية موزونة بالمعاملات 3,1,2، حيث يتساوى عدد ذرات الهيدروجين والنيتروجين في الطرفين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0092\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.80\",\n      \"reason\": \"تركيز أيونات البوتاسيوم هو ضعف تركيز كبريتات البوتاسيوم بسبب التفكك التام، أي 0.4 × 2 = 0.80 مول/لتر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0090\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.60\",\n      \"reason\": \"تركيز أيونات الصوديوم هو ضعف تركيز كبريتات الصوديوم بسبب التفكك التام، أي 0.3 × 2 = 0.60 مول/لتر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2.00\",\n      \"reason\": \"عدد المولات = 0.2 × 0.25 = 0.05 مول، والكتلة المولية لـ NaOH = 40 غ/مول، فتكون الكتلة = 0.05 × 40 = 2.00 غ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0085\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2.00\",\n      \"reason\": \"كل مول من H2SO4 يحتوي 4 مول من ذرات الأكسجين، فتكون الكمية = 0.5 × 4 = 2.00 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1.20\",\n      \"reason\": \"كل مول من KNO3 يحتوي 3 مول من ذرات الأكسجين، فتكون الكمية = 0.4 × 3 = 1.20 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"11.70\",\n      \"reason\": \"عدد المولات = 0.4 × 0.5 = 0.20 مول، والكتلة المولية لـ NaCl = 58.5 غ/مول، فتكون الكتلة = 0.20 × 58.5 = 11.70 غ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"158.0\",\n      \"reason\": \"الكتلة المولية لـ KMnO4 = 39 + 55 + (4 × 16) = 158 غ/مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0086\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3.00\",\n      \"reason\": \"كل مول من Al2(SO4)3 يحتوي 12 مول من ذرات الأكسجين، فتكون الكمية = 0.25 × 12 = 3.00 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1.00\",\n      \"reason\": \"تركيز أيونات الكلوريد هو ضعف تركيز كلوريد الكالسيوم بسبب التفكك التام، أي 0.5 × 2 = 1.00 مول/لتر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"74.0\",\n      \"reason\": \"الكتلة المولية لـ Ca(OH)2 = 40 + (2 × 16) + (2 × 1) = 74 غ/مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.50\",\n      \"reason\": \"الكتلة المولية لـ C6H12O6 = (6 × 12) + (12 × 1) + (6 × 16) = 180 غ/مول، فتكون عدد المولات = 90 / 180 = 0.50 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0083\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"500.0\",\n      \"reason\": \"باستخدام قانون التخفيف C1V1 = C2V2، يكون الحجم النهائي V2 = (4.0 × 25.0) / 0.2 = 500.0 مل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.15\",\n      \"reason\": \"عدد المولات = 0.2 × 0.75 = 0.15 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"98.0\",\n      \"reason\": \"الكتلة المولية لـ H2SO4 = (2 × 1) + 32 + (4 × 16) = 98 غ/مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0072\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.25\",\n      \"reason\": \"الحجم باللتر = 0.4 لتر، فتكون التركيز = 0.1 / 0.4 = 0.25 مول/لتر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"84.0\",\n      \"reason\": \"الكتلة المولية لـ NaHCO3 = 23 + 1 + 12 + (3 × 16) = 84 غ/مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2.00\",\n      \"reason\": \"الكتلة المولية لـ NaCl = 23 + 35.5 = 58.5 غ/مول، فتكون عدد المولات = 117 / 58.5 = 2.00 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.50\",\n      \"reason\": \"الكتلة المولية لـ KNO3 = 39 + 14 + (3 × 16) = 101 غ/مول، فتكون عدد المولات = 50.5 / 101 = 0.50 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2.00\",\n      \"reason\": \"الكتلة المولية لـ H2O = (2 × 1) + 16 = 18 غ/مول، فتكون عدد المولات = 36 / 18 = 2.00 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0094\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"15.05\",\n      \"reason\": \"عدد وحدات الصيغة = 2.5 × 6.02 × 10^23 = 15.05 × 10^23.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.50\",\n      \"reason\": \"الكتلة المولية لـ NaOH = 23 + 16 + 1 = 40 غ/مول، فتكون عدد المولات = 20 / 40 = 0.50 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"51.0\",\n      \"reason\": \"الكتلة المولية لـ NH3 = 14 + (3 × 1) = 17 غ/مول، فتكون الكتلة = 3 × 17 = 51 غ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4.00\",\n      \"reason\": \"الحجم باللتر = 0.5 لتر، فتكون التركيز = 2 / 0.5 = 4.00 مول/لتر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"24.5\",\n      \"reason\": \"الكتلة المولية لـ H2SO4 = 98 غ/مول، فتكون الكتلة = 0.25 × 98 = 24.5 غ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.15\",\n      \"reason\": \"عدد المولات = 1.0 × 0.15 = 0.15 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.20\",\n      \"reason\": \"عدد المولات = 0.5 × 0.4 = 0.20 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2.00\",\n      \"reason\": \"الحجم باللتر = 0.25 لتر، فتكون التركيز = 0.5 / 0.25 = 2.00 مول/لتر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0096\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.20\",\n      \"reason\": \"التركيز 2.00 مول/لتر في 100 مل (0.1 لتر) يعطي عدد مولات = 2.00 × 0.1 = 0.20 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2.50\",\n      \"reason\": \"الحجم باللتر = 0.1 لتر، فتكون التركيز = 0.25 / 0.1 = 2.50 مول/لتر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0073\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.50\",\n      \"reason\": \"عدد المولات = 2.0 × 0.25 = 0.50 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"53.0\",\n      \"reason\": \"الكتلة المولية لـ Na2CO3 = (2 × 23) + 12 + (3 × 16) = 106 غ/مول، فتكون الكتلة = 0.5 × 106 = 53 غ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0082\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"400.0\",\n      \"reason\": \"باستخدام قانون التخفيف C1V1 = C2V2، يكون الحجم النهائي V2 = (1.0 × 100) / 0.25 = 400.0 مل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a2_0097\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.25\",\n      \"reason\": \"التركيز 1 مول/لتر في 250 مل (0.25 لتر) يعطي عدد مولات = 1 × 0.25 = 0.25 مول.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 69790,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_sci_a_002.json",
+  "file_sha256": "189f64226614c96697749bc3dce32651c455893225a55ec60a21b994573b0776",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "sci_a2_0025",
+      "my_answer": "1,1,1,1",
+      "reason": "المعادلة موزونة بالفعل بالمعاملات 1,1,1,1، حيث يتساوى عدد الذرات لكل عنصر في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0041",
+      "my_answer": "1,1,1,1",
+      "reason": "المعادلة موزونة بالمعاملات 1,1,1,1، حيث يتساوى عدد الذرات لكل عنصر في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0035",
+      "my_answer": "1,1,2",
+      "reason": "المعادلة موزونة بالمعاملات 1,1,2، حيث يتساوى عدد ذرات الهيدروجين والكلور في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0034",
+      "my_answer": "2,1,2",
+      "reason": "المعادلة موزونة بالمعاملات 2,1,2، حيث يتساوى عدد ذرات النيتروجين والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0003",
+      "my_answer": "1,2,1,2",
+      "reason": "المعادلة موزونة بالمعاملات 1,2,1,2، حيث يتساوى عدد ذرات الكربون والهيدروجين والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0029",
+      "my_answer": "1,1,1,1",
+      "reason": "المعادلة موزونة بالمعاملات 1,1,1,1، حيث يتساوى عدد الذرات لكل عنصر في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0024",
+      "my_answer": "2,2,1",
+      "reason": "المعادلة موزونة بالمعاملات 2,2,1، حيث يتساوى عدد ذرات الهيدروجين والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0012",
+      "my_answer": "1,2,1,1",
+      "reason": "المعادلة موزونة بالمعاملات 1,2,1,1، حيث يتساوى عدد ذرات الزنك والهيدروجين والكلور في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0047",
+      "my_answer": "2,1,2",
+      "reason": "المعادلة موزونة بالمعاملات 2,1,2، حيث يتساوى عدد ذرات الكربون والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0001",
+      "my_answer": "2,1,2",
+      "reason": "المعادلة موزونة بالمعاملات 2,1,2، حيث يتساوى عدد ذرات الهيدروجين والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0049",
+      "my_answer": "1,3,1,2",
+      "reason": "المعادلة موزونة بالمعاملات 1,3,1,2، حيث يتساوى عدد ذرات الكربون والكبريت والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0030",
+      "my_answer": "4,5,4,6",
+      "reason": "المعادلة موزونة بالمعاملات 4,5,4,6، حيث يتساوى عدد ذرات النيتروجين والهيدروجين والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0039",
+      "my_answer": "1,2,2,1,1",
+      "reason": "المعادلة موزونة بالمعاملات 1,2,2,1,1، حيث يتساوى عدد ذرات الصوديوم والكربون والهيدروجين والكلور والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0013",
+      "my_answer": "2,6,2,3",
+      "reason": "المعادلة موزونة بالمعاملات 2,6,2,3، حيث يتساوى عدد ذرات الألمنيوم والهيدروجين والكلور في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0021",
+      "my_answer": "1,2,1,1,1",
+      "reason": "المعادلة موزونة بالمعاملات 1,2,1,1,1، حيث يتساوى عدد ذرات الكالسيوم والكربون والهيدروجين والكلور والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0027",
+      "my_answer": "1,2,1,2",
+      "reason": "المعادلة موزونة بالمعاملات 1,2,1,2، حيث يتساوى عدد ذرات الحديد والألمنيوم والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0048",
+      "my_answer": "2,3,2,2",
+      "reason": "المعادلة موزونة بالمعاملات 2,3,2,2، حيث يتساوى عدد ذرات الهيدروجين والكبريت والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0005",
+      "my_answer": "1,5,3,4",
+      "reason": "المعادلة موزونة بالمعاملات 1,5,3,4، حيث يتساوى عدد ذرات الكربون والهيدروجين والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0046",
+      "my_answer": "6,1,2",
+      "reason": "المعادلة موزونة بالمعاملات 6,1,2، حيث يتساوى عدد ذرات الليثيوم والنيتروجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0026",
+      "my_answer": "1,3,2,3",
+      "reason": "المعادلة موزونة بالمعاملات 1,3,2,3، حيث يتساوى عدد ذرات الحديد والكربون والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0008",
+      "my_answer": "2,5,4,2",
+      "reason": "المعادلة موزونة بالمعاملات 2,5,4,2، حيث يتساوى عدد ذرات الكربون والهيدروجين والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0043",
+      "my_answer": "3,2,1,6",
+      "reason": "المعادلة موزونة بالمعاملات 3,2,1,6، حيث يتساوى عدد ذرات الكالسيوم والصوديوم والفوسفور والكلور والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0036",
+      "my_answer": "2,3,2",
+      "reason": "المعادلة موزونة بالمعاملات 2,3,2، حيث يتساوى عدد ذرات الحديد والكلور في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0022",
+      "my_answer": "1,1,1,1,1",
+      "reason": "المعادلة موزونة بالمعاملات 1,1,1,1,1، حيث يتساوى عدد ذرات الصوديوم والكربون والهيدروجين والكلور والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0010",
+      "my_answer": "4,3,2",
+      "reason": "المعادلة موزونة بالمعاملات 4,3,2، حيث يتساوى عدد ذرات الألمنيوم والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0018",
+      "my_answer": "2,1,1,2",
+      "reason": "المعادلة موزونة بالمعاملات 2,1,1,2، حيث يتساوى عدد ذرات الهيدروجين والكلور والكالسيوم والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0009",
+      "my_answer": "4,3,2",
+      "reason": "المعادلة موزونة بالمعاملات 4,3,2، حيث يتساوى عدد ذرات الحديد والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0007",
+      "my_answer": "1,3,2,2",
+      "reason": "المعادلة موزونة بالمعاملات 1,3,2,2، حيث يتساوى عدد ذرات الكربون والهيدروجين والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0040",
+      "my_answer": "1,1,1,2",
+      "reason": "المعادلة موزونة بالمعاملات 1,1,1,2، حيث يتساوى عدد ذرات الباريوم والصوديوم والكبريت والكلور والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0044",
+      "my_answer": "1,3,1,3",
+      "reason": "المعادلة موزونة بالمعاملات 1,3,1,3، حيث يتساوى عدد ذرات الحديد والكلور والصوديوم والهيدروجين والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0019",
+      "my_answer": "1,3,1,3",
+      "reason": "المعادلة موزونة بالمعاملات 1,3,1,3، حيث يتساوى عدد ذرات الهيدروجين والصوديوم والفوسفور والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0045",
+      "my_answer": "3,1,1",
+      "reason": "المعادلة موزونة بالمعاملات 3,1,1، حيث يتساوى عدد ذرات المغنيسيوم والنيتروجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0023",
+      "my_answer": "2,2,3",
+      "reason": "المعادلة موزونة بالمعاملات 2,2,3، حيث يتساوى عدد ذرات البوتاسيوم والكلور والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0042",
+      "my_answer": "1,2,1,2",
+      "reason": "المعادلة موزونة بالمعاملات 1,2,1,2، حيث يتساوى عدد ذرات الرصاص والبوتاسيوم واليود والنيتروجين والأكسجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0002",
+      "my_answer": "1,3,2",
+      "reason": "المعادلة موزونة بالمعاملات 1,3,2، حيث يتساوى عدد ذرات النيتروجين والهيدروجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0050",
+      "my_answer": "3,1,2",
+      "reason": "المعادلة الثانية موزونة بالمعاملات 3,1,2، حيث يتساوى عدد ذرات الهيدروجين والنيتروجين في الطرفين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0092",
+      "my_answer": "0.80",
+      "reason": "تركيز أيونات البوتاسيوم هو ضعف تركيز كبريتات البوتاسيوم بسبب التفكك التام، أي 0.4 × 2 = 0.80 مول/لتر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0090",
+      "my_answer": "0.60",
+      "reason": "تركيز أيونات الصوديوم هو ضعف تركيز كبريتات الصوديوم بسبب التفكك التام، أي 0.3 × 2 = 0.60 مول/لتر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0077",
+      "my_answer": "2.00",
+      "reason": "عدد المولات = 0.2 × 0.25 = 0.05 مول، والكتلة المولية لـ NaOH = 40 غ/مول، فتكون الكتلة = 0.05 × 40 = 2.00 غ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0085",
+      "my_answer": "2.00",
+      "reason": "كل مول من H2SO4 يحتوي 4 مول من ذرات الأكسجين، فتكون الكمية = 0.5 × 4 = 2.00 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0088",
+      "my_answer": "1.20",
+      "reason": "كل مول من KNO3 يحتوي 3 مول من ذرات الأكسجين، فتكون الكمية = 0.4 × 3 = 1.20 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0078",
+      "my_answer": "11.70",
+      "reason": "عدد المولات = 0.4 × 0.5 = 0.20 مول، والكتلة المولية لـ NaCl = 58.5 غ/مول، فتكون الكتلة = 0.20 × 58.5 = 11.70 غ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0066",
+      "my_answer": "158.0",
+      "reason": "الكتلة المولية لـ KMnO4 = 39 + 55 + (4 × 16) = 158 غ/مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0086",
+      "my_answer": "3.00",
+      "reason": "كل مول من Al2(SO4)3 يحتوي 12 مول من ذرات الأكسجين، فتكون الكمية = 0.25 × 12 = 3.00 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0089",
+      "my_answer": "1.00",
+      "reason": "تركيز أيونات الكلوريد هو ضعف تركيز كلوريد الكالسيوم بسبب التفكك التام، أي 0.5 × 2 = 1.00 مول/لتر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0065",
+      "my_answer": "74.0",
+      "reason": "الكتلة المولية لـ Ca(OH)2 = 40 + (2 × 16) + (2 × 1) = 74 غ/مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0055",
+      "my_answer": "0.50",
+      "reason": "الكتلة المولية لـ C6H12O6 = (6 × 12) + (12 × 1) + (6 × 16) = 180 غ/مول، فتكون عدد المولات = 90 / 180 = 0.50 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0083",
+      "my_answer": "500.0",
+      "reason": "باستخدام قانون التخفيف C1V1 = C2V2، يكون الحجم النهائي V2 = (4.0 × 25.0) / 0.2 = 500.0 مل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0076",
+      "my_answer": "0.15",
+      "reason": "عدد المولات = 0.2 × 0.75 = 0.15 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0062",
+      "my_answer": "98.0",
+      "reason": "الكتلة المولية لـ H2SO4 = (2 × 1) + 32 + (4 × 16) = 98 غ/مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0072",
+      "my_answer": "0.25",
+      "reason": "الحجم باللتر = 0.4 لتر، فتكون التركيز = 0.1 / 0.4 = 0.25 مول/لتر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0067",
+      "my_answer": "84.0",
+      "reason": "الكتلة المولية لـ NaHCO3 = 23 + 1 + 12 + (3 × 16) = 84 غ/مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0052",
+      "my_answer": "2.00",
+      "reason": "الكتلة المولية لـ NaCl = 23 + 35.5 = 58.5 غ/مول، فتكون عدد المولات = 117 / 58.5 = 2.00 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0056",
+      "my_answer": "0.50",
+      "reason": "الكتلة المولية لـ KNO3 = 39 + 14 + (3 × 16) = 101 غ/مول، فتكون عدد المولات = 50.5 / 101 = 0.50 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0054",
+      "my_answer": "2.00",
+      "reason": "الكتلة المولية لـ H2O = (2 × 1) + 16 = 18 غ/مول، فتكون عدد المولات = 36 / 18 = 2.00 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0094",
+      "my_answer": "15.05",
+      "reason": "عدد وحدات الصيغة = 2.5 × 6.02 × 10^23 = 15.05 × 10^23.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0051",
+      "my_answer": "0.50",
+      "reason": "الكتلة المولية لـ NaOH = 23 + 16 + 1 = 40 غ/مول، فتكون عدد المولات = 20 / 40 = 0.50 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0061",
+      "my_answer": "51.0",
+      "reason": "الكتلة المولية لـ NH3 = 14 + (3 × 1) = 17 غ/مول، فتكون الكتلة = 3 × 17 = 51 غ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0069",
+      "my_answer": "4.00",
+      "reason": "الحجم باللتر = 0.5 لتر، فتكون التركيز = 2 / 0.5 = 4.00 مول/لتر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0059",
+      "my_answer": "24.5",
+      "reason": "الكتلة المولية لـ H2SO4 = 98 غ/مول، فتكون الكتلة = 0.25 × 98 = 24.5 غ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0075",
+      "my_answer": "0.15",
+      "reason": "عدد المولات = 1.0 × 0.15 = 0.15 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0074",
+      "my_answer": "0.20",
+      "reason": "عدد المولات = 0.5 × 0.4 = 0.20 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0068",
+      "my_answer": "2.00",
+      "reason": "الحجم باللتر = 0.25 لتر، فتكون التركيز = 0.5 / 0.25 = 2.00 مول/لتر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0096",
+      "my_answer": "0.20",
+      "reason": "التركيز 2.00 مول/لتر في 100 مل (0.1 لتر) يعطي عدد مولات = 2.00 × 0.1 = 0.20 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0070",
+      "my_answer": "2.50",
+      "reason": "الحجم باللتر = 0.1 لتر، فتكون التركيز = 0.25 / 0.1 = 2.50 مول/لتر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0073",
+      "my_answer": "0.50",
+      "reason": "عدد المولات = 2.0 × 0.25 = 0.50 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0058",
+      "my_answer": "53.0",
+      "reason": "الكتلة المولية لـ Na2CO3 = (2 × 23) + 12 + (3 × 16) = 106 غ/مول، فتكون الكتلة = 0.5 × 106 = 53 غ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0082",
+      "my_answer": "400.0",
+      "reason": "باستخدام قانون التخفيف C1V1 = C2V2، يكون الحجم النهائي V2 = (1.0 × 100) / 0.25 = 400.0 مل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a2_0097",
+      "my_answer": "0.25",
+      "reason": "التركيز 1 مول/لتر في 250 مل (0.25 لتر) يعطي عدد مولات = 1 × 0.25 = 0.25 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T19:41:40Z"
+}

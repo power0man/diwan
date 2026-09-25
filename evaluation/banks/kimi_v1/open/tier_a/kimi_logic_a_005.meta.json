@@ -1,0 +1,419 @@
+{
+  "suite_id": "kimi_logic_a_005",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "cprob2_a_0006": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب بقيود نسبية قبل/بعد/ليس مجاورًا، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0004": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "توزيع أزواج بشروط اجتماع وافتراق، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0084": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب بقيود نسبية قبل/بعد/ليس مجاورًا، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0087": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب بقيود نسبية قبل/بعد/ليس مجاورًا، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0027": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ترتيب بقيود نسبية قبل/بعد/ليس مجاورًا، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0090": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "توزيع أزواج بشروط اجتماع وافتراق، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0007": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "توزيع أزواج بشروط اجتماع وافتراق، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0072": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0005": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ترتيب بقيود نسبية قبل/بعد/ليس مجاورًا، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0003": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0048": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0033": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "توزيع أزواج بشروط اجتماع وافتراق، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0085": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "توزيع أزواج بشروط اجتماع وافتراق، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0080": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0046": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب بقيود نسبية قبل/بعد/ليس مجاورًا، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0058": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب بقيود نسبية قبل/بعد/ليس مجاورًا، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0070": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "توزيع فريقين بشروط اجتماع وافتراق وقائدين ثابتين، حل فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0040": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب بقيود نسبية قبل/بعد/ليس مجاورًا، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0001": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0020": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0052": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "توزيع فريقين بشروط اجتماع وافتراق وقائدين ثابتين، حل فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0086": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0019": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "توزيع فريقين بشروط اجتماع وافتراق وقائدين ثابتين، حل فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0012": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "توزيع أزواج بشروط اجتماع وافتراق، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0075": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0073": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب بقيود نسبية قبل/بعد/ليس مجاورًا، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0071": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "توزيع فريقين بشروط اجتماع وافتراق وقائدين ثابتين، حل فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0045": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "توزيع فريقين بشروط اجتماع وافتراق وقائدين ثابتين، حل فريد مؤكد برمجيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0059": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0050": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0082": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مسألة جدولة بقيود ترتيب وقاعات، تأكد برنامج brute-force من فرادة الحل قبل اعتمادها.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0088": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب بقيود نسبية قبل/بعد/ليس مجاورًا، تأكد البرنامج من فرادة الحل.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0060": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بايز مع صندوقين؛ حساب بالكسور الدقيقة.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0063": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بايز مع صندوقين؛ حساب بالكسور الدقيقة.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0054": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بايز مع صندوقين؛ حساب بالكسور الدقيقة.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0062": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال عكسي (بايز) في مراقبة جودة بمصدرين.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0038": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال المرض رغم سلبية الفحص؛ متمّم القيمة التنبؤية السلبية.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0032": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال المرض رغم سلبية الفحص؛ متمّم القيمة التنبؤية السلبية.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0076": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال شرطي في سياق قبول/اختبار واقعي.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0037": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال عكسي (بايز) في مراقبة جودة بمصدرين.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0010": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال المرض رغم سلبية الفحص؛ متمّم القيمة التنبؤية السلبية.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0051": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال شرطي بايزي لفحص طبي؛ يُحسب بالكسور الجبرية الدقيقة.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ معدل الأساس: رغم إيجابية الفحص يبقى الاحتمال أقل من النصف لندرة المرض؛ من يتجاهل الانتشار يجيب بقرب الحساسية."
+    },
+    "cprob2_a_0008": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال شرطي بايزي لفحص طبي؛ يُحسب بالكسور الجبرية الدقيقة.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ معدل الأساس: رغم إيجابية الفحص يبقى الاحتمال أقل من النصف لندرة المرض؛ من يتجاهل الانتشار يجيب بقرب الحساسية."
+    },
+    "cprob2_a_0002": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال المرض رغم سلبية الفحص؛ متمّم القيمة التنبؤية السلبية.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ: المطلوب متمّم القيمة التنبؤية السلبية لا هي؛ كثيرون يجيبون بالاحتمال المعاكس."
+    },
+    "cprob2_a_0079": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال شرطي بايزي لفحص طبي؛ يُحسب بالكسور الجبرية الدقيقة.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ معدل الأساس: رغم إيجابية الفحص يبقى الاحتمال أقل من النصف لندرة المرض؛ من يتجاهل الانتشار يجيب بقرب الحساسية."
+    },
+    "cprob2_a_0021": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال شرطي بايزي لفحص طبي؛ يُحسب بالكسور الجبرية الدقيقة.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ معدل الأساس: رغم إيجابية الفحص يبقى الاحتمال أقل من النصف لندرة المرض؛ من يتجاهل الانتشار يجيب بقرب الحساسية."
+    },
+    "cprob2_a_0015": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال شرطي بايزي لفحص طبي؛ يُحسب بالكسور الجبرية الدقيقة.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ معدل الأساس: رغم إيجابية الفحص يبقى الاحتمال أقل من النصف لندرة المرض؛ من يتجاهل الانتشار يجيب بقرب الحساسية."
+    },
+    "cprob2_a_0093": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال شرطي بايزي لفحص طبي؛ يُحسب بالكسور الجبرية الدقيقة.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ معدل الأساس: رغم إيجابية الفحص يبقى الاحتمال أقل من النصف لندرة المرض؛ من يتجاهل الانتشار يجيب بقرب الحساسية."
+    },
+    "cprob2_a_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال شرطي بايزي لفحص طبي؛ يُحسب بالكسور الجبرية الدقيقة.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ معدل الأساس: رغم إيجابية الفحص يبقى الاحتمال أقل من النصف لندرة المرض؛ من يتجاهل الانتشار يجيب بقرب الحساسية."
+    },
+    "cprob2_a_0067": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال شرطي بايزي لفحص طبي؛ يُحسب بالكسور الجبرية الدقيقة.",
+      "answer_verified_by": "mechanical",
+      "trap": "فخّ معدل الأساس: رغم إيجابية الفحص يبقى الاحتمال أقل من النصف لندرة المرض؛ من يتجاهل الانتشار يجيب بقرب الحساسية."
+    },
+    "cprob2_a_0011": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بايز مع صندوقين؛ حساب بالكسور الدقيقة.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "القيمة التنبؤية السلبية لفحص طبي محسوبة بالكسور.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0049": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "احتمال شرطي في سياق قبول/اختبار واقعي.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "احتمال شرطي في سياق قبول/اختبار واقعي.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0083": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "القيمة التنبؤية السلبية لفحص طبي محسوبة بالكسور.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0055": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "احتمال عكسي (بايز) في مراقبة جودة بمصدرين.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0028": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "احتمال شرطي في سياق قبول/اختبار واقعي.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0043": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بايز مع صندوقين؛ حساب بالكسور الدقيقة.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0026": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "احتمال شرطي في سياق قبول/اختبار واقعي.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0092": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "احتمال عكسي (بايز) في مراقبة جودة بمصدرين.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0077": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "احتمال شرطي في سياق قبول/اختبار واقعي.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0064": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "القيمة التنبؤية السلبية لفحص طبي محسوبة بالكسور.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0066": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "احتمال شرطي في سياق قبول/اختبار واقعي.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "احتمال عكسي (بايز) في مراقبة جودة بمصدرين.",
+      "answer_verified_by": "mechanical"
+    },
+    "cprob2_a_0042": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "القيمة التنبؤية السلبية لفحص طبي محسوبة بالكسور.",
+      "answer_verified_by": "mechanical"
+    }
+  }
+}

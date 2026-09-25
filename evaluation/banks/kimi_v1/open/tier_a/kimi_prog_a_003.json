@@ -1,0 +1,1216 @@
+{
+  "schema_version": 1,
+  "suite_id": "kimi_prog_a_003",
+  "split": "development",
+  "description": "قياس كتابة اختبار يكشف عيبًا معطى (write_test)، وتقدير التعقيد الزمني (time_complexity)، وتحويل الكود بين صيغ مع تكافؤ سلوكي (convert_format).",
+  "cases": [
+    {
+      "case_id": "prog_c_0065",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "حوّل الدالة التالية إلى تعبير lambda يُسند إلى الاسم نفسه، مع الحفاظ على السلوك تمامًا. أخرج الكود فقط.\n\n```python\ndef add(a, b):\n    return a + b\n```"
+        }
+      ],
+      "reference": "جمع لا طرح في lambda.",
+      "rubric": [
+        "يستخدم lambda",
+        "يجمع لا يطرح"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"add\"]\nassert f(2, 3) == 5\nassert f(-1, 1) == 0\nassert \"lambda\" in _code, \"لم يُستخدم lambda\"\nassert callable(_ns[\"add\"])\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0078",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التالية باستخدام بناء قوائم/قواميس بالتعبير (comprehension) بدل حلقة الإلحاق، مع الحفاظ على السلوك نفسه وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef even_squares(lst):\n    out = []\n    for x in lst:\n        if x % 2 == 0:\n            out.append(x * x)\n    return out\n```"
+        }
+      ],
+      "reference": "الترشيح بالزوجية قبل التربيع.",
+      "rubric": [
+        "comprehension صحيحة",
+        "يرشّح الزوجية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"even_squares\"]\nassert f([1, 2, 3, 4]) == [4, 16]\nassert f([]) == []\nassert f([1, 3]) == []\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0066",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "حوّل الدالة التالية إلى تعبير lambda يُسند إلى الاسم نفسه، مع الحفاظ على السلوك تمامًا. أخرج الكود فقط.\n\n```python\ndef square(x):\n    return x ** 2\n```"
+        }
+      ],
+      "reference": "تربيع لا مضاعفة.",
+      "rubric": [
+        "يستخدم lambda",
+        "يحسب المربع"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"square\"]\nassert f(5) == 25\nassert f(0) == 0\nassert f(-3) == 9\nassert \"lambda\" in _code, \"لم يُستخدم lambda\"\nassert callable(_ns[\"square\"])\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0069",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "حوّل الدالة التالية إلى تعبير lambda يُسند إلى الاسم نفسه، مع الحفاظ على السلوك تمامًا. أخرج الكود فقط.\n\n```python\ndef avg2(a, b):\n    return (a + b) / 2\n```"
+        }
+      ],
+      "reference": "القسمة الحقيقية لا الصحيحة.",
+      "rubric": [
+        "يستخدم lambda",
+        "قسمة حقيقية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"avg2\"]\nassert f(2, 4) == 3.0\nassert f(1, 2) == 1.5\nassert \"lambda\" in _code, \"لم يُستخدم lambda\"\nassert callable(_ns[\"avg2\"])\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0056",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التالية باستخدام حلقة while فقط (يُمنع استخدام for نهائيًّا ولو في تعليق)، مع الحفاظ على السلوك نفسه تمامًا وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef sum_list(lst):\n    total = 0\n    for x in lst:\n        total += x\n    return total\n```"
+        }
+      ],
+      "reference": "التحويل الصحيح يفهرس بـ while مع تقدّم يدوي للعدّاد.",
+      "rubric": [
+        "لا يستخدم for",
+        "نفس النتائج على القوائم"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"sum_list\"]\nassert f([1, 2, 3]) == 6\nassert f([]) == 0\nassert f([-1, 1]) == 0\nassert not __import__(\"re\").search(r\"\\bfor\\b\", _code), \"استُخدمت for\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0061",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التالية باستخدام حلقة while فقط (يُمنع استخدام for نهائيًّا ولو في تعليق)، مع الحفاظ على السلوك نفسه تمامًا وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef squares_list(n):\n    out = []\n    for i in range(n):\n        out.append(i * i)\n    return out\n```"
+        }
+      ],
+      "reference": "range(n) تبدأ من صفر وتستثني n.",
+      "rubric": [
+        "يحافظ على حدود range(n)",
+        "لا يستخدم for"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"squares_list\"]\nassert f(4) == [0, 1, 4, 9]\nassert f(0) == []\nassert f(1) == [0]\nassert not __import__(\"re\").search(r\"\\bfor\\b\", _code), \"استُخدمت for\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0057",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التالية باستخدام حلقة while فقط (يُمنع استخدام for نهائيًّا ولو في تعليق)، مع الحفاظ على السلوك نفسه تمامًا وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef find_first_negative(lst):\n    for x in lst:\n        if x < 0:\n            return x\n    return None\n```"
+        }
+      ],
+      "reference": "العودة المبكرة عند أول سالب هي جوهر السلوك؛ إكمال المسح يعيد آخر سالب.",
+      "rubric": [
+        "يحافظ على العودة المبكرة",
+        "لا يستخدم for",
+        "يعيد None عند غياب السالب"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"find_first_negative\"]\nassert f([1, -3, -5]) == -3\nassert f([1, 2]) is None\nassert f([-7]) == -7\nassert not __import__(\"re\").search(r\"\\bfor\\b\", _code), \"استُخدمت for\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0063",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التالية باستخدام حلقة while فقط (يُمنع استخدام for نهائيًّا ولو في تعليق)، مع الحفاظ على السلوك نفسه تمامًا وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef index_of_max(lst):\n    best = 0\n    for i in range(1, len(lst)):\n        if lst[i] > lst[best]:\n            best = i\n    return best\n```"
+        }
+      ],
+      "reference": "الحفاظ على > الصارمة يبقي أول فهرس للأقصى عند التعادل.",
+      "rubric": [
+        "يعيد فهرس الأقصى الأول",
+        "لا يستخدم for"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"index_of_max\"]\nassert f([1, 9, 3]) == 1\nassert f([5, 2]) == 0\nassert f([-3, -1, -7]) == 1\nassert f([9, 1, 9]) == 0\nassert not __import__(\"re\").search(r\"\\bfor\\b\", _code), \"استُخدمت for\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0080",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التالية باستخدام بناء قوائم/قواميس بالتعبير (comprehension) بدل حلقة الإلحاق، مع الحفاظ على السلوك نفسه وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef word_index_map(words):\n    out = {}\n    for i, w in enumerate(words):\n        if w not in out:\n            out[w] = i\n    return out\n```"
+        }
+      ],
+      "reference": "المطلوب أول فهرس لكل كلمة؛ comprehension المباشرة تكتب آخر فهرس فوقه.",
+      "rubric": [
+        "يحفظ أول فهرس عند التكرار",
+        "comprehension صحيحة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"word_index_map\"]\nassert f([\"ب\", \"أ\", \"ب\"]) == {\"ب\": 0, \"أ\": 1}\nassert f([]) == {}\nassert f([\"x\", \"x\"]) == {\"x\": 0}\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0077",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التكرارية التالية بأسلوب تكراري (حلقات، بلا استدعاء ذاتي)، مع الحفاظ على السلوك نفسه وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef fib_iter(n):\n    if n < 2:\n        return n\n    return fib_iter(n - 1) + fib_iter(n - 2)\n```"
+        }
+      ],
+      "reference": "التحويل التكراري يحتفظ بمتغيرين ويبدأ من 0.",
+      "rubric": [
+        "بلا استدعاء ذاتي",
+        "يبدأ من fib(0)=0"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"fib_iter\"]\nassert f(0) == 0\nassert f(1) == 1\nassert f(10) == 55\nassert f(15) == 610\nassert _code.count(\"fib_iter(\") <= 1, \"بقي استدعاء ذاتي\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0059",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التالية باستخدام حلقة while فقط (يُمنع استخدام for نهائيًّا ولو في تعليق)، مع الحفاظ على السلوك نفسه تمامًا وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef join_words(words, sep):\n    out = ''\n    for w in words:\n        if out:\n            out += sep\n        out += w\n    return out\n```"
+        }
+      ],
+      "reference": "الفاصل يجب ألا يُضاف بعد الكلمة الأخيرة.",
+      "rubric": [
+        "لا فاصل زائد في النهاية",
+        "لا يستخدم for",
+        "القائمة الفارغة والمفردة صحيحتان"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"join_words\"]\nassert f([\"أ\", \"ب\", \"ج\"], \"-\") == \"أ-ب-ج\"\nassert f([], \"-\") == \"\"\nassert f([\"واحدة\"], \"-\") == \"واحدة\"\nassert not __import__(\"re\").search(r\"\\bfor\\b\", _code), \"استُخدمت for\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0058",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التالية باستخدام حلقة while فقط (يُمنع استخدام for نهائيًّا ولو في تعليق)، مع الحفاظ على السلوك نفسه تمامًا وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef count_above(lst, t):\n    c = 0\n    for x in lst:\n        if x > t:\n            c += 1\n    return c\n```"
+        }
+      ],
+      "reference": "الحفاظ على صرامة الشرط > أثناء التحويل.",
+      "rubric": [
+        "يحافظ على > الصارمة",
+        "لا يستخدم for"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"count_above\"]\nassert f([1, 5, 9], 4) == 2\nassert f([], 0) == 0\nassert f([3, 3], 3) == 0\nassert not __import__(\"re\").search(r\"\\bfor\\b\", _code), \"استُخدمت for\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0073",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التالية باستخدام حلقة for فقط (يُمنع استخدام while نهائيًّا)، مع الحفاظ على السلوك نفسه وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef countdown_list(n):\n    out = []\n    while n > 0:\n        out.append(n)\n        n -= 1\n    return out\n```"
+        }
+      ],
+      "reference": "range(n, 0, -1) يبدأ من n نفسها.",
+      "rubric": [
+        "لا يستخدم while",
+        "يبدأ من n"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"countdown_list\"]\nassert f(4) == [4, 3, 2, 1]\nassert f(0) == []\nassert not __import__(\"re\").search(r\"\\bwhile\\b\", _code), \"استُخدمت while\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0060",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التالية باستخدام حلقة while فقط (يُمنع استخدام for نهائيًّا ولو في تعليق)، مع الحفاظ على السلوك نفسه تمامًا وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef max_list(lst):\n    best = lst[0]\n    for x in lst[1:]:\n        if x > best:\n            best = x\n    return best\n```"
+        }
+      ],
+      "reference": "شرط الاستمرار i < len لا <=.",
+      "rubric": [
+        "يحافظ على البدء من الفهرس 1",
+        "لا يستخدم for",
+        "لا يتجاوز الفهرس"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"max_list\"]\nassert f([3, 9, 1]) == 9\nassert f([-5, -2]) == -2\nassert f([7]) == 7\nassert not __import__(\"re\").search(r\"\\bfor\\b\", _code), \"استُخدمت for\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0074",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التكرارية التالية بأسلوب تكراري (حلقات، بلا استدعاء ذاتي)، مع الحفاظ على السلوك نفسه وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef factorial_rec(n):\n    if n <= 1:\n        return 1\n    return n * factorial_rec(n - 1)\n```"
+        }
+      ],
+      "reference": "التحويل التكراري يتراكم من 2 إلى n.",
+      "rubric": [
+        "بلا استدعاء ذاتي",
+        "نفس القيم"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"factorial_rec\"]\nassert f(5) == 120\nassert f(0) == 1\nassert f(7) == 5040\nassert _code.count(\"factorial_rec(\") <= 1, \"بقي استدعاء ذاتي\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0062",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد كتابة الدالة التالية باستخدام حلقة while فقط (يُمنع استخدام for نهائيًّا ولو في تعليق)، مع الحفاظ على السلوك نفسه تمامًا وبنفس الاسم. أخرج الكود فقط.\n\n```python\ndef sum_digits_loop(n):\n    total = 0\n    for d in str(n):\n        total += int(d)\n    return total\n```"
+        }
+      ],
+      "reference": "الفهرسة تبدأ من صفر لتشمل الخانة الأولى.",
+      "rubric": [
+        "يشمل كل الخانات",
+        "لا يستخدم for"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"sum_digits_loop\"]\nassert f(1234) == 10\nassert f(0) == 0\nassert f(999) == 27\nassert not __import__(\"re\").search(r\"\\bfor\\b\", _code), \"استُخدمت for\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0067",
+      "capability": "convert_format",
+      "messages": [
+        {
+          "role": "user",
+          "content": "حوّل الدالة التالية إلى تعبير lambda يُسند إلى الاسم نفسه، مع الحفاظ على السلوك تمامًا. أخرج الكود فقط.\n\n```python\ndef is_adult(age):\n    return age >= 18\n```"
+        }
+      ],
+      "reference": "الشرط >= يشمل الثامنة عشرة.",
+      "rubric": [
+        "يستخدم lambda",
+        "يحافظ على >= "
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"is_adult\"]\nassert f(18) is True\nassert f(17) is False\nassert f(40) is True\nassert \"lambda\" in _code, \"لم يُستخدم lambda\"\nassert callable(_ns[\"is_adult\"])\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0044",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef find_first(lst, x):\n    for i, v in enumerate(lst):\n        if v == x:\n            return i\n    return -1\n```"
+        }
+      ],
+      "reference": "أسوأ حالة (العنصر غائب أو أخير) تمسح القائمة كلها.",
+      "rubric": [
+        "يأخذ أسوأ حالة لا أحسنها",
+        "يحدد O(n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(n)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0051",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef collect(n):\n    out = []\n    for i in range(n):\n        out.append(i)\n    return out\n```"
+        }
+      ],
+      "reference": "append مُطفأة التكلفة O(1) في حلقة خطية.",
+      "rubric": [
+        "يعرف إطفاء كلفة append",
+        "يحدد O(n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(n)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0036",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef get_score(scores, name):\n    return scores.get(name, 0)\n```"
+        }
+      ],
+      "reference": "الوصول لمفتاح قاموس ثابت متوسطًا.",
+      "rubric": [
+        "يحدد O(1)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(1)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0043",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef cube_count(n):\n    c = 0\n    for i in range(n):\n        for j in range(n):\n            for k in range(n):\n                c += 1\n    return c\n```"
+        }
+      ],
+      "reference": "ثلاث حلقات متداخلة: تكعيبي.",
+      "rubric": [
+        "يحدد O(n^3)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(n^3)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0033",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef find(lst, x):\n    lo, hi = 0, len(lst) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if lst[mid] == x:\n            return mid\n        if lst[mid] < x:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1\n```"
+        }
+      ],
+      "reference": "البحث الثنائي ينصّف المجال كل خطوة: لوغاريتمي.",
+      "rubric": [
+        "يحدد O(log n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(log n)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0032",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef all_pairs(lst):\n    out = []\n    for a in lst:\n        for b in lst:\n            out.append((a, b))\n    return out\n```"
+        }
+      ],
+      "reference": "حلقتان متداخلتان على المدخل نفسه: تربيعي.",
+      "rubric": [
+        "يحدد O(n^2)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(n^2)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0048",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef gcd(a, b):\n    while b:\n        a, b = b, a % b\n    return a\n```"
+        }
+      ],
+      "reference": "أقليدس ينقص الأرقام هندسيًّا: لوغاريتمي في قيمة المدخل.",
+      "rubric": [
+        "يعرف تعقيد أقليدس",
+        "يحدد O(log n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(log n)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0049",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef is_prime(n):\n    if n < 2:\n        return False\n    i = 2\n    while i * i <= n:\n        if n % i == 0:\n            return False\n        i += 1\n    return True\n```"
+        }
+      ],
+      "reference": "الفحص حتى الجذر فقط: جذر n.",
+      "rubric": [
+        "يحدد O(sqrt(n))",
+        "لا يقول O(n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(sqrt(n))"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0046",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef widen(lst):\n    out = []\n    for x in lst:\n        for _ in range(1000):\n            out.append(x)\n    return out\n```"
+        }
+      ],
+      "reference": "ألف تكرار ثابت: معامل كبير لا يغيّر الرتبة الخطية.",
+      "rubric": [
+        "لا يخدعه الثابت الكبير",
+        "يحدد O(n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(n)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0054",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef fast_pow(base, exp):\n    if exp == 0:\n        return 1\n    half = fast_pow(base, exp // 2)\n    if exp % 2 == 0:\n        return half * half\n    return half * half * base\n```"
+        }
+      ],
+      "reference": "التربيع المتكرر ينصّف الأس كل استدعاء.",
+      "rubric": [
+        "يميز القوة السريعة عن الخطية",
+        "يحدد O(log n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(log n)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0042",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef has_pair_fast(nums, target):\n    seen = set()\n    for a in nums:\n        if target - a in seen:\n            return True\n        seen.add(a)\n    return False\n```"
+        }
+      ],
+      "reference": "عضوية المجموعة ثابتة متوسطًا فيبقى الإجمالي خطيًّا.",
+      "rubric": [
+        "يميز كلفة in على set",
+        "يحدد O(n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(n)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0038",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef with_header(lst):\n    out = []\n    for x in lst:\n        for _ in range(10):\n            out.append(x)\n    return out\n```"
+        }
+      ],
+      "reference": "الحلقة الداخلية ثابتة الطول (10) فلا تغيّر الرتبة.",
+      "rubric": [
+        "يتجاهل الثابت 10",
+        "يحدد O(n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(n)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0053",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef shrink(lst):\n    while len(lst) > 1:\n        lst = lst[1:]\n    return lst\n```"
+        }
+      ],
+      "reference": "كل قطع lst[1:] ينسخ القائمة الباقية: نسخ خطي متكرر = تربيعي.",
+      "rubric": [
+        "يكشف كلفة النسخ في القطع",
+        "يحدد O(n^2)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(n^2)"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_c_0055",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef harmonic(n):\n    c = 0\n    for i in range(1, n + 1):\n        j = 1\n        while j * i <= n:\n            c += 1\n            j += 1\n    return c\n```"
+        }
+      ],
+      "reference": "مجموع n/i على i هو المتسلسلة التوافقية: n log n.",
+      "rubric": [
+        "يتعرف على المجموع التوافقي",
+        "لا يقول O(n^2)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(n log n)"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_c_0035",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef fib(n):\n    if n < 2:\n        return n\n    return fib(n - 1) + fib(n - 2)\n```"
+        }
+      ],
+      "reference": "التكرار الذاتي المزدوج بلا تخزين يبني شجرة استدعاءات أسّية.",
+      "rubric": [
+        "يكشف النمو الأسّي",
+        "لا يقول O(n^2)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(2^n)"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_c_0047",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef halve(n):\n    c = 0\n    if n <= 1:\n        return 0\n    return 1 + halve(n // 2)\n```"
+        }
+      ],
+      "reference": "كل استدعاء ينصّف المدخل: عمق لوغاريتمي.",
+      "rubric": [
+        "يحدد O(log n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(log n)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0037",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef stats(lst):\n    total = 0\n    for x in lst:\n        total += x\n    mx = lst[0]\n    for x in lst:\n        if x > mx:\n            mx = x\n    return total, mx\n```"
+        }
+      ],
+      "reference": "حلقتان متتاليتان لا متداخلتان: n + n = O(n).",
+      "rubric": [
+        "يجمع لا يضرب التعقيدين",
+        "يحدد O(n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(n)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0034",
+      "capability": "time_complexity",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما التعقيد الزمني للشيفرة التالية في أسوأ حالة، بدلالة n (حجم المدخل)؟ أجب بصيغة O(...) فقط بلا أي كلمة أخرى، واختر من هذه الصيغ حرفيًّا: O(1) · O(log n) · O(sqrt(n)) · O(n) · O(n log n) · O(n^2) · O(n^3) · O(2^n).\n\n```python\ndef dedup_sort(lst):\n    return sorted(set(lst))\n```"
+        }
+      ],
+      "reference": "بناء المجموعة خطي لكن sorted يسيطر: n log n.",
+      "rubric": [
+        "يعرف أن الفرز يسيطر",
+        "يحدد O(n log n)"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "O(n log n)"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0016",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد آخر n عنصر من قائمة:\n\n```python\ndef get_last_n(lst, n):\n    return lst[:n]\n```\n\nالعيب المقصود: الدالة تعيد أول n عنصر بدل آخرها.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `get_last_n` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "آخر عنصرين هما [3, 4].",
+      "rubric": [
+        "يكشف أخذ البداية بدل النهاية",
+        "يمرّ مع القطع السالب"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def get_last_n(lst, n):\\n    return lst[:n]', _bns)\n_fns = {}\nexec('def get_last_n(lst, n):\\n    return lst[-n:] if n > 0 else []', _fns)\n_buggy = _bns['get_last_n']\n_fixed = _fns['get_last_n']\ndef _run(_impl):\n    _ns = {'get_last_n': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0006",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد أكبر قيمة بين ثلاث:\n\n```python\ndef max3(a, b, c):\n    return a if a > b else b\n```\n\nالعيب المقصود: الدالة تتجاهل الوسيط الثالث تمامًا.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `max3` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "قيمة كبرى في الموضع الثالث تكشف تجاهله.",
+      "rubric": [
+        "يكشف تجاهل الوسيط c",
+        "يمرّ مع المقارنة الثلاثية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def max3(a, b, c):\\n    return a if a > b else b', _bns)\n_fns = {}\nexec('def max3(a, b, c):\\n    return max(a, b, c)', _fns)\n_buggy = _bns['max3']\n_fixed = _fns['max3']\ndef _run(_impl):\n    _ns = {'max3': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0023",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد عدد المحارف المختلفة في نص:\n\n```python\ndef count_unique(s):\n    return len(s)\n```\n\nالعيب المقصود: الدالة تعيد طول النص كله لا عدد المختلف.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `count_unique` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "«aab» فيها محرفان مختلفان فقط.",
+      "rubric": [
+        "يكشف إهمال إزالة التكرار",
+        "يتحقق من الفارغ"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def count_unique(s):\\n    return len(s)', _bns)\n_fns = {}\nexec('def count_unique(s):\\n    return len(set(s))', _fns)\n_buggy = _bns['count_unique']\n_fixed = _fns['count_unique']\ndef _run(_impl):\n    _ns = {'count_unique': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0024",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تفحص تساوي أول عنصر وآخره في قائمة:\n\n```python\ndef first_last_same(lst):\n    return lst[0] == lst[1]\n```\n\nالعيب المقصود: الدالة تقارن الأول بالثاني بدل الأخير.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `first_last_same` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "في [1,2,1] الأول والأخير متساويان.",
+      "rubric": [
+        "يكشف الفهرس الخاطئ",
+        "يتحقق من حالة عدم التساوي"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def first_last_same(lst):\\n    return lst[0] == lst[1]', _bns)\n_fns = {}\nexec('def first_last_same(lst):\\n    return lst[0] == lst[-1]', _fns)\n_buggy = _bns['first_last_same']\n_fixed = _fns['first_last_same']\ndef _run(_impl):\n    _ns = {'first_last_same': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0027",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحوّل نصًّا إلى عدد صحيح أو تعيد None عند تعذّر التحويل:\n\n```python\ndef safe_parse_int(s):\n    return int(s)\n```\n\nالعيب المقصود: الدالة ترمي ValueError بدل إعادة None عند نص غير عددي.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `safe_parse_int` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "النص غير العددي يجب أن يعيد None لا استثناء.",
+      "rubric": [
+        "يكشف رمي الاستثناء",
+        "يتحقق من التحويل الصحيح"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def safe_parse_int(s):\\n    return int(s)', _bns)\n_fns = {}\nexec('def safe_parse_int(s):\\n    try:\\n        return int(s)\\n    except ValueError:\\n        return None', _fns)\n_buggy = _bns['safe_parse_int']\n_fixed = _fns['safe_parse_int']\ndef _run(_impl):\n    _ns = {'safe_parse_int': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0004",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تجمع القيم المطلقة لعناصر قائمة:\n\n```python\ndef absolute_sum(lst):\n    return sum(lst)\n```\n\nالعيب المقصود: الدالة تجمع بلا قيمة مطلقة.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `absolute_sum` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "السوالب يجب أن تُجمع بمطلقها.",
+      "rubric": [
+        "يكشف غياب abs",
+        "يمرّ بعد إضافتها"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def absolute_sum(lst):\\n    return sum(lst)', _bns)\n_fns = {}\nexec('def absolute_sum(lst):\\n    return sum(abs(x) for x in lst)', _fns)\n_buggy = _bns['absolute_sum']\n_fixed = _fns['absolute_sum']\ndef _run(_impl):\n    _ns = {'absolute_sum': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0022",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد قاموسًا كلمة←طولها لجملة عربية:\n\n```python\ndef word_lengths(s):\n    return [len(w) for w in s.split()]\n```\n\nالعيب المقصود: الدالة تعيد قائمة أطوال بدل قاموس.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `word_lengths` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "الموعود قاموس لا قائمة.",
+      "rubric": [
+        "يكشف نوع الإعادة الخاطئ",
+        "يمرّ مع القاموس"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def word_lengths(s):\\n    return [len(w) for w in s.split()]', _bns)\n_fns = {}\nexec('def word_lengths(s):\\n    return {w: len(w) for w in s.split()}', _fns)\n_buggy = _bns['word_lengths']\n_fixed = _fns['word_lengths']\ndef _run(_impl):\n    _ns = {'word_lengths': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0014",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعدّ الأعداد الفردية في قائمة:\n\n```python\ndef count_odds(lst):\n    return sum(1 for x in lst if x % 2 == 0)\n```\n\nالعيب المقصود: الشرط يعدّ الزوجية بدل الفردية.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `count_odds` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "في [1,3,5,2] ثلاثة فردية وواحد زوجي.",
+      "rubric": [
+        "يكشف قلب الشرط",
+        "يمرّ مع الشرط الصحيح"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def count_odds(lst):\\n    return sum(1 for x in lst if x % 2 == 0)', _bns)\n_fns = {}\nexec('def count_odds(lst):\\n    return sum(1 for x in lst if x % 2 != 0)', _fns)\n_buggy = _bns['count_odds']\n_fixed = _fns['count_odds']\ndef _run(_impl):\n    _ns = {'count_odds': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0009",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحسب سعر منتج بعد خصم نسبة مئوية:\n\n```python\ndef discount_price(price, pct):\n    return price * (1 + pct / 100)\n```\n\nالعيب المقصود: الدالة تضيف النسبة بدل طرحها فترفع السعر بدل خفضه.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `discount_price` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "خصم 10% من 200 يجب أن يعطي 180.",
+      "rubric": [
+        "يكشف قلب إشارة الخصم",
+        "يمرّ مع الطرح"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def discount_price(price, pct):\\n    return price * (1 + pct / 100)', _bns)\n_fns = {}\nexec('def discount_price(price, pct):\\n    return price * (1 - pct / 100)', _fns)\n_buggy = _bns['discount_price']\n_fixed = _fns['discount_price']\ndef _run(_impl):\n    _ns = {'discount_price': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_c_0020",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد أقرب ربع ساعة قادم لدقيقة داخل الساعة (10←15، 15←15، 0←0):\n\n```python\ndef next_quarter_hour(m):\n    return (m // 15) * 15\n```\n\nالعيب المقصود: الدالة تقرّب للأسفل فتعيد الربع الماضي لا القادم.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `next_quarter_hour` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "الدقيقة 10 أقرب ربع قادم لها 15.",
+      "rubric": [
+        "يكشف التقريب للأسفل",
+        "يتحقق من حدود الأرباع"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def next_quarter_hour(m):\\n    return (m // 15) * 15', _bns)\n_fns = {}\nexec('def next_quarter_hour(m):\\n    return ((m + 14) // 15) * 15', _fns)\n_buggy = _bns['next_quarter_hour']\n_fixed = _fns['next_quarter_hour']\ndef _run(_impl):\n    _ns = {'next_quarter_hour': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0021",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحسب متوسط الدرجات الناجحة فقط (60 فأكثر)، وتعيد None إن لم توجد:\n\n```python\ndef average_passing(scores):\n    return sum(scores) / len(scores) if scores else None\n```\n\nالعيب المقصود: الدالة تحسب متوسط كل الدرجات بما فيها الراسبة.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `average_passing` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "الدرجة 30 يجب استبعادها من المتوسط.",
+      "rubric": [
+        "يكشف إدخال الراسب في المتوسط",
+        "يتحقق من None"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def average_passing(scores):\\n    return sum(scores) / len(scores) if scores else None', _bns)\n_fns = {}\nexec('def average_passing(scores):\\n    passing = [s for s in scores if s >= 60]\\n    return sum(passing) / len(passing) if passing else None', _fns)\n_buggy = _bns['average_passing']\n_fixed = _fns['average_passing']\ndef _run(_impl):\n    _ns = {'average_passing': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0026",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تفحص وجود حرف عربي واحد على الأقل في النص:\n\n```python\ndef text_has_arabic(s):\n    letters = 'ابتثجحخدذرزسشصطظعغفقكلمنهوي'\n    return any(ch in letters for ch in s)\n```\n\nالعيب المقصود: قائمة الأحرف اليدوية تفتقد أحرفًا مثل ض ؤ ة ى.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `text_has_arabic` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "الضاد والتاء المربوطة غائبتان عن القائمة اليدوية رغم أنهما عربيتان.",
+      "rubric": [
+        "يكشف نقص قائمة الأحرف",
+        "يرفض النص اللاتيني"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec(\"def text_has_arabic(s):\\n    letters = 'ابتثجحخدذرزسشصطظعغفقكلمنهوي'\\n    return any(ch in letters for ch in s)\", _bns)\n_fns = {}\nexec(\"def text_has_arabic(s):\\n    return any('\\\\u0621' <= ch <= '\\\\u064a' for ch in s)\", _fns)\n_buggy = _bns['text_has_arabic']\n_fixed = _fns['text_has_arabic']\ndef _run(_impl):\n    _ns = {'text_has_arabic': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0019",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحسب إجمالي فاتورة مع ضريبة 15%، والسياسة: تجمع الأسطر ثم تطبّق الضريبة ثم تقرّب لخانتين:\n\n```python\ndef total_with_tax(lines):\n    return round(sum(round(x * 1.15, 2) for x in lines), 2)\n```\n\nالعيب المقصود: التقريب لكل سطر قبل الجمع يجمع أخطاء تقريب (1.11+1.11 تعطي 2.56 بدل 2.55).\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `total_with_tax` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "السياسة تقرّب بعد الجمع: 2.22×1.15=2.553←2.55.",
+      "rubric": [
+        "يكشف التقريب المبكر لكل سطر",
+        "يمرّ مع التقريب بعد الجمع"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def total_with_tax(lines):\\n    return round(sum(round(x * 1.15, 2) for x in lines), 2)', _bns)\n_fns = {}\nexec('def total_with_tax(lines):\\n    return round(sum(lines) * 1.15, 2)', _fns)\n_buggy = _bns['total_with_tax']\n_fixed = _fns['total_with_tax']\ndef _run(_impl):\n    _ns = {'total_with_tax': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_c_0017",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تفحص هل n من مضاعفات k، ويجب أن تعيد False عند k=0 بدل الانهيار:\n\n```python\ndef is_multiple(n, k):\n    return n % k == 0\n```\n\nالعيب المقصود: الدالة تنفجر بقسمة على صفر عند k=0.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `is_multiple` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "k=0 يجب أن تعيد False بلا استثناء.",
+      "rubric": [
+        "يكشف انهيار القسمة على صفر",
+        "يتحقق من الحالة الطبيعية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def is_multiple(n, k):\\n    return n % k == 0', _bns)\n_fns = {}\nexec('def is_multiple(n, k):\\n    return k != 0 and n % k == 0', _fns)\n_buggy = _bns['is_multiple']\n_fixed = _fns['is_multiple']\ndef _run(_impl):\n    _ns = {'is_multiple': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0007",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد عدد أيام فبراير لسنة معطاة:\n\n```python\ndef days_in_feb(y):\n    return 28\n```\n\nالعيب المقصود: الدالة تعيد 28 دائمًا حتى في السنة الكبيسة.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `days_in_feb` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "السنة الكبيسة يجب أن تعيد 29.",
+      "rubric": [
+        "يكشف تجاهل الكبيسة",
+        "يتحقق من غير الكبيسة أيضًا"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def days_in_feb(y):\\n    return 28', _bns)\n_fns = {}\nexec('def days_in_feb(y):\\n    return 29 if (y % 400 == 0 or (y % 4 == 0 and y % 100 != 0)) else 28', _fns)\n_buggy = _bns['days_in_feb']\n_fixed = _fns['days_in_feb']\ndef _run(_impl):\n    _ns = {'days_in_feb': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0003",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تفحص أن القائمة مرتبة تصاعديًّا (التساوي المتجاور مسموح):\n\n```python\ndef is_sorted(lst):\n    return all(lst[i] < lst[i + 1] for i in range(len(lst) - 1))\n```\n\nالعيب المقصود: الشرط الصارم < يرفض المتساويات المتجاورة رغم أنها مرتبة.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `is_sorted` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "قائمة فيها تكرار متجاور مرتبة يجب أن تُقبل.",
+      "rubric": [
+        "يكشف رفض المتساويات",
+        "يمرّ مع <="
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def is_sorted(lst):\\n    return all(lst[i] < lst[i + 1] for i in range(len(lst) - 1))', _bns)\n_fns = {}\nexec('def is_sorted(lst):\\n    return all(lst[i] <= lst[i + 1] for i in range(len(lst) - 1))', _fns)\n_buggy = _bns['is_sorted']\n_fixed = _fns['is_sorted']\ndef _run(_impl):\n    _ns = {'is_sorted': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0030",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد أسماء البالغين (عمر 18 فأكثر) من قاموس اسم←عمر:\n\n```python\ndef find_adults(ages):\n    return [name for name, age in ages.items() if age > 18]\n```\n\nالعيب المقصود: الشرط > يستبعد من عمره 18 بالضبط.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `find_adults` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "من عمره 18 بالغ ويجب إدراجه.",
+      "rubric": [
+        "يكشف استبعاد الثامنة عشرة",
+        "يستبعد القاصر"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def find_adults(ages):\\n    return [name for name, age in ages.items() if age > 18]', _bns)\n_fns = {}\nexec('def find_adults(ages):\\n    return [name for name, age in ages.items() if age >= 18]', _fns)\n_buggy = _bns['find_adults']\n_fixed = _fns['find_adults']\ndef _run(_impl):\n    _ns = {'find_adults': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_c_0018",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تقارن كلمتي سر للتأكد من تطابقهما (التطابق حرفيّ بحالة الأحرف):\n\n```python\ndef passwords_match(p1, p2):\n    return p1.lower() == p2.lower()\n```\n\nالعيب المقصود: المقارنة بتوحيد الحالة تقبل كلمتين مختلفتين فعليًّا.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `passwords_match` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "كلمتا سر تختلفان في الحالة يجب ألا تتطابقا.",
+      "rubric": [
+        "يكشف تجاهل حالة الأحرف",
+        "يقبل التطابق التام"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def passwords_match(p1, p2):\\n    return p1.lower() == p2.lower()', _bns)\n_fns = {}\nexec('def passwords_match(p1, p2):\\n    return p1 == p2', _fns)\n_buggy = _bns['passwords_match']\n_fixed = _fns['passwords_match']\ndef _run(_impl):\n    _ns = {'passwords_match': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_c_0028",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تقسيط: تقسّم مبلغًا على عدد أشهر مقرّبة لخانتين، وترمي ValueError إن كانت الأشهر صفرًا أو أقل:\n\n```python\ndef monthly_payment(principal, months):\n    return principal / months\n```\n\nالعيب المقصود: بلا تحقق من الأشهر ولا تقريب: تنفجر عند الصفر وتعيد كسورًا طويلة.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `monthly_payment` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "القسط يجب أن يقرّب لخانتين والأشهر الصفرية مرفوضة.",
+      "rubric": [
+        "يكشف غياب التقريب",
+        "يكشف غياب التحقق من الأشهر"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def monthly_payment(principal, months):\\n    return principal / months', _bns)\n_fns = {}\nexec(\"def monthly_payment(principal, months):\\n    if months <= 0:\\n        raise ValueError('عدد أشهر غير صالح')\\n    return round(principal / months, 2)\", _fns)\n_buggy = _bns['monthly_payment']\n_fixed = _fns['monthly_payment']\ndef _run(_impl):\n    _ns = {'monthly_payment': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_c_0005",
+      "capability": "write_test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تقرر نجاح طالب: النجاح من 60 درجة فأكثر:\n\n```python\ndef is_passing(score):\n    return score > 60\n```\n\nالعيب المقصود: الشرط > يرسّب من نال 60 بالضبط.\n\nاكتب اختبار pytest يكشف هذا العيب: دالة (أو دوال) باسم يبدأ بـ test_ تستدعي الدالة `is_passing` (ستكون معرّفة في بيئة الاختبار)، باستخدام assert فقط ودون أي استيراد. يجب أن يسقط اختبارك مع هذه النسخة المعطوبة وأن يمرّ مع النسخة المصلَّحة. أخرج كود الاختبار فقط."
+        }
+      ],
+      "reference": "درجة الحد 60 يجب أن تُحتسب نجاحًا.",
+      "rubric": [
+        "يكشف إقصاء درجة الحد",
+        "يمرّ مع >="
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_bns = {}\nexec('def is_passing(score):\\n    return score > 60', _bns)\n_fns = {}\nexec('def is_passing(score):\\n    return score >= 60', _fns)\n_buggy = _bns['is_passing']\n_fixed = _fns['is_passing']\ndef _run(_impl):\n    _ns = {'is_passing': _impl}\n    exec(_code, _ns)\n    _ts = [v for k, v in _ns.items() if k.startswith('test') and callable(v)]\n    assert _ts, 'لم يُعثر على دالة اختبار'\n    for _t in _ts:\n        _t()\n_run(_fixed)\ntry:\n    _run(_buggy)\n    _caught = False\nexcept Exception:\n    _caught = True\nassert _caught, 'الاختبار مرّ مع الكود المعطوب'\n"
+        }
+      ],
+      "critical": true
+    }
+  ]
+}

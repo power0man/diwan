@@ -1,0 +1,478 @@
+{
+  "suite_id": "kimi_assist_a_003",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "cmpx_a_0020": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الجزيرة أرخص وحدة (7) لكن حدها الأدنى 1000 يضاعف الكمية؛ الخليج يفوز بـ4200.",
+      "answer_verified_by": "mechanical",
+      "trap": "سعر الوحدة الأدنى فخّ كلاسيكي مع حد أدنى للطلب."
+    },
+    "cmpx_a_0028": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فرق سنوي بسيط (40) مع رسوم تأسيس تصنعه.",
+      "answer_verified_by": "mechanical"
+    },
+    "cmpx_a_0044": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "النهائي: 360 و372 و180؛ المصباح بأصغر خصم هو الأرخص.",
+      "answer_verified_by": "mechanical"
+    },
+    "cmpx_a_0042": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الأسعار بعد الخصم: 180 و210 و250؛ الساعة بخصمها الكبير تبقى الأغلى.",
+      "answer_verified_by": "mechanical",
+      "trap": "خصم 50% على الساعة يوحي بأنها الأوفر."
+    },
+    "cmpx_a_0018": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب فرق سنوي مباشر (5400) بأرقام صغيرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "cmpx_a_0003": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "المطلوب الأغلى لا الأرخص؛ فخّ القراءة العجلة مقصود.",
+      "answer_verified_by": "mechanical",
+      "trap": "كثير من النماذج تجيب بالأرخص عادةً؛ هنا المطلوب الأعلى تكلفة إجمالية (الوادي 1310)."
+    },
+    "cmpx_a_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الأرخص سعرًا (النور 319) يصير أغلى من السلام بعد الشحن؛ يقيس الجمع لا القراءة.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يقارن السعر المعروض فقط يجيب «النور» والصحيح «السلام» بـ345."
+    },
+    "cmpx_a_0008": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "صاحب أقل راتب أساسي (فهد) هو الأعلى إجمالًا بفضل العلاوة.",
+      "answer_verified_by": "mechanical",
+      "trap": "نورة أعلى أساسيًّا لكن فهد (9400) يتفوق إجمالًا."
+    },
+    "cmpx_a_0047": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "النهائي: 135 و112 و200؛ القميص أرخص رغم أصغر خصم.",
+      "answer_verified_by": "mechanical",
+      "trap": "الجاكيت بنصف السعر يبقى الأغلى."
+    },
+    "cmpx_a_0026": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "صفا أغلى شهريًّا (110) وأرخص سنويًّا (1188) بعد خصم 10%.",
+      "answer_verified_by": "mechanical",
+      "trap": "رؤية أرخص شهريًّا لكن رسوم تأسيسها ترفعها فوق صفا."
+    },
+    "cmpx_a_0024": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ندى أرخص وحدة (22) وهي الأغلى فعليًّا (3450) بسبب الحد الأدنى والرسوم.",
+      "answer_verified_by": "mechanical",
+      "trap": "الترتيب بالوحدة (ندى، أمل، رجاء) ≠ الترتيب الفعلي (أمل، رجاء، ندى)."
+    },
+    "cmpx_a_0031": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مقارنة تكلفة مباشرة بثلاث وسائل؛ القطار أرخص (420).",
+      "answer_verified_by": "mechanical"
+    },
+    "cmpx_a_0030": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الترتيب السنوي (هلال 2286، بدر 2340، نور 2400) معكوس عن الشهري تمامًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "نور أغلى شهريًّا وهي الأغلى سنويًّا أيضًا لكن بفارق ضئيل عن بدر."
+    },
+    "cmpx_a_0017": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ثلاثة عروض؛ سحاب ورمال متساويان شهريًّا (15500 و16000) ونسيم يفوز سنويًّا (208000).",
+      "answer_verified_by": "mechanical",
+      "trap": "نسيم أدنى راتبًا أساسيًّا (12500) وهو الفائز."
+    },
+    "cmpx_a_0033": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الحافلة أرخص إجمالًا لكنها تتجاوز المهلة (300 دقيقة)؛ القطار يفوز ضمن الشرط (350).",
+      "answer_verified_by": "mechanical",
+      "trap": "استبعاد الأرخص بسبب قيد الزمن يُنسى كثيرًا."
+    },
+    "cmpx_a_0036": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أرقام مشرقية في النص وإخراج غربي؛ الرحلة البرية أرخص لكنها فوق المهلة.",
+      "answer_verified_by": "mechanical",
+      "trap": "شرط المهلة مع تحويل الأرقام؛ الفائز القطار بـ380."
+    },
+    "cmpx_a_0005": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ترتيب أربعة متاجر تصاعديًّا بالتكلفة الإجمالية؛ النجم أرخص معروضًا وأغلاها إجمالًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "ترتيب الأسعار المعروضة (النجم، القمر، الفجر، الشمس) يختلف كليًّا عن ترتيب الإجمالي."
+    },
+    "cmpx_a_0012": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "العلاوة نسبة مئوية من الأساسي؛ الترتيب بالأساسي (سمية، وليد، رامي) ينعكس تمامًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "رامي أدنى أساسيًّا وهو الأعلى إجمالًا (8160)."
+    },
+    "cmpx_a_0029": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ثلاث باقات ترتيبها الشهري معكوس عن السنوي؛ ص أغلى شهريًّا وأرخص سنويًّا (624).",
+      "answer_verified_by": "mechanical",
+      "trap": "س أرخص شهريًّا لكن تأسيسها 300 يرفعها إلى 900 سنويًّا."
+    },
+    "cmpx_a_0007": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الأرقام في النص مشرقية والمطلوب إخراجها غربية في JSON؛ يقيس التحويل مع الحساب.",
+      "answer_verified_by": "mechanical",
+      "trap": "التميز (١١٤٠+٢٥=١١٦٥) أرخص من المستقبل (١١٨٠) رغم أن سعره المعروض قريب."
+    },
+    "cmpx_a_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تعادل مقصود عند 9000 بين فجر (بحدّه الأدنى 300) وشمس؛ قمر أغلى (10500).",
+      "answer_verified_by": "mechanical",
+      "trap": "الحد الأدنى لفجر يرفع كميته من 200 إلى 300؛ من يتجاهله يخطئ التعادل."
+    },
+    "cmpx_a_0023": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ترشيح بمهلة ثم مقارنة؛ واحة أرخص إجمالًا (15000) لكنها متأخرة (10 أيام) فتُستبعد.",
+      "answer_verified_by": "mechanical",
+      "trap": "ضياء يبدو منافسًا (16 للوحدة، 4 أيام) لكن حده الأدنى 2000 يرفعه إلى 32200؛ الفائز سراب 17500."
+    },
+    "cmpx_a_0016": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "وثبة أعلى شهريًّا بفارق 1000 لكن مدى يتفوق سنويًّا بمكافأة ضخمة (الفرق 58000).",
+      "answer_verified_by": "mechanical",
+      "trap": "غياب المكافأة عن وثبة يُنسى بسهولة؛ العرض «الأضعف شهريًّا» هو الأفضل."
+    },
+    "cmpx_a_0043": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "السؤال عن مقدار التوفير لا السعر النهائي: 200 و140 و70؛ المكنسة أعلى توفيرًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "الخلاط بأعلى نسبة خصم (40%) لكن مقدار توفيره أقل."
+    },
+    "cmpx_a_0038": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "س وع متعادلتان عند 45 للكيلو وص تفوز بـ40.",
+      "answer_verified_by": "mechanical",
+      "trap": "التعادل الجزئي بين س وع قد يشتت؛ المطلوب الأوفر فقط."
+    },
+    "cmpx_a_0019": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الإجمالي الشهري متطابق (14000)؛ المكافأة ترجّح ابتكار بإجمالي سنوي 182000.",
+      "answer_verified_by": "mechanical",
+      "trap": "تطابق الشهري يدفع للتعادل الظاهري."
+    },
+    "cmpx_a_0011": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الفرق بين الأعلى (سيف 11500) والأدنى (بشرى 10400) = 1100؛ بشرى ليست أدنى أساسي.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يحسب الفرق بين الأساسيين الأعلى والأدنى يحصل على 1200 بدل 1100."
+    },
+    "cmpx_a_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ثلاثة مكونات (أساسي وعلاوة وخصم)؛ هند أعلى أساسيًّا وتخسر أمام ماجد.",
+      "answer_verified_by": "mechanical",
+      "trap": "هند 13000 أساسي لكن إجماليها 13700 مقابل 14300 لماجد."
+    },
+    "cmpx_a_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "كميتان مع حد شحن مجاني لا يبلغه أحد؛ الأرخص وحدةً (الإخلاص) ليس الأرخص إجمالًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "سعر الوحدة الأدنى عند الإخلاص لكن شحنه 60 يقلب النتيجة لصالح التقنية (1110)."
+    },
+    "cmpx_a_0048": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أربعة موظفين؛ الترتيب بالأساسي (رياض، مالك، جمانة، سحر) شبه معكوس إجمالًا (سحر، مالك، جمانة، رياض).",
+      "answer_verified_by": "mechanical",
+      "trap": "سحر أدنى أساسيًّا (5000) وهي الأعلى إجمالًا (6100)."
+    },
+    "cmpx_a_0015": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الإجمالي الشهري متساوٍ تمامًا (16000)؛ المكافأة السنوية وحدها تحسم.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يقارن الشهري فقط يظن التعادل؛ الفرق 12000 لصالح أمواج."
+    },
+    "cmpx_a_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "السؤال عن سعر الكيلو في العبوة الأوفر (45) لا عن اسمها.",
+      "answer_verified_by": "mechanical",
+      "trap": "د أرخص معروضًا (20) لكن كيلوها 50 مقابل 45 لك."
+    },
+    "cmpx_a_0004": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "السؤال عن مقدار التوفير لا عن المتجر؛ يتطلب حساب طرفين ثم الطرح.",
+      "answer_verified_by": "mechanical",
+      "trap": "صفاء أرخص معروضًا (875) لكنه الأغلى إجمالًا (940)؛ الفرق بين الأرخص والأغلى 20."
+    },
+    "cmpx_a_0045": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الشاشة أرخص أصلًا (1800) لكنها الأغلى بعد الخصم (1620)؛ البروجكتر يفوز بـ1500.",
+      "answer_verified_by": "mechanical",
+      "trap": "انعكاس كامل لترتيب الأسعار الأصلية بعد الخصومات."
+    },
+    "cndx_a_0010": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "حدود شاملة هذه المرة (فأكثر)؛ سلمى عند الحدّين معًا فتدخل.",
+      "answer_verified_by": "mechanical",
+      "trap": "فارس ٨٤ وآمال حضورها ٨٩؛ كلاهما يخرج بدرجة واحدة، ومن يقلب الشرط إلى «أكثر من» يُخرج سلمى خطأً."
+    },
+    "cndx_a_0034": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "عدّ غير المعادة بلا شرط تأخر؛ التأخر مشتت.",
+      "answer_verified_by": "mechanical",
+      "trap": "سفر الأحجار غير معاد ولو لم يتأخر بعد؛ يُحسب."
+    },
+    "cndx_a_0028": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "عدّ بحالة واحدة؛ بقية الحالات مشتتة.",
+      "answer_verified_by": "mechanical"
+    },
+    "cndx_a_0044": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "عدّ بعلم واحد؛ بقية الحقول مشتتة.",
+      "answer_verified_by": "mechanical"
+    },
+    "cndx_a_0027": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "شرط حالة وعمر؛ ط-5503 عند اليوم الخامس يخرج.",
+      "answer_verified_by": "mechanical",
+      "trap": "ط-5502 عمره ٩ أيام لكنه «جديد» لا «قيد الشحن»."
+    },
+    "cndx_a_0038": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "شرطا فترة وحالة؛ كل مستبعد يفشل في واحد منهما.",
+      "answer_verified_by": "mechanical",
+      "trap": "تركي صباحي لكنه معلّق لا مؤكد."
+    },
+    "cndx_a_0021": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "شرط قسم وشرط راتب؛ هشام عند ٨٠٠٠ بالضبط يخرج.",
+      "answer_verified_by": "mechanical",
+      "trap": "غادة راتبها الأعلى لكنها في التسويق، وهشام عند الحدّ تمامًا."
+    },
+    "cndx_a_0016": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "شرط واحد على الكمية؛ الصلاحية معلومة مشتتة.",
+      "answer_verified_by": "mechanical",
+      "trap": "كل الأصناف النافدة صلاحيتها بعيدة؛ من يقرأ الشرطين خطأً يستبعدها."
+    },
+    "cndx_a_0003": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الإجابة عدد فقط؛ ف-304 عند الحدّ بالضبط (٢٠) فلا تُحسب.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يعدّ «٢٠ يومًا فأكثر» يجيب ٤ والصحيح ٣."
+    },
+    "cndx_a_0012": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "عدّ مباشر بحدّ واحد؛ نغم عند ٥٠ ناجحة.",
+      "answer_verified_by": "mechanical",
+      "trap": "ثلاث درجات ملاصقة للخمسين (٤٨، ٤٩، ٥٠، ٥١) تغري بالخطأ."
+    },
+    "cndx_a_0033": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "المعادة ولو متأخرة لا تدخل؛ رحلة الفصول مستبعدة رغم تأخرها ٢٠ يومًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "مدائن الملح عند ٥ أيام لم تتجاوز الحد."
+    },
+    "cndx_a_0005": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ترشيح ثم جمع المبالغ: 12400+8700+9900 = 31000.",
+      "answer_verified_by": "mechanical",
+      "trap": "ف-503 (٢٩ يومًا) خارج الشرط بيوم واحد، وف-505 (٣١) داخلة بيوم واحد؛ والمدفوعة مهما تأخرت لا تدخل."
+    },
+    "cndx_a_0029": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ط-7702 عند ٥٠٠ بالضبط لا يدخل («تتجاوز» صارمة).",
+      "answer_verified_by": "mechanical",
+      "trap": "ط-7703 قيمته الأعلى لكن حالته «قيد الشحن» لا «جديد»."
+    },
+    "cndx_a_0037": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مجال مغلق بطرفين؛ ثامر (٧) وأمل (٢١) خارجان بيوم واحد من كل طرف.",
+      "answer_verified_by": "mechanical",
+      "trap": "غالية داخل المجال لكنها أعادت الكتاب؛ أربعة مهلات ملاصقة للحدود."
+    },
+    "cndx_a_0046": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ثلاثة شروط؛ كل مستبعد يفشل في شرط واحد (٥٠٠ بالضبط، ٥٩ يومًا، مميز).",
+      "answer_verified_by": "mechanical",
+      "trap": "أذخر عند ٥٠٠ تخرج (ليس أقل)، وكافور عند ٥٩ تخرج بيوم، وزعفر تحقق العددين لكنها مميزة."
+    },
+    "cndx_a_0041": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ثلاثة شروط متقاطعة؛ كل مستبعد يفشل في شرط واحد فقط.",
+      "answer_verified_by": "mechanical",
+      "trap": "أصيل يحقق شرطين (صباحي وجديد) لكنه معلّق؛ هزاع جديد مؤكد لكنه مسائي."
+    },
+    "cndx_a_0020": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "«٥ فأقل» شامل و«تتجاوز ١٥» صارم؛ خميرة عند ١٥ بالضبط تخرج.",
+      "answer_verified_by": "mechanical",
+      "trap": "بهارات عند ٥ تدخل (شامل) وخميرة عند ١٥ تخرج (صارم)؛ خلط الشامل والصارم خطأ شائع."
+    },
+    "cndx_a_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مجال مغلق من صفر إلى خمسة مع شرط توفر؛ ثلاثة أصناف تخرج لأسباب مختلفة.",
+      "answer_verified_by": "mechanical",
+      "trap": "كريمة عند صفر (تنتهي اليوم) تدخل، ودجاج عند ستة يخرج، ولحم منتهٍ أمس خارج المجال."
+    },
+    "cndx_a_0030": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ثلاثة شروط متقاطعة؛ كل مستبعد يفشل في شرط واحد فقط.",
+      "answer_verified_by": "mechanical",
+      "trap": "ط-8802 بـ١٠٠١ يخرج بريال، وط-8803 عند اليوم السابع يخرج، وط-8805 عند ١٠٠٠ يدخل («فأقل» شاملة)."
+    },
+    "cndx_a_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "«أو» داخل قسم محدد؛ رامي يدخل بخبرته (١٠) لا راتبه (١٠٠٠٠ بالضبط لا تكفي).",
+      "answer_verified_by": "mechanical",
+      "trap": "شكري خبرته ٨ بالضبط فلا تكفي، ووفاء تحقق الشرطين لكنها في التقنية."
+    },
+    "cndx_a_0014": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اتحاد شرطين لا تقاطعهما؛ عمر يفلت من الشرطين بحدّ واحد في كل منهما.",
+      "answer_verified_by": "mechanical",
+      "trap": "عمر (٥٠ و٦٠) لا يحقق أيًّا منهما لأن الحدين «أقل من»؛ كثيرون يدرجونه خطأً."
+    },
+    "cndx_a_0047": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "«فأكثر» شاملة هنا: سدرة عند ٢٠٠٠ تدخل؛ دوم عند ١٩٩٩ تخرج بريال.",
+      "answer_verified_by": "mechanical",
+      "trap": "طلح تحقق الشرطين لكنها في جدة؛ والفرق بين الشامل هنا والصارم في حالات أخرى مقصود."
+    },
+    "cndx_a_0004": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مخرجان معًا: العدد والأرقام؛ يجب أن يتطابقا.",
+      "answer_verified_by": "mechanical",
+      "trap": "ف-402 (٤٤ يومًا) وف-405 (٤٦ يومًا) متجاورتان حول الحدّ؛ وف-404 مدفوعة رغم تأخرها الطويل."
+    },
+    "cndx_a_0026": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أثير خبرتها ٣ بالضبط فليست «جديدة» بالمعنى المحدد.",
+      "answer_verified_by": "mechanical",
+      "trap": "صقر راتبه ٦٨٠٠ قريب من الحدّ ويخرج؛ أثير عند حدّ السنوات تمامًا."
+    },
+    "cndx_a_0042": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "استبعاد الملغية المسائية تحديدًا؛ عفيف يخرج لإلغائه.",
+      "answer_verified_by": "mechanical",
+      "trap": "شكيب مؤكد لكنه صباحي فيخرج رغم صحة حالته."
+    },
+    "cndx_a_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "شرط «في أحد قسمين» مع خبرة؛ جاد يخرج بسنة واحدة (٤).",
+      "answer_verified_by": "mechanical",
+      "trap": "سلوى خبرتها الأعلى (١٢) لكن قسمها خارج المطلوب."
+    },
+    "cndx_a_0013": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ناجحون بضعف حضور؛ بشار يخرج لرسوبه رغم سوء حضوره.",
+      "answer_verified_by": "mechanical",
+      "trap": "هيا حضورها ٧٠ بالضبط فلا تدخل («دون» تعني أقل)."
+    },
+    "cndx_a_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "«فأقل» شاملة: عمر ٣ يدخل و٤ يخرج؛ ط-1205 وصل اليوم فيدخل.",
+      "answer_verified_by": "mechanical",
+      "trap": "ط-1203 عند اليوم الرابع يخرج بيوم واحد."
+    },
+    "cndx_a_0019": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "شرطان «أكبر من» صارمان؛ مكسرات عند ١٠ وعصير عند ٣٠ يخرجان.",
+      "answer_verified_by": "mechanical",
+      "trap": "رقائق كميتها ٩ (قريبة من الحد) مع صلاحية بعيدة مشتتة."
+    },
+    "cndx_a_0007": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الشرط على المسددة هذه المرة؛ ف-705 بمبلغ ٩٩٩٩ تخرج بريال واحد.",
+      "answer_verified_by": "mechanical",
+      "trap": "ف-703 غير مسددة رغم مبلغها الكبير، وف-705 عند الحدّ ناقصة ريالًا."
+    },
+    "cndx_a_0045": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "لآلئ عند ٩٠ بالضبط تخرج؛ عقيق خاملة جدًّا لكنها غير مميزة.",
+      "answer_verified_by": "mechanical",
+      "trap": "ياقوت مميزة لكنها نشطة (٤٥ يومًا) فتخرج."
+    },
+    "cndx_a_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "المنتهي بكمية صفر لا يُحسب (ليس في المخزون)، والمنتهي اليوم (٠) ليس «منتهيًا فعلًا» بعد.",
+      "answer_verified_by": "mechanical",
+      "trap": "حلاوة عند اليوم صفر: تنتهي اليوم ولم تنتهِ بعد؛ وجبنة وبيض منتهيان لكنهما نافدان."
+    },
+    "cndx_a_0035": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الإجابة أسماء أعضاء لا كتب؛ سالم عند ١٤ بالضبط يخرج.",
+      "answer_verified_by": "mechanical",
+      "trap": "سالم ويزيد قريبان من الحدّ من جهتيه، وفوزي أعاد كتابه متأخرًا جدًّا فلا يُحسب."
+    },
+    "cndx_a_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اشتراط رسوب وضعف حضور معًا؛ كل سجل يفشل في شرط مختلف.",
+      "answer_verified_by": "mechanical",
+      "trap": "لينا درجتها ٥٠ فهي ناجحة، ورهف راسبة لكن حضورها مرتفع، ومها عند ٤٩ و٧٤ تدخل بصعوبة."
+    }
+  }
+}

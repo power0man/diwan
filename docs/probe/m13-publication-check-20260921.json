@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-09-21T01:12:15.859728+00:00",
+  "commit": "fd7aa817ee070be55cc4a33593d5f90e8afb56da",
+  "status": "passed",
+  "signature_required": true,
+  "checked_using_original_repository_code": true,
+  "files_checked_unchanged": 268,
+  "bytes_mtime_inode_unchanged": true,
+  "publication_plan": {
+    "published": 0,
+    "skipped": 33341,
+    "rights_refused": 0,
+    "stores_missing": [],
+    "files": []
+  },
+  "publication_applied": false,
+  "rights_changed": false,
+  "release_ready": false
+}

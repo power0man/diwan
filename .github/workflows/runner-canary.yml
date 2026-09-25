@@ -1,0 +1,63 @@
+name: runner-canary
+on:
+  workflow_dispatch:
+    inputs:
+      probe:
+        type: choice
+        required: true
+        default: lifecycle
+        options: [lifecycle, intentional-failure]
+permissions: {}
+
+jobs:
+  first-worker:
+    if: inputs.probe == 'lifecycle'
+    runs-on: [self-hosted, Linux, ARM64, diwan-isolated-canary]
+    timeout-minutes: 5
+    outputs:
+      runner-name: ${{ steps.boundary.outputs.runner-name }}
+    steps:
+      - name: First disposable worker
+        id: boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(id -u)" = 1000
+          test ! -e /var/run/docker.sock
+          test ! -d /Users
+          test ! -e /tmp/diwan-canary-state
+          printf 'created by first job\n' > /tmp/diwan-canary-state
+          printf 'runner-name=%s\n' "$RUNNER_NAME" >> "$GITHUB_OUTPUT"
+          printf 'first worker: %s; private host paths absent\n' "$RUNNER_NAME"
+  second-worker:
+    needs: first-worker
+    runs-on: [self-hosted, Linux, ARM64, diwan-isolated-canary]
+    timeout-minutes: 5
+    steps:
+      - name: New worker has no previous state
+        shell: bash
+        env:
+          FIRST_RUNNER: ${{ needs.first-worker.outputs.runner-name }}
+        run: |
+          set -euo pipefail
+          test "$(id -u)" = 1000
+          test ! -e /var/run/docker.sock
+          test ! -d /Users
+          test ! -e /tmp/diwan-canary-state
+          test -n "$FIRST_RUNNER"
+          test "$RUNNER_NAME" != "$FIRST_RUNNER"
+          printf 'second worker: %s; previous worker: %s; fresh tmpfs verified\n' "$RUNNER_NAME" "$FIRST_RUNNER"
+  intentional-failure:
+    if: inputs.probe == 'intentional-failure'
+    runs-on: [self-hosted, Linux, ARM64, diwan-isolated-canary]
+    timeout-minutes: 5
+    steps:
+      - name: Deliberate failure must remain a failed GitHub job
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(id -u)" = 1000
+          test ! -e /tmp/diwan-canary-state
+          printf 'intentional failure fixture\n' > /tmp/diwan-canary-state
+          printf 'intentional-exit-17\n'
+          exit 17

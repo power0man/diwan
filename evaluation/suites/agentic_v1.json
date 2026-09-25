@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "suite_id": "agentic_v1",
+  "kind": "agentic_tasks",
+  "description": "بنكٌ أوّليٌّ للمهامّ الوكيلة: يُحكَم على حالة العالَم بعد أن تفرغ الحلقة، لا على نصّ الجواب.",
+  "tasks": [
+    {
+      "task_id": "ag_fix_failing_test",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "src/calc.py": "def area(w, h):\n    return w + h\n",
+        "tests/test_calc.py": "import sys\nsys.path.insert(0, '.')\nfrom src.calc import area\n\n\ndef test_area():\n    assert area(3, 4) == 12\n    assert area(0, 5) == 0\n"
+      },
+      "instruction": "اختبارٌ يسقط في هذا المشروع. اقرأ الشيفرةَ والاختبار، واعثر على السبب، وأصلحه في المصدر. لا تعدّل ملفات الاختبار.",
+      "success": {"kind": "tests_pass", "command": ["python3", "-m", "pytest", "tests/", "-q", "-p", "no:cacheprovider"]},
+      "forbidden": ["tests"],
+      "rubric": [
+        "أصلح المصدر لا الاختبار",
+        "الدالّة تضرب البُعدين ولا تجمعهما",
+        "لم يُحذف اختبارٌ ولم يُعطَّل"
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "ag_extract_to_file",
+      "capability": "read_transform_write",
+      "workspace": {
+        "data/notes.txt": "الاجتماع الأول: الأحد\nالاجتماع الثاني: الثلاثاء\nالاجتماع الثالث: الخميس\n",
+        "README.md": "# مشروع\n"
+      },
+      "instruction": "اقرأ data/notes.txt واكتب في ملفٍّ جديد اسمه days.txt أيامَ الاجتماعات فقط، يومًا في كل سطر، بلا أرقامٍ ولا كلمة «الاجتماع».",
+      "success": {"kind": "file_equals", "path": "days.txt", "value": "الأحد\nالثلاثاء\nالخميس\n"},
+      "forbidden": ["data"],
+      "rubric": ["استخرج الأيامَ الثلاثة بترتيبها", "لم يُعدّل المصدر"],
+      "max_steps": 8
+    },
+    {
+      "task_id": "ag_find_definition",
+      "capability": "search_codebase",
+      "workspace": {
+        "pkg/a.py": "def helper():\n    return 1\n",
+        "pkg/b.py": "from pkg.a import helper\n\n\ndef compute():\n    return helper() * 2\n",
+        "pkg/c.py": "# لا شيء هنا\n"
+      },
+      "instruction": "أين تُعرَّف الدالّة helper؟ اكتب جوابك في ملفٍّ اسمه answer.txt يحتوي مسارَ الملفِّ فقط.",
+      "success": {"kind": "file_contains", "path": "answer.txt", "value": "pkg/a.py"},
+      "forbidden": [],
+      "rubric": ["حدّد ملفَّ التعريف لا ملفَّ الاستعمال"],
+      "max_steps": 6
+    }
+  ]
+}

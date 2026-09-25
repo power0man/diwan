@@ -1,0 +1,515 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-7b-instruct-v0.3\",\n  \"file\": \"kimi_prog_a_005\",\n  \"judgments\": [\n    {\n      \"id\": \"prog_e_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"555 6\",\n      \"reason\": \"ضرب النص في عدد يكرره، وضرب العددين حسابيًا صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2 3\",\n      \"reason\": \"فهرسة المحارف من 0 صحيحة، و'ج' في الموضع 2 و'د' في الموضع 3.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0085\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2 True\",\n      \"reason\": \"حرف 'م' يظهر مرتين في 'معلومات'، والبادئة 'مع' متحققة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرحبا\",\n      \"reason\": \"strip بمحرف مخصص يزيل الفاصلة العربية من الطرفين فقط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"6 2\",\n      \"reason\": \"النص يحتوي على 6 محارف بفراغاته، وبعد strip يبقى 2 محرفان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ+ب == ج\",\n      \"reason\": \"replace تستبدل كل ظهور لـ = بـ ' == ' بفراغات.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[(1, 'أ'), (2, 'ب')]\",\n      \"reason\": \"zip يقف عند أقصر متتالية، فيزاوج عنصرين فقط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لام\",\n      \"reason\": \"next تستهلك 'س'، والمولّد يكمل من حيث توقف فيُدمج 'لام' فقط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"6\",\n      \"reason\": \"inner تقرأ x عند الاستدعاء لا عند التعريف، وقيمته حينها 5 فيعيد 6.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0082\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"512 64\",\n      \"reason\": \"الأس يتجمع يمينًا: 2**(3**2)=512، والمقوس (2**3)**2=64.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[[1, 2, 3], [1, 2, 3]]\",\n      \"reason\": \"b يحوي مرجعين للقائمة نفسها، فالتعديل يظهر في الموضعين معًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3 1 -4 1\",\n      \"reason\": \"القسمة الصحيحة تقصر نحو الأسفل، وباقي القسمة يتبع إشارة المقسوم عليه.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0072\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['و', 'حد ', 'ثنان ثلاثة']\",\n      \"reason\": \"split بحد أقصى 2 يقسم عند أول ظهورين لـ'ا'، والفراغ يبقى في الجزء.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0090\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2 ا\",\n      \"reason\": \"break يمنع تنفيذ else الخاص بالحلقة، وتبقى i=2 وc='ا' بعد الخروج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0073\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"False True\",\n      \"reason\": \"0.1+0.2 لا يساوي 0.3 بسبب خطأ التمثيل العشري، لكن التقريب لعشر خانات يساويه.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0083\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"True [1, 2, 3, 4]\",\n      \"reason\": \"+= على قائمة تعدلها في مكانها، فـ b هي a نفسها بعد إلحاق 4.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"24\",\n      \"reason\": \"عاودية مضروب: 4×3×2×1×1 = 24.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0084\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2 3\",\n      \"reason\": \"تكرار المفتاح في القاموس الحرفي يبقي الأخير، قيمة 'أ' تساوي 3.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ةعتم\",\n      \"reason\": \"الكلمة الثانية 'متعة' تُعكس محرفًا محرفًا فتصبح 'ةعتم'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"خطأ قيمة\",\n      \"reason\": \"int على نص عشري يرفع ValueError لا TypeError.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"30 عمره خالد سنوات\",\n      \"reason\": \"الوسائط ممررة بترتيب (age, name) فيحل العمر في الموضع الأول والاسم في الثاني.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"5 False\",\n      \"reason\": \"get يعيد الافتراضي 5 دون إدخال 'ج' في القاموس.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[1] [2]\",\n      \"reason\": \"النمط الصحيح بـ None يجعل كل استدعاء بقائمة جديدة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[1, 9]\",\n      \"reason\": \"الشرط x % 2 يبقي الفردية فقط (1 و3)، ومربعاهما 1 و9.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"False True False True\",\n      \"reason\": \"النص '0' غير فارغ فهو True، والقائمة [0] غير فارغة فهي True.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[5, 8, 3]\",\n      \"reason\": \"remove تحذف أول ظهور فقط للقيمة 3.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"None [1, 2, 3]\",\n      \"reason\": \"sort تعيد None وترتب في المكان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4 4\",\n      \"reason\": \"الإسناد y = x يجعلهما اسمين للقائمة نفسها، فالإضافة عبر y تظهر في x.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0087\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2 3\",\n      \"reason\": \"x[:] نسخة سطحية مستقلة، فإلحاق y لا يمس x.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"5 حبا\",\n      \"reason\": \"الطول 5 محارف، والشريحة من الفهرس 2 للنهاية تعطي 'حبا'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0080\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[1, 3] [4, 3]\",\n      \"reason\": \"العمود الأول من كل صف [1, 3]، والصف الثاني معكوسًا [4, 3].\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def capitalize_first(s):\\n    return s[0].upper() + s[1:]\",\n      \"reason\": \"النصوص في بايثون غير قابلة للتعديل، التغيير يكون ببناء نص جديد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def final_fee(fee):\\n    return min(fee, 50)\",\n      \"reason\": \"السقف حد أعلى فيفرض بـ min لا max.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def countdown_list(n):\\n    return list(range(n, 0, -1))\",\n      \"reason\": \"نهاية range حصرية، الوقوف عند 1 يتطلب الحد 0 لا -1.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def is_eligible(age):\\n    return age > 30\",\n      \"reason\": \"'تجاوز' صارم يعني > 30 لا >= 30.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def add_tag(tags, tag):\\n    return tags + (tag,)\",\n      \"reason\": \"tuple لا يدعم append، الإضافة ببناء tuple جديد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def average(nums):\\n    return sum(nums) / len(nums)\",\n      \"reason\": \"// تقصر نحو الأسفل، المتوسط الحقيقي يحتاج /.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def sum_range(a, b):\\n    return sum(range(a, b + 1))\",\n      \"reason\": \"range يستثني الحد الأعلى، الشمول يتطلب b + 1.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def has_negative(nums):\\n    for x in nums:\\n        if x < 0:\\n            return True\\n    return False\",\n      \"reason\": \"return False داخل الحلقة ينهي الفحص بعد أول عنصر، يجب أن يكون بعد الحلقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def month_name(m):\\n    return MONTHS[m - 1]\",\n      \"reason\": \"القوائم مفهرسة من 0، الأشهر مرقمة من 1، الفهرس m - 1.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def sort_students(records):\\n    return sorted(records, key=lambda r: (-r[\\\"grade\\\"], r[\\\"name\\\"]))\",\n      \"reason\": \"reverse=True يعكس المفتاح كله، المفتاح (-grade, name) وحده يكفي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def any_prefix(words, p):\\n    return any(w.startswith(p) for w in words)\",\n      \"reason\": \"in على قائمة يفحص العضوية الكاملة، البادئة تُفحص بـ startswith.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def contains_digit(s):\\n    return re.search(r\\\"\\\\d\\\", s) is not None\",\n      \"reason\": \"re.match يطابق من بداية النص فقط، البحث في أي موضع يتطلب re.search.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def merge_intervals(intervals):\\n    if not intervals:\\n        return []\\n    intervals = sorted(intervals)\\n    merged = [list(intervals[0])]\\n    for s, e in intervals[1:]:\\n        if s <= merged[-1][1]:\\n            merged[-1][1] = max(merged[-1][1], e)\\n        else:\\n            merged.append([s, e])\\n    return [tuple(m) for m in merged]\",\n      \"reason\": \"الدمج التسلسلي يفترض ترتيبًا، يجب sorted(intervals) قبل المرور.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def dedup_keep_first(lst):\\n    out = []\\n    for x in lst:\\n        if x not in out:\\n            out.append(x)\\n    return out\",\n      \"reason\": \"إزالة القديم وإلحاق الجديد ينقل العنصر إلى النهاية، الإبقاء على الأول يعني تخطّي المكرر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def merge_intervals(intervals):\\n    if not intervals:\\n        return []\\n    intervals = sorted(intervals)\\n    merged = [list(intervals[0])]\\n    for s, e in intervals[1:]:\\n        if s <= merged[-1][1]:\\n            merged[-1][1] = max(merged[-1][1], e)\\n        else:\\n            merged.append([s, e])\\n    return [tuple(m) for m in merged]\",\n      \"reason\": \"الشرط s < النهاية يستثني التلامس، الفترات المغلقة تتطلب s <= النهاية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def drop_inactive(users):\\n    return {name: active for name, active in users.items() if active}\",\n      \"reason\": \"الحذف من قاموس أثناء التكرار يغير حجمه، الحل بناء قاموس جديد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def cheapest(prices):\\n    return min(prices, key=prices.get)\",\n      \"reason\": \"min على قاموس يقارن المفاتيح، المطلوب المفتاح صاحب أصغر قيمة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def greeting(name):\\n    if name == \\\"admin\\\":\\n        return \\\"مرحبًا بالمدير\\\"\\n    return \\\"مرحبًا \\\" + name\",\n      \"reason\": \"is تقارن الهوية لا المحتوى، النصوص المتساوية قد تختلف هويتها، والمقارنة الصحيحة ==.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def round_money(x):\\n    return int(x + 0.5)\",\n      \"reason\": \"round في بايثون يقرب النصف للزوجي، النصف لأعلى يحتاج floor(x + 0.5).\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"from math import isclose\\ndef payments_equal(payments, expected):\\n    return isclose(sum(payments), expected)\",\n      \"reason\": \"جمع الأعداد العشرية تراكمي الخطأ، المقارنة بـ == تفشل، الحل isclose.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def combine(a, b):\\n    return a + b\",\n      \"reason\": \"append يضيف القائمة كعنصر واحد، الدمج يكون بـ +.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def double_total(nums):\\n    total = 0\\n    for x in nums:\\n        total += x\\n    return total * 2\",\n      \"reason\": \"المتغير sum يحجب الدالة المدمجة، إعادة التسمية تحلّه.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def first_positions(items):\\n    out = {}\\n    for i, x in enumerate(items):\\n        out[x] = i\\n    return out\",\n      \"reason\": \"enumerate تعيد (الفهرس، العنصر)، فك التعبئة بترتيب معكوس يقلب القاموس.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def line_total(price, fee, qty):\\n    return (price + fee) * qty\",\n      \"reason\": \"الضرب مقدم على الجمع، القوسان حول (price + fee) إلزاميان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def parse_list(s):\\n    return [x.strip() for x in s.split(\\\",\\\") if x.strip()]\",\n      \"reason\": \"split وحدها تترك الفراغات والفارغات، يلزم strip لكل عنصر وتصفية الفارغ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def valid_code(s):\\n    return len(s) >= 3 and any(c.isdigit() for c in s)\",\n      \"reason\": \"المواصفة تشترط تحقق الشرطين معًا (and) لا أحدهما (or).\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def row_sums(m):\\n    out = []\\n    for row in m:\\n        total = 0\\n        for x in row:\\n            total += x\\n        out.append(total)\\n    return out\",\n      \"reason\": \"المجمّع يجب أن يُصفّر داخل حلقة الصفوف لا خارجها.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def wrap_index(i, n):\\n    return i % n\",\n      \"reason\": \"abs يقلب دلالة السالب، باقي القسمة في بايثون موجب دومًا مع مقسوم موجب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def describe(name, age):\\n    return \\\"الاسم: {}، العمر: {}\\\".format(name, age)\",\n      \"reason\": \"وسائط format تُمرّر بترتيب معكوس، يجب مطابقة ترتيب الوسائط لمواضع {}.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def larger_number(a, b):\\n    return a if int(a) > int(b) else b\",\n      \"reason\": \"المقارنة النصية أبجدية، يجب التحويل إلى int قبل المقارنة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_e_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def days_until(today, target):\\n    return (target - today).days\",\n      \"reason\": \"المتبقي = الهدف ناقص اليوم، الطرح المعكوس يعكس الإشارة.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 63173,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_prog_a_005.json",
+  "file_sha256": "68bea327ac82fa9fe6d4d7faf714c0ecbbd44ae28268c06d14fc6fdd972e8fec",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "prog_e_0064",
+      "my_answer": "555 6",
+      "reason": "ضرب النص في عدد يكرره، وضرب العددين حسابيًا صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0068",
+      "my_answer": "2 3",
+      "reason": "فهرسة المحارف من 0 صحيحة، و'ج' في الموضع 2 و'د' في الموضع 3.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0085",
+      "my_answer": "2 True",
+      "reason": "حرف 'م' يظهر مرتين في 'معلومات'، والبادئة 'مع' متحققة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0088",
+      "my_answer": "مرحبا",
+      "reason": "strip بمحرف مخصص يزيل الفاصلة العربية من الطرفين فقط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0069",
+      "my_answer": "6 2",
+      "reason": "النص يحتوي على 6 محارف بفراغاته، وبعد strip يبقى 2 محرفان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0058",
+      "my_answer": "أ+ب == ج",
+      "reason": "replace تستبدل كل ظهور لـ = بـ ' == ' بفراغات.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0076",
+      "my_answer": "[(1, 'أ'), (2, 'ب')]",
+      "reason": "zip يقف عند أقصر متتالية، فيزاوج عنصرين فقط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0061",
+      "my_answer": "لام",
+      "reason": "next تستهلك 'س'، والمولّد يكمل من حيث توقف فيُدمج 'لام' فقط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0077",
+      "my_answer": "6",
+      "reason": "inner تقرأ x عند الاستدعاء لا عند التعريف، وقيمته حينها 5 فيعيد 6.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0082",
+      "my_answer": "512 64",
+      "reason": "الأس يتجمع يمينًا: 2**(3**2)=512، والمقوس (2**3)**2=64.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0062",
+      "my_answer": "[[1, 2, 3], [1, 2, 3]]",
+      "reason": "b يحوي مرجعين للقائمة نفسها، فالتعديل يظهر في الموضعين معًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0054",
+      "my_answer": "3 1 -4 1",
+      "reason": "القسمة الصحيحة تقصر نحو الأسفل، وباقي القسمة يتبع إشارة المقسوم عليه.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0072",
+      "my_answer": "['و', 'حد ', 'ثنان ثلاثة']",
+      "reason": "split بحد أقصى 2 يقسم عند أول ظهورين لـ'ا'، والفراغ يبقى في الجزء.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0090",
+      "my_answer": "2 ا",
+      "reason": "break يمنع تنفيذ else الخاص بالحلقة، وتبقى i=2 وc='ا' بعد الخروج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0073",
+      "my_answer": "False True",
+      "reason": "0.1+0.2 لا يساوي 0.3 بسبب خطأ التمثيل العشري، لكن التقريب لعشر خانات يساويه.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0083",
+      "my_answer": "True [1, 2, 3, 4]",
+      "reason": "+= على قائمة تعدلها في مكانها، فـ b هي a نفسها بعد إلحاق 4.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0066",
+      "my_answer": "24",
+      "reason": "عاودية مضروب: 4×3×2×1×1 = 24.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0084",
+      "my_answer": "2 3",
+      "reason": "تكرار المفتاح في القاموس الحرفي يبقي الأخير، قيمة 'أ' تساوي 3.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0047",
+      "my_answer": "ةعتم",
+      "reason": "الكلمة الثانية 'متعة' تُعكس محرفًا محرفًا فتصبح 'ةعتم'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0079",
+      "my_answer": "خطأ قيمة",
+      "reason": "int على نص عشري يرفع ValueError لا TypeError.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0075",
+      "my_answer": "30 عمره خالد سنوات",
+      "reason": "الوسائط ممررة بترتيب (age, name) فيحل العمر في الموضع الأول والاسم في الثاني.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0050",
+      "my_answer": "5 False",
+      "reason": "get يعيد الافتراضي 5 دون إدخال 'ج' في القاموس.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0071",
+      "my_answer": "[1] [2]",
+      "reason": "النمط الصحيح بـ None يجعل كل استدعاء بقائمة جديدة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0056",
+      "my_answer": "[1, 9]",
+      "reason": "الشرط x % 2 يبقي الفردية فقط (1 و3)، ومربعاهما 1 و9.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0063",
+      "my_answer": "False True False True",
+      "reason": "النص '0' غير فارغ فهو True، والقائمة [0] غير فارغة فهي True.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0051",
+      "my_answer": "[5, 8, 3]",
+      "reason": "remove تحذف أول ظهور فقط للقيمة 3.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0067",
+      "my_answer": "None [1, 2, 3]",
+      "reason": "sort تعيد None وترتب في المكان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0048",
+      "my_answer": "4 4",
+      "reason": "الإسناد y = x يجعلهما اسمين للقائمة نفسها، فالإضافة عبر y تظهر في x.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0087",
+      "my_answer": "2 3",
+      "reason": "x[:] نسخة سطحية مستقلة، فإلحاق y لا يمس x.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0052",
+      "my_answer": "5 حبا",
+      "reason": "الطول 5 محارف، والشريحة من الفهرس 2 للنهاية تعطي 'حبا'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0080",
+      "my_answer": "[1, 3] [4, 3]",
+      "reason": "العمود الأول من كل صف [1, 3]، والصف الثاني معكوسًا [4, 3].",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0033",
+      "my_answer": "def capitalize_first(s):\n    return s[0].upper() + s[1:]",
+      "reason": "النصوص في بايثون غير قابلة للتعديل، التغيير يكون ببناء نص جديد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0042",
+      "my_answer": "def final_fee(fee):\n    return min(fee, 50)",
+      "reason": "السقف حد أعلى فيفرض بـ min لا max.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0032",
+      "my_answer": "def countdown_list(n):\n    return list(range(n, 0, -1))",
+      "reason": "نهاية range حصرية، الوقوف عند 1 يتطلب الحد 0 لا -1.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0019",
+      "my_answer": "def is_eligible(age):\n    return age > 30",
+      "reason": "'تجاوز' صارم يعني > 30 لا >= 30.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0044",
+      "my_answer": "def add_tag(tags, tag):\n    return tags + (tag,)",
+      "reason": "tuple لا يدعم append، الإضافة ببناء tuple جديد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0013",
+      "my_answer": "def average(nums):\n    return sum(nums) / len(nums)",
+      "reason": "// تقصر نحو الأسفل، المتوسط الحقيقي يحتاج /.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0012",
+      "my_answer": "def sum_range(a, b):\n    return sum(range(a, b + 1))",
+      "reason": "range يستثني الحد الأعلى، الشمول يتطلب b + 1.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0015",
+      "my_answer": "def has_negative(nums):\n    for x in nums:\n        if x < 0:\n            return True\n    return False",
+      "reason": "return False داخل الحلقة ينهي الفحص بعد أول عنصر، يجب أن يكون بعد الحلقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0039",
+      "my_answer": "def month_name(m):\n    return MONTHS[m - 1]",
+      "reason": "القوائم مفهرسة من 0، الأشهر مرقمة من 1، الفهرس m - 1.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0011",
+      "my_answer": "def sort_students(records):\n    return sorted(records, key=lambda r: (-r[\"grade\"], r[\"name\"]))",
+      "reason": "reverse=True يعكس المفتاح كله، المفتاح (-grade, name) وحده يكفي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0028",
+      "my_answer": "def any_prefix(words, p):\n    return any(w.startswith(p) for w in words)",
+      "reason": "in على قائمة يفحص العضوية الكاملة، البادئة تُفحص بـ startswith.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0029",
+      "my_answer": "def contains_digit(s):\n    return re.search(r\"\\d\", s) is not None",
+      "reason": "re.match يطابق من بداية النص فقط، البحث في أي موضع يتطلب re.search.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0002",
+      "my_answer": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    intervals = sorted(intervals)\n    merged = [list(intervals[0])]\n    for s, e in intervals[1:]:\n        if s <= merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], e)\n        else:\n            merged.append([s, e])\n    return [tuple(m) for m in merged]",
+      "reason": "الدمج التسلسلي يفترض ترتيبًا، يجب sorted(intervals) قبل المرور.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0041",
+      "my_answer": "def dedup_keep_first(lst):\n    out = []\n    for x in lst:\n        if x not in out:\n            out.append(x)\n    return out",
+      "reason": "إزالة القديم وإلحاق الجديد ينقل العنصر إلى النهاية، الإبقاء على الأول يعني تخطّي المكرر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0001",
+      "my_answer": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    intervals = sorted(intervals)\n    merged = [list(intervals[0])]\n    for s, e in intervals[1:]:\n        if s <= merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], e)\n        else:\n            merged.append([s, e])\n    return [tuple(m) for m in merged]",
+      "reason": "الشرط s < النهاية يستثني التلامس، الفترات المغلقة تتطلب s <= النهاية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0023",
+      "my_answer": "def drop_inactive(users):\n    return {name: active for name, active in users.items() if active}",
+      "reason": "الحذف من قاموس أثناء التكرار يغير حجمه، الحل بناء قاموس جديد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0022",
+      "my_answer": "def cheapest(prices):\n    return min(prices, key=prices.get)",
+      "reason": "min على قاموس يقارن المفاتيح، المطلوب المفتاح صاحب أصغر قيمة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0005",
+      "my_answer": "def greeting(name):\n    if name == \"admin\":\n        return \"مرحبًا بالمدير\"\n    return \"مرحبًا \" + name",
+      "reason": "is تقارن الهوية لا المحتوى، النصوص المتساوية قد تختلف هويتها، والمقارنة الصحيحة ==.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0024",
+      "my_answer": "def round_money(x):\n    return int(x + 0.5)",
+      "reason": "round في بايثون يقرب النصف للزوجي، النصف لأعلى يحتاج floor(x + 0.5).",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0004",
+      "my_answer": "from math import isclose\ndef payments_equal(payments, expected):\n    return isclose(sum(payments), expected)",
+      "reason": "جمع الأعداد العشرية تراكمي الخطأ، المقارنة بـ == تفشل، الحل isclose.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0036",
+      "my_answer": "def combine(a, b):\n    return a + b",
+      "reason": "append يضيف القائمة كعنصر واحد، الدمج يكون بـ +.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0037",
+      "my_answer": "def double_total(nums):\n    total = 0\n    for x in nums:\n        total += x\n    return total * 2",
+      "reason": "المتغير sum يحجب الدالة المدمجة، إعادة التسمية تحلّه.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0027",
+      "my_answer": "def first_positions(items):\n    out = {}\n    for i, x in enumerate(items):\n        out[x] = i\n    return out",
+      "reason": "enumerate تعيد (الفهرس، العنصر)، فك التعبئة بترتيب معكوس يقلب القاموس.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0014",
+      "my_answer": "def line_total(price, fee, qty):\n    return (price + fee) * qty",
+      "reason": "الضرب مقدم على الجمع، القوسان حول (price + fee) إلزاميان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0045",
+      "my_answer": "def parse_list(s):\n    return [x.strip() for x in s.split(\",\") if x.strip()]",
+      "reason": "split وحدها تترك الفراغات والفارغات، يلزم strip لكل عنصر وتصفية الفارغ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0016",
+      "my_answer": "def valid_code(s):\n    return len(s) >= 3 and any(c.isdigit() for c in s)",
+      "reason": "المواصفة تشترط تحقق الشرطين معًا (and) لا أحدهما (or).",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0018",
+      "my_answer": "def row_sums(m):\n    out = []\n    for row in m:\n        total = 0\n        for x in row:\n            total += x\n        out.append(total)\n    return out",
+      "reason": "المجمّع يجب أن يُصفّر داخل حلقة الصفوف لا خارجها.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0025",
+      "my_answer": "def wrap_index(i, n):\n    return i % n",
+      "reason": "abs يقلب دلالة السالب، باقي القسمة في بايثون موجب دومًا مع مقسوم موجب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0006",
+      "my_answer": "def describe(name, age):\n    return \"الاسم: {}، العمر: {}\".format(name, age)",
+      "reason": "وسائط format تُمرّر بترتيب معكوس، يجب مطابقة ترتيب الوسائط لمواضع {}.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0017",
+      "my_answer": "def larger_number(a, b):\n    return a if int(a) > int(b) else b",
+      "reason": "المقارنة النصية أبجدية، يجب التحويل إلى int قبل المقارنة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_e_0030",
+      "my_answer": "def days_until(today, target):\n    return (target - today).days",
+      "reason": "المتبقي = الهدف ناقص اليوم، الطرح المعكوس يعكس الإشارة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T19:37:28Z"
+}

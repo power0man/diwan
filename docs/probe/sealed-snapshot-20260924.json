@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-09-24",
+  "scope": "sealed_bank_guard_supports_trusted_gitless_snapshot_and_checkout",
+  "owner_authorization": "أوافق على التصحيح ثم متابعة ج١",
+  "source_sha256": "e48f4db82d765e9589f3290837744634d5e0bf54e1b1250750dcda8d13cc51ee",
+  "targeted_tests_passed": 17,
+  "mutations": [
+    {
+      "mutation": "empty_snapshot",
+      "exit_code": 1,
+      "detected": true
+    },
+    {
+      "mutation": "suffix_only_manifest",
+      "exit_code": 1,
+      "detected": true
+    },
+    {
+      "mutation": "broken_git_treated_as_snapshot",
+      "exit_code": 1,
+      "detected": true
+    },
+    {
+      "mutation": "swallowed_listing_failure",
+      "exit_code": 1,
+      "detected": true
+    },
+    {
+      "mutation": "foreign_git_environment",
+      "exit_code": 1,
+      "detected": true
+    },
+    {
+      "mutation": "parent_git_discovery",
+      "exit_code": 1,
+      "detected": true
+    }
+  ],
+  "cross_family_review": {
+    "provider": "anthropic",
+    "model": "claude-opus-5-5",
+    "identity_provenance": "vendor_reported_api",
+    "weights_sha256": null,
+    "verdict": "accept",
+    "findings": [],
+    "response_sha256": "e288632abd0995b310b7a1f0ed1e07d3430db4e5988ad05fbbaf6e76d686a9ec",
+    "first_review_followup": "Isolated inherited Git environment and prevented upward repository discovery; both protections were tested by mutation.",
+    "limitations": [
+      "This is a static review of the provided module and materializer context. I did not execute the tests or the mutation runs, and I did not verify the reported validation results or source hash.",
+      "Snapshot mode is chosen when ROOT/.git is absent. That is sound here only because the trusted materializer rejects any path component that casefolds to '.git', so a snapshot never contains one. A different materializer would need separate review.",
+      "_disk_files does not follow symlinks below the prefix. os.scandir on the prefix itself does follow a symlinked 'evaluation' or 'evaluation/banks' component. The materializer rejects symlinks in snapshots, and in checkouts the index listing still reports the symlink entry. Only names are enumerated either way, never contents.",
+      "Matching of the 'sealed' component is case-sensitive, and only paths under evaluation/banks are scanned. Variants such as 'Sealed/' on case-insensitive filesystems, or sealed material stored elsewhere in the repository, are outside this guard's scope as specified.",
+      "_git removes every GIT_* variable, including GIT_CONFIG_COUNT and GIT_CONFIG_PARAMETERS. If a CI runner relied on those to set options such as safe.directory, git ls-files would raise loudly rather than pass silently. That is acceptable under the fail-closed requirement, but it was not checked against the actual CI configuration.",
+      "The fixture tests need a git binary and symlink support. They may error rather than skip on platforms without symlinks, such as Windows without developer mode.",
+      "No sealed bank contents were read or requested. This review does not assess the product quality of the banks or of the evaluation."
+    ]
+  },
+  "measurement_limits": [
+    "Synthetic fixtures only; no heldout bank contents were read.",
+    "Guard is scoped to exact sealed path components under evaluation/banks.",
+    "Snapshot scanning relies on the trusted materializer rejecting aliases and symlinks.",
+    "Cross-family code review is advisory; no model-judge qualification or product-quality certificate is inferred."
+  ]
+}

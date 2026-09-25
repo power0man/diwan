@@ -1,0 +1,23 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": "invalid_json",
+      "raw_output": ""
+    },
+    {
+      "attempt": 2,
+      "error": "invalid_json",
+      "raw_output": ""
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 597137,
+  "error": "invalid_json",
+  "family": "deepseek",
+  "file": "tier_a/kimi_assist_a_001.json",
+  "file_sha256": "7d743145f212bddf36e0c816d451c31f45da645f8d40f7864cba1c50b1717cd4",
+  "judgments": null,
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T18:20:48Z"
+}

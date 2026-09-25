@@ -1,0 +1,555 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-7b-v0.3\",\n  \"file\": \"kimi_arabic_a_001\",\n  \"judgments\": [\n    {\n      \"id\": \"morph_a_0108\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تَفْعِيل\",\n      \"reason\": \"الجذر لكلمة «تَقْدِير» هو «قدر»، والوزن الصرفي الصحيح هو «تَفْعِيل» حسب قواعد الصرف العربي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0101\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فَعِلَ\",\n      \"reason\": \"كلمة «عَلِمَ» على وزن «فَعِلَ» حسب حركة العين في الماضي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0319\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مشرق\",\n      \"reason\": \"اسم المكان من الفعل «شَرَقَ» هو «مشرق» بفتح الميم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كتب\",\n      \"reason\": \"الجذر لكلمة «مكتبة» هو «كتب» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0304\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"واقف\",\n      \"reason\": \"اسم الفاعل من الفعل «وَقَفَ» هو «واقف» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0204\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أقلام\",\n      \"reason\": \"جمع التكسير لكلمة «قلم» هو «أقلام» حسب الاستخدام الشائع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0102\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فَعُلَ\",\n      \"reason\": \"كلمة «حَسُنَ» على وزن «فَعُلَ» حسب حركة العين في الماضي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0104\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مَفْعُول\",\n      \"reason\": \"كلمة «مَكْتُوب» على وزن «مَفْعُول» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"درس\",\n      \"reason\": \"الجذر لكلمة «مدرسة» هو «درس» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0103\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مَفْعَل\",\n      \"reason\": \"كلمة «مَكْتَب» على وزن «مَفْعَل» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0216\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"شيوخ\",\n      \"reason\": \"جمع التكسير لكلمة «شيخ» هو «شيوخ» حسب الاستخدام الشائع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0301\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كاتب\",\n      \"reason\": \"اسم الفاعل من الفعل «كَتَبَ» هو «كاتب» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0107\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اِنْفَعَلَ\",\n      \"reason\": \"كلمة «اِنْكَسَرَ» على وزن «اِنْفَعَلَ» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0106\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اِسْتَفْعَلَ\",\n      \"reason\": \"كلمة «اِسْتَغْفَرَ» على وزن «اِسْتَفْعَلَ» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0313\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعليم\",\n      \"reason\": \"مصدر الفعل «عَلَّمَ» هو «تعليم» على وزن «تفعيل».\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0307\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مفهوم\",\n      \"reason\": \"اسم المفعول من الفعل «فَهِمَ» هو «مفهوم» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0113\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فَعُول\",\n      \"reason\": \"كلمة «صَبُور» على وزن «فَعُول» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0205\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نجوم\",\n      \"reason\": \"جمع التكسير لكلمة «نجم» هو «نجوم» حسب الاستخدام الشائع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0213\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سفن\",\n      \"reason\": \"جمع التكسير لكلمة «سفينة» هو «سفن» حسب الاستخدام الشائع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0212\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جزر\",\n      \"reason\": \"جمع التكسير لكلمة «جزيرة» هو «جزر» حسب الاستخدام الشائع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0202\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مساجد\",\n      \"reason\": \"جمع التكسير لكلمة «مسجد» هو «مساجد» حسب الاستخدام الشائع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0218\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كواكب\",\n      \"reason\": \"جمع التكسير لكلمة «كوكب» هو «كواكب» حسب الاستخدام الشائع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"غفر\",\n      \"reason\": \"الجذر لكلمة «استغفار» هو «غفر» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0317\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قيام\",\n      \"reason\": \"مصدر الفعل «قامَ» هو «قيام» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0105\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مُفَعِّل\",\n      \"reason\": \"كلمة «مُعَلِّم» على وزن «مُفَعِّل» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0315\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعاون\",\n      \"reason\": \"مصدر الفعل «تَعاوَنَ» هو «تعاون» على وزن «تفاعل».\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"خرج\",\n      \"reason\": \"الجذر لكلمة «استخراج» هو «خرج» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0320\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"موعد\",\n      \"reason\": \"اسم المكان من الفعل «وَعَدَ» هو «موعد» على وزن «مَفْعِل» لأن مضارعه مكسور العين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0120\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مُتَفَاعِل\",\n      \"reason\": \"كلمة «مُتَقاعِد» على وزن «مُتَفَاعِل» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0121\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إِفْعَالَة\",\n      \"reason\": \"كلمة «إِعادَة» على وزن «إِفْعَالَة» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0219\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حيطان\",\n      \"reason\": \"جمع التكسير لكلمة «حائط» هو «حيطان» حسب الاستخدام الشائع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وعد\",\n      \"reason\": \"الجذر لكلمة «ميعاد» هو «وعد» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0211\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أحصنة\",\n      \"reason\": \"جمع التكسير لكلمة «حصان» هو «أحصنة» حسب الاستخدام الشائع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وزن\",\n      \"reason\": \"الجذر لكلمة «ميزان» هو «وزن» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"عدو\",\n      \"reason\": \"الجذر لكلمة «معدية» هو «عدو» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0122\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فَعْلال\",\n      \"reason\": \"كلمة «زَلْزال» على وزن «فَعْلال» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0312\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المعطى\",\n      \"reason\": \"اسم المفعول من الفعل «أَعْطى» معرّفًا هو «المعطى» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0310\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مبيع\",\n      \"reason\": \"اسم المفعول من الفعل «باعَ» هو «مبيع» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0117\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مُسْتَفْعَل\",\n      \"reason\": \"كلمة «مُسْتَشْفى» على وزن «مُسْتَفْعَل» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قوم\",\n      \"reason\": \"الجذر لكلمة «مقام» هو «قوم» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0223\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أشهر\",\n      \"reason\": \"جمع القلّة لكلمة «شهر» هو «أشهر» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ترجم\",\n      \"reason\": \"الجذر لكلمة «ترجمان» هو «ترجم» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0118\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مِفْعَال\",\n      \"reason\": \"كلمة «مِفْتاح» على وزن «مِفْعَال» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0222\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أثواب\",\n      \"reason\": \"جمع القلّة لكلمة «ثوب» هو «أثواب» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0123\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تَفَعْلَلَ\",\n      \"reason\": \"كلمة «تَدَحْرَجَ» على وزن «تَفَعْلَلَ» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0119\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مُفْتَعَل\",\n      \"reason\": \"كلمة «مُجْتَمَع» على وزن «مُفْتَعَل» حسب قواعد الصرف، لكن المرجع ذكر «مُفْتَعَل» وهو صحيح، إلا أن المرجع كتب «مُفْتَعَل» بالتشكيل الخاطئ (مُفْتَعَل بدلاً من مُفْتَعَل). ومع ذلك، فإن الوزن الصحيح هو «مُفْتَعَل» وليس «مُفْعَل» كما ورد في المرجع.\",\n      \"fix\": \"مُفْتَعَل\"\n    },\n    {\n      \"id\": \"morph_a_0015\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"طير\",\n      \"reason\": \"الجذر لكلمة «مطار» هو «طير» وليس «طور» كما ورد في المرجع. المطار مشتق من الطيران وليس من الطور.\",\n      \"fix\": \"طير\"\n    },\n    {\n      \"id\": \"morph_a_0111\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اِسْتِفْعَال\",\n      \"reason\": \"كلمة «اِسْتِقْلال» على وزن «اِسْتِفْعَال» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0305\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"آخذ\",\n      \"reason\": \"اسم الفاعل من الفعل «أَخَذَ» هو «آخذ» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وثق\",\n      \"reason\": \"الجذر لكلمة «وثيقة» هو «وثق» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0316\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجادلة\",\n      \"reason\": \"مصدر الفعل «جادَلَ» على وزن «مُفاعَلَة» هو «مجادلة».\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0110\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تَفَاعَلَ\",\n      \"reason\": \"كلمة «تَكَاتَفَ» على وزن «تَفَاعَلَ» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0302\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قارئ\",\n      \"reason\": \"اسم الفاعل من الفعل «قَرَأَ» هو «قارئ» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0321\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مكنسة\",\n      \"reason\": \"اسم الآلة من الفعل «كَنَسَ» هو «مكنسة» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0209\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"غرباء\",\n      \"reason\": \"جمع التكسير لكلمة «غريب» هو «غرباء» حسب الاستخدام الشائع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0115\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فُعَال\",\n      \"reason\": \"كلمة «غُراب» على وزن «فُعَال» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0116\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تَفَعَّلَ\",\n      \"reason\": \"كلمة «تَذَكَّرَ» على وزن «تَفَعَّلَ» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"زلزل\",\n      \"reason\": \"الجذر لكلمة «زلزال» هو «زلزل» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0326\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"بائع\",\n      \"reason\": \"اسم الفاعل من الفعل «باع» هو «بائع» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0112\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مُفَاعَلَة\",\n      \"reason\": \"كلمة «مُخالَفة» على وزن «مُفَاعَلَة» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0308\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"موعود\",\n      \"reason\": \"اسم المفعول من الفعل «وَعَدَ» هو «موعود» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وعظ\",\n      \"reason\": \"الجذر لكلمة «موعظة» هو «وعظ» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0318\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجيء\",\n      \"reason\": \"مصدر الفعل «جاءَ» هو «مجيء» حسب قواعد الصرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0208\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أحذية\",\n      \"reason\": \"جمع التكسير لكلمة «حذاء» هو «أحذية» حسب الاستخدام الشائع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ودع\",\n      \"reason\": \"الجذر لكلمة «مستودع» هو «ودع» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سأل\",\n      \"reason\": \"الجذر لكلمة «تساؤل» هو «سأل» بعد حذف الزوائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0125\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اِفْتَعَلَ\",\n      \"reason\": \"كلمة «اكتشف» على وزن «اِفْتَعَلَ» حسب قواعد الصرف.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 66611,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_arabic_a_001.json",
+  "file_sha256": "5677a1996e64f809e4dbd35de4eba7a5623146bdbde55229b0ff6ccc6268c98e",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "morph_a_0108",
+      "my_answer": "تَفْعِيل",
+      "reason": "الجذر لكلمة «تَقْدِير» هو «قدر»، والوزن الصرفي الصحيح هو «تَفْعِيل» حسب قواعد الصرف العربي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0101",
+      "my_answer": "فَعِلَ",
+      "reason": "كلمة «عَلِمَ» على وزن «فَعِلَ» حسب حركة العين في الماضي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0319",
+      "my_answer": "مشرق",
+      "reason": "اسم المكان من الفعل «شَرَقَ» هو «مشرق» بفتح الميم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0003",
+      "my_answer": "كتب",
+      "reason": "الجذر لكلمة «مكتبة» هو «كتب» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0304",
+      "my_answer": "واقف",
+      "reason": "اسم الفاعل من الفعل «وَقَفَ» هو «واقف» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0204",
+      "my_answer": "أقلام",
+      "reason": "جمع التكسير لكلمة «قلم» هو «أقلام» حسب الاستخدام الشائع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0102",
+      "my_answer": "فَعُلَ",
+      "reason": "كلمة «حَسُنَ» على وزن «فَعُلَ» حسب حركة العين في الماضي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0104",
+      "my_answer": "مَفْعُول",
+      "reason": "كلمة «مَكْتُوب» على وزن «مَفْعُول» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0002",
+      "my_answer": "درس",
+      "reason": "الجذر لكلمة «مدرسة» هو «درس» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0103",
+      "my_answer": "مَفْعَل",
+      "reason": "كلمة «مَكْتَب» على وزن «مَفْعَل» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0216",
+      "my_answer": "شيوخ",
+      "reason": "جمع التكسير لكلمة «شيخ» هو «شيوخ» حسب الاستخدام الشائع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0301",
+      "my_answer": "كاتب",
+      "reason": "اسم الفاعل من الفعل «كَتَبَ» هو «كاتب» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0107",
+      "my_answer": "اِنْفَعَلَ",
+      "reason": "كلمة «اِنْكَسَرَ» على وزن «اِنْفَعَلَ» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0106",
+      "my_answer": "اِسْتَفْعَلَ",
+      "reason": "كلمة «اِسْتَغْفَرَ» على وزن «اِسْتَفْعَلَ» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0313",
+      "my_answer": "تعليم",
+      "reason": "مصدر الفعل «عَلَّمَ» هو «تعليم» على وزن «تفعيل».",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0307",
+      "my_answer": "مفهوم",
+      "reason": "اسم المفعول من الفعل «فَهِمَ» هو «مفهوم» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0113",
+      "my_answer": "فَعُول",
+      "reason": "كلمة «صَبُور» على وزن «فَعُول» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0205",
+      "my_answer": "نجوم",
+      "reason": "جمع التكسير لكلمة «نجم» هو «نجوم» حسب الاستخدام الشائع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0213",
+      "my_answer": "سفن",
+      "reason": "جمع التكسير لكلمة «سفينة» هو «سفن» حسب الاستخدام الشائع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0212",
+      "my_answer": "جزر",
+      "reason": "جمع التكسير لكلمة «جزيرة» هو «جزر» حسب الاستخدام الشائع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0202",
+      "my_answer": "مساجد",
+      "reason": "جمع التكسير لكلمة «مسجد» هو «مساجد» حسب الاستخدام الشائع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0218",
+      "my_answer": "كواكب",
+      "reason": "جمع التكسير لكلمة «كوكب» هو «كواكب» حسب الاستخدام الشائع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0004",
+      "my_answer": "غفر",
+      "reason": "الجذر لكلمة «استغفار» هو «غفر» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0317",
+      "my_answer": "قيام",
+      "reason": "مصدر الفعل «قامَ» هو «قيام» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0105",
+      "my_answer": "مُفَعِّل",
+      "reason": "كلمة «مُعَلِّم» على وزن «مُفَعِّل» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0315",
+      "my_answer": "تعاون",
+      "reason": "مصدر الفعل «تَعاوَنَ» هو «تعاون» على وزن «تفاعل».",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0001",
+      "my_answer": "خرج",
+      "reason": "الجذر لكلمة «استخراج» هو «خرج» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0320",
+      "my_answer": "موعد",
+      "reason": "اسم المكان من الفعل «وَعَدَ» هو «موعد» على وزن «مَفْعِل» لأن مضارعه مكسور العين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0120",
+      "my_answer": "مُتَفَاعِل",
+      "reason": "كلمة «مُتَقاعِد» على وزن «مُتَفَاعِل» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0121",
+      "my_answer": "إِفْعَالَة",
+      "reason": "كلمة «إِعادَة» على وزن «إِفْعَالَة» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0219",
+      "my_answer": "حيطان",
+      "reason": "جمع التكسير لكلمة «حائط» هو «حيطان» حسب الاستخدام الشائع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0012",
+      "my_answer": "وعد",
+      "reason": "الجذر لكلمة «ميعاد» هو «وعد» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0211",
+      "my_answer": "أحصنة",
+      "reason": "جمع التكسير لكلمة «حصان» هو «أحصنة» حسب الاستخدام الشائع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0007",
+      "my_answer": "وزن",
+      "reason": "الجذر لكلمة «ميزان» هو «وزن» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0016",
+      "my_answer": "عدو",
+      "reason": "الجذر لكلمة «معدية» هو «عدو» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0122",
+      "my_answer": "فَعْلال",
+      "reason": "كلمة «زَلْزال» على وزن «فَعْلال» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0312",
+      "my_answer": "المعطى",
+      "reason": "اسم المفعول من الفعل «أَعْطى» معرّفًا هو «المعطى» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0310",
+      "my_answer": "مبيع",
+      "reason": "اسم المفعول من الفعل «باعَ» هو «مبيع» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0117",
+      "my_answer": "مُسْتَفْعَل",
+      "reason": "كلمة «مُسْتَشْفى» على وزن «مُسْتَفْعَل» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0008",
+      "my_answer": "قوم",
+      "reason": "الجذر لكلمة «مقام» هو «قوم» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0223",
+      "my_answer": "أشهر",
+      "reason": "جمع القلّة لكلمة «شهر» هو «أشهر» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0020",
+      "my_answer": "ترجم",
+      "reason": "الجذر لكلمة «ترجمان» هو «ترجم» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0118",
+      "my_answer": "مِفْعَال",
+      "reason": "كلمة «مِفْتاح» على وزن «مِفْعَال» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0222",
+      "my_answer": "أثواب",
+      "reason": "جمع القلّة لكلمة «ثوب» هو «أثواب» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0123",
+      "my_answer": "تَفَعْلَلَ",
+      "reason": "كلمة «تَدَحْرَجَ» على وزن «تَفَعْلَلَ» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "مُفْتَعَل",
+      "id": "morph_a_0119",
+      "my_answer": "مُفْتَعَل",
+      "reason": "كلمة «مُجْتَمَع» على وزن «مُفْتَعَل» حسب قواعد الصرف، لكن المرجع ذكر «مُفْتَعَل» وهو صحيح، إلا أن المرجع كتب «مُفْتَعَل» بالتشكيل الخاطئ (مُفْتَعَل بدلاً من مُفْتَعَل). ومع ذلك، فإن الوزن الصحيح هو «مُفْتَعَل» وليس «مُفْعَل» كما ورد في المرجع.",
+      "reference": "incorrect",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "طير",
+      "id": "morph_a_0015",
+      "my_answer": "طير",
+      "reason": "الجذر لكلمة «مطار» هو «طير» وليس «طور» كما ورد في المرجع. المطار مشتق من الطيران وليس من الطور.",
+      "reference": "incorrect",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0111",
+      "my_answer": "اِسْتِفْعَال",
+      "reason": "كلمة «اِسْتِقْلال» على وزن «اِسْتِفْعَال» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0305",
+      "my_answer": "آخذ",
+      "reason": "اسم الفاعل من الفعل «أَخَذَ» هو «آخذ» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0019",
+      "my_answer": "وثق",
+      "reason": "الجذر لكلمة «وثيقة» هو «وثق» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0316",
+      "my_answer": "مجادلة",
+      "reason": "مصدر الفعل «جادَلَ» على وزن «مُفاعَلَة» هو «مجادلة».",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0110",
+      "my_answer": "تَفَاعَلَ",
+      "reason": "كلمة «تَكَاتَفَ» على وزن «تَفَاعَلَ» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0302",
+      "my_answer": "قارئ",
+      "reason": "اسم الفاعل من الفعل «قَرَأَ» هو «قارئ» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0321",
+      "my_answer": "مكنسة",
+      "reason": "اسم الآلة من الفعل «كَنَسَ» هو «مكنسة» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0209",
+      "my_answer": "غرباء",
+      "reason": "جمع التكسير لكلمة «غريب» هو «غرباء» حسب الاستخدام الشائع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0115",
+      "my_answer": "فُعَال",
+      "reason": "كلمة «غُراب» على وزن «فُعَال» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0116",
+      "my_answer": "تَفَعَّلَ",
+      "reason": "كلمة «تَذَكَّرَ» على وزن «تَفَعَّلَ» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0021",
+      "my_answer": "زلزل",
+      "reason": "الجذر لكلمة «زلزال» هو «زلزل» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0326",
+      "my_answer": "بائع",
+      "reason": "اسم الفاعل من الفعل «باع» هو «بائع» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0112",
+      "my_answer": "مُفَاعَلَة",
+      "reason": "كلمة «مُخالَفة» على وزن «مُفَاعَلَة» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0308",
+      "my_answer": "موعود",
+      "reason": "اسم المفعول من الفعل «وَعَدَ» هو «موعود» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0006",
+      "my_answer": "وعظ",
+      "reason": "الجذر لكلمة «موعظة» هو «وعظ» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0318",
+      "my_answer": "مجيء",
+      "reason": "مصدر الفعل «جاءَ» هو «مجيء» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0208",
+      "my_answer": "أحذية",
+      "reason": "جمع التكسير لكلمة «حذاء» هو «أحذية» حسب الاستخدام الشائع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0018",
+      "my_answer": "ودع",
+      "reason": "الجذر لكلمة «مستودع» هو «ودع» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0017",
+      "my_answer": "سأل",
+      "reason": "الجذر لكلمة «تساؤل» هو «سأل» بعد حذف الزوائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0125",
+      "my_answer": "اِفْتَعَلَ",
+      "reason": "كلمة «اكتشف» على وزن «اِفْتَعَلَ» حسب قواعد الصرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T18:12:25Z"
+}

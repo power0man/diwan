@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "probe": "k4_meaning_inversion",
+  "task": "ك٤",
+  "agent": "anthropic/claude-opus-5",
+  "date": "2026-09-24",
+  "generated_at": "2026-09-23T23:55:03Z",
+  "baseline_commit": "c251ade",
+  "question": "هل يميّز مقياسُ الجودة بين الجواب الصحيح والجواب المقلوب معناه؟",
+  "headline": {
+    "before": "الجوابُ المقلوب ينال overall_score = 1.0 في الأبعاد الأربعة كلِّها (صحة واكتمال وإسناد)، فلا يفرّقه المقياس عن الصحيح بشيء.",
+    "after": "الجوابُ المقلوب ينال overall_score = 0.0، والصحيحُ باقٍ على 1.0."
+  },
+  "cases_passed": {
+    "before": "4/9",
+    "after": "8/9"
+  },
+  "still_failing": [
+    "paraphrase_fact_has_no_number"
+  ],
+  "cases": [
+    {
+      "case": "correct_verbatim",
+      "description": "الجواب الصحيح بحروفه",
+      "group": "inversion",
+      "expected": 1.0,
+      "before": 1.0,
+      "after": 1.0,
+      "verdict": "كان سليمًا"
+    },
+    {
+      "case": "inverted_la",
+      "description": "المقلوب بـ«لا»",
+      "group": "inversion",
+      "expected": 0.0,
+      "before": 1.0,
+      "after": 0.0,
+      "verdict": "أُصلح"
+    },
+    {
+      "case": "inverted_laysa",
+      "description": "المقلوب بـ«ليس»",
+      "group": "inversion",
+      "expected": 0.0,
+      "before": 1.0,
+      "after": 0.0,
+      "verdict": "أُصلح"
+    },
+    {
+      "case": "inverted_wala",
+      "description": "المقلوب بـ«ولا» الملتحمة",
+      "group": "inversion",
+      "expected": 0.0,
+      "before": 1.0,
+      "after": 0.0,
+      "verdict": "أُصلح"
+    },
+    {
+      "case": "negation_elsewhere",
+      "description": "نفيٌ في شقٍّ آخر لا يمسّ الحكم",
+      "group": "false_positive",
+      "expected": 1.0,
+      "before": 1.0,
+      "after": 1.0,
+      "verdict": "كان سليمًا"
+    },
+    {
+      "case": "self_correcting",
+      "description": "ينفي ثم يستدرك بالصواب",
+      "group": "false_positive",
+      "expected": 1.0,
+      "before": 1.0,
+      "after": 1.0,
+      "verdict": "كان سليمًا"
+    },
+    {
+      "case": "negative_fact_quoted",
+      "description": "ينقل المنعَ بحروفه الصحيحة",
+      "group": "false_positive",
+      "expected": 1.0,
+      "before": 0.0,
+      "after": 1.0,
+      "verdict": "أُصلح"
+    },
+    {
+      "case": "paraphrase_fact_has_number",
+      "description": "مرادفٌ صحيح، والحقيقةُ فيها رقم",
+      "group": "paraphrase",
+      "expected": 1.0,
+      "before": 1.0,
+      "after": 1.0,
+      "verdict": "كان سليمًا"
+    },
+    {
+      "case": "paraphrase_fact_has_no_number",
+      "description": "مرادفٌ صحيح، والحقيقةُ بلا رقم",
+      "group": "paraphrase",
+      "expected": 1.0,
+      "before": 0.0,
+      "after": 0.0,
+      "verdict": "باقٍ على خطئه"
+    }
+  ],
+  "second_defect_found_while_fixing": {
+    "what": "جوابٌ ينقل المنعَ («لا يجوز…») بحروفه الصحيحة كان يُتَّهم بستّة تناقضات إباحة/حظر ويسقط إلى صفر.",
+    "why": "«يجوز» جزءٌ من «لا يجوز»، وكاشفُ الإباحة كان يَعُدّ اللفظَ بمجرّد وروده.",
+    "predates_this_work": true,
+    "case": "negative_fact_quoted"
+  },
+  "what_this_does_not_fix": [
+    "المقياسُ لم يصر دلاليًّا: أُغلق عماه عن النفي، ولم يُكتسب فهمُ المعنى.",
+    "إعادةُ الصياغة الصحيحة ما تزال تسقط إلى صفر متى خلت الحقيقةُ الذهبية من رقم — وتنجو متى حوت رقمًا يرد في الجواب (مسارُ التداخل اللفظي ‎0.5 مشروطٌ بالأرقام). فنجاتُها رهنُ مصادفةٍ في صياغة الحقيقة، لا رهنُ صحّة الجواب. والحالتان المقيستان هنا: paraphrase_fact_has_number وparaphrase_fact_has_no_number.",
+    "الكشفُ يعتمد قائمةَ أدواتِ نفيٍ مغلقة؛ فأداةٌ خارجها لا تُرى.",
+    "النفيُ المزدوج («ليس من غير الجائز») غيرُ محسوب.",
+    "القلبُ بغير أداةِ نفي — كقلب «يجب» إلى «يُستحسن» — غيرُ مكشوف.",
+    "بُعدُ الاكتمال يبقى 1.0 للجواب المقلوب عمدًا: الاكتمالُ يقيس تناولَ الشقوق لا صحّتَها، وأثرُ القلب يقع في الدرجة الإجمالية."
+  ],
+  "measurement_limits": [
+    "تسعُ حالاتٍ مصطنعة تقيس اتجاه العطب، لا جودةَ ديوان ولا أيَّ محرّك",
+    "لم يُعَد تشغيلُ بنك م١٤ كاملًا، فالأرقامُ المنشورة سابقًا لم تُحدَّث بهذا الإصلاح",
+    "القياسُ على evaluate_factuality وevaluate_case_response وحدهما"
+  ]
+}

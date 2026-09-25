@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-21",
+  "scope": "m9_experimental_technical_acceptance",
+  "live": {
+    "schema_version": 1,
+    "scope": "live_development_dialogue_mechanism",
+    "checks": {
+      "three_complete_turns": true,
+      "ordered_multi_turn_context": true,
+      "context_changes_request_identity": true,
+      "local_only_without_tools": true,
+      "unverified_assistant_type": true,
+      "three_fresh_calls": true,
+      "restart_replays_same_results": true,
+      "replay_zero_provider_calls": true,
+      "replay_preserves_files": true,
+      "replay_zero_network_requests": true,
+      "three_initial_chat_requests": true
+    },
+    "passed": 11,
+    "total": 11,
+    "initial_provider_calls": 3,
+    "replay_provider_calls": 0,
+    "quality_pending": true,
+    "human_review": "pending",
+    "independent_bank": "not_provided",
+    "m8b_complete": false,
+    "release_ready": false,
+    "run_id": "m9-first-20260921",
+    "initial_chat_calls": 3,
+    "initial_metadata_calls": 6,
+    "replay_chat_calls": 0,
+    "replay_metadata_calls": 0
+  },
+  "final_replay": {
+    "replayed": 3,
+    "all_replayed": true,
+    "chat_calls": 0,
+    "metadata_calls": 0,
+    "files_unchanged": true
+  },
+  "usage": {
+    "input_tokens": 611,
+    "output_tokens": 43
+  },
+  "answers": [
+    {
+      "turn_id": "turn-1",
+      "text": "أعد صياغة هذه المعلومة بجملة قصيرة: موعد التجربة يوم الأحد الساعة التاسعة.",
+      "content": "تبدأ التجربة يوم الأحد الساعة التاسعة.",
+      "status": "complete",
+      "request_sha256": "cc25e37cb6d03cb44d647ef005ef1c67b23fef29f3b12f983844fc19f4b8950c",
+      "context_sha256": "30550785017cb594af1b148c90ef4ad83fcb0ca6bc5ca937092813dee4840a93"
+    },
+    {
+      "turn_id": "turn-2",
+      "text": "تصحيح: الموعد يوم الاثنين الساعة العاشرة. اعتمد هذا التصحيح في هذه المحادثة.",
+      "content": "تبدأ التجربة يوم الاثنين الساعة العاشرة.",
+      "status": "complete",
+      "request_sha256": "7d9ecaf2bb100a2fcea14b85abab9b1b089bf617b913e677773c2678f27a9b07",
+      "context_sha256": "ef9e0883127ee49a151ec8ca952c3d0983e31f976769df7ff1c72c2464352062"
+    },
+    {
+      "turn_id": "turn-3",
+      "text": "ما الموعد المصحح؟ أجب بجملة واحدة.",
+      "content": "الموعد المصحح هو يوم الاثنين الساعة العاشرة.",
+      "status": "complete",
+      "request_sha256": "e4ac226fa82331daf8f097b3d14f116ee9e3ef66970ce452a84d1847c75af4c5",
+      "context_sha256": "2de9b517821fe5b59b98b2dc472c97245d37bc00f1e7db6fab7a179bd0ea93f2"
+    }
+  ],
+  "quality_review": "pending",
+  "independent_bank": "not_provided",
+  "release_ready": false,
+  "verification": {
+    "pytest_passed": 727,
+    "m0_passed": 8,
+    "m8b_mechanism_passed": 6,
+    "m9_synthetic_passed": 14,
+    "m7_passed": 10,
+    "clone_signatures_verified": 6,
+    "original_baseline_signatures_verified": 8,
+    "m7_materials_scanned": 3678,
+    "m7_leaked": 0,
+    "audit_findings_fixed": 7
+  }
+}

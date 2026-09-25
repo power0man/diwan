@@ -1,0 +1,914 @@
+{
+ "schema_version": 1,
+ "suite_id": "morphology_roots_v1",
+ "kind": "root_gold",
+ "description": "مئةُ كلمةِ متنٍ حقيقية من المتن البحري (٥٠ شائعة عبر ثلاث وثائق فأكثر، و٥٠ متوسّطة التكرار) بعيّنةٍ طبقيّة عشوائية ببذرة 20260925؛ الجذورُ الذهبية بيد Claude في ٢٥ سبتمبر ٢٠٢٦، والهمزةُ «ء» في الجذر، و[] يعني لا جذرَ اشتقاقيًّا. لم يراجعها لسانيٌّ ثانٍ بعد.",
+ "sampling": {
+  "seed": 20260925,
+  "source": "corpus/maritime (117 وثيقة، 19910 لفظةً مميّزة)",
+  "strata": {
+   "frequent": "أعلى 400 لفظة ترد في ثلاث وثائق فأكثر",
+   "mid": "الرتب 400–4000 بتكرار ≥ 3"
+  }
+ },
+ "items": [
+  {
+   "word": "ويجب",
+   "gold_roots": [
+    "وجب"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 189,
+   "corpus_docs": 18
+  },
+  {
+   "word": "الاعتماد",
+   "gold_roots": [
+    "عمد"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 324,
+   "corpus_docs": 51
+  },
+  {
+   "word": "حمولة",
+   "gold_roots": [
+    "حمل"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 105,
+   "corpus_docs": 28
+  },
+  {
+   "word": "خطوط",
+   "gold_roots": [
+    "خطط"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 143,
+   "corpus_docs": 50
+  },
+  {
+   "word": "الجهة",
+   "gold_roots": [
+    "وجه"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 332,
+   "corpus_docs": 58
+  },
+  {
+   "word": "التلوث",
+   "gold_roots": [
+    "لوث"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 159,
+   "corpus_docs": 34
+  },
+  {
+   "word": "معتمدة",
+   "gold_roots": [
+    "عمد"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 131,
+   "corpus_docs": 39
+  },
+  {
+   "word": "إجراءات",
+   "gold_roots": [
+    "جري"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 108,
+   "corpus_docs": 36
+  },
+  {
+   "word": "قيد",
+   "gold_roots": [
+    "قيد"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 118,
+   "corpus_docs": 38
+  },
+  {
+   "word": "الجامع",
+   "gold_roots": [
+    "جمع"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 124,
+   "corpus_docs": 22
+  },
+  {
+   "word": "الوحدة",
+   "gold_roots": [
+    "وحد"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 238,
+   "corpus_docs": 35
+  },
+  {
+   "word": "بيان",
+   "gold_roots": [
+    "بين"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 131,
+   "corpus_docs": 39
+  },
+  {
+   "word": "القرارات",
+   "gold_roots": [
+    "قرر"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 146,
+   "corpus_docs": 36
+  },
+  {
+   "word": "مغلقة",
+   "gold_roots": [
+    "غلق"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 167,
+   "corpus_docs": 5
+  },
+  {
+   "word": "مياه",
+   "gold_roots": [
+    "موه"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 384,
+   "corpus_docs": 52
+  },
+  {
+   "word": "كلها",
+   "gold_roots": [
+    "كلل"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 142,
+   "corpus_docs": 49
+  },
+  {
+   "word": "التسجيل",
+   "gold_roots": [
+    "سجل"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 222,
+   "corpus_docs": 45
+  },
+  {
+   "word": "شهادة",
+   "gold_roots": [
+    "شهد"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 1506,
+   "corpus_docs": 72
+  },
+  {
+   "word": "دولة",
+   "gold_roots": [
+    "دول"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 205,
+   "corpus_docs": 33
+  },
+  {
+   "word": "المؤسسة",
+   "gold_roots": [
+    "ءسس"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 184,
+   "corpus_docs": 22
+  },
+  {
+   "word": "السجل",
+   "gold_roots": [
+    "سجل"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 237,
+   "corpus_docs": 50
+  },
+  {
+   "word": "الأعلى",
+   "gold_roots": [
+    "علو",
+    "علي"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 124,
+   "corpus_docs": 29,
+   "note": "ع-ل-و/ع-ل-ي"
+  },
+  {
+   "word": "بلائحة",
+   "gold_roots": [
+    "لوح"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 126,
+   "corpus_docs": 8
+  },
+  {
+   "word": "حذف",
+   "gold_roots": [
+    "حذف"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 117,
+   "corpus_docs": 35
+  },
+  {
+   "word": "أماكن",
+   "gold_roots": [
+    "مكن",
+    "كون"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 115,
+   "corpus_docs": 10,
+   "note": "مكان: م-ك-ن عند أكثر المعاجم، وك-و-ن عند بعضها"
+  },
+  {
+   "word": "الإرشاد",
+   "gold_roots": [
+    "رشد"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 244,
+   "corpus_docs": 32
+  },
+  {
+   "word": "تشغيل",
+   "gold_roots": [
+    "شغل"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 155,
+   "corpus_docs": 52
+  },
+  {
+   "word": "وقد",
+   "gold_roots": [],
+   "stratum": "frequent",
+   "corpus_count": 128,
+   "corpus_docs": 42
+  },
+  {
+   "word": "السفينة",
+   "gold_roots": [
+    "سفن"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 2059,
+   "corpus_docs": 81
+  },
+  {
+   "word": "إعادة",
+   "gold_roots": [
+    "عود"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 340,
+   "corpus_docs": 53
+  },
+  {
+   "word": "المعاينة",
+   "gold_roots": [
+    "عين"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 267,
+   "corpus_docs": 33
+  },
+  {
+   "word": "ملاحظة",
+   "gold_roots": [
+    "لحظ"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 145,
+   "corpus_docs": 36
+  },
+  {
+   "word": "نطاق",
+   "gold_roots": [
+    "نطق"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 224,
+   "corpus_docs": 72
+  },
+  {
+   "word": "العقوبة",
+   "gold_roots": [
+    "عقب"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 106,
+   "corpus_docs": 39
+  },
+  {
+   "word": "بدل",
+   "gold_roots": [
+    "بدل"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 129,
+   "corpus_docs": 40
+  },
+  {
+   "word": "يناير",
+   "gold_roots": [],
+   "stratum": "frequent",
+   "corpus_count": 163,
+   "corpus_docs": 14,
+   "note": "أعجمي"
+  },
+  {
+   "word": "وما",
+   "gold_roots": [],
+   "stratum": "frequent",
+   "corpus_count": 190,
+   "corpus_docs": 56
+  },
+  {
+   "word": "نقل",
+   "gold_roots": [
+    "نقل"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 259,
+   "corpus_docs": 61
+  },
+  {
+   "word": "مدونة",
+   "gold_roots": [
+    "دون"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 240,
+   "corpus_docs": 29
+  },
+  {
+   "word": "بذلك",
+   "gold_roots": [],
+   "stratum": "frequent",
+   "corpus_count": 115,
+   "corpus_docs": 33
+  },
+  {
+   "word": "لسفينة",
+   "gold_roots": [
+    "سفن"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 160,
+   "corpus_docs": 31
+  },
+  {
+   "word": "البحارة",
+   "gold_roots": [
+    "بحر"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 106,
+   "corpus_docs": 18
+  },
+  {
+   "word": "التوجيهية",
+   "gold_roots": [
+    "وجه"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 145,
+   "corpus_docs": 16
+  },
+  {
+   "word": "اللازمة",
+   "gold_roots": [
+    "لزم"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 156,
+   "corpus_docs": 29
+  },
+  {
+   "word": "الاتفاقية",
+   "gold_roots": [
+    "وفق"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 687,
+   "corpus_docs": 40
+  },
+  {
+   "word": "تقرير",
+   "gold_roots": [
+    "قرر"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 398,
+   "corpus_docs": 78
+  },
+  {
+   "word": "تاريخ",
+   "gold_roots": [
+    "ءرخ",
+    "ورخ"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 375,
+   "corpus_docs": 61,
+   "note": "أ-ر-خ، وو-ر-خ لغة"
+  },
+  {
+   "word": "آلاف",
+   "gold_roots": [
+    "ءلف"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 207,
+   "corpus_docs": 39
+  },
+  {
+   "word": "تقديم",
+   "gold_roots": [
+    "قدم"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 154,
+   "corpus_docs": 41
+  },
+  {
+   "word": "سلامة",
+   "gold_roots": [
+    "سلم"
+   ],
+   "stratum": "frequent",
+   "corpus_count": 297,
+   "corpus_docs": 53
+  },
+  {
+   "word": "بالقياس",
+   "gold_roots": [
+    "قيس"
+   ],
+   "stratum": "mid",
+   "corpus_count": 29,
+   "corpus_docs": 15
+  },
+  {
+   "word": "لناقلات",
+   "gold_roots": [
+    "نقل"
+   ],
+   "stratum": "mid",
+   "corpus_count": 39,
+   "corpus_docs": 13
+  },
+  {
+   "word": "أكبر",
+   "gold_roots": [
+    "كبر"
+   ],
+   "stratum": "mid",
+   "corpus_count": 12,
+   "corpus_docs": 10
+  },
+  {
+   "word": "للهيئة",
+   "gold_roots": [
+    "هيء"
+   ],
+   "stratum": "mid",
+   "corpus_count": 18,
+   "corpus_docs": 8
+  },
+  {
+   "word": "أميال",
+   "gold_roots": [
+    "ميل"
+   ],
+   "stratum": "mid",
+   "corpus_count": 20,
+   "corpus_docs": 7
+  },
+  {
+   "word": "وقواعد",
+   "gold_roots": [
+    "قعد"
+   ],
+   "stratum": "mid",
+   "corpus_count": 23,
+   "corpus_docs": 17
+  },
+  {
+   "word": "والمعدات",
+   "gold_roots": [
+    "عدد"
+   ],
+   "stratum": "mid",
+   "corpus_count": 48,
+   "corpus_docs": 16
+  },
+  {
+   "word": "بأنظمة",
+   "gold_roots": [
+    "نظم"
+   ],
+   "stratum": "mid",
+   "corpus_count": 9,
+   "corpus_docs": 5
+  },
+  {
+   "word": "تمهيد",
+   "gold_roots": [
+    "مهد"
+   ],
+   "stratum": "mid",
+   "corpus_count": 9,
+   "corpus_docs": 4
+  },
+  {
+   "word": "خالل",
+   "gold_roots": [
+    "خلل"
+   ],
+   "stratum": "mid",
+   "corpus_count": 20,
+   "corpus_docs": 1,
+   "note": "رسمُ المتن كما ورد (خلال بألفٍ زائدة من المسح الضوئي)"
+  },
+  {
+   "word": "وإقفال",
+   "gold_roots": [
+    "قفل"
+   ],
+   "stratum": "mid",
+   "corpus_count": 9,
+   "corpus_docs": 7
+  },
+  {
+   "word": "تعهد",
+   "gold_roots": [
+    "عهد"
+   ],
+   "stratum": "mid",
+   "corpus_count": 9,
+   "corpus_docs": 7
+  },
+  {
+   "word": "الخطأ",
+   "gold_roots": [
+    "خطء"
+   ],
+   "stratum": "mid",
+   "corpus_count": 11,
+   "corpus_docs": 7
+  },
+  {
+   "word": "التنسيق",
+   "gold_roots": [
+    "نسق"
+   ],
+   "stratum": "mid",
+   "corpus_count": 21,
+   "corpus_docs": 18
+  },
+  {
+   "word": "للعيان",
+   "gold_roots": [
+    "عين"
+   ],
+   "stratum": "mid",
+   "corpus_count": 15,
+   "corpus_docs": 2
+  },
+  {
+   "word": "مثبتة",
+   "gold_roots": [
+    "ثبت"
+   ],
+   "stratum": "mid",
+   "corpus_count": 23,
+   "corpus_docs": 13
+  },
+  {
+   "word": "مسؤوليات",
+   "gold_roots": [
+    "سءل"
+   ],
+   "stratum": "mid",
+   "corpus_count": 17,
+   "corpus_docs": 14
+  },
+  {
+   "word": "معاين",
+   "gold_roots": [
+    "عين"
+   ],
+   "stratum": "mid",
+   "corpus_count": 10,
+   "corpus_docs": 5
+  },
+  {
+   "word": "مدمجة",
+   "gold_roots": [
+    "دمج"
+   ],
+   "stratum": "mid",
+   "corpus_count": 16,
+   "corpus_docs": 12
+  },
+  {
+   "word": "الصهريج",
+   "gold_roots": [
+    "صهرج"
+   ],
+   "stratum": "mid",
+   "corpus_count": 15,
+   "corpus_docs": 2
+  },
+  {
+   "word": "الجزء",
+   "gold_roots": [
+    "جزء"
+   ],
+   "stratum": "mid",
+   "corpus_count": 74,
+   "corpus_docs": 21
+  },
+  {
+   "word": "المؤهلين",
+   "gold_roots": [
+    "ءهل"
+   ],
+   "stratum": "mid",
+   "corpus_count": 9,
+   "corpus_docs": 8
+  },
+  {
+   "word": "شركة",
+   "gold_roots": [
+    "شرك"
+   ],
+   "stratum": "mid",
+   "corpus_count": 79,
+   "corpus_docs": 28
+  },
+  {
+   "word": "قنوات",
+   "gold_roots": [
+    "قنو",
+    "قني"
+   ],
+   "stratum": "mid",
+   "corpus_count": 16,
+   "corpus_docs": 5,
+   "note": "ق-ن-و/ق-ن-ي"
+  },
+  {
+   "word": "الدنيا",
+   "gold_roots": [
+    "دنو",
+    "دني"
+   ],
+   "stratum": "mid",
+   "corpus_count": 14,
+   "corpus_docs": 6,
+   "note": "د-ن-و/د-ن-ي"
+  },
+  {
+   "word": "الغسل",
+   "gold_roots": [
+    "غسل"
+   ],
+   "stratum": "mid",
+   "corpus_count": 9,
+   "corpus_docs": 3
+  },
+  {
+   "word": "الوقاية",
+   "gold_roots": [
+    "وقي"
+   ],
+   "stratum": "mid",
+   "corpus_count": 16,
+   "corpus_docs": 5
+  },
+  {
+   "word": "الأحكام",
+   "gold_roots": [
+    "حكم"
+   ],
+   "stratum": "mid",
+   "corpus_count": 51,
+   "corpus_docs": 20
+  },
+  {
+   "word": "وتبقى",
+   "gold_roots": [
+    "بقي"
+   ],
+   "stratum": "mid",
+   "corpus_count": 15,
+   "corpus_docs": 13
+  },
+  {
+   "word": "وسيلة",
+   "gold_roots": [
+    "وسل"
+   ],
+   "stratum": "mid",
+   "corpus_count": 42,
+   "corpus_docs": 13
+  },
+  {
+   "word": "للائحة",
+   "gold_roots": [
+    "لوح"
+   ],
+   "stratum": "mid",
+   "corpus_count": 79,
+   "corpus_docs": 30
+  },
+  {
+   "word": "الأبيض",
+   "gold_roots": [
+    "بيض"
+   ],
+   "stratum": "mid",
+   "corpus_count": 9,
+   "corpus_docs": 4
+  },
+  {
+   "word": "المذكورة",
+   "gold_roots": [
+    "ذكر"
+   ],
+   "stratum": "mid",
+   "corpus_count": 52,
+   "corpus_docs": 15
+  },
+  {
+   "word": "وليست",
+   "gold_roots": [],
+   "stratum": "mid",
+   "corpus_count": 11,
+   "corpus_docs": 9,
+   "note": "ليس فعلٌ جامد بلا جذرٍ اشتقاقيّ"
+  },
+  {
+   "word": "شامل",
+   "gold_roots": [
+    "شمل"
+   ],
+   "stratum": "mid",
+   "corpus_count": 24,
+   "corpus_docs": 17
+  },
+  {
+   "word": "وتقع",
+   "gold_roots": [
+    "وقع"
+   ],
+   "stratum": "mid",
+   "corpus_count": 9,
+   "corpus_docs": 6
+  },
+  {
+   "word": "تتولى",
+   "gold_roots": [
+    "ولي"
+   ],
+   "stratum": "mid",
+   "corpus_count": 26,
+   "corpus_docs": 17
+  },
+  {
+   "word": "المناسب",
+   "gold_roots": [
+    "نسب"
+   ],
+   "stratum": "mid",
+   "corpus_count": 35,
+   "corpus_docs": 11
+  },
+  {
+   "word": "المصممة",
+   "gold_roots": [
+    "صمم"
+   ],
+   "stratum": "mid",
+   "corpus_count": 11,
+   "corpus_docs": 8
+  },
+  {
+   "word": "وتثبيت",
+   "gold_roots": [
+    "ثبت"
+   ],
+   "stratum": "mid",
+   "corpus_count": 19,
+   "corpus_docs": 12
+  },
+  {
+   "word": "والإحالة",
+   "gold_roots": [
+    "حول"
+   ],
+   "stratum": "mid",
+   "corpus_count": 12,
+   "corpus_docs": 11
+  },
+  {
+   "word": "مجموعات",
+   "gold_roots": [
+    "جمع"
+   ],
+   "stratum": "mid",
+   "corpus_count": 28,
+   "corpus_docs": 19
+  },
+  {
+   "word": "الإنجليزي",
+   "gold_roots": [],
+   "stratum": "mid",
+   "corpus_count": 17,
+   "corpus_docs": 8,
+   "note": "نسبةٌ إلى أعجمي"
+  },
+  {
+   "word": "أنواع",
+   "gold_roots": [
+    "نوع"
+   ],
+   "stratum": "mid",
+   "corpus_count": 62,
+   "corpus_docs": 25
+  },
+  {
+   "word": "للنموذج",
+   "gold_roots": [
+    "نمذج"
+   ],
+   "stratum": "mid",
+   "corpus_count": 28,
+   "corpus_docs": 13
+  },
+  {
+   "word": "منشآت",
+   "gold_roots": [
+    "نشء"
+   ],
+   "stratum": "mid",
+   "corpus_count": 64,
+   "corpus_docs": 18
+  },
+  {
+   "word": "ومساعدات",
+   "gold_roots": [
+    "سعد"
+   ],
+   "stratum": "mid",
+   "corpus_count": 9,
+   "corpus_docs": 2
+  },
+  {
+   "word": "مما",
+   "gold_roots": [],
+   "stratum": "mid",
+   "corpus_count": 33,
+   "corpus_docs": 15
+  },
+  {
+   "word": "بهم",
+   "gold_roots": [],
+   "stratum": "mid",
+   "corpus_count": 18,
+   "corpus_docs": 12
+  },
+  {
+   "word": "مشغل",
+   "gold_roots": [
+    "شغل"
+   ],
+   "stratum": "mid",
+   "corpus_count": 35,
+   "corpus_docs": 10
+  }
+ ]
+}

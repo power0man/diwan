@@ -1,0 +1,515 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-7b-instruct-v0.3\",\n  \"file\": \"kimi_logic_a_002\",\n  \"judgments\": [\n    {\n      \"id\": \"fallcy_a_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0072\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0057\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0081\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الاستدلال استقرائي معقول ولا يحتوي على مغالطة. المرجع صحيح في الحكم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0084\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'التعميم المتسرع'، حيث يُعمم حكم على فئة بناءً على حالة واحدة. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'التعميم المتسرع'، حيث يُعمم حكم على فئة بناءً على حالتين. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'التعميم المتسرع'، حيث يُعمم حكم على مدينة بناءً على يوم واحد. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'رجل القش'، حيث يُحرف المقترح الأصلي إلى شيء مبالغ فيه. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'التعميم المتسرع'، حيث يُعمم حكم على متجر بناءً على ساعة واحدة. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'الاحتكام إلى الجهل'، حيث يُستنتج عدم وجود شيء بناءً على عدم وجود دليل. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'الالتفاف (مصادرة على المطلوب)'، حيث يُفترض ما يُراد إثباته. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'التعميم المتسرع'، حيث يُعمم حكم على فئة بناءً على حالة واحدة. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'الالتفاف (مصادرة على المطلوب)'، حيث يُفترض ما يُراد إثباته. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'الاحتكام إلى الجهل'، حيث يُستنتج وجود شيء بناءً على عدم وجود دليل ضده. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'رجل القش'، حيث يُحرف المقترح الأصلي إلى شيء مبالغ فيه. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'رجل القش'، حيث يُحرف المقترح الأصلي إلى شيء مبالغ فيه. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'الاحتكام إلى الجهل'، حيث يُستنتج أمان شيء بناءً على عدم وجود دليل ضده. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'الالتفاف (مصادرة على المطلوب)'، حيث يُفترض ما يُراد إثباته. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'الالتفاف (مصادرة على المطلوب)'، حيث يُفترض ما يُراد إثباته. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح\",\n      \"reason\": \"الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'الاحتكام إلى الجهل'، حيث يُستنتج عدم وجود شيء بناءً على عدم وجود دليل. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0082\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد\",\n      \"reason\": \"الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 69024,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_logic_a_002.json",
+  "file_sha256": "f47bf44f6c362a6ee93571b1df08f76a4a123601da8d7927d03b8e90ebbd6845",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "fallcy_a_0037",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0041",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0049",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0015",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0066",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0012",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0042",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0072",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'إثبات المقدم يلزم منه التالي'، وهي قاعدة منطقية صحيحة. المعايير واضحة وتسمح بالحكم الصحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0057",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0077",
+      "my_answer": "د",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0064",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0001",
+      "my_answer": "ج",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0075",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0060",
+      "my_answer": "ب",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0062",
+      "my_answer": "أ",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0040",
+      "my_answer": "ب",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0022",
+      "my_answer": "د",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0027",
+      "my_answer": "ب",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0035",
+      "my_answer": "ج",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0019",
+      "my_answer": "د",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0065",
+      "my_answer": "د",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0005",
+      "my_answer": "أ",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0011",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0016",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0038",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0030",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0081",
+      "my_answer": "د",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0051",
+      "my_answer": "ب",
+      "reason": "الاستدلال استقرائي معقول ولا يحتوي على مغالطة. المرجع صحيح في الحكم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0084",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0063",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0006",
+      "my_answer": "ب",
+      "reason": "الاستدلال يرتكب مغالطة 'التعميم المتسرع'، حيث يُعمم حكم على فئة بناءً على حالة واحدة. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0088",
+      "my_answer": "د",
+      "reason": "الاستدلال يرتكب مغالطة 'التعميم المتسرع'، حيث يُعمم حكم على فئة بناءً على حالتين. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0047",
+      "my_answer": "ج",
+      "reason": "الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0031",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0050",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0074",
+      "my_answer": "د",
+      "reason": "الاستدلال يرتكب مغالطة 'التعميم المتسرع'، حيث يُعمم حكم على مدينة بناءً على يوم واحد. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0079",
+      "my_answer": "د",
+      "reason": "الاستدلال يرتكب مغالطة 'رجل القش'، حيث يُحرف المقترح الأصلي إلى شيء مبالغ فيه. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0046",
+      "my_answer": "ب",
+      "reason": "الاستدلال يرتكب مغالطة 'التعميم المتسرع'، حيث يُعمم حكم على متجر بناءً على ساعة واحدة. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0070",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0014",
+      "my_answer": "أ",
+      "reason": "الاستدلال يرتكب مغالطة 'الاحتكام إلى الجهل'، حيث يُستنتج عدم وجود شيء بناءً على عدم وجود دليل. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0002",
+      "my_answer": "ب",
+      "reason": "الاستدلال يرتكب مغالطة 'الالتفاف (مصادرة على المطلوب)'، حيث يُفترض ما يُراد إثباته. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0033",
+      "my_answer": "أ",
+      "reason": "الاستدلال يرتكب مغالطة 'التعميم المتسرع'، حيث يُعمم حكم على فئة بناءً على حالة واحدة. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0032",
+      "my_answer": "ج",
+      "reason": "الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0055",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0007",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0028",
+      "my_answer": "ج",
+      "reason": "الاستدلال يرتكب مغالطة 'الالتفاف (مصادرة على المطلوب)'، حيث يُفترض ما يُراد إثباته. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0029",
+      "my_answer": "أ",
+      "reason": "الاستدلال يرتكب مغالطة 'الاحتكام إلى الجهل'، حيث يُستنتج وجود شيء بناءً على عدم وجود دليل ضده. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0004",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0071",
+      "my_answer": "ج",
+      "reason": "الاستدلال يرتكب مغالطة 'رجل القش'، حيث يُحرف المقترح الأصلي إلى شيء مبالغ فيه. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0008",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0089",
+      "my_answer": "د",
+      "reason": "الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0068",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0010",
+      "my_answer": "ب",
+      "reason": "الاستدلال يرتكب مغالطة 'رجل القش'، حيث يُحرف المقترح الأصلي إلى شيء مبالغ فيه. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0025",
+      "my_answer": "ج",
+      "reason": "الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0078",
+      "my_answer": "أ",
+      "reason": "الاستدلال يرتكب مغالطة 'الاحتكام إلى الجهل'، حيث يُستنتج أمان شيء بناءً على عدم وجود دليل ضده. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0058",
+      "my_answer": "ج",
+      "reason": "الاستدلال يرتكب مغالطة 'الالتفاف (مصادرة على المطلوب)'، حيث يُفترض ما يُراد إثباته. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0018",
+      "my_answer": "أ",
+      "reason": "الاستدلال يرتكب مغالطة 'الالتفاف (مصادرة على المطلوب)'، حيث يُفترض ما يُراد إثباته. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0039",
+      "my_answer": "صحيح",
+      "reason": "الاستدلال يتبع قاعدة 'نفي التالي يلزم منه نفي المقدم'، وهي قاعدة منطقية صحيحة. المرجع صحيح في الحكم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0056",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0076",
+      "my_answer": "أ",
+      "reason": "الاستدلال يرتكب مغالطة 'الاحتكام إلى الجهل'، حيث يُستنتج عدم وجود شيء بناءً على عدم وجود دليل. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0082",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إثبات التالي'، حيث يُستنتج المقدم من التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0045",
+      "my_answer": "فاسد",
+      "reason": "الاستدلال يرتكب مغالطة 'إنكار المقدم'، حيث يُنكر المقدم ويُستنتج نفي التالي. المرجع صحيح في تشخيص المغالطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T19:00:22Z"
+}

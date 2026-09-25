@@ -1,0 +1,467 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-24.07\",\n  \"file\": \"kimi_prog_a_002\",\n  \"judgments\": [\n    {\n      \"id\": \"prog_b_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[2, 3]\",\n      \"reason\": \"المرجع صحيح: الشريحة nums[1:3] تعيد [2, 3] كما هو متوقع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[1, 2, 3, 1]\",\n      \"reason\": \"المرجع صحيح: a + a[:1] تعيد [1, 2, 3, 1] كما هو متوقع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"7\",\n      \"reason\": \"المرجع صحيح: d[\\\"a\\\"] تصبح 2 وd[\\\"b\\\"] تُضاف بقيمة 5، المجموع 7.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"abd\",\n      \"reason\": \"المرجع صحيح: المقارنة المعجمية بين \\\"abc\\\" و\\\"abd\\\" تعيد \\\"abd\\\" الأكبر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3\",\n      \"reason\": \"المرجع صحيح: حرف 'a' يتكرر 3 مرات في \\\"banana\\\".\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"11\",\n      \"reason\": \"المرجع صحيح: x % 3 تعيد 1، ثم x += 1 تصبح 11.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[(1, 9), (2, 8)]\",\n      \"reason\": \"المرجع صحيح: zip تقف عند القائمة الأقصر، الناتج [(1, 9), (2, 8)].\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تا\",\n      \"reason\": \"المرجع صحيح: الشريحة w[1:3] من \\\"كتاب\\\" تعيد \\\"تا\\\".\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اباب\",\n      \"reason\": \"المرجع صحيح: ضرب النص \\\"اب\\\" في 2 يكرره ليصبح \\\"اباب\\\".\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"10\",\n      \"reason\": \"المرجع صحيح: مجموع الأعداد من 1 إلى 4 هو 10.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3\",\n      \"reason\": \"المرجع صحيح: بعد الترتيب، lst.pop() تعيد 3.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[1, 3]\",\n      \"reason\": \"المرجع صحيح: حذف الفهرس 1 من القائمة [1, 2, 3] يعيد [1, 3].\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"-1\",\n      \"reason\": \"المرجع صحيح: find تعيد -1 عند عدم وجود الحرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[1, 2]\",\n      \"reason\": \"المرجع صحيح: قيم القاموس d.values() تعيد [1, 2] بترتيب الإدراج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"7\",\n      \"reason\": \"المرجع صحيح: طول النص \\\"البرمجة\\\" هو 7 محارف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0057\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2\",\n      \"reason\": \"المرجع صحيح: المفتاحان 1 و\\\"1\\\" مختلفان في النوع، لذا القاموس يحتوي على عنصرين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"True True\",\n      \"reason\": \"المرجع صحيح: isdigit تقبل الأرقام العربية المشرقية والغربية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"512\",\n      \"reason\": \"المرجع صحيح: الأس يرتبط من اليمين، 2**(3**2) = 512.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"-4\",\n      \"reason\": \"المرجع صحيح: القسمة الصحيحة في بايثون تقرب نحو السالب اللانهائي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[1]\\n[1, 2]\",\n      \"reason\": \"المرجع صحيح: الوسيط الافتراضي القابل للتغيير يتراكم بين الاستدعاءات.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0\",\n      \"reason\": \"المرجع صحيح: and تعيد قيمة الطرف الثاني إذا كان الأول صحيحًا، 1 // 2 = 0.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2\",\n      \"reason\": \"المرجع صحيح: باقي القسمة في بايثون يأخذ إشارة المقسوم عليه.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2.67\",\n      \"reason\": \"المرجع صحيح: التقريب الثنائي يجعل 2.675 أقرب إلى 2.67.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"32\",\n      \"reason\": \"المرجع صحيح: الفرق بين ord(\\\"a\\\") وord(\\\"A\\\") هو 32.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فارغ\",\n      \"reason\": \"المرجع صحيح: القائمة الفارغة False، لذا or تعيد الطرف الثاني.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[2, 3]\",\n      \"reason\": \"المرجع صحيح: التفكيك بالنجمة يجعل b قائمة [2, 3].\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0080\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1\",\n      \"reason\": \"المرجع صحيح: الحلقة تتوقف عندما تصبح i = 1.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"13\",\n      \"reason\": \"المرجع صحيح: sum تبدأ من 10، المجموع 10 + 1 + 2 = 13.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def c_to_f(c):\\n    return c * 9 / 5 + 32\",\n      \"reason\": \"المرجع صحيح: الصيغة الصحيحة لتحويل سلسيوس إلى فهرنهايت هي c * 9/5 + 32.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def evens_only(lst):\\n    return [x for x in lst if x % 2 == 0]\",\n      \"reason\": \"المرجع صحيح: الشرط الصحيح هو x % 2 == 0 للزوجية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def average(lst):\\n    return sum(lst) / len(lst)\",\n      \"reason\": \"المرجع صحيح: المقام الصحيح هو عدد العناصر لا عددها زائد واحد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def sum_to_n(n):\\n    total = 0\\n    for i in range(1, n + 1):\\n        total += i\\n    return total\",\n      \"reason\": \"المرجع صحيح: range يجب أن يشمل n.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def replace_first(s, old, new):\\n    return s.replace(old, new, 1)\",\n      \"reason\": \"المرجع صحيح: المعامل الثالث 1 يقصر الاستبدال على الظهور الأول فقط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def countdown(n):\\n    return list(range(n, 0, -1))\",\n      \"reason\": \"المرجع صحيح: range التنازلي يحتاج خطوة -1 صريحة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def years_to_retire(age):\\n    return max(0, 60 - age)\",\n      \"reason\": \"المرجع صحيح: النتيجة يجب أن تقص عند الصفر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def clip_grade(g):\\n    return max(0, min(g, 100))\",\n      \"reason\": \"المرجع صحيح: min وmax مقلوبتان في الكود الأصلي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def index_of(lst, x):\\n    try:\\n        return lst.index(x)\\n    except ValueError:\\n        return -1\",\n      \"reason\": \"المرجع صحيح: index ترمي ValueError عند الغياب، يجب التعامل معها.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def find_max(lst):\\n    if not lst:\\n        return None\\n    best = lst[0]\\n    for x in lst:\\n        if x > best:\\n            best = x\\n    return best\",\n      \"reason\": \"المرجع صحيح: التهيئة بصفر غير صحيحة للقوائم السالبة، يجب التهيئة بأول عنصر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def most_frequent(words):\\n    counts = {}\\n    for w in words:\\n        counts[w] = counts.get(w, 0) + 1\\n    return max(counts, key=counts.get)\",\n      \"reason\": \"المرجع صحيح: max يجب أن تُستخدم مع key=counts.get للحصول على المفتاح صاحب أكبر قيمة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def max_abs(lst):\\n    best = lst[0]\\n    for x in lst:\\n        if abs(x) > abs(best):\\n            best = x\\n    return best\",\n      \"reason\": \"المرجع صحيح: يجب مقارنة القيم المطلقة وإعادة العنصر بإشارته الأصلية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def fib_upto(n):\\n    if n == 0:\\n        return [0]\\n    seq = [0, 1]\\n    while seq[-1] + seq[-2] <= n:\\n        seq.append(seq[-1] + seq[-2])\\n    return seq\",\n      \"reason\": \"المرجع صحيح: المتتالية يجب أن تبدأ من 0 و1.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def remove_dups(lst):\\n    seen = set()\\n    result = []\\n    for x in lst:\\n        if x not in seen:\\n            seen.add(x)\\n            result.append(x)\\n    return result\",\n      \"reason\": \"المرجع صحيح: الحذف أثناء التكرار يسبب مشاكل، يجب بناء قائمة جديدة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def is_valid_username(s):\\n    return bool(re.fullmatch(r'[A-Za-z][A-Za-z0-9_]{2,15}', s))\",\n      \"reason\": \"المرجع صحيح: النمط يجب أن يفرض حرفًا أولًا ثم 2-15 محرفًا بعده.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def longest_run(lst):\\n    if not lst:\\n        return 0\\n    best = 1\\n    cur = 1\\n    for i in range(1, len(lst)):\\n        if lst[i] == lst[i - 1]:\\n            cur += 1\\n            best = max(best, cur)\\n        else:\\n            cur = 1\\n    return best\",\n      \"reason\": \"المرجع صحيح: آخر سلسلة يجب أن تُحدّث في best.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def balanced(expr):\\n    stack = []\\n    pairs = {')': '(', ']': '[', '}': '{'}\\n    for ch in expr:\\n        if ch in '([{':\\n            stack.append(ch)\\n        elif ch in ')]}':\\n            if not stack or stack[-1] != pairs[ch]:\\n                return False\\n            stack.pop()\\n    return not stack\",\n      \"reason\": \"المرجع صحيح: القوس المغلق يجب أن يطابق نوع قمة المكدس.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def title_words(s):\\n    return ' '.join(w[0].upper() + w[1:] for w in s.split(' '))\",\n      \"reason\": \"المرجع صحيح: capitalize تصغر الباقي، يجب تكبير الأول فقط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def tax(income):\\n    if income <= 10000:\\n        return 0.0\\n    elif income <= 30000:\\n        return (income - 10000) * 0.10\\n    else:\\n        return 2000 + (income - 30000) * 0.20\",\n      \"reason\": \"المرجع صحيح: الضريبة التصاعدية تحسب كل شريحة على جزئها فقط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def word_count(s):\\n    return len(s.split())\",\n      \"reason\": \"المرجع صحيح: split يعالج الفراغات المتكررة والطرفية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def remove_punct(s):\\n    return re.sub(r'[.,!?؟،]', '', s)\",\n      \"reason\": \"المرجع صحيح: الفاصلة العربية يجب أن تُضاف إلى صنف المحارف المحذوفة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def grade_average(scores):\\n    if len(scores) <= 1:\\n        return 0.0\\n    min_score = min(scores)\\n    rest = [x for x in scores if x != min_score] or scores[1:]\\n    return sum(rest) / len(rest)\",\n      \"reason\": \"المرجع صحيح: يجب حذف القيمة الأدنى لا الموضع الأول. تم تعديل الكود ليتعامل مع التكرار.\",\n      \"fix\": \"def grade_average(scores):\\n    if len(scores) <= 1:\\n        return 0.0\\n    min_score = min(scores)\\n    rest = [x for x in scores if x != min_score]\\n    if not rest:\\n        return 0.0\\n    return sum(rest) / len(rest)\"\n    },\n    {\n      \"id\": \"prog_b_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def valid_price(s):\\n    return bool(re.fullmatch(r'\\\\d+(\\\\.\\\\d{1,2})?', s)) and float(s) > 0\",\n      \"reason\": \"المرجع صحيح: الجزء العشري يجب أن يقيد بطول 1-2.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def month_days(m, y):\\n    days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]\\n    if m == 2 and ((y % 400 == 0) or (y % 100 != 0 and y % 4 == 0)):\\n        return 29\\n    return days[m - 1]\",\n      \"reason\": \"المرجع صحيح: فبراير يحتاج استثناء السنة الكبيسة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def invoice_total(items):\\n    total = 0\\n    for price, qty in items:\\n        total += price * qty\\n    return total\",\n      \"reason\": \"المرجع صحيح: سطر الفاتورة يجب أن يكون سعر × كمية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def char_count(s, ch):\\n    return s.lower().count(ch.lower())\",\n      \"reason\": \"المرجع صحيح: يجب توحيد حالة النص والحرف قبل العد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def get_initials(name):\\n    return '.'.join(w[0] for w in name.split())\",\n      \"reason\": \"المرجع صحيح: المطلوب الحرف الأول w[0] لا الأخير w[-1].\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def validate_amount(x):\\n    return 0 < x <= 10000\",\n      \"reason\": \"المرجع صحيح: الصفر ليس مبلغ تحويل صالحًا.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 59742,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_prog_a_002.json",
+  "file_sha256": "37dce3ed63ed8cca770e63f75bc952573ad7ca164b03e429076cb3657dad2db3",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "prog_b_0054",
+      "my_answer": "[2, 3]",
+      "reason": "المرجع صحيح: الشريحة nums[1:3] تعيد [2, 3] كما هو متوقع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0068",
+      "my_answer": "[1, 2, 3, 1]",
+      "reason": "المرجع صحيح: a + a[:1] تعيد [1, 2, 3, 1] كما هو متوقع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0045",
+      "my_answer": "7",
+      "reason": "المرجع صحيح: d[\"a\"] تصبح 2 وd[\"b\"] تُضاف بقيمة 5، المجموع 7.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0077",
+      "my_answer": "abd",
+      "reason": "المرجع صحيح: المقارنة المعجمية بين \"abc\" و\"abd\" تعيد \"abd\" الأكبر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0071",
+      "my_answer": "3",
+      "reason": "المرجع صحيح: حرف 'a' يتكرر 3 مرات في \"banana\".",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0050",
+      "my_answer": "11",
+      "reason": "المرجع صحيح: x % 3 تعيد 1، ثم x += 1 تصبح 11.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0065",
+      "my_answer": "[(1, 9), (2, 8)]",
+      "reason": "المرجع صحيح: zip تقف عند القائمة الأقصر، الناتج [(1, 9), (2, 8)].",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0053",
+      "my_answer": "تا",
+      "reason": "المرجع صحيح: الشريحة w[1:3] من \"كتاب\" تعيد \"تا\".",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0069",
+      "my_answer": "اباب",
+      "reason": "المرجع صحيح: ضرب النص \"اب\" في 2 يكرره ليصبح \"اباب\".",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0048",
+      "my_answer": "10",
+      "reason": "المرجع صحيح: مجموع الأعداد من 1 إلى 4 هو 10.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0046",
+      "my_answer": "3",
+      "reason": "المرجع صحيح: بعد الترتيب، lst.pop() تعيد 3.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0078",
+      "my_answer": "[1, 3]",
+      "reason": "المرجع صحيح: حذف الفهرس 1 من القائمة [1, 2, 3] يعيد [1, 3].",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0058",
+      "my_answer": "-1",
+      "reason": "المرجع صحيح: find تعيد -1 عند عدم وجود الحرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0074",
+      "my_answer": "[1, 2]",
+      "reason": "المرجع صحيح: قيم القاموس d.values() تعيد [1, 2] بترتيب الإدراج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0063",
+      "my_answer": "7",
+      "reason": "المرجع صحيح: طول النص \"البرمجة\" هو 7 محارف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0057",
+      "my_answer": "2",
+      "reason": "المرجع صحيح: المفتاحان 1 و\"1\" مختلفان في النوع، لذا القاموس يحتوي على عنصرين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0066",
+      "my_answer": "True True",
+      "reason": "المرجع صحيح: isdigit تقبل الأرقام العربية المشرقية والغربية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0059",
+      "my_answer": "512",
+      "reason": "المرجع صحيح: الأس يرتبط من اليمين، 2**(3**2) = 512.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0043",
+      "my_answer": "-4",
+      "reason": "المرجع صحيح: القسمة الصحيحة في بايثون تقرب نحو السالب اللانهائي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0051",
+      "my_answer": "[1]\n[1, 2]",
+      "reason": "المرجع صحيح: الوسيط الافتراضي القابل للتغيير يتراكم بين الاستدعاءات.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0075",
+      "my_answer": "0",
+      "reason": "المرجع صحيح: and تعيد قيمة الطرف الثاني إذا كان الأول صحيحًا، 1 // 2 = 0.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0052",
+      "my_answer": "2",
+      "reason": "المرجع صحيح: باقي القسمة في بايثون يأخذ إشارة المقسوم عليه.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0067",
+      "my_answer": "2.67",
+      "reason": "المرجع صحيح: التقريب الثنائي يجعل 2.675 أقرب إلى 2.67.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0079",
+      "my_answer": "32",
+      "reason": "المرجع صحيح: الفرق بين ord(\"a\") وord(\"A\") هو 32.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0047",
+      "my_answer": "فارغ",
+      "reason": "المرجع صحيح: القائمة الفارغة False، لذا or تعيد الطرف الثاني.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0056",
+      "my_answer": "[2, 3]",
+      "reason": "المرجع صحيح: التفكيك بالنجمة يجعل b قائمة [2, 3].",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0080",
+      "my_answer": "1",
+      "reason": "المرجع صحيح: الحلقة تتوقف عندما تصبح i = 1.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0061",
+      "my_answer": "13",
+      "reason": "المرجع صحيح: sum تبدأ من 10، المجموع 10 + 1 + 2 = 13.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0036",
+      "my_answer": "def c_to_f(c):\n    return c * 9 / 5 + 32",
+      "reason": "المرجع صحيح: الصيغة الصحيحة لتحويل سلسيوس إلى فهرنهايت هي c * 9/5 + 32.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0010",
+      "my_answer": "def evens_only(lst):\n    return [x for x in lst if x % 2 == 0]",
+      "reason": "المرجع صحيح: الشرط الصحيح هو x % 2 == 0 للزوجية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0008",
+      "my_answer": "def average(lst):\n    return sum(lst) / len(lst)",
+      "reason": "المرجع صحيح: المقام الصحيح هو عدد العناصر لا عددها زائد واحد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0001",
+      "my_answer": "def sum_to_n(n):\n    total = 0\n    for i in range(1, n + 1):\n        total += i\n    return total",
+      "reason": "المرجع صحيح: range يجب أن يشمل n.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0031",
+      "my_answer": "def replace_first(s, old, new):\n    return s.replace(old, new, 1)",
+      "reason": "المرجع صحيح: المعامل الثالث 1 يقصر الاستبدال على الظهور الأول فقط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0020",
+      "my_answer": "def countdown(n):\n    return list(range(n, 0, -1))",
+      "reason": "المرجع صحيح: range التنازلي يحتاج خطوة -1 صريحة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0017",
+      "my_answer": "def years_to_retire(age):\n    return max(0, 60 - age)",
+      "reason": "المرجع صحيح: النتيجة يجب أن تقص عند الصفر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0011",
+      "my_answer": "def clip_grade(g):\n    return max(0, min(g, 100))",
+      "reason": "المرجع صحيح: min وmax مقلوبتان في الكود الأصلي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0022",
+      "my_answer": "def index_of(lst, x):\n    try:\n        return lst.index(x)\n    except ValueError:\n        return -1",
+      "reason": "المرجع صحيح: index ترمي ValueError عند الغياب، يجب التعامل معها.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0002",
+      "my_answer": "def find_max(lst):\n    if not lst:\n        return None\n    best = lst[0]\n    for x in lst:\n        if x > best:\n            best = x\n    return best",
+      "reason": "المرجع صحيح: التهيئة بصفر غير صحيحة للقوائم السالبة، يجب التهيئة بأول عنصر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0032",
+      "my_answer": "def most_frequent(words):\n    counts = {}\n    for w in words:\n        counts[w] = counts.get(w, 0) + 1\n    return max(counts, key=counts.get)",
+      "reason": "المرجع صحيح: max يجب أن تُستخدم مع key=counts.get للحصول على المفتاح صاحب أكبر قيمة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0030",
+      "my_answer": "def max_abs(lst):\n    best = lst[0]\n    for x in lst:\n        if abs(x) > abs(best):\n            best = x\n    return best",
+      "reason": "المرجع صحيح: يجب مقارنة القيم المطلقة وإعادة العنصر بإشارته الأصلية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0040",
+      "my_answer": "def fib_upto(n):\n    if n == 0:\n        return [0]\n    seq = [0, 1]\n    while seq[-1] + seq[-2] <= n:\n        seq.append(seq[-1] + seq[-2])\n    return seq",
+      "reason": "المرجع صحيح: المتتالية يجب أن تبدأ من 0 و1.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0006",
+      "my_answer": "def remove_dups(lst):\n    seen = set()\n    result = []\n    for x in lst:\n        if x not in seen:\n            seen.add(x)\n            result.append(x)\n    return result",
+      "reason": "المرجع صحيح: الحذف أثناء التكرار يسبب مشاكل، يجب بناء قائمة جديدة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0034",
+      "my_answer": "def is_valid_username(s):\n    return bool(re.fullmatch(r'[A-Za-z][A-Za-z0-9_]{2,15}', s))",
+      "reason": "المرجع صحيح: النمط يجب أن يفرض حرفًا أولًا ثم 2-15 محرفًا بعده.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0021",
+      "my_answer": "def longest_run(lst):\n    if not lst:\n        return 0\n    best = 1\n    cur = 1\n    for i in range(1, len(lst)):\n        if lst[i] == lst[i - 1]:\n            cur += 1\n            best = max(best, cur)\n        else:\n            cur = 1\n    return best",
+      "reason": "المرجع صحيح: آخر سلسلة يجب أن تُحدّث في best.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0039",
+      "my_answer": "def balanced(expr):\n    stack = []\n    pairs = {')': '(', ']': '[', '}': '{'}\n    for ch in expr:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in ')]}':\n            if not stack or stack[-1] != pairs[ch]:\n                return False\n            stack.pop()\n    return not stack",
+      "reason": "المرجع صحيح: القوس المغلق يجب أن يطابق نوع قمة المكدس.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0015",
+      "my_answer": "def title_words(s):\n    return ' '.join(w[0].upper() + w[1:] for w in s.split(' '))",
+      "reason": "المرجع صحيح: capitalize تصغر الباقي، يجب تكبير الأول فقط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0035",
+      "my_answer": "def tax(income):\n    if income <= 10000:\n        return 0.0\n    elif income <= 30000:\n        return (income - 10000) * 0.10\n    else:\n        return 2000 + (income - 30000) * 0.20",
+      "reason": "المرجع صحيح: الضريبة التصاعدية تحسب كل شريحة على جزئها فقط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0023",
+      "my_answer": "def word_count(s):\n    return len(s.split())",
+      "reason": "المرجع صحيح: split يعالج الفراغات المتكررة والطرفية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0018",
+      "my_answer": "def remove_punct(s):\n    return re.sub(r'[.,!?؟،]', '', s)",
+      "reason": "المرجع صحيح: الفاصلة العربية يجب أن تُضاف إلى صنف المحارف المحذوفة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "def grade_average(scores):\n    if len(scores) <= 1:\n        return 0.0\n    min_score = min(scores)\n    rest = [x for x in scores if x != min_score]\n    if not rest:\n        return 0.0\n    return sum(rest) / len(rest)",
+      "id": "prog_b_0037",
+      "my_answer": "def grade_average(scores):\n    if len(scores) <= 1:\n        return 0.0\n    min_score = min(scores)\n    rest = [x for x in scores if x != min_score] or scores[1:]\n    return sum(rest) / len(rest)",
+      "reason": "المرجع صحيح: يجب حذف القيمة الأدنى لا الموضع الأول. تم تعديل الكود ليتعامل مع التكرار.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0038",
+      "my_answer": "def valid_price(s):\n    return bool(re.fullmatch(r'\\d+(\\.\\d{1,2})?', s)) and float(s) > 0",
+      "reason": "المرجع صحيح: الجزء العشري يجب أن يقيد بطول 1-2.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0028",
+      "my_answer": "def month_days(m, y):\n    days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]\n    if m == 2 and ((y % 400 == 0) or (y % 100 != 0 and y % 4 == 0)):\n        return 29\n    return days[m - 1]",
+      "reason": "المرجع صحيح: فبراير يحتاج استثناء السنة الكبيسة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0016",
+      "my_answer": "def invoice_total(items):\n    total = 0\n    for price, qty in items:\n        total += price * qty\n    return total",
+      "reason": "المرجع صحيح: سطر الفاتورة يجب أن يكون سعر × كمية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0012",
+      "my_answer": "def char_count(s, ch):\n    return s.lower().count(ch.lower())",
+      "reason": "المرجع صحيح: يجب توحيد حالة النص والحرف قبل العد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0019",
+      "my_answer": "def get_initials(name):\n    return '.'.join(w[0] for w in name.split())",
+      "reason": "المرجع صحيح: المطلوب الحرف الأول w[0] لا الأخير w[-1].",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0027",
+      "my_answer": "def validate_amount(x):\n    return 0 < x <= 10000",
+      "reason": "المرجع صحيح: الصفر ليس مبلغ تحويل صالحًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T19:21:48Z"
+}

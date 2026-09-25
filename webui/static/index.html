@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="diwan-token" content="__DIWAN_TOKEN__"><title>ديوان — مساحة العمل</title>
+<link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+<aside><header><strong class="brand">ديوان<span>مساحة عربية للعمل والتفكير</span></strong><span class="local">على جهازك</span></header>
+<label for="projects">المشروع</label><select id="projects"><option value="">اختر مشروعًا</option></select>
+<form id="new-project"><label for="project-name">مشروع جديد</label><div class="row"><input id="project-name" maxlength="80" placeholder="اسم المشروع" required><button>إضافة</button></div></form>
+<hr><h2>المحادثات</h2><nav id="sessions" aria-label="المحادثات"></nav>
+<form id="new-session"><label for="session-name">محادثة جديدة</label><label for="session-mode">نوع المحادثة</label><select id="session-mode"><option value="text">نص وملفات نصية</option><option id="agent-option" value="agent" disabled>عمل بالأدوات داخل المشروع</option><option id="media-option" value="media" disabled>صورة أو صوت قصير — تجريبي</option></select><div class="row"><input id="session-name" maxlength="80" placeholder="عنوان المحادثة" required><button>إضافة</button></div></form>
+<button id="preferences" type="button">تفضيلات هذا المشروع</button>
+<p class="footnote">نسخة تجريبية. تُعرض حالة التنفيذ وحدود التحقق مع النتيجة.</p></aside>
+<main><div class="top"><div><p class="eyebrow" id="project-title">مساحتك الخاصة</p><h1 id="session-title">ابدأ بمشروعك الأول</h1></div><button id="refresh" type="button">استرجاع الحالة</button></div>
+<p id="notice" role="status" aria-live="polite">أنشئ مشروعًا ومحادثة لبدء العمل.</p>
+<div id="agent-controls" hidden><p id="agent-capabilities" class="meta"></p><button id="agent-files" type="button">ملفات العمل في هذا المشروع</button><button id="agent-stop" type="button" hidden>إيقاف المتابعة بعد الخطوة الجارية</button></div>
+<button id="older" type="button" hidden>عرض الجولات الأقدم</button>
+<section id="messages" aria-label="رسائل المحادثة"><div class="empty"><b>فكرة أو سؤال أو مسودة.</b><p>تجتمع المحادثات هنا، وتبقى كل جلسة بسياقها الخاص.</p></div></section>
+<div id="recovery" class="pending" hidden><p>هناك إرسال لم تُحسم حالته في هذه النافذة. استرجع الحالة أولًا.</p><button id="release-pending" type="button" hidden>بدء طلب جديد بعد التحقق من الحالة</button></div>
+<form id="composer"><details id="text-inputs"><summary>الملفات المختارة لهذا الطلب <span id="file-count">(0)</span></summary><p><small>ملفات نصية UTF-8، حتى 64 كيلوبايت للملف وأربعة مرفقات للطلب. تبقى النسخة المرفوعة داخل المشروع.</small></p><label for="upload">رفع ملف نصي من جهازك</label><input type="file" id="upload" accept=".txt,.md,.json,.csv"><div id="files"></div></details>
+<div id="media-inputs" hidden><label for="media-file">صورة PNG أو صوت WAV لهذا الطلب</label><input type="file" id="media-file" accept="image/png,audio/wav,.wav"><p><small>ملف واحد حتى 256 كيلوبايت. PNG ملون حتى مليون بكسل، أو WAV أحادي PCM ‏16 بت / 16 كيلوهرتز حتى 8 ثوان. يُرسل عند الضغط على إرسال فقط.</small></p><button id="clear-media" type="button">إزالة الملف المختار</button></div>
+<label for="message">رسالتك إلى ديوان</label><textarea id="message" rows="3" maxlength="24000" placeholder="بماذا نبدأ؟" required></textarea><div class="row"><small>المحادثة محلية • تنفيذ الأداة لا يثبت صحة كل جواب</small><button id="send" class="primary">إرسال</button></div></form>
+<dialog id="dialog"><div id="dialog-body"></div><button id="close-dialog" type="button">إغلاق</button></dialog>
+</main></body></html>

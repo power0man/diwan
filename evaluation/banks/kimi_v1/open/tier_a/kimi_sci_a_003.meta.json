@@ -1,0 +1,446 @@
+{
+  "suite_id": "kimi_sci_a_003",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "sci_a3_0010": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "نسب مندلية شكلية/جينية؛ الترتيب في الجواب جزء من القياس.",
+      "answer_verified_by": "mechanical",
+      "trap": "قلب ترتيب النسبة (متنحٍّ : سائد)."
+    },
+    "sci_a3_0003": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تهجين أحادي لصفة لون حبّة الذرة؛ يقيس فهم السيادة التامّة والانعزال المندلي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تهجين أحادي لصفة لون قرن البازلاء؛ يقيس فهم السيادة التامّة والانعزال المندلي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0087": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "نسبة جينية لتهجين اختباري بسياق جديد.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0002": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تهجين أحادي لصفة لون فراء الأرانب؛ يقيس فهم السيادة التامّة والانعزال المندلي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0012": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "نسب مندلية شكلية/جينية؛ الترتيب في الجواب جزء من القياس.",
+      "answer_verified_by": "mechanical",
+      "trap": "قلب ترتيب النسبة (متنحٍّ : سائد)."
+    },
+    "sci_a3_0027": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "وراثة فصائل الدم؛ تساوي السيادة مفهوم يتعثر فيه كثيرون.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0020": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال التنحّي المزدوج؛ يقيس فهم استقلال الجينين.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0088": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فصائل دم بتركيبين مختلفين؛ يكشف من يهمل أليل i في الأم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0021": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "احتمال السيادة المزدوجة في تهجين ثنائي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0019": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تهجين ثنائي الصفة؛ قمة المهارة المندلية المدرسية.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0089": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "صفة مرتبطة بالجنس مع أب مصاب؛ إصابة الإناث ممكنة هنا بخلاف النمط المعتاد.",
+      "answer_verified_by": "mechanical",
+      "trap": "القول بأن البنات لا يُصبن أبدًا (صحيح فقط عندما يكون الأب سليمًا)."
+    },
+    "sci_a3_0030": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "وراثة مرتبطة بالجنس؛ الفخّ حساب الاحتمال من كل الأبناء بدل الذكور/البنات.",
+      "answer_verified_by": "mechanical",
+      "trap": "الإجابة 1/4 بحساب كل الأبناء بدل قصر السؤال على الذكور."
+    },
+    "sci_a3_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل نسبة مندلية إلى عدد متوقع؛ خطوة إضافية عن الكسر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0028": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "وراثة فصائل الدم؛ تساوي السيادة مفهوم يتعثر فيه كثيرون.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0005": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تهجين أحادي لصفة لون ثمرة الطماطم؛ يقيس فهم السيادة التامّة والانعزال المندلي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل نسبة مندلية إلى عدد متوقع؛ خطوة إضافية عن الكسر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0025": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "وراثة فصائل الدم؛ تساوي السيادة مفهوم يتعثر فيه كثيرون.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0007": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تهجين أحادي لصفة لون فراء القطط؛ يقيس فهم السيادة التامّة والانعزال المندلي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تهجين أحادي لصفة طول عبّاد الشمس؛ يقيس فهم السيادة التامّة والانعزال المندلي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0031": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حوار وراثي يقيس التمييز بين تهجينين متشابهين ظاهريًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "تكرار جواب الدور السابق 1/4."
+    },
+    "sci_a3_0026": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "وراثة فصائل الدم؛ تساوي السيادة مفهوم يتعثر فيه كثيرون.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عدد أنواع الأمشاج؛ الفخّ الإجابة 16 (خانات المربّع).",
+      "answer_verified_by": "mechanical",
+      "trap": "الخلط بين أنواع الأمشاج وخانات بانيت."
+    },
+    "sci_a3_0086": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "فخّ مفاهيمي: من يطبّق 1/4 آليًّا يخطئ؛ AA × Aa لا ينتج aa.",
+      "answer_verified_by": "mechanical",
+      "trap": "تطبيق نسبة التهجين الذاتي 1:2:1 على تهجين مختلف."
+    },
+    "sci_a3_0015": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل نسبة مندلية إلى عدد متوقع؛ خطوة إضافية عن الكسر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0013": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سيادة غير تامّة؛ الفخّ معاملتها كسيادة تامّة فيختفي الطرز الوسيط.",
+      "answer_verified_by": "mechanical",
+      "trap": "تطبيق سيادة تامّة يعطي 3:1 بدل 1:2:1."
+    },
+    "sci_a3_0078": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: قلب قاعدتي التوالي (التيار والجهد).",
+      "answer_verified_by": "mechanical",
+      "trap": "قسمة التيار على عدد المصابيح (2/3 أمبير)."
+    },
+    "sci_a3_0067": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: تعميم W = F·d بلا شرط التوازي.",
+      "answer_verified_by": "mechanical",
+      "trap": "ضرب الوزن في المسافة الأفقية."
+    },
+    "sci_a3_0073": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: فرضية وراثية مستحيلة (طفل O من أب AB) قُدّمت كمعلومة مسلَّم بها.",
+      "answer_verified_by": "mechanical",
+      "trap": "محاولة تبرير النتيجة المستحيلة بدل رفضها."
+    },
+    "sci_a3_0070": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: نسبة وحدة خاطئة (غرام/لتر) إلى المولية.",
+      "answer_verified_by": "mechanical",
+      "trap": "قبول 40 غ/لتر كتركيز مولي."
+    },
+    "sci_a3_0083": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: صيغة مقلوبة لقانون أوم (ضرب بدل قسمة).",
+      "answer_verified_by": "mechanical",
+      "trap": "حساب 36 أوم من الصيغة المدسوسة."
+    },
+    "sci_a3_0074": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: تصوّر شائع أن التربة تغذّي النبات مباشرة.",
+      "answer_verified_by": "mechanical",
+      "trap": "قبول فكرة «الغذاء الجاهز من التربة» وتفسير الضوء على أساسها."
+    },
+    "sci_a3_0075": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: قيمة فيزيائية مقلوبة (درجة غليان الماء) داخل سؤال مفاهيمي سليم.",
+      "answer_verified_by": "mechanical",
+      "trap": "قبول 90°م كحقيقة والبناء عليها."
+    },
+    "sci_a3_0068": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: مقارنة كثافتين مقلوبة مع تفسير شائع خاطئ لطفو السفن.",
+      "answer_verified_by": "mechanical",
+      "trap": "الإجابة «يطفو» اتباعًا للمعلومة المدسوسة."
+    },
+    "sci_a3_0079": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: الخلط بين درجة الحرارة وكمية الحرارة.",
+      "answer_verified_by": "mechanical",
+      "trap": "قبول «60 درجة» كمقدار لكمية الحرارة."
+    },
+    "sci_a3_0076": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: نقض قانون حفظ الكتلة بحجة انطلاق الطاقة.",
+      "answer_verified_by": "mechanical",
+      "trap": "الإجابة بأن الكتلة أكبر من 44 غرامًا."
+    },
+    "sci_a3_0080": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: علاقة مقلوبة بين الارتفاع وتسارع الجاذبية.",
+      "answer_verified_by": "mechanical",
+      "trap": "الإجابة بأن التسارع على القمة أكبر."
+    },
+    "sci_a3_0065": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: قلب علاقة التناسب بين الطاقة الحركية والسرعة من تربيعية إلى خطّية.",
+      "answer_verified_by": "mechanical",
+      "trap": "البناء على القاعدة المقلوبة يعطي النسبة 2 بدل 4."
+    },
+    "sci_a3_0069": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: خلط وحدات غير متجانسة (كم/دقيقة نُسبت إلى م/ث).",
+      "answer_verified_by": "mechanical",
+      "trap": "تبنّي الرقم 3 دون فحص الوحدات."
+    },
+    "sci_a3_0072": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مدسوس: نسبة مندلية مقلوبة (1/2 بدل 1/4).",
+      "answer_verified_by": "mechanical",
+      "trap": "حساب 100 بذرة اتباعًا للنسبة المدسوسة."
+    },
+    "sci_a3_0053": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0036": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0040": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0092": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات شائع في سياق يومي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0091": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات شائع في سياق يومي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0032": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0045": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0098": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تجانس علاقة أساسية؛ توازن مع حالات «لا».",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0034": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0094": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات شائع في سياق يومي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0042": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0057": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحليل أبعاد وحدات مشتقة؛ الخيارات متشابهة عمدًا لقياس الدقة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0043": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0052": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0049": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0062": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فحص تجانس الأبعاد؛ أداة تحقق أساسية تكشف العلاقات المقلوبة.",
+      "answer_verified_by": "mechanical",
+      "trap": "العلاقة تبدو مألوفة لكنها مقلوبة أو ناقصة."
+    },
+    "sci_a3_0064": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فحص تجانس الأبعاد؛ أداة تحقق أساسية تكشف العلاقات المقلوبة.",
+      "answer_verified_by": "mechanical",
+      "trap": "العلاقة تبدو مألوفة لكنها مقلوبة أو ناقصة."
+    },
+    "sci_a3_0055": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحليل أبعاد وحدات مشتقة؛ الخيارات متشابهة عمدًا لقياس الدقة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0097": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحليل أبعاد وحدة الضغط.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0047": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0063": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فحص تجانس الأبعاد؛ أداة تحقق أساسية تكشف العلاقات المقلوبة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0059": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فحص تجانس الأبعاد؛ أداة تحقق أساسية تكشف العلاقات المقلوبة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0050": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0056": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحليل أبعاد وحدات مشتقة؛ الخيارات متشابهة عمدًا لقياس الدقة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0061": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فحص تجانس الأبعاد؛ أداة تحقق أساسية تكشف العلاقات المقلوبة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0048": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0054": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحليل أبعاد وحدات مشتقة؛ الخيارات متشابهة عمدًا لقياس الدقة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a3_0051": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل وحدات؛ أكثر الأخطاء شيوعًا قلب اتجاه عامل التحويل.",
+      "answer_verified_by": "mechanical"
+    }
+  }
+}

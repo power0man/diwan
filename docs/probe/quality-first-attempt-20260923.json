@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "8ea75e60be10bfef940ed9d80254bb57b0e852d9",
+  "quality_calibration": {
+    "protocol_version": 1,
+    "run_binding": {
+      "run_id": "aae5be9dd6b644599eed71c905102eeb",
+      "source_sha256": "83f45798be43e5edea04041aa39b8e4d33961e6a074d7dc1661a2957f6b891c2",
+      "bank_sha256": "00bb5e79f39c748bb82e9225e2d1910a7e2cac07c911cac0a43a9ac55816230a",
+      "harness_sha256": "539066918e2c6806af09ddd15e2ff5222de39642e1b6c2153be919e532a324f5"
+    },
+    "calibration_sha256": "e831eb343d67f9005a9abbe954094bfb2502ef8f0536b1f28284c517e8d053d9",
+    "judges": [
+      {
+        "identity": {
+          "digest": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e",
+          "family": "llama",
+          "model": "llama3.1:8b",
+          "provider": "ollama"
+        },
+        "status": "unqualified",
+        "matched": 12,
+        "denominator": 24,
+        "matrix": {
+          "correct_pass": 12,
+          "correct_fail": 0,
+          "false_pass": 12,
+          "false_fail": 0,
+          "inconclusive_or_missing": 0
+        }
+      },
+      {
+        "identity": {
+          "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+          "family": "gemma4",
+          "model": "gemma4:latest",
+          "provider": "ollama"
+        },
+        "status": "unqualified",
+        "matched": 23,
+        "denominator": 24,
+        "matrix": {
+          "correct_pass": 12,
+          "correct_fail": 11,
+          "false_pass": 1,
+          "false_fail": 0,
+          "inconclusive_or_missing": 0
+        }
+      }
+    ],
+    "attempted": 48,
+    "qualified_reviewers": 0,
+    "candidate_generations": 0,
+    "heldout_consumed": 0,
+    "denominator_per_arm": 120,
+    "status": "blocked_by_calibration",
+    "human_review": false,
+    "raw_summary_sha256": "6194b86743d44290d050534bb99619736367499333e323dce46d0d867c8bc1c4"
+  },
+  "tool_declaration_ablation": {
+    "denominator": 16,
+    "per_arm_denominator": 8,
+    "manifest_sha256": "3e8d2e5a3b11bc48fafcd2ebde6f1dde230960acdb368a9a0bc0b19f7c43018f",
+    "counts": {
+      "pass": 15,
+      "exact_mismatch": 1
+    },
+    "arms": {
+      "empty": {
+        "pass": 8,
+        "input_tokens_observed": 625,
+        "output_tokens_observed": 23,
+        "elapsed_ms_sum": 8597
+      },
+      "file_tools": {
+        "pass": 7,
+        "exact_mismatch": 1,
+        "input_tokens_observed": 3105,
+        "output_tokens_observed": 31,
+        "elapsed_ms_sum": 6344
+      }
+    },
+    "actual_model_request_attempts": 16,
+    "tools_executed": false,
+    "product_readiness": "not_assessed",
+    "limits": [
+      "8 synthetic tasks; descriptive diagnostic, not a quality benchmark",
+      "No tool effects or complete agent journeys measured",
+      "Same call budget; declared schemas increase input tokens",
+      "Local server trusted; no proof of token coverage or host isolation",
+      "Elapsed time includes metadata and varies with warm caches/load",
+      "Unknown calls never retried within this output directory"
+    ]
+  },
+  "product_readiness": false
+}

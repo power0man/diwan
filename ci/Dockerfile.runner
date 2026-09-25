@@ -1,0 +1,16 @@
+# RUNTIME_IMAGE is a local tag derived from the canonical runtime image ID.
+# prepare_runtime.py verifies its target before/after building; receipts use IDs.
+ARG RUNTIME_IMAGE
+FROM ${RUNTIME_IMAGE}
+USER 0:0
+# Official actions/runner v2.337.0 Linux ARM64 release, reviewed 2026-09-21.
+ADD https://github.com/actions/runner/releases/download/v2.337.0/actions-runner-linux-arm64-2.337.0.tar.gz /tmp/runner.tar.gz
+RUN echo '9b1dc70626422526e3c94767cf024896beb15da5342a3f4819bf2feac13e0393  /tmp/runner.tar.gz' | sha256sum --check --status \
+    && mkdir /opt/actions-runner \
+    && tar xzf /tmp/runner.tar.gz -C /opt/actions-runner \
+    && rm /tmp/runner.tar.gz
+COPY runner_entrypoint.py /opt/runner_entrypoint.py
+LABEL diwan.runner-version="2.337.0" diwan.runner-mode="ephemeral-only-v1"
+USER 1000:1000
+WORKDIR /runner
+ENTRYPOINT ["/opt/venv/bin/python", "/opt/runner_entrypoint.py"]

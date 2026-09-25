@@ -1,0 +1,456 @@
+{
+ "suite_id": "kimi_assist_a_002",
+ "authored_by": "kimi",
+ "authored_at": "2026-09-24",
+ "tier": "A",
+ "cases": {
+  "ifc_a_0038": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "قيد الكلمة الواحدة مع عدد ثابت من العناصر.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "سكين\nقدر\nملعقة\nصحن\nشوكة\nمقلاة",
+   "wrong_solution": "سكين حاد\nقدر\nملعقة\nصحن\nشوكة"
+  },
+  "ifc_a_0015": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "صيغة «بلا ألم» تكسر القيد لأن الكلمة ظهرت؛ فخ النفي.",
+   "answer_verified_by": "mechanical",
+   "trap": "كثيرون يظنون أن نفي الكلمة يحقق المنع."
+  },
+  "ifc_a_0046": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "الشرطة البادئة قيد تنسيقي يُهمل كثيرًا.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "- فحص إطارات السيارة\n- تعبئة وقود كامل\n- تحميل خرائط الرحلة\n- تجهيز إسعافات أولية\n- إبلاغ الأهل بالمسار",
+   "wrong_solution": "فحص إطارات السيارة\nتعبئة وقود كامل\nتحميل خرائط دون اتصال\nتجهيز إسعافات أولية\nإبلاغ الأهل بالمسار"
+  },
+  "ifc_a_0020": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "أمانة وصفية: المنع موجه ضد المبالغة في التصنيف.",
+   "answer_verified_by": "mechanical"
+  },
+  "ifc_a_0002": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "بدايات مفروضة لكل سطر مع كلمتين محظورتين شائعتين في السياق.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "يسعدنا دعوتكم لمشاركتنا مائدة عشاء ودية مساء الخميس.\nنرجو تأكيد الحضور قبل نهاية يوم الثلاثاء.\nننتظر تشريفكم بفارغ الصبر.",
+   "wrong_solution": "يسعدنا دعوتكم لمشاركتنا عشاء عمل ودي مساء الخميس.\nننتظر تشريفكم بفارغ الصبر."
+  },
+  "ifc_a_0028": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "الاستقالات العاطفية تتسرب إليها الكلمات المحظورة بسهولة.",
+   "answer_verified_by": "mechanical"
+  },
+  "ifc_a_0010": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "منع أشهر صيغتين تسويقيتين في مجال التوصيل.",
+   "answer_verified_by": "mechanical"
+  },
+  "ifc_a_0036": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "سقف كلمات لكل سطر مع عدد أسطر ثابت.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "تساقط المطر على النوافذ طوال الليل.\nارتديت معطفي الصوفي القديم.\nشربنا الشاي الساخن حول المدفأة.",
+   "wrong_solution": "تساقط المطر بغزارة شديدة على النوافذ الزجاجية طوال الليل الباردة.\nارتديت معطفي."
+  },
+  "ifc_a_0011": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "حتى ذكر «بلا كيماويات» ممنوع لأنه يتضمن الكلمة المحظورة؛ فخ لفظي دقيق.",
+   "answer_verified_by": "mechanical",
+   "trap": "صيغة النفي «بلا كيماويات» لا تحقق القيد لأن الكلمة نفسها ظهرت."
+  },
+  "ifc_a_0006": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "المبررات المحظورة هي أول ما يخطر للكاتب في الاعتذار.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "أعتذر منكم عن تلبية الدعوة الكريمة هذه المرة.\nأتمنى لكم مناسبة سعيدة ولقاءً قريبًا بإذن الله.",
+   "wrong_solution": "أعتذر منكم بصدق عن تلبية الدعوة الكريمة هذه المرة."
+  },
+  "ifc_a_0035": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "العدّ الدقيق للكلمات قيد حسابي بسيط لكنه كاشف.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "القراءة توسع المدارك وتغذي العقل وتبني شخصية الإنسان كل يوم",
+   "wrong_solution": "القراءة توسع المدارك وتغذي العقل وتبني شخصية الإنسان"
+  },
+  "ifc_a_0044": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "منع الكلمة الأكثر بداهة في تسمية المقاهي.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "ركن الصباح\nدفء الغروب\nنبض المدينة\nهمس السكون",
+   "wrong_solution": "ركن الصباح\nدفء الغروب\nنبض المدينة"
+  },
+  "ifc_a_0009": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "ثلاثة contains حرفية وثلاثة excludes من نفس الحقل الدلالي للإعلانات.",
+   "answer_verified_by": "mechanical"
+  },
+  "ifc_a_0022": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "الانفعال الطبيعي في الشكاوى يقود للكلمتين المحظورتين.",
+   "answer_verified_by": "mechanical"
+  },
+  "ifc_a_0025": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "التمييز بين الترقية النهائية والتكليف المؤقت قيد دلالي لفظي.",
+   "answer_verified_by": "mechanical"
+  },
+  "ifc_a_0041": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "طولان مختلفان مفروضان على سطرين متتاليين؛ أدق أنواع القيود العددية.",
+   "answer_verified_by": "mechanical",
+   "trap": "«جميلة» أول صفة تخطر لوصف مدينة.",
+   "correct_solution": "جدة عروس البحر الأحمر الدائمة.\nتنبض شوارعها العتيقة بالحياة والتاريخ والتجارة والبحر.",
+   "wrong_solution": "جدة مدينة جميلة على البحر.\nفيها كورنيش وأسواق وتاريخ."
+  },
+  "ifc_a_0007": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "خمسة قيود موضعية مختلفة في خمسة أسطر؛ ذروة التقاطع.",
+   "answer_verified_by": "mechanical",
+   "trap": "وجود «الرياض» لا يكفي؛ يجب أن تكون في السطر الثاني تحديدًا.",
+   "correct_solution": "يسرّ مركز الدراسات المستقبلية دعوتكم لملتقى الابتكار السنوي.\nيقام الملتقى في فندق الأندلس بمدينة الرياض يومي ٣ و٤ مارس.\nألستم معنا لنرسم معًا ملامح الغد؟\nللتسجيل زوروا موقع المركز قبل اكتمال المقاعد.\nنلقاكم على موعد مع المعرفة في ربيع ٢٠٢٦",
+   "wrong_solution": "يسرّ مركز الدراسات المستقبلية دعوتكم لملتقى الابتكار السنوي.\nيقام الملتقى في فندق الأندلس بمدينة الرياض يومي ٣ و٤ مارس.\nللتسجيل زوروا موقع المركز قبل اكتمال المقاعد.\nنلقاكم على موعد مع المعرفة في ربيع ٢٠٢٦"
+  },
+  "ifc_a_0030": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "منع الكلمات الأساسية الثلاث يفرض إعادة صياغة حقيقية لا تجميلية.",
+   "answer_verified_by": "mechanical",
+   "trap": "الاكتفاء بتغيير ترتيب الكلمات مع إبقاء المفردات المحظورة.",
+   "correct_solution": "يتهرب التلاميذ من استذكار مقرراتهم قبيل موعد الامتحان.",
+   "wrong_solution": "يتهرب التلاميذ من استذكار دروسهم.\nكما يؤجلون الاستعداد للامتحان."
+  },
+  "ifc_a_0018": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "ثلاثة محظورات من حقل دلالي واحد (التفوق) تختبر حساسية الاستبعاد للصيغ المشتقة.",
+   "answer_verified_by": "mechanical"
+  },
+  "ifc_a_0037": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "نافذة طول ضيقة (٦ كلمات) مع استبعاد جذر شائع الورود في الموضوع.",
+   "answer_verified_by": "mechanical",
+   "trap": "«مهم» تتسلل كصفة تلقائية في أي كلام عن التطوع.",
+   "correct_solution": "يعزز التطوع روابط المجتمع ويمنح الشباب خبرات حقيقية، فكل ساعة عطاء صادقة تبني ثقة وتفتح أبوابًا جديدة، وتترك أثرًا نبيلًا يبقى طويلًا في النفوس والمكان والذاكرة.",
+   "wrong_solution": "التطوع مهم جدًّا للمجتمع لأنه يساعد المحتاجين ويقوي التكافل بين الناس في كل مكان وزمان."
+  },
+  "ifc_a_0039": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "نوع الجملة (سؤال/خبر) موزع على السطرين مع سقف طول لكليهما.",
+   "answer_verified_by": "mechanical",
+   "trap": "جعل العنوانين سؤالين أو قلب الترتيب.",
+   "correct_solution": "كيف يحول الشباب أفكارهم إلى شركات؟\nريادة الأعمال تفتح أبواب المستقبل للجميع",
+   "wrong_solution": "ريادة الأعمال طريق المستقبل؟\nكيف تبدأ مشروعك الخاص بنجاح؟"
+  },
+  "ifc_a_0026": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "ثلاث كلمات محظورة هي أكثر ما يتدفق في رسائل الشكوى بين الجيران.",
+   "answer_verified_by": "mechanical",
+   "trap": "حتى كلمة «إزعاج» المحايدة محظورة؛ على الكاتب وصف المشكلة بغيرها."
+  },
+  "ifc_a_0008": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "العبارات المحظورة هي أشهر ما يُقال في التعزية؛ تجنبها يقيس ضبط الناتج حقًّا.",
+   "answer_verified_by": "mechanical",
+   "trap": "النموذج مدرَّب على آلاف التعازي بالصيغ المستهلكة نفسها؛ القيد يعاكس الغالب.",
+   "correct_solution": "رحم الله أبو خالد وجعل ما أصابكم رفعة في درجاتكم.\nخالص مواساتي القلبية لكم في هذا المصاب الجلل.\nأسأل الله له واسع المغفرة",
+   "wrong_solution": "رحم الله أبو خالد وجعل ما أصابكم رفعة في درجاتكم.\nخالص مواساتي القلبية لكم."
+  },
+  "ifc_a_0031": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "أمانة إخبارية: النماذج تخترع الأسباب تلقائيًّا في أخبار الحرائق.",
+   "answer_verified_by": "mechanical",
+   "trap": "«بسبب إهمال» أشهر إضافة مهلوسة في مثل هذا الخبر.",
+   "correct_solution": "اندلع حريق في مستودع تمور بمنطقة القصيم وتمكنت فرق الدفاع المدني من السيطرة عليه خلال ساعتين.\nأكدت الجهات المختصة: لا إصابات جراء الحادث.",
+   "wrong_solution": "اندلع حريق في مستودع تمور بمنطقة القصيم وتمكنت فرق الدفاع المدني من السيطرة عليه خلال ساعتين دون أن يسفر الحادث عن أي إصابات بشرية بين العاملين أو السكان المجاورين للموقع."
+  },
+  "ifc_a_0017": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "أربعة contains حرفية وقيد استبعاد يمنع أشهر حجة تسويقية للسيارات الكهربائية.",
+   "answer_verified_by": "mechanical",
+   "trap": "«ودّع محطات البنزين» أقوى جملة تسويقية هنا؛ وهي محظورة."
+  },
+  "ifc_a_0027": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "التوصيات الفاترة تستخدم العبارتين المحظورتين تلقائيًّا.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "عمل ماجد تحت إشرافي ثلاث سنوات فكان مثالًا في المبادرة والدقة.\nقاد مشروع التحول الرقمي وحقق نتائج فاقت التوقعات.\nأوصي به بقوة لأي قيادة تقنية طموحة.",
+   "wrong_solution": "ماجد موظف لا بأس به وأداؤه مقبول.\nأوصي به بقوة أحيانًا."
+  },
+  "ifc_a_0023": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "ثلاثة أنواع قيود معًا: إلزام لفظي، استبعاد، وسقف طول.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "تحية طيبة، أرجو تزويدي بمواعيد التقديم لبرنامج الماجستير في إدارة الأعمال للفصل القادم، مع بيان رسوم الدراسة ومتطلبات القبول والوثائق المطلوبة، ولكم جزيل الشكر.",
+   "wrong_solution": "تحية طيبة، أرجو تزويدي بتفاصيل برنامج الماجستير ورسوم الدراسة ومواعيد التقديم وشروط القبول والوثائق المطلوبة وموعد بدء الدراسة ونظام الدوام والرسوم الإضافية للكتب والسكن الجامعي وتكاليفه ومواصلات الجامعة وخططها الدراسية التفصيلية لكل مسار من مسارات البرنامج ومواعيد الاختبارات التحصيلية المطلوبة للقبول النهائي في البرنامج بكل مساراته وخططه الدراسية التفصيلية المعتمدة وأسعار السكن الخارجي القريب من الحرم الجامعي للطلاب والطالبات."
+  },
+  "ifc_a_0012": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الوعود المحظورة هي أكثر ما يلحق بإعلانات الدورات.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "انطلق في رحلة إتقان الإنجليزية مع دورتنا المكثفة لمدة ٦ أسابيع.\nمستواك يتحدد باختبار قصير قبل البدء لتلتحق بالمجموعة الأنسب.\nسجّل اليوم وابدأ التحدي.",
+   "wrong_solution": "انطلق في رحلة إتقان الإنجليزية مع دورتنا المكثفة لمدة ٦ أسابيع.\nمستواك يتحدد باختبار قصير قبل البدء."
+  },
+  "ifc_a_0040": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "علامة التعجب في النهاية قيد شكلي يُنسى كثيرًا.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "نحتفي اليوم بمسيرة وطن ممتدة منذ ٩٤ عامًا من العطاء والبناء، وكلنا فخر بما تحقق وما هو آت!",
+   "wrong_solution": "٩٤ عامًا من المجد والفخر لوطننا الغالي الذي نحبه جميعًا ونفديه بكل شيء."
+  },
+  "ifc_a_0005": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "موضع المعلومة (التاريخ في السطر الأخير تحديدًا) قيد مكاني لا يكفي فيه وجود الكلمة.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "ببالغ السرور يدعوكم راشد العمري\nلمشاركته أجمل لياليه بزواج نجله سلطان\nتقام المراسم بقاعة النخبة الكبرى\nوذلك مساء يوم الخميس الموافق ١٥ مايو",
+   "wrong_solution": "أدعوكم لفرح ابني سلطان ووالده راشد يشكركم\nالقاعة الكبرى مساء الخميس\n١٥ مايو"
+  },
+  "ifc_a_0001": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "أربعة قيود متقاطعة (عدد، بدايات محددة، نهايات، استبعاد) قابلة للتحقق كلها.",
+   "answer_verified_by": "mechanical",
+   "trap": "الجمع بين فعل الأمر في أول السطر وعلامة الاستفهام في آخره متعارض ظاهريًّا ومقصود.",
+   "correct_solution": "هلمّوا إلى افتتاح مقهى الركن الدافئ صباح السبت؟\nتذوّقوا قهوتنا المختصة وحلويات البيت الطازجة؟\nتعرّفوا على فريقنا ومساحات العمل الهادئة لدينا؟\nاحجزوا كرسيّكم المفضل قبل اكتمال العدد؟",
+   "wrong_solution": "هلمّوا إلى حفل افتتاح مقهى الركن الدافئ؟\nتذوّقوا قهوتنا المختصة وحلويات البيت الطازجة؟\nاحجزوا مقاعدكم مبكرًا؟"
+  },
+  "ifc_a_0034": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "منع التحيز التوظيفي الشائع في الإعلانات المحلية.",
+   "answer_verified_by": "mechanical",
+   "trap": "«آنسة حسنة المظهر» عبارة تقليدية في إعلانات السكرتارية.",
+   "correct_solution": "مطلوب سكرتير تنفيذي بخبرة ثلاث سنوات في الأعمال المكتبية.\nيشترط إجادة الحاسب وتنظيم المواعيد وإدارة المراسلات.\nالتقديم عبر البوابة الإلكترونية للشركة.",
+   "wrong_solution": "مطلوب آنسة حسنة المظهر لوظيفة سكرتير تنفيذي، شابة بخبرة ثلاث سنوات.\nإجادة الحاسب مطلوبة."
+  },
+  "ifc_a_0029": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "أمانة التلخيص: حذف جهة الإعلان إجباري ومنع الإضافة معًا.",
+   "answer_verified_by": "mechanical",
+   "trap": "نسخ الخبر كما هو يبقي «بلدية» فيسقط القيد.",
+   "correct_solution": "افتُتحت حديقة حي السلام بالطائف على مساحة ١٢ ألف متر مربع وتضم ٤٠٠ شجرة ومضمار مشي بطول كيلومتر.",
+   "wrong_solution": "افتُتحت حديقة حي السلام في مدينة الطائف على مساحة تبلغ ١٢ ألف متر مربع وتضم نحو ٤٠٠ شجرة مثمرة وظليلة ومضمار مشي طويل للعائلات والرياضيين مع مقاعد وإضاءة ليلية حديثة."
+  },
+  "ifc_a_0033": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "اختبار أمانة: كثير من التلخيصات تلمّع الرأي وتحذف الشكوى.",
+   "answer_verified_by": "mechanical",
+   "trap": "حذف الشكوى يحسّن النبرة لكنه تحريف.",
+   "correct_solution": "أعجب العميل بأن الجهاز ممتاز لكنه اعترض على السعر المرتفع وتأخر الشحن يومين.",
+   "wrong_solution": "العميل أعجب بأن الجهاز ممتاز جدًّا.\nلكنه اعترض بشدة على السعر المرتفع."
+  },
+  "mtm_a_0008": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "تحديث صريح بسيط مع فخ اللون الأول.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0040": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "السؤال عن الوضع الحالي المؤقت لا الاسم الأصلي الثابت.",
+   "answer_verified_by": "mechanical",
+   "trap": "الإجابة بالأستاذ صالح لأنه «معلم الرياضيات» الأصلي."
+  },
+  "mtm_a_0001": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "أبسط صور التحديث الناسخ لمعلومة أولى.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0032": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "تحديث إعداد بسيط بلهجة محكية.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0013": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "تحديث وجهة مباشر.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0022": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "تحديث موعد مدرسي بسيط بلهجة شبه محكية.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0036": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "استبدال كامل لكيان مركب والسؤال عن جزء منه.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0029": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "تحديث موقع غرض يومي بلهجة محكية.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0031": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "رقمان متشابهان جدًّا (أحدهما بادئة الآخر)؛ فحص exact وحده كافٍ.",
+   "answer_verified_by": "mechanical",
+   "trap": "الرقم القديم بادئةٌ للجديد، فلا يصلح فحص excludes هنا واعتمدنا exact."
+  },
+  "mtm_a_0024": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "تحديث جزئي لاسم مركب يتشارك جزءًا مع القديم.",
+   "answer_verified_by": "mechanical",
+   "trap": "كتابة «الأفق للتجارة» لأن «الأفق» صحيحة في الاسمين."
+  },
+  "mtm_a_0002": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "تحديثان متسلسلان لحقلين مختلفين؛ يسهل الاحتفاظ بقديم أحدهما.",
+   "answer_verified_by": "mechanical",
+   "trap": "التحديث الثاني لم يذكر اليوم لأنه «نفسه»؛ من يفقد السياق يجيب بالأحد."
+  },
+  "mtm_a_0025": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "ثلاث معلومات: واحدة ثابتة واثنتان محدّثتان في إشعار واحد.",
+   "answer_verified_by": "mechanical",
+   "trap": "الإبقاء على B12 أو ٦ صباحًا من التفاصيل الأولى."
+  },
+  "mtm_a_0034": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "تحديث لحقل ثالث يجب ألا يلوث استرجاع الحقلين الثابتين.",
+   "answer_verified_by": "mechanical",
+   "trap": "خلط القيمة المحدّثة (٦ كجم) مع نوع المحتوى."
+  },
+  "mtm_a_0019": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "تحديث جزئي لعنوان مركب: جزء يتغير وجزء يبقى.",
+   "answer_verified_by": "mechanical",
+   "trap": "حذف المدينة أو إبقاء الحي القديم."
+  },
+  "mtm_a_0023": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "فخ معاكس: تحديثات كثيرة لا تمس المعلومة المسؤول عنها.",
+   "answer_verified_by": "mechanical",
+   "trap": "سحب آخر معلومة بارزة (الدور الرابع أو ٩–٥) بدل المدير."
+  },
+  "mtm_a_0003": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "حذف وإضافة في أمر واحد؛ الخطأ الشائع نسيان الحذف.",
+   "answer_verified_by": "mechanical",
+   "trap": "من يضيف وينسى الحذف يخرج قائمة بستة عناصر."
+  },
+  "mtm_a_0038": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "عكس حكم دوري: نظام إرسال كامل أُلغي واستُبدل؛ القديم لا يكمل الجديد.",
+   "answer_verified_by": "mechanical",
+   "trap": "الجمع بين النظامين (الاثنين و١ و١٥) أو إبقاء الاثنين."
+  },
+  "mtm_a_0014": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "عكس حكم كامل في سياق حساس؛ الاحتفاظ بالمعلومة القديمة هنا خطر حقيقي.",
+   "answer_verified_by": "mechanical",
+   "trap": "معلومة طبية قديمة «موثقة» في الدور الأول تغلب التحديث عند بعض النماذج."
+  },
+  "mtm_a_0007": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "تحديثان متتاليان للكمية نفسها؛ الوسطى (٥) فخّ قوي لقربها من السؤال.",
+   "answer_verified_by": "mechanical",
+   "trap": "الإجابة ٥ لأنها آخر رقم بارز قبل التعديل الأخير."
+  },
+  "mtm_a_0039": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "عنصر أول القائمة هو المحذوف؛ خطأ شائع نسيان حذفه مع الإضافة.",
+   "answer_verified_by": "mechanical",
+   "trap": "إبقاء «الخيميائي» لأنها أشهر عناصر القائمة وأولها."
+  },
+  "mtm_a_0004": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "تحديث عنوان مباشر مع سؤال عن جزء منه.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0016": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "تحديث مبلغ مالي مع سبب؛ الرقم القديم يبقى ظاهرًا في السياق.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0033": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "العنوانان متقاربان لفظيًّا (ري/رياح) ما يرفع احتمال الخلط.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0010": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "تحديث مكان مع ثبات الزمان؛ سؤال عن المكان تحديدًا.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0021": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "التحديث يذكر المركز الجديد مباشرة؛ الخطأ الاحتفاظ بالترتيب الأول أو إجراء حساب خاطئ.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0005": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "رقمان طويلان متشابهان البنية؛ اختبار دقة نقل الأرقام مع التحديث.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtm_a_0026": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "استبدال صفة وإضافة صنف في أمر واحد محكي.",
+   "answer_verified_by": "mechanical",
+   "trap": "الإبقاء على «حار» مع إضافة الكولا."
+  },
+  "mtm_a_0009": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "المساعد أخطأ في دوره والمستخدم صحّح؛ يقيس عدم التشبث بخطأ المساعد نفسه.",
+   "answer_verified_by": "mechanical",
+   "trap": "تاريخ ١٦ ظهر في دور المساعد وقد يبدو «جزءًا من المحادثة» فيعتمده النموذج."
+  }
+ }
+}

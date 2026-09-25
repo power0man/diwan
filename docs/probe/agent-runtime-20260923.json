@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "scope": "agent_transport_state_and_tool_execution_acceptance",
+  "release_ready": false,
+  "quality_review": "pending_independent_bank_and_calibrated_reviewers",
+  "local_model": {
+    "scope": "one_live_local_model_http_file_journey",
+    "model": "qwen3:14b",
+    "model_digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+    "checks": {
+      "completed": true,
+      "single_write": true,
+      "read_confirmed": true,
+      "file_exact": true,
+      "replay_no_model_call": true,
+      "reverted": true,
+      "revert_replay_preserves_owner": true
+    },
+    "passed": true,
+    "chat_calls": 2,
+    "elapsed_s": 6.491,
+    "source_sha256": {
+      "conversation/agent_session.py": "e921deec856cdac1d677e3f38aaa4e7191087244517e2a0e584d608fc3cfd039",
+      "agent/loop.py": "07e0b10951021f51f58f4ec6b60aae3e85cdd0c6c2c1333aa08e4e74971779b4",
+      "agent/actions.py": "cec848cab41ef840eba5d4436ac7015846db2b1f981ff101c19f3e16ec0085c9",
+      "agent/action_revert.py": "820e267bf725fdbd092d9664aab5b3f7f9e562b75c39838db46e690887731987",
+      "agent/registry.py": "c32d1cde345d1aa2a69454914713bd704f2af97eee543d515add43d10618180b",
+      "webui/server.py": "9ffed9df49b8a370c814a8ab86f748d2f527e2dc30061214811bb8d518e63007",
+      "services/agent_workspace.py": "3156b90d54a716d0efe72878c191a21db9196d75f35132dacb23245c1a97c682",
+      "providers/local_tools.py": "a08761fbd6d8ba3e4c5d702d1f4883495c22edb9fb1c82abbb6fda323eba265d",
+      "providers/ollama_codec.py": "a8fb98b57021ce659a74b0906cbffd262f130c5e4653ed1ec8bb676acdf0e6bf"
+    },
+    "limits": [
+      "One explicit Arabic tool task, not the 120-task quality evaluation.",
+      "No actual command execution was requested.",
+      "Temporary synthetic workspace removed after test.",
+      "First probe expected a nonexistent replay flag; corrected to compare literal saved receipt and unchanged owner bytes."
+    ]
+  },
+  "execution": {
+    "schema_version": 1,
+    "source_sha256": "0d9f6eeb36ef1cc1ecdfa44d6753471a47cbf8b59681e00711ea9184a569aac3",
+    "cases": [
+      {
+        "case": "boundary_probe",
+        "exit_code": 0,
+        "stdout": "{\"uid\": 1000, \"no_owner_mounts\": true, \"no_docker_socket\": true, \"rootfs_readonly\": true, \"ollama_unreachable\": true}\n",
+        "boundary": "disposable_docker_container_id_retained_in_private_evidence"
+      },
+      {
+        "case": "forged_stdout",
+        "exit_code": 7,
+        "stdout": "{\"exit_code\":0,\"success\":true}\n",
+        "boundary": "disposable_docker_container_id_retained_in_private_evidence"
+      },
+      {
+        "case": "timeout_with_child",
+        "code": "execution_timeout"
+      },
+      {
+        "case": "missing_executable",
+        "code": "execution_outcome_unverified"
+      },
+      {
+        "case": "ambiguous_exit_125",
+        "code": "execution_outcome_unverified"
+      },
+      {
+        "case": "mismatched_runtime_preflight",
+        "code": "execution_runtime_mismatch"
+      }
+    ],
+    "cleanup_verified": true,
+    "scope": "Disposable Docker test fixtures only; not proof against Docker VM/kernel escape.",
+    "human_review": false
+  },
+  "browser": {
+    "schema_version": 1,
+    "scope": "browser_journey_synthetic_provider_real_http_and_docker",
+    "checks": {
+      "approval_dialog_bound_args_and_input_hash": true,
+      "send_disabled_while_pending": true,
+      "explicit_approval_then_single_container_command": true,
+      "docker_stdout_visible": "DIWAN-BROWSER-7319",
+      "browser_reload_restored_agent_session": true,
+      "provider_calls_total": 3,
+      "revert_receipt_visible": true,
+      "workspace_empty_after_revert": true
+    },
+    "evidence_kind": "browser_AX_and_DOM_observations_plus_persisted_receipts",
+    "state_sha256": "f25d7884d35dd59d1912930cd4cbbd991cb09deff96e9bb2175cae25c9cf720c",
+    "source_sha256": {
+      "webui/static/app.js": "496e15c1aba8243aa3d42361fe81dbd5a879f68dfd83f14d3017f118d2ca06a0",
+      "webui/static/index.html": "4dcb21d2ea0b8a193d7a61f6a15ffbe8044765fe3c243f28b6917d4351eab2b9",
+      "webui/server.py": "9ffed9df49b8a370c814a8ab86f748d2f527e2dc30061214811bb8d518e63007",
+      "conversation/agent_session.py": "e921deec856cdac1d677e3f38aaa4e7191087244517e2a0e584d608fc3cfd039",
+      "core/execution.py": "0d9f6eeb36ef1cc1ecdfa44d6753471a47cbf8b59681e00711ea9184a569aac3",
+      "agent/actions.py": "cec848cab41ef840eba5d4436ac7015846db2b1f981ff101c19f3e16ec0085c9"
+    },
+    "limits": [
+      "Synthetic model decisions; this is not model quality evidence.",
+      "One desktop viewport; no phone or accessibility certification."
+    ]
+  },
+  "frontend": {
+    "scope": "node_fake_dom_behavior_only",
+    "browser_rendering": "not_tested",
+    "checks": [
+      {
+        "name": "agent_approval_is_explicit_bound_and_then_resumes_once",
+        "passed": true
+      },
+      {
+        "name": "stale_agent_approval_cannot_apply_to_another_project",
+        "passed": true
+      },
+      {
+        "name": "rejected_binding_never_resumes_agent",
+        "passed": true
+      },
+      {
+        "name": "agent_recovery_reads_history_without_resubmitting_or_resuming",
+        "passed": true
+      },
+      {
+        "name": "agent_send_uses_selected_files_and_agent_route",
+        "passed": true
+      },
+      {
+        "name": "refused_agent_revert_preserves_error_and_reuses_request_identity",
+        "passed": true
+      },
+      {
+        "name": "already_reverted_receipt_is_not_a_new_write_claim",
+        "passed": true
+      },
+      {
+        "name": "agent_file_markup_is_plain_text_and_blob_is_revoked",
+        "passed": true
+      },
+      {
+        "name": "stale_agent_file_never_opens_or_creates_blob",
+        "passed": true
+      },
+      {
+        "name": "agent_file_list_error_is_visible",
+        "passed": true
+      },
+      {
+        "name": "media_runtime_mismatch_has_specific_arabic_explanation",
+        "passed": true
+      },
+      {
+        "name": "apply_error_never_announces_creation",
+        "passed": true
+      },
+      {
+        "name": "http_apply_error_remains_visible",
+        "passed": true
+      },
+      {
+        "name": "newer_draft_survives_earlier_answer",
+        "passed": true
+      },
+      {
+        "name": "stale_preferences_do_not_open_in_new_project",
+        "passed": true
+      },
+      {
+        "name": "stale_inspection_does_not_open_in_new_project",
+        "passed": true
+      },
+      {
+        "name": "stale_review_does_not_open_in_new_project",
+        "passed": true
+      },
+      {
+        "name": "late_session_creation_does_not_switch_wrong_project",
+        "passed": true
+      },
+      {
+        "name": "stale_preference_save_does_not_close_new_dialog",
+        "passed": true
+      },
+      {
+        "name": "stale_preference_delete_does_not_close_new_dialog",
+        "passed": true
+      },
+      {
+        "name": "late_history_is_ignored_after_project_switch",
+        "passed": true
+      },
+      {
+        "name": "double_submit_calls_provider_route_once",
+        "passed": true
+      },
+      {
+        "name": "interrupted_request_recovers_without_resubmission",
+        "passed": true
+      },
+      {
+        "name": "media_submission_keeps_exact_selected_bytes_and_mode",
+        "passed": true
+      },
+      {
+        "name": "media_read_cannot_send_after_project_switch",
+        "passed": true
+      },
+      {
+        "name": "media_replacement_survives_earlier_answer",
+        "passed": true
+      },
+      {
+        "name": "media_oversize_does_not_read_or_record_pending",
+        "passed": true
+      },
+      {
+        "name": "missing_media_turn_requires_explicit_pending_release",
+        "passed": true
+      },
+      {
+        "name": "boot_uses_persisted_session_mode_from_server",
+        "passed": true
+      },
+      {
+        "name": "frozen_media_preview_is_bounded_to_blobs_and_revoked_on_close",
+        "passed": true
+      },
+      {
+        "name": "stale_media_inspect_creates_no_object_url",
+        "passed": true
+      },
+      {
+        "name": "media_preview_url_is_revoked_on_escape_and_navigation",
+        "passed": true
+      },
+      {
+        "name": "answer_markup_is_plain_text",
+        "passed": true
+      }
+    ],
+    "passed": 33,
+    "total": 33
+  },
+  "test_suite": {
+    "passed": 2907,
+    "skipped": 4,
+    "test_log_sha256": "18fd2ae83a986abd29041641309a47fb404ff2e1bb101ca280b41f2843a96e76",
+    "scope": "stage3 source before merging four already-tested attribution-scope cases; exact final commit is checked by pre-push and CI"
+  },
+  "probe_corrections": [
+    {
+      "probe": "first live HTTP journey",
+      "status": "test_expectation_corrected",
+      "reason": "Expected an undocumented replay flag; the contract returns the same saved revert receipt. Re-run compared literal receipt and preserved owner bytes. Original failed proof retained outside checkout."
+    }
+  ],
+  "limits": [
+    "No 120-task quality result yet.",
+    "No new model weights, cloud vendor capability or product certification.",
+    "Host owner and Docker VM/kernel remain trusted.",
+    "Browser fixture server was stopped after verification."
+  ]
+}

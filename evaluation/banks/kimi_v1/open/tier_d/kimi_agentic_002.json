@@ -1,0 +1,922 @@
+{
+  "schema_version": 1,
+  "suite_id": "kimi_agentic_002",
+  "kind": "agentic_tasks",
+  "description": "مهامّ وكيلة من طبقة التنفيذ: البحث في شجرة ملفات عن موضع التعريف الصحيح وتعديل السلوك فيه، وإعادة بناء آمنة (تسمية/نقل) تحدّث كل الاستخدامات دون كسر السلوك؛ سكربتات التحقق داخل مساحة العمل محرّمة التعديل.",
+  "tasks": [
+    {
+      "task_id": "agentic_0035",
+      "capability": "refactor_safe",
+      "workspace": {
+        "shop/cart.py": "class Cart:\n    def __init__(self, prices):\n        self.prices = prices\n\n    def calculate(self):\n        return sum(self.prices)\n",
+        "shop/checkout.py": "from shop.cart import Cart\n\n\ndef total_of(prices):\n    return Cart(prices).calculate()\n",
+        "check_method.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom shop.cart import Cart\nfrom shop.checkout import total_of\n\nc = Cart([10, 20])\nassert c.compute_total() == 30\nassert not hasattr(c, \"calculate\") or callable(getattr(c, \"compute_total\"))\nassert total_of([5, 5]) == 10\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert 'calculate' not in (_root / 'shop/cart.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في shop/cart.py'\nassert 'calculate' not in (_root / 'shop/checkout.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في shop/checkout.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "اسم التابع `calculate` عامّ أكثر من اللازم؛ أعد تسميته إلى `compute_total` في تعريف الصنف وفي كل من يناديه. السلوك والنتائج لا تتغير، والاسم القديم يختفي.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_method.py"
+        ]
+      },
+      "forbidden": [
+        "check_method.py"
+      ],
+      "rubric": [
+        "يُعاد تسمية التابع في التعريف ومواضع النداء.",
+        "تبقى النتائج كما هي بعد التسمية الجديدة.",
+        "لا يبقى الاسم القديم في الملفين."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0050",
+      "capability": "refactor_safe",
+      "workspace": {
+        "notify/sender.py": "CHANNEL = \"sms\"\n\n\ndef send(msg):\n    return \"[%s] %s\" % (CHANNEL, msg)\n",
+        "notify/alerts.py": "from notify.sender import send\n\n\ndef alert(msg):\n    return send(\"تنبيه: \" + msg)\n",
+        "notify/audit.py": "from notify.sender import CHANNEL\n\n\ndef current_channel():\n    return CHANNEL\n",
+        "check_channel.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom notify.alerts import alert\nfrom notify.audit import current_channel\n\nassert current_channel() == \"push\"\nassert alert(\"انتهت المهمة\") == \"[push] تنبيه: انتهت المهمة\"\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert '\"sms\"' not in (_root / 'notify/sender.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في notify/sender.py'\nassert '\"sms\"' not in (_root / 'notify/audit.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في notify/audit.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "الشركة أوقفت الرسائل النصية وانتقلت إلى الإشعارات الفورية: غيّر قناة الإرسال من «sms» إلى «push» في موضع تعريفها، بحيث تنعكس على كل من يرسل أو يستعلم عن القناة. بنية الرسائل لا تتغير.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_channel.py"
+        ]
+      },
+      "forbidden": [
+        "check_channel.py"
+      ],
+      "rubric": [
+        "تُغيَّر القيمة في موضع تعريفها فقط.",
+        "تنعكس القناة الجديدة على الإرسال والاستعلام معًا.",
+        "لا تبقى القيمة القديمة في الشيفرة."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0037",
+      "capability": "refactor_safe",
+      "workspace": {
+        "web/handlers.py": "def on_request(ctx):\n    return \"handled:\" + ctx\n",
+        "web/router.py": "from web.handlers import on_request\n\nROUTES = {\"/\": on_request}\n",
+        "check_handler.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom web.handlers import handle_request\nfrom web.router import ROUTES\n\nassert handle_request(\"x\") == \"handled:x\"\nassert ROUTES[\"/\"](\"y\") == \"handled:y\"\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert 'on_request' not in (_root / 'web/handlers.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في web/handlers.py'\nassert 'on_request' not in (_root / 'web/router.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في web/router.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "اتفاق تسمية المعالجات في المشروع هو handle_*: أعد تسمية المعالج `on_request` إلى `handle_request` في تعريفه وفي جدول التوجيه. سلوك المعالجة لا يتغير، والاسم القديم يختفي من الملفين.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_handler.py"
+        ]
+      },
+      "forbidden": [
+        "check_handler.py"
+      ],
+      "rubric": [
+        "يُعاد تسمية المعالج في التعريف والاستيراد وجدول التوجيه.",
+        "يبقى ناتج المعالجة مطابقًا.",
+        "لا يبقى الاسم القديم في الملفين."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0042",
+      "capability": "refactor_safe",
+      "workspace": {
+        "i18n/config.py": "DEFAULT_LANG = \"ar\"\n",
+        "i18n/loader.py": "from i18n.config import DEFAULT_LANG\n\n\ndef current_language():\n    return DEFAULT_LANG\n",
+        "i18n/fallback.py": "from i18n.config import DEFAULT_LANG\n\n\ndef fallback_for(lang):\n    return DEFAULT_LANG if lang not in (\"ar\", \"en\") else lang\n",
+        "check_locale.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom i18n.config import DEFAULT_LOCALE\nfrom i18n.loader import current_language\nfrom i18n.fallback import fallback_for\n\nassert DEFAULT_LOCALE == \"ar\"\nassert current_language() == \"ar\"\nassert fallback_for(\"fr\") == \"ar\"\nassert fallback_for(\"en\") == \"en\"\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert 'DEFAULT_LANG' not in (_root / 'i18n/config.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في i18n/config.py'\nassert 'DEFAULT_LANG' not in (_root / 'i18n/loader.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في i18n/loader.py'\nassert 'DEFAULT_LANG' not in (_root / 'i18n/fallback.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في i18n/fallback.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "الثابت DEFAULT_LANG سيُوسّع لاحقًا ليحمل إقليمًا كاملًا (مثل ar-SA)، فالاسم الأدق DEFAULT_LOCALE. أعد التسمية في التعريف وكل المستوردين. القيمة والسلوك لا يتغيران، والاسم القديم يختفي.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_locale.py"
+        ]
+      },
+      "forbidden": [
+        "check_locale.py"
+      ],
+      "rubric": [
+        "يُعاد تسمية الثابت في التعريف وكل الوحدات.",
+        "تبقى القيمة «ar» وسلوك fallback كما هما.",
+        "لا يبقى الاسم القديم في أي ملف."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0040",
+      "capability": "refactor_safe",
+      "workspace": {
+        "promo/config.json": "{\"discount\": 10, \"code\": \"WELCOME\"}\n",
+        "promo/engine.py": "import json\nimport os\n\n\ndef discount_percent():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"config.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        cfg = json.load(f)\n    return cfg[\"discount\"]\n",
+        "check_promo.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nimport json\nfrom promo.engine import discount_percent\n\nassert discount_percent() == 10\ncfg = json.load(open(\"promo/config.json\", encoding=\"utf-8\"))\nassert \"discount_percent\" in cfg\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert '\"discount\"' not in (_root / 'promo/config.json').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في promo/config.json'\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert '[\"discount\"]' not in (_root / 'promo/engine.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في promo/engine.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "مفتاح «discount» في إعدادات العروض غامض (نسبة أم مبلغ؟)؛ أعد تسميته إلى «discount_percent» في ملف الإعدادات وحدّث قارئه. القيمة 10 تبقى، ولا يبقى المفتاح القديم في أي مكان.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_promo.py"
+        ]
+      },
+      "forbidden": [
+        "check_promo.py"
+      ],
+      "rubric": [
+        "يُعاد تسمية المفتاح في الإعدادات والقارئ معًا.",
+        "تبقى القيمة 10 تُقرأ بنجاح.",
+        "لا يبقى المفتاح القديم في الملفين."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0045",
+      "capability": "refactor_safe",
+      "workspace": {
+        "api/routes.py": "ROUTES = {\"/api/getPrice\": \"price_handler\", \"/api/health\": \"health_handler\"}\n",
+        "api/client.py": "PRICE_URL = \"/api/getPrice\"\n\n\ndef price_endpoint():\n    return PRICE_URL\n",
+        "check_route.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom api.routes import ROUTES\nfrom api.client import price_endpoint\n\nassert price_endpoint() == \"/api/price\"\nassert \"/api/price\" in ROUTES\nassert ROUTES[\"/api/health\"] == \"health_handler\"\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert '/api/getPrice' not in (_root / 'api/routes.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في api/routes.py'\nassert '/api/getPrice' not in (_root / 'api/client.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في api/client.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "مسار الأسعار القديم «/api/getPrice» لا يلتزم بأسلوب REST المعتمد؛ أعد تسميته إلى «/api/price» في جدول التوجيه وفي ثابت العميل. المسارات الأخرى لا تُمسّ، والمسار القديم يختفي من الملفين.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_route.py"
+        ]
+      },
+      "forbidden": [
+        "check_route.py"
+      ],
+      "rubric": [
+        "يُحدَّث المسار في جدول التوجيه وثابت العميل معًا.",
+        "يبقى مسار الصحة وغيره دون تغيير.",
+        "لا يبقى المسار القديم في الملفين."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0038",
+      "capability": "refactor_safe",
+      "workspace": {
+        "ui/config.json": "{\"dark_mode\": true, \"lang\": \"ar\"}\n",
+        "ui/theme.py": "import json\nimport os\n\n\ndef theme_name():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"config.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        cfg = json.load(f)\n    return \"داكن\" if cfg[\"dark_mode\"] else \"فاتح\"\n",
+        "check_theme.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nimport json\nfrom ui.theme import theme_name\n\nassert theme_name() == \"داكن\"\ncfg = json.load(open(\"ui/config.json\", encoding=\"utf-8\"))\nassert cfg.get(\"appearance\") == \"dark\"\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert 'dark_mode' not in (_root / 'ui/config.json').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في ui/config.json'\nassert 'dark_mode' not in (_root / 'ui/theme.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في ui/theme.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "صيغة إعدادات المظهر تطوّرت من منطقي ثنائي إلى قيمة نصية: بدل \"dark_mode\": true صار \"appearance\": \"dark\" (وقيمته البديلة \"light\"). حوّل ملف الإعدادات إلى الصيغة الجديدة وحدّث شيفرة القراءة لتعمل بها، مع بقاء الناتج «داكن» كما هو. الصيغة القديمة تختفي تمامًا.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_theme.py"
+        ]
+      },
+      "forbidden": [
+        "check_theme.py"
+      ],
+      "rubric": [
+        "تُستبدل بنية الإعداد بمفتاح نصي appearance بقيمة dark.",
+        "تُحدَّث شيفرة القراءة لتعمل بالبنية الجديدة وتبقى النتيجة «داكن».",
+        "لا يبقى المفتاح القديم في الإعدادات ولا الشيفرة."
+      ],
+      "max_steps": 10
+    },
+    {
+      "task_id": "agentic_0032",
+      "capability": "refactor_safe",
+      "workspace": {
+        "utils/misc.py": "def is_valid_email(addr):\n    return \"@\" in addr and \".\" in addr\n\n\ndef shout(s):\n    return s.upper()\n",
+        "web/forms.py": "from utils.misc import is_valid_email\n\n\ndef accept(addr):\n    return is_valid_email(addr)\n",
+        "check_move.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom utils.validators import is_valid_email\nfrom web.forms import accept\nfrom utils.misc import shout\n\nassert is_valid_email(\"a@b.co\") is True\nassert accept(\"a@b.co\") is True\nassert shout(\"هاي\") == \"هاي\".upper()\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert 'def is_valid_email' not in (_root / 'utils/misc.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في utils/misc.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "ملف utils/misc.py تضخّم وصار سلة مهملات. انقل دالة `is_valid_email` إلى وحدة جديدة باسم utils/validators.py، وحدّث من يستوردها لتبقى تعمل، واحذفها من موضعها القديم. الدالة `shout` تبقى في misc.py دون تغيير.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_move.py"
+        ]
+      },
+      "forbidden": [
+        "check_move.py"
+      ],
+      "rubric": [
+        "تُنشأ utils/validators.py وتُنقل إليها الدالة كاملة.",
+        "تُحدَّث الاستيرادات في web/forms.py ولا تبقى الدالة في misc.py.",
+        "تبقى shout في مكانها ويعمل كل شيء بعد النقل."
+      ],
+      "max_steps": 11
+    },
+    {
+      "task_id": "agentic_0044",
+      "capability": "refactor_safe",
+      "workspace": {
+        "store/errors.py": "class NotFound(Exception):\n    pass\n",
+        "store/repo.py": "from store.errors import NotFound\n\n\ndef get(items, i):\n    if i >= len(items):\n        raise NotFound(\"غير موجود\")\n    return items[i]\n",
+        "api/handler.py": "from store.errors import NotFound\nfrom store.repo import get\n\n\ndef safe_get(items, i):\n    try:\n        return get(items, i)\n    except NotFound:\n        return None\n",
+        "check_exc.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom store.errors import RecordNotFound\nfrom api.handler import safe_get\n\nassert safe_get([1], 5) is None\nassert safe_get([1], 0) == 1\ntry:\n    from store.repo import get\n    get([], 0)\nexcept RecordNotFound:\n    pass\nelse:\n    raise AssertionError(\"يجب أن يرفع RecordNotFound\")\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nimport re\nassert not re.search(r'\\bNotFound\\b', (_root / 'store/errors.py').read_text(encoding='utf-8')), 'المعرف القديم باقٍ في store/errors.py'\nassert not re.search(r'\\bNotFound\\b', (_root / 'store/repo.py').read_text(encoding='utf-8')), 'المعرف القديم باقٍ في store/repo.py'\nassert not re.search(r'\\bNotFound\\b', (_root / 'api/handler.py').read_text(encoding='utf-8')), 'المعرف القديم باقٍ في api/handler.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "الاستثناء NotFound عامّ جدًّا ويتصادم مع استثناءات مكتبات أخرى؛ أعد تسميته إلى RecordNotFound في تعريفه وفي كل مواضع رفعه والتقاطه. السلوك (يرفع عند الغياب ويُلتقط في safe_get) يبقى كما هو بالضبط.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_exc.py"
+        ]
+      },
+      "forbidden": [
+        "check_exc.py"
+      ],
+      "rubric": [
+        "يُعاد تسمية الاستثناء في التعريف والاستيراد والرفع والالتقاط.",
+        "يبقى السلوك الاستثنائي مطابقًا بعد التسمية.",
+        "لا يبقى الاسم القديم كمعرّف مستقل في أي ملف."
+      ],
+      "max_steps": 10
+    },
+    {
+      "task_id": "agentic_0031",
+      "capability": "refactor_safe",
+      "workspace": {
+        "billing/invoice.py": "class Invoice:\n    def __init__(self, number, amount):\n        self.number = number\n        self.amount = amount\n",
+        "billing/service.py": "from billing.invoice import Invoice\n\n\ndef build_invoice(number, amount):\n    return Invoice(number, amount)\n",
+        "check_class.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom billing.invoice import SalesInvoice\nfrom billing.service import build_invoice\n\ninv = build_invoice(7, 99.5)\nassert isinstance(inv, SalesInvoice)\nassert (inv.number, inv.amount) == (7, 99.5)\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nimport re\nassert not re.search(r'\\bInvoice\\b', (_root / 'billing/invoice.py').read_text(encoding='utf-8')), 'المعرف القديم باقٍ في billing/invoice.py'\nassert not re.search(r'\\bInvoice\\b', (_root / 'billing/service.py').read_text(encoding='utf-8')), 'المعرف القديم باقٍ في billing/service.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "سينضم قريبًا نوع آخر من الفواتير (فاتورة مشتريات)، لذا يجب تمييز الحالية: أعد تسمية الصنف `Invoice` إلى `SalesInvoice` في تعريفه وكل استخداماته. الخصائص والسلوك لا يتغيران.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_class.py"
+        ]
+      },
+      "forbidden": [
+        "check_class.py"
+      ],
+      "rubric": [
+        "يُعاد تسمية الصنف في التعريف والاستيراد والإنشاء.",
+        "يبقى الباني والخصائص يعملان كما كانا.",
+        "لا يبقى الاسم القديم كمعرّف مستقل في أي ملف."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0033",
+      "capability": "refactor_safe",
+      "workspace": {
+        "tool/args.py": "import argparse\n\n\ndef build_parser():\n    p = argparse.ArgumentParser()\n    p.add_argument(\"--out\", dest=\"out\")\n    return p\n",
+        "tool/main.py": "from tool.args import build_parser\n\n\ndef main(argv=None):\n    args = build_parser().parse_args(argv)\n    print(\"الإخراج إلى:\", args.out)\n",
+        "check_flag.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nimport io\nimport contextlib\nfrom tool.main import main\n\nbuf = io.StringIO()\nwith contextlib.redirect_stdout(buf):\n    main([\"--output\", \"x.txt\"])\nassert \"x.txt\" in buf.getvalue(), buf.getvalue()\ntry:\n    with contextlib.redirect_stderr(io.StringIO()):\n        main([\"--out\", \"y.txt\"])\nexcept SystemExit:\n    pass\nelse:\n    raise AssertionError(\"العلم القديم --out يجب ألا يقبل\")\nprint(\"OK\")\n"
+      },
+      "instruction": "واجهة سطر الأوامر توحّدت على الاسم الطويل الواضح: أعد تسمية العلم «--out» إلى «--output» بحيث يقبل البرنامج العلم الجديد ويرفض القديم. وجهة التخزين (args.out) يمكن أن تبقى كما هي؛ المهم واجهة المستخدم.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_flag.py"
+        ]
+      },
+      "forbidden": [
+        "check_flag.py"
+      ],
+      "rubric": [
+        "يُعاد تسمية العلم في تعريف المحلل.",
+        "يعمل --output ويُرفض --out بعد التغيير (مع تعطيل قبول البادئات المختصرة).",
+        "يبقى سلوك البرنامج (طباعة الوجهة) كما هو."
+      ],
+      "max_steps": 10
+    },
+    {
+      "task_id": "agentic_0039",
+      "capability": "refactor_safe",
+      "workspace": {
+        "utils/helpers.py": "def arabic_join(parts):\n    return \"، \".join(parts)\n",
+        "app/listing.py": "from utils.helpers import arabic_join\n\n\ndef list_items(items):\n    return arabic_join(items)\n",
+        "check_file.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nimport os\nfrom app.listing import list_items\n\nassert os.path.isfile(\"utils/text.py\"), \"utils/text.py غير موجود\"\nassert not os.path.exists(\"utils/helpers.py\"), \"الملف القديم ما زال موجودًا\"\nassert list_items([\"أ\", \"ب\"]) == \"أ، ب\"\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert 'helpers' not in (_root / 'app/listing.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في app/listing.py'\nassert 'helpers' not in (_root / 'utils/text.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في utils/text.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "اسم utils/helpers.py غامض؛ أعد تسمية الملف إلى utils/text.py (المحتوى نفسه دون تغيير)، وحدّث الاستيرادات لتشير للاسم الجديد، واحذف الملف القديم حتى لا يبقى مصدران للالتباس.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_file.py"
+        ]
+      },
+      "forbidden": [
+        "check_file.py"
+      ],
+      "rubric": [
+        "يُنقل المحتوى إلى utils/text.py ويُحذف الملف القديم.",
+        "تُحدَّث الاستيرادات وتبقى النتائج كما هي.",
+        "لا يبقى ذكر للاسم القديم في الشيفرة."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0041",
+      "capability": "refactor_safe",
+      "workspace": {
+        "contacts/model.py": "def make_contact(name, mobile):\n    return {\"name\": name, \"mobile\": mobile}\n",
+        "contacts/directory.py": "from contacts.model import make_contact\n\n\ndef phone_of(contact):\n    return contact[\"mobile\"]\n",
+        "check_field.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom contacts.model import make_contact\nfrom contacts.directory import phone_of\n\nc = make_contact(\"سليم\", \"0551234567\")\nassert c == {\"name\": \"سليم\", \"phone\": \"0551234567\"}, c\nassert phone_of(c) == \"0551234567\"\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert 'mobile' not in (_root / 'contacts/model.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في contacts/model.py'\nassert 'mobile' not in (_root / 'contacts/directory.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في contacts/directory.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "حقل جهة الاتصال «mobile» سيُعاد تصديره لنظام يسميه «phone»؛ وحّد التسمية الآن: أعد تسمية الحقل في المنتِج والقارئ بحيث تخرج البنية باسم «phone» وتستمر القراءة. لا يبقى الاسم القديم في الملفين.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_field.py"
+        ]
+      },
+      "forbidden": [
+        "check_field.py"
+      ],
+      "rubric": [
+        "يُعاد تسمية الحقل في منتِج البنية وقارئها.",
+        "تبقى البيانات والقيم كما هي.",
+        "لا يبقى الاسم القديم في الملفين."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0043",
+      "capability": "refactor_safe",
+      "workspace": {
+        "logs/logger.py": "def warn(msg):\n    return \"WARN: \" + msg\n",
+        "logs/config.json": "{\"level\": \"WARN\", \"sink\": \"stdout\"}\n",
+        "logs/runner.py": "from logs.logger import warn\n\n\ndef startup_warning():\n    return warn(\"مساحة التخزين منخفضة\")\n",
+        "check_warn.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nimport re, pathlib, json\nfrom logs.runner import startup_warning\n\nassert startup_warning() == \"WARNING: مساحة التخزين منخفضة\"\ncfg = json.load(open(\"logs/config.json\", encoding=\"utf-8\"))\nassert cfg[\"level\"] == \"WARNING\"\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nfor rel in [\"logs/logger.py\", \"logs/config.json\"]:\n    assert not re.search(r\"\\bWARN\\b\", (_root / rel).read_text(encoding=\"utf-8\")), rel\nprint(\"OK\")\n"
+      },
+      "instruction": "معيار السجلات في الشركة يستخدم الاسم الكامل «WARNING» لا المختصر «WARN». حدّث نص مستوى التحذير في كل مواضعه (الشيفرة وملف إعدادات السجل) بحيث يخرج السطر بالصيغة الكاملة وتطابق الإعدادات. تنبيه: لا تكسر البادئة بجعلها مكررة أو ناقصة.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_warn.py"
+        ]
+      },
+      "forbidden": [
+        "check_warn.py"
+      ],
+      "rubric": [
+        "تُوحَّد تسمية المستوى إلى WARNING في الشيفرة والإعدادات.",
+        "يخرج سطر التحذير «WARNING: ...» سليمًا غير مكرر.",
+        "لا يبقى المختصر القديم كمعرّف مستقل."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0036",
+      "capability": "refactor_safe",
+      "workspace": {
+        "payroll/engine.py": "TAX_2024 = 0.05\n\n\ndef net(gross):\n    return gross * (1 - TAX_2024)\n",
+        "payroll/report.py": "from payroll.engine import TAX_2024\n\n\ndef tax_line():\n    return \"نسبة الاستقطاع: %s\" % TAX_2024\n",
+        "payroll/audit.py": "from payroll.engine import TAX_2024\n\n\ndef expected_deduction(gross):\n    return gross * TAX_2024\n",
+        "check_const.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom payroll.engine import VAT_RATE, net\nfrom payroll.report import tax_line\nfrom payroll.audit import expected_deduction\n\nassert VAT_RATE == 0.05\nassert net(10000) == 9500\nassert \"0.05\" in tax_line()\nassert expected_deduction(10000) == 500\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert 'TAX_2024' not in (_root / 'payroll/engine.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في payroll/engine.py'\nassert 'TAX_2024' not in (_root / 'payroll/report.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في payroll/report.py'\nassert 'TAX_2024' not in (_root / 'payroll/audit.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في payroll/audit.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "الثابت TAX_2024 سُمّي بسنة محددة وصار مضللًا بعد استمرار النسبة؛ أعد تسميته إلى VAT_RATE في تعريفه وكل الوحدات الثلاث التي تستخدمه. النسبة والحسابات لا تتغير إطلاقًا.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_const.py"
+        ]
+      },
+      "forbidden": [
+        "check_const.py"
+      ],
+      "rubric": [
+        "يُعاد تسمية الثابت في التعريف وثلاث وحدات.",
+        "تبقى كل النتائج الحسابية كما هي.",
+        "لا يبقى الاسم القديم في أي وحدة."
+      ],
+      "max_steps": 10
+    },
+    {
+      "task_id": "agentic_0026",
+      "capability": "refactor_safe",
+      "workspace": {
+        "settings.json": "{\"db_host\": \"db.internal\", \"port\": 5432}\n",
+        "db.py": "import json\nimport os\n\n\ndef _cfg():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"settings.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        return json.load(f)\n\n\ndef connect_string():\n    return \"db://%s:5432/app\" % _cfg()[\"db_host\"]\n",
+        "backup.py": "import json\nimport os\n\n\ndef backup_target():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"settings.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        cfg = json.load(f)\n    return \"نسخ احتياطي من \" + cfg[\"db_host\"]\n",
+        "check_rename.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nimport json\nfrom db import connect_string\nfrom backup import backup_target\n\nassert connect_string() == \"db://db.internal:5432/app\"\nassert \"db.internal\" in backup_target()\ncfg = json.load(open(\"settings.json\", encoding=\"utf-8\"))\nassert \"database_host\" in cfg, \"المفتاح الجديد غير موجود في الإعدادات\"\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert 'db_host' not in (_root / 'settings.json').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في settings.json'\nassert 'db_host' not in (_root / 'db.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في db.py'\nassert 'db_host' not in (_root / 'backup.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في backup.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "أعد تسمية مفتاح الإعدادات «db_host» إلى «database_host» في ملف settings.json، وحدّث كل مواضع استخدامه في الشيفرة بحيث يستمر النظام يعمل بنفس القيم. الاسم القديم يجب ألا يبقى له أثر في أي ملف.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_rename.py"
+        ]
+      },
+      "forbidden": [
+        "check_rename.py"
+      ],
+      "rubric": [
+        "يُعاد تسمية المفتاح في ملف الإعدادات وكل مواضع الاستخدام معًا.",
+        "لا يبقى أي ظهور للاسم القديم في الملفات.",
+        "يستمر السلوك كما هو (نفس المضيف والناتج)."
+      ],
+      "max_steps": 10
+    },
+    {
+      "task_id": "agentic_0046",
+      "capability": "refactor_safe",
+      "workspace": {
+        "data/stock.csv": "الاسم,الكمية\nقلم,50\nدفتر,30\n",
+        "store/loader.py": "import csv\nimport os\n\n\ndef first_quantity():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"..\", \"data\", \"stock.csv\")\n    with open(path, newline=\"\", encoding=\"utf-8\") as f:\n        rows = list(csv.DictReader(f))\n    return int(rows[0][\"الكمية\"])\n",
+        "check_header.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom store.loader import first_quantity\n\nassert first_quantity() == 50\nheader = open(\"data/stock.csv\", encoding=\"utf-8\").readline()\nassert \"العدد\" in header\nassert \"الكمية\" not in header\nimport pathlib\n_root = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))\nassert 'الكمية' not in (_root / 'store/loader.py').read_text(encoding='utf-8'), 'المعرف القديم باقٍ في store/loader.py'\nprint(\"OK\")\n"
+      },
+      "instruction": "مورّد البيانات بدّل اسم عمود الملف من «الكمية» إلى «العدد». حدّث ملف البيانات نفسه (ترويسة العمود فقط، دون صفوف القيم) وحدّث القارئ ليطابق، بحيث يستمر التحميل يعمل بالقيم نفسها.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_header.py"
+        ]
+      },
+      "forbidden": [
+        "check_header.py"
+      ],
+      "rubric": [
+        "تُحدَّث ترويسة CSV والقارئ معًا دون المساس بصفوف البيانات.",
+        "يستمر التحميل ويرجع 50 للصف الأول.",
+        "لا يبقى اسم العمود القديم في الملف ولا الشيفرة."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0015",
+      "capability": "search_and_modify",
+      "workspace": {
+        "cache/policy.py": "TTL_SECONDS = 60\n",
+        "cache/store.py": "from cache.policy import TTL_SECONDS\n\n\ndef expires_at(now):\n    return now + TTL_SECONDS\n",
+        "check_ttl.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom cache.store import expires_at\n\nassert expires_at(1000) == 1300, \"مدة الصلاحية يجب أن تصبح 300 ثانية\"\nprint(\"OK\")\n"
+      },
+      "instruction": "مدة صلاحية الخادم الوسيط (cache) قصيرة جدًّا وتسبب ضغطًا على قاعدة البيانات. ابحث عن موضع تعريف مدة الصلاحية وارفعها من 60 إلى 300 ثانية في مكان تعريفها.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_ttl.py"
+        ]
+      },
+      "forbidden": [
+        "check_ttl.py"
+      ],
+      "rubric": [
+        "يُعدَّل ثابت المدة في موضع تعريفه لا عند الاستخدام.",
+        "تصبح المدة 300 ثانية وتنعكس على expires_at.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 6
+    },
+    {
+      "task_id": "agentic_0011",
+      "capability": "search_and_modify",
+      "workspace": {
+        "mathx/ops.py": "def divide(a, b):\n    return a / b\n",
+        "mathx/report.py": "from mathx.ops import divide\n\n\ndef safe_ratio(a, b):\n    r = divide(a, b)\n    return \"غير معرّف\" if r is None else r\n",
+        "check_div.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom mathx.report import safe_ratio\n\nassert safe_ratio(1, 0) == \"غير معرّف\"\nassert safe_ratio(10, 2) == 5\nprint(\"OK\")\n"
+      },
+      "instruction": "الدالة safe_ratio مكتوبة على افتراض أن divide ترجع None عند القسمة على صفر، لكن التعريف الحالي يترك الاستثناء ينفجر. ابحث عن تعريف divide وأضف معالجة الحالة الحدّية هناك (None عند مقسوم عليه صفري) دون تعديل المستدعي.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_div.py"
+        ]
+      },
+      "forbidden": [
+        "check_div.py"
+      ],
+      "rubric": [
+        "تُضاف الحالة الحدّية في تعريف divide لا في safe_ratio.",
+        "القسمة السليمة لا يتغير ناتجها.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0022",
+      "capability": "search_and_modify",
+      "workspace": {
+        "billing/numbers.py": "COUNTER = 1000\n\n\ndef next_invoice_no():\n    global COUNTER\n    COUNTER += 1\n    return \"INV-\" + str(COUNTER)\n",
+        "check_prefix.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom billing.numbers import next_invoice_no\n\nno = next_invoice_no()\nassert no.startswith(\"ف-\"), no\nassert no == \"ف-1001\", no\nprint(\"OK\")\n"
+      },
+      "instruction": "توطين النظام يتطلب أن تبدأ أرقام الفواتير بالبادئة العربية «ف-» بدل «INV-» مع بقاء الترقيم التسلسلي كما هو (أول رقم بعد التغيير: ف-1001). ابحث عن موضع توليد الرقم وعدّل البادئة.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_prefix.py"
+        ]
+      },
+      "forbidden": [
+        "check_prefix.py"
+      ],
+      "rubric": [
+        "تُعدَّل البادئة في موضع توليد الرقم.",
+        "يبقى العدّاد التسلسلي يعمل من 1001.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 6
+    },
+    {
+      "task_id": "agentic_0002",
+      "capability": "search_and_modify",
+      "workspace": {
+        "shop/pricing.py": "def format_price(amount):\n    return \"%s ر.س\" % amount\n",
+        "shop/cart.py": "from shop.pricing import format_price\n\n\ndef receipt_line(name, price):\n    return \"%s: %s\" % (name, format_price(price))\n",
+        "check_fmt.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom shop.pricing import format_price\nfrom shop.cart import receipt_line\n\nassert receipt_line(\"جوال\", 12500) == \"جوال: 12,500 ر.س\"\nassert format_price(999) == \"999 ر.س\"\nprint(\"OK\")\n"
+      },
+      "instruction": "أرقام الأسعار الكبيرة تظهر متلاصقة يصعب قراءتها. ابحث عن موضع تنسيق السعر في هذه الشيفرة وعدّله ليستخدم فاصلة آلاف (12500 تصبح «12,500») مع بقاء اللاحقة «ر.س» وشكل السطر كما هو. الأرقام الصغيرة لا يتغير شكلها.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_fmt.py"
+        ]
+      },
+      "forbidden": [
+        "check_fmt.py"
+      ],
+      "rubric": [
+        "يُعدَّل التنسيق في موضع تعريفه لا في كل موضع استخدام.",
+        "تُضاف فاصلة الآلاف للأرقام الكبيرة وتبقى الصغيرة بلا فواصل.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0024",
+      "capability": "search_and_modify",
+      "workspace": {
+        "org/schedule.py": "WEEKEND = (\"الجمعة\",)\n\n\ndef is_weekend(day):\n    return day in WEEKEND\n",
+        "check_weekend.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom org.schedule import is_weekend\n\nassert is_weekend(\"الجمعة\") is True\nassert is_weekend(\"السبت\") is True\nassert is_weekend(\"الأحد\") is False\nprint(\"OK\")\n"
+      },
+      "instruction": "الشركة انتقلت لعطلة يومين: الجمعة والسبت. ابحث عن موضع تعريف أيام العطلة الأسبوعية وحدّثه؛ دوال الاستعلام تبقى كما هي.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_weekend.py"
+        ]
+      },
+      "forbidden": [
+        "check_weekend.py"
+      ],
+      "rubric": [
+        "يُحدَّث تعريف أيام العطلة في موضعه.",
+        "السبت والجمعة عطلة والأحد يوم عمل.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 6
+    },
+    {
+      "task_id": "agentic_0014",
+      "capability": "search_and_modify",
+      "workspace": {
+        "billing/invoice.py": "def final_amount(subtotal, vat_rate):\n    return subtotal * (1 + vat_rate)\n",
+        "billing/pdf.py": "from billing.invoice import final_amount\n\n\ndef amount_text(subtotal, vat_rate):\n    return \"المستحق: %s\" % final_amount(subtotal, vat_rate)\n",
+        "check_round.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom billing.pdf import amount_text\n\nassert amount_text(99.99, 0.15) == \"المستحق: 114.99\"\nprint(\"OK\")\n"
+      },
+      "instruction": "الفواتير تظهر بكسور طويلة مثل 114.98850000000001. ابحث عن موضع حساب المبلغ النهائي وعدّله ليُقرَّب إلى منزلتين عشريتين (تقريبًا صحيحًا لا قطعًا).",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_round.py"
+        ]
+      },
+      "forbidden": [
+        "check_round.py"
+      ],
+      "rubric": [
+        "يُضاف التقريب في موضع الحساب لا في مواضع العرض.",
+        "التقريب إلى منزلتين عشريتين بالطريقة الصحيحة.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0006",
+      "capability": "search_and_modify",
+      "workspace": {
+        "net/client.py": "MAX_RETRIES = 3\nTIMEOUT = 10\n",
+        "net/api.py": "from net.client import MAX_RETRIES, TIMEOUT\n\n\ndef connection_plan():\n    return {\"attempts\": MAX_RETRIES, \"timeout\": TIMEOUT}\n",
+        "check_retry.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom net.api import connection_plan\n\nplan = connection_plan()\nassert plan[\"attempts\"] == 5, \"عدد المحاولات يجب أن يكون 5\"\nassert plan[\"timeout\"] == 10, \"المهلة يجب ألا تتغير\"\nprint(\"OK\")\n"
+      },
+      "instruction": "بعد كثرة انقطاعات الشبكة قررنا رفع عدد محاولات إعادة الاتصال من 3 إلى 5. ابحث عن الموضع الذي تُعرَّف فيه هذه السياسة وعدّله هناك فقط؛ المهلة الزمنية (10) تبقى كما هي.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_retry.py"
+        ]
+      },
+      "forbidden": [
+        "check_retry.py"
+      ],
+      "rubric": [
+        "يُعدَّل الثابت في موضع تعريفه لا قيمة منسوخة عند الاستخدام.",
+        "تبقى المهلة الزمنية دون تغيير.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 6
+    },
+    {
+      "task_id": "agentic_0012",
+      "capability": "search_and_modify",
+      "workspace": {
+        "web/pagination.py": "DEFAULT_PAGE_SIZE = 20\n\n\ndef paginate(items, page=1, size=None):\n    size = size or DEFAULT_PAGE_SIZE\n    start = (page - 1) * size\n    return items[start:start + size]\n",
+        "check_page.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom web.pagination import paginate\n\nassert len(paginate(list(range(100)))) == 50\nassert len(paginate(list(range(100)), size=10)) == 10\nprint(\"OK\")\n"
+      },
+      "instruction": "قرر فريق المنتج أن الحجم الافتراضي للصفحة في القوائم 50 عنصرًا بدل 20. ابحث عن موضع تعريف هذا الافتراضي وعدّله؛ من يمرّر حجمًا صراحةً يجب ألا يتأثر.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_page.py"
+        ]
+      },
+      "forbidden": [
+        "check_page.py"
+      ],
+      "rubric": [
+        "يُعدَّل الافتراضي في موضع تعريفه.",
+        "الحجم الممرّر صراحةً يظل محترمًا.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 6
+    },
+    {
+      "task_id": "agentic_0019",
+      "capability": "search_and_modify",
+      "workspace": {
+        "game/leaderboard.py": "def rank(players):\n    return sorted(players, key=lambda p: p[\"score\"])\n",
+        "check_rank.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom game.leaderboard import rank\n\nplayers = [\n    {\"name\": \"بدر\", \"score\": 10},\n    {\"name\": \"أمجاد\", \"score\": 10},\n    {\"name\": \"جود\", \"score\": 5},\n]\nnames = [p[\"name\"] for p in rank(players)]\nassert names == [\"أمجاد\", \"بدر\", \"جود\"], names\nprint(\"OK\")\n"
+      },
+      "instruction": "لوحة الصدارة الحالية ترتّب من الأقل نقاطًا إلى الأعلى — مقلوبة تمامًا. المطلوب: تنازليًّا بالنقاط، وعند تعادل لاعبين يتقدّم الأسبق في ترتيب اسمه الأبجدي. ابحث عن موضع الترتيب وأعد كتابة معياره.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_rank.py"
+        ]
+      },
+      "forbidden": [
+        "check_rank.py"
+      ],
+      "rubric": [
+        "يُعكس اتجاه ترتيب النقاط إلى تنازلي.",
+        "يُحسم التعادل بالاسم تصاعديًّا عبر مفتاح ترتيب مركّب.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0013",
+      "capability": "search_and_modify",
+      "workspace": {
+        "contacts/phone.py": "def normalize_phone(p):\n    digits = \"\".join(ch for ch in p if ch.isdigit())\n    return digits\n",
+        "contacts/sync.py": "from contacts.phone import normalize_phone\n\n\ndef key_for(p):\n    return normalize_phone(p)\n",
+        "check_phone.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom contacts.sync import key_for\n\nassert key_for(\"+966 55 123 4567\") == \"+966551234567\"\nassert key_for(\"055 123 4567\") == \"0551234567\"\nprint(\"OK\")\n"
+      },
+      "instruction": "مزامنة جهات الاتصال تفقد مفتاح البلد لأن التطبيع يحذف علامة «+» مع الرموز. ابحث عن موضع التطبيع وعدّله ليحافظ على «+» البادئة إن وجدت، مع إزالة المسافات والرموز الأخرى كما هو الحال اليوم.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_phone.py"
+        ]
+      },
+      "forbidden": [
+        "check_phone.py"
+      ],
+      "rubric": [
+        "يُعدَّل normalize_phone في موضع تعريفه.",
+        "تُحفظ علامة + البادئة فقط وتُزال بقية الرموز غير الرقمية.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0005",
+      "capability": "search_and_modify",
+      "workspace": {
+        "utils/text.py": "def slugify(title):\n    out = []\n    for ch in title.lower():\n        if ch.isascii() and ch.isalnum():\n            out.append(ch)\n        elif ch == \" \":\n            out.append(\"-\")\n    return \"\".join(out)\n",
+        "blog/posts.py": "from utils.text import slugify\n\n\ndef post_url(title):\n    return \"/blog/\" + slugify(title)\n",
+        "check_slug.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom blog.posts import post_url\n\nassert post_url(\"أخبار التقنية 2026\") == \"/blog/أخبار-التقنية-2026\"\nassert post_url(\"hello world\") == \"/blog/hello-world\"\nprint(\"OK\")\n"
+      },
+      "instruction": "روابط المدونة العربية تخرج مشوّهة لأن مولّد الـ slug يحذف الحروف العربية كلها. ابحث عن موضع التوليد وعدّله ليحافظ على الحروف العربية (والإنجليزية والأرقام) ويحوّل المسافات إلى شرطات. السلوك مع النصوص الإنجليزية يجب ألا يتغير.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_slug.py"
+        ]
+      },
+      "forbidden": [
+        "check_slug.py"
+      ],
+      "rubric": [
+        "يُعدَّل شرط القبول في slugify ليشمل الحروف العربية.",
+        "لا يتغير سلوك النصوص الإنجليزية ولا تحويل المسافات.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0016",
+      "capability": "search_and_modify",
+      "workspace": {
+        "core/logger.py": "def info(msg):\n    return \"[INFO] \" + msg\n",
+        "core/runner.py": "from core.logger import info\n\n\ndef boot():\n    return info(\"بدء التشغيل\")\n",
+        "old/logger_v1.py": "# الإصدار الأول من السجلّ، متروك للأرشيف\ndef info(msg):\n    return \"[INFO] \" + msg\n",
+        "check_log.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom core.runner import boot\n\nassert boot() == \"INFO: بدء التشغيل\"\nprint(\"OK\")\n"
+      },
+      "instruction": "نظام تحليل السجلات الجديد يتوقع الصيغة «INFO: الرسالة» بدل «[INFO] الرسالة». ابحث عن موضع بناء سطر السجل الذي يغذّي التطبيق حاليًّا (توجد نسخة أرشيفية قديمة لا تُستورد) وعدّل الصيغة هناك.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_log.py"
+        ]
+      },
+      "forbidden": [
+        "check_log.py"
+      ],
+      "rubric": [
+        "يُعدَّل تنسيق السطر في core/logger.py لا النسخة الأرشيفية.",
+        "الصيغة الجديدة «INFO: » تسبق الرسالة دون تغيير نصها.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0003",
+      "capability": "search_and_modify",
+      "workspace": {
+        "services/welcome.py": "def greet(name):\n    return \"مرحبا \" + name\n",
+        "services/notify.py": "from services.welcome import greet\n\n\ndef welcome_message(name):\n    return greet(name) + \"! يسعدنا انضمامك\"\n",
+        "legacy/greeter.py": "def greet(name):\n    return \"مرحبا \" + name\n",
+        "check_greet.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom services.notify import welcome_message\n\nassert welcome_message(\"سلمى\") == \"أهلًا وسهلًا سلمى! يسعدنا انضمامك\"\nprint(\"OK\")\n"
+      },
+      "instruction": "فريق التجربة طلب تغيير عبارة الترحيب من «مرحبا» إلى «أهلًا وسهلًا». لاحظ أن عبارة الترحيب معرّفة في أكثر من ملف (أحدها قديم لم يعد يُستورد). ابحث عن التعريف الذي يغذّي رسالة الانضمام الفعلية وعدّله وحده.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_greet.py"
+        ]
+      },
+      "forbidden": [
+        "check_greet.py"
+      ],
+      "rubric": [
+        "يُحدَّد التعريف الحي في services/welcome.py ويُعدَّل دون النسخة القديمة.",
+        "النص الجديد «أهلًا وسهلًا » يحل محل «مرحبا » مع بقية بنية الرسالة.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0020",
+      "capability": "search_and_modify",
+      "workspace": {
+        "utils/text.py": "def truncate(s, n):\n    return s[:n]\n",
+        "feed/preview.py": "from utils.text import truncate\n\n\ndef teaser(body):\n    return truncate(body, 5)\n",
+        "check_trunc.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom feed.preview import teaser\nfrom utils.text import truncate\n\nassert teaser(\"مرحبا بالعالم\") == \"مرحبا…\"\nassert truncate(\"قص\", 5) == \"قص\"\nprint(\"OK\")\n"
+      },
+      "instruction": "المقتطفات المقصوصة تبدو وكأنها نص مكتمل. عدّل دالة القصّ بحيث تُلحق علامة حذف «…» عندما يُقصّ النص فعلًا، أما النص الأقصر من الحد فيبقى كما هو بلا إلحاق. ابحث عن التعريف في utils/text.py.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_trunc.py"
+        ]
+      },
+      "forbidden": [
+        "check_trunc.py"
+      ],
+      "rubric": [
+        "تُلحق علامة الحذف عند القص الفعلي فقط.",
+        "النص القصير يمرّ دون أي إلحاق.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0023",
+      "capability": "search_and_modify",
+      "workspace": {
+        "pay/cards.py": "def mask_card(number):\n    return number[:4] + \"************\"\n",
+        "pay/receipt.py": "from pay.cards import mask_card\n\n\ndef card_line(number):\n    return \"البطاقة: \" + mask_card(number)\n",
+        "check_mask.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom pay.receipt import card_line\n\nassert card_line(\"1234567812345678\") == \"البطاقة: ************5678\"\nprint(\"OK\")\n"
+      },
+      "instruction": "معيار عرض البطاقات: تُخفى كل الأرقام عدا الأربعة الأخيرة، ويبقى الطول الكلي مطابقًا لطول الرقم. الحالي يعرض الأربعة الأولى — عكس المطلوب وأخطر. ابحث عن موضع الإخفاء وصحّحه (النجوم بعدد الأرقام المخفية فعلًا).",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_mask.py"
+        ]
+      },
+      "forbidden": [
+        "check_mask.py"
+      ],
+      "rubric": [
+        "يُعرَض آخر أربعة أرقام ويُخفى ما قبلها بنجوم.",
+        "عدد النجوم يساوي عدد الأرقام المخفية فعلًا لا قيمة ثابتة.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0018",
+      "capability": "search_and_modify",
+      "workspace": {
+        "people/names.py": "def initials(full_name):\n    parts = full_name.split()\n    return parts[0][0]\n",
+        "people/badge.py": "from people.names import initials\n\n\ndef badge(full_name):\n    return \"الشارة: \" + initials(full_name)\n",
+        "check_initials.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom people.badge import badge\n\nassert badge(\"أحمد محمد علي\") == \"الشارة: أ.م.ع\"\nassert badge(\"نورة\") == \"الشارة: ن\"\nprint(\"OK\")\n"
+      },
+      "instruction": "شارات الموظفين يجب أن تعرض الأحرف الأولى من كل اسم مفصولة بنقاط («أحمد محمد علي» ← «أ.م.ع»)، لكنها اليوم تعرض حرفًا واحدًا فقط. ابحث عن موضع استخراج الأحرف وعدّله ليغطي كل الأجزاء، ومن اسمه كلمة واحدة يبقى حرف واحد بلا نقطة.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_initials.py"
+        ]
+      },
+      "forbidden": [
+        "check_initials.py"
+      ],
+      "rubric": [
+        "يُعدَّل استخراج الأحرف في people/names.py.",
+        "تُجمع أحرف كل الأجزاء بنقاط، والاسم الواحد بلا نقطة زائدة.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0008",
+      "capability": "search_and_modify",
+      "workspace": {
+        "auth/validators.py": "import re\n\n\ndef is_valid_email(addr):\n    pattern = r\"^[A-Za-z0-9._%]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$\"\n    return re.match(pattern, addr) is not None\n",
+        "auth/signup.py": "from auth.validators import is_valid_email\n\n\ndef can_register(addr):\n    return is_valid_email(addr)\n",
+        "check_email.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom auth.signup import can_register\n\nassert can_register(\"user+tag@example.com\") is True\nassert can_register(\"plain@example.com\") is True\nassert can_register(\"no-at-sign\") is False\nprint(\"OK\")\n"
+      },
+      "instruction": "مستخدمون كثر يعتمدون عناوين بصيغة «user+tag@example.com» والتسجيل يرفضها. ابحث عن مدقّق البريد ووسّعه ليقبل علامة «+» في الجزء المحلي من العنوان، مع بقاء رفض العناوين المشوّهة. عدّل التعريف لا المستدعي.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_email.py"
+        ]
+      },
+      "forbidden": [
+        "check_email.py"
+      ],
+      "rubric": [
+        "تُعدَّل تعبيرات التحقق في auth/validators.py فقط.",
+        "تُقبل علامة + في الجزء المحلي وتبقى الصيغ الفاسدة مرفوضة.",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0010",
+      "capability": "search_and_modify",
+      "workspace": {
+        "utils/dates.py": "def fmt_date(d):\n    return \"%s/%s/%s\" % (d.year, d.month, d.day)\n",
+        "reports/daily.py": "from utils.dates import fmt_date\n\n\ndef title_for(d):\n    return \"تقرير يوم \" + fmt_date(d)\n",
+        "check_dates.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nfrom datetime import date\nfrom reports.daily import title_for\n\nassert title_for(date(2026, 9, 24)) == \"تقرير يوم 2026-09-24\"\nprint(\"OK\")\n"
+      },
+      "instruction": "اتفقنا مع الجهة المستقبلة على صيغة ISO للتواريخ: «2026-09-24» بشرطات وأصفار بادئة. ابحث عن موضع تنسيق التاريخ وعدّله ليطابق الصيغة الجديدة في كل ما يُبنى عليه.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check_dates.py"
+        ]
+      },
+      "forbidden": [
+        "check_dates.py"
+      ],
+      "rubric": [
+        "يُعدَّل التنسيق في utils/dates.py لا في كل مستدعٍ.",
+        "الصيغة الجديدة ISO بأصفار بادئة (09 وليس 9).",
+        "ينجح سكربت التحقق بعد التعديل."
+      ],
+      "max_steps": 8
+    }
+  ]
+}

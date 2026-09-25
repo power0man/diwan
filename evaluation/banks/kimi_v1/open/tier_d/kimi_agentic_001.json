@@ -1,0 +1,963 @@
+{
+  "schema_version": 1,
+  "suite_id": "kimi_agentic_001",
+  "kind": "agentic_tasks",
+  "description": "مهامّ وكيلة من طبقة التنفيذ: مشاريع بايثون صغيرة فيها اختبار يسقط أو خطأ تشغيل؛ المطلوب تشخيص السبب وإصلاح المصدر لا الاختبارات (المحرّمة غالبًا).",
+  "tasks": [
+    {
+      "task_id": "agentic_0002",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "shop.py": "def apply_discount(price, percent):\n    return price * percent / 100\n",
+        "tests/test_shop.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom shop import apply_discount\n\n\ndef test_discount():\n    assert apply_discount(200, 10) == 180\n    assert apply_discount(50, 0) == 50\n    assert apply_discount(99.9, 100) == 0\n"
+      },
+      "instruction": "دالة `apply_discount` في متجرنا الإلكتروني يفترض أن ترجع السعر بعد خصم نسبة مئوية (مثلًا خصم 10% من 200 يعطي 180)، لكن الاختبارات تسقط. شخّص الخلل وأصلحه. ملفات الاختبار خط أحمر، لا تلمسها.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُصلح منطق الخصم في shop.py دون المساس بالاختبارات.",
+        "النتيجة هي السعر بعد إنقاص النسبة، لا قيمة الخصم نفسها.",
+        "كل الاختبارات تنجح بعد الإصلاح."
+      ],
+      "max_steps": 6
+    },
+    {
+      "task_id": "agentic_0012",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "textkit.py": "def normalise_ar(text):\n    return text.replace(\"أ\", \"ا\").replace(\"إ\", \"ا\").replace(\"آ\", \"ا\")\n",
+        "tests/test_textkit.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom textkit import normalize_ar\n\n\ndef test_norm():\n    assert normalize_ar(\"أحمد\") == \"احمد\"\n    assert normalize_ar(\"إسلام\") == \"اسلام\"\n"
+      },
+      "instruction": "الاختبار يستورد دالة اسمها `normalize_ar` من `textkit` لكنه لا يجدها. وحّد التسمية بحيث يمرّ الاختبار، والتعديل يكون في ملف المكتبة لا في الاختبار.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "تُعرَّف الدالة بالاسم الذي يتوقعه العملاء (normalize_ar).",
+        "يُحافَظ على سلوك التطبيع نفسه.",
+        "تنجح الاختبارات دون لمسها."
+      ],
+      "max_steps": 6
+    },
+    {
+      "task_id": "agentic_0011",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "util.py": "def fmt_price(amount):\n    return \"%.2f\" % amount\n",
+        "shop.py": "from utils import fmt_price\n\n\ndef label(amount):\n    return \"السعر: \" + fmt_price(amount)\n",
+        "tests/test_shop.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom shop import label\n\n\ndef test_label():\n    assert label(10) == \"السعر: 10.00\"\n"
+      },
+      "instruction": "مجموعة الاختبارات لا تشتغل أصلًا: تنهار بخطأ استيراد قبل أن تبدأ. اعثر على سبب فشل الاستيراد وأصلحه بحيث تنجح الاختبارات. ملفات الاختبار ممنوعة.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُشخَّص أن العلة في اسم الوحدة المستورَدة لا في الاختبار.",
+        "يُصلَّح الاستيراد في shop.py مع بقاء الوظيفة كما هي.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0006",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "textkit.py": "def reverse_words(sentence):\n    words = sentence.split()\n    words.reverse()\n    return \" \".join(words[1:])\n",
+        "tests/test_textkit.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom textkit import reverse_words\n\n\ndef test_reverse():\n    assert reverse_words(\"السماء صافية اليوم\") == \"اليوم صافية السماء\"\n    assert reverse_words(\"واحد\") == \"واحد\"\n    assert reverse_words(\"أ ب\") == \"ب أ\"\n"
+      },
+      "instruction": "دالة `reverse_words` يفترض أن تعكس ترتيب كلمات الجملة، لكن كلمة تضيع في الطريق والاختبار يسقط. اكتشف السبب وأصلحه في المصدر دون الاقتراب من مجلد الاختبارات.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "لا تُفقد أي كلمة بعد العكس، بما فيها الجملة من كلمة واحدة.",
+        "الإصلاح في textkit.py فقط.",
+        "تنجح الاختبارات الثلاثة بعد الإصلاح."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0014",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "invoice.py": "def format_total(total):\n    return \"المجموع المستحق: \" + total + \" ريال\"\n",
+        "tests/test_invoice.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom invoice import format_total\n\n\ndef test_format():\n    assert format_total(150) == \"المجموع المستحق: 150 ريال\"\n    assert format_total(0) == \"المجموع المستحق: 0 ريال\"\n"
+      },
+      "instruction": "اختبار تنسيق الفاتورة ينهار بخطأ نوع (TypeError) عند دمج النص مع الرقم. أصلح الدالة بحيث ترجع السلسلة المنسّقة الصحيحة. لا تعدّل الاختبار.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُحوَّل الرقم إلى نص قبل الدمج أو يُستخدم تنسيق سلاسل صحيح.",
+        "الناتج النهائي مطابق للصيغة المتوقعة حرفيًّا.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 6
+    },
+    {
+      "task_id": "agentic_0045",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "greeter.py": "def welcome(name):\n    return \"أهلا بك يا {name} في بوابة الموظفين\"\n",
+        "tests/test_greeter.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom greeter import welcome\n\n\ndef test_welcome():\n    assert welcome(\"نورة\") == \"أهلا بك يا نورة في بوابة الموظفين\"\n    assert welcome(\"خالد\") == \"أهلا بك يا خالد في بوابة الموظفين\"\n"
+      },
+      "instruction": "رسالة الترحيل تظهر فيها «{name}» حرفيًّا للموظفين بدل أسمائهم، والاختبار يسقط. السلسلة تبدو منسّقة لكنها لا تُعالَج كذلك. أصلحها.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُكتشف غياب بادئة f من السلسلة المنسّقة.",
+        "تُدخَل قيمة الاسم فعليًّا في الرسالة.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 6
+    },
+    {
+      "task_id": "agentic_0010",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "limits.py": "def clamp(value, low, high):\n    if value < low:\n        return high\n    if value > high:\n        return low\n    return value\n",
+        "tests/test_limits.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom limits import clamp\n\n\ndef test_clamp():\n    assert clamp(5, 0, 10) == 5\n    assert clamp(-3, 0, 10) == 0\n    assert clamp(99, 0, 10) == 10\n"
+      },
+      "instruction": "دالة `clamp` يجب أن تحصر القيمة بين حدّ أدنى وحدّ أعلى، لكن نتائجها مقلوبة عند تجاوز الحدود والاختبار يسقط. راجع المنطق وأصلحه في المصدر.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُرجَع الحد الأدنى عند النزول عنه والأعلى عند تجاوزه.",
+        "لا يُكتب حلّ ملتفّ بحالات خاصة؛ يُصحَّح المنطق نفسه.",
+        "تنجح الاختبارات دون تعديلها."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0007",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "textkit.py": "def collapse_spaces(text):\n    return text.split()\n",
+        "tests/test_textkit.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom textkit import collapse_spaces\n\n\ndef test_collapse():\n    assert collapse_spaces(\"مرحبا   بالعالم\") == \"مرحبا بالعالم\"\n    assert collapse_spaces(\"  كثير   المسافات  \") == \"كثير المسافات\"\n"
+      },
+      "instruction": "المطلوب من `collapse_spaces` أن ترجع نصًّا بمسافات مفردة بين الكلمات وبلا مسافات طرفية، لكن الاختبار يشكو من نوع القيمة المرجعة. شخّص وأصلح.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "ترجع الدالة نصًّا لا قائمة.",
+        "تُدمج المسافات المتتالية وتُزال الطرفية.",
+        "الإصلاح في المصدر، والاختبارات تنجح بعده."
+      ],
+      "max_steps": 6
+    },
+    {
+      "task_id": "agentic_0049",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "shipping.py": "import json\nimport os\n\n\ndef load_cfg():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"config.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        return json.load(f)\n\n\ndef is_free_shipping(order_total):\n    return order_total >= load_cfg()[\"free_shipping_threshold\"]\n",
+        "config.json": "{\"free_shipping_threshold\": 1000, \"courier\": \"سمسا\"}\n",
+        "tests/test_shipping.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom shipping import is_free_shipping, load_cfg\n\n\ndef test_free_shipping():\n    assert is_free_shipping(250) is True\n    assert is_free_shipping(150) is False\n\n\ndef test_threshold_source():\n    assert load_cfg()[\"free_shipping_threshold\"] == 200\n"
+      },
+      "instruction": "سياسة المتجر: الشحن مجاني للطلبات من 200 ريال فأعلى، والعتبة يجب أن تبقى قابلة للضبط من ملف الإعدادات. الاختبارات تسقط: طلب بـ250 يُحسب شحنه مدفوعًا. تتبّع من أين تأتي العتبة وأصلح الخلل دون تثبيت قيمة داخل الكود. الاختبارات ممنوعة.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُكتشف أن العتبة الخاطئة مصدرها ملف الإعدادات.",
+        "تُصحَّح قيمة العتبة في config.json إلى 200 ويبقى الكود يقرأ منه.",
+        "تنجح الاختبارات بعد الإصلاح دون تثبيت القيمة في الكود."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0042",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "parser.py": "import csv\nimport os\n\n\ndef load_grades():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"data\", \"grades.csv\")\n    with open(path, newline=\"\", encoding=\"utf-8\") as f:\n        return list(csv.DictReader(f, delimiter=\",\"))\n",
+        "data/grades.csv": "الاسم;الدرجة\nليلى;88\nسامي;92\n",
+        "tests/test_parser.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom parser import load_grades\n\n\ndef test_grades():\n    rows = load_grades()\n    assert len(rows) == 2\n    assert rows[0][\"الاسم\"] == \"ليلى\"\n    assert rows[1][\"الدرجة\"] == \"92\"\n"
+      },
+      "instruction": "قراءة درجات الطلاب من ملف CSV ترجع بنية مشوّهة: الأعمدة لا تنفصل كما ينبغي. افتح ملف البيانات نفسه وانظر كيف تُفصل القيم فعلًا، ثم أصلح القارئ. الاختبارات ممنوعة.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُكتشف أن فاصل الملف الفعلي فاصلة منقوطة لا فاصلة.",
+        "يُعدَّل القارئ ليطابق تنسيق الملف دون تغيير ملف البيانات.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0046",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "finder.py": "def find_all_positive(nums):\n    result = []\n    for n in nums:\n        if n > 0:\n            result.append(n)\n        return result\n",
+        "tests/test_finder.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom finder import find_all_positive\n\n\ndef test_all():\n    assert find_all_positive([1, -2, 3]) == [1, 3]\n    assert find_all_positive([-1, -5]) == []\n    assert find_all_positive([7, 8, 9]) == [7, 8, 9]\n"
+      },
+      "instruction": "دالة تستخرج الأرقام الموجبة لكنها لا ترجع إلا جزءًا من النتيجة. انظر إلى موضع جملة return بتمعّن — المسافة البادئة تحكي القصة. أصلح المصدر.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُكتشف أن return داخل حلقة for فيُنهي الدالة مبكرًا.",
+        "يُصحَّح الإزاحة لتعود النتيجة بعد اكتمال الحلقة.",
+        "تنجح الاختبارات الثلاثة بعد الإصلاح."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0019",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "settings.py": "import json\n\n\ndef load_settings():\n    with open(os_path(), encoding=\"utf-8\") as f:\n        return json.load(f.read())\n\n\ndef os_path():\n    import os\n    return os.path.join(os.path.dirname(os.path.abspath(__file__)), \"config.json\")\n",
+        "config.json": "{\"app\": \"ديوان\", \"retries\": 3}\n",
+        "tests/test_settings.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom settings import load_settings\n\n\ndef test_load():\n    cfg = load_settings()\n    assert cfg[\"app\"] == \"ديوان\"\n    assert cfg[\"retries\"] == 3\n"
+      },
+      "instruction": "تحميل الإعدادات ينهار بخطأ في وحدة json رغم أن ملف الإعدادات JSON سليم تمامًا. انظر كيف تُقرأ البيانات وتُمرَّر إلى json وأصلح الخلط.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُميَّز بين json.load (تأخذ ملفًا) و json.loads (تأخذ نصًّا).",
+        "يبقى محتوى الإعدادات المقروء مطابقًا للملف.",
+        "تنجح الاختبارات بعد الإصلاح دون لمسها."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0022",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "db.py": "import json\nimport os\n\n\ndef connect_string():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"config.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        cfg = json.load(f)\n    return \"db://%s:5432/app\" % cfg[\"db_host\"]\n",
+        "config.json": "{\"hostname\": \"db.internal\", \"port\": 5432}\n",
+        "tests/test_db.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom db import connect_string\n\n\ndef test_conn():\n    assert connect_string() == \"db://db.internal:5432/app\"\n"
+      },
+      "instruction": "بناء سلسلة الاتصال بقاعدة البيانات ينهار بـ KeyError عند قراءة الإعدادات. افتح ملف الإعدادات وقارن مفاتيحه بما يطلبه الكود، ثم أصلح عدم التطابق من جهة الكود (ملف الإعدادات تديره جهة أخرى ولا يجوز تعديله).",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests",
+        "config.json"
+      ],
+      "rubric": [
+        "يُكتشف أن الكود يطلب مفتاحًا غير الموجود في الإعدادات.",
+        "يُعدَّل الكود ليقرأ المفتاح الفعلي «hostname» دون تغيير ملف الإعدادات.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0041",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "versions.py": "def sort_quantities(values):\n    return sorted(values)\n",
+        "tests/test_versions.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom versions import sort_quantities\n\n\ndef test_numeric_order():\n    assert sort_quantities([\"9\", \"10\", \"100\"]) == [\"9\", \"10\", \"100\"]\n    assert sort_quantities([\"3\", \"20\", \"1\"]) == [\"1\", \"3\", \"20\"]\n"
+      },
+      "instruction": "كميات المخزون تُخزَّن نصوصًا، وترتيبها تصاعديًّا يعطي نتائج غريبة: «10» قبل «9». الاختبارات تسقط. المطلوب ترتيبًا عدديًّا مع بقاء العناصر نصوصًا كما وردت. أصلح المصدر.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُدرَك أن الترتيب الأبجدي للنصوص لا يطابق الترتيب العددي.",
+        "يُستخدم مفتاح ترتيب عددي دون تحويل عناصر القائمة.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0044",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "calendar_util.py": "def is_leap(year):\n    return year % 4 == 0\n",
+        "tests/test_calendar.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom calendar_util import is_leap\n\n\ndef test_leap():\n    assert is_leap(2024) is True\n    assert is_leap(2023) is False\n    assert is_leap(2000) is True\n    assert is_leap(1900) is False\n"
+      },
+      "instruction": "دالة الكشف عن السنة الكبيسة تنجح مع السنوات القريبة لكنها تخطئ في سنوات قرنية معيّنة، والاختبارات تلتقط ذلك. القاعدة الكاملة للسنة الكبيسة أدقّ من «يقبل القسمة على 4». أصلح القاعدة في المصدر.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "تُطبَّق القاعدة الكاملة: قسمة على 4 مع استثناء المئوية إلا إن قُبلت على 400.",
+        "سنة 1900 غير كبيسة و2000 كبيسة بعد الإصلاح.",
+        "تنجح الاختبارات دون تعديلها."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0004",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "stats.py": "def median(nums):\n    ordered = sorted(nums)\n    n = len(ordered)\n    return ordered[n // 2]\n",
+        "tests/test_stats.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom stats import median\n\n\ndef test_median_odd():\n    assert median([5, 1, 3]) == 2 + 1\n\n\ndef test_median_even():\n    assert median([1, 2, 3, 4]) == 2.5\n    assert median([10, 20]) == 15\n"
+      },
+      "instruction": "في مكتبة الإحصاء هذه اختبارٌ يسقط. الوسيط لقائمة ذات عدد زوجي من العناصر يجب أن يكون متوسط العنصرين الأوسطين، لكن الدالة الحالية لا تفعل ذلك. حدّد الخلل وأصلحه في `stats.py`.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُعالَج طولا القائمة الزوجي والفردي معالجة صحيحة.",
+        "التعديل في المصدر حصرًا، والاختبارات لا تُمسّ.",
+        "تنجح جميع الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0048",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "clock.py": "def to_12h(hour):\n    return hour % 12\n",
+        "tests/test_clock.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom clock import to_12h\n\n\ndef test_clock():\n    assert to_12h(13) == 1\n    assert to_12h(1) == 1\n    assert to_12h(12) == 12\n    assert to_12h(0) == 12\n"
+      },
+      "instruction": "شاشة العرض تستخدم نظام 12 ساعة: الساعة 13 تظهر 1، والساعة 12 تظهر 12، ومنتصف الليل (0) يظهر 12. الدالة الحالية تظهر صفرًا في حالتين والاختبار يسقط. أصلح التحويل.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُدرَك أن باقي القسمة على 12 يعطي 0 حيث يجب 12.",
+        "تُعالَج الحالتان 12 و0 معالجة صحيحة بلا حالات خاصة زائدة.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0050",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "events.py": "from datetime import datetime\n\n\ndef day_name(date_str):\n    dt = datetime.strptime(date_str, \"%d/%m/%Y\")\n    return dt.strftime(\"%A\")\n",
+        "tests/test_events.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom events import day_name\n\n\ndef test_day():\n    assert day_name(\"2026-09-24\") == \"Thursday\"\n    assert day_name(\"2026-01-01\") == \"Thursday\"\n"
+      },
+      "instruction": "واجهة برمجية ترسل التواريخ بصيغة ISO مثل «2026-09-24»، ودالة تعطي اسم اليوم بالإنجليزية كما تُرجعه مكتبة datetime. الاختبارات تنهار عند التحليل. طابق صيغة التحليل مع الصيغة الواردة فعلًا. الاختبارات ممنوعة.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُكتشف عدم تطابق صيغة strptime مع صيغة ISO الواردة.",
+        "تُصحَّح الصيغة إلى %Y-%m-%d دون تغيير مخرجات الدالة المقصودة.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0017",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "report.py": "def write_report(lines, out_dir=\"out\"):\n    path = out_dir + \"/report.txt\"\n    with open(path, \"w\", encoding=\"utf-8\") as f:\n        f.write(\"\\n\".join(lines))\n    return path\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nimport os\nfrom report import write_report\n\n\ndef test_write(tmp_path):\n    out = str(tmp_path / \"newdir\")\n    path = write_report([\"أ\", \"ب\"], out)\n    with open(path, encoding=\"utf-8\") as f:\n        assert f.read() == \"أ\\nب\"\n"
+      },
+      "instruction": "كتابة التقرير تنهار إذا كان مجلد الإخراج غير موجود بعد، والاختبار يلتقط هذا بالضبط. أصلح `write_report` بحيث تنشئ المجلد عند الحاجة ثم تكتب. الاختبار خط أحمر.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُنشأ مجلد الإخراج تلقائيًّا عند عدم وجوده.",
+        "يُكتب المحتوى كما هو بلا تغيير في التنسيق.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0047",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "formatter.py": "def trim_code(code):\n    return code.strip(\"0\")\n",
+        "tests/test_formatter.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom formatter import trim_code\n\n\ndef test_trim():\n    assert trim_code(\"00100\") == \"100\"\n    assert trim_code(\"007\") == \"7\"\n    assert trim_code(\"100\") == \"100\"\n"
+      },
+      "instruction": "رموز المنتجات تصل بأصفار بادئة زائدة يجب إزالتها، لكن الأصفار في نهاية الرمز جزء منه ولا تُمسّ (الرمز «100» يبقى «100»). الدالة الحالية تأكل من الطرفين والاختبار يسقط. أصلحها.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُدرَك الفرق بين strip و lstrip.",
+        "تُزال الأصفار البادئة فقط وتُصان اللاحقة.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0005",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "grades.py": "def grade(score):\n    if score > 90:\n        return \"A\"\n    if score > 80:\n        return \"B\"\n    if score > 70:\n        return \"C\"\n    return \"F\"\n",
+        "tests/test_grades.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom grades import grade\n\n\ndef test_boundaries():\n    assert grade(90) == \"A\"\n    assert grade(91) == \"A\"\n    assert grade(80) == \"B\"\n    assert grade(70) == \"C\"\n    assert grade(69) == \"F\"\n"
+      },
+      "instruction": "نظام التقديرات عندنا يعتمد الحدود الشاملة: 90 فأعلى تقديرها A، و80 فأعلى B، و70 فأعلى C. اختبار الحدود يسقط رغم أن الدالة تبدو سليمة للوهلة الأولى. اعثر على العلّة الدقيقة وأصلحها.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "تُصحَّح عوامل المقارنة لتشمل قيم الحد نفسها.",
+        "لا يُعدَّل الاختبار ولا تُضاف حالات خاصة ملتفّة.",
+        "تنجح اختبارات الحدود كلها بعد الإصلاح."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0016",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "inventory.py": "import csv\nimport os\n\n\ndef load_items():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"data\", \"items.csv\")\n    with open(path, newline=\"\", encoding=\"utf-8\") as f:\n        return list(csv.DictReader(f))\n",
+        "data/item.csv": "الاسم,الكمية\nقلم,50\nدفتر,30\nممحاة,20\n",
+        "tests/test_inventory.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom inventory import load_items\n\n\ndef test_load():\n    items = load_items()\n    assert len(items) == 3\n    assert items[0][\"الاسم\"] == \"قلم\"\n"
+      },
+      "instruction": "تحميل المخزون يفشل بأن الملف غير موجود، مع أن مجلد البيانات موجود وفيه ملف. قارن المسار الذي يبنيه الكود بما هو موجود فعلًا على القرص وأصلح الخلل.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُطابَق مسار الملف في الكود مع الاسم الفعلي على القرص.",
+        "لا يُعاد تسمية ملف البيانات ولا يُعدَّل الاختبار؛ الإصلاح في الكود.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0013",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "rates.py": "TAX_RATE = 0.05\n",
+        "payroll.py": "from rates import TAX\n\n\ndef net_salary(gross):\n    return gross * (1 - TAX)\n",
+        "tests/test_payroll.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom payroll import net_salary\n\n\ndef test_net():\n    assert net_salary(10000) == 9500\n    assert net_salary(0) == 0\n"
+      },
+      "instruction": "حساب صافي الراتب متوقف تمامًا: الاختبار يفشل بخطأ استيراد رمز غير موجود. تتبّع الرموز بين الملفين وأصلح الخلل بحيث تنجح الاختبارات.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يُكتشف عدم تطابق اسم الثابت بين rates.py و payroll.py.",
+        "يُوحَّد الاسم بحيث يستورد payroll رمزًا موجودًا فعلًا.",
+        "تنجح الاختبارات بعد الإصلاح."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0009",
+      "capability": "debug_and_fix",
+      "workspace": {
+        "weather.py": "def max_temp(temps):\n    best = 0\n    for t in temps:\n        if t > best:\n            best = t\n    return best\n",
+        "tests/test_weather.py": "import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))\nfrom weather import max_temp\n\n\ndef test_max():\n    assert max_temp([30, 42, 25]) == 42\n    assert max_temp([-5, -2, -9]) == -2\n    assert max_temp([7]) == 7\n"
+      },
+      "instruction": "محطة الأرصاد تسجّل درجات تحت الصفر أحيانًا، واختبار `max_temp` يسقط في تلك الحالة. الدالة تبدو معقولة لكن فيها خطأ تهيئة خفيًّا. اعثر عليه وأصلحه.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "تعمل الدالة صحيحةً مع القيم السالبة كلها.",
+        "لا يُفترض مسبقًا أن الصفر أدنى من كل القيم.",
+        "الإصلاح في المصدر وتنجح الاختبارات."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0028",
+      "capability": "run_and_diagnose",
+      "workspace": {
+        "main.py": "from printer import summary\n\n\ndef main():\n    print(summary(420))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "printer.py": "def summary(total):\n    reslut = \"الإجمالي: %d\" % total\n    return result\n"
+      },
+      "instruction": "البرنامج ينهار بخطأ اسم غير معرّف عند الطباعة. تتبّع المتغيرات داخل دالة التلخيص وأصلح الخلل. main.py محرّم.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "main.py"
+        ]
+      },
+      "forbidden": [
+        "main.py"
+      ],
+      "rubric": [
+        "يُكتشف اختلاف اسم المتغير بين التعريف والاستخدام.",
+        "تُوحَّد التسمية دون تغيير نص الرسالة.",
+        "يعمل البرنامج ويطبع الإجمالي الصحيح."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0035",
+      "capability": "run_and_diagnose",
+      "workspace": {
+        "main.py": "from reader import read_first_line\n\nprint(read_first_line())\n",
+        "reader.py": "import os\n\n\ndef read_first_line():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"data\", \"input.txt\")\n    with open(path, encoding=\"utf-8\") as f:\n        return f.readline().strip()\n",
+        "data/inputs.txt": "السطر الأول مهم\nسطر ثانٍ\n"
+      },
+      "instruction": "شغّل البرنامج: يشكو أن ملف البيانات مفقود، لكن مجلد data موجود وفيه ملف. قارن الاسم الذي يطلبه الكود بالاسم الفعلي وأصلح الخلل حيث تراه مناسبًا (المحتوى نفسه يجب ألا يتغير).",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "main.py"
+        ]
+      },
+      "forbidden": [],
+      "rubric": [
+        "يُطابَق اسم الملف المطلوب في الكود مع الموجود فعلًا.",
+        "لا يتغير محتوى البيانات ولا سلوك البرنامج المقصود.",
+        "يعمل البرنامج ويطبع السطر الأول."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0036",
+      "capability": "run_and_diagnose",
+      "workspace": {
+        "main.py": "from reader import read_message\n\nprint(read_message())\n",
+        "reader.py": "import os\n\n\ndef read_message():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"data\", \"msg.txt\")\n    with open(path, encoding=\"ascii\") as f:\n        return f.read()\n",
+        "data/msg.txt": "رسالة سرية بالعربية\n"
+      },
+      "instruction": "برنامج يقرأ رسالة عربية من ملف لكنه ينهار بخطأ ترميز. الملف نفسه سليم. شخّص سبب خطأ الترميز في الكود وأصلحه بحيث تُقرأ الرسالة كاملة.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "main.py"
+        ]
+      },
+      "forbidden": [],
+      "rubric": [
+        "يُشخَّص تعارض الترميز المحدد في الكود مع محتوى الملف.",
+        "يُقرأ الملف بترميز utf-8 دون تغيير الملف نفسه.",
+        "يعمل البرنامج ويطبع الرسالة العربية كاملة."
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "agentic_0038",
+      "capability": "run_and_diagnose",
+      "workspace": {
+        "main.py": "from sorter import sort_mixed\n\nprint(sort_mixed([3, \"10\", 1, \"2\"]))\n",
+        "sorter.py": "def sort_mixed(items):\n    return sorted(items)\n"
+      },
+      "instruction": "قائمة تجمع أرقامًا ونصوصًا تمثل أرقامًا (جاءت من مدخلات مستخدم). الترتيب ينهار بخطأ مقارنة بين الأنواع. المطلوب ترتيبها جميعًا باعتبارها قيمًا عددية. أصلح sorter.py. main.py محرّم.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "main.py"
+        ]
+      },
+      "forbidden": [
+        "main.py"
+      ],
+      "rubric": [
+        "يُدرَك أن المقارنة بين int و str غير معرّفة.",
+        "يُرتَّب بمفتاح تحويل عددي دون تغيير عناصر القائمة نفسها.",
+        "يعمل البرنامج ويطبع ترتيبًا عدديًّا صحيحًا."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0031",
+      "capability": "run_and_diagnose",
+      "workspace": {
+        "main.py": "from checker import run\n\nrun()\nprint(\"اكتمل الفحص بنجاح\")\n",
+        "checker.py": "import sys\n\n\ndef validate():\n    return True\n\n\ndef run():\n    ok = validate()\n    if ok:\n        sys.exit(1)\n"
+      },
+      "instruction": "سكربت فحص يفترض أن يطبع «اكتمل الفحص بنجاح» ويخرج برمز صفر عندما ينجح التحقق، لكنه يفشل دائمًا رغم أن `validate` ترجع True. المنطق في مكان ما مقلوب. شغّل، شخّص، أصلح. main.py محرّم.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "main.py"
+        ]
+      },
+      "forbidden": [
+        "main.py"
+      ],
+      "rubric": [
+        "يُكتشف أن شرط الخروج برمز خطأ مقلوب.",
+        "يُصحَّح الشرط بحيث يكون الخروج بخطأ عند فشل التحقق فقط.",
+        "يعمل السكربت برمز خروج صفر ويطبع رسالة النجاح."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0032",
+      "capability": "run_and_diagnose",
+      "workspace": {
+        "main.py": "from loader import load\n\n\ncfg = load()\nprint(\"الوضع:\", cfg.get(\"mode\", \"افتراضي\"))\n",
+        "loader.py": "import json\nimport os\n\n\nDEFAULTS = {\"fallbacks\": {}}\n\n\ndef load():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"app.json\")\n    try:\n        with open(path, encoding=\"utf-8\") as f:\n            return json.load(f)\n    except FileNotFoundError:\n        return DEFAULTS[\"fallback\"]\n"
+      },
+      "instruction": "البرنامج مصمّم ليتحمّل غياب ملف الإعدادات app.json برجوعه لقيم افتراضية، لكنه ينهار رغم وجود معالجة للاستثناء. المعالج نفسه مريض. تتبّع مسار الخطأ كاملًا وأصلحه. main.py محرّم.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "main.py"
+        ]
+      },
+      "forbidden": [
+        "main.py"
+      ],
+      "rubric": [
+        "يُدرَك أن الانهيار يحدث داخل معالج الاستثناء لا خارجه.",
+        "يُصحَّح مفتاح القيم الافتراضية (أو تُعرَّف قيمة افتراضية معقولة).",
+        "يعمل البرنامج عند غياب الملف ويطبع الوضع الافتراضي."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0033",
+      "capability": "run_and_diagnose",
+      "workspace": {
+        "main.py": "from builder import read_data\n\nprint(read_data())\n",
+        "builder.py": "import os\n\n\ndef build_path(base, name):\n    return os.path.join(base, \"/\" + name)\n\n\ndef read_data():\n    base = os.path.dirname(os.path.abspath(__file__))\n    with open(build_path(base, \"data.txt\"), encoding=\"utf-8\") as f:\n        return f.read().strip()\n",
+        "data.txt": "بيانات جاهزة\n"
+      },
+      "instruction": "قراءة ملف بيانات موجود في المشروع تنهار بأن الملف غير موجود. المسار يُبنى بدالة مساعدة تبدو بريئة، لكنها تمحو الجذر الذي تُمرَّر إليه. جرّب بناء المسار بنفسك، شخّص، وأصلح. main.py محرّم.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "main.py"
+        ]
+      },
+      "forbidden": [
+        "main.py"
+      ],
+      "rubric": [
+        "يُكتشف أن os.path.join مع مقطع يبدأ بشرطة مائلة يتجاهل المسار الأساس.",
+        "يُصحَّح بناء المسار في الدالة المساعدة.",
+        "يعمل البرنامج ويطبع محتوى الملف."
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "agentic_0023",
+      "capability": "run_and_diagnose",
+      "workspace": {
+        "main.py": "from helper import caclculate_total\n\n\ndef main():\n    items = [10, 20, 30]\n    print(\"الإجمالي:\", caclculate_total(items))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "helper.py": "def calculate_total(items):\n    return sum(items)\n"
+      },
+      "instruction": "شغّل `python3 main.py` وسترى أن البرنامج ينهار فورًا. شخّص سبب الانهيار وأصلحه بحيث يعمل البرنامج ويطبع الإجمالي الصحيح. ملف main.py نقطة الدخول ولا يجوز تعديله.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "main.py"
+        ]
+      },
+      "forbidden": [
+        "main.py"
+      ],
+      "rubric": [
+        "يُشخَّص أن الاسم المستورَد في main.py مكتوب بحرف زائد.",
+        "يُحلّ الخلل من جهة المكتبة (إتاحة الاسم المطلوب) لأن main.py محرّم.",
+        "يعمل البرنامج بعد الإصلاح ويخرج برمز صفر."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0024",
+      "capability": "run_and_diagnose",
+      "workspace": {
+        "main.py": "from analyzer import average\n\n\ndef main():\n    readings = []\n    print(\"متوسط القراءات:\", average(readings))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "analyzer.py": "def average(nums):\n    return sum(nums) / len(nums)\n"
+      },
+      "instruction": "برنامج تحليل القراءات ينهار عند تشغيله بقائمة قراءات فارغة. المطلوب سلوكًا سليمًا: متوسط قائمة فارغة يجب أن يكون 0 لا انهيارًا. شغّل البرنامج، شخّص، وأصلح المكتبة. ملف main.py محرّم.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "main.py"
+        ]
+      },
+      "forbidden": [
+        "main.py"
+      ],
+      "rubric": [
+        "يُشخَّص انهيار القسمة على صفر عند قائمة فارغة.",
+        "يُضاف حارس في analyzer.py يرجع 0 للقائمة الفارغة.",
+        "يعمل البرنامج برمز خروج صفر بعد الإصلاح."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0037",
+      "capability": "run_and_diagnose",
+      "workspace": {
+        "main.py": "from notifier import mode\n\nprint(\"وضع التشغيل:\", mode())\n",
+        "notifier.py": "import json\nimport os\n\n\ndef mode():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"app.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        cfg = json.load(f)\n    return cfg[\"mode\"]\n",
+        "app.json": "{\"name\": \"منبّه\"}\n"
+      },
+      "instruction": "البرنامج يقرأ وضع التشغيل من ملف إعدادات لا يحتوي مفتاح «mode»، وينهار بـ KeyError. السلوك المطلوب: عند غياب المفتاح يُفترض الوضع «normal». ملف app.json تديره جهة أخرى وممنوع تعديله؛ أصلح الكود.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "main.py"
+        ]
+      },
+      "forbidden": [
+        "app.json"
+      ],
+      "rubric": [
+        "يُشخَّص غياب المفتاح في الإعدادات لا في منطق البرنامج العام.",
+        "يُستخدم وصول آمن بقيمة افتراضية «normal» دون تعديل app.json.",
+        "يعمل البرنامج ويطبع الوضع الافتراضي."
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "agentic_0030",
+      "capability": "run_and_diagnose",
+      "workspace": {
+        "main.py": "from mathlib import fact\n\n\ndef main():\n    print(\"5! =\", fact(5))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "mathlib.py": "def fact(n):\n    return n * fact(n - 1)\n"
+      },
+      "instruction": "حساب المضروب (factorial) يدخل في استدعاءات لا تنتهي حتى ينهار المفسّر. الدالة الرياضية ناقصها شيء جوهري. شخّص وأصلح. main.py محرّم.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "main.py"
+        ]
+      },
+      "forbidden": [
+        "main.py"
+      ],
+      "rubric": [
+        "يُشخَّص غياب الحالة القاعدية للعودية.",
+        "تُضاف حالة قاعدية صحيحة (0 أو 1 يعطي 1).",
+        "يعمل البرنامج ويطبع 120."
+      ],
+      "max_steps": 7
+    }
+  ]
+}

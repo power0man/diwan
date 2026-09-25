@@ -1,0 +1,464 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": "invalid_json",
+      "raw_output": ""
+    },
+    {
+      "attempt": 2,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_prog_a_003.json\",\n  \"judgments\": [\n    {\n      \"id\": \"prog_c_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"add = lambda a, b: a + b\",\n      \"reason\": \"The reference correctly states the lambda should add, and the rubric checks lambda usage and addition. The sandbox verifies behavior.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"even_squares = [x*x for x in lst if x % 2 == 0]\",\n      \"reason\": \"The reference correctly identifies filtering even numbers before squaring. The rubric and sandbox confirm comprehension and correct filtering.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"square = lambda x: x ** 2\",\n      \"reason\": \"The reference correctly states squaring, not doubling. Rubric checks lambda and square, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"avg2 = lambda a, b: (a + b) / 2\",\n      \"reason\": \"The reference correctly emphasizes true division. Rubric checks lambda and true division, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"while loop with index and manual increment\",\n      \"reason\": \"The reference correctly describes the while loop conversion with manual counter. Rubric checks no for and same results, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"while loop with i from 0 to n-1\",\n      \"reason\": \"The reference correctly notes range(n) starts at 0 and excludes n. Rubric checks bounds and no for, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0057\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"while loop with early return on first negative\",\n      \"reason\": \"The reference correctly emphasizes early return. Rubric checks early return, no for, and None case, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"while loop with strict > to keep first max index\",\n      \"reason\": \"The reference correctly notes strict > preserves first index on ties. Rubric checks first index and no for, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0080\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"dict comprehension with condition to keep first index\",\n      \"reason\": \"The reference correctly warns that naive comprehension overwrites with last index. Rubric checks first index preservation and comprehension, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"iterative loop with two variables starting from 0\",\n      \"reason\": \"The reference correctly describes iterative conversion. Rubric checks no self-call and fib(0)=0, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"while loop with separator added only between words\",\n      \"reason\": \"The reference correctly notes no trailing separator. Rubric checks no trailing separator, no for, and edge cases, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"while loop with strict > condition\",\n      \"reason\": \"The reference correctly emphasizes strict >. Rubric checks strict > and no for, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0073\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"for i in range(n, 0, -1)\",\n      \"reason\": \"The reference correctly states range(n,0,-1) starts from n. Rubric checks no while and starts from n, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"while loop with i starting at 1 and condition i < len(lst)\",\n      \"reason\": \"The reference correctly notes loop condition i < len. Rubric checks start from index 1, no for, and no out-of-bounds, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"iterative loop multiplying from 2 to n\",\n      \"reason\": \"The reference correctly describes accumulation from 2 to n. Rubric checks no self-call and same values, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"while loop indexing string from 0 to len-1\",\n      \"reason\": \"The reference correctly notes indexing starts at 0. Rubric checks all digits and no for, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"is_adult = lambda age: age >= 18\",\n      \"reason\": \"The reference correctly states >= includes 18. Rubric checks lambda and >=, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"The reference correctly identifies worst-case linear scan. Rubric checks worst-case and O(n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"The reference correctly notes amortized O(1) append in linear loop. Rubric checks amortized cost and O(n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(1)\",\n      \"reason\": \"The reference correctly states dictionary access is constant on average. Rubric checks O(1), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n^3)\",\n      \"reason\": \"The reference correctly identifies triple nested loops as cubic. Rubric checks O(n^3), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(log n)\",\n      \"reason\": \"The reference correctly identifies binary search as logarithmic. Rubric checks O(log n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n^2)\",\n      \"reason\": \"The reference correctly identifies double nested loops as quadratic. Rubric checks O(n^2), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(log n)\",\n      \"reason\": \"The reference correctly notes Euclidean algorithm is logarithmic in input value. Rubric checks Euclid complexity and O(log n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(sqrt(n))\",\n      \"reason\": \"The reference correctly identifies checking up to sqrt. Rubric checks O(sqrt(n)) and not O(n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"The reference correctly notes constant 1000 doesn't change linear order. Rubric checks not fooled by constant and O(n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(log n)\",\n      \"reason\": \"The reference correctly identifies fast exponentiation as logarithmic. Rubric checks distinction from linear and O(log n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"The reference correctly notes set membership is constant on average. Rubric checks cost of in on set and O(n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"The reference correctly notes constant inner loop doesn't change order. Rubric checks ignoring constant and O(n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n^2)\",\n      \"reason\": \"The reference correctly identifies repeated slicing as quadratic. Rubric checks copy cost and O(n^2), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n log n)\",\n      \"reason\": \"The reference correctly identifies harmonic series sum. Rubric checks harmonic recognition and not O(n^2), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(2^n)\",\n      \"reason\": \"The reference correctly identifies exponential growth from double recursion. Rubric checks exponential and not O(n^2), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(log n)\",\n      \"reason\": \"The reference correctly identifies halving input as logarithmic. Rubric checks O(log n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"The reference correctly notes sequential loops add not multiply. Rubric checks addition and O(n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n log n)\",\n      \"reason\": \"The reference correctly notes sorting dominates. Rubric checks sorting dominance and O(n log n), exact check confirms.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert get_last_n([1,2,3,4], 2) == [3,4]\",\n      \"reason\": \"The reference correctly identifies that last two elements are [3,4]. Rubric checks revealing start vs end and passing with negative slicing, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert max3(1,2,3) == 3\",\n      \"reason\": \"The reference correctly notes a max in third position reveals ignoring it. Rubric checks ignoring c and passing with three-way comparison, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert count_unique('aab') == 2\",\n      \"reason\": \"The reference correctly states 'aab' has two distinct characters. Rubric checks revealing dedup and empty case, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert first_last_same([1,2,1]) is True\",\n      \"reason\": \"The reference correctly notes first and last equal in [1,2,1]. Rubric checks wrong index and inequality case, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert safe_parse_int('abc') is None\",\n      \"reason\": \"The reference correctly states non-numeric should return None. Rubric checks exception and correct conversion, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert absolute_sum([-1,2]) == 3\",\n      \"reason\": \"The reference correctly notes negatives should be summed by absolute value. Rubric checks missing abs and passing after adding, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert isinstance(word_lengths('مرحبا'), dict)\",\n      \"reason\": \"The reference correctly states promised dict not list. Rubric checks wrong return type and passing with dict, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert count_odds([1,3,5,2]) == 3\",\n      \"reason\": \"The reference correctly notes three odds in [1,3,5,2]. Rubric checks flipped condition and passing with correct condition, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert discount_price(200, 10) == 180\",\n      \"reason\": \"The reference correctly states 10% discount on 200 gives 180. Rubric checks flipped sign and passing with subtraction, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert next_quarter_hour(10) == 15\",\n      \"reason\": \"The reference correctly notes minute 10 next quarter is 15. Rubric checks rounding down and quarter boundaries, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert average_passing([30, 90]) == 90\",\n      \"reason\": \"The reference correctly states score 30 should be excluded. Rubric checks including failing and None case, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert text_has_arabic('ض') is True\",\n      \"reason\": \"The reference correctly notes ض and ة missing from manual list. Rubric checks missing letters and rejecting Latin, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert total_with_tax([1.11, 1.11]) == 2.55\",\n      \"reason\": \"The reference correctly states policy rounds after sum. Rubric checks early rounding and passing with rounding after sum, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert is_multiple(5, 0) is False\",\n      \"reason\": \"The reference correctly states k=0 should return False. Rubric checks division by zero and normal case, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert days_in_feb(2020) == 29\",\n      \"reason\": \"The reference correctly states leap year should return 29. Rubric checks ignoring leap year and non-leap, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert is_sorted([1,1,2]) is True\",\n      \"reason\": \"The reference correctly notes adjacent duplicates should be accepted. Rubric checks rejecting equals and passing with <=, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert find_adults({'ali': 18}) == ['ali']\",\n      \"reason\": \"The reference correctly states age 18 is adult. Rubric checks excluding 18 and excluding minor, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert passwords_match('Pass', 'pass') is False\",\n      \"reason\": \"The reference correctly states case difference should not match. Rubric checks ignoring case and accepting exact match, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert monthly_payment(100, 3) == 33.33 and raises ValueError for months=0\",\n      \"reason\": \"The reference correctly states rounding and zero months rejection. Rubric checks missing rounding and missing validation, sandbox verifies.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"assert is_passing(60) is True\",\n      \"reason\": \"The reference correctly states boundary 60 should pass. Rubric checks excluding boundary and passing with >=, sandbox verifies.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 470241,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_prog_a_003.json",
+  "file_sha256": "93206cc866eaaedff53623f3dc1726d4f892994ca53c62cea6b4510f62ab2448",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "prog_c_0065",
+      "my_answer": "add = lambda a, b: a + b",
+      "reason": "The reference correctly states the lambda should add, and the rubric checks lambda usage and addition. The sandbox verifies behavior.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0078",
+      "my_answer": "even_squares = [x*x for x in lst if x % 2 == 0]",
+      "reason": "The reference correctly identifies filtering even numbers before squaring. The rubric and sandbox confirm comprehension and correct filtering.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0066",
+      "my_answer": "square = lambda x: x ** 2",
+      "reason": "The reference correctly states squaring, not doubling. Rubric checks lambda and square, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0069",
+      "my_answer": "avg2 = lambda a, b: (a + b) / 2",
+      "reason": "The reference correctly emphasizes true division. Rubric checks lambda and true division, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0056",
+      "my_answer": "while loop with index and manual increment",
+      "reason": "The reference correctly describes the while loop conversion with manual counter. Rubric checks no for and same results, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0061",
+      "my_answer": "while loop with i from 0 to n-1",
+      "reason": "The reference correctly notes range(n) starts at 0 and excludes n. Rubric checks bounds and no for, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0057",
+      "my_answer": "while loop with early return on first negative",
+      "reason": "The reference correctly emphasizes early return. Rubric checks early return, no for, and None case, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0063",
+      "my_answer": "while loop with strict > to keep first max index",
+      "reason": "The reference correctly notes strict > preserves first index on ties. Rubric checks first index and no for, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0080",
+      "my_answer": "dict comprehension with condition to keep first index",
+      "reason": "The reference correctly warns that naive comprehension overwrites with last index. Rubric checks first index preservation and comprehension, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0077",
+      "my_answer": "iterative loop with two variables starting from 0",
+      "reason": "The reference correctly describes iterative conversion. Rubric checks no self-call and fib(0)=0, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0059",
+      "my_answer": "while loop with separator added only between words",
+      "reason": "The reference correctly notes no trailing separator. Rubric checks no trailing separator, no for, and edge cases, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0058",
+      "my_answer": "while loop with strict > condition",
+      "reason": "The reference correctly emphasizes strict >. Rubric checks strict > and no for, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0073",
+      "my_answer": "for i in range(n, 0, -1)",
+      "reason": "The reference correctly states range(n,0,-1) starts from n. Rubric checks no while and starts from n, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0060",
+      "my_answer": "while loop with i starting at 1 and condition i < len(lst)",
+      "reason": "The reference correctly notes loop condition i < len. Rubric checks start from index 1, no for, and no out-of-bounds, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0074",
+      "my_answer": "iterative loop multiplying from 2 to n",
+      "reason": "The reference correctly describes accumulation from 2 to n. Rubric checks no self-call and same values, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0062",
+      "my_answer": "while loop indexing string from 0 to len-1",
+      "reason": "The reference correctly notes indexing starts at 0. Rubric checks all digits and no for, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0067",
+      "my_answer": "is_adult = lambda age: age >= 18",
+      "reason": "The reference correctly states >= includes 18. Rubric checks lambda and >=, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0044",
+      "my_answer": "O(n)",
+      "reason": "The reference correctly identifies worst-case linear scan. Rubric checks worst-case and O(n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0051",
+      "my_answer": "O(n)",
+      "reason": "The reference correctly notes amortized O(1) append in linear loop. Rubric checks amortized cost and O(n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0036",
+      "my_answer": "O(1)",
+      "reason": "The reference correctly states dictionary access is constant on average. Rubric checks O(1), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0043",
+      "my_answer": "O(n^3)",
+      "reason": "The reference correctly identifies triple nested loops as cubic. Rubric checks O(n^3), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0033",
+      "my_answer": "O(log n)",
+      "reason": "The reference correctly identifies binary search as logarithmic. Rubric checks O(log n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0032",
+      "my_answer": "O(n^2)",
+      "reason": "The reference correctly identifies double nested loops as quadratic. Rubric checks O(n^2), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0048",
+      "my_answer": "O(log n)",
+      "reason": "The reference correctly notes Euclidean algorithm is logarithmic in input value. Rubric checks Euclid complexity and O(log n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0049",
+      "my_answer": "O(sqrt(n))",
+      "reason": "The reference correctly identifies checking up to sqrt. Rubric checks O(sqrt(n)) and not O(n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0046",
+      "my_answer": "O(n)",
+      "reason": "The reference correctly notes constant 1000 doesn't change linear order. Rubric checks not fooled by constant and O(n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0054",
+      "my_answer": "O(log n)",
+      "reason": "The reference correctly identifies fast exponentiation as logarithmic. Rubric checks distinction from linear and O(log n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0042",
+      "my_answer": "O(n)",
+      "reason": "The reference correctly notes set membership is constant on average. Rubric checks cost of in on set and O(n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0038",
+      "my_answer": "O(n)",
+      "reason": "The reference correctly notes constant inner loop doesn't change order. Rubric checks ignoring constant and O(n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0053",
+      "my_answer": "O(n^2)",
+      "reason": "The reference correctly identifies repeated slicing as quadratic. Rubric checks copy cost and O(n^2), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0055",
+      "my_answer": "O(n log n)",
+      "reason": "The reference correctly identifies harmonic series sum. Rubric checks harmonic recognition and not O(n^2), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0035",
+      "my_answer": "O(2^n)",
+      "reason": "The reference correctly identifies exponential growth from double recursion. Rubric checks exponential and not O(n^2), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0047",
+      "my_answer": "O(log n)",
+      "reason": "The reference correctly identifies halving input as logarithmic. Rubric checks O(log n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0037",
+      "my_answer": "O(n)",
+      "reason": "The reference correctly notes sequential loops add not multiply. Rubric checks addition and O(n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0034",
+      "my_answer": "O(n log n)",
+      "reason": "The reference correctly notes sorting dominates. Rubric checks sorting dominance and O(n log n), exact check confirms.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0016",
+      "my_answer": "assert get_last_n([1,2,3,4], 2) == [3,4]",
+      "reason": "The reference correctly identifies that last two elements are [3,4]. Rubric checks revealing start vs end and passing with negative slicing, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0006",
+      "my_answer": "assert max3(1,2,3) == 3",
+      "reason": "The reference correctly notes a max in third position reveals ignoring it. Rubric checks ignoring c and passing with three-way comparison, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0023",
+      "my_answer": "assert count_unique('aab') == 2",
+      "reason": "The reference correctly states 'aab' has two distinct characters. Rubric checks revealing dedup and empty case, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0024",
+      "my_answer": "assert first_last_same([1,2,1]) is True",
+      "reason": "The reference correctly notes first and last equal in [1,2,1]. Rubric checks wrong index and inequality case, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0027",
+      "my_answer": "assert safe_parse_int('abc') is None",
+      "reason": "The reference correctly states non-numeric should return None. Rubric checks exception and correct conversion, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0004",
+      "my_answer": "assert absolute_sum([-1,2]) == 3",
+      "reason": "The reference correctly notes negatives should be summed by absolute value. Rubric checks missing abs and passing after adding, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0022",
+      "my_answer": "assert isinstance(word_lengths('مرحبا'), dict)",
+      "reason": "The reference correctly states promised dict not list. Rubric checks wrong return type and passing with dict, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0014",
+      "my_answer": "assert count_odds([1,3,5,2]) == 3",
+      "reason": "The reference correctly notes three odds in [1,3,5,2]. Rubric checks flipped condition and passing with correct condition, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0009",
+      "my_answer": "assert discount_price(200, 10) == 180",
+      "reason": "The reference correctly states 10% discount on 200 gives 180. Rubric checks flipped sign and passing with subtraction, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0020",
+      "my_answer": "assert next_quarter_hour(10) == 15",
+      "reason": "The reference correctly notes minute 10 next quarter is 15. Rubric checks rounding down and quarter boundaries, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0021",
+      "my_answer": "assert average_passing([30, 90]) == 90",
+      "reason": "The reference correctly states score 30 should be excluded. Rubric checks including failing and None case, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0026",
+      "my_answer": "assert text_has_arabic('ض') is True",
+      "reason": "The reference correctly notes ض and ة missing from manual list. Rubric checks missing letters and rejecting Latin, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0019",
+      "my_answer": "assert total_with_tax([1.11, 1.11]) == 2.55",
+      "reason": "The reference correctly states policy rounds after sum. Rubric checks early rounding and passing with rounding after sum, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0017",
+      "my_answer": "assert is_multiple(5, 0) is False",
+      "reason": "The reference correctly states k=0 should return False. Rubric checks division by zero and normal case, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0007",
+      "my_answer": "assert days_in_feb(2020) == 29",
+      "reason": "The reference correctly states leap year should return 29. Rubric checks ignoring leap year and non-leap, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0003",
+      "my_answer": "assert is_sorted([1,1,2]) is True",
+      "reason": "The reference correctly notes adjacent duplicates should be accepted. Rubric checks rejecting equals and passing with <=, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0030",
+      "my_answer": "assert find_adults({'ali': 18}) == ['ali']",
+      "reason": "The reference correctly states age 18 is adult. Rubric checks excluding 18 and excluding minor, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0018",
+      "my_answer": "assert passwords_match('Pass', 'pass') is False",
+      "reason": "The reference correctly states case difference should not match. Rubric checks ignoring case and accepting exact match, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0028",
+      "my_answer": "assert monthly_payment(100, 3) == 33.33 and raises ValueError for months=0",
+      "reason": "The reference correctly states rounding and zero months rejection. Rubric checks missing rounding and missing validation, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0005",
+      "my_answer": "assert is_passing(60) is True",
+      "reason": "The reference correctly states boundary 60 should pass. Rubric checks excluding boundary and passing with >=, sandbox verifies.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T19:22:47Z"
+}

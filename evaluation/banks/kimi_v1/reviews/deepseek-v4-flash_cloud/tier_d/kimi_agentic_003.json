@@ -1,0 +1,299 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek-v3\",\n  \"file\": \"kimi_agentic_003\",\n  \"judgments\": [\n    {\n      \"id\": \"pipe_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"السكربت يقرأ CSV بفاصل افتراضي (فاصلة) بينما الملف بفاصل منقوط، فيفشل. الحل: تحديد delimiter=';' في DictReader.\",\n      \"reason\": \"التعليمات واضحة، والمعايير تغطي التشخيص والإصلاح ونجاح الاختبار. الاختبار يمنع الحلول الخاطئة (مثل تعديل البيانات).\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نفس مشكلة الفاصل: الملف بفاصل منقوط والسكربت يستخدم الفاصلة. الحل: delimiter=';'.\",\n      \"reason\": \"التعليمات تطلب فحص الملف والسكربت، والمعايير تحدد السبب الجذري. الاختبارات تتحقق من النتائج الصحيحة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"السكربت يتجاهل فقط '' و'N/A' لكن الملف يحتوي أيضًا على 'null' و'-'، فيفشل int(). الحل: معالجة كل الصيغ.\",\n      \"reason\": \"التعليمات تطلب فحص البيانات الفعلية، والمعايير تذكر اكتشاف صيغ null. الاختبار يتوقع total=59 وvalid=4، مما يمنع تحويل القيم إلى 0.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الملف يحتوي تاريخين بصيغتين (ISO وDD/MM/YYYY)، والسكربت يستخدم %Y-%m-%d فقط فيفشل. الحل: تحليل الصيغتين.\",\n      \"reason\": \"التعليمات بلا تلميح، والمعايير تطلب ربط ValueError بالصيغ المختلطة. الاختبار يتوقع span=41، وهو صحيح بعد التحويل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"عيبان: الفاصل منقوط (السكربت يستخدم الفاصلة) وقيم غير صالحة (N/A، -) لا يتعامل معها. الحل: delimiter=';' ومعالجة القيم.\",\n      \"reason\": \"التعليمات تذكر وجود أكثر من عيب، والمعايير تطلب اكتشاف العيبين. الاختبار يتوقع total=75، وهو صحيح بعد الإصلاح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"عيبان: الترميز latin-1 بدلاً من utf-8، والفاصل منقوط (السكربت يستخدم الفاصلة). الحل: تغيير الترميز وتحديد delimiter=';'.\",\n      \"reason\": \"التعليمات تذكر عيبين من نوعين، والمعايير تغطيهما. الاختبار يتحقق من الناتج النهائي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"شذوذان: ترويسة مكررة في المنتصف، وتاريخان بصيغتين (ISO وDD/MM/YYYY). الحل: تخطي الترويسة المكررة وتحويل التاريخين.\",\n      \"reason\": \"التعليمات تطلب حصر كل الشذوذات، والمعايير تغطي الترويسة والتاريخين. الاختبار يتوقع count=5 وtotal=1200، وهو صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الملف يحتوي ترويسة مكررة في آخر السطر، والسكربت يقرؤها كبيانات فيفشل int(). الحل: تخطي السطور التي تطابق الترويسة.\",\n      \"reason\": \"التعليمات بلا تلميح، والمعايير تطلب ملاحظة السطر الشاذ. الاختبار يتوقع rows=5 وtotal=505، وهو صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"السكربت يفتح الملف بترميز latin-1 بينما الملف UTF-8، مما يشوه الأسماء. الحل: تغيير الترميز إلى utf-8.\",\n      \"reason\": \"التعليمات تذكر تشوه الأسماء، والمعايير تطلب تشخيص الترميز. الاختبار يتحقق من ظهور 'طه حسين'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الملف يحتوي قيمًا ناقصة بصيغ متعددة (N/A، فارغة، null، -) والسكربت يتعامل مع واحدة فقط. الحل: معالجة كل الصيغ.\",\n      \"reason\": \"التعليمات تطلب حصر كل الصيغ، والمعايير تغطي ذلك. الاختبار يتوقع total=59 وvalid=4، وهو صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الملف يحتوي قيمًا ناقصة (N/A، -، null) والسكربت يتجاهل N/A فقط. الحل: معالجة كل الصيغ.\",\n      \"reason\": \"التعليمات تطلب معالجة كل الصيغ، والمعايير تغطي ذلك. الاختبار يتوقع 'أعلى رسوم: يوسف بقيمة 220'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الملف يحتوي تاريخين بصيغتين، والسكربت يستخدم startswith('2026-03') فيفوت التواريخ بالصيغة الثانية. الحل: تحويل التاريخين.\",\n      \"reason\": \"التعليمات تطلب اكتشاف الصيغتين، والمعايير تغطي ذلك. الفحص يتوقع count=5 وtotal=1200.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نفس مشكلة التاريخين المختلطين، والسكربت لا يحصي كل القيود. الحل: تحويل التاريخين.\",\n      \"reason\": \"التعليمات تطلب إصلاح السكربت وإعادة تشغيله، والمعايير تغطي ذلك. التقرير يتوقع '5 قيدًا بصافي 1200'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الملف يحتوي تاريخين بصيغتين، والسكربت يستخدم %Y-%m-%d فقط فيفشل. الحل: تحليل الصيغتين.\",\n      \"reason\": \"التعليمات تطلب قبول الملف كما هو، والمعايير تغطي الصيغتين. الاختبار يتوقع ترتيبًا زمنيًا صحيحًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الملف يحتوي ترويسة مكررة في المنتصف، والسكربت يقرؤها كبيانات فيفشل float(). الحل: تخطي السطور الشاذة.\",\n      \"reason\": \"التعليمات تطلب فهم سبب الخطأ، والمعايير تغطي الترويسة المكررة. الاختبار يتوقع count=5 وaverage=79.0.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"السكربت يقرأ CSV بفاصل افتراضي بينما الملف بفاصل منقوط، فيقرأ صفًا واحدًا فقط. الحل: delimiter=';'.\",\n      \"reason\": \"التعليمات تطلب إصلاح القراءة، والمعايير تغطي ذلك. التقرير يتوقع 'إجمالي الإيراد: 750'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"pipe_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"السكربت يفتح الملف بترميز cp1256 بينما الملف UTF-8، مما يشوه أسماء الأصناف. الحل: تغيير الترميز إلى utf-8.\",\n      \"reason\": \"التعليمات تطلب مقارنة المفاتيح، والمعايير تغطي الترميز. الاختبار يتوقع res['شاي']==11 وres['قهوة']==14.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إضافة دالة render_with_total في report.py ووسيط --total في cli.py، مع بقاء الاختبارات القديمة خضراء.\",\n      \"reason\": \"التعليمات واضحة، والمعايير تغطي إضافة الميزة وعدم كسر القديم. الاختبارات تتحقق من الوظيفة الجديدة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/distinct.py مع unique_values بترتيب أول ظهور، وإضافة --unique في cli.py.\",\n      \"reason\": \"التعليمات تحدد الترتيب، والمعايير تغطي ذلك. الاختبارات تتحقق من الترتيب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/threshold.py مع filter_min، وإضافة --min في cli.py.\",\n      \"reason\": \"التعليمات واضحة، والمعايير تغطي إضافة الميزة. الاختبارات تتحقق من الترشيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/counting.py مع count_by، وإضافة --count-by في cli.py.\",\n      \"reason\": \"التعليمات واضحة، والمعايير تغطي ذلك. الاختبارات تتحقق من العد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/taxing.py مع with_tax، وإضافة --tax في cli.py.\",\n      \"reason\": \"التعليمات تحدد الصيغة، والمعايير تغطي ذلك. الاختبارات تتحقق من العمود الجديد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/lookup.py مع find_by_value، وإضافة --find في cli.py.\",\n      \"reason\": \"التعليمات واضحة، والمعايير تغطي ذلك. الاختبارات تتحقق من البحث.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/validation.py، وتحديث loader.py وcli.py لدعم التحقق.\",\n      \"reason\": \"التعليمات تحدد المتطلبات بدقة، والمعايير تغطي إضافة الميزة وعدم كسر القديم. الاختبارات تتحقق من رسائل الخطأ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/daterange.py مع filter_by_date_range، وإضافة --from/--to في cli.py.\",\n      \"reason\": \"التعليمات تذكر شمول الطرفين، والمعايير تغطي ذلك. الاختبارات تتحقق من الحدود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/digits.py، وتحديث loader.py لدعم normalize_digits، وإضافة --sum في cli.py.\",\n      \"reason\": \"التعليمات تحدد السلوك الافتراضي، والمعايير تغطي ذلك. الاختبارات تتحقق من التحويل والمجموع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/cumulative.py مع render_running_total، وإضافة --running في cli.py.\",\n      \"reason\": \"التعليمات تحدد العمود التراكمي، والمعايير تغطي ذلك. الاختبارات تتحقق من القيم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/monthly.py مع summary_by_month، وإضافة --by-month في cli.py.\",\n      \"reason\": \"التعليمات تحدد الترتيب، والمعايير تغطي ذلك. الاختبارات تتحقق من التلخيص.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/filtering.py مع filter_by_value، وإضافة --filter في cli.py.\",\n      \"reason\": \"التعليمات واضحة، والمعايير تغطي ذلك. الاختبارات تتحقق من الترشيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/jsonout.py مع render_json، وإضافة --format json في cli.py.\",\n      \"reason\": \"التعليمات تحدد ensure_ascii=False، والمعايير تغطي ذلك. الاختبارات تتحقق من JSON.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/grouping.py مع group_sum، وإضافة --group-by و--sum في cli.py.\",\n      \"reason\": \"التعليمات تحدد الترتيب، والمعايير تغطي ذلك. الاختبارات تتحقق من التجميع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/stats.py مع stats، وإضافة --stats في cli.py.\",\n      \"reason\": \"التعليمات تحدد التنسيق، والمعايير تغطي ذلك. الاختبارات تتحقق من الإحصاءات.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/exporter.py مع export_csv، وإضافة --export في cli.py.\",\n      \"reason\": \"التعليمات واضحة، والمعايير تغطي ذلك. الاختبارات تتحقق من التصدير.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/paging.py مع paginate، وإضافة --page و--size في cli.py.\",\n      \"reason\": \"التعليمات تحدد أن الصفحة الأولى رقمها 1، والمعايير تغطي ذلك. الاختبارات تتحقق من الترقيم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"feat_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء src/multi.py مع load_many، وتحديث cli.py لقبول عدة مسارات.\",\n      \"reason\": \"التعليمات تحدد ترتيب الدمج، والمعايير تغطي ذلك. الاختبارات تتحقق من الدمج.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 81178,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_d/kimi_agentic_003.json",
+  "file_sha256": "63f74ffe7726a437ff0100d3296da855b3d444820b35dfb59d98d9ef4c855d0e",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "pipe_0001",
+      "my_answer": "السكربت يقرأ CSV بفاصل افتراضي (فاصلة) بينما الملف بفاصل منقوط، فيفشل. الحل: تحديد delimiter=';' في DictReader.",
+      "reason": "التعليمات واضحة، والمعايير تغطي التشخيص والإصلاح ونجاح الاختبار. الاختبار يمنع الحلول الخاطئة (مثل تعديل البيانات).",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0002",
+      "my_answer": "نفس مشكلة الفاصل: الملف بفاصل منقوط والسكربت يستخدم الفاصلة. الحل: delimiter=';'.",
+      "reason": "التعليمات تطلب فحص الملف والسكربت، والمعايير تحدد السبب الجذري. الاختبارات تتحقق من النتائج الصحيحة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0011",
+      "my_answer": "السكربت يتجاهل فقط '' و'N/A' لكن الملف يحتوي أيضًا على 'null' و'-'، فيفشل int(). الحل: معالجة كل الصيغ.",
+      "reason": "التعليمات تطلب فحص البيانات الفعلية، والمعايير تذكر اكتشاف صيغ null. الاختبار يتوقع total=59 وvalid=4، مما يمنع تحويل القيم إلى 0.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0018",
+      "my_answer": "الملف يحتوي تاريخين بصيغتين (ISO وDD/MM/YYYY)، والسكربت يستخدم %Y-%m-%d فقط فيفشل. الحل: تحليل الصيغتين.",
+      "reason": "التعليمات بلا تلميح، والمعايير تطلب ربط ValueError بالصيغ المختلطة. الاختبار يتوقع span=41، وهو صحيح بعد التحويل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0023",
+      "my_answer": "عيبان: الفاصل منقوط (السكربت يستخدم الفاصلة) وقيم غير صالحة (N/A، -) لا يتعامل معها. الحل: delimiter=';' ومعالجة القيم.",
+      "reason": "التعليمات تذكر وجود أكثر من عيب، والمعايير تطلب اكتشاف العيبين. الاختبار يتوقع total=75، وهو صحيح بعد الإصلاح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0025",
+      "my_answer": "عيبان: الترميز latin-1 بدلاً من utf-8، والفاصل منقوط (السكربت يستخدم الفاصلة). الحل: تغيير الترميز وتحديد delimiter=';'.",
+      "reason": "التعليمات تذكر عيبين من نوعين، والمعايير تغطيهما. الاختبار يتحقق من الناتج النهائي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0024",
+      "my_answer": "شذوذان: ترويسة مكررة في المنتصف، وتاريخان بصيغتين (ISO وDD/MM/YYYY). الحل: تخطي الترويسة المكررة وتحويل التاريخين.",
+      "reason": "التعليمات تطلب حصر كل الشذوذات، والمعايير تغطي الترويسة والتاريخين. الاختبار يتوقع count=5 وtotal=1200، وهو صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0009",
+      "my_answer": "الملف يحتوي ترويسة مكررة في آخر السطر، والسكربت يقرؤها كبيانات فيفشل int(). الحل: تخطي السطور التي تطابق الترويسة.",
+      "reason": "التعليمات بلا تلميح، والمعايير تطلب ملاحظة السطر الشاذ. الاختبار يتوقع rows=5 وtotal=505، وهو صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0022",
+      "my_answer": "السكربت يفتح الملف بترميز latin-1 بينما الملف UTF-8، مما يشوه الأسماء. الحل: تغيير الترميز إلى utf-8.",
+      "reason": "التعليمات تذكر تشوه الأسماء، والمعايير تطلب تشخيص الترميز. الاختبار يتحقق من ظهور 'طه حسين'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0010",
+      "my_answer": "الملف يحتوي قيمًا ناقصة بصيغ متعددة (N/A، فارغة، null، -) والسكربت يتعامل مع واحدة فقط. الحل: معالجة كل الصيغ.",
+      "reason": "التعليمات تطلب حصر كل الصيغ، والمعايير تغطي ذلك. الاختبار يتوقع total=59 وvalid=4، وهو صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0013",
+      "my_answer": "الملف يحتوي قيمًا ناقصة (N/A، -، null) والسكربت يتجاهل N/A فقط. الحل: معالجة كل الصيغ.",
+      "reason": "التعليمات تطلب معالجة كل الصيغ، والمعايير تغطي ذلك. الاختبار يتوقع 'أعلى رسوم: يوسف بقيمة 220'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0019",
+      "my_answer": "الملف يحتوي تاريخين بصيغتين، والسكربت يستخدم startswith('2026-03') فيفوت التواريخ بالصيغة الثانية. الحل: تحويل التاريخين.",
+      "reason": "التعليمات تطلب اكتشاف الصيغتين، والمعايير تغطي ذلك. الفحص يتوقع count=5 وtotal=1200.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0017",
+      "my_answer": "نفس مشكلة التاريخين المختلطين، والسكربت لا يحصي كل القيود. الحل: تحويل التاريخين.",
+      "reason": "التعليمات تطلب إصلاح السكربت وإعادة تشغيله، والمعايير تغطي ذلك. التقرير يتوقع '5 قيدًا بصافي 1200'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0016",
+      "my_answer": "الملف يحتوي تاريخين بصيغتين، والسكربت يستخدم %Y-%m-%d فقط فيفشل. الحل: تحليل الصيغتين.",
+      "reason": "التعليمات تطلب قبول الملف كما هو، والمعايير تغطي الصيغتين. الاختبار يتوقع ترتيبًا زمنيًا صحيحًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0006",
+      "my_answer": "الملف يحتوي ترويسة مكررة في المنتصف، والسكربت يقرؤها كبيانات فيفشل float(). الحل: تخطي السطور الشاذة.",
+      "reason": "التعليمات تطلب فهم سبب الخطأ، والمعايير تغطي الترويسة المكررة. الاختبار يتوقع count=5 وaverage=79.0.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0005",
+      "my_answer": "السكربت يقرأ CSV بفاصل افتراضي بينما الملف بفاصل منقوط، فيقرأ صفًا واحدًا فقط. الحل: delimiter=';'.",
+      "reason": "التعليمات تطلب إصلاح القراءة، والمعايير تغطي ذلك. التقرير يتوقع 'إجمالي الإيراد: 750'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "pipe_0021",
+      "my_answer": "السكربت يفتح الملف بترميز cp1256 بينما الملف UTF-8، مما يشوه أسماء الأصناف. الحل: تغيير الترميز إلى utf-8.",
+      "reason": "التعليمات تطلب مقارنة المفاتيح، والمعايير تغطي الترميز. الاختبار يتوقع res['شاي']==11 وres['قهوة']==14.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0002",
+      "my_answer": "إضافة دالة render_with_total في report.py ووسيط --total في cli.py، مع بقاء الاختبارات القديمة خضراء.",
+      "reason": "التعليمات واضحة، والمعايير تغطي إضافة الميزة وعدم كسر القديم. الاختبارات تتحقق من الوظيفة الجديدة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0013",
+      "my_answer": "إنشاء src/distinct.py مع unique_values بترتيب أول ظهور، وإضافة --unique في cli.py.",
+      "reason": "التعليمات تحدد الترتيب، والمعايير تغطي ذلك. الاختبارات تتحقق من الترتيب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0019",
+      "my_answer": "إنشاء src/threshold.py مع filter_min، وإضافة --min في cli.py.",
+      "reason": "التعليمات واضحة، والمعايير تغطي إضافة الميزة. الاختبارات تتحقق من الترشيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0016",
+      "my_answer": "إنشاء src/counting.py مع count_by، وإضافة --count-by في cli.py.",
+      "reason": "التعليمات واضحة، والمعايير تغطي ذلك. الاختبارات تتحقق من العد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0023",
+      "my_answer": "إنشاء src/taxing.py مع with_tax، وإضافة --tax في cli.py.",
+      "reason": "التعليمات تحدد الصيغة، والمعايير تغطي ذلك. الاختبارات تتحقق من العمود الجديد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0024",
+      "my_answer": "إنشاء src/lookup.py مع find_by_value، وإضافة --find في cli.py.",
+      "reason": "التعليمات واضحة، والمعايير تغطي ذلك. الاختبارات تتحقق من البحث.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0008",
+      "my_answer": "إنشاء src/validation.py، وتحديث loader.py وcli.py لدعم التحقق.",
+      "reason": "التعليمات تحدد المتطلبات بدقة، والمعايير تغطي إضافة الميزة وعدم كسر القديم. الاختبارات تتحقق من رسائل الخطأ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0005",
+      "my_answer": "إنشاء src/daterange.py مع filter_by_date_range، وإضافة --from/--to في cli.py.",
+      "reason": "التعليمات تذكر شمول الطرفين، والمعايير تغطي ذلك. الاختبارات تتحقق من الحدود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0020",
+      "my_answer": "إنشاء src/digits.py، وتحديث loader.py لدعم normalize_digits، وإضافة --sum في cli.py.",
+      "reason": "التعليمات تحدد السلوك الافتراضي، والمعايير تغطي ذلك. الاختبارات تتحقق من التحويل والمجموع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0018",
+      "my_answer": "إنشاء src/cumulative.py مع render_running_total، وإضافة --running في cli.py.",
+      "reason": "التعليمات تحدد العمود التراكمي، والمعايير تغطي ذلك. الاختبارات تتحقق من القيم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0021",
+      "my_answer": "إنشاء src/monthly.py مع summary_by_month، وإضافة --by-month في cli.py.",
+      "reason": "التعليمات تحدد الترتيب، والمعايير تغطي ذلك. الاختبارات تتحقق من التلخيص.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0001",
+      "my_answer": "إنشاء src/filtering.py مع filter_by_value، وإضافة --filter في cli.py.",
+      "reason": "التعليمات واضحة، والمعايير تغطي ذلك. الاختبارات تتحقق من الترشيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0009",
+      "my_answer": "إنشاء src/jsonout.py مع render_json، وإضافة --format json في cli.py.",
+      "reason": "التعليمات تحدد ensure_ascii=False، والمعايير تغطي ذلك. الاختبارات تتحقق من JSON.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0006",
+      "my_answer": "إنشاء src/grouping.py مع group_sum، وإضافة --group-by و--sum في cli.py.",
+      "reason": "التعليمات تحدد الترتيب، والمعايير تغطي ذلك. الاختبارات تتحقق من التجميع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0010",
+      "my_answer": "إنشاء src/stats.py مع stats، وإضافة --stats في cli.py.",
+      "reason": "التعليمات تحدد التنسيق، والمعايير تغطي ذلك. الاختبارات تتحقق من الإحصاءات.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0003",
+      "my_answer": "إنشاء src/exporter.py مع export_csv، وإضافة --export في cli.py.",
+      "reason": "التعليمات واضحة، والمعايير تغطي ذلك. الاختبارات تتحقق من التصدير.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0015",
+      "my_answer": "إنشاء src/paging.py مع paginate، وإضافة --page و--size في cli.py.",
+      "reason": "التعليمات تحدد أن الصفحة الأولى رقمها 1، والمعايير تغطي ذلك. الاختبارات تتحقق من الترقيم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "feat_0017",
+      "my_answer": "إنشاء src/multi.py مع load_many، وتحديث cli.py لقبول عدة مسارات.",
+      "reason": "التعليمات تحدد ترتيب الدمج، والمعايير تغطي ذلك. الاختبارات تتحقق من الدمج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T20:39:06Z"
+}

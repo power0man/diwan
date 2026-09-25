@@ -1,0 +1,121 @@
+{
+ "models": [
+  {
+   "gen_tokens_per_s": 25.3,
+   "model": "qwen3:14b",
+   "needle": [
+    {
+     "approx_tokens": 2000,
+     "prompt_tokens_reported": 3727,
+     "retrieved": false,
+     "wall_s": 19.81
+    },
+    {
+     "approx_tokens": 8000,
+     "prompt_tokens_reported": 14646,
+     "retrieved": false,
+     "wall_s": 68.11
+    },
+    {
+     "approx_tokens": 16000,
+     "prompt_tokens_reported": 29164,
+     "retrieved": false,
+     "wall_s": 135.72
+    },
+    {
+     "approx_tokens": 32000,
+     "prompt_tokens_reported": 20482,
+     "retrieved": false,
+     "wall_s": 142.26
+    }
+   ],
+   "prompt_tokens_per_s": 178.4,
+   "short_latency_s": {
+    "min": 0.31,
+    "runs": [
+     7.77,
+     0.32,
+     0.31
+    ]
+   }
+  },
+  {
+   "gen_tokens_per_s": 53.1,
+   "model": "gemma4:latest",
+   "needle": [
+    {
+     "approx_tokens": 2000,
+     "prompt_tokens_reported": 3190,
+     "retrieved": false,
+     "wall_s": 12.53
+    },
+    {
+     "approx_tokens": 8000,
+     "prompt_tokens_reported": 12498,
+     "retrieved": false,
+     "wall_s": 17.45
+    },
+    {
+     "approx_tokens": 16000,
+     "prompt_tokens_reported": 24874,
+     "retrieved": false,
+     "wall_s": 29.93
+    },
+    {
+     "approx_tokens": 32000,
+     "prompt_tokens_reported": 49626,
+     "retrieved": false,
+     "wall_s": 92.83
+    }
+   ],
+   "prompt_tokens_per_s": 273.9,
+   "short_latency_s": {
+    "min": 0.2,
+    "runs": [
+     3.53,
+     44.91,
+     0.2
+    ]
+   }
+  },
+  {
+   "gen_tokens_per_s": 22.9,
+   "model": "llama3.1:8b",
+   "needle": [
+    {
+     "approx_tokens": 2000,
+     "prompt_tokens_reported": 3606,
+     "retrieved": true,
+     "wall_s": 14.82
+    },
+    {
+     "approx_tokens": 8000,
+     "prompt_tokens_reported": 14167,
+     "retrieved": true,
+     "wall_s": 77.99
+    },
+    {
+     "approx_tokens": 16000,
+     "prompt_tokens_reported": 28209,
+     "retrieved": true,
+     "wall_s": 480.03
+    },
+    {
+     "approx_tokens": 32000,
+     "error": "TimeoutError: timed out"
+    }
+   ],
+   "prompt_tokens_per_s": 234.9,
+   "short_latency_s": {
+    "min": 0.08,
+    "runs": [
+     13.65,
+     0.09,
+     0.08
+    ]
+   }
+  }
+ ],
+ "note_ar": "قياس حي: كمون وسرعة توليد وسياق مفيد (استرجاع إبرة) — التقريب بالكلمات معلن",
+ "probed_at_utc": "2026-09-20T10:09:17Z"
+}

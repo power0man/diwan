@@ -1,0 +1,563 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_assist_a_004\",\n  \"judgments\": [\n    {\n      \"id\": \"ifx_a_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"خمس نقاط تبدأ بـ«- » وكل منها ≤ ٦ كلمات\",\n      \"reason\": \"المرجع يصف القيود بدقة، والفحص الآلي يتحقق من عدد النقاط والبداية وعدد الكلمات، والمعايير كافية للحكم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"شعار من ٨ كلمات بالضبط عن المدرسة\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من عدد الكلمات، والمعايير تشمل الملاءمة للمدرسة وهي كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاثة أسطر عن البحر تنتهي كل سطر بكلمة آخرها «اء»\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من عدد الأسطر والنهاية بالقافية، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جملة سؤال تنتهي بـ«؟» ثم جملة خبر تنتهي بـ«.»\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من ترتيب العلامات، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاثة أسطر تبدأ بن، و، ر بالترتيب\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الأحرف الأولى، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جملتان عن رحلة برية تنتهيان بنقطة وتحتويان رقمين بالضبط\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من عدد الأرقام والجمل، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وصف من ١٢ كلمة بلا أرقام\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من عدد الكلمات وغياب الأرقام، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ست نقاط تبدأ بـ«- » وكل ≤ ٤ كلمات وبلا أرقام\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاث جمل عن السفر كل منها ٥-٧ كلمات، الثانية تبدأ بـ«ومع»، بلا تكرار ثلاثي\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وصف من ٢٠ كلمة بلا أرقام ولا لاتينية ولا «رائع»\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أربعة أسطر بأطوال ٥،٧،٤،٦ بالضبط\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الأطوال، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أربعة أسطر تبدأ بسألت/فأجاب بالتناوب وكل ≤ ٨ كلمات\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من التناوب وعدد الكلمات، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أربع جمل بترتيب علامات . ؟ ! .\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الترتيب، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تغريدة عن القهوة طولها ٣٠-٤٠ حرفًا بلا ترقيم سوى نقطة الختام\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الطول والترقيم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أربع جمل عن الوقت بلا تكرار أي كلمة\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من عدم التكرار، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاثة أسطر تبدأ بأ، م، ل وكل منها ٥ كلمات\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الأحرف الأولى وعدد الكلمات، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أربعة أسطر بأطوال ٤،٦،٥،٧ والأخير ينتهي بـ«مبكرًا»\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الأطوال والنهاية، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أربع جمل عن النجاح بلا حرف «خ» وتتضمن «النجاح»\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الحظر والتضمين، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاثة أسطر تنتهي بـ«ين» وكل منها ٦ كلمات\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من النهاية وعدد الكلمات، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاثة أسطر بأطوال ٦،٤،٥ بالترتيب\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الأطوال، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاثة أسطر تبدأ بب، د، ر بالترتيب\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الأحرف الأولى، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ستة أسطر متناوبة «في الصباح»/«في المساء»\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من التناوب، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاث جمل عن المطر بلا تكرار كلمة أكثر من مرتين\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من عدد الجمل والتكرار، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أربع جمل عن العمل التطوعي كل منها ٤-٦ كلمات وبلا تكرار ثلاثي\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أربع نقاط تبدأ بـ«- » وكل ≤ ٥ كلمات وبلا «مال»\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جملة واحدة عن الذكاء الاصطناعي طولها ٥٠-٧٠ حرفًا وتنتهي بنقطة\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الطول والجملة، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاث جمل عن القراءة بلا حرف «ش» وتتضمن «كتاب»\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الحظر والتضمين، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاثة أسطر بأطوال ٧،٥،٦ بالترتيب\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الأطوال، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاث جمل عن التأخر بلا «مشروع» وبلا تكرار كلمة أكثر من مرتين\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جملة واحدة نصيحة للطلاب طولها ٤٠-٦٠ حرفًا وتنتهي بنقطة\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الطول والجملة، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جملتان عن الوطن مجموعهما ٨٠-١٠٠ حرف وتنتهيان بنقطة\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الطول وعدد الجمل، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جملتان عن معرض سيارات فيهما رقم واحد فقط وبلا «خصم»\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الرقم والجمل، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"رسالة امتنان من ١٥ كلمة بلا «شكر» وتنتهي بنقطة\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من عدد الكلمات والنهاية، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"ifx_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاث جمل عن المستقبل بترتيب علامات ؟ ! .\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الترتيب، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قائمة [الرياض، جدة، أبها، ينبع]\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من القائمة واستبعاد الطائف، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"50\",\n      \"reason\": \"الحساب صحيح: 40+15-5=50، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4\",\n      \"reason\": \"المضاعفة تضاعف السكر من 2 إلى 4، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تسويق 4500، تطوير 8000، دعم 2000\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من JSON، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ماجد\",\n      \"reason\": \"ماجد حل محل بدر، والفحص يتحقق من الاسم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12A\",\n      \"reason\": \"المقعد تغير إلى 12A، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نايف\",\n      \"reason\": \"بعد خروج سالم يصبح نايف ثانيًا، والفحص يتحقق من الاسم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تحب جدتي زراعة الياسمين العطرة في الحديقة المنزلية\",\n      \"reason\": \"المرجع صحيح، والفحص يتحقق من الجملة النهائية، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قرأت ليلى القصة القصيرة باهتمام\",\n      \"reason\": \"التراجع ألغى الحذف فقط، والفحص يتحقق من الجملة، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وليد\",\n      \"reason\": \"وليد عاد أساسيًا، والفحص يتحقق من الاسم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ريم، سلوى\",\n      \"reason\": \"إلغاء التقديم وانسحاب مازن يؤديان إلى ريم ثم سلوى، والفحص يتحقق من JSON، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"عادل\",\n      \"reason\": \"عادل انتقل إلى الوسط الأيمن، والفحص يتحقق من الاسم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"100\",\n      \"reason\": \"الحساب: 200+40=240، ربعها 60 -> 180، +20=200، نصفها 100 -> 100، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"300\",\n      \"reason\": \"المضاعفة ألغيت فعاد 300، والشوفان لا يؤثر، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعلان 3500، تدريب 2500، سفر 3000\",\n      \"reason\": \"الرفع ألغي فعاد السفر 3000، والإعلان خُفض، والفحص يتحقق من JSON، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0551234576\",\n      \"reason\": \"الرقم صحح إلى 0551234576، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2\",\n      \"reason\": \"الأقفال أعيد فتحها والخزان أنجز، فبقيت مهمتان، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الهاتف 0501112233 والبريد huda@newcorp.com\",\n      \"reason\": \"تغيير الهاتف ألغي والبريد حدث، والفحص يتحقق من JSON، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"85\",\n      \"reason\": \"100-20-15+15+5=85، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"رواتب 50000، إيجار 13000، تشغيل 9500، طوارئ 5000\",\n      \"reason\": \"التحديثان صحيحان، والفحص يتحقق من JSON، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"420\",\n      \"reason\": \"180 + (240-60) + 60 = 420، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"65\",\n      \"reason\": \"80-30+5+10=65، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سامي\",\n      \"reason\": \"سامي تولى الواجهة، والفحص يتحقق من الاسم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدمام، الفيصلية\",\n      \"reason\": \"المدينة الدمام والحي الفيصلية، والفحص يتحقق من JSON، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"56\",\n      \"reason\": \"48+18-10=56، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تنسيق الحديقة، دهان البوابة، تركيب الإنارة\",\n      \"reason\": \"السياج حذف والإنارة أضيفت، والفحص يتحقق من القائمة، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"123\",\n      \"reason\": \"45 + 28*2 + 22 = 123، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"450\",\n      \"reason\": \"200*2 + 50 = 450، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المقعد 9F، الوجبة سمك، الدرجة رجال الأعمال\",\n      \"reason\": \"الوجبة والدرجة تحدثا والمقعد بقي، والفحص يتحقق من JSON، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"طارق\",\n      \"reason\": \"طارق بديل نبيل في الجناح، والفحص يتحقق من الاسم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"khaled@pro-mail.com\",\n      \"reason\": \"آخر تحديث هو البريد النهائي، والفحص يتحقق من البريد، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اشترى أبي سيارة خضراء من المعرض الكبير\",\n      \"reason\": \"الاستبدال والحذف صحيحان، والفحص يتحقق من الجملة، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"400\",\n      \"reason\": \"600/2 + 100 = 400، والفحص يتحقق من الرقم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"mtx_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تطوير 7000، دعم 2000، صيانة 1500\",\n      \"reason\": \"التحويل صحيح، والفحص يتحقق من JSON، والمعايير كافية.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 100963,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_assist_a_004.json",
+  "file_sha256": "369567dbe9e95abb001cfd43474f3a6455e8bb07047c9dda01377b6fab970d06",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "ifx_a_0045",
+      "my_answer": "خمس نقاط تبدأ بـ«- » وكل منها ≤ ٦ كلمات",
+      "reason": "المرجع يصف القيود بدقة، والفحص الآلي يتحقق من عدد النقاط والبداية وعدد الكلمات، والمعايير كافية للحكم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0009",
+      "my_answer": "شعار من ٨ كلمات بالضبط عن المدرسة",
+      "reason": "المرجع صحيح، والفحص يتحقق من عدد الكلمات، والمعايير تشمل الملاءمة للمدرسة وهي كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0038",
+      "my_answer": "ثلاثة أسطر عن البحر تنتهي كل سطر بكلمة آخرها «اء»",
+      "reason": "المرجع صحيح، والفحص يتحقق من عدد الأسطر والنهاية بالقافية، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0043",
+      "my_answer": "جملة سؤال تنتهي بـ«؟» ثم جملة خبر تنتهي بـ«.»",
+      "reason": "المرجع صحيح، والفحص يتحقق من ترتيب العلامات، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0015",
+      "my_answer": "ثلاثة أسطر تبدأ بن، و، ر بالترتيب",
+      "reason": "المرجع صحيح، والفحص يتحقق من الأحرف الأولى، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0032",
+      "my_answer": "جملتان عن رحلة برية تنتهيان بنقطة وتحتويان رقمين بالضبط",
+      "reason": "المرجع صحيح، والفحص يتحقق من عدد الأرقام والجمل، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0007",
+      "my_answer": "وصف من ١٢ كلمة بلا أرقام",
+      "reason": "المرجع صحيح، والفحص يتحقق من عدد الكلمات وغياب الأرقام، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0047",
+      "my_answer": "ست نقاط تبدأ بـ«- » وكل ≤ ٤ كلمات وبلا أرقام",
+      "reason": "المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0004",
+      "my_answer": "ثلاث جمل عن السفر كل منها ٥-٧ كلمات، الثانية تبدأ بـ«ومع»، بلا تكرار ثلاثي",
+      "reason": "المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0010",
+      "my_answer": "وصف من ٢٠ كلمة بلا أرقام ولا لاتينية ولا «رائع»",
+      "reason": "المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0012",
+      "my_answer": "أربعة أسطر بأطوال ٥،٧،٤،٦ بالضبط",
+      "reason": "المرجع صحيح، والفحص يتحقق من الأطوال، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0037",
+      "my_answer": "أربعة أسطر تبدأ بسألت/فأجاب بالتناوب وكل ≤ ٨ كلمات",
+      "reason": "المرجع صحيح، والفحص يتحقق من التناوب وعدد الكلمات، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0044",
+      "my_answer": "أربع جمل بترتيب علامات . ؟ ! .",
+      "reason": "المرجع صحيح، والفحص يتحقق من الترتيب، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0029",
+      "my_answer": "تغريدة عن القهوة طولها ٣٠-٤٠ حرفًا بلا ترقيم سوى نقطة الختام",
+      "reason": "المرجع صحيح، والفحص يتحقق من الطول والترقيم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0024",
+      "my_answer": "أربع جمل عن الوقت بلا تكرار أي كلمة",
+      "reason": "المرجع صحيح، والفحص يتحقق من عدم التكرار، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0018",
+      "my_answer": "ثلاثة أسطر تبدأ بأ، م، ل وكل منها ٥ كلمات",
+      "reason": "المرجع صحيح، والفحص يتحقق من الأحرف الأولى وعدد الكلمات، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0014",
+      "my_answer": "أربعة أسطر بأطوال ٤،٦،٥،٧ والأخير ينتهي بـ«مبكرًا»",
+      "reason": "المرجع صحيح، والفحص يتحقق من الأطوال والنهاية، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0022",
+      "my_answer": "أربع جمل عن النجاح بلا حرف «خ» وتتضمن «النجاح»",
+      "reason": "المرجع صحيح، والفحص يتحقق من الحظر والتضمين، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0041",
+      "my_answer": "ثلاثة أسطر تنتهي بـ«ين» وكل منها ٦ كلمات",
+      "reason": "المرجع صحيح، والفحص يتحقق من النهاية وعدد الكلمات، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0011",
+      "my_answer": "ثلاثة أسطر بأطوال ٦،٤،٥ بالترتيب",
+      "reason": "المرجع صحيح، والفحص يتحقق من الأطوال، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0017",
+      "my_answer": "ثلاثة أسطر تبدأ بب، د، ر بالترتيب",
+      "reason": "المرجع صحيح، والفحص يتحقق من الأحرف الأولى، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0036",
+      "my_answer": "ستة أسطر متناوبة «في الصباح»/«في المساء»",
+      "reason": "المرجع صحيح، والفحص يتحقق من التناوب، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0025",
+      "my_answer": "ثلاث جمل عن المطر بلا تكرار كلمة أكثر من مرتين",
+      "reason": "المرجع صحيح، والفحص يتحقق من عدد الجمل والتكرار، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0003",
+      "my_answer": "أربع جمل عن العمل التطوعي كل منها ٤-٦ كلمات وبلا تكرار ثلاثي",
+      "reason": "المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0046",
+      "my_answer": "أربع نقاط تبدأ بـ«- » وكل ≤ ٥ كلمات وبلا «مال»",
+      "reason": "المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0027",
+      "my_answer": "جملة واحدة عن الذكاء الاصطناعي طولها ٥٠-٧٠ حرفًا وتنتهي بنقطة",
+      "reason": "المرجع صحيح، والفحص يتحقق من الطول والجملة، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0021",
+      "my_answer": "ثلاث جمل عن القراءة بلا حرف «ش» وتتضمن «كتاب»",
+      "reason": "المرجع صحيح، والفحص يتحقق من الحظر والتضمين، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0013",
+      "my_answer": "ثلاثة أسطر بأطوال ٧،٥،٦ بالترتيب",
+      "reason": "المرجع صحيح، والفحص يتحقق من الأطوال، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0026",
+      "my_answer": "ثلاث جمل عن التأخر بلا «مشروع» وبلا تكرار كلمة أكثر من مرتين",
+      "reason": "المرجع صحيح، والفحص يتحقق من كل القيود، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0028",
+      "my_answer": "جملة واحدة نصيحة للطلاب طولها ٤٠-٦٠ حرفًا وتنتهي بنقطة",
+      "reason": "المرجع صحيح، والفحص يتحقق من الطول والجملة، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0030",
+      "my_answer": "جملتان عن الوطن مجموعهما ٨٠-١٠٠ حرف وتنتهيان بنقطة",
+      "reason": "المرجع صحيح، والفحص يتحقق من الطول وعدد الجمل، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0034",
+      "my_answer": "جملتان عن معرض سيارات فيهما رقم واحد فقط وبلا «خصم»",
+      "reason": "المرجع صحيح، والفحص يتحقق من الرقم والجمل، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0008",
+      "my_answer": "رسالة امتنان من ١٥ كلمة بلا «شكر» وتنتهي بنقطة",
+      "reason": "المرجع صحيح، والفحص يتحقق من عدد الكلمات والنهاية، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "ifx_a_0042",
+      "my_answer": "ثلاث جمل عن المستقبل بترتيب علامات ؟ ! .",
+      "reason": "المرجع صحيح، والفحص يتحقق من الترتيب، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0001",
+      "my_answer": "قائمة [الرياض، جدة، أبها، ينبع]",
+      "reason": "المرجع صحيح، والفحص يتحقق من القائمة واستبعاد الطائف، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0006",
+      "my_answer": "50",
+      "reason": "الحساب صحيح: 40+15-5=50، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0029",
+      "my_answer": "4",
+      "reason": "المضاعفة تضاعف السكر من 2 إلى 4، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0017",
+      "my_answer": "تسويق 4500، تطوير 8000، دعم 2000",
+      "reason": "المرجع صحيح، والفحص يتحقق من JSON، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0021",
+      "my_answer": "ماجد",
+      "reason": "ماجد حل محل بدر، والفحص يتحقق من الاسم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0033",
+      "my_answer": "12A",
+      "reason": "المقعد تغير إلى 12A، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0037",
+      "my_answer": "نايف",
+      "reason": "بعد خروج سالم يصبح نايف ثانيًا، والفحص يتحقق من الاسم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0014",
+      "my_answer": "تحب جدتي زراعة الياسمين العطرة في الحديقة المنزلية",
+      "reason": "المرجع صحيح، والفحص يتحقق من الجملة النهائية، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0015",
+      "my_answer": "قرأت ليلى القصة القصيرة باهتمام",
+      "reason": "التراجع ألغى الحذف فقط، والفحص يتحقق من الجملة، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0024",
+      "my_answer": "وليد",
+      "reason": "وليد عاد أساسيًا، والفحص يتحقق من الاسم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0039",
+      "my_answer": "ريم، سلوى",
+      "reason": "إلغاء التقديم وانسحاب مازن يؤديان إلى ريم ثم سلوى، والفحص يتحقق من JSON، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0023",
+      "my_answer": "عادل",
+      "reason": "عادل انتقل إلى الوسط الأيمن، والفحص يتحقق من الاسم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0010",
+      "my_answer": "100",
+      "reason": "الحساب: 200+40=240، ربعها 60 -> 180، +20=200، نصفها 100 -> 100، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0032",
+      "my_answer": "300",
+      "reason": "المضاعفة ألغيت فعاد 300، والشوفان لا يؤثر، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0020",
+      "my_answer": "إعلان 3500، تدريب 2500، سفر 3000",
+      "reason": "الرفع ألغي فعاد السفر 3000، والإعلان خُفض، والفحص يتحقق من JSON، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0026",
+      "my_answer": "0551234576",
+      "reason": "الرقم صحح إلى 0551234576، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0047",
+      "my_answer": "2",
+      "reason": "الأقفال أعيد فتحها والخزان أنجز، فبقيت مهمتان، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0028",
+      "my_answer": "الهاتف 0501112233 والبريد huda@newcorp.com",
+      "reason": "تغيير الهاتف ألغي والبريد حدث، والفحص يتحقق من JSON، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0009",
+      "my_answer": "85",
+      "reason": "100-20-15+15+5=85، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0018",
+      "my_answer": "رواتب 50000، إيجار 13000، تشغيل 9500، طوارئ 5000",
+      "reason": "التحديثان صحيحان، والفحص يتحقق من JSON، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0043",
+      "my_answer": "420",
+      "reason": "180 + (240-60) + 60 = 420، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0008",
+      "my_answer": "65",
+      "reason": "80-30+5+10=65، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0045",
+      "my_answer": "سامي",
+      "reason": "سامي تولى الواجهة، والفحص يتحقق من الاسم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0027",
+      "my_answer": "الدمام، الفيصلية",
+      "reason": "المدينة الدمام والحي الفيصلية، والفحص يتحقق من JSON، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0007",
+      "my_answer": "56",
+      "reason": "48+18-10=56، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0046",
+      "my_answer": "تنسيق الحديقة، دهان البوابة، تركيب الإنارة",
+      "reason": "السياج حذف والإنارة أضيفت، والفحص يتحقق من القائمة، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0041",
+      "my_answer": "123",
+      "reason": "45 + 28*2 + 22 = 123، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0030",
+      "my_answer": "450",
+      "reason": "200*2 + 50 = 450، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0034",
+      "my_answer": "المقعد 9F، الوجبة سمك، الدرجة رجال الأعمال",
+      "reason": "الوجبة والدرجة تحدثا والمقعد بقي، والفحص يتحقق من JSON، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0022",
+      "my_answer": "طارق",
+      "reason": "طارق بديل نبيل في الجناح، والفحص يتحقق من الاسم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0025",
+      "my_answer": "khaled@pro-mail.com",
+      "reason": "آخر تحديث هو البريد النهائي، والفحص يتحقق من البريد، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0012",
+      "my_answer": "اشترى أبي سيارة خضراء من المعرض الكبير",
+      "reason": "الاستبدال والحذف صحيحان، والفحص يتحقق من الجملة، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0031",
+      "my_answer": "400",
+      "reason": "600/2 + 100 = 400، والفحص يتحقق من الرقم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "mtx_a_0019",
+      "my_answer": "تطوير 7000، دعم 2000، صيانة 1500",
+      "reason": "التحويل صحيح، والفحص يتحقق من JSON، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T18:52:55Z"
+}

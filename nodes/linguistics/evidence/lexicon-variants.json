@@ -1,0 +1,20 @@
+{
+ "generated_by": "acceptance_m5",
+ "query": "صابورة",
+ "results": [
+  {
+   "store": "lexicons",
+   "digest": "05c920d3a3644e8bd3348f15813422c20c77a7510dff6bc8620b4bb235d7a2f5",
+   "part": "المعجم الوسيط — ج1",
+   "locus": "ج1 ص506",
+   "source_id": "hf-shamela4-full-db"
+  },
+  {
+   "store": "lexicons-local",
+   "digest": "5f7553d4162e07f33fde4abc5650a1a5cb902db70b60021db937757c72442ade",
+   "part": "تاج العروس — ج12",
+   "locus": "ج12 ص285",
+   "source_id": "hf-shamela4-full-db"
+  }
+ ]
+}

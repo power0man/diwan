@@ -1,0 +1,299 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_agentic_004.json\",\n  \"judgments\": [\n    {\n      \"id\": \"report_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_palindrome_with_spaces سيسقط لأن is_palindrome يقارن النص كاملًا دون تجاهل الفراغات، فـ\\\"ان انا\\\" لا يساوي معكوسه بسبب الفراغ.\",\n      \"reason\": \"فحصت الدالة: is_palindrome(\\\"ان انا\\\") يعيد False لأن النص لا يساوي معكوسه (الفراغ في موضع مختلف). الاختبار يتوقع True فيسقط. بقية الاختبارات تمر. المرجع يذكر هذا الاختبار الساقط، وهو صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_safe_div_by_zero سيسقط لأن safe_div يعيد 0 بدل رمي ValueError عند القسمة على صفر.\",\n      \"reason\": \"الدالة safe_div فيها if b==0: return 0، والاختبار يتوقع pytest.raises(ValueError) فيسقط. بقية الاختبارات تمر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_avg_two_decimals سيسقط لأن format_avg تُرجع منزلة عشرية واحدة (f\\\"{...:.1f}\\\") بينما الاختبار يتوقع \\\"3.33\\\".\",\n      \"reason\": \"format_avg(10,3) = f\\\"{3.333...:.1f}\\\" = \\\"3.3\\\"، والاختبار يتوقع \\\"3.33\\\" فيسقط. بقية الاختبارات تمر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_discount سيسقط لأن discount(100) يعيد 100 (الشرط >100) بينما الاختبار يتوقع 90.0.\",\n      \"reason\": \"الدالة تستخدم if amount > 100، فالحد 100 لا يُخصم. الاختبار المعلمي يتضمن (100, 90.0) فيسقط. بقية الاختبارات تمر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"التشغيل سيفشل عند استيراد tests/test_stats.py لأنه يستورد mode من src.stats_utils بينما الدالة غير معرّفة، فلا تُنفَّذ أي اختبارات.\",\n      \"reason\": \"test_stats.py يستورد mode غير الموجودة في src.stats_utils، فيحدث ImportError ويفشل جمع الاختبارات. test_helpers.py لا يُشغَّل أيضًا لأن pytest يتوقف عند خطأ الجمع. المرجع يطلب وصف هذا الخلل، وهو صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_add_five وtest_mul_five وtest_square_five ستسقط لأن الـfixture تعيد سلسلة \\\"5\\\" لا عددًا صحيحًا، فتفشل العمليات الحسابية. العيب في الـfixture لا في الدوال.\",\n      \"reason\": \"fixture five تعيد \\\"5\\\" (سلسلة). add(\\\"5\\\",1) يرمي TypeError، mul(\\\"5\\\",2) يرمي TypeError، square(\\\"5\\\") يرمي TypeError. test_add_plain يمر. العيب في fixture وليس في الدوال. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_discount_boundary سيسقط لأن apply_discount(100) يعيد 100 (الشرط >100) بينما يتوقع 90.0. كما يسقط test_grand_total لأن grand_total يعيد lines لا المجموع، وtest_vat لأن vat(200) يعيد 102.0 لا 30.0.\",\n      \"reason\": \"ثلاثة اختبارات تسقط: test_discount_boundary (حد الخصم)، test_grand_total (يعيد القائمة لا المجموع)، test_vat (0.51 بدل 0.15). المرجع يطلب أكثر من ساقط، وهو صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_area_unit سيسقط لأن area_circle(1) = π ≈ 3.14159 والاختبار يتوقع 3.0. العيب في الاختبار لا في الدالة.\",\n      \"reason\": \"area_circle(1) يعيد π وليس 3.0، فالاختبار يتوقع قيمة خاطئة. test_area_zero وtest_circumference_unit يمران. المرجع ينبّه إلى أن السقوط قد يكون في الاختبار لا الكود، وهو صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_double_space سيسقط لأن count_words(\\\"أ  ب\\\") = len(\\\"أ  ب\\\".split(\\\" \\\")) = 3 (فراغان ينتجان عنصرًا فارغًا) بينما يتوقع 2. test_title_case_future مُتخطًّى فلا يُعدّ ساقطًا.\",\n      \"reason\": \"count_words تقسم على \\\" \\\" حرفيًا، فالنص \\\"أ  ب\\\" يعطي ['أ','','ب'] أي 3. الاختبار يتوقع 2 فيسقط. الاختبار المُتخطَّى لا يُحتسب ساقطًا. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_total سيسقط لأن total لا تعيد قيمة (لا return)، فtotal([10,5]) يعيد None وNone+5 يرمي TypeError.\",\n      \"reason\": \"دالة total تحسب s لكن لا تعيدها، فتعيد None. الاختبار total([10,5])+5 يرمي TypeError. test_count يمر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الاختبارات الثلاثة ستسقط لأن add_task وremove_task وcount_open كلها تعيد None.\",\n      \"reason\": \"add_task([],\\\"غسل الصحون\\\") يعيد None لا ['غسل الصحون']، remove_task يعيد None لا ['ب']، count_open يعيد None لا 1. كل الاختبارات تسقط. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_area_square سيسقط لأن area_square(5) = 5*2 = 10 لا 25.\",\n      \"reason\": \"area_square تستخدم s*2 بدل s*s، فالاختبار يتوقع 25 ويحصل 10 فيسقط. test_area_rect يمر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_القسمة_على_صفر سيسقط لأن safe_div يعيد 0 بدل رمي ValueError.\",\n      \"reason\": \"safe_div(5,0) يعيد 0، والاختبار يتوقع ValueError فيسقط. test_القسمة_العادية يمر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_clamp_high سيسقط لأن clamp(15,0,10) يعيد 0 (الشرط الأول x<lo يعيد hi) بينما يتوقع 10. كما test_clamp_inside سيسقط لأن clamp(5,0,10) يعيد 10 (x<lo خطأ، x>hi خطأ، فيعيد x=5؟ لا، الشرط الأول x<lo: 5<0 خطأ، الثاني x>hi: 5>10 خطأ، فيعيد 5. صحيح. لكن clamp(15,0,10): x<lo خطأ، x>hi: 15>10 صحيح فيعيد lo=0. فيسقط test_clamp_high فقط.\",\n      \"reason\": \"clamp معكوسة: عند x>hi تعيد lo (0) بدل hi (10). test_clamp_high يتوقع 10 فيسقط. بقية الاختبارات تمر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_scale سيسقط لأن scale([1,2],3) = [4,5] (جمع بدل ضرب) بينما يتوقع [3,6].\",\n      \"reason\": \"scale تستخدم x+k بدل x*k، فتعيد [4,5] لا [3,6]. test_old_sum وtest_new_sum يمران. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_div_fraction سيسقط لأن divide(7,2) يعيد int(3.5)=3 لا 3.5.\",\n      \"reason\": \"divide تحوّل الناتج إلى int، فالاختبار يتوقع 3.5 ويحصل 3. test_div_exact يمر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"report_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"test_leap_century سيسقط لأن is_leap(1900) يعيد True (year%4==0) بينما يتوقع False. كما test_days_feb_leap سيسقط لأن days_in_month(2,2024) يعيد 28 لا 29.\",\n      \"reason\": \"is_leap تنقص قاعدة القرن (1900 ليست كبيسة)، وdays_in_month لا تراعي فبراير في السنوات الكبيسة. اختباران يسقطان. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert discount(100) == 90.0 سيسقط مع الكود الحالي (يعيد 100) ويمرّ بعد الإصلاح (>=100).\",\n      \"reason\": \"العيب أن الشرط >100 بدل >=100. اختبار عند 100 بالضبط يكشفه بالاتجاهين. المرجع يطلب هذا الاختبار، وهو صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert count_words(\\\"أ  ب\\\") == 2 سيسقط مع الكود الحالي (يعيد 3) ويمرّ بعد الإصلاح (split() بدون وسيط).\",\n      \"reason\": \"العيب أن split(\\\" \\\") ينتج عناصر فارغة مع فراغات متكررة. اختبار بفراغين متتاليين يكشفه بالاتجاهين. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert clamp(15,0,10) == 10 سيسقط مع الكود الحالي (يعيد 0) ويمرّ بعد الإصلاح (يعيد hi).\",\n      \"reason\": \"العيب أن clamp تعيد hi عند x<lo وlo عند x>hi، أي معكوسة. اختبار عند x>hi يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert classify(15) == \\\"كلاهما\\\" سيسقط مع الكود الحالي (يعيد \\\"ثلاثة\\\") ويمرّ بعد الإصلاح.\",\n      \"reason\": \"العيب ترتيب الشروط: n%3 يُفحص قبل n%15. اختبار عند 15 يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert fib(0) == 0 وfib(1) == 1 سيسقط مع الكود الحالي (يعيد 1 و1) ويمرّ بعد الإصلاح.\",\n      \"reason\": \"العيب أن الحالة الأساسية تعيد 1 بدل n. اختبار عند 0 يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert grade_letter(90) == \\\"ممتاز\\\" سيسقط مع الكود الحالي (يعيد \\\"جيد جدًّا\\\") ويمرّ بعد الإصلاح.\",\n      \"reason\": \"العيب استخدام > بدل >= عند الحدود. اختبار عند 90 يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert chunks([1,2,3,4,5],2) == [[1,2],[3,4],[5]] سيسقط مع الكود الحالي (يفقد [5]) ويمرّ بعد الإصلاح.\",\n      \"reason\": \"العيب أن range ينتهي عند len-n+1 فيفقد الذيل. اختبار بقائمة لا تقبل القسمة يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert days_in_month(2,2024) == 29 سيسقط مع الكود الحالي (يعيد 28) ويمرّ بعد الإصلاح.\",\n      \"reason\": \"العيب أن فبراير دائمًا 28 دون اعتبار السنة الكبيسة. اختبار في سنة كبيسة يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert normalize_name(\\\"إبراهيم\\\") == \\\"ابراهيم\\\" سيسقط مع الكود الحالي (يبقى \\\"إبراهيم\\\") ويمرّ بعد الإصلاح.\",\n      \"reason\": \"العيب أن replace تستبدل \\\"أ\\\" فقط لا \\\"إ\\\" و\\\"آ\\\". اختبار بإحدى الهمزات الأخرى يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert second_largest([5,5,3]) == 3 سيسقط مع الكود الحالي (يعيد 5) ويمرّ بعد الإصلاح (set).\",\n      \"reason\": \"العيب عدم إزالة التكرار قبل الترتيب. اختبار بتكرار الأكبر يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert average([10, None, 20]) == 15 سيسقط مع الكود الحالي (يعيد 10) ويمرّ بعد الإصلاح (len(vals)).\",\n      \"reason\": \"العيب القسمة على len(grades) بدل len(vals). اختبار بقيم None يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert strong_password(\\\"abcdefgh\\\") is False سيسقط مع الكود الحالي (يعيد True) ويمرّ بعد الإصلاح (and).\",\n      \"reason\": \"العيب استخدام or بدل and. اختبار بطول كافٍ بلا أرقام يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert unique([3,1,2,1]) == [3,1,2] سيسقط مع الكود الحالي (يعيد [1,2,3]) ويمرّ بعد الإصلاح.\",\n      \"reason\": \"العيب استخدام sorted(set) يفقد الترتيب الأصلي. اختبار بترتيب غير عددي يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert is_leap(1900) is False سيسقط مع الكود الحالي (يعيد True) ويمرّ بعد الإصلاح.\",\n      \"reason\": \"العيب نقص قاعدة القرن. اختبار عند 1900 يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert triangle_type(2,2,3) == \\\"متساوي الساقين\\\" سيسقط مع الكود الحالي (يعيد \\\"متساوي الأضلاع\\\") ويمرّ بعد الإصلاح.\",\n      \"reason\": \"العيب أن a==b or b==c يُصنَّف متساوي الأضلاع. اختبار بمتساوي ساقين غير متساوي أضلاع يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert reverse_words(\\\"مرحبا بالعالم\\\") == \\\"بالعالم مرحبا\\\" سيسقط مع الكود الحالي (يعيد معكوس الحروف) ويمرّ بعد الإصلاح.\",\n      \"reason\": \"العيب عكس النص كاملًا بدل الكلمات. اختبار بجملة من كلمتين يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert split_bill(100, 10, 2) == 55.0 سيسقط مع الكود الحالي (يعيد 50.0) ويمرّ بعد الإصلاح.\",\n      \"reason\": \"العيب تجاهل tip_percent. اختبار ببقشيش غير صفري يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"tauth_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اختبار مثل assert round_half_up(2.5) == 3 سيسقط مع الكود الحالي (round(2.5)=2 في Python) ويمرّ بعد الإصلاح (floor(x+0.5)).\",\n      \"reason\": \"العيب أن round() البنكية تقرّب النصف للزوجي. اختبار عند 2.5 يكشفه. المرجع صحيح.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 46207,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_d/kimi_agentic_004.json",
+  "file_sha256": "2abd24ec425aeadf16db4166f408fc6638d0c01b169f1bd88641d343ec910d0e",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "report_0002",
+      "my_answer": "test_palindrome_with_spaces سيسقط لأن is_palindrome يقارن النص كاملًا دون تجاهل الفراغات، فـ\"ان انا\" لا يساوي معكوسه بسبب الفراغ.",
+      "reason": "فحصت الدالة: is_palindrome(\"ان انا\") يعيد False لأن النص لا يساوي معكوسه (الفراغ في موضع مختلف). الاختبار يتوقع True فيسقط. بقية الاختبارات تمر. المرجع يذكر هذا الاختبار الساقط، وهو صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0001",
+      "my_answer": "test_safe_div_by_zero سيسقط لأن safe_div يعيد 0 بدل رمي ValueError عند القسمة على صفر.",
+      "reason": "الدالة safe_div فيها if b==0: return 0، والاختبار يتوقع pytest.raises(ValueError) فيسقط. بقية الاختبارات تمر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0009",
+      "my_answer": "test_avg_two_decimals سيسقط لأن format_avg تُرجع منزلة عشرية واحدة (f\"{...:.1f}\") بينما الاختبار يتوقع \"3.33\".",
+      "reason": "format_avg(10,3) = f\"{3.333...:.1f}\" = \"3.3\"، والاختبار يتوقع \"3.33\" فيسقط. بقية الاختبارات تمر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0011",
+      "my_answer": "test_discount سيسقط لأن discount(100) يعيد 100 (الشرط >100) بينما الاختبار يتوقع 90.0.",
+      "reason": "الدالة تستخدم if amount > 100، فالحد 100 لا يُخصم. الاختبار المعلمي يتضمن (100, 90.0) فيسقط. بقية الاختبارات تمر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0007",
+      "my_answer": "التشغيل سيفشل عند استيراد tests/test_stats.py لأنه يستورد mode من src.stats_utils بينما الدالة غير معرّفة، فلا تُنفَّذ أي اختبارات.",
+      "reason": "test_stats.py يستورد mode غير الموجودة في src.stats_utils، فيحدث ImportError ويفشل جمع الاختبارات. test_helpers.py لا يُشغَّل أيضًا لأن pytest يتوقف عند خطأ الجمع. المرجع يطلب وصف هذا الخلل، وهو صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0018",
+      "my_answer": "test_add_five وtest_mul_five وtest_square_five ستسقط لأن الـfixture تعيد سلسلة \"5\" لا عددًا صحيحًا، فتفشل العمليات الحسابية. العيب في الـfixture لا في الدوال.",
+      "reason": "fixture five تعيد \"5\" (سلسلة). add(\"5\",1) يرمي TypeError، mul(\"5\",2) يرمي TypeError، square(\"5\") يرمي TypeError. test_add_plain يمر. العيب في fixture وليس في الدوال. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0023",
+      "my_answer": "test_discount_boundary سيسقط لأن apply_discount(100) يعيد 100 (الشرط >100) بينما يتوقع 90.0. كما يسقط test_grand_total لأن grand_total يعيد lines لا المجموع، وtest_vat لأن vat(200) يعيد 102.0 لا 30.0.",
+      "reason": "ثلاثة اختبارات تسقط: test_discount_boundary (حد الخصم)، test_grand_total (يعيد القائمة لا المجموع)، test_vat (0.51 بدل 0.15). المرجع يطلب أكثر من ساقط، وهو صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0024",
+      "my_answer": "test_area_unit سيسقط لأن area_circle(1) = π ≈ 3.14159 والاختبار يتوقع 3.0. العيب في الاختبار لا في الدالة.",
+      "reason": "area_circle(1) يعيد π وليس 3.0، فالاختبار يتوقع قيمة خاطئة. test_area_zero وtest_circumference_unit يمران. المرجع ينبّه إلى أن السقوط قد يكون في الاختبار لا الكود، وهو صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0015",
+      "my_answer": "test_double_space سيسقط لأن count_words(\"أ  ب\") = len(\"أ  ب\".split(\" \")) = 3 (فراغان ينتجان عنصرًا فارغًا) بينما يتوقع 2. test_title_case_future مُتخطًّى فلا يُعدّ ساقطًا.",
+      "reason": "count_words تقسم على \" \" حرفيًا، فالنص \"أ  ب\" يعطي ['أ','','ب'] أي 3. الاختبار يتوقع 2 فيسقط. الاختبار المُتخطَّى لا يُحتسب ساقطًا. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0012",
+      "my_answer": "test_total سيسقط لأن total لا تعيد قيمة (لا return)، فtotal([10,5]) يعيد None وNone+5 يرمي TypeError.",
+      "reason": "دالة total تحسب s لكن لا تعيدها، فتعيد None. الاختبار total([10,5])+5 يرمي TypeError. test_count يمر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0008",
+      "my_answer": "الاختبارات الثلاثة ستسقط لأن add_task وremove_task وcount_open كلها تعيد None.",
+      "reason": "add_task([],\"غسل الصحون\") يعيد None لا ['غسل الصحون']، remove_task يعيد None لا ['ب']، count_open يعيد None لا 1. كل الاختبارات تسقط. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0022",
+      "my_answer": "test_area_square سيسقط لأن area_square(5) = 5*2 = 10 لا 25.",
+      "reason": "area_square تستخدم s*2 بدل s*s، فالاختبار يتوقع 25 ويحصل 10 فيسقط. test_area_rect يمر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0021",
+      "my_answer": "test_القسمة_على_صفر سيسقط لأن safe_div يعيد 0 بدل رمي ValueError.",
+      "reason": "safe_div(5,0) يعيد 0، والاختبار يتوقع ValueError فيسقط. test_القسمة_العادية يمر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0017",
+      "my_answer": "test_clamp_high سيسقط لأن clamp(15,0,10) يعيد 0 (الشرط الأول x<lo يعيد hi) بينما يتوقع 10. كما test_clamp_inside سيسقط لأن clamp(5,0,10) يعيد 10 (x<lo خطأ، x>hi خطأ، فيعيد x=5؟ لا، الشرط الأول x<lo: 5<0 خطأ، الثاني x>hi: 5>10 خطأ، فيعيد 5. صحيح. لكن clamp(15,0,10): x<lo خطأ، x>hi: 15>10 صحيح فيعيد lo=0. فيسقط test_clamp_high فقط.",
+      "reason": "clamp معكوسة: عند x>hi تعيد lo (0) بدل hi (10). test_clamp_high يتوقع 10 فيسقط. بقية الاختبارات تمر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0016",
+      "my_answer": "test_scale سيسقط لأن scale([1,2],3) = [4,5] (جمع بدل ضرب) بينما يتوقع [3,6].",
+      "reason": "scale تستخدم x+k بدل x*k، فتعيد [4,5] لا [3,6]. test_old_sum وtest_new_sum يمران. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0014",
+      "my_answer": "test_div_fraction سيسقط لأن divide(7,2) يعيد int(3.5)=3 لا 3.5.",
+      "reason": "divide تحوّل الناتج إلى int، فالاختبار يتوقع 3.5 ويحصل 3. test_div_exact يمر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "report_0006",
+      "my_answer": "test_leap_century سيسقط لأن is_leap(1900) يعيد True (year%4==0) بينما يتوقع False. كما test_days_feb_leap سيسقط لأن days_in_month(2,2024) يعيد 28 لا 29.",
+      "reason": "is_leap تنقص قاعدة القرن (1900 ليست كبيسة)، وdays_in_month لا تراعي فبراير في السنوات الكبيسة. اختباران يسقطان. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0001",
+      "my_answer": "اختبار مثل assert discount(100) == 90.0 سيسقط مع الكود الحالي (يعيد 100) ويمرّ بعد الإصلاح (>=100).",
+      "reason": "العيب أن الشرط >100 بدل >=100. اختبار عند 100 بالضبط يكشفه بالاتجاهين. المرجع يطلب هذا الاختبار، وهو صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0008",
+      "my_answer": "اختبار مثل assert count_words(\"أ  ب\") == 2 سيسقط مع الكود الحالي (يعيد 3) ويمرّ بعد الإصلاح (split() بدون وسيط).",
+      "reason": "العيب أن split(\" \") ينتج عناصر فارغة مع فراغات متكررة. اختبار بفراغين متتاليين يكشفه بالاتجاهين. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0004",
+      "my_answer": "اختبار مثل assert clamp(15,0,10) == 10 سيسقط مع الكود الحالي (يعيد 0) ويمرّ بعد الإصلاح (يعيد hi).",
+      "reason": "العيب أن clamp تعيد hi عند x<lo وlo عند x>hi، أي معكوسة. اختبار عند x>hi يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0005",
+      "my_answer": "اختبار مثل assert classify(15) == \"كلاهما\" سيسقط مع الكود الحالي (يعيد \"ثلاثة\") ويمرّ بعد الإصلاح.",
+      "reason": "العيب ترتيب الشروط: n%3 يُفحص قبل n%15. اختبار عند 15 يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0024",
+      "my_answer": "اختبار مثل assert fib(0) == 0 وfib(1) == 1 سيسقط مع الكود الحالي (يعيد 1 و1) ويمرّ بعد الإصلاح.",
+      "reason": "العيب أن الحالة الأساسية تعيد 1 بدل n. اختبار عند 0 يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0006",
+      "my_answer": "اختبار مثل assert grade_letter(90) == \"ممتاز\" سيسقط مع الكود الحالي (يعيد \"جيد جدًّا\") ويمرّ بعد الإصلاح.",
+      "reason": "العيب استخدام > بدل >= عند الحدود. اختبار عند 90 يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0015",
+      "my_answer": "اختبار مثل assert chunks([1,2,3,4,5],2) == [[1,2],[3,4],[5]] سيسقط مع الكود الحالي (يفقد [5]) ويمرّ بعد الإصلاح.",
+      "reason": "العيب أن range ينتهي عند len-n+1 فيفقد الذيل. اختبار بقائمة لا تقبل القسمة يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0020",
+      "my_answer": "اختبار مثل assert days_in_month(2,2024) == 29 سيسقط مع الكود الحالي (يعيد 28) ويمرّ بعد الإصلاح.",
+      "reason": "العيب أن فبراير دائمًا 28 دون اعتبار السنة الكبيسة. اختبار في سنة كبيسة يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0016",
+      "my_answer": "اختبار مثل assert normalize_name(\"إبراهيم\") == \"ابراهيم\" سيسقط مع الكود الحالي (يبقى \"إبراهيم\") ويمرّ بعد الإصلاح.",
+      "reason": "العيب أن replace تستبدل \"أ\" فقط لا \"إ\" و\"آ\". اختبار بإحدى الهمزات الأخرى يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0022",
+      "my_answer": "اختبار مثل assert second_largest([5,5,3]) == 3 سيسقط مع الكود الحالي (يعيد 5) ويمرّ بعد الإصلاح (set).",
+      "reason": "العيب عدم إزالة التكرار قبل الترتيب. اختبار بتكرار الأكبر يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0002",
+      "my_answer": "اختبار مثل assert average([10, None, 20]) == 15 سيسقط مع الكود الحالي (يعيد 10) ويمرّ بعد الإصلاح (len(vals)).",
+      "reason": "العيب القسمة على len(grades) بدل len(vals). اختبار بقيم None يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0013",
+      "my_answer": "اختبار مثل assert strong_password(\"abcdefgh\") is False سيسقط مع الكود الحالي (يعيد True) ويمرّ بعد الإصلاح (and).",
+      "reason": "العيب استخدام or بدل and. اختبار بطول كافٍ بلا أرقام يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0014",
+      "my_answer": "اختبار مثل assert unique([3,1,2,1]) == [3,1,2] سيسقط مع الكود الحالي (يعيد [1,2,3]) ويمرّ بعد الإصلاح.",
+      "reason": "العيب استخدام sorted(set) يفقد الترتيب الأصلي. اختبار بترتيب غير عددي يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0012",
+      "my_answer": "اختبار مثل assert is_leap(1900) is False سيسقط مع الكود الحالي (يعيد True) ويمرّ بعد الإصلاح.",
+      "reason": "العيب نقص قاعدة القرن. اختبار عند 1900 يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0018",
+      "my_answer": "اختبار مثل assert triangle_type(2,2,3) == \"متساوي الساقين\" سيسقط مع الكود الحالي (يعيد \"متساوي الأضلاع\") ويمرّ بعد الإصلاح.",
+      "reason": "العيب أن a==b or b==c يُصنَّف متساوي الأضلاع. اختبار بمتساوي ساقين غير متساوي أضلاع يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0010",
+      "my_answer": "اختبار مثل assert reverse_words(\"مرحبا بالعالم\") == \"بالعالم مرحبا\" سيسقط مع الكود الحالي (يعيد معكوس الحروف) ويمرّ بعد الإصلاح.",
+      "reason": "العيب عكس النص كاملًا بدل الكلمات. اختبار بجملة من كلمتين يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0025",
+      "my_answer": "اختبار مثل assert split_bill(100, 10, 2) == 55.0 سيسقط مع الكود الحالي (يعيد 50.0) ويمرّ بعد الإصلاح.",
+      "reason": "العيب تجاهل tip_percent. اختبار ببقشيش غير صفري يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "tauth_0007",
+      "my_answer": "اختبار مثل assert round_half_up(2.5) == 3 سيسقط مع الكود الحالي (round(2.5)=2 في Python) ويمرّ بعد الإصلاح (floor(x+0.5)).",
+      "reason": "العيب أن round() البنكية تقرّب النصف للزوجي. اختبار عند 2.5 يكشفه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T20:41:37Z"
+}

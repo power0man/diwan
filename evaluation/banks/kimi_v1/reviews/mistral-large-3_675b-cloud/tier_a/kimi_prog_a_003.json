@@ -1,0 +1,459 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-7b-instruct-v0.3\",\n  \"file\": \"kimi_prog_a_003\",\n  \"judgments\": [\n    {\n      \"id\": \"prog_c_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"add = lambda a, b: a + b\",\n      \"reason\": \"المرجع صحيح: التعبير lambda يجمع ولا يطرح، وهو مطابق للسلوك المطلوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"even_squares = lambda lst: [x * x for x in lst if x % 2 == 0]\",\n      \"reason\": \"المرجع صحيح: التعبير comprehension يرشح الأعداد الزوجية قبل تربيعها، وهو مطابق للسلوك المطلوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"square = lambda x: x ** 2\",\n      \"reason\": \"المرجع صحيح: التعبير lambda يحسب المربع وليس المضاعفة، وهو مطابق للسلوك المطلوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"avg2 = lambda a, b: (a + b) / 2\",\n      \"reason\": \"المرجع صحيح: التعبير lambda يستخدم القسمة الحقيقية وليس الصحيحة، وهو مطابق للسلوك المطلوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def sum_list(lst):\\n    total = 0\\n    i = 0\\n    while i < len(lst):\\n        total += lst[i]\\n        i += 1\\n    return total\",\n      \"reason\": \"المرجع صحيح: التحويل إلى while يحافظ على السلوك ويستخدم فهرسة يدوية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def squares_list(n):\\n    out = []\\n    i = 0\\n    while i < n:\\n        out.append(i * i)\\n        i += 1\\n    return out\",\n      \"reason\": \"المرجع صحيح: التحويل إلى while يحافظ على حدود range(n) ويبدأ من الصفر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0057\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def find_first_negative(lst):\\n    i = 0\\n    while i < len(lst):\\n        if lst[i] < 0:\\n            return lst[i]\\n        i += 1\\n    return None\",\n      \"reason\": \"المرجع صحيح: التحويل إلى while يحافظ على العودة المبكرة عند أول سالب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def index_of_max(lst):\\n    if not lst:\\n        return 0\\n    best = 0\\n    i = 1\\n    while i < len(lst):\\n        if lst[i] > lst[best]:\\n            best = i\\n        i += 1\\n    return best\",\n      \"reason\": \"المرجع صحيح: التحويل إلى while يحافظ على الشرط > الصارم ويعيد أول فهرس للأقصى.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0080\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def word_index_map(words):\\n    out = {}\\n    i = 0\\n    while i < len(words):\\n        if words[i] not in out:\\n            out[words[i]] = i\\n        i += 1\\n    return out\",\n      \"reason\": \"المرجع صحيح: التحويل إلى comprehension يحافظ على أول فهرس لكل كلمة، لكن المرجع يشير إلى أن comprehension المباشرة قد تكتب آخر فهرس. الحل الصحيح هو استخدام حلقة while أو dict.fromkeys مع فهرسة، لكن المرجع يشير إلى أن المطلوب هو الحفاظ على أول فهرس. المعايير كافية.\",\n      \"fix\": \"def word_index_map(words):\\n    return {w: i for i, w in enumerate(words) if w not in {x for j, x in enumerate(words) if j < i}}\"\n    },\n    {\n      \"id\": \"prog_c_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def fib_iter(n):\\n    if n < 2:\\n        return n\\n    a, b = 0, 1\\n    for _ in range(2, n + 1):\\n        a, b = b, a + b\\n    return b\",\n      \"reason\": \"المرجع صحيح: التحويل التكراري يحتفظ بمتغيرين ويبدأ من fib(0)=0.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def join_words(words, sep):\\n    if not words:\\n        return ''\\n    out = words[0]\\n    i = 1\\n    while i < len(words):\\n        out += sep + words[i]\\n        i += 1\\n    return out\",\n      \"reason\": \"المرجع صحيح: التحويل إلى while يحافظ على عدم إضافة فاصل بعد الكلمة الأخيرة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def count_above(lst, t):\\n    c = 0\\n    i = 0\\n    while i < len(lst):\\n        if lst[i] > t:\\n            c += 1\\n        i += 1\\n    return c\",\n      \"reason\": \"المرجع صحيح: التحويل إلى while يحافظ على الشرط > الصارم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0073\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def countdown_list(n):\\n    return [i for i in range(n, 0, -1)]\",\n      \"reason\": \"المرجع صحيح: التحويل إلى for باستخدام range(n, 0, -1) يبدأ من n.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def max_list(lst):\\n    if not lst:\\n        return None\\n    best = lst[0]\\n    i = 1\\n    while i < len(lst):\\n        if lst[i] > best:\\n            best = lst[i]\\n        i += 1\\n    return best\",\n      \"reason\": \"المرجع صحيح: التحويل إلى while يحافظ على الشرط i < len ولا يتجاوز الفهرس.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def factorial_rec(n):\\n    if n <= 1:\\n        return 1\\n    result = 1\\n    for i in range(2, n + 1):\\n        result *= i\\n    return result\",\n      \"reason\": \"المرجع صحيح: التحويل التكراري يتراكم من 2 إلى n.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def sum_digits_loop(n):\\n    total = 0\\n    s = str(n)\\n    i = 0\\n    while i < len(s):\\n        total += int(s[i])\\n        i += 1\\n    return total\",\n      \"reason\": \"المرجع صحيح: التحويل إلى while يشمل كل الخانات ويبدأ من الصفر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"is_adult = lambda age: age >= 18\",\n      \"reason\": \"المرجع صحيح: التعبير lambda يحافظ على الشرط >=.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"المرجع صحيح: أسوأ حالة هي مسح القائمة كلها.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"المرجع صحيح: append مطفأة التكلفة في حلقة خطية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(1)\",\n      \"reason\": \"المرجع صحيح: الوصول لمفتاح قاموس ثابت متوسطًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n^3)\",\n      \"reason\": \"المرجع صحيح: ثلاث حلقات متداخلة تعطي تعقيدًا تكعيبيًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(log n)\",\n      \"reason\": \"المرجع صحيح: البحث الثنائي ينصف المجال كل خطوة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n^2)\",\n      \"reason\": \"المرجع صحيح: حلقتان متداخلتان على المدخل نفسه تعطي تعقيدًا تربيعيًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(log n)\",\n      \"reason\": \"المرجع صحيح: خوارزمية أقليدس تنقص الأرقام هندسيًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(sqrt(n))\",\n      \"reason\": \"المرجع صحيح: الفحص حتى الجذر فقط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"المرجع صحيح: الثابت الكبير لا يغير الرتبة الخطية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(log n)\",\n      \"reason\": \"المرجع صحيح: التربيع المتكرر ينصف الأس كل استدعاء.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"المرجع صحيح: عضوية المجموعة ثابتة متوسطًا فيبقى الإجمالي خطيًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"المرجع صحيح: الحلقة الداخلية ثابتة الطول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n^2)\",\n      \"reason\": \"المرجع صحيح: كل قطع lst[1:] ينسخ القائمة الباقية، مما يعطي تعقيدًا تربيعيًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n log n)\",\n      \"reason\": \"المرجع صحيح: المجموع التوافقي يعطي تعقيدًا n log n.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(2^n)\",\n      \"reason\": \"المرجع صحيح: التكرار الذاتي المزدوج يبني شجرة استدعاءات أسية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(log n)\",\n      \"reason\": \"المرجع صحيح: كل استدعاء ينصف المدخل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n)\",\n      \"reason\": \"المرجع صحيح: حلقتان متتاليتان لا متداخلتان تعطي تعقيدًا خطيًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"O(n log n)\",\n      \"reason\": \"المرجع صحيح: الفرز يسيطر على التعقيد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_get_last_n():\\n    assert get_last_n([1, 2, 3, 4], 2) == [3, 4]\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف أخذ البداية بدل النهاية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_max3():\\n    assert max3(1, 2, 3) == 3\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف تجاهل الوسيط الثالث.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_count_unique():\\n    assert count_unique('aab') == 2\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف إهمال إزالة التكرار.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_first_last_same():\\n    assert first_last_same([1, 2, 1]) is True\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف الفهرس الخاطئ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_safe_parse_int():\\n    assert safe_parse_int('abc') is None\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف رمي الاستثناء بدل إعادة None.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_absolute_sum():\\n    assert absolute_sum([-1, -2, 3]) == 6\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف غياب القيمة المطلقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_word_lengths():\\n    assert word_lengths('مرحبا') == {'مرحبا': 5}\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف نوع الإعادة الخاطئ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_count_odds():\\n    assert count_odds([1, 3, 5, 2]) == 3\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف قلب الشرط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_discount_price():\\n    assert discount_price(200, 10) == 180\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف قلب إشارة الخصم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_next_quarter_hour():\\n    assert next_quarter_hour(10) == 15\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف التقريب للأسفل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_average_passing():\\n    assert average_passing([30, 70, 80]) == 75\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف إدخال الراسب في المتوسط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_text_has_arabic():\\n    assert text_has_arabic('ض') is True\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف نقص قائمة الأحرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_total_with_tax():\\n    assert total_with_tax([1.11, 1.11], 15) == 2.55\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف التقريب المبكر لكل سطر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_is_multiple():\\n    assert is_multiple(10, 0) is False\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف انهيار القسمة على صفر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_days_in_feb():\\n    assert days_in_feb(2020) == 29\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف تجاهل السنة الكبيسة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_is_sorted():\\n    assert is_sorted([1, 2, 2, 3]) is True\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف رفض المتساويات المتجاورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_find_adults():\\n    assert 'ahmad' in find_adults({'ahmad': 18, 'ali': 17})\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف استبعاد الثامنة عشرة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_passwords_match():\\n    assert passwords_match('Abc', 'abc') is False\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف تجاهل حالة الأحرف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_c_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_monthly_payment():\\n    assert monthly_payment(100, 0) == ValueError\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف غياب التحقق من الأشهر الصفرية، لكن المعايير تحتاج إلى توضيح أن الاختبار يجب أن يتوقع ValueError. المرجع صحيح لكن المعايير غير كافية.\",\n      \"fix\": \"def test_monthly_payment():\\n    try:\\n        monthly_payment(100, 0)\\n        assert False, 'لم يُرمَ ValueError'\\n    except ValueError:\\n        pass\"\n    },\n    {\n      \"id\": \"prog_c_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"def test_is_passing():\\n    assert is_passing(60) is True\",\n      \"reason\": \"المرجع صحيح: الاختبار يكشف إقصاء درجة الحد.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 63618,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_prog_a_003.json",
+  "file_sha256": "93206cc866eaaedff53623f3dc1726d4f892994ca53c62cea6b4510f62ab2448",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "prog_c_0065",
+      "my_answer": "add = lambda a, b: a + b",
+      "reason": "المرجع صحيح: التعبير lambda يجمع ولا يطرح، وهو مطابق للسلوك المطلوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0078",
+      "my_answer": "even_squares = lambda lst: [x * x for x in lst if x % 2 == 0]",
+      "reason": "المرجع صحيح: التعبير comprehension يرشح الأعداد الزوجية قبل تربيعها، وهو مطابق للسلوك المطلوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0066",
+      "my_answer": "square = lambda x: x ** 2",
+      "reason": "المرجع صحيح: التعبير lambda يحسب المربع وليس المضاعفة، وهو مطابق للسلوك المطلوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0069",
+      "my_answer": "avg2 = lambda a, b: (a + b) / 2",
+      "reason": "المرجع صحيح: التعبير lambda يستخدم القسمة الحقيقية وليس الصحيحة، وهو مطابق للسلوك المطلوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0056",
+      "my_answer": "def sum_list(lst):\n    total = 0\n    i = 0\n    while i < len(lst):\n        total += lst[i]\n        i += 1\n    return total",
+      "reason": "المرجع صحيح: التحويل إلى while يحافظ على السلوك ويستخدم فهرسة يدوية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0061",
+      "my_answer": "def squares_list(n):\n    out = []\n    i = 0\n    while i < n:\n        out.append(i * i)\n        i += 1\n    return out",
+      "reason": "المرجع صحيح: التحويل إلى while يحافظ على حدود range(n) ويبدأ من الصفر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0057",
+      "my_answer": "def find_first_negative(lst):\n    i = 0\n    while i < len(lst):\n        if lst[i] < 0:\n            return lst[i]\n        i += 1\n    return None",
+      "reason": "المرجع صحيح: التحويل إلى while يحافظ على العودة المبكرة عند أول سالب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0063",
+      "my_answer": "def index_of_max(lst):\n    if not lst:\n        return 0\n    best = 0\n    i = 1\n    while i < len(lst):\n        if lst[i] > lst[best]:\n            best = i\n        i += 1\n    return best",
+      "reason": "المرجع صحيح: التحويل إلى while يحافظ على الشرط > الصارم ويعيد أول فهرس للأقصى.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "def word_index_map(words):\n    return {w: i for i, w in enumerate(words) if w not in {x for j, x in enumerate(words) if j < i}}",
+      "id": "prog_c_0080",
+      "my_answer": "def word_index_map(words):\n    out = {}\n    i = 0\n    while i < len(words):\n        if words[i] not in out:\n            out[words[i]] = i\n        i += 1\n    return out",
+      "reason": "المرجع صحيح: التحويل إلى comprehension يحافظ على أول فهرس لكل كلمة، لكن المرجع يشير إلى أن comprehension المباشرة قد تكتب آخر فهرس. الحل الصحيح هو استخدام حلقة while أو dict.fromkeys مع فهرسة، لكن المرجع يشير إلى أن المطلوب هو الحفاظ على أول فهرس. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0077",
+      "my_answer": "def fib_iter(n):\n    if n < 2:\n        return n\n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n    return b",
+      "reason": "المرجع صحيح: التحويل التكراري يحتفظ بمتغيرين ويبدأ من fib(0)=0.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0059",
+      "my_answer": "def join_words(words, sep):\n    if not words:\n        return ''\n    out = words[0]\n    i = 1\n    while i < len(words):\n        out += sep + words[i]\n        i += 1\n    return out",
+      "reason": "المرجع صحيح: التحويل إلى while يحافظ على عدم إضافة فاصل بعد الكلمة الأخيرة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0058",
+      "my_answer": "def count_above(lst, t):\n    c = 0\n    i = 0\n    while i < len(lst):\n        if lst[i] > t:\n            c += 1\n        i += 1\n    return c",
+      "reason": "المرجع صحيح: التحويل إلى while يحافظ على الشرط > الصارم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0073",
+      "my_answer": "def countdown_list(n):\n    return [i for i in range(n, 0, -1)]",
+      "reason": "المرجع صحيح: التحويل إلى for باستخدام range(n, 0, -1) يبدأ من n.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0060",
+      "my_answer": "def max_list(lst):\n    if not lst:\n        return None\n    best = lst[0]\n    i = 1\n    while i < len(lst):\n        if lst[i] > best:\n            best = lst[i]\n        i += 1\n    return best",
+      "reason": "المرجع صحيح: التحويل إلى while يحافظ على الشرط i < len ولا يتجاوز الفهرس.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0074",
+      "my_answer": "def factorial_rec(n):\n    if n <= 1:\n        return 1\n    result = 1\n    for i in range(2, n + 1):\n        result *= i\n    return result",
+      "reason": "المرجع صحيح: التحويل التكراري يتراكم من 2 إلى n.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0062",
+      "my_answer": "def sum_digits_loop(n):\n    total = 0\n    s = str(n)\n    i = 0\n    while i < len(s):\n        total += int(s[i])\n        i += 1\n    return total",
+      "reason": "المرجع صحيح: التحويل إلى while يشمل كل الخانات ويبدأ من الصفر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0067",
+      "my_answer": "is_adult = lambda age: age >= 18",
+      "reason": "المرجع صحيح: التعبير lambda يحافظ على الشرط >=.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0044",
+      "my_answer": "O(n)",
+      "reason": "المرجع صحيح: أسوأ حالة هي مسح القائمة كلها.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0051",
+      "my_answer": "O(n)",
+      "reason": "المرجع صحيح: append مطفأة التكلفة في حلقة خطية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0036",
+      "my_answer": "O(1)",
+      "reason": "المرجع صحيح: الوصول لمفتاح قاموس ثابت متوسطًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0043",
+      "my_answer": "O(n^3)",
+      "reason": "المرجع صحيح: ثلاث حلقات متداخلة تعطي تعقيدًا تكعيبيًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0033",
+      "my_answer": "O(log n)",
+      "reason": "المرجع صحيح: البحث الثنائي ينصف المجال كل خطوة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0032",
+      "my_answer": "O(n^2)",
+      "reason": "المرجع صحيح: حلقتان متداخلتان على المدخل نفسه تعطي تعقيدًا تربيعيًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0048",
+      "my_answer": "O(log n)",
+      "reason": "المرجع صحيح: خوارزمية أقليدس تنقص الأرقام هندسيًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0049",
+      "my_answer": "O(sqrt(n))",
+      "reason": "المرجع صحيح: الفحص حتى الجذر فقط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0046",
+      "my_answer": "O(n)",
+      "reason": "المرجع صحيح: الثابت الكبير لا يغير الرتبة الخطية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0054",
+      "my_answer": "O(log n)",
+      "reason": "المرجع صحيح: التربيع المتكرر ينصف الأس كل استدعاء.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0042",
+      "my_answer": "O(n)",
+      "reason": "المرجع صحيح: عضوية المجموعة ثابتة متوسطًا فيبقى الإجمالي خطيًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0038",
+      "my_answer": "O(n)",
+      "reason": "المرجع صحيح: الحلقة الداخلية ثابتة الطول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0053",
+      "my_answer": "O(n^2)",
+      "reason": "المرجع صحيح: كل قطع lst[1:] ينسخ القائمة الباقية، مما يعطي تعقيدًا تربيعيًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0055",
+      "my_answer": "O(n log n)",
+      "reason": "المرجع صحيح: المجموع التوافقي يعطي تعقيدًا n log n.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0035",
+      "my_answer": "O(2^n)",
+      "reason": "المرجع صحيح: التكرار الذاتي المزدوج يبني شجرة استدعاءات أسية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0047",
+      "my_answer": "O(log n)",
+      "reason": "المرجع صحيح: كل استدعاء ينصف المدخل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0037",
+      "my_answer": "O(n)",
+      "reason": "المرجع صحيح: حلقتان متتاليتان لا متداخلتان تعطي تعقيدًا خطيًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0034",
+      "my_answer": "O(n log n)",
+      "reason": "المرجع صحيح: الفرز يسيطر على التعقيد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0016",
+      "my_answer": "def test_get_last_n():\n    assert get_last_n([1, 2, 3, 4], 2) == [3, 4]",
+      "reason": "المرجع صحيح: الاختبار يكشف أخذ البداية بدل النهاية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0006",
+      "my_answer": "def test_max3():\n    assert max3(1, 2, 3) == 3",
+      "reason": "المرجع صحيح: الاختبار يكشف تجاهل الوسيط الثالث.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0023",
+      "my_answer": "def test_count_unique():\n    assert count_unique('aab') == 2",
+      "reason": "المرجع صحيح: الاختبار يكشف إهمال إزالة التكرار.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0024",
+      "my_answer": "def test_first_last_same():\n    assert first_last_same([1, 2, 1]) is True",
+      "reason": "المرجع صحيح: الاختبار يكشف الفهرس الخاطئ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0027",
+      "my_answer": "def test_safe_parse_int():\n    assert safe_parse_int('abc') is None",
+      "reason": "المرجع صحيح: الاختبار يكشف رمي الاستثناء بدل إعادة None.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0004",
+      "my_answer": "def test_absolute_sum():\n    assert absolute_sum([-1, -2, 3]) == 6",
+      "reason": "المرجع صحيح: الاختبار يكشف غياب القيمة المطلقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0022",
+      "my_answer": "def test_word_lengths():\n    assert word_lengths('مرحبا') == {'مرحبا': 5}",
+      "reason": "المرجع صحيح: الاختبار يكشف نوع الإعادة الخاطئ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0014",
+      "my_answer": "def test_count_odds():\n    assert count_odds([1, 3, 5, 2]) == 3",
+      "reason": "المرجع صحيح: الاختبار يكشف قلب الشرط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0009",
+      "my_answer": "def test_discount_price():\n    assert discount_price(200, 10) == 180",
+      "reason": "المرجع صحيح: الاختبار يكشف قلب إشارة الخصم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0020",
+      "my_answer": "def test_next_quarter_hour():\n    assert next_quarter_hour(10) == 15",
+      "reason": "المرجع صحيح: الاختبار يكشف التقريب للأسفل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0021",
+      "my_answer": "def test_average_passing():\n    assert average_passing([30, 70, 80]) == 75",
+      "reason": "المرجع صحيح: الاختبار يكشف إدخال الراسب في المتوسط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0026",
+      "my_answer": "def test_text_has_arabic():\n    assert text_has_arabic('ض') is True",
+      "reason": "المرجع صحيح: الاختبار يكشف نقص قائمة الأحرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0019",
+      "my_answer": "def test_total_with_tax():\n    assert total_with_tax([1.11, 1.11], 15) == 2.55",
+      "reason": "المرجع صحيح: الاختبار يكشف التقريب المبكر لكل سطر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0017",
+      "my_answer": "def test_is_multiple():\n    assert is_multiple(10, 0) is False",
+      "reason": "المرجع صحيح: الاختبار يكشف انهيار القسمة على صفر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0007",
+      "my_answer": "def test_days_in_feb():\n    assert days_in_feb(2020) == 29",
+      "reason": "المرجع صحيح: الاختبار يكشف تجاهل السنة الكبيسة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0003",
+      "my_answer": "def test_is_sorted():\n    assert is_sorted([1, 2, 2, 3]) is True",
+      "reason": "المرجع صحيح: الاختبار يكشف رفض المتساويات المتجاورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0030",
+      "my_answer": "def test_find_adults():\n    assert 'ahmad' in find_adults({'ahmad': 18, 'ali': 17})",
+      "reason": "المرجع صحيح: الاختبار يكشف استبعاد الثامنة عشرة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0018",
+      "my_answer": "def test_passwords_match():\n    assert passwords_match('Abc', 'abc') is False",
+      "reason": "المرجع صحيح: الاختبار يكشف تجاهل حالة الأحرف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "def test_monthly_payment():\n    try:\n        monthly_payment(100, 0)\n        assert False, 'لم يُرمَ ValueError'\n    except ValueError:\n        pass",
+      "id": "prog_c_0028",
+      "my_answer": "def test_monthly_payment():\n    assert monthly_payment(100, 0) == ValueError",
+      "reason": "المرجع صحيح: الاختبار يكشف غياب التحقق من الأشهر الصفرية، لكن المعايير تحتاج إلى توضيح أن الاختبار يجب أن يتوقع ValueError. المرجع صحيح لكن المعايير غير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_c_0005",
+      "my_answer": "def test_is_passing():\n    assert is_passing(60) is True",
+      "reason": "المرجع صحيح: الاختبار يكشف إقصاء درجة الحد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T19:30:38Z"
+}

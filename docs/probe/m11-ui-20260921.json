@@ -1,0 +1,70 @@
+{
+  "date": "2026-09-21",
+  "summary": {
+    "schema_version": 1,
+    "scope": "live_development_local_http_mechanism",
+    "checks": {
+      "loopback_only": true,
+      "arabic_page_and_security_headers": true,
+      "boundary_refuses_without_effect": true,
+      "upload_bound_to_bytes": true,
+      "project_files_and_preferences_isolated": true,
+      "one_fresh_unverified_answer": true,
+      "no_model_tools_or_remote_policy": true,
+      "answer_does_not_change_preferences": true,
+      "session_history_isolated": true,
+      "visible_frozen_input_witness": true,
+      "witness_survives_source_and_preference_changes": true,
+      "restart_replays_same_answer": true,
+      "replay_zero_provider_or_network_calls": true,
+      "restart_replay_preserves_state_bytes": true,
+      "restarted_witness_is_original": true,
+      "proposal_review_has_no_target_effect": true,
+      "wrong_approval_rejected": true,
+      "explicit_apply_matches_reviewed_bytes": true,
+      "repeated_apply_no_new_effect": true,
+      "overwrite_refused_honestly": true,
+      "no_additional_generation_for_file_actions": true,
+      "flow_complete": true
+    },
+    "passed": 22,
+    "total": 22,
+    "counter_scope": "one_selected_file_turn",
+    "quality_pending": true,
+    "human_review": "pending",
+    "daily_task_efficiency": "not_measured",
+    "browser_rendering": "not_tested",
+    "independent_bank": "not_provided",
+    "snapshot_scope": "state_bytes; explicit_apply_bytes_and_mtime",
+    "write_approval": "explicit_synthetic_test_call",
+    "release_ready": false,
+    "initial_provider_calls": 1,
+    "replay_provider_calls": 0,
+    "initial_provider_instances": 1,
+    "replay_provider_instances": 0,
+    "initial_chat_calls": 1,
+    "replay_chat_calls": 0,
+    "initial_metadata_calls": 2,
+    "replay_metadata_calls": 0,
+    "run_id": "m11-first-20260921"
+  },
+  "fixture": {
+    "file_text": "ملاحظة اختبار: موعد مراجعة ديوان الثلاثاء الساعة العاشرة.",
+    "user_request": "لخص الملاحظة المرفقة في جملة عربية واحدة."
+  },
+  "answer": {
+    "content": "الملاحظة المرفقة تشير إلى أن موعد مراجعة ديوان الثلاثاء محدد الساعة العاشرة.",
+    "status": "complete",
+    "usage": {
+      "input_tokens": 532,
+      "output_tokens": 28
+    },
+    "verification": "unverified"
+  },
+  "limits": [
+    "One public development fixture, not an independent acceptance bank.",
+    "Write approval came from the test driver, not the owner.",
+    "Browser rendering and human daily-task efficiency were not tested.",
+    "Replay preserves state bytes; ledger mtime may be touched on load."
+  ]
+}

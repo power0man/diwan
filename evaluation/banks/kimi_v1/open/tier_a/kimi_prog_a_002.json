@@ -1,0 +1,1257 @@
+{
+  "schema_version": 1,
+  "suite_id": "kimi_prog_a_002",
+  "split": "development",
+  "description": "قياس إصلاح عيب خفيّ واحد في كود (fix_bug) والتنبؤ الدقيق بمخرجات شيفرة (explain_code).",
+  "cases": [
+    {
+      "case_id": "prog_b_0054",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة ذهنيًّا: ما الناتج المطبوع بالضبط؟ أجب بالمطبوع فقط، وإن كان أكثر من سطر فاكتبها بترتيبها.\n\n```python\nnums = [1, 2, 3, 4]\nprint(nums[1:3])\n```"
+        }
+      ],
+      "reference": "القطع [2, 3] ويطبع بصيغة قائمة.",
+      "rubric": [
+        "يتقن شرائح القوائم",
+        "الناتج [2, 3]"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[2, 3]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0068",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي تطبعه هذه الشيفرة بالضبط؟ أجب بالناتج فقط كما تخرجه بايثون تمامًا، بلا شرح وبلا زخرفة وبلا أسور كود.\n\n```python\na = [1, 2, 3]\nprint(a + a[:1])\n```"
+        }
+      ],
+      "reference": "a[:1] هو [1] فيلصق بالقائمة: [1, 2, 3, 1].",
+      "rubric": [
+        "يتقن لصق القوائم والشرائح",
+        "الناتج [1, 2, 3, 1]"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[1, 2, 3, 1]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0045",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة ذهنيًّا: ما الناتج المطبوع بالضبط؟ أجب بالمطبوع فقط، وإن كان أكثر من سطر فاكتبها بترتيبها.\n\n```python\nd = {\"a\": 1}\nd[\"a\"] += 1\nd.setdefault(\"b\", 5)\nprint(d[\"a\"] + d[\"b\"])\n```"
+        }
+      ],
+      "reference": "a تصبح 2 وb تُضاف بـ 5 فيطبع 7.",
+      "rubric": [
+        "يتتبع التعديل وsetdefault",
+        "الناتج 7"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "7"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0077",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي تطبعه هذه الشيفرة بالضبط؟ أجب بالناتج فقط كما تخرجه بايثون تمامًا، بلا شرح وبلا زخرفة وبلا أسور كود.\n\n```python\nprint(max(\"abc\", \"abd\"))\n```"
+        }
+      ],
+      "reference": "المقارنة معجمية محرفًا محرفًا: abd أكبر.",
+      "rubric": [
+        "يعرف المقارنة المعجمية",
+        "الناتج abd"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "abd"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0071",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي تطبعه هذه الشيفرة بالضبط؟ أجب بالناتج فقط كما تخرجه بايثون تمامًا، بلا شرح وبلا زخرفة وبلا أسور كود.\n\n```python\ncnt = 0\nfor ch in \"banana\":\n    if ch == \"a\":\n        cnt += 1\nprint(cnt)\n```"
+        }
+      ],
+      "reference": "حرف a في banana ثلاث مرات.",
+      "rubric": [
+        "يتتبع العدّ الشرطي",
+        "الناتج 3"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "3"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0050",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي تطبعه هذه الشيفرة بالضبط؟ أجب بالناتج فقط كما تخرجه بايثون تمامًا، بلا شرح وبلا زخرفة وبلا أسور كود.\n\n```python\nx = 10\nx += x % 3\nprint(x)\n```"
+        }
+      ],
+      "reference": "باقي قسمة 10 على 3 هو 1 فيصبح x=11.",
+      "rubric": [
+        "يحسب الباقي",
+        "الناتج 11"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "11"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0065",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي تطبعه هذه الشيفرة بالضبط؟ أجب بالناتج فقط كما تخرجه بايثون تمامًا، بلا شرح وبلا زخرفة وبلا أسور كود.\n\n```python\nprint(list(zip([1, 2, 3], [9, 8])))\n```"
+        }
+      ],
+      "reference": "zip يقف عند الأقصر: [(1, 9), (2, 8)].",
+      "rubric": [
+        "يعرف أن zip يقص للأقصر",
+        "الناتج [(1, 9), (2, 8)]"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[(1, 9), (2, 8)]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0053",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي تطبعه هذه الشيفرة بالضبط؟ أجب بالناتج فقط كما تخرجه بايثون تمامًا، بلا شرح وبلا زخرفة وبلا أسور كود.\n\n```python\nw = \"كتاب\"\nprint(w[1:3])\n```"
+        }
+      ],
+      "reference": "القطع من الفهرس 1 إلى 2 يطبع «تا».",
+      "rubric": [
+        "يتقن شرائح النص العربي",
+        "الناتج تا"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "تا"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0069",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة ذهنيًّا: ما الناتج المطبوع بالضبط؟ أجب بالمطبوع فقط، وإن كان أكثر من سطر فاكتبها بترتيبها.\n\n```python\ndef g(x):\n    return x * 2\n\nprint(g(\"اب\"))\n```"
+        }
+      ],
+      "reference": "ضرب النص في 2 يكرره: «اباب».",
+      "rubric": [
+        "يعمم الضرب على النصوص",
+        "الناتج اباب"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "اباب"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0048",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة ذهنيًّا: ما الناتج المطبوع بالضبط؟ أجب بالمطبوع فقط، وإن كان أكثر من سطر فاكتبها بترتيبها.\n\n```python\ntotal = 0\nfor i in range(1, 5):\n    total += i\nprint(total)\n```"
+        }
+      ],
+      "reference": "المجموع 1+2+3+4 = 10.",
+      "rubric": [
+        "يتتبع التراكم",
+        "الناتج 10"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "10"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0046",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لو شغّلت هذه الشيفرة فماذا سترى على الشاشة حرفيًّا؟ الجواب هو المطبوع فقط، لا تفسير.\n\n```python\nlst = [3, 1, 2]\nlst.sort()\nprint(lst.pop())\n```"
+        }
+      ],
+      "reference": "بعد الترتيب [1,2,3] وpop يخرج الأخير 3.",
+      "rubric": [
+        "يرتب ثم يخرج الأخير",
+        "الناتج 3"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "3"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0078",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة ذهنيًّا: ما الناتج المطبوع بالضبط؟ أجب بالمطبوع فقط، وإن كان أكثر من سطر فاكتبها بترتيبها.\n\n```python\nx = [1, 2, 3]\ndel x[1]\nprint(x)\n```"
+        }
+      ],
+      "reference": "حذف الفهرس 1 يزيل 2: [1, 3].",
+      "rubric": [
+        "يعرف del بالفهرس",
+        "الناتج [1, 3]"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[1, 3]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0058",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لو شغّلت هذه الشيفرة فماذا سترى على الشاشة حرفيًّا؟ الجواب هو المطبوع فقط، لا تفسير.\n\n```python\ns = \"hello\"\nprint(s.find(\"z\"))\n```"
+        }
+      ],
+      "reference": "find تعيد -1 عند عدم الوجود ولا ترمي خطأ.",
+      "rubric": [
+        "يعرف دلالة -1 من find",
+        "الناتج -1"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "-1"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0074",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي تطبعه هذه الشيفرة بالضبط؟ أجب بالناتج فقط كما تخرجه بايثون تمامًا، بلا شرح وبلا زخرفة وبلا أسور كود.\n\n```python\nd = {\"x\": 1, \"y\": 2}\nprint(list(d.values()))\n```"
+        }
+      ],
+      "reference": "قيم القاموس بترتيب الإدراج: [1, 2].",
+      "rubric": [
+        "يعرف values وترتيب الإدراج",
+        "الناتج [1, 2]"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[1, 2]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0063",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة ذهنيًّا: ما الناتج المطبوع بالضبط؟ أجب بالمطبوع فقط، وإن كان أكثر من سطر فاكتبها بترتيبها.\n\n```python\ns = \"البرمجة\"\nprint(len(s))\n```"
+        }
+      ],
+      "reference": "عدد محارف «البرمجة» سبعة.",
+      "rubric": [
+        "يعدّ محارب النص العربي",
+        "الناتج 7"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "7"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0057",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة ذهنيًّا: ما الناتج المطبوع بالضبط؟ أجب بالمطبوع فقط، وإن كان أكثر من سطر فاكتبها بترتيبها.\n\n```python\nd = {}\nd[1] = \"a\"\nd[\"1\"] = \"b\"\nprint(len(d))\n```"
+        }
+      ],
+      "reference": "المفتاحان 1 و'1' مختلفان في النوع فيُحفظان كلاهما: 2.",
+      "rubric": [
+        "يميز مفاتيح الأنواع المختلفة",
+        "الناتج 2"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "2"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0066",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة ذهنيًّا: ما الناتج المطبوع بالضبط؟ أجب بالمطبوع فقط، وإن كان أكثر من سطر فاكتبها بترتيبها.\n\n```python\nx = \"5\"\nprint(x.isdigit(), \"٥\".isdigit())\n```"
+        }
+      ],
+      "reference": "isdigit تقبل الأرقام العربية المشرقية أيضًا: True True.",
+      "rubric": [
+        "يعرف شمول isdigit للأرقام العربية",
+        "الناتج True True"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "True True"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0059",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي تطبعه هذه الشيفرة بالضبط؟ أجب بالناتج فقط كما تخرجه بايثون تمامًا، بلا شرح وبلا زخرفة وبلا أسور كود.\n\n```python\nprint(2 ** 3 ** 2)\n```"
+        }
+      ],
+      "reference": "الأس يرتبط من اليمين: 2**(3**2)=2**9=512.",
+      "rubric": [
+        "يعرف ترتيب ارتباط الأس",
+        "الناتج 512"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "512"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_b_0043",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لو شغّلت هذه الشيفرة فماذا سترى على الشاشة حرفيًّا؟ الجواب هو المطبوع فقط، لا تفسير.\n\n```python\nprint(7 // -2)\n```"
+        }
+      ],
+      "reference": "القسمة الصحيحة في بايثون تقرّب نحو السالب اللانهائي: -4 لا -3.",
+      "rubric": [
+        "يعرف دلالة // مع السوالب",
+        "الناتج -4"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "-4"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_b_0051",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة ذهنيًّا: ما الناتج المطبوع بالضبط؟ أجب بالمطبوع فقط، وإن كان أكثر من سطر فاكتبها بترتيبها.\n\n```python\ndef f(a, b=[]):\n    b.append(a)\n    return b\n\nprint(f(1))\nprint(f(2))\n```"
+        }
+      ],
+      "reference": "الوسيط الافتراضي القابل للتغيير يُنشأ مرة واحدة فيتراكم: [1] ثم [1, 2].",
+      "rubric": [
+        "يكشف فخ الوسيط الافتراضي القابل للتغيير",
+        "الناتج سطران: [1] ثم [1, 2]"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[1]\n[1, 2]"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_b_0075",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة ذهنيًّا: ما الناتج المطبوع بالضبط؟ أجب بالمطبوع فقط، وإن كان أكثر من سطر فاكتبها بترتيبها.\n\n```python\nprint(1 / 2 == 0.5 and 1 // 2)\n```"
+        }
+      ],
+      "reference": "المقارنة صحيحة فيعيد and قيمة الطرف الثاني: 1//2 = 0.",
+      "rubric": [
+        "يعرف أن and تعيد القيمة لا منطقية",
+        "الناتج 0"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "0"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_b_0052",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لو شغّلت هذه الشيفرة فماذا سترى على الشاشة حرفيًّا؟ الجواب هو المطبوع فقط، لا تفسير.\n\n```python\nprint(-7 % 3)\n```"
+        }
+      ],
+      "reference": "باقي القسمة في بايثون يأخذ إشارة المقسوم عليه: 2 لا -1.",
+      "rubric": [
+        "يعرف إشارة الباقي في بايثون",
+        "الناتج 2"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "2"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_b_0067",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لو شغّلت هذه الشيفرة فماذا سترى على الشاشة حرفيًّا؟ الجواب هو المطبوع فقط، لا تفسير.\n\n```python\nprint(round(2.675, 2))\n```"
+        }
+      ],
+      "reference": "التمثيل الثنائي يجعل 2.675 أقرب إلى 2.67 فيطبع 2.67.",
+      "rubric": [
+        "يعرف انحراف التقريب الثنائي",
+        "الناتج 2.67"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "2.67"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_b_0079",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لو شغّلت هذه الشيفرة فماذا سترى على الشاشة حرفيًّا؟ الجواب هو المطبوع فقط، لا تفسير.\n\n```python\nprint(ord(\"a\") - ord(\"A\"))\n```"
+        }
+      ],
+      "reference": "ترتيب a هو 97 وA هو 65 فيكون الفرق 32.",
+      "rubric": [
+        "يعرف قيم ord للحالتين",
+        "الناتج 32"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "32"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0047",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي تطبعه هذه الشيفرة بالضبط؟ أجب بالناتج فقط كما تخرجه بايثون تمامًا، بلا شرح وبلا زخرفة وبلا أسور كود.\n\n```python\nprint(bool([]) or \"فارغ\")\n```"
+        }
+      ],
+      "reference": "القائمة الفارغة False فيعيد or الطرف الثاني «فارغ».",
+      "rubric": [
+        "يعرف حقيقة القائمة الفارغة",
+        "الناتج فارغ"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "فارغ"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0056",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي تطبعه هذه الشيفرة بالضبط؟ أجب بالناتج فقط كما تخرجه بايثون تمامًا، بلا شرح وبلا زخرفة وبلا أسور كود.\n\n```python\nt = (1, 2, 3)\na, *b = t\nprint(b)\n```"
+        }
+      ],
+      "reference": "التفكيك بالنجمة يجعل b قائمة [2, 3].",
+      "rubric": [
+        "يعرف التفكيك بالنجمة",
+        "الناتج [2, 3]"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[2, 3]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0080",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي تطبعه هذه الشيفرة بالضبط؟ أجب بالناتج فقط كما تخرجه بايثون تمامًا، بلا شرح وبلا زخرفة وبلا أسور كود.\n\n```python\ni = 10\nwhile i > 1:\n    i //= 3\nprint(i)\n```"
+        }
+      ],
+      "reference": "10//3=3 ثم 3//3=1 وتتوقف الحلقة: 1.",
+      "rubric": [
+        "يتتبع حلقة القسمة الصحيحة",
+        "الناتج 1"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "1"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0061",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لو شغّلت هذه الشيفرة فماذا سترى على الشاشة حرفيًّا؟ الجواب هو المطبوع فقط، لا تفسير.\n\n```python\nprint(sum([1, 2], 10))\n```"
+        }
+      ],
+      "reference": "الوسيط الثاني لـ sum قيمة ابتدائية: 10+1+2=13.",
+      "rubric": [
+        "يعرف وسيط البداية لـ sum",
+        "الناتج 13"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "13"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0036",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحوّل سلسيوس إلى فهرنهايت، لكن الصفر السلسيوس يخرج صفرًا بدل 32. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef c_to_f(c):\n    return c * 9 / 5\n```"
+        }
+      ],
+      "reference": "إزاحة 32 ناقصة من الصيغة.",
+      "rubric": [
+        "الصفر سلسيوس 32 فهرنهايت",
+        "النقطة -40 تتطابق"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"c_to_f\"]\nassert f(0) == 32.0\nassert f(100) == 212.0\nassert f(-40) == -40.0\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0010",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تُفترض أن تعيد الأعداد الزوجية من قائمة، لكنها تعيد الفردية. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef evens_only(lst):\n    return [x for x in lst if x % 2]\n```"
+        }
+      ],
+      "reference": "الشرط المقلوب: x%2 صحيح للفردية؛ الصحيح == 0.",
+      "rubric": [
+        "يعيد الزوجية فقط",
+        "يتعامل مع السوالب الزوجية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"evens_only\"]\nassert f([1, 2, 3, 4]) == [2, 4]\nassert f([]) == []\nassert f([-2, -3]) == [-2]\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0008",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة متوسط حسابي تعطي قيمة أصغر من الصحيح دائمًا. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef average(lst):\n    return sum(lst) / (len(lst) + 1)\n```"
+        }
+      ],
+      "reference": "المقام الصحيح عدد العناصر لا عددها زائد واحد.",
+      "rubric": [
+        "يقسم على العدد الصحيح",
+        "قائمة العنصر الواحد تعيده"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"average\"]\nassert f([2, 4]) == 3.0\nassert f([5]) == 5.0\nassert f([1, 2, 3]) == 2.0\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0001",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تجمع الأعداد من 1 إلى n لكنها تعطي ناتجًا ناقصًا دائمًا. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef sum_to_n(n):\n    total = 0\n    for i in range(1, n):\n        total += i\n    return total\n```"
+        }
+      ],
+      "reference": "الخلل off-by-one في نهاية range؛ الصحيح range(1, n+1).",
+      "rubric": [
+        "يشمل n في المجموع",
+        "sum_to_n(0) يعيد 0"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"sum_to_n\"]\nassert f(5) == 15\nassert f(1) == 1\nassert f(0) == 0\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0031",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تستبدل أول ظهور فقط لكلمة في نص، لكنها تستبدل كل الظهور. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef replace_first(s, old, new):\n    return s.replace(old, new)\n```"
+        }
+      ],
+      "reference": "replace بلا حدّ تستبدل الكل؛ المعامل الثالث 1 يقصرها على الأول.",
+      "rubric": [
+        "يستبدل الظهور الأول فقط",
+        "غير الموجود يبقى النص كما هو"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"replace_first\"]\nassert f(\"aaab\", \"a\", \"x\") == \"xaab\"\nassert f(\"بيت بيت\", \"بيت\", \"دار\") == \"دار بيت\"\nassert f(\"xyz\", \"a\", \"b\") == \"xyz\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0020",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد قائمة تنازلية من n إلى 1، لكنها تعيد قائمة فارغة دائمًا. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef countdown(n):\n    return list(range(n, 0))\n```"
+        }
+      ],
+      "reference": "range التنازلي يحتاج خطوة -1 صريحة.",
+      "rubric": [
+        "يتنازل من n إلى 1",
+        "الصفر يعيد فارغة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"countdown\"]\nassert f(3) == [3, 2, 1]\nassert f(1) == [1]\nassert f(0) == []\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0017",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد السنوات المتبقية للتقاعد (سن 60) ولا تقبل قيمة سالبة، لكنها تعيد سالبًا لمن تجاوز الستين. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef years_to_retire(age):\n    return 60 - age\n```"
+        }
+      ],
+      "reference": "النتيجة تقصّ عند الصفر.",
+      "rubric": [
+        "من تجاوز الستين يعيد 0",
+        "من دونها يعيد الفرق"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"years_to_retire\"]\nassert f(45) == 15\nassert f(60) == 0\nassert f(65) == 0\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0011",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحصر درجة طالب في المجال [0, 100]، لكن كل القيم تخرج صفرًا. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef clip_grade(g):\n    return min(0, max(g, 100))\n```"
+        }
+      ],
+      "reference": "min و max مقلوبتان؛ الصحيح max(0, min(g, 100)).",
+      "rubric": [
+        "فوق المئة يعيد 100",
+        "تحت الصفر يعيد 0",
+        "الداخل يبقى"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"clip_grade\"]\nassert f(105) == 100\nassert f(-3) == 0\nassert f(55) == 55\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0022",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تُفترض أن تعيد فهرس أول ظهور لعنصر أو -1 إن غاب، لكنها تنهار باستثناء عند الغياب. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef index_of(lst, x):\n    return lst.index(x)\n```"
+        }
+      ],
+      "reference": "index ترمي ValueError عند الغياب؛ العقد يعد بـ -1.",
+      "rubric": [
+        "الغائب يعيد -1 بلا استثناء",
+        "الموجود يعيد فهرسه"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"index_of\"]\nassert f([1, 2, 3], 2) == 1\nassert f([1, 2], 5) == -1\nassert f([], 1) == -1\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0002",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تجد أكبر قيمة في قائمة، لكنها تخفق مع قوائم كلها سالبة. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef find_max(lst):\n    best = 0\n    for x in lst:\n        if x > best:\n            best = x\n    return best\n```"
+        }
+      ],
+      "reference": "التهيئة بصفر تجعل أي قائمة سالبة تعيد 0 زورًا؛ الصحيح التهيئة بأول عنصر.",
+      "rubric": [
+        "يعمل مع قوائم سالبة بالكامل",
+        "لا يغيّر سلوك الموجبة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"find_max\"]\nassert f([-5, -2, -9]) == -2\nassert f([3, 1, 4]) == 4\nassert f([-7]) == -7\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0032",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد الكلمة الأكثر تكرارًا في قائمة، لكنها تعيد عدد التكرارات بدل الكلمة. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef most_frequent(words):\n    counts = {}\n    for w in words:\n        counts[w] = counts.get(w, 0) + 1\n    return max(counts.values())\n```"
+        }
+      ],
+      "reference": "max على القيم يعيد العدد؛ المطلوب المفتاح صاحب أكبر قيمة.",
+      "rubric": [
+        "يعيد الكلمة لا عددها",
+        "يعمل مع العربية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"most_frequent\"]\nassert f([\"a\", \"b\", \"a\"]) == \"a\"\nassert f([\"x\"]) == \"x\"\nassert f([\"كتاب\", \"قلم\", \"كتاب\", \"قلم\", \"قلم\"]) == \"قلم\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0030",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد العنصر صاحب أكبر قيمة مطلقة في قائمة، لكنها تعيد الأكبر جبريًّا. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef max_abs(lst):\n    best = lst[0]\n    for x in lst:\n        if x > best:\n            best = x\n    return best\n```"
+        }
+      ],
+      "reference": "المقارنة يجب أن تتم على القيمة المطلقة مع إعادة العنصر بإشارته.",
+      "rubric": [
+        "يقارن بالمطلق",
+        "يعيد العنصر بإشارته الأصلية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"max_abs\"]\nassert f([-7, 3]) == -7\nassert f([2, -5, -4]) == -5\nassert f([1, 2, 3]) == 3\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0040",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة فيبوناتشي عندي لا تُظهر الصفر في بدايتها، هل هذا طبيعي؟"
+        },
+        {
+          "role": "assistant",
+          "content": "المتتالية المعيارية تبدأ 0, 1, 1 — أرني الدالة."
+        },
+        {
+          "role": "user",
+          "content": "دالة تعيد قائمة بأرقام فيبوناتشي حتى n حدًّا (مع n=0 تعيد [0])، لكنها تبدأ من [1, 1] وتُسقط الصفر. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef fib_upto(n):\n    seq = [1, 1]\n    while seq[-1] + seq[-2] <= n:\n        seq.append(seq[-1] + seq[-2])\n    return seq\n```"
+        }
+      ],
+      "reference": "المتتالية المعيارية تبدأ 0,1؛ البدء من 1,1 يُسقط الصفر ويكرر الواحد زورًا.",
+      "rubric": [
+        "يبدأ من 0 و1",
+        "n=0 يعيد [0]",
+        "الحد n مشمول إن كان حدًّا"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"fib_upto\"]\nassert f(10) == [0, 1, 1, 2, 3, 5, 8]\nassert f(0) == [0]\nassert f(1) == [0, 1, 1]\nassert f(2) == [0, 1, 1, 2]\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0006",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تزيل التكرار من قائمة مع حفظ الترتيب، لكنها تترك تكرارات أحيانًا وتعدّل القائمة أثناء المرور عليها. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef remove_dups(lst):\n    for x in lst:\n        if lst.count(x) > 1:\n            lst.remove(x)\n    return lst\n```"
+        }
+      ],
+      "reference": "الحذف أثناء التكرار يقفز عن عناصر؛ الصحيح بناء قائمة جديدة بمجموعة مرئية.",
+      "rubric": [
+        "يزيل التكرار كله",
+        "يحفظ ترتيب الظهور الأول"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"remove_dups\"]\nassert f([1, 1, 2, 2, 3]) == [1, 2, 3]\nassert f([3, 1, 3, 2, 1]) == [3, 1, 2]\nassert f([]) == []\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0034",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحقق لاسم مستخدم: طوله 3-16 ويبدأ بحرف لاتيني ويتكون من حروف لاتينية وأرقام وشرطة سفلية، لكنها تقبل من يبدأ برقم. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\nimport re\ndef is_valid_username(s):\n    return bool(re.fullmatch(r'[A-Za-z0-9_]{3,16}', s))\n```"
+        }
+      ],
+      "reference": "النمط يجب أن يفرض حرفًا أول ثم 2-15 محرفًا بعده.",
+      "rubric": [
+        "يرفض البادئة الرقمية",
+        "يحافظ على حدود الطول",
+        "يقبل الشرطة السفلية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"is_valid_username\"]\nassert f(\"1abc\") is False\nassert f(\"ab_1\") is True\nassert f(\"ab\") is False\nassert f(\"a\" * 17) is False\nassert f(\"user_name\") is True\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0021",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد أطول سلسلة متتالية من قيم متساوية في قائمة، لكنها تفقد السلسلة إن كانت في نهاية القائمة. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef longest_run(lst):\n    best = 0\n    cur = 1\n    for i in range(1, len(lst)):\n        if lst[i] == lst[i - 1]:\n            cur += 1\n        else:\n            best = max(best, cur)\n            cur = 1\n    return best\n```"
+        }
+      ],
+      "reference": "آخر سلسلة لا تُحدَّث منها best لأن التحديث داخل فرع الانقطاع فقط.",
+      "rubric": [
+        "يحتسب السلسلة الختامية",
+        "الفارغة تعيد 0"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"longest_run\"]\nassert f([1, 2, 2, 2]) == 3\nassert f([5, 5]) == 2\nassert f([]) == 0\nassert f([1, 1, 2, 3, 3, 3]) == 3\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0039",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تتحقق من توازن الأقواس ()[]{} في تعبير، لكنها تقبل '(]' رغم عدم تطابق النوع. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef balanced(expr):\n    stack = []\n    for ch in expr:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in ')]}':\n            if not stack:\n                return False\n            stack.pop()\n    return not stack\n```"
+        }
+      ],
+      "reference": "القوس المغلق يجب أن يطابق نوع قمة المكدس لا مجرد وجودها.",
+      "rubric": [
+        "يرفض عدم تطابق النوع",
+        "يرفض التداخل المعكوس",
+        "الفارغ متوازن"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"balanced\"]\nassert f(\"(]\") is False\nassert f(\"([{}])\") is True\nassert f(\"(((\") is False\nassert f(\"\") is True\nassert f(\"{[}]\") is False\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0015",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تكبّر أول حرف من كل كلمة مع إبقاء باقي الحروف كما هي، لكنها تصغّر باقي الحروف. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef title_words(s):\n    return ' '.join(w.capitalize() for w in s.split(' '))\n```"
+        }
+      ],
+      "reference": "capitalize تصغّر الباقي؛ المطلوب تكبير الأول فقط والإبقاء على الباقي.",
+      "rubric": [
+        "يكبّر الأول ويبقي الباقي",
+        "العربية لا تتغير"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"title_words\"]\nassert f(\"hELLO wORLD\") == \"HELLO WORLD\"\nassert f(\"مرحبا بالعالم\") == \"مرحبا بالعالم\"\nassert f(\"\") == \"\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0035",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة ضريبة تصاعدية: أول 10000 معفاة، وما بين 10000 و30000 عليه 10%، وما فوق 30000 عليه 20%، لكن المبالغ الصغيرة تخرج بضريبة ضخمة. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef tax(income):\n    return income * 0.20\n```"
+        }
+      ],
+      "reference": "الضريبة التصاعدية تحسب كل شريحة على جزئها فقط لا على كامل الدخل.",
+      "rubric": [
+        "الإعفاء حتى 10000",
+        "الشرائح تحسب على أجزائها",
+        "فوق 30000 يجمع الشريحتين"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"tax\"]\nassert f(5000) == 0.0\nassert f(15000) == 500.0\nassert f(30000) == 2000.0\nassert f(40000) == 4000.0\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_b_0023",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعدّ كلمات الجملة، لكنها تعدّ الفراغات فتخطئ مع الفراغات المتكررة والطرفية. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef word_count(s):\n    if not s:\n        return 0\n    return s.count(' ') + 1\n```"
+        }
+      ],
+      "reference": "عدّ الفراغات يفترض فراغًا واحدًا بين كل كلمتين؛ split يعالج كل الحالات.",
+      "rubric": [
+        "يتجاهل الفراغات المتكررة والطرفية",
+        "الفارغ يعيد 0"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"word_count\"]\nassert f(\" مرحبا \") == 1\nassert f(\"أ ب  ج\") == 3\nassert f(\"\") == 0\nassert f(\"كلمة\") == 1\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0018",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تزيل علامات الترقيم العربية والإنجليزية (، . ! ؟ ?) من النص، لكن الفاصلة العربية تبقى. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\nimport re\ndef remove_punct(s):\n    return re.sub(r'[.!?؟]', '', s)\n```"
+        }
+      ],
+      "reference": "الفاصلة العربية «،» يجب أن تكون في صنف المحارف المحذوفة.",
+      "rubric": [
+        "يحذف الفاصلة العربية",
+        "يحذف باقي العلامات",
+        "النص النظيف يبقى"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"remove_punct\"]\nassert f(\"مرحبا، كيف؟\") == \"مرحبا كيف\"\nassert f(\"نقطة. تعجب!\") == \"نقطة تعجب\"\nassert f(\"بلا ترقيم\") == \"بلا ترقيم\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0037",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد متوسط الدرجات بعد حذف أدنى درجة، لكنها تحذف أول عنصر في القائمة مهما كانت قيمته. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef grade_average(scores):\n    rest = scores[1:]\n    return sum(rest) / len(rest)\n```"
+        }
+      ],
+      "reference": "الحذف يجب أن يطال القيمة الأدنى لا الموضع الأول.",
+      "rubric": [
+        "يحذف الأدنى أينما كان",
+        "التكرار يحذف نسخة واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"grade_average\"]\nassert f([10, 5, 8]) == 9.0\nassert f([5, 5, 10]) == 7.5\nassert f([7, 3]) == 7.0\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0038",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تتحقق أن نص المبلغ المدخل عدد موجب بحد أقصى خانتين عشريتين (مثل '12.50')، لكنها تقبل '12.999'. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\nimport re\ndef valid_price(s):\n    return bool(re.fullmatch(r'\\d+(\\.\\d+)?', s)) and float(s) > 0\n```"
+        }
+      ],
+      "reference": "الجزء العشري يجب أن يقيد بطول 1-2 لا \\d+ المفتوح.",
+      "rubric": [
+        "يرفض ثلاث خانات عشرية",
+        "يرفض الصفر",
+        "يقبل الصحيح والعشري المحدود"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"valid_price\"]\nassert f(\"12.50\") is True\nassert f(\"12.999\") is False\nassert f(\"0\") is False\nassert f(\"7\") is True\nassert f(\"abc\") is False\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0028",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد عدد أيام شهر (1-12) في سنة معطاة، لكن فبراير عندها 28 يومًا دائمًا حتى في الكبيسة. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef month_days(m, y):\n    days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]\n    return days[m - 1]\n```"
+        }
+      ],
+      "reference": "فبراير يحتاج استثناء السنة الكبيسة بقاعدتها الكاملة.",
+      "rubric": [
+        "فبراير الكبيسة 29",
+        "1900 ليست كبيسة",
+        "باقي الأشهر ثابتة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"month_days\"]\nassert f(2, 2024) == 29\nassert f(2, 2023) == 28\nassert f(2, 1900) == 28\nassert f(1, 2024) == 31\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0016",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحسب إجمالي فاتورة من قائمة أزواج (سعر، كمية)، لكن الناتج أقل من المتوقع. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef invoice_total(items):\n    total = 0\n    for price, qty in items:\n        total += price + qty\n    return total\n```"
+        }
+      ],
+      "reference": "سطر الفاتورة سعر × كمية لا سعر + كمية.",
+      "rubric": [
+        "يضرب السعر بالكمية",
+        "الفاتورة الفارغة 0"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"invoice_total\"]\nassert f([(10, 2), (5, 3)]) == 35\nassert f([]) == 0\nassert f([(7.5, 2)]) == 15.0\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0012",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعدّ تكرار حرف في نص بلا حساسية لحالته، لكنها لا تعدّ الحرف الكبير. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef char_count(s, ch):\n    return s.count(ch.lower())\n```"
+        }
+      ],
+      "reference": "توحيد حالة النص والحرف معًا قبل العدّ.",
+      "rubric": [
+        "يعدّ الحرف بحالتيه",
+        "بلا وجود يعيد 0"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"char_count\"]\nassert f(\"Banana\", \"a\") == 3\nassert f(\"AAA\", \"a\") == 3\nassert f(\"xyz\", \"a\") == 0\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0019",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تستخرج الأحرف الأولى من كلمات الاسم مفصولة بنقاط (أحمد محمد علي ← أ.م.ع)، لكنها تأخذ الأحرف الأخيرة. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef get_initials(name):\n    return '.'.join(w[-1] for w in name.split())\n```"
+        }
+      ],
+      "reference": "المطلوب الحرف الأول w[0] لا الأخير w[-1].",
+      "rubric": [
+        "يأخذ أول حرف من كل كلمة",
+        "يفصل بنقاط"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"get_initials\"]\nassert f(\"أحمد محمد علي\") == \"أ.م.ع\"\nassert f(\"سارة\") == \"س\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_b_0027",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحقق لمبلغ تحويل بنكي: صالح إن كان أكبر من صفر ولا يتجاوز 10000، لكنها تقبل الصفر. أصلحها وأخرج الكود المصلَّح فقط.\n\n```python\ndef validate_amount(x):\n    return 0 <= x <= 10000\n```"
+        }
+      ],
+      "reference": "الصفر ليس مبلغ تحويل صالحًا؛ الحد الأدنى مفتوح.",
+      "rubric": [
+        "يرفض الصفر",
+        "يقبل الحد الأقصى 10000",
+        "يرفض السالب والمتجاوز"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"validate_amount\"]\nassert f(0) is False\nassert f(5000) is True\nassert f(10001) is False\nassert f(-5) is False\nassert f(10000) is True\n"
+        }
+      ],
+      "critical": true
+    }
+  ]
+}

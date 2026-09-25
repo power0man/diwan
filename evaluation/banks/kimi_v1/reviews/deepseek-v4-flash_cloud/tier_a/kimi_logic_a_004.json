@@ -1,0 +1,547 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_logic_a_004.json\",\n  \"judgments\": [\n    {\n      \"id\": \"dedcond_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"حصر الترتيبات: صُفّت الموائد أولاً، ذُبحت الذبيحة آخراً، ونضج الطعام لا يمكن أن يكون قبل الأخير لعدم ملاصقته للذبح، فيكون نضج في الموضع الثاني والحلوى في الثالث، فالحلوى بعد النضج دائمًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"الشرط (أو) يتحقق بتحقق أحد الطرفين، وانخفاض الأسعار محقق، فالإقبال لازم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"القرينة الأولى تنص صراحةً أن اندلع الحريق قبل وصول فرقة الإطفاء.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"الشرط (أو) يتحقق بتحقق أحد الطرفين، وتجفيف المحاصيل محقق، فامتلاء الساقية لازم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0092\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"لا توجد قرينة تربط ذُبحت الذبيحة بأي حدث آخر، فيمكن أن تكون قبل أو بعد نضج الطعام في ترتيبات مختلفة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"الشرط (أو) يتحقق بتحقق أحد الطرفين، ورسو الباخرة محقق، فمغادرة الشاحنات لازمة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"لا قرينة تربط وصول فرقة الإطفاء بأُخليت المحلات مباشرة، فيمكن أن يقع قبلها أو بعدها.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0082\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"أُخليت المحلات آخر الأحداث، واندلع الحريق أولها، ووصول فرقة الإطفاء لا يمكن أن يكون قبل الأخير لعدم ملاصقته لأُخليت، فيكون وصول في الثاني وأُخمدت في الثالث، فإخماد النيران قبل الإخلاء دائمًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"ارتفعت الجدران أول الأحداث، فسُقف البيت يقع بعده دائمًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"حضور المفتش يستلزم مغادرة الشاحنات، ومغادرتها تستلزم إغلاق أبواب المخزن، فالإغلاق لازم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"القرينة الثانية تنص أن شدّت القافلة قبل نُصبت الخيام.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"لا توجد قرينة عن صُفّت الموائد، فيمكن أن تكون قبل أو بعد نضج الطعام.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"الشرط (و) محقق بتحقق كلا الطرفين، ففتح مكتب التذاكر لازم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"وصلت فرقة الإطفاء أول الأحداث، فأُخليت المحلات تقع بعدها دائمًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"حضور الجرّاح يستلزم وصول سيارة الإسعاف، ووصولها يستلزم عدم إخلاء جناح الطوارئ، فالإخلاء مناقض للمقدمات.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0094\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"نُصبت الخيام أولاً وشدّت القافلة مباشرة بعدها، فلا يمكن أن تكون أُوقدت نار المخيم قبل شدّت لأن الموضع قبل شدّت مشغول بنُصبت.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"الشرط (أو) يتحقق بتحقق أحد الطرفين، ومغادرة الشاحنات محققة، فإغلاق أبواب المخزن لازم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0091\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"وصول البذور وتجفيف المحاصيل محققان، فيستلزمان هطول المطر، وهطول المطر يستلزم امتلاء الساقية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"هطول المطر ووصول البذور محققان، فيستلزمان امتلاء الساقية، وامتلاؤها يستلزم تجفيف المحاصيل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0083\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أُخمدت النيران\",\n      \"reason\": \"الترتيب الوحيد: اندلع الحريق ← وصلت فرقة الإطفاء ← أُخمدت النيران ← أُخليت المحلات ← فُتح التحقيق، فثالثًا أُخمدت النيران.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"امتلاء المواقف وانخفاض الأسعار محققان، فيستلزمان وصول الشحنات باكرًا، ووصولها يستلزم ازدياد الإقبال.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"شدّت القافلة أول الأحداث، فتقع قبل نُصبت الخيام دائمًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وصلت فرقة الإطفاء\",\n      \"reason\": \"الترتيب الوحيد: أُخمدت النيران ← وصلت فرقة الإطفاء ← أُخليت المحلات ← فُتح التحقيق ← اندلع الحريق، فثانيًا وصلت فرقة الإطفاء.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"الشرط يتطلب كلا الطرفين، ولم يُثبت إلا إغلاق البوابة دون انطلاق الحافلة، فلا يمكن الجزم بوصول القطار.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"الشرط يتطلب حضور المفتش ورسو الباخرة معًا، ولم يُثبت إلا حضور المفتش، فلا يمكن الجزم بمغادرة الشاحنات.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"الشرط يتطلب وصول البذور وهطول المطر معًا، ولم يُثبت إلا وصول البذور، فلا يمكن الجزم بتجفيف المحاصيل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"من عدم إغلاق أبواب المخزن نستنتج عدم حضور المفتش، ومن عدم حضوره نستنتج عدم رسو الباخرة، فرسو الباخرة مناقض للمقدمات.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"اندلع الحريق قبل فُتح التحقيق، وفُتح التحقيق قبل أُخمدت النيران، فأُخمدت النيران بعد اندلع الحريق دائمًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أُوقدت نار المخيم\",\n      \"reason\": \"الترتيب الوحيد: نُصبت الخيام ← شدّت القافلة الرحال ← أُوقدت نار المخيم ← نام القوم ← اجتازت القافلة الوادي، فثالثًا أُوقدت نار المخيم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0072\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"من عدم وصول سيارة الإسعاف نستنتج عدم حضور الجرّاح، ومن عدم حضوره نستنتج عدم إخلاء جناح الطوارئ، فالإخلاء مناقض للمقدمات.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"العبارة تكافؤ: وصول قطع الغيار يلزمه تجريب السيارة، ووصول قطع الغيار محقق، فالتجريب لازم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"القرينة الثالثة تنص أن نضج الطعام مباشرة بعد ذُبحت الذبيحة، فذُبحت قبل النضج دائمًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"الترتيب الوحيد: ذُبحت الذبيحة ← وصل الضيوف ← صُفّت الموائد ← نضج الطعام ← قُدّمت الحلوى، فوصل الضيوف قبل النضج دائمًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"الشرط يتطلب حضور المشرف وخروج التلاميذ معًا، ولم يُثبت إلا حضور المشرف، فلا يمكن الجزم برن الجرس.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"الشرط يتطلب إصلاح المحرك وغسل السيارة معًا، ولم يُثبت إلا إصلاح المحرك، فلا يمكن الجزم بتجريب السيارة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"إضافة (ب) تفعّل السلسلة: إغلاق الأبواب ← رسو الباخرة ← حضور المفتش، بينما (أ) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"إضافة (ج) تفعّل السلسلة: انقطاع التيار ← تغير اللون ← نجاح التفاعل، بينما (أ) و(ب) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0085\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"إضافة (ج) تفعّل السلسلة: انقطاع التيار ← تعطل الجهاز ← تغير اللون، بينما (أ) و(ب) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"إضافة (ج) تفعّل السلسلة: وصول القطار ← نوم المسافرين ← فتح مكتب التذاكر، بينما (أ) و(ب) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"إضافة (ب) تفعّل السلسلة: وصول قطع الغيار ← تجريب السيارة ← إصلاح المحرك، بينما (أ) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"الافتراض (زرع الفلاحون القمح) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يزرع الفلاحون القمح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الافتراض (وصلت البذور الجديدة) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم تصل البذور الجديدة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"إضافة (أ) تحقق الشرط (و) بكلا الطرفين، فسجل الباحث لازم، بينما (ب) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"إضافة (ب) تحقق الشرط (و) بكلا الطرفين، فتغير اللون لازم، بينما (أ) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"إضافة (ج) تحقق الشرط (و) بكلا الطرفين، فزرع الفلاحون لازم، بينما (أ) و(ب) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"إضافة (ب) تحقق الشرط (و) بكلا الطرفين، فتجفيف المحاصيل لازم، بينما (أ) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الافتراض (فُتح مكتب التذاكر) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يُفتح مكتب التذاكر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"الافتراض (وصلت سيارة الإسعاف) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم تصل سيارة الإسعاف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"إضافة (ب) تحقق الشرط (و) بكلا الطرفين، فانخفاض الأسعار لازم، بينما (أ) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"إضافة (أ) تحقق الشرط (و) بكلا الطرفين، فازدياد الإقبال لازم، بينما (ب) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"إضافة (ب) تحقق الشرط (و) بكلا الطرفين، فتجفيف المحاصيل لازم، بينما (أ) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"إضافة (ب) تحقق الشرط (و) بكلا الطرفين، فتجريب السيارة لازم، بينما (أ) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الافتراض (ازداد إقبال المتبضعين) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم يزدد الإقبال.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الافتراض (انقطع التيار الكهربائي) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم ينقطع التيار.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الافتراض (جُرّبت السيارة على الطريق) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم تُجرَّب السيارة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"الافتراض (ازداد إقبال المتبضعين) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يزدد الإقبال.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0084\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الافتراض (أصلح الميكانيكي المحرك) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم يصلح الميكانيكي المحرك.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الافتراض (تغيّر لون المحلول) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يتغيّر لون المحلول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الافتراض (وصل قطع الغيار من المورّد) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم يصل قطع الغيار.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الافتراض (حضر المشرف المناوب) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يحضر المشرف المناوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"إضافة (أ) تفعّل السلسلة: وصول سيارة الإسعاف ← إخلاء الجناح ← إدخال المصاب ← إجراء العملية، بينما (ب) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الافتراض (فُتح مكتب التذاكر) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يُفتح مكتب التذاكر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"إضافة (أ) تفعّل السلسلة: دفع الحساب ← وصول قطع الغيار ← غسل السيارة ← إصلاح المحرك، بينما (ب) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"إضافة (أ) تفعّل السلسلة: انطلاق الحافلة ← إغلاق البوابة ← نوم المسافرين ← وصول القطار، بينما (ب) و(ج) لا تكفيان.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الافتراض (حضر الجرّاح المناوب) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم يحضر الجرّاح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"dedcond_a_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"الافتراض (رنّ جرس الفسحة) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم يرنّ جرس الفسحة.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 98938,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_logic_a_004.json",
+  "file_sha256": "52fb96fde1120ad297cb7496ca6468c6248e794a00566883ba5e5bec7c0e9488",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "dedcond_a_0004",
+      "my_answer": "لا",
+      "reason": "حصر الترتيبات: صُفّت الموائد أولاً، ذُبحت الذبيحة آخراً، ونضج الطعام لا يمكن أن يكون قبل الأخير لعدم ملاصقته للذبح، فيكون نضج في الموضع الثاني والحلوى في الثالث، فالحلوى بعد النضج دائمًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0020",
+      "my_answer": "نعم",
+      "reason": "الشرط (أو) يتحقق بتحقق أحد الطرفين، وانخفاض الأسعار محقق، فالإقبال لازم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0003",
+      "my_answer": "نعم",
+      "reason": "القرينة الأولى تنص صراحةً أن اندلع الحريق قبل وصول فرقة الإطفاء.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0052",
+      "my_answer": "نعم",
+      "reason": "الشرط (أو) يتحقق بتحقق أحد الطرفين، وتجفيف المحاصيل محقق، فامتلاء الساقية لازم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0092",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "لا توجد قرينة تربط ذُبحت الذبيحة بأي حدث آخر، فيمكن أن تكون قبل أو بعد نضج الطعام في ترتيبات مختلفة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0019",
+      "my_answer": "نعم",
+      "reason": "الشرط (أو) يتحقق بتحقق أحد الطرفين، ورسو الباخرة محقق، فمغادرة الشاحنات لازمة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0079",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "لا قرينة تربط وصول فرقة الإطفاء بأُخليت المحلات مباشرة، فيمكن أن يقع قبلها أو بعدها.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0082",
+      "my_answer": "نعم",
+      "reason": "أُخليت المحلات آخر الأحداث، واندلع الحريق أولها، ووصول فرقة الإطفاء لا يمكن أن يكون قبل الأخير لعدم ملاصقته لأُخليت، فيكون وصول في الثاني وأُخمدت في الثالث، فإخماد النيران قبل الإخلاء دائمًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0060",
+      "my_answer": "لا",
+      "reason": "ارتفعت الجدران أول الأحداث، فسُقف البيت يقع بعده دائمًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0002",
+      "my_answer": "نعم",
+      "reason": "حضور المفتش يستلزم مغادرة الشاحنات، ومغادرتها تستلزم إغلاق أبواب المخزن، فالإغلاق لازم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0029",
+      "my_answer": "نعم",
+      "reason": "القرينة الثانية تنص أن شدّت القافلة قبل نُصبت الخيام.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0056",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "لا توجد قرينة عن صُفّت الموائد، فيمكن أن تكون قبل أو بعد نضج الطعام.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0006",
+      "my_answer": "نعم",
+      "reason": "الشرط (و) محقق بتحقق كلا الطرفين، ففتح مكتب التذاكر لازم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0053",
+      "my_answer": "لا",
+      "reason": "وصلت فرقة الإطفاء أول الأحداث، فأُخليت المحلات تقع بعدها دائمًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0036",
+      "my_answer": "لا",
+      "reason": "حضور الجرّاح يستلزم وصول سيارة الإسعاف، ووصولها يستلزم عدم إخلاء جناح الطوارئ، فالإخلاء مناقض للمقدمات.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0094",
+      "my_answer": "لا",
+      "reason": "نُصبت الخيام أولاً وشدّت القافلة مباشرة بعدها، فلا يمكن أن تكون أُوقدت نار المخيم قبل شدّت لأن الموضع قبل شدّت مشغول بنُصبت.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0015",
+      "my_answer": "نعم",
+      "reason": "الشرط (أو) يتحقق بتحقق أحد الطرفين، ومغادرة الشاحنات محققة، فإغلاق أبواب المخزن لازم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0091",
+      "my_answer": "نعم",
+      "reason": "وصول البذور وتجفيف المحاصيل محققان، فيستلزمان هطول المطر، وهطول المطر يستلزم امتلاء الساقية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0025",
+      "my_answer": "نعم",
+      "reason": "هطول المطر ووصول البذور محققان، فيستلزمان امتلاء الساقية، وامتلاؤها يستلزم تجفيف المحاصيل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0083",
+      "my_answer": "أُخمدت النيران",
+      "reason": "الترتيب الوحيد: اندلع الحريق ← وصلت فرقة الإطفاء ← أُخمدت النيران ← أُخليت المحلات ← فُتح التحقيق، فثالثًا أُخمدت النيران.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0035",
+      "my_answer": "نعم",
+      "reason": "امتلاء المواقف وانخفاض الأسعار محققان، فيستلزمان وصول الشحنات باكرًا، ووصولها يستلزم ازدياد الإقبال.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0054",
+      "my_answer": "نعم",
+      "reason": "شدّت القافلة أول الأحداث، فتقع قبل نُصبت الخيام دائمًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0055",
+      "my_answer": "وصلت فرقة الإطفاء",
+      "reason": "الترتيب الوحيد: أُخمدت النيران ← وصلت فرقة الإطفاء ← أُخليت المحلات ← فُتح التحقيق ← اندلع الحريق، فثانيًا وصلت فرقة الإطفاء.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0032",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "الشرط يتطلب كلا الطرفين، ولم يُثبت إلا إغلاق البوابة دون انطلاق الحافلة، فلا يمكن الجزم بوصول القطار.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0022",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "الشرط يتطلب حضور المفتش ورسو الباخرة معًا، ولم يُثبت إلا حضور المفتش، فلا يمكن الجزم بمغادرة الشاحنات.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0001",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "الشرط يتطلب وصول البذور وهطول المطر معًا، ولم يُثبت إلا وصول البذور، فلا يمكن الجزم بتجفيف المحاصيل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0005",
+      "my_answer": "لا",
+      "reason": "من عدم إغلاق أبواب المخزن نستنتج عدم حضور المفتش، ومن عدم حضوره نستنتج عدم رسو الباخرة، فرسو الباخرة مناقض للمقدمات.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0009",
+      "my_answer": "لا",
+      "reason": "اندلع الحريق قبل فُتح التحقيق، وفُتح التحقيق قبل أُخمدت النيران، فأُخمدت النيران بعد اندلع الحريق دائمًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0077",
+      "my_answer": "أُوقدت نار المخيم",
+      "reason": "الترتيب الوحيد: نُصبت الخيام ← شدّت القافلة الرحال ← أُوقدت نار المخيم ← نام القوم ← اجتازت القافلة الوادي، فثالثًا أُوقدت نار المخيم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0072",
+      "my_answer": "لا",
+      "reason": "من عدم وصول سيارة الإسعاف نستنتج عدم حضور الجرّاح، ومن عدم حضوره نستنتج عدم إخلاء جناح الطوارئ، فالإخلاء مناقض للمقدمات.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0061",
+      "my_answer": "نعم",
+      "reason": "العبارة تكافؤ: وصول قطع الغيار يلزمه تجريب السيارة، ووصول قطع الغيار محقق، فالتجريب لازم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0062",
+      "my_answer": "نعم",
+      "reason": "القرينة الثالثة تنص أن نضج الطعام مباشرة بعد ذُبحت الذبيحة، فذُبحت قبل النضج دائمًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0034",
+      "my_answer": "نعم",
+      "reason": "الترتيب الوحيد: ذُبحت الذبيحة ← وصل الضيوف ← صُفّت الموائد ← نضج الطعام ← قُدّمت الحلوى، فوصل الضيوف قبل النضج دائمًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0026",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "الشرط يتطلب حضور المشرف وخروج التلاميذ معًا، ولم يُثبت إلا حضور المشرف، فلا يمكن الجزم برن الجرس.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0031",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "الشرط يتطلب إصلاح المحرك وغسل السيارة معًا، ولم يُثبت إلا إصلاح المحرك، فلا يمكن الجزم بتجريب السيارة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0023",
+      "my_answer": "ب",
+      "reason": "إضافة (ب) تفعّل السلسلة: إغلاق الأبواب ← رسو الباخرة ← حضور المفتش، بينما (أ) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0016",
+      "my_answer": "ج",
+      "reason": "إضافة (ج) تفعّل السلسلة: انقطاع التيار ← تغير اللون ← نجاح التفاعل، بينما (أ) و(ب) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0085",
+      "my_answer": "ج",
+      "reason": "إضافة (ج) تفعّل السلسلة: انقطاع التيار ← تعطل الجهاز ← تغير اللون، بينما (أ) و(ب) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0051",
+      "my_answer": "ج",
+      "reason": "إضافة (ج) تفعّل السلسلة: وصول القطار ← نوم المسافرين ← فتح مكتب التذاكر، بينما (أ) و(ب) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0070",
+      "my_answer": "ب",
+      "reason": "إضافة (ب) تفعّل السلسلة: وصول قطع الغيار ← تجريب السيارة ← إصلاح المحرك، بينما (أ) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0067",
+      "my_answer": "ج",
+      "reason": "الافتراض (زرع الفلاحون القمح) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يزرع الفلاحون القمح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0089",
+      "my_answer": "أ",
+      "reason": "الافتراض (وصلت البذور الجديدة) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم تصل البذور الجديدة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0066",
+      "my_answer": "أ",
+      "reason": "إضافة (أ) تحقق الشرط (و) بكلا الطرفين، فسجل الباحث لازم، بينما (ب) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0030",
+      "my_answer": "ب",
+      "reason": "إضافة (ب) تحقق الشرط (و) بكلا الطرفين، فتغير اللون لازم، بينما (أ) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0028",
+      "my_answer": "ج",
+      "reason": "إضافة (ج) تحقق الشرط (و) بكلا الطرفين، فزرع الفلاحون لازم، بينما (أ) و(ب) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0075",
+      "my_answer": "ب",
+      "reason": "إضافة (ب) تحقق الشرط (و) بكلا الطرفين، فتجفيف المحاصيل لازم، بينما (أ) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0050",
+      "my_answer": "ب",
+      "reason": "الافتراض (فُتح مكتب التذاكر) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يُفتح مكتب التذاكر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0063",
+      "my_answer": "ج",
+      "reason": "الافتراض (وصلت سيارة الإسعاف) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم تصل سيارة الإسعاف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0049",
+      "my_answer": "ب",
+      "reason": "إضافة (ب) تحقق الشرط (و) بكلا الطرفين، فانخفاض الأسعار لازم، بينما (أ) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0043",
+      "my_answer": "أ",
+      "reason": "إضافة (أ) تحقق الشرط (و) بكلا الطرفين، فازدياد الإقبال لازم، بينما (ب) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0040",
+      "my_answer": "ب",
+      "reason": "إضافة (ب) تحقق الشرط (و) بكلا الطرفين، فتجفيف المحاصيل لازم، بينما (أ) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0017",
+      "my_answer": "ب",
+      "reason": "إضافة (ب) تحقق الشرط (و) بكلا الطرفين، فتجريب السيارة لازم، بينما (أ) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0044",
+      "my_answer": "أ",
+      "reason": "الافتراض (ازداد إقبال المتبضعين) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم يزدد الإقبال.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0018",
+      "my_answer": "أ",
+      "reason": "الافتراض (انقطع التيار الكهربائي) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم ينقطع التيار.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0007",
+      "my_answer": "أ",
+      "reason": "الافتراض (جُرّبت السيارة على الطريق) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم تُجرَّب السيارة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0076",
+      "my_answer": "ج",
+      "reason": "الافتراض (ازداد إقبال المتبضعين) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يزدد الإقبال.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0084",
+      "my_answer": "ب",
+      "reason": "الافتراض (أصلح الميكانيكي المحرك) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم يصلح الميكانيكي المحرك.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0046",
+      "my_answer": "أ",
+      "reason": "الافتراض (تغيّر لون المحلول) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يتغيّر لون المحلول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0047",
+      "my_answer": "أ",
+      "reason": "الافتراض (وصل قطع الغيار من المورّد) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم يصل قطع الغيار.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0014",
+      "my_answer": "أ",
+      "reason": "الافتراض (حضر المشرف المناوب) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يحضر المشرف المناوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0064",
+      "my_answer": "أ",
+      "reason": "إضافة (أ) تفعّل السلسلة: وصول سيارة الإسعاف ← إخلاء الجناح ← إدخال المصاب ← إجراء العملية، بينما (ب) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0008",
+      "my_answer": "أ",
+      "reason": "الافتراض (فُتح مكتب التذاكر) يؤدي لتناقض، فالبرهان بالخلف يثبت نقيضه: لم يُفتح مكتب التذاكر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0042",
+      "my_answer": "أ",
+      "reason": "إضافة (أ) تفعّل السلسلة: دفع الحساب ← وصول قطع الغيار ← غسل السيارة ← إصلاح المحرك، بينما (ب) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0033",
+      "my_answer": "أ",
+      "reason": "إضافة (أ) تفعّل السلسلة: انطلاق الحافلة ← إغلاق البوابة ← نوم المسافرين ← وصول القطار، بينما (ب) و(ج) لا تكفيان.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0041",
+      "my_answer": "أ",
+      "reason": "الافتراض (حضر الجرّاح المناوب) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم يحضر الجرّاح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "dedcond_a_0024",
+      "my_answer": "أ",
+      "reason": "الافتراض (رنّ جرس الفسحة) يؤدي لتناقض مع الواقعة المؤكدة، فالبرهان بالخلف يثبت نقيضه: لم يرنّ جرس الفسحة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T19:06:50Z"
+}

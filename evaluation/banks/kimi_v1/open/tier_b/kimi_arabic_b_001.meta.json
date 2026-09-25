@@ -1,0 +1,359 @@
+{
+  "suite_id": "kimi_arabic_b_001",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "B",
+  "cases": {
+    "fsem_b_0037": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0036؛ نفي الحضور في السياق يجعل «عاين» خطأً قطعيًّا، لذا صلح فحص excludes.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0039": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0038؛ وجود الأمارة يحسم للظن.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0014": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0013 بقرينة ملكية العمل؛ سهل مقصود.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0016": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0015؛ النفيان في السياق يحسمان الكرم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0024": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0023؛ الفزع العارض ينفي شرطي الخشية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0011": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قرينتا النفي تحسمان الحكم؛ حالة سهلة مقصودة في منتصف السلسلة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0007": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "زوج مضادّ الدلالة (محمود/مذموم) حكمُه محسوم؛ خط أساس سهل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0003": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الزوج الثاني المطلوب؛ الفرق دقيق لأن الفراسة قد تُطلق مجازًا على الفهم الثاقب في الاستعمال العام، والاصطلاح يضبطها بالاستدلال الظاهري.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0005": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الزوج الثالث المطلوب؛ دقته أن البديل ليس خطأً بل أضعف من مقتضى الحال، والحكم على الترجيح لا التخطئة المطلقة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0004": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مقلوب 0003 بسياق بوليسي؛ الظواهر المادية تجعل الفراسة وحدها الأنسب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0030": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قرينة الزوال السريع تحسم للغضب؛ تمهيد لمقلوبها المستقر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0032": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الفرق الزمني (قبل/بعد البلاء) من أدق فروق الراغب؛ القرينة واحدة لكنها حاسمة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0033": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مقلوب 0032؛ قرينة وقوع البلاء تحسم للغم.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الاستعمال العام يجعل «همّ» مطلقًا لكل ضيق؛ الاصطلاح يخالفه."
+    },
+    "fsem_b_0040": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "لفظ «كفاف» أدبي دقيق؛ الاستعمال العام يسمي عدم الاستلاف غنى، والاصطلاح يفرق.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يختار النموذج «غنى» تأثرًا بالمعنى العامي (مو مضطر لأحد)."
+    },
+    "fsem_b_0017": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فخ التجميل: المخاطرة الكبيرة تبدو «شجاعة»؛ الحكم مبني على قرائن النفي لا على حجم المخاطرة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يختار النموذج «إقدام» مجاملة لخطاب ريادة الأعمال الشائع."
+    },
+    "fsem_b_0042": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0041؛ رفض الحق لشخص قائله هو الفيصل الحاسم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0019": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نفس فخ النفي التركيبي في 0015 بزوج جديد؛ تثبيت الانتباه الصياغي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0038": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ظن/وهم بقرينة انعدام المستند؛ فرق معرفي دقيق شائع الاستعمال.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0020": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0019؛ التوثيق والطريق النظامي هما الفيصل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0031": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0030؛ الامتداد الزمني هو الفيصل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0008": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0007؛ القرائن كلها سلبية فالحكم تواكل بلا تردد.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0017؛ القرائن الإيجابية الثلاث تحسم، وتحفّظ الأهل شبهة معروضة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0012": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0011؛ قرينة «أعرف حدودي» هي الفيصل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0022": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0021؛ التسويف الضار بلا عمل هو الفيصل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عزة/كبر بقرينة الحق المشروع؛ يقيس عدم قلب المحمود مذمومًا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0028": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "دهاء/مكر بسياق خديعة صريحة؛ الحكم مكر بلا تردد.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقلوب 0009؛ القرينة الحاسمة هنا إيجابية (تقوية الدليل).",
+      "answer_verified_by": "author_reasoned"
+    },
+    "fsem_b_0013": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "طمع/حرص في سياق أخلاقي صارخ؛ يقيس عدم تجميل القبيح بلفظ أخف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0041": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "حالة تثبيت سهلة بعد سلسلة صعبة؛ تقابل 0010 بمادة مختلفة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0013": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مكنية سهلة رابعة لتثبيت النمط قبل الصعب؛ تنويع في مادة الصورة (طبيعة).",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "أسهل حالات الإنتاج؛ خط أساس مع قيد عدم المبالغة المبدِّلة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0011": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "يقابل 0010: نفس البنية بحذف وجه الشبه؛ يقيس حساسية التصنيف للحذف لا للمادة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0017": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مكنية خامسة بمادة الحرائق؛ استكمال تغطية المواد قبل الانتقال للتعليل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0010": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ضبط أركان التشبيه الأربعة وفرق المفصل من المجمل والبليغ؛ حالة تأسيسية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0031": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إنتاج لا تحليل: ضبط شرط التصريحية أثناء التوليد أصعب من التعرف عليها؛ مع قيد حفظ المعنى المزدوج.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "أكثر الهفوات المتوقعة إنتاج تشبيه بليغ ظانًّا أنه تصريحية."
+    },
+    "rhet_b_0016": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "كناية أقل تداولًا من «كثير الرماد»؛ تقيس نقل القاعدة إلى مادة جديدة لا حفظ النموذج.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0004": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قياس على «واسأل القرية» بسياق مؤلَّف؛ يختبر ضبط علاقة المحلية وتمييزها من لزوم الكناية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "سببية الإسناد للآمر شائعة في الكلام ولا ينتبه لها كثيرون؛ تختبر التنبه إلى أنها مجاز لا حقيقة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0014": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تصريحية بمادة غير «الأسد» المعهودة؛ يكشف من يحفظ الأمثلة ولا يملك القاعدة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يتردد النموذج بين كناية وتصريحية لأن «السيف» أقل شيوعًا في هذا الاستعمال."
+    },
+    "rhet_b_0034": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ضبط حدّ البليغ أثناء الإنتاج: أقل زيادة (أداة أو وجه) تخرجه عن نوعه.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "كناية تحتاج معرفة لغوية (الجنان) معطاة في السؤال؛ تختبر التركيب لا الحفظ فقط.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0022": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تصحيح خطأ شائع بعلة؛ يختبر فهم الفارق الحقيقي (حذف المشبه) لا مجرد تخمين الصورة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "علّة الطالب تبدو مقنعة سطحيًّا؛ قد يوافقه النموذج مجاملة."
+    },
+    "rhet_b_0037": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "التنبيه نفسه فخ: كثير من المنتجات ستبقي «أستاذنا» فتخرج بليغًا رغم التحذير؛ الحكم على الضبط تحت التنبيه.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الخروج إلى «كان أستاذنا بحرًا» هو الهفوة المدروسة هنا."
+    },
+    "rhet_b_0028": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نقد رأي خاطئ بشرط الكناية؛ «الأسد يدل على الشجاع» شبهة شائعة تحتاج تفكيكًا.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "شبهة الدلالة تجعل الحكم كناية مغرٍ؛ قد يتبعها النموذج."
+    },
+    "rhet_b_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نموذج تصريحية صافٍ بحذف المشبه؛ يقيس التمييز بينها وبين البليغ والكناية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0015": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نقيض «كثير الرماد» مع قرينة مفسِّرة؛ يختبر الانتباه إلى أن المطلوب الحكم على اللفظة لا على الجملة كلها.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0033": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إنتاج كناية مع تعليلها؛ الكنائية أدق من الاستعارة لأن اللازم يجب أن يكون مقبولًا عرفًا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مكنية عاطفية شائعة الذوق؛ القيد المميز هنا حفظ السبب الذي يغفل عنه كثير من التحسينات.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0001": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نموذج مكنية صافٍ يختبر ضبط شرطها: حذف المشبه به والرمز إليه بلازمه، وهو ما يخلط فيه كثيرون مع البليغ والكناية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0042": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "يقابل 0040 من جهة أخرى: استبعاد الوصف غير الجامع؛ تدريب على شرط الجمع في وجه الشبه.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0007": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "قياس على «أنبت الربيع البقل»؛ يختبر ضبط السببية بعيدًا عن النص المدرسي المحفوظ.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0027": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سؤال ذي طبقتين: اختيار سياقي ثم ضبط إطلاق الحكم؛ يقيس النضج البلاغي لا الحفظ.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إنتاج مكنية من جملة إخبارية محايدة؛ يختبر القدرة على التصوير مع قيد حفظ المعنى الثلاثي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0008": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تصريحية ثانية بقرينة مانعة واضحة؛ تثبيت الحكم بمثال مستقل عن 0002.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0038": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حرية الاختيار تنقل الفحص إلى مطابقة التسمية للمنتج؛ خطأ شائع: إنتاج بليغ وتسميته استعارة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "كناية التلخيص المشهورة «مهزول الضأن» في سياق مؤلَّف؛ تقابل كثير الرماد من جهة الفقر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rhet_b_0006": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الفخ الأشهر: ظن «العلم نور» استعارة؛ الحكم المضبوط عند أهل المعاني أنها بليغ لذكر المشبه.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يسميها النموذج استعارة تصريحية لتساوقها مع «رأيت أسدًا»، والفرق حذف المشبه."
+    }
+  }
+}

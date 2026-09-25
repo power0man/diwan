@@ -1,0 +1,29 @@
+{
+  "schema_version": 2,
+  "legacy_record_redacted": true,
+  "legacy_sha256": "c9b22ba4f9d061aa4f83a64f73a9913964d9fad8c13bb93f7f48e82b20cf5f32",
+  "probed_at_utc": "2026-09-20T08:43:40Z",
+  "host": {
+    "machine": "arm64",
+    "cpu_cores": 14,
+    "ram_gb": 24
+  },
+  "tooling": {
+    "python_version": "3.14.7",
+    "git_version": null
+  },
+  "removed_fields": [
+    "raw_command_output",
+    "command_errors",
+    "model_inventory",
+    "mcp_inventory",
+    "host_paths"
+  ],
+  "history_rewritten": false,
+  "capacity_estimate": {
+    "usable_gb": 16,
+    "max_params_b_at_4bit": 32,
+    "max_params_b_at_8bit": 16,
+    "note_ar": "تقدير تاريخي تقريبي، لا وعد تشغيل."
+  }
+}

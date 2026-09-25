@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "probe": "kimi_v1_intake",
+  "measured_at": "2026-09-23",
+  "measured_by": "anthropic/claude-opus-5-5",
+  "scope": "ما سُلِّم إلى المستودع من بنك Kimi الأول: البيانُ المختوم وملفُّ الخلاف وتقريرُ التسليم. الشطرُ المفتوح لم يصل بعد، والمحجوبُ لا يُقرأ هنا أبدًا.",
+  "received": {
+    "sealed_manifest": "evaluation/banks/kimi_v1/sealed/MANIFEST.json",
+    "disputed": "evaluation/banks/kimi_v1/disputed.json",
+    "report": "لُصق في المحادثة ولم يُسلَّم ملفًّا",
+    "open_split": null
+  },
+  "findings": [
+    {
+      "id": "sealed_count_mismatch",
+      "severity": "blocking_for_the_number",
+      "evidence": "البيانُ يعدّ للمحجوب 73 حالة (أ 62 · ب 5 · ج 4 · د 2)، والتقريرُ يعدّ 78 (أ 67). الفرقُ كلُّه في الطبقة (أ): خمسُ حالات.",
+      "cannot_tell_which_is_wrong": "البيانُ هو الالتزامُ المختوم، فإن كان صحيحًا فعددُ (أ) الكلّيّ ومفتوحُها في التقرير خاطئان أيضًا (206/139). يُحسم بعدِّ الحالات في الملفّات على جهاز المالك."
+    },
+    {
+      "id": "cases_reviewed_without_review",
+      "severity": "claim_stronger_than_evidence",
+      "evidence": "disputed.json يقول cases_reviewed = 27 داخل review_process، ونصُّه نفسه يقول إن المراجِعَ الثالث تعذّر، وagreed وdispute_rate = null.",
+      "reading": "27 هو عددُ الحالات **المنتظِرة** للمراجعة لا المُراجَعة."
+    },
+    {
+      "id": "empty_disputes_is_not_zero_disputes",
+      "severity": "claim_stronger_than_evidence",
+      "evidence": "disputes = [] مع غياب المراجعة. القائمةُ الفارغة تُقرأ آليًّا «لا خلاف»، والصحيحُ «لم يُفحص»."
+    },
+    {
+      "id": "human_reread_claim",
+      "severity": "needs_owner_confirmation",
+      "evidence": "disputed.json يقول «قرعة عشرين حالة أعيدت قراءتها بشريةً»، والتقريرُ يقولها بلا «بشريةً». لا دليلَ على أنّ إنسانًا قرأها.",
+      "why_it_matters": "قراءةُ إنسانٍ دليلٌ أقوى من قراءة المؤلِّف لنفسه؛ نسبتُها إلى إنسانٍ بلا إنسانٍ ترفع الثقةَ بلا سند."
+    },
+    {
+      "id": "sample_error_rate",
+      "severity": "blocking_for_the_number",
+      "evidence": "خطآن في عيّنة 20 = نحو 10٪ في الحالات المُعاد قراءتها. أُصلح الخطآن ولم تُعَد قراءةُ الباقي (223).",
+      "consequence": "المتوقَّع نحو 20 جوابًا مرجعيًّا خاطئًا باقيًا في البنك، بهامشٍ واسع لصِغَر العيّنة."
+    }
+  ],
+  "what_was_done": [
+    "أُثبت البيانُ المختوم في المستودع كما وصل قبل أيّ قياس — فيُؤرَّخ الالتزامُ بالتزام git.",
+    "evaluation/banks/*/sealed/* في .gitignore عدا MANIFEST.json.",
+    "tests/test_sealed_banks_stay_sealed.py يفحص الشجرةَ والقرصَ معًا (git add -f يتجاوز .gitignore)، ومُثبَتٌ بالطفرة."
+  ],
+  "limits": [
+    "لم تُحسَب بصمةُ أيّ ملفٍّ محجوب هنا — ولن تُحسب: المحجوبُ لا يدخل هذه البيئة.",
+    "ملفّا Kimi مُثبَتان كما وصلا بلا تعديل؛ التصحيحُ يأتي في نسخةٍ منه لا بيدٍ أخرى."
+  ]
+}

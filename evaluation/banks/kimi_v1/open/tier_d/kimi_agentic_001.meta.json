@@ -1,0 +1,329 @@
+{
+  "suite_id": "kimi_agentic_001",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "D",
+  "tasks": {
+    "agentic_0002": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "خلط شائع بين قيمة الخصم والسعر بعده؛ يقيس فهم الدلالة لا مجرد مطابقة الأرقام.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "shop.py": "def apply_discount(price, percent):\n    return price * (100 - percent) / 100\n"
+      }
+    },
+    "agentic_0012": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اختلاف إملاء الاسم (normalise/normalize)؛ يقيس ملاحقة الواجهة المتفق عليها.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "textkit.py": "def normalize_ar(text):\n    return text.replace(\"أ\", \"ا\").replace(\"إ\", \"ا\").replace(\"آ\", \"ا\")\n"
+      }
+    },
+    "agentic_0011": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "استيراد مكسور (utils بدل util)؛ خطأ شائع بعد إعادة تسمية ملف.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "shop.py": "from util import fmt_price\n\n\ndef label(amount):\n    return \"السعر: \" + fmt_price(amount)\n"
+      }
+    },
+    "agentic_0006": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "شريحة [1:] زائدة تُسقط أوّل كلمة؛ خطأ تشريح كلاسيكي.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "textkit.py": "def reverse_words(sentence):\n    words = sentence.split()\n    words.reverse()\n    return \" \".join(words)\n"
+      }
+    },
+    "agentic_0014": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "دمج نص مع عدد؛ خطأ نوع نموذجي سريع التشخيص.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "invoice.py": "def format_total(total):\n    return \"المجموع المستحق: \" + str(total) + \" ريال\"\n"
+      }
+    },
+    "agentic_0045": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "بادئة f مفقودة؛ خطأ إملائي صغير بأثر ظاهر.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "greeter.py": "def welcome(name):\n    return f\"أهلا بك يا {name} في بوابة الموظفين\"\n"
+      }
+    },
+    "agentic_0010": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فرعان متبادلان؛ يقيس دقة القراءة لا التخمين.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "limits.py": "def clamp(value, low, high):\n    if value < low:\n        return low\n    if value > high:\n        return high\n    return value\n"
+      }
+    },
+    "agentic_0007": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "خطأ نوع القيمة المرجعة (قائمة بدل نص)؛ يقيس قراءة رسالة الفشل بتمعّن.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "textkit.py": "def collapse_spaces(text):\n    return \" \".join(text.split())\n"
+      }
+    },
+    "agentic_0049": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قيمة config خاطئة مع اختبار يمنع تثبيت القيمة في الكود؛ الحل في الإعدادات حصرًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "تثبيت 200 داخل الكود يجتاز اختبار السلوك لكنه يسقط اختبار مصدر الإعداد.",
+      "reference_solution": {
+        "config.json": "{\"free_shipping_threshold\": 200, \"courier\": \"سمسا\"}\n"
+      }
+    },
+    "agentic_0042": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فاصل CSV غير مطابق؛ يقيس فحص البيانات الفعلية قبل افتراض علة منطقية.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "parser.py": "import csv\nimport os\n\n\ndef load_grades():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"data\", \"grades.csv\")\n    with open(path, newline=\"\", encoding=\"utf-8\") as f:\n        return list(csv.DictReader(f, delimiter=\";\"))\n"
+      }
+    },
+    "agentic_0046": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "return داخل حلقة بسوء إزاحة؛ خطأ بنيوي يقيس قراءة المسافات البادئة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "finder.py": "def find_all_positive(nums):\n    result = []\n    for n in nums:\n        if n > 0:\n            result.append(n)\n    return result\n"
+      }
+    },
+    "agentic_0019": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خلط load/loads؛ خطأ واجهة مكتبة شائع يقيس معرفة API القياسية.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "settings.py": "import json\n\n\ndef load_settings():\n    with open(os_path(), encoding=\"utf-8\") as f:\n        return json.loads(f.read())\n\n\ndef os_path():\n    import os\n    return os.path.join(os.path.dirname(os.path.abspath(__file__)), \"config.json\")\n"
+      }
+    },
+    "agentic_0022": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "عدم تطابق مفتاح config مع تحريم ملف الإعدادات نفسه؛ الحلّ في الكود حصرًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "الطريق السهل (تعديل config.json) محرّم؛ يجب تصحيح الكود ليطابق الإعدادات.",
+      "reference_solution": {
+        "db.py": "import json\nimport os\n\n\ndef connect_string():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"config.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        cfg = json.load(f)\n    return \"db://%s:5432/app\" % cfg[\"hostname\"]\n"
+      }
+    },
+    "agentic_0041": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ترتيب معجمي بدل عددي؛ خطأ دلالي شائع مع بيانات نصية رقمية.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "versions.py": "def sort_quantities(values):\n    return sorted(values, key=int)\n"
+      }
+    },
+    "agentic_0044": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قاعدة السنة الكبيسة الكاملة؛ الحالات القرنية فخّ معرفي كلاسيكي.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "calendar_util.py": "def is_leap(year):\n    if year % 400 == 0:\n        return True\n    if year % 100 == 0:\n        return False\n    return year % 4 == 0\n"
+      }
+    },
+    "agentic_0004": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حالة حدّية (عدد زوجي) تتطلب تفرّعًا صحيحًا لا مجرد تبديل مؤشر.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "stats.py": "def median(nums):\n    ordered = sorted(nums)\n    n = len(ordered)\n    mid = n // 2\n    if n % 2 == 1:\n        return ordered[mid]\n    return (ordered[mid - 1] + ordered[mid]) / 2\n"
+      }
+    },
+    "agentic_0048": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حالة حدّية في باقي القسمة (الساعة 12)؛ خطأ نمطي في تحويلات الأنظمة العددية.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "clock.py": "def to_12h(hour):\n    h = hour % 12\n    return 12 if h == 0 else h\n"
+      }
+    },
+    "agentic_0050": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عدم تطابق صيغة تاريخ؛ خطأ تكامل شائع عند الحدود بين الأنظمة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "events.py": "from datetime import datetime\n\n\ndef day_name(date_str):\n    dt = datetime.strptime(date_str, \"%Y-%m-%d\")\n    return dt.strftime(\"%A\")\n"
+      }
+    },
+    "agentic_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مجلد إخراج غير موجود؛ خطأ مسارات واقعي في أدوات التقارير.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "report.py": "import os\n\n\ndef write_report(lines, out_dir=\"out\"):\n    os.makedirs(out_dir, exist_ok=True)\n    path = out_dir + \"/report.txt\"\n    with open(path, \"w\", encoding=\"utf-8\") as f:\n        f.write(\"\\n\".join(lines))\n    return path\n"
+      }
+    },
+    "agentic_0047": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "strip تأكل الطرفين؛ يقيس الانتباه لدلالة البيانات (الأصفار اللاحقة ذات معنى).",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "formatter.py": "def trim_code(code):\n    return code.lstrip(\"0\")\n"
+      }
+    },
+    "agentic_0005": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "علة حدّية (`>` بدل `>=`) على ثلاثة فروع؛ مثال نموذجي لأخطاء الحدود.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "grades.py": "def grade(score):\n    if score >= 90:\n        return \"A\"\n    if score >= 80:\n        return \"B\"\n    if score >= 70:\n        return \"C\"\n    return \"F\"\n"
+      }
+    },
+    "agentic_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عدم تطابق اسم ملف (items/item)؛ يقيس فحص نظام الملفات قبل افتراض علة منطقية.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "inventory.py": "import csv\nimport os\n\n\ndef load_items():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"data\", \"item.csv\")\n    with open(path, newline=\"\", encoding=\"utf-8\") as f:\n        return list(csv.DictReader(f))\n"
+      }
+    },
+    "agentic_0013": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "رمز مفقود عبر ملفين؛ يتطلب تتبّع التعريف والاستخدام معًا.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "payroll.py": "from rates import TAX_RATE as TAX\n\n\ndef net_salary(gross):\n    return gross * (1 - TAX)\n"
+      }
+    },
+    "agentic_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تهيئة بصفر تخفي العلة حتى تظهر بيانات سالبة؛ خطأ واقعي ماكر.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "weather.py": "def max_temp(temps):\n    best = temps[0]\n    for t in temps:\n        if t > best:\n            best = t\n    return best\n"
+      }
+    },
+    "agentic_0028": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "NameError بسبب خطأ إملائي في متغير؛ من أكثر أخطاء التشغيل شيوعًا.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "printer.py": "def summary(total):\n    reslut = \"الإجمالي: %d\" % total\n    return reslut\n"
+      }
+    },
+    "agentic_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "عدم تطابق اسم ملف بيانات؛ forbidden فارغ ليختار الوكيل جهة الإصلاح.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "reader.py": "import os\n\n\ndef read_first_line():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"data\", \"inputs.txt\")\n    with open(path, encoding=\"utf-8\") as f:\n        return f.readline().strip()\n"
+      }
+    },
+    "agentic_0036": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ترميز خاطئ في نمط run_and_diagnose؛ مكمّل لمهمة الترميز بنمط الاختبارات.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "reader.py": "import os\n\n\ndef read_message():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"data\", \"msg.txt\")\n    with open(path, encoding=\"utf-8\") as f:\n        return f.read()\n"
+      }
+    },
+    "agentic_0038": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "TypeError مقارنة أنواع مختلطة؛ يتطلب مفتاح ترتيب لا تحويلًا يغيّر البيانات.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "sorter.py": "def sort_mixed(items):\n    return sorted(items, key=lambda x: float(x))\n"
+      }
+    },
+    "agentic_0031": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "شرط مقلوب لا يولّد استثناءً بل رمز خروج خاطئ؛ تشخيصه أصعب لأنه لا traceback.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "checker.py": "import sys\n\n\ndef validate():\n    return True\n\n\ndef run():\n    ok = validate()\n    if not ok:\n        sys.exit(1)\n"
+      }
+    },
+    "agentic_0032": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطأ مقنّع داخل except؛ يقيس قراءة تتبّع الخطأ كاملًا حتى آخر إطار.",
+      "answer_verified_by": "mechanical",
+      "trap": "المعالج يوحي بأن المشكلة محلولة؛ العلة في سطر داخل الـ except نفسه.",
+      "reference_solution": {
+        "loader.py": "import json\nimport os\n\n\nDEFAULTS = {\"fallbacks\": {}}\n\n\ndef load():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"app.json\")\n    try:\n        with open(path, encoding=\"utf-8\") as f:\n            return json.load(f)\n    except FileNotFoundError:\n        return DEFAULTS.get(\"fallback\", {})\n"
+      }
+    },
+    "agentic_0033": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "os.path.join مع مسار مطلق يلغي البادئة؛ فخّ مكتبة قياسية يعرفه المتمرسون فقط.",
+      "answer_verified_by": "mechanical",
+      "trap": "الدالة المساعدة تبدو صحيحة شكليًّا؛ الشرطة الزائدة تبتلع مسار المشروع كله.",
+      "reference_solution": {
+        "builder.py": "import os\n\n\ndef build_path(base, name):\n    return os.path.join(base, name)\n\n\ndef read_data():\n    base = os.path.dirname(os.path.abspath(__file__))\n    with open(build_path(base, \"data.txt\"), encoding=\"utf-8\") as f:\n        return f.read().strip()\n"
+      }
+    },
+    "agentic_0023": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم مستورَد مُخطَّأ إملائيًّا مع تحريم الملف المستورِد؛ الحل يتطلب التفافًا من جهة المكتبة.",
+      "answer_verified_by": "mechanical",
+      "trap": "الطريق السهل (تصحيح الاستيراد في main.py) محرّم؛ يجب إتاحة الاسم المطلوب في helper.py.",
+      "reference_solution": {
+        "helper.py": "def calculate_total(items):\n    return sum(items)\n\n\ndef caclculate_total(items):\n    return sum(items)\n"
+      }
+    },
+    "agentic_0024": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "قسمة على صفر في حالة حدّية واقعية (لا بيانات) مع تحريم المنفِّذ.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "analyzer.py": "def average(nums):\n    if not nums:\n        return 0\n    return sum(nums) / len(nums)\n"
+      }
+    },
+    "agentic_0037": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "KeyError على مفتاح غائب مع تحريم ملف الإعدادات؛ الحل وصول آمن في الكود.",
+      "answer_verified_by": "mechanical",
+      "trap": "الطريق السهل (إضافة المفتاح إلى app.json) محرّم.",
+      "reference_solution": {
+        "notifier.py": "import json\nimport os\n\n\ndef mode():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"app.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        cfg = json.load(f)\n    return cfg.get(\"mode\", \"normal\")\n"
+      }
+    },
+    "agentic_0030": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عودية بلا حالة قاعدية؛ RecursionError نمطي يقيس فهم تتبّع المكدس.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "mathlib.py": "def fact(n):\n    if n <= 1:\n        return 1\n    return n * fact(n - 1)\n"
+      }
+    }
+  }
+}

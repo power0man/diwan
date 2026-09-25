@@ -1,0 +1,405 @@
+{
+  "suite_id": "kimi_sci_a_004",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "sci_a4_0074": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قانون أوم مقلوبًا؛ الفحص يستبعد ناتج الضرب ويشترط ناتج القسمة.",
+      "answer_verified_by": "mechanical",
+      "trap": "تطبيق القانون كما كُتب فينتج 48."
+    },
+    "sci_a4_0079": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فخ مدسوس جديد: عدم تجانس الأبعاد بين الطرفين.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الاكتفاء بالتعويض العددي دون فحص الوحدات."
+    },
+    "sci_a4_0086": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مواصفات تجارية متناقضة مع P = V×I.",
+      "answer_verified_by": "mechanical",
+      "trap": "عدم التحقق من اتساق المواصفات."
+    },
+    "sci_a4_0087": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تناقض رقمي في سياق ميكانيكي لا كهربائي؛ تعميم كشف التناقض.",
+      "answer_verified_by": "mechanical",
+      "trap": "قبول النتيجة الجاهزة دون إعادة الحساب."
+    },
+    "sci_a4_0076": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قدرة بقانون مغلوط البنية؛ الفخ تبديل موضع التربيع.",
+      "answer_verified_by": "mechanical",
+      "trap": "استعمال الصيغة المكتوبة فينتج 0.4."
+    },
+    "sci_a4_0089": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ارتباط باتجاه سببي معكوس الظاهر؛ الفخ قبول الاتجاه المقترح.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قبول أن الإطفاء سبب الخسائر."
+    },
+    "sci_a4_0091": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ارتباط سلوكي في سياق مدرسي قريب من الطلاب.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "تعميم الارتباط سببًا."
+    },
+    "sci_a4_0088": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فخ استنتاج سببيّ من ارتباط؛ السلوك الصحيح رفضه وترشيح متغير ثالث.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الانجرار مع الاستنتاج السببي الجاهز."
+    },
+    "sci_a4_0083": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "معطى زائد متناقض عدديًّا مع قانون أوم؛ الفخ اكتشاف عدم الاتساق لا اختيار معطًى.",
+      "answer_verified_by": "mechanical",
+      "trap": "استعمال القيم الثلاث كما هي دون فحص الاتساق."
+    },
+    "sci_a4_0077": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قلب الضرب قسمةً في قانون القدرة.",
+      "answer_verified_by": "mechanical",
+      "trap": "قسمة 6 على 2.5 فينتج 2.4."
+    },
+    "sci_a4_0090": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "انحياز اختيار العيّنة متنكّرًا في سببية.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الاستنتاج المباشر من الارتباط."
+    },
+    "sci_a4_0078": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قلب الضرب قسمةً في قانون الحرارة النوعية.",
+      "answer_verified_by": "mechanical",
+      "trap": "تطبيق القسمة كما كُتبت."
+    },
+    "sci_a4_0081": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "جمع حدّين غير متجانسين؛ لا يجمع إلا متماثلان بُعدًا.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قبول أي صيغة مكتوبة بثقة."
+    },
+    "sci_a4_0009": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اشتقاق المقاومة من قانون أوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قانون أوم المباشر؛ بوابة قسم الدوائر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0002": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قانون أوم المباشر؛ بوابة قسم الدوائر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0013": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مكافئة التوالي المباشرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0003": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قانون أوم المباشر؛ بوابة قسم الدوائر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0028": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قدرة مباشرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0008": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اشتقاق المقاومة من قانون أوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0005": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اشتقاق الجهد من قانون أوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0007": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اشتقاق الجهد من قانون أوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0010": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اشتقاق المقاومة من قانون أوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0006": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اشتقاق الجهد من قانون أوم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0038": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اشتقاق عكسي؛ الفخ قسمة V على P مباشرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مجزّئ الجهد؛ يتطلب خطوتين مترابطتين.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "توزّع التيار في التوازي؛ الفخ حساب تيار واحد فقط.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0026": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "توزّع التيار في التوازي؛ الفخ حساب تيار واحد فقط.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0024": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ثلاثة فروع متساوية؛ الفخ القسمة على 2 بدل 3.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0017": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مجزّئ الجهد؛ يتطلب خطوتين مترابطتين.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اختيار الصيغة المناسبة للمعطيات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0034": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اختيار الصيغة المناسبة للمعطيات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مفهومي؛ يكشف من يحفظ الصيغ بلا فهم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0021": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مكافئة التوازي لفرعين؛ الفخ الجمع المباشر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0022": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مكافئة التوازي لفرعين؛ الفخ الجمع المباشر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0039": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اشتقاق عكسي بسيط من قانون القدرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0031": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اختيار الصيغة المناسبة للمعطيات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اختيار الصيغة المناسبة للمعطيات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0033": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اختيار الصيغة المناسبة للمعطيات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0019": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مكافئة التوازي لفرعين؛ الفخ الجمع المباشر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0035": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اختيار الصيغة المناسبة للمعطيات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0054": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "التحويل العكسي للكلفن.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0052": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل كلفن مباشر بالإزاحة المعلنة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0053": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "التحويل العكسي للكلفن.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0070": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "استخراج القدرة من تعريفها بالأبعاد.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0055": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحويل مركّب من خطوتين؛ الفخ ترتيب العمليات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0056": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحويل مركّب من خطوتين؛ الفخ ترتيب العمليات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0067": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حساب حرارة نوعية؛ الفخ إغفال أحد العوامل الثلاثة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0069": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حساب حرارة نوعية؛ الفخ إغفال أحد العوامل الثلاثة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0071": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "استخراج المقاومة من قانون أوم بعدّيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0043": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل مئوي→فهرنهايت؛ الفخ تقديم الإضافة على الضرب.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0061": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الاتجاه العكسي؛ يكشف من يحفظ اتجاهًا واحدًا.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0064": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "وحدة فاتورة الكهرباء؛ الفخ نسيان القسمة على ألف.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0058": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل سرعة؛ الفخ الضرب بدل القسمة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0060": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الاتجاه العكسي؛ يكشف من يحفظ اتجاهًا واحدًا.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0063": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "كيلوواط·ساعة وحدة طاقة لا قدرة؛ الفخ المفهومي مصاحب للحساب.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0059": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل سرعة؛ الفخ الضرب بدل القسمة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0065": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "وحدة فاتورة الكهرباء؛ الفخ نسيان القسمة على ألف.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0066": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حساب حرارة نوعية؛ الفخ إغفال أحد العوامل الثلاثة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0046": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل مئوي→فهرنهايت؛ الفخ تقديم الإضافة على الضرب.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0045": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل مئوي→فهرنهايت؛ الفخ تقديم الإضافة على الضرب.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0050": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "التحويل العكسي؛ الفخ قلب ترتيب العمليات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0049": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "التحويل العكسي؛ الفخ قلب ترتيب العمليات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a4_0047": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "التحويل العكسي؛ الفخ قلب ترتيب العمليات.",
+      "answer_verified_by": "mechanical"
+    }
+  }
+}

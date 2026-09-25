@@ -1,0 +1,425 @@
+{
+  "suite_id": "kimi_sci_a_001",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "sci_a1_0058": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قانون نيوتن الثاني مباشرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0094": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "حوار متعدد الأدوار يختبر تتبّع تعديل المعطيات.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0040": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "طاقة حركية مباشرة؛ يكشف من ينسى التربيع أو النصف.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0006": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "يميّز بين حساب الارتفاع وحساب السرعة في السقوط الحر؛ خطأ شائع هو نسيان التربيع.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "شغل مباشر W=Fd في سياق عملي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0068": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "التمييز كتلة/وزن؛ أساس يُخطئ فيه كثير من الطلبة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0004": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قياس مباشر لقانون v=g·t في سياق قطرة ماء من ميزاب؛ يكشف الخلط بين g=9.8 وg=10.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قياس مباشر لقانون v=g·t في سياق حصاة أفلتها طالب من جسر؛ يكشف الخلط بين g=9.8 وg=10.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0002": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قياس مباشر لقانون v=g·t في سياق مفتاح سقط من سقالة؛ يكشف الخلط بين g=9.8 وg=10.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0050": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قدرة متوسطة مباشرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0032": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "شغل مباشر W=Fd في سياق عملي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0067": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "التمييز كتلة/وزن؛ أساس يُخطئ فيه كثير من الطلبة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0076": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "كمية تحرك مباشرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0003": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قياس مباشر لقانون v=g·t في سياق كرة في مختبر؛ يكشف الخلط بين g=9.8 وg=10.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0005": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "يميّز بين حساب الارتفاع وحساب السرعة في السقوط الحر؛ خطأ شائع هو نسيان التربيع.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0051": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "طاقة وضع مباشرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0095": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "حوار يقيس نقل المعطيات بين الأدوار دون تسرّب.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0056": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قانون نيوتن الثاني مباشرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0057": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قانون نيوتن الثاني مباشرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0078": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "كمية تحرك مباشرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0052": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "طاقة وضع مباشرة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0041": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "طاقة حركية مباشرة؛ يكشف من ينسى التربيع أو النصف.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0034": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "شغل مباشر W=Fd في سياق عملي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0073": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مفهوم القصور الذاتي في موقف يومي؛ الخطأ الشائع قلب الاتجاه.",
+      "answer_verified_by": "mechanical",
+      "trap": "القول بالاندفاع إلى الخلف."
+    },
+    "sci_a1_0072": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الوزن الظاهري في مصعد متسارع؛ الفخّ الإجابة بالوزن الحقيقي mg.",
+      "answer_verified_by": "mechanical",
+      "trap": "إهمال تسارع المصعد والإجابة بـ mg."
+    },
+    "sci_a1_0026": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مقذوف بزاوية؛ يتطلب تفكيك المركبات واستعمال دوال مثلثية — صعب بحق لمن يحفظ دون فهم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0027": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مقذوف بزاوية؛ يتطلب تفكيك المركبات واستعمال دوال مثلثية — صعب بحق لمن يحفظ دون فهم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0031": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مقذوف بزاوية؛ يتطلب تفكيك المركبات واستعمال دوال مثلثية — صعب بحق لمن يحفظ دون فهم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0045": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "عكس علاقة الطاقة الحركية؛ خطوة جذر إضافية.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0091": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "انفجار من سكون؛ يتطلب فهم الاتجاهين المتعاكسين.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0020": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فخّ شائع: إهمال السرعة الابتدائية والاكتفاء بـ g·t.",
+      "answer_verified_by": "mechanical",
+      "trap": "نسيان v₀ يعطي قيمة أصغر؛ الفحص يستبعدها."
+    },
+    "sci_a1_0071": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الوزن الظاهري في مصعد متسارع؛ الفخّ الإجابة بالوزن الحقيقي mg.",
+      "answer_verified_by": "mechanical",
+      "trap": "إهمال تسارع المصعد والإجابة بـ mg."
+    },
+    "sci_a1_0030": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مقذوف بزاوية؛ يتطلب تفكيك المركبات واستعمال دوال مثلثية — صعب بحق لمن يحفظ دون فهم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0046": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نظرية الشغل والطاقة بخطوتين؛ الفخّ إهمال السرعة الابتدائية.",
+      "answer_verified_by": "mechanical",
+      "trap": "حساب v من W وحده يتجاهل KE الابتدائية."
+    },
+    "sci_a1_0075": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "شدّ الحبل مع تسارع رأسي؛ الفخّ T = mg.",
+      "answer_verified_by": "mechanical",
+      "trap": "مساواة الشد بالوزن."
+    },
+    "sci_a1_0029": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مقذوف بزاوية؛ يتطلب تفكيك المركبات واستعمال دوال مثلثية — صعب بحق لمن يحفظ دون فهم.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0047": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نظرية الشغل والطاقة بخطوتين؛ الفخّ إهمال السرعة الابتدائية.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0037": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "شغل قوة مائلة؛ الفخّ هو إهمال cosθ.",
+      "answer_verified_by": "mechanical",
+      "trap": "استعمال F·d كاملًا يعطي قيمة أكبر؛ الفحص يستبعدها."
+    },
+    "sci_a1_0093": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تصادم مرن؛ من أصعب ما في الميكانيكا المدرسية ويكشف الحفظ السطحي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0044": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "عكس علاقة الطاقة الحركية؛ خطوة جذر إضافية.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0024": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "المقذوف الأفقي؛ الفصل بين المركبتين مهارة جوهرية. حساب المدى خطوتان: الزمن ثم الضرب.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0070": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الوزن الظاهري في مصعد متسارع؛ الفخّ الإجابة بالوزن الحقيقي mg.",
+      "answer_verified_by": "mechanical",
+      "trap": "إهمال تسارع المصعد والإجابة بـ mg."
+    },
+    "sci_a1_0019": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فخّ شائع: إهمال السرعة الابتدائية والاكتفاء بـ g·t.",
+      "answer_verified_by": "mechanical",
+      "trap": "نسيان v₀ يعطي قيمة أصغر؛ الفحص يستبعدها."
+    },
+    "sci_a1_0092": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تصادم مرن؛ من أصعب ما في الميكانيكا المدرسية ويكشف الحفظ السطحي.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0090": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "انفجار من سكون؛ يتطلب فهم الاتجاهين المتعاكسين.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0074": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "شدّ الحبل مع تسارع رأسي؛ الفخّ T = mg.",
+      "answer_verified_by": "mechanical",
+      "trap": "مساواة الشد بالوزن."
+    },
+    "sci_a1_0064": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مسألة بخطوتين: احتكاك ثم محصلة؛ الفخّ تجاهل الاحتكاك.",
+      "answer_verified_by": "mechanical",
+      "trap": "قسمة القوة المسلطة على الكتلة مباشرة."
+    },
+    "sci_a1_0015": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "قياس v=√(2gh)؛ يكشف من يخلط بينه وبين v=g·t دون زمن.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0088": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سرعة الارتداد بحفظ كمية التحرك.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0014": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "قياس v=√(2gh)؛ يكشف من يخلط بينه وبين v=g·t دون زمن.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0089": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سرعة الارتداد بحفظ كمية التحرك.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0083": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تصادم غير مرن بحفظ كمية التحرك.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0011": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "يتطلب عكس العلاقة وأخذ جذر تربيعي؛ خطوة إضافية عن التعويض المباشر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0062": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "القوة المحصلة لقوتين متعاكستين؛ الفخّ الجمع بدل الطرح.",
+      "answer_verified_by": "mechanical",
+      "trap": "جمع القوتين بدل طرحهما."
+    },
+    "sci_a1_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "قذف رأسي لأعلى؛ يقيس فهم الزمن الكلي T = 2v₀/g.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0096": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حوار يتطلب استرجاع معطى سابق واستعماله في قانون آخر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "يتطلب عكس العلاقة وأخذ جذر تربيعي؛ خطوة إضافية عن التعويض المباشر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0022": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "المقذوف الأفقي؛ الفصل بين المركبتين مهارة جوهرية.",
+      "answer_verified_by": "mechanical",
+      "trap": "الخلط بين استعمال السرعة الأفقية في حساب الزمن."
+    },
+    "sci_a1_0085": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تصادم غير مرن بحفظ كمية التحرك.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0061": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "القوة المحصلة لقوتين متعاكستين؛ الفخّ الجمع بدل الطرح.",
+      "answer_verified_by": "mechanical",
+      "trap": "جمع القوتين بدل طرحهما."
+    },
+    "sci_a1_0082": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "القوة كمعدل تغير كمية التحرك.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "يتطلب عكس العلاقة وأخذ جذر تربيعي؛ خطوة إضافية عن التعويض المباشر.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0054": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حفظ الطاقة؛ يكشف من يطلب الكتلة ظنًّا أنها ناقصة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0053": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حفظ الطاقة؛ يكشف من يطلب الكتلة ظنًّا أنها ناقصة.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0079": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الدفع والتغير في كمية التحرك.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0081": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "القوة كمعدل تغير كمية التحرك.",
+      "answer_verified_by": "mechanical"
+    },
+    "sci_a1_0038": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "مفهوم الشغل الصفري؛ الخطأ الشائع W=Fd بلا اعتبار للزاوية.",
+      "answer_verified_by": "mechanical",
+      "trap": "ضرب الوزن في المسافة يعطي 2000 وهو خطأ مفاهيمي."
+    }
+  }
+}

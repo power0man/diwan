@@ -1,0 +1,2386 @@
+{
+  "schema_version": 1,
+  "suite_id": "kimi_assist_a_002",
+  "split": "development",
+  "description": "اتباع تعليمات مركبة بقيود متعددة متقاطعة قابلة للتحقق، وحوارات متعددة الأدوار تختبر تذكر المعلومة المحدثة لا القديمة.",
+  "cases": [
+    {
+      "case_id": "ifc_a_0038",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب قائمة من ستة أشياء توجد في المطبخ، كل شيء في سطر مستقل وكل عنصر كلمة واحدة فقط."
+        }
+      ],
+      "reference": "ستة أسطر بكلمات مفردة مثل: سكين، قدر، ملعقة، صحن، شوكة، مقلاة.",
+      "rubric": [
+        "ستة عناصر",
+        "كل عنصر كلمة واحدة",
+        "كلها أدوات مطبخ"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 6, 'عدد الأسطر'\nassert all(len(l.split()) == 1 for l in lines), 'كلمات السطر ليست بالعدد المطلوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0015",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب إعلانًا لعيادة أسنان يتضمن: «ابتسامة» و«تقويم». ممنوع ذكر: «ألم» و«إبرة» حتى لا يتخوف القارئ."
+        }
+      ],
+      "reference": "إعلان مطمئن فيه «ابتسامة» و«تقويم» ولا يذكر مصدر تخويف حتى بصيغة النفي.",
+      "rubric": [
+        "ذكر الكلمتين",
+        "خلوّ من «ألم» و«إبرة»"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "ابتسامة"
+        },
+        {
+          "kind": "contains",
+          "value": "تقويم"
+        },
+        {
+          "kind": "excludes",
+          "value": "ألم"
+        },
+        {
+          "kind": "excludes",
+          "value": "إبرة"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0046",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب قائمة تحقق من خمسة بنود لتجهيز رحلة برية، كل بند في سطر يبدأ بـ«-» ولا يتجاوز أربع كلمات."
+        }
+      ],
+      "reference": "خمسة أسطر تبدأ بشرطة، كل بند ≤٤ كلمات، وتغطي تجهيزات الرحلة.",
+      "rubric": [
+        "خمسة بنود تبدأ بـ«-»",
+        "كل بند ≤٤ كلمات",
+        "منطقية البنود"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 5, 'عدد الأسطر'\nassert all(len(l.split()) <= 4 for l in lines), 'كلمات السطر تتجاوز الحد'\nassert all(l.startswith('-') for l in lines), 'كل بند يبدأ بشرطة'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0020",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب إعلانًا لفندق صغير يتضمن: «إطلالة على البحر» و«إفطار شامل». ممنوع ذكر: «فاخر» و«خمس نجوم» لأنه فندق ثلاث نجوم."
+        }
+      ],
+      "reference": "إعلان صادق التصنيف بالميزتين الإلزاميتين.",
+      "rubric": [
+        "ذكر الميزتين",
+        "خلوّ من ادعاء الفخامة والتصنيف الزائف"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "إطلالة على البحر"
+        },
+        {
+          "kind": "contains",
+          "value": "إفطار شامل"
+        },
+        {
+          "kind": "excludes",
+          "value": "فاخر"
+        },
+        {
+          "kind": "excludes",
+          "value": "خمس نجوم"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0002",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب رسالة دعوة لعشاء عمل من ثلاثة أسطر بالضبط: يبدأ السطر الأول بـ«يسعدنا»، والثاني بـ«نرجو»، والثالث بـ«ننتظر». ممنوع ذكر كلمة «اجتماع» وكلمة «مطعم»."
+        }
+      ],
+      "reference": "ثلاثة أسطر تبدأ بالكلمات الثلاث المحددة ولا تذكر «اجتماع» ولا «مطعم»، مثل النموذج المكتوب في الفحوص.",
+      "rubric": [
+        "ثلاثة أسطر بالبدايات الثلاث المحددة",
+        "خلوّ من الكلمتين المحظورتين",
+        "لباقة دعوة عمل"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "يسعدنا"
+        },
+        {
+          "kind": "contains",
+          "value": "نرجو"
+        },
+        {
+          "kind": "contains",
+          "value": "ننتظر"
+        },
+        {
+          "kind": "excludes",
+          "value": "اجتماع"
+        },
+        {
+          "kind": "excludes",
+          "value": "مطعم"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 3, 'عدد الأسطر'\n_st = ['يسعدنا', 'نرجو', 'ننتظر']\nassert len(lines) == len(_st) and all(l.startswith(w) for l, w in zip(lines, _st)), 'بدايات الأسطر'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0028",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب رسالة استقالة مهنية قصيرة تتضمن: «شهرًا واحدًا» كمهلة إشعار. ممنوع ذكر أي سلبية: «كرهت»، «أسوأ»، «مللت»."
+        }
+      ],
+      "reference": "استقالة مهنية بمهلة الإشعار المحددة ودون أي عبارة سلبية.",
+      "rubric": [
+        "ذكر المهلة",
+        "خلوّ من السلبيات الثلاث",
+        "مهنية الصياغة"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "شهرًا واحدًا"
+        },
+        {
+          "kind": "excludes",
+          "value": "كرهت"
+        },
+        {
+          "kind": "excludes",
+          "value": "أسوأ"
+        },
+        {
+          "kind": "excludes",
+          "value": "مللت"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0010",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب إعلانًا لتطبيق توصيل طعام يتضمن: «١٥ دقيقة» و«أول طلب». ممنوع ادعاء التفوق بكلمتي «أسرع» و«الأفضل»."
+        }
+      ],
+      "reference": "إعلان فيه «١٥ دقيقة» و«أول طلب» دون «أسرع» ولا «الأفضل».",
+      "rubric": [
+        "ذكر المدة وأول طلب",
+        "خلوّ من ادعاءي التفوق"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "١٥ دقيقة"
+        },
+        {
+          "kind": "contains",
+          "value": "أول طلب"
+        },
+        {
+          "kind": "excludes",
+          "value": "أسرع"
+        },
+        {
+          "kind": "excludes",
+          "value": "الأفضل"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0036",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاث جمل عن فصل الشتاء، كل جملة في سطر مستقل ولا تتجاوز ثماني كلمات."
+        }
+      ],
+      "reference": "ثلاثة أسطر، كل سطر جملة شتوية من ثماني كلمات أو أقل.",
+      "rubric": [
+        "ثلاث جمل",
+        "كل جملة ≤٨ كلمات",
+        "ارتباط بالشتاء"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 3, 'عدد الأسطر'\nassert all(len(l.split()) <= 8 for l in lines), 'كلمات السطر تتجاوز الحد'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0011",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب إعلانًا لمنظف منزلي صديق للبيئة يتضمن: «بمكونات طبيعية» و«آمن على الأطفال». ممنوع ذكر: «كيماويات» و«١٠٠٪»."
+        }
+      ],
+      "reference": "إعلان بالعبارتين الإلزاميتين وبلا «كيماويات» ولا نسبة مئوية.",
+      "rubric": [
+        "ذكر العبارتين",
+        "خلوّ من «كيماويات» و«١٠٠٪»"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "بمكونات طبيعية"
+        },
+        {
+          "kind": "contains",
+          "value": "آمن على الأطفال"
+        },
+        {
+          "kind": "excludes",
+          "value": "كيماويات"
+        },
+        {
+          "kind": "excludes",
+          "value": "١٠٠٪"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0006",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب اعتذارًا مهذبًا عن تلبية دعوة من سطرين بالضبط: يبدأ الأول بـ«أعتذر» والثاني بـ«أتمنى»، وممنوع ذكر «انشغال» و«ظرف»."
+        }
+      ],
+      "reference": "سطران بالبدايتين المحددتين وبلا «انشغال» ولا «ظرف».",
+      "rubric": [
+        "سطران بالبدايتين",
+        "خلوّ من المبررين المحظورين",
+        "لباقة الاعتذار"
+      ],
+      "checks": [
+        {
+          "kind": "excludes",
+          "value": "انشغال"
+        },
+        {
+          "kind": "excludes",
+          "value": "ظرف"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 2, 'عدد الأسطر'\n_st = ['أعتذر', 'أتمنى']\nassert len(lines) == len(_st) and all(l.startswith(w) for l, w in zip(lines, _st)), 'بدايات الأسطر'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0035",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب جملة واحدة عن فوائد قراءة الكتب مكوّنة من عشر كلمات بالضبط."
+        }
+      ],
+      "reference": "جملة من عشر كلمات مثل: «القراءة توسع المدارك وتغذي العقل وتبني شخصية الإنسان كل يوم».",
+      "rubric": [
+        "عشر كلمات بالضبط",
+        "جملة واحدة مفيدة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 1, 'عدد الأسطر'\nassert len(ans.split()) == 10, 'عدد الكلمات'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0044",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اقترح أربعة أسماء لمقهى جديد، كل اسم كلمتان بالضبط وفي سطر مستقل، وممنوع استخدام كلمة «قهوة» في أي اسم."
+        }
+      ],
+      "reference": "أربعة أسماء من كلمتين لكل منها وبلا «قهوة».",
+      "rubric": [
+        "أربعة أسماء",
+        "كل اسم كلمتان",
+        "خلوّ من «قهوة»"
+      ],
+      "checks": [
+        {
+          "kind": "excludes",
+          "value": "قهوة"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 4, 'عدد الأسطر'\nassert all(len(l.split()) == 2 for l in lines), 'كلمات السطر ليست بالعدد المطلوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0009",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب إعلانًا نصيًّا قصيرًا لعطر رجالي اسمه «ليالي العود». يجب أن يتضمن: اسم المنتج، وعبارة «ثبات يدوم طوال اليوم»، والسعر «٢٤٠ ريالًا». ممنوع منعًا باتًّا ذكر: «خصم»، «عرض»، «مجانًا»."
+        }
+      ],
+      "reference": "إعلان يجمع العناصر الثلاثة الإلزامية ويخلو من المفردات الترويجية الثلاث المحظورة.",
+      "rubric": [
+        "ذكر اسم المنتج وعبارة الثبات والسعر حرفيًّا",
+        "خلوّ من «خصم» و«عرض» و«مجانًا»"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "ليالي العود"
+        },
+        {
+          "kind": "contains",
+          "value": "ثبات يدوم طوال اليوم"
+        },
+        {
+          "kind": "contains",
+          "value": "٢٤٠ ريالًا"
+        },
+        {
+          "kind": "excludes",
+          "value": "خصم"
+        },
+        {
+          "kind": "excludes",
+          "value": "عرض"
+        },
+        {
+          "kind": "excludes",
+          "value": "مجانًا"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0022",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب شكوى عميل مهذبة لمتجر إلكتروني تتضمن: «رقم الطلب ٧٧٤١» و«تأخر ثلاثة أسابيع». ممنوع استخدام كلمتي «غش» و«نصب»."
+        }
+      ],
+      "reference": "شكوى حازمة لكن مهذبة تذكر الرقم والمدة وتطلب حلًّا دون اتهامات محظورة.",
+      "rubric": [
+        "ذكر الرقم والمدة",
+        "خلوّ من «غش» و«نصب»",
+        "نبرة مهذبة"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "رقم الطلب ٧٧٤١"
+        },
+        {
+          "kind": "contains",
+          "value": "تأخر ثلاثة أسابيع"
+        },
+        {
+          "kind": "excludes",
+          "value": "غش"
+        },
+        {
+          "kind": "excludes",
+          "value": "نصب"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0025",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب إعلان ترقية داخليًّا يتضمن: «مدير قسم» و«أول يوليو». ممنوع ذكر «مؤقت» و«بالوكالة»."
+        }
+      ],
+      "reference": "إعلان ترقية نهائية بالمسمى والتاريخ دون صيغ التكليف المؤقت.",
+      "rubric": [
+        "ذكر المسمى والتاريخ",
+        "خلوّ من «مؤقت» و«بالوكالة»"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "مدير قسم"
+        },
+        {
+          "kind": "contains",
+          "value": "أول يوليو"
+        },
+        {
+          "kind": "excludes",
+          "value": "مؤقت"
+        },
+        {
+          "kind": "excludes",
+          "value": "بالوكالة"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0041",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب وصفًا لمدينة جدة في سطرين: السطر الأول خمس كلمات بالضبط، والثاني سبع كلمات بالضبط، وممنوع كلمة «جميلة»."
+        }
+      ],
+      "reference": "سطران بأطوال محددة بدقة (٥ ثم ٧ كلمات) وبلا «جميلة».",
+      "rubric": [
+        "الأول ٥ كلمات والثاني ٧ بالضبط",
+        "خلوّ من «جميلة»",
+        "وصف حقيقي لجدة"
+      ],
+      "checks": [
+        {
+          "kind": "excludes",
+          "value": "جميلة"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 2, 'عدد الأسطر'\nassert len(lines[0].split()) == 5, 'الأول ٥ كلمات'\nassert len(lines[1].split()) == 7, 'الثاني ٧ كلمات'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0007",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دعوة لملتقى ثقافي من خمسة أسطر بالضبط: يبدأ السطر الأول بـ«يسرّ»، ويذكر السطر الثاني مدينة «الرياض»، ويكون السطر الثالث سؤالًا ينتهي بـ«؟»، ويبدأ السطر الرابع بـ«للتسجيل»، وينتهي السطر الخامس بـ«٢٠٢٦». وممنوع ذكر «مجاني» و«حفل»."
+        }
+      ],
+      "reference": "خمسة أسطر لكل منها قيده الموضعي: يسرّ/الرياض/سؤال/للتسجيل/٢٠٢٦، وبلا «مجاني» ولا «حفل».",
+      "rubric": [
+        "خمسة أسطر بالقيود الموضعية الخمسة",
+        "خلوّ من «مجاني» و«حفل»",
+        "سلاسة الدعوة"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "الرياض"
+        },
+        {
+          "kind": "contains",
+          "value": "٢٠٢٦"
+        },
+        {
+          "kind": "excludes",
+          "value": "مجاني"
+        },
+        {
+          "kind": "excludes",
+          "value": "حفل"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 5, 'عدد الأسطر'\nassert lines[0].startswith('يسرّ'), 'السطر الأول'\nassert 'الرياض' in lines[1], 'الرياض في الثاني'\nassert lines[2].endswith('؟'), 'الثالث سؤال'\nassert lines[3].startswith('للتسجيل'), 'الرابع'\nassert lines[4].endswith('٢٠٢٦'), 'الخامس'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0030",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أعد صياغة الجملة التالية بجملة واحدة تحفظ المعنى كاملًا، دون استخدام أيٍّ من كلماتها الثلاث: «الطلاب»، «يمتنع»، «مراجعة». الجملة: «يمتنع الطلاب عن مراجعة الدروس قبل الاختبارات.»"
+        }
+      ],
+      "reference": "إعادة صياغة بمترادفات (تلاميذ، يتهرب، استذكار) تحفظ المعنى وتتجنب الكلمات الثلاث المحظورة.",
+      "rubric": [
+        "حفظ المعنى كاملًا",
+        "خلوّ من الكلمات الثلاث المحظورة",
+        "جملة واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "excludes",
+          "value": "الطلاب"
+        },
+        {
+          "kind": "excludes",
+          "value": "يمتنع"
+        },
+        {
+          "kind": "excludes",
+          "value": "مراجعة"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 1, 'عدد الأسطر'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0018",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب إعلانًا لمحمصة قهوة مختصة يتضمن: «محمصة محلية» و«حصاد الموسم». ممنوع ذكر: «الأجود» و«عالمي» و«عالمية»."
+        }
+      ],
+      "reference": "إعلان بالعبارتين الإلزاميتين وبلا ادعاء «الأجود» ولا وصف عالمي.",
+      "rubric": [
+        "ذكر العبارتين",
+        "خلوّ من صيغ التفضيل والعالمية"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "محمصة محلية"
+        },
+        {
+          "kind": "contains",
+          "value": "حصاد الموسم"
+        },
+        {
+          "kind": "excludes",
+          "value": "الأجود"
+        },
+        {
+          "kind": "excludes",
+          "value": "عالمي"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0037",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب فقرة واحدة عن أهمية التطوع تتراوح بين ٢٥ و٣٠ كلمة بالضبط، وتتضمن كلمة «المجتمع»، ولا تذكر كلمة «مهم» ولا «مهمة»."
+        }
+      ],
+      "reference": "فقرة من ٢٥–٣٠ كلمة فيها «المجتمع» وتتجنب الجذر «مهم» كليًّا.",
+      "rubric": [
+        "٢٥–٣٠ كلمة",
+        "ذكر «المجتمع»",
+        "خلوّ من «مهم» واشتقاقاته"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "المجتمع"
+        },
+        {
+          "kind": "excludes",
+          "value": "مهم"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 1, 'عدد الأسطر'\n_n = len(ans.split())\nassert _n >= 25, 'أقل من الحد الأدنى للكلمات'\nassert _n <= 30, 'أكثر من الحد الأقصى للكلمات'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0039",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب عنوانين لمقال عن ريادة الأعمال: الأول سؤال ينتهي بـ«؟» والثاني خبري، ولا يتجاوز كل عنوان سبع كلمات، وضع كل عنوان في سطر مستقل."
+        }
+      ],
+      "reference": "سطران: الأول سؤال من سبع كلمات أو أقل، والثاني خبري بالحد نفسه.",
+      "rubric": [
+        "عنوانان بحد أقصى ٧ كلمات لكل",
+        "الأول سؤال والثاني خبري"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 2, 'عدد الأسطر'\nassert all(len(l.split()) <= 7 for l in lines), 'كلمات السطر تتجاوز الحد'\nassert lines[0].endswith('؟'), 'الأول سؤال'\nassert not lines[1].endswith('؟'), 'الثاني خبري'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0026",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب رسالة لجارّك بشأن الضوضاء تتضمن: «بعد الحادية عشرة مساءً»، وتكون حازمة لكن ودية. ممنوع ذكر «أشتكي» و«الشرطة» و«إزعاج»."
+        }
+      ],
+      "reference": "رسالة ودية حازمة تذكر الوقت المحدد وتطلب خفض الصوت دون تهديد أو كلمة «إزعاج».",
+      "rubric": [
+        "ذكر الوقت",
+        "خلوّ من التهديد وكلمة «إزعاج»",
+        "نبرة ودية"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "بعد الحادية عشرة مساءً"
+        },
+        {
+          "kind": "excludes",
+          "value": "أشتكي"
+        },
+        {
+          "kind": "excludes",
+          "value": "الشرطة"
+        },
+        {
+          "kind": "excludes",
+          "value": "إزعاج"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0008",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب برقية مواساة من ثلاثة أسطر بالضبط بصياغة غير مستهلكة: ممنوع استخدام «عظم الله أجركم» و«عظّم الله أجركم» و«البقاء لله» و«إنا لله». يجب ذكر اسم المتوفى «أبو خالد»، وأن ينتهي السطر الأخير بكلمة «المغفرة»."
+        }
+      ],
+      "reference": "ثلاثة أسطر تذكر «أبو خالد» وتنتهي بـ«المغفرة» وتخلو من العبارات المستهلكة الأربع المحظورة.",
+      "rubric": [
+        "خلوّ من العبارات المستهلكة المحظورة",
+        "ذكر اسم المتوفى",
+        "ثلاثة أسطر والأخير ينتهي بـ«المغفرة»"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "أبو خالد"
+        },
+        {
+          "kind": "excludes",
+          "value": "عظم الله أجركم"
+        },
+        {
+          "kind": "excludes",
+          "value": "عظّم الله أجركم"
+        },
+        {
+          "kind": "excludes",
+          "value": "البقاء لله"
+        },
+        {
+          "kind": "excludes",
+          "value": "إنا لله"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 3, 'عدد الأسطر'\nassert lines[2].endswith('المغفرة'), 'نهاية السطر الأخير'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "ifc_a_0031",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب خبرًا من سطرين بالضبط باستخدام هذه المعطيات فقط ولا شيء غيرها: حريق في مستودع تمور بمنطقة القصيم؛ السيطرة عليه خلال ساعتين؛ لا إصابات. يجب ذكر «القصيم» وعبارة «لا إصابات»، وممنوع اختراع سبب للحريق أو ذكر «إهمال» أو «انفجار»."
+        }
+      ],
+      "reference": "خبر من سطرين يقتصر على المعطيات الثلاثة دون اختراع سبب أو تفاصيل.",
+      "rubric": [
+        "سطران",
+        "ذكر «القصيم» و«لا إصابات»",
+        "خلوّ من السبب المخترع والكلمتين المحظورتين"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "القصيم"
+        },
+        {
+          "kind": "contains",
+          "value": "لا إصابات"
+        },
+        {
+          "kind": "excludes",
+          "value": "إهمال"
+        },
+        {
+          "kind": "excludes",
+          "value": "انفجار"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 2, 'عدد الأسطر'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "ifc_a_0017",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب إعلانًا لسيارة كهربائية يتضمن أربعة عناصر حرفيًّا: «مدى ٥٠٠ كيلومتر»، «شحن منزلي»، «٨ سنوات ضمان»، «صفر انبعاثات». ممنوع ذكر: «بنزين» و«وقود»."
+        }
+      ],
+      "reference": "إعلان يجمع المواصفات الأربع حرفيًّا ويتجنب المقارنة بسيارات الاحتراق تجنبًا تامًّا.",
+      "rubric": [
+        "العناصر الأربعة حرفيًّا",
+        "خلوّ من «بنزين» و«وقود»"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "مدى ٥٠٠ كيلومتر"
+        },
+        {
+          "kind": "contains",
+          "value": "شحن منزلي"
+        },
+        {
+          "kind": "contains",
+          "value": "٨ سنوات ضمان"
+        },
+        {
+          "kind": "contains",
+          "value": "صفر انبعاثات"
+        },
+        {
+          "kind": "excludes",
+          "value": "بنزين"
+        },
+        {
+          "kind": "excludes",
+          "value": "وقود"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "ifc_a_0027",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب خطاب توصية مختصرًا من ثلاثة أسطر بالضبط لموظف سابق يتضمن عبارة «أوصي به بقوة». ممنوع ذكر عبارتي «لا بأس» و«مقبول»."
+        }
+      ],
+      "reference": "ثلاثة أسطر تنتهي عمليًّا بعبارة التوصية القوية وتخلو من الفتور المحظور.",
+      "rubric": [
+        "ثلاثة أسطر",
+        "ذكر عبارة التوصية",
+        "خلوّ من «لا بأس» و«مقبول»"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "أوصي به بقوة"
+        },
+        {
+          "kind": "excludes",
+          "value": "لا بأس"
+        },
+        {
+          "kind": "excludes",
+          "value": "مقبول"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 3, 'عدد الأسطر'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0023",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب بريد استفسار لجامعة عن برنامج ماجستير يتضمن: «الماجستير» و«رسوم الدراسة». ممنوع ذكر «عاجل» و«ضروري»، ولا يتجاوز البريد ٥٠ كلمة."
+        }
+      ],
+      "reference": "بريد موجز (≤٥٠ كلمة) يذكر «الماجستير» و«رسوم الدراسة» ويخلو من «عاجل» و«ضروري».",
+      "rubric": [
+        "ذكر الكلمتين",
+        "خلوّ من كلمتي الاستعجال",
+        "عدم تجاوز ٥٠ كلمة"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "الماجستير"
+        },
+        {
+          "kind": "contains",
+          "value": "رسوم الدراسة"
+        },
+        {
+          "kind": "excludes",
+          "value": "عاجل"
+        },
+        {
+          "kind": "excludes",
+          "value": "ضروري"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\n_n = len(ans.split())\nassert _n <= 50, 'أكثر من الحد الأقصى للكلمات'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0012",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب إعلان دورة لغة إنجليزية من ثلاثة أسطر بالضبط يتضمن «٦ أسابيع» و«مستواك يتحدد باختبار». ممنوع ذكر «مجاني» و«شهادة معتمدة»."
+        }
+      ],
+      "reference": "ثلاثة أسطر بالعبارة والمدة الإلزاميتين وبلا وعود محظورة.",
+      "rubric": [
+        "ثلاثة أسطر",
+        "ذكر المدة وعبارة الاختبار",
+        "خلوّ من «مجاني» و«شهادة معتمدة»"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "٦ أسابيع"
+        },
+        {
+          "kind": "contains",
+          "value": "مستواك يتحدد باختبار"
+        },
+        {
+          "kind": "excludes",
+          "value": "مجاني"
+        },
+        {
+          "kind": "excludes",
+          "value": "شهادة معتمدة"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 3, 'عدد الأسطر'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0040",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب تغريدة من سطر واحد عن اليوم الوطني تتضمن «٩٤ عامًا» وكلمة «فخر»، وتنتهي بعلامة تعجب «!»، ولا تتجاوز ٢٠ كلمة."
+        }
+      ],
+      "reference": "سطر واحد ≤٢٠ كلمة فيه «٩٤ عامًا» و«فخر» ومنتهٍ بعلامة تعجب.",
+      "rubric": [
+        "سطر واحد ≤٢٠ كلمة",
+        "ذكر «٩٤ عامًا» و«فخر»",
+        "الانتهاء بـ«!»"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "٩٤ عامًا"
+        },
+        {
+          "kind": "contains",
+          "value": "فخر"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 1, 'عدد الأسطر'\n_n = len(ans.split())\nassert _n <= 20, 'أكثر من الحد الأقصى للكلمات'\nassert lines[0].endswith('!'), 'ينتهي بتعجب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0005",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دعوة زواج من أربعة أسطر بالضبط تتضمن اسم العريس «سلطان» واسم والده «راشد»، ويحدد السطر الأخير التاريخ «١٥ مايو»، ولا تذكر كلمة «فرح» ولا كلمة «زفاف»."
+        }
+      ],
+      "reference": "أربعة أسطر تتضمن «راشد» و«سلطان»، والسطر الرابع فيه «١٥ مايو»، وبلا «فرح» ولا «زفاف».",
+      "rubric": [
+        "أربعة أسطر",
+        "ذكر الاسمين",
+        "التاريخ في السطر الأخير",
+        "خلوّ من «فرح» و«زفاف»"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "سلطان"
+        },
+        {
+          "kind": "contains",
+          "value": "راشد"
+        },
+        {
+          "kind": "contains",
+          "value": "١٥ مايو"
+        },
+        {
+          "kind": "excludes",
+          "value": "فرح"
+        },
+        {
+          "kind": "excludes",
+          "value": "زفاف"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 4, 'عدد الأسطر'\nassert '١٥ مايو' in lines[3], 'التاريخ في السطر الأخير'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0001",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دعوة لحضور افتتاح مقهى جديد من أربعة أسطر بالضبط. القيود: لا تذكر كلمة «حفل» إطلاقًا؛ ابدأ الأسطر الأربعة على الترتيب بالأفعال: «هلمّوا»، «تذوّقوا»، «تعرّفوا»، «احجزوا»؛ واختم كل سطر بعلامة استفهام."
+        }
+      ],
+      "reference": "جواب صحيح مثل: «هلمّوا إلى افتتاح مقهى الركن الدافئ صباح السبت؟ / تذوّقوا قهوتنا المختصة وحلويات البيت الطازجة؟ / تعرّفوا على فريقنا ومساحات العمل الهادئة لدينا؟ / احجزوا كرسيّكم المفضل قبل اكتمال العدد؟» لأنه أربعة أسطر بالأفعال الأربعة المحددة بترتيبها وكلها منتهية باستفهام وبلا كلمة «حفل».",
+      "rubric": [
+        "أربعة أسطر بالضبط",
+        "الأسطر تبدأ بالأفعال الأربعة المعطاة وبالترتيب",
+        "كل سطر ينتهي بعلامة استفهام",
+        "خلوّ النص من كلمة «حفل»"
+      ],
+      "checks": [
+        {
+          "kind": "excludes",
+          "value": "حفل"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 4, 'عدد الأسطر'\nassert all(l.endswith('؟') for l in lines), 'نهاية السطر'\n_st = ['هلمّوا', 'تذوّقوا', 'تعرّفوا', 'احجزوا']\nassert len(lines) == len(_st) and all(l.startswith(w) for l, w in zip(lines, _st)), 'بدايات الأسطر'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifc_a_0034",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب إعلان وظيفة «سكرتير تنفيذي» من ثلاثة أسطر بالضبط، ممنوع تحديد الجنس أو العمر أو المظهر، وممنوع كلمات «شاب» و«آنسة» و«حسن المظهر». يجب ذكر «خبرة ثلاث سنوات» و«إجادة الحاسب»."
+        }
+      ],
+      "reference": "إعلان توظيف محايد تمامًا يذكر الخبرة والمهارة دون أي معيار تمييزي.",
+      "rubric": [
+        "ثلاثة أسطر",
+        "ذكر الخبرة والمهارة",
+        "خلوّ من معايير الجنس والعمر والمظهر"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "خبرة ثلاث سنوات"
+        },
+        {
+          "kind": "contains",
+          "value": "إجادة الحاسب"
+        },
+        {
+          "kind": "excludes",
+          "value": "شاب"
+        },
+        {
+          "kind": "excludes",
+          "value": "آنسة"
+        },
+        {
+          "kind": "excludes",
+          "value": "حسن المظهر"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 3, 'عدد الأسطر'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "ifc_a_0029",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لخّص الخبر التالي في جملة واحدة لا تتجاوز ٢٥ كلمة، دون إضافة أي معلومة غير واردة فيه. يجب أن يتضمن التلخيص الرقم «١٢» ولا يذكر كلمة «بلدية». الخبر: «أعلنت بلدية الطائف افتتاح حديقة حي السلام مساحتها ١٢ ألف متر مربع وتضم ٤٠٠ شجرة ومضمار مشي بطول كيلومتر واحد.»"
+        }
+      ],
+      "reference": "تلخيص منصف في حدود ٢٥ كلمة يذكر «١٢» ويحذف اسم الجهة «بلدية» ولا يضيف شيئًا من عنده.",
+      "rubric": [
+        "جملة واحدة ≤٢٥ كلمة",
+        "ذكر الرقم ١٢",
+        "خلوّ من «بلدية» ومن أي معلومة مضافة"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "١٢"
+        },
+        {
+          "kind": "excludes",
+          "value": "بلدية"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 1, 'عدد الأسطر'\n_n = len(ans.split())\nassert _n <= 25, 'أكثر من الحد الأقصى للكلمات'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "ifc_a_0033",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لخّص رأي العميل التالي في جملة واحدة منصفة: يجب أن يظهر الإعجاب بأن «الجهاز ممتاز» وأن تُذكر الشكوى من «السعر»، وممنوع حذف الشكوى أو تحويلها إلى مدح، وممنوع كلمة «فاشل». رأي العميل: «الجهاز ممتاز لكن السعر مبالغ فيه والشحن تأخر يومين.»"
+        }
+      ],
+      "reference": "تلخيص منصف يبقي المدح والشكوى معًا: الجهاز ممتاز والسعر مرتفع.",
+      "rubric": [
+        "بقاء المدح والشكوى معًا",
+        "خلوّ من «فاشل»",
+        "جملة واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "ممتاز"
+        },
+        {
+          "kind": "contains",
+          "value": "السعر"
+        },
+        {
+          "kind": "excludes",
+          "value": "فاشل"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 1, 'عدد الأسطر'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "mtm_a_0008",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "حجزت سيارة لونها أبيض من المعرض."
+        },
+        {
+          "role": "assistant",
+          "content": "مبارك، سجّلت: سيارة بيضاء."
+        },
+        {
+          "role": "user",
+          "content": "رجعت لهم اليوم وبدّلت اللون إلى الرمادي."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، اللون الآن رمادي."
+        },
+        {
+          "role": "user",
+          "content": "ما لون السيارة التي حجزتها؟ أجب بكلمة واحدة."
+        }
+      ],
+      "reference": "الرمادي؛ لأن المستخدم بدّل اللون صراحة في الدور الثاني.",
+      "rubric": [
+        "اللون المحدّث",
+        "كلمة واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "الرمادي"
+        },
+        {
+          "kind": "excludes",
+          "value": "أبيض"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0040",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "معلم الرياضيات لصفنا الأستاذ صالح."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: معلم الرياضيات الأستاذ صالح."
+        },
+        {
+          "role": "user",
+          "content": "الأستاذ صالح في إجازة، وسيدرّسنا الأستاذ عادل حتى نهاية الشهر."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الأستاذ عادل يدرّسكم الرياضيات حاليًّا."
+        },
+        {
+          "role": "user",
+          "content": "من يدرّسنا الرياضيات هذه الفترة؟ أجب بالاسم فقط."
+        }
+      ],
+      "reference": "الأستاذ عادل؛ لأنه البديل الحالي خلال إجازة الأستاذ صالح.",
+      "rubric": [
+        "المعلم الحالي (البديل)",
+        "عدم ذكر المعلم الأصلي"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "عادل"
+        },
+        {
+          "kind": "excludes",
+          "value": "صالح"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0001",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "سجّل عندي: اجتماع فريق التسويق يوم الثلاثاء القادم الساعة العاشرة صباحًا في قاعة الاجتماعات الثالثة."
+        },
+        {
+          "role": "assistant",
+          "content": "تم التسجيل: اجتماع فريق التسويق يوم الثلاثاء الساعة ١٠ صباحًا في قاعة الاجتماعات الثالثة."
+        },
+        {
+          "role": "user",
+          "content": "طرأ تغيير: أُجّل الاجتماع إلى يوم الخميس في الوقت نفسه والقاعة نفسها."
+        },
+        {
+          "role": "assistant",
+          "content": "حسنًا، صار الاجتماع يوم الخميس الساعة العاشرة صباحًا في قاعة الاجتماعات الثالثة."
+        },
+        {
+          "role": "user",
+          "content": "متى اجتماع فريق التسويق الآن؟ أجب باليوم فقط بكلمة واحدة."
+        }
+      ],
+      "reference": "الخميس؛ لأن التحديث الثاني نسخ الموعد الأصلي (الثلاثاء) مع بقاء الوقت والقاعة.",
+      "rubric": [
+        "الجواب الخميس لا الثلاثاء",
+        "كلمة واحدة كما طُلب"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "الخميس"
+        },
+        {
+          "kind": "excludes",
+          "value": "الثلاثاء"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0032",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "خلّيت واجهة التطبيق باللغة العربية من أول ما حملته."
+        },
+        {
+          "role": "assistant",
+          "content": "فهمت، الواجهة بالعربية."
+        },
+        {
+          "role": "user",
+          "content": "اليوم رجعتها إنجليزي عشان أتدرب على المصطلحات."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الواجهة الآن بالإنجليزية."
+        },
+        {
+          "role": "user",
+          "content": "بأي لغة واجهة التطبيق عندي حاليًّا؟ أجب بكلمة واحدة."
+        }
+      ],
+      "reference": "الإنجليزية؛ لأن المستخدم رجّع الواجهة إليها في الدور الثاني.",
+      "rubric": [
+        "اللغة المحدّثة",
+        "كلمة واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "إنجليزي"
+        },
+        {
+          "kind": "excludes",
+          "value": "العربية"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0013",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "رحلتنا العائلية نهاية الشهر إلى أبها."
+        },
+        {
+          "role": "assistant",
+          "content": "رائع، سجّلت: رحلة إلى أبها."
+        },
+        {
+          "role": "user",
+          "content": "غيّرنا الخطة بسبب الطقس، الرحلة إلى الطائف بدل أبها."
+        },
+        {
+          "role": "assistant",
+          "content": "تم تحديث الوجهة إلى الطائف."
+        },
+        {
+          "role": "user",
+          "content": "ما وجهة الرحلة الآن؟ أجب بكلمة واحدة."
+        }
+      ],
+      "reference": "الطائف؛ لأنها الوجهة بعد تغيير الخطة صراحة.",
+      "rubric": [
+        "الوجهة المحدّثة",
+        "كلمة واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "الطائف"
+        },
+        {
+          "kind": "excludes",
+          "value": "أبها"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0022",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اختبار الرياضيات عندنا يوم الأربعاء الجاي."
+        },
+        {
+          "role": "assistant",
+          "content": "بالتوفيق، سجّلت: اختبار الرياضيات يوم الأربعاء."
+        },
+        {
+          "role": "user",
+          "content": "المعلم أعلن قبل شوي: نُقل الاختبار إلى السبت."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الاختبار الآن يوم السبت."
+        },
+        {
+          "role": "user",
+          "content": "متى اختبار الرياضيات؟ أجب بكلمة واحدة."
+        }
+      ],
+      "reference": "السبت؛ لأن المعلم نقل الاختبار صراحة في آخر خبر.",
+      "rubric": [
+        "اليوم المحدّث",
+        "كلمة واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "السبت"
+        },
+        {
+          "kind": "excludes",
+          "value": "الأربعاء"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0036",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لوحة سيارتي أ ب ج ٤٥٦٧."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت اللوحة: أ ب ج ٤٥٦٧."
+        },
+        {
+          "role": "user",
+          "content": "بدّلتها بلوحة مميزة جديدة: ن ن ر ٩٩٩."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، اللوحة الجديدة: ن ن ر ٩٩٩."
+        },
+        {
+          "role": "user",
+          "content": "ما رقم لوحتي الحالية؟ أجب بالأرقام فقط."
+        }
+      ],
+      "reference": "٩٩٩؛ لأن اللوحة بُدّلت كاملة والسؤال عن الجزء الرقمي من الجديدة.",
+      "rubric": [
+        "أرقام اللوحة الجديدة",
+        "عدم ذكر القديمة"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "٩٩٩"
+        },
+        {
+          "kind": "excludes",
+          "value": "٤٥٦٧"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0029",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "حطيت مفاتيح السيارة في درج المكتب قبل ما أطلع."
+        },
+        {
+          "role": "assistant",
+          "content": "فهمت، المفاتيح في درج المكتب."
+        },
+        {
+          "role": "user",
+          "content": "الحقيقة رجعت ونقلتها إلى حقيبة يدي."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، المفاتيح الآن في حقيبة يدك."
+        },
+        {
+          "role": "user",
+          "content": "وين مفاتيح السيارة الآن؟"
+        }
+      ],
+      "reference": "في الحقيبة؛ لأن المستخدم نقلها بنفسه من الدرج في الدور الثاني.",
+      "rubric": [
+        "الموقع المحدّث",
+        "عدم ذكر الدرج"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "حقيبة"
+        },
+        {
+          "kind": "excludes",
+          "value": "درج"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0031",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "رقم حجز طاولتنا في المطعم ٥٥٨٨."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت رقم الحجز: ٥٥٨٨."
+        },
+        {
+          "role": "user",
+          "content": "عذرًا أخطأت في القراءة من الرسالة، الرقم الصحيح ٥٥٨٨٦."
+        },
+        {
+          "role": "assistant",
+          "content": "لا بأس، صحّحت الرقم إلى: ٥٥٨٨٦."
+        },
+        {
+          "role": "user",
+          "content": "ما رقم الحجز الصحيح؟ أجب بالرقم فقط."
+        }
+      ],
+      "reference": "٥٥٨٨٦؛ لأن المستخدم صحّح قراءته الأولى بنفسه.",
+      "rubric": [
+        "الرقم المصحَّح بخاناته الخمس",
+        "الرقم فقط"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "٥٥٨٨٦"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0024",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نتعامل مع شركة الأفق للتجارة في توريد القرطاسية."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: شركة الأفق للتجارة، مورد القرطاسية."
+        },
+        {
+          "role": "user",
+          "content": "وصلنا خطاب رسمي: الشركة غيّرت اسمها إلى الأفق للحلول اعتبارًا من هذا الشهر."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الاسم الجديد: الأفق للحلول."
+        },
+        {
+          "role": "user",
+          "content": "ما اسم شركة التوريد حاليًّا؟ أجب بالاسم الكامل فقط."
+        }
+      ],
+      "reference": "الأفق للحلول؛ لأن الاسم تغيّر رسميًّا مع بقاء الجزء الأول «الأفق».",
+      "rubric": [
+        "الاسم الجديد كاملًا",
+        "عدم الإبقاء على الاسم القديم"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "الأفق للحلول"
+        },
+        {
+          "kind": "excludes",
+          "value": "للتجارة"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0002",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "موعدي عند طبيب الأسنان يوم الأحد الساعة التاسعة صباحًا."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: موعد طبيب الأسنان يوم الأحد الساعة ٩ صباحًا."
+        },
+        {
+          "role": "user",
+          "content": "اتصلت العيادة ونقلوا الموعد إلى الثلاثاء في الوقت نفسه."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الموعد الآن يوم الثلاثاء الساعة التاسعة صباحًا."
+        },
+        {
+          "role": "user",
+          "content": "اتصلوا مرة أخرى: اليوم نفسه لكن الساعة تأخرت إلى الحادية عشرة والنصف."
+        },
+        {
+          "role": "assistant",
+          "content": "فهمت، الموعد النهائي: الثلاثاء الساعة الحادية عشرة والنصف."
+        },
+        {
+          "role": "user",
+          "content": "متى موعدي الآن بدقة؟ أجب باليوم والساعة في سطر واحد."
+        }
+      ],
+      "reference": "الثلاثاء الحادية عشرة والنصف؛ لأن تحديثين متتاليين نقلا اليوم ثم الساعة، والمطلوب آخر قيمة لكل منهما.",
+      "rubric": [
+        "اليوم المحدّث (الثلاثاء)",
+        "الساعة المحدّثة (الحادية عشرة والنصف)",
+        "عدم الرجوع لأي قيمة قديمة"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "الثلاثاء"
+        },
+        {
+          "kind": "contains",
+          "value": "الحادية عشرة والنصف"
+        },
+        {
+          "kind": "excludes",
+          "value": "الأحد"
+        },
+        {
+          "kind": "excludes",
+          "value": "التاسعة"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0025",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "رحلتي غدًا رقم SV1023 الساعة ٦ صباحًا من البوابة B12."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: رحلة SV1023، الإقلاع ٦ صباحًا، البوابة B12."
+        },
+        {
+          "role": "user",
+          "content": "وصلني إشعار من الخطوط: تغيّرت البوابة إلى C7 وتأخر الإقلاع إلى ٧:٤٥."
+        },
+        {
+          "role": "assistant",
+          "content": "تم التحديث: الرحلة SV1023 تقلع ٧:٤٥ من البوابة C7."
+        },
+        {
+          "role": "user",
+          "content": "ما رقم الرحلة والبوابة ووقت الإقلاع الآن؟ أجب في سطر واحد."
+        }
+      ],
+      "reference": "SV1023 من البوابة C7 الساعة ٧:٤٥؛ رقم الرحلة ثابت والبوابة والوقت محدّثان.",
+      "rubric": [
+        "رقم الرحلة الثابت",
+        "البوابة والوقت المحدّثان",
+        "سطر واحد"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "SV1023"
+        },
+        {
+          "kind": "contains",
+          "value": "C7"
+        },
+        {
+          "kind": "contains",
+          "value": "٧:٤٥"
+        },
+        {
+          "kind": "excludes",
+          "value": "B12"
+        },
+        {
+          "kind": "excludes",
+          "value": "٦ صباحًا"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0034",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "سجّل بيانات شحنتي: الوجهة الدمام، الوزن ٤ كجم، نوع المحتوى كتب."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: الوجهة الدمام، الوزن ٤ كجم، المحتوى كتب."
+        },
+        {
+          "role": "user",
+          "content": "أضفت طردًا على الشحنة فصار الوزن ٦ كجم."
+        },
+        {
+          "role": "assistant",
+          "content": "تم تحديث الوزن إلى ٦ كجم."
+        },
+        {
+          "role": "user",
+          "content": "ما وجهة الشحنة ونوع محتواها؟ أجب في سطر واحد."
+        }
+      ],
+      "reference": "الدمام، كتب؛ لأن التحديث مسّ الوزن فقط، والسؤال عن حقلين ثابتين من الدور الأول.",
+      "rubric": [
+        "استرجاع الحقلين الثابتين بدقة",
+        "عدم تسريب الوزن إلى نوع المحتوى"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "الدمام"
+        },
+        {
+          "kind": "contains",
+          "value": "كتب"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0019",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "سكنت في جدة، حي الروضة، منذ سنتين."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: جدة، حي الروضة."
+        },
+        {
+          "role": "user",
+          "content": "انتقلت الأسبوع الماضي إلى حي السلامة، وما زلت في جدة طبعًا."
+        },
+        {
+          "role": "assistant",
+          "content": "تم التحديث: جدة، حي السلامة."
+        },
+        {
+          "role": "user",
+          "content": "في أي مدينة وحيّ أسكن الآن؟ أجب في سطر واحد."
+        }
+      ],
+      "reference": "جدة، حي السلامة؛ لأن الحي تحدّث والمدينة ثبتت بقوله «ما زلت في جدة».",
+      "rubric": [
+        "الحي المحدّث",
+        "المدينة الثابتة",
+        "سطر واحد"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "جدة"
+        },
+        {
+          "kind": "contains",
+          "value": "السلامة"
+        },
+        {
+          "kind": "excludes",
+          "value": "الروضة"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0023",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "سجّل عندي: مديري المباشر الأستاذ فهد، ومكتبي في الدور الثاني، ودوامي من ٨ إلى ٤."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: المدير الأستاذ فهد، المكتب الدور الثاني، الدوام ٨–٤."
+        },
+        {
+          "role": "user",
+          "content": "نُقل مكتبي اليوم إلى الدور الرابع."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، مكتبك الآن في الدور الرابع."
+        },
+        {
+          "role": "user",
+          "content": "وتغيّر دوامي أيضًا: صار من ٩ إلى ٥."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، دوامك الآن من ٩ إلى ٥."
+        },
+        {
+          "role": "user",
+          "content": "من مديري المباشر حاليًّا؟ أجب بالاسم فقط."
+        }
+      ],
+      "reference": "الأستاذ فهد؛ لأن التحديثين مسّا المكتب والدوام فقط، والمدير لم يتغير.",
+      "rubric": [
+        "الإجابة من الدور الأول دون تلوث بالتحديثات",
+        "الاسم فقط"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "الأستاذ فهد"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0003",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "سجّل قائمة مشترياتي: حليب، خبز، بيض، جبن."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت القائمة: حليب، خبز، بيض، جبن."
+        },
+        {
+          "role": "user",
+          "content": "احذف الجبن وأضف الزبادي والتفاح."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صارت القائمة: حليب، خبز، بيض، زبادي، تفاح."
+        },
+        {
+          "role": "user",
+          "content": "أخرج القائمة النهائية كقائمة JSON فقط بلا أي شرح."
+        }
+      ],
+      "reference": "[\"حليب\", \"خبز\", \"بيض\", \"زبادي\", \"تفاح\"] بالترتيب نفسه؛ لأن الجبن حُذف والزبادي والتفاح أُضيفا في آخر القائمة.",
+      "rubric": [
+        "الجبن محذوف نهائيًّا",
+        "الزبادي والتفاح موجودان",
+        "JSON فقط بلا شرح"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": [
+            "حليب",
+            "خبز",
+            "بيض",
+            "زبادي",
+            "تفاح"
+          ]
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "mtm_a_0038",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اتفقنا في قسمنا أن أرسل تقرير المبيعات كل يوم اثنين."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: التقرير أسبوعي كل اثنين."
+        },
+        {
+          "role": "user",
+          "content": "الإدارة عدّلت الدورة: التقرير صار نصف شهري، يُرسل يومي ١ و١٥ من كل شهر."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، التقرير الآن نصف شهري يومي ١ و١٥."
+        },
+        {
+          "role": "user",
+          "content": "متى أرسل تقرير المبيعات الآن؟ أجب في سطر واحد."
+        }
+      ],
+      "reference": "يومي ١ و١٥ من كل شهر؛ لأن الإدارة استبدلت الدورة الأسبوعية بنصف الشهرية كليًّا.",
+      "rubric": [
+        "الجدول الجديد كاملًا",
+        "عدم ذكر الاثنين"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "١ و١٥"
+        },
+        {
+          "kind": "excludes",
+          "value": "الاثنين"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "mtm_a_0014",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "سجّل في ملفي الصحي: لدي حساسية من البنسلين."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت في ملفك: حساسية من البنسلين."
+        },
+        {
+          "role": "user",
+          "content": "تحديث مهم: أجرينا اختبارًا دقيقًا عند مختص واتضح أن التشخيص السابق كان خاطئًا، لا حساسية لدي من البنسلين إطلاقًا. احذفها من ملفي."
+        },
+        {
+          "role": "assistant",
+          "content": "تم حذف حساسية البنسلين من ملفك بناءً على نتيجة الاختبار الجديدة."
+        },
+        {
+          "role": "user",
+          "content": "هل لدي حساسية من البنسلين حسب ملفي الآن؟ أجب بكلمة واحدة: نعم أو لا."
+        }
+      ],
+      "reference": "لا؛ لأن الاختبار الأخير نفى الحساسية وحُذفت من الملف، والمعلومة المحدّثة تلغي القديمة كليًّا.",
+      "rubric": [
+        "الإجابة «لا»",
+        "عدم التشبث بالتشخيص القديم"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "لا"
+        },
+        {
+          "kind": "excludes",
+          "value": "نعم"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "mtm_a_0007",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اطلب من المورد ثلاثة صناديق تمور."
+        },
+        {
+          "role": "assistant",
+          "content": "تم تسجيل الطلب: ثلاثة صناديق تمور."
+        },
+        {
+          "role": "user",
+          "content": "ارفع الطلب إلى خمسة صناديق من فضلك."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الطلب الآن خمسة صناديق."
+        },
+        {
+          "role": "user",
+          "content": "آخر تعديل أعدك: اكتفي بصندوقين فقط."
+        },
+        {
+          "role": "assistant",
+          "content": "حسنًا، الكمية النهائية صندوقان."
+        },
+        {
+          "role": "user",
+          "content": "كم صندوقًا في الطلب النهائي؟ أجب برقم فقط."
+        }
+      ],
+      "reference": "٢؛ لأن آخر تعديل (صندوقان) نسخ الكميتين السابقتين ثلاثة ثم خمسة.",
+      "rubric": [
+        "القيمة من آخر تحديث",
+        "رقم فقط"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "٢"
+        },
+        {
+          "kind": "excludes",
+          "value": "٥"
+        },
+        {
+          "kind": "excludes",
+          "value": "٣"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0039",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "قائمة قراءاتي الحالية: الخيميائي، ساق البامبو، موسم الهجرة إلى الشمال."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت قائمتك: الخيميائي، ساق البامبو، موسم الهجرة إلى الشمال."
+        },
+        {
+          "role": "user",
+          "content": "خلصت رواية الخيميائي أمس، وضفت على القائمة رواية الطنطورية."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، القائمة الآن: ساق البامبو، موسم الهجرة إلى الشمال، الطنطورية."
+        },
+        {
+          "role": "user",
+          "content": "أخرج قائمة قراءاتي الحالية كقائمة JSON فقط بلا شرح."
+        }
+      ],
+      "reference": "[\"ساق البامبو\", \"موسم الهجرة إلى الشمال\", \"الطنطورية\"]؛ الخيميائي أُنهيت فحُذفت والطنطورية أُضيفت في الآخر.",
+      "rubric": [
+        "حذف المنتهية",
+        "إضافة الجديدة بموضعها",
+        "JSON فقط"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": [
+            "ساق البامبو",
+            "موسم الهجرة إلى الشمال",
+            "الطنطورية"
+          ]
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0004",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أسكن في حي النرجس، شارع ١٢."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت عنوانك: حي النرجس، شارع ١٢."
+        },
+        {
+          "role": "user",
+          "content": "انتقلت أمس إلى حي الياسمين، شارع الأمير سلطان."
+        },
+        {
+          "role": "assistant",
+          "content": "تم تحديث العنوان: حي الياسمين، شارع الأمير سلطان."
+        },
+        {
+          "role": "user",
+          "content": "ما حيّ سكني الحالي؟ أجب باسم الحي فقط."
+        }
+      ],
+      "reference": "الياسمين؛ لأنه آخر حي سكن ذُكر بعد الانتقال.",
+      "rubric": [
+        "الحي المحدّث",
+        "اسم الحي فقط"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "الياسمين"
+        },
+        {
+          "kind": "excludes",
+          "value": "النرجس"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0016",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ميزانية مشروع التوسعة معتمدة بمبلغ ٨٠ ألف ريال."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: ميزانية ٨٠ ألف ريال."
+        },
+        {
+          "role": "user",
+          "content": "أضفنا بند التأثيث، واعتمدت الإدارة رفع الميزانية إلى ٩٥ ألف ريال."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الميزانية الآن ٩٥ ألف ريال بعد إضافة بند التأثيث."
+        },
+        {
+          "role": "user",
+          "content": "كم الميزانية المعتمدة الحالية؟ أجب بالمبلغ فقط."
+        }
+      ],
+      "reference": "٩٥ ألف ريال؛ لأن الاعتماد الأخير نسخ المبلغ الأول.",
+      "rubric": [
+        "المبلغ المحدّث",
+        "عدم ذكر القديم"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "٩٥ ألف"
+        },
+        {
+          "kind": "excludes",
+          "value": "٨٠"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0033",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "عنوان مشروع تخرجي «نظام ري ذكي»."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت عنوان المشروع: نظام ري ذكي."
+        },
+        {
+          "role": "user",
+          "content": "المشرف اقترح تغيير الاسم واعتمدنا «منصة رياح» عنوانًا نهائيًّا."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، العنوان النهائي: منصة رياح."
+        },
+        {
+          "role": "user",
+          "content": "ما عنوان مشروع تخرجي المعتمد؟ أجب بالعنوان فقط."
+        }
+      ],
+      "reference": "منصة رياح؛ لأنه العنوان المعتمد نهائيًّا بعد اقتراح المشرف.",
+      "rubric": [
+        "العنوان المعتمد الأخير",
+        "العنوان فقط"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "منصة رياح"
+        },
+        {
+          "kind": "excludes",
+          "value": "نظام ري ذكي"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0010",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اجتماع مجلس الإدارة يوم الأربعاء في قاعة الاجتماعات الثالثة."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: الأربعاء، قاعة الاجتماعات الثالثة."
+        },
+        {
+          "role": "user",
+          "content": "القاعة الثالثة محجوزة لغيرنا، نقلونا إلى القاعة الخامسة، اليوم نفسه."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الاجتماع يوم الأربعاء في القاعة الخامسة."
+        },
+        {
+          "role": "user",
+          "content": "في أي قاعة سيعقد الاجتماع؟ أجب باسم القاعة فقط."
+        }
+      ],
+      "reference": "القاعة الخامسة؛ لأن الحجز نُقل إليها صراحة مع ثبات اليوم.",
+      "rubric": [
+        "القاعة المحدّثة",
+        "عدم ذكر القاعة القديمة"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "الخامسة"
+        },
+        {
+          "kind": "excludes",
+          "value": "الثالثة"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0021",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ترتيبي في قائمة انتظار عيادة الأسنان ١٢."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: ترتيبك ١٢ في قائمة الانتظار."
+        },
+        {
+          "role": "user",
+          "content": "اتصلت العيادة: اعتذر خمسة قبلك وتقدمت مباشرة إلى المركز السابع."
+        },
+        {
+          "role": "assistant",
+          "content": "ممتاز، ترتيبك الآن ٧."
+        },
+        {
+          "role": "user",
+          "content": "ما ترتيبي الحالي في القائمة؟ أجب برقم فقط."
+        }
+      ],
+      "reference": "٧؛ لأن العيادة أبلغت بالمركز الجديد صراحة، ولا حاجة لأي حساب.",
+      "rubric": [
+        "المركز المعلن من العيادة",
+        "رقم فقط"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "٧"
+        },
+        {
+          "kind": "excludes",
+          "value": "١٢"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0005",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "رقم جوالي ٠٥٠٩٩٨٨٧٧٦، احفظه."
+        },
+        {
+          "role": "assistant",
+          "content": "حفظت رقمك: ٠٥٠٩٩٨٨٧٧٦."
+        },
+        {
+          "role": "user",
+          "content": "غيّرت الشريحة، رقمي الجديد ٠٥٥١١٢٢٣٣٤، والقديم لم يعد يعمل."
+        },
+        {
+          "role": "assistant",
+          "content": "تم تحديث الرقم إلى: ٠٥٥١١٢٢٣٣٤."
+        },
+        {
+          "role": "user",
+          "content": "ما رقم جوالي الحالي؟ أجب بالرقم فقط."
+        }
+      ],
+      "reference": "٠٥٥١١٢٢٣٣٤؛ لأن المستخدم صرّح أن القديم لم يعد يعمل.",
+      "rubric": [
+        "الرقم الجديد كاملًا وبلا خطأ رقمي",
+        "الرقم فقط"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "٠٥٥١١٢٢٣٣٤"
+        },
+        {
+          "kind": "excludes",
+          "value": "٠٥٠٩٩٨٨٧٧٦"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0026",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أبي أطلب برغر دجاج حار وبطاطس كبيرة."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الطلب: برغر دجاج حار وبطاطس كبيرة."
+        },
+        {
+          "role": "user",
+          "content": "بدّل الحار خلّه عادي، وزدني عليه كولا."
+        },
+        {
+          "role": "assistant",
+          "content": "تم: برغر دجاج عادي، بطاطس كبيرة، وكولا."
+        },
+        {
+          "role": "user",
+          "content": "وش طلبي النهائي؟ أجب في سطر واحد."
+        }
+      ],
+      "reference": "برغر دجاج عادي مع بطاطس كبيرة وكولا؛ لأن «حار» استُبدل بـ«عادي» والكولا أُضيفت.",
+      "rubric": [
+        "استبدال الحار بالعادي",
+        "إضافة الكولا",
+        "سطر واحد"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "عادي"
+        },
+        {
+          "kind": "contains",
+          "value": "كولا"
+        },
+        {
+          "kind": "excludes",
+          "value": "حار"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtm_a_0009",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "عيد ميلاد أمي يوم ١٤ مارس، لا تنسَ."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: عيد ميلاد والدتك يوم ١٦ مارس."
+        },
+        {
+          "role": "user",
+          "content": "لا! قلت ١٤ مارس وليس ١٦، صحّح خطأك."
+        },
+        {
+          "role": "assistant",
+          "content": "اعتذر منك، صحّحت: عيد ميلاد والدتك يوم ١٤ مارس."
+        },
+        {
+          "role": "user",
+          "content": "متى عيد ميلاد أمي؟ أجب بالتاريخ فقط."
+        }
+      ],
+      "reference": "١٤ مارس؛ لأن المستخدم صحّح خطأ المساعد صراحة، وقول المستخدم هو المرجع.",
+      "rubric": [
+        "الأولوية لتصحيح المستخدم",
+        "١٤ مارس لا ١٦"
+      ],
+      "checks": [
+        {
+          "kind": "contains",
+          "value": "١٤ مارس"
+        },
+        {
+          "kind": "excludes",
+          "value": "١٦"
+        }
+      ],
+      "critical": true
+    }
+  ]
+}

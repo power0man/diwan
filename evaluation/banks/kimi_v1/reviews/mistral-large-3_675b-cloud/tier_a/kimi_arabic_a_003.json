@@ -1,0 +1,547 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-7b-instruct-v0.3\",\n  \"file\": \"kimi_arabic_a_003\",\n  \"judgments\": [\n    {\n      \"id\": \"lex_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"متواضع\",\n      \"reason\": \"التواضع هو ترك الترفّع مع القدرة، وهو ما ينطبق على وصف الرجل القادر الذي ترك التعالي على من دونه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الإحجام\",\n      \"reason\": \"الإحجام هو ضد الإقدام، وهما متقابلان في المعنى. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الشدة\",\n      \"reason\": \"الضراوة تعني الشدة، وهو مرادفها الأدق بين الخيارات. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدم\",\n      \"reason\": \"النجيع يعني الدم الصافي، وهو المعنى الأدق بين الخيارات. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"طول القامة\",\n      \"reason\": \"طويل النجاد كناية عن طول القامة، حيث النجاد هو حمائل السيف. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المخمصة\",\n      \"reason\": \"المخمصة هي شدة الجوع، وهي أشد من الجوع العادي. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الأسود\",\n      \"reason\": \"الأدهم هو الفرس الأسود. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"شفقة\",\n      \"reason\": \"الشفقة هي رقة القلب عند رؤية المبتلى، وهي أولى من الرحمة التي تقتضي الإحسان. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الكرم\",\n      \"reason\": \"كثرة الرماد كناية عن الكرم، حيث تدل على كثرة الطبخ للضيوف. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"طمع\",\n      \"reason\": \"الطمع هو تمني الجائزة دون سعي، وهو ما ينطبق على وصف الرجل. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"رجاحة العقل\",\n      \"reason\": \"الحصافة تعني رجاحة العقل ورزانته. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"بليغ\",\n      \"reason\": \"البلاغة هي مطابقة الكلام لمقتضى الحال، وهو ما ينطبق على وصف الكلام. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"شحيح\",\n      \"reason\": \"الشح هو بخل مع حرص على مال الغير، وهو أشد من البخل. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الظمأ\",\n      \"reason\": \"الظمأ هو شدة العطش، وهو أشد من العطش العادي. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"زهد\",\n      \"reason\": \"الزهد هو ترك ما لا ينفع من فضول الدنيا، وهو ما ينطبق على وصف الرجل. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حليم\",\n      \"reason\": \"الحلم هو كظم الغيظ مع القدرة على الانتقام، وهو ما ينطبق على وصف الرجل. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجاز\",\n      \"reason\": \"استعمال كلمة أسد في وصف الجيش هو مجاز، حيث تعني الرجل الشجاع. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء\",\n      \"reason\": \"الأمر هو إنشاء طلبي لا يحتمل الصدق والكذب. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أول النهار\",\n      \"reason\": \"الغداة تعني أول النهار. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أحجم\",\n      \"reason\": \"الإحجام هو الامتناع عن الإقدام لعذر، وهو ما ينطبق على وصف الرجل. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الإبانة\",\n      \"reason\": \"الإبانة هي ضد الإبهام، وتعني الظهور والتوضح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جبان\",\n      \"reason\": \"الجبان هو من لم يقدم على ما يقدر عليه خوفًا وجبنًا، وهو ما ينطبق على وصف الرجل. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سرقة\",\n      \"reason\": \"السرقة هي أخذ المال خفية من حرزه، وهو ما ينطبق على وصف الفعل. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حاسد\",\n      \"reason\": \"الحسد هو تمني زوال النعمة عن الغير، وهو ما ينطبق على وصف الرجل. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مكر\",\n      \"reason\": \"المكر هو تدبير خفي في ضرر، وهو ما ينطبق على وصف الفعل. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المواربة\",\n      \"reason\": \"المواربة هي ضد الصراحة، وتعني الكلام الذي يحتمل وجوهًا. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخشية\",\n      \"reason\": \"الخشية هي خوف مقترن بتعظيم المخوف منه، وهو ما ينطبق على الوصف. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"التأني\",\n      \"reason\": \"المهل يعني ترك العجلة، وهو مرادف للتأني. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تمني\",\n      \"reason\": \"ليت الشباب يعود يومًا هو تمني، حيث يطلب ما لا يكون أو يبعد وقوعه. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الشك\",\n      \"reason\": \"الشك هو تساوي احتمال الصدق والكذب في خبر، وهو ما ينطبق على الوصف. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3\",\n      \"reason\": \"سوى بمعنى إلا، والموجود هو ثلاثة أقلام فقط. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"عدا من أدوات الاستثناء، وأحمد خارج النجاح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"السفر محصور في الأب، والأم لم تسافر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الحصر في الطلبة ينفي الإعفاء عن الموظف. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"إلا بعد الإثبات تنفي المستثنى، وسامي لم يحضر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الحصر بـ«لا... إلا» ينفي ما عدا الواحد، وزيد يملك بيتًا واحدًا فقط. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"إلا بعد النفي الكامل تثبت المستثنى، وأحمد حضر الاجتماع وحده. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الصيدلية مستثناة من الإغلاق. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1\",\n      \"reason\": \"غير بمعنى إلا بعد نفي، والمتبقي دقيقة واحدة. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"الجملة تنفي دخول المتأخر فقط، ولا تلزم كفاية الحضور المبكر للدخول. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"غير المضافة تعمل عمل إلا، والرئيس مستثنى من الموافقة. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"لا غنى عنه تجعله شرطًا لازمًا لا كافيًا. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"الحصر يجعل استخدام التذكرة شرطًا لازمًا للنجاة لا كافيًا. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"التصديق هو الاستثناء من بقاء التعليق، وقد وقع فزال التعليق. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"تحققت حال ما لم فيلزم انتفاء النظر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"الموافقة شرط لازم غير كاف، وقد يتخلف الإذن لمانع آخر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"الحصر يجعل استخدام السلالم شرطًا لازمًا للنجاة لا كافيًا. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"12% تتجاوز العشر، وتحقق الاستثناء فانتفى القبول. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"ما لم بمعنى إلا إذا، والفسخ مباح إلا في حال عدم الدفع، وقد دفع. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الاستيراد هو حال الاستثناء من الإعفاء، وقد تحقق فانتفى الإعفاء. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"الشرطية تجعل الاجتهاد كافيًا لا لازمًا، وقد ينجح لسبب آخر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الجملة تقصر القبول على الملف المكتمل، والناقص خارج القبول قطعًا. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"انتفاء التالي (التجميد) يلزم منه انتفاء المقدم (عدم التجديد)، أي جدّد. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"انتفى التالي (زيادة الفائدة) فيلزم انتفاء المقدم (عدم التسديد)، أي سدّد في موعده. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"خلا أداة استثناء، والمدير لم يحضر. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"غير بمعنى إلا، وهذه الرواية منفية الإعجاب. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"إنما كافة ومكفوفة تفيد الحصر، والتكليف مقصور على المتجاوزين. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"متى أداة شرط تجعل إدخال الرقم كافيًا للفتح، وقد تحقق. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الحصر بإنما يقصر النجاح على الصبورين. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"القصر المؤكد بـوحدها يحصر الانعقاد في الجمعة. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"شرط الشطب ثلاث فعاليات، وقد تحقق اثنتان فقط فلم يتحقق الشرط. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"غير اثنين = إلا اثنين، وبقي اثنان لم يجتازا. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"المناوبة هي الاستثناء من الجواز، وقد تحققت فيمتنع الغياب. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"التوثيق وقع داخل المهلة فانتفى شرط اللغو. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"قد تبتل الطرق بغير المطر، وإثبات التالي لا يلزم منه المقدم. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الرضا شرط صحة لازم منتفٍ، والبيع غير صحيح. المرجع صحيح.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 61161,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_arabic_a_003.json",
+  "file_sha256": "688794fb722b687750bac065f7b6e4849508655b6fe21dcc558ca4207f511c08",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "lex_a_0033",
+      "my_answer": "متواضع",
+      "reason": "التواضع هو ترك الترفّع مع القدرة، وهو ما ينطبق على وصف الرجل القادر الذي ترك التعالي على من دونه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0002",
+      "my_answer": "الإحجام",
+      "reason": "الإحجام هو ضد الإقدام، وهما متقابلان في المعنى. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0011",
+      "my_answer": "الشدة",
+      "reason": "الضراوة تعني الشدة، وهو مرادفها الأدق بين الخيارات. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0008",
+      "my_answer": "الدم",
+      "reason": "النجيع يعني الدم الصافي، وهو المعنى الأدق بين الخيارات. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0038",
+      "my_answer": "طول القامة",
+      "reason": "طويل النجاد كناية عن طول القامة، حيث النجاد هو حمائل السيف. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0018",
+      "my_answer": "المخمصة",
+      "reason": "المخمصة هي شدة الجوع، وهي أشد من الجوع العادي. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0037",
+      "my_answer": "الأسود",
+      "reason": "الأدهم هو الفرس الأسود. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0031",
+      "my_answer": "شفقة",
+      "reason": "الشفقة هي رقة القلب عند رؤية المبتلى، وهي أولى من الرحمة التي تقتضي الإحسان. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0039",
+      "my_answer": "الكرم",
+      "reason": "كثرة الرماد كناية عن الكرم، حيث تدل على كثرة الطبخ للضيوف. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0028",
+      "my_answer": "طمع",
+      "reason": "الطمع هو تمني الجائزة دون سعي، وهو ما ينطبق على وصف الرجل. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0015",
+      "my_answer": "رجاحة العقل",
+      "reason": "الحصافة تعني رجاحة العقل ورزانته. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0027",
+      "my_answer": "بليغ",
+      "reason": "البلاغة هي مطابقة الكلام لمقتضى الحال، وهو ما ينطبق على وصف الكلام. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0021",
+      "my_answer": "شحيح",
+      "reason": "الشح هو بخل مع حرص على مال الغير، وهو أشد من البخل. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0017",
+      "my_answer": "الظمأ",
+      "reason": "الظمأ هو شدة العطش، وهو أشد من العطش العادي. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0032",
+      "my_answer": "زهد",
+      "reason": "الزهد هو ترك ما لا ينفع من فضول الدنيا، وهو ما ينطبق على وصف الرجل. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0034",
+      "my_answer": "حليم",
+      "reason": "الحلم هو كظم الغيظ مع القدرة على الانتقام، وهو ما ينطبق على وصف الرجل. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0040",
+      "my_answer": "مجاز",
+      "reason": "استعمال كلمة أسد في وصف الجيش هو مجاز، حيث تعني الرجل الشجاع. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0041",
+      "my_answer": "إنشاء",
+      "reason": "الأمر هو إنشاء طلبي لا يحتمل الصدق والكذب. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0036",
+      "my_answer": "أول النهار",
+      "reason": "الغداة تعني أول النهار. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0026",
+      "my_answer": "أحجم",
+      "reason": "الإحجام هو الامتناع عن الإقدام لعذر، وهو ما ينطبق على وصف الرجل. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0043",
+      "my_answer": "الإبانة",
+      "reason": "الإبانة هي ضد الإبهام، وتعني الظهور والتوضح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0025",
+      "my_answer": "جبان",
+      "reason": "الجبان هو من لم يقدم على ما يقدر عليه خوفًا وجبنًا، وهو ما ينطبق على وصف الرجل. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0022",
+      "my_answer": "سرقة",
+      "reason": "السرقة هي أخذ المال خفية من حرزه، وهو ما ينطبق على وصف الفعل. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0030",
+      "my_answer": "حاسد",
+      "reason": "الحسد هو تمني زوال النعمة عن الغير، وهو ما ينطبق على وصف الرجل. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0035",
+      "my_answer": "مكر",
+      "reason": "المكر هو تدبير خفي في ضرر، وهو ما ينطبق على وصف الفعل. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0009",
+      "my_answer": "المواربة",
+      "reason": "المواربة هي ضد الصراحة، وتعني الكلام الذي يحتمل وجوهًا. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0016",
+      "my_answer": "الخشية",
+      "reason": "الخشية هي خوف مقترن بتعظيم المخوف منه، وهو ما ينطبق على الوصف. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0044",
+      "my_answer": "التأني",
+      "reason": "المهل يعني ترك العجلة، وهو مرادف للتأني. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0042",
+      "my_answer": "تمني",
+      "reason": "ليت الشباب يعود يومًا هو تمني، حيث يطلب ما لا يكون أو يبعد وقوعه. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0020",
+      "my_answer": "الشك",
+      "reason": "الشك هو تساوي احتمال الصدق والكذب في خبر، وهو ما ينطبق على الوصف. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0039",
+      "my_answer": "3",
+      "reason": "سوى بمعنى إلا، والموجود هو ثلاثة أقلام فقط. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0041",
+      "my_answer": "لا",
+      "reason": "عدا من أدوات الاستثناء، وأحمد خارج النجاح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0004",
+      "my_answer": "لا",
+      "reason": "السفر محصور في الأب، والأم لم تسافر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0046",
+      "my_answer": "لا",
+      "reason": "الحصر في الطلبة ينفي الإعفاء عن الموظف. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0012",
+      "my_answer": "لا",
+      "reason": "إلا بعد الإثبات تنفي المستثنى، وسامي لم يحضر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0003",
+      "my_answer": "لا",
+      "reason": "الحصر بـ«لا... إلا» ينفي ما عدا الواحد، وزيد يملك بيتًا واحدًا فقط. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0001",
+      "my_answer": "نعم",
+      "reason": "إلا بعد النفي الكامل تثبت المستثنى، وأحمد حضر الاجتماع وحده. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0014",
+      "my_answer": "لا",
+      "reason": "الصيدلية مستثناة من الإغلاق. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0043",
+      "my_answer": "1",
+      "reason": "غير بمعنى إلا بعد نفي، والمتبقي دقيقة واحدة. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0049",
+      "my_answer": "لا يلزم",
+      "reason": "الجملة تنفي دخول المتأخر فقط، ولا تلزم كفاية الحضور المبكر للدخول. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0015",
+      "my_answer": "لا",
+      "reason": "غير المضافة تعمل عمل إلا، والرئيس مستثنى من الموافقة. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0040",
+      "my_answer": "لا يلزم",
+      "reason": "لا غنى عنه تجعله شرطًا لازمًا لا كافيًا. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0007",
+      "my_answer": "لا يلزم",
+      "reason": "الحصر يجعل استخدام التذكرة شرطًا لازمًا للنجاة لا كافيًا. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0033",
+      "my_answer": "لا",
+      "reason": "التصديق هو الاستثناء من بقاء التعليق، وقد وقع فزال التعليق. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0047",
+      "my_answer": "لا",
+      "reason": "تحققت حال ما لم فيلزم انتفاء النظر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0008",
+      "my_answer": "لا يلزم",
+      "reason": "الموافقة شرط لازم غير كاف، وقد يتخلف الإذن لمانع آخر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0006",
+      "my_answer": "لا يلزم",
+      "reason": "الحصر يجعل استخدام السلالم شرطًا لازمًا للنجاة لا كافيًا. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0023",
+      "my_answer": "لا",
+      "reason": "12% تتجاوز العشر، وتحقق الاستثناء فانتفى القبول. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0018",
+      "my_answer": "نعم",
+      "reason": "ما لم بمعنى إلا إذا، والفسخ مباح إلا في حال عدم الدفع، وقد دفع. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0021",
+      "my_answer": "لا",
+      "reason": "الاستيراد هو حال الاستثناء من الإعفاء، وقد تحقق فانتفى الإعفاء. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0026",
+      "my_answer": "لا يلزم",
+      "reason": "الشرطية تجعل الاجتهاد كافيًا لا لازمًا، وقد ينجح لسبب آخر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0050",
+      "my_answer": "لا",
+      "reason": "الجملة تقصر القبول على الملف المكتمل، والناقص خارج القبول قطعًا. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0048",
+      "my_answer": "نعم",
+      "reason": "انتفاء التالي (التجميد) يلزم منه انتفاء المقدم (عدم التجديد)، أي جدّد. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0032",
+      "my_answer": "نعم",
+      "reason": "انتفى التالي (زيادة الفائدة) فيلزم انتفاء المقدم (عدم التسديد)، أي سدّد في موعده. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0042",
+      "my_answer": "لا",
+      "reason": "خلا أداة استثناء، والمدير لم يحضر. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0017",
+      "my_answer": "لا",
+      "reason": "غير بمعنى إلا، وهذه الرواية منفية الإعجاب. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0034",
+      "my_answer": "لا",
+      "reason": "إنما كافة ومكفوفة تفيد الحصر، والتكليف مقصور على المتجاوزين. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0005",
+      "my_answer": "نعم",
+      "reason": "متى أداة شرط تجعل إدخال الرقم كافيًا للفتح، وقد تحقق. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0035",
+      "my_answer": "لا",
+      "reason": "الحصر بإنما يقصر النجاح على الصبورين. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0036",
+      "my_answer": "لا",
+      "reason": "القصر المؤكد بـوحدها يحصر الانعقاد في الجمعة. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0020",
+      "my_answer": "لا",
+      "reason": "شرط الشطب ثلاث فعاليات، وقد تحقق اثنتان فقط فلم يتحقق الشرط. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0016",
+      "my_answer": "لا",
+      "reason": "غير اثنين = إلا اثنين، وبقي اثنان لم يجتازا. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0022",
+      "my_answer": "لا",
+      "reason": "المناوبة هي الاستثناء من الجواز، وقد تحققت فيمتنع الغياب. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0024",
+      "my_answer": "لا",
+      "reason": "التوثيق وقع داخل المهلة فانتفى شرط اللغو. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0027",
+      "my_answer": "لا يلزم",
+      "reason": "قد تبتل الطرق بغير المطر، وإثبات التالي لا يلزم منه المقدم. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0011",
+      "my_answer": "لا",
+      "reason": "الرضا شرط صحة لازم منتفٍ، والبيع غير صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T18:17:04Z"
+}

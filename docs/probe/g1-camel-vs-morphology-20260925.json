@@ -1,0 +1,3491 @@
+{
+ "schema_version": 1,
+ "kind": "morphology_root_measurement",
+ "task": "غ١",
+ "date": "2026-09-25",
+ "suite_id": "morphology_roots_v1",
+ "camel": {
+  "available": true,
+  "db": "calima-msa-r13"
+ },
+ "scores": {
+  "current": {
+   "correct": 61,
+   "answered": 94,
+   "wrong_with_confidence": 35,
+   "refused_correctly": 2,
+   "total": 100,
+   "accuracy": 0.61
+  },
+  "camel_agree": {
+   "correct": 83,
+   "answered": 78,
+   "wrong_with_confidence": 2,
+   "refused_correctly": 7,
+   "total": 100,
+   "accuracy": 0.83
+  },
+  "camel_first": {
+   "correct": 89,
+   "answered": 96,
+   "wrong_with_confidence": 9,
+   "refused_correctly": 2,
+   "total": 100,
+   "accuracy": 0.89
+  },
+  "camel_any_upper_bound": {
+   "correct": 91,
+   "total": 100
+  }
+ },
+ "by_stratum": {
+  "frequent": {
+   "current": 0.58,
+   "camel_agree": 0.78,
+   "camel_first": 0.88
+  },
+  "mid": {
+   "current": 0.64,
+   "camel_agree": 0.88,
+   "camel_first": 0.9
+  }
+ },
+ "items": [
+  {
+   "word": "ويجب",
+   "gold_roots": [
+    "وجب"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "يجب",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "ج.ب.ب",
+    "correct": false
+   },
+   "camel_any": {
+    "root": [
+     "#.ج.ب",
+     "ج.#.ب",
+     "ج.ب.#",
+     "ج.ب.ب"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 18,
+    "roots": [
+     "#.ج.ب",
+     "ج.#.ب",
+     "ج.ب.#",
+     "ج.ب.ب"
+    ]
+   }
+  },
+  {
+   "word": "الاعتماد",
+   "gold_roots": [
+    "عمد"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "عمد",
+    "reason": null,
+    "pattern": "افتعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ع.م.د",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ع.م.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ع.م.د"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ع.م.د"
+    ]
+   }
+  },
+  {
+   "word": "حمولة",
+   "gold_roots": [
+    "حمل"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "حمل",
+    "reason": null,
+    "pattern": "فعول",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ح.م.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ح.م.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ح.م.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 11,
+    "roots": [
+     "ح.م.ل"
+    ]
+   }
+  },
+  {
+   "word": "خطوط",
+   "gold_roots": [
+    "خطط"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "خطط",
+    "reason": null,
+    "pattern": "فعول",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "خ.ط.ط",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "خ.ط.ط",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "خ.ط.ط"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 6,
+    "roots": [
+     "خ.ط.ط"
+    ]
+   }
+  },
+  {
+   "word": "الجهة",
+   "gold_roots": [
+    "وجه"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "الج",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "#.ج.ه",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "#.ج.ه",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ج.ه"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "#.ج.ه"
+    ]
+   }
+  },
+  {
+   "word": "التلوث",
+   "gold_roots": [
+    "لوث"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "تلث",
+    "reason": null,
+    "pattern": "فعول",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ل.#.ث",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ل.#.ث",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ل.#.ث"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ل.#.ث"
+    ]
+   }
+  },
+  {
+   "word": "معتمدة",
+   "gold_roots": [
+    "عمد"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": null,
+    "reason": "root_undetermined",
+    "pattern": null,
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ع.م.د",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ع.م.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ع.م.د"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 22,
+    "roots": [
+     "ع.م.د"
+    ]
+   }
+  },
+  {
+   "word": "إجراءات",
+   "gold_roots": [
+    "جري"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "جرء",
+    "reason": null,
+    "pattern": "افعال",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ج.ر.#",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ج.ر.#",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ج.ر.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 14,
+    "roots": [
+     "ج.ر.#"
+    ]
+   }
+  },
+  {
+   "word": "قيد",
+   "gold_roots": [
+    "قيد"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "قيد",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "ق.#.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ق.#.د",
+     "قد"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": [
+     "ق.#.د",
+     "قد"
+    ]
+   }
+  },
+  {
+   "word": "الجامع",
+   "gold_roots": [
+    "جمع"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "جمع",
+    "reason": null,
+    "pattern": "فاعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ج.م.ع",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ج.م.ع",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ج.م.ع"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": [
+     "ج.م.ع"
+    ]
+   }
+  },
+  {
+   "word": "الوحدة",
+   "gold_roots": [
+    "وحد"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "وحد",
+    "reason": null,
+    "pattern": "فعله",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "#.ح.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ح.د",
+     "حدة"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 10,
+    "roots": [
+     "#.ح.د",
+     "حدة"
+    ]
+   }
+  },
+  {
+   "word": "بيان",
+   "gold_roots": [
+    "بين"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "بين",
+    "reason": null,
+    "pattern": "فعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ب.#.ن",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ب.#.ن",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ب.#.ن"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 7,
+    "roots": [
+     "ب.#.ن"
+    ]
+   }
+  },
+  {
+   "word": "القرارات",
+   "gold_roots": [
+    "قرر"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "قرر",
+    "reason": null,
+    "pattern": "فعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ق.ر.ر",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ق.ر.ر",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ق.ر.ر"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ق.ر.ر"
+    ]
+   }
+  },
+  {
+   "word": "مغلقة",
+   "gold_roots": [
+    "غلق"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "غلق",
+    "reason": null,
+    "pattern": "مفعله",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "غ.ل.ق",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "غ.ل.ق",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "غ.ل.ق"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 11,
+    "roots": [
+     "غ.ل.ق"
+    ]
+   }
+  },
+  {
+   "word": "مياه",
+   "gold_roots": [
+    "موه"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "ياه",
+    "reason": null,
+    "pattern": "مفعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "م.#.#",
+    "reason": null,
+    "correct": false
+   },
+   "camel_first": {
+    "root": "م.#.#",
+    "correct": false
+   },
+   "camel_any": {
+    "root": [
+     "م.#.#"
+    ],
+    "correct": false
+   },
+   "camel_detail": {
+    "analyses": 6,
+    "roots": [
+     "م.#.#"
+    ]
+   }
+  },
+  {
+   "word": "كلها",
+   "gold_roots": [
+    "كلل"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "لها",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "ك.ل.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ك.ل",
+     "ك.ل.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 5,
+    "roots": [
+     "#.ك.ل",
+     "ك.ل.ل"
+    ]
+   }
+  },
+  {
+   "word": "التسجيل",
+   "gold_roots": [
+    "سجل"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "سجل",
+    "reason": null,
+    "pattern": "تفعيل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "س.ج.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "س.ج.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "س.ج.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "س.ج.ل"
+    ]
+   }
+  },
+  {
+   "word": "شهادة",
+   "gold_roots": [
+    "شهد"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "شهد",
+    "reason": null,
+    "pattern": "فعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ش.ه.د",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ش.ه.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ش.ه.د"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 14,
+    "roots": [
+     "ش.ه.د"
+    ]
+   }
+  },
+  {
+   "word": "دولة",
+   "gold_roots": [
+    "دول"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "دول",
+    "reason": null,
+    "pattern": "فعله",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "د.#.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "د.#.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "د.#.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 11,
+    "roots": [
+     "د.#.ل"
+    ]
+   }
+  },
+  {
+   "word": "المؤسسة",
+   "gold_roots": [
+    "ءسس"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "ؤسس",
+    "reason": null,
+    "pattern": "مفعله",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "#.س.س",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "#.س.س",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.س.س"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": [
+     "#.س.س"
+    ]
+   }
+  },
+  {
+   "word": "السجل",
+   "gold_roots": [
+    "سجل"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "سجل",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "س.ج.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "س.ج.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "س.ج.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "س.ج.ل"
+    ]
+   }
+  },
+  {
+   "word": "الأعلى",
+   "gold_roots": [
+    "علو",
+    "علي"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "علي",
+    "reason": null,
+    "pattern": "افعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ع.ل.#",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ع.ل.#",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ع.ل.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 1,
+    "roots": [
+     "ع.ل.#"
+    ]
+   }
+  },
+  {
+   "word": "بلائحة",
+   "gold_roots": [
+    "لوح"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "بلح",
+    "reason": null,
+    "pattern": "فعائل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ل.#.ح",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ل.#.ح",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ل.#.ح"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 3,
+    "roots": [
+     "ل.#.ح"
+    ]
+   }
+  },
+  {
+   "word": "حذف",
+   "gold_roots": [
+    "حذف"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "حذف",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ح.ذ.ف",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ح.ذ.ف",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ح.ذ.ف"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": [
+     "ح.ذ.ف"
+    ]
+   }
+  },
+  {
+   "word": "أماكن",
+   "gold_roots": [
+    "مكن",
+    "كون"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "اما",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ك.#.ن",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ك.#.ن",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ك.#.ن"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ك.#.ن"
+    ]
+   }
+  },
+  {
+   "word": "الإرشاد",
+   "gold_roots": [
+    "رشد"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "رشد",
+    "reason": null,
+    "pattern": "افعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ر.ش.د",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ر.ش.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ر.ش.د"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ر.ش.د"
+    ]
+   }
+  },
+  {
+   "word": "تشغيل",
+   "gold_roots": [
+    "شغل"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "شغل",
+    "reason": null,
+    "pattern": "تفعيل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ش.غ.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ش.غ.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ش.غ.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 12,
+    "roots": [
+     "ش.غ.ل"
+    ]
+   }
+  },
+  {
+   "word": "وقد",
+   "gold_roots": [],
+   "stratum": "frequent",
+   "current": {
+    "root": "وقد",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": true
+   },
+   "camel_first": {
+    "root": "#.ق.د",
+    "correct": false
+   },
+   "camel_any": {
+    "root": [
+     "#.ق.د",
+     "ق.د",
+     "ق.د.د"
+    ],
+    "correct": false
+   },
+   "camel_detail": {
+    "analyses": 74,
+    "roots": [
+     "#.ق.د",
+     "ق.د",
+     "ق.د.د"
+    ]
+   }
+  },
+  {
+   "word": "السفينة",
+   "gold_roots": [
+    "سفن"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "لسف",
+    "reason": null,
+    "pattern": "افعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "س.ف.ن",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "س.ف.ن",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "س.ف.ن"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "س.ف.ن"
+    ]
+   }
+  },
+  {
+   "word": "إعادة",
+   "gold_roots": [
+    "عود"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "عاد",
+    "reason": null,
+    "pattern": "افعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ع.#.د",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ع.#.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ع.#.د"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": [
+     "ع.#.د"
+    ]
+   }
+  },
+  {
+   "word": "المعاينة",
+   "gold_roots": [
+    "عين"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "معا",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ع.#.ن",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ع.#.ن",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ع.#.ن"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": [
+     "ع.#.ن"
+    ]
+   }
+  },
+  {
+   "word": "ملاحظة",
+   "gold_roots": [
+    "لحظ"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "لحظ",
+    "reason": null,
+    "pattern": "مفاعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ل.ح.ظ",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ل.ح.ظ",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ل.ح.ظ"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 33,
+    "roots": [
+     "ل.ح.ظ"
+    ]
+   }
+  },
+  {
+   "word": "نطاق",
+   "gold_roots": [
+    "نطق"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "نطق",
+    "reason": null,
+    "pattern": "فعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "ن.ط.ق",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ط.#.ق",
+     "ن.ط.ق"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 7,
+    "roots": [
+     "ط.#.ق",
+     "ن.ط.ق"
+    ]
+   }
+  },
+  {
+   "word": "العقوبة",
+   "gold_roots": [
+    "عقب"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "عقب",
+    "reason": null,
+    "pattern": "فعول",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ع.ق.ب",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ع.ق.ب",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ع.ق.ب"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ع.ق.ب"
+    ]
+   }
+  },
+  {
+   "word": "بدل",
+   "gold_roots": [
+    "بدل"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "بدل",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "ب.د.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ب.د.ل",
+     "د.ل.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 17,
+    "roots": [
+     "ب.د.ل",
+     "د.ل.ل"
+    ]
+   }
+  },
+  {
+   "word": "يناير",
+   "gold_roots": [],
+   "stratum": "frequent",
+   "current": {
+    "root": "ينر",
+    "reason": null,
+    "pattern": "فعائل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "no_root",
+    "correct": true
+   },
+   "camel_first": {
+    "root": null,
+    "correct": true
+   },
+   "camel_any": {
+    "root": [],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 1,
+    "roots": []
+   }
+  },
+  {
+   "word": "وما",
+   "gold_roots": [],
+   "stratum": "frequent",
+   "current": {
+    "root": "وما",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "م.#",
+    "reason": null,
+    "correct": false
+   },
+   "camel_first": {
+    "root": "م.#",
+    "correct": false
+   },
+   "camel_any": {
+    "root": [
+     "م.#"
+    ],
+    "correct": false
+   },
+   "camel_detail": {
+    "analyses": 12,
+    "roots": [
+     "م.#"
+    ]
+   }
+  },
+  {
+   "word": "نقل",
+   "gold_roots": [
+    "نقل"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "نقل",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "ن.ق.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ق.ل.#",
+     "ق.ل.ل",
+     "ن.ق.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 21,
+    "roots": [
+     "ق.ل.#",
+     "ق.ل.ل",
+     "ن.ق.ل"
+    ]
+   }
+  },
+  {
+   "word": "مدونة",
+   "gold_roots": [
+    "دون"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "دون",
+    "reason": null,
+    "pattern": "مفعله",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "د.#.ن",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "د.#.ن",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "د.#.ن"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 11,
+    "roots": [
+     "د.#.ن"
+    ]
+   }
+  },
+  {
+   "word": "بذلك",
+   "gold_roots": [],
+   "stratum": "frequent",
+   "current": {
+    "root": "بذل",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ب.ذ.ل",
+    "correct": false
+   },
+   "camel_any": {
+    "root": [
+     "ب.ذ.ل",
+     "ذ.#",
+     "ذ.ل.ل"
+    ],
+    "correct": false
+   },
+   "camel_detail": {
+    "analyses": 19,
+    "roots": [
+     "ب.ذ.ل",
+     "ذ.#",
+     "ذ.ل.ل"
+    ]
+   }
+  },
+  {
+   "word": "لسفينة",
+   "gold_roots": [
+    "سفن"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "لسف",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "س.ف.#",
+    "correct": false
+   },
+   "camel_any": {
+    "root": [
+     "س.ف.#",
+     "س.ف.ن"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 14,
+    "roots": [
+     "س.ف.#",
+     "س.ف.ن"
+    ]
+   }
+  },
+  {
+   "word": "البحارة",
+   "gold_roots": [
+    "بحر"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "بحر",
+    "reason": null,
+    "pattern": "فعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ب.ح.ر",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ب.ح.ر",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ب.ح.ر"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": [
+     "ب.ح.ر"
+    ]
+   }
+  },
+  {
+   "word": "التوجيهية",
+   "gold_roots": [
+    "وجه"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "لوج",
+    "reason": null,
+    "pattern": "افتعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "#.ج.ه",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "#.ج.ه",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ج.ه"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "#.ج.ه"
+    ]
+   }
+  },
+  {
+   "word": "اللازمة",
+   "gold_roots": [
+    "لزم"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "لزم",
+    "reason": null,
+    "pattern": "فاعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ل.ز.م",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ل.ز.م",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ل.ز.م"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 12,
+    "roots": [
+     "ل.ز.م"
+    ]
+   }
+  },
+  {
+   "word": "الاتفاقية",
+   "gold_roots": [
+    "وفق"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "تفق",
+    "reason": null,
+    "pattern": "افعال",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "#.ف.ق",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "#.ف.ق",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ف.ق"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": [
+     "#.ف.ق"
+    ]
+   }
+  },
+  {
+   "word": "تقرير",
+   "gold_roots": [
+    "قرر"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "قرر",
+    "reason": null,
+    "pattern": "تفعيل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ق.ر.ر",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ق.ر.ر",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ق.ر.ر"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 12,
+    "roots": [
+     "ق.ر.ر"
+    ]
+   }
+  },
+  {
+   "word": "تاريخ",
+   "gold_roots": [
+    "ءرخ",
+    "ورخ"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "ارخ",
+    "reason": null,
+    "pattern": "تفعيل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "#.ر.خ",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "#.ر.خ",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ر.خ"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 12,
+    "roots": [
+     "#.ر.خ"
+    ]
+   }
+  },
+  {
+   "word": "آلاف",
+   "gold_roots": [
+    "ءلف"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "لاف",
+    "reason": null,
+    "pattern": "افعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "#.ل.ف",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "#.ل.ف",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ل.ف"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 19,
+    "roots": [
+     "#.ل.ف"
+    ]
+   }
+  },
+  {
+   "word": "تقديم",
+   "gold_roots": [
+    "قدم"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "قدم",
+    "reason": null,
+    "pattern": "تفعيل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ق.د.م",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ق.د.م",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ق.د.م"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 6,
+    "roots": [
+     "ق.د.م"
+    ]
+   }
+  },
+  {
+   "word": "سلامة",
+   "gold_roots": [
+    "سلم"
+   ],
+   "stratum": "frequent",
+   "current": {
+    "root": "سلم",
+    "reason": null,
+    "pattern": "فعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "س.ل.م",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "س.ل.م",
+     "سلمة"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 16,
+    "roots": [
+     "س.ل.م",
+     "سلمة"
+    ]
+   }
+  },
+  {
+   "word": "بالقياس",
+   "gold_roots": [
+    "قيس"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "قيس",
+    "reason": null,
+    "pattern": "فعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ق.#.س",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ق.#.س",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ق.#.س"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ق.#.س"
+    ]
+   }
+  },
+  {
+   "word": "لناقلات",
+   "gold_roots": [
+    "نقل"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "نقل",
+    "reason": null,
+    "pattern": "فاعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ن.ق.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ن.ق.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ن.ق.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 14,
+    "roots": [
+     "ن.ق.ل"
+    ]
+   }
+  },
+  {
+   "word": "أكبر",
+   "gold_roots": [
+    "كبر"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "كبر",
+    "reason": null,
+    "pattern": "افعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ك.ب.ر",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ك.ب.ر",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ك.ب.ر"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 14,
+    "roots": [
+     "ك.ب.ر"
+    ]
+   }
+  },
+  {
+   "word": "للهيئة",
+   "gold_roots": [
+    "هيء"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "هيئ",
+    "reason": null,
+    "pattern": "فعله",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ه.#.#",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ه.#.#",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ه.#.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 2,
+    "roots": [
+     "ه.#.#"
+    ]
+   }
+  },
+  {
+   "word": "أميال",
+   "gold_roots": [
+    "ميل"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "ميل",
+    "reason": null,
+    "pattern": "افعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "م.#.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "م.#.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "م.#.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 12,
+    "roots": [
+     "م.#.ل"
+    ]
+   }
+  },
+  {
+   "word": "وقواعد",
+   "gold_roots": [
+    "قعد"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "قعد",
+    "reason": null,
+    "pattern": "فواعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ق.ع.د",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ق.ع.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ق.ع.د"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 24,
+    "roots": [
+     "ق.ع.د"
+    ]
+   }
+  },
+  {
+   "word": "والمعدات",
+   "gold_roots": [
+    "عدد"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "معد",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ع.د.د",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ع.د.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ع.د.د"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 12,
+    "roots": [
+     "ع.د.د"
+    ]
+   }
+  },
+  {
+   "word": "بأنظمة",
+   "gold_roots": [
+    "نظم"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "ظمه",
+    "reason": null,
+    "pattern": "انفعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ن.ظ.م",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ن.ظ.م",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ن.ظ.م"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 6,
+    "roots": [
+     "ن.ظ.م"
+    ]
+   }
+  },
+  {
+   "word": "تمهيد",
+   "gold_roots": [
+    "مهد"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "مهد",
+    "reason": null,
+    "pattern": "تفعيل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "م.ه.د",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "م.ه.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "م.ه.د"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 6,
+    "roots": [
+     "م.ه.د"
+    ]
+   }
+  },
+  {
+   "word": "خالل",
+   "gold_roots": [
+    "خلل"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "خلل",
+    "reason": null,
+    "pattern": "فاعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "no_analysis",
+    "correct": false
+   },
+   "camel_first": {
+    "root": null,
+    "correct": false
+   },
+   "camel_any": {
+    "root": [],
+    "correct": false
+   },
+   "camel_detail": {
+    "analyses": 0,
+    "roots": []
+   }
+  },
+  {
+   "word": "وإقفال",
+   "gold_roots": [
+    "قفل"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "قفل",
+    "reason": null,
+    "pattern": "افعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ق.ف.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ق.ف.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ق.ف.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 36,
+    "roots": [
+     "ق.ف.ل"
+    ]
+   }
+  },
+  {
+   "word": "تعهد",
+   "gold_roots": [
+    "عهد"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": null,
+    "reason": "root_undetermined",
+    "pattern": null,
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ع.ه.د",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ع.ه.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ع.ه.د"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 9,
+    "roots": [
+     "ع.ه.د"
+    ]
+   }
+  },
+  {
+   "word": "الخطأ",
+   "gold_roots": [
+    "خطء"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "خطا",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "خ.ط.#",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "خ.ط.#",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "خ.ط.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "خ.ط.#"
+    ]
+   }
+  },
+  {
+   "word": "التنسيق",
+   "gold_roots": [
+    "نسق"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "نسق",
+    "reason": null,
+    "pattern": "تفعيل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ن.س.ق",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ن.س.ق",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ن.س.ق"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ن.س.ق"
+    ]
+   }
+  },
+  {
+   "word": "للعيان",
+   "gold_roots": [
+    "عين"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "للع",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "ع.#.ن",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ع.#.#",
+     "ع.#.ن"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ع.#.#",
+     "ع.#.ن"
+    ]
+   }
+  },
+  {
+   "word": "مثبتة",
+   "gold_roots": [
+    "ثبت"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "ثبت",
+    "reason": null,
+    "pattern": "مفعله",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ث.ب.ت",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ث.ب.ت",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ث.ب.ت"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 11,
+    "roots": [
+     "ث.ب.ت"
+    ]
+   }
+  },
+  {
+   "word": "مسؤوليات",
+   "gold_roots": [
+    "سءل"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "سؤل",
+    "reason": null,
+    "pattern": "مفعول",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "س.#.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "س.#.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "س.#.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 7,
+    "roots": [
+     "س.#.ل"
+    ]
+   }
+  },
+  {
+   "word": "معاين",
+   "gold_roots": [
+    "عين"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "عين",
+    "reason": null,
+    "pattern": "مفاعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ع.#.ن",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ع.#.ن",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ع.#.ن"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 6,
+    "roots": [
+     "ع.#.ن"
+    ]
+   }
+  },
+  {
+   "word": "مدمجة",
+   "gold_roots": [
+    "دمج"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "دمج",
+    "reason": null,
+    "pattern": "مفعله",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "د.م.ج",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "د.م.ج",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "د.م.ج"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 11,
+    "roots": [
+     "د.م.ج"
+    ]
+   }
+  },
+  {
+   "word": "الصهريج",
+   "gold_roots": [
+    "صهرج"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": null,
+    "reason": "root_undetermined",
+    "pattern": null,
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ص.ه.ر.ج",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ص.ه.ر.ج",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ص.ه.ر.ج"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ص.ه.ر.ج"
+    ]
+   }
+  },
+  {
+   "word": "الجزء",
+   "gold_roots": [
+    "جزء"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "جزء",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ج.ز.#",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ج.ز.#",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ج.ز.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 1,
+    "roots": [
+     "ج.ز.#"
+    ]
+   }
+  },
+  {
+   "word": "المؤهلين",
+   "gold_roots": [
+    "ءهل"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "ؤهل",
+    "reason": null,
+    "pattern": "مفعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "#.ه.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "#.ه.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ه.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 6,
+    "roots": [
+     "#.ه.ل"
+    ]
+   }
+  },
+  {
+   "word": "شركة",
+   "gold_roots": [
+    "شرك"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "شرك",
+    "reason": null,
+    "pattern": "فعله",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ش.ر.ك",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ش.ر.ك",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ش.ر.ك"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 20,
+    "roots": [
+     "ش.ر.ك"
+    ]
+   }
+  },
+  {
+   "word": "قنوات",
+   "gold_roots": [
+    "قنو",
+    "قني"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "قنو",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ق.ن.#",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ق.ن.#",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ق.ن.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 7,
+    "roots": [
+     "ق.ن.#"
+    ]
+   }
+  },
+  {
+   "word": "الدنيا",
+   "gold_roots": [
+    "دنو",
+    "دني"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "دنا",
+    "reason": null,
+    "pattern": "فعيل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "د.ن.#",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "د.ن.#",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "د.ن.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "د.ن.#"
+    ]
+   }
+  },
+  {
+   "word": "الغسل",
+   "gold_roots": [
+    "غسل"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "غسل",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "غ.س.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "غ.س.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "غ.س.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": [
+     "غ.س.ل"
+    ]
+   }
+  },
+  {
+   "word": "الوقاية",
+   "gold_roots": [
+    "وقي"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "وقه",
+    "reason": null,
+    "pattern": "فعائل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "#.ق.#",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "#.ق.#",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ق.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": [
+     "#.ق.#"
+    ]
+   }
+  },
+  {
+   "word": "الأحكام",
+   "gold_roots": [
+    "حكم"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "حكم",
+    "reason": null,
+    "pattern": "افعال",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ح.ك.م",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ح.ك.م",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ح.ك.م"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": [
+     "ح.ك.م"
+    ]
+   }
+  },
+  {
+   "word": "وتبقى",
+   "gold_roots": [
+    "بقي"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "تبق",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "ب.ق.#",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ب.ق",
+     "ب.ق.#",
+     "ب.ق.ق"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 33,
+    "roots": [
+     "#.ب.ق",
+     "ب.ق.#",
+     "ب.ق.ق"
+    ]
+   }
+  },
+  {
+   "word": "وسيلة",
+   "gold_roots": [
+    "وسل"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "وسل",
+    "reason": null,
+    "pattern": "فعيل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "#.س.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.س.ل",
+     "#.ل.#",
+     "#.ل.ه",
+     "س.#.ل",
+     "ل.ه.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 61,
+    "roots": [
+     "#.س.ل",
+     "#.ل.#",
+     "#.ل.ه",
+     "س.#.ل",
+     "ل.ه.#"
+    ]
+   }
+  },
+  {
+   "word": "للائحة",
+   "gold_roots": [
+    "لوح"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "للح",
+    "reason": null,
+    "pattern": "فعائل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ل.#.ح",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ل.#.ح",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ل.#.ح"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 7,
+    "roots": [
+     "ل.#.ح"
+    ]
+   }
+  },
+  {
+   "word": "الأبيض",
+   "gold_roots": [
+    "بيض"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "بيض",
+    "reason": null,
+    "pattern": "افعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ب.#.ض",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ب.#.ض",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ب.#.ض"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ب.#.ض"
+    ]
+   }
+  },
+  {
+   "word": "المذكورة",
+   "gold_roots": [
+    "ذكر"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "ذكر",
+    "reason": null,
+    "pattern": "مفعول",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ذ.ك.ر",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ذ.ك.ر",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ذ.ك.ر"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ذ.ك.ر"
+    ]
+   }
+  },
+  {
+   "word": "وليست",
+   "gold_roots": [],
+   "stratum": "mid",
+   "current": {
+    "root": null,
+    "reason": "root_undetermined",
+    "pattern": null,
+    "correct": true
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ل.#.س",
+    "correct": false
+   },
+   "camel_any": {
+    "root": [
+     "ل.#.س",
+     "لست"
+    ],
+    "correct": false
+   },
+   "camel_detail": {
+    "analyses": 15,
+    "roots": [
+     "ل.#.س",
+     "لست"
+    ]
+   }
+  },
+  {
+   "word": "شامل",
+   "gold_roots": [
+    "شمل"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "شمل",
+    "reason": null,
+    "pattern": "فاعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ش.م.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ش.م.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ش.م.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 6,
+    "roots": [
+     "ش.م.ل"
+    ]
+   }
+  },
+  {
+   "word": "وتقع",
+   "gold_roots": [
+    "وقع"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "تقع",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": false
+   },
+   "camel_first": {
+    "root": "#.ق.ع",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ق.ع",
+     "ق.ع.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 12,
+    "roots": [
+     "#.ق.ع",
+     "ق.ع.#"
+    ]
+   }
+  },
+  {
+   "word": "تتولى",
+   "gold_roots": [
+    "ولي"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "تتل",
+    "reason": null,
+    "pattern": "فعول",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "#.ل.#",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "#.ل.#",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "#.ل.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 3,
+    "roots": [
+     "#.ل.#"
+    ]
+   }
+  },
+  {
+   "word": "المناسب",
+   "gold_roots": [
+    "نسب"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "نسب",
+    "reason": null,
+    "pattern": "مفاعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ن.س.ب",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ن.س.ب",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ن.س.ب"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 4,
+    "roots": [
+     "ن.س.ب"
+    ]
+   }
+  },
+  {
+   "word": "المصممة",
+   "gold_roots": [
+    "صمم"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "صمم",
+    "reason": null,
+    "pattern": "مفعله",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ص.م.م",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ص.م.م",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ص.م.م"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 12,
+    "roots": [
+     "ص.م.م"
+    ]
+   }
+  },
+  {
+   "word": "وتثبيت",
+   "gold_roots": [
+    "ثبت"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "ثبت",
+    "reason": null,
+    "pattern": "تفعيل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ث.ب.ت",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ث.ب.ت",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ث.ب.ت"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 18,
+    "roots": [
+     "ث.ب.ت"
+    ]
+   }
+  },
+  {
+   "word": "والإحالة",
+   "gold_roots": [
+    "حول"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "حال",
+    "reason": null,
+    "pattern": "افعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ح.#.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ح.#.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ح.#.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 12,
+    "roots": [
+     "ح.#.ل"
+    ]
+   }
+  },
+  {
+   "word": "مجموعات",
+   "gold_roots": [
+    "جمع"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "جمع",
+    "reason": null,
+    "pattern": "مفعول",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ج.م.ع",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ج.م.ع",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ج.م.ع"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 14,
+    "roots": [
+     "ج.م.ع"
+    ]
+   }
+  },
+  {
+   "word": "الإنجليزي",
+   "gold_roots": [],
+   "stratum": "mid",
+   "current": {
+    "root": null,
+    "reason": "root_undetermined",
+    "pattern": null,
+    "correct": true
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "no_root",
+    "correct": true
+   },
+   "camel_first": {
+    "root": null,
+    "correct": true
+   },
+   "camel_any": {
+    "root": [],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 8,
+    "roots": []
+   }
+  },
+  {
+   "word": "أنواع",
+   "gold_roots": [
+    "نوع"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "واع",
+    "reason": null,
+    "pattern": "انفعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ن.#.ع",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ن.#.ع",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ن.#.ع"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 6,
+    "roots": [
+     "ن.#.ع"
+    ]
+   }
+  },
+  {
+   "word": "للنموذج",
+   "gold_roots": [
+    "نمذج"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": null,
+    "reason": "root_undetermined",
+    "pattern": null,
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "no_root",
+    "correct": false
+   },
+   "camel_first": {
+    "root": null,
+    "correct": false
+   },
+   "camel_any": {
+    "root": [],
+    "correct": false
+   },
+   "camel_detail": {
+    "analyses": 2,
+    "roots": []
+   }
+  },
+  {
+   "word": "منشآت",
+   "gold_roots": [
+    "نشء"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "منش",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": "ن.ش.#",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ن.ش.#",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ن.ش.#"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 21,
+    "roots": [
+     "ن.ش.#"
+    ]
+   }
+  },
+  {
+   "word": "ومساعدات",
+   "gold_roots": [
+    "سعد"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "سعد",
+    "reason": null,
+    "pattern": "مفاعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "س.ع.د",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "س.ع.د",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "س.ع.د"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 42,
+    "roots": [
+     "س.ع.د"
+    ]
+   }
+  },
+  {
+   "word": "مما",
+   "gold_roots": [],
+   "stratum": "mid",
+   "current": {
+    "root": "مما",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": true
+   },
+   "camel_first": {
+    "root": "م.ن",
+    "correct": false
+   },
+   "camel_any": {
+    "root": [
+     "م.ن",
+     "ممّ"
+    ],
+    "correct": false
+   },
+   "camel_detail": {
+    "analyses": 2,
+    "roots": [
+     "م.ن",
+     "ممّ"
+    ]
+   }
+  },
+  {
+   "word": "بهم",
+   "gold_roots": [],
+   "stratum": "mid",
+   "current": {
+    "root": "بهم",
+    "reason": null,
+    "pattern": "فعل",
+    "correct": false
+   },
+   "camel_agree": {
+    "root": null,
+    "reason": "ambiguous",
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ب",
+    "correct": false
+   },
+   "camel_any": {
+    "root": [
+     "ب",
+     "ب.ه.م",
+     "ه.م.م"
+    ],
+    "correct": false
+   },
+   "camel_detail": {
+    "analyses": 16,
+    "roots": [
+     "ب",
+     "ب.ه.م",
+     "ه.م.م"
+    ]
+   }
+  },
+  {
+   "word": "مشغل",
+   "gold_roots": [
+    "شغل"
+   ],
+   "stratum": "mid",
+   "current": {
+    "root": "شغل",
+    "reason": null,
+    "pattern": "مفعل",
+    "correct": true
+   },
+   "camel_agree": {
+    "root": "ش.غ.ل",
+    "reason": null,
+    "correct": true
+   },
+   "camel_first": {
+    "root": "ش.غ.ل",
+    "correct": true
+   },
+   "camel_any": {
+    "root": [
+     "ش.غ.ل"
+    ],
+    "correct": true
+   },
+   "camel_detail": {
+    "analyses": 18,
+    "roots": [
+     "ش.غ.ل"
+    ]
+   }
+  }
+ ],
+ "measurement_limits": [
+  "gold_roots_authored_by_one_agent_not_yet_reviewed_by_a_second_linguist",
+  "single_words_without_context_no_disambiguation",
+  "camel_r13_writes_weak_and_hamza_radicals_as_hash_compared_by_declared_rule",
+  "sample_is_maritime_corpus_only_not_general_arabic",
+  "current_analyzer_is_the_one_shipped_in_core_linguistics_morphology"
+ ]
+}

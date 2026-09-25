@@ -1,0 +1,528 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": "judgment_fields",
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-24.07\",\n  \"file\": \"kimi_logic_a_003\",\n  \"judgments\": [\n    {\n      \"id\": \"constprob_a_0052\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['نورة', 'ريم', 'جواهر', 'مريم', 'سارة']\",\n      \"reason\": \"المرجع يحتوي على اسم 'ريم' بدلاً من 'نورة' في المركز الثاني. القرائن تتطلب: نورة قبل سارة، بين نورة وجواهر متسابق واحد فقط، سارة خلف مريم مباشرة، بين سارة وجواهر متسابق واحد فقط. الحل الصحيح هو ['نورة', 'جواهر', 'ريم', 'مريم', 'سارة'] لأن: نورة قبل سارة، بين نورة وجواهر متسابق واحد (ريم)، سارة خلف مريم مباشرة، وبين سارة وجواهر متسابق واحد (مريم).\",\n      \"fix\": \"['نورة', 'جواهر', 'ريم', 'مريم', 'سارة']\"\n    },\n    {\n      \"id\": \"constprob_a_0090\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'طارق': 'استقبال الضيوف', 'ناصر': 'طبخ الرز', 'زياد': 'إعداد القهوة', 'فهد': 'ترتيب المجلس'}\",\n      \"reason\": \"التعيين يحقق كل القيود المذكورة: طارق لا يجيد إعداد القهوة، ناصر لا يجيد ترتيب المجلس، طارق لا يجيد ترتيب المجلس، ناصر يتولى طبخ الرز، وإذا تولى فهد إعداد القهوة فإن زياد يتولى استقبال الضيوف (هذا الشرط غير مطبق هنا لأن فهد يتولى ترتيب المجلس).\"\n    },\n    {\n      \"id\": \"constprob_a_0040\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['بدر', 'طارق', 'خالد', 'ناصر', 'سالم']\",\n      \"reason\": \"المرجع يحتوي على خطأ في الترتيب. القرائن تتطلب: بين سالم وطارق مقعد واحد فقط، بين بدر وطارق مقعد واحد فقط، مقعد سالم يلي مقعد ناصر مباشرة في الاتجاه الأبعد عن اليمين، طارق ليس في أبعد مقعد عن اليمين. الحل الصحيح هو ['بدر', 'طارق', 'خالد', 'ناصر', 'سالم'] لكن يجب التأكد من أن سالم ليس الأقرب لليمين مباشرة بعد ناصر. الحل الصحيح هو ['بدر', 'خالد', 'طارق', 'ناصر', 'سالم'] حسب القرائن.\",\n      \"fix\": \"['بدر', 'خالد', 'طارق', 'ناصر', 'سالم']\"\n    },\n    {\n      \"id\": \"constprob_a_0082\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['ماجد', 'جاسم', 'خالد', 'زياد', 'بدر']\",\n      \"reason\": \"الترتيب يحقق كل القرائن: جاسم قبل بدر، خالد بعد جاسم وقبل زياد، جاسم قبل خالد، جاسم ليس أولًا، زياد ليس أخيرًا.\"\n    },\n    {\n      \"id\": \"constprob_a_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['خالد', 'منصور', 'ماجد', 'ناصر', 'جاسم']\",\n      \"reason\": \"التوزيع يحقق كل القرائن: ناصر أقرب إلى اليمين من جاسم، بين ماجد وخالد مقعد واحد فقط، مقعد ماجد بين مقعد خالد ومقعد جاسم في الاتجاه من اليمين، مقعد ماجد أقرب إلى اليمين من مقعد ناصر، منصور ليس في المقعد الأول من اليمين.\"\n    },\n    {\n      \"id\": \"constprob_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['تدريب اللياقة', 'تدريب التمرير', 'مباراة ودية', 'مراجعة الخطة']\",\n      \"reason\": \"الجدول يحقق كل القيود: تدريب اللياقة يوم السبت، ليس يوم الثلاثاء، تدريب التمرير ليس يوم السبت، بين تدريب اللياقة ومباراة ودية يوم واحد فقط، تدريب التمرير ليس يوم الثلاثاء.\"\n    },\n    {\n      \"id\": \"constprob_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['أمسية الشعر', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'ندوة التراث']\",\n      \"reason\": \"الجدول يحقق كل القيود: عرض الفرقة الشعبية في اليوم التالي لمسابقة الطبخ مباشرة، ندوة التراث يوم الثلاثاء، بين عرض الفرقة الشعبية وأمسية الشعر يوم واحد فقط، بين أمسية الشعر وعرض الفرقة الشعبية يوم واحد فقط.\"\n    },\n    {\n      \"id\": \"constprob_a_0066\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['ندوة التراث', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'أمسية الشعر']\",\n      \"reason\": \"المرجع يحتوي على خطأ في الترتيب. القرائن تتطلب: ندوة التراث يوم السبت، بين ندوة التراث ومسابقة الطبخ يوم واحد فقط، مسابقة الطبخ قبل أمسية الشعر، بين أمسية الشعر وعرض الفرقة الشعبية يوم واحد فقط، مسابقة الطبخ ليس يوم الثلاثاء. الحل الصحيح هو ['ندوة التراث', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'أمسية الشعر'] لكن يجب التأكد من أن مسابقة الطبخ قبل أمسية الشعر.\",\n      \"fix\": \"['ندوة التراث', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'أمسية الشعر']\"\n    },\n    {\n      \"id\": \"constprob_a_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'ناصر': 'طبخ العشاء', 'فهد': 'جمع الحطب', 'سالم': 'قيادة السيارة', 'راشد': 'نصب الخيام'}\",\n      \"reason\": \"التعيين يحقق كل القيود: ناصر لا يجيد قيادة السيارة ولا جمع الحطب، سالم لا يجيد جمع الحطب، إذا تولى فهد قيادة السيارة فإن سالم يتولى نصب الخيام (غير مطبق هنا)، راشد يتولى نصب الخيام.\"\n    },\n    {\n      \"id\": \"constprob_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['راشد', 'فهد', 'زياد', 'ماجد', 'جاسم']\",\n      \"reason\": \"الترتيب يحقق كل القرائن: فهد ليس أولًا، زياد قبل ماجد، ماجد ليس أخيرًا، زياد بعد فهد وقبل جاسم.\"\n    },\n    {\n      \"id\": \"constprob_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['لطيفة', 'هند', 'ريم', 'أمل']\",\n      \"reason\": \"التوزيع يحقق كل القرائن: لطيفة ليس في أبعد مقعد عن اليمين، هند ليس في أبعد مقعد عن اليمين، مقعد أمل يلي مقعد ريم مباشرة في الاتجاه الأبعد عن اليمين، مقعد لطيفة أقرب إلى اليمين من مقعد هند.\"\n    },\n    {\n      \"id\": \"constprob_a_0074\",\n      \"reference\": \"ambiguous\",\n      \"rubric\": \"insufficient\",\n      \"my_answer\": \"{'سالم': 'إدارة المقصف', 'جاسم': 'تنسيق الملعب', 'وليد': 'الإذاعة الصباحية'}\",\n      \"reason\": \"المهمة الرابعة غير مذكورة في المكلفين أو المهام، مما يجعل الحالة غامضة. المعايير غير كافية لتحديد المهمة الرابعة.\",\n      \"fix\": \"يجب تحديد المهمة الرابعة أو المكلف الرابع.\"\n    },\n    {\n      \"id\": \"constprob_a_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"زياد\",\n      \"reason\": \"الحل الفريد للقرائن هو ['خالد', 'سالم', 'زياد', 'بدر', 'جاسم'] وصاحب المركز الثالث هو زياد.\"\n    },\n    {\n      \"id\": \"constprob_a_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['نورة', 'جواهر', 'مريم', 'ريم']\",\n      \"reason\": \"التوزيع يحقق كل القرائن: جواهر ليس في المقعد الأول من اليمين ولا في أبعد مقعد عن اليمين، مقعد مريم أقرب إلى اليمين من مقعد ريم، مقعد جواهر أقرب إلى اليمين من مقعد مريم.\"\n    },\n    {\n      \"id\": \"constprob_a_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'زياد': 'حدادة الشباك', 'راشد': 'خياطة الستائر', 'ناصر': 'صيانة المكيف'}\",\n      \"reason\": \"التعيين يحقق كل القيود: ناصر لا يجيد خياطة الستائر ولا حدادة الشباك، راشد يتولى خياطة الستائر.\"\n    },\n    {\n      \"id\": \"constprob_a_0086\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ريم\",\n      \"reason\": \"الحل الفريد للقرائن هو ['ريم', 'نورة', 'أمل', 'مريم'] وصاحب المركز الأول هو ريم.\"\n    },\n    {\n      \"id\": \"constprob_a_0087\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['فهد', 'منصور', 'زياد', 'وليد', 'ناصر']\",\n      \"reason\": \"الترتيب يحقق كل القرائن: منصور ليس أخيرًا، ناصر خلف وليد مباشرة، زياد قبل وليد، فهد أولًا، منصور قبل زياد.\"\n    },\n    {\n      \"id\": \"constprob_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سارة\",\n      \"reason\": \"الحل الفريد للقرائن هو ['مريم', 'سارة', 'حصة', 'أمل', 'منيرة'] وصاحب المركز الثاني هو سارة.\"\n    },\n    {\n      \"id\": \"constprob_a_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"هند\",\n      \"reason\": \"الحل الفريد للقرائن هو ['أمل', 'منيرة', 'هند', 'نورة', 'مريم'] وصاحب المركز الثالث هو هند.\"\n    },\n    {\n      \"id\": \"constprob_a_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['سارة', 'حصة', 'أمل', 'مريم', 'منيرة']\",\n      \"reason\": \"التوزيع يحقق كل القرائن: منيرة في أبعد مقعد عن اليمين، مقعد أمل بين مقعد حصة ومقعد مريم في الاتجاه من اليمين، سارة في المقعد الأول من اليمين، مقعد مريم بين مقعد سارة ومقعد منيرة في الاتجاه من اليمين.\"\n    },\n    {\n      \"id\": \"constprob_a_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سارة\",\n      \"reason\": \"الحل الفريد للقرائن هو ['أمل', 'حصة', 'سارة', 'ريم'] وصاحب المركز الثالث هو سارة.\"\n    },\n    {\n      \"id\": \"constprob_a_0027\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'جاسم': 'نصب الخيام', 'منصور': 'طبخ العشاء', 'طارق': 'جمع الحطب'}\",\n      \"reason\": \"المرجع يحتوي على خطأ في التعيين. القرائن تتطلب: طارق لا يجيد طبخ العشاء ولا جمع الحطب، إذا تولى جاسم طبخ العشاء فإن طارق يتولى جمع الحطب (غير مطبق هنا). التعيين الصحيح هو {'جاسم': 'جمع الحطب', 'منصور': 'طبخ العشاء', 'طارق': 'نصب الخيام'}.\",\n      \"fix\": \"{'جاسم': 'جمع الحطب', 'منصور': 'طبخ العشاء', 'طارق': 'نصب الخيام'}\"\n    },\n    {\n      \"id\": \"constprob_a_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'جاسم': 'نجارة الباب', 'فهد': 'صيانة المكيف', 'بدر': 'خياطة الستائر'}\",\n      \"reason\": \"التعيين يحقق كل القيود: جاسم لا يجيد خياطة الستائر، فهد لا يجيد نجارة الباب، إذا تولى جاسم خياطة الستائر فإن فهد يتولى صيانة المكيف (غير مطبق هنا)، بدر يتولى خياطة الستائر.\"\n    },\n    {\n      \"id\": \"constprob_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['منيرة', 'مريم', 'هند', 'أمل', 'ريم']\",\n      \"reason\": \"الترتيب يحقق كل القرائن: هند خلف مريم مباشرة، ريم أخيرًا، أمل بعد مريم وقبل ريم، مريم بعد منيرة وقبل أمل.\"\n    },\n    {\n      \"id\": \"constprob_a_0081\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'جاسم': 'طبخ العشاء', 'سالم': 'جمع الحطب', 'منصور': 'نصب الخيام'}\",\n      \"reason\": \"التعيين يحقق كل القيود: سالم لا يجيد نصب الخيام، جاسم لا يجيد جمع الحطب، منصور يتولى نصب الخيام.\"\n    },\n    {\n      \"id\": \"constprob_a_0084\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نورة\",\n      \"reason\": \"الحل الفريد للقرائن هو ['أمل', 'منيرة', 'مريم', 'نورة', 'ريم'] وصاحب المركز الرابع هو نورة.\"\n    },\n    {\n      \"id\": \"constprob_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أمل\",\n      \"reason\": \"الحل الفريد للقرائن هو ['جواهر', 'سارة', 'أمل', 'لطيفة'] وصاحب المركز الثالث هو أمل.\"\n    },\n    {\n      \"id\": \"constprob_a_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'جاسم': 'حدادة الشباك', 'ناصر': 'خياطة الستائر', 'راشد': 'نجارة الباب'}\",\n      \"reason\": \"التعيين يحقق كل القيود: راشد لا يجيد خياطة الستائر، ناصر لا يجيد حدادة الشباك ولا نجارة الباب، جاسم يتولى حدادة الشباك.\"\n    },\n    {\n      \"id\": \"constprob_a_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لطيفة\",\n      \"reason\": \"الحل الفريد للقرائن هو ['مريم', 'لطيفة', 'هند', 'جواهر', 'ريم'] وصاحب المركز الثاني هو لطيفة.\"\n    },\n    {\n      \"id\": \"constprob_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['زياد', 'ناصر', 'طارق', 'خالد']\",\n      \"reason\": \"التوزيع يحقق كل القرائن: خالد في أبعد مقعد عن اليمين، مقعد ناصر يلي مقعد زياد مباشرة في الاتجاه الأبعد عن اليمين، مقعد ناصر بين مقعد زياد ومقعد طارق في الاتجاه من اليمين، خالد ليس في المقعد الأول من اليمين.\"\n    },\n    {\n      \"id\": \"constprob_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'سالم': 'تنسيق الملعب', 'راشد': 'الإذاعة الصباحية', 'بدر': 'إدارة المقصف'}\",\n      \"reason\": \"التعيين يحقق كل القيود: بدر لا يجيد الإذاعة الصباحية، سالم لا يجيد الإذاعة الصباحية، سالم يتولى تنسيق الملعب.\"\n    },\n    {\n      \"id\": \"constprob_a_0083\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"7/8\",\n      \"reason\": \"احتمال ظهور الصورة مرة واحدة على الأقل في ثلاث رميات هو 1 - احتمال عدم ظهور الصورة أبدًا (1/2)^3 = 1 - 1/8 = 7/8.\"\n    },\n    {\n      \"id\": \"constprob_a_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/6\",\n      \"reason\": \"احتمال ظهور العدد نفسه على حجرين من النرد هو 6/36 = 1/6.\"\n    },\n    {\n      \"id\": \"constprob_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/6\",\n      \"reason\": \"احتمال ظهور العدد نفسه على حجرين من النرد هو 6/36 = 1/6.\"\n    },\n    {\n      \"id\": \"constprob_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"120\",\n      \"reason\": \"عدد طرق ترتيب 5 لوحات مختلفة هو 5! = 120.\"\n    },\n    {\n      \"id\": \"constprob_a_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"70\",\n      \"reason\": \"عدد طرق اختيار 4 طلاب من 8 هو C(8,4) = 70.\"\n    },\n    {\n      \"id\": \"constprob_a_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/8\",\n      \"reason\": \"احتمال ظهور الصورة مرتين بالضبط في ثلاث رميات هو C(3,2) * (1/2)^3 = 3/8.\"\n    },\n    {\n      \"id\": \"constprob_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/8\",\n      \"reason\": \"احتمال ظهور الصورة مرتين بالضبط في ثلاث رميات هو C(3,2) * (1/2)^3 = 3/8.\"\n    },\n    {\n      \"id\": \"constprob_a_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"35\",\n      \"reason\": \"عدد طرق اختيار 3 طلاب من 7 هو C(7,3) = 35.\"\n    },\n    {\n      \"id\": \"constprob_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/6\",\n      \"reason\": \"احتمال ظهور العدد نفسه على حجرين من النرد هو 6/36 = 1/6.\"\n    },\n    {\n      \"id\": \"constprob_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/8\",\n      \"reason\": \"احتمال ظهور الصورة مرتين بالضبط في ثلاث رميات هو C(3,2) * (1/2)^3 = 3/8.\"\n    },\n    {\n      \"id\": \"constprob_a_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"6/11\",\n      \"reason\": \"احتمال أن الكرة الحمراء جاءت من الصندوق أ باستخدام قاعدة بايز هو (3/5 * 1/2) / (3/5 * 1/2 + 4/8 * 1/2) = 6/11.\"\n    },\n    {\n      \"id\": \"constprob_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"9/17\",\n      \"reason\": \"احتمال أن الكرة الحمراء جاءت من الصندوق أ باستخدام قاعدة بايز هو (3/8 * 1/2) / (3/8 * 1/2 + 1/3 * 1/2) = 9/17.\"\n    },\n    {\n      \"id\": \"constprob_a_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"10/17\",\n      \"reason\": \"احتمال أن الكرة الحمراء جاءت من الصندوق أ باستخدام قاعدة بايز هو (4/7 * 1/2) / (4/7 * 1/2 + 2/5 * 1/2) = 10/17.\"\n    },\n    {\n      \"id\": \"constprob_a_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/5\",\n      \"reason\": \"بعد سحب سهم أبيض الريش، يبقى 3 سهام بيضاء من أصل 5، لذا الاحتمال هو 3/5.\"\n    },\n    {\n      \"id\": \"constprob_a_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"5/7\",\n      \"reason\": \"بعد سحب قلم أزرق الحبر، يبقى 5 أقلام زرقاء من أصل 7، لذا الاحتمال هو 5/7.\"\n    },\n    {\n      \"id\": \"constprob_a_0026\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2/4\",\n      \"reason\": \"بعد سحب قلم أزرق الحبر، يبقى 2 أقلام زرقاء من أصل 4، لذا الاحتمال هو 2/4 = 1/2. المرجع يحتوي على خطأ في التبسيط.\",\n      \"fix\": \"1/2\"\n    },\n    {\n      \"id\": \"constprob_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/2\",\n      \"reason\": \"بعد سحب كرة حمراء، يبقى 5 كرات حمراء من أصل 10، لذا الاحتمال هو 5/10 = 1/2.\"\n    },\n    {\n      \"id\": \"constprob_a_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2/3\",\n      \"reason\": \"احتمال أن الكرة الحمراء جاءت من الصندوق أ باستخدام قاعدة بايز هو (3/6 * 1/2) / (3/6 * 1/2 + 1/4 * 1/2) = 2/3.\"\n    },\n    {\n      \"id\": \"constprob_a_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"5/7\",\n      \"reason\": \"احتمال أن الكرة الحمراء جاءت من الصندوق أ باستخدام قاعدة بايز هو (3/6 * 1/2) / (3/6 * 1/2 + 1/5 * 1/2) = 5/7.\"\n    },\n    {\n      \"id\": \"constprob_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"عدد الترتيبات المختلفة لأربع خرزات حيث اثنتان متماثلتان هو 4!/2! = 12.\"\n    },\n    {\n      \"id\": \"constprob_a_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/4\",\n      \"reason\": \"احتمال سحب سهمين رماديي الريش مع الإرجاع هو (3/6) * (3/6) = 1/4.\"\n    },\n    {\n      \"id\": \"constprob_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2/5\",\n      \"reason\": \"احتمال سحب سهمين من نفس اللون دون إرجاع هو (3/6 * 2/5) + (3/6 * 2/5) = 2/5.\"\n    },\n    {\n      \"id\": \"constprob_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4/7\",\n      \"reason\": \"احتمال سحب قلمين من نفس اللون دون إرجاع هو (6/8 * 5/7) + (2/8 * 1/7) = 4/7.\"\n    },\n    {\n      \"id\": \"constprob_a_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/14\",\n      \"reason\": \"احتمال سحب كرتين حمراوين دون إرجاع هو C(4,2)/C(8,2) = 6/28 = 3/14.\"\n    },\n    {\n      \"id\": \"constprob_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"325\",\n      \"reason\": \"عدد اللجان المختلفة المكونة من 4 أعضاء مع وجود امرأة واحدة على الأقل هو C(11,4) - C(5,4) = 330 - 5 = 325.\"\n    },\n    {\n      \"id\": \"constprob_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"عدد الترتيبات المختلفة لأربع خرزات حيث اثنتان متماثلتان هو 4!/2! = 12.\"\n    },\n    {\n      \"id\": \"constprob_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"عدد الترتيبات المختلفة لأربع خرزات حيث اثنتان متماثلتان هو 4!/2! = 12.\"\n    },\n    {\n      \"id\": \"constprob_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"21\",\n      \"reason\": \"عدد اللجان المختلفة المكونة من 3 أشخاص مع وجود خالد هو C(7,2) = 21.\"\n    },\n    {\n      \"id\": \"constprob_a_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"209\",\n      \"reason\": \"عدد اللجان المختلفة المكونة من 4 أعضاء مع وجود امرأة واحدة على الأقل هو C(10,4) - C(4,4) = 210 - 1 = 209.\"\n    },\n    {\n      \"id\": \"constprob_a_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"21\",\n      \"reason\": \"عدد اللجان المختلفة المكونة من 3 أشخاص مع وجود خالد هو C(7,2) = 21.\"\n    },\n    {\n      \"id\": \"constprob_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"عدد الترتيبات المختلفة لأربع خرزات حيث اثنتان متماثلتان هو 4!/2! = 12.\"\n    },\n    {\n      \"id\": \"constprob_a_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"عدد الترتيبات المختلفة لأربع خرزات حيث اثنتان متماثلتان هو 4!/2! = 12.\"\n    }\n  ]\n}\n```"
+    },
+    {
+      "attempt": 2,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-24.07\",\n  \"file\": \"kimi_logic_a_003\",\n  \"judgments\": [\n    {\n      \"id\": \"constprob_a_0052\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['نورة', 'ريم', 'جواهر', 'مريم', 'سارة']\",\n      \"reason\": \"المرجع يحتوي على اسم 'ريم' بدلاً من 'نورة' في المركز الثاني. القرائن تشير إلى أن نورة جاءت قبل سارة وبين نورة وجواهر متسابق واحد فقط، وسارة خلف مريم مباشرة. الحل الصحيح هو ['نورة', 'مريم', 'جواهر', 'سارة', 'ريم']، لكن المرجع وضع 'ريم' في المركز الرابع بدلاً من 'سارة'، وهو خطأ.\",\n      \"fix\": \"['نورة', 'مريم', 'جواهر', 'سارة', 'ريم']\"\n    },\n    {\n      \"id\": \"constprob_a_0090\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'طارق': 'استقبال الضيوف', 'ناصر': 'طبخ الرز', 'زياد': 'إعداد القهوة', 'فهد': 'ترتيب المجلس'}\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القيود المذكورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0040\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['بدر', 'طارق', 'خالد', 'ناصر', 'سالم']\",\n      \"reason\": \"المرجع وضع 'خالد' في المركز الثاني، لكن القرائن تشير إلى أن سالم يلي ناصر مباشرة في الاتجاه الأبعد عن اليمين، وأن بين سالم وطارق مقعد واحد فقط. الحل الصحيح هو ['بدر', 'طارق', 'خالد', 'ناصر', 'سالم']، لكن المرجع أخطأ في ترتيب ناصر وسالم.\",\n      \"fix\": \"['بدر', 'خالد', 'طارق', 'ناصر', 'سالم']\"\n    },\n    {\n      \"id\": \"constprob_a_0082\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['ماجد', 'جاسم', 'خالد', 'زياد', 'بدر']\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القرائن المذكورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['خالد', 'منصور', 'ماجد', 'ناصر', 'جاسم']\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القرائن المذكورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['تدريب اللياقة', 'تدريب التمرير', 'مباراة ودية', 'مراجعة الخطة']\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القيود الزمنية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['أمسية الشعر', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'ندوة التراث']\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القيود الزمنية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0066\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['ندوة التراث', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'أمسية الشعر']\",\n      \"reason\": \"المرجع وضع 'عرض الفرقة الشعبية' في المركز الثاني، لكن القرائن تشير إلى أن مسابقة الطبخ قبل أمسية الشعر وبين أمسية الشعر وعرض الفرقة الشعبية يوم واحد فقط. الحل الصحيح هو ['ندوة التراث', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'أمسية الشعر']، لكن المرجع أخطأ في ترتيب مسابقة الطبخ وأمسية الشعر.\",\n      \"fix\": \"['ندوة التراث', 'مسابقة الطبخ', 'أمسية الشعر', 'عرض الفرقة الشعبية']\"\n    },\n    {\n      \"id\": \"constprob_a_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'ناصر': 'طبخ العشاء', 'فهد': 'جمع الحطب', 'سالم': 'قيادة السيارة', 'راشد': 'نصب الخيام'}\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القيود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['راشد', 'فهد', 'زياد', 'ماجد', 'جاسم']\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['لطيفة', 'هند', 'ريم', 'أمل']\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'سالم': 'إدارة المقصف', 'جاسم': 'تنسيق الملعب', 'وليد': 'الإذاعة الصباحية'}\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القيود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"زياد\",\n      \"reason\": \"المرجع صحيح ويستخرج الاسم من الحل الفريد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['نورة', 'جواهر', 'مريم', 'ريم']\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'زياد': 'حدادة الشباك', 'راشد': 'خياطة الستائر', 'ناصر': 'صيانة المكيف'}\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القيود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0086\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ريم\",\n      \"reason\": \"المرجع صحيح ويستخرج الاسم من الحل الفريد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0087\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['فهد', 'منصور', 'زياد', 'وليد', 'ناصر']\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سارة\",\n      \"reason\": \"المرجع صحيح ويستخرج الاسم من الحل الفريد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"هند\",\n      \"reason\": \"المرجع صحيح ويستخرج الاسم من الحل الفريد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['سارة', 'حصة', 'أمل', 'مريم', 'منيرة']\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سارة\",\n      \"reason\": \"المرجع صحيح ويستخرج الاسم من الحل الفريد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'جاسم': 'جمع الحطب', 'منصور': 'طبخ العشاء', 'طارق': 'نصب الخيام'}\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القيود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'جاسم': 'نجارة الباب', 'فهد': 'صيانة المكيف', 'بدر': 'خياطة الستائر'}\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القيود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['منيرة', 'مريم', 'هند', 'أمل', 'ريم']\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0081\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'جاسم': 'طبخ العشاء', 'سالم': 'جمع الحطب', 'منصور': 'نصب الخيام'}\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القيود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0083\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"7/8\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/6\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/6\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"120\",\n      \"reason\": \"المرجع صحيح ويحسب التباديل بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"70\",\n      \"reason\": \"المرجع صحيح ويحسب التوافيق بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/8\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/8\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"35\",\n      \"reason\": \"المرجع صحيح ويحسب التوافيق بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/6\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/8\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"6/11\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال الشرطي بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"9/17\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال الشرطي بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"10/17\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال الشرطي بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/5\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"5/7\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0026\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2/4\",\n      \"reason\": \"المرجع وضع 1/2، لكن بعد سحب قلم أزرق يبقى 2 أقلام زرقاء و2 أقلام سوداء، لذا الاحتمال الصحيح هو 2/4 وليس 1/2.\",\n      \"fix\": \"2/4\"\n    },\n    {\n      \"id\": \"constprob_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/2\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2/3\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال الشرطي بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"5/7\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال الشرطي بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"المرجع صحيح ويحسب التباديل المتميزة بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/4\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2/5\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4/7\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/14\",\n      \"reason\": \"المرجع صحيح ويحسب الاحتمال بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"325\",\n      \"reason\": \"المرجع صحيح ويحسب التوافيق بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"المرجع صحيح ويحسب التباديل المتميزة بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"المرجع صحيح ويحسب التباديل المتميزة بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"21\",\n      \"reason\": \"المرجع صحيح ويحسب التوافيق بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"209\",\n      \"reason\": \"المرجع صحيح ويحسب التوافيق بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"21\",\n      \"reason\": \"المرجع صحيح ويحسب التوافيق بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"المرجع صحيح ويحسب التباديل المتميزة بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"12\",\n      \"reason\": \"المرجع صحيح ويحسب التباديل المتميزة بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لطيفة\",\n      \"reason\": \"المرجع صحيح ويستخرج الاسم من الحل الفريد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"['زياد', 'ناصر', 'طارق', 'خالد']\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'سالم': 'تنسيق الملعب', 'راشد': 'الإذاعة الصباحية', 'بدر': 'إدارة المقصف'}\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القيود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أمل\",\n      \"reason\": \"المرجع صحيح ويستخرج الاسم من الحل الفريد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0084\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نورة\",\n      \"reason\": \"المرجع صحيح ويستخرج الاسم من الحل الفريد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"constprob_a_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"{'جاسم': 'حدادة الشباك', 'ناصر': 'خياطة الستائر', 'راشد': 'نجارة الباب'}\",\n      \"reason\": \"المرجع صحيح ويلبي جميع القيود.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 147056,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_logic_a_003.json",
+  "file_sha256": "5c7cdb802dadd9c3c3c73d5bdd679de7beb78192230af92e7a654b9ca0599272",
+  "judgments": [
+    {
+      "fix": "['نورة', 'مريم', 'جواهر', 'سارة', 'ريم']",
+      "id": "constprob_a_0052",
+      "my_answer": "['نورة', 'ريم', 'جواهر', 'مريم', 'سارة']",
+      "reason": "المرجع يحتوي على اسم 'ريم' بدلاً من 'نورة' في المركز الثاني. القرائن تشير إلى أن نورة جاءت قبل سارة وبين نورة وجواهر متسابق واحد فقط، وسارة خلف مريم مباشرة. الحل الصحيح هو ['نورة', 'مريم', 'جواهر', 'سارة', 'ريم']، لكن المرجع وضع 'ريم' في المركز الرابع بدلاً من 'سارة'، وهو خطأ.",
+      "reference": "incorrect",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0090",
+      "my_answer": "{'طارق': 'استقبال الضيوف', 'ناصر': 'طبخ الرز', 'زياد': 'إعداد القهوة', 'فهد': 'ترتيب المجلس'}",
+      "reason": "المرجع صحيح ويلبي جميع القيود المذكورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "['بدر', 'خالد', 'طارق', 'ناصر', 'سالم']",
+      "id": "constprob_a_0040",
+      "my_answer": "['بدر', 'طارق', 'خالد', 'ناصر', 'سالم']",
+      "reason": "المرجع وضع 'خالد' في المركز الثاني، لكن القرائن تشير إلى أن سالم يلي ناصر مباشرة في الاتجاه الأبعد عن اليمين، وأن بين سالم وطارق مقعد واحد فقط. الحل الصحيح هو ['بدر', 'طارق', 'خالد', 'ناصر', 'سالم']، لكن المرجع أخطأ في ترتيب ناصر وسالم.",
+      "reference": "incorrect",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0082",
+      "my_answer": "['ماجد', 'جاسم', 'خالد', 'زياد', 'بدر']",
+      "reason": "المرجع صحيح ويلبي جميع القرائن المذكورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0062",
+      "my_answer": "['خالد', 'منصور', 'ماجد', 'ناصر', 'جاسم']",
+      "reason": "المرجع صحيح ويلبي جميع القرائن المذكورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0033",
+      "my_answer": "['تدريب اللياقة', 'تدريب التمرير', 'مباراة ودية', 'مراجعة الخطة']",
+      "reason": "المرجع صحيح ويلبي جميع القيود الزمنية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0006",
+      "my_answer": "['أمسية الشعر', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'ندوة التراث']",
+      "reason": "المرجع صحيح ويلبي جميع القيود الزمنية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "['ندوة التراث', 'مسابقة الطبخ', 'أمسية الشعر', 'عرض الفرقة الشعبية']",
+      "id": "constprob_a_0066",
+      "my_answer": "['ندوة التراث', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'أمسية الشعر']",
+      "reason": "المرجع وضع 'عرض الفرقة الشعبية' في المركز الثاني، لكن القرائن تشير إلى أن مسابقة الطبخ قبل أمسية الشعر وبين أمسية الشعر وعرض الفرقة الشعبية يوم واحد فقط. الحل الصحيح هو ['ندوة التراث', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'أمسية الشعر']، لكن المرجع أخطأ في ترتيب مسابقة الطبخ وأمسية الشعر.",
+      "reference": "incorrect",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0048",
+      "my_answer": "{'ناصر': 'طبخ العشاء', 'فهد': 'جمع الحطب', 'سالم': 'قيادة السيارة', 'راشد': 'نصب الخيام'}",
+      "reason": "المرجع صحيح ويلبي جميع القيود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0047",
+      "my_answer": "['راشد', 'فهد', 'زياد', 'ماجد', 'جاسم']",
+      "reason": "المرجع صحيح ويلبي جميع القرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0008",
+      "my_answer": "['لطيفة', 'هند', 'ريم', 'أمل']",
+      "reason": "المرجع صحيح ويلبي جميع القرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0074",
+      "my_answer": "{'سالم': 'إدارة المقصف', 'جاسم': 'تنسيق الملعب', 'وليد': 'الإذاعة الصباحية'}",
+      "reason": "المرجع صحيح ويلبي جميع القيود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0089",
+      "my_answer": "زياد",
+      "reason": "المرجع صحيح ويستخرج الاسم من الحل الفريد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0068",
+      "my_answer": "['نورة', 'جواهر', 'مريم', 'ريم']",
+      "reason": "المرجع صحيح ويلبي جميع القرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0071",
+      "my_answer": "{'زياد': 'حدادة الشباك', 'راشد': 'خياطة الستائر', 'ناصر': 'صيانة المكيف'}",
+      "reason": "المرجع صحيح ويلبي جميع القيود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0086",
+      "my_answer": "ريم",
+      "reason": "المرجع صحيح ويستخرج الاسم من الحل الفريد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0087",
+      "my_answer": "['فهد', 'منصور', 'زياد', 'وليد', 'ناصر']",
+      "reason": "المرجع صحيح ويلبي جميع القرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0004",
+      "my_answer": "سارة",
+      "reason": "المرجع صحيح ويستخرج الاسم من الحل الفريد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0067",
+      "my_answer": "هند",
+      "reason": "المرجع صحيح ويستخرج الاسم من الحل الفريد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0056",
+      "my_answer": "['سارة', 'حصة', 'أمل', 'مريم', 'منيرة']",
+      "reason": "المرجع صحيح ويلبي جميع القرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0023",
+      "my_answer": "سارة",
+      "reason": "المرجع صحيح ويستخرج الاسم من الحل الفريد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0027",
+      "my_answer": "{'جاسم': 'جمع الحطب', 'منصور': 'طبخ العشاء', 'طارق': 'نصب الخيام'}",
+      "reason": "المرجع صحيح ويلبي جميع القيود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0064",
+      "my_answer": "{'جاسم': 'نجارة الباب', 'فهد': 'صيانة المكيف', 'بدر': 'خياطة الستائر'}",
+      "reason": "المرجع صحيح ويلبي جميع القيود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0034",
+      "my_answer": "['منيرة', 'مريم', 'هند', 'أمل', 'ريم']",
+      "reason": "المرجع صحيح ويلبي جميع القرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0081",
+      "my_answer": "{'جاسم': 'طبخ العشاء', 'سالم': 'جمع الحطب', 'منصور': 'نصب الخيام'}",
+      "reason": "المرجع صحيح ويلبي جميع القيود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0083",
+      "my_answer": "7/8",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0054",
+      "my_answer": "1/6",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0035",
+      "my_answer": "1/6",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0007",
+      "my_answer": "120",
+      "reason": "المرجع صحيح ويحسب التباديل بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0053",
+      "my_answer": "70",
+      "reason": "المرجع صحيح ويحسب التوافيق بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0088",
+      "my_answer": "3/8",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0019",
+      "my_answer": "3/8",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0069",
+      "my_answer": "35",
+      "reason": "المرجع صحيح ويحسب التوافيق بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0001",
+      "my_answer": "1/6",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0014",
+      "my_answer": "3/8",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0078",
+      "my_answer": "6/11",
+      "reason": "المرجع صحيح ويحسب الاحتمال الشرطي بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0029",
+      "my_answer": "9/17",
+      "reason": "المرجع صحيح ويحسب الاحتمال الشرطي بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0059",
+      "my_answer": "10/17",
+      "reason": "المرجع صحيح ويحسب الاحتمال الشرطي بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0051",
+      "my_answer": "3/5",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0060",
+      "my_answer": "5/7",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "2/4",
+      "id": "constprob_a_0026",
+      "my_answer": "2/4",
+      "reason": "المرجع وضع 1/2، لكن بعد سحب قلم أزرق يبقى 2 أقلام زرقاء و2 أقلام سوداء، لذا الاحتمال الصحيح هو 2/4 وليس 1/2.",
+      "reference": "incorrect",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0018",
+      "my_answer": "1/2",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0070",
+      "my_answer": "2/3",
+      "reason": "المرجع صحيح ويحسب الاحتمال الشرطي بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0076",
+      "my_answer": "5/7",
+      "reason": "المرجع صحيح ويحسب الاحتمال الشرطي بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0017",
+      "my_answer": "12",
+      "reason": "المرجع صحيح ويحسب التباديل المتميزة بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0075",
+      "my_answer": "1/4",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0012",
+      "my_answer": "2/5",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0031",
+      "my_answer": "4/7",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0063",
+      "my_answer": "3/14",
+      "reason": "المرجع صحيح ويحسب الاحتمال بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0005",
+      "my_answer": "325",
+      "reason": "المرجع صحيح ويحسب التوافيق بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0021",
+      "my_answer": "12",
+      "reason": "المرجع صحيح ويحسب التباديل المتميزة بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0025",
+      "my_answer": "12",
+      "reason": "المرجع صحيح ويحسب التباديل المتميزة بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0036",
+      "my_answer": "21",
+      "reason": "المرجع صحيح ويحسب التوافيق بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0050",
+      "my_answer": "209",
+      "reason": "المرجع صحيح ويحسب التوافيق بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0061",
+      "my_answer": "21",
+      "reason": "المرجع صحيح ويحسب التوافيق بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0020",
+      "my_answer": "12",
+      "reason": "المرجع صحيح ويحسب التباديل المتميزة بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0010",
+      "my_answer": "12",
+      "reason": "المرجع صحيح ويحسب التباديل المتميزة بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0044",
+      "my_answer": "لطيفة",
+      "reason": "المرجع صحيح ويستخرج الاسم من الحل الفريد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0032",
+      "my_answer": "['زياد', 'ناصر', 'طارق', 'خالد']",
+      "reason": "المرجع صحيح ويلبي جميع القرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0041",
+      "my_answer": "{'سالم': 'تنسيق الملعب', 'راشد': 'الإذاعة الصباحية', 'بدر': 'إدارة المقصف'}",
+      "reason": "المرجع صحيح ويلبي جميع القيود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0028",
+      "my_answer": "أمل",
+      "reason": "المرجع صحيح ويستخرج الاسم من الحل الفريد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0084",
+      "my_answer": "نورة",
+      "reason": "المرجع صحيح ويستخرج الاسم من الحل الفريد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "constprob_a_0077",
+      "my_answer": "{'جاسم': 'حدادة الشباك', 'ناصر': 'خياطة الستائر', 'راشد': 'نجارة الباب'}",
+      "reason": "المرجع صحيح ويلبي جميع القيود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T19:04:22Z"
+}

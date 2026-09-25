@@ -1,0 +1,523 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-7b-v0.3\",\n  \"file\": \"kimi_arabic_a_002\",\n  \"judgments\": [\n    {\n      \"id\": \"gram_a_0201\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الفلاح\",\n      \"reason\": \"الفاعل في الجملة هو 'الفلاح' وهو صحيح كما ورد في الجملة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0211\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لعبته\",\n      \"reason\": \"المفعول به في الجملة هو 'لعبته' وهو مضاف لضمير.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجزوم\",\n      \"reason\": \"الفعل 'يحضر' مجزوم بلم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"كلمة 'لاعبتان' مثنى فاعل مرفوع بالألف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0210\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المشاهدون\",\n      \"reason\": \"الفاعل في الجملة هو 'المشاهدون' وهو جمع مذكر سالم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0304\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كتب\",\n      \"reason\": \"المبتدأ في الجملة هو 'كتب' وهو مبتدأ مؤخر نكرة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجرور\",\n      \"reason\": \"كلمة 'رجلين' مجرورة بالياء بعد حرف الجر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0309\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صديقي\",\n      \"reason\": \"المبتدأ في الجملة هو 'صديقي' وهو مضاف لضمير.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0312\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الليل\",\n      \"reason\": \"المبتدأ في الجملة هو 'الليل' وهو مبتدأ صريح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0403\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'مزدحما' خبر أصبح منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0409\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'الصدق' اسم إن منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'الشباب' اسم ليت منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0213\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الأعلام\",\n      \"reason\": \"نائب الفاعل في الجملة هو 'الأعلام'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0307\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الطائرة\",\n      \"reason\": \"المبتدأ في الجملة هو 'الطائرة' وهو مبتدأ أول وخبره شبه جملة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0219\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الطالب\",\n      \"reason\": \"الفاعل في الجملة هو 'الطالب' وهو موصوف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'لطيفا' خبر كان منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0310\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"هذا\",\n      \"reason\": \"المبتدأ في الجملة هو 'هذا' وهو اسم إشارة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'سيرا' مفعول مطلق منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'الاجتهاد' اسم إن منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'الواجب' مفعول به منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0208\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المسجد\",\n      \"reason\": \"نائب الفاعل في الجملة هو 'المسجد'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0221\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الكهرباء\",\n      \"reason\": \"نائب الفاعل في الجملة هو 'الكهرباء'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0302\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"العلم\",\n      \"reason\": \"المبتدأ في الجملة هو 'العلم'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0214\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الأم\",\n      \"reason\": \"الفاعل في الجملة هو 'الأم'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0402\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ناقصة\",\n      \"reason\": \"كان في الجملة ناقصة لأنها رفعت اسمًا ونصبت خبرًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0101\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مفعول مطلق\",\n      \"reason\": \"كلمة 'ضحكة' مفعول مطلق لأنها مصدر من لفظ الفعل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"كلمة 'سهل' خبر لعل مرفوع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0105\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تمييز\",\n      \"reason\": \"كلمة 'كتابا' تمييز كم الاستفهامية منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0301\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ورد\",\n      \"reason\": \"المبتدأ في الجملة هو 'ورد' وهو مبتدأ مؤخر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0414\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"كلمة 'الشمس' اسم كاد مرفوع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'احتراما' مفعول لأجله منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"كلمة 'هر' مبتدأ مؤخر مرفوع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0305\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حق\",\n      \"reason\": \"المبتدأ في الجملة هو 'حق' وهو خبر مقدم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'جديدة' نعت للمفعول به منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'منتصرا' حال منصوبة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0103\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مفعول لأجله\",\n      \"reason\": \"كلمة 'عطشا' مفعول لأجله لأنها مصدر قلبي علة للفعل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'ضحكة' مفعول مطلق منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0215\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الطالب\",\n      \"reason\": \"الفاعل في الجملة هو 'الطالب' بعد تقديم المفعول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0102\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تمييز\",\n      \"reason\": \"كلمة 'سكرا' تمييز ملفوظ منصوب بعد نكرة الكيل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0415\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'أسدا' اسم إن مؤخر منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0218\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إياك\",\n      \"reason\": \"المفعول به في الجملة هو 'إياك' وهو ضمير يتقدم وجوبًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'قصيدة' تمييز كم الخبرية منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'كريم' منادى مضاف منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'عدوا' مفعول مطلق منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'شكرا' مفعول مطلق منصوب لفعل محذوف تقديره أشكر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'صفحة' تمييز العدد المركب منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0417\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"كلمة 'مفيد' خبر إن مرفوع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0209\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"باب\",\n      \"reason\": \"نائب الفاعل في الجملة هو 'باب'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0308\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قوة\",\n      \"reason\": \"المبتدأ في الجملة هو 'قوة' وهو مبتدأ مؤخر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0212\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الموظفين\",\n      \"reason\": \"المفعول به في الجملة هو 'الموظفين' وهو مفعول أول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'صندوقين' مثنى مفعول به منصوب بالياء.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0410\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'القمر' اسم كأن منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'العمر' اسم كأن منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0412\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"كلمة 'قريب' خبر لعل مرفوع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0405\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"كلمة 'الجهد' اسم ما زال مرفوع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0205\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الحديقة\",\n      \"reason\": \"نائب الفاعل في الجملة هو 'الحديقة'.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0216\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الطعام\",\n      \"reason\": \"المفعول به في الجملة هو 'الطعام' وهو مفعول مقدم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0204\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المريض\",\n      \"reason\": \"المفعول به في الجملة هو 'المريض' وهو مفعول مقدم وجوبًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"كلمة 'أزهار' مبتدأ مؤخر مرفوع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0407\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ناقصة\",\n      \"reason\": \"بات في الجملة ناقصة لأنها من أخوات كان الناقصة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0406\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"كلمة 'معقدا' خبر ليس منصوب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0416\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ناقصة\",\n      \"reason\": \"أمسى في الجملة ناقصة لأنها نصبت الخبر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0303\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ظل\",\n      \"reason\": \"المبتدأ في الجملة هو 'ظل' وهو مبتدأ مؤخر.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 55218,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_arabic_a_002.json",
+  "file_sha256": "9a219731516ca9314f9ce97a5d1c5836b7ceee3297804165cc5de3e67d4aa934",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "gram_a_0201",
+      "my_answer": "الفلاح",
+      "reason": "الفاعل في الجملة هو 'الفلاح' وهو صحيح كما ورد في الجملة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0211",
+      "my_answer": "لعبته",
+      "reason": "المفعول به في الجملة هو 'لعبته' وهو مضاف لضمير.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0016",
+      "my_answer": "مجزوم",
+      "reason": "الفعل 'يحضر' مجزوم بلم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0031",
+      "my_answer": "مرفوع",
+      "reason": "كلمة 'لاعبتان' مثنى فاعل مرفوع بالألف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0210",
+      "my_answer": "المشاهدون",
+      "reason": "الفاعل في الجملة هو 'المشاهدون' وهو جمع مذكر سالم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0304",
+      "my_answer": "كتب",
+      "reason": "المبتدأ في الجملة هو 'كتب' وهو مبتدأ مؤخر نكرة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0005",
+      "my_answer": "مجرور",
+      "reason": "كلمة 'رجلين' مجرورة بالياء بعد حرف الجر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0309",
+      "my_answer": "صديقي",
+      "reason": "المبتدأ في الجملة هو 'صديقي' وهو مضاف لضمير.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0312",
+      "my_answer": "الليل",
+      "reason": "المبتدأ في الجملة هو 'الليل' وهو مبتدأ صريح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0403",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'مزدحما' خبر أصبح منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0409",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'الصدق' اسم إن منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0018",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'الشباب' اسم ليت منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0213",
+      "my_answer": "الأعلام",
+      "reason": "نائب الفاعل في الجملة هو 'الأعلام'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0307",
+      "my_answer": "الطائرة",
+      "reason": "المبتدأ في الجملة هو 'الطائرة' وهو مبتدأ أول وخبره شبه جملة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0219",
+      "my_answer": "الطالب",
+      "reason": "الفاعل في الجملة هو 'الطالب' وهو موصوف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0011",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'لطيفا' خبر كان منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0310",
+      "my_answer": "هذا",
+      "reason": "المبتدأ في الجملة هو 'هذا' وهو اسم إشارة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0027",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'سيرا' مفعول مطلق منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0012",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'الاجتهاد' اسم إن منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0001",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'الواجب' مفعول به منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0208",
+      "my_answer": "المسجد",
+      "reason": "نائب الفاعل في الجملة هو 'المسجد'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0221",
+      "my_answer": "الكهرباء",
+      "reason": "نائب الفاعل في الجملة هو 'الكهرباء'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0302",
+      "my_answer": "العلم",
+      "reason": "المبتدأ في الجملة هو 'العلم'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0214",
+      "my_answer": "الأم",
+      "reason": "الفاعل في الجملة هو 'الأم'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0402",
+      "my_answer": "ناقصة",
+      "reason": "كان في الجملة ناقصة لأنها رفعت اسمًا ونصبت خبرًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0101",
+      "my_answer": "مفعول مطلق",
+      "reason": "كلمة 'ضحكة' مفعول مطلق لأنها مصدر من لفظ الفعل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0019",
+      "my_answer": "مرفوع",
+      "reason": "كلمة 'سهل' خبر لعل مرفوع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0105",
+      "my_answer": "تمييز",
+      "reason": "كلمة 'كتابا' تمييز كم الاستفهامية منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0301",
+      "my_answer": "ورد",
+      "reason": "المبتدأ في الجملة هو 'ورد' وهو مبتدأ مؤخر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0414",
+      "my_answer": "مرفوع",
+      "reason": "كلمة 'الشمس' اسم كاد مرفوع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0030",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'احتراما' مفعول لأجله منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0032",
+      "my_answer": "مرفوع",
+      "reason": "كلمة 'هر' مبتدأ مؤخر مرفوع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0305",
+      "my_answer": "حق",
+      "reason": "المبتدأ في الجملة هو 'حق' وهو خبر مقدم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0024",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'جديدة' نعت للمفعول به منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0002",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'منتصرا' حال منصوبة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0103",
+      "my_answer": "مفعول لأجله",
+      "reason": "كلمة 'عطشا' مفعول لأجله لأنها مصدر قلبي علة للفعل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0003",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'ضحكة' مفعول مطلق منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0215",
+      "my_answer": "الطالب",
+      "reason": "الفاعل في الجملة هو 'الطالب' بعد تقديم المفعول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0102",
+      "my_answer": "تمييز",
+      "reason": "كلمة 'سكرا' تمييز ملفوظ منصوب بعد نكرة الكيل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0415",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'أسدا' اسم إن مؤخر منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0218",
+      "my_answer": "إياك",
+      "reason": "المفعول به في الجملة هو 'إياك' وهو ضمير يتقدم وجوبًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0026",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'قصيدة' تمييز كم الخبرية منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0025",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'كريم' منادى مضاف منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0029",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'عدوا' مفعول مطلق منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0034",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'شكرا' مفعول مطلق منصوب لفعل محذوف تقديره أشكر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0007",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'صفحة' تمييز العدد المركب منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0417",
+      "my_answer": "مرفوع",
+      "reason": "كلمة 'مفيد' خبر إن مرفوع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0209",
+      "my_answer": "باب",
+      "reason": "نائب الفاعل في الجملة هو 'باب'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0308",
+      "my_answer": "قوة",
+      "reason": "المبتدأ في الجملة هو 'قوة' وهو مبتدأ مؤخر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0212",
+      "my_answer": "الموظفين",
+      "reason": "المفعول به في الجملة هو 'الموظفين' وهو مفعول أول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0004",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'صندوقين' مثنى مفعول به منصوب بالياء.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0410",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'القمر' اسم كأن منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0017",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'العمر' اسم كأن منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0412",
+      "my_answer": "مرفوع",
+      "reason": "كلمة 'قريب' خبر لعل مرفوع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0405",
+      "my_answer": "مرفوع",
+      "reason": "كلمة 'الجهد' اسم ما زال مرفوع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0205",
+      "my_answer": "الحديقة",
+      "reason": "نائب الفاعل في الجملة هو 'الحديقة'.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0216",
+      "my_answer": "الطعام",
+      "reason": "المفعول به في الجملة هو 'الطعام' وهو مفعول مقدم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0204",
+      "my_answer": "المريض",
+      "reason": "المفعول به في الجملة هو 'المريض' وهو مفعول مقدم وجوبًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0009",
+      "my_answer": "مرفوع",
+      "reason": "كلمة 'أزهار' مبتدأ مؤخر مرفوع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0407",
+      "my_answer": "ناقصة",
+      "reason": "بات في الجملة ناقصة لأنها من أخوات كان الناقصة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0406",
+      "my_answer": "منصوب",
+      "reason": "كلمة 'معقدا' خبر ليس منصوب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0416",
+      "my_answer": "ناقصة",
+      "reason": "أمسى في الجملة ناقصة لأنها نصبت الخبر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0303",
+      "my_answer": "ظل",
+      "reason": "المبتدأ في الجملة هو 'ظل' وهو مبتدأ مؤخر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T18:14:27Z"
+}

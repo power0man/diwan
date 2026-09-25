@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-09-24",
+  "base_commit": "e8eeb1c",
+  "scope": "pre_implementation_baseline_for_J1",
+  "evidence_type": "executed_synthetic_tests",
+  "observations": [
+    {
+      "configuration": "project Python 3.14.7; inherited macOS temporary directory and PATH",
+      "suite": "full pytest suite",
+      "exit_code": 1,
+      "failed_tests": 8,
+      "failure_scope": "tests/test_agentic_runner.py",
+      "failure": "JournalRefused unsafe_path: temporary directory path traverses the macOS /var alias"
+    },
+    {
+      "configuration": "same interpreter; TMPDIR=/private/tmp; inherited PATH",
+      "suite": "tests/test_agentic_runner.py",
+      "exit_code": 1,
+      "failed_tests": 1,
+      "failure_scope": "test_an_agent_that_fixes_the_source_passes",
+      "observation": "The test's success command names python3; inherited PATH resolves it to system Python 3.9.6 rather than the project runtime."
+    },
+    {
+      "configuration": "same interpreter; TMPDIR=/private/tmp; project runtime bin first in this process PATH",
+      "suite": "tests/test_agentic_runner.py",
+      "exit_code": 0,
+      "passed_tests": 29,
+      "source_changes": false
+    }
+  ],
+  "measurement_limits": [
+    "Synthetic scripted-provider tests, not a model benchmark.",
+    "Environment configuration is limited to the test process; no host settings changed.",
+    "No journal guard or runner code was changed; this records a pre-existing portability problem.",
+    "The passing controlled configuration does not establish that the inherited macOS environment works."
+  ]
+}

@@ -1,0 +1,531 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-7b-v0.3\",\n  \"file\": \"kimi_sci_a_004\",\n  \"judgments\": [\n    {\n      \"id\": \"sci_a4_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"القانون الخاطئ هو R = I × V، والصحيح هو R = V/I. المقاومة = 24/2 = 12 أوم.\",\n      \"reason\": \"المرجع اكتشف الخطأ في القانون (مقلوب) وحل المسألة بالقانون الصحيح، وحذر من استخدام القانون الخاطئ. المعايير تغطي جميع الجوانب المطلوبة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، لأن وحدات الطاقة (كغ·م²/ث²) لا تتطابق مع وحدات الكتلة × السرعة (كغ·م/ث).\",\n      \"reason\": \"المرجع اكتشف عدم تجانس الوحدات وأجاب بـ'لا'، وهو صحيح. المعايير واضحة وتغطي الحاجة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0086\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"متناقضة، لأن القدرة المحسوبة من الجهد والتيار هي 110 واط، لا 60 واط.\",\n      \"reason\": \"المرجع اكتشف التناقض بين القدرة المعلنة والقدرة المحسوبة، وأجاب بـ'متناقضة'، وهو صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0087\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"متناقضة، لأن السرعة المتوقعة بعد ثانيتين هي 20 م/ث، لا 15 م/ث.\",\n      \"reason\": \"المرجع اكتشف التناقض في السرعة المحسوبة، وأجاب بـ'متناقضة'، وهو صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"القانون الخاطئ هو P = V ÷ R²، والصحيح هو P = V²/R. القدرة = 10²/5 = 20 واط.\",\n      \"reason\": \"المرجع اكتشف الخطأ في القانون (قسمة على مربع المقاومة) وحل المسألة بالقانون الصحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، لأن الارتباط لا يعني السببية، وقد يكون هناك متغير ثالث (حجم الحريق).\",\n      \"reason\": \"المرجع اكتشف خطأ الاستنتاج السببي من الارتباط، وأجاب بـ'لا'، وهو صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0091\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، لأن الارتباط قد يكون ناتجًا عن متغير ثالث (الاجتهاد).\",\n      \"reason\": \"المرجع اكتشف خطأ الاستنتاج السببي، وأجاب بـ'لا'، وهو صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، لأن الارتباط ناتج عن متغير ثالث (حرارة الصيف).\",\n      \"reason\": \"المرجع اكتشف خطأ الاستنتاج السببي، وأجاب بـ'لا'، وهو صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0083\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"متناقضة، لأن التيار المحسوب من قانون أوم هو 2 أمبير، لا 3 أمبير.\",\n      \"reason\": \"المرجع اكتشف التناقض في التيار المحسوب، وأجاب بـ'متناقضة'، وهو صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"القانون الخاطئ هو P = V ÷ I، والصحيح هو P = V × I. القدرة = 6 × 2.5 = 15 واط.\",\n      \"reason\": \"المرجع اكتشف الخطأ في القانون (قسمة الجهد على التيار) وحل المسألة بالقانون الصحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0090\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، لأن المستشفيات تستقبل الحالات الحرجة، ولا تسبب الوفيات.\",\n      \"reason\": \"المرجع اكتشف خطأ الاستنتاج السببي، وأجاب بـ'لا'، وهو صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"القانون الخاطئ هو Q = m ÷ (c × ΔT)، والصحيح هو Q = m × c × ΔT. كمية الحرارة = 0.5 × 4200 × 20 = 42000 جول.\",\n      \"reason\": \"المرجع اكتشف الخطأ في القانون (قسمة الكتلة على الحرارة النوعية وفرق الحرارة) وحل المسألة بالقانون الصحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0081\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، لأن جمع القوة والمسافة غير متجانس فيزيائيًا.\",\n      \"reason\": \"المرجع اكتشف خطأ جمع الوحدات غير المتجانسة، وأجاب بـ'لا'، وهو صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"6\",\n      \"reason\": \"الحساب بالقانون R = V/I يعطي 9/1.5 = 6 أوم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3\",\n      \"reason\": \"الحساب بالقانون I = V/R يعطي 9/3 = 3 أمبير. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2\",\n      \"reason\": \"الحساب بالقانون I = V/R يعطي 12/6 = 2 أمبير. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"18\",\n      \"reason\": \"جمع المقاومات على التوالي يعطي 4 + 6 + 8 = 18 أوم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4\",\n      \"reason\": \"الحساب بالقانون I = V/R يعطي 220/55 = 4 أمبير. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"24\",\n      \"reason\": \"الحساب بالقانون P = V × I يعطي 12 × 2 = 24 واط. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4\",\n      \"reason\": \"الحساب بالقانون R = V/I يعطي 12/3 = 4 أوم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"10\",\n      \"reason\": \"الحساب بالقانون V = I × R يعطي 0.5 × 20 = 10 فولت. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"9\",\n      \"reason\": \"الحساب بالقانون V = I × R يعطي 0.2 × 45 = 9 فولت. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"60\",\n      \"reason\": \"الحساب بالقانون R = V/I يعطي 30/0.5 = 60 أوم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"14\",\n      \"reason\": \"الحساب بالقانون V = I × R يعطي 2 × 7 = 14 فولت. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"400\",\n      \"reason\": \"الحساب بالقانون R = V²/P يعطي 200²/100 = 400 أوم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"20\",\n      \"reason\": \"التيار الكلي = 30/30 = 1 أمبير، والجهد على المقاومة 20 أوم = 1 × 20 = 20 فولت. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"6\",\n      \"reason\": \"تيار الفرع الأول = 12/6 = 2 أمبير، والثاني = 12/3 = 4 أمبير، والكلي = 6 أمبير. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"6\",\n      \"reason\": \"تيار الفرع الأول = 24/8 = 3 أمبير، والثاني = 24/8 = 3 أمبير، والكلي = 6 أمبير. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3\",\n      \"reason\": \"المقاومة المكافئة لمقاومات متساوية على التوازي = 9/3 = 3 أوم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"16\",\n      \"reason\": \"التيار الكلي = 24/12 = 2 أمبير، والجهد على المقاومة 8 أوم = 2 × 8 = 16 فولت. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"48\",\n      \"reason\": \"الحساب بالقانون P = V²/R يعطي 24²/12 = 48 واط. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"24\",\n      \"reason\": \"الحساب بالقانون P = V²/R يعطي 12²/6 = 24 واط. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"التوازي\",\n      \"reason\": \"المقاومة المكافئة على التوازي أصغر من أصغر مقاومة في الدائرة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4\",\n      \"reason\": \"المقاومة المكافئة = (12 × 6)/(12 + 6) = 4 أوم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"6\",\n      \"reason\": \"المقاومة المكافئة = (10 × 15)/(10 + 15) = 6 أوم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.5\",\n      \"reason\": \"الحساب بالقانون I = P/V يعطي 100/200 = 0.5 أمبير. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"20\",\n      \"reason\": \"الحساب بالقانون P = I² × R يعطي 2² × 5 = 20 واط. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"36\",\n      \"reason\": \"الحساب بالقانون P = I² × R يعطي 3² × 4 = 36 واط. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"25\",\n      \"reason\": \"الحساب بالقانون P = I² × R يعطي 0.5² × 100 = 25 واط. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2\",\n      \"reason\": \"المقاومة المكافئة = (6 × 3)/(6 + 3) = 2 أوم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"40\",\n      \"reason\": \"الحساب بالقانون P = V²/R يعطي 20²/10 = 40 واط. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"126.85\",\n      \"reason\": \"التحويل من كلفن إلى مئوية: 400 - 273.15 = 126.85. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"373.15\",\n      \"reason\": \"التحويل من مئوية إلى كلفن: 100 + 273.15 = 373.15. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"26.85\",\n      \"reason\": \"التحويل من كلفن إلى مئوية: 300 - 273.15 = 26.85. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"القدرة\",\n      \"reason\": \"الوحدات الناتجة عن الشغل ÷ الزمن هي واط، وهي وحدة القدرة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"293.15\",\n      \"reason\": \"التحويل من فهرنهايت إلى مئوية: (68 - 32) × 5/9 = 20، ثم إلى كلفن: 20 + 273.15 = 293.15. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"373.15\",\n      \"reason\": \"التحويل من فهرنهايت إلى مئوية: (212 - 32) × 5/9 = 100، ثم إلى كلفن: 100 + 273.15 = 373.15. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"13500\",\n      \"reason\": \"الحساب بالقانون Q = m × c × ΔT يعطي 0.5 × 900 × 30 = 13500 جول. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"27600\",\n      \"reason\": \"الحساب بالقانون Q = m × c × ΔT يعطي 3 × 460 × 20 = 27600 جول. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المقاومة\",\n      \"reason\": \"الوحدات الناتجة عن فرق الجهد ÷ شدة التيار هي أوم، وهي وحدة المقاومة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"77\",\n      \"reason\": \"التحويل من مئوية إلى فهرنهايت: (9/5) × 25 + 32 = 77. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"18\",\n      \"reason\": \"التحويل من م/ث إلى كم/ساعة: 5 × 3.6 = 18. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.5\",\n      \"reason\": \"الطاقة = (100/1000) × 5 = 0.5 كيلوواط·ساعة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"10\",\n      \"reason\": \"التحويل من كم/ساعة إلى م/ث: 36/3.6 = 10. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"90\",\n      \"reason\": \"التحويل من م/ث إلى كم/ساعة: 25 × 3.6 = 90. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"9000000\",\n      \"reason\": \"الطاقة بالجول = 2.5 × 3.6 × 10⁶ = 9000000 جول. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"30\",\n      \"reason\": \"التحويل من كم/ساعة إلى م/ث: 108/3.6 = 30. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0.6\",\n      \"reason\": \"الطاقة = (60/1000) × 10 = 0.6 كيلوواط·ساعة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"126000\",\n      \"reason\": \"الحساب بالقانون Q = m × c × ΔT يعطي 2 × 4200 × 15 = 126000 جول. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"14\",\n      \"reason\": \"التحويل من مئوية إلى فهرنهايت: (9/5) × (-10) + 32 = 14. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"98.6\",\n      \"reason\": \"التحويل من مئوية إلى فهرنهايت: (9/5) × 37 + 32 = 98.6. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"100\",\n      \"reason\": \"التحويل من فهرنهايت إلى مئوية: (212 - 32) × 5/9 = 100. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"-20\",\n      \"reason\": \"التحويل من فهرنهايت إلى مئوية: (-4 - 32) × 5/9 = -20. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"20\",\n      \"reason\": \"التحويل من فهرنهايت إلى مئوية: (68 - 32) × 5/9 = 20. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 71979,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_sci_a_004.json",
+  "file_sha256": "84b0e082e7611f322c88a2f921814fbd0bf7f409d976e6b671c90b6e91bf8b76",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "sci_a4_0074",
+      "my_answer": "القانون الخاطئ هو R = I × V، والصحيح هو R = V/I. المقاومة = 24/2 = 12 أوم.",
+      "reason": "المرجع اكتشف الخطأ في القانون (مقلوب) وحل المسألة بالقانون الصحيح، وحذر من استخدام القانون الخاطئ. المعايير تغطي جميع الجوانب المطلوبة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0079",
+      "my_answer": "لا، لأن وحدات الطاقة (كغ·م²/ث²) لا تتطابق مع وحدات الكتلة × السرعة (كغ·م/ث).",
+      "reason": "المرجع اكتشف عدم تجانس الوحدات وأجاب بـ'لا'، وهو صحيح. المعايير واضحة وتغطي الحاجة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0086",
+      "my_answer": "متناقضة، لأن القدرة المحسوبة من الجهد والتيار هي 110 واط، لا 60 واط.",
+      "reason": "المرجع اكتشف التناقض بين القدرة المعلنة والقدرة المحسوبة، وأجاب بـ'متناقضة'، وهو صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0087",
+      "my_answer": "متناقضة، لأن السرعة المتوقعة بعد ثانيتين هي 20 م/ث، لا 15 م/ث.",
+      "reason": "المرجع اكتشف التناقض في السرعة المحسوبة، وأجاب بـ'متناقضة'، وهو صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0076",
+      "my_answer": "القانون الخاطئ هو P = V ÷ R²، والصحيح هو P = V²/R. القدرة = 10²/5 = 20 واط.",
+      "reason": "المرجع اكتشف الخطأ في القانون (قسمة على مربع المقاومة) وحل المسألة بالقانون الصحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0089",
+      "my_answer": "لا، لأن الارتباط لا يعني السببية، وقد يكون هناك متغير ثالث (حجم الحريق).",
+      "reason": "المرجع اكتشف خطأ الاستنتاج السببي من الارتباط، وأجاب بـ'لا'، وهو صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0091",
+      "my_answer": "لا، لأن الارتباط قد يكون ناتجًا عن متغير ثالث (الاجتهاد).",
+      "reason": "المرجع اكتشف خطأ الاستنتاج السببي، وأجاب بـ'لا'، وهو صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0088",
+      "my_answer": "لا، لأن الارتباط ناتج عن متغير ثالث (حرارة الصيف).",
+      "reason": "المرجع اكتشف خطأ الاستنتاج السببي، وأجاب بـ'لا'، وهو صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0083",
+      "my_answer": "متناقضة، لأن التيار المحسوب من قانون أوم هو 2 أمبير، لا 3 أمبير.",
+      "reason": "المرجع اكتشف التناقض في التيار المحسوب، وأجاب بـ'متناقضة'، وهو صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0077",
+      "my_answer": "القانون الخاطئ هو P = V ÷ I، والصحيح هو P = V × I. القدرة = 6 × 2.5 = 15 واط.",
+      "reason": "المرجع اكتشف الخطأ في القانون (قسمة الجهد على التيار) وحل المسألة بالقانون الصحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0090",
+      "my_answer": "لا، لأن المستشفيات تستقبل الحالات الحرجة، ولا تسبب الوفيات.",
+      "reason": "المرجع اكتشف خطأ الاستنتاج السببي، وأجاب بـ'لا'، وهو صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0078",
+      "my_answer": "القانون الخاطئ هو Q = m ÷ (c × ΔT)، والصحيح هو Q = m × c × ΔT. كمية الحرارة = 0.5 × 4200 × 20 = 42000 جول.",
+      "reason": "المرجع اكتشف الخطأ في القانون (قسمة الكتلة على الحرارة النوعية وفرق الحرارة) وحل المسألة بالقانون الصحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0081",
+      "my_answer": "لا، لأن جمع القوة والمسافة غير متجانس فيزيائيًا.",
+      "reason": "المرجع اكتشف خطأ جمع الوحدات غير المتجانسة، وأجاب بـ'لا'، وهو صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0009",
+      "my_answer": "6",
+      "reason": "الحساب بالقانون R = V/I يعطي 9/1.5 = 6 أوم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0001",
+      "my_answer": "3",
+      "reason": "الحساب بالقانون I = V/R يعطي 9/3 = 3 أمبير. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0002",
+      "my_answer": "2",
+      "reason": "الحساب بالقانون I = V/R يعطي 12/6 = 2 أمبير. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0013",
+      "my_answer": "18",
+      "reason": "جمع المقاومات على التوالي يعطي 4 + 6 + 8 = 18 أوم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0003",
+      "my_answer": "4",
+      "reason": "الحساب بالقانون I = V/R يعطي 220/55 = 4 أمبير. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0028",
+      "my_answer": "24",
+      "reason": "الحساب بالقانون P = V × I يعطي 12 × 2 = 24 واط. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0008",
+      "my_answer": "4",
+      "reason": "الحساب بالقانون R = V/I يعطي 12/3 = 4 أوم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0005",
+      "my_answer": "10",
+      "reason": "الحساب بالقانون V = I × R يعطي 0.5 × 20 = 10 فولت. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0007",
+      "my_answer": "9",
+      "reason": "الحساب بالقانون V = I × R يعطي 0.2 × 45 = 9 فولت. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0010",
+      "my_answer": "60",
+      "reason": "الحساب بالقانون R = V/I يعطي 30/0.5 = 60 أوم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0006",
+      "my_answer": "14",
+      "reason": "الحساب بالقانون V = I × R يعطي 2 × 7 = 14 فولت. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0038",
+      "my_answer": "400",
+      "reason": "الحساب بالقانون R = V²/P يعطي 200²/100 = 400 أوم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0018",
+      "my_answer": "20",
+      "reason": "التيار الكلي = 30/30 = 1 أمبير، والجهد على المقاومة 20 أوم = 1 × 20 = 20 فولت. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0025",
+      "my_answer": "6",
+      "reason": "تيار الفرع الأول = 12/6 = 2 أمبير، والثاني = 12/3 = 4 أمبير، والكلي = 6 أمبير. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0026",
+      "my_answer": "6",
+      "reason": "تيار الفرع الأول = 24/8 = 3 أمبير، والثاني = 24/8 = 3 أمبير، والكلي = 6 أمبير. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0024",
+      "my_answer": "3",
+      "reason": "المقاومة المكافئة لمقاومات متساوية على التوازي = 9/3 = 3 أوم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0017",
+      "my_answer": "16",
+      "reason": "التيار الكلي = 24/12 = 2 أمبير، والجهد على المقاومة 8 أوم = 2 × 8 = 16 فولت. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0036",
+      "my_answer": "48",
+      "reason": "الحساب بالقانون P = V²/R يعطي 24²/12 = 48 واط. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0034",
+      "my_answer": "24",
+      "reason": "الحساب بالقانون P = V²/R يعطي 12²/6 = 24 واط. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0041",
+      "my_answer": "التوازي",
+      "reason": "المقاومة المكافئة على التوازي أصغر من أصغر مقاومة في الدائرة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0021",
+      "my_answer": "4",
+      "reason": "المقاومة المكافئة = (12 × 6)/(12 + 6) = 4 أوم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0022",
+      "my_answer": "6",
+      "reason": "المقاومة المكافئة = (10 × 15)/(10 + 15) = 6 أوم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0039",
+      "my_answer": "0.5",
+      "reason": "الحساب بالقانون I = P/V يعطي 100/200 = 0.5 أمبير. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0031",
+      "my_answer": "20",
+      "reason": "الحساب بالقانون P = I² × R يعطي 2² × 5 = 20 واط. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0032",
+      "my_answer": "36",
+      "reason": "الحساب بالقانون P = I² × R يعطي 3² × 4 = 36 واط. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0033",
+      "my_answer": "25",
+      "reason": "الحساب بالقانون P = I² × R يعطي 0.5² × 100 = 25 واط. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0019",
+      "my_answer": "2",
+      "reason": "المقاومة المكافئة = (6 × 3)/(6 + 3) = 2 أوم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0035",
+      "my_answer": "40",
+      "reason": "الحساب بالقانون P = V²/R يعطي 20²/10 = 40 واط. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0054",
+      "my_answer": "126.85",
+      "reason": "التحويل من كلفن إلى مئوية: 400 - 273.15 = 126.85. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0052",
+      "my_answer": "373.15",
+      "reason": "التحويل من مئوية إلى كلفن: 100 + 273.15 = 373.15. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0053",
+      "my_answer": "26.85",
+      "reason": "التحويل من كلفن إلى مئوية: 300 - 273.15 = 26.85. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0070",
+      "my_answer": "القدرة",
+      "reason": "الوحدات الناتجة عن الشغل ÷ الزمن هي واط، وهي وحدة القدرة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0055",
+      "my_answer": "293.15",
+      "reason": "التحويل من فهرنهايت إلى مئوية: (68 - 32) × 5/9 = 20، ثم إلى كلفن: 20 + 273.15 = 293.15. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0056",
+      "my_answer": "373.15",
+      "reason": "التحويل من فهرنهايت إلى مئوية: (212 - 32) × 5/9 = 100، ثم إلى كلفن: 100 + 273.15 = 373.15. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0067",
+      "my_answer": "13500",
+      "reason": "الحساب بالقانون Q = m × c × ΔT يعطي 0.5 × 900 × 30 = 13500 جول. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0069",
+      "my_answer": "27600",
+      "reason": "الحساب بالقانون Q = m × c × ΔT يعطي 3 × 460 × 20 = 27600 جول. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0071",
+      "my_answer": "المقاومة",
+      "reason": "الوحدات الناتجة عن فرق الجهد ÷ شدة التيار هي أوم، وهي وحدة المقاومة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0043",
+      "my_answer": "77",
+      "reason": "التحويل من مئوية إلى فهرنهايت: (9/5) × 25 + 32 = 77. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0061",
+      "my_answer": "18",
+      "reason": "التحويل من م/ث إلى كم/ساعة: 5 × 3.6 = 18. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0064",
+      "my_answer": "0.5",
+      "reason": "الطاقة = (100/1000) × 5 = 0.5 كيلوواط·ساعة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0058",
+      "my_answer": "10",
+      "reason": "التحويل من كم/ساعة إلى م/ث: 36/3.6 = 10. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0060",
+      "my_answer": "90",
+      "reason": "التحويل من م/ث إلى كم/ساعة: 25 × 3.6 = 90. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0063",
+      "my_answer": "9000000",
+      "reason": "الطاقة بالجول = 2.5 × 3.6 × 10⁶ = 9000000 جول. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0059",
+      "my_answer": "30",
+      "reason": "التحويل من كم/ساعة إلى م/ث: 108/3.6 = 30. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0065",
+      "my_answer": "0.6",
+      "reason": "الطاقة = (60/1000) × 10 = 0.6 كيلوواط·ساعة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0066",
+      "my_answer": "126000",
+      "reason": "الحساب بالقانون Q = m × c × ΔT يعطي 2 × 4200 × 15 = 126000 جول. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0046",
+      "my_answer": "14",
+      "reason": "التحويل من مئوية إلى فهرنهايت: (9/5) × (-10) + 32 = 14. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0045",
+      "my_answer": "98.6",
+      "reason": "التحويل من مئوية إلى فهرنهايت: (9/5) × 37 + 32 = 98.6. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0050",
+      "my_answer": "100",
+      "reason": "التحويل من فهرنهايت إلى مئوية: (212 - 32) × 5/9 = 100. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0049",
+      "my_answer": "-20",
+      "reason": "التحويل من فهرنهايت إلى مئوية: (-4 - 32) × 5/9 = -20. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0047",
+      "my_answer": "20",
+      "reason": "التحويل من فهرنهايت إلى مئوية: (68 - 32) × 5/9 = 20. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T19:45:33Z"
+}

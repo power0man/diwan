@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "kind": "diwan-human-review",
+  "suite_id": "arabic_general_v1",
+  "run_id": "baseline-20260921",
+  "suite_sha256": "24830b7049af50436cea81016c164015736bd2981361d57463cd5efb6ff902bb",
+  "config_sha256": "5329acec3449ff34ab86315f6a7736d7efe97e59fc21bca15b7eefb7be0c4cb4",
+  "report_sha256": "d81c1794f29189d79f9792efadb9591e02eabef28a2d96b25d426b6599ee0501",
+  "release_ready": false,
+  "reviewer": {
+    "identity": "حسين",
+    "attestation": true
+  },
+  "decisions": [
+    {
+      "case_id": "ag09_translation_en_ar",
+      "answer_sha256": "7f41498f78cd7fb750569f65a0c580a9ddf227c322a20877f768b6aa8b4bece7",
+      "verdict": "fail",
+      "reason": "optional field تعني حقل اختياري وليس اضافي",
+      "severity": "material",
+      "review_seconds": 6
+    }
+  ]
+}

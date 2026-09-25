@@ -1,0 +1,417 @@
+{
+  "suite_id": "kimi_arabic_a_003",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "lex_a_0033": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ترك التعالي مع القدرة تواضع لا ذل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0002": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الإقدام والإحجام ضدان متقابلان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0011": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الضراوة: الشدة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0008": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "النجيع: الدم الصافي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0038": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "النجاد حمائل السيف؛ طوله كناية عن طول القامة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "المخمصة: شدة الجوع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0037": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الأدهم: الأسود من الخيل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0031": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مجرد رقة القلب عند الرؤية شفقة؛ والرحمة تتعداها إلى الإحسان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0039": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "كثرة الرماد من كثرة طبخ القدور للضيوف؛ فهي كناية عن الكرم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0028": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "التمني بلا سعي طمعٌ لا رجاء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0015": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الحصافة: رزانة العقل ورجاحته.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0027": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "المطابقة لمقتضى الحال هي ملاك البلاغة لا الفصاحة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يغلب الخلط بين الفصيح والبليغ فينعكس الوصف البلاغي."
+    },
+    "lex_a_0021": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اجتمع فيه البخل والحرص فهو شحيح لا مجرد بخيل.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الخلط بين الشح والبخل يقلب الوصف الأخلاقي."
+    },
+    "lex_a_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الظمأ: شدة العطش.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترك الحلال الفاضل زهد؛ أما ترك الحرام فعفة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0034": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "كف الغضب مع القدرة هو ملاك الحلم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0040": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الأسد هنا الرجل الشجاع؛ استعارة فهو مجاز.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الأمر إنشاء طلبي لا يحتمل الصدق والكذب لذاته.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الغداة: أول النهار، ويقابلها العشية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0026": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الإحجام قد يكون لعذر؛ فلا يوصف بالجبن.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0043": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الإبانة: الظهور والتوضح؛ ضد الإبهام.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0025": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الجبن صفة ذميمة في التخلف عن الواجب؛ والإحجام قد يكون لعذر مسوّغ.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0022": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "السرقة أخذ المال خفية من حرزه.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0030": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تمني زوال النعمة هو ملاك الحسد.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0035": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "التدبير الخفي في الضرر مكر لا دهاء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "المواربة كلام يحتمل وجوهًا؛ وهي ضد التصريح.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الخشية: خوف مع تعظيم وإجلال؛ والفزع خوف فاجع بغتة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0044": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "المهل: التأني وترك العجلة؛ وليس الإهمال.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0042": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "التمني طلب ما لا يكون أو يبعد وقوعه، وغالبه بليت.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "lex_a_0020": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الشك: تساوي الاحتمالين؛ والظن رجحان أحدهما.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0039": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "سوى بمعنى إلا: الموجود ثلاثة فقط.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0041": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "عدا من أدوات الاستثناء: أحمد خارج النجاح.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0004": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "السفر محصور في الأب؛ بقية الأسرة لم تسافر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0046": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الحصر في الطلبة ينفي الإعفاء عن الموظف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0012": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "«إلا» بعد الإثبات تنفي المستثنى.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0003": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الحصر بـ«لا... إلا» ينفي ما عدا الواحد.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "«إلا» بعد النفي الكامل تثبت المستثنى: حضر أحمد وحده.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0014": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الصيدلية مستثناة من الإغلاق.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0043": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "غير بمعنى إلا بعد نفي: المتبقي دقيقة واحدة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0049": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الجملة تنفي دخول المتأخر فقط؛ ولا تلزم منها كفايةُ الحضور المبكر للدخول.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0015": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "«غير» المضافة تعمل عمل «إلا»: الرئيس مستثنى من الموافقة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ أن «غير» وصف أو أن الرئيس وافق لأنه ذُكر بعد الواو المحذوفة."
+    },
+    "neg_a_0040": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "«لا غنى عنه» تجعله شرطًا لازمًا لا كافيًا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0007": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حمل التذكرة شرط لازم للدخول لا كافٍ؛ قد تُمنع الزيارة لسبب آخر.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الخلط بين الشرط اللازم والكافي."
+    },
+    "neg_a_0033": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "التصديق هو الاستثناء من بقاء التعليق؛ وقع فزال التعليق.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0047": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحققت حال «ما لم» فيلزم انتفاء النظر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0008": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الموافقة شرط لازم غير كافٍ؛ قد يتخلف الإذن لمانع آخر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0006": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الحصر يجعل استخدام السلالم شرطًا لازمًا للنجاة لا كافيًا؛ فقد يستخدمها ولا ينجو لسبب آخر.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يغلب الجواب «نعم» لأن الذهن يحوّل الشرط اللازم كافيًا."
+    },
+    "neg_a_0023": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "12% تتجاوز العُشر؛ تحقق الاستثناء فانتفى القبول.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "حكم أكاديمي يقلب لو أُهمل حدّ العُشر."
+    },
+    "neg_a_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "«ما لم» بمعنى «إلا إذا»: الفسخ مباح إلا في حال عدم الدفع؛ وقد دفع.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يغلب قلب الشرط فيُحكم بأن الدفع يسقط حق الفسخ."
+    },
+    "neg_a_0021": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الاستيراد هو حال الاستثناء من الإعفاء؛ تحققت فانتفى الإعفاء.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "ينعكس الحكم التجاري كاملًا بقلب «ما لم»."
+    },
+    "neg_a_0026": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الشرطية تجعل الاجتهاد كافيًا لا لازمًا؛ قد ينجح لسبب آخر.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الفخّ الكلاسيكي: إثبات التالي لا يستلزم المقدم."
+    },
+    "neg_a_0050": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حوار ثنائي يفرّق بين اتجاهي الحصر: المكتمل لا يلزم قبوله، والناقص يمتنع قبوله قطعًا.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يغلب التماثل بين الاتجاهين فيجاب «لا يلزم» في الثاني أيضًا."
+    },
+    "neg_a_0048": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "انتفاء التالي (التجميد) يلزم منه انتفاء المقدم (عدم التجديد)؛ أي جدّد.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "ينعكس الاستنتاج كاملًا بإغفال لزوم نفي التالي لنفي المقدم."
+    },
+    "neg_a_0032": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "انتفى التالي (زيادة الفائدة) فيلزم انتفاء المقدم (عدم التسديد)؛ أي سدّد في موعده.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "حكم مالي ينعكس كاملًا بإهمال لزوم نفي التالي لنفي المقدم."
+    },
+    "neg_a_0042": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "خلا أداة استثناء: المدير لم يحضر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "غير بمعنى إلا: هذه الرواية منفية الإعجاب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0034": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إنما كافة ومكفوفة تفيد الحصر: التكليف مقصور على المتجاوزين.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0005": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "«متى» أداة شرط تجعل إدخال الرقم كافيًا للفتح؛ وقد تحقق.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0035": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الحصر بإنما يقصر النجاح على الصبورين.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "القصر المؤكد بـ«وحدها» يحصر الانعقاد في الجمعة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0020": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "شرط الشطب ثلاث فعاليات؛ تحقق اثنتان فقط فلم يتحقق الشرط.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "غير اثنين = إلا اثنين؛ بقي اثنان لم يجتازا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0022": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "المناوبة هي الاستثناء من الجواز؛ تحققت فيمتنع الغياب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0024": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "التوثيق وقع داخل المهلة فانتفى شرط اللغو.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0027": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "قد تبتلّ الطرق بغير المطر؛ إثبات التالي لا يلزم منه المقدم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "neg_a_0011": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الرضا شرط صحة لازم منتفٍ؛ فالبيع غير صحيح.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "حكم صحّة ينعكس كاملًا بانتفاء الشرط المقصور."
+    }
+  }
+}

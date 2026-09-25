@@ -1,0 +1,462 @@
+{
+  "errors": [
+    {
+      "error": "invalid_json",
+      "file": "tier_a/kimi_assist_a_001.json",
+      "model": "deepseek-v4-flash:cloud"
+    },
+    {
+      "error": "http_502",
+      "file": "tier_a/kimi_assist_a_003.json",
+      "model": "deepseek-v4-flash:cloud"
+    },
+    {
+      "error": "judgment_fields",
+      "file": "tier_c/kimi_honesty_c_001.json",
+      "model": "deepseek-v4-flash:cloud"
+    },
+    {
+      "error": "judgment_ids_mismatch",
+      "file": "tier_a/kimi_arabic_a_004.json",
+      "model": "mistral-large-3:675b-cloud"
+    },
+    {
+      "error": "invalid_json",
+      "file": "tier_a/kimi_prog_a_001.json",
+      "model": "mistral-large-3:675b-cloud"
+    }
+  ],
+  "generated_at": "2026-09-24T20:43:34Z",
+  "measurement_limits": [
+    "cloud_model_identity_is_the_service_name_not_a_verified_weight_digest",
+    "llm_reviewers_not_human",
+    "open_split_only_sealed_is_owner_reviewed",
+    "single_call_per_file_no_variance_estimate"
+  ],
+  "owner_queue": [
+    {
+      "file": "tier_a/kimi_arabic_a_001.json",
+      "id": "morph_a_0015",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": null,
+          "id": "morph_a_0015",
+          "my_answer": "طور",
+          "reason": "جذر مطار هو طور، والمرجع صحيح.",
+          "reference": "correct",
+          "rubric": "sufficient"
+        },
+        "mistral-large-3:675b-cloud": {
+          "fix": "طير",
+          "id": "morph_a_0015",
+          "my_answer": "طير",
+          "reason": "الجذر لكلمة «مطار» هو «طير» وليس «طور» كما ورد في المرجع. المطار مشتق من الطيران وليس من الطور.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_arabic_a_001.json",
+      "id": "morph_a_0119",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": null,
+          "id": "morph_a_0119",
+          "my_answer": "مُفْتَعَل",
+          "reason": "مجتمع على وزن مفتعل، والمرجع صحيح.",
+          "reference": "correct",
+          "rubric": "sufficient"
+        },
+        "mistral-large-3:675b-cloud": {
+          "fix": "مُفْتَعَل",
+          "id": "morph_a_0119",
+          "my_answer": "مُفْتَعَل",
+          "reason": "كلمة «مُجْتَمَع» على وزن «مُفْتَعَل» حسب قواعد الصرف، لكن المرجع ذكر «مُفْتَعَل» وهو صحيح، إلا أن المرجع كتب «مُفْتَعَل» بالتشكيل الخاطئ (مُفْتَعَل بدلاً من مُفْتَعَل). ومع ذلك، فإن الوزن الصحيح هو «مُفْتَعَل» وليس «مُفْعَل» كما ورد في المرجع.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_arabic_a_002.json",
+      "id": "gram_a_0026",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": "الجواب الصحيح: مجرور؛ تمييز كم الخبرية مجرور بالإضافة، وليس منصوبًا.",
+          "id": "gram_a_0026",
+          "my_answer": "مجرور",
+          "reason": "في «كم قصيدة حفظت» بدون تنوين، «كم» خبرية وتمييزها مجرور بالإضافة، وليس منصوبًا. المرجع قال منصوب وهو خطأ.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        },
+        "mistral-large-3:675b-cloud": {
+          "fix": null,
+          "id": "gram_a_0026",
+          "my_answer": "منصوب",
+          "reason": "كلمة 'قصيدة' تمييز كم الخبرية منصوب.",
+          "reference": "correct",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_arabic_a_004.json",
+      "id": "arab_a_0005",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": "تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. تعديل المعايير.",
+          "id": "arab_a_0005",
+          "my_answer": "بدل مرفوع أو مستثنى منصوب (كلاهما جائز)",
+          "reason": "الجملة تامة منفية (أحد مذكور)، فيجوز الوجهان. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله.",
+          "reference": "incorrect",
+          "rubric": "insufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_arabic_a_004.json",
+      "id": "arab_a_0006",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": "تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. يجب تعديل المعايير لتشمل جواز الوجهين.",
+          "id": "arab_a_0006",
+          "my_answer": "بدل منصوب أو مستثنى منصوب (كلاهما جائز)",
+          "reason": "الجملة تامة منفية (المستثنى منه مذكور)، فيجوز النصب على الاستثناء والبدل. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله، فلا تكفي.",
+          "reference": "incorrect",
+          "rubric": "insufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_arabic_a_004.json",
+      "id": "arab_a_0007",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": "تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. تعديل المعايير.",
+          "id": "arab_a_0007",
+          "my_answer": "بدل مرفوع أو مستثنى منصوب (كلاهما جائز)",
+          "reason": "الجملة تامة منفية (أحد مذكور)، فيجوز الوجهان. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله.",
+          "reference": "incorrect",
+          "rubric": "insufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_arabic_a_004.json",
+      "id": "arab_a_0012",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": "تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. تعديل المعايير.",
+          "id": "arab_a_0012",
+          "my_answer": "بدل مرفوع أو مستثنى منصوب (كلاهما جائز)",
+          "reason": "الجملة تامة منفية (شيء مذكور)، فيجوز الوجهان. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله.",
+          "reference": "incorrect",
+          "rubric": "insufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_assist_a_001.json",
+      "id": "trnt_a_0001",
+      "verdicts": {
+        "mistral-large-3:675b-cloud": {
+          "fix": "8",
+          "id": "trnt_a_0001",
+          "my_answer": "6",
+          "reason": "عدد الكلمات التي تبدأ بحرف 'ب' هو 8 وليس 6، حيث تشمل الكلمات: بدأ، بدر، بقراءة، بريده، باع، بعض، بسعر، بسيط.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_assist_a_003.json",
+      "id": "cmpx_a_0001",
+      "verdicts": {
+        "mistral-large-3:675b-cloud": {
+          "fix": "{\"الخيار الأرخص\": \"متجر السلام\", \"التكلفة الإجمالية\": 345}",
+          "id": "cmpx_a_0001",
+          "my_answer": "متجر الرائد: 329 + 25 = 354 ريال، متجر السلام: 345 + 0 = 345 ريال، متجر النور: 319 + 35 = 354 ريال. الخيار الأرخص هو متجر السلام بتكلفة 345 ريال.",
+          "reason": "المرجع يشير إلى أن الخيار الأرخص هو متجر السلام بتكلفة 345 ريال، وهو صحيح.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_assist_a_003.json",
+      "id": "cmpx_a_0003",
+      "verdicts": {
+        "mistral-large-3:675b-cloud": {
+          "fix": "{\"الخيار الأغلى\": \"متجر الوادي\", \"التكلفة الإجمالية\": 1310}",
+          "id": "cmpx_a_0003",
+          "my_answer": "متجر الأفق: 1299 + 0 = 1299 ريال، متجر الريادة: 1249 + 45 = 1294 ريال، متجر الوادي: 1275 + 35 = 1310 ريال. الخيار الأغلى هو متجر الوادي بتكلفة 1310 ريال.",
+          "reason": "المرجع يشير إلى أن الخيار الأغلى هو متجر الوادي بتكلفة 1310 ريال، وهو صحيح.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_assist_a_003.json",
+      "id": "cmpx_a_0005",
+      "verdicts": {
+        "mistral-large-3:675b-cloud": {
+          "fix": "{\"الترتيب\": [\"متجر الشمس\", \"متجر القمر\", \"متجر الفجر\", \"متجر النجم\"]}",
+          "id": "cmpx_a_0005",
+          "my_answer": "متجر القمر: 450 + 30 = 480 ريال، متجر الشمس: 470 + 0 = 470 ريال، متجر النجم: 440 + 55 = 495 ريال، متجر الفجر: 460 + 25 = 485 ريال. الترتيب من الأرخص للأغلى: متجر الشمس، متجر القمر، متجر الفجر، متجر النجم.",
+          "reason": "المرجع يشير إلى الترتيب الصحيح وهو متجر الشمس، متجر القمر، متجر الفجر، متجر النجم.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_assist_a_003.json",
+      "id": "cmpx_a_0020",
+      "verdicts": {
+        "mistral-large-3:675b-cloud": {
+          "fix": "{\"المورد الأرخص\": \"مؤسسة الخليج\", \"التكلفة الإجمالية\": 4200}",
+          "id": "cmpx_a_0020",
+          "my_answer": "مؤسسة الخليج: 500 * 8 + 200 = 4200 ريال، مؤسسة الجزيرة: 1000 * 7 + 0 = 7000 ريال، مؤسسة الربيع: 500 * 9 + 100 = 4600 ريال. المورد الأرخص هو مؤسسة الخليج بتكلفة 4200 ريال.",
+          "reason": "المرجع يشير إلى أن المورد الأرخص هو مؤسسة الخليج بتكلفة 4200 ريال، لكن الحساب الصحيح يظهر أن مؤسسة الخليج هي الأرخص بالفعل. ومع ذلك، المرجع صحيح في النتيجة النهائية.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_assist_a_003.json",
+      "id": "cmpx_a_0025",
+      "verdicts": {
+        "mistral-large-3:675b-cloud": {
+          "fix": "{\"الموردون الأرخص\": [\"مؤسسة شمس\", \"مؤسسة فجر\"], \"التكلفة الإجمالية\": 9000}",
+          "id": "cmpx_a_0025",
+          "my_answer": "مؤسسة فجر: 300 * 30 = 9000 ريال، مؤسسة شمس: 200 * 45 = 9000 ريال، مؤسسة قمر: 250 * 40 + 500 = 10500 ريال. الموردون الأرخص هم مؤسسة فجر ومؤسسة شمس بتكلفة إجمالية 9000 ريال.",
+          "reason": "المرجع يشير إلى الموردين الأرخص وهما مؤسسة فجر ومؤسسة شمس بتكلفة إجمالية 9000 ريال.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_assist_a_003.json",
+      "id": "cmpx_a_0048",
+      "verdicts": {
+        "mistral-large-3:675b-cloud": {
+          "fix": "{\"الترتيب\": [\"سحر\", \"مالك\", \"جمانة\", \"رياض\"]}",
+          "id": "cmpx_a_0048",
+          "my_answer": "جمانة: 5200 + 600 = 5800 ريال، رياض: 5500 + 100 = 5600 ريال، سحر: 5000 + 1100 = 6100 ريال، مالك: 5400 + 500 = 5900 ريال. الترتيب من الأعلى دخلًا للأدنى: سحر، مالك، جمانة، رياض.",
+          "reason": "المرجع يشير إلى الترتيب الصحيح وهو سحر، مالك، جمانة، رياض.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_assist_a_003.json",
+      "id": "cndx_a_0018",
+      "verdicts": {
+        "mistral-large-3:675b-cloud": {
+          "fix": "{\"الأسماء\": [\"كريمة طبخ\", \"عسل\", \"سمك طازج\"]}",
+          "id": "cndx_a_0018",
+          "my_answer": "كريمة طبخ، عسل، سمك طازج، فطر صلاحيتها تنتهي خلال 5 أيام. الأسماء هي كريمة طبخ، عسل، سمك طازج، فطر.",
+          "reason": "المرجع يشير إلى أن فطر غير متوفر (كميته صفر)، لذا لا يجب إدراجه.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_assist_a_003.json",
+      "id": "cndx_a_0026",
+      "verdicts": {
+        "mistral-large-3:675b-cloud": {
+          "fix": "{\"العدد\": 2, \"الأسماء\": [\"ليث\", \"كنان\"]}",
+          "id": "cndx_a_0026",
+          "my_answer": "ليث، جواهر، كنان رواتبهم تتجاوز 7000 ريال وخبرتهم أقل من 3 سنوات. العدد هو 3 والأسماء هي ليث، جواهر، كنان.",
+          "reason": "جواهر ليست في قسم التقنية أو الدعم، لذا لا يجب إدراجها.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_logic_a_003.json",
+      "id": "constprob_a_0026",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": null,
+          "id": "constprob_a_0026",
+          "my_answer": "1/2",
+          "reason": "بعد سحب أزرق بقي 2 زرق من 4، فاحتمال الثاني أزرق 2/4 = 1/2.",
+          "reference": "correct",
+          "rubric": "sufficient"
+        },
+        "mistral-large-3:675b-cloud": {
+          "fix": "2/4",
+          "id": "constprob_a_0026",
+          "my_answer": "2/4",
+          "reason": "المرجع وضع 1/2، لكن بعد سحب قلم أزرق يبقى 2 أقلام زرقاء و2 أقلام سوداء، لذا الاحتمال الصحيح هو 2/4 وليس 1/2.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_logic_a_003.json",
+      "id": "constprob_a_0040",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": null,
+          "id": "constprob_a_0040",
+          "my_answer": "بدر، خالد، طارق، ناصر، سالم",
+          "reason": "بين سالم وطارق واحد وبين بدر وطارق واحد يقتضي أن طارق في المنتصف وسالم وبدر على الطرفين، وسالم يلي ناصرًا فيجعل ناصرًا قبله. الترتيب وحيد.",
+          "reference": "correct",
+          "rubric": "sufficient"
+        },
+        "mistral-large-3:675b-cloud": {
+          "fix": "['بدر', 'خالد', 'طارق', 'ناصر', 'سالم']",
+          "id": "constprob_a_0040",
+          "my_answer": "['بدر', 'طارق', 'خالد', 'ناصر', 'سالم']",
+          "reason": "المرجع وضع 'خالد' في المركز الثاني، لكن القرائن تشير إلى أن سالم يلي ناصر مباشرة في الاتجاه الأبعد عن اليمين، وأن بين سالم وطارق مقعد واحد فقط. الحل الصحيح هو ['بدر', 'طارق', 'خالد', 'ناصر', 'سالم']، لكن المرجع أخطأ في ترتيب ناصر وسالم.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_logic_a_003.json",
+      "id": "constprob_a_0052",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": null,
+          "id": "constprob_a_0052",
+          "my_answer": "نورة، ريم، جواهر، مريم، سارة",
+          "reason": "حللت القيود: نورة قبل سارة، وبين نورة وجواهر واحد، وسارة خلف مريم مباشرة، وبين سارة وجواهر واحد. يفرض ذلك الترتيب الوحيد المذكور.",
+          "reference": "correct",
+          "rubric": "sufficient"
+        },
+        "mistral-large-3:675b-cloud": {
+          "fix": "['نورة', 'مريم', 'جواهر', 'سارة', 'ريم']",
+          "id": "constprob_a_0052",
+          "my_answer": "['نورة', 'ريم', 'جواهر', 'مريم', 'سارة']",
+          "reason": "المرجع يحتوي على اسم 'ريم' بدلاً من 'نورة' في المركز الثاني. القرائن تشير إلى أن نورة جاءت قبل سارة وبين نورة وجواهر متسابق واحد فقط، وسارة خلف مريم مباشرة. الحل الصحيح هو ['نورة', 'مريم', 'جواهر', 'سارة', 'ريم']، لكن المرجع وضع 'ريم' في المركز الرابع بدلاً من 'سارة'، وهو خطأ.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_logic_a_003.json",
+      "id": "constprob_a_0056",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": "أضف قيدًا يزيل التماثل مثل «مقعد حصة أقرب إلى اليمين من مقعد مريم» أو اقبل أي ترتيب يحقق القرائن.",
+          "id": "constprob_a_0056",
+          "my_answer": "سارة، حصة، أمل، مريم، منيرة (ويوجد حل آخر: سارة، مريم، أمل، حصة، منيرة)",
+          "reason": "القرائن لا تفرض ترتيبًا واحدًا: يمكن تبديل حصة ومريم في المقعدين الثاني والرابع مع بقاء أمل بينهما، وكل القرائن تتحقق. لذا الحالة غير فريدة والمرجع ليس الوحيد.",
+          "reference": "ambiguous",
+          "rubric": "insufficient"
+        },
+        "mistral-large-3:675b-cloud": {
+          "fix": null,
+          "id": "constprob_a_0056",
+          "my_answer": "['سارة', 'حصة', 'أمل', 'مريم', 'منيرة']",
+          "reason": "المرجع صحيح ويلبي جميع القرائن.",
+          "reference": "correct",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_logic_a_003.json",
+      "id": "constprob_a_0066",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": null,
+          "id": "constprob_a_0066",
+          "my_answer": "ندوة التراث، عرض الفرقة الشعبية، مسابقة الطبخ، أمسية الشعر",
+          "reason": "الندوة السبت، والطبخ على بعد يوم منها فالإثنين، والطبخ قبل الشعر فالشعر الثلاثاء، والعرض الأحد. الترتيب وحيد.",
+          "reference": "correct",
+          "rubric": "sufficient"
+        },
+        "mistral-large-3:675b-cloud": {
+          "fix": "['ندوة التراث', 'مسابقة الطبخ', 'أمسية الشعر', 'عرض الفرقة الشعبية']",
+          "id": "constprob_a_0066",
+          "my_answer": "['ندوة التراث', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'أمسية الشعر']",
+          "reason": "المرجع وضع 'عرض الفرقة الشعبية' في المركز الثاني، لكن القرائن تشير إلى أن مسابقة الطبخ قبل أمسية الشعر وبين أمسية الشعر وعرض الفرقة الشعبية يوم واحد فقط. الحل الصحيح هو ['ندوة التراث', 'مسابقة الطبخ', 'عرض الفرقة الشعبية', 'أمسية الشعر']، لكن المرجع أخطأ في ترتيب مسابقة الطبخ وأمسية الشعر.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_logic_a_005.json",
+      "id": "cprob2_a_0085",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": null,
+          "id": "cprob2_a_0085",
+          "my_answer": "سعود",
+          "reason": "طلال مع ياسر، عادل مع سعود، ماجد مع راشد.",
+          "reference": "correct",
+          "rubric": "sufficient"
+        },
+        "mistral-large-3:675b-cloud": {
+          "fix": "سعود",
+          "id": "cprob2_a_0085",
+          "my_answer": "ياسر",
+          "reason": "حللت المسألة بتوزيع الأزواج: ماجد لا يعمل مع طلال أو سعود، طلال لا يعمل مع سعود أو عادل، سعود لا يعمل مع راشد أو ياسر، بالتالي عادل يعمل مع ياسر. لكن المرجع يشير إلى أن عادل يعمل مع سعود. الخطأ في توزيع الأزواج.",
+          "reference": "incorrect",
+          "rubric": "sufficient"
+        }
+      }
+    },
+    {
+      "file": "tier_a/kimi_prog_a_005.json",
+      "id": "prog_e_0085",
+      "verdicts": {
+        "deepseek-v4-flash:cloud": {
+          "fix": "أضف معيارًا يغطي startswith مثل: 'يتحقق من startswith'",
+          "id": "prog_e_0085",
+          "my_answer": "الخرج هو '2 True'",
+          "reason": "count تحسب مرتين، وstartswith تعيد True، لكن المعيار لا يذكر startswith.",
+          "reference": "correct",
+          "rubric": "insufficient"
+        },
+        "mistral-large-3:675b-cloud": {
+          "fix": null,
+          "id": "prog_e_0085",
+          "my_answer": "2 True",
+          "reason": "حرف 'م' يظهر مرتين في 'معلومات'، والبادئة 'مع' متحققة.",
+          "reference": "correct",
+          "rubric": "sufficient"
+        }
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "items": 1740,
+      "reference": {
+        "kappa": -0.0013,
+        "observed_agreement": 0.9948
+      },
+      "reviewers": [
+        "deepseek-v4-flash:cloud",
+        "mistral-large-3:675b-cloud"
+      ],
+      "rubric": {
+        "kappa": 0.0,
+        "observed_agreement": 0.9989
+      }
+    }
+  ],
+  "reviewers": [
+    "deepseek-v4-flash:cloud",
+    "mistral-large-3:675b-cloud"
+  ],
+  "schema_version": 1
+}

@@ -1,0 +1,694 @@
+{
+  "generated_at": "2026-09-24",
+  "bank_version": "1.1",
+  "files": [
+    {
+      "path": "sealed/tier_a/kimi_arabic_a_001_sealed.json",
+      "sha256": "991ea1281b012d332d17df5168a902b240ff707e28c0c9535016f0aa04c346ec",
+      "count": 29,
+      "kind": "suite",
+      "capabilities": [
+        "morphology"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_arabic_a_001_sealed.meta.json",
+      "sha256": "57f4958fae85f61577ce2e4c467b1b6bcf875c3dd74ac4f31fef11ea0af41993",
+      "count": 29,
+      "kind": "sidecar",
+      "capabilities": [
+        "morphology"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_arabic_a_002_sealed.json",
+      "sha256": "4706d8382a6033b031ef65a98a6e5997029ea43bf40c201027615e2f968d16dd",
+      "count": 26,
+      "kind": "suite",
+      "capabilities": [
+        "grammar_parsing"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_arabic_a_002_sealed.meta.json",
+      "sha256": "4e834984fcf120f453b7d3f5b16cfcb67d48f3a6741ebd8a7fc00588e7629c04",
+      "count": 26,
+      "kind": "sidecar",
+      "capabilities": [
+        "grammar_parsing"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_arabic_a_003_sealed.json",
+      "sha256": "92f06c8f19a32f98401ef56a6d7cfe6fb9f8d3c3bdb141a8d737139a8ff94bc3",
+      "count": 28,
+      "kind": "suite",
+      "capabilities": [
+        "lexical_semantics",
+        "negation_exception_logic"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_arabic_a_003_sealed.meta.json",
+      "sha256": "538fe2810b1dd8a5a691398bc8d28d94c760cd41de95b97403a3e0e094595ea9",
+      "count": 28,
+      "kind": "sidecar",
+      "capabilities": [
+        "lexical_semantics",
+        "negation_exception_logic"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_arabic_a_004_sealed.json",
+      "sha256": "6b0c75e9cc62db458fea335cc13ae32fbd781f1e26cb201d209a706a3412dd04",
+      "count": 28,
+      "kind": "suite",
+      "capabilities": [
+        "grammar_parsing",
+        "morphology"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_arabic_a_004_sealed.meta.json",
+      "sha256": "e93942cc36ada432ce88b42448b2ba2dcd1c32d4f48696d2f6405b04a5bdecc1",
+      "count": 28,
+      "kind": "sidecar",
+      "capabilities": [
+        "grammar_parsing",
+        "morphology"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_assist_a_001_sealed.json",
+      "sha256": "46d259635e1168e35e915aa83c4d328663bb0adc3a053fa409ff958223370715",
+      "count": 28,
+      "kind": "suite",
+      "capabilities": [
+        "extract_to_json",
+        "transform_text"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_assist_a_001_sealed.meta.json",
+      "sha256": "b377dd1be97572d01cff62b8d327613c4bd7276a0384620ada54863c19c50e26",
+      "count": 28,
+      "kind": "sidecar",
+      "capabilities": [
+        "extract_to_json",
+        "transform_text"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_assist_a_002_sealed.json",
+      "sha256": "e5d6152d31ff7cff653226384eccc6fd3a6f7436bee908786fc521c8c001f894",
+      "count": 28,
+      "kind": "suite",
+      "capabilities": [
+        "instruction_following_constraints",
+        "multi_turn_memory"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_assist_a_002_sealed.meta.json",
+      "sha256": "1c376f9d29d3de227acabd617d91d3aeaf006bc41ec3d160af7b0632bab58192",
+      "count": 28,
+      "kind": "sidecar",
+      "capabilities": [
+        "instruction_following_constraints",
+        "multi_turn_memory"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_assist_a_003_sealed.json",
+      "sha256": "b83a6d9b9e024d49fee1c61c29349041778711117669dd73f54590df961c1a41",
+      "count": 27,
+      "kind": "suite",
+      "capabilities": [
+        "comparison_extraction",
+        "conditional_extraction"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_assist_a_003_sealed.meta.json",
+      "sha256": "e27bea495a923266bfd6c186b53cc5df4c45b8f12e2b824433cc5f6dc2a12b26",
+      "count": 27,
+      "kind": "sidecar",
+      "capabilities": [
+        "comparison_extraction",
+        "conditional_extraction"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_assist_a_004_sealed.json",
+      "sha256": "e7ca9a41bf2ce11522e1829ba1fc89aa9d7c654681dda5150cc57818081996ad",
+      "count": 27,
+      "kind": "suite",
+      "capabilities": [
+        "instruction_following_constraints",
+        "multi_turn_memory"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_assist_a_004_sealed.meta.json",
+      "sha256": "b20f01e226932c11e2ba1308f006e86b27430cda7ddc1bf99f22b49612734c69",
+      "count": 27,
+      "kind": "sidecar",
+      "capabilities": [
+        "instruction_following_constraints",
+        "multi_turn_memory"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_logic_a_001_sealed.json",
+      "sha256": "1a47378961ebb858602373c7e3016f09146ab0ff1dd6e34714c8421949674e86",
+      "count": 28,
+      "kind": "suite",
+      "capabilities": [
+        "deductive_reasoning"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_logic_a_001_sealed.meta.json",
+      "sha256": "bd8c88f7452b7b270d3737120dfe2bac97d6cf659d4450fb79719c42e24c13f3",
+      "count": 28,
+      "kind": "sidecar",
+      "capabilities": [
+        "deductive_reasoning"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_logic_a_002_sealed.json",
+      "sha256": "1e3913557ae8e15e901b73545126e69f3a2cc276e2ad41098ef9d0c7904fbb2c",
+      "count": 28,
+      "kind": "suite",
+      "capabilities": [
+        "fallacy_detection"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_logic_a_002_sealed.meta.json",
+      "sha256": "f02bc34ca6a59a2eb57b548326c7090377061b9f9d4626aeafddee1f1e5db20e",
+      "count": 28,
+      "kind": "sidecar",
+      "capabilities": [
+        "fallacy_detection"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_logic_a_003_sealed.json",
+      "sha256": "c20c4e37a9f82b865b56e494f05b2142cbef8ad3bb5c6756fccbd73a77dc5792",
+      "count": 27,
+      "kind": "suite",
+      "capabilities": [
+        "constraint_solving",
+        "probability_counting"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_logic_a_003_sealed.meta.json",
+      "sha256": "00105def22c15c21bb109625e66e6e8a5db87d1e9717a863c833a0d3e2b132ca",
+      "count": 27,
+      "kind": "sidecar",
+      "capabilities": [
+        "constraint_solving",
+        "probability_counting"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_logic_a_004_sealed.json",
+      "sha256": "a890079c13f8878012b5b71357a7696796fec1ce3afbe9ae213eaa522b7985d3",
+      "count": 28,
+      "kind": "suite",
+      "capabilities": [
+        "conditional_logic",
+        "deductive_reasoning"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_logic_a_004_sealed.meta.json",
+      "sha256": "5c40684db60acf7714f0cd4d1f3b2a7e20e0a2c5e54f2668d2fd04c0ffa46ef4",
+      "count": 28,
+      "kind": "sidecar",
+      "capabilities": [
+        "conditional_logic",
+        "deductive_reasoning"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_logic_a_005_sealed.json",
+      "sha256": "accabf4a8dbf2707b51b1fdc28889d06af7c9648189957cff074a20a283bc8d6",
+      "count": 27,
+      "kind": "suite",
+      "capabilities": [
+        "constraint_solving",
+        "probability_counting"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_logic_a_005_sealed.meta.json",
+      "sha256": "0854970347efaf6ba0d06832c584efce3980b843193f0cae99b2cac7b3a2162e",
+      "count": 27,
+      "kind": "sidecar",
+      "capabilities": [
+        "constraint_solving",
+        "probability_counting"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_prog_a_001_sealed.json",
+      "sha256": "5a30c71b31188fb80a94249df22387cb81f79cc4fed63c8912201368789c4c2b",
+      "count": 23,
+      "kind": "suite",
+      "capabilities": [
+        "write_function"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_prog_a_001_sealed.meta.json",
+      "sha256": "b25024cf7d2acc7a2a86496eeedbd2d4eaa600e75370e176b0ca7c0943998325",
+      "count": 23,
+      "kind": "sidecar",
+      "capabilities": [
+        "write_function"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_prog_a_002_sealed.json",
+      "sha256": "2e357476f238d00b00643efbacfe435de9c93439dd37608c6d1abdd5a3c3d7ec",
+      "count": 24,
+      "kind": "suite",
+      "capabilities": [
+        "explain_code",
+        "fix_bug"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_prog_a_002_sealed.meta.json",
+      "sha256": "c80eef4f533e81f88d8415c14307c02e016071d040125a7bc4a8de6f92208d1d",
+      "count": 24,
+      "kind": "sidecar",
+      "capabilities": [
+        "explain_code",
+        "fix_bug"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_prog_a_003_sealed.json",
+      "sha256": "7c338f1785962d0608dafabd1dbf0effa395970cd841758a3557b2198b4eb8d4",
+      "count": 25,
+      "kind": "suite",
+      "capabilities": [
+        "convert_format",
+        "time_complexity",
+        "write_test"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_prog_a_003_sealed.meta.json",
+      "sha256": "839bc8b9efcb78f9724146d5ec97725d04a9a701b4b6857d4fda22d148e9e0ac",
+      "count": 25,
+      "kind": "sidecar",
+      "capabilities": [
+        "convert_format",
+        "time_complexity",
+        "write_test"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_prog_a_004_sealed.json",
+      "sha256": "43c0563fa272f98b1d8a612a00e9ac9c37caded03fe7815b77122a5ceeedcfe0",
+      "count": 26,
+      "kind": "suite",
+      "capabilities": [
+        "write_function"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_prog_a_004_sealed.meta.json",
+      "sha256": "c70ccb5c3b69d8e7e19384d250f35f64bcdc62816960a50ef257a199d5b17803",
+      "count": 26,
+      "kind": "sidecar",
+      "capabilities": [
+        "write_function"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_prog_a_005_sealed.json",
+      "sha256": "f5ce8a8df0b09d81142866b73770f4090c86e0e8a94d9dd075a5e1cf33218ee0",
+      "count": 28,
+      "kind": "suite",
+      "capabilities": [
+        "explain_code",
+        "fix_bug"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_prog_a_005_sealed.meta.json",
+      "sha256": "af385a4f8794e8567ced99b19fbf867d8720e176488f7a1840afa4897ff5428d",
+      "count": 28,
+      "kind": "sidecar",
+      "capabilities": [
+        "explain_code",
+        "fix_bug"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_sci_a_001_sealed.json",
+      "sha256": "90e2e1beebe85f1abd90b040e04e109b6ba65010031eeeed0f31f30bc4fd6018",
+      "count": 29,
+      "kind": "suite",
+      "capabilities": [
+        "physics_mechanics"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_sci_a_001_sealed.meta.json",
+      "sha256": "32f60cd9416461a2535d9cff0bc346d6d1461574d5758e3804750e7fd7f2f0d4",
+      "count": 29,
+      "kind": "sidecar",
+      "capabilities": [
+        "physics_mechanics"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_sci_a_002_sealed.json",
+      "sha256": "7413ea30158b0b12cc701f0750d1dadbb9ee7a23eed564f0f6d82797fcdce73e",
+      "count": 28,
+      "kind": "suite",
+      "capabilities": [
+        "chemistry_balancing",
+        "chemistry_molarity"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_sci_a_002_sealed.meta.json",
+      "sha256": "7a7eced81af0d69f70d3dad26fcaf87a9e3415fab4e95920fbb2e3ca3cfc89c0",
+      "count": 28,
+      "kind": "sidecar",
+      "capabilities": [
+        "chemistry_balancing",
+        "chemistry_molarity"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_sci_a_003_sealed.json",
+      "sha256": "0dddb98852ccf5e7848e6d990f4f03cdcb42134ad9139166057affec7c6e8f5c",
+      "count": 29,
+      "kind": "suite",
+      "capabilities": [
+        "biology_genetics",
+        "detect_planted_error",
+        "units_dimensions"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_sci_a_003_sealed.meta.json",
+      "sha256": "1fd2ccd99cd42002deced1e6cc25aba9665ca54b41c56c7d797140c5ab796e51",
+      "count": 29,
+      "kind": "sidecar",
+      "capabilities": [
+        "biology_genetics",
+        "detect_planted_error",
+        "units_dimensions"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_sci_a_004_sealed.json",
+      "sha256": "aab90dcdb44ebbec4082b4ea19762ae4f79778c69393b2f5533ffd64957fff06",
+      "count": 27,
+      "kind": "suite",
+      "capabilities": [
+        "detect_planted_error",
+        "physics_mechanics",
+        "units_dimensions"
+      ]
+    },
+    {
+      "path": "sealed/tier_a/kimi_sci_a_004_sealed.meta.json",
+      "sha256": "398129893875ffcf42ca5a790b9398653f30b74a25618f8b2490727a6bec8b97",
+      "count": 27,
+      "kind": "sidecar",
+      "capabilities": [
+        "detect_planted_error",
+        "physics_mechanics",
+        "units_dimensions"
+      ]
+    },
+    {
+      "path": "sealed/tier_b/kimi_arabic_b_001_sealed.json",
+      "sha256": "7c5c89d9b2c9022e0b9354e4e80fb0f7ffa1c2a8ca19543276c5fe2e87c440b6",
+      "count": 25,
+      "kind": "suite",
+      "capabilities": [
+        "fine_semantics",
+        "rhetoric_balagha"
+      ]
+    },
+    {
+      "path": "sealed/tier_b/kimi_arabic_b_001_sealed.meta.json",
+      "sha256": "e5afdf3ad66b29c962b91c6c2a8990e4c618c5c1a12e2be712cb5481646068e6",
+      "count": 25,
+      "kind": "sidecar",
+      "capabilities": [
+        "fine_semantics",
+        "rhetoric_balagha"
+      ]
+    },
+    {
+      "path": "sealed/tier_b/kimi_assist_b_001_sealed.json",
+      "sha256": "01c49bced2456801833d5c38b11521184804ca88b6dff42a00a5ce57ee97fe1f",
+      "count": 25,
+      "kind": "suite",
+      "capabilities": [
+        "editing_rewrite",
+        "official_writing"
+      ]
+    },
+    {
+      "path": "sealed/tier_b/kimi_assist_b_001_sealed.meta.json",
+      "sha256": "b147b653937cba903aaba1b48bf3dd5d2efc6fba1189febdcaa350301a2d386b",
+      "count": 25,
+      "kind": "sidecar",
+      "capabilities": [
+        "editing_rewrite",
+        "official_writing"
+      ]
+    },
+    {
+      "path": "sealed/tier_b/kimi_assist_b_002_sealed.json",
+      "sha256": "d96ba3469bc9d72fd828df8f4118dff75de8d137028783e02232d856808120b5",
+      "count": 27,
+      "kind": "suite",
+      "capabilities": [
+        "analysis_comparison",
+        "conditional_summary"
+      ]
+    },
+    {
+      "path": "sealed/tier_b/kimi_assist_b_002_sealed.meta.json",
+      "sha256": "d7bf554e3a94c65f21305f0af308021306bf4c60940e07a36594866129274756",
+      "count": 27,
+      "kind": "sidecar",
+      "capabilities": [
+        "analysis_comparison",
+        "conditional_summary"
+      ]
+    },
+    {
+      "path": "sealed/tier_b/kimi_assist_b_003_sealed.json",
+      "sha256": "13c42145e0e1eddfb785675c7972510144592ba4217baf2d9b936e060228a73a",
+      "count": 26,
+      "kind": "suite",
+      "capabilities": [
+        "editing_rewrite",
+        "official_writing"
+      ]
+    },
+    {
+      "path": "sealed/tier_b/kimi_assist_b_003_sealed.meta.json",
+      "sha256": "16845fccd627641e1c38d32fc5b1625efdd1cdc590b8cf107e76cf3c0fc4c94a",
+      "count": 26,
+      "kind": "sidecar",
+      "capabilities": [
+        "editing_rewrite",
+        "official_writing"
+      ]
+    },
+    {
+      "path": "sealed/tier_b/kimi_assist_b_004_sealed.json",
+      "sha256": "1757a8b00b7be818209d2c5649f4e1633fe13ae74060364b5f8dd06c875e1c0e",
+      "count": 26,
+      "kind": "suite",
+      "capabilities": [
+        "argument_analysis",
+        "register_adaptation"
+      ]
+    },
+    {
+      "path": "sealed/tier_b/kimi_assist_b_004_sealed.meta.json",
+      "sha256": "abefdc22792dccd4115ee0a176bed0c50dc8f7a1fb1cd5b54bebfc3f46bcb990",
+      "count": 26,
+      "kind": "sidecar",
+      "capabilities": [
+        "argument_analysis",
+        "register_adaptation"
+      ]
+    },
+    {
+      "path": "sealed/tier_c/kimi_honesty_c_001_sealed.json",
+      "sha256": "951cacfb335ee645d81fc9068bd42d69ada7dd80deff4fd70e26615189ea49c2",
+      "count": 22,
+      "kind": "suite",
+      "capabilities": [
+        "unanswerable_abstention"
+      ]
+    },
+    {
+      "path": "sealed/tier_c/kimi_honesty_c_001_sealed.meta.json",
+      "sha256": "35aaf78ff0d56e5f119761c7f54e6514a0b85aad3ee714a02ea92fdd1585642c",
+      "count": 22,
+      "kind": "sidecar",
+      "capabilities": [
+        "unanswerable_abstention"
+      ]
+    },
+    {
+      "path": "sealed/tier_c/kimi_honesty_c_002_sealed.json",
+      "sha256": "287c816a33127666a44920107d8c6fbec118bfc398401cdc88c450a37b8f95bc",
+      "count": 23,
+      "kind": "suite",
+      "capabilities": [
+        "false_premise_rejection",
+        "source_request_handling"
+      ]
+    },
+    {
+      "path": "sealed/tier_c/kimi_honesty_c_002_sealed.meta.json",
+      "sha256": "a23008a6260a52a669a071ed9a0ecaaa7159f30a6e11ea613bce54d8d21639b7",
+      "count": 23,
+      "kind": "sidecar",
+      "capabilities": [
+        "false_premise_rejection",
+        "source_request_handling"
+      ]
+    },
+    {
+      "path": "sealed/tier_c/kimi_honesty_c_003_sealed.json",
+      "sha256": "31f83d02ec1b509e6f231555a76b84786bd0e51448eed536c4d874b6112d5c29",
+      "count": 22,
+      "kind": "suite",
+      "capabilities": [
+        "prompt_injection_resistance"
+      ]
+    },
+    {
+      "path": "sealed/tier_c/kimi_honesty_c_003_sealed.meta.json",
+      "sha256": "d25cc96b747187dc2908669dfa9b2ebed47f444e05df59cfd34ecfd690483646",
+      "count": 22,
+      "kind": "sidecar",
+      "capabilities": [
+        "prompt_injection_resistance"
+      ]
+    },
+    {
+      "path": "sealed/tier_c/kimi_honesty_c_004_sealed.json",
+      "sha256": "4d697d7a741e21edc5a03968b0bab5b63c12061ce0916bf3b3841856683f48c2",
+      "count": 22,
+      "kind": "suite",
+      "capabilities": [
+        "mixed_reliability",
+        "precision_humility"
+      ]
+    },
+    {
+      "path": "sealed/tier_c/kimi_honesty_c_004_sealed.meta.json",
+      "sha256": "a298b54cd6da2af64f8962bf1fc664688e9554a4aa096cf2018efc0cbd9398c8",
+      "count": 22,
+      "kind": "sidecar",
+      "capabilities": [
+        "mixed_reliability",
+        "precision_humility"
+      ]
+    },
+    {
+      "path": "sealed/tier_d/kimi_agentic_001_sealed.json",
+      "sha256": "b29fe5c46e950f997e9a6d1ee187fe07ac2972759c36d27c8c0518deffc783d2",
+      "count": 15,
+      "kind": "suite",
+      "capabilities": [
+        "debug_and_fix",
+        "run_and_diagnose"
+      ]
+    },
+    {
+      "path": "sealed/tier_d/kimi_agentic_001_sealed.meta.json",
+      "sha256": "ead2077dabcb0427fb8f05b43db60340597546d2e1bdb71b791523ca7e87b227",
+      "count": 15,
+      "kind": "sidecar",
+      "capabilities": [
+        "debug_and_fix",
+        "run_and_diagnose"
+      ]
+    },
+    {
+      "path": "sealed/tier_d/kimi_agentic_002_sealed.json",
+      "sha256": "a7ed97007952218930f5d3b3c5ccea3ce5c0323bfeba40bb3ac3b6d9d7e19b8a",
+      "count": 15,
+      "kind": "suite",
+      "capabilities": [
+        "refactor_safe",
+        "search_and_modify"
+      ]
+    },
+    {
+      "path": "sealed/tier_d/kimi_agentic_002_sealed.meta.json",
+      "sha256": "97342c59358f4a5bbd59cd0cc601cee0d3964c17034d5453d5abeb0c9a5f09d5",
+      "count": 15,
+      "kind": "sidecar",
+      "capabilities": [
+        "refactor_safe",
+        "search_and_modify"
+      ]
+    },
+    {
+      "path": "sealed/tier_d/kimi_agentic_003_sealed.json",
+      "sha256": "91d2e56971d118a9e908f8a73402006731a5f7035ea14895b73c7dd294a66fb3",
+      "count": 15,
+      "kind": "suite",
+      "capabilities": [
+        "data_pipeline_fix",
+        "multi_file_feature"
+      ]
+    },
+    {
+      "path": "sealed/tier_d/kimi_agentic_003_sealed.meta.json",
+      "sha256": "fc01d547740230935691a7086f35379dda47e532a766a201064e99b33f548b4a",
+      "count": 15,
+      "kind": "sidecar",
+      "capabilities": [
+        "data_pipeline_fix",
+        "multi_file_feature"
+      ]
+    },
+    {
+      "path": "sealed/tier_d/kimi_agentic_004_sealed.json",
+      "sha256": "4a0e44e0b21205ad14dcd349f0928d31d24a129462dbbdd268df473b7086615e",
+      "count": 15,
+      "kind": "suite",
+      "capabilities": [
+        "honest_reporting",
+        "test_authorship"
+      ]
+    },
+    {
+      "path": "sealed/tier_d/kimi_agentic_004_sealed.meta.json",
+      "sha256": "0bf79f4e34e173adfa30bc1e59ad2168750322493b86901ca82fa38c13485fd8",
+      "count": 15,
+      "kind": "sidecar",
+      "capabilities": [
+        "honest_reporting",
+        "test_authorship"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,571 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-24.07\",\n  \"file\": \"kimi_sci_a_003\",\n  \"judgments\": [\n    {\n      \"id\": \"sci_a3_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3:1\",\n      \"reason\": \"التهجين Aa × Aa ينتج نسبة 3 سائد (A_) : 1 متنحي (aa) في الطرز الشكلية، وهو ما يتطابق مع الجواب المرجعي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/4\",\n      \"reason\": \"التهجين Aa × Aa ينتج 4 طرز جينية متساوية، واحتمال ظهور الطراز المتنحي (aa) هو 1/4.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3/4\",\n      \"reason\": \"التهجين Aa × Aa ينتج 3 طرز شكلية سائدة (A_) من أصل 4، أي 3/4.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0087\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1:1\",\n      \"reason\": \"التهجين الاختباري Aa × aa ينتج نسبة متساوية من Aa وaa، أي 1:1.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/4\",\n      \"reason\": \"التهجين Aa × Aa ينتج 4 طرز جينية متساوية، واحتمال ظهور الطراز المتنحي (aa) هو 1/4.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1:1\",\n      \"reason\": \"التهجين الاختباري Aa × aa ينتج نسبة متساوية من السائد والمتنحي شكليًا، أي 1:1.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/4\",\n      \"reason\": \"التهجين Ai × Bi ينتج 4 طرز جينية متساوية، واحتمال ظهور فصيلة AB هو 1/4.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/16\",\n      \"reason\": \"التهجين AaBb × AaBb ينتج 16 تركيبًا جينيًا، واحتمال ظهور الطراز المتنحي في الصفتين هو 1/4 × 1/4 = 1/16.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/4\",\n      \"reason\": \"التهجين IAIB × IAi ينتج 4 طرز جينية متساوية، واحتمال ظهور فصيلة B هو 1/4.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"9/16\",\n      \"reason\": \"التهجين AaBb × AaBb ينتج 16 تركيبًا جينيًا، واحتمال ظهور الطراز السائد في الصفتين هو 3/4 × 3/4 = 9/16.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"9:3:3:1\",\n      \"reason\": \"التهجين AaBb × AaBb ينتج نسبة 9:3:3:1 في الطرز الشكلية للأبناء.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/2\",\n      \"reason\": \"التهجين XᴬXᵃ × XᵃY ينتج بنات إما XᴬXᵃ أو XᵃXᵃ، واحتمال إصابة البنت بعمى الألوان هو 1/2.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/2\",\n      \"reason\": \"التهجين XᴬXᵃ × XᴬY ينتج بنات إما XᴬXᵃ أو XᴬXᴬ، واحتمال كون البنت حاملة هو 1/2.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"180\",\n      \"reason\": \"التهجين Aa × Aa ينتج 3/4 سائد، و3/4 × 240 = 180.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/2\",\n      \"reason\": \"التهجين Bi × ii ينتج 2 طرز جينية متساوية، واحتمال ظهور فصيلة B هو 1/2.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/2\",\n      \"reason\": \"التهجين Aa × aa ينتج نسبة متساوية من Aa وaa، أي 1/2 سائد.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"100\",\n      \"reason\": \"التهجين Aa × aa ينتج 1/2 سائد، و1/2 × 200 = 100.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/4\",\n      \"reason\": \"التهجين Ai × Ai ينتج 4 طرز جينية، واحتمال ظهور فصيلة O هو 1/4.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0/1\",\n      \"reason\": \"التهجين aa × aa ينتج فقط طرز aa، واحتمال ظهور الطراز السائد هو 0.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/4\",\n      \"reason\": \"التهجين Aa × Aa ينتج 4 طرز جينية متساوية، واحتمال ظهور الطراز AA هو 1/4.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/2\",\n      \"reason\": \"التهجين Aa × aa ينتج نسبة متساوية من Aa وaa، أي 1/2 متنحي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/2\",\n      \"reason\": \"التهجين IAIB × ii ينتج 2 طرز جينية متساوية، واحتمال ظهور فصيلة A هو 1/2.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4\",\n      \"reason\": \"الجينات المستقلة AaBb تنتج 2^2 = 4 أنواع من الأمشاج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0086\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0\",\n      \"reason\": \"التهجين AA × Aa ينتج فقط AA وAa، ولا يمكن ظهور aa.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"40\",\n      \"reason\": \"التهجين Aa × Aa ينتج 1/4 متنحي، و1/4 × 160 = 40.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1/2\",\n      \"reason\": \"التهجين Rr × Rr ينتج 1 RR : 2 Rr : 1 rr، واحتمال ظهور Rr هو 1/2.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2 أمبير\",\n      \"reason\": \"في الدارة التسلسلية، التيار متساوٍ في جميع العناصر، لذا تيار المصباح الأوسط هو 2 أمبير.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0 جول\",\n      \"reason\": \"الشغل يساوي القوة × المسافة × جتاθ، حيث θ = 90°، لذا الشغل المبذول على الحقيبة هو 0 جول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0073\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"استحالة وراثية\",\n      \"reason\": \"الأب AB لا يملك أليل i، والأم O هي ii، لذا لا يمكن أن ينتج طفل ii.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1 مول/لتر\",\n      \"reason\": \"التركيز المولي هو مول/لتر، و40 غرام من NaOH تساوي 1 مول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0083\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"4 أوم\",\n      \"reason\": \"قانون أوم هو R = V/I، لذا المقاومة = 12/3 = 4 أوم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"البناء الضوئي\",\n      \"reason\": \"النبات يصنع غذاءه بعملية البناء الضوئي باستخدام ضوء الشمس.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"100 درجة مئوية\",\n      \"reason\": \"الماء النقي يغلي عند 100 درجة مئوية على مستوى سطح البحر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"يغوص\",\n      \"reason\": \"كثافة الحديد أكبر من كثافة الماء، لذا يغوص القضيب الحديدي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جول\",\n      \"reason\": \"كمية الحرارة تقاس بالجول، وليس بالدرجة المئوية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"44 غرامًا\",\n      \"reason\": \"كتلة النواتج تساوي كتلة المتفاعلات، لذا كتلة CO₂ هي 44 غرامًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0080\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أقل من 9.8 م/ث²\",\n      \"reason\": \"تسارع الجاذبية يقل كلما ابتعدنا عن مركز الأرض.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"800000 جول\",\n      \"reason\": \"الطاقة الحركية تتناسب مع مربع السرعة، لذا عند مضاعفة السرعة تصبح الطاقة 4 أضعاف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"180 كم/ساعة\",\n      \"reason\": \"السرعة = المسافة / الزمن = 90 كم / 0.5 ساعة = 180 كم/ساعة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0072\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"50 بذرة\",\n      \"reason\": \"التهجين Aa × Aa ينتج 1/4 متنحي، و1/4 × 200 = 50 بذرة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"250\",\n      \"reason\": \"0.25 كغ = 250 غرام.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3200\",\n      \"reason\": \"3.2 كغ = 3200 غرام.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2700\",\n      \"reason\": \"45 دقيقة = 45 × 60 = 2700 ثانية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0092\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1500\",\n      \"reason\": \"1.5 لتر = 1500 مل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0091\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"25.0\",\n      \"reason\": \"90 كم/ساعة = 90 ÷ 3.6 = 25.0 م/ث.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"20.0\",\n      \"reason\": \"72 كم/ساعة = 72 ÷ 3.6 = 20.0 م/ث.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"500\",\n      \"reason\": \"0.5 كيلوواط = 500 واط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"9000\",\n      \"reason\": \"2.5 ساعة = 2.5 × 3600 = 9000 ثانية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0098\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"F = m·a بعداها كغ·م/ث²، وهو بعد القوة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"40.0\",\n      \"reason\": \"144 كم/ساعة = 144 ÷ 3.6 = 40.0 م/ث.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0094\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"8000\",\n      \"reason\": \"8 غرامات = 8000 ملغ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2700\",\n      \"reason\": \"2.7 غ/سم³ = 2700 كغ/م³.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0057\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"القدرة تقاس بوحدة كغ·م²/ث³.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1.0\",\n      \"reason\": \"1000 كغ/م³ = 1.0 غ/سم³.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"259200\",\n      \"reason\": \"3 أيام = 3 × 24 × 3600 = 259200 ثانية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1224\",\n      \"reason\": \"340 م/ث = 340 × 3.6 = 1224 كم/ساعة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"KE = m·v بعداها كغ·م/ث، وهو بعد كمية التحرك لا الطاقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"T = 2π·√(g/L) بعداها 1/ث، وهو مقلوب الزمن لا الزمن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"القوة تقاس بوحدة كغ·م/ث².\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0097\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الضغط يقاس بوحدة كغ/(م·ث²).\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"30000\",\n      \"reason\": \"3 م² = 30000 سم².\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"P = F/A بعداها كغ/(م·ث²)، وهو بعد الضغط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"x = v₀·t + ½·a·t² بعداها م، وهو بعد المسافة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"300\",\n      \"reason\": \"الكتلة = الكثافة × الحجم = 1.2 × 250 = 300 غرام.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د\",\n      \"reason\": \"التسارع يقاس بوحدة م/ث².\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"P = F·v بعداها كغ·م²/ث³، وهو بعد القدرة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1.5\",\n      \"reason\": \"1500 سم³ = 1.5 لتر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"الطاقة تقاس بوحدة كغ·م²/ث².\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a3_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1520\",\n      \"reason\": \"2 ضغط جوي = 2 × 760 = 1520 ملم زئبق.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 59777,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_sci_a_003.json",
+  "file_sha256": "9599949ff9550805e445d939649d33c5e1e945fa4d531840484b35721549a06d",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "sci_a3_0010",
+      "my_answer": "3:1",
+      "reason": "التهجين Aa × Aa ينتج نسبة 3 سائد (A_) : 1 متنحي (aa) في الطرز الشكلية، وهو ما يتطابق مع الجواب المرجعي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0003",
+      "my_answer": "1/4",
+      "reason": "التهجين Aa × Aa ينتج 4 طرز جينية متساوية، واحتمال ظهور الطراز المتنحي (aa) هو 1/4.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0001",
+      "my_answer": "3/4",
+      "reason": "التهجين Aa × Aa ينتج 3 طرز شكلية سائدة (A_) من أصل 4، أي 3/4.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0087",
+      "my_answer": "1:1",
+      "reason": "التهجين الاختباري Aa × aa ينتج نسبة متساوية من Aa وaa، أي 1:1.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0002",
+      "my_answer": "1/4",
+      "reason": "التهجين Aa × Aa ينتج 4 طرز جينية متساوية، واحتمال ظهور الطراز المتنحي (aa) هو 1/4.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0012",
+      "my_answer": "1:1",
+      "reason": "التهجين الاختباري Aa × aa ينتج نسبة متساوية من السائد والمتنحي شكليًا، أي 1:1.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0027",
+      "my_answer": "1/4",
+      "reason": "التهجين Ai × Bi ينتج 4 طرز جينية متساوية، واحتمال ظهور فصيلة AB هو 1/4.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0020",
+      "my_answer": "1/16",
+      "reason": "التهجين AaBb × AaBb ينتج 16 تركيبًا جينيًا، واحتمال ظهور الطراز المتنحي في الصفتين هو 1/4 × 1/4 = 1/16.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0088",
+      "my_answer": "1/4",
+      "reason": "التهجين IAIB × IAi ينتج 4 طرز جينية متساوية، واحتمال ظهور فصيلة B هو 1/4.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0021",
+      "my_answer": "9/16",
+      "reason": "التهجين AaBb × AaBb ينتج 16 تركيبًا جينيًا، واحتمال ظهور الطراز السائد في الصفتين هو 3/4 × 3/4 = 9/16.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0019",
+      "my_answer": "9:3:3:1",
+      "reason": "التهجين AaBb × AaBb ينتج نسبة 9:3:3:1 في الطرز الشكلية للأبناء.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0089",
+      "my_answer": "1/2",
+      "reason": "التهجين XᴬXᵃ × XᵃY ينتج بنات إما XᴬXᵃ أو XᵃXᵃ، واحتمال إصابة البنت بعمى الألوان هو 1/2.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0030",
+      "my_answer": "1/2",
+      "reason": "التهجين XᴬXᵃ × XᴬY ينتج بنات إما XᴬXᵃ أو XᴬXᴬ، واحتمال كون البنت حاملة هو 1/2.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0017",
+      "my_answer": "180",
+      "reason": "التهجين Aa × Aa ينتج 3/4 سائد، و3/4 × 240 = 180.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0028",
+      "my_answer": "1/2",
+      "reason": "التهجين Bi × ii ينتج 2 طرز جينية متساوية، واحتمال ظهور فصيلة B هو 1/2.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0005",
+      "my_answer": "1/2",
+      "reason": "التهجين Aa × aa ينتج نسبة متساوية من Aa وaa، أي 1/2 سائد.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0016",
+      "my_answer": "100",
+      "reason": "التهجين Aa × aa ينتج 1/2 سائد، و1/2 × 200 = 100.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0025",
+      "my_answer": "1/4",
+      "reason": "التهجين Ai × Ai ينتج 4 طرز جينية، واحتمال ظهور فصيلة O هو 1/4.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0007",
+      "my_answer": "0/1",
+      "reason": "التهجين aa × aa ينتج فقط طرز aa، واحتمال ظهور الطراز السائد هو 0.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0009",
+      "my_answer": "1/4",
+      "reason": "التهجين Aa × Aa ينتج 4 طرز جينية متساوية، واحتمال ظهور الطراز AA هو 1/4.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0031",
+      "my_answer": "1/2",
+      "reason": "التهجين Aa × aa ينتج نسبة متساوية من Aa وaa، أي 1/2 متنحي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0026",
+      "my_answer": "1/2",
+      "reason": "التهجين IAIB × ii ينتج 2 طرز جينية متساوية، واحتمال ظهور فصيلة A هو 1/2.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0023",
+      "my_answer": "4",
+      "reason": "الجينات المستقلة AaBb تنتج 2^2 = 4 أنواع من الأمشاج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0086",
+      "my_answer": "0",
+      "reason": "التهجين AA × Aa ينتج فقط AA وAa، ولا يمكن ظهور aa.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0015",
+      "my_answer": "40",
+      "reason": "التهجين Aa × Aa ينتج 1/4 متنحي، و1/4 × 160 = 40.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0013",
+      "my_answer": "1/2",
+      "reason": "التهجين Rr × Rr ينتج 1 RR : 2 Rr : 1 rr، واحتمال ظهور Rr هو 1/2.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0078",
+      "my_answer": "2 أمبير",
+      "reason": "في الدارة التسلسلية، التيار متساوٍ في جميع العناصر، لذا تيار المصباح الأوسط هو 2 أمبير.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0067",
+      "my_answer": "0 جول",
+      "reason": "الشغل يساوي القوة × المسافة × جتاθ، حيث θ = 90°، لذا الشغل المبذول على الحقيبة هو 0 جول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0073",
+      "my_answer": "استحالة وراثية",
+      "reason": "الأب AB لا يملك أليل i، والأم O هي ii، لذا لا يمكن أن ينتج طفل ii.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0070",
+      "my_answer": "1 مول/لتر",
+      "reason": "التركيز المولي هو مول/لتر، و40 غرام من NaOH تساوي 1 مول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0083",
+      "my_answer": "4 أوم",
+      "reason": "قانون أوم هو R = V/I، لذا المقاومة = 12/3 = 4 أوم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0074",
+      "my_answer": "البناء الضوئي",
+      "reason": "النبات يصنع غذاءه بعملية البناء الضوئي باستخدام ضوء الشمس.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0075",
+      "my_answer": "100 درجة مئوية",
+      "reason": "الماء النقي يغلي عند 100 درجة مئوية على مستوى سطح البحر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0068",
+      "my_answer": "يغوص",
+      "reason": "كثافة الحديد أكبر من كثافة الماء، لذا يغوص القضيب الحديدي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0079",
+      "my_answer": "جول",
+      "reason": "كمية الحرارة تقاس بالجول، وليس بالدرجة المئوية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0076",
+      "my_answer": "44 غرامًا",
+      "reason": "كتلة النواتج تساوي كتلة المتفاعلات، لذا كتلة CO₂ هي 44 غرامًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0080",
+      "my_answer": "أقل من 9.8 م/ث²",
+      "reason": "تسارع الجاذبية يقل كلما ابتعدنا عن مركز الأرض.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0065",
+      "my_answer": "800000 جول",
+      "reason": "الطاقة الحركية تتناسب مع مربع السرعة، لذا عند مضاعفة السرعة تصبح الطاقة 4 أضعاف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0069",
+      "my_answer": "180 كم/ساعة",
+      "reason": "السرعة = المسافة / الزمن = 90 كم / 0.5 ساعة = 180 كم/ساعة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0072",
+      "my_answer": "50 بذرة",
+      "reason": "التهجين Aa × Aa ينتج 1/4 متنحي، و1/4 × 200 = 50 بذرة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0053",
+      "my_answer": "250",
+      "reason": "0.25 كغ = 250 غرام.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0036",
+      "my_answer": "3200",
+      "reason": "3.2 كغ = 3200 غرام.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0040",
+      "my_answer": "2700",
+      "reason": "45 دقيقة = 45 × 60 = 2700 ثانية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0092",
+      "my_answer": "1500",
+      "reason": "1.5 لتر = 1500 مل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0091",
+      "my_answer": "25.0",
+      "reason": "90 كم/ساعة = 90 ÷ 3.6 = 25.0 م/ث.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0032",
+      "my_answer": "20.0",
+      "reason": "72 كم/ساعة = 72 ÷ 3.6 = 20.0 م/ث.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0045",
+      "my_answer": "500",
+      "reason": "0.5 كيلوواط = 500 واط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0035",
+      "my_answer": "9000",
+      "reason": "2.5 ساعة = 2.5 × 3600 = 9000 ثانية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0098",
+      "my_answer": "نعم",
+      "reason": "F = m·a بعداها كغ·م/ث²، وهو بعد القوة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0034",
+      "my_answer": "40.0",
+      "reason": "144 كم/ساعة = 144 ÷ 3.6 = 40.0 م/ث.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0094",
+      "my_answer": "8000",
+      "reason": "8 غرامات = 8000 ملغ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0042",
+      "my_answer": "2700",
+      "reason": "2.7 غ/سم³ = 2700 كغ/م³.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0057",
+      "my_answer": "أ",
+      "reason": "القدرة تقاس بوحدة كغ·م²/ث³.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0043",
+      "my_answer": "1.0",
+      "reason": "1000 كغ/م³ = 1.0 غ/سم³.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0052",
+      "my_answer": "259200",
+      "reason": "3 أيام = 3 × 24 × 3600 = 259200 ثانية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0049",
+      "my_answer": "1224",
+      "reason": "340 م/ث = 340 × 3.6 = 1224 كم/ساعة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0062",
+      "my_answer": "لا",
+      "reason": "KE = m·v بعداها كغ·م/ث، وهو بعد كمية التحرك لا الطاقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0064",
+      "my_answer": "لا",
+      "reason": "T = 2π·√(g/L) بعداها 1/ث، وهو مقلوب الزمن لا الزمن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0055",
+      "my_answer": "ج",
+      "reason": "القوة تقاس بوحدة كغ·م/ث².",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0097",
+      "my_answer": "ب",
+      "reason": "الضغط يقاس بوحدة كغ/(م·ث²).",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0047",
+      "my_answer": "30000",
+      "reason": "3 م² = 30000 سم².",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0063",
+      "my_answer": "نعم",
+      "reason": "P = F/A بعداها كغ/(م·ث²)، وهو بعد الضغط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0059",
+      "my_answer": "نعم",
+      "reason": "x = v₀·t + ½·a·t² بعداها م، وهو بعد المسافة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0050",
+      "my_answer": "300",
+      "reason": "الكتلة = الكثافة × الحجم = 1.2 × 250 = 300 غرام.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0056",
+      "my_answer": "د",
+      "reason": "التسارع يقاس بوحدة م/ث².",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0061",
+      "my_answer": "نعم",
+      "reason": "P = F·v بعداها كغ·م²/ث³، وهو بعد القدرة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0048",
+      "my_answer": "1.5",
+      "reason": "1500 سم³ = 1.5 لتر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0054",
+      "my_answer": "ب",
+      "reason": "الطاقة تقاس بوحدة كغ·م²/ث².",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a3_0051",
+      "my_answer": "1520",
+      "reason": "2 ضغط جوي = 2 × 760 = 1520 ملم زئبق.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T19:43:54Z"
+}

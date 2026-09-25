@@ -1,0 +1,58 @@
+name: verify-hosted
+# طريقٌ ثانٍ للتحقّق على مشغّل GitHub المستضاف (ك٢٧): آلةٌ عابرة بلا أسرار وبصلاحية
+# قراءةٍ وحدها. يعمل آليًّا حين يصير المستودعُ عامًّا (فالدقائقُ عندها مجّانية بلا حدّ)،
+# وقبل ذلك بتشغيلٍ يدوي فقط، فلا يستهلك دقائقَ المستودع الخاص ولا يعلّق على فوترته.
+# المشغّلُ الذاتي المعزول في verify.yml يبقى كما قرّره ق٣٦؛ هذا لا يستبدله.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-hosted-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.event_name == 'workflow_dispatch' || github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24'
+      # uv مثبَّتٌ بإصداره، وبايثون 3.14 كما في بيئة CI المعزولة، والاعتمادياتُ من uv.lock
+      # المجمَّد وحده؛ لا حلَّ جديدًا على المشغّل.
+      - name: Install the locked runtime
+        run: |
+          set -eu
+          python3 -m pip install --user 'uv==0.8.17'
+          "$HOME/.local/bin/uv" python install 3.14
+          "$HOME/.local/bin/uv" sync --frozen --python 3.14 --extra dev
+      - name: Every commit names its producing agent
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RANGE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          RANGE_HEAD: ${{ github.sha }}
+        run: |
+          set -eu
+          zero=0000000000000000000000000000000000000000
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            range="$RANGE_HEAD^!"
+          elif [ -z "${RANGE_BASE:-}" ] || [ "$RANGE_BASE" = "$zero" ] \
+             || ! git cat-file -e "$RANGE_BASE^{commit}" 2>/dev/null; then
+            range="$RANGE_HEAD"
+          else
+            range="$RANGE_BASE..$RANGE_HEAD"
+          fi
+          .venv/bin/python tools/agent_attribution.py --range "$range"
+      - name: Shared checks and strict public signature verification
+        run: .venv/bin/python tools/run_verification.py --node "$(command -v node)"

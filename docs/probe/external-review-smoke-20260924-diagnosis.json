@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "probe": "external_review_smoke_diagnosis",
+  "agent": "anthropic/claude-opus-5",
+  "date": "2026-09-24",
+  "companion_report": "docs/probe/external-review-smoke-20260924.json",
+  "question": "هل «http_402» في تقرير التجربة عطبٌ في الأداة، أم اسمُ نموذجٍ خاطئ، أم بوابةُ دفع؟",
+  "answer": "بوابةُ دفع. الأداةُ سليمة، والأسماءُ صحيحة، والحسابُ مربوط.",
+  "observations": [
+    {
+      "check": "ollama_server",
+      "result": "up",
+      "detail": "GET /api/version على 127.0.0.1:11434 يعيد 0.34.2"
+    },
+    {
+      "check": "account_linked_to_cloud",
+      "result": "yes",
+      "detail": "POST /api/chat على gpt-oss:120b-cloud يعيد HTTP 200 وجوابًا صحيحًا (56). فالتسجيل قائم، ولا حاجة إلى ollama signin."
+    },
+    {
+      "check": "reviewer_names_exist_in_registry",
+      "result": "yes",
+      "detail": "ollama pull نجح لكلا اسمَي DEFAULT_REVIEWERS: deepseek-v4-flash:cloud وmistral-large-3:675b-cloud. فلا تصحيح يلزم في evaluation/external_review.py ولا في AGENTS.md §٧ ولا في ق٥٠."
+    }
+  ],
+  "model_calls": [
+    {"model": "gpt-oss:120b-cloud", "http": 200, "family": "openai", "usable_as_reviewer": false,
+     "why_not": "عائلةُ مطوِّر (DEVELOPER_FAMILIES)؛ الأداة ترفضه بـreviewer_is_developer_family، وهذا مقصود"},
+    {"model": "deepseek-v4-flash:cloud", "http": 402, "family": "deepseek", "usable_as_reviewer": false,
+     "why_not": "خارج الاستعمال المجاني"},
+    {"model": "deepseek-v4.1-flash:cloud", "http": 402, "family": "deepseek", "usable_as_reviewer": false,
+     "why_not": "خارج الاستعمال المجاني"},
+    {"model": "deepseek-v4-pro:cloud", "http": 402, "family": "deepseek", "usable_as_reviewer": false,
+     "why_not": "خارج الاستعمال المجاني"},
+    {"model": "mistral-large-3:675b-cloud", "http": 402, "family": "mistral", "usable_as_reviewer": false,
+     "why_not": "خارج الاستعمال المجاني"}
+  ],
+  "server_message_402": "this model is not included in your free usage, add usage credits to pay as you go: https://ollama.com/settings or upgrade for included usage: https://ollama.com/upgrade",
+  "cloud_catalogue_families": {
+    "source": "https://ollama.com/search?c=cloud",
+    "deepseek": ["deepseek-v4-flash", "deepseek-v4-pro", "deepseek-v4.1-flash"],
+    "mistral": ["mistral-large-3"],
+    "note": "جُرّب كلُّ نموذج deepseek في القائمة، وكلُّها 402. وmistral-large-3 هو نموذجُ Mistral الوحيد في سحابة Ollama، فلا بديل داخل العائلتين."
+  },
+  "conclusion": "لا يمكن إتمامُ ك٧ بالاستعمال المجاني. والمجاني الوحيد المتاح gpt-oss، وهو من عائلة مطوِّر تمنعها ق٥٠ — ولا يُستبدَل به المراجعان. فالقرارُ للمالك: إمّا رصيدُ Ollama، وإمّا مزوِّدٌ آخر لـDeepSeek وMistral، وإمّا يبقى اللصقُ اليدوي.",
+  "owner_decision_needed": true,
+  "measurement_limits": [
+    "نداءٌ واحد لكل نموذج، لا يقيس تقلّبًا",
+    "الرمز 402 قرأناه من رسالة الخادم، لا من لوحة حساب المالك: قد يكون سقفًا شهريًّا انتهى لا خطةً ناقصة",
+    "قائمةُ السحابة لقطةٌ في ٢٤ سبتمبر ٢٠٢٦، وقد تتغيّر",
+    "لم يُقس شيءٌ عن جودة المراجعين: التجربة لم تصل إلى المراجعة أصلًا"
+  ]
+}

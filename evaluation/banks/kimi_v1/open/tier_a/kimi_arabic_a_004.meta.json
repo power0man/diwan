@@ -1,0 +1,397 @@
+{
+  "suite_id": "kimi_arabic_a_004",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "arab_a_0023": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "حالة أساسية لتثبيت البوابة بعد الفخاخ.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "استثناء تام مثبت؛ القاعدة الأساسية لتثبيت البوابة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0044": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "أشهر أدوات الحصر؛ تثبيت.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0036": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "المقابل المباشر للسابقة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0024": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تمييز نائب الفاعل عن الفاعل؛ سهل مقصود للتوازن.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تثبيت التمييز الأولي بين الكمّين.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0006": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تامّ منفيّ بمستثنى منه منصوب يتّحد فيه الوجهان نصبًا؛ يكشف من يحفظ «يجيز الوجهين» دون فهم تبعيّة البدل للمبدل منه.",
+      "trap": "يحفظ «التامّ المنفيّ يجيز الوجهين» فيجيز الرفع، غافلًا أن البدل يتبع «الكتبَ» المنصوبة فالرفع لا وجه له.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0012": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تامّ منفيّ بمستثنى منه نكرة مرفوعة (شيء)؛ يختبر جواز النصب على الاستثناء والإبدال.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0042": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تفكيك «إنما» إعرابيًّا؛ كثيرون يجهلون وظيفة «ما».",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0009": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نفس حكم الجواز بصيغة سؤال مختلفة لمنع التقولب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0019": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تقديم «الكتاب» يوهم بأنه نائب الفاعل؛ الترتيب لا يحكم.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "جعل «الكتاب» نائب الفاعل لأنه تقدّم."
+    },
+    "arab_a_0026": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الرفع لا يغيّر صورة المركّب؛ يفضح من يظن تغيّر الحركة معنىً إعرابيًّا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0021": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بقاء خبر ظن منصوبًا بعد النيابة؛ فخ نحوي دقيق متفق عليه.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "إعرابها حالًا أو نائب فاعل ثانيًا."
+    },
+    "arab_a_0004": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فخ معروف: كثيرون يظنون النصب واجبًا بعد «إلا» مطلقًا، والحكم يتغير بالنفي.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الظن أن النصب بعد إلا واجب دائمًا."
+    },
+    "arab_a_0005": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "التامّ المنفيّ يجيز الوجهين؛ فخّ إعرابيّ حقيقيّ في جواز النصب على الاستثناء.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ أن التامّ المنفيّ يوجب البدلَ فقط فيُجاب «لا يجوز»."
+    },
+    "arab_a_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أشهر خطأ: «اثني عشر» على قياس المثنى؛ المركّب مبني.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "كتابة «اثني عشر» قياسًا على إعراب المثنى."
+    },
+    "arab_a_0038": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الربط بين النوع والإعراب؛ الخلط بين تمييزَي الكمّين.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "نصب التمييز قياسًا على كم الاستفهامية."
+    },
+    "arab_a_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بقاء المفعول الثاني منصوبًا مع نائب الفاعل؛ أشهر فخاخ المبني للمجهول.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "إعراب «الكتاب» نائب فاعل ثانيًا أو مبتدأ."
+    },
+    "arab_a_0033": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "العقود مُلحقة بجمع المذكر السالم؛ الفخ ظنها مفردة بالفتحة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الفخ أن البعض يظن الجواز مطلقًا؛ الوجوب للتام المثبت.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الخلط مع حكم المنفي التام الذي يجيز الوجهين."
+    },
+    "arab_a_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الجمع بعد كم الاستفهامية خطأ شائع في المحكية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقابلة القواعد الثلاث للتمييز في سؤال واحد.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0007": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "صورة ثانية للتامّ المنفيّ بسياق محكيّ قريب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0028": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "صيغتا 11 تتبادلان بالتذكير والتأنيث؛ خلط شائع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "خبر كان الجامد؛ يُوهَم بعضهم أن الجامد لا يُنصب خبرًا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0031": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "العقود وإن أشبهت الجمع السالم صورةً فتمييزها مفرد منصوب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0043": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الحصر بـ«ليس... إلا»؛ التمييز المعنوي المتفق عليه.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0046": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تسمية الأداتين بصيغة مقيدة؛ اختبار دقة التعبير النحوي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0037": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "«من» بعد كم الخبرية؛ يظنها بعضهم قرينة استفهام.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0029": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فخ التمييز: قياس على أعداد 3-10 الجمع المجرور.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "كتابة «كتبٍ» قياسًا على «ثلاثة كتب»."
+    },
+    "arab_a_0048": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الأسماء الأعلام همزتها قطع غالبًا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0063": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ناقص يائي واضح من مضارعه.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0078": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "نصب الجمع بالياء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0067": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "يائي واضح.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0049": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "من الأسماء العشرة المشهورة بهمزة الوصل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0047": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فعل خماسي (استفعل) همزته وصل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0077": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تصريف أساسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0051": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "انفعل: همزة وصل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0061": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فعل رباعي همزته قطع.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قياس على همزة الوصل في الخماسي."
+    },
+    "arab_a_0082": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "سقوط النون في الجر المضاف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0089": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ضابط العاقل؛ يمنع القياس الأعمى.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0088": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حكم إحلالي دقيق متفق عليه في كتب النحو.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0075": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ألف لا تُنطق؛ تُكتب تمييزًا لواو الجماعة من واو «دعو».",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0064": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "لا مضارع ظاهر يدل؛ يحتاج معرفة بالأصل.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "ظنها ياء لكثرة اليائية في الألف المقصورة."
+    },
+    "arab_a_0052": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الفعل الرباعي همزته قطع؛ الفخ قياسه على الخماسي.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "ظنها وصلًا لشبهها بـ«استفعل»."
+    },
+    "arab_a_0074": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ألف «رأى» ليست مقصورة عادية؛ أصلها همزة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "إدخالها في الواوية أو اليائية."
+    },
+    "arab_a_0086": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الكسرة علامة نصب هنا خلافًا للأصل؛ فخ صريح.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الظن أن النصب بالفتحة كالمفرد."
+    },
+    "arab_a_0080": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "سقوط النون في الإضافة؛ أشهر أخطاء الكتابة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "كتابة «معلمون المدرسة» بالنون."
+    },
+    "arab_a_0060": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مصدر الخماسي همزته وصل كفعله.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0056": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فعل رباعي: قطع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0065": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "واوية رغم شيوع ظن الياء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0050": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ماضي الثلاثي همزته قطع.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قياس على المصدر «أكل» المنطوق."
+    },
+    "arab_a_0071": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مضارعه بالواو دليل واضح.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0054": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "من أسماء همزة الوصل؛ تُحذف في الوصل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0055": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "افتعل من الثلاثي همزته وصل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0079": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الجر بالياء كالنصب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0059": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم علم همزته قطع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0062": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مثال واوي شهير.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0069": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حرف جر شائع جدًّا وألفه ياء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0092": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تثبيت الجر بالياء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0076": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم التفضيل المؤنث؛ ألفه ياء متفق عليها.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "arab_a_0073": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "يائية واضحة.",
+      "answer_verified_by": "author_reasoned"
+    }
+  }
+}

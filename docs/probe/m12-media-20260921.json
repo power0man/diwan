@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "scope": "live_public_development_media_mechanism",
+  "checks": {
+    "image_one_fresh_unverified_answer": true,
+    "image_bytes_frozen_in_governed_request": true,
+    "image_local_only_without_model_tools": true,
+    "image_visible_input_witness_matches": true,
+    "image_inspection_has_original_bytes": true,
+    "audio_one_fresh_unverified_answer": true,
+    "audio_bytes_frozen_in_governed_request": true,
+    "audio_local_only_without_model_tools": true,
+    "audio_visible_input_witness_matches": true,
+    "audio_inspection_has_original_bytes": true,
+    "exactly_two_initial_calls": true,
+    "exactly_two_initial_chat_requests": true,
+    "exactly_six_initial_metadata_requests": true,
+    "answer_does_not_modify_sources_or_preferences": true,
+    "different_media_bind_different_request_identity": true,
+    "image_restart_replays_same_result": true,
+    "image_frozen_inspection_survives_source_loss": true,
+    "image_session_isolation": true,
+    "audio_restart_replays_same_result": true,
+    "audio_frozen_inspection_survives_source_loss": true,
+    "audio_session_isolation": true,
+    "replay_never_reads_provider_or_preferences": true,
+    "replay_zero_provider_and_network_calls": true,
+    "replay_preserves_state_bytes": true,
+    "replay_without_source_directory": true,
+    "flow_complete": true
+  },
+  "passed": 26,
+  "total": 26,
+  "counter_scope": "one_image_turn_and_one_audio_turn",
+  "snapshot_scope": "state_bytes",
+  "quality_pending": true,
+  "image_understanding": "not_assessed",
+  "arabic_asr_quality": "not_assessed",
+  "human_review": "pending",
+  "semantic_injection_resistance": "not_established",
+  "independent_bank": "not_provided",
+  "m8b_complete": false,
+  "release_ready": false,
+  "initial_provider_calls": 2,
+  "replay_provider_calls": 0,
+  "initial_estimate_calls": 2,
+  "replay_estimate_calls": 0,
+  "initial_chat_calls": 2,
+  "replay_chat_calls": 0,
+  "initial_metadata_calls": 6,
+  "replay_metadata_calls": 0,
+  "run_id": "m12-first-20260921",
+  "runtime_version": "0.34.2",
+  "media_profile": {
+    "num_ctx": 8192,
+    "max_output": 400,
+    "deadline_s": 180
+  },
+  "fixture": {
+    "image": "Public development: red square, green circle, blue triangle",
+    "audio_origin": "Existing macOS Arabic voice; generated locally; PCM WAV mono 16-bit 16000Hz",
+    "audio_reference": "موعد مراجعة ديوان غدًا الساعة العاشرة.",
+    "audio_frames": 79605,
+    "audio_duration_s": "4.9753125",
+    "audio_sha256": "ec1758e7c314acf5383a2e2b63278792277070bcb5681e1912c9d6ed20ce3f8f"
+  },
+  "answers": {
+    "image": {
+      "content": "الأشكال والألوان الظاهرة في الصورة من اليسار إلى اليمين هي: مربع أحمر، ودائرة خضراء، ومثلث أزرق.",
+      "status": "complete",
+      "error_code": null,
+      "usage": {
+        "input_tokens": 557,
+        "output_tokens": 35
+      }
+    },
+    "audio": {
+      "content": "موعد مراجعة ديوان غداً الساعة العاشرة.",
+      "status": "complete",
+      "error_code": null,
+      "usage": {
+        "input_tokens": 631,
+        "output_tokens": 14
+      }
+    }
+  },
+  "measurement_note": "Token counts are provider-reported; not per-modality decoding proof."
+}

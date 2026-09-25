@@ -1,0 +1,299 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_agentic_001.json\",\n  \"judgments\": [\n    {\n      \"id\": \"agentic_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل في apply_discount: ترجع قيمة الخصم (price * percent / 100) بدل السعر بعد الخصم. الصحيح: price - (price * percent / 100). الاختبارات تتوقع 180 من 200 و10%، و50 من 50 و0%، و0 من 99.9 و100%.\",\n      \"reason\": \"حللت المسألة: الخصم يجب أن يُطرح من السعر الأصلي. المرجع يشير إلى أن النتيجة هي السعر بعد إنقاص النسبة لا قيمة الخصم نفسها، وهذا صحيح. المعايير تغطي الإصلاح المنطقي وعدم المساس بالاختبارات ونجاحها.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: الدالة معرفة باسم normalise_ar (بسين) بينما الاختبار يستورد normalize_ar (بزاي). يجب إعادة تسمية الدالة في textkit.py إلى normalize_ar مع الحفاظ على السلوك.\",\n      \"reason\": \"حللت: الاختبار يستورد normalize_ar ولا يجده لأن الدالة اسمها normalise_ar. المرجع يطلب توحيد التسمية إلى normalize_ar، وهذا صحيح. المعايير كافية: تحدد الاسم المطلوب والحفاظ على السلوك ونجاح الاختبارات.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: shop.py يستورد from utils import fmt_price بينما الملف الفعلي اسمه util.py (بدون s). يجب تصحيح الاستيراد إلى from util import fmt_price.\",\n      \"reason\": \"حللت: الاستيراد يشير إلى utils غير موجود، والملف الموجود هو util.py. المرجع يشخص العلة في اسم الوحدة المستوردة ويطلب إصلاح الاستيراد في shop.py، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: بعد عكس الكلمات، يتم إسقاط أول كلمة عبر join(words[1:])، فتفقد كلمة. الصحيح: return \\\" \\\".join(words) بدون شريحة.\",\n      \"reason\": \"حللت: reverse_words تعكس القائمة ثم تحذف أول عنصر (words[1:])، فتفقد كلمة. المرجع يطلب عدم فقد أي كلمة والإصلاح في textkit.py، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: format_total تجمع نصًا مع رقم مباشرة (\\\"المجموع المستحق: \\\" + total) فيحدث TypeError. الصحيح: تحويل الرقم إلى نص أو استخدام f-string: return f\\\"المجموع المستحق: {total} ريال\\\".\",\n      \"reason\": \"حللت: الدمج بين str و int يسبب TypeError. المرجع يطلب تحويل الرقم إلى نص أو تنسيق صحيح، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: السلسلة في welcome ليست f-string، فتبقى {name} حرفيًا. الصحيح: return f\\\"أهلا بك يا {name} في بوابة الموظفين\\\".\",\n      \"reason\": \"حللت: غياب بادئة f يعني عدم إدراج قيمة name. المرجع يكتشف ذلك ويطلب إدخال الاسم فعليًا، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: عند value < low ترجع high بدل low، وعند value > high ترجع low بدل high. الصحيح: return low في الأولى و high في الثانية.\",\n      \"reason\": \"حللت: منطق clamp مقلوب في حالتي التجاوز. المرجع يطلب تصحيح المنطق نفسه دون حالات خاصة، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: collapse_spaces ترجع قائمة من split() بدل نص. الصحيح: return \\\" \\\".join(text.split()) لدمج المسافات وإزالة الطرفية.\",\n      \"reason\": \"حللت: split() يعطي قائمة، والمطلوب نص بمسافات مفردة. المرجع يطلب إرجاع نص ودمج المسافات، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: config.json يحتوي free_shipping_threshold: 1000 بينما السياسة 200. يجب تعديل config.json إلى 200 مع بقاء الكود يقرأ منه.\",\n      \"reason\": \"حللت: الاختبار يتوقع عتبة 200، والملف يحوي 1000. المرجع يطلب تصحيح قيمة العتبة في config.json، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: ملف grades.csv مفصول بفاصلة منقوطة (;) بينما القارئ يستخدم فاصلة (,) في csv.DictReader. الصحيح: delimiter=\\\";\\\".\",\n      \"reason\": \"حللت: البيانات تستخدم فاصلة منقوطة، والقارئ يفترض فاصلة. المرجع يطلب تعديل القارئ ليطابق التنسيق، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: جملة return داخل حلقة for (بإزاحة خاطئة) فتُنهي الدالة بعد أول عنصر. الصحيح: إرجاع result بعد اكتمال الحلقة (إزاحة return خارج الحلقة).\",\n      \"reason\": \"حللت: return داخل الحلقة يوقفها مبكرًا. المرجع يطلب تصحيح الإزاحة، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: json.load(f.read()) يمرر نصًا إلى json.load التي تتوقع ملفًا. الصحيح: json.load(f) أو json.loads(f.read()).\",\n      \"reason\": \"حللت: الخلط بين json.load و json.loads. المرجع يميز بينهما ويطلب الإصلاح، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: الكود يقرأ cfg[\\\"db_host\\\"] بينما الملف يحتوي مفتاح \\\"hostname\\\". يجب تعديل الكود إلى cfg[\\\"hostname\\\"].\",\n      \"reason\": \"حللت: عدم تطابق المفتاح المطلوب مع الموجود. المرجع يطلب تعديل الكود لقراءة المفتاح الفعلي، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: sorted(values) يرتب أبجديًا كنصوص، فيكون \\\"10\\\" قبل \\\"9\\\". الصحيح: sorted(values, key=int) لترتيب عددي مع بقاء العناصر نصوصًا.\",\n      \"reason\": \"حللت: الترتيب الأبجدي لا يطابق العددي. المرجع يطلب مفتاح ترتيب عددي دون تحويل العناصر، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: is_leap تعتمد فقط على year % 4 == 0، فتعطي 1900 كبيسة خطأ. الصحيح: year % 4 == 0 and (year % 100 != 0 or year % 400 == 0).\",\n      \"reason\": \"حللت: القاعدة الكاملة تستثني المئوية إلا إذا قُبلت على 400. المرجع يطلب تطبيقها، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: median ترجع ordered[n // 2] فقط، فلا تعالج الحالة الزوجية. الصحيح: إذا كان n زوجيًا، متوسط العنصرين الأوسطين: (ordered[n//2 - 1] + ordered[n//2]) / 2.\",\n      \"reason\": \"حللت: الوسيط للقائمة الزوجية يجب أن يكون متوسط العنصرين الأوسطين. المرجع يطلب معالجة الطولين، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: to_12h(12) ترجع 0 و to_12h(0) ترجع 0، بينما المطلوب 12 في الحالتين. الصحيح: return 12 if hour % 12 == 0 else hour % 12.\",\n      \"reason\": \"حللت: باقي القسمة على 12 يعطي 0 حيث يجب 12. المرجع يطلب معالجة الحالتين، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: strptime تستخدم صيغة \\\"%d/%m/%Y\\\" بينما التواريخ واردة بصيغة ISO \\\"%Y-%m-%d\\\". الصحيح: datetime.strptime(date_str, \\\"%Y-%m-%d\\\").\",\n      \"reason\": \"حللت: عدم تطابق صيغة التحليل مع الصيغة الواردة. المرجع يطلب تصحيح الصيغة، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: write_report لا ينشئ مجلد الإخراج إذا لم يكن موجودًا. الصحيح: os.makedirs(out_dir, exist_ok=True) قبل فتح الملف.\",\n      \"reason\": \"حللت: الاختبار يمرر مجلدًا غير موجود فينهار open. المرجع يطلب إنشاء المجلد تلقائيًا، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: strip(\\\"0\\\") يزيل الأصفار من الطرفين، بينما المطلوب إزالة البادئة فقط. الصحيح: code.lstrip(\\\"0\\\") أو code.lstrip(\\\"0\\\") or \\\"0\\\".\",\n      \"reason\": \"حللت: الفرق بين strip و lstrip. المرجع يطلب إزالة البادئة فقط، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: الشروط تستخدم > بدل >=، فالحدود 90 و80 و70 لا تُحتسب. الصحيح: if score >= 90: A، elif score >= 80: B، elif score >= 70: C.\",\n      \"reason\": \"حللت: الحدود شاملة، والمقارنات يجب أن تكون >=. المرجع يطلب تصحيح عوامل المقارنة، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: الكود يقرأ من data/items.csv بينما الملف الفعلي اسمه data/item.csv (بدون s). يجب تعديل المسار في الكود إلى data/item.csv.\",\n      \"reason\": \"حللت: عدم تطابق اسم الملف في المسار مع الموجود. المرجع يطلب مطابقة المسار مع الاسم الفعلي، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: payroll.py يستورد TAX من rates بينما الثابت معرف باسم TAX_RATE. يجب تعديل الاستيراد إلى from rates import TAX_RATE أو تعريف TAX في rates.\",\n      \"reason\": \"حللت: عدم تطابق اسم الثابت بين الملفين. المرجع يطلب توحيد الاسم، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: best initialized to 0، فإذا كانت كل القيم سالبة، تبقى 0 وهي أكبر من السالب. الصحيح: best = temps[0] أو float('-inf') أو None.\",\n      \"reason\": \"حللت: التهيئة بالصفر تفشل مع القيم السالبة. المرجع يطلب عدم افتراض أن الصفر أدنى قيمة، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: في printer.py، المتغير معرف باسم reslut (خطأ إملائي) ثم يُستخدم result. الصحيح: توحيد الاسم إلى result.\",\n      \"reason\": \"حللت: خطأ إملائي في اسم المتغير يسبب NameError. المرجع يطلب توحيد التسمية دون تغيير الرسالة، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: الكود يقرأ من data/input.txt بينما الملف الفعلي اسمه data/inputs.txt (بـ s). يجب تعديل المسار في reader.py إلى inputs.txt.\",\n      \"reason\": \"حللت: عدم تطابق اسم الملف. المرجع يطلب مطابقة الاسم مع الموجود، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: فتح الملف بترميز ascii بينما المحتوى عربي (utf-8). الصحيح: encoding=\\\"utf-8\\\".\",\n      \"reason\": \"حللت: تعارض الترميز المحدد مع المحتوى. المرجع يطلب القراءة بترميز utf-8، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: sorted(items) يقارن int مع str فيحدث TypeError. الصحيح: sorted(items, key=int) لترتيب عددي دون تغيير العناصر.\",\n      \"reason\": \"حللت: المقارنة بين الأنواع غير معرّفة. المرجع يطلب مفتاح تحويل عددي، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: في checker.py، عند نجاح التحقق (ok=True) يستدعي sys.exit(1) (رمز خطأ). الصحيح: sys.exit(0) عند النجاح أو sys.exit(1) عند الفشل فقط.\",\n      \"reason\": \"حللت: شرط الخروج مقلوب. المرجع يطلب تصحيح الشرط بحيث يخرج بخطأ عند الفشل فقط، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: في معالج الاستثناء، DEFAULTS[\\\"fallback\\\"] غير موجود (المفتاح الصحيح \\\"fallbacks\\\"). الصحيح: DEFAULTS[\\\"fallbacks\\\"] أو تعريف fallback.\",\n      \"reason\": \"حللت: الانهيار داخل معالج الاستثناء بسبب مفتاح خاطئ. المرجع يطلب تصحيح المفتاح، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: build_path تستخدم os.path.join(base, \\\"/\\\" + name) حيث المقطع الثاني يبدأ بشرطة مائلة فيتجاهل base. الصحيح: os.path.join(base, name) بدون الشرطة المائلة.\",\n      \"reason\": \"حللت: os.path.join يتجاهل المسار الأساس إذا كان المقطع التالي يبدأ بشرطة مائلة. المرجع يطلب تصحيح بناء المسار، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: main.py يستورد caclculate_total (خطأ إملائي) بينما الدالة معرفة calculate_total. يجب إتاحة الاسم المطلوب في helper.py (تعريف دالة بنفس الاسم أو تصحيح الاستيراد، لكن main.py محرّم).\",\n      \"reason\": \"حللت: عدم تطابق الاسم المستورد مع المعرّف. المرجع يطلب حل الخلل من جهة المكتبة، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: average تقسم على len(nums) فتنهار مع قائمة فارغة. الصحيح: إضافة حارس يرجع 0 إذا كانت القائمة فارغة.\",\n      \"reason\": \"حللت: القسمة على صفر عند قائمة فارغة. المرجع يطلب إضافة حارس في analyzer.py، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: cfg[\\\"mode\\\"] يسبب KeyError لأن المفتاح غير موجود. الصحيح: cfg.get(\\\"mode\\\", \\\"normal\\\").\",\n      \"reason\": \"حللت: غياب المفتاح في الإعدادات. المرجع يطلب وصولًا آمنًا بقيمة افتراضية، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخلل: fact(n) بلا حالة قاعدية، فيستمر بلا نهاية. الصحيح: إضافة if n <= 1: return 1.\",\n      \"reason\": \"حللت: غياب الحالة القاعدية للعودية. المرجع يطلب إضافتها، وهذا صحيح. المعايير كافية.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 45033,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_d/kimi_agentic_001.json",
+  "file_sha256": "23d40995de87f9f15f152442182f81f2e36bac2abd6f35dd1e107f70f7708c6c",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "agentic_0002",
+      "my_answer": "الخلل في apply_discount: ترجع قيمة الخصم (price * percent / 100) بدل السعر بعد الخصم. الصحيح: price - (price * percent / 100). الاختبارات تتوقع 180 من 200 و10%، و50 من 50 و0%، و0 من 99.9 و100%.",
+      "reason": "حللت المسألة: الخصم يجب أن يُطرح من السعر الأصلي. المرجع يشير إلى أن النتيجة هي السعر بعد إنقاص النسبة لا قيمة الخصم نفسها، وهذا صحيح. المعايير تغطي الإصلاح المنطقي وعدم المساس بالاختبارات ونجاحها.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0012",
+      "my_answer": "الخلل: الدالة معرفة باسم normalise_ar (بسين) بينما الاختبار يستورد normalize_ar (بزاي). يجب إعادة تسمية الدالة في textkit.py إلى normalize_ar مع الحفاظ على السلوك.",
+      "reason": "حللت: الاختبار يستورد normalize_ar ولا يجده لأن الدالة اسمها normalise_ar. المرجع يطلب توحيد التسمية إلى normalize_ar، وهذا صحيح. المعايير كافية: تحدد الاسم المطلوب والحفاظ على السلوك ونجاح الاختبارات.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0011",
+      "my_answer": "الخلل: shop.py يستورد from utils import fmt_price بينما الملف الفعلي اسمه util.py (بدون s). يجب تصحيح الاستيراد إلى from util import fmt_price.",
+      "reason": "حللت: الاستيراد يشير إلى utils غير موجود، والملف الموجود هو util.py. المرجع يشخص العلة في اسم الوحدة المستوردة ويطلب إصلاح الاستيراد في shop.py، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0006",
+      "my_answer": "الخلل: بعد عكس الكلمات، يتم إسقاط أول كلمة عبر join(words[1:])، فتفقد كلمة. الصحيح: return \" \".join(words) بدون شريحة.",
+      "reason": "حللت: reverse_words تعكس القائمة ثم تحذف أول عنصر (words[1:])، فتفقد كلمة. المرجع يطلب عدم فقد أي كلمة والإصلاح في textkit.py، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0014",
+      "my_answer": "الخلل: format_total تجمع نصًا مع رقم مباشرة (\"المجموع المستحق: \" + total) فيحدث TypeError. الصحيح: تحويل الرقم إلى نص أو استخدام f-string: return f\"المجموع المستحق: {total} ريال\".",
+      "reason": "حللت: الدمج بين str و int يسبب TypeError. المرجع يطلب تحويل الرقم إلى نص أو تنسيق صحيح، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0045",
+      "my_answer": "الخلل: السلسلة في welcome ليست f-string، فتبقى {name} حرفيًا. الصحيح: return f\"أهلا بك يا {name} في بوابة الموظفين\".",
+      "reason": "حللت: غياب بادئة f يعني عدم إدراج قيمة name. المرجع يكتشف ذلك ويطلب إدخال الاسم فعليًا، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0010",
+      "my_answer": "الخلل: عند value < low ترجع high بدل low، وعند value > high ترجع low بدل high. الصحيح: return low في الأولى و high في الثانية.",
+      "reason": "حللت: منطق clamp مقلوب في حالتي التجاوز. المرجع يطلب تصحيح المنطق نفسه دون حالات خاصة، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0007",
+      "my_answer": "الخلل: collapse_spaces ترجع قائمة من split() بدل نص. الصحيح: return \" \".join(text.split()) لدمج المسافات وإزالة الطرفية.",
+      "reason": "حللت: split() يعطي قائمة، والمطلوب نص بمسافات مفردة. المرجع يطلب إرجاع نص ودمج المسافات، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0049",
+      "my_answer": "الخلل: config.json يحتوي free_shipping_threshold: 1000 بينما السياسة 200. يجب تعديل config.json إلى 200 مع بقاء الكود يقرأ منه.",
+      "reason": "حللت: الاختبار يتوقع عتبة 200، والملف يحوي 1000. المرجع يطلب تصحيح قيمة العتبة في config.json، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0042",
+      "my_answer": "الخلل: ملف grades.csv مفصول بفاصلة منقوطة (;) بينما القارئ يستخدم فاصلة (,) في csv.DictReader. الصحيح: delimiter=\";\".",
+      "reason": "حللت: البيانات تستخدم فاصلة منقوطة، والقارئ يفترض فاصلة. المرجع يطلب تعديل القارئ ليطابق التنسيق، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0046",
+      "my_answer": "الخلل: جملة return داخل حلقة for (بإزاحة خاطئة) فتُنهي الدالة بعد أول عنصر. الصحيح: إرجاع result بعد اكتمال الحلقة (إزاحة return خارج الحلقة).",
+      "reason": "حللت: return داخل الحلقة يوقفها مبكرًا. المرجع يطلب تصحيح الإزاحة، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0019",
+      "my_answer": "الخلل: json.load(f.read()) يمرر نصًا إلى json.load التي تتوقع ملفًا. الصحيح: json.load(f) أو json.loads(f.read()).",
+      "reason": "حللت: الخلط بين json.load و json.loads. المرجع يميز بينهما ويطلب الإصلاح، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0022",
+      "my_answer": "الخلل: الكود يقرأ cfg[\"db_host\"] بينما الملف يحتوي مفتاح \"hostname\". يجب تعديل الكود إلى cfg[\"hostname\"].",
+      "reason": "حللت: عدم تطابق المفتاح المطلوب مع الموجود. المرجع يطلب تعديل الكود لقراءة المفتاح الفعلي، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0041",
+      "my_answer": "الخلل: sorted(values) يرتب أبجديًا كنصوص، فيكون \"10\" قبل \"9\". الصحيح: sorted(values, key=int) لترتيب عددي مع بقاء العناصر نصوصًا.",
+      "reason": "حللت: الترتيب الأبجدي لا يطابق العددي. المرجع يطلب مفتاح ترتيب عددي دون تحويل العناصر، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0044",
+      "my_answer": "الخلل: is_leap تعتمد فقط على year % 4 == 0، فتعطي 1900 كبيسة خطأ. الصحيح: year % 4 == 0 and (year % 100 != 0 or year % 400 == 0).",
+      "reason": "حللت: القاعدة الكاملة تستثني المئوية إلا إذا قُبلت على 400. المرجع يطلب تطبيقها، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0004",
+      "my_answer": "الخلل: median ترجع ordered[n // 2] فقط، فلا تعالج الحالة الزوجية. الصحيح: إذا كان n زوجيًا، متوسط العنصرين الأوسطين: (ordered[n//2 - 1] + ordered[n//2]) / 2.",
+      "reason": "حللت: الوسيط للقائمة الزوجية يجب أن يكون متوسط العنصرين الأوسطين. المرجع يطلب معالجة الطولين، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0048",
+      "my_answer": "الخلل: to_12h(12) ترجع 0 و to_12h(0) ترجع 0، بينما المطلوب 12 في الحالتين. الصحيح: return 12 if hour % 12 == 0 else hour % 12.",
+      "reason": "حللت: باقي القسمة على 12 يعطي 0 حيث يجب 12. المرجع يطلب معالجة الحالتين، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0050",
+      "my_answer": "الخلل: strptime تستخدم صيغة \"%d/%m/%Y\" بينما التواريخ واردة بصيغة ISO \"%Y-%m-%d\". الصحيح: datetime.strptime(date_str, \"%Y-%m-%d\").",
+      "reason": "حللت: عدم تطابق صيغة التحليل مع الصيغة الواردة. المرجع يطلب تصحيح الصيغة، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0017",
+      "my_answer": "الخلل: write_report لا ينشئ مجلد الإخراج إذا لم يكن موجودًا. الصحيح: os.makedirs(out_dir, exist_ok=True) قبل فتح الملف.",
+      "reason": "حللت: الاختبار يمرر مجلدًا غير موجود فينهار open. المرجع يطلب إنشاء المجلد تلقائيًا، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0047",
+      "my_answer": "الخلل: strip(\"0\") يزيل الأصفار من الطرفين، بينما المطلوب إزالة البادئة فقط. الصحيح: code.lstrip(\"0\") أو code.lstrip(\"0\") or \"0\".",
+      "reason": "حللت: الفرق بين strip و lstrip. المرجع يطلب إزالة البادئة فقط، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0005",
+      "my_answer": "الخلل: الشروط تستخدم > بدل >=، فالحدود 90 و80 و70 لا تُحتسب. الصحيح: if score >= 90: A، elif score >= 80: B، elif score >= 70: C.",
+      "reason": "حللت: الحدود شاملة، والمقارنات يجب أن تكون >=. المرجع يطلب تصحيح عوامل المقارنة، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0016",
+      "my_answer": "الخلل: الكود يقرأ من data/items.csv بينما الملف الفعلي اسمه data/item.csv (بدون s). يجب تعديل المسار في الكود إلى data/item.csv.",
+      "reason": "حللت: عدم تطابق اسم الملف في المسار مع الموجود. المرجع يطلب مطابقة المسار مع الاسم الفعلي، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0013",
+      "my_answer": "الخلل: payroll.py يستورد TAX من rates بينما الثابت معرف باسم TAX_RATE. يجب تعديل الاستيراد إلى from rates import TAX_RATE أو تعريف TAX في rates.",
+      "reason": "حللت: عدم تطابق اسم الثابت بين الملفين. المرجع يطلب توحيد الاسم، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0009",
+      "my_answer": "الخلل: best initialized to 0، فإذا كانت كل القيم سالبة، تبقى 0 وهي أكبر من السالب. الصحيح: best = temps[0] أو float('-inf') أو None.",
+      "reason": "حللت: التهيئة بالصفر تفشل مع القيم السالبة. المرجع يطلب عدم افتراض أن الصفر أدنى قيمة، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0028",
+      "my_answer": "الخلل: في printer.py، المتغير معرف باسم reslut (خطأ إملائي) ثم يُستخدم result. الصحيح: توحيد الاسم إلى result.",
+      "reason": "حللت: خطأ إملائي في اسم المتغير يسبب NameError. المرجع يطلب توحيد التسمية دون تغيير الرسالة، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0035",
+      "my_answer": "الخلل: الكود يقرأ من data/input.txt بينما الملف الفعلي اسمه data/inputs.txt (بـ s). يجب تعديل المسار في reader.py إلى inputs.txt.",
+      "reason": "حللت: عدم تطابق اسم الملف. المرجع يطلب مطابقة الاسم مع الموجود، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0036",
+      "my_answer": "الخلل: فتح الملف بترميز ascii بينما المحتوى عربي (utf-8). الصحيح: encoding=\"utf-8\".",
+      "reason": "حللت: تعارض الترميز المحدد مع المحتوى. المرجع يطلب القراءة بترميز utf-8، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0038",
+      "my_answer": "الخلل: sorted(items) يقارن int مع str فيحدث TypeError. الصحيح: sorted(items, key=int) لترتيب عددي دون تغيير العناصر.",
+      "reason": "حللت: المقارنة بين الأنواع غير معرّفة. المرجع يطلب مفتاح تحويل عددي، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0031",
+      "my_answer": "الخلل: في checker.py، عند نجاح التحقق (ok=True) يستدعي sys.exit(1) (رمز خطأ). الصحيح: sys.exit(0) عند النجاح أو sys.exit(1) عند الفشل فقط.",
+      "reason": "حللت: شرط الخروج مقلوب. المرجع يطلب تصحيح الشرط بحيث يخرج بخطأ عند الفشل فقط، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0032",
+      "my_answer": "الخلل: في معالج الاستثناء، DEFAULTS[\"fallback\"] غير موجود (المفتاح الصحيح \"fallbacks\"). الصحيح: DEFAULTS[\"fallbacks\"] أو تعريف fallback.",
+      "reason": "حللت: الانهيار داخل معالج الاستثناء بسبب مفتاح خاطئ. المرجع يطلب تصحيح المفتاح، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0033",
+      "my_answer": "الخلل: build_path تستخدم os.path.join(base, \"/\" + name) حيث المقطع الثاني يبدأ بشرطة مائلة فيتجاهل base. الصحيح: os.path.join(base, name) بدون الشرطة المائلة.",
+      "reason": "حللت: os.path.join يتجاهل المسار الأساس إذا كان المقطع التالي يبدأ بشرطة مائلة. المرجع يطلب تصحيح بناء المسار، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0023",
+      "my_answer": "الخلل: main.py يستورد caclculate_total (خطأ إملائي) بينما الدالة معرفة calculate_total. يجب إتاحة الاسم المطلوب في helper.py (تعريف دالة بنفس الاسم أو تصحيح الاستيراد، لكن main.py محرّم).",
+      "reason": "حللت: عدم تطابق الاسم المستورد مع المعرّف. المرجع يطلب حل الخلل من جهة المكتبة، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0024",
+      "my_answer": "الخلل: average تقسم على len(nums) فتنهار مع قائمة فارغة. الصحيح: إضافة حارس يرجع 0 إذا كانت القائمة فارغة.",
+      "reason": "حللت: القسمة على صفر عند قائمة فارغة. المرجع يطلب إضافة حارس في analyzer.py، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0037",
+      "my_answer": "الخلل: cfg[\"mode\"] يسبب KeyError لأن المفتاح غير موجود. الصحيح: cfg.get(\"mode\", \"normal\").",
+      "reason": "حللت: غياب المفتاح في الإعدادات. المرجع يطلب وصولًا آمنًا بقيمة افتراضية، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0030",
+      "my_answer": "الخلل: fact(n) بلا حالة قاعدية، فيستمر بلا نهاية. الصحيح: إضافة if n <= 1: return 1.",
+      "reason": "حللت: غياب الحالة القاعدية للعودية. المرجع يطلب إضافتها، وهذا صحيح. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T20:30:01Z"
+}

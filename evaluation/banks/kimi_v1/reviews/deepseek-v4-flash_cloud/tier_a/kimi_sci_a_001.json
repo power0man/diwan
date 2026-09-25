@@ -1,0 +1,555 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_sci_a_001.json\",\n  \"judgments\": [\n    {\n      \"id\": \"sci_a1_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"a = F/m = 90.0/4.5 = 20.0 م/ث²\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0094\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = g·t = 9.8×2 = 19.6 م/ث\",\n      \"reason\": \"يتبع تعديل السؤال ويستخدم g=9.8، الحساب صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"KE = ½mv² = 0.5×2.0×10.0² = 100.0 جول\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والتربيع والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"h = ½gt² = 0.5×10×3.0² = 45.0 م\",\n      \"reason\": \"الحساب صحيح، والمعايير تمنع الخلط مع v=gt وتشمل الصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"W = F·d = 75.0×2.4 = 180.0 جول\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"W = m·g = 70.0×10 = 700.0 نيوتن\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي التمييز بين الكتلة والوزن والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = g·t = 9.8×2.0 = 19.6 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = g·t = 10×2.5 = 25.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = g·t = 9.8×3.0 = 29.4 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"P = W/t = 980.0/2.0 = 490.0 واط\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"W = F·d = 50.0×12.0 = 600.0 جول\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"W = m·g = 12.0×9.8 = 117.6 نيوتن\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي التمييز بين الكتلة والوزن والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"p = m·v = 3.0×14.0 = 42.0 كغ·م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = g·t = 10×4.0 = 40.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"h = ½gt² = 0.5×10×2.0² = 20.0 م\",\n      \"reason\": \"الحساب صحيح، والمعايير تمنع الخلط مع v=gt وتشمل الصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"PE = m·g·h = 2.0×10×10.0 = 200.0 جول\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0095\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"a = F/m = 40/16 = 2.5 م/ث²\",\n      \"reason\": \"يحتفظ بالقوة ويحدّث الكتلة، الحساب صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"a = F/m = 100.0/20.0 = 5.0 م/ث²\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0057\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"a = F/m = 48.0/6.0 = 8.0 م/ث²\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"p = m·v = 1500.0×12.0 = 18000.0 كغ·م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"PE = m·g·h = 12.0×10×2.5 = 300.0 جول\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"KE = ½mv² = 0.5×60.0×3.0² = 270.0 جول\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والتربيع والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"W = F·d = 35.0×8.0 = 280.0 جول\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0073\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"يندفعون للأمام بسبب القصور الذاتي\",\n      \"reason\": \"الاتجاه والسبب صحيحان، والمعايير تغطي الاتجاه والسبب والوضوح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0072\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"N = m(g−a) = 70.0×(10−3.0) = 490.0 نيوتن\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي فهم الوزن الظاهري والإشارة والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"R = v₀²·sin(2θ)/g = 20.0²×sin(90°)/10 = 40.0 م\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون وقيم الجيب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"H = (v₀·sinθ)²/(2g) = (20.0×0.5)²/(2×10) = 5.0 م\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون وقيم الجيب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"T = 2·v₀·sinθ/g = 2×28.0×0.5/9.8 ≈ 2.9 ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون وقيم الجيب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = √(2KE/m) = √(2×1000.0/8.0) ≈ 15.8 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي عكس العلاقة والجذر والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0091\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v₂ = m₁v₁/m₂ = 2.0×9.0/3.0 = 6.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والاتجاه والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = v₀ + g·t = 3.0 + 10×3.0 = 33.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي عدم نسيان السرعة الابتدائية والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"N = m(g−a) = 50.0×(9.8−1.5) = 415.0 نيوتن\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي فهم الوزن الظاهري والإشارة والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"H = (v₀·sinθ)²/(2g) = (14.0×1)²/(2×9.8) = 10.0 م\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون وقيم الجيب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = √(v₀² + 2W/m) = √(3.0² + 2×100.0/4.0) ≈ 7.7 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي نظرية الشغل والطاقة والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"T = m(g+a) = 2.5×(9.8+1.2) = 27.5 نيوتن\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي جمع الوزن والتسارع والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"R = v₀²·sin(2θ)/g = 30.0²×sin(60°)/10 ≈ 77.9 م\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون وقيم الجيب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = √(2W/m) = √(2×500.0/10.0) = 10.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي نظرية الشغل والطاقة والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"W = F·d·cosθ = 80.0×10.0×0.5 = 400.0 جول\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي مركبة القوة والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0093\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v₁′ = (m₁−m₂)v₁/(m₁+m₂) = (4.0−2.0)×10.0/(4.0+2.0) ≈ 3.3 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي علاقات التصادم المرن والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = √(2KE/m) = √(2×256.0/2.0) = 16.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي عكس العلاقة والجذر والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"t = √(2h/g) = √(2×78.4/9.8) = 4 ث، R = v₀·t = 5.0×4 = 20.0 م\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي فصل الحركتين والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"N = m(g+a) = 60.0×(10+2.0) = 720.0 نيوتن\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي فهم الوزن الظاهري والإشارة والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = v₀ + g·t = 5.0 + 9.8×2.0 = 24.6 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي عدم نسيان السرعة الابتدائية والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0092\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v₂′ = 2m₁v₁/(m₁+m₂) = 2×2.0×9.0/(2.0+2.0) = 9.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي علاقات التصادم المرن والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0090\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v₂ = m₁v₁/m₂ = 3.0×6.0/6.0 = 3.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والاتجاه والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"T = m(g+a) = 4.0×(10+2.0) = 48.0 نيوتن\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي جمع الوزن والتسارع والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"f = μ·m·g = 0.25×8.0×10 = 20.0 نيوتن، a = (55.0−20.0)/8.0 = 4.4 م/ث²\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي حساب الاحتكاك والطرح والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = √(2gh) = √(2×10×45.0) = 30.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والجذر والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"V = m·v/M = 0.02×500.0/4.0 = 2.5 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = √(2gh) = √(2×10×5.0) = 10.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والجذر والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"V = m·v/M = 5.0×200.0/500.0 = 2.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0083\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = (m₁v₁+m₂v₂)/(m₁+m₂) = (2.0×6.0+2.0×0.0)/(2.0+2.0) = 3.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"t = √(2h/g) = √(2×19.6/9.8) = 2.0 ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي اشتقاق الزمن والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"F_net = 200.0−140.0 = 60.0 نيوتن، a = 60.0/3.0 = 20.0 م/ث²\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي حساب المحصلة والتسارع والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"T = 2v₀/g = 2×30.0/10 = 6.0 ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي العلاقة الصحيحة والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0096\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"P = W/t = 800/16 = 50.0 واط\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي ربط الشغل والقدرة والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"t = √(2h/g) = √(2×20.0/10) = 2.0 ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي اشتقاق الزمن والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"t = √(2h/g) = √(2×20.0/10) = 2.0 ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي فصل الحركتين والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0085\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = (m₁v₁+m₂v₂)/(m₁+m₂) = (3.0×8.0+1.0×2.0)/(3.0+1.0) = 6.5 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"F_net = 150.0−90.0 = 60.0 نيوتن، a = 60.0/15.0 = 4.0 م/ث²\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي حساب المحصلة والتسارع والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0082\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"F = m·Δv/Δt = 0.05×200.0/0.01 = 1000.0 نيوتن\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"t = √(2h/g) = √(2×45.0/10) = 3.0 ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي اشتقاق الزمن والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = √(2gh) = √(2×9.8×20.0) ≈ 19.8 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي حفظ الطاقة والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"v = √(2gh) = √(2×10×5.0) = 10.0 م/ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي حفظ الطاقة والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"J = m·Δv = 0.2×25.0 = 5.0 نيوتن·ث\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي الدفع والتغير في كمية التحرك والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0081\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"F = Δp/Δt = 60.0/0.5 = 120.0 نيوتن\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a1_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"W = 0.0 جول لأن القوة عمودية على الإزاحة\",\n      \"reason\": \"الحساب صحيح، والمعايير تغطي فهم الشغل والصيغة.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 63311,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_sci_a_001.json",
+  "file_sha256": "3a6601accdafc54d44341545f265236fbd2ee65069a5d16b141500b3d6ed9406",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "sci_a1_0058",
+      "my_answer": "a = F/m = 90.0/4.5 = 20.0 م/ث²",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0094",
+      "my_answer": "v = g·t = 9.8×2 = 19.6 م/ث",
+      "reason": "يتبع تعديل السؤال ويستخدم g=9.8، الحساب صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0040",
+      "my_answer": "KE = ½mv² = 0.5×2.0×10.0² = 100.0 جول",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والتربيع والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0006",
+      "my_answer": "h = ½gt² = 0.5×10×3.0² = 45.0 م",
+      "reason": "الحساب صحيح، والمعايير تمنع الخلط مع v=gt وتشمل الصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0035",
+      "my_answer": "W = F·d = 75.0×2.4 = 180.0 جول",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0068",
+      "my_answer": "W = m·g = 70.0×10 = 700.0 نيوتن",
+      "reason": "الحساب صحيح، والمعايير تغطي التمييز بين الكتلة والوزن والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0004",
+      "my_answer": "v = g·t = 9.8×2.0 = 19.6 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0001",
+      "my_answer": "v = g·t = 10×2.5 = 25.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0002",
+      "my_answer": "v = g·t = 9.8×3.0 = 29.4 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0050",
+      "my_answer": "P = W/t = 980.0/2.0 = 490.0 واط",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0032",
+      "my_answer": "W = F·d = 50.0×12.0 = 600.0 جول",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0067",
+      "my_answer": "W = m·g = 12.0×9.8 = 117.6 نيوتن",
+      "reason": "الحساب صحيح، والمعايير تغطي التمييز بين الكتلة والوزن والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0076",
+      "my_answer": "p = m·v = 3.0×14.0 = 42.0 كغ·م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0003",
+      "my_answer": "v = g·t = 10×4.0 = 40.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0005",
+      "my_answer": "h = ½gt² = 0.5×10×2.0² = 20.0 م",
+      "reason": "الحساب صحيح، والمعايير تمنع الخلط مع v=gt وتشمل الصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0051",
+      "my_answer": "PE = m·g·h = 2.0×10×10.0 = 200.0 جول",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0095",
+      "my_answer": "a = F/m = 40/16 = 2.5 م/ث²",
+      "reason": "يحتفظ بالقوة ويحدّث الكتلة، الحساب صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0056",
+      "my_answer": "a = F/m = 100.0/20.0 = 5.0 م/ث²",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0057",
+      "my_answer": "a = F/m = 48.0/6.0 = 8.0 م/ث²",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0078",
+      "my_answer": "p = m·v = 1500.0×12.0 = 18000.0 كغ·م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0052",
+      "my_answer": "PE = m·g·h = 12.0×10×2.5 = 300.0 جول",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والتعويض والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0041",
+      "my_answer": "KE = ½mv² = 0.5×60.0×3.0² = 270.0 جول",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والتربيع والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0034",
+      "my_answer": "W = F·d = 35.0×8.0 = 280.0 جول",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0073",
+      "my_answer": "يندفعون للأمام بسبب القصور الذاتي",
+      "reason": "الاتجاه والسبب صحيحان، والمعايير تغطي الاتجاه والسبب والوضوح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0072",
+      "my_answer": "N = m(g−a) = 70.0×(10−3.0) = 490.0 نيوتن",
+      "reason": "الحساب صحيح، والمعايير تغطي فهم الوزن الظاهري والإشارة والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0026",
+      "my_answer": "R = v₀²·sin(2θ)/g = 20.0²×sin(90°)/10 = 40.0 م",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون وقيم الجيب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0027",
+      "my_answer": "H = (v₀·sinθ)²/(2g) = (20.0×0.5)²/(2×10) = 5.0 م",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون وقيم الجيب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0031",
+      "my_answer": "T = 2·v₀·sinθ/g = 2×28.0×0.5/9.8 ≈ 2.9 ث",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون وقيم الجيب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0045",
+      "my_answer": "v = √(2KE/m) = √(2×1000.0/8.0) ≈ 15.8 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي عكس العلاقة والجذر والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0091",
+      "my_answer": "v₂ = m₁v₁/m₂ = 2.0×9.0/3.0 = 6.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والاتجاه والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0020",
+      "my_answer": "v = v₀ + g·t = 3.0 + 10×3.0 = 33.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي عدم نسيان السرعة الابتدائية والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0071",
+      "my_answer": "N = m(g−a) = 50.0×(9.8−1.5) = 415.0 نيوتن",
+      "reason": "الحساب صحيح، والمعايير تغطي فهم الوزن الظاهري والإشارة والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0030",
+      "my_answer": "H = (v₀·sinθ)²/(2g) = (14.0×1)²/(2×9.8) = 10.0 م",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون وقيم الجيب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0046",
+      "my_answer": "v = √(v₀² + 2W/m) = √(3.0² + 2×100.0/4.0) ≈ 7.7 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي نظرية الشغل والطاقة والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0075",
+      "my_answer": "T = m(g+a) = 2.5×(9.8+1.2) = 27.5 نيوتن",
+      "reason": "الحساب صحيح، والمعايير تغطي جمع الوزن والتسارع والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0029",
+      "my_answer": "R = v₀²·sin(2θ)/g = 30.0²×sin(60°)/10 ≈ 77.9 م",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون وقيم الجيب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0047",
+      "my_answer": "v = √(2W/m) = √(2×500.0/10.0) = 10.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي نظرية الشغل والطاقة والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0037",
+      "my_answer": "W = F·d·cosθ = 80.0×10.0×0.5 = 400.0 جول",
+      "reason": "الحساب صحيح، والمعايير تغطي مركبة القوة والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0093",
+      "my_answer": "v₁′ = (m₁−m₂)v₁/(m₁+m₂) = (4.0−2.0)×10.0/(4.0+2.0) ≈ 3.3 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي علاقات التصادم المرن والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0044",
+      "my_answer": "v = √(2KE/m) = √(2×256.0/2.0) = 16.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي عكس العلاقة والجذر والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0024",
+      "my_answer": "t = √(2h/g) = √(2×78.4/9.8) = 4 ث، R = v₀·t = 5.0×4 = 20.0 م",
+      "reason": "الحساب صحيح، والمعايير تغطي فصل الحركتين والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0070",
+      "my_answer": "N = m(g+a) = 60.0×(10+2.0) = 720.0 نيوتن",
+      "reason": "الحساب صحيح، والمعايير تغطي فهم الوزن الظاهري والإشارة والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0019",
+      "my_answer": "v = v₀ + g·t = 5.0 + 9.8×2.0 = 24.6 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي عدم نسيان السرعة الابتدائية والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0092",
+      "my_answer": "v₂′ = 2m₁v₁/(m₁+m₂) = 2×2.0×9.0/(2.0+2.0) = 9.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي علاقات التصادم المرن والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0090",
+      "my_answer": "v₂ = m₁v₁/m₂ = 3.0×6.0/6.0 = 3.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والاتجاه والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0074",
+      "my_answer": "T = m(g+a) = 4.0×(10+2.0) = 48.0 نيوتن",
+      "reason": "الحساب صحيح، والمعايير تغطي جمع الوزن والتسارع والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0064",
+      "my_answer": "f = μ·m·g = 0.25×8.0×10 = 20.0 نيوتن، a = (55.0−20.0)/8.0 = 4.4 م/ث²",
+      "reason": "الحساب صحيح، والمعايير تغطي حساب الاحتكاك والطرح والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0015",
+      "my_answer": "v = √(2gh) = √(2×10×45.0) = 30.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والجذر والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0088",
+      "my_answer": "V = m·v/M = 0.02×500.0/4.0 = 2.5 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0014",
+      "my_answer": "v = √(2gh) = √(2×10×5.0) = 10.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والجذر والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0089",
+      "my_answer": "V = m·v/M = 5.0×200.0/500.0 = 2.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0083",
+      "my_answer": "v = (m₁v₁+m₂v₂)/(m₁+m₂) = (2.0×6.0+2.0×0.0)/(2.0+2.0) = 3.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0011",
+      "my_answer": "t = √(2h/g) = √(2×19.6/9.8) = 2.0 ث",
+      "reason": "الحساب صحيح، والمعايير تغطي اشتقاق الزمن والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0062",
+      "my_answer": "F_net = 200.0−140.0 = 60.0 نيوتن، a = 60.0/3.0 = 20.0 م/ث²",
+      "reason": "الحساب صحيح، والمعايير تغطي حساب المحصلة والتسارع والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0018",
+      "my_answer": "T = 2v₀/g = 2×30.0/10 = 6.0 ث",
+      "reason": "الحساب صحيح، والمعايير تغطي العلاقة الصحيحة والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0096",
+      "my_answer": "P = W/t = 800/16 = 50.0 واط",
+      "reason": "الحساب صحيح، والمعايير تغطي ربط الشغل والقدرة والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0009",
+      "my_answer": "t = √(2h/g) = √(2×20.0/10) = 2.0 ث",
+      "reason": "الحساب صحيح، والمعايير تغطي اشتقاق الزمن والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0022",
+      "my_answer": "t = √(2h/g) = √(2×20.0/10) = 2.0 ث",
+      "reason": "الحساب صحيح، والمعايير تغطي فصل الحركتين والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0085",
+      "my_answer": "v = (m₁v₁+m₂v₂)/(m₁+m₂) = (3.0×8.0+1.0×2.0)/(3.0+1.0) = 6.5 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي حفظ كمية التحرك والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0061",
+      "my_answer": "F_net = 150.0−90.0 = 60.0 نيوتن، a = 60.0/15.0 = 4.0 م/ث²",
+      "reason": "الحساب صحيح، والمعايير تغطي حساب المحصلة والتسارع والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0082",
+      "my_answer": "F = m·Δv/Δt = 0.05×200.0/0.01 = 1000.0 نيوتن",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0010",
+      "my_answer": "t = √(2h/g) = √(2×45.0/10) = 3.0 ث",
+      "reason": "الحساب صحيح، والمعايير تغطي اشتقاق الزمن والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0054",
+      "my_answer": "v = √(2gh) = √(2×9.8×20.0) ≈ 19.8 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي حفظ الطاقة والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0053",
+      "my_answer": "v = √(2gh) = √(2×10×5.0) = 10.0 م/ث",
+      "reason": "الحساب صحيح، والمعايير تغطي حفظ الطاقة والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0079",
+      "my_answer": "J = m·Δv = 0.2×25.0 = 5.0 نيوتن·ث",
+      "reason": "الحساب صحيح، والمعايير تغطي الدفع والتغير في كمية التحرك والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0081",
+      "my_answer": "F = Δp/Δt = 60.0/0.5 = 120.0 نيوتن",
+      "reason": "الحساب صحيح، والمعايير تغطي القانون والحساب والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a1_0038",
+      "my_answer": "W = 0.0 جول لأن القوة عمودية على الإزاحة",
+      "reason": "الحساب صحيح، والمعايير تغطي فهم الشغل والصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T19:38:32Z"
+}

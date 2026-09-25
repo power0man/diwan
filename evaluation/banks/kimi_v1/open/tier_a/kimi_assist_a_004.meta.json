@@ -1,0 +1,511 @@
+{
+ "suite_id": "kimi_assist_a_004",
+ "authored_by": "kimi",
+ "authored_at": "2026-09-24",
+ "tier": "A",
+ "cases": {
+  "ifx_a_0045": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص أربع نقاط فقط؛ عدد النقاط الدقيق يُخفق مع الاسترسال أو التقصير.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "- اشرب ماء كافيًا كل يوم\n- نم مبكرًا ثماني ساعات\n- امشِ نصف ساعة يوميًّا\n- قلل السكر والملح دائمًا\n- افطر قبل مغادرة المنزل صباحًا",
+   "wrong_solution": "- اشرب ماء كافيًا كل يوم\n- نم مبكرًا ثماني ساعات\n- امشِ نصف ساعة يوميًّا\n- قلل السكر والملح دائمًا"
+  },
+  "ifx_a_0009": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "عدّ بسيط بلا قيود أخرى؛ الناقص ١٠ كلمات.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "مدرستنا بيت العلم وموطن الأخلاق وصناعة المستقبل الواعد",
+   "wrong_solution": "مدرستنا بيت العلم وموطن الأخلاق الحميدة وصناعة المستقبل المشرق"
+  },
+  "ifx_a_0038": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص أنهى السطر الثاني بـ«الكبير» فكسر القافية.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "وقفت على الشاطئ في المساء\nوالموج يحكي حكاية الصيادين في الشتاء\nوالنسيم عليل في ذلك المساء",
+   "wrong_solution": "وقفت على الشاطئ في المساء\nوالموج يحكي حكاية البحر الكبير\nوالنسيم عليل في ذلك المساء"
+  },
+  "ifx_a_0043": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص عكس الترتيب المطلوب صراحة.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "هل زرت حديقة الحيوان يومًا مع أطفالك؟ زرناها الجمعة الماضية وقضينا يومًا جميلًا.",
+   "wrong_solution": "زرنا حديقة الحيوان الجمعة الماضية. هل زرتها يومًا مع أطفالك؟"
+  },
+  "ifx_a_0015": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص بدأ السطر الأخير بـ«ازرع» فيكسر التهجية.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "نور العلم يضيء دروب الحياة\nواصل طلب المعرفة كل يوم\nرافق الكتب تجد خير رفيق",
+   "wrong_solution": "نور العلم يضيء دروب الحياة\nواصل طلب المعرفة كل يوم\nازرع حب القراءة في قلبك"
+  },
+  "ifx_a_0032": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص بلا أرقام إطلاقًا؛ القيد يفرض تضمين أرقام لا تجنبها.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "انطلقنا فجرًا نحو الصحراء في رحلة امتدت 6 ساعات. قطعنا 420 كيلومترًا قبل أن نصل إلى المخيم.",
+   "wrong_solution": "انطلقنا فجرًا نحو الصحراء في رحلة طويلة. وصلنا إلى المخيم قبل الغروب."
+  },
+  "ifx_a_0007": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "العدّ الكلي الدقيق أصعب من المجال؛ النموذج الناقص ١٠ كلمات.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "حديقتنا الصغيرة مليئة بالورود الحمراء والياسمين وتزورها العصافير الجميلة كل صباح باكرًا.",
+   "wrong_solution": "حديقتنا جميلة ومليئة بالورود والياسمين والعصافير تزورها."
+  },
+  "ifx_a_0047": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "سقف ٤ كلمات خانق لقواعد مرور اعتيادية الطول؛ الناقص تجاوزه في نقطة واحدة فقط.",
+   "answer_verified_by": "mechanical",
+   "trap": "«اربط حزام الأمان دائمًا في كل رحلة» صياغة طبيعية لكنها ٦ كلمات.",
+   "correct_solution": "- اربط حزام الأمان دائمًا\n- التزم بحدود السرعة\n- لا تستخدم هاتفك\n- احترم إشارات التوقف تمامًا\n- افحص الإطارات دوريًّا باستمرار\n- أعطِ المشاة حقهم",
+   "wrong_solution": "- اربط حزام الأمان دائمًا في كل رحلة\n- التزم بحدود السرعة\n- لا تستخدم هاتفك\n- احترم إشارات التوقف تمامًا\n- افحص الإطارات دوريًّا باستمرار\n- أعطِ المشاة حقهم"
+  },
+  "ifx_a_0004": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "قيد موضعي (بداية الجملة الثانية) فوق القيود العددية؛ الناقص يستبدلها ببداية حرة.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "السفر يعلم الإنسان صبرًا وتدبرًا. ومع كل رحلة تنضج التجارب وتتسع الآفاق. تعود من الغربة بقلب جديد.",
+   "wrong_solution": "السفر مفيد وممتع للجميع. السفر يوسع المدارك ويزيل الهموم. تعود من الغربة بقلب جديد."
+  },
+  "ifx_a_0010": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "عشرون كلمة بالضبط مع ثلاثة محظورات؛ الناقص ١٨ كلمة وفيه «رائع».",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "عطر يختصر حكاية الشرق الأصيل بعبق العود الفاخر والمسك ويمنح حضورك هيبة آسرة تدوم من الصباح الباكر حتى أواخر الليل.",
+   "wrong_solution": "عطر رائع يختصر حكاية الشرق بعبق العود والمسك ويمنح حضورك هيبة تدوم من الصباح حتى الليل."
+  },
+  "ifx_a_0012": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "تتابع غير منتظم (٥،٧،٤،٦) يمنع الاعتماد على إيقاع واحد.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "مدينة تعانق البحر كل صباح\nبيوتها البيضاء تطل على الميناء القديم الجميل\nنسيمها عليل طوال العام\nيقصدها الزوار من كل حدب وصوب",
+   "wrong_solution": "مدينة تعانق البحر كل صباح\nبيوتها البيضاء تطل على الميناء القديم\nنسيمها عليل طوال العام\nيقصدها الزوار من كل حدب وصوب"
+  },
+  "ifx_a_0037": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "الناقص أطال السطر الأول إلى ١١ كلمة؛ قيد السقف مع التناوب مزدوج.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "سألت جدي عن سر طول عافيته\nفأجاب القناعة كنز لا ينفد\nسألت وهل تندم على شيء مضى\nفأجاب ندمت على كل قسوة بلا داع",
+   "wrong_solution": "سألت جدي عن سر طول عافيته وتدخينه للحكمة كل صباح مع جيرانه\nفأجاب القناعة كنز لا ينفد\nسألت وهل تندم على شيء مضى\nفأجاب ندمت على كل قسوة بلا داع"
+  },
+  "ifx_a_0044": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "الناقص بدّل موضعي السؤال والتعجب؛ أربعة أنماط متتابعة أصعب في الحفظ.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "هبّت العاصفة فجأة على المدينة. هل رأيت السماء صفراء كالنار؟ ما أشد غبارها وهو يغطي كل شيء! عاد الهدوء بعد ساعات طويلة.",
+   "wrong_solution": "هبّت العاصفة فجأة على المدينة. ما أشد غبارها وهو يغطي كل شيء! هل رأيت السماء صفراء كالنار؟ عاد الهدوء بعد ساعات طويلة."
+  },
+  "ifx_a_0029": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "مجال ضيق جدًّا (١٠ أحرف سماح) مع حظر الفواصل؛ الناقص أطول وفيه فاصلة وتعجب.",
+   "answer_verified_by": "mechanical",
+   "trap": "الأسلوب التغريدي الطبيعي يجلب الفاصلة والتعجب تلقائيًّا.",
+   "correct_solution": "قهوة الصباح مزاج لا يعادله سواه.",
+   "wrong_solution": "قهوة الصباح مزاج رائع، لا يعادله شيء أبدًا!"
+  },
+  "ifx_a_0024": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "حظر التكرار المطلق يشمل أدوات الربط («من»، «في»، «عن»)؛ الناقص كرر «الوقت/وقتك».",
+   "answer_verified_by": "mechanical",
+   "trap": "تنويع حروف الجر أصعب من تنويع الأسماء؛ النموذج المضمون استعمل كل حرف جر مرة واحدة.",
+   "correct_solution": "الوقت كالسيف إن لم تقطعه قطعك. اغتنم لحظاتك قبل فواتها. كل دقيقة ضاعت تعجز عن استرجاعها. نظّم يومك تسعد بحياتك.",
+   "wrong_solution": "الوقت كالسيف إن لم تقطعه قطعك. اغتنم وقتك قبل فوات الوقت. كل دقيقة ضاعت تعجز عن استرجاعها. نظّم يومك تسعد بحياتك."
+  },
+  "ifx_a_0018": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "قيدان متقاطعان: التهجية والعدّ؛ الناقص أصاب التهجية وأخفق في عدّ السطر الأول (٦ كلمات).",
+   "answer_verified_by": "mechanical",
+   "trap": "السطر الأول الطبيعي «أملي بالله لا ينقطع أبدًا» ست كلمات؛ ضبطه إلى خمس يتطلب حذفًا واعيًا.",
+   "correct_solution": "أملي بالله وحده لا ينقطع\nمع كل فجر جديد يتجدد\nللصابرين فرج من الله قريب",
+   "wrong_solution": "أملي بالله وحده لا ينقطع أبدًا\nمع كل فجر جديد يتجدد\nللصابرين فرج من الله قريب"
+  },
+  "ifx_a_0014": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "الناقص أنهى بـ«بوقت كاف» وهو طبيعي جدًّا؛ القيد الموضعي يُنسى بعد ضبط الأطوال.",
+   "answer_verified_by": "mechanical",
+   "trap": "«وصل مبكرًا» كليشيه يغري بإنهاء مختلف عن المطلوب حرفيًّا.",
+   "correct_solution": "احفظ جوازك جيدًا دائمًا\nراجع حجز الطيران قبل موعدك بيوم\nلا تنس شاحن هاتفك المحمول\nوصل إلى المطار قبل موعد الإقلاع مبكرًا",
+   "wrong_solution": "احفظ جوازك جيدًا دائمًا\nراجع حجز الطيران قبل موعدك بيوم\nلا تنس شاحن هاتفك المحمول\nوصل إلى المطار قبل موعد الإقلاع بوقت كاف"
+  },
+  "ifx_a_0022": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "«خطط» و«يخطط» و«تخطيط» مفردات أساسية في موضوع النجاح وهي محظورة كلها.",
+   "answer_verified_by": "mechanical",
+   "trap": "موضوع النجاح يستدعي مفردات التخطيط آلياً؛ كلها بـ«خ».",
+   "correct_solution": "النجاح ثمرة صبر وعمل دؤوب. من سار على الدرب وصل. لا تيأس مهما بطأ الوصول. واصل السير فالعاقبة حميدة.",
+   "wrong_solution": "النجاح ثمرة صبر وعمل دؤوب. من سار على الدرب وصل. خطط ليومك من الليلة السابقة. واصل السير فالعاقبة حميدة."
+  },
+  "ifx_a_0041": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "قيدان متقاطعان (قافية وعدّ)؛ الناقص أصاب القافية وأسقط عدّ السطر الأول (٥ كلمات).",
+   "answer_verified_by": "mechanical",
+   "trap": "السطر الأول بدون «صباحًا» ألحن سمعًا لكنه خمس كلمات.",
+   "correct_solution": "قص الشاعر صباحًا هموم أهل الحزين\nوذرف دمعه الغزير على أوجاع اليتيمين\nوسار يسأل عن أحوال ذاك السجين",
+   "wrong_solution": "قص الشاعر هموم أهل الحزين\nوذرف دمعه الغزير على أوجاع اليتيمين\nوسار يسأل عن أحوال ذاك السجين"
+  },
+  "ifx_a_0011": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص سطر أول من ٧ كلمات؛ خطأ كلمة واحدة يُسقط الحالة.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "أشرقت الشمس فوق أسطح البيوت القديمة\nفتح النوافذ كل صباح\nاحتسى قهوته الصباحية بهدوء تام",
+   "wrong_solution": "أشرقت الشمس فوق أسطح البيوت القديمة الجميلة\nفتح النوافذ كل صباح\nاحتسى قهوته الصباحية بهدوء تام"
+  },
+  "ifx_a_0017": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص قدّم السطر الرائي على الدالي؛ ترتيب الحروف جوهر الحالة.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "بدر الليلة يملأ السماء ضياء\nدرب النجوم واضح فوق الرؤوس\nراحة النفوس في سكون الليل",
+   "wrong_solution": "بدر الليلة يملأ السماء ضياء\nراحة النفوس في سكون الليل\nدرب النجوم واضح فوق الرؤوس"
+  },
+  "ifx_a_0036": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص كسر التناوب في السطرين الرابع والخامس؛ التناوب الطويل يتدهور في المنتصف.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "في الصباح أشرب قهوتي على مهل\nفي المساء أمشي ساعة كاملة\nفي الصباح أقرأ الأخبار بسرعة\nفي المساء أجلس مع أهلي\nفي الصباح أرتب مهام عملي\nفي المساء أنام مبكرًا دائمًا",
+   "wrong_solution": "في الصباح أشرب قهوتي على مهل\nفي المساء أمشي ساعة كاملة\nفي الصباح أقرأ الأخبار بسرعة\nفي الصباح أرتب مهام عملي\nفي المساء أجلس مع أهلي\nفي المساء أنام مبكرًا دائمًا"
+  },
+  "ifx_a_0025": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص كرر «المطر» أربع مرات؛ موضوع الجمل يغري بتكرار اسمها.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "هطل المطر فأنعش الأرض العطشى. خرج الأطفال يرقصون تحت الغيث. عادت الحقول خضراء بعد طول جفاف.",
+   "wrong_solution": "المطر نزل بغزارة على المدينة. أحب الناس المطر وفرحوا به كثيرًا. المطر يسقي الأرض العطشى."
+  },
+  "ifx_a_0003": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "مجال ضيق (٤-٦) على أربع جمل؛ النموذج الناقص ثلاث جمل فقط.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "العمل التطوعي غرس طيب الأثر. يساعد المتطوع مجتمعه بكل محبة. تكبر الفائدة حين يتعاون الجميع. العطاء سرّ السعادة الحقيقية.",
+   "wrong_solution": "العمل التطوعي جميل ومفيد للمجتمع كله. يساعد المتطوعون المحتاجين في كل مكان وزمان. العطاء شيء رائع."
+  },
+  "ifx_a_0046": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "«مال» أول كلمة في موضوع التوفير؛ الناقص الأول سقط بها والثاني تجاوز سقف الكلمات.",
+   "answer_verified_by": "mechanical",
+   "trap": "موضوع التوفير يستدعي كلمة «مال» غريزيًّا.",
+   "correct_solution": "- أطفئ الأنوار عند الخروج\n- أصلح التسريب فور حدوثه\n- اشترِ حاجتك بقائمة مسبقة\n- قارن الأسعار قبل الشراء",
+   "wrong_solution": "- أطفئ الأنوار عند الخروج من الغرفة دائمًا\n- أصلح التسريب فور حدوثه\n- اشترِ حاجتك بقائمة مسبقة\n- قارن الأسعار قبل الشراء"
+  },
+  "ifx_a_0027": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "ضبط الطول بالحروف قيد نادر؛ الناقص تجاوز الحد الأعلى بكثير.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "الذكاء الاصطناعي أنظمة تحاكي قدرات الإنسان على الفهم والتعلم.",
+   "wrong_solution": "الذكاء الاصطناعي هو علم بناء أنظمة حاسوبية قادرة على محاكاة قدرات الإنسان في الفهم والتعلم واتخاذ القرار."
+  },
+  "ifx_a_0021": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص أدخل «شرارة» في جملة بدت مثالية؛ الحرف المحظور يتطلب مسحًا كاملًا للناتج.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "أقرأ كل يوم صفحات من كتاب مفيد. الكتاب صديق وفي لمن أحبه. من قرأ كثر علمه وكبر عقله.",
+   "wrong_solution": "أقرأ كل يوم صفحات من كتاب مفيد. القراءة غذاء العقل وشرارة الفكر. من قرأ كثر علمه وكبر عقله."
+  },
+  "ifx_a_0013": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص أطال السطر الثاني كلمة واحدة («جدًا») فاختل التتابع.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "نظّم وقتك جيدًا وابدأ بالدروس الصعبة أولًا\nنم مبكرًا قبل الامتحان دائمًا\nراجع ملخصاتك بهدوء وثقة تامة بالنفس",
+   "wrong_solution": "نظّم وقتك جيدًا وابدأ بالدروس الصعبة أولًا\nنم مبكرًا جدًا قبل الامتحان دائمًا\nراجع ملخصاتك بهدوء وثقة تامة بالنفس"
+  },
+  "ifx_a_0026": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص الأول سقط بكلمة «مشروع» الطبيعية في السياق، والثاني كرر «اليوم» أربع مرات.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "تأخرت اليوم عن موعدنا المحدد. انتظرناك طويلًا قبل البدء بالنقاش. أرجو الالتزام بالحضور مستقبلًا احترامًا للجميع.",
+   "wrong_solution": "تأخرت اليوم عن موعدنا. انتظرناك اليوم طويلًا اليوم قبل البدء. أرجو الالتزام اليوم بالحضور."
+  },
+  "ifx_a_0028": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص قصير جدًّا (٢٦ حرفًا)؛ الحد الأدنى للطول قيد يُتجاهل كثيرًا.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "ذاكر دروسك أولًا بأول ولا تؤجل عمل اليوم إلى الغد.",
+   "wrong_solution": "ذاكر دروسك أولًا بأول."
+  },
+  "ifx_a_0030": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص قصير جدًّا (٤٦ حرفًا)؛ الجمع بين عدّ الجمل وعدّ الحروف مزدوج الصعوبة.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "الوطن ليس أرضًا نسكنها فحسب بل ذاكرة نحملها أينما ذهبنا. نخدمه بعملنا قبل أن نتغنى بحبه.",
+   "wrong_solution": "الوطن أغلى ما نملك. نحبه ونفديه بأرواحنا."
+  },
+  "ifx_a_0034": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص أصاب العدد وسقط بكلمة «خصومات» المحظورة أصلها.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "يفتح معرض المستقبل للسيارات أبوابه يوم الجمعة في تمام الساعة 10 صباحًا. تفضلوا بزيارتنا لمشاهدة أحدث الطرازات العالمية.",
+   "wrong_solution": "يفتح معرض المستقبل للسيارات أبوابه يوم الجمعة في تمام الساعة 10 صباحًا ويستمر حتى 11 مساءً. تفضلوا بزيارتنا لمشاهدة أحدث الطرازات العالمية."
+  },
+  "ifx_a_0008": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "رسالة امتنان بلا «شكر» تناقض غريزي؛ الناقص الأول فيه «أشكرك» والثاني ١٣ كلمة.",
+   "answer_verified_by": "mechanical",
+   "trap": "كلمة «شكر» أول ما يخطر عند طلب رسالة امتنان.",
+   "correct_solution": "أقدّر لك وقوفك الصادق بجانبي وقت الحاجة فقد كان لموقفك النبيل أثر كبير في قلبي.",
+   "wrong_solution": "أشكرك من كل قلبي على وقوفك الصادق بجانبي وقت الحاجة يا صديقي العزيز."
+  },
+  "ifx_a_0042": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص قدّم التعجب على السؤال؛ ترتيب أنماط الجمل قيد مستقل عن عددها.",
+   "answer_verified_by": "mechanical",
+   "correct_solution": "هل يدرك الشباب قيمة أعمارهم؟ ما أجمل أن يستيقظ الإنسان على هدف واضح! المستقبل لمن يعمل له اليوم.",
+   "wrong_solution": "ما أجمل أن يستيقظ الإنسان على هدف واضح! هل يدرك الشباب قيمة أعمارهم؟ المستقبل لمن يعمل له اليوم."
+  },
+  "mtx_a_0001": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "استبدال عنصر في قائمة مرتبة مع الحفاظ على موضعه.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0006": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "عمليتان متعاكستان على الصنف نفسه مع عمليات مشتتة على أصناف أخرى.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0029": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "تحجيم كمية بسيط بعامل اثنين.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0017": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "تحديث حقل واحد في سجل مع الحفاظ على الباقي.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0021": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "تبديل لاعب في مركز واحد؛ أبسط صور التحديث.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0033": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "تحديث قيمة واحدة بقيمة أحدث.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0037": {
+   "difficulty": "easy",
+   "expected_failure_likely": false,
+   "why_this_case": "إزاحة ترقيم بعد حذف الرأس؛ الفخّ الجواب «فهد» (الأول الجديد).",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0014": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "الناقص بدّل موضعي الكلمتين المضافتين؛ المواضع الدقيقة هي جوهر القياس.",
+   "answer_verified_by": "mechanical",
+   "trap": "كلتا الكلمتين صفتان؛ تبادل موضعيهما يعطي جملة مقبولة لغويًّا وخاطئة قياسيًّا."
+  },
+  "mtx_a_0015": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "التراجع عن آخر عملية فقط يختبر تتبع مكدس التعديلات لا آخر حالة.",
+   "answer_verified_by": "mechanical",
+   "trap": "الناقص ترك الحذف ساريًا؛ ومن يتراجع عن كل شيء يعيد الجملة الأصلية."
+  },
+  "mtx_a_0024": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "تحديث ثم نسخه بعودة الوضع الأصلي؛ معلومة «ناصر» أحدث زمنيًّا لكنها ملغاة.",
+   "answer_verified_by": "mechanical",
+   "trap": "الاسم الأخير المذكور في سياق الحراسة (ناصر) هو الإجابة الخاطئة."
+  },
+  "mtx_a_0039": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "تقديم ثم إلغاؤه ثم انسحاب؛ الناقص احتفظ بتقديم سلوى الملغى.",
+   "answer_verified_by": "mechanical",
+   "trap": "بعد ثلاثة تغييرات يبدو ترتيب «سلوى، ريم» معقولًا لمن فقد الإلغاء."
+  },
+  "mtx_a_0023": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "سلسلة إزاحات مترابطة (انتقالان مسببان)؛ تتبع من خلف المركز ومن ملأه.",
+   "answer_verified_by": "mechanical",
+   "trap": "فيصل كان وسطًا أيمن طوال الحوار الأول؛ الذاكرة الأولى أقوى من التحديث."
+  },
+  "mtx_a_0010": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "الكسور على الرصيد المتحرك هي الفخّ الحسابي الأعمق في هذه المجموعة.",
+   "answer_verified_by": "mechanical",
+   "trap": "من يحسب الربع والنصف من الـ200 الأصلية يصل إلى 150."
+  },
+  "mtx_a_0032": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "فخّان متتاليان: إلغاء التحجيم، ومعلومة مشتتة (الشوفان) تغري بجمعها للدقيق.",
+   "answer_verified_by": "mechanical",
+   "trap": "من يجمع 100 الشوفان على الدقيق يجيب 400، ومن يبقي المضاعفة يجيب 600 أو 700."
+  },
+  "mtx_a_0020": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "إلغاء صريح لتحديث سابق مع تحديث لاحق مستقل؛ الفخّ في بقاء القيمة الملغاة.",
+   "answer_verified_by": "mechanical",
+   "trap": "من يحتفظ بـ5000 للسفر سقط في الفخّ المدسوس رغم صراحة الإلغاء."
+  },
+  "mtx_a_0026": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "تصحيح جزئي صريح (خانتان فقط) مع طلب نسيان القديم؛ فخّ الأرقام المتشابهة.",
+   "answer_verified_by": "mechanical",
+   "trap": "الرقمان يختلفان في خانتين متجاورتين (67/76)؛ الخلط بينهما سهل جدًّا."
+  },
+  "mtx_a_0047": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "عكس حالة إنجاز (إعادة فتح) ثم إنجاز لاحق؛ الناقص (1) تعامل مع الأقفال كمنجزة نهائية.",
+   "answer_verified_by": "mechanical",
+   "trap": "سلسلة الحالات على المهمة نفسها: مفتوحة ← منجزة ← مفتوحة؛ آخر حالة هي الفيصل."
+  },
+  "mtx_a_0028": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "إلغاء انتقائي لتحديث حقل دون آخر؛ يجب عزل أثر الإلغاء عن بقية التحديثات.",
+   "answer_verified_by": "mechanical",
+   "trap": "التحديثان وردا بصيغة واحدة؛ من يعامل الإلغاء كإلغاء شامل يُرجع البريد أيضًا."
+  },
+  "mtx_a_0009": {
+   "difficulty": "hard",
+   "expected_failure_likely": true,
+   "why_this_case": "إلغاء صريح لعملية وسط سلسلة؛ يجب عكس أثرها دون سواها.",
+   "answer_verified_by": "mechanical",
+   "trap": "من لا يطبق الإلغاء يجيب 70، ومن يلغي آخر عمليتين يجيب 85 بالخطأ المصادف؟ لا—من يلغي الشحنة يجيب 80."
+  },
+  "mtx_a_0018": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص طبّق التحديث الأول وأسقط الثاني.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0043": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "خصم نسبة على عنصر واحد لا على الإجمالي؛ الناقص (480) تجاهل الخصم.",
+   "answer_verified_by": "mechanical",
+   "trap": "من يخصم 25٪ من الإجمالي الكلي يخطئ بطريقة أخرى (يحصل على 375)."
+  },
+  "mtx_a_0008": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "تصحيح كمية عملية سابقة يتطلب تعديل الأثر لا تجاهل العملية كلها.",
+   "answer_verified_by": "mechanical",
+   "trap": "من يتجاهل التصحيح يحصل على 60، ومن يحذف العملية كلها يحصل على 90."
+  },
+  "mtx_a_0045": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "نقل مسؤولية مع معلومة مشتتة عن مسؤولية أخرى لم تتغير.",
+   "answer_verified_by": "mechanical",
+   "trap": "تشابه الأسماء (رامي/سامي) متعمد؛ والمشتت عن دينا وفادي يزيد الحمل."
+  },
+  "mtx_a_0027": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "حقلان يتحدثان بوتائر مختلفة؛ الناقص احتفظ بالقيمة الوسطى للحي.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0007": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "أربع عمليات متداخلة على أربعة أصناف؛ المطلوب صنف واحد تأثر بعمليتين غير متتاليتين.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0046": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "حذف وإلحاق متتاليان على قائمة؛ الناقص احتفظ بالمهمة المنجزة.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0041": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "تغيير كمية عنصر موجود يضاعف أثره؛ الناقص (95) جمع الدجاج مرة واحدة.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0030": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "عمليتان متتاليتان من نوعين مختلفين (تحجيم ثم إضافة).",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0034": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "الناقص طبّق تحديثًا واحدًا من اثنين.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0022": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "تبديلان متزامنان في مركزين؛ الخلط بين البديلين هو الفخّ.",
+   "answer_verified_by": "mechanical",
+   "trap": "سلمان آخر اسم ورد في الحوار؛ قربه الزمني يغري باختياره."
+  },
+  "mtx_a_0025": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "سلسلة من ثلاث قيم للحقل نفسه؛ يقيس الاحتفاظ بالأخيرة لا الأوسطى.",
+   "answer_verified_by": "mechanical",
+   "trap": "القيمة الوسطى (workmail) حديثة بما يكفي للتسلل إلى الجواب."
+  },
+  "mtx_a_0012": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "استبدال بالمحتوى ثم حذف بالفهرس؛ العدّ بعد الاستبدال لا يتغير هنا لكنه يختبر الدقة.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0031": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "تنصيف ثم تعديل؛ ترتيب العمليتين يغيّر الناتج.",
+   "answer_verified_by": "mechanical"
+  },
+  "mtx_a_0019": {
+   "difficulty": "medium",
+   "expected_failure_likely": false,
+   "why_this_case": "التحويل عملية مزدوجة الأثر؛ الناقص زاد التطوير ونسي إنقاص الدعم.",
+   "answer_verified_by": "mechanical",
+   "trap": "خطأ شائع: تحديث جهة واحدة من التحويل."
+  }
+ }
+}

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-09-23",
+  "base_commit": "554e0032380c8ffdd710da4b1e30566bf5680b44",
+  "scope": "synthetic_probes_and_readonly_owner_inventory",
+  "claims": [
+    {
+      "decision": "ق٤٦",
+      "claim": "جسر أدوات الوكيل يتيح كتابة الوثيقة في مساحة العمل مع الرجوع",
+      "how_i_tried": "export_agent_tools.write_workspace_document على مساحة مؤقتة فارغة",
+      "result": "refuted",
+      "evidence": {
+        "exception": "TypeError",
+        "reason": "argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'",
+        "written": false
+      }
+    },
+    {
+      "decision": "ق٤٧",
+      "claim": "بناء فهرس SQLite في projections والخوارزمية في core مستقلة عن الإدخال والإخراج",
+      "how_i_tried": "استدعاء core.linguistics.morphology.build_projection على مسار مؤقت",
+      "result": "refuted",
+      "evidence": {
+        "implementation_module": "core.linguistics.morphology",
+        "sqlite_created": true,
+        "rows": 1
+      }
+    },
+    {
+      "decision": "ق٤٨",
+      "claim": "سحب نشر اللوائح من publish ومنع توزيع المصدر مع إبقاء الاستخدام الداخلي",
+      "how_i_tried": "قراءة آخر قيد استحواذ وجرد ملفات إسقاط النشر",
+      "result": "held",
+      "evidence": {
+        "source_id": "claude-project-regulations-export",
+        "use_distribution": false,
+        "use_internal": true,
+        "published_text_files": 0
+      },
+      "limits": [
+        "لم يفحص مزامنة Drive السحابية أو مشاركة الملفات",
+        "المتون الداخلية وتاريخ Git لم يحذفا"
+      ]
+    }
+  ]
+}

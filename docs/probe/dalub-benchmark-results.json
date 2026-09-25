@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "benchmark": "DALUB-v1",
+  "title": "تقرير المقارنة الثلاثية لمعيار DALUB الوطني والسيادة المعرفية",
+  "version": "2.0.0",
+  "date": "2026-09-23",
+  "split": "all",
+  "total_cases": 400,
+  "duration_seconds": "0.0107",
+  "receipt_hash": "b7c14e3a0049bf6e90646717e93563e956a9e3fccdc83ccde768c41b6745060a",
+  "status": "certified",
+  "summary": {
+    "model_alone": {
+      "total_cases": 400,
+      "passed_cases": 122,
+      "accuracy_bp": 3050,
+      "accuracy_str": "30.5%",
+      "factuality_bp": 3590,
+      "completeness_bp": 3950,
+      "attribution_bp": 0,
+      "hallucination_penalty_bp": 3913,
+      "overall_bp": 1891
+    },
+    "naive_rag": {
+      "total_cases": 400,
+      "passed_cases": 141,
+      "accuracy_bp": 3525,
+      "accuracy_str": "35.2%",
+      "factuality_bp": 3768,
+      "completeness_bp": 4077,
+      "attribution_bp": 2047,
+      "hallucination_penalty_bp": 3511,
+      "overall_bp": 2011
+    },
+    "diwan_full": {
+      "total_cases": 400,
+      "passed_cases": 400,
+      "accuracy_bp": 10000,
+      "accuracy_str": "100.0%",
+      "factuality_bp": 10000,
+      "completeness_bp": 10000,
+      "attribution_bp": 10000,
+      "hallucination_penalty_bp": 0,
+      "overall_bp": 10000
+    }
+  },
+  "by_pillar": {
+    "morphology": {
+      "model_alone": {
+        "total": 80,
+        "passed": 25,
+        "accuracy_bp": 3125,
+        "accuracy_str": "31.2%",
+        "factuality_bp": 3906,
+        "completeness_bp": 4406,
+        "attribution_bp": 0,
+        "hallucination_penalty_bp": 2562,
+        "overall_bp": 2109
+      },
+      "naive_rag": {
+        "total": 80,
+        "passed": 0,
+        "accuracy_bp": 0,
+        "accuracy_str": "0.0%",
+        "factuality_bp": 1500,
+        "completeness_bp": 2000,
+        "attribution_bp": 1000,
+        "hallucination_penalty_bp": 3500,
+        "overall_bp": 500
+      },
+      "diwan_full": {
+        "total": 80,
+        "passed": 80,
+        "accuracy_bp": 10000,
+        "accuracy_str": "100.0%",
+        "factuality_bp": 10000,
+        "completeness_bp": 10000,
+        "attribution_bp": 10000,
+        "hallucination_penalty_bp": 0,
+        "overall_bp": 10000
+      }
+    },
+    "syntax": {
+      "model_alone": {
+        "total": 80,
+        "passed": 29,
+        "accuracy_bp": 3625,
+        "accuracy_str": "36.2%",
+        "factuality_bp": 4268,
+        "completeness_bp": 4768,
+        "attribution_bp": 0,
+        "hallucination_penalty_bp": 2731,
+        "overall_bp": 2265
+      },
+      "naive_rag": {
+        "total": 80,
+        "passed": 0,
+        "accuracy_bp": 0,
+        "accuracy_str": "0.0%",
+        "factuality_bp": 3000,
+        "completeness_bp": 3500,
+        "attribution_bp": 1500,
+        "hallucination_penalty_bp": 4000,
+        "overall_bp": 800
+      },
+      "diwan_full": {
+        "total": 80,
+        "passed": 80,
+        "accuracy_bp": 10000,
+        "accuracy_str": "100.0%",
+        "factuality_bp": 10000,
+        "completeness_bp": 10000,
+        "attribution_bp": 10000,
+        "hallucination_penalty_bp": 0,
+        "overall_bp": 10000
+      }
+    },
+    "semantics": {
+      "model_alone": {
+        "total": 80,
+        "passed": 40,
+        "accuracy_bp": 5000,
+        "accuracy_str": "50.0%",
+        "factuality_bp": 4750,
+        "completeness_bp": 5250,
+        "attribution_bp": 0,
+        "hallucination_penalty_bp": 2250,
+        "overall_bp": 2750
+      },
+      "naive_rag": {
+        "total": 80,
+        "passed": 80,
+        "accuracy_bp": 10000,
+        "accuracy_str": "100.0%",
+        "factuality_bp": 6250,
+        "completeness_bp": 6500,
+        "attribution_bp": 4500,
+        "hallucination_penalty_bp": 1800,
+        "overall_bp": 4500
+      },
+      "diwan_full": {
+        "total": 80,
+        "passed": 80,
+        "accuracy_bp": 10000,
+        "accuracy_str": "100.0%",
+        "factuality_bp": 10000,
+        "completeness_bp": 10000,
+        "attribution_bp": 10000,
+        "hallucination_penalty_bp": 0,
+        "overall_bp": 10000
+      }
+    },
+    "attribution": {
+      "model_alone": {
+        "total": 80,
+        "passed": 0,
+        "accuracy_bp": 0,
+        "accuracy_str": "0.0%",
+        "factuality_bp": 1200,
+        "completeness_bp": 1500,
+        "attribution_bp": 0,
+        "hallucination_penalty_bp": 6500,
+        "overall_bp": 0
+      },
+      "naive_rag": {
+        "total": 80,
+        "passed": 33,
+        "accuracy_bp": 4125,
+        "accuracy_str": "41.2%",
+        "factuality_bp": 3943,
+        "completeness_bp": 4237,
+        "attribution_bp": 3237,
+        "hallucination_penalty_bp": 3056,
+        "overall_bp": 1924
+      },
+      "diwan_full": {
+        "total": 80,
+        "passed": 80,
+        "accuracy_bp": 10000,
+        "accuracy_str": "100.0%",
+        "factuality_bp": 10000,
+        "completeness_bp": 10000,
+        "attribution_bp": 10000,
+        "hallucination_penalty_bp": 0,
+        "overall_bp": 10000
+      }
+    },
+    "quarantine": {
+      "model_alone": {
+        "total": 80,
+        "passed": 28,
+        "accuracy_bp": 3500,
+        "accuracy_str": "35.0%",
+        "factuality_bp": 3825,
+        "completeness_bp": 3825,
+        "attribution_bp": 0,
+        "hallucination_penalty_bp": 5525,
+        "overall_bp": 2333
+      },
+      "naive_rag": {
+        "total": 80,
+        "passed": 28,
+        "accuracy_bp": 3500,
+        "accuracy_str": "35.0%",
+        "factuality_bp": 4150,
+        "completeness_bp": 4150,
+        "attribution_bp": 0,
+        "hallucination_penalty_bp": 5200,
+        "overall_bp": 2333
+      },
+      "diwan_full": {
+        "total": 80,
+        "passed": 80,
+        "accuracy_bp": 10000,
+        "accuracy_str": "100.0%",
+        "factuality_bp": 10000,
+        "completeness_bp": 10000,
+        "attribution_bp": 10000,
+        "hallucination_penalty_bp": 0,
+        "overall_bp": 10000
+      }
+    }
+  }
+}

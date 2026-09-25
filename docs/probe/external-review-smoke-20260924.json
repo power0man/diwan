@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "probe": "external_review_smoke",
+  "generated_at": "2026-09-23T22:27:58Z",
+  "status": "failed",
+  "reviewers": {
+    "deepseek-v4-flash:cloud": {
+      "family": "deepseek",
+      "error": "http_402",
+      "attempts": 2,
+      "elapsed_ms": 494,
+      "caught_planted_error": null,
+      "false_flags": []
+    },
+    "mistral-large-3:675b-cloud": {
+      "family": "mistral",
+      "error": "http_402",
+      "attempts": 2,
+      "elapsed_ms": 964,
+      "caught_planted_error": null,
+      "false_flags": []
+    }
+  },
+  "counts": {
+    "reviewed": 0,
+    "skipped": 0,
+    "failed": 2
+  },
+  "pairs": [],
+  "planted_error": {
+    "case": "smoke_2",
+    "reference_given": "54",
+    "correct": "56"
+  },
+  "measurement_limits": [
+    "cloud_model_identity_is_the_service_name_not_a_verified_weight_digest",
+    "llm_reviewers_not_human",
+    "open_split_only_sealed_is_owner_reviewed",
+    "single_call_per_file_no_variance_estimate",
+    "three_synthetic_cases_prove_the_path_not_reviewer_quality"
+  ]
+}

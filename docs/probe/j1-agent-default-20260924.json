@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-24",
+  "task": "ج١",
+  "author": "openai/codex",
+  "behavior": [
+    "New sessions default to agent when the agent provider is configured; otherwise text.",
+    "Explicit text and media choices remain available; persisted legacy sessions retain their mode.",
+    "Default selection does not grant additional tools, configure Docker or bypass action approval.",
+    "The local API omitted-mode behavior follows projects.default_session_mode; text callers must send mode=text."
+  ],
+  "source_sha256": {
+    "webui/server.py": "1260159921642720c78051401e6fc8d2a5e7bb160dbef81a2bbdf5c5dadebf31",
+    "webui/static/app.js": "d3d07e94987f3a6bbf4fdef5538cd4eaa4483414a38ce6ee0f0f2200d9bddb0d",
+    "tests/test_webui_agent_default.py": "b844e9335c386b3ebe27a4fc1d117515a6ad2ba2656df0bce610a11fe2a96585",
+    "tests/webui_frontend.cjs": "fd4434b7840d9b4549990ee5d2246b6095431042d9b8791d83ae2bad67949638"
+  },
+  "tests": {
+    "full_pytest": {
+      "passed": 3043,
+      "skipped": 4,
+      "log_sha256": "695149a06f5073b661698bed9cd9f6733431f1fd65882090f1d3081f2385f64c",
+      "environment": "Pinned Python 3.14.7, canonical TMPDIR=/private/tmp, pinned interpreter first in process PATH."
+    },
+    "existing_targeted_http": 141,
+    "new_http_contracts": 8,
+    "frontend_node": 45,
+    "public_signatures_verified": 7,
+    "absent_local_stores_skipped": 8
+  },
+  "mutations": {
+    "frontend": [
+      {
+        "name": "force_text_default",
+        "exit_code": 1,
+        "failed_checks": [
+          "new_general_session_defaults_to_agent_and_sends_on_agent_route",
+          "restoring_legacy_text_sessions_keeps_the_text_route_with_agent_default",
+          "boot_uses_persisted_session_mode_from_server"
+        ]
+      },
+      {
+        "name": "ignore_agent_availability",
+        "exit_code": 1,
+        "failed_checks": [
+          "unavailable_agent_cannot_be_selected_by_the_default_advertisement",
+          "unavailable_explicit_mode_returns_to_an_available_default"
+        ]
+      },
+      {
+        "name": "override_explicit_choice",
+        "exit_code": 1,
+        "failed_checks": [
+          "explicit_text_and_media_choices_survive_project_list_refresh",
+          "a_delayed_project_refresh_does_not_replace_a_new_explicit_choice"
+        ]
+      },
+      {
+        "name": "retain_unavailable_choice",
+        "exit_code": 1,
+        "failed_checks": [
+          "unavailable_explicit_mode_returns_to_an_available_default"
+        ]
+      },
+      {
+        "name": "migrate_existing_session",
+        "exit_code": 1,
+        "failed_checks": [
+          "explicit_text_and_media_choices_survive_project_list_refresh",
+          "restoring_legacy_text_sessions_keeps_the_text_route_with_agent_default",
+          "boot_uses_persisted_session_mode_from_server"
+        ]
+      },
+      {
+        "name": "force_text_creation",
+        "exit_code": 1,
+        "failed_checks": [
+          "new_general_session_defaults_to_agent_and_sends_on_agent_route",
+          "explicit_text_and_media_choices_survive_project_list_refresh"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "case": "baseline",
+        "exit_code": 0,
+        "source_sha256": "1260159921642720c78051401e6fc8d2a5e7bb160dbef81a2bbdf5c5dadebf31",
+        "stdout_sha256": "06955fb47f16312e5d13266c774a2aa4648c46e423cbe6564a92e25b68e39131"
+      },
+      {
+        "case": "omitted_forced_text",
+        "exit_code": 1,
+        "source_sha256": "798ab7eb170da048400f70e6f3f47cee9954415d1aea7c72b7ac1a1b06b84182",
+        "stdout_sha256": "5ae883d57ff29cdc9681a0e7f479408c4be5dbe804d7e7c20b62fc74a86d6b25"
+      },
+      {
+        "case": "agent_without_provider",
+        "exit_code": 1,
+        "source_sha256": "1d3b45dd9372af2a322969fe5eb71828493b1e3dd257b806b2a28ba4897c12e8",
+        "stdout_sha256": "cd568c63ed45bf86a02fb84dac9721f98b344d9494a87403c3a21a4c06d6c7f0"
+      },
+      {
+        "case": "explicit_text_ignored",
+        "exit_code": 1,
+        "source_sha256": "77be04420c1a5d26256886eeb9b4435d63c44a88de46b9927b7ff6926ad6f755",
+        "stdout_sha256": "178480e9c4f12eda830119eb792d7943cc10c57a1b141f99024f3cdbe75869d9"
+      }
+    ],
+    "backend_original_source_unchanged": true,
+    "backend_original_tests_unchanged": true
+  },
+  "cross_family_code_review": {
+    "reviewer": "anthropic/claude-opus-5-5",
+    "identity_provenance": "vendor_reported_api",
+    "scope": "code_review_only_not_quality_judge_qualification",
+    "verdict": "accept",
+    "findings": [
+      {
+        "explanation": "The server-side default for an omitted `mode` now changes with provider configuration, not only in the UI. Any non-UI caller that creates sessions without `mode` and then calls `ask` will get an agent session when the tool provider is configured. It will then receive `session_mode_mismatch`. This appears intentional: `test_bootstrap_and_omitted_mode_agree_with_available_provider` asserts it, and it only affects the local loopback API. It is still a behavior change beyond the stated requirement, which covers \"New UI sessions\" only.",
+        "fix": "If external scripts rely on omitted mode meaning text, either keep the server fallback at 'text' and send the mode explicitly from app.js, or record the API default change in the docs.",
+        "location": "webui/server.py create_session: mode=request.get(\"mode\", self.default_session_mode)",
+        "severity": "low"
+      }
+    ],
+    "resolution": "The low-severity API compatibility note is now documented in docs/DAILY-UI.md with explicit mode=text and action routing.",
+    "review_artifact_sha256": "015a87da1ddf5636d8188153853eacbd991be3ef1cbe011b0bdd31692e2da3c8",
+    "raw_response_sha256": "16fcd976fe887dd5030f15a88446fc2f433787b8565272ae43c2825178723173",
+    "source_match_verified_after_review": true,
+    "reviewer_limitations": [
+      "webui/static/index.html was not provided. I could not confirm the initial `<select id=\"session-mode\">` option order or values, or how the browser behaves if `projects()` fails before setting the value.",
+      "tests/test_webui_http.py and other callers of create_session were not provided. I could not rule out other tests or scripts that omit `mode` against an agent-enabled app and expect text.",
+      "Frontend checks run against a Node fake DOM whose `session-mode` element is a generic div, not a real select. Real browser behavior for disabled options was not exercised; the single live smoke partly covers this.",
+      "Mutation results and live smoke evidence were taken as reported and not re-executed."
+    ]
+  },
+  "live_browser_smoke": {
+    "schema_version": 1,
+    "task": "ج١",
+    "kind": "single_live_browser_smoke",
+    "model": "qwen3:14b",
+    "model_version": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+    "source_sha256": {
+      "webui/server.py": "1260159921642720c78051401e6fc8d2a5e7bb160dbef81a2bbdf5c5dadebf31",
+      "webui/static/app.js": "d3d07e94987f3a6bbf4fdef5538cd4eaa4483414a38ce6ee0f0f2200d9bddb0d"
+    },
+    "observed": [
+      "new session selector defaults to agent",
+      "creating session without changing selector displays file tools and unconfigured execution",
+      "live model wrote hello.txt via write_file with a journal receipt",
+      "file opened in browser and content matched",
+      "explicit text session remained text after reload; new-session selector returned to agent"
+    ],
+    "file": {
+      "name": "hello.txt",
+      "content": "مرحبًا من ديوان.",
+      "sha256": "914f6c5d2cea1b01cb6978dfda5e71f5d7579777eb971822e8bce5a83828d612"
+    },
+    "measurement_limits": [
+      "One temporary project and one local model tool task; no general quality score.",
+      "No commands, Docker execution or media generated in live smoke.",
+      "User data and production UI service were not used."
+    ]
+  },
+  "measurement_limits": [
+    "Synthetic component tests and mutations do not certify general assistant answer quality.",
+    "Live browser smoke is one file task with qwen3:14b in an isolated temporary UI root, not owner daily-use acceptance.",
+    "MLX fallback and approval preservation were checked with fixtures; live smoke did not run commands or media.",
+    "The previously recorded Mac test-environment portability issue remains assigned separately as ك٨.",
+    "No sealed bank was read; no default model, owner data, persistent service or signing trust changed."
+  ]
+}

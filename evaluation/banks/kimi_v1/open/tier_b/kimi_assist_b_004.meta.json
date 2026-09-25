@@ -1,0 +1,370 @@
+{
+  "suite_id": "kimi_assist_b_004",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "B",
+  "cases": {
+    "argu_b_0004": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تصنيف أنواع القرائن مع فخ «البداهة» الشائع في النصوص العربية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0023": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "كشف افتراض «العدد=الخدمة» وصياغة سؤال تجريبي — تحليل سياسات حقيقي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0013": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "افتراض خفي اقتصادي (طاقة) خلف أرقام هندسية لامعة — يقيس النفاذ خلف الأرقام.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0027": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "افتراض خفي أيديولوجي واسع (الطالب زبون) — يقيس العمق المفاهيمي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0009": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "معدل الأساس الغائب — فخ إحصائي كلاسيكي بصياغة رياضية محلية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0039": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "سؤال متابعة مفاهيمي: صدق القرائن لا يساوي كفايتها — فخ منطقي صرف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0019": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "افتراض سببية في سياسة سكانية مع مطالبة ببيانات اختبار عملية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0010": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إعادة بناء صورية للحجة مع تحديد المقدمة الموضعية — مهارة تحليلية صرفة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0041": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "انحياز اختيار في موضوع تعليمي عاطفي — مع مطالبة بقرينة بديلة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0020": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "شروط صلاح القياس التمثيلي — مهارة حجاجية صرفة بمثال عمراني شائع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0015": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فجوة خاصية/حكم كلاسيكية (أسرع ≠ أنزه) في سياق سيادي حساس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0011": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "شهادة ضد إحصائية في سياق صحي — فخ التعاطف مع القصة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "شهادة عائلية مؤثرة معروضة كأنها تدحض إحصائية فعالية."
+    },
+    "argu_b_0007": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "كشف توتر داخلي بين قرينة ودعوى؛ فخ التهوين المدسوس.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "النص يسمي أقوى قرينة معاكسة «تفصيلًا صغيرًا» ليمرر دعوى مطلقة."
+    },
+    "argu_b_0032": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "توتر داخلي خفي بين قرينة واستثناء — يقيس اليقظة المنطقية.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قرينتان متوترتان داخل نص واحد تُمرَّران بلغة واثقة."
+    },
+    "argu_b_0008": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ارتباط/سببية مع مطالبة باختبار عادل — يقيس تجاوز النقد إلى البديل المنهجي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0005": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "قياس صياغة steel man ثم رد غير تهربي؛ الخطأ الشائع اعتراض هزلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0021": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فخ الخلط بين الانتشار/السرعة والصدق — قضية معاصرة شائعة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تقييم تفاضلي لقرينتين مع تمييز دعوى معدلة عن دعوى قصوى.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0024": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "دعوى عكسية مع استدلال «لو كانت تنفع لنفعت» — فخ غياب الضابطة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0033": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "رجل فولاذي صريح في سياق مهاري داخلي — يقيس الانصاف قبل الإقناع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0030": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نقل نموذج عمراني غربي — فخ تعميم من حي مختار ذاتيًّا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0035": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فخ «لم تتوقف إذن لم تنفع» — خط أساس غائب في سياق إداري يومي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حوار متعدد الأدوار يقيس اتساق التحليل عبر الأدوار وبناء الرد على الافتراض المستخرج.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0012": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اعتراض+رد في ملف طاقة مثير للانحيازات؛ يقيس حياد الصياغة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0031": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حجة عدالة جذابة تقوم على افتراض اقتصادي خفي — يقيس التوازن التحليلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "قياس الفصل بين الارتباط والسببية في استدلال بمقارنة دولية شائعة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0003": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب قرائن متفاوتة النوع مع مغالطة تخوين يجب استبعادها من القرائن.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0014": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تصنيف أنواع قرائن في موضوع جماهيري عاطفي مع حكم كفاية نهائي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0026": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تفكيك رباعي يشمل كشف التخويف التسويقي ومصلحة مصدر البيانات.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "argu_b_0028": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تعميم صحي خطير على فئات مستثناة — سلامة صحية.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "نصيحة صحية معممة «بلا استثناء» — خطرها على فئات محددة."
+    },
+    "regs_b_0033": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "سقالات مع أرقام عتبة حرجة (ارتفاع/رياح).",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0039": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مستودع أرفف — الإحالة لملصق الحمولة تُختزل خطأً في التبسيطات.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0012": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تبسيط وراثي بسقف جملتين — ضغط إيجاز مع دقة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0003": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تصحيح مفهوم خاطئ للطفل بلطف — يقيس النبرة مع الدقة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "محطة وقود — بساطة مع منع التعليلات المخترعة الشائعة (شحنة الجوال).",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0041": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحويل تقرير تحقيق إلى تعميم وقائي — سجل مختلف تمامًا مع بقاء الجوهر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0027": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحويل مزدوج تنفيذي→عاملي في حوار — يقيس مدى ضبط السجل عبر قفزة أكبر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0013": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تمييز طبي دقيق للطفل — خطأ المضاد مع الفيروس جسيم وشائع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0042": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ضغط إلى لافتة مع صفر حذف — اختبار أقصى درجات التكثيف مع الاكتمال.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0014": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تكييف الفكرة نفسها لجمهورين في حوار — يقيس ضبط السجل عبر التحول.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0037": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تناقض ظاهري في تعليمات سلامة يجب توضيحه لا حسمه بالحذف.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "بندان يبدوان متناقضين — الحل الساذج حذف أحدهما وهو خطر قاتل."
+    },
+    "regs_b_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فكرة «الفهرس المسبق» عكس الحدس — يقيس نقل الفكرة غير البديهية للطفل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0006": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مفهوم مصرفي بمثال رقمي طفولي — يقيس الاتساق العددي مع البساطة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0015": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترجمة مفهوم هندسي للغة مجلس إدارة مع سؤال قرار — سجل تنفيذي صرف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0038": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "خطر خفي قاتل (CO) — التبسيط يجب أن يبقي الخفاء لا يذيبه.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترجمة قاعدة تقنية شهيرة لمبدأ إداري + سؤال اختباري عملي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0024": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "شرح فشل مشاريع تكامل بلا شخصنة — تحليل تنفيذي ناضج.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نفايات طبية: منع إعادة تغطية الإبرة بند مضاد للبديهة يجب بقاؤه.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ضبط توقعات تنفيذية من التنبؤ — يقيس مقاومة إغراء المبالغة التقنية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0026": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "معضلة legacy كلاسيكية — يقيس التوازن بين خطرين حقيقيين.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0022": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "قرار فدية — يقيس نقل الحسابات الكاملة لا نصائح انفعالية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0025": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تسويق مفهوم أمني «معاكس للبديهة» لمجلس إدارة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0008": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تمييز ظاهرة نافعة عن ضرر زيادتها — دقة علمية في تبسيط مناخي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0034": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مطبخ تجاري: بند الماء/الزيت إسعافي حرج مع تعليل إلزامي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0020": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مفهوم تعاقدي تقني — يقيس تحويله لنقاط فحص توقيع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل خطر أمني إلى قرارين إداريين — جوهر السجل التنفيذي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "regs_b_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تبسيط جهاز أمان منزلي مع تحذير إلزامي — سلامة طفل.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "شرح كهربائي منزلي للطفل — الخطر في الإغواء بالتجربة."
+    },
+    "regs_b_0029": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل تعليمات سلامة مع إلزام بقاء كل تحذير — سلامة مهنية.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "حذف تحذير واحد من تعليمات سلامة خطأ جسيم — الفحص على الاكتمال."
+    },
+    "regs_b_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": true,
+      "why_this_case": "دقة التبسيط في موضوع أمني — الراحة مقابل الصحة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "التشبيه المريح الخاطئ («الرسالة مخفية») أسهل من الشرح الصحيح."
+    }
+  }
+}

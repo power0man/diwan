@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "probe": "k18_agentic_fails_before_fix_declared_environment",
+  "task": "ك١٨",
+  "date": "2026-09-25",
+  "agent": "anthropic/claude-fable-5-1",
+  "question": "هل «١٤٠ من ١٤٠ مهمّةً وكيلة تسقط قبل الحلّ» (ك١) دعوى عن البنك، أم أثرُ غياب pytest على المضيف؟",
+  "bank": "evaluation/banks/kimi_v1/open/tier_d — v1.1 بعد إصلاحات ك١٥ (main عند 3e45dad)",
+  "tool": "tools/check_agentic_fails_before_fix.py (يحكم بـevaluation.agentic_runner.evaluate_success نفسِها، RUNNER_VERSION=2)",
+  "environment": {
+    "host": "حاوية لينكس زائلة لجلسة Claude Code السحابية (Linux 6.18، بلا Ollama ولا Docker)",
+    "python": "3.11.15 من .venv (uv sync --extra dev)",
+    "pytest": "9.1.1",
+    "how_the_runner_was_made_visible": "PATH=$PWD/.venv/bin:$PATH فيحلّ `python3` الذي تسمّيه أوامرُ البنك إلى مفسّر فيه pytest؛ لا تعديلَ في البنك ولا في الأداة",
+    "attestation": "ليست حاوية Docker التي يطلبها ج٣، لكنها بيئةٌ مُعلَنةٌ بمفسّرها ومُشغِّلها — وهو ما تطلبه ك١٨"
+  },
+  "success_kinds_in_bank": {"tests_pass": 53, "command_exit_zero": 65, "file_contains": 22, "total": 140},
+  "runs": [
+    {
+      "condition": "pytest متاحٌ لـpython3 على PATH",
+      "per_file": {
+        "kimi_agentic_001.json": {"tasks": 35, "fail_before_fix": 35, "already_passing": 0, "unjudgeable": 0},
+        "kimi_agentic_002.json": {"tasks": 35, "fail_before_fix": 35, "already_passing": 0, "unjudgeable": 0},
+        "kimi_agentic_003.json": {"tasks": 35, "fail_before_fix": 35, "already_passing": 0, "unjudgeable": 0},
+        "kimi_agentic_004.json": {"tasks": 35, "fail_before_fix": 35, "already_passing": 0, "unjudgeable": 0}
+      },
+      "total": {"tasks": 140, "fail_before_fix": 140, "already_passing": 0, "unjudgeable": 0},
+      "verdict": "دعوى ك١ تصمد على بيئةٍ فيها المُشغِّل: كلُّ مهمّةٍ تسقط قبل الحلّ، ولا مهمّةَ تمرّ مجّانًا، ولا تعذُّرَ حكم."
+    },
+    {
+      "condition": "python3 على PATH بلا pytest (الحالة التي كشفتها عدسة القياس في ٢٥ سبتمبر)",
+      "per_file": {
+        "kimi_agentic_001.json": {"tasks": 35, "fail_before_fix": 11, "already_passing": 0, "unjudgeable": 24},
+        "kimi_agentic_002.json": {"tasks": 35, "fail_before_fix": 35, "already_passing": 0, "unjudgeable": 0},
+        "kimi_agentic_003.json": {"tasks": 35, "fail_before_fix": 6, "already_passing": 0, "unjudgeable": 29},
+        "kimi_agentic_004.json": {"tasks": 35, "fail_before_fix": 35, "already_passing": 0, "unjudgeable": 0}
+      },
+      "total": {"tasks": 140, "fail_before_fix": 87, "already_passing": 0, "unjudgeable": 53},
+      "verdict": "بعد ك٢٤ صار غيابُ المُشغِّل «تعذَّر الحكم» لا «تسقط»: ٥٣ مهمّةَ tests_pass كلُّها تُعلن نفسَها غيرَ محكومة، وهي نفسُها التي كانت تُعدّ ساقطةً قبل ك٢٤. والأداة تعيد رمزَ خروجٍ غيرَ صفر فلا يُقرأ الملفُّ مفحوصًا."
+    }
+  ],
+  "what_changed_since_k1": "ك١ (268b7df) لم تذكر بيئةَ التشغيل، فلم يكن يُميَّز رقمُها عن أثر غياب pytest. هذا الدليل يذكرها، ويُظهر الحالتين جنبًا إلى جنب على البنك نفسِه.",
+  "measurement_limits": [
+    "فحصُ المساحة الابتدائية وحدها: «تسقط قبل الحلّ» لا تعني «قابلةٌ للحلّ» ولا تقيس نموذجًا.",
+    "أوامرُ النجاح جرت على مضيف الحاوية مباشرةً لا في خُلفيّة Docker (ج٣ مفتوحة)؛ وهي حاويةٌ زائلة لا جهازُ المالك.",
+    "المفحوصُ الشطرُ المفتوح (١٤٠ مهمّة)؛ المحجوبُ لم يُقرأ.",
+    "٦٥ مهمّةَ command_exit_zero و٢٢ file_contains لا تعتمد على pytest، فلا تتأثّر بالحالتين — وهو ما يفسّر بقاء الملفّين ٠٠٢ و٠٠٤ على ٣٥/٣٥ في الحالتين."
+  ]
+}

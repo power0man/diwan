@@ -1,0 +1,1099 @@
+{
+  "schema_version": 1,
+  "suite_id": "kimi_agentic_003",
+  "kind": "agentic_tasks",
+  "description": "مهامّ وكيلة: إصلاح خطوط معالجة بيانات عربية فيها عيوب واقعية (فاصل منقوط، ترويسة مكررة، null بصيغ متعددة، تاريخان بصيغتين، ترميز خاطئ)، وإضافة مزايا صغيرة تمسّ ملفين أو ثلاثة مع إبقاء الاختبارات الموجودة خضراء.",
+  "tasks": [
+    {
+      "task_id": "pipe_0001",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/sales.csv": "التاريخ;المنتج;الكمية;سعر_الوحدة\n2026-01-03;تفاح;10;3\n2026-01-03;أرز;2;25\n2026-01-04;حليب;6;4\n2026-01-05;تفاح;5;3\n2026-01-06;خبز;12;1\n",
+        "pipeline.py": "import csv\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f))\n    total = 0\n    for r in rows:\n        total += int(r[\"الكمية\"]) * int(r[\"سعر_الوحدة\"])\n    return {\"rows\": len(rows), \"total\": total}\n",
+        "tests/test_pipeline.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pipeline\n\ndef test_rows_count():\n    assert pipeline.run(\"data/sales.csv\")[\"rows\"] == 5\n\ndef test_total():\n    assert pipeline.run(\"data/sales.csv\")[\"total\"] == 131\n"
+      },
+      "instruction": "في هذا المجلد سكربت pipeline.py يقرأ data/sales.csv ويحسب إجمالي الإيراد (الكمية × سعر الوحدة).\nشغّل اختبارات tests/ وسترى أنها تسقط. شخّص سبب الفشل وأصلح السكربت حتى تخضر الاختبارات.\nيُمنع تعديل أي ملف داخل tests/.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يشخّص سبب الفشل من رسالة الخطأ أو من فحص ملف البيانات",
+        "يصلح السكربت لا الاختبارات",
+        "تجتاز الاختبارات بعد الإصلاح"
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "pipe_0002",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/grades.csv": "الاسم;الصف;المادة;الدرجة\nسارة;العاشر;رياضيات;88\nخالد;العاشر;رياضيات;73\nنورة;الحادي عشر;فيزياء;91\nفهد;العاشر;فيزياء;64\nريم;الحادي عشر;رياضيات;79\n",
+        "pipeline.py": "import csv\n\ndef run(path, subject):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f))\n    sel = [int(r[\"الدرجة\"]) for r in rows if r[\"المادة\"] == subject]\n    return {\"count\": len(sel), \"average\": sum(sel) / len(sel) if sel else 0}\n",
+        "tests/test_pipeline.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pipeline\n\ndef test_math_average():\n    res = pipeline.run(\"data/grades.csv\", \"رياضيات\")\n    assert res[\"count\"] == 3\n    assert res[\"average\"] == 80.0\n\ndef test_physics_average():\n    res = pipeline.run(\"data/grades.csv\", \"فيزياء\")\n    assert res[\"average\"] == 77.5\n"
+      },
+      "instruction": "ملف data/grades.csv فيه درجات طلاب، والسكربت pipeline.py يفترض أن يحسب متوسط كل مادة.\nالمشكلة أن الاختبارات تسقط برسالة خطأ غامضة. افحص الملف والسكربت، عالج السبب الجذري، وأبقِ الاختبارات كما هي (محرّم تعديل tests/).",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يفهم من بنية الملف أن الفاصل ليس الفاصلة الافتراضية",
+        "الإصلاح في طريقة القراءة لا في الاختبار ولا في البيانات",
+        "الاختبارات خضراء بعد الإصلاح"
+      ],
+      "max_steps": 7
+    },
+    {
+      "task_id": "pipe_0011",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/branch.csv": "التاريخ;المنتج;الكمية\n2026-03-01;تفاح;10\n2026-03-01;أرز;N/A\n2026-03-02;حليب;\n2026-03-02;خبز;30\n2026-03-03;عصير;null\n2026-03-03;جبن;7\n2026-03-04;شاي;-\n2026-03-04;قهوة;12\n",
+        "pipeline.py": "import csv\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    total, valid = 0, 0\n    for r in rows:\n        q = r[\"الكمية\"].strip()\n        if q in (\"\", \"N/A\"):\n            continue\n        total += int(q)\n        valid += 1\n    return {\"total\": total, \"valid\": valid}\n",
+        "tests/test_pipeline.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pipeline\n\ndef test_totals():\n    res = pipeline.run(\"data/branch.csv\")\n    assert res[\"total\"] == 59\n    assert res[\"valid\"] == 4\n"
+      },
+      "instruction": "السكربت pipeline.py يتجاوز القيم الفارغة ويحسب مجموع كميات data/branch.csv، لكن الاختبار ما زال أحمر.\nالسكربت «يبدو» سليمًا لأول وهلة. افتح ملف البيانات كاملًا وقارن افتراضات الكود بالواقع، ثم أصلح. لا تعدّل الاختبارات.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "لا يكتفي بقراءة الكود بل يفحص البيانات الفعلية سطرًا سطرًا",
+        "يكتشف صيغ null التي لا يعالجها الكود",
+        "الاختبار يمرّ"
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "pipe_0018",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/contract.csv": "الحدث;التاريخ\nبداية العقد;2026-01-10\nأول دفعة;25/01/2026\nالتسليم الأول;2026-02-05\nالتسليم النهائي;20/02/2026\n",
+        "pipeline.py": "import csv\nfrom datetime import datetime\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    dates = [datetime.strptime(r[\"التاريخ\"], \"%Y-%m-%d\") for r in rows]\n    return (max(dates) - min(dates)).days\n",
+        "tests/test_pipeline.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pipeline\n\ndef test_span():\n    assert pipeline.run(\"data/contract.csv\") == 41\n"
+      },
+      "instruction": "الاختبار يسقط. لا وصف إضافي؛ المشروع أمامك: pipeline.py وdata/contract.csv وtests/. شخّص وأصلح دون لمس الاختبارات أو البيانات.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests",
+        "data/contract.csv"
+      ],
+      "rubric": [
+        "تشخيص بلا أي تلميح",
+        "ربط ValueError بصيغ تاريخ مختلطة",
+        "الاختبار يمرّ"
+      ],
+      "max_steps": 10
+    },
+    {
+      "task_id": "pipe_0023",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/goods.csv": "التاريخ;المنتج;الكمية\n2026-05-01;أرز;40\n2026-05-01;سكر;N/A\n2026-05-02;زيت;\n2026-05-02;دقيق;25\n2026-05-03;شاي;-\n2026-05-03;أرز;10\n",
+        "pipeline.py": "import csv\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f))\n    total = 0\n    for r in rows:\n        if r[\"الكمية\"] == \"\":\n            continue\n        total += int(r[\"الكمية\"])\n    return {\"total\": total}\n",
+        "tests/test_pipeline.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pipeline\n\ndef test_total():\n    assert pipeline.run(\"data/goods.csv\")[\"total\"] == 75\n"
+      },
+      "instruction": "الاختبار يسقط. المشروع صغير: pipeline.py وdata/goods.csv واختبار واحد. فيه أكثر من عيب واحد؛ أصلحها جميعًا. الاختبارات والبيانات محرّمة.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests",
+        "data/goods.csv"
+      ],
+      "rubric": [
+        "يكتشف العيبين لا أحدهما",
+        "إصلاح القراءة والتنظيف معًا",
+        "الاختبار يمرّ"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "pipe_0025",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/orders.csv": "المنتج;الفرع;عدد_الطلبات\nتفاح;الرياض;12\nحليب;جدة;20\nتفاح;جدة;8\nخبز;الرياض;30\nحليب;الرياض;15\nعصير;الدمام;9\n",
+        "pipeline.py": "import csv, sys\n\ndef run(path):\n    with open(path, encoding=\"latin-1\", newline=\"\") as f:\n        rows = list(csv.DictReader(f))\n    big = [r[\"المنتج\"] for r in rows if int(r[\"عدد_الطلبات\"]) >= 10]\n    return big\n\nif __name__ == \"__main__\":\n    res = run(sys.argv[1])\n    with open(\"out/popular.txt\", \"w\", encoding=\"utf-8\") as f:\n        f.write(\"الأصناف الرائجة: \" + \"، \".join(res) + \"\\n\")\n    print(\"تم\")\n",
+        "out/popular.txt": "الأصناف الرائجة: لا شيء\n"
+      },
+      "instruction": "سكربت pipeline.py يستخرج الأصناف التي بلغت طلباتها 10 فأكثر من data/orders.csv ويكتبها في out/popular.txt، لكنه ينهار. في السكربت عيبان من نوعين مختلفين. أصلحهما ثم شغّل python3 pipeline.py data/orders.csv. ممنوع تحرير الناتج يدويًّا أو تعديل البيانات.",
+      "success": {
+        "kind": "file_contains",
+        "path": "out/popular.txt",
+        "value": "الأصناف الرائجة: تفاح، حليب، خبز، حليب"
+      },
+      "forbidden": [
+        "data/orders.csv",
+        "out/popular.txt"
+      ],
+      "rubric": [
+        "يكتشف عيب الترميز وعيب الفاصل",
+        "إصلاح وإعادة تشغيل",
+        "الناتج النهائي صحيح"
+      ],
+      "max_steps": 13
+    },
+    {
+      "task_id": "pipe_0024",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/mixed.csv": "التاريخ;الوصف;المبلغ\n2026-03-01;مبيعات فرع الرياض;500\n02/03/2026;مبيعات فرع جدة;300\nالتاريخ;الوصف;المبلغ\n2026-03-05;مرتجعات;-100\n10/03/2026;مبيعات فرع الدمام;700\n2026-04-01;مبيعات فرع الرياض;900\n15/03/2026;مصروفات;-200\n",
+        "pipeline.py": "def run(path, month):\n    total, count = 0, 0\n    import csv\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        for r in csv.DictReader(f, delimiter=\";\"):\n            if r[\"التاريخ\"].startswith(month):\n                total += int(r[\"المبلغ\"])\n                count += 1\n    return {\"total\": total, \"count\": count}\n",
+        "tests/test_pipeline.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pipeline\n\ndef test_march():\n    res = pipeline.run(\"data/mixed.csv\", \"2026-03\")\n    assert res[\"count\"] == 5\n    assert res[\"total\"] == 1200\n"
+      },
+      "instruction": "ملف data/mixed.csv ناتج دمج نظامين محاسبيين، وفيه أكثر من شذوذ. السكربت pipeline.py يحسب صافي شهر، والاختبار يسقط بسببهما معًا. شخّص كل الشذوذات وعالجها في السكربت. ممنوع لمس الاختبارات أو البيانات.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests",
+        "data/mixed.csv"
+      ],
+      "rubric": [
+        "يحصي شذوذات الملف كلها قبل الكتابة",
+        "يعالج الترويسة المكررة والتاريخين معًا",
+        "الاختبار يمرّ"
+      ],
+      "max_steps": 13
+    },
+    {
+      "task_id": "pipe_0009",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/stock.csv": "الصنف;المستودع;الكمية\nأقلام;الرئيسي;120\nدفاتر;الرئيسي;80\nأحبار;الفرعي;45\nأقلام;الفرعي;60\nورق;الرئيسي;200\nالصنف;المستودع;الكمية\n",
+        "pipeline.py": "import csv\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    return {\"rows\": len(rows), \"total\": sum(int(r[\"الكمية\"]) for r in rows)}\n",
+        "tests/test_pipeline.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pipeline\n\ndef test_grand_total():\n    res = pipeline.run(\"data/stock.csv\")\n    assert res[\"rows\"] == 5\n    assert res[\"total\"] == 505\n"
+      },
+      "instruction": "اختبارات هذا المشروع تسقط، ولا نعرف السبب بالضبط. السكربت pipeline.py يجمع كميات المخزون كلها من data/stock.csv. ممنوع تعديل الاختبارات وممنوع تعديل ملف البيانات.\nابحث عن السبب الحقيقي وأصلحه.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests",
+        "data/stock.csv"
+      ],
+      "rubric": [
+        "يشخّص العيب دون تلميح من نصّ المهمّة",
+        "يلاحظ أن السطر الشاذّ في آخر الملف",
+        "الاختبارات تمرّ دون مسّ البيانات"
+      ],
+      "max_steps": 10
+    },
+    {
+      "task_id": "pipe_0022",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/library.csv": "العنوان;المؤلف;السنة\nالأيام;طه حسين;1929\nخوف;نجيب محفوظ;1938\nرجال في الشمس;غسان كنفاني;1963\nموسم الهجرة إلى الشمال;الطيب صالح;1966\nأولاد حارتنا;نجيب محفوظ;1959\n",
+        "pipeline.py": "import csv, sys\n\ndef run(path):\n    names = set()\n    with open(path, encoding=\"latin-1\", newline=\"\") as f:\n        for r in csv.DictReader(f, delimiter=\";\"):\n            names.add(r[\"المؤلف\"])\n    return sorted(names)\n\nif __name__ == \"__main__\":\n    res = run(sys.argv[1])\n    with open(\"out/authors.txt\", \"w\", encoding=\"utf-8\") as f:\n        f.write(\"المؤلفون:\\n\")\n        for n in res:\n            f.write(\"- \" + n + \"\\n\")\n    print(\"تم\")\n",
+        "out/authors.txt": "المؤلفون:\n- ???\n"
+      },
+      "instruction": "سكربت pipeline.py يكتب قائمة المؤلفين من data/library.csv في out/authors.txt، لكن الأسماء تخرج مشوّهة غير مقروءة. أصلح السكربت ثم شغّله بـ python3 pipeline.py data/library.csv.\nيُمنع تحرير out/authors.txt يدويًّا وتعديل البيانات.",
+      "success": {
+        "kind": "file_contains",
+        "path": "out/authors.txt",
+        "value": "- طه حسين"
+      },
+      "forbidden": [
+        "data/library.csv",
+        "out/authors.txt"
+      ],
+      "rubric": [
+        "تشخيص الترميز الخاطئ",
+        "إصلاح وإعادة تشغيل",
+        "الأسماء العربية تظهر سليمة"
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "pipe_0010",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/sales_march.csv": "التاريخ;المنتج;الكمية\n2026-03-01;تفاح;10\n2026-03-01;أرز;N/A\n2026-03-02;حليب;\n2026-03-02;خبز;30\n2026-03-03;عصير;null\n2026-03-03;جبن;7\n2026-03-04;شاي;-\n2026-03-04;قهوة;12\n",
+        "pipeline.py": "import csv\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    total, valid = 0, 0\n    for r in rows:\n        if r[\"الكمية\"] == \"\":\n            continue\n        total += int(r[\"الكمية\"])\n        valid += 1\n    return {\"total\": total, \"valid\": valid}\n",
+        "tests/test_pipeline.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pipeline\n\ndef test_totals():\n    res = pipeline.run(\"data/sales_march.csv\")\n    assert res[\"total\"] == 59\n    assert res[\"valid\"] == 4\n"
+      },
+      "instruction": "ملف data/sales_march.csv جاء من فروع تستخدم أنظمة مختلفة، فالخلايا الفارغة مكتوبة بأكثر من صيغة. السكربت pipeline.py يتعامل مع صيغة واحدة فقط ثم ينهار.\nافحص الملف لتعرف كل صيغ القيم المفقودة، وعالجها كلها في السكربت. الاختبارات محرّمة التعديل.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يستكشف الملف ويحصي كل صيغ null الموجودة فعلًا",
+        "يعالجها جميعًا لا الصيغة الظاهرة في رسالة الخطأ فقط",
+        "الاختبار يمرّ"
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "pipe_0013",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/payments.csv": "المريض;الطبيب;الرسوم\nأحمد;ليلى;150\nمريم;سامي;N/A\nيوسف;ليلى;220\nهند;سامي;-\nسالم;ليلى;180\nنورة;سامي;null\n",
+        "pipeline.py": "import csv, sys\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    names = []\n    for r in rows:\n        if r[\"الرسوم\"] == \"N/A\":\n            continue\n        names.append((r[\"المريض\"], int(r[\"الرسوم\"])))\n    names.sort(key=lambda x: -x[1])\n    return names\n\nif __name__ == \"__main__\":\n    res = run(sys.argv[1])\n    with open(\"out/top.txt\", \"w\", encoding=\"utf-8\") as f:\n        f.write(f\"أعلى رسوم: {res[0][0]} بقيمة {res[0][1]}\\n\")\n    print(\"تم\")\n",
+        "out/top.txt": "أعلى رسوم: لا أحد بقيمة 0\n"
+      },
+      "instruction": "سكربت pipeline.py يكتب في out/top.txt اسم صاحب أعلى رسوم من data/payments.csv، لكنه ينهار عند تشغيله على الملف الحالي. أصلح السكربت ثم شغّله بـ python3 pipeline.py data/payments.csv.\nيُمنع تعديل البيانات وكتابة الناتج يدويًّا.",
+      "success": {
+        "kind": "file_contains",
+        "path": "out/top.txt",
+        "value": "أعلى رسوم: يوسف بقيمة 220"
+      },
+      "forbidden": [
+        "data/payments.csv",
+        "out/top.txt"
+      ],
+      "rubric": [
+        "يعالج كل صيغ القيم الناقصة لا أولها فقط",
+        "يعيد تشغيل السكربت لتوليد الناتج",
+        "الناتج صحيح"
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "pipe_0019",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/ledger.csv": "التاريخ;الوصف;المبلغ\n2026-03-01;مبيعات فرع الرياض;500\n02/03/2026;مبيعات فرع جدة;300\n2026-03-05;مرتجعات;-100\n10/03/2026;مبيعات فرع الدمام;700\n2026-04-01;مبيعات فرع الرياض;900\n15/03/2026;مصروفات;-200\n",
+        "pipeline.py": "def run(path, month):\n    total, count = 0, 0\n    import csv\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        for r in csv.DictReader(f, delimiter=\";\"):\n            if r[\"التاريخ\"].startswith(month):\n                total += int(r[\"المبلغ\"])\n                count += 1\n    return {\"total\": total, \"count\": count}\n",
+        "check.py": "import pipeline\n\nres = pipeline.run(\"data/ledger.csv\", \"2026-03\")\nassert res[\"count\"] == 5, res\nassert res[\"total\"] == 1200, res\nprint(\"الفحص نجح\")\n"
+      },
+      "instruction": "شغّل python3 check.py — سيفشل. المجموع الذي يحسبه pipeline.py لشهر 2026-03 ناقص. اعرف السبب من ملف البيانات وأصلح السكربت. check.py حَكم لا يُعدَّل، والبيانات كذلك.",
+      "success": {
+        "kind": "command_exit_zero",
+        "command": [
+          "python3",
+          "check.py"
+        ]
+      },
+      "forbidden": [
+        "check.py",
+        "data/ledger.csv"
+      ],
+      "rubric": [
+        "يكتشف الصيغتين المختلطتين",
+        "إصلاح جذري لا التفاف",
+        "الفحص ينجح"
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "pipe_0017",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/ledger.csv": "التاريخ;الوصف;المبلغ\n2026-03-01;مبيعات فرع الرياض;500\n02/03/2026;مبيعات فرع جدة;300\n2026-03-05;مرتجعات;-100\n10/03/2026;مبيعات فرع الدمام;700\n2026-04-01;مبيعات فرع الرياض;900\n15/03/2026;مصروفات;-200\n",
+        "pipeline.py": "def run(path, month):\n    total, count = 0, 0\n    import csv\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        for r in csv.DictReader(f, delimiter=\";\"):\n            if r[\"التاريخ\"].startswith(month):\n                total += int(r[\"المبلغ\"])\n                count += 1\n    return {\"total\": total, \"count\": count}\n\nimport sys\nif __name__ == \"__main__\":\n    res = run(sys.argv[1], sys.argv[2])\n    with open(\"out/month.txt\", \"w\", encoding=\"utf-8\") as f:\n        f.write(f\"شهر {res and sys.argv[2]}: {res['count']} قيدًا بصافي {res['total']}\\n\")\n    print(\"تم\")\n",
+        "out/month.txt": "شهر 2026-03: 0 قيدًا بصافي 0\n"
+      },
+      "instruction": "التقرير out/month.txt أرقامه صفرية لأن السكربت pipeline.py لا يحصي كل قيود الشهر. أصلح السكربت ثم أعد تشغيله بـ python3 pipeline.py data/ledger.csv 2026-03.\nممنوع تحرير التقرير يدويًّا أو تعديل البيانات.",
+      "success": {
+        "kind": "file_contains",
+        "path": "out/month.txt",
+        "value": "5 قيدًا بصافي 1200"
+      },
+      "forbidden": [
+        "data/ledger.csv",
+        "out/month.txt"
+      ],
+      "rubric": [
+        "يكتشف إسقاط التواريخ ذات الصيغة الثانية",
+        "يعيد تشغيل السكربت بعد إصلاحه",
+        "التقرير النهائي صحيح"
+      ],
+      "max_steps": 10
+    },
+    {
+      "task_id": "pipe_0016",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/ledger.csv": "التاريخ;الوصف;المبلغ\n2026-03-01;مبيعات فرع الرياض;500\n02/03/2026;مبيعات فرع جدة;300\n2026-03-05;مرتجعات;-100\n10/03/2026;مبيعات فرع الدمام;700\n2026-04-01;مبيعات فرع الرياض;900\n15/03/2026;مصروفات;-200\n",
+        "pipeline.py": "import csv\nfrom datetime import datetime\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    rows.sort(key=lambda r: datetime.strptime(r[\"التاريخ\"], \"%Y-%m-%d\"))\n    return [r[\"الوصف\"] for r in rows]\n",
+        "tests/test_pipeline.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pipeline\n\ndef test_sorted():\n    res = pipeline.run(\"data/ledger.csv\")\n    assert res[0] == \"مبيعات فرع الرياض\"\n    assert res[-1] == \"مبيعات فرع الرياض\"  # آخر قيد زمنيًّا هو قيد أبريل\n    assert res[1] == \"مبيعات فرع جدة\"\n"
+      },
+      "instruction": "يفترض بـ pipeline.py أن يعيد أوصاف القيود مرتبة زمنيًّا، لكنه ينهار بـ ValueError.\nأصلحه ليقبل الملف كما هو. ممنوع تعديل الاختبارات والبيانات.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests",
+        "data/ledger.csv"
+      ],
+      "rubric": [
+        "يفهم أن الملف يخلط صيغتين للتاريخ",
+        "يكتب محللًا يقبل الصيغتين",
+        "الاختبار يمرّ"
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "pipe_0006",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/grades_export.csv": "الاسم;الصف;المادة;الدرجة\nسارة;العاشر;رياضيات;88\nخالد;العاشر;رياضيات;73\nنورة;الحادي عشر;فيزياء;91\nالاسم;الصف;المادة;الدرجة\nفهد;العاشر;فيزياء;64\nريم;الحادي عشر;رياضيات;79\n",
+        "pipeline.py": "import csv\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f, delimiter=\";\"))\n    grades = [float(r[\"الدرجة\"]) for r in rows]\n    return {\"count\": len(grades), \"average\": sum(grades) / len(grades)}\n",
+        "tests/test_pipeline.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pipeline\n\ndef test_average():\n    res = pipeline.run(\"data/grades_export.csv\")\n    assert res[\"count\"] == 5\n    assert res[\"average\"] == 79.0\n"
+      },
+      "instruction": "ملف data/grades_export.csv صدَّرناه من نظامين قديمين ودمجناهما، والسكربت pipeline.py يحسب متوسط الدرجات.\nالاختبار يسقط بخطأ تحويل رقمي. افتح ملف البيانات وافهم سبب الخطأ، ثم أصلح السكربت ليتعامل مع الملف كما هو (يُمنع تعديل الملف ويُمنع تعديل الاختبارات).",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests",
+        "data/grades_export.csv"
+      ],
+      "rubric": [
+        "يلاحظ الترويسة المكررة وسط البيانات",
+        "يضيف تجاوزًا للسطور الشاذة في السكربت لا في الملف",
+        "الاختبار يمرّ"
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "pipe_0005",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/clinic.csv": "المريض;الطبيب;التاريخ;الرسوم\nأحمد;ليلى;2026-02-01;150\nمريم;سامي;2026-02-01;200\nيوسف;ليلى;2026-02-02;150\nهند;سامي;2026-02-03;250\n",
+        "pipeline.py": "import csv, sys\n\ndef run(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        rows = list(csv.DictReader(f))\n    total = sum(int(r[\"الرسوم\"]) for r in rows)\n    return {\"visits\": len(rows), \"revenue\": total}\n\nif __name__ == \"__main__\":\n    res = run(sys.argv[1])\n    with open(\"out/report.txt\", \"w\", encoding=\"utf-8\") as f:\n        f.write(f\"عدد الزيارات: {res['visits']}\\nإجمالي الإيراد: {res['revenue']}\\n\")\n    print(\"تمت كتابة out/report.txt\")\n",
+        "out/report.txt": "عدد الزيارات: 0\nإجمالي الإيراد: 0\n"
+      },
+      "instruction": "شغّلنا سكربت العيادة pipeline.py على data/clinic.csv فأخرج out/report.txt بأرقام صفرية غير صحيحة (أُفرغت الأرقام بعدما لاحظنا أن السكربت لا يقرأ الملف قراءة سليمة).\nالمطلوب: أصلح السكربت ثم أعد تشغيله بالأمر python3 pipeline.py data/clinic.csv ليُنتج التقرير بالأرقام الصحيحة. ممنوع تحرير out/report.txt يدويًّا، وممنوع تعديل ملف البيانات.",
+      "success": {
+        "kind": "file_contains",
+        "path": "out/report.txt",
+        "value": "إجمالي الإيراد: 750"
+      },
+      "forbidden": [
+        "data/clinic.csv",
+        "out/report.txt"
+      ],
+      "rubric": [
+        "يصلح سبب القراءة المعطوبة في السكربت",
+        "يعيد تشغيل السكربت فتتحدث المخرجات آليًّا لا يدويًّا",
+        "التقرير النهائي فيه الأرقام الصحيحة"
+      ],
+      "max_steps": 9
+    },
+    {
+      "task_id": "pipe_0021",
+      "capability": "data_pipeline_fix",
+      "workspace": {
+        "data/menu.csv": "الصنف;الفرع;عدد_الطلبات\nشاي;الشمالي;5\nقهوة;الشمالي;9\nشاي;الجنوبي;6\nقهوة;الجنوبي;5\n",
+        "pipeline.py": "import csv\n\ndef run(path):\n    counts = {}\n    with open(path, encoding=\"cp1256\", newline=\"\") as f:\n        for r in csv.DictReader(f, delimiter=\";\"):\n            counts[r[\"الصنف\"]] = counts.get(r[\"الصنف\"], 0) + int(r[\"عدد_الطلبات\"])\n    return counts\n",
+        "tests/test_pipeline.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pipeline\n\ndef test_menu():\n    res = pipeline.run(\"data/menu.csv\")\n    assert res[\"شاي\"] == 11\n    assert res[\"قهوة\"] == 14\n"
+      },
+      "instruction": "اختبار menu يسقط رغم أن السكربت pipeline.py «يعمل» ولا يرمي استثناء. المشكلة في مكان لا تخطر على البال؛ قارن المفاتيح التي يعيدها السكربت بما في الملف. أصلح السكربت فقط (الاختبارات والبيانات محرّمة).",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests",
+        "data/menu.csv"
+      ],
+      "rubric": [
+        "يلاحظ أن أسماء الأصناف تصل مشوّهة",
+        "يصحح الترميز",
+        "الاختبار يمرّ"
+      ],
+      "max_steps": 8
+    },
+    {
+      "task_id": "feat_0002",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الاسم', 'القسم', 'الراتب']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/employees.csv": "الاسم,القسم,المدينة,الراتب\nبدر,التقنية,الرياض,9000\nلطيفة,التقنية,جدة,8500\nماجد,التقنية,الرياض,9500\nهند,الموارد,الرياض,7000\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/employees.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/employees.csv\")\n    assert rows[0][\"الاسم\"] == \"بدر\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الاسم': 'بدر', 'القسم': 'التقنية', 'المدينة': 'الرياض', 'الراتب': 9000}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الاسم': 'بدر', 'القسم': 'التقنية', 'المدينة': 'الرياض', 'الراتب': 9000}], COLUMNS)\n    assert \"بدر\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.report import render_with_total\nfrom src.cli import main\n\ndef test_render_with_total():\n    rows = load_records(\"data/employees.csv\")\n    out = render_with_total(rows, [\"الاسم\", \"الراتب\"], \"الراتب\")\n    assert out.splitlines()[-1] == \"الإجمالي: 34000\"\n\ndef test_cli_total():\n    out = main([\"data/employees.csv\", \"--total\", \"الراتب\"])\n    assert out.splitlines()[-1] == \"الإجمالي: 34000\"\n"
+      },
+      "instruction": "أضف للمشروع إمكانية إظهار سطر إجمالي:\n1. في src/report.py أضف دالة render_with_total(records, columns, total_field) تعيد الناتج المعتاد ثم سطرًا أخيرًا «الإجمالي: X» حيث X مجموع الحقل العددي.\n2. في src/cli.py أضف الوسيط --total <حقل>.\nلا تمسّ tests/ وأبقِ الاختبارات القديمة خضراء.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0013",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الصنف', 'المستودع', 'الكمية']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/inventory.csv": "الصنف,المستودع,الكمية,حد_الطلب\nأقلام,الرئيسي,120,50\nدفاتر,الرئيسي,80,40\nأحبار,الفرعي,45,30\nورق,الفرعي,200,100\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/inventory.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/inventory.csv\")\n    assert rows[0][\"الصنف\"] == \"أقلام\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الصنف': 'أقلام', 'المستودع': 'الرئيسي', 'الكمية': 120, 'حد_الطلب': 50}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الصنف': 'أقلام', 'المستودع': 'الرئيسي', 'الكمية': 120, 'حد_الطلب': 50}], COLUMNS)\n    assert \"أقلام\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.distinct import unique_values\nfrom src.cli import main\n\ndef test_unique_direct():\n    rows = load_records(\"data/inventory.csv\")\n    assert unique_values(rows, \"المستودع\") == [\"الرئيسي\", \"الفرعي\"]\n\ndef test_cli_unique():\n    out = main([\"data/inventory.csv\", \"--unique\", \"المستودع\"])\n    assert out.splitlines() == [\"الرئيسي\", \"الفرعي\"]\n"
+      },
+      "instruction": "أضف ميزة القيم الفريدة:\n1. src/distinct.py فيه unique_values(records, field) تعيد القيم المختلفة بترتيب أول ظهور (لا set عشوائي).\n2. src/cli.py يقبل --unique <حقل> ويعرض كل قيمة في سطر.\nالاختبارات القديمة تبقى خضراء.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0019",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الخط', 'المحطة', 'عدد_الركاب']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/trips.csv": "الخط,المحطة,عدد_الركاب,التاريخ\nأ,المحطة المركزية,120,2026-04-01\nب,حي الجامعة,85,2026-04-01\nج,المحطة المركزية,60,2026-04-02\nد,حي الصفا,40,2026-04-02\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/trips.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/trips.csv\")\n    assert rows[0][\"الخط\"] == \"أ\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الخط': 'أ', 'المحطة': 'المحطة المركزية', 'عدد_الركاب': 120, 'التاريخ': '2026-04-01'}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الخط': 'أ', 'المحطة': 'المحطة المركزية', 'عدد_الركاب': 120, 'التاريخ': '2026-04-01'}], COLUMNS)\n    assert \"أ\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.threshold import filter_min\nfrom src.cli import main\n\ndef test_filter_min_direct():\n    rows = load_records(\"data/trips.csv\")\n    res = filter_min(rows, \"عدد_الركاب\", 85)\n    assert [r[\"الخط\"] for r in res] == [\"أ\", \"ب\"]\n\ndef test_cli_min():\n    out = main([\"data/trips.csv\", \"--min\", \"عدد_الركاب\", \"100\"])\n    assert \"حي الجامعة\" not in out\n    assert \"المحطة المركزية\" in out\n"
+      },
+      "instruction": "أضف ترشيحًا بحد أدنى:\n1. src/threshold.py فيه filter_min(records, field, minimum) يبقي السجلات التي قيمة الحقل فيها أكبر من الحد أو تساويه.\n2. src/cli.py يقبل --min <حقل> <قيمة>.\nلا تلمس tests/.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0016",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الحي', 'النوع', 'السعر']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/properties.csv": "الحي,النوع,المساحة,السعر\nالنرجس,شقة,120,450000\nالياسمين,فيلا,300,1500000\nالنرجس,فيلا,280,1350000\nالورود,شقة,95,380000\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/properties.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/properties.csv\")\n    assert rows[0][\"الحي\"] == \"النرجس\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الحي': 'النرجس', 'النوع': 'شقة', 'المساحة': 120, 'السعر': 450000}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الحي': 'النرجس', 'النوع': 'شقة', 'المساحة': 120, 'السعر': 450000}], COLUMNS)\n    assert \"النرجس\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.counting import count_by\nfrom src.cli import main\n\ndef test_count_by_direct():\n    rows = load_records(\"data/properties.csv\")\n    assert count_by(rows, \"النوع\") == {\"شقة\": 2, \"فيلا\": 2}\n    assert count_by(rows, \"الحي\")[\"النرجس\"] == 2\n\ndef test_cli_count():\n    out = main([\"data/properties.csv\", \"--count-by\", \"النوع\"])\n    lines = set(out.splitlines())\n    assert \"شقة: 2\" in lines and \"فيلا: 2\" in lines\n"
+      },
+      "instruction": "أضف عدًّا بقيمة حقل:\n1. src/counting.py فيه count_by(records, field) يعيد قاموس «القيمة → العدد».\n2. src/cli.py يقبل --count-by <حقل> ويعرض كل زوج في سطر «القيمة: العدد».\nالاختبارات القديمة خط أحمر.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0023",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الحي', 'النوع', 'السعر']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/properties.csv": "الحي,النوع,المساحة,السعر\nالنرجس,شقة,120,450000\nالياسمين,فيلا,300,1500000\nالنرجس,فيلا,280,1350000\nالورود,شقة,95,380000\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/properties.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/properties.csv\")\n    assert rows[0][\"الحي\"] == \"النرجس\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الحي': 'النرجس', 'النوع': 'شقة', 'المساحة': 120, 'السعر': 450000}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الحي': 'النرجس', 'النوع': 'شقة', 'المساحة': 120, 'السعر': 450000}], COLUMNS)\n    assert \"النرجس\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.taxing import with_tax\nfrom src.cli import main\n\ndef test_with_tax():\n    rows = load_records(\"data/properties.csv\")\n    res = with_tax(rows, \"السعر\", 0.10)\n    assert res[0][\"السعر_مع_الضريبة\"] == \"495000\"\n    assert \"السعر_مع_الضريبة\" not in rows[0]\n\ndef test_cli_tax():\n    out = main([\"data/properties.csv\", \"--tax\", \"0.10\"])\n    assert \"السعر_مع_الضريبة\" in out.splitlines()[0]\n    assert \"495000\" in out\n"
+      },
+      "instruction": "أضف عمود السعر مع الضريبة:\n1. src/taxing.py فيه with_tax(records, field, rate) تعيد نسخًا جديدة بعمود «<الحقل>_مع_الضريبة» = الحقل × (1 + النسبة) مقصوصًا لعدد صحيح نصّي، دون تغيير الأصل.\n2. src/cli.py يقبل --tax <نسبة> مثل 0.10 ويضيف العمود للعرض.\nالاختبارات القديمة خط أحمر.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0024",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الاسم', 'القسم', 'الراتب']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/employees.csv": "الاسم,القسم,المدينة,الراتب\nبدر,التقنية,الرياض,9000\nلطيفة,التقنية,جدة,8500\nماجد,التقنية,الرياض,9500\nهند,الموارد,الرياض,7000\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/employees.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/employees.csv\")\n    assert rows[0][\"الاسم\"] == \"بدر\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الاسم': 'بدر', 'القسم': 'التقنية', 'المدينة': 'الرياض', 'الراتب': 9000}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الاسم': 'بدر', 'القسم': 'التقنية', 'المدينة': 'الرياض', 'الراتب': 9000}], COLUMNS)\n    assert \"بدر\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.lookup import find_by_value\nfrom src.cli import main\n\ndef test_find_direct():\n    rows = load_records(\"data/employees.csv\")\n    r = find_by_value(rows, \"الاسم\", \"هند\")\n    assert r[\"الراتب\"] == \"7000\"\n    assert find_by_value(rows, \"الاسم\", \"غير موجود\") is None\n\ndef test_cli_find():\n    out = main([\"data/employees.csv\", \"--find\", \"القسم\", \"الموارد\"])\n    assert \"هند\" in out\n    assert \"بدر\" not in out\n"
+      },
+      "instruction": "أضف بحثًا بقيمة يعيد أول سجل مطابق:\n1. src/lookup.py فيه find_by_value(records, field, value) يعيد أول سجل أو None.\n2. src/cli.py يقبل --find <حقل> <قيمة> ويعرض السجل المطابق (أو الترويسة وحدها إن لم يوجد).\nلا تعدّل الاختبارات.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0008",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الاسم', 'القسم', 'الراتب']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/employees.csv": "الاسم,القسم,المدينة,الراتب\nبدر,التقنية,الرياض,9000\nلطيفة,التقنية,جدة,8500\nماجد,التقنية,الرياض,9500\nهند,الموارد,الرياض,7000\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/employees.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/employees.csv\")\n    assert rows[0][\"الاسم\"] == \"بدر\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الاسم': 'بدر', 'القسم': 'التقنية', 'المدينة': 'الرياض', 'الراتب': 9000}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الاسم': 'بدر', 'القسم': 'التقنية', 'المدينة': 'الرياض', 'الراتب': 9000}], COLUMNS)\n    assert \"بدر\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport pytest\nfrom src.validation import validate_records\n\ndef test_valid_records_pass():\n    rows = [{\"الاسم\": \"بدر\", \"الراتب\": \"9000\"}, {\"الاسم\": \"هند\", \"الراتب\": \"7000\"}]\n    validate_records(rows, [\"الاسم\", \"الراتب\"])  # لا يرمي شيئًا\n\ndef test_empty_field_raises_with_row_number():\n    rows = [{\"الاسم\": \"بدر\", \"الراتب\": \"9000\"}, {\"الاسم\": \"هند\", \"الراتب\": \"\"}]\n    with pytest.raises(ValueError) as e:\n        validate_records(rows, [\"الاسم\", \"الراتب\"])\n    msg = str(e.value)\n    assert \"السطر 2\" in msg and \"الراتب\" in msg\n\ndef test_missing_column_raises():\n    rows = [{\"الاسم\": \"بدر\"}]\n    with pytest.raises(ValueError):\n        validate_records(rows, [\"الاسم\", \"الراتب\"])\n"
+      },
+      "instruction": "ميزة تحقق من سلامة البيانات:\n1. وحدة src/validation.py بدالة validate_records(records, required_fields) ترمي ValueError برسالة عربية تذكر رقم السطر (يبدأ من 1 بترتيب سطور البيانات) واسم الحقل عند غيابه أو خلوّه.\n2. حدّث src/loader.py ليقبل load_records(path, required=None) فيتحقق عند تمرير الحقول المطلوبة.\n3. src/cli.py يقبل --validate فيمرّر الأعمدة المعروضة بوصفها مطلوبة.\nثلاثة ملفات تتغير؛ الاختبارات القديمة يجب ألا تتأثر (السلوك الافتراضي بلا تحقق).",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0005",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['المريض', 'الطبيب', 'الرسوم', 'التاريخ']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/visits.csv": "المريض,الطبيب,التخصص,الرسوم,التاريخ\nأحمد,ليلى,باطنة,150,2026-02-01\nمريم,سامي,أطفال,200,2026-02-03\nيوسف,ليلى,باطنة,150,2026-02-10\nهند,سامي,جلدية,250,2026-03-01\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/visits.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/visits.csv\")\n    assert rows[0][\"المريض\"] == \"أحمد\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'المريض': 'أحمد', 'الطبيب': 'ليلى', 'التخصص': 'باطنة', 'الرسوم': 150, 'التاريخ': '2026-02-01'}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'المريض': 'أحمد', 'الطبيب': 'ليلى', 'التخصص': 'باطنة', 'الرسوم': 150, 'التاريخ': '2026-02-01'}], COLUMNS)\n    assert \"أحمد\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.daterange import filter_by_date_range\nfrom src.cli import main\n\ndef test_range_direct():\n    rows = load_records(\"data/visits.csv\")\n    res = filter_by_date_range(rows, \"2026-02-01\", \"2026-02-10\")\n    assert len(res) == 3  # الطرفان مشمولان\n    assert all(\"2026-02-01\" <= r[\"التاريخ\"] <= \"2026-02-10\" for r in res)\n\ndef test_range_boundaries_inclusive():\n    rows = load_records(\"data/visits.csv\")\n    res = filter_by_date_range(rows, \"2026-02-03\", \"2026-02-03\")\n    assert len(res) == 1\n    assert res[0][\"المريض\"] == \"مريم\"\n\ndef test_cli_range():\n    out = main([\"data/visits.csv\", \"--from\", \"2026-03-01\", \"--to\", \"2026-03-31\"])\n    assert \"هند\" in out and \"أحمد\" not in out\n"
+      },
+      "instruction": "ميزة ترشيح الزيارات بمدى تاريخ:\n1. src/daterange.py فيه filter_by_date_range(records, start, end) — التواريخ بصيغة ISO والطرفان مشمولان في المدى.\n2. src/cli.py يقبل --from <تاريخ> --to <تاريخ>.\nانتبه لشمول الطرفين؛ اختبار الميزة يفحص ذلك صراحة. الاختبارات القديمة تبقى خضراء.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0020",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['العنوان', 'المؤلف', 'النسخ']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/books.csv": "العنوان,المؤلف,التصنيف,النسخ\nالأيام,طه حسين,سيرة,٣\nموسم الهجرة إلى الشمال,الطيب صالح,رواية,٥\nرجال في الشمس,غسان كنفاني,رواية,٢\nعزازيل,يوسف زيدان,رواية,٤\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/books.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/books.csv\")\n    assert rows[0][\"العنوان\"] == \"الأيام\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'العنوان': 'الأيام', 'المؤلف': 'طه حسين', 'التصنيف': 'سيرة', 'النسخ': 3}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'العنوان': 'الأيام', 'المؤلف': 'طه حسين', 'التصنيف': 'سيرة', 'النسخ': 3}], COLUMNS)\n    assert \"الأيام\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.digits import to_western_digits\nfrom src.loader import load_records\nfrom src.cli import main\n\ndef test_to_western():\n    assert to_western_digits(\"١٢٣\") == \"123\"\n    assert to_western_digits(\"٣٤٥\") == \"345\"\n\ndef test_load_normalized():\n    rows = load_records(\"data/books.csv\", normalize_digits=True)\n    assert rows[0][\"النسخ\"] == \"3\"\n    assert int(rows[1][\"النسخ\"]) == 5\n\ndef test_load_default_unchanged():\n    rows = load_records(\"data/books.csv\")\n    assert rows[0][\"النسخ\"] == \"٣\"\n\ndef test_cli_sum():\n    out = main([\"data/books.csv\", \"--sum\", \"النسخ\"])\n    assert out.strip() == \"المجموع: 14\"\n"
+      },
+      "instruction": "ملف data/books.csv الحالي يكتب عمود النسخ بأرقام عربية مشرقية (٣، ٥...). أضف:\n1. src/digits.py فيه to_western_digits(text) يحوّل ٠-٩ إلى 0-9.\n2. حدّث src/loader.py: load_records(path, normalize_digits=False) — عند True تُحوَّل الأرقام في كل الحقول، والافتراضي يبقى كما كان (اختبار قديم يعتمد على ذلك).\n3. src/cli.py يقبل --sum <حقل> فيحسب المجموع بعد التحويل ويعيد «المجموع: N».\nثلاثة ملفات؛ لا تمسّ tests/ ولا ملف البيانات.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0018",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الدورة', 'المدرب', 'عدد_المسجلين']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/courses.csv": "الدورة,المدرب,عدد_المسجلين,رسوم_التسجيل\nأساسيات بايثون,أحمد,25,300\nتصميم قواعد البيانات,منى,18,450\nمقدمة في الذكاء الاصطناعي,خالد,40,600\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/courses.csv\")\n    assert len(rows) == 3\n\ndef test_first_row_text():\n    rows = load_records(\"data/courses.csv\")\n    assert rows[0][\"الدورة\"] == \"أساسيات بايثون\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الدورة': 'أساسيات بايثون', 'المدرب': 'أحمد', 'عدد_المسجلين': 25, 'رسوم_التسجيل': 300}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الدورة': 'أساسيات بايثون', 'المدرب': 'أحمد', 'عدد_المسجلين': 25, 'رسوم_التسجيل': 300}], COLUMNS)\n    assert \"أساسيات بايثون\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.cumulative import render_running_total\nfrom src.cli import main\n\ndef test_running_total():\n    rows = load_records(\"data/courses.csv\")\n    out = render_running_total(rows, [\"الدورة\", \"عدد_المسجلين\"], \"عدد_المسجلين\")\n    lines = out.splitlines()\n    assert lines[0].endswith(\"الإجمالي_التراكمي\")\n    assert lines[1].endswith(\"25\")\n    assert lines[2].endswith(\"43\")\n    assert lines[3].endswith(\"83\")\n\ndef test_cli_running():\n    out = main([\"data/courses.csv\", \"--running\", \"عدد_المسجلين\"])\n    assert out.splitlines()[-1].endswith(\"83\")\n"
+      },
+      "instruction": "أضف عمود إجمالي تراكمي:\n1. src/cumulative.py فيه render_running_total(records, columns, field) يعيد العرض المعتاد مضافًا إليه عمود «الإجمالي_التراكمي» قيمته مجموع الحقل حتى ذلك السطر شاملاً إياه.\n2. src/cli.py يقبل --running <حقل>.\nالعرض الأساسي في src/report.py يجب أن يبقى كما هو (الاختبارات القديمة تعتمد عليه).",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0021",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['المريض', 'الطبيب', 'الرسوم', 'التاريخ']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/visits.csv": "المريض,الطبيب,التخصص,الرسوم,التاريخ\nأحمد,ليلى,باطنة,150,2026-02-01\nمريم,سامي,أطفال,200,2026-02-03\nيوسف,ليلى,باطنة,150,2026-02-10\nهند,سامي,جلدية,250,2026-03-01\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/visits.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/visits.csv\")\n    assert rows[0][\"المريض\"] == \"أحمد\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'المريض': 'أحمد', 'الطبيب': 'ليلى', 'التخصص': 'باطنة', 'الرسوم': 150, 'التاريخ': '2026-02-01'}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'المريض': 'أحمد', 'الطبيب': 'ليلى', 'التخصص': 'باطنة', 'الرسوم': 150, 'التاريخ': '2026-02-01'}], COLUMNS)\n    assert \"أحمد\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.monthly import summary_by_month\nfrom src.cli import main\n\ndef test_summary_by_month():\n    rows = load_records(\"data/visits.csv\")\n    res = summary_by_month(rows, \"التاريخ\", \"الرسوم\")\n    assert res == {\"2026-02\": 500, \"2026-03\": 250}\n\ndef test_cli_by_month():\n    out = main([\"data/visits.csv\", \"--by-month\", \"الرسوم\"])\n    lines = out.splitlines()\n    assert \"2026-02: 500\" in lines\n    assert \"2026-03: 250\" in lines\n"
+      },
+      "instruction": "أضف تلخيصًا شهريًّا للرسوم:\n1. src/monthly.py فيه summary_by_month(records, date_field, sum_field) يجمع بمفتاح «سنة-شهر» مستخرج من تاريخ ISO، بترتيب أول ظهور.\n2. src/cli.py يقبل --by-month <حقل> ويعرض كل شهر في سطر «الشهر: المجموع».\nالاختبارات القديمة خط أحمر.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0001",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['التاريخ', 'المنتج', 'المدينة', 'الكمية', 'سعر_الوحدة']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/sales.csv": "التاريخ,المنتج,المدينة,الكمية,سعر_الوحدة\n2026-01-03,تفاح,الرياض,10,3\n2026-01-03,أرز,جدة,2,25\n2026-01-04,حليب,الرياض,6,4\n2026-01-05,تفاح,جدة,5,3\n2026-01-06,خبز,الدمام,12,1\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/sales.csv\")\n    assert len(rows) == 5\n\ndef test_first_row_text():\n    rows = load_records(\"data/sales.csv\")\n    assert rows[0][\"المنتج\"] == \"تفاح\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'التاريخ': '2026-01-03', 'المنتج': 'تفاح', 'المدينة': 'الرياض', 'الكمية': 10, 'سعر_الوحدة': 3}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'التاريخ': '2026-01-03', 'المنتج': 'تفاح', 'المدينة': 'الرياض', 'الكمية': 10, 'سعر_الوحدة': 3}], COLUMNS)\n    assert \"تفاح\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.filtering import filter_by_value\nfrom src.cli import main\n\ndef test_filter_direct():\n    rows = load_records(\"data/sales.csv\")\n    res = filter_by_value(rows, \"المدينة\", \"الرياض\")\n    assert len(res) == 2\n    assert all(r[\"المدينة\"] == \"الرياض\" for r in res)\n\ndef test_cli_filter():\n    out = main([\"data/sales.csv\", \"--filter\", \"المدينة\", \"جدة\"])\n    lines = out.splitlines()\n    assert len(lines) == 3\n    assert \"جدة\" in out and \"الرياض\" not in out\n"
+      },
+      "instruction": "المشروع يقرأ data/sales.csv ويعرضه. المطلوب ميزة ترشيح:\n1. وحدة جديدة src/filtering.py فيها دالة filter_by_value(records, field, value) تعيد السطور التي يساوي فيها الحقل القيمة.\n2. حدّث src/cli.py ليقبل main وسيطًا اختياريًّا --filter <حقل> <قيمة> بعد مسار الملف.\nاختبار الميزة في tests/test_feature.py، والاختبارات القديمة يجب أن تبقى خضراء. ممنوع تعديل tests/.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0009",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الاسم', 'المادة', 'الدرجة']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/students.csv": "الاسم,الصف,المادة,الدرجة\nسارة,العاشر,رياضيات,88\nخالد,العاشر,علوم,73\nنورة,الحادي عشر,رياضيات,91\nفهد,الحادي عشر,علوم,64\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/students.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/students.csv\")\n    assert rows[0][\"الاسم\"] == \"سارة\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الاسم': 'سارة', 'الصف': 'العاشر', 'المادة': 'رياضيات', 'الدرجة': 88}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الاسم': 'سارة', 'الصف': 'العاشر', 'المادة': 'رياضيات', 'الدرجة': 88}], COLUMNS)\n    assert \"سارة\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport json\nfrom src.loader import load_records\nfrom src.jsonout import render_json\nfrom src.cli import main\n\ndef test_render_json():\n    rows = load_records(\"data/students.csv\")\n    out = render_json(rows)\n    data = json.loads(out)\n    assert len(data) == 4\n    assert data[0][\"الاسم\"] == \"سارة\"\n    assert \"سارة\" in out  # عربي مقروء لا محرفات \\u\n\ndef test_cli_json():\n    out = main([\"data/students.csv\", \"--format\", \"json\"])\n    assert json.loads(out)[1][\"الدرجة\"] == \"73\"\n"
+      },
+      "instruction": "أضف إخراج JSON:\n1. src/jsonout.py فيه render_json(records) يعيد JSON بمسافة بادئة 2، والنص العربي مقروءًا (ensure_ascii=False) لا تسلسلات \\u.\n2. src/cli.py يقبل --format json.\nالاختبارات القديمة تبقى خضراء.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0006",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الصنف', 'المستودع', 'الكمية']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/inventory.csv": "الصنف,المستودع,الكمية,حد_الطلب\nأقلام,الرئيسي,120,50\nدفاتر,الرئيسي,80,40\nأحبار,الفرعي,45,30\nورق,الفرعي,200,100\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/inventory.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/inventory.csv\")\n    assert rows[0][\"الصنف\"] == \"أقلام\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الصنف': 'أقلام', 'المستودع': 'الرئيسي', 'الكمية': 120, 'حد_الطلب': 50}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الصنف': 'أقلام', 'المستودع': 'الرئيسي', 'الكمية': 120, 'حد_الطلب': 50}], COLUMNS)\n    assert \"أقلام\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.grouping import group_sum\nfrom src.cli import main\n\ndef test_group_sum_direct():\n    rows = load_records(\"data/inventory.csv\")\n    res = group_sum(rows, \"المستودع\", \"الكمية\")\n    assert res == {\"الرئيسي\": 200, \"الفرعي\": 245}\n\ndef test_cli_group():\n    out = main([\"data/inventory.csv\", \"--group-by\", \"المستودع\", \"--sum\", \"الكمية\"])\n    lines = out.splitlines()\n    assert \"الرئيسي: 200\" in lines\n    assert \"الفرعي: 245\" in lines\n"
+      },
+      "instruction": "أضف تجميعًا حسابيًّا:\n1. src/grouping.py فيه group_sum(records, group_field, sum_field) يعيد قاموس «المجموعة → المجموع» بترتيب أول ظهور.\n2. src/cli.py يقبل --group-by <حقل> --sum <حقل> ويطبع كل مجموعة في سطر «الاسم: المجموع».\nالاختبارات القديمة تبقى كما هي.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0010",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الحي', 'النوع', 'السعر']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/properties.csv": "الحي,النوع,المساحة,السعر\nالنرجس,شقة,120,450000\nالياسمين,فيلا,300,1500000\nالنرجس,فيلا,280,1350000\nالورود,شقة,95,380000\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/properties.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/properties.csv\")\n    assert rows[0][\"الحي\"] == \"النرجس\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الحي': 'النرجس', 'النوع': 'شقة', 'المساحة': 120, 'السعر': 450000}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الحي': 'النرجس', 'النوع': 'شقة', 'المساحة': 120, 'السعر': 450000}], COLUMNS)\n    assert \"النرجس\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.stats import stats\nfrom src.cli import main\n\ndef test_stats_direct():\n    rows = load_records(\"data/properties.csv\")\n    res = stats(rows, \"السعر\")\n    assert res[\"min\"] == 380000\n    assert res[\"max\"] == 1500000\n    assert res[\"avg\"] == 920000\n\ndef test_cli_stats():\n    out = main([\"data/properties.csv\", \"--stats\", \"السعر\"])\n    assert \"الأدنى: 380000\" in out\n    assert \"الأعلى: 1500000\" in out\n    assert \"المتوسط: 920000\" in out\n"
+      },
+      "instruction": "ميزة إحصاءات سريعة:\n1. src/stats.py فيه stats(records, field) يعيد قاموسًا بالمفاتيح min وmax وavg (المتوسط عدد صحيح إن كان كاملًا، وإلا مقرّبًا لمنزلتين).\n2. src/cli.py يقبل --stats <حقل> ويعرض: «الأدنى: X» ثم «الأعلى: Y» ثم «المتوسط: Z» كلٌّ في سطر.\nلا تعدّل الاختبارات.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0003",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الاسم', 'المادة', 'الدرجة']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/students.csv": "الاسم,الصف,المادة,الدرجة\nسارة,العاشر,رياضيات,88\nخالد,العاشر,علوم,73\nنورة,الحادي عشر,رياضيات,91\nفهد,الحادي عشر,علوم,64\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/students.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/students.csv\")\n    assert rows[0][\"الاسم\"] == \"سارة\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الاسم': 'سارة', 'الصف': 'العاشر', 'المادة': 'رياضيات', 'الدرجة': 88}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الاسم': 'سارة', 'الصف': 'العاشر', 'المادة': 'رياضيات', 'الدرجة': 88}], COLUMNS)\n    assert \"سارة\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nimport csv\nfrom src.loader import load_records\nfrom src.exporter import export_csv\nfrom src.cli import main\n\ndef test_export_direct(tmp_path):\n    rows = load_records(\"data/students.csv\")\n    p = tmp_path / \"out.csv\"\n    export_csv(rows, str(p), [\"الاسم\", \"الدرجة\"])\n    with open(p, encoding=\"utf-8\", newline=\"\") as f:\n        r = list(csv.DictReader(f))\n    assert len(r) == 4\n    assert r[0][\"الاسم\"] == \"سارة\"\n    assert \"الصف\" not in r[0]\n\ndef test_cli_export(tmp_path):\n    p = tmp_path / \"out2.csv\"\n    main([\"data/students.csv\", \"--export\", str(p)])\n    with open(p, encoding=\"utf-8\") as f:\n        assert \"الدرجة\" in f.read()\n"
+      },
+      "instruction": "نريد تصدير السجلات المعروضة إلى ملف CSV جديد:\n1. وحدة src/exporter.py بدالة export_csv(records, path, columns) تكتب ترويسة ثم السطور، بترميز UTF-8.\n2. في src/cli.py وسيط --export <مسار> يصدّر الأعمدة المعروضة نفسها.\nالاختبارات القديمة خط أحمر.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0015",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['الخط', 'المحطة', 'عدد_الركاب']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/trips.csv": "الخط,المحطة,عدد_الركاب,التاريخ\nأ,المحطة المركزية,120,2026-04-01\nب,حي الجامعة,85,2026-04-01\nج,المحطة المركزية,60,2026-04-02\nد,حي الصفا,40,2026-04-02\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/trips.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/trips.csv\")\n    assert rows[0][\"الخط\"] == \"أ\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'الخط': 'أ', 'المحطة': 'المحطة المركزية', 'عدد_الركاب': 120, 'التاريخ': '2026-04-01'}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'الخط': 'أ', 'المحطة': 'المحطة المركزية', 'عدد_الركاب': 120, 'التاريخ': '2026-04-01'}], COLUMNS)\n    assert \"أ\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\nfrom src.paging import paginate\nfrom src.cli import main\n\ndef test_paginate_direct():\n    rows = load_records(\"data/trips.csv\")\n    assert [r[\"الخط\"] for r in paginate(rows, 2, 2)] == [\"ج\", \"د\"]\n    assert [r[\"الخط\"] for r in paginate(rows, 1, 3)] == [\"أ\", \"ب\", \"ج\"]\n\ndef test_cli_page():\n    out = main([\"data/trips.csv\", \"--page\", \"2\", \"--size\", \"2\"])\n    assert \"حي الصفا\" in out\n    assert \"حي الجامعة\" not in out\n"
+      },
+      "instruction": "أضف ترقيم الصفحات:\n1. src/paging.py فيه paginate(records, page, size) — الصفحة الأولى رقمها 1.\n2. src/cli.py يقبل --page <رقم> --size <عدد>.\nلا تعدّل الاختبارات.",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    },
+    {
+      "task_id": "feat_0017",
+      "capability": "multi_file_feature",
+      "workspace": {
+        "src/__init__.py": "",
+        "src/loader.py": "import csv\n\ndef load_records(path):\n    with open(path, encoding=\"utf-8\", newline=\"\") as f:\n        return list(csv.DictReader(f))\n",
+        "src/report.py": "def render(records, columns):\n    lines = [\" | \".join(columns)]\n    for r in records:\n        lines.append(\" | \".join(str(r.get(c, \"\")) for c in columns))\n    return \"\\n\".join(lines)\n",
+        "src/cli.py": "from src.loader import load_records\nfrom src.report import render\n\nCOLUMNS = ['المريض', 'الطبيب', 'الرسوم', 'التاريخ']\n\ndef main(argv):\n    records = load_records(argv[0])\n    return render(records, COLUMNS)\n",
+        "data/visits.csv": "المريض,الطبيب,التخصص,الرسوم,التاريخ\nأحمد,ليلى,باطنة,150,2026-02-01\nمريم,سامي,أطفال,200,2026-02-03\nيوسف,ليلى,باطنة,150,2026-02-10\nهند,سامي,جلدية,250,2026-03-01\n",
+        "tests/test_loader.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.loader import load_records\n\ndef test_loads_all_rows():\n    rows = load_records(\"data/visits.csv\")\n    assert len(rows) == 4\n\ndef test_first_row_text():\n    rows = load_records(\"data/visits.csv\")\n    assert rows[0][\"المريض\"] == \"أحمد\"\n",
+        "tests/test_report.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.report import render\nfrom src.cli import COLUMNS\n\ndef test_header_line():\n    out = render([{'المريض': 'أحمد', 'الطبيب': 'ليلى', 'التخصص': 'باطنة', 'الرسوم': 150, 'التاريخ': '2026-02-01'}], COLUMNS)\n    assert out.splitlines()[0] == \" | \".join(COLUMNS)\n\ndef test_row_renders_value():\n    out = render([{'المريض': 'أحمد', 'الطبيب': 'ليلى', 'التخصص': 'باطنة', 'الرسوم': 150, 'التاريخ': '2026-02-01'}], COLUMNS)\n    assert \"أحمد\" in out\n",
+        "tests/test_feature.py": "import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.multi import load_many\nfrom src.cli import main\n\ndef test_load_many():\n    rows = load_many([\"data/visits.csv\", \"data/visits_extra.csv\"])\n    assert len(rows) == 6\n    assert rows[-2][\"المريض\"] == \"سلمى\"\n\ndef test_cli_two_files():\n    out = main([\"data/visits.csv\", \"data/visits_extra.csv\"])\n    assert \"سلمى\" in out and \"أحمد\" in out\n",
+        "data/visits_extra.csv": "المريض,الطبيب,التخصص,الرسوم,التاريخ\nسلمى,خالد,أسنان,180,2026-03-05\nعمر,ليلى,باطنة,150,2026-03-07\n"
+      },
+      "instruction": "المشروع يقرأ ملفًا واحدًا. أضف دعم دمج عدة ملفات:\n1. src/multi.py فيه load_many(paths) يعيد سجلات كل الملفات متتابعة بترتيب تمريرها.\n2. حدّث src/cli.py ليقبل main أكثر من مسار (كل الوسائط التي لا تبدأ بـ --).\nملف data/visits_extra.csv موجود للتجربة. الاختبارات القديمة تبقى خضراء (مسار واحد يجب أن يعمل كما كان).",
+      "success": {
+        "kind": "tests_pass",
+        "command": [
+          "python3",
+          "-m",
+          "pytest",
+          "tests/",
+          "-q"
+        ]
+      },
+      "forbidden": [
+        "tests"
+      ],
+      "rubric": [
+        "يضيف الميزة في ملفات المصدر دون لمس الاختبارات",
+        "تبقى الاختبارات الموجودة خضراء كما كانت",
+        "اختبار الميزة الجديدة يمرّ فعلًا"
+      ],
+      "max_steps": 12
+    }
+  ]
+}

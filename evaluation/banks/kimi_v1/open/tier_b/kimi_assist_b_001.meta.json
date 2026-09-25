@@ -1,0 +1,381 @@
+{
+  "suite_id": "kimi_assist_b_001",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "B",
+  "cases": {
+    "edit_b_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحرير إعلان عامي ركيك؛ يقيس الرفع اللغوي مع حفظ المعلومات وعدم الإضافة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0038": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إعلان مجتمعي عامي؛ حفظ المواعيد والتفاصيل التنظيمية يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0028": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "رد دعم فني على خطأ مستخدم؛ الحياد المهني مع دقة الخطوات يُقاسان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0031": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل تفاوض بيع عامي إلى فصحى؛ الأرقام والشرط يُقاسان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0033": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "متابعة عميل عبر واتساب تُرفع لبريد رسمي؛ اكتمال العناصر يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0023": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "رد أكاديمي بقاعدة معلنة؛ حفظ القاعدة مع التلطيف هو المقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0013": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "خطاب شكر رسمي؛ دقة الأسماء والأرقام والنبرة الاحتفالية تُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تلطيف تقييم أداء مع منع تخفيف المضمون؛ التخفيف قد يُفقد التقييم قيمته كمستند أداء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0020": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تلطيف اعتراض مع تهديد؛ تحويل التهديد إلى إشعار إجرائي مهذب دون حذفه هو المهارة المقاسة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0043": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إصلاح عربية متكسرة مع حفظ المضمون بدقة؛ إضافة تفاصيل «مفترضة» فخّ شائع في هذا النمط.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "النموذج قد يضيف تواريخ أو اسم بلد أو تفاصيل عن المرض لتجميل النص."
+    },
+    "edit_b_0014": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إعادة تنظيم بريد متشعب متعدد النقاط؛ حذف نقطة أثناء إعادة الترتيب هو الخطأ المقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0035": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "طلب تصحيح اسم رسمي؛ أي خطأ في إعادة كتابة الاسمين يُبطل الخطاب كله، وهو فخّ دقيق للنماذج.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يوحّد النموذج الاسمين أو «يصحح» الاسم الخاطئ المعروض كمثال."
+    },
+    "edit_b_0039": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اعتراض على فاتورة طبية؛ الأرقام هي جوهر المطالبة وأي تغيير فيها أو تحويل الطلب المشروط إلى قطعي يُضعف الموقف.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يحذف النموذج صيغة التحفظ «إن ثبت الخطأ» فيطالب بردّ الفرق كأنه حق مؤكد."
+    },
+    "edit_b_0016": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تلطيف رسالة مدير مهينة مع منع تغيير القرار؛ التلطيف الزائد الذي يوحي بقبول مؤجل خطأ جسيم في سياق إداري.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "النموذج قد يلطف لدرجة «سندرس اقتراحك» فيقلب الرفض قبولًا ضمنيًّا."
+    },
+    "edit_b_0029": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "رفض عرض مورد بأسباب موثقة؛ التحقير خطأ مهني مقاس مع حفظ الأسباب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0030": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل تكليف شفهي عامي إلى بريد رسمي؛ الأرقام والتسلسل الشرطي يُقاسان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0034": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اعتذار عن خطأ رقمي؛ قلب الرقمين أثناء التحرير فخّ مقاس بدقة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "النموذج قد يكتب «الصحيح 2.3» قالبًا الرقمين أو يحذف أحدهما."
+    },
+    "edit_b_0004": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نبذة سيرة ذاتية عامية؛ الخطر المقاس إضافة مؤهلات وهمية يفعلها النموذج غالبًا.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "النماذج تضيف عادة «بكالوريوس محاسبة» أو مهارات قيادية غير مذكورة في الأصل."
+    },
+    "edit_b_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تفكيك جملة تقريرية متداخلة طويلة مع حفظ الأرقام؛ قياس التكثيف والدقة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "رد عيادة تجميل؛ إخلاء الضمان عن النتائج بند حساس يجب حفظه حرفيًّا في المعنى.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل ملاحظات عجلى إلى محضر؛ اكتمال القرارات والأرقام يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0037": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل اتفاق شفهي إلى مكتوب؛ أي بند مضاف أو محذوف يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نص تسويقي عامي؛ اختلاق المزايا فخّ مقاس بدقة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0019": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلطيف استعلاء خبير مع حفظ المحتوى الفني؛ حذف المرجع أو التصحيح خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0015": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ملاحظات تحريرية عامية؛ حفظ الملاحظات الأربع كاملة دون إضافة هو المقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0011": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "رسالة مستثمر عامية؛ التوازن بين الثقة والتزلف يُقاس مع دقة الأرقام.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0021": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "رد على مراجعة عامة؛ الاتهام العلني للعميل خطأ تسويقي مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تقرير ميداني عامي؛ اكتمال التفاصيل الفنية والتوصية يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0025": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مراجعة كود بين زملاء؛ النقد المهني دون شخصنة هو المقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "edit_b_0040": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل رأي نقدي عامي إلى تقييم مهني؛ حفظ التوازن النقدي دون تجميل يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0005": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اعتذار مهني قياسي؛ يقيس اكتمال العناصر والنبرة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0008": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اعتذار قصير بقناة غير تقليدية؛ يقيس ضبط الطول والقناة مع اكتمال العناصر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0018": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اعتذار عن دعوة مع ترشيح بديل؛ يقيس اللباقة والإيجاز.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تعميم عملي؛ الخلط بين جدولي اليومين هو الخطأ المقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0025": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اعتذار تجاري بعناصر تعويض متعددة؛ الإغفال هو الخطأ المقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0015": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "طلب مناسبة اجتماعية بصيغة رسمية؛ يقيس اللباقة والدقة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0014": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الرد على عميل مهدد بالتشهير: الإساءة أو التنازل كلاهما خسارة؛ والتعليمة الصريحة بتجاهل التهديد تُقاس بدقة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "كثير من النماذج يرد على التهديد («نحتفظ بحقنا القانوني») رغم التعليمة الصريحة بتجاهله."
+    },
+    "offw_b_0019": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إعادة طلب مرفوض سابقًا تتطلب دبلوماسية عالية؛ التلميح الانتصاري خطأ شائع وجسيم في بيئة العمل.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "عبارات مثل «كما أشرت سابقًا عند رفض طلبي» تحمل عتبًا مقنّعًا يفسد النبرة."
+    },
+    "offw_b_0024": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "رفض طلب عميل مع بدائل مرقّمة؛ تغيير الأرقام أو قبول الضغط يخالف التعليمة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0027": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "رد حساس على اتهام بالمحسوبية؛ تسرّب معلومات متقدمين أو وعد باستثناء كلاهما خطأ جسيم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0042": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مخاطبة توثيقية في مشروع إنشائي قد تُحال لنزاع؛ خطأ التواريخ أو إغفال المطلب القانوني يُضعف موقف الجهة المشرفة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "النموذج قد يقلب تسلسل التواريخ أو يحوّل الخطاب إلى اتهام شخصي للمقاول بدل التوثيق الفني المحايد."
+    },
+    "offw_b_0013": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اعتذار عن حادث تقني مع قيد قانوني صريح؛ الصيغة الخاطئة قد تُستخدم إقرارًا ضد الشركة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "النماذج تميل إلى «نعتذر عن هذا الخطأ من جانبنا» وهي صيغة إقرار مقنّع."
+    },
+    "offw_b_0009": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خطاب توثيقي قد يُستخدم أمام لجنة فض المنازعات؛ أي خلل في التواريخ أو في الإشعار الحقوقي يُفقد المستأجر ورقته القانونية.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يستبدل النموذج الإشعار الحقوقي الدقيق بعبارة عامة («أحتفظ بحقوقي») تفقد الخطاب قيمته الإثباتية."
+    },
+    "offw_b_0037": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تصحيح صحفي عن منتج دوائي؛ خطأ آخر في التصحيح يضاعف الضرر القانوني والمهني، وتحميل المصدر تنصّل مرفوض صحفيًّا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0036": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "استشارة مالية تمس أموال العميل؛ ضمان العائد مخالفة مهنية جسيمة، والسكوت عن الوعد المشبوه قد يورّطه في احتيال.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0001": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "شكوى مصرفية يتوقف نجاحها على دقة الوقائع والمطلب؛ إغفال الأرقام أو المطلب يُفقد الشكوى قيمتها العملية.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يكتفي النموذج بشكوى عامة بلاغية دون الأرقام والمطلب الصريح."
+    },
+    "offw_b_0004": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ردّ على تهديد ضمني؛ الحزم بلا إساءة هنا هو جوهر القدرة، والانزلاق للاستعلاء أو التنازل كلاهما خطأ جسيم في سياق أكاديمي.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد ينجذب النموذج إلى الدفاع العاطفي أو إلى تهدئة تتضمن وعدًا ضمنيًّا بمراجعة الدرجة."
+    },
+    "offw_b_0034": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "رفض استثناء مع شفافية النظام؛ يقيس الحزم العادل والبدائل البنّاءة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "شكوى خدمة شائعة تختبر الالتزام بالوقائع والمطلبين معًا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0039": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تواصل مدرسي عن حادثة؛ التوازن بين الشفافية والطمأنة هو موضع القياس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "خبر سيئ مع خطة تخفيف؛ يقيس الشفافية والبنية الحلّية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0038": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحصيل مستحقات بخصم محدود؛ الحساب الصحيح وضبط الخصم يُقاسان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عرض تجديد بزيادة؛ دقة الأرقام والمهلة وأثر السكوت تُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حوار متعدد الأدوار يقيس الحفاظ على السياق وإدماج إضافات محددة دون انجراف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0040": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "رفض منحة بحساسية إنسانية؛ الوعد الزائف والجفاف كلاهما خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0030": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "شكوى جهة مجتمعية بأرقام بلاغات؛ الدقة الرقمية والمطالب الثلاثة هي موضع القياس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0033": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "طلب ميزانية تقني؛ الإقناع المتوازن بالأرقام هو موضع القياس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ظرف قاهر بتواريخ متشابكة؛ يقيس الدقة الزمنية والتوثيق.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "رفض توظيف صادق؛ الصدق المهني دون قسوة هو موضع القياس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "offw_b_0003": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "طلب إجازة بظرف إنساني؛ التوازن بين الإقناع والمهنية هو موضع القياس.",
+      "answer_verified_by": "author_reasoned"
+    }
+  }
+}

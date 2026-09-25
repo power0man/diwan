@@ -1,0 +1,2528 @@
+{
+  "schema_version": 1,
+  "suite_id": "kimi_assist_a_004",
+  "split": "development",
+  "description": "قيود نصية عددية دقيقة (عدّ جمل وكلمات وحروف وأرقام، أحرف محظورة، تتابع وقوالب) بفحوص بايثون عاملة، وحوارات طويلة بتحديثات متسلسلة ومعلومات ملغاة وتصحيحات تتطلب آخر حالة لا أول معلومة.",
+  "cases": [
+    {
+      "case_id": "ifx_a_0045",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب خمس نقاط عن عادات صحية، كل نقطة تبدأ بـ«- » (شرطة ومسافة) ولا تتجاوز ٦ كلمات. أخرج النقاط فقط."
+        }
+      ],
+      "reference": "خمس نقاط تبدأ بـ«- » وكل منها ≤ ٦ كلمات مثل النموذج المضمون.",
+      "rubric": [
+        "خمس نقاط بالضبط",
+        "كل نقطة تبدأ بـ«- »",
+        "كل نقطة ≤ ٦ كلمات"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 5, 'عدد النقاط'\nassert all(l.startswith('- ') for l in lines), 'بداية النقطة'\n_b = [l[2:].strip() for l in lines]\nassert all(len(b.split()) <= 6 for b in _b), 'كلمات النقطة تتجاوز الحد'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0009",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب شعارًا لمدرسة من ٨ كلمات بالضبط. أخرج الشعار فقط بلا أي شرح."
+        }
+      ],
+      "reference": "شعار من ٨ كلمات بالضبط مثل النموذج المضمون.",
+      "rubric": [
+        "٨ كلمات بالضبط",
+        "ملاءمة الشعار لمدرسة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nassert not ans.startswith('```'), 'أسور كود'\nassert len(ans.split()) == 8, 'عدد الكلمات الكلي'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0038",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاثة أسطر عن البحر، كل سطر ينتهي بكلمة آخرها «اء». أخرج الأسطر فقط."
+        }
+      ],
+      "reference": "ثلاثة أسطر تنتهي كلماتها بـ«اء» (المساء/الشتاء/المساء) مثل النموذج المضمون.",
+      "rubric": [
+        "ثلاثة أسطر",
+        "كل سطر ينتهي بـ«اء»",
+        "وصف البحر"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 3, 'عدد الأسطر'\n_p = '«»\"\\'()[]{}،,؛;:.!؟?-_—…*·'\nassert all(l.rstrip(_p).endswith('اء') for l in lines), 'نهاية السطر لا تطابق القافية المطلوبة'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0043",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب جملتين بالضبط عن حديقة الحيوان: الأولى سؤال ينتهي بـ«؟» والثانية جواب خبري ينتهي بـ«.». أخرج الجملتين فقط."
+        }
+      ],
+      "reference": "سؤال منتهٍ بـ«؟» ثم جواب منتهٍ بـ«.» مثل النموذج المضمون.",
+      "rubric": [
+        "جملتان بالضبط",
+        "السؤال أولًا ثم الجواب",
+        "ترتيب العلامات"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\n_s = re.findall(r'[^.!؟]+[.!؟]', ans)\n_e = ['؟', '.']\nassert len(_s) == len(_e), 'عدد الجمل'\nassert [s.strip()[-1] for s in _s] == _e, 'تسلسل علامات الترقيم غير مطابق'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0015",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاثة أسطر عن العلم بحيث يكون الحرف الأول من كل سطر على الترتيب: ن، و، ر — لتتهجى الأسطر كلمة «نور». أخرج الأسطر فقط."
+        }
+      ],
+      "reference": "ثلاثة أسطر تبدأ بالحروف ن، و، ر بالترتيب مثل النموذج المضمون.",
+      "rubric": [
+        "ثلاثة أسطر",
+        "الحروف الأولى ن-و-ر بالترتيب",
+        "محتوى عن العلم"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\n_w = 'نور'\nassert len(lines) == len(_w), 'عدد الأسطر'\n_p = '«»\"\\'()[]{}،,؛;:.!؟?-_—…*·'\nassert ''.join(l.lstrip(_p)[0] for l in lines) == _w, 'الأحرف الأولى لا تتهجى الكلمة المطلوبة'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0032",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب جملتين عن رحلة برية (منتهيتين بنقطة) تتضمنان رقمين بالضبط مكتوبين بالأرقام لا بالحروف. أخرج الجملتين فقط."
+        }
+      ],
+      "reference": "جملتان فيهما مجموعتان رقميتان بالضبط (6 و420)، مثل النموذج المضمون.",
+      "rubric": [
+        "جملتان منتهيتان بنقطة",
+        "رقمان بالضبط مكتوبان رقميًّا",
+        "وصف رحلة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\nassert len(re.findall(r'[0-9٠-٩]+', ans)) == 2, 'عدد الأرقام غير مطابق'\nparts = [p.strip() for p in ans.split('.') if p.strip()]\nassert len(parts) == 2, 'عدد الجمل'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0007",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب وصفًا لحديقة منزلية من ١٢ كلمة بالضبط، بلا أرقام وبلا علامات ترقيم عدا نقطة الختام. أخرج الوصف فقط."
+        }
+      ],
+      "reference": "وصف من ١٢ كلمة بالضبط بلا أرقام، مثل النموذج المضمون في الفحص (حديقتنا الصغيرة مليئة بالورود الحمراء والياسمين وتزورها العصافير الجميلة كل صباح باكرًا).",
+      "rubric": [
+        "١٢ كلمة بالضبط لا أكثر ولا أقل",
+        "بلا أرقام",
+        "الإخراج بلا شرح"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nassert not ans.startswith('```'), 'أسور كود'\nassert len(ans.split()) == 12, 'عدد الكلمات الكلي'\nimport re\nassert not re.search(r'[0-9٠-٩]', ans), 'وجود أرقام'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0047",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ست نقاط من قواعد المرور، كل نقطة تبدأ بـ«- » ولا تتجاوز ٤ كلمات إطلاقًا، وبلا أي أرقام. أخرج النقاط فقط."
+        }
+      ],
+      "reference": "ست نقاط كل منها ≤ ٤ كلمات وبلا أرقام مثل النموذج المضمون.",
+      "rubric": [
+        "ست نقاط بـ«- »",
+        "كل نقطة ≤ ٤ كلمات",
+        "بلا أرقام",
+        "صحة القواعد"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 6, 'عدد النقاط'\nassert all(l.startswith('- ') for l in lines), 'بداية النقطة'\n_b = [l[2:].strip() for l in lines]\nassert all(len(b.split()) <= 4 for b in _b), 'كلمات النقطة تتجاوز الحد'\nimport re\nassert not re.search(r'[0-9٠-٩]', ans), 'وجود أرقام'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0004",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاث جمل عن السفر. القيود: كل جملة بين ٥ و٧ كلمات وتنتهي بنقطة؛ يجب أن تبدأ الجملة الثانية بكلمة «ومع»؛ ممنوع أي حرف مكرر ثلاث مرات متتالية. أخرج الجمل فقط."
+        }
+      ],
+      "reference": "ثلاث جمل من ٦ و٧ و٥ كلمات، الثانية تبدأ بـ«ومع»، وكلها منتهية بنقطة.",
+      "rubric": [
+        "ثلاث جمل بمجال ٥-٧ كلمات",
+        "الجملة الثانية تبدأ بـ«ومع»",
+        "النهايات بنقطة",
+        "لا تكرار ثلاثي"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\nparts = [p.strip() for p in ans.split('.') if p.strip()]\nassert len(parts) == 3, 'عدد الجمل'\n_c = [len(p.split()) for p in parts]\nassert all(5 <= c <= 7 for c in _c), 'عدد كلمات كل جملة خارج المجال'\nassert not re.search(r'(.)\\1\\1', ans), 'تكرار حرف ثلاث مرات متتالية'\nassert parts[1].split()[0] == 'ومع', 'بداية الجملة الثانية'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0010",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب وصفًا تسويقيًّا لعطر شرقي من ٢٠ كلمة بالضبط. القيود: بلا أرقام؛ بلا أي حرف لاتيني؛ ممنوع كلمة «رائع» ومشتقاتها. أخرج الوصف فقط."
+        }
+      ],
+      "reference": "وصف من ٢٠ كلمة بالضبط بلا أرقام ولا لاتينية ولا «رائع»، مثل النموذج المضمون.",
+      "rubric": [
+        "٢٠ كلمة بالضبط",
+        "بلا أرقام ولا حروف لاتينية",
+        "خلوّ من «رائع»"
+      ],
+      "checks": [
+        {
+          "kind": "excludes",
+          "value": "رائع"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nassert not ans.startswith('```'), 'أسور كود'\nassert len(ans.split()) == 20, 'عدد الكلمات الكلي'\nimport re\nassert not re.search(r'[0-9٠-٩A-Za-z]', ans), 'أرقام أو لاتينية'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0012",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب أربعة أسطر تصف مدينة ساحلية: السطر الأول ٥ كلمات، والثاني ٧ كلمات، والثالث ٤ كلمات، والرابع ٦ كلمات، وكلها بالضبط. أخرج الأسطر الأربعة فقط."
+        }
+      ],
+      "reference": "أربعة أسطر بأطوال ٥ و٧ و٤ و٦ بالضبط مثل النموذج المضمون.",
+      "rubric": [
+        "أربعة أسطر",
+        "الأطوال ٥ و٧ و٤ و٦ بالضبط",
+        "وصف مدينة ساحلية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\n_w = [5, 7, 4, 6]\nassert len(lines) == len(_w), 'عدد الأسطر'\nassert [len(l.split()) for l in lines] == _w, 'عدد كلمات الأسطر لا يطابق المطلوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0037",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب قصة حوار مصغرة من أربعة أسطر: الأول يبدأ بـ«سألت»، والثاني بـ«فأجاب»، والثالث بـ«سألت»، والرابع بـ«فأجاب». قيد إضافي: كل سطر ثماني كلمات كحد أقصى. أخرج الأسطر فقط."
+        }
+      ],
+      "reference": "أربعة أسطر متناوبة «سألت»/«فأجاب» وكل سطر ≤ ٨ كلمات مثل النموذج المضمون.",
+      "rubric": [
+        "التناوب سألت/فأجاب",
+        "كل سطر ≤ ٨ كلمات",
+        "تماسك الحوار"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\n_w = ['سألت', 'فأجاب']\nassert len(lines) == 4, 'عدد الأسطر'\nassert all(l.startswith(_w[i % 2]) for i, l in enumerate(lines)), 'التناوب في بدايات الأسطر'\nassert all(len(l.split()) <= 8 for l in lines), 'كلمات السطر'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0044",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب أربع جمل بالضبط عن عاصفة رملية بترتيب العلامات الآتي حتمًا: خبر «.» ثم سؤال «؟» ثم تعجب «!» ثم خبر «.». أخرج الجمل فقط."
+        }
+      ],
+      "reference": "أربع جمل بترتيب علامات . ؟ ! . بالضبط مثل النموذج المضمون.",
+      "rubric": [
+        "أربع جمل",
+        "ترتيب العلامات . ؟ ! .",
+        "وصف العاصفة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\n_s = re.findall(r'[^.!؟]+[.!؟]', ans)\n_e = ['.', '؟', '!', '.']\nassert len(_s) == len(_e), 'عدد الجمل'\nassert [s.strip()[-1] for s in _s] == _e, 'تسلسل علامات الترقيم غير مطابق'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0029",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب تغريدة عن القهوة طولها بين ٣٠ و٤٠ حرفًا فقط شاملةً الفراغات، بلا أي علامات ترقيم عدا نقطة الختام. أخرج التغريدة فقط."
+        }
+      ],
+      "reference": "تغريدة بين ٣٠ و٤٠ حرفًا (النموذج المضمون ٣٢ حرفًا شاملة النقطة) بلا ترقيم سوى نقطة الختام.",
+      "rubric": [
+        "الطول بين ٣٠ و٤٠ حرفًا",
+        "بلا ترقيم عدا نقطة الختام",
+        "عن القهوة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nassert 30 <= len(ans) <= 40, 'عدد الحروف خارج المجال'\nimport re\nassert not re.search(r'[،,؛;:!؟؟?«»\"]', ans), 'علامات ترقيم محظورة'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0024",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب أربع جمل بالضبط عن الوقت، تنتهي كل منها بنقطة، بشرط ألا تتكرر أي كلمة (بحرفيتها) ولو مرة واحدة في النص كله — كل كلمة تُستعمل مرة فقط. أخرج الجمل فقط."
+        }
+      ],
+      "reference": "أربع جمل كل كلماتها فريدة بلا أي تكرار (٢١ كلمة مختلفة في النموذج المضمون)، وهو الشرط الصارم المطلوب.",
+      "rubric": [
+        "أربع جمل منتهية بنقطة",
+        "لا تكرار لأي كلمة إطلاقًا",
+        "محتوى عن الوقت"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\nfrom collections import Counter\nparts = [p.strip() for p in ans.split('.') if p.strip()]\nassert len(parts) == 4, 'عدد الجمل'\n_toks = [t.strip('«»\"\\'()[]{}،,؛;:.!؟?-_—…*·') for t in ans.split()]\n_toks = [t for t in _toks if t]\nassert max(Counter(_toks).values()) <= 1, 'كلمة تكررت فوق الحد'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "ifx_a_0018",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاثة أسطر عن الأمل تتهجى أحرفها الأولى كلمة «أمل» (أ، م، ل بالترتيب)، وكل سطر من ٥ كلمات بالضبط. أخرج الأسطر فقط."
+        }
+      ],
+      "reference": "ثلاثة أسطر تبدأ بـأ، م، ل وكل منها ٥ كلمات بالضبط مثل النموذج المضمون.",
+      "rubric": [
+        "الحروف الأولى أ-م-ل بالترتيب",
+        "كل سطر ٥ كلمات بالضبط",
+        "محتوى عن الأمل"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\n_w = 'أمل'\nassert len(lines) == len(_w), 'عدد الأسطر'\n_p = '«»\"\\'()[]{}،,؛;:.!؟?-_—…*·'\nassert ''.join(l.lstrip(_p)[0] for l in lines) == _w, 'الأحرف الأولى لا تتهجى الكلمة المطلوبة'\nassert all(len(l.split()) == 5 for l in lines), 'كلمات السطر'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "ifx_a_0014",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب أربعة أسطر إرشادات للمسافر: السطر الأول ٤ كلمات، والثاني ٦ كلمات، والثالث ٥ كلمات، والرابع ٧ كلمات، وكلها بالضبط. قيد إضافي: يجب أن ينتهي السطر الأخير بكلمة «مبكرًا». أخرج الأسطر فقط."
+        }
+      ],
+      "reference": "أربعة أسطر بأطوال ٤ و٦ و٥ و٧ بالضبط والأخير منتهٍ بـ«مبكرًا» مثل النموذج المضمون.",
+      "rubric": [
+        "الأطوال ٤ و٦ و٥ و٧ بالضبط",
+        "السطر الأخير ينتهي بـ«مبكرًا»",
+        "محتوى إرشادات سفر"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\n_w = [4, 6, 5, 7]\nassert len(lines) == len(_w), 'عدد الأسطر'\nassert [len(l.split()) for l in lines] == _w, 'عدد كلمات الأسطر لا يطابق المطلوب'\nassert lines[3].endswith('مبكرًا'), 'نهاية السطر الأخير'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "ifx_a_0022",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب أربع جمل على الأقل عن النجاح دون استعمال حرف «خ» إطلاقًا، ويجب أن تتضمن كلمة «النجاح» نفسها. أخرج الجمل فقط."
+        }
+      ],
+      "reference": "أربع جمل بلا حرف «خ» وتتضمن «النجاح»، مثل النموذج المضمون.",
+      "rubric": [
+        "خلوّ تام من حرف «خ»",
+        "أربع جمل على الأقل",
+        "تضمين «النجاح»"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\nassert 'خ' not in ans, 'الحرف المحظور موجود'\nparts = [p.strip() for p in re.split(r'[.!؟]', ans) if p.strip()]\nassert len(parts) >= 4, 'عدد الجمل'\nassert 'النجاح' in ans, 'كلمة مطلوبة غائبة'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "ifx_a_0041",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاثة أسطر عن أحوال الناس، كل سطر ينتهي بكلمة آخرها «ين»، وكل سطر من ٦ كلمات بالضبط. أخرج الأسطر فقط."
+        }
+      ],
+      "reference": "ثلاثة أسطر تنتهي بـ«ين» وكل منها ٦ كلمات بالضبط مثل النموذج المضمون.",
+      "rubric": [
+        "كل سطر ينتهي بـ«ين»",
+        "كل سطر ٦ كلمات بالضبط",
+        "ثلاثة أسطر"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 3, 'عدد الأسطر'\n_p = '«»\"\\'()[]{}،,؛;:.!؟?-_—…*·'\nassert all(l.rstrip(_p).endswith('ين') for l in lines), 'نهاية السطر لا تطابق القافية المطلوبة'\nassert all(len(l.split()) == 6 for l in lines), 'كلمات السطر'\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "ifx_a_0011",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاثة أسطر تصف الصباح: السطر الأول ٦ كلمات بالضبط، والثاني ٤ كلمات بالضبط، والثالث ٥ كلمات بالضبط. كل سطر في سطر مستقل. أخرج الأسطر فقط."
+        }
+      ],
+      "reference": "ثلاثة أسطر بأطوال ٦ و٤ و٥ كلمات بالضبط مثل النموذج المضمون.",
+      "rubric": [
+        "ثلاثة أسطر",
+        "الأطوال ٦ و٤ و٥ بالضبط وبالترتيب",
+        "وصف الصباح"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\n_w = [6, 4, 5]\nassert len(lines) == len(_w), 'عدد الأسطر'\nassert [len(l.split()) for l in lines] == _w, 'عدد كلمات الأسطر لا يطابق المطلوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0017",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاثة أسطر تصف الليل تتهجى أحرفها الأولى كلمة «بدر» (ب، د، ر بالترتيب). أخرج الأسطر فقط."
+        }
+      ],
+      "reference": "ثلاثة أسطر تبدأ بـب، د، ر بالترتيب مثل النموذج المضمون.",
+      "rubric": [
+        "الحروف الأولى ب-د-ر بالترتيب",
+        "ثلاثة أسطر",
+        "وصف الليل"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\n_w = 'بدر'\nassert len(lines) == len(_w), 'عدد الأسطر'\n_p = '«»\"\\'()[]{}،,؛;:.!؟?-_—…*·'\nassert ''.join(l.lstrip(_p)[0] for l in lines) == _w, 'الأحرف الأولى لا تتهجى الكلمة المطلوبة'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0036",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ستة أسطر عن يومك تتناوب بداياتها: «في الصباح» ثم «في المساء» ثم «في الصباح»… وهكذا بالتناوب حتى السطر السادس. أخرج الأسطر فقط."
+        }
+      ],
+      "reference": "ستة أسطر متناوبة البدايات «في الصباح»/«في المساء» مثل النموذج المضمون.",
+      "rubric": [
+        "ستة أسطر",
+        "التناوب الكامل للبدايات",
+        "محتوى يومي"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\n_w = ['في الصباح', 'في المساء']\nassert len(lines) == 6, 'عدد الأسطر'\nassert all(l.startswith(_w[i % 2]) for i, l in enumerate(lines)), 'التناوب في بدايات الأسطر'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0025",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاث جمل بالضبط عن المطر، تنتهي كل منها بنقطة، ولا تتكرر أي كلمة أكثر من مرتين. أخرج الجمل فقط."
+        }
+      ],
+      "reference": "ثلاث جمل أعلى تكرار فيها مرة واحدة لكل كلمة، مثل النموذج المضمون.",
+      "rubric": [
+        "ثلاث جمل منتهية بنقطة",
+        "لا كلمة فوق مرتين",
+        "محتوى عن المطر"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\nfrom collections import Counter\nparts = [p.strip() for p in ans.split('.') if p.strip()]\nassert len(parts) == 3, 'عدد الجمل'\n_toks = [t.strip('«»\"\\'()[]{}،,؛;:.!؟?-_—…*·') for t in ans.split()]\n_toks = [t for t in _toks if t]\nassert max(Counter(_toks).values()) <= 2, 'كلمة تكررت فوق الحد'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0003",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب أربع جمل بالضبط عن العمل التطوعي. القيود: كل جملة بين ٤ و٦ كلمات؛ كل جملة تنتهي بنقطة؛ ممنوع تكرار أي حرف ثلاث مرات متتالية. أخرج الجمل الأربع فقط."
+        }
+      ],
+      "reference": "أربع جمل أطوالها ٥ و٦ و٦ و٥ كلمات ضمن ٤-٦ ومنتهية بنقطة.",
+      "rubric": [
+        "أربع جمل بالضبط",
+        "كل جملة بين ٤ و٦ كلمات",
+        "النهايات بنقطة",
+        "لا تكرار ثلاثي للحروف"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\nparts = [p.strip() for p in ans.split('.') if p.strip()]\nassert len(parts) == 4, 'عدد الجمل'\n_c = [len(p.split()) for p in parts]\nassert all(4 <= c <= 6 for c in _c), 'عدد كلمات كل جملة خارج المجال'\nassert not re.search(r'(.)\\1\\1', ans), 'تكرار حرف ثلاث مرات متتالية'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0046",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب أربع نقاط نصائح للتوفير المنزلي، كل نقطة تبدأ بـ«- » ولا تتجاوز ٥ كلمات، وممنوع ذكر كلمة «مال» إطلاقًا. أخرج النقاط فقط."
+        }
+      ],
+      "reference": "أربع نقاط ≤ ٥ كلمات بلا «مال» مثل النموذج المضمون.",
+      "rubric": [
+        "أربع نقاط بـ«- »",
+        "كل نقطة ≤ ٥ كلمات",
+        "خلوّ من «مال»"
+      ],
+      "checks": [
+        {
+          "kind": "excludes",
+          "value": "مال"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\nassert len(lines) == 4, 'عدد النقاط'\nassert all(l.startswith('- ') for l in lines), 'بداية النقطة'\n_b = [l[2:].strip() for l in lines]\nassert all(len(b.split()) <= 5 for b in _b), 'كلمات النقطة تتجاوز الحد'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0027",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب تعريفًا موجزًا للذكاء الاصطناعي في جملة واحدة تنتهي بنقطة، طولها بين ٥٠ و٧٠ حرفًا شاملةً الفراغات وعلامات الترقيم. أخرج الجملة فقط."
+        }
+      ],
+      "reference": "جملة واحدة طولها ٦٥ حرفًا (ضمن ٥٠-٧٠) منتهية بنقطة، مثل النموذج المضمون.",
+      "rubric": [
+        "جملة واحدة منتهية بنقطة",
+        "الطول بين ٥٠ و٧٠ حرفًا",
+        "صحة التعريف"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nassert 50 <= len(ans) <= 70, 'عدد الحروف خارج المجال'\nparts = [p for p in ans.split('.') if p.strip()]\nassert len(parts) == 1 and ans.endswith('.'), 'جملة واحدة منتهية بنقطة'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0021",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاث جمل على الأقل عن القراءة دون استعمال حرف «ش» إطلاقًا، ويجب أن تتضمن كلمة «كتاب». أخرج الجمل فقط."
+        }
+      ],
+      "reference": "ثلاث جمل بلا حرف «ش» وتتضمن «كتاب»، مثل النموذج المضمون.",
+      "rubric": [
+        "خلوّ تام من حرف «ش»",
+        "ثلاث جمل على الأقل",
+        "تضمين «كتاب»"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\nassert 'ش' not in ans, 'الحرف المحظور موجود'\nparts = [p.strip() for p in re.split(r'[.!؟]', ans) if p.strip()]\nassert len(parts) >= 3, 'عدد الجمل'\nassert 'كتاب' in ans, 'كلمة مطلوبة غائبة'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0013",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاثة أسطر نصيحة لطالب مقبل على الامتحانات: الأول ٧ كلمات، والثاني ٥ كلمات، والثالث ٦ كلمات، بالضبط. أخرج الأسطر فقط."
+        }
+      ],
+      "reference": "ثلاثة أسطر بأطوال ٧ و٥ و٦ بالضبط مثل النموذج المضمون.",
+      "rubric": [
+        "ثلاثة أسطر",
+        "الأطوال ٧ و٥ و٦ بالضبط",
+        "محتوى نصيحة دراسية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nlines = [l.strip() for l in ans.splitlines() if l.strip() and not l.strip().startswith('```')]\n_w = [7, 5, 6]\nassert len(lines) == len(_w), 'عدد الأسطر'\nassert [len(l.split()) for l in lines] == _w, 'عدد كلمات الأسطر لا يطابق المطلوب'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0026",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب رسالة من ثلاث جمل بالضبط لزميل تأخر عن الاجتماع، تنتهي كل جملة بنقطة، ولا تتكرر أي كلمة أكثر من مرتين، وممنوع ذكر كلمة «مشروع». أخرج الرسالة فقط."
+        }
+      ],
+      "reference": "ثلاث جمل بلا «مشروع» ولا كلمة فوق مرتين، مثل النموذج المضمون.",
+      "rubric": [
+        "خلوّ من «مشروع»",
+        "ثلاث جمل منتهية بنقطة",
+        "لا كلمة فوق مرتين",
+        "لباقة الرسالة"
+      ],
+      "checks": [
+        {
+          "kind": "excludes",
+          "value": "مشروع"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\nfrom collections import Counter\nparts = [p.strip() for p in ans.split('.') if p.strip()]\nassert len(parts) == 3, 'عدد الجمل'\n_toks = [t.strip('«»\"\\'()[]{}،,؛;:.!؟?-_—…*·') for t in ans.split()]\n_toks = [t for t in _toks if t]\nassert max(Counter(_toks).values()) <= 2, 'كلمة تكررت فوق الحد'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0028",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب نصيحة للطلاب في جملة واحدة بين ٤٠ و٦٠ حرفًا شاملة الفراغات، تنتهي بنقطة. أخرج الجملة فقط."
+        }
+      ],
+      "reference": "جملة واحدة بين ٤٠ و٦٠ حرفًا (النموذج ٤٩ حرفًا) منتهية بنقطة.",
+      "rubric": [
+        "جملة واحدة منتهية بنقطة",
+        "الطول بين ٤٠ و٦٠ حرفًا",
+        "نصيحة صحيحة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nassert 40 <= len(ans) <= 60, 'عدد الحروف خارج المجال'\nparts = [p for p in ans.split('.') if p.strip()]\nassert len(parts) == 1 and ans.endswith('.'), 'جملة واحدة'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0030",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب جملتين بالضبط عن الوطن، مجموع طولهما بين ٨٠ و١٠٠ حرف شاملة الفراغات، وتنتهي كل جملة بنقطة. أخرج الجملتين فقط."
+        }
+      ],
+      "reference": "جملتان مجموعهما ٨٧ حرفًا (ضمن ٨٠-١٠٠) منتهيتان بنقطة، مثل النموذج المضمون.",
+      "rubric": [
+        "جملتان منتهيتان بنقطة",
+        "الطول الكلي بين ٨٠ و١٠٠ حرف",
+        "محتوى وطني"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nassert 80 <= len(ans) <= 100, 'عدد الحروف خارج المجال'\nparts = [p.strip() for p in ans.split('.') if p.strip()]\nassert len(parts) == 2, 'عدد الجمل'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0034",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب إعلانًا من جملتين (منتهيتين بنقطة) لمعرض سيارات، يتضمن رقمًا واحدًا فقط مكتوبًا بالأرقام، وممنوع ذكر كلمة «خصم». أخرج الإعلان فقط."
+        }
+      ],
+      "reference": "جملتان فيهما رقم واحد فقط (10) وبلا كلمة «خصم»، مثل النموذج المضمون.",
+      "rubric": [
+        "جملتان منتهيتان بنقطة",
+        "رقم واحد فقط",
+        "خلوّ من «خصم»"
+      ],
+      "checks": [
+        {
+          "kind": "excludes",
+          "value": "خصم"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\nassert len(re.findall(r'[0-9٠-٩]+', ans)) == 1, 'عدد الأرقام غير مطابق'\nparts = [p.strip() for p in ans.split('.') if p.strip()]\nassert len(parts) == 2, 'عدد الجمل'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0008",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب رسالة امتنان لصديق من ١٥ كلمة بالضبط تنتهي بنقطة، دون استعمال كلمة «شكر» أو أي مشتق منها. أخرج الرسالة فقط."
+        }
+      ],
+      "reference": "رسالة امتنان من ١٥ كلمة بلا «شكر» ومشتقاتها منتهية بنقطة، مثل النموذج المضمون في الفحص.",
+      "rubric": [
+        "١٥ كلمة بالضبط",
+        "خلوّ من «شكر» ومشتقاتها",
+        "نقطة الختام",
+        "صدق الامتنان"
+      ],
+      "checks": [
+        {
+          "kind": "excludes",
+          "value": "شكر"
+        },
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nassert not ans.startswith('```'), 'أسور كود'\nassert len(ans.split()) == 15, 'عدد الكلمات الكلي'\nassert ans.endswith('.'), 'نقطة الختام'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "ifx_a_0042",
+      "capability": "instruction_following_constraints",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب ثلاث جمل بالضبط عن المستقبل: الأولى سؤال ينتهي بـ«؟»، والثانية تعجب ينتهي بـ«!»، والثالثة خبر ينتهي بـ«.» — بهذا الترتيب حتمًا. أخرج الجمل فقط."
+        }
+      ],
+      "reference": "ثلاث جمل بترتيب علامات ؟ ! . بالضبط مثل النموذج المضمون.",
+      "rubric": [
+        "ثلاث جمل",
+        "ترتيب العلامات ؟ ! .",
+        "محتوى عن المستقبل"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "ans = __model_raw_answer__.strip()\nimport re\n_s = re.findall(r'[^.!؟]+[.!؟]', ans)\n_e = ['؟', '!', '.']\nassert len(_s) == len(_e), 'عدد الجمل'\nassert [s.strip()[-1] for s in _s] == _e, 'تسلسل علامات الترقيم غير مطابق'\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0001",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "سجّل خط سير رحلتي: الرياض، ثم جدة، ثم أبها، ثم الطائف."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت الخط: الرياض ← جدة ← أبها ← الطائف."
+        },
+        {
+          "role": "user",
+          "content": "غيّرت رأيي: بدل الطائف سيكون الختام في ينبع."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار الخط: الرياض ← جدة ← أبها ← ينبع."
+        },
+        {
+          "role": "user",
+          "content": "أخرج خط سير الرحلة النهائي كقائمة JSON فقط بلا أي شرح."
+        }
+      ],
+      "reference": "القائمة النهائية [الرياض، جدة، أبها، ينبع]؛ لأن ينبع نسخت الطائف نسخًا كاملًا.",
+      "rubric": [
+        "ينبع مكان الطائف في الموضع نفسه",
+        "بقية المدن وترتيبها لم يتغير",
+        "الإخراج قائمة JSON فقط"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": [
+            "الرياض",
+            "جدة",
+            "أبها",
+            "ينبع"
+          ]
+        },
+        {
+          "kind": "excludes",
+          "value": "الطائف"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0006",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "سجّل مخزني الحالي: سكر 40 كيسًا، أرز 25 كيسًا، طحين 60 كيسًا."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت المخزون: سكر 40، أرز 25، طحين 60."
+        },
+        {
+          "role": "user",
+          "content": "وصلت اليوم شحنة: 15 كيس سكر و10 أكياس طحين."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون سكر: 55، صار مخزون طحين: 70."
+        },
+        {
+          "role": "user",
+          "content": "خرج من المستودع 20 كيس أرز و5 أكياس سكر."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون أرز: 5، صار مخزون سكر: 50."
+        },
+        {
+          "role": "user",
+          "content": "كم كيس سكر عندي الآن؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "50؛ السكر بدأ 40 ثم +15 ثم -5.",
+      "rubric": [
+        "تتبع عمليتي السكر (دخول وخروج)",
+        "عمليات الأرز والطحين لا تؤثر"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "50"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0029",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "وصفتي للكيك تحتاج كوبين من السكر."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: كوبان من السكر."
+        },
+        {
+          "role": "user",
+          "content": "سأطبخ ضعف الكمية لضيوف أكثر."
+        },
+        {
+          "role": "assistant",
+          "content": "فهمت، كل المقادير ستُضاعف، فيصير السكر 4 أكواب."
+        },
+        {
+          "role": "user",
+          "content": "كم كوب سكر أحتاج الآن؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "4؛ لأن مضاعفة الوصفة تضاعف السكر من 2 إلى 4.",
+      "rubric": [
+        "العدد 4",
+        "رقم فقط"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "4"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0017",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ميزانية المشروع: تسويق 3000، تطوير 8000، دعم 2000."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت الميزانية: تسويق 3000، تطوير 8000، دعم 2000."
+        },
+        {
+          "role": "user",
+          "content": "اعتمدنا رفع ميزانية التسويق إلى 4500."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار التوزيع: تسويق 4500، تطوير 8000، دعم 2000."
+        },
+        {
+          "role": "user",
+          "content": "أخرج الميزانية النهائية كائن JSON بمفاتيح البنود الثلاثة كما هي وقيمها النهائية، بلا شرح."
+        }
+      ],
+      "reference": "تسويق 4500 وتطوير 8000 ودعم 2000؛ تحديث بند واحد وبقاء بندين.",
+      "rubric": [
+        "التسويق 4500",
+        "البندان الآخران بلا تغيير",
+        "JSON بالمفاتيح نفسها"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": {
+            "تسويق": 4500,
+            "تطوير": 8000,
+            "دعم": 2000
+          }
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0021",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "تشكيلة فريقي: الحارس بدر، والمدافعان سعود وياسر، والمهاجم فيصل."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت التشكيلة: بدر حارسًا، وسعود وياسر دفاعًا، وفيصل هجومًا."
+        },
+        {
+          "role": "user",
+          "content": "بدر أصيب في الإحماء؛ سيلعب ماجد بدلًا منه."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، ماجد حارسًا بدل بدر."
+        },
+        {
+          "role": "user",
+          "content": "من حارس فريقي الآن؟ أجب بكلمة واحدة."
+        }
+      ],
+      "reference": "ماجد؛ لأنه حلّ محل بدر المصاب.",
+      "rubric": [
+        "الجواب ماجد",
+        "كلمة واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "ماجد"
+        },
+        {
+          "kind": "excludes",
+          "value": "بدر"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0033",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "حجزت على رحلة الغد مقعد 14C في الدرجة الاقتصادية."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: مقعد 14C اقتصادية."
+        },
+        {
+          "role": "user",
+          "content": "اتصلت بي شركة الطيران ونقلتني إلى المقعد 12A."
+        },
+        {
+          "role": "assistant",
+          "content": "تم تحديث مقعدك إلى 12A."
+        },
+        {
+          "role": "user",
+          "content": "ما رقم مقعدي الآن؟ أجب برقم المقعد فقط."
+        }
+      ],
+      "reference": "12A؛ لأن شركة الطيران نقلت الراكب إليه صراحة.",
+      "rubric": [
+        "المقعد الجديد لا القديم",
+        "الإجابة برقم المقعد فقط"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "12A"
+        },
+        {
+          "kind": "excludes",
+          "value": "14C"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0037",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "طابور العيادة الآن: سالم، فهد، نايف، بدر."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت الطابور: سالم، فهد، نايف، بدر."
+        },
+        {
+          "role": "user",
+          "content": "غادر سالم دون أن يُكشف عليه."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار الطابور: فهد، نايف، بدر."
+        },
+        {
+          "role": "user",
+          "content": "من الثاني في الطابور الآن؟ أجب بكلمة واحدة."
+        }
+      ],
+      "reference": "نايف؛ بعد خروج سالم تقدّم الجميع فصار فهد أولًا ونايف ثانيًا.",
+      "rubric": [
+        "الجواب نايف",
+        "كلمة واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "نايف"
+        },
+        {
+          "kind": "excludes",
+          "value": "فهد"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0014",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "خذ هذه الجملة وتعامل معها نصًّا: «تحب جدتي زراعة الورود في الحديقة»"
+        },
+        {
+          "role": "assistant",
+          "content": "معي الجملة: «تحب جدتي زراعة الورود في الحديقة». ما التعديل المطلوب؟"
+        },
+        {
+          "role": "user",
+          "content": "استبدل كلمة «الورود» بكلمة «الياسمين»."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صارت الجملة: «تحب جدتي زراعة الياسمين في الحديقة»"
+        },
+        {
+          "role": "user",
+          "content": "أدخل كلمة «العطرة» بعد كلمة «الياسمين» مباشرة."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صارت الجملة: «تحب جدتي زراعة الياسمين العطرة في الحديقة»"
+        },
+        {
+          "role": "user",
+          "content": "أضف كلمة «المنزلية» في نهاية الجملة."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صارت الجملة: «تحب جدتي زراعة الياسمين العطرة في الحديقة المنزلية»"
+        },
+        {
+          "role": "user",
+          "content": "ما الجملة النهائية؟ أخرجها فقط بلا شرح ولا نقطة ختامية."
+        }
+      ],
+      "reference": "تحب جدتي زراعة الياسمين العطرة في الحديقة المنزلية؛ ثلاث عمليات بمواضع مختلفة: استبدال، وإدخال بعد كلمة، وإلحاق بالنهاية.",
+      "rubric": [
+        "«العطرة» بعد «الياسمين» مباشرة",
+        "«المنزلية» في النهاية",
+        "«الياسمين» مكان «الورود»"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "تحب جدتي زراعة الياسمين العطرة في الحديقة المنزلية"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0015",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "خذ هذه الجملة وتعامل معها نصًّا: «قرأت ليلى القصة الطويلة باهتمام»"
+        },
+        {
+          "role": "assistant",
+          "content": "معي الجملة: «قرأت ليلى القصة الطويلة باهتمام». ما التعديل المطلوب؟"
+        },
+        {
+          "role": "user",
+          "content": "استبدل كلمة «الطويلة» بكلمة «القصيرة»."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صارت الجملة: «قرأت ليلى القصة القصيرة باهتمام»"
+        },
+        {
+          "role": "user",
+          "content": "احذف كلمة «باهتمام» من الجملة."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صارت الجملة: «قرأت ليلى القصة القصيرة»"
+        },
+        {
+          "role": "user",
+          "content": "تراجع: ألغِ آخر تعديل طلبته منك."
+        },
+        {
+          "role": "assistant",
+          "content": "تم التراجع عن آخر تعديل، صارت الجملة: «قرأت ليلى القصة القصيرة باهتمام»"
+        },
+        {
+          "role": "user",
+          "content": "ما الجملة النهائية الآن؟ أخرجها فقط بلا شرح ولا نقطة ختامية."
+        }
+      ],
+      "reference": "قرأت ليلى القصة القصيرة باهتمام؛ التراجع ألغى الحذف فقط وبقي الاستبدال.",
+      "rubric": [
+        "التراجع يلغي الحذف لا الاستبدال",
+        "«باهتمام» عادت إلى النهاية",
+        "«القصيرة» باقية"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "قرأت ليلى القصة القصيرة باهتمام"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0024",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "حارسنا الأساسي في النهائي هو وليد."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: وليد حارس النهائي."
+        },
+        {
+          "role": "user",
+          "content": "تطور جديد: وليد مريض، وسيبدأ ناصر بدلًا منه."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، ناصر سيبدأ حارسًا في النهائي."
+        },
+        {
+          "role": "user",
+          "content": "آخر الأخبار: تحسّن وليد تمامًا والجهاز الفني قرر إشراكه أساسيًّا كما كان مقررًا."
+        },
+        {
+          "role": "assistant",
+          "content": "فهمت، عاد وليد ليبدأ أساسيًّا في الحراسة."
+        },
+        {
+          "role": "user",
+          "content": "من يبدأ في حراسة المرمى في النهائي؟ أجب بكلمة واحدة."
+        }
+      ],
+      "reference": "وليد؛ لأن قرار إشراك ناصر نُسخ بخبر تحسّن وليد وعودته أساسيًّا.",
+      "rubric": [
+        "الجواب وليد لا ناصر",
+        "العودة إلى القرار الأصلي محسوبة"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "وليد"
+        },
+        {
+          "kind": "excludes",
+          "value": "ناصر"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0039",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "قائمة انتظار الترقية بالترتيب: ريم، مازن، سلوى."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: ريم أولًا، مازن ثانيًا، سلوى ثالثًا."
+        },
+        {
+          "role": "user",
+          "content": "قرار إداري: قدّموا سلوى إلى المرتبة الأولى."
+        },
+        {
+          "role": "assistant",
+          "content": "تم: سلوى، ريم، مازن."
+        },
+        {
+          "role": "user",
+          "content": "أُلغي القرار الإداري؛ عاد الترتيب إلى ما كان عليه قبله تمامًا."
+        },
+        {
+          "role": "assistant",
+          "content": "فهمت، عاد الترتيب: ريم، مازن، سلوى."
+        },
+        {
+          "role": "user",
+          "content": "انسحب مازن من القائمة."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صارت القائمة: ريم، سلوى."
+        },
+        {
+          "role": "user",
+          "content": "أخرج الترتيب النهائي للقائمة كائن JSON بمفتاح واحد «الترتيب» قيمته قائمة، بلا شرح."
+        }
+      ],
+      "reference": "ريم ثم سلوى؛ القرار الإداري أُلغي فعادت ريم أولًا، ثم خرج مازن فتقدمت سلوى ثانية.",
+      "rubric": [
+        "إلغاء تقديم سلوى محسوب",
+        "انسحاب مازن محسوب",
+        "JSON بالمفتاح المحدد"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": {
+            "الترتيب": [
+              "ريم",
+              "سلوى"
+            ]
+          }
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0023",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "في الفريق: فيصل يلعب وسطًا أيمن، وعادل يلعب ظهيرًا أيمن، وراشد قلب هجوم."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: فيصل وسط أيمن، عادل ظهير أيمن، راشد قلب هجوم."
+        },
+        {
+          "role": "user",
+          "content": "راشد أصيب؛ انقل فيصل إلى قلب الهجوم مكانه، وقدّم عادل ليلعب وسطًا أيمن بدل فيصل."
+        },
+        {
+          "role": "assistant",
+          "content": "تم: فيصل قلب هجوم، وعادل وسط أيمن، والظهير الأيمن شاغر الآن."
+        },
+        {
+          "role": "user",
+          "content": "من يلعب وسطًا أيمن الآن؟ أجب بكلمة واحدة."
+        }
+      ],
+      "reference": "عادل؛ فهو الذي تقدّم من الظهير إلى الوسط، أما فيصل فصار قلب هجوم.",
+      "rubric": [
+        "الجواب عادل",
+        "فيصل لم يعد في الوسط",
+        "كلمة واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "عادل"
+        },
+        {
+          "kind": "excludes",
+          "value": "فيصل"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0010",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "مخزون الأرز عندي 200 كيس."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت المخزون: أرز 200."
+        },
+        {
+          "role": "user",
+          "content": "وصلت شحنة 40 كيسًا."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون أرز: 240."
+        },
+        {
+          "role": "user",
+          "content": "بِعنا اليوم ربع الكمية الحالية."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون أرز: 180."
+        },
+        {
+          "role": "user",
+          "content": "وصلت 20 كيسًا إضافية."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون أرز: 200."
+        },
+        {
+          "role": "user",
+          "content": "وفي المساء بِعنا نصف ما تبقى."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون أرز: 100."
+        },
+        {
+          "role": "user",
+          "content": "كم كيس أرز بقي في المستودع؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "100؛ 200+40=240، ربعها 60 فيصير 180، ثم +20 فيصير 200، ونصفه يُباع فيبقى 100.",
+      "rubric": [
+        "الربع والنصف يحسبان على الرصيد الجاري لا الأصلي",
+        "الناتج 100"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "100"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0032",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "وصفة الخبز عندي فيها 300 غرام دقيق."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: 300 غرام دقيق."
+        },
+        {
+          "role": "user",
+          "content": "ضاعفت المقادير كلها لأضيف ضيوفًا."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الدقيق صار 600 غرام."
+        },
+        {
+          "role": "user",
+          "content": "رجعت عن القرار: سألتزم بالكمية الأصلية للوصفة دون مضاعفة."
+        },
+        {
+          "role": "assistant",
+          "content": "فهمت، ألغينا المضاعفة؛ الدقيق عاد 300 غرام."
+        },
+        {
+          "role": "user",
+          "content": "وأضفت للوصفة 100 غرام شوفان لنكهة أغنى."
+        },
+        {
+          "role": "assistant",
+          "content": "أضفت 100 غرام شوفان؛ الدقيق بقي 300 غرام."
+        },
+        {
+          "role": "user",
+          "content": "كم غرام دقيق أحتاج في الوصفة النهائية؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "300؛ المضاعفة أُلغيت صراحة فعاد الدقيق 300، وإضافة الشوفان لا تغيّر كمية الدقيق.",
+      "rubric": [
+        "إلغاء المضاعفة محسوب",
+        "الشوفان لا يدخل في حساب الدقيق",
+        "الناتج 300"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "300"
+        },
+        {
+          "kind": "excludes",
+          "value": "700"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "mtx_a_0020",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ميزانية الحملات: إعلان 4000، تدريب 2500، سفر 3000."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت الميزانية: إعلان 4000، تدريب 2500، سفر 3000."
+        },
+        {
+          "role": "user",
+          "content": "اعتمدنا رفع ميزانية السفر إلى 5000."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار التوزيع: إعلان 4000، تدريب 2500، سفر 5000."
+        },
+        {
+          "role": "user",
+          "content": "قرار رفع السفر أُلغي رسميًّا؛ عاد البند إلى مبلغه الأصلي قبل الرفع."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار التوزيع: إعلان 4000، تدريب 2500، سفر 3000."
+        },
+        {
+          "role": "user",
+          "content": "وخُفّض بند الإعلان إلى 3500."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار التوزيع: إعلان 3500، تدريب 2500، سفر 3000."
+        },
+        {
+          "role": "user",
+          "content": "أخرج الميزانية النهائية كائن JSON بمفاتيح البنود الثلاثة وقيمها النهائية، بلا شرح."
+        }
+      ],
+      "reference": "إعلان 3500، تدريب 2500، سفر 3000؛ الرفع أُلغي صراحة فعاد السفر لأصله، والإعلان خُفّض.",
+      "rubric": [
+        "السفر عاد إلى 3000 لا 5000",
+        "الإعلان 3500",
+        "التدريب بلا تغيير"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": {
+            "إعلان": 3500,
+            "تدريب": 2500,
+            "سفر": 3000
+          }
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "mtx_a_0026",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "رقم هاتفي الجديد 0551234567، سجّله عندك."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت الرقم: 0551234567."
+        },
+        {
+          "role": "user",
+          "content": "تنبيه مهم: الرقم الذي أعطيتك فيه خطأ في الخانتين الأخيرتين؛ الرقم الصحيح 0551234576. اعتمد هذا وانسَ السابق."
+        },
+        {
+          "role": "assistant",
+          "content": "تم التصحيح، الرقم المعتمد الآن: 0551234576."
+        },
+        {
+          "role": "user",
+          "content": "وسجّل أيضًا بريدي الجديد: samir@mail.com"
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت البريد: samir@mail.com."
+        },
+        {
+          "role": "user",
+          "content": "ما رقم هاتفي المعتمد؟ أجب بالرقم فقط."
+        }
+      ],
+      "reference": "0551234576؛ لأن المستخدم صحّح صراحةً الخانتين الأخيرتين وطلب نسيان السابق.",
+      "rubric": [
+        "الرقم المصحح لا الأصلي",
+        "الخانتان الأخيرتان 76 لا 67",
+        "رقم فقط"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "0551234576"
+        },
+        {
+          "kind": "excludes",
+          "value": "0551234567"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "mtx_a_0047",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "مهام الصيانة: فحص الكهرباء (مفتوحة)، تغيير الأقفال (مفتوحة)، تنظيف الخزان (مفتوحة)."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت ثلاث مهام مفتوحة."
+        },
+        {
+          "role": "user",
+          "content": "أُنجزت مهمة تغيير الأقفال."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، بقيت مهمتان مفتوحتان."
+        },
+        {
+          "role": "user",
+          "content": "اتضح من الفحص أن تغيير الأقفال لم يكتمل فعليًّا؛ أعيدوها إلى المفتوحة."
+        },
+        {
+          "role": "assistant",
+          "content": "فهمت، أُعيدت تغيير الأقفال إلى المفتوحة؛ عادت المهام المفتوحة ثلاثًا."
+        },
+        {
+          "role": "user",
+          "content": "واليوم أُنجزت مهمة تنظيف الخزان."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، بقيت مهمتان: فحص الكهرباء وتغيير الأقفال."
+        },
+        {
+          "role": "user",
+          "content": "كم مهمة مفتوحة الآن؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "2؛ تغيير الأقفال أُنجزت ثم أُعيد فتحها، وتنظيف الخزان أُنجز، فبقيت الكهرباء والأقفال.",
+      "rubric": [
+        "إعادة فتح الأقفال محسوبة",
+        "إنجاز الخزان محسوب",
+        "الناتج 2"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "2"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "mtx_a_0028",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "بيانات التواصل معي: الهاتف 0501112233، والبريد huda@corp.com"
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: الهاتف 0501112233، والبريد huda@corp.com."
+        },
+        {
+          "role": "user",
+          "content": "حدّث الهاتف إلى 0504445566."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الهاتف الآن 0504445566."
+        },
+        {
+          "role": "user",
+          "content": "وحدّث البريد إلى huda@newcorp.com"
+        },
+        {
+          "role": "assistant",
+          "content": "تم، البريد الآن huda@newcorp.com."
+        },
+        {
+          "role": "user",
+          "content": "بخصوص الهاتف: بقيت على الرقم الأول، فتجاهل تغييره تمامًا."
+        },
+        {
+          "role": "assistant",
+          "content": "فهمت، الهاتف بقي 0501112233 والبريد huda@newcorp.com."
+        },
+        {
+          "role": "user",
+          "content": "أخرج بيانات التواصل الحالية كائن JSON بمفتاحي «الهاتف» و«البريد» فقط بلا شرح."
+        }
+      ],
+      "reference": "الهاتف 0501112233 (أُلغي تغييره صراحة) والبريد huda@newcorp.com (تحديثه باقٍ).",
+      "rubric": [
+        "الهاتف عاد للرقم الأول",
+        "البريد المحدث باقٍ",
+        "JSON بالمفتاحين فقط"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": {
+            "الهاتف": "0501112233",
+            "البريد": "huda@newcorp.com"
+          }
+        },
+        {
+          "kind": "excludes",
+          "value": "0504445566"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "mtx_a_0009",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "مخزون الزيت: 100 كرتونة."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت المخزون: زيت 100."
+        },
+        {
+          "role": "user",
+          "content": "أخرجنا 20 كرتونة للفرع."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون زيت: 80."
+        },
+        {
+          "role": "user",
+          "content": "ثم أخرجنا 15 كرتونة لعميل جملة."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون زيت: 65."
+        },
+        {
+          "role": "user",
+          "content": "تنبيه مهم: عملية إخراج الـ15 كرتونة الأخيرة كانت خطأً إداريًّا؛ أُعيدت الكراتين كاملة إلى المستودع."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون زيت: 80."
+        },
+        {
+          "role": "user",
+          "content": "وصلت شحنة تعويض 5 كراتين."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون زيت: 85."
+        },
+        {
+          "role": "user",
+          "content": "كم كرتونة زيت في المستودع الآن؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "85؛ الزيت: 100 - 20 - 15 ثم إلغاء الإخراج +15 ثم +5.",
+      "rubric": [
+        "إلغاء أثر عملية الـ15 تحديدًا",
+        "عملية الـ20 باقية الأثر",
+        "الناتج 85"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "85"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "mtx_a_0018",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ميزانية القسم السنوية: رواتب 50000، إيجار 12000، تشغيل 8000، طوارئ 5000."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت الميزانية: رواتب 50000، إيجار 12000، تشغيل 8000، طوارئ 5000."
+        },
+        {
+          "role": "user",
+          "content": "رفعنا بند التشغيل إلى 9500."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار التوزيع: رواتب 50000، إيجار 12000، تشغيل 9500، طوارئ 5000."
+        },
+        {
+          "role": "user",
+          "content": "وصار الإيجار الجديد 13000 بعد تجديد العقد."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار التوزيع: رواتب 50000، إيجار 13000، تشغيل 9500، طوارئ 5000."
+        },
+        {
+          "role": "user",
+          "content": "أخرج الميزانية النهائية كائن JSON بمفاتيح البنود الأربعة وقيمها النهائية، بلا شرح."
+        }
+      ],
+      "reference": "رواتب 50000، إيجار 13000، تشغيل 9500، طوارئ 5000؛ تحديثان لبندين مختلفين.",
+      "rubric": [
+        "الإيجار 13000",
+        "التشغيل 9500",
+        "الرواتب والطوارئ بلا تغيير"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": {
+            "رواتب": 50000,
+            "إيجار": 13000,
+            "تشغيل": 9500,
+            "طوارئ": 5000
+          }
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0043",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "مشترياتي: حذاء بـ180 ريالًا، حقيبة بـ240 ريالًا."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت السلة. الإجمالي الآن: 420 ريالًا."
+        },
+        {
+          "role": "user",
+          "content": "اشتكيت من خدش في الحقيبة فوافق البائع على خصم 25٪ من سعرها."
+        },
+        {
+          "role": "assistant",
+          "content": "تم. إجمالي السلة الآن: 360 ريالًا."
+        },
+        {
+          "role": "user",
+          "content": "وأضفت حزامًا بـ60 ريالًا."
+        },
+        {
+          "role": "assistant",
+          "content": "تم. إجمالي السلة الآن: 420 ريالًا."
+        },
+        {
+          "role": "user",
+          "content": "كم إجمالي ما سأدفعه؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "420؛ الحقيبة بعد خصم 25٪ تصير 180، فيكون المجموع 180 حذاء + 180 حقيبة + 60 حزام.",
+      "rubric": [
+        "الخصم يطبق على الحقيبة فقط",
+        "25٪ من 240 تساوي 60",
+        "الناتج 420"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "420"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0008",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "مخزون التمور: تمر 80 كيسًا، زبيب 45 كيسًا."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت المخزون: تمر 80، زبيب 45."
+        },
+        {
+          "role": "user",
+          "content": "أخرجنا 30 كيس تمر للفرع الجديد."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون تمر: 50."
+        },
+        {
+          "role": "user",
+          "content": "تصحيح: الذي خرج للفرع 25 كيسًا لا 30؛ أعدنا 5 أكياس للمستودع."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون تمر: 55."
+        },
+        {
+          "role": "user",
+          "content": "وصلت شحنة 10 أكياس تمر."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون تمر: 65."
+        },
+        {
+          "role": "user",
+          "content": "كم كيس تمر لدي الآن؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "65؛ التمر: 80 - 30 ثم تصحيح +5 ثم +10. (أي 80 - 25 + 10).",
+      "rubric": [
+        "احتساب التصحيح (+5) لا تجاهله",
+        "الناتج 65"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "65"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0045",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "فريق المشروع: تصميم الواجهة مسؤولها رامي، وكتابة المحتوى مسؤولتها دينا، والاختبار مسؤوله فادي."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: رامي للواجهة، دينا للمحتوى، فادي للاختبار."
+        },
+        {
+          "role": "user",
+          "content": "رامي بدأ إجازته؛ انتقلت مسؤولية الواجهة إلى سامي."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، سامي مسؤول الواجهة الآن."
+        },
+        {
+          "role": "user",
+          "content": "ودينا ستساعد فادي في الاختبار، لكن المسؤولية الرسمية بقيت على فادي."
+        },
+        {
+          "role": "assistant",
+          "content": "فهمت، فادي ما زال مسؤول الاختبار ودينا مساعدة فقط."
+        },
+        {
+          "role": "user",
+          "content": "من المسؤول الرسمي عن تصميم الواجهة الآن؟ أجب بكلمة واحدة."
+        }
+      ],
+      "reference": "سامي؛ لأن مسؤولية الواجهة انتقلت إليه صراحة، وحديث الاختبار مشتت لا يمس الواجهة.",
+      "rubric": [
+        "الجواب سامي",
+        "كلمة واحدة",
+        "عدم الخلط مع ترتيبات الاختبار"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "سامي"
+        },
+        {
+          "kind": "excludes",
+          "value": "رامي"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0027",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أسكن في جدة، حي الروضة."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: جدة، حي الروضة."
+        },
+        {
+          "role": "user",
+          "content": "انتقلت هذا الشهر إلى الدمام، حي الشاطئ."
+        },
+        {
+          "role": "assistant",
+          "content": "تم التحديث: الدمام، حي الشاطئ."
+        },
+        {
+          "role": "user",
+          "content": "بقيت في الدمام لكنني غيّرت الحي، صار الفيصلية."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار عنوانك: الدمام، حي الفيصلية."
+        },
+        {
+          "role": "user",
+          "content": "أخرج عنواني الحالي كائن JSON بمفتاحين «المدينة» و«الحي» فقط بلا شرح."
+        }
+      ],
+      "reference": "المدينة الدمام والحي الفيصلية؛ المدينة تحدّثت مرة والحي مرتين، والمطلوب آخر قيمة لكل منهما.",
+      "rubric": [
+        "المدينة الدمام",
+        "الحي الفيصلية لا الشاطئ ولا الروضة",
+        "JSON بالمفتاحين فقط"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": {
+            "المدينة": "الدمام",
+            "الحي": "الفيصلية"
+          }
+        },
+        {
+          "kind": "excludes",
+          "value": "الروضة"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0007",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "جرد المتجر: شاي 12 علبة، قهوة 30 علبة، حليب 48 علبة، عصير 20 علبة."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت المخزون: شاي 12، قهوة 30، حليب 48، عصير 20."
+        },
+        {
+          "role": "user",
+          "content": "وصل 18 علبة حليب."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون حليب: 66."
+        },
+        {
+          "role": "user",
+          "content": "بِعنا 12 علبة قهوة و4 علب شاي."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون قهوة: 18، صار مخزون شاي: 8."
+        },
+        {
+          "role": "user",
+          "content": "وصل 7 علب عصير."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون عصير: 27."
+        },
+        {
+          "role": "user",
+          "content": "بِعنا 10 علب حليب."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار مخزون حليب: 56."
+        },
+        {
+          "role": "user",
+          "content": "كم علبة حليب بقيت؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "56؛ الحليب: 48 + 18 - 10، وعمليات الشاي والقهوة والعصير مشتتات.",
+      "rubric": [
+        "جمع دخول الحليب قبل طرح خروجه",
+        "تجاهل عمليات الأصناف الأخرى"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "56"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0046",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "المهام المفتوحة في صيانة المنزل: تنسيق الحديقة، إصلاح السياج، دهان البوابة."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت ثلاث مهام مفتوحة."
+        },
+        {
+          "role": "user",
+          "content": "أنجزت إصلاح السياج."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، بقيت: تنسيق الحديقة ودهان البوابة."
+        },
+        {
+          "role": "user",
+          "content": "أضيفت مهمة جديدة: تركيب الإنارة."
+        },
+        {
+          "role": "assistant",
+          "content": "أضفت تركيب الإنارة للمفتوحة."
+        },
+        {
+          "role": "user",
+          "content": "أخرج المهام المفتوحة الحالية كقائمة JSON فقط بلا شرح."
+        }
+      ],
+      "reference": "[تنسيق الحديقة، دهان البوابة، تركيب الإنارة]؛ حذف المنجزة وإلحاق الجديدة بالنهاية.",
+      "rubric": [
+        "إصلاح السياج محذوفة",
+        "تركيب الإنارة مضافة في النهاية",
+        "ترتيب الباقي محفوظ"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": [
+            "تنسيق الحديقة",
+            "دهان البوابة",
+            "تركيب الإنارة"
+          ]
+        },
+        {
+          "kind": "excludes",
+          "value": "السياج"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0041",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "سلتي الآن: أرز بـ45 ريالًا، دجاج بـ28 ريالًا (كيس واحد)."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت السلة. الإجمالي الآن: 73 ريالًا."
+        },
+        {
+          "role": "user",
+          "content": "أضف زيتًا بـ22 ريالًا."
+        },
+        {
+          "role": "assistant",
+          "content": "تم. إجمالي السلة الآن: 95 ريالًا."
+        },
+        {
+          "role": "user",
+          "content": "واجعل الدجاج كيسين بدل كيس واحد."
+        },
+        {
+          "role": "assistant",
+          "content": "تم. إجمالي السلة الآن: 123 ريالًا."
+        },
+        {
+          "role": "user",
+          "content": "كم إجمالي السلة الآن بالريال؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "123؛ أرز 45 + دجاج 28×2 = 56 + زيت 22.",
+      "rubric": [
+        "مضاعفة سعر الدجاج بالكمية",
+        "إضافة الزيت",
+        "الناتج 123"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "123"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0030",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أضع في العجينة 200 غرام زبدة."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: 200 غرام زبدة."
+        },
+        {
+          "role": "user",
+          "content": "ضاعفت الوصفة كلها."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، الزبدة الآن 400 غرام."
+        },
+        {
+          "role": "user",
+          "content": "ثم أضفت 50 غرامًا إضافية لدهن الوجه."
+        },
+        {
+          "role": "assistant",
+          "content": "حسنًا، إجمالي الزبدة 450 غرامًا."
+        },
+        {
+          "role": "user",
+          "content": "كم غرام زبدة أحتاج إجمالًا؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "450؛ الضعف 400 ثم إضافة 50. الناقص (250) طبّق الإضافة ونسي المضاعفة.",
+      "rubric": [
+        "المضاعفة قبل الإضافة",
+        "الناتج 450"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "450"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0034",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "حجزي غدًا: مقعد 9F، وجبة دجاج، درجة اقتصادية."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: 9F، وجبة دجاج، اقتصادية."
+        },
+        {
+          "role": "user",
+          "content": "غيّرت الوجبة إلى سمك، ورقّيت المقعد إلى درجة رجال الأعمال."
+        },
+        {
+          "role": "assistant",
+          "content": "تم: الوجبة سمك، والدرجة رجال أعمال، والمقعد 9F كما هو."
+        },
+        {
+          "role": "user",
+          "content": "أخرج حجزي الحالي كائن JSON بمفاتيح «المقعد» و«الوجبة» و«الدرجة» فقط بلا شرح."
+        }
+      ],
+      "reference": "المقعد 9F بلا تغيير، الوجبة سمك، الدرجة رجال الأعمال؛ حقلان تحدثا وحقل بقي.",
+      "rubric": [
+        "الوجبة سمك",
+        "الدرجة رجال الأعمال",
+        "المقعد 9F بقي كما هو"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": {
+            "المقعد": "9F",
+            "الوجبة": "سمك",
+            "الدرجة": "رجال الأعمال"
+          }
+        },
+        {
+          "kind": "excludes",
+          "value": "دجاج"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0022",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "تشكيلتنا: قلب الهجوم راشد، والجناح الأيمن نبيل، وخط الوسط خالد."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: راشد قلب هجوم، نبيل جناح أيمن، خالد وسط."
+        },
+        {
+          "role": "user",
+          "content": "تغييران: طارق بدل نبيل، وسلمان بدل راشد."
+        },
+        {
+          "role": "assistant",
+          "content": "تم: طارق جناح أيمن، وسلمان قلب هجوم، وخالد باقٍ في الوسط."
+        },
+        {
+          "role": "user",
+          "content": "من يلعب جناحًا أيمن الآن؟ أجب بكلمة واحدة."
+        }
+      ],
+      "reference": "طارق؛ لأنه بديل نبيل في الجناح تحديدًا، أما سلمان فبديل راشد في الهجوم.",
+      "rubric": [
+        "الجواب طارق لا سلمان",
+        "كلمة واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "طارق"
+        },
+        {
+          "kind": "excludes",
+          "value": "نبيل"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0025",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "سجّل بريدي الإلكتروني: khaled@oldmail.com"
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت البريد: khaled@oldmail.com"
+        },
+        {
+          "role": "user",
+          "content": "غيّرت بريدي، صار: khaled@workmail.com"
+        },
+        {
+          "role": "assistant",
+          "content": "تم تحديث البريد إلى: khaled@workmail.com"
+        },
+        {
+          "role": "user",
+          "content": "تحديث أخير اليوم: بريدي النهائي هو khaled@pro-mail.com"
+        },
+        {
+          "role": "assistant",
+          "content": "تم، البريد الحالي: khaled@pro-mail.com"
+        },
+        {
+          "role": "user",
+          "content": "ما بريدي الإلكتروني الحالي؟ أجب بالبريد فقط بلا أي كلمة."
+        }
+      ],
+      "reference": "khaled@pro-mail.com؛ لأنه آخر تحديث صريح، وسبقاه ملغيّان ضمنًا.",
+      "rubric": [
+        "آخر قيمة محدثة",
+        "بريد فقط بلا زيادات"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "khaled@pro-mail.com"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0012",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "خذ هذه الجملة وتعامل معها نصًّا: «اشترى أبي سيارة حمراء جديدة من المعرض الكبير»"
+        },
+        {
+          "role": "assistant",
+          "content": "معي الجملة: «اشترى أبي سيارة حمراء جديدة من المعرض الكبير». ما التعديل المطلوب؟"
+        },
+        {
+          "role": "user",
+          "content": "استبدل كلمة «حمراء» بكلمة «خضراء»."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صارت الجملة: «اشترى أبي سيارة خضراء جديدة من المعرض الكبير»"
+        },
+        {
+          "role": "user",
+          "content": "احذف الكلمة الخامسة من الجملة."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صارت الجملة: «اشترى أبي سيارة خضراء من المعرض الكبير»"
+        },
+        {
+          "role": "user",
+          "content": "ما الجملة النهائية؟ أخرجها فقط بلا شرح ولا نقطة ختامية."
+        }
+      ],
+      "reference": "اشترى أبي سيارة خضراء من المعرض الكبير؛ الاستبدال غيّر الرابعة، والحذف أزال «جديدة» (الخامسة).",
+      "rubric": [
+        "«خضراء» مكان «حمراء»",
+        "حذف «جديدة» بالفهرس الخامس",
+        "ترتيب الباقي سليم"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "اشترى أبي سيارة خضراء من المعرض الكبير"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0031",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "الوصفة تحتاج 600 مل من الحليب."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت: 600 مل حليب."
+        },
+        {
+          "role": "user",
+          "content": "سأصنع نصف الكمية فقط."
+        },
+        {
+          "role": "assistant",
+          "content": "فهمت، الحليب يصير 300 مل."
+        },
+        {
+          "role": "user",
+          "content": "الخليط بدا جافًّا فأضفت 100 مل أخرى."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار المجموع 400 مل."
+        },
+        {
+          "role": "user",
+          "content": "كم مل حليب استخدمت في النهاية؟ أجب برقم فقط بالأرقام الغربية (0-9)."
+        }
+      ],
+      "reference": "400؛ النصف 300 ثم إضافة 100. الناقص (700) أضاف 100 للكمية الأصلية دون التنصيف.",
+      "rubric": [
+        "التنصيف أولًا ثم الإضافة",
+        "الناتج 400"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "400"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "mtx_a_0019",
+      "capability": "multi_turn_memory",
+      "messages": [
+        {
+          "role": "user",
+          "content": "توزيع الميزانية: تطوير 6000، دعم 3000، صيانة 1500."
+        },
+        {
+          "role": "assistant",
+          "content": "سجّلت الميزانية: تطوير 6000، دعم 3000، صيانة 1500."
+        },
+        {
+          "role": "user",
+          "content": "انقل 1000 من بند الدعم إلى بند التطوير."
+        },
+        {
+          "role": "assistant",
+          "content": "تم، صار التوزيع: تطوير 7000، دعم 2000، صيانة 1500."
+        },
+        {
+          "role": "user",
+          "content": "أخرج التوزيع النهائي كائن JSON بمفاتيح البنود الثلاثة وقيمها النهائية، بلا شرح."
+        }
+      ],
+      "reference": "تطوير 7000، دعم 2000، صيانة 1500؛ التحويل ينقص مصدره ويزيد وجهته بالمقدار نفسه.",
+      "rubric": [
+        "التطوير زاد 1000",
+        "الدعم نقص 1000",
+        "الصيانة بلا تغيير"
+      ],
+      "checks": [
+        {
+          "kind": "json_equals",
+          "value": {
+            "تطوير": 7000,
+            "دعم": 2000,
+            "صيانة": 1500
+          }
+        }
+      ],
+      "critical": false
+    }
+  ]
+}

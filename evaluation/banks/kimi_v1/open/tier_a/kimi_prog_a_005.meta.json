@@ -1,0 +1,473 @@
+{
+  "suite_id": "kimi_prog_a_005",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "prog_e_0064": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تكرار النص بالضرب.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0068": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "find وindex على نص عربي.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0085": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "عدّ محرف وبادئة.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0088": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "strip لغير الفراغات.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0069": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "len قبل وبعد strip.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0058": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "استبدال نصّيّ بسيط.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0076": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "zip مع أطوال مختلفة.",
+      "answer_verified_by": "mechanical",
+      "trap": "zip لا يملأ بالـ None"
+    },
+    "prog_e_0061": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "استهلاك المولّدات جزئيًّا.",
+      "answer_verified_by": "mechanical",
+      "trap": "المولّد لا يُعاد من البداية"
+    },
+    "prog_e_0077": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إغلاق يقرأ متأخرًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "الإغلاق يلتقط المرجع لا القيمة"
+    },
+    "prog_e_0082": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "أسبقية عامل الأسّ.",
+      "answer_verified_by": "mechanical",
+      "trap": "** يتجمّع يمينًا لا يسارًا"
+    },
+    "prog_e_0062": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مرجع مكرر داخل قائمة.",
+      "answer_verified_by": "mechanical",
+      "trap": "نسخة سطحية تشارك الداخل"
+    },
+    "prog_e_0054": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قسمة وباقي الأعداد السالبة.",
+      "answer_verified_by": "mechanical",
+      "trap": "-7//2 = -4 لا -3"
+    },
+    "prog_e_0072": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "split بحدّ أقصى للتقسيمات.",
+      "answer_verified_by": "mechanical",
+      "trap": "maxsplit يوقف التقسيم مبكرًا"
+    },
+    "prog_e_0090": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "else الحلقة مع break.",
+      "answer_verified_by": "mechanical",
+      "trap": "else لا تُنفّذ بعد break"
+    },
+    "prog_e_0073": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "دقة الأعداد العشرية.",
+      "answer_verified_by": "mechanical",
+      "trap": "0.1+0.2 != 0.3"
+    },
+    "prog_e_0083": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "is بعد تعديل في المكان.",
+      "answer_verified_by": "mechanical",
+      "trap": "+= على القوائم تمديد في المكان"
+    },
+    "prog_e_0066": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تتبّع عاودية بسيطة.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0084": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مفتاح مكرر في literal قاموس.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0047": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عكس كلمة داخل جملة.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0079": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نوع استثناء التحويل.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0075": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب وسائط format.",
+      "answer_verified_by": "mechanical",
+      "trap": "الوسائط معكوسة عمدًا"
+    },
+    "prog_e_0050": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "get بالافتراضي لا تعدّل القاموس.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0071": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النمط الصحيح للافتراضي القابل للتغيير.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0056": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "توليد قائمة بشرط.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0063": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "صدقية القيم.",
+      "answer_verified_by": "mechanical",
+      "trap": "bool('0') وbool([0]) كلاهما True"
+    },
+    "prog_e_0051": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حذف أول ظهور لا كل الظهور.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0067": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "قيمة إعادة sort.",
+      "answer_verified_by": "mechanical",
+      "trap": "sort تعيد None"
+    },
+    "prog_e_0048": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الإسناد لا ينسخ القوائم.",
+      "answer_verified_by": "mechanical",
+      "trap": "y = x مشاركة مرجع لا نسخة"
+    },
+    "prog_e_0087": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "النسخة بالشريحة الكاملة.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0052": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "طول وشريحة نص عربي.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0080": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فهرسة مصفوفة ثنائية.",
+      "answer_verified_by": "mechanical"
+    },
+    "prog_e_0033": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ثبات النصوص في بايثون.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def capitalize_first(s):\n    return s[0].upper() + s[1:]\n",
+      "wrong_solution": "def capitalize_first(s):\n    s[0] = s[0].upper()\n    return s\n"
+    },
+    "prog_e_0042": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "min للسقف وmax للحد الأدنى.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def final_fee(fee):\n    return min(fee, 50)\n",
+      "wrong_solution": "def final_fee(fee):\n    return max(fee, 50)\n"
+    },
+    "prog_e_0032": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إزاحة في نهاية range التنازليّة.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def countdown_list(n):\n    return list(range(n, 0, -1))\n",
+      "wrong_solution": "def countdown_list(n):\n    return list(range(n, -1, -1))\n"
+    },
+    "prog_e_0019": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "الفرق بين التجاوز والبلوغ عند العتبة.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def is_eligible(age):\n    return age > 30\n",
+      "wrong_solution": "def is_eligible(age):\n    return age >= 30\n"
+    },
+    "prog_e_0044": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ثبات tuples.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def add_tag(tags, tag):\n    return tags + (tag,)\n",
+      "wrong_solution": "def add_tag(tags, tag):\n    tags.append(tag)\n    return tags\n"
+    },
+    "prog_e_0013": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "// مقابل / في المتوسطات.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def average(nums):\n    return sum(nums) / len(nums)\n",
+      "wrong_solution": "def average(nums):\n    return sum(nums) // len(nums)\n"
+    },
+    "prog_e_0012": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "حصرية الحد الأعلى في range.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def sum_range(a, b):\n    return sum(range(a, b + 1))\n",
+      "wrong_solution": "def sum_range(a, b):\n    return sum(range(a, b))\n"
+    },
+    "prog_e_0015": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "return مبكر داخل حلقة.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def has_negative(nums):\n    for x in nums:\n        if x < 0:\n            return True\n    return False\n",
+      "wrong_solution": "def has_negative(nums):\n    for x in nums:\n        if x < 0:\n            return True\n        else:\n            return False\n    return False\n"
+    },
+    "prog_e_0039": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إزاحة الفهرسة من 1 إلى 0.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "MONTHS = [\"يناير\", \"فبراير\", \"مارس\", \"أبريل\", \"مايو\", \"يونيو\", \"يوليو\", \"أغسطس\", \"سبتمبر\", \"أكتوبر\", \"نوفمبر\", \"ديسمبر\"]\ndef month_name(m):\n    return MONTHS[m - 1]\n",
+      "wrong_solution": "MONTHS = [\"يناير\", \"فبراير\", \"مارس\", \"أبريل\", \"مايو\", \"يونيو\", \"يوليو\", \"أغسطس\", \"سبتمبر\", \"أكتوبر\", \"نوفمبر\", \"ديسمبر\"]\ndef month_name(m):\n    return MONTHS[m]\n"
+    },
+    "prog_e_0011": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "reverse مع مفتاح مركّب يعكس البعدين معًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "reverse=True على مفتاح مركّب",
+      "correct_solution": "def sort_students(records):\n    return sorted(records, key=lambda r: (-r[\"grade\"], r[\"name\"]))\n",
+      "wrong_solution": "def sort_students(records):\n    return sorted(records, key=lambda r: (-r[\"grade\"], r[\"name\"]), reverse=True)\n"
+    },
+    "prog_e_0028": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "in للعضوية مقابل فحص البادئة.",
+      "answer_verified_by": "mechanical",
+      "trap": "in على قائمة بدل startswith",
+      "correct_solution": "def any_prefix(words, p):\n    return any(w.startswith(p) for w in words)\n",
+      "wrong_solution": "def any_prefix(words, p):\n    return p in words\n"
+    },
+    "prog_e_0029": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "match مقابل search في re.",
+      "answer_verified_by": "mechanical",
+      "trap": "match يقف عند البداية",
+      "correct_solution": "import re\ndef contains_digit(s):\n    return re.search(r\"\\d\", s) is not None\n",
+      "wrong_solution": "import re\ndef contains_digit(s):\n    return re.match(r\"\\d\", s) is not None\n"
+    },
+    "prog_e_0002": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خوارزمية صحيحة على فرضية مرتّبة دون فرضها.",
+      "answer_verified_by": "mechanical",
+      "trap": "غياب الترتيب المسبق",
+      "correct_solution": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    intervals = sorted(intervals)\n    merged = [list(intervals[0])]\n    for s, e in intervals[1:]:\n        if s <= merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], e)\n        else:\n            merged.append([s, e])\n    return [tuple(m) for m in merged]\n",
+      "wrong_solution": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    merged = [list(intervals[0])]\n    for s, e in intervals[1:]:\n        if s <= merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], e)\n        else:\n            merged.append([s, e])\n    return [tuple(m) for m in merged]\n"
+    },
+    "prog_e_0041": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الإبقاء على الأول مقابل نقله للنهاية.",
+      "answer_verified_by": "mechanical",
+      "trap": "إزالة ثم إلحاق = آخر ظهور",
+      "correct_solution": "def dedup_keep_first(lst):\n    out = []\n    for x in lst:\n        if x not in out:\n            out.append(x)\n    return out\n",
+      "wrong_solution": "def dedup_keep_first(lst):\n    out = []\n    for x in lst:\n        if x in out:\n            out.remove(x)\n        out.append(x)\n    return out\n"
+    },
+    "prog_e_0001": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حالة حدّية في دمج الفترات: التلامس مقابل التداخل.",
+      "answer_verified_by": "mechanical",
+      "trap": "شرط < يستثني التلامس",
+      "correct_solution": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    intervals = sorted(intervals)\n    merged = [list(intervals[0])]\n    for s, e in intervals[1:]:\n        if s <= merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], e)\n        else:\n            merged.append([s, e])\n    return [tuple(m) for m in merged]\n",
+      "wrong_solution": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    intervals = sorted(intervals)\n    merged = [list(intervals[0])]\n    for s, e in intervals[1:]:\n        if s < merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], e)\n        else:\n            merged.append([s, e])\n    return [tuple(m) for m in merged]\n"
+    },
+    "prog_e_0023": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تعديل القاموس أثناء المرور عليه.",
+      "answer_verified_by": "mechanical",
+      "trap": "del أثناء items()",
+      "correct_solution": "def drop_inactive(users):\n    return {name: active for name, active in users.items() if active}\n",
+      "wrong_solution": "def drop_inactive(users):\n    for name, active in users.items():\n        if not active:\n            del users[name]\n    return users\n"
+    },
+    "prog_e_0022": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "min(d) مقابل min(d, key=d.get).",
+      "answer_verified_by": "mechanical",
+      "trap": "min يقارن المفاتيح",
+      "correct_solution": "def cheapest(prices):\n    return min(prices, key=prices.get)\n",
+      "wrong_solution": "def cheapest(prices):\n    return min(prices)\n"
+    },
+    "prog_e_0005": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "is مع النصوص يعمل مصادفةً أحيانًا فيخفي الخلل.",
+      "answer_verified_by": "mechanical",
+      "trap": "is على النصوص",
+      "correct_solution": "def greeting(name):\n    if name == \"admin\":\n        return \"مرحبًا بالمدير\"\n    return \"مرحبًا \" + name\n",
+      "wrong_solution": "def greeting(name):\n    if name is \"admin\":\n        return \"مرحبًا بالمدير\"\n    return \"مرحبًا \" + name\n"
+    },
+    "prog_e_0024": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تقريب المصرفيين في بايثون فخّ محاسبيّ خفيّ.",
+      "answer_verified_by": "mechanical",
+      "trap": "round يقرّب النصف للزوجي",
+      "correct_solution": "import math\ndef round_money(x):\n    return math.floor(x + 0.5)\n",
+      "wrong_solution": "def round_money(x):\n    return round(x)\n"
+    },
+    "prog_e_0004": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مقارنة أرقام عشرية بـ == خطأ جوهري في الماليات.",
+      "answer_verified_by": "mechanical",
+      "trap": "0.1+0.1+0.1 != 0.3 في الثنائية",
+      "correct_solution": "import math\ndef payments_equal(payments, expected):\n    return math.isclose(sum(payments), expected, rel_tol=1e-9, abs_tol=1e-9)\n",
+      "wrong_solution": "def payments_equal(payments, expected):\n    return sum(payments) == expected\n"
+    },
+    "prog_e_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "append مقابل extend/+.",
+      "answer_verified_by": "mechanical",
+      "trap": "append(b) يدخّل b كعنصر",
+      "correct_solution": "def combine(a, b):\n    return a + b\n",
+      "wrong_solution": "def combine(a, b):\n    a.append(b)\n    return a\n"
+    },
+    "prog_e_0037": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حجب الأسماء المدمجة.",
+      "answer_verified_by": "mechanical",
+      "trap": "sum متغيرًا يحجب الدالة",
+      "correct_solution": "def double_total(nums):\n    total = 0\n    for x in nums:\n        total += x\n    return total * 2\n",
+      "wrong_solution": "def double_total(nums):\n    sum = 0\n    for x in nums:\n        sum += x\n    return sum(nums) * 2\n"
+    },
+    "prog_e_0027": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ترتيب مخرجات enumerate.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def first_positions(items):\n    out = {}\n    for i, x in enumerate(items):\n        out[x] = i\n    return out\n",
+      "wrong_solution": "def first_positions(items):\n    out = {}\n    for x, i in enumerate(items):\n        out[x] = i\n    return out\n"
+    },
+    "prog_e_0014": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أسبقية العمليات تقلب الصيغة المحاسبية.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def line_total(price, fee, qty):\n    return (price + fee) * qty\n",
+      "wrong_solution": "def line_total(price, fee, qty):\n    return price + fee * qty\n"
+    },
+    "prog_e_0045": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تنظيف مخرجات split.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def parse_list(s):\n    return [p.strip() for p in s.split(\",\") if p.strip()]\n",
+      "wrong_solution": "def parse_list(s):\n    return s.split(\",\")\n"
+    },
+    "prog_e_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "and مقابل or في التحقق المركّب.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def valid_code(s):\n    return len(s) >= 3 and any(c.isdigit() for c in s)\n",
+      "wrong_solution": "def valid_code(s):\n    return len(s) >= 3 or any(c.isdigit() for c in s)\n"
+    },
+    "prog_e_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مجمّع لا يُعاد تصفيره في حلقة متداخلة.",
+      "answer_verified_by": "mechanical",
+      "correct_solution": "def row_sums(m):\n    out = []\n    for row in m:\n        total = 0\n        for x in row:\n            total += x\n        out.append(total)\n    return out\n",
+      "wrong_solution": "def row_sums(m):\n    total = 0\n    out = []\n    for row in m:\n        for x in row:\n            total += x\n        out.append(total)\n    return out\n"
+    },
+    "prog_e_0025": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "باقي القسمة في بايثون يعالج السالب صحيحًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "abs يفسد اللفّ السالب",
+      "correct_solution": "def wrap_index(i, n):\n    return i % n\n",
+      "wrong_solution": "def wrap_index(i, n):\n    return abs(i) % n\n"
+    },
+    "prog_e_0006": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "خطأ ترتيب الوسائط يقلب الدلالة بلا أي تحذير.",
+      "answer_verified_by": "mechanical",
+      "trap": "وسائط format معكوسة",
+      "correct_solution": "def describe(name, age):\n    return \"الاسم: {}، العمر: {}\".format(name, age)\n",
+      "wrong_solution": "def describe(name, age):\n    return \"الاسم: {}، العمر: {}\".format(age, name)\n"
+    },
+    "prog_e_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "المقارنة الأبجدية للأرقام النصية فخّ صامت شائع.",
+      "answer_verified_by": "mechanical",
+      "trap": "مقارنة '10' و'9' نصيًّا",
+      "correct_solution": "def larger_number(a, b):\n    return a if int(a) > int(b) else b\n",
+      "wrong_solution": "def larger_number(a, b):\n    return a if a > b else b\n"
+    },
+    "prog_e_0030": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إشارة فرق التواريخ تقلب معنى «المتبقي».",
+      "answer_verified_by": "mechanical",
+      "trap": "طرح معكوس الإشارة",
+      "correct_solution": "from datetime import date\ndef days_until(today, target):\n    return (target - today).days\n",
+      "wrong_solution": "from datetime import date\ndef days_until(today, target):\n    return (today - target).days\n"
+    }
+  }
+}

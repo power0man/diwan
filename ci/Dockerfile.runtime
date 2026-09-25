@@ -1,0 +1,23 @@
+# Built only from this reviewed Dockerfile and requirements-ci.lock. No source,
+# owner HOME, credentials, or Docker socket is part of the build context.
+ARG NODE_IMAGE
+ARG PYTHON_IMAGE
+FROM ${NODE_IMAGE} AS node
+FROM ${PYTHON_IMAGE}
+ARG LOCK_SHA256
+LABEL diwan.lock-sha256="${LOCK_SHA256}"
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates git libicu72 libssl3 libstdc++6 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --uid 1000 --create-home --shell /bin/bash runner \
+    && mkdir /workspace && chown 1000:1000 /workspace
+COPY requirements-ci.lock /opt/requirements-ci.lock
+RUN echo "${LOCK_SHA256}  /opt/requirements-ci.lock" | sha256sum --check --status \
+    && python -m venv /opt/venv \
+    && /opt/venv/bin/python -m pip install --no-cache-dir --require-hashes -r /opt/requirements-ci.lock \
+    && /opt/venv/bin/python -m pip check
+ENV PATH="/opt/venv/bin:/usr/local/bin:/usr/bin:/bin" \
+    HOME="/home/runner" PYTHONDONTWRITEBYTECODE="1"
+USER 1000:1000
+WORKDIR /workspace

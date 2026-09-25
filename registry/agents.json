@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "trailer": "Diwan-Agent",
+  "enforced_from": "2026-09-22T09:00:00Z",
+  "limits": [
+    "self_declared_not_authenticated",
+    "forbids_anonymity_not_impersonation",
+    "tag_must_sit_in_the_last_trailer_block_with_the_other_footers",
+    "no_verify_bypasses_the_local_hook"
+  ],
+  "agents": {
+    "anthropic/claude-opus-5": {"surface": "Claude Code", "admitted": "2026-09-22"},
+    "anthropic/claude-opus-5-5": {"surface": "Claude Code", "admitted": "2026-09-23"},
+    "anthropic/claude-fable-5-1": {"surface": "Claude Code", "admitted": "2026-09-22"},
+    "openai/codex": {"surface": "ChatGPT Codex", "admitted": "2026-09-22"},
+    "google/gemini-antigravity": {"surface": "Antigravity", "admitted": "2026-09-22"},
+    "human/hussain-alrabighi": {"surface": "المالك بيده", "admitted": "2026-09-22"}
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-21",
+  "baseline_commit": "cace2ad160927fe68d3c4103c622ec74fe546d16",
+  "code_commit": "56fe95b2eeaf5b0dfc2b1f2896b45fee30d3f22c",
+  "pytest": {
+    "passed": 1639,
+    "failed": 0,
+    "seconds": 45.19
+  },
+  "frontend": {
+    "passed": 23,
+    "total": 23,
+    "scope": "node_fake_dom_behavior_only",
+    "browser_rendering": "not_tested"
+  },
+  "acceptance": [
+    {
+      "script": "acceptance.py",
+      "exit_code": 0,
+      "passed": 8,
+      "total": 8
+    },
+    {
+      "script": "acceptance_m8b.py",
+      "exit_code": 0,
+      "passed": 6,
+      "total": 6
+    },
+    {
+      "script": "acceptance_m9.py",
+      "exit_code": 0,
+      "passed": 14,
+      "total": 14
+    },
+    {
+      "script": "acceptance_m10.py",
+      "exit_code": 0,
+      "passed": 22,
+      "total": 22
+    },
+    {
+      "script": "acceptance_m11.py",
+      "exit_code": 0,
+      "passed": 22,
+      "total": 22
+    },
+    {
+      "script": "acceptance_m12.py",
+      "exit_code": 0,
+      "passed": 29,
+      "total": 29
+    },
+    {
+      "script": "acceptance_m13.py",
+      "exit_code": 0,
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "script": "acceptance_m7.py",
+      "exit_code": 0,
+      "passed": 10,
+      "total": 10
+    }
+  ],
+  "live_model_calls": 0,
+  "clone_strict_signatures": {
+    "verified": 7,
+    "failures": 0
+  },
+  "original_migration": {
+    "signed_streams": 6,
+    "strict_signatures_verified": 15,
+    "failures": 0,
+    "pre_upgrade_stream_bytes_preserved": true,
+    "pre_upgrade_anchor_bytes_preserved": true,
+    "audit_bytes_preserved": true,
+    "plan_sha256": "1f183afc6904c402a30fc1cbb6a1cf7929f672ddc8e8124dd56b44154180d424"
+  },
+  "ci": {
+    "run_id": 35570791226,
+    "url": "https://github.com/power0man/diwan-private/actions/runs/35570791226",
+    "conclusion": "failure",
+    "execution_started": false,
+    "reason": "account_payment_or_spending_limit",
+    "hmac_job": "skipped",
+    "owner_direction": "complete_local_keep_ci_pending",
+    "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the Billing & plans section in your settings"
+  },
+  "legacy_runner": {
+    "detach_authorization": "only_after_hosted_ci_success",
+    "detached": false
+  },
+  "secret_transfer": {
+    "owner_authorized": true,
+    "key_printed": false,
+    "key_saved_to_file": false,
+    "github_secret_exists": true
+  },
+  "legacy_probe_redaction": {
+    "current_tree_files": 4,
+    "originals_privately_preserved": true,
+    "history_rewritten": false
+  },
+  "unused_cache_quarantine": {
+    "directories": 29,
+    "files": 0,
+    "file_bytes": 0,
+    "symlinks": 0,
+    "deleted": false
+  },
+  "quality_review": "pending",
+  "independent_bank": "not_provided",
+  "release_ready": false,
+  "publication_read_only": {
+    "report": {
+      "published": 0,
+      "skipped": 33341,
+      "rights_refused": 0,
+      "stores_missing": [],
+      "files": []
+    },
+    "files_checked": 311,
+    "bytes_mtimes_inodes_unchanged": true
+  }
+}

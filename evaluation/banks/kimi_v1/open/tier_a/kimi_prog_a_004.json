@@ -1,0 +1,1424 @@
+{
+  "schema_version": 1,
+  "suite_id": "kimi_prog_a_004",
+  "split": "development",
+  "description": "كتابة دوالّ بايثون (جزء ثانٍ): معالجة نصوص عربية متقدمة، هياكل بيانات مركّبة، خوارزميات صغيرة، وتحقق من مدخلات غير صالحة برفع استثناءات محددة — كلها بفحص python_sandbox مختبَر.",
+  "cases": [
+    {
+      "case_id": "prog_d_0006",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `hindi_to_latin_digits` تحوّل الأرقام العربية المشرقية (٠١٢٣٤٥٦٧٨٩) في النص إلى أرقام لاتينية (0-9)، وتترك باقي النص كما هو. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "التحويل يشمل الصفر المشرقي ٠؛ نسيانه يترك أرقامًا غير محوّلة.",
+      "rubric": [
+        "يحوّل كل الأرقام العشرة بما فيها ٠",
+        "لا يمسّ باقي المحارف"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"hindi_to_latin_digits\"]\nassert f(\"الرقم ١٢٣\") == \"الرقم 123\"\nassert f(\"٧\") == \"7\"\nassert f(\"abc\") == \"abc\"\nassert f(\"١٢٣٤٥٦٧٨٩٠\") == \"1234567890\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0012",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `replace_alef_maqsura` تستبدل كل ألف مقصورة (ى) بياء (ي) في النص. لا أريد شرحًا، الكود فقط."
+        }
+      ],
+      "reference": "الاتجاه من الألف المقصورة إلى الياء؛ عكس الاتجاه يخرّب كلمات سليمة.",
+      "rubric": [
+        "الاتجاه الصحيح للاستبدال",
+        "يستبدل كل الظهور"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"replace_alef_maqsura\"]\nassert f(\"على\") == \"علي\"\nassert f(\"مستشفى\") == \"مستشفي\"\nassert f(\"باب\") == \"باب\"\nassert f(\"فتى قضى\") == \"فتي قضي\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0047",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `merge_two_sorted(a, b)` تدمج قائمتين مرتبتين تصاعديًّا في قائمة واحدة مرتبة. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الدمج يحافظ على الترتيب بالتناوب بين القائمتين؛ الضمّ المباشر لا يرتّب.",
+      "rubric": [
+        "ناتج مرتّب",
+        "يحفظ التكرارات"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"merge_two_sorted\"]\nassert f([1, 4, 6], [2, 3, 5]) == [1, 2, 3, 4, 5, 6]\nassert f([], [1]) == [1]\nassert f([1, 1], [1]) == [1, 1, 1]\nassert f([-3, 0], [-2, -1]) == [-3, -2, -1, 0]\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0072",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `safe_sqrt(x)` تعيد الجذر التربيعي. ارفع ValueError إن كان x سالبًا، وTypeError إن لم يكن عددًا (int أو float). أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "السالب يرفع ValueError لا يعيد None، وغير العددي يرفع TypeError.",
+      "rubric": [
+        "ValueError للسالب",
+        "TypeError لغير العددي"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"safe_sqrt\"]\nassert f(4) == 2.0\nassert f(0) == 0.0\ntry:\n    f(-1)\n    assert False\nexcept ValueError:\n    pass\ntry:\n    f(\"9\")\n    assert False\nexcept TypeError:\n    pass\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0074",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "في نظام مصرفيّ، اكتب دالة `withdraw(balance, amount)` تعيد الرصيد بعد السحب. ارفع ValueError إن كان المبلغ صفرًا أو سالبًا، وValueError إن تجاوز الرصيد. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "المبلغ غير الموجب مرفوض؛ سحب قيمة سالبة يزيد الرصيد وهو خلل أمنيّ.",
+      "rubric": [
+        "يرفض المبلغ غير الموجب",
+        "يرفض تجاوز الرصيد"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"withdraw\"]\nassert f(100, 40) == 60\nassert f(50, 50) == 0\nfor bad in [0, -10]:\n    try:\n        f(50, bad)\n        assert False\n    except ValueError:\n        pass\ntry:\n    f(100, 150)\n    assert False\nexcept ValueError:\n    pass\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0081",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `percentage_of(part, whole)` تعيد النسبة المئوية للجزء من الكل. ارفع ValueError إن كان الكل صفرًا. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "المقام الصفري يرفع ValueError المعبّر لا ZeroDivisionError العارض.",
+      "rubric": [
+        "ValueError للمقام الصفري"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"percentage_of\"]\nassert f(1, 4) == 25.0\nassert f(0, 5) == 0.0\nassert f(3, 3) == 100.0\ntry:\n    f(1, 0)\n    assert False\nexcept ValueError:\n    pass\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0016",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `common_letters(a, b)` تعيد قائمة مرتبة أبجديًّا (حسب ترميز يونيكود) بالحروف المشتركة بين النصين، بلا تكرار. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "المطلوب التقاطع بين مجموعتي الحروف مرتبًا، لا حروف النص الأول.",
+      "rubric": [
+        "يأخذ التقاطع فقط",
+        "يرتّب بلا تكرار"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"common_letters\"]\nassert f(\"مدرسة\", \"مكتبة\") == [\"ة\", \"م\"]\nassert f(\"abc\", \"def\") == []\nassert f(\"سلام\", \"مساء\") == [\"ا\", \"س\", \"م\"]\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0044",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `partition_records(records, key)` تقسّم قائمة السجلات إلى زوج من القوائم: الأولى لمن قيمة key فيه صادقة (truthy)، والثانية لمن هي كاذبة، مع حفظ الترتيب في كلتيهما. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "الأولى للصادق والثانية للكاذب بهذا الترتيب.",
+      "rubric": [
+        "ترتيب الزوج صحيح",
+        "يحفظ ترتيب الورود"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"partition_records\"]\nrecs = [{\"a\": True, \"id\": 1}, {\"a\": False, \"id\": 2}, {\"a\": True, \"id\": 3}]\nyes, no = f(recs, \"a\")\nassert yes == [recs[0], recs[2]] and no == [recs[1]]\nassert f([], \"a\") == ([], [])\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0015",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `mirror_words` تعكس محارف كل كلمة على حدة مع الإبقاء على ترتيب الكلمات. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "العكس داخل كل كلمة مع ثبات ترتيب الكلمات؛ عكس النص كله يبدّل الترتيب أيضًا.",
+      "rubric": [
+        "يعكس كل كلمة داخليًّا",
+        "يحفظ ترتيب الكلمات"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"mirror_words\"]\nassert f(\"أحمد علي\") == \"دمحأ يلع\"\nassert f(\"سلام\") == \"مالس\"\nassert f(\"أب جد\") == \"بأ دج\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0002",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `unify_hamza_seats` توحّد مواضع الهمزة: تستبدل كل ؤ بواو، وكل ئ بياء، وتترك ما عداها. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "التوحيد يشمل الهمزة على الواو وعلى الياء معًا؛ ترك إحداهما يبقي كلمات غير موحّدة.",
+      "rubric": [
+        "يستبدل ؤ بواو",
+        "يستبدل ئ بياء",
+        "لا يغيّر حروفًا أخرى"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"unify_hamza_seats\"]\nassert f(\"مؤمن\") == \"مومن\"\nassert f(\"سئل\") == \"سيل\"\nassert f(\"رئيس\") == \"رييس\"\nassert f(\"عاد\") == \"عاد\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0033",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `word_positions(s)` تعيد قاموسًا يقابل كل كلمة بقائمة مواضع ظهورها (فهارس الكلمات من 0) بترتيب الظهور. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "كل المواضع تُجمع في قائمة لا آخر موضع فقط.",
+      "rubric": [
+        "يجمع كل المواضع",
+        "الفهرسة من 0"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"word_positions\"]\nassert f(\"أ ب أ\") == {\"أ\": [0, 2], \"ب\": [1]}\nassert f(\"\") == {}\nassert f(\"س س س\") == {\"س\": [0, 1, 2]}\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0079",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `repeat_text(s, n)` تعيد النص مكررًا n مرة. ارفع ValueError إن كان n سالبًا؛ التكرار صفر مرات يعيد سلسلة فارغة. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "التكرار السالب خطأ يُرفع؛ ضرب النص في سالب في بايثون يعيد سلسلة فارغة صامتًا وهذا ممنوع هنا.",
+      "rubric": [
+        "يرفع ValueError للسالب",
+        "الصفر يعيد فارغًا"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"repeat_text\"]\nassert f(\"أب\", 2) == \"أبأب\"\nassert f(\"س\", 0) == \"\"\nassert f(\"\", 5) == \"\"\ntry:\n    f(\"س\", -1)\n    assert False\nexcept ValueError:\n    pass\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0082",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `divide_checked(a, b)` تعيد ناتج القسمة، وترفع ZeroDivisionError صراحةً برسالة واضحة إن كان المقام صفرًا (بدل ترك بايثون يرميه من تلقاء نفسه بلا رسالة مفيدة). أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "القسمة على صفر ترفع ZeroDivisionError برسالة لا إعادة None.",
+      "rubric": [
+        "يرفع ZeroDivisionError برسالة",
+        "القسمة الصحيحة تعمل"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"divide_checked\"]\nassert f(6, 3) == 2.0\nassert f(-4, 2) == -2.0\ntry:\n    f(1, 0)\n    assert False\nexcept ZeroDivisionError as e:\n    assert str(e) != \"\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0014",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `shadda_count` تعدّ عدد محارف الشدة (ّ U+0651) في النص. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "العدّ مقصور على الشدة وحدها لا سائر علامات التشكيل.",
+      "rubric": [
+        "يعدّ الشدة فقط"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"shadda_count\"]\nassert f(\"مُحَمَّد\") == 1\nassert f(\"الرَّحمن\") == 1\nassert f(\"سلام\") == 0\nassert f(\"عَدَّ شَدَّ\") == 2\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0005",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `strip_punct_ar` تحذف علامات الترقيم العربية واللاتينية التالية من النص: ، ؛ . : ! ؟ ? ( ) وتُبقي الحروف والأرقام والفراغات كما هي. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "الحذف يشمل الفاصلة العربية والفاصلة المنقوطة العربية وعلامة الاستفهام العربية إضافة إلى اللاتينية.",
+      "rubric": [
+        "يحذف علامات الترقيم العربية",
+        "يحذف علامات الترقيم اللاتينية",
+        "يُبقي الفراغات"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"strip_punct_ar\"]\nassert f(\"مرحبا، يا عالم!\") == \"مرحبا يا عالم\"\nassert f(\"أ؟\") == \"أ\"\nassert f(\"نص بلا ترقيم\") == \"نص بلا ترقيم\"\nassert f(\"(ملاحظة): مهم؛\") == \"ملاحظة مهم\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0007",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أريد العكس: دالة `latin_to_hindi_digits` تحوّل الأرقام اللاتينية في النص إلى أرقام عربية مشرقية (٠-٩). لا أريد شرحًا، الكود فقط."
+        }
+      ],
+      "reference": "التحويل الكامل للأرقام العشرة بما فيها الصفر.",
+      "rubric": [
+        "يحوّل الصفر أيضًا",
+        "لا يغيّر الحروف"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"latin_to_hindi_digits\"]\nassert f(\"رقمي 42\") == \"رقمي ٤٢\"\nassert f(\"0\") == \"٠\"\nassert f(\"لا أرقام\") == \"لا أرقام\"\nassert f(\"9876543210\") == \"٩٨٧٦٥٤٣٢١٠\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0087",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `find_or_raise(lst, x)` تعيد فهرس أول ظهور لـ x في القائمة، وترفع ValueError إن لم يوجد. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الغياب يرفع ValueError لا يعيد -1 (اتفاق -1 يخفي الأخطاء).",
+      "rubric": [
+        "يرفع لا يعيد -1"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"find_or_raise\"]\nassert f([1, 2, 3], 2) == 1\nassert f([\"أ\", \"ب\"], \"أ\") == 0\ntry:\n    f([1, 2], 3)\n    assert False\nexcept ValueError:\n    pass\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0086",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `head_items(lst, n)` تعيد أول n عنصر من القائمة كقائمة جديدة. ارفع ValueError إن كان n سالبًا (لا تستعمل سلوك الشرائح الصامت مع السالب). أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "lst[:−1] في بايثون يعيد كل شيء عدا الأخير صامتًا؛ هنا السالب خطأ يجب رفعه.",
+      "rubric": [
+        "يرفع ValueError للسالب",
+        "يعيد نسخة لا مرجع"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"head_items\"]\nassert f([1, 2, 3], 2) == [1, 2]\nassert f([1], 5) == [1]\nassert f([1, 2], 0) == []\ntry:\n    f([1, 2], -1)\n    assert False\nexcept ValueError:\n    pass\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0080",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `email_user(email)` تعيد الجزء المحلي من البريد (ما قبل أول @). ارفع ValueError إن لم توجد @ إطلاقًا أو كان الجزء المحلي فارغًا. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "غياب @ وفراغ الجزء المحلي حالتان ترفعان ValueError؛ التقسيم الأعمى يعيد النص كاملًا.",
+      "rubric": [
+        "يرفع عند غياب @",
+        "يرفع عند فراغ الجزء المحلي",
+        "يقطع عند أول @"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"email_user\"]\nassert f(\"ali@example.com\") == \"ali\"\nassert f(\"a@b@c\") == \"a\"\ntry:\n    f(\"no-at-here\")\n    assert False\nexcept ValueError:\n    pass\ntry:\n    f(\"@x.com\")\n    assert False\nexcept ValueError:\n    pass\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0008",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `swap_first_last_word` تبدّل أول كلمة بآخر كلمة في الجملة وتعيد الجملة الناتجة بفراغات مفردة. جملة الكلمة الواحدة تُعاد كما هي. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "التبديل بين الطرفين فقط؛ الكلمات الوسطى تبقى في مواضعها.",
+      "rubric": [
+        "يبدّل الأولى بالأخيرة فقط",
+        "يعالج حالة الكلمة الواحدة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"swap_first_last_word\"]\nassert f(\"أحمد يحب البرمجة\") == \"البرمجة يحب أحمد\"\nassert f(\"كلمة\") == \"كلمة\"\nassert f(\"أ ب\") == \"ب أ\"\nassert f(\"واحد اثنان ثلاثة أربعة\") == \"أربعة اثنان ثلاثة واحد\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0067",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `count_pairs_sum(nums, t)` تعدّ الأزواج غير المرتبة (i < j) التي مجموع عنصريها يساوي t. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "كل زوج يُحسب مرة واحدة بشرط i < j؛ العدّ المرتّب يضاعف النتيجة.",
+      "rubric": [
+        "i < j بلا مضاعفة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"count_pairs_sum\"]\nassert f([1, 2, 3, 4], 5) == 2\nassert f([2, 2, 2], 4) == 3\nassert f([1], 2) == 0\nassert f([0, 0], 0) == 1\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0076",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `apply_discount(price, pct)` تعيد السعر بعد خصم نسبة pct بالمئة. ارفع ValueError إن كان السعر سالبًا أو كانت النسبة خارج المجال [0, 100]. لا تُصحّح القيم صامتًا. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "النسبة خارج المجال خطأ يُرفع لا قيمة تُحصَّر صامتًا.",
+      "rubric": [
+        "يرفع لا يحصُر",
+        "يغطي طرفي المجال"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"apply_discount\"]\nassert f(100, 20) == 80.0\nassert f(50, 0) == 50.0\nassert f(200, 100) == 0.0\ntry:\n    f(100, 120)\n    assert False\nexcept ValueError:\n    pass\ntry:\n    f(-5, 10)\n    assert False\nexcept ValueError:\n    pass\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_d_0057",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `edit_distance_at_most_one(a, b)` تعيد True إن كانت المسافة التحريرية بين النصين 1 على الأكثر: متطابقان، أو يختلفان بمحرف واحد في الموضع نفسه، أو بحذف/إدراج محرف واحد. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الحذف/الإدراج الواحد مقبول؛ قصر الفحص على الاستبدال يرفض «قط/قطة».",
+      "rubric": [
+        "يدعم الحذف والإدراج لا الاستبدال فقط",
+        "يرفض فرق الطول الأكبر من 1"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"edit_distance_at_most_one\"]\nassert f(\"قط\", \"قطة\") is True\nassert f(\"كتاب\", \"كباب\") is True\nassert f(\"سلام\", \"سلام\") is True\nassert f(\"أب\", \"أجب\") is True\nassert f(\"قلم\", \"كتاب\") is False\nassert f(\"أب\", \"أبجد\") is False\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0043",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `set_sym_diff_all(sets)` تعيد الفرق المتماثل عبر قائمة مجموعات: العناصر التي تظهر في عدد فردي من المجموعات. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الفرق المتماثل التراكمي يُبقي ما ظهر فرديًّا فقط؛ الاتحاد ناقص التقاطع يُبقي ما ظهر مرتين.",
+      "rubric": [
+        "يبقي الظهور الفردي فقط"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"set_sym_diff_all\"]\nassert f([{1, 2}, {2, 3}, {3, 4}]) == {1, 4}\nassert f([{1}]) == {1}\nassert f([]) == set()\nassert f([{1, 2}, {1, 2}]) == set()\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0038",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أريد دالة ترتّب أسماء الطلاب حسب درجاتهم من الأعلى إلى الأدنى."
+        },
+        {
+          "role": "assistant",
+          "content": "وعند تساوي الدرجة بين طالبين، أيّهما يتقدّم؟"
+        },
+        {
+          "role": "user",
+          "content": "يتقدّم الأسبق أبجديًّا. اكتب دالة `rank_names(records)` حيث كل سجل قاموس فيه name وscore، وتعيد قائمة الأسماء مرتبة. أخرج الكود فقط."
+        }
+      ],
+      "reference": "الترتيب بالدرجة تنازليًّا ثم بالاسم أبجديًّا عند التعادل؛ بلا كسر تعادل يتقدّم بدر على أمجد خطأً.",
+      "rubric": [
+        "الدرجة تنازليًّا",
+        "التعادل يُحسم أبجديًّا"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"rank_names\"]\nrecs = [{\"name\": \"بدر\", \"score\": 90}, {\"name\": \"أمجد\", \"score\": 90}, {\"name\": \"جمال\", \"score\": 80}]\nassert f(recs) == [\"أمجد\", \"بدر\", \"جمال\"]\nassert f([{\"name\": \"سعاد\", \"score\": 70}]) == [\"سعاد\"]\nassert f([]) == []\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0050",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `longest_increasing_run(nums)` تعيد طول أطول مقطع متجاور متزايد تمامًا (كل عنصر أكبر قطعًا من سابقه). القائمة الفارغة تعيد 0. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "المقطع متجاور ومتزايد تمامًا؛ عدّ أزواج التزايد لا يقيس طول المقطع.",
+      "rubric": [
+        "تجاور المقطع",
+        "التزايد تمام لا يسمح بالتساوي"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"longest_increasing_run\"]\nassert f([1, 2, 3, 1, 2, 1, 2, 3, 4]) == 4\nassert f([5, 4, 3]) == 1\nassert f([]) == 0\nassert f([2, 2, 3]) == 2\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0025",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `invert_multimap(d)` تعكس قاموسًا قيمُه قوائم: كل عنصر في القوائم يصبح مفتاحًا يقابل قائمة المفاتيح الأصلية التي احتوته، بترتيب ورودها. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "العنصر المشترك بين مفاتيح عدة يجمعها كلها في قائمة؛ الكتابة فوقها تفقد البيانات.",
+      "rubric": [
+        "يجمع كل المفاتيح المالكة للعنصر",
+        "يحفظ ترتيب الورود"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"invert_multimap\"]\nassert f({\"أ\": [\"x\", \"y\"], \"ب\": [\"x\"]}) == {\"x\": [\"أ\", \"ب\"], \"y\": [\"أ\"]}\nassert f({}) == {}\nassert f({\"م\": [\"q\"]}) == {\"q\": [\"م\"]}\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0064",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `roman_to_int(s)` تحوّل رقمًا رومانيًّا صحيحًا إلى عدد صحيح (تُطبق قاعدة الطرح: IV=4، IX=9، XL=40، XC=90، CD=400، CM=900). أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "قاعدة الطرح تُنقص الرمز الأصغر قبل الأكبر؛ الجمع المطلق يعطي IX=11.",
+      "rubric": [
+        "يطبّق قاعدة الطرح"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"roman_to_int\"]\nassert f(\"IX\") == 9\nassert f(\"LVIII\") == 58\nassert f(\"MCMXCIV\") == 1994\nassert f(\"III\") == 3\nassert f(\"CDXLIV\") == 444\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0022",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `deep_merge(a, b)` تدمج قاموسين دمجًا عميقًا: القواميس المتداخلة تُدمج تعاوديًّا، وعند تعارض قيمة غير قاموسية تغلب قيمة b. لا تُغيّر المدخلين. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الدمج العميق يحفظ المفاتيح المتداخلة غير المتعارضة؛ update السطحي يطمس القاموس الداخلي كله.",
+      "rubric": [
+        "دمج تعاوديّ للقواميس الداخلية",
+        "قيمة b تغلب عند التعارض"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"deep_merge\"]\nassert f({\"x\": {\"p\": 1, \"q\": 2}, \"y\": 0}, {\"x\": {\"q\": 3, \"r\": 4}}) == {\"x\": {\"p\": 1, \"q\": 3, \"r\": 4}, \"y\": 0}\nassert f({}, {\"a\": 1}) == {\"a\": 1}\nassert f({\"a\": 1}, {\"a\": 2}) == {\"a\": 2}\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0059",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `coin_change_min(coins, amount)` تعيد أقل عدد قطع نقدية (من الفئات المعطاة، بتكرار غير محدود) لجمع المبلغ، أو -1 إن تعذّر. المبلغ صفر يحتاج 0 قطعة. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الحل الأمثل يتطلب برمجة ديناميكية؛ الجشع بأكبر فئة أولًا يفشل في [1,3,4] للمبلغ 6 (يعطي 3 بدل 2).",
+      "rubric": [
+        "حلّ أمثل لا جشع",
+        "-1 عند الاستحالة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"coin_change_min\"]\nassert f([1, 3, 4], 6) == 2\nassert f([2], 3) == -1\nassert f([1, 2, 5], 0) == 0\nassert f([2, 5], 9) == 3\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0010",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `split_sentences_keep` تقسّم نصًّا إلى جمل عند العلامات (. ! ؟ ?) مع إبقاء علامة النهاية ملحقة بجملتها، وتزيل فراغات الأطراف من كل جملة وتتجاهل الفارغة. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "علامة النهاية تبقى ملحقة بالجملة؛ التقسيم الخام يسقطها.",
+      "rubric": [
+        "يبقي علامة نهاية الجملة",
+        "يزيل فراغات الأطراف",
+        "يتجاهل المقاطع الفارغة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"split_sentences_keep\"]\nassert f(\"أولى. ثانية! ثالثة؟\") == [\"أولى.\", \"ثانية!\", \"ثالثة؟\"]\nassert f(\"بلا نهاية\") == [\"بلا نهاية\"]\nassert f(\"أ.ب؟ج!\") == [\"أ.\", \"ب؟\", \"ج!\"]\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0063",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `spreadsheet_column(n)` تحوّل رقم عمود جدول (يبدأ من 1) إلى حروفه: 1=A، 26=Z، 27=AA، 52=AZ، 702=ZZ. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الترقيم أبجديّ ذو أساس 26 بلا صفر؛ يتطلب إنزال n-1 قبل القسمة وإلا انزلقت الحدود (26 تعطي Z لا BA).",
+      "rubric": [
+        "معالجة نمط الأساس 26 بلا صفر"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"spreadsheet_column\"]\nassert f(1) == \"A\"\nassert f(26) == \"Z\"\nassert f(27) == \"AA\"\nassert f(28) == \"AB\"\nassert f(52) == \"AZ\"\nassert f(702) == \"ZZ\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0056",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `next_greater(nums)` تعيد لكل عنصر أول عنصر أكبر منه يقع يمينه، أو -1 إن لم يوجد. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "المطلوب أول عنصر أكبر يمينًا لا أكبر عنصر في اليمين.",
+      "rubric": [
+        "أول أكبر يمينًا لا الأكبر",
+        "-1 عند غيابه"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"next_greater\"]\nassert f([4, 5, 2, 25]) == [5, 25, 25, -1]\nassert f([13, 7, 6, 12]) == [-1, 12, 12, -1]\nassert f([1]) == [-1]\nassert f([]) == []\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0004",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "في نظام مطابقة نصوص، اكتب دالة `sentences_equivalent(a, b)` تقرّر هل جملتان متكافئتان بعد: حذف كل علامات التشكيل (U+064B–U+0652) والتطويل، وتوحيد أشكال الألف (أ وإ وآ تصبح ا)، وإزالة الفراغات من الطرفين. تعيد True أو False. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "التكافؤ يتطلب التطبيع الكامل (تشكيل + تطويل + أشكال الألف + أطراف)؛ المقارنة الخام ترفض جملًا متكافئة فعلًا.",
+      "rubric": [
+        "يحذف التشكيل والتطويل قبل المقارنة",
+        "يوحّد أشكال الألف",
+        "يقارن بعد إزالة فراغات الطرفين"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"sentences_equivalent\"]\nassert f(\"مُحَمَّد\", \"محمد\") is True\nassert f(\"أحمد\", \"احمد\") is True\nassert f(\"ذَهَبَ\", \"ذهب\") is True\nassert f(\"قلم\", \"كتاب\") is False\nassert f(\" مدرسة \", \"مدرسة\") is True\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0058",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `lcs_length(a, b)` تعيد طول أطول تتابع مشترك (subsequence غير متجاورة بالضرورة) بين النصين. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "التتابع المشترك لا يشترط التجاور؛ أطول سلسلة متجاورة مشتركة أقصر منه.",
+      "rubric": [
+        "subsequence لا substring"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"lcs_length\"]\nassert f(\"ABCBDAB\", \"BDCABA\") == 4\nassert f(\"\", \"abc\") == 0\nassert f(\"abc\", \"abc\") == 3\nassert f(\"abc\", \"def\") == 0\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0083",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `matrix_multiply(a, b)` لضرب مصفوفتين. ارفع ValueError إن تعذّر الضرب (عدد أعمدة a لا يساوي عدد صفوف b). اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الضرب الحقيقي صف×عمود بالجمع، والأبعاد غير المتوافقة ترفع ValueError.",
+      "rubric": [
+        "ضرب مصفوفيّ حقيقي",
+        "يرفع ValueError عند عدم التوافق"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"matrix_multiply\"]\nassert f([[1, 2], [3, 4]], [[5, 6], [7, 8]]) == [[19, 22], [43, 50]]\nassert f([[1, 2, 3]], [[4], [5], [6]]) == [[32]]\ntry:\n    f([[1, 2]], [[1, 2]])\n    assert False\nexcept ValueError:\n    pass\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0054",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `max_subarray_sum(nums)` تعيد أكبر مجموع لمقطع متجاور (غير فارغ) من القائمة. إن كانت كلها سالبة فالناتج أكبر عنصر فيها. القائمة الفارغة تعيد 0. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "تهيئة الحد الأقصى بصفر تكسر حالة كلها سالبة؛ يجب البدء من أول عنصر.",
+      "rubric": [
+        "حالة كلها سالبة تعيد أكبر عنصر",
+        "خوارزمية كادان الصحيحة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"max_subarray_sum\"]\nassert f([-2, 1, -3, 4, -1, 2, 1, -5, 4]) == 6\nassert f([-3, -1, -2]) == -1\nassert f([5]) == 5\nassert f([]) == 0\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_d_0048",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `dedup_below(lst, t)` تحذف تكرارات القيم الأصغر قطعًا من t فقط (تُبقي أول ظهور لكل قيمة منها)، أمّا القيم الأكبر من t أو مساوية لها فتبقى كل ظهورها، مع حفظ الترتيب. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "إزالة التكرار مشروطة بالقيم الأصغر من t فقط؛ تعميمها على الكل يحذف ما يجب بقاؤه.",
+      "rubric": [
+        "الشرط مقصور على ما دون t",
+        "يبقي أول ظهور ويحفظ الترتيب"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"dedup_below\"]\nassert f([1, 5, 1, 5, 2, 2], 3) == [1, 5, 5, 2]\nassert f([9, 9, 9], 3) == [9, 9, 9]\nassert f([], 1) == []\nassert f([3, 3, 2, 2], 3) == [3, 3, 2]\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_d_0073",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `get_at(lst, i)` تعيد عنصر القائمة عند الفهرس i. ارفع TypeError إن لم يكن i عددًا صحيحًا (والقيم المنطقية True/False مرفوضة أيضًا رغم أنها من نوع int في بايثون)، وIndexError إن كان الفهرس خارج النطاق (الفهارس السالبة مرفوضة أيضًا). اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "القيم المنطقية ليست فهارس مقبولة رغم أن bool صنف فرعي من int، والسالب مرفوض رغم أن بايثون يقبله.",
+      "rubric": [
+        "يرفض bool كفهرس",
+        "يرفض الفهارس السالبة",
+        "يميّز TypeError عن IndexError"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"get_at\"]\nassert f([10, 20, 30], 1) == 20\nassert f([10, 20, 30], 0) == 10\nfor bad, exc in [(5, IndexError), (-1, IndexError), (\"1\", TypeError), (True, TypeError), (1.5, TypeError)]:\n    try:\n        f([10, 20, 30], bad)\n        assert False\n    except exc:\n        pass\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_d_0089",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `unique_or_fail(lst)` تتحقق أن عناصر القائمة كلها فريدة: إن وُجد تكرار فارفع ValueError، وإلا أعِد قائمة مرتبة تصاعديًّا بالعناصر. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "التكرار خطأ يُرفع لا يُحذف صامتًا؛ الإزالة الصامتة تخفي بيانات مكررة.",
+      "rubric": [
+        "يرفع عند التكرار",
+        "يعيد مرتبة عند الفرادة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"unique_or_fail\"]\nassert f([3, 1, 2]) == [1, 2, 3]\nassert f([]) == []\ntry:\n    f([1, 2, 1])\n    assert False\nexcept ValueError:\n    pass\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_d_0061",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `majority_element(nums)` تعيد العنصر الذي يظهر أكثر من n/2 مرة (حصرًا أكثر من النصف)، أو None إن لم يوجد مثل هذا العنصر. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الأكثر تكرارًا ليس بالضرورة أغلبية؛ الشرط أكثر من النصف حصرًا.",
+      "rubric": [
+        "شرط أكثر من النصف",
+        "None عند غياب الأغلبية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"majority_element\"]\nassert f([2, 2, 1, 2]) == 2\nassert f([1, 2]) is None\nassert f([3, 3, 3]) == 3\nassert f([1, 2, 2, 3]) is None\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_d_0040",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `deep_update_copy(d, path, value)` تعيد نسخة جديدة من القاموس المتداخل d بعد إسناد value في نهاية مسار المفاتيح path، دون أي تعديل على d الأصلي (ولا على قواميسه الداخلية). أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "النسخة يجب أن تكون عميقة؛ النسخة السطحية تشارك القواميس الداخلية فتُلوَّث الأصل.",
+      "rubric": [
+        "لا يعدّل الأصل إطلاقًا",
+        "يحدّث المسار المطلوب فقط"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"deep_update_copy\"]\nd = {\"a\": {\"b\": 1}, \"c\": [1, 2]}\nr = f(d, [\"a\", \"b\"], 99)\nassert r == {\"a\": {\"b\": 99}, \"c\": [1, 2]}\nassert d == {\"a\": {\"b\": 1}, \"c\": [1, 2]}\nr2 = f(d, [\"c\"], [9])\nassert r2[\"c\"] == [9] and d[\"c\"] == [1, 2]\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_d_0068",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `max_product_pair(nums)` تعيد أكبر حاصل ضرب لعنصرين مختلفي الموضع في القائمة (طولها عنصران فأكثر). أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "أكبر حاصل قد يأتي من سالبين كبيري المقدار؛ الاكتفاء بأكبر عنصرين يفقده.",
+      "rubric": [
+        "يراعي حاصل السالبين",
+        "موضعان مختلفان"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"max_product_pair\"]\nassert f([-10, -3, 1, 2]) == 30\nassert f([1, 2, 3]) == 6\nassert f([0, -5, -1]) == 5\nassert f([2, 4]) == 8\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_d_0036",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `diag_sum(m)` تجمع عناصر القطرين الرئيسي والثانوي لمصفوفة مربعة، دون احتساب العنصر المركزي مرتين في الفردية الأبعاد. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "العنصر المركزي في المصفوفة الفردية يقع على القطرين ويُحسب مرة واحدة فقط.",
+      "rubric": [
+        "لا يحسب المركز مرتين",
+        "يجمع القطرين"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"diag_sum\"]\nassert f([[1, 2, 3], [4, 5, 6], [7, 8, 9]]) == 25\nassert f([[1, 2], [3, 4]]) == 10\nassert f([[5]]) == 5\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_d_0028",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `zip_longest_fill(a, b, fill)` تزاوج قائمتين عنصرًا عنصرًا حتى نهاية الأطول، وتملأ مواضع الأقصر الناقصة بقيمة fill، وتعيد قائمة الأزواج. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الزواج حتى الأطول مع ملء الناقص؛ zip العادي يقتصر على الأقصر.",
+      "rubric": [
+        "يصل إلى نهاية الأطول",
+        "يملأ بقيمة fill"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"zip_longest_fill\"]\nassert f([1, 2, 3], [9], 0) == [(1, 9), (2, 0), (3, 0)]\nassert f([1], [2, 3], \"x\") == [(1, 2), (\"x\", 3)]\nassert f([], [], 0) == []\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0009",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `word_lengths_map` تعيد قاموسًا يقابل كل كلمة في النص بطولها (عدد محارفها). النص الفارغ يعيد قاموسًا فارغًا. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "القيمة طول الكلمة لا عدد تكرارها.",
+      "rubric": [
+        "القيمة هي الطول",
+        "النص الفارغ يعيد قاموسًا فارغًا"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"word_lengths_map\"]\nassert f(\"أنا أحب العلم\") == {\"أنا\": 3, \"أحب\": 3, \"العلم\": 5}\nassert f(\"\") == {}\nassert f(\"باب\") == {\"باب\": 3}\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0003",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "أريد دالة `count_diacritized_words` تأخذ نصًّا عربيًّا وتعيد عدد الكلمات التي تحمل علامة تشكيل واحدة على الأقل (الحركات والتنوين والشدة والسكون، أي النطاق U+064B إلى U+0652). الكلمات تفصلها فراغات. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "المطلوب عدّ الكلمات المشكولة لا عدّ علامات التشكيل نفسها؛ الكلمة الواحدة بثلاث علامات تُحسب مرة واحدة.",
+      "rubric": [
+        "يعدّ الكلمات لا العلامات",
+        "يغطي كامل نطاق التشكيل"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"count_diacritized_words\"]\nassert f(\"الكِتابُ جميل\") == 1\nassert f(\"مُحَمَّد\") == 1\nassert f(\"لا شيء هنا\") == 0\nassert f(\"بِسْمِ اللهِ الرَّحمنِ\") == 3\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0051",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `kth_smallest(nums, k)` تعيد k-أصغر عنصر في القائمة (k من 1، والتكرارات تُحسب). ارفع ValueError إن كان k خارج المجال. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الفهرسة من 1 مع تحقق من المجال برفع ValueError.",
+      "rubric": [
+        "الفهرسة من 1",
+        "يرفع ValueError خارج المجال",
+        "التكرارات تُحسب"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"kth_smallest\"]\nassert f([5, 1, 3], 2) == 3\nassert f([4, 4, 1], 2) == 4\nassert f([7], 1) == 7\ntry:\n    f([1, 2], 3)\n    assert False\nexcept ValueError:\n    pass\ntry:\n    f([1, 2], 0)\n    assert False\nexcept ValueError:\n    pass\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0020",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `same_word_set(a, b)` تعيد True إن كانت الجملتان تتكونان من مجموعة الكلمات نفسها مهما اختلف الترتيب أو تكرار الظهور. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "المقارنة على مجموعة الكلمات لا على تسلسلها.",
+      "rubric": [
+        "مقارنة بالمجموعات لا بالقوائم",
+        "التكرار لا يؤثر"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"same_word_set\"]\nassert f(\"ذهب علي إلى المدرسة\", \"المدرسة إلى علي ذهب\") is True\nassert f(\"أ ب\", \"أ ب ب\") is True\nassert f(\"أ ب\", \"أ ج\") is False\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0078",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `set_page_params(page, per_page)` لترقيم الصفحات: كلاهما يجب أن يكون عددًا صحيحًا أكبر أو يساوي 1 (bool مرفوض)، وإلا ارفع TypeError لغير الصحيح وValueError للأصغر من 1. عند الصحة تعيد الزوج (page, per_page). أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "التحقق من النوع الصحيح الصرف (باستبعاد bool) قبل تحقق المجال.",
+      "rubric": [
+        "يرفض bool",
+        "يميّز TypeError عن ValueError"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"set_page_params\"]\nassert f(2, 10) == (2, 10)\nassert f(1, 1) == (1, 1)\ntry:\n    f(0, 10)\n    assert False\nexcept ValueError:\n    pass\ntry:\n    f(1, True)\n    assert False\nexcept TypeError:\n    pass\ntry:\n    f(1.5, 10)\n    assert False\nexcept TypeError:\n    pass\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0049",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `two_sum_indices(nums, target)` تعيد زوج الفهارس (i, j) حيث i < j وnums[i] + nums[j] == target مع أصغر i ثم أصغر j عند تعدد الحلول، أو None إن لم يوجد. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "المطلوب الفهارس لا القيم.",
+      "rubric": [
+        "يعيد فهارس",
+        "يمنع استخدام العنصر نفسه مرتين"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"two_sum_indices\"]\nassert f([2, 7, 11, 15], 9) == (0, 1)\nassert f([1, 2, 3], 10) is None\nassert f([3, 3], 6) == (0, 1)\nassert f([1, 4, 4, 5], 8) == (1, 2)\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0019",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `longest_sentence(text)` تقسّم النص إلى جمل عند (. ! ؟ ?) وتعيد أطول جملة بعد إزالة فراغات الأطراف (القياس بعدد المحارف). عند التعادل تُعاد الأولى، وعند غياب الجمل تُعاد سلسلة فارغة. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "تُعاد الأطول قياسًا بالمحارف مع حسم التعادل لصالح الأولى؛ إعادة الأخيرة خطأ.",
+      "rubric": [
+        "القياس بعدد المحارف بعد التهذيب",
+        "التعادل لصالح الأولى",
+        "النص الفارغ يعيد سلسلة فارغة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"longest_sentence\"]\nassert f(\"قصيرة. هذه أطول قليلًا! أخرى؟\") == \"هذه أطول قليلًا\"\nassert f(\"أب. جد!\") == \"أب\"\nassert f(\"\") == \"\"\nassert f(\"واحدة فقط\") == \"واحدة فقط\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0029",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `count_leaf_values(d)` تعدّ القيم النهائية (غير القواميس) في قاموس متداخل؛ القوائم قيمة واحدة نهائية. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "القواميس الداخلية ليست قيمًا نهائية؛ عدّها مع أوراقها يضاعف الحساب.",
+      "rubric": [
+        "لا يعدّ القواميس الداخلية",
+        "القائمة قيمة نهائية واحدة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"count_leaf_values\"]\nassert f({\"a\": 1, \"b\": {\"c\": [1, 2], \"d\": 2}}) == 3\nassert f({\"x\": {}}) == 0\nassert f({}) == 0\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0021",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `flatten_dict(d)` تسطّح قاموسًا متداخلًا إلى قاموس واحد مفاتيحه المسارات مفصولة بنقطة (مثل {'a': {'b': 1}} ← {'a.b': 1}). القيم غير القواميس تبقى كما هي. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "التسطيح تعاوديّ لأي عمق؛ مستوى واحد لا يكفي.",
+      "rubric": [
+        "يتعامل مع عمق غير محدود",
+        "القوائم قيم نهائية لا تُسطّح"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"flatten_dict\"]\nassert f({\"a\": {\"b\": 1}, \"c\": 2}) == {\"a.b\": 1, \"c\": 2}\nassert f({\"x\": {\"y\": {\"z\": 5}}}) == {\"x.y.z\": 5}\nassert f({}) == {}\nassert f({\"a\": [1, 2]}) == {\"a\": [1, 2]}\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0026",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `count_all_keys(d)` تعدّ كل المفاتيح في قاموس متداخل على جميع المستويات (مفاتيح القواميس الداخلية تُحسب أيضًا). اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "العدّ تعاوديّ عبر المستويات؛ len يعدّ المستوى الأعلى فقط.",
+      "rubric": [
+        "عدّ تعاوديّ لكل المستويات"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"count_all_keys\"]\nassert f({\"a\": 1, \"b\": {\"c\": 2, \"d\": {\"e\": 3}}}) == 5\nassert f({}) == 0\nassert f({\"a\": {\"b\": {}}}) == 2\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0013",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `count_bigrams` تعيد قاموسًا يعدّ كل زوج متتالٍ من الكلمات في النص (المفتاح الكلمتان مفصولتين بفراغ، مثل «أ ب»). نص الكلمة الواحدة يعيد قاموسًا فارغًا. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "الزوج مرتّب بترتيب الظهور في النص؛ «أ ب» تختلف عن «ب أ».",
+      "rubric": [
+        "يراعي ترتيب الكلمتين",
+        "يعدّ التكرارات المتراكبة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"count_bigrams\"]\nassert f(\"أ ب أ ب أ\") == {\"أ ب\": 2, \"ب أ\": 2}\nassert f(\"واحد\") == {}\nassert f(\"س س س\") == {\"س س\": 2}\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0065",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `is_subsequence(s, t)` تعيد True إن كانت كل محارف s تظهر في t بالترتيب نفسه (وليس بالضرورة متجاورة). اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "التتابع لا يشترط التجاور؛ فحص السلسلة الفرعية المتجاورة يرفض ace في abcde.",
+      "rubric": [
+        "تتابع غير متجاور",
+        "الترتيب ملزم"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"is_subsequence\"]\nassert f(\"ace\", \"abcde\") is True\nassert f(\"aec\", \"abcde\") is False\nassert f(\"\", \"أي شيء\") is True\nassert f(\"أب\", \"أب\") is True\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0075",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `register_student(name, age)` تسجّل طالبًا وتعيد قاموسًا فيه مفتاح name للاسم مهدّبًا ومفتاح age للعمر. ارفع ValueError إن كان الاسم فارغًا أو فراغات فقط، وTypeError إن لم يكن العمر عددًا صحيحًا (bool مرفوض)، وValueError إن كان العمر أصغر من 6. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "ثلاثة تحققات مرتبة: الاسم غير فارغ بعد التهذيب، والعمر int صرف لا bool، وحدّ القبول 6.",
+      "rubric": [
+        "يهدّب الاسم ويرفض الفارغ",
+        "يرفض bool كعمر",
+        "يفرّق ValueError عن TypeError"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"register_student\"]\nassert f(\" سارة \", 10) == {\"name\": \"سارة\", \"age\": 10}\ntry:\n    f(\"   \", 10)\n    assert False\nexcept ValueError:\n    pass\ntry:\n    f(\"علي\", \"عشر\")\n    assert False\nexcept TypeError:\n    pass\ntry:\n    f(\"علي\", 4)\n    assert False\nexcept ValueError:\n    pass\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0066",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `peak_index(nums)` تعيد فهرس أول ذروة محلية: عنصر داخلي (ليس طرفًا) أكبر تمامًا من جاريه المباشرين، أو -1 إن لم توجد. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "الذروة محلية وأولى عند تعددها؛ أكبر عنصر مطلقًا ليس بالضرورة ذروة أولى.",
+      "rubric": [
+        "ذروة محلية لا قصوى مطلقة",
+        "أول ذروة عند التعدد"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"peak_index\"]\nassert f([1, 3, 2, 4, 1]) == 1\nassert f([1, 2, 3]) == -1\nassert f([5, 1, 5]) == -1\nassert f([1, 5, 1, 5, 1]) == 1\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0052",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `compress_ranges(nums)` تأخذ قائمة أعداد صحيحة مرتبة بلا تكرار وتعيد نصًّا يضغط المتتاليات: كل مدى متصل يُكتب «بداية-نهاية» والمنفرد يُكتب وحده، وتفصل المدىات فاصلةٌ لاتينية بلا فراغات. مثال: [1,2,3,5,7,8] ← '1-3,5,7-8'. أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "العنصر المنفرد يُكتب بلا شرطة؛ كتابته كمدى منه إليه خاطئة.",
+      "rubric": [
+        "المنفرد بلا شرطة",
+        "المدى المتصل يُدمج"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"compress_ranges\"]\nassert f([1, 2, 3, 5, 7, 8]) == \"1-3,5,7-8\"\nassert f([9]) == \"9\"\nassert f([]) == \"\"\nassert f([1, 2, 4]) == \"1-2,4\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0017",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `remove_non_arabic` تُبقي فقط الحروف العربية (ء-ي) والفراغات من النص وتحذف كل ما عداها (أرقام، لاتينية، ترقيم، تشكيل). أخرج الكود فقط بلا شرح."
+        }
+      ],
+      "reference": "الإبقاء على الحروف العربية والفراغات فقط؛ isalnum يُبقي الأرقام واللاتينية.",
+      "rubric": [
+        "يحذف الأرقام والتشكيل واللاتينية",
+        "يُبقي الفراغات"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"remove_non_arabic\"]\nassert f(\"مرحبا123عالم!\") == \"مرحباعالم\"\nassert f(\"abc\") == \"\"\nassert f(\"أ ب\") == \"أ ب\"\nassert f(\"مُحَمَّد\") == \"محمد\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_d_0041",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `require_keys(d, keys)` تتحقق من وجود كل المفاتيح المطلوبة في القاموس: إن غاب مفتاح فارفع KeyError يذكر اسم أول مفتاح مفقود، وإن وُجدت كلها أعِد القاموس نفسه. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "المفتاح المفقود يرفع KeyError يذكر اسمه لا إعادة صامتة.",
+      "rubric": [
+        "يرفع KeyError عند أول مفقود",
+        "رسالة الاستثناء تذكر المفتاح"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"require_keys\"]\nassert f({\"a\": 1, \"b\": 2}, [\"a\"]) == {\"a\": 1, \"b\": 2}\ntry:\n    f({\"a\": 1}, [\"a\", \"b\"])\n    assert False\nexcept KeyError as e:\n    assert \"b\" in str(e)\ntry:\n    f({}, [\"x\"])\n    assert False\nexcept KeyError:\n    pass\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_d_0018",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `nth_word(s, n)` تعيد الكلمة رقم n من النص (العدّ من 1). إن كان n أكبر من عدد الكلمات أو أصغر من 1 فارفع IndexError. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الخروج عن النطاق يرفع IndexError لا يعيد None، والعدّ يبدأ من 1.",
+      "rubric": [
+        "العدّ من 1",
+        "يرفع IndexError عند الخروج عن النطاق"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"nth_word\"]\nassert f(\"أ ب ج\", 2) == \"ب\"\nassert f(\"وحيدة\", 1) == \"وحيدة\"\ntry:\n    f(\"أ ب ج\", 4)\n    assert False\nexcept IndexError:\n    pass\ntry:\n    f(\"أ ب ج\", 0)\n    assert False\nexcept IndexError:\n    pass\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_d_0085",
+      "capability": "write_function",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اكتب دالة `push_sorted(queue, item)` تعيد قائمة جديدة مرتبة تصاعديًّا بعد إدراج item في قائمة queue المرتبة، دون تغيير queue الأصلية. اكتب الكود وحده، بلا شرح ولا أمثلة تشغيل."
+        }
+      ],
+      "reference": "الإدراج يبني قائمة جديدة؛ التعديل في المكان يلوّث قائمة المستدعي.",
+      "rubric": [
+        "لا يغيّر المدخل",
+        "يعيد مرتبة جديدة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"push_sorted\"]\nq = [1, 3, 5]\nr = f(q, 4)\nassert r == [1, 3, 4, 5]\nassert q == [1, 3, 5]\nr2 = f([], 7)\nassert r2 == [7]\n"
+        }
+      ],
+      "critical": true
+    }
+  ]
+}

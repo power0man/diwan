@@ -1,0 +1,531 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"mistral-7b-v0.3\",\n  \"file\": \"kimi_logic_a_001\",\n  \"judgments\": [\n    {\n      \"id\": \"logic_a_0073\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"السلسلة الشرطية صحيحة: وصول قماش الصوف الجديد يؤدي إلى تسليم الطلبات قبل العيد. المعطى يثبت المقدّم الأول، والنتيجة تلزم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فهد\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، فهد هو الوحيد الذي يمكن أن يأتي في المركز الأول وفقًا للقرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"القياس صحيح: كل الهوامر الجواثم وكل الجواثم القنادس، لذا كل الهوامر القنادس بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حصة\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، حصة هي الوحيدة التي يمكن أن تأتي في المركز الثالث وفقًا للقرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0082\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"نقيض 'بعض التمور في الصندوق فاسدة' هو 'لا تمرة في الصندوق فاسدة'، وهو الخيار أ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"نقيض 'بعض المرضى لم يأخذوا الدواء' هو 'كل المرضى أخذوا الدواء'، وهو الخيار ج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0087\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ريم\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، ريم هي الوحيدة التي يمكن أن تأتي في الموقع الأول وفقًا للقرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"تحقق مقدّم الشرطية (صلّى ولده الفجر في المسجد) فيلزم التالي (أعطاه مكافأة).\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"السلسلة الشرطية صحيحة: وصول قافلة التمور يؤدي إلى ارتفاع أسعار الرطب قبل الظهر. المعطى يثبت المقدّم الأول، والنتيجة تلزم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مريم\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، مريم هي الوحيدة التي يمكن أن تأتي في الموقع الثاني وفقًا للقرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"نقيض 'كل المشاركات في المعرض سلّمن أعمالهن' هو 'بعض المشاركات في المعرض لم يسلّمن أعمالهن'، وهو الخيار ج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"المقدمتان لا تلزمان النتيجة بالضرورة، حيث يمكن أن تكون النتيجة صادقة أو كاذبة في نماذج مختلفة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"السلسلة الشرطية صحيحة: توقيع الشاعر على محضر المشاركة يؤدي إلى نيله شهادة التقدير. المعطى يثبت المقدّم الأول، والنتيجة تلزم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"زياد\",\n      \"reason\": \"بفحص جميع الاحتمالات، زياد هو الوحيد الذي يجعل عبارة واحدة فقط صادقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"نفي النتيجة الأخيرة (لم يُقفل المطعم بعد منتصف الليل) يلزم نفي المقدّم الأول (لم يصل الخضار الطازج).\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ريم\",\n      \"reason\": \"بفحص جميع الاحتمالات، ريم هي الوحيدة التي تجعل عبارة واحدة فقط صادقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صالح\",\n      \"reason\": \"بفحص جميع الاحتمالات، صالح هو الوحيد الذي يجعل عبارة واحدة فقط صادقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نورة\",\n      \"reason\": \"بفحص جميع الاحتمالات، نورة هي الوحيدة التي تجعل عبارة واحدة فقط صادقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، لا يمكن الجزم بأن جاسم جاء قبل بدر بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0057\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"السلسلة الشرطية صحيحة: وصول قماش الصوف الجديد يؤدي إلى تجدد الطلبات في الموسم التالي. المعطى يثبت المقدّم الأول، والنتيجة تلزم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"السلسلة الشرطية صحيحة: وصول قافلة التمور يؤدي إلى تحصيل المحتسب الغرامات. المعطى يثبت المقدّم الأول، والنتيجة تلزم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"المقدمتان لا تلزمان النتيجة بالضرورة، حيث يمكن أن تكون النتيجة صادقة أو كاذبة في نماذج مختلفة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"إثبات التالي (أُرسل الكشف إلى الوزارة) لا يلزم المقدّم (اكتمل توقيع كل المعلمين).\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"إنكار المقدّم (لم يُعجن الدقيق قبل الفجر) لا ينفي التالي (عجن الخبّاز عجينة ثانية)، فقد يتحقق التالي بطريق آخر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"المقدمتان لا تلزمان النتيجة بالضرورة، حيث يمكن أن تكون النتيجة صادقة أو كاذبة في نماذج مختلفة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"نقيض 'بعض الإيصالات فُقدت' هو 'لم تفقد أي إيصال'، وهو الخيار ب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"نقيض 'لا موظف تأخر اليوم' هو 'بعض الموظفين تأخر اليوم'، وهو الخيار أ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"إثبات التالي (نصب الخيام في الوادي) لا يثبت المقدّم (اشتدت الريح)، فقد يكون هناك سبب آخر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"إثبات التالي (أُرسل الفهرس إلى المطبعة) لا يثبت المقدّم (فتح أمين المكتبة القاعة مبكرًا)، فقد يكون هناك سبب آخر.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0090\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"المقدمتان لا تلزمان النتيجة بالضرورة، حيث يمكن أن تكون النتيجة صادقة أو كاذبة في نماذج مختلفة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"القياس صحيح: بعض الزرابيل الهوامر ولا شيء من الهوامر الجواثم، لذا بعض الزرابيل ليس الجواثم بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"نفي النتيجة الأخيرة (لم ينفد الخبز قبل نهاية الفسحة) يلزم نفي المقدّم الأول (لم ينطلق جرس الفسحة الأولى).\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، خالد جاء قبل فهد بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"نقيض 'كل الجسور في المحافظة فُحصت' هو 'بعض الجسور في المحافظة لم تُفحص'، وهو الخيار ج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، وليد جاء بعد ماجد بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"القياس صحيح: لا شيء من الهوامر الضباريح وكل الكواثل الضباريح، لذا لا شيء من الهوامر الكواثل بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0086\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، هند جاءت بعد لطيفة بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"القياس صحيح: بعض الزرابيل الخضارم وكل الخضارم المزاحير، لذا بعض الزرابيل المزاحير بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"القياس صحيح: كل الهوامر السماعيل وكل السماعيل القنادس، لذا لا يمكن أن يكون بعض الهوامر ليس القنادس.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"نفي التالي (لم يُغلق الدكان ظهرًا) يلزم نفي المقدّم (لم ينفد الهيل).\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يمكن الجزم\",\n      \"reason\": \"القضية المسؤول عنها (هل كان مدير المدرسة حاضرًا) لا ترد في أي قاعدة أو معطى، لذا لا يمكن الجزم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0081\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"القياس صحيح: بعض السماعيل ليس القنادس وكل الدرافس القنادس، لذا لا يمكن أن يكون كل السماعيل الدرافس.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، جواهر جاءت بعد ريم بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب\",\n      \"reason\": \"نقيض 'لا مركب خرج في هذه العاصفة' هو 'بعض المراكب خرجت في هذه العاصفة'، وهو الخيار ب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0091\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"نفي النتيجة الأخيرة (لم يصطفّ الزبائن عند النافذة) يلزم نفي المقدّم الأول (لم يُعجن الدقيق قبل الفجر).\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"القياس صحيح: بعض الخضارم الدرافس وكل الدرافس الضراوح، لذا لا يمكن أن يكون لا شيء من الخضارم الضراوح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، ماجد جاء بعد جاسم بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"السلسلة الشرطية صحيحة: وصول الخضار الطازج يؤدي إلى مدّ الطباخين ساعات العمل. المعطى يثبت المقدّم الأول، والنتيجة تلزم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حمد\",\n      \"reason\": \"بفحص جميع الاحتمالات، حمد هو الوحيد الذي يجعل عبارتين صادقتين وواحدة كاذبة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"القياس صحيح: كل الضباريح السماعيل ولا شيء من السماعيل الخضارم، لذا لا شيء من الضباريح الخضارم بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"نفي النتيجة الأخيرة (لم تُمدّد أيام المعرض أسبوعًا) يلزم نفي المقدّم الأول (لم تُوزّع بطاقات الدعوة).\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أمل\",\n      \"reason\": \"بفحص جميع الاحتمالات، أمل هي الوحيدة التي تجعل عبارتين صادقتين وواحدة كاذبة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"القياس صحيح: بعض النواصر ليس الكواثل وكل المزاحير الكواثل، لذا بعض النواصر ليس المزاحير بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"طارق\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، طارق هو الوحيد الذي يمكن أن يأتي في المركز الأول وفقًا للقرائن.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"السلسلة الشرطية صحيحة: فتح أمين المكتبة القاعة مبكرًا يؤدي إلى إرسال الفهرس إلى المطبعة. المعطى يثبت المقدّم الأول، والنتيجة تلزم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، وليد جاء بعد ناصر بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وليد\",\n      \"reason\": \"بفحص جميع الاحتمالات، وليد هو الوحيد الذي يجعل عبارتين صادقتين وواحدة كاذبة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"خالد\",\n      \"reason\": \"بفحص جميع الاحتمالات، خالد هو الوحيد الذي يجعل عبارتين صادقتين وواحدة كاذبة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"القياس صحيح: كل الخضارم الكواثل ولا شيء من الكواثل الجواثم، لذا لا يمكن أن يكون بعض الخضارم الجواثم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"القياس صحيح: بعض المزاحير الصوالج وكل الصوالج الكواثل، لذا لا يمكن أن يكون لا شيء من المزاحير الكواثل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"القياس صحيح: بعض الضباريح الخضارم ولا شيء من الخضارم الصوالج، لذا بعض الضباريح ليس الصوالج بالضرورة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج\",\n      \"reason\": \"نقيض 'كل الطلاب سلّموا الواجب' هو 'بعض الطلاب لم يسلّموا الواجب'، وهو الخيار ج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ\",\n      \"reason\": \"نقيض 'بعض طلاب الحلقة لم يحفظوا السورة' هو 'كل طلاب الحلقة حفظوا السورة'، وهو الخيار أ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"logic_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"بحصر جميع الترتيبات الممكنة، وليد جاء قبل جاسم بالضرورة.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 63306,
+  "error": null,
+  "family": "mistral",
+  "file": "tier_a/kimi_logic_a_001.json",
+  "file_sha256": "343106952584281f793e63016b2d934fc9d442027b708a11d7c8a6eac1ce43e0",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "logic_a_0073",
+      "my_answer": "نعم",
+      "reason": "السلسلة الشرطية صحيحة: وصول قماش الصوف الجديد يؤدي إلى تسليم الطلبات قبل العيد. المعطى يثبت المقدّم الأول، والنتيجة تلزم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0061",
+      "my_answer": "فهد",
+      "reason": "بحصر جميع الترتيبات الممكنة، فهد هو الوحيد الذي يمكن أن يأتي في المركز الأول وفقًا للقرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0028",
+      "my_answer": "نعم",
+      "reason": "القياس صحيح: كل الهوامر الجواثم وكل الجواثم القنادس، لذا كل الهوامر القنادس بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0058",
+      "my_answer": "حصة",
+      "reason": "بحصر جميع الترتيبات الممكنة، حصة هي الوحيدة التي يمكن أن تأتي في المركز الثالث وفقًا للقرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0082",
+      "my_answer": "أ",
+      "reason": "نقيض 'بعض التمور في الصندوق فاسدة' هو 'لا تمرة في الصندوق فاسدة'، وهو الخيار أ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0075",
+      "my_answer": "ج",
+      "reason": "نقيض 'بعض المرضى لم يأخذوا الدواء' هو 'كل المرضى أخذوا الدواء'، وهو الخيار ج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0087",
+      "my_answer": "ريم",
+      "reason": "بحصر جميع الترتيبات الممكنة، ريم هي الوحيدة التي يمكن أن تأتي في الموقع الأول وفقًا للقرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0059",
+      "my_answer": "نعم",
+      "reason": "تحقق مقدّم الشرطية (صلّى ولده الفجر في المسجد) فيلزم التالي (أعطاه مكافأة).",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0051",
+      "my_answer": "نعم",
+      "reason": "السلسلة الشرطية صحيحة: وصول قافلة التمور يؤدي إلى ارتفاع أسعار الرطب قبل الظهر. المعطى يثبت المقدّم الأول، والنتيجة تلزم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0013",
+      "my_answer": "مريم",
+      "reason": "بحصر جميع الترتيبات الممكنة، مريم هي الوحيدة التي يمكن أن تأتي في الموقع الثاني وفقًا للقرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0001",
+      "my_answer": "ج",
+      "reason": "نقيض 'كل المشاركات في المعرض سلّمن أعمالهن' هو 'بعض المشاركات في المعرض لم يسلّمن أعمالهن'، وهو الخيار ج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0088",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "المقدمتان لا تلزمان النتيجة بالضرورة، حيث يمكن أن تكون النتيجة صادقة أو كاذبة في نماذج مختلفة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0040",
+      "my_answer": "نعم",
+      "reason": "السلسلة الشرطية صحيحة: توقيع الشاعر على محضر المشاركة يؤدي إلى نيله شهادة التقدير. المعطى يثبت المقدّم الأول، والنتيجة تلزم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0008",
+      "my_answer": "زياد",
+      "reason": "بفحص جميع الاحتمالات، زياد هو الوحيد الذي يجعل عبارة واحدة فقط صادقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0035",
+      "my_answer": "لا",
+      "reason": "نفي النتيجة الأخيرة (لم يُقفل المطعم بعد منتصف الليل) يلزم نفي المقدّم الأول (لم يصل الخضار الطازج).",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0019",
+      "my_answer": "ريم",
+      "reason": "بفحص جميع الاحتمالات، ريم هي الوحيدة التي تجعل عبارة واحدة فقط صادقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0053",
+      "my_answer": "صالح",
+      "reason": "بفحص جميع الاحتمالات، صالح هو الوحيد الذي يجعل عبارة واحدة فقط صادقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0076",
+      "my_answer": "نورة",
+      "reason": "بفحص جميع الاحتمالات، نورة هي الوحيدة التي تجعل عبارة واحدة فقط صادقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0003",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "بحصر جميع الترتيبات الممكنة، لا يمكن الجزم بأن جاسم جاء قبل بدر بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0057",
+      "my_answer": "نعم",
+      "reason": "السلسلة الشرطية صحيحة: وصول قماش الصوف الجديد يؤدي إلى تجدد الطلبات في الموسم التالي. المعطى يثبت المقدّم الأول، والنتيجة تلزم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0015",
+      "my_answer": "نعم",
+      "reason": "السلسلة الشرطية صحيحة: وصول قافلة التمور يؤدي إلى تحصيل المحتسب الغرامات. المعطى يثبت المقدّم الأول، والنتيجة تلزم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0030",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "المقدمتان لا تلزمان النتيجة بالضرورة، حيث يمكن أن تكون النتيجة صادقة أو كاذبة في نماذج مختلفة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0065",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "إثبات التالي (أُرسل الكشف إلى الوزارة) لا يلزم المقدّم (اكتمل توقيع كل المعلمين).",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0004",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "إنكار المقدّم (لم يُعجن الدقيق قبل الفجر) لا ينفي التالي (عجن الخبّاز عجينة ثانية)، فقد يتحقق التالي بطريق آخر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0052",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "المقدمتان لا تلزمان النتيجة بالضرورة، حيث يمكن أن تكون النتيجة صادقة أو كاذبة في نماذج مختلفة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0062",
+      "my_answer": "ب",
+      "reason": "نقيض 'بعض الإيصالات فُقدت' هو 'لم تفقد أي إيصال'، وهو الخيار ب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0055",
+      "my_answer": "أ",
+      "reason": "نقيض 'لا موظف تأخر اليوم' هو 'بعض الموظفين تأخر اليوم'، وهو الخيار أ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0049",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "إثبات التالي (نصب الخيام في الوادي) لا يثبت المقدّم (اشتدت الريح)، فقد يكون هناك سبب آخر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0089",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "إثبات التالي (أُرسل الفهرس إلى المطبعة) لا يثبت المقدّم (فتح أمين المكتبة القاعة مبكرًا)، فقد يكون هناك سبب آخر.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0090",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "المقدمتان لا تلزمان النتيجة بالضرورة، حيث يمكن أن تكون النتيجة صادقة أو كاذبة في نماذج مختلفة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0012",
+      "my_answer": "نعم",
+      "reason": "القياس صحيح: بعض الزرابيل الهوامر ولا شيء من الهوامر الجواثم، لذا بعض الزرابيل ليس الجواثم بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0023",
+      "my_answer": "لا",
+      "reason": "نفي النتيجة الأخيرة (لم ينفد الخبز قبل نهاية الفسحة) يلزم نفي المقدّم الأول (لم ينطلق جرس الفسحة الأولى).",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0024",
+      "my_answer": "نعم",
+      "reason": "بحصر جميع الترتيبات الممكنة، خالد جاء قبل فهد بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0034",
+      "my_answer": "ج",
+      "reason": "نقيض 'كل الجسور في المحافظة فُحصت' هو 'بعض الجسور في المحافظة لم تُفحص'، وهو الخيار ج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0027",
+      "my_answer": "لا",
+      "reason": "بحصر جميع الترتيبات الممكنة، وليد جاء بعد ماجد بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0033",
+      "my_answer": "نعم",
+      "reason": "القياس صحيح: لا شيء من الهوامر الضباريح وكل الكواثل الضباريح، لذا لا شيء من الهوامر الكواثل بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0086",
+      "my_answer": "لا",
+      "reason": "بحصر جميع الترتيبات الممكنة، هند جاءت بعد لطيفة بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0002",
+      "my_answer": "نعم",
+      "reason": "القياس صحيح: بعض الزرابيل الخضارم وكل الخضارم المزاحير، لذا بعض الزرابيل المزاحير بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0060",
+      "my_answer": "لا",
+      "reason": "القياس صحيح: كل الهوامر السماعيل وكل السماعيل القنادس، لذا لا يمكن أن يكون بعض الهوامر ليس القنادس.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0063",
+      "my_answer": "لا",
+      "reason": "نفي التالي (لم يُغلق الدكان ظهرًا) يلزم نفي المقدّم (لم ينفد الهيل).",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0070",
+      "my_answer": "لا يمكن الجزم",
+      "reason": "القضية المسؤول عنها (هل كان مدير المدرسة حاضرًا) لا ترد في أي قاعدة أو معطى، لذا لا يمكن الجزم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0081",
+      "my_answer": "لا",
+      "reason": "القياس صحيح: بعض السماعيل ليس القنادس وكل الدرافس القنادس، لذا لا يمكن أن يكون كل السماعيل الدرافس.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0041",
+      "my_answer": "لا",
+      "reason": "بحصر جميع الترتيبات الممكنة، جواهر جاءت بعد ريم بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0068",
+      "my_answer": "ب",
+      "reason": "نقيض 'لا مركب خرج في هذه العاصفة' هو 'بعض المراكب خرجت في هذه العاصفة'، وهو الخيار ب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0091",
+      "my_answer": "لا",
+      "reason": "نفي النتيجة الأخيرة (لم يصطفّ الزبائن عند النافذة) يلزم نفي المقدّم الأول (لم يُعجن الدقيق قبل الفجر).",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0077",
+      "my_answer": "لا",
+      "reason": "القياس صحيح: بعض الخضارم الدرافس وكل الدرافس الضراوح، لذا لا يمكن أن يكون لا شيء من الخضارم الضراوح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0017",
+      "my_answer": "لا",
+      "reason": "بحصر جميع الترتيبات الممكنة، ماجد جاء بعد جاسم بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0079",
+      "my_answer": "نعم",
+      "reason": "السلسلة الشرطية صحيحة: وصول الخضار الطازج يؤدي إلى مدّ الطباخين ساعات العمل. المعطى يثبت المقدّم الأول، والنتيجة تلزم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0054",
+      "my_answer": "حمد",
+      "reason": "بفحص جميع الاحتمالات، حمد هو الوحيد الذي يجعل عبارتين صادقتين وواحدة كاذبة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0043",
+      "my_answer": "نعم",
+      "reason": "القياس صحيح: كل الضباريح السماعيل ولا شيء من السماعيل الخضارم، لذا لا شيء من الضباريح الخضارم بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0045",
+      "my_answer": "لا",
+      "reason": "نفي النتيجة الأخيرة (لم تُمدّد أيام المعرض أسبوعًا) يلزم نفي المقدّم الأول (لم تُوزّع بطاقات الدعوة).",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0031",
+      "my_answer": "أمل",
+      "reason": "بفحص جميع الاحتمالات، أمل هي الوحيدة التي تجعل عبارتين صادقتين وواحدة كاذبة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0029",
+      "my_answer": "نعم",
+      "reason": "القياس صحيح: بعض النواصر ليس الكواثل وكل المزاحير الكواثل، لذا بعض النواصر ليس المزاحير بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0037",
+      "my_answer": "طارق",
+      "reason": "بحصر جميع الترتيبات الممكنة، طارق هو الوحيد الذي يمكن أن يأتي في المركز الأول وفقًا للقرائن.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0044",
+      "my_answer": "نعم",
+      "reason": "السلسلة الشرطية صحيحة: فتح أمين المكتبة القاعة مبكرًا يؤدي إلى إرسال الفهرس إلى المطبعة. المعطى يثبت المقدّم الأول، والنتيجة تلزم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0047",
+      "my_answer": "لا",
+      "reason": "بحصر جميع الترتيبات الممكنة، وليد جاء بعد ناصر بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0032",
+      "my_answer": "وليد",
+      "reason": "بفحص جميع الاحتمالات، وليد هو الوحيد الذي يجعل عبارتين صادقتين وواحدة كاذبة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0056",
+      "my_answer": "خالد",
+      "reason": "بفحص جميع الاحتمالات، خالد هو الوحيد الذي يجعل عبارتين صادقتين وواحدة كاذبة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0042",
+      "my_answer": "لا",
+      "reason": "القياس صحيح: كل الخضارم الكواثل ولا شيء من الكواثل الجواثم، لذا لا يمكن أن يكون بعض الخضارم الجواثم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0007",
+      "my_answer": "لا",
+      "reason": "القياس صحيح: بعض المزاحير الصوالج وكل الصوالج الكواثل، لذا لا يمكن أن يكون لا شيء من المزاحير الكواثل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0010",
+      "my_answer": "نعم",
+      "reason": "القياس صحيح: بعض الضباريح الخضارم ولا شيء من الخضارم الصوالج، لذا بعض الضباريح ليس الصوالج بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0050",
+      "my_answer": "ج",
+      "reason": "نقيض 'كل الطلاب سلّموا الواجب' هو 'بعض الطلاب لم يسلّموا الواجب'، وهو الخيار ج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0036",
+      "my_answer": "أ",
+      "reason": "نقيض 'بعض طلاب الحلقة لم يحفظوا السورة' هو 'كل طلاب الحلقة حفظوا السورة'، وهو الخيار أ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "logic_a_0022",
+      "my_answer": "نعم",
+      "reason": "بحصر جميع الترتيبات الممكنة، وليد جاء قبل جاسم بالضرورة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "mistral-large-3:675b-cloud",
+  "started_at": "2026-09-24T18:58:31Z"
+}

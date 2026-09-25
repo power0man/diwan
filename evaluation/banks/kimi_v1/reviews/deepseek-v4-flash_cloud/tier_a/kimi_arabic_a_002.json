@@ -1,0 +1,523 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"deepseek-v3\",\n  \"file\": \"kimi_arabic_a_002.json\",\n  \"judgments\": [\n    {\n      \"id\": \"gram_a_0201\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الفلاح\",\n      \"reason\": \"الفاعل في الجملة «زرع الفلاح القمح» هو «الفلاح» لأنه الذي قام بالفعل. المرجع مطابق، والمعايير واضحة وتحدد الكلمة الصحيحة والالتزام باللفظ.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0211\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لعبته\",\n      \"reason\": \"المفعول به في «أحب الطفل لعبته الجديدة» هو «لعبته» لأنه وقع عليه الفعل. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجزوم\",\n      \"reason\": \"«يحضر» بعد «لم» يكون مجزومًا. المرجع صحيح، والمعايير تحدد نوع الإعراب والالتزام بكلمة واحدة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"«لاعبتان» فاعل مرفوع بالألف لأنه مثنى. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0210\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المشاهدون\",\n      \"reason\": \"الفاعل في «شاهد المشاهدون المباراة» هو «المشاهدون» لأنه قام بالفعل. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0304\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كتب\",\n      \"reason\": \"في «على الطاولة كتب» المبتدأ مؤخر هو «كتب» لأن الخبر شبه الجملة مقدم. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجرور\",\n      \"reason\": \"«رجلين» بعد حرف الجر «بـ» مجرور بالياء لأنه مثنى. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0309\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صديقي\",\n      \"reason\": \"المبتدأ في «صديقي طبيب ماهر» هو «صديقي» لأنه المبتدأ. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0312\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الليل\",\n      \"reason\": \"المبتدأ في «الليل هادئ» هو «الليل». المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0403\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«مزدحما» خبر أصبح منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0409\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«الصدق» اسم إن منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«الشباب» اسم ليت منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0213\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الأعلام\",\n      \"reason\": \"نائب الفاعل في «رُفعت الأعلام» هو «الأعلام». المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0307\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الطائرة\",\n      \"reason\": \"المبتدأ في «الطائرة فوق السحاب» هو «الطائرة». المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0219\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الطالب\",\n      \"reason\": \"الفاعل في «نجح الطالب المجتهد» هو «الطالب» و«المجتهد» نعت. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«لطيفا» خبر كان منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0310\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"هذا\",\n      \"reason\": \"المبتدأ في «هذا درس مفيد» هو «هذا». المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«سيرا» مفعول مطلق منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«الاجتهاد» اسم إن منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«الواجب» مفعول به منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0208\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المسجد\",\n      \"reason\": \"نائب الفاعل في «بُني المسجد» هو «المسجد». المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0221\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الكهرباء\",\n      \"reason\": \"نائب الفاعل في «قُطعت الكهرباء» هو «الكهرباء». المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0302\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"العلم\",\n      \"reason\": \"المبتدأ في «العلم نور» هو «العلم». المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0214\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الأم\",\n      \"reason\": \"الفاعل في «غسلت الأم الثياب» هو «الأم». المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0402\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ناقصة\",\n      \"reason\": \"«كان» في «كان المطر غزيرا» ناقصة لأنها رفعت الاسم ونصبت الخبر. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0101\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مفعول مطلق\",\n      \"reason\": \"«ضحكة» مصدر من لفظ الفعل وقع بعد الفعل، فهو مفعول مطلق. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"«سهل» خبر لعل مرفوع. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0105\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تمييز\",\n      \"reason\": \"«كتابا» تمييز كم الاستفهامية منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0301\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ورد\",\n      \"reason\": \"المبتدأ في «في البستان ورد جميل» هو «ورد» مؤخر. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0414\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"«الشمس» اسم كاد مرفوع. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«احتراما» مفعول لأجله منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"«هر» مبتدأ مؤخر مرفوع بعد خبر مقدم شبه جملة. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0305\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حق\",\n      \"reason\": \"المبتدأ في «للطالب حق في السؤال» هو «حق» مؤخر. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«جديدة» نعت للمفعول به منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«منتصرا» حال منصوبة. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0103\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مفعول لأجله\",\n      \"reason\": \"«عطشا» مصدر قلبي علة للفعل، فهو مفعول لأجله. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«ضحكة» مفعول مطلق منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0215\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الطالب\",\n      \"reason\": \"الفاعل في «السؤال أجاب عنه الطالب» هو «الطالب» رغم تقديم المفعول. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0102\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تمييز\",\n      \"reason\": \"«سكرا» تمييز ملفوظ منصوب بعد نكرة الكيل. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0415\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«أسدا» اسم إن مؤخر منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0218\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إياك\",\n      \"reason\": \"المفعول به في «إياك نقدر» هو «إياك». المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0026\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجرور\",\n      \"reason\": \"في «كم قصيدة حفظت» بدون تنوين، «كم» خبرية وتمييزها مجرور بالإضافة، وليس منصوبًا. المرجع قال منصوب وهو خطأ.\",\n      \"fix\": \"الجواب الصحيح: مجرور؛ تمييز كم الخبرية مجرور بالإضافة، وليس منصوبًا.\"\n    },\n    {\n      \"id\": \"gram_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«كريم» منادى مضاف منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«عدوا» مفعول مطلق منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«شكرا» مفعول مطلق لفعل محذوف منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«صفحة» تمييز العدد المركب منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0417\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"في «إن الدرس مفيد» خبر إن مرفوع. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0209\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"باب\",\n      \"reason\": \"نائب الفاعل في «فُتح باب المدرسة» هو «باب» مضاف. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0308\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قوة\",\n      \"reason\": \"المبتدأ في «في التعاون قوة» هو «قوة» مؤخر. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0212\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الموظفين\",\n      \"reason\": \"المفعول به في «كافأ المدير الموظفين المجتهدين» هو «الموظفين». المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«صندوقين» مفعول به منصوب بالياء لأنه مثنى. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0410\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«القمر» اسم كأن منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«العمر» اسم كأن منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0412\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"«قريب» خبر لعل مرفوع. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0405\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"«الجهد» اسم ما زال مرفوع. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0205\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الحديقة\",\n      \"reason\": \"نائب الفاعل في «نُظِّمت الحديقة» هو «الحديقة». المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0216\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الطعام\",\n      \"reason\": \"المفعول به في «الطعام أكل الضيوف» هو «الطعام» مقدم. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0204\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المريض\",\n      \"reason\": \"المفعول به في «المريض عاين الطبيب» هو «المريض» مقدم. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مرفوع\",\n      \"reason\": \"«أزهار» مبتدأ مؤخر مرفوع. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0407\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ناقصة\",\n      \"reason\": \"«بات» في «بات الجو ممطرا» ناقصة لأنها رفعت الاسم ونصبت الخبر. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0406\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"منصوب\",\n      \"reason\": \"«معقدا» خبر ليس منصوب. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0416\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ناقصة\",\n      \"reason\": \"«أمسى» في «أمسى السوق هادئا» ناقصة لأنها رفعت الاسم ونصبت الخبر. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"gram_a_0303\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ظل\",\n      \"reason\": \"المبتدأ في «تحت النخلة ظل واسع» هو «ظل» مؤخر. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 55436,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_arabic_a_002.json",
+  "file_sha256": "9a219731516ca9314f9ce97a5d1c5836b7ceee3297804165cc5de3e67d4aa934",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "gram_a_0201",
+      "my_answer": "الفلاح",
+      "reason": "الفاعل في الجملة «زرع الفلاح القمح» هو «الفلاح» لأنه الذي قام بالفعل. المرجع مطابق، والمعايير واضحة وتحدد الكلمة الصحيحة والالتزام باللفظ.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0211",
+      "my_answer": "لعبته",
+      "reason": "المفعول به في «أحب الطفل لعبته الجديدة» هو «لعبته» لأنه وقع عليه الفعل. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0016",
+      "my_answer": "مجزوم",
+      "reason": "«يحضر» بعد «لم» يكون مجزومًا. المرجع صحيح، والمعايير تحدد نوع الإعراب والالتزام بكلمة واحدة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0031",
+      "my_answer": "مرفوع",
+      "reason": "«لاعبتان» فاعل مرفوع بالألف لأنه مثنى. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0210",
+      "my_answer": "المشاهدون",
+      "reason": "الفاعل في «شاهد المشاهدون المباراة» هو «المشاهدون» لأنه قام بالفعل. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0304",
+      "my_answer": "كتب",
+      "reason": "في «على الطاولة كتب» المبتدأ مؤخر هو «كتب» لأن الخبر شبه الجملة مقدم. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0005",
+      "my_answer": "مجرور",
+      "reason": "«رجلين» بعد حرف الجر «بـ» مجرور بالياء لأنه مثنى. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0309",
+      "my_answer": "صديقي",
+      "reason": "المبتدأ في «صديقي طبيب ماهر» هو «صديقي» لأنه المبتدأ. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0312",
+      "my_answer": "الليل",
+      "reason": "المبتدأ في «الليل هادئ» هو «الليل». المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0403",
+      "my_answer": "منصوب",
+      "reason": "«مزدحما» خبر أصبح منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0409",
+      "my_answer": "منصوب",
+      "reason": "«الصدق» اسم إن منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0018",
+      "my_answer": "منصوب",
+      "reason": "«الشباب» اسم ليت منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0213",
+      "my_answer": "الأعلام",
+      "reason": "نائب الفاعل في «رُفعت الأعلام» هو «الأعلام». المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0307",
+      "my_answer": "الطائرة",
+      "reason": "المبتدأ في «الطائرة فوق السحاب» هو «الطائرة». المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0219",
+      "my_answer": "الطالب",
+      "reason": "الفاعل في «نجح الطالب المجتهد» هو «الطالب» و«المجتهد» نعت. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0011",
+      "my_answer": "منصوب",
+      "reason": "«لطيفا» خبر كان منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0310",
+      "my_answer": "هذا",
+      "reason": "المبتدأ في «هذا درس مفيد» هو «هذا». المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0027",
+      "my_answer": "منصوب",
+      "reason": "«سيرا» مفعول مطلق منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0012",
+      "my_answer": "منصوب",
+      "reason": "«الاجتهاد» اسم إن منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0001",
+      "my_answer": "منصوب",
+      "reason": "«الواجب» مفعول به منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0208",
+      "my_answer": "المسجد",
+      "reason": "نائب الفاعل في «بُني المسجد» هو «المسجد». المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0221",
+      "my_answer": "الكهرباء",
+      "reason": "نائب الفاعل في «قُطعت الكهرباء» هو «الكهرباء». المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0302",
+      "my_answer": "العلم",
+      "reason": "المبتدأ في «العلم نور» هو «العلم». المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0214",
+      "my_answer": "الأم",
+      "reason": "الفاعل في «غسلت الأم الثياب» هو «الأم». المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0402",
+      "my_answer": "ناقصة",
+      "reason": "«كان» في «كان المطر غزيرا» ناقصة لأنها رفعت الاسم ونصبت الخبر. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0101",
+      "my_answer": "مفعول مطلق",
+      "reason": "«ضحكة» مصدر من لفظ الفعل وقع بعد الفعل، فهو مفعول مطلق. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0019",
+      "my_answer": "مرفوع",
+      "reason": "«سهل» خبر لعل مرفوع. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0105",
+      "my_answer": "تمييز",
+      "reason": "«كتابا» تمييز كم الاستفهامية منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0301",
+      "my_answer": "ورد",
+      "reason": "المبتدأ في «في البستان ورد جميل» هو «ورد» مؤخر. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0414",
+      "my_answer": "مرفوع",
+      "reason": "«الشمس» اسم كاد مرفوع. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0030",
+      "my_answer": "منصوب",
+      "reason": "«احتراما» مفعول لأجله منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0032",
+      "my_answer": "مرفوع",
+      "reason": "«هر» مبتدأ مؤخر مرفوع بعد خبر مقدم شبه جملة. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0305",
+      "my_answer": "حق",
+      "reason": "المبتدأ في «للطالب حق في السؤال» هو «حق» مؤخر. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0024",
+      "my_answer": "منصوب",
+      "reason": "«جديدة» نعت للمفعول به منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0002",
+      "my_answer": "منصوب",
+      "reason": "«منتصرا» حال منصوبة. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0103",
+      "my_answer": "مفعول لأجله",
+      "reason": "«عطشا» مصدر قلبي علة للفعل، فهو مفعول لأجله. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0003",
+      "my_answer": "منصوب",
+      "reason": "«ضحكة» مفعول مطلق منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0215",
+      "my_answer": "الطالب",
+      "reason": "الفاعل في «السؤال أجاب عنه الطالب» هو «الطالب» رغم تقديم المفعول. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0102",
+      "my_answer": "تمييز",
+      "reason": "«سكرا» تمييز ملفوظ منصوب بعد نكرة الكيل. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0415",
+      "my_answer": "منصوب",
+      "reason": "«أسدا» اسم إن مؤخر منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0218",
+      "my_answer": "إياك",
+      "reason": "المفعول به في «إياك نقدر» هو «إياك». المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "الجواب الصحيح: مجرور؛ تمييز كم الخبرية مجرور بالإضافة، وليس منصوبًا.",
+      "id": "gram_a_0026",
+      "my_answer": "مجرور",
+      "reason": "في «كم قصيدة حفظت» بدون تنوين، «كم» خبرية وتمييزها مجرور بالإضافة، وليس منصوبًا. المرجع قال منصوب وهو خطأ.",
+      "reference": "incorrect",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0025",
+      "my_answer": "منصوب",
+      "reason": "«كريم» منادى مضاف منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0029",
+      "my_answer": "منصوب",
+      "reason": "«عدوا» مفعول مطلق منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0034",
+      "my_answer": "منصوب",
+      "reason": "«شكرا» مفعول مطلق لفعل محذوف منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0007",
+      "my_answer": "منصوب",
+      "reason": "«صفحة» تمييز العدد المركب منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0417",
+      "my_answer": "مرفوع",
+      "reason": "في «إن الدرس مفيد» خبر إن مرفوع. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0209",
+      "my_answer": "باب",
+      "reason": "نائب الفاعل في «فُتح باب المدرسة» هو «باب» مضاف. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0308",
+      "my_answer": "قوة",
+      "reason": "المبتدأ في «في التعاون قوة» هو «قوة» مؤخر. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0212",
+      "my_answer": "الموظفين",
+      "reason": "المفعول به في «كافأ المدير الموظفين المجتهدين» هو «الموظفين». المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0004",
+      "my_answer": "منصوب",
+      "reason": "«صندوقين» مفعول به منصوب بالياء لأنه مثنى. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0410",
+      "my_answer": "منصوب",
+      "reason": "«القمر» اسم كأن منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0017",
+      "my_answer": "منصوب",
+      "reason": "«العمر» اسم كأن منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0412",
+      "my_answer": "مرفوع",
+      "reason": "«قريب» خبر لعل مرفوع. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0405",
+      "my_answer": "مرفوع",
+      "reason": "«الجهد» اسم ما زال مرفوع. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0205",
+      "my_answer": "الحديقة",
+      "reason": "نائب الفاعل في «نُظِّمت الحديقة» هو «الحديقة». المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0216",
+      "my_answer": "الطعام",
+      "reason": "المفعول به في «الطعام أكل الضيوف» هو «الطعام» مقدم. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0204",
+      "my_answer": "المريض",
+      "reason": "المفعول به في «المريض عاين الطبيب» هو «المريض» مقدم. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0009",
+      "my_answer": "مرفوع",
+      "reason": "«أزهار» مبتدأ مؤخر مرفوع. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0407",
+      "my_answer": "ناقصة",
+      "reason": "«بات» في «بات الجو ممطرا» ناقصة لأنها رفعت الاسم ونصبت الخبر. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0406",
+      "my_answer": "منصوب",
+      "reason": "«معقدا» خبر ليس منصوب. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0416",
+      "my_answer": "ناقصة",
+      "reason": "«أمسى» في «أمسى السوق هادئا» ناقصة لأنها رفعت الاسم ونصبت الخبر. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "gram_a_0303",
+      "my_answer": "ظل",
+      "reason": "المبتدأ في «تحت النخلة ظل واسع» هو «ظل» مؤخر. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T18:13:32Z"
+}

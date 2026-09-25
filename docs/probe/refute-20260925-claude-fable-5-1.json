@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "agent": "anthropic/claude-fable-5-1",
+  "surface": "Claude Code (سحابة، لينكس، بلا Ollama)",
+  "date": "2026-09-25",
+  "head": "cb0c81b",
+  "protocol": "docs/AGENT-ONBOARD-REFUTE.md — أول جلسة: نقض آخر ثلاثة قرارات مرقّمة (ق٤٨، ق٤٩، ق٥٠) قبل أي بناء",
+  "claims": [
+    {
+      "decision": "ق٤٨",
+      "claim": "لا نصَّ كاملًا للوائح في publish/، والبيان المختوم يوثّق حجب ٧٥٦ مادة (rights_refused: 756, published: 0)",
+      "how_i_tried": "find publish -type f ; tail -1 publish/_manifest.jsonl ; python3 tools/sign_anchors.py verify",
+      "result": "held",
+      "evidence": "publish/ فيه أربعة ملفات فقط: _manifest.jsonl و.anchor و.anchor.sig و.publish.lock. آخر سجل (seq 1523): {\"kind\":\"publish_run\",\"published\":0,\"rights_refused\":756,\"run_seq\":12,\"skipped\":32585}. والمراسي السبع ختمًا وتوقيعًا مفحوصة."
+    },
+    {
+      "decision": "ق٤٨",
+      "claim": "سُحب إذن التوزيع في سجل الأصول: قيد acquired جديد للمصدر claude-project-regulations-export بـuse_distribution: false وuse_internal: true",
+      "how_i_tried": "sed -n 13p sources/acquisitions.jsonl | python3 -c 'json.loads(...)'",
+      "result": "held",
+      "evidence": "السطر ١٣: kind=acquired، source_id=claude-project-regulations-export، use_distribution=false، use_internal=true، verified_date=2026-09-23، والسند نصُّ المالك. ويسبقه (السطر ١٢) القيد الملغى الذي كان يجيز التوزيع بالمادة الرابعة — بقي شاهدًا ولم يُحذف."
+    },
+    {
+      "decision": "ق٤٨",
+      "claim": "«نُقلت الملفات الـ 25 المنشورة سابقاً إلى مجلد الشواهد التاريخية archive/witnesses/publish-retracted-20260923/» (القرار، البند ٤، وفق القاعدة ٨: لا يُحذف شاهد)",
+      "how_i_tried": "ls archive/witnesses/publish-retracted-20260923 | wc -l ; git show --stat 375c44f -- archive/ publish/",
+      "result": "refuted",
+      "evidence": "المجلد يحوي ملفًّا واحدًا: README.md (٧ أسطر). وإيداع ق٤٨ نفسه (375c44f) يُظهر ٢٥ ملف jsonl محذوفةً من publish/ (758 سطرًا محذوفًا) ولا ملفًّا مضافًا إلى archive/ سوى README.md. فالملفات لم تُنقل إلى مجلد الشواهد بل حُذفت من الشجرة، وبقيت في تاريخ git عند 398943b وحده. القرارُ يصف نقلًا لم يحدث في المستودع؛ والنقل إلى درايف المالك خارج المستودع لا يمكنني التحقق منه من هنا. الحكمُ على الدعوى كما كُتبت: مردودة. أما شرط النقض المعلن للقرار (نصٌّ كامل في publish/) فلم يتحقق."
+    },
+    {
+      "decision": "ق٤٩",
+      "claim": "اتفاق المراجعين لا يرفع فشلًا حتميًّا: قاعدة حتمية ساقطة + إجماع المراجعين على النجاح ⇒ rejected",
+      "how_i_tried": "evaluation.multi_system_review.build_review_package على مادة فيها ok=false وقاعدة equals تتوقع true، ومراجعان (gemma، llama) يحكمان pass",
+      "result": "held",
+      "evidence": "status = rejected ، human_review = False"
+    },
+    {
+      "decision": "ق٤٩",
+      "claim": "الخلاف بين المراجعين يمنع الاعتماد (inconclusive)، وحزمة مخزَّنة عُدِّل فيها human_review إلى true تُردّ",
+      "how_i_tried": "حزمة بمراجعين pass/fail ← build_review_package؛ ثم تعديل human_review=True وstatus=accepted في نسخة ← validate_review_package",
+      "result": "held",
+      "evidence": "الأولى: status = inconclusive. الثانية: REFUSED review_package_mismatch"
+    },
+    {
+      "decision": "ق٤٩",
+      "claim": "«المراجع ليس من عائلة المحرّك، ولا مراجعان من عائلة» مفروضٌ في الشيفرة (validate_identities)",
+      "how_i_tried": "validate_identities بهويات family مُعلَنة: (gemma,gemma)؛ (qwen2.5 معلنة qwen) مع محرّك qwen؛ ثم هجوم: qwen2.5 معلنة family='other'؛ ثم (gemini, gemma) وكلاهما Google؛ ثم qwq معلنة 'qwq'؛ ثم محرّك qwen3 معلن family='foo' مع مراجع qwen",
+      "result": "held",
+      "evidence": "الأربعة الأُوَل: duplicate_review_family / reviewer_shares_engine_family ← الحارس يعمل على ما يُعلَن. لكن الثلاثة الأخيرة مرّت كلها (OK): family_group تجمع بالبادئات (qwen، gemma، llama، mistral، phi، deepseek) على سلسلة family التي يعلنها المستدعي، ولا تشتقّها من اسم النموذج. وفي المسار الحيّ يأخذها tools/review_automatically.py:188 من تقرير خادم Ollama (details.family) ويعيد مطابقتها في preflight:199، فالهجوم يحتاج خادمًا كاذبًا أو مستدعيًا آخر. **حدٌّ لا نقض:** القرار يعلن أن «هويات Ollama تقرير الخادم المحلي». والملاحظة: الوحدة الشقيقة evaluation/external_review.py (ق٥٠) تشتقّ العائلة من الاسم وترفض المجهول، فالوحدتان تختلفان صرامةً لقاعدةٍ واحدة."
+    },
+    {
+      "decision": "ق٥٠",
+      "claim": "يُرفض المراجع من عائلة المحرّك (qwen) أو المؤلّف (kimi) أو المطوِّرين (openai/google/anthropic) أو مجهول العائلة، ويُرفض مراجعان من عائلة",
+      "how_i_tried": "evaluation.external_review.check_reviewers على ١٢ مجموعة، منها أسماء ملتوية: hf.co/x/Qwen3-14B-GGUF، DeepSeek-R1 مع deepseek-v4، ministral مع mistral، foo:latest",
+      "result": "held",
+      "evidence": "qwen3→reviewer_is_engine_family؛ kimi→reviewer_is_author_family؛ gpt-oss وgemma4→reviewer_is_developer_family؛ mistral+ministral وDeepSeek-R1+deepseek-v4→duplicate_reviewer_family؛ foo→reviewer_family_unknown؛ hf.co/x/Qwen3-14B-GGUF→reviewer_is_engine_family؛ مراجع واحد→two_reviewers_required. والمقبول: (deepseek, mistral)، (llama, phi)، (granite, falcon)."
+    },
+    {
+      "decision": "ق٥٠",
+      "claim": "الشطر المحجوب لا يُرسل إلى أي مراجع",
+      "how_i_tried": "بنك مصطنع فيه open/ وsealed/، ثم رابط رمزي open/t/link.json → sealed/z.json، ثم review_file عليه بناقلٍ يعدّ النداءات",
+      "result": "held",
+      "evidence": "open_files أدرجت الرابط (open/t/link.json) لكن review_file ردّته قبل أي نداء: REFUSED sealed_never_reviewed_externally, calls=0 (تفحص المسار بعد resolve)."
+    },
+    {
+      "decision": "ق٥٠",
+      "claim": "الردّ غير الصالح يُعاد مرةً واحدة ثم يُسجَّل خطؤه برمزه، فلا يسقط ملفٌّ صمتًا؛ ويُحسب κ لكوهين",
+      "how_i_tried": "ناقلٌ يردّ نثرًا؛ ناقلٌ يردّ معرّفًا زائدًا؛ ناقلٌ يرفع ConnectionError؛ وcohen_kappa على ثلاث حالات",
+      "result": "held",
+      "evidence": "نثر: attempts=2، error=invalid_json. معرّف زائد: judgment_ids_mismatch. κ: (ثابت/ثابت)→None، (تام على صنفين)→1.0، (مراجع ثابت مقابل مختلط)→0.0. **حد:** استثناءٌ من غير AutomaticReviewError (ConnectionError) ينفجر من review_file ويوقف التشغيل كله بدل تسجيله في سجل الملف؛ لكن الناقل المشحون OllamaChat (tools/external_review.py) يلفّ HTTPError وURLError وOSError وTimeoutError برموز، فالحدُّ في عقد Transport لا في الأداة."
+    },
+    {
+      "decision": "ق٥٠",
+      "claim": "شرط المراجعة: «إن ظهر أن الخدمة بدّلت النموذج بين تشغيلين»",
+      "how_i_tried": "قراءة سجل المراجعة (review_file): ما يُحفظ عن هوية النموذج",
+      "result": "could_not_test",
+      "evidence": "السجل يحفظ اسم النموذج وبصمة الملف وبصمة التكليف فقط، ولا بصمة أوزانٍ ولا معرّف إصدارٍ من الخدمة. فتبديل النموذج بين تشغيلين لا يمكن كشفه من السجل أصلًا، وهو ما يعلنه القرار حدًّا (cloud_model_identity_is_the_service_name). لا أملك Ollama هنا لاختباره حيًّا."
+    }
+  ],
+  "summary": {
+    "held": 7,
+    "refuted": 1,
+    "could_not_test": 1,
+    "note": "النقض الوحيد في ق٤٨ نقضٌ لدعوى النقل إلى مجلد الشواهد لا لجوهر القرار: شرط النقض المعلن (نص كامل في publish/) لم يتحقق. ويبقى للمالك أن يقرر: هل يُقبل تاريخ git شاهدًا كافيًا، أم يُعاد تحرير نص ق٤٨ ليقول ما حدث فعلًا (حذف من الشجرة وبقاء في التاريخ ونسخة على درايف المالك)."
+  },
+  "measurement_limits": [
+    "كل التشغيل على لينكس بلا Ollama: ما يحتاج نموذجًا حيًّا لم يُختبر.",
+    "الحكم على ق٤٨ من المستودع وحده؛ درايف المالك خارج ما أراه.",
+    "براهين النقض في scratch خارج المستودع، ونُقلت مخرجاتها هنا حرفيًّا مختصرة."
+  ]
+}

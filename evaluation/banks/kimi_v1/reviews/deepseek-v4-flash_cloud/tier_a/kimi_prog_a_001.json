@@ -1,0 +1,475 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_prog_a_001.json\",\n  \"judgments\": [\n    {\n      \"id\": \"prog_a_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Check divisibility by 15 first, then 3, then 5, else return the number as a string.\",\n      \"reason\": \"The reference correctly emphasizes checking 15 before 3 and 5 to avoid misclassifying multiples of 15. The rubric covers the key cases and the check tests them.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return the key with the maximum value; return None for an empty dictionary.\",\n      \"reason\": \"The reference correctly states to compare by values, not keys. The rubric covers the essential behaviors and the check includes Arabic keys and negative values.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return a list with all negative numbers removed, keeping zero and other non-negative values.\",\n      \"reason\": \"The reference correctly specifies keeping non-negative values including zero. The rubric covers the required behaviors and the check tests edge cases.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Check primality for n >= 2 by testing divisors up to sqrt(n); numbers < 2 are not prime.\",\n      \"reason\": \"The reference correctly describes the primality test. The rubric covers the key cases and the check includes negative, zero, one, and composite numbers.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Compute GCD using absolute values, handle zero cases: gcd(0,n)=|n|, gcd(0,0)=0, always return non-negative.\",\n      \"reason\": \"The reference correctly describes the Euclidean algorithm with absolute values and zero handling. The rubric covers the required behaviors and the check tests them.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Invert the dictionary by swapping keys and values, assuming unique values; empty dict returns empty dict.\",\n      \"reason\": \"The reference correctly describes the inversion. The rubric covers the essential behaviors and the check tests with simple and empty cases.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Replace all forms of alef (أ, إ, آ, ٱ) with plain alef (ا), leaving other characters unchanged.\",\n      \"reason\": \"The reference correctly lists the four forms and the requirement to keep other characters. The rubric covers the key points and the check includes tashkeel.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return the number of days in a given month, accounting for leap years in February.\",\n      \"reason\": \"The reference correctly describes the month-day calculation with leap year rule. The rubric covers the essential cases and the check includes leap and non-leap years.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Clamp x to the range [lo, hi]: return lo if x < lo, hi if x > hi, otherwise x.\",\n      \"reason\": \"The reference correctly describes clamping with inclusive bounds. The rubric covers the required behaviors and the check tests boundaries.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Remove all Arabic diacritics (U+064B–U+0652 and U+0670) from the text, keeping everything else.\",\n      \"reason\": \"The reference correctly specifies the Unicode ranges. The rubric covers the key behaviors and the check tests with tashkeel and empty string.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return a dictionary with entries whose values are >= threshold, including equality.\",\n      \"reason\": \"The reference correctly states the >= condition. The rubric covers the essential cases and the check tests equality and empty dict.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Merge two dictionaries, summing values for common keys and carrying over unique keys.\",\n      \"reason\": \"The reference correctly describes the merge with sum. The rubric covers the required behaviors and the check includes negative values.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return a list of cumulative sums where element i is the sum of elements from 0 to i; empty list returns empty.\",\n      \"reason\": \"The reference correctly describes the cumulative sum. The rubric covers the key behaviors and the check tests with negatives and single element.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Build a dictionary from two lists, pairing keys and values in order, stopping at the shorter list.\",\n      \"reason\": \"The reference correctly describes the zip behavior. The rubric covers the essential cases and the check tests unequal lengths.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return a list of cumulative maximums where element i is the max of elements from 0 to i; empty list returns empty.\",\n      \"reason\": \"The reference correctly describes the cumulative max. The rubric covers the key behaviors and the check tests with negatives.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return the longest word in a sentence; on tie return the first; empty string returns empty string.\",\n      \"reason\": \"The reference correctly describes the tie-breaking rule. The rubric covers the essential behaviors and the check includes Arabic.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Sum the digits of an integer, using absolute value for negatives; zero returns zero.\",\n      \"reason\": \"The reference correctly describes the absolute value handling. The rubric covers the key cases and the check tests negative and zero.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Remove duplicates while preserving the order of first occurrence.\",\n      \"reason\": \"The reference correctly describes the behavior. The rubric covers the essential points and the check tests with duplicates.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Count Arabic letters in the range U+0621–U+064A, ignoring digits, spaces, diacritics, and Latin letters.\",\n      \"reason\": \"The reference correctly specifies the Unicode range. The rubric covers the key behaviors and the check tests with tashkeel and mixed text.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return a tuple (evens, odds) preserving original order within each list.\",\n      \"reason\": \"The reference correctly describes the partition. The rubric covers the required behaviors and the check tests with negatives.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Sum elements at even indices (0, 2, 4, ...); empty list returns 0.\",\n      \"reason\": \"The reference correctly describes the index-based sum. The rubric covers the key behaviors and the check tests with single element.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return the nth Fibonacci number with fib(0)=0 and fib(1)=1.\",\n      \"reason\": \"The reference correctly defines the base cases. The rubric covers the essential points and the check tests several values.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return the first n words joined by a single space; if n exceeds word count return whole string; n=0 returns empty string.\",\n      \"reason\": \"The reference correctly describes the word-based truncation. The rubric covers the key behaviors and the check tests all cases.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return a/b, or None if b is zero, without raising any exception.\",\n      \"reason\": \"The reference correctly describes the safe division. The rubric covers the required behaviors and the check tests zero and negatives.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Traverse a nested dictionary along a path of keys, returning default if any key is missing or structure is not a dict; empty path returns the dict itself.\",\n      \"reason\": \"The reference correctly describes the safe traversal. The rubric covers the key behaviors and the check tests missing keys and empty path.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Convert integer to standard Roman numerals up to 3999, including subtractive forms like IV, IX, XL, XC, CD, CM.\",\n      \"reason\": \"The reference correctly emphasizes the subtractive forms. The rubric covers the essential requirements and the check tests several numbers.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return the first character that appears exactly once in the string, or None if none exists.\",\n      \"reason\": \"The reference correctly describes the order-based selection. The rubric covers the key behaviors and the check includes Arabic.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Count the number of steps to reach 1 in the Collatz sequence; collatz_steps(1)=0.\",\n      \"reason\": \"The reference correctly defines the step count. The rubric covers the essential points and the check tests 1, 6, and 27.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Check if a string is a valid date in YYYY-MM-DD format, including leap year rules.\",\n      \"reason\": \"The reference correctly suggests using fromisoformat for semantic validation. The rubric covers the key invalid cases and the check tests them.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Sort the list, then return the maximum difference between consecutive elements; return 0 for lists with fewer than 2 elements.\",\n      \"reason\": \"The reference correctly describes the process. The rubric covers the essential behaviors and the check tests with duplicates and short lists.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return the most frequent value; on tie return the smallest; empty list returns None.\",\n      \"reason\": \"The reference correctly describes the mode with tie-breaking. The rubric covers the key behaviors and the check tests ties and empty list.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Check if a string is a palindrome after removing non-alphanumeric characters and ignoring case.\",\n      \"reason\": \"The reference correctly describes the cleaning and comparison. The rubric covers the essential behaviors and the check includes Arabic and empty string.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return a list of maximums for each sliding window of size k; number of results is len(lst)-k+1.\",\n      \"reason\": \"The reference correctly describes the window max. The rubric covers the key behaviors and the check tests with negatives.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Compute the digital root by repeatedly summing digits until a single digit remains; digital_root(0)=0.\",\n      \"reason\": \"The reference correctly describes the process. The rubric covers the essential behaviors and the check tests large numbers.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Apply Caesar cipher to Latin letters only, wrapping after z, preserving case, leaving other characters unchanged; k may exceed 26.\",\n      \"reason\": \"The reference correctly describes the shift with modulo. The rubric covers the key behaviors and the check tests wrapping and non-Latin.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Count occurrences of a whole word in a text, not as part of another word.\",\n      \"reason\": \"The reference correctly emphasizes whole-word matching. The rubric covers the essential behaviors and the check tests partial matches.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0057\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Check if a number is an Armstrong number where the power equals the number of digits.\",\n      \"reason\": \"The reference correctly states the power is the digit count. The rubric covers the key behaviors and the check tests single and multi-digit numbers.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Encode a string using run-length encoding: each run of a character is replaced by the character followed by its count, even if count is 1.\",\n      \"reason\": \"The reference correctly describes the encoding. The rubric covers the essential behaviors and the check tests Arabic and single characters.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Split a bill equally among n people to 2 decimal places, ensuring the sum equals the total exactly, distributing the remainder one unit at a time to the first shares.\",\n      \"reason\": \"The reference correctly describes the integer-based division and remainder distribution. The rubric covers the key requirements and the check tests exact sum and distribution.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0073\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Calculate full years between two dates, not counting a year until the birthday has occurred in that year.\",\n      \"reason\": \"The reference correctly describes the age calculation. The rubric covers the key behaviors and the check tests leap day birthdays.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Convert camelCase to snake_case by inserting an underscore before each uppercase letter (except the first) and lowercasing.\",\n      \"reason\": \"The reference correctly describes the conversion. The rubric covers the essential behaviors and the check tests various cases.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Add n days (possibly negative) to a date in YYYY-MM-DD format, handling month/year boundaries and leap years.\",\n      \"reason\": \"The reference correctly suggests using timedelta. The rubric covers the key behaviors and the check tests boundaries and negative n.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Convert a binary string to an integer, raising ValueError for empty or invalid characters.\",\n      \"reason\": \"The reference correctly describes the strict conversion. The rubric covers the essential behaviors and the check tests invalid inputs.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0072\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return the Arabic weekday name for a date, mapping Monday=0 to 'الاثنين', etc.\",\n      \"reason\": \"The reference correctly describes the mapping. The rubric covers the key behaviors and the check tests specific dates.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Count the number of sentences by counting sentence-ending punctuation marks: . ! ؟ ?\",\n      \"reason\": \"The reference correctly lists the four punctuation marks. The rubric covers the essential behaviors and the check tests Arabic and English.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Check if a number is perfect: equal to the sum of its proper divisors (excluding itself); numbers < 1 are not perfect.\",\n      \"reason\": \"The reference correctly describes the perfect number definition. The rubric covers the key behaviors and the check tests 6, 28, 12, 1, and negative.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return the nth element from the end of a list (1 = last), or None if n is out of range or non-positive.\",\n      \"reason\": \"The reference correctly describes the indexing. The rubric covers the essential behaviors and the check tests boundaries.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Flatten a list one level: elements of inner lists are pulled out, non-list elements remain as is.\",\n      \"reason\": \"The reference correctly describes one-level flattening. The rubric covers the key behaviors and the check tests nested lists.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Remove all Latin vowels (a, e, i, o, u) in both cases from the text, keeping everything else.\",\n      \"reason\": \"The reference correctly specifies the set of vowels. The rubric covers the essential behaviors and the check tests with Arabic.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Count words by their first letter, returning a dictionary with counts.\",\n      \"reason\": \"The reference correctly describes the grouping. The rubric covers the key behaviors and the check tests Arabic words.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Remove only consecutive duplicates from a list, keeping non-adjacent duplicates.\",\n      \"reason\": \"The reference correctly describes the behavior. The rubric covers the essential points and the check tests with non-adjacent duplicates.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return the percentage change from old to new, or None if old is zero, without raising an exception.\",\n      \"reason\": \"The reference correctly describes the formula and zero handling. The rubric covers the key behaviors and the check tests negative change.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Check if a password is strong: length >= 8, contains at least one lowercase, one uppercase, and one digit.\",\n      \"reason\": \"The reference correctly lists the four conditions. The rubric covers the essential behaviors and the check tests each missing condition.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Mask all digits in a string with '*' except the last 4 digits, keeping non-digit characters in place; if there are 4 or fewer digits, leave unchanged.\",\n      \"reason\": \"The reference correctly describes the masking rule. The rubric covers the key behaviors and the check tests with hyphens and short numbers.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Round a monetary amount to 2 decimal places using half-up rounding (e.g., 0.125 -> 0.13).\",\n      \"reason\": \"The reference correctly recommends Decimal with ROUND_HALF_UP to avoid floating-point issues. The rubric covers the key behaviors and the check tests tricky values.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return a letter grade based on score thresholds: >=90 'ممتاز', >=80 'جيد جدًّا', >=70 'جيد', >=60 'مقبول', else 'راسب'.\",\n      \"reason\": \"The reference correctly states inclusive thresholds and descending order. The rubric covers the key boundaries and the check tests them.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_a_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Return the total price including VAT: price * (1 + rate/100), rounded to 2 decimal places half-up.\",\n      \"reason\": \"The reference correctly describes the calculation and rounding. The rubric covers the key behaviors and the check tests with various prices.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 72923,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_prog_a_001.json",
+  "file_sha256": "d9209f0a02941f7eb17e4524485adbaf43268f44b0e4972a71d5b9d676804d17",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "prog_a_0077",
+      "my_answer": "Check divisibility by 15 first, then 3, then 5, else return the number as a string.",
+      "reason": "The reference correctly emphasizes checking 15 before 3 and 5 to avoid misclassifying multiples of 15. The rubric covers the key cases and the check tests them.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0045",
+      "my_answer": "Return the key with the maximum value; return None for an empty dictionary.",
+      "reason": "The reference correctly states to compare by values, not keys. The rubric covers the essential behaviors and the check includes Arabic keys and negative values.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0032",
+      "my_answer": "Return a list with all negative numbers removed, keeping zero and other non-negative values.",
+      "reason": "The reference correctly specifies keeping non-negative values including zero. The rubric covers the required behaviors and the check tests edge cases.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0051",
+      "my_answer": "Check primality for n >= 2 by testing divisors up to sqrt(n); numbers < 2 are not prime.",
+      "reason": "The reference correctly describes the primality test. The rubric covers the key cases and the check includes negative, zero, one, and composite numbers.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0052",
+      "my_answer": "Compute GCD using absolute values, handle zero cases: gcd(0,n)=|n|, gcd(0,0)=0, always return non-negative.",
+      "reason": "The reference correctly describes the Euclidean algorithm with absolute values and zero handling. The rubric covers the required behaviors and the check tests them.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0041",
+      "my_answer": "Invert the dictionary by swapping keys and values, assuming unique values; empty dict returns empty dict.",
+      "reason": "The reference correctly describes the inversion. The rubric covers the essential behaviors and the check tests with simple and empty cases.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0006",
+      "my_answer": "Replace all forms of alef (أ, إ, آ, ٱ) with plain alef (ا), leaving other characters unchanged.",
+      "reason": "The reference correctly lists the four forms and the requirement to keep other characters. The rubric covers the key points and the check includes tashkeel.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0074",
+      "my_answer": "Return the number of days in a given month, accounting for leap years in February.",
+      "reason": "The reference correctly describes the month-day calculation with leap year rule. The rubric covers the essential cases and the check includes leap and non-leap years.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0055",
+      "my_answer": "Clamp x to the range [lo, hi]: return lo if x < lo, hi if x > hi, otherwise x.",
+      "reason": "The reference correctly describes clamping with inclusive bounds. The rubric covers the required behaviors and the check tests boundaries.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0002",
+      "my_answer": "Remove all Arabic diacritics (U+064B–U+0652 and U+0670) from the text, keeping everything else.",
+      "reason": "The reference correctly specifies the Unicode ranges. The rubric covers the key behaviors and the check tests with tashkeel and empty string.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0044",
+      "my_answer": "Return a dictionary with entries whose values are >= threshold, including equality.",
+      "reason": "The reference correctly states the >= condition. The rubric covers the essential cases and the check tests equality and empty dict.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0042",
+      "my_answer": "Merge two dictionaries, summing values for common keys and carrying over unique keys.",
+      "reason": "The reference correctly describes the merge with sum. The rubric covers the required behaviors and the check includes negative values.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0021",
+      "my_answer": "Return a list of cumulative sums where element i is the sum of elements from 0 to i; empty list returns empty.",
+      "reason": "The reference correctly describes the cumulative sum. The rubric covers the key behaviors and the check tests with negatives and single element.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0037",
+      "my_answer": "Build a dictionary from two lists, pairing keys and values in order, stopping at the shorter list.",
+      "reason": "The reference correctly describes the zip behavior. The rubric covers the essential cases and the check tests unequal lengths.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0030",
+      "my_answer": "Return a list of cumulative maximums where element i is the max of elements from 0 to i; empty list returns empty.",
+      "reason": "The reference correctly describes the cumulative max. The rubric covers the key behaviors and the check tests with negatives.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0010",
+      "my_answer": "Return the longest word in a sentence; on tie return the first; empty string returns empty string.",
+      "reason": "The reference correctly describes the tie-breaking rule. The rubric covers the essential behaviors and the check includes Arabic.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0058",
+      "my_answer": "Sum the digits of an integer, using absolute value for negatives; zero returns zero.",
+      "reason": "The reference correctly describes the absolute value handling. The rubric covers the key cases and the check tests negative and zero.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0035",
+      "my_answer": "Remove duplicates while preserving the order of first occurrence.",
+      "reason": "The reference correctly describes the behavior. The rubric covers the essential points and the check tests with duplicates.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0001",
+      "my_answer": "Count Arabic letters in the range U+0621–U+064A, ignoring digits, spaces, diacritics, and Latin letters.",
+      "reason": "The reference correctly specifies the Unicode range. The rubric covers the key behaviors and the check tests with tashkeel and mixed text.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0038",
+      "my_answer": "Return a tuple (evens, odds) preserving original order within each list.",
+      "reason": "The reference correctly describes the partition. The rubric covers the required behaviors and the check tests with negatives.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0036",
+      "my_answer": "Sum elements at even indices (0, 2, 4, ...); empty list returns 0.",
+      "reason": "The reference correctly describes the index-based sum. The rubric covers the key behaviors and the check tests with single element.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0059",
+      "my_answer": "Return the nth Fibonacci number with fib(0)=0 and fib(1)=1.",
+      "reason": "The reference correctly defines the base cases. The rubric covers the essential points and the check tests several values.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0008",
+      "my_answer": "Return the first n words joined by a single space; if n exceeds word count return whole string; n=0 returns empty string.",
+      "reason": "The reference correctly describes the word-based truncation. The rubric covers the key behaviors and the check tests all cases.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0054",
+      "my_answer": "Return a/b, or None if b is zero, without raising any exception.",
+      "reason": "The reference correctly describes the safe division. The rubric covers the required behaviors and the check tests zero and negatives.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0049",
+      "my_answer": "Traverse a nested dictionary along a path of keys, returning default if any key is missing or structure is not a dict; empty path returns the dict itself.",
+      "reason": "The reference correctly describes the safe traversal. The rubric covers the key behaviors and the check tests missing keys and empty path.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0063",
+      "my_answer": "Convert integer to standard Roman numerals up to 3999, including subtractive forms like IV, IX, XL, XC, CD, CM.",
+      "reason": "The reference correctly emphasizes the subtractive forms. The rubric covers the essential requirements and the check tests several numbers.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0005",
+      "my_answer": "Return the first character that appears exactly once in the string, or None if none exists.",
+      "reason": "The reference correctly describes the order-based selection. The rubric covers the key behaviors and the check includes Arabic.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0060",
+      "my_answer": "Count the number of steps to reach 1 in the Collatz sequence; collatz_steps(1)=0.",
+      "reason": "The reference correctly defines the step count. The rubric covers the essential points and the check tests 1, 6, and 27.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0075",
+      "my_answer": "Check if a string is a valid date in YYYY-MM-DD format, including leap year rules.",
+      "reason": "The reference correctly suggests using fromisoformat for semantic validation. The rubric covers the key invalid cases and the check tests them.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0039",
+      "my_answer": "Sort the list, then return the maximum difference between consecutive elements; return 0 for lists with fewer than 2 elements.",
+      "reason": "The reference correctly describes the process. The rubric covers the essential behaviors and the check tests with duplicates and short lists.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0029",
+      "my_answer": "Return the most frequent value; on tie return the smallest; empty list returns None.",
+      "reason": "The reference correctly describes the mode with tie-breaking. The rubric covers the key behaviors and the check tests ties and empty list.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0004",
+      "my_answer": "Check if a string is a palindrome after removing non-alphanumeric characters and ignoring case.",
+      "reason": "The reference correctly describes the cleaning and comparison. The rubric covers the essential behaviors and the check includes Arabic and empty string.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0033",
+      "my_answer": "Return a list of maximums for each sliding window of size k; number of results is len(lst)-k+1.",
+      "reason": "The reference correctly describes the window max. The rubric covers the key behaviors and the check tests with negatives.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0056",
+      "my_answer": "Compute the digital root by repeatedly summing digits until a single digit remains; digital_root(0)=0.",
+      "reason": "The reference correctly describes the process. The rubric covers the essential behaviors and the check tests large numbers.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0017",
+      "my_answer": "Apply Caesar cipher to Latin letters only, wrapping after z, preserving case, leaving other characters unchanged; k may exceed 26.",
+      "reason": "The reference correctly describes the shift with modulo. The rubric covers the key behaviors and the check tests wrapping and non-Latin.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0007",
+      "my_answer": "Count occurrences of a whole word in a text, not as part of another word.",
+      "reason": "The reference correctly emphasizes whole-word matching. The rubric covers the essential behaviors and the check tests partial matches.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0057",
+      "my_answer": "Check if a number is an Armstrong number where the power equals the number of digits.",
+      "reason": "The reference correctly states the power is the digit count. The rubric covers the key behaviors and the check tests single and multi-digit numbers.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0020",
+      "my_answer": "Encode a string using run-length encoding: each run of a character is replaced by the character followed by its count, even if count is 1.",
+      "reason": "The reference correctly describes the encoding. The rubric covers the essential behaviors and the check tests Arabic and single characters.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0066",
+      "my_answer": "Split a bill equally among n people to 2 decimal places, ensuring the sum equals the total exactly, distributing the remainder one unit at a time to the first shares.",
+      "reason": "The reference correctly describes the integer-based division and remainder distribution. The rubric covers the key requirements and the check tests exact sum and distribution.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0073",
+      "my_answer": "Calculate full years between two dates, not counting a year until the birthday has occurred in that year.",
+      "reason": "The reference correctly describes the age calculation. The rubric covers the key behaviors and the check tests leap day birthdays.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0014",
+      "my_answer": "Convert camelCase to snake_case by inserting an underscore before each uppercase letter (except the first) and lowercasing.",
+      "reason": "The reference correctly describes the conversion. The rubric covers the essential behaviors and the check tests various cases.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0071",
+      "my_answer": "Add n days (possibly negative) to a date in YYYY-MM-DD format, handling month/year boundaries and leap years.",
+      "reason": "The reference correctly suggests using timedelta. The rubric covers the key behaviors and the check tests boundaries and negative n.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0062",
+      "my_answer": "Convert a binary string to an integer, raising ValueError for empty or invalid characters.",
+      "reason": "The reference correctly describes the strict conversion. The rubric covers the essential behaviors and the check tests invalid inputs.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0072",
+      "my_answer": "Return the Arabic weekday name for a date, mapping Monday=0 to 'الاثنين', etc.",
+      "reason": "The reference correctly describes the mapping. The rubric covers the key behaviors and the check tests specific dates.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0013",
+      "my_answer": "Count the number of sentences by counting sentence-ending punctuation marks: . ! ؟ ?",
+      "reason": "The reference correctly lists the four punctuation marks. The rubric covers the essential behaviors and the check tests Arabic and English.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0061",
+      "my_answer": "Check if a number is perfect: equal to the sum of its proper divisors (excluding itself); numbers < 1 are not perfect.",
+      "reason": "The reference correctly describes the perfect number definition. The rubric covers the key behaviors and the check tests 6, 28, 12, 1, and negative.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0040",
+      "my_answer": "Return the nth element from the end of a list (1 = last), or None if n is out of range or non-positive.",
+      "reason": "The reference correctly describes the indexing. The rubric covers the essential behaviors and the check tests boundaries.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0025",
+      "my_answer": "Flatten a list one level: elements of inner lists are pulled out, non-list elements remain as is.",
+      "reason": "The reference correctly describes one-level flattening. The rubric covers the key behaviors and the check tests nested lists.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0009",
+      "my_answer": "Remove all Latin vowels (a, e, i, o, u) in both cases from the text, keeping everything else.",
+      "reason": "The reference correctly specifies the set of vowels. The rubric covers the essential behaviors and the check tests with Arabic.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0043",
+      "my_answer": "Count words by their first letter, returning a dictionary with counts.",
+      "reason": "The reference correctly describes the grouping. The rubric covers the key behaviors and the check tests Arabic words.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0023",
+      "my_answer": "Remove only consecutive duplicates from a list, keeping non-adjacent duplicates.",
+      "reason": "The reference correctly describes the behavior. The rubric covers the essential points and the check tests with non-adjacent duplicates.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0068",
+      "my_answer": "Return the percentage change from old to new, or None if old is zero, without raising an exception.",
+      "reason": "The reference correctly describes the formula and zero handling. The rubric covers the key behaviors and the check tests negative change.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0016",
+      "my_answer": "Check if a password is strong: length >= 8, contains at least one lowercase, one uppercase, and one digit.",
+      "reason": "The reference correctly lists the four conditions. The rubric covers the essential behaviors and the check tests each missing condition.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0011",
+      "my_answer": "Mask all digits in a string with '*' except the last 4 digits, keeping non-digit characters in place; if there are 4 or fewer digits, leave unchanged.",
+      "reason": "The reference correctly describes the masking rule. The rubric covers the key behaviors and the check tests with hyphens and short numbers.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0064",
+      "my_answer": "Round a monetary amount to 2 decimal places using half-up rounding (e.g., 0.125 -> 0.13).",
+      "reason": "The reference correctly recommends Decimal with ROUND_HALF_UP to avoid floating-point issues. The rubric covers the key behaviors and the check tests tricky values.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0078",
+      "my_answer": "Return a letter grade based on score thresholds: >=90 'ممتاز', >=80 'جيد جدًّا', >=70 'جيد', >=60 'مقبول', else 'راسب'.",
+      "reason": "The reference correctly states inclusive thresholds and descending order. The rubric covers the key boundaries and the check tests them.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_a_0065",
+      "my_answer": "Return the total price including VAT: price * (1 + rate/100), rounded to 2 decimal places half-up.",
+      "reason": "The reference correctly describes the calculation and rounding. The rubric covers the key behaviors and the check tests with various prices.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T19:15:49Z"
+}

@@ -1,0 +1,304 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": "invalid_json",
+      "raw_output": ""
+    },
+    {
+      "attempt": 2,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_agentic_002\",\n  \"judgments\": [\n    {\n      \"id\": \"agentic_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعادة تسمية التابع calculate إلى compute_total في تعريف الصنف وفي checkout.py، مع بقاء السلوك كما هو واختفاء الاسم القديم.\",\n      \"reason\": \"السكربت يتحقق من أن compute_total يعمل، وأن calculate غير موجود في الملفين. المعايير تغطي التسمية والسلوك واختفاء الاسم القديم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تغيير قيمة CHANNEL من \\\"sms\\\" إلى \\\"push\\\" في sender.py، بحيث تنعكس على الإرسال والاستعلام، وعدم بقاء القيمة القديمة.\",\n      \"reason\": \"السكربت يتحقق من أن current_channel() == \\\"push\\\" وأن alert يستخدم push، وعدم وجود \\\"sms\\\" في sender.py و audit.py. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعادة تسمية on_request إلى handle_request في handlers.py و router.py، مع بقاء السلوك واختفاء الاسم القديم.\",\n      \"reason\": \"السكربت يتحقق من أن handle_request يعمل و ROUTES[\\\"/\\\"] يستدعيها، وعدم وجود on_request في الملفين. المعايير تغطي التسمية والسلوك.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعادة تسمية DEFAULT_LANG إلى DEFAULT_LOCALE في config.py و loader.py و fallback.py، مع بقاء القيمة والسلوك.\",\n      \"reason\": \"السكربت يتحقق من أن DEFAULT_LOCALE == \\\"ar\\\" وأن current_language و fallback_for يعملان، وعدم وجود DEFAULT_LANG في الملفات الثلاثة. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعادة تسمية مفتاح \\\"discount\\\" إلى \\\"discount_percent\\\" في config.json و engine.py، مع بقاء القيمة 10.\",\n      \"reason\": \"السكربت يتحقق من أن discount_percent() == 10 وأن المفتاح الجديد موجود، وعدم وجود المفتاح القديم في الملفين. المعايير تغطي التسمية والقراءة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تغيير المسار \\\"/api/getPrice\\\" إلى \\\"/api/price\\\" في routes.py و client.py، مع بقاء المسارات الأخرى.\",\n      \"reason\": \"السكربت يتحقق من أن price_endpoint() == \\\"/api/price\\\" وأن المسار الجديد في ROUTES، وعدم وجود المسار القديم في الملفين. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تحويل إعداد dark_mode: true إلى appearance: \\\"dark\\\" في config.json وتحديث theme.py لقراءته، مع بقاء الناتج \\\"داكن\\\".\",\n      \"reason\": \"السكربت يتحقق من أن theme_name() == \\\"داكن\\\" وأن cfg.get(\\\"appearance\\\") == \\\"dark\\\"، وعدم وجود dark_mode في الملفين. المعايير تغطي التحويل والسلوك.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نقل is_valid_email من utils/misc.py إلى utils/validators.py وتحديث الاستيراد في web/forms.py، مع بقاء shout في misc.py.\",\n      \"reason\": \"السكربت يتحقق من أن is_valid_email قابلة للاستيراد من utils.validators وأن accept يعمل، وعدم وجود تعريف الدالة في misc.py. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعادة تسمية NotFound إلى RecordNotFound في errors.py و repo.py و handler.py، مع بقاء السلوك الاستثنائي.\",\n      \"reason\": \"السكربت يتحقق من أن RecordNotFound يُستورد ويُرفع، وعدم وجود \\bNotFound\\b في الملفات الثلاثة. المعايير تغطي التسمية والسلوك.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعادة تسمية Invoice إلى SalesInvoice في invoice.py و service.py، مع بقاء الخصائص والسلوك.\",\n      \"reason\": \"السكربت يتحقق من أن build_invoice يعيد مثيل SalesInvoice، وعدم وجود \\bInvoice\\b في الملفين. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعادة تسمية العلم --out إلى --output في args.py مع تعطيل الاختصارات، بحيث يعمل --output ويرفض --out.\",\n      \"reason\": \"السكربت يتحقق من أن --output يعمل و --out يرفض (SystemExit). المعايير تغطي التسمية والسلوك.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعادة تسمية utils/helpers.py إلى utils/text.py وتحديث الاستيرادات وحذف الملف القديم.\",\n      \"reason\": \"السكربت يتحقق من وجود utils/text.py وعدم وجود utils/helpers.py، وأن list_items يعمل، وعدم وجود 'helpers' في الملفات. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعادة تسمية حقل \\\"mobile\\\" إلى \\\"phone\\\" في model.py و directory.py، مع بقاء القيم.\",\n      \"reason\": \"السكربت يتحقق من أن make_contact يعيد \\\"phone\\\" وأن phone_of يعمل، وعدم وجود 'mobile' في الملفين. المعايير تغطي التسمية والقراءة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تغيير مستوى التحذير من WARN إلى WARNING في logger.py و config.json، مع بقاء السطر سليمًا.\",\n      \"reason\": \"السكربت يتحقق من أن startup_warning() == \\\"WARNING: ...\\\" وأن cfg[\\\"level\\\"] == \\\"WARNING\\\"، وعدم وجود \\bWARN\\b في الملفين. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعادة تسمية TAX_2024 إلى VAT_RATE في engine.py و report.py و audit.py، مع بقاء النسبة والحسابات.\",\n      \"reason\": \"السكربت يتحقق من VAT_RATE == 0.05 وأن net و tax_line و expected_deduction تعمل، وعدم وجود TAX_2024 في الملفات الثلاثة. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إعادة تسمية مفتاح \\\"db_host\\\" إلى \\\"database_host\\\" في settings.json و db.py و backup.py، مع بقاء القيم.\",\n      \"reason\": \"السكربت يتحقق من أن connect_string و backup_target يعملان، وأن المفتاح الجديد موجود، وعدم وجود db_host في الملفات الثلاثة. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تغيير اسم عمود CSV من \\\"الكمية\\\" إلى \\\"العدد\\\" في stock.csv و loader.py، مع بقاء القيم.\",\n      \"reason\": \"السكربت يتحقق من أن first_quantity() == 50 وأن الترويسة تحتوي \\\"العدد\\\" ولا تحتوي \\\"الكمية\\\"، وعدم وجود 'الكمية' في loader.py. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"رفع TTL_SECONDS من 60 إلى 300 في cache/policy.py.\",\n      \"reason\": \"السكربت يتحقق من أن expires_at(1000) == 1300، مما يؤكد أن المدة أصبحت 300. المعايير تغطي التعديل في موضع التعريف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل divide ليعيد None عند القسمة على صفر، مع بقاء القسمة السليمة.\",\n      \"reason\": \"السكربت يتحقق من أن safe_ratio(1,0) == \\\"غير معرّف\\\" وأن safe_ratio(10,2) == 5. المعايير تغطي الحالة الحدّية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تغيير بادئة رقم الفاتورة من \\\"INV-\\\" إلى \\\"ف-\\\" في billing/numbers.py.\",\n      \"reason\": \"السكربت يتحقق من أن next_invoice_no() == \\\"ف-1001\\\". المعايير تغطي البادئة والترقيم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل format_price لإضافة فاصلة آلاف للأرقام الكبيرة مع بقاء اللاحقة.\",\n      \"reason\": \"السكربت يتحقق من أن receipt_line(\\\"جوال\\\", 12500) == \\\"جوال: 12,500 ر.س\\\" وأن format_price(999) == \\\"999 ر.س\\\". المعايير تغطي التنسيق.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تحديث WEEKEND ليشمل الجمعة والسبت في org/schedule.py.\",\n      \"reason\": \"السكربت يتحقق من أن is_weekend(\\\"الجمعة\\\") و is_weekend(\\\"السبت\\\") True و is_weekend(\\\"الأحد\\\") False. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل final_amount لتقريب الناتج إلى منزلتين عشريتين.\",\n      \"reason\": \"السكربت يتحقق من أن amount_text(99.99, 0.15) == \\\"المستحق: 114.99\\\". المعايير تغطي التقريب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"رفع MAX_RETRIES من 3 إلى 5 في net/client.py مع بقاء TIMEOUT.\",\n      \"reason\": \"السكربت يتحقق من أن plan[\\\"attempts\\\"] == 5 و plan[\\\"timeout\\\"] == 10. المعايير تغطي التعديل في موضع التعريف.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تغيير DEFAULT_PAGE_SIZE من 20 إلى 50 في web/pagination.py.\",\n      \"reason\": \"السكربت يتحقق من أن paginate(list(range(100))) يعيد 50 عنصرًا وأن size=10 يبقى محترمًا. المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل rank لترتيب تنازليًا بالنقاط وكسر التعادل بالاسم تصاعديًا.\",\n      \"reason\": \"السكربت يتحقق من أن names == [\\\"أمجاد\\\", \\\"بدر\\\", \\\"جود\\\"]، مما يؤكد الترتيب الصحيح. المعايير تغطي الترتيب وكسر التعادل.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل normalize_phone للحفاظ على علامة + البادئة مع إزالة الرموز الأخرى.\",\n      \"reason\": \"السكربت يتحقق من أن key_for(\\\"+966 55 123 4567\\\") == \\\"+966551234567\\\" وأن key_for(\\\"055 123 4567\\\") == \\\"0551234567\\\". المعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل slugify للحفاظ على الحروف العربية والإنجليزية والأرقام وتحويل المسافات إلى شرطات.\",\n      \"reason\": \"السكربت يتحقق من أن post_url(\\\"أخبار التقنية 2026\\\") == \\\"/blog/أخبار-التقنية-2026\\\" وأن post_url(\\\"hello world\\\") == \\\"/blog/hello-world\\\". المعايير تغطي السلوك.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل core/logger.py ليعيد \\\"INFO: \\\" بدل \\\"[INFO] \\\" مع بقاء النص.\",\n      \"reason\": \"السكربت يتحقق من أن boot() == \\\"INFO: بدء التشغيل\\\". المعايير تغطي التنسيق وعدم تغيير النص.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل services/welcome.py ليعيد \\\"أهلًا وسهلًا \\\" بدل \\\"مرحبا \\\" مع بقاء بقية الرسالة.\",\n      \"reason\": \"السكربت يتحقق من أن welcome_message(\\\"سلمى\\\") == \\\"أهلًا وسهلًا سلمى! يسعدنا انضمامك\\\". المعايير تغطي التعديل في التعريف الحي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل truncate لإلحاق \\\"…\\\" عند القص الفعلي فقط.\",\n      \"reason\": \"السكربت يتحقق من أن teaser(\\\"مرحبا بالعالم\\\") == \\\"مرحبا…\\\" وأن truncate(\\\"قص\\\", 5) == \\\"قص\\\". المعايير تغطي الإلحاق الشرطي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل mask_card لإظهار آخر 4 أرقام وإخفاء الباقي بنجوم بعدد الأرقام المخفية.\",\n      \"reason\": \"السكربت يتحقق من أن card_line(\\\"1234567812345678\\\") == \\\"البطاقة: ************5678\\\" (12 نجمة). المعايير تغطي الإخفاء الصحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل initials ليعيد الأحرف الأولى من كل جزء مفصولة بنقاط، مع عدم وجود نقطة زائدة للاسم الواحد.\",\n      \"reason\": \"السكربت يتحقق من أن badge(\\\"أحمد محمد علي\\\") == \\\"الشارة: أ.م.ع\\\" وأن badge(\\\"نورة\\\") == \\\"الشارة: ن\\\". المعايير تغطي الجمع والنقاط.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل is_valid_email لقبول علامة + في الجزء المحلي مع بقاء رفض الصيغ الفاسدة.\",\n      \"reason\": \"السكربت يتحقق من أن can_register(\\\"user+tag@example.com\\\") True و plain@example.com True و no-at-sign False. المعايير تغطي التوسيع.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"agentic_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعديل fmt_date إلى صيغة ISO بشرطات وأصفار بادئة (2026-09-24).\",\n      \"reason\": \"السكربت يتحقق من أن title_for(date(2026, 9, 24)) == \\\"تقرير يوم 2026-09-24\\\". المعايير تغطي الصيغة.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 381334,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_d/kimi_agentic_002.json",
+  "file_sha256": "b07e6e9c98671ac658a60e9fe6f7145439c1993da3dd206ad74ec551622f9b90",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "agentic_0035",
+      "my_answer": "إعادة تسمية التابع calculate إلى compute_total في تعريف الصنف وفي checkout.py، مع بقاء السلوك كما هو واختفاء الاسم القديم.",
+      "reason": "السكربت يتحقق من أن compute_total يعمل، وأن calculate غير موجود في الملفين. المعايير تغطي التسمية والسلوك واختفاء الاسم القديم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0050",
+      "my_answer": "تغيير قيمة CHANNEL من \"sms\" إلى \"push\" في sender.py، بحيث تنعكس على الإرسال والاستعلام، وعدم بقاء القيمة القديمة.",
+      "reason": "السكربت يتحقق من أن current_channel() == \"push\" وأن alert يستخدم push، وعدم وجود \"sms\" في sender.py و audit.py. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0037",
+      "my_answer": "إعادة تسمية on_request إلى handle_request في handlers.py و router.py، مع بقاء السلوك واختفاء الاسم القديم.",
+      "reason": "السكربت يتحقق من أن handle_request يعمل و ROUTES[\"/\"] يستدعيها، وعدم وجود on_request في الملفين. المعايير تغطي التسمية والسلوك.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0042",
+      "my_answer": "إعادة تسمية DEFAULT_LANG إلى DEFAULT_LOCALE في config.py و loader.py و fallback.py، مع بقاء القيمة والسلوك.",
+      "reason": "السكربت يتحقق من أن DEFAULT_LOCALE == \"ar\" وأن current_language و fallback_for يعملان، وعدم وجود DEFAULT_LANG في الملفات الثلاثة. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0040",
+      "my_answer": "إعادة تسمية مفتاح \"discount\" إلى \"discount_percent\" في config.json و engine.py، مع بقاء القيمة 10.",
+      "reason": "السكربت يتحقق من أن discount_percent() == 10 وأن المفتاح الجديد موجود، وعدم وجود المفتاح القديم في الملفين. المعايير تغطي التسمية والقراءة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0045",
+      "my_answer": "تغيير المسار \"/api/getPrice\" إلى \"/api/price\" في routes.py و client.py، مع بقاء المسارات الأخرى.",
+      "reason": "السكربت يتحقق من أن price_endpoint() == \"/api/price\" وأن المسار الجديد في ROUTES، وعدم وجود المسار القديم في الملفين. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0038",
+      "my_answer": "تحويل إعداد dark_mode: true إلى appearance: \"dark\" في config.json وتحديث theme.py لقراءته، مع بقاء الناتج \"داكن\".",
+      "reason": "السكربت يتحقق من أن theme_name() == \"داكن\" وأن cfg.get(\"appearance\") == \"dark\"، وعدم وجود dark_mode في الملفين. المعايير تغطي التحويل والسلوك.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0032",
+      "my_answer": "نقل is_valid_email من utils/misc.py إلى utils/validators.py وتحديث الاستيراد في web/forms.py، مع بقاء shout في misc.py.",
+      "reason": "السكربت يتحقق من أن is_valid_email قابلة للاستيراد من utils.validators وأن accept يعمل، وعدم وجود تعريف الدالة في misc.py. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0044",
+      "my_answer": "إعادة تسمية NotFound إلى RecordNotFound في errors.py و repo.py و handler.py، مع بقاء السلوك الاستثنائي.",
+      "reason": "السكربت يتحقق من أن RecordNotFound يُستورد ويُرفع، وعدم وجود \bNotFound\b في الملفات الثلاثة. المعايير تغطي التسمية والسلوك.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0031",
+      "my_answer": "إعادة تسمية Invoice إلى SalesInvoice في invoice.py و service.py، مع بقاء الخصائص والسلوك.",
+      "reason": "السكربت يتحقق من أن build_invoice يعيد مثيل SalesInvoice، وعدم وجود \bInvoice\b في الملفين. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0033",
+      "my_answer": "إعادة تسمية العلم --out إلى --output في args.py مع تعطيل الاختصارات، بحيث يعمل --output ويرفض --out.",
+      "reason": "السكربت يتحقق من أن --output يعمل و --out يرفض (SystemExit). المعايير تغطي التسمية والسلوك.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0039",
+      "my_answer": "إعادة تسمية utils/helpers.py إلى utils/text.py وتحديث الاستيرادات وحذف الملف القديم.",
+      "reason": "السكربت يتحقق من وجود utils/text.py وعدم وجود utils/helpers.py، وأن list_items يعمل، وعدم وجود 'helpers' في الملفات. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0041",
+      "my_answer": "إعادة تسمية حقل \"mobile\" إلى \"phone\" في model.py و directory.py، مع بقاء القيم.",
+      "reason": "السكربت يتحقق من أن make_contact يعيد \"phone\" وأن phone_of يعمل، وعدم وجود 'mobile' في الملفين. المعايير تغطي التسمية والقراءة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0043",
+      "my_answer": "تغيير مستوى التحذير من WARN إلى WARNING في logger.py و config.json، مع بقاء السطر سليمًا.",
+      "reason": "السكربت يتحقق من أن startup_warning() == \"WARNING: ...\" وأن cfg[\"level\"] == \"WARNING\"، وعدم وجود \bWARN\b في الملفين. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0036",
+      "my_answer": "إعادة تسمية TAX_2024 إلى VAT_RATE في engine.py و report.py و audit.py، مع بقاء النسبة والحسابات.",
+      "reason": "السكربت يتحقق من VAT_RATE == 0.05 وأن net و tax_line و expected_deduction تعمل، وعدم وجود TAX_2024 في الملفات الثلاثة. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0026",
+      "my_answer": "إعادة تسمية مفتاح \"db_host\" إلى \"database_host\" في settings.json و db.py و backup.py، مع بقاء القيم.",
+      "reason": "السكربت يتحقق من أن connect_string و backup_target يعملان، وأن المفتاح الجديد موجود، وعدم وجود db_host في الملفات الثلاثة. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0046",
+      "my_answer": "تغيير اسم عمود CSV من \"الكمية\" إلى \"العدد\" في stock.csv و loader.py، مع بقاء القيم.",
+      "reason": "السكربت يتحقق من أن first_quantity() == 50 وأن الترويسة تحتوي \"العدد\" ولا تحتوي \"الكمية\"، وعدم وجود 'الكمية' في loader.py. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0015",
+      "my_answer": "رفع TTL_SECONDS من 60 إلى 300 في cache/policy.py.",
+      "reason": "السكربت يتحقق من أن expires_at(1000) == 1300، مما يؤكد أن المدة أصبحت 300. المعايير تغطي التعديل في موضع التعريف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0011",
+      "my_answer": "تعديل divide ليعيد None عند القسمة على صفر، مع بقاء القسمة السليمة.",
+      "reason": "السكربت يتحقق من أن safe_ratio(1,0) == \"غير معرّف\" وأن safe_ratio(10,2) == 5. المعايير تغطي الحالة الحدّية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0022",
+      "my_answer": "تغيير بادئة رقم الفاتورة من \"INV-\" إلى \"ف-\" في billing/numbers.py.",
+      "reason": "السكربت يتحقق من أن next_invoice_no() == \"ف-1001\". المعايير تغطي البادئة والترقيم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0002",
+      "my_answer": "تعديل format_price لإضافة فاصلة آلاف للأرقام الكبيرة مع بقاء اللاحقة.",
+      "reason": "السكربت يتحقق من أن receipt_line(\"جوال\", 12500) == \"جوال: 12,500 ر.س\" وأن format_price(999) == \"999 ر.س\". المعايير تغطي التنسيق.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0024",
+      "my_answer": "تحديث WEEKEND ليشمل الجمعة والسبت في org/schedule.py.",
+      "reason": "السكربت يتحقق من أن is_weekend(\"الجمعة\") و is_weekend(\"السبت\") True و is_weekend(\"الأحد\") False. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0014",
+      "my_answer": "تعديل final_amount لتقريب الناتج إلى منزلتين عشريتين.",
+      "reason": "السكربت يتحقق من أن amount_text(99.99, 0.15) == \"المستحق: 114.99\". المعايير تغطي التقريب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0006",
+      "my_answer": "رفع MAX_RETRIES من 3 إلى 5 في net/client.py مع بقاء TIMEOUT.",
+      "reason": "السكربت يتحقق من أن plan[\"attempts\"] == 5 و plan[\"timeout\"] == 10. المعايير تغطي التعديل في موضع التعريف.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0012",
+      "my_answer": "تغيير DEFAULT_PAGE_SIZE من 20 إلى 50 في web/pagination.py.",
+      "reason": "السكربت يتحقق من أن paginate(list(range(100))) يعيد 50 عنصرًا وأن size=10 يبقى محترمًا. المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0019",
+      "my_answer": "تعديل rank لترتيب تنازليًا بالنقاط وكسر التعادل بالاسم تصاعديًا.",
+      "reason": "السكربت يتحقق من أن names == [\"أمجاد\", \"بدر\", \"جود\"]، مما يؤكد الترتيب الصحيح. المعايير تغطي الترتيب وكسر التعادل.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0013",
+      "my_answer": "تعديل normalize_phone للحفاظ على علامة + البادئة مع إزالة الرموز الأخرى.",
+      "reason": "السكربت يتحقق من أن key_for(\"+966 55 123 4567\") == \"+966551234567\" وأن key_for(\"055 123 4567\") == \"0551234567\". المعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0005",
+      "my_answer": "تعديل slugify للحفاظ على الحروف العربية والإنجليزية والأرقام وتحويل المسافات إلى شرطات.",
+      "reason": "السكربت يتحقق من أن post_url(\"أخبار التقنية 2026\") == \"/blog/أخبار-التقنية-2026\" وأن post_url(\"hello world\") == \"/blog/hello-world\". المعايير تغطي السلوك.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0016",
+      "my_answer": "تعديل core/logger.py ليعيد \"INFO: \" بدل \"[INFO] \" مع بقاء النص.",
+      "reason": "السكربت يتحقق من أن boot() == \"INFO: بدء التشغيل\". المعايير تغطي التنسيق وعدم تغيير النص.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0003",
+      "my_answer": "تعديل services/welcome.py ليعيد \"أهلًا وسهلًا \" بدل \"مرحبا \" مع بقاء بقية الرسالة.",
+      "reason": "السكربت يتحقق من أن welcome_message(\"سلمى\") == \"أهلًا وسهلًا سلمى! يسعدنا انضمامك\". المعايير تغطي التعديل في التعريف الحي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0020",
+      "my_answer": "تعديل truncate لإلحاق \"…\" عند القص الفعلي فقط.",
+      "reason": "السكربت يتحقق من أن teaser(\"مرحبا بالعالم\") == \"مرحبا…\" وأن truncate(\"قص\", 5) == \"قص\". المعايير تغطي الإلحاق الشرطي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0023",
+      "my_answer": "تعديل mask_card لإظهار آخر 4 أرقام وإخفاء الباقي بنجوم بعدد الأرقام المخفية.",
+      "reason": "السكربت يتحقق من أن card_line(\"1234567812345678\") == \"البطاقة: ************5678\" (12 نجمة). المعايير تغطي الإخفاء الصحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0018",
+      "my_answer": "تعديل initials ليعيد الأحرف الأولى من كل جزء مفصولة بنقاط، مع عدم وجود نقطة زائدة للاسم الواحد.",
+      "reason": "السكربت يتحقق من أن badge(\"أحمد محمد علي\") == \"الشارة: أ.م.ع\" وأن badge(\"نورة\") == \"الشارة: ن\". المعايير تغطي الجمع والنقاط.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0008",
+      "my_answer": "تعديل is_valid_email لقبول علامة + في الجزء المحلي مع بقاء رفض الصيغ الفاسدة.",
+      "reason": "السكربت يتحقق من أن can_register(\"user+tag@example.com\") True و plain@example.com True و no-at-sign False. المعايير تغطي التوسيع.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "agentic_0010",
+      "my_answer": "تعديل fmt_date إلى صيغة ISO بشرطات وأصفار بادئة (2026-09-24).",
+      "reason": "السكربت يتحقق من أن title_for(date(2026, 9, 24)) == \"تقرير يوم 2026-09-24\". المعايير تغطي الصيغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T20:31:45Z"
+}

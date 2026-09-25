@@ -1,0 +1,515 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_logic_a_002.json\",\n  \"judgments\": [\n    {\n      \"id\": \"fallcy_a_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، وضع المقدم\",\n      \"reason\": \"القياس على صورة: إذا P فإن Q، وP، إذن Q. هذا هو وضع المقدم وهو صحيح منطقيًا. المرجع مطابق.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، وضع المقدم\",\n      \"reason\": \"نفس البنية: إذا P فإن Q، وP، إذن Q. صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، وضع المقدم\",\n      \"reason\": \"وضع المقدم صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، وضع المقدم\",\n      \"reason\": \"وضع المقدم صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، وضع المقدم\",\n      \"reason\": \"وضع المقدم صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، وضع المقدم\",\n      \"reason\": \"وضع المقدم صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، وضع المقدم\",\n      \"reason\": \"وضع المقدم صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0072\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، وضع المقدم\",\n      \"reason\": \"وضع المقدم صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0057\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إثبات التالي\",\n      \"reason\": \"القياس: إذا P فإن Q، وQ، إذن P. هذا إثبات التالي وهو مغالطة. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د، إثبات التالي\",\n      \"reason\": \"القياس: إذا P فإن Q، وQ، إذن P. إثبات التالي. الخيار د صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إنكار المقدم\",\n      \"reason\": \"القياس: إذا P فإن Q، وليس P، إذن ليس Q. إنكار المقدم وهو مغالطة. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. الخيار ج صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إثبات التالي\",\n      \"reason\": \"إثبات التالي. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب، إثبات التالي\",\n      \"reason\": \"إثبات التالي. الخيار ب صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ، إثبات التالي\",\n      \"reason\": \"إثبات التالي. الخيار أ صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. الخيار ب صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. الخيار د صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. الخيار ب صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. الخيار ج صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د، إثبات التالي\",\n      \"reason\": \"إثبات التالي. الخيار د صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. الخيار د صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ، إثبات التالي\",\n      \"reason\": \"إثبات التالي. الخيار أ صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إثبات التالي\",\n      \"reason\": \"إثبات التالي. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0081\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د، إثبات التالي\",\n      \"reason\": \"إثبات التالي. الخيار د صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب، كلام سليم\",\n      \"reason\": \"استدلال استقرائي معقول بعينة ممثلة، لا مغالطة. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0084\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إثبات التالي\",\n      \"reason\": \"إثبات التالي. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إثبات التالي\",\n      \"reason\": \"إثبات التالي. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب، تعميم متسرع\",\n      \"reason\": \"تعميم من حالة واحدة. الخيار ب صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د، تعميم متسرع\",\n      \"reason\": \"تعميم من حالتين. الخيار د صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج، صحيح (نفي التالي)\",\n      \"reason\": \"نفي التالي صحيح. الخيار ج صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، نفي التالي\",\n      \"reason\": \"نفي التالي صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د، تعميم متسرع\",\n      \"reason\": \"تعميم من يوم واحد. الخيار د صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د، رجل القش\",\n      \"reason\": \"تحريف موقف الخصم. الخيار د صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب، تعميم متسرع\",\n      \"reason\": \"تعميم من منتج واحد. الخيار ب صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ، الاحتكام إلى الجهل\",\n      \"reason\": \"الاستدلال من عدم الإثبات إلى النفي القاطع. الخيار أ صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب، التفاف\",\n      \"reason\": \"مصادرة على المطلوب. الخيار ب صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ، تعميم متسرع\",\n      \"reason\": \"تعميم من بائع واحد. الخيار أ صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج، صحيح (نفي التالي)\",\n      \"reason\": \"نفي التالي صحيح. الخيار ج صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، نفي التالي\",\n      \"reason\": \"نفي التالي صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إثبات التالي\",\n      \"reason\": \"إثبات التالي. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج، التفاف\",\n      \"reason\": \"مصادرة على المطلوب. الخيار ج صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ، الاحتكام إلى الجهل\",\n      \"reason\": \"الاستدلال من عدم التفسير إلى الحقيقة. الخيار أ صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج، رجل القش\",\n      \"reason\": \"تحريف موقف المعلمة. الخيار ج صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، نفي التالي\",\n      \"reason\": \"نفي التالي صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"د، صحيح (نفي التالي)\",\n      \"reason\": \"نفي التالي صحيح. الخيار د صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ب، رجل القش\",\n      \"reason\": \"تحريف موقف المدرب. الخيار ب صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج، صحيح (نفي التالي)\",\n      \"reason\": \"نفي التالي صحيح. الخيار ج صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ، الاحتكام إلى الجهل\",\n      \"reason\": \"الاستدلال من عدم إثبات الضرر إلى السلامة المطلقة. الخيار أ صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ج، التفاف\",\n      \"reason\": \"مصادرة على المطلوب. الخيار ج صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ، التفاف\",\n      \"reason\": \"مصادرة على المطلوب. الخيار أ صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صحيح، نفي التالي\",\n      \"reason\": \"نفي التالي صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أ، الاحتكام إلى الجهل\",\n      \"reason\": \"الاستدلال من عدم وجود دليل إلى الاستحالة. الخيار أ صحيح. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0082\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إثبات التالي\",\n      \"reason\": \"إثبات التالي. المرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"fallcy_a_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فاسد، إنكار المقدم\",\n      \"reason\": \"إنكار المقدم. المرجع صحيح.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 48360,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_logic_a_002.json",
+  "file_sha256": "f47bf44f6c362a6ee93571b1df08f76a4a123601da8d7927d03b8e90ebbd6845",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "fallcy_a_0037",
+      "my_answer": "صحيح، وضع المقدم",
+      "reason": "القياس على صورة: إذا P فإن Q، وP، إذن Q. هذا هو وضع المقدم وهو صحيح منطقيًا. المرجع مطابق.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0041",
+      "my_answer": "صحيح، وضع المقدم",
+      "reason": "نفس البنية: إذا P فإن Q، وP، إذن Q. صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0049",
+      "my_answer": "صحيح، وضع المقدم",
+      "reason": "وضع المقدم صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0015",
+      "my_answer": "صحيح، وضع المقدم",
+      "reason": "وضع المقدم صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0066",
+      "my_answer": "صحيح، وضع المقدم",
+      "reason": "وضع المقدم صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0012",
+      "my_answer": "صحيح، وضع المقدم",
+      "reason": "وضع المقدم صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0042",
+      "my_answer": "صحيح، وضع المقدم",
+      "reason": "وضع المقدم صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0072",
+      "my_answer": "صحيح، وضع المقدم",
+      "reason": "وضع المقدم صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0057",
+      "my_answer": "فاسد، إثبات التالي",
+      "reason": "القياس: إذا P فإن Q، وQ، إذن P. هذا إثبات التالي وهو مغالطة. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0077",
+      "my_answer": "د، إثبات التالي",
+      "reason": "القياس: إذا P فإن Q، وQ، إذن P. إثبات التالي. الخيار د صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0064",
+      "my_answer": "فاسد، إنكار المقدم",
+      "reason": "القياس: إذا P فإن Q، وليس P، إذن ليس Q. إنكار المقدم وهو مغالطة. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0001",
+      "my_answer": "ج، إنكار المقدم",
+      "reason": "إنكار المقدم. الخيار ج صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0075",
+      "my_answer": "فاسد، إثبات التالي",
+      "reason": "إثبات التالي. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0060",
+      "my_answer": "ب، إثبات التالي",
+      "reason": "إثبات التالي. الخيار ب صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0062",
+      "my_answer": "أ، إثبات التالي",
+      "reason": "إثبات التالي. الخيار أ صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0040",
+      "my_answer": "ب، إنكار المقدم",
+      "reason": "إنكار المقدم. الخيار ب صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0022",
+      "my_answer": "د، إنكار المقدم",
+      "reason": "إنكار المقدم. الخيار د صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0027",
+      "my_answer": "ب، إنكار المقدم",
+      "reason": "إنكار المقدم. الخيار ب صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0035",
+      "my_answer": "ج، إنكار المقدم",
+      "reason": "إنكار المقدم. الخيار ج صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0019",
+      "my_answer": "د، إثبات التالي",
+      "reason": "إثبات التالي. الخيار د صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0065",
+      "my_answer": "د، إنكار المقدم",
+      "reason": "إنكار المقدم. الخيار د صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0005",
+      "my_answer": "أ، إثبات التالي",
+      "reason": "إثبات التالي. الخيار أ صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0011",
+      "my_answer": "فاسد، إنكار المقدم",
+      "reason": "إنكار المقدم. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0016",
+      "my_answer": "فاسد، إنكار المقدم",
+      "reason": "إنكار المقدم. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0038",
+      "my_answer": "فاسد، إثبات التالي",
+      "reason": "إثبات التالي. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0030",
+      "my_answer": "فاسد، إنكار المقدم",
+      "reason": "إنكار المقدم. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0081",
+      "my_answer": "د، إثبات التالي",
+      "reason": "إثبات التالي. الخيار د صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0051",
+      "my_answer": "ب، كلام سليم",
+      "reason": "استدلال استقرائي معقول بعينة ممثلة، لا مغالطة. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0084",
+      "my_answer": "فاسد، إثبات التالي",
+      "reason": "إثبات التالي. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0063",
+      "my_answer": "فاسد، إثبات التالي",
+      "reason": "إثبات التالي. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0006",
+      "my_answer": "ب، تعميم متسرع",
+      "reason": "تعميم من حالة واحدة. الخيار ب صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0088",
+      "my_answer": "د، تعميم متسرع",
+      "reason": "تعميم من حالتين. الخيار د صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0047",
+      "my_answer": "ج، صحيح (نفي التالي)",
+      "reason": "نفي التالي صحيح. الخيار ج صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0031",
+      "my_answer": "فاسد، إنكار المقدم",
+      "reason": "إنكار المقدم. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0050",
+      "my_answer": "صحيح، نفي التالي",
+      "reason": "نفي التالي صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0074",
+      "my_answer": "د، تعميم متسرع",
+      "reason": "تعميم من يوم واحد. الخيار د صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0079",
+      "my_answer": "د، رجل القش",
+      "reason": "تحريف موقف الخصم. الخيار د صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0046",
+      "my_answer": "ب، تعميم متسرع",
+      "reason": "تعميم من منتج واحد. الخيار ب صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0070",
+      "my_answer": "فاسد، إنكار المقدم",
+      "reason": "إنكار المقدم. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0014",
+      "my_answer": "أ، الاحتكام إلى الجهل",
+      "reason": "الاستدلال من عدم الإثبات إلى النفي القاطع. الخيار أ صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0002",
+      "my_answer": "ب، التفاف",
+      "reason": "مصادرة على المطلوب. الخيار ب صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0033",
+      "my_answer": "أ، تعميم متسرع",
+      "reason": "تعميم من بائع واحد. الخيار أ صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0032",
+      "my_answer": "ج، صحيح (نفي التالي)",
+      "reason": "نفي التالي صحيح. الخيار ج صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0055",
+      "my_answer": "صحيح، نفي التالي",
+      "reason": "نفي التالي صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0007",
+      "my_answer": "فاسد، إثبات التالي",
+      "reason": "إثبات التالي. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0028",
+      "my_answer": "ج، التفاف",
+      "reason": "مصادرة على المطلوب. الخيار ج صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0029",
+      "my_answer": "أ، الاحتكام إلى الجهل",
+      "reason": "الاستدلال من عدم التفسير إلى الحقيقة. الخيار أ صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0004",
+      "my_answer": "فاسد، إنكار المقدم",
+      "reason": "إنكار المقدم. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0071",
+      "my_answer": "ج، رجل القش",
+      "reason": "تحريف موقف المعلمة. الخيار ج صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0008",
+      "my_answer": "صحيح، نفي التالي",
+      "reason": "نفي التالي صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0089",
+      "my_answer": "د، صحيح (نفي التالي)",
+      "reason": "نفي التالي صحيح. الخيار د صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0068",
+      "my_answer": "فاسد، إنكار المقدم",
+      "reason": "إنكار المقدم. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0010",
+      "my_answer": "ب، رجل القش",
+      "reason": "تحريف موقف المدرب. الخيار ب صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0025",
+      "my_answer": "ج، صحيح (نفي التالي)",
+      "reason": "نفي التالي صحيح. الخيار ج صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0078",
+      "my_answer": "أ، الاحتكام إلى الجهل",
+      "reason": "الاستدلال من عدم إثبات الضرر إلى السلامة المطلقة. الخيار أ صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0058",
+      "my_answer": "ج، التفاف",
+      "reason": "مصادرة على المطلوب. الخيار ج صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0018",
+      "my_answer": "أ، التفاف",
+      "reason": "مصادرة على المطلوب. الخيار أ صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0039",
+      "my_answer": "صحيح، نفي التالي",
+      "reason": "نفي التالي صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0056",
+      "my_answer": "فاسد، إنكار المقدم",
+      "reason": "إنكار المقدم. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0076",
+      "my_answer": "أ، الاحتكام إلى الجهل",
+      "reason": "الاستدلال من عدم وجود دليل إلى الاستحالة. الخيار أ صحيح. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0082",
+      "my_answer": "فاسد، إثبات التالي",
+      "reason": "إثبات التالي. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "fallcy_a_0045",
+      "my_answer": "فاسد، إنكار المقدم",
+      "reason": "إنكار المقدم. المرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T18:59:34Z"
+}

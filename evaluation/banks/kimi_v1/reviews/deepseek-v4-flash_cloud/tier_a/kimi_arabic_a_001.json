@@ -1,0 +1,560 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": "invalid_json",
+      "raw_output": ""
+    },
+    {
+      "attempt": 2,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek-v3\",\n  \"file\": \"kimi_arabic_a_001.json\",\n  \"judgments\": [\n    {\n      \"id\": \"morph_a_0108\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تَفْعِيل\",\n      \"reason\": \"تقدير على وزن تفعيل، والمرجع مطابق.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0101\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فَعِلَ\",\n      \"reason\": \"علمَ على وزن فعل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0319\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مشرق\",\n      \"reason\": \"اسم المكان من شرق هو مشرق، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كتب\",\n      \"reason\": \"جذر مكتبة هو كتب بعد حذف الزوائد، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0304\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"واقف\",\n      \"reason\": \"اسم الفاعل من وقف هو واقف، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0204\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أقلام\",\n      \"reason\": \"جمع تكسير قلم هو أقلام، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0102\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فَعُلَ\",\n      \"reason\": \"حسنَ على وزن فعل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0104\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مَفْعُول\",\n      \"reason\": \"مكتوب على وزن مفعول، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"درس\",\n      \"reason\": \"جذر مدرسة هو درس، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0103\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مَفْعَل\",\n      \"reason\": \"مكتب على وزن مفعل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0216\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"شيوخ\",\n      \"reason\": \"جمع تكسير شيخ هو شيوخ، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0301\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كاتب\",\n      \"reason\": \"اسم الفاعل من كتب هو كاتب، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0107\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اِنْفَعَلَ\",\n      \"reason\": \"انكسر على وزن انفعل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0106\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اِسْتَفْعَلَ\",\n      \"reason\": \"استغفر على وزن استفعل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0313\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعليم\",\n      \"reason\": \"مصدر علّم هو تعليم، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0307\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مفهوم\",\n      \"reason\": \"اسم المفعول من فهم هو مفهوم، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0113\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فَعُول\",\n      \"reason\": \"صبور على وزن فعول، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0205\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نجوم\",\n      \"reason\": \"جمع تكسير نجم هو نجوم، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0213\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سفن\",\n      \"reason\": \"جمع تكسير سفينة هو سفن، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0212\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جزر\",\n      \"reason\": \"جمع تكسير جزيرة هو جزر، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0202\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مساجد\",\n      \"reason\": \"جمع تكسير مسجد هو مساجد، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0218\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كواكب\",\n      \"reason\": \"جمع تكسير كوكب هو كواكب، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"غفر\",\n      \"reason\": \"جذر استغفار هو غفر، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0317\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قيام\",\n      \"reason\": \"مصدر قام هو قيام، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0105\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مُفَعِّل\",\n      \"reason\": \"معلّم على وزن مفعّل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0315\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تعاون\",\n      \"reason\": \"مصدر تعاون هو تعاون، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"خرج\",\n      \"reason\": \"جذر استخراج هو خرج، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0320\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"موعد\",\n      \"reason\": \"اسم المكان من وعد هو موعد، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0120\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مُتَفَاعِل\",\n      \"reason\": \"متقاعد على وزن متفاعل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0121\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إِفْعَالَة\",\n      \"reason\": \"إعادة على وزن إفعالة، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0219\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حيطان\",\n      \"reason\": \"جمع تكسير حائط هو حيطان، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وعد\",\n      \"reason\": \"جذر ميعاد هو وعد، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0211\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أحصنة\",\n      \"reason\": \"جمع تكسير حصان هو أحصنة، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وزن\",\n      \"reason\": \"جذر ميزان هو وزن، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"عدو\",\n      \"reason\": \"جذر معدية هو عدو، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0122\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فَعْلال\",\n      \"reason\": \"زلزال على وزن فعلال، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0312\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المعطى\",\n      \"reason\": \"اسم المفعول من أعطى معرّفًا هو المعطى، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0310\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مبيع\",\n      \"reason\": \"اسم المفعول من باع هو مبيع، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0117\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مُسْتَفْعَل\",\n      \"reason\": \"مستشفى على وزن مستفعل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قوم\",\n      \"reason\": \"جذر مقام هو قوم، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0223\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أشهر\",\n      \"reason\": \"جمع قلة شهر هو أشهر، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ترجم\",\n      \"reason\": \"جذر ترجمان هو ترجم، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0118\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مِفْعَال\",\n      \"reason\": \"مفتاح على وزن مفعال، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0222\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أثواب\",\n      \"reason\": \"جمع قلة ثوب هو أثواب، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0123\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تَفَعْلَلَ\",\n      \"reason\": \"تدحرج على وزن تفعلل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0119\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مُفْتَعَل\",\n      \"reason\": \"مجتمع على وزن مفتعل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"طور\",\n      \"reason\": \"جذر مطار هو طور، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0111\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اِسْتِفْعَال\",\n      \"reason\": \"استقلال على وزن استفعال، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0305\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"آخذ\",\n      \"reason\": \"اسم الفاعل من أخذ هو آخذ، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وثق\",\n      \"reason\": \"جذر وثيقة هو وثق، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0316\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجادلة\",\n      \"reason\": \"مصدر جادل على وزن مفاعلة هو مجادلة، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0110\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تَفَاعَلَ\",\n      \"reason\": \"تكاتف على وزن تفاعل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0302\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قارئ\",\n      \"reason\": \"اسم الفاعل من قرأ هو قارئ، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0321\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مكنسة\",\n      \"reason\": \"اسم الآلة من كنس هو مكنسة، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0209\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"غرباء\",\n      \"reason\": \"جمع تكسير غريب هو غرباء، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0115\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فُعَال\",\n      \"reason\": \"غراب على وزن فعال، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0116\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تَفَعَّلَ\",\n      \"reason\": \"تذكر على وزن تفعّل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"زلزل\",\n      \"reason\": \"جذر زلزال هو زلزل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0326\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"بائع\",\n      \"reason\": \"اسم الفاعل من باع هو بائع، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0112\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مُفَاعَلَة\",\n      \"reason\": \"مخالفة على وزن مفاعلة، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0308\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"موعود\",\n      \"reason\": \"اسم المفعول من وعد هو موعود، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وعظ\",\n      \"reason\": \"جذر موعظة هو وعظ، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0318\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجيء\",\n      \"reason\": \"مصدر جاء هو مجيء، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0208\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أحذية\",\n      \"reason\": \"جمع تكسير حذاء هو أحذية، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ودع\",\n      \"reason\": \"جذر مستودع هو ودع، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سأل\",\n      \"reason\": \"جذر تساؤل هو سأل، والمرجع صحيح.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"morph_a_0125\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اِفْتَعَلَ\",\n      \"reason\": \"اكتشف على وزن افتعل، والمرجع صحيح.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 434659,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_arabic_a_001.json",
+  "file_sha256": "5677a1996e64f809e4dbd35de4eba7a5623146bdbde55229b0ff6ccc6268c98e",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "morph_a_0108",
+      "my_answer": "تَفْعِيل",
+      "reason": "تقدير على وزن تفعيل، والمرجع مطابق.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0101",
+      "my_answer": "فَعِلَ",
+      "reason": "علمَ على وزن فعل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0319",
+      "my_answer": "مشرق",
+      "reason": "اسم المكان من شرق هو مشرق، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0003",
+      "my_answer": "كتب",
+      "reason": "جذر مكتبة هو كتب بعد حذف الزوائد، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0304",
+      "my_answer": "واقف",
+      "reason": "اسم الفاعل من وقف هو واقف، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0204",
+      "my_answer": "أقلام",
+      "reason": "جمع تكسير قلم هو أقلام، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0102",
+      "my_answer": "فَعُلَ",
+      "reason": "حسنَ على وزن فعل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0104",
+      "my_answer": "مَفْعُول",
+      "reason": "مكتوب على وزن مفعول، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0002",
+      "my_answer": "درس",
+      "reason": "جذر مدرسة هو درس، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0103",
+      "my_answer": "مَفْعَل",
+      "reason": "مكتب على وزن مفعل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0216",
+      "my_answer": "شيوخ",
+      "reason": "جمع تكسير شيخ هو شيوخ، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0301",
+      "my_answer": "كاتب",
+      "reason": "اسم الفاعل من كتب هو كاتب، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0107",
+      "my_answer": "اِنْفَعَلَ",
+      "reason": "انكسر على وزن انفعل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0106",
+      "my_answer": "اِسْتَفْعَلَ",
+      "reason": "استغفر على وزن استفعل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0313",
+      "my_answer": "تعليم",
+      "reason": "مصدر علّم هو تعليم، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0307",
+      "my_answer": "مفهوم",
+      "reason": "اسم المفعول من فهم هو مفهوم، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0113",
+      "my_answer": "فَعُول",
+      "reason": "صبور على وزن فعول، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0205",
+      "my_answer": "نجوم",
+      "reason": "جمع تكسير نجم هو نجوم، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0213",
+      "my_answer": "سفن",
+      "reason": "جمع تكسير سفينة هو سفن، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0212",
+      "my_answer": "جزر",
+      "reason": "جمع تكسير جزيرة هو جزر، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0202",
+      "my_answer": "مساجد",
+      "reason": "جمع تكسير مسجد هو مساجد، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0218",
+      "my_answer": "كواكب",
+      "reason": "جمع تكسير كوكب هو كواكب، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0004",
+      "my_answer": "غفر",
+      "reason": "جذر استغفار هو غفر، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0317",
+      "my_answer": "قيام",
+      "reason": "مصدر قام هو قيام، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0105",
+      "my_answer": "مُفَعِّل",
+      "reason": "معلّم على وزن مفعّل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0315",
+      "my_answer": "تعاون",
+      "reason": "مصدر تعاون هو تعاون، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0001",
+      "my_answer": "خرج",
+      "reason": "جذر استخراج هو خرج، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0320",
+      "my_answer": "موعد",
+      "reason": "اسم المكان من وعد هو موعد، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0120",
+      "my_answer": "مُتَفَاعِل",
+      "reason": "متقاعد على وزن متفاعل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0121",
+      "my_answer": "إِفْعَالَة",
+      "reason": "إعادة على وزن إفعالة، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0219",
+      "my_answer": "حيطان",
+      "reason": "جمع تكسير حائط هو حيطان، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0012",
+      "my_answer": "وعد",
+      "reason": "جذر ميعاد هو وعد، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0211",
+      "my_answer": "أحصنة",
+      "reason": "جمع تكسير حصان هو أحصنة، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0007",
+      "my_answer": "وزن",
+      "reason": "جذر ميزان هو وزن، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0016",
+      "my_answer": "عدو",
+      "reason": "جذر معدية هو عدو، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0122",
+      "my_answer": "فَعْلال",
+      "reason": "زلزال على وزن فعلال، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0312",
+      "my_answer": "المعطى",
+      "reason": "اسم المفعول من أعطى معرّفًا هو المعطى، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0310",
+      "my_answer": "مبيع",
+      "reason": "اسم المفعول من باع هو مبيع، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0117",
+      "my_answer": "مُسْتَفْعَل",
+      "reason": "مستشفى على وزن مستفعل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0008",
+      "my_answer": "قوم",
+      "reason": "جذر مقام هو قوم، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0223",
+      "my_answer": "أشهر",
+      "reason": "جمع قلة شهر هو أشهر، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0020",
+      "my_answer": "ترجم",
+      "reason": "جذر ترجمان هو ترجم، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0118",
+      "my_answer": "مِفْعَال",
+      "reason": "مفتاح على وزن مفعال، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0222",
+      "my_answer": "أثواب",
+      "reason": "جمع قلة ثوب هو أثواب، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0123",
+      "my_answer": "تَفَعْلَلَ",
+      "reason": "تدحرج على وزن تفعلل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0119",
+      "my_answer": "مُفْتَعَل",
+      "reason": "مجتمع على وزن مفتعل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0015",
+      "my_answer": "طور",
+      "reason": "جذر مطار هو طور، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0111",
+      "my_answer": "اِسْتِفْعَال",
+      "reason": "استقلال على وزن استفعال، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0305",
+      "my_answer": "آخذ",
+      "reason": "اسم الفاعل من أخذ هو آخذ، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0019",
+      "my_answer": "وثق",
+      "reason": "جذر وثيقة هو وثق، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0316",
+      "my_answer": "مجادلة",
+      "reason": "مصدر جادل على وزن مفاعلة هو مجادلة، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0110",
+      "my_answer": "تَفَاعَلَ",
+      "reason": "تكاتف على وزن تفاعل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0302",
+      "my_answer": "قارئ",
+      "reason": "اسم الفاعل من قرأ هو قارئ، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0321",
+      "my_answer": "مكنسة",
+      "reason": "اسم الآلة من كنس هو مكنسة، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0209",
+      "my_answer": "غرباء",
+      "reason": "جمع تكسير غريب هو غرباء، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0115",
+      "my_answer": "فُعَال",
+      "reason": "غراب على وزن فعال، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0116",
+      "my_answer": "تَفَعَّلَ",
+      "reason": "تذكر على وزن تفعّل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0021",
+      "my_answer": "زلزل",
+      "reason": "جذر زلزال هو زلزل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0326",
+      "my_answer": "بائع",
+      "reason": "اسم الفاعل من باع هو بائع، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0112",
+      "my_answer": "مُفَاعَلَة",
+      "reason": "مخالفة على وزن مفاعلة، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0308",
+      "my_answer": "موعود",
+      "reason": "اسم المفعول من وعد هو موعود، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0006",
+      "my_answer": "وعظ",
+      "reason": "جذر موعظة هو وعظ، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0318",
+      "my_answer": "مجيء",
+      "reason": "مصدر جاء هو مجيء، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0208",
+      "my_answer": "أحذية",
+      "reason": "جمع تكسير حذاء هو أحذية، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0018",
+      "my_answer": "ودع",
+      "reason": "جذر مستودع هو ودع، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0017",
+      "my_answer": "سأل",
+      "reason": "جذر تساؤل هو سأل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "morph_a_0125",
+      "my_answer": "اِفْتَعَلَ",
+      "reason": "اكتشف على وزن افتعل، والمرجع صحيح.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T18:05:10Z"
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "source_sha256": "ecb1d43cec38cf1ed0bf4b28021a0aeb30e54e41062cb612c4492dd6b88edceb",
+  "execution_sha256": "1ee09408353024a0e11432eef565b6200b22e7df5f7680686a20041b0739081f",
+  "correct_program": {
+    "passed": true,
+    "exit_code": 0
+  },
+  "incorrect_program": {
+    "passed": false,
+    "exit_code": 1
+  },
+  "boundary": "reviewed_disposable_docker",
+  "limits": [
+    "A harness in the same interpreter as arbitrary candidate code is not a tamper-proof grader.",
+    "No product certification."
+  ]
+}

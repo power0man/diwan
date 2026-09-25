@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "source_sha256": "1ee09408353024a0e11432eef565b6200b22e7df5f7680686a20041b0739081f",
+  "cases": [
+    {
+      "case": "boundary_probe",
+      "exit_code": 0,
+      "stdout": "{\"uid\": 1000, \"no_owner_mounts\": true, \"no_docker_socket\": true, \"rootfs_readonly\": true, \"ollama_unreachable\": true}\n",
+      "boundary": "docker:identity-retained-in-private-evidence"
+    },
+    {
+      "case": "forged_stdout",
+      "exit_code": 7,
+      "stdout": "{\"exit_code\":0,\"success\":true}\n",
+      "boundary": "docker:identity-retained-in-private-evidence"
+    },
+    {
+      "case": "timeout_with_child",
+      "code": "execution_timeout"
+    },
+    {
+      "case": "missing_executable",
+      "code": "execution_outcome_unverified"
+    },
+    {
+      "case": "ambiguous_exit_125",
+      "code": "execution_outcome_unverified"
+    },
+    {
+      "case": "mismatched_runtime_preflight",
+      "code": "execution_runtime_mismatch"
+    }
+  ],
+  "cleanup_verified": true,
+  "scope": "Disposable Docker test fixtures only; not proof against Docker VM/kernel escape.",
+  "human_review": false
+}

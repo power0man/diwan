@@ -1,0 +1,405 @@
+{
+  "suite_id": "kimi_arabic_a_002",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "gram_a_0201": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فاعل صريح بعد الفعل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0211": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مفعول مضاف لضمير.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0016": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مضارع مجزوم بلم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0031": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مثنى فاعل مرفوع بالألف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0210": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فاعل جمع مذكر سالم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0304": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مبتدأ مؤخر نكرة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0005": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مثنى مجرور بالياء بعد حرف الجر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0309": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مبتدأ مضاف لضمير.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0312": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مبتدأ صريح.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0403": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "خبر أصبح منصوب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0409": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم إن منصوب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0018": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم ليت منصوب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0213": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "نائب فاعل جمع تكسير.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0307": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مبتدأ أول وخبره شبه جملة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0219": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فاعل موصوف؛ المطلوب الموصوف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0011": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "خبر كان منصوب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0310": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مبتدأ اسم إشارة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0027": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مفعول مطلق موصوف.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0012": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم إن منصوب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مفعول به قياسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0208": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "نائب فاعل قياسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0221": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "نائب فاعل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0302": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مبتدأ أول صريح.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0214": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "فاعل بعد فعل تاء التأنيث.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0402": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "كان رفعت اسمًا ونصبت خبرًا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0101": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مصدر من لفظ الفعل وقع بعده موصوفًا.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ حالًا لوجود الصفة."
+    },
+    "gram_a_0019": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خبر لعل مرفوع؛ يُظنّ منصوبًا قياسًا على الاسم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0105": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تمييز كم الاستفهامية منصوب.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ مفعولًا به."
+    },
+    "gram_a_0301": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مبتدأ مؤخر وخبره شبه الجملة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُجاب بـ«البستان» ظنًّا أنه مبتدأ."
+    },
+    "gram_a_0414": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم كاد مرفوع وخبرها جملة فعلية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0030": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مفعول لأجله منصوب.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ حالًا أو مفعولًا مطلقًا."
+    },
+    "gram_a_0032": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مبتدأ مؤخر بعد خبر مقدم شبه جملة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ مجرورًا تبعًا للشجرة."
+    },
+    "gram_a_0305": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خبر مقدم (جار ومجرور) ومبتدأ مؤخر.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُجاب بـ«الطالب»."
+    },
+    "gram_a_0024": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نعت للمفعول به منصوب تبعًا له.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ حالًا أو خبرًا ثانيًا."
+    },
+    "gram_a_0002": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حال منصوبة؛ تُظنّ خبرًا أو نعتًا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0103": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مصدر قلبي علة للفعل.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ حالًا."
+    },
+    "gram_a_0003": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مفعول مطلق موصوف؛ يُظنّ مفعولًا به.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0215": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تقديم المفعول مع عود الضمير إليه في الجار.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يغلب ظنّ أن «السؤال» فاعل."
+    },
+    "gram_a_0102": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تمييز ملفوظ منصوب بعد نكرة الكيل؛ لو جُرّ لكان مضافًا إليه.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ مضافًا إليه مجرورًا فيقرأه بغير النصب."
+    },
+    "gram_a_0415": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اسم إن مؤخر منصوب وخبرها شبه الجملة المقدمة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ مرفوعًا أو مبتدأ."
+    },
+    "gram_a_0218": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إيا ضمير مفعول به يتقدم وجوبًا.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ «إياك» فاعلًا أو مبتدأ."
+    },
+    "gram_a_0026": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تمييز كم الاستفهامية مفرد منصوب.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ مجرورًا أو فاعلًا."
+    },
+    "gram_a_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "منادى مضاف منصوب.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ مرفوعًا كالمنادى المفرد العلم."
+    },
+    "gram_a_0029": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مفعول مطلق من مصدر من جنس الفعل غير لفظه وقد وُصف.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ حالًا؛ وعلى كل تقدير فهو منصوب."
+    },
+    "gram_a_0034": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مفعول مطلق لفعل محذوف تقديره أشكر.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ مرفوعًا على أنه مبتدأ."
+    },
+    "gram_a_0007": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تمييز العدد المركب (11-99) مفرد منصوب.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ مجرورًا قياسًا على تمييز ثلاثة."
+    },
+    "gram_a_0417": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حوار يقيس قلب القاعدة نفسها بعد مثال مضاد: المفعول الثاني المنصوب مقابل خبر إن المرفوع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0209": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نائب الفاعل مضاف؛ المطلوب المضاف وحده كما ورد.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُجاب بـ«باب المدرسة» كاملة أو بـ«المدرسة» خطأً."
+    },
+    "gram_a_0308": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مبتدأ مؤخر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0212": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مفعول أول موصوف؛ التمييز بينه وبين النعت.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0004": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مثنى مفعول به منصوب بالياء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0410": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم كأن منصوب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم كأن منصوب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0412": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "خبر لعل مرفوع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0405": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اسم ما زال مرفوع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0205": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "المبني للمجهول ينوب عنه نائب الفاعل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0216": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مفعول مقدم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0204": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مفعول مقدم وجوبًا في الظاهر للفصل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مبتدأ مؤخر وخبره شبه الجملة المقدمة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "يُظنّ منصوبًا بسبب التأخر."
+    },
+    "gram_a_0407": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بات من أخوات كان الناقصة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0406": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "خبر ليس منصوب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0416": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أمسى ناقصة نصبت الخبر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "gram_a_0303": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مبتدأ مؤخر.",
+      "answer_verified_by": "author_reasoned"
+    }
+  }
+}

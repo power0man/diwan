@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "probe": "k1_bank_validation",
+  "task": "ك١",
+  "date": "2026-09-24",
+  "agent": "anthropic/claude-opus-5",
+  "bank": "kimi_v1 v1.1 الكامل",
+  "validators": {
+    "capabilities": "evaluation/capabilities.py:validate_suite",
+    "agentic": "evaluation/agentic_runner.py:validate_agentic_suite"
+  },
+  "result": {
+    "files_checked": 35,
+    "files_passed": 35,
+    "capability_cases": 1902,
+    "agentic_tasks": 140,
+    "agentic_tasks_failing_before_fix": 140,
+    "agentic_tasks_already_passing": 0,
+    "sealed_cases": 876,
+    "bank_total": 2918,
+    "manifest_entries": 70,
+    "manifest_mismatches": 0
+  },
+  "sufficiency_vs_brief": {
+    "target_total": "~2900",
+    "delivered_total": 2918,
+    "note": "قِيست هذه المرّة. وفي الفحص الأول أُغفلت، فأُعلن ٣٢٨ حالةً تسليمًا وهي ١١٪ من المستهدَف."
+  },
+  "files": [
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_arabic_a_001.json",
+      "validator": "validate_suite",
+      "items": 67,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_arabic_a_002.json",
+      "validator": "validate_suite",
+      "items": 63,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_arabic_a_003.json",
+      "validator": "validate_suite",
+      "items": 66,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_arabic_a_004.json",
+      "validator": "validate_suite",
+      "items": 62,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_assist_a_001.json",
+      "validator": "validate_suite",
+      "items": 62,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_assist_a_002.json",
+      "validator": "validate_suite",
+      "items": 62,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_assist_a_003.json",
+      "validator": "validate_suite",
+      "items": 68,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_assist_a_004.json",
+      "validator": "validate_suite",
+      "items": 68,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_logic_a_001.json",
+      "validator": "validate_suite",
+      "items": 64,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_logic_a_002.json",
+      "validator": "validate_suite",
+      "items": 62,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_logic_a_003.json",
+      "validator": "validate_suite",
+      "items": 63,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_logic_a_004.json",
+      "validator": "validate_suite",
+      "items": 66,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_logic_a_005.json",
+      "validator": "validate_suite",
+      "items": 67,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_prog_a_001.json",
+      "validator": "validate_suite",
+      "items": 57,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_prog_a_002.json",
+      "validator": "validate_suite",
+      "items": 56,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_prog_a_003.json",
+      "validator": "validate_suite",
+      "items": 55,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_prog_a_004.json",
+      "validator": "validate_suite",
+      "items": 64,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_prog_a_005.json",
+      "validator": "validate_suite",
+      "items": 62,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_sci_a_001.json",
+      "validator": "validate_suite",
+      "items": 67,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_sci_a_002.json",
+      "validator": "validate_suite",
+      "items": 69,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_sci_a_003.json",
+      "validator": "validate_suite",
+      "items": 69,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_a/kimi_sci_a_004.json",
+      "validator": "validate_suite",
+      "items": 64,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_b/kimi_arabic_b_001.json",
+      "validator": "validate_suite",
+      "items": 57,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_b/kimi_assist_b_001.json",
+      "validator": "validate_suite",
+      "items": 60,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_b/kimi_assist_b_002.json",
+      "validator": "validate_suite",
+      "items": 57,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_b/kimi_assist_b_003.json",
+      "validator": "validate_suite",
+      "items": 59,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_b/kimi_assist_b_004.json",
+      "validator": "validate_suite",
+      "items": 59,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_c/kimi_honesty_c_001.json",
+      "validator": "validate_suite",
+      "items": 53,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_c/kimi_honesty_c_002.json",
+      "validator": "validate_suite",
+      "items": 52,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_c/kimi_honesty_c_003.json",
+      "validator": "validate_suite",
+      "items": 51,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_c/kimi_honesty_c_004.json",
+      "validator": "validate_suite",
+      "items": 51,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_d/kimi_agentic_001.json",
+      "validator": "validate_agentic_suite",
+      "items": 35,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_d/kimi_agentic_002.json",
+      "validator": "validate_agentic_suite",
+      "items": 35,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_d/kimi_agentic_003.json",
+      "validator": "validate_agentic_suite",
+      "items": 35,
+      "verdict": "passed"
+    },
+    {
+      "path": "evaluation/banks/kimi_v1/open/tier_d/kimi_agentic_004.json",
+      "validator": "validate_agentic_suite",
+      "items": 35,
+      "verdict": "passed"
+    }
+  ],
+  "measurement_limits": [
+    "فحصُ بنيةٍ وعقدٍ لا فحصُ صحةِ المعنى: المدقّق يقول إن الملفّ يطابق العقد، لا إن مرجع الحالة صحيح.",
+    "المحجوب تحقّقت بصماتُه السبعون ولم يُفحص محتواه ولم يُقرأ.",
+    "«تسقط قبل الحلّ» تعني أن المعيار لا يتحقّق على المساحة الابتدائية، لا أن المهمّة قابلةٌ للحلّ — والقابلية لا تُثبت إلا بحلٍّ مرجعيٍّ يُشغَّل.",
+    "أوامرُ النجاح شُغِّلت في حاوية بلا شبكة والمستودعُ للقراءة فقط (ج٣ ما زالت مفتوحة للمُشغِّل نفسه).",
+    "لم يُقَس نموذجٌ على هذا البنك بعد: هذا فحصُ البنك لا نتيجةُ ديوان."
+  ]
+}

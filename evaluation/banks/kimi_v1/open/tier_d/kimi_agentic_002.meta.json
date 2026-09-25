@@ -1,0 +1,348 @@
+{
+  "suite_id": "kimi_agentic_002",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "D",
+  "tasks": {
+    "agentic_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إعادة تسمية تابع صنف مع منادٍ خارجي؛ نمط أساسي متكرر.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "shop/cart.py": "class Cart:\n    def __init__(self, prices):\n        self.prices = prices\n\n    def compute_total(self):\n        return sum(self.prices)\n",
+        "shop/checkout.py": "from shop.cart import Cart\n\n\ndef total_of(prices):\n    return Cart(prices).compute_total()\n"
+      }
+    },
+    "agentic_0050": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تغيير قيمة ثابت ينتشر عبر مستهلكين؛ يقيس مبدأ التعديل في المصدر.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "notify/sender.py": "CHANNEL = \"push\"\n\n\ndef send(msg):\n    return \"[%s] %s\" % (CHANNEL, msg)\n"
+      }
+    },
+    "agentic_0037": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إعادة تسمية دالة مسجّلة في جدول؛ يقيس تتبّع المراجع غير المباشرة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "web/handlers.py": "def handle_request(ctx):\n    return \"handled:\" + ctx\n",
+        "web/router.py": "from web.handlers import handle_request\n\nROUTES = {\"/\": handle_request}\n"
+      }
+    },
+    "agentic_0042": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إعادة تسمية ثابت عبر ثلاث وحدات؛ نمط متكرر بسياق تعريب.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "i18n/config.py": "DEFAULT_LOCALE = \"ar\"\n",
+        "i18n/loader.py": "from i18n.config import DEFAULT_LOCALE\n\n\ndef current_language():\n    return DEFAULT_LOCALE\n",
+        "i18n/fallback.py": "from i18n.config import DEFAULT_LOCALE\n\n\ndef fallback_for(lang):\n    return DEFAULT_LOCALE if lang not in (\"ar\", \"en\") else lang\n"
+      }
+    },
+    "agentic_0040": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إعادة تسمية مفتاح config بقارئ واحد؛ حالة سهلة للتدرج.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "promo/config.json": "{\"discount_percent\": 10, \"code\": \"WELCOME\"}\n",
+        "promo/engine.py": "import json\nimport os\n\n\ndef discount_percent():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"config.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        cfg = json.load(f)\n    return cfg[\"discount_percent\"]\n"
+      }
+    },
+    "agentic_0045": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إعادة تسمية مسار API في خادم وعميل؛ يقيس مزامنة الطرفين.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "api/routes.py": "ROUTES = {\"/api/price\": \"price_handler\", \"/api/health\": \"health_handler\"}\n",
+        "api/client.py": "PRICE_URL = \"/api/price\"\n\n\ndef price_endpoint():\n    return PRICE_URL\n"
+      }
+    },
+    "agentic_0038": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إعادة هيكلة قيمة config (منطقي ← نص) مع تحديث القارئ؛ أعمق من تسمية بسيطة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "ui/config.json": "{\"appearance\": \"dark\", \"lang\": \"ar\"}\n",
+        "ui/theme.py": "import json\nimport os\n\n\ndef theme_name():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"config.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        cfg = json.load(f)\n    return \"داكن\" if cfg[\"appearance\"] == \"dark\" else \"فاتح\"\n"
+      }
+    },
+    "agentic_0032": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نقل دالة بين وحدات مع إنشاء ملف وحذف وتحديث استيراد؛ إعادة بناء متعددة الخطوات.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "utils/misc.py": "def shout(s):\n    return s.upper()\n",
+        "web/forms.py": "from utils.validators import is_valid_email\n\n\ndef accept(addr):\n    return is_valid_email(addr)\n",
+        "utils/validators.py": "def is_valid_email(addr):\n    return \"@\" in addr and \".\" in addr\n"
+      }
+    },
+    "agentic_0044": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إعادة تسمية استثناء عبر ثلاثة ملفات وأدوار مختلفة (تعريف/رفع/التقاط).",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "store/errors.py": "class RecordNotFound(Exception):\n    pass\n",
+        "store/repo.py": "from store.errors import RecordNotFound\n\n\ndef get(items, i):\n    if i >= len(items):\n        raise RecordNotFound(\"غير موجود\")\n    return items[i]\n",
+        "api/handler.py": "from store.errors import RecordNotFound\nfrom store.repo import get\n\n\ndef safe_get(items, i):\n    try:\n        return get(items, i)\n    except RecordNotFound:\n        return None\n"
+      }
+    },
+    "agentic_0031": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الاسم الجديد يحتوي القديم جزئيًّا؛ يقيس الدقة في الاستبدال بحدود المعرف.",
+      "answer_verified_by": "mechanical",
+      "trap": "استبدال نصي ساذج قد يكرّر الاسم (SalesSalesInvoice) إن طُبق مرتين أو على ملف محدّث.",
+      "reference_solution": {
+        "billing/invoice.py": "class SalesInvoice:\n    def __init__(self, number, amount):\n        self.number = number\n        self.amount = amount\n",
+        "billing/service.py": "from billing.invoice import SalesInvoice\n\n\ndef build_invoice(number, amount):\n    return SalesInvoice(number, amount)\n"
+      }
+    },
+    "agentic_0033": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إعادة تسمية علم CLI مع شرط رفض الاسم القديم؛ يقيس فهم واجهة argparse بعمق.",
+      "answer_verified_by": "mechanical",
+      "trap": "argparse يقبل البادئات الفريدة افتراضيًّا (--out تطابق --output)؛ الرفض الصريح يتطلب allow_abbrev=False.",
+      "reference_solution": {
+        "tool/args.py": "import argparse\n\n\ndef build_parser():\n    p = argparse.ArgumentParser(allow_abbrev=False)\n    p.add_argument(\"--output\", dest=\"out\")\n    return p\n"
+      }
+    },
+    "agentic_0039": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إعادة تسمية ملف (إنشاء + حذف + تحديث استيراد)؛ يتطلب عمليات نظام ملفات لا تحرير نص فقط.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "app/listing.py": "from utils.text import arabic_join\n\n\ndef list_items(items):\n    return arabic_join(items)\n",
+        "utils/text.py": "def arabic_join(parts):\n    return \"، \".join(parts)\n"
+      }
+    },
+    "agentic_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إعادة تسمية حقل بيانات منتِج/مستهلِك؛ مكمل لمهمة grand_total ببنية مختلفة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "contacts/model.py": "def make_contact(name, phone):\n    return {\"name\": name, \"phone\": phone}\n",
+        "contacts/directory.py": "from contacts.model import make_contact\n\n\ndef phone_of(contact):\n    return contact[\"phone\"]\n"
+      }
+    },
+    "agentic_0043": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الاسم الجديد يحتوي القديم بادئةً؛ يقيس الحذر في الاستبدال والتحقق بحدود الكلمة.",
+      "answer_verified_by": "mechanical",
+      "trap": "استبدال نصي ساذج على ملف محدّث جزئيًّا قد ينتج «WARNINGING».",
+      "reference_solution": {
+        "logs/logger.py": "def warn(msg):\n    return \"WARNING: \" + msg\n",
+        "logs/config.json": "{\"level\": \"WARNING\", \"sink\": \"stdout\"}\n"
+      }
+    },
+    "agentic_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إعادة تسمية عبر ثلاث وحدات مستهلكة؛ يقيس الشمول دون كسر الحسابات.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "payroll/engine.py": "VAT_RATE = 0.05\n\n\ndef net(gross):\n    return gross * (1 - VAT_RATE)\n",
+        "payroll/report.py": "from payroll.engine import VAT_RATE\n\n\ndef tax_line():\n    return \"نسبة الاستقطاع: %s\" % VAT_RATE\n",
+        "payroll/audit.py": "from payroll.engine import VAT_RATE\n\n\ndef expected_deduction(gross):\n    return gross * VAT_RATE\n"
+      }
+    },
+    "agentic_0026": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إعادة تسمية مفتاح config عبر ملف الإعدادات ومستهلكَين؛ نمط refactor_safe الأساسي.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "settings.json": "{\"database_host\": \"db.internal\", \"port\": 5432}\n",
+        "db.py": "import json\nimport os\n\n\ndef _cfg():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"settings.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        return json.load(f)\n\n\ndef connect_string():\n    return \"db://%s:5432/app\" % _cfg()[\"database_host\"]\n",
+        "backup.py": "import json\nimport os\n\n\ndef backup_target():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"settings.json\")\n    with open(path, encoding=\"utf-8\") as f:\n        cfg = json.load(f)\n    return \"نسخ احتياطي من \" + cfg[\"database_host\"]\n"
+      }
+    },
+    "agentic_0046": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إعادة تسمية تمتد من الشيفرة إلى ملف بيانات؛ يقيس مزامنة الكود مع البيانات.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "data/stock.csv": "الاسم,العدد\nقلم,50\nدفتر,30\n",
+        "store/loader.py": "import csv\nimport os\n\n\ndef first_quantity():\n    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"..\", \"data\", \"stock.csv\")\n    with open(path, newline=\"\", encoding=\"utf-8\") as f:\n        rows = list(csv.DictReader(f))\n    return int(rows[0][\"العدد\"])\n"
+      }
+    },
+    "agentic_0015": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تعديل سياسة في موضع تعريفها؛ نمط متكرر بسياق مختلف.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "cache/policy.py": "TTL_SECONDS = 300\n"
+      }
+    },
+    "agentic_0011": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "معالجة حالة حدّية في موضعها الصحيح من الشجرة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "mathx/ops.py": "def divide(a, b):\n    if b == 0:\n        return None\n    return a / b\n"
+      }
+    },
+    "agentic_0022": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "توطين بادئة في موضع توليد؛ حالة سهلة بسياق عربي.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "billing/numbers.py": "COUNTER = 1000\n\n\ndef next_invoice_no():\n    global COUNTER\n    COUNTER += 1\n    return \"ف-\" + str(COUNTER)\n"
+      }
+    },
+    "agentic_0002": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تعديل سلوك دالة تنسيق في موضع تعريفها؛ أساس قدرة search_and_modify.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "shop/pricing.py": "def format_price(amount):\n    return \"{:,} ر.س\".format(amount)\n"
+      }
+    },
+    "agentic_0024": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحديث بيانات سياسة في موضع تعريفها.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "org/schedule.py": "WEEKEND = (\"الجمعة\", \"السبت\")\n\n\ndef is_weekend(day):\n    return day in WEEKEND\n"
+      }
+    },
+    "agentic_0014": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تقريب نقدي في موضع الحساب؛ حالة شائعة في أنظمة الفوترة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "billing/invoice.py": "def final_amount(subtotal, vat_rate):\n    return round(subtotal * (1 + vat_rate), 2)\n"
+      }
+    },
+    "agentic_0006": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تعديل ثابت في موضع تعريفه؛ يقيس مبدأ «عدّل المصدر لا النسخ».",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "net/client.py": "MAX_RETRIES = 5\nTIMEOUT = 10\n"
+      }
+    },
+    "agentic_0012": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تغيير قيمة افتراضية مع شرط عدم التأثير على الممرَّر صراحة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "web/pagination.py": "DEFAULT_PAGE_SIZE = 50\n\n\ndef paginate(items, page=1, size=None):\n    size = size or DEFAULT_PAGE_SIZE\n    start = (page - 1) * size\n    return items[start:start + size]\n"
+      }
+    },
+    "agentic_0019": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مفتاح ترتيب مركّب (عدد تنازلي + نص تصاعدي)؛ يتطلب حيلة الإشارة السالبة أو معيارين.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "game/leaderboard.py": "def rank(players):\n    return sorted(players, key=lambda p: (-p[\"score\"], p[\"name\"]))\n"
+      }
+    },
+    "agentic_0013": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تعديل سلوك بحفظ رمز بادئ مشروط؛ يتطلب فهم المطلوب دون كسر الحالة المحلية.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "contacts/phone.py": "def normalize_phone(p):\n    digits = \"\".join(ch for ch in p if ch.isdigit())\n    if p.strip().startswith(\"+\"):\n        return \"+\" + digits\n    return digits\n"
+      }
+    },
+    "agentic_0005": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "يتطلب فهم دلالة isascii/isalnum مع يونيكود عربي؛ تعديل جراحي دقيق.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "utils/text.py": "def slugify(title):\n    out = []\n    for ch in title.lower():\n        if ch.isalnum():\n            out.append(ch)\n        elif ch == \" \":\n            out.append(\"-\")\n    return \"\".join(out)\n"
+      }
+    },
+    "agentic_0016": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نسخة أرشيفية مشابهة تمامًا؛ يقيس تحديد سلسلة الاستيراد الحية.",
+      "answer_verified_by": "mechanical",
+      "trap": "old/logger_v1.py نسخة طبق الأصل لكنها مهجورة.",
+      "reference_solution": {
+        "core/logger.py": "def info(msg):\n    return \"INFO: \" + msg\n"
+      }
+    },
+    "agentic_0003": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تكرار النص نفسه في ملفين؛ يقيس التحقق من سلسلة الاستيراد قبل التعديل.",
+      "answer_verified_by": "mechanical",
+      "trap": "الملف القديم legacy/greeter.py يحمل النص نفسه؛ تعديله لا أثر له.",
+      "reference_solution": {
+        "services/welcome.py": "def greet(name):\n    return \"أهلًا وسهلًا \" + name\n"
+      }
+    },
+    "agentic_0020": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "سلوك مشروط بحالة القص الفعلي؛ يقيس فهم «عند القص فعلًا».",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "utils/text.py": "def truncate(s, n):\n    if len(s) <= n:\n        return s\n    return s[:n] + \"…\"\n"
+      }
+    },
+    "agentic_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عكس منطق الإخفاء مع شرط طول ديناميكي؛ يمنع الحل بسلسلة نجوم ثابتة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "pay/cards.py": "def mask_card(number):\n    return \"*\" * (len(number) - 4) + number[-4:]\n"
+      }
+    },
+    "agentic_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "توسيع دالة من حالة أولية لحالة عامة مع حالة حدّية (اسم واحد).",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "people/names.py": "def initials(full_name):\n    parts = full_name.split()\n    return \".\".join(p[0] for p in parts)\n"
+      }
+    },
+    "agentic_0008": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تعديل تعبير نمطي بدقة دون كسر الحالات المقبولة سابقًا.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "auth/validators.py": "import re\n\n\ndef is_valid_email(addr):\n    pattern = r\"^[A-Za-z0-9._%+]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$\"\n    return re.match(pattern, addr) is not None\n"
+      }
+    },
+    "agentic_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تغيير صيغة تنسيق مع متطلب أصفار بادئة؛ isoformat يحلها بأناقة.",
+      "answer_verified_by": "mechanical",
+      "reference_solution": {
+        "utils/dates.py": "def fmt_date(d):\n    return d.isoformat()\n"
+      }
+    }
+  }
+}

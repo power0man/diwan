@@ -1,0 +1,1344 @@
+{
+  "schema_version": 1,
+  "suite_id": "kimi_prog_a_005",
+  "split": "development",
+  "description": "إصلاح عيوب منطقية خفية بطُرز جديدة (حالات حدّية في دمج الفترات، نسخ سطحي، مقارنة عشرية، is مقابل ==، ترتيب وسائط format، تعديل أثناء المرور...) وتتبّع تنفيذ شيفرات — الجزء الثاني.",
+  "cases": [
+    {
+      "case_id": "prog_e_0064",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما القيم التي ستظهر في الطرفية عند تنفيذ هذا المقطع؟ اكتبها كما تطبعها بايثون بالضبط.\n\n```python\nx = \"5\"\ny = 3\nprint(x * y, y * 2)\n```"
+        }
+      ],
+      "reference": "ضرب نص في عدد يكرّره: «555»، وضرب عددين حسابيّ: 6.",
+      "rubric": [
+        "يميّز ضرب النص عن العدد"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "555 6"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0068",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "تخيّل أنك مفسّر بايثون: نفّذ المقطع التالي وأخبرني بالخرج النهائي حرفيًّا.\n\n```python\nprint(\"أبجد\".find(\"ج\"), \"أبجد\".index(\"د\"))\n```"
+        }
+      ],
+      "reference": "«ج» في الموضع 2 و«د» في الموضع 3 (الفهرسة من 0).",
+      "rubric": [
+        "فهرسة المحارف من 0"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "2 3"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0085",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "قبل أن تشغّلها: توقّع الخرج المطبوع بدقة. أجب بالخرج فقط.\n\n```python\nprint(\"معلومات\".count(\"م\"), \"معلومات\".startswith(\"مع\"))\n```"
+        }
+      ],
+      "reference": "حرف «م» يظهر مرتين في «معلومات»، والبادئة «مع» متحققة.",
+      "rubric": [
+        "يعدّ المحرف بدقة"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "2 True"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0088",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما القيم التي ستظهر في الطرفية عند تنفيذ هذا المقطع؟ اكتبها كما تطبعها بايثون بالضبط.\n\n```python\ndef t(s):\n    return s.strip(\"،\")\nprint(t(\"،مرحبا،\"))\n```"
+        }
+      ],
+      "reference": "strip بمحرف مخصص يزيل الفاصلة العربية من الطرفين فقط.",
+      "rubric": [
+        "يعرف strip بمحارف مخصصة"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "مرحبا"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0069",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دون تشغيل فعليّ: ما الخرج المنتظر من هذه الشيفرة؟ اكتب المطبوع كما هو بلا إضافات.\n\n```python\ns = \"  نص  \"\nprint(len(s), len(s.strip()))\n```"
+        }
+      ],
+      "reference": "النص 6 محارف بفراغاته الأربعة، وبعد strip يبقى محرفان.",
+      "rubric": [
+        "يحسب الفراغات في الطول"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "6 2"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0058",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "تتبّع هذه الشيفرة ذهنيًّا: ما الناتج المطبوع حرفيًّا؟ أجب بالمطبوع فقط بلا شرح وبلا أسور كود.\n\n```python\ns = \"أ+ب=ج\"\nprint(s.replace(\"=\", \" == \"))\n```"
+        }
+      ],
+      "reference": "replace تستبدل كل ظهور لـ = بـ « == » بفراغات.",
+      "rubric": [
+        "يفهم replace"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "أ+ب == ج"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0076",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما القيم التي ستظهر في الطرفية عند تنفيذ هذا المقطع؟ اكتبها كما تطبعها بايثون بالضبط.\n\n```python\nprint(list(zip([1, 2, 3], \"أب\")))\n```"
+        }
+      ],
+      "reference": "zip يقف عند أقصر متتالية، فيزاوج عنصرين فقط.",
+      "rubric": [
+        "يعرف توقف zip عند الأقصر"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[(1, 'أ'), (2, 'ب')]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0061",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "قبل أن تشغّلها: توقّع الخرج المطبوع بدقة. أجب بالخرج فقط.\n\n```python\ngen = (c for c in \"سلام\")\nnext(gen)\nprint(\"\".join(gen))\n```"
+        }
+      ],
+      "reference": "next تستهلك «س»، والمولّد يكمل من حيث توقّف فيُدمج «لام» فقط.",
+      "rubric": [
+        "يعرف استهلاك المولّد"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "لام"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0077",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "حدّد الخرج الدقيق لهذا المقطع. لا شرح ولا تنسيق، المطبوع فقط.\n\n```python\ndef outer():\n    x = 1\n    def inner():\n        return x + 1\n    x = 5\n    return inner()\nprint(outer())\n```"
+        }
+      ],
+      "reference": "inner تقرأ x عند الاستدعاء لا عند التعريف، وقيمته حينها 5 فيعيد 6.",
+      "rubric": [
+        "يعرف قراءة الإغلاق وقت الاستدعاء"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "6"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0082",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "تتبّع هذه الشيفرة ذهنيًّا: ما الناتج المطبوع حرفيًّا؟ أجب بالمطبوع فقط بلا شرح وبلا أسور كود.\n\n```python\nprint(2 ** 3 ** 2, (2 ** 3) ** 2)\n```"
+        }
+      ],
+      "reference": "الأسّ يتجمّع يمينًا: 2**(3**2)=2**9=512، والمقوَّس (2**3)**2=64.",
+      "rubric": [
+        "يعرف تجميع ** يمينًا"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "512 64"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0062",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "هذه الشيفرة تطبع شيئًا محددًا — ما هو؟ اكتب المطبوع حرفيًّا ولا تكتب غيره.\n\n```python\na = [1, 2]\nb = [a, a]\na.append(3)\nprint(b)\n```"
+        }
+      ],
+      "reference": "b يحوي مرجعين للقائمة نفسها، فالتعديل يظهر في الموضعين معًا.",
+      "rubric": [
+        "يدرك تكرار المرجع"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[[1, 2, 3], [1, 2, 3]]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0054",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "إليك مقطع بايثون قصير. اكتب خرجه كما تراه على الشاشة حرفًا حرفًا.\n\n```python\nprint(7 // 2, 7 % 2, -7 // 2, -7 % 2)\n```"
+        }
+      ],
+      "reference": "القسمة الصحيحة تقصّر نحو الأسفل: -7//2 يساوي -4 لا -3، وباقي القسمة يتبع إشارة المقسوم عليه: -7%2 = 1.",
+      "rubric": [
+        "يعرف قاعدة floor للسالب",
+        "الناتج 3 1 -4 1"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "3 1 -4 1"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0072",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لو شغّلت هذه الشيفرة في مفسّر بايثون، ماذا يظهر على الشاشة؟ اكتب الخرج كما هو تمامًا، بلا أي كلمة إضافية.\n\n```python\ntext = \"واحد اثنان ثلاثة\"\nprint(text.split(\"ا\", 2))\n```"
+        }
+      ],
+      "reference": "split بحدّ أقصى 2 يقسم عند أول ظهورين لـ«ا» فقط، والجزء الأخير يبقى كاملًا، والفراغ قبل «ا» يبقى ضمن الجزء.",
+      "rubric": [
+        "يفهم maxsplit",
+        "الفراغ يبقى في الجزء"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "['و', 'حد ', 'ثنان ثلاثة']"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0090",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "إليك مقطع بايثون قصير. اكتب خرجه كما تراه على الشاشة حرفًا حرفًا.\n\n```python\ns = \"سلام\"\nfor i, c in enumerate(s):\n    if i == 2:\n        break\nelse:\n    print(\"اكتمل\")\nprint(i, c)\n```"
+        }
+      ],
+      "reference": "break يمنع تنفيذ else الخاص بالحلقة، وتبقى i=2 وc=«ا» بعد الخروج.",
+      "rubric": [
+        "يعرف else الحلقة مع break",
+        "قيم المتغيرات بعد break"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "2 ا"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_e_0073",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "قبل أن تشغّلها: توقّع الخرج المطبوع بدقة. أجب بالخرج فقط.\n\n```python\nprint(0.1 + 0.2 == 0.3, round(0.1 + 0.2, 10) == 0.3)\n```"
+        }
+      ],
+      "reference": "0.1+0.2 يساوي 0.30000000000000004 فلا يساوي 0.3، لكن التقريب لعشر خانات يساويه.",
+      "rubric": [
+        "يعرف خطأ التمثيل العشري",
+        "الناتج False True"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "False True"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_e_0083",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اقرأ الشيفرة التالية ثم اكتب ما ستطبعه بالضبط. الجواب هو الخرج النهائي فقط.\n\n```python\ndef f(x):\n    x += [4]\n    return x\na = [1, 2, 3]\nb = f(a)\nprint(a is b, a)\n```"
+        }
+      ],
+      "reference": "+= على قائمة تعدّلها في مكانها، فـ b هي a نفسها بعد إلحاق 4.",
+      "rubric": [
+        "يعرف += في المكان للقوائم"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "True [1, 2, 3, 4]"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_e_0066",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "إليك مقطع بايثون قصير. اكتب خرجه كما تراه على الشاشة حرفًا حرفًا.\n\n```python\ndef q(n):\n    if n == 0:\n        return 1\n    return n * q(n - 1)\nprint(q(4))\n```"
+        }
+      ],
+      "reference": "عاودية مضروب: 4×3×2×1×1 = 24.",
+      "rubric": [
+        "يتتبّع العاودية"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "24"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0084",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لو شغّلت هذه الشيفرة في مفسّر بايثون، ماذا يظهر على الشاشة؟ اكتب الخرج كما هو تمامًا، بلا أي كلمة إضافية.\n\n```python\nchars = {\"أ\": 1, \"ب\": 2, \"أ\": 3}\nprint(len(chars), chars[\"أ\"])\n```"
+        }
+      ],
+      "reference": "تكرار المفتاح في القاموس الحرفيّ يبقي الأخير: مفتاحان فقط وقيمة «أ» تساوي 3.",
+      "rubric": [
+        "يعرف حسم تكرار المفاتيح"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "2 3"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0047",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اقرأ الشيفرة التالية ثم اكتب ما ستطبعه بالضبط. الجواب هو الخرج النهائي فقط.\n\n```python\ns = \"البرمجة متعة\"\nprint(s.split()[1][::-1])\n```"
+        }
+      ],
+      "reference": "الكلمة الثانية «متعة» تُعكس محرفًا محرفًا فتصبح «ةعتم».",
+      "rubric": [
+        "يعرف أن [::-1] يعكس",
+        "الناتج ةعتم"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "ةعتم"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0079",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما الذي يطبعه هذا المقطع عند تشغيله؟ الجواب بالمطبوع فقط.\n\n```python\ntry:\n    int(\"12.5\")\nexcept ValueError:\n    print(\"خطأ قيمة\")\nexcept TypeError:\n    print(\"خطأ نوع\")\n```"
+        }
+      ],
+      "reference": "int على نص عشريّ يرفع ValueError لا TypeError لأن النوع نصّ سليم لكن قيمته غير قابلة.",
+      "rubric": [
+        "يميّز ValueError عن TypeError"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "خطأ قيمة"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0075",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة في رأسك سطرًا سطرًا. ما الخرج النهائي؟ أجب بالمطبوع فقط بلا زخرفة.\n\n```python\nname = \"خالد\"\nage = 30\nprint(\"{} عمره {} سنوات\".format(age, name))\n```"
+        }
+      ],
+      "reference": "الوسائط ممرّرة بترتيب (age, name) فيحل العمر في الموضع الأول والاسم في الثاني حرفيًّا.",
+      "rubric": [
+        "يتتبّع ترتيب وسائط format"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "30 عمره خالد سنوات"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0050",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "هذه الشيفرة تطبع شيئًا محددًا — ما هو؟ اكتب المطبوع حرفيًّا ولا تكتب غيره.\n\n```python\nd = {\"أ\": 1, \"ب\": 2}\nd[\"أ\"] = d.get(\"ج\", 5)\nprint(d[\"أ\"], \"ج\" in d)\n```"
+        }
+      ],
+      "reference": "get يعيد الافتراضي 5 دون إدخال «ج» في القاموس، فتصير d['أ']=5 و«ج» غير موجودة.",
+      "rubric": [
+        "get لا تُدخل المفتاح",
+        "الناتج 5 False"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "5 False"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0071",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "اقرأ الشيفرة التالية ثم اكتب ما ستطبعه بالضبط. الجواب هو الخرج النهائي فقط.\n\n```python\ndef add(x, y=None):\n    if y is None:\n        y = []\n    y.append(x)\n    return y\nprint(add(1), add(2))\n```"
+        }
+      ],
+      "reference": "النمط الصحيح بـ None يجعل كل استدعاء بقائمة جديدة: [1] ثم [2].",
+      "rubric": [
+        "يفهم نمط None الافتراضي"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[1] [2]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0056",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "تخيّل أنك مفسّر بايثون: نفّذ المقطع التالي وأخبرني بالخرج النهائي حرفيًّا.\n\n```python\ndef g():\n    return [x * x for x in range(4) if x % 2]\nprint(g())\n```"
+        }
+      ],
+      "reference": "الشرط x % 2 يبقي الفردية فقط (1 و3)، ومربعاها 1 و9.",
+      "rubric": [
+        "يفهم شرط الفردية"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[1, 9]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0063",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة في رأسك سطرًا سطرًا. ما الخرج النهائي؟ أجب بالمطبوع فقط بلا زخرفة.\n\n```python\nprint(bool(\"\"), bool(\"0\"), bool(0), bool([0]))\n```"
+        }
+      ],
+      "reference": "النص «0» غير فارغ فهو True، والقائمة [0] غير فارغة فهي True رغم أن عنصرها صفر.",
+      "rubric": [
+        "يميّز الفراغ عن المحتوى الصفري"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "False True False True"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0051",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة في رأسك سطرًا سطرًا. ما الخرج النهائي؟ أجب بالمطبوع فقط بلا زخرفة.\n\n```python\nnums = [5, 3, 8, 3]\nnums.remove(3)\nprint(nums)\n```"
+        }
+      ],
+      "reference": "remove تحذف أول ظهور فقط للقيمة 3، فيبقى الظهور الثاني.",
+      "rubric": [
+        "remove تحذف أول ظهور فقط"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[5, 8, 3]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0067",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ماذا تعيد دالة sort عند استدعائها على قائمة؟"
+        },
+        {
+          "role": "assistant",
+          "content": "ترتّب القائمة في مكانها وتعيد None."
+        },
+        {
+          "role": "user",
+          "content": "بناءً على ذلك، ما الذي تطبعه هذه الشيفرة حرفيًّا؟ أجب بالمطبوع فقط.\n\n```python\nlst = [3, 1, 2]\nr = lst.sort()\nprint(r, lst)\n```"
+        }
+      ],
+      "reference": "sort تعيد None وترتّب في المكان، فيُطبع None ثم القائمة مرتبة.",
+      "rubric": [
+        "يعرف أن sort تعيد None",
+        "القائمة تُرتّب في مكانها"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "None [1, 2, 3]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0048",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "لو شغّلت هذه الشيفرة في مفسّر بايثون، ماذا يظهر على الشاشة؟ اكتب الخرج كما هو تمامًا، بلا أي كلمة إضافية.\n\n```python\nx = [1, 2, 3]\ny = x\ny.append(4)\nprint(len(x), x[-1])\n```"
+        }
+      ],
+      "reference": "الإسناد y = x يجعلهما اسمين للقائمة نفسها، فالإضافة عبر y تظهر في x: الطول 4 والأخير 4.",
+      "rubric": [
+        "يدرك مشاركة المرجع",
+        "الناتج 4 4"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "4 4"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0087",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "نفّذ هذه الشيفرة في رأسك سطرًا سطرًا. ما الخرج النهائي؟ أجب بالمطبوع فقط بلا زخرفة.\n\n```python\nx = [1, 2]\ny = x[:]\ny.append(3)\nprint(len(x), len(y))\n```"
+        }
+      ],
+      "reference": "x[:] نسخة سطحية مستقلة، فإلحاق y لا يمسّ x: 2 و3.",
+      "rubric": [
+        "يميّز النسخة بالشريحة عن الإسناد"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "2 3"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0052",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ما القيم التي ستظهر في الطرفية عند تنفيذ هذا المقطع؟ اكتبها كما تطبعها بايثون بالضبط.\n\n```python\ns = \"مرحبا\"\nprint(len(s), s[2:])\n```"
+        }
+      ],
+      "reference": "الطول 5 محارف، والشريحة من الفهرس 2 للنهاية تعطي «حبا».",
+      "rubric": [
+        "يحسب الطول والشريحة صحيحًا"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "5 حبا"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0080",
+      "capability": "explain_code",
+      "messages": [
+        {
+          "role": "user",
+          "content": "تخيّل أنك مفسّر بايثون: نفّذ المقطع التالي وأخبرني بالخرج النهائي حرفيًّا.\n\n```python\nm = [[1, 2], [3, 4]]\nprint([row[0] for row in m], m[1][::-1])\n```"
+        }
+      ],
+      "reference": "العمود الأول من كل صف [1, 3]، والصف الثاني معكوسًا [4, 3].",
+      "rubric": [
+        "يجمع عمودًا ويعكس صفًّا"
+      ],
+      "checks": [
+        {
+          "kind": "exact",
+          "value": "[1, 3] [4, 3]"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0033",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تكبّر أول حرف لاتيني من كلمة، لكنها تنهار بخطأ TypeError لأنها تحاول تعديل النص في مكانه. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef capitalize_first(s):\n    s[0] = s[0].upper()\n    return s\n```"
+        }
+      ],
+      "reference": "النصوص في بايثون غير قابلة للتعديل؛ التغيير يكون ببناء نص جديد.",
+      "rubric": [
+        "تبني نصًّا جديدًا بدل التعديل في المكان"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"capitalize_first\"]\nassert f(\"hello\") == \"Hello\"\nassert f(\"ali\") == \"Ali\"\nassert f(\"Zed\") == \"Zed\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0042",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "رسم الخدمة له سقف 50: أي رسم أعلى يُخفض إلى 50. الدالة بدل ذلك ترفع كل رسم أدنى إلى 50. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef final_fee(fee):\n    return max(fee, 50)\n```"
+        }
+      ],
+      "reference": "السقف حدّ أعلى فيُفرض بـ min؛ max تفرض حدًّا أدنى وهو عكس القاعدة.",
+      "rubric": [
+        "تستعمل min لفرض السقف"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"final_fee\"]\nassert f(20) == 20\nassert f(80) == 50\nassert f(50) == 50\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0032",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد قائمة عدّ تنازليّ من n إلى 1، لكنها تلحق صفرًا زائدًا في النهاية. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef countdown_list(n):\n    return list(range(n, -1, -1))\n```"
+        }
+      ],
+      "reference": "نهاية range حصرية؛ الوقوف عند 1 يتطلب الحد 0 لا -1.",
+      "rubric": [
+        "تقف عند 1 بلا صفر"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"countdown_list\"]\nassert f(4) == [4, 3, 2, 1]\nassert f(1) == [1]\nassert f(0) == []\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0019",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "قاعدة النظام: «العضو المميّز من تجاوز الثلاثين بشكل صارم». الدالة تمنح العضوية لمن بلغ الثلاثين بالضبط. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef is_eligible(age):\n    return age >= 30\n```"
+        }
+      ],
+      "reference": "«تجاوز» صارم (> 30) لا «بلغ» (>= 30)؛ عتبة المساواة هي جوهر القاعدة.",
+      "rubric": [
+        "تستعمل > لا >="
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"is_eligible\"]\nassert f(30) is False\nassert f(31) is True\nassert f(29) is False\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0044",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "الوسوم مخزّنة كـ tuple غير قابلة للتغيير، ودالة الإضافة يجب أن تعيد tuple جديدًا يضمّ الوسم، لكنها تنهار بخطأ AttributeError. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef add_tag(tags, tag):\n    tags.append(tag)\n    return tags\n```"
+        }
+      ],
+      "reference": "tuple لا تدعم append؛ الإضافة ببناء tuple جديد عبر الضمّ.",
+      "rubric": [
+        "تبني tuple جديدًا",
+        "لا تغيّر الأصل"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"add_tag\"]\nassert f((\"أ\", \"ب\"), \"ج\") == (\"أ\", \"ب\", \"ج\")\nassert f((), \"س\") == (\"س\",)\nold = (\"x\",)\nr = f(old, \"y\")\nassert r == (\"x\", \"y\") and old == (\"x\",)\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0013",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة متوسط تعطي نتيجة صحيحة ناقصة أحيانًا لأنها تقسم قسمة صحيحة بدل الحقيقية. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef average(nums):\n    return sum(nums) // len(nums)\n```"
+        }
+      ],
+      "reference": "// تقصّر نحو الأسفل؛ المتوسط الحقيقي يحتاج /.",
+      "rubric": [
+        "قسمة حقيقية لا صحيحة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"average\"]\nassert f([1, 2]) == 1.5\nassert f([2, 4]) == 3.0\nassert f([1, 2, 2]) == 5 / 3\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0012",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تجمع الأعداد من a إلى b شاملًا الطرفين، لكنها تحذف b من المجموع. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef sum_range(a, b):\n    return sum(range(a, b))\n```"
+        }
+      ],
+      "reference": "range يستثني الحد الأعلى؛ الشمول يتطلب b + 1.",
+      "rubric": [
+        "تشمل b في المجموع",
+        "حالة a == b تعيد a"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"sum_range\"]\nassert f(1, 10) == 55\nassert f(5, 5) == 5\nassert f(-2, 2) == 0\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0015",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تفحص وجود عدد سالب في قائمة، لكنها تحكم من أول عنصر فقط فتخطئ كل القوائم التي أولها موجب. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef has_negative(nums):\n    for x in nums:\n        if x < 0:\n            return True\n        else:\n            return False\n    return False\n```"
+        }
+      ],
+      "reference": "return False داخل الحلقة ينهي الفحص بعد أول عنصر؛ يجب أن يكون بعد انتهاء الحلقة.",
+      "rubric": [
+        "تكمل المرور على كل العناصر",
+        "ترجع False بعد الحلقة لا داخلها"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"has_negative\"]\nassert f([1, -2, 3]) is True\nassert f([1, 2]) is False\nassert f([]) is False\nassert f([-5, 1]) is True\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0039",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد اسم الشهر (1=يناير ... 12=ديسمبر)، لكنها متقدمة شهرًا وتنهار تمامًا عند ديسمبر. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\nMONTHS = [\"يناير\", \"فبراير\", \"مارس\", \"أبريل\", \"مايو\", \"يونيو\", \"يوليو\", \"أغسطس\", \"سبتمبر\", \"أكتوبر\", \"نوفمبر\", \"ديسمبر\"]\ndef month_name(m):\n    return MONTHS[m]\n```"
+        }
+      ],
+      "reference": "القوائم مفهرسة من 0 والأشهر مرقمة من 1؛ الفهرس m - 1.",
+      "rubric": [
+        "تحوّل الترقيم البشري إلى فهرسة بايثون"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"month_name\"]\nassert f(1) == \"يناير\"\nassert f(12) == \"ديسمبر\"\nassert f(6) == \"يونيو\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0011",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة ترتّب سجلات طلاب تنازليًّا بالدرجة، وعند التعادل أبجديًّا تصاعديًّا بالاسم، لكن المتعادلين يخرجون بترتيب أبجديّ معكوس. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef sort_students(records):\n    return sorted(records, key=lambda r: (-r[\"grade\"], r[\"name\"]), reverse=True)\n```"
+        }
+      ],
+      "reference": "reverse=True يعكس المفتاح كله فيقلب كسر التعادل أيضًا؛ المفتاح (-grade, name) وحده يكفي.",
+      "rubric": [
+        "الدرجة تنازليًّا",
+        "الاسم تصاعديًّا عند التعادل"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"sort_students\"]\nrecs = [{\"name\": \"بدر\", \"grade\": 90}, {\"name\": \"أمجد\", \"grade\": 90}, {\"name\": \"جمال\", \"grade\": 80}]\nassert [r[\"name\"] for r in f(recs)] == [\"أمجد\", \"بدر\", \"جمال\"]\nrecs2 = [{\"name\": \"س\", \"grade\": 5}, {\"name\": \"ع\", \"grade\": 9}]\nassert [r[\"name\"] for r in f(recs2)] == [\"ع\", \"س\"]\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0028",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تفحص هل توجد في القائمة كلمة تبدأ ببادئة معطاة، لكنها لا تجدها إلا إذا كانت القائمة تحوي البادئة كلمةً مستقلة. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef any_prefix(words, p):\n    return p in words\n```"
+        }
+      ],
+      "reference": "in على قائمة يفحص العضوية الكاملة؛ البادئة تُفحص بـ startswith على كل كلمة.",
+      "rubric": [
+        "تفحص البادئة لا العضوية الكاملة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"any_prefix\"]\nassert f([\"حمادة\", \"علي\"], \"حم\") is True\nassert f([\"سعيد\"], \"ح\") is False\nassert f([], \"أ\") is False\nassert f([\"باب\"], \"باب\") is True\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0029",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تفحص وجود رقم في أي موضع من النص، لكنها لا ترى الرقم إلا إذا جاء في بداية النص. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\nimport re\ndef contains_digit(s):\n    return re.match(r\"\\d\", s) is not None\n```"
+        }
+      ],
+      "reference": "re.match يطابق من بداية النص فقط؛ البحث في أي موضع يتطلب re.search.",
+      "rubric": [
+        "تستعمل search لا match"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"contains_digit\"]\nassert f(\"أب3\") is True\nassert f(\"أب\") is False\nassert f(\"3أب\") is True\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0002",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة دمج فترات تعمل صحيحًا إذا كان المدخل مرتبًا، لكنها تنتج نتائج خاطئة عند فترات غير مرتبة لأنها لا ترتّب أولًا. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef merge_intervals(intervals):\n    if not intervals:\n        return []\n    merged = [list(intervals[0])]\n    for s, e in intervals[1:]:\n        if s <= merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], e)\n        else:\n            merged.append([s, e])\n    return [tuple(m) for m in merged]\n```"
+        }
+      ],
+      "reference": "الدمج التسلسلي يفترض ترتيبًا؛ يجب sorted(intervals) قبل المرور.",
+      "rubric": [
+        "ترتّب المدخل قبل الدمج",
+        "ناتج مرتّب مدموج"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"merge_intervals\"]\nassert f([(5, 7), (1, 3)]) == [(1, 3), (5, 7)]\nassert f([(10, 12), (1, 4), (2, 3)]) == [(1, 4), (10, 12)]\nassert f([]) == []\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0041",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحذف التكرار مع الإبقاء على أول ظهور لكل عنصر، لكنها تبقي آخر ظهور بدل الأول. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef dedup_keep_first(lst):\n    out = []\n    for x in lst:\n        if x in out:\n            out.remove(x)\n        out.append(x)\n    return out\n```"
+        }
+      ],
+      "reference": "إزالة القديم وإلحاق الجديد ينقل العنصر إلى النهاية؛ الإبقاء على الأول يعني تخطّي المكرر.",
+      "rubric": [
+        "تبقي أول ظهور وموضعه",
+        "تحذف التكرارات اللاحقة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"dedup_keep_first\"]\nassert f([1, 2, 1, 3]) == [1, 2, 3]\nassert f([5, 5, 5]) == [5]\nassert f([]) == []\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0001",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تدمج الفترات المغلقة المتداخلة، والمطلوب أن تُدمج المتلامسة أيضًا ([1,3] مع [3,5] لأن 3 مشتركة)، لكنها تترك المتلامسة منفصلة. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef merge_intervals(intervals):\n    if not intervals:\n        return []\n    intervals = sorted(intervals)\n    merged = [list(intervals[0])]\n    for s, e in intervals[1:]:\n        if s < merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], e)\n        else:\n            merged.append([s, e])\n    return [tuple(m) for m in merged]\n```"
+        }
+      ],
+      "reference": "الشرط s < النهاية يستثني التلامس؛ الفترات المغلقة تتطلب s <= النهاية.",
+      "rubric": [
+        "تُدمج الفترات المتلامسة",
+        "تبقى المنفصلة كما هي",
+        "الحاوية تُدمج"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"merge_intervals\"]\nassert f([(1, 3), (3, 5)]) == [(1, 5)]\nassert f([(1, 2), (4, 6)]) == [(1, 2), (4, 6)]\nassert f([]) == []\nassert f([(1, 4), (2, 3)]) == [(1, 4)]\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0023",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحذف المستخدمين غير النشطين من قاموس، لكنها تنهار بخطأ RuntimeError عند وجود أي غير نشط. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef drop_inactive(users):\n    for name, active in users.items():\n        if not active:\n            del users[name]\n    return users\n```"
+        }
+      ],
+      "reference": "الحذف من قاموس أثناء التكرار عليه يغيّر حجمه فيرفع RuntimeError؛ الحل بناء قاموس جديد.",
+      "rubric": [
+        "لا تحذف أثناء التكرار",
+        "تبقي النشطين فقط"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"drop_inactive\"]\nassert f({\"أ\": True, \"ب\": False}) == {\"أ\": True}\nassert f({\"أ\": True}) == {\"أ\": True}\nassert f({}) == {}\nassert f({\"أ\": False, \"ب\": False}) == {}\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0022",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة يفترض أن تعيد اسم أرخص منتج من قاموس {اسم: سعر}، لكنها تعيد الاسم الأبجدي الأول بغضّ النظر عن السعر. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef cheapest(prices):\n    return min(prices)\n```"
+        }
+      ],
+      "reference": "min على قاموس يقارن المفاتيح؛ المطلوب المفتاح صاحب أصغر قيمة عبر key=prices.get.",
+      "rubric": [
+        "تقارن بالقيم لا بالمفاتيح",
+        "تعيد الاسم لا السعر"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"cheapest\"]\nassert f({\"خبز\": 5, \"حليب\": 3, \"جبن\": 8}) == \"حليب\"\nassert f({\"تفاح\": 10, \"موز\": 4}) == \"موز\"\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0005",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة ترحيب يفترض أن تميّز المدير، لكنها لا تتعرّف عليه أحيانًا رغم أن الاسم صحيح حرفًا حرفًا. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef greeting(name):\n    if name is \"admin\":\n        return \"مرحبًا بالمدير\"\n    return \"مرحبًا \" + name\n```"
+        }
+      ],
+      "reference": "is تقارن الهوية لا المحتوى؛ النصوص المتساوية قد تختلف هويّتها، والمقارنة الصحيحة ==.",
+      "rubric": [
+        "تستبدل is بـ == للنصوص",
+        "تتعرف على النص المبنيّ ديناميكيًّا"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"greeting\"]\n_name = \"\".join([\"ad\", \"min\"])\nassert f(_name) == \"مرحبًا بالمدير\"\nassert f(\"admin\") == \"مرحبًا بالمدير\"\nassert f(\"سالم\") == \"مرحبًا سالم\"\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_e_0024",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "في نظام فوترة، التقريب لأقرب عدد صحيح يجب أن يكون والنصف لأعلى (2.5 ← 3)، لكن الدالة تقرّب 2.5 إلى 2. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef round_money(x):\n    return round(x)\n```"
+        }
+      ],
+      "reference": "round في بايثون يقرّب النصف للزوجي (تقريب المصرفيين)؛ النصف لأعلى يحتاج floor(x + 0.5).",
+      "rubric": [
+        "النصف يقرّب لأعلى دائمًا",
+        "الباقي تقريب عاديّ"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"round_money\"]\nassert f(2.5) == 3\nassert f(2.4) == 2\nassert f(3.5) == 4\nassert f(0.5) == 1\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_e_0004",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تتحقق أن مجموع دفعات يساوي المبلغ المتوقع، لكنها ترفض أحيانًا رغم صحة الحساب (مثل ثلاث دفعات 0.1 مقابل 0.3). أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef payments_equal(payments, expected):\n    return sum(payments) == expected\n```"
+        }
+      ],
+      "reference": "جمع الأعداد العشرية تراكميّ الخطأ؛ المقارنة بـ == تفشل مع 0.1+0.1+0.1، والحل isclose.",
+      "rubric": [
+        "لا تقارن العشرية بـ ==",
+        "تقبل التقريب وتقيه من الإيجابيات الكاذبة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"payments_equal\"]\nassert f([0.1, 0.1, 0.1], 0.3) is True\nassert f([0.1, 0.2], 0.5) is False\nassert f([1.5, 2.5], 4.0) is True\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_e_0036",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تدمج قائمتين في قائمة واحدة جديدة بعناصرهما معًا، لكنها تضيف القائمة الثانية عنصرًا واحدًا متداخلًا. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef combine(a, b):\n    a.append(b)\n    return a\n```"
+        }
+      ],
+      "reference": "append يضيف القائمة كعنصر واحد؛ الدمج يكون بـ + أو extend مع نسخة لحماية المدخل.",
+      "rubric": [
+        "تدمج العناصر لا القائمة كعنصر",
+        "لا تغيّر المدخل"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"combine\"]\nassert f([1], [2, 3]) == [1, 2, 3]\nassert f([], [1]) == [1]\nx = [9]\nr = f(x, [8])\nassert r == [9, 8] and x == [9]\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0037",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تعيد ضعف مجموع قائمة، لكنها تنهار بخطأ TypeError: 'int' object is not callable. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef double_total(nums):\n    sum = 0\n    for x in nums:\n        sum += x\n    return sum(nums) * 2\n```"
+        }
+      ],
+      "reference": "المتغير sum يحجب الدالة المدمجة فيصير sum(nums) استدعاءً لعدد؛ إعادة التسمية تحلّه.",
+      "rubric": [
+        "لا تحجب sum المدمجة",
+        "الضعف يُحسب من المجموع"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"double_total\"]\nassert f([1, 2]) == 6\nassert f([]) == 0\nassert f([5]) == 10\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0027",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تبني قاموسًا يقابل كل عنصر بفهرسه (يبدأ من 0)، لكن الفهارس والعناصر مقلوبة في الناتج. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef first_positions(items):\n    out = {}\n    for x, i in enumerate(items):\n        out[x] = i\n    return out\n```"
+        }
+      ],
+      "reference": "enumerate تعيد (الفهرس، العنصر) بهذا الترتيب؛ فكّ التعبئة بترتيب معكوس يقلب القاموس.",
+      "rubric": [
+        "ترتيب فكّ تعبئة enumerate صحيح"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"first_positions\"]\nassert f([\"أ\", \"ب\"]) == {\"أ\": 0, \"ب\": 1}\nassert f([]) == {}\nassert f([\"س\", \"ص\", \"ع\"]) == {\"س\": 0, \"ص\": 1, \"ع\": 2}\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0014",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "إجمالي السطر في فاتورة يجب أن يكون (السعر + رسم الخدمة) × الكمية، لكن الدالة تحسب السعر + (الرسم × الكمية) لخطأ في الأسبقية. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef line_total(price, fee, qty):\n    return price + fee * qty\n```"
+        }
+      ],
+      "reference": "الضرب مقدَّم على الجمع؛ القوسان حول (price + fee) إلزاميان.",
+      "rubric": [
+        "تجمع قبل الضرب بالكمية"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"line_total\"]\nassert f(10, 2, 3) == 36\nassert f(100, 0, 5) == 500\nassert f(1.5, 0.5, 4) == 8.0\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0045",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحلّل قائمة نصية مفصولة بفواصل إلى عناصر نظيفة: بلا فراغات زائدة حول كل عنصر وبلا عناصر فارغة، لكن ناتجها مليء بفراغات وعناصر فارغة. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef parse_list(s):\n    return s.split(\",\")\n```"
+        }
+      ],
+      "reference": "split وحدها تترك الفراغات والفارغات؛ يلزم strip لكل عنصر وتصفية الفارغ.",
+      "rubric": [
+        "تهذّب كل عنصر",
+        "تحذف العناصر الفارغة"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"parse_list\"]\nassert f(\"أ, ب ,,ج \") == [\"أ\", \"ب\", \"ج\"]\nassert f(\"\") == []\nassert f(\"واحد\") == [\"واحد\"]\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0016",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "رمز الدخول صالح إذا تحقّق الشرطان معًا: طوله 3 فأكثر، وفيه رقم واحد على الأقل. الدالة تقبل رموزًا يجب رفضها. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef valid_code(s):\n    return len(s) >= 3 or any(c.isdigit() for c in s)\n```"
+        }
+      ],
+      "reference": "المواصفة تشترط تحقق الشرطين معًا (and) لا أحدهما (or).",
+      "rubric": [
+        "تستعمل and لا or"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"valid_code\"]\nassert f(\"a1\") is False\nassert f(\"abc1\") is True\nassert f(\"abcd\") is False\nassert f(\"1\") is False\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0018",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحسب مجموع كل صف في مصفوفة، لكن مجاميعها تتراكم من صف إلى صف بدل أن تبدأ كل صف من الصفر. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef row_sums(m):\n    total = 0\n    out = []\n    for row in m:\n        for x in row:\n            total += x\n        out.append(total)\n    return out\n```"
+        }
+      ],
+      "reference": "المجمّع يجب أن يُصفّر داخل حلقة الصفوف لا خارجها.",
+      "rubric": [
+        "تصفير المجموع لكل صف"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"row_sums\"]\nassert f([[1, 2], [3, 4]]) == [3, 7]\nassert f([[5], [5], [5]]) == [5, 5, 5]\nassert f([[]]) == [0]\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0025",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تطبّع فهرسًا داخل طول قائمة دائرية وتدعم الفهارس السالبة (مثل -1 يعني آخر موضع)، لكنها تعطي مواضع خاطئة للسالب. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef wrap_index(i, n):\n    return abs(i) % n\n```"
+        }
+      ],
+      "reference": "abs يقلب دلالة السالب؛ باقي القسمة في بايثون موجب دومًا مع مقسوم موجب فيكفي i % n.",
+      "rubric": [
+        "تستعمل % مباشرة دون abs"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"wrap_index\"]\nassert f(-1, 5) == 4\nassert f(7, 5) == 2\nassert f(0, 3) == 0\nassert f(-6, 5) == 4\n"
+        }
+      ],
+      "critical": false
+    },
+    {
+      "case_id": "prog_e_0006",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة وصف شخص تطبع جملة مقلوبة المعنى: الاسم مكان العمر والعمر مكان الاسم. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef describe(name, age):\n    return \"الاسم: {}، العمر: {}\".format(age, name)\n```"
+        }
+      ],
+      "reference": "وسائط format تُمرّر بترتيب معكوس؛ يجب مطابقة ترتيب الوسائط لمواضع {}.",
+      "rubric": [
+        "ترتيب وسائط format صحيح"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"describe\"]\nassert f(\"سارة\", 25) == \"الاسم: سارة، العمر: 25\"\nassert f(\"خالد\", 40) == \"الاسم: خالد، العمر: 40\"\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_e_0017",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تأخذ عددين كنصوص وتعيد النص الموافق للأكبر عدديًّا، لكنها تقارن نصيًّا فتظن أن '9' أكبر من '10'. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\ndef larger_number(a, b):\n    return a if a > b else b\n```"
+        }
+      ],
+      "reference": "المقارنة النصية أبجدية ('9' > '10')؛ يجب التحويل إلى int قبل المقارنة مع إعادة النص الأصلي.",
+      "rubric": [
+        "تقارن عدديًّا لا نصيًّا",
+        "تعيد النص الأصلي"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"larger_number\"]\nassert f(\"10\", \"9\") == \"10\"\nassert f(\"7\", \"42\") == \"42\"\nassert f(\"5\", \"5\") == \"5\"\n"
+        }
+      ],
+      "critical": true
+    },
+    {
+      "case_id": "prog_e_0030",
+      "capability": "fix_bug",
+      "messages": [
+        {
+          "role": "user",
+          "content": "دالة تحسب كم يومًا بقي حتى تاريخ مستقبليّ، لكنها تعيد قيمًا سالبة لأن طرح التاريخين معكوس. أصلحها وأخرج الكود المصلَّح فقط بلا شرح.\n\n```python\nfrom datetime import date\ndef days_until(today, target):\n    return (today - target).days\n```"
+        }
+      ],
+      "reference": "المتبقي = الهدف ناقص اليوم؛ الطرح المعكوس يعكس الإشارة.",
+      "rubric": [
+        "اتجاه الطرح صحيح",
+        "الماضي يعطي سالبًا صحيحًا"
+      ],
+      "checks": [
+        {
+          "kind": "python_sandbox",
+          "value": "import re\n_ans = __model_raw_answer__\n_m = re.findall(r\"```(?:python)?\\s*\\n(.*?)```\", _ans, re.S)\n_code = _m[0] if _m else _ans\n_ns = {}\nexec(_code, _ns)\nf = _ns[\"days_until\"]\nfrom datetime import date as _d\nassert f(_d(2026, 1, 1), _d(2026, 1, 10)) == 9\nassert f(_d(2026, 3, 1), _d(2026, 3, 1)) == 0\nassert f(_d(2026, 5, 10), _d(2026, 5, 1)) == -9\n"
+        }
+      ],
+      "critical": true
+    }
+  ]
+}

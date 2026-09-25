@@ -1,0 +1,358 @@
+{
+  "suite_id": "kimi_assist_b_002",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "B",
+  "cases": {
+    "anal_b_0005": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تشخيص مغالطة شائعة بوضوح؛ التسمية الخاطئة هي الفشل المقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0009": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "مغالطة شخصنة نموذجية؛ التسمية والشرح يُقاسان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0013": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "وزن نوعين من الأدلة (تجريبي مقابل سلطة وقياس)؛ ترجيح السلطة على البيانات خطأ منهجي مقصود.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0003": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مقارنة عرضين بظرف شخصي مركب (زواج حديث + دراسة مسائية)؛ تجاهل أحد الظرفين خطأ تحليلي مقصود.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قرار صحي إداري بمقايضة سلامة؛ التعامل مع الحالات كأرقام قد يخفي خطرًا على حالات حرجة — جوهر التحليل الجيد هنا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0014": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحليل عقد شراكة فيه بند خطير خفي (تكافؤ السعر)؛ تفويته قد يكلف التاجر قناته المباشرة الأعلى ربحية.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "البند الخطير مقدّم بصيغة عادية آخر العرض كي يمرّ دون فحص."
+    },
+    "anal_b_0037": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحليل رسالة قيادية متعددة الأبعاد؛ الإعجاب الكامل بالأسلوب التحفيزي دون رصد التعريض المقنع خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0030": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فحص نزاهة إجرائية في قرار لجنة؛ الخلط بين استحقاق الفائز وسلامة تطبيق المعيار خطأ تحليلي له أثر على عدالة القرار.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0041": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مطابقة مطالب على بنود عقد؛ الخلط أو الإنصاف العاطفي قد يكلف طرفًا حقًّا تعاقديًّا موثقًا.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "المطلب الثالث فخّ: فيه حق جزئي لكل طرف، والحكم الجازم لأحدهما خطأ."
+    },
+    "anal_b_0021": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحليل خطاب فصل؛ الخلط بين الموثق والانطباعي قد يحوّل فصلًا مشروعًا إلى تعسفي بخسارة قانونية للجهة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0004": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحليل خطاب بحجة إحصائية ملتبسة؛ قبول الارتباط الزائف بين زوار الحي ومصلحة التجار خطأ تحليلي جسيم لمن يستند للتحليل في قرار.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "رقم 40% الملموس يغري بقبول الحجة دون فحص وحدتها القياسية."
+    },
+    "anal_b_0011": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مقارنة عائد استثمار بحساب صريح؛ الخطأ الحسابي أو تجاهل افتراض التحويل خطأ جسيم في قرار إنفاق حقيقي.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الرقم الكبير 1.2 مليون قد يحسم الترجيح دون فحص أنه مبني على نسبة تحويل مفترضة."
+    },
+    "anal_b_0038": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قراءة نتائج استطلاع بعينة ذاتية؛ تعميم نسبة المشاركين على الكل خطأ إحصائي جسيم شائع في التقارير المؤسسية.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "نسبة 78% الكبيرة تغري بالتعميم رغم أنها على 30% فقط من الموظفين."
+    },
+    "anal_b_0015": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "استخراج جوهر الخلاف في قضية سياسات؛ يقيس الإنصاف والتجريد.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0033": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقارنة بمعيار مؤسسي (الرسالة) لا مالي فقط؛ التجاهل للمعيار المطلوب خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحليل قرار مالي شخصي بطلب صريح بعدم فرض القرار؛ الالتزام بهذا القيد يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0029": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تمييز علاج العرض من الجذر؛ المساواة بينهما أو اعتبار المؤقت حلًّا خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحليل عرض ترشيح فيه تلاعب استدلالي خفي؛ قبول «الخيار الوحيد» دون فحص خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0012": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحليل تقنية إقناعية إشكالية؛ الاكتفاء بالوصف دون التقييم النقدي خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحليل قرار تجاري بسياق محدد؛ العموميات والتجاهل للعمولات أخطاء مقاسة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0006": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقارنة بقيد صارم (عدد المقاعد)؛ تجاهل القيد الصارم لصالح مزايا ثانوية خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0036": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تشخيص نوع الخلاف (علمي مقابل أولويات)؛ الخلط بينهما يطيل النزاعات المؤسسية ويقيس عمق التحليل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "منحدر زلق في سياق بلدي واقعي؛ قبول الحتمية خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0001": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عرض وجهي جدل بحياد؛ الترجيح الخفي أو الخاتمة المتحيزة خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0039": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فصل وصف عن حكم في نص نقدي؛ ابتلاع الأحكام التأويلية كوقائع خطأ قرائي مقصود.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0019": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقارنة نهجين بمعيار «متى يكون أنسب»؛ التفضيل المطلق خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0034": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تصميم فحص لادعاء تسويقي؛ قبول الشهادات كدليل خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0024": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "مقارنة جودة خطابي توصية؛ الانخداع بشدة المجاملة خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "anal_b_0031": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحليل قرار شخصي بتخصيص التوصية؛ الحكم المطلق خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0027": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل إرشادات سردية إلى نقاط أمر مباشرة؛ اكتمال القواعد وصيغة الأمر يُقاسان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0035": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص إعلان وظيفة بعناصر إلزامية؛ حفظ البريد حرفيًّا يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0019": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص بريد تكليفات بصيغة «ماذا يريد مني»؛ عملي شائع ودقيق القياس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0007": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "صياغة عنوان بحد كلمات؛ الدقة وعدم التهويل يُقاسان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0022": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اختيار «النتيجة الرئيسية» حكم تحريري؛ الخطأ المقاس هو سرد كل الأرقام تهرّبًا من الحكم أو قلب اتجاه نسبة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0037": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تلخيص بنود عقد للمستأجر؛ حذف مهلة الإخطار أو عقوبة الفسخ قد يكلف المستأجر حقوقًا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الفصل بين الواقع والتوقع في خبر اقتصادي؛ دمج التوقع مع الواقع خطأ شائع مقصود.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0028": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تلخيص تجربتين متناقضتين لأبحاث سوق؛ دمجهما في رأي واحد يفسد البيانات النوعية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0036": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نص يعرض القرار ثم يعارضه؛ التلخيص الذي يقلب موقف الكاتب معارضةً إلى تأييد خطأ جسيم يشوّه الموقف.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "عرض مبرر المؤيدين أولًا يغري النموذج بتقديم النص كأنه يؤيد القرار."
+    },
+    "summ_b_0010": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "توقعات متحدث ذي مصلحة؛ تقديمها كحقائق يضلل القارئ ويقلب طبيعة النص من ادعاء إلى خبر.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "النموذج قد يكتب «سترتفع أسعار الشحن 30%» كخبر بدل نسبته لصاحبه."
+    },
+    "summ_b_0012": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بيان نفي إشاعة صحية؛ قلب النفي إلى تأكيد خطأ جسيم قد يسبب ذعرًا صحيًّا.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "التلخيص الآلي قد يقطع الجملة عند «سحب دواء الشركة» فيقلب المعنى."
+    },
+    "summ_b_0038": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص بيانات متباينة؛ الدمج في رقم واحد يخفي جوهر التقرير.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0024": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إعلان حكومي بشروط؛ حصرية القناة شرط جوهري يجب ألا يضيع في التلخيص.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0021": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص بمنظور عملي (إيجابيات/سلبيات للزبون)؛ الموازنة مطلوبة صراحة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0031": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تركيز على فئة شروط دون غيرها؛ التسريب من الفئات الأخرى خطأ مقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص للأرشفة يتطلب حيادًا وحفظ السلبيات؛ خطر التجميل بحذف الملاحظة السلبية مقصود القياس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص تعميم إداري بتركيز محدد (مواعيد ومستندات)؛ اكتمال القائمة يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0020": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص تسلسل زمني؛ خلط الترتيب أو فقد التواريخ يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0030": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص تحذير أمني بعناصر إلزامية؛ حذف الإجراء يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0004": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص رياضي بتفاصيل كثيرة؛ حفظ الأسماء والأرقام هو المقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص شكوى لهيكل محدد بأرقام مرجعية؛ حفظ الأرقام وظيفي هنا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0025": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نص شخصي مشحون؛ الحياد عن الحكم الأخلاقي يقيس الانضباط على التعليمة ضد ميل النماذج للتعليق.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0029": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص توثيقي لملف موظف؛ الحياد والتواريخ يُقاسان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "استخراج المشكلة والمطلب من رسالة انفعالية؛ يقيس الفلترة دون فقد الجوهر.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0006": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "استخراج نوع واحد من المعلومات (القرارات) مع استبعاد صريح للمناقشات.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0001": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص مشروط بفصل الوقائع عن الآراء؛ إقحام التوقعات هو الخطأ المقاس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0039": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص لقرار فردي؛ حذف المتطلبات يحوّل التلخيص إلى إعلان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "summ_b_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تلخيص اعتراض للجنة؛ حفظ المطلب المزدوج والمبررات يُقاس.",
+      "answer_verified_by": "author_reasoned"
+    }
+  }
+}

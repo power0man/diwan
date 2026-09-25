@@ -1,0 +1,379 @@
+{
+  "suite_id": "kimi_assist_b_003",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "B",
+  "cases": {
+    "rewr_b_0009": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل عامي مبالغ إلى بند ملزم؛ القيود الثلاثة هي الحكم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0034": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تاريخ مستحيل ذاتيًّا؛ أسهل حالات الاكتشاف وأكثرها فضحًا للتمرير الآلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0030": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تعاكس تاريخين مباشر؛ حالة سهلة الاكتشاف تقيس الانتباه الأساسي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0010": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "رفع منشور عامي إلى إعلان رسمي بحفظ وقائع؛ حالة سهلة بضبط أرقام.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0029": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تناقض تسلسل زمني ملفوف بصياغة سببية («وقد سبق ذلك»)؛ يقيس تتبع الخط الزمني لا التواريخ المفردة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0040": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نسبة إنجاز لا تطابق كسرها؛ طبقة ثانية من التناقض مع «وفق الجدول» تكافئ التدقيق الأعمق.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0031": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "طرح زمني مقنَّع بمناسبة (يوبيل فضي)؛ يقيس الحساب الزمني داخل سرد احتفالي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0032": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تناقض يتطلب معرفة تقويمية خارجية؛ يقيس الحذر من تأكيد يوم/تاريخ غير متحقق منه.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يعيد النموذج إنتاج اليوم والتاريخ بثقة، أو «يصحح» إلى يوم خاطئ آخر."
+    },
+    "rewr_b_0036": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "مجموع جزئي لا يطابق إجمالًى؛ الخطورة في «تصحيح» النموذج للرقم بصمت أو اختلاق بند مكمل.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يضيف النموذج «و10 من مدن أخرى» تجميلًا للنص — وهو اختلاق وقائع."
+    },
+    "rewr_b_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحقيق استقصائي إلى مذكرة حقائق؛ خطورة إعادة الصياغة قانونية (تجنب القذف الضمني) ومهنية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0006": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "99.5% تسويقيًّا تبدو «ضعيفة» فيغري رفعها؛ معرفة أنها تعني ~3.6 ساعة توقف شهريًّا تمنع التضخيم.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يحوّلها النموذج إلى «توافر شبه كامل يتجاوز 99%» أو يحذف الرقم."
+    },
+    "rewr_b_0039": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حالة ملتبسة بقصد: الفارق قد يكون خطأ وقد يكون ملحقات غير مفصلة؛ الحكم على التنبيه المشروط لا الجزم.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يجزم النموذج بأحد الاتجاهين (خطأ صريح أو لا شيء) والصواب التنبيه المشروط."
+    },
+    "rewr_b_0008": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إعلان بادعاءين غير مسوغين؛ التحويل الملزم يقتضي حذف الألقاب وتقييد الأرقام، وهو عكس غريزة التسويق.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يبقي النموذج «بلا حدود» ويضيف هامشًا صغيرًا عن السياسة بدل دمجها في النص."
+    },
+    "rewr_b_0001": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تحويل سجل مع قيد الأمانة الكاملة؛ التسويق الصادق يبقي الالتزامات الثلاثة ظاهرة وهو أصعب من التلطيف.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يحذف النموذج شرط الـ30 يومًا أو عدم الرد ليبدو العرض أجمل."
+    },
+    "rewr_b_0042": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فخ مركّب: حساب جزئي صحيح يصرف النظر عن مجموع مستحيل؛ أخطر أنماط الأخطاء الحسابية في النصوص.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يتحقق النموذج من 55% فيجدها صحيحة فيطمئن ويمرر الخبر."
+    },
+    "rewr_b_0028": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تاريخان متعاكسان الترتيب؛ الاكتشاف بديهي لمن انتبه ويمرّ على من يحرر آليًّا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0005": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بند رسوم جمركية؛ إخفاؤه شائع تسويقيًّا وهو مصدر نزاعات حقيقي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0013": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فارق «تعهد» و«تبرع» جوهري في الأخبار الرسمية؛ التضخيم هنا شائع ومرفوض.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0038": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نسب مئوية لا تكتمل؛ حالة نظيفة الاكتشاف تقيس التنبيه دون التلفيق.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0011": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تغريدة حماسية إلى بيان؛ الفخ ترقية «مذكرة تفاهم» إلى «شراكة»، وهو فارق قانوني جوهري.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0007": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بند ملكية فكرية له وجهان (حماية الصانع/ترخيص المنصة)؛ الحكم على عرض الوجهين بلا إخفاء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0021": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "صحفي إلى تقريري؛ يقيس التجريد والإسناد وعدم اختراع السبب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0022": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "فصل الرأي عن الواقعة في التحويل الأكاديمي؛ التبني السلس للرأي هو الخطأ المقصود.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أمانة الخصوصية في السجل التسويقي؛ النفي المطلق المطمئن كذب صريح هنا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0037": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نسبة مشتقة خاطئة؛ الحسم واضح (النسبة تُصحح لا الأصل) فيقيس الجرأة على التصحيح المحسوب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0018": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تبسيط علمي مع حفظ الحدود؛ يقيس مقاومة سحر «الذكاء الاصطناعي» التسويقية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0033": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تعارض عمر/سنة ميلاد داخل سرد إنساني؛ حساب بسيط يغفل عنه التحرير الآلي.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أرقام تجارب دوائية تُقرأ بلا سياقها بسهولة؛ النسبة مقابل الوهمي والمرحلة هما السياق الواجب.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0024": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل حوار إلى ملخص أكاديمي؛ استمرارية أفعال النسبة هي الضابط.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "rewr_b_0016": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تحويل الارتباط إلى سببية أشهر خطأ صحفي علمي؛ الفحص على الصيغة السببية المرفوضة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يصيغ النموذج العنوان بصيغة سببية جذابة ويصلح في المتن — والعنوان وحده يكفي للرفض."
+    },
+    "techw_b_0013": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "طلب روتيني بضوابط واضحة؛ حالة سهلة تثبت النمط قبل الطلبات الحرجة.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0034": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "نقاط متداخلة تختلط فيها القرارات بالمعلّقات؛ الفصل البنيوي دون ترقية المعلق إلى قرار هو الحكم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0006": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تصعيد بمؤشرات كمية؛ الفخان: تحريف الأرقام بالتقريب، والجزم بسبب تقني غير موثق.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يخترع النموذج سببًا جذريًّا ليبدو خبيرًا."
+    },
+    "techw_b_0016": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الشفافية الزمنية في الإشعارات محل فحص تنظيمي؛ دمج التاريخين تمويه شائع يجب أن يقاومه النص.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يدمج النموذج التواريخ في «مؤخرًا» أو «خلال الأسابيع الماضية» تلطيفًا."
+    },
+    "techw_b_0026": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "يتطلب فحص تطابق نسبة مع رقمين؛ النسبة صحيحة هنا، والمطلوب تقرير يحافظ عليها ولا «يصححها» خطأً.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد «يصحح» النموذج النسبة إلى 15% ظانًّا أنه يدقق، وهنا يخطئ تصحيحُ الصحيح."
+    },
+    "techw_b_0024": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إشعارات تغيير الشروط أشهر مواضع التمويه المهني؛ الأمانة في الإبراز هنا حكم أخلاقي قبل أن يكون تحريريًّا.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يستبدل النموذج الزيادة بـ«تحديث الأسعار» ويدفن التجديد التلقائي في التفاصيل."
+    },
+    "techw_b_0008": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "طلب وصول إنتاج حساس؛ جوهره مبدأ الحد الأدنى الذي تغفله الصياغات العامة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يكتب النموذج طلب «وصول كامل لإنجاز المشروع بسرعة» مناقضًا للمبدأ الأمني."
+    },
+    "techw_b_0014": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إشعار اختراق بيانات من أدق الكتابة الرسمية: الصدق الكامل مع الهدوء، وأي تهوين أو اختراع خطيئة قانونية وأخلاقية.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "الميل الطبيعي للنماذج تلطيف الخبر بعبارات طمأنة مفرطة أو صيغ تبريرية."
+    },
+    "techw_b_0018": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "الفخ الأمني: إشعارات الاختراق نفسها تُستغل للتصيد؛ الإشعار السليم يحصّن العميل ولا يفتح ثغرة جديدة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يضيف النموذج رابط «تحقق من حسابك» أو يطلب تأكيد بيانات — وهو أسوأ خطأ ممكن هنا."
+    },
+    "techw_b_0001": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تصعيد فوري تحت ضغط خسارة مالية؛ نجاحه مرهون بحصر الوقائع والمطالب دون انفعال أو اختراع.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يضيف النموذج تهديدًا قانونيًّا أو أرقام تعويض من عنده فيفسد الحياد المهني."
+    },
+    "techw_b_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إشعار تأجيل؛ النقطة الفارقة: نفي الانقطاع في الموعد القديم الذي ينساه كثير من الصياغات.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0028": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تقرير متابعة مشروع؛ يقيس الصدق في تسمية المتأخر وسببه بدل لغة «السير الإيجابي».",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0022": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تاريخان متقاربان مختلفا الدلالة؛ الخلط بينهما يضلل العميل عن خطورته الأمنية الحقيقية.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0032": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "محضر فيه معارضة؛ يقيس توثيق الأقلية بحياد بدل تلميع الإجماع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0039": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "اعتذار انقطاع بتعويض؛ الوعد المطلق بعدم التكرار عبارة شائعة يجب منعها.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0019": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "حادثة محدودة يكثر فيها الخطآن: التضخيم المقلق أو التهوين المتكبر؛ دقة الحصر هي الحكم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0004": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "بريد رواتب حساس زمنيًّا؛ يقيس عرض بدائل مسؤولة بدل المطلب الانفعالي الواحد.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0029": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تقرير بوجهين متعاكسين؛ دفن الرقم السيئ في ذيل التقرير هو الخطأ المقصود هنا.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0007": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "البريد الثالث في تدرج تعاقدي؛ يقيس الحزم الموثّق المحسوب بدل الانفجار أو الاستجداء.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0011": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تفويض مؤقت شائع يكثر فيه الخطأ العملي (مشاركة الحساب)؛ الطلب السليم يجب أن يتجنبه صراحة.",
+      "answer_verified_by": "author_reasoned",
+      "trap": "قد يقترح النموذج «تسجيل الدخول بحساب الزميل» كحل عملي."
+    },
+    "techw_b_0009": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "رفع صلاحية كتابة على بيانات عملاء؛ الضوابط الزمنية والإجرائية هي موضع القياس.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0015": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "دقة وصف نطاق التأثر الجزئي؛ الخلط بين «تأثر جزء من بيانات البطاقة» و«سرقة بطاقات» أو نفي المساس هما الخطآن المقصودان.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0040": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "توضيح خطأ مالي؛ يقيس الشفافية الكاملة بالأرقام مع سهولة الحل على العميل.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0010": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "وصول لبيانات مالية حساسة؛ يقيس التسبيب والتقييد الطوعي بدل الطلب المجرد.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0002": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تصعيد نمط متكرر لا حادثة مفردة؛ يقيس توثيق السجل وربط المطلب التعويضي بالسند.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0042": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "رسالة تأخير لشريك؛ التوازن بين الإقرار وحفظ الثقة بالإجراءات هو الحكم.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إشعار طرف ثالث يختبر التوازن بين دقة النسبة وعدم التنصل؛ خطأ شائع: التهرب الكامل أو تحميل النفس ما لم يقع.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0027": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "ملخص تنفيذي بحادث توقف؛ يقيس ضبط الخط الزمني وتحديد السبب الجذري بلا هروب للعموميات.",
+      "answer_verified_by": "author_reasoned"
+    },
+    "techw_b_0021": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إشعار لحظي أثناء حادثة؛ يقيس الصدق الجزئي والالتزام بالتحديث الدوري.",
+      "answer_verified_by": "author_reasoned"
+    }
+  }
+}

@@ -1,0 +1,515 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_arabic_a_004.json\",\n  \"judgments\": [\n    {\n      \"id\": \"arab_a_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نائب فاعل مرفوع\",\n      \"reason\": \"الفعل قُرئ مبني للمجهول، فالخبر نائب فاعل مرفوع. المرجع مطابق، والمعايير كافية للحكم.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مستثنى منصوب\",\n      \"reason\": \"الجملة تامة مثبتة، فالمستثنى بعد إلا منصوب وجوبًا. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حصر\",\n      \"reason\": \"ما...إلا تفيد الحصر. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"استفهامية\",\n      \"reason\": \"الجملة سؤال، وتمييزها مفرد منصوب، فكم استفهامية. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نائب فاعل مرفوع\",\n      \"reason\": \"فُتح مبني للمجهول، فباب نائب فاعل مرفوع. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"خبرية\",\n      \"reason\": \"السياق تعجبي إخباري، فكم خبرية وتمييزها مجرور. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0006\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"insufficient\",\n      \"my_answer\": \"بدل منصوب أو مستثنى منصوب (كلاهما جائز)\",\n      \"reason\": \"الجملة تامة منفية (المستثنى منه مذكور)، فيجوز النصب على الاستثناء والبدل. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله، فلا تكفي.\",\n      \"fix\": \"تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. يجب تعديل المعايير لتشمل جواز الوجهين.\"\n    },\n    {\n      \"id\": \"arab_a_0012\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"insufficient\",\n      \"my_answer\": \"بدل مرفوع أو مستثنى منصوب (كلاهما جائز)\",\n      \"reason\": \"الجملة تامة منفية (شيء مذكور)، فيجوز الوجهان. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله.\",\n      \"fix\": \"تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. تعديل المعايير.\"\n    },\n    {\n      \"id\": \"arab_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كافة\",\n      \"reason\": \"ما في إنما كافة تكف إن عن العمل. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كلتاهما\",\n      \"reason\": \"الاستثناء منفي تام، فيجوز الوجهان. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نائب فاعل مرفوع\",\n      \"reason\": \"أُعطي مبني للمجهول، والطالب هو المفعول الأول الذي ناب عن الفاعل. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ثلاثة عشر\",\n      \"reason\": \"العدد المركب مبني على فتح الجزأين. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"خبر ظن منصوب\",\n      \"reason\": \"ظن من أفعال الرجحان، وفي المبني للمجهول يبقى الخبر منصوبًا. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جوازًا\",\n      \"reason\": \"الاستثناء منفي تام، فالنصب جائز لا واجب. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0005\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"insufficient\",\n      \"my_answer\": \"بدل مرفوع أو مستثنى منصوب (كلاهما جائز)\",\n      \"reason\": \"الجملة تامة منفية (أحد مذكور)، فيجوز الوجهان. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله.\",\n      \"fix\": \"تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. تعديل المعايير.\"\n    },\n    {\n      \"id\": \"arab_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اثنا عشر\",\n      \"reason\": \"العدد المركب مبني على فتح الجزأين. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تمييز مجرور\",\n      \"reason\": \"كم خبرية وتمييزها مجرور. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مفعول به ثانٍ منصوب\",\n      \"reason\": \"أعطى متعدٍ لمفعولين، وفي المبني للمجهول يبقى الثاني منصوبًا. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الواو\",\n      \"reason\": \"العقود تُرفع بالواو كجمع المذكر السالم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وجوبًا\",\n      \"reason\": \"الاستثناء تام مثبت، فنصب المستثنى واجب. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كم كتابًا\",\n      \"reason\": \"تمييز كم الاستفهامية مفرد منصوب. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جمع مجرور\",\n      \"reason\": \"تمييز 3-10 جمع مجرور. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0007\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"insufficient\",\n      \"my_answer\": \"بدل مرفوع أو مستثنى منصوب (كلاهما جائز)\",\n      \"reason\": \"الجملة تامة منفية (أحد مذكور)، فيجوز الوجهان. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله.\",\n      \"fix\": \"تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. تعديل المعايير.\"\n    },\n    {\n      \"id\": \"arab_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إحدى عشرة\",\n      \"reason\": \"العدد 11 مع المؤنث إحدى عشرة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"خبر كان منصوب\",\n      \"reason\": \"خبر كان منصوب ولو كان جامدًا. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"درسًا\",\n      \"reason\": \"تمييز العقود مفرد منصوب. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حصر\",\n      \"reason\": \"ليس...إلا تفيد الحصر. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ما وإلا\",\n      \"reason\": \"أداتا الحصر ما وإلا. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"خبرية\",\n      \"reason\": \"دخول من الزائدة وقرينة التعجب تدل على الخبرية. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0029\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"كتابًا\",\n      \"reason\": \"تمييز العدد المركب مفرد منصوب. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قطع\",\n      \"reason\": \"همزة أحمد قطع. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ياء\",\n      \"reason\": \"رمى من يرمي، فالألف أصلها ياء. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مسلمين\",\n      \"reason\": \"جمع مذكر سالم منصوب بالياء. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ياء\",\n      \"reason\": \"سعى من يسعى، فالألف ياء. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وصل\",\n      \"reason\": \"همزة ابن وصل. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وصل\",\n      \"reason\": \"همزة استمع وصل. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"معلمون\",\n      \"reason\": \"جمع مذكر سالم مرفوع بالواو. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وصل\",\n      \"reason\": \"همزة انطلق وصل. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قطع\",\n      \"reason\": \"همزة أوقف قطع. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0082\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"موظفي\",\n      \"reason\": \"عند الإضافة تحذف النون. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"كتاب غير عاقل فلا يجمع جمع مذكر سالم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"التنوين\",\n      \"reason\": \"نون الجمع عوض عن التنوين. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فارقة\",\n      \"reason\": \"الألف بعد واو الجماعة فارقة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"واو\",\n      \"reason\": \"فتى من فتو، فالألف واو. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قطع\",\n      \"reason\": \"همزة أنفق قطع. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"همزة\",\n      \"reason\": \"ألف رأى أصلها همزة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0086\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الكسرة\",\n      \"reason\": \"جمع المؤنث السالم ينصب بالكسرة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0080\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"معلمو\",\n      \"reason\": \"عند الإضافة تحذف النون. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وصل\",\n      \"reason\": \"همزة استقبال وصل. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قطع\",\n      \"reason\": \"همزة أكرم قطع. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"واو\",\n      \"reason\": \"هدى من هدو، فالألف واو. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قطع\",\n      \"reason\": \"همزة أكل قطع. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"واو\",\n      \"reason\": \"دعا من يدعو، فالألف واو. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وصل\",\n      \"reason\": \"همزة اثنان وصل. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"وصل\",\n      \"reason\": \"همزة اعتمد وصل. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"صادقين\",\n      \"reason\": \"جمع مذكر سالم مجرور بالياء. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"قطع\",\n      \"reason\": \"همزة إبراهيم قطع. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0062\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"واو\",\n      \"reason\": \"عصا من عصو، فالألف واو. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ياء\",\n      \"reason\": \"على من علي، فالألف ياء. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0092\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مؤمنين\",\n      \"reason\": \"جمع مذكر سالم مجرور بالياء. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ياء\",\n      \"reason\": \"كبرى على وزن فعلى، فالألف ياء. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"arab_a_0073\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"ياء\",\n      \"reason\": \"قضى من يقضي، فالألف ياء. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 73968,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_arabic_a_004.json",
+  "file_sha256": "f7d4248bd7174664238bffe6fa4daa3a4f02ef947237cad242850f3d2a406f42",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "arab_a_0023",
+      "my_answer": "نائب فاعل مرفوع",
+      "reason": "الفعل قُرئ مبني للمجهول، فالخبر نائب فاعل مرفوع. المرجع مطابق، والمعايير كافية للحكم.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0001",
+      "my_answer": "مستثنى منصوب",
+      "reason": "الجملة تامة مثبتة، فالمستثنى بعد إلا منصوب وجوبًا. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0044",
+      "my_answer": "حصر",
+      "reason": "ما...إلا تفيد الحصر. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0036",
+      "my_answer": "استفهامية",
+      "reason": "الجملة سؤال، وتمييزها مفرد منصوب، فكم استفهامية. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0024",
+      "my_answer": "نائب فاعل مرفوع",
+      "reason": "فُتح مبني للمجهول، فباب نائب فاعل مرفوع. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0035",
+      "my_answer": "خبرية",
+      "reason": "السياق تعجبي إخباري، فكم خبرية وتمييزها مجرور. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. يجب تعديل المعايير لتشمل جواز الوجهين.",
+      "id": "arab_a_0006",
+      "my_answer": "بدل منصوب أو مستثنى منصوب (كلاهما جائز)",
+      "reason": "الجملة تامة منفية (المستثنى منه مذكور)، فيجوز النصب على الاستثناء والبدل. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله، فلا تكفي.",
+      "reference": "incorrect",
+      "rubric": "insufficient"
+    },
+    {
+      "fix": "تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. تعديل المعايير.",
+      "id": "arab_a_0012",
+      "my_answer": "بدل مرفوع أو مستثنى منصوب (كلاهما جائز)",
+      "reason": "الجملة تامة منفية (شيء مذكور)، فيجوز الوجهان. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله.",
+      "reference": "incorrect",
+      "rubric": "insufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0042",
+      "my_answer": "كافة",
+      "reason": "ما في إنما كافة تكف إن عن العمل. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0009",
+      "my_answer": "كلتاهما",
+      "reason": "الاستثناء منفي تام، فيجوز الوجهان. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0019",
+      "my_answer": "نائب فاعل مرفوع",
+      "reason": "أُعطي مبني للمجهول، والطالب هو المفعول الأول الذي ناب عن الفاعل. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0026",
+      "my_answer": "ثلاثة عشر",
+      "reason": "العدد المركب مبني على فتح الجزأين. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0021",
+      "my_answer": "خبر ظن منصوب",
+      "reason": "ظن من أفعال الرجحان، وفي المبني للمجهول يبقى الخبر منصوبًا. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0004",
+      "my_answer": "جوازًا",
+      "reason": "الاستثناء منفي تام، فالنصب جائز لا واجب. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. تعديل المعايير.",
+      "id": "arab_a_0005",
+      "my_answer": "بدل مرفوع أو مستثنى منصوب (كلاهما جائز)",
+      "reason": "الجملة تامة منفية (أحد مذكور)، فيجوز الوجهان. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله.",
+      "reference": "incorrect",
+      "rubric": "insufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0025",
+      "my_answer": "اثنا عشر",
+      "reason": "العدد المركب مبني على فتح الجزأين. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0038",
+      "my_answer": "تمييز مجرور",
+      "reason": "كم خبرية وتمييزها مجرور. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0018",
+      "my_answer": "مفعول به ثانٍ منصوب",
+      "reason": "أعطى متعدٍ لمفعولين، وفي المبني للمجهول يبقى الثاني منصوبًا. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0033",
+      "my_answer": "الواو",
+      "reason": "العقود تُرفع بالواو كجمع المذكر السالم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0002",
+      "my_answer": "وجوبًا",
+      "reason": "الاستثناء تام مثبت، فنصب المستثنى واجب. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0041",
+      "my_answer": "كم كتابًا",
+      "reason": "تمييز كم الاستفهامية مفرد منصوب. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0032",
+      "my_answer": "جمع مجرور",
+      "reason": "تمييز 3-10 جمع مجرور. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": "تصحيح المرجع: الاستثناء تام منفي، فيجوز الوجهان. تعديل المعايير.",
+      "id": "arab_a_0007",
+      "my_answer": "بدل مرفوع أو مستثنى منصوب (كلاهما جائز)",
+      "reason": "الجملة تامة منفية (أحد مذكور)، فيجوز الوجهان. المرجع اعتبرها ناقصة منفية وأوجب البدل، وهذا خطأ. المعايير توجب البدل في غير محله.",
+      "reference": "incorrect",
+      "rubric": "insufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0028",
+      "my_answer": "إحدى عشرة",
+      "reason": "العدد 11 مع المؤنث إحدى عشرة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0016",
+      "my_answer": "خبر كان منصوب",
+      "reason": "خبر كان منصوب ولو كان جامدًا. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0031",
+      "my_answer": "درسًا",
+      "reason": "تمييز العقود مفرد منصوب. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0043",
+      "my_answer": "حصر",
+      "reason": "ليس...إلا تفيد الحصر. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0046",
+      "my_answer": "ما وإلا",
+      "reason": "أداتا الحصر ما وإلا. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0037",
+      "my_answer": "خبرية",
+      "reason": "دخول من الزائدة وقرينة التعجب تدل على الخبرية. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0029",
+      "my_answer": "كتابًا",
+      "reason": "تمييز العدد المركب مفرد منصوب. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0048",
+      "my_answer": "قطع",
+      "reason": "همزة أحمد قطع. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0063",
+      "my_answer": "ياء",
+      "reason": "رمى من يرمي، فالألف أصلها ياء. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0078",
+      "my_answer": "مسلمين",
+      "reason": "جمع مذكر سالم منصوب بالياء. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0067",
+      "my_answer": "ياء",
+      "reason": "سعى من يسعى، فالألف ياء. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0049",
+      "my_answer": "وصل",
+      "reason": "همزة ابن وصل. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0047",
+      "my_answer": "وصل",
+      "reason": "همزة استمع وصل. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0077",
+      "my_answer": "معلمون",
+      "reason": "جمع مذكر سالم مرفوع بالواو. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0051",
+      "my_answer": "وصل",
+      "reason": "همزة انطلق وصل. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0061",
+      "my_answer": "قطع",
+      "reason": "همزة أوقف قطع. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0082",
+      "my_answer": "موظفي",
+      "reason": "عند الإضافة تحذف النون. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0089",
+      "my_answer": "لا",
+      "reason": "كتاب غير عاقل فلا يجمع جمع مذكر سالم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0088",
+      "my_answer": "التنوين",
+      "reason": "نون الجمع عوض عن التنوين. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0075",
+      "my_answer": "فارقة",
+      "reason": "الألف بعد واو الجماعة فارقة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0064",
+      "my_answer": "واو",
+      "reason": "فتى من فتو، فالألف واو. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0052",
+      "my_answer": "قطع",
+      "reason": "همزة أنفق قطع. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0074",
+      "my_answer": "همزة",
+      "reason": "ألف رأى أصلها همزة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0086",
+      "my_answer": "الكسرة",
+      "reason": "جمع المؤنث السالم ينصب بالكسرة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0080",
+      "my_answer": "معلمو",
+      "reason": "عند الإضافة تحذف النون. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0060",
+      "my_answer": "وصل",
+      "reason": "همزة استقبال وصل. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0056",
+      "my_answer": "قطع",
+      "reason": "همزة أكرم قطع. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0065",
+      "my_answer": "واو",
+      "reason": "هدى من هدو، فالألف واو. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0050",
+      "my_answer": "قطع",
+      "reason": "همزة أكل قطع. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0071",
+      "my_answer": "واو",
+      "reason": "دعا من يدعو، فالألف واو. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0054",
+      "my_answer": "وصل",
+      "reason": "همزة اثنان وصل. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0055",
+      "my_answer": "وصل",
+      "reason": "همزة اعتمد وصل. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0079",
+      "my_answer": "صادقين",
+      "reason": "جمع مذكر سالم مجرور بالياء. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0059",
+      "my_answer": "قطع",
+      "reason": "همزة إبراهيم قطع. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0062",
+      "my_answer": "واو",
+      "reason": "عصا من عصو، فالألف واو. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0069",
+      "my_answer": "ياء",
+      "reason": "على من علي، فالألف ياء. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0092",
+      "my_answer": "مؤمنين",
+      "reason": "جمع مذكر سالم مجرور بالياء. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0076",
+      "my_answer": "ياء",
+      "reason": "كبرى على وزن فعلى، فالألف ياء. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "arab_a_0073",
+      "my_answer": "ياء",
+      "reason": "قضى من يقضي، فالألف ياء. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T18:18:05Z"
+}

@@ -1,0 +1,552 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": "judgment_fields",
+      "raw_output": "```json\n{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_arabic_a_003\",\n  \"judgments\": [\n    {\n      \"id\": \"lex_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"متواضع\",\n      \"reason\": \"التواضع هو ترك الترفع مع القدرة، والرجل ترك التعالي مع قدرته، فهو متواضع لا ذليل.\"\n    },\n    {\n      \"id\": \"lex_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الإحجام\",\n      \"reason\": \"الإحجام هو ضد الإقدام، والثبات والحزم ليسا ضدًا مباشرًا.\"\n    },\n    {\n      \"id\": \"lex_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الشدة\",\n      \"reason\": \"الضراوة تعني الشدة، واللطف والخوف ليسا مرادفين.\"\n    },\n    {\n      \"id\": \"lex_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدم\",\n      \"reason\": \"النجيع هو الدم الصافي، والعرق والندى ليسا كذلك.\"\n    },\n    {\n      \"id\": \"lex_a_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"طول القامة\",\n      \"reason\": \"طويل النجاد كناية عن طول القامة، لأن النجاد حمائل السيف وطوله يدل على طول القامة.\"\n    },\n    {\n      \"id\": \"lex_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المخمصة\",\n      \"reason\": \"المخمصة هي شدة الجوع، فهي أشد.\"\n    },\n    {\n      \"id\": \"lex_a_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الأسود\",\n      \"reason\": \"الأدهم هو الأسود من الخيل.\"\n    },\n    {\n      \"id\": \"lex_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"شفقة\",\n      \"reason\": \"مجرد رقة القلب عند رؤية المبتلى هي الشفقة، والرحمة تتعداها إلى الإحسان.\"\n    },\n    {\n      \"id\": \"lex_a_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الكرم\",\n      \"reason\": \"كثرة الرماد من كثرة الطبخ للضيوف، فهي كناية عن الكرم.\"\n    },\n    {\n      \"id\": \"lex_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"طمع\",\n      \"reason\": \"التمني بلا سعي هو طمع، لأن الرجاء مقرون ببذل السبب.\"\n    },\n    {\n      \"id\": \"lex_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"رجاحة العقل\",\n      \"reason\": \"الحصافة هي رزانة العقل ورجاحته.\"\n    },\n    {\n      \"id\": \"lex_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"بليغ\",\n      \"reason\": \"المطابقة لمقتضى الحال هي ملاك البلاغة، وليست الفصاحة.\"\n    },\n    {\n      \"id\": \"lex_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"شحيح\",\n      \"reason\": \"الشحيح هو البخيل الحريص على مال الغير، والرجل اجتمع فيه البخل والحرص.\"\n    },\n    {\n      \"id\": \"lex_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الظمأ\",\n      \"reason\": \"الظمأ هو شدة العطش.\"\n    },\n    {\n      \"id\": \"lex_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"زهد\",\n      \"reason\": \"ترك فضول الدنيا الحلال هو زهد، أما العفة فهي الكف عن الحرام.\"\n    },\n    {\n      \"id\": \"lex_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حليم\",\n      \"reason\": \"كف الغضب مع القدرة على الانتقام هو الحلم، والأناة هي التثبت وترك العجلة.\"\n    },\n    {\n      \"id\": \"lex_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجاز\",\n      \"reason\": \"الأسد هنا استعارة عن الرجل الشجاع، فهو مجاز.\"\n    },\n    {\n      \"id\": \"lex_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء\",\n      \"reason\": \"الأمر إنشاء طلبي لا يحتمل الصدق والكذب.\"\n    },\n    {\n      \"id\": \"lex_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أول النهار\",\n      \"reason\": \"الغداة هي أول النهار، ويقابلها العشية.\"\n    },\n    {\n      \"id\": \"lex_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أحجم\",\n      \"reason\": \"الإحجام قد يكون لعذر مسوغ، فلا يوصف بالجبن.\"\n    },\n    {\n      \"id\": \"lex_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الإبانة\",\n      \"reason\": \"الإبانة هي الظهور والتوضح، وهي ضد الإبهام.\"\n    },\n    {\n      \"id\": \"lex_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جبان\",\n      \"reason\": \"التخلف عن الواجب خوفًا وجبنًا هو الجبن، والإحجام قد يكون لعذر.\"\n    },\n    {\n      \"id\": \"lex_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سرقة\",\n      \"reason\": \"أخذ المال خفية من حرزه هو السرقة، والنهب علانية، والاختلاس من جهة العمل.\"\n    },\n    {\n      \"id\": \"lex_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حاسد\",\n      \"reason\": \"تمني زوال النعمة عن الغير هو الحسد، والغيرة على المحبوب.\"\n    },\n    {\n      \"id\": \"lex_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مكر\",\n      \"reason\": \"التدبير الخفي في الضرر هو المكر، والدهاء قوة الكيس وحسن التدبير.\"\n    },\n    {\n      \"id\": \"lex_a_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المواربة\",\n      \"reason\": \"المواربة كلام يحتمل وجوهًا، وهي ضد التصريح.\"\n    },\n    {\n      \"id\": \"lex_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخشية\",\n      \"reason\": \"الخشية خوف مع تعظيم وإجلال، والفزع خوف فاجع بغتة.\"\n    },\n    {\n      \"id\": \"lex_a_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"التأني\",\n      \"reason\": \"المهل هو التأني وترك العجلة، وليس الإهمال.\"\n    },\n    {\n      \"id\": \"lex_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تمني\",\n      \"reason\": \"ليت للتمني، والتمني طلب ما لا يكون أو يبعد وقوعه.\"\n    },\n    {\n      \"id\": \"lex_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الشك\",\n      \"reason\": \"الشك هو تساوي الاحتمالين، والظن رجحان أحدهما.\"\n    },\n    {\n      \"id\": \"neg_a_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3\",\n      \"reason\": \"سوى بمعنى إلا، فالمتبقي ثلاثة فقط.\"\n    },\n    {\n      \"id\": \"neg_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"عدا أداة استثناء، فأحمد خارج النجاح.\"\n    },\n    {\n      \"id\": \"neg_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الحصر في الأب، فبقية الأسرة لم تسافر.\"\n    },\n    {\n      \"id\": \"neg_a_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الحصر في الطلبة، والموظف ليس طالبًا.\"\n    },\n    {\n      \"id\": \"neg_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"إلا بعد الإثبات تنفي المستثنى، فسامي لم يحضر.\"\n    },\n    {\n      \"id\": \"neg_a_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الحصر بـلا... إلا ينفي ما عدا الواحد، فلا يملك بيتين.\"\n    },\n    {\n      \"id\": \"neg_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"إلا بعد النفي تثبت المستثنى، فأحمد حضر وحده.\"\n    },\n    {\n      \"id\": \"neg_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الصيدلية مستثناة من الإغلاق، فلم تُغلق.\"\n    },\n    {\n      \"id\": \"neg_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1\",\n      \"reason\": \"غير بمعنى إلا بعد نفي، فالمتبقي دقيقة واحدة.\"\n    },\n    {\n      \"id\": \"neg_a_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"الجملة تنفي دخول المتأخر فقط، ولا تلزم كفاية الحضور المبكر للدخول.\"\n    },\n    {\n      \"id\": \"neg_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"غير بمعنى إلا، فالرئيس مستثنى من الموافقة.\"\n    },\n    {\n      \"id\": \"neg_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"لا غنى عن التصريح يجعله شرطًا لازمًا لا كافيًا.\"\n    },\n    {\n      \"id\": \"neg_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"حمل التذكرة شرط لازم للدخول لا كافٍ، فقد تُمنع الزيارة لسبب آخر.\"\n    },\n    {\n      \"id\": \"neg_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"التصديق هو الاستثناء من بقاء التعليق، وقد وقع فزال التعليق.\"\n    },\n    {\n      \"id\": \"neg_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"تحققت حال ما لم (عدم استيفاء النموذج) فيلزم انتفاء النظر.\"\n    },\n    {\n      \"id\": \"neg_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"موافقة المدير شرط لازم غير كافٍ، فقد يتخلف الإذن لمانع آخر.\"\n    },\n    {\n      \"id\": \"neg_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"استخدام السلالم شرط لازم للنجاة لا كافٍ، فقد يستخدمها ولا ينجو لسبب آخر.\"\n    },\n    {\n      \"id\": \"neg_a_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"12% تتجاوز العُشر (10%)، فتحقق الاستثناء فانتفى القبول.\"\n    },\n    {\n      \"id\": \"neg_a_0018\",\n      \"reference\": \"incorrect\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الجملة تفيد أن الفسخ جائز ما لم يدفع التأمين، أي أن الدفع يمنع الفسخ. فبما أنه دفع، لا يحق له الفسخ. المرجع قال نعم وهذا خطأ.\",\n      \"fix\": \"الجواب الصحيح: لا. دفع التأمين يمنع الفسخ، لأن الجملة تفيد أن الفسخ جائز ما لم يدفع التأمين.\"\n    },\n    {\n      \"id\": \"neg_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الاستيراد هو حال الاستثناء من الإعفاء، وقد تحقق فانتفى الإعفاء.\"\n    },\n    {\n      \"id\": \"neg_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"الشرطية تجعل الاجتهاد كافيًا لا لازمًا، فقد ينجح لسبب آخر.\"\n    },\n    {\n      \"id\": \"neg_a_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم ثم لا\",\n      \"reason\": \"المكتمل شرط لازم لا كافٍ، فلا يلزم قبوله. والناقص خارج القبول قطعًا، فلا يُقبل.\"\n    },\n    {\n      \"id\": \"neg_a_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"انتفاء التالي (التجميد) يلزم منه انتفاء المقدم (عدم التجديد)، أي جدّد اشتراكه.\"\n    },\n    {\n      \"id\": \"neg_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"انتفاء التالي (زيادة الفائدة) يلزم منه انتفاء المقدم (عدم التسديد)، أي سدّد في موعده.\"\n    },\n    {\n      \"id\": \"neg_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"خلا أداة استثناء، فالمدير لم يحضر.\"\n    },\n    {\n      \"id\": \"neg_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"غير بمعنى إلا، فهذه الرواية منفية الإعجاب.\"\n    },\n    {\n      \"id\": \"neg_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"إنما تفيد الحصر، فالتكليف مقصور على المتجاوزين، وماهر لم يتجاوز.\"\n    },\n    {\n      \"id\": \"neg_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"متى أداة شرط تجعل إدخال الرقم كافيًا للفتح، وقد تحقق.\"\n    },\n    {\n      \"id\": \"neg_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الحصر بإنما يقصر النجاح على الصبورين، فغير الصبورين لا ينجحون.\"\n    },\n    {\n      \"id\": \"neg_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"القصر المؤكد بوحدها يحصر الانعقاد في الجمعة، فلا ينعقد يوم السبت.\"\n    },\n    {\n      \"id\": \"neg_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"شرط الشطب ثلاث فعاليات، ولم يتحقق (غاب عن اثنتين فقط).\"\n    },\n    {\n      \"id\": \"neg_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"غير اثنين = إلا اثنين، فبقي اثنان لم يجتازا، فليس الجميع ناجحًا.\"\n    },\n    {\n      \"id\": \"neg_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"المناوبة هي الاستثناء من الجواز، وقد تحققت فيمتنع الغياب.\"\n    },\n    {\n      \"id\": \"neg_a_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"التوثيق وقع خلال أسبوعين (أقل من شهر)، فانتفى شرط اللغو.\"\n    },\n    {\n      \"id\": \"neg_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"إثبات التالي (ابتلال الطرق) لا يلزم منه المقدم (هطول المطر)، فقد تبتل بغيره.\"\n    },\n    {\n      \"id\": \"neg_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الرضا شرط صحة لازم منتفٍ، فالبيع غير صحيح.\"\n    }\n  ]\n}\n```"
+    },
+    {
+      "attempt": 2,
+      "error": null,
+      "raw_output": "{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_arabic_a_003.json\",\n  \"judgments\": [\n    {\n      \"id\": \"lex_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"متواضع\",\n      \"reason\": \"الرجل قادر وترك التعالي، فذلك تواضع لا ذل. المرجع صحيح والمعايير واضحة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الإحجام\",\n      \"reason\": \"الإقدام ضد الإحجام. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الشدة\",\n      \"reason\": \"الضراوة تعني الشدة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الدم\",\n      \"reason\": \"النجيع هو الدم الصافي. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"طول القامة\",\n      \"reason\": \"طويل النجاد كناية عن طول القامة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المخمصة\",\n      \"reason\": \"المخمصة أشد من الجوع. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الأسود\",\n      \"reason\": \"الأدهم من الخيل أسود. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"شفقة\",\n      \"reason\": \"مجرد رقة القلب عند رؤية المبتلى شفقة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الكرم\",\n      \"reason\": \"كثرة الرماد كناية عن الكرم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"طمع\",\n      \"reason\": \"التمني بلا سعي طمع. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"رجاحة العقل\",\n      \"reason\": \"الحصافة رجاحة العقل. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"بليغ\",\n      \"reason\": \"المطابقة لمقتضى الحال بلاغة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"شحيح\",\n      \"reason\": \"البخل مع الحرص على مال الغير شح. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الظمأ\",\n      \"reason\": \"الظمأ شدة العطش. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"زهد\",\n      \"reason\": \"ترك فضول الدنيا الحلال زهد. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حليم\",\n      \"reason\": \"كف الغضب مع القدرة حلم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مجاز\",\n      \"reason\": \"استعمال أسد للرجل الشجاع مجاز. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إنشاء\",\n      \"reason\": \"الأمر إنشاء طلبي. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أول النهار\",\n      \"reason\": \"الغداة أول النهار. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"أحجم\",\n      \"reason\": \"الإحجام قد يكون لعذر. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الإبانة\",\n      \"reason\": \"الإبانة ضد الإبهام. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"جبان\",\n      \"reason\": \"التخلف عن الواجب خوفًا جبن. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"سرقة\",\n      \"reason\": \"أخذ المال خفية من حرزه سرقة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حاسد\",\n      \"reason\": \"تمني زوال النعمة حسد. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مكر\",\n      \"reason\": \"التدبير الخفي في الضرر مكر. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المواربة\",\n      \"reason\": \"المواربة ضد الصراحة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الخشية\",\n      \"reason\": \"الخشية خوف مع تعظيم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0044\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"التأني\",\n      \"reason\": \"المهل التأني. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تمني\",\n      \"reason\": \"ليت تفيد التمني. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"lex_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الشك\",\n      \"reason\": \"تساوي الاحتمالين شك. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3\",\n      \"reason\": \"سوى بمعنى إلا، فالمتبقي ثلاثة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"عدا أداة استثناء، فأحمد لم ينجح. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0004\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الحصر في الأب ينفي سفر الأم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الحصر في الطلبة ينفي إعفاء الموظف. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"إلا بعد الإثبات تنفي المستثنى. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"لا... إلا تفيد الحصر، فلا يملك بيتين. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"إلا بعد النفي تثبت المستثنى. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0014\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الصيدلية مستثناة من الإغلاق. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1\",\n      \"reason\": \"غير بمعنى إلا بعد نفي، فالمتبقي دقيقة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"الجملة تنفي دخول المتأخر فقط، فلا تلزم كفاية الحضور المبكر. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"غير بمعنى إلا، فالرئيس لم يوافق. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"لا غنى عنه شرط لازم لا كافٍ. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"حمل التذكرة شرط لازم لا كافٍ. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"التصديق وقع فزال التعليق. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"تحققت حال ما لم فيلزم انتفاء النظر. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"الموافقة شرط لازم غير كافٍ. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"استخدام السلالم شرط لازم لا كافٍ. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"12% تتجاوز العُشر فانتفى القبول. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"دفع التأمين فزال الاستثناء، فيحق الفسخ. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"السلعة مستوردة فانتفى الإعفاء. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"الاجتهاد شرط كافٍ لا لازم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الناقص خارج القبول قطعًا. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"انتفاء التالي يلزم منه انتفاء المقدم، فجدّد. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"انتفاء زيادة الفائدة يلزم منه التسديد. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0042\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"خلا أداة استثناء، فالمدير لم يحضر. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"غير بمعنى إلا، فهذه الرواية لم تعجب. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"إنما تفيد الحصر، فغير المتجاوزين لا يُكلَّفون. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"نعم\",\n      \"reason\": \"متى شرطية تجعل الرقم كافيًا للفتح. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"إنما تحصر النجاح في الصبورين. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"وحدها تفيد الحصر في الجمعة. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"لم يتحقق شرط الشطب (ثلاث فعاليات). المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"غير اثنين استثناء، فلم يجتاز الجميع. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"المناوبة استثناء من الجواز، فممتنع. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"التوثيق وقع داخل المهلة فانتفى اللغو. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا يلزم\",\n      \"reason\": \"إثبات التالي لا يلزم منه المقدم. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"neg_a_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا\",\n      \"reason\": \"الرضا شرط صحة لازم منتفٍ. المرجع صحيح والمعايير كافية.\",\n      \"fix\": null\n    }\n  ]\n}"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 101279,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_arabic_a_003.json",
+  "file_sha256": "688794fb722b687750bac065f7b6e4849508655b6fe21dcc558ca4207f511c08",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "lex_a_0033",
+      "my_answer": "متواضع",
+      "reason": "الرجل قادر وترك التعالي، فذلك تواضع لا ذل. المرجع صحيح والمعايير واضحة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0002",
+      "my_answer": "الإحجام",
+      "reason": "الإقدام ضد الإحجام. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0011",
+      "my_answer": "الشدة",
+      "reason": "الضراوة تعني الشدة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0008",
+      "my_answer": "الدم",
+      "reason": "النجيع هو الدم الصافي. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0038",
+      "my_answer": "طول القامة",
+      "reason": "طويل النجاد كناية عن طول القامة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0018",
+      "my_answer": "المخمصة",
+      "reason": "المخمصة أشد من الجوع. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0037",
+      "my_answer": "الأسود",
+      "reason": "الأدهم من الخيل أسود. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0031",
+      "my_answer": "شفقة",
+      "reason": "مجرد رقة القلب عند رؤية المبتلى شفقة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0039",
+      "my_answer": "الكرم",
+      "reason": "كثرة الرماد كناية عن الكرم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0028",
+      "my_answer": "طمع",
+      "reason": "التمني بلا سعي طمع. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0015",
+      "my_answer": "رجاحة العقل",
+      "reason": "الحصافة رجاحة العقل. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0027",
+      "my_answer": "بليغ",
+      "reason": "المطابقة لمقتضى الحال بلاغة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0021",
+      "my_answer": "شحيح",
+      "reason": "البخل مع الحرص على مال الغير شح. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0017",
+      "my_answer": "الظمأ",
+      "reason": "الظمأ شدة العطش. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0032",
+      "my_answer": "زهد",
+      "reason": "ترك فضول الدنيا الحلال زهد. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0034",
+      "my_answer": "حليم",
+      "reason": "كف الغضب مع القدرة حلم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0040",
+      "my_answer": "مجاز",
+      "reason": "استعمال أسد للرجل الشجاع مجاز. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0041",
+      "my_answer": "إنشاء",
+      "reason": "الأمر إنشاء طلبي. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0036",
+      "my_answer": "أول النهار",
+      "reason": "الغداة أول النهار. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0026",
+      "my_answer": "أحجم",
+      "reason": "الإحجام قد يكون لعذر. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0043",
+      "my_answer": "الإبانة",
+      "reason": "الإبانة ضد الإبهام. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0025",
+      "my_answer": "جبان",
+      "reason": "التخلف عن الواجب خوفًا جبن. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0022",
+      "my_answer": "سرقة",
+      "reason": "أخذ المال خفية من حرزه سرقة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0030",
+      "my_answer": "حاسد",
+      "reason": "تمني زوال النعمة حسد. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0035",
+      "my_answer": "مكر",
+      "reason": "التدبير الخفي في الضرر مكر. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0009",
+      "my_answer": "المواربة",
+      "reason": "المواربة ضد الصراحة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0016",
+      "my_answer": "الخشية",
+      "reason": "الخشية خوف مع تعظيم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0044",
+      "my_answer": "التأني",
+      "reason": "المهل التأني. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0042",
+      "my_answer": "تمني",
+      "reason": "ليت تفيد التمني. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "lex_a_0020",
+      "my_answer": "الشك",
+      "reason": "تساوي الاحتمالين شك. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0039",
+      "my_answer": "3",
+      "reason": "سوى بمعنى إلا، فالمتبقي ثلاثة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0041",
+      "my_answer": "لا",
+      "reason": "عدا أداة استثناء، فأحمد لم ينجح. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0004",
+      "my_answer": "لا",
+      "reason": "الحصر في الأب ينفي سفر الأم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0046",
+      "my_answer": "لا",
+      "reason": "الحصر في الطلبة ينفي إعفاء الموظف. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0012",
+      "my_answer": "لا",
+      "reason": "إلا بعد الإثبات تنفي المستثنى. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0003",
+      "my_answer": "لا",
+      "reason": "لا... إلا تفيد الحصر، فلا يملك بيتين. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0001",
+      "my_answer": "نعم",
+      "reason": "إلا بعد النفي تثبت المستثنى. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0014",
+      "my_answer": "لا",
+      "reason": "الصيدلية مستثناة من الإغلاق. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0043",
+      "my_answer": "1",
+      "reason": "غير بمعنى إلا بعد نفي، فالمتبقي دقيقة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0049",
+      "my_answer": "لا يلزم",
+      "reason": "الجملة تنفي دخول المتأخر فقط، فلا تلزم كفاية الحضور المبكر. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0015",
+      "my_answer": "لا",
+      "reason": "غير بمعنى إلا، فالرئيس لم يوافق. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0040",
+      "my_answer": "لا يلزم",
+      "reason": "لا غنى عنه شرط لازم لا كافٍ. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0007",
+      "my_answer": "لا يلزم",
+      "reason": "حمل التذكرة شرط لازم لا كافٍ. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0033",
+      "my_answer": "لا",
+      "reason": "التصديق وقع فزال التعليق. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0047",
+      "my_answer": "لا",
+      "reason": "تحققت حال ما لم فيلزم انتفاء النظر. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0008",
+      "my_answer": "لا يلزم",
+      "reason": "الموافقة شرط لازم غير كافٍ. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0006",
+      "my_answer": "لا يلزم",
+      "reason": "استخدام السلالم شرط لازم لا كافٍ. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0023",
+      "my_answer": "لا",
+      "reason": "12% تتجاوز العُشر فانتفى القبول. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0018",
+      "my_answer": "نعم",
+      "reason": "دفع التأمين فزال الاستثناء، فيحق الفسخ. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0021",
+      "my_answer": "لا",
+      "reason": "السلعة مستوردة فانتفى الإعفاء. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0026",
+      "my_answer": "لا يلزم",
+      "reason": "الاجتهاد شرط كافٍ لا لازم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0050",
+      "my_answer": "لا",
+      "reason": "الناقص خارج القبول قطعًا. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0048",
+      "my_answer": "نعم",
+      "reason": "انتفاء التالي يلزم منه انتفاء المقدم، فجدّد. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0032",
+      "my_answer": "نعم",
+      "reason": "انتفاء زيادة الفائدة يلزم منه التسديد. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0042",
+      "my_answer": "لا",
+      "reason": "خلا أداة استثناء، فالمدير لم يحضر. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0017",
+      "my_answer": "لا",
+      "reason": "غير بمعنى إلا، فهذه الرواية لم تعجب. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0034",
+      "my_answer": "لا",
+      "reason": "إنما تفيد الحصر، فغير المتجاوزين لا يُكلَّفون. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0005",
+      "my_answer": "نعم",
+      "reason": "متى شرطية تجعل الرقم كافيًا للفتح. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0035",
+      "my_answer": "لا",
+      "reason": "إنما تحصر النجاح في الصبورين. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0036",
+      "my_answer": "لا",
+      "reason": "وحدها تفيد الحصر في الجمعة. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0020",
+      "my_answer": "لا",
+      "reason": "لم يتحقق شرط الشطب (ثلاث فعاليات). المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0016",
+      "my_answer": "لا",
+      "reason": "غير اثنين استثناء، فلم يجتاز الجميع. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0022",
+      "my_answer": "لا",
+      "reason": "المناوبة استثناء من الجواز، فممتنع. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0024",
+      "my_answer": "لا",
+      "reason": "التوثيق وقع داخل المهلة فانتفى اللغو. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0027",
+      "my_answer": "لا يلزم",
+      "reason": "إثبات التالي لا يلزم منه المقدم. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "neg_a_0011",
+      "my_answer": "لا",
+      "reason": "الرضا شرط صحة لازم منتفٍ. المرجع صحيح والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T18:15:22Z"
+}

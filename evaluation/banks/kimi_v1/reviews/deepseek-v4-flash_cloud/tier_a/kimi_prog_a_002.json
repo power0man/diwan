@@ -1,0 +1,467 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"deepseek\",\n  \"file\": \"kimi_prog_a_002.json\",\n  \"judgments\": [\n    {\n      \"id\": \"prog_b_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[2, 3]\",\n      \"reason\": \"شريحة nums[1:3] تأخذ العناصر من الفهرس 1 إلى 2، وهي 2 و3، فالناتج [2, 3]. المرجع مطابق، والمعايير تحدد الناتج بدقة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0068\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[1, 2, 3, 1]\",\n      \"reason\": \"a[:1] هو [1]، ولصق القوائم يعطي [1,2,3,1]. المرجع صحيح، والمعايير تغطي المهارة والناتج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"7\",\n      \"reason\": \"d[\\\"a\\\"] تصبح 2، وsetdefault يضيف b=5، فالمجموع 7. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"abd\",\n      \"reason\": \"المقارنة المعجمية بين السلسلتين: عند المحرف الثالث 'c' مقابل 'd'، فـ abd أكبر. المرجع صحيح، والمعايير محددة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3\",\n      \"reason\": \"حرف 'a' يتكرر ثلاث مرات في 'banana'، فالعد 3. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"11\",\n      \"reason\": \"10 % 3 = 1، فـ x = 10 + 1 = 11. المرجع صحيح، والمعايير تحدد الناتج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[(1, 9), (2, 8)]\",\n      \"reason\": \"zip يقص عند أقصر قائمة، وهي الثانية بطول 2، فالناتج أزواج (1,9) و(2,8). المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تا\",\n      \"reason\": \"النص 'كتاب'، الشريحة من 1 إلى 3 تأخذ 'تا'. المرجع صحيح، والمعايير محددة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"اباب\",\n      \"reason\": \"ضرب النص في 2 يكرره: 'اب' * 2 = 'اباب'. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0048\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"10\",\n      \"reason\": \"مجموع 1+2+3+4 = 10. المرجع صحيح، والمعايير تحدد الناتج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"3\",\n      \"reason\": \"بعد الترتيب [1,2,3]، pop() يزيل آخر عنصر 3. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[1, 3]\",\n      \"reason\": \"del x[1] يحذف العنصر ذا الفهرس 1 (وهو 2)، فتبقى [1,3]. المرجع صحيح، والمعايير محددة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"-1\",\n      \"reason\": \"find تعيد -1 عند عدم وجود المحرف. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[1, 2]\",\n      \"reason\": \"values() تعيد القيم بترتيب الإدراج: [1,2]. المرجع صحيح، والمعايير محددة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"7\",\n      \"reason\": \"عدد محارف 'البرمجة' هو 7. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0057\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2\",\n      \"reason\": \"المفتاحان 1 و'1' مختلفان في النوع، فيُحفظ كلاهما، فيكون الطول 2. المرجع صحيح، والمعايير محددة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"True True\",\n      \"reason\": \"isdigit() يعيد True للأرقام العربية المشرقية أيضًا، فكلاهما True. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"512\",\n      \"reason\": \"الأس يرتبط من اليمين: 2**(3**2)=2**9=512. المرجع صحيح، والمعايير تحدد الناتج.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"-4\",\n      \"reason\": \"القسمة الصحيحة تقرب نحو سالب اللانهاية: 7 // -2 = -4. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0051\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[1]\\n[1, 2]\",\n      \"reason\": \"الوسيط الافتراضي القابل للتغيير يُنشأ مرة واحدة، فيتراكم: f(1) يعيد [1]، f(2) يعيد [1,2]. المرجع صحيح، والمعايير محددة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0075\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"0\",\n      \"reason\": \"1/2 == 0.5 صحيح، وand يعيد قيمة الطرف الثاني 1//2 = 0. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2\",\n      \"reason\": \"باقي القسمة في بايثون يأخذ إشارة المقسوم عليه: -7 % 3 = 2. المرجع صحيح، والمعايير محددة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2.67\",\n      \"reason\": \"التمثيل الثنائي لـ 2.675 يجعله أقرب إلى 2.67 عند التقريب لخانتين. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"32\",\n      \"reason\": \"ord('a')=97 وord('A')=65، فالفرق 32. المرجع صحيح، والمعايير محددة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"فارغ\",\n      \"reason\": \"القائمة الفارغة False، فـ or يعيد الطرف الثاني 'فارغ'. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"[2, 3]\",\n      \"reason\": \"التفكيك بالنجمة: a=1، b=[2,3]. المرجع صحيح، والمعايير محددة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0080\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"1\",\n      \"reason\": \"10//3=3، ثم 3//3=1، فيتوقف الشرط i>1. الناتج 1. المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"13\",\n      \"reason\": \"sum([1,2],10) يبدأ من 10 ويضيف 1 و2: 13. المرجع صحيح، والمعايير محددة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الصيغة الصحيحة: return c * 9 / 5 + 32\",\n      \"reason\": \"الدالة تنقص الإزاحة 32، فالصفر يعطي 0 بدل 32. المرجع يصف العيب بدقة، والمعايير تختبر نقاطًا حرجة (0، -40) والفحص يضيف 100.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الشرط الصحيح: if x % 2 == 0\",\n      \"reason\": \"الشرط x%2 يعيد الفردية، والصحيح == 0 للزوجية. المرجع صحيح، والمعايير تغطي الزوجية والسوالب.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"return sum(lst) / len(lst)\",\n      \"reason\": \"المقام يجب أن يكون عدد العناصر لا +1. المرجع صحيح، والمعايير تختبر حالات متعددة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"range(1, n+1)\",\n      \"reason\": \"range(1,n) ينقص n، فالمجموع ناقص. المرجع يحدد off-by-one بدقة، والمعايير تختبر n=5 وn=0.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"s.replace(old, new, 1)\",\n      \"reason\": \"replace بلا حد يستبدل الكل، والمعامل الثالث 1 يقصر على الأول. المرجع صحيح، والمعايير تغطي الحالات.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0020\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"list(range(n, 0, -1))\",\n      \"reason\": \"range(n,0) بخطوة افتراضية 1 لا ينتج شيئًا، والصحيح خطوة -1. المرجع صحيح، والمعايير تختبر n=3 وn=0.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"return max(0, 60 - age)\",\n      \"reason\": \"النتيجة يجب ألا تقل عن 0. المرجع يصف القصّ عند الصفر، والمعايير تختبر من تجاوز الستين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0011\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"return max(0, min(g, 100))\",\n      \"reason\": \"min وmax مقلوبتان، فكل القيم تصبح 0. المرجع صحيح، والمعايير تختبر الحدود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"استخدام try/except أو التحقق من الوجود قبل index\",\n      \"reason\": \"index يرمي ValueError عند الغياب، والمطلوب -1. المرجع صحيح، والمعايير تختبر الغياب والوجود.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تهيئة best = lst[0]\",\n      \"reason\": \"التهيئة بصفر تجعل القوائم السالبة تعيد 0 زورًا. المرجع صحيح، والمعايير تختبر السالبة والموجبة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"return max(counts, key=counts.get)\",\n      \"reason\": \"max على القيم يعيد العدد، والمطلوب المفتاح. المرجع صحيح، والمعايير تختبر العربية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0030\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المقارنة على abs(x) مع إعادة x\",\n      \"reason\": \"المقارنة يجب أن تكون على القيمة المطلقة مع الحفاظ على الإشارة. المرجع صحيح، والمعايير تختبر السالب الأكبر مطلقًا.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0040\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"seq = [0, 1]\",\n      \"reason\": \"المتتالية المعيارية تبدأ 0,1، والبدء من 1,1 يسقط الصفر. المرجع صحيح، والمعايير تختبر n=0 وn=1.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"بناء قائمة جديدة مع مجموعة مرئية\",\n      \"reason\": \"الحذف أثناء التكرار يقفز عناصر. المرجع صحيح، والمعايير تختبر الترتيب والتكرار.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"r'[A-Za-z][A-Za-z0-9_]{2,15}'\",\n      \"reason\": \"النمط يجب أن يفرض حرفًا أول ثم 2-15 محرفًا. المرجع صحيح، والمعايير تختبر البادئة الرقمية والطول.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تحديث best بعد انتهاء الحلقة أيضًا\",\n      \"reason\": \"آخر سلسلة لا تُحدَّث لأن التحديث داخل فرع الانقطاع فقط. المرجع صحيح، والمعايير تختبر السلسلة الختامية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"مطابقة نوع القوس المغلق مع قمة المكدس\",\n      \"reason\": \"القوس المغلق يجب أن يطابق نوع القمة، لا مجرد وجودها. المرجع صحيح، والمعايير تختبر عدم التطابق.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0015\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"w[0].upper() + w[1:]\",\n      \"reason\": \"capitalize تصغّر الباقي، والمطلوب تكبير الأول فقط. المرجع صحيح، والمعايير تختبر الحالة المختلطة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حساب الشرائح: 0 حتى 10000 معفى، 10000-30000 بـ10%، فوق 30000 بـ20%\",\n      \"reason\": \"الضريبة الثابتة 20% خاطئة، والصحيح حساب كل شريحة على جزئها. المرجع صحيح، والمعايير تختبر قيمًا حرجة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0023\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"len(s.split())\",\n      \"reason\": \"عد الفراغات يفشل مع المتكررة والطرفية، وsplit يعالجها. المرجع صحيح، والمعايير تختبر الحالات.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إضافة '،' إلى نمط الحذف\",\n      \"reason\": \"الفاصلة العربية غير موجودة في النمط، فتبقى. المرجع صحيح، والمعايير تختبر حذفها.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0037\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"حذف min(scores) ثم حساب المتوسط\",\n      \"reason\": \"الحذف يجب أن يطال الأدنى لا الموضع الأول. المرجع صحيح، والمعايير تختبر التكرار.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"r'\\\\d+(\\\\.\\\\d{1,2})?'\",\n      \"reason\": \"الجزء العشري يجب أن يكون 1-2 خانة. المرجع صحيح، والمعايير تختبر رفض 12.999.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"إضافة شرط السنة الكبيسة لفبراير\",\n      \"reason\": \"فبراير يحتاج استثناء الكبيسة بقاعدتها الكاملة. المرجع صحيح، والمعايير تختبر 2024 و1900.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0016\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"total += price * qty\",\n      \"reason\": \"سطر الفاتورة سعر × كمية، لا سعر + كمية. المرجع صحيح، والمعايير تختبر الفاتورة الفارغة.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0012\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"s.lower().count(ch.lower())\",\n      \"reason\": \"يجب توحيد حالة النص والحرف معًا. المرجع صحيح، والمعايير تختبر الحالتين.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"w[0] بدل w[-1]\",\n      \"reason\": \"المطلوب الحرف الأول لا الأخير. المرجع صحيح، والمعايير تختبر الاسم العربي.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"prog_b_0027\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"return 0 < x <= 10000\",\n      \"reason\": \"الصفر ليس مبلغ تحويل صالحًا، فالحد الأدنى مفتوح. المرجع صحيح، والمعايير تختبر الصفر والحد الأقصى.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 93393,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_prog_a_002.json",
+  "file_sha256": "37dce3ed63ed8cca770e63f75bc952573ad7ca164b03e429076cb3657dad2db3",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "prog_b_0054",
+      "my_answer": "[2, 3]",
+      "reason": "شريحة nums[1:3] تأخذ العناصر من الفهرس 1 إلى 2، وهي 2 و3، فالناتج [2, 3]. المرجع مطابق، والمعايير تحدد الناتج بدقة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0068",
+      "my_answer": "[1, 2, 3, 1]",
+      "reason": "a[:1] هو [1]، ولصق القوائم يعطي [1,2,3,1]. المرجع صحيح، والمعايير تغطي المهارة والناتج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0045",
+      "my_answer": "7",
+      "reason": "d[\"a\"] تصبح 2، وsetdefault يضيف b=5، فالمجموع 7. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0077",
+      "my_answer": "abd",
+      "reason": "المقارنة المعجمية بين السلسلتين: عند المحرف الثالث 'c' مقابل 'd'، فـ abd أكبر. المرجع صحيح، والمعايير محددة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0071",
+      "my_answer": "3",
+      "reason": "حرف 'a' يتكرر ثلاث مرات في 'banana'، فالعد 3. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0050",
+      "my_answer": "11",
+      "reason": "10 % 3 = 1، فـ x = 10 + 1 = 11. المرجع صحيح، والمعايير تحدد الناتج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0065",
+      "my_answer": "[(1, 9), (2, 8)]",
+      "reason": "zip يقص عند أقصر قائمة، وهي الثانية بطول 2، فالناتج أزواج (1,9) و(2,8). المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0053",
+      "my_answer": "تا",
+      "reason": "النص 'كتاب'، الشريحة من 1 إلى 3 تأخذ 'تا'. المرجع صحيح، والمعايير محددة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0069",
+      "my_answer": "اباب",
+      "reason": "ضرب النص في 2 يكرره: 'اب' * 2 = 'اباب'. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0048",
+      "my_answer": "10",
+      "reason": "مجموع 1+2+3+4 = 10. المرجع صحيح، والمعايير تحدد الناتج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0046",
+      "my_answer": "3",
+      "reason": "بعد الترتيب [1,2,3]، pop() يزيل آخر عنصر 3. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0078",
+      "my_answer": "[1, 3]",
+      "reason": "del x[1] يحذف العنصر ذا الفهرس 1 (وهو 2)، فتبقى [1,3]. المرجع صحيح، والمعايير محددة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0058",
+      "my_answer": "-1",
+      "reason": "find تعيد -1 عند عدم وجود المحرف. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0074",
+      "my_answer": "[1, 2]",
+      "reason": "values() تعيد القيم بترتيب الإدراج: [1,2]. المرجع صحيح، والمعايير محددة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0063",
+      "my_answer": "7",
+      "reason": "عدد محارف 'البرمجة' هو 7. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0057",
+      "my_answer": "2",
+      "reason": "المفتاحان 1 و'1' مختلفان في النوع، فيُحفظ كلاهما، فيكون الطول 2. المرجع صحيح، والمعايير محددة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0066",
+      "my_answer": "True True",
+      "reason": "isdigit() يعيد True للأرقام العربية المشرقية أيضًا، فكلاهما True. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0059",
+      "my_answer": "512",
+      "reason": "الأس يرتبط من اليمين: 2**(3**2)=2**9=512. المرجع صحيح، والمعايير تحدد الناتج.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0043",
+      "my_answer": "-4",
+      "reason": "القسمة الصحيحة تقرب نحو سالب اللانهاية: 7 // -2 = -4. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0051",
+      "my_answer": "[1]\n[1, 2]",
+      "reason": "الوسيط الافتراضي القابل للتغيير يُنشأ مرة واحدة، فيتراكم: f(1) يعيد [1]، f(2) يعيد [1,2]. المرجع صحيح، والمعايير محددة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0075",
+      "my_answer": "0",
+      "reason": "1/2 == 0.5 صحيح، وand يعيد قيمة الطرف الثاني 1//2 = 0. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0052",
+      "my_answer": "2",
+      "reason": "باقي القسمة في بايثون يأخذ إشارة المقسوم عليه: -7 % 3 = 2. المرجع صحيح، والمعايير محددة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0067",
+      "my_answer": "2.67",
+      "reason": "التمثيل الثنائي لـ 2.675 يجعله أقرب إلى 2.67 عند التقريب لخانتين. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0079",
+      "my_answer": "32",
+      "reason": "ord('a')=97 وord('A')=65، فالفرق 32. المرجع صحيح، والمعايير محددة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0047",
+      "my_answer": "فارغ",
+      "reason": "القائمة الفارغة False، فـ or يعيد الطرف الثاني 'فارغ'. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0056",
+      "my_answer": "[2, 3]",
+      "reason": "التفكيك بالنجمة: a=1، b=[2,3]. المرجع صحيح، والمعايير محددة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0080",
+      "my_answer": "1",
+      "reason": "10//3=3، ثم 3//3=1، فيتوقف الشرط i>1. الناتج 1. المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0061",
+      "my_answer": "13",
+      "reason": "sum([1,2],10) يبدأ من 10 ويضيف 1 و2: 13. المرجع صحيح، والمعايير محددة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0036",
+      "my_answer": "الصيغة الصحيحة: return c * 9 / 5 + 32",
+      "reason": "الدالة تنقص الإزاحة 32، فالصفر يعطي 0 بدل 32. المرجع يصف العيب بدقة، والمعايير تختبر نقاطًا حرجة (0، -40) والفحص يضيف 100.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0010",
+      "my_answer": "الشرط الصحيح: if x % 2 == 0",
+      "reason": "الشرط x%2 يعيد الفردية، والصحيح == 0 للزوجية. المرجع صحيح، والمعايير تغطي الزوجية والسوالب.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0008",
+      "my_answer": "return sum(lst) / len(lst)",
+      "reason": "المقام يجب أن يكون عدد العناصر لا +1. المرجع صحيح، والمعايير تختبر حالات متعددة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0001",
+      "my_answer": "range(1, n+1)",
+      "reason": "range(1,n) ينقص n، فالمجموع ناقص. المرجع يحدد off-by-one بدقة، والمعايير تختبر n=5 وn=0.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0031",
+      "my_answer": "s.replace(old, new, 1)",
+      "reason": "replace بلا حد يستبدل الكل، والمعامل الثالث 1 يقصر على الأول. المرجع صحيح، والمعايير تغطي الحالات.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0020",
+      "my_answer": "list(range(n, 0, -1))",
+      "reason": "range(n,0) بخطوة افتراضية 1 لا ينتج شيئًا، والصحيح خطوة -1. المرجع صحيح، والمعايير تختبر n=3 وn=0.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0017",
+      "my_answer": "return max(0, 60 - age)",
+      "reason": "النتيجة يجب ألا تقل عن 0. المرجع يصف القصّ عند الصفر، والمعايير تختبر من تجاوز الستين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0011",
+      "my_answer": "return max(0, min(g, 100))",
+      "reason": "min وmax مقلوبتان، فكل القيم تصبح 0. المرجع صحيح، والمعايير تختبر الحدود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0022",
+      "my_answer": "استخدام try/except أو التحقق من الوجود قبل index",
+      "reason": "index يرمي ValueError عند الغياب، والمطلوب -1. المرجع صحيح، والمعايير تختبر الغياب والوجود.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0002",
+      "my_answer": "تهيئة best = lst[0]",
+      "reason": "التهيئة بصفر تجعل القوائم السالبة تعيد 0 زورًا. المرجع صحيح، والمعايير تختبر السالبة والموجبة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0032",
+      "my_answer": "return max(counts, key=counts.get)",
+      "reason": "max على القيم يعيد العدد، والمطلوب المفتاح. المرجع صحيح، والمعايير تختبر العربية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0030",
+      "my_answer": "المقارنة على abs(x) مع إعادة x",
+      "reason": "المقارنة يجب أن تكون على القيمة المطلقة مع الحفاظ على الإشارة. المرجع صحيح، والمعايير تختبر السالب الأكبر مطلقًا.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0040",
+      "my_answer": "seq = [0, 1]",
+      "reason": "المتتالية المعيارية تبدأ 0,1، والبدء من 1,1 يسقط الصفر. المرجع صحيح، والمعايير تختبر n=0 وn=1.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0006",
+      "my_answer": "بناء قائمة جديدة مع مجموعة مرئية",
+      "reason": "الحذف أثناء التكرار يقفز عناصر. المرجع صحيح، والمعايير تختبر الترتيب والتكرار.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0034",
+      "my_answer": "r'[A-Za-z][A-Za-z0-9_]{2,15}'",
+      "reason": "النمط يجب أن يفرض حرفًا أول ثم 2-15 محرفًا. المرجع صحيح، والمعايير تختبر البادئة الرقمية والطول.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0021",
+      "my_answer": "تحديث best بعد انتهاء الحلقة أيضًا",
+      "reason": "آخر سلسلة لا تُحدَّث لأن التحديث داخل فرع الانقطاع فقط. المرجع صحيح، والمعايير تختبر السلسلة الختامية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0039",
+      "my_answer": "مطابقة نوع القوس المغلق مع قمة المكدس",
+      "reason": "القوس المغلق يجب أن يطابق نوع القمة، لا مجرد وجودها. المرجع صحيح، والمعايير تختبر عدم التطابق.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0015",
+      "my_answer": "w[0].upper() + w[1:]",
+      "reason": "capitalize تصغّر الباقي، والمطلوب تكبير الأول فقط. المرجع صحيح، والمعايير تختبر الحالة المختلطة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0035",
+      "my_answer": "حساب الشرائح: 0 حتى 10000 معفى، 10000-30000 بـ10%، فوق 30000 بـ20%",
+      "reason": "الضريبة الثابتة 20% خاطئة، والصحيح حساب كل شريحة على جزئها. المرجع صحيح، والمعايير تختبر قيمًا حرجة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0023",
+      "my_answer": "len(s.split())",
+      "reason": "عد الفراغات يفشل مع المتكررة والطرفية، وsplit يعالجها. المرجع صحيح، والمعايير تختبر الحالات.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0018",
+      "my_answer": "إضافة '،' إلى نمط الحذف",
+      "reason": "الفاصلة العربية غير موجودة في النمط، فتبقى. المرجع صحيح، والمعايير تختبر حذفها.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0037",
+      "my_answer": "حذف min(scores) ثم حساب المتوسط",
+      "reason": "الحذف يجب أن يطال الأدنى لا الموضع الأول. المرجع صحيح، والمعايير تختبر التكرار.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0038",
+      "my_answer": "r'\\d+(\\.\\d{1,2})?'",
+      "reason": "الجزء العشري يجب أن يكون 1-2 خانة. المرجع صحيح، والمعايير تختبر رفض 12.999.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0028",
+      "my_answer": "إضافة شرط السنة الكبيسة لفبراير",
+      "reason": "فبراير يحتاج استثناء الكبيسة بقاعدتها الكاملة. المرجع صحيح، والمعايير تختبر 2024 و1900.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0016",
+      "my_answer": "total += price * qty",
+      "reason": "سطر الفاتورة سعر × كمية، لا سعر + كمية. المرجع صحيح، والمعايير تختبر الفاتورة الفارغة.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0012",
+      "my_answer": "s.lower().count(ch.lower())",
+      "reason": "يجب توحيد حالة النص والحرف معًا. المرجع صحيح، والمعايير تختبر الحالتين.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0019",
+      "my_answer": "w[0] بدل w[-1]",
+      "reason": "المطلوب الحرف الأول لا الأخير. المرجع صحيح، والمعايير تختبر الاسم العربي.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "prog_b_0027",
+      "my_answer": "return 0 < x <= 10000",
+      "reason": "الصفر ليس مبلغ تحويل صالحًا، فالحد الأدنى مفتوح. المرجع صحيح، والمعايير تختبر الصفر والحد الأقصى.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T19:20:14Z"
+}

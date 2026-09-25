@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "tests_collected": 3412,
+  "latest_technical_document": "M16-ACCEPTANCE.md",
+  "latest_technical_scope": "م١٦",
+  "latest_decision": 52,
+  "historical_m1_m7_defects": {
+    "1": 12,
+    "2": 12,
+    "3": 10,
+    "4": 12,
+    "5": 24,
+    "6": 21,
+    "7": 22
+  },
+  "historical_m1_m7_defect_total": 113,
+  "maritime_current_documents": 117,
+  "maritime_current_pages": 1279,
+  "acceptance_documents": 19,
+  "python_files": 310,
+  "python_lines": 62458,
+  "quality_review": "automated_multi_system_pending",
+  "active_gate": "ق٤٩",
+  "release_ready": false
+}

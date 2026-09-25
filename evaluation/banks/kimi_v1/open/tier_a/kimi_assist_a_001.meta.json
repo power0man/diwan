@@ -1,0 +1,398 @@
+{
+  "suite_id": "kimi_assist_a_001",
+  "authored_by": "kimi",
+  "authored_at": "2026-09-24",
+  "tier": "A",
+  "cases": {
+    "extj_a_0033": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "وصفة قصيرة بكميات لفظية (فصّ، حبتين، كوبين) يجب نقلها حرفيًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0022": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إشعار لوجستي قصير؛ يختبر التقاط «قبل الثامنة» كما هي لا كتابة «الثامنة مساءً» فقط.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0050": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "دعوة ثقافية كاملة الحقول تقريبًا؛ تختبر الدقة دون فخاخ.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0027": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إشعار خدمي بمصعدين متعاكسي الحالة؛ يختبر عدم عكس الوصفين.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0038": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إشعار تقني بمصطلحات لاتينية يجب نقلها كما تُستعمل بلا تعريب.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0007": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "سيرة مهنية واضحة مع حقل شخصي غير مذكور إطلاقًا.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0011": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إشعار مالي قصير بمبلغين متقاربين يجب عدم الخلط بينهما.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0019": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إعلان مفقودات يومي بألوان ثلاثة يجب نسبة كل لون لصاحبه.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0043": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تنبيه مدرسي قصير؛ يختبر نقل «نحو أربعين دقيقة» بأداة التقريب كما هي.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إعلان وظيفة نمطي مع حقل غائب يجب أن يكون null.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0036": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "إعلان خدمات محكي بأسعار ثلاثة أحدها شرطي (مجاني إذا صلحت)؛ القيمة المطلوبة «مجاني» كما وردت.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0025": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "جدول عيادة نثري بأيام مزدوجة وفترات مختلفة؛ يختبر بناء قائمة كائنات منثورة.",
+      "answer_verified_by": "mechanical",
+      "trap": "الخميس مخصص للتقويم ولا يدخل في قائمة المواعيد العامة؛ من يضيفه للقائمة يخطئ."
+    },
+    "extj_a_0044": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "اتفاق مصغر ببنود متتابعة؛ موعد الإطلاق غير محدد نصًّا رغم ذكره حدثًا مستقبليًّا.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0004": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "تسعة حقول متداخلة في جملة واحدة طويلة مع حقل تواصل غائب؛ يختبر الدقة تحت الازدحام.",
+      "answer_verified_by": "mechanical",
+      "trap": "«المعاينة بموعد مسبق» توحي بوجود رقم لكن لا رقم في النص؛ يجب null."
+    },
+    "extj_a_0006": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قائمة JSON بسبعة عناصر حرفية يجب نقلها كلها دون حذف أو إعادة صياغة.",
+      "answer_verified_by": "mechanical",
+      "trap": "الحشو مذكور بعد المقادير ولا يدخل في قائمة المكونات؛ من يضيفه للقائمة أو يخلطه بها يخطئ."
+    },
+    "extj_a_0009": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "جدول مواعيد نثريّ بتسلسل زمني؛ يختبر ربط كل حدث بوقته ومكانه الصحيحين.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0024": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حجز برقم مرجعي لاتيني يجب نقله كما هو بلا ترجمة ولا تعديل.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0012": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "قائمة أصناف حرفية بأسعار؛ أحد الأصناف سعره مكتوب بالحروف (ريالين) ويجب إبقاؤه كما هو.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0035": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "جدول مناوبات نثري بفترتين متكررتين لموظفين مختلفين؛ يختبر إسناد كل فترة وأيام لصاحبها.",
+      "answer_verified_by": "mechanical",
+      "trap": "خالد وسعد يتقاسمان الجمعة؛ دمجهما في عنصر واحد أو نسبة أيام محمد لنورة خطأ شائع."
+    },
+    "extj_a_0046": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "إعلان حملات العمرة يذكر عادة أسعار الغرف الثنائية والثلاثية معًا؛ هنا ذُكرت الثلاثية فقط، وتاريخ العودة غير مذكور رغم معرفة المدة.",
+      "answer_verified_by": "mechanical",
+      "trap": "حساب تاريخ العودة من مدة الرحلة أو تخمين سعر الثنائية خطأ؛ كلاهما null."
+    },
+    "extj_a_0029": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "محضر رسمي بثلاثة قرارات متشابكة الصياغة؛ يختبر قصّ كل قرار بحدوده الصحيحة.",
+      "answer_verified_by": "mechanical",
+      "trap": "القرار الثالث طويل وذو شقين (تكليف + موعد رفع)؛ من يقتطع «تُرفع قبل نهاية أبريل» قرارًا رابعًا يخطئ."
+    },
+    "extj_a_0037": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "بنود ثلاثة قابلة للجمع لكن الإجمالي لم يُذكر؛ القيم المحسوبة مرفوضة.",
+      "answer_verified_by": "mechanical",
+      "trap": "جمع البنود (٧١٥٠٠) حساب صحيح لكنه ليس قيمة من النص؛ يجب null."
+    },
+    "extj_a_0039": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إعلان فعالية بفترة زمنية ممتدة وساعات تمتد إلى منتصف الليل.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0021": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نشرة دوائية بأرقام متعددة (تركيز، ساعات، حد أقصى، حرارة) يجب نسبة كل رقم لحقله.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0026": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تعميم رسمي بتاريخين من الشهر نفسه يجب عدم قلبهما.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0023": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إعلان مطعم بدوام غير معتاد يمتد بعد منتصف الليل؛ يختبر نقل الصيغة كما هي.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0014": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نص شبه محكي بعامية خليجية؛ يختبر الاستخراج من غير الفصحى.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0040": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "نص محكي بألفاظ زمنية عامية (الصبح، بالليل) يجب نقلها كما وردت لا تعريبها إلى «صباحًا ومساءً».",
+      "answer_verified_by": "mechanical",
+      "trap": "تحويل «من عشرة الصبح» إلى «من ١٠ صباحًا» إعادة صياغة مرفوضة؛ المطلوب الحرفية."
+    },
+    "extj_a_0045": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "منشور محكي بمبلغين نقديين مختلفين (٦٠٠ و٢٠٠) يجب عدم الخلط بينهما.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0048": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "إعلان فعالية جامعية بموقعين مختلفين للمعرض والأمسيات؛ يختبر الفصل بينهما.",
+      "answer_verified_by": "mechanical"
+    },
+    "extj_a_0041": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الاستقالات يُتوقع فيها سبب وتاريخ انتهاء؛ كلاهما غائب هنا وكتابة أي تخمين خطأ.",
+      "answer_verified_by": "mechanical",
+      "trap": "تخمين سبب مثل «ظروف خاصة» أو تاريخ مثل «نهاية الشهر» شائع وممنوع."
+    },
+    "extj_a_0049": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "العمل عن بعد لا يعني أن مقر الشركة «عن بعد»؛ المقر غير مذكور فيجب null.",
+      "answer_verified_by": "mechanical",
+      "trap": "كتابة «عن بعد» في حقل المقر خطأ دلالي شائع؛ نظام العمل حقل مستقل."
+    },
+    "extj_a_0015": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "دعوات الزواج تُخفي عادة اسم العروس («كريمة»)؛ اختبار أمانة ثقافي.",
+      "answer_verified_by": "mechanical",
+      "trap": "«كريمة الأستاذ» ليست اسمًا؛ من يخترع اسمًا أو يكتب «كريمة» يخطئ."
+    },
+    "extj_a_0008": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "العمر الحالي مذكور لكن تاريخ الميلاد غير قابل للاستخراج حرفيًّا؛ حساب سنة تقريبية ممنوع.",
+      "answer_verified_by": "mechanical",
+      "trap": "«ستة وعشرون عامًا» تغري باستنتاج سنة ميلاد؛ الصحيح null لأن الحقل غير موجود نصًّا."
+    },
+    "trnt_a_0007": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ثلاث جمل قصيرة بفاصلة منقوطة.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0034": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "جملة قصيرة بلا ترقيم.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0001": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "عدّ بسيط بحرف متكرر بوضوح.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0003": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "سرد يومي بحرف س متكرر؛ «السور» و«صوت» فخّان لفظيان (الأول يبدأ بالألف والثاني بالصاد).",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0024": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "ثلاث مجموعات رقمية في سياق شحن.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0039": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "تكرار واضح متتالٍ لثلاث كلمات.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0015": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "قائمة مهام يومية مفصولة بفواصل منقوطة.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0028": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "سنة قديمة بأربع خانات.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0020": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "جمع ثلاثة أرقام مع عدد مكتوب بالحروف (ثلاث) لا يدخل في الجمع.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0031": {
+      "difficulty": "easy",
+      "expected_failure_likely": false,
+      "why_this_case": "حرف واضح في بدايات كلمات.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0026": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خمس مجموعات رقمية بينها أوقات بنقطتين؛ كثافة ترفع احتمال الإغفال.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0038": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "ثماني كلمات بينها ص وض وش المتتالية هجائيًّا؛ يسهل قلب ترتيبها.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0023": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "سنة التأسيس عدد مكتوب بالأرقام فيدخل في الجمع حسب القاعدة الحرفية المعلنة.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يستبعد السنة ٢٠١٥ لأنها «ليست كمية» يخالف القاعدة المعلنة حرفيًّا."
+    },
+    "trnt_a_0009": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "خمس جمل يزيد احتمال الخلط في ترتيبها مع العدد.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0011": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "جمل رسمية طويلة متشابهة البنية؛ يسهل قلب الثانية والثالثة.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0035": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "فاصلة ملتصقة بكلمة يجب تجاوزها إلى الحرف الأول.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0014": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "علامات ترقيم ملتصقة بالكلمات يجب أن تبقى معها في مواضعها الجديدة.",
+      "answer_verified_by": "mechanical",
+      "trap": "«لي:» و«غدًا،» و«تتأخر!» تنتقل بترقيمها كوحدة واحدة؛ من يفصل الترقيم يخطئ."
+    },
+    "trnt_a_0004": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "التمييز بين الهمزة على ألف (أ) والألف الخالصة والهمزة الكسرى (إ) في أول الكلمة.",
+      "answer_verified_by": "mechanical",
+      "trap": "«الأربعاء» و«الأقسام» تبدآن بألف وصل لا بهمزة، و«إلزامي» همزتها كسرة؛ كلها لا تُحسب."
+    },
+    "trnt_a_0032": {
+      "difficulty": "hard",
+      "expected_failure_likely": true,
+      "why_this_case": "حرف الميم متكرر في البدايات والأوساط والنهايات معًا.",
+      "answer_verified_by": "mechanical",
+      "trap": "الاكتفاء بعدّ الكلمات التي تبدأ بالميم خطأ؛ المطلوب كل المواضع."
+    },
+    "trnt_a_0017": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "الوصف «طالب الصف السادس» يجب استبعاده من الاسم.",
+      "answer_verified_by": "mechanical",
+      "trap": "إدخال «طالب الصف السادس» في الاسم الأول خطأ شائع."
+    },
+    "trnt_a_0030": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "يوم وشهر بمنزلة واحدة يتطلبان صفرًا بادئًا.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0013": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "جملة متوسطة بسبع كلمات.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0029": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "آخر يوم في السنة؛ اختبار شهر ١٢.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0025": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "تاريخ بصيغة رقمية مفصولة بشرطة مائلة يجب إبقاء الفاصل.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0037": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أحرف أولى متقاربة ترتيبًا (ت، ح، خ، ز، ع).",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0021": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "عدد كتابي (خمسة) يجب تجاهله حسب القاعدة المعلنة.",
+      "answer_verified_by": "mechanical",
+      "trap": "من يجمع ٥٤ أضاف «خمسة» المكتوبة بالحروف."
+    },
+    "trnt_a_0008": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "أربع جمل متدرجة الطول.",
+      "answer_verified_by": "mechanical"
+    },
+    "trnt_a_0005": {
+      "difficulty": "medium",
+      "expected_failure_likely": false,
+      "why_this_case": "كلمات كثيرة تبدأ بلام حقيقية أو لام ملحقة (للبيع) وكلها تُحسب حسب القاعدة.",
+      "answer_verified_by": "mechanical"
+    }
+  }
+}

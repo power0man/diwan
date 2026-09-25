@@ -1,0 +1,63 @@
+name: verify
+# Only the reviewed, disposable Linux container receives this label. It has no
+# owner HOME, host mounts, Docker socket, HMAC key or private signing key.
+# --ephemeral limits job count; container disposal supplies the fresh filesystem.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    # المشغّلُ الذاتي المعزول مسجَّلٌ على المستودع الخاص وحده (ق٥٢)؛ في العام يعمل verify-hosted.
+    if: github.event.repository.private
+    runs-on: [self-hosted, Linux, ARM64, diwan-isolated]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # Every pushed commit must name the agent that produced it. This is a
+      # second, weaker line than the owner's pre-push gate: it runs the
+      # candidate's own copy of the tool, so a candidate could in principle
+      # weaken it here. The trusted copy in the installed bundle is the one
+      # that cannot be edited by a candidate commit. CI catches the ordinary
+      # case: an agent that pushed with --no-verify or on another machine.
+      - name: Every commit names its producing agent
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RANGE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          RANGE_HEAD: ${{ github.sha }}
+        run: |
+          set -eu
+          zero=0000000000000000000000000000000000000000
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            # A manual verification introduces no commits; recheck the selected
+            # commit. Historical attribution debt is audited separately. Push
+            # and PR events still validate every commit in their incoming range.
+            range="$RANGE_HEAD^!"
+          elif [ -z "${RANGE_BASE:-}" ] || [ "$RANGE_BASE" = "$zero" ] \
+             || ! git cat-file -e "$RANGE_BASE^{commit}" 2>/dev/null; then
+            # No usable base (new branch or shallow history): walk the whole
+            # history. Commits before enforced_from are exempt by the tool, so
+            # this flags exactly the same set as a range would.
+            range="$RANGE_HEAD"
+          else
+            range="$RANGE_BASE..$RANGE_HEAD"
+          fi
+          /opt/venv/bin/python tools/agent_attribution.py --range "$range"
+      - name: Shared checks and strict public signature verification
+        run: /opt/venv/bin/python tools/run_verification.py --node /usr/local/bin/node
+
+
+# The Python range is proven by tests/test_install_hooks.py
+# ::test_supported_python_range_is_enforced_at_both_bounds, which drives the
+# guard with synthetic interpreters at both bounds. A four-entry matrix was
+# removed because every entry ran the one interpreter in this container and
+# asserted only that a literal string parsed into range: four green jobs that
+# could not fail, on an --ephemeral runner that takes one job per push.

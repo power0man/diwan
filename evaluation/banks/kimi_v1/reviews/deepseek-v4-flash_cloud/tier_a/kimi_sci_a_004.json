@@ -1,0 +1,531 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "raw_output": "```json\n{\n  \"reviewer\": \"gpt-4\",\n  \"file\": \"kimi_sci_a_004.json\",\n  \"judgments\": [\n    {\n      \"id\": \"sci_a4_0074\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"القانون الصحيح R=V/I، فالمقاومة = 24/2 = 12 أوم، والقانون المعطى مقلوب.\",\n      \"reason\": \"المرجع يحدد الخطأ بدقة ويحسب بالقانون الصحيح، والمعايير تطلب اكتشاف الخطأ وعدم استخدامه والحساب الصحيح، وهي كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0079\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، لأن الطرف الأيسر طاقة والأيمن كمية تحرك، غير متجانسين.\",\n      \"reason\": \"المرجع يشرح عدم التجانس بوضوح، والمعايير تطلب اكتشاف الخطأ وعدم البناء عليه والتعليل، وهي كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0086\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"متناقضة، لأن 220×0.5=110 واط لا 60.\",\n      \"reason\": \"المرجع يوضح التناقض الحسابي، والمعايير تطلب اكتشاف الخطأ وعدم البناء عليه والتعليل، وهي كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0087\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"متناقضة، لأن v=gt=10×2=20 م/ث لا 15.\",\n      \"reason\": \"المرجع يبين التناقض مع قانون السقوط الحر، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0076\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الصحيح P=V²/R=100/5=20 واط، والقانون المعطى خاطئ.\",\n      \"reason\": \"المرجع يحدد الخطأ ويحسب صحيحًا، والمعايير تطلب ذلك، وهي كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0089\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، الارتباط لا يثبت سببية، والسببية معكوسة عبر متغير ثالث.\",\n      \"reason\": \"المرجع يشرح السببية المعكوسة، والمعايير تطلب اكتشاف الخطأ وعدم البناء عليه والتعليل، وهي كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0091\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، قد يكون الاجتهاد متغيرًا ثالثًا يفسر الارتباط.\",\n      \"reason\": \"المرجع يوضح المتغير الثالث، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0088\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، حرارة الصيف متغير ثالث يفسر الارتباط.\",\n      \"reason\": \"المرجع يشرح المتغير الثالث، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0083\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"متناقضة، لأن I=12/6=2 أمبير لا 3.\",\n      \"reason\": \"المرجع يبين التناقض مع قانون أوم، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0077\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الصحيح P=V×I=6×2.5=15 واط، والقانون المعطى خاطئ.\",\n      \"reason\": \"المرجع يحدد الخطأ ويحسب صحيحًا، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0090\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، المستشفيات تستقبل الحالات الحرجة فالارتباط ليس سببيًا.\",\n      \"reason\": \"المرجع يشرح السبب، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0078\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"الصحيح Q=mcΔT=0.5×4200×20=42000 جول، والقانون المعطى خاطئ.\",\n      \"reason\": \"المرجع يحدد الخطأ ويحسب صحيحًا، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0081\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"لا، لأن جمع قوة ومسافة غير متجانس، والصحيح W=F×d.\",\n      \"reason\": \"المرجع يشرح عدم التجانس، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0009\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"R=9/1.5=6 أوم.\",\n      \"reason\": \"المرجع صحيح، والمعايير تطلب اختيار الصيغة والتعويض والالتزام بالصيغة، وهي كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0001\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"I=9/3=3 أمبير.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0002\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"I=12/6=2 أمبير.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0013\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"R=4+6+8=18 أوم.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0003\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"I=220/55=4 أمبير.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0028\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"P=12×2=24 واط.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0008\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"R=12/3=4 أوم.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0005\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"V=0.5×20=10 فولت.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0007\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"V=0.2×45=9 فولت.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0010\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"R=30/0.5=60 أوم.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0006\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"V=2×7=14 فولت.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0038\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"R=V²/P=200²/100=400 أوم.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0018\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"التيار=30/30=1 أمبير، جهد 20 أوم=20 فولت.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0025\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تيار الفرع الأول=2، الثاني=4، الكلي=6 أمبير.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0026\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"تيار كل فرع=3، الكلي=6 أمبير.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0024\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"R=9/3=3 أوم.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0017\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"التيار=24/12=2 أمبير، جهد 8 أوم=16 فولت.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0036\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"P=24²/12=48 واط.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0034\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"P=12²/6=24 واط.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0041\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"التوازي.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0021\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"R=(12×6)/(12+6)=4 أوم.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0022\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"R=(10×15)/(10+15)=6 أوم.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0039\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"I=100/200=0.5 أمبير.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0031\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"P=2²×5=20 واط.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0032\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"P=3²×4=36 واط.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0033\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"P=0.5²×100=25 واط.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0019\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"R=(6×3)/(6+3)=2 أوم.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0035\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"P=20²/10=40 واط.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0054\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"C=400-273.15=126.85.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0052\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"K=100+273.15=373.15.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0053\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"C=300-273.15=26.85.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0070\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"القدرة.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0055\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"C=(68-32)*5/9=20، K=20+273.15=293.15.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0056\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"C=(212-32)*5/9=100، K=100+273.15=373.15.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0067\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Q=0.5×900×30=13500 جول.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0069\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Q=3×460×20=27600 جول.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0071\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"المقاومة.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0043\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"F=(9/5)*25+32=77.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0061\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"5×3.6=18 كم/ساعة.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0064\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"(100/1000)×5=0.5 كيلوواط ساعة.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0058\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"36/3.6=10 م/ث.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0060\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"25×3.6=90 كم/ساعة.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0063\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"2.5×3.6×10^6=9000000 جول.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0059\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"108/3.6=30 م/ث.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0065\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"(60/1000)×10=0.6 كيلوواط ساعة.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0066\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"Q=2×4200×15=126000 جول.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0046\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"F=(9/5)*(-10)+32=14.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0045\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"F=(9/5)*37+32=98.6.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0050\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"C=(212-32)*5/9=100.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0049\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"C=(-4-32)*5/9=-20.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    },\n    {\n      \"id\": \"sci_a4_0047\",\n      \"reference\": \"correct\",\n      \"rubric\": \"sufficient\",\n      \"my_answer\": \"C=(68-32)*5/9=20.\",\n      \"reason\": \"المرجع صحيح، والمعايير كافية.\",\n      \"fix\": null\n    }\n  ]\n}\n```"
+    }
+  ],
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "elapsed_ms": 39945,
+  "error": null,
+  "family": "deepseek",
+  "file": "tier_a/kimi_sci_a_004.json",
+  "file_sha256": "84b0e082e7611f322c88a2f921814fbd0bf7f409d976e6b671c90b6e91bf8b76",
+  "judgments": [
+    {
+      "fix": null,
+      "id": "sci_a4_0074",
+      "my_answer": "القانون الصحيح R=V/I، فالمقاومة = 24/2 = 12 أوم، والقانون المعطى مقلوب.",
+      "reason": "المرجع يحدد الخطأ بدقة ويحسب بالقانون الصحيح، والمعايير تطلب اكتشاف الخطأ وعدم استخدامه والحساب الصحيح، وهي كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0079",
+      "my_answer": "لا، لأن الطرف الأيسر طاقة والأيمن كمية تحرك، غير متجانسين.",
+      "reason": "المرجع يشرح عدم التجانس بوضوح، والمعايير تطلب اكتشاف الخطأ وعدم البناء عليه والتعليل، وهي كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0086",
+      "my_answer": "متناقضة، لأن 220×0.5=110 واط لا 60.",
+      "reason": "المرجع يوضح التناقض الحسابي، والمعايير تطلب اكتشاف الخطأ وعدم البناء عليه والتعليل، وهي كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0087",
+      "my_answer": "متناقضة، لأن v=gt=10×2=20 م/ث لا 15.",
+      "reason": "المرجع يبين التناقض مع قانون السقوط الحر، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0076",
+      "my_answer": "الصحيح P=V²/R=100/5=20 واط، والقانون المعطى خاطئ.",
+      "reason": "المرجع يحدد الخطأ ويحسب صحيحًا، والمعايير تطلب ذلك، وهي كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0089",
+      "my_answer": "لا، الارتباط لا يثبت سببية، والسببية معكوسة عبر متغير ثالث.",
+      "reason": "المرجع يشرح السببية المعكوسة، والمعايير تطلب اكتشاف الخطأ وعدم البناء عليه والتعليل، وهي كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0091",
+      "my_answer": "لا، قد يكون الاجتهاد متغيرًا ثالثًا يفسر الارتباط.",
+      "reason": "المرجع يوضح المتغير الثالث، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0088",
+      "my_answer": "لا، حرارة الصيف متغير ثالث يفسر الارتباط.",
+      "reason": "المرجع يشرح المتغير الثالث، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0083",
+      "my_answer": "متناقضة، لأن I=12/6=2 أمبير لا 3.",
+      "reason": "المرجع يبين التناقض مع قانون أوم، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0077",
+      "my_answer": "الصحيح P=V×I=6×2.5=15 واط، والقانون المعطى خاطئ.",
+      "reason": "المرجع يحدد الخطأ ويحسب صحيحًا، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0090",
+      "my_answer": "لا، المستشفيات تستقبل الحالات الحرجة فالارتباط ليس سببيًا.",
+      "reason": "المرجع يشرح السبب، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0078",
+      "my_answer": "الصحيح Q=mcΔT=0.5×4200×20=42000 جول، والقانون المعطى خاطئ.",
+      "reason": "المرجع يحدد الخطأ ويحسب صحيحًا، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0081",
+      "my_answer": "لا، لأن جمع قوة ومسافة غير متجانس، والصحيح W=F×d.",
+      "reason": "المرجع يشرح عدم التجانس، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0009",
+      "my_answer": "R=9/1.5=6 أوم.",
+      "reason": "المرجع صحيح، والمعايير تطلب اختيار الصيغة والتعويض والالتزام بالصيغة، وهي كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0001",
+      "my_answer": "I=9/3=3 أمبير.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0002",
+      "my_answer": "I=12/6=2 أمبير.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0013",
+      "my_answer": "R=4+6+8=18 أوم.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0003",
+      "my_answer": "I=220/55=4 أمبير.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0028",
+      "my_answer": "P=12×2=24 واط.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0008",
+      "my_answer": "R=12/3=4 أوم.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0005",
+      "my_answer": "V=0.5×20=10 فولت.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0007",
+      "my_answer": "V=0.2×45=9 فولت.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0010",
+      "my_answer": "R=30/0.5=60 أوم.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0006",
+      "my_answer": "V=2×7=14 فولت.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0038",
+      "my_answer": "R=V²/P=200²/100=400 أوم.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0018",
+      "my_answer": "التيار=30/30=1 أمبير، جهد 20 أوم=20 فولت.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0025",
+      "my_answer": "تيار الفرع الأول=2، الثاني=4، الكلي=6 أمبير.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0026",
+      "my_answer": "تيار كل فرع=3، الكلي=6 أمبير.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0024",
+      "my_answer": "R=9/3=3 أوم.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0017",
+      "my_answer": "التيار=24/12=2 أمبير، جهد 8 أوم=16 فولت.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0036",
+      "my_answer": "P=24²/12=48 واط.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0034",
+      "my_answer": "P=12²/6=24 واط.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0041",
+      "my_answer": "التوازي.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0021",
+      "my_answer": "R=(12×6)/(12+6)=4 أوم.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0022",
+      "my_answer": "R=(10×15)/(10+15)=6 أوم.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0039",
+      "my_answer": "I=100/200=0.5 أمبير.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0031",
+      "my_answer": "P=2²×5=20 واط.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0032",
+      "my_answer": "P=3²×4=36 واط.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0033",
+      "my_answer": "P=0.5²×100=25 واط.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0019",
+      "my_answer": "R=(6×3)/(6+3)=2 أوم.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0035",
+      "my_answer": "P=20²/10=40 واط.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0054",
+      "my_answer": "C=400-273.15=126.85.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0052",
+      "my_answer": "K=100+273.15=373.15.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0053",
+      "my_answer": "C=300-273.15=26.85.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0070",
+      "my_answer": "القدرة.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0055",
+      "my_answer": "C=(68-32)*5/9=20، K=20+273.15=293.15.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0056",
+      "my_answer": "C=(212-32)*5/9=100، K=100+273.15=373.15.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0067",
+      "my_answer": "Q=0.5×900×30=13500 جول.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0069",
+      "my_answer": "Q=3×460×20=27600 جول.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0071",
+      "my_answer": "المقاومة.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0043",
+      "my_answer": "F=(9/5)*25+32=77.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0061",
+      "my_answer": "5×3.6=18 كم/ساعة.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0064",
+      "my_answer": "(100/1000)×5=0.5 كيلوواط ساعة.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0058",
+      "my_answer": "36/3.6=10 م/ث.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0060",
+      "my_answer": "25×3.6=90 كم/ساعة.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0063",
+      "my_answer": "2.5×3.6×10^6=9000000 جول.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0059",
+      "my_answer": "108/3.6=30 م/ث.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0065",
+      "my_answer": "(60/1000)×10=0.6 كيلوواط ساعة.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0066",
+      "my_answer": "Q=2×4200×15=126000 جول.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0046",
+      "my_answer": "F=(9/5)*(-10)+32=14.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0045",
+      "my_answer": "F=(9/5)*37+32=98.6.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0050",
+      "my_answer": "C=(212-32)*5/9=100.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0049",
+      "my_answer": "C=(-4-32)*5/9=-20.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    },
+    {
+      "fix": null,
+      "id": "sci_a4_0047",
+      "my_answer": "C=(68-32)*5/9=20.",
+      "reason": "المرجع صحيح، والمعايير كافية.",
+      "reference": "correct",
+      "rubric": "sufficient"
+    }
+  ],
+  "model": "deepseek-v4-flash:cloud",
+  "started_at": "2026-09-24T19:44:53Z"
+}
