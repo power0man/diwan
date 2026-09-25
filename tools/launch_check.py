@@ -225,6 +225,29 @@ def run_checks(root: Path, *, engine: str, base_url: str, probe=probe_engine,
     return steps
 
 
+# طرفيةُ ويندوز بترميزها المحليّ (cp1256 على Nitro) لا تكتب ✓ ولا ◻ ولا ✗، فانهار الفحصُ بـUnicodeEncodeError
+# قبل أول سطر (#64، ٢٥ سبتمبر ٢٠٢٦). فتُختار علاماتٌ يكتبها الترميز، ويُستبدل ما بقي بدل أن ينهار.
+MARKS = {"ok": "✓", "unavailable": "◻", "failed": "✗"}
+ASCII_MARKS = {"ok": "+", "unavailable": "o", "failed": "x"}
+
+
+def marks_for(encoding: str | None) -> dict[str, str]:
+    try:
+        "".join(MARKS.values()).encode(encoding or "utf-8")
+    except (UnicodeEncodeError, LookupError):
+        return ASCII_MARKS
+    return MARKS
+
+
+def _tolerate_console(stream) -> None:
+    reconfigure = getattr(stream, "reconfigure", None)
+    if reconfigure is not None:
+        try:
+            reconfigure(errors="replace")
+        except (ValueError, OSError):
+            pass
+
+
 def exit_code(steps: list[Step]) -> int:
     statuses = {s.status for s in steps}
     if "failed" in statuses:
@@ -248,12 +271,13 @@ def main(argv: list[str] | None = None) -> int:
                           "verdict": {0: "ready", 3: "unavailable_declared", 1: "failed"}[code]},
                          ensure_ascii=False, indent=2))
     else:
-        mark = {"ok": "✓", "unavailable": "◻", "failed": "✗"}
+        _tolerate_console(sys.stdout)
+        mark = marks_for(getattr(sys.stdout, "encoding", None))
         for s in steps:
             print(f"  {mark[s.status]} {s.step}: {s.code} — {s.detail}")
-        print({0: "\n✓ جاهزٌ للإطلاق على هذا الجهاز.",
-               3: "\n◻ تعذّر بحدٍّ معلن: أكمل ما سُمّي أعلاه ثم أعد الفحص.",
-               1: "\n✗ عطب: يُصلَح قبل الإطلاق."}[code])
+        print({0: f"\n{mark['ok']} جاهزٌ للإطلاق على هذا الجهاز.",
+               3: f"\n{mark['unavailable']} تعذّر بحدٍّ معلن: أكمل ما سُمّي أعلاه ثم أعد الفحص.",
+               1: f"\n{mark['failed']} عطب: يُصلَح قبل الإطلاق."}[code])
     return code
 
 

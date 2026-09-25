@@ -141,3 +141,22 @@ def test_a_journal_that_refuses_its_root_is_a_named_failure_not_a_traceback(monk
     step = lc.check_agent_turn("qwen3:14b", "http://x", live=False)
     assert step.status == "failed" and step.code == "agent_turn_raised"
     assert "JournalRefused" in step.detail
+
+
+def test_a_windows_arabic_console_prints_the_report_instead_of_crashing(monkeypatch):
+    """على Nitro انهار الفحصُ بـUnicodeEncodeError عند «✗» على طرفية cp1256 قبل أن يطبع سطرًا (#64)."""
+    import io
+    raw = io.BytesIO()
+    console = io.TextIOWrapper(raw, encoding="cp1256", errors="strict")
+    monkeypatch.setattr(lc.sys, "stdout", console)
+    monkeypatch.setattr(lc, "run_checks", lambda *a, **k: [
+        lc.Step("runtime", "failed", "import_failed", "ModuleNotFoundError: No module named 'fcntl' ✓")])
+    assert lc.main([]) == 1
+    console.flush()
+    text = raw.getvalue().decode("cp1256")
+    assert "  x runtime: import_failed" in text and "x عطب: يُصلَح قبل الإطلاق." in text
+
+
+def test_a_utf8_console_keeps_the_symbols():
+    assert lc.marks_for("utf-8") == lc.MARKS and lc.marks_for("cp1256") == lc.ASCII_MARKS
+    assert lc.marks_for("no-such-codec") == lc.ASCII_MARKS
