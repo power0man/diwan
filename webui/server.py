@@ -325,6 +325,7 @@ class LocalApp:
             need(type(request["files"]) is list and len(request["files"]) <= 4
                  and all(isinstance(item, str) for item in request["files"])
                  and len(set(request["files"])) == len(request["files"]), "attachments_invalid")
+            need(type(request.get("thinking", False)) is bool, "thinking_invalid")
         elif action == "agent_resume":
             identifier(request["turn"])
         elif action == "agent_decide":
@@ -354,7 +355,8 @@ class LocalApp:
             if action == "agent_ask" and old is not None:
                 prior = agent_workspace.decode_input(old["text"])
                 need(prior["user_request"] == request["message"] and
-                     [doc["source_path"] for doc in prior["attachments"]] == request["files"], "turn_conflict")
+                     [doc["source_path"] for doc in prior["attachments"]] == request["files"]
+                     and old.get("thinking", False) == request.get("thinking", False), "turn_conflict")
                 return {**self.present_agent(old, session), "replayed": True}
             if action == "agent_resume" and old is None:
                 raise UIError("turn_unknown")
@@ -380,11 +382,11 @@ class LocalApp:
                 preferences = (Preferences(preferences_root).snapshot()
                     if preferences_root.exists() or preferences_root.is_symlink() else None)
                 text = agent_workspace.encode_input(request["message"], docs, preferences)
-                session.validate_turn(request["turn"], text)
+                session.validate_turn(request["turn"], text, request.get("thinking", False))
                 provider = self.agent_provider_factory()
                 need(getattr(provider, "is_local", None) is True, "policy_requires_local")
                 agent_workspace.materialize_selected(workspace, blobs)
-                session.start_turn(request["turn"], text, provider)
+                session.start_turn(request["turn"], text, provider, thinking=request.get("thinking", False))
             else:
                 session.resume(request["turn"], self.agent_provider_factory())
             saved = next(turn for turn in session.history()["turns"] if turn["turn_id"] == request["turn"])
@@ -446,6 +448,8 @@ class LocalApp:
             fields -= {"pages"}
         elif action in ("ask", "ask_media"):
             fields -= {"tier", "data_policy"}
+        elif action == "agent_ask":
+            fields -= {"thinking"}      # اختياريّ: طلبُ التفكير في الجولة (ك٤٧)
         need(fields == schemas[action] | {"action"})
         if action == "projects":
             with self.lock:

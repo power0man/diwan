@@ -32,6 +32,7 @@ from services.agent_workspace import model_facing_input
 MAX_STATE_BYTES = 32 * 1024 * 1024
 MAX_LEDGER_BYTES = 32 * 1024 * 1024
 TERMINAL = frozenset({"complete", "truncated", "timed_out", "failed", "refused", "step_limit", "cancelled"})
+_TURN_KEYS = frozenset({"turn_id", "text", "initial_messages", "input_digest", "calls", "result", "transcript"})
 
 
 def _copy(value):
@@ -289,10 +290,10 @@ class AgentSession:
         state["ledger"] = {"count": len(entries), "head": entries[-1]["digest"] if entries else GENESIS}
         self._write("state.json", {"state": state, "sha256": digest(state)})
 
-    def _request(self, messages):
+    def _request(self, messages, thinking=False):
         return validated(Request(messages, self.config["model"], self.config["model_version"],
                                  self.config["max_output"], float(self.config["deadline_s"]), "local_only", None,
-                                 tuple(ToolSpec(**spec) for spec in self.config["tools"])))
+                                 tuple(ToolSpec(**spec) for spec in self.config["tools"]), thinking=thinking))
 
     def _load(self):
         try:
@@ -324,17 +325,19 @@ class AgentSession:
             previous = [_message_payload(Message("system", self.config["system"]))]
             unresolved = False
             for turn in state["turns"]:
-                if (set(turn) != {"turn_id", "text", "initial_messages", "input_digest", "calls", "result", "transcript"}
+                # طلبُ التفكير مفتاحٌ اختياريّ قيمتُه True وحدها (ك٤٧)، فحالاتُ ما قبله صالحة كما هي
+                thinking = turn.get("thinking", False)
+                if (set(turn) - {"thinking"} != _TURN_KEYS or ("thinking" in turn and thinking is not True)
                         or not _id(turn["turn_id"]) or turn["turn_id"] in seen or not _text(turn["text"])
                         or unresolved or turn["initial_messages"] != previous
                         or turn["input_digest"] != self._input_digest(turn)
                         or not isinstance(turn["calls"], list) or len(turn["calls"]) > self.config["max_steps"]):
                     _fail("state_corrupt", "مدخلات الجولة أو ترتيبها غير صالح")
                 seen.add(turn["turn_id"])
-                self._request(_messages(turn["initial_messages"]) + (_user_message(turn["text"]),))
+                self._request(_messages(turn["initial_messages"]) + (_user_message(turn["text"]),), thinking)
                 for intent in turn["calls"]:
                     payload = intent["request"]
-                    request = self._request(_messages(payload["messages"]))
+                    request = self._request(_messages(payload["messages"]), thinking)
                     expected_key = "agent-" + digest({"request": payload, "session_id": self.session_id,
                                                       "turn_id": turn["turn_id"]})
                     prefix = turn["initial_messages"] + [_message_payload(_user_message(turn["text"]))]
@@ -366,7 +369,8 @@ class AgentSession:
 
     def _input_digest(self, turn):
         return digest({"config": digest(self.config), "turn_id": turn["turn_id"],
-                       "text": turn["text"], "initial_messages": turn["initial_messages"]})
+                       "text": turn["text"], "initial_messages": turn["initial_messages"],
+                       **({"thinking": True} if turn.get("thinking") else {})})
 
     def _verify_result(self, turn, entries):
         result = turn["result"]
@@ -383,7 +387,8 @@ class AgentSession:
             if (record is None or step["index"] != index
                     or step["request_digest"] != record["request_digest"]
                     or record["idempotency_key"] not in intents
-                    or record["request_digest"] != digest(self._request(tuple(messages)).fingerprint_payload())):
+                    or record["request_digest"] != digest(self._request(
+                        tuple(messages), turn.get("thinking", False)).fingerprint_payload())):
                 _fail("ledger_binding_invalid", "خطوة محفوظة بلا قيد ومدخل مطابقين")
             response = record.get("response")
             if response is None:
@@ -391,7 +396,8 @@ class AgentSession:
                     _fail("ledger_binding_invalid", "محتوى بلا جواب مثبت")
                 continue
             if (step["content"] != response["content"] or step["stop_reason"] != response["stop_reason"]
-                    or step["tool_calls"] != response.get("tool_calls", [])):
+                    or step["tool_calls"] != response.get("tool_calls", [])
+                    or step.get("thinking", "") != response.get("thinking", "")):
                 _fail("ledger_binding_invalid", "جواب الخطوة لا يطابق السجل")
             if step["stop_reason"] != "complete":
                 if step["tool_results"]:
@@ -458,13 +464,15 @@ class AgentSession:
                 return False
         return not any(view["state"] == "outcome_unknown" for view in self._pending(turn))
 
-    def _admit_turn(self, state, turn_id, text):
+    def _admit_turn(self, state, turn_id, text, thinking=False):
         if not _id(turn_id) or not _text(text):
             _fail("turn_input_invalid", "معرف جولة ونص UTF-8 غير فارغ مطلوبان")
+        if not isinstance(thinking, bool):
+            _fail("turn_input_invalid", "طلب التفكير True أو False")
         existing = self._find(state, turn_id)
         if existing is not None:
-            if existing["text"] != text:
-                _fail("turn_id_conflict", "معرف الجولة مرتبط بنص مختلف")
+            if existing["text"] != text or existing.get("thinking", False) != thinking:
+                _fail("turn_id_conflict", "معرف الجولة مرتبط بنص أو طلب تفكير مختلف")
             return existing, None
         if len(state["turns"]) >= self.config["max_turns"]:
             _fail("turn_limit", "بلغت الجلسة حد الجولات")
@@ -472,7 +480,7 @@ class AgentSession:
             _fail("turn_unresolved", "توجد جولة غير محسومة؛ استأنفها أولًا")
         complete = [turn for turn in state["turns"] if turn["result"]["status"] == "complete"]
         initial = complete[-1]["transcript"] if complete else [_message_payload(Message("system", self.config["system"]))]
-        request = self._request(_messages(initial) + (_user_message(text),))
+        request = self._request(_messages(initial) + (_user_message(text),), thinking)
         if len(canonical_bytes(request.fingerprint_payload()).decode("utf-8")) > self.config["max_context_chars"]:
             _fail("context_limit", "سياق الجلسة تجاوز الحد؛ أنشئ جلسة جديدة")
         return None, initial
@@ -496,7 +504,8 @@ class AgentSession:
             step = {"index": index, "content": response.get("content", ""),
                     "request_digest": record["request_digest"], "ledger_digest": entry["digest"],
                     "replayed": True, "tool_results": [], "stop_reason": response.get("stop_reason", "complete"),
-                    "tool_calls": [call.declared() for call in calls]}
+                    "tool_calls": [call.declared() for call in calls],
+                    **({"thinking": response["thinking"]} if response.get("thinking") else {})}
             steps.append(step)
             if not calls or step["stop_reason"] != "complete":
                 break
@@ -583,7 +592,7 @@ class AgentSession:
         return {"turn_id": turn_id, "status": signal["status"],
                 "error_code": signal.get("error_code")}
 
-    def validate_turn(self, turn_id, text):
+    def validate_turn(self, turn_id, text, thinking=False):
         """Read-only admission for trusted input staging; start_turn checks again.
 
         This is not a reservation. The application must serialize admission and
@@ -591,21 +600,23 @@ class AgentSession:
         """
         with self._lock():
             state = self._load()
-            existing, _ = self._admit_turn(state, turn_id, text)
+            existing, _ = self._admit_turn(state, turn_id, text, thinking)
             return ({"status": "replayed", "result": self._public(existing)} if existing is not None
                     else {"status": "ready"})
 
-    def start_turn(self, turn_id, text, provider):
+    def start_turn(self, turn_id, text, provider, *, thinking=False):
         with self._lock():
             state = self._load()
             self._settle_stops(state)
-            existing, initial = self._admit_turn(state, turn_id, text)
+            existing, initial = self._admit_turn(state, turn_id, text, thinking)
             if existing is not None:
                 return self._public(existing)
             if getattr(provider, "is_local", None) is not True:
                 _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
             turn = {"turn_id": turn_id, "text": text, "initial_messages": _copy(initial),
-                    "input_digest": "", "calls": [], "result": None, "transcript": []}
+                    "input_digest": "", "calls": [], "result": None, "transcript": [],
+                    # يُحفظ حين يُطلب فقط (ك٤٧): جولاتُ ما قبله بلا مفتاح
+                    **({"thinking": True} if thinking else {})}
             turn["input_digest"] = self._input_digest(turn)
             state["turns"].append(turn)
             self._save(state)
@@ -638,13 +649,15 @@ class AgentSession:
                             max_output=self.config["max_output"], deadline_s=float(self.config["deadline_s"]),
                             action_store=self.action_store, session_id=self.session_id, turn_id=turn["turn_id"],
                             initial_messages=_messages(turn["initial_messages"]),
-                            stop_check=lambda: self._stop_signals.requested(turn))
+                            stop_check=lambda: self._stop_signals.requested(turn),
+                            thinking=turn.get("thinking", False))
             turn["result"] = {"turn_id": turn["turn_id"], "content": run.answer, "status": run.status,
                               "error_code": run.code, "steps": [{"index": step.index, "content": step.content,
                                   "request_digest": step.request_digest, "ledger_digest": step.ledger_digest,
                                   "replayed": step.replayed, "tool_results": _copy(list(step.tool_results)),
                                   "stop_reason": step.stop_reason,
-                                  "tool_calls": [call.declared() for call in step.tool_calls]} for step in run.steps],
+                                  "tool_calls": [call.declared() for call in step.tool_calls],
+                                  **({"thinking": step.thinking} if step.thinking else {})} for step in run.steps],
                               "pending": [] if run.status == "cancelled" else self._pending(turn)}
             turn["transcript"] = [_message_payload(message) for message in run.transcript]
             if not self._can_replay(turn):
@@ -711,7 +724,8 @@ class AgentSession:
                     self._save(state)
             return {"schema_version": 2, "session_id": self.session_id, "project_id": self.project_id,
                     "workspace_root": str(self.workspace),
-                    "turns": [{"turn_id": turn["turn_id"], "text": turn["text"], "result": self._public(turn)}
+                    "turns": [{"turn_id": turn["turn_id"], "text": turn["text"], "result": self._public(turn),
+                               **({"thinking": True} if turn.get("thinking") else {})}
                               for turn in state["turns"]],
                     "pending": [view for view in self.action_store.pending()
                                 if any(turn["turn_id"] == view["position"]["turn_id"]

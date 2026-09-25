@@ -99,6 +99,10 @@ function renderAgentActions(answer, actions, ctx, turn) {
   }
   for(const step of turn.steps || []) {
     const details = element("details"); details.append(element("summary", `الخطوة ${step.index + 1}`));
+    if(step.thinking) {
+      const thought = element("details"); thought.append(element("summary", "تفكير النموذج — محجور، ولا يُعاد إليه"));
+      thought.append(element("pre", step.thinking)); details.append(thought);
+    }
     for(const result of step.tool_results || []) {
       details.append(element("p", `${result.name} · ${result.status}${result.code ? ` · ${result.code}` : ""}`));
       if(result.content) details.append(element("pre", result.content));
@@ -293,7 +297,8 @@ $("composer").onsubmit = async event => {
     }
     try {sessionStorage.setItem(pendingKey(ctx), turn);} catch {notice("تعذر حفظ معرف الجولة في المتصفح. فعّل تخزين الجلسة قبل الإرسال.", true); return;}
     syncPending(); notice("ديوان يكتب… يمكنك استرجاع الحالة إذا انقطع الاتصال.");
-    await api(mode === "media" ? "ask_media" : mode === "agent" ? "agent_ask" : "ask", {...ctx, turn, message, ...(mode === "media" ? {media} : {files})});
+    const thinking = mode === "agent" && $("agent-thinking").checked ? {thinking: true} : {};
+    await api(mode === "media" ? "ask_media" : mode === "agent" ? "agent_ask" : "ask", {...ctx, turn, message, ...(mode === "media" ? {media} : {files}), ...thinking});
     if(epoch === state.epoch) {
       if($("message").value === message) $("message").value = "";
       if($("media-file").files[0] === selectedFile) $("media-file").value = "";
