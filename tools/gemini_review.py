@@ -22,6 +22,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -42,6 +43,9 @@ ENDPOINTS = (
     ("ai-studio", "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"),
     ("vertex-express", "https://aiplatform.googleapis.com/v1/publishers/google/models/{model}:generateContent"),
 )
+# انشغالُ خادم Gemini عابر: «503 UNAVAILABLE» أسقط مراجعةَ #12 في ٢٥ سبتمبر ٢٠٢٦
+TRANSIENT = frozenset({500, 503, 504})
+RETRY_WAITS = (5, 15)
 LOCKFILES = frozenset({"uv.lock", "requirements-ci.lock"})
 MAX_DIFF_CHARS = 300_000
 MAX_RESPONSE_BYTES = 8_000_000
@@ -145,14 +149,23 @@ def _text(raw: bytes) -> str:
         return ""
 
 
-def ask_gemini(payload: dict, key: str, http: Http, models: tuple[str, ...]) -> tuple[str, str, str]:
-    """(النص، النموذج، النقطة). 404 ينقل إلى النموذج التالي، ورفضُ الصلاحية إلى النقطة التالية."""
+def ask_gemini(payload: dict, key: str, http: Http, models: tuple[str, ...],
+               sleep=time.sleep) -> tuple[str, str, str]:
+    """(النص، النموذج، النقطة). 404 ينقل إلى النموذج التالي، ورفضُ الصلاحية إلى النقطة التالية،
+    وانشغالُ الخادم (500/503/504) يُعاد مرّتين بمهلةٍ ثم ينقل إلى النموذج التالي."""
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     headers = {"Content-Type": "application/json", "x-goog-api-key": key}
     last = GeminiReviewError("gemini_model_unavailable", ",".join(models))
     for endpoint, template in ENDPOINTS:
         for model in models:
-            status, raw = http.request("POST", template.format(model=model), dict(headers), body)
+            for wait in (*RETRY_WAITS, None):
+                status, raw = http.request("POST", template.format(model=model), dict(headers), body)
+                if status not in TRANSIENT or wait is None:
+                    break
+                sleep(wait)
+            if status in TRANSIENT:
+                last = GeminiReviewError("gemini_unavailable", f"{model} {status}")
+                continue
             if status == 200:
                 text = _text(raw)
                 if not text:
@@ -200,7 +213,7 @@ def post_review(slug: str, pr: int, head: str, body: str, token: str | None, htt
 
 
 def run(*, families: set[str], environ: dict, http: Http, slug: str, pr: int, head: str,
-        styleguide: str) -> dict:
+        styleguide: str, sleep=time.sleep) -> dict:
     """الخطواتُ كلُّها بلا سطر أوامر: تخطٍّ أو نشرٌ أو خطأٌ مسمًّى."""
     if FAMILY in families:
         return {"status": "skipped", "code": "same_family_as_author", "author_families": sorted(families)}
@@ -211,13 +224,14 @@ def run(*, families: set[str], environ: dict, http: Http, slug: str, pr: int, he
     sent, omitted, truncated = split_diff(fetch_diff(slug, pr, token, http))
     payload, _ = build_request(sent, styleguide, pr, head, omitted)
     chosen = environ.get(MODEL_ENV) or ""
-    text, model, endpoint = ask_gemini(payload, key, http, (chosen,) if chosen else MODELS)
+    text, model, endpoint = ask_gemini(payload, key, http, (chosen,) if chosen else MODELS, sleep)
     post_review(slug, pr, head, review_body(text, model, endpoint, omitted, truncated), token, http)
     return {"status": "posted", "model": model, "endpoint": endpoint, "head": head,
             "omitted": omitted, "truncated": truncated}
 
 
-def main(argv: list[str] | None = None, environ=os.environ, http: Http | None = None) -> int:
+def main(argv: list[str] | None = None, environ=os.environ, http: Http | None = None,
+         sleep=time.sleep) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--range", required=True, help="مدى إيداعات الطلب، مثل BASE..HEAD")
     parser.add_argument("--head", required=True)
@@ -232,7 +246,7 @@ def main(argv: list[str] | None = None, environ=os.environ, http: Http | None = 
         if not args.repo_slug:
             raise GeminiReviewError("repo_slug_missing")
         report = run(families=families, environ=dict(environ), http=http or Http(), slug=args.repo_slug,
-                     pr=args.pr, head=args.head, styleguide=styleguide)
+                     pr=args.pr, head=args.head, styleguide=styleguide, sleep=sleep)
     except (GeminiReviewError, AttributionError, OSError, ValueError) as exc:
         # التفصيلُ من رموزنا وحدها (نقطة، نموذج، حالة HTTP)؛ لا نصَّ خامَ من الشبكة ولا ترويسات
         print(json.dumps({"status": "error", "code": getattr(exc, "code", type(exc).__name__),
