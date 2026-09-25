@@ -65,6 +65,24 @@ def test_morphology_here_reports_the_real_state_of_this_machine():
     assert (step.status == "ok") == camel_available()
 
 
+def test_a_symlinked_temporary_directory_is_resolved_before_the_journal_guard(tmp_path, monkeypatch):
+    """عطبٌ كشفه التشغيلُ الحيّ على الماك (٢٥ سبتمبر): `tempfile` يعطي مسارًا تحت `/var` وهو رابطٌ
+    رمزي إلى `/private/var`، فيرفضه حارسُ دفتر الرجوع (`unsafe_path`) — عطبُ ك٨ نفسُه."""
+    import contextlib
+    real = tmp_path / "real"
+    real.mkdir()
+    link = tmp_path / "link"
+    link.symlink_to(real, target_is_directory=True)
+
+    @contextlib.contextmanager
+    def linked_tmp(prefix=""):
+        yield str(link)
+
+    monkeypatch.setattr(lc.tempfile, "TemporaryDirectory", linked_tmp)
+    step = lc.check_agent_turn("qwen3.5:9b", "http://x", live=False)
+    assert step.status == "ok" and step.code == "mechanism_only", step
+
+
 def test_a_model_that_answers_without_the_tool_is_a_failure(monkeypatch):
     class Silent(lc._Mechanism):
         def complete(self, request):
