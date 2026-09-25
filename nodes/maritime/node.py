@@ -239,8 +239,11 @@ class MaritimeNode:
     """مشغّل السؤال/الجواب — كل نداء نموذجٍ عبر الحلقة المحكومة."""
 
     def __init__(self, root: Path, provider, budget, ledger,
-                 search_fn=None, top_k: int = 7):
+                 search_fn=None, top_k: int = 7, auto_repair: bool = False):
         self.root = root
+        # الإصلاحُ الآليّ للإسناد موقوفٌ افتراضيًّا (ق٦٢): يُلحق الإحالةَ
+        # بادعاءٍ ينفي شاهدَه فيصير مسنَدًا. ويعود حين يفحص القطبية (غ٦).
+        self.auto_repair = auto_repair
         self.provider = provider
         self.budget = budget
         self.ledger = ledger
@@ -452,7 +455,7 @@ class MaritimeNode:
                                "part": u["item"]["part"],
                                "locus": u["item"]["locus"]} for u in used})
                 weak = unsupported(bindings)
-                if weak:
+                if weak and self.auto_repair:
                     # محاولة الإصلاح الآلي التوليدي المعزز قبل إعلان الرفض (م١٥)
                     all_pages_map = {idx: {"text": p["item"]["text"],
                                            "part": p["item"]["part"],
