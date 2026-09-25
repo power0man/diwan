@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "public_export",
   "source_commit": "679123713aea0e73c79482d5e5f63a93dfde6c86",
-  "exported_at": "2026-09-25T14:23:18+00:00",
+  "exported_at": "2026-09-25T16:03:28+00:00",
   "excluded_paths": [
     "corpus/",
     "glossaries/",
@@ -18,6 +18,10 @@
     "tools/build_benchmark_suite.py",
     "tools/seed_acquisitions.py"
   ],
+  "included_paths": [
+    "corpus/lexicons/qamus-muhit.jsonl",
+    "corpus/lexicons/qamus-muhit.jsonl.anchor"
+  ],
   "excluded_streams": [
     "corpus/lexicons-local/_catalog.jsonl",
     "corpus/lexicons/_catalog.jsonl",
@@ -26,16 +30,15 @@
     "publish/_manifest.jsonl",
     "sources/acquisitions.jsonl"
   ],
-  "files_exported": 630,
-  "files_excluded": 315,
+  "files_exported": 632,
+  "files_excluded": 313,
   "fingerprints": {
     "shingle_words": 12,
-    "shingles": 1477640,
+    "shingles": 927605,
     "titles": 113,
     "sources": [
       "corpus/lexicons/_catalog.jsonl",
       "corpus/lexicons/mujam-wasit.jsonl",
-      "corpus/lexicons/qamus-muhit.jsonl",
       "corpus/maritime/001__اللائحة-التنفيذية-للمعاهدة-الدولية-لسلامة-الأرواح-في-البحار-سولاس-1974.jsonl",
       "corpus/maritime/001__اللائحة-التنفيذية-للمعاهدة-الدولية-لسلامة-الأرواح-في-البحار-سولاس-1974__v2.jsonl",
       "corpus/maritime/002__لائحة-تسجيل-السفن-وقيد-الوحدات-البحرية.jsonl",

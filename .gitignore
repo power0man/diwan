@@ -40,8 +40,14 @@ evaluation/banks/*/sealed/*
 
 # مخازنُ المالك الخاصة (ك٢٧، ق٥١، ق٥٢): تبقى في Drive وفي diwan-private، وتوضع محليًّا
 # بـtools/place_private_stores.py ولا تدخل المستودعَ العام أبدًا. القائمةُ مصدرُها
-# tools/export_public.py::EXCLUDED_PATHS، والحارس tests/test_private_stores_are_ignored.py
-corpus/
+# tools/export_public.py::EXCLUDED_PATHS، والحارس tests/test_private_stores_are_ignored.py.
+# وما ضمّنه المالك في العام (INCLUDED_PATHS، ق٥٨: القاموسُ المحيط) يُعاد تضمينُه نفيًا بعد نفي،
+# لأن git لا يُعيد ملفًّا تحت دليلٍ متجاهَلٍ كلُّه.
+corpus/*
+!corpus/lexicons/
+corpus/lexicons/*
+!corpus/lexicons/qamus-muhit.jsonl
+!corpus/lexicons/qamus-muhit.jsonl.anchor
 glossaries/
 sources/
 publish/
