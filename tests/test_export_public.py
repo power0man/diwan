@@ -200,14 +200,40 @@ def test_a_non_empty_destination_is_refused(tmp_path):
     assert ex.build(root, tmp_path / "out", tracked=tracked)["code"] == "dest_not_empty"
 
 
-def test_a_marker_never_coexists_with_the_private_streams():
-    """المستودعُ الخاص بلا علامة، واللقطةُ العامة بعلامةٍ ولا مخازنَ خاصة؛ واجتماعُهما عبث."""
+def _git_ok(*argv):
+    return subprocess.run(["git", "-C", str(ROOT), *argv], capture_output=True).returncode == 0
+
+
+def test_a_marker_never_coexists_with_a_tracked_private_stream():
+    """المستودعُ الخاص بلا علامة؛ واللقطةُ العامة بعلامةٍ لا تتتبّع مخزنًا خاصًّا ولا تدعه يُتتبَّع (ك٣٥).
+
+    كان الاختبارُ يشترط غيابَ المخازن من **القرص**، فسقط في كل نسخةٍ عامة وُضعت فيها المتون عمدًا
+    بـ`tools/place_private_stores.py` (ك٢٩؛ قيس على الماك في ٢٥ سبتمبر). الشرطُ الصحيح: غيرُ متتبَّع
+    في git ومتجاهَل، فوضعُه محليًّا لا يعرّضه للدفع."""
     marker = read_marker(ROOT)
     if marker is None:
         assert not (ROOT / MARKER_NAME).exists(), "علامةٌ معطوبة في الجذر"
         return
     for rel in marker["excluded_streams"]:
-        assert not (ROOT / rel).exists(), f"{rel} حاضرٌ رغم أن العلامة تستبعده"
+        assert not _git_ok("ls-files", "--error-unmatch", rel), f"{rel} متتبَّعٌ رغم أن العلامة تستبعده"
+        assert _git_ok("check-ignore", "-q", rel), f"{rel} غيرُ متجاهَل: وضعُه محليًّا يعرّضه للدفع"
+
+
+def test_no_tracked_text_file_in_this_tree_trips_the_personal_data_patterns():
+    """ك٣٦: مفتاحٌ مصطنع في اختبارٍ كان يطابق نمطَ `token` فيردّ التصديرَ حيث المتنُ موضوع، ولا يُرى في CI
+    لأن اختبار التصدير الحقيقي `@needs_corpus`. هذا الحارس يمسح الشجرةَ المتتبَّعة كلَّها بلا متون: أنماطُ
+    البيانات الشخصية والأسرار والمحجوب وحدها (بصماتٌ فارغة)، فيسقط في CI قبل أن يسقط التصدير."""
+    empty = ex.Fingerprints(frozenset(), (), ())
+    hits = []
+    for rel in ex.tracked_files(ROOT):
+        if ex.is_excluded(rel) or ex.is_included(rel):
+            continue
+        try:
+            text = (ROOT / rel).read_bytes().decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        hits.extend(ex.scan_path(rel, text, empty))
+    assert hits == [], [h.as_dict() for h in hits]
 
 
 @needs_corpus
