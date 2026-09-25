@@ -185,6 +185,18 @@ def test_omitted_lockfiles_are_named_to_the_model_outside_the_fence():
     assert "lock files" not in payload["contents"][0]["parts"][0]["text"], "لا ملاحظةَ حين لا حذف"
 
 
+def test_the_model_is_told_todays_date():
+    """حكم Gemini مرّتين «بتاريخٍ مستقبليّ» على تاريخ اليوم (#61 و#62)، لأنه لا يعرف التاريخ."""
+    payload, _ = gr.build_request("diff", STYLE, 7, HEAD, today="2026-09-25")
+    system = payload["systemInstruction"]["parts"][0]["text"]
+    assert "Today's date is 2026-09-25 (UTC)" in system and "UTC+3" in system
+    http = FakeHttp()
+    run(http)
+    live = json.loads(http.gemini_calls()[0]["body"])["systemInstruction"]["parts"][0]["text"]
+    from datetime import datetime, timezone
+    assert f"Today's date is {datetime.now(timezone.utc).date().isoformat()} (UTC)" in live
+
+
 def test_the_task_asks_for_defects_only_not_praise():
     """مراجعةُ #13 الحيّة أعطت مدائحَ درجةَ «عالٍ»."""
     assert "never list what is correct" in gr.TASK and "If there are no findings" in gr.TASK

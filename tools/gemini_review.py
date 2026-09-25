@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 import sys
@@ -60,6 +61,10 @@ TASK = (
     "only: never list what is correct, and never give a severity to praise. If there are no findings, say so in one "
     "line. Separate blocking defects from optional suggestions. End with a short line saying what you did not check.")
 # ملفّاتُ القفل تُحذف من الفرق لحجمها، فيُخبَر النموذجُ بتغيّرها كي لا يحسبها غائبة (كشفته مراجعةُ #12 الحيّة)
+# النموذجُ لا يعرف تاريخ اليوم، فحكم مرّتين «بتاريخٍ مستقبليّ» على تاريخ اليوم (#61 و#62، ٢٥ سبتمبر ٢٠٢٦).
+# والمالكُ يكتب التاريخَ بتوقيت UTC+3، فاليومُ التالي لتاريخ UTC قد يكون اليومَ عنده.
+TODAY_NOTE = ("Today's date is {today} (UTC). The owner writes dates in UTC+3, so the day after it may already be today "
+              "there. Never report a date as being in the future unless it is later than that.")
 OMITTED_NOTE = ("These lock files changed in this pull request; their diff was omitted only for size, so do not "
                 "report them as missing or not updated: {files}.")
 
@@ -119,10 +124,12 @@ def _path(block: str) -> str | None:
 
 
 def build_request(diff: str, styleguide: str, pr: int, head: str,
-                  omitted: list[str] | tuple[str, ...] = ()) -> tuple[dict, str]:
-    """جسمُ generateContent والنونس. الفرقُ مسيَّج، والتعليماتُ في النظام وحده، وملفّاتُ القفل المحذوفة مسمّاةٌ خارج السياج."""
+                  omitted: list[str] | tuple[str, ...] = (), today: str | None = None) -> tuple[dict, str]:
+    """جسمُ generateContent والنونس. الفرقُ مسيَّج، والتعليماتُ في النظام وحده ومعها تاريخُ اليوم،
+    وملفّاتُ القفل المحذوفة مسمّاةٌ خارج السياج."""
     fenced, nonce = wrap(diff)
-    system = f"{styleguide.strip()}\n\n{DATA_NOT_INSTRUCTIONS}\n\n{TASK}"
+    today = today or datetime.now(timezone.utc).date().isoformat()
+    system = f"{styleguide.strip()}\n\n{DATA_NOT_INSTRUCTIONS}\n\n{TASK}\n\n{TODAY_NOTE.format(today=today)}"
     note = f" {OMITTED_NOTE.format(files=', '.join(omitted))}" if omitted else ""
     user = f"Pull request #{pr}, head {head}.{note} The diff is inside the fence <<<مادة:{nonce}>>>.\n\n{fenced}"
     payload = {"systemInstruction": {"parts": [{"text": system}]},
