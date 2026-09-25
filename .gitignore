@@ -9,12 +9,9 @@ evaluation/holdout/
 # السجل: أثرُ تشغيلٍ لا مصدر — إلا سجلات الحقيقة المدفوعة (استثناءات أدناه)
 var/
 *.jsonl
-!sources/*.jsonl
-!corpus/**/*.jsonl
-!glossaries/*.jsonl
 !rulings/*.jsonl
 !registry/
-!publish/*.jsonl
+!registry/*.jsonl
 # مخزن المعاجم الكبيرة محلي (فوق طاقة git بلا LFS — قرار م٥ المعلن)
 corpus/lexicons-local/
 # التيارات والسجل الرئيس حالةُ تشغيلٍ تُصفَّر — لا حقيقة مدفوعة (م٥)
@@ -40,3 +37,20 @@ ORIGINAL_REQUEST.md
 # أنّ المحجوبَ لم يُبدَّل بعد ظهور النتيجة.
 evaluation/banks/*/sealed/*
 !evaluation/banks/*/sealed/MANIFEST.json
+
+# مخازنُ المالك الخاصة (ك٢٧، ق٥١، ق٥٢): تبقى في Drive وفي diwan-private، وتوضع محليًّا
+# بـtools/place_private_stores.py ولا تدخل المستودعَ العام أبدًا. القائمةُ مصدرُها
+# tools/export_public.py::EXCLUDED_PATHS، والحارس tests/test_private_stores_are_ignored.py
+corpus/
+glossaries/
+sources/
+publish/
+evaluation/suites/benchmark_m14.json
+nodes/maritime/evidence/golden-answers.json
+services/evidence/research-m6.json
+docs/probe/m14-human-sample-review.json
+nodes/linguistics/evidence/roots-20.json
+docs/probe/policy-library-index.md
+docs/probe/drive-library-index.md
+tools/build_benchmark_suite.py
+tools/seed_acquisitions.py
