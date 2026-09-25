@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
-"""تشغيل المراجعة الخارجية لبنك قياس عبر Ollama على الماك (ق٥٠).
+"""تشغيل المراجعة الخارجية لبنك قياس عبر Ollama (ق٥٠)، محليًّا أو على واجهة ollama.com (ق٦٠، ك٣١).
 
     python3 tools/external_review.py evaluation/banks/kimi_v1
     python3 tools/external_review.py evaluation/banks/kimi_v1 \\
         --reviewer deepseek-v4-flash:cloud --reviewer mistral-large-3:675b-cloud
+    OLLAMA_API_KEY=… python3 tools/external_review.py --base-url https://ollama.com --smoke out.json
 
-يتصل بخادم Ollama المحليّ وحده (127.0.0.1)، والخادمُ يمرّر النداء إلى النماذج
-السحابية كما يفعل اليوم مع gpt-oss:120b-cloud. ولا يطبع محتوى الحالات أبدًا:
+نقطتان لا ثالثَ لهما: خادمُ Ollama المحليّ (127.0.0.1، بلا وكيلٍ ولا تحويل) يمرّر النداء إلى
+النماذج السحابية كما على الماك؛ أو واجهةُ `https://ollama.com` مباشرةً بمفتاحٍ يُقرأ من
+البيئة `OLLAMA_API_KEY` وحدها (لا من سطر الأوامر، ولا يُطبع، ولا يُودَع) — وهي طريقُ الجلسات
+السحابية التي لا خادمَ فيها. أيُّ نقطةٍ أخرى مرفوضة. ولا يطبع الأداةُ محتوى الحالات أبدًا:
 الخلاصةُ أعدادٌ وκ وطولُ قائمة المالك.
+
+**الحدُّ المعلَن:** النداءُ السحابيُّ المباشر لم يُجرَّب حيًّا بعد (ينتظر المفتاح في بيئة الجلسات)،
+وأسماءُ النماذج تُمرَّر كما أُعطيت: فإن كانت واجهةُ ollama.com تسمّيها بلا لاحقة `:cloud` فتُعطى كذلك.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
@@ -26,17 +33,34 @@ from evaluation.external_review import (DEFAULT_REVIEWERS, review_bank,  # noqa:
 from evaluation.multi_system_review import AutomaticReviewError  # noqa: E402
 
 MAX_RESPONSE_BYTES = 8_000_000
+LOCAL_PREFIXES = ("http://127.0.0.1:", "http://localhost:", "http://[::1]:")
+CLOUD_ENDPOINT = "https://ollama.com"          # النقطةُ السحابية الوحيدة المسموحة (ق٦٠)
+CLOUD_KEY_ENV = "OLLAMA_API_KEY"               # يُقرأ من البيئة وحدها، ولا يُطبع ولا يُودَع
 
 
 class OllamaChat:
-    """نداءُ /api/chat على خادمٍ محليٍّ فقط، بلا وكيلٍ ولا تحويل."""
+    """نداءُ /api/chat على خادمٍ محليّ (بلا وكيلٍ ولا تحويل)، أو على ollama.com بمفتاحٍ من البيئة.
 
-    def __init__(self, base_url: str = "http://127.0.0.1:11434", timeout: int = 900):
-        if not base_url.startswith(("http://127.0.0.1:", "http://localhost:", "http://[::1]:")):
+    المفتاحُ لا يُحفظ إلا في ترويسة الطلب، ولا يظهر في أي خطأٍ أو تقرير: الأخطاءُ رموزٌ باسم النموذج.
+    """
+
+    def __init__(self, base_url: str = "http://127.0.0.1:11434", timeout: int = 900,
+                 api_key: str | None = None):
+        base = base_url.rstrip("/")
+        self._headers = {"Content-Type": "application/json"}
+        if base_url.startswith(LOCAL_PREFIXES):
+            self.cloud = False
+            self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        elif base == CLOUD_ENDPOINT:
+            if not api_key:
+                raise AutomaticReviewError("cloud_key_missing", f"{CLOUD_KEY_ENV} غيرُ مضبوطٍ في البيئة")
+            self.cloud = True
+            self.opener = urllib.request.build_opener()      # يمرّ بوكيل البيئة إن وُجد
+            self._headers["Authorization"] = f"Bearer {api_key}"
+        else:
             raise AutomaticReviewError("local_endpoint_required", base_url)
-        self.url = base_url.rstrip("/") + "/api/chat"
+        self.url = base + "/api/chat"
         self.timeout = timeout
-        self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
     def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
         payload = {"model": model, "stream": False, "format": schema,
@@ -45,7 +69,7 @@ class OllamaChat:
                    "options": {"temperature": 0, "seed": 0, "num_ctx": 65536}}
         request = urllib.request.Request(
             self.url, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            headers={"Content-Type": "application/json"})
+            headers=dict(self._headers))
         try:
             with self.opener.open(request, timeout=self.timeout) as response:
                 raw = response.read(MAX_RESPONSE_BYTES + 1)
@@ -66,6 +90,11 @@ class OllamaChat:
         return content
 
 
+def build_transport(base_url: str, environ=os.environ) -> OllamaChat:
+    """النقلُ من النقطة المطلوبة؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر)."""
+    return OllamaChat(base_url, api_key=environ.get(CLOUD_KEY_ENV) or None)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("bank", type=Path, nargs="?", help="مجلّد البنك، وفيه open/")
@@ -75,14 +104,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--reviewer", action="append", dest="reviewers",
                         help="نموذجُ مراجعٍ في Ollama (يتكرّر)")
     parser.add_argument("--brief", type=Path, default=ROOT / "docs" / "REVIEWER-BRIEF.md")
-    parser.add_argument("--base-url", default="http://127.0.0.1:11434")
+    parser.add_argument("--base-url", default="http://127.0.0.1:11434",
+                        help=f"خادمُ Ollama المحلي، أو {CLOUD_ENDPOINT} بمفتاح {CLOUD_KEY_ENV} من البيئة")
     args = parser.parse_args(argv)
     reviewers = args.reviewers or list(DEFAULT_REVIEWERS)
     if args.smoke:
         import tempfile
         try:
             with tempfile.TemporaryDirectory() as tmp:
-                report = smoke(Path(tmp), reviewers, OllamaChat(args.base_url),
+                report = smoke(Path(tmp), reviewers, build_transport(args.base_url),
                                brief_path=args.brief)
         except AutomaticReviewError as exc:
             print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
@@ -96,7 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.bank is None:
         parser.error("مجلّد البنك مطلوب، أو --smoke")
     try:
-        counts = review_bank(args.bank, reviewers, OllamaChat(args.base_url),
+        counts = review_bank(args.bank, reviewers, build_transport(args.base_url),
                              brief_path=args.brief)
         summary = summarize(args.bank)
     except AutomaticReviewError as exc:
