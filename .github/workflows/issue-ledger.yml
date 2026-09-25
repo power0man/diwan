@@ -1,0 +1,33 @@
+name: issue-ledger
+# ك٤١ (ق٦١): المسألةُ المغلقة «مكتملةً» يثبتها طلبُ دمجٍ مدموج على main بذيولٍ مسجَّلة. وإلّا تُعاد فتحُها
+# وتُوسم proof-missing، ويُعلَّق عليها بالسبب. يجري عند كل إغلاق، وأسبوعيًّا لما فات. لا يُودِع شيئًا:
+# إلحاقُ docs/TASKS.jsonl يجري في طلب دمج (tools/issue_ledger.py append).
+on:
+  issues:
+    types: [closed]
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: issue-ledger
+  cancel-in-progress: false
+
+jobs:
+  issue-ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Every issue closed as completed is proven by a merged pull
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: python3 tools/issue_ledger.py apply --repo-slug "$REPO"

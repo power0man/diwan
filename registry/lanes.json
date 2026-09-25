@@ -40,6 +40,7 @@
       "tools/agent_attribution.py",
       "tools/family_review.py",
       "tools/gemini_review.py",
+      "tools/issue_ledger.py",
       "tools/lane_handoff.py"
     ],
     "openai": [
