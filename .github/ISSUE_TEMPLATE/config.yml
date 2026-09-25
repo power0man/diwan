@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ثغرةٌ أمنية
+    url: https://github.com/power0man/diwan/security/advisories/new
+    about: أبلغ عن الثغرات بلاغًا خاصًّا لا مسألةً عامة (SECURITY.md)

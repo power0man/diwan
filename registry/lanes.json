@@ -4,15 +4,73 @@
   "enforced_from": "2026-09-25T14:35:00Z",
   "lanes": {
     "anthropic": [
-      "core/run.py", "core/contracts.py", "core/validate.py",
-      "agent/loop.py", "agent/journal.py", "agent/registry.py", "agent/builtin_tools.py",
-      "evaluation/"
+      "core/run.py",
+      "core/contracts.py",
+      "core/validate.py",
+      "agent/loop.py",
+      "agent/journal.py",
+      "agent/registry.py",
+      "agent/builtin_tools.py",
+      "evaluation/",
+      "core/ledger.py",
+      "core/signing.py",
+      "core/seal.py",
+      "core/budget.py",
+      "core/action_loop.py",
+      "agent/web_search.py",
+      "memory/",
+      "tools/evaluate_agentic.py",
+      "tools/evaluate_capabilities.py",
+      "tools/evaluate_dalub.py",
+      "tools/evaluate_dalub_arms.py",
+      "tools/external_review.py",
+      "tools/kimi_drive.sh",
+      "tools/run_benchmark_m14.py",
+      "tools/review_automatically.py",
+      "tools/certify_benchmark_m14.py",
+      ".github/",
+      "ci/",
+      "pyproject.toml",
+      "uv.lock",
+      "requirements-ci.lock",
+      "Dockerfile",
+      "tools/launch_check.py",
+      "tools/export_public.py",
+      "tools/place_private_stores.py",
+      "tools/agent_attribution.py",
+      "tools/family_review.py",
+      "tools/gemini_review.py",
+      "tools/lane_handoff.py"
     ],
     "openai": [
-      "conversation/", "agent/actions.py", "core/execution.py", "core/sandbox.py", "webui/"
+      "conversation/",
+      "agent/actions.py",
+      "core/execution.py",
+      "core/sandbox.py",
+      "webui/",
+      "services/agent_workspace.py",
+      "services/assistant_workspace.py",
+      "workspace_tools/",
+      "analysis/",
+      "documents/"
     ],
     "google": [
-      "core/linguistics/", "providers/"
+      "core/linguistics/",
+      "providers/",
+      "services/translate.py",
+      "core/hybrid_retrieval.py",
+      "core/vector_retrieval.py",
+      "core/router.py",
+      "core/router_sovereign.py",
+      "projections/",
+      "nodes/",
+      "core/attribution.py",
+      "core/semantic_governance.py",
+      "services/research.py",
+      "services/hermes_gate.py",
+      "multimodal/",
+      "services/media_assistant.py",
+      "media/"
     ]
   },
   "limits": [
@@ -20,6 +78,7 @@
     "unlisted_paths_belong_to_no_lane",
     "human_agents_are_the_judge_and_never_owe_a_handoff",
     "a_handoff_line_is_declared_not_verified",
-    "commits_before_enforced_from_are_exempt"
+    "commits_before_enforced_from_are_exempt",
+    "blocks_b1_to_b12_are_documented_in_docs_PROJECT-PLAN-20260925_md_section_2_not_in_this_schema"
   ]
 }
