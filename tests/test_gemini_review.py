@@ -28,6 +28,12 @@ DIFF = ("diff --git a/tools/x.py b/tools/x.py\n--- a/tools/x.py\n+++ b/tools/x.p
         "diff --git a/uv.lock b/uv.lock\n--- a/uv.lock\n+++ b/uv.lock\n@@ -1 +1 @@\n-old\n+new\n")
 
 
+PER_DAY = (b'{"error": {"status": "RESOURCE_EXHAUSTED", "details": [{"violations": '
+           b'[{"quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier"}]}]}}')
+PER_MINUTE = (b'{"error": {"status": "RESOURCE_EXHAUSTED", "details": [{"violations": '
+              b'[{"quotaId": "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"}]}]}}')
+
+
 def gemini_ok(text="الحكم: لا عوائق\n- لا ملاحظات."):
     return 200, json.dumps({"candidates": [{"content": {"parts": [{"text": text}]}}]}).encode()
 
@@ -107,7 +113,7 @@ def test_a_refused_key_everywhere_is_a_named_error():
 
 
 @pytest.mark.parametrize("reply,code", [
-    ((429, b'{"error": {"status": "RESOURCE_EXHAUSTED"}}'), "gemini_quota_exhausted"),
+    ((429, PER_DAY), "gemini_quota_exhausted"),
     ((200, b'{"candidates": [], "promptFeedback": {"blockReason": "OTHER"}}'), "gemini_empty_response"),
     ((400, b'{"error": {"status": "INVALID_ARGUMENT"}}'), "gemini_http_error"),
 ])
@@ -133,6 +139,32 @@ def test_a_model_busy_after_every_retry_falls_through_to_the_next():
     busy = (503, b"{}")
     http = FakeHttp(gemini=[busy] * (len(gr.RETRY_WAITS) + 1) + [gemini_ok()])
     assert run(http)["model"] == gr.MODELS[1] and SLEPT == list(gr.RETRY_WAITS)
+
+
+def test_a_per_minute_limit_is_waited_out_on_the_same_model():
+    """حدُّ الدقيقة أسقط مراجعةَ #68 في ٢٥ سبتمبر بعد دفعةٍ من المراجعات المتتالية."""
+    SLEPT.clear()
+    http = FakeHttp(gemini=[(429, PER_MINUTE), gemini_ok()])
+    report = run(http)
+    assert report["status"] == "posted" and report["model"] == gr.MODELS[0] and SLEPT == [gr.RATE_WAITS[0]]
+
+
+def test_a_per_minute_limit_that_persists_is_named_after_its_waits():
+    SLEPT.clear()
+    http = FakeHttp(gemini=[(429, PER_MINUTE)] * (len(gr.RATE_WAITS) + 1))
+    with pytest.raises(gr.GeminiReviewError) as failed:
+        run(http)
+    assert failed.value.code == "gemini_quota_exhausted" and "per_minute" in str(failed.value)
+    assert SLEPT == list(gr.RATE_WAITS) and http.posted() == []
+
+
+def test_a_daily_quota_is_named_at_once_without_waiting():
+    SLEPT.clear()
+    http = FakeHttp(gemini=[(429, PER_DAY)])
+    with pytest.raises(gr.GeminiReviewError) as failed:
+        run(http)
+    assert failed.value.code == "gemini_quota_exhausted" and "per_day" in str(failed.value)
+    assert SLEPT == [] and len(http.gemini_calls()) == 1
 
 
 def test_busy_everywhere_is_a_named_error_and_posts_nothing():

@@ -54,6 +54,7 @@ class Step:
     stop_reason: str = "complete"
     tool_calls: tuple = ()
     quarantined: tuple = ()     # (call_id, code) لكل مقطعٍ حُجر من نتيجة أداة
+    cost_micros: int = 0        # ما سُوّي لهذا النداء؛ والمُعاد عرضُه صفرٌ لأنه لم يُنفق جديدًا
 
 
 @dataclass(frozen=True)
@@ -67,7 +68,8 @@ class Run:
 
     @property
     def cost_micros(self) -> int:
-        return 0    # الكلفةُ في السجل؛ هذا العرضُ لا يعيد حسابها
+        """ما أنفقه هذا التشغيل: مجموعُ ما سُوّي لخطواته (ك٤٢). كان صفرًا ثابتًا."""
+        return sum(step.cost_micros for step in self.steps)
 
 
 # حقولُ التحكّم في نتيجة الأداة: رموزٌ وبصماتٌ وأعداد، لا مادّةٌ يقرؤها النموذج.
@@ -178,6 +180,8 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
             return finish("refused", exc.code, "")
 
         response = outcome.response
+        # الكلفةُ التي سوّاها `execute` لهذا النداء؛ والمُعاد عرضُه لم يُنفق جديدًا
+        spent = 0 if response is None or outcome.replayed else response.cost_micros
         if response is None:
             steps.append(Step(index, "", outcome.request_digest, outcome.ledger_digest,
                               outcome.replayed))
@@ -186,7 +190,7 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
         if response.stop_reason != "complete":
             steps.append(Step(index, response.content, outcome.request_digest,
                               outcome.ledger_digest, outcome.replayed,
-                              stop_reason=response.stop_reason, tool_calls=response.tool_calls))
+                              stop_reason=response.stop_reason, tool_calls=response.tool_calls, cost_micros=spent))
             status = {"max_output": "truncated", "deadline": "timed_out",
                       "error": "failed", "refused": "refused"}[response.stop_reason]
             return finish(status, outcome.error_code or "response_" + response.stop_reason, response.content)
@@ -196,19 +200,19 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
         if stopped():
             steps.append(Step(index, response.content, outcome.request_digest,
                               outcome.ledger_digest, outcome.replayed,
-                              tool_calls=response.tool_calls))
+                              tool_calls=response.tool_calls, cost_micros=spent))
             return finish("cancelled", "stop_requested", response.content)
 
         if not response.tool_calls:
             steps.append(Step(index, response.content, outcome.request_digest,
-                              outcome.ledger_digest, outcome.replayed))
+                              outcome.ledger_digest, outcome.replayed, cost_micros=spent))
             messages.append(Message("assistant", response.content))
             return finish("complete", None, response.content)
 
         messages.append(Message("assistant", response.content, tool_calls=response.tool_calls))
         if action_store is None:
             steps.append(Step(index, response.content, outcome.request_digest,
-                              outcome.ledger_digest, outcome.replayed, tool_calls=response.tool_calls))
+                              outcome.ledger_digest, outcome.replayed, tool_calls=response.tool_calls, cost_micros=spent))
             return finish("refused", "action_store_required", response.content)
 
         try:
@@ -217,7 +221,7 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
                 calls=response.tool_calls, specs=specs, allow_new=not outcome.replayed)
         except PayloadRejected as exc:
             steps.append(Step(index, response.content, outcome.request_digest,
-                              outcome.ledger_digest, outcome.replayed, tool_calls=response.tool_calls))
+                              outcome.ledger_digest, outcome.replayed, tool_calls=response.tool_calls, cost_micros=spent))
             return finish("refused", exc.code, response.content)
 
         results, pending, held = [], [], []
@@ -241,7 +245,8 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
 
         steps.append(Step(index, response.content, outcome.request_digest,
                           outcome.ledger_digest, outcome.replayed, tuple(results),
-                          tool_calls=response.tool_calls, quarantined=tuple(held)))
+                          tool_calls=response.tool_calls, quarantined=tuple(held),
+                          cost_micros=spent))
         if results and results[-1]["status"] == "outcome_unknown":
             return finish("outcome_unknown", results[-1].get("code", "action_outcome_unknown"), response.content)
         if stopped():

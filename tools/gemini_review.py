@@ -47,6 +47,9 @@ ENDPOINTS = (
 # انشغالُ خادم Gemini عابر: «503 UNAVAILABLE» أسقط مراجعةَ #12 في ٢٥ سبتمبر ٢٠٢٦
 TRANSIENT = frozenset({500, 503, 504})
 RETRY_WAITS = (5, 15)
+# حدُّ الدقيقة (429) عابرٌ كذلك: أسقط مراجعةَ #68 بعد دفعةٍ من المراجعات المتتالية في ٢٥ سبتمبر.
+# أمّا حصّةُ اليوم فلا تعود قبل الغد، فلا يُنتظر لها.
+RATE_WAITS = (30, 60)
 LOCKFILES = frozenset({"uv.lock", "requirements-ci.lock"})
 MAX_DIFF_CHARS = 300_000
 MAX_RESPONSE_BYTES = 8_000_000
@@ -159,17 +162,22 @@ def _text(raw: bytes) -> str:
 def ask_gemini(payload: dict, key: str, http: Http, models: tuple[str, ...],
                sleep=time.sleep) -> tuple[str, str, str]:
     """(النص، النموذج، النقطة). 404 ينقل إلى النموذج التالي، ورفضُ الصلاحية إلى النقطة التالية،
-    وانشغالُ الخادم (500/503/504) يُعاد مرّتين بمهلةٍ ثم ينقل إلى النموذج التالي."""
+    وانشغالُ الخادم (500/503/504) يُعاد مرّتين بمهلةٍ ثم ينقل إلى النموذج التالي، وحدُّ الدقيقة (429)
+    يُعاد مرّتين بمهلةٍ أطول ثم يُسمّى، وحصّةُ اليوم تُسمّى بلا انتظار."""
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     headers = {"Content-Type": "application/json", "x-goog-api-key": key}
     last = GeminiReviewError("gemini_model_unavailable", ",".join(models))
     for endpoint, template in ENDPOINTS:
         for model in models:
-            for wait in (*RETRY_WAITS, None):
+            busy_waits, rate_waits = list(RETRY_WAITS), list(RATE_WAITS)
+            while True:
                 status, raw = http.request("POST", template.format(model=model), dict(headers), body)
-                if status not in TRANSIENT or wait is None:
+                if status in TRANSIENT and busy_waits:
+                    sleep(busy_waits.pop(0))
+                elif status == 429 and rate_waits and not _per_day(raw):
+                    sleep(rate_waits.pop(0))
+                else:
                     break
-                sleep(wait)
             if status in TRANSIENT:
                 last = GeminiReviewError("gemini_unavailable", f"{model} {status}")
                 continue
@@ -184,9 +192,15 @@ def ask_gemini(payload: dict, key: str, http: Http, models: tuple[str, ...],
                 last = GeminiReviewError("gemini_auth_refused", endpoint)
                 break
             if status == 429:
-                raise GeminiReviewError("gemini_quota_exhausted", model)
+                raise GeminiReviewError("gemini_quota_exhausted",
+                                        f"{model} {'per_day' if _per_day(raw) else 'per_minute'}")
             raise GeminiReviewError("gemini_http_error", f"{status} {_error_status(raw)}".strip())
     raise last
+
+
+def _per_day(raw: bytes) -> bool:
+    """حصّةُ اليوم تُسمّي نفسَها في تفاصيل الردّ (`quotaId` فيه `PerDay`)؛ وما سواها حدُّ دقيقة."""
+    return b"PerDay" in raw
 
 
 def review_body(text: str, model: str, endpoint: str, omitted: list[str], truncated: bool) -> str:
