@@ -1,0 +1,47 @@
+name: container-smoke
+# ج٦ (#36): التثبيتُ بأمرٍ واحد (`docker build`) وفحصُ الدخان داخل الحاوية على المشغّل المستضاف.
+# الحاويةُ بلا شبكة (`--network none`): فالمحرّكُ غائبٌ يقينًا، والمتونُ ليست في النسخة العامة.
+# المتوقَّع: الخروج 3 (تعذّرٌ معلن) وكلُّ خطوةٍ بحالها المسمّاة، ولا خطوةَ «failed».
+on:
+  pull_request:
+    paths: [Dockerfile, .dockerignore, pyproject.toml, uv.lock, tools/launch_check.py,
+            .github/workflows/container-smoke.yml]
+  push:
+    branches: [main]
+    paths: [Dockerfile, .dockerignore, pyproject.toml, uv.lock, tools/launch_check.py,
+            .github/workflows/container-smoke.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  container-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: One-command install
+        run: docker build -t diwan:ci .
+      - name: Smoke check inside the container, offline
+        run: |
+          set +e
+          docker run --rm --network none diwan:ci python tools/launch_check.py --json > smoke.json
+          code=$?
+          set -e
+          cat smoke.json
+          python3 - "$code" <<'PY'
+          import json, sys
+          report = json.load(open("smoke.json", encoding="utf-8"))
+          got = {s["step"]: (s["status"], s["code"]) for s in report["steps"]}
+          want = {"runtime": ("ok", None), "morphology": ("ok", "camel_ready"),
+                  "engine": ("unavailable", "engine_unreachable"), "agent_turn": ("ok", "mechanism_only"),
+                  "policies": ("unavailable", "corpus_missing"), "ui": ("ok", "ui_ready")}
+          bad = {k: (got.get(k), v) for k, v in want.items()
+                 if got.get(k) is None or got[k][0] != v[0] or (v[1] and got[k][1] != v[1])}
+          assert int(sys.argv[1]) == 3 == report["exit_code"], f"exit {sys.argv[1]} / {report['exit_code']}"
+          assert not bad, f"steps differ: {bad}"
+          print("container smoke: exit 3 with every step as declared")
+          PY
