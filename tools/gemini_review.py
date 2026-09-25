@@ -52,8 +52,12 @@ DATA_NOT_INSTRUCTIONS = (
 TASK = (
     "Review this pull request of the Diwan repository as its Google-family reviewer. Write the review in Arabic. "
     "Start with one verdict line: «الحكم: لا عوائق» or «الحكم: عوائق». Then list findings; for each give its severity "
-    "(حرج، عالٍ، متوسط، منخفض)، the file and line, the defect and why it matters. Separate blocking defects from "
-    "optional suggestions. End with a short line saying what you did not check.")
+    "(حرج، عالٍ، متوسط، منخفض)، the file and line, the defect and why it matters. A finding is a defect or a risk "
+    "only: never list what is correct, and never give a severity to praise. If there are no findings, say so in one "
+    "line. Separate blocking defects from optional suggestions. End with a short line saying what you did not check.")
+# ملفّاتُ القفل تُحذف من الفرق لحجمها، فيُخبَر النموذجُ بتغيّرها كي لا يحسبها غائبة (كشفته مراجعةُ #12 الحيّة)
+OMITTED_NOTE = ("These lock files changed in this pull request; their diff was omitted only for size, so do not "
+                "report them as missing or not updated: {files}.")
 
 
 class GeminiReviewError(RuntimeError):
@@ -110,11 +114,13 @@ def _path(block: str) -> str | None:
     return first[marker + 3:].strip() if marker != -1 else None
 
 
-def build_request(diff: str, styleguide: str, pr: int, head: str) -> tuple[dict, str]:
-    """جسمُ generateContent والنونس. الفرقُ مسيَّج، والتعليماتُ في النظام وحده."""
+def build_request(diff: str, styleguide: str, pr: int, head: str,
+                  omitted: list[str] | tuple[str, ...] = ()) -> tuple[dict, str]:
+    """جسمُ generateContent والنونس. الفرقُ مسيَّج، والتعليماتُ في النظام وحده، وملفّاتُ القفل المحذوفة مسمّاةٌ خارج السياج."""
     fenced, nonce = wrap(diff)
     system = f"{styleguide.strip()}\n\n{DATA_NOT_INSTRUCTIONS}\n\n{TASK}"
-    user = f"Pull request #{pr}, head {head}. The diff is inside the fence <<<مادة:{nonce}>>>.\n\n{fenced}"
+    note = f" {OMITTED_NOTE.format(files=', '.join(omitted))}" if omitted else ""
+    user = f"Pull request #{pr}, head {head}.{note} The diff is inside the fence <<<مادة:{nonce}>>>.\n\n{fenced}"
     payload = {"systemInstruction": {"parts": [{"text": system}]},
                "contents": [{"role": "user", "parts": [{"text": user}]}],
                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 8192}}
@@ -203,7 +209,7 @@ def run(*, families: set[str], environ: dict, http: Http, slug: str, pr: int, he
         return {"status": "skipped", "code": "gemini_key_missing"}
     token = environ.get("GH_TOKEN") or environ.get("GITHUB_TOKEN")
     sent, omitted, truncated = split_diff(fetch_diff(slug, pr, token, http))
-    payload, _ = build_request(sent, styleguide, pr, head)
+    payload, _ = build_request(sent, styleguide, pr, head, omitted)
     chosen = environ.get(MODEL_ENV) or ""
     text, model, endpoint = ask_gemini(payload, key, http, (chosen,) if chosen else MODELS)
     post_review(slug, pr, head, review_body(text, model, endpoint, omitted, truncated), token, http)
