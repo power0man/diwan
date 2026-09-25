@@ -235,7 +235,7 @@ python3 tools/lane_handoff.py --range origin/main..HEAD
 
 | الذكاء | خطوته الحالية | كيف يصله التكليف | ما على المالك |
 |---|---|---|---|
-| **DeepSeek** | مراجعة الشطر المفتوح (المهمة ك٥) | **آليًّا** عبر `tools/external_review.py` بالنموذج `deepseek-v4-flash:cloud`، ويُرسل إليه `docs/REVIEWER-BRIEF.md` والملف | **لا شيء** |
+| **DeepSeek** | مراجعة الشطر المفتوح (المهمة ك٥) | **آليًّا** عبر `tools/external_review.py` بالنموذج `deepseek-v4-flash:cloud` — من خادم Ollama على الماك، أو من الجلسات السحابية مباشرةً على `https://ollama.com` بمفتاح `OLLAMA_API_KEY` من البيئة (ك٣١، ق٦٠) — ويُرسل إليه `docs/REVIEWER-BRIEF.md` والملف | **لا شيء** |
 | **Mistral** | المراجعة نفسها، في نداءاتٍ مستقلّة | **آليًّا** بالأداة نفسها، بالنموذج `mistral-large-3:675b-cloud` | **لا شيء** |
 | **Kimi** | إصدار النسخة v1.1 من البنك | **يقوده Claude المحلّي** بـ`tools/kimi_drive.sh` (المهمة ك٩، والقواعد في `docs/external/KIMI-DRIVER.md`): تُجمع له نصوص المستودع الثابتة كما هي، ويعمل في `~/kimi-work` ولا يُعطى مسار المستودع، ومخرجاتُه إلى سجلٍّ لا يُفتح. وتبقى اللصقةُ اليدوية (`docs/external/KIMI-NEXT.md`، ويُلصق قبله `docs/KIMI-BENCHMARK-BRIEF.md` في محادثةٍ جديدة) طريقًا احتياطيًّا ما دامت أداةُ سطر الأوامر غير مركَّبة | تركيبُ Kimi Code CLI وتسجيلُ دخوله مرّةً واحدة — ثم لا شيء |
 | **Hermes** | يعمل وحده بمهمّةٍ دورية | ميثاقه في `~/diwan-work/hermes-research/AGENTS.md` على الماك (`docs/HERMES-RESEARCH.md`) | لا شيء |
