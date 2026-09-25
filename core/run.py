@@ -31,6 +31,15 @@ class RouteRefused(RuntimeError):
         self.reason = reason
 
 
+class ProviderFailed(RuntimeError):
+    """نداءٌ فشل بلا إعادة: يحمل رمزَ المزوّد (`Outcome.error_code`) لا اسمَ استثناءٍ خام (ك٣٧)."""
+
+    def __init__(self, code: str | None, reason: str):
+        self.code = code or "provider_failed"
+        self.reason = reason
+        super().__init__(f"{reason} [{self.code}]")
+
+
 @dataclass(frozen=True)
 class Outcome:
     response: Response | None

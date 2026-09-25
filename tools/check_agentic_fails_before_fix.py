@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from evaluation.agentic_runner import evaluate_success, validate_agentic_suite
+from evaluation.agentic_runner import evaluate_success, qualified_task_id, validate_agentic_suite
 
 
 def materialize(task: dict, root: Path) -> None:
@@ -40,21 +40,23 @@ def main(argv: list[str]) -> int:
     already_passing = []
     unjudgeable = []
     for task in suite["tasks"]:
+        # المعرّفُ المؤهَّل: task_id وحده يتكرّر بين حزم البنك (ك٤٢)
+        name = qualified_task_id(suite["suite_id"], task["task_id"])
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp).resolve()
             materialize(task, root)
             verdict = evaluate_success(task, root)
         kind = task["success"]["kind"]
         if verdict["passed"]:
-            already_passing.append(task["task_id"])
+            already_passing.append(name)
             mark = "✗ تمرّ قبل الحلّ"
         elif verdict.get("code") in ("success_command_unavailable", "success_command_timeout"):
             # تعذُّرُ الحكم ليس سقوطًا: لا يُقرأ دليلًا على أن المهمّة تقيس
-            unjudgeable.append((task["task_id"], verdict["code"]))
+            unjudgeable.append((name, verdict["code"]))
             mark = "؟ تعذَّر الحكم"
         else:
             mark = "✓ تسقط"
-        print(f"{mark}  {task['task_id']}  [{kind}]")
+        print(f"{mark}  {name}  [{kind}]")
 
     total = len(suite["tasks"])
     print(f"\nالمهامّ: {total} — تسقط قبل الحلّ "

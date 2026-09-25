@@ -26,7 +26,7 @@ from core.corpus import CorpusCatalog, CorpusFile
 from core.glossary import Glossary
 from core.knowledge import (KnowledgeItem, NodeManifest,
                             policy_within_ceiling)
-from core.run import execute
+from core.run import ProviderFailed, execute
 
 MANIFEST = NodeManifest(
     name="linguistics",
@@ -275,7 +275,7 @@ class LinguisticsNode:
                   data_policy: str | None = None) -> dict:
         """يعيد {"item": مادة معرَّبة، "bindings", "outcome"} — أو يرفض."""
         if not text_foreign.strip():
-            raise ValueError("نص فارغ")
+            raise PayloadRejected("translate.text", "text_empty", "نص فارغ")
         policy = data_policy or MANIFEST.data_policy_ceiling
         if not policy_within_ceiling(policy, MANIFEST.data_policy_ceiling):
             raise PayloadRejected(
@@ -307,6 +307,7 @@ class LinguisticsNode:
         messages = (Message("system", TRANSLATE_SYSTEM),
                     Message("user", prompt))
         last_flaw = "لم يُنادَ"
+        last_code = "attempts_exhausted"
         for n in range(1, MAX_ATTEMPTS + 1):
             key = key_base if n == 1 else f"{key_base}-a{n}"
             req = Request(messages=messages, model=self.provider.model,
@@ -319,8 +320,10 @@ class LinguisticsNode:
                 if prior and prior["record"].get("kind") == "error" \
                         and prior["record"].get("retryable") is True:
                     last_flaw = f"عطل قابل للإعادة: {outcome.error_code}"
+                    last_code = "provider_retry_exhausted"
                     continue
-                raise RuntimeError(f"نداء التعريب فشل: {outcome.error_code}")
+                raise ProviderFailed(outcome.error_code,
+                                     f"نداء التعريب فشل: {outcome.error_code}")
             text_ar = outcome.response.content.strip()
             missing = [ar for ar, n in required.items()
                        if term_count(ar, text_ar) < n]
@@ -335,8 +338,9 @@ class LinguisticsNode:
                 ))
                 return {"item": item, "bindings": bindings,
                         "outcome": outcome}
-            last_flaw = ("ترجمة مبتورة"
-                         if outcome.response.stop_reason != "complete"
+            truncated = outcome.response.stop_reason != "complete"
+            last_code = "translation_truncated" if truncated else "glossary_terms_missing"
+            last_flaw = ("ترجمة مبتورة" if truncated
                          else f"مصطلحات المسرد لم تُفرَض: {missing[:3]}")
             messages = messages + (
                 Message("assistant", text_ar),
@@ -344,4 +348,6 @@ class LinguisticsNode:
                         + ". أعدها كاملة مستعملًا كلَّ مصطلحٍ معتمد في "
                         "موضع مكافئه من النص نفسه — لا مُلحقًا في قائمة "
                         "أو سطر منفصل."))
-        raise ValueError(f"استُنفدت المحاولات ({MAX_ATTEMPTS}) — {last_flaw}")
+        # رمزٌ مسمًّى لا ValueError خام، فيقرؤه ذراعُ القياس (ك٣٧)
+        raise PayloadRejected("translate.output", last_code,
+                              f"استُنفدت المحاولات ({MAX_ATTEMPTS}) — {last_flaw}")
