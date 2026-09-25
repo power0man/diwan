@@ -11,13 +11,14 @@
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from core.budget import Budget, BudgetRefused
 from core.canonical import check_payload, digest
 from core.contracts import (CALL_ID, LOCAL_ONLY_POLICIES, Request, Response,
                             ToolCall, Usage)
 from core.ledger import EFFECTFUL_KINDS
+from core.quoted import quarantine
 from core.validate import validated
 from providers.base import ProviderError
 
@@ -128,6 +129,21 @@ def _is_local(provider) -> bool:
     return getattr(provider, "is_local", None) is True
 
 
+def _held_thinking(resp: Response, req: Request) -> tuple[Response, tuple[str, ...]]:
+    """التفكيرُ مادّةٌ لا تعليمات: يُحجر ما فيه من أمرٍ موجَّه قبل أن يُسجَّل أو يُعرض (ك٤٧).
+
+    ولا يُقبل تفكيرٌ لم يُطلب: مزوّدٌ يُرجعه بلا طلبٍ يُرفض كما يُرفض نداءُ أداةٍ لم تُعلَن.
+    """
+    if not isinstance(resp.thinking, str):
+        raise RouteRefused("thinking_type", "التفكيرُ نصّ")
+    if not resp.thinking:
+        return resp, ()
+    if not req.thinking:
+        raise RouteRefused("thinking_unrequested", "تفكيرٌ لم يُطلب")
+    held = quarantine(resp.thinking)
+    return replace(resp, thinking=held.text), tuple(f.code for f in held.findings)
+
+
 def _response_error(response: Response | None) -> str | None:
     """Keep a provider stop distinguishable even when replaying an old ok record."""
     if response is not None and response.stop_reason != "complete":
@@ -144,6 +160,7 @@ def _restore_response(payload, request: Request) -> Response | None:
             stop_reason=payload["stop_reason"], cost_micros=payload["cost_micros"],
             provider=payload.get("provider", ""), model_version=payload.get("model_version", ""),
             tool_calls=tuple(ToolCall(**call) for call in payload.get("tool_calls", ())),
+            thinking=payload.get("thinking", ""),
         )
     except (KeyError, TypeError, ValueError, AttributeError):
         raise RouteRefused("replay_response_invalid", "جواب محفوظ لا يطابق عقد الاستعادة") from None
@@ -221,6 +238,7 @@ def execute(request: Request, provider, budget: Budget, ledger) -> Outcome:
 
         _check_response(resp)
         _check_tool_calls(resp, req)
+        resp, held = _held_thinking(resp, req)
 
         # القيد يُبصَم **قبل** تحريك المال: فلا يُخصم ثم يتعذّر القيد.
         body = _record("ok", req, req_digest, estimate_micros=estimate,
@@ -237,6 +255,9 @@ def execute(request: Request, provider, budget: Budget, ledger) -> Outcome:
                            # كما هي، ولا تنزاح بصمةُ سجلٍّ مختوم.
                            **({"tool_calls": [c.declared() for c in resp.tool_calls]}
                               if resp.tool_calls else {}),
+                           # التفكيرُ محجورًا، ورموزُ ما حُجر منه؛ ويظهر حين يوجد فقط (ك٤٧)
+                           **({"thinking": resp.thinking, "thinking_quarantined": list(held)}
+                              if resp.thinking else {}),
                        })
         check_payload(body, "ledger.record")
 

@@ -56,7 +56,7 @@ class LocalToolProvider(LocalChatProvider):
         if tools:
             payload["tools"] = tools
         if thinking:
-            payload["think"] = False
+            payload["think"] = request.thinking
         out = self._json("POST", "/api/chat", payload, deadline)
         _no_remote(out)
         if out.get("model") != self.model:
@@ -65,7 +65,7 @@ class LocalToolProvider(LocalChatProvider):
             _fail("local_tools_malformed", "وسائط غير متوقعة في جواب الأدوات")
         try:
             # Some local models emit a separate thinking field despite think=false.
-            # The pure parser discards it; done_reason still controls truncation.
+            # The pure parser discards it unless the request asked for it (ك٤٧).
             return parse_response(out, request=request, provider_name=self.name,
                                   model_version=self.model_version, allow_thinking=True)
         except ProviderError as exc:

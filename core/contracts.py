@@ -87,6 +87,8 @@ class Request:
     data_policy: str            # يُرفض الغائب والمجهول
     idempotency_key: str | None  # الانقطاع ليس إذنًا بإعادة الفعل
     tools: tuple[ToolSpec, ...] = ()
+    # طلبُ التقاط التفكير (ك٤٧). يدخل البصمة حين يُطلب فقط، فبصماتُ ما قبله باقية.
+    thinking: bool = False
 
     def fingerprint_payload(self) -> dict:
         """ما يدخل البصمة — ولا يدخلها ما يتغيّر بين تشغيلين متكافئين.
@@ -102,6 +104,7 @@ class Request:
             "data_policy": self.data_policy,
             "tools": [t.declared() for t in self.tools],
             "schema_version": 1,
+            **({"thinking": True} if self.thinking else {}),
         }
 
 
@@ -127,3 +130,5 @@ class Response:
     # نداءاتُ أدواتٍ طلبها النموذج. الفراغُ هو الحال الطبيعية، ومزوّدٌ
     # لم تُعلَن له أدواتٌ يبقى مُلزَمًا بردّ أيّ نداءٍ يأتيه (فشلٌ مغلق).
     tool_calls: tuple[ToolCall, ...] = ()
+    # التفكيرُ الملتقَط حين يُطلب (ك٤٧): مادّةٌ محجورة تُسجَّل وتُعرض، ولا تعود إلى النموذج.
+    thinking: str = ""

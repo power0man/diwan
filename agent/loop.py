@@ -55,6 +55,7 @@ class Step:
     tool_calls: tuple = ()
     quarantined: tuple = ()     # (call_id, code) لكل مقطعٍ حُجر من نتيجة أداة
     cost_micros: int = 0        # ما سُوّي لهذا النداء؛ والمُعاد عرضُه صفرٌ لأنه لم يُنفق جديدًا
+    thinking: str = ""          # تفكيرُ النموذج محجورًا حين طُلب (ك٤٧)؛ لا يعود إليه رسالةً
 
 
 @dataclass(frozen=True)
@@ -143,7 +144,7 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
               system: str = SYSTEM, idempotency_prefix: str | None = None,
               action_store=None, session_id: str | None = None,
               turn_id: str | None = None, initial_messages: tuple[Message, ...] = (),
-              stop_check=None) -> Run:
+              stop_check=None, thinking: bool = False) -> Run:
     if not isinstance(task, str) or not task.strip():
         raise ValueError("المهمّةُ نصٌّ غير فارغ")
     if type(max_steps) is not int or not 1 <= max_steps <= 64:
@@ -152,6 +153,8 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
         raise ValueError("تاريخ الرسائل tuple مكتمل قبل الطلب الجديد")
     if stop_check is not None and not callable(stop_check):
         raise ValueError("stop_check must be callable")
+    if not isinstance(thinking, bool):
+        raise ValueError("طلبُ التفكير True أو False")
     def stopped():
         return stop_check is not None and stop_check() is True
     specs = registry.specs()
@@ -172,7 +175,7 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
         request = Request(messages=tuple(messages), model=model,
                           model_version=model_version, max_output=max_output,
                           deadline_s=deadline_s, data_policy=data_policy,
-                          idempotency_key=None, tools=specs)
+                          idempotency_key=None, tools=specs, thinking=thinking)
         try:
             request = _keyed_request(request, idempotency_prefix, session_id, turn_id, ledger)
             outcome: Outcome = execute(request, provider, budget, ledger)
@@ -182,6 +185,8 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
         response = outcome.response
         # الكلفةُ التي سوّاها `execute` لهذا النداء؛ والمُعاد عرضُه لم يُنفق جديدًا
         spent = 0 if response is None or outcome.replayed else response.cost_micros
+        # محجورٌ في النواة قبل القيد؛ يُحفظ في الخطوة ولا يدخل `messages` أبدًا
+        thought = "" if response is None else response.thinking
         if response is None:
             steps.append(Step(index, "", outcome.request_digest, outcome.ledger_digest,
                               outcome.replayed))
@@ -190,7 +195,7 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
         if response.stop_reason != "complete":
             steps.append(Step(index, response.content, outcome.request_digest,
                               outcome.ledger_digest, outcome.replayed,
-                              stop_reason=response.stop_reason, tool_calls=response.tool_calls, cost_micros=spent))
+                              stop_reason=response.stop_reason, tool_calls=response.tool_calls, cost_micros=spent, thinking=thought))
             status = {"max_output": "truncated", "deadline": "timed_out",
                       "error": "failed", "refused": "refused"}[response.stop_reason]
             return finish(status, outcome.error_code or "response_" + response.stop_reason, response.content)
@@ -200,19 +205,19 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
         if stopped():
             steps.append(Step(index, response.content, outcome.request_digest,
                               outcome.ledger_digest, outcome.replayed,
-                              tool_calls=response.tool_calls, cost_micros=spent))
+                              tool_calls=response.tool_calls, cost_micros=spent, thinking=thought))
             return finish("cancelled", "stop_requested", response.content)
 
         if not response.tool_calls:
             steps.append(Step(index, response.content, outcome.request_digest,
-                              outcome.ledger_digest, outcome.replayed, cost_micros=spent))
+                              outcome.ledger_digest, outcome.replayed, cost_micros=spent, thinking=thought))
             messages.append(Message("assistant", response.content))
             return finish("complete", None, response.content)
 
         messages.append(Message("assistant", response.content, tool_calls=response.tool_calls))
         if action_store is None:
             steps.append(Step(index, response.content, outcome.request_digest,
-                              outcome.ledger_digest, outcome.replayed, tool_calls=response.tool_calls, cost_micros=spent))
+                              outcome.ledger_digest, outcome.replayed, tool_calls=response.tool_calls, cost_micros=spent, thinking=thought))
             return finish("refused", "action_store_required", response.content)
 
         try:
@@ -221,7 +226,7 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
                 calls=response.tool_calls, specs=specs, allow_new=not outcome.replayed)
         except PayloadRejected as exc:
             steps.append(Step(index, response.content, outcome.request_digest,
-                              outcome.ledger_digest, outcome.replayed, tool_calls=response.tool_calls, cost_micros=spent))
+                              outcome.ledger_digest, outcome.replayed, tool_calls=response.tool_calls, cost_micros=spent, thinking=thought))
             return finish("refused", exc.code, response.content)
 
         results, pending, held = [], [], []
@@ -246,7 +251,7 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
         steps.append(Step(index, response.content, outcome.request_digest,
                           outcome.ledger_digest, outcome.replayed, tuple(results),
                           tool_calls=response.tool_calls, quarantined=tuple(held),
-                          cost_micros=spent))
+                          cost_micros=spent, thinking=thought))
         if results and results[-1]["status"] == "outcome_unknown":
             return finish("outcome_unknown", results[-1].get("code", "action_outcome_unknown"), response.content)
         if stopped():

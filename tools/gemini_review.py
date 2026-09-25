@@ -199,8 +199,12 @@ def ask_gemini(payload: dict, key: str, http: Http, models: tuple[str, ...],
 
 
 def _per_day(raw: bytes) -> bool:
-    """حصّةُ اليوم تُسمّي نفسَها في تفاصيل الردّ (`quotaId` فيه `PerDay`)؛ وما سواها حدُّ دقيقة."""
-    return b"PerDay" in raw
+    """حصّةُ اليوم تُسمّي نفسَها في تفاصيل الردّ (`quotaId` فيه `PerDay`)؛ وما سواها حدُّ دقيقة.
+
+    وردٌّ يذكر الحصّتين معًا يُعامَل حدَّ دقيقة فيُنتظر: سُمّي «per_day» على #71 في ٢٥ سبتمبر
+    ثم نجحت المراجعةُ التالية بعد عشرين دقيقة، وحصّةُ يومٍ لا تعود بهذه السرعة.
+    """
+    return b"PerDay" in raw and b"PerMinute" not in raw
 
 
 def review_body(text: str, model: str, endpoint: str, omitted: list[str], truncated: bool) -> str:

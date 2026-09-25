@@ -116,7 +116,7 @@ class Git:
         self.root, self.main_ref = root, main_ref
 
     def _git(self, *argv: str) -> subprocess.CompletedProcess:
-        return subprocess.run(["git", "-C", str(self.root), *argv], capture_output=True, text=True, timeout=60)
+        return subprocess.run(["git", "-C", str(self.root), *argv], capture_output=True, encoding="utf-8", timeout=60)
 
     def is_ancestor(self, sha: str) -> bool:
         return (self._git("cat-file", "-e", f"{sha}^{{commit}}").returncode == 0

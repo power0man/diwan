@@ -99,7 +99,7 @@ class OllamaProvider:
             "model": self.model,
             "messages": self._messages(request),
             "stream": False,
-            "think": False,
+            "think": request.thinking,
             # نافذة السياق والبذرة معلنتان لا متروكتان لخادمٍ قد يغيّرهما:
             # بلا num_ctx يتغيّر السياق الفعليّ بإعداد الخادم فيصير القياس غير
             # قابلٍ لإعادة الإنتاج — وهو ما وثّقه tools/model_probe.py قبلًا.
