@@ -157,8 +157,9 @@ def check_agent_turn(engine: str, base_url: str, *, live: bool) -> Step:
             provider, model, version = OllamaProvider(engine, base_url), engine, engine
         else:
             provider, model, version = _Mechanism(), "mechanism", "v1"
-        context = ToolContext(root=space, journal=Journal(space), allowed_consents=frozenset({"auto", "logged"}))
         try:
+            # إنشاءُ الدفتر داخل `try`: رفضُه (كما وقع على ماك قبل حلّ المسار) عطبٌ مسمًّى في التقرير لا تعقّبٌ يقطع الفحص.
+            context = ToolContext(root=space, journal=Journal(space), allowed_consents=frozenset({"auto", "logged"}))
             run = run_agent(TASK, provider, ToolRegistry(*DEFAULT_TOOLS), context,
                             ledger=Ledger(space / "ledger.jsonl"), budget=Budget(0, 0),
                             action_store=ActionStore(Path(directory) / "actions", space),

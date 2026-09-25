@@ -126,3 +126,18 @@ def test_run_checks_without_an_engine_is_a_declared_unavailability_not_a_failure
 
 def test_the_ui_entry_point_initialises():
     assert lc.check_ui(ROOT).status == "ok"
+
+
+def test_a_journal_that_refuses_its_root_is_a_named_failure_not_a_traceback(monkeypatch):
+    """رفضُ الدفتر (أو أيُّ عطبٍ قبل الجولة) يُسمّى `agent_turn_raised` في التقرير ولا يقطع الفحص.
+
+    الطفرةُ التي تقتله: إخراجُ إنشاء `Journal` من `try` في `check_agent_turn`.
+    """
+    import agent.journal as journal_module
+
+    def refuse(root):
+        raise journal_module.JournalRefused("unsafe_path", "مُصطنَع")
+    monkeypatch.setattr(journal_module, "Journal", refuse)
+    step = lc.check_agent_turn("qwen3:14b", "http://x", live=False)
+    assert step.status == "failed" and step.code == "agent_turn_raised"
+    assert "JournalRefused" in step.detail
