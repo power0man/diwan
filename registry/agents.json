@@ -14,6 +14,8 @@
     "anthropic/claude-fable-5-1": {"surface": "Claude Code", "admitted": "2026-09-22"},
     "openai/codex": {"surface": "ChatGPT Codex", "admitted": "2026-09-22"},
     "google/gemini-antigravity": {"surface": "Antigravity", "admitted": "2026-09-22"},
+    "google/gemini-jules": {"surface": "Jules", "admitted": "2026-09-25"},
+    "openai/gpt-oss-20b": {"surface": "OpenCode", "admitted": "2026-09-25"},
     "human/hussain-alrabighi": {"surface": "المالك بيده", "admitted": "2026-09-22"}
   }
 }
