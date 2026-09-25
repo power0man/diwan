@@ -1,0 +1,32 @@
+name: قياس
+description: قياسٌ يُجدوَل فقط إن خدم قرارًا مسمًّى (الخطة §٦، فخُّ «قياسٌ لا يغيّر قرارًا»)
+title: "[ك٠٠] قياس: "
+labels: ["measurement", "block:b8"]
+body:
+  - type: textarea
+    id: decision
+    attributes:
+      label: القرارُ الذي يخدمه
+      description: أيُّ قرارٍ يتغيّر بنتيجة هذا القياس؟ بلا قرارٍ لا يُجدوَل
+    validations:
+      required: true
+  - type: input
+    id: rule
+    attributes:
+      label: القاعدةُ المسجَّلة سلفًا
+      placeholder: "إن ≥ س فـ أ، وإلا ب"
+    validations:
+      required: true
+  - type: input
+    id: sample
+    attributes:
+      label: أصغرُ عيّنةٍ تقلب الجواب
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: الحدودُ المعلَنة سلفًا
+      description: ما لا يقيسه هذا القياس، ومن يحكم (ليس من عائلة المحرّك ولا عائلة المؤلّف)
+    validations:
+      required: true
