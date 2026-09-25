@@ -23,7 +23,9 @@ sys.path.insert(0, str(ROOT / "tools"))
 import external_review as cli  # noqa: E402
 from evaluation.multi_system_review import AutomaticReviewError  # noqa: E402
 
-KEY = "sk-test-secret-key-0123456789"
+# مفتاحٌ مصطنع لا يطابق أنماطَ الأسرار في tools/export_public.py (لا `sk-` ولا `gh?_` ولا `AKIA`)، فلا يردّ
+# التصديرَ ولا حارسَ الشجرة (ك٣٦)
+KEY = "test-key-not-a-secret-0123456789"
 
 
 class _Opener:
