@@ -7,7 +7,6 @@ later turn. An intent without a durable outcome is never retried automatically.
 from __future__ import annotations
 
 from contextlib import contextmanager
-import fcntl
 import json
 import math
 import os
@@ -21,6 +20,7 @@ from agent.loop import SYSTEM, _result_message, run_agent
 from agent.registry import ToolContext, ToolRegistry
 from conversation.agent_stop import StopSignals
 from conversation.session import ConversationError, _decode, _fail, _id, _text
+from core import filelock
 from core.budget import Budget
 from core.canonical import canonical_bytes, digest
 from core.contracts import Message, Request, ToolCall, ToolSpec, _message_payload
@@ -237,7 +237,7 @@ class AgentSession:
                               0o600, dir_fd=root_fd)
             _regular(os.fstat(lock_fd))
             try:
-                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                filelock.lock(lock_fd, blocking=False)
             except BlockingIOError:
                 _fail("session_busy", "الجلسة تعمل في عملية أخرى")
             self._fd, self._lock_identity = root_fd, _identity(os.fstat(lock_fd))

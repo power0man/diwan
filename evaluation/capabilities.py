@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import hashlib
-import fcntl
 import json
 import os
 import re
@@ -17,6 +16,7 @@ from contextlib import contextmanager
 from decimal import Decimal, DecimalException
 from pathlib import Path
 
+from core import filelock
 from core.budget import Budget, BudgetRefused
 from core.canonical import PayloadRejected
 from core.contracts import Message, Request
@@ -271,13 +271,13 @@ def _run_lock(run_dir: Path):
         if os.fstat(stream.fileno()).st_nlink != 1:
             _reject("run", "unsafe_output_path", "قفل متعدد الروابط")
         try:
-            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            filelock.lock(stream, blocking=False)
         except BlockingIOError:
             _reject("run", "run_busy", "تشغيل آخر يملك هذا السجل")
         try:
             yield
         finally:
-            fcntl.flock(stream, fcntl.LOCK_UN)
+            filelock.unlock(stream)
 
 
 def evaluate_suite(suite: dict, provider, run_root: Path, *, run_id: str | None = None,

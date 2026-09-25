@@ -9,7 +9,6 @@ transaction or an exactly-once guarantee. Container inputs are frozen bytes.
 from __future__ import annotations
 
 from contextlib import contextmanager
-import fcntl
 import hashlib
 import json
 import os
@@ -20,6 +19,7 @@ import uuid
 
 from agent.journal import (Journal, JournalRefused, _exact, _identity, _open_directory,
                            _read, _regular, _stamp)
+from core import filelock
 from core.canonical import PayloadRejected, canonical_bytes, digest
 from core.contracts import CALL_ID, CONSENT_GRADES, TOOL_NAME, ToolCall, ToolSpec
 
@@ -149,7 +149,7 @@ class ActionStore:
             if info.st_mode & 0o077:
                 _fail("action_state_not_private", "قفل الأفعال ليس خاصًا")
             try:
-                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                filelock.lock(lock_fd, blocking=False)
             except BlockingIOError:
                 _fail("action_store_busy", "عملية أخرى تستخدم مخزن الأفعال")
             self._active_lock = lock_fd

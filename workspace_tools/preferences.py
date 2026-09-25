@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-import fcntl
 import errno
 import json
 import os
@@ -16,6 +15,7 @@ import stat
 import unicodedata
 import uuid
 
+from core import filelock
 from core.canonical import SAFE_INT, canonical_bytes, digest
 
 _KEYS = frozenset({"response_language", "verbosity", "address_name"})
@@ -193,13 +193,13 @@ class Preferences:
                 fd = os.open(self.lock_path.name, os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=root_fd)
             _check_stat(os.fstat(fd))
             try:
-                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                filelock.lock(fd, blocking=False)
             except BlockingIOError:
                 _fail("preference_busy", "مخزن التفضيلات قيد الاستخدام")
             try:
                 yield root_fd, new_lock
             finally:
-                fcntl.flock(fd, fcntl.LOCK_UN)
+                filelock.unlock(fd)
         except OSError as exc:
             _io_error(exc)
         finally:

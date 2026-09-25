@@ -10,7 +10,6 @@ from __future__ import annotations
 import base64
 import copy
 from contextlib import ExitStack, contextmanager
-import fcntl
 import hashlib
 import json
 import os
@@ -22,6 +21,7 @@ import unicodedata
 
 from conversation import ChatSession
 from conversation.session import SYSTEM
+from core import filelock
 from core.canonical import canonical_bytes, digest
 from multimodal.codec import MEDIA_SYSTEM, decode_request
 from services.assistant_workspace import _decode_context
@@ -197,7 +197,7 @@ def _lease(root_fd, path):
     try:
         _private(os.fstat(fd))
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            filelock.lock(fd, blocking=False)
         except BlockingIOError:
             _fail("backup_busy", "أغلق مساحة العمل قبل النسخ")
         yield

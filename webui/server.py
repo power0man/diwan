@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import base64
-import fcntl
 import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -23,6 +22,7 @@ from conversation.session import ConversationError
 from agent.builtin_tools import DEFAULT_TOOLS
 from agent.registry import ToolRegistry
 from agent.web_search import web_search_tool
+from core import filelock
 from core.execution import configure_execution_backend
 from core.canonical import canonical_bytes, digest
 from core.contracts import Message as ContractMessage, Request as ContractRequest
@@ -118,7 +118,7 @@ class LocalApp:
             self.lease = os.open("app.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW,
                                  0o600, dir_fd=self.fd)
             _private(os.fstat(self.lease))
-            fcntl.flock(self.lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            filelock.lock(self.lease, blocking=False)
         except BaseException:
             if hasattr(self, "lease"):
                 os.close(self.lease)

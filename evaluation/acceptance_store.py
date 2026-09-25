@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import asdict
-import fcntl
 import hashlib
 import json
 import os
@@ -16,6 +15,7 @@ import re
 import stat
 import uuid
 
+from core import filelock
 from evaluation.disclosure import Case, DisclosureRefused
 
 ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}\Z")
@@ -144,13 +144,13 @@ class AcceptanceStore:
             if os.fstat(stream.fileno()).st_nlink != 1:
                 _fail("unsafe_path", "قفل متعدد الروابط")
             try:
-                fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                filelock.lock(stream, blocking=False)
             except BlockingIOError:
                 _fail("store_busy", "عملية أخرى تملك مخزن القبول")
             try:
                 yield
             finally:
-                fcntl.flock(stream, fcntl.LOCK_UN)
+                filelock.unlock(stream)
 
     def _load(self):
         manifest_path = self.directory / "manifest.json"

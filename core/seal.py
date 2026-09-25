@@ -16,10 +16,10 @@
 """
 from __future__ import annotations
 
-import fcntl
 import json
 from contextlib import contextmanager
 
+from core import filelock
 from core.ledger import Ledger, LedgerCorrupt
 from core.signing import UNSIGNED
 
@@ -31,11 +31,11 @@ def write_lock(ledger: Ledger):
     كسرًا لا جراحة له (عيب تدقيق م٣/٩)."""
     lock_path = ledger.path.with_suffix(ledger.path.suffix + ".lock")
     with lock_path.open("w") as f:
-        fcntl.flock(f, fcntl.LOCK_EX)
+        filelock.lock(f)
         try:
             yield
         finally:
-            fcntl.flock(f, fcntl.LOCK_UN)
+            filelock.unlock(f)
 
 
 def require_seal(ledger: Ledger, what: str) -> str:
