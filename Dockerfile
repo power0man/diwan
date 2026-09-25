@@ -21,7 +21,8 @@ RUN uv sync --frozen --no-install-project --python /usr/local/bin/python3
 
 COPY . .
 # قاعدةُ الصرف (CAMeL) داخل الصورة، في مسارٍ يقرؤه المستخدمُ غيرُ الجذر
-RUN camel_data -i morphology-db-msa-r13 \
+RUN mkdir -p "$CAMELTOOLS_DATA" \
+    && camel_data -i morphology-db-msa-r13 \
     && useradd --create-home --uid 1000 diwan \
     && chown -R diwan /app
 
