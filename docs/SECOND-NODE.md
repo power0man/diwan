@@ -56,12 +56,12 @@ $ uv run --no-sync python tools/launch_check.py
 
 | الخطوة | النتيجة | السبب |
 |---|---|---|
-| runtime | سقط `import_failed` | `core/seal.py` يستورد `fcntl`، وهي وحدةٌ لا توجد على ويندوز. وتستوردها سبعُ وحدات: `core/seal.py` و`core/router.py` و`agent/actions.py` و`agent/journal.py` و`conversation/session.py` و`conversation/agent_session.py` و`tools/publish_projection.py` |
+| runtime | سقط `import_failed` | `core/seal.py` يستورد `fcntl`، وهي وحدةٌ لا توجد على ويندوز. وتستوردها **أربعَ عشرةَ وحدةً** خارج الاختبارات (عُدّت بعد الدمج؛ كان المكتوب هنا سبعًا): `core/seal.py` و`core/router.py` و`agent/actions.py` و`agent/journal.py` و`conversation/session.py` و`conversation/agent_session.py` و`tools/publish_projection.py` و`ci/run_persistent_runner.py` و`evaluation/acceptance_store.py` و`evaluation/capabilities.py` و`webui/server.py` و`workspace_tools/backup.py` و`workspace_tools/files.py` و`workspace_tools/preferences.py` |
 | morphology، engine، agent_turn، policies، ui | لم تُشغَّل | الفحصُ يتوقّف عند أول عطب |
 
 **حدود هذا الفحص:**
 - `--no-sync` لأن `uv run` يثبّت الاعتماديات قبل التشغيل، والتكليف «لا تثبّت شيئًا». فالبيئة `.venv` جزئية من `uv sync` أُوقف قبل تمامه. لكن السقوط في استيرادٍ من المكتبة القياسية، فلا تغيّره بيئةٌ كاملة.
-- عطبٌ ثانٍ ظهر أثناء الفحص: الإخراجُ النصّي نفسُه ينهار على طرفية ويندوز (`UnicodeEncodeError` بترميز `cp1256` عند الحرف `✗`) قبل أن يطبع سطرًا. والسطرُ أعلاه من تشغيلٍ بـ`PYTHONIOENCODING=utf-8`، أما `--json` فيعمل بلا ضبط.
+- عطبٌ ثانٍ ظهر أثناء الفحص: الإخراجُ النصّي نفسُه ينهار على طرفية ويندوز (`UnicodeEncodeError` بترميز `cp1256` عند الحرف `✗`) قبل أن يطبع سطرًا. والسطرُ أعلاه من تشغيلٍ بـ`PYTHONIOENCODING=utf-8`، أما `--json` فيعمل بلا ضبط. **وأُصلح بعده:** تسقط العلاماتُ إلى ASCII (+ وo وx) حين لا يكتبها ترميزُ الطرفية، ويُستبدل ما بقي بدل أن ينهار الفحص.
 - الطريقُ إلى 0 على هذا الجهاز: إمّا ج٧ (`core/filelock.py` بدل `fcntl`، وهي تعتمد على ع٢)، وإمّا التشغيلُ داخل WSL2. وحتى حينها تتوقّع النسخةُ العامة بلا متونٍ الرمزَ `3` في خطوة السياسات.
 
 لقياس البطاقة، على الايسر في PowerShell:
