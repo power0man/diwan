@@ -54,6 +54,10 @@ def validated(request: Request) -> Request:
         if not isinstance(m.content, str):
             _reject(f"messages[{i}].content", "content_type", "المحتوى نصّ")
 
+    # طلبُ التفكير: منطقيٌّ صريح، فلا يُقرأ «"no"» أو 1 طلبًا (ك٤٧)
+    if not isinstance(request.thinking, bool):
+        _reject("thinking", "thinking_type", "طلبُ التفكير True أو False")
+
     # سقف الإخراج: صحيحٌ موجب داخل حدّ
     mo = request.max_output
     if isinstance(mo, bool) or not isinstance(mo, int):

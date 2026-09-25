@@ -291,7 +291,7 @@ class LocalChatProvider:
                         "num_ctx": CONTEXT_TOKENS, "seed": SAMPLING_SEED},
         }
         if thinking:
-            payload["think"] = False
+            payload["think"] = request.thinking
         out = self._json("POST", "/api/chat", payload, deadline)
         _no_remote(out)
         message = out.get("message")
@@ -307,4 +307,7 @@ class LocalChatProvider:
             usage=Usage(_count(out.get("prompt_eval_count")), _count(out.get("eval_count"))),
             stop_reason="complete" if out["done_reason"] == "stop" else "max_output",
             cost_micros=0, provider=self.name, model_version=self.model_version,
+            # التفكيرُ حين طُلب وحده (ك٤٧)؛ والنواةُ تحجره قبل القيد
+            thinking=(message.get("thinking") or "") if request.thinking
+            and isinstance(message.get("thinking"), (str, type(None))) else "",
         )

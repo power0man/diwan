@@ -3,7 +3,8 @@
 Wire fields verified against api/types.go at Ollama v0.34.2 and the chat API:
 https://github.com/ollama/ollama/blob/v0.34.2/api/types.go
 https://docs.ollama.com/api/chat
-Thinking may be accepted as a separate field, but is never returned or recorded.
+Thinking may be accepted as a separate field; it is returned only when the request
+asks for it (ك٤٧), and the core quarantines it before recording.
 """
 from __future__ import annotations
 
@@ -69,6 +70,8 @@ def parse_response(out: dict, *, request: Request | None = None,
     message = out["message"]
     content = message.get("content")
     thinking = message.get("thinking")
+    wanted = request is not None and request.thinking
+    accept_thinking = allow_thinking or wanted
     raw_calls = message.get("tool_calls")
     if (raw_calls is not None and not isinstance(raw_calls, list)):
         raise ProviderError("malformed", "نداءات أدوات Ollama ليست قائمة",
@@ -77,8 +80,8 @@ def parse_response(out: dict, *, request: Request | None = None,
             or out.get("done") is not True
             or message.get("images") not in (None, [])
             or message.get("audio") not in (None, [])
-            or (not allow_thinking and thinking not in (None, ""))
-            or (allow_thinking and thinking is not None and not isinstance(thinking, str))):
+            or (not accept_thinking and thinking not in (None, ""))
+            or (accept_thinking and thinking is not None and not isinstance(thinking, str))):
         raise ProviderError("malformed", "محتوى الجواب ليس نصًّا",
                             retryable=False)
     tool_calls = []
@@ -144,4 +147,5 @@ def parse_response(out: dict, *, request: Request | None = None,
         provider=provider_name,
         model_version=model if model_version is None else model_version,
         tool_calls=tuple(tool_calls),
+        thinking=thinking if wanted and thinking else "",
     )
