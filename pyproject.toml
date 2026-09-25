@@ -4,14 +4,15 @@ version = "0.0.1"
 description = "مساحة عمل شخصية: مشروعات ومصادر وتحرير وتقييم"
 license = "Apache-2.0"
 requires-python = ">=3.11"
-dependencies = ["cryptography==50.0.1"]
+# غ١/ق٥٥: CAMeL Tools للجذور اعتماديةٌ رئيسة لازمةٌ للإطلاق (فحصُ الدخان لا يُعلن الجهازَ جاهزًا بدونه
+# وبدون `camel_data -i morphology-db-msa-r13`). ثمنُه torch، وعلى لينكس يُقفل من فهرس المعالج وحده
+# (`[tool.uv.sources]` أدناه، ك٣٣) فلا يجرّ CUDA؛ وعلى ماك يأتي من PyPI كما هو.
+# torch يُسمّى اعتماديةً مباشرة (لا عابرةً عبر camel-tools وحدها) لأن `[tool.uv.sources]` لا تُطبَّق إلا على
+# الاعتماديات المباشرة؛ وبدون هذا السطر يُقفل torch من PyPI بحزم CUDA على لينكس رغم الفهرس أدناه (قيس في ك٣٣).
+dependencies = ["cryptography==50.0.1", "camel-tools>=1.6", "torch>=2.4"]
 
 [project.optional-dependencies]
 dev = ["pytest==9.1.1"]
-# غ١/ق٥٥: CAMeL Tools للجذور، لازمٌ للإطلاق (فحصُ الدخان لا يُعلن الجهازَ جاهزًا بدونه وبدون
-# `camel_data -i morphology-db-msa-r13`). يبقى هنا لا في الاعتماديات الرئيسة لأن torch من PyPI على لينكس
-# يجرّ نحو ٣ غيغابايت من حزم CUDA؛ نقلُه بفهرس torch للمعالج مهمّةُ ك٣٣.
-morphology = ["camel-tools>=1.6"]
 mlx = [
     "mlx>=0.32.0",
     "mlx-lm>=0.31.0",
@@ -20,3 +21,13 @@ mlx = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+# ك٣٣ (ق٥٥): torch على لينكس من فهرس المعالج وحده لا من PyPI، فلا يجرّ نحو ٣ غيغابايت من عجلات CUDA
+# إلى CI المستضاف وكلِّ تثبيتٍ على لينكس. الفهرسُ صريح (`explicit`) فلا تُحلّ منه حزمةٌ غيرُ torch.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

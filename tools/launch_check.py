@@ -39,7 +39,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 from providers.ollama import DEFAULT_MODEL as DEFAULT_ENGINE  # noqa: E402 — موضعٌ واحد للمحرّك (ق٥٤)
 
-CAMEL_INSTALL = "uv sync --extra morphology"
+CAMEL_INSTALL = "uv sync"   # ك٣٣: CAMeL اعتماديةٌ رئيسة، لا extra
 CAMEL_DB_COMMAND = "uv run camel_data -i morphology-db-msa-r13"
 DEFAULT_BASE_URL = "http://127.0.0.1:11434"
 NOTE_TEXT = "مرحبًا بديوان على هذا الجهاز"
