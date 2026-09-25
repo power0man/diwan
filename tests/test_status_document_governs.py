@@ -45,5 +45,6 @@ def test_every_done_task_row_carries_a_commit_hash():
     rows = [line for line in read("AGENTS.md").split("\n") if line.startswith("| ك") or line.startswith("| ج") or line.startswith("| غ") or line.startswith("| ع")]
     done = [line for line in rows if "| منجزة" in line]
     assert done, "لا صفوفَ منجزة؟"
-    missing = [line.split("|")[1].strip() for line in done if not re.search(r"\| منجزة: [0-9a-f]{7,40}", line)]
+    # ما سبق الفتحَ موسومٌ diwan-private@ (ك٣٠)، وما بعده بصمةٌ في هذا المستودع
+    missing = [line.split("|")[1].strip() for line in done if not re.search(r"\| منجزة: (?:diwan-private@)?[0-9a-f]{7,40}", line)]
     assert missing == [], missing

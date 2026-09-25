@@ -54,5 +54,8 @@ jobs:
             range="$RANGE_BASE..$RANGE_HEAD"
           fi
           .venv/bin/python tools/agent_attribution.py --range "$range"
+          echo "RANGE=$range" >> "$GITHUB_ENV"
+      - name: Touching another lane declares a hand-off
+        run: .venv/bin/python tools/lane_handoff.py --range "$RANGE"
       - name: Shared checks and strict public signature verification
         run: .venv/bin/python tools/run_verification.py --node "$(command -v node)"
