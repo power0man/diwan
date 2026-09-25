@@ -111,6 +111,10 @@ def _read(parent, name, limit):
                 _fail("file_too_large", "الملف يتجاوز حد القراءة الآمنة")
             raw = stream.read(limit + 1)
             after = os.fstat(stream.fileno())
+            if after.st_nlink == 0:
+                # استُبدل الملفُّ ذرّيًّا (os.replace من كاتبٍ مصرَّحٍ له) بعد فتحه: تغيُّرٌ يُعاد بعده القراءة،
+                # لا مسارٌ غيرُ آمن — سباقُ إيقافين كشفه CI في ٢٥ سبتمبر ٢٠٢٦ (ك٢٨)
+                _fail("file_changed", "استُبدل الملف أثناء قراءته")
             _regular(after)
             entry = os.stat(name, dir_fd=parent, follow_symlinks=False)
             if (_stamp(before) != _stamp(after) or _identity(entry) != _identity(after)

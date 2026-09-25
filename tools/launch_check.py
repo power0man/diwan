@@ -146,6 +146,9 @@ def check_agent_turn(engine: str, base_url: str, *, live: bool) -> Step:
     from core.budget import Budget
     from core.ledger import Ledger
     with tempfile.TemporaryDirectory(prefix="diwan-launch-") as directory:
+        # يُحلّ المسارُ أولًا: على ماك يقع المؤقّت تحت /var وهو رابطٌ إلى /private/var، وحارسُ دفتر
+        # الرجوع يرفض المسارَ غيرَ المحلول (unsafe_path) — كشفه التشغيلُ الحيّ في ٢٥ سبتمبر (عطبُ ك٨ نفسُه)
+        directory = str(Path(directory).resolve())
         space = Path(directory) / "workspace"
         space.mkdir()
         (space / "notes.txt").write_text(NOTE_TEXT + "\n", encoding="utf-8")
