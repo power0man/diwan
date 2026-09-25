@@ -251,6 +251,18 @@ def unsupported(bindings: list[Binding],
     return bad
 
 
+# أدواتُ النفي والحظر (غ٦): الإصلاحُ لا يُلحق إحالةً بادعاءٍ تخالف قطبيّتُه قطبيّةَ شاهده.
+# «ما» ليست منها لأنها موصولةٌ غالبًا («ما يلزم»)؛ والحدُّ معلن: نفيٌ بغير هذه الأدوات يفلت.
+_NEGATORS = frozenset({"لا", "ليس", "ليست", "لست", "لم", "لن", "غير", "عدم", "بدون",
+                       "يحظر", "يمنع", "ممنوع", "محظور", "يحرم"})
+_NEGATORS_NORMAL = frozenset(normalize(word).strip() for word in _NEGATORS)
+
+
+def polarity(text: str) -> int:
+    """زوجيّةُ أدوات النفي والحظر في النص: ١ منفيّ و٠ مثبت، فالنفيُ المزدوج إثبات."""
+    return sum(1 for word in normalize(text).split() if word in _NEGATORS_NORMAL) % 2
+
+
 def _find_best_supporting_ref(claim_text: str, pages_by_ref: dict[int, dict],
                              floor: float = DEFAULT_OVERLAP_FLOOR,
                              marker: str = "ش") -> int | None:
@@ -264,6 +276,7 @@ def _find_best_supporting_ref(claim_text: str, pages_by_ref: dict[int, dict],
 
     best_ref = None
     best_score = 0.0
+    sign = polarity(bare)
 
     for ref, page in sorted(pages_by_ref.items()):
         body = page.get("text", "")
@@ -271,7 +284,10 @@ def _find_best_supporting_ref(claim_text: str, pages_by_ref: dict[int, dict],
         haystack = set(numbers_in(body)) | set(numbers_in(meta))
         if any(n not in haystack for n in nums):
             continue
-        _, coverage = _best_window(toks, body)
+        excerpt, coverage = _best_window(toks, body)
+        # شاهدٌ يُثبت ما ينفيه الادعاء (أو العكس) لا يسنده ولو تطابقت ألفاظُه (غ٦)
+        if polarity(excerpt) != sign:
+            continue
         if coverage >= floor and coverage > best_score:
             best_score = coverage
             best_ref = ref
