@@ -21,6 +21,7 @@ import family_review as fr  # noqa: E402
 import gemini_review as gr  # noqa: E402
 
 KEY = "test-gemini-key-not-real-0000"
+SLEPT: list = []
 HEAD = "a" * 40
 STYLE = (ROOT / ".gemini" / "styleguide.md").read_text(encoding="utf-8")
 DIFF = ("diff --git a/tools/x.py b/tools/x.py\n--- a/tools/x.py\n+++ b/tools/x.py\n@@ -1 +1 @@\n-a\n+b\n"
@@ -55,7 +56,7 @@ class FakeHttp(gr.Http):
 def run(http, families=frozenset({"anthropic"}), environ=None):
     env = {"GEMINI_API_KEY": KEY, "GH_TOKEN": "gh-token"} if environ is None else environ
     return gr.run(families=set(families), environ=env, http=http, slug="owner/repo", pr=7, head=HEAD,
-                  styleguide=STYLE)
+                  styleguide=STYLE, sleep=SLEPT.append)
 
 
 # — النشر —
@@ -108,13 +109,38 @@ def test_a_refused_key_everywhere_is_a_named_error():
 @pytest.mark.parametrize("reply,code", [
     ((429, b'{"error": {"status": "RESOURCE_EXHAUSTED"}}'), "gemini_quota_exhausted"),
     ((200, b'{"candidates": [], "promptFeedback": {"blockReason": "OTHER"}}'), "gemini_empty_response"),
-    ((500, b'{"error": {"status": "INTERNAL"}}'), "gemini_http_error"),
+    ((400, b'{"error": {"status": "INVALID_ARGUMENT"}}'), "gemini_http_error"),
 ])
 def test_gemini_failures_are_named_and_post_nothing(reply, code):
     http = FakeHttp(gemini=[reply])
     with pytest.raises(gr.GeminiReviewError) as failed:
         run(http)
     assert failed.value.code == code and http.posted() == []
+
+
+# — انشغالُ الخادم عابر —
+
+def test_a_busy_server_is_retried_after_a_pause_on_the_same_model():
+    """«503 UNAVAILABLE» أسقط مراجعةَ #12 في ٢٥ سبتمبر ٢٠٢٦ من نداءٍ واحد."""
+    SLEPT.clear()
+    http = FakeHttp(gemini=[(503, b'{"error": {"status": "UNAVAILABLE"}}'), gemini_ok()])
+    report = run(http)
+    assert report["status"] == "posted" and report["model"] == gr.MODELS[0] and SLEPT == [gr.RETRY_WAITS[0]]
+
+
+def test_a_model_busy_after_every_retry_falls_through_to_the_next():
+    SLEPT.clear()
+    busy = (503, b"{}")
+    http = FakeHttp(gemini=[busy] * (len(gr.RETRY_WAITS) + 1) + [gemini_ok()])
+    assert run(http)["model"] == gr.MODELS[1] and SLEPT == list(gr.RETRY_WAITS)
+
+
+def test_busy_everywhere_is_a_named_error_and_posts_nothing():
+    calls = len(gr.MODELS) * len(gr.ENDPOINTS) * (len(gr.RETRY_WAITS) + 1)
+    http = FakeHttp(gemini=[(504, b"{}")] * calls)
+    with pytest.raises(gr.GeminiReviewError) as failed:
+        run(http)
+    assert failed.value.code == "gemini_unavailable" and http.posted() == [] and http.gemini == []
 
 
 # — المفتاح —
@@ -128,10 +154,10 @@ def test_the_key_travels_in_a_header_only_and_never_in_a_url_error_or_review(tmp
     assert all("x-goog-api-key" not in c["headers"] for c in http.calls if "api.github.com" in c["url"])
     assert KEY not in json.dumps(http.posted(), ensure_ascii=False)
 
-    failing = FakeHttp(gemini=[(500, json.dumps({"error": {"status": "INTERNAL", "message": KEY}}).encode())])
+    failing = FakeHttp(gemini=[(400, json.dumps({"error": {"status": "INVALID_ARGUMENT", "message": KEY}}).encode())])
     repo = _repo_with_one_commit(tmp_path, "anthropic/claude-opus-5-5")
     code = gr.main(["--range", "HEAD~1..HEAD", "--head", HEAD, "--pr", "7", "--repo-slug", "o/r", "--repo", str(repo)],
-                   environ={"GEMINI_API_KEY": KEY}, http=failing)
+                   environ={"GEMINI_API_KEY": KEY}, http=failing, sleep=SLEPT.append)
     out = capsys.readouterr().out
     assert code == 1 and '"gemini_http_error"' in out and KEY not in out
 
