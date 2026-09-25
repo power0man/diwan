@@ -64,6 +64,38 @@ $ uv run --no-sync python tools/launch_check.py
 - عطبٌ ثانٍ ظهر أثناء الفحص: الإخراجُ النصّي نفسُه ينهار على طرفية ويندوز (`UnicodeEncodeError` بترميز `cp1256` عند الحرف `✗`) قبل أن يطبع سطرًا. والسطرُ أعلاه من تشغيلٍ بـ`PYTHONIOENCODING=utf-8`، أما `--json` فيعمل بلا ضبط. **وأُصلح بعده:** تسقط العلاماتُ إلى ASCII (+ وo وx) حين لا يكتبها ترميزُ الطرفية، ويُستبدل ما بقي بدل أن ينهار الفحص.
 - الطريقُ إلى 0 على هذا الجهاز: إمّا ج٧ (`core/filelock.py` بدل `fcntl`، وهي تعتمد على ع٢)، وإمّا التشغيلُ داخل WSL2. وحتى حينها تتوقّع النسخةُ العامة بلا متونٍ الرمزَ `3` في خطوة السياسات.
 
+### فحص الدخان داخل WSL2 (ع٢، ٢٦ سبتمبر ٢٠٢٦)
+
+شُغّل في نسخةٍ مستقلّة من المستودع داخل WSL2 (Ubuntu 26.04.1)، على `main` عند `b893715`، ببايثون النظام 3.14.4. وOllama على ويندوز يُبلغ من WSL بضبط `networkingMode=mirrored`، والمحرّكُ `qwen3.5:9b` مسحوب.
+
+```
+$ python3 tools/launch_check.py
+  ✓ runtime: runtime_ready_public — بايثون 3.14.4، نسخةٌ public
+  ◻ morphology: camel_missing — CAMeL Tools غيرُ مركَّب — `uv sync` ثم `uv run camel_data -i morphology-db-msa-r13`
+  ✓ engine: engine_ready — qwen3.5:9b على http://127.0.0.1:11434
+  ✓ agent_turn: agent_turn_live — 2 خطوات، والجواب: يحتوي الملف notes.txt على عبارة: "مرحبًا بديوان على هذا الجهاز".
+  ◻ policies: corpus_missing — المتنُ غيرُ موضوع محليًّا — `python tools/place_private_stores.py --from ~/diwan-private`
+  ✓ ui: ui_ready — tools/serve_ui.py يُهيَّأ
+
+◻ تعذّر بحدٍّ معلن: أكمل ما سُمّي أعلاه ثم أعد الفحص.
+```
+
+**رمز الخروج: `3`** (`unavailable_declared`) في أربعة تشغيلاتٍ من خمسة. لكن شرط الإغلاق («3 وكلُّ ما قبل السياسات ok») **لم يتحقّق**، لأن `morphology` قبلها ليست ok.
+
+| الخطوة | النتيجة | السبب |
+|---|---|---|
+| runtime | نجح | — |
+| morphology | تعذّر `camel_missing` | CAMeL Tools يحتاج بيئة المشروع، و`uv sync --extra dev` يسقط هنا: `editdistance` (عبر camel-tools) بلا عجلةٍ لبايثون 3.14، ولا مترجم C على الجهاز. وتثبيتُ `build-essential` يحتاج `sudo` بكلمة مرور |
+| engine | نجح | `qwen3.5:9b` حيّ |
+| agent_turn | نجح حيًّا في ٤ من ٥ | التشغيلُ الأول سقط `agent_turn_failed` (`http_500`): خادمُ النموذج في Ollama انهار عند أول تحميل (`0xc0000409`، تجاوزُ مخزنٍ في المكدّس) بعد ٢٣ ثانية، ثم نجحت التشغيلاتُ الأربعة التالية |
+| policies | تعذّر `corpus_missing` | النسخةُ العامة بلا متون، كما هو متوقَّع |
+| ui | نجح | — |
+
+**حدود هذا الفحص:**
+- بايثون النظام لا بيئةُ المشروع، فالفحص لا يشهد لإصدارات الاعتماديات المقفولة.
+- انهيارُ Ollama الأول لم يُشخَّص، ولم يتكرّر في أربع محاولاتٍ بعده. فهو حادثةٌ واحدة مسجّلة، ولا يُعرف بعدُ أعابرةٌ هي أم تتكرّر عند كل تحميلٍ بارد.
+- الطريقُ إلى إغلاق #21: مترجم C داخل WSL (`sudo apt install build-essential` بيد المالك)، ثم `uv sync --extra dev` و`uv run camel_data -i morphology-db-msa-r13`، ثم إعادةُ الفحص.
+
 لقياس البطاقة، على الايسر في PowerShell:
 
 ```powershell
