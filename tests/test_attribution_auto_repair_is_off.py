@@ -1,8 +1,8 @@
 """الإصلاحُ الآليّ للإسناد موقوفٌ في طريق الجواب (ق٦٢، غ٦).
 
-سببُ الإيقاف مقيسٌ هنا لا منقول: الادعاءُ الذي ينفي شاهدَه يُلحَق به رقمُ
-الشاهد فيصير مسنَدًا بلا ادعاءٍ ضعيف. فما دامت الدالةُ عمياءَ عن القطبية،
-لا تُستدعى في `MaritimeNode.answer` إلا بطلبٍ صريح `auto_repair=True`.
+سببُ الإيقاف كان مقيسًا هنا: الادعاءُ الذي ينفي شاهدَه يُلحَق به رقمُ الشاهد
+فيصير مسنَدًا. وأُغلق في غ٦ بموازنة القطبية (`tests/test_attribution_repair_polarity.py`)،
+والإيقافُ الافتراضيّ في `MaritimeNode.answer` باقٍ بقرار ق٦٢ حتى يقرّر المالكُ إعادته.
 
 الطفرتان اللتان يقتلهما هذا الملف: جعلُ `auto_repair=True` افتراضيًّا، وحذفُ
 شرط `self.auto_repair` من موضع الاستدعاء.
@@ -63,12 +63,13 @@ def _spy(monkeypatch) -> list:
     return calls
 
 
-def test_the_reason_a_claim_that_negates_its_witness_is_repaired_into_support():
+def test_the_reason_is_closed_a_claim_that_negates_its_witness_is_no_longer_repaired():
+    """كان هذا سببَ الإيقاف: الادعاءُ المنفيّ يُلحَق به رقمُ شاهده. وصار يُرفض (غ٦)،
+    والإيقافُ الافتراضيّ باقٍ حتى يقرّر المالكُ إعادته."""
     negated = "لا " + SUPPORT
     repaired, bindings, changed = auto_repair_attribution(negated, PAGES_BY_REF)
-    assert changed is True
-    assert repaired.endswith("[ش1]")
-    assert unsupported(bindings) == []
+    assert changed is False and repaired == negated
+    assert unsupported(bindings)
 
 
 def test_auto_repair_is_off_by_default():
