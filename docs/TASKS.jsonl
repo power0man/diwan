@@ -3,3 +3,5 @@
 {"schema_version":1,"task":"ج٧","issue":37,"pull":70,"merge":"3c665606321a227f7870ead9ab666823ce58d71a","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-25T22:59:52Z"}
 {"schema_version":1,"task":"ك٤٢","issue":17,"pull":71,"merge":"28769a84e9cb0c98817c6ffd39d174e16ba26baa","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-25T23:08:59Z"}
 {"schema_version":1,"task":"ك٣٧","issue":39,"pull":71,"merge":"28769a84e9cb0c98817c6ffd39d174e16ba26baa","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-25T23:08:59Z"}
+{"schema_version":1,"task":"ك٤١","issue":16,"pull":74,"merge":"1ebaba471d35c3889143935e9626cafeba50050e","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-25T23:15:18Z"}
+{"schema_version":1,"task":"ع٢","issue":21,"pull":72,"merge":"df4a37ffa2e33688bdc7f202f7e7ac0365c4b2b0","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-25T23:21:22Z"}
