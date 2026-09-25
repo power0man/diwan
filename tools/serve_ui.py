@@ -8,6 +8,7 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from providers.local_chat import LocalChatProvider
+from providers.ollama import DEFAULT_MODEL
 from providers.local_media import LocalMediaProvider
 from providers.local_tools import LocalToolProvider
 from agent.web_search import SearxngBackend
@@ -28,7 +29,7 @@ def _discover_ollama() -> tuple[str | None, str | None, str | None, str | None]:
                       and m["size"] > 0 and not m.get("remote_model") and not m.get("remote_host")
                       and "cloud" not in m["name"].lower()}
             chat_m = chat_v = media_m = media_v = None
-            for pref in ("qwen3:14b", "qwen2.5:3b", "llama3.1:8b"):
+            for pref in (DEFAULT_MODEL, "qwen3:14b", "qwen2.5:3b", "llama3.1:8b"):   # المعتمَدُ أولًا (ق٥٤)
                 if pref in models:
                     chat_m, chat_v = pref, models[pref]
                     break

@@ -14,7 +14,7 @@ from tools import review_automatically as cli
 
 @pytest.fixture
 def engine():
-    """المحرّكُ المُراجَع: qwen3:14b بنصّ AGENTS.md §٤."""
+    """المحرّكُ المُراجَع من عائلة Qwen بنصّ AGENTS.md §٤ (qwen3:14b في هذا المثبِّت؛ والافتراضيُّ اليوم qwen3.5:9b، ق٥٤)."""
     return {"provider": "ollama", "model": "qwen3:14b",
             "digest": "c" * 64, "family": "qwen3"}
 
