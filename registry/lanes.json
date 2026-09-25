@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "handoff_marker": "تسليم:",
+  "enforced_from": "2026-09-25T14:35:00Z",
+  "lanes": {
+    "anthropic": [
+      "core/run.py", "core/contracts.py", "core/validate.py",
+      "agent/loop.py", "agent/journal.py", "agent/registry.py", "agent/builtin_tools.py",
+      "evaluation/"
+    ],
+    "openai": [
+      "conversation/", "agent/actions.py", "core/execution.py", "core/sandbox.py", "webui/"
+    ],
+    "google": [
+      "core/linguistics/", "providers/"
+    ]
+  },
+  "limits": [
+    "the_agent_is_the_self_declared_Diwan-Agent_trailer_not_the_git_author",
+    "unlisted_paths_belong_to_no_lane",
+    "human_agents_are_the_judge_and_never_owe_a_handoff",
+    "a_handoff_line_is_declared_not_verified",
+    "commits_before_enforced_from_are_exempt"
+  ]
+}
