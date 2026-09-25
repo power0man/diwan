@@ -38,7 +38,7 @@ from core.contracts import Message, Request
 from core.corpus import CorpusCatalog, CorpusFile
 from core.knowledge import (KnowledgeItem, NodeManifest,
                             policy_within_ceiling, validated_item)
-from core.run import execute
+from core.run import ProviderFailed, execute
 
 MANIFEST = NodeManifest(
     name="maritime",
@@ -59,6 +59,8 @@ class RetrievalFailed(RuntimeError):
     بوصفه «عجزًا معلنًا أو استرجاعًا صفريًّا»، فلو ورثه لعاد العطبُ يُقرأ
     امتناعًا. وهو ما يجعل هذا التمييزَ حاملًا لا تجميلًا.
     """
+
+    code = "retrieval_failed"
 
 _CITE = re.compile(r"\[\s*ش\s*([\d٠-٩]+)\s*\]")
 _CITE_MARKER = re.compile(r"\[\s*ش[^\[\]]*(?:\]|(?=\[|$))")
@@ -422,6 +424,7 @@ class MaritimeNode:
         messages = (Message("system", SYSTEM), Message("user", prompt))
         last_flaw = "لم يُنادَ"
         last_code = None
+        last_path = "answer.citations"
         correction_scope = ""
         for n in range(1, MAX_ATTEMPTS + 1):
             key = key_base if n == 1 else f"{key_base}{correction_scope}-a{n}"
@@ -430,8 +433,10 @@ class MaritimeNode:
             if outcome.response is None:
                 if self._prior_retryable(key):
                     last_flaw = f"عطل قابل للإعادة: {outcome.error_code}"
+                    last_path, last_code = "answer.provider", "provider_retry_exhausted"
                     continue      # مفتاحُ محاولةٍ تالٍ = نداء جديد مشروع
-                raise RuntimeError(f"نداء النموذج فشل: {outcome.error_code}")
+                raise ProviderFailed(outcome.error_code,
+                                     f"نداء النموذج فشل: {outcome.error_code}")
             text = outcome.response.content.strip()
 
             if INSUFFICIENT in text:
@@ -455,6 +460,7 @@ class MaritimeNode:
                                "part": u["item"]["part"],
                                "locus": u["item"]["locus"]} for u in used})
                 weak = unsupported(bindings)
+                last_path = "answer.citations"
                 if weak and self.auto_repair:
                     # محاولة الإصلاح الآلي التوليدي المعزز قبل إعلان الرفض (م١٥)
                     all_pages_map = {idx: {"text": p["item"]["text"],
@@ -482,6 +488,7 @@ class MaritimeNode:
                                          for c, _k, d in weak[:2]))
                 correction_scope = "-attribution-v2"
             elif invalid or malformed:
+                last_path = "answer.citations"
                 last_code = "citation_malformed" if malformed else "citation_out_of_range"
                 last_flaw = ((f"صيغة إحالة معطوبة: {malformed}؛ " if malformed else "")
                              + (f"إحالات خارج الشواهد: {invalid}؛ " if invalid else "")
@@ -490,8 +497,11 @@ class MaritimeNode:
                 # الإحالة الملفقة كغياب استشهاد؛ أول جواب يبقى قابلًا للعرض.
                 correction_scope = "-citations-v2"
             else:
-                last_flaw = ("جواب مبتور (max_output)"
-                             if outcome.response.stop_reason != "complete"
+                # المبتورُ والخالي من الإحالة رمزان مسمّيان لا ValueError خام (ك٣٧)
+                truncated = outcome.response.stop_reason != "complete"
+                last_path, last_code = (("answer.output", "answer_truncated") if truncated
+                                        else ("answer.citations", "citation_missing"))
+                last_flaw = ("جواب مبتور (max_output)" if truncated
                              else "جواب بلا استشهاد صحيح")
             messages = messages + (
                 Message("assistant", text),
@@ -501,17 +511,16 @@ class MaritimeNode:
                         "2. ابدأ بنص الحكم أو المعلومة مباشرة، وكل سطر أو فقرة تُختم برقم شاهدها [ش1].\n"
                         "3. التزم بالألفاظ والعبارات الواردة في الشواهد نصاً وتجنب إعادة الصياغة التعبيرية الفضفاضة.\n"
                         "4. لا تكتب أي معلومة إلا إن كان نصها في الشاهد الذي تحيل إليه، واحذف ما لا تجده."))
-        if last_code:
-            raise PayloadRejected("answer.citations", last_code,
-                                  f"استُنفدت المحاولات ({MAX_ATTEMPTS}) — {last_flaw}")
-        raise ValueError(f"استُنفدت المحاولات ({MAX_ATTEMPTS}) — {last_flaw}")
+        raise PayloadRejected(last_path, last_code or "attempts_exhausted",
+                              f"استُنفدت المحاولات ({MAX_ATTEMPTS}) — {last_flaw}")
 
     def _derived_item(self, text: str, used: list[dict]) -> KnowledgeItem:
         # الحقوق بالتقاطع: المشتق لا يملك حقًّا لم تمنحه شواهده كلها
         internal = all(u["item"]["use_internal"] for u in used)
         distribution = all(u["item"]["use_distribution"] for u in used)
         if not internal and not distribution:
-            raise ValueError("شواهد بلا حقِّ استخدامٍ مشترك — لا مادة مشتقة")
+            raise PayloadRejected("answer.rights", "evidence_rights_disjoint",
+                                  "شواهد بلا حقِّ استخدامٍ مشترك — لا مادة مشتقة")
         first = used[0]["item"]
         return validated_item(KnowledgeItem(
             text=text, lang="ar", domain="maritime",
