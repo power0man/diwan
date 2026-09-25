@@ -17,7 +17,6 @@
 """
 from __future__ import annotations
 
-import fcntl
 import json
 import os
 import shutil
@@ -29,6 +28,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core import filelock
 from core.acquisitions import SourceRegister
 from core.canonical import PayloadRejected
 from core.corpus import CorpusCatalog, CorpusFile
@@ -147,11 +147,11 @@ def _publish_lock(out_dir: Path):
     lock_path = out_dir / ".publish.lock"
     fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
     with os.fdopen(fd, "r+") as stream:
-        fcntl.flock(stream, fcntl.LOCK_EX)
+        filelock.lock(stream)
         try:
             yield
         finally:
-            fcntl.flock(stream, fcntl.LOCK_UN)
+            filelock.unlock(stream)
 
 
 def build(root: Path = ROOT) -> dict:

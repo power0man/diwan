@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import copy
-import fcntl
 import json
 import math
 import os
@@ -17,6 +16,7 @@ import re
 import stat
 import uuid
 
+from core import filelock
 from core.budget import Budget
 from core.canonical import canonical_bytes, digest
 from core.contracts import Message, Request, Response, Usage
@@ -185,13 +185,13 @@ class ChatSession:
             if os.fstat(stream.fileno()).st_nlink != 1:
                 _fail("unsafe_path", "قفل متعدد الروابط")
             try:
-                fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                filelock.lock(stream, blocking=False)
             except BlockingIOError:
                 _fail("session_busy", "الجلسة قيد التنفيذ في عملية أخرى")
             try:
                 yield
             finally:
-                fcntl.flock(stream, fcntl.LOCK_UN)
+                filelock.unlock(stream)
 
     def _save(self, state):
         _write(self.directory / "state.json", {"state": state, "sha256": digest(state)})

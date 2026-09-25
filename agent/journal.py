@@ -18,7 +18,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from contextlib import contextmanager
-import fcntl
 import hashlib
 import json
 import os
@@ -29,6 +28,7 @@ import threading
 import time
 import uuid
 
+from core import filelock
 from workspace_tools.files import _relative
 
 JOURNAL_DIR = ".diwan-journal"
@@ -217,7 +217,7 @@ class Journal:
                                        | (os.O_CREAT if create or mutate else 0), 0o600, dir_fd=store)
                         _regular(os.fstat(lock))
                         try:
-                            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                            filelock.lock(lock, blocking=False)
                         except BlockingIOError:
                             _fail("journal_busy", "دفتر الرجوع قيد عملية أخرى")
                 except FileNotFoundError:

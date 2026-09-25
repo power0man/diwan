@@ -46,6 +46,7 @@
       "conversation/",
       "agent/actions.py",
       "core/execution.py",
+      "core/filelock.py",
       "core/sandbox.py",
       "webui/",
       "services/agent_workspace.py",

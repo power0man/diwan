@@ -24,11 +24,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import fcntl
 import sys
 import time
 from pathlib import Path
 
+from core import filelock
 from core.canonical import PayloadRejected
 from core.contracts import DATA_POLICIES, LOCAL_ONLY_POLICIES
 from core.knowledge import BROADCAST, policy_within_ceiling
@@ -70,11 +70,11 @@ def route_once(root: Path, now_ts: str) -> dict:
     lock_dir = root / "ledger"
     lock_dir.mkdir(parents=True, exist_ok=True)
     with (lock_dir / "router.lock").open("w") as lock_f:
-        fcntl.flock(lock_f, fcntl.LOCK_EX)
+        filelock.lock(lock_f)
         try:
             return _route_once_locked(root, now_ts)
         finally:
-            fcntl.flock(lock_f, fcntl.LOCK_UN)
+            filelock.unlock(lock_f)
 
 
 def _route_once_locked(root: Path, now_ts: str) -> dict:

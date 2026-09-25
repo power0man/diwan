@@ -10,7 +10,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 import copy
 import errno
-import fcntl
 import hashlib
 import json
 import os
@@ -20,6 +19,7 @@ import stat
 import unicodedata
 import uuid
 
+from core import filelock
 from core.canonical import canonical_bytes, digest
 
 MAX_BYTES = 65536
@@ -277,7 +277,7 @@ class TextWorkspace:
                               0o600, dir_fd=state_fd)
             _private(os.fstat(lock_fd))
             try:
-                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                filelock.lock(lock_fd, blocking=False)
             except BlockingIOError:
                 _fail("workspace_busy", "عملية أخرى تملك حالة الملفات")
             yield artifact_fd, state_fd
