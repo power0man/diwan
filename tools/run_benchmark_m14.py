@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from evaluation.benchmark_runner import BenchmarkRunner
-from providers.ollama import OllamaProvider
+from providers.ollama import DEFAULT_MODEL, OllamaProvider
 
 
 def format_markdown_table(summary: dict) -> str:
@@ -65,7 +65,7 @@ def main() -> int:
     )
     parser.add_argument("--domain", type=str, default=None, help="فلترة القضايا بنطاق محدد (maritime, lexicon, translation)")
     parser.add_argument("--offset", type=int, default=0, help="تخطي عدد من القضايا في البداية")
-    parser.add_argument("--model", type=str, default="qwen3:14b", help="نموذج التشغيل")
+    parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help="نموذج التشغيل (الافتراضيُّ المعتمَد، ق٥٤)")
     parser.add_argument(
         "--report-doc",
         type=str,

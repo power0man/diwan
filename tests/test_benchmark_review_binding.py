@@ -34,7 +34,7 @@ def synthetic_report():
             "summary": summarize_scores({arm: [metrics] for arm in STANDARD_ARMS})}
 
 
-# المحرّكُ المُراجَع: qwen3:14b (AGENTS.md §٤). فلا يكون بين المراجعين
+# المحرّكُ المُراجَع من عائلة Qwen (qwen3:14b آنذاك، وqwen3.5:9b منذ ق٥٤؛ AGENTS.md §٤). فلا يكون بين المراجعين
 # ولا واحدٌ من عائلته — وكان في هذا المثبِّت قبل ك٣.
 ENGINE = {"provider": "ollama", "model": "qwen3:14b", "family": "qwen3",
           "digest": "c" * 64}

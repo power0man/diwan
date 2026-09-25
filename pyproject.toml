@@ -8,7 +8,9 @@ dependencies = ["cryptography==50.0.1"]
 
 [project.optional-dependencies]
 dev = ["pytest==9.1.1"]
-# غ١: CAMeL Tools للجذور (ثم `camel_data -i morphology-db-msa-r13`)؛ اختياريٌّ والاحتياطيُّ القالبيُّ مسمًّى
+# غ١/ق٥٥: CAMeL Tools للجذور، لازمٌ للإطلاق (فحصُ الدخان لا يُعلن الجهازَ جاهزًا بدونه وبدون
+# `camel_data -i morphology-db-msa-r13`). يبقى هنا لا في الاعتماديات الرئيسة لأن torch من PyPI على لينكس
+# يجرّ نحو ٣ غيغابايت من حزم CUDA؛ نقلُه بفهرس torch للمعالج مهمّةُ ك٣٣.
 morphology = ["camel-tools>=1.6"]
 mlx = [
     "mlx>=0.32.0",

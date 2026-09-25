@@ -29,6 +29,10 @@ from providers.base import ProviderError
 from providers.ollama_codec import parse_response, serialize_messages, tool_payload
 
 BASE_URL = "http://127.0.0.1:11434"
+# المحرّكُ الافتراضي لديوان، في موضعٍ واحد تستورده أدواتُ التشغيل والفحص (ق٥٤، ٢٥ سبتمبر ٢٠٢٦):
+# `qwen3.5:9b` بالقياس على العيّنة الطبقية من بنك Kimi (ك٢: ٥٤٫٣٪ مقابل ٤٨٫١٪ لـqwen3:14b).
+# تغييرُه بقاعدة ق٥٩ (فارقُ ≥٥ نقاط على العيّنة نفسِها)، وقاعدةُ التحكيم (AGENTS.md §٤) تتبعه.
+DEFAULT_MODEL = "qwen3.5:9b"
 # النافذة نفسها المعلنة في providers/local_chat.py حتى لا يختلف مسارُ القياس
 # عن مسار الحوار في شرطٍ يغيّر الجواب.
 CONTEXT_TOKENS = 32768
@@ -38,7 +42,7 @@ _LOCAL_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
 class OllamaProvider:
-    def __init__(self, model: str = "qwen3:14b", base_url: str = BASE_URL,
+    def __init__(self, model: str = DEFAULT_MODEL, base_url: str = BASE_URL,
                  allow_thinking: bool = False):
         self.model = model
         self.base_url = base_url

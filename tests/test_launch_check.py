@@ -46,6 +46,25 @@ def test_the_mechanism_turn_reads_the_file_through_the_governed_loop():
     assert lc.NOTE_TEXT in step.detail
 
 
+def test_morphology_names_what_is_missing_and_is_never_ready_without_the_database():
+    """ق٥٥: CAMeL لازمٌ للإطلاق — غيابُه أو غيابُ قاعدته تعذّرٌ معلن يسمّي أمرَه."""
+    missing = lc.check_morphology(installed=lambda: False)
+    assert missing.status == "unavailable" and missing.code == "camel_missing"
+    assert lc.CAMEL_INSTALL in missing.detail and lc.CAMEL_DB_COMMAND in missing.detail
+    no_db = lc.check_morphology(installed=lambda: True, analyzer=None)
+    assert no_db.status == "unavailable" and no_db.code == "camel_db_missing"
+    assert lc.CAMEL_DB_COMMAND in no_db.detail
+    ready = lc.check_morphology(installed=lambda: True, analyzer=object())
+    assert ready.status == "ok" and ready.code == "camel_ready"
+
+
+def test_morphology_here_reports_the_real_state_of_this_machine():
+    from core.linguistics.roots import camel_available
+    step = lc.check_morphology()
+    assert step.code in ("camel_missing", "camel_db_missing", "camel_ready"), step
+    assert (step.status == "ok") == camel_available()
+
+
 def test_a_model_that_answers_without_the_tool_is_a_failure(monkeypatch):
     class Silent(lc._Mechanism):
         def complete(self, request):
@@ -79,7 +98,9 @@ def test_run_checks_without_an_engine_is_a_declared_unavailability_not_a_failure
     steps = lc.run_checks(ROOT, engine="qwen3:14b", base_url="http://127.0.0.1:1", probe=_down,
                           with_ui=False)
     by = {s.step: s for s in steps}
+    assert [s.step for s in steps] == ["runtime", "morphology", "engine", "agent_turn", "policies"]
     assert by["runtime"].status == "ok"
+    assert by["morphology"].status in ("ok", "unavailable")
     assert by["engine"].code == "engine_unreachable"
     assert by["agent_turn"].code == "mechanism_only", "بلا محرّكٍ تُثبَت الحلقةُ بالمزوّد الآلي"
     assert lc.exit_code(steps) == 3

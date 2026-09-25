@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 """فحصُ الدخان للإطلاق الأول: هل يعمل ديوان على هذا الجهاز؟ (ك٢٨، الخطة §١.٣-٣)
 
-خمسُ خطواتٍ بالترتيب، كلٌّ منها تنتهي بحالةٍ من ثلاث ورمزٍ مسمًّى:
+ستُّ خطواتٍ بالترتيب، كلٌّ منها تنتهي بحالةٍ من ثلاث ورمزٍ مسمًّى:
 `ok` (عملت)، أو `unavailable` (تعذّرت بحدٍّ معلن: لا محرّك، لا متن)، أو `failed` (عطب).
 
 1. **runtime** — بايثون ≥ 3.11، والوحداتُ تُستورد، وuv.lock حاضر، ونوعُ النسخة (عامة/خاصة).
-2. **engine** — خادمُ Ollama يجيب على `/api/tags` والمحرّكُ المطلوب مسحوب.
-3. **agent_turn** — جولةٌ وكيلة محكومة كاملة في مساحةٍ مؤقّتة: النموذجُ يقرأ ملفًّا بأداة
+2. **morphology** — CAMeL Tools وقاعدتُه الصرفية حاضران (ق٥٥: لازمان للإطلاق، والقالبيُّ
+   احتياطيٌّ مسمًّى لا بديل)؛ وإلا `camel_missing` أو `camel_db_missing` مع أمر التركيب.
+3. **engine** — خادمُ Ollama يجيب على `/api/tags` والمحرّكُ المطلوب مسحوب.
+4. **agent_turn** — جولةٌ وكيلة محكومة كاملة في مساحةٍ مؤقّتة: النموذجُ يقرأ ملفًّا بأداة
    `read_file` ويجيب، والسجلُّ يقيّد. بالمحرّك الحيّ إن وُجد؛ وإلا بمزوّدٍ آليّ مكتوبٍ سلفًا
    يُثبت الحلقةَ والأدواتِ والحَجرَ دون النموذج (`mechanism_only`).
-4. **policies** — عقدةُ السياسات: المتنُ موضوعٌ محليًّا وإسقاطُه مبنيٌّ واستعلامٌ واحد يعيد شاهدًا؛
+5. **policies** — عقدةُ السياسات: المتنُ موضوعٌ محليًّا وإسقاطُه مبنيٌّ واستعلامٌ واحد يعيد شاهدًا؛
    وإلا `corpus_missing` أو `index_missing` (النسخةُ العامة بلا متون، ك٢٩).
-5. **ui** — `tools/serve_ui.py --help` يعمل (الواجهةُ تُستورد وتُهيّأ).
+6. **ui** — `tools/serve_ui.py --help` يعمل (الواجهةُ تُستورد وتُهيّأ).
 
-    python tools/launch_check.py [--engine qwen3:14b] [--base-url http://127.0.0.1:11434] [--json]
+    python tools/launch_check.py [--engine qwen3.5:9b] [--base-url http://127.0.0.1:11434] [--json]
 
 الخروج: 0 كلُّها `ok`؛ 3 فيها `unavailable` بلا `failed` (تعذّرٌ معلن — ليس جهازًا جاهزًا للإطلاق
 لكنه ليس عطبًا)؛ 1 عطب. **الحدُّ المعلَن:** الجولةُ الحيّة تُثبت أن المحرّك يستعمل أداةً ويجيب،
@@ -35,7 +37,10 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
 
-DEFAULT_ENGINE = "qwen3:14b"          # الافتراضيُّ في providers/ollama.py؛ والمعتمَدُ بالقياس ينتظر قرار الخطة §٦-٣
+from providers.ollama import DEFAULT_MODEL as DEFAULT_ENGINE  # noqa: E402 — موضعٌ واحد للمحرّك (ق٥٤)
+
+CAMEL_INSTALL = "uv sync --extra morphology"
+CAMEL_DB_COMMAND = "uv run camel_data -i morphology-db-msa-r13"
 DEFAULT_BASE_URL = "http://127.0.0.1:11434"
 NOTE_TEXT = "مرحبًا بديوان على هذا الجهاز"
 TASK = "اقرأ الملف notes.txt بأداة read_file ثم أخبرني في جملةٍ واحدة بما فيه."
@@ -64,6 +69,32 @@ def check_runtime(root: Path) -> Step:
     from core.public_export import read_marker
     kind = "public" if read_marker(root) else "private"
     return Step("runtime", "ok", f"runtime_ready_{kind}", f"بايثون {sys.version.split()[0]}، نسخةٌ {kind}")
+
+
+def _camel_installed() -> bool:
+    try:
+        import camel_tools  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def check_morphology(*, installed=_camel_installed, analyzer=...) -> Step:
+    """CAMeL Tools وقاعدتُه (ق٥٥): غيابُ أحدهما تعذّرٌ معلن يسمّي أمرَه، لا جهازٌ جاهز."""
+    if not installed():
+        return Step("morphology", "unavailable", "camel_missing",
+                    f"CAMeL Tools غيرُ مركَّب — `{CAMEL_INSTALL}` ثم `{CAMEL_DB_COMMAND}`")
+    from core.linguistics.roots import CAMEL_DB, camel_analyzer
+    ready = camel_analyzer() if analyzer is ... else analyzer
+    if ready is None:
+        return Step("morphology", "unavailable", "camel_db_missing",
+                    f"قاعدةُ CAMeL الصرفية ({CAMEL_DB}) غيرُ منزَّلة — `{CAMEL_DB_COMMAND}`")
+    try:
+        from importlib.metadata import version
+        camel_version = version("camel-tools")
+    except Exception:  # noqa: BLE001 — الإصدارُ زينةٌ لا حكم
+        camel_version = "?"
+    return Step("morphology", "ok", "camel_ready", f"CAMeL Tools {camel_version} بقاعدة {CAMEL_DB}")
 
 
 def probe_engine(base_url: str, timeout: float = 3.0) -> dict:
@@ -179,6 +210,7 @@ def run_checks(root: Path, *, engine: str, base_url: str, probe=probe_engine,
     steps = [check_runtime(root)]
     if steps[0].status == "failed":
         return steps
+    steps.append(check_morphology())
     engine_step = check_engine(engine, base_url, probe=probe)
     steps.append(engine_step)
     if with_agent:

@@ -140,7 +140,7 @@ def main() -> int:
     if node_name == "maritime":
         def handle(ev, msg_budget):
             from providers.ollama import OllamaProvider
-            op = mod.MaritimeNode(ROOT, OllamaProvider("qwen3:14b"),
+            op = mod.MaritimeNode(ROOT, OllamaProvider(),
                                   msg_budget, ledger)
             r = op.answer(ev.payload["question"], data_policy=ev.data_policy)
             return r["answer"].fingerprint_payload()
@@ -152,7 +152,7 @@ def main() -> int:
     elif node_name == "philosophy":
         def handle(ev, msg_budget):
             from providers.ollama import OllamaProvider
-            op = mod.PhilosophyNode(ROOT, OllamaProvider("qwen3:14b"),
+            op = mod.PhilosophyNode(ROOT, OllamaProvider(),
                                   msg_budget, ledger)
             major = ev.payload.get("major_premise")
             minor = ev.payload.get("minor_premise")

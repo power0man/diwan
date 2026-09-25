@@ -44,7 +44,7 @@ _FAMILY_PREFIXES = (
     ("falcon", "tii"), ("nemotron", "nvidia"),
 )
 
-# المحرّكُ اليوم qwen3:14b (providers/ollama.py). واختبارٌ يربط هذه القيمة بالمحرّك
+# المحرّكُ اليوم qwen3.5:9b (providers/ollama.py::DEFAULT_MODEL، ق٥٤) وعائلتُه Qwen. واختبارٌ يربط هذه القيمة بالمحرّك
 # الفعليّ، فإن تغيّر المحرّكُ سقط حتى تتبعه القاعدة.
 ENGINE_FAMILY = "qwen"
 AUTHOR_FAMILY = "kimi"
