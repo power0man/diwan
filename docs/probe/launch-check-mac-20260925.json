@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "steps": [
+    {
+      "step": "runtime",
+      "status": "ok",
+      "code": "runtime_ready_public",
+      "detail": "بايثون 3.12.9، نسخةٌ public"
+    },
+    {
+      "step": "morphology",
+      "status": "ok",
+      "code": "camel_ready",
+      "detail": "CAMeL Tools 1.6.0 بقاعدة calima-msa-r13"
+    },
+    {
+      "step": "engine",
+      "status": "ok",
+      "code": "engine_ready",
+      "detail": "qwen3.5:9b على http://127.0.0.1:11434"
+    },
+    {
+      "step": "agent_turn",
+      "status": "ok",
+      "code": "agent_turn_live",
+      "detail": "2 خطوات، والجواب: يحتوي الملف notes.txt على عبارة ترحيبية تقول: «مرحبًا بديوان على هذا الجهاز»."
+    },
+    {
+      "step": "policies",
+      "status": "ok",
+      "code": "policies_ready",
+      "detail": "شاهدٌ من 058__الدليل_الموحد_v1"
+    },
+    {
+      "step": "ui",
+      "status": "ok",
+      "code": "ui_ready",
+      "detail": "tools/serve_ui.py يُهيَّأ"
+    }
+  ],
+  "exit_code": 0,
+  "verdict": "ready"
+}
