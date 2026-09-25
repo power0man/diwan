@@ -46,6 +46,19 @@ def test_every_private_store_path_is_ignored_in_the_public_checkout(entry):
 
 
 @public_only
+@pytest.mark.parametrize("rel", ex.INCLUDED_PATHS)
+def test_the_included_dictionary_is_tracked_not_ignored(rel):
+    assert not _ignored(rel), f"{rel}: مضمَّنٌ بق٥٨ ويجب أن يُتتبَّع"
+
+
+@public_only
+@pytest.mark.parametrize("rel", ["corpus/lexicons/mujam-wasit.jsonl", "corpus/lexicons/_catalog.jsonl",
+                                 "corpus/lexicons/_catalog.jsonl.anchor.sig", "corpus/lexicons-local/x.jsonl"])
+def test_the_rest_of_the_lexicon_store_stays_ignored(rel):
+    assert _ignored(rel), rel
+
+
+@public_only
 def test_the_node_registry_ledger_is_tracked_not_ignored():
     assert not _ignored("registry/nodes.jsonl"), "سجلُّ العقد مصدرٌ يُدفع لا مخزنًا خاصًّا"
 
@@ -97,6 +110,26 @@ def test_removing_deletes_the_placed_stores_only(tmp_path):
     assert report["status"] == "removed" and set(report["removed"]) == {"corpus", "glossaries"}
     assert not (root / "corpus").exists() and not (root / "glossaries").exists()
     assert (root / "core" / "x.py").exists()
+
+
+def test_placing_never_overwrites_the_included_dictionary_and_removing_keeps_it(tmp_path):
+    root = _public_root(tmp_path)
+    src = _source(tmp_path)
+    (src / "corpus" / "lexicons").mkdir()
+    (src / "corpus" / "lexicons" / "qamus-muhit.jsonl").write_text("SOURCE\n")
+    (src / "corpus" / "lexicons" / "mujam-wasit.jsonl").write_text("{}\n")
+    public_copy = root / "corpus" / "lexicons" / "qamus-muhit.jsonl"
+    public_copy.parent.mkdir(parents=True)
+    public_copy.write_text("PUBLIC\n")
+    assert pps.place(root, src, verify=False)["status"] == "placed"
+    assert public_copy.read_text() == "PUBLIC\n", "المتتبَّعُ في العام لا يُكتب فوقه"
+    assert (root / "corpus" / "lexicons" / "mujam-wasit.jsonl").is_file()
+    assert (root / "corpus" / "maritime" / "_catalog.jsonl").is_file()
+    report = pps.remove(root)
+    assert report["status"] == "removed" and "corpus/lexicons/qamus-muhit.jsonl" in report["kept"]
+    assert public_copy.read_text() == "PUBLIC\n", "الرفعُ لا يمسّ المضمَّن"
+    assert not (root / "corpus" / "lexicons" / "mujam-wasit.jsonl").exists()
+    assert not (root / "corpus" / "maritime").exists() and not (root / "glossaries").exists()
 
 
 def test_a_source_without_any_store_is_refused(tmp_path):

@@ -3,7 +3,8 @@
 
 القاعدة (ك٢٧، بقرار المالك في ٢٥ سبتمبر ٢٠٢٦): «كلُّ ملفات المالك تبقى في Drive،
 حتى اللوائح والأنظمة، لأن بعضها مسوداتٌ غير منشورة». فاللقطةُ العامة تستبعد المتونَ
-ومشتقّاتِها كلَّها (`EXCLUDED_PATHS`)، ثم **تُثبت** الاستبعادَ بالبصمة لا بالاسم:
+ومشتقّاتِها كلَّها (`EXCLUDED_PATHS`) إلا ما ضمّنه المالكُ بقرارٍ مسمًّى (`INCLUDED_PATHS`، ق٥٨)،
+ثم **تُثبت** الاستبعادَ بالبصمة لا بالاسم:
 كلُّ ملفٍّ نصّي في اللقطة يُمسح بحثًا عن أيّ اثنتي عشرة كلمةً متتاليةً من نصوص المتون
 والمسرد، وعن عناوين وثائق المتن، وعن البيانات الشخصية والأسرار، وعن محتوًى محجوب.
 وأيُّ إصابةٍ تُسقط اللقطةَ كلَّها برمزٍ مسمًّى **ولا يُكتب شيء**.
@@ -16,7 +17,8 @@
 
 **الحدُّ المعلَن:** البصمةُ تلتقط الاقتباسَ الحرفيَّ الطويل والعناوينَ، لا إعادةَ
 الصياغة ولا الاقتباسَ الأقصر من اثنتي عشرة كلمة (`tests/test_export_public.py`
-يسمّي هذا الحدّ اختبارًا).
+يسمّي هذا الحدّ اختبارًا). والمضمَّنُ بقرارٍ يخرج من البصمة ومن المسح معًا: ما قرّر
+المالكُ نشرَه ليس تسرّبًا، والحارسُ يُثبت أن ما خرج هو ما قُرّر لا أكثر.
 """
 from __future__ import annotations
 
@@ -56,6 +58,14 @@ EXCLUDED_PATHS: tuple[str, ...] = (
 
 # مصادرُ البصمة: كلُّ نصٍّ في هذه المسارات يُبصَم، لا أسماؤها وحدها.
 FINGERPRINT_SOURCES: tuple[str, ...] = ("corpus/", "glossaries/")
+
+# ما يُضمَّن رغم وقوعه تحت مسارٍ مستبعَد، بقرارٍ مسمًّى من المالك (ق٥٨): يخرج من الاستبعاد ومن
+# بصمات النصّ الخاص ومن المسح. القاموسُ المحيط (الفيروزآبادي) ملكٌ عام؛ والمعجمُ الوسيط
+# وفهرسُ المعاجم يبقيان مع ملفات المالك.
+INCLUDED_PATHS: tuple[str, ...] = (
+    "corpus/lexicons/qamus-muhit.jsonl",
+    "corpus/lexicons/qamus-muhit.jsonl.anchor",
+)
 SHINGLE_WORDS = 12
 MIN_TITLE_WORDS = 3
 SEALED_MANIFEST = "MANIFEST.json"
@@ -98,7 +108,13 @@ def _flatten(value):
             yield from _flatten(item)
 
 
+def is_included(rel: str) -> bool:
+    return rel in INCLUDED_PATHS
+
+
 def is_excluded(rel: str) -> bool:
+    if is_included(rel):
+        return False
     for pattern in EXCLUDED_PATHS:
         if pattern.endswith("/"):
             if rel.startswith(pattern):
@@ -133,8 +149,8 @@ def private_fingerprints(root: Path, tracked: list[str]) -> Fingerprints:
     titles: set[str] = set()
     sources: list[str] = []
     for rel in tracked:
-        if not any(rel.startswith(src) for src in FINGERPRINT_SOURCES):
-            continue
+        if not any(rel.startswith(src) for src in FINGERPRINT_SOURCES) or is_included(rel):
+            continue                       # المضمَّنُ بقرارٍ نصٌّ عام لا خاص
         name = Path(rel).name
         if not name.endswith(".jsonl"):
             continue                       # المراسي والتواقيع بصماتٌ لا نصوص
@@ -246,7 +262,7 @@ def regenerate_docs(dest: Path) -> dict | None:
 def build(root: Path, dest: Path, *, tracked: list[str] | None = None) -> dict:
     """يمسح أولًا ثم ينسخ: لا يُكتب ملفٌّ واحد ما لم تخلُ اللقطةُ كلُّها من الإصابات."""
     root = Path(root).resolve()
-    dest = Path(dest)
+    dest = Path(dest).resolve()          # نسبيٌّ كان يُضاعَف عند تشغيل check_docs بـcwd=dest
     tracked = list(tracked_files(root) if tracked is None else tracked)
     if dest.exists() and any(dest.iterdir()):
         return {"status": "refused", "code": "dest_not_empty", "dest": str(dest)}
@@ -255,6 +271,8 @@ def build(root: Path, dest: Path, *, tracked: list[str] | None = None) -> dict:
     excluded = [rel for rel in tracked if is_excluded(rel)]
     findings: list[Finding] = []
     for rel in kept:
+        if is_included(rel):
+            continue                       # ما ضمّنه المالك بقرارٍ لا يُمسح: ليس تسرّبًا
         data = (root / rel).read_bytes()
         try:
             text: str | None = data.decode("utf-8")
@@ -284,6 +302,7 @@ def build(root: Path, dest: Path, *, tracked: list[str] | None = None) -> dict:
         "source_commit": report["source_commit"],
         "exported_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "excluded_paths": list(EXCLUDED_PATHS),
+        "included_paths": list(INCLUDED_PATHS),
         "excluded_streams": list(excluded_signed_ledgers()),
         "files_exported": len(kept),
         "files_excluded": len(excluded),

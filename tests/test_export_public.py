@@ -148,6 +148,51 @@ def test_excluded_paths_never_reach_the_export_and_the_marker_names_their_stream
     assert "rulings/precedence.jsonl" not in excluded_streams(out), "سوابقُ المالك عقيدةُ المشروع لا ملفًّا من Drive"
 
 
+# — المضمَّنُ بقرار المالك (ق٥٨): يخرج من الاستبعاد والبصمة والمسح معًا —
+
+LEXICON_LINE = ("الصبر حبس النفس عن الجزع والفم عن الشكوى والجوارح عن التشويش "
+                "وقيل هو ثبات القلب عند موارد الاضطراب على ما تكرهه النفس")
+
+
+def _lexicon_root(tmp_path, *, wasit_quotes_it: bool):
+    extra = {"corpus/lexicons/qamus-muhit.jsonl": json.dumps({"record": {"text": LEXICON_LINE}}, ensure_ascii=False) + "\n",
+             "corpus/lexicons/qamus-muhit.jsonl.anchor": "{}\n",
+             "corpus/lexicons/mujam-wasit.jsonl": json.dumps({"record": {"text": LEXICON_LINE if wasit_quotes_it else "مادة"}}, ensure_ascii=False) + "\n"}
+    return mini_root(tmp_path, note=f"يقول القاموس: {LEXICON_LINE}", extra=extra)
+
+
+def test_an_included_dictionary_is_exported_and_its_text_is_public(tmp_path):
+    root, tracked = _lexicon_root(tmp_path, wasit_quotes_it=False)
+    out = tmp_path / "out"
+    report = ex.build(root, out, tracked=tracked)
+    assert report["status"] == "exported", report.get("findings")
+    for rel in ex.INCLUDED_PATHS:
+        assert (out / rel).is_file(), rel
+    assert not (out / "corpus/lexicons/mujam-wasit.jsonl").exists(), "الوسيط يبقى مع ملفات المالك"
+    assert (out / "docs/note.md").is_file(), "اقتباسُ نصٍّ صار عامًّا ليس تسرّبًا"
+    marker = read_marker(out)
+    assert marker["included_paths"] == list(ex.INCLUDED_PATHS)
+    assert "corpus/lexicons/qamus-muhit.jsonl" not in marker["fingerprints"]["sources"]
+    assert report["files_excluded"] == 3 and report["files_exported"] == len(tracked) - 3   # اللائحة وفهرسها والوسيط
+
+
+def test_the_included_dictionary_is_not_scanned_but_the_rest_still_is(tmp_path):
+    """الوسيطُ (خاص) ينقل عبارةً عن المحيط (عام): المحيطُ يخرج رغم التداخل، ووثيقةٌ تقتبسها تُرفَض."""
+    root, tracked = _lexicon_root(tmp_path, wasit_quotes_it=True)
+    report = ex.build(root, tmp_path / "out", tracked=tracked)
+    assert report["status"] == "refused" and report["code"] == "private_text_in_export"
+    assert {f["path"] for f in report["findings"]} == {"docs/note.md"}, "المضمَّن لا يُمسح؛ والوثيقةُ تُمسح"
+
+
+def test_without_the_inclusion_the_dictionary_is_private_again(tmp_path, monkeypatch):
+    """الطفرةُ اختبارًا: إفراغُ القائمة يعيد المحيط إلى الاستبعاد والبصمة، فتُرفَض الوثيقةُ التي تقتبسه."""
+    monkeypatch.setattr(ex, "INCLUDED_PATHS", ())
+    root, tracked = _lexicon_root(tmp_path, wasit_quotes_it=False)
+    report = ex.build(root, tmp_path / "out", tracked=tracked)
+    assert report["status"] == "refused" and report["code"] == "private_text_in_export"
+    assert not (tmp_path / "out" / "corpus").exists()
+
+
 def test_a_non_empty_destination_is_refused(tmp_path):
     root, tracked = mini_root(tmp_path)
     (tmp_path / "out").mkdir()
@@ -172,9 +217,12 @@ def test_the_real_repository_exports_cleanly(tmp_path):
     report = ex.build(ROOT, out)
     assert report["status"] == "exported", json.dumps(report.get("findings", [])[:20], ensure_ascii=False)
     assert report["fingerprints"]["shingles"] > 100_000 and report["fingerprints"]["titles"] > 100
-    for rel in ("corpus", "glossaries", "sources", "publish", "docs/probe/drive-library-index.md",
+    for rel in ("corpus/maritime", "corpus/lexicons/_catalog.jsonl", "corpus/lexicons/mujam-wasit.jsonl",
+                "glossaries", "sources", "publish", "docs/probe/drive-library-index.md",
                 "evaluation/suites/benchmark_m14.json"):
         assert not (out / rel).exists(), rel
+    for rel in ex.INCLUDED_PATHS:
+        assert (out / rel).is_file(), f"{rel}: المضمَّن بق٥٨ يخرج"
     assert (out / MARKER_NAME).is_file() and (out / "AGENTS.md").is_file()
     # الأرقامُ المولَّدة أُعيد اشتقاقُها داخل اللقطة فيمرّ فحصُ الوثائق فيها كما هي
     assert report["docs_regenerated"] is True
