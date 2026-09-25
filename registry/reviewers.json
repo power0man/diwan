@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "reviewers": {
+    "gemini-code-assist[bot]": "google",
+    "chatgpt-codex-connector[bot]": "openai",
+    "claude[bot]": "anthropic"
+  },
+  "counted_states": ["APPROVED", "COMMENTED"],
+  "limits": [
+    "only_github_app_bots_are_counted_because_every_agent_pushes_and_comments_as_the_owner_account",
+    "the_owner_overrides_by_merging_himself_not_by_a_review",
+    "a_review_counts_only_on_the_current_head_sha",
+    "the_check_attests_that_another_family_reviewed_not_that_its_findings_were_addressed",
+    "bot_logins_are_as_observed_or_documented_and_an_unlisted_bot_is_ignored_not_trusted"
+  ]
+}
