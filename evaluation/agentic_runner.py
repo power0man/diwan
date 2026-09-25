@@ -152,6 +152,32 @@ def validate_agentic_suite(suite: dict) -> dict:
     return suite
 
 
+def qualified_task_id(suite_id: str, task_id: str) -> str:
+    """معرّفُ المهمّة في البنك كلِّه (ك٤٢).
+
+    `task_id` فريدٌ داخل الحزمة وحدها: في بنك Kimi v1 ستّةٌ وعشرون معرّفًا
+    مشتركًا بين `kimi_agentic_001` و`kimi_agentic_002` بمحتوًى مختلف. فالمعرّفُ
+    الذي يُقرأ خارج تقرير حزمته هو `suite_id/task_id`، وتفرّدُه يقوم على تفرّد
+    `suite_id` الذي يفرضه `validate_agentic_bank`.
+    """
+    return f"{suite_id}/{task_id}"
+
+
+def validate_agentic_bank(suites) -> list[str]:
+    """يفحص حزمَ بنكٍ معًا، ويرفض `suite_id` مكرَّرًا، ويعيد المعرّفاتِ المؤهَّلة."""
+    seen_suites: set[str] = set()
+    qualified: list[str] = []
+    for index, suite in enumerate(suites):
+        validate_agentic_suite(suite)
+        if suite["suite_id"] in seen_suites:
+            _reject(f"bank[{index}].suite_id", "suite_id_duplicate",
+                    f"حزمتان بالمعرّف نفسِه: {suite['suite_id']!r}")
+        seen_suites.add(suite["suite_id"])
+        qualified.extend(qualified_task_id(suite["suite_id"], task["task_id"])
+                         for task in suite["tasks"])
+    return qualified
+
+
 def _validate_success(success, path):
     if not isinstance(success, dict) or "kind" not in success:
         _reject(path, "success_invalid", "معيارُ نجاحٍ بنوعه مطلوب")
@@ -502,9 +528,10 @@ def run_agentic_suite(suite: dict, provider, registry: ToolRegistry, *, model: s
                     f"معيارُ النجاح يُشغّل كودًا كتبه النموذج على المضيف؛ يلزمه إيصالُ "
                     f"Docker أو إقرارٌ في {DISPOSABLE_HOST_ENV} [ق٤٤]")
         executor = HostSuccessExecutor(host)
-    results = [run_task(task, provider, registry, model=model,
-                        model_version=model_version, host=host,
-                        success_executor=executor, **kwargs)
+    results = [{**run_task(task, provider, registry, model=model,
+                           model_version=model_version, host=host,
+                           success_executor=executor, **kwargs),
+                "qualified_id": qualified_task_id(suite["suite_id"], task["task_id"])}
                for task in suite["tasks"]]
     config = {"runner_version": RUNNER_VERSION, "suite_id": suite["suite_id"],
               "suite_sha256": hashlib.sha256(
