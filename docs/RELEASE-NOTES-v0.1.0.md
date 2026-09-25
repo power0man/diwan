@@ -1,7 +1,8 @@
 # ديوان v0.1.0 — «ديوان على جهازك» (مسودةُ ملاحظات الإصدار)
 
-> **الحالة:** مسودة (ك٢٨). تُصبح إصدارًا بعد أن يُشغَّل `uv run python tools/launch_check.py` بالمحرّك الحيّ على
-> جهاز المالك ويخرج **0**، ويُلصق ناتجُه في §٤ أدناه، ثم يُوسَم `v0.1.0` (الخطة `docs/LAUNCH-PLAN-20260925.md` §١.٣).
+> **الحالة:** إصدار. شُغّل `uv run python tools/launch_check.py` بالمحرّك الحيّ على جهاز المالك في ٢٥ سبتمبر ٢٠٢٦
+> وخرج **0** (§٤ أدناه، والملف `docs/probe/launch-check-mac-20260925.json`)، فوُسم `v0.1.0` (الخطة
+> `docs/LAUNCH-PLAN-20260925.md` §١.٣).
 
 ## ١ — ما هو
 
@@ -37,9 +38,59 @@
 
 ## ٤ — ناتجُ فحص الدخان الحيّ (يُلصق قبل الوسم)
 
+ناتج `uv run python tools/launch_check.py --json` على ماك المالك (Apple Silicon، بايثون 3.12.9) بالمحرّك الحيّ
+`qwen3.5:9b` والمتن الموضوع بـ`tools/place_private_stores.py`؛ الخطواتُ الستّ `ok` والخروج 0:
+
+```json
+{
+  "schema_version": 1,
+  "steps": [
+    {
+      "step": "runtime",
+      "status": "ok",
+      "code": "runtime_ready_public",
+      "detail": "بايثون 3.12.9، نسخةٌ public"
+    },
+    {
+      "step": "morphology",
+      "status": "ok",
+      "code": "camel_ready",
+      "detail": "CAMeL Tools 1.6.0 بقاعدة calima-msa-r13"
+    },
+    {
+      "step": "engine",
+      "status": "ok",
+      "code": "engine_ready",
+      "detail": "qwen3.5:9b على http://127.0.0.1:11434"
+    },
+    {
+      "step": "agent_turn",
+      "status": "ok",
+      "code": "agent_turn_live",
+      "detail": "2 خطوات، والجواب: يحتوي الملف notes.txt على عبارة ترحيبية تقول: «مرحبًا بديوان على هذا الجهاز»."
+    },
+    {
+      "step": "policies",
+      "status": "ok",
+      "code": "policies_ready",
+      "detail": "شاهدٌ من 058__الدليل_الموحد_v1"
+    },
+    {
+      "step": "ui",
+      "status": "ok",
+      "code": "ui_ready",
+      "detail": "tools/serve_ui.py يُهيَّأ"
+    }
+  ],
+  "exit_code": 0,
+  "verdict": "ready"
+}
 ```
-(ناتج `uv run python tools/launch_check.py --json` على جهاز المالك، بالمحرّك الحيّ والمتن الموضوع)
-```
+
+**حدٌّ معلَن من هذا التشغيل:** في المحاولة الأولى سقط الفحصُ بتعقّبٍ لا بحكم، لأن المجلد المؤقّت على ماك
+يمرّ عبر رابط `/var` → `/private/var` ودفترُ الرجوع يرفضه (`unsafe_path`) — عطبُ ك٨ نفسُه لم يكن مطبَّقًا في
+الأداة. أُصلح قبل الوسم (`.resolve()`، وإنشاءُ الدفتر داخل `try` فيصير الرفضُ عطبًا مسمًّى)، بحارسَين قُتلا
+بالطفرة في `tests/test_launch_check.py`، وهذا الناتجُ من التشغيل بعد الإصلاح بمجلدٍ مؤقّتٍ قياسي.
 
 ## ٥ — ما بعد الإطلاق
 

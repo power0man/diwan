@@ -146,7 +146,11 @@ def check_agent_turn(engine: str, base_url: str, *, live: bool) -> Step:
     from core.budget import Budget
     from core.ledger import Ledger
     with tempfile.TemporaryDirectory(prefix="diwan-launch-") as directory:
-        space = Path(directory) / "workspace"
+        # `.resolve()` لا يُستغنى عنه (عطبُ ك٨ نفسُه، `evaluation/agentic_runner.py`): على ماك يعطي
+        # المجلدُ المؤقّت مسارًا تحت `/var` وهو رابطٌ رمزي إلى `/private/var`، وحارسُ دفتر الرجوع
+        # يفتح المكوّنات بلا اتّباع روابط فيرفضه `unsafe_path`. قِيس حيًّا في ٢٥ سبتمبر ٢٠٢٦.
+        base = Path(directory).resolve()
+        space = base / "workspace"
         space.mkdir()
         (space / "notes.txt").write_text(NOTE_TEXT + "\n", encoding="utf-8")
         if live:
@@ -154,11 +158,12 @@ def check_agent_turn(engine: str, base_url: str, *, live: bool) -> Step:
             provider, model, version = OllamaProvider(engine, base_url), engine, engine
         else:
             provider, model, version = _Mechanism(), "mechanism", "v1"
-        context = ToolContext(root=space, journal=Journal(space), allowed_consents=frozenset({"auto", "logged"}))
         try:
+            # إنشاءُ الدفتر داخل `try`: رفضُه عطبٌ مسمًّى في التقرير لا تعقّبٌ يقطع الفحص.
+            context = ToolContext(root=space, journal=Journal(space), allowed_consents=frozenset({"auto", "logged"}))
             run = run_agent(TASK, provider, ToolRegistry(*DEFAULT_TOOLS), context,
                             ledger=Ledger(space / "ledger.jsonl"), budget=Budget(0, 0),
-                            action_store=ActionStore(Path(directory) / "actions", space),
+                            action_store=ActionStore(base / "actions", space),
                             session_id="launch-check", turn_id="turn-1",
                             model=model, model_version=version, max_steps=4, deadline_s=120.0)
         except Exception as exc:  # noqa: BLE001 — يُسمّى ولا يُبتلع

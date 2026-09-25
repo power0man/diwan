@@ -108,3 +108,36 @@ def test_run_checks_without_an_engine_is_a_declared_unavailability_not_a_failure
 
 def test_the_ui_entry_point_initialises():
     assert lc.check_ui(ROOT).status == "ok"
+
+
+def test_a_temp_directory_reached_through_a_symlink_is_resolved_before_the_journal_sees_it(monkeypatch, tmp_path):
+    """عطبُ ك٨ في فحص الدخان: على ماك يمرّ المجلدُ المؤقّت عبر `/var` → `/private/var` فيرفضه دفترُ الرجوع.
+
+    يُحاكى الرابطُ هنا على أيّ نظام: `TMPDIR` يشير إلى رابطٍ رمزي، فإن لم يُحلَّ المسارُ قبل إنشاء
+    الدفتر سقطت الجولةُ بـ`unsafe_path`. الطفرةُ التي تقتله: حذفُ `.resolve()` في `check_agent_turn`.
+    """
+    import tempfile
+    real = tmp_path / "real"
+    real.mkdir()
+    link = tmp_path / "link"
+    link.symlink_to(real, target_is_directory=True)
+    monkeypatch.setenv("TMPDIR", str(link))
+    monkeypatch.setattr(tempfile, "tempdir", None)          # حتى يُعاد قراءةُ TMPDIR
+    assert Path(tempfile.gettempdir()) == link
+    step = lc.check_agent_turn("qwen3:14b", "http://x", live=False)
+    assert step.status == "ok" and step.code == "mechanism_only", step
+
+
+def test_a_journal_that_refuses_its_root_is_a_named_failure_not_a_traceback(monkeypatch):
+    """رفضُ الدفتر (أو أيُّ عطبٍ قبل الجولة) يُسمّى `agent_turn_raised` في التقرير ولا يقطع الفحص.
+
+    الطفرةُ التي تقتله: إخراجُ إنشاء `Journal` من `try` في `check_agent_turn`.
+    """
+    import agent.journal as journal_module
+
+    def refuse(root):
+        raise journal_module.JournalRefused("unsafe_path", "مُصطنَع")
+    monkeypatch.setattr(journal_module, "Journal", refuse)
+    step = lc.check_agent_turn("qwen3:14b", "http://x", live=False)
+    assert step.status == "failed" and step.code == "agent_turn_raised"
+    assert "JournalRefused" in step.detail
