@@ -167,6 +167,15 @@ def test_a_daily_quota_is_named_at_once_without_waiting():
     assert SLEPT == [] and len(http.gemini_calls()) == 1
 
 
+def test_a_reply_naming_both_quotas_is_waited_out_as_a_minute_limit():
+    SLEPT.clear()
+    both = (b'{"error": {"status": "RESOURCE_EXHAUSTED", "details": [{"violations": ['
+            b'{"quotaId": "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"},'
+            b'{"quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier"}]}]}}')
+    http = FakeHttp(gemini=[(429, both), gemini_ok()])
+    assert run(http)["status"] == "posted" and SLEPT == [gr.RATE_WAITS[0]]
+
+
 def test_busy_everywhere_is_a_named_error_and_posts_nothing():
     calls = len(gr.MODELS) * len(gr.ENDPOINTS) * (len(gr.RETRY_WAITS) + 1)
     http = FakeHttp(gemini=[(504, b"{}")] * calls)

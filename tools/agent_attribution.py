@@ -147,7 +147,7 @@ def parse_log(raw: str) -> list[dict]:
 
 def read_commits(repo: Path, revision_range: str) -> list[dict]:
     result = subprocess.run(["git", "-C", str(repo), *LOG_ARGV, revision_range],
-                            capture_output=True, text=True, timeout=60)
+                            capture_output=True, encoding="utf-8", timeout=60)
     if result.returncode:
         raise AttributionError("git_read_failed", result.stderr.strip()[:200])
     return parse_log(result.stdout)
