@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "probe": "m14-qwen3.5-9b",
+  "task": "ك٣٢",
+  "date": "2026-09-25",
+  "agent": "anthropic/claude-fable-5-1",
+  "machine": "ماك المالك، Ollama محلي، المتون موضوعة بـtools/place_private_stores.py والإسقاط مبني",
+  "run_id": "run-m14-20260925-205512-5428ad",
+  "status": "pending_automated_review",
+  "review_mode": "automated_multi_system",
+  "product_readiness": "not_assessed",
+  "provenance": {
+    "suite_sha256": "c5fdc5e53fffe685fc404d26dc20ba85d39f7a36ff6c6463785a846c591b5f68",
+    "reference_cases_sha256": "fcbfc1113cdba5641ddf70505a6d5210f5cd6ae4756d00709286f8424736de39",
+    "provider": "ollama:qwen3.5:9b",
+    "model": "qwen3.5:9b",
+    "arms": [
+      "model_alone",
+      "naive_rag",
+      "diwan_full"
+    ],
+    "offset": 0,
+    "limit": null,
+    "domain": null,
+    "reference_exposure": "development_visible"
+  },
+  "results_file": "var/benchmarks/m14/run-m14-20260925-205512-5428ad-results.json (خارج المستودع: var/ متجاهَل؛ يبقى على الماك)",
+  "metric": "ك٢١: العطبُ حالةٌ ثالثة (error_count) خارج مقامَي الإجابة والامتناع؛ المقياسُ المصحَّح ف٠ وق٤٢ بلا تغيير",
+  "summary": {
+    "model_alone": {
+      "total_cases": 40,
+      "measured_count": 36,
+      "error_count": 4,
+      "error_rate": 0.1,
+      "answered_count": 36,
+      "abstained_count": 0,
+      "answered_rate": 1.0,
+      "refusal_rate": 0.0,
+      "mean_factuality": 0.428,
+      "mean_completeness": 0.639,
+      "mean_attribution": 0.0,
+      "mean_hallucination_penalty": 0.037,
+      "mean_translation": 0.367,
+      "mean_overall": 0.417,
+      "effective_overall": 0.417
+    },
+    "naive_rag": {
+      "total_cases": 40,
+      "measured_count": 38,
+      "error_count": 2,
+      "error_rate": 0.05,
+      "answered_count": 38,
+      "abstained_count": 0,
+      "answered_rate": 1.0,
+      "refusal_rate": 0.0,
+      "mean_factuality": 0.252,
+      "mean_completeness": 0.425,
+      "mean_attribution": 0.0,
+      "mean_hallucination_penalty": 0.018,
+      "mean_translation": 0.542,
+      "mean_overall": 0.261,
+      "effective_overall": 0.261
+    },
+    "diwan_full": {
+      "total_cases": 40,
+      "measured_count": 33,
+      "error_count": 7,
+      "error_rate": 0.175,
+      "answered_count": 32,
+      "abstained_count": 1,
+      "answered_rate": 0.97,
+      "refusal_rate": 0.03,
+      "mean_factuality": 0.552,
+      "mean_completeness": 0.521,
+      "mean_attribution": 0.448,
+      "mean_hallucination_penalty": 0.0,
+      "mean_translation": 1.0,
+      "mean_overall": 0.533,
+      "effective_overall": 0.517
+    }
+  },
+  "errors_by_arm": {
+    "model_alone": {
+      "codes": {
+        "response_max_output": 4
+      },
+      "cases": [
+        "bm14_01",
+        "bm14_02",
+        "bm14_19",
+        "bm14_21"
+      ]
+    },
+    "diwan_full": {
+      "codes": {
+        "citation_missing": 5,
+        "ValueError": 2
+      },
+      "cases": [
+        "bm14_08",
+        "bm14_14",
+        "bm14_15",
+        "bm14_18",
+        "bm14_22",
+        "bm14_23",
+        "bm14_24"
+      ]
+    },
+    "naive_rag": {
+      "codes": {
+        "response_max_output": 2
+      },
+      "cases": [
+        "bm14_32",
+        "bm14_40"
+      ]
+    }
+  },
+  "previous_certified_run": {
+    "run_id": "run-m14-20260922-025351-cc0aa9",
+    "model": "qwen3:14b",
+    "summary_subset": {
+      "model_alone": {
+        "mean_overall": 0.221,
+        "effective_overall": 0.221,
+        "mean_factuality": 0.152,
+        "answered_rate": 1.0
+      },
+      "naive_rag": {
+        "mean_overall": 0.206,
+        "effective_overall": 0.206,
+        "mean_factuality": 0.151,
+        "answered_rate": 1.0
+      },
+      "diwan_full": {
+        "mean_overall": 0.499,
+        "effective_overall": 0.437,
+        "mean_factuality": 0.432,
+        "answered_rate": 0.875,
+        "mean_attribution": 0.506,
+        "mean_completeness": 0.552
+      }
+    },
+    "note": "قيس قبل ك٢١ حين كان كلُّ عطبٍ يُقرأ امتناعًا، فمقاماتُه تختلف؛ يُنشر جنبًا إلى جنب لا بدلًا"
+  },
+  "headline": "ديوان كاملًا على qwen3.5:9b: جودةٌ ٥٣٫٣٪ وفعليةٌ ٥١٫٧٪ (كانت ٤٩٫٩٪ و٤٣٫٧٪ على qwen3:14b)؛ والنموذجُ وحده قفز من ٢٢٫١٪ إلى ٤١٫٧٪ فضاق فرقُ ديوان عليه من ٢٧٫٨ نقطة إلى ١١٫٦",
+  "measurement_limits": [
+    "٤٠ قضيةً من بنك التطوير المرئيّ للمطوّرين (reference_exposure: development_visible)، لا مجموعةَ قبولٍ مستقلة.",
+    "تشغيلةٌ واحدة بلا تكرار، فلا فاصلَ ثقةٍ منشور؛ وفروقُ النقاط القليلة لا تُقرأ ترتيبًا.",
+    "الحالةُ pending_automated_review: لم تُراجَع بالمراجعة الآلية متعددة الأنظمة (ق٤٩)، فلا اعتماد.",
+    "المقاييسُ معجميةٌ تشخيصية لا برهانَ استلزامٍ معنويّ (ك٤ وك١٠ عالجا مقياسَ بنك Kimi لا هذا).",
+    "الأعطالُ خارج المقام (ك٢١): ٤ و٢ و٧ من ٤٠. في ذراع ديوان خمسةٌ منها citation_missing، أي رفضُ حارس الإسناد جوابًا ادّعى ما لا تسنده شواهده بعد ثلاث محاولات — وهو سلوكُ الحوكمة لا عطبَ تشغيل، وإخراجُه من المقام يرفع أرقامَ الذراع؛ لو عُدّ امتناعًا لهبط معدّلُ الإجابة إلى نحو ٨٤٪.",
+    "عطبان في ذراع ديوان رمزُهما اسمُ استثناءٍ خام (ValueError: جوابٌ مبتور max_output) لا رمزٌ مسمًّى — ثغرةُ تسميةٍ في المُشغِّل تُسجَّل مهمّة.",
+    "مقارنةُ الرقم برقم qwen3:14b مقارنةُ تشغيلتين بمقياسين: القديمُ عدّ العطبَ امتناعًا. الاتجاهُ (ديوان أعلى، والنموذجُ وحده أعلى بكثير) أوثقُ من الفرق الرقمي.",
+    "هويةُ النموذج اسمُ خدمةٍ في Ollama (qwen3.5:9b) لا بصمةُ أوزان.",
+    "بصمةُ المجموعة suite_sha256 مطابِقةٌ لملف evaluation/suites/benchmark_m14.json الموضوع من المخازن الخاصة؛ الملفُ نفسُه لا يُنشر."
+  ]
+}
