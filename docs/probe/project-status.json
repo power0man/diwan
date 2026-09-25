@@ -17,8 +17,8 @@
   "maritime_current_documents": 117,
   "maritime_current_pages": 1279,
   "acceptance_documents": 19,
-  "python_files": 321,
-  "python_lines": 64536,
+  "python_files": 319,
+  "python_lines": 63753,
   "quality_review": "automated_multi_system_pending",
   "active_gate": "ق٤٩",
   "release_ready": false
