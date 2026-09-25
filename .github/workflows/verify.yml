@@ -51,6 +51,11 @@ jobs:
             range="$RANGE_BASE..$RANGE_HEAD"
           fi
           /opt/venv/bin/python tools/agent_attribution.py --range "$range"
+          # المدى للخطوة التالية؛ مشروطٌ فيبقى السكربتُ قابلًا للتشغيل خارج Actions (tests/test_ci_attribution_scope.py)
+          if [ -n "${GITHUB_ENV:-}" ]; then echo "RANGE=$range" >> "$GITHUB_ENV"; fi
+      # ك٣٨: مرآةُ verify-hosted — مسُّ مسارِ عائلةٍ أخرى بلا «تسليم:» يُردّ هنا أيضًا
+      - name: Touching another lane declares a hand-off
+        run: /opt/venv/bin/python tools/lane_handoff.py --range "$RANGE"
       - name: Shared checks and strict public signature verification
         run: /opt/venv/bin/python tools/run_verification.py --node /usr/local/bin/node
 

@@ -1,0 +1,52 @@
+name: عيبٌ عربيّ
+description: ديوان أخطأ في فهم العربية أو إنتاجها أو ترجمتها
+title: "عيب عربيّ: "
+labels: ["arabic-defect", "block:b6"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        شكرًا لك. **لا تلصق بياناتٍ شخصية ولا نصوصًا خاصة أو غير منشورة**: المستودعُ عام، وكلُّ ما يُكتب هنا يُنشر.
+  - type: textarea
+    id: input
+    attributes:
+      label: ما أُعطي لديوان
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: ما أجاب به
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: الصواب وسببُه
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: نوعُ العيب
+      options:
+        - نفيٌ أو استثناءٌ أو شرطٌ مقلوب
+        - مرجعُ ضمير
+        - إعرابٌ أو صرف
+        - ترجمةٌ أو مصطلح
+        - إسنادٌ إلى مصدرٍ لا يسنده
+        - أخرى
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: الإصدار والمحرّك
+      placeholder: "v0.1.0، qwen3.5:9b"
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: الخصوصية
+      options:
+        - label: لا يحوي هذا البلاغ بياناتٍ شخصية ولا نصًّا خاصًّا أو غير منشور
+          required: true

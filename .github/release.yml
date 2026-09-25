@@ -1,0 +1,17 @@
+# فئاتُ ملاحظات الإصدار المولَّدة (ق٦١): ميزةٌ أصلية في GitHub بلا Action ولا إيداع.
+changelog:
+  exclude:
+    labels: ["owner-decision", "owner-action", "draft"]
+  categories:
+    - title: القدرات
+      labels: ["cap:analyst", "cap:coder", "cap:image-gen", "cap:vision", "cap:voice", "cap:ocr", "cap:export", "cap:memory", "cap:translation", "cap:reasoning", "cap:research"]
+    - title: القياس
+      labels: ["measurement", "block:b8"]
+    - title: العربية
+      labels: ["arabic-defect", "block:b6"]
+    - title: السياسات
+      labels: ["node:policies", "block:b10"]
+    - title: المنصّة والتنسيق
+      labels: ["block:b9"]
+    - title: أخرى
+      labels: ["*"]

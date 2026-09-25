@@ -48,7 +48,17 @@ _FAMILY_PREFIXES = (
 # الفعليّ، فإن تغيّر المحرّكُ سقط حتى تتبعه القاعدة.
 ENGINE_FAMILY = "qwen"
 AUTHOR_FAMILY = "kimi"
-DEVELOPER_FAMILIES = ("openai", "google", "anthropic")
+_REGISTRY = Path(__file__).resolve().parents[1] / "registry" / "agents.json"
+
+
+def developer_families(registry_path: Path = _REGISTRY) -> tuple[str, ...]:
+    """عائلاتُ العملاء المطوِّرين من `registry/agents.json` (ك٤٠): تسجيلُ عميلٍ من عائلةٍ جديدة يُخرجها من مراجعة البنوك
+    آليًّا، فلا يراجع بنكًا نموذجٌ من عائلةٍ تطوّر ديوان. المالكُ (`human/*`) ليس عائلةَ نموذج."""
+    agents = json.loads(registry_path.read_text(encoding="utf-8"))["agents"]
+    return tuple(sorted({agent.split("/", 1)[0] for agent in agents if not agent.startswith("human/")}))
+
+
+DEVELOPER_FAMILIES = developer_families()
 
 DEFAULT_REVIEWERS = ("deepseek-v4-flash:cloud", "mistral-large-3:675b-cloud")
 

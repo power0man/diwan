@@ -1,0 +1,62 @@
+name: مهمّة
+description: مهمّةٌ من خطة المشروع (docs/PROJECT-PLAN-20260925.md §٥)؛ عنوانُها يبدأ بمعرّفها
+title: "[ك٠٠] "
+labels: ["task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **العنوان يبدأ بالمعرّف** (`[ك٣٨]`، `[ج٥]`، `[غ٣]`، `[ع١]`، `[ح١]`)، وطلبُ الدمج يحمله ومعه `Closes #N` (ق٦١).
+        الحروف اللاتينية للفروع: ك=k، ج=j، غ=g، ع=o، ح=h — مثل `anthropic/k38-doc-drift`.
+  - type: dropdown
+    id: block
+    attributes:
+      label: البلوك
+      options:
+        - "ب١ النواة المحكومة (anthropic)"
+        - "ب٢ الحلقة الوكيلة (anthropic)"
+        - "ب٣ المحادثة والواجهة (openai)"
+        - "ب٤ الذاكرة (anthropic)"
+        - "ب٥ التنفيذ والمساحة (openai)"
+        - "ب٦ العربية والترجمة (google)"
+        - "ب٧ الاسترجاع والمزوّدون (google)"
+        - "ب٨ القياس (anthropic)"
+        - "ب٩ المنصّة وCI والتغليف (anthropic)"
+        - "ب١٠ العقد (السياسات) (google)"
+        - "ب١١ الوسائط: الصور والصوت وOCR (google)"
+        - "ب١٢ المحلّل والمبرمج والتصدير (openai)"
+    validations:
+      required: true
+  - type: dropdown
+    id: phase
+    attributes:
+      label: المرحلة
+      options:
+        - "م٠ v0.1.x الإغلاق"
+        - "م١ v0.2 مركزٌ مقيس"
+        - "م٢ v0.3 مساعدٌ يومي ومنتِج"
+        - "م٣ v0.4 الوسائط"
+        - "م٤ v0.5 الطبقة السيادية"
+        - "v1.0 مقبول"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: المطلوب
+      description: ما يُنجَز، وما يُلمس من مسارات، وسطرُ «تسليم:» إن مسّ مسارَ عائلةٍ أخرى
+    validations:
+      required: true
+  - type: input
+    id: depends
+    attributes:
+      label: شرطُ البدء أو الاعتماد
+      placeholder: "مثل: ع٣ منجزة، أو —"
+  - type: checkboxes
+    id: done
+    attributes:
+      label: تعريفُ «منجز» (الخطة §٦)
+      options:
+        - label: دُمج بطلبٍ بإيداع دمج، و`verify-hosted` و`family-review` خضراوان
+        - label: كلُّ حارسٍ جديد مُثبَتٌ بالطفرة، والطفرةُ مسمّاةٌ في الطلب
+        - label: كلُّ رقمٍ في `docs/probe/*.json` مع حدوده، ولا «يعمل» بلا دليلٍ حيّ

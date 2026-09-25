@@ -1,0 +1,30 @@
+name: family-review
+# ك٤٠ (ق٦١): الدمجُ الآليّ مشروطٌ بمراجعةٍ من عائلةٍ غير عائلة المؤلّف على الرأس الحاليّ. يُطلب هذا الفحصُ في حماية
+# main (ح١). يقرأ المراجعاتِ بصلاحية القراءة وحدها، ولا يُودِع، ولا يقرأ سرًّا غير رمز Actions.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  family-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Another family reviewed the current head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: python3 tools/family_review.py --range "$BASE..$HEAD" --head "$HEAD" --pr "$PR" --repo-slug "$REPO"

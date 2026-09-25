@@ -6,6 +6,9 @@
 الإيقافُ كلُّه. والاستبدالُ الذرّي هو ما يفعله كلُّ كاتبٍ مصرَّحٍ له في هذه الأدلّة عمدًا، فحقُّه
 `file_changed` الذي تعيد بعده `_value` القراءةَ مرّاتٍ محدودة. الحارسُ يصنع السباقَ حتميًّا: يستبدل
 الملفَّ بين قراءتَي الهوية.
+
+ثم كشف CI نافذةً ثانية للسباق نفسِه في طلب الدمج ١٤: الاستبدالُ بين `os.open` وأول `fstat`، فتكون
+وصلاتُ `before` صفرًا ويسقط `_regular(before)` بـ`unsafe_path`. والحارسُ الثاني يصنعها حتميًّا.
 """
 from __future__ import annotations
 
@@ -41,6 +44,32 @@ def test_a_file_replaced_atomically_during_the_read_is_file_changed_not_unsafe(t
     parent = os.open(tmp_path, os.O_RDONLY | os.O_DIRECTORY)
     try:
         monkeypatch.setattr(journal.os, "fstat", _racing_fstat(lambda: os.replace(fresh, target)))
+        with pytest.raises(journal.JournalRefused) as refused:
+            journal._read(parent, "stop.json", 1 << 20)
+        assert refused.value.code == "file_changed", refused.value.code
+    finally:
+        os.close(parent)
+
+
+def _fstat_after_replacing(replace_once):
+    real = os.fstat
+    state = {"done": False}
+
+    def fstat(fd):
+        if not state["done"]:
+            state["done"] = True
+            replace_once()                       # بين `os.open` و`before`: الاسمُ صار لملفٍّ آخر
+        return real(fd)
+    return fstat
+
+
+def test_a_file_replaced_between_open_and_the_first_fstat_is_file_changed_not_unsafe(tmp_path, monkeypatch):
+    target, fresh = tmp_path / "stop.json", tmp_path / "stop-write.tmp"
+    target.write_bytes(b'{"old": 1}')
+    fresh.write_bytes(b'{"new": 2}')
+    parent = os.open(tmp_path, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        monkeypatch.setattr(journal.os, "fstat", _fstat_after_replacing(lambda: os.replace(fresh, target)))
         with pytest.raises(journal.JournalRefused) as refused:
             journal._read(parent, "stop.json", 1 << 20)
         assert refused.value.code == "file_changed", refused.value.code

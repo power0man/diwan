@@ -1,0 +1,262 @@
+{
+  "schema_version": 1,
+  "labels": [
+    {
+      "name": "task",
+      "color": "0e8a16",
+      "description": "مهمّةٌ من خطة المشروع بمعرّفها في العنوان"
+    },
+    {
+      "name": "measurement",
+      "color": "1d76db",
+      "description": "قياسٌ يخدم قرارًا مسمًّى (ق٦١)"
+    },
+    {
+      "name": "owner-decision",
+      "color": "b60205",
+      "description": "قرارٌ للمالك: خيارات وتوصية وموعد"
+    },
+    {
+      "name": "owner-action",
+      "color": "d93f0b",
+      "description": "فعلٌ بيد المالك: إعدادات أو أسرار أو عتاد"
+    },
+    {
+      "name": "arabic-defect",
+      "color": "fbca04",
+      "description": "عيبٌ في فهم العربية أو إنتاجها"
+    },
+    {
+      "name": "proof-missing",
+      "color": "000000",
+      "description": "مسألةٌ أُغلقت بلا طلب دمجٍ مدموج يثبتها (ك٤١)"
+    },
+    {
+      "name": "node:policies",
+      "color": "5319e7",
+      "description": "مسار السياسات تحت عنوانه (≤١٥٪ من السعة)"
+    },
+    {
+      "name": "jules",
+      "color": "4285f4",
+      "description": "تكليفٌ لـ Jules (مسار google)"
+    },
+    {
+      "name": "draft",
+      "color": "cfd3d7",
+      "description": "مسوّدةُ مهمّة تُفصَّل عند بدء مرحلتها"
+    },
+    {
+      "name": "family:anthropic",
+      "color": "d97757",
+      "description": "عائلة Claude"
+    },
+    {
+      "name": "family:openai",
+      "color": "10a37f",
+      "description": "عائلة Codex وOpenCode"
+    },
+    {
+      "name": "family:google",
+      "color": "4285f4",
+      "description": "عائلة Jules وGemini"
+    },
+    {
+      "name": "family:owner",
+      "color": "b60205",
+      "description": "المالك"
+    },
+    {
+      "name": "block:b1",
+      "color": "c5def5",
+      "description": "ب١ النواة المحكومة — anthropic"
+    },
+    {
+      "name": "block:b2",
+      "color": "c5def5",
+      "description": "ب٢ الحلقة الوكيلة — anthropic"
+    },
+    {
+      "name": "block:b3",
+      "color": "c5def5",
+      "description": "ب٣ المحادثة والواجهة — openai"
+    },
+    {
+      "name": "block:b4",
+      "color": "c5def5",
+      "description": "ب٤ الذاكرة — anthropic"
+    },
+    {
+      "name": "block:b5",
+      "color": "c5def5",
+      "description": "ب٥ التنفيذ والمساحة — openai"
+    },
+    {
+      "name": "block:b6",
+      "color": "c5def5",
+      "description": "ب٦ العربية والترجمة — google"
+    },
+    {
+      "name": "block:b7",
+      "color": "c5def5",
+      "description": "ب٧ الاسترجاع والمزوّدون — google"
+    },
+    {
+      "name": "block:b8",
+      "color": "c5def5",
+      "description": "ب٨ القياس — anthropic"
+    },
+    {
+      "name": "block:b9",
+      "color": "c5def5",
+      "description": "ب٩ المنصّة وCI والتغليف — anthropic"
+    },
+    {
+      "name": "block:b10",
+      "color": "c5def5",
+      "description": "ب١٠ العقد (السياسات) — google"
+    },
+    {
+      "name": "block:b11",
+      "color": "c5def5",
+      "description": "ب١١ الوسائط: الصور والصوت وOCR — google"
+    },
+    {
+      "name": "block:b12",
+      "color": "c5def5",
+      "description": "ب١٢ المحلّل والمبرمج والتصدير — openai"
+    },
+    {
+      "name": "phase:m0",
+      "color": "bfdadc",
+      "description": "م٠ v0.1.x الإغلاق"
+    },
+    {
+      "name": "phase:m1",
+      "color": "bfdadc",
+      "description": "م١ v0.2 مركزٌ مقيس"
+    },
+    {
+      "name": "phase:m2",
+      "color": "bfdadc",
+      "description": "م٢ v0.3 مساعدٌ يومي ومنتِج"
+    },
+    {
+      "name": "phase:m3",
+      "color": "bfdadc",
+      "description": "م٣ v0.4 الوسائط"
+    },
+    {
+      "name": "phase:m4",
+      "color": "bfdadc",
+      "description": "م٤ v0.5 الطبقة السيادية"
+    },
+    {
+      "name": "phase:v1",
+      "color": "bfdadc",
+      "description": "v1.0 مقبول"
+    },
+    {
+      "name": "cap:analyst",
+      "color": "f9d0c4",
+      "description": "المحلّل: تحليلُ البيانات والرسوم"
+    },
+    {
+      "name": "cap:coder",
+      "color": "f9d0c4",
+      "description": "المبرمج"
+    },
+    {
+      "name": "cap:image-gen",
+      "color": "f9d0c4",
+      "description": "مولّدُ الصور"
+    },
+    {
+      "name": "cap:vision",
+      "color": "f9d0c4",
+      "description": "فهمُ الصور"
+    },
+    {
+      "name": "cap:voice",
+      "color": "f9d0c4",
+      "description": "الصوت: تفريغٌ ونطق"
+    },
+    {
+      "name": "cap:ocr",
+      "color": "f9d0c4",
+      "description": "OCR عربيّ للممسوح"
+    },
+    {
+      "name": "cap:export",
+      "color": "f9d0c4",
+      "description": "تصديرُ المستندات"
+    },
+    {
+      "name": "cap:memory",
+      "color": "f9d0c4",
+      "description": "الذاكرة"
+    },
+    {
+      "name": "cap:translation",
+      "color": "f9d0c4",
+      "description": "الترجمة والتعريب"
+    },
+    {
+      "name": "cap:reasoning",
+      "color": "f9d0c4",
+      "description": "الاستدلال والتقاطُ التفكير"
+    },
+    {
+      "name": "cap:research",
+      "color": "f9d0c4",
+      "description": "البحث المعمّق"
+    },
+    {
+      "name": "size:S",
+      "color": "ededed",
+      "description": "صغيرة"
+    },
+    {
+      "name": "size:M",
+      "color": "ededed",
+      "description": "متوسطة"
+    },
+    {
+      "name": "size:L",
+      "color": "ededed",
+      "description": "كبيرة"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "v0.1.x — الإغلاق",
+      "due_on": "2026-10-07T23:59:59Z",
+      "description": "م٠: كلُّ ادّعاءٍ في v0.1 مُثبَتٌ حيًّا أو موسوم، والتنسيقُ تفرضه GitHub"
+    },
+    {
+      "title": "v0.2 — مركزٌ مقيس",
+      "due_on": "2026-10-28T23:59:59Z",
+      "description": "م١: رقمٌ عامٌّ موثوق، وحكمٌ لكل مكوّن، وبنوكُ القدرات الجديدة مجمَّدة"
+    },
+    {
+      "title": "v0.3 — مساعدٌ يومي ومنتِج",
+      "due_on": "2026-12-02T23:59:59Z",
+      "description": "م٢: الذاكرة، والمحلّل، والمبرمج، وOCR، والتصدير، والمثبّت"
+    },
+    {
+      "title": "v0.4 — الوسائط",
+      "due_on": "2026-12-31T23:59:59Z",
+      "description": "م٣: مولّدُ الصور، والصوت، وفهمُ الصور على Nitro"
+    },
+    {
+      "title": "v0.5 — الطبقة السيادية",
+      "due_on": "2027-01-15T23:59:59Z",
+      "description": "م٤: تصعيدٌ سحابيٌّ اختياريٌّ محكوم ومنقّى"
+    },
+    {
+      "title": "v1.0 — مقبول",
+      "due_on": "2027-03-31T23:59:59Z",
+      "description": "إغلاقُ م٨-ب وم١٣-ب وم١٦"
+    }
+  ]
+}
