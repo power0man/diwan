@@ -106,6 +106,9 @@ def _read(parent, name, limit):
         fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
         with os.fdopen(fd, "rb") as stream:
             before = os.fstat(stream.fileno())
+            if before.st_nlink == 0:
+                # النافذةُ الأولى للسباق نفسِه: استُبدل الاسمُ بين `os.open` وهذا الـfstat (طلب الدمج ١٤)
+                _fail("file_changed", "استُبدل الملف بين فتحه وقراءته")
             _regular(before)
             if before.st_size > limit:
                 _fail("file_too_large", "الملف يتجاوز حد القراءة الآمنة")
