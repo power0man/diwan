@@ -7,7 +7,7 @@
 ## التشغيل السريع (v0.1 «ديوان على جهازك»)
 
 ```sh
-uv sync --extra morphology               # بايثون ≥ 3.11؛ الاعتمادياتُ من uv.lock المقفول، وCAMeL Tools للجذور (ق٥٥)
+uv sync                                  # بايثون ≥ 3.11؛ الاعتمادياتُ من uv.lock المقفول، وفيها CAMeL Tools للجذور (ق٥٥؛ torch للمعالج على لينكس، ك٣٣)
 uv run camel_data -i morphology-db-msa-r13   # قاعدةُ CAMeL الصرفية، مرّةً واحدة
 ollama pull qwen3.5:9b                   # المحرّكُ المعتمَد بالقياس (ق٥٤؛ providers/ollama.py::DEFAULT_MODEL)
 uv run python tools/launch_check.py      # فحصُ الدخان: البيئة، وCAMeL، والمحرّك، وجولةٌ وكيلة، وعقدةُ السياسات إن وُضع المتن، والواجهة
