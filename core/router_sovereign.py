@@ -8,7 +8,7 @@
    - استبدالها برموز مستعارة قابلة للعكس بدقة: [هوية_محجوبة_X].
 2. توجيه سيادي ثلاثي الطبقات:
    - المستوى 0 (محلي/حافة - Tier 0: Local Edge): تنفيذ محلي بالكامل (MLX / CPU / Local Ollama)، صفر خروج، لسياسات local_only.
-   - المستوى 1 (سحابي وطني سيادي - Tier 1: Sovereign Cloud): استضافة وطنية داخل حدود المملكة بشهادات mTLS لسياسات regulated وinternal.
+   - المستوى 1 (سحابي وطني سيادي - Tier 1: Sovereign Cloud): استضافة وطنية داخل حدود المملكة لسياسة internal (وregulated محليٌّ بالعقد، غ٥).
    - المستوى 2 (نماذج طليعية مع صفر حفظ - Tier 2: Frontier ZDR): نماذج متقدمة باتفاقيات Zero Data Retention، مشروطة بالتعقيم الكامل للبيانات الحساسة.
 3. الإخفاق المغلق (Fail-Closed):
    - أي خرق لسياسة البيانات أو فشل في التعقيم يُسفر عن حجب فوري وتوقف آمن.
@@ -137,11 +137,12 @@ class SovereignRouter:
                 "بيانات محصورة محليًا (local_only) لا يمكن توجيهها لسحابة وطنية أو خارجية."
             )
 
-        # regulated لا يخرج خارج حدود المملكة إطلاقًا
-        if policy == "regulated" and not endpoint.in_territory:
+        # regulated محليٌّ بالعقد (LOCAL_ONLY_POLICIES)، والنواةُ ترفض له مزوّدًا غير محليّ (core/run.py)؛
+        # فلا يَعِد الموجّهُ بسحابةٍ وطنية لا تمرّ منها (غ٥، evaluation/protocols/sovereign_v1.json)
+        if policy == "regulated" and target_tier != "local_edge":
             raise SovereignRoutingError(
                 "policy_violation_regulated",
-                "بيانات خاضعة للوائح السيادية (regulated) لا يمكن معالجتها خارج الحدود الجغرافية للمملكة."
+                "بيانات خاضعة للوائح (regulated) محلية بالعقد، فلا تُوجَّه إلى سحابةٍ وطنيةٍ ولا خارجية."
             )
 
         # frontier_zdr يتطلب اتفاقية صفر احتفاظ بالبيانات
