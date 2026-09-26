@@ -128,7 +128,7 @@ def clean_comment_reviews(comments: list[dict], head: str) -> list[dict]:
         if not marker or marker not in body or not match:
             continue
         short = match.group(1)
-        reviews.append({"user": {"login": login}, "state": "COMMENTED", "submitted_at": comment.get("created_at", ""),
+        reviews.append({"user": {"login": login}, "state": "COMMENTED", "submitted_at": comment.get("updated_at") or comment.get("created_at", ""),
                         "commit_id": head if head.startswith(short) else short, "source": "clean_comment"})
     return reviews
 

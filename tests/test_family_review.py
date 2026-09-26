@@ -266,3 +266,18 @@ def test_every_guide_step_that_sets_up_gemini_is_marked_canceled():
         for section in sections:
             if gemini.search(section):
                 assert "ق٦٥" in section.split("\n\n", 2)[0] + section.split("\n\n", 2)[1], section.splitlines()[0]
+
+
+def test_an_edited_clean_comment_is_placed_at_its_edit_time_not_its_creation():
+    """ملاحظةُ Codex على #125: التعليقُ المُحرَّر يحفظ created_at ويتقدّم updated_at؛ فالحكمُ النظيف بعد طلب تعديلٍ يُقرأ الأحدث."""
+    edited = dict(clean("chatgpt-codex-connector[bot]", HEAD[:10]),
+                  created_at="2026-09-26T10:00:00Z", updated_at="2026-09-26T12:00:00Z")
+    block = dict(review("chatgpt-codex-connector[bot]", "CHANGES_REQUESTED"), submitted_at="2026-09-26T11:00:00Z")
+    merged = fr.chronological([block] + fr.clean_comment_reviews([edited], HEAD))
+    assert fr.evaluate({"anthropic"}, merged, HEAD, REVIEWERS)["status"] == "passed"
+
+
+def test_deleting_the_counted_comment_reruns_the_gate():
+    workflow = (ROOT / ".github" / "workflows" / "family-review-recheck.yml").read_text(encoding="utf-8")
+    types = re.search(r"types:\s*\[([^\]]*)\]", workflow).group(1)
+    assert {t.strip() for t in types.split(",")} == {"created", "edited", "deleted"}

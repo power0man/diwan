@@ -3,7 +3,8 @@ name: family-review-recheck
 # على رأس الطلب، فيُعاد تشغيلُ آخر تشغيلٍ لـfamily-review على الرأس بدل ذلك. لا يسحب شيفرةَ الطلب ولا يقرأ سرًّا.
 on:
   issue_comment:
-    types: [created, edited]
+    # deleted: حذفُ التعليق المحتسب يُعيد الفحص فيسحب نجاحًا لم يعد له سند.
+    types: [created, edited, deleted]
 
 permissions:
   actions: write
