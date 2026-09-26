@@ -112,11 +112,16 @@ def run_scenario(scenario: dict, root: Path) -> dict:
 
 
 class _ScriptedProvider:
-    """مزوّدٌ محلّيٌّ للبنك: يلتقط كلَّ طلب، ويجيب بما وُضع له أو بجوابٍ لا ذاكرةَ فيه."""
+    """مزوّدٌ محلّيٌّ للبنك: يلتقط كلَّ طلب، ويجيب بما وُضع له أو بجوابٍ لا ذاكرةَ فيه.
+
+    وبمزوّدٍ حيّ (`delegate`، جديد-memory-probe) يذهب كلُّ طلبٍ لم يُوضع له جوابٌ إلى النموذج الحقيقيّ.
+    والاقتراحُ يبقى مكتوبًا سلفًا، لأن البنك يقيس الموافقةَ عليه لا أن النموذج يقترح."""
     name, is_local = "memory-bank", True
 
-    def __init__(self):
-        self.requests, self.responses = [], []
+    def __init__(self, delegate=None):
+        self.requests, self.responses, self.delegate = [], [], delegate
+        if delegate is not None:
+            self.name, self.is_local = delegate.name, delegate.is_local
 
     def estimate_micros(self, request):
         return 0
@@ -126,6 +131,8 @@ class _ScriptedProvider:
         self.requests.append(request)
         if self.responses:
             return self.responses.pop(0)
+        if self.delegate is not None:
+            return self.delegate.complete(request)
         return Response("تم.", Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64)
 
 
@@ -159,8 +166,8 @@ class _ConsentBypassed(RuntimeError):
 class _Wired:
     """الطريقُ الموصول: خادمُ الواجهة نفسُه، بلا شبكةٍ ولا نموذجٍ حيّ."""
 
-    def __init__(self, root: Path):
-        self.provider = _ScriptedProvider()
+    def __init__(self, root: Path, delegate=None):
+        self.provider = _ScriptedProvider(delegate)
         self.root, self.generation = root, 0
         self.projects: dict[str, dict] = {}
         self._open()
@@ -213,6 +220,15 @@ class _Wired:
             ids[kind] = self.api("create_session", project=ids["id"], name=kind, mode=mode)["id"]
         return ids[kind]
 
+    def probe_session(self, name, kind):
+        """جلسةُ الفحص. بالمزوّد المكتوب جلسةٌ واحدة للمشروع؛ وبالحيّ جلسةٌ جديدة لكل فحص، فأداةٌ يطلبها النموذجُ
+        من تلقاء نفسه (propose_memory ينتظر المالك) لا تُبقي جولةً معلّقة تُسقط الفحصَ التالي بـturn_unresolved."""
+        if self.provider.delegate is None:
+            return self.session(name, kind)
+        mode = "text" if kind == "text" else "agent"
+        return self.api("create_session", project=self.project(name)["id"], name=f"{kind}-{uuid.uuid4().hex[:8]}",
+                        mode=mode)["id"]
+
     def store(self, name) -> MemoryStore:
         return MemoryStore(self.app.project(self.project(name)["id"]))
 
@@ -247,10 +263,13 @@ class _Wired:
         """ما رآه النموذجُ في جولةٍ وكيلة وجولةٍ نصّية بالسؤال نفسِه."""
         ids = self.project(name)
         seen = []
-        for action, session in (("agent_ask", self.session(name, "agent")), ("ask", self.session(name, "text"))):
+        for action, session in (("agent_ask", self.probe_session(name, "agent")),
+                                ("ask", self.probe_session(name, "text"))):
             before = len(self.provider.requests)
             self.api(action, project=ids["id"], session=session, turn=uuid.uuid4().hex, message=question, files=[])
-            (request,) = self.provider.requests[before:]
+            new = self.provider.requests[before:]
+            # النموذجُ الحيّ قد يستدعي أداةً فتطول الجولة؛ والذاكرةُ في أول طلبٍ منها
+            (request,) = new if self.provider.delegate is None else new[:1]
             seen.append(_memory_parts(request))
         return seen
 
@@ -259,8 +278,8 @@ class _Wired:
                 if r["item_id"] == item_id]
 
 
-def run_wired_scenario(scenario: dict, root: Path) -> dict:
-    wired = _Wired(root / "ui")
+def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
+    wired = _Wired(root / "ui", delegate)
     refs: dict[str, object] = {}
     failures: list[str] = []
     leaks = consent_violations = unquarantined = 0
@@ -344,10 +363,14 @@ WIRED_PATHS = {"remember": "memory_remember (واجهة المالك)", "remembe
                "restore": "workspace_tools.backup.restore_workspace(tombstones_from=المساحة الحيّة) إلى جذرٍ جديد"}
 
 
-def run_memory_bank(bank: dict, driver: str = "store") -> dict:
-    if driver not in ("store", "wired"):
-        raise ValueError("driver: store أو wired")
-    run = run_scenario if driver == "store" else run_wired_scenario
+def run_memory_bank(bank: dict, driver: str = "store", delegate=None) -> dict:
+    """driver: store (المخزن وحده)، أو wired (الواجهة بمزوّدٍ مكتوب)، أو live (الواجهة بمزوّدٍ حيّ)."""
+    if driver not in ("store", "wired", "live"):
+        raise ValueError("driver: store أو wired أو live")
+    if (driver == "live") != (delegate is not None):
+        raise ValueError("live يلزمه مزوّدٌ حيّ، وغيرُه لا يقبله")
+    run = (run_scenario if driver == "store"
+           else lambda scenario, root: run_wired_scenario(scenario, root, delegate))
     results = []
     for scenario in bank["scenarios"]:
         with tempfile.TemporaryDirectory(prefix="diwan-memory-") as tmp:
@@ -364,6 +387,7 @@ def run_memory_bank(bank: dict, driver: str = "store") -> dict:
              and all(metrics[k] <= thresholds[k] for k in ("leakage", "consent_violations", "injection_unquarantined"))
              and all(r["passed"] for r in results))
     return {"schema_version": 1, "suite_id": bank["suite_id"], "driver": driver,
-            **({"paths": WIRED_PATHS} if driver == "wired" else {}),
+            **({"paths": WIRED_PATHS} if driver != "store" else {}),
+            **({"provider": delegate.name} if delegate is not None else {}),
             "metrics": metrics, "meets_thresholds": meets,
             "passed": sum(r["passed"] for r in results), "total": len(results), "results": results}

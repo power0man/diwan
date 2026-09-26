@@ -175,3 +175,117 @@ def test_admission_counts_the_memory_block_before_attachments_are_staged(tmp_pat
     with pytest.raises(ConversationError) as err:
         session("remembering", size + 10, store).validate_turn(uuid.uuid4().hex, "سؤال")
     assert err.value.code == "context_limit"
+
+
+class _Delegate:
+    """مزوّدٌ حيٌّ مصطنع: يعدّ نداءاته ويجيب بلا ذاكرة."""
+    name, is_local = "fake-live", True
+
+    def __init__(self):
+        self.calls = 0
+
+    def estimate_micros(self, request):
+        return 0
+
+    def complete(self, request):
+        from core.contracts import Response, Usage
+        self.calls += 1
+        return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="1" * 64)
+
+
+def test_the_live_driver_sends_every_unscripted_turn_to_the_real_provider():
+    delegate = _Delegate()
+    report = run_memory_bank(BANK, driver="live", delegate=delegate)
+    assert report["driver"] == "live" and report["provider"] == "fake-live"
+    assert report["passed"] == report["total"] == 30 and report["meets_thresholds"]
+    assert delegate.calls > 0, "الطريقُ الحيّ لم يبلغ المزوّدَ الحقيقيّ"
+
+
+def test_live_needs_a_provider_and_the_others_refuse_one():
+    import pytest
+    with pytest.raises(ValueError):
+        run_memory_bank(BANK, driver="live")
+    with pytest.raises(ValueError):
+        run_memory_bank(BANK, driver="wired", delegate=_Delegate())
+
+
+
+class _ProposingDelegate(_Delegate):
+    """نموذجٌ حيٌّ يطلب propose_memory من تلقاء نفسه في كل جولةٍ وكيلة، فتقف الجولةُ تنتظر المالك."""
+    name = "proposing-live"
+
+    def complete(self, request):
+        from core.contracts import Response, ToolCall, Usage
+        self.calls += 1
+        if request.tools:
+            call = ToolCall("call_" + uuid.uuid4().hex[:8], "propose_memory", {"text": "ملاحظة"})
+            return Response("", Usage(1, 1), "complete", 0, provider=self.name, model_version="1" * 64,
+                            tool_calls=(call,))
+        return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="1" * 64)
+
+
+def test_a_tool_the_live_model_asks_for_does_not_leave_a_turn_that_fails_the_next_probe():
+    """ملاحظةُ Codex على #129: جولةٌ وكيلة تقف awaiting_owner كانت تُسقط فحصَ السياق التالي بـturn_unresolved."""
+    report = run_memory_bank(BANK, driver="live", delegate=_ProposingDelegate())
+    assert report["passed"] == report["total"] == 30, [r for r in report["results"] if not r["passed"]][:2]
+
+
+def test_the_cli_validates_the_suite_and_names_the_runner_before_any_call(tmp_path, monkeypatch, capsys):
+    """ملاحظتا Codex على #129: بنكٌ غير مفحوص كان يمرّ ١٠٠٪، والمعرّفُ كان مكتوبًا في الأداة."""
+    import json
+    import tools.evaluate_memory as cli
+    monkeypatch.setattr(cli, "OllamaProvider", lambda **_: (_ for _ in ()).throw(AssertionError("نداءٌ قبل الفحص")))
+    bad = tmp_path / "bank.json"
+    broken = json.loads(json.dumps(BANK))
+    broken["scenarios"][0]["steps"] = [{"project": broken["scenarios"][0]["steps"][0]["project"], "expect": "typo"}]
+    bad.write_text(json.dumps(broken, ensure_ascii=False), encoding="utf-8")
+    assert cli.main(["--model", "m", "--suite", str(bad), "--agent", "anthropic/claude-opus-5-5",
+                     "--out", str(tmp_path / "r.json")]) == 2
+    assert json.loads(capsys.readouterr().out)["status"] == "refused"
+    with pytest.raises(SystemExit):
+        cli.main(["--model", "m", "--agent", "someone/unknown", "--out", str(tmp_path / "r.json")])
+
+
+
+def test_a_custom_suite_must_be_a_commissioned_bank_at_full_size_and_reports_bind_its_bytes(tmp_path, monkeypatch,
+                                                                                             capsys):
+    """ملاحظتا Codex على #129: تسليمٌ من سيناريو واحد كان يُقاس «١/١»، والتقريرُ لا يربط نفسه ببايتات البنك."""
+    import hashlib
+    import json
+    import tools.evaluate_memory as cli
+    small = json.loads(json.dumps(BANK))
+    small["suite_id"] = "memory_kimi_v1"
+    path = tmp_path / "kimi.json"
+    path.write_text(json.dumps(small, ensure_ascii=False), encoding="utf-8")
+    args = ["--model", "m", "--suite", str(path), "--agent", "anthropic/claude-opus-5-5", "--out", str(tmp_path / "r.json")]
+    monkeypatch.setattr(cli, "OllamaProvider", lambda **_: (_ for _ in ()).throw(AssertionError("نداءٌ قبل الفحص")))
+    assert cli.main(args) == 2 and json.loads(capsys.readouterr().out)["code"] == "suite_below_commissioned_total"
+    small["suite_id"] = "someone_else_v1"
+    path.write_text(json.dumps(small, ensure_ascii=False), encoding="utf-8")
+    assert cli.main(args) == 2 and json.loads(capsys.readouterr().out)["code"] == "suite_not_commissioned"
+    full = json.loads(json.dumps(BANK))
+    full["suite_id"] = "memory_kimi_v1"
+    by = {c: [s for s in full["scenarios"] if s["category"] == c] for c in cli.COMMISSIONED["memory_kimi_v1"] if c != "total"}
+    grown = []
+    for category, minimum in cli.COMMISSIONED["memory_kimi_v1"].items():
+        if category != "total":
+            grown += [dict(by[category][i % len(by[category])], id=f"{category}_{i}") for i in range(minimum)]
+    full["scenarios"] = grown
+    assert cli.commissioned_shortfall(full) is None
+    full["scenarios"] = [s for s in grown if s["category"] != "backup"] + [s for s in grown if s["category"] == "backup"][:5]
+    full["scenarios"] += [dict(full["scenarios"][0], id="extra")]
+    assert cli.commissioned_shortfall(full) == "suite_below_commissioned_category"
+    monkeypatch.setattr(cli, "OllamaProvider", lambda **_: _Delegate())
+    out = tmp_path / "default.json"
+    assert cli.main(["--model", "m", "--agent", "anthropic/claude-opus-5-5", "--out", str(out)]) == 0
+    capsys.readouterr()
+    assert json.loads(out.read_text(encoding="utf-8"))["suite_sha256"] == hashlib.sha256(
+        cli.DEFAULT_SUITE.read_bytes()).hexdigest()
+
+
+def test_the_published_memory_evidence_is_bound_to_the_committed_suite_bytes():
+    """ملاحظةُ Codex على #129: الدليلُ المنشور بلا بصمة البنك، والأداةُ تكتبها الآن في كل تقرير."""
+    import hashlib
+    evidence = json.loads((ROOT / "docs" / "probe" / "memory-live-20260926.json").read_text(encoding="utf-8"))
+    assert evidence["suite_sha256"] == hashlib.sha256(
+        (ROOT / "evaluation" / "suites" / "memory_v1.json").read_bytes()).hexdigest()
