@@ -243,3 +243,14 @@ def test_the_recheck_waits_for_a_running_family_review_and_never_swallows_a_fail
     minutes = lambda text: int(re.search(r"timeout-minutes:\s*(\d+)", text).group(1))
     assert minutes(workflow) > minutes(main)
     assert "cancel-in-progress: true" in workflow
+
+
+def test_the_governing_plan_no_longer_waits_on_the_canceled_gemini_reviewer():
+    """ملاحظةُ Codex على #125: الخطةُ قالت إن Codex مركَّب وأبقت المراجِعَ المحتسب معلَّقًا على ح٤ ودليلٍ لا وجود له."""
+    plan = json.loads((ROOT / "docs" / "PLAN-20260926.json").read_text(encoding="utf-8"))
+    tasks = {task["id"]: task for task in plan["tasks"]}
+    assert "ح٤" not in tasks["جديد-counted-google-reviewer"]["depends_on"]
+    guides = {item.get("guide_id") for item in plan["tasks"] + plan["owner_steps"]}
+    assert "NEW-gemini-app" not in guides
+    live = json.dumps(plan["tasks"] + plan["owner_steps"], ensure_ascii=False)
+    assert "gemini_review.py" not in live and not re.search(r"gemini-review(?!er)", live)

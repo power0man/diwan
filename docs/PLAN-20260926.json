@@ -1,6 +1,6 @@
 {
  "title": "خطة ديوان المدمجة (٢٦ سبتمبر ٢٠٢٦): الخصوصية أولًا، ثم البوابة الآلية، ثم الرقم الموثوق، ولا إنفاق قبل الدليل",
- "thesis": "الترتيب واحد: لا بايت يخرج، ولا دولار يُنفَق، ولا رقم يُعلَن قبل دليله. أولًا يُسدّ ثقبا الخصوصية المقيسان (is_local من اسم النموذج والمضيف، والحذف بإيصال) لأن كل مسار سحابي لاحق يمرّ فوقهما، ويفكّ المالك حجب جلسة الماك (G4) لأن كل رقم حيّ موقوف عليها. ثانيًا تصير البوابة آلية بترتيب G4 ← G3 ← G1 ← G2، بمراجع google محسوب يعمل من main بدل gemini-code-assist، وتُحرس أداة الرقم وأدلته قبل أي قياس جديد. ثالثًا تُنتج م١ الرقم العام الموثوق وحده: v1.2 من Kimi، ومحكِّم معايَر بعتبة مسجَّلة سلفًا، والمحجوب يُحكم عليه محليًّا فقط بفاصل Wilson، وخمسة استئصالات، و١٥٠ عامة و٣٠ وكيلة، والمحرّك مجمَّد (ق٦٢-٦). رابعًا تُفتح الميزات بحسب ما قاله الرقم. خامسًا لا إنفاق على عتاد أو سحابة قبل الدليل: فرضية 27B وJais-2-8B على الماك مجانًا أولًا، ثم HF Jobs بسقف مدفوع مسبقًا إن عجز الماك، والشراء بقرار بعد م١. GitHub يبقى بيت الشيفرة والحوكمة، وHugging Face ذراع حوسبة ونشر مفتوح باتجاه واحد. ووقت المالك محسوب: ٣٠ دقيقة يوميًّا بخط توقف وقائمة تأجيل، واحتياط Claude في المسارين ممدود إلى ٨ نوفمبر بق٦٤.",
+ "thesis": "الترتيب واحد: لا بايت يخرج، ولا دولار يُنفَق، ولا رقم يُعلَن قبل دليله. أولًا يُسدّ ثقبا الخصوصية المقيسان (is_local من اسم النموذج والمضيف، والحذف بإيصال) لأن كل مسار سحابي لاحق يمرّ فوقهما، ويفكّ المالك حجب جلسة الماك (G4) لأن كل رقم حيّ موقوف عليها. ثانيًا تصير البوابة آلية بترتيب G4 ← G3 ← G1 ← G2، بمراجِعٍ محتسب من عائلةٍ أخرى (Codex بعد إلغاء Gemini بق٦٥)، وتُحرس أداة الرقم وأدلته قبل أي قياس جديد. ثالثًا تُنتج م١ الرقم العام الموثوق وحده: v1.2 من Kimi، ومحكِّم معايَر بعتبة مسجَّلة سلفًا، والمحجوب يُحكم عليه محليًّا فقط بفاصل Wilson، وخمسة استئصالات، و١٥٠ عامة و٣٠ وكيلة، والمحرّك مجمَّد (ق٦٢-٦). رابعًا تُفتح الميزات بحسب ما قاله الرقم. خامسًا لا إنفاق على عتاد أو سحابة قبل الدليل: فرضية 27B وJais-2-8B على الماك مجانًا أولًا، ثم HF Jobs بسقف مدفوع مسبقًا إن عجز الماك، والشراء بقرار بعد م١. GitHub يبقى بيت الشيفرة والحوكمة، وHugging Face ذراع حوسبة ونشر مفتوح باتجاه واحد. ووقت المالك محسوب: ٣٠ دقيقة يوميًّا بخط توقف وقائمة تأجيل، واحتياط Claude في المسارين ممدود إلى ٨ نوفمبر بق٦٤.",
  "where_we_are": {
   "summary": "ديوان v0.1.0 منشور علنًا برخصة Apache-2.0. النواة الحاكمة والحلقة الوكيلة ناضجتان في الشيفرة وضعيفتان في الأدلّة الحيّة: لا رقم عامّ موثوق، وثقبا خصوصية مقيسان، والدمج بعائلة واحدة لأن family-review أحمر ١٣١/١٣١. جلستا الماك وNitro محجوبتان تنتظران إذن المالك، ورصيد Codex نافد، وحصّة Gemini المجانية نفدت في ٢٦ سبتمبر، وJules غير مثبَّت. تفويض Claude ينتهي في ٢٨ سبتمبر لمسار google و٣٠ سبتمبر لمسار openai، واحتياطه بق٦٢-٥ وق٦٤ حتى ٨ نوفمبر. والجديد اشتراك Hugging Face PRO فعّال.",
   "proven": [
@@ -62,7 +62,7 @@
    "start": "2026-10-05",
    "end": "2026-10-11",
    "gate": [
-    "family-review أخضر على طلب حقيقي بمراجع google محسوب، أو قاعدة انتقالية معلنة في STATUS تنتهي 2026-10-17",
+    "family-review أخضر على طلب حقيقي بمراجِعٍ محتسب من عائلةٍ أخرى (Codex، ق٦٥)، أو قاعدة انتقالية معلنة في STATUS تنتهي 2026-10-17",
     "tests/test_measure_engine_denominator.py يقتل ≥٣ طفرات، وtools/compare_engines.py يعيد k2 وk12 بتطابق بصمي",
     "اختبار شكل docs/probe على كل الملفات، وdocs/probe/INDEX.md يحكم ك٢ «عيّنة» وم١٤ «معلّق» وDALUB «مسحوب»",
     "evaluation/protocols/judge_v1.json مبصوم، واختبار يثبت أن tools/evaluate_sealed.py يرفض مزوّدًا غير محلي ولا يُخرج معرّفًا",
@@ -258,7 +258,7 @@
   },
   {
    "risk": "لا مراجع محسوب: gemini-code-assist لعملاء Google Cloud، وحصّة Gemini المجانية نفدت",
-   "mitigation": "run-gemini-cli بتطبيق خاص ومفتاح في بيئة مقصورة على main، والإطلاق عند ready_for_review؛ وقاعدة انتقالية تنتهي 17 أكتوبر، ومسار يدوي لطلبات docs/probe",
+   "mitigation": "أُلغي Gemini بق٦٥، والمراجِعُ المحتسب Codex؛ وإن توقّف فبديلاه CodeRabbit أو مراجعة Copilot بعد تجربةٍ على طلبٍ حقيقي؛ وقاعدة انتقالية تنتهي 17 أكتوبر، ومسار يدوي لطلبات docs/probe",
    "owner": "claude-cloud"
   },
   {
@@ -324,7 +324,7 @@
    "dates": "2026-10-05 → 2026-10-11",
    "milestones": [
     "المالك: G2 (ح٤) على جلستين بلا لوحة Projects، ونسخ مخازن الماك",
-    "مراجع google محسوب أخضر مرة",
+    "مراجِعٌ محتسب أخضر مرة (Codex، ق٦٥)",
     "حراسة measure_engine وdocs/probe وINDEX، وjudge_v1 ومُشغِّل المحجوب، وسجل الإنفاق",
     "الماك: ج٥؛ السحابة: سقف الجواب والتنزيل وسجل الرحلات وصحّة الاختبارات",
     "مراجعة بوابة م٠ في ١١ أكتوبر",
@@ -448,7 +448,7 @@
    "Ollama Cloud Free ثم Pro ‎$20: المراجعة الخارجية وKimi السحابي، على الشطر المفتوح وحده",
    "Kimi: نحو ‎$3 بالتوكن لكل بنك، أو Plus نحو ‎$14",
    "Jules Free ‎$0 (١٥ مهمّة يوميًّا)، وOpenCode وgpt-oss:20b وGranite 4 محليًّا ‎$0",
-   "Gemini API Free ‎$0: نفدت حصّته في ٢٦/٩، فالإطلاق عند ready_for_review فقط",
+   "Gemini API: أُلغي مراجِعًا بق٦٥، فلا كلفة",
    "GitHub Actions وCodeQL وsecret scanning ‎$0 على المستودع العام",
    "HF Jobs: L4 ‎$0.80 وL40S ‎$1.80 للساعة؛ المتوقع لقياس 27B أقل من ‎$10 (تقدير لم يُقَس)؛ Kaggle ‎$0 احتياطًا",
    "مؤجَّل: watsonx Standard ‎$1,110/شهر إلى ما بعد v1.0؛ GroqCloud وOCI بصفر التزام في م٤",
@@ -482,9 +482,9 @@
     "team:ح٢",
     "compute:ح٢"
    ],
-   "description": "١) المالك يبدأ بدليل G4، الخطوات ١٠–١٦: ملف `.claude/settings.local.json` على الماك بقواعد ضيّقة تفكّ حجب الحلقة الوكيلة وقيادة Kimi، بلا `Bash(*)`. ٢) ثم ١٧–١٨ على Nitro من داخل WSL2؛ وإن بقي الحجب يُؤجَّل Nitro إلى ما بعد G5. ٣) ثم ١–٩: شبكة Custom للجلسة السحابية (download.pytorch.org وdownload-r2.pytorch.org وollama.com وregistry.ollama.ai)، وOLLAMA_API_KEY في حقل البيئة لا في المحادثة. ويُضاف huggingface.co وrouter.huggingface.co بتوكن استدلال فقط إن وافق المالك على HFD5 (G9 الخطوة ٦). ٤) ثم G3: سرّ GEMINI_API_KEY ومتغيّر GEMINI_MODEL وبيئة live. ٥) Claude السحابي يشغّل تجربة ك٧ الدخانية من السحابة (--base-url https://ollama.com)، وclaude-mac يشغّل أمرًا واحدًا بلا رفض. لا شيفرة هنا.\nولا يُضاف cdn-lfs.huggingface.co، فهو نطاق قديم لا يرد في قائمة HF الحالية. وتنزيل التضمين يبقى على الماك (غ٣). وتوكن السحابة هو diwan-cloud-inference من G9 الخطوة ٥، بلا Jobs ولا كتابة.\n٦) قيادة Kimi (ك٦) لا تجري من الجلسة السحابية أبدًا، رغم ما في ق٦٠ ونصّ G4. السبب أن مخرجاته تشمل المحجوب، والمحجوب لا يُكتب إلا في ~/diwan-sealed على الماك. فالسحابة تستعمل ollama.com للمراجعة الخارجية على المفتوح وحده.",
+   "description": "١) المالك يبدأ بدليل G4، الخطوات ١٠–١٦: ملف `.claude/settings.local.json` على الماك بقواعد ضيّقة تفكّ حجب الحلقة الوكيلة وقيادة Kimi، بلا `Bash(*)`. ٢) ثم ١٧–١٨ على Nitro من داخل WSL2؛ وإن بقي الحجب يُؤجَّل Nitro إلى ما بعد G5. ٣) ثم ١–٩: شبكة Custom للجلسة السحابية (download.pytorch.org وdownload-r2.pytorch.org وollama.com وregistry.ollama.ai)، وOLLAMA_API_KEY في حقل البيئة لا في المحادثة. ويُضاف huggingface.co وrouter.huggingface.co بتوكن استدلال فقط إن وافق المالك على HFD5 (G9 الخطوة ٦). ٤) ثم G3: بيئة live وأذونات Actions؛ أمّا سرّ GEMINI_API_KEY ومتغيّر GEMINI_MODEL فأُلغيا بق٦٥. ٥) Claude السحابي يشغّل تجربة ك٧ الدخانية من السحابة (--base-url https://ollama.com)، وclaude-mac يشغّل أمرًا واحدًا بلا رفض. لا شيفرة هنا.\nولا يُضاف cdn-lfs.huggingface.co، فهو نطاق قديم لا يرد في قائمة HF الحالية. وتنزيل التضمين يبقى على الماك (غ٣). وتوكن السحابة هو diwan-cloud-inference من G9 الخطوة ٥، بلا Jobs ولا كتابة.\n٦) قيادة Kimi (ك٦) لا تجري من الجلسة السحابية أبدًا، رغم ما في ق٦٠ ونصّ G4. السبب أن مخرجاته تشمل المحجوب، والمحجوب لا يُكتب إلا في ~/diwan-sealed على الماك. فالسحابة تستعمل ollama.com للمراجعة الخارجية على المفتوح وحده.",
    "deliverable": "الأسرار والبيئة في مواضعها، وجلستا الماك وNitro مأذونتان، وdocs/probe/external-review-smoke-cloud-<date>.json",
-   "acceptance_evidence": "الدليل الدخاني: المراجعان يلتقطان الخطأ المزروع (7×8=54) بلا إنذار كاذب ولا cloud_key_missing؛ tools/evaluate_ablation.py يبدأ على الماك بلا رفض؛ gemini-review بحالة posted.",
+   "acceptance_evidence": "الدليل الدخاني: المراجعان يلتقطان الخطأ المزروع (7×8=54) بلا إنذار كاذب ولا cloud_key_missing؛ tools/evaluate_ablation.py يبدأ على الماك بلا رفض.",
    "unblocks": [
     "ح١",
     "ج٥",
@@ -674,11 +674,10 @@
     "team:جديد-actions-hardening",
     "team:جديد-issue-intake-guard"
    ],
-   "description": "١) في كل سير: permissions دنيا، ولا pull_request_target، والأفعال مثبَّتة بـSHA. ٢) gemini-review وfamily-review يشغّلان الأداة من origin/main لا من رأس الطلب. ٣) Dockerfile بـdigest للصورة وبصمة لـuv، و.dockerignore يستبعد corpus/ وglossaries/ وsources/ وpublish/. ٤) حارس الاستلام: لا يبدأ وكيل من مسألة إلا بوسم ready:<family> يضعه المالك (sender==power0man). ونصّ المسألة يمرّ بـquarantine_quoted قبل أي نموذج. ٥) لا HF_TOKEN ولا توكن Jobs في أسرار المستودع. ٦) tests/test_workflows_hardened.py وtests/test_intake_gate.py، كلٌّ بطفرة، ومسألة حقن مزروعة تثبت أن لا وكيل انطلق. ٧) docs/AGENT-INTAKE.md يصف القاعدة. مسار anthropic، والمراجعة من غير anthropic.",
+   "description": "١) في كل سير: permissions دنيا، ولا pull_request_target، والأفعال مثبَّتة بـSHA. ٢) family-review وfamily-review-recheck يشغّلان الأداة من origin/main لا من رأس الطلب. ٣) Dockerfile بـdigest للصورة وبصمة لـuv، و.dockerignore يستبعد corpus/ وglossaries/ وsources/ وpublish/. ٤) حارس الاستلام: لا يبدأ وكيل من مسألة إلا بوسم ready:<family> يضعه المالك (sender==power0man). ونصّ المسألة يمرّ بـquarantine_quoted قبل أي نموذج. ٥) لا HF_TOKEN ولا توكن Jobs في أسرار المستودع. ٦) tests/test_workflows_hardened.py وtests/test_intake_gate.py، كلٌّ بطفرة، ومسألة حقن مزروعة تثبت أن لا وكيل انطلق. ٧) docs/AGENT-INTAKE.md يصف القاعدة. مسار anthropic، والمراجعة من غير anthropic.",
    "deliverable": "طلب دمج على .github/ وDockerfile و.dockerignore + tools/intake_gate.py + الاختباران + docs/AGENT-INTAKE.md",
    "acceptance_evidence": "الحارسان يسقطان بطفرتين مسمّاتين (إضافة pull_request_target، ووسم من غير المالك)؛ docs/probe/injection-drill-<date>.json: المسألة المزروعة لم تُطلق وكيلًا.",
    "unblocks": [
-    "جديد-counted-google-reviewer",
     "جديد-hf-publish-open"
    ],
    "cost": "صفر"
@@ -729,7 +728,7 @@
   },
   {
    "id": "ح٤",
-   "title": "G2: Jules ومراجع Gemini المحسوب وأدوات الأمان، بلا gemini-code-assist",
+   "title": "G2: Jules وأدوات الأمان (مراجِع Gemini ملغًى بق٦٥)",
    "assignee": "owner",
    "block": "ب٩",
    "phase": "م٠-ب",
@@ -750,11 +749,10 @@
     "team:ح٤",
     "compute:ح٤"
    ],
-   "description": "المالك ينفّذ G2 على جلستين. ١) gemini-code-assist لا يدخل البوابة، لأن صفحته تقصره على عملاء Google Cloud. البديل تطبيق GitHub خاص لـrun-gemini-cli (NEW-gemini-app)، ومفتاحه في بيئة GitHub مقصورة على main. وClaude يبني سيره في جديد-counted-google-reviewer. ٢) Jules (الخطوات ٥–٧) بوسم jules، وتجربة تحقّق بلا أثر على main. ٣) إزالة Blocks (١١). ٤) Dependabot alerts وCodeQL وsecret scanning مع push protection (١٢–١٥). ٥) Codex (٨–١٠) فقط إن قرّره ق٦٤. ٦) لوحة Projects (١٦–٢٢، ٤٥–٦٠ دقيقة) مؤجَّلة. ٧) تعليق ختامي بما ثُبّت وما تأجّل (٢٣). لا يُلصق مفتاح في أي محادثة.",
-   "deliverable": "Jules مربوط، وتطبيق Gemini الخاص مُنشأ ومفتاحه في بيئة main، وأدوات الأمان مفعَّلة، وBlocks مُزال، وإغلاق #56",
-   "acceptance_evidence": "قائمة التطبيقات المثبَّتة بلا blocksorg؛ أول تشغيل CodeQL ناجح؛ Jules يعلن معرّفه المسجَّل؛ بيئة GitHub مقصورة على main.",
+   "description": "المالك ينفّذ G2 على جلستين. ١) لا مراجِعَ Gemini: أُلغي بق٦٥، فلا تطبيقَ GitHub خاصًّا له ولا مفتاح ولا بيئة؛ والمراجِعُ المحتسب Codex المركَّب (جديد-counted-google-reviewer). ٢) Jules (الخطوات ٥–٧) بوسم jules، وتجربة تحقّق بلا أثر على main. ٣) إزالة Blocks (١١). ٤) Dependabot alerts وCodeQL وsecret scanning مع push protection (١٢–١٥). ٥) Codex مركَّب فعلًا ويراجع كل طلب (ق٦٥)، فتُتخطّى الخطوات ٨–١٠. ٦) لوحة Projects (١٦–٢٢، ٤٥–٦٠ دقيقة) مؤجَّلة. ٧) تعليق ختامي بما ثُبّت وما تأجّل (٢٣). لا يُلصق مفتاح في أي محادثة.",
+   "deliverable": "Jules مربوط، وأدوات الأمان مفعَّلة، وBlocks مُزال، وإغلاق #56",
+   "acceptance_evidence": "قائمة التطبيقات المثبَّتة بلا blocksorg؛ أول تشغيل CodeQL ناجح؛ Jules يعلن معرّفه المسجَّل.",
    "unblocks": [
-    "جديد-counted-google-reviewer",
     "غ٧",
     "جديد-upload-extract",
     "غ٨",
@@ -770,10 +768,7 @@
    "block": "ب٩",
    "phase": "م٠-ب",
    "effort": "M",
-   "depends_on": [
-    "ح٤",
-    "جديد-actions-hardening"
-   ],
+   "depends_on": [],
    "gap_ids": [
     "platform-g3",
     "platform-g11",
@@ -793,8 +788,7 @@
     "ك٣٠",
     "جديد-routines-dashboard"
    ],
-   "guide_id": "NEW-gemini-app",
-   "cost": "صفر (Gemini API Free)"
+   "cost": "صفر إضافي؛ مراجعاتُ Codex محدودةٌ بحصّة استعماله (حدٌّ معلَن في ق٦٥)"
   },
   {
    "id": "جديد-test-health",
@@ -937,7 +931,7 @@
     "compute:جديد-spend-ledger",
     "compute:جديد-spend-report"
    ],
-   "description": "اليوم لا سجل إنفاق: كل طريق حيّ Budget(0,0)، والنداءات السحابية خارج core.run. ١) OllamaChat.__call__ وtools/external_review.py وtools/gemini_review.py تلتقط prompt_eval_count وeval_count لكل نموذج. ٢) registry/prices.json بالميكرو-دولار لكل ألف توكن، بتاريخ القراءة ومصدرها. ٣) النداءات السحابية (المراجعة الخارجية وKimi والمحكِّم وHF) تُغلَّف بمزوّد is_local=False يمرّ بـcore.run، فتعمل Budget فعلًا. ٤) حارس يرفض أي probe سحابي بلا tokens وcost_estimate. ٥) تقرير شهري docs/probe/spend-<month>.json يقرأ فاتورة HF. ٦) سطر «لا يُنفَق قبل الدليل» في AGENTS §٤ يدمجه المالك. كل حارس بطفرة.",
+   "description": "اليوم لا سجل إنفاق: كل طريق حيّ Budget(0,0)، والنداءات السحابية خارج core.run. ١) OllamaChat.__call__ وtools/external_review.py تلتقط prompt_eval_count وeval_count لكل نموذج. ٢) registry/prices.json بالميكرو-دولار لكل ألف توكن، بتاريخ القراءة ومصدرها. ٣) النداءات السحابية (المراجعة الخارجية وKimi والمحكِّم وHF) تُغلَّف بمزوّد is_local=False يمرّ بـcore.run، فتعمل Budget فعلًا. ٤) حارس يرفض أي probe سحابي بلا tokens وcost_estimate. ٥) تقرير شهري docs/probe/spend-<month>.json يقرأ فاتورة HF. ٦) سطر «لا يُنفَق قبل الدليل» في AGENTS §٤ يدمجه المالك. كل حارس بطفرة.",
    "deliverable": "الالتقاط + registry/prices.json + الغلاف عبر core.run + الحارس + أول docs/probe/spend-2026-10.json",
    "acceptance_evidence": "اختبار بمزوّد مزيَّف: الجمع صحيح، وطفرة إسقاط eval_count مقتولة، وBudget يرفض نداءً فوق السقف؛ probe سحابي بلا كلفة يُسقط الحارس.",
    "unblocks": [
@@ -1508,7 +1502,7 @@
     "team:ج٦",
     "compute:ج٦"
    ],
-   "description": "١) Dockerfile (٣١ سطرًا) يضيف VOLUME لجذر var/، ويستبدل --network host في تعليق :30 بتوجيه منفذ يعمل على Docker Desktop. ٢) تجربة uv tool install ثم tools/launch_check.py، وLibreOffice شرط معلَن لـPDF. ٣) container-smoke فحص إلزامي في CI يخرج 0، ويشغّل pytest داخل صورة 3.12 (سُجّل له إخفاق ثم نجاحان). ٤) Dockerfile و.github مسار anthropic في registry/lanes.json، فلا تُسند إلى codex أو opencode ولا يلزم سطر تسليم:. ٥) اختبار يقرأ Dockerfile ويشترط VOLUME وغياب --network host، ويُثبت بطفرة. ٦) المراجع من عائلة غير anthropic: مراجع google المحسوب. ٧) تشغيل الماك وWSL2 يتمّ في جلستَي الجهازين لا في السحابة.",
+   "description": "١) Dockerfile (٣١ سطرًا) يضيف VOLUME لجذر var/، ويستبدل --network host في تعليق :30 بتوجيه منفذ يعمل على Docker Desktop. ٢) تجربة uv tool install ثم tools/launch_check.py، وLibreOffice شرط معلَن لـPDF. ٣) container-smoke فحص إلزامي في CI يخرج 0، ويشغّل pytest داخل صورة 3.12 (سُجّل له إخفاق ثم نجاحان). ٤) Dockerfile و.github مسار anthropic في registry/lanes.json، فلا تُسند إلى codex أو opencode ولا يلزم سطر تسليم:. ٥) اختبار يقرأ Dockerfile ويشترط VOLUME وغياب --network host، ويُثبت بطفرة. ٦) المراجع من عائلة غير anthropic: Codex المحتسب (ق٦٥). ٧) تشغيل الماك وWSL2 يتمّ في جلستَي الجهازين لا في السحابة.",
    "deliverable": "طلب دمج على Dockerfile و.github/workflows، واختبار الحاوية، وdocs/probe/container-smoke-<date>.json، وإغلاق #36",
    "acceptance_evidence": "container-smoke أخضر إلزاميًّا بـpytest داخل الصورة؛ محادثة تبقى بعد حذف الحاوية وإعادة إنشائها بالحجم نفسه؛ طفرة إزالة VOLUME تُسقط الاختبار؛ الدليل يحمل measurement_limits",
    "unblocks": [
@@ -1631,7 +1625,7 @@
     "team:ك٣٠",
     "compute:ك٣٠"
    ],
-   "description": "١) CODEOWNERS لا يخدم، لأن كل الطلبات بحساب power0man. البديل فحص حالة مطلوب في tools/family_review.py يقرأ ذيل Diwan-Agent ويشترط مراجعة من عائلة أخرى. ٢) الذيل إقرار ذاتي، فتُربط العائلة بهوية التطبيق الذي فتح الطلب (Jules أو Codex أو تطبيق Gemini الخاص)، لا بالذيل وحده. ٣) تُحتسب المراجعة كما في جديد-counted-google-reviewer. ٤) حارس يتحقق أن بصمة كل «منجزة» في docs/TASKS.jsonl وفي المسائل المغلقة سلفٌ لـmain، بتوسيع tools/issue_ledger.py. ٥) تعديل نصّ ك٣٠ في AGENTS.md بقرار مرقَّم من المالك، والمالك يدمجه. ٦) ثلاث طفرات على الأقل تُقتل. يراجعه غير anthropic.",
+   "description": "١) CODEOWNERS لا يخدم، لأن كل الطلبات بحساب power0man. البديل فحص حالة مطلوب في tools/family_review.py يقرأ ذيل Diwan-Agent ويشترط مراجعة من عائلة أخرى. ٢) الذيل إقرار ذاتي، فتُربط العائلة بهوية التطبيق الذي فتح الطلب (Jules أو Codex)، لا بالذيل وحده. ٣) تُحتسب المراجعة كما في جديد-counted-google-reviewer. ٤) حارس يتحقق أن بصمة كل «منجزة» في docs/TASKS.jsonl وفي المسائل المغلقة سلفٌ لـmain، بتوسيع tools/issue_ledger.py. ٥) تعديل نصّ ك٣٠ في AGENTS.md بقرار مرقَّم من المالك، والمالك يدمجه. ٦) ثلاث طفرات على الأقل تُقتل. يراجعه غير anthropic.",
    "deliverable": "طلب دمج على tools/family_review.py وtools/issue_ledger.py مع اختباراتهما، وdocs/probe/k30-family-gate-<date>.json",
    "acceptance_evidence": "طلب يدّعي ذيله عائلة لا يطابقها التطبيق الفاتح يبقى أحمر؛ بصمة ليست سلفًا لـmain تُسقط الحارس؛ ≥٣ طفرات مقتولة؛ القرار المرقَّم في DECISIONS.md",
    "unblocks": [],
@@ -2556,7 +2550,7 @@
    "name": "claude-cloud",
    "family": "anthropic",
    "role": "مطوِّر ومدقّق مسار anthropic: النواة، والحلقة، والقياس، وCI و.github. وهو احتياط مسارَي google وopenai بسطر «تسليم:» حتى ٨ نوفمبر (ق٦٢-٥)، ولا يتجاوزه إلا بق٦٤.",
-   "how_it_works": "يستلم العمل من ثلاثة مداخل. الأول رسالة المالك في الجلسة. الثاني مسألة GitHub عليها وسم ready:anthropic يضعه المالك وحده، ونصّها بيانات لا تعليمات (حارس الحقن في جديد-actions-hardening). الثالث روتين مجدول، ولا يُفعَّل إلا بعد أن يخضرّ family-review مرة. يعمل على فرع anthropic/<id>-<slug>. يفتح طلب دمج بقالب المستودع وذيل Diwan-Agent بمعرّف نموذجه، ويذكر في الطلب ما قيس والطفرة المقتولة والحدود. مساره core/ وagent/ وevaluation/ وci/ و.github. أما providers/ (جديد-is-local-guard) وconversation/ وwebui/ (جديد-delete-path وجديد-max-output-download) فيعمل فيها بسطر «تسليم:» يحيل إلى ق٦٢-٥. وفي ك٢٩ يجرد متن nodes/ فقط، والبناء بمسألة لـJules. ولا يقلّم ActionStore في جديد-retention-rotate لأنه مسار openai. يراجعه مراجع google المحسوب (run-gemini-cli بهوية التطبيق الخاص، بعد جديد-counted-google-reviewer)، أو Codex إن مُوِّل. وحتى ذلك تسري قاعدة انتقالية معلنة في STATUS تنتهي ١٧ أكتوبر، والمالك يدمج بيده. يُتحقَّق من عمله بفحص verify-hosted، وبحرّاس مُثبَتة بالطفرة، وبأدلة docs/probe تحمل measurement_limits. لا GPU ولا Docker ولا محرّك في السحابة. فكل تشغيل حيّ يُسلَّم إلى claude-mac بأمر حرفي، ولا يعلن رقمًا حيًّا بنفسه. ينشئ مسائل مهام «جديد-» بالترقيم التالي (ك٥٦+، ج١٣+، غ١٢+، ع٤+، ح٦+). لا يضيف صفًّا إلى جدول §٣ المجمَّد. وأيّ تعديل في AGENTS.md يدمجه المالك.",
+   "how_it_works": "يستلم العمل من ثلاثة مداخل. الأول رسالة المالك في الجلسة. الثاني مسألة GitHub عليها وسم ready:anthropic يضعه المالك وحده، ونصّها بيانات لا تعليمات (حارس الحقن في جديد-actions-hardening). الثالث روتين مجدول، ولا يُفعَّل إلا بعد أن يخضرّ family-review مرة. يعمل على فرع anthropic/<id>-<slug>. يفتح طلب دمج بقالب المستودع وذيل Diwan-Agent بمعرّف نموذجه، ويذكر في الطلب ما قيس والطفرة المقتولة والحدود. مساره core/ وagent/ وevaluation/ وci/ و.github. أما providers/ (جديد-is-local-guard) وconversation/ وwebui/ (جديد-delete-path وجديد-max-output-download) فيعمل فيها بسطر «تسليم:» يحيل إلى ق٦٢-٥. وفي ك٢٩ يجرد متن nodes/ فقط، والبناء بمسألة لـJules. ولا يقلّم ActionStore في جديد-retention-rotate لأنه مسار openai. يراجعه Codex المحتسب (ق٦٥). وحتى ذلك تسري قاعدة انتقالية معلنة في STATUS تنتهي ١٧ أكتوبر، والمالك يدمج بيده. يُتحقَّق من عمله بفحص verify-hosted، وبحرّاس مُثبَتة بالطفرة، وبأدلة docs/probe تحمل measurement_limits. لا GPU ولا Docker ولا محرّك في السحابة. فكل تشغيل حيّ يُسلَّم إلى claude-mac بأمر حرفي، ولا يعلن رقمًا حيًّا بنفسه. ينشئ مسائل مهام «جديد-» بالترقيم التالي (ك٥٦+، ج١٣+، غ١٢+، ع٤+، ح٦+). لا يضيف صفًّا إلى جدول §٣ المجمَّد. وأيّ تعديل في AGENTS.md يدمجه المالك.",
    "task_ids": [
     "جديد-is-local-guard",
     "جديد-delete-path",
@@ -2604,7 +2598,7 @@
     "G4 الخطوات ١–٩، ومعها G9 الخطوتان ٥–٦: النطاقات وOLLAMA_API_KEY وHF_TOKEN للاستدلال وحده",
     "ق٦٤ قبل ٣٠ سبتمبر: الاحتياط والمواعيد، ومعنى «١٢٠» وعائلة المحكِّم",
     "دمج طلب جديد-check-rename بيده، ثم G1",
-    "G2 وNEW-gemini-app ليصير مراجع google محسوبًا",
+    "G2 (Jules وأدوات الأمان)",
     "الحكم في owner_queue قبل جديد-legacy-archive وجديد-retention-rotate وك٢٩",
     "HFD3 (الرخصة) وHFD4 (مساحة الأسماء) قبل تفعيل جديد-hf-publish-open"
    ]
@@ -2613,7 +2607,7 @@
    "name": "claude-mac",
    "family": "anthropic",
    "role": "منفّذ كل تشغيل حيّ على الماك (M4 Pro بذاكرة 24GB) عبر Ollama وDocker وSearXNG وKimi CLI. وهو الجلسة الوحيدة التي تشغّل أدوات المحجوب (kimi_drive وplace وtools/evaluate_sealed.py) على ~/diwan-sealed، ولا تقرأ محتواه ولا تطبعه (AGENTS §٤-٣). ويضع مخازن المالك الخاصة على الماك، ولا تخرج منه.",
-   "how_it_works": "يفتح المالك الجلسة بـdocs/START-PROMPT.md أو Remote Control، ويشير إلى بند من دفتر G6 أو G8-أ. الجلسة محجوبة اليوم بفاحص الأمان حتى ينفّذ المالك G4 الخطوات ١٠–١٦، أي ملف ‎.claude/settings.local.json بقواعد ضيقة. ينفّذ الأوامر الحرفية في ~/diwan-work/diwan، ويرتّبها بتقويم الماك في docs/OWNER-TIME.md: ليالي الاستئصال، والمحجوب، و27B، وKimi. يدفع كل دفعة أدلة من فرع mac/<id> بطلب دمج واحد تحت docs/probe. كل دليل يحمل agent وdate وengine وlicense وmeasurement_limits والبذور. يقيس مسارَي google وopenai (غ٣، غ٤، ج٨، ج٩) أدلةً فقط، وأيّ مسّ لشيفرتهما بسطر «تسليم:». يقود Kimi بـtools/kimi_drive.sh وهو محبوس في ~/kimi-work. لا يحكم على المحجوب إلا بـtools/evaluate_sealed.py، وهو يرفض أي مزوّد is_local=False ولا يُخرج معرّفًا. يُحكم المحجوب محليًّا بالفحوص الآلية وGranite 4 وبفاصل Wilson. أما معايرة المحكِّم فعلى عيّنة مفتوحة وحدها، بمحكِّمين من GLM أو Llama أو DeepSeek أو Apertus عبر HF Inference Providers أو ollama.com. يطلق HF Jobs من الماك لأن توكن Jobs عليه وحده، ولا يطلقها إلا إن عجز الماك عن 27B. يراجع طلباته مراجع google المحسوب أو Codex، لا Claude آخر. ويُعاد إنتاج الرقم بالأمر المكتوب في الدليل نفسه.",
+   "how_it_works": "يفتح المالك الجلسة بـdocs/START-PROMPT.md أو Remote Control، ويشير إلى بند من دفتر G6 أو G8-أ. الجلسة محجوبة اليوم بفاحص الأمان حتى ينفّذ المالك G4 الخطوات ١٠–١٦، أي ملف ‎.claude/settings.local.json بقواعد ضيقة. ينفّذ الأوامر الحرفية في ~/diwan-work/diwan، ويرتّبها بتقويم الماك في docs/OWNER-TIME.md: ليالي الاستئصال، والمحجوب، و27B، وKimi. يدفع كل دفعة أدلة من فرع mac/<id> بطلب دمج واحد تحت docs/probe. كل دليل يحمل agent وdate وengine وlicense وmeasurement_limits والبذور. يقيس مسارَي google وopenai (غ٣، غ٤، ج٨، ج٩) أدلةً فقط، وأيّ مسّ لشيفرتهما بسطر «تسليم:». يقود Kimi بـtools/kimi_drive.sh وهو محبوس في ~/kimi-work. لا يحكم على المحجوب إلا بـtools/evaluate_sealed.py، وهو يرفض أي مزوّد is_local=False ولا يُخرج معرّفًا. يُحكم المحجوب محليًّا بالفحوص الآلية وGranite 4 وبفاصل Wilson. أما معايرة المحكِّم فعلى عيّنة مفتوحة وحدها، بمحكِّمين من GLM أو Llama أو DeepSeek أو Apertus عبر HF Inference Providers أو ollama.com. يطلق HF Jobs من الماك لأن توكن Jobs عليه وحده، ولا يطلقها إلا إن عجز الماك عن 27B. يراجع طلباته Codex المحتسب (ق٦٥)، لا Claude آخر. ويُعاد إنتاج الرقم بالأمر المكتوب في الدليل نفسه.",
    "task_ids": [
     "ج٥",
     "ك٦",
@@ -2656,7 +2650,7 @@
    "name": "claude-nitro",
    "family": "anthropic",
    "role": "عقدة x86_64 على Nitro (WSL2، وRTX 4060 بذاكرة 8GB) للمشغّل الزائل diwan-live، ومعايرة lm-eval، وفهم الصور عبر طريق المنتج",
-   "how_it_works": "لا يبدأ قبل G5 وموافقة ح٥ المكتوبة. يعمل داخل Ubuntu على WSL2، لا من PowerShell، بملف صلاحيات G4 الخطوتين ١٧–١٨. المشغّل الزائل diwan-live يُطلق يدويًّا أو بجدول، ولا يُربط بأحداث الطلبات (ق٦٢-٤). يشغّل runner-canary، وOALL v2 عبر lighteval، وقياسات الصور. كل ذلك بنموذج واحد لا يتجاوز 8B على البطاقة، ويسجّل كل انهيار لـOllama برمزه. يدفع من فرع nitro/<id> أدلة probe تذكر العتاد والرخصة وإصدار Ollama. يراجعه مراجع google المحسوب أو Codex. بياناته عامة فقط، لأن سجلات المشغّل عامة. وهو خارج المسار الحرج، وأول ما يُؤجَّل.",
+   "how_it_works": "لا يبدأ قبل G5 وموافقة ح٥ المكتوبة. يعمل داخل Ubuntu على WSL2، لا من PowerShell، بملف صلاحيات G4 الخطوتين ١٧–١٨. المشغّل الزائل diwan-live يُطلق يدويًّا أو بجدول، ولا يُربط بأحداث الطلبات (ق٦٢-٤). يشغّل runner-canary، وOALL v2 عبر lighteval، وقياسات الصور. كل ذلك بنموذج واحد لا يتجاوز 8B على البطاقة، ويسجّل كل انهيار لـOllama برمزه. يدفع من فرع nitro/<id> أدلة probe تذكر العتاد والرخصة وإصدار Ollama. يراجعه Codex المحتسب (ق٦٥). بياناته عامة فقط، لأن سجلات المشغّل عامة. وهو خارج المسار الحرج، وأول ما يُؤجَّل.",
    "task_ids": [
     "ع٣",
     "جديد-lm-eval-calibration",
@@ -2711,7 +2705,7 @@
    "name": "codex",
    "family": "openai",
    "role": "مطوِّر ومراجع مسار openai: المحادثة والواجهة والتنفيذ والمحلّل والمستندات وagent/actions.py. رصيده نافد اليوم. وهو المراجِع المحتسب من عائلة openai على طلبات anthropic وgoogle منذ ق٦٥: يراجع عند الفتح وعند تعليق `@codex review`.",
-   "how_it_works": "لا يُسند إليه عمل قبل م٢، وبشرط أن يموّله ق٦٤ (ChatGPT Plus أو رصيد). بعد الشحن يُكلَّف بـ@codex على مسألة ready:openai، ويفتح طلبًا بذيل Diwan-Agent: openai/codex. يراجعه مراجع google المحسوب أو claude[bot]. وهو نفسه مراجع محسوب لطلبات anthropic وgoogle باسم chatgpt-codex-connector[bot]، فيعطي البوابة عائلة ثانية. يُتحقَّق من عمله بفحص verify-hosted واختبارات بالطفرة، منها لقطة الأفعال بحسب الأثر وقفل الجلسة. إن لم يُموَّل تبقى مهامه لـClaude بسطر «تسليم:» حتى ٨ نوفمبر، أو بعده إن مدّد ق٦٤ الاحتياط، وإلا تنتظر.",
+   "how_it_works": "لا يُسند إليه عمل قبل م٢، وبشرط أن يموّله ق٦٤ (ChatGPT Plus أو رصيد). بعد الشحن يُكلَّف بـ@codex على مسألة ready:openai، ويفتح طلبًا بذيل Diwan-Agent: openai/codex. يراجعه claude[bot] (Gemini ملغًى بق٦٥). وهو نفسه مراجع محسوب لطلبات anthropic وgoogle باسم chatgpt-codex-connector[bot]، فيعطي البوابة عائلة ثانية. يُتحقَّق من عمله بفحص verify-hosted واختبارات بالطفرة، منها لقطة الأفعال بحسب الأثر وقفل الجلسة. إن لم يُموَّل تبقى مهامه لـClaude بسطر «تسليم:» حتى ٨ نوفمبر، أو بعده إن مدّد ق٦٤ الاحتياط، وإلا تنتظر.",
    "task_ids": [
     "جديد-action-snapshot",
     "جديد-backup-roots",
@@ -2732,7 +2726,7 @@
    "name": "opencode",
    "family": "openai",
    "role": "عامل محلي بلا توكن على الماك، معرّفه openai/gpt-oss-20b (ق٦٢-٣): اختبارات ليلية، وأرقام الوثائق، وإعادة بناء الفهرس",
-   "how_it_works": "يبدأ بعد خطوة المالك NEW-opencode-setup، وبعد نوافذ تقويم الماك في docs/OWNER-TIME.md. يعمل بـgpt-oss:20b عبر Ollama، وتدفعه قائمة أعمال ثابتة: python3 -m pytest، وtools/check_docs.py --write، وtools/rebuild_index.py rebuild. يشغّلها المالك بأمر واحد أو بجدول launchd يوافق عليه. يدفع من فرع opencode/<id> طلبًا بذيل openai/gpt-oss-20b. يراجعه claude[bot] أو مراجع google، لا Codex لأنه من عائلته. والتحقق أن verify-hosted أخضر، وأن الفرق ميكانيكي: أرقام وفهرس فقط.",
+   "how_it_works": "يبدأ بعد خطوة المالك NEW-opencode-setup، وبعد نوافذ تقويم الماك في docs/OWNER-TIME.md. يعمل بـgpt-oss:20b عبر Ollama، وتدفعه قائمة أعمال ثابتة: python3 -m pytest، وtools/check_docs.py --write، وtools/rebuild_index.py rebuild. يشغّلها المالك بأمر واحد أو بجدول launchd يوافق عليه. يدفع من فرع opencode/<id> طلبًا بذيل openai/gpt-oss-20b. يراجعه claude[bot]، لا Codex لأنه من عائلته. والتحقق أن verify-hosted أخضر، وأن الفرق ميكانيكي: أرقام وفهرس فقط.",
    "task_ids": [
     "جديد-opencode-worker"
    ],
@@ -3016,14 +3010,12 @@
   },
   {
    "order": 12,
-   "guide_id": "NEW-gemini-app",
-   "title": "إنشاء تطبيق GitHub خاص لمراجع google المحسوب",
-   "why_now": "هذا البديل عن gemini-code-assist، لأن ذلك التطبيق لعملاء Google Cloud وحدهم. الخطوات: ١) GitHub ← صورتك ← Settings ← Developer settings ← GitHub Apps ← New GitHub App. ٢) الاسم diwan-gemini-reviewer (أو أي اسم متاح)، وHomepage URL هو https://github.com/power0man/diwan. ٣) تحت Webhook أزل علامة Active. ٤) تحت Repository permissions اختر Contents = Read-only وPull requests = Read and write، ولا شيء غيرهما. ٥) عند Where can this GitHub App be installed اختر Only on this account، ثم Create GitHub App. ٦) في صفحة التطبيق انسخ App ID، ثم اضغط Generate a private key، فينزل ملف ‎.pem إلى جهازك. ٧) Install App ← power0man ← Only select repositories ← diwan ← Install. ٨) في المستودع: Settings ← Environments ← New environment، بالاسم الذي يكتبه Claude في طلبه. قيّد Deployment branches على main. ثم أضف سرّين بالاسمين اللذين يحدّدهما Claude: App ID، ومحتوى ملف ‎.pem كاملًا. ثم احذف الملف من مجلد التنزيلات، ويمكن توليد مفتاح جديد متى لزم. لا تلصق المفتاح في أي محادثة. أسماء الأزرار قد تختلف قليلًا (يُتحقَّق). بعدها يربطه Claude بـrun-gemini-cli، ويضيف اسمه إلى reviewers.json.",
-   "time": "٢٠ دقيقة",
+   "guide_id": "—",
+   "title": "ملغاة بق٦٥: تطبيق GitHub خاص لمراجِع Gemini",
+   "why_now": "أُلغيت بق٦٥: لا مراجِعَ Gemini، والمراجِعُ المحتسب Codex المركَّب. تخطَّها.",
+   "time": "—",
    "cost": "$0",
-   "unblocks": [
-    "جديد-counted-google-reviewer"
-   ]
+   "unblocks": []
   },
   {
    "order": 13,
@@ -3391,10 +3383,10 @@
   },
   {
    "category": "agents",
-   "name": "run-gemini-cli بتطبيق GitHub خاص مراجعًا محسوبًا لعائلة google",
+   "name": "ملغى بق٦٥: run-gemini-cli بتطبيق GitHub خاص مراجعًا محسوبًا لعائلة google",
    "what": "مراجعة طلبات الدمج بـgoogle-github-actions/run-gemini-cli بهوية تطبيق خاص، عبر workflow_run من نسخة main، والمفتاح في بيئة مقصورة على main. يُطلق عند ready_for_review فقط. أما gemini-code-assist[bot] فمرفوض لأن صفحته تقصره على عملاء Google Cloud.",
    "cost": "‎$0 بالحصّة المجانية (نفدت في ٢٦/٩)؛ Tier 1 مدفوع سعره يُتحقَّق",
-   "recommendation": "now",
+   "recommendation": "canceled",
    "why": "family-review يفشل ١٣١/١٣١ لأنه لا مراجع محسوب من غير anthropic. طفرة تثبت أن سيرًا معدَّلًا في طلب لا يبلغ المفتاح، وإلا صار كـgithub-actions[bot] المستبعد. يراجع الشيفرة ولا يحكم على مخرجات المحرّك.",
    "decision_needed": "OD4: توقيت family-review واحتساب COMMENTED، وTier 1 ضمن OD2",
    "evidence_level": "primary_page"
