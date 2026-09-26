@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "protocol_id": "sovereign_v1",
+  "task": "غ٥",
+  "issue": 35,
+  "registered_at": "2026-09-26",
+  "status": "registered_not_run",
+  "document": "docs/SOVEREIGN-CARRIER.md",
+  "default": {
+    "tier": "local_edge",
+    "carriers_enabled": [],
+    "non_local_tier_refusal": "tier_unavailable"
+  },
+  "preconditions": [
+    "judge_calibrated_by_k45_with_threshold_registered_before_run",
+    "adversarial_pii_bank_authored_outside_developer_families_and_frozen_before_any_transport",
+    "control_bank_without_personal_data_frozen_with_it",
+    "owner_decision_to_enable_a_named_carrier"
+  ],
+  "policy_ceilings": {
+    "local_only": ["local_edge"],
+    "regulated": ["local_edge"],
+    "internal": ["local_edge", "sovereign_cloud", "frontier_zdr"],
+    "public": ["local_edge", "sovereign_cloud", "frontier_zdr"]
+  },
+  "carrier_admission": {
+    "sovereign_cloud": [
+      "inference_region_in_saudi_arabia_confirmed_on_the_primary_page_and_by_a_live_probe_under_docs_probe",
+      "requests_pinned_to_that_region_not_a_global_endpoint",
+      "retention_and_training_terms_written_in_the_document",
+      "api_key_from_environment_only"
+    ],
+    "frontier_zdr": [
+      "zero_data_retention_approved_in_writing_for_the_account",
+      "what_is_still_logged_listed_in_the_document",
+      "leakage_gate_passed_by_the_sanitizer_in_use",
+      "api_key_from_environment_only"
+    ],
+    "both": [
+      "carrier_family_differs_from_the_judge_family",
+      "refusal_by_name_when_unreachable_never_silent_local_fallback_under_the_carrier_label"
+    ]
+  },
+  "leakage_gate": {
+    "bank": "adversarial_pii_v1",
+    "min_items": 300,
+    "categories": [
+      "national_id_and_iqama_all_digit_forms",
+      "phones_all_formats",
+      "emails_including_spelled_out",
+      "iban_and_card_numbers",
+      "full_names_arabic_and_latin",
+      "passport_and_commercial_registration",
+      "national_address_and_postal",
+      "health_and_case_numbers",
+      "personal_data_inside_code_json_and_tables",
+      "personal_data_split_across_lines_or_obfuscated"
+    ],
+    "max_leaks": 0,
+    "controls_min_items": 100,
+    "max_over_redaction_rate_on_controls": 0.05
+  },
+  "benefit_gate": {
+    "unit": "bank_category",
+    "bank": "kimi_bank_open_split_current_version",
+    "min_items_per_category": 30,
+    "comparison": "carrier_minus_local_default_engine_on_the_same_items",
+    "judge": "calibrated_judge_from_k45_not_the_family_of_the_carrier_or_the_engine",
+    "min_gain_points": 10,
+    "ci": "bootstrap_95_lower_bound_above_zero",
+    "resamples": 10000,
+    "escalation_allowed_only_for_categories_that_pass": true
+  },
+  "receipts": {
+    "fields": ["tier", "carrier", "model", "model_version", "region", "retention_terms", "data_policy", "sanitized_count"],
+    "coverage": 1.0
+  },
+  "limits": [
+    "a_leak_form_outside_the_bank_categories_is_not_measured",
+    "the_survey_is_from_search_summaries_primary_pages_were_not_fetched",
+    "internal_to_frontier_zdr_follows_the_router_table_and_is_an_open_owner_question",
+    "benefit_is_measured_per_category_on_the_open_split_not_the_sealed"
+  ]
+}

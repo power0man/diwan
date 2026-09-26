@@ -43,6 +43,13 @@ def _show(result):
         print(terminal_text(result["error_code"]), file=sys.stderr)
 
 
+def _require_local(tier):
+    """لا ناقلَ سحابيٌّ موصول: غيرُ المحليّ يُرفض قبل النداء، ولا يُنفَّذ محليًّا ثم يُوسم بمستواه (غ٥)."""
+    if tier != "local_edge":
+        raise SovereignRoutingError("tier_unavailable",
+                                    f"لا ناقلَ موصولٌ للمستوى {tier}؛ الافتراضيُّ محليّ (docs/SOVEREIGN-CARRIER.md)")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--session", required=True, help="معرف جلسة ثابت لاستئنافها")
@@ -96,6 +103,7 @@ def main(argv=None):
                 idempotency_key=None,
             )
             router.determine_tier(probe_req, target_tier=args.tier)
+            _require_local(args.tier)
             effective_text = text
             token_map = {}
             if args.tier == "frontier_zdr":
@@ -138,6 +146,7 @@ def main(argv=None):
                     idempotency_key=None,
                 )
                 router.determine_tier(probe_req, target_tier=args.tier)
+                _require_local(args.tier)
                 effective_text = text
                 token_map = {}
                 if args.tier == "frontier_zdr":
