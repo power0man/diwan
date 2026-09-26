@@ -24,7 +24,8 @@ cmd_setup() {
   # والشطرُ المفتوح من البنك الحاليّ إلى current/open (قرار المالك، ٢٦ سبتمبر): دورةُ v1.2
   # للمفتوح وحده، فلا يصل Kimi محجوبٌ ولا بيانُه — فـKimi نموذجٌ سحابيّ، والمحجوبُ لا يُرسل.
   local cur="$KIMI_WORK/current"
-  [ ! -e "$cur/open" ] || die "$cur/open موجود من قبل، ولم أغيّر شيئًا"
+  # current/ كلُّه لا open/ وحده: current/ قائمٌ فيه sealed/ أو غيرُه يبقى بجانب المفتوح في متناول Kimi
+  [ ! -e "$cur" ] || die "$cur موجود من قبل، ولم أغيّر شيئًا — انقله جانبًا بيدك إن أردت دورةً جديدة"
   mkdir -p "$cur"
   cp -R "$DIWAN/evaluation/banks/kimi_v1/open" "$cur/open"
   echo "مجلّد Kimi جاهز: $KIMI_WORK (examples/ و logs/ و prompts/ و current/)"

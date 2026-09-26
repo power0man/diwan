@@ -95,3 +95,13 @@ def test_setup_gives_kimi_the_current_open_bank_and_no_sealed_file(tmp_path):
     marker.write_text("نسختُه", encoding="utf-8")
     again = _run(["setup"], tmp_path)
     assert again.returncode != 0 and marker.read_text(encoding="utf-8") == "نسختُه"
+
+
+def test_setup_refuses_any_existing_current_folder_not_only_its_open_half(tmp_path):
+    """ملاحظةُ Codex على #128: current/ قائمٌ بلا open/ وفيه sealed/ كان يمرّ، فيبقى المحجوبُ في متناول Kimi."""
+    stale = tmp_path / "current" / "sealed" / "old.json"
+    stale.parent.mkdir(parents=True)
+    stale.write_text("{}", encoding="utf-8")
+    done = _run(["setup"], tmp_path)
+    assert done.returncode != 0
+    assert not (tmp_path / "current" / "open").exists()

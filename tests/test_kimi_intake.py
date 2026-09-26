@@ -184,11 +184,35 @@ def test_an_open_only_delivery_passes_without_a_manifest_and_refuses_a_sealed_fo
     """دورةُ الشطر المفتوح: لا يصل Kimi محجوبٌ، فلا بيانَ يُطلب، ويُرفض تسليمٌ فيه sealed/."""
     import shutil
     src = delivery(tmp_path)
-    with_sealed = intake(src, open_only=True)
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    with_sealed = intake(src, open_only=True, current=current)
     assert not with_sealed["passed"] and with_sealed["structure"]["missing"]
     shutil.rmtree(src / "sealed")
     assert not intake(src)["passed"], "بلا open_only يبقى البيانُ مطلوبًا"
-    report = intake(src, open_only=True)
+    report = intake(src, open_only=True, current=current)
     assert report["passed"], report
     assert report["manifest"]["skipped"] == "open_only"
     assert report["bank"]["counts"]["sealed"]["files"] == 0
+
+
+def test_an_open_only_delivery_must_carry_every_current_file_and_case(tmp_path):
+    """ملاحظةُ Codex على #128: التوزيعُ يستبدل المفتوح، فالتسليمُ الفارغ أو الناقص كان يمرّ ثم يمحو البنك."""
+    import shutil
+    src = delivery(tmp_path)
+    shutil.rmtree(src / "sealed")
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    _write(current / "tier_a" / "kimi_a_002.json", _suite("kimi_a_002", [_case("o9")]))
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_file_missing"}
+    _write(src / "open" / "tier_a" / "kimi_a_002.json", _suite("kimi_a_002", [_case("o8")]))
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_case_missing"}
+    _write(src / "open" / "tier_a" / "kimi_a_002.json", _suite("kimi_a_002", [_case("o9"), _case("o10")]))
+    _write(src / "open" / "tier_a" / "kimi_a_003.json", _suite("kimi_a_003", [_case("n1")]))
+    assert intake(src, open_only=True, current=current)["passed"], "الزيادةُ لا تمحو شيئًا"
+    shutil.rmtree(src / "open")
+    (src / "open").mkdir()
+    empty = intake(src, open_only=True, current=current)
+    assert not empty["passed"] and "open_file_missing" in _codes(empty, "replacement")
+    assert _codes(intake(src, open_only=True, current=tmp_path / "absent"), "replacement") == {
+        "current_open_bank_missing"}

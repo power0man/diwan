@@ -46,6 +46,7 @@ from evaluation.capabilities import validate_suite  # noqa: E402
 REQUIRED = ("open", "sealed/MANIFEST.json", "REPORT.md", "disputed.json")
 # دورةُ الشطر المفتوح (قرار المالك، ٢٦ سبتمبر): لا يرى Kimi المحجوب، فلا بيانَ ولا sealed/ في تسليمه
 REQUIRED_OPEN_ONLY = ("open", "REPORT.md", "disputed.json")
+CURRENT_OPEN = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
 # بنكُ العربية العامة ملفّان، لأن المدقّقَ لا يقبل فوق مئة حالةٍ في الملف (`validate_suite`)
 DEV_GENERAL = ("arabic_general_v3_1.json", "arabic_general_v3_2.json")
 DEV_AGENTIC, DEV_AGENTIC_META = "agentic_v3.json", "agentic_v3.meta.json"
@@ -110,6 +111,38 @@ def check_manifest(src: Path) -> dict:
         if extra.name != "MANIFEST.json" and relative not in listed:
             _failure(failures, relative, "sealed_file_unlisted")
     return {"files": len(entries), "failures": failures}
+
+
+def _open_ids(root: Path) -> dict[str, set]:
+    out = {}
+    for path in sorted(root.rglob("*.json")):
+        if path.name.endswith(".meta.json"):
+            continue
+        data = _json(path)
+        items = (data.get("cases") or data.get("tasks") or []) if isinstance(data, dict) else []
+        out[path.relative_to(root).as_posix()] = {
+            item.get("case_id") or item.get("task_id") for item in items if isinstance(item, dict)}
+    return out
+
+
+def check_open_replacement(src: Path, current: Path) -> dict:
+    """دورةُ المفتوح تستبدل المفتوحَ القائم (`UPDATE=1 OPEN_ONLY=1 place`)، فلا تمرّ إلا بكلِّ ملفٍّ وكلِّ حالةٍ فيه.
+
+    كان تسليمٌ فارغٌ يمرّ: البيانُ يُتخطّى، ولا ملفَّ يسقط في المدقّقات، فيمحو التوزيعُ البنك (ملاحظة Codex على #128).
+    والزيادةُ مقبولة: ملفٌّ أو حالةٌ جديدة لا تمحو شيئًا.
+    """
+    failures: list = []
+    expected = _open_ids(current) if current.is_dir() else {}
+    if not expected:
+        _failure(failures, "open", "current_open_bank_missing")
+        return {"files": 0, "failures": failures}
+    delivered = _open_ids(src / "open")
+    for relative, ids in expected.items():
+        if relative not in delivered:
+            _failure(failures, f"open/{relative}", "open_file_missing")
+        elif not ids <= delivered[relative]:
+            _failure(failures, f"open/{relative}", "open_case_missing")
+    return {"files": len(expected), "failures": failures}
 
 
 def _bank_files(src: Path) -> list[tuple[str, Path]]:
@@ -263,7 +296,8 @@ def check_agentic(src: Path, *, judge=_judge) -> dict:
     return {"counts": counts, "failures": failures}
 
 
-def intake(src: Path, *, agentic: bool = False, open_only: bool = False, judge=_judge) -> dict:
+def intake(src: Path, *, agentic: bool = False, open_only: bool = False, current: Path | None = None,
+           judge=_judge) -> dict:
     structure = check_structure(src, open_only=open_only)
     report = {"schema_version": 1, "kind": "kimi_intake", "source": src.name, "structure": structure,
               "open_only": open_only}
@@ -271,11 +305,14 @@ def intake(src: Path, *, agentic: bool = False, open_only: bool = False, judge=_
         report.update(passed=False, measurement_limits=LIMITS)
         return report
     report["manifest"] = {"files": 0, "failures": [], "skipped": "open_only"} if open_only else check_manifest(src)
+    if open_only:
+        report["replacement"] = check_open_replacement(src, current or CURRENT_OPEN)
     report["bank"] = check_bank(src)
     report["dev"] = check_dev(src)
     if agentic:
         report["agentic"] = check_agentic(src, judge=judge)
-    report["passed"] = not any(report[k]["failures"] for k in ("manifest", "bank", "dev", "agentic") if k in report)
+    report["passed"] = not any(report[k]["failures"] for k in ("manifest", "replacement", "bank", "dev", "agentic")
+                               if k in report)
     report["measurement_limits"] = LIMITS
     return report
 
@@ -286,9 +323,11 @@ def main(argv=None) -> int:
     parser.add_argument("--agentic", action="store_true", help="يحكم على المهامّ الوكيلة؛ في حاويةٍ زائلة وحدها")
     parser.add_argument("--open-only", action="store_true",
                         help="دورةُ الشطر المفتوح: لا بيانَ، ويُرفض تسليمٌ فيه sealed/")
+    parser.add_argument("--current", type=Path, default=None,
+                        help="المفتوحُ القائم الذي يستبدله التسليم (الافتراضيُّ بنكُ المستودع)")
     parser.add_argument("--out", required=True, help="مسارُ التقرير، أو - للطباعة")
     args = parser.parse_args(argv)
-    report = intake(args.source.resolve(), agentic=args.agentic, open_only=args.open_only)
+    report = intake(args.source.resolve(), agentic=args.agentic, open_only=args.open_only, current=args.current)
     text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.out == "-":
         sys.stdout.write(text)
