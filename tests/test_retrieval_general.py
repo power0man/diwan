@@ -99,19 +99,18 @@ def test_a_sample_where_everything_succeeds_keeps_its_uncertainty():
     assert hit_interval(twins) == wilson(30, 60)
 
 
-def test_the_vector_rule_decides_the_hybrid_only_and_never_a_blocked_component(monkeypatch):
-    """ملاحظتا Codex على #132: القاعدةُ تقرّر قناةَ المتّجهات في الهجين، فلا تُطبَّق على المتّجهات وحدها؛
-    ولا تُطبَّق على مكوّنٍ محجوبٍ في البروتوكول، فتمرّ بـ`ablation.judge` لا بـ`decide` مباشرةً."""
+def test_these_synthetic_arms_never_yield_a_protocol_decision(monkeypatch):
+    """ملاحظاتُ Codex على #132: قاعدةُ ك٤٦ تقرّر قناةَ المتّجهات في `HybridRetriever` المنتج، وهذه الأذرعُ ليست هو
+    (BM25 بلا توسيعٍ صرفيّ، والهجينُ بلا exact/any، والمقاطعُ عناقيدُ لا يراها الحكم). فلا حكمَ منها ولو صار المكوّنُ
+    جاهزًا، ولا يُستدعى `ablation.judge`."""
     _, rows, arms = _recorded()
-    blocked = comparisons(rows, arms)
-    assert blocked["hybrid_vs_bm25"]["protocol"]["reason"] == "component_blocked"
-    assert blocked["vectors_vs_bm25"]["protocol"]["decision"] == "not_applied"
     ready = ablation.protocol()
     ready["components"]["vectors"]["status"] = "ready"
     monkeypatch.setattr(ablation, "protocol", lambda: ready)
-    unblocked = comparisons(rows, arms)
-    assert unblocked["hybrid_vs_bm25"]["protocol"]["decision"] == "underpowered"
-    assert unblocked["vectors_vs_bm25"]["protocol"]["decision"] == "not_applied"
+    monkeypatch.setattr(ablation, "judge", lambda *a, **k: pytest.fail("حكمٌ من أذرعٍ ليست المنتج"))
+    result = comparisons(rows, arms)
+    assert {v["protocol"]["decision"] for v in result.values()} == {"not_applied"}
+    assert result["hybrid_vs_bm25"]["protocol"]["component_status"] == "ready"
 
 
 def test_intervals_resample_gold_passages_not_queries():

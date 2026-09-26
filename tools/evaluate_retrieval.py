@@ -32,7 +32,7 @@ LIMITS = [
     "fusion_uses_depth_50_per_channel_and_one_or_matched_bm25_list_unlike_the_product_2x_limit_and_exact_plus_any_lists",
     "the_protocol_statistic_agresti_min_treats_queries_as_independent_the_clustered_effect_interval_is_beside_it",
     "vectors_vs_bm25_is_descriptive_the_k46_vector_rule_decides_the_hybrid_channel_only",
-    "no_protocol_decision_while_the_vectors_component_is_blocked_and_461_pairs_would_be_needed_once_ready",
+    "no_protocol_decision_here_the_k46_vector_rule_needs_the_product_hybrid_retriever_with_only_vector_toggled",
 ]
 
 

@@ -234,11 +234,13 @@ def paired_effect_ci(on: list[dict], off: list[dict], **options) -> list[float]:
 
 
 def comparisons(rows: dict[str, list[dict]], arms: dict) -> dict:
-    """كلُّ ذراعٍ مقابل BM25 في hit@5.
+    """كلُّ ذراعٍ مقابل BM25 في hit@5، وصفًا لا حكمًا.
 
-    قاعدةُ ك٤٦ لمكوّن المتّجهات تقرّر تفعيلَ قناته في `HybridRetriever`، فذراعاها الهجينُ مقابل BM25 وحده؛
-    والمتّجهاتُ وحدها تحلّ محلّ BM25 لا تضاف إليه، فمقارنتُها وصفية (ملاحظة Codex على #132). والقاعدةُ
-    تمرّ بـ`ablation.judge` وحده، فمكوّنٌ محجوبٌ في البروتوكول لا يُنشر له حكم.
+    قاعدةُ ك٤٦ لمكوّن المتّجهات تقرّر تفعيلَ قناته في `HybridRetriever` المنتج. وأذرعُ هذا القياس ليست
+    المنتجَ مع القناة وبدونها: BM25 هنا بلا التوسيع الصرفيّ، والهجينُ بلا قائمتَي exact/any وأوزانهما ولا
+    تجميع الصفحات؛ والمقارنةُ على الاستعلامات والمقاطعُ عناقيدُ لا يراها `ablation.judge`. فلا يُستدعى الحكمُ
+    هنا ولو صار المكوّنُ `ready`، والقرارُ من قياس `HybridRetriever` نفسِه بقلب `vector` وحده (ملاحظات Codex
+    على #132). والمتّجهاتُ وحدها تحلّ محلّ BM25 لا تضاف إليه، فهي وصفيةٌ على كل حال.
     """
     out = {}
     for name, on in (("hybrid_vs_bm25", "hybrid"), ("vectors_vs_bm25", "vectors")):
@@ -248,15 +250,10 @@ def comparisons(rows: dict[str, list[dict]], arms: dict) -> dict:
                  "ndcg_at_10_difference": round(arms[on]["overall"]["ndcg_at_10"]
                                                 - arms["bm25"]["overall"]["ndcg_at_10"], 4)}
         if on == "hybrid":
-            try:
-                verdict = ablation.judge("vectors", on_rows, off_rows)
-                entry["protocol"] = {k: verdict[k] for k in ("component", "decision", "reason", "protocol_sha256")}
-            except ablation.AblationError as exc:
-                if exc.code != "component_blocked":
-                    raise
-                spec = ablation.protocol()["components"]["vectors"]
-                entry["protocol"] = {"component": "vectors", "decision": "not_applied",
-                                     "reason": "component_blocked", "blocked_by": spec["blocked_by"]}
+            spec = ablation.protocol()["components"]["vectors"]
+            entry["protocol"] = {"component": "vectors", "decision": "not_applied",
+                                 "reason": "descriptive_these_arms_are_not_the_product_retriever_with_vector_toggled",
+                                 "component_status": spec["status"], "blocked_by": spec.get("blocked_by", [])}
         else:
             entry["protocol"] = {"decision": "not_applied",
                                  "reason": "descriptive_the_vector_rule_is_for_the_hybrid_not_a_bm25_replacement"}
