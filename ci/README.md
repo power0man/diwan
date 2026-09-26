@@ -32,6 +32,16 @@ tokens through the owner's authenticated `gh`. Workers receive neither capabilit
    or updates to other projects. Runtime image contents have not changed; this
    version requires a new runner image because its entrypoint changed.
 
+**Platforms.** `requirements-ci.lock` carries macOS arm64 and Linux arm64 wheel
+hashes only, so pip refuses `cffi` and `cryptography` on Linux x86_64 (Nitro).
+Nitro builds the runtime alone with `--platform linux/amd64 --lock
+ci/requirements-ci.all-platforms.lock`: the same pins and every hash of
+`requirements-ci.lock`, plus one Linux x86_64 hash for each platform wheel
+(`tests/test_ci_lock_platforms.py`). The root lock stays unchanged for now,
+because `tools/verify_gate.py` matches each candidate's lock against the Mac
+receipt. At the next lock change the all-platforms lock replaces it, and the
+Mac rebuilds its receipt then. The runner image remains linux/arm64 only.
+
 A receipt is a reviewed local identity record, not an attestation against a
 hostile Docker daemon or host owner. Runner v2.337.0 remains pinned with its
 reviewed official checksum. Review upstream release requirements before building;
