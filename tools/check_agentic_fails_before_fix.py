@@ -11,7 +11,10 @@
 ألّفها نموذجٌ خارجيّ، وتشغيلُها على جهاز المالك هو ما تعالجه المهمّة ج٣.
 
     docker run --rm --network none -v "$PWD":/workspace:ro -w /workspace \\
-      <image> python tools/check_agentic_fails_before_fix.py <suite.json>
+      <image> python tools/check_agentic_fails_before_fix.py <suite.json> [--meta <suite.meta.json>]
+
+ومع `--meta` (بنكٌ له حلولٌ مرجعية، ك٤٤) يُفحص في البيئة نفسِها أن كلَّ مهمّةٍ تمرّ بحلّها المرجعيّ ولا
+يمسّ حلُّها ملفّاتِ الحكم، وأن حلَّها القريبَ الخاطئ (`decoy_solution`) يسقط: فالمدقّقُ يميّز لا يرفض كلَّ شيء.
 """
 from __future__ import annotations
 
@@ -23,14 +26,28 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # بناءُ المساحة بدالّة المُشغِّل نفسِها: نصٌّ وملفّاتٌ ثنائية (ك٥٠)، لا بنسخةٍ نصّية منها
-from evaluation.agentic_runner import evaluate_success, materialize, qualified_task_id, validate_agentic_suite
+from evaluation.agentic_runner import (evaluate_success, harness_tampering, materialize, qualified_task_id,
+                                      validate_agentic_suite, workspace_bytes)
+
+
+def _judge(task: dict, overlay: dict | None) -> tuple[dict, list[str]]:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp).resolve()
+        materialize(task, root)
+        for name, content in (overlay or {}).items():
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(workspace_bytes(content))
+        return evaluate_success(task, root), harness_tampering(task, root)
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 2:
-        print("الاستعمال: check_agentic_fails_before_fix.py <suite.json>", file=sys.stderr)
+    if len(argv) not in (2, 4) or (len(argv) == 4 and argv[2] != "--meta"):
+        print("الاستعمال: check_agentic_fails_before_fix.py <suite.json> [--meta <suite.meta.json>]", file=sys.stderr)
         return 2
     suite = validate_agentic_suite(json.loads(Path(argv[1]).read_text(encoding="utf-8")))
+    meta = json.loads(Path(argv[3]).read_text(encoding="utf-8"))["tasks"] if len(argv) == 4 else None
+    solutions = []
     already_passing = []
     unjudgeable = []
     for task in suite["tasks"]:
@@ -50,6 +67,15 @@ def main(argv: list[str]) -> int:
             mark = "؟ تعذَّر الحكم"
         else:
             mark = "✓ تسقط"
+        if meta is not None:
+            reference, tampered = _judge(task, meta[task["task_id"]]["reference_solution"])
+            decoy, _ = _judge(task, meta[task["task_id"]]["decoy_solution"])
+            if not reference["passed"] or tampered:
+                solutions.append(f"{name}: الحلُّ المرجعيّ لا يمرّ ({reference.get('code')}{', ' + ', '.join(tampered) if tampered else ''})")
+            if decoy["passed"]:
+                solutions.append(f"{name}: الحلُّ الخاطئ يمرّ")
+            mark += "، والمرجعيّ يمرّ" if reference["passed"] and not tampered else "، والمرجعيّ لا يمرّ"
+            mark += "، والخاطئ يسقط" if not decoy["passed"] else "، والخاطئ يمرّ"
         print(f"{mark}  {name}  [{kind}]")
 
     total = len(suite["tasks"])
@@ -60,7 +86,10 @@ def main(argv: list[str]) -> int:
         print("مهامٌّ لا تقيس شيئًا:", ", ".join(already_passing))
     if unjudgeable:
         print("مهامٌّ لم يُحكم عليها:", ", ".join(f"{t} ({c})" for t, c in unjudgeable))
-    return 1 if already_passing or unjudgeable else 0
+    if meta is not None:
+        print(f"الحلول: {total - len(solutions)} مهمّةً بحلٍّ مرجعيٍّ يمرّ وحلٍّ خاطئٍ يسقط" if not solutions
+              else "حلولٌ لا تميّز:\n  " + "\n  ".join(solutions))
+    return 1 if already_passing or unjudgeable or solutions else 0
 
 
 if __name__ == "__main__":

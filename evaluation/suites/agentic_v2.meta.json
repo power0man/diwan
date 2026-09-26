@@ -1,0 +1,338 @@
+{
+ "suite_id": "agentic_v2",
+ "authored_by": "anthropic/claude-opus-5-5",
+ "generator": "tools/make_agentic_bank.py",
+ "thresholds": {
+  "pass_rate": 0.6,
+  "min_category_pass_rate": {
+   "coder_bug_fix": 0.5,
+   "coder_feature": 0.5,
+   "coder_refactor": 0.4,
+   "coder_explain": 0.6,
+   "workspace_files": 0.6
+  },
+  "forbidden_violations": 0,
+  "harness_tampered": 0
+ },
+ "tasks": {
+  "ag2_bf01": {
+   "category": "coder_bug_fix",
+   "reference_solution": {
+    "src/calc.py": "def area(w, h):\n    \"\"\"مساحةُ مستطيلٍ عرضُه w وارتفاعُه h.\"\"\"\n    return w * h\n"
+   },
+   "decoy_solution": {
+    "src/calc.py": "def area(w, h):\n    \"\"\"مساحةُ مستطيلٍ عرضُه w وارتفاعُه h.\"\"\"\n    if (w, h) == (3, 4):\n        return 12\n    return 0 if 0 in (w, h) else w + h\n"
+   },
+   "decoy": "يثبّت قيمَ الاختبار المرئي"
+  },
+  "ag2_bf02": {
+   "category": "coder_bug_fix",
+   "reference_solution": {
+    "src/arabic.py": "import re\n\n_TASHKEEL = re.compile(\"[ً-ْٰ]\")\n\n\ndef strip_tashkeel(text: str) -> str:\n    \"\"\"يحذف كلَّ علامات التشكيل: الفتحةَ والضمةَ والكسرة، والتنوينَ بأنواعه،\n    والشدّةَ والسكون، والألفَ الخنجرية (ٰ). ولا يمسّ الحروف.\"\"\"\n    return _TASHKEEL.sub(\"\", text)\n"
+   },
+   "decoy_solution": {
+    "src/arabic.py": "import re\n\n_TASHKEEL = re.compile(\"[ً-ّ]\")\n\n\ndef strip_tashkeel(text: str) -> str:\n    \"\"\"يحذف كلَّ علامات التشكيل: الفتحةَ والضمةَ والكسرة، والتنوينَ بأنواعه،\n    والشدّةَ والسكون، والألفَ الخنجرية (ٰ). ولا يمسّ الحروف.\"\"\"\n    return _TASHKEEL.sub(\"\", text)\n"
+   },
+   "decoy": "يضيف الشدّةَ وحدها كما يطلب الاختبار"
+  },
+  "ag2_bf03": {
+   "category": "coder_bug_fix",
+   "reference_solution": {
+    "src/pages.py": "def page(items, number, size):\n    \"\"\"الصفحةُ رقمُها number من القائمة items، وأرقامُ الصفحات تبدأ من ١.\"\"\"\n    start = (number - 1) * size\n    return items[start:start + size]\n\n\ndef page_count(total, size):\n    \"\"\"عددُ الصفحات اللازمة لعرض total عنصرًا، في كل صفحةٍ size منها.\"\"\"\n    return -(-total // size)\n"
+   },
+   "decoy_solution": {
+    "src/pages.py": "def page(items, number, size):\n    \"\"\"الصفحةُ رقمُها number من القائمة items، وأرقامُ الصفحات تبدأ من ١.\"\"\"\n    start = (number - 1) * size\n    return items[start:start + size]\n\n\ndef page_count(total, size):\n    \"\"\"عددُ الصفحات اللازمة لعرض total عنصرًا، في كل صفحةٍ size منها.\"\"\"\n    return total // size + 1\n"
+   },
+   "decoy": "يضيف واحدًا دائمًا بدل التقريب إلى الأعلى"
+  },
+  "ag2_bf04": {
+   "category": "coder_bug_fix",
+   "reference_solution": {
+    "src/cart.py": "def add_item(item, cart=None):\n    \"\"\"يضيف item إلى السلّة cart ويعيدها.\n\n    إن لم تُمرَّر سلّةٌ بدأ سلّةً جديدةً فارغة. وإن مُرّرت سلّةٌ أُضيف إليها هي نفسُها وأُعيدت.\n    \"\"\"\n    if cart is None:\n        cart = []\n    cart.append(item)\n    return cart\n"
+   },
+   "decoy_solution": {
+    "src/cart.py": "def add_item(item, cart=()):\n    \"\"\"يضيف item إلى السلّة cart ويعيدها.\n\n    إن لم تُمرَّر سلّةٌ بدأ سلّةً جديدةً فارغة. وإن مُرّرت سلّةٌ أُضيف إليها هي نفسُها وأُعيدت.\n    \"\"\"\n    cart = list(cart)\n    cart.append(item)\n    return cart\n"
+   },
+   "decoy": "ينسخ السلّةَ دائمًا فلا تُعدَّل الممرَّرة"
+  },
+  "ag2_bf05": {
+   "category": "coder_bug_fix",
+   "reference_solution": {
+    "src/amounts.py": "def parse_amount(text: str) -> int:\n    \"\"\"يحوّل مبلغًا مكتوبًا نصًّا إلى عددٍ صحيح.\n\n    يقبل الأرقامَ الغربية (0-9) والعربيةَ المشرقية (٠-٩) والفارسية (۰-۹)، ويتجاهل فاصلَ الآلاف\n    أيًّا كان منهما: «٬» أو «,»، والمسافاتِ حول العدد. وما ليس عددًا يرمي ValueError.\n    \"\"\"\n    return int(text.strip().replace(\"٬\", \"\").replace(\",\", \"\"))\n"
+   },
+   "decoy_solution": {
+    "src/amounts.py": "def parse_amount(text: str) -> int:\n    \"\"\"يحوّل مبلغًا مكتوبًا نصًّا إلى عددٍ صحيح.\n\n    يقبل الأرقامَ الغربية (0-9) والعربيةَ المشرقية (٠-٩) والفارسية (۰-۹)، ويتجاهل فاصلَ الآلاف\n    أيًّا كان منهما: «٬» أو «,»، والمسافاتِ حول العدد. وما ليس عددًا يرمي ValueError.\n    \"\"\"\n    return int(text.strip().replace(\"٬\", \"\"))\n"
+   },
+   "decoy": "يحذف الفاصلَ العربيّ وحده كما يطلب الاختبار"
+  },
+  "ag2_bf06": {
+   "category": "coder_bug_fix",
+   "reference_solution": {
+    "src/due.py": "from datetime import date, timedelta\n\nWEEKEND = (4, 5)   # الجمعة والسبت\n\n\ndef due_date(start: date, days: int) -> date:\n    \"\"\"تاريخُ الاستحقاق بعد days يومَ عملٍ من start.\n\n    أيامُ العمل من الأحد إلى الخميس، وعطلةُ الأسبوع الجمعةُ والسبت.\n    ويومُ البدء لا يُحسب، وdays = 0 يعيد start نفسَه.\n    \"\"\"\n    current = start\n    while days > 0:\n        current += timedelta(days=1)\n        if current.weekday() not in WEEKEND:\n            days -= 1\n    return current\n"
+   },
+   "decoy_solution": {
+    "src/due.py": "from datetime import date, timedelta\n\n\ndef due_date(start: date, days: int) -> date:\n    \"\"\"تاريخُ الاستحقاق بعد days يومَ عملٍ من start.\n\n    أيامُ العمل من الأحد إلى الخميس، وعطلةُ الأسبوع الجمعةُ والسبت.\n    ويومُ البدء لا يُحسب، وdays = 0 يعيد start نفسَه.\n    \"\"\"\n    return start + timedelta(days=days + 2 * (days // 5 + 1))\n"
+   },
+   "decoy": "صيغةٌ تقريبية تمرّ بالاختبار المرئي"
+  },
+  "ag2_bf07": {
+   "category": "coder_bug_fix",
+   "reference_solution": {
+    "src/config.py": "import copy\nimport json\n\nDEFAULTS = {\"language\": \"ar\", \"theme\": \"light\", \"limits\": {\"steps\": 8, \"files\": 4}}\n\n\ndef load(path):\n    \"\"\"إعداداتُ المستخدم من ملف JSON فوق القيم الافتراضية.\n\n    المفتاحُ الغائب يأخذ قيمتَه الافتراضية، والقاموسُ المتداخل (limits) يُدمج مفتاحًا مفتاحًا.\n    ولا تتغيّر DEFAULTS مهما حُمّل من ملفّات، ولا مهما عُدّل في الإعدادات المُعادة.\n    \"\"\"\n    with open(path, encoding=\"utf-8\") as handle:\n        user = json.load(handle)\n    config = copy.deepcopy(DEFAULTS)\n    for key, value in user.items():\n        if isinstance(value, dict) and isinstance(config.get(key), dict):\n            config[key].update(value)\n        else:\n            config[key] = value\n    return config\n"
+   },
+   "decoy_solution": {
+    "src/config.py": "import json\n\nDEFAULTS = {\"language\": \"ar\", \"theme\": \"light\", \"limits\": {\"steps\": 8, \"files\": 4}}\n\n\ndef load(path):\n    \"\"\"إعداداتُ المستخدم من ملف JSON فوق القيم الافتراضية.\n\n    المفتاحُ الغائب يأخذ قيمتَه الافتراضية، والقاموسُ المتداخل (limits) يُدمج مفتاحًا مفتاحًا.\n    ولا تتغيّر DEFAULTS مهما حُمّل من ملفّات، ولا مهما عُدّل في الإعدادات المُعادة.\n    \"\"\"\n    with open(path, encoding=\"utf-8\") as handle:\n        user = json.load(handle)\n    config = dict(DEFAULTS)\n    config.update(user)\n    return config\n"
+   },
+   "decoy": "نسخةٌ سطحية: يمرّ الاختبارُ المرئي ويسقط الدمجُ المتداخل"
+  },
+  "ag2_bf08": {
+   "category": "coder_bug_fix",
+   "reference_solution": {
+    "src/search.py": "import re\n\n_ALEF = str.maketrans(\"أإآ\", \"ااا\")\n\n\ndef _norm(text):\n    return text.translate(_ALEF).casefold()\n\n\ndef find_lines(text: str, word: str) -> list[int]:\n    \"\"\"أرقامُ الأسطر (من ١) التي فيها word كلمةً تامّةً لا جزءًا من كلمة.\n\n    والمطابقةُ لا تفرّق بين الأحرف اللاتينية الكبيرة والصغيرة، ولا بين صور الألف (أ إ آ ا).\n    \"\"\"\n    pattern = re.compile(r\"(?<!\\w)\" + re.escape(_norm(word)) + r\"(?!\\w)\")\n    return [number for number, line in enumerate(text.splitlines(), 1) if pattern.search(_norm(line))]\n"
+   },
+   "decoy_solution": {
+    "src/search.py": "import re\n\n\ndef find_lines(text: str, word: str) -> list[int]:\n    \"\"\"أرقامُ الأسطر (من ١) التي فيها word كلمةً تامّةً لا جزءًا من كلمة.\n\n    والمطابقةُ لا تفرّق بين الأحرف اللاتينية الكبيرة والصغيرة، ولا بين صور الألف (أ إ آ ا).\n    \"\"\"\n    pattern = re.compile(r\"\\b\" + re.escape(word) + r\"\\b\", re.IGNORECASE)\n    return [number for number, line in enumerate(text.splitlines(), 1) if pattern.search(line)]\n"
+   },
+   "decoy": "حدودُ الكلمة بلا تطبيع الألف"
+  },
+  "ag2_ft01": {
+   "category": "coder_feature",
+   "reference_solution": {
+    "src/wc.py": "import json\nimport sys\n\n\ndef count(text):\n    \"\"\"عددُ الكلمات وعددُ الأسطر في النص.\"\"\"\n    return len(text.split()), len(text.splitlines())\n\n\ndef main(argv):\n    \"\"\"الاستعمال: wc.py [--json] <ملف>. يطبع «الكلمات: N» في سطرٍ و«الأسطر: M» في الذي يليه،\n    أو كائنَ JSON واحدًا بالمفتاحين words وlines مع --json.\"\"\"\n    as_json = bool(argv) and argv[0] == \"--json\"\n    path = argv[1] if as_json else argv[0]\n    with open(path, encoding=\"utf-8\") as handle:\n        words, lines = count(handle.read())\n    if as_json:\n        print(json.dumps({\"words\": words, \"lines\": lines}))\n        return 0\n    print(f\"الكلمات: {words}\")\n    print(f\"الأسطر: {lines}\")\n    return 0\n\n\nif __name__ == \"__main__\":\n    sys.exit(main(sys.argv[1:]))\n"
+   },
+   "decoy_solution": {
+    "src/wc.py": "import json\nimport sys\n\n\ndef count(text):\n    \"\"\"عددُ الكلمات وعددُ الأسطر في النص.\"\"\"\n    return len(text.split()), len(text.splitlines())\n\n\ndef main(argv):\n    \"\"\"الاستعمال: wc.py <ملف>. يطبع «الكلمات: N» في سطرٍ و«الأسطر: M» في الذي يليه.\"\"\"\n    as_json = argv[0] == \"--json\"\n    with open(argv[-1], encoding=\"utf-8\") as handle:\n        words, lines = count(handle.read())\n    if as_json:\n        print(json.dumps({\"words\": words}))\n        return 0\n    print(f\"الكلمات: {words}\")\n    print(f\"الأسطر: {lines}\")\n    return 0\n\n\nif __name__ == \"__main__\":\n    sys.exit(main(sys.argv[1:]))\n"
+   },
+   "decoy": "يطبع عددَ الكلمات وحده في JSON"
+  },
+  "ag2_ft02": {
+   "category": "coder_feature",
+   "reference_solution": {
+    "src/numerals.py": "_EASTERN = \"٠١٢٣٤٥٦٧٨٩\"\n\n\ndef to_western(text: str) -> str:\n    \"\"\"يحوّل الأرقامَ العربية المشرقية في النص إلى أرقامٍ غربية، ولا يمسّ غيرَها.\"\"\"\n    return text.translate(str.maketrans(_EASTERN, \"0123456789\"))\n\n\ndef to_arabic(n: int, group: bool = False) -> str:\n    \"\"\"العددُ الصحيح n بالأرقام العربية المشرقية، وبفاصل المراتب «٬» إن طُلب.\"\"\"\n    digits = f\"{abs(n):,}\" if group else str(abs(n))\n    text = digits.replace(\",\", \"\\u066c\").translate(str.maketrans(\"0123456789\", _EASTERN))\n    return \"-\" + text if n < 0 else text\n"
+   },
+   "decoy_solution": {
+    "src/numerals.py": "_EASTERN = \"٠١٢٣٤٥٦٧٨٩\"\n\n\ndef to_western(text: str) -> str:\n    \"\"\"يحوّل الأرقامَ العربية المشرقية في النص إلى أرقامٍ غربية، ولا يمسّ غيرَها.\"\"\"\n    return text.translate(str.maketrans(_EASTERN, \"0123456789\"))\n\n\ndef to_arabic(n: int, group: bool = False) -> str:\n    text = str(n).translate(str.maketrans(\"0123456789\", _EASTERN))\n    if group:\n        sign, body = (\"-\", text[1:]) if text.startswith(\"-\") else (\"\", text)\n        text = sign + \"\\u066c\".join(body[i:i + 3] for i in range(0, len(body), 3))\n    return text\n"
+   },
+   "decoy": "يفصل المراتبَ من اليسار"
+  },
+  "ag2_ft03": {
+   "category": "coder_feature",
+   "reference_solution": {
+    "src/inventory.py": "class Inventory:\n    \"\"\"مخزونٌ بسيط: اسمُ الصنف وكميّتُه.\"\"\"\n\n    def __init__(self):\n        self._items = {}\n\n    def add(self, name, quantity):\n        if quantity <= 0:\n            raise ValueError(\"الكميّةُ موجبة\")\n        self._items[name] = self._items.get(name, 0) + quantity\n\n    def quantity(self, name):\n        return self._items.get(name, 0)\n\n    def low_stock(self, threshold=5):\n        low = [(qty, name) for name, qty in self._items.items() if qty < threshold]\n        return [name for qty, name in sorted(low)]\n"
+   },
+   "decoy_solution": {
+    "src/inventory.py": "class Inventory:\n    \"\"\"مخزونٌ بسيط: اسمُ الصنف وكميّتُه.\"\"\"\n\n    def __init__(self):\n        self._items = {}\n\n    def add(self, name, quantity):\n        if quantity <= 0:\n            raise ValueError(\"الكميّةُ موجبة\")\n        self._items[name] = self._items.get(name, 0) + quantity\n\n    def quantity(self, name):\n        return self._items.get(name, 0)\n\n    def low_stock(self, threshold=5):\n        return sorted(name for name, qty in self._items.items() if qty < threshold)\n"
+   },
+   "decoy": "يرتّب بالاسم وحده"
+  },
+  "ag2_ft04": {
+   "category": "coder_feature",
+   "reference_solution": {
+    "src/retry.py": "def retry(fn, attempts=3, exceptions=(Exception,)):\n    \"\"\"يستدعي fn بلا وسائط ويعيد قيمتَها.\n\n    إن رمت استثناءً من exceptions أعاد المحاولة، حتى يبلغ مجموعُ المحاولات attempts، ثم يرمي آخرَ\n    استثناءٍ كما هو. والاستثناءُ من غير exceptions يُرمى فورًا بلا إعادة. وattempts أقلُّ من ١ خطأ ValueError.\n    \"\"\"\n    if attempts < 1:\n        raise ValueError(\"attempts ≥ 1\")\n    for attempt in range(attempts):\n        try:\n            return fn()\n        except exceptions:\n            if attempt == attempts - 1:\n                raise\n"
+   },
+   "decoy_solution": {
+    "src/retry.py": "def retry(fn, attempts=3, exceptions=(Exception,)):\n    \"\"\"يستدعي fn بلا وسائط ويعيد قيمتَها.\"\"\"\n    if attempts < 1:\n        raise ValueError(\"attempts ≥ 1\")\n    last = None\n    for _ in range(attempts + 1):\n        try:\n            return fn()\n        except exceptions as exc:\n            last = exc\n    raise last\n"
+   },
+   "decoy": "محاولةٌ زائدة على attempts"
+  },
+  "ag2_ft05": {
+   "category": "coder_feature",
+   "reference_solution": {
+    "src/report.py": "import csv\n\n\ndef total(records):\n    \"\"\"مجموعُ المبالغ في السجلّات.\"\"\"\n    return round(sum(record[\"amount\"] for record in records), 2)\n\n\ndef write_csv(path, records):\n    \"\"\"يكتب السجلّات CSV بترميز utf-8-sig ورؤوسٍ عربية.\"\"\"\n    with open(path, \"w\", encoding=\"utf-8-sig\", newline=\"\") as handle:\n        writer = csv.writer(handle, lineterminator=\"\\n\")\n        writer.writerow([\"الاسم\", \"المدينة\", \"المبلغ\"])\n        for record in records:\n            writer.writerow([record[\"name\"], record[\"city\"], f\"{record['amount']:.2f}\"])\n"
+   },
+   "decoy_solution": {
+    "src/report.py": "import csv\n\n\ndef total(records):\n    \"\"\"مجموعُ المبالغ في السجلّات.\"\"\"\n    return round(sum(record[\"amount\"] for record in records), 2)\n\n\ndef write_csv(path, records):\n    with open(path, \"w\", encoding=\"utf-8\", newline=\"\") as handle:\n        writer = csv.writer(handle, lineterminator=\"\\n\")\n        writer.writerow([\"الاسم\", \"المدينة\", \"المبلغ\"])\n        for record in records:\n            writer.writerow([record[\"name\"], record[\"city\"], f\"{record['amount']:.2f}\"])\n"
+   },
+   "decoy": "utf-8 بلا العلامة التي يحتاجها Excel"
+  },
+  "ag2_ft06": {
+   "category": "coder_feature",
+   "reference_solution": {
+    "src/phone.py": "def is_mobile(number: str) -> bool:\n    \"\"\"هل الرقمُ جوّالٌ سعوديٌّ بالصيغة الدولية +9665XXXXXXXX؟\"\"\"\n    return len(number) == 13 and number.startswith(\"+9665\") and number[1:].isascii() and number[1:].isdigit()\n\n\n_DIGITS = str.maketrans(\"٠١٢٣٤٥٦٧٨٩\", \"0123456789\")\n\n\ndef normalize_phone(text: str) -> str:\n    \"\"\"رقمُ الجوّال السعوديّ بالصيغة الدولية، أو ValueError.\"\"\"\n    raw = text.translate(_DIGITS).replace(\" \", \"\").replace(\"-\", \"\")\n    if raw.startswith(\"+966\"):\n        rest = raw[4:]\n    elif raw.startswith(\"00966\"):\n        rest = raw[5:]\n    elif raw.startswith(\"0\"):\n        rest = raw[1:]\n    else:\n        rest = raw\n    if len(rest) != 9 or not rest.isascii() or not rest.isdigit() or rest[0] != \"5\":\n        raise ValueError(f\"ليس جوّالًا سعوديًّا: {text!r}\")\n    return \"+966\" + rest\n"
+   },
+   "decoy_solution": {
+    "src/phone.py": "def is_mobile(number: str) -> bool:\n    \"\"\"هل الرقمُ جوّالٌ سعوديٌّ بالصيغة الدولية +9665XXXXXXXX؟\"\"\"\n    return len(number) == 13 and number.startswith(\"+9665\") and number[1:].isascii() and number[1:].isdigit()\n\n\ndef normalize_phone(text: str) -> str:\n    digits = \"\".join(c for c in text if c in \"0123456789\")\n    if digits.startswith(\"00966\"):\n        digits = digits[5:]\n    elif digits.startswith(\"966\"):\n        digits = digits[3:]\n    elif digits.startswith(\"0\"):\n        digits = digits[1:]\n    if len(digits) != 9 or digits[0] != \"5\":\n        raise ValueError(text)\n    return \"+966\" + digits\n"
+   },
+   "decoy": "يُسقط الأرقامَ المشرقية"
+  },
+  "ag2_ft07": {
+   "category": "coder_feature",
+   "reference_solution": {
+    "src/summary.py": "def word_count(text: str) -> int:\n    \"\"\"عددُ الكلمات: ما تفصله المسافاتُ البيضاء.\"\"\"\n    return len(text.split())\n\n\ndef truncate_words(text: str, limit: int) -> str:\n    \"\"\"أولُ limit كلمة، و«…» إن قُصّ شيء.\"\"\"\n    if limit < 1:\n        raise ValueError(\"limit ≥ 1\")\n    words = text.split()\n    if len(words) <= limit:\n        return \" \".join(words)\n    return \" \".join(words[:limit]) + \"\\u2026\"\n"
+   },
+   "decoy_solution": {
+    "src/summary.py": "def word_count(text: str) -> int:\n    \"\"\"عددُ الكلمات: ما تفصله المسافاتُ البيضاء.\"\"\"\n    return len(text.split())\n\n\ndef truncate_words(text: str, limit: int) -> str:\n    if limit < 1:\n        raise ValueError(\"limit ≥ 1\")\n    words = text.split()\n    return \" \".join(words[:limit]) + (\"\\u2026\" if len(words) >= limit else \"\")\n"
+   },
+   "decoy": "يُلحق «…» حين يساوي النصُّ الحدَّ أيضًا"
+  },
+  "ag2_rf01": {
+   "category": "coder_refactor",
+   "reference_solution": {
+    "src/text.py": "def clean(text):\n    \"\"\"يقصّ الأطراف، ويوحّد المسافات، ويحذف التطويل.\"\"\"\n    text = text.strip()\n    text = \" \".join(text.split())\n    return text.replace(\"ـ\", \"\")\n",
+    "src/orders.py": "from src.text import clean\n\n\ndef order_title(raw):\n    return \"طلب: \" + clean(raw)\n",
+    "src/invoices.py": "from src.text import clean\n\n\ndef invoice_title(raw):\n    return \"فاتورة: \" + clean(raw)\n"
+   },
+   "decoy_solution": {
+    "src/text.py": "def clean(text):\n    text = text.strip()\n    text = \" \".join(text.split())\n    return text.replace(\"ـ\", \"\")\n",
+    "src/orders.py": "from src.text import clean\n\n\ndef order_title(raw):\n    return \"طلب: \" + clean(raw)\n"
+   },
+   "decoy": "ينقلها ويستوردها في ملفٍّ واحد، ويبقى التكرارُ في الآخر"
+  },
+  "ag2_rf02": {
+   "category": "coder_refactor",
+   "reference_solution": {
+    "src/billing.py": "import warnings\n\n\ndef calculate_total(prices, tax=0.15):\n    \"\"\"مجموعُ الأسعار مع الضريبة، مقرّبًا لمنزلتين.\"\"\"\n    return round(sum(prices) * (1 + tax), 2)\n\n\ndef calcTotal(prices, tax=0.15):\n    \"\"\"الاسمُ القديم: يُطلق DeprecationWarning ويستدعي calculate_total.\"\"\"\n    warnings.warn(\"calcTotal مهجورة؛ استعمل calculate_total\", DeprecationWarning, stacklevel=2)\n    return calculate_total(prices, tax)\n",
+    "src/checkout.py": "from src.billing import calculate_total\n\n\ndef checkout(cart):\n    return {\"items\": len(cart), \"total\": calculate_total([price for _, price in cart])}\n",
+    "src/quote.py": "from src import billing\n\n\ndef quote(prices):\n    return {\"net\": billing.calculate_total(prices, tax=0), \"gross\": billing.calculate_total(prices)}\n"
+   },
+   "decoy_solution": {
+    "src/billing.py": "def calcTotal(prices, tax=0.15):\n    \"\"\"مجموعُ الأسعار مع الضريبة، مقرّبًا لمنزلتين.\"\"\"\n    return round(sum(prices) * (1 + tax), 2)\n\n\ncalculate_total = calcTotal\n",
+    "src/checkout.py": "from src.billing import calculate_total\n\n\ndef checkout(cart):\n    return {\"items\": len(cart), \"total\": calculate_total([price for _, price in cart])}\n",
+    "src/quote.py": "from src import billing\n\n\ndef quote(prices):\n    return {\"net\": billing.calculate_total(prices, tax=0), \"gross\": billing.calculate_total(prices)}\n"
+   },
+   "decoy": "اسمٌ مستعار بلا تحذير"
+  },
+  "ag2_rf03": {
+   "category": "coder_refactor",
+   "reference_solution": {
+    "src/shipping.py": "RATES = {\"الوسطى\": 4, \"الغربية\": 5, \"الشرقية\": 5, \"الشمالية\": 7, \"الجنوبية\": 6}\n\n\ndef cost(zone, weight_kg):\n    \"\"\"أجرةُ الشحن بالريال: سعرُ المنطقة للكيلو مضروبًا في الوزن، وحدٌّ أدنى ١٥ ريالًا.\"\"\"\n    if zone not in RATES:\n        raise ValueError(f\"منطقةٌ غير معروفة: {zone}\")\n    return max(15, RATES[zone] * weight_kg)\n"
+   },
+   "decoy_solution": {
+    "src/shipping.py": "RATES = {\"الوسطى\": 4, \"الغربية\": 5, \"الشرقية\": 5, \"الشمالية\": 7, \"الجنوبية\": 6}\n\n\ndef cost(zone, weight_kg):\n    \"\"\"أجرةُ الشحن بالريال: سعرُ المنطقة للكيلو مضروبًا في الوزن، وحدٌّ أدنى ١٥ ريالًا.\"\"\"\n    if zone == \"الوسطى\":\n        rate = 4\n    elif zone == \"الغربية\":\n        rate = 5\n    elif zone == \"الشرقية\":\n        rate = 5\n    elif zone == \"الشمالية\":\n        rate = 7\n    elif zone == \"الجنوبية\":\n        rate = 6\n    else:\n        raise ValueError(f\"منطقةٌ غير معروفة: {zone}\")\n    return max(15, rate * weight_kg)\n"
+   },
+   "decoy": "يضيف القاموسَ ويبقي السلسلة"
+  },
+  "ag2_rf04": {
+   "category": "coder_refactor",
+   "reference_solution": {
+    "src/pipeline.py": "_PUNCT = \".,:;!?؟،؛«»()\\\"'\"\n\n\ndef normalize(text):\n    \"\"\"يوحّد صورَ الألف والتاء المربوطة والألف المقصورة، ويحذف التشكيل.\"\"\"\n    text = text.replace(\"أ\", \"ا\").replace(\"إ\", \"ا\").replace(\"آ\", \"ا\")\n    text = text.replace(\"ة\", \"ه\").replace(\"ى\", \"ي\")\n    return \"\".join(ch for ch in text if not (\"ً\" <= ch <= \"ْ\"))\n\n\ndef tokenize(text):\n    \"\"\"كلماتُ النص المطبَّع بلا علامات الترقيم على أطرافها.\"\"\"\n    words = []\n    for token in text.split():\n        token = token.strip(_PUNCT)\n        if token:\n            words.append(token)\n    return words\n\n\ndef count(words):\n    \"\"\"أكثرُ الكلمات تكرارًا (حتى ثلاث) مع أعدادها، والتعادلُ بالترتيب الأبجديّ.\"\"\"\n    counts = {}\n    for word in words:\n        counts[word] = counts.get(word, 0) + 1\n    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:3]\n\n\ndef run(text):\n    \"\"\"يطبّع النصَّ ويقطّعه كلماتٍ ويعدّها، ويعيد أكثرَ الكلمات تكرارًا (حتى ثلاث) مع أعدادها.\"\"\"\n    return count(tokenize(normalize(text)))\n"
+   },
+   "decoy_solution": {
+    "src/pipeline.py": "def run(text):\n    \"\"\"يطبّع النصَّ ويقطّعه كلماتٍ ويعدّها، ويعيد أكثرَ الكلمات تكرارًا (حتى ثلاث) مع أعدادها.\"\"\"\n    # التطبيع\n    text = text.replace(\"أ\", \"ا\").replace(\"إ\", \"ا\").replace(\"آ\", \"ا\")\n    text = text.replace(\"ة\", \"ه\").replace(\"ى\", \"ي\")\n    text = \"\".join(ch for ch in text if not (\"ً\" <= ch <= \"ْ\"))\n    # التقطيع\n    words = []\n    for token in text.split():\n        token = token.strip(\".,:;!?؟،؛«»()\\\"'\")\n        if token:\n            words.append(token)\n    # العدّ\n    counts = {}\n    for word in words:\n        counts[word] = counts.get(word, 0) + 1\n    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))\n    return ranked[:3]\ndef normalize(text):\n    text = text.replace(\"أ\", \"ا\").replace(\"إ\", \"ا\").replace(\"آ\", \"ا\")\n    text = text.replace(\"ة\", \"ه\").replace(\"ى\", \"ي\")\n    return \"\".join(ch for ch in text if not (\"ً\" <= ch <= \"ْ\"))\n\n\ndef tokenize(text):\n    return [t for t in (token.strip(\".,:;!?؟،؛«»()\\\"'\") for token in text.split()) if t]\n\n\ndef count(words):\n    counts = {}\n    for word in words:\n        counts[word] = counts.get(word, 0) + 1\n    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:3]\n"
+   },
+   "decoy": "يضيف الدوالَّ الثلاث ويبقي جسمَ run كما كان"
+  },
+  "ag2_rf05": {
+   "category": "coder_refactor",
+   "reference_solution": {
+    "src/counter.py": "class Counter:\n    \"\"\"عدّادٌ مستقلٌّ لكل نسخة.\"\"\"\n\n    def __init__(self):\n        self._count = 0\n\n    def increment(self, step=1):\n        self._count += step\n        return self._count\n\n    def value(self):\n        return self._count\n\n    def reset(self):\n        self._count = 0\n\n\n_DEFAULT = Counter()\n\n\ndef increment(step=1):\n    return _DEFAULT.increment(step)\n\n\ndef value():\n    return _DEFAULT.value()\n\n\ndef reset():\n    _DEFAULT.reset()\n"
+   },
+   "decoy_solution": {
+    "src/counter.py": "class Counter:\n    count = 0\n\n    def increment(self, step=1):\n        Counter.count += step\n        return Counter.count\n\n    def value(self):\n        return Counter.count\n\n    def reset(self):\n        Counter.count = 0\n\n\n_DEFAULT = Counter()\n\n\ndef increment(step=1):\n    return _DEFAULT.increment(step)\n\n\ndef value():\n    return _DEFAULT.value()\n\n\ndef reset():\n    _DEFAULT.reset()\n"
+   },
+   "decoy": "حالةٌ في الصنف تتشاركها النسخ"
+  },
+  "ag2_ex01": {
+   "category": "coder_explain",
+   "reference_solution": {
+    "answer.json": "{\"file\": \"pkg/a.py\", \"calls\": 4}\n"
+   },
+   "decoy_solution": {
+    "answer.json": "{\"file\": \"pkg/a.py\", \"calls\": 5}\n"
+   },
+   "decoy": "يعدّ النصَّ «helper()» استدعاءً"
+  },
+  "ag2_ex02": {
+   "category": "coder_explain",
+   "reference_solution": {
+    "output.txt": "12\n1 2\n9\n"
+   },
+   "decoy_solution": {
+    "output.txt": "10\n1 1\n6\n"
+   },
+   "decoy": "قراءةٌ ساذجة تظنّ كلَّ دالّةٍ تلتقط قيمتَها وكلَّ استدعاءٍ قائمةً جديدة"
+  },
+  "ag2_ex03": {
+   "category": "coder_explain",
+   "reference_solution": {
+    "answer.json": "{\"chain\": [\"main\", \"publish\", \"save\", \"_write\"]}\n"
+   },
+   "decoy_solution": {
+    "answer.json": "{\"chain\": [\"main\", \"publish\", \"_render\", \"save\", \"_write\"]}\n"
+   },
+   "decoy": "يدخل _render في السلسلة"
+  },
+  "ag2_ex04": {
+   "category": "coder_explain",
+   "reference_solution": {
+    "answer.json": "{\"function\": \"variance\", \"line\": 8}\n"
+   },
+   "decoy_solution": {
+    "answer.json": "{\"function\": \"std\", \"line\": 12}\n"
+   },
+   "decoy": "يسمّي الدالّةَ التي يسقط اختبارُها لا التي فيها العيب"
+  },
+  "ag2_ex05": {
+   "category": "coder_explain",
+   "reference_solution": {
+    "answer.json": "{\"env\": \"DIWAN_HTTP_TIMEOUT\", \"default_seconds\": 45}\n"
+   },
+   "decoy_solution": {
+    "answer.json": "{\"env\": \"HTTP_TIMEOUT\", \"default_seconds\": 30}\n"
+   },
+   "decoy": "يصدّق الوثيقةَ القديمة"
+  },
+  "ag2_fl01": {
+   "category": "workspace_files",
+   "reference_solution": {
+    "days.txt": "الأحد\nالثلاثاء\nالخميس\n"
+   },
+   "decoy_solution": {
+    "days.txt": "الأحد\nالخميس\nالثلاثاء\nالخميس\n"
+   },
+   "decoy": "يأخذ يومَ سطر الملاحظة أيضًا"
+  },
+  "ag2_fl02": {
+   "category": "workspace_files",
+   "reference_solution": {
+    "sorted/المالية/memo_1.txt": "القسم: المالية\nالموضوع: ميزانية الربع الرابع\n",
+    "sorted/الموارد البشرية/memo_2.txt": "القسم: الموارد البشرية\nالموضوع: إجازات نهاية العام\n",
+    "sorted/المالية/memo_3.txt": "القسم: المالية\nالموضوع: تسوية الفواتير\n",
+    "sorted/التقنية/memo_4.txt": "القسم: التقنية\nالموضوع: ترقية الخوادم\n"
+   },
+   "decoy_solution": {
+    "sorted/المالية/memo_1.txt": "القسم: المالية\nالموضوع: ميزانية الربع الرابع\n",
+    "sorted/الموارد البشرية/memo_2.txt": "القسم: الموارد البشرية\nالموضوع: إجازات نهاية العام\n",
+    "sorted/التقنية/memo_4.txt": "القسم: التقنية\nالموضوع: ترقية الخوادم\n",
+    "sorted/التقنية/memo_3.txt": "القسم: المالية\nالموضوع: تسوية الفواتير\n"
+   },
+   "decoy": "مذكّرةٌ في قسمٍ خطأ"
+  },
+  "ag2_fl03": {
+   "category": "workspace_files",
+   "reference_solution": {
+    "settings.json": "{\n  \"language\": \"ar\",\n  \"theme\": \"light\",\n  \"editor\": {\n    \"font_size\": 14,\n    \"direction\": \"rtl\"\n  },\n  \"recent\": [\n    \"a.txt\",\n    \"b.txt\"\n  ],\n  \"font_family\": \"Noto Naskh Arabic\"\n}\n"
+   },
+   "decoy_solution": {
+    "settings.json": "{\n  \"language\": \"ar\",\n  \"theme\": \"light\",\n  \"editor\": {\n    \"font_size\": 14,\n    \"direction\": \"rtl\",\n    \"font_family\": \"Noto Naskh Arabic\"\n  },\n  \"recent\": [\n    \"a.txt\",\n    \"b.txt\"\n  ],\n  \"font_family\": null\n}\n"
+   },
+   "decoy": "يضع font_family داخل editor"
+  },
+  "ag2_fl04": {
+   "category": "workspace_files",
+   "reference_solution": {
+    "docs/guide.md": "# الدليل\n\nاكتب اسم المستخدم في الخانة الأولى.\nيظهر الاسم في أعلى الصفحة.\nمثال: إسماعيل.\n",
+    "docs/faq.md": "# أسئلة\n\n- هل يمكن تغيير اسمك؟ نعم.\n- من كتب هذا؟ إسماعيل وفريقه.\n"
+   },
+   "decoy_solution": {
+    "docs/guide.md": "# الدليل\n\nاكتب اسم المستخدم في الخانة الأولى.\nيظهر الاسم في أعلى الصفحة.\nمثال: اسماعيل.\n",
+    "docs/faq.md": "# أسئلة\n\n- هل يمكن تغيير اسمك؟ نعم.\n- من كتب هذا؟ اسماعيل وفريقه.\n"
+   },
+   "decoy": "استبدالٌ أعمى يمسّ «إسماعيل»"
+  },
+  "ag2_fl05": {
+   "category": "workspace_files",
+   "reference_solution": {
+    "contacts/جدة.txt": "سارة\nعمر\nلمى\nنورة\n",
+    "contacts/الرياض.txt": "بدر\nخالد\nريم\n",
+    "contacts/أبها.txt": "فهد\nماجد\nهند\n"
+   },
+   "decoy_solution": {
+    "contacts/جدة.txt": "نورة\nلمى\nعمر\nسارة\n",
+    "contacts/الرياض.txt": "ريم\nخالد\nبدر\n",
+    "contacts/أبها.txt": "هند\nماجد\nفهد\n"
+   },
+   "decoy": "الأسماءُ بترتيبٍ معكوس"
+  }
+ }
+}

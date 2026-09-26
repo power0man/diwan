@@ -1,0 +1,87 @@
+{
+ "schema_version": 1,
+ "probe": "k44_agentic_v2_fails_before_fix_declared_environment",
+ "task": "ك٤٤ (#29)",
+ "date": "2026-09-26",
+ "agent": "anthropic/claude-opus-5-5",
+ "question": "هل تسقط المهامُّ الثلاثون قبل الحلّ، وتمرّ بحلّها المرجعيّ، ويسقط حلُّها القريبُ الخاطئ، في بيئةٍ معلنة لا على مضيف المطوّر؟",
+ "bank": {
+  "suite": "evaluation/suites/agentic_v2.json",
+  "suite_sha256": "b18694ee4f7fec28e6a6a4b9cb316d196b3e7a894cc45ddf184ec5f7f151d455",
+  "meta": "evaluation/suites/agentic_v2.meta.json",
+  "meta_sha256": "c8c308edc232355bb966afd6fd20aed1bf7f7f69b7931484e485bf9d4405c8be",
+  "generator": "tools/make_agentic_bank.py",
+  "base_commit": "8e53b3d"
+ },
+ "tool": {
+  "path": "tools/check_agentic_fails_before_fix.py --meta",
+  "sha256": "b9556a2ea6902d6c076737480a85ecfaa7271269b09656b5bf2dd80899f91a93",
+  "judge": "evaluation.agentic_runner.evaluate_success نفسُها، وharness_tampering للحلّ المرجعيّ"
+ },
+ "environment": {
+  "image": "python:3.12-slim-bookworm@sha256:392307d22300de8b5986851a12d9176dfc0fc073e65bf6523ebd7dcbeb23564e",
+  "python": "3.12.14",
+  "pytest": "absent (ModuleNotFoundError) — المدقّقُ بالمكتبة القياسية وحدها",
+  "docker_flags": [
+   "--network none",
+   "--read-only",
+   "--tmpfs /tmp:rw,exec,size=64m",
+   "--user 1000:1000",
+   "-v <checkout>:/src:ro"
+  ],
+  "host": "جلسةٌ سحابية زائلة، Docker 29.3.1 على x86_64"
+ },
+ "success_kinds_in_bank": {
+  "command_exit_zero": 28,
+  "file_equals": 2,
+  "total": 30
+ },
+ "result": {
+  "tasks": 30,
+  "fail_before_fix": 30,
+  "already_passing": 0,
+  "unjudgeable": 0,
+  "reference_passes_without_touching_harness_files": 30,
+  "decoy_fails": 30,
+  "exit_code": 0
+ },
+ "per_task": [
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_bf01  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_bf02  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_bf03  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_bf04  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_bf05  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_bf06  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_bf07  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_bf08  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ft01  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ft02  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ft03  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ft04  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ft05  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ft06  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ft07  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_rf01  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_rf02  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_rf03  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_rf04  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_rf05  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ex01  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ex02  [file_equals]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ex03  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ex04  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_ex05  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_fl01  [file_equals]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_fl02  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_fl03  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_fl04  [command_exit_zero]",
+  "✓ تسقط، والمرجعيّ يمرّ، والخاطئ يسقط  agentic_v2/ag2_fl05  [command_exit_zero]"
+ ],
+ "measurement_limits": [
+  "proves_the_checkers_discriminate_reference_from_one_authored_decoy_each_not_from_every_wrong_solution",
+  "the_decoys_were_written_by_the_bank_author_so_they_show_one_near_miss_per_task_not_the_models_failure_modes",
+  "no_model_was_run_this_is_bank_validity_not_a_capability_number",
+  "bank_authored_by_a_developer_family_not_blind",
+  "container_is_a_pinned_public_python_image_not_the_diwan_execution_image"
+ ]
+}
