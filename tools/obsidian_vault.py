@@ -200,7 +200,12 @@ def check(vault: Path, root: Path = ROOT) -> list[str]:
     vault = check_vault_location(vault, root)
     out_dir = vault / OUT
     drift = []
-    for rel, text in render(root).items():
+    wanted = render(root)
+    for rel, recorded in _load_manifest(out_dir)["files"].items():   # ما سيحذفه build ولم يُحذف بعد
+        target = out_dir / rel
+        if rel not in wanted and target.is_file() and sha(target.read_bytes()) == recorded:
+            drift.append(f"obsolete {rel}")
+    for rel, text in wanted.items():
         target = out_dir / rel
         if rel in SEED_NOTES:
             if not target.exists():
@@ -231,6 +236,10 @@ def mark_done(vault: Path, note: str, root: Path = ROOT) -> Path:
     if src.parent != inbox or not src.is_file() or src.name == INBOX_README:
         raise VaultError("not_an_inbox_note", note)
     dest = inbox / DONE / src.name
+    n = 2
+    while dest.exists():                       # لا يُكتب فوق ملاحظةٍ منجزةٍ سابقة بالاسم نفسه
+        dest = inbox / DONE / f"{src.stem}-{n}{src.suffix}"
+        n += 1
     shutil.move(str(src), str(dest))
     return dest
 

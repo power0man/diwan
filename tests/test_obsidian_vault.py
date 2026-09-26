@@ -160,3 +160,21 @@ def test_a_written_file_the_owner_edited_is_not_removed_when_it_leaves_the_plan(
     (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
     report = ov.build(vault, root=repo)
     assert "المهام/جديد-x.md" not in report["removed"] and task.read_text(encoding="utf-8") == "ملاحظتي على المهمّة"
+
+
+def test_mark_done_never_overwrites_an_earlier_completed_note(repo, vault):
+    ov.build(vault, root=repo)
+    for body in ("# الأول\n", "# الثاني\n"):
+        (vault / "Inbox/طلب.md").write_text(body, encoding="utf-8")
+        ov.mark_done(vault, "Inbox/طلب.md", root=repo)
+    done = sorted(p.read_text(encoding="utf-8") for p in (vault / "Inbox/منجز").glob("*.md"))
+    assert done == ["# الأول\n", "# الثاني\n"]
+
+
+def test_check_reports_an_obsolete_managed_note(repo, vault):
+    ov.build(vault, root=repo)
+    plan = {**PLAN, "tasks": PLAN["tasks"][:1], "phases": [{**PLAN["phases"][0], "task_ids": ["ك١"]}]}
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    assert "obsolete المهام/جديد-x.md" in ov.check(vault, root=repo)
+    ov.build(vault, root=repo)
+    assert ov.check(vault, root=repo) == []
