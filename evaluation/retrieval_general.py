@@ -6,6 +6,7 @@
   - `vectors`: `core.vector_retrieval.VectorIndex` بالمُضمِّن المسمّى.
   - `hybrid`: دمجُ الرتبتين بالرتب التبادلية (RRF، k=60) كما في `core.hybrid_retrieval`.
 - **المقاييس:** hit@5 حاكمٌ (بروتوكول ك٤٦ لمكوّن المتّجهات)، وnDCG@10 وMRR ثانويّان.
+- **المجالات** بإعادة معاينة المقاطع الذهبية لا الاستعلامات: لكلّ مقطعٍ استعلامان مترابطان.
 - **والمُضمِّنُ مسترجعٌ لا حَكَم:** الحكمُ بالمقطع الذهبيّ المسجَّل في البنك وحده.
 """
 from __future__ import annotations
@@ -20,6 +21,7 @@ import sqlite3
 import tempfile
 
 from core.vector_retrieval import VectorIndex, passage
+from evaluation import ablation
 from tools.rebuild_index import normalize
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -98,12 +100,33 @@ def wilson(successes: int, n: int, z: float = 1.96) -> list[float]:
     return [round(centre - half, 4), round(centre + half, 4)]
 
 
-def bootstrap_mean(values: list[float], *, resamples: int = 2000, seed: int = 0) -> list[float]:
-    """مجالٌ ٩٥٪ بإعادة المعاينة، ببذرةٍ ثابتة فيُعاد الرقمُ نفسُه."""
-    if not values:
+def _cluster(query: dict) -> str:
+    return "+".join(sorted(query["relevant"]))
+
+
+def cluster_bootstrap(rows: list[dict], value, *, resamples: int = 2000, seed: int = 0) -> list[float]:
+    """مجالٌ ٩٥٪ بإعادة معاينة المقاطع الذهبية، لا الاستعلامات.
+
+    استعلاما المقطع الواحد (اللفظيّ والمُعادُ صياغتُه) يتشاركان الذهبيَّ والمنافسين، فلا يُعاملان مستقلَّين
+    (ملاحظة Codex على #132). ولا تُحفظ طبقاتُ المواضيع: في كلٍّ منها خمسةُ مقاطع، وإعادةُ المعاينة داخل طبقةٍ
+    من خمسة تُنقص التباينَ خُمسًا. والبذرةُ ثابتة فيُعاد الرقمُ نفسُه.
+    """
+    if not rows:
         return [0.0, 0.0]
+    grouped: dict[str, list[float]] = {}
+    for row in rows:
+        grouped.setdefault(row["cluster"], []).append(value(row))
+    clusters = list(grouped.values())
     rng = random.Random(seed)
-    means = sorted(sum(rng.choice(values) for _ in values) / len(values) for _ in range(resamples))
+    means = []
+    for _ in range(resamples):
+        total = count = 0
+        for _ in clusters:
+            picked = rng.choice(clusters)
+            total += sum(picked)
+            count += len(picked)
+        means.append(total / count)
+    means.sort()
     return [round(means[int(0.025 * resamples)], 4), round(means[int(0.975 * resamples) - 1], 4)]
 
 
@@ -111,9 +134,18 @@ def _summary(rows: list[dict]) -> dict:
     n = len(rows)
     hits = sum(r["hit_at_5"] for r in rows)
     ndcg = [r["ndcg_at_10"] for r in rows]
-    return {"queries": n, "hit_at_5": round(hits / n, 4), "hit_at_5_ci95": wilson(hits, n),
-            "ndcg_at_10": round(sum(ndcg) / n, 4), "ndcg_at_10_ci95": bootstrap_mean(ndcg),
+    return {"queries": n, "hit_at_5": round(hits / n, 4),
+            "hit_at_5_ci95": cluster_bootstrap(rows, lambda r: float(r["hit_at_5"])),
+            "hit_at_5_ci95_if_queries_were_independent": wilson(hits, n),
+            "ndcg_at_10": round(sum(ndcg) / n, 4), "ndcg_at_10_ci95": cluster_bootstrap(rows, lambda r: r["ndcg_at_10"]),
             "mrr": round(sum(r["rr"] for r in rows) / n, 4)}
+
+
+def summaries(rows: dict[str, list[dict]]) -> dict:
+    types = sorted({r["type"] for arm_rows in rows.values() for r in arm_rows})
+    return {arm: {"overall": _summary(rows[arm]),
+                  "by_type": {t: _summary([r for r in rows[arm] if r["type"] == t]) for t in types}}
+            for arm in rows}
 
 
 def run(bank: dict, embedder, *, depth: int = DEPTH) -> dict:
@@ -131,13 +163,17 @@ def run(bank: dict, embedder, *, depth: int = DEPTH) -> dict:
             semantic = [hit["passage_id"] for hit in index.search(q["text"], embedder, limit=depth)]
             relevant = set(q["relevant"])
             for arm, ranking in (("bm25", lexical), ("vectors", semantic), ("hybrid", rrf([lexical, semantic]))):
-                rows[arm].append({"id": q["id"], "type": q["type"], "topic": q["topic"],
+                rows[arm].append({"id": q["id"], "type": q["type"], "topic": q["topic"], "cluster": _cluster(q),
                                   **_metrics(ranking, relevant), "top5": ranking[:5]})
-    types = sorted({q["type"] for q in bank["queries"]})
-    return {"arms": {arm: {"overall": _summary(rows[arm]),
-                           "by_type": {t: _summary([r for r in rows[arm] if r["type"] == t]) for t in types}}
-                     for arm in ARMS},
-            "rows": rows}
+    return {"arms": summaries(rows), "rows": rows}
+
+
+def rows_from_report(report_rows: dict[str, list[dict]], bank: dict) -> dict[str, list[dict]]:
+    """الصفوفُ المسجَّلة في التقرير (المعرّف والنوع والرتبة وhit@5 وnDCG@10) مكمَّلةً من البنك، فيُعاد كلُّ رقمٍ بلا نموذج."""
+    queries = {q["id"]: q for q in bank["queries"]}
+    return {arm: [{**r, "topic": queries[r["id"]]["topic"], "cluster": _cluster(queries[r["id"]]),
+                   "rr": 0.0 if r["rank"] is None else round(1 / r["rank"], 4)} for r in arm_rows]
+            for arm, arm_rows in report_rows.items()}
 
 
 def paired(on: list[dict], off: list[dict]) -> list[list[dict]]:
@@ -145,3 +181,41 @@ def paired(on: list[dict], off: list[dict]) -> list[list[dict]]:
     shape = lambda rows: [{"id": r["id"], "category": r["type"], "status": "measured", "passed": r["hit_at_5"]}
                           for r in rows]
     return [shape(on), shape(off)]
+
+
+def paired_effect_ci(on: list[dict], off: list[dict], **options) -> list[float]:
+    """مجالُ فرق hit@5 «مع − بدون» بإعادة معاينة المقاطع، بجانب مجال Agresti–Min الذي يفترض الاستقلال."""
+    off_by_id = {r["id"]: r for r in off}
+    diffs = [{**r, "difference": float(r["hit_at_5"]) - float(off_by_id[r["id"]]["hit_at_5"])} for r in on]
+    return cluster_bootstrap(diffs, lambda r: r["difference"], **options)
+
+
+def comparisons(rows: dict[str, list[dict]], arms: dict) -> dict:
+    """كلُّ ذراعٍ مقابل BM25 في hit@5.
+
+    قاعدةُ ك٤٦ لمكوّن المتّجهات تقرّر تفعيلَ قناته في `HybridRetriever`، فذراعاها الهجينُ مقابل BM25 وحده؛
+    والمتّجهاتُ وحدها تحلّ محلّ BM25 لا تضاف إليه، فمقارنتُها وصفية (ملاحظة Codex على #132). والقاعدةُ
+    تمرّ بـ`ablation.judge` وحده، فمكوّنٌ محجوبٌ في البروتوكول لا يُنشر له حكم.
+    """
+    out = {}
+    for name, on in (("hybrid_vs_bm25", "hybrid"), ("vectors_vs_bm25", "vectors")):
+        on_rows, off_rows = paired(rows[on], rows["bm25"])
+        entry = {"hit_at_5": ablation.compare(on_rows, off_rows),
+                 "hit_at_5_effect_ci95_clustered": paired_effect_ci(rows[on], rows["bm25"]),
+                 "ndcg_at_10_difference": round(arms[on]["overall"]["ndcg_at_10"]
+                                                - arms["bm25"]["overall"]["ndcg_at_10"], 4)}
+        if on == "hybrid":
+            try:
+                verdict = ablation.judge("vectors", on_rows, off_rows)
+                entry["protocol"] = {k: verdict[k] for k in ("component", "decision", "reason", "protocol_sha256")}
+            except ablation.AblationError as exc:
+                if exc.code != "component_blocked":
+                    raise
+                spec = ablation.protocol()["components"]["vectors"]
+                entry["protocol"] = {"component": "vectors", "decision": "not_applied",
+                                     "reason": "component_blocked", "blocked_by": spec["blocked_by"]}
+        else:
+            entry["protocol"] = {"decision": "not_applied",
+                                 "reason": "descriptive_the_vector_rule_is_for_the_hybrid_not_a_bm25_replacement"}
+        out[name] = entry
+    return out

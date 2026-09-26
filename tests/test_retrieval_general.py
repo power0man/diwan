@@ -10,8 +10,11 @@ import json
 import pytest
 
 from core.vector_retrieval import HashEmbedder
-from evaluation.retrieval_general import (BANK, MIN_QUERIES, RetrievalBankError, load_bank, paired, rrf, run,
-                                          wilson)
+from evaluation import ablation
+from evaluation.retrieval_general import (BANK, MIN_QUERIES, ROOT, RetrievalBankError, cluster_bootstrap, comparisons,
+                                          load_bank, paired, rows_from_report, rrf, run, summaries, wilson)
+
+EVIDENCE = ROOT / "docs" / "probe" / "g3-hybrid-vs-bm25-20260927.json"
 
 
 def test_the_bank_is_frozen_general_and_large_enough():
@@ -51,3 +54,41 @@ def test_the_full_run_reports_three_arms_and_the_hybrid_is_the_fusion_of_the_two
 def test_wilson_interval_is_inside_zero_one_and_contains_the_rate():
     low, high = wilson(90, 120)
     assert 0 <= low < 0.75 < high <= 1
+
+
+def _recorded():
+    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    rows = rows_from_report(evidence["rows"], load_bank())
+    return evidence, rows, summaries(rows)
+
+
+def test_the_published_numbers_are_recomputed_from_the_recorded_rows():
+    """الدليلُ يُعاد من صفوفه المسجَّلة والبنك وحدهما، بلا مُضمِّن: الأذرعُ ومجالاتُها والمقارناتُ وحكمُ البروتوكول."""
+    evidence, rows, arms = _recorded()
+    assert evidence["arms"] == arms
+    assert evidence["comparisons"] == comparisons(rows, arms)
+
+
+def test_the_vector_rule_decides_the_hybrid_only_and_never_a_blocked_component(monkeypatch):
+    """ملاحظتا Codex على #132: القاعدةُ تقرّر قناةَ المتّجهات في الهجين، فلا تُطبَّق على المتّجهات وحدها؛
+    ولا تُطبَّق على مكوّنٍ محجوبٍ في البروتوكول، فتمرّ بـ`ablation.judge` لا بـ`decide` مباشرةً."""
+    _, rows, arms = _recorded()
+    blocked = comparisons(rows, arms)
+    assert blocked["hybrid_vs_bm25"]["protocol"]["reason"] == "component_blocked"
+    assert blocked["vectors_vs_bm25"]["protocol"]["decision"] == "not_applied"
+    ready = ablation.protocol()
+    ready["components"]["vectors"]["status"] = "ready"
+    monkeypatch.setattr(ablation, "protocol", lambda: ready)
+    unblocked = comparisons(rows, arms)
+    assert unblocked["hybrid_vs_bm25"]["protocol"]["decision"] == "underpowered"
+    assert unblocked["vectors_vs_bm25"]["protocol"]["decision"] == "not_applied"
+
+
+def test_intervals_resample_gold_passages_not_queries():
+    """ملاحظةُ Codex على #132: استعلاما المقطع الواحد مترابطان، فإعادةُ المعاينة بالمقطع.
+    ستون مقطعًا لكلٍّ استعلامان متطابقان: مجالُها مجالُ ستين قيمة، أعرضُ من مئةٍ وعشرين مستقلّة بنحو √٢."""
+    values = [float(i % 2) for i in range(60)]
+    twins = [{"cluster": f"p{i}", "v": v} for i, v in enumerate(values) for _ in range(2)]
+    singles = [{"cluster": f"q{i}", "v": row["v"]} for i, row in enumerate(twins)]
+    width = lambda ci: ci[1] - ci[0]
+    assert width(cluster_bootstrap(twins, lambda r: r["v"])) > 1.3 * width(cluster_bootstrap(singles, lambda r: r["v"]))
