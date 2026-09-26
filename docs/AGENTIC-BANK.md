@@ -92,7 +92,8 @@ python3 tools/evaluate_agentic.py --suite evaluation/suites/agentic_v2.json \
     --out docs/probe/k44-agentic-v2-<التاريخ>.json
 ```
 
-والتقريرُ يحمل `thresholds` بحكمها. والتنفيذُ (`run_tests`) يحتاج إيصالَ Docker. وبلا إيصال تبقى الأدواتُ
+وبـ`--mode coder` يُقاس بتعليمات المبرمج وأدواته كما في الواجهة (ج٩، `docs/CODER.md`)، وهو القياسُ الذي تُحكم به
+عتباتُ ك٥١ على وضع المبرمج. والتقريرُ يحمل `thresholds` بحكمها، و`config.system_sha256` بصمةَ التعليمات. والتنفيذُ (`run_tests`) يحتاج إيصالَ Docker. وبلا إيصال تبقى الأدواتُ
 الأخرى، ويُقرّ المشغِّلُ بمضيفٍ زائل (ق٤٤).
 
 ## ٦ — الحدود

@@ -5,6 +5,9 @@ const token = document.querySelector('meta[name="diwan-token"]').content;
 const uuid = () => crypto.randomUUID().replaceAll("-", "");
 const errors = {
   agent_unavailable: "مسار الأدوات غير مهيأ في هذا التشغيل.",
+  changed_since_turn: "تغيّر ملفٌّ بعد الجولة؛ لا يُرجع عنها كلِّها حتى لا يُمحى تعديلٌ أحدث. ارجع عن أفعالها واحدًا واحدًا.",
+  turn_partially_reverted: "رُدّ بعضُ الجولة وحده من قبل؛ ارجع عن الباقي فعلًا فعلًا.",
+  turn_not_revertible: "تغيّر ملفٌّ بين فعلين داخل الجولة؛ لا يُرجع عنها دفعةً واحدة.",
   action_binding_conflict: "تغير الفعل أو مدخلاته منذ عرضه؛ لم تُنقل الموافقة إلى نسخة مختلفة.",
   action_revision_conflict: "سبق اتخاذ قرار لهذا الفعل. استرجع الحالة الحالية.",
   outcome_unknown: "وقع انقطاع ولا يوجد دليل كافٍ على نتيجة الأثر. لن يُعاد تلقائيًا.",
@@ -61,8 +64,8 @@ async function api(action, values = {}) {
   return data;
 }
 function context() {return {project: state.project, session: state.session};}
-// جلسةُ البحث المعمّق (ك٥٣) جلسةٌ وكيلة: الطلبُ والإيقافُ والاسترجاعُ طريقُها نفسُه
-function agentLike(mode) {return mode === "agent" || mode === "research";}
+// جلسةُ البحث المعمّق (ك٥٣) وجلسةُ المبرمج (ج٩) جلستان وكيلتان: الطلبُ والإيقافُ والاسترجاعُ طريقُهما نفسُه
+function agentLike(mode) {return mode === "agent" || mode === "research" || mode === "coder";}
 function pendingKey(ctx = context()) {return `diwan.pending.${ctx.project}.${ctx.session}`;}
 function stoppableTurn() {
   return agentLike(state.mode) ? state.runningTurn || state.pending || state.turns.find(t => t.status === "awaiting_owner")?.turn_id : null;
@@ -133,6 +136,12 @@ function renderAgentActions(answer, actions, ctx, turn) {
       }
     }
     answer.append(details);
+  }
+  // الجولةُ كلُّها (ج٩): فرقُها من دفتر الرجوع، والتراجعُ عنها بزرٍّ واحد بعد أن تنتهي
+  const wrote = (turn.steps || []).some(step => (step.tool_results || []).some(r => r.status === "ok" && r.action_id && (r.journal_action_id || (r.journal_action_ids || []).length)));
+  if(wrote && !["awaiting_owner", "outcome_unknown"].includes(turn.status)) {
+    actions.append(button("فرقُ الجولة", () => showTurnChanges(ctx, turn.turn_id)));
+    actions.append(button("التراجع عن الجولة كلِّها", () => reviewTurnRevert(ctx, turn.turn_id)));
   }
   const pending = turn.pending || [];
   for(const action of turn.status === "awaiting_owner" ? pending : []) {
@@ -209,9 +218,40 @@ function reviewAgentRevert(ctx, result) {
     finally {state.busy = false; syncPending();}
   }); body.append(restore);
 }
+async function showTurnChanges(ctx, turnId) {
+  const epoch = state.epoch, ticket = ++state.dialogEpoch;
+  const data = await api("agent_turn_changes", {...ctx, turn: turnId});
+  if(!currentDialog(epoch,ticket)) return;
+  const body = dialog("فرقُ الجولة");
+  const labels = {added:"أُنشئ", modified:"عُدّل", removed:"حُذف", unavailable:"لم يعد فرقُه متاحًا"};
+  const now = {as_after:"كما تركته الجولة", as_before:"رُدّ إلى ما قبلها", changed:"تغيّر بعدها"};
+  if(!data.complete) body.append(element("p", `تعرض أولَ ${data.files.length} من ${data.total_files} ملفًّا.`));
+  for(const file of data.files) {
+    body.append(element("h3", `${file.path} · ${labels[file.status] || file.status} · ${now[file.now] || ""}`));
+    body.append(element("pre", file.binary ? "ملفٌّ ثنائيّ" : file.diff || "لا فرق"));
+  }
+}
+function reviewTurnRevert(ctx, turnId) {
+  if(ctx.project !== state.project || ctx.session !== state.session) return;
+  const epoch = state.epoch, ticket = ++state.dialogEpoch, body = dialog("التراجع عن الجولة كلِّها");
+  body.append(element("p", "تُفحص الملفّاتُ كلُّها أولًا: إن تغيّر أحدُها بعد الجولة لم يُرجع عن شيء. وإلّا أُرجع عن أفعالها بعكس ترتيبها، ولكل فعلٍ إيصال."));
+  const restore = button("التراجع عن الجولة", async () => {
+    if(!currentDialog(epoch,ticket) || state.busy) return;
+    state.busy = true; restore.disabled = true; syncPending();
+    try {
+      const key = `diwan.revert-turn.${ctx.project}.${ctx.session}.${turnId}`;
+      let request = sessionStorage.getItem(key);
+      if(!request) {request = uuid(); sessionStorage.setItem(key,request);}
+      const reverted = await api("agent_revert_turn", {...ctx, turn: turnId, request});
+      if(!["reverted","already_reverted"].includes(reverted.status)) throw {code:reverted.error_code || "outcome_unknown"};
+      if(currentDialog(epoch,ticket)) {body.append(element("p", reverted.status === "already_reverted" ? "الجولةُ مردودةٌ من قبل." : `أُرجع عن ${reverted.files.length} ملفًّا، ولكل فعلٍ إيصالُه.`)); restore.remove(); await refresh();}
+    } catch(error) {if(currentDialog(epoch,ticket)) throw error;}
+    finally {state.busy = false; syncPending();}
+  }); body.append(restore);
+}
 $("agent-files").onclick = async () => {
   const project = state.project, epoch = state.epoch, ticket = ++state.dialogEpoch;
-  if(!project || state.mode !== "agent") return;
+  if(!project || !["agent", "coder"].includes(state.mode)) return;
   try {
     const data = await api("agent_files", {project});
     if(!currentDialog(epoch,ticket)) return;
@@ -234,10 +274,10 @@ async function projects() {
   for (const project of data.projects) select.add(new Option(project.name, project.id));
   select.value = state.project;
   state.mediaEnabled = data.media_enabled === true; $("media-option").disabled = !state.mediaEnabled;
-  const agentEnabled = data.agent_enabled === true; $("agent-option").disabled = !agentEnabled;
+  const agentEnabled = data.agent_enabled === true; $("agent-option").disabled = !agentEnabled; $("coder-option").disabled = !agentEnabled;
   state.researchEnabled = data.research_enabled === true; $("research-option").disabled = !state.researchEnabled;
   state.defaultSessionMode = agentEnabled && data.default_session_mode === "agent" ? "agent" : "text";
-  const mode = $("session-mode"), available = mode.value === "text" || (mode.value === "agent" && agentEnabled) || (mode.value === "media" && state.mediaEnabled) || (mode.value === "research" && state.researchEnabled);
+  const mode = $("session-mode"), available = mode.value === "text" || (["agent", "coder"].includes(mode.value) && agentEnabled) || (mode.value === "media" && state.mediaEnabled) || (mode.value === "research" && state.researchEnabled);
   if(!state.sessionModeChosen || !available) {mode.value = state.defaultSessionMode; state.sessionModeChosen = false;}
 }
 async function chooseProject(id) {
@@ -270,6 +310,7 @@ async function chooseSession(id, name, mode = "text") {
   render(); state.poll = 0; await refresh();
   if(mode === "research") $("agent-capabilities").textContent = "بحثٌ معمّق: يبحث في الويب بالمحرّك المضبوط مرّاتٍ، ويُسند كلَّ ادّعاءٍ إلى مصدرٍ أعاده البحث، ويُفحص الإسنادُ عند العرض.";
   if(mode === "agent") {const epoch = state.epoch; const caps = await api("agent_capabilities", {project:state.project}); if(epoch === state.epoch) $("agent-capabilities").textContent = caps.execution_enabled ? "أدوات الملفات وتنفيذ الأوامر المضبوطة متاحة؛ يُعرض الإذن المطلوب لكل فعل." : "أدوات ملفات المشروع متاحة. تنفيذ الأوامر غير مهيأ.";}
+  if(mode === "coder") {const epoch = state.epoch; const caps = await api("agent_capabilities", {project:state.project}); if(epoch === state.epoch) $("agent-capabilities").textContent = "مبرمج: يقرأ شيفرةَ المشروع ويعدّلها بتعديلاتٍ تُعرض فروقُها ويُرجع عنها، فعلًا فعلًا أو الجولةَ كلَّها. " + (caps.execution_enabled ? "وتشغيلُ الاختبارات متاحٌ في الحاوية." : "وتشغيلُ الاختبارات غير مهيأ في هذا التشغيل.");}
 }
 async function refresh() {
   if (!state.session) {notice("اختر محادثة أولًا."); return;}

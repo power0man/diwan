@@ -21,6 +21,7 @@ from conversation.agent_session import AgentSession
 from conversation.session import ConversationError
 from agent.builtin_tools import DEFAULT_TOOLS
 from agent.citations import check as check_citations
+from agent.coder import CODER_SYSTEM, coder_tools
 from agent.registry import ToolRegistry
 from agent.research import RESEARCH_SYSTEM, returned_urls
 from agent.web_search import web_search_tool
@@ -87,8 +88,9 @@ def decode(raw):
         raise UIError("json_invalid") from None
 
 
-# جلسةُ البحث المعمّق (ك٥٣) جلسةٌ وكيلة بتعليماتٍ وأداةٍ واحدة: web_search
-AGENT_MODES = ("agent", "research")
+# جلسةُ البحث المعمّق (ك٥٣) جلسةٌ وكيلة بتعليماتٍ وأداةٍ واحدة: web_search؛
+# وجلسةُ المبرمج (ج٩) جلسةٌ وكيلة بتعليماتها وأدوات الشيفرة وحدها
+AGENT_MODES = ("agent", "research", "coder")
 SESSION_MODES = ("text", "media", *AGENT_MODES)
 
 
@@ -189,6 +191,7 @@ class LocalApp:
                 need(mode != "media" or self.media_enabled, "media_unavailable")
                 need(mode != "agent" or self.agent_enabled, "agent_unavailable")
                 need(mode != "research" or self.research_enabled, "research_unavailable")
+                need(mode != "coder" or self.agent_enabled, "coder_unavailable")
                 value["mode"] = mode
             staging = self.root / "staging"
             with self.directory(staging, create=True) as fd:
@@ -200,7 +203,7 @@ class LocalApp:
                 _write_json(fd, "meta.json", value)
             if chat:
                 if mode in AGENT_MODES:
-                    self.agent_session(root.parent, value["id"], create=True, research=mode == "research")
+                    self.agent_session(root.parent, value["id"], create=True, mode=mode)
                 elif mode == "media":
                     MediaAssistant.open(staged / "chat", value["id"], model=self.media_model,
                         model_version=self.media_model_version, provider=None)
@@ -303,14 +306,24 @@ class LocalApp:
         self.agent_workspace(project)
         return ToolRegistry(web_search_tool(self.web_search))
 
-    def agent_session(self, project, session_id, *, create=False, research=False):
+    def coder_registry(self, project):
+        """المبرمجُ بأدوات الشيفرة وحدها، والتنفيذُ منها حيث ضُبطت خُلفيّتُه كما في الجلسة الوكيلة."""
+        self.agent_workspace(project)
+        execution = self.agent_backends[project.name]["execution_enabled"]
+        return ToolRegistry(*coder_tools(DEFAULT_TOOLS, execution=execution))
+
+    def mode_registry(self, project, mode):
+        return (self.research_registry(project) if mode == "research" else
+                self.coder_registry(project) if mode == "coder" else self.agent_registry(project))
+
+    def agent_session(self, project, session_id, *, create=False, mode="agent"):
         workspace = self.agent_workspace(project)
         root = project / "agent-control"
         if create:
             config = {"model": self.model, "model_version": self.model_version}
-            registry = self.research_registry(project) if research else self.agent_registry(project)
-            if research:
-                config["system"] = RESEARCH_SYSTEM
+            registry = self.mode_registry(project, mode)
+            if mode in ("research", "coder"):
+                config["system"] = RESEARCH_SYSTEM if mode == "research" else CODER_SYSTEM
         else:
             with self.directory(root / identifier(session_id)) as fd:
                 saved = _read_json(fd, "manifest.json")
@@ -332,14 +345,14 @@ class LocalApp:
                             registry=registry, memory=self.memory_store(project), **config)
 
     @staticmethod
-    def present_agent(turn, session=None, research=False):
+    def present_agent(turn, session=None, mode="agent"):
         inputs = agent_workspace.decode_input(turn["text"])
         result = dict(turn["result"])
         if session is not None:
             result["pending"] = [{**view, **agent_workspace.snapshot_preview(
                 session.action_store.inputs(view["action_id"]))} for view in result["pending"]]
         citations = {}
-        if research and result.get("status") == "complete":
+        if mode == "research" and result.get("status") == "complete":
             # الإسنادُ يُحكم عليه عند العرض من الجواب وما أعاده البحثُ في الجولة نفسِها (ك٥٣)
             returned = returned_urls(result.get("steps") or ())
             report = check_citations(result.get("content") or "", returned)
@@ -349,7 +362,7 @@ class LocalApp:
                                                    if url in returned}}}
         return {**result, "user_request": inputs["user_request"],
                 "inputs": {"attachments": inputs["attachments"], "preferences": inputs.get("preferences")}, "verification": "unverified",
-                "mode": "research" if research else "agent", **citations,
+                "mode": mode, **citations,
                 **({"memory_items": turn["memory_items"]} if turn.get("memory_items") else {})}
 
     def memory_dispatch(self, request, project):
@@ -419,7 +432,6 @@ class LocalApp:
         key = (project.name, identifier(request["session"]))
         session_mode = self.metadata(project / "sessions" / key[1]).get("mode")
         need(session_mode in AGENT_MODES, "session_mode_mismatch")
-        research = session_mode == "research"
         if action == "agent_stop":
             turn_id = identifier(request["turn"])
             with self.lock:
@@ -453,6 +465,10 @@ class LocalApp:
                  "decision_invalid")
         elif action == "agent_revert":
             identifier(request["request"])
+        elif action in ("agent_turn_changes", "agent_revert_turn"):
+            identifier(request["turn"])
+            if action == "agent_revert_turn":
+                identifier(request["request"])
         fingerprint = digest(request)
         operation = request.get("turn", request.get("action_id"))
         with self.lock:
@@ -470,6 +486,10 @@ class LocalApp:
                                       request["approve"], request["expected_revision"])
             if action == "agent_revert":
                 return session.revert(request["action_id"], request["request"])
+            if action == "agent_turn_changes":
+                return session.turn_changes(request["turn"])
+            if action == "agent_revert_turn":
+                return session.revert_turn(request["turn"], request["request"])
             history = session.history()["turns"]
             old = next((turn for turn in history if turn["turn_id"] == request["turn"]), None)
             if action == "agent_ask" and old is not None:
@@ -477,17 +497,17 @@ class LocalApp:
                 need(prior["user_request"] == request["message"] and
                      [doc["source_path"] for doc in prior["attachments"]] == request["files"]
                      and old.get("thinking", False) == request.get("thinking", False), "turn_conflict")
-                return {**self.present_agent(old, session, research=research), "replayed": True}
+                return {**self.present_agent(old, session, mode=session_mode), "replayed": True}
             if action == "agent_resume" and old is None:
                 raise UIError("turn_unknown")
             if action == "agent_resume" and old["result"]["status"] in {
                     "complete", "truncated", "timed_out", "failed", "refused", "step_limit", "cancelled"}:
-                return {**self.present_agent(old, session, research=research), "replayed": True}
+                return {**self.present_agent(old, session, mode=session_mode), "replayed": True}
             need(self.agent_enabled, "agent_unavailable")
-            need(not research or self.research_enabled, "research_unavailable")
+            need(session_mode != "research" or self.research_enabled, "research_unavailable")
             need(session.config["model"] == self.model and session.config["model_version"] == self.model_version,
                  "model_changed_new_session")
-            expected = self.research_registry(project) if research else self.agent_registry(project)
+            expected = self.mode_registry(project, session_mode)
             need([spec.declared() for spec in expected.specs()] == session.config["tools"],
                  "agent_capabilities_changed_new_session")
             if action == "agent_ask":
@@ -512,7 +532,7 @@ class LocalApp:
             else:
                 session.resume(request["turn"], self.agent_provider_factory())
             saved = next(turn for turn in session.history()["turns"] if turn["turn_id"] == request["turn"])
-            return self.present_agent(saved, session, research=research)
+            return self.present_agent(saved, session, mode=session_mode)
         finally:
             with self.lock:
                 self.active = self.active_payload = None
@@ -559,6 +579,8 @@ class LocalApp:
             "agent_stop": {"project", "session", "turn"},
             "agent_decide": {"project", "session", "action_id", "call_digest", "expected_revision", "approve"},
             "agent_revert": {"project", "session", "action_id", "request"},
+            "agent_turn_changes": {"project", "session", "turn"},
+            "agent_revert_turn": {"project", "session", "turn", "request"},
             "memory": {"project"},
             "memory_remember": {"project", "text"},
             "memory_forget": {"project", "item_id"},
@@ -689,7 +711,7 @@ class LocalApp:
             need(before is None or (type(before) is int and 0 <= before <= len(history)))
             end = len(history) if before is None else before
             start = max(0, end - 30)
-            present = ((lambda turn: self.present_agent(turn, agent, research=mode == "research")) if agent
+            present = ((lambda turn: self.present_agent(turn, agent, mode=mode)) if agent
                        else self.present)
             return {"status": "idle", "turns": [present(r) for r in history[start:end]],
                     "before": start, "total": len(history)}
