@@ -184,3 +184,81 @@ def test_the_real_commit_footer_shape_is_read(registry):
                  "\nCo-Authored-By: Claude Opus 5 <noreply@anthropic.com>\n"
                  "Claude-Session: https://claude.ai/code/session_x\n")
     assert inspect_commit(made(one_block), registry) is None
+
+
+# ————— الدمجُ الذي يحمل محتواه يُوسم، والفارغُ معفًى —————
+
+def _git(repo, *argv, env=None):
+    import subprocess
+    return subprocess.run(["git", "-C", str(repo), *argv], check=True, capture_output=True, text=True,
+                          env=env).stdout.strip()
+
+
+def _repo(tmp_path):
+    import os
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.com",
+           "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.com"}
+    _git(repo, "init", "-q", "-b", "main", env=env)
+    return repo, env
+
+
+def _commit(repo, env, name, text, message):
+    (repo / name).write_text(text, encoding="utf-8")
+    _git(repo, "add", name, env=env)
+    _git(repo, "commit", "-q", "-m", message, env=env)
+
+
+def test_a_merge_that_resolves_a_conflict_must_carry_the_tag_and_a_clean_merge_is_exempt(tmp_path):
+    from tools.agent_attribution import read_content_merges
+    repo, env = _repo(tmp_path)
+    tag = f"\n\nDiwan-Agent: {AGENT}"
+    _commit(repo, env, "a.txt", "base\n", "أساس" + tag)
+    base = _git(repo, "rev-parse", "HEAD", env=env)
+    _git(repo, "checkout", "-q", "-b", "side", env=env)
+    _commit(repo, env, "a.txt", "side\n", "فرع" + tag)
+    _commit(repo, env, "b.txt", "only side\n", "ملفٌّ في الفرع" + tag)
+    _git(repo, "checkout", "-q", "main", env=env)
+    _commit(repo, env, "a.txt", "main\n", "رئيس" + tag)
+    _commit(repo, env, "c.txt", "only main\n", "ملفٌّ في الرئيس" + tag)
+    import subprocess
+    subprocess.run(["git", "-C", str(repo), "merge", "-q", "side", "-m", "دمجٌ بحلّ تعارض"], env=env,
+                   capture_output=True)
+    (repo / "a.txt").write_text("resolved by hand\n", encoding="utf-8")
+    _git(repo, "add", "a.txt", env=env)
+    _git(repo, "commit", "-q", "--no-edit", env=env)
+    resolved = read_content_merges(repo, f"{base}..HEAD")
+    assert [m["message"].splitlines()[0] for m in resolved] == ["دمجٌ بحلّ تعارض"]
+    # ودمجٌ نظيفٌ بلا تعارض لا يحمل محتواه: يبقى معفًى
+    _git(repo, "checkout", "-q", "-b", "clean", base, env=env)
+    _commit(repo, env, "d.txt", "clean\n", "فرعٌ نظيف" + tag)
+    _git(repo, "checkout", "-q", "main", env=env)
+    _git(repo, "merge", "-q", "--no-ff", "clean", "-m", "دمجٌ نظيف", env=env)
+    names = [m["message"].splitlines()[0] for m in read_content_merges(repo, f"{base}..HEAD")]
+    assert names == ["دمجٌ بحلّ تعارض"]
+
+
+def test_the_cli_refuses_an_untagged_resolving_merge(tmp_path, capsys):
+    from tools import agent_attribution
+    repo, env = _repo(tmp_path)
+    tag = f"\n\nDiwan-Agent: {AGENT}"
+    _commit(repo, env, "a.txt", "base\n", "أساس" + tag)
+    base = _git(repo, "rev-parse", "HEAD", env=env)
+    _git(repo, "checkout", "-q", "-b", "side", env=env)
+    _commit(repo, env, "a.txt", "side\n", "فرع" + tag)
+    _git(repo, "checkout", "-q", "main", env=env)
+    _commit(repo, env, "a.txt", "main\n", "رئيس" + tag)
+    import subprocess
+    subprocess.run(["git", "-C", str(repo), "merge", "-q", "side", "-m", "دمجٌ بحلّ تعارض"], env=env,
+                   capture_output=True)
+    (repo / "a.txt").write_text("resolved\n", encoding="utf-8")
+    _git(repo, "add", "a.txt", env=env)
+    _git(repo, "commit", "-q", "--no-edit", env=env)
+    registry_path = tmp_path / "agents.json"
+    registry_path.write_text(json.dumps(RAW), encoding="utf-8")
+    code = agent_attribution.main(["--repo", str(repo), "--range", f"{base}..HEAD",
+                                   "--registry", str(registry_path)])
+    report = json.loads(capsys.readouterr().out.splitlines()[0])
+    assert code == 1 and report["checked"] == 3
+    assert [f["subject"] for f in report["findings"]] == ["دمجٌ بحلّ تعارض"]

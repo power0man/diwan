@@ -22,27 +22,14 @@ from itertools import combinations
 from pathlib import Path
 from typing import Callable
 
-from evaluation.multi_system_review import AutomaticReviewError, parse_json
+from evaluation.multi_system_review import AutomaticReviewError, model_family, parse_json
 
 REFERENCE_VERDICTS = ("correct", "incorrect", "ambiguous")
 RUBRIC_VERDICTS = ("sufficient", "insufficient")
 JUDGMENT_FIELDS = {"id", "reference", "rubric", "my_answer", "reason", "fix"}
 
-# العائلة تُستخرج من اسم النموذج ببادئاتٍ صريحة. واسمٌ لا تعرفه القائمة يُرفض:
-# استقلالٌ لا يُعرف مصدرُه لا يُثبَت.
-_FAMILY_PREFIXES = (
-    ("deepseek", "deepseek"),
-    ("mistral", "mistral"), ("ministral", "mistral"), ("magistral", "mistral"),
-    ("devstral", "mistral"), ("codestral", "mistral"),
-    ("qwen", "qwen"), ("qwq", "qwen"),
-    ("kimi", "kimi"),
-    ("gpt", "openai"),
-    ("gemini", "google"), ("gemma", "google"),
-    ("claude", "anthropic"),
-    ("llama", "meta"), ("phi", "microsoft"), ("granite", "ibm"),
-    ("glm", "zhipu"), ("minimax", "minimax"), ("jais", "inception"),
-    ("falcon", "tii"), ("nemotron", "nvidia"),
-)
+# العائلة تُستخرج من اسم النموذج ببادئاتٍ صريحة، بالجدول الواحد في `evaluation/multi_system_review.py`.
+# واسمٌ لا تعرفه القائمة يُرفض: استقلالٌ لا يُعرف مصدرُه لا يُثبَت.
 
 # المحرّكُ اليوم qwen3.5:9b (providers/ollama.py::DEFAULT_MODEL، ق٥٤) وعائلتُه Qwen. واختبارٌ يربط هذه القيمة بالمحرّك
 # الفعليّ، فإن تغيّر المحرّكُ سقط حتى تتبعه القاعدة.
@@ -73,11 +60,11 @@ Transport = Callable[[str, str, str, dict], str]
 
 
 def reviewer_family(model: str) -> str:
-    name = model.lower().rsplit("/", 1)[-1]
-    for prefix, family in _FAMILY_PREFIXES:
-        if name.startswith(prefix):
-            return family
-    raise AutomaticReviewError("reviewer_family_unknown", model)
+    # الجدولُ الواحد في `evaluation/multi_system_review.py::FAMILY_PREFIXES` (ق٤٩ وق٥٠ بصرامةٍ واحدة)
+    family = model_family(model)
+    if family is None:
+        raise AutomaticReviewError("reviewer_family_unknown", model)
+    return family
 
 
 def check_reviewers(models: list[str]) -> dict[str, str]:

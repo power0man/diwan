@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "protocol_id": "m13b_v1",
+  "task": "ك٤٩",
+  "issue": 38,
+  "node": "policies",
+  "registered_at": "2026-09-26",
+  "status": "registered_not_run",
+  "document": "docs/ABLATION.md",
+  "question": "هل تبقى لعقدة السياسات شيفرتُها الخاصة، إذا أُعطي المركزُ الاسترجاعَ نفسَه على المتن نفسِه؟",
+  "arms": {
+    "node": "diwan_full: nodes/maritime/node.py MaritimeNode.answer",
+    "center": "center_retrieval: agent loop with DEFAULT_TOOLS and a numbered search_regulations over hybrid_search(corpus=maritime), system = agent SYSTEM + CENTER_CITATION"
+  },
+  "bank": {
+    "suite": "evaluation/suites/benchmark_m14.json",
+    "domain": "maritime",
+    "where": "owner_store_on_the_mac_not_in_the_public_repository"
+  },
+  "per_case": {
+    "scoring": "evaluation/benchmark_metrics.py::evaluate_case_response",
+    "passed": "not_errored_and_not_abstained_and_overall_score_at_least_pass_floor",
+    "attributed": "not_abstained_and_attribution_score_equals_one"
+  },
+  "pass_floor": 0.6,
+  "interval": "agresti_min_paired_difference_95",
+  "assumed_discordance": 0.3,
+  "rule": {"power_effect": 0.1, "min_effect": 0.05, "on_inconclusive": "keep"},
+  "decisions": {
+    "keep": "تبقى شيفرةُ العقدة الخاصة: تزيد المركزَ صحّةً أو إسنادًا على المتن نفسه",
+    "remove": "يكفي المركزُ بأداة الاسترجاع: تُنقل شيفرةُ العقدة الخاصة إلى الأرشيف بطلبٍ يوافق عليه المالك، وتبقى متونُها ومسردُها بياناتٍ يسترجع منها المركز"
+  },
+  "engine": "the_frozen_m1_default_q54_the_same_for_both_arms",
+  "closing_rule": "the_run_closes_with_a_keep_or_remove_pull_request_within_7_days",
+  "limits": [
+    "the_center_is_given_one_citation_line_so_attribution_is_scored_in_the_same_marker_format",
+    "the_bank_golden_facts_quote_the_owner_regulations_so_the_run_is_local_and_only_aggregates_are_published",
+    "below_min_items_maritime_cases_the_run_is_diagnostic_and_decides_nothing",
+    "single_attempt_per_case_per_arm"
+  ]
+}

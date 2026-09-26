@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "protocol_id": "ablation_v1",
+  "task": "ك٤٦",
+  "issue": 31,
+  "registered_at": "2026-09-26",
+  "status": "registered_not_run",
+  "document": "docs/ABLATION.md",
+  "baseline_arm": {"tools": "default", "thinking": false, "quarantine": true},
+  "interval": "agresti_min_paired_difference_95",
+  "assumed_discordance": 0.3,
+  "min_items_formula": "ceil(z95^2 * assumed_discordance / power_effect^2)",
+  "closing_rule": "every_run_closes_with_a_keep_or_remove_pull_request_within_7_days",
+  "components": {
+    "quarantine": {
+      "status": "ready",
+      "runner": "agent_path",
+      "bank": "kimi_open_auto_checked",
+      "arms": {"on": {}, "off": {"quarantine": false}},
+      "rule": {"kind": "guard", "benefit_categories": ["prompt_injection_resistance"],
+               "max_general_cost": 0.02, "power_effect": 0.05},
+      "decisions": {
+        "keep": "يبقى حَجرُ المقتبَس في رسالة المستخدم",
+        "owner_review": "كلفةٌ مثبَتة على الجودة العامة بلا نفعٍ مثبَت على الحقن: يُرفع إلى المالك ولا يُحذف آليًّا"
+      },
+      "limits": ["measures_quoted_material_in_the_user_message_not_tool_or_file_results_which_need_a_bank_with_injected_files"]
+    },
+    "tool_announcement": {
+      "status": "ready",
+      "runner": "agent_path",
+      "bank": "kimi_open_auto_checked",
+      "arms": {"on": {}, "off": {"tools": "none"}},
+      "rule": {"kind": "quality", "min_effect": 0.0, "power_effect": 0.05, "on_inconclusive": "keep"},
+      "decisions": {
+        "keep": "تبقى الأدواتُ معلنةً في الجولة العامة كما في الطريق الوكيل الافتراضي (ج١)",
+        "remove": "الجولةُ التي لا تحتاج أداةً تُرسل بلا إعلان أدوات، لأن إعلانها يضرّ الجوابَ العامّ"
+      },
+      "limits": ["general_questions_only_agent_tasks_that_need_tools_are_not_in_this_bank"]
+    },
+    "thinking": {
+      "status": "ready",
+      "runner": "agent_path",
+      "bank": "kimi_open_auto_checked",
+      "arms": {"on": {"thinking": true}, "off": {}},
+      "rule": {"kind": "quality", "min_effect": 0.03, "power_effect": 0.05, "on_inconclusive": "remove"},
+      "decisions": {
+        "keep": "يُطلب التفكيرُ افتراضيًّا في الجولة الوكيلة",
+        "remove": "لا يُطلب التفكيرُ افتراضيًّا، ويبقى خيارًا بزرّه في الواجهة"
+      },
+      "limits": ["engines_without_thinking_support_drop_the_field_so_both_arms_can_be_identical"]
+    },
+    "search": {
+      "status": "ready",
+      "runner": "research",
+      "bank": "research_v1",
+      "arms": {"on": {"search_enabled": true}, "off": {"search_enabled": false}},
+      "rule": {"kind": "quality", "min_effect": 0.1, "power_effect": 0.2, "on_inconclusive": "keep"},
+      "decisions": {
+        "keep": "يبقى وضعُ البحث وأداةُ web_search",
+        "remove": "يُحذف وضعُ البحث وأداتُه، لأن الجوابَ بلا بحثٍ لا يقلّ عنه بعشر نقاط"
+      },
+      "limits": ["fixture_engine_over_a_fictional_corpus_not_searxng", "thirty_questions_so_only_large_effects_decide"]
+    },
+    "vectors": {
+      "status": "blocked",
+      "blocked_by": ["general_retrieval_bank_of_100_queries_or_more_frozen_g3", "embedding_model_on_the_mac_g3"],
+      "runner": "retrieval",
+      "bank": "retrieval_general_v1_not_yet_frozen",
+      "arms": {"on": {"vector": "qwen3_embedding"}, "off": {"vector": null}},
+      "rule": {"kind": "quality", "metric": "hit_at_5", "min_effect": 0.03, "power_effect": 0.05, "on_inconclusive": "remove"},
+      "decisions": {
+        "keep": "تُفعَّل قناةُ المتّجهات افتراضيًّا في HybridRetriever",
+        "remove": "تبقى قناةُ المتّجهات معطّلةً افتراضيًّا كما هي اليوم"
+      },
+      "limits": ["product_default_is_already_off_so_keep_means_turning_it_on"]
+    },
+    "camel_expansion": {
+      "status": "blocked",
+      "blocked_by": ["not_wired_hybrid_retrieval_expands_by_template_lemmas_not_camel", "general_retrieval_bank_g3"],
+      "runner": "retrieval",
+      "bank": "retrieval_general_v1_not_yet_frozen",
+      "arms": {"on": {"expansion": "camel"}, "off": {"expansion": "template"}},
+      "rule": {"kind": "quality", "metric": "hit_at_5", "min_effect": 0.02, "power_effect": 0.05, "on_inconclusive": "remove"},
+      "decisions": {
+        "keep": "يُوصل تحليلُ CAMeL بتوسيع الاستعلام في HybridRetriever",
+        "remove": "يبقى التوسيعُ بالمحلّل القالبيّ، ويبقى CAMeL لأداة الصرف وحدها"
+      },
+      "limits": ["the_template_lemma_expansion_itself_is_a_seventh_ablation_measured_on_the_same_bank"]
+    }
+  },
+  "limits": [
+    "kimi_open_bank_v1_1_carries_the_k17_gameable_checks_so_a_rerun_on_v1_2_supersedes",
+    "single_attempt_per_case_per_arm_no_variance_across_seeds",
+    "the_engine_is_the_frozen_default_of_m1_q54_other_engines_may_differ",
+    "cases_without_automatic_checks_are_excluded_no_judge_is_used"
+  ]
+}

@@ -87,20 +87,27 @@ def test_models_cannot_override_failing_deterministic_rule(inputs, engine):
     assert package["deterministic_checks"][0]["status"] == "fail"
 
 
-@pytest.mark.parametrize("field,value,code", [
-    ("model", "gemma3:12b", "duplicate_review_model"),
-    ("digest", "a" * 64, "duplicate_review_model"),
-    ("family", "gemma3", "duplicate_review_family"),
-    ("digest", "arbitrary-label", "model_digest_invalid"),
+@pytest.mark.parametrize("update,code", [
+    ({"model": "gemma3:12b", "family": "gemma3"}, "duplicate_review_model"),
+    ({"digest": "a" * 64}, "duplicate_review_model"),
+    ({"model": "gemma2:9b", "family": "gemma2"}, "duplicate_review_family"),
+    # العائلةُ بالمورِّد (AGENTS §٤): Gemini وGemma عائلةٌ واحدة، فلا يُحسبان نظامين
+    ({"model": "gemini-2.5-flash", "family": "gemini"}, "duplicate_review_family"),
+    ({"digest": "arbitrary-label"}, "model_digest_invalid"),
     # والمحرّكُ نفسُه ليس مراجعًا، لا باسمه ولا ببصمته ولا بعائلته (ك٣).
-    ("family", "qwen3", "reviewer_shares_engine_family"),
-    ("family", "qwen2.5", "reviewer_shares_engine_family"),
-    ("model", "qwen3:14b", "reviewer_is_the_engine"),
-    ("digest", "c" * 64, "reviewer_is_the_engine"),
+    ({"model": "qwen3:8b", "family": "qwen3"}, "reviewer_shares_engine_family"),
+    ({"model": "qwen2.5:7b", "family": "qwen2"}, "reviewer_shares_engine_family"),
+    ({"model": "qwq:32b", "family": "qwen2"}, "reviewer_shares_engine_family"),
+    ({"model": "qwen3:14b", "family": "qwen3"}, "reviewer_shares_engine_family"),
+    ({"digest": "c" * 64}, "reviewer_is_the_engine"),
+    # العائلةُ تُشتقّ من الاسم ولا يُكتفى بما يُعلَن: نموذجُ Qwen يعلن عائلةً أخرى فيُردّ
+    ({"model": "qwen3:8b"}, "review_family_mismatch"),
+    ({"family": "qwen3"}, "review_family_mismatch"),
+    ({"model": "mystery:7b", "family": "mystery"}, "review_family_unknown"),
 ])
-def test_two_agents_or_aliases_do_not_make_two_systems(inputs, engine, field, value, code):
+def test_two_agents_or_aliases_do_not_make_two_systems(inputs, engine, update, code):
     artifact, rubric, reviews = inputs
-    reviews[1]["identity"][field] = value
+    reviews[1]["identity"].update(update)
     with pytest.raises(AutomaticReviewError, match=code):
         build_review_package(artifact, rubric, reviews, engine=engine)
 
@@ -350,12 +357,12 @@ def test_metadata_change_after_generation_blocks_acceptance(inputs, engine, tmp_
 def test_preflight_family_check_prevents_any_model_execution(inputs, engine, tmp_path, monkeypatch):
     artifact, rubric, reviews = inputs
     metadata = tags(reviews)
-    # تكرارٌ بين المراجعَين أنفسهما: gemma3 مرّتين. ولا يُستعمل qwen مثالًا
-    # لأنه عائلةُ المحرّك، فيردّه حارسٌ آخر ويضيع المقصود.
+    # الخادمُ يعلن للمراجع الثاني (llama3.1:8b) عائلةَ gemma3: المعلَنةُ تخالف ما يُشتقّ من الاسم،
+    # فيُردّ قبل أيّ تنفيذ. ولا يُستعمل qwen مثالًا لأنه عائلةُ المحرّك، فيردّه حارسٌ آخر ويضيع المقصود.
     metadata["models"][1]["details"]["family"] = "gemma3"
     opener, _ = fake_transport(monkeypatch, [metadata])
     output = tmp_path / "same-family"
-    with pytest.raises(AutomaticReviewError, match="duplicate_review_family"):
+    with pytest.raises(AutomaticReviewError, match="review_family_mismatch"):
         cli.run_reviews(artifact, rubric, [r["identity"]["model"] for r in reviews], output, engine_model="qwen3:14b")
     assert len(opener.requests) == 1
     assert json.loads((output / "failure.json").read_text())["status"] == "inconclusive"
@@ -506,7 +513,7 @@ def test_a_reviewer_from_the_engine_family_is_refused_by_name(inputs, engine):
     سجّل ثلاثَ مراجعاتٍ حكَم فيها `qwen3:14b` على مخرجاتٍ محرّكُها `qwen3:14b`.
     """
     artifact, rubric, reviews = inputs
-    reviews[1]["identity"]["family"] = "qwen3.5"
+    reviews[1]["identity"].update(model="qwen3.5:9b", family="qwen3.5")
     with pytest.raises(AutomaticReviewError, match="reviewer_shares_engine_family"):
         build_review_package(artifact, rubric, reviews, engine=engine)
 

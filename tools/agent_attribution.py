@@ -153,6 +153,23 @@ def read_commits(repo: Path, revision_range: str) -> list[dict]:
     return parse_log(result.stdout)
 
 
+def _git(repo: Path, *argv: str) -> str:
+    result = subprocess.run(["git", "-C", str(repo), *argv], capture_output=True, encoding="utf-8", timeout=60)
+    if result.returncode:
+        raise AttributionError("git_read_failed", result.stderr.strip()[:200])
+    return result.stdout
+
+
+def read_content_merges(repo: Path, revision_range: str) -> list[dict]:
+    """إيداعاتُ الدمج التي تحمل محتواها: حلَّ تعارضٍ أو تعديلًا ليس في أيٍّ من أبويها.
+
+    `--no-merges` كان يعفي الدمجَ كلَّه، فمرّ إيداعا دمجٍ يحملان عشرين سطرًا من حلّ التعارض بلا وسم
+    (تقييم ٢٥ سبتمبر §٥). والدمجُ الفارغ لا مُنتِجَ لمحتواه فيبقى معفًى: فرقُه المركّب (`--cc`) فارغ.
+    """
+    merges = parse_log(_git(repo, "log", "--merges", LOG_FORMAT, revision_range))
+    return [merge for merge in merges if _git(repo, "show", "--cc", "--format=", merge["sha"]).strip()]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path.cwd())
@@ -164,7 +181,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         path = args.registry or args.repo / REGISTRY_PATH
         registry = load_registry(Path(path).read_bytes())
-        report = check_commits(read_commits(args.repo, args.revision_range), registry)
+        commits = read_commits(args.repo, args.revision_range) + read_content_merges(args.repo, args.revision_range)
+        report = check_commits(commits, registry)
     except AttributionError as exc:
         report = {"schema_version": 1, "status": "failed", "code": exc.code,
                   "detail": exc.detail, "findings": []}

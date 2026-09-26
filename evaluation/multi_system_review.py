@@ -178,6 +178,40 @@ def deterministic_checks(artifact: dict, rubric: dict) -> list[dict]:
     return checks
 
 
+# عائلةُ النموذج بمورِّده (AGENTS §٤): Gemini وGemma عائلةٌ واحدة، فإن صار Gemma محرّكًا خرج Gemini من التحكيم.
+# وتُشتقّ من اسم النموذج بهذا الجدول الواحد في المراجعتين (هنا، و`evaluation/external_review.py`)، ولا يُكتفى بما يُعلَن.
+FAMILY_PREFIXES = (
+    ("deepseek", "deepseek"),
+    ("mistral", "mistral"), ("ministral", "mistral"), ("magistral", "mistral"),
+    ("devstral", "mistral"), ("codestral", "mistral"),
+    ("qwen", "qwen"), ("qwq", "qwen"),
+    ("kimi", "kimi"),
+    ("gpt", "openai"),
+    ("gemini", "google"), ("gemma", "google"),
+    ("claude", "anthropic"),
+    ("llama", "meta"), ("phi", "microsoft"), ("granite", "ibm"),
+    ("glm", "zhipu"), ("minimax", "minimax"), ("jais", "inception"),
+    ("falcon", "tii"), ("nemotron", "nvidia"),
+)
+
+
+def model_family(name: str) -> str | None:
+    """المورِّدُ من اسم النموذج أو عائلته المعلَنة (آخرُ مقطعٍ بعد «/»)؛ وما لا يُعرف None."""
+    base = name.lower().strip().rsplit("/", 1)[-1]
+    return next((family for prefix, family in FAMILY_PREFIXES if base.startswith(prefix)), None)
+
+
+def identity_family(identity: dict, role: str) -> str:
+    """العائلةُ تُشتقّ من اسم النموذج، والمجهولُ مرفوض؛ والمعلَنةُ إن عُرفت تطابقها (ق٤٩ وق٥٠ بصرامةٍ واحدة)."""
+    derived = model_family(identity["model"])
+    if derived is None:
+        _fail(f"{role}_family_unknown", identity["model"])
+    declared = model_family(identity["family"])
+    if declared is not None and declared != derived:
+        _fail(f"{role}_family_mismatch", identity["model"])
+    return derived
+
+
 def family_group(family: str) -> str:
     _text(family, "family", limit=128)
     normalized = family.lower().strip()
@@ -196,6 +230,7 @@ def validate_identity(identity: dict) -> dict:
     if not isinstance(identity["digest"], str) or not re.fullmatch(r"[0-9a-f]{64}", identity["digest"]):
         _fail("model_digest_invalid")
     family_group(identity["family"])
+    identity_family(identity, "review")
     return identity
 
 
@@ -211,6 +246,7 @@ def validate_engine(engine: dict) -> dict:
     if not isinstance(engine["digest"], str) or not re.fullmatch(r"[0-9a-f]{64}", engine["digest"]):
         _fail("engine_digest_invalid")
     family_group(engine["family"])
+    identity_family(engine, "engine")
     return engine
 
 
@@ -224,13 +260,13 @@ def validate_identities(identities: list[dict], engine: dict) -> None:
     validate_engine(engine)
     if not isinstance(identities, list) or not 2 <= len(identities) <= 8:
         _fail("insufficient_review_systems")
-    engine_family = family_group(engine["family"])
+    engine_family = identity_family(engine, "engine")
     seen_models, seen_digests, seen_families = set(), set(), set()
     for identity in identities:
         validate_identity(identity)
         model = identity["model"].casefold()
         digest = identity["digest"]
-        family = family_group(identity["family"])
+        family = identity_family(identity, "review")
         if family == engine_family:
             _fail("reviewer_shares_engine_family")
         if digest == engine["digest"] or model == engine["model"].casefold():
