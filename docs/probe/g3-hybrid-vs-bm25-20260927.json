@@ -126,12 +126,12 @@
           0.8894
         ],
         "hit_at_5_design_effect": 1.0,
-        "ndcg_at_10": 0.7745,
+        "ndcg_at_10": 0.7683,
         "ndcg_at_10_ci95": [
-          0.7177,
-          0.826
+          0.7107,
+          0.8221
         ],
-        "mrr": 0.7462
+        "mrr": 0.7379
       },
       "by_type": {
         "lexical": {
@@ -142,12 +142,12 @@
             0.9908
           ],
           "hit_at_5_design_effect": 1.0,
-          "ndcg_at_10": 0.9667,
+          "ndcg_at_10": 0.9605,
           "ndcg_at_10_ci95": [
-            0.9167,
+            0.9105,
             1.0
           ],
-          "mrr": 0.9685
+          "mrr": 0.9601
         },
         "paraphrase": {
           "queries": 60,
@@ -157,12 +157,12 @@
             0.801
           ],
           "hit_at_5_design_effect": 1.0,
-          "ndcg_at_10": 0.5823,
+          "ndcg_at_10": 0.5762,
           "ndcg_at_10_ci95": [
-            0.481,
-            0.6746
+            0.4753,
+            0.6669
           ],
-          "mrr": 0.524
+          "mrr": 0.5156
         }
       }
     }
@@ -186,7 +186,7 @@
         0.1,
         0.2167
       ],
-      "ndcg_at_10_difference": 0.1356,
+      "ndcg_at_10_difference": 0.1294,
       "protocol": {
         "component": "vectors",
         "decision": "not_applied",
@@ -2121,9 +2121,9 @@
       {
         "id": "rg_q031",
         "type": "lexical",
-        "rank": 1,
+        "rank": 2,
         "hit_at_5": true,
-        "ndcg_at_10": 1.0
+        "ndcg_at_10": 0.6309
       },
       {
         "id": "rg_q032",
@@ -2198,9 +2198,9 @@
       {
         "id": "rg_q042",
         "type": "paraphrase",
-        "rank": 1,
+        "rank": 2,
         "hit_at_5": true,
-        "ndcg_at_10": 1.0
+        "ndcg_at_10": 0.6309
       },
       {
         "id": "rg_q043",
@@ -2750,6 +2750,488 @@
       }
     ]
   },
+  "channels": {
+    "rg_q001": {
+      "bm25": "rg_d001",
+      "vectors": "rg_d001 rg_d004 rg_d002 rg_d037 rg_d053 rg_d005 rg_d036 rg_d027 rg_d003 rg_d028 rg_d033 rg_d056 rg_d030 rg_d058 rg_d029 rg_d045 rg_d051 rg_d031 rg_d060 rg_d034 rg_d039 rg_d026 rg_d041 rg_d018 rg_d042 rg_d057 rg_d012 rg_d023 rg_d017 rg_d035 rg_d015 rg_d006 rg_d059 rg_d021 rg_d050 rg_d009 rg_d022 rg_d043 rg_d014 rg_d048 rg_d013 rg_d025 rg_d040 rg_d010 rg_d047 rg_d052 rg_d020 rg_d032 rg_d024 rg_d046"
+    },
+    "rg_q002": {
+      "bm25": "rg_d042 rg_d004 rg_d019 rg_d006 rg_d002",
+      "vectors": "rg_d001 rg_d004 rg_d053 rg_d033 rg_d003 rg_d002 rg_d037 rg_d056 rg_d005 rg_d034 rg_d039 rg_d023 rg_d043 rg_d051 rg_d031 rg_d009 rg_d026 rg_d015 rg_d041 rg_d028 rg_d060 rg_d017 rg_d029 rg_d042 rg_d035 rg_d038 rg_d013 rg_d025 rg_d058 rg_d040 rg_d010 rg_d045 rg_d008 rg_d020 rg_d059 rg_d036 rg_d022 rg_d047 rg_d050 rg_d049 rg_d006 rg_d021 rg_d057 rg_d012 rg_d046 rg_d014 rg_d032 rg_d027 rg_d024 rg_d018"
+    },
+    "rg_q003": {
+      "bm25": "rg_d002 rg_d043 rg_d054 rg_d005 rg_d009",
+      "vectors": "rg_d002 rg_d004 rg_d001 rg_d005 rg_d028 rg_d006 rg_d024 rg_d034 rg_d054 rg_d026 rg_d009 rg_d037 rg_d023 rg_d043 rg_d033 rg_d050 rg_d019 rg_d051 rg_d042 rg_d058 rg_d035 rg_d003 rg_d036 rg_d055 rg_d056 rg_d040 rg_d032 rg_d060 rg_d027 rg_d030 rg_d059 rg_d022 rg_d031 rg_d008 rg_d013 rg_d007 rg_d018 rg_d025 rg_d017 rg_d016 rg_d012 rg_d047 rg_d057 rg_d041 rg_d029 rg_d048 rg_d046 rg_d015 rg_d052 rg_d038"
+    },
+    "rg_q004": {
+      "bm25": "rg_d042 rg_d045 rg_d044 rg_d013 rg_d015 rg_d007 rg_d026 rg_d035 rg_d036 rg_d034 rg_d006 rg_d047 rg_d009 rg_d017 rg_d023 rg_d032 rg_d038",
+      "vectors": "rg_d002 rg_d003 rg_d028 rg_d004 rg_d031 rg_d023 rg_d011 rg_d035 rg_d052 rg_d001 rg_d026 rg_d005 rg_d013 rg_d051 rg_d034 rg_d042 rg_d046 rg_d032 rg_d024 rg_d047 rg_d033 rg_d008 rg_d045 rg_d017 rg_d022 rg_d007 rg_d059 rg_d019 rg_d058 rg_d037 rg_d053 rg_d020 rg_d016 rg_d009 rg_d027 rg_d006 rg_d057 rg_d015 rg_d044 rg_d021 rg_d029 rg_d055 rg_d050 rg_d060 rg_d039 rg_d010 rg_d038 rg_d043 rg_d014 rg_d012"
+    },
+    "rg_q005": {
+      "bm25": "rg_d003 rg_d005 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d013 rg_d014 rg_d024 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d003 rg_d005 rg_d027 rg_d030 rg_d019 rg_d002 rg_d012 rg_d001 rg_d028 rg_d051 rg_d004 rg_d026 rg_d042 rg_d018 rg_d045 rg_d050 rg_d029 rg_d009 rg_d006 rg_d031 rg_d046 rg_d033 rg_d035 rg_d037 rg_d017 rg_d041 rg_d044 rg_d049 rg_d015 rg_d016 rg_d053 rg_d032 rg_d008 rg_d014 rg_d010 rg_d011 rg_d054 rg_d058 rg_d055 rg_d025 rg_d013 rg_d007 rg_d043 rg_d039 rg_d052 rg_d056 rg_d059 rg_d022 rg_d021 rg_d057"
+    },
+    "rg_q006": {
+      "bm25": "rg_d055 rg_d010 rg_d012 rg_d056 rg_d036 rg_d040 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d003 rg_d028 rg_d002 rg_d005 rg_d004 rg_d026 rg_d001 rg_d006 rg_d027 rg_d024 rg_d042 rg_d010 rg_d033 rg_d035 rg_d019 rg_d008 rg_d023 rg_d046 rg_d011 rg_d037 rg_d052 rg_d029 rg_d031 rg_d013 rg_d045 rg_d018 rg_d009 rg_d034 rg_d030 rg_d047 rg_d007 rg_d017 rg_d054 rg_d053 rg_d051 rg_d015 rg_d016 rg_d012 rg_d020 rg_d050 rg_d060 rg_d025 rg_d043 rg_d032 rg_d041 rg_d055 rg_d044 rg_d048 rg_d021 rg_d040"
+    },
+    "rg_q007": {
+      "bm25": "rg_d042 rg_d036 rg_d037 rg_d039 rg_d004",
+      "vectors": "rg_d004 rg_d001 rg_d037 rg_d012 rg_d041 rg_d056 rg_d039 rg_d057 rg_d026 rg_d029 rg_d051 rg_d006 rg_d030 rg_d036 rg_d027 rg_d059 rg_d058 rg_d002 rg_d033 rg_d017 rg_d003 rg_d009 rg_d040 rg_d023 rg_d060 rg_d022 rg_d054 rg_d028 rg_d045 rg_d043 rg_d050 rg_d014 rg_d018 rg_d053 rg_d005 rg_d044 rg_d025 rg_d016 rg_d049 rg_d034 rg_d038 rg_d020 rg_d024 rg_d042 rg_d021 rg_d052 rg_d032 rg_d047 rg_d013 rg_d019"
+    },
+    "rg_q008": {
+      "bm25": "rg_d004 rg_d054 rg_d026 rg_d019 rg_d006 rg_d002",
+      "vectors": "rg_d004 rg_d001 rg_d033 rg_d026 rg_d002 rg_d005 rg_d003 rg_d029 rg_d006 rg_d027 rg_d030 rg_d012 rg_d037 rg_d051 rg_d052 rg_d028 rg_d009 rg_d017 rg_d053 rg_d056 rg_d057 rg_d045 rg_d013 rg_d054 rg_d008 rg_d025 rg_d034 rg_d024 rg_d023 rg_d032 rg_d015 rg_d050 rg_d060 rg_d031 rg_d048 rg_d011 rg_d021 rg_d022 rg_d041 rg_d055 rg_d014 rg_d059 rg_d038 rg_d018 rg_d035 rg_d043 rg_d058 rg_d039 rg_d036 rg_d042"
+    },
+    "rg_q009": {
+      "bm25": "rg_d005 rg_d001",
+      "vectors": "rg_d005 rg_d001 rg_d003 rg_d004 rg_d033 rg_d029 rg_d002 rg_d028 rg_d031 rg_d042 rg_d008 rg_d053 rg_d027 rg_d035 rg_d045 rg_d009 rg_d052 rg_d037 rg_d014 rg_d010 rg_d051 rg_d030 rg_d056 rg_d017 rg_d032 rg_d015 rg_d050 rg_d020 rg_d023 rg_d013 rg_d046 rg_d047 rg_d054 rg_d043 rg_d006 rg_d041 rg_d026 rg_d011 rg_d012 rg_d021 rg_d034 rg_d036 rg_d058 rg_d039 rg_d060 rg_d059 rg_d038 rg_d018 rg_d025 rg_d022"
+    },
+    "rg_q010": {
+      "bm25": "rg_d002 rg_d018 rg_d001 rg_d005 rg_d012 rg_d016",
+      "vectors": "rg_d005 rg_d029 rg_d052 rg_d025 rg_d033 rg_d032 rg_d045 rg_d026 rg_d002 rg_d003 rg_d009 rg_d023 rg_d057 rg_d001 rg_d054 rg_d042 rg_d014 rg_d027 rg_d004 rg_d059 rg_d011 rg_d037 rg_d012 rg_d053 rg_d031 rg_d013 rg_d028 rg_d035 rg_d015 rg_d030 rg_d006 rg_d024 rg_d055 rg_d056 rg_d039 rg_d008 rg_d058 rg_d044 rg_d046 rg_d017 rg_d021 rg_d051 rg_d060 rg_d018 rg_d050 rg_d020 rg_d019 rg_d049 rg_d022 rg_d047"
+    },
+    "rg_q011": {
+      "bm25": "rg_d006 rg_d026 rg_d035 rg_d007 rg_d028 rg_d052 rg_d029 rg_d033 rg_d004 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d040 rg_d024 rg_d025 rg_d034 rg_d015 rg_d030 rg_d023 rg_d008 rg_d009 rg_d032 rg_d016 rg_d018 rg_d012 rg_d056 rg_d036 rg_d055 rg_d002 rg_d049 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d003 rg_d010 rg_d039 rg_d046 rg_d001",
+      "vectors": "rg_d006 rg_d012 rg_d026 rg_d033 rg_d028 rg_d002 rg_d009 rg_d011 rg_d035 rg_d055 rg_d042 rg_d048 rg_d023 rg_d052 rg_d034 rg_d008 rg_d018 rg_d054 rg_d016 rg_d019 rg_d024 rg_d030 rg_d007 rg_d004 rg_d029 rg_d025 rg_d005 rg_d003 rg_d010 rg_d041 rg_d013 rg_d047 rg_d001 rg_d046 rg_d031 rg_d014 rg_d032 rg_d056 rg_d045 rg_d051 rg_d059 rg_d060 rg_d015 rg_d057 rg_d053 rg_d021 rg_d017 rg_d043 rg_d050 rg_d022"
+    },
+    "rg_q012": {
+      "bm25": "rg_d042 rg_d026 rg_d008 rg_d028 rg_d022 rg_d021 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d040 rg_d024 rg_d035 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d030 rg_d023 rg_d009 rg_d032 rg_d016 rg_d018 rg_d012 rg_d056 rg_d036 rg_d055 rg_d002 rg_d049 rg_d054 rg_d005 rg_d013 rg_d014 rg_d003 rg_d010 rg_d033 rg_d039 rg_d046 rg_d001 rg_d004",
+      "vectors": "rg_d006 rg_d026 rg_d012 rg_d042 rg_d004 rg_d033 rg_d009 rg_d028 rg_d054 rg_d055 rg_d002 rg_d013 rg_d011 rg_d023 rg_d005 rg_d025 rg_d052 rg_d024 rg_d008 rg_d029 rg_d034 rg_d035 rg_d022 rg_d032 rg_d015 rg_d037 rg_d041 rg_d018 rg_d030 rg_d007 rg_d021 rg_d001 rg_d003 rg_d053 rg_d019 rg_d016 rg_d044 rg_d045 rg_d031 rg_d010 rg_d038 rg_d056 rg_d014 rg_d048 rg_d051 rg_d046 rg_d043 rg_d047 rg_d060 rg_d027"
+    },
+    "rg_q013": {
+      "bm25": "rg_d002 rg_d035 rg_d007 rg_d026 rg_d006",
+      "vectors": "rg_d007 rg_d013 rg_d047 rg_d034 rg_d035 rg_d024 rg_d028 rg_d006 rg_d042 rg_d023 rg_d033 rg_d011 rg_d048 rg_d002 rg_d046 rg_d010 rg_d026 rg_d031 rg_d029 rg_d004 rg_d016 rg_d032 rg_d052 rg_d041 rg_d009 rg_d022 rg_d021 rg_d008 rg_d019 rg_d017 rg_d043 rg_d050 rg_d059 rg_d015 rg_d044 rg_d012 rg_d003 rg_d055 rg_d045 rg_d018 rg_d020 rg_d060 rg_d025 rg_d056 rg_d057 rg_d051 rg_d014 rg_d038 rg_d049 rg_d030"
+    },
+    "rg_q014": {
+      "bm25": "rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+      "vectors": "rg_d007 rg_d050 rg_d046 rg_d052 rg_d044 rg_d048 rg_d013 rg_d033 rg_d031 rg_d029 rg_d021 rg_d057 rg_d022 rg_d032 rg_d045 rg_d054 rg_d047 rg_d009 rg_d060 rg_d020 rg_d056 rg_d049 rg_d053 rg_d027 rg_d058 rg_d026 rg_d039 rg_d038 rg_d037 rg_d010 rg_d051 rg_d023 rg_d042 rg_d034 rg_d006 rg_d017 rg_d024 rg_d059 rg_d025 rg_d035 rg_d011 rg_d043 rg_d036 rg_d055 rg_d004 rg_d005 rg_d028 rg_d012 rg_d015 rg_d008"
+    },
+    "rg_q015": {
+      "bm25": "rg_d008",
+      "vectors": "rg_d008 rg_d052 rg_d031 rg_d035 rg_d011 rg_d033 rg_d003 rg_d042 rg_d010 rg_d034 rg_d017 rg_d047 rg_d028 rg_d002 rg_d015 rg_d006 rg_d060 rg_d013 rg_d032 rg_d029 rg_d012 rg_d004 rg_d045 rg_d026 rg_d014 rg_d023 rg_d007 rg_d055 rg_d009 rg_d053 rg_d039 rg_d018 rg_d051 rg_d021 rg_d046 rg_d050 rg_d024 rg_d001 rg_d038 rg_d005 rg_d020 rg_d019 rg_d048 rg_d058 rg_d037 rg_d016 rg_d030 rg_d056 rg_d059 rg_d022"
+    },
+    "rg_q016": {
+      "bm25": "rg_d008 rg_d009 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+      "vectors": "rg_d052 rg_d008 rg_d026 rg_d050 rg_d004 rg_d033 rg_d006 rg_d012 rg_d029 rg_d030 rg_d055 rg_d003 rg_d019 rg_d031 rg_d042 rg_d043 rg_d035 rg_d005 rg_d001 rg_d032 rg_d053 rg_d045 rg_d002 rg_d017 rg_d009 rg_d044 rg_d014 rg_d058 rg_d048 rg_d015 rg_d011 rg_d051 rg_d021 rg_d056 rg_d060 rg_d016 rg_d018 rg_d054 rg_d027 rg_d046 rg_d039 rg_d057 rg_d007 rg_d034 rg_d028 rg_d010 rg_d038 rg_d013 rg_d041 rg_d024"
+    },
+    "rg_q017": {
+      "bm25": "rg_d009 rg_d042 rg_d022",
+      "vectors": "rg_d009 rg_d033 rg_d022 rg_d013 rg_d035 rg_d054 rg_d021 rg_d014 rg_d031 rg_d053 rg_d006 rg_d025 rg_d029 rg_d028 rg_d020 rg_d034 rg_d023 rg_d043 rg_d042 rg_d024 rg_d055 rg_d019 rg_d010 rg_d060 rg_d059 rg_d008 rg_d051 rg_d016 rg_d026 rg_d007 rg_d037 rg_d003 rg_d017 rg_d032 rg_d046 rg_d011 rg_d052 rg_d044 rg_d040 rg_d001 rg_d002 rg_d005 rg_d027 rg_d041 rg_d056 rg_d049 rg_d004 rg_d050 rg_d012 rg_d058"
+    },
+    "rg_q018": {
+      "bm25": "rg_d037 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d040 rg_d024 rg_d035 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d030 rg_d023 rg_d008 rg_d009 rg_d032 rg_d016 rg_d018 rg_d012 rg_d056 rg_d036 rg_d055 rg_d002 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d003 rg_d010 rg_d026 rg_d033 rg_d039 rg_d046 rg_d001 rg_d004",
+      "vectors": "rg_d009 rg_d033 rg_d013 rg_d006 rg_d004 rg_d025 rg_d053 rg_d043 rg_d028 rg_d029 rg_d035 rg_d054 rg_d026 rg_d007 rg_d031 rg_d022 rg_d032 rg_d002 rg_d042 rg_d023 rg_d005 rg_d021 rg_d037 rg_d055 rg_d001 rg_d052 rg_d024 rg_d014 rg_d045 rg_d038 rg_d015 rg_d010 rg_d056 rg_d050 rg_d008 rg_d048 rg_d034 rg_d041 rg_d019 rg_d011 rg_d030 rg_d036 rg_d047 rg_d012 rg_d059 rg_d060 rg_d027 rg_d017 rg_d003 rg_d051"
+    },
+    "rg_q019": {
+      "bm25": "rg_d010 rg_d042 rg_d028 rg_d024 rg_d052 rg_d006 rg_d047",
+      "vectors": "rg_d010 rg_d031 rg_d035 rg_d006 rg_d034 rg_d047 rg_d042 rg_d046 rg_d052 rg_d018 rg_d048 rg_d007 rg_d024 rg_d013 rg_d041 rg_d011 rg_d008 rg_d028 rg_d055 rg_d050 rg_d015 rg_d060 rg_d033 rg_d023 rg_d017 rg_d002 rg_d019 rg_d045 rg_d009 rg_d016 rg_d003 rg_d026 rg_d014 rg_d053 rg_d044 rg_d032 rg_d027 rg_d059 rg_d004 rg_d030 rg_d037 rg_d029 rg_d043 rg_d051 rg_d049 rg_d020 rg_d036 rg_d005 rg_d012 rg_d056"
+    },
+    "rg_q020": {
+      "bm25": "rg_d010 rg_d008 rg_d047 rg_d017 rg_d055 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d025 rg_d011 rg_d020 rg_d046 rg_d018",
+      "vectors": "rg_d031 rg_d010 rg_d034 rg_d035 rg_d042 rg_d011 rg_d006 rg_d008 rg_d014 rg_d052 rg_d046 rg_d055 rg_d028 rg_d013 rg_d047 rg_d016 rg_d009 rg_d024 rg_d007 rg_d015 rg_d033 rg_d026 rg_d017 rg_d032 rg_d023 rg_d012 rg_d045 rg_d003 rg_d029 rg_d019 rg_d053 rg_d060 rg_d048 rg_d018 rg_d041 rg_d037 rg_d050 rg_d004 rg_d049 rg_d056 rg_d002 rg_d051 rg_d020 rg_d044 rg_d054 rg_d030 rg_d027 rg_d005 rg_d022 rg_d001"
+    },
+    "rg_q021": {
+      "bm25": "rg_d011 rg_d057 rg_d008 rg_d013 rg_d014 rg_d015",
+      "vectors": "rg_d011 rg_d014 rg_d013 rg_d023 rg_d028 rg_d015 rg_d012 rg_d016 rg_d042 rg_d006 rg_d017 rg_d035 rg_d008 rg_d034 rg_d032 rg_d003 rg_d046 rg_d007 rg_d009 rg_d047 rg_d059 rg_d037 rg_d038 rg_d026 rg_d052 rg_d024 rg_d031 rg_d045 rg_d055 rg_d002 rg_d020 rg_d022 rg_d051 rg_d021 rg_d019 rg_d010 rg_d018 rg_d033 rg_d041 rg_d060 rg_d025 rg_d057 rg_d029 rg_d050 rg_d054 rg_d048 rg_d056 rg_d039 rg_d005 rg_d040"
+    },
+    "rg_q022": {
+      "bm25": "rg_d013 rg_d032 rg_d039 rg_d019 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d016 rg_d018",
+      "vectors": "rg_d011 rg_d032 rg_d017 rg_d014 rg_d013 rg_d055 rg_d012 rg_d052 rg_d020 rg_d015 rg_d045 rg_d016 rg_d037 rg_d042 rg_d031 rg_d059 rg_d023 rg_d051 rg_d053 rg_d009 rg_d022 rg_d060 rg_d028 rg_d057 rg_d046 rg_d040 rg_d025 rg_d056 rg_d044 rg_d038 rg_d027 rg_d033 rg_d034 rg_d005 rg_d029 rg_d006 rg_d018 rg_d024 rg_d021 rg_d007 rg_d019 rg_d004 rg_d010 rg_d050 rg_d054 rg_d047 rg_d043 rg_d008 rg_d048 rg_d026"
+    },
+    "rg_q023": {
+      "bm25": "rg_d012 rg_d042 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d012 rg_d006 rg_d042 rg_d011 rg_d051 rg_d014 rg_d015 rg_d017 rg_d018 rg_d016 rg_d033 rg_d019 rg_d055 rg_d029 rg_d004 rg_d009 rg_d052 rg_d008 rg_d005 rg_d045 rg_d025 rg_d023 rg_d003 rg_d013 rg_d041 rg_d030 rg_d020 rg_d049 rg_d054 rg_d028 rg_d056 rg_d031 rg_d057 rg_d038 rg_d059 rg_d032 rg_d037 rg_d010 rg_d044 rg_d060 rg_d026 rg_d046 rg_d036 rg_d050 rg_d027 rg_d040 rg_d053 rg_d039 rg_d047 rg_d034"
+    },
+    "rg_q024": {
+      "bm25": "rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d012 rg_d042 rg_d006 rg_d004 rg_d051 rg_d011 rg_d028 rg_d016 rg_d029 rg_d052 rg_d002 rg_d005 rg_d054 rg_d038 rg_d040 rg_d018 rg_d055 rg_d015 rg_d013 rg_d014 rg_d053 rg_d025 rg_d045 rg_d026 rg_d037 rg_d033 rg_d041 rg_d003 rg_d021 rg_d056 rg_d047 rg_d032 rg_d001 rg_d036 rg_d022 rg_d030 rg_d049 rg_d050 rg_d044 rg_d023 rg_d057 rg_d007 rg_d043 rg_d017 rg_d046 rg_d010 rg_d019 rg_d058 rg_d009 rg_d059"
+    },
+    "rg_q025": {
+      "bm25": "rg_d013 rg_d011 rg_d014 rg_d015 rg_d045 rg_d059 rg_d035 rg_d017 rg_d046",
+      "vectors": "rg_d013 rg_d015 rg_d046 rg_d031 rg_d010 rg_d014 rg_d045 rg_d052 rg_d007 rg_d011 rg_d023 rg_d047 rg_d035 rg_d053 rg_d039 rg_d042 rg_d044 rg_d050 rg_d060 rg_d055 rg_d022 rg_d018 rg_d043 rg_d038 rg_d009 rg_d032 rg_d059 rg_d024 rg_d028 rg_d034 rg_d021 rg_d033 rg_d049 rg_d041 rg_d017 rg_d037 rg_d058 rg_d006 rg_d026 rg_d012 rg_d002 rg_d057 rg_d029 rg_d008 rg_d048 rg_d020 rg_d051 rg_d005 rg_d025 rg_d056"
+    },
+    "rg_q026": {
+      "bm25": "rg_d007 rg_d042 rg_d045 rg_d035 rg_d017 rg_d059 rg_d011 rg_d046 rg_d026 rg_d036 rg_d034 rg_d006 rg_d047 rg_d009 rg_d023 rg_d032 rg_d038",
+      "vectors": "rg_d013 rg_d009 rg_d023 rg_d035 rg_d015 rg_d045 rg_d037 rg_d006 rg_d025 rg_d014 rg_d007 rg_d053 rg_d024 rg_d011 rg_d033 rg_d055 rg_d043 rg_d022 rg_d046 rg_d029 rg_d054 rg_d026 rg_d031 rg_d028 rg_d040 rg_d042 rg_d059 rg_d010 rg_d050 rg_d056 rg_d017 rg_d052 rg_d060 rg_d021 rg_d004 rg_d039 rg_d034 rg_d018 rg_d012 rg_d001 rg_d038 rg_d041 rg_d020 rg_d005 rg_d049 rg_d044 rg_d003 rg_d016 rg_d057 rg_d051"
+    },
+    "rg_q027": {
+      "bm25": "rg_d014 rg_d042 rg_d013 rg_d015 rg_d011",
+      "vectors": "rg_d014 rg_d011 rg_d015 rg_d042 rg_d013 rg_d041 rg_d012 rg_d053 rg_d059 rg_d037 rg_d009 rg_d032 rg_d017 rg_d038 rg_d016 rg_d021 rg_d052 rg_d018 rg_d023 rg_d031 rg_d045 rg_d034 rg_d022 rg_d049 rg_d046 rg_d055 rg_d020 rg_d050 rg_d040 rg_d029 rg_d033 rg_d056 rg_d051 rg_d006 rg_d044 rg_d004 rg_d035 rg_d025 rg_d010 rg_d028 rg_d058 rg_d057 rg_d027 rg_d001 rg_d007 rg_d008 rg_d060 rg_d026 rg_d047 rg_d048"
+    },
+    "rg_q028": {
+      "bm25": "rg_d014 rg_d019 rg_d032 rg_d060 rg_d029 rg_d035 rg_d033 rg_d020 rg_d018 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d014 rg_d009 rg_d011 rg_d042 rg_d015 rg_d053 rg_d012 rg_d006 rg_d013 rg_d018 rg_d055 rg_d050 rg_d045 rg_d035 rg_d017 rg_d033 rg_d003 rg_d029 rg_d051 rg_d010 rg_d008 rg_d005 rg_d028 rg_d032 rg_d046 rg_d020 rg_d052 rg_d019 rg_d023 rg_d043 rg_d021 rg_d031 rg_d060 rg_d037 rg_d027 rg_d022 rg_d041 rg_d038 rg_d059 rg_d026 rg_d025 rg_d007 rg_d058 rg_d016 rg_d056 rg_d001 rg_d049 rg_d034 rg_d030 rg_d004"
+    },
+    "rg_q029": {
+      "bm25": "rg_d015 rg_d013 rg_d056 rg_d045 rg_d044 rg_d014 rg_d011",
+      "vectors": "rg_d015 rg_d014 rg_d011 rg_d045 rg_d013 rg_d042 rg_d044 rg_d012 rg_d010 rg_d041 rg_d003 rg_d023 rg_d038 rg_d017 rg_d051 rg_d043 rg_d053 rg_d055 rg_d031 rg_d035 rg_d050 rg_d039 rg_d056 rg_d008 rg_d029 rg_d018 rg_d059 rg_d037 rg_d019 rg_d009 rg_d006 rg_d034 rg_d052 rg_d020 rg_d026 rg_d033 rg_d028 rg_d016 rg_d004 rg_d058 rg_d025 rg_d001 rg_d060 rg_d057 rg_d047 rg_d049 rg_d032 rg_d024 rg_d007 rg_d040"
+    },
+    "rg_q030": {
+      "bm25": "rg_d014 rg_d052 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d015 rg_d045 rg_d044 rg_d030 rg_d014 rg_d042 rg_d053 rg_d013 rg_d041 rg_d017 rg_d052 rg_d029 rg_d004 rg_d033 rg_d026 rg_d010 rg_d051 rg_d018 rg_d011 rg_d012 rg_d020 rg_d037 rg_d008 rg_d043 rg_d025 rg_d056 rg_d031 rg_d059 rg_d060 rg_d002 rg_d050 rg_d038 rg_d003 rg_d006 rg_d009 rg_d023 rg_d034 rg_d039 rg_d016 rg_d035 rg_d049 rg_d046 rg_d047 rg_d005 rg_d032 rg_d058 rg_d001 rg_d022 rg_d028 rg_d048"
+    },
+    "rg_q031": {
+      "bm25": "rg_d017 rg_d016",
+      "vectors": "rg_d016 rg_d017 rg_d058 rg_d018 rg_d042 rg_d056 rg_d006 rg_d050 rg_d048 rg_d020 rg_d028 rg_d008 rg_d004 rg_d060 rg_d039 rg_d034 rg_d057 rg_d026 rg_d045 rg_d007 rg_d002 rg_d009 rg_d023 rg_d053 rg_d051 rg_d011 rg_d025 rg_d024 rg_d012 rg_d033 rg_d013 rg_d055 rg_d029 rg_d052 rg_d001 rg_d030 rg_d035 rg_d032 rg_d044 rg_d043 rg_d054 rg_d019 rg_d041 rg_d003 rg_d027 rg_d059 rg_d015 rg_d022 rg_d037 rg_d046"
+    },
+    "rg_q032": {
+      "bm25": "rg_d042 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+      "vectors": "rg_d017 rg_d016 rg_d020 rg_d042 rg_d011 rg_d034 rg_d041 rg_d014 rg_d018 rg_d012 rg_d015 rg_d009 rg_d059 rg_d044 rg_d051 rg_d032 rg_d033 rg_d029 rg_d054 rg_d052 rg_d049 rg_d056 rg_d046 rg_d031 rg_d055 rg_d024 rg_d006 rg_d013 rg_d037 rg_d053 rg_d035 rg_d045 rg_d021 rg_d019 rg_d057 rg_d003 rg_d043 rg_d028 rg_d023 rg_d040 rg_d008 rg_d010 rg_d060 rg_d039 rg_d002 rg_d027 rg_d005 rg_d022 rg_d025 rg_d048"
+    },
+    "rg_q033": {
+      "bm25": "rg_d017 rg_d044 rg_d042",
+      "vectors": "rg_d017 rg_d050 rg_d018 rg_d046 rg_d020 rg_d059 rg_d031 rg_d051 rg_d044 rg_d034 rg_d060 rg_d015 rg_d052 rg_d008 rg_d056 rg_d016 rg_d047 rg_d011 rg_d048 rg_d033 rg_d042 rg_d041 rg_d057 rg_d045 rg_d058 rg_d037 rg_d043 rg_d004 rg_d032 rg_d014 rg_d039 rg_d049 rg_d010 rg_d035 rg_d038 rg_d053 rg_d029 rg_d002 rg_d012 rg_d021 rg_d023 rg_d007 rg_d024 rg_d013 rg_d026 rg_d009 rg_d001 rg_d019 rg_d027 rg_d036"
+    },
+    "rg_q034": {
+      "bm25": "rg_d017 rg_d035 rg_d045 rg_d059 rg_d011 rg_d046 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+      "vectors": "rg_d017 rg_d020 rg_d011 rg_d016 rg_d051 rg_d006 rg_d042 rg_d059 rg_d015 rg_d045 rg_d009 rg_d012 rg_d018 rg_d025 rg_d013 rg_d023 rg_d053 rg_d050 rg_d035 rg_d026 rg_d021 rg_d039 rg_d056 rg_d033 rg_d041 rg_d046 rg_d008 rg_d014 rg_d043 rg_d022 rg_d037 rg_d057 rg_d052 rg_d024 rg_d044 rg_d004 rg_d002 rg_d058 rg_d031 rg_d029 rg_d049 rg_d054 rg_d055 rg_d034 rg_d028 rg_d060 rg_d007 rg_d048 rg_d032 rg_d005"
+    },
+    "rg_q035": {
+      "bm25": "rg_d018 rg_d042 rg_d034 rg_d051 rg_d012 rg_d006 rg_d046 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d039 rg_d047 rg_d023 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d018 rg_d042 rg_d017 rg_d046 rg_d050 rg_d012 rg_d049 rg_d006 rg_d051 rg_d058 rg_d016 rg_d060 rg_d015 rg_d041 rg_d043 rg_d039 rg_d059 rg_d033 rg_d045 rg_d056 rg_d040 rg_d048 rg_d047 rg_d005 rg_d053 rg_d036 rg_d014 rg_d052 rg_d004 rg_d002 rg_d010 rg_d034 rg_d035 rg_d020 rg_d013 rg_d025 rg_d037 rg_d031 rg_d028 rg_d027 rg_d001 rg_d044 rg_d011 rg_d057 rg_d030 rg_d007 rg_d026 rg_d019 rg_d023 rg_d038"
+    },
+    "rg_q036": {
+      "bm25": "rg_d032 rg_d019 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d016 rg_d018",
+      "vectors": "rg_d042 rg_d052 rg_d053 rg_d018 rg_d014 rg_d029 rg_d017 rg_d050 rg_d035 rg_d046 rg_d013 rg_d032 rg_d041 rg_d031 rg_d009 rg_d027 rg_d016 rg_d007 rg_d012 rg_d043 rg_d045 rg_d003 rg_d048 rg_d056 rg_d010 rg_d005 rg_d019 rg_d006 rg_d020 rg_d055 rg_d047 rg_d021 rg_d001 rg_d008 rg_d049 rg_d033 rg_d058 rg_d022 rg_d028 rg_d037 rg_d060 rg_d015 rg_d044 rg_d051 rg_d004 rg_d039 rg_d023 rg_d024 rg_d059 rg_d011"
+    },
+    "rg_q037": {
+      "bm25": "rg_d017 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+      "vectors": "rg_d019 rg_d017 rg_d042 rg_d046 rg_d043 rg_d013 rg_d012 rg_d008 rg_d052 rg_d006 rg_d003 rg_d023 rg_d053 rg_d007 rg_d029 rg_d041 rg_d050 rg_d004 rg_d010 rg_d018 rg_d031 rg_d026 rg_d028 rg_d051 rg_d027 rg_d009 rg_d014 rg_d035 rg_d048 rg_d011 rg_d005 rg_d034 rg_d015 rg_d037 rg_d024 rg_d032 rg_d002 rg_d045 rg_d047 rg_d016 rg_d044 rg_d033 rg_d025 rg_d059 rg_d030 rg_d060 rg_d021 rg_d038 rg_d055 rg_d022"
+    },
+    "rg_q038": {
+      "bm25": "rg_d033 rg_d022 rg_d009 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d009 rg_d055 rg_d006 rg_d054 rg_d019 rg_d013 rg_d026 rg_d012 rg_d005 rg_d033 rg_d043 rg_d037 rg_d011 rg_d022 rg_d025 rg_d003 rg_d028 rg_d042 rg_d021 rg_d004 rg_d023 rg_d051 rg_d024 rg_d002 rg_d052 rg_d030 rg_d014 rg_d031 rg_d007 rg_d044 rg_d027 rg_d029 rg_d045 rg_d046 rg_d048 rg_d050 rg_d032 rg_d016 rg_d008 rg_d034 rg_d041 rg_d015 rg_d038 rg_d035 rg_d053 rg_d010 rg_d020 rg_d017 rg_d059 rg_d056"
+    },
+    "rg_q039": {
+      "bm25": "rg_d020",
+      "vectors": "rg_d020 rg_d017 rg_d059 rg_d009 rg_d051 rg_d029 rg_d046 rg_d044 rg_d060 rg_d053 rg_d032 rg_d025 rg_d050 rg_d056 rg_d045 rg_d026 rg_d033 rg_d021 rg_d057 rg_d016 rg_d041 rg_d023 rg_d039 rg_d034 rg_d022 rg_d058 rg_d038 rg_d004 rg_d019 rg_d037 rg_d042 rg_d015 rg_d013 rg_d048 rg_d043 rg_d049 rg_d031 rg_d024 rg_d018 rg_d014 rg_d028 rg_d054 rg_d007 rg_d006 rg_d030 rg_d011 rg_d012 rg_d055 rg_d027 rg_d008"
+    },
+    "rg_q040": {
+      "bm25": "rg_d009 rg_d046 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+      "vectors": "rg_d020 rg_d017 rg_d015 rg_d011 rg_d046 rg_d013 rg_d023 rg_d043 rg_d024 rg_d042 rg_d018 rg_d050 rg_d035 rg_d051 rg_d010 rg_d060 rg_d032 rg_d016 rg_d048 rg_d053 rg_d004 rg_d044 rg_d006 rg_d025 rg_d034 rg_d041 rg_d007 rg_d019 rg_d029 rg_d026 rg_d045 rg_d058 rg_d037 rg_d008 rg_d031 rg_d059 rg_d002 rg_d014 rg_d005 rg_d056 rg_d033 rg_d047 rg_d009 rg_d052 rg_d022 rg_d012 rg_d027 rg_d028 rg_d054 rg_d003"
+    },
+    "rg_q041": {
+      "bm25": "rg_d021 rg_d022",
+      "vectors": "rg_d021 rg_d022 rg_d023 rg_d028 rg_d013 rg_d052 rg_d046 rg_d025 rg_d033 rg_d032 rg_d009 rg_d011 rg_d014 rg_d041 rg_d026 rg_d047 rg_d042 rg_d031 rg_d017 rg_d045 rg_d051 rg_d024 rg_d044 rg_d020 rg_d007 rg_d038 rg_d037 rg_d050 rg_d029 rg_d056 rg_d003 rg_d010 rg_d004 rg_d055 rg_d043 rg_d034 rg_d048 rg_d057 rg_d060 rg_d002 rg_d053 rg_d016 rg_d001 rg_d006 rg_d008 rg_d059 rg_d019 rg_d035 rg_d005 rg_d054"
+    },
+    "rg_q042": {
+      "bm25": "rg_d022 rg_d021 rg_d026 rg_d009 rg_d025 rg_d023 rg_d032",
+      "vectors": "rg_d021 rg_d022 rg_d025 rg_d023 rg_d032 rg_d009 rg_d013 rg_d024 rg_d029 rg_d033 rg_d031 rg_d007 rg_d017 rg_d052 rg_d028 rg_d005 rg_d054 rg_d037 rg_d020 rg_d011 rg_d043 rg_d044 rg_d042 rg_d050 rg_d046 rg_d051 rg_d048 rg_d004 rg_d003 rg_d001 rg_d060 rg_d041 rg_d059 rg_d012 rg_d034 rg_d045 rg_d056 rg_d027 rg_d016 rg_d019 rg_d014 rg_d035 rg_d055 rg_d026 rg_d047 rg_d040 rg_d008 rg_d006 rg_d053 rg_d038"
+    },
+    "rg_q043": {
+      "bm25": "rg_d022 rg_d024 rg_d021 rg_d023 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d022 rg_d021 rg_d024 rg_d023 rg_d025 rg_d054 rg_d009 rg_d051 rg_d013 rg_d044 rg_d032 rg_d043 rg_d041 rg_d046 rg_d007 rg_d037 rg_d052 rg_d050 rg_d026 rg_d033 rg_d005 rg_d059 rg_d017 rg_d029 rg_d056 rg_d004 rg_d039 rg_d057 rg_d015 rg_d058 rg_d053 rg_d045 rg_d055 rg_d016 rg_d049 rg_d011 rg_d038 rg_d028 rg_d060 rg_d027 rg_d042 rg_d020 rg_d018 rg_d031 rg_d040 rg_d035 rg_d010 rg_d001 rg_d048 rg_d019"
+    },
+    "rg_q044": {
+      "bm25": "rg_d023 rg_d042 rg_d007 rg_d026 rg_d045 rg_d036 rg_d035 rg_d034 rg_d006 rg_d047 rg_d009 rg_d017 rg_d032 rg_d038 rg_d012 rg_d056 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d010 rg_d025 rg_d033 rg_d039 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d022 rg_d024 rg_d023 rg_d025 rg_d054 rg_d009 rg_d013 rg_d037 rg_d021 rg_d033 rg_d043 rg_d027 rg_d051 rg_d015 rg_d005 rg_d004 rg_d044 rg_d029 rg_d032 rg_d052 rg_d055 rg_d007 rg_d060 rg_d026 rg_d036 rg_d039 rg_d038 rg_d058 rg_d001 rg_d053 rg_d011 rg_d057 rg_d006 rg_d020 rg_d030 rg_d019 rg_d046 rg_d045 rg_d017 rg_d002 rg_d028 rg_d048 rg_d035 rg_d042 rg_d034 rg_d016 rg_d059 rg_d010 rg_d049 rg_d056"
+    },
+    "rg_q045": {
+      "bm25": "rg_d023 rg_d022 rg_d021",
+      "vectors": "rg_d023 rg_d024 rg_d022 rg_d021 rg_d047 rg_d011 rg_d034 rg_d046 rg_d028 rg_d007 rg_d035 rg_d016 rg_d013 rg_d025 rg_d052 rg_d010 rg_d042 rg_d006 rg_d008 rg_d003 rg_d029 rg_d031 rg_d059 rg_d017 rg_d051 rg_d032 rg_d012 rg_d041 rg_d002 rg_d019 rg_d060 rg_d009 rg_d020 rg_d018 rg_d044 rg_d048 rg_d026 rg_d045 rg_d056 rg_d033 rg_d057 rg_d014 rg_d050 rg_d037 rg_d015 rg_d054 rg_d055 rg_d043 rg_d039 rg_d038"
+    },
+    "rg_q046": {
+      "bm25": "rg_d029 rg_d034 rg_d042 rg_d007 rg_d047 rg_d035 rg_d038 rg_d006 rg_d009 rg_d023 rg_d032 rg_d026 rg_d045 rg_d036 rg_d017 rg_d050 rg_d027 rg_d031 rg_d024 rg_d040 rg_d025 rg_d015 rg_d008 rg_d030 rg_d016 rg_d018",
+      "vectors": "rg_d023 rg_d024 rg_d022 rg_d025 rg_d046 rg_d021 rg_d034 rg_d037 rg_d059 rg_d056 rg_d057 rg_d011 rg_d051 rg_d060 rg_d016 rg_d026 rg_d028 rg_d017 rg_d039 rg_d013 rg_d036 rg_d047 rg_d049 rg_d002 rg_d032 rg_d009 rg_d054 rg_d038 rg_d041 rg_d007 rg_d033 rg_d042 rg_d008 rg_d001 rg_d035 rg_d010 rg_d012 rg_d004 rg_d053 rg_d050 rg_d018 rg_d043 rg_d031 rg_d048 rg_d044 rg_d052 rg_d006 rg_d020 rg_d040 rg_d019"
+    },
+    "rg_q047": {
+      "bm25": "rg_d024 rg_d022",
+      "vectors": "rg_d024 rg_d022 rg_d054 rg_d023 rg_d025 rg_d009 rg_d050 rg_d021 rg_d039 rg_d007 rg_d026 rg_d051 rg_d016 rg_d013 rg_d057 rg_d034 rg_d037 rg_d043 rg_d056 rg_d032 rg_d004 rg_d005 rg_d044 rg_d060 rg_d019 rg_d041 rg_d046 rg_d035 rg_d015 rg_d027 rg_d033 rg_d049 rg_d055 rg_d059 rg_d029 rg_d053 rg_d017 rg_d010 rg_d020 rg_d038 rg_d045 rg_d006 rg_d058 rg_d011 rg_d028 rg_d001 rg_d002 rg_d048 rg_d036 rg_d040"
+    },
+    "rg_q048": {
+      "bm25": "rg_d042 rg_d016 rg_d054 rg_d038 rg_d026",
+      "vectors": "rg_d024 rg_d023 rg_d025 rg_d022 rg_d013 rg_d007 rg_d021 rg_d009 rg_d043 rg_d046 rg_d029 rg_d027 rg_d052 rg_d028 rg_d016 rg_d011 rg_d026 rg_d048 rg_d035 rg_d054 rg_d034 rg_d032 rg_d006 rg_d044 rg_d059 rg_d047 rg_d002 rg_d033 rg_d031 rg_d037 rg_d019 rg_d041 rg_d010 rg_d017 rg_d042 rg_d018 rg_d055 rg_d008 rg_d053 rg_d058 rg_d004 rg_d020 rg_d003 rg_d005 rg_d060 rg_d051 rg_d001 rg_d050 rg_d057 rg_d056"
+    },
+    "rg_q049": {
+      "bm25": "rg_d025 rg_d051 rg_d005 rg_d027 rg_d043 rg_d028 rg_d037 rg_d010 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+      "vectors": "rg_d025 rg_d022 rg_d021 rg_d059 rg_d037 rg_d023 rg_d009 rg_d026 rg_d054 rg_d056 rg_d024 rg_d051 rg_d013 rg_d043 rg_d032 rg_d033 rg_d049 rg_d020 rg_d028 rg_d041 rg_d039 rg_d057 rg_d005 rg_d050 rg_d001 rg_d004 rg_d029 rg_d017 rg_d018 rg_d040 rg_d027 rg_d016 rg_d006 rg_d053 rg_d060 rg_d048 rg_d038 rg_d011 rg_d030 rg_d007 rg_d002 rg_d012 rg_d019 rg_d046 rg_d003 rg_d042 rg_d015 rg_d036 rg_d014 rg_d044"
+    },
+    "rg_q050": {
+      "bm25": "rg_d007 rg_d037 rg_d032 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d013 rg_d025 rg_d037 rg_d023 rg_d009 rg_d026 rg_d045 rg_d021 rg_d015 rg_d055 rg_d022 rg_d006 rg_d038 rg_d014 rg_d024 rg_d054 rg_d033 rg_d011 rg_d007 rg_d012 rg_d028 rg_d046 rg_d029 rg_d039 rg_d049 rg_d053 rg_d030 rg_d020 rg_d051 rg_d043 rg_d041 rg_d034 rg_d048 rg_d059 rg_d032 rg_d016 rg_d044 rg_d056 rg_d004 rg_d017 rg_d027 rg_d060 rg_d050 rg_d031 rg_d036 rg_d042 rg_d040 rg_d057 rg_d018 rg_d052"
+    },
+    "rg_q051": {
+      "bm25": "rg_d026 rg_d042 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d026 rg_d006 rg_d028 rg_d030 rg_d033 rg_d004 rg_d009 rg_d055 rg_d003 rg_d054 rg_d019 rg_d013 rg_d053 rg_d037 rg_d002 rg_d052 rg_d008 rg_d025 rg_d024 rg_d042 rg_d023 rg_d050 rg_d029 rg_d035 rg_d027 rg_d007 rg_d022 rg_d038 rg_d015 rg_d034 rg_d018 rg_d031 rg_d010 rg_d012 rg_d048 rg_d021 rg_d041 rg_d011 rg_d014 rg_d056 rg_d005 rg_d051 rg_d043 rg_d044 rg_d001 rg_d032 rg_d039 rg_d040 rg_d057 rg_d016"
+    },
+    "rg_q052": {
+      "bm25": "rg_d052 rg_d004 rg_d054 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d016",
+      "vectors": "rg_d030 rg_d028 rg_d026 rg_d053 rg_d029 rg_d006 rg_d033 rg_d004 rg_d054 rg_d027 rg_d009 rg_d052 rg_d002 rg_d012 rg_d037 rg_d003 rg_d045 rg_d043 rg_d005 rg_d001 rg_d008 rg_d042 rg_d018 rg_d023 rg_d039 rg_d013 rg_d046 rg_d010 rg_d019 rg_d024 rg_d025 rg_d031 rg_d034 rg_d015 rg_d017 rg_d055 rg_d050 rg_d035 rg_d047 rg_d038 rg_d036 rg_d016 rg_d056 rg_d044 rg_d020 rg_d060 rg_d041 rg_d007 rg_d058 rg_d032"
+    },
+    "rg_q053": {
+      "bm25": "rg_d027 rg_d042",
+      "vectors": "rg_d027 rg_d030 rg_d026 rg_d028 rg_d004 rg_d053 rg_d050 rg_d031 rg_d035 rg_d009 rg_d029 rg_d037 rg_d010 rg_d024 rg_d020 rg_d054 rg_d006 rg_d055 rg_d059 rg_d060 rg_d052 rg_d025 rg_d011 rg_d012 rg_d003 rg_d005 rg_d032 rg_d042 rg_d008 rg_d044 rg_d019 rg_d048 rg_d034 rg_d016 rg_d007 rg_d046 rg_d056 rg_d051 rg_d017 rg_d023 rg_d014 rg_d058 rg_d018 rg_d057 rg_d049 rg_d001 rg_d013 rg_d039 rg_d022 rg_d041"
+    },
+    "rg_q054": {
+      "bm25": "rg_d003 rg_d024 rg_d022 rg_d021 rg_d029 rg_d026 rg_d033 rg_d004 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d007 rg_d010 rg_d025 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d016",
+      "vectors": "rg_d027 rg_d030 rg_d003 rg_d026 rg_d005 rg_d004 rg_d029 rg_d028 rg_d001 rg_d031 rg_d054 rg_d006 rg_d033 rg_d009 rg_d010 rg_d002 rg_d052 rg_d024 rg_d022 rg_d035 rg_d012 rg_d050 rg_d025 rg_d023 rg_d060 rg_d037 rg_d008 rg_d021 rg_d053 rg_d055 rg_d056 rg_d045 rg_d032 rg_d013 rg_d044 rg_d042 rg_d046 rg_d058 rg_d051 rg_d019 rg_d020 rg_d048 rg_d059 rg_d007 rg_d049 rg_d018 rg_d011 rg_d043 rg_d057 rg_d039"
+    },
+    "rg_q055": {
+      "bm25": "rg_d028 rg_d002",
+      "vectors": "rg_d028 rg_d023 rg_d047 rg_d002 rg_d021 rg_d007 rg_d024 rg_d013 rg_d003 rg_d011 rg_d004 rg_d034 rg_d006 rg_d022 rg_d029 rg_d026 rg_d010 rg_d042 rg_d035 rg_d008 rg_d009 rg_d019 rg_d027 rg_d025 rg_d052 rg_d031 rg_d017 rg_d054 rg_d033 rg_d046 rg_d043 rg_d038 rg_d032 rg_d012 rg_d030 rg_d045 rg_d001 rg_d037 rg_d051 rg_d016 rg_d059 rg_d041 rg_d020 rg_d048 rg_d055 rg_d060 rg_d044 rg_d057 rg_d015 rg_d018"
+    },
+    "rg_q056": {
+      "bm25": "",
+      "vectors": "rg_d027 rg_d042 rg_d028 rg_d009 rg_d053 rg_d035 rg_d026 rg_d029 rg_d020 rg_d006 rg_d004 rg_d013 rg_d031 rg_d007 rg_d034 rg_d059 rg_d060 rg_d037 rg_d023 rg_d001 rg_d054 rg_d011 rg_d048 rg_d014 rg_d030 rg_d017 rg_d050 rg_d025 rg_d043 rg_d010 rg_d056 rg_d033 rg_d058 rg_d045 rg_d018 rg_d040 rg_d047 rg_d055 rg_d032 rg_d002 rg_d052 rg_d041 rg_d057 rg_d003 rg_d051 rg_d039 rg_d005 rg_d016 rg_d046 rg_d019"
+    },
+    "rg_q057": {
+      "bm25": "rg_d029 rg_d030 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+      "vectors": "rg_d029 rg_d030 rg_d053 rg_d028 rg_d026 rg_d004 rg_d008 rg_d009 rg_d027 rg_d023 rg_d033 rg_d013 rg_d032 rg_d054 rg_d052 rg_d037 rg_d042 rg_d021 rg_d017 rg_d031 rg_d038 rg_d043 rg_d022 rg_d010 rg_d045 rg_d035 rg_d003 rg_d025 rg_d060 rg_d055 rg_d034 rg_d056 rg_d006 rg_d007 rg_d015 rg_d024 rg_d005 rg_d039 rg_d002 rg_d051 rg_d059 rg_d016 rg_d020 rg_d050 rg_d014 rg_d001 rg_d011 rg_d040 rg_d058 rg_d047"
+    },
+    "rg_q058": {
+      "bm25": "rg_d049 rg_d018 rg_d024 rg_d010 rg_d047",
+      "vectors": "rg_d029 rg_d053 rg_d054 rg_d003 rg_d026 rg_d028 rg_d009 rg_d008 rg_d037 rg_d013 rg_d027 rg_d033 rg_d030 rg_d020 rg_d004 rg_d022 rg_d023 rg_d052 rg_d025 rg_d005 rg_d021 rg_d039 rg_d024 rg_d051 rg_d010 rg_d001 rg_d017 rg_d032 rg_d042 rg_d045 rg_d056 rg_d055 rg_d060 rg_d043 rg_d012 rg_d015 rg_d038 rg_d047 rg_d057 rg_d049 rg_d059 rg_d035 rg_d031 rg_d048 rg_d044 rg_d002 rg_d011 rg_d007 rg_d058 rg_d046"
+    },
+    "rg_q059": {
+      "bm25": "rg_d030 rg_d042",
+      "vectors": "rg_d030 rg_d026 rg_d027 rg_d054 rg_d029 rg_d028 rg_d006 rg_d009 rg_d012 rg_d033 rg_d021 rg_d053 rg_d052 rg_d022 rg_d037 rg_d023 rg_d003 rg_d004 rg_d001 rg_d058 rg_d025 rg_d059 rg_d014 rg_d056 rg_d018 rg_d060 rg_d005 rg_d002 rg_d051 rg_d032 rg_d034 rg_d035 rg_d057 rg_d031 rg_d041 rg_d055 rg_d010 rg_d046 rg_d008 rg_d042 rg_d039 rg_d013 rg_d050 rg_d024 rg_d036 rg_d007 rg_d049 rg_d016 rg_d020 rg_d047"
+    },
+    "rg_q060": {
+      "bm25": "rg_d052 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d030 rg_d026 rg_d028 rg_d004 rg_d054 rg_d029 rg_d027 rg_d001 rg_d033 rg_d005 rg_d002 rg_d006 rg_d003 rg_d035 rg_d052 rg_d008 rg_d009 rg_d034 rg_d037 rg_d031 rg_d012 rg_d010 rg_d024 rg_d021 rg_d011 rg_d007 rg_d060 rg_d042 rg_d048 rg_d013 rg_d045 rg_d023 rg_d038 rg_d032 rg_d022 rg_d055 rg_d020 rg_d050 rg_d053 rg_d036 rg_d014 rg_d015 rg_d018 rg_d017 rg_d041 rg_d056 rg_d025 rg_d019 rg_d039 rg_d057"
+    },
+    "rg_q061": {
+      "bm25": "rg_d031 rg_d045 rg_d044 rg_d013 rg_d015",
+      "vectors": "rg_d031 rg_d035 rg_d032 rg_d050 rg_d033 rg_d034 rg_d052 rg_d006 rg_d008 rg_d013 rg_d014 rg_d015 rg_d045 rg_d053 rg_d042 rg_d009 rg_d027 rg_d010 rg_d007 rg_d011 rg_d018 rg_d005 rg_d055 rg_d048 rg_d046 rg_d028 rg_d020 rg_d017 rg_d056 rg_d039 rg_d047 rg_d024 rg_d060 rg_d029 rg_d012 rg_d004 rg_d026 rg_d001 rg_d030 rg_d023 rg_d044 rg_d059 rg_d051 rg_d021 rg_d016 rg_d057 rg_d041 rg_d022 rg_d054 rg_d002"
+    },
+    "rg_q062": {
+      "bm25": "rg_d001 rg_d002 rg_d045 rg_d005 rg_d012 rg_d044 rg_d016 rg_d013 rg_d015",
+      "vectors": "rg_d031 rg_d035 rg_d013 rg_d034 rg_d015 rg_d045 rg_d008 rg_d009 rg_d032 rg_d033 rg_d010 rg_d060 rg_d001 rg_d014 rg_d002 rg_d042 rg_d017 rg_d052 rg_d011 rg_d056 rg_d028 rg_d053 rg_d050 rg_d006 rg_d026 rg_d007 rg_d003 rg_d039 rg_d055 rg_d037 rg_d046 rg_d005 rg_d029 rg_d004 rg_d023 rg_d018 rg_d044 rg_d012 rg_d043 rg_d020 rg_d047 rg_d059 rg_d030 rg_d016 rg_d051 rg_d019 rg_d058 rg_d024 rg_d048 rg_d049"
+    },
+    "rg_q063": {
+      "bm25": "rg_d044 rg_d011 rg_d032 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d032 rg_d059 rg_d031 rg_d022 rg_d056 rg_d033 rg_d047 rg_d021 rg_d044 rg_d046 rg_d052 rg_d057 rg_d026 rg_d013 rg_d023 rg_d007 rg_d034 rg_d060 rg_d042 rg_d041 rg_d028 rg_d011 rg_d010 rg_d035 rg_d014 rg_d009 rg_d045 rg_d051 rg_d048 rg_d020 rg_d050 rg_d016 rg_d006 rg_d038 rg_d029 rg_d058 rg_d003 rg_d055 rg_d017 rg_d005 rg_d002 rg_d019 rg_d025 rg_d053 rg_d049 rg_d024 rg_d012 rg_d004 rg_d039 rg_d027"
+    },
+    "rg_q064": {
+      "bm25": "rg_d032 rg_d037 rg_d050 rg_d044 rg_d005",
+      "vectors": "rg_d032 rg_d031 rg_d052 rg_d043 rg_d033 rg_d013 rg_d009 rg_d050 rg_d060 rg_d046 rg_d044 rg_d053 rg_d017 rg_d035 rg_d011 rg_d023 rg_d015 rg_d007 rg_d022 rg_d005 rg_d014 rg_d039 rg_d045 rg_d047 rg_d021 rg_d025 rg_d042 rg_d059 rg_d038 rg_d054 rg_d037 rg_d058 rg_d018 rg_d008 rg_d029 rg_d020 rg_d010 rg_d055 rg_d049 rg_d026 rg_d002 rg_d027 rg_d056 rg_d024 rg_d036 rg_d004 rg_d016 rg_d051 rg_d030 rg_d034"
+    },
+    "rg_q065": {
+      "bm25": "rg_d033 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d033 rg_d006 rg_d052 rg_d054 rg_d031 rg_d009 rg_d026 rg_d030 rg_d034 rg_d004 rg_d029 rg_d032 rg_d035 rg_d053 rg_d008 rg_d002 rg_d014 rg_d021 rg_d042 rg_d050 rg_d013 rg_d017 rg_d055 rg_d044 rg_d010 rg_d018 rg_d028 rg_d012 rg_d007 rg_d022 rg_d047 rg_d048 rg_d051 rg_d005 rg_d025 rg_d057 rg_d060 rg_d046 rg_d037 rg_d023 rg_d041 rg_d016 rg_d058 rg_d056 rg_d038 rg_d001 rg_d049 rg_d045 rg_d043 rg_d059"
+    },
+    "rg_q066": {
+      "bm25": "rg_d050 rg_d057 rg_d042 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d033 rg_d009 rg_d052 rg_d042 rg_d029 rg_d006 rg_d054 rg_d030 rg_d014 rg_d031 rg_d010 rg_d008 rg_d026 rg_d055 rg_d050 rg_d035 rg_d013 rg_d004 rg_d017 rg_d053 rg_d032 rg_d012 rg_d034 rg_d018 rg_d007 rg_d045 rg_d021 rg_d005 rg_d028 rg_d022 rg_d060 rg_d025 rg_d056 rg_d002 rg_d046 rg_d048 rg_d016 rg_d038 rg_d001 rg_d015 rg_d051 rg_d003 rg_d023 rg_d037 rg_d047 rg_d041 rg_d043 rg_d044 rg_d024 rg_d057"
+    },
+    "rg_q067": {
+      "bm25": "rg_d034",
+      "vectors": "rg_d034 rg_d024 rg_d016 rg_d023 rg_d031 rg_d010 rg_d046 rg_d032 rg_d035 rg_d033 rg_d002 rg_d007 rg_d009 rg_d047 rg_d042 rg_d028 rg_d006 rg_d060 rg_d037 rg_d011 rg_d013 rg_d019 rg_d017 rg_d052 rg_d008 rg_d038 rg_d050 rg_d014 rg_d053 rg_d054 rg_d051 rg_d020 rg_d022 rg_d001 rg_d057 rg_d059 rg_d055 rg_d026 rg_d029 rg_d025 rg_d056 rg_d041 rg_d048 rg_d015 rg_d049 rg_d004 rg_d045 rg_d018 rg_d021 rg_d012"
+    },
+    "rg_q068": {
+      "bm25": "rg_d042",
+      "vectors": "rg_d034 rg_d031 rg_d016 rg_d023 rg_d033 rg_d046 rg_d024 rg_d032 rg_d037 rg_d019 rg_d047 rg_d015 rg_d002 rg_d010 rg_d009 rg_d014 rg_d006 rg_d035 rg_d013 rg_d008 rg_d039 rg_d025 rg_d017 rg_d060 rg_d018 rg_d011 rg_d053 rg_d028 rg_d038 rg_d049 rg_d050 rg_d059 rg_d042 rg_d052 rg_d004 rg_d012 rg_d051 rg_d041 rg_d001 rg_d020 rg_d054 rg_d048 rg_d007 rg_d045 rg_d056 rg_d030 rg_d022 rg_d026 rg_d040 rg_d036"
+    },
+    "rg_q069": {
+      "bm25": "rg_d035 rg_d046 rg_d047 rg_d048 rg_d024 rg_d007 rg_d026 rg_d006 rg_d045 rg_d059 rg_d011 rg_d017",
+      "vectors": "rg_d035 rg_d031 rg_d010 rg_d034 rg_d006 rg_d050 rg_d008 rg_d013 rg_d009 rg_d007 rg_d024 rg_d052 rg_d033 rg_d023 rg_d011 rg_d046 rg_d047 rg_d026 rg_d032 rg_d055 rg_d028 rg_d042 rg_d060 rg_d003 rg_d053 rg_d027 rg_d048 rg_d045 rg_d017 rg_d014 rg_d005 rg_d041 rg_d002 rg_d022 rg_d029 rg_d015 rg_d059 rg_d016 rg_d056 rg_d054 rg_d004 rg_d021 rg_d018 rg_d019 rg_d039 rg_d001 rg_d051 rg_d025 rg_d030 rg_d044"
+    },
+    "rg_q070": {
+      "bm25": "rg_d011 rg_d045 rg_d059 rg_d035 rg_d017 rg_d046",
+      "vectors": "rg_d035 rg_d031 rg_d050 rg_d045 rg_d008 rg_d009 rg_d023 rg_d052 rg_d060 rg_d013 rg_d053 rg_d046 rg_d033 rg_d010 rg_d011 rg_d042 rg_d028 rg_d032 rg_d026 rg_d051 rg_d043 rg_d029 rg_d039 rg_d006 rg_d002 rg_d003 rg_d056 rg_d017 rg_d059 rg_d019 rg_d015 rg_d024 rg_d057 rg_d038 rg_d012 rg_d014 rg_d044 rg_d020 rg_d034 rg_d007 rg_d055 rg_d025 rg_d054 rg_d004 rg_d022 rg_d037 rg_d021 rg_d027 rg_d001 rg_d058"
+    },
+    "rg_q071": {
+      "bm25": "rg_d036 rg_d042 rg_d046 rg_d057 rg_d012 rg_d056 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d036 rg_d037 rg_d050 rg_d025 rg_d004 rg_d049 rg_d038 rg_d059 rg_d040 rg_d018 rg_d033 rg_d051 rg_d056 rg_d057 rg_d046 rg_d005 rg_d001 rg_d054 rg_d012 rg_d053 rg_d024 rg_d002 rg_d047 rg_d058 rg_d007 rg_d016 rg_d017 rg_d027 rg_d042 rg_d006 rg_d022 rg_d030 rg_d041 rg_d048 rg_d055 rg_d043 rg_d026 rg_d039 rg_d060 rg_d032 rg_d020 rg_d029 rg_d021 rg_d023 rg_d045 rg_d014 rg_d052 rg_d013 rg_d015 rg_d034"
+    },
+    "rg_q072": {
+      "bm25": "rg_d041 rg_d007 rg_d026 rg_d045 rg_d042 rg_d035 rg_d036 rg_d034 rg_d006 rg_d047 rg_d009 rg_d017 rg_d023 rg_d032 rg_d038",
+      "vectors": "rg_d036 rg_d039 rg_d060 rg_d040 rg_d037 rg_d013 rg_d056 rg_d038 rg_d058 rg_d022 rg_d026 rg_d015 rg_d003 rg_d009 rg_d018 rg_d025 rg_d059 rg_d054 rg_d023 rg_d046 rg_d020 rg_d012 rg_d057 rg_d011 rg_d050 rg_d055 rg_d002 rg_d021 rg_d030 rg_d042 rg_d014 rg_d024 rg_d053 rg_d043 rg_d001 rg_d008 rg_d005 rg_d006 rg_d045 rg_d016 rg_d004 rg_d049 rg_d007 rg_d051 rg_d010 rg_d032 rg_d052 rg_d048 rg_d028 rg_d017"
+    },
+    "rg_q073": {
+      "bm25": "rg_d037 rg_d042 rg_d046",
+      "vectors": "rg_d037 rg_d004 rg_d053 rg_d051 rg_d038 rg_d033 rg_d034 rg_d017 rg_d026 rg_d001 rg_d045 rg_d029 rg_d025 rg_d009 rg_d020 rg_d023 rg_d059 rg_d016 rg_d002 rg_d042 rg_d060 rg_d056 rg_d014 rg_d052 rg_d032 rg_d050 rg_d015 rg_d047 rg_d018 rg_d041 rg_d055 rg_d057 rg_d022 rg_d006 rg_d010 rg_d005 rg_d036 rg_d049 rg_d013 rg_d024 rg_d030 rg_d058 rg_d028 rg_d048 rg_d031 rg_d021 rg_d046 rg_d044 rg_d054 rg_d011"
+    },
+    "rg_q074": {
+      "bm25": "rg_d025 rg_d037 rg_d039 rg_d051 rg_d012 rg_d007 rg_d047 rg_d035 rg_d038 rg_d034 rg_d006 rg_d009 rg_d023 rg_d032 rg_d026 rg_d045 rg_d042 rg_d036 rg_d017 rg_d050 rg_d027 rg_d031 rg_d024 rg_d040 rg_d015 rg_d008 rg_d030 rg_d016 rg_d018",
+      "vectors": "rg_d037 rg_d025 rg_d004 rg_d038 rg_d039 rg_d026 rg_d045 rg_d023 rg_d001 rg_d036 rg_d028 rg_d015 rg_d029 rg_d013 rg_d005 rg_d060 rg_d030 rg_d003 rg_d051 rg_d033 rg_d009 rg_d054 rg_d019 rg_d027 rg_d012 rg_d006 rg_d002 rg_d031 rg_d056 rg_d011 rg_d020 rg_d059 rg_d043 rg_d052 rg_d050 rg_d046 rg_d032 rg_d034 rg_d048 rg_d018 rg_d022 rg_d042 rg_d053 rg_d041 rg_d014 rg_d057 rg_d024 rg_d008 rg_d040 rg_d010"
+    },
+    "rg_q075": {
+      "bm25": "rg_d038 rg_d045 rg_d046 rg_d047 rg_d050 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+      "vectors": "rg_d038 rg_d037 rg_d036 rg_d048 rg_d004 rg_d057 rg_d025 rg_d050 rg_d018 rg_d040 rg_d056 rg_d058 rg_d029 rg_d051 rg_d033 rg_d007 rg_d047 rg_d034 rg_d022 rg_d039 rg_d052 rg_d045 rg_d030 rg_d060 rg_d059 rg_d042 rg_d028 rg_d010 rg_d032 rg_d024 rg_d012 rg_d017 rg_d023 rg_d049 rg_d014 rg_d013 rg_d055 rg_d021 rg_d053 rg_d016 rg_d026 rg_d006 rg_d001 rg_d009 rg_d041 rg_d054 rg_d015 rg_d046 rg_d027 rg_d031"
+    },
+    "rg_q076": {
+      "bm25": "rg_d038 rg_d054 rg_d026",
+      "vectors": "rg_d038 rg_d046 rg_d050 rg_d020 rg_d033 rg_d060 rg_d022 rg_d025 rg_d037 rg_d026 rg_d036 rg_d004 rg_d021 rg_d051 rg_d053 rg_d057 rg_d031 rg_d013 rg_d029 rg_d023 rg_d040 rg_d052 rg_d017 rg_d011 rg_d009 rg_d028 rg_d039 rg_d054 rg_d056 rg_d032 rg_d049 rg_d034 rg_d002 rg_d018 rg_d058 rg_d001 rg_d048 rg_d014 rg_d015 rg_d044 rg_d005 rg_d043 rg_d030 rg_d041 rg_d027 rg_d007 rg_d045 rg_d012 rg_d059 rg_d008"
+    },
+    "rg_q077": {
+      "bm25": "rg_d039 rg_d036 rg_d037 rg_d004 rg_d007 rg_d026 rg_d045 rg_d042 rg_d035 rg_d034 rg_d006 rg_d047 rg_d009 rg_d017 rg_d023 rg_d032 rg_d038",
+      "vectors": "rg_d039 rg_d056 rg_d059 rg_d004 rg_d060 rg_d036 rg_d037 rg_d013 rg_d057 rg_d058 rg_d017 rg_d046 rg_d016 rg_d028 rg_d023 rg_d038 rg_d001 rg_d025 rg_d022 rg_d026 rg_d050 rg_d002 rg_d020 rg_d054 rg_d049 rg_d040 rg_d032 rg_d044 rg_d048 rg_d024 rg_d033 rg_d031 rg_d045 rg_d047 rg_d052 rg_d011 rg_d007 rg_d041 rg_d029 rg_d051 rg_d030 rg_d034 rg_d053 rg_d021 rg_d018 rg_d006 rg_d010 rg_d012 rg_d027 rg_d043"
+    },
+    "rg_q078": {
+      "bm25": "rg_d057 rg_d013 rg_d041 rg_d059 rg_d014 rg_d019 rg_d022 rg_d039 rg_d021 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d039 rg_d058 rg_d057 rg_d059 rg_d056 rg_d041 rg_d049 rg_d060 rg_d051 rg_d036 rg_d004 rg_d029 rg_d018 rg_d053 rg_d020 rg_d033 rg_d044 rg_d043 rg_d017 rg_d046 rg_d030 rg_d038 rg_d050 rg_d037 rg_d015 rg_d045 rg_d001 rg_d012 rg_d019 rg_d032 rg_d047 rg_d042 rg_d014 rg_d048 rg_d009 rg_d052 rg_d031 rg_d026 rg_d003 rg_d008 rg_d002 rg_d006 rg_d025 rg_d013 rg_d016 rg_d021 rg_d040 rg_d005 rg_d028 rg_d024"
+    },
+    "rg_q079": {
+      "bm25": "rg_d040 rg_d042 rg_d034 rg_d011 rg_d012 rg_d056 rg_d036 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d040 rg_d059 rg_d037 rg_d049 rg_d020 rg_d054 rg_d025 rg_d038 rg_d056 rg_d036 rg_d014 rg_d009 rg_d021 rg_d051 rg_d022 rg_d034 rg_d018 rg_d039 rg_d013 rg_d032 rg_d041 rg_d050 rg_d060 rg_d004 rg_d027 rg_d016 rg_d053 rg_d046 rg_d058 rg_d055 rg_d011 rg_d030 rg_d028 rg_d057 rg_d026 rg_d017 rg_d042 rg_d023 rg_d047 rg_d015 rg_d012 rg_d007 rg_d045 rg_d043 rg_d033 rg_d005 rg_d035 rg_d029 rg_d010 rg_d002"
+    },
+    "rg_q080": {
+      "bm25": "rg_d040 rg_d012 rg_d056 rg_d036 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d040 rg_d054 rg_d053 rg_d056 rg_d037 rg_d022 rg_d001 rg_d025 rg_d049 rg_d036 rg_d039 rg_d004 rg_d051 rg_d055 rg_d016 rg_d033 rg_d009 rg_d038 rg_d057 rg_d018 rg_d024 rg_d052 rg_d020 rg_d017 rg_d012 rg_d059 rg_d035 rg_d014 rg_d023 rg_d042 rg_d060 rg_d043 rg_d013 rg_d029 rg_d028 rg_d005 rg_d021 rg_d058 rg_d044 rg_d015 rg_d034 rg_d026 rg_d006 rg_d008 rg_d011 rg_d031 rg_d010 rg_d047 rg_d007 rg_d002"
+    },
+    "rg_q081": {
+      "bm25": "",
+      "vectors": "rg_d041 rg_d042 rg_d044 rg_d048 rg_d015 rg_d045 rg_d006 rg_d046 rg_d028 rg_d018 rg_d043 rg_d034 rg_d023 rg_d013 rg_d056 rg_d001 rg_d059 rg_d021 rg_d047 rg_d022 rg_d007 rg_d026 rg_d053 rg_d010 rg_d049 rg_d002 rg_d012 rg_d004 rg_d029 rg_d016 rg_d060 rg_d050 rg_d017 rg_d024 rg_d058 rg_d057 rg_d033 rg_d003 rg_d032 rg_d051 rg_d030 rg_d014 rg_d037 rg_d025 rg_d039 rg_d036 rg_d035 rg_d054 rg_d038 rg_d052"
+    },
+    "rg_q082": {
+      "bm25": "rg_d023 rg_d045 rg_d044 rg_d013 rg_d015",
+      "vectors": "rg_d042 rg_d013 rg_d041 rg_d023 rg_d035 rg_d026 rg_d006 rg_d053 rg_d045 rg_d052 rg_d029 rg_d046 rg_d011 rg_d031 rg_d015 rg_d055 rg_d028 rg_d044 rg_d010 rg_d004 rg_d034 rg_d024 rg_d033 rg_d003 rg_d014 rg_d007 rg_d019 rg_d012 rg_d009 rg_d032 rg_d051 rg_d005 rg_d043 rg_d047 rg_d060 rg_d057 rg_d059 rg_d008 rg_d017 rg_d056 rg_d018 rg_d038 rg_d016 rg_d002 rg_d039 rg_d025 rg_d020 rg_d001 rg_d050 rg_d037"
+    },
+    "rg_q083": {
+      "bm25": "rg_d042 rg_d014",
+      "vectors": "rg_d042 rg_d041 rg_d023 rg_d014 rg_d046 rg_d011 rg_d012 rg_d052 rg_d034 rg_d053 rg_d016 rg_d021 rg_d018 rg_d051 rg_d022 rg_d047 rg_d032 rg_d028 rg_d024 rg_d006 rg_d010 rg_d003 rg_d059 rg_d026 rg_d017 rg_d035 rg_d033 rg_d009 rg_d007 rg_d060 rg_d031 rg_d008 rg_d002 rg_d013 rg_d055 rg_d044 rg_d056 rg_d029 rg_d019 rg_d057 rg_d005 rg_d050 rg_d049 rg_d037 rg_d025 rg_d043 rg_d015 rg_d020 rg_d001 rg_d004"
+    },
+    "rg_q084": {
+      "bm25": "rg_d042 rg_d033 rg_d060 rg_d054 rg_d026",
+      "vectors": "rg_d042 rg_d041 rg_d015 rg_d018 rg_d046 rg_d050 rg_d044 rg_d043 rg_d053 rg_d052 rg_d014 rg_d017 rg_d031 rg_d035 rg_d032 rg_d027 rg_d013 rg_d012 rg_d058 rg_d006 rg_d033 rg_d049 rg_d029 rg_d059 rg_d005 rg_d034 rg_d007 rg_d056 rg_d011 rg_d051 rg_d023 rg_d045 rg_d060 rg_d010 rg_d016 rg_d008 rg_d047 rg_d009 rg_d001 rg_d021 rg_d002 rg_d004 rg_d022 rg_d037 rg_d038 rg_d039 rg_d025 rg_d057 rg_d048 rg_d036"
+    },
+    "rg_q085": {
+      "bm25": "rg_d043 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d043 rg_d041 rg_d044 rg_d045 rg_d015 rg_d059 rg_d004 rg_d017 rg_d042 rg_d029 rg_d033 rg_d006 rg_d002 rg_d009 rg_d001 rg_d051 rg_d018 rg_d020 rg_d026 rg_d025 rg_d056 rg_d053 rg_d030 rg_d058 rg_d046 rg_d050 rg_d023 rg_d037 rg_d049 rg_d022 rg_d057 rg_d039 rg_d003 rg_d021 rg_d013 rg_d034 rg_d048 rg_d005 rg_d036 rg_d028 rg_d019 rg_d014 rg_d052 rg_d012 rg_d031 rg_d060 rg_d047 rg_d024 rg_d038 rg_d016"
+    },
+    "rg_q086": {
+      "bm25": "rg_d002 rg_d043 rg_d005 rg_d055 rg_d017 rg_d001 rg_d012 rg_d016 rg_d027 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+      "vectors": "rg_d005 rg_d042 rg_d043 rg_d006 rg_d002 rg_d012 rg_d019 rg_d018 rg_d017 rg_d044 rg_d009 rg_d031 rg_d033 rg_d041 rg_d052 rg_d051 rg_d035 rg_d004 rg_d056 rg_d015 rg_d016 rg_d001 rg_d013 rg_d026 rg_d025 rg_d050 rg_d032 rg_d003 rg_d054 rg_d010 rg_d045 rg_d057 rg_d060 rg_d007 rg_d008 rg_d030 rg_d048 rg_d055 rg_d034 rg_d059 rg_d028 rg_d053 rg_d046 rg_d039 rg_d058 rg_d029 rg_d023 rg_d020 rg_d024 rg_d021"
+    },
+    "rg_q087": {
+      "bm25": "rg_d044 rg_d045 rg_d042 rg_d054 rg_d026 rg_d013 rg_d015",
+      "vectors": "rg_d044 rg_d045 rg_d015 rg_d050 rg_d031 rg_d046 rg_d017 rg_d041 rg_d042 rg_d051 rg_d056 rg_d013 rg_d018 rg_d058 rg_d059 rg_d034 rg_d032 rg_d057 rg_d001 rg_d011 rg_d053 rg_d004 rg_d020 rg_d033 rg_d038 rg_d012 rg_d049 rg_d043 rg_d028 rg_d014 rg_d022 rg_d021 rg_d029 rg_d023 rg_d047 rg_d060 rg_d039 rg_d048 rg_d006 rg_d035 rg_d003 rg_d052 rg_d016 rg_d002 rg_d026 rg_d037 rg_d007 rg_d010 rg_d019 rg_d040"
+    },
+    "rg_q088": {
+      "bm25": "rg_d045 rg_d044 rg_d027 rg_d025 rg_d008 rg_d018 rg_d005 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d011 rg_d020 rg_d046 rg_d047 rg_d038 rg_d050 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d034 rg_d006 rg_d015 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016",
+      "vectors": "rg_d044 rg_d041 rg_d045 rg_d042 rg_d015 rg_d050 rg_d046 rg_d043 rg_d023 rg_d051 rg_d017 rg_d006 rg_d059 rg_d048 rg_d020 rg_d019 rg_d026 rg_d024 rg_d025 rg_d060 rg_d056 rg_d047 rg_d034 rg_d021 rg_d052 rg_d022 rg_d007 rg_d010 rg_d029 rg_d033 rg_d004 rg_d016 rg_d018 rg_d013 rg_d037 rg_d011 rg_d057 rg_d031 rg_d058 rg_d032 rg_d055 rg_d038 rg_d049 rg_d035 rg_d012 rg_d053 rg_d054 rg_d039 rg_d009 rg_d008"
+    },
+    "rg_q089": {
+      "bm25": "rg_d045 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+      "vectors": "rg_d045 rg_d041 rg_d050 rg_d044 rg_d042 rg_d015 rg_d046 rg_d053 rg_d049 rg_d018 rg_d027 rg_d010 rg_d052 rg_d017 rg_d031 rg_d051 rg_d029 rg_d014 rg_d012 rg_d043 rg_d037 rg_d005 rg_d004 rg_d013 rg_d059 rg_d009 rg_d003 rg_d058 rg_d035 rg_d060 rg_d056 rg_d047 rg_d022 rg_d023 rg_d007 rg_d020 rg_d032 rg_d006 rg_d048 rg_d001 rg_d033 rg_d019 rg_d034 rg_d026 rg_d016 rg_d028 rg_d021 rg_d055 rg_d030 rg_d024"
+    },
+    "rg_q090": {
+      "bm25": "rg_d005 rg_d012 rg_d016 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004",
+      "vectors": "rg_d045 rg_d042 rg_d015 rg_d012 rg_d041 rg_d052 rg_d044 rg_d005 rg_d004 rg_d006 rg_d029 rg_d030 rg_d053 rg_d014 rg_d003 rg_d013 rg_d051 rg_d050 rg_d033 rg_d018 rg_d017 rg_d043 rg_d001 rg_d059 rg_d008 rg_d010 rg_d026 rg_d038 rg_d055 rg_d031 rg_d011 rg_d058 rg_d037 rg_d032 rg_d035 rg_d002 rg_d020 rg_d049 rg_d046 rg_d007 rg_d009 rg_d021 rg_d027 rg_d019 rg_d036 rg_d060 rg_d028 rg_d039 rg_d056 rg_d034"
+    },
+    "rg_q091": {
+      "bm25": "rg_d046 rg_d042 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d046 rg_d050 rg_d045 rg_d059 rg_d047 rg_d018 rg_d049 rg_d044 rg_d058 rg_d032 rg_d048 rg_d034 rg_d007 rg_d041 rg_d051 rg_d017 rg_d031 rg_d057 rg_d053 rg_d013 rg_d014 rg_d056 rg_d023 rg_d052 rg_d026 rg_d042 rg_d015 rg_d060 rg_d016 rg_d033 rg_d021 rg_d020 rg_d022 rg_d030 rg_d035 rg_d039 rg_d002 rg_d006 rg_d024 rg_d038 rg_d005 rg_d037 rg_d010 rg_d029 rg_d004 rg_d008 rg_d028 rg_d009 rg_d012 rg_d011"
+    },
+    "rg_q092": {
+      "bm25": "rg_d005 rg_d012 rg_d016 rg_d045 rg_d059 rg_d035 rg_d011 rg_d017 rg_d046",
+      "vectors": "rg_d050 rg_d046 rg_d045 rg_d007 rg_d047 rg_d013 rg_d035 rg_d017 rg_d031 rg_d018 rg_d042 rg_d041 rg_d051 rg_d044 rg_d029 rg_d023 rg_d028 rg_d009 rg_d021 rg_d011 rg_d049 rg_d048 rg_d033 rg_d012 rg_d015 rg_d003 rg_d059 rg_d032 rg_d014 rg_d057 rg_d034 rg_d005 rg_d026 rg_d008 rg_d056 rg_d020 rg_d052 rg_d027 rg_d053 rg_d060 rg_d022 rg_d006 rg_d039 rg_d004 rg_d038 rg_d001 rg_d030 rg_d002 rg_d019 rg_d043"
+    },
+    "rg_q093": {
+      "bm25": "rg_d047 rg_d042",
+      "vectors": "rg_d047 rg_d038 rg_d018 rg_d004 rg_d032 rg_d030 rg_d051 rg_d036 rg_d037 rg_d017 rg_d022 rg_d031 rg_d021 rg_d041 rg_d042 rg_d034 rg_d033 rg_d010 rg_d059 rg_d052 rg_d023 rg_d057 rg_d028 rg_d046 rg_d058 rg_d029 rg_d016 rg_d005 rg_d053 rg_d050 rg_d049 rg_d020 rg_d056 rg_d054 rg_d060 rg_d027 rg_d040 rg_d008 rg_d014 rg_d025 rg_d043 rg_d013 rg_d015 rg_d009 rg_d044 rg_d001 rg_d002 rg_d055 rg_d024 rg_d048"
+    },
+    "rg_q094": {
+      "bm25": "rg_d047 rg_d035 rg_d028 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+      "vectors": "rg_d046 rg_d028 rg_d047 rg_d050 rg_d045 rg_d007 rg_d031 rg_d003 rg_d013 rg_d010 rg_d029 rg_d004 rg_d035 rg_d027 rg_d026 rg_d053 rg_d056 rg_d023 rg_d042 rg_d017 rg_d002 rg_d034 rg_d048 rg_d049 rg_d030 rg_d001 rg_d018 rg_d044 rg_d041 rg_d033 rg_d024 rg_d059 rg_d019 rg_d008 rg_d057 rg_d015 rg_d005 rg_d032 rg_d052 rg_d051 rg_d020 rg_d060 rg_d006 rg_d037 rg_d016 rg_d058 rg_d009 rg_d039 rg_d038 rg_d012"
+    },
+    "rg_q095": {
+      "bm25": "rg_d048 rg_d042",
+      "vectors": "rg_d048 rg_d050 rg_d007 rg_d044 rg_d052 rg_d056 rg_d004 rg_d057 rg_d036 rg_d029 rg_d031 rg_d010 rg_d033 rg_d026 rg_d017 rg_d006 rg_d042 rg_d060 rg_d015 rg_d037 rg_d055 rg_d034 rg_d016 rg_d025 rg_d018 rg_d027 rg_d058 rg_d046 rg_d020 rg_d038 rg_d030 rg_d043 rg_d013 rg_d005 rg_d032 rg_d047 rg_d054 rg_d053 rg_d045 rg_d024 rg_d041 rg_d012 rg_d051 rg_d002 rg_d028 rg_d009 rg_d035 rg_d059 rg_d019 rg_d039"
+    },
+    "rg_q096": {
+      "bm25": "rg_d013 rg_d007 rg_d045 rg_d044 rg_d015",
+      "vectors": "rg_d007 rg_d029 rg_d048 rg_d013 rg_d046 rg_d036 rg_d056 rg_d057 rg_d050 rg_d025 rg_d004 rg_d059 rg_d016 rg_d045 rg_d037 rg_d023 rg_d017 rg_d060 rg_d039 rg_d049 rg_d015 rg_d052 rg_d031 rg_d041 rg_d058 rg_d022 rg_d024 rg_d038 rg_d028 rg_d033 rg_d047 rg_d020 rg_d012 rg_d030 rg_d053 rg_d044 rg_d002 rg_d001 rg_d042 rg_d032 rg_d034 rg_d051 rg_d035 rg_d006 rg_d018 rg_d021 rg_d026 rg_d043 rg_d027 rg_d054"
+    },
+    "rg_q097": {
+      "bm25": "",
+      "vectors": "rg_d049 rg_d050 rg_d045 rg_d034 rg_d038 rg_d041 rg_d051 rg_d046 rg_d053 rg_d015 rg_d037 rg_d004 rg_d002 rg_d033 rg_d059 rg_d029 rg_d017 rg_d018 rg_d042 rg_d026 rg_d013 rg_d056 rg_d039 rg_d047 rg_d007 rg_d010 rg_d030 rg_d009 rg_d031 rg_d022 rg_d032 rg_d036 rg_d020 rg_d025 rg_d012 rg_d021 rg_d040 rg_d006 rg_d014 rg_d048 rg_d001 rg_d028 rg_d023 rg_d060 rg_d003 rg_d024 rg_d057 rg_d005 rg_d035 rg_d058"
+    },
+    "rg_q098": {
+      "bm25": "rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d040 rg_d024 rg_d035 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d030 rg_d023 rg_d008 rg_d009 rg_d032 rg_d016 rg_d018 rg_d012 rg_d056 rg_d036 rg_d055 rg_d002 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d003 rg_d010 rg_d026 rg_d033 rg_d039 rg_d046 rg_d001 rg_d004",
+      "vectors": "rg_d049 rg_d046 rg_d047 rg_d059 rg_d056 rg_d058 rg_d050 rg_d041 rg_d053 rg_d051 rg_d018 rg_d045 rg_d039 rg_d029 rg_d020 rg_d001 rg_d026 rg_d044 rg_d057 rg_d032 rg_d002 rg_d042 rg_d004 rg_d060 rg_d033 rg_d017 rg_d034 rg_d014 rg_d030 rg_d007 rg_d005 rg_d048 rg_d031 rg_d003 rg_d027 rg_d013 rg_d015 rg_d009 rg_d025 rg_d038 rg_d037 rg_d012 rg_d028 rg_d021 rg_d016 rg_d036 rg_d022 rg_d010 rg_d040 rg_d023"
+    },
+    "rg_q099": {
+      "bm25": "rg_d050 rg_d048 rg_d047 rg_d038 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+      "vectors": "rg_d050 rg_d046 rg_d048 rg_d045 rg_d018 rg_d017 rg_d008 rg_d031 rg_d044 rg_d052 rg_d007 rg_d015 rg_d024 rg_d033 rg_d059 rg_d035 rg_d058 rg_d019 rg_d051 rg_d029 rg_d020 rg_d026 rg_d013 rg_d047 rg_d056 rg_d049 rg_d027 rg_d025 rg_d032 rg_d005 rg_d053 rg_d039 rg_d043 rg_d030 rg_d022 rg_d041 rg_d011 rg_d057 rg_d010 rg_d021 rg_d023 rg_d014 rg_d038 rg_d042 rg_d003 rg_d004 rg_d034 rg_d006 rg_d060 rg_d037"
+    },
+    "rg_q100": {
+      "bm25": "rg_d027 rg_d025 rg_d008 rg_d018 rg_d005 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d011 rg_d020 rg_d046 rg_d047 rg_d038 rg_d050 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d034 rg_d006 rg_d015 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016",
+      "vectors": "rg_d050 rg_d046 rg_d045 rg_d048 rg_d044 rg_d007 rg_d058 rg_d059 rg_d020 rg_d031 rg_d060 rg_d051 rg_d018 rg_d017 rg_d049 rg_d035 rg_d029 rg_d039 rg_d033 rg_d056 rg_d005 rg_d041 rg_d036 rg_d014 rg_d006 rg_d053 rg_d013 rg_d054 rg_d047 rg_d032 rg_d038 rg_d021 rg_d052 rg_d024 rg_d012 rg_d042 rg_d057 rg_d009 rg_d008 rg_d034 rg_d022 rg_d023 rg_d015 rg_d011 rg_d043 rg_d025 rg_d010 rg_d026 rg_d016 rg_d004"
+    },
+    "rg_q101": {
+      "bm25": "rg_d051 rg_d003 rg_d005 rg_d027 rg_d043 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+      "vectors": "rg_d051 rg_d059 rg_d017 rg_d016 rg_d012 rg_d041 rg_d025 rg_d018 rg_d056 rg_d057 rg_d049 rg_d044 rg_d046 rg_d020 rg_d042 rg_d033 rg_d050 rg_d058 rg_d024 rg_d022 rg_d054 rg_d010 rg_d005 rg_d032 rg_d060 rg_d043 rg_d023 rg_d006 rg_d039 rg_d021 rg_d009 rg_d007 rg_d004 rg_d040 rg_d002 rg_d011 rg_d019 rg_d015 rg_d037 rg_d034 rg_d047 rg_d045 rg_d035 rg_d031 rg_d053 rg_d013 rg_d052 rg_d001 rg_d014 rg_d029"
+    },
+    "rg_q102": {
+      "bm25": "rg_d042 rg_d029 rg_d007 rg_d026 rg_d045 rg_d035 rg_d036 rg_d034 rg_d006 rg_d047 rg_d009 rg_d017 rg_d023 rg_d032 rg_d038",
+      "vectors": "rg_d051 rg_d020 rg_d058 rg_d059 rg_d003 rg_d056 rg_d029 rg_d050 rg_d015 rg_d009 rg_d060 rg_d004 rg_d043 rg_d016 rg_d037 rg_d017 rg_d046 rg_d040 rg_d002 rg_d012 rg_d005 rg_d039 rg_d023 rg_d013 rg_d027 rg_d032 rg_d025 rg_d034 rg_d049 rg_d011 rg_d018 rg_d022 rg_d035 rg_d019 rg_d033 rg_d053 rg_d036 rg_d014 rg_d054 rg_d024 rg_d001 rg_d042 rg_d008 rg_d057 rg_d030 rg_d038 rg_d031 rg_d010 rg_d041 rg_d006"
+    },
+    "rg_q103": {
+      "bm25": "rg_d018 rg_d029 rg_d026 rg_d033 rg_d004 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d016",
+      "vectors": "rg_d030 rg_d006 rg_d029 rg_d012 rg_d041 rg_d042 rg_d026 rg_d052 rg_d033 rg_d043 rg_d001 rg_d045 rg_d017 rg_d004 rg_d002 rg_d018 rg_d048 rg_d008 rg_d050 rg_d056 rg_d010 rg_d028 rg_d031 rg_d007 rg_d027 rg_d009 rg_d053 rg_d057 rg_d032 rg_d013 rg_d046 rg_d044 rg_d003 rg_d059 rg_d025 rg_d034 rg_d051 rg_d037 rg_d023 rg_d047 rg_d060 rg_d019 rg_d005 rg_d015 rg_d016 rg_d058 rg_d054 rg_d035 rg_d039 rg_d020"
+    },
+    "rg_q104": {
+      "bm25": "rg_d052 rg_d019 rg_d032",
+      "vectors": "rg_d052 rg_d013 rg_d053 rg_d033 rg_d043 rg_d015 rg_d059 rg_d060 rg_d045 rg_d007 rg_d056 rg_d031 rg_d022 rg_d039 rg_d032 rg_d042 rg_d026 rg_d029 rg_d044 rg_d004 rg_d058 rg_d057 rg_d023 rg_d021 rg_d017 rg_d014 rg_d009 rg_d025 rg_d035 rg_d050 rg_d002 rg_d011 rg_d028 rg_d034 rg_d024 rg_d037 rg_d046 rg_d051 rg_d008 rg_d048 rg_d049 rg_d020 rg_d038 rg_d041 rg_d018 rg_d047 rg_d001 rg_d010 rg_d055 rg_d054"
+    },
+    "rg_q105": {
+      "bm25": "rg_d053 rg_d042",
+      "vectors": "rg_d053 rg_d020 rg_d014 rg_d009 rg_d058 rg_d029 rg_d042 rg_d013 rg_d059 rg_d060 rg_d031 rg_d032 rg_d055 rg_d056 rg_d004 rg_d052 rg_d046 rg_d050 rg_d035 rg_d054 rg_d041 rg_d044 rg_d033 rg_d037 rg_d057 rg_d010 rg_d034 rg_d017 rg_d023 rg_d043 rg_d022 rg_d011 rg_d006 rg_d026 rg_d015 rg_d045 rg_d027 rg_d016 rg_d039 rg_d007 rg_d049 rg_d024 rg_d048 rg_d005 rg_d021 rg_d051 rg_d001 rg_d018 rg_d028 rg_d038"
+    },
+    "rg_q106": {
+      "bm25": "rg_d053 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d046 rg_d008 rg_d011 rg_d020 rg_d018 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d038 rg_d049 rg_d042 rg_d054 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d027 rg_d053 rg_d026 rg_d054 rg_d030 rg_d037 rg_d052 rg_d055 rg_d029 rg_d028 rg_d046 rg_d032 rg_d045 rg_d013 rg_d022 rg_d024 rg_d050 rg_d004 rg_d005 rg_d060 rg_d039 rg_d056 rg_d023 rg_d031 rg_d058 rg_d009 rg_d051 rg_d059 rg_d044 rg_d048 rg_d035 rg_d014 rg_d042 rg_d007 rg_d025 rg_d011 rg_d020 rg_d001 rg_d057 rg_d038 rg_d040 rg_d017 rg_d010 rg_d021 rg_d015 rg_d018 rg_d043 rg_d049 rg_d008 rg_d003"
+    },
+    "rg_q107": {
+      "bm25": "rg_d054 rg_d042 rg_d026 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d054 rg_d033 rg_d029 rg_d024 rg_d022 rg_d009 rg_d037 rg_d025 rg_d053 rg_d051 rg_d020 rg_d030 rg_d005 rg_d032 rg_d023 rg_d059 rg_d012 rg_d016 rg_d006 rg_d052 rg_d055 rg_d021 rg_d040 rg_d060 rg_d013 rg_d026 rg_d049 rg_d034 rg_d042 rg_d007 rg_d056 rg_d028 rg_d014 rg_d027 rg_d019 rg_d010 rg_d035 rg_d011 rg_d004 rg_d017 rg_d031 rg_d018 rg_d057 rg_d050 rg_d039 rg_d008 rg_d043 rg_d046 rg_d001 rg_d058"
+    },
+    "rg_q108": {
+      "bm25": "rg_d054 rg_d052 rg_d028 rg_d022 rg_d021 rg_d008",
+      "vectors": "rg_d054 rg_d009 rg_d022 rg_d033 rg_d030 rg_d052 rg_d024 rg_d026 rg_d044 rg_d053 rg_d027 rg_d005 rg_d051 rg_d019 rg_d029 rg_d006 rg_d025 rg_d043 rg_d035 rg_d003 rg_d037 rg_d007 rg_d050 rg_d021 rg_d046 rg_d055 rg_d012 rg_d023 rg_d049 rg_d013 rg_d057 rg_d008 rg_d058 rg_d028 rg_d042 rg_d060 rg_d011 rg_d014 rg_d017 rg_d010 rg_d016 rg_d059 rg_d040 rg_d056 rg_d039 rg_d032 rg_d031 rg_d045 rg_d015 rg_d004"
+    },
+    "rg_q109": {
+      "bm25": "rg_d055 rg_d033",
+      "vectors": "rg_d055 rg_d052 rg_d010 rg_d053 rg_d033 rg_d035 rg_d009 rg_d011 rg_d013 rg_d057 rg_d026 rg_d008 rg_d029 rg_d006 rg_d031 rg_d032 rg_d022 rg_d024 rg_d014 rg_d042 rg_d023 rg_d037 rg_d060 rg_d045 rg_d059 rg_d039 rg_d007 rg_d027 rg_d038 rg_d004 rg_d003 rg_d012 rg_d054 rg_d025 rg_d047 rg_d005 rg_d021 rg_d048 rg_d046 rg_d015 rg_d051 rg_d050 rg_d019 rg_d044 rg_d028 rg_d056 rg_d018 rg_d017 rg_d020 rg_d034"
+    },
+    "rg_q110": {
+      "bm25": "rg_d055 rg_d010 rg_d012 rg_d056 rg_d036 rg_d040 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d055 rg_d006 rg_d042 rg_d010 rg_d013 rg_d052 rg_d053 rg_d033 rg_d026 rg_d035 rg_d031 rg_d029 rg_d007 rg_d045 rg_d024 rg_d028 rg_d015 rg_d011 rg_d012 rg_d048 rg_d034 rg_d008 rg_d004 rg_d009 rg_d060 rg_d016 rg_d046 rg_d022 rg_d037 rg_d023 rg_d014 rg_d027 rg_d020 rg_d003 rg_d018 rg_d017 rg_d002 rg_d050 rg_d047 rg_d057 rg_d021 rg_d041 rg_d056 rg_d038 rg_d039 rg_d043 rg_d054 rg_d025 rg_d032 rg_d059"
+    },
+    "rg_q111": {
+      "bm25": "rg_d056 rg_d044 rg_d042 rg_d041 rg_d059 rg_d014 rg_d019 rg_d022 rg_d021 rg_d039",
+      "vectors": "rg_d056 rg_d059 rg_d058 rg_d057 rg_d041 rg_d032 rg_d039 rg_d049 rg_d037 rg_d017 rg_d001 rg_d051 rg_d004 rg_d040 rg_d044 rg_d018 rg_d033 rg_d060 rg_d014 rg_d020 rg_d053 rg_d052 rg_d025 rg_d021 rg_d012 rg_d022 rg_d043 rg_d029 rg_d031 rg_d015 rg_d009 rg_d046 rg_d050 rg_d042 rg_d047 rg_d023 rg_d048 rg_d035 rg_d008 rg_d016 rg_d026 rg_d045 rg_d034 rg_d010 rg_d013 rg_d003 rg_d005 rg_d028 rg_d007 rg_d024"
+    },
+    "rg_q112": {
+      "bm25": "rg_d039 rg_d056 rg_d015 rg_d030 rg_d012 rg_d036 rg_d040 rg_d055 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+      "vectors": "rg_d039 rg_d060 rg_d056 rg_d059 rg_d015 rg_d057 rg_d013 rg_d022 rg_d033 rg_d046 rg_d025 rg_d034 rg_d038 rg_d045 rg_d020 rg_d031 rg_d023 rg_d021 rg_d050 rg_d036 rg_d017 rg_d049 rg_d047 rg_d028 rg_d016 rg_d048 rg_d032 rg_d058 rg_d024 rg_d002 rg_d001 rg_d051 rg_d042 rg_d037 rg_d004 rg_d008 rg_d044 rg_d041 rg_d052 rg_d007 rg_d011 rg_d035 rg_d018 rg_d029 rg_d012 rg_d009 rg_d010 rg_d040 rg_d053 rg_d043"
+    },
+    "rg_q113": {
+      "bm25": "rg_d057 rg_d044 rg_d042 rg_d041 rg_d059 rg_d014 rg_d019 rg_d022 rg_d021 rg_d039",
+      "vectors": "rg_d057 rg_d059 rg_d058 rg_d056 rg_d039 rg_d052 rg_d032 rg_d060 rg_d041 rg_d051 rg_d044 rg_d048 rg_d017 rg_d037 rg_d020 rg_d016 rg_d046 rg_d018 rg_d049 rg_d004 rg_d053 rg_d015 rg_d024 rg_d023 rg_d031 rg_d045 rg_d027 rg_d047 rg_d038 rg_d033 rg_d026 rg_d050 rg_d012 rg_d014 rg_d034 rg_d025 rg_d035 rg_d001 rg_d022 rg_d019 rg_d008 rg_d005 rg_d021 rg_d042 rg_d011 rg_d029 rg_d028 rg_d055 rg_d043 rg_d040"
+    },
+    "rg_q114": {
+      "bm25": "rg_d032 rg_d057 rg_d011 rg_d017 rg_d016 rg_d037",
+      "vectors": "rg_d059 rg_d056 rg_d039 rg_d017 rg_d057 rg_d020 rg_d016 rg_d058 rg_d060 rg_d046 rg_d051 rg_d032 rg_d049 rg_d050 rg_d033 rg_d034 rg_d029 rg_d041 rg_d004 rg_d048 rg_d044 rg_d045 rg_d023 rg_d047 rg_d018 rg_d026 rg_d015 rg_d031 rg_d008 rg_d012 rg_d024 rg_d021 rg_d002 rg_d025 rg_d053 rg_d037 rg_d009 rg_d001 rg_d022 rg_d042 rg_d006 rg_d013 rg_d043 rg_d014 rg_d007 rg_d028 rg_d038 rg_d036 rg_d052 rg_d010"
+    },
+    "rg_q115": {
+      "bm25": "rg_d058 rg_d042 rg_d046 rg_d004 rg_d019 rg_d006 rg_d002",
+      "vectors": "rg_d058 rg_d056 rg_d059 rg_d060 rg_d001 rg_d017 rg_d044 rg_d053 rg_d050 rg_d057 rg_d004 rg_d041 rg_d046 rg_d020 rg_d051 rg_d040 rg_d018 rg_d029 rg_d002 rg_d016 rg_d022 rg_d045 rg_d027 rg_d047 rg_d052 rg_d031 rg_d009 rg_d005 rg_d042 rg_d035 rg_d049 rg_d034 rg_d021 rg_d033 rg_d043 rg_d032 rg_d024 rg_d048 rg_d014 rg_d037 rg_d015 rg_d008 rg_d039 rg_d019 rg_d010 rg_d006 rg_d013 rg_d007 rg_d036 rg_d026"
+    },
+    "rg_q116": {
+      "bm25": "rg_d029 rg_d017",
+      "vectors": "rg_d058 rg_d060 rg_d056 rg_d039 rg_d057 rg_d059 rg_d016 rg_d043 rg_d017 rg_d015 rg_d049 rg_d053 rg_d036 rg_d051 rg_d020 rg_d046 rg_d044 rg_d018 rg_d050 rg_d032 rg_d029 rg_d040 rg_d014 rg_d023 rg_d022 rg_d001 rg_d052 rg_d041 rg_d038 rg_d037 rg_d005 rg_d013 rg_d054 rg_d003 rg_d027 rg_d042 rg_d008 rg_d011 rg_d002 rg_d021 rg_d033 rg_d012 rg_d045 rg_d030 rg_d048 rg_d047 rg_d034 rg_d004 rg_d009 rg_d025"
+    },
+    "rg_q117": {
+      "bm25": "rg_d059 rg_d056",
+      "vectors": "rg_d059 rg_d056 rg_d039 rg_d057 rg_d060 rg_d020 rg_d058 rg_d041 rg_d049 rg_d053 rg_d015 rg_d017 rg_d033 rg_d045 rg_d032 rg_d013 rg_d046 rg_d044 rg_d047 rg_d051 rg_d011 rg_d050 rg_d016 rg_d052 rg_d025 rg_d023 rg_d040 rg_d021 rg_d004 rg_d001 rg_d022 rg_d014 rg_d029 rg_d009 rg_d037 rg_d018 rg_d042 rg_d026 rg_d031 rg_d043 rg_d002 rg_d028 rg_d010 rg_d035 rg_d048 rg_d007 rg_d012 rg_d008 rg_d024 rg_d034"
+    },
+    "rg_q118": {
+      "bm25": "rg_d057 rg_d029 rg_d041 rg_d059 rg_d014 rg_d019 rg_d022 rg_d021 rg_d039",
+      "vectors": "rg_d059 rg_d056 rg_d057 rg_d039 rg_d049 rg_d058 rg_d051 rg_d017 rg_d060 rg_d022 rg_d020 rg_d050 rg_d046 rg_d016 rg_d041 rg_d021 rg_d040 rg_d032 rg_d053 rg_d037 rg_d018 rg_d042 rg_d045 rg_d047 rg_d001 rg_d023 rg_d012 rg_d011 rg_d033 rg_d007 rg_d004 rg_d044 rg_d025 rg_d043 rg_d013 rg_d015 rg_d014 rg_d048 rg_d028 rg_d052 rg_d005 rg_d036 rg_d031 rg_d054 rg_d026 rg_d002 rg_d027 rg_d009 rg_d024 rg_d035"
+    },
+    "rg_q119": {
+      "bm25": "rg_d060 rg_d059 rg_d042",
+      "vectors": "rg_d060 rg_d059 rg_d010 rg_d056 rg_d058 rg_d051 rg_d009 rg_d053 rg_d020 rg_d057 rg_d017 rg_d033 rg_d050 rg_d039 rg_d018 rg_d034 rg_d049 rg_d016 rg_d031 rg_d001 rg_d037 rg_d032 rg_d004 rg_d040 rg_d002 rg_d022 rg_d025 rg_d015 rg_d042 rg_d023 rg_d041 rg_d035 rg_d047 rg_d046 rg_d048 rg_d014 rg_d012 rg_d043 rg_d008 rg_d027 rg_d054 rg_d045 rg_d024 rg_d036 rg_d052 rg_d011 rg_d013 rg_d006 rg_d026 rg_d029"
+    },
+    "rg_q120": {
+      "bm25": "rg_d060 rg_d029 rg_d035 rg_d033 rg_d020 rg_d018",
+      "vectors": "rg_d060 rg_d058 rg_d056 rg_d057 rg_d059 rg_d032 rg_d053 rg_d051 rg_d048 rg_d001 rg_d023 rg_d039 rg_d050 rg_d017 rg_d004 rg_d044 rg_d026 rg_d034 rg_d010 rg_d002 rg_d041 rg_d016 rg_d020 rg_d042 rg_d037 rg_d038 rg_d009 rg_d028 rg_d029 rg_d027 rg_d033 rg_d046 rg_d031 rg_d018 rg_d043 rg_d021 rg_d025 rg_d013 rg_d054 rg_d022 rg_d015 rg_d035 rg_d055 rg_d040 rg_d052 rg_d024 rg_d006 rg_d008 rg_d014 rg_d011"
+    }
+  },
   "measurement_limits": [
     "bank_authored_by_a_developer_family_one_gold_passage_per_query_not_blind",
     "sixty_short_passages_a_small_corpus_so_absolute_scores_run_high",
@@ -2760,9 +3242,7 @@
     "the_protocol_statistic_agresti_min_treats_queries_as_independent_the_clustered_effect_interval_is_beside_it",
     "vectors_vs_bm25_is_descriptive_the_k46_vector_rule_decides_the_hybrid_channel_only",
     "no_protocol_decision_while_the_vectors_component_is_blocked_and_461_pairs_would_be_needed_once_ready",
-    "recomputed_from_the_recorded_rows_after_review_no_new_embedding_run",
-    "baseline_rows_were_not_recorded_in_this_run_so_its_intervals_are_dropped_not_recomputed",
-    "hybrid_rows_predate_the_product_tie_order_and_channel_rankings_were_not_recorded_a_rerun_is_pending_on_the_mac"
+    "rerun_after_review_with_the_product_tie_order_same_embedder"
   ],
   "baseline": {
     "embedder": {
@@ -2774,20 +3254,47 @@
         "overall": {
           "queries": 120,
           "hit_at_5": 0.9833,
+          "hit_at_5_ci95": [
+            0.9413,
+            0.9954
+          ],
+          "hit_at_5_design_effect": 1.0,
           "ndcg_at_10": 0.9633,
+          "ndcg_at_10_ci95": [
+            0.9392,
+            0.9846
+          ],
           "mrr": 0.9515
         },
         "by_type": {
           "lexical": {
             "queries": 60,
             "hit_at_5": 0.9833,
+            "hit_at_5_ci95": [
+              0.9114,
+              0.9971
+            ],
+            "hit_at_5_design_effect": 1.0,
             "ndcg_at_10": 0.9889,
+            "ndcg_at_10_ci95": [
+              0.9667,
+              1.0
+            ],
             "mrr": 0.9857
           },
           "paraphrase": {
             "queries": 60,
             "hit_at_5": 0.9833,
+            "hit_at_5_ci95": [
+              0.9114,
+              0.9971
+            ],
+            "hit_at_5_design_effect": 1.0,
             "ndcg_at_10": 0.9378,
+            "ndcg_at_10_ci95": [
+              0.892,
+              0.977
+            ],
             "mrr": 0.9172
           }
         }
@@ -2796,23 +3303,2218 @@
         "overall": {
           "queries": 120,
           "hit_at_5": 0.8333,
-          "ndcg_at_10": 0.7775,
-          "mrr": 0.7504
+          "hit_at_5_ci95": [
+            0.7565,
+            0.8894
+          ],
+          "hit_at_5_design_effect": 1.0,
+          "ndcg_at_10": 0.7741,
+          "ndcg_at_10_ci95": [
+            0.7137,
+            0.8263
+          ],
+          "mrr": 0.7458
         },
         "by_type": {
           "lexical": {
             "queries": 60,
             "hit_at_5": 0.9667,
-            "ndcg_at_10": 0.9667,
-            "mrr": 0.9686
+            "hit_at_5_ci95": [
+              0.8864,
+              0.9908
+            ],
+            "hit_at_5_design_effect": 1.0,
+            "ndcg_at_10": 0.9605,
+            "ndcg_at_10_ci95": [
+              0.9105,
+              1.0
+            ],
+            "mrr": 0.9603
           },
           "paraphrase": {
             "queries": 60,
             "hit_at_5": 0.7,
-            "ndcg_at_10": 0.5884,
-            "mrr": 0.5322
+            "hit_at_5_ci95": [
+              0.5749,
+              0.801
+            ],
+            "hit_at_5_design_effect": 1.0,
+            "ndcg_at_10": 0.5877,
+            "ndcg_at_10_ci95": [
+              0.4866,
+              0.6775
+            ],
+            "mrr": 0.5314
           }
         }
+      }
+    },
+    "rows": {
+      "vectors": [
+        {
+          "id": "rg_q001",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q002",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q003",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q004",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q005",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q006",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q007",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q008",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q009",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q010",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q011",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q012",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q013",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q014",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q015",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q016",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q017",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q018",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q019",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q020",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q021",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q022",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q023",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q024",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q025",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q026",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q027",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q028",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q029",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q030",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q031",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q032",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q033",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q034",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q035",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q036",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q037",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q038",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q039",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q040",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q041",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q042",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q043",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q044",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q045",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q046",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q047",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q048",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q049",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q050",
+          "type": "paraphrase",
+          "rank": 6,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.3562
+        },
+        {
+          "id": "rg_q051",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q052",
+          "type": "paraphrase",
+          "rank": 3,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.5
+        },
+        {
+          "id": "rg_q053",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q054",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q055",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q056",
+          "type": "paraphrase",
+          "rank": 3,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.5
+        },
+        {
+          "id": "rg_q057",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q058",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q059",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q060",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q061",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q062",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q063",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q064",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q065",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q066",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q067",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q068",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q069",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q070",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q071",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q072",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q073",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q074",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q075",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q076",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q077",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q078",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q079",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q080",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q081",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q082",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q083",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q084",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q085",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q086",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q087",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q088",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q089",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q090",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q091",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q092",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q093",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q094",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q095",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q096",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q097",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q098",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q099",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q100",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q101",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q102",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q103",
+          "type": "lexical",
+          "rank": 7,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.3333
+        },
+        {
+          "id": "rg_q104",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q105",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q106",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q107",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q108",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q109",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q110",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q111",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q112",
+          "type": "paraphrase",
+          "rank": 5,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.3869
+        },
+        {
+          "id": "rg_q113",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q114",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q115",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q116",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q117",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q118",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q119",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q120",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        }
+      ],
+      "hybrid": [
+        {
+          "id": "rg_q001",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q002",
+          "type": "paraphrase",
+          "rank": 5,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.3869
+        },
+        {
+          "id": "rg_q003",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q004",
+          "type": "paraphrase",
+          "rank": 16,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q005",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q006",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q007",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q008",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q009",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q010",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q011",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q012",
+          "type": "paraphrase",
+          "rank": 4,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.4307
+        },
+        {
+          "id": "rg_q013",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q014",
+          "type": "paraphrase",
+          "rank": 12,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q015",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q016",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q017",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q018",
+          "type": "paraphrase",
+          "rank": 3,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.5
+        },
+        {
+          "id": "rg_q019",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q020",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q021",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q022",
+          "type": "paraphrase",
+          "rank": 20,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q023",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q024",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q025",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q026",
+          "type": "paraphrase",
+          "rank": 17,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q027",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q028",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q029",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q030",
+          "type": "paraphrase",
+          "rank": 27,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q031",
+          "type": "lexical",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q032",
+          "type": "paraphrase",
+          "rank": 12,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q033",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q034",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q035",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q036",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q037",
+          "type": "lexical",
+          "rank": 12,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q038",
+          "type": "paraphrase",
+          "rank": 26,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q039",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q040",
+          "type": "paraphrase",
+          "rank": 18,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q041",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q042",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q043",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q044",
+          "type": "paraphrase",
+          "rank": 30,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q045",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q046",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q047",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q048",
+          "type": "paraphrase",
+          "rank": 5,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.3869
+        },
+        {
+          "id": "rg_q049",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q050",
+          "type": "paraphrase",
+          "rank": 9,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.301
+        },
+        {
+          "id": "rg_q051",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q052",
+          "type": "paraphrase",
+          "rank": 8,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.3155
+        },
+        {
+          "id": "rg_q053",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q054",
+          "type": "paraphrase",
+          "rank": 28,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q055",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q056",
+          "type": "paraphrase",
+          "rank": 3,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.5
+        },
+        {
+          "id": "rg_q057",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q058",
+          "type": "paraphrase",
+          "rank": 5,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.3869
+        },
+        {
+          "id": "rg_q059",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q060",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q061",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q062",
+          "type": "paraphrase",
+          "rank": 10,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.2891
+        },
+        {
+          "id": "rg_q063",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q064",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q065",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q066",
+          "type": "paraphrase",
+          "rank": 6,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.3562
+        },
+        {
+          "id": "rg_q067",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q068",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q069",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q070",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q071",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q072",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q073",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q074",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q075",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q076",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q077",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q078",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q079",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q080",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q081",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q082",
+          "type": "paraphrase",
+          "rank": 6,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.3562
+        },
+        {
+          "id": "rg_q083",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q084",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q085",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q086",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q087",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q088",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q089",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q090",
+          "type": "paraphrase",
+          "rank": 24,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q091",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q092",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q093",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q094",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q095",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q096",
+          "type": "paraphrase",
+          "rank": 6,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.3562
+        },
+        {
+          "id": "rg_q097",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q098",
+          "type": "paraphrase",
+          "rank": 5,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.3869
+        },
+        {
+          "id": "rg_q099",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q100",
+          "type": "paraphrase",
+          "rank": 3,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.5
+        },
+        {
+          "id": "rg_q101",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q102",
+          "type": "paraphrase",
+          "rank": 12,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q103",
+          "type": "lexical",
+          "rank": 30,
+          "hit_at_5": false,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "id": "rg_q104",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q105",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q106",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q107",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q108",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q109",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q110",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q111",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q112",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q113",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q114",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q115",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q116",
+          "type": "paraphrase",
+          "rank": 3,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.5
+        },
+        {
+          "id": "rg_q117",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q118",
+          "type": "paraphrase",
+          "rank": 2,
+          "hit_at_5": true,
+          "ndcg_at_10": 0.6309
+        },
+        {
+          "id": "rg_q119",
+          "type": "lexical",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "id": "rg_q120",
+          "type": "paraphrase",
+          "rank": 1,
+          "hit_at_5": true,
+          "ndcg_at_10": 1.0
+        }
+      ]
+    },
+    "channels": {
+      "rg_q001": {
+        "bm25": "rg_d001",
+        "vectors": "rg_d001 rg_d002 rg_d003 rg_d005 rg_d004 rg_d045 rg_d037 rg_d029 rg_d027 rg_d031 rg_d008 rg_d035 rg_d012 rg_d052 rg_d056 rg_d057 rg_d041 rg_d028 rg_d006 rg_d059 rg_d051 rg_d015 rg_d044 rg_d042 rg_d030 rg_d021 rg_d022 rg_d036 rg_d043 rg_d055 rg_d033 rg_d024 rg_d046 rg_d058 rg_d060 rg_d047 rg_d016 rg_d010 rg_d018 rg_d039 rg_d025 rg_d011 rg_d032 rg_d048 rg_d050 rg_d017 rg_d023 rg_d053 rg_d040 rg_d038"
+      },
+      "rg_q002": {
+        "bm25": "rg_d042 rg_d004 rg_d019 rg_d006 rg_d002",
+        "vectors": "rg_d001 rg_d002 rg_d003 rg_d004 rg_d037 rg_d053 rg_d052 rg_d028 rg_d060 rg_d045 rg_d031 rg_d005 rg_d043 rg_d056 rg_d046 rg_d027 rg_d029 rg_d038 rg_d035 rg_d008 rg_d015 rg_d026 rg_d057 rg_d051 rg_d042 rg_d033 rg_d006 rg_d058 rg_d024 rg_d044 rg_d048 rg_d055 rg_d020 rg_d047 rg_d041 rg_d050 rg_d023 rg_d013 rg_d059 rg_d017 rg_d022 rg_d049 rg_d039 rg_d034 rg_d010 rg_d009 rg_d012 rg_d011 rg_d036 rg_d030"
+      },
+      "rg_q003": {
+        "bm25": "rg_d002 rg_d043 rg_d054 rg_d005 rg_d009",
+        "vectors": "rg_d002 rg_d005 rg_d004 rg_d001 rg_d003 rg_d043 rg_d006 rg_d042 rg_d008 rg_d024 rg_d012 rg_d011 rg_d016 rg_d031 rg_d034 rg_d028 rg_d035 rg_d057 rg_d052 rg_d022 rg_d029 rg_d013 rg_d032 rg_d020 rg_d026 rg_d058 rg_d027 rg_d019 rg_d047 rg_d023 rg_d018 rg_d010 rg_d037 rg_d054 rg_d030 rg_d009 rg_d055 rg_d048 rg_d046 rg_d056 rg_d015 rg_d007 rg_d060 rg_d053 rg_d039 rg_d033 rg_d036 rg_d051 rg_d050 rg_d045"
+      },
+      "rg_q004": {
+        "bm25": "rg_d042 rg_d045 rg_d044 rg_d013 rg_d015 rg_d007 rg_d026 rg_d035 rg_d036 rg_d034 rg_d006 rg_d047 rg_d009 rg_d017 rg_d023 rg_d032 rg_d038",
+        "vectors": "rg_d002 rg_d004 rg_d003 rg_d023 rg_d001 rg_d028 rg_d052 rg_d042 rg_d008 rg_d006 rg_d024 rg_d031 rg_d035 rg_d047 rg_d037 rg_d026 rg_d011 rg_d029 rg_d053 rg_d005 rg_d022 rg_d013 rg_d046 rg_d012 rg_d033 rg_d034 rg_d043 rg_d038 rg_d060 rg_d019 rg_d057 rg_d007 rg_d045 rg_d055 rg_d032 rg_d015 rg_d030 rg_d021 rg_d017 rg_d010 rg_d009 rg_d039 rg_d051 rg_d056 rg_d048 rg_d020 rg_d016 rg_d050 rg_d058 rg_d059"
+      },
+      "rg_q005": {
+        "bm25": "rg_d003 rg_d005 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d013 rg_d014 rg_d024 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d003 rg_d002 rg_d005 rg_d042 rg_d001 rg_d045 rg_d018 rg_d028 rg_d012 rg_d027 rg_d051 rg_d006 rg_d019 rg_d030 rg_d011 rg_d015 rg_d004 rg_d043 rg_d008 rg_d053 rg_d046 rg_d057 rg_d029 rg_d026 rg_d058 rg_d013 rg_d055 rg_d050 rg_d052 rg_d035 rg_d014 rg_d056 rg_d016 rg_d037 rg_d041 rg_d010 rg_d022 rg_d031 rg_d024 rg_d009 rg_d059 rg_d021 rg_d038 rg_d048 rg_d049 rg_d017 rg_d047 rg_d007 rg_d032 rg_d033"
+      },
+      "rg_q006": {
+        "bm25": "rg_d055 rg_d010 rg_d012 rg_d056 rg_d036 rg_d040 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d003 rg_d002 rg_d052 rg_d008 rg_d027 rg_d006 rg_d001 rg_d042 rg_d033 rg_d053 rg_d043 rg_d045 rg_d028 rg_d029 rg_d004 rg_d051 rg_d019 rg_d026 rg_d035 rg_d012 rg_d005 rg_d013 rg_d015 rg_d031 rg_d018 rg_d050 rg_d046 rg_d011 rg_d057 rg_d048 rg_d010 rg_d024 rg_d037 rg_d023 rg_d054 rg_d030 rg_d055 rg_d022 rg_d041 rg_d047 rg_d009 rg_d007 rg_d032 rg_d017 rg_d056 rg_d060 rg_d044 rg_d059 rg_d025 rg_d021"
+      },
+      "rg_q007": {
+        "bm25": "rg_d042 rg_d036 rg_d037 rg_d039 rg_d004",
+        "vectors": "rg_d004 rg_d001 rg_d039 rg_d002 rg_d016 rg_d037 rg_d049 rg_d029 rg_d027 rg_d059 rg_d012 rg_d060 rg_d045 rg_d003 rg_d056 rg_d017 rg_d057 rg_d028 rg_d006 rg_d043 rg_d018 rg_d026 rg_d022 rg_d052 rg_d058 rg_d036 rg_d030 rg_d015 rg_d044 rg_d031 rg_d050 rg_d035 rg_d051 rg_d005 rg_d021 rg_d020 rg_d013 rg_d024 rg_d055 rg_d041 rg_d046 rg_d053 rg_d040 rg_d048 rg_d011 rg_d033 rg_d047 rg_d010 rg_d038 rg_d023"
+      },
+      "rg_q008": {
+        "bm25": "rg_d004 rg_d054 rg_d026 rg_d019 rg_d006 rg_d002",
+        "vectors": "rg_d004 rg_d002 rg_d001 rg_d006 rg_d026 rg_d012 rg_d003 rg_d033 rg_d037 rg_d005 rg_d030 rg_d055 rg_d052 rg_d045 rg_d008 rg_d027 rg_d022 rg_d057 rg_d029 rg_d043 rg_d056 rg_d028 rg_d021 rg_d032 rg_d015 rg_d050 rg_d009 rg_d031 rg_d060 rg_d044 rg_d053 rg_d013 rg_d042 rg_d024 rg_d023 rg_d035 rg_d040 rg_d059 rg_d038 rg_d046 rg_d017 rg_d011 rg_d054 rg_d048 rg_d034 rg_d047 rg_d058 rg_d041 rg_d051 rg_d016"
+      },
+      "rg_q009": {
+        "bm25": "rg_d005 rg_d001",
+        "vectors": "rg_d005 rg_d002 rg_d001 rg_d003 rg_d031 rg_d008 rg_d052 rg_d045 rg_d043 rg_d042 rg_d006 rg_d033 rg_d004 rg_d028 rg_d053 rg_d035 rg_d050 rg_d029 rg_d056 rg_d027 rg_d012 rg_d032 rg_d037 rg_d015 rg_d051 rg_d060 rg_d019 rg_d057 rg_d020 rg_d046 rg_d017 rg_d016 rg_d047 rg_d055 rg_d010 rg_d059 rg_d011 rg_d009 rg_d026 rg_d022 rg_d030 rg_d025 rg_d023 rg_d039 rg_d048 rg_d034 rg_d021 rg_d013 rg_d044 rg_d018"
+      },
+      "rg_q010": {
+        "bm25": "rg_d002 rg_d018 rg_d001 rg_d005 rg_d012 rg_d016",
+        "vectors": "rg_d005 rg_d002 rg_d003 rg_d006 rg_d033 rg_d011 rg_d019 rg_d028 rg_d057 rg_d015 rg_d008 rg_d031 rg_d001 rg_d035 rg_d026 rg_d052 rg_d042 rg_d045 rg_d037 rg_d053 rg_d043 rg_d012 rg_d032 rg_d030 rg_d055 rg_d025 rg_d013 rg_d021 rg_d004 rg_d046 rg_d050 rg_d054 rg_d027 rg_d018 rg_d024 rg_d009 rg_d059 rg_d051 rg_d023 rg_d020 rg_d007 rg_d029 rg_d039 rg_d060 rg_d048 rg_d016 rg_d041 rg_d056 rg_d017 rg_d010"
+      },
+      "rg_q011": {
+        "bm25": "rg_d006 rg_d026 rg_d035 rg_d007 rg_d028 rg_d052 rg_d029 rg_d033 rg_d004 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d040 rg_d024 rg_d025 rg_d034 rg_d015 rg_d030 rg_d023 rg_d008 rg_d009 rg_d032 rg_d016 rg_d018 rg_d012 rg_d056 rg_d036 rg_d055 rg_d002 rg_d049 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d003 rg_d010 rg_d039 rg_d046 rg_d001",
+        "vectors": "rg_d006 rg_d026 rg_d012 rg_d028 rg_d055 rg_d007 rg_d002 rg_d009 rg_d030 rg_d033 rg_d042 rg_d019 rg_d008 rg_d035 rg_d010 rg_d054 rg_d048 rg_d043 rg_d052 rg_d003 rg_d024 rg_d034 rg_d011 rg_d005 rg_d031 rg_d027 rg_d013 rg_d045 rg_d053 rg_d046 rg_d016 rg_d041 rg_d015 rg_d050 rg_d021 rg_d023 rg_d018 rg_d001 rg_d057 rg_d004 rg_d047 rg_d059 rg_d029 rg_d014 rg_d022 rg_d025 rg_d037 rg_d060 rg_d044 rg_d058"
+      },
+      "rg_q012": {
+        "bm25": "rg_d042 rg_d026 rg_d008 rg_d028 rg_d022 rg_d021 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d040 rg_d024 rg_d035 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d030 rg_d023 rg_d009 rg_d032 rg_d016 rg_d018 rg_d012 rg_d056 rg_d036 rg_d055 rg_d002 rg_d049 rg_d054 rg_d005 rg_d013 rg_d014 rg_d003 rg_d010 rg_d033 rg_d039 rg_d046 rg_d001 rg_d004",
+        "vectors": "rg_d006 rg_d026 rg_d012 rg_d055 rg_d033 rg_d008 rg_d042 rg_d002 rg_d007 rg_d004 rg_d010 rg_d052 rg_d009 rg_d035 rg_d028 rg_d031 rg_d045 rg_d029 rg_d013 rg_d003 rg_d053 rg_d043 rg_d030 rg_d001 rg_d050 rg_d019 rg_d027 rg_d047 rg_d015 rg_d034 rg_d011 rg_d041 rg_d046 rg_d021 rg_d032 rg_d048 rg_d023 rg_d016 rg_d044 rg_d005 rg_d060 rg_d037 rg_d024 rg_d022 rg_d014 rg_d054 rg_d057 rg_d059 rg_d056 rg_d058"
+      },
+      "rg_q013": {
+        "bm25": "rg_d002 rg_d035 rg_d007 rg_d026 rg_d006",
+        "vectors": "rg_d007 rg_d006 rg_d035 rg_d013 rg_d047 rg_d042 rg_d028 rg_d031 rg_d034 rg_d002 rg_d010 rg_d023 rg_d008 rg_d046 rg_d016 rg_d011 rg_d048 rg_d033 rg_d012 rg_d024 rg_d019 rg_d026 rg_d017 rg_d045 rg_d009 rg_d055 rg_d041 rg_d021 rg_d018 rg_d050 rg_d043 rg_d015 rg_d029 rg_d022 rg_d003 rg_d049 rg_d053 rg_d032 rg_d052 rg_d060 rg_d014 rg_d057 rg_d025 rg_d020 rg_d059 rg_d056 rg_d027 rg_d039 rg_d054 rg_d044"
+      },
+      "rg_q014": {
+        "bm25": "rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+        "vectors": "rg_d007 rg_d050 rg_d046 rg_d013 rg_d048 rg_d045 rg_d057 rg_d053 rg_d047 rg_d020 rg_d010 rg_d031 rg_d052 rg_d006 rg_d056 rg_d043 rg_d044 rg_d033 rg_d024 rg_d059 rg_d023 rg_d026 rg_d008 rg_d058 rg_d055 rg_d021 rg_d060 rg_d034 rg_d028 rg_d015 rg_d027 rg_d017 rg_d049 rg_d054 rg_d022 rg_d035 rg_d039 rg_d037 rg_d009 rg_d011 rg_d042 rg_d041 rg_d002 rg_d029 rg_d038 rg_d032 rg_d040 rg_d051 rg_d019 rg_d016"
+      },
+      "rg_q015": {
+        "bm25": "rg_d008",
+        "vectors": "rg_d008 rg_d012 rg_d031 rg_d006 rg_d047 rg_d042 rg_d010 rg_d034 rg_d052 rg_d035 rg_d007 rg_d002 rg_d003 rg_d016 rg_d033 rg_d046 rg_d017 rg_d056 rg_d024 rg_d045 rg_d023 rg_d029 rg_d015 rg_d028 rg_d001 rg_d011 rg_d043 rg_d055 rg_d060 rg_d051 rg_d013 rg_d059 rg_d057 rg_d009 rg_d050 rg_d019 rg_d032 rg_d039 rg_d020 rg_d038 rg_d005 rg_d018 rg_d021 rg_d041 rg_d048 rg_d026 rg_d053 rg_d027 rg_d014 rg_d004"
+      },
+      "rg_q016": {
+        "bm25": "rg_d008 rg_d009 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+        "vectors": "rg_d008 rg_d052 rg_d012 rg_d045 rg_d050 rg_d006 rg_d043 rg_d033 rg_d057 rg_d003 rg_d055 rg_d031 rg_d015 rg_d042 rg_d029 rg_d051 rg_d027 rg_d005 rg_d035 rg_d056 rg_d017 rg_d026 rg_d010 rg_d004 rg_d013 rg_d046 rg_d030 rg_d019 rg_d002 rg_d007 rg_d060 rg_d053 rg_d024 rg_d032 rg_d001 rg_d059 rg_d011 rg_d044 rg_d054 rg_d058 rg_d038 rg_d014 rg_d028 rg_d047 rg_d021 rg_d009 rg_d023 rg_d041 rg_d037 rg_d039"
+      },
+      "rg_q017": {
+        "bm25": "rg_d009 rg_d042 rg_d022",
+        "vectors": "rg_d009 rg_d021 rg_d022 rg_d028 rg_d055 rg_d006 rg_d008 rg_d025 rg_d031 rg_d035 rg_d010 rg_d033 rg_d013 rg_d043 rg_d032 rg_d017 rg_d056 rg_d053 rg_d029 rg_d002 rg_d024 rg_d026 rg_d023 rg_d020 rg_d059 rg_d042 rg_d007 rg_d014 rg_d060 rg_d011 rg_d003 rg_d057 rg_d052 rg_d045 rg_d019 rg_d047 rg_d054 rg_d049 rg_d016 rg_d050 rg_d027 rg_d001 rg_d046 rg_d004 rg_d037 rg_d039 rg_d051 rg_d005 rg_d030 rg_d012"
+      },
+      "rg_q018": {
+        "bm25": "rg_d037 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d040 rg_d024 rg_d035 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d030 rg_d023 rg_d008 rg_d009 rg_d032 rg_d016 rg_d018 rg_d012 rg_d056 rg_d036 rg_d055 rg_d002 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d003 rg_d010 rg_d026 rg_d033 rg_d039 rg_d046 rg_d001 rg_d004",
+        "vectors": "rg_d009 rg_d033 rg_d053 rg_d002 rg_d035 rg_d006 rg_d032 rg_d031 rg_d042 rg_d022 rg_d043 rg_d021 rg_d025 rg_d013 rg_d045 rg_d055 rg_d026 rg_d023 rg_d050 rg_d029 rg_d005 rg_d028 rg_d008 rg_d007 rg_d059 rg_d046 rg_d060 rg_d015 rg_d003 rg_d056 rg_d017 rg_d001 rg_d037 rg_d010 rg_d054 rg_d020 rg_d052 rg_d014 rg_d019 rg_d004 rg_d024 rg_d048 rg_d011 rg_d027 rg_d057 rg_d044 rg_d047 rg_d051 rg_d018 rg_d012"
+      },
+      "rg_q019": {
+        "bm25": "rg_d010 rg_d042 rg_d028 rg_d024 rg_d052 rg_d006 rg_d047",
+        "vectors": "rg_d010 rg_d031 rg_d034 rg_d008 rg_d045 rg_d006 rg_d043 rg_d023 rg_d050 rg_d024 rg_d013 rg_d047 rg_d028 rg_d027 rg_d015 rg_d052 rg_d046 rg_d035 rg_d042 rg_d007 rg_d053 rg_d048 rg_d026 rg_d033 rg_d055 rg_d002 rg_d016 rg_d009 rg_d019 rg_d011 rg_d041 rg_d017 rg_d003 rg_d029 rg_d038 rg_d021 rg_d032 rg_d030 rg_d044 rg_d051 rg_d022 rg_d054 rg_d004 rg_d012 rg_d020 rg_d014 rg_d049 rg_d059 rg_d060 rg_d056"
+      },
+      "rg_q020": {
+        "bm25": "rg_d010 rg_d008 rg_d047 rg_d017 rg_d055 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d025 rg_d011 rg_d020 rg_d046 rg_d018",
+        "vectors": "rg_d010 rg_d031 rg_d008 rg_d035 rg_d006 rg_d042 rg_d034 rg_d045 rg_d055 rg_d052 rg_d053 rg_d026 rg_d007 rg_d015 rg_d014 rg_d028 rg_d011 rg_d012 rg_d013 rg_d003 rg_d019 rg_d024 rg_d023 rg_d017 rg_d016 rg_d046 rg_d043 rg_d009 rg_d054 rg_d048 rg_d032 rg_d033 rg_d050 rg_d029 rg_d027 rg_d041 rg_d002 rg_d047 rg_d021 rg_d060 rg_d004 rg_d056 rg_d020 rg_d037 rg_d057 rg_d051 rg_d059 rg_d025 rg_d022 rg_d018"
+      },
+      "rg_q021": {
+        "bm25": "rg_d011 rg_d057 rg_d008 rg_d013 rg_d014 rg_d015",
+        "vectors": "rg_d011 rg_d015 rg_d014 rg_d016 rg_d013 rg_d042 rg_d003 rg_d017 rg_d012 rg_d023 rg_d024 rg_d034 rg_d002 rg_d008 rg_d007 rg_d019 rg_d006 rg_d035 rg_d055 rg_d010 rg_d018 rg_d032 rg_d020 rg_d046 rg_d038 rg_d057 rg_d022 rg_d041 rg_d056 rg_d031 rg_d001 rg_d059 rg_d047 rg_d021 rg_d045 rg_d039 rg_d028 rg_d044 rg_d050 rg_d053 rg_d043 rg_d037 rg_d033 rg_d049 rg_d051 rg_d004 rg_d036 rg_d027 rg_d054 rg_d029"
+      },
+      "rg_q022": {
+        "bm25": "rg_d013 rg_d032 rg_d039 rg_d019 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d016 rg_d018",
+        "vectors": "rg_d011 rg_d014 rg_d013 rg_d015 rg_d017 rg_d042 rg_d012 rg_d057 rg_d032 rg_d020 rg_d059 rg_d055 rg_d053 rg_d016 rg_d045 rg_d044 rg_d008 rg_d023 rg_d034 rg_d033 rg_d003 rg_d031 rg_d038 rg_d052 rg_d050 rg_d060 rg_d018 rg_d010 rg_d006 rg_d056 rg_d019 rg_d025 rg_d041 rg_d007 rg_d002 rg_d035 rg_d043 rg_d039 rg_d021 rg_d028 rg_d046 rg_d054 rg_d001 rg_d047 rg_d005 rg_d029 rg_d022 rg_d004 rg_d037 rg_d024"
+      },
+      "rg_q023": {
+        "bm25": "rg_d012 rg_d042 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d012 rg_d006 rg_d042 rg_d008 rg_d011 rg_d015 rg_d014 rg_d003 rg_d055 rg_d033 rg_d013 rg_d051 rg_d034 rg_d052 rg_d045 rg_d002 rg_d019 rg_d029 rg_d007 rg_d016 rg_d031 rg_d032 rg_d017 rg_d053 rg_d010 rg_d047 rg_d035 rg_d004 rg_d038 rg_d018 rg_d056 rg_d001 rg_d028 rg_d030 rg_d043 rg_d044 rg_d027 rg_d005 rg_d026 rg_d041 rg_d060 rg_d057 rg_d023 rg_d024 rg_d059 rg_d009 rg_d037 rg_d039 rg_d020 rg_d021"
+      },
+      "rg_q024": {
+        "bm25": "rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d012 rg_d015 rg_d042 rg_d011 rg_d055 rg_d056 rg_d006 rg_d004 rg_d014 rg_d017 rg_d051 rg_d028 rg_d029 rg_d043 rg_d002 rg_d003 rg_d013 rg_d045 rg_d001 rg_d059 rg_d044 rg_d016 rg_d057 rg_d008 rg_d038 rg_d019 rg_d052 rg_d050 rg_d060 rg_d020 rg_d035 rg_d034 rg_d031 rg_d033 rg_d037 rg_d005 rg_d047 rg_d032 rg_d007 rg_d018 rg_d053 rg_d046 rg_d010 rg_d041 rg_d024 rg_d049 rg_d026 rg_d023 rg_d048 rg_d025"
+      },
+      "rg_q025": {
+        "bm25": "rg_d013 rg_d011 rg_d014 rg_d015 rg_d045 rg_d059 rg_d035 rg_d017 rg_d046",
+        "vectors": "rg_d013 rg_d015 rg_d031 rg_d042 rg_d043 rg_d055 rg_d002 rg_d007 rg_d035 rg_d045 rg_d014 rg_d010 rg_d008 rg_d047 rg_d006 rg_d046 rg_d011 rg_d050 rg_d059 rg_d017 rg_d052 rg_d023 rg_d034 rg_d053 rg_d020 rg_d019 rg_d012 rg_d056 rg_d049 rg_d003 rg_d033 rg_d026 rg_d009 rg_d038 rg_d028 rg_d057 rg_d051 rg_d044 rg_d018 rg_d041 rg_d039 rg_d022 rg_d058 rg_d004 rg_d048 rg_d037 rg_d024 rg_d021 rg_d032 rg_d001"
+      },
+      "rg_q026": {
+        "bm25": "rg_d007 rg_d042 rg_d045 rg_d035 rg_d017 rg_d059 rg_d011 rg_d046 rg_d026 rg_d036 rg_d034 rg_d006 rg_d047 rg_d009 rg_d023 rg_d032 rg_d038",
+        "vectors": "rg_d013 rg_d055 rg_d007 rg_d015 rg_d035 rg_d014 rg_d011 rg_d045 rg_d031 rg_d006 rg_d042 rg_d020 rg_d053 rg_d023 rg_d050 rg_d059 rg_d025 rg_d009 rg_d002 rg_d022 rg_d017 rg_d046 rg_d010 rg_d008 rg_d024 rg_d043 rg_d038 rg_d012 rg_d026 rg_d029 rg_d037 rg_d044 rg_d034 rg_d049 rg_d057 rg_d054 rg_d019 rg_d003 rg_d021 rg_d001 rg_d056 rg_d047 rg_d048 rg_d018 rg_d041 rg_d028 rg_d051 rg_d052 rg_d032 rg_d004"
+      },
+      "rg_q027": {
+        "bm25": "rg_d014 rg_d042 rg_d013 rg_d015 rg_d011",
+        "vectors": "rg_d014 rg_d011 rg_d015 rg_d013 rg_d012 rg_d042 rg_d017 rg_d041 rg_d016 rg_d055 rg_d020 rg_d053 rg_d045 rg_d018 rg_d003 rg_d010 rg_d043 rg_d034 rg_d006 rg_d044 rg_d023 rg_d019 rg_d009 rg_d038 rg_d060 rg_d021 rg_d037 rg_d059 rg_d049 rg_d057 rg_d058 rg_d052 rg_d032 rg_d031 rg_d054 rg_d008 rg_d051 rg_d022 rg_d001 rg_d056 rg_d026 rg_d027 rg_d007 rg_d035 rg_d028 rg_d002 rg_d046 rg_d029 rg_d033 rg_d039"
+      },
+      "rg_q028": {
+        "bm25": "rg_d014 rg_d019 rg_d032 rg_d060 rg_d029 rg_d035 rg_d033 rg_d020 rg_d018 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d014 rg_d011 rg_d042 rg_d015 rg_d012 rg_d003 rg_d013 rg_d017 rg_d045 rg_d018 rg_d008 rg_d055 rg_d038 rg_d006 rg_d002 rg_d050 rg_d019 rg_d020 rg_d041 rg_d010 rg_d035 rg_d051 rg_d009 rg_d032 rg_d044 rg_d060 rg_d057 rg_d059 rg_d053 rg_d023 rg_d007 rg_d046 rg_d034 rg_d029 rg_d016 rg_d056 rg_d031 rg_d033 rg_d052 rg_d028 rg_d005 rg_d001 rg_d049 rg_d027 rg_d039 rg_d043 rg_d022 rg_d021 rg_d037 rg_d026"
+      },
+      "rg_q029": {
+        "bm25": "rg_d015 rg_d013 rg_d056 rg_d045 rg_d044 rg_d014 rg_d011",
+        "vectors": "rg_d015 rg_d011 rg_d044 rg_d013 rg_d042 rg_d014 rg_d045 rg_d041 rg_d017 rg_d012 rg_d043 rg_d008 rg_d056 rg_d023 rg_d051 rg_d057 rg_d059 rg_d038 rg_d018 rg_d003 rg_d019 rg_d031 rg_d001 rg_d010 rg_d002 rg_d050 rg_d006 rg_d032 rg_d020 rg_d035 rg_d060 rg_d049 rg_d039 rg_d033 rg_d052 rg_d046 rg_d055 rg_d053 rg_d004 rg_d034 rg_d016 rg_d007 rg_d005 rg_d022 rg_d047 rg_d037 rg_d021 rg_d028 rg_d027 rg_d029"
+      },
+      "rg_q030": {
+        "bm25": "rg_d014 rg_d052 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d015 rg_d042 rg_d043 rg_d045 rg_d013 rg_d014 rg_d011 rg_d052 rg_d017 rg_d051 rg_d030 rg_d012 rg_d044 rg_d002 rg_d010 rg_d018 rg_d041 rg_d008 rg_d039 rg_d020 rg_d028 rg_d057 rg_d056 rg_d031 rg_d001 rg_d059 rg_d033 rg_d016 rg_d003 rg_d006 rg_d032 rg_d026 rg_d053 rg_d004 rg_d037 rg_d029 rg_d005 rg_d047 rg_d046 rg_d038 rg_d048 rg_d021 rg_d027 rg_d049 rg_d023 rg_d050 rg_d055 rg_d022 rg_d035 rg_d034"
+      },
+      "rg_q031": {
+        "bm25": "rg_d017 rg_d016",
+        "vectors": "rg_d016 rg_d017 rg_d056 rg_d011 rg_d046 rg_d020 rg_d035 rg_d042 rg_d045 rg_d015 rg_d050 rg_d057 rg_d018 rg_d006 rg_d048 rg_d032 rg_d059 rg_d053 rg_d052 rg_d002 rg_d043 rg_d049 rg_d031 rg_d051 rg_d007 rg_d008 rg_d058 rg_d047 rg_d004 rg_d010 rg_d003 rg_d028 rg_d060 rg_d039 rg_d013 rg_d019 rg_d026 rg_d033 rg_d001 rg_d044 rg_d034 rg_d041 rg_d029 rg_d009 rg_d022 rg_d027 rg_d021 rg_d055 rg_d012 rg_d014"
+      },
+      "rg_q032": {
+        "bm25": "rg_d042 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+        "vectors": "rg_d016 rg_d017 rg_d020 rg_d011 rg_d015 rg_d042 rg_d018 rg_d056 rg_d045 rg_d014 rg_d043 rg_d032 rg_d006 rg_d008 rg_d050 rg_d057 rg_d039 rg_d046 rg_d051 rg_d007 rg_d013 rg_d052 rg_d002 rg_d060 rg_d003 rg_d012 rg_d059 rg_d010 rg_d033 rg_d019 rg_d035 rg_d031 rg_d044 rg_d053 rg_d041 rg_d048 rg_d028 rg_d047 rg_d054 rg_d034 rg_d004 rg_d058 rg_d049 rg_d022 rg_d021 rg_d029 rg_d009 rg_d027 rg_d024 rg_d026"
+      },
+      "rg_q033": {
+        "bm25": "rg_d017 rg_d044 rg_d042",
+        "vectors": "rg_d017 rg_d008 rg_d046 rg_d050 rg_d045 rg_d020 rg_d018 rg_d051 rg_d010 rg_d044 rg_d059 rg_d015 rg_d031 rg_d047 rg_d060 rg_d011 rg_d052 rg_d035 rg_d016 rg_d002 rg_d043 rg_d042 rg_d013 rg_d033 rg_d057 rg_d056 rg_d048 rg_d034 rg_d012 rg_d053 rg_d039 rg_d006 rg_d032 rg_d041 rg_d001 rg_d028 rg_d014 rg_d027 rg_d003 rg_d004 rg_d038 rg_d019 rg_d049 rg_d026 rg_d023 rg_d029 rg_d055 rg_d009 rg_d007 rg_d021"
+      },
+      "rg_q034": {
+        "bm25": "rg_d017 rg_d035 rg_d045 rg_d059 rg_d011 rg_d046 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+        "vectors": "rg_d017 rg_d020 rg_d016 rg_d011 rg_d015 rg_d056 rg_d059 rg_d051 rg_d050 rg_d013 rg_d046 rg_d032 rg_d045 rg_d039 rg_d035 rg_d057 rg_d042 rg_d033 rg_d044 rg_d018 rg_d031 rg_d007 rg_d009 rg_d002 rg_d053 rg_d014 rg_d060 rg_d022 rg_d049 rg_d008 rg_d006 rg_d055 rg_d019 rg_d041 rg_d004 rg_d012 rg_d052 rg_d024 rg_d029 rg_d010 rg_d048 rg_d025 rg_d026 rg_d047 rg_d043 rg_d021 rg_d005 rg_d003 rg_d027 rg_d034"
+      },
+      "rg_q035": {
+        "bm25": "rg_d018 rg_d042 rg_d034 rg_d051 rg_d012 rg_d006 rg_d046 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d039 rg_d047 rg_d023 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d018 rg_d046 rg_d042 rg_d051 rg_d017 rg_d016 rg_d057 rg_d058 rg_d015 rg_d050 rg_d006 rg_d059 rg_d045 rg_d041 rg_d002 rg_d019 rg_d035 rg_d044 rg_d032 rg_d011 rg_d060 rg_d020 rg_d031 rg_d049 rg_d007 rg_d012 rg_d053 rg_d056 rg_d001 rg_d043 rg_d003 rg_d004 rg_d027 rg_d033 rg_d039 rg_d047 rg_d052 rg_d014 rg_d013 rg_d026 rg_d048 rg_d025 rg_d010 rg_d038 rg_d023 rg_d005 rg_d008 rg_d034 rg_d028 rg_d055"
+      },
+      "rg_q036": {
+        "bm25": "rg_d032 rg_d019 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d016 rg_d018",
+        "vectors": "rg_d018 rg_d042 rg_d043 rg_d003 rg_d053 rg_d019 rg_d045 rg_d006 rg_d014 rg_d020 rg_d008 rg_d017 rg_d031 rg_d007 rg_d035 rg_d016 rg_d052 rg_d015 rg_d013 rg_d011 rg_d046 rg_d050 rg_d028 rg_d055 rg_d032 rg_d049 rg_d027 rg_d005 rg_d009 rg_d012 rg_d002 rg_d022 rg_d041 rg_d010 rg_d021 rg_d056 rg_d059 rg_d047 rg_d001 rg_d051 rg_d029 rg_d033 rg_d054 rg_d026 rg_d044 rg_d039 rg_d038 rg_d048 rg_d058 rg_d025"
+      },
+      "rg_q037": {
+        "bm25": "rg_d017 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+        "vectors": "rg_d019 rg_d042 rg_d017 rg_d003 rg_d028 rg_d008 rg_d043 rg_d006 rg_d045 rg_d052 rg_d015 rg_d053 rg_d010 rg_d011 rg_d024 rg_d050 rg_d026 rg_d027 rg_d007 rg_d023 rg_d035 rg_d013 rg_d046 rg_d031 rg_d002 rg_d059 rg_d016 rg_d055 rg_d041 rg_d051 rg_d012 rg_d029 rg_d056 rg_d022 rg_d018 rg_d009 rg_d047 rg_d001 rg_d057 rg_d021 rg_d033 rg_d034 rg_d030 rg_d004 rg_d048 rg_d020 rg_d014 rg_d049 rg_d044 rg_d054"
+      },
+      "rg_q038": {
+        "bm25": "rg_d033 rg_d022 rg_d009 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d055 rg_d019 rg_d028 rg_d013 rg_d009 rg_d021 rg_d043 rg_d053 rg_d007 rg_d006 rg_d022 rg_d011 rg_d042 rg_d015 rg_d024 rg_d010 rg_d023 rg_d026 rg_d008 rg_d050 rg_d045 rg_d003 rg_d017 rg_d031 rg_d044 rg_d052 rg_d005 rg_d054 rg_d032 rg_d035 rg_d037 rg_d056 rg_d057 rg_d014 rg_d030 rg_d012 rg_d033 rg_d025 rg_d002 rg_d020 rg_d051 rg_d047 rg_d059 rg_d041 rg_d027 rg_d046 rg_d018 rg_d029 rg_d048 rg_d060"
+      },
+      "rg_q039": {
+        "bm25": "rg_d020",
+        "vectors": "rg_d020 rg_d017 rg_d045 rg_d016 rg_d046 rg_d018 rg_d042 rg_d032 rg_d044 rg_d015 rg_d059 rg_d060 rg_d053 rg_d056 rg_d050 rg_d041 rg_d043 rg_d051 rg_d029 rg_d011 rg_d049 rg_d031 rg_d014 rg_d013 rg_d038 rg_d057 rg_d047 rg_d022 rg_d019 rg_d008 rg_d007 rg_d039 rg_d009 rg_d003 rg_d002 rg_d034 rg_d028 rg_d055 rg_d052 rg_d026 rg_d048 rg_d035 rg_d033 rg_d001 rg_d012 rg_d010 rg_d004 rg_d006 rg_d058 rg_d025"
+      },
+      "rg_q040": {
+        "bm25": "rg_d009 rg_d046 rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+        "vectors": "rg_d020 rg_d017 rg_d015 rg_d045 rg_d011 rg_d046 rg_d050 rg_d013 rg_d042 rg_d016 rg_d043 rg_d044 rg_d051 rg_d018 rg_d032 rg_d056 rg_d059 rg_d048 rg_d010 rg_d008 rg_d014 rg_d060 rg_d002 rg_d031 rg_d041 rg_d027 rg_d019 rg_d006 rg_d026 rg_d053 rg_d003 rg_d057 rg_d025 rg_d022 rg_d007 rg_d029 rg_d052 rg_d001 rg_d058 rg_d054 rg_d024 rg_d039 rg_d028 rg_d055 rg_d035 rg_d004 rg_d012 rg_d023 rg_d033 rg_d038"
+      },
+      "rg_q041": {
+        "bm25": "rg_d021 rg_d022",
+        "vectors": "rg_d021 rg_d022 rg_d023 rg_d028 rg_d009 rg_d003 rg_d053 rg_d024 rg_d010 rg_d025 rg_d013 rg_d043 rg_d045 rg_d011 rg_d026 rg_d006 rg_d007 rg_d055 rg_d041 rg_d019 rg_d042 rg_d008 rg_d002 rg_d046 rg_d017 rg_d044 rg_d033 rg_d059 rg_d035 rg_d031 rg_d016 rg_d056 rg_d001 rg_d047 rg_d014 rg_d040 rg_d054 rg_d012 rg_d015 rg_d051 rg_d039 rg_d032 rg_d052 rg_d057 rg_d018 rg_d030 rg_d034 rg_d060 rg_d037 rg_d020"
+      },
+      "rg_q042": {
+        "bm25": "rg_d022 rg_d021 rg_d026 rg_d009 rg_d025 rg_d023 rg_d032",
+        "vectors": "rg_d021 rg_d023 rg_d022 rg_d024 rg_d025 rg_d013 rg_d009 rg_d053 rg_d050 rg_d028 rg_d035 rg_d031 rg_d059 rg_d045 rg_d011 rg_d037 rg_d055 rg_d046 rg_d017 rg_d015 rg_d026 rg_d044 rg_d007 rg_d019 rg_d010 rg_d057 rg_d043 rg_d032 rg_d042 rg_d002 rg_d054 rg_d008 rg_d052 rg_d005 rg_d029 rg_d039 rg_d027 rg_d006 rg_d004 rg_d003 rg_d038 rg_d020 rg_d041 rg_d033 rg_d034 rg_d030 rg_d047 rg_d056 rg_d049 rg_d014"
+      },
+      "rg_q043": {
+        "bm25": "rg_d022 rg_d024 rg_d021 rg_d023 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d022 rg_d021 rg_d024 rg_d023 rg_d055 rg_d025 rg_d054 rg_d037 rg_d009 rg_d002 rg_d043 rg_d053 rg_d004 rg_d013 rg_d039 rg_d028 rg_d007 rg_d005 rg_d059 rg_d057 rg_d019 rg_d011 rg_d035 rg_d045 rg_d041 rg_d040 rg_d046 rg_d049 rg_d010 rg_d008 rg_d056 rg_d026 rg_d034 rg_d044 rg_d029 rg_d017 rg_d031 rg_d050 rg_d015 rg_d003 rg_d060 rg_d027 rg_d020 rg_d058 rg_d038 rg_d030 rg_d033 rg_d001 rg_d032 rg_d016"
+      },
+      "rg_q044": {
+        "bm25": "rg_d023 rg_d042 rg_d007 rg_d026 rg_d045 rg_d036 rg_d035 rg_d034 rg_d006 rg_d047 rg_d009 rg_d017 rg_d032 rg_d038 rg_d012 rg_d056 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d010 rg_d025 rg_d033 rg_d039 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d022 rg_d024 rg_d025 rg_d023 rg_d021 rg_d054 rg_d037 rg_d055 rg_d009 rg_d053 rg_d013 rg_d043 rg_d019 rg_d028 rg_d004 rg_d002 rg_d026 rg_d051 rg_d005 rg_d027 rg_d007 rg_d038 rg_d006 rg_d039 rg_d030 rg_d011 rg_d059 rg_d020 rg_d035 rg_d057 rg_d032 rg_d015 rg_d056 rg_d001 rg_d046 rg_d033 rg_d029 rg_d012 rg_d044 rg_d050 rg_d047 rg_d060 rg_d010 rg_d040 rg_d031 rg_d058 rg_d052 rg_d003 rg_d008 rg_d036"
+      },
+      "rg_q045": {
+        "bm25": "rg_d023 rg_d022 rg_d021",
+        "vectors": "rg_d023 rg_d024 rg_d022 rg_d021 rg_d034 rg_d010 rg_d011 rg_d035 rg_d028 rg_d046 rg_d019 rg_d007 rg_d042 rg_d008 rg_d013 rg_d047 rg_d002 rg_d031 rg_d041 rg_d006 rg_d037 rg_d003 rg_d016 rg_d055 rg_d053 rg_d015 rg_d038 rg_d045 rg_d025 rg_d054 rg_d039 rg_d017 rg_d033 rg_d059 rg_d009 rg_d052 rg_d043 rg_d012 rg_d049 rg_d048 rg_d018 rg_d060 rg_d014 rg_d050 rg_d026 rg_d051 rg_d057 rg_d029 rg_d040 rg_d020"
+      },
+      "rg_q046": {
+        "bm25": "rg_d029 rg_d034 rg_d042 rg_d007 rg_d047 rg_d035 rg_d038 rg_d006 rg_d009 rg_d023 rg_d032 rg_d026 rg_d045 rg_d036 rg_d017 rg_d050 rg_d027 rg_d031 rg_d024 rg_d040 rg_d025 rg_d015 rg_d008 rg_d030 rg_d016 rg_d018",
+        "vectors": "rg_d023 rg_d034 rg_d024 rg_d037 rg_d022 rg_d021 rg_d010 rg_d042 rg_d002 rg_d056 rg_d025 rg_d039 rg_d028 rg_d046 rg_d038 rg_d019 rg_d047 rg_d013 rg_d031 rg_d015 rg_d026 rg_d012 rg_d016 rg_d057 rg_d051 rg_d008 rg_d006 rg_d059 rg_d011 rg_d053 rg_d060 rg_d041 rg_d035 rg_d003 rg_d001 rg_d033 rg_d055 rg_d040 rg_d005 rg_d043 rg_d050 rg_d017 rg_d007 rg_d032 rg_d054 rg_d045 rg_d052 rg_d009 rg_d049 rg_d018"
+      },
+      "rg_q047": {
+        "bm25": "rg_d024 rg_d022",
+        "vectors": "rg_d024 rg_d022 rg_d054 rg_d023 rg_d021 rg_d002 rg_d004 rg_d055 rg_d053 rg_d037 rg_d034 rg_d028 rg_d057 rg_d043 rg_d019 rg_d011 rg_d010 rg_d025 rg_d009 rg_d046 rg_d005 rg_d008 rg_d015 rg_d029 rg_d031 rg_d013 rg_d030 rg_d027 rg_d039 rg_d003 rg_d050 rg_d051 rg_d035 rg_d049 rg_d038 rg_d059 rg_d040 rg_d016 rg_d044 rg_d032 rg_d041 rg_d007 rg_d001 rg_d017 rg_d052 rg_d012 rg_d020 rg_d026 rg_d006 rg_d056"
+      },
+      "rg_q048": {
+        "bm25": "rg_d042 rg_d016 rg_d054 rg_d038 rg_d026",
+        "vectors": "rg_d024 rg_d023 rg_d025 rg_d021 rg_d013 rg_d007 rg_d022 rg_d043 rg_d019 rg_d028 rg_d053 rg_d034 rg_d006 rg_d046 rg_d055 rg_d002 rg_d035 rg_d026 rg_d009 rg_d047 rg_d059 rg_d010 rg_d033 rg_d037 rg_d049 rg_d051 rg_d031 rg_d054 rg_d060 rg_d057 rg_d011 rg_d041 rg_d001 rg_d045 rg_d042 rg_d017 rg_d029 rg_d008 rg_d052 rg_d039 rg_d005 rg_d050 rg_d004 rg_d056 rg_d048 rg_d027 rg_d015 rg_d018 rg_d016 rg_d044"
+      },
+      "rg_q049": {
+        "bm25": "rg_d025 rg_d051 rg_d005 rg_d027 rg_d043 rg_d028 rg_d037 rg_d010 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+        "vectors": "rg_d025 rg_d023 rg_d021 rg_d022 rg_d013 rg_d049 rg_d009 rg_d059 rg_d051 rg_d037 rg_d057 rg_d060 rg_d024 rg_d043 rg_d053 rg_d026 rg_d056 rg_d028 rg_d005 rg_d015 rg_d046 rg_d002 rg_d033 rg_d048 rg_d038 rg_d020 rg_d041 rg_d017 rg_d027 rg_d010 rg_d055 rg_d050 rg_d006 rg_d019 rg_d001 rg_d039 rg_d032 rg_d054 rg_d007 rg_d045 rg_d058 rg_d035 rg_d044 rg_d040 rg_d018 rg_d042 rg_d011 rg_d052 rg_d004 rg_d008"
+      },
+      "rg_q050": {
+        "bm25": "rg_d007 rg_d037 rg_d032 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d013 rg_d037 rg_d021 rg_d034 rg_d023 rg_d025 rg_d053 rg_d022 rg_d012 rg_d055 rg_d039 rg_d007 rg_d038 rg_d046 rg_d015 rg_d032 rg_d049 rg_d009 rg_d051 rg_d011 rg_d059 rg_d026 rg_d056 rg_d024 rg_d002 rg_d028 rg_d045 rg_d043 rg_d033 rg_d010 rg_d047 rg_d014 rg_d006 rg_d057 rg_d020 rg_d048 rg_d054 rg_d040 rg_d035 rg_d042 rg_d060 rg_d018 rg_d041 rg_d036 rg_d017 rg_d029 rg_d050 rg_d044 rg_d004 rg_d019"
+      },
+      "rg_q051": {
+        "bm25": "rg_d026 rg_d042 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d026 rg_d053 rg_d028 rg_d002 rg_d003 rg_d030 rg_d004 rg_d043 rg_d006 rg_d055 rg_d033 rg_d037 rg_d052 rg_d045 rg_d042 rg_d013 rg_d029 rg_d001 rg_d009 rg_d027 rg_d010 rg_d019 rg_d031 rg_d015 rg_d008 rg_d021 rg_d050 rg_d060 rg_d005 rg_d022 rg_d057 rg_d054 rg_d035 rg_d056 rg_d023 rg_d011 rg_d048 rg_d046 rg_d038 rg_d018 rg_d012 rg_d032 rg_d049 rg_d007 rg_d024 rg_d051 rg_d025 rg_d058 rg_d041 rg_d044"
+      },
+      "rg_q052": {
+        "bm25": "rg_d052 rg_d004 rg_d054 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d016",
+        "vectors": "rg_d053 rg_d030 rg_d026 rg_d028 rg_d003 rg_d052 rg_d033 rg_d002 rg_d008 rg_d006 rg_d004 rg_d045 rg_d043 rg_d055 rg_d021 rg_d024 rg_d022 rg_d019 rg_d027 rg_d029 rg_d037 rg_d023 rg_d031 rg_d015 rg_d005 rg_d054 rg_d009 rg_d042 rg_d046 rg_d010 rg_d057 rg_d056 rg_d035 rg_d017 rg_d013 rg_d034 rg_d001 rg_d012 rg_d058 rg_d032 rg_d041 rg_d047 rg_d039 rg_d018 rg_d050 rg_d051 rg_d016 rg_d059 rg_d011 rg_d048"
+      },
+      "rg_q053": {
+        "bm25": "rg_d027 rg_d042",
+        "vectors": "rg_d027 rg_d030 rg_d054 rg_d028 rg_d010 rg_d053 rg_d008 rg_d026 rg_d024 rg_d052 rg_d055 rg_d045 rg_d006 rg_d031 rg_d050 rg_d003 rg_d029 rg_d037 rg_d022 rg_d043 rg_d005 rg_d044 rg_d057 rg_d058 rg_d002 rg_d001 rg_d021 rg_d012 rg_d015 rg_d046 rg_d059 rg_d051 rg_d056 rg_d011 rg_d048 rg_d013 rg_d009 rg_d004 rg_d041 rg_d035 rg_d033 rg_d020 rg_d032 rg_d018 rg_d017 rg_d019 rg_d023 rg_d034 rg_d025 rg_d049"
+      },
+      "rg_q054": {
+        "bm25": "rg_d003 rg_d024 rg_d022 rg_d021 rg_d029 rg_d026 rg_d033 rg_d004 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d007 rg_d010 rg_d025 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d016",
+        "vectors": "rg_d027 rg_d030 rg_d003 rg_d026 rg_d037 rg_d004 rg_d022 rg_d053 rg_d029 rg_d058 rg_d052 rg_d001 rg_d006 rg_d024 rg_d028 rg_d043 rg_d008 rg_d021 rg_d005 rg_d045 rg_d050 rg_d055 rg_d002 rg_d009 rg_d012 rg_d054 rg_d013 rg_d019 rg_d010 rg_d051 rg_d046 rg_d032 rg_d056 rg_d057 rg_d011 rg_d023 rg_d025 rg_d059 rg_d033 rg_d015 rg_d020 rg_d017 rg_d018 rg_d044 rg_d038 rg_d007 rg_d042 rg_d035 rg_d031 rg_d048"
+      },
+      "rg_q055": {
+        "bm25": "rg_d028 rg_d002",
+        "vectors": "rg_d028 rg_d006 rg_d024 rg_d007 rg_d035 rg_d002 rg_d023 rg_d008 rg_d019 rg_d021 rg_d009 rg_d010 rg_d031 rg_d003 rg_d026 rg_d043 rg_d013 rg_d047 rg_d034 rg_d042 rg_d022 rg_d011 rg_d055 rg_d052 rg_d029 rg_d030 rg_d046 rg_d001 rg_d053 rg_d038 rg_d045 rg_d004 rg_d027 rg_d016 rg_d054 rg_d033 rg_d059 rg_d017 rg_d012 rg_d048 rg_d057 rg_d015 rg_d050 rg_d005 rg_d056 rg_d040 rg_d041 rg_d020 rg_d051 rg_d018"
+      },
+      "rg_q056": {
+        "bm25": "",
+        "vectors": "rg_d026 rg_d035 rg_d028 rg_d042 rg_d006 rg_d053 rg_d029 rg_d043 rg_d015 rg_d007 rg_d052 rg_d031 rg_d002 rg_d009 rg_d045 rg_d004 rg_d027 rg_d008 rg_d011 rg_d019 rg_d032 rg_d003 rg_d013 rg_d020 rg_d047 rg_d056 rg_d017 rg_d030 rg_d012 rg_d041 rg_d051 rg_d001 rg_d034 rg_d033 rg_d055 rg_d060 rg_d038 rg_d018 rg_d059 rg_d057 rg_d054 rg_d046 rg_d050 rg_d010 rg_d044 rg_d016 rg_d023 rg_d058 rg_d037 rg_d025"
+      },
+      "rg_q057": {
+        "bm25": "rg_d029 rg_d030 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+        "vectors": "rg_d029 rg_d053 rg_d008 rg_d026 rg_d043 rg_d028 rg_d030 rg_d003 rg_d052 rg_d045 rg_d027 rg_d004 rg_d002 rg_d055 rg_d001 rg_d031 rg_d054 rg_d060 rg_d005 rg_d009 rg_d032 rg_d033 rg_d010 rg_d017 rg_d035 rg_d006 rg_d022 rg_d015 rg_d042 rg_d046 rg_d041 rg_d021 rg_d056 rg_d059 rg_d024 rg_d013 rg_d037 rg_d023 rg_d057 rg_d050 rg_d038 rg_d012 rg_d020 rg_d034 rg_d014 rg_d007 rg_d058 rg_d049 rg_d011 rg_d018"
+      },
+      "rg_q058": {
+        "bm25": "rg_d049 rg_d018 rg_d024 rg_d010 rg_d047",
+        "vectors": "rg_d029 rg_d053 rg_d003 rg_d008 rg_d028 rg_d043 rg_d052 rg_d026 rg_d027 rg_d045 rg_d055 rg_d031 rg_d056 rg_d042 rg_d015 rg_d020 rg_d033 rg_d002 rg_d054 rg_d001 rg_d012 rg_d017 rg_d059 rg_d035 rg_d010 rg_d009 rg_d051 rg_d030 rg_d013 rg_d046 rg_d006 rg_d057 rg_d004 rg_d047 rg_d039 rg_d024 rg_d014 rg_d005 rg_d060 rg_d050 rg_d007 rg_d016 rg_d032 rg_d038 rg_d019 rg_d023 rg_d022 rg_d011 rg_d058 rg_d034"
+      },
+      "rg_q059": {
+        "bm25": "rg_d030 rg_d042",
+        "vectors": "rg_d030 rg_d026 rg_d027 rg_d054 rg_d053 rg_d028 rg_d045 rg_d012 rg_d006 rg_d003 rg_d033 rg_d029 rg_d021 rg_d057 rg_d024 rg_d037 rg_d005 rg_d055 rg_d004 rg_d008 rg_d001 rg_d041 rg_d058 rg_d022 rg_d018 rg_d002 rg_d052 rg_d051 rg_d046 rg_d009 rg_d043 rg_d023 rg_d032 rg_d044 rg_d059 rg_d010 rg_d031 rg_d040 rg_d034 rg_d015 rg_d056 rg_d048 rg_d047 rg_d038 rg_d060 rg_d011 rg_d019 rg_d049 rg_d036 rg_d020"
+      },
+      "rg_q060": {
+        "bm25": "rg_d052 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d030 rg_d026 rg_d004 rg_d027 rg_d028 rg_d053 rg_d002 rg_d029 rg_d001 rg_d052 rg_d006 rg_d003 rg_d037 rg_d057 rg_d045 rg_d012 rg_d015 rg_d058 rg_d022 rg_d008 rg_d033 rg_d024 rg_d039 rg_d011 rg_d042 rg_d043 rg_d050 rg_d005 rg_d031 rg_d021 rg_d019 rg_d035 rg_d017 rg_d056 rg_d010 rg_d055 rg_d054 rg_d032 rg_d038 rg_d044 rg_d051 rg_d023 rg_d048 rg_d041 rg_d060 rg_d059 rg_d018 rg_d013 rg_d049 rg_d046"
+      },
+      "rg_q061": {
+        "bm25": "rg_d031 rg_d045 rg_d044 rg_d013 rg_d015",
+        "vectors": "rg_d031 rg_d035 rg_d045 rg_d050 rg_d006 rg_d008 rg_d010 rg_d002 rg_d044 rg_d033 rg_d007 rg_d013 rg_d015 rg_d032 rg_d046 rg_d042 rg_d005 rg_d001 rg_d034 rg_d028 rg_d052 rg_d055 rg_d056 rg_d026 rg_d017 rg_d053 rg_d020 rg_d047 rg_d004 rg_d043 rg_d027 rg_d048 rg_d057 rg_d041 rg_d024 rg_d009 rg_d059 rg_d054 rg_d039 rg_d011 rg_d051 rg_d022 rg_d049 rg_d060 rg_d029 rg_d023 rg_d016 rg_d012 rg_d037 rg_d025"
+      },
+      "rg_q062": {
+        "bm25": "rg_d001 rg_d002 rg_d045 rg_d005 rg_d012 rg_d044 rg_d016 rg_d013 rg_d015",
+        "vectors": "rg_d031 rg_d035 rg_d045 rg_d010 rg_d008 rg_d002 rg_d034 rg_d006 rg_d053 rg_d033 rg_d013 rg_d042 rg_d015 rg_d052 rg_d005 rg_d050 rg_d001 rg_d032 rg_d056 rg_d055 rg_d043 rg_d044 rg_d003 rg_d017 rg_d012 rg_d028 rg_d009 rg_d046 rg_d026 rg_d011 rg_d047 rg_d007 rg_d059 rg_d019 rg_d027 rg_d004 rg_d041 rg_d020 rg_d023 rg_d016 rg_d057 rg_d048 rg_d021 rg_d039 rg_d037 rg_d049 rg_d022 rg_d014 rg_d018 rg_d060"
+      },
+      "rg_q063": {
+        "bm25": "rg_d044 rg_d011 rg_d032 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d032 rg_d033 rg_d031 rg_d035 rg_d017 rg_d020 rg_d056 rg_d011 rg_d047 rg_d006 rg_d015 rg_d022 rg_d008 rg_d060 rg_d057 rg_d009 rg_d013 rg_d042 rg_d010 rg_d051 rg_d021 rg_d046 rg_d059 rg_d028 rg_d002 rg_d045 rg_d007 rg_d053 rg_d025 rg_d044 rg_d018 rg_d012 rg_d034 rg_d016 rg_d026 rg_d029 rg_d055 rg_d023 rg_d050 rg_d043 rg_d052 rg_d038 rg_d001 rg_d049 rg_d005 rg_d041 rg_d003 rg_d004 rg_d019 rg_d058"
+      },
+      "rg_q064": {
+        "bm25": "rg_d032 rg_d037 rg_d050 rg_d044 rg_d005",
+        "vectors": "rg_d032 rg_d059 rg_d053 rg_d035 rg_d031 rg_d033 rg_d056 rg_d017 rg_d005 rg_d025 rg_d044 rg_d045 rg_d021 rg_d057 rg_d046 rg_d015 rg_d020 rg_d022 rg_d047 rg_d013 rg_d024 rg_d050 rg_d014 rg_d018 rg_d034 rg_d011 rg_d051 rg_d002 rg_d043 rg_d029 rg_d052 rg_d007 rg_d008 rg_d048 rg_d060 rg_d010 rg_d039 rg_d009 rg_d016 rg_d012 rg_d023 rg_d054 rg_d004 rg_d055 rg_d026 rg_d028 rg_d019 rg_d049 rg_d030 rg_d037"
+      },
+      "rg_q065": {
+        "bm25": "rg_d033 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d033 rg_d006 rg_d031 rg_d012 rg_d010 rg_d008 rg_d050 rg_d052 rg_d035 rg_d034 rg_d053 rg_d032 rg_d030 rg_d057 rg_d046 rg_d029 rg_d026 rg_d045 rg_d047 rg_d054 rg_d043 rg_d013 rg_d056 rg_d059 rg_d049 rg_d002 rg_d042 rg_d015 rg_d003 rg_d009 rg_d039 rg_d007 rg_d028 rg_d055 rg_d017 rg_d048 rg_d016 rg_d051 rg_d038 rg_d060 rg_d018 rg_d001 rg_d004 rg_d011 rg_d021 rg_d041 rg_d058 rg_d044 rg_d023 rg_d027"
+      },
+      "rg_q066": {
+        "bm25": "rg_d050 rg_d057 rg_d042 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d033 rg_d006 rg_d008 rg_d052 rg_d031 rg_d053 rg_d012 rg_d026 rg_d045 rg_d042 rg_d059 rg_d032 rg_d043 rg_d050 rg_d055 rg_d035 rg_d029 rg_d056 rg_d017 rg_d054 rg_d046 rg_d057 rg_d001 rg_d009 rg_d010 rg_d034 rg_d021 rg_d047 rg_d030 rg_d051 rg_d007 rg_d002 rg_d003 rg_d028 rg_d049 rg_d022 rg_d005 rg_d004 rg_d041 rg_d013 rg_d015 rg_d018 rg_d020 rg_d027 rg_d016 rg_d011 rg_d044 rg_d039 rg_d060 rg_d023"
+      },
+      "rg_q067": {
+        "bm25": "rg_d034",
+        "vectors": "rg_d034 rg_d024 rg_d023 rg_d010 rg_d016 rg_d008 rg_d031 rg_d002 rg_d035 rg_d011 rg_d012 rg_d047 rg_d038 rg_d046 rg_d019 rg_d022 rg_d021 rg_d037 rg_d055 rg_d033 rg_d042 rg_d032 rg_d006 rg_d007 rg_d028 rg_d015 rg_d059 rg_d053 rg_d013 rg_d054 rg_d017 rg_d060 rg_d014 rg_d051 rg_d041 rg_d056 rg_d043 rg_d003 rg_d045 rg_d040 rg_d039 rg_d044 rg_d057 rg_d020 rg_d052 rg_d029 rg_d048 rg_d050 rg_d025 rg_d018"
+      },
+      "rg_q068": {
+        "bm25": "rg_d042",
+        "vectors": "rg_d034 rg_d010 rg_d024 rg_d016 rg_d012 rg_d023 rg_d031 rg_d059 rg_d033 rg_d047 rg_d006 rg_d008 rg_d046 rg_d053 rg_d035 rg_d019 rg_d042 rg_d057 rg_d002 rg_d013 rg_d007 rg_d011 rg_d043 rg_d014 rg_d015 rg_d025 rg_d045 rg_d003 rg_d032 rg_d021 rg_d060 rg_d055 rg_d056 rg_d005 rg_d028 rg_d044 rg_d048 rg_d017 rg_d049 rg_d018 rg_d038 rg_d022 rg_d039 rg_d051 rg_d050 rg_d054 rg_d037 rg_d027 rg_d041 rg_d001"
+      },
+      "rg_q069": {
+        "bm25": "rg_d035 rg_d046 rg_d047 rg_d048 rg_d024 rg_d007 rg_d026 rg_d006 rg_d045 rg_d059 rg_d011 rg_d017",
+        "vectors": "rg_d035 rg_d031 rg_d007 rg_d006 rg_d046 rg_d034 rg_d010 rg_d047 rg_d008 rg_d013 rg_d052 rg_d042 rg_d011 rg_d024 rg_d002 rg_d023 rg_d028 rg_d033 rg_d016 rg_d019 rg_d032 rg_d050 rg_d009 rg_d045 rg_d055 rg_d018 rg_d003 rg_d017 rg_d053 rg_d015 rg_d005 rg_d057 rg_d026 rg_d048 rg_d012 rg_d056 rg_d027 rg_d059 rg_d022 rg_d029 rg_d041 rg_d001 rg_d021 rg_d020 rg_d043 rg_d014 rg_d004 rg_d060 rg_d051 rg_d058"
+      },
+      "rg_q070": {
+        "bm25": "rg_d011 rg_d045 rg_d059 rg_d035 rg_d017 rg_d046",
+        "vectors": "rg_d035 rg_d031 rg_d008 rg_d042 rg_d050 rg_d002 rg_d046 rg_d010 rg_d006 rg_d009 rg_d011 rg_d055 rg_d013 rg_d023 rg_d045 rg_d017 rg_d003 rg_d047 rg_d007 rg_d033 rg_d028 rg_d056 rg_d019 rg_d005 rg_d015 rg_d020 rg_d052 rg_d032 rg_d059 rg_d016 rg_d012 rg_d034 rg_d057 rg_d053 rg_d029 rg_d051 rg_d001 rg_d025 rg_d026 rg_d004 rg_d043 rg_d060 rg_d044 rg_d027 rg_d048 rg_d039 rg_d014 rg_d022 rg_d024 rg_d041"
+      },
+      "rg_q071": {
+        "bm25": "rg_d036 rg_d042 rg_d046 rg_d057 rg_d012 rg_d056 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d036 rg_d057 rg_d001 rg_d002 rg_d038 rg_d040 rg_d056 rg_d043 rg_d049 rg_d028 rg_d005 rg_d059 rg_d042 rg_d055 rg_d004 rg_d051 rg_d029 rg_d007 rg_d025 rg_d060 rg_d006 rg_d041 rg_d016 rg_d050 rg_d037 rg_d046 rg_d045 rg_d017 rg_d058 rg_d015 rg_d047 rg_d013 rg_d003 rg_d039 rg_d023 rg_d048 rg_d020 rg_d012 rg_d008 rg_d044 rg_d027 rg_d021 rg_d011 rg_d010 rg_d024 rg_d030 rg_d026 rg_d054 rg_d033 rg_d034"
+      },
+      "rg_q072": {
+        "bm25": "rg_d041 rg_d007 rg_d026 rg_d045 rg_d042 rg_d035 rg_d036 rg_d034 rg_d006 rg_d047 rg_d009 rg_d017 rg_d023 rg_d032 rg_d038",
+        "vectors": "rg_d036 rg_d038 rg_d039 rg_d040 rg_d057 rg_d060 rg_d013 rg_d020 rg_d037 rg_d048 rg_d058 rg_d056 rg_d012 rg_d015 rg_d045 rg_d011 rg_d046 rg_d055 rg_d008 rg_d002 rg_d023 rg_d022 rg_d025 rg_d032 rg_d003 rg_d014 rg_d053 rg_d018 rg_d050 rg_d026 rg_d044 rg_d028 rg_d017 rg_d047 rg_d005 rg_d034 rg_d001 rg_d059 rg_d051 rg_d004 rg_d041 rg_d007 rg_d043 rg_d021 rg_d042 rg_d052 rg_d030 rg_d006 rg_d029 rg_d035"
+      },
+      "rg_q073": {
+        "bm25": "rg_d037 rg_d042 rg_d046",
+        "vectors": "rg_d037 rg_d053 rg_d023 rg_d034 rg_d004 rg_d056 rg_d002 rg_d024 rg_d022 rg_d054 rg_d055 rg_d016 rg_d060 rg_d011 rg_d049 rg_d057 rg_d015 rg_d017 rg_d020 rg_d021 rg_d026 rg_d001 rg_d029 rg_d025 rg_d032 rg_d059 rg_d058 rg_d039 rg_d045 rg_d038 rg_d046 rg_d042 rg_d013 rg_d047 rg_d035 rg_d051 rg_d014 rg_d036 rg_d050 rg_d005 rg_d031 rg_d018 rg_d028 rg_d030 rg_d006 rg_d041 rg_d012 rg_d003 rg_d027 rg_d033"
+      },
+      "rg_q074": {
+        "bm25": "rg_d025 rg_d037 rg_d039 rg_d051 rg_d012 rg_d007 rg_d047 rg_d035 rg_d038 rg_d034 rg_d006 rg_d009 rg_d023 rg_d032 rg_d026 rg_d045 rg_d042 rg_d036 rg_d017 rg_d050 rg_d027 rg_d031 rg_d024 rg_d040 rg_d015 rg_d008 rg_d030 rg_d016 rg_d018",
+        "vectors": "rg_d037 rg_d012 rg_d001 rg_d002 rg_d038 rg_d004 rg_d003 rg_d005 rg_d051 rg_d013 rg_d045 rg_d025 rg_d048 rg_d026 rg_d039 rg_d032 rg_d015 rg_d059 rg_d011 rg_d055 rg_d028 rg_d020 rg_d022 rg_d052 rg_d060 rg_d023 rg_d050 rg_d057 rg_d056 rg_d006 rg_d053 rg_d042 rg_d040 rg_d024 rg_d027 rg_d030 rg_d058 rg_d036 rg_d018 rg_d021 rg_d046 rg_d008 rg_d029 rg_d034 rg_d031 rg_d014 rg_d043 rg_d044 rg_d054 rg_d019"
+      },
+      "rg_q075": {
+        "bm25": "rg_d038 rg_d045 rg_d046 rg_d047 rg_d050 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+        "vectors": "rg_d038 rg_d036 rg_d059 rg_d060 rg_d046 rg_d057 rg_d037 rg_d048 rg_d034 rg_d017 rg_d045 rg_d021 rg_d039 rg_d023 rg_d028 rg_d055 rg_d050 rg_d001 rg_d056 rg_d051 rg_d022 rg_d011 rg_d025 rg_d040 rg_d018 rg_d058 rg_d004 rg_d016 rg_d032 rg_d012 rg_d008 rg_d006 rg_d049 rg_d047 rg_d029 rg_d003 rg_d015 rg_d044 rg_d002 rg_d027 rg_d033 rg_d010 rg_d035 rg_d026 rg_d024 rg_d007 rg_d041 rg_d053 rg_d019 rg_d020"
+      },
+      "rg_q076": {
+        "bm25": "rg_d038 rg_d054 rg_d026",
+        "vectors": "rg_d038 rg_d046 rg_d020 rg_d013 rg_d015 rg_d059 rg_d048 rg_d060 rg_d045 rg_d050 rg_d018 rg_d032 rg_d011 rg_d033 rg_d057 rg_d023 rg_d037 rg_d036 rg_d001 rg_d025 rg_d029 rg_d034 rg_d051 rg_d017 rg_d054 rg_d053 rg_d047 rg_d042 rg_d035 rg_d012 rg_d056 rg_d039 rg_d002 rg_d014 rg_d049 rg_d010 rg_d055 rg_d003 rg_d009 rg_d028 rg_d041 rg_d040 rg_d058 rg_d022 rg_d007 rg_d006 rg_d004 rg_d021 rg_d031 rg_d024"
+      },
+      "rg_q077": {
+        "bm25": "rg_d039 rg_d036 rg_d037 rg_d004 rg_d007 rg_d026 rg_d045 rg_d042 rg_d035 rg_d034 rg_d006 rg_d047 rg_d009 rg_d017 rg_d023 rg_d032 rg_d038",
+        "vectors": "rg_d039 rg_d059 rg_d036 rg_d056 rg_d038 rg_d004 rg_d057 rg_d060 rg_d017 rg_d001 rg_d037 rg_d013 rg_d016 rg_d023 rg_d046 rg_d049 rg_d043 rg_d020 rg_d028 rg_d045 rg_d058 rg_d015 rg_d025 rg_d009 rg_d008 rg_d048 rg_d044 rg_d047 rg_d010 rg_d031 rg_d002 rg_d021 rg_d022 rg_d040 rg_d051 rg_d026 rg_d055 rg_d050 rg_d032 rg_d033 rg_d007 rg_d018 rg_d029 rg_d006 rg_d011 rg_d042 rg_d012 rg_d041 rg_d034 rg_d052"
+      },
+      "rg_q078": {
+        "bm25": "rg_d057 rg_d013 rg_d041 rg_d059 rg_d014 rg_d019 rg_d022 rg_d039 rg_d021 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d057 rg_d039 rg_d056 rg_d038 rg_d060 rg_d058 rg_d059 rg_d045 rg_d046 rg_d051 rg_d049 rg_d033 rg_d020 rg_d048 rg_d015 rg_d041 rg_d018 rg_d053 rg_d050 rg_d044 rg_d025 rg_d036 rg_d013 rg_d008 rg_d028 rg_d037 rg_d043 rg_d003 rg_d002 rg_d031 rg_d022 rg_d016 rg_d026 rg_d055 rg_d017 rg_d047 rg_d021 rg_d029 rg_d030 rg_d019 rg_d042 rg_d023 rg_d009 rg_d001 rg_d032 rg_d004 rg_d027 rg_d011 rg_d006 rg_d012"
+      },
+      "rg_q079": {
+        "bm25": "rg_d040 rg_d042 rg_d034 rg_d011 rg_d012 rg_d056 rg_d036 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d040 rg_d038 rg_d037 rg_d039 rg_d002 rg_d055 rg_d057 rg_d059 rg_d056 rg_d043 rg_d009 rg_d023 rg_d036 rg_d054 rg_d001 rg_d022 rg_d044 rg_d026 rg_d053 rg_d045 rg_d021 rg_d034 rg_d052 rg_d027 rg_d049 rg_d028 rg_d058 rg_d024 rg_d051 rg_d046 rg_d041 rg_d011 rg_d035 rg_d006 rg_d016 rg_d060 rg_d004 rg_d010 rg_d030 rg_d025 rg_d013 rg_d007 rg_d008 rg_d042 rg_d015 rg_d020 rg_d031 rg_d050 rg_d032 rg_d047"
+      },
+      "rg_q080": {
+        "bm25": "rg_d040 rg_d012 rg_d056 rg_d036 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d040 rg_d057 rg_d051 rg_d054 rg_d028 rg_d056 rg_d038 rg_d001 rg_d025 rg_d043 rg_d053 rg_d036 rg_d058 rg_d022 rg_d013 rg_d059 rg_d037 rg_d044 rg_d055 rg_d048 rg_d024 rg_d039 rg_d010 rg_d060 rg_d009 rg_d002 rg_d021 rg_d023 rg_d050 rg_d004 rg_d045 rg_d049 rg_d035 rg_d046 rg_d052 rg_d020 rg_d027 rg_d015 rg_d031 rg_d003 rg_d029 rg_d008 rg_d018 rg_d012 rg_d019 rg_d041 rg_d017 rg_d026 rg_d042 rg_d006"
+      },
+      "rg_q081": {
+        "bm25": "",
+        "vectors": "rg_d041 rg_d042 rg_d045 rg_d015 rg_d043 rg_d001 rg_d044 rg_d010 rg_d049 rg_d003 rg_d006 rg_d028 rg_d002 rg_d023 rg_d048 rg_d012 rg_d031 rg_d018 rg_d013 rg_d052 rg_d046 rg_d026 rg_d051 rg_d053 rg_d008 rg_d017 rg_d011 rg_d007 rg_d058 rg_d027 rg_d060 rg_d057 rg_d056 rg_d047 rg_d059 rg_d055 rg_d022 rg_d016 rg_d029 rg_d050 rg_d033 rg_d021 rg_d035 rg_d004 rg_d038 rg_d034 rg_d030 rg_d024 rg_d020 rg_d014"
+      },
+      "rg_q082": {
+        "bm25": "rg_d023 rg_d045 rg_d044 rg_d013 rg_d015",
+        "vectors": "rg_d041 rg_d042 rg_d045 rg_d015 rg_d044 rg_d013 rg_d023 rg_d043 rg_d006 rg_d053 rg_d046 rg_d031 rg_d055 rg_d026 rg_d010 rg_d052 rg_d059 rg_d035 rg_d001 rg_d049 rg_d017 rg_d007 rg_d003 rg_d008 rg_d018 rg_d050 rg_d058 rg_d047 rg_d056 rg_d020 rg_d019 rg_d014 rg_d028 rg_d033 rg_d032 rg_d012 rg_d057 rg_d029 rg_d002 rg_d027 rg_d022 rg_d025 rg_d011 rg_d021 rg_d004 rg_d034 rg_d038 rg_d051 rg_d005 rg_d060"
+      },
+      "rg_q083": {
+        "bm25": "rg_d042 rg_d014",
+        "vectors": "rg_d042 rg_d041 rg_d011 rg_d006 rg_d003 rg_d014 rg_d023 rg_d012 rg_d019 rg_d015 rg_d017 rg_d018 rg_d002 rg_d007 rg_d045 rg_d008 rg_d016 rg_d028 rg_d010 rg_d031 rg_d024 rg_d035 rg_d013 rg_d020 rg_d055 rg_d046 rg_d034 rg_d047 rg_d043 rg_d059 rg_d044 rg_d051 rg_d057 rg_d050 rg_d053 rg_d005 rg_d052 rg_d022 rg_d026 rg_d021 rg_d033 rg_d001 rg_d049 rg_d056 rg_d048 rg_d009 rg_d027 rg_d029 rg_d038 rg_d032"
+      },
+      "rg_q084": {
+        "bm25": "rg_d042 rg_d033 rg_d060 rg_d054 rg_d026",
+        "vectors": "rg_d042 rg_d041 rg_d018 rg_d015 rg_d044 rg_d014 rg_d043 rg_d031 rg_d045 rg_d010 rg_d019 rg_d006 rg_d035 rg_d046 rg_d002 rg_d057 rg_d011 rg_d013 rg_d059 rg_d047 rg_d033 rg_d003 rg_d012 rg_d034 rg_d060 rg_d058 rg_d016 rg_d023 rg_d052 rg_d032 rg_d050 rg_d017 rg_d056 rg_d007 rg_d053 rg_d049 rg_d008 rg_d051 rg_d020 rg_d001 rg_d022 rg_d038 rg_d027 rg_d005 rg_d028 rg_d021 rg_d009 rg_d004 rg_d055 rg_d026"
+      },
+      "rg_q085": {
+        "bm25": "rg_d043 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d043 rg_d015 rg_d044 rg_d045 rg_d002 rg_d041 rg_d056 rg_d033 rg_d059 rg_d042 rg_d023 rg_d057 rg_d017 rg_d060 rg_d022 rg_d019 rg_d018 rg_d001 rg_d039 rg_d013 rg_d003 rg_d046 rg_d047 rg_d021 rg_d006 rg_d049 rg_d029 rg_d052 rg_d016 rg_d053 rg_d051 rg_d009 rg_d058 rg_d004 rg_d031 rg_d050 rg_d026 rg_d005 rg_d010 rg_d020 rg_d032 rg_d055 rg_d012 rg_d024 rg_d014 rg_d007 rg_d028 rg_d011 rg_d008 rg_d038"
+      },
+      "rg_q086": {
+        "bm25": "rg_d002 rg_d043 rg_d005 rg_d055 rg_d017 rg_d001 rg_d012 rg_d016 rg_d027 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+        "vectors": "rg_d043 rg_d002 rg_d005 rg_d042 rg_d015 rg_d019 rg_d006 rg_d031 rg_d008 rg_d012 rg_d003 rg_d056 rg_d045 rg_d057 rg_d044 rg_d052 rg_d033 rg_d010 rg_d047 rg_d013 rg_d028 rg_d051 rg_d001 rg_d041 rg_d009 rg_d027 rg_d025 rg_d055 rg_d053 rg_d017 rg_d030 rg_d060 rg_d032 rg_d016 rg_d054 rg_d059 rg_d035 rg_d018 rg_d004 rg_d039 rg_d007 rg_d034 rg_d021 rg_d026 rg_d023 rg_d046 rg_d050 rg_d048 rg_d020 rg_d022"
+      },
+      "rg_q087": {
+        "bm25": "rg_d044 rg_d045 rg_d042 rg_d054 rg_d026 rg_d013 rg_d015",
+        "vectors": "rg_d044 rg_d045 rg_d015 rg_d041 rg_d043 rg_d050 rg_d042 rg_d059 rg_d013 rg_d057 rg_d058 rg_d017 rg_d019 rg_d031 rg_d051 rg_d046 rg_d056 rg_d010 rg_d020 rg_d001 rg_d018 rg_d014 rg_d006 rg_d048 rg_d021 rg_d053 rg_d022 rg_d034 rg_d012 rg_d038 rg_d016 rg_d011 rg_d004 rg_d008 rg_d055 rg_d047 rg_d002 rg_d026 rg_d028 rg_d039 rg_d007 rg_d060 rg_d027 rg_d040 rg_d032 rg_d023 rg_d035 rg_d003 rg_d049 rg_d052"
+      },
+      "rg_q088": {
+        "bm25": "rg_d045 rg_d044 rg_d027 rg_d025 rg_d008 rg_d018 rg_d005 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d011 rg_d020 rg_d046 rg_d047 rg_d038 rg_d050 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d034 rg_d006 rg_d015 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016",
+        "vectors": "rg_d044 rg_d015 rg_d045 rg_d042 rg_d043 rg_d041 rg_d019 rg_d010 rg_d050 rg_d011 rg_d023 rg_d017 rg_d057 rg_d008 rg_d024 rg_d031 rg_d006 rg_d051 rg_d003 rg_d055 rg_d012 rg_d013 rg_d046 rg_d002 rg_d056 rg_d052 rg_d005 rg_d018 rg_d058 rg_d048 rg_d028 rg_d030 rg_d014 rg_d059 rg_d047 rg_d027 rg_d022 rg_d007 rg_d035 rg_d020 rg_d001 rg_d016 rg_d021 rg_d009 rg_d026 rg_d034 rg_d060 rg_d039 rg_d049 rg_d033"
+      },
+      "rg_q089": {
+        "bm25": "rg_d045 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+        "vectors": "rg_d045 rg_d042 rg_d043 rg_d041 rg_d044 rg_d015 rg_d053 rg_d052 rg_d010 rg_d018 rg_d051 rg_d003 rg_d050 rg_d017 rg_d019 rg_d049 rg_d028 rg_d031 rg_d046 rg_d013 rg_d020 rg_d014 rg_d058 rg_d027 rg_d016 rg_d056 rg_d055 rg_d026 rg_d006 rg_d057 rg_d011 rg_d001 rg_d008 rg_d059 rg_d005 rg_d012 rg_d007 rg_d029 rg_d004 rg_d030 rg_d032 rg_d047 rg_d035 rg_d002 rg_d021 rg_d054 rg_d023 rg_d060 rg_d048 rg_d034"
+      },
+      "rg_q090": {
+        "bm25": "rg_d005 rg_d012 rg_d016 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004",
+        "vectors": "rg_d045 rg_d015 rg_d042 rg_d053 rg_d044 rg_d008 rg_d005 rg_d006 rg_d020 rg_d003 rg_d043 rg_d055 rg_d052 rg_d031 rg_d029 rg_d012 rg_d046 rg_d041 rg_d017 rg_d013 rg_d051 rg_d001 rg_d058 rg_d050 rg_d018 rg_d007 rg_d027 rg_d002 rg_d056 rg_d014 rg_d038 rg_d011 rg_d019 rg_d026 rg_d016 rg_d059 rg_d030 rg_d010 rg_d028 rg_d032 rg_d057 rg_d035 rg_d021 rg_d004 rg_d060 rg_d048 rg_d022 rg_d054 rg_d034 rg_d025"
+      },
+      "rg_q091": {
+        "bm25": "rg_d046 rg_d042 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d046 rg_d047 rg_d050 rg_d058 rg_d059 rg_d057 rg_d007 rg_d018 rg_d045 rg_d020 rg_d041 rg_d056 rg_d017 rg_d048 rg_d031 rg_d060 rg_d053 rg_d052 rg_d016 rg_d049 rg_d035 rg_d051 rg_d034 rg_d044 rg_d013 rg_d024 rg_d039 rg_d023 rg_d010 rg_d008 rg_d006 rg_d042 rg_d002 rg_d055 rg_d015 rg_d038 rg_d033 rg_d001 rg_d043 rg_d027 rg_d021 rg_d032 rg_d028 rg_d003 rg_d026 rg_d029 rg_d022 rg_d019 rg_d005 rg_d014"
+      },
+      "rg_q092": {
+        "bm25": "rg_d005 rg_d012 rg_d016 rg_d045 rg_d059 rg_d035 rg_d011 rg_d017 rg_d046",
+        "vectors": "rg_d046 rg_d050 rg_d047 rg_d045 rg_d057 rg_d059 rg_d017 rg_d007 rg_d052 rg_d031 rg_d056 rg_d035 rg_d042 rg_d041 rg_d018 rg_d049 rg_d020 rg_d008 rg_d003 rg_d044 rg_d001 rg_d058 rg_d002 rg_d015 rg_d016 rg_d048 rg_d013 rg_d039 rg_d060 rg_d033 rg_d051 rg_d010 rg_d034 rg_d026 rg_d043 rg_d023 rg_d053 rg_d027 rg_d038 rg_d006 rg_d028 rg_d019 rg_d011 rg_d021 rg_d029 rg_d022 rg_d004 rg_d055 rg_d012 rg_d032"
+      },
+      "rg_q093": {
+        "bm25": "rg_d047 rg_d042",
+        "vectors": "rg_d047 rg_d046 rg_d002 rg_d051 rg_d053 rg_d017 rg_d059 rg_d018 rg_d038 rg_d027 rg_d028 rg_d032 rg_d043 rg_d012 rg_d045 rg_d029 rg_d055 rg_d030 rg_d022 rg_d016 rg_d007 rg_d004 rg_d052 rg_d060 rg_d021 rg_d020 rg_d035 rg_d013 rg_d037 rg_d034 rg_d005 rg_d015 rg_d009 rg_d031 rg_d024 rg_d008 rg_d049 rg_d023 rg_d041 rg_d006 rg_d003 rg_d058 rg_d056 rg_d042 rg_d033 rg_d039 rg_d011 rg_d001 rg_d044 rg_d019"
+      },
+      "rg_q094": {
+        "bm25": "rg_d047 rg_d035 rg_d028 rg_d038 rg_d050 rg_d027 rg_d031 rg_d024 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+        "vectors": "rg_d028 rg_d047 rg_d031 rg_d046 rg_d007 rg_d050 rg_d035 rg_d045 rg_d008 rg_d057 rg_d056 rg_d052 rg_d042 rg_d013 rg_d001 rg_d059 rg_d003 rg_d002 rg_d010 rg_d029 rg_d017 rg_d023 rg_d043 rg_d004 rg_d034 rg_d019 rg_d015 rg_d020 rg_d024 rg_d006 rg_d051 rg_d026 rg_d033 rg_d049 rg_d055 rg_d018 rg_d038 rg_d044 rg_d016 rg_d058 rg_d041 rg_d012 rg_d053 rg_d027 rg_d039 rg_d011 rg_d030 rg_d048 rg_d022 rg_d032"
+      },
+      "rg_q095": {
+        "bm25": "rg_d048 rg_d042",
+        "vectors": "rg_d048 rg_d050 rg_d057 rg_d010 rg_d006 rg_d046 rg_d007 rg_d045 rg_d056 rg_d044 rg_d031 rg_d013 rg_d055 rg_d016 rg_d002 rg_d042 rg_d043 rg_d008 rg_d026 rg_d059 rg_d058 rg_d047 rg_d027 rg_d028 rg_d019 rg_d052 rg_d001 rg_d017 rg_d015 rg_d060 rg_d039 rg_d036 rg_d051 rg_d020 rg_d004 rg_d012 rg_d030 rg_d053 rg_d035 rg_d003 rg_d033 rg_d038 rg_d041 rg_d005 rg_d054 rg_d049 rg_d034 rg_d024 rg_d009 rg_d037"
+      },
+      "rg_q096": {
+        "bm25": "rg_d013 rg_d007 rg_d045 rg_d044 rg_d015",
+        "vectors": "rg_d048 rg_d007 rg_d013 rg_d045 rg_d031 rg_d029 rg_d046 rg_d015 rg_d050 rg_d049 rg_d056 rg_d047 rg_d060 rg_d017 rg_d038 rg_d035 rg_d002 rg_d057 rg_d028 rg_d004 rg_d059 rg_d039 rg_d036 rg_d020 rg_d058 rg_d044 rg_d042 rg_d012 rg_d041 rg_d051 rg_d032 rg_d025 rg_d006 rg_d001 rg_d034 rg_d008 rg_d043 rg_d016 rg_d026 rg_d052 rg_d053 rg_d037 rg_d010 rg_d011 rg_d033 rg_d018 rg_d023 rg_d019 rg_d005 rg_d003"
+      },
+      "rg_q097": {
+        "bm25": "",
+        "vectors": "rg_d049 rg_d045 rg_d046 rg_d015 rg_d041 rg_d042 rg_d050 rg_d038 rg_d018 rg_d013 rg_d010 rg_d034 rg_d047 rg_d002 rg_d053 rg_d003 rg_d011 rg_d057 rg_d016 rg_d017 rg_d007 rg_d055 rg_d001 rg_d006 rg_d031 rg_d058 rg_d021 rg_d043 rg_d059 rg_d022 rg_d020 rg_d028 rg_d051 rg_d056 rg_d033 rg_d008 rg_d012 rg_d023 rg_d004 rg_d014 rg_d044 rg_d027 rg_d035 rg_d039 rg_d026 rg_d052 rg_d029 rg_d060 rg_d048 rg_d024"
+      },
+      "rg_q098": {
+        "bm25": "rg_d047 rg_d038 rg_d050 rg_d027 rg_d031 rg_d040 rg_d024 rg_d035 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d030 rg_d023 rg_d008 rg_d009 rg_d032 rg_d016 rg_d018 rg_d012 rg_d056 rg_d036 rg_d055 rg_d002 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d003 rg_d010 rg_d026 rg_d033 rg_d039 rg_d046 rg_d001 rg_d004",
+        "vectors": "rg_d049 rg_d059 rg_d057 rg_d047 rg_d046 rg_d056 rg_d020 rg_d051 rg_d058 rg_d045 rg_d018 rg_d050 rg_d031 rg_d041 rg_d033 rg_d038 rg_d015 rg_d042 rg_d053 rg_d032 rg_d044 rg_d013 rg_d043 rg_d017 rg_d007 rg_d001 rg_d048 rg_d026 rg_d024 rg_d052 rg_d022 rg_d039 rg_d034 rg_d002 rg_d004 rg_d012 rg_d060 rg_d021 rg_d028 rg_d025 rg_d023 rg_d019 rg_d030 rg_d010 rg_d037 rg_d055 rg_d027 rg_d008 rg_d003 rg_d035"
+      },
+      "rg_q099": {
+        "bm25": "rg_d050 rg_d048 rg_d047 rg_d038 rg_d027 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d025 rg_d034 rg_d006 rg_d015 rg_d008 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016 rg_d018",
+        "vectors": "rg_d050 rg_d046 rg_d045 rg_d015 rg_d057 rg_d048 rg_d008 rg_d059 rg_d013 rg_d017 rg_d031 rg_d044 rg_d058 rg_d020 rg_d010 rg_d007 rg_d019 rg_d035 rg_d047 rg_d049 rg_d043 rg_d051 rg_d011 rg_d018 rg_d056 rg_d042 rg_d052 rg_d053 rg_d027 rg_d005 rg_d039 rg_d055 rg_d016 rg_d006 rg_d038 rg_d024 rg_d026 rg_d041 rg_d003 rg_d036 rg_d023 rg_d033 rg_d002 rg_d060 rg_d021 rg_d025 rg_d034 rg_d032 rg_d014 rg_d028"
+      },
+      "rg_q100": {
+        "bm25": "rg_d027 rg_d025 rg_d008 rg_d018 rg_d005 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d011 rg_d020 rg_d046 rg_d047 rg_d038 rg_d050 rg_d031 rg_d024 rg_d035 rg_d040 rg_d007 rg_d034 rg_d006 rg_d015 rg_d009 rg_d023 rg_d030 rg_d032 rg_d016",
+        "vectors": "rg_d050 rg_d046 rg_d048 rg_d059 rg_d045 rg_d058 rg_d013 rg_d017 rg_d027 rg_d010 rg_d057 rg_d020 rg_d044 rg_d008 rg_d043 rg_d019 rg_d049 rg_d052 rg_d006 rg_d015 rg_d051 rg_d035 rg_d039 rg_d060 rg_d007 rg_d014 rg_d047 rg_d003 rg_d038 rg_d053 rg_d025 rg_d029 rg_d023 rg_d026 rg_d031 rg_d036 rg_d042 rg_d018 rg_d011 rg_d055 rg_d028 rg_d034 rg_d056 rg_d002 rg_d024 rg_d004 rg_d033 rg_d041 rg_d012 rg_d009"
+      },
+      "rg_q101": {
+        "bm25": "rg_d051 rg_d003 rg_d005 rg_d027 rg_d043 rg_d028 rg_d037 rg_d010 rg_d025 rg_d008 rg_d011 rg_d020 rg_d046 rg_d018",
+        "vectors": "rg_d051 rg_d057 rg_d018 rg_d046 rg_d059 rg_d056 rg_d060 rg_d058 rg_d019 rg_d012 rg_d044 rg_d025 rg_d042 rg_d017 rg_d045 rg_d006 rg_d020 rg_d016 rg_d003 rg_d002 rg_d038 rg_d033 rg_d022 rg_d032 rg_d043 rg_d041 rg_d021 rg_d015 rg_d039 rg_d024 rg_d047 rg_d023 rg_d050 rg_d010 rg_d028 rg_d008 rg_d049 rg_d034 rg_d001 rg_d027 rg_d011 rg_d005 rg_d007 rg_d031 rg_d048 rg_d052 rg_d053 rg_d055 rg_d004 rg_d054"
+      },
+      "rg_q102": {
+        "bm25": "rg_d042 rg_d029 rg_d007 rg_d026 rg_d045 rg_d035 rg_d036 rg_d034 rg_d006 rg_d047 rg_d009 rg_d017 rg_d023 rg_d032 rg_d038",
+        "vectors": "rg_d051 rg_d015 rg_d002 rg_d045 rg_d003 rg_d043 rg_d058 rg_d013 rg_d056 rg_d042 rg_d004 rg_d039 rg_d057 rg_d020 rg_d001 rg_d053 rg_d046 rg_d050 rg_d052 rg_d037 rg_d012 rg_d027 rg_d060 rg_d029 rg_d032 rg_d044 rg_d059 rg_d008 rg_d016 rg_d019 rg_d049 rg_d017 rg_d038 rg_d011 rg_d026 rg_d055 rg_d024 rg_d025 rg_d018 rg_d054 rg_d005 rg_d006 rg_d048 rg_d022 rg_d030 rg_d047 rg_d040 rg_d033 rg_d023 rg_d035"
+      },
+      "rg_q103": {
+        "bm25": "rg_d018 rg_d029 rg_d026 rg_d033 rg_d004 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d016",
+        "vectors": "rg_d006 rg_d045 rg_d008 rg_d043 rg_d030 rg_d026 rg_d052 rg_d042 rg_d027 rg_d053 rg_d041 rg_d012 rg_d029 rg_d010 rg_d007 rg_d033 rg_d015 rg_d001 rg_d055 rg_d004 rg_d031 rg_d028 rg_d050 rg_d005 rg_d002 rg_d046 rg_d003 rg_d018 rg_d013 rg_d009 rg_d057 rg_d058 rg_d054 rg_d019 rg_d044 rg_d048 rg_d017 rg_d035 rg_d047 rg_d051 rg_d024 rg_d049 rg_d059 rg_d023 rg_d056 rg_d020 rg_d034 rg_d036 rg_d022 rg_d060"
+      },
+      "rg_q104": {
+        "bm25": "rg_d052 rg_d019 rg_d032",
+        "vectors": "rg_d052 rg_d008 rg_d031 rg_d006 rg_d047 rg_d043 rg_d002 rg_d010 rg_d042 rg_d007 rg_d035 rg_d033 rg_d060 rg_d057 rg_d056 rg_d045 rg_d029 rg_d034 rg_d046 rg_d053 rg_d050 rg_d012 rg_d028 rg_d019 rg_d013 rg_d016 rg_d015 rg_d004 rg_d041 rg_d023 rg_d055 rg_d024 rg_d001 rg_d059 rg_d018 rg_d039 rg_d026 rg_d017 rg_d011 rg_d003 rg_d027 rg_d054 rg_d058 rg_d044 rg_d005 rg_d049 rg_d048 rg_d038 rg_d051 rg_d020"
+      },
+      "rg_q105": {
+        "bm25": "rg_d053 rg_d042",
+        "vectors": "rg_d053 rg_d055 rg_d054 rg_d021 rg_d022 rg_d045 rg_d043 rg_d029 rg_d008 rg_d020 rg_d006 rg_d013 rg_d031 rg_d026 rg_d052 rg_d019 rg_d009 rg_d010 rg_d015 rg_d014 rg_d023 rg_d044 rg_d041 rg_d050 rg_d027 rg_d011 rg_d024 rg_d046 rg_d002 rg_d025 rg_d004 rg_d059 rg_d005 rg_d042 rg_d007 rg_d032 rg_d030 rg_d035 rg_d033 rg_d037 rg_d058 rg_d017 rg_d003 rg_d034 rg_d060 rg_d028 rg_d018 rg_d001 rg_d038 rg_d039"
+      },
+      "rg_q106": {
+        "bm25": "rg_d053 rg_d005 rg_d027 rg_d043 rg_d051 rg_d028 rg_d037 rg_d010 rg_d025 rg_d046 rg_d008 rg_d011 rg_d020 rg_d018 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d038 rg_d049 rg_d042 rg_d054 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d053 rg_d054 rg_d055 rg_d026 rg_d037 rg_d024 rg_d030 rg_d022 rg_d027 rg_d021 rg_d028 rg_d052 rg_d029 rg_d033 rg_d023 rg_d031 rg_d006 rg_d035 rg_d046 rg_d045 rg_d032 rg_d057 rg_d034 rg_d009 rg_d025 rg_d010 rg_d059 rg_d048 rg_d005 rg_d002 rg_d038 rg_d044 rg_d041 rg_d050 rg_d011 rg_d013 rg_d043 rg_d014 rg_d017 rg_d008 rg_d040 rg_d020 rg_d058 rg_d019 rg_d003 rg_d007 rg_d039 rg_d056 rg_d049 rg_d060"
+      },
+      "rg_q107": {
+        "bm25": "rg_d054 rg_d042 rg_d026 rg_d012 rg_d056 rg_d036 rg_d040 rg_d055 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d054 rg_d053 rg_d024 rg_d055 rg_d025 rg_d019 rg_d022 rg_d008 rg_d021 rg_d030 rg_d011 rg_d027 rg_d057 rg_d023 rg_d033 rg_d005 rg_d040 rg_d009 rg_d037 rg_d014 rg_d052 rg_d020 rg_d028 rg_d006 rg_d031 rg_d034 rg_d029 rg_d032 rg_d004 rg_d013 rg_d002 rg_d043 rg_d010 rg_d035 rg_d045 rg_d026 rg_d059 rg_d017 rg_d007 rg_d046 rg_d058 rg_d049 rg_d044 rg_d018 rg_d050 rg_d015 rg_d016 rg_d042 rg_d003 rg_d056"
+      },
+      "rg_q108": {
+        "bm25": "rg_d054 rg_d052 rg_d028 rg_d022 rg_d021 rg_d008",
+        "vectors": "rg_d054 rg_d024 rg_d053 rg_d030 rg_d019 rg_d006 rg_d033 rg_d005 rg_d043 rg_d008 rg_d028 rg_d026 rg_d002 rg_d052 rg_d022 rg_d055 rg_d009 rg_d027 rg_d057 rg_d003 rg_d004 rg_d013 rg_d021 rg_d040 rg_d012 rg_d020 rg_d011 rg_d029 rg_d037 rg_d023 rg_d058 rg_d044 rg_d046 rg_d050 rg_d059 rg_d045 rg_d051 rg_d035 rg_d034 rg_d025 rg_d031 rg_d007 rg_d049 rg_d015 rg_d010 rg_d032 rg_d056 rg_d017 rg_d018 rg_d042"
+      },
+      "rg_q109": {
+        "bm25": "rg_d055 rg_d033",
+        "vectors": "rg_d055 rg_d013 rg_d008 rg_d010 rg_d011 rg_d035 rg_d006 rg_d031 rg_d042 rg_d052 rg_d029 rg_d024 rg_d053 rg_d009 rg_d012 rg_d045 rg_d033 rg_d005 rg_d019 rg_d007 rg_d015 rg_d014 rg_d043 rg_d003 rg_d002 rg_d047 rg_d026 rg_d057 rg_d023 rg_d028 rg_d034 rg_d032 rg_d027 rg_d021 rg_d022 rg_d038 rg_d025 rg_d037 rg_d054 rg_d046 rg_d050 rg_d030 rg_d004 rg_d051 rg_d041 rg_d056 rg_d048 rg_d044 rg_d060 rg_d059"
+      },
+      "rg_q110": {
+        "bm25": "rg_d055 rg_d010 rg_d012 rg_d056 rg_d036 rg_d040 rg_d030 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d025 rg_d026 rg_d033 rg_d006 rg_d039 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d055 rg_d006 rg_d042 rg_d052 rg_d031 rg_d008 rg_d045 rg_d043 rg_d013 rg_d050 rg_d007 rg_d002 rg_d010 rg_d029 rg_d053 rg_d028 rg_d035 rg_d026 rg_d012 rg_d015 rg_d024 rg_d056 rg_d046 rg_d011 rg_d003 rg_d047 rg_d033 rg_d057 rg_d041 rg_d009 rg_d001 rg_d004 rg_d048 rg_d019 rg_d022 rg_d020 rg_d059 rg_d058 rg_d051 rg_d027 rg_d021 rg_d017 rg_d054 rg_d038 rg_d025 rg_d023 rg_d034 rg_d005 rg_d016 rg_d032"
+      },
+      "rg_q111": {
+        "bm25": "rg_d056 rg_d044 rg_d042 rg_d041 rg_d059 rg_d014 rg_d019 rg_d022 rg_d021 rg_d039",
+        "vectors": "rg_d056 rg_d059 rg_d057 rg_d016 rg_d051 rg_d047 rg_d017 rg_d015 rg_d031 rg_d020 rg_d060 rg_d033 rg_d044 rg_d041 rg_d013 rg_d046 rg_d043 rg_d001 rg_d049 rg_d058 rg_d039 rg_d021 rg_d032 rg_d018 rg_d045 rg_d002 rg_d012 rg_d022 rg_d019 rg_d053 rg_d038 rg_d008 rg_d035 rg_d003 rg_d042 rg_d034 rg_d023 rg_d011 rg_d052 rg_d037 rg_d024 rg_d028 rg_d026 rg_d005 rg_d048 rg_d007 rg_d029 rg_d025 rg_d006 rg_d027"
+      },
+      "rg_q112": {
+        "bm25": "rg_d039 rg_d056 rg_d015 rg_d030 rg_d012 rg_d036 rg_d040 rg_d055 rg_d002 rg_d018 rg_d038 rg_d049 rg_d028 rg_d042 rg_d054 rg_d005 rg_d013 rg_d014 rg_d024 rg_d003 rg_d007 rg_d010 rg_d025 rg_d026 rg_d033 rg_d006 rg_d047 rg_d023 rg_d046 rg_d001 rg_d004 rg_d016",
+        "vectors": "rg_d039 rg_d060 rg_d057 rg_d059 rg_d056 rg_d015 rg_d021 rg_d046 rg_d058 rg_d033 rg_d008 rg_d045 rg_d017 rg_d049 rg_d001 rg_d030 rg_d048 rg_d012 rg_d031 rg_d002 rg_d016 rg_d044 rg_d023 rg_d003 rg_d051 rg_d022 rg_d038 rg_d013 rg_d041 rg_d043 rg_d050 rg_d052 rg_d047 rg_d028 rg_d032 rg_d004 rg_d011 rg_d029 rg_d042 rg_d005 rg_d053 rg_d036 rg_d026 rg_d006 rg_d018 rg_d009 rg_d024 rg_d055 rg_d007 rg_d020"
+      },
+      "rg_q113": {
+        "bm25": "rg_d057 rg_d044 rg_d042 rg_d041 rg_d059 rg_d014 rg_d019 rg_d022 rg_d021 rg_d039",
+        "vectors": "rg_d057 rg_d059 rg_d056 rg_d033 rg_d060 rg_d046 rg_d030 rg_d015 rg_d021 rg_d051 rg_d018 rg_d016 rg_d058 rg_d044 rg_d045 rg_d020 rg_d019 rg_d024 rg_d052 rg_d041 rg_d038 rg_d012 rg_d022 rg_d008 rg_d049 rg_d039 rg_d003 rg_d011 rg_d032 rg_d042 rg_d050 rg_d054 rg_d031 rg_d001 rg_d017 rg_d014 rg_d048 rg_d023 rg_d013 rg_d035 rg_d053 rg_d009 rg_d002 rg_d055 rg_d006 rg_d034 rg_d043 rg_d027 rg_d005 rg_d037"
+      },
+      "rg_q114": {
+        "bm25": "rg_d032 rg_d057 rg_d011 rg_d017 rg_d016 rg_d037",
+        "vectors": "rg_d056 rg_d057 rg_d059 rg_d039 rg_d016 rg_d017 rg_d046 rg_d060 rg_d051 rg_d020 rg_d047 rg_d058 rg_d049 rg_d050 rg_d048 rg_d018 rg_d004 rg_d033 rg_d045 rg_d032 rg_d044 rg_d002 rg_d023 rg_d022 rg_d008 rg_d041 rg_d001 rg_d043 rg_d038 rg_d052 rg_d015 rg_d025 rg_d021 rg_d003 rg_d013 rg_d034 rg_d035 rg_d012 rg_d031 rg_d029 rg_d042 rg_d009 rg_d026 rg_d055 rg_d011 rg_d006 rg_d027 rg_d010 rg_d036 rg_d024"
+      },
+      "rg_q115": {
+        "bm25": "rg_d058 rg_d042 rg_d046 rg_d004 rg_d019 rg_d006 rg_d002",
+        "vectors": "rg_d058 rg_d046 rg_d051 rg_d059 rg_d022 rg_d056 rg_d060 rg_d044 rg_d018 rg_d021 rg_d020 rg_d057 rg_d001 rg_d045 rg_d053 rg_d004 rg_d002 rg_d041 rg_d055 rg_d032 rg_d006 rg_d016 rg_d052 rg_d027 rg_d050 rg_d043 rg_d047 rg_d037 rg_d014 rg_d030 rg_d012 rg_d024 rg_d038 rg_d039 rg_d026 rg_d008 rg_d015 rg_d003 rg_d049 rg_d042 rg_d048 rg_d017 rg_d035 rg_d029 rg_d013 rg_d031 rg_d028 rg_d005 rg_d009 rg_d010"
+      },
+      "rg_q116": {
+        "bm25": "rg_d029 rg_d017",
+        "vectors": "rg_d058 rg_d056 rg_d057 rg_d020 rg_d059 rg_d060 rg_d046 rg_d051 rg_d045 rg_d049 rg_d039 rg_d018 rg_d048 rg_d055 rg_d015 rg_d038 rg_d050 rg_d017 rg_d053 rg_d027 rg_d043 rg_d041 rg_d040 rg_d013 rg_d016 rg_d054 rg_d032 rg_d022 rg_d052 rg_d021 rg_d044 rg_d014 rg_d004 rg_d001 rg_d002 rg_d030 rg_d008 rg_d012 rg_d029 rg_d011 rg_d037 rg_d006 rg_d003 rg_d036 rg_d023 rg_d005 rg_d025 rg_d010 rg_d033 rg_d026"
+      },
+      "rg_q117": {
+        "bm25": "rg_d059 rg_d056",
+        "vectors": "rg_d059 rg_d039 rg_d056 rg_d057 rg_d046 rg_d020 rg_d038 rg_d050 rg_d015 rg_d060 rg_d049 rg_d036 rg_d017 rg_d045 rg_d047 rg_d008 rg_d058 rg_d051 rg_d001 rg_d013 rg_d043 rg_d041 rg_d044 rg_d037 rg_d031 rg_d048 rg_d018 rg_d042 rg_d023 rg_d032 rg_d006 rg_d028 rg_d002 rg_d029 rg_d016 rg_d040 rg_d025 rg_d033 rg_d022 rg_d004 rg_d007 rg_d010 rg_d052 rg_d053 rg_d009 rg_d021 rg_d055 rg_d034 rg_d026 rg_d024"
+      },
+      "rg_q118": {
+        "bm25": "rg_d057 rg_d029 rg_d041 rg_d059 rg_d014 rg_d019 rg_d022 rg_d021 rg_d039",
+        "vectors": "rg_d059 rg_d057 rg_d056 rg_d049 rg_d020 rg_d046 rg_d039 rg_d051 rg_d060 rg_d041 rg_d047 rg_d017 rg_d045 rg_d058 rg_d052 rg_d031 rg_d013 rg_d050 rg_d018 rg_d037 rg_d053 rg_d016 rg_d055 rg_d035 rg_d048 rg_d004 rg_d021 rg_d022 rg_d044 rg_d015 rg_d001 rg_d042 rg_d033 rg_d034 rg_d012 rg_d027 rg_d043 rg_d032 rg_d002 rg_d010 rg_d054 rg_d007 rg_d029 rg_d006 rg_d024 rg_d023 rg_d014 rg_d008 rg_d025 rg_d009"
+      },
+      "rg_q119": {
+        "bm25": "rg_d060 rg_d059 rg_d042",
+        "vectors": "rg_d060 rg_d056 rg_d057 rg_d059 rg_d010 rg_d046 rg_d020 rg_d048 rg_d058 rg_d008 rg_d031 rg_d017 rg_d045 rg_d043 rg_d033 rg_d050 rg_d051 rg_d009 rg_d049 rg_d041 rg_d004 rg_d006 rg_d047 rg_d052 rg_d042 rg_d039 rg_d001 rg_d028 rg_d027 rg_d016 rg_d055 rg_d015 rg_d053 rg_d025 rg_d029 rg_d044 rg_d013 rg_d018 rg_d007 rg_d038 rg_d035 rg_d037 rg_d002 rg_d023 rg_d040 rg_d022 rg_d019 rg_d032 rg_d054 rg_d014"
+      },
+      "rg_q120": {
+        "bm25": "rg_d060 rg_d029 rg_d035 rg_d033 rg_d020 rg_d018",
+        "vectors": "rg_d060 rg_d046 rg_d057 rg_d056 rg_d058 rg_d032 rg_d004 rg_d002 rg_d017 rg_d008 rg_d001 rg_d029 rg_d043 rg_d059 rg_d044 rg_d033 rg_d053 rg_d055 rg_d050 rg_d048 rg_d006 rg_d045 rg_d042 rg_d041 rg_d052 rg_d025 rg_d020 rg_d018 rg_d051 rg_d049 rg_d015 rg_d031 rg_d027 rg_d003 rg_d028 rg_d013 rg_d009 rg_d035 rg_d023 rg_d039 rg_d019 rg_d026 rg_d012 rg_d005 rg_d054 rg_d047 rg_d038 rg_d022 rg_d016 rg_d010"
       }
     }
   }
