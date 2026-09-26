@@ -5,7 +5,7 @@
   "date": "2026-09-26",
   "agent": "anthropic/claude-opus-5-5",
   "question": "هل جُهّز Nitro بخطوات G5 ١–١٤ وHugging Face (G9) وObsidian (G10)، وما نتيجة فحص الدخان عليه؟",
-  "answer": "جُهّز كلُّه إلا ثلاثة: Docker Desktop لا يقلع بعد إعادة تشغيله (مقبسٌ عالق يحتاج المالك، ومعه تنتظر G5 ٦–٧)، و`gcc` غائب لأن `build-essential` يحتاج sudo، وصفحةُ الواجهة لم تُفتح من متصفح ويندوز (G5 ١٤ جزئية). وأداةُ `hf` مركَّبة بلا توكن عمدًا، لأن G9 لا يعرّف توكنًا لـNitro. وفحصُ الدخان خرج 3 وكلُّ ما قبل السياسات ok في الإعادة، بعد أن سقطت الجولةُ الوكيلة أولًا بانهيار خادم نموذج Ollama (0xc0000409، المرّة الثالثة).",
+  "answer": "جُهّز كلُّه إلا اثنين بيد المالك: gcc وpython3-venv (build-essential يحتاج sudo)، و`hf auth login`. وDocker Desktop عاد بعد أن حذف المالك الملفين العالقين، فاجتازت G5 ٥–٧ (الدمج، والعزل، والبطاقة داخل حاوية). وفحصُ الدخان خرج 3 وكلُّ ما قبل السياسات ok في الإعادة، بعد انهيار خادم نموذج Ollama في الأولى.",
   "machine": {
     "model": "Acer Nitro AN515-58",
     "os": "Windows 11 Home 10.0.26200.7623, x86_64",
@@ -13,20 +13,90 @@
     "nvidia_smi_in_wsl": "NVIDIA GeForce RTX 4060 Laptop GPU, 8188 MiB, 610.62"
   },
   "g5_steps_1_14": [
-    {"step": 1, "what": "WSL2", "status": "present", "detail": "WSL 2.9.13.0، النواة 6.18.40.1-1، التوزيعة Ubuntu 26.04.1 LTS بالإصدار 2"},
-    {"step": 2, "what": "systemd", "status": "present", "detail": "/etc/wsl.conf فيه [boot] systemd=true، وsystemctl is-system-running = degraded (يعمل)"},
-    {"step": 3, "what": ".wslconfig", "status": "updated", "detail": "networkingMode=mirrored كان قائمًا، وأُضيف memory=12GB (free يعرض 11 GB). Ollama يجيب من WSL: {\"version\":\"0.34.4\"}"},
-    {"step": 4, "what": "NVIDIA في WSL", "status": "present", "detail": "nvidia-smi داخل أوبونتو يعرض البطاقة نفسها"},
-    {"step": 5, "what": "Docker Desktop ودمج WSL", "status": "blocked", "detail": "Docker Desktop 4.91.0 (المحرّك 29.8.0). ضُبط AutoStart وEnableIntegrationWithDefaultWslDistro وIntegratedWslDistros=[Ubuntu] في settings-store.json (والنسخة السابقة محفوظة بجانبه). بعد إعادة التشغيل تنهار الخلفية: rename …/Docker/run/sailor-ingest.sock → sailor-ingest.sock.stale يفشل لأن .stale قديمًا موجود من 00:44. الإصلاح يحتاج حذف ملفين لم تُنشئهما الجلسة، فهو للمالك"},
-    {"step": 6, "what": "فحوص Docker", "status": "not_run", "detail": "تنتظر الخطوة ٥"},
-    {"step": 7, "what": "البطاقة داخل حاوية", "status": "not_run", "detail": "تنتظر الخطوة ٥"},
-    {"step": 8, "what": "Ollama والنماذج", "status": "present", "detail": "Ollama 0.34.4 على ويندوز؛ qwen3.5:9b وqwen2.5vl:7b وgemma3:12b وminicpm-v:8b"},
-    {"step": 9, "what": "OLLAMA_HOST", "status": "skipped", "detail": "اختياريّ، ويجعل Ollama مسموعًا على الشبكة المحلية؛ لا يلزم اليوم"},
-    {"step": 10, "what": "أدوات النظام وuv", "status": "partial", "detail": "uv 0.12.19 وgit 2.53.0 موجودان؛ gcc/build-essential غائب لأنه يحتاج sudo — الأمر للمالك"},
-    {"step": 11, "what": "نسخة المستودع", "status": "present", "detail": "~/code/diwan على main، و~/diwan رابطٌ إليها"},
-    {"step": 12, "what": "بيئة المشروع", "status": "present", "detail": "بايثون 3.12.14 بـuv sync --extra dev، وقاعدة CAMeL calima-msa-r13"},
-    {"step": 13, "what": "فحص الدخان", "status": "done", "detail": "انظر smoke_check"},
-    {"step": 14, "what": "الواجهة", "status": "partial", "detail": "خطوة ui في فحص الدخان ok (tools/serve_ui.py يُهيَّأ)؛ لم تُفتح الصفحة من متصفح ويندوز"}
+    {
+      "step": 1,
+      "what": "WSL2",
+      "status": "present",
+      "detail": "WSL 2.9.13.0، النواة 6.18.40.1-1، التوزيعة Ubuntu 26.04.1 LTS بالإصدار 2"
+    },
+    {
+      "step": 2,
+      "what": "systemd",
+      "status": "present",
+      "detail": "/etc/wsl.conf فيه [boot] systemd=true، وsystemctl is-system-running = degraded (يعمل)"
+    },
+    {
+      "step": 3,
+      "what": ".wslconfig",
+      "status": "updated",
+      "detail": "networkingMode=mirrored كان قائمًا، وأُضيف memory=12GB (free يعرض 11 GB). Ollama يجيب من WSL: {\"version\":\"0.34.4\"}"
+    },
+    {
+      "step": 4,
+      "what": "NVIDIA في WSL",
+      "status": "present",
+      "detail": "nvidia-smi داخل أوبونتو يعرض البطاقة نفسها"
+    },
+    {
+      "step": 5,
+      "what": "Docker Desktop ودمج WSL",
+      "status": "done",
+      "detail": "Docker Desktop 4.91.0 (المحرّك 29.8.0). ضُبط AutoStart وEnableIntegrationWithDefaultWslDistro وIntegratedWslDistros=[Ubuntu] في settings-store.json (والنسخة السابقة محفوظة بجانبه). بعد إعادة التشغيل تنهار الخلفية: rename …/Docker/run/sailor-ingest.sock → sailor-ingest.sock.stale يفشل لأن .stale قديمًا موجود من 00:44. الإصلاح يحتاج حذف ملفين لم تُنشئهما الجلسة، فهو للمالك — ثم حذف المالك الملفين في ٢٧ سبتمبر فأقلع Docker Desktop، والدمجُ مع Ubuntu يعمل: docker في WSL من /mnt/wsl/docker-desktop/cli-tools، والخادم 29.8.0 linux/amd64"
+    },
+    {
+      "step": 6,
+      "what": "فحوص Docker",
+      "status": "done",
+      "detail": "docker run hello-world: «Hello from Docker!»؛ والحاويةُ المعزولة (بلا شبكة، جذرٌ للقراءة، بلا صلاحيات، UID 1000) طبعت: 3.14.7 x86_64"
+    },
+    {
+      "step": 7,
+      "what": "البطاقة داخل حاوية",
+      "status": "done",
+      "detail": "docker run --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi: «NVIDIA GeForce RTX 4060 Laptop GPU, 8188 MiB». والمحاولةُ الأولى سقطت أثناء سحب الصورة، ونجحت الثانية"
+    },
+    {
+      "step": 8,
+      "what": "Ollama والنماذج",
+      "status": "present",
+      "detail": "Ollama 0.34.4 على ويندوز؛ qwen3.5:9b وqwen2.5vl:7b وgemma3:12b وminicpm-v:8b"
+    },
+    {
+      "step": 9,
+      "what": "OLLAMA_HOST",
+      "status": "skipped",
+      "detail": "اختياريّ، ويجعل Ollama مسموعًا على الشبكة المحلية؛ لا يلزم اليوم"
+    },
+    {
+      "step": 10,
+      "what": "أدوات النظام وuv",
+      "status": "partial",
+      "detail": "uv 0.12.19 وgit 2.53.0 موجودان؛ gcc/build-essential غائب لأنه يحتاج sudo — الأمر للمالك"
+    },
+    {
+      "step": 11,
+      "what": "نسخة المستودع",
+      "status": "present",
+      "detail": "~/code/diwan على main، و~/diwan رابطٌ إليها"
+    },
+    {
+      "step": 12,
+      "what": "بيئة المشروع",
+      "status": "present",
+      "detail": "بايثون 3.12.14 بـuv sync --extra dev، وقاعدة CAMeL calima-msa-r13"
+    },
+    {
+      "step": 13,
+      "what": "فحص الدخان",
+      "status": "done",
+      "detail": "انظر smoke_check"
+    },
+    {
+      "step": 14,
+      "what": "الواجهة",
+      "status": "partial",
+      "detail": "خطوة ui في فحص الدخان ok (tools/serve_ui.py يُهيَّأ)؛ لم تُفتح الصفحة من متصفح ويندوز"
+    }
   ],
   "hugging_face": {
     "hf_cli": "huggingface_hub 2.0.0 بـuv tool install في WSL. مثبّتُ hf.co الرسميّ (بـ--exclude-skill) سقط لأن python3-venv غائب ويحتاج sudo، فاستُعمل uv بالحزمة نفسها",
@@ -42,21 +112,47 @@
   "smoke_check": {
     "command": "uv run python tools/launch_check.py --json",
     "commit": "6d5a9eb",
-    "first_run": {"exit_code": 1, "agent_turn": "agent_turn_failed http_500 — خادمُ نموذج Ollama انهار (0xc0000409) بعد 23 ثانية، أول نداءٍ بعد خمول"},
+    "first_run": {
+      "exit_code": 1,
+      "agent_turn": "agent_turn_failed http_500 — خادمُ نموذج Ollama انهار (0xc0000409) بعد 23 ثانية، أول نداءٍ بعد خمول"
+    },
     "retry": {
       "exit_code": 3,
       "steps": [
-        {"step": "runtime", "status": "ok", "code": "runtime_ready_public"},
-        {"step": "morphology", "status": "ok", "code": "camel_ready"},
-        {"step": "engine", "status": "ok", "code": "engine_ready"},
-        {"step": "agent_turn", "status": "ok", "code": "agent_turn_live"},
-        {"step": "policies", "status": "unavailable", "code": "corpus_missing"},
-        {"step": "ui", "status": "ok", "code": "ui_ready"}
+        {
+          "step": "runtime",
+          "status": "ok",
+          "code": "runtime_ready_public"
+        },
+        {
+          "step": "morphology",
+          "status": "ok",
+          "code": "camel_ready"
+        },
+        {
+          "step": "engine",
+          "status": "ok",
+          "code": "engine_ready"
+        },
+        {
+          "step": "agent_turn",
+          "status": "ok",
+          "code": "agent_turn_live"
+        },
+        {
+          "step": "policies",
+          "status": "unavailable",
+          "code": "corpus_missing"
+        },
+        {
+          "step": "ui",
+          "status": "ok",
+          "code": "ui_ready"
+        }
       ]
     }
   },
   "owner_actions": [
-    "Docker: أغلق Docker Desktop كليًّا (Quit من أيقونة الصينية)، ثم احذف الملفين %LOCALAPPDATA%\\Docker\\run\\sailor-ingest.sock.stale و%LOCALAPPDATA%\\Docker\\run\\dockerInference.stale، ثم افتح Docker Desktop. لا تختر Reset to factory defaults.",
     "داخل أوبونتو: sudo apt update && sudo apt install -y build-essential python3-venv",
     "داخل أوبونتو: cd ~/diwan && uv run python tools/serve_ui.py، ثم افتح http://127.0.0.1:8765 من متصفح ويندوز (G5 ١٤)"
   ],
@@ -68,9 +164,20 @@
   "measurement_limits": [
     "انهيارُ خادم نموذج Ollama (0xc0000409) عند أول نداءٍ بعد خمول وقع ثلاث مرّاتٍ على هذا الجهاز ولم يُشخَّص؛ فالرمز 3 من الإعادة لا من الجولة الأولى.",
     "بيئةُ المشروع ببايثون 3.12 لا 3.14 التي في CI، فالفحصُ يشهد للجهاز لا لبيئة CI.",
-    "خطوات G5 ٦ و٧ لم تُنفَّذ لأن Docker لا يقلع، و١٥–٣١ و٣٧ خارج هذا التكليف: ٢٤–٢٨ تحضيرٌ (طاقة وWSL وإعدادات Actions) يجوز قبل الموافقة، و٢٩ هي الموافقةُ نفسها في #57، و٣٠ فحصٌ جافّ متوقَّعٌ سقوطه، و٣١ عملُ المطوّرين (ع٣). والذي ينتظر موافقةَ المالك ودمجَ طلب ع٣ هو تسجيلُ المشغّل في ٣٢–٣٦ وحده.",
+    "خطوات G5 ١٥ فما بعدها لم تُنفَّذ في هذا التكليف، وG5 ٢٤–٣٧ والمشغّل (ع٣) تنتظر موافقة المالك في #57.",
     "أُعيد تشغيل WSL وDocker Desktop أثناء التجهيز. وانهيارُ Docker بدأ بعد إيقاف Docker Desktop بالقوّة لتطبيق إعداداته، فالأرجح أن الإيقاف القسري ترك المقبس عالقًا.",
     "خزنةُ Obsidian على Nitro لقطةٌ من main عند 6d5a9eb، تتقادم حتى يُعاد بناؤها.",
-    "خطوة ui في فحص الدخان تشغّل tools/serve_ui.py --help وحده، فلا تشهد على ربط المنفذ ولا على وصول متصفح ويندوز إليه؛ وG5 ١٤ جزئية حتى تُفتح الصفحة."
-  ]
+    "خطوة ui في فحص الدخان تشغّل tools/serve_ui.py --help وحده، فلا تشهد على ربط المنفذ ولا على وصول متصفح ويندوز إليه؛ وG5 ١٤ جزئية حتى تُفتح الصفحة.",
+    "تحليلُ انهيار Ollama خمسُ محاولاتٍ في جلسةٍ واحدة، فعدمُ إعادة الإنتاج لا ينفي السبب؛ ويُعاد الاختبار وDocker Desktop قائم."
+  ],
+  "ollama_crash_analysis": {
+    "date": "2026-09-27",
+    "signature": "CUDA error: shared object initialization failed في ggml_cuda_kernel_can_use_pdl (cudaFuncGetAttributes)، في مكتبة cuda_v13 عند تحميل النموذج، فيخرج llama-server بـ0xc0000409 ويردّ Ollama http_500",
+    "occurrences": "ستّ مرّاتٍ في سجلّات ٢٦ سبتمبر، أزواجًا لأن Ollama يعيد التحميل مرّةً: 01:34 و02:02 و21:59",
+    "hypothesis_tested": "أولُ تحميلٍ بعد إقلاع آلة WSL2 الافتراضية",
+    "test": "Docker Desktop موقوفٌ بـdocker desktop stop، ثم wsl --shutdown وإقلاعُ WSL ثم تحميلٌ فوري، مرّتين على cuda_v13 (خادم Ollama القائم) ومرّتين على cuda_v12 (خادمٌ مؤقّت بـOLLAMA_LLM_LIBRARY=cuda_v12 على 11435)، وتحميلٌ ضابطٌ بلا إعادة",
+    "result": "لم يُعَد إنتاجُ الانهيار: خمسُ تحميلاتٍ ناجحة في 8–9 ثوانٍ، وcuda_v12 حمّل الطبقات كلَّها (34/34) بلا خطأ CUDA. فالفرضية مردودة بصيغتها هذه",
+    "remaining_candidate": "في الحوادث الثلاث كان Docker Desktop قائمًا أو يُقلع، وهو يشارك البطاقة عبر GPU-PV؛ وفي التجربة كان موقوفًا. لم يُختبر، لأن إعادة تشغيل WSL وDocker قائمٌ عطّلت Docker في ٢٦ سبتمبر",
+    "decision": "لا تغيير في إعداد Ollama: لا دليل أن cuda_v12 يمنع الانهيار. والتدبير القائم إعادةُ الفحص مرّةً عند http_500 (G5 الخطوة ٨)"
+  }
 }
