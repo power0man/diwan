@@ -50,16 +50,16 @@ cmd_run() {
   local bundle="${1:-}"
   [ -n "$bundle" ] || bundle="$(cmd_bundle)"
   [ -s "$bundle" ] || die "حزمةُ الطلب فارغة: $bundle"
-  # مخرَج Kimi وحده قد يحمل حالاتٍ محجوبة، وأخطاءُ التشغيل لا.
-  # فيُفصلان: سجلٌّ لا يُفتح، وسجلُّ أخطاءٍ يُقرأ ليُشخَّص العطب.
+  # السجلّان كلاهما لا يُفتحان: Kimi يكتب تفكيرَه في مجرى الأخطاء، وفيه أسماءُ حالاتٍ
+  # محجوبة وفحوصُها (قيس في ٢٦ سبتمبر ٢٠٢٦). فلا يُطبع منهما إلا الرمزُ والحجم.
   local log="$KIMI_WORK/logs/run-$STAMP.log"
   local errlog="$KIMI_WORK/logs/run-$STAMP.err.log"
   local rc=0
   ( cd "$KIMI_WORK" && "$kimi_bin" --prompt "$(cat "$bundle")" --output-format text )     >"$log" 2>"$errlog" || rc=$?
   chmod 600 "$log" "$errlog"
-  echo "انتهى التشغيل (رمز $rc). مخرَج Kimi في $log — لا يُفتح."
+  echo "انتهى التشغيل (رمز $rc). السجلّان لا يُفتحان: $log ($(wc -c <"$log" | tr -d ' ') بايت)، و$errlog ($(wc -c <"$errlog" | tr -d ' ') بايت)."
   if [ "$rc" != 0 ]; then
-    echo "وأخطاءُ التشغيل في $errlog — هذا يُقرأ، فليس فيه حالات."
+    echo "تعذّر التشغيل: يشخّصه المالكُ بنفسه، فمجرى الأخطاء قد يحمل حالاتٍ محجوبة."
   fi
   echo "التالي: تحقّق من البنية بـ '$0 inspect'، واستلم بـ '$0 intake'، ثم وزّع بـ '$0 place'."
   return "$rc"
@@ -96,7 +96,8 @@ cmd_place() {
   local doc="$DIWAN/docs/external/PLACE-KIMI-FILES.md"
   local block; block="$(awk '/^```bash$/{f=1;next} /^```$/{f=0} f' "$doc")"
   [ -n "$block" ] || die "لم أجد أمرَ التوزيع في $doc"
-  SRC="$KIMI_WORK/kimi-benchmark" bash -c "$block"
+  # المستودعُ هو الذي فيه هذا الملفّ، لا الافتراضيُّ في الوثيقة
+  SRC="$KIMI_WORK/kimi-benchmark" DIWAN="$DIWAN" bash -c "$block"
 }
 
 case "${1:-}" in

@@ -52,9 +52,17 @@ def _kimi(tmp: Path, *, tamper=False, unlisted=False) -> Path:
     return src
 
 
-def _run(tmp: Path, src: Path) -> subprocess.CompletedProcess:
+def _public_repo(diwan: Path, url: str = "https://github.com/power0man/diwan.git") -> None:
+    """مستودعٌ حقيقيّ بأصلٍ مسمًّى: التوزيعُ يرفض غيرَ النسخة العامة."""
+    diwan.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init", "-q", str(diwan)], check=True)
+    subprocess.run(["git", "-C", str(diwan), "remote", "add", "origin", url], check=True)
+
+
+def _run(tmp: Path, src: Path, url: str = "https://github.com/power0man/diwan.git") -> subprocess.CompletedProcess:
     diwan = tmp / "diwan"
-    (diwan / ".git").mkdir(parents=True, exist_ok=True)
+    if not (diwan / ".git").exists():
+        _public_repo(diwan, url)
     env = {"PATH": "/usr/bin:/bin:/usr/local/bin", "HOME": str(tmp), "SRC": str(src),
            "DIWAN": str(diwan), "SEALED_DST": str(tmp / "diwan-sealed" / "kimi_v1")}
     return subprocess.run(["bash", "-c", _script()], cwd=src, env=env,
@@ -152,3 +160,12 @@ def test_the_requested_development_suites_do_not_collide_with_committed_banks():
     for name in names:
         assert f"`{name}`" in request, f"التكليفُ لا يطلب {name}"
         assert not (ROOT / "evaluation" / "suites" / name).exists(), f"{name} مودَعٌ من قبل"
+
+
+def test_the_private_copy_is_refused_before_anything_is_copied(tmp_path):
+    """على الماك ~/diwan-work/diwan هو diwan-private؛ فالتوزيعُ إليه يُرفض بالاسم."""
+    src = _kimi(tmp_path)
+    proc = _run(tmp_path, src, url="https://github.com/power0man/diwan-private")
+    assert proc.returncode != 0 and "ليس نسخةَ power0man/diwan العامة" in proc.stdout
+    assert not (tmp_path / "diwan" / "evaluation").exists()
+    assert not (tmp_path / "diwan-sealed").exists()
