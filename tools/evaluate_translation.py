@@ -13,7 +13,9 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
+import os
 from pathlib import Path
+import platform
 import shlex
 import sys
 import urllib.request
@@ -38,10 +40,29 @@ def _digest(model: str, base: str = "http://127.0.0.1:11434") -> str | None:
     return next((m.get("digest") for m in models if m.get("name") == wanted), None)
 
 
+def _interpreter() -> str:
+    """المفسّرُ الذي قاس، نسبيًّا إلى المستودع إن كان فيه (‎.venv)؛ وإلا اسمُه وحده، فالمسارُ المطلق يحمل اسمَ الحساب
+    المحليّ ولا يدخل دليلًا عامًّا (ك٢٧)."""
+    executable = Path(sys.executable)
+    try:
+        return os.path.relpath(executable, ROOT) if executable.resolve().is_relative_to(ROOT.resolve()) else executable.name
+    except ValueError:
+        return executable.name
+
+
+def _reproduction(argv: list[str], out: Path | None) -> str:
+    """الأمرُ الذي يعيد القياس: الوسائطُ نفسُها، والتقريرُ إلى مسارٍ جديد فلا يردّه `output_exists`."""
+    args = list(argv)
+    if out is not None:
+        fresh = out.with_name(out.stem + ".rerun" + out.suffix)
+        args = [str(fresh) if a == str(out) else (f"--out={fresh}" if a == f"--out={out}" else a) for a in args]
+    return shlex.join([_interpreter(), "tools/evaluate_translation.py", *args])
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--model", required=True, help="اسمُ النموذج كما يعرفه Ollama")
-    parser.add_argument("--model-version", help="بصمةُ النموذج؛ تُقرأ من Ollama إن لم تُعطَ")
+    parser.add_argument("--model-version", help="بصمةُ النموذج المتوقَّعة؛ تُقارَن بما يعرضه Ollama")
     parser.add_argument("--license", required=True, help="رخصةُ أوزان النموذج كما في بطاقته")
     parser.add_argument("--agent", required=True, help="معرّفُ من يشغّل القياس، مسجَّلًا في registry/agents.json")
     parser.add_argument("--out", type=Path, help="مسارُ التقرير؛ لا يُستبدل ملفٌّ قائم")
@@ -55,15 +76,22 @@ def main(argv=None) -> int:
         print(json.dumps({"status": "refused", "code": "agent_unregistered"}, ensure_ascii=False))
         return 1
     from providers.ollama import SAMPLING_SEED, OllamaProvider
-    model_version = args.model_version or _digest(args.model) or "unspecified"
+    # البصمةُ من Ollama قبل أيّ نداءٍ وبعد آخره، ولا تقريرَ بدونها أو إن تغيّرت (على نسق evaluate_memory)
+    model_version = _digest(args.model)
+    if not model_version or (args.model_version and args.model_version != model_version):
+        code = "model_digest_unresolved" if not model_version else "model_version_mismatch"
+        print(json.dumps({"status": "refused", "code": code}, ensure_ascii=False))
+        return 1
     report = run_bank(OllamaProvider(args.model), model=args.model, model_version=model_version,
                       max_steps=args.max_steps, deadline_s=args.deadline_s)
+    if _digest(args.model) != model_version:
+        print(json.dumps({"status": "refused", "code": "model_digest_drifted"}, ensure_ascii=False))
+        return 1
     report.update(agent=args.agent, date=datetime.date.today().isoformat(),
                   engine={"provider": "ollama", "model": args.model, "model_version": model_version,
                           "license": args.license},
-                  sampling={"temperature": 0, "seed": SAMPLING_SEED},
-                  command=shlex.join(["python3", "tools/evaluate_translation.py", *(argv if argv is not None
-                                                                                  else sys.argv[1:])]))
+                  sampling={"temperature": 0, "seed": SAMPLING_SEED}, python=platform.python_version(),
+                  command=_reproduction(argv if argv is not None else sys.argv[1:], args.out))
     if args.out is not None:
         args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     summary = report["summary"]

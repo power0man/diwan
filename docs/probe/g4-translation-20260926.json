@@ -1,6 +1,6 @@
 {
  "agent": "anthropic/claude-opus-5-5",
- "command": "python3 tools/evaluate_translation.py --model qwen3.5:9b --out docs/probe/g4-translation-20260926.json",
+ "command": "python3 tools/evaluate_translation.py --model qwen3.5:9b --license Apache-2.0 --agent anthropic/claude-opus-5-5 --out docs/probe/g4-translation-20260926.rerun.json",
  "config": {
   "meta_sha256": "431f6ded3bfb72ce8a0c9bd88d6f3066c266ef3637ac238760770c905ba60b21",
   "model": "qwen3.5:9b",
@@ -37,7 +37,7 @@
   "the_bank_has_no_execution_criterion_for_injection_items_so_obeying_an_injected_command_is_not_scored_as_such",
   "overlong_for_short_source_fails_an_answer_over_max_8_or_4x_the_words_of_a_source_under_6_words_by_length_alone",
   "injection_outcomes_in_observations_are_read_by_hand_from_the_recorded_translations",
-  "provenance_backfilled_after_the_run_agent_from_the_commit_trailer_date_from_the_commit_command_from_the_defaults_in_config_options_sampling_from_providers_ollama_at_that_commit_license_from_the_model_card"
+  "provenance_backfilled_after_the_run_agent_from_the_commit_trailer_date_from_the_commit_command_is_the_reproduction_with_todays_required_flags_and_a_fresh_out_path_the_interpreter_at_run_time_is_unknown_sampling_from_providers_ollama_at_that_commit_license_from_the_model_card"
  ],
  "observations": {
   "injection_outcomes_read_by_hand": {

@@ -245,9 +245,32 @@ def test_the_cli_records_the_provenance_the_plan_requires(tmp_path, monkeypatch,
     assert report["engine"] == {"provider": "ollama", "model": "qwen3.5:9b", "model_version": "sha256:weights",
                                 "license": "Apache-2.0"}
     assert report["config"]["model_version"] == "sha256:weights"
-    assert report["sampling"] == {"temperature": 0, "seed": ollama.SAMPLING_SEED}
-    assert report["command"] == shlex.join(["python3", "tools/evaluate_translation.py", *args])
+    assert report["sampling"] == {"temperature": 0, "seed": ollama.SAMPLING_SEED} and report["python"]
+    # الأمرُ يعيد القياسَ حرفيًّا: الوسائطُ اللازمة، وتقريرٌ إلى مسارٍ جديد، والمفسّرُ الذي قاس بلا مسارٍ مطلق
+    command = shlex.split(report["command"])
+    assert command[1:-1] == ["tools/evaluate_translation.py", *args[:-1]]
+    assert command[-1] == str(tmp_path / "r.rerun.json") and not command[0].startswith("/")
+    assert Path(command[0]).name == Path(sys.executable).name
+    assert cli.main(command[2:]) == 0 and (tmp_path / "r.rerun.json").exists()
     stranger = [*args[:5], "someone/unknown", "--out", str(tmp_path / "s.json")]
     assert cli.main(stranger) == 1 and "agent_unregistered" in capsys.readouterr().out
     evidence = json.loads((ROOT / "docs" / "probe" / "g4-translation-20260926.json").read_text(encoding="utf-8"))
     assert {"agent", "date", "engine", "sampling", "command"} <= set(evidence)
+
+
+def test_a_run_without_a_stable_model_digest_writes_no_report(tmp_path, monkeypatch, capsys):
+    """على نسق ملاحظة Codex على #129: لا تقريرَ ترجمةٍ بالوسم وحده، ولا بوسمٍ تغيّرت أوزانُه أثناء التشغيل."""
+    import providers.ollama as ollama
+    import tools.evaluate_translation as cli
+    monkeypatch.setattr(ollama, "OllamaProvider", lambda model: Replay("reference"))
+    args = ["--model", "m", "--license", "Apache-2.0", "--agent", "anthropic/claude-opus-5-5",
+            "--out", str(tmp_path / "r.json")]
+    monkeypatch.setattr(cli, "_digest", lambda model: None)
+    assert cli.main(args) == 1 and "model_digest_unresolved" in capsys.readouterr().out
+    seen = iter(["sha256:before", "sha256:after"])
+    monkeypatch.setattr(cli, "_digest", lambda model: next(seen))
+    assert cli.main(args) == 1 and "model_digest_drifted" in capsys.readouterr().out
+    monkeypatch.setattr(cli, "_digest", lambda model: "sha256:real")
+    assert cli.main([*args[:-2], "--model-version", "sha256:other", "--out", str(tmp_path / "r.json")]) == 1
+    assert "model_version_mismatch" in capsys.readouterr().out
+    assert not (tmp_path / "r.json").exists()
