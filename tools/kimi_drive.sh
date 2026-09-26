@@ -33,15 +33,27 @@ cmd_setup() {
 }
 
 # يجمع الرأسَ والتكليفَ والتحديث، كلٌّ من بعد أول خطٍّ فاصل فيه
+# والتكليفُ يُختار بـKIMI_TASK: next (الافتراضيّ، KIMI-NEXT.md) أو memory (KIMI-MEMORY-BANK.md). وتكليفُ الذاكرة
+# يأخذ من الرأس فقرتَه الأولى وحدها (حدُّ المجلّد وشكلُ الرسالة الأخيرة)، فما بعدها خاصٌّ بدورة v1.2.
 cmd_bundle() {
-  local out="$KIMI_WORK/prompts/prompt-$STAMP.txt"
+  local out="$KIMI_WORK/prompts/prompt-$STAMP.txt" header="$DIWAN/docs/external/KIMI-WORKSPACE-HEADER.md"
+  local task="${KIMI_TASK:-next}" assignment
+  case "$task" in
+    next) assignment="$DIWAN/docs/external/KIMI-NEXT.md" ;;
+    memory) assignment="$DIWAN/docs/external/KIMI-MEMORY-BANK.md" ;;
+    *) die "KIMI_TASK: next أو memory، لا $task" ;;
+  esac
   mkdir -p "$KIMI_WORK/prompts"
   {
-    sed -n '/^---$/,$p' "$DIWAN/docs/external/KIMI-WORKSPACE-HEADER.md" | tail -n +2
+    if [ "$task" = next ]; then
+      sed -n '/^---$/,$p' "$header" | tail -n +2
+    else
+      sed -n '/^---$/,$p' "$header" | tail -n +2 | awk 'NF {seen=1} seen && !NF {exit} seen {print}'
+    fi
     printf '\n'
     cat "$DIWAN/docs/KIMI-BENCHMARK-BRIEF.md"
     printf '\n'
-    sed -n '/^---$/,$p' "$DIWAN/docs/external/KIMI-NEXT.md" | tail -n +2
+    sed -n '/^---$/,$p' "$assignment" | tail -n +2
   } > "$out"
   chmod 600 "$out"
   echo "$out"

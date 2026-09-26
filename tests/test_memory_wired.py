@@ -244,3 +244,40 @@ def test_the_cli_validates_the_suite_and_names_the_runner_before_any_call(tmp_pa
     assert json.loads(capsys.readouterr().out)["status"] == "refused"
     with pytest.raises(SystemExit):
         cli.main(["--model", "m", "--agent", "someone/unknown", "--out", str(tmp_path / "r.json")])
+
+
+
+def test_a_custom_suite_must_be_a_commissioned_bank_at_full_size_and_reports_bind_its_bytes(tmp_path, monkeypatch,
+                                                                                             capsys):
+    """ملاحظتا Codex على #129: تسليمٌ من سيناريو واحد كان يُقاس «١/١»، والتقريرُ لا يربط نفسه ببايتات البنك."""
+    import hashlib
+    import json
+    import tools.evaluate_memory as cli
+    small = json.loads(json.dumps(BANK))
+    small["suite_id"] = "memory_kimi_v1"
+    path = tmp_path / "kimi.json"
+    path.write_text(json.dumps(small, ensure_ascii=False), encoding="utf-8")
+    args = ["--model", "m", "--suite", str(path), "--agent", "anthropic/claude-opus-5-5", "--out", str(tmp_path / "r.json")]
+    monkeypatch.setattr(cli, "OllamaProvider", lambda **_: (_ for _ in ()).throw(AssertionError("نداءٌ قبل الفحص")))
+    assert cli.main(args) == 2 and json.loads(capsys.readouterr().out)["code"] == "suite_below_commissioned_total"
+    small["suite_id"] = "someone_else_v1"
+    path.write_text(json.dumps(small, ensure_ascii=False), encoding="utf-8")
+    assert cli.main(args) == 2 and json.loads(capsys.readouterr().out)["code"] == "suite_not_commissioned"
+    full = json.loads(json.dumps(BANK))
+    full["suite_id"] = "memory_kimi_v1"
+    by = {c: [s for s in full["scenarios"] if s["category"] == c] for c in cli.COMMISSIONED["memory_kimi_v1"] if c != "total"}
+    grown = []
+    for category, minimum in cli.COMMISSIONED["memory_kimi_v1"].items():
+        if category != "total":
+            grown += [dict(by[category][i % len(by[category])], id=f"{category}_{i}") for i in range(minimum)]
+    full["scenarios"] = grown
+    assert cli.commissioned_shortfall(full) is None
+    full["scenarios"] = [s for s in grown if s["category"] != "backup"] + [s for s in grown if s["category"] == "backup"][:5]
+    full["scenarios"] += [dict(full["scenarios"][0], id="extra")]
+    assert cli.commissioned_shortfall(full) == "suite_below_commissioned_category"
+    monkeypatch.setattr(cli, "OllamaProvider", lambda **_: _Delegate())
+    out = tmp_path / "default.json"
+    assert cli.main(["--model", "m", "--agent", "anthropic/claude-opus-5-5", "--out", str(out)]) == 0
+    capsys.readouterr()
+    assert json.loads(out.read_text(encoding="utf-8"))["suite_sha256"] == hashlib.sha256(
+        cli.DEFAULT_SUITE.read_bytes()).hexdigest()

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -25,6 +26,24 @@ from evaluation.memory_runner import run_memory_bank  # noqa: E402
 from providers.ollama import OllamaProvider  # noqa: E402
 
 REGISTRY = ROOT / "registry" / "agents.json"
+DEFAULT_SUITE = ROOT / "evaluation" / "suites" / "memory_v1.json"
+# البنوكُ المكلَّف بها بأعدادها كما في تكليفها؛ فتسليمٌ مبتورٌ لا يُقاس «١/١» (ملاحظة Codex على #129)
+COMMISSIONED = {
+    "memory_kimi_v1": {"total": 40, "forget": 10, "isolation": 8, "consent": 8, "backup": 6, "injection": 8},
+}
+
+
+def commissioned_shortfall(bank: dict) -> str | None:
+    wanted = COMMISSIONED.get(bank["suite_id"])
+    if wanted is None:
+        return "suite_not_commissioned"
+    scenarios = bank["scenarios"]
+    if len(scenarios) < wanted["total"]:
+        return "suite_below_commissioned_total"
+    for category, minimum in wanted.items():
+        if category != "total" and sum(s["category"] == category for s in scenarios) < minimum:
+            return "suite_below_commissioned_category"
+    return None
 
 LIMITS = [
     "measures_what_reaches_the_model_and_what_stays_on_disk_not_what_the_model_does_with_a_memory",
@@ -38,7 +57,7 @@ LIMITS = [
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--model", required=True, help="اسمُ النموذج كما يعرفه Ollama")
-    parser.add_argument("--suite", type=Path, default=ROOT / "evaluation" / "suites" / "memory_v1.json")
+    parser.add_argument("--suite", type=Path, default=DEFAULT_SUITE)
     parser.add_argument("--agent", required=True, help="معرّفُ من يشغّل القياس، مسجَّلًا في registry/agents.json")
     parser.add_argument("--out", required=True, type=Path, help="مسارُ التقرير؛ لا يُستبدل ملفٌّ قائم")
     args = parser.parse_args(argv)
@@ -47,14 +66,20 @@ def main(argv=None) -> int:
     if args.agent not in json.loads(REGISTRY.read_text(encoding="utf-8"))["agents"]:
         parser.error(f"agent_unregistered: {args.agent}")
     # بنكٌ لم يُفحص قد يمرّ ١٠٠٪ بخطواتٍ يتجاهلها المُشغِّل؛ فالمدقّقُ قبل أي نداء (ملاحظة Codex على #129)
+    raw = args.suite.read_bytes()
     try:
-        bank = validate_memory_bank(json.loads(args.suite.read_text(encoding="utf-8")))
+        bank = validate_memory_bank(json.loads(raw.decode("utf-8")))
     except (PayloadRejected, ValueError, KeyError, TypeError) as exc:
         print(json.dumps({"status": "refused", "code": getattr(exc, "code", "bank_invalid")}, ensure_ascii=False))
         return 2
+    # غيرُ البنك المودَع بنكٌ مكلَّفٌ به، بأعداده كاملةً
+    shortfall = None if args.suite.resolve() == DEFAULT_SUITE.resolve() else commissioned_shortfall(bank)
+    if shortfall:
+        print(json.dumps({"status": "refused", "code": shortfall}, ensure_ascii=False))
+        return 2
     provider = OllamaProvider(model=args.model)
     report = run_memory_bank(bank, driver="live", delegate=provider)
-    report.update(date=datetime.date.today().isoformat(), agent=args.agent,
+    report.update(suite_sha256=hashlib.sha256(raw).hexdigest(), date=datetime.date.today().isoformat(), agent=args.agent,
                   engine={"provider": "ollama", "model": args.model}, measurement_limits=LIMITS)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
