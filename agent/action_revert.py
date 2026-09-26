@@ -14,6 +14,7 @@ from core.canonical import digest
 from core.contracts import ToolCall, ToolSpec
 
 
+# سقفُ قيود الرجوع لفعلٍ واحد، لأيّ أداةٍ تكتب ملفّاتٍ عدّة؛ وحدُّ كل أداةٍ تحته (analyze_data: ثمانية)
 MAX_GROUP = 16
 
 
