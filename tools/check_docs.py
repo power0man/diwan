@@ -160,6 +160,14 @@ def maritime_counts(root):
     raise DocsError('maritime_catalog_missing')
 
 
+STATUS_LIMITS = [
+    "tests_collected_is_a_pytest_collection_count_not_a_pass_count",
+    "python_files_and_lines_count_tracked_py_files_and_their_newlines_not_code_quality",
+    "maritime_counts_come_from_the_owner_store_and_are_carried_as_published_where_the_store_is_excluded",
+    "historical_defects_are_read_from_the_m1_to_m7_acceptance_documents_not_recounted",
+]
+
+
 def derive(root, test_count):
     decisions = (root / 'docs/DECISIONS.md').read_text()
     titles = decision_titles(decisions)
@@ -189,7 +197,9 @@ def derive(root, test_count):
              'maritime_current_pages': maritime_pages,
              'acceptance_documents': len(stages), 'python_files': python_files,
              'python_lines': python_lines,
-             'quality_review': 'automated_multi_system_pending', 'active_gate': gate_ref, 'release_ready': False}
+             'quality_review': 'automated_multi_system_pending', 'active_gate': gate_ref, 'release_ready': False,
+             # كلُّ رقمٍ في docs/probe بحدوده (دليلُ المراجعة §٢): هذه أعدادُ جردٍ لا قياسُ جودة
+             'measurement_limits': STATUS_LIMITS}
     return state, titles, gate
 
 

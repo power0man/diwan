@@ -113,7 +113,7 @@ def test_an_existing_target_is_never_overwritten(tmp_path):
     assert [p.name for p in earlier.iterdir()] == ["keep.json"]
 
 
-DEV = ("arabic_general_v3.json", "agentic_v2.json", "agentic_v2.meta.json")
+DEV = ("arabic_general_v3_1.json", "arabic_general_v3_2.json", "agentic_v3.json", "agentic_v3.meta.json")
 
 
 def test_the_development_suites_are_placed_beside_the_bank(tmp_path):
@@ -128,12 +128,27 @@ def test_the_development_suites_are_placed_beside_the_bank(tmp_path):
 
 def test_an_existing_development_suite_stops_before_anything_is_copied(tmp_path):
     src = _kimi(tmp_path)
-    (src / "agentic_v2.json").write_text('{"new": true}')
+    (src / "agentic_v3.json").write_text('{"new": true}')
     suites = tmp_path / "diwan" / "evaluation" / "suites"
     suites.mkdir(parents=True)
-    (suites / "agentic_v2.json").write_text('{"old": true}')
+    (suites / "agentic_v3.json").write_text('{"old": true}')
     result = _run(tmp_path, src)
     assert result.returncode != 0 and "موجود من قبل" in result.stdout
-    assert (suites / "agentic_v2.json").read_text() == '{"old": true}'
+    assert (suites / "agentic_v3.json").read_text() == '{"old": true}'
     assert not (tmp_path / "diwan" / "evaluation" / "banks").exists()
     assert not (tmp_path / "diwan-sealed").exists()
+
+
+def test_the_requested_development_suites_do_not_collide_with_committed_banks():
+    """ما يطلبه التكليفُ الحاليّ لا يسمّي بنكًا مودَعًا، وإلّا توقّف التوزيعُ عند «موجود من قبل».
+
+    كان الجزءُ ٣ يطلب agentic_v2.json وهو بنكُ ك٤٤ المودَع (#101). وحين يُسلَّم التكليفُ ويُودَع ما فيه،
+    يُستبدل التكليفُ نفسُه بالتالي، فيُحدَّث هذا السطرُ معه.
+    """
+    block = (ROOT / "docs" / "external" / "PLACE-KIMI-FILES.md").read_text(encoding="utf-8")
+    names = re.search(r'^DEV="([^"]+)"', block, re.M).group(1).split()
+    assert tuple(names) == DEV
+    request = (ROOT / "docs" / "external" / "KIMI-NEXT.md").read_text(encoding="utf-8").split("\n---\n", 1)[1]
+    for name in names:
+        assert f"`{name}`" in request, f"التكليفُ لا يطلب {name}"
+        assert not (ROOT / "evaluation" / "suites" / name).exists(), f"{name} مودَعٌ من قبل"

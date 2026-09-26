@@ -42,7 +42,8 @@ def _sha(path: Path) -> str:
 
 
 def run_item(item: dict, provider, search, *, model: str, model_version: str, max_steps: int = 8,
-             deadline_s: float = 180.0, max_output: int = 2048) -> dict:
+             deadline_s: float = 180.0, max_output: int = 2048, search_enabled: bool = True) -> dict:
+    """`search_enabled=False` ذراعُ الاستئصال (ك٤٦): التعليماتُ نفسُها بلا أداة بحث."""
     base = {"id": item["id"], "category": item["category"]}
     scratch = Path(tempfile.mkdtemp(prefix="diwan-research-")).resolve()
     try:
@@ -50,7 +51,8 @@ def run_item(item: dict, provider, search, *, model: str, model_version: str, ma
         workspace.mkdir()
         context = ToolContext(workspace, Journal(workspace), frozenset({"auto"}))
         try:
-            run = run_agent(item["question"], provider, ToolRegistry(web_search_tool(search)), context,
+            registry = ToolRegistry(web_search_tool(search)) if search_enabled else ToolRegistry()
+            run = run_agent(item["question"], provider, registry, context,
                             ledger=Ledger(scratch / "ledger.jsonl"), budget=Budget(0, 0), model=model,
                             model_version=model_version, max_steps=max_steps, max_output=max_output,
                             deadline_s=deadline_s, system=RESEARCH_SYSTEM,

@@ -1,0 +1,300 @@
+{
+ "schema_version": 1,
+ "probe": "g11-vision-qwen2.5vl-7b",
+ "task": "غ١١ (#52)",
+ "date": "2026-09-26",
+ "agent": "anthropic/claude-opus-5-5",
+ "question": "ما دقّةُ qwen2.5vl:7b في Ollama المحلي على بطاقة Nitro، على شطر الفهم المجمَّد من بنك غ٧ (40 صورة)، وهل يبلغ العتباتِ المسجَّلة سلفًا؟",
+ "answer": "لا يبلغها بسبب فئة واحدة. الدقّة الكلّية 0.85 فوق عتبة 0.75، وخمسُ فئاتٍ من ستّ كاملة، لكن العدّ 0.4 دون حدِّ الفئة 0.5 (4 من 10).",
+ "command": "uv run python evaluation/vision_runner.py --model qwen2.5vl:7b --out docs/probe/g11-vision-qwen2.5vl-7b-20260926.json — ومنه engine وreport وerrors وitems كما هي؛ والسؤالُ والجوابُ والبيئةُ والحدودُ أُضيفت بعده",
+ "environment": {
+  "machine": "Acer Nitro AN515-58 (docs/SECOND-NODE.md)",
+  "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU, 8188 MiB, driver 610.62",
+  "os": "Windows 11 (Ollama 0.34.4 on Windows); runner in WSL2 Ubuntu 26.04, Python 3.12.14 (uv env)",
+  "ollama_url": "http://127.0.0.1:11434 (WSL mirrored networking)"
+ },
+ "measurement_limits": [
+  "القياسُ للنموذج وحده عبر `evaluation/ocr_runner.py` و`evaluation/vision_runner.py`، لا لطريق المنتج (لا واجهة ولا حلقة وكيلة ولا حَجر).",
+  "على Nitro: RTX 4060 Laptop بذاكرة 8 GB، وOllama 0.34.4 على ويندوز، والمشغِّلُ في WSL2. والأزمنةُ تخصّ هذا الجهاز.",
+  "نداءٌ واحد لكل صورة بـtemperature 0 وseed 0، فلا تقديرَ لتباين. والموجّهُ والإعدادُ كما في المشغِّل، ولم يُضبط شيءٌ بعد رؤية النتائج.",
+  "النماذجُ الثلاثة سُجّلت في التكليف قبل أيّ قياس، ونُشرت نتائجُها كلُّها.",
+  "البطاقة: كلُّ الطبقات على البطاقة (29/29). والزمن 48 ثانية لأربعين صورة.",
+  "أربعون صورةً مصطنعة في ستّ فئات، والحكمُ على سطر «الجواب:» وحده؛ فالجوابُ الصحيح بلا السطر خطأ.",
+  "فئةُ العدّ هي التي تُسقط الحكم عند النموذجين الأعليين، وعشرُ صورٍ لا تكفي لتمييز فرقٍ صغير بينهما."
+ ],
+ "suite_id": "media_v1_vision",
+ "bank_manifest_sha256": "b942ed8763b139810e990b05285ac1e22bad9c5a6546a535a0f55fb69e3ec742",
+ "engine": {
+  "name": "ollama:qwen2.5vl:7b",
+  "version": "5ced39dfa4ba / ollama 0.34.4",
+  "settings": {
+   "options": {
+    "temperature": 0,
+    "seed": 0,
+    "num_predict": 2048
+   },
+   "think": null,
+   "digest": "5ced39dfa4bac325dc183dd1e4febaa1c46b3ea28bce48896c8e69c1e79611cc",
+   "ollama": "0.34.4"
+  }
+ },
+ "thresholds": {
+  "accuracy": 0.75,
+  "min_category_accuracy": 0.5
+ },
+ "report": {
+  "accuracy": 0.85,
+  "categories": {
+   "counting": 0.4,
+   "colors": 1.0,
+   "spatial": 1.0,
+   "chart": 1.0,
+   "table": 1.0,
+   "sign": 1.0
+  },
+  "meets": false
+ },
+ "errors": {},
+ "items": [
+  {
+   "id": "v01",
+   "category": "counting",
+   "response": "الجواب: 2",
+   "correct": true
+  },
+  {
+   "id": "v02",
+   "category": "counting",
+   "response": "الجواب: 10",
+   "correct": false
+  },
+  {
+   "id": "v03",
+   "category": "counting",
+   "response": "الجواب: 5",
+   "correct": false
+  },
+  {
+   "id": "v04",
+   "category": "counting",
+   "response": "الجواب: 10",
+   "correct": false
+  },
+  {
+   "id": "v05",
+   "category": "counting",
+   "response": "الجواب: 4",
+   "correct": false
+  },
+  {
+   "id": "v06",
+   "category": "counting",
+   "response": "الجواب: 10",
+   "correct": false
+  },
+  {
+   "id": "v07",
+   "category": "counting",
+   "response": "الجواب: 4",
+   "correct": true
+  },
+  {
+   "id": "v08",
+   "category": "counting",
+   "response": "الجواب: 4",
+   "correct": true
+  },
+  {
+   "id": "v09",
+   "category": "counting",
+   "response": "الجواب: 2",
+   "correct": true
+  },
+  {
+   "id": "v10",
+   "category": "counting",
+   "response": "الجواب: 10",
+   "correct": false
+  },
+  {
+   "id": "v11",
+   "category": "colors",
+   "response": "الجواب: أزرق",
+   "correct": true
+  },
+  {
+   "id": "v12",
+   "category": "colors",
+   "response": "الجواب: أحمر",
+   "correct": true
+  },
+  {
+   "id": "v13",
+   "category": "colors",
+   "response": "الجواب: أحمر",
+   "correct": true
+  },
+  {
+   "id": "v14",
+   "category": "colors",
+   "response": "الجواب: أصفر",
+   "correct": true
+  },
+  {
+   "id": "v15",
+   "category": "colors",
+   "response": "الجواب: أصفر",
+   "correct": true
+  },
+  {
+   "id": "v16",
+   "category": "colors",
+   "response": "الجواب: أحمر",
+   "correct": true
+  },
+  {
+   "id": "v17",
+   "category": "spatial",
+   "response": "الجواب: المربع",
+   "correct": true
+  },
+  {
+   "id": "v18",
+   "category": "spatial",
+   "response": "الجواب: فوق",
+   "correct": true
+  },
+  {
+   "id": "v19",
+   "category": "spatial",
+   "response": "الجواب: المثلث",
+   "correct": true
+  },
+  {
+   "id": "v20",
+   "category": "spatial",
+   "response": "الجواب: تحت",
+   "correct": true
+  },
+  {
+   "id": "v21",
+   "category": "spatial",
+   "response": "الجواب: المربع",
+   "correct": true
+  },
+  {
+   "id": "v22",
+   "category": "spatial",
+   "response": "الجواب: فوق",
+   "correct": true
+  },
+  {
+   "id": "v23",
+   "category": "chart",
+   "response": "الجواب: 72",
+   "correct": true
+  },
+  {
+   "id": "v24",
+   "category": "chart",
+   "response": "الجواب: 72",
+   "correct": true
+  },
+  {
+   "id": "v25",
+   "category": "chart",
+   "response": "الجواب: 15",
+   "correct": true
+  },
+  {
+   "id": "v26",
+   "category": "chart",
+   "response": "الجواب: 68",
+   "correct": true
+  },
+  {
+   "id": "v27",
+   "category": "chart",
+   "response": "الجواب: مارس",
+   "correct": true
+  },
+  {
+   "id": "v28",
+   "category": "chart",
+   "response": "الجواب: يونيو",
+   "correct": true
+  },
+  {
+   "id": "v29",
+   "category": "chart",
+   "response": "الجواب: أبريل",
+   "correct": true
+  },
+  {
+   "id": "v30",
+   "category": "chart",
+   "response": "الجواب: مارس",
+   "correct": true
+  },
+  {
+   "id": "v31",
+   "category": "table",
+   "response": "الجواب: 12",
+   "correct": true
+  },
+  {
+   "id": "v32",
+   "category": "table",
+   "response": "الجواب: 23 ريال",
+   "correct": true
+  },
+  {
+   "id": "v33",
+   "category": "table",
+   "response": "الجواب: 8",
+   "correct": true
+  },
+  {
+   "id": "v34",
+   "category": "table",
+   "response": "الجواب: 8",
+   "correct": true
+  },
+  {
+   "id": "v35",
+   "category": "table",
+   "response": "الجواب: 21 ريال",
+   "correct": true
+  },
+  {
+   "id": "v36",
+   "category": "sign",
+   "response": "الجواب: مغلق للصيانة",
+   "correct": true
+  },
+  {
+   "id": "v37",
+   "category": "sign",
+   "response": "الجواب: ممنوع التدخين",
+   "correct": true
+  },
+  {
+   "id": "v38",
+   "category": "sign",
+   "response": "الجواب: المخرج",
+   "correct": true
+  },
+  {
+   "id": "v39",
+   "category": "sign",
+   "response": "الجواب: الطابق الثاني",
+   "correct": true
+  },
+  {
+   "id": "v40",
+   "category": "sign",
+   "response": "الجواب: الدفع نقدًا فقط",
+   "correct": true
+  }
+ ]
+}

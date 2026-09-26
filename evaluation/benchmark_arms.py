@@ -250,3 +250,103 @@ class DiwanFullArm:
             "error_code": error_code,
             "abstained": abstained,
         }
+
+
+# — م١٣-ب (ك٤٩): المركزُ بالاسترجاع نفسِه على المتن نفسِه —
+
+CENTER_CITATION = (
+    "حين تجيب ممّا أعادته أداةُ search_regulations فأسنِد كلَّ ادعاءٍ إلى شاهده بعلامته كما رُقّم "
+    "في النتائج، مثل [ش1]، ولا تُسند إلى ما لم تُعده الأداة. وإن لم تكفِ الشواهد فقل: الشواهد غير كافية."
+)
+
+
+def numbered_search_tool(search, pages: dict[int, dict], *, limit_ceiling: int = 8):
+    """أداةُ `search_regulations` للمركز: كلُّ شاهدٍ يُعاد يأخذ رقمًا في الجولة، ويُحفظ نصُّه للحكم على الإسناد.
+
+    `search(query, limit)` يعيد شواهدَ فيها text وpart وlocus، وهو في التشغيل `hybrid_search` على المتن البحري
+    نفسِه الذي تسترجع منه العقدة. والشاهدُ المكرَّر يحتفظ برقمه الأول.
+    """
+    from agent.registry import Tool, ToolRefused
+    from core.contracts import ToolSpec
+
+    def run(arguments: dict, context) -> dict:
+        query = arguments.get("query")
+        limit = arguments.get("limit", 5)
+        if not isinstance(query, str) or not query.strip():
+            raise ToolRefused("query_empty", "الاستعلامُ نصٌّ غير فارغ")
+        if type(limit) is not int or not 1 <= limit <= limit_ceiling:
+            raise ToolRefused("limit_invalid", f"الحدُّ عددٌ بين ١ و{limit_ceiling}")
+        lines = []
+        for hit in search(query.strip(), limit):
+            page = {"text": hit.get("text", ""), "part": hit.get("part", ""), "locus": hit.get("locus", "")}
+            ref = next((n for n, known in pages.items() if known == page), None)
+            if ref is None:
+                ref = len(pages) + 1
+                pages[ref] = page
+            lines.append(f"[ش{ref}] {page['part']} — {page['locus']}:\n{page['text']}")
+        return {"content": "\n\n".join(lines) or "لا شواهد لهذا الاستعلام."}
+
+    spec = ToolSpec("search_regulations", "يسترجع شواهدَ مرقّمةً من الأنظمة واللوائح في مخزن المعرفة.",
+                    {"type": "object", "properties": {"query": {"type": "string"}, "limit": {"type": "integer"}},
+                     "required": ["query"]}, consent="auto")
+    return Tool(spec, run)
+
+
+class CenterRetrievalArm:
+    """ذراعُ المركز: الحلقةُ الوكيلة بأدوات المنتج وأداةِ الاسترجاع المرقّمة، بتعليمات المنتج وسطرِ الإسناد وحده.
+
+    فالفرقُ عن ذراع العقدة شيفرتُها الخاصة: الاسترجاعُ المحكوم، والشواهدُ المعقّمة، وفحصُ الإسناد، وفرضُ المسرد.
+    """
+
+    def __init__(self, provider, budget: Budget, ledger: Ledger, *, search=None, max_steps: int = 6):
+        self.provider = provider
+        self.budget = budget
+        self.ledger = ledger
+        self.search = search or self._hybrid
+        self.max_steps = max_steps
+
+    @staticmethod
+    def _hybrid(query: str, limit: int) -> list[dict]:
+        from core.hybrid_retrieval import hybrid_search
+        return hybrid_search(query, limit=limit, corpus="maritime")
+
+    def run(self, question: str, case: dict) -> dict[str, Any]:
+        import shutil
+        import tempfile
+        from agent.actions import ActionStore
+        from agent.builtin_tools import DEFAULT_TOOLS
+        from agent.journal import Journal
+        from agent.loop import SYSTEM as AGENT_SYSTEM, run_agent
+        from agent.registry import ToolContext, ToolRegistry
+        from services.agent_workspace import encode_input, model_facing_input
+
+        t0 = time.time()
+        pages: dict[int, dict] = {}
+        scratch = Path(tempfile.mkdtemp(prefix="diwan-m13b-")).resolve()
+        try:
+            workspace = scratch / "workspace"
+            workspace.mkdir()
+            registry = ToolRegistry(*DEFAULT_TOOLS, numbered_search_tool(self.search, pages))
+            try:
+                run = run_agent(model_facing_input(encode_input(question, [], None)), self.provider, registry,
+                                ToolContext(workspace, Journal(workspace), frozenset({"auto"})),
+                                ledger=self.ledger, budget=self.budget, model=self.provider.model,
+                                model_version="benchmark", max_steps=self.max_steps, max_output=700,
+                                deadline_s=120.0, data_policy="internal",
+                                system=AGENT_SYSTEM + "\n\n" + CENTER_CITATION,
+                                action_store=ActionStore(scratch / "control", workspace), session_id="m13b",
+                                turn_id=str(case.get("case_id", "case")))
+                answer = run.answer if run.status not in ("refused", "failed") else ""
+                error_code = run.code if run.status in ("refused", "failed") else None
+            except Exception as exc:
+                answer, error_code = "", getattr(exc, "code", type(exc).__name__)
+        finally:
+            shutil.rmtree(scratch, ignore_errors=True)
+        return {
+            "arm": "center_retrieval",
+            "answer": answer,
+            "pages_by_ref": dict(pages) or None,
+            "latency_s": round(time.time() - t0, 3),
+            "error_code": error_code,
+            "abstained": _verdict(answer, error_code, "الشواهد غير كافية"),
+        }
