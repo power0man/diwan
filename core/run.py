@@ -18,6 +18,7 @@ from core.canonical import check_payload, digest
 from core.contracts import (CALL_ID, LOCAL_ONLY_POLICIES, Request, Response,
                             ToolCall, Usage)
 from core.ledger import EFFECTFUL_KINDS
+from core.locality import is_cloud_model, is_local_provider
 from core.quoted import quarantine
 from core.validate import validated
 from providers.base import ProviderError
@@ -120,13 +121,16 @@ def _check_response(resp) -> None:
         raise RouteRefused("stop_reason_unknown", f"سبب توقّف غير معروف: {resp.stop_reason!r}")
 
 
-def _is_local(provider) -> bool:
-    """المحليّة تُقاس بالهوية لا بالصدق المنطقي.
+def _is_local(provider, req: Request) -> bool:
+    """المحليّة تُقاس بالهوية لا بالصدق المنطقي، ولا بالإعلان وحده.
 
     فدالّةٌ غير مُستدعاة، ونصٌّ «false»، وقائمةٌ فيها صفر — كلّها صادقة
-    منطقيًّا. والعقد في providers/base.py يُعلن `is_local: bool`، فيُشترط.
+    منطقيًّا. والعقد في providers/base.py يُعلن `is_local: bool`، فيُشترط
+    True بعينها، ثم لا يناقضها اسمُ النموذج ولا المضيف (`core/locality.py`).
+    وفحصٌ ثانٍ مستقلّ على `req.model`: مزوّدٌ لا يُعلن نموذجه لا يُدخل الطلبَ
+    السحابيّ بإعلانه.
     """
-    return getattr(provider, "is_local", None) is True
+    return is_local_provider(provider) and not is_cloud_model(req.model)
 
 
 def _held_thinking(resp: Response, req: Request) -> tuple[Response, tuple[str, ...]]:
@@ -176,7 +180,7 @@ def execute(request: Request, provider, budget: Budget, ledger) -> Outcome:
     req_digest = digest(req.fingerprint_payload())
 
     # ٢ — الخصوصية. قبل أن يرى المزوّد الحمولة — ولو للتقدير. وتُقيَّد المحاولة.
-    if req.data_policy in LOCAL_ONLY_POLICIES and not _is_local(provider):
+    if req.data_policy in LOCAL_ONLY_POLICIES and not _is_local(provider, req):
         ledger.append(_record("refused", req, req_digest,
                               error_code="policy_requires_local",
                               provider_name=str(getattr(provider, "name", "?"))))

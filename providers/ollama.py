@@ -1,7 +1,8 @@
 """مزوّد Ollama المحلي — أول مزوّد نموذجٍ حيّ عبر بروتوكول م٠ (م٤، ق٢٠).
 
-`is_local=True` بالهوية: بوابة الخصوصية تقبل له حمولات `local_only`
-و`regulated`. والكلفة المالية صفرٌ معلَن (كهرباء الجهاز لا تُحاسَب):
+`is_local` مشتقٌّ من اسم النموذج والمضيف (`core/locality.py`)، لا معلَنٌ لكل
+نموذج: خادمُ Ollama المحليّ يمرّر `…:cloud` إلى ollama.com، فكان الإعلانُ الثابت
+يُدخل حمولات `local_only` و`regulated` إليه. وما سوى ذلك محليٌّ بالهوية. والكلفة المالية صفرٌ معلَن (كهرباء الجهاز لا تُحاسَب):
 الحجز والتسوية يعملان بصفرين، والاستهلاك الحقيقي (توكنات) يُقيَّد في
 السجل من عدّادات Ollama نفسها.
 
@@ -24,6 +25,7 @@ import urllib.error
 import urllib.request
 
 from core.contracts import Request, Response
+from core.locality import is_cloud_model, is_loopback_url
 from core.validate import validated
 from providers.base import ProviderError
 from providers.ollama_codec import parse_response, serialize_messages, tool_payload
@@ -47,7 +49,7 @@ class OllamaProvider:
         self.model = model
         self.base_url = base_url
         self.name = f"ollama:{model}"
-        self.is_local = True
+        self.is_local = not is_cloud_model(model) and is_loopback_url(base_url)
         self.allow_thinking = allow_thinking
 
     def estimate_micros(self, request: Request) -> int:
