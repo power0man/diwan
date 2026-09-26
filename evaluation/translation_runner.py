@@ -2,7 +2,11 @@
 
 - **الطريقُ طريقُ وضع الترجمة:**
   - الحلقةُ الوكيلة نفسُها، والتعليماتُ المسجَّلة ببصمتها.
-  - ورسالةُ الجولة كما تبنيها الواجهة (`translation_request`): النصُّ ثم مسردُه إن كان.
+  - ورسالةُ الجولة كما تبلغ النموذجَ من الواجهة بعينها:
+    - النصُّ ثم مسردُه إن كان (`translation_request`).
+    - في غلاف المدخل الوكيل (`encode_input`).
+    - محجورًا ما يُحجر (`model_facing_input`).
+  - فالرقمُ يقيس وضعَ الترجمة كما يراه المستخدم، لا نسخةً أنظفَ منه.
 - **ما يُسجَّل لكل حالة:** الترجمةُ وحدها، فيُعاد حسابُ الرقم من التقرير (`rescore`) ولا يطابقه رقمٌ عُدِّل باليد.
 - **العطبُ ليس رسوبًا:** حالةُ `error` برمزها تخرج من المقام، والعتبةُ لا تُعدّ مستوفاةً ما بقي عطب.
 """
@@ -18,11 +22,12 @@ from agent.journal import Journal
 from agent.loop import run_agent
 from agent.registry import ToolContext, ToolRegistry
 from agent.translation import CHECK_TRANSLATION, TRANSLATE_SYSTEM, translation_request
+from services.agent_workspace import encode_input, model_facing_input
 from core.budget import Budget
 from core.ledger import Ledger
 from evaluation.translation_bank import META, SUITE, load, score_item, summarize
 
-RUNNER_VERSION = 1
+RUNNER_VERSION = 1   # الرسالةُ في غلاف المدخل الوكيل كما في الواجهة
 MAX_ANSWER_CHARS = 6000
 LIMITS = [
     "checks_numbers_tokens_glossary_script_copying_and_length_mechanically_not_style_or_fluency",
@@ -46,7 +51,8 @@ def run_item(item: dict, provider, *, model: str, model_version: str, max_steps:
         workspace = scratch / "workspace"
         workspace.mkdir()
         context = ToolContext(workspace, Journal(workspace), frozenset({"auto"}))
-        message = translation_request(item["source"], [tuple(p) for p in item["glossary"]])
+        message = model_facing_input(encode_input(
+            translation_request(item["source"], [tuple(p) for p in item["glossary"]]), [], None))
         try:
             run = run_agent(message, provider, ToolRegistry(CHECK_TRANSLATION), context,
                             ledger=Ledger(scratch / "ledger.jsonl"), budget=Budget(0, 0), model=model,

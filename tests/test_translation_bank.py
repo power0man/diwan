@@ -2,7 +2,8 @@
 
 - الملفّان المودَعان هما ما يولّده `tools/make_translation_bank.py` بايتًا ببايت.
 - كلُّ ترجمةٍ مرجعية تمرّ، وكلُّ ترجمةٍ قريبةٍ خاطئة تسقط، وهي خطأٌ واحدٌ مسمًّى.
-- المُشغِّلُ على طريق وضع الترجمة: إعادةُ المراجع عبر الحلقة (بعد نداء check_translation) تستوفي العتبات، والخاطئةُ لا.
+- المُشغِّلُ على طريق وضع الترجمة، والرسالةُ في غلاف المدخل كما في الواجهة: إعادةُ المراجع عبر الحلقة (بعد نداء
+  check_translation) تستوفي العتبات، والخاطئةُ لا.
 - الرقمُ يُعاد حسابُه من التقرير، ولا يُقبل تقريرٌ على بنكٍ تغيّر. والعطبُ والفئةُ الضعيفة يمنعان الاستيفاء.
 """
 from __future__ import annotations
@@ -15,6 +16,7 @@ from pathlib import Path
 import pytest
 
 from agent.translation import TRANSLATE_SYSTEM, split_request, target_of
+from services.agent_workspace import decode_input
 from core.contracts import Response, ToolCall, Usage
 from evaluation.translation_bank import load, score_item, summarize
 from evaluation.translation_runner import BankChanged, rescore, run_bank
@@ -68,8 +70,8 @@ class Replay:
 
     def complete(self, request):
         self.systems.update(m.content for m in request.messages if m.role == "system")
-        user = next(m.content for m in request.messages if m.role == "user")
-        source = next(s for s in self.by_source if s in user)
+        user = decode_input(next(m.content for m in request.messages if m.role == "user"))["user_request"]
+        source = split_request(user)[0]
         if not any(m.role == "tool" for m in request.messages):
             return _says("", ToolCall("chk", "check_translation", {"source": source, "translation": self.by_source[source]}))
         return _says(self.by_source[source])
@@ -102,7 +104,7 @@ def test_a_glossary_reaches_the_model_inside_the_request():
 
     class Spy(Replay):
         def complete(self, request):
-            seen.append(next(m.content for m in request.messages if m.role == "user"))
+            seen.append(decode_input(next(m.content for m in request.messages if m.role == "user"))["user_request"])
             return super().complete(request)
     run_bank(Spy("reference"), model="replay", model_version="v1")
     received = {split_request(text)[0]: split_request(text)[1] for text in seen}
