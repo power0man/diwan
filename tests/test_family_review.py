@@ -159,3 +159,54 @@ def test_developer_families_follow_the_agent_registry(tmp_path):
     extended.write_text(json.dumps(registry), encoding="utf-8")
     assert "mistral" in er.developer_families(extended)
     assert "human" not in er.developer_families(extended)
+
+
+# — تعليقُ المراجعة النظيفة من Codex (ق٦٥) —
+
+def clean(login, commit, text="Codex Review: Didn't find any major issues. More of your lovely PRs please."):
+    return {"user": {"login": login}, "body": f"{text}\n\n**Reviewed commit:** `{commit}`\n\n<details>…</details>"}
+
+
+def test_a_clean_codex_comment_on_the_head_counts():
+    reviews = fr.clean_comment_reviews([clean("chatgpt-codex-connector[bot]", HEAD[:10])], HEAD)
+    report = fr.evaluate({"anthropic"}, reviews, HEAD, REVIEWERS)
+    assert report["status"] == "passed" and report["counted"] == ["chatgpt-codex-connector[bot]"]
+
+
+@pytest.mark.parametrize("comment", [
+    clean("chatgpt-codex-connector[bot]", OLD[:10]),                                   # إيداعٌ قديم
+    clean("power0man", HEAD[:10]),                                                   # حسابُ المالك يكتب به كلُّ عميل
+    clean("someone[bot]", HEAD[:10]),                                                # بوتٌ غير مدرَج
+    clean("chatgpt-codex-connector[bot]", HEAD[:10], text="Codex Review: here are some suggestions"),  # ليست نظيفة
+    {"user": {"login": "chatgpt-codex-connector[bot]"}, "body": "Didn't find any major issues"},    # بلا إيداعٍ مسمًّى
+])
+def test_what_a_clean_comment_cannot_count_for(comment):
+    reviews = fr.clean_comment_reviews([comment], HEAD)
+    assert fr.evaluate({"anthropic"}, reviews, HEAD, REVIEWERS)["status"] == "failed"
+
+
+def test_the_cli_reads_comments_from_a_reviews_file(tmp_path):
+    repo = tmp_path / "repo"
+    (repo / "registry").mkdir(parents=True)
+    for name in ("agents.json", "reviewers.json"):
+        (repo / "registry" / name).write_bytes((ROOT / "registry" / name).read_bytes())
+    env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.org", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.org")
+    _git(repo, "init", "-q", "-b", "main"); _git(repo, "add", "-A"); _git(repo, "commit", "-q", "-m", "base", env=env)
+    base = _git(repo, "rev-parse", "HEAD")
+    (repo / "x.txt").write_text("x"); _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "عمل\n\nDiwan-Agent: anthropic/claude-opus-5-5", env=env)
+    head = _git(repo, "rev-parse", "HEAD")
+    data = tmp_path / "reviews.json"
+    data.write_text(json.dumps({"reviews": [], "comments": [clean("chatgpt-codex-connector[bot]", head[:10])]}), encoding="utf-8")
+    out = subprocess.run([sys.executable, str(ROOT / "tools" / "family_review.py"), "--repo", str(repo),
+                          "--range", f"{base}..{head}", "--head", head, "--reviews-json", str(data)], capture_output=True, text=True)
+    assert out.returncode == 0 and '"reviewed_by_another_family"' in out.stdout
+
+
+def test_the_workflow_waits_for_the_reviewer_within_its_timeout():
+    workflow = (ROOT / ".github" / "workflows" / "family-review.yml").read_text(encoding="utf-8")
+    assert "--wait-seconds 900" in workflow and "timeout-minutes: 20" in workflow
+
+
+def test_only_a_listed_bot_can_produce_a_clean_comment_review():
+    assert fr.clean_comment_reviews([clean("power0man", HEAD[:10]), clean("someone[bot]", HEAD[:10])], HEAD) == []

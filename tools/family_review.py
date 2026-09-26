@@ -13,6 +13,10 @@
     python tools/family_review.py --range BASE..HEAD --head HEAD --pr N --repo-slug owner/name   # في CI
     python tools/family_review.py --range BASE..HEAD --head HEAD --reviews-json reviews.json    # بلا شبكة
 
+**تعليقُ المراجعة النظيفة (ق٦٥):** Codex حين لا يجد ملاحظةً لا ينشر «مراجعة» بل تعليقًا نصُّه `Didn't find any major issues`
+ومعه `Reviewed commit:` ببصمةٍ مختصرة. فيُقرأ تعليقٌ كهذا من بوتٍ مدرَجٍ في `CLEAN_REVIEW_COMMENTS` مراجعةً بحالة COMMENTED على
+الإيداع الذي يسمّيه، ولا تُحتسب إلا إن كان ذلك الإيداعُ الرأسَ الحاليّ. و`--wait-seconds` ينتظر المراجِعَ الذي يأتي بعد الدفع بدقائق.
+
 **الحدُّ المعلَن:** يشهد الفحصُ أن عائلةً أخرى راجعت، لا أن ملاحظاتِها عولجت؛ ومعالجتُها واجبُ من يقود الطلب (الخطة §٦).
 """
 from __future__ import annotations
@@ -20,7 +24,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
+import time
 import urllib.request
 from pathlib import Path
 
@@ -34,6 +40,9 @@ REVIEWERS_PATH = "registry/reviewers.json"
 ALLOWED_STATES = frozenset({"APPROVED", "COMMENTED"})
 BLOCKING_STATE = "CHANGES_REQUESTED"
 API = "https://api.github.com"
+# بوتٌ ← عبارةُ «لا ملاحظات» في تعليقه (Codex لا ينشر مراجعةً حين تنظف، ق٦٥)
+CLEAN_REVIEW_COMMENTS = {"chatgpt-codex-connector[bot]": "Didn't find any major issues"}
+REVIEWED_COMMIT = re.compile(r"Reviewed commit:\*\*\s*`([0-9a-f]{7,40})`")
 
 
 class ReviewError(RuntimeError):
@@ -108,12 +117,27 @@ def evaluate(families: set[str], reviews: list[dict], head: str, reviewers: dict
             "same_family": same_family, "ignored": ignored, "limits": reviewers["limits"]}
 
 
-def fetch_reviews(repo_slug: str, pr: int, token: str | None) -> list[dict]:
-    """مراجعاتُ الطلب من واجهة GitHub، صفحةً صفحة، بالرمز الذي يعطيه Actions (قراءةٌ فقط)."""
-    reviews: list[dict] = []
+def clean_comment_reviews(comments: list[dict], head: str) -> list[dict]:
+    """تعليقاتُ «لا ملاحظات» من بوتٍ مدرَج مراجعاتٌ بحالة COMMENTED على الإيداع الذي تسمّيه (الأقدمُ أولًا)."""
+    reviews = []
+    for comment in comments:
+        login = (comment.get("user") or {}).get("login", "")
+        marker = CLEAN_REVIEW_COMMENTS.get(login)
+        body = comment.get("body") or ""
+        match = REVIEWED_COMMIT.search(body)
+        if not marker or marker not in body or not match:
+            continue
+        short = match.group(1)
+        reviews.append({"user": {"login": login}, "state": "COMMENTED",
+                        "commit_id": head if head.startswith(short) else short, "source": "clean_comment"})
+    return reviews
+
+
+def _get_all(url: str, token: str | None) -> list[dict]:
+    items: list[dict] = []
     page = 1
     while True:
-        request = urllib.request.Request(f"{API}/repos/{repo_slug}/pulls/{pr}/reviews?per_page=100&page={page}",
+        request = urllib.request.Request(f"{url}?per_page=100&page={page}",
                                          headers={"Accept": "application/vnd.github+json",
                                                   **({"Authorization": f"Bearer {token}"} if token else {})})
         try:
@@ -123,10 +147,17 @@ def fetch_reviews(repo_slug: str, pr: int, token: str | None) -> list[dict]:
             raise ReviewError("reviews_unreachable", type(exc).__name__) from exc
         if not isinstance(batch, list):
             raise ReviewError("reviews_malformed")
-        reviews.extend(batch)
+        items.extend(batch)
         if len(batch) < 100:
-            return reviews
+            return items
         page += 1
+
+
+def fetch_reviews(repo_slug: str, pr: int, token: str | None, head: str = "") -> list[dict]:
+    """مراجعاتُ الطلب وتعليقاتُ المراجعة النظيفة من واجهة GitHub، بالرمز الذي يعطيه Actions (قراءةٌ فقط)."""
+    reviews = _get_all(f"{API}/repos/{repo_slug}/pulls/{pr}/reviews", token)
+    comments = _get_all(f"{API}/repos/{repo_slug}/issues/{pr}/comments", token)
+    return reviews + clean_comment_reviews(comments, head)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -138,18 +169,28 @@ def main(argv: list[str] | None = None) -> int:
     source.add_argument("--reviews-json", type=Path, help="ملفُّ مراجعاتٍ بصيغة GitHub (بلا شبكة)")
     parser.add_argument("--repo-slug", default=os.environ.get("GITHUB_REPOSITORY", ""))
     parser.add_argument("--repo", type=Path, default=ROOT)
+    parser.add_argument("--wait-seconds", type=int, default=0, help="مع --pr: انتظر مراجِعًا محتسبًا حتى هذه المدّة")
     args = parser.parse_args(argv)
     try:
         registry = load_registry((args.repo / REGISTRY_PATH).read_bytes())
         reviewers = load_reviewers((args.repo / REVIEWERS_PATH).read_bytes())
         families = author_families(read_commits(args.repo, args.range), registry)
         if args.reviews_json is not None:
-            reviews = json.loads(args.reviews_json.read_text(encoding="utf-8"))
+            raw = json.loads(args.reviews_json.read_text(encoding="utf-8"))
+            reviews = raw["reviews"] + clean_comment_reviews(raw["comments"], args.head) if isinstance(raw, dict) else raw
         else:
             if not args.repo_slug:
                 raise ReviewError("repo_slug_missing")
-            reviews = fetch_reviews(args.repo_slug, args.pr, os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN"))
-        report = evaluate(families, reviews, args.head, reviewers)
+            token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+            deadline = time.monotonic() + max(0, args.wait_seconds)
+            while True:
+                report = evaluate(families, fetch_reviews(args.repo_slug, args.pr, token, args.head), args.head, reviewers)
+                if report["status"] == "passed" or report["blocking"] or time.monotonic() >= deadline:
+                    break
+                time.sleep(30)
+            reviews = None
+        if reviews is not None:
+            report = evaluate(families, reviews, args.head, reviewers)
     except (ReviewError, AttributionError, OSError, ValueError) as exc:
         print(json.dumps({"status": "error", "code": getattr(exc, "code", type(exc).__name__),
                           "detail": str(exc)[:200]}, ensure_ascii=False))
