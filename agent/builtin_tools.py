@@ -1,4 +1,4 @@
-"""ستُّ أدواتٍ أولى — درجةُ كلٍّ منها تتبع أثرَها لا خطورةَ اسمها.
+"""سبعُ أدواتٍ أولى — درجةُ كلٍّ منها تتبع أثرَها لا خطورةَ اسمها.
 
   auto   — لا أثرَ يبقى بعد النداء (قراءةٌ وبحثٌ وسردٌ واختبارات).
   logged — أثرٌ يبقى وهو **رَجعيّ** بدفتر الرجوع (كتابةٌ داخل المساحة).
@@ -9,6 +9,7 @@
 """
 from __future__ import annotations
 
+import difflib
 import json
 import os
 from pathlib import Path
@@ -157,6 +158,27 @@ def _write_file(arguments, context):
                 "غير موجود" if action.before_sha256 is None else action.before_sha256[:12]}
 
 
+MAX_DIFF_CHARS = 8000
+
+
+def _edit_file(arguments, context):
+    """تحريرٌ في موضع الملف (ج١١): فرقٌ يُعرض، ويُطبَّق بالدفتر، ويُرجع عنه بزرّ الرجوع نفسِه."""
+    path = _need(arguments, "path")
+    old, new = arguments.get("old_text"), arguments.get("new_text")
+    if not isinstance(old, str) or not old:
+        raise ToolRefused("argument_invalid", "الوسيط «old_text» نصٌّ غير فارغ يرد في الملف مرّةً واحدة")
+    if not isinstance(new, str):
+        raise ToolRefused("argument_invalid", "الوسيط «new_text» نصّ")
+    _inside(context, path, writing=True)
+    action, before, after = context.journal.edit_file(path, old, new)
+    diff = "".join(difflib.unified_diff(before.splitlines(keepends=True), after.splitlines(keepends=True),
+                                        fromfile=f"{action.path} (قبل)", tofile=f"{action.path} (بعد)"))
+    shown = diff if len(diff) <= MAX_DIFF_CHARS else diff[:MAX_DIFF_CHARS] + "\n[…الفرقُ مبتور للعرض]"
+    return {"content": f"عُدّل {action.path} في موضعه. للرجوع: {action.action_id}\n{shown}",
+            "action_id": action.action_id, "diff": shown,
+            "reverts_to": action.before_sha256[:12]}
+
+
 # ————— owner: لا يُردّ —————
 
 def _run_command(arguments, context):
@@ -199,13 +221,21 @@ WRITE_FILE = Tool(ToolSpec(
                                       "content": {"type": "string"}},
      "required": ["path", "content"]}, consent="logged", reversible=True), _write_file)
 
+EDIT_FILE = Tool(ToolSpec(
+    "edit_file", "يعدّل ملفًّا قائمًا في موضعه: يستبدل مقطعًا يرد فيه مرّةً واحدة، ويودِع ما قبله "
+    "فيُمكن الرجوع، ويعيد الفرق.",
+    {"type": "object", "properties": {"path": {"type": "string"},
+                                      "old_text": {"type": "string"},
+                                      "new_text": {"type": "string"}},
+     "required": ["path", "old_text", "new_text"]}, consent="logged", reversible=True), _edit_file)
+
 RUN_COMMAND = Tool(ToolSpec(
     "run_command", "يشغّل أمرًا في مساحة العمل — أثرُه لا يُردّ، فينتظر إذن المالك.",
     {"type": "object", "properties": {"argv": {"type": "array",
                                                "items": {"type": "string"}}},
      "required": ["argv"]}, consent="owner"), _run_command)
 
-DEFAULT_TOOLS = (READ_FILE, SEARCH_FILES, LIST_FILES, RUN_TESTS, WRITE_FILE, RUN_COMMAND)
+DEFAULT_TOOLS = (READ_FILE, SEARCH_FILES, LIST_FILES, RUN_TESTS, WRITE_FILE, EDIT_FILE, RUN_COMMAND)
 
 
 def get_sovereign_tools() -> tuple[Tool, ...]:

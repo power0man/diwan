@@ -248,4 +248,5 @@ def test_the_declared_tools_reach_the_model_with_their_consent_grades(space, ful
     drive(provider, full, space)
     declared = {t.name: t.consent for t in provider.requests[0].tools}
     assert declared == {"read_file": "auto", "search_files": "auto", "list_files": "auto",
-                        "run_tests": "auto", "write_file": "logged", "run_command": "owner"}
+                        "run_tests": "auto", "write_file": "logged", "edit_file": "logged",
+                        "run_command": "owner"}
