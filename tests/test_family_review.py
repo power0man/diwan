@@ -210,3 +210,22 @@ def test_the_workflow_waits_for_the_reviewer_within_its_timeout():
 
 def test_only_a_listed_bot_can_produce_a_clean_comment_review():
     assert fr.clean_comment_reviews([clean("power0man", HEAD[:10]), clean("someone[bot]", HEAD[:10])], HEAD) == []
+
+
+def test_a_later_change_request_outweighs_an_earlier_clean_comment():
+    clean_early = dict(clean("chatgpt-codex-connector[bot]", HEAD[:10]), created_at="2026-09-26T10:00:00Z")
+    block_late = dict(review("chatgpt-codex-connector[bot]", "CHANGES_REQUESTED"), submitted_at="2026-09-26T11:00:00Z")
+    merged = fr.chronological([block_late] + fr.clean_comment_reviews([clean_early], HEAD))
+    assert fr.evaluate({"anthropic"}, merged, HEAD, REVIEWERS)["code"] == "changes_requested_by_another_family"
+    clean_later = dict(clean_early, created_at="2026-09-26T12:00:00Z")
+    merged = fr.chronological([block_late] + fr.clean_comment_reviews([clean_later], HEAD))
+    assert fr.evaluate({"anthropic"}, merged, HEAD, REVIEWERS)["status"] == "passed"
+
+
+def test_a_late_codex_comment_reruns_family_review_without_touching_pr_code():
+    workflow = (ROOT / ".github" / "workflows" / "family-review-recheck.yml").read_text(encoding="utf-8")
+    assert "issue_comment:" in workflow and "chatgpt-codex-connector[bot]" in workflow
+    assert "actions: write" in workflow and "pull-requests: read" in workflow
+    for forbidden in ("contents: write", "checkout", "secrets.", "pull_request_target"):
+        assert forbidden not in workflow, forbidden
+    assert "gh run rerun" in workflow

@@ -128,7 +128,7 @@ def clean_comment_reviews(comments: list[dict], head: str) -> list[dict]:
         if not marker or marker not in body or not match:
             continue
         short = match.group(1)
-        reviews.append({"user": {"login": login}, "state": "COMMENTED",
+        reviews.append({"user": {"login": login}, "state": "COMMENTED", "submitted_at": comment.get("created_at", ""),
                         "commit_id": head if head.startswith(short) else short, "source": "clean_comment"})
     return reviews
 
@@ -157,7 +157,12 @@ def fetch_reviews(repo_slug: str, pr: int, token: str | None, head: str = "") ->
     """مراجعاتُ الطلب وتعليقاتُ المراجعة النظيفة من واجهة GitHub، بالرمز الذي يعطيه Actions (قراءةٌ فقط)."""
     reviews = _get_all(f"{API}/repos/{repo_slug}/pulls/{pr}/reviews", token)
     comments = _get_all(f"{API}/repos/{repo_slug}/issues/{pr}/comments", token)
-    return reviews + clean_comment_reviews(comments, head)
+    return chronological(reviews + clean_comment_reviews(comments, head))
+
+
+def chronological(reviews: list[dict]) -> list[dict]:
+    """المراجعاتُ والتعليقاتُ النظيفة مسارٌ واحدٌ بزمن GitHub، فيبقى «الأخير» أخيرًا (ترتيبٌ مستقرّ لما بلا زمن)."""
+    return sorted(reviews, key=lambda r: r.get("submitted_at") or "")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -177,7 +182,7 @@ def main(argv: list[str] | None = None) -> int:
         families = author_families(read_commits(args.repo, args.range), registry)
         if args.reviews_json is not None:
             raw = json.loads(args.reviews_json.read_text(encoding="utf-8"))
-            reviews = raw["reviews"] + clean_comment_reviews(raw["comments"], args.head) if isinstance(raw, dict) else raw
+            reviews = chronological(raw["reviews"] + clean_comment_reviews(raw["comments"], args.head)) if isinstance(raw, dict) else raw
         else:
             if not args.repo_slug:
                 raise ReviewError("repo_slug_missing")
