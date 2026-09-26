@@ -25,7 +25,11 @@ def returned_urls(steps) -> list[str]:
     """عناوينُ ما أعاده البحثُ في الجولة بترتيب وروده: المصادرُ التي يجوز الاستشهادُ بها وحدها."""
     seen, urls = set(), []
     for step in steps:
-        for result in getattr(step, "tool_results", ()) or ():
+        # خطوةُ الحلقة (Step) أو صورتُها المحفوظة في حالة الجلسة (dict)
+        results = step.get("tool_results") if isinstance(step, dict) else getattr(step, "tool_results", ())
+        for result in results or ():
+            if not isinstance(result, dict):
+                continue
             if result.get("name") != "web_search" or result.get("status") != "ok":
                 continue
             for item in result.get("results") or ():
