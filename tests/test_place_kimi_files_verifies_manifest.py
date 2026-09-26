@@ -68,10 +68,17 @@ def _build(src: Path, shape: str, *, tamper: bool = False, unlisted: bool = Fals
     )
 
 
+def _public_repo(diwan: Path, url: str = "https://github.com/power0man/diwan.git") -> None:
+    """مستودعٌ حقيقيّ بأصلٍ مسمًّى: التوزيعُ يرفض غيرَ النسخة العامة."""
+    diwan.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init", "-q", str(diwan)], check=True)
+    subprocess.run(["git", "-C", str(diwan), "remote", "add", "origin", url], check=True)
+
+
 def _place(tmp_path: Path, shape: str, **kw) -> subprocess.CompletedProcess:
     src, diwan, dst = tmp_path / "src", tmp_path / "diwan", tmp_path / "sealed-dst"
     _build(src, shape, **kw)
-    (diwan / ".git").mkdir(parents=True)
+    _public_repo(diwan)
     return subprocess.run(
         ["bash", "-c", _block()],
         capture_output=True,

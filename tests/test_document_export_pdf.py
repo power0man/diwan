@@ -170,6 +170,8 @@ def test_the_command_is_fixed_isolated_and_gets_no_secrets(tmp_path, monkeypatch
     assert not any(word in arg for arg in seen["argv"] for word in _arabic_words(json.dumps(TEXT_DOCUMENT)))
     assert "OLLAMA_API_KEY" not in seen["env"] and "GEMINI_API_KEY" not in seen["env"]
     added_by_the_fake = {"LC_CTYPE"}                # بايثونُ المزيّف يضيفه لنفسه (PEP 538)، لا to_pdf
+    if sys.platform == "darwin":
+        added_by_the_fake.add("__CF_USER_TEXT_ENCODING")   # يضيفه نظامُ الماك لكل عملية، لا to_pdf
     assert set(seen["env"]) <= set(export_module._ENV_KEEP) | {"HOME", "TMPDIR", "TEMP", "TMP"} | added_by_the_fake
     assert seen["env"]["HOME"] == str(workdir)
     assert not workdir.exists()                      # المجلّدُ المؤقّت يُمحى بعد التحويل
