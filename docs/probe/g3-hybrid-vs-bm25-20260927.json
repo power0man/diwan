@@ -24,13 +24,10 @@
         "queries": 120,
         "hit_at_5": 0.675,
         "hit_at_5_ci95": [
-          0.6,
-          0.7417
-        ],
-        "hit_at_5_ci95_if_queries_were_independent": [
           0.5869,
           0.7522
         ],
+        "hit_at_5_design_effect": 1.0,
         "ndcg_at_10": 0.6389,
         "ndcg_at_10_ci95": [
           0.5726,
@@ -43,13 +40,10 @@
           "queries": 60,
           "hit_at_5": 0.9333,
           "hit_at_5_ci95": [
-            0.8667,
-            0.9833
-          ],
-          "hit_at_5_ci95_if_queries_were_independent": [
             0.8407,
             0.9738
           ],
+          "hit_at_5_design_effect": 1.0,
           "ndcg_at_10": 0.9003,
           "ndcg_at_10_ci95": [
             0.8237,
@@ -61,13 +55,10 @@
           "queries": 60,
           "hit_at_5": 0.4167,
           "hit_at_5_ci95": [
-            0.2833,
-            0.5333
-          ],
-          "hit_at_5_ci95_if_queries_were_independent": [
             0.3006,
             0.5427
           ],
+          "hit_at_5_design_effect": 1.0,
           "ndcg_at_10": 0.3775,
           "ndcg_at_10_ci95": [
             0.2668,
@@ -82,13 +73,10 @@
         "queries": 120,
         "hit_at_5": 0.9917,
         "hit_at_5_ci95": [
-          0.975,
-          1.0
-        ],
-        "hit_at_5_ci95_if_queries_were_independent": [
           0.9543,
           0.9985
         ],
+        "hit_at_5_design_effect": 1.0,
         "ndcg_at_10": 0.9317,
         "ndcg_at_10_ci95": [
           0.9028,
@@ -101,13 +89,10 @@
           "queries": 60,
           "hit_at_5": 0.9833,
           "hit_at_5_ci95": [
-            0.95,
-            1.0
-          ],
-          "hit_at_5_ci95_if_queries_were_independent": [
             0.9114,
             0.9971
           ],
+          "hit_at_5_design_effect": 1.0,
           "ndcg_at_10": 0.9886,
           "ndcg_at_10_ci95": [
             0.9658,
@@ -119,13 +104,10 @@
           "queries": 60,
           "hit_at_5": 1.0,
           "hit_at_5_ci95": [
-            1.0,
-            1.0
-          ],
-          "hit_at_5_ci95_if_queries_were_independent": [
             0.9398,
             1.0
           ],
+          "hit_at_5_design_effect": 1.0,
           "ndcg_at_10": 0.8748,
           "ndcg_at_10_ci95": [
             0.8187,
@@ -140,13 +122,10 @@
         "queries": 120,
         "hit_at_5": 0.8333,
         "hit_at_5_ci95": [
-          0.7667,
-          0.8917
-        ],
-        "hit_at_5_ci95_if_queries_were_independent": [
           0.7565,
           0.8894
         ],
+        "hit_at_5_design_effect": 1.0,
         "ndcg_at_10": 0.7745,
         "ndcg_at_10_ci95": [
           0.7177,
@@ -159,13 +138,10 @@
           "queries": 60,
           "hit_at_5": 0.9667,
           "hit_at_5_ci95": [
-            0.9167,
-            1.0
-          ],
-          "hit_at_5_ci95_if_queries_were_independent": [
             0.8864,
             0.9908
           ],
+          "hit_at_5_design_effect": 1.0,
           "ndcg_at_10": 0.9667,
           "ndcg_at_10_ci95": [
             0.9167,
@@ -177,13 +153,10 @@
           "queries": 60,
           "hit_at_5": 0.7,
           "hit_at_5_ci95": [
-            0.5833,
-            0.8
-          ],
-          "hit_at_5_ci95_if_queries_were_independent": [
             0.5749,
             0.801
           ],
+          "hit_at_5_design_effect": 1.0,
           "ndcg_at_10": 0.5823,
           "ndcg_at_10_ci95": [
             0.481,
@@ -2782,12 +2755,14 @@
     "sixty_short_passages_a_small_corpus_so_absolute_scores_run_high",
     "bm25_arm_has_no_morphological_expansion_unlike_the_product_hybrid_retriever",
     "embedder_is_a_retriever_not_a_judge_gold_labels_decide",
-    "single_run_ci95_by_seeded_bootstrap_over_gold_passages_not_queries_topic_strata_of_five_not_preserved",
+    "single_run_hit_interval_is_wilson_on_the_design_effect_size_ndcg_and_effect_by_seeded_passage_bootstrap",
+    "fusion_uses_depth_50_per_channel_and_one_or_matched_bm25_list_unlike_the_product_2x_limit_and_exact_plus_any_lists",
     "the_protocol_statistic_agresti_min_treats_queries_as_independent_the_clustered_effect_interval_is_beside_it",
     "vectors_vs_bm25_is_descriptive_the_k46_vector_rule_decides_the_hybrid_channel_only",
     "no_protocol_decision_while_the_vectors_component_is_blocked_and_461_pairs_would_be_needed_once_ready",
     "recomputed_from_the_recorded_rows_after_review_no_new_embedding_run",
-    "baseline_rows_were_not_recorded_in_this_run_so_its_intervals_are_dropped_not_recomputed"
+    "baseline_rows_were_not_recorded_in_this_run_so_its_intervals_are_dropped_not_recomputed",
+    "hybrid_rows_predate_the_product_tie_order_and_channel_rankings_were_not_recorded_a_rerun_is_pending_on_the_mac"
   ],
   "baseline": {
     "embedder": {

@@ -28,11 +28,16 @@ LIMITS = [
     "sixty_short_passages_a_small_corpus_so_absolute_scores_run_high",
     "bm25_arm_has_no_morphological_expansion_unlike_the_product_hybrid_retriever",
     "embedder_is_a_retriever_not_a_judge_gold_labels_decide",
-    "single_run_ci95_by_seeded_bootstrap_over_gold_passages_not_queries_topic_strata_of_five_not_preserved",
+    "single_run_hit_interval_is_wilson_on_the_design_effect_size_ndcg_and_effect_by_seeded_passage_bootstrap",
+    "fusion_uses_depth_50_per_channel_and_one_or_matched_bm25_list_unlike_the_product_2x_limit_and_exact_plus_any_lists",
     "the_protocol_statistic_agresti_min_treats_queries_as_independent_the_clustered_effect_interval_is_beside_it",
     "vectors_vs_bm25_is_descriptive_the_k46_vector_rule_decides_the_hybrid_channel_only",
     "no_protocol_decision_while_the_vectors_component_is_blocked_and_461_pairs_would_be_needed_once_ready",
 ]
+
+
+def _channels(channels: dict) -> dict:
+    return {qid: {name: " ".join(ids) for name, ids in pair.items()} for qid, pair in channels.items()}
 
 
 def _recorded(rows: dict) -> dict:
@@ -61,6 +66,7 @@ def main(argv=None) -> int:
     bank = load_bank()
     main_run = run(bank, OllamaEmbedder(args.embedder))
     rows = main_run.pop("rows")
+    channels = main_run.pop("channels")
     protocol = ablation.protocol()
     report = {
         "schema_version": 1, "kind": "g3_retrieval", "task": "غ٣", "issue": "power0man/diwan#24",
@@ -72,14 +78,17 @@ def main(argv=None) -> int:
                    "protocol_vectors_status": protocol["components"]["vectors"]["status"]},
         "arms": main_run["arms"], "comparisons": comparisons(rows, main_run["arms"]),
         "rows": _recorded(rows),
+        "channels": _channels(channels),
         "measurement_limits": LIMITS,
     }
     if args.baseline:
         base = run(bank, OllamaEmbedder(args.baseline))
         base_rows = base.pop("rows")
+        base_channels = base.pop("channels")
         report["baseline"] = {"embedder": {"model": args.baseline, "digest": _digest(args.baseline)},
                               "arms": {arm: base["arms"][arm] for arm in ("vectors", "hybrid")},
-                              "rows": _recorded({arm: base_rows[arm] for arm in ("vectors", "hybrid")})}
+                              "rows": _recorded({arm: base_rows[arm] for arm in ("vectors", "hybrid")}),
+                              "channels": _channels(base_channels)}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({arm: report["arms"][arm]["overall"] for arm in report["arms"]}, ensure_ascii=False))

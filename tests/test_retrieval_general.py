@@ -12,7 +12,8 @@ import pytest
 from core.vector_retrieval import HashEmbedder
 from evaluation import ablation
 from evaluation.retrieval_general import (BANK, MIN_QUERIES, ROOT, RetrievalBankError, cluster_bootstrap, comparisons,
-                                          load_bank, paired, rows_from_report, rrf, run, summaries, wilson)
+                                          design_effect, hit_interval, hybrid_rows_from_channels, load_bank, paired,
+                                          rows_from_report, rrf, run, summaries, wilson)
 
 EVIDENCE = ROOT / "docs" / "probe" / "g3-hybrid-vs-bm25-20260927.json"
 
@@ -67,6 +68,35 @@ def test_the_published_numbers_are_recomputed_from_the_recorded_rows():
     evidence, rows, arms = _recorded()
     assert evidence["arms"] == arms
     assert evidence["comparisons"] == comparisons(rows, arms)
+    # وصفوفُ الهجين تُعاد من رتبتَي القناتين إن سُجّلتا، وإلا فالدليلُ يعلن أنها تسبق ترتيبَ التعادل في المنتج
+    if "channels" in evidence:
+        assert evidence["rows"]["hybrid"] == hybrid_rows_from_channels(evidence["channels"], load_bank())
+    else:
+        assert any(limit.startswith("hybrid_rows_predate_the_product_tie_order")
+                   for limit in evidence["measurement_limits"])
+
+
+def test_a_full_run_records_both_channels_so_the_fusion_is_recomputed_without_a_model():
+    report = run(load_bank(), HashEmbedder())
+    channels = {qid: {name: " ".join(ids) for name, ids in pair.items()} for qid, pair in report["channels"].items()}
+    recorded = [{k: r[k] for k in ("id", "type", "rank", "hit_at_5", "ndcg_at_10")} for r in report["rows"]["hybrid"]]
+    assert hybrid_rows_from_channels(channels, load_bank()) == recorded
+
+
+def test_rrf_ties_go_to_the_earlier_channel_as_in_the_product():
+    """ملاحظةُ Codex على #132: `HybridRetriever` يرتّب بالنقاط وحدها ترتيبًا مستقرًّا، فالتعادلُ لـBM25 لا للمعرّف."""
+    assert rrf([["b"], ["a"]]) == ["b", "a"]
+    assert rrf([["a"], ["b"]]) == ["a", "b"]
+
+
+def test_a_sample_where_everything_succeeds_keeps_its_uncertainty():
+    """ملاحظةُ Codex على #132: ٦٠/٦٠ نُشرت بمجال [1.0, 1.0]؛ Wilson على الحجم الفعليّ يُبقي الحدَّ الأدنى دون الواحد،
+    واستعلاما المقطع المتطابقان يُعدّان واحدًا (أثرُ التصميم ٢)."""
+    singles = [{"cluster": f"p{i}", "hit_at_5": True} for i in range(60)]
+    assert hit_interval(singles)[0] < 0.95 and hit_interval(singles)[1] == 1.0
+    twins = [{"cluster": f"p{i}", "hit_at_5": i % 2 == 0} for i in range(60) for _ in range(2)]
+    assert design_effect(twins, lambda r: float(r["hit_at_5"])) == 2.0
+    assert hit_interval(twins) == wilson(30, 60)
 
 
 def test_the_vector_rule_decides_the_hybrid_only_and_never_a_blocked_component(monkeypatch):
