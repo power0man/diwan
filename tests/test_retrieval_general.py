@@ -104,13 +104,28 @@ def test_these_synthetic_arms_never_yield_a_protocol_decision(monkeypatch):
     (BM25 بلا توسيعٍ صرفيّ، والهجينُ بلا exact/any، والمقاطعُ عناقيدُ لا يراها الحكم). فلا حكمَ منها ولو صار المكوّنُ
     جاهزًا، ولا يُستدعى `ablation.judge`."""
     _, rows, arms = _recorded()
+    before = comparisons(rows, arms)
     ready = ablation.protocol()
     ready["components"]["vectors"]["status"] = "ready"
     monkeypatch.setattr(ablation, "protocol", lambda: ready)
     monkeypatch.setattr(ablation, "judge", lambda *a, **k: pytest.fail("حكمٌ من أذرعٍ ليست المنتج"))
     result = comparisons(rows, arms)
     assert {v["protocol"]["decision"] for v in result.values()} == {"not_applied"}
-    assert result["hybrid_vs_bm25"]["protocol"]["component_status"] == "ready"
+    # ولا تُقرأ حالةُ البروتوكول الحيّة، فانتقالُه لا يغيّر ما يُعاد من الصفوف
+    assert result == before
+
+
+def test_a_report_without_the_embedder_digest_is_refused_before_any_embedding(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #132: تعذّرُ `/api/tags` كان يُنتج تقريرًا بالوسم وحده، فلا يُعرف أيُّ أوزانٍ ضمّنت."""
+    import tools.evaluate_retrieval as cli
+    monkeypatch.setattr(cli, "OllamaEmbedder", lambda model: pytest.fail("تضمينٌ قبل التحقّق من البصمة"))
+    monkeypatch.setattr(cli, "_digest", lambda model: None if model == "bge-m3" else "sha256:weights")
+    args = ["--embedder", "qwen3-embedding:0.6b", "--baseline", "bge-m3", "--agent", "anthropic/claude-opus-5-5",
+            "--out", str(tmp_path / "r.json")]
+    assert cli.main(args) == 2
+    assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "embedder_digest_unresolved",
+                                                   "models": ["bge-m3"]}
+    assert not (tmp_path / "r.json").exists()
 
 
 def test_intervals_resample_gold_passages_not_queries():

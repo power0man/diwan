@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """يشغّل غ٣: BM25 مقابل المتّجهات مقابل الهجين على البنك العام المجمَّد، بمُضمِّنٍ في Ollama المحلي.
 
-    python3 tools/evaluate_retrieval.py --embedder qwen3-embedding:0.6b --baseline bge-m3 \\
+    python3 tools/evaluate_retrieval.py --embedder qwen3-embedding:0.6b --baseline bge-m3 --agent <معرّفك> \\
         --out docs/probe/g3-hybrid-vs-bm25-<التاريخ>.json
 
 والتضمينُ محليٌّ وحده: التضمينُ السحابيّ مرفوضٌ لأنه يمرّر النصوص (خطة ٢٦ سبتمبر، غ٣).
@@ -59,10 +59,20 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--embedder", default="qwen3-embedding:0.6b")
     parser.add_argument("--baseline", help="مُضمِّنٌ ثانٍ خطَّ أساس (مثل bge-m3)")
+    parser.add_argument("--agent", required=True, help="معرّفُ من يشغّل القياس، مسجَّلًا في registry/agents.json")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args(argv)
     if args.out.exists():
         parser.error(f"التقريرُ قائم: {args.out}")
+    if args.agent not in json.loads((ROOT / "registry" / "agents.json").read_text(encoding="utf-8"))["agents"]:
+        parser.error(f"agent_unregistered: {args.agent}")
+    # البصمةُ قبل أيّ تضمين: تقريرٌ بالوسم وحده لا يسمّي الأوزانَ التي أنتجت المتّجهات (ملاحظة Codex على #132)
+    digests = {name: _digest(name) for name in filter(None, (args.embedder, args.baseline))}
+    missing = sorted(name for name, value in digests.items() if not value)
+    if missing:
+        print(json.dumps({"status": "refused", "code": "embedder_digest_unresolved", "models": missing},
+                         ensure_ascii=False))
+        return 2
     bank = load_bank()
     main_run = run(bank, OllamaEmbedder(args.embedder))
     rows = main_run.pop("rows")
@@ -70,10 +80,10 @@ def main(argv=None) -> int:
     protocol = ablation.protocol()
     report = {
         "schema_version": 1, "kind": "g3_retrieval", "task": "غ٣", "issue": "power0man/diwan#24",
-        "date": datetime.date.today().isoformat(), "agent": "anthropic/claude-opus-5-5",
+        "date": datetime.date.today().isoformat(), "agent": args.agent,
         "engine": None,
         "config": {"bank": str(BANK.relative_to(ROOT)), "bank_sha256": BANK_SHA256, "rrf_k": RRF_K,
-                   "embedder": {"model": args.embedder, "digest": _digest(args.embedder), "provider": "ollama-local"},
+                   "embedder": {"model": args.embedder, "digest": digests[args.embedder], "provider": "ollama-local"},
                    "protocol_sha256": ablation._sha(ablation.PROTOCOL.read_bytes()),
                    "protocol_vectors_status": protocol["components"]["vectors"]["status"]},
         "arms": main_run["arms"], "comparisons": comparisons(rows, main_run["arms"]),
@@ -85,7 +95,7 @@ def main(argv=None) -> int:
         base = run(bank, OllamaEmbedder(args.baseline))
         base_rows = base.pop("rows")
         base_channels = base.pop("channels")
-        report["baseline"] = {"embedder": {"model": args.baseline, "digest": _digest(args.baseline)},
+        report["baseline"] = {"embedder": {"model": args.baseline, "digest": digests[args.baseline]},
                               "arms": {arm: base["arms"][arm] for arm in ("vectors", "hybrid")},
                               "rows": _recorded({arm: base_rows[arm] for arm in ("vectors", "hybrid")}),
                               "channels": _channels(base_channels)}

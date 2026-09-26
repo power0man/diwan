@@ -240,7 +240,8 @@ def comparisons(rows: dict[str, list[dict]], arms: dict) -> dict:
     المنتجَ مع القناة وبدونها: BM25 هنا بلا التوسيع الصرفيّ، والهجينُ بلا قائمتَي exact/any وأوزانهما ولا
     تجميع الصفحات؛ والمقارنةُ على الاستعلامات والمقاطعُ عناقيدُ لا يراها `ablation.judge`. فلا يُستدعى الحكمُ
     هنا ولو صار المكوّنُ `ready`، والقرارُ من قياس `HybridRetriever` نفسِه بقلب `vector` وحده (ملاحظات Codex
-    على #132). والمتّجهاتُ وحدها تحلّ محلّ BM25 لا تضاف إليه، فهي وصفيةٌ على كل حال.
+    على #132). والمتّجهاتُ وحدها تحلّ محلّ BM25 لا تضاف إليه، فهي وصفيةٌ على كل حال. ولا تُقرأ هنا حالةُ
+    البروتوكول الحيّة، فيُعاد الدليلُ من صفوفه وحدها بعد أيّ انتقالٍ فيه؛ وحالتُه وقتَ القياس في `config`.
     """
     out = {}
     for name, on in (("hybrid_vs_bm25", "hybrid"), ("vectors_vs_bm25", "vectors")):
@@ -250,10 +251,8 @@ def comparisons(rows: dict[str, list[dict]], arms: dict) -> dict:
                  "ndcg_at_10_difference": round(arms[on]["overall"]["ndcg_at_10"]
                                                 - arms["bm25"]["overall"]["ndcg_at_10"], 4)}
         if on == "hybrid":
-            spec = ablation.protocol()["components"]["vectors"]
             entry["protocol"] = {"component": "vectors", "decision": "not_applied",
-                                 "reason": "descriptive_these_arms_are_not_the_product_retriever_with_vector_toggled",
-                                 "component_status": spec["status"], "blocked_by": spec.get("blocked_by", [])}
+                                 "reason": "descriptive_these_arms_are_not_the_product_retriever_with_vector_toggled"}
         else:
             entry["protocol"] = {"decision": "not_applied",
                                  "reason": "descriptive_the_vector_rule_is_for_the_hybrid_not_a_bm25_replacement"}
