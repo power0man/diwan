@@ -48,6 +48,8 @@ def main(argv=None) -> int:
     parser.add_argument("--execution-receipt", type=Path,
                         help="إيصالُ صورة Docker الخاص (ج٣): يُشغَّل أمرُ النجاح في الحاوية لا على الجهاز")
     parser.add_argument("--docker", help="مسارٌ مطلق لمحرّك Docker إن لم يكن في موضعه الافتراضي")
+    parser.add_argument("--mode", choices=("agent", "coder"), default="agent",
+                        help="coder: تعليماتُ المبرمج وأدواتُ الشيفرة وحدها كما في الواجهة (ج٩)")
     parser.add_argument("--analysis-receipt", type=Path,
                         help="إيصالُ صورة المحلّل (ج٨): تُعلَن analyze_data وتُضبط صورتُها لكل مهمّة (بنكُ ك٥٠)")
     args = parser.parse_args(argv)
@@ -56,7 +58,12 @@ def main(argv=None) -> int:
     provider = OllamaProvider(args.model)
     suite = json.loads(args.suite.read_text(encoding="utf-8"))
     try:
-        tools = DEFAULT_TOOLS
+        tools, options = DEFAULT_TOOLS, {}
+        if args.mode == "coder":
+            # المبرمجُ كما في الواجهة: أدواتُ الشيفرة، والتنفيذُ منها حيث يُعطى إيصالُ Docker
+            from agent.coder import CODER_SYSTEM, coder_tools
+            tools = tuple(coder_tools(DEFAULT_TOOLS, execution=args.execution_receipt is not None))
+            options["system"] = CODER_SYSTEM
         if args.analysis_receipt is not None:
             from analysis.tool import ANALYZE_DATA
             tools = (*DEFAULT_TOOLS, ANALYZE_DATA)
@@ -66,7 +73,7 @@ def main(argv=None) -> int:
                                    deadline_s=args.deadline_s,
                                    execution_receipt=args.execution_receipt,
                                    docker_executable=args.docker,
-                                   analysis_receipt=args.analysis_receipt)
+                                   analysis_receipt=args.analysis_receipt, **options)
     except PayloadRejected as exc:
         print(json.dumps({"status": "refused", "code": exc.code,
                           "reason": getattr(exc, "reason", "")}, ensure_ascii=False))

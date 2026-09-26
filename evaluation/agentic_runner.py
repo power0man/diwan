@@ -54,7 +54,7 @@ import time
 
 from agent.actions import ActionStore
 from agent.journal import Journal
-from agent.loop import run_agent
+from agent.loop import SYSTEM, run_agent
 from agent.registry import ToolContext, ToolRegistry
 from core.budget import Budget
 from core.canonical import PayloadRejected, digest
@@ -62,7 +62,7 @@ from core.execution import DockerExecutionBackend, ExecutionRefused, ExecutionRe
 from core.ledger import Ledger
 from core.sandbox import DISPOSABLE_HOST_ENV, sandbox_configuration
 
-RUNNER_VERSION = 5   # ٥: صورةُ المحلّل لكل مهمّة إن أُعطي إيصالُها (ج٨)؛ ٤: ملفّاتٌ ثنائية في المساحة (ك٥٠)؛ ٣: أمرُ النجاح في Docker؛ ٢: حارسُ ملفات الحكم
+RUNNER_VERSION = 6   # ٦: تعليماتُ النظام تُختار وتُسجَّل ببصمتها (وضعُ المبرمج، ج٩)؛ ٥: صورةُ المحلّل لكل مهمّة إن أُعطي إيصالُها (ج٨)؛ ٤: ملفّاتٌ ثنائية في المساحة (ك٥٠)؛ ٣: أمرُ النجاح في Docker؛ ٢: حارسُ ملفات الحكم
 SUCCESS_KINDS = ("tests_pass", "file_equals", "file_contains", "command_exit_zero")
 _ROOT_FIELDS = {"schema_version", "suite_id", "kind", "description", "tasks"}
 _TASK_FIELDS = {"task_id", "capability", "workspace", "instruction", "success",
@@ -453,7 +453,7 @@ def forbidden_touches(task: dict, journal: Journal) -> list[str]:
 def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
              model_version: str, host: str | None, charter=frozenset({"auto", "logged"}),
              deadline_s: float = 120.0, max_output: int = 1024, success_executor=None,
-             analysis_receipt=None, docker_executable: str | None = None) -> dict:
+             analysis_receipt=None, docker_executable: str | None = None, system: str = SYSTEM) -> dict:
     started = time.monotonic_ns()
     # `.resolve()` لا يُستغنى عنه: على ماك المالك يعطي `mkdtemp` مسارًا تحت
     # `/var` وهو رابطٌ رمزيّ إلى `/private/var`، وحارسُ دفتر الرجوع يفتح
@@ -482,7 +482,7 @@ def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
                             model_version=model_version,
                             max_steps=task["max_steps"], max_output=max_output,
                             deadline_s=deadline_s, action_store=store,
-                            session_id="agentic", turn_id=task["task_id"])
+                            session_id="agentic", turn_id=task["task_id"], system=system)
         except Exception as exc:                 # عطبُ بنيةٍ لا فشلُ قدرة
             return {"task_id": task["task_id"], "capability": task["capability"],
                     "status": "error", "code": "loop_raised",
@@ -577,6 +577,8 @@ def run_agentic_suite(suite: dict, provider, registry: ToolRegistry, *, model: s
               "sandbox_backend": (sandbox_configuration() or {}).get("backend"),
               # صورةُ المحلّل إن أُعطيت (ج٨)
               "analysis": analysis,
+              # التعليماتُ التي قيس بها (الحلقةُ العامة أو وضعُ المبرمج) ببصمتها
+              "system_sha256": hashlib.sha256(kwargs.get("system", SYSTEM).encode("utf-8")).hexdigest(),
               "tools": [spec.name for spec in registry.specs()]}
     attempted = len(results)
     errors = sum(r["status"] == "error" for r in results)

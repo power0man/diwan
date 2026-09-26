@@ -505,6 +505,57 @@ class Journal:
                 return "already_reverted"
             _fail("changed_since_action", "تغيّر الملفُّ بعد الفعل؛ الرجوعُ يردّ فعلَ الوكيل لا يمحو غيره")
 
+    def current_sha256(self, path: str) -> str | None:
+        """بصمةُ الملفّ الآن بلا أثر، أو لا شيء إن غاب (ج٩)."""
+        relative = _relative(path, writing=True)
+        with self._operation() as state:
+            if state is None:
+                return None
+            try:
+                parent = self._parent(relative)
+            except FileNotFoundError:
+                return None
+            except OSError:
+                _fail("unsafe_path", "دليل الهدف غير آمن")
+            try:
+                snapshot = _read(parent, relative.rsplit("/", 1)[-1], MAX_BYTES)
+            finally:
+                os.close(parent)
+            return None if snapshot is None else _sha(snapshot[0])
+
+    def content(self, sha256: str, path: str) -> bytes | None:
+        """محتوًى بعينه بلا أثر (ج٩): نسخةُ رجوعٍ بهذه البصمة، أو الملفُّ الآن إن طابقها، وإلّا لا شيء.
+
+        الدفترُ يحفظ ما قبل الفعل وحده، فما بعده يُقرأ من نسخة فعلٍ لاحق على المسار نفسِه أو من الملفّ الآن.
+        ولا يُعاد محتوًى لا تطابق بصمتُه ما طُلب.
+        """
+        if not isinstance(sha256, str) or not _SHA.fullmatch(sha256):
+            _fail("sha_invalid", "بصمةٌ غير صالحة")
+        relative = _relative(path, writing=True)
+        with self._operation() as state:
+            if state is None:
+                return None
+            try:
+                fd = _directory(state[1], "blobs")
+            except (FileNotFoundError, OSError):
+                fd = None
+            if fd is not None:
+                try:
+                    blob = _read(fd, sha256, MAX_BYTES)
+                finally:
+                    os.close(fd)
+                if blob is not None and _sha(blob[0]) == sha256:
+                    return blob[0]
+            try:
+                parent = self._parent(relative)
+            except (FileNotFoundError, OSError):
+                return None
+            try:
+                snapshot = _read(parent, relative.rsplit("/", 1)[-1], MAX_BYTES)
+            finally:
+                os.close(parent)
+            return snapshot[0] if snapshot is not None and _sha(snapshot[0]) == sha256 else None
+
     def _revert(self, action, target, parent):
         action_id = action.action_id
         snapshot = _read(parent, target.name, MAX_BYTES)

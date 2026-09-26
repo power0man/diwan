@@ -828,6 +828,101 @@ class AgentSession:
                 public.update(status=outcome["status"], result=outcome["result"])
             return public
 
+    def _turn_writes(self, state, turn_id):
+        """أفعالُ الكتابة في جولةٍ منتهية بترتيب وقوعها: (معرّفُ الإيصال، قيودُ الدفتر)."""
+        turn = self._find(state, turn_id) if _id(turn_id) else None
+        if turn is None:
+            _fail("turn_unknown", "لا جولةَ بهذا المعرّف في الجلسة")
+        if turn["result"] is None or turn["result"]["status"] not in TERMINAL:
+            _fail("turn_unresolved", "الجولةُ لم تنتهِ، أو فيها ما ينتظر قرارَ المالك")
+        writes = []
+        for step in turn["result"]["steps"]:
+            for result in step["tool_results"]:
+                # قيودُ الدفتر لا تحملها إلا نتيجةٌ كتبت فعلًا؛ والمرفوضُ والمعلَّق بلا قيود
+                if not isinstance(result.get("action_id"), str):
+                    continue
+                linked = result.get("journal_action_ids") or (
+                    [result["journal_action_id"]] if isinstance(result.get("journal_action_id"), str) else [])
+                if linked:
+                    writes.append((result["action_id"], list(linked)))
+        return writes
+
+    def _turn_files(self, writes):
+        by_path = {}
+        for _, linked in writes:
+            for journal_id in linked:
+                action = self.journal.action(journal_id)
+                by_path.setdefault(action.path, []).append(action)
+        return by_path
+
+    def turn_changes(self, turn_id):
+        """فرقُ الجولة ملفًّا ملفًّا (ج٩): من حال الملفّ قبل أول فعلٍ فيها إلى حاله بعد آخر فعل."""
+        from agent.coder import MAX_TURN_FILES, file_diff
+        with self._lock():
+            state = self._load()
+            by_path = self._turn_files(self._turn_writes(state, turn_id))
+            files = []
+            for path, actions in list(by_path.items())[:MAX_TURN_FILES]:
+                first, last = actions[0], actions[-1]
+                before = None if first.before_sha256 is None else self.journal.content(first.before_sha256, path)
+                after = self.journal.content(last.after_sha256, path)
+                current = self.journal.current_sha256(path)
+                now = ("as_after" if current == last.after_sha256 else
+                       "as_before" if current == first.before_sha256 else "changed")
+                if (first.before_sha256 is not None and before is None) or after is None:
+                    files.append({"path": path, "status": "unavailable", "binary": False, "diff": "",
+                                  "actions": len(actions), "now": now})
+                    continue
+                files.append({**file_diff(path, before, after), "actions": len(actions), "now": now})
+            return {"turn_id": turn_id, "files": files, "total_files": len(by_path),
+                    "complete": len(by_path) <= MAX_TURN_FILES}
+
+    def revert_turn(self, turn_id, request_id):
+        """التراجعُ عن الجولة كلِّها بطلب المالك (ج٩): تُفحص الملفّاتُ كلُّها أولًا، ثم يُرجع عن أفعالها بعكس ترتيبها.
+
+        لكل ملفٍّ مسَّته الجولةُ ثلاثةُ أحوال: كما تركته الجولة، أو كما كان قبلها، أو تغيّر بعدها. فإن تغيّر ملفٌّ
+        أو تخالفت الأحوالُ رُفض الطلبُ كلُّه بالاسم قبل أن يُرجع عن شيء، فلا تبقى جولةٌ نصفُها مردود.
+        """
+        from agent.action_revert import revert_prepared
+        if not _id(request_id):
+            _fail("request_id_invalid", "هوية طلب رجوع مطلوبة")
+        with self._lock():
+            state = self._load()
+            writes = self._turn_writes(state, turn_id)
+            if not writes:
+                _fail("turn_has_no_changes", "لم تكتب الجولةُ شيئًا يُرجع عنه")
+            by_path = self._turn_files(writes)
+            states = {}
+            for path, actions in by_path.items():
+                if any(a.after_sha256 != b.before_sha256 for a, b in zip(actions, actions[1:])):
+                    _fail("turn_not_revertible", f"تغيّر {path} بين فعلين في الجولة نفسِها")
+                current = self.journal.current_sha256(path)
+                states[path] = ("after" if current == actions[-1].after_sha256 else
+                                "before" if current == actions[0].before_sha256 else "changed")
+            changed = sorted(path for path, now in states.items() if now == "changed")
+            if changed:
+                _fail("changed_since_turn", "تغيّر بعد الجولة: " + "، ".join(changed))
+            if all(now == "before" for now in states.values()):
+                return {"status": "already_reverted", "turn_id": turn_id, "request_id": request_id,
+                        "files": sorted(states), "receipts": []}
+            if any(now == "before" for now in states.values()):
+                _fail("turn_partially_reverted", "رُدّ بعضُ الجولة وحده: "
+                      + "، ".join(sorted(p for p, now in states.items() if now == "before")))
+            receipts = []
+            for index, (action_id, _) in enumerate(reversed(writes)):
+                result = revert_prepared(self.action_store, self.context, action_id,
+                                         session_id=self.session_id, request_id=f"{request_id}.{index}")
+                outcome = json.loads(result["content"]) if result["status"] == "ok" else None
+                statuses = ([] if outcome is None else
+                            [item["status"] for item in outcome] if isinstance(outcome, list) else [outcome["status"]])
+                if result["status"] != "ok" or not all(s in ("reverted", "already_reverted") for s in statuses):
+                    return {"status": "incomplete", "error_code": result.get("code") or "revert_failed",
+                            "turn_id": turn_id, "request_id": request_id, "failed_action_id": action_id,
+                            "receipts": receipts}
+                receipts.append(result.get("action_id"))
+            return {"status": "reverted", "turn_id": turn_id, "request_id": request_id,
+                    "files": sorted(states), "receipts": receipts}
+
     def history(self, recover=False):
         if type(recover) is not bool:
             _fail("recover_invalid", "خيار الاستعادة منطقي")
