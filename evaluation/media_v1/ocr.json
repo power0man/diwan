@@ -1,0 +1,286 @@
+{
+  "schema_version": 1,
+  "suite_id": "media_v1_ocr",
+  "description": "ثلاثون صفحةً ممسوحةً مولَّدة (غ٧): عشرةُ نصوصٍ في ocr_texts.json، كلٌّ بثلاثة مستوياتٍ من التلف.",
+  "license": "Apache-2.0 (مولَّدةٌ لهذا البنك؛ الخطّان برخصة OFL-1.1)",
+  "metric": "نسبةُ خطأ المحارف (CER) بعد التطبيع: NFKC، وحذفُ الحركات والتطويل، وتوحيدُ المسافات. وفي الصفحتين المشكولتين تُنشر معها CER بالحركات، ولا تحجب.",
+  "thresholds": {
+    "cer_max": {
+      "clean": 0.05,
+      "moderate": 0.12,
+      "heavy": 0.25
+    }
+  },
+  "items": [
+    {
+      "id": "o01",
+      "text_id": "t01",
+      "level": "clean",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o01.jpg",
+      "sha256": "e61ef80b77add57a3be1b96a64f4f319ef92904a02fba8c635510cb74257e694"
+    },
+    {
+      "id": "o02",
+      "text_id": "t01",
+      "level": "moderate",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o02.jpg",
+      "sha256": "264b0a7367685c2b407747c333cc337f75c413cafb1ecf7a1d015d645089579a"
+    },
+    {
+      "id": "o03",
+      "text_id": "t01",
+      "level": "heavy",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o03.jpg",
+      "sha256": "6b09667aa19725d29136210a5523d690724febee8cbef295050ca2030aac7260"
+    },
+    {
+      "id": "o04",
+      "text_id": "t02",
+      "level": "clean",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o04.jpg",
+      "sha256": "f842339c6b7625aee99fc818c16562d332d2c280c6dbfd56ba12da5273faeef5"
+    },
+    {
+      "id": "o05",
+      "text_id": "t02",
+      "level": "moderate",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o05.jpg",
+      "sha256": "b9975f63b0637c7e054427e788761f7935c1473caa8f8b6200700e68e035c7e4"
+    },
+    {
+      "id": "o06",
+      "text_id": "t02",
+      "level": "heavy",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o06.jpg",
+      "sha256": "7e8a7c061c5da1d37659725b9ce9eabb045feac505485e77906e944cc4263bde"
+    },
+    {
+      "id": "o07",
+      "text_id": "t03",
+      "level": "clean",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o07.jpg",
+      "sha256": "ffd631826d1fbe985cfed44878b3c687ab6f035dc969a71126f30fae5a8c608b"
+    },
+    {
+      "id": "o08",
+      "text_id": "t03",
+      "level": "moderate",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o08.jpg",
+      "sha256": "e24efa7d62a61d4e0db183f82cafa75dbb23f1654d56df96fc21d4324189f88e"
+    },
+    {
+      "id": "o09",
+      "text_id": "t03",
+      "level": "heavy",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o09.jpg",
+      "sha256": "f8124fee862c0d09481122e6bf78373f48a898c42f1d2293a413d3a1878af178"
+    },
+    {
+      "id": "o10",
+      "text_id": "t04",
+      "level": "clean",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o10.jpg",
+      "sha256": "4fe70b4ad356903ce2b836046f851df7dacc5b89389e7730317d96093788864b"
+    },
+    {
+      "id": "o11",
+      "text_id": "t04",
+      "level": "moderate",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o11.jpg",
+      "sha256": "942fb0bf39ebf5ad46a3d0cf257a0788c594f77a616720df137875068b97c928"
+    },
+    {
+      "id": "o12",
+      "text_id": "t04",
+      "level": "heavy",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o12.jpg",
+      "sha256": "76acc24ac80085a781f7255ef18c0adf744f2f74a48662e5a7b73cc5332a2b3f"
+    },
+    {
+      "id": "o13",
+      "text_id": "t05",
+      "level": "clean",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o13.jpg",
+      "sha256": "23a2d496130b7dc1f3232036517ea78475c61a1afeba6f162d317be14c8db0bf"
+    },
+    {
+      "id": "o14",
+      "text_id": "t05",
+      "level": "moderate",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o14.jpg",
+      "sha256": "cb08038c3c55bba6399f474454675f889a66d91809044cf5c9a70efd00a8a63c"
+    },
+    {
+      "id": "o15",
+      "text_id": "t05",
+      "level": "heavy",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o15.jpg",
+      "sha256": "5d6eb4365589f5f042ff96c92be1119f8f160d6c6568d68040badf786f8a3a01"
+    },
+    {
+      "id": "o16",
+      "text_id": "t06",
+      "level": "clean",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o16.jpg",
+      "sha256": "b72f21c292f1107f1ee00987c63a324f0bf3617da67d53f6aff7c0dd701d0fac"
+    },
+    {
+      "id": "o17",
+      "text_id": "t06",
+      "level": "moderate",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o17.jpg",
+      "sha256": "3fea4de26aa0e7feebfb48aa20e1afe92eadd7e6a78d0ceb19d506bf5d2cd1a6"
+    },
+    {
+      "id": "o18",
+      "text_id": "t06",
+      "level": "heavy",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o18.jpg",
+      "sha256": "2773079c11ac31f24f951091532e740e7d5d6cd19a38f206bd3db1935da85b50"
+    },
+    {
+      "id": "o19",
+      "text_id": "t07",
+      "level": "clean",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o19.jpg",
+      "sha256": "b42d4498f26cda7c734458563c10b709637e7430e2d15d38e9ad979c6699217d"
+    },
+    {
+      "id": "o20",
+      "text_id": "t07",
+      "level": "moderate",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o20.jpg",
+      "sha256": "b9a47e0cf70ea7df3d94e3870b48cbbb656d808cc294ebb1e955feab1fb081a2"
+    },
+    {
+      "id": "o21",
+      "text_id": "t07",
+      "level": "heavy",
+      "font": "amiri",
+      "tashkeel": false,
+      "image": "ocr/o21.jpg",
+      "sha256": "d5d8f17fa86550d44b48f41ea4636abf164491f834ae0054989d82af25b9ba00"
+    },
+    {
+      "id": "o22",
+      "text_id": "t08",
+      "level": "clean",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o22.jpg",
+      "sha256": "b4cda669dcb76d7abd17402119c040dcbddeca3ceb70c0070603bd9899ca8541"
+    },
+    {
+      "id": "o23",
+      "text_id": "t08",
+      "level": "moderate",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o23.jpg",
+      "sha256": "9430c64473af8b6e436cad7878fd18c5fa160df3e9a3def6f048a49db1361723"
+    },
+    {
+      "id": "o24",
+      "text_id": "t08",
+      "level": "heavy",
+      "font": "noto",
+      "tashkeel": false,
+      "image": "ocr/o24.jpg",
+      "sha256": "5adaaf9b34a8a3b3cb89ef221f761fa7c70c60465b1ca43b61686d4cead7e5ff"
+    },
+    {
+      "id": "o25",
+      "text_id": "t09",
+      "level": "clean",
+      "font": "amiri",
+      "tashkeel": true,
+      "image": "ocr/o25.jpg",
+      "sha256": "d7f108d7dae4396a1e2c7fa93569b820750de6f8b170d1079b798ba04fb62cf1"
+    },
+    {
+      "id": "o26",
+      "text_id": "t09",
+      "level": "moderate",
+      "font": "amiri",
+      "tashkeel": true,
+      "image": "ocr/o26.jpg",
+      "sha256": "96bcba1b5e00d5a545b2bb15dc2346a3ec51aa31e85cb40f82a6b15dced00545"
+    },
+    {
+      "id": "o27",
+      "text_id": "t09",
+      "level": "heavy",
+      "font": "amiri",
+      "tashkeel": true,
+      "image": "ocr/o27.jpg",
+      "sha256": "c2fca7f75cc81be1095a74ac6c5579d6c006ec8bff949d2daf890dfd7a4ef55f"
+    },
+    {
+      "id": "o28",
+      "text_id": "t10",
+      "level": "clean",
+      "font": "amiri",
+      "tashkeel": true,
+      "image": "ocr/o28.jpg",
+      "sha256": "23de2b1f09c11f234212353b7e9362fb8ea27fed2dc99d60928568e75df28e6b"
+    },
+    {
+      "id": "o29",
+      "text_id": "t10",
+      "level": "moderate",
+      "font": "amiri",
+      "tashkeel": true,
+      "image": "ocr/o29.jpg",
+      "sha256": "c95a30ebb416fbf923d849c0d400d2d221c9d757ab9dde151095c9c2ee3ae19d"
+    },
+    {
+      "id": "o30",
+      "text_id": "t10",
+      "level": "heavy",
+      "font": "amiri",
+      "tashkeel": true,
+      "image": "ocr/o30.jpg",
+      "sha256": "5b9c54ab6979c31da906ef41b867576d10a9135a564fe292b27e2a5db2a4007c"
+    }
+  ]
+}
