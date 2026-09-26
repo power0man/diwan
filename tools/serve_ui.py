@@ -3,6 +3,7 @@
 import argparse
 import os
 from pathlib import Path
+import shutil
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -56,6 +57,8 @@ def main():
                         help="إيصال bootstrap صريح لتفعيل أدوات الحاوية؛ لا تشغيل Docker عند فتح الواجهة")
     parser.add_argument("--web-search-url",
                         help="عنوانُ SearXNG (مثل http://127.0.0.1:8080) لتفعيل أداة البحث في الويب (ج٢)؛ بدونه لا تُعلَن")
+    parser.add_argument("--analysis-receipt", type=Path,
+                        help="إيصالُ صورة المحلّل من analysis/prepare.py لتفعيل analyze_data (ج٨)؛ بدونه لا تُعلَن")
     args = parser.parse_args()
     media_model, media_version = os.environ.get("DIWAN_MEDIA_MODEL"), os.environ.get("DIWAN_MEDIA_DIGEST")
     if args.provider == "mlx":
@@ -95,7 +98,9 @@ def main():
                        media_model=media_model, media_model_version=media_version,
                        media_provider_factory=media_factory,
                        agent_provider_factory=agent_factory, runtime_receipt=args.runtime_receipt,
-                       web_search=(SearxngBackend(args.web_search_url) if args.web_search_url else None))
+                       web_search=(SearxngBackend(args.web_search_url) if args.web_search_url else None),
+                       analysis_receipt=args.analysis_receipt,
+                       docker_executable=shutil.which("docker") or "/usr/local/bin/docker")
         server = Server(app, args.port)
         print(f"ديوان المحلي: {server.origin}", flush=True)
         print("Ctrl+C للإغلاق؛ تُحفظ الجولات التي انتهت. انتظار النداء الجاري محدود بمهلته.", flush=True)

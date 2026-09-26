@@ -22,6 +22,8 @@ from conversation.session import ConversationError
 from agent.builtin_tools import DEFAULT_TOOLS
 from agent.registry import ToolRegistry
 from agent.web_search import web_search_tool
+from analysis.backend import configure_analysis_backend
+from analysis.tool import ANALYZE_DATA
 from core import filelock
 from core.execution import configure_execution_backend
 from core.canonical import canonical_bytes, digest
@@ -91,7 +93,8 @@ class LocalApp:
     """
     def __init__(self, root, *, model, model_version, provider_factory,
                  media_model=None, media_model_version=None, media_provider_factory=None,
-                 agent_provider_factory=None, runtime_receipt=None, web_search=None):
+                 agent_provider_factory=None, runtime_receipt=None, web_search=None,
+                 analysis_receipt=None, docker_executable="/usr/local/bin/docker"):
         self.root = Path(root).absolute()
         self.model, self.model_version = model, model_version
         self.provider_factory = provider_factory
@@ -101,6 +104,9 @@ class LocalApp:
         self.runtime_receipt = None if runtime_receipt is None else Path(runtime_receipt).absolute()
         # محرّكُ البحث يضبطه الإقلاعُ الموثوق وحده (ج٢)؛ وبدونه لا تُعلَن الأداة
         self.web_search = web_search
+        # صورةُ المحلّل يضبطها الإقلاعُ الموثوق وحده (ج٨)؛ وبدونها لا تُعلَن analyze_data
+        self.analysis_receipt = None if analysis_receipt is None else Path(analysis_receipt).absolute()
+        self.docker_executable = docker_executable
         self.agent_backends = {}
         self.media_model, self.media_model_version = media_model, media_model_version
         self.media_provider_factory = media_provider_factory
@@ -241,6 +247,15 @@ class LocalApp:
                 except Exception as exc:
                     configured.update(execution_enabled=False, execution_status="unavailable",
                                       error_code=getattr(exc, "code", "execution_configuration_invalid"))
+            configured.update(analysis_enabled=False, analysis_status="not_configured")
+            if self.agent_enabled and self.analysis_receipt is not None:
+                try:
+                    configure_analysis_backend(self.analysis_receipt, path,
+                                               docker_executable=self.docker_executable)
+                    configured.update(analysis_enabled=True, analysis_status="configured")
+                except Exception as exc:
+                    configured.update(analysis_status="unavailable",
+                                      analysis_error_code=getattr(exc, "code", "analysis_configuration_invalid"))
             self.agent_backends[project.name] = configured
         return path
 
@@ -251,6 +266,8 @@ class LocalApp:
                  if execution or tool.spec.name not in {"run_command", "run_tests"}]
         if self.web_search is not None:
             tools.append(web_search_tool(self.web_search))
+        if self.agent_backends[project.name]["analysis_enabled"]:
+            tools.append(ANALYZE_DATA)
         tools.append(self.memory_tool(project))
         return ToolRegistry(*tools)
 
@@ -282,9 +299,9 @@ class LocalApp:
             need(type(saved) is dict and saved.get("schema_version") in (2, 3), "metadata_invalid")
             need(saved.get("project_id") == project.name and saved.get("session_id") == session_id,
                  "metadata_invalid")
-            # كلُّ أداةٍ قد تُعلنها جلسةٌ محفوظة: الافتراضيةُ، والبحثُ (يرفض بالاسم إن لم يُضبط محرّك)، والذاكرة
+            # كلُّ أداةٍ قد تُعلنها جلسةٌ محفوظة: الافتراضيةُ، والبحثُ والمحلّلُ (يرفضان بالاسم إن لم يُضبطا)، والذاكرة
             available = {tool.spec.name: tool for tool in (*DEFAULT_TOOLS, web_search_tool(self.web_search),
-                                                           self.memory_tool(project))}
+                                                           ANALYZE_DATA, self.memory_tool(project))}
             need(type(saved.get("tools")) is list and all(type(spec) is dict and
                 spec.get("name") in available and spec == available[spec["name"]].spec.declared()
                 for spec in saved["tools"]), "agent_tool_contract_changed")

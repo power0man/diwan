@@ -8,6 +8,9 @@
         --model qwen3:14b --execution-receipt <مسارُ الإيصال الخاص> \
         --out docs/probe/agentic-<تاريخ>.json
 
+وبنكُ المحلّل (ك٥٠) يُشغَّل مع صورة المحلّل (ج٨): `--analysis-receipt <إيصالُها>`
+فتُعلَن `analyze_data` وتُضبط صورتُها لمساحة كل مهمّة.
+
 وبلا إيصالٍ يبقى الطريقُ القديم على المضيف، ولا يُقبل إلا بإقرار مضيفٍ زائل (ق٤٤):
 
     DIWAN_DISPOSABLE_HOST=<اسمُ المضيف> python3 tools/evaluate_agentic.py ...
@@ -44,18 +47,25 @@ def main(argv=None) -> int:
     parser.add_argument("--execution-receipt", type=Path,
                         help="إيصالُ صورة Docker الخاص (ج٣): يُشغَّل أمرُ النجاح في الحاوية لا على الجهاز")
     parser.add_argument("--docker", help="مسارٌ مطلق لمحرّك Docker إن لم يكن في موضعه الافتراضي")
+    parser.add_argument("--analysis-receipt", type=Path,
+                        help="إيصالُ صورة المحلّل (ج٨): تُعلَن analyze_data وتُضبط صورتُها لكل مهمّة (بنكُ ك٥٠)")
     args = parser.parse_args(argv)
 
     from providers.ollama import OllamaProvider
     provider = OllamaProvider(args.model)
     suite = json.loads(args.suite.read_text(encoding="utf-8"))
     try:
-        report = run_agentic_suite(suite, provider, ToolRegistry(*DEFAULT_TOOLS),
+        tools = DEFAULT_TOOLS
+        if args.analysis_receipt is not None:
+            from analysis.tool import ANALYZE_DATA
+            tools = (*DEFAULT_TOOLS, ANALYZE_DATA)
+        report = run_agentic_suite(suite, provider, ToolRegistry(*tools),
                                    model=args.model, model_version=args.model_version,
                                    max_output=args.max_output,
                                    deadline_s=args.deadline_s,
                                    execution_receipt=args.execution_receipt,
-                                   docker_executable=args.docker)
+                                   docker_executable=args.docker,
+                                   analysis_receipt=args.analysis_receipt)
     except PayloadRejected as exc:
         print(json.dumps({"status": "refused", "code": exc.code,
                           "reason": getattr(exc, "reason", "")}, ensure_ascii=False))

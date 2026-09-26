@@ -143,8 +143,9 @@ def _read_snapshot_file(root: Path, name: str, *, root_fd: int | None = None) ->
 # container. Candidate stdout cannot forge or interfere with this phase.
 _RUNTIME_PREFLIGHT = r'''
 import hashlib, importlib.metadata, json, pathlib, re, sys
-receipt = json.loads(sys.stdin.buffer.readline(16384))["runtime"]
-raw_lock = pathlib.Path("/opt/requirements-ci.lock").read_bytes()
+payload = json.loads(sys.stdin.buffer.readline(16384))
+receipt = payload["runtime"]
+raw_lock = pathlib.Path(payload.get("lock", "/opt/requirements-ci.lock")).read_bytes()
 if (".".join(map(str, sys.version_info[:3])) != receipt["python_version"]
     or hashlib.sha256(raw_lock).hexdigest() != receipt["lock_sha256"]):
     raise RuntimeError("execution_runtime_mismatch")
@@ -183,7 +184,8 @@ except BaseException:
 '''
 
 
-def _bounded_process(argv: list[str], *, data: bytes = b"", timeout: float = 20) -> tuple[int, bytes, bytes]:
+def _bounded_process(argv: list[str], *, data: bytes = b"", timeout: float = 20,
+                     limit: int = MAX_OUTPUT_BYTES) -> tuple[int, bytes, bytes]:
     """Drain both pipes while feeding stdin; abort before unbounded host output."""
     try:
         process = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -227,7 +229,7 @@ def _bounded_process(argv: list[str], *, data: bytes = b"", timeout: float = 20)
                             key.fileobj.close()
                         else:
                             output[key.data].extend(raw)
-                            if sum(map(len, output.values())) > MAX_OUTPUT_BYTES:
+                            if sum(map(len, output.values())) > limit:
                                 _refuse("execution_output_limit", "تجاوز خرج الحاوية الحد المسموح")
             try:
                 code = process.wait(timeout=max(0.01, deadline - time.monotonic()))
@@ -254,6 +256,9 @@ class ExecutionResult:
 
 
 class DockerExecutionBackend:
+    # The image's pinned lock, which the preflight re-checks against the receipt.
+    lock_path = "/opt/requirements-ci.lock"
+
     def __init__(self, receipt_path: Path, workspace_root: Path, snapshot_files: tuple[str, ...],
                  *, docker_executable: str = "/usr/local/bin/docker", snapshot_selector=None):
         self.root = _root(workspace_root)
@@ -299,8 +304,8 @@ class DockerExecutionBackend:
         self.docker = docker_executable
         self.snapshot_selector = snapshot_selector
 
-    def _docker(self, *args: str, data=b"", timeout=20):
-        return _bounded_process([self.docker, *args], data=data, timeout=timeout)
+    def _docker(self, *args: str, data=b"", timeout=20, limit=MAX_OUTPUT_BYTES):
+        return _bounded_process([self.docker, *args], data=data, timeout=timeout, limit=limit)
 
     def _selected_files(self):
         return _snapshot_files(self.files if self.snapshot_selector is None
@@ -401,8 +406,12 @@ class DockerExecutionBackend:
         except (ValueError, IndexError, TypeError, AttributeError):
             _refuse("execution_exit_unverified", "لم تثبت حالة خروج الحاوية من محرك Docker")
 
-    def _run_container(self, driver: str, payload: dict, *, timeout_s: float) -> ExecutionResult:
-        """Run one fixed bootstrap and always verify disposal before returning."""
+    def _run_container_raw(self, driver: str, payload: dict, *, timeout_s: float,
+                           output_limit: int | None = None) -> tuple[int, bytes, bytes, str]:
+        """Run one fixed bootstrap and always verify disposal before returning.
+
+        Returns the daemon-attested exit code, the raw output and the boundary.
+        """
         name = "diwan-exec-" + uuid.uuid4().hex
         try:
             code, raw, _ = self._docker(*self._create_args(name, driver))
@@ -411,16 +420,30 @@ class DockerExecutionBackend:
                 _refuse("execution_container_unavailable", "تعذر إنشاء حاوية تنفيذ زائلة")
             self._verify_container(container_id, name, driver)
             data = json.dumps(payload, ensure_ascii=True).encode() + b"\n"
-            _, stdout, stderr = self._docker("start", "--attach", "--interactive", container_id,
-                                             data=data, timeout=timeout_s)
+            start = ("start", "--attach", "--interactive", container_id)
+            _, stdout, stderr = (self._docker(*start, data=data, timeout=timeout_s) if output_limit is None
+                                 else self._docker(*start, data=data, timeout=timeout_s, limit=output_limit))
             # stdout is candidate-controlled. Only the daemon attests process exit.
-            exit_code = self._exit_code(container_id, name)
-            return ExecutionResult(exit_code, stdout[-16384:].decode("utf-8", "replace"),
-                stderr[-16384:].decode("utf-8", "replace"), "docker:" + container_id,
-                output_truncated=len(stdout) > 16384 or len(stderr) > 16384)
+            return self._exit_code(container_id, name), stdout, stderr, "docker:" + container_id
         finally:
             if not self._dispose(name):
                 _refuse("execution_cleanup_unverified", "تعذر إثبات إزالة حاوية التنفيذ")
+
+    def _run_container(self, driver: str, payload: dict, *, timeout_s: float) -> ExecutionResult:
+        exit_code, stdout, stderr, boundary = self._run_container_raw(driver, payload, timeout_s=timeout_s)
+        return ExecutionResult(exit_code, stdout[-16384:].decode("utf-8", "replace"),
+            stderr[-16384:].decode("utf-8", "replace"), boundary,
+            output_truncated=len(stdout) > 16384 or len(stderr) > 16384)
+
+    def _preflight(self):
+        """The image and its pinned lock, checked before any candidate bytes are sent."""
+        self._verify_image()
+        payload = {"runtime": self.receipt}
+        if self.lock_path != DockerExecutionBackend.lock_path:
+            payload["lock"] = self.lock_path
+        preflight = self._run_container(_RUNTIME_PREFLIGHT, payload, timeout_s=20)
+        if preflight.exit_code != 0:
+            _refuse("execution_runtime_mismatch", "لم تجتز صورة التشغيل تحقق Python والقفل والاعتماديات")
 
     def run(self, argv: tuple[str, ...], *, timeout_s: float) -> ExecutionResult:
         if (not isinstance(argv, tuple) or not 1 <= len(argv) <= 64
@@ -430,10 +453,7 @@ class DockerExecutionBackend:
             _refuse("execution_arguments_invalid", "أمر أو مهلة تنفيذ غير صالحة")
         frozen = _FROZEN_INPUTS.get()
         files = self._snapshot() if frozen is None else _validated_frozen(self, frozen)
-        self._verify_image()
-        preflight = self._run_container(_RUNTIME_PREFLIGHT, {"runtime": self.receipt}, timeout_s=20)
-        if preflight.exit_code != 0:
-            _refuse("execution_runtime_mismatch", "لم تجتز صورة التشغيل تحقق Python والقفل والاعتماديات")
+        self._preflight()
         result = self._run_container(_CONTAINER_DRIVER, {"argv": argv, "files": files}, timeout_s=timeout_s)
         # 125 is intentionally ambiguous: a bootstrap error or an explicit
         # candidate exit. It never claims a measured model failure or success.

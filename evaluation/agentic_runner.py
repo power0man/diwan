@@ -62,7 +62,7 @@ from core.execution import DockerExecutionBackend, ExecutionRefused, ExecutionRe
 from core.ledger import Ledger
 from core.sandbox import DISPOSABLE_HOST_ENV, sandbox_configuration
 
-RUNNER_VERSION = 4   # ٤: ملفّاتٌ ثنائية في المساحة (ك٥٠)؛ ٣: أمرُ النجاح في Docker؛ ٢: حارسُ ملفات الحكم
+RUNNER_VERSION = 5   # ٥: صورةُ المحلّل لكل مهمّة إن أُعطي إيصالُها (ج٨)؛ ٤: ملفّاتٌ ثنائية في المساحة (ك٥٠)؛ ٣: أمرُ النجاح في Docker؛ ٢: حارسُ ملفات الحكم
 SUCCESS_KINDS = ("tests_pass", "file_equals", "file_contains", "command_exit_zero")
 _ROOT_FIELDS = {"schema_version", "suite_id", "kind", "description", "tasks"}
 _TASK_FIELDS = {"task_id", "capability", "workspace", "instruction", "success",
@@ -452,7 +452,8 @@ def forbidden_touches(task: dict, journal: Journal) -> list[str]:
 
 def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
              model_version: str, host: str | None, charter=frozenset({"auto", "logged"}),
-             deadline_s: float = 120.0, max_output: int = 1024, success_executor=None) -> dict:
+             deadline_s: float = 120.0, max_output: int = 1024, success_executor=None,
+             analysis_receipt=None, docker_executable: str | None = None) -> dict:
     started = time.monotonic_ns()
     # `.resolve()` لا يُستغنى عنه: على ماك المالك يعطي `mkdtemp` مسارًا تحت
     # `/var` وهو رابطٌ رمزيّ إلى `/private/var`، وحارسُ دفتر الرجوع يفتح
@@ -470,6 +471,11 @@ def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
         # دليلُ التحكم خارج مساحة الفعل شرطٌ في الجلسة الوكيلة: الإيصالاتُ
         # لا تسكن المساحةَ التي يكتب فيها الوكيل، وإلّا كتب فوق إيصاله.
         store = ActionStore(scratch / "control", workspace)
+        if analysis_receipt is not None:
+            # صورةُ المحلّل (ج٨) تُضبط لمساحة هذه المهمّة وحدها، وتُحرَّر بعدها
+            from analysis.backend import configure_analysis_backend
+            configure_analysis_backend(analysis_receipt, workspace,
+                                       **({"docker_executable": docker_executable} if docker_executable else {}))
         try:
             run = run_agent(task["instruction"], provider, registry, context,
                             ledger=ledger, budget=Budget(0, 0), model=model,
@@ -512,6 +518,9 @@ def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
                 "answer": run.answer[:1000],
                 "elapsed_ms": (time.monotonic_ns() - started) // 1_000_000}
     finally:
+        if analysis_receipt is not None:
+            from analysis.backend import release_analysis_backend
+            release_analysis_backend(scratch / "workspace")
         shutil.rmtree(scratch, ignore_errors=True)
 
 
@@ -533,7 +542,7 @@ def attested_disposable_host() -> str | None:
 
 def run_agentic_suite(suite: dict, provider, registry: ToolRegistry, *, model: str,
                       model_version: str, execution_receipt=None,
-                      docker_executable: str | None = None, **kwargs) -> dict:
+                      docker_executable: str | None = None, analysis_receipt=None, **kwargs) -> dict:
     """بإيصال Docker يُشغَّل أمرُ النجاح في الحاوية (ج٣)؛ وبدونه لا يبدأ إلا بإقرار مضيفٍ زائل (ق٤٤)."""
     validate_agentic_suite(suite)
     host = attested_disposable_host()
@@ -545,9 +554,14 @@ def run_agentic_suite(suite: dict, provider, registry: ToolRegistry, *, model: s
                     f"معيارُ النجاح يُشغّل كودًا كتبه النموذج على المضيف؛ يلزمه إيصالُ "
                     f"Docker أو إقرارٌ في {DISPOSABLE_HOST_ENV} [ق٤٤]")
         executor = HostSuccessExecutor(host)
+    analysis = None
+    if analysis_receipt is not None:
+        # يُقرأ هنا للإعداد وحده؛ والتحقّقُ من الصورة نفسِها في كل نداءٍ داخل الحدّ
+        analysis = {"image_id": json.loads(Path(analysis_receipt).read_text(encoding="utf-8")).get("image_id")}
     results = [{**run_task(task, provider, registry, model=model,
                            model_version=model_version, host=host,
-                           success_executor=executor, **kwargs),
+                           success_executor=executor, analysis_receipt=analysis_receipt,
+                           docker_executable=docker_executable, **kwargs),
                 "qualified_id": qualified_task_id(suite["suite_id"], task["task_id"])}
                for task in suite["tasks"]]
     config = {"runner_version": RUNNER_VERSION, "suite_id": suite["suite_id"],
@@ -561,6 +575,8 @@ def run_agentic_suite(suite: dict, provider, registry: ToolRegistry, *, model: s
               **executor.configuration(),
               # وهل كانت خُلفيّةُ الصندوق مضبوطةً أصلًا — تمييزًا لا اعتمادًا
               "sandbox_backend": (sandbox_configuration() or {}).get("backend"),
+              # صورةُ المحلّل إن أُعطيت (ج٨)
+              "analysis": analysis,
               "tools": [spec.name for spec in registry.specs()]}
     attempted = len(results)
     errors = sum(r["status"] == "error" for r in results)

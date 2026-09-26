@@ -1,0 +1,5 @@
+# سياقُ البناء ثلاثةُ ملفّاتٍ لا غير
+*
+!Dockerfile
+!requirements.lock
+!diwan_ar.py

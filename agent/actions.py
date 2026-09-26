@@ -447,6 +447,9 @@ class ActionStore:
                 result = _copy(result)
                 if "action_id" in result:
                     result["journal_action_id"] = result.pop("action_id")
+                # فعلٌ يكتب ملفّاتٍ عدّة (ج٨) يُرجع عنه رجوعًا واحدًا
+                if "action_ids" in result:
+                    result["journal_action_ids"] = result.pop("action_ids")
                 record.update(state="completed", revision=record["revision"] + 1)
                 result.update(action_id=action_id, call_digest=record["call_digest"], revision=record["revision"])
                 record["result"] = result
