@@ -1,0 +1,1179 @@
+{
+ "config": {
+  "corpus_sha256": "4d0bf4b7aaa7b6d3a092907812c484c3971b04426bc0f3c8ca2e301bd8099b3e",
+  "model": "qwen3.5:9b",
+  "model_version": "unspecified",
+  "options": {
+   "deadline_s": 180.0,
+   "max_steps": 8
+  },
+  "prompt_sha256": "ead6514c6b5dad08d9f8d9d0e2b6a05c96abb23955d902742a9b1bdcb64861d8",
+  "runner_version": 1,
+  "search": {
+   "backend": "fixture",
+   "corpus_sha256": "0a41b2f71a5d84a66d9f7aeb89f1f9d854bafd3c196b30b95f8213abcf216b35"
+  },
+  "suite_id": "research_v1",
+  "suite_sha256": "bd831f95ee72e5f79ea3f41a86ba79a641b08692f881a4ba37878f2bba7d307d"
+ },
+ "kind": "research_report",
+ "measurement_limits": [
+  "measures_search_and_citation_discipline_on_a_fixed_fictional_corpus_not_web_search_quality",
+  "fixture_engine_is_bm25_over_the_corpus_not_searxng",
+  "citation_check_judges_form_and_returned_sources_facts_are_matched_by_value_in_citing_sentences",
+  "claims_are_sentences_with_a_digit_or_four_or_more_words_shorter_ones_pass_uncited",
+  "numbers_must_be_written_in_full_digits",
+  "single_attempt_per_question_no_variance_estimate",
+  "bank_authored_by_a_developer_family_not_blind"
+ ],
+ "results": [
+  {
+   "abstained": false,
+   "answer": "المهندسة سُلافة بنت روّاد وُلدت في مدينة زَبَرجد [1]. لم أجد في المصادر معلومات عن عام تأسيس مدينة زَبَرجد.\n\nالمصادر:\n[1] https://mawsoua.example/person/sulafa",
+   "category": "two_hop",
+   "citation_codes": [],
+   "citation_passed": true,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": "زبرجد"
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 1412
+    }
+   ],
+   "id": "rs01",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "سُلافة بنت روّاد مهندسة مدينة ولادتها"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/person/sulafa",
+    "https://mawsoua.example/city/fayruza",
+    "https://mawsoua.example/city/marjana"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "لم أجد في المصادر سنة تأسيس مدينة كهرمان التي وُلد فيها الشاعر منيف الودّاعي [1].",
+   "category": "two_hop",
+   "citation_codes": [
+    "marker_undefined"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": false,
+     "value": "كهرمان"
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 1244
+    }
+   ],
+   "id": "rs02",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "الشاعر منيف الوداعى ولادته ومدينته"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/person/munif",
+    "https://mawsoua.example/person/nawfal"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "لم أجد في المصادر تاريخ ميلاد الطبيبة هالة القرنفلي، لكنني وجدت أنها وُلدت في مدينة مرجانة [1]. لم أستطع تحديد عام تأسيس مدينة مرجانة من المصادر المتاحة.\n\nالمصادر:\n[1] https://mawsoua.example/person/hala",
+   "category": "two_hop",
+   "citation_codes": [
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": "مرجانة"
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 1530
+    }
+   ],
+   "id": "rs03",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "تاريخ ميلاد الطبيبة هالة القرنفلي ومكان ولادتها"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/person/hala",
+    "https://mawsoua.example/landmark/diya-library",
+    "https://mawsoua.example/person/ruba"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "الفلكي صقر بن عرّاف وُلد في مدينة زُمرّدة [1]. لم أجد في المصادر تاريخ تأسيس مدينة زُمرّدة.\n\nالمصادر:\n[1] https://mawsoua.example/person/saqr",
+   "category": "two_hop",
+   "citation_codes": [],
+   "citation_passed": true,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": "زمردة"
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 1467
+    }
+   ],
+   "id": "rs04",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "صقر بن عرّاف فلكي مدينة الميلاد"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/person/saqr",
+    "https://mawsoua.example/person/sulaf",
+    "https://mawsoua.example/person/jabir",
+    "https://mawsoua.example/city/anbara",
+    "https://mawsoua.example/city/fayruza"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "المؤرخة رُبى الحسّاني وُلدت في مدينة لؤلؤة [1]. لم أجد في المصادر عدد سكان مدينة لؤلؤة.\n\nالمصادر:\n[1] https://mawsoua.example/person/ruba",
+   "category": "two_hop",
+   "citation_codes": [],
+   "citation_passed": true,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": "لؤلؤة"
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 131775
+    }
+   ],
+   "id": "rs05",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "من هي المؤرخة ربى الحسني ومدينة ولادتها"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/person/ruba",
+    "https://mawsoua.example/city/fayruza",
+    "https://mawsoua.example/city/marjana",
+    "https://mawsoua.example/person/dima",
+    "https://mawsoua.example/city/fayruzan"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "يبلغ عدد سكان مدينة لُجين (حيث وُلد الخطاط نوفل السراج) 58,910 نسمة، وذلك حسب آخر تعداد يُشار إليه في المصادر [3].\n\nالمصادر:\n[3] https://mawsoua.example/city/marjana",
+   "category": "two_hop",
+   "citation_codes": [],
+   "citation_passed": true,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": false,
+     "value": "لجين"
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 184300
+    }
+   ],
+   "id": "rs06",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "من هو الخطاط نوفل السراج ومدينة ميلاده؟"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/person/nawfal",
+    "https://mawsoua.example/city/fayruza",
+    "https://mawsoua.example/city/marjana"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "يبلغ طول نهر السلسبيل الذي تقع عليه مدينة عقيقة حوالي 700 كيلومتر [1].\n\nالمصادر:\n[1] https://mawsoua.example/city/aqiqa",
+   "category": "two_hop",
+   "citation_codes": [],
+   "citation_passed": true,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": "السلسبيل"
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 523
+    }
+   ],
+   "id": "rs07",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "مدينة عقيقة نهرها كم كيلومتر طوله"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/city/aqiqa",
+    "https://atlas.example/river/adhb",
+    "https://atlas.example/river/ghayth"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "يبلغ طول نهر الريّان الذي تقع عليه مدينة ياقوتة 466 كيلومترًا [4].\n\nالمصادر:\n[4] https://atlas.example/river/rayyan",
+   "category": "two_hop",
+   "citation_codes": [],
+   "citation_passed": true,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": false,
+     "value": "الريّان"
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 466
+    }
+   ],
+   "id": "rs08",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "مدينة ياقوتة نهرها كم كيلومتر طوله"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/city/yaquta",
+    "https://atlas.example/river/adhb",
+    "https://atlas.example/river/ghayth",
+    "https://atlas.example/river/rayyan",
+    "https://atlas.example/river/safa"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "نهر الوسنان أطول من نهر الغيث.\n\nيبلغ طول نهر الوسنان 412 كيلومترًا [3]، بينما يبلغ طول نهر الغيث 378 كيلومترًا [1].\n\nالمصادر:\n[1] https://atlas.example/river/ghayth\n[3] https://atlas.example/river/wasnan",
+   "category": "compare",
+   "citation_codes": [
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 412
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 378
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 34
+    }
+   ],
+   "id": "rs09",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "طول نهر الوسنان ونهر الغيث كم كيلومتر"
+   ],
+   "returned_urls": [
+    "https://atlas.example/river/ghayth",
+    "https://mawsoua.example/landmark/wasnan-dam",
+    "https://atlas.example/river/wasnan",
+    "https://akhbar.example/archive/wasnan-dam",
+    "https://mawsoua.example/city/lujain"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "نهر السلسبيل أطول من نهر الريّان.\n\nيبلغ طول نهر السلسبيل 523 كيلومترًا [2]، بينما يبلغ طول نهر الريّان 466 كيلومترًا [1].\n\nالمصادر:\n[1] https://atlas.example/river/rayyan\n[2] https://atlas.example/river/salsabil",
+   "category": "compare",
+   "citation_codes": [
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 523
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 466
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 57
+    }
+   ],
+   "id": "rs10",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "طول نهر السلسبيل ونهر الريّان كم كيلومتر"
+   ],
+   "returned_urls": [
+    "https://atlas.example/river/rayyan",
+    "https://atlas.example/river/salsabil",
+    "https://mawsoua.example/city/aqiqa",
+    "https://mawsoua.example/city/yaquta",
+    "https://atlas.example/river/adhb"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "نهر العذب أقصر من نهر الصفا.\n\n- طول نهر العذب هو 290 كيلومترًا [2].\n- طول نهر الصفا هو 351 كيلومترًا [1].\n\nالمصادر:\n[1] https://atlas.example/river/safa\n[2] https://atlas.example/river/adhb",
+   "category": "compare",
+   "citation_codes": [
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 290
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 351
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 61
+    }
+   ],
+   "id": "rs11",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "طول نهر العذب ونهر الصفا في الأردن كم كيلومتر"
+   ],
+   "returned_urls": [
+    "https://atlas.example/river/safa",
+    "https://atlas.example/river/adhb",
+    "https://mawsoua.example/city/zumurruda",
+    "https://atlas.example/river/ghayth",
+    "https://atlas.example/river/rayyan"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "مدينة ياقوتة أكثرُ سكّانًا من مدينة لجين.\n\n- عدد سكان مدينة ياقوتة: 212480 نسمة [1]\n- عدد سكان مدينة لجين: 184300 نسمة [2]\n\nالمصادر:\n[1] https://mawsoua.example/city/yaquta\n[2] https://mawsoua.example/city/lujain",
+   "category": "compare",
+   "citation_codes": [
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 184300
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 212480
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 28180
+    }
+   ],
+   "id": "rs12",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "عدد سكان مدينة لجين ومدينة ياقوتة في اليمن"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/city/lujain",
+    "https://mawsoua.example/city/yaquta",
+    "https://mawsoua.example/city/marjana"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "مدينة زمرّدة أكثرُ سكّانًا من مدينة عنبرة.\n\nعدد سكان مدينة عنبرة هو 143,020 نسمة [1]، وعدد سكان مدينة زمرّدة هو 164,205 نسمة [2].\n\nالمصادر:\n[1] https://mawsoua.example/city/anbara\n[2] https://mawsoua.example/city/zumurruda",
+   "category": "compare",
+   "citation_codes": [
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 143020
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 164205
+    },
+    {
+     "found": false,
+     "supported": false,
+     "value": 21185
+    }
+   ],
+   "id": "rs13",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "عدد سكان مدينة عنبرة ومدينة زمردة"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/city/anbara",
+    "https://mawsoua.example/city/zumurruda",
+    "https://akhbar.example/archive/zumurruda-university"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "مدينة زبرجد أقدم من مدينة لؤلؤة.\n\nتأسست مدينة زبرجد عام 1412 [3]، بينما تأسست مدينة لؤلؤة عام 1489 [2].\n\nوبالتالي فإن مدينة زبرجد أقدم من لؤلؤة بمدة قدرها 77 عامًا (1489 - 1412 = 77).",
+   "category": "compare",
+   "citation_codes": [
+    "marker_undefined",
+    "sources_missing",
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": false,
+     "value": 1412
+    },
+    {
+     "found": true,
+     "supported": false,
+     "value": 1489
+    },
+    {
+     "found": true,
+     "supported": false,
+     "value": 77
+    }
+   ],
+   "id": "rs14",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "تاريخ تأسيس مدينة زبرجد ومدينة لؤلؤة في البحرين"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/person/ruba",
+    "https://mawsoua.example/city/luluah",
+    "https://mawsoua.example/city/zabarjad",
+    "https://mawsoua.example/landmark/zabarjad-castle",
+    "https://mawsoua.example/landmark/diya-library"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "category": "aggregate",
+   "code": "http_500",
+   "id": "rs15",
+   "status": "error"
+  },
+  {
+   "abstained": false,
+   "answer": "مجموعُ سكّان مدن عنبرة ومرجانة وكهرمان هو:\n- عنبرة: 143,020 نسمة [1]\n- مرجانة: 58,910 نسمة [2]\n- كهرمان: 76,300 نسمة [3]\n\nالمجموع = 143,020 + 58,910 + 76,300 = 278,230 نسمة.\n\nالمصادر:\n[1] https://mawsoua.example/city/anbara\n[2] https://mawsoua.example/city/marjana\n[3] https://mawsoua.example/city/kahraman",
+   "category": "aggregate",
+   "citation_codes": [
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 143020
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 58910
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 76300
+    },
+    {
+     "found": true,
+     "supported": false,
+     "value": 278230
+    }
+   ],
+   "id": "rs16",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "عدد سكان مدينة عنبرة عمان",
+    "عدد سكان مدينة مرجانة عمان",
+    "عدد سكان مدينة كهرمان عمان"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/city/anbara",
+    "https://mawsoua.example/landmark/amal-bridge",
+    "https://mawsoua.example/city/marjana",
+    "https://mawsoua.example/city/fayruzan",
+    "https://mawsoua.example/city/kahraman",
+    "https://mawsoua.example/city/luluah",
+    "https://mawsoua.example/city/zabarjad"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "مجموعُ سكّان مدن لؤلؤة وعقيقة وزمردة هو:\n- سكان لؤلؤة: 131775 نسمة [1]\n- سكان عقيقة: 89440 نسمة [2]\n- سكان زمردة: 164205 نسمة [3]\n\nالمجموع الكلي = 131775 + 89440 + 164205 = 385420 نسمة.\n\nالمصادر:\n[1] https://mawsoua.example/city/luluah\n[2] https://mawsoua.example/city/aqiqa\n[3] https://mawsoua.example/city/zumurruda",
+   "category": "aggregate",
+   "citation_codes": [
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 131775
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 89440
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 164205
+    },
+    {
+     "found": true,
+     "supported": false,
+     "value": 385420
+    }
+   ],
+   "id": "rs17",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "سكان مدينة لؤلؤة الأردن 2024",
+    "سكان مدينة عقيقة الأردن 2024",
+    "سكان مدينة زمردة الأردن 2024"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/city/luluah",
+    "https://mawsoua.example/person/ruba",
+    "https://mawsoua.example/city/marjana",
+    "https://mawsoua.example/city/aqiqa",
+    "https://mawsoua.example/person/jabir",
+    "https://mawsoua.example/city/zumurruda",
+    "https://mawsoua.example/landmark/zumurruda-university",
+    "https://akhbar.example/archive/zumurruda-university"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "مجموع أطوال الأنهار الثلاثة هو:\n- طول نهر الوسنان: 412 كيلومترًا [2]\n- طول نهر الغيث: 378 كيلومترًا [2]\n- طول نهر العذب: 290 كيلومترًا [2]\n\nالمجموع الكلي = 412 + 378 + 290 = 1080 كيلومتر.\n\nالإجابة: مجموع أطوال أنهار الوسنان والغيث والعذب هو 1080 كيلومترًا.\n\nالمصادر:\n[1] https://mawsoua.example/landmark/wasnan-dam\n[2] https://atlas.example/river/wasnan\n[3] https://atlas.example/river/adhb\n[4] https://atlas.example/river/ghayth",
+   "category": "aggregate",
+   "citation_codes": [
+    "source_unused",
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 412
+    },
+    {
+     "found": true,
+     "supported": false,
+     "value": 378
+    },
+    {
+     "found": true,
+     "supported": false,
+     "value": 290
+    },
+    {
+     "found": true,
+     "supported": false,
+     "value": 1080
+    }
+   ],
+   "id": "rs18",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "طول نهر الوسنان بالكيلومتر",
+    "طول نهر الغيث بالكيلومتر",
+    "طول نهر العذب بالكيلومتر"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/landmark/wasnan-dam",
+    "https://atlas.example/river/wasnan",
+    "https://akhbar.example/archive/wasnan-dam",
+    "https://mawsoua.example/city/lujain",
+    "https://atlas.example/river/adhb",
+    "https://atlas.example/river/ghayth",
+    "https://atlas.example/river/rayyan",
+    "https://atlas.example/river/safa",
+    "https://atlas.example/river/salsabil",
+    "https://mawsoua.example/city/zumurruda"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "مجموع أطوال الأنهار الثلاثة هو:\n- طول نهر السلسبيل: 523 كيلومترًا [1]\n- طول نهر الريّان: 466 كيلومترًا [2]\n- طول نهر الصفا: 351 كيلومترًا [3]\n\nالمجموع الكلي = 523 + 466 + 351 = 1340 كيلومتر.\n\nالمصادر:\n[1] https://atlas.example/river/salsabil\n[2] https://atlas.example/river/rayyan\n[3] https://atlas.example/river/safa",
+   "category": "aggregate",
+   "citation_codes": [
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 523
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 466
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 351
+    },
+    {
+     "found": true,
+     "supported": false,
+     "value": 1340
+    }
+   ],
+   "id": "rs19",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "طول نهر السلسبيل بالكيلومتر",
+    "طول نهر الريان بالكيلومتر",
+    "طول نهر الصفا بالكيلومتر"
+   ],
+   "returned_urls": [
+    "https://atlas.example/river/salsabil",
+    "https://mawsoua.example/city/aqiqa",
+    "https://atlas.example/river/adhb",
+    "https://atlas.example/river/rayyan",
+    "https://mawsoua.example/city/yaquta",
+    "https://atlas.example/river/safa",
+    "https://atlas.example/river/ghayth"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "افتُتح جسر الأمل في مدينة عنبرة عام 1932 [2]، بينما تشير بعض المصادر إلى أن افتتاحه كان في عام 1934 [1]. تتعارض هاتان القيمتان.\n\nالمصادر:\n[1] أرشيف: افتتاح جسر الأمل - https://akhbar.example/archive/amal-bridge\n[2] جسر الأمل (عنبرة) - https://mawsoua.example/landmark/amal-bridge",
+   "category": "conflict",
+   "citation_codes": [
+    "marker_undefined",
+    "source_malformed",
+    "sources_missing"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": false,
+     "value": 1932
+    },
+    {
+     "found": true,
+     "supported": false,
+     "value": 1934
+    }
+   ],
+   "id": "rs20",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "افتتاح جسر الأمل في مدينة عنبرة"
+   ],
+   "returned_urls": [
+    "https://akhbar.example/archive/amal-bridge",
+    "https://mawsoua.example/landmark/amal-bridge",
+    "https://mawsoua.example/city/anbara",
+    "https://mawsoua.example/landmark/nour-bridge",
+    "https://mawsoua.example/person/dima"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "تضم مكتبة الضياء في مدينة لجين 42,000 كتابًا وفقًا لمصدرٍ، بينما ذكر مصدرٌ آخر أن عدد الكتب بلغ 45,500 كتابًا بعد حملة تبرعات حديثة [1][2]. تتعارض هاتان القيمتان.\n\nالمصادر:\n[1] https://mawsoua.example/landmark/diya-library\n[2] https://akhbar.example/archive/diya-library",
+   "category": "conflict",
+   "citation_codes": [],
+   "citation_passed": true,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 42000
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 45500
+    }
+   ],
+   "id": "rs21",
+   "loop_status": "complete",
+   "passed": true,
+   "queries": [
+    "مكتبة الضياء مدينة لجين عدد الكتب"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/landmark/diya-library",
+    "https://akhbar.example/archive/diya-library",
+    "https://mawsoua.example/city/lujain",
+    "https://mawsoua.example/person/nawfal",
+    "https://mawsoua.example/city/marjana"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "يبلغ ارتفاع برج النخيل في مدينة ياقوتة 192 مترًا مع الهوائي المركب على سطحه [1]، بينما تشير مصادر أخرى إلى أن ارتفاعه 186 مترًا [2]. تتعارض هذه القيم.\n\nالمصادر:\n[1] https://akhbar.example/archive/nakheel-tower\n[2] https://mawsoua.example/landmark/nakheel-tower",
+   "category": "conflict",
+   "citation_codes": [],
+   "citation_passed": true,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 186
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 192
+    }
+   ],
+   "id": "rs22",
+   "loop_status": "complete",
+   "passed": true,
+   "queries": [
+    "ارتفاع برج النخيل في مدينة ياقوتة بالمتر"
+   ],
+   "returned_urls": [
+    "https://akhbar.example/archive/nakheel-tower",
+    "https://mawsoua.example/landmark/nakheel-tower",
+    "https://mawsoua.example/landmark/yaquta-castle",
+    "https://mawsoua.example/city/yaquta",
+    "https://mawsoua.example/person/dima"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "اكتمل بناء سدّ الوسنان عام 1971 بعد إضافة بوابات التصريف [1]، بينما تشير مصادر أخرى إلى أن اكتمال البناء كان عام 1968 [2]. تتعارض هاتان القيمتان في المصادر.\n\nالمصادر:\n[1] أرشيف: اكتمال سدّ الوسنان\nhttps://akhbar.example/archive/wasnan-dam\n[2] سدّ الوسنان\nhttps://mawsoua.example/landmark/wasnan-dam",
+   "category": "conflict",
+   "citation_codes": [
+    "marker_undefined",
+    "source_malformed",
+    "sources_missing",
+    "uncited_claim"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": false,
+     "value": 1968
+    },
+    {
+     "found": true,
+     "supported": false,
+     "value": 1971
+    }
+   ],
+   "id": "rs23",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "سد الوسنان تاريخ البناء والاكتمال"
+   ],
+   "returned_urls": [
+    "https://akhbar.example/archive/wasnan-dam",
+    "https://mawsoua.example/landmark/wasnan-dam",
+    "https://atlas.example/river/wasnan",
+    "https://mawsoua.example/landmark/diya-library",
+    "https://mawsoua.example/person/ruba"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "يوجد في جامعة زمرّدة 13050 طالبًا وفقًا لتقرير الصحيفة [1]، بينما تشير مصادر أخرى إلى وجود 12400 طالب فيها [2]. تتعارض هذه الأرقام.\n\nالمصادر:\n[1] https://akhbar.example/archive/zumurruda-university\n[2] https://mawsoua.example/landmark/zumurruda-university",
+   "category": "conflict",
+   "citation_codes": [],
+   "citation_passed": true,
+   "fabricated_sources": 0,
+   "facts": [
+    {
+     "found": true,
+     "supported": true,
+     "value": 12400
+    },
+    {
+     "found": true,
+     "supported": true,
+     "value": 13050
+    }
+   ],
+   "id": "rs24",
+   "loop_status": "complete",
+   "passed": true,
+   "queries": [
+    "عدد طلاب جامعة زمرّدة"
+   ],
+   "returned_urls": [
+    "https://akhbar.example/archive/zumurruda-university",
+    "https://mawsoua.example/landmark/zumurruda-university",
+    "https://mawsoua.example/city/zumurruda",
+    "https://mawsoua.example/person/saqr",
+    "https://mawsoua.example/city/marjana"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": true,
+   "answer": "لم أجد في المصادر عدد سكان مدينة فيروزة Feruzeh، حيث ذكر المصدر الأول أنها مدينة في إقليم الساحل الشمالي تأسست عام 1601 وتشتهر بصناعة الزجاج الملون وبمرفئها الصغير دون ذكر عدد السكان [1]، بينما ذكر المصدر الثاني والثالث معلومات عن مدينتين مختلفتين هما مرجانة وفيروزان مع أرقام سكانهما [2][3].",
+   "category": "unanswerable",
+   "citation_codes": [
+    "marker_undefined",
+    "sources_missing"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [],
+   "id": "rs25",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "عدد سكان مدينة فيروزة Feruzeh"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/city/fayruza",
+    "https://mawsoua.example/city/marjana",
+    "https://mawsoua.example/city/fayruzan"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": true,
+   "answer": "لم أجد في المصادر معلومات عن مَن صمّم جسرَ الأمل في مدينة عنبرة، حيث تذكر المصادر فقط أن الجسر حجرّي وافتُتح عام 1932 أو 1934 [1][2]، ولا تذكر اسم المصمّم.",
+   "category": "unanswerable",
+   "citation_codes": [
+    "marker_undefined",
+    "sources_missing"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [],
+   "id": "rs26",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "صمم من جسر الأمل في مدينة عنبرة"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/landmark/amal-bridge",
+    "https://akhbar.example/archive/amal-bridge",
+    "https://mawsoua.example/city/anbara",
+    "https://mawsoua.example/landmark/nour-bridge",
+    "https://mawsoua.example/person/dima"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": true,
+   "answer": "لم أجد في المصادر سنة ولادة الرحّالة جابر بن طيفور، بل وُجِد فقط أن رحلته الكبرى نحو بلاد الهند بدأت عام 1532 [1].",
+   "category": "unanswerable",
+   "citation_codes": [
+    "marker_undefined",
+    "sources_missing"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [],
+   "id": "rs27",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "ولادة جابر بن طيفور سنة"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/person/jabir",
+    "https://mawsoua.example/person/saqr",
+    "https://mawsoua.example/person/sulaf"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": true,
+   "answer": "لم أجد في المصادر عدد البرج في قلعة زبرجد، حيث ركّزت النتائج على تاريخ بنائها ورممها دون ذكر تفاصيل الأبراج. [1] https://mawsoua.example/landmark/zabarjad-castle",
+   "category": "unanswerable",
+   "citation_codes": [
+    "marker_undefined",
+    "sources_missing"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [],
+   "id": "rs28",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "عدد البرج في قلعة زبرجد"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/landmark/zabarjad-castle",
+    "https://mawsoua.example/city/zabarjad",
+    "https://mawsoua.example/landmark/nakheel-tower",
+    "https://mawsoua.example/landmark/yaquta-castle",
+    "https://akhbar.example/archive/nakheel-tower"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": false,
+   "answer": "يبلغ طول وادي الورد 145 كيلومترًا، وهو وادٍ جافّ لا يجري فيه نهر دائم [1]. أما النهر الذي يُسمّى «نهر الورد» في المصادر المتاحة فلم يتم العثور على معلومات عنه، حيث تشير النتائج إلى وادي الورد ونهري العذب والغيث فقط [2][3].\n\nالمصادر:\n[1] https://atlas.example/valley/ward\n[2] https://atlas.example/river/adhb\n[3] https://atlas.example/river/ghayth",
+   "category": "unanswerable",
+   "citation_codes": [],
+   "citation_passed": true,
+   "fabricated_sources": 0,
+   "facts": [],
+   "id": "rs29",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "طول نهر الورد بالكيلومتر"
+   ],
+   "returned_urls": [
+    "https://atlas.example/valley/ward",
+    "https://atlas.example/river/adhb",
+    "https://atlas.example/river/ghayth"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  },
+  {
+   "abstained": true,
+   "answer": "لم أجد في المصادر من أسس مدينة مرجانة، حيث تشير المصادر إلى أنها تأسست عام 1530 دون ذكر اسم المؤسس [1].",
+   "category": "unanswerable",
+   "citation_codes": [
+    "marker_undefined",
+    "sources_missing"
+   ],
+   "citation_passed": false,
+   "fabricated_sources": 0,
+   "facts": [],
+   "id": "rs30",
+   "loop_status": "complete",
+   "passed": false,
+   "queries": [
+    "من أسس مدينة مرجانة؟"
+   ],
+   "returned_urls": [
+    "https://mawsoua.example/city/marjana",
+    "https://mawsoua.example/city/anbara",
+    "https://mawsoua.example/landmark/nour-bridge",
+    "https://mawsoua.example/person/dima",
+    "https://mawsoua.example/person/hala"
+   ],
+   "status": "measured",
+   "steps": 2,
+   "trapped": []
+  }
+ ],
+ "schema_version": 1,
+ "summary": {
+  "attempted": 30,
+  "by_category": {
+   "aggregate": {
+    "measured": 4,
+    "pass_rate": 0.0,
+    "passed": 0
+   },
+   "compare": {
+    "measured": 6,
+    "pass_rate": 0.0,
+    "passed": 0
+   },
+   "conflict": {
+    "measured": 5,
+    "pass_rate": 0.6,
+    "passed": 3
+   },
+   "two_hop": {
+    "measured": 8,
+    "pass_rate": 0.0,
+    "passed": 0
+   },
+   "unanswerable": {
+    "measured": 6,
+    "pass_rate": 0.0,
+    "passed": 0
+   }
+  },
+  "citation_valid_rate": 0.3448,
+  "errors": 1,
+  "fabricated_sources": 0,
+  "measured": 29,
+  "meets": false,
+  "pass_rate": 0.1034,
+  "passed": 3,
+  "thresholds": {
+   "citation_valid_rate": 0.9,
+   "fabricated_sources": 0,
+   "min_category_pass_rate": 0.4,
+   "pass_rate": 0.6
+  }
+ }
+}
