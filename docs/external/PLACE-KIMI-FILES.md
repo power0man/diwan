@@ -56,9 +56,15 @@ case "$(git -C "$DIWAN" remote get-url origin)" in
   *) echo "توقّفت: $DIWAN ليس نسخةَ power0man/diwan العامة"; exit 1 ;;
 esac
 
-# ٢ — لا كتابة فوق ما ليس محفوظًا في git
-[ ! -e "$BANK/open" ] || { echo "توقّفت: $BANK/open موجود من قبل، ولم أغيّر شيئًا"; exit 1; }
-[ ! -e "$SEALED_DST" ] || { echo "توقّفت: $SEALED_DST موجود من قبل، ولم أغيّر شيئًا"; exit 1; }
+# ٢ — لا كتابة فوق ما ليس محفوظًا في git. والتحديثُ (UPDATE=1) يشترط القائمَ ولا يمحوه:
+#      المفتوحُ محفوظٌ في git، والمحجوبُ يُنقل إلى نسخةٍ مؤرَّخة بجانبه قبل النسخ.
+if [ "${UPDATE:-0}" = 1 ]; then
+  [ -e "$BANK/open" ] && [ -e "$SEALED_DST" ] || { echo "توقّفت: UPDATE=1 ولا بنكَ قائمًا يُحدَّث، ولم أغيّر شيئًا"; exit 1; }
+  [ -z "$(git -C "$DIWAN" status --porcelain -- "$BANK")" ] || { echo "توقّفت: في $BANK تغييراتٌ غيرُ مودَعة، ولم أغيّر شيئًا"; exit 1; }
+else
+  [ ! -e "$BANK/open" ] || { echo "توقّفت: $BANK/open موجود من قبل، ولم أغيّر شيئًا (للتحديث: UPDATE=1)"; exit 1; }
+  [ ! -e "$SEALED_DST" ] || { echo "توقّفت: $SEALED_DST موجود من قبل، ولم أغيّر شيئًا (للتحديث: UPDATE=1)"; exit 1; }
+fi
 # بنكا التطوير (منذ v1.2) مفتوحان كلُّهما، ويُنسخان إن سلّمهما Kimi
 DEV="arabic_general_v3_1.json arabic_general_v3_2.json agentic_v3.json agentic_v3.meta.json"
 for f in $DEV; do
@@ -105,6 +111,11 @@ PY
 ) || { echo "توقّفت: البيان لا يطابق الملفّات المحجوبة، ولم أنسخ شيئًا"; exit 1; }
 
 # ٤ — النسخ
+if [ "${UPDATE:-0}" = 1 ]; then
+  BACKUP="$SEALED_DST.before-$(date +%Y%m%d-%H%M%S)"
+  mv "$SEALED_DST" "$BACKUP" && echo "المحجوبُ السابق في $BACKUP"
+  rm -rf "$BANK/open"
+fi
 mkdir -p "$BANK/sealed" "$(dirname "$SEALED_DST")"
 cp -R "$SRC/open" "$BANK/open"
 cp "$SRC/REPORT.md" "$SRC/disputed.json" "$BANK/"
