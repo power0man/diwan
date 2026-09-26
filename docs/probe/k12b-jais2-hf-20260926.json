@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-26",
+  "task": "جديد-hf-jais2-mac",
+  "agent": "anthropic/claude-opus-5-5",
+  "host": {"machine": "MacBook Pro (Apple silicon, arm64)", "os": "Darwin 25.6.0", "ollama": "0.34.4"},
+  "engine": null,
+  "status": "not_measured",
+  "model": {
+    "requested": "hf.co/inceptionai/Jais-2-8B-Chat-GGUF:Q4_K_M",
+    "repo": "inception42/Jais-2-8B-Chat-GGUF",
+    "revision": "61365d41aad6a2ffa9d7b7f79dfce21b65833254",
+    "file": "Q4_K_M.gguf",
+    "gguf_sha256": null,
+    "license": "apache-2.0",
+    "gated": "auto"
+  },
+  "attempts": [
+    {"command": "ollama pull hf.co/inceptionai/Jais-2-8B-Chat-GGUF:Q4_K_M",
+     "error": "pull model manifest: realm host \"huggingface.co\" does not match original host \"hf.co\"",
+     "code": "ollama_realm_host_mismatch"},
+    {"command": "ollama pull huggingface.co/inceptionai/Jais-2-8B-Chat-GGUF:Q4_K_M",
+     "error": "pull model manifest: 401: {\"error\":\"Invalid username or password.\"}",
+     "code": "hf_gated_unauthorized"},
+    {"command": "ollama pull hf.co/inception42/Jais-2-8B-Chat-GGUF:Q4_K_M",
+     "error": "pull model manifest: realm host \"huggingface.co\" does not match original host \"hf.co\"",
+     "code": "ollama_realm_host_mismatch"},
+    {"command": "ollama pull huggingface.co/inception42/Jais-2-8B-Chat-GGUF:Q4_K_M",
+     "error": "pull model manifest: 401: {\"error\":\"Invalid username or password.\"}",
+     "code": "hf_gated_unauthorized"}
+  ],
+  "findings": [
+    "The org was renamed: https://huggingface.co/api/models/inceptionai/Jais-2-8B-Chat-GGUF answers 307 to inception42/Jais-2-8B-Chat-GGUF; Ollama does not follow the redirect.",
+    "The repo is gated ('gated': 'auto' in the public API), so the pull needs the owner to accept its terms on the model page while signed in, and Ollama's key (~/.ollama/id_ed25519.pub) linked to the owner's Hugging Face account.",
+    "Ollama 0.34.4 answers hf.co names with a realm-host mismatch and huggingface.co names with 401 for this gated repo."
+  ],
+  "next": "After the owner accepts the terms and links the Ollama key: ollama pull huggingface.co/inception42/Jais-2-8B-Chat-GGUF:Q4_K_M, then the ك٢ measurement per docs/guides/G8.md steps 4–5 (sample 376, salt k2, --require-same-suites) into this file's successor with the GGUF sha256.",
+  "measurement_limits": [
+    "no_number_is_published_the_model_was_never_pulled",
+    "repo_revision_and_license_read_from_the_public_hugging_face_api_without_a_token",
+    "error_codes_are_named_here_from_the_verbatim_ollama_messages_not_by_ollama_itself"
+  ]
+}
