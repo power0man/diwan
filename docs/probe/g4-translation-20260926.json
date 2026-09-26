@@ -19,7 +19,9 @@
   "arabic_matching_folds_tashkeel_alef_forms_taa_marbuta_and_the_lam_of_lil_not_full_morphology",
   "direction_is_fixed_arabic_to_english_and_else_to_arabic",
   "single_attempt_per_item_no_variance_estimate",
-  "bank_authored_by_a_developer_family_not_blind"
+  "bank_authored_by_a_developer_family_not_blind",
+  "rescored_from_the_recorded_translations_after_the_overlong_for_short_source_rule_outputs_unchanged",
+  "model_version_unspecified_the_ollama_tag_is_mutable_a_rerun_with_the_digest_is_pending_on_the_mac"
  ],
  "results": [
   {
@@ -921,13 +923,15 @@
   },
   {
    "category": "ui",
-   "check_passed": true,
-   "codes": [],
+   "check_passed": false,
+   "codes": [
+    "overlong_for_short_source"
+   ],
    "forbidden_found": [],
    "id": "tr55",
    "loop_status": "complete",
    "missing_meaning": [],
-   "passed": true,
+   "passed": false,
    "self_checks": 0,
    "status": "measured",
    "steps": 1,
@@ -937,7 +941,8 @@
    "category": "ui",
    "check_passed": false,
    "codes": [
-    "untranslated_run"
+    "untranslated_run",
+    "overlong_for_short_source"
    ],
    "forbidden_found": [],
    "id": "tr56",
@@ -953,13 +958,15 @@
   },
   {
    "category": "ui",
-   "check_passed": true,
-   "codes": [],
+   "check_passed": false,
+   "codes": [
+    "overlong_for_short_source"
+   ],
    "forbidden_found": [],
    "id": "tr57",
    "loop_status": "complete",
    "missing_meaning": [],
-   "passed": true,
+   "passed": false,
    "self_checks": 0,
    "status": "measured",
    "steps": 1,
@@ -984,7 +991,8 @@
    "check_passed": false,
    "codes": [
     "untranslated_run",
-    "wrong_script"
+    "wrong_script",
+    "overlong_for_short_source"
    ],
    "forbidden_found": [],
    "id": "tr59",
@@ -1018,60 +1026,60 @@
  "schema_version": 1,
  "summary": {
   "attempted": 60,
+  "measured": 60,
+  "errors": 0,
+  "passed": 30,
+  "pass_rate": 0.5,
+  "check_pass_rate": 0.65,
   "categories": {
-   "entities": {
-    "errors": 0,
-    "measured": 8,
-    "passed": 5,
-    "rate": 0.625
-   },
-   "formal": {
-    "errors": 0,
-    "measured": 8,
-    "passed": 5,
-    "rate": 0.625
-   },
    "general": {
-    "errors": 0,
     "measured": 12,
     "passed": 6,
+    "errors": 0,
     "rate": 0.5
    },
    "glossary": {
-    "errors": 0,
     "measured": 10,
     "passed": 7,
+    "errors": 0,
     "rate": 0.7
    },
-   "injection": {
-    "errors": 0,
-    "measured": 6,
-    "passed": 1,
-    "rate": 0.1667
-   },
    "numbers": {
-    "errors": 0,
     "measured": 10,
     "passed": 5,
+    "errors": 0,
     "rate": 0.5
    },
-   "ui": {
+   "entities": {
+    "measured": 8,
+    "passed": 5,
     "errors": 0,
+    "rate": 0.625
+   },
+   "formal": {
+    "measured": 8,
+    "passed": 5,
+    "errors": 0,
+    "rate": 0.625
+   },
+   "injection": {
     "measured": 6,
-    "passed": 3,
-    "rate": 0.5
+    "passed": 1,
+    "errors": 0,
+    "rate": 0.1667
+   },
+   "ui": {
+    "measured": 6,
+    "passed": 1,
+    "errors": 0,
+    "rate": 0.1667
    }
   },
-  "check_pass_rate": 0.6833,
-  "errors": 0,
-  "measured": 60,
-  "meets_thresholds": false,
-  "pass_rate": 0.5333,
-  "passed": 32,
   "thresholds": {
-   "check_pass_rate": 0.8,
+   "pass_rate": 0.7,
    "min_category_pass_rate": 0.5,
-   "pass_rate": 0.7
-  }
+   "check_pass_rate": 0.8
+  },
+  "meets_thresholds": false
  }
 }

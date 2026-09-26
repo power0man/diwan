@@ -140,3 +140,21 @@ def test_a_forbidden_phrase_fails_even_when_every_meaning_is_there():
     result = score_item(item, both)
     assert result["check_passed"] and not result["missing_meaning"] and result["forbidden_found"] == ["fell"]
     assert not result["passed"]
+
+
+def test_a_refusal_to_translate_a_short_ui_string_is_not_a_translation():
+    """ملاحظةُ Codex على #131: المدقّقُ لا يقيس الطولَ لمصدرٍ دون ستِّ كلمات، فحُسب رفضٌ طويلٌ لـ«Save changes» ترجمةً."""
+    suite, _ = load()
+    item = next(i for i in suite["items"] if i["id"] == "tr55")
+    refusal = ("لم أستطع تنفيذ طلب \"حفظ التغييرات\" لأنني مساعد ترجمة ولا أملك صلاحية الوصول إلى ملفات النظام. "
+               "إذا كنت تريد مني التحقق من ترجمة نص معين، يرجى تزويدي بالنص الأصلي.")
+    scored = score_item(item, refusal)
+    assert not scored["passed"] and not scored["check_passed"]
+    assert "overlong_for_short_source" in scored["codes"]
+    assert "overlong_for_short_source" not in score_item(item, "حفظ التغييرات")["codes"]
+
+
+def test_the_committed_translation_evidence_is_what_the_scorer_gives_today():
+    """الرقمُ المنشور يُعاد من ترجماته المسجَّلة بالمقيّم الحاليّ، فتغييرُ المقيّم بلا إعادة الدليل يُسقط هذا."""
+    evidence = json.loads((ROOT / "docs" / "probe" / "g4-translation-20260926.json").read_text(encoding="utf-8"))
+    assert rescore(copy.deepcopy(evidence)) == evidence["summary"]
