@@ -205,8 +205,8 @@ def test_an_open_only_delivery_must_carry_every_current_file_and_case(tmp_path):
     shutil.copytree(src / "open", current)
     _write(current / "tier_a" / "kimi_a_002.json", _suite("kimi_a_002", [_case("o9")]))
     assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_file_missing"}
-    _write(src / "open" / "tier_a" / "kimi_a_002.json", _suite("kimi_a_002", [_case("o8")]))
-    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_case_missing"}
+    _write(src / "open" / "tier_a" / "kimi_a_002.json", _suite("kimi_a_002", []))
+    assert "open_case_missing" in _codes(intake(src, open_only=True, current=current), "replacement")
     _write(src / "open" / "tier_a" / "kimi_a_002.json", _suite("kimi_a_002", [_case("o9"), _case("o10")]))
     _write(src / "open" / "tier_a" / "kimi_a_003.json", _suite("kimi_a_003", [_case("n1")]))
     assert intake(src, open_only=True, current=current)["passed"], "الزيادةُ لا تمحو شيئًا"
@@ -248,3 +248,22 @@ def test_a_case_sidecar_keeps_its_cases_and_an_unreadable_one_is_refused(tmp_pat
     assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_case_missing"}
     sidecar.write_text("{not json", encoding="utf-8")
     assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_unreadable"}
+
+
+def test_renaming_ids_as_the_tasking_asks_passes_but_emptying_a_sidecar_entry_does_not(tmp_path):
+    """ملاحظتا Codex على #128: التكليفُ يطلب إعادةَ تسمية المعرّفات المكرّرة، فالحصرُ بالعدد لا بالمعرّف؛
+    ومدخلٌ جانبيٌّ فُرّغ مع بقاء مفتاحه كان يمرّ فيمحو التوزيعُ مصادرَه."""
+    import shutil
+    src = delivery(tmp_path)
+    shutil.rmtree(src / "sealed")
+    sidecar = src / "open" / "tier_d" / "kimi_d_001.meta.json"
+    _write(sidecar, {"tasks": {"t1": {"reference_solution": {"notes.txt": "new"}, "why": "w"}}})
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    _write(src / "open" / "tier_d" / "kimi_d_001.json", _agentic("kimi_d_001", [_task("kimi_d_001-t1")]))
+    _write(sidecar, {"tasks": {"kimi_d_001-t1": {"reference_solution": {"notes.txt": "new"}, "why": "w"}}})
+    assert intake(src, open_only=True, current=current)["passed"], "إعادةُ التسمية يطلبها التكليف"
+    _write(sidecar, {"tasks": {"kimi_d_001-t1": {}}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_entry_incomplete"}
+    _write(sidecar, {"tasks": {"kimi_d_001-t1": {"reference_solution": {"notes.txt": "new"}, "why": ""}}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_entry_incomplete"}

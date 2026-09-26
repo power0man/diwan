@@ -113,43 +113,65 @@ def check_manifest(src: Path) -> dict:
     return {"files": len(entries), "failures": failures}
 
 
-def _open_ids(root: Path) -> dict[str, set]:
-    """كلُّ ملفٍّ بمعرّفاته. والملفُّ الجانبيّ (`.meta.json`) داخلٌ بمفاتيح حالاته أو مهامّه، فمصادرُه وحلولُه تُمحى معه."""
-    out = {}
+def _open_inventory(root: Path) -> dict[str, dict | None]:
+    """لكلِّ ملفٍّ عددُ حالاته أو مهامّه؛ وللملفّ الجانبيّ (`.meta.json`) مدخلاتُه أيضًا، فمصادرُه وحلولُه تُمحى معه.
+
+    يُحصى العددُ لا المعرّفات، لأن تكليف v1.2 يطلب إعادةَ تسمية معرّفات المهامّ المكرّرة بين الملفّين
+    (KIMI-NEXT.md)، فحصرُ المعرّفات كان يرفض ما يطلبه التكليفُ نفسُه (ملاحظة Codex على #128).
+    وملفٌّ جانبيٌّ بلا `cases` ولا `tasks` قاموسًا لا يُقرأ: قيمتُه None.
+    """
+    out: dict[str, dict | None] = {}
     for path in sorted(root.rglob("*.json")):
         data = _json(path)
+        relative = path.relative_to(root).as_posix()
         if path.name.endswith(".meta.json"):
             entries = None
             if isinstance(data, dict):
                 entries = next((data[k] for k in ("cases", "tasks") if isinstance(data.get(k), dict)), None)
-            # ملفٌّ جانبيٌّ بلا cases ولا tasks قاموسًا لا يُقرأ، فلا يُحكم بتمامه (None)
-            out[path.relative_to(root).as_posix()] = set(entries) if entries is not None else None
+            out[relative] = None if entries is None else {"count": len(entries), "entries": entries}
             continue
         items = (data.get("cases") or data.get("tasks") or []) if isinstance(data, dict) else []
-        out[path.relative_to(root).as_posix()] = {
-            item.get("case_id") or item.get("task_id") for item in items if isinstance(item, dict)}
+        out[relative] = {"count": len(items)}
     return out
 
 
+def _required_fields(entries: dict) -> set:
+    """الحقولُ التي يحملها كلُّ مدخلٍ في الملف الجانبيّ القائم؛ فلا يمرّ مدخلٌ مسلَّمٌ ينقصه أحدُها أو يفرغ."""
+    dicts = [value for value in entries.values() if isinstance(value, dict)]
+    return set.intersection(*(set(value) for value in dicts)) if dicts else set()
+
+
+def _empty(value) -> bool:
+    return value is None or value == "" or value == [] or value == {}
+
+
 def check_open_replacement(src: Path, current: Path) -> dict:
-    """دورةُ المفتوح تستبدل المفتوحَ القائم (`UPDATE=1 OPEN_ONLY=1 place`)، فلا تمرّ إلا بكلِّ ملفٍّ وكلِّ حالةٍ فيه.
+    """دورةُ المفتوح تستبدل المفتوحَ القائم (`UPDATE=1 OPEN_ONLY=1 place`)، فلا تمرّ إلا بكلِّ ملفٍّ وبعددِ حالاته.
 
     كان تسليمٌ فارغٌ يمرّ: البيانُ يُتخطّى، ولا ملفَّ يسقط في المدقّقات، فيمحو التوزيعُ البنك (ملاحظة Codex على #128).
-    والزيادةُ مقبولة: ملفٌّ أو حالةٌ جديدة لا تمحو شيئًا.
+    - **الزيادة مقبولة:** ملفٌّ جديد، أو حالةٌ جديدة.
+    - **إعادةُ التسمية مقبولة:** يطلبها التكليف.
+    - **النقصُ مرفوض:** في الملفّات، وفي عدد الحالات، وفي حقول الملف الجانبيّ.
     """
     failures: list = []
-    expected = _open_ids(current) if current.is_dir() else {}
+    expected = _open_inventory(current) if current.is_dir() else {}
     if not expected:
         _failure(failures, "open", "current_open_bank_missing")
         return {"files": 0, "failures": failures}
-    delivered = _open_ids(src / "open")
-    for relative, ids in expected.items():
-        if relative not in delivered:
+    delivered = _open_inventory(src / "open")
+    for relative, before in expected.items():
+        after = delivered.get(relative, "absent")
+        if after == "absent":
             _failure(failures, f"open/{relative}", "open_file_missing")
-        elif delivered[relative] is None:
+        elif after is None:
             _failure(failures, f"open/{relative}", "sidecar_unreadable")
-        elif not (ids or set()) <= delivered[relative]:
+        elif before is not None and after["count"] < before["count"]:
             _failure(failures, f"open/{relative}", "open_case_missing")
+        elif before is not None and "entries" in before:
+            required = _required_fields(before["entries"])
+            if any(not isinstance(entry, dict) or any(_empty(entry.get(field)) for field in required)
+                   for entry in after["entries"].values()):
+                _failure(failures, f"open/{relative}", "sidecar_entry_incomplete")
     return {"files": len(expected), "failures": failures}
 
 
