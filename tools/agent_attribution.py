@@ -154,7 +154,9 @@ def read_commits(repo: Path, revision_range: str) -> list[dict]:
 
 
 def _git(repo: Path, *argv: str) -> str:
-    result = subprocess.run(["git", "-C", str(repo), *argv], capture_output=True, encoding="utf-8", timeout=60)
+    # git يبتر سياقَ رأس المقطع بالبايت فقد يقطع حرفًا عربيًّا نصفين؛ والمقروءُ هنا وجودُ الفرق لا نصُّه.
+    result = subprocess.run(["git", "-C", str(repo), *argv], capture_output=True, encoding="utf-8",
+                            errors="replace", timeout=60)
     if result.returncode:
         raise AttributionError("git_read_failed", result.stderr.strip()[:200])
     return result.stdout

@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import re
 import os
 import subprocess
 import sys
@@ -38,15 +39,16 @@ def commit(agent):
 # — الحكم —
 
 def test_another_family_reviewing_the_current_head_passes():
-    report = fr.evaluate({"anthropic"}, [review("gemini-code-assist[bot]", "COMMENTED")], HEAD, REVIEWERS)
+    report = fr.evaluate({"anthropic"}, [review("chatgpt-codex-connector[bot]", "COMMENTED")], HEAD, REVIEWERS)
     assert report["status"] == "passed" and report["code"] == "reviewed_by_another_family"
-    assert report["counted"] == ["gemini-code-assist[bot]"]
+    assert report["counted"] == ["chatgpt-codex-connector[bot]"]
 
 
 @pytest.mark.parametrize("reviews,code", [
     ([review("claude[bot]", "APPROVED")], "reviewed_only_by_the_author_family"),
     ([review("power0man", "APPROVED")], "no_review_from_another_family"),
-    ([review("gemini-code-assist[bot]", "APPROVED", OLD)], "no_review_from_another_family"),
+    ([review("chatgpt-codex-connector[bot]", "APPROVED", OLD)], "no_review_from_another_family"),
+    ([review("gemini-code-assist[bot]", "APPROVED")], "no_review_from_another_family"),   # أُلغي Gemini (ق٦٥)
     ([review("unknown-bot[bot]", "APPROVED")], "no_review_from_another_family"),
     ([], "no_review_from_another_family"),
 ])
@@ -56,22 +58,23 @@ def test_what_does_not_count_as_another_family_review(reviews, code):
 
 
 def test_changes_requested_by_another_family_blocks_even_with_an_approval():
-    reviews = [review("gemini-code-assist[bot]", "APPROVED"), review("chatgpt-codex-connector[bot]", "CHANGES_REQUESTED")]
-    report = fr.evaluate({"anthropic"}, reviews, HEAD, REVIEWERS)
+    reviews = [review("claude[bot]", "APPROVED"), review("chatgpt-codex-connector[bot]", "CHANGES_REQUESTED")]
+    report = fr.evaluate({"google"}, reviews, HEAD, REVIEWERS)
     assert report["status"] == "failed" and report["blocking"] == ["chatgpt-codex-connector[bot]"]
 
 
 def test_the_latest_review_on_the_head_decides():
-    later_approval = [review("gemini-code-assist[bot]", "CHANGES_REQUESTED"), review("gemini-code-assist[bot]", "APPROVED")]
+    later_approval = [review("chatgpt-codex-connector[bot]", "CHANGES_REQUESTED"), review("chatgpt-codex-connector[bot]", "APPROVED")]
     assert fr.evaluate({"anthropic"}, later_approval, HEAD, REVIEWERS)["status"] == "passed"
     later_block = list(reversed(later_approval))
     assert fr.evaluate({"anthropic"}, later_block, HEAD, REVIEWERS)["code"] == "changes_requested_by_another_family"
 
 
 def test_a_pull_request_from_two_families_needs_a_third():
-    families = {"anthropic", "google"}
-    assert fr.evaluate(families, [review("gemini-code-assist[bot]", "APPROVED")], HEAD, REVIEWERS)["status"] == "failed"
-    assert fr.evaluate(families, [review("chatgpt-codex-connector[bot]", "COMMENTED")], HEAD, REVIEWERS)["status"] == "passed"
+    both = {"anthropic", "openai"}
+    assert fr.evaluate(both, [review("chatgpt-codex-connector[bot]", "APPROVED")], HEAD, REVIEWERS)["status"] == "failed"
+    assert fr.evaluate(both, [review("claude[bot]", "APPROVED")], HEAD, REVIEWERS)["status"] == "failed"
+    assert fr.evaluate({"anthropic", "google"}, [review("chatgpt-codex-connector[bot]", "COMMENTED")], HEAD, REVIEWERS)["status"] == "passed"
 
 
 def test_author_families_come_from_the_trailer_not_the_account():
@@ -95,8 +98,9 @@ def test_the_reviewer_map_refuses_what_widens_trust(mutate, code):
     assert refused.value.code == code
 
 
-def test_the_repository_map_counts_one_bot_per_developer_family():
-    assert set(REVIEWERS["reviewers"].values()) == {"anthropic", "openai", "google"}
+def test_the_repository_map_counts_one_bot_per_developer_family_and_no_gemini():
+    assert set(REVIEWERS["reviewers"].values()) == {"anthropic", "openai"}
+    assert not any("gemini" in login for login in REVIEWERS["reviewers"])
     assert all(login.endswith("[bot]") for login in REVIEWERS["reviewers"])
 
 
@@ -127,7 +131,7 @@ def test_the_cli_reads_the_range_and_a_reviews_file(tmp_path):
         return subprocess.run([sys.executable, str(ROOT / "tools" / "family_review.py"), "--repo", str(repo),
                                "--range", f"{base}..{head}", "--head", head, "--reviews-json", str(reviews)],
                               capture_output=True, text=True)
-    passed = run([review("gemini-code-assist[bot]", "COMMENTED", head)])
+    passed = run([review("chatgpt-codex-connector[bot]", "COMMENTED", head)])
     assert passed.returncode == 0 and '"reviewed_by_another_family"' in passed.stdout
     same = run([review("claude[bot]", "APPROVED", head)])
     assert same.returncode == 1 and '"reviewed_only_by_the_author_family"' in same.stdout
@@ -156,3 +160,132 @@ def test_developer_families_follow_the_agent_registry(tmp_path):
     extended.write_text(json.dumps(registry), encoding="utf-8")
     assert "mistral" in er.developer_families(extended)
     assert "human" not in er.developer_families(extended)
+
+
+# — تعليقُ المراجعة النظيفة من Codex (ق٦٥) —
+
+def clean(login, commit, text="Codex Review: Didn't find any major issues. More of your lovely PRs please."):
+    return {"user": {"login": login}, "body": f"{text}\n\n**Reviewed commit:** `{commit}`\n\n<details>…</details>"}
+
+
+def test_a_clean_codex_comment_on_the_head_counts():
+    reviews = fr.clean_comment_reviews([clean("chatgpt-codex-connector[bot]", HEAD[:10])], HEAD)
+    report = fr.evaluate({"anthropic"}, reviews, HEAD, REVIEWERS)
+    assert report["status"] == "passed" and report["counted"] == ["chatgpt-codex-connector[bot]"]
+
+
+@pytest.mark.parametrize("comment", [
+    clean("chatgpt-codex-connector[bot]", OLD[:10]),                                   # إيداعٌ قديم
+    clean("power0man", HEAD[:10]),                                                   # حسابُ المالك يكتب به كلُّ عميل
+    clean("someone[bot]", HEAD[:10]),                                                # بوتٌ غير مدرَج
+    clean("chatgpt-codex-connector[bot]", HEAD[:10], text="Codex Review: here are some suggestions"),  # ليست نظيفة
+    {"user": {"login": "chatgpt-codex-connector[bot]"}, "body": "Didn't find any major issues"},    # بلا إيداعٍ مسمًّى
+])
+def test_what_a_clean_comment_cannot_count_for(comment):
+    reviews = fr.clean_comment_reviews([comment], HEAD)
+    assert fr.evaluate({"anthropic"}, reviews, HEAD, REVIEWERS)["status"] == "failed"
+
+
+def test_the_cli_reads_comments_from_a_reviews_file(tmp_path):
+    repo = tmp_path / "repo"
+    (repo / "registry").mkdir(parents=True)
+    for name in ("agents.json", "reviewers.json"):
+        (repo / "registry" / name).write_bytes((ROOT / "registry" / name).read_bytes())
+    env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.org", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.org")
+    _git(repo, "init", "-q", "-b", "main"); _git(repo, "add", "-A"); _git(repo, "commit", "-q", "-m", "base", env=env)
+    base = _git(repo, "rev-parse", "HEAD")
+    (repo / "x.txt").write_text("x"); _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "عمل\n\nDiwan-Agent: anthropic/claude-opus-5-5", env=env)
+    head = _git(repo, "rev-parse", "HEAD")
+    data = tmp_path / "reviews.json"
+    data.write_text(json.dumps({"reviews": [], "comments": [clean("chatgpt-codex-connector[bot]", head[:10])]}), encoding="utf-8")
+    out = subprocess.run([sys.executable, str(ROOT / "tools" / "family_review.py"), "--repo", str(repo),
+                          "--range", f"{base}..{head}", "--head", head, "--reviews-json", str(data)], capture_output=True, text=True)
+    assert out.returncode == 0 and '"reviewed_by_another_family"' in out.stdout
+
+
+def test_the_workflow_waits_for_the_reviewer_within_its_timeout():
+    workflow = (ROOT / ".github" / "workflows" / "family-review.yml").read_text(encoding="utf-8")
+    assert "--wait-seconds 900" in workflow and "timeout-minutes: 20" in workflow
+
+
+def test_only_a_listed_bot_can_produce_a_clean_comment_review():
+    assert fr.clean_comment_reviews([clean("power0man", HEAD[:10]), clean("someone[bot]", HEAD[:10])], HEAD) == []
+
+
+def test_a_later_change_request_outweighs_an_earlier_clean_comment():
+    clean_early = dict(clean("chatgpt-codex-connector[bot]", HEAD[:10]), created_at="2026-09-26T10:00:00Z")
+    block_late = dict(review("chatgpt-codex-connector[bot]", "CHANGES_REQUESTED"), submitted_at="2026-09-26T11:00:00Z")
+    merged = fr.chronological([block_late] + fr.clean_comment_reviews([clean_early], HEAD))
+    assert fr.evaluate({"anthropic"}, merged, HEAD, REVIEWERS)["code"] == "changes_requested_by_another_family"
+    clean_later = dict(clean_early, created_at="2026-09-26T12:00:00Z")
+    merged = fr.chronological([block_late] + fr.clean_comment_reviews([clean_later], HEAD))
+    assert fr.evaluate({"anthropic"}, merged, HEAD, REVIEWERS)["status"] == "passed"
+
+
+def test_a_late_codex_comment_reruns_family_review_without_touching_pr_code():
+    workflow = (ROOT / ".github" / "workflows" / "family-review-recheck.yml").read_text(encoding="utf-8")
+    assert "issue_comment:" in workflow and "chatgpt-codex-connector[bot]" in workflow
+    assert "actions: write" in workflow and "pull-requests: read" in workflow
+    for forbidden in ("contents: write", "checkout", "secrets.", "pull_request_target"):
+        assert forbidden not in workflow, forbidden
+    assert "gh run rerun" in workflow
+
+
+def test_the_recheck_waits_for_a_running_family_review_and_never_swallows_a_failed_rerun():
+    """ملاحظةُ Codex على #125: تعليقٌ بعد الجلب الأخير وقبل انتهاء التشغيل كان يُبلَع فيبقى الرأسُ محجوبًا."""
+    workflow = (ROOT / ".github" / "workflows" / "family-review-recheck.yml").read_text(encoding="utf-8")
+    rerun = next(line for line in workflow.splitlines() if "gh run rerun" in line)
+    assert "||" not in rerun
+    wait_at = workflow.index('--jq .status)" = completed')
+    assert wait_at < workflow.index("gh run rerun")
+    main = (ROOT / ".github" / "workflows" / "family-review.yml").read_text(encoding="utf-8")
+    minutes = lambda text: int(re.search(r"timeout-minutes:\s*(\d+)", text).group(1))
+    assert minutes(workflow) > minutes(main)
+    assert "cancel-in-progress: true" in workflow
+
+
+def test_the_governing_plan_no_longer_waits_on_the_canceled_gemini_reviewer():
+    """ملاحظةُ Codex على #125: الخطةُ قالت إن Codex مركَّب وأبقت المراجِعَ المحتسب معلَّقًا على ح٤ ودليلٍ لا وجود له."""
+    plan = json.loads((ROOT / "docs" / "PLAN-20260926.json").read_text(encoding="utf-8"))
+    tasks = {task["id"]: task for task in plan["tasks"]}
+    assert "ح٤" not in tasks["جديد-counted-google-reviewer"]["depends_on"]
+    guides = {item.get("guide_id") for item in plan["tasks"] + plan["owner_steps"]}
+    assert "NEW-gemini-app" not in guides
+    live = json.dumps(plan["tasks"] + plan["owner_steps"], ensure_ascii=False)
+    assert "gemini_review.py" not in live and not re.search(r"gemini-review(?!er)", live)
+
+
+def test_every_guide_step_that_sets_up_gemini_is_marked_canceled():
+    """ملاحظةُ Codex على #125: لافتةٌ في رأس الدليل وتحتها خطواتُ تثبيت Gemini كما هي يتبعها المالكُ خطوةً خطوة."""
+    gemini = re.compile(r"gemini[- ]code[- ]assist|GEMINI_API_KEY|GEMINI_MODEL|gemini-review(?!er)|\.gemini/", re.I)
+    for name in ("G1", "G2", "G3"):
+        text = (ROOT / "docs" / "guides" / f"{name}.md").read_text(encoding="utf-8")
+        preamble, *sections = re.split(r"(?m)^(?=### )", text)
+        assert "ق٦٥" in preamble, name
+        for section in sections:
+            if gemini.search(section):
+                assert "ق٦٥" in section.split("\n\n", 2)[0] + section.split("\n\n", 2)[1], section.splitlines()[0]
+
+
+def test_an_edited_clean_comment_is_placed_at_its_edit_time_not_its_creation():
+    """ملاحظةُ Codex على #125: التعليقُ المُحرَّر يحفظ created_at ويتقدّم updated_at؛ فالحكمُ النظيف بعد طلب تعديلٍ يُقرأ الأحدث."""
+    edited = dict(clean("chatgpt-codex-connector[bot]", HEAD[:10]),
+                  created_at="2026-09-26T10:00:00Z", updated_at="2026-09-26T12:00:00Z")
+    block = dict(review("chatgpt-codex-connector[bot]", "CHANGES_REQUESTED"), submitted_at="2026-09-26T11:00:00Z")
+    merged = fr.chronological([block] + fr.clean_comment_reviews([edited], HEAD))
+    assert fr.evaluate({"anthropic"}, merged, HEAD, REVIEWERS)["status"] == "passed"
+
+
+def test_deleting_the_counted_comment_reruns_the_gate():
+    workflow = (ROOT / ".github" / "workflows" / "family-review-recheck.yml").read_text(encoding="utf-8")
+    types = re.search(r"types:\s*\[([^\]]*)\]", workflow).group(1)
+    assert {t.strip() for t in types.split(",")} == {"created", "edited", "deleted"}
+
+
+def test_the_codex_review_instruction_excludes_openai_authored_pull_requests():
+    """ملاحظةُ Codex على #125: طلبُ Codex على طلبٍ من عائلته لا يُحتسب ويستهلك حصّته، فالتعليمةُ تستثنيه وتسمّي بديله."""
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    start = agents.index("`@codex review` (ق٦٥)")
+    rule = agents[agents.rindex("\n", 0, start):agents.index("\n3. ", start)]
+    assert "ليس من عائلة openai" in rule and "`@claude`" in rule

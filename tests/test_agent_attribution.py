@@ -262,3 +262,29 @@ def test_the_cli_refuses_an_untagged_resolving_merge(tmp_path, capsys):
     report = json.loads(capsys.readouterr().out.splitlines()[0])
     assert code == 1 and report["checked"] == 3
     assert [f["subject"] for f in report["findings"]] == ["دمجٌ بحلّ تعارض"]
+
+
+def test_a_resolving_merge_whose_hunk_header_cuts_an_arabic_letter_is_still_read(tmp_path):
+    """git يبتر سياقَ رأس المقطع عند ٨٠ بايتًا فقد يقطع حرفًا عربيًّا نصفين؛ فأسقط ذلك الأداةَ
+    بـUnicodeDecodeError على دمجٍ حقيقيّ في #125. والمطلوب هنا أن الفرق غيرُ فارغ، لا نصُّه."""
+    from tools.agent_attribution import read_content_merges
+    repo, env = _repo(tmp_path)
+    tag = f"\n\nDiwan-Agent: {AGENT}"
+    head = "xy" + "م" * 60 + "\n" + "".join(f"  {i}\n" for i in range(6))
+    _commit(repo, env, "a.txt", head + "base\n", "أساس" + tag)
+    base = _git(repo, "rev-parse", "HEAD", env=env)
+    _git(repo, "checkout", "-q", "-b", "side", env=env)
+    _commit(repo, env, "a.txt", head + "side\n", "فرع" + tag)
+    _git(repo, "checkout", "-q", "main", env=env)
+    _commit(repo, env, "a.txt", head + "main\n", "رئيس" + tag)
+    import subprocess
+    subprocess.run(["git", "-C", str(repo), "merge", "-q", "side", "-m", "دمجٌ يقطع حرفًا"], env=env,
+                   capture_output=True)
+    (repo / "a.txt").write_text(head + "resolved\n", encoding="utf-8")
+    _git(repo, "add", "a.txt", env=env)
+    _git(repo, "commit", "-q", "--no-edit", env=env)
+    shown = subprocess.run(["git", "-C", str(repo), "show", "--cc", "--format=", "HEAD"],
+                           capture_output=True, env=env).stdout
+    with pytest.raises(UnicodeDecodeError):
+        shown.decode("utf-8")
+    assert [m["message"].splitlines()[0] for m in read_content_merges(repo, f"{base}..HEAD")] == ["دمجٌ يقطع حرفًا"]
