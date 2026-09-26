@@ -68,7 +68,7 @@ async function api(action, values = {}) {
 }
 function context() {return {project: state.project, session: state.session};}
 // جلسةُ البحث المعمّق (ك٥٣) وجلسةُ المبرمج (ج٩) جلستان وكيلتان: الطلبُ والإيقافُ والاسترجاعُ طريقُهما نفسُه
-function agentLike(mode) {return mode === "agent" || mode === "research" || mode === "coder";}
+function agentLike(mode) {return ["agent", "research", "coder", "translate"].includes(mode);}
 function pendingKey(ctx = context()) {return `diwan.pending.${ctx.project}.${ctx.session}`;}
 function stoppableTurn() {
   return agentLike(state.mode) ? state.runningTurn || state.pending || state.turns.find(t => t.status === "awaiting_owner")?.turn_id : null;
@@ -92,6 +92,7 @@ function render() {
     const ctx = context(), actions = element("div", undefined, "tools");
     if(turn.memory_items) answer.append(element("div", `دخل سياقَ هذا الطلب ${turn.memory_items} من ذاكرة المشروع — محجورًا، بياناتٍ لا تعليمات`, "meta"));
     if(turn.citations) renderCitations(answer, turn.citations);
+    if(turn.translation) renderTranslationCheck(answer, turn.translation);
     if(agentLike(state.mode)) renderAgentActions(answer, actions, ctx, turn);
     else {
       actions.append(button("المدخلات المستخدمة", () => inspect(ctx, turn.turn_id)));
@@ -113,6 +114,14 @@ function renderCitations(answer, citations) {
     link.href = url; link.rel = "noopener noreferrer"; link.target = "_blank"; item.append(link); list.append(item);
   }
   answer.append(list);
+}
+// الترجمة (غ٤): حكمُ المدقّق الحتميّ مع الترجمة، ولا يحكم على الأسلوب
+function renderTranslationCheck(answer, report) {
+  const direction = report.target === "ar" ? "إلى العربية" : "إلى الإنجليزية";
+  const glossary = report.glossary_terms ? ` بمسردٍ من ${report.glossary_terms} مصطلحًا` : "";
+  answer.append(element("div", report.passed
+    ? `الفحص الآليّ للترجمة ${direction}${glossary}: يمرّ — الأرقامُ والرموزُ محفوظة، والحرفُ حرفُ اللغة الهدف.`
+    : `الفحص الآليّ للترجمة ${direction}${glossary}: لا يمرّ — ${report.findings.map(f => `${f.code}: ${f.detail}`).join("، ")}`, "meta"));
 }
 function renderAgentActions(answer, actions, ctx, turn) {
   if(turn.inputs) {
@@ -303,10 +312,10 @@ async function projects() {
   for (const project of data.projects) select.add(new Option(project.name, project.id));
   select.value = state.project;
   state.mediaEnabled = data.media_enabled === true; $("media-option").disabled = !state.mediaEnabled;
-  const agentEnabled = data.agent_enabled === true; $("agent-option").disabled = !agentEnabled; $("coder-option").disabled = !agentEnabled;
+  const agentEnabled = data.agent_enabled === true; $("agent-option").disabled = !agentEnabled; $("coder-option").disabled = !agentEnabled; $("translate-option").disabled = !agentEnabled;
   state.researchEnabled = data.research_enabled === true; $("research-option").disabled = !state.researchEnabled;
   state.defaultSessionMode = agentEnabled && data.default_session_mode === "agent" ? "agent" : "text";
-  const mode = $("session-mode"), available = mode.value === "text" || (["agent", "coder"].includes(mode.value) && agentEnabled) || (mode.value === "media" && state.mediaEnabled) || (mode.value === "research" && state.researchEnabled);
+  const mode = $("session-mode"), available = mode.value === "text" || (["agent", "coder", "translate"].includes(mode.value) && agentEnabled) || (mode.value === "media" && state.mediaEnabled) || (mode.value === "research" && state.researchEnabled);
   if(!state.sessionModeChosen || !available) {mode.value = state.defaultSessionMode; state.sessionModeChosen = false;}
 }
 async function chooseProject(id) {
@@ -325,7 +334,7 @@ async function chooseProject(id) {
 function setMode(mode) {
   state.mode = mode; $("text-inputs").hidden = mode === "media"; $("media-inputs").hidden = mode !== "media";
   $("media-file").value = ""; $("message").maxLength = mode === "media" ? 4000 : 24000;
-  $("agent-controls").hidden = !agentLike(mode); $("agent-files").hidden = mode === "research";
+  $("agent-controls").hidden = !agentLike(mode); $("agent-files").hidden = ["research", "translate"].includes(mode);
 }
 $("clear-media").onclick = () => {$("media-file").value = "";};
 async function chooseSession(id, name, mode = "text") {
@@ -337,6 +346,7 @@ async function chooseSession(id, name, mode = "text") {
   sessionStorage.setItem("diwan.last", JSON.stringify({...context(), name}));
   for (const el of $("sessions").children) el.setAttribute("aria-current", String(el.dataset.session === id));
   render(); state.poll = 0; await refresh();
+  if(mode === "translate") $("agent-capabilities").textContent = "ترجمة: العربيُّ إلى الإنجليزية وما سواه إلى العربية. ويُفحص كلُّ جوابٍ آليًّا (الأرقام والرموز والحرف والمسرد). وللمسرد ارفع ملفًّا باسم glossary.csv بعمودين: المصدر، الهدف.";
   if(mode === "research") $("agent-capabilities").textContent = "بحثٌ معمّق: يبحث في الويب بالمحرّك المضبوط مرّاتٍ، ويُسند كلَّ ادّعاءٍ إلى مصدرٍ أعاده البحث، ويُفحص الإسنادُ عند العرض.";
   if(mode === "agent") {const epoch = state.epoch; const caps = await api("agent_capabilities", {project:state.project}); if(epoch === state.epoch) $("agent-capabilities").textContent = caps.execution_enabled ? "أدوات الملفات وتنفيذ الأوامر المضبوطة متاحة؛ يُعرض الإذن المطلوب لكل فعل." : "أدوات ملفات المشروع متاحة. تنفيذ الأوامر غير مهيأ.";}
   if(mode === "coder") {const epoch = state.epoch; const caps = await api("agent_capabilities", {project:state.project}); if(epoch === state.epoch) $("agent-capabilities").textContent = "مبرمج: يقرأ شيفرةَ المشروع ويعدّلها بتعديلاتٍ تُعرض فروقُها ويُرجع عنها، فعلًا فعلًا أو الجولةَ كلَّها. " + (caps.execution_enabled ? "وتشغيلُ الاختبارات متاحٌ في الحاوية." : "وتشغيلُ الاختبارات غير مهيأ في هذا التشغيل.");}
