@@ -1,0 +1,44 @@
+name: export-pdf
+# ج١٠ (#46): تصديرُ PDF يحوّله LibreOffice، واختباراتُه الحقيقية تُتخطّى بالاسم حيث يغيب. وهنا لا تُتخطّى:
+# `DIWAN_REQUIRE_PDF=1` يجعل الغيابَ سقوطًا، فيُقاس الاتّجاهُ والترتيبُ والأعمدةُ والخطوطُ على PDF حقيقيّ.
+# يجري داخل حاويةٍ بصورة Dockerfile نفسِها وبلا شبكة بعد التثبيت، وبصلاحية قراءةٍ وحدها ولا أسرار.
+on:
+  pull_request:
+    paths: [documents/**, agent/builtin_tools.py, tests/test_document_export.py, tests/test_document_export_pdf.py,
+            .github/workflows/export-pdf.yml]
+  push:
+    branches: [main]
+    paths: [documents/**, agent/builtin_tools.py, tests/test_document_export.py, tests/test_document_export_pdf.py,
+            .github/workflows/export-pdf.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: export-pdf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  export-pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: LibreOffice and poppler in a throwaway container
+        run: |
+          set -eu
+          docker build -t diwan-export-pdf - <<'DOCKERFILE'
+          FROM python:3.12-slim-bookworm
+          RUN apt-get update \
+           && apt-get install -y --no-install-recommends libreoffice-writer-nogui poppler-utils fonts-dejavu-core \
+           && rm -rf /var/lib/apt/lists/* \
+           && pip install --no-cache-dir 'pytest==9.1.1'
+          DOCKERFILE
+      - name: Real PDFs, no skip allowed, no network
+        run: |
+          docker run --rm --network none -v "$PWD:/w:ro" -w /w -e DIWAN_REQUIRE_PDF=1 -e PYTHONDONTWRITEBYTECODE=1 \
+            diwan-export-pdf python -m pytest -q -p no:cacheprovider -rs \
+            tests/test_document_export.py tests/test_document_export_pdf.py

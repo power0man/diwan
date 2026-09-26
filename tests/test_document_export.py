@@ -2,7 +2,7 @@
 
 docx: كلُّ فقرةٍ `w:bidi`، وكلُّ مقطعٍ `w:rtl` بلغةٍ عربية، وكلُّ جدولٍ `w:bidiVisual`، والقسمُ `w:bidi`.
 xlsx: كلُّ ورقةٍ `rightToLeft="1"`، والنصُّ نصٌّ والعددُ عدد. والنصُّ يعود كما كُتب، والمدخلُ نفسُه يعطي
-البايتاتِ نفسَها، والرفضُ مسمًّى، والتصديرُ يُرجع عنه بالدفتر.
+البايتاتِ نفسَها، والرفضُ مسمًّى، والتصديرُ يُرجع عنه بالدفتر. وPDF في `test_document_export_pdf.py`.
 """
 from __future__ import annotations
 
@@ -111,9 +111,9 @@ def test_an_invalid_document_is_refused_by_name(document):
     assert err.value.code == "document_invalid"
 
 
-def test_pdf_is_named_as_the_second_part_not_silently_dropped():
+def test_an_unknown_format_is_refused_by_name():
     with pytest.raises(ExportRefused) as err:
-        export(DOCUMENT, "pdf")
+        export(DOCUMENT, "odt")
     assert err.value.code == "format_unsupported"
 
 
@@ -137,6 +137,6 @@ def test_the_tool_writes_through_the_journal_and_is_reverted(tmp_path, context):
 
 
 def test_the_tool_refuses_an_unknown_extension_or_document_and_writes_nothing(tmp_path, context):
-    assert _export(context, "q1.pdf")["code"] == "format_unsupported"
+    assert _export(context, "q1.odt")["code"] == "format_unsupported"
     assert _export(context, "q1.xlsx", {"blocks": []})["code"] == "document_invalid"
     assert context.journal.actions() == [] and not any(tmp_path.glob("q1.*"))

@@ -1,4 +1,4 @@
-"""تصديرُ المستندات باتّجاهٍ عربيّ (ج١٠): docx وxlsx بالمكتبة القياسية وحدها.
+"""تصديرُ المستندات باتّجاهٍ عربيّ (ج١٠): docx وxlsx بالمكتبة القياسية وحدها، وPDF بتحويل docx.
 
 المستندُ نموذجٌ صغيرٌ محكوم: عنوانٌ وكتلٌ (عنوانٌ فرعيّ، وفقرة، وقائمة، وجدول). ويُكتب بصيغة Office
 المفتوحة (OOXML) كما تكتبها برامجها، والاتّجاهُ في كلِّ موضعٍ يحتاجه لا في موضعٍ واحد:
@@ -7,20 +7,30 @@
   LibreOffice)، والمحاذاةُ الافتراضية بدايةُ السطر، وهي اليمين. والجدولُ يُحاذى يمينًا بـ`w:jc` في خصائصه.
 - **xlsx:** `rightToLeft="1"` في عرض كل ورقة، والنصُّ `inlineStr` محفوظُ المسافات، والأعدادُ أعداد.
 
-وPDF جزءٌ ثانٍ، لأن تشكيلَ العربية فيه يحتاج محرّكَ تشكيلٍ وخطًّا مضمَّنًا.
+- **pdf:** تشكيلُ العربية فيه يحتاج محرّكَ تشكيلٍ وخطًّا مضمَّنًا، فلا يُكتب بالمكتبة القياسية. يُبنى docx أعلاه
+  ثم يحوّله LibreOffice (`soffice --convert-to pdf`، وفيه HarfBuzz) بأمرٍ ثابتٍ لا يؤلّفه النموذج، على ملفٍّ أنتجه
+  ديوان في مجلّدٍ مؤقّت، بملفِّ تعريفٍ معزول وبيئةٍ مقصوصة ومهلة. وحيث لا LibreOffice يُرفض بالاسم
+  (`pdf_converter_unavailable`) ولا يُكتب شيء. ولا يُضاف اعتمادٌ بايثونيّ (قرارُ #46، الطريق «ب»).
+  وبايتاتُ PDF لا تتكرّر حرفيًّا (فيها تاريخُ الإنشاء)؛ فالحتميّةُ في docx الذي يُحوَّل.
 """
 from __future__ import annotations
 
 import io
+import os
 import re
+import shutil
+import signal
+import subprocess
+import tempfile
 import zipfile
+from pathlib import Path
 from xml.sax.saxutils import escape
 
 MAX_BLOCKS = 400
 MAX_TEXT = 20000
 MAX_ROWS = 2000
 MAX_COLUMNS = 50
-FORMATS = ("docx", "xlsx")
+FORMATS = ("docx", "xlsx", "pdf")
 # محارفُ التحكّم ممنوعةٌ في XML 1.0 إلا الجدولةَ ونهايةَ السطر
 _XML_ILLEGAL = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f￾￿]")
 _FIXED_TIME = (2026, 1, 1, 0, 0, 0)     # تاريخٌ ثابت في الأرشيف: المدخلُ نفسُه يعطي البايتات نفسَها
@@ -282,7 +292,77 @@ def to_xlsx(document: dict) -> bytes:
     return _zip(parts)
 
 
+# ————— pdf —————
+
+PDF_TIMEOUT_S = 120
+MAX_PDF_BYTES = 64 * 1024 * 1024
+_MAC_SOFFICE = "/Applications/LibreOffice.app/Contents/MacOS/soffice"
+# ما يبلغ المحوِّلَ من البيئة: ما يحتاجه ليعمل ويجد الخطوط، لا مفاتيحَ ولا أسرار
+_ENV_KEEP = ("PATH", "SYSTEMROOT", "WINDIR", "LANG", "LC_ALL", "FONTCONFIG_FILE", "FONTCONFIG_PATH")
+
+
+def find_converter() -> str | None:
+    """مسارُ soffice: في PATH، أو في موضعه المعروف على الماك؛ وإلّا None."""
+    for name in ("soffice", "libreoffice"):
+        found = shutil.which(name)
+        if found:
+            return found
+    return _MAC_SOFFICE if os.path.isfile(_MAC_SOFFICE) and os.access(_MAC_SOFFICE, os.X_OK) else None
+
+
+def pdf_command(converter: str, workdir: Path) -> list[str]:
+    """أمرُ التحويل ثابت: لا يدخله من المستند إلا ملفٌّ كتبه ديوان باسمٍ ثابت داخل المجلّد المؤقّت.
+    وملفُّ التعريف في المجلّد نفسِه، فلا يمسّ إعداداتِ المستخدم ولا يتصادم تحويلان متزامنان."""
+    return [converter, f"-env:UserInstallation={(workdir / 'profile').as_uri()}", "--headless", "--norestore",
+            "--nolockcheck", "--convert-to", "pdf", "--outdir", str(workdir / "out"), str(workdir / "document.docx")]
+
+
+def _stop(proc: subprocess.Popen) -> None:
+    try:
+        if os.name == "posix":
+            os.killpg(proc.pid, signal.SIGKILL)     # soffice يُطلق عمليّةً بنت؛ تُقتل المجموعةُ كلُّها
+        else:
+            proc.kill()
+    except (ProcessLookupError, PermissionError):
+        pass
+    proc.wait()
+
+
+def to_pdf(document: dict, *, converter: str | None = None, timeout_s: float = PDF_TIMEOUT_S) -> bytes:
+    docx = to_docx(document)                         # التحقّقُ أوّلًا: المستندُ الفاسد يُرفض قبل البحث عن محوِّل
+    converter = converter or find_converter()
+    if not converter:
+        raise ExportRefused("pdf_converter_unavailable",
+                            "تصديرُ PDF يحتاج LibreOffice (soffice) على هذا الجهاز؛ وdocx وxlsx متاحان بدونه")
+    with tempfile.TemporaryDirectory(prefix="diwan-pdf-") as tmp:
+        workdir = Path(tmp)
+        (workdir / "document.docx").write_bytes(docx)
+        env = {key: os.environ[key] for key in _ENV_KEEP if key in os.environ}
+        env.update(HOME=tmp, TMPDIR=tmp, TEMP=tmp, TMP=tmp)
+        try:
+            proc = subprocess.Popen(pdf_command(converter, workdir), cwd=tmp, env=env, stdin=subprocess.DEVNULL,
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                                    start_new_session=os.name == "posix")
+        except OSError as exc:
+            raise ExportRefused("pdf_converter_unavailable", f"تعذّر تشغيلُ المحوِّل: {type(exc).__name__}") from None
+        try:
+            _, err = proc.communicate(timeout=timeout_s)
+        except subprocess.TimeoutExpired:
+            _stop(proc)
+            raise ExportRefused("pdf_conversion_failed", f"لم ينتهِ التحويلُ في {timeout_s:g} ثانية") from None
+        output = workdir / "out" / "document.pdf"
+        if proc.returncode != 0 or not output.is_file():
+            tail = err.decode("utf-8", "replace").strip()[-300:]
+            raise ExportRefused("pdf_conversion_failed", f"لم يُخرج المحوِّلُ PDF (الخروج {proc.returncode}) {tail}".strip())
+        if output.stat().st_size > MAX_PDF_BYTES:
+            raise ExportRefused("pdf_conversion_failed", f"PDF أكبرُ من {MAX_PDF_BYTES} بايت")
+        raw = output.read_bytes()
+    if not raw.startswith(b"%PDF-") or b"%%EOF" not in raw[-1024:]:
+        raise ExportRefused("pdf_conversion_failed", "مخرجُ المحوِّل ليس PDF تامًّا")
+    return raw
+
+
 def export(document: dict, fmt: str) -> bytes:
     if fmt not in FORMATS:
-        raise ExportRefused("format_unsupported", f"الصيغ المتاحة: {'، '.join(FORMATS)}؛ وPDF جزءٌ ثانٍ من ج١٠")
-    return (to_docx if fmt == "docx" else to_xlsx)(document)
+        raise ExportRefused("format_unsupported", f"الصيغ المتاحة: {'، '.join(FORMATS)}")
+    return {"docx": to_docx, "xlsx": to_xlsx, "pdf": to_pdf}[fmt](document)
