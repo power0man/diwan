@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """يشغّل بنكَ الذاكرة المحكومة (ك٤٨) على الطريق الموصول بمحرّكٍ حيّ في Ollama المحلي (جديد-memory-probe).
 
-    python3 tools/evaluate_memory.py --model qwen3.5:9b --out docs/probe/memory-live-<التاريخ>.json
+    python3 tools/evaluate_memory.py --model qwen3.5:9b --agent <معرّفك> --out docs/probe/memory-live-<التاريخ>.json
 
 - كلُّ جولةٍ تذهب إلى النموذج الحقيقيّ عبر `webui.server.LocalApp`، والاقتراحُ وحده مكتوبٌ سلفًا
   (البنكُ يقيس الموافقةَ عليه، لا أن النموذج يقترح).
@@ -19,8 +19,12 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from core.canonical import PayloadRejected  # noqa: E402
+from evaluation.memory_bank import validate_memory_bank  # noqa: E402
 from evaluation.memory_runner import run_memory_bank  # noqa: E402
 from providers.ollama import OllamaProvider  # noqa: E402
+
+REGISTRY = ROOT / "registry" / "agents.json"
 
 LIMITS = [
     "measures_what_reaches_the_model_and_what_stays_on_disk_not_what_the_model_does_with_a_memory",
@@ -35,13 +39,22 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--model", required=True, help="اسمُ النموذج كما يعرفه Ollama")
     parser.add_argument("--suite", type=Path, default=ROOT / "evaluation" / "suites" / "memory_v1.json")
+    parser.add_argument("--agent", required=True, help="معرّفُ من يشغّل القياس، مسجَّلًا في registry/agents.json")
     parser.add_argument("--out", required=True, type=Path, help="مسارُ التقرير؛ لا يُستبدل ملفٌّ قائم")
     args = parser.parse_args(argv)
     if args.out.exists():
         parser.error(f"التقريرُ قائم: {args.out}")
+    if args.agent not in json.loads(REGISTRY.read_text(encoding="utf-8"))["agents"]:
+        parser.error(f"agent_unregistered: {args.agent}")
+    # بنكٌ لم يُفحص قد يمرّ ١٠٠٪ بخطواتٍ يتجاهلها المُشغِّل؛ فالمدقّقُ قبل أي نداء (ملاحظة Codex على #129)
+    try:
+        bank = validate_memory_bank(json.loads(args.suite.read_text(encoding="utf-8")))
+    except (PayloadRejected, ValueError, KeyError, TypeError) as exc:
+        print(json.dumps({"status": "refused", "code": getattr(exc, "code", "bank_invalid")}, ensure_ascii=False))
+        return 2
     provider = OllamaProvider(model=args.model)
-    report = run_memory_bank(json.loads(args.suite.read_text(encoding="utf-8")), driver="live", delegate=provider)
-    report.update(date=datetime.date.today().isoformat(), agent="anthropic/claude-opus-5-5",
+    report = run_memory_bank(bank, driver="live", delegate=provider)
+    report.update(date=datetime.date.today().isoformat(), agent=args.agent,
                   engine={"provider": "ollama", "model": args.model}, measurement_limits=LIMITS)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

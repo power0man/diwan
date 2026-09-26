@@ -207,3 +207,40 @@ def test_live_needs_a_provider_and_the_others_refuse_one():
         run_memory_bank(BANK, driver="live")
     with pytest.raises(ValueError):
         run_memory_bank(BANK, driver="wired", delegate=_Delegate())
+
+
+
+class _ProposingDelegate(_Delegate):
+    """نموذجٌ حيٌّ يطلب propose_memory من تلقاء نفسه في كل جولةٍ وكيلة، فتقف الجولةُ تنتظر المالك."""
+    name = "proposing-live"
+
+    def complete(self, request):
+        from core.contracts import Response, ToolCall, Usage
+        self.calls += 1
+        if request.tools:
+            call = ToolCall("call_" + uuid.uuid4().hex[:8], "propose_memory", {"text": "ملاحظة"})
+            return Response("", Usage(1, 1), "complete", 0, provider=self.name, model_version="1" * 64,
+                            tool_calls=(call,))
+        return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="1" * 64)
+
+
+def test_a_tool_the_live_model_asks_for_does_not_leave_a_turn_that_fails_the_next_probe():
+    """ملاحظةُ Codex على #129: جولةٌ وكيلة تقف awaiting_owner كانت تُسقط فحصَ السياق التالي بـturn_unresolved."""
+    report = run_memory_bank(BANK, driver="live", delegate=_ProposingDelegate())
+    assert report["passed"] == report["total"] == 30, [r for r in report["results"] if not r["passed"]][:2]
+
+
+def test_the_cli_validates_the_suite_and_names_the_runner_before_any_call(tmp_path, monkeypatch, capsys):
+    """ملاحظتا Codex على #129: بنكٌ غير مفحوص كان يمرّ ١٠٠٪، والمعرّفُ كان مكتوبًا في الأداة."""
+    import json
+    import tools.evaluate_memory as cli
+    monkeypatch.setattr(cli, "OllamaProvider", lambda **_: (_ for _ in ()).throw(AssertionError("نداءٌ قبل الفحص")))
+    bad = tmp_path / "bank.json"
+    broken = json.loads(json.dumps(BANK))
+    broken["scenarios"][0]["steps"] = [{"project": broken["scenarios"][0]["steps"][0]["project"], "expect": "typo"}]
+    bad.write_text(json.dumps(broken, ensure_ascii=False), encoding="utf-8")
+    assert cli.main(["--model", "m", "--suite", str(bad), "--agent", "anthropic/claude-opus-5-5",
+                     "--out", str(tmp_path / "r.json")]) == 2
+    assert json.loads(capsys.readouterr().out)["status"] == "refused"
+    with pytest.raises(SystemExit):
+        cli.main(["--model", "m", "--agent", "someone/unknown", "--out", str(tmp_path / "r.json")])

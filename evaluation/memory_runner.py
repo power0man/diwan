@@ -220,6 +220,15 @@ class _Wired:
             ids[kind] = self.api("create_session", project=ids["id"], name=kind, mode=mode)["id"]
         return ids[kind]
 
+    def probe_session(self, name, kind):
+        """جلسةُ الفحص. بالمزوّد المكتوب جلسةٌ واحدة للمشروع؛ وبالحيّ جلسةٌ جديدة لكل فحص، فأداةٌ يطلبها النموذجُ
+        من تلقاء نفسه (propose_memory ينتظر المالك) لا تُبقي جولةً معلّقة تُسقط الفحصَ التالي بـturn_unresolved."""
+        if self.provider.delegate is None:
+            return self.session(name, kind)
+        mode = "text" if kind == "text" else "agent"
+        return self.api("create_session", project=self.project(name)["id"], name=f"{kind}-{uuid.uuid4().hex[:8]}",
+                        mode=mode)["id"]
+
     def store(self, name) -> MemoryStore:
         return MemoryStore(self.app.project(self.project(name)["id"]))
 
@@ -254,7 +263,8 @@ class _Wired:
         """ما رآه النموذجُ في جولةٍ وكيلة وجولةٍ نصّية بالسؤال نفسِه."""
         ids = self.project(name)
         seen = []
-        for action, session in (("agent_ask", self.session(name, "agent")), ("ask", self.session(name, "text"))):
+        for action, session in (("agent_ask", self.probe_session(name, "agent")),
+                                ("ask", self.probe_session(name, "text"))):
             before = len(self.provider.requests)
             self.api(action, project=ids["id"], session=session, turn=uuid.uuid4().hex, message=question, files=[])
             new = self.provider.requests[before:]
