@@ -1,0 +1,810 @@
+{
+ "schema_version": 1,
+ "suite_id": "agentic_v2",
+ "kind": "agentic_tasks",
+ "description": "البنكُ الوكيل الثاني (ك٤٤) بفئات المبرمج (ك٥١): ثلاثون مهمّةً في خمس فئات، يحكم عليها مدقّقٌ مخفيّ بالمكتبة القياسية، ولكلٍّ حلٌّ مرجعيّ وحلٌّ قريبٌ خاطئ. مجمَّدٌ بعتباته في docs/AGENTIC-BANK.md.",
+ "tasks": [
+  {
+   "task_id": "ag2_bf01",
+   "capability": "coder_bug_fix",
+   "workspace": {
+    "src/calc.py": "def area(w, h):\n    \"\"\"مساحةُ مستطيلٍ عرضُه w وارتفاعُه h.\"\"\"\n    return w + h\n",
+    "tests/test_calc.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.calc import area\n\n\ndef test_area():\n    assert area(3, 4) == 12\n    assert area(0, 5) == 0\n"
+   },
+   "instruction": "اختبارٌ يسقط في هذا المشروع. اقرأ الشيفرةَ والاختبار، واعثر على السبب، وأصلحه في المصدر. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.calc import area\ncheck(area(7, 9) == 63, \"area(7, 9)\")\ncheck(area(2.5, 4) == 10.0, \"area(2.5, 4)\")\ncheck(area(1, 1) == 1, \"area(1, 1)\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "أصلح المصدر لا الاختبار",
+    "الدالّة تضرب البُعدين ولا تجمعهما"
+   ],
+   "max_steps": 8
+  },
+  {
+   "task_id": "ag2_bf02",
+   "capability": "coder_bug_fix",
+   "workspace": {
+    "src/arabic.py": "import re\n\n_TASHKEEL = re.compile(\"[ً-ِ]\")\n\n\ndef strip_tashkeel(text: str) -> str:\n    \"\"\"يحذف كلَّ علامات التشكيل: الفتحةَ والضمةَ والكسرة، والتنوينَ بأنواعه،\n    والشدّةَ والسكون، والألفَ الخنجرية (ٰ). ولا يمسّ الحروف.\"\"\"\n    return _TASHKEEL.sub(\"\", text)\n",
+    "tests/test_arabic.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.arabic import strip_tashkeel\n\n\ndef test_shadda_and_tanween():\n    assert strip_tashkeel(\"مُحَمَّدٌ\") == \"محمد\"\n\n\ndef test_plain_text_is_unchanged():\n    assert strip_tashkeel(\"كتاب\") == \"كتاب\"\n"
+   },
+   "instruction": "الدالّة strip_tashkeel في src/arabic.py لا تحذف كلَّ ما يقول توثيقُها إنها تحذفه، واختبارٌ يسقط لذلك. أصلحها حتى تطابق توثيقَها كلَّه، لا الاختبارَ وحده. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.arabic import strip_tashkeel as s\ncheck(s(\"قُرْآن\") == \"قرآن\", \"السكون\")\ncheck(s(\"الرَّحْمَٰنِ\") == \"الرحمن\", \"الألف الخنجرية\")\ncheck(s(\"إِنَّ\") == \"إن\", \"الشدّة\")\ncheck(s(\"آمَنَ\") == \"آمن\", \"الحرف آ يبقى\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "النطاقُ يشمل الشدّة والسكون",
+    "والألفَ الخنجرية",
+    "ولا يمسّ الحروف"
+   ],
+   "max_steps": 8
+  },
+  {
+   "task_id": "ag2_bf03",
+   "capability": "coder_bug_fix",
+   "workspace": {
+    "src/pages.py": "def page(items, number, size):\n    \"\"\"الصفحةُ رقمُها number من القائمة items، وأرقامُ الصفحات تبدأ من ١.\"\"\"\n    start = number * size\n    return items[start:start + size]\n\n\ndef page_count(total, size):\n    \"\"\"عددُ الصفحات اللازمة لعرض total عنصرًا، في كل صفحةٍ size منها.\"\"\"\n    return total // size\n",
+    "tests/test_pages.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.pages import page, page_count\n\n\ndef test_first_page():\n    assert page(list(\"abcdefg\"), 1, 3) == [\"a\", \"b\", \"c\"]\n\n\ndef test_page_count_with_a_remainder():\n    assert page_count(10, 3) == 4\n"
+   },
+   "instruction": "في src/pages.py عيبان يجعلان الاختبارات تسقط. أصلح الدالّتين حتى تطابقا توثيقَهما. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.pages import page, page_count\ncheck(page(list(range(7)), 3, 3) == [6], \"الصفحة الأخيرة\")\ncheck(page(list(range(7)), 4, 3) == [], \"ما بعد الأخيرة\")\ncheck(page_count(9, 3) == 3, \"page_count(9, 3)\")\ncheck(page_count(0, 5) == 0, \"page_count(0, 5)\")\ncheck(page_count(1, 5) == 1, \"page_count(1, 5)\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "الصفحاتُ من ١",
+    "العددُ بالتقريب إلى الأعلى لا بإضافة واحد"
+   ],
+   "max_steps": 10
+  },
+  {
+   "task_id": "ag2_bf04",
+   "capability": "coder_bug_fix",
+   "workspace": {
+    "src/cart.py": "def add_item(item, cart=[]):\n    \"\"\"يضيف item إلى السلّة cart ويعيدها.\n\n    إن لم تُمرَّر سلّةٌ بدأ سلّةً جديدةً فارغة. وإن مُرّرت سلّةٌ أُضيف إليها هي نفسُها وأُعيدت.\n    \"\"\"\n    cart.append(item)\n    return cart\n",
+    "tests/test_cart.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.cart import add_item\n\n\ndef test_each_call_without_a_cart_starts_empty():\n    assert add_item(\"قهوة\") == [\"قهوة\"]\n    assert add_item(\"شاي\") == [\"شاي\"]\n"
+   },
+   "instruction": "add_item في src/cart.py تُفسد السلالَ بين الاستدعاءات، واختبارٌ يسقط. أصلحها حتى تطابق توثيقَها كلَّه. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.cart import add_item\nbasket = [\"تمر\"]\nout = add_item(\"لبن\", basket)\ncheck(out is basket and basket == [\"تمر\", \"لبن\"], \"السلّةُ الممرَّرة نفسُها\")\ncheck([add_item(\"ماء\") for _ in range(3)] == [[\"ماء\"]] * 3, \"سلّةٌ جديدة في كل استدعاء\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "القيمةُ الافتراضية None",
+    "السلّةُ الممرَّرة تُعدَّل وتُعاد هي نفسُها"
+   ],
+   "max_steps": 8
+  },
+  {
+   "task_id": "ag2_bf05",
+   "capability": "coder_bug_fix",
+   "workspace": {
+    "src/amounts.py": "def parse_amount(text: str) -> int:\n    \"\"\"يحوّل مبلغًا مكتوبًا نصًّا إلى عددٍ صحيح.\n\n    يقبل الأرقامَ الغربية (0-9) والعربيةَ المشرقية (٠-٩) والفارسية (۰-۹)، ويتجاهل فاصلَ الآلاف\n    أيًّا كان منهما: «٬» أو «,»، والمسافاتِ حول العدد. وما ليس عددًا يرمي ValueError.\n    \"\"\"\n    return int(text.strip())\n",
+    "tests/test_amounts.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.amounts import parse_amount\n\n\ndef test_eastern_digits_with_the_arabic_separator():\n    assert parse_amount(\"١٬٢٣٤\") == 1234\n\n\ndef test_plain():\n    assert parse_amount(\" 75 \") == 75\n"
+   },
+   "instruction": "parse_amount في src/amounts.py لا تقبل كلَّ ما يقول توثيقُها إنها تقبله، واختبارٌ يسقط. أصلحها. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.amounts import parse_amount as p\ncheck(p(\"12,500\") == 12500, \"الفاصلة اللاتينية\")\ncheck(p(\"۴۵۰\") == 450, \"الأرقام الفارسية\")\ncheck(p(\" ٣٬٠٠٠٬٠٠٠ \") == 3000000, \"فاصلان\")\ntry:\n    p(\"مبلغ\")\n    fail(\"نصٌّ ليس عددًا قُبل\")\nexcept ValueError:\n    pass\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "يتجاهل الفاصلين كليهما",
+    "ويبقى رفضُ ما ليس عددًا"
+   ],
+   "max_steps": 8
+  },
+  {
+   "task_id": "ag2_bf06",
+   "capability": "coder_bug_fix",
+   "workspace": {
+    "src/due.py": "from datetime import date, timedelta\n\nWEEKEND = (5, 6)\n\n\ndef due_date(start: date, days: int) -> date:\n    \"\"\"تاريخُ الاستحقاق بعد days يومَ عملٍ من start.\n\n    أيامُ العمل من الأحد إلى الخميس، وعطلةُ الأسبوع الجمعةُ والسبت.\n    ويومُ البدء لا يُحسب، وdays = 0 يعيد start نفسَه.\n    \"\"\"\n    current = start\n    while days > 0:\n        current += timedelta(days=1)\n        if current.weekday() not in WEEKEND:\n            days -= 1\n    return current\n",
+    "tests/test_due.py": "import sys\nsys.path.insert(0, \".\")\nfrom datetime import date\n\nfrom src.due import due_date\n\n\ndef test_thursday_plus_one_is_sunday():\n    assert due_date(date(2026, 9, 24), 1) == date(2026, 9, 27)\n"
+   },
+   "instruction": "due_date في src/due.py تحسب أيامَ العمل خطأً، واختبارٌ يسقط. أصلحها حتى تطابق توثيقَها. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom datetime import date\nfrom src.due import due_date\ncheck(due_date(date(2026, 9, 27), 5) == date(2026, 10, 4), \"خمسةُ أيامٍ من الأحد\")\ncheck(due_date(date(2026, 9, 25), 1) == date(2026, 9, 27), \"من الجمعة\")\ncheck(due_date(date(2026, 9, 24), 0) == date(2026, 9, 24), \"صفرُ أيام\")\ncheck(due_date(date(2026, 9, 24), 10) == date(2026, 10, 8), \"عشرةُ أيام\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "عطلةُ الأسبوع الجمعةُ والسبت (4 و5 في weekday)",
+    "لا صيغةَ تقريبية"
+   ],
+   "max_steps": 8
+  },
+  {
+   "task_id": "ag2_bf07",
+   "capability": "coder_bug_fix",
+   "workspace": {
+    "src/config.py": "import json\n\nDEFAULTS = {\"language\": \"ar\", \"theme\": \"light\", \"limits\": {\"steps\": 8, \"files\": 4}}\n\n\ndef load(path):\n    \"\"\"إعداداتُ المستخدم من ملف JSON فوق القيم الافتراضية.\n\n    المفتاحُ الغائب يأخذ قيمتَه الافتراضية، والقاموسُ المتداخل (limits) يُدمج مفتاحًا مفتاحًا.\n    ولا تتغيّر DEFAULTS مهما حُمّل من ملفّات، ولا مهما عُدّل في الإعدادات المُعادة.\n    \"\"\"\n    with open(path, encoding=\"utf-8\") as handle:\n        user = json.load(handle)\n    config = DEFAULTS\n    config.update(user)\n    return config\n",
+    "tests/data/dark.json": "{\"theme\": \"dark\"}\n",
+    "tests/data/english.json": "{\"language\": \"en\"}\n",
+    "tests/data/steps.json": "{\"limits\": {\"steps\": 3}}\n",
+    "tests/test_config.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.config import load\n\n\ndef test_a_second_file_does_not_inherit_the_first():\n    assert load(\"tests/data/dark.json\")[\"theme\"] == \"dark\"\n    assert load(\"tests/data/english.json\")[\"theme\"] == \"light\"\n"
+   },
+   "instruction": "load في src/config.py تُسرّب إعداداتِ ملفٍّ إلى ما بعده، واختبارٌ يسقط. أصلحها حتى تطابق توثيقَها كلَّه. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src import config\ngot = config.load(\"tests/data/steps.json\")\ncheck(got[\"limits\"] == {\"steps\": 3, \"files\": 4}, \"الدمجُ المتداخل\")\ngot[\"limits\"][\"files\"] = 99\ngot[\"theme\"] = \"x\"\ncheck(config.DEFAULTS == {\"language\": \"ar\", \"theme\": \"light\", \"limits\": {\"steps\": 8, \"files\": 4}},\n      \"DEFAULTS تغيّرت\")\ncheck(config.load(\"tests/data/english.json\")[\"limits\"] == {\"steps\": 8, \"files\": 4}, \"limits بعد ملفٍّ آخر\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "نسخةٌ عميقة من DEFAULTS",
+    "الدمجُ المتداخل مفتاحًا مفتاحًا"
+   ],
+   "max_steps": 10
+  },
+  {
+   "task_id": "ag2_bf08",
+   "capability": "coder_bug_fix",
+   "workspace": {
+    "src/search.py": "def find_lines(text: str, word: str) -> list[int]:\n    \"\"\"أرقامُ الأسطر (من ١) التي فيها word كلمةً تامّةً لا جزءًا من كلمة.\n\n    والمطابقةُ لا تفرّق بين الأحرف اللاتينية الكبيرة والصغيرة، ولا بين صور الألف (أ إ آ ا).\n    \"\"\"\n    return [number for number, line in enumerate(text.splitlines(), 1) if word in line]\n",
+    "tests/test_search.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.search import find_lines\n\n\ndef test_whole_words_only():\n    assert find_lines(\"كتب\\nكتابة جديدة\\nهذا كتاب\", \"كتاب\") == [3]\n"
+   },
+   "instruction": "find_lines في src/search.py تطابق أجزاءَ الكلمات، واختبارٌ يسقط. أصلحها حتى تطابق توثيقَها كلَّه. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.search import find_lines as f\ncheck(f(\"أحمد جاء\\nمحمد\", \"احمد\") == [1], \"صورُ الألف\")\ncheck(f(\"إسلام\\nاسلام\", \"أسلام\") == [1, 2], \"صورُ الألف في الكلمة\")\ncheck(f(\"Hello world\\nhello\", \"HELLO\") == [1, 2], \"حالةُ الأحرف\")\ncheck(f(\"الكتاب\\nكتاب.\", \"كتاب\") == [2], \"كلمةٌ تامّة بجوار علامة\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "حدودُ الكلمة",
+    "تطبيعُ الألف وحالة الأحرف في الطرفين"
+   ],
+   "max_steps": 10
+  },
+  {
+   "task_id": "ag2_ft01",
+   "capability": "coder_feature",
+   "workspace": {
+    "src/wc.py": "import sys\n\n\ndef count(text):\n    \"\"\"عددُ الكلمات وعددُ الأسطر في النص.\"\"\"\n    return len(text.split()), len(text.splitlines())\n\n\ndef main(argv):\n    \"\"\"الاستعمال: wc.py <ملف>. يطبع «الكلمات: N» في سطرٍ و«الأسطر: M» في الذي يليه.\"\"\"\n    with open(argv[0], encoding=\"utf-8\") as handle:\n        words, lines = count(handle.read())\n    print(f\"الكلمات: {words}\")\n    print(f\"الأسطر: {lines}\")\n    return 0\n\n\nif __name__ == \"__main__\":\n    sys.exit(main(sys.argv[1:]))\n",
+    "tests/data/poem.txt": "على قدر أهل العزم تأتي العزائم\nوتأتي على قدر الكرام المكارم\n",
+    "tests/data/note.txt": "سطرٌ واحد فيه خمس كلمات\nو ثانٍ\nوثالث\n",
+    "tests/test_wc.py": "import sys\nsys.path.insert(0, \".\")\nimport contextlib\nimport io\n\nfrom src.wc import count, main\n\n\ndef test_count():\n    assert count(\"أ ب\\nج\") == (3, 2)\n\n\ndef test_plain_output():\n    out = io.StringIO()\n    with contextlib.redirect_stdout(out):\n        assert main([\"tests/data/poem.txt\"]) == 0\n    assert out.getvalue() == \"الكلمات: 11\\nالأسطر: 2\\n\"\n"
+   },
+   "instruction": "أضف إلى src/wc.py الخيارَ --json: إذا جاء قبل اسم الملف (wc.py --json <ملف>) طبع البرنامجُ سطرًا واحدًا هو كائنُ JSON فيه المفتاحان words وlines بعدديهما، ولا يطبع شيئًا غيرَه، ويعيد main القيمةَ 0. ويبقى السلوكُ بلا الخيار كما هو. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nimport contextlib, io\nfrom src.wc import main\ndef run(argv):\n    out = io.StringIO()\n    with contextlib.redirect_stdout(out):\n        code = main(argv)\n    return code, out.getvalue()\ncode, text = run([\"--json\", \"tests/data/note.txt\"])\ncheck(code == 0, \"رمزُ الخروج\")\ncheck(text.endswith(\"\\n\") and text.count(\"\\n\") == 1, \"سطرٌ واحد\")\ncheck(json.loads(text) == {\"words\": 8, \"lines\": 3}, \"المفتاحان وقيمتاهما\")\ncheck(run([\"tests/data/note.txt\"]) == (0, \"الكلمات: 8\\nالأسطر: 3\\n\"), \"السلوكُ بلا الخيار\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "الخيارُ قبل اسم الملف",
+    "المفتاحان وحدهما",
+    "السلوكُ القديم باقٍ"
+   ],
+   "max_steps": 12
+  },
+  {
+   "task_id": "ag2_ft02",
+   "capability": "coder_feature",
+   "workspace": {
+    "src/numerals.py": "_EASTERN = \"٠١٢٣٤٥٦٧٨٩\"\n\n\ndef to_western(text: str) -> str:\n    \"\"\"يحوّل الأرقامَ العربية المشرقية في النص إلى أرقامٍ غربية، ولا يمسّ غيرَها.\"\"\"\n    return text.translate(str.maketrans(_EASTERN, \"0123456789\"))\n",
+    "tests/test_numerals.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.numerals import to_western\n\n\ndef test_to_western():\n    assert to_western(\"العام ٢٠٢٦\") == \"العام 2026\"\n"
+   },
+   "instruction": "أضف إلى src/numerals.py دالّةً to_arabic(n, group=False) تكتب العددَ الصحيح n بالأرقام العربية المشرقية (٠١٢٣٤٥٦٧٨٩). وإن كان group صحيحًا فُصلت كلُّ ثلاث مراتب من اليمين بالفاصل «٬» (U+066C). والعددُ السالب يبدأ بالعلامة «-». لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.numerals import to_arabic as a, to_western\ncheck(a(0) == \"٠\", \"الصفر\")\ncheck(a(1234567) == \"١٢٣٤٥٦٧\", \"بلا فواصل\")\ncheck(a(1234567, group=True) == \"١٬٢٣٤٬٥٦٧\", \"الفواصلُ من اليمين\")\ncheck(a(123, True) == \"١٢٣\", \"ثلاثُ مراتب\")\ncheck(a(1000, True) == \"١٬٠٠٠\", \"ألف\")\ncheck(a(-4500, True) == \"-٤٬٥٠٠\", \"السالب\")\ncheck(to_western(a(987654321)) == \"987654321\", \"الذهابُ والعودة\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "الفواصلُ من اليمين",
+    "العلامةُ السالبة في أوله"
+   ],
+   "max_steps": 12
+  },
+  {
+   "task_id": "ag2_ft03",
+   "capability": "coder_feature",
+   "workspace": {
+    "src/inventory.py": "class Inventory:\n    \"\"\"مخزونٌ بسيط: اسمُ الصنف وكميّتُه.\"\"\"\n\n    def __init__(self):\n        self._items = {}\n\n    def add(self, name, quantity):\n        if quantity <= 0:\n            raise ValueError(\"الكميّةُ موجبة\")\n        self._items[name] = self._items.get(name, 0) + quantity\n\n    def quantity(self, name):\n        return self._items.get(name, 0)\n",
+    "tests/test_inventory.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.inventory import Inventory\n\n\ndef test_add_accumulates():\n    inventory = Inventory()\n    inventory.add(\"شاي\", 2)\n    inventory.add(\"شاي\", 3)\n    assert inventory.quantity(\"شاي\") == 5\n"
+   },
+   "instruction": "أضف إلى الصنف Inventory في src/inventory.py تابعًا low_stock(threshold=5) يعيد قائمةَ أسماء الأصناف التي كميّتُها أقلّ من threshold (لا تساويه)، مرتّبةً بالكميّة تصاعديًّا، ثم بالاسم عند التساوي. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.inventory import Inventory\ninv = Inventory()\nfor name, qty in [(\"شاي\", 3), (\"بن\", 3), (\"سكر\", 10), (\"ماء\", 5), (\"حليب\", 1)]:\n    inv.add(name, qty)\ncheck(inv.low_stock() == [\"حليب\", \"بن\", \"شاي\"], \"العتبةُ الافتراضية والترتيب\")\ncheck(inv.low_stock(11) == [\"حليب\", \"بن\", \"شاي\", \"ماء\", \"سكر\"], \"عتبةٌ أعلى\")\ncheck(inv.low_stock(1) == [], \"لا شيء دون الواحد\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "أقلّ لا يساوي",
+    "الترتيبُ بالكميّة ثم بالاسم"
+   ],
+   "max_steps": 10
+  },
+  {
+   "task_id": "ag2_ft04",
+   "capability": "coder_feature",
+   "workspace": {
+    "src/retry.py": "def retry(fn, attempts=3, exceptions=(Exception,)):\n    \"\"\"يستدعي fn بلا وسائط ويعيد قيمتَها.\n\n    إن رمت استثناءً من exceptions أعاد المحاولة، حتى يبلغ مجموعُ المحاولات attempts، ثم يرمي آخرَ\n    استثناءٍ كما هو. والاستثناءُ من غير exceptions يُرمى فورًا بلا إعادة. وattempts أقلُّ من ١ خطأ ValueError.\n    \"\"\"\n    raise NotImplementedError\n",
+    "tests/test_retry.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.retry import retry\n\n\ndef test_returns_the_value_of_a_call_that_succeeds():\n    assert retry(lambda: 7) == 7\n"
+   },
+   "instruction": "أكمل الدالّة retry في src/retry.py كما يصفها توثيقُها. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.retry import retry\ncalls = []\ndef flaky():\n    calls.append(1)\n    if len(calls) < 3:\n        raise ConnectionError(len(calls))\n    return \"تم\"\ncheck(retry(flaky, attempts=3) == \"تم\" and len(calls) == 3, \"ينجح في الثالثة\")\nraised = []\ndef always():\n    raised.append(TimeoutError(len(raised)))\n    raise raised[-1]\ntry:\n    retry(always, attempts=2)\n    fail(\"لم يُرمَ الاستثناء\")\nexcept TimeoutError as exc:\n    check(exc is raised[-1] and len(raised) == 2, \"آخرُ استثناءٍ بعد محاولتين\")\nseen = []\ndef wrong():\n    seen.append(1)\n    raise KeyError(\"x\")\ntry:\n    retry(wrong, attempts=5, exceptions=(ConnectionError,))\n    fail(\"لم يُرمَ الاستثناء\")\nexcept KeyError:\n    check(len(seen) == 1, \"غيرُ المذكور يُرمى فورًا\")\ntry:\n    retry(lambda: 1, attempts=0)\n    fail(\"attempts = 0 قُبل\")\nexcept ValueError:\n    pass\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "عددُ المحاولات الكلّيّ attempts",
+    "آخرُ استثناءٍ كما هو",
+    "غيرُ المذكور فورًا"
+   ],
+   "max_steps": 12
+  },
+  {
+   "task_id": "ag2_ft05",
+   "capability": "coder_feature",
+   "workspace": {
+    "src/report.py": "def total(records):\n    \"\"\"مجموعُ المبالغ في السجلّات.\"\"\"\n    return round(sum(record[\"amount\"] for record in records), 2)\n",
+    "tests/test_report.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.report import total\n\n\ndef test_total():\n    assert total([{\"amount\": 1.25}, {\"amount\": 2}]) == 3.25\n"
+   },
+   "instruction": "أضف إلى src/report.py دالّةً write_csv(path, records) تكتب records (قائمةَ قواميس بالمفاتيح name وcity وamount) ملفَّ CSV بترميز utf-8-sig ليفتحه Excel بالعربية: أولُ سطرٍ رؤوسُ الأعمدة «الاسم,المدينة,المبلغ»، ثم سطرٌ لكل سجلٍّ بترتيبه، والمبلغُ بمنزلتين عشريتين (1250.50)، ونهايةُ كل سطرٍ \\n وحدها، ويُقتبس الحقلُ الذي فيه فاصلة كما في CSV. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nimport csv, tempfile\nfrom src.report import write_csv\npath = os.path.join(tempfile.mkdtemp(), \"out.csv\")\nwrite_csv(path, [{\"name\": \"سارة\", \"city\": \"جدة\", \"amount\": 1250.5},\n                 {\"name\": \"آل سعود, فهد\", \"city\": \"الرياض\", \"amount\": 980}])\nwith open(path, \"rb\") as f:\n    raw = f.read()\ncheck(raw.startswith(b\"\\xef\\xbb\\xbf\"), \"علامةُ utf-8-sig\")\ncheck(b\"\\r\" not in raw, \"نهايةُ السطر \\\\n وحدها\")\ntext = raw.decode(\"utf-8-sig\")\ncheck(text.split(\"\\n\")[0] == \"الاسم,المدينة,المبلغ\", \"رؤوسُ الأعمدة\")\ncheck(list(csv.reader(text.splitlines())) == [[\"الاسم\", \"المدينة\", \"المبلغ\"], [\"سارة\", \"جدة\", \"1250.50\"],\n      [\"آل سعود, فهد\", \"الرياض\", \"980.00\"]], \"الصفوف\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "utf-8-sig",
+    "منزلتان عشريتان",
+    "اقتباسُ الفاصلة"
+   ],
+   "max_steps": 12
+  },
+  {
+   "task_id": "ag2_ft06",
+   "capability": "coder_feature",
+   "workspace": {
+    "src/phone.py": "def is_mobile(number: str) -> bool:\n    \"\"\"هل الرقمُ جوّالٌ سعوديٌّ بالصيغة الدولية +9665XXXXXXXX؟\"\"\"\n    return len(number) == 13 and number.startswith(\"+9665\") and number[1:].isascii() and number[1:].isdigit()\n",
+    "tests/test_phone.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.phone import is_mobile\n\n\ndef test_is_mobile():\n    assert is_mobile(\"+966501234567\")\n    assert not is_mobile(\"+966401234567\")\n"
+   },
+   "instruction": "أضف إلى src/phone.py دالّةً normalize_phone(text) تعيد رقمَ الجوّال السعوديّ بالصيغة الدولية +9665XXXXXXXX. تقبل الصيغَ: 05XXXXXXXX، و5XXXXXXXX، و+9665XXXXXXXX، و009665XXXXXXXX، بأرقامٍ غربية أو عربيةٍ مشرقية، مع مسافاتٍ أو شرطات بين الأرقام. وما لم يكن جوّالًا سعوديًّا (تسعةُ أرقامٍ أولُها 5 بعد مفتاح الدولة) يرمي ValueError. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.phone import normalize_phone as n\nfor raw in [\"0501234567\", \"501234567\", \"+966501234567\", \"00966501234567\", \"+966 50 123 4567\",\n            \"050-123-4567\", \"٠٥٠١٢٣٤٥٦٧\", \"+٩٦٦ ٥٠ ١٢٣ ٤٥٦٧\"]:\n    check(n(raw) == \"+966501234567\", raw)\nfor raw in [\"0401234567\", \"05012345\", \"هاتف\", \"+9715012345678\", \"\"]:\n    try:\n        n(raw)\n        fail(\"قُبل: \" + raw)\n    except ValueError:\n        pass\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "الأرقامُ المشرقية",
+    "المسافاتُ والشرطات",
+    "رفضُ غير الجوّال"
+   ],
+   "max_steps": 12
+  },
+  {
+   "task_id": "ag2_ft07",
+   "capability": "coder_feature",
+   "workspace": {
+    "src/summary.py": "def word_count(text: str) -> int:\n    \"\"\"عددُ الكلمات: ما تفصله المسافاتُ البيضاء.\"\"\"\n    return len(text.split())\n",
+    "tests/test_summary.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.summary import word_count\n\n\ndef test_word_count():\n    assert word_count(\" أ  ب\\nج \") == 3\n"
+   },
+   "instruction": "أضف إلى src/summary.py دالّةً truncate_words(text, limit) تعيد النصَّ مقصوصًا إلى أول limit كلمة: الكلماتُ ما تفصله المسافاتُ البيضاء، وتُجمع بمسافةٍ واحدة. فإن قُصّ شيءٌ أُلحقت «…» (U+2026) بآخر كلمةٍ بلا مسافة. وإن لم يزد النصُّ على limit كلمةً أُعيدت كلماتُه مجموعةً بمسافةٍ واحدة بلا «…». وlimit أقلُّ من ١ خطأ ValueError. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.summary import truncate_words as t\ncheck(t(\"واحد  اثنان\\nثلاثة أربعة\", 2) == \"واحد اثنان\\u2026\", \"القصّ\")\ncheck(t(\"أ ب\", 2) == \"أ ب\", \"مساوٍ للحدّ\")\ncheck(t(\"  أ   ب  \", 5) == \"أ ب\", \"أقلّ من الحدّ\")\ncheck(t(\"كلمةٌ_طويلةٌ_جدًّا بعدها\", 1) == \"كلمةٌ_طويلةٌ_جدًّا\\u2026\", \"كلمةٌ واحدة\")\ntry:\n    t(\"أ\", 0)\n    fail(\"limit = 0 قُبل\")\nexcept ValueError:\n    pass\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "بالكلمات لا بالحروف",
+    "«…» بلا مسافة وحين القصّ وحده"
+   ],
+   "max_steps": 10
+  },
+  {
+   "task_id": "ag2_rf01",
+   "capability": "coder_refactor",
+   "workspace": {
+    "src/orders.py": "def _clean(text):\n    text = text.strip()\n    text = \" \".join(text.split())\n    return text.replace(\"ـ\", \"\")\n\n\ndef order_title(raw):\n    return \"طلب: \" + _clean(raw)\n",
+    "src/invoices.py": "def _clean(text):\n    text = text.strip()\n    text = \" \".join(text.split())\n    return text.replace(\"ـ\", \"\")\n\n\ndef invoice_title(raw):\n    return \"فاتورة: \" + _clean(raw)\n",
+    "tests/test_titles.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.invoices import invoice_title\nfrom src.orders import order_title\n\n\ndef test_titles():\n    assert order_title(\"  قهـوة   عربية \") == \"طلب: قهوة عربية\"\n    assert invoice_title(\"رقم ١٢\") == \"فاتورة: رقم ١٢\"\n"
+   },
+   "instruction": "الدالّة _clean مكرّرةٌ حرفيًّا في src/orders.py وsrc/invoices.py. انقلها إلى ملفٍّ جديد src/text.py باسم clean، واجعل الملفّين يستوردانها منه (from src.text import clean)، واحذف النسختين المكرّرتين. ولا يتغيّر سلوكُ order_title ولا invoice_title. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src.text import clean\nfrom src.orders import order_title\nfrom src.invoices import invoice_title\ncheck(clean(\"ـأ  ب \") == \"أ ب\", \"clean\")\ncheck(order_title(\"\\tتمـر\\nسكري\") == \"طلب: تمر سكري\", \"order_title\")\ncheck(invoice_title(\"  \") == \"فاتورة: \", \"invoice_title\")\nfor path, keep in ((\"src/orders.py\", \"order_title\"), (\"src/invoices.py\", \"invoice_title\")):\n    t = tree(path)\n    defs = [n.name for n in ast.walk(t) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]\n    check(defs == [keep], path + \": ما زالت فيه دالّةٌ مكرّرة\")\n    check(any(isinstance(n, ast.ImportFrom) and n.module == \"src.text\" and any(a.name == \"clean\" for a in n.names)\n              for n in ast.walk(t)), path + \": لا يستورد clean من src.text\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "نسخةٌ واحدة في src/text.py",
+    "لا دالّةَ مكرّرة باقية",
+    "السلوكُ نفسُه"
+   ],
+   "max_steps": 14
+  },
+  {
+   "task_id": "ag2_rf02",
+   "capability": "coder_refactor",
+   "workspace": {
+    "src/billing.py": "def calcTotal(prices, tax=0.15):\n    \"\"\"مجموعُ الأسعار مع الضريبة، مقرّبًا لمنزلتين.\"\"\"\n    return round(sum(prices) * (1 + tax), 2)\n",
+    "src/checkout.py": "from src.billing import calcTotal\n\n\ndef checkout(cart):\n    return {\"items\": len(cart), \"total\": calcTotal([price for _, price in cart])}\n",
+    "src/quote.py": "from src import billing\n\n\ndef quote(prices):\n    return {\"net\": billing.calcTotal(prices, tax=0), \"gross\": billing.calcTotal(prices)}\n",
+    "tests/test_billing.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.billing import calcTotal\nfrom src.checkout import checkout\nfrom src.quote import quote\n\n\ndef test_old_name_still_works():\n    assert calcTotal([10, 20]) == 34.5\n\n\ndef test_callers():\n    assert checkout([(\"قلم\", 10), (\"دفتر\", 30)]) == {\"items\": 2, \"total\": 46.0}\n    assert quote([100]) == {\"net\": 100, \"gross\": 115.0}\n"
+   },
+   "instruction": "أعد تسمية الدالّة calcTotal إلى calculate_total على نهج PEP 8، وحدّث كلَّ استدعاءٍ لها في src/. وأبقِ calcTotal في src/billing.py اسمًا قديمًا يعمل كما كان، لكنه يُطلق DeprecationWarning عند كل استدعاء، لأن مستعملين خارج المشروع ما زالوا عليه. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src import billing\ncheck(billing.calculate_total([1, 2, 3], tax=0.1) == 6.6, \"calculate_total\")\nwith warnings.catch_warnings(record=True) as caught:\n    warnings.simplefilter(\"always\")\n    check(billing.calcTotal([10], tax=0) == 10, \"الاسمُ القديم\")\ncheck(any(issubclass(w.category, DeprecationWarning) for w in caught), \"لا DeprecationWarning\")\ncheck(func(tree(\"src/billing.py\"), \"calculate_total\") is not None, \"calculate_total ليست دالّةً معرَّفة\")\nfor path in (\"src/checkout.py\", \"src/quote.py\"):\n    names = {getattr(n, \"id\", None) or getattr(n, \"attr\", None) or getattr(n, \"name\", None)\n             for n in ast.walk(tree(path))}\n    check(\"calcTotal\" not in names, path + \": ما زال يستعمل calcTotal\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "الاسمُ الجديد دالّةٌ معرَّفة",
+    "القديمُ يُحذّر ويعمل",
+    "لا مستدعيَ على القديم في src/"
+   ],
+   "max_steps": 14
+  },
+  {
+   "task_id": "ag2_rf03",
+   "capability": "coder_refactor",
+   "workspace": {
+    "src/shipping.py": "def cost(zone, weight_kg):\n    \"\"\"أجرةُ الشحن بالريال: سعرُ المنطقة للكيلو مضروبًا في الوزن، وحدٌّ أدنى ١٥ ريالًا.\"\"\"\n    if zone == \"الوسطى\":\n        rate = 4\n    elif zone == \"الغربية\":\n        rate = 5\n    elif zone == \"الشرقية\":\n        rate = 5\n    elif zone == \"الشمالية\":\n        rate = 7\n    elif zone == \"الجنوبية\":\n        rate = 6\n    else:\n        raise ValueError(f\"منطقةٌ غير معروفة: {zone}\")\n    return max(15, rate * weight_kg)\n",
+    "tests/test_shipping.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.shipping import cost\n\n\ndef test_cost():\n    assert cost(\"الوسطى\", 5) == 20\n    assert cost(\"الشمالية\", 1) == 15\n\n\ndef test_unknown_zone():\n    try:\n        cost(\"المريخ\", 1)\n    except ValueError:\n        return\n    raise AssertionError(\"قُبلت منطقةٌ غير معروفة\")\n"
+   },
+   "instruction": "أعد هيكلة cost في src/shipping.py: انقل أسعارَ المناطق من سلسلة if/elif إلى قاموسٍ على مستوى الوحدة اسمُه RATES (المنطقة ← السعر)، واجعل cost تقرأ منه. ولا يتغيّر السلوك، ومنه رسالةُ الخطأ للمنطقة غير المعروفة. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src import shipping\nrates = {\"الوسطى\": 4, \"الغربية\": 5, \"الشرقية\": 5, \"الشمالية\": 7, \"الجنوبية\": 6}\ncheck(getattr(shipping, \"RATES\", None) == rates, \"RATES\")\nfor zone, rate in rates.items():\n    for w in (0.5, 3, 10):\n        check(shipping.cost(zone, w) == max(15, rate * w), f\"{zone} {w}\")\ntry:\n    shipping.cost(\"القطب\", 2)\n    fail(\"قُبلت منطقةٌ غير معروفة\")\nexcept ValueError as exc:\n    check(str(exc) == \"منطقةٌ غير معروفة: القطب\", \"رسالةُ الخطأ\")\nbody = func(tree(\"src/shipping.py\"), \"cost\")\ncheck(body is not None, \"cost\")\nifs = [n for n in ast.walk(body) if isinstance(n, ast.If)]\ncheck(len(ifs) <= 1, \"ما زالت سلسلةُ if/elif\")\ncheck(not any(isinstance(n, ast.Constant) and n.value in rates for n in ast.walk(body)), \"أسماءُ المناطق في cost\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "القاموسُ على مستوى الوحدة",
+    "لا سلسلة if/elif",
+    "الرسالةُ نفسُها"
+   ],
+   "max_steps": 12
+  },
+  {
+   "task_id": "ag2_rf04",
+   "capability": "coder_refactor",
+   "workspace": {
+    "src/pipeline.py": "def run(text):\n    \"\"\"يطبّع النصَّ ويقطّعه كلماتٍ ويعدّها، ويعيد أكثرَ الكلمات تكرارًا (حتى ثلاث) مع أعدادها.\"\"\"\n    # التطبيع\n    text = text.replace(\"أ\", \"ا\").replace(\"إ\", \"ا\").replace(\"آ\", \"ا\")\n    text = text.replace(\"ة\", \"ه\").replace(\"ى\", \"ي\")\n    text = \"\".join(ch for ch in text if not (\"ً\" <= ch <= \"ْ\"))\n    # التقطيع\n    words = []\n    for token in text.split():\n        token = token.strip(\".,:;!?؟،؛«»()\\\"'\")\n        if token:\n            words.append(token)\n    # العدّ\n    counts = {}\n    for word in words:\n        counts[word] = counts.get(word, 0) + 1\n    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))\n    return ranked[:3]\n",
+    "tests/test_pipeline.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.pipeline import run\n\n\ndef test_run():\n    assert run(\"إلى البيت، الى البيت! والبيتُ\") == [(\"البيت\", 2), (\"الي\", 2), (\"والبيت\", 1)]\n"
+   },
+   "instruction": "run في src/pipeline.py تفعل ثلاثة أشياء في جسمٍ واحد. قسّمها ثلاثَ دوالّ على مستوى الوحدة: normalize(text) تعيد النصَّ المطبَّع، وtokenize(text) تعيد قائمةَ الكلمات من نصٍّ مطبَّع، وcount(words) تعيد القائمةَ المرتّبة (أكثرَ ثلاثٍ بأعدادها). ثم اجعل run تركّبها في خمس عباراتٍ على الأكثر بعد توثيقها. ولا يتغيّر سلوكُ run. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src import pipeline as p\ncheck(p.normalize(\"أحمدُ إلى مدرسة\") == \"احمد الي مدرسه\", \"normalize\")\ncheck(p.tokenize(\"«قال»، نعم!\") == [\"قال\", \"نعم\"], \"tokenize\")\ncheck(p.count([\"ب\", \"ا\", \"ب\"]) == [(\"ب\", 2), (\"ا\", 1)], \"count\")\nfor text, want in zip(['قال أحمدُ: الكتابةُ مدرسةٌ، والكتابه مدرسه!', 'إلى «إلى» الى؟ على على على', 'آمنة أمنة امنه. ى'], [[['مدرسه', 2], ['احمد', 1], ['الكتابه', 1]], [['الي', 3], ['علي', 3]], [['امنه', 3], ['ي', 1]]]):\n    check([list(x) for x in p.run(text)] == want, \"run: \" + text)\nbody = func(tree(\"src/pipeline.py\"), \"run\")\nstmts = [s for s in body.body if not (isinstance(s, ast.Expr) and isinstance(s.value, ast.Constant))]\ncheck(len(stmts) <= 5, \"جسمُ run أطول من خمس عبارات\")\ncalled = {n.func.id for n in ast.walk(body) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}\ncheck({\"normalize\", \"tokenize\", \"count\"} <= called, \"run لا تركّب الدوالَّ الثلاث\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "ثلاثُ دوالّ على مستوى الوحدة",
+    "run تركّبها",
+    "السلوكُ نفسُه"
+   ],
+   "max_steps": 14
+  },
+  {
+   "task_id": "ag2_rf05",
+   "capability": "coder_refactor",
+   "workspace": {
+    "src/counter.py": "COUNT = 0\n\n\ndef increment(step=1):\n    global COUNT\n    COUNT += step\n    return COUNT\n\n\ndef value():\n    return COUNT\n\n\ndef reset():\n    global COUNT\n    COUNT = 0\n",
+    "tests/test_counter.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.counter import increment, reset, value\n\n\ndef test_module_functions():\n    reset()\n    assert increment() == 1\n    assert increment(4) == 5\n    assert value() == 5\n    reset()\n    assert value() == 0\n"
+   },
+   "instruction": "الوحدة src/counter.py تحفظ حالتَها في متغيّرٍ عامّ. أعد هيكلتها في صنفٍ Counter له التوابع increment(step=1) وvalue() وreset()، ولكلّ نسخةٍ عدّادُها المستقلّ. وأبقِ الدوالَّ الثلاث على مستوى الوحدة تعمل كما كانت عبر نسخةٍ افتراضيةٍ واحدة. ولا تبقى في الوحدة عبارةُ global. لا تعدّل ملفّات الاختبار.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nvisible(\"tests\")\nfrom src import counter\na, b = counter.Counter(), counter.Counter()\ncheck(a.increment() == 1 and a.increment(3) == 4, \"increment\")\ncheck(a.value() == 4 and b.value() == 0, \"نسختان مستقلّتان\")\nb.increment()\na.reset()\ncheck(a.value() == 0 and b.value() == 1, \"reset لنسخةٍ واحدة\")\ncounter.reset()\ncheck(counter.increment(2) == 2 and counter.value() == 2, \"دوالُّ الوحدة\")\ncheck(a.value() == 0, \"دوالُّ الوحدة لا تمسّ نسخةً أخرى\")\ncheck(not any(isinstance(n, ast.Global) for n in ast.walk(tree(\"src/counter.py\"))), \"ما زالت global\")\n",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "tests"
+   ],
+   "rubric": [
+    "حالةٌ لكل نسخة",
+    "نسخةٌ افتراضيةٌ للدوالّ",
+    "لا global"
+   ],
+   "max_steps": 12
+  },
+  {
+   "task_id": "ag2_ex01",
+   "capability": "coder_explain",
+   "workspace": {
+    "pkg/a.py": "def helper():\n    return 1\n",
+    "pkg/b.py": "from pkg.a import helper\n\n\ndef compute():\n    return helper() * 2\n\n\ndef twice():\n    return helper() + helper()\n",
+    "pkg/c.py": "# helper() تُذكر هنا في تعليقٍ فقط\nNOTE = \"helper()\"\n\n\ndef helper_v2():\n    return 2\n",
+    "pkg/d.py": "from pkg import a\n\n\ndef run():\n    return a.helper()\n"
+   },
+   "instruction": "أين تُعرَّف الدالّة helper، وكم مرّةً تُستدعى في المشروع؟ اكتب الجوابَ في answer.json كائنًا فيه المفتاحان file (مسارُ ملفّ التعريف نسبةً إلى جذر المشروع) وcalls (عددُ مواضع استدعائها في الشيفرة، بلا التعليقات والنصوص وبلا الدوالّ الأخرى ذات الأسماء القريبة). ولا تعدّل ملفّات المشروع.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\ngot = answer()\ncheck(isinstance(got, dict) and set(got) == {\"file\", \"calls\"}, \"المفتاحان\")\ncheck(got[\"file\"] == \"pkg/a.py\", \"ملفُّ التعريف\")\ncheck(type(got[\"calls\"]) is int and got[\"calls\"] == 4, \"عددُ الاستدعاءات\")\n",
+     "pkg"
+    ]
+   },
+   "forbidden": [
+    "pkg"
+   ],
+   "rubric": [
+    "ملفُّ التعريف لا الاستعمال",
+    "الاستدعاءُ عبر الوحدة يُعدّ",
+    "لا التعليقات ولا النصوص ولا helper_v2"
+   ],
+   "max_steps": 8
+  },
+  {
+   "task_id": "ag2_ex02",
+   "capability": "coder_explain",
+   "workspace": {
+    "main.py": "def make_adders():\n    adders = []\n    for n in range(3):\n        adders.append(lambda x: x + n)\n    return adders\n\n\ndef tally(item, seen=[]):\n    seen.append(item)\n    return len(seen)\n\n\nadders = make_adders()\nprint(adders[0](10))\nprint(tally(\"a\"), tally(\"b\"))\nprint(sum(adder(1) for adder in adders))\n"
+   },
+   "instruction": "ماذا يطبع الأمر python3 main.py؟ اكتب ناتجَه حرفيًّا في ملفٍّ اسمه output.txt (كلُّ سطرٍ كما يُطبع، وسطرٌ جديد في آخره). ولا تعدّل ملفّات المشروع.",
+   "success": {
+    "kind": "file_equals",
+    "path": "output.txt",
+    "value": "12\n1 2\n9\n"
+   },
+   "forbidden": [
+    "main.py"
+   ],
+   "rubric": [
+    "الإغلاقُ يلتقط المتغيّرَ لا قيمتَه",
+    "القائمةُ الافتراضية تُشارَك بين الاستدعاءات"
+   ],
+   "max_steps": 6
+  },
+  {
+   "task_id": "ag2_ex03",
+   "capability": "coder_explain",
+   "workspace": {
+    "app/main.py": "from app.config import load_config\nfrom app.publish import publish\nfrom app.report import build\n\n\ndef main():\n    config = load_config()\n    report = build(config)\n    publish(report, config[\"out\"])\n",
+    "app/config.py": "from app.storage import read\n\n\ndef load_config():\n    return {\"title\": read(\"title.txt\"), \"out\": \"out/report.txt\"}\n",
+    "app/report.py": "def build(config):\n    return {\"title\": config[\"title\"], \"lines\": _collect()}\n\n\ndef _collect():\n    return [\"سطرٌ أول\", \"سطرٌ ثانٍ\"]\n",
+    "app/publish.py": "from app.storage import save\n\n\ndef _render(report):\n    return report[\"title\"] + \"\\n\" + \"\\n\".join(report[\"lines\"])\n\n\ndef publish(report, path):\n    text = _render(report)\n    save(path, text)\n",
+    "app/storage.py": "def read(path):\n    with open(path, \"rb\") as handle:\n        return handle.read().decode(\"utf-8\")\n\n\ndef save(path, text):\n    _write(path, text.encode(\"utf-8\"))\n\n\ndef _write(path, data):\n    with open(path, \"wb\") as handle:\n        handle.write(data)\n",
+    "app/cache.py": "def flush(entries, path=\"cache.bin\"):\n    with open(path, \"wb\") as handle:\n        handle.write(b\"\".join(entries))\n"
+   },
+   "instruction": "ما سلسلةُ الاستدعاءات من main في app/main.py إلى الدالّة التي تفتح ملفًّا للكتابة فعلًا حين يُشغَّل البرنامج؟ اكتب في answer.json كائنًا فيه المفتاح chain: قائمةُ أسماء الدوالّ بالترتيب، أولُها main وآخرُها الدالّةُ التي تستدعي open للكتابة، بأسمائها كما عُرِّفت (بلا اسم الوحدة). ولا تعدّل ملفّات المشروع.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\ngot = answer()\ncheck(isinstance(got, dict) and set(got) == {\"chain\"}, \"المفتاح chain وحده\")\ncheck(got[\"chain\"] == [\"main\", \"publish\", \"save\", \"_write\"], \"السلسلة\")\n",
+     "app"
+    ]
+   },
+   "forbidden": [
+    "app"
+   ],
+   "rubric": [
+    "_render لا يكتب",
+    "flush لا يُستدعى من main",
+    "read يفتح للقراءة"
+   ],
+   "max_steps": 8
+  },
+  {
+   "task_id": "ag2_ex04",
+   "capability": "coder_explain",
+   "workspace": {
+    "src/stats.py": "def mean(values):\n    return sum(values) / len(values)\n\n\ndef variance(values):\n    \"\"\"تباينُ العيّنة: مجموعُ مربّعات الانحراف مقسومًا على (n - 1).\"\"\"\n    m = mean(values)\n    return sum((v - m) ** 2 for v in values) / len(values) - 1\n\n\ndef std(values):\n    return variance(values) ** 0.5\n",
+    "tests/test_stats.py": "import sys\nsys.path.insert(0, \".\")\nfrom src.stats import mean, std, variance\n\n\ndef test_mean():\n    assert mean([1, 2, 3]) == 2\n\n\ndef test_variance():\n    assert abs(variance([2, 4, 4, 4, 5, 5, 7, 9]) - 32 / 7) < 1e-9\n\n\ndef test_std():\n    assert abs(std([1, 3]) - 2 ** 0.5) < 1e-9\n"
+   },
+   "instruction": "اختباراتٌ في tests/ تسقط. لا تصلح شيئًا: اكتب في answer.json المفتاحين function (اسمُ الدالّة التي فيها العيب) وline (رقمُ سطر العيب في ملفّها، والسطرُ الأول ١). ولا تعدّل أيَّ ملفّ.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\ngot = answer()\ncheck(isinstance(got, dict) and set(got) == {\"function\", \"line\"}, \"المفتاحان\")\ncheck(got[\"function\"] == \"variance\", \"الدالّة\")\ncheck(type(got[\"line\"]) is int and got[\"line\"] == 8, \"السطر\")\n",
+     "src",
+     "tests"
+    ]
+   },
+   "forbidden": [
+    "src",
+    "tests"
+   ],
+   "rubric": [
+    "std تسقط لأنها تستدعي variance",
+    "أسبقيّةُ القسمة على الطرح"
+   ],
+   "max_steps": 8
+  },
+  {
+   "task_id": "ag2_ex05",
+   "capability": "coder_explain",
+   "workspace": {
+    "app/names.py": "PREFIX = \"DIWAN_\"\nTIMEOUT_VAR = PREFIX + \"HTTP_TIMEOUT\"\nRETRIES_VAR = PREFIX + \"HTTP_RETRIES\"\nLEGACY_TIMEOUT_VAR = \"HTTP_TIMEOUT\"   # لم يعد يُقرأ منذ الإصدار ٢\n",
+    "app/settings.py": "import os\n\nfrom app.names import RETRIES_VAR, TIMEOUT_VAR\n\nTIMEOUT = int(os.environ.get(TIMEOUT_VAR, \"45\"))\nRETRIES = int(os.environ.get(RETRIES_VAR, \"3\"))\n",
+    "app/client.py": "from urllib.request import urlopen\n\nfrom app import settings\n\n\ndef fetch(url):\n    return urlopen(url, timeout=settings.TIMEOUT).read()\n",
+    "docs/README.md": "# العميل\n\nالمهلةُ يضبطها `HTTP_TIMEOUT`، وقيمتُها الافتراضية 30 ثانية.\n"
+   },
+   "instruction": "أيُّ متغيّرِ بيئةٍ يضبط مهلةَ الاتصال التي يستعملها app/client.py فعلًا، وما قيمتُها الافتراضية بالثواني إن لم يُضبط؟ اكتب في answer.json المفتاحين env (اسمُ المتغيّر كاملًا) وdefault_seconds (عددًا صحيحًا). الشيفرةُ هي المرجع لا الوثائق. ولا تعدّل ملفّات المشروع.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\ngot = answer()\ncheck(isinstance(got, dict) and set(got) == {\"env\", \"default_seconds\"}, \"المفتاحان\")\ncheck(got[\"env\"] == \"DIWAN_HTTP_TIMEOUT\", \"المتغيّر\")\ncheck(type(got[\"default_seconds\"]) is int and got[\"default_seconds\"] == 45, \"القيمةُ الافتراضية\")\n",
+     "app",
+     "docs"
+    ]
+   },
+   "forbidden": [
+    "app",
+    "docs"
+   ],
+   "rubric": [
+    "الاسمُ مركّبٌ من PREFIX",
+    "الوثيقةُ قديمة"
+   ],
+   "max_steps": 8
+  },
+  {
+   "task_id": "ag2_fl01",
+   "capability": "workspace_files",
+   "workspace": {
+    "data/notes.txt": "الاجتماع الأول: الأحد\nملاحظة: أحضِر تقريرَ الخميس\nالاجتماع الثاني: الثلاثاء\nالاجتماع الثالث: الخميس\n",
+    "README.md": "# مشروع\n"
+   },
+   "instruction": "اقرأ data/notes.txt واكتب في ملفٍّ جديد اسمه days.txt أيامَ الاجتماعات وحدها بترتيب ورودها، يومًا في كل سطر، بلا أرقامٍ ولا كلمة «الاجتماع»، وسطرٌ جديد في آخر الملف. ولا تعدّل data/.",
+   "success": {
+    "kind": "file_equals",
+    "path": "days.txt",
+    "value": "الأحد\nالثلاثاء\nالخميس\n"
+   },
+   "forbidden": [
+    "data"
+   ],
+   "rubric": [
+    "الاجتماعاتُ وحدها بلا سطر الملاحظة",
+    "بترتيب ورودها"
+   ],
+   "max_steps": 8
+  },
+  {
+   "task_id": "ag2_fl02",
+   "capability": "workspace_files",
+   "workspace": {
+    "inbox/memo_1.txt": "القسم: المالية\nالموضوع: ميزانية الربع الرابع\n",
+    "inbox/memo_2.txt": "القسم: الموارد البشرية\nالموضوع: إجازات نهاية العام\n",
+    "inbox/memo_3.txt": "القسم: المالية\nالموضوع: تسوية الفواتير\n",
+    "inbox/memo_4.txt": "القسم: التقنية\nالموضوع: ترقية الخوادم\n"
+   },
+   "instruction": "انسخ كلَّ مذكّرةٍ في inbox/ إلى مجلّدٍ باسم قسمها (من سطرها الأول) تحت sorted/، باسمها ومحتواها كما هما، مثل sorted/المالية/memo_1.txt. ولا يكون تحت sorted/ غيرُ ذلك، ولا تعدّل inbox/.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nwant = {'sorted/المالية/memo_1.txt': 'القسم: المالية\\nالموضوع: ميزانية الربع الرابع\\n', 'sorted/الموارد البشرية/memo_2.txt': 'القسم: الموارد البشرية\\nالموضوع: إجازات نهاية العام\\n', 'sorted/المالية/memo_3.txt': 'القسم: المالية\\nالموضوع: تسوية الفواتير\\n', 'sorted/التقنية/memo_4.txt': 'القسم: التقنية\\nالموضوع: ترقية الخوادم\\n'}\ngot = {}\nfor base, _, files in os.walk(\"sorted\"):\n    for name in files:\n        path = os.path.join(base, name).replace(os.sep, \"/\")\n        got[path] = read(path)\ncheck(set(got) == set(want), \"الملفّاتُ تحت sorted/: \" + \", \".join(sorted(set(got) ^ set(want))))\nfor path, body in want.items():\n    check(got[path] == body, \"المحتوى: \" + path)\n",
+     "inbox"
+    ]
+   },
+   "forbidden": [
+    "inbox"
+   ],
+   "rubric": [
+    "المجلّدُ من سطر القسم",
+    "المحتوى بعينه",
+    "لا ملفَّ زائد"
+   ],
+   "max_steps": 12
+  },
+  {
+   "task_id": "ag2_fl03",
+   "capability": "workspace_files",
+   "workspace": {
+    "settings.json": "{\n  \"language\": \"en\",\n  \"theme\": \"light\",\n  \"editor\": {\n    \"font_size\": 14,\n    \"direction\": \"ltr\"\n  },\n  \"recent\": [\n    \"a.txt\",\n    \"b.txt\"\n  ]\n}\n"
+   },
+   "instruction": "عدّل settings.json: اجعل language «ar»، وdirection داخل editor «rtl»، وأضف إلى المستوى الأعلى المفتاح font_family بقيمة «Noto Naskh Arabic». ولا تغيّر شيئًا آخر، ويبقى الملفُّ JSON صالحًا.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nwith open(\"settings.json\", encoding=\"utf-8\") as f:\n    try:\n        got = json.load(f)\n    except Exception as x:\n        fail(f\"settings.json: {x}\")\ncheck(got == {'language': 'ar', 'theme': 'light', 'editor': {'font_size': 14, 'direction': 'rtl'}, 'recent': ['a.txt', 'b.txt'], 'font_family': 'Noto Naskh Arabic'}, \"الإعدادات\")\n"
+    ]
+   },
+   "forbidden": [],
+   "rubric": [
+    "المفاتيحُ الثلاثة في مواضعها",
+    "لا تغييرَ غيرها"
+   ],
+   "max_steps": 8
+  },
+  {
+   "task_id": "ag2_fl04",
+   "capability": "workspace_files",
+   "workspace": {
+    "docs/guide.md": "# الدليل\n\nاكتب إسم المستخدم في الخانة الأولى.\nيظهر الإسم في أعلى الصفحة.\nمثال: إسماعيل.\n",
+    "docs/faq.md": "# أسئلة\n\n- هل يمكن تغيير إسمك؟ نعم.\n- من كتب هذا؟ إسماعيل وفريقه.\n",
+    "src/app.py": "# خطأٌ قديم في الاسم: «إسم» يبقى هنا لأنه نصُّ رسالةٍ محفوظة\nMESSAGE = \"أدخل إسم المستخدم\"\n"
+   },
+   "instruction": "في ملفّات Markdown تحت docs/ صحّح الخطأ الإملائيّ «إسم» إلى «اسم» حيث وقع كلمةً أو في أول كلمة (مثل «الإسم» ← «الاسم»، و«إسمك» ← «اسمك»)، ولا تمسّ الأسماءَ الأعلام مثل «إسماعيل»، ولا الملفّاتِ خارج docs/.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\ncheck(read(\"docs/guide.md\") == '# الدليل\\n\\nاكتب اسم المستخدم في الخانة الأولى.\\nيظهر الاسم في أعلى الصفحة.\\nمثال: إسماعيل.\\n', \"docs/guide.md\")\ncheck(read(\"docs/faq.md\") == '# أسئلة\\n\\n- هل يمكن تغيير اسمك؟ نعم.\\n- من كتب هذا؟ إسماعيل وفريقه.\\n', \"docs/faq.md\")\ncheck(read(\"src/app.py\") == '# خطأٌ قديم في الاسم: «إسم» يبقى هنا لأنه نصُّ رسالةٍ محفوظة\\nMESSAGE = \"أدخل إسم المستخدم\"\\n', \"src/app.py\")\n",
+     "src"
+    ]
+   },
+   "forbidden": [
+    "src"
+   ],
+   "rubric": [
+    "«إسماعيل» علمٌ لا يُمسّ",
+    "src/ لا يُمسّ"
+   ],
+   "max_steps": 10
+  },
+  {
+   "task_id": "ag2_fl05",
+   "capability": "workspace_files",
+   "workspace": {
+    "data/contacts.csv": "الاسم,المدينة\nسارة,جدة\nخالد,الرياض\nنورة,جدة\nفهد,أبها\nريم,الرياض\nعمر,جدة\nهند,أبها\nبدر,الرياض\nلمى,جدة\nماجد,أبها\n"
+   },
+   "instruction": "لكل مدينةٍ في data/contacts.csv اكتب ملفًّا contacts/<المدينة>.txt فيه أسماءُ أهلها مرتّبةً أبجديًّا، اسمًا في كل سطر، وسطرٌ جديد في آخره. ولا يكون تحت contacts/ غيرُ هذه الملفّات، ولا تعدّل data/.",
+   "success": {
+    "kind": "command_exit_zero",
+    "command": [
+     "python3",
+     "-c",
+     "\nimport ast,importlib.util,json,os,sys,warnings\nsys.dont_write_bytecode=True\nsys.path.insert(0,os.getcwd())\ndef fail(m):\n    print(\"لم يمرّ:\",m); sys.exit(1)\ndef check(c,m):\n    if not c: fail(m)\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path)\n    if spec is None: fail(\"لا يُحمَّل \"+path)\n    m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\ndef visible(d):\n    names=sorted(f for f in os.listdir(d) if f.startswith(\"test_\") and f.endswith(\".py\"))\n    check(names,\"لا اختباراتٍ مرئية في \"+d)\n    for f in names:\n        m=load(os.path.join(d,f),\"visible_\"+f[:-3])\n        for k in sorted(vars(m)):\n            if k.startswith(\"test_\") and callable(getattr(m,k)):\n                try: getattr(m,k)()\n                except Exception as x: fail(f\"{f}::{k}: {type(x).__name__}: {x}\")\ndef answer(p=\"answer.json\"):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return json.load(f)\n    except Exception as x: fail(f\"{p}: {x}\")\ndef tree(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return ast.parse(f.read())\n    except Exception as x: fail(f\"{p}: {x}\")\ndef func(t,name):\n    for n in t.body:\n        if isinstance(n,ast.FunctionDef) and n.name==name: return n\n    return None\ndef read(p):\n    try:\n        with open(p,encoding=\"utf-8\") as f: return f.read()\n    except Exception as x: fail(f\"{p}: {x}\")\nwant = {'contacts/جدة.txt': 'سارة\\nعمر\\nلمى\\nنورة\\n', 'contacts/الرياض.txt': 'بدر\\nخالد\\nريم\\n', 'contacts/أبها.txt': 'فهد\\nماجد\\nهند\\n'}\nnames = sorted(\"contacts/\" + n for n in os.listdir(\"contacts\")) if os.path.isdir(\"contacts\") else []\ncheck(names == sorted(want), \"الملفّاتُ تحت contacts/\")\nfor path, body in want.items():\n    check(read(path) == body, \"المحتوى: \" + path)\n",
+     "data"
+    ]
+   },
+   "forbidden": [
+    "data"
+   ],
+   "rubric": [
+    "ملفٌّ لكل مدينة",
+    "ترتيبٌ أبجديّ"
+   ],
+   "max_steps": 10
+  }
+ ]
+}

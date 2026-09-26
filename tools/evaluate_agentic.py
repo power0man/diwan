@@ -32,6 +32,7 @@ if str(ROOT) not in sys.path:
 from agent.builtin_tools import DEFAULT_TOOLS
 from agent.registry import ToolRegistry
 from core.canonical import PayloadRejected
+from evaluation.agentic_bank import attach as attach_thresholds
 from evaluation.agentic_runner import run_agentic_suite
 
 
@@ -70,6 +71,8 @@ def main(argv=None) -> int:
         print(json.dumps({"status": "refused", "code": exc.code,
                           "reason": getattr(exc, "reason", "")}, ensure_ascii=False))
         return 1
+    # عتباتُ البنك من ملفّه الجانبي إن كانت (ك٥١): تُحكم على التقرير ولا تُختار بعده
+    report = attach_thresholds(report, suite, args.suite)
 
     raw = json.dumps(report, ensure_ascii=False, sort_keys=True, indent=1) + "\n"
     if args.out:
@@ -91,6 +94,10 @@ def main(argv=None) -> int:
     for capability, stats in sorted(report["by_capability"].items()):
         errors = f" (أخطاء {stats['errors']})" if stats["errors"] else ""
         print(f"  • {capability:24s} {stats['passed']}/{stats['measured']}{errors}")
+    if "thresholds" in report:
+        verdict = report["thresholds"]
+        print("العتبات: " + ("مستوفاة" if verdict["meets_thresholds"]
+                            else "لم تُستوفَ — " + "، ".join(verdict["unmet"])))
     print("الحدودُ المعلنة: " + " · ".join(report["measurement_limits"]))
     return 0 if summary["errors"] == 0 else 1
 

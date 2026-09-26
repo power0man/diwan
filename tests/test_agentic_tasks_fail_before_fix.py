@@ -87,3 +87,39 @@ def test_unjudgeable_is_not_read_as_a_sound_failure(tmp_path):
     assert "تعذَّر الحكم" in done.stdout
     assert "لم يُحكم عليها" in done.stdout
     assert "✓ تسقط" not in done.stdout
+
+
+# ————— مع --meta: الحلُّ المرجعيّ يمرّ والقريبُ الخاطئ يسقط (ك٤٤) —————
+
+def _run_meta(tmp_path: Path, reference: dict, decoy: dict, flag: str = "--meta") -> subprocess.CompletedProcess:
+    suite = _suite(_task("t_real", already_passing=False))
+    (tmp_path / "suite.json").write_text(json.dumps(suite, ensure_ascii=False), encoding="utf-8")
+    meta = {"tasks": {"t_real": {"reference_solution": reference, "decoy_solution": decoy}}}
+    (tmp_path / "meta.json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+    return subprocess.run([sys.executable, str(TOOL), str(tmp_path / "suite.json"), flag, str(tmp_path / "meta.json")],
+                          capture_output=True, text=True)
+
+
+def test_meta_accepts_a_reference_that_passes_and_a_decoy_that_fails(tmp_path):
+    done = _run_meta(tmp_path, {"days.txt": "الأحد\n"}, {"days.txt": "الاثنين\n"})
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "والمرجعيّ يمرّ، والخاطئ يسقط" in done.stdout
+
+
+def test_meta_refuses_a_decoy_that_passes(tmp_path):
+    done = _run_meta(tmp_path, {"days.txt": "الأحد\n"}, {"days.txt": "الأحد\n"})
+    assert done.returncode != 0 and "t_real: الحلُّ الخاطئ يمرّ" in done.stdout
+
+
+def test_meta_refuses_a_reference_that_fails(tmp_path):
+    done = _run_meta(tmp_path, {"days.txt": "السبت\n"}, {"days.txt": "الاثنين\n"})
+    assert done.returncode != 0 and "t_real: الحلُّ المرجعيّ لا يمرّ" in done.stdout
+
+
+def test_meta_refuses_a_reference_that_writes_a_harness_file(tmp_path):
+    done = _run_meta(tmp_path, {"days.txt": "الأحد\n", "conftest.py": "x = 1\n"}, {"days.txt": "الاثنين\n"})
+    assert done.returncode != 0 and "conftest.py" in done.stdout
+
+
+def test_an_unknown_flag_is_a_usage_error(tmp_path):
+    assert _run_meta(tmp_path, {"days.txt": "الأحد\n"}, {"days.txt": "الاثنين\n"}, flag="--solutions").returncode == 2
