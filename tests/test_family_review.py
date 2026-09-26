@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import re
 import os
 import subprocess
 import sys
@@ -229,3 +230,16 @@ def test_a_late_codex_comment_reruns_family_review_without_touching_pr_code():
     for forbidden in ("contents: write", "checkout", "secrets.", "pull_request_target"):
         assert forbidden not in workflow, forbidden
     assert "gh run rerun" in workflow
+
+
+def test_the_recheck_waits_for_a_running_family_review_and_never_swallows_a_failed_rerun():
+    """ملاحظةُ Codex على #125: تعليقٌ بعد الجلب الأخير وقبل انتهاء التشغيل كان يُبلَع فيبقى الرأسُ محجوبًا."""
+    workflow = (ROOT / ".github" / "workflows" / "family-review-recheck.yml").read_text(encoding="utf-8")
+    rerun = next(line for line in workflow.splitlines() if "gh run rerun" in line)
+    assert "||" not in rerun
+    wait_at = workflow.index('--jq .status)" = completed')
+    assert wait_at < workflow.index("gh run rerun")
+    main = (ROOT / ".github" / "workflows" / "family-review.yml").read_text(encoding="utf-8")
+    minutes = lambda text: int(re.search(r"timeout-minutes:\s*(\d+)", text).group(1))
+    assert minutes(workflow) > minutes(main)
+    assert "cancel-in-progress: true" in workflow

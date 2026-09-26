@@ -9,11 +9,17 @@ permissions:
   actions: write
   pull-requests: read
 
+# ملخّصُ Codex يُحرَّر مع كل تغيّر حالة؛ فالحدثُ الأخير لكل طلب هو الذي يُعيد الفحص.
+concurrency:
+  group: family-review-recheck-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
 jobs:
   recheck:
     if: github.event.issue.pull_request && github.event.comment.user.login == 'chatgpt-codex-connector[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # أطولُ من مهلة family-review (٢٠ دقيقة)، لأن الإعادة تنتظر انتهاءَ تشغيله الجاري.
+    timeout-minutes: 25
     steps:
       - name: Re-run the latest family-review on the current head
         env:
@@ -24,4 +30,7 @@ jobs:
           head=$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)
           run=$(gh api "repos/$REPO/actions/workflows/family-review.yml/runs?head_sha=$head&per_page=1" --jq '.workflow_runs[0].id // empty')
           if [ -z "$run" ]; then echo "no family-review run on $head"; exit 0; fi
-          gh run rerun "$run" --repo "$REPO" || echo "run $run is still in progress; its own wait will read the comment"
+          # تشغيلٌ جارٍ قد يكون أجرى جلبه الأخير قبل التعليق، ولا يُعاد تشغيلُ ما لم ينتهِ: فيُنتظر ثم يُعاد.
+          # وإخفاقُ الإعادة إخفاقٌ لهذه المهمّة، لا يُبلَع.
+          until [ "$(gh api "repos/$REPO/actions/runs/$run" --jq .status)" = completed ]; do sleep 20; done
+          gh run rerun "$run" --repo "$REPO"
