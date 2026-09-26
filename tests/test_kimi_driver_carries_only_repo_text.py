@@ -143,3 +143,40 @@ def test_the_memory_assignment_is_bundled_with_the_header_rule_only(tmp_path):
     bad = subprocess.run(["bash", str(DRIVER), "bundle"], capture_output=True, text=True,
                          env={**env, "KIMI_TASK": "other"})
     assert bad.returncode != 0
+
+
+def test_the_memory_brief_documents_exactly_the_fields_the_validator_accepts():
+    """ملاحظةُ Codex على #129: جدولُ الشكل أسقط `quarantined`، فبنكٌ يتبع التكليفَ حرفيًّا يرفضه المدقّقُ في كلِّ سيناريو حقن."""
+    import re
+    from evaluation.memory_bank import EXPECTS, OPS
+    brief = (ROOT / "docs" / "external" / "KIMI-MEMORY-BANK.md").read_text(encoding="utf-8")
+    documented = {}
+    for shape in re.findall(r'`(\{"(?:op|expect)": "\w+"[^`]*\})`', brief):
+        kind = re.match(r'\{"(op|expect)": "(\w+)"', shape).groups()
+        documented.setdefault(kind, set()).update(re.findall(r'(?:\{|,\s*)"(\w+)"', shape))
+    accepted = {**{("op", k): v for k, v in OPS.items()},
+                **{("expect", k): v | ({"quarantined"} if k == "context" else set()) for k, v in EXPECTS.items()}}
+    assert documented == accepted
+    assert '"quarantined": true' in brief.split("### ما يُرفض به البنكُ كلُّه", 1)[1]
+
+
+def test_a_memory_run_points_to_the_memory_tool_not_the_bank_intake(tmp_path):
+    """ملاحظةُ Codex على #129: بعد تشغيل الذاكرة كانت الأداةُ توجّه إلى inspect/intake/place، وهي لشجرة open/sealed."""
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    fake = bin_dir / "kimi"
+    fake.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    fake.chmod(0o755)
+    work = tmp_path / "work"
+    (work / "logs").mkdir(parents=True)
+    env = dict(os.environ, KIMI_WORK=str(work), DIWAN=str(ROOT), KIMI_TASK="memory",
+               PATH=f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
+    done = subprocess.run(["bash", str(DRIVER), "run"], capture_output=True, text=True, env=env)
+    assert done.returncode == 0, done.stderr
+    assert "tools/evaluate_memory.py --suite" in done.stdout and "intake'" not in done.stdout
+    for cmd in ("inspect", "intake", "place"):
+        refused = subprocess.run(["bash", str(DRIVER), cmd], capture_output=True, text=True, env=env)
+        assert refused.returncode != 0 and "evaluate_memory" in refused.stderr
+    plain = subprocess.run(["bash", str(DRIVER), "run"], capture_output=True, text=True,
+                           env={**env, "KIMI_TASK": "next"})
+    assert plain.returncode == 0 and "intake'" in plain.stdout

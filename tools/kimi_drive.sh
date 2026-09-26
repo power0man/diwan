@@ -80,12 +80,20 @@ cmd_run() {
   if [ "$rc" != 0 ]; then
     echo "تعذّر التشغيل: يشخّصه المالكُ بنفسه، فمجرى الأخطاء قد يحمل حالاتٍ محجوبة."
   fi
-  echo "التالي: تحقّق من البنية بـ '$0 inspect'، واستلم بـ '$0 intake'، ثم وزّع بـ '$0 place'."
+  # تسليمُ الذاكرة ملفٌّ واحد لا شجرةُ open/sealed، فلا يمرّ بالاستلام والتوزيع (ملاحظة Codex على #129)
+  if [ "${KIMI_TASK:-next}" = memory ]; then
+    echo "التالي: التسليمُ $KIMI_WORK/kimi-benchmark/memory_kimi_v1.json يُفحص ويُشغَّل بأداةٍ واحدة تفحصه بالمدقّق وبأعداد التكليف قبل أي نداء:"
+    echo "  python3 tools/evaluate_memory.py --suite $KIMI_WORK/kimi-benchmark/memory_kimi_v1.json --model <النموذج> --agent <معرّفك> --out docs/probe/memory-kimi-<التاريخ>.json"
+    echo "ولا inspect ولا intake ولا place: تلك لبنك v1.2."
+  else
+    echo "التالي: تحقّق من البنية بـ '$0 inspect'، واستلم بـ '$0 intake'، ثم وزّع بـ '$0 place'."
+  fi
   return "$rc"
 }
 
 # أعدادٌ وأسماءُ مجلّداتٍ فقط — لا محتوى أي حالة
 cmd_inspect() {
+  [ "${KIMI_TASK:-next}" = next ] || die "هذا الأمر لبنك v1.2؛ تسليمُ الذاكرة يُفحص بـ tools/evaluate_memory.py"
   local src="$KIMI_WORK/kimi-benchmark"
   [ -d "$src" ] || die "لم يسلّم Kimi بعد: لا مجلّد $src"
   echo "التسليم في $src:"
@@ -99,6 +107,7 @@ cmd_inspect() {
 
 # الاستلامُ قبل التوزيع (ك٦): المدقّقاتُ الحقيقية وشروطُ التكليف، والتقريرُ أعدادٌ ورموزٌ بلا محتوى
 cmd_intake() {
+  [ "${KIMI_TASK:-next}" = next ] || die "هذا الأمر لبنك v1.2؛ تسليمُ الذاكرة يُفحص بـ tools/evaluate_memory.py"
   local src="$KIMI_WORK/kimi-benchmark"
   [ -d "$src" ] || die "لم يسلّم Kimi بعد: لا مجلّد $src"
   local out="$KIMI_WORK/logs/intake-$STAMP.json"
@@ -113,6 +122,7 @@ cmd_intake() {
 
 # يستخرج أمرَ التوزيع من PLACE-KIMI-FILES.md ويشغّله، فلا تتفرّق النسختان
 cmd_place() {
+  [ "${KIMI_TASK:-next}" = next ] || die "هذا الأمر لبنك v1.2؛ تسليمُ الذاكرة يُفحص بـ tools/evaluate_memory.py"
   local doc="$DIWAN/docs/external/PLACE-KIMI-FILES.md"
   local block; block="$(awk '/^```bash$/{f=1;next} /^```$/{f=0} f' "$doc")"
   [ -n "$block" ] || die "لم أجد أمرَ التوزيع في $doc"
