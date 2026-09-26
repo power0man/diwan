@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "probe": "nitro-setup",
+  "task": "تجهيز Nitro وHugging Face وObsidian (ق٦٤)",
+  "date": "2026-09-26",
+  "agent": "anthropic/claude-opus-5-5",
+  "question": "هل جُهّز Nitro بخطوات G5 ١–١٤ وHugging Face (G9) وObsidian (G10)، وما نتيجة فحص الدخان عليه؟",
+  "answer": "جُهّز كلُّه إلا ثلاثة: Docker Desktop لا يقلع بعد إعادة تشغيله (مقبسٌ عالق يحتاج المالك، ومعه تنتظر G5 ٦–٧)، و`gcc` غائب لأن `build-essential` يحتاج sudo، وصفحةُ الواجهة لم تُفتح من متصفح ويندوز (G5 ١٤ جزئية). وأداةُ `hf` مركَّبة بلا توكن عمدًا، لأن G9 لا يعرّف توكنًا لـNitro. وفحصُ الدخان خرج 3 وكلُّ ما قبل السياسات ok في الإعادة، بعد أن سقطت الجولةُ الوكيلة أولًا بانهيار خادم نموذج Ollama (0xc0000409، المرّة الثالثة).",
+  "machine": {
+    "model": "Acer Nitro AN515-58",
+    "os": "Windows 11 Home 10.0.26200.7623, x86_64",
+    "nvidia_smi": "NVIDIA GeForce RTX 4060 Laptop GPU, 8188 MiB, 610.62",
+    "nvidia_smi_in_wsl": "NVIDIA GeForce RTX 4060 Laptop GPU, 8188 MiB, 610.62"
+  },
+  "g5_steps_1_14": [
+    {"step": 1, "what": "WSL2", "status": "present", "detail": "WSL 2.9.13.0، النواة 6.18.40.1-1، التوزيعة Ubuntu 26.04.1 LTS بالإصدار 2"},
+    {"step": 2, "what": "systemd", "status": "present", "detail": "/etc/wsl.conf فيه [boot] systemd=true، وsystemctl is-system-running = degraded (يعمل)"},
+    {"step": 3, "what": ".wslconfig", "status": "updated", "detail": "networkingMode=mirrored كان قائمًا، وأُضيف memory=12GB (free يعرض 11 GB). Ollama يجيب من WSL: {\"version\":\"0.34.4\"}"},
+    {"step": 4, "what": "NVIDIA في WSL", "status": "present", "detail": "nvidia-smi داخل أوبونتو يعرض البطاقة نفسها"},
+    {"step": 5, "what": "Docker Desktop ودمج WSL", "status": "blocked", "detail": "Docker Desktop 4.91.0 (المحرّك 29.8.0). ضُبط AutoStart وEnableIntegrationWithDefaultWslDistro وIntegratedWslDistros=[Ubuntu] في settings-store.json (والنسخة السابقة محفوظة بجانبه). بعد إعادة التشغيل تنهار الخلفية: rename …/Docker/run/sailor-ingest.sock → sailor-ingest.sock.stale يفشل لأن .stale قديمًا موجود من 00:44. الإصلاح يحتاج حذف ملفين لم تُنشئهما الجلسة، فهو للمالك"},
+    {"step": 6, "what": "فحوص Docker", "status": "not_run", "detail": "تنتظر الخطوة ٥"},
+    {"step": 7, "what": "البطاقة داخل حاوية", "status": "not_run", "detail": "تنتظر الخطوة ٥"},
+    {"step": 8, "what": "Ollama والنماذج", "status": "present", "detail": "Ollama 0.34.4 على ويندوز؛ qwen3.5:9b وqwen2.5vl:7b وgemma3:12b وminicpm-v:8b"},
+    {"step": 9, "what": "OLLAMA_HOST", "status": "skipped", "detail": "اختياريّ، ويجعل Ollama مسموعًا على الشبكة المحلية؛ لا يلزم اليوم"},
+    {"step": 10, "what": "أدوات النظام وuv", "status": "partial", "detail": "uv 0.12.19 وgit 2.53.0 موجودان؛ gcc/build-essential غائب لأنه يحتاج sudo — الأمر للمالك"},
+    {"step": 11, "what": "نسخة المستودع", "status": "present", "detail": "~/code/diwan على main، و~/diwan رابطٌ إليها"},
+    {"step": 12, "what": "بيئة المشروع", "status": "present", "detail": "بايثون 3.12.14 بـuv sync --extra dev، وقاعدة CAMeL calima-msa-r13"},
+    {"step": 13, "what": "فحص الدخان", "status": "done", "detail": "انظر smoke_check"},
+    {"step": 14, "what": "الواجهة", "status": "partial", "detail": "خطوة ui في فحص الدخان ok (tools/serve_ui.py يُهيَّأ)؛ لم تُفتح الصفحة من متصفح ويندوز"}
+  ],
+  "hugging_face": {
+    "hf_cli": "huggingface_hub 2.0.0 بـuv tool install في WSL. مثبّتُ hf.co الرسميّ (بـ--exclude-skill) سقط لأن python3-venv غائب ويحتاج sudo، فاستُعمل uv بالحزمة نفسها",
+    "skills_added": false,
+    "logged_in": false,
+    "login_decision": "لا دخول على Nitro. G9 يعرّف توكنين فقط: diwan-mac للماك، وdiwan-cloud-inference لبيئة Claude السحابية. وتوكن «diwan-nitro» في تكليف هذه الجلسة جاء خطأً من نصّ الجلسة السحابية وسُحب (ملاحظة Codex على #127). وNitro مرشّحٌ مشغّلًا ذاتيًّا (ع٣)، فلا يحمل اعتمادًا إلا بقرارٍ صريح من المالك.",
+    "mcp_server": "hf-mcp-server (http، https://huggingface.co/mcp?login) أُضيف بنطاق المشروع المحلي لجلسة Claude Code على ويندوز، ولم يُسجَّل دخولُه. ودخولُه اعتمادُ OAuth بحساب المالك، فلا يُكمَل على Nitro إلا بالقرار نفسه"
+  },
+  "obsidian": {
+    "installed": "Obsidian 1.13.7 بـwinget (Obsidian.Obsidian)",
+    "vault": "لقطةٌ للقراءة في مجلّد المستخدم على ويندوز (Diwan-Vault) بُنيت بـtools/obsidian_vault.py build من المستودع العام: 91 ملفًّا، وcheck يخرج 0. ليست خزنة التحكم: G10 (الخطوة ٧) يجعل الخزنة على الماك وحده وClaude يقرأ صندوق واردها هناك، فما يُكتب في Inbox/ هنا لا يصل إلى أحد. ولم يُنسخ إليها شيءٌ من الماك"
+  },
+  "smoke_check": {
+    "command": "uv run python tools/launch_check.py --json",
+    "commit": "6d5a9eb",
+    "first_run": {"exit_code": 1, "agent_turn": "agent_turn_failed http_500 — خادمُ نموذج Ollama انهار (0xc0000409) بعد 23 ثانية، أول نداءٍ بعد خمول"},
+    "retry": {
+      "exit_code": 3,
+      "steps": [
+        {"step": "runtime", "status": "ok", "code": "runtime_ready_public"},
+        {"step": "morphology", "status": "ok", "code": "camel_ready"},
+        {"step": "engine", "status": "ok", "code": "engine_ready"},
+        {"step": "agent_turn", "status": "ok", "code": "agent_turn_live"},
+        {"step": "policies", "status": "unavailable", "code": "corpus_missing"},
+        {"step": "ui", "status": "ok", "code": "ui_ready"}
+      ]
+    }
+  },
+  "owner_actions": [
+    "Docker: أغلق Docker Desktop كليًّا (Quit من أيقونة الصينية)، ثم احذف الملفين %LOCALAPPDATA%\\Docker\\run\\sailor-ingest.sock.stale و%LOCALAPPDATA%\\Docker\\run\\dockerInference.stale، ثم افتح Docker Desktop. لا تختر Reset to factory defaults.",
+    "داخل أوبونتو: sudo apt update && sudo apt install -y build-essential python3-venv",
+    "داخل أوبونتو: cd ~/diwan && uv run python tools/serve_ui.py، ثم افتح http://127.0.0.1:8765 من متصفح ويندوز (G5 ١٤)"
+  ],
+  "owner_actions_withdrawn": [
+    "hf auth login على Nitro: سُحب، لأن G9 لا يعرّف توكنًا لـNitro",
+    "دخول hf-mcp-server من /mcp على Nitro: سُحب للسبب نفسه",
+    "فتح Diwan-Vault خزنةً على Nitro: سُحب، لأن خزنة التحكم على الماك (G10 الخطوة ٧). ولقطةُ Nitro تبقى للقراءة أو يحذفها المالك"
+  ],
+  "measurement_limits": [
+    "انهيارُ خادم نموذج Ollama (0xc0000409) عند أول نداءٍ بعد خمول وقع ثلاث مرّاتٍ على هذا الجهاز ولم يُشخَّص؛ فالرمز 3 من الإعادة لا من الجولة الأولى.",
+    "بيئةُ المشروع ببايثون 3.12 لا 3.14 التي في CI، فالفحصُ يشهد للجهاز لا لبيئة CI.",
+    "خطوات G5 ٦ و٧ لم تُنفَّذ لأن Docker لا يقلع، و١٥–٣١ و٣٧ خارج هذا التكليف: ٢٤–٢٨ تحضيرٌ (طاقة وWSL وإعدادات Actions) يجوز قبل الموافقة، و٢٩ هي الموافقةُ نفسها في #57، و٣٠ فحصٌ جافّ متوقَّعٌ سقوطه، و٣١ عملُ المطوّرين (ع٣). والذي ينتظر موافقةَ المالك ودمجَ طلب ع٣ هو تسجيلُ المشغّل في ٣٢–٣٦ وحده.",
+    "أُعيد تشغيل WSL وDocker Desktop أثناء التجهيز. وانهيارُ Docker بدأ بعد إيقاف Docker Desktop بالقوّة لتطبيق إعداداته، فالأرجح أن الإيقاف القسري ترك المقبس عالقًا.",
+    "خزنةُ Obsidian على Nitro لقطةٌ من main عند 6d5a9eb، تتقادم حتى يُعاد بناؤها.",
+    "خطوة ui في فحص الدخان تشغّل tools/serve_ui.py --help وحده، فلا تشهد على ربط المنفذ ولا على وصول متصفح ويندوز إليه؛ وG5 ١٤ جزئية حتى تُفتح الصفحة."
+  ]
+}
