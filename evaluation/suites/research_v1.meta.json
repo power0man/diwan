@@ -1,0 +1,217 @@
+{
+ "suite_id": "research_v1",
+ "authored_by": "anthropic/claude-opus-5-5",
+ "generator": "tools/make_research_bank.py",
+ "thresholds": {
+  "pass_rate": 0.6,
+  "min_category_pass_rate": 0.4,
+  "citation_valid_rate": 0.9,
+  "fabricated_sources": 0
+ },
+ "references": {
+  "rs01": {
+   "queries": [
+    "المهندسة سلافة بنت رواد",
+    "مدينة زبرجد"
+   ],
+   "answer": "وُلدت المهندسة سلافة بنت رواد في مدينة زبرجد [1]. وتأسّست زبرجد عام 1412 [2].\n\nالمصادر:\n[1] https://mawsoua.example/person/sulafa\n[2] https://mawsoua.example/city/zabarjad"
+  },
+  "rs02": {
+   "queries": [
+    "الشاعر منيف الوداعي",
+    "مدينة كهرمان"
+   ],
+   "answer": "وُلد الشاعر منيف الوداعي في مدينة كهرمان [1]. وتأسّست كهرمان عام 1244 [2].\n\nالمصادر:\n[1] https://mawsoua.example/person/munif\n[2] https://mawsoua.example/city/kahraman"
+  },
+  "rs03": {
+   "queries": [
+    "الطبيبة هالة القرنفلي",
+    "مدينة مرجانة"
+   ],
+   "answer": "وُلدت الطبيبة هالة القرنفلي في مدينة مرجانة [1]. وتأسّست مرجانة عام 1530 [2].\n\nالمصادر:\n[1] https://mawsoua.example/person/hala\n[2] https://mawsoua.example/city/marjana"
+  },
+  "rs04": {
+   "queries": [
+    "الفلكي صقر بن عراف",
+    "مدينة زمردة"
+   ],
+   "answer": "وُلد الفلكي صقر بن عراف في مدينة زمردة [1]. وتأسّست زمردة عام 1467 [2].\n\nالمصادر:\n[1] https://mawsoua.example/person/saqr\n[2] https://mawsoua.example/city/zumurruda"
+  },
+  "rs05": {
+   "queries": [
+    "المؤرخة ربى الحساني",
+    "سكان لؤلؤة"
+   ],
+   "answer": "وُلدت المؤرخة ربى الحساني في مدينة لؤلؤة [1]. ويبلغ عددُ سكّان لؤلؤة 131775 نسمة [2].\n\nالمصادر:\n[1] https://mawsoua.example/person/ruba\n[2] https://mawsoua.example/city/luluah"
+  },
+  "rs06": {
+   "queries": [
+    "الخطاط نوفل السراج",
+    "سكان لجين"
+   ],
+   "answer": "وُلد الخطاط نوفل السراج في مدينة لجين [1]. ويبلغ عددُ سكّان لجين 184300 نسمة [2].\n\nالمصادر:\n[1] https://mawsoua.example/person/nawfal\n[2] https://mawsoua.example/city/lujain"
+  },
+  "rs07": {
+   "queries": [
+    "مدينة عقيقة نهر",
+    "نهر السلسبيل طول"
+   ],
+   "answer": "تقع مدينة عقيقة على ضفّة نهر السلسبيل [1]. ويبلغ طولُ نهر السلسبيل 523 كيلومترًا [2].\n\nالمصادر:\n[1] https://mawsoua.example/city/aqiqa\n[2] https://atlas.example/river/salsabil"
+  },
+  "rs08": {
+   "queries": [
+    "مدينة ياقوتة نهر",
+    "نهر الريّان طول"
+   ],
+   "answer": "تقع مدينة ياقوتة على ضفّة نهر الريّان [1]. ويبلغ طولُ نهر الريّان 466 كيلومترًا [2].\n\nالمصادر:\n[1] https://mawsoua.example/city/yaquta\n[2] https://atlas.example/river/rayyan"
+  },
+  "rs09": {
+   "queries": [
+    "نهر الوسنان طول",
+    "نهر الغيث طول"
+   ],
+   "answer": "يبلغ طولُ نهر الوسنان 412 كيلومترًا [1]، وطولُ نهر الغيث 378 كيلومترًا [2]. فالفرقُ بينهما 34 كيلومترًا [1][2].\n\nالمصادر:\n[1] https://atlas.example/river/wasnan\n[2] https://atlas.example/river/ghayth"
+  },
+  "rs10": {
+   "queries": [
+    "نهر السلسبيل طول",
+    "نهر الريّان طول"
+   ],
+   "answer": "يبلغ طولُ نهر السلسبيل 523 كيلومترًا [1]، وطولُ نهر الريّان 466 كيلومترًا [2]. فالفرقُ بينهما 57 كيلومترًا [1][2].\n\nالمصادر:\n[1] https://atlas.example/river/salsabil\n[2] https://atlas.example/river/rayyan"
+  },
+  "rs11": {
+   "queries": [
+    "نهر العذب طول",
+    "نهر الصفا طول"
+   ],
+   "answer": "يبلغ طولُ نهر العذب 290 كيلومترًا [1]، وطولُ نهر الصفا 351 كيلومترًا [2]. فالفرقُ بينهما 61 كيلومترًا [1][2].\n\nالمصادر:\n[1] https://atlas.example/river/adhb\n[2] https://atlas.example/river/safa"
+  },
+  "rs12": {
+   "queries": [
+    "مدينة لجين",
+    "مدينة ياقوتة"
+   ],
+   "answer": "عددُ سكّان لجين 184300 [1]، وعددُ سكّان ياقوتة 212480 [2]. والفرقُ بينهما 28180 نسمة [1][2].\n\nالمصادر:\n[1] https://mawsoua.example/city/lujain\n[2] https://mawsoua.example/city/yaquta"
+  },
+  "rs13": {
+   "queries": [
+    "مدينة عنبرة",
+    "مدينة زمردة"
+   ],
+   "answer": "عددُ سكّان عنبرة 143020 [1]، وعددُ سكّان زمردة 164205 [2]. والفرقُ بينهما 21185 نسمة [1][2].\n\nالمصادر:\n[1] https://mawsoua.example/city/anbara\n[2] https://mawsoua.example/city/zumurruda"
+  },
+  "rs14": {
+   "queries": [
+    "مدينة زبرجد",
+    "مدينة لؤلؤة"
+   ],
+   "answer": "سنةُ تأسيس زبرجد 1412 [1]، وسنةُ تأسيس لؤلؤة 1489 [2]. والفرقُ بينهما 77 عامًا [1][2].\n\nالمصادر:\n[1] https://mawsoua.example/city/zabarjad\n[2] https://mawsoua.example/city/luluah"
+  },
+  "rs15": {
+   "queries": [
+    "سكان لجين",
+    "سكان زبرجد",
+    "سكان ياقوتة"
+   ],
+   "answer": "يبلغ عددُ سكّان لجين 184300 نسمة [1]. يبلغ عددُ سكّان زبرجد 97650 نسمة [2]. يبلغ عددُ سكّان ياقوتة 212480 نسمة [3]. فمجموعُ سكّانها 494430 نسمة [1][2][3].\n\nالمصادر:\n[1] https://mawsoua.example/city/lujain\n[2] https://mawsoua.example/city/zabarjad\n[3] https://mawsoua.example/city/yaquta"
+  },
+  "rs16": {
+   "queries": [
+    "سكان عنبرة",
+    "سكان مرجانة",
+    "سكان كهرمان"
+   ],
+   "answer": "يبلغ عددُ سكّان عنبرة 143020 نسمة [1]. يبلغ عددُ سكّان مرجانة 58910 نسمة [2]. يبلغ عددُ سكّان كهرمان 76300 نسمة [3]. فمجموعُ سكّانها 278230 نسمة [1][2][3].\n\nالمصادر:\n[1] https://mawsoua.example/city/anbara\n[2] https://mawsoua.example/city/marjana\n[3] https://mawsoua.example/city/kahraman"
+  },
+  "rs17": {
+   "queries": [
+    "سكان لؤلؤة",
+    "سكان عقيقة",
+    "سكان زمردة"
+   ],
+   "answer": "يبلغ عددُ سكّان لؤلؤة 131775 نسمة [1]. يبلغ عددُ سكّان عقيقة 89440 نسمة [2]. يبلغ عددُ سكّان زمردة 164205 نسمة [3]. فمجموعُ سكّانها 385420 نسمة [1][2][3].\n\nالمصادر:\n[1] https://mawsoua.example/city/luluah\n[2] https://mawsoua.example/city/aqiqa\n[3] https://mawsoua.example/city/zumurruda"
+  },
+  "rs18": {
+   "queries": [
+    "نهر الوسنان طول",
+    "نهر الغيث طول",
+    "نهر العذب طول"
+   ],
+   "answer": "يبلغ طولُ نهر الوسنان 412 كيلومترًا [1]. يبلغ طولُ نهر الغيث 378 كيلومترًا [2]. يبلغ طولُ نهر العذب 290 كيلومترًا [3]. فمجموعُ أطوالها 1080 كيلومترًا [1][2][3].\n\nالمصادر:\n[1] https://atlas.example/river/wasnan\n[2] https://atlas.example/river/ghayth\n[3] https://atlas.example/river/adhb"
+  },
+  "rs19": {
+   "queries": [
+    "نهر السلسبيل طول",
+    "نهر الريّان طول",
+    "نهر الصفا طول"
+   ],
+   "answer": "يبلغ طولُ نهر السلسبيل 523 كيلومترًا [1]. يبلغ طولُ نهر الريّان 466 كيلومترًا [2]. يبلغ طولُ نهر الصفا 351 كيلومترًا [3]. فمجموعُ أطوالها 1340 كيلومترًا [1][2][3].\n\nالمصادر:\n[1] https://atlas.example/river/salsabil\n[2] https://atlas.example/river/rayyan\n[3] https://atlas.example/river/safa"
+  },
+  "rs20": {
+   "queries": [
+    "في أيّ عامٍ افتُتح جسرُ الأمل في مدينة عنبرة"
+   ],
+   "answer": "تذكر الموسوعةُ أن القيمة 1932 [1]، بينما يذكر أرشيفُ الصحيفة 1934 [2]. فالمصدران يتعارضان في هذه المعلومة [1][2].\n\nالمصادر:\n[1] https://mawsoua.example/landmark/amal-bridge\n[2] https://akhbar.example/archive/amal-bridge"
+  },
+  "rs21": {
+   "queries": [
+    "كم كتابًا تضمّ مكتبةُ الضياء في مدينة لجين"
+   ],
+   "answer": "تذكر الموسوعةُ أن القيمة 42000 [1]، بينما يذكر أرشيفُ الصحيفة 45500 [2]. فالمصدران يتعارضان في هذه المعلومة [1][2].\n\nالمصادر:\n[1] https://mawsoua.example/landmark/diya-library\n[2] https://akhbar.example/archive/diya-library"
+  },
+  "rs22": {
+   "queries": [
+    "كم يبلغ ارتفاعُ برج النخيل في مدينة ياقوتة بالمتر"
+   ],
+   "answer": "تذكر الموسوعةُ أن القيمة 186 [1]، بينما يذكر أرشيفُ الصحيفة 192 [2]. فالمصدران يتعارضان في هذه المعلومة [1][2].\n\nالمصادر:\n[1] https://mawsoua.example/landmark/nakheel-tower\n[2] https://akhbar.example/archive/nakheel-tower"
+  },
+  "rs23": {
+   "queries": [
+    "في أيّ عامٍ اكتمل بناءُ سدّ الوسنان"
+   ],
+   "answer": "تذكر الموسوعةُ أن القيمة 1968 [1]، بينما يذكر أرشيفُ الصحيفة 1971 [2]. فالمصدران يتعارضان في هذه المعلومة [1][2].\n\nالمصادر:\n[1] https://mawsoua.example/landmark/wasnan-dam\n[2] https://akhbar.example/archive/wasnan-dam"
+  },
+  "rs24": {
+   "queries": [
+    "كم طالبًا في جامعة زمرّدة"
+   ],
+   "answer": "تذكر الموسوعةُ أن القيمة 12400 [1]، بينما يذكر أرشيفُ الصحيفة 13050 [2]. فالمصدران يتعارضان في هذه المعلومة [1][2].\n\nالمصادر:\n[1] https://mawsoua.example/landmark/zumurruda-university\n[2] https://akhbar.example/archive/zumurruda-university"
+  },
+  "rs25": {
+   "queries": [
+    "عدد سكان مدينة فيروزة"
+   ],
+   "answer": "لم أجد في المصادر المتاحة عددَ سكّان مدينة فيروزة."
+  },
+  "rs26": {
+   "queries": [
+    "من صمم جسر الأمل عنبرة"
+   ],
+   "answer": "لم أجد في المصادر المتاحة اسمَ من صمّم جسر الأمل في عنبرة."
+  },
+  "rs27": {
+   "queries": [
+    "الرحالة جابر بن طيفور"
+   ],
+   "answer": "لم أجد في المصادر المتاحة سنةَ ولادة الرحّالة جابر بن طيفور."
+  },
+  "rs28": {
+   "queries": [
+    "قلعة زبرجد أبراج"
+   ],
+   "answer": "لم أجد في المصادر المتاحة عددَ أبراج قلعة زبرجد."
+  },
+  "rs29": {
+   "queries": [
+    "نهر الورد طول"
+   ],
+   "answer": "لم أجد في المصادر المتاحة نهرًا باسم الورد ولا طولَه."
+  },
+  "rs30": {
+   "queries": [
+    "من أسس مدينة مرجانة"
+   ],
+   "answer": "لم أجد في المصادر المتاحة اسمَ مؤسّس مدينة مرجانة."
+  }
+ }
+}

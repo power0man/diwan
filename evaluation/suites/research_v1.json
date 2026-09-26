@@ -1,0 +1,736 @@
+{
+ "schema_version": 1,
+ "suite_id": "research_v1",
+ "kind": "research_questions",
+ "description": "بنكُ البحث المعمّق (ك٥٣): ثلاثون سؤالًا بخمس فئات على متنٍ متخيَّل ثابت، يُحكم على الجواب بحقائقه وإسناده إلى مصادر أعادها البحث. مجمَّدٌ بعتباته في docs/RESEARCH-BANK.md.",
+ "questions": [
+  {
+   "id": "rs01",
+   "category": "two_hop",
+   "question": "في أيّ عامٍ تأسّست المدينةُ التي وُلدت فيها المهندسة سُلافة بنت روّاد؟",
+   "facts": [
+    {
+     "value": "زبرجد",
+     "sources": [
+      "https://mawsoua.example/person/sulafa"
+     ],
+     "derived": false
+    },
+    {
+     "value": 1412,
+     "sources": [
+      "https://mawsoua.example/city/zabarjad"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs02",
+   "category": "two_hop",
+   "question": "في أيّ عامٍ تأسّست المدينةُ التي وُلد فيها الشاعر مُنيف الودّاعي؟",
+   "facts": [
+    {
+     "value": "كهرمان",
+     "sources": [
+      "https://mawsoua.example/person/munif"
+     ],
+     "derived": false
+    },
+    {
+     "value": 1244,
+     "sources": [
+      "https://mawsoua.example/city/kahraman"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs03",
+   "category": "two_hop",
+   "question": "في أيّ عامٍ تأسّست المدينةُ التي وُلدت فيها الطبيبة هالة القرنفلي؟",
+   "facts": [
+    {
+     "value": "مرجانة",
+     "sources": [
+      "https://mawsoua.example/person/hala"
+     ],
+     "derived": false
+    },
+    {
+     "value": 1530,
+     "sources": [
+      "https://mawsoua.example/city/marjana"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs04",
+   "category": "two_hop",
+   "question": "في أيّ عامٍ تأسّست المدينةُ التي وُلد فيها الفلكي صَقر بن عرّاف؟",
+   "facts": [
+    {
+     "value": "زمردة",
+     "sources": [
+      "https://mawsoua.example/person/saqr"
+     ],
+     "derived": false
+    },
+    {
+     "value": 1467,
+     "sources": [
+      "https://mawsoua.example/city/zumurruda"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs05",
+   "category": "two_hop",
+   "question": "كم يبلغ عددُ سكّان المدينة التي وُلدت فيها المؤرّخة رُبى الحسّاني؟",
+   "facts": [
+    {
+     "value": "لؤلؤة",
+     "sources": [
+      "https://mawsoua.example/person/ruba"
+     ],
+     "derived": false
+    },
+    {
+     "value": 131775,
+     "sources": [
+      "https://mawsoua.example/city/luluah"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs06",
+   "category": "two_hop",
+   "question": "كم يبلغ عددُ سكّان المدينة التي وُلد فيها الخطّاط نَوفل السرّاج؟",
+   "facts": [
+    {
+     "value": "لجين",
+     "sources": [
+      "https://mawsoua.example/person/nawfal"
+     ],
+     "derived": false
+    },
+    {
+     "value": 184300,
+     "sources": [
+      "https://mawsoua.example/city/lujain"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs07",
+   "category": "two_hop",
+   "question": "كم كيلومترًا يبلغ طولُ النهر الذي تقع عليه مدينةُ عقيقة؟",
+   "facts": [
+    {
+     "value": "السلسبيل",
+     "sources": [
+      "https://mawsoua.example/city/aqiqa"
+     ],
+     "derived": false
+    },
+    {
+     "value": 523,
+     "sources": [
+      "https://atlas.example/river/salsabil"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs08",
+   "category": "two_hop",
+   "question": "كم كيلومترًا يبلغ طولُ النهر الذي تقع عليه مدينةُ ياقوتة؟",
+   "facts": [
+    {
+     "value": "الريّان",
+     "sources": [
+      "https://mawsoua.example/city/yaquta"
+     ],
+     "derived": false
+    },
+    {
+     "value": 466,
+     "sources": [
+      "https://atlas.example/river/rayyan"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs09",
+   "category": "compare",
+   "question": "أيُّ النهرين أطول: الوسنان أم الغيث؟ وبكم كيلومترًا؟",
+   "facts": [
+    {
+     "value": 412,
+     "sources": [
+      "https://atlas.example/river/wasnan"
+     ],
+     "derived": false
+    },
+    {
+     "value": 378,
+     "sources": [
+      "https://atlas.example/river/ghayth"
+     ],
+     "derived": false
+    },
+    {
+     "value": 34,
+     "sources": [
+      "https://atlas.example/river/wasnan",
+      "https://atlas.example/river/ghayth"
+     ],
+     "derived": true
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs10",
+   "category": "compare",
+   "question": "أيُّ النهرين أطول: السلسبيل أم الريّان؟ وبكم كيلومترًا؟",
+   "facts": [
+    {
+     "value": 523,
+     "sources": [
+      "https://atlas.example/river/salsabil"
+     ],
+     "derived": false
+    },
+    {
+     "value": 466,
+     "sources": [
+      "https://atlas.example/river/rayyan"
+     ],
+     "derived": false
+    },
+    {
+     "value": 57,
+     "sources": [
+      "https://atlas.example/river/salsabil",
+      "https://atlas.example/river/rayyan"
+     ],
+     "derived": true
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs11",
+   "category": "compare",
+   "question": "أيُّ النهرين أقصر: العذب أم الصفا؟ وبكم كيلومترًا؟",
+   "facts": [
+    {
+     "value": 290,
+     "sources": [
+      "https://atlas.example/river/adhb"
+     ],
+     "derived": false
+    },
+    {
+     "value": 351,
+     "sources": [
+      "https://atlas.example/river/safa"
+     ],
+     "derived": false
+    },
+    {
+     "value": 61,
+     "sources": [
+      "https://atlas.example/river/adhb",
+      "https://atlas.example/river/safa"
+     ],
+     "derived": true
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs12",
+   "category": "compare",
+   "question": "أيُّ المدينتين أكثرُ سكّانًا: لجين أم ياقوتة؟ وبكم نسمة؟",
+   "facts": [
+    {
+     "value": 184300,
+     "sources": [
+      "https://mawsoua.example/city/lujain"
+     ],
+     "derived": false
+    },
+    {
+     "value": 212480,
+     "sources": [
+      "https://mawsoua.example/city/yaquta"
+     ],
+     "derived": false
+    },
+    {
+     "value": 28180,
+     "sources": [
+      "https://mawsoua.example/city/lujain",
+      "https://mawsoua.example/city/yaquta"
+     ],
+     "derived": true
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs13",
+   "category": "compare",
+   "question": "أيُّ المدينتين أكثرُ سكّانًا: عنبرة أم زمردة؟ وبكم نسمة؟",
+   "facts": [
+    {
+     "value": 143020,
+     "sources": [
+      "https://mawsoua.example/city/anbara"
+     ],
+     "derived": false
+    },
+    {
+     "value": 164205,
+     "sources": [
+      "https://mawsoua.example/city/zumurruda"
+     ],
+     "derived": false
+    },
+    {
+     "value": 21185,
+     "sources": [
+      "https://mawsoua.example/city/anbara",
+      "https://mawsoua.example/city/zumurruda"
+     ],
+     "derived": true
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs14",
+   "category": "compare",
+   "question": "أيُّ المدينتين أقدم: زبرجد أم لؤلؤة؟ وبكم عامًا؟",
+   "facts": [
+    {
+     "value": 1412,
+     "sources": [
+      "https://mawsoua.example/city/zabarjad"
+     ],
+     "derived": false
+    },
+    {
+     "value": 1489,
+     "sources": [
+      "https://mawsoua.example/city/luluah"
+     ],
+     "derived": false
+    },
+    {
+     "value": 77,
+     "sources": [
+      "https://mawsoua.example/city/zabarjad",
+      "https://mawsoua.example/city/luluah"
+     ],
+     "derived": true
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs15",
+   "category": "aggregate",
+   "question": "كم مجموعُ سكّان مدن لجين وزبرجد وياقوتة؟",
+   "facts": [
+    {
+     "value": 184300,
+     "sources": [
+      "https://mawsoua.example/city/lujain"
+     ],
+     "derived": false
+    },
+    {
+     "value": 97650,
+     "sources": [
+      "https://mawsoua.example/city/zabarjad"
+     ],
+     "derived": false
+    },
+    {
+     "value": 212480,
+     "sources": [
+      "https://mawsoua.example/city/yaquta"
+     ],
+     "derived": false
+    },
+    {
+     "value": 494430,
+     "sources": [
+      "https://mawsoua.example/city/lujain",
+      "https://mawsoua.example/city/zabarjad",
+      "https://mawsoua.example/city/yaquta"
+     ],
+     "derived": true
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs16",
+   "category": "aggregate",
+   "question": "كم مجموعُ سكّان مدن عنبرة ومرجانة وكهرمان؟",
+   "facts": [
+    {
+     "value": 143020,
+     "sources": [
+      "https://mawsoua.example/city/anbara"
+     ],
+     "derived": false
+    },
+    {
+     "value": 58910,
+     "sources": [
+      "https://mawsoua.example/city/marjana"
+     ],
+     "derived": false
+    },
+    {
+     "value": 76300,
+     "sources": [
+      "https://mawsoua.example/city/kahraman"
+     ],
+     "derived": false
+    },
+    {
+     "value": 278230,
+     "sources": [
+      "https://mawsoua.example/city/anbara",
+      "https://mawsoua.example/city/marjana",
+      "https://mawsoua.example/city/kahraman"
+     ],
+     "derived": true
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs17",
+   "category": "aggregate",
+   "question": "كم مجموعُ سكّان مدن لؤلؤة وعقيقة وزمردة؟",
+   "facts": [
+    {
+     "value": 131775,
+     "sources": [
+      "https://mawsoua.example/city/luluah"
+     ],
+     "derived": false
+    },
+    {
+     "value": 89440,
+     "sources": [
+      "https://mawsoua.example/city/aqiqa"
+     ],
+     "derived": false
+    },
+    {
+     "value": 164205,
+     "sources": [
+      "https://mawsoua.example/city/zumurruda"
+     ],
+     "derived": false
+    },
+    {
+     "value": 385420,
+     "sources": [
+      "https://mawsoua.example/city/luluah",
+      "https://mawsoua.example/city/aqiqa",
+      "https://mawsoua.example/city/zumurruda"
+     ],
+     "derived": true
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs18",
+   "category": "aggregate",
+   "question": "كم مجموعُ أطوال أنهار الوسنان والغيث والعذب بالكيلومتر؟",
+   "facts": [
+    {
+     "value": 412,
+     "sources": [
+      "https://atlas.example/river/wasnan"
+     ],
+     "derived": false
+    },
+    {
+     "value": 378,
+     "sources": [
+      "https://atlas.example/river/ghayth"
+     ],
+     "derived": false
+    },
+    {
+     "value": 290,
+     "sources": [
+      "https://atlas.example/river/adhb"
+     ],
+     "derived": false
+    },
+    {
+     "value": 1080,
+     "sources": [
+      "https://atlas.example/river/wasnan",
+      "https://atlas.example/river/ghayth",
+      "https://atlas.example/river/adhb"
+     ],
+     "derived": true
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs19",
+   "category": "aggregate",
+   "question": "كم مجموعُ أطوال أنهار السلسبيل والريّان والصفا بالكيلومتر؟",
+   "facts": [
+    {
+     "value": 523,
+     "sources": [
+      "https://atlas.example/river/salsabil"
+     ],
+     "derived": false
+    },
+    {
+     "value": 466,
+     "sources": [
+      "https://atlas.example/river/rayyan"
+     ],
+     "derived": false
+    },
+    {
+     "value": 351,
+     "sources": [
+      "https://atlas.example/river/safa"
+     ],
+     "derived": false
+    },
+    {
+     "value": 1340,
+     "sources": [
+      "https://atlas.example/river/salsabil",
+      "https://atlas.example/river/rayyan",
+      "https://atlas.example/river/safa"
+     ],
+     "derived": true
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs20",
+   "category": "conflict",
+   "question": "في أيّ عامٍ افتُتح جسرُ الأمل في مدينة عنبرة؟",
+   "facts": [
+    {
+     "value": 1932,
+     "sources": [
+      "https://mawsoua.example/landmark/amal-bridge"
+     ],
+     "derived": false
+    },
+    {
+     "value": 1934,
+     "sources": [
+      "https://akhbar.example/archive/amal-bridge"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs21",
+   "category": "conflict",
+   "question": "كم كتابًا تضمّ مكتبةُ الضياء في مدينة لجين؟",
+   "facts": [
+    {
+     "value": 42000,
+     "sources": [
+      "https://mawsoua.example/landmark/diya-library"
+     ],
+     "derived": false
+    },
+    {
+     "value": 45500,
+     "sources": [
+      "https://akhbar.example/archive/diya-library"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs22",
+   "category": "conflict",
+   "question": "كم يبلغ ارتفاعُ برج النخيل في مدينة ياقوتة بالمتر؟",
+   "facts": [
+    {
+     "value": 186,
+     "sources": [
+      "https://mawsoua.example/landmark/nakheel-tower"
+     ],
+     "derived": false
+    },
+    {
+     "value": 192,
+     "sources": [
+      "https://akhbar.example/archive/nakheel-tower"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs23",
+   "category": "conflict",
+   "question": "في أيّ عامٍ اكتمل بناءُ سدّ الوسنان؟",
+   "facts": [
+    {
+     "value": 1968,
+     "sources": [
+      "https://mawsoua.example/landmark/wasnan-dam"
+     ],
+     "derived": false
+    },
+    {
+     "value": 1971,
+     "sources": [
+      "https://akhbar.example/archive/wasnan-dam"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs24",
+   "category": "conflict",
+   "question": "كم طالبًا في جامعة زمرّدة؟",
+   "facts": [
+    {
+     "value": 12400,
+     "sources": [
+      "https://mawsoua.example/landmark/zumurruda-university"
+     ],
+     "derived": false
+    },
+    {
+     "value": 13050,
+     "sources": [
+      "https://akhbar.example/archive/zumurruda-university"
+     ],
+     "derived": false
+    }
+   ],
+   "traps": []
+  },
+  {
+   "id": "rs25",
+   "category": "unanswerable",
+   "question": "كم يبلغ عددُ سكّان مدينة فيروزة؟",
+   "facts": [],
+   "traps": [
+    {
+     "value": 48000,
+     "context": "فيروزة"
+    }
+   ]
+  },
+  {
+   "id": "rs26",
+   "category": "unanswerable",
+   "question": "مَن صمّم جسرَ الأمل في مدينة عنبرة؟",
+   "facts": [],
+   "traps": [
+    {
+     "value": "ديمة الخزامي",
+     "context": "الأمل"
+    }
+   ]
+  },
+  {
+   "id": "rs27",
+   "category": "unanswerable",
+   "question": "في أيّ عامٍ وُلد الرحّالةُ جابر بن طيفور؟",
+   "facts": [],
+   "traps": [
+    {
+     "value": 1532,
+     "context": "ولد"
+    }
+   ]
+  },
+  {
+   "id": "rs28",
+   "category": "unanswerable",
+   "question": "كم برجًا في قلعة زبرجد؟",
+   "facts": [],
+   "traps": [
+    {
+     "value": 9,
+     "context": "زبرجد"
+    }
+   ]
+  },
+  {
+   "id": "rs29",
+   "category": "unanswerable",
+   "question": "كم كيلومترًا يبلغ طولُ نهر الورد؟",
+   "facts": [],
+   "traps": [
+    {
+     "value": 145,
+     "context": "نهر الورد"
+    }
+   ]
+  },
+  {
+   "id": "rs30",
+   "category": "unanswerable",
+   "question": "مَن أسّس مدينةَ مرجانة؟",
+   "facts": [],
+   "traps": [
+    {
+     "value": "سنان بن هلال",
+     "context": "مرجانة"
+    }
+   ]
+  }
+ ]
+}
