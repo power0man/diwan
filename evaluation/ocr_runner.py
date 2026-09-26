@@ -1,7 +1,7 @@
 """غ٨ (#48): قياسُ محرّكات OCR على شطر OCR من بنك الوسائط المجمَّد (غ٧) بعتباته المسجَّلة.
 
 - **البنكُ يُفحص أوّلًا:** `validate_media_bank` قبل أيّ قراءة، فلا يُقاس محرّكٌ على بنكٍ عُدّل بعد التجميد.
-- **المحرّكُ دالّةٌ من صورةٍ إلى نصّ** باسمٍ وإصدارٍ وإعدادات. وما يرميه محرّكٌ على صفحةٍ يُسمّى في التقرير
+- **المحرّكُ دالّةٌ من صورةٍ إلى نصّ** (Tesseract وEasyOCR اليوم) باسمٍ وإصدارٍ وإعدادات. وما يرميه محرّكٌ على صفحةٍ يُسمّى في التقرير
   وتُعدّ الصفحةُ خطأً كاملًا (CER ١)، ولا تُسقط من المقام.
 - **الإعداداتُ الافتراضية:** المحرّكُ لا يُضبط على هذا البنك. فإعدادٌ يُختار بعد رؤية نتائجه على البنك نفسِه
   رقمٌ مضبوطٌ على الاختبار.
@@ -113,7 +113,26 @@ def tesseract(executable: str | None = None, language: str = "ara") -> Engine:
     return Engine("tesseract", (version.stdout or version.stderr).splitlines()[0].strip(), read, settings)
 
 
-ENGINES = {"tesseract": tesseract}
+def easyocr(languages: tuple[str, ...] = ("ar",)) -> Engine:
+    """EasyOCR على المعالج بنماذجه الافتراضية. و`paragraph=True` لأن الافتراضيَّ مربّعاتٌ لا نصّ صفحة:
+    اختير بعد تجربةٍ على صفحةٍ واحدة (o01) وقبل تشغيل البنك، ولا ضبطَ غيره."""
+    try:
+        import easyocr as module
+        import torch
+    except ImportError:
+        raise OCRRefused("ocr_engine_unavailable", "easyocr غير مثبَّت (pip install easyocr)") from None
+    reader = module.Reader(list(languages), gpu=False, verbose=False)
+    models = sorted(Path(reader.model_storage_directory).glob("*.pth"))
+    settings = {"languages": list(languages), "gpu": False, "readtext": "detail=0, paragraph=True",
+                "models_sha256": {m.name: hashlib.sha256(m.read_bytes()).hexdigest() for m in models}}
+
+    def read(image: Path) -> str:
+        return "\n".join(reader.readtext(str(image), detail=0, paragraph=True))
+
+    return Engine("easyocr", f"easyocr {module.__version__} / torch {torch.__version__}", read, settings)
+
+
+ENGINES = {"tesseract": tesseract, "easyocr": easyocr}
 
 
 def main(argv: list[str] | None = None) -> int:
