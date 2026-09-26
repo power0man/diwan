@@ -65,3 +65,20 @@ def test_limit_one_marker_covers_its_sentence_and_the_bank_catches_the_misattrib
             "traps": []}
     scored = score_item(item, answer, {A, B})
     assert not scored["passed"] and [f["supported"] for f in scored["facts"]] == [True, False]
+
+
+MEMORY = "https://en.wikipedia.org/wiki/Nile_(river)"
+DESCRIBED = f"وُلدت سلافة في زبرجد [1].\n\nالمصادر:\n[1] {A} - صفحةُ سلافة\n[2] من الذاكرة: {MEMORY}.\n[3] صفحةُ المدينة ({B})\n"
+
+
+def test_a_malformed_source_line_still_counts_its_unreturned_link_as_fabricated():
+    """كشفه ك٤٦ (#119): `[n] رابط - وصف` سطرٌ معطوب، فكان يُتخطّى قبل مقارنة رابطه بما أعاده البحث،
+    فلا يُعدّ الاستشهادُ من الذاكرة اختلاقًا. والرابطُ يُقرأ بقوسيه ولا يلصق به ترقيمُ الجملة."""
+    report = check(DESCRIBED, {A, B})
+    assert "source_malformed" in report.codes and not report.passed
+    assert [url for code, url in report.findings if code == "source_not_returned"] == [MEMORY]
+
+
+def test_a_malformed_line_whose_link_was_returned_is_malformed_but_not_fabricated():
+    report = check(DESCRIBED, {A, B, MEMORY})
+    assert "source_malformed" in report.codes and "source_not_returned" not in report.codes
