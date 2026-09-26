@@ -765,7 +765,7 @@
   },
   {
    "id": "جديد-counted-google-reviewer",
-   "title": "مراجع google محسوب يعمل من main، ويخضرّ family-review مرة",
+   "title": "مراجِعٌ محتسب من عائلةٍ أخرى: Codex على كل رأس (بدل Gemini الملغى بق٦٥)",
    "assignee": "claude-cloud",
    "block": "ب٩",
    "phase": "م٠-ب",
@@ -786,9 +786,9 @@
     "team:جديد-counted-google-reviewer",
     "compute:جديد-gemini-quota"
    ],
-   "description": "١) سير workflow_run يعمل من نسخة الأداة على main لا من رأس الطلب. يقرأ الفرق نصًّا محجورًا، ويستدعي run-gemini-cli، وينشر المراجعة بهوية التطبيق الخاص. ٢) المفتاح في بيئة GitHub مقصورة على main. طفرة تثبت أن سيرًا معدَّلًا في طلب لا يبلغه؛ وإلا صار كـgithub-actions[bot] المستبعد. ٣) البوت يُدرج في registry/reviewers.json بعائلة google. ٤) يُحتسب APPROVED، أو COMMENTED بسطر «الحكم: لا عوائق». وطفرة «الحكم: عوائق» تُسقط family-review. ٥) الإطلاق عند ready_for_review فقط، لأن حصّة Gemini المجانية نفدت في ٢٦ سبتمبر. ٦) بعد أول خضرة يضيف المالك family-review إلى Ruleset. هذا المراجع لا يراجع طلب إنشائه؛ المالك يدمجه.",
-   "deliverable": ".github/workflows/gemini-counted-review.yml + tools/gemini_review.py محدَّث + registry/reviewers.json + اختبارات",
-   "acceptance_evidence": "docs/probe/family-review-first-green-<date>.json: طلب حقيقي من anthropic أخضر بمراجعة البوت؛ ثلاث طفرات مسمّاة مقتولة؛ صفر gemini_quota_exhausted أسبوعًا.",
+   "description": "ألغى المالك Gemini في ٢٦ سبتمبر (ق٦٥)، فحُذف مراجِع Gemini الاستشاريّ وسيرُه وأداتُه، وخرج gemini-code-assist من registry/reviewers.json. والبديل Codex (chatgpt-codex-connector[bot]، عائلة openai)، وهو مركَّب ويراجع كل طلبٍ عند فتحه، وأخضر family-review فعلًا على #124. ١) لأن المراجعة لا تُحتسب إلا على الرأس الحالي، يكتب كل عميلٍ بعد كل دفعٍ إلى طلبٍ تعليقًا `@codex review` (AGENTS §٥). ٢) تُعالج ملاحظاتُ Codex كملاحظات أي مراجِع: إصلاحٌ أو ردٌّ مسبَّب. ٣) طلباتُ Codex نفسه (عائلة openai) يراجعها claude[bot] إن رُكّب، وإلا يدمجها المالك بيده. ٤) بعد أسبوعٍ أخضر يضيف المالك family-review إلى Ruleset (OD4). ٥) بدائل إن توقّف Codex: CodeRabbit (مجاني للمستودعات العامة، يُركَّب تطبيقًا) أو مراجعة Copilot؛ لا يُعتمد أيٌّ منهما قبل تجربته على طلبٍ حقيقي.",
+   "deliverable": "ق٦٥، وحذف مراجِع Gemini، وreviewers.json بلا gemini، وقاعدة `@codex review` في AGENTS §٥",
+   "acceptance_evidence": "family-review أخضر على طلبٍ بمراجعة Codex على رأسه الحالي؛ واختبارٌ يثبت أن مراجعة gemini-code-assist لا تُحتسب",
    "unblocks": [
     "ك٣٠",
     "جديد-routines-dashboard"
@@ -2710,7 +2710,7 @@
   {
    "name": "codex",
    "family": "openai",
-   "role": "مطوِّر ومراجع مسار openai: المحادثة والواجهة والتنفيذ والمحلّل والمستندات وagent/actions.py. رصيده نافد اليوم.",
+   "role": "مطوِّر ومراجع مسار openai: المحادثة والواجهة والتنفيذ والمحلّل والمستندات وagent/actions.py. رصيده نافد اليوم. وهو المراجِع المحتسب من عائلة openai على طلبات anthropic وgoogle منذ ق٦٥: يراجع عند الفتح وعند تعليق `@codex review`.",
    "how_it_works": "لا يُسند إليه عمل قبل م٢، وبشرط أن يموّله ق٦٤ (ChatGPT Plus أو رصيد). بعد الشحن يُكلَّف بـ@codex على مسألة ready:openai، ويفتح طلبًا بذيل Diwan-Agent: openai/codex. يراجعه مراجع google المحسوب أو claude[bot]. وهو نفسه مراجع محسوب لطلبات anthropic وgoogle باسم chatgpt-codex-connector[bot]، فيعطي البوابة عائلة ثانية. يُتحقَّق من عمله بفحص verify-hosted واختبارات بالطفرة، منها لقطة الأفعال بحسب الأثر وقفل الجلسة. إن لم يُموَّل تبقى مهامه لـClaude بسطر «تسليم:» حتى ٨ نوفمبر، أو بعده إن مدّد ق٦٤ الاحتياط، وإلا تنتظر.",
    "task_ids": [
     "جديد-action-snapshot",
@@ -2751,20 +2751,15 @@
   {
    "name": "gemini-reviewer",
    "family": "google",
-   "role": "مراجعة آلية لطلبات anthropic وopenai. اليوم استشارية لا تُحتسب، وتصير مراجع google المحسوب بعد جديد-counted-google-reviewer.",
-   "how_it_works": "اليوم يعمل gemini-review.yml بمفتاح GEMINI_API_KEY، وينشر باسم github-actions[bot]. هذا الاسم مستبعد في registry/reviewers.json، ففحص family-review أحمر ١٣١ من ١٣١. gemini-code-assist لا يدخل البوابة لأنه لعملاء Google Cloud وحدهم. البديل run-gemini-cli بهوية تطبيق GitHub خاص (NEW-gemini-app)، يشغّله workflow_run من نسخة الأداة على main لا من رأس الطلب. مفتاح التطبيق في بيئة GitHub مقصورة على main، وطفرة تثبت أن سيرًا معدَّلًا في طلب لا يبلغه. يُحتسب APPROVED، أو COMMENTED بسطر «الحكم: لا عوائق». الفرق يمرّ محجورًا. نفدت الحصّة المجانية في ٢٦ سبتمبر، فيُطلق عند ready_for_review وحده، ويُثبَّت النموذج بـGEMINI_MODEL. تُقاس قيمته بعيب مزروع شهريًّا (جديد-routines-dashboard): مراجع يلتقط أقل من ٥٠٪ لا يُحتسب.",
+   "role": "أُلغي بقرار المالك في ٢٦ سبتمبر (ق٦٥). بديلُه Codex مراجِعًا محتسبًا (chatgpt-codex-connector[bot]).",
+   "how_it_works": "لا يعمل: حُذف سيرُ gemini-review وأداتُه ودليلُ أسلوبه. ويمكن للمالك حذفُ سرّ GEMINI_API_KEY من إعدادات المستودع.",
    "task_ids": [],
    "constraints": [
-    "الحصّة المجانية نفدت في ٢٦ سبتمبر وتتجدد يوميًّا",
-    "لا يراجع طلبات google (Jules)",
-    "لا يحكم على مخرجات ديوان ولا على البنوك (ق٥٠)، لأن Google عائلة مطوِّرة. وإن اعتُمد Gemma محرّكًا خرجت Google من المراجعة كلها",
-    "لا يُحتسب قبل أن يُضاف اسم تطبيقه إلى registry/reviewers.json بطلب مراجَع"
+    "ملغى (ق٦٥)"
    ],
-   "cost": "$0 على الطبقة المجانية. والفوترة بالاستهلاك اختيارية، وسعرها غير متحقَّق.",
+   "cost": "$0",
    "needs_from_owner": [
-    "G3 الخطوات ١–٧: المفتاح وGEMINI_MODEL، والتدوير إن لُصق المفتاح يومًا في محادثة",
-    "NEW-gemini-app: إنشاء تطبيق GitHub الخاص، ومفتاحه في بيئة مقصورة على main",
-    "قرار ترقية الحصّة إن تكرّر النفاد"
+    "اختياري: حذف سرّ GEMINI_API_KEY من Settings ← Secrets and variables ← Actions"
    ]
   },
   {
@@ -2941,7 +2936,7 @@
    "order": 6,
    "guide_id": "G3",
    "title": "G3: أسرار GitHub وبيئة live وأذونات Actions",
-   "why_now": "الخطوات ١–٤ و٧ مفتاح Gemini وGEMINI_MODEL، والتدوير إلزامي إن لُصق المفتاح يومًا. الخطوات ٨–١١ بيئة live بمراجعة power0man وOLLAMA_API_KEY. الخطوات ١٣–١٥: موافقة على المساهمين الخارجيين، وتوكن قراءة فقط، ومنع Actions من إنشاء الطلبات. الخطوة ١٦ قراءة فقط، و١٧–١٨ تُؤجَّلان إلى ع٣.",
+   "why_now": "الخطوات ١–٤ و٧ مفتاح Gemini وGEMINI_MODEL، والتدوير إلزامي إن لُصق المفتاح يومًا. الخطوات ٨–١١ بيئة live بمراجعة power0man وOLLAMA_API_KEY. الخطوات ١٣–١٥: موافقة على المساهمين الخارجيين، وتوكن قراءة فقط، ومنع Actions من إنشاء الطلبات. الخطوة ١٦ قراءة فقط، و١٧–١٨ تُؤجَّلان إلى ع٣. أمّا خطوات GEMINI_API_KEY وGEMINI_MODEL في G3 فأُلغيت بق٦٥: تخطَّها، ويجوز حذف السرّ إن كان موضوعًا.",
    "time": "٣٠–٤٥ دقيقة",
    "cost": "$0",
    "unblocks": [

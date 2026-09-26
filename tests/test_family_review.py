@@ -38,15 +38,16 @@ def commit(agent):
 # — الحكم —
 
 def test_another_family_reviewing_the_current_head_passes():
-    report = fr.evaluate({"anthropic"}, [review("gemini-code-assist[bot]", "COMMENTED")], HEAD, REVIEWERS)
+    report = fr.evaluate({"anthropic"}, [review("chatgpt-codex-connector[bot]", "COMMENTED")], HEAD, REVIEWERS)
     assert report["status"] == "passed" and report["code"] == "reviewed_by_another_family"
-    assert report["counted"] == ["gemini-code-assist[bot]"]
+    assert report["counted"] == ["chatgpt-codex-connector[bot]"]
 
 
 @pytest.mark.parametrize("reviews,code", [
     ([review("claude[bot]", "APPROVED")], "reviewed_only_by_the_author_family"),
     ([review("power0man", "APPROVED")], "no_review_from_another_family"),
-    ([review("gemini-code-assist[bot]", "APPROVED", OLD)], "no_review_from_another_family"),
+    ([review("chatgpt-codex-connector[bot]", "APPROVED", OLD)], "no_review_from_another_family"),
+    ([review("gemini-code-assist[bot]", "APPROVED")], "no_review_from_another_family"),   # أُلغي Gemini (ق٦٥)
     ([review("unknown-bot[bot]", "APPROVED")], "no_review_from_another_family"),
     ([], "no_review_from_another_family"),
 ])
@@ -56,22 +57,23 @@ def test_what_does_not_count_as_another_family_review(reviews, code):
 
 
 def test_changes_requested_by_another_family_blocks_even_with_an_approval():
-    reviews = [review("gemini-code-assist[bot]", "APPROVED"), review("chatgpt-codex-connector[bot]", "CHANGES_REQUESTED")]
-    report = fr.evaluate({"anthropic"}, reviews, HEAD, REVIEWERS)
+    reviews = [review("claude[bot]", "APPROVED"), review("chatgpt-codex-connector[bot]", "CHANGES_REQUESTED")]
+    report = fr.evaluate({"google"}, reviews, HEAD, REVIEWERS)
     assert report["status"] == "failed" and report["blocking"] == ["chatgpt-codex-connector[bot]"]
 
 
 def test_the_latest_review_on_the_head_decides():
-    later_approval = [review("gemini-code-assist[bot]", "CHANGES_REQUESTED"), review("gemini-code-assist[bot]", "APPROVED")]
+    later_approval = [review("chatgpt-codex-connector[bot]", "CHANGES_REQUESTED"), review("chatgpt-codex-connector[bot]", "APPROVED")]
     assert fr.evaluate({"anthropic"}, later_approval, HEAD, REVIEWERS)["status"] == "passed"
     later_block = list(reversed(later_approval))
     assert fr.evaluate({"anthropic"}, later_block, HEAD, REVIEWERS)["code"] == "changes_requested_by_another_family"
 
 
 def test_a_pull_request_from_two_families_needs_a_third():
-    families = {"anthropic", "google"}
-    assert fr.evaluate(families, [review("gemini-code-assist[bot]", "APPROVED")], HEAD, REVIEWERS)["status"] == "failed"
-    assert fr.evaluate(families, [review("chatgpt-codex-connector[bot]", "COMMENTED")], HEAD, REVIEWERS)["status"] == "passed"
+    both = {"anthropic", "openai"}
+    assert fr.evaluate(both, [review("chatgpt-codex-connector[bot]", "APPROVED")], HEAD, REVIEWERS)["status"] == "failed"
+    assert fr.evaluate(both, [review("claude[bot]", "APPROVED")], HEAD, REVIEWERS)["status"] == "failed"
+    assert fr.evaluate({"anthropic", "google"}, [review("chatgpt-codex-connector[bot]", "COMMENTED")], HEAD, REVIEWERS)["status"] == "passed"
 
 
 def test_author_families_come_from_the_trailer_not_the_account():
@@ -95,8 +97,9 @@ def test_the_reviewer_map_refuses_what_widens_trust(mutate, code):
     assert refused.value.code == code
 
 
-def test_the_repository_map_counts_one_bot_per_developer_family():
-    assert set(REVIEWERS["reviewers"].values()) == {"anthropic", "openai", "google"}
+def test_the_repository_map_counts_one_bot_per_developer_family_and_no_gemini():
+    assert set(REVIEWERS["reviewers"].values()) == {"anthropic", "openai"}
+    assert not any("gemini" in login for login in REVIEWERS["reviewers"])
     assert all(login.endswith("[bot]") for login in REVIEWERS["reviewers"])
 
 
@@ -127,7 +130,7 @@ def test_the_cli_reads_the_range_and_a_reviews_file(tmp_path):
         return subprocess.run([sys.executable, str(ROOT / "tools" / "family_review.py"), "--repo", str(repo),
                                "--range", f"{base}..{head}", "--head", head, "--reviews-json", str(reviews)],
                               capture_output=True, text=True)
-    passed = run([review("gemini-code-assist[bot]", "COMMENTED", head)])
+    passed = run([review("chatgpt-codex-connector[bot]", "COMMENTED", head)])
     assert passed.returncode == 0 and '"reviewed_by_another_family"' in passed.stdout
     same = run([review("claude[bot]", "APPROVED", head)])
     assert same.returncode == 1 and '"reviewed_only_by_the_author_family"' in same.stdout
