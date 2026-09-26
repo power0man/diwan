@@ -5,7 +5,7 @@
   "date": "2026-09-26",
   "agent": "anthropic/claude-opus-5-5",
   "question": "هل جُهّز Nitro بخطوات G5 ١–١٤ وHugging Face (G9) وObsidian (G10)، وما نتيجة فحص الدخان عليه؟",
-  "answer": "جُهّز كلُّه إلا ثلاثة: Docker Desktop لا يقلع بعد إعادة تشغيله (مقبسٌ عالق يحتاج المالك)، و`gcc` غائب لأن `build-essential` يحتاج sudo، و`hf` غير مسجَّل حتى يكتب المالك `hf auth login`. وفحصُ الدخان خرج 3 وكلُّ ما قبل السياسات ok في الإعادة، بعد أن سقطت الجولةُ الوكيلة أولًا بانهيار خادم نموذج Ollama (0xc0000409، المرّة الثالثة).",
+  "answer": "جُهّز كلُّه إلا ثلاثة: Docker Desktop لا يقلع بعد إعادة تشغيله (مقبسٌ عالق يحتاج المالك، ومعه تنتظر G5 ٦–٧)، و`gcc` غائب لأن `build-essential` يحتاج sudo، وصفحةُ الواجهة لم تُفتح من متصفح ويندوز (G5 ١٤ جزئية). وأداةُ `hf` مركَّبة بلا توكن عمدًا، لأن G9 لا يعرّف توكنًا لـNitro. وفحصُ الدخان خرج 3 وكلُّ ما قبل السياسات ok في الإعادة، بعد أن سقطت الجولةُ الوكيلة أولًا بانهيار خادم نموذج Ollama (0xc0000409، المرّة الثالثة).",
   "machine": {
     "model": "Acer Nitro AN515-58",
     "os": "Windows 11 Home 10.0.26200.7623, x86_64",
@@ -32,11 +32,12 @@
     "hf_cli": "huggingface_hub 2.0.0 بـuv tool install في WSL. مثبّتُ hf.co الرسميّ (بـ--exclude-skill) سقط لأن python3-venv غائب ويحتاج sudo، فاستُعمل uv بالحزمة نفسها",
     "skills_added": false,
     "logged_in": false,
-    "mcp_server": "hf-mcp-server (http، https://huggingface.co/mcp?login) أُضيف بنطاق المشروع المحلي لجلسة Claude Code على ويندوز؛ دخولُه من /mcp ينتظر المالك"
+    "login_decision": "لا دخول على Nitro. G9 يعرّف توكنين فقط: diwan-mac للماك، وdiwan-cloud-inference لبيئة Claude السحابية. وتوكن «diwan-nitro» في تكليف هذه الجلسة جاء خطأً من نصّ الجلسة السحابية وسُحب (ملاحظة Codex على #127). وNitro مرشّحٌ مشغّلًا ذاتيًّا (ع٣)، فلا يحمل اعتمادًا إلا بقرارٍ صريح من المالك.",
+    "mcp_server": "hf-mcp-server (http، https://huggingface.co/mcp?login) أُضيف بنطاق المشروع المحلي لجلسة Claude Code على ويندوز، ولم يُسجَّل دخولُه. ودخولُه اعتمادُ OAuth بحساب المالك، فلا يُكمَل على Nitro إلا بالقرار نفسه"
   },
   "obsidian": {
     "installed": "Obsidian 1.13.7 بـwinget (Obsidian.Obsidian)",
-    "vault": "خزنةٌ في مجلّد المستخدم على ويندوز (Diwan-Vault) بُنيت بـtools/obsidian_vault.py build من المستودع العام: 91 ملفًّا، وcheck يخرج 0. منفصلةٌ عن خزنة الماك، ولم يُنسخ إليها شيءٌ منه"
+    "vault": "لقطةٌ للقراءة في مجلّد المستخدم على ويندوز (Diwan-Vault) بُنيت بـtools/obsidian_vault.py build من المستودع العام: 91 ملفًّا، وcheck يخرج 0. ليست خزنة التحكم: G10 (الخطوة ٧) يجعل الخزنة على الماك وحده وClaude يقرأ صندوق واردها هناك، فما يُكتب في Inbox/ هنا لا يصل إلى أحد. ولم يُنسخ إليها شيءٌ من الماك"
   },
   "smoke_check": {
     "command": "uv run python tools/launch_check.py --json",
@@ -57,15 +58,19 @@
   "owner_actions": [
     "Docker: أغلق Docker Desktop كليًّا (Quit من أيقونة الصينية)، ثم احذف الملفين %LOCALAPPDATA%\\Docker\\run\\sailor-ingest.sock.stale و%LOCALAPPDATA%\\Docker\\run\\dockerInference.stale، ثم افتح Docker Desktop. لا تختر Reset to factory defaults.",
     "داخل أوبونتو: sudo apt update && sudo apt install -y build-essential python3-venv",
-    "داخل أوبونتو: hf auth login ← Paste an access token ← الصق توكن diwan-nitro (قراءة المستودعات المحجوبة وInference Providers فقط)، ثم hf auth whoami",
-    "في جلسة Claude Code تفاعلية: /mcp ثم أكمل دخول hf-mcp-server",
-    "Obsidian: Open folder as vault ← Diwan-Vault في مجلّد المستخدم"
+    "افتح http://127.0.0.1:8765 من متصفح ويندوز بعد uv run python tools/serve_ui.py داخل أوبونتو (G5 ١٤)"
+  ],
+  "owner_actions_withdrawn": [
+    "hf auth login على Nitro: سُحب، لأن G9 لا يعرّف توكنًا لـNitro",
+    "دخول hf-mcp-server من /mcp على Nitro: سُحب للسبب نفسه",
+    "فتح Diwan-Vault خزنةً على Nitro: سُحب، لأن خزنة التحكم على الماك (G10 الخطوة ٧). ولقطةُ Nitro تبقى للقراءة أو يحذفها المالك"
   ],
   "measurement_limits": [
     "انهيارُ خادم نموذج Ollama (0xc0000409) عند أول نداءٍ بعد خمول وقع ثلاث مرّاتٍ على هذا الجهاز ولم يُشخَّص؛ فالرمز 3 من الإعادة لا من الجولة الأولى.",
     "بيئةُ المشروع ببايثون 3.12 لا 3.14 التي في CI، فالفحصُ يشهد للجهاز لا لبيئة CI.",
     "خطوات G5 ٦ و٧ و١٥–٢٣ لم تُنفَّذ: Docker لا يقلع، وما بعد ١٤ خارج هذا التكليف. وG5 ٢٤–٣٧ والمشغّل (ع٣) تنتظر موافقة المالك في #57.",
     "أُعيد تشغيل WSL وDocker Desktop أثناء التجهيز. وانهيارُ Docker بدأ بعد إيقاف Docker Desktop بالقوّة لتطبيق إعداداته، فالأرجح أن الإيقاف القسري ترك المقبس عالقًا.",
-    "خزنةُ Obsidian على Nitro لقطةٌ من main عند 6d5a9eb، تتقادم حتى يُعاد بناؤها."
+    "خزنةُ Obsidian على Nitro لقطةٌ من main عند 6d5a9eb، تتقادم حتى يُعاد بناؤها.",
+    "خطوة ui في فحص الدخان تشغّل tools/serve_ui.py --help وحده، فلا تشهد على ربط المنفذ ولا على وصول متصفح ويندوز إليه؛ وG5 ١٤ جزئية حتى تُفتح الصفحة."
   ]
 }
