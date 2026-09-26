@@ -63,6 +63,8 @@ _WORKSPACE_DIRS = {".diwan-journal", ".diwan-journal/blobs", ".diwan-workspace"}
 _WORKSPACE_FILES = {".diwan-journal/journal.jsonl", ".diwan-journal/journal.lock",
                     ".diwan-workspace/identity.json"}
 _JOURNAL_BLOB = re.compile(r"\.diwan-journal/blobs/[a-f0-9]{64}\Z")
+# جلسةُ البحث المعمّق (ك٥٣) جلسةٌ وكيلة بتعليماتها، فتُنسخ كما تُنسخ الوكيلة
+_AGENT_MODES = ("agent", "research")
 _LOCKS = {"session.lock", "preferences.lock", "store.lock", "journal.lock"}
 
 
@@ -331,7 +333,7 @@ def _metadata(raw, expected, *, session=False):
     _need(value["id"] == expected and type(name) is str and 1 <= len(name.strip()) <= 80
           and not any(unicodedata.category(c).startswith("C") for c in name))
     mode = value.get("mode", "text")
-    _need(mode in ("text", "media", "agent"))
+    _need(mode in ("text", "media", *_AGENT_MODES))
     return mode
 
 
@@ -395,8 +397,8 @@ def _shape(dirs, data):
             sid = session.split("/")[-1]
             _need(_ID.fullmatch(sid), "backup_invalid")
             mode = _metadata(data[session + "/meta.json"], sid, session=True)
-            if mode == "agent":
-                # الجلسةُ الوكيلة (ج١٢): بيانُها هنا، وتحكّمُها في agent-control، ومساحتُها للمشروع كلِّه
+            if mode in _AGENT_MODES:
+                # الجلسةُ الوكيلة (ج١٢)، والبحثيّةُ منها (ك٥٣): بيانُها هنا، وتحكّمُها في agent-control، ومساحتُها للمشروع كلِّه
                 allowed_dirs.add(session)
                 allowed_files.add(session + "/meta.json")
                 _control(project + "/agent-control/" + sid, dirs, data, allowed_dirs, allowed_files)
@@ -428,6 +430,7 @@ def _shape(dirs, data):
             for entry in sorted(p for p in dirs if p.startswith(shelf + "/") and p.count("/") == 3):
                 sid = entry.split("/")[-1]
                 _need(_ID.fullmatch(sid), "backup_invalid")
+                # الرفُّ للجلسات السابقة لـج١٢ وحدها، ولم تكن يومها جلسةُ بحث (ك٥٣)
                 _need(_metadata(data[entry + "/meta.json"], sid, session=True) == "agent", "backup_invalid")
                 allowed_dirs.add(entry)
                 allowed_files.add(entry + "/meta.json")

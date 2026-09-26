@@ -61,13 +61,15 @@ async function api(action, values = {}) {
   return data;
 }
 function context() {return {project: state.project, session: state.session};}
+// جلسةُ البحث المعمّق (ك٥٣) جلسةٌ وكيلة: الطلبُ والإيقافُ والاسترجاعُ طريقُها نفسُه
+function agentLike(mode) {return mode === "agent" || mode === "research";}
 function pendingKey(ctx = context()) {return `diwan.pending.${ctx.project}.${ctx.session}`;}
 function stoppableTurn() {
-  return state.mode === "agent" ? state.runningTurn || state.pending || state.turns.find(t => t.status === "awaiting_owner")?.turn_id : null;
+  return agentLike(state.mode) ? state.runningTurn || state.pending || state.turns.find(t => t.status === "awaiting_owner")?.turn_id : null;
 }
 function syncPending() {
   state.pending = sessionStorage.getItem(pendingKey());
-  $("recovery").hidden = !state.pending; $("send").disabled = state.busy || !!state.pending || !!state.runningTurn || (state.mode === "agent" && state.turns.some(t => ["awaiting_owner","outcome_unknown"].includes(t.status)));
+  $("recovery").hidden = !state.pending; $("send").disabled = state.busy || !!state.pending || !!state.runningTurn || (agentLike(state.mode) && state.turns.some(t => ["awaiting_owner","outcome_unknown"].includes(t.status)));
   $("release-pending").hidden = true;
   $("agent-stop").hidden = !stoppableTurn(); $("agent-stop").disabled = state.stopBusy;
 }
@@ -83,7 +85,8 @@ function render() {
     answer.append(element("div", `${statusLabel}${turn.usage ? ` · ${turn.usage.input_tokens + turn.usage.output_tokens} وحدة نصية` : ""}`, "meta"));
     const ctx = context(), actions = element("div", undefined, "tools");
     if(turn.memory_items) answer.append(element("div", `دخل سياقَ هذا الطلب ${turn.memory_items} من ذاكرة المشروع — محجورًا، بياناتٍ لا تعليمات`, "meta"));
-    if(state.mode === "agent") renderAgentActions(answer, actions, ctx, turn);
+    if(turn.citations) renderCitations(answer, turn.citations);
+    if(agentLike(state.mode)) renderAgentActions(answer, actions, ctx, turn);
     else {
       actions.append(button("المدخلات المستخدمة", () => inspect(ctx, turn.turn_id)));
       if (turn.status === "complete" && turn.content.trim()) actions.append(button("مراجعة وحفظ مسودة", () => propose(ctx, turn.turn_id)));
@@ -92,6 +95,18 @@ function render() {
     answer.append(actions);
     box.append(user, answer);
   }
+}
+function renderCitations(answer, citations) {
+  answer.append(element("div", citations.passed ? "الإسناد: كلُّ ادّعاءٍ بمرجعٍ إلى مصدرٍ أعاده البحث في هذه الجولة"
+    : `الإسناد لم يكتمل — لا يُعتمد الجوابُ قبل مراجعته: ${citations.codes.join("، ")}`, "meta"));
+  const sources = Object.entries(citations.sources || {}).filter(([, url]) => /^https?:\/\//.test(url));
+  if(!sources.length) return;
+  const list = element("ol");
+  for(const [n, url] of sources) {
+    const item = element("li", `[${n}] `), link = element("a", url);
+    link.href = url; link.rel = "noopener noreferrer"; link.target = "_blank"; item.append(link); list.append(item);
+  }
+  answer.append(list);
 }
 function renderAgentActions(answer, actions, ctx, turn) {
   if(turn.inputs) {
@@ -220,8 +235,9 @@ async function projects() {
   select.value = state.project;
   state.mediaEnabled = data.media_enabled === true; $("media-option").disabled = !state.mediaEnabled;
   const agentEnabled = data.agent_enabled === true; $("agent-option").disabled = !agentEnabled;
+  state.researchEnabled = data.research_enabled === true; $("research-option").disabled = !state.researchEnabled;
   state.defaultSessionMode = agentEnabled && data.default_session_mode === "agent" ? "agent" : "text";
-  const mode = $("session-mode"), available = mode.value === "text" || (mode.value === "agent" && agentEnabled) || (mode.value === "media" && state.mediaEnabled);
+  const mode = $("session-mode"), available = mode.value === "text" || (mode.value === "agent" && agentEnabled) || (mode.value === "media" && state.mediaEnabled) || (mode.value === "research" && state.researchEnabled);
   if(!state.sessionModeChosen || !available) {mode.value = state.defaultSessionMode; state.sessionModeChosen = false;}
 }
 async function chooseProject(id) {
@@ -240,7 +256,7 @@ async function chooseProject(id) {
 function setMode(mode) {
   state.mode = mode; $("text-inputs").hidden = mode === "media"; $("media-inputs").hidden = mode !== "media";
   $("media-file").value = ""; $("message").maxLength = mode === "media" ? 4000 : 24000;
-  $("agent-controls").hidden = mode !== "agent";
+  $("agent-controls").hidden = !agentLike(mode); $("agent-files").hidden = mode === "research";
 }
 $("clear-media").onclick = () => {$("media-file").value = "";};
 async function chooseSession(id, name, mode = "text") {
@@ -252,6 +268,7 @@ async function chooseSession(id, name, mode = "text") {
   sessionStorage.setItem("diwan.last", JSON.stringify({...context(), name}));
   for (const el of $("sessions").children) el.setAttribute("aria-current", String(el.dataset.session === id));
   render(); state.poll = 0; await refresh();
+  if(mode === "research") $("agent-capabilities").textContent = "بحثٌ معمّق: يبحث في الويب بالمحرّك المضبوط مرّاتٍ، ويُسند كلَّ ادّعاءٍ إلى مصدرٍ أعاده البحث، ويُفحص الإسنادُ عند العرض.";
   if(mode === "agent") {const epoch = state.epoch; const caps = await api("agent_capabilities", {project:state.project}); if(epoch === state.epoch) $("agent-capabilities").textContent = caps.execution_enabled ? "أدوات الملفات وتنفيذ الأوامر المضبوطة متاحة؛ يُعرض الإذن المطلوب لكل فعل." : "أدوات ملفات المشروع متاحة. تنفيذ الأوامر غير مهيأ.";}
 }
 async function refresh() {
@@ -267,7 +284,7 @@ async function refresh() {
   syncPending();
   if (state.pending) {
     try {
-      if(state.mode === "agent") {if(!data.turns.some(t => t.turn_id === state.pending)) throw {code:"workspace_turn_missing"};}
+      if(agentLike(state.mode)) {if(!data.turns.some(t => t.turn_id === state.pending)) throw {code:"workspace_turn_missing"};}
       else await api("replay", {...ctx, turn: state.pending});
       if(epoch !== state.epoch) return; sessionStorage.removeItem(pendingKey(ctx)); syncPending();}
     catch(e) {if(epoch !== state.epoch) return; if(["workspace_turn_missing", "media_turn_missing"].includes(e.code)) {$("release-pending").hidden = false; notice("لم يسجل الخادم هذه الجولة. يمكنك بدء طلب جديد صراحة.", true); return;} throw e;}
@@ -288,7 +305,7 @@ $("new-session").onsubmit = async event => {
 };
 $("composer").onsubmit = async event => {
   event.preventDefault(); if (state.busy || state.pending || state.runningTurn || !state.session) {notice("اختر محادثة واسترجع حالة أي إرسال سابق أولًا.", true); return;}
-  if(state.mode === "agent" && state.turns.some(t => ["awaiting_owner","outcome_unknown"].includes(t.status))) {showError({code:"turn_unresolved"}); return;}
+  if(agentLike(state.mode) && state.turns.some(t => ["awaiting_owner","outcome_unknown"].includes(t.status))) {showError({code:"turn_unresolved"}); return;}
   const epoch = state.epoch, ctx = context(), message = $("message").value, turn = uuid();
   const files = [...state.selected], mode = state.mode, selectedFile = $("media-file").files[0];
   state.busy = true; $("send").disabled = true;
@@ -304,8 +321,8 @@ $("composer").onsubmit = async event => {
     }
     try {sessionStorage.setItem(pendingKey(ctx), turn);} catch {notice("تعذر حفظ معرف الجولة في المتصفح. فعّل تخزين الجلسة قبل الإرسال.", true); return;}
     syncPending(); notice("ديوان يكتب… يمكنك استرجاع الحالة إذا انقطع الاتصال.");
-    const thinking = mode === "agent" && $("agent-thinking").checked ? {thinking: true} : {};
-    await api(mode === "media" ? "ask_media" : mode === "agent" ? "agent_ask" : "ask", {...ctx, turn, message, ...(mode === "media" ? {media} : {files}), ...thinking});
+    const thinking = agentLike(mode) && $("agent-thinking").checked ? {thinking: true} : {};
+    await api(mode === "media" ? "ask_media" : agentLike(mode) ? "agent_ask" : "ask", {...ctx, turn, message, ...(mode === "media" ? {media} : {files}), ...thinking});
     if(epoch === state.epoch) {
       if($("message").value === message) $("message").value = "";
       if($("media-file").files[0] === selectedFile) $("media-file").value = "";
