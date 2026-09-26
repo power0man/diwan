@@ -61,7 +61,7 @@ cmd_run() {
   if [ "$rc" != 0 ]; then
     echo "وأخطاءُ التشغيل في $errlog — هذا يُقرأ، فليس فيه حالات."
   fi
-  echo "التالي: تحقّق من البنية بـ '$0 inspect'، ثم وزّع بـ '$0 place'."
+  echo "التالي: تحقّق من البنية بـ '$0 inspect'، واستلم بـ '$0 intake'، ثم وزّع بـ '$0 place'."
   return "$rc"
 }
 
@@ -78,6 +78,19 @@ cmd_inspect() {
   echo "  ملفّاتٌ محجوبة: $({ find "$src/sealed" -name '*.json' ! -name MANIFEST.json 2>/dev/null || true; } | wc -l | tr -d ' ')"
 }
 
+# الاستلامُ قبل التوزيع (ك٦): المدقّقاتُ الحقيقية وشروطُ التكليف، والتقريرُ أعدادٌ ورموزٌ بلا محتوى
+cmd_intake() {
+  local src="$KIMI_WORK/kimi-benchmark"
+  [ -d "$src" ] || die "لم يسلّم Kimi بعد: لا مجلّد $src"
+  local out="$KIMI_WORK/logs/intake-$STAMP.json"
+  mkdir -p "$KIMI_WORK/logs"
+  local rc=0
+  "${PYTHON:-python3}" "$DIWAN/tools/kimi_intake.py" "$src" --out "$out" || rc=$?
+  echo "تقريرُ الاستلام في $out — أعدادٌ ورموزٌ فقط، فيُقرأ."
+  echo "والمهامُّ الوكيلة تُحكم في حاويةٍ زائلة: انظر رأسَ tools/kimi_intake.py."
+  return "$rc"
+}
+
 # يستخرج أمرَ التوزيع من PLACE-KIMI-FILES.md ويشغّله، فلا تتفرّق النسختان
 cmd_place() {
   local doc="$DIWAN/docs/external/PLACE-KIMI-FILES.md"
@@ -91,6 +104,7 @@ case "${1:-}" in
   bundle)  cmd_bundle ;;
   run)     shift; cmd_run "${1:-}" ;;
   inspect) cmd_inspect ;;
+  intake)  cmd_intake ;;
   place)   cmd_place ;;
-  *) echo "الاستعمال: $0 {setup|bundle|run [ملفّ]|inspect|place}" >&2; exit 2 ;;
+  *) echo "الاستعمال: $0 {setup|bundle|run [ملفّ]|inspect|intake|place}" >&2; exit 2 ;;
 esac

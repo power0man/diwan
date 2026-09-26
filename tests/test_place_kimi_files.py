@@ -113,7 +113,7 @@ def test_an_existing_target_is_never_overwritten(tmp_path):
     assert [p.name for p in earlier.iterdir()] == ["keep.json"]
 
 
-DEV = ("arabic_general_v3.json", "agentic_v3.json", "agentic_v3.meta.json")
+DEV = ("arabic_general_v3_1.json", "arabic_general_v3_2.json", "agentic_v3.json", "agentic_v3.meta.json")
 
 
 def test_the_development_suites_are_placed_beside_the_bank(tmp_path):
