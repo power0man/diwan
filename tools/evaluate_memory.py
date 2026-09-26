@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""يشغّل بنكَ الذاكرة المحكومة (ك٤٨) على الطريق الموصول بمحرّكٍ حيّ في Ollama المحلي (جديد-memory-probe).
+
+    python3 tools/evaluate_memory.py --model qwen3.5:9b --out docs/probe/memory-live-<التاريخ>.json
+
+- كلُّ جولةٍ تذهب إلى النموذج الحقيقيّ عبر `webui.server.LocalApp`، والاقتراحُ وحده مكتوبٌ سلفًا
+  (البنكُ يقيس الموافقةَ عليه، لا أن النموذج يقترح).
+- المقاييسُ ما بلغ النموذجَ وما بقي على القرص، كما في `docs/MEMORY-DESIGN.md` §٦.
+"""
+from __future__ import annotations
+
+import argparse
+import datetime
+import json
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from evaluation.memory_runner import run_memory_bank  # noqa: E402
+from providers.ollama import OllamaProvider  # noqa: E402
+
+LIMITS = [
+    "measures_what_reaches_the_model_and_what_stays_on_disk_not_what_the_model_does_with_a_memory",
+    "proposals_are_scripted_the_bank_measures_consent_not_that_the_model_proposes",
+    "retrieval_is_lexical_so_a_paraphrased_question_can_miss_a_stored_item",
+    "the_context_checked_is_the_first_request_of_each_turn_later_tool_steps_are_not_inspected",
+    "single_run_on_one_local_model_no_variance_estimate",
+]
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--model", required=True, help="اسمُ النموذج كما يعرفه Ollama")
+    parser.add_argument("--suite", type=Path, default=ROOT / "evaluation" / "suites" / "memory_v1.json")
+    parser.add_argument("--out", required=True, type=Path, help="مسارُ التقرير؛ لا يُستبدل ملفٌّ قائم")
+    args = parser.parse_args(argv)
+    if args.out.exists():
+        parser.error(f"التقريرُ قائم: {args.out}")
+    provider = OllamaProvider(model=args.model)
+    report = run_memory_bank(json.loads(args.suite.read_text(encoding="utf-8")), driver="live", delegate=provider)
+    report.update(date=datetime.date.today().isoformat(), agent="anthropic/claude-opus-5-5",
+                  engine={"provider": "ollama", "model": args.model}, measurement_limits=LIMITS)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({"metrics": report["metrics"], "meets_thresholds": report["meets_thresholds"],
+                      "passed": report["passed"], "total": report["total"], "out": str(args.out)},
+                     ensure_ascii=False))
+    return 0 if report["meets_thresholds"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

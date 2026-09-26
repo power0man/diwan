@@ -175,3 +175,35 @@ def test_admission_counts_the_memory_block_before_attachments_are_staged(tmp_pat
     with pytest.raises(ConversationError) as err:
         session("remembering", size + 10, store).validate_turn(uuid.uuid4().hex, "سؤال")
     assert err.value.code == "context_limit"
+
+
+class _Delegate:
+    """مزوّدٌ حيٌّ مصطنع: يعدّ نداءاته ويجيب بلا ذاكرة."""
+    name, is_local = "fake-live", True
+
+    def __init__(self):
+        self.calls = 0
+
+    def estimate_micros(self, request):
+        return 0
+
+    def complete(self, request):
+        from core.contracts import Response, Usage
+        self.calls += 1
+        return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="1" * 64)
+
+
+def test_the_live_driver_sends_every_unscripted_turn_to_the_real_provider():
+    delegate = _Delegate()
+    report = run_memory_bank(BANK, driver="live", delegate=delegate)
+    assert report["driver"] == "live" and report["provider"] == "fake-live"
+    assert report["passed"] == report["total"] == 30 and report["meets_thresholds"]
+    assert delegate.calls > 0, "الطريقُ الحيّ لم يبلغ المزوّدَ الحقيقيّ"
+
+
+def test_live_needs_a_provider_and_the_others_refuse_one():
+    import pytest
+    with pytest.raises(ValueError):
+        run_memory_bank(BANK, driver="live")
+    with pytest.raises(ValueError):
+        run_memory_bank(BANK, driver="wired", delegate=_Delegate())
