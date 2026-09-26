@@ -6,6 +6,9 @@
 - كلُّ عنصرٍ يُنسى في سيناريو نسيانٍ أو استعادة يُفحص فيه الإيصالُ وبقايا القرص.
 - كلُّ سيناريو عزلٍ يمسّ مشروعين على الأقل.
 - كلُّ سيناريو حجرٍ يطلب السياقَ محجورًا.
+- كلُّ سيناريو يؤدّي ما تسمّيه فئتُه: الاستعادةُ فيها نسخٌ واستعادةٌ يُفحص بعدها، والنسيانُ يُفحص بعده في الاسترجاع
+  أو السياق. وللبنك المكلَّف (`strict`) شرطان أشدّ: النسيانُ يُفحص في الاثنين، والموافقةُ فيها حفظٌ بلا موافقة
+  أو اقتراح (ملاحظة Codex على #129: فئةٌ تُسمّى ولا تُؤدّى تُنتج رقمًا أقوى من دليله).
 - العتبةُ هي المسجَّلة في `docs/MEMORY-DESIGN.md` §٦ لا غيرها.
 """
 from __future__ import annotations
@@ -40,7 +43,7 @@ def _texts(value, path):
         _reject(path, "texts_invalid", "قائمةُ نصوصٍ غير فارغة")
 
 
-def validate_memory_bank(bank: dict) -> dict:
+def validate_memory_bank(bank: dict, *, strict: bool = False) -> dict:
     if not isinstance(bank, dict) or set(bank) != {"schema_version", "suite_id", "kind", "description", "projects",
                                                     "thresholds", "scenarios"}:
         _reject("bank", "schema_fields", "حقولُ البنك المعلنة وحدها")
@@ -58,7 +61,27 @@ def validate_memory_bank(bank: dict) -> dict:
             _reject(path + ".id", "scenario_id_duplicate", "معرّفٌ مكرّر")
         seen.add(scenario["id"])
         _validate_steps(scenario, path, projects)
+        _validate_semantics(scenario, path, strict)
     return bank
+
+
+def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
+    steps = scenario["steps"]
+    last = lambda op: max((i for i, s in enumerate(steps) if s.get("op") == op), default=None)
+    checked_after = lambda i, kinds: {s["expect"] for s in steps[i + 1:] if s.get("expect") in kinds}
+    category = scenario["category"]
+    if category == "backup":
+        restore = last("restore")
+        if last("backup") is None or restore is None or not checked_after(restore, {"retrieve", "context", "residue"}):
+            _reject(path, "backup_semantics_missing", "نسخٌ واستعادةٌ ثم فحصٌ بعد الاستعادة")
+    if category == "forget":
+        seen = checked_after(last("forget"), {"retrieve", "context"})
+        if not seen or (strict and seen != {"retrieve", "context"}):
+            _reject(path, "forget_not_checked_in_use",
+                    "المنسيُّ يُفحص بعد النسيان في الاسترجاع والسياق" if strict else "في الاسترجاع أو السياق")
+    if strict and category == "consent" and not any(
+            s.get("op") == "propose" or (s.get("op") == "remember" and s["consent"] == "none") for s in steps):
+        _reject(path, "consent_without_unconsented_save", "اقتراحٌ أو حفظٌ بلا موافقة")
 
 
 def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:

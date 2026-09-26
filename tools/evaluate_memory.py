@@ -67,13 +67,15 @@ def main(argv=None) -> int:
         parser.error(f"agent_unregistered: {args.agent}")
     # بنكٌ لم يُفحص قد يمرّ ١٠٠٪ بخطواتٍ يتجاهلها المُشغِّل؛ فالمدقّقُ قبل أي نداء (ملاحظة Codex على #129)
     raw = args.suite.read_bytes()
+    # البنكُ المكلَّف بالشروط الأشدّ: كلُّ فئةٍ تؤدّي ما تسمّيه (ملاحظة Codex على #129)
+    commissioned = args.suite.resolve() != DEFAULT_SUITE.resolve()
     try:
-        bank = validate_memory_bank(json.loads(raw.decode("utf-8")))
+        bank = validate_memory_bank(json.loads(raw.decode("utf-8")), strict=commissioned)
     except (PayloadRejected, ValueError, KeyError, TypeError) as exc:
         print(json.dumps({"status": "refused", "code": getattr(exc, "code", "bank_invalid")}, ensure_ascii=False))
         return 2
     # غيرُ البنك المودَع بنكٌ مكلَّفٌ به، بأعداده كاملةً
-    shortfall = None if args.suite.resolve() == DEFAULT_SUITE.resolve() else commissioned_shortfall(bank)
+    shortfall = commissioned_shortfall(bank) if commissioned else None
     if shortfall:
         print(json.dumps({"status": "refused", "code": shortfall}, ensure_ascii=False))
         return 2

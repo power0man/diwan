@@ -247,13 +247,57 @@ def test_the_cli_validates_the_suite_and_names_the_runner_before_any_call(tmp_pa
 
 
 
+def _strict_only(bank: dict) -> dict:
+    """سيناريوهاتُ البنك المودَع التي تستوفي شروطَ البنك المكلَّف الأشدّ."""
+    import json
+    from core.canonical import PayloadRejected
+    from evaluation.memory_bank import validate_memory_bank
+    kept = []
+    for scenario in bank["scenarios"]:
+        try:
+            validate_memory_bank({**bank, "scenarios": [scenario]}, strict=True)
+        except PayloadRejected:
+            continue
+        kept.append(scenario)
+    return json.loads(json.dumps({**bank, "scenarios": kept}))
+
+
+def test_each_category_must_do_what_it_names_and_the_commissioned_bank_more_strictly(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #129: الفئةُ كانت تُفحص باسمها وعددها وحدهما، فستُّ نسيانٍ تُسمّى «نسخًا احتياطيًّا» تمرّ
+    وتُنشر «٤٠/٤٠» بلا اختبار استعادة."""
+    import json
+    import tools.evaluate_memory as cli
+    from core.canonical import PayloadRejected
+    from evaluation.memory_bank import validate_memory_bank
+    by_id = {s["id"]: s for s in BANK["scenarios"]}
+    one = lambda scenario, **kw: validate_memory_bank({**BANK, "scenarios": [scenario]}, **kw)
+    code = lambda scenario, **kw: pytest.raises(PayloadRejected, one, scenario, **kw).value.code
+    assert code(dict(by_id["forget_001"], category="backup")) == "backup_semantics_missing"
+    only_forget = dict(by_id["forget_001"], steps=[s for s in by_id["forget_001"]["steps"]
+                                                   if s.get("expect") not in ("retrieve", "context")])
+    assert code(only_forget) == "forget_not_checked_in_use"
+    one(by_id["forget_005"])                                      # البنكُ المودَع: الاسترجاعُ أو السياق يكفي
+    assert code(by_id["forget_005"], strict=True) == "forget_not_checked_in_use"
+    one(by_id["consent_005"])
+    assert code(by_id["consent_005"], strict=True) == "consent_without_unconsented_save"
+    validate_memory_bank(BANK)
+    relabeled = _strict_only(BANK)
+    relabeled["suite_id"] = "memory_kimi_v1"
+    relabeled["scenarios"] += [dict(by_id["forget_005"], id="context_only")]    # يمرّ المودَعَ ويُردّ مكلَّفًا
+    path = tmp_path / "kimi.json"
+    path.write_text(json.dumps(relabeled, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(cli, "OllamaProvider", lambda **_: (_ for _ in ()).throw(AssertionError("نداءٌ قبل الفحص")))
+    args = ["--model", "m", "--suite", str(path), "--agent", "anthropic/claude-opus-5-5", "--out", str(tmp_path / "r.json")]
+    assert cli.main(args) == 2 and json.loads(capsys.readouterr().out)["code"] == "forget_not_checked_in_use"
+
+
 def test_a_custom_suite_must_be_a_commissioned_bank_at_full_size_and_reports_bind_its_bytes(tmp_path, monkeypatch,
                                                                                              capsys):
     """ملاحظتا Codex على #129: تسليمٌ من سيناريو واحد كان يُقاس «١/١»، والتقريرُ لا يربط نفسه ببايتات البنك."""
     import hashlib
     import json
     import tools.evaluate_memory as cli
-    small = json.loads(json.dumps(BANK))
+    small = _strict_only(BANK)
     small["suite_id"] = "memory_kimi_v1"
     path = tmp_path / "kimi.json"
     path.write_text(json.dumps(small, ensure_ascii=False), encoding="utf-8")
@@ -263,7 +307,7 @@ def test_a_custom_suite_must_be_a_commissioned_bank_at_full_size_and_reports_bin
     small["suite_id"] = "someone_else_v1"
     path.write_text(json.dumps(small, ensure_ascii=False), encoding="utf-8")
     assert cli.main(args) == 2 and json.loads(capsys.readouterr().out)["code"] == "suite_not_commissioned"
-    full = json.loads(json.dumps(BANK))
+    full = _strict_only(BANK)
     full["suite_id"] = "memory_kimi_v1"
     by = {c: [s for s in full["scenarios"] if s["category"] == c] for c in cli.COMMISSIONED["memory_kimi_v1"] if c != "total"}
     grown = []
