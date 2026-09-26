@@ -250,20 +250,72 @@ def test_a_case_sidecar_keeps_its_cases_and_an_unreadable_one_is_refused(tmp_pat
     assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_unreadable"}
 
 
-def test_renaming_ids_as_the_tasking_asks_passes_but_emptying_a_sidecar_entry_does_not(tmp_path):
-    """ملاحظتا Codex على #128: التكليفُ يطلب إعادةَ تسمية المعرّفات المكرّرة، فالحصرُ بالعدد لا بالمعرّف؛
-    ومدخلٌ جانبيٌّ فُرّغ مع بقاء مفتاحه كان يمرّ فيمحو التوزيعُ مصادرَه."""
+def _dup_bank(tmp_path):
+    """بنكٌ قائمٌ فيه معرّفُ مهمّةٍ مكرّرٌ بين ملفّين، كالستّة والعشرين في v1.1، وملفّان جانبيّان."""
     import shutil
     src = delivery(tmp_path)
     shutil.rmtree(src / "sealed")
-    sidecar = src / "open" / "tier_d" / "kimi_d_001.meta.json"
-    _write(sidecar, {"tasks": {"t1": {"reference_solution": {"notes.txt": "new"}, "why": "w"}}})
+    d = src / "open" / "tier_d"
+    _write(d / "kimi_d_001.json", _agentic("kimi_d_001", [_task("t1"), _task("dup")]))
+    _write(d / "kimi_d_002.json", _agentic("kimi_d_002", [_task("dup")]))
+    for name, ids in (("kimi_d_001", ("t1", "dup")), ("kimi_d_002", ("dup",))):
+        _write(d / f"{name}.meta.json", {"tasks": {i: {"reference_solution": {"notes.txt": "new"}, "why": "w"}
+                                                   for i in ids}})
     current = tmp_path / "current_open"
     shutil.copytree(src / "open", current)
-    _write(src / "open" / "tier_d" / "kimi_d_001.json", _agentic("kimi_d_001", [_task("kimi_d_001-t1")]))
-    _write(sidecar, {"tasks": {"kimi_d_001-t1": {"reference_solution": {"notes.txt": "new"}, "why": "w"}}})
-    assert intake(src, open_only=True, current=current)["passed"], "إعادةُ التسمية يطلبها التكليف"
-    _write(sidecar, {"tasks": {"kimi_d_001-t1": {}}})
+    return src, current
+
+
+def test_only_duplicated_ids_may_be_renamed_and_a_swapped_case_is_refused(tmp_path):
+    """ملاحظاتُ Codex على #128: التكليفُ يطلب إعادةَ تسمية المكرّر، لكن حذفَ حالةٍ وإضافةَ غيرها بالعدد نفسِه محوٌ."""
+    src, current = _dup_bank(tmp_path)
+    d = src / "open" / "tier_d"
+    ref = {"reference_solution": {"notes.txt": "new"}, "why": "w"}
+    _write(d / "kimi_d_001.json", _agentic("kimi_d_001", [_task("t1"), _task("kimi_d_001-dup")]))
+    _write(d / "kimi_d_001.meta.json", {"tasks": {"t1": ref, "kimi_d_001-dup": ref}})
+    _write(d / "kimi_d_002.json", _agentic("kimi_d_002", [_task("kimi_d_002-dup")]))
+    _write(d / "kimi_d_002.meta.json", {"tasks": {"kimi_d_002-dup": ref}})
+    assert intake(src, open_only=True, current=current)["passed"], "إعادةُ تسمية المكرّر يطلبها التكليف"
+    _write(d / "kimi_d_002.json", _agentic("kimi_d_002", []))
+    _write(d / "kimi_d_002.meta.json", {"tasks": {}})
+    assert "open_case_missing" in _codes(intake(src, open_only=True, current=current), "replacement"), \
+        "المكرّرُ يُعاد تسميتُه لا يُحذف"
+    _write(d / "kimi_d_002.json", _agentic("kimi_d_002", [_task("kimi_d_002-dup")]))
+    _write(d / "kimi_d_002.meta.json", {"tasks": {"kimi_d_002-dup": ref}})
+    _write(d / "kimi_d_001.json", _agentic("kimi_d_001", [_task("other"), _task("kimi_d_001-dup")]))
+    _write(d / "kimi_d_001.meta.json", {"tasks": {"other": ref, "kimi_d_001-dup": ref}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_case_missing"}
+
+
+def test_a_sidecar_entry_keeps_every_field_it_had_even_optional_ones(tmp_path):
+    """ملاحظةُ Codex على #128: حقولٌ في بعض المدخلات دون بعض (trap، correct_solution) كانت تسقط من الشرط."""
+    src, current = _dup_bank(tmp_path)
+    d = src / "open" / "tier_d"
+    rich = {"reference_solution": {"notes.txt": "new"}, "why": "w", "trap": "t"}
+    _write(current / "tier_d" / "kimi_d_001.meta.json", {"tasks": {"t1": rich, "dup": rich}})
+    _write(d / "kimi_d_001.meta.json", {"tasks": {"t1": rich, "dup": rich}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == set()
+    _write(d / "kimi_d_001.meta.json", {"tasks": {"t1": {**rich, "trap": ""}, "dup": rich}})
     assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_entry_incomplete"}
-    _write(sidecar, {"tasks": {"kimi_d_001-t1": {"reference_solution": {"notes.txt": "new"}, "why": ""}}})
+    _write(d / "kimi_d_001.meta.json", {"tasks": {"t1": {}, "dup": rich}})
     assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_entry_incomplete"}
+
+
+def test_a_renamed_entry_carries_what_its_replaced_entries_shared(tmp_path):
+    src, current = _dup_bank(tmp_path)
+    d = src / "open" / "tier_d"
+    _write(d / "kimi_d_002.json", _agentic("kimi_d_002", [_task("kimi_d_002-dup")]))
+    _write(d / "kimi_d_002.meta.json", {"tasks": {"kimi_d_002-dup": {"why": "w"}}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_entry_incomplete"}
+
+
+def test_bank_reference_solutions_in_sibling_sidecars_are_judged(tmp_path):
+    """ملاحظةُ Codex على #128: --agentic كان يحكم «تسقط قبل الحلّ» وحده في البنك، ويتخطّى حلوله المرجعية."""
+    src, _ = _dup_bank(tmp_path)
+    report = check_agentic(src)
+    assert report["counts"]["reference_passes"] == 3 + AGENTIC_MIN_TASKS and not report["failures"]
+    _write(src / "open" / "tier_d" / "kimi_d_002.meta.json",
+           {"tasks": {"dup": {"reference_solution": {"notes.txt": "still old"}}}})
+    report = check_agentic(src)
+    assert {f["file"] for f in report["failures"]} == {"open/tier_d/kimi_d_002.json"}
+    assert {f["code"] for f in report["failures"]} == {"reference_solution_fails"}

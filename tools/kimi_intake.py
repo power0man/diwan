@@ -114,10 +114,8 @@ def check_manifest(src: Path) -> dict:
 
 
 def _open_inventory(root: Path) -> dict[str, dict | None]:
-    """لكلِّ ملفٍّ عددُ حالاته أو مهامّه؛ وللملفّ الجانبيّ (`.meta.json`) مدخلاتُه أيضًا، فمصادرُه وحلولُه تُمحى معه.
+    """لكلِّ ملفٍّ معرّفاتُ حالاته أو مهامّه؛ وللملفّ الجانبيّ (`.meta.json`) مدخلاتُه كاملةً، فمصادرُه وحلولُه تُمحى معه.
 
-    يُحصى العددُ لا المعرّفات، لأن تكليف v1.2 يطلب إعادةَ تسمية معرّفات المهامّ المكرّرة بين الملفّين
-    (KIMI-NEXT.md)، فحصرُ المعرّفات كان يرفض ما يطلبه التكليفُ نفسُه (ملاحظة Codex على #128).
     وملفٌّ جانبيٌّ بلا `cases` ولا `tasks` قاموسًا لا يُقرأ: قيمتُه None.
     """
     out: dict[str, dict | None] = {}
@@ -128,50 +126,66 @@ def _open_inventory(root: Path) -> dict[str, dict | None]:
             entries = None
             if isinstance(data, dict):
                 entries = next((data[k] for k in ("cases", "tasks") if isinstance(data.get(k), dict)), None)
-            out[relative] = None if entries is None else {"count": len(entries), "entries": entries}
+            out[relative] = None if entries is None else {"ids": set(entries), "entries": entries}
             continue
         items = (data.get("cases") or data.get("tasks") or []) if isinstance(data, dict) else []
-        out[relative] = {"count": len(items)}
+        out[relative] = {"ids": {item.get("case_id") or item.get("task_id") for item in items if isinstance(item, dict)}}
     return out
-
-
-def _required_fields(entries: dict) -> set:
-    """الحقولُ التي يحملها كلُّ مدخلٍ في الملف الجانبيّ القائم؛ فلا يمرّ مدخلٌ مسلَّمٌ ينقصه أحدُها أو يفرغ."""
-    dicts = [value for value in entries.values() if isinstance(value, dict)]
-    return set.intersection(*(set(value) for value in dicts)) if dicts else set()
 
 
 def _empty(value) -> bool:
     return value is None or value == "" or value == [] or value == {}
 
 
+def _filled(entry) -> set:
+    return {key for key, value in entry.items() if not _empty(value)} if isinstance(entry, dict) else set()
+
+
 def check_open_replacement(src: Path, current: Path) -> dict:
-    """دورةُ المفتوح تستبدل المفتوحَ القائم (`UPDATE=1 OPEN_ONLY=1 place`)، فلا تمرّ إلا بكلِّ ملفٍّ وبعددِ حالاته.
+    """دورةُ المفتوح تستبدل المفتوحَ القائم (`UPDATE=1 OPEN_ONLY=1 place`)، فلا تمرّ إلا بكلِّ ملفٍّ وكلِّ حالةٍ فيه.
 
     كان تسليمٌ فارغٌ يمرّ: البيانُ يُتخطّى، ولا ملفَّ يسقط في المدقّقات، فيمحو التوزيعُ البنك (ملاحظة Codex على #128).
     - **الزيادة مقبولة:** ملفٌّ جديد، أو حالةٌ جديدة.
-    - **إعادةُ التسمية مقبولة:** يطلبها التكليف.
-    - **النقصُ مرفوض:** في الملفّات، وفي عدد الحالات، وفي حقول الملف الجانبيّ.
+    - **المعرّفُ يبقى:** إلا المكرّرَ بين ملفّين. تكليفُ v1.2 يطلب إعادةَ تسميته، فغيابُه يغطّيه معرّفٌ جديدٌ في الملف نفسِه.
+    - **الملفُّ الجانبيّ:** كلُّ مدخلٍ يُبقي كلَّ حقلٍ كان فيه غيرَ فارغ. والمدخلُ المُعادُ تسميتُه يحمل ما تشترك فيه المدخلاتُ التي حلّ محلَّها.
     """
     failures: list = []
     expected = _open_inventory(current) if current.is_dir() else {}
     if not expected:
         _failure(failures, "open", "current_open_bank_missing")
         return {"files": 0, "failures": failures}
+    seen: dict = {}
+    for relative, before in expected.items():
+        if before is not None and "entries" not in before:
+            for identifier in before["ids"]:
+                seen[identifier] = seen.get(identifier, 0) + 1
+    duplicated = {identifier for identifier, n in seen.items() if n > 1}
     delivered = _open_inventory(src / "open")
     for relative, before in expected.items():
-        after = delivered.get(relative, "absent")
-        if after == "absent":
-            _failure(failures, f"open/{relative}", "open_file_missing")
-        elif after is None:
-            _failure(failures, f"open/{relative}", "sidecar_unreadable")
-        elif before is not None and after["count"] < before["count"]:
-            _failure(failures, f"open/{relative}", "open_case_missing")
-        elif before is not None and "entries" in before:
-            required = _required_fields(before["entries"])
-            if any(not isinstance(entry, dict) or any(_empty(entry.get(field)) for field in required)
-                   for entry in after["entries"].values()):
-                _failure(failures, f"open/{relative}", "sidecar_entry_incomplete")
+        where = f"open/{relative}"
+        if relative not in delivered:
+            _failure(failures, where, "open_file_missing")
+            continue
+        after = delivered[relative]
+        if after is None:
+            _failure(failures, where, "sidecar_unreadable")
+            continue
+        if before is None:
+            continue
+        missing = before["ids"] - after["ids"]
+        renamed = missing & duplicated
+        added = after["ids"] - before["ids"]
+        if missing - duplicated or len(added) < len(renamed):
+            _failure(failures, where, "open_case_missing")
+        if "entries" not in before:
+            continue
+        kept = [(before["entries"][i], after["entries"][i]) for i in before["ids"] & after["ids"]]
+        replaced = [_filled(before["entries"][i]) for i in renamed]
+        shared = set.intersection(*replaced) if replaced else set()
+        kept_short = any(not _filled(new) >= _filled(old) for old, new in kept)
+        added_short = replaced and any(not _filled(after["entries"][i]) >= shared for i in added)
+        if kept_short or added_short:
+            _failure(failures, where, "sidecar_entry_incomplete")
     return {"files": len(expected), "failures": failures}
 
 
@@ -293,7 +307,12 @@ def check_agentic(src: Path, *, judge=_judge) -> dict:
     failures: list = []
     counts = {"tasks": 0, "fail_before_fix": 0, "pass_before_fix": 0, "unjudged": 0,
               "reference_passes": 0, "reference_fails": 0, "decoy_passes": 0}
-    suites = [(path.relative_to(src).as_posix(), _json(path), None) for _, path in _bank_files(src)]
+    # حلولُ البنك المرجعية في الملف الجانبيّ المجاور (`kimi_agentic_001.meta.json`)، فتُحكم كحلول التطوير
+    suites = []
+    for _, path in _bank_files(src):
+        sidecar = _json(path.with_name(path.name[:-len(".json")] + ".meta.json"))
+        tasks = sidecar.get("tasks") if isinstance(sidecar, dict) else None
+        suites.append((path.relative_to(src).as_posix(), _json(path), tasks if isinstance(tasks, dict) else None))
     if (src / DEV_AGENTIC).exists():
         meta = _json(src / DEV_AGENTIC_META) or {}
         suites.append((DEV_AGENTIC, _json(src / DEV_AGENTIC), meta.get("tasks") or {}))
