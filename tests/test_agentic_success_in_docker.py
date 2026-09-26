@@ -163,7 +163,7 @@ def test_a_suite_with_a_receipt_needs_no_host_attestation_and_says_where_it_ran(
     report = run_agentic_suite(SUITE, fixing_provider(), registry, model="m", model_version="v",
                                execution_receipt=receipt)
     config = report["config"]
-    assert (config["success_executor"], config["attested_host"], config["runner_version"]) == ("docker", None, 6)
+    assert (config["success_executor"], config["attested_host"], config["runner_version"]) == ("docker", None, 7)
     assert config["execution_receipt"] == {key: RECEIPT[key] for key in ("image_id", "lock_sha256", "python_version")}
     limits = report["measurement_limits"]
     assert "success_command_runs_inside_the_docker_backend_on_a_snapshot_of_the_post_run_workspace" in limits

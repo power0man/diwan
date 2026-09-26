@@ -36,6 +36,20 @@ from evaluation.agentic_bank import attach as attach_thresholds
 from evaluation.agentic_runner import run_agentic_suite
 
 
+def select_tools(mode: str, *, execution: bool, analysis: bool) -> tuple:
+    """الأدواتُ كما تعلنها الواجهة (`webui/server.py::agent_registry`): أدواتُ التنفيذ حيث يُعطى إيصالُ
+    Docker وحده، فيُضبط بها منفذُ الوكيل لكل مهمّة. وإعلانُها بلا منفذٍ كان يردّ نداءها (ج٨، #117)."""
+    from agent.coder import EXECUTION_TOOLS, coder_tools
+    general = tuple(tool for tool in DEFAULT_TOOLS if execution or tool.spec.name not in EXECUTION_TOOLS)
+    if analysis:
+        from analysis.tool import ANALYZE_DATA
+        return (*general, ANALYZE_DATA)
+    if mode == "coder":
+        # المبرمجُ كما في الواجهة: أدواتُ الشيفرة، والتنفيذُ منها حيث يُعطى إيصالُ Docker
+        return tuple(coder_tools(DEFAULT_TOOLS, execution=execution))
+    return general
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--suite", type=Path,
@@ -58,15 +72,12 @@ def main(argv=None) -> int:
     provider = OllamaProvider(args.model)
     suite = json.loads(args.suite.read_text(encoding="utf-8"))
     try:
-        tools, options = DEFAULT_TOOLS, {}
+        options = {}
         if args.mode == "coder":
-            # المبرمجُ كما في الواجهة: أدواتُ الشيفرة، والتنفيذُ منها حيث يُعطى إيصالُ Docker
-            from agent.coder import CODER_SYSTEM, coder_tools
-            tools = tuple(coder_tools(DEFAULT_TOOLS, execution=args.execution_receipt is not None))
+            from agent.coder import CODER_SYSTEM
             options["system"] = CODER_SYSTEM
-        if args.analysis_receipt is not None:
-            from analysis.tool import ANALYZE_DATA
-            tools = (*DEFAULT_TOOLS, ANALYZE_DATA)
+        tools = select_tools(args.mode, execution=args.execution_receipt is not None,
+                             analysis=args.analysis_receipt is not None)
         report = run_agentic_suite(suite, provider, ToolRegistry(*tools),
                                    model=args.model, model_version=args.model_version,
                                    max_output=args.max_output,

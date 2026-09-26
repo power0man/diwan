@@ -464,12 +464,19 @@ class DockerExecutionBackend:
 
 
 def configure_execution_backend(receipt_path: Path, workspace_root: Path,
-                                snapshot_files: tuple[str, ...] = (), *, snapshot_selector=None) -> DockerExecutionBackend:
+                                snapshot_files: tuple[str, ...] = (), *, snapshot_selector=None,
+                                docker_executable: str | None = None) -> DockerExecutionBackend:
     """Trusted startup only; never expose this function as a model tool."""
+    options = {} if docker_executable is None else {"docker_executable": docker_executable}
     backend = DockerExecutionBackend(receipt_path, workspace_root, snapshot_files,
-                                     snapshot_selector=snapshot_selector)
+                                     snapshot_selector=snapshot_selector, **options)
     _BACKENDS[backend.root] = backend
     return backend
+
+
+def release_execution_backend(workspace_root: Path) -> None:
+    """Trusted teardown only: the workspace loses its container executor (a disposable benchmark task)."""
+    _BACKENDS.pop(Path(workspace_root), None)
 
 
 def execute_candidate(argv: tuple[str, ...], workspace_root, *, timeout_s: float = 30) -> ExecutionResult:
