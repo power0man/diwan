@@ -3,6 +3,13 @@
 This is separate from ChatSession v1. Checksums detect corruption, not an owner
 rewriting every control file together. Only completed, closed transcripts enter a
 later turn. An intent without a durable outcome is never retried automatically.
+
+A session manifest binds the workspace (ج١٢، ق٦٣). New sessions (manifest schema 3)
+bind its location-independent identity: a random ``workspace_id`` written once in
+the workspace (``.diwan-workspace/identity.json``, a hidden path tools cannot write)
+and recorded in the manifest, so control directory and workspace restore together
+at a new path. Path and inode stay runtime checks while a session is open. Sessions
+created before it (schema 2) keep their path, device and inode binding unchanged.
 """
 from __future__ import annotations
 
@@ -10,12 +17,13 @@ from contextlib import contextmanager
 import json
 import math
 import os
+import re
 import threading
 from pathlib import Path
 import uuid
 
 from agent.actions import ActionRefused, ActionStore
-from agent.journal import Journal, JournalRefused, _identity, _open_directory, _read, _regular
+from agent.journal import Journal, JournalRefused, _directory, _identity, _open_directory, _read, _regular
 from agent.loop import SYSTEM, _result_message, run_agent
 from agent.registry import ToolContext, ToolRegistry
 from conversation.agent_stop import StopSignals
@@ -35,6 +43,53 @@ MAX_LEDGER_BYTES = 32 * 1024 * 1024
 TERMINAL = frozenset({"complete", "truncated", "timed_out", "failed", "refused", "step_limit", "cancelled"})
 _TURN_KEYS = frozenset({"turn_id", "text", "initial_messages", "input_digest", "calls", "result", "transcript"})
 _OPTIONAL_TURN_KEYS = frozenset({"thinking", "memory"})
+WORKSPACE_ID_DIR = ".diwan-workspace"
+WORKSPACE_ID_FILE = "identity.json"
+_WORKSPACE_ID = re.compile(r"[a-f0-9]{32}\Z")
+
+
+def workspace_id(workspace_fd, *, create):
+    """هويّةُ مساحة العمل المستقلّة عن موضعها (ج١٢): تُكتب مرّةً وتُقرأ بعدها كما هي.
+
+    في دليلٍ مخفيّ داخل المساحة، فلا تكتبه أداةٌ (`_relative(writing=True)` يرفض المخفيّ)،
+    ولا تدخل لقطةَ المدخلات ولا الحاوية (كلتاهما تتخطّى المخفيّ). وبلا `create` تعيد None
+    إن غابت: مساحةٌ بلا هويّة ليست مساحةَ جلسةٍ مربوطةٍ بها.
+    """
+    try:
+        directory = _directory(workspace_fd, WORKSPACE_ID_DIR, create=create)
+    except FileNotFoundError:
+        return None
+    try:
+        info = os.fstat(directory)
+        if info.st_uid != os.getuid() or info.st_mode & 0o077:
+            _fail("unsafe_permissions", "دليل هوية المساحة خاص بمالكه")
+        for _ in range(2):
+            found = _read(directory, WORKSPACE_ID_FILE, 4096)
+            if found is not None:
+                if os.stat(WORKSPACE_ID_FILE, dir_fd=directory, follow_symlinks=False).st_mode & 0o077:
+                    _fail("unsafe_permissions", "هوية المساحة خاصة بمالكها")
+                record = _decode(found[0])
+                if (not isinstance(record, dict) or set(record) != {"schema_version", "workspace_id"}
+                        or record["schema_version"] != 1 or not isinstance(record["workspace_id"], str)
+                        or not _WORKSPACE_ID.fullmatch(record["workspace_id"])):
+                    _fail("state_corrupt", "هوية مساحة العمل غير صالحة")
+                return record["workspace_id"]
+            if not create:
+                return None
+            raw = canonical_bytes({"schema_version": 1, "workspace_id": uuid.uuid4().hex})
+            try:
+                fd = os.open(WORKSPACE_ID_FILE, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                             0o600, dir_fd=directory)
+            except FileExistsError:
+                continue  # كتبها منشئٌ متزامن: تُقرأ هي
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(raw)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.fsync(directory)
+        _fail("state_corrupt", "تعذر تثبيت هوية مساحة العمل")
+    finally:
+        os.close(directory)
 
 
 def _copy(value):
@@ -165,20 +220,31 @@ class AgentSession:
             workspace_fd = _open_directory(self.workspace)
             try:
                 self._workspace_identity = _identity(os.fstat(workspace_fd))
+                root_fd = _open_directory(self.root, create=True)
+                try:
+                    self._root_identity = _identity(os.fstat(root_fd))
+                    self._private_dir(root_fd)
+                    saved = _read(root_fd, "manifest.json", MAX_STATE_BYTES)
+                finally:
+                    os.close(root_fd)
+                # جلسةٌ من قبل ج١٢ تبقى على ربطها بالمسار والجهاز وinode؛ وغيرُها على هويّة المساحة
+                legacy = saved is not None and _decode(saved[0]).get("schema_version") == 2
+                bound = None if legacy else workspace_id(workspace_fd, create=saved is None)
             finally:
                 os.close(workspace_fd)
-            root_fd = _open_directory(self.root, create=True)
-            try:
-                self._root_identity = _identity(os.fstat(root_fd))
-                self._private_dir(root_fd)
-            finally:
-                os.close(root_fd)
         except (OSError, JournalRefused):
             _fail("unsafe_path", "مسار جلسة أو مساحة عمل غير آمن")
-        self.config = {"schema_version": 2, "session_id": session_id, "project_id": project_id,
-                       "workspace": {"path": str(self.workspace),
-                                     "device": str(self._workspace_identity[0]),
-                                     "inode": str(self._workspace_identity[1])},
+        except AttributeError:
+            _fail("state_corrupt", "بيان الجلسة غير صالح")
+        if legacy:
+            binding = {"path": str(self.workspace), "device": str(self._workspace_identity[0]),
+                       "inode": str(self._workspace_identity[1])}
+        elif bound is None:
+            _fail("configuration_conflict", "مساحة العمل بلا هوية؛ ليست مساحة هذه الجلسة")
+        else:
+            binding = {"workspace_id": bound}
+        self.config = {"schema_version": 2 if legacy else 3, "session_id": session_id, "project_id": project_id,
+                       "workspace": binding,
                        "model": model, "model_version": model_version,
                        "max_steps": max_steps, "max_output": max_output,
                        "deadline_s": str(float(deadline_s)), "max_context_chars": max_context_chars,
@@ -212,7 +278,8 @@ class AgentSession:
                         os.close(actions_fd)
                 except FileNotFoundError:
                     _fail("state_missing", "مخزن أفعال جلسة سابقة مفقود")
-            self.action_store = ActionStore(self.root / "actions", self.workspace)
+            self.action_store = ActionStore(self.root / "actions", self.workspace,
+                                            workspace_id=binding.get("workspace_id"))
             self._settle_stops(self._load())
             self.context = ToolContext(self.workspace, self.journal,
                                        allowed_consents=frozenset({"auto", "logged"}))

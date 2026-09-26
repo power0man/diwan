@@ -278,7 +278,8 @@ class LocalApp:
         else:
             with self.directory(root / identifier(session_id)) as fd:
                 saved = _read_json(fd, "manifest.json")
-            need(type(saved) is dict and saved.get("schema_version") == 2, "metadata_invalid")
+            # ٢ ما قبل ج١٢ (ربطٌ بالموضع)، و٣ بهويّة المساحة المستقلّة عن الموضع
+            need(type(saved) is dict and saved.get("schema_version") in (2, 3), "metadata_invalid")
             need(saved.get("project_id") == project.name and saved.get("session_id") == session_id,
                  "metadata_invalid")
             # كلُّ أداةٍ قد تُعلنها جلسةٌ محفوظة: الافتراضيةُ، والبحثُ (يرفض بالاسم إن لم يُضبط محرّك)، والذاكرة

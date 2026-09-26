@@ -26,6 +26,7 @@ from core.contracts import CALL_ID, CONSENT_GRADES, TOOL_NAME, ToolCall, ToolSpe
 SHA = re.compile(r"[a-f0-9]{64}\Z")
 IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,159}\Z")
 ACTION_ID = re.compile(r"action-[a-f0-9]{64}\Z")
+WORKSPACE_ID = re.compile(r"[a-f0-9]{32}\Z")
 MAX_RECORD_BYTES = 96 * 1024 * 1024
 MAX_INPUT_BYTES = 64 * 1024 * 1024
 MAX_FILES = 4096
@@ -78,9 +79,19 @@ def _declaration(call, spec):
 
 
 class ActionStore:
-    """One private store bound to one workspace; no model-selected state paths."""
+    """One private store bound to one workspace; no model-selected state paths.
 
-    def __init__(self, state_root, workspace_root):
+    The persisted binding is either the workspace's location-independent identity
+    (``workspace_id``, ج١٢) or, for stores created before it, its path, device and
+    inode. Path and inode are always re-checked at runtime (``_check_paths``); with
+    ``workspace_id`` they only stay out of the receipts, so a backup restores intact.
+    """
+
+    def __init__(self, state_root, workspace_root, *, workspace_id=None):
+        if workspace_id is not None and (not isinstance(workspace_id, str)
+                                         or not WORKSPACE_ID.fullmatch(workspace_id)):
+            _fail("action_identity_invalid", "هوية مساحة العمل غير صالحة")
+        self.workspace_id = workspace_id
         self.directory, self.workspace = _path(state_root), _path(workspace_root)
         if self.directory == self.workspace or self.directory.is_relative_to(self.workspace):
             _fail("action_state_inside_workspace", "مخزن الأفعال يجب أن يكون خارج مساحة الأدوات")
@@ -112,6 +123,8 @@ class ActionStore:
             raise ActionRefused("action_state_unsafe", "تعذر فتح مخزن آمن بلا روابط أو التباس") from exc
 
     def _workspace_binding(self):
+        if self.workspace_id is not None:
+            return {"workspace_id": self.workspace_id}
         return {"path": str(self.workspace), "device": str(self.workspace_identity[0]),
                 "inode": str(self.workspace_identity[1])}
 
