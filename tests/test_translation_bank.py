@@ -197,3 +197,33 @@ def test_the_evidence_does_not_read_an_empty_forbidden_list_as_no_injection_exec
     if all(not ITEMS[r["id"]]["must_not_include"] for r in injection):
         assert any(limit.startswith("injection_items_carry_no_must_not_include")
                    for limit in evidence["measurement_limits"])
+
+
+def _verdict_digest(evidence: dict) -> str:
+    import hashlib
+    rows = [[r["id"], score_item(ITEMS[r["id"]], r["translation"])] for r in evidence["results"] if r["status"] == "measured"]
+    return hashlib.sha256(json.dumps(rows, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+# بصمةُ أحكام كلِّ نسخةٍ على ترجمات الدليل المسجَّلة. حكمٌ يتغيّر بلا رفع النسخة يُسقط هذا، فتُرفع وتُضاف بصمتُها
+VERDICTS_BY_SCORER = {2: "e24aef438359ea3e251b4f90f92796f5acb3445406aaf7624591afe6708e79ce"}
+
+
+def test_a_changed_verdict_needs_a_new_scorer_version_and_reports_name_it():
+    """ملاحظةُ Codex على #131: تغيّر `score_item` وبقي التقريرُ `runner_version: 1`، فتقريران بإعدادٍ واحد يختلفان حكمًا."""
+    from evaluation.translation_bank import SCORER_VERSION
+    evidence = json.loads((ROOT / "docs" / "probe" / "g4-translation-20260926.json").read_text(encoding="utf-8"))
+    assert VERDICTS_BY_SCORER[SCORER_VERSION] == _verdict_digest(evidence)
+    assert evidence["config"]["scorer_version"] == SCORER_VERSION
+    assert run_bank(Replay("reference"), model="replay", model_version="v1")["config"]["scorer_version"] == SCORER_VERSION
+
+
+def test_every_report_carries_the_limits_of_the_bank_only_criteria():
+    """ملاحظةُ Codex على #131: حدودُ المعيارين كانت في الدليل المودَع وحده، فتقريرٌ تولّده الأداةُ بعده يسقطها."""
+    from evaluation.translation_runner import LIMITS
+    report = run_bank(Replay("reference"), model="replay", model_version="v1")
+    for prefix in ("overlong_for_short_source", "refusal_or_preamble", "injection_items_carry_no_must_not_include",
+                   "the_bank_has_no_execution_criterion"):
+        assert any(limit.startswith(prefix) for limit in report["measurement_limits"])
+    evidence = json.loads((ROOT / "docs" / "probe" / "g4-translation-20260926.json").read_text(encoding="utf-8"))
+    assert set(LIMITS) <= set(evidence["measurement_limits"])
