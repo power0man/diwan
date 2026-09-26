@@ -1,0 +1,2839 @@
+{
+  "schema_version": 1,
+  "kind": "g3_retrieval",
+  "task": "غ٣",
+  "issue": "power0man/diwan#24",
+  "date": "2026-09-27",
+  "agent": "anthropic/claude-opus-5-5",
+  "engine": null,
+  "config": {
+    "bank": "evaluation/suites/retrieval_general_v1.json",
+    "bank_sha256": "df7ca9456ae1f451d79b021b981d2ed23ef374a6025f546c373f525354a8da4f",
+    "rrf_k": 60,
+    "embedder": {
+      "model": "qwen3-embedding:0.6b",
+      "digest": "ac6da0dfba84a81fdbfbaf330198c33cd77c4cdfc53e8bc50eb581914a15621d",
+      "provider": "ollama-local"
+    },
+    "protocol_sha256": "4df31babe1b15899fe3e9c7eb3359cf3a213530d44e86b823e21540fb3328105",
+    "protocol_vectors_status": "blocked"
+  },
+  "arms": {
+    "bm25": {
+      "overall": {
+        "queries": 120,
+        "hit_at_5": 0.675,
+        "hit_at_5_ci95": [
+          0.5869,
+          0.7522
+        ],
+        "ndcg_at_10": 0.6389,
+        "ndcg_at_10_ci95": [
+          0.5596,
+          0.7172
+        ],
+        "mrr": 0.6181
+      },
+      "by_type": {
+        "lexical": {
+          "queries": 60,
+          "hit_at_5": 0.9333,
+          "hit_at_5_ci95": [
+            0.8407,
+            0.9738
+          ],
+          "ndcg_at_10": 0.9003,
+          "ndcg_at_10_ci95": [
+            0.8237,
+            0.9627
+          ],
+          "mrr": 0.8894
+        },
+        "paraphrase": {
+          "queries": 60,
+          "hit_at_5": 0.4167,
+          "hit_at_5_ci95": [
+            0.3006,
+            0.5427
+          ],
+          "ndcg_at_10": 0.3775,
+          "ndcg_at_10_ci95": [
+            0.2668,
+            0.4852
+          ],
+          "mrr": 0.3468
+        }
+      }
+    },
+    "vectors": {
+      "overall": {
+        "queries": 120,
+        "hit_at_5": 0.9917,
+        "hit_at_5_ci95": [
+          0.9543,
+          0.9985
+        ],
+        "ndcg_at_10": 0.9317,
+        "ndcg_at_10_ci95": [
+          0.8995,
+          0.963
+        ],
+        "mrr": 0.9092
+      },
+      "by_type": {
+        "lexical": {
+          "queries": 60,
+          "hit_at_5": 0.9833,
+          "hit_at_5_ci95": [
+            0.9114,
+            0.9971
+          ],
+          "ndcg_at_10": 0.9886,
+          "ndcg_at_10_ci95": [
+            0.9658,
+            1.0
+          ],
+          "mrr": 0.9854
+        },
+        "paraphrase": {
+          "queries": 60,
+          "hit_at_5": 1.0,
+          "hit_at_5_ci95": [
+            0.9398,
+            1.0
+          ],
+          "ndcg_at_10": 0.8748,
+          "ndcg_at_10_ci95": [
+            0.8187,
+            0.9286
+          ],
+          "mrr": 0.8331
+        }
+      }
+    },
+    "hybrid": {
+      "overall": {
+        "queries": 120,
+        "hit_at_5": 0.8333,
+        "hit_at_5_ci95": [
+          0.7565,
+          0.8894
+        ],
+        "ndcg_at_10": 0.7745,
+        "ndcg_at_10_ci95": [
+          0.7071,
+          0.8343
+        ],
+        "mrr": 0.7462
+      },
+      "by_type": {
+        "lexical": {
+          "queries": 60,
+          "hit_at_5": 0.9667,
+          "hit_at_5_ci95": [
+            0.8864,
+            0.9908
+          ],
+          "ndcg_at_10": 0.9667,
+          "ndcg_at_10_ci95": [
+            0.9167,
+            1.0
+          ],
+          "mrr": 0.9685
+        },
+        "paraphrase": {
+          "queries": 60,
+          "hit_at_5": 0.7,
+          "hit_at_5_ci95": [
+            0.5749,
+            0.801
+          ],
+          "ndcg_at_10": 0.5823,
+          "ndcg_at_10_ci95": [
+            0.481,
+            0.6746
+          ],
+          "mrr": 0.524
+        }
+      }
+    }
+  },
+  "comparisons": {
+    "hybrid_vs_bm25": {
+      "hit_at_5": {
+        "pairs": 120,
+        "errors": 0,
+        "on_rate": 0.8333,
+        "off_rate": 0.675,
+        "effect": 0.1583,
+        "ci95": [
+          0.0894,
+          0.2221
+        ],
+        "on_only": 19,
+        "off_only": 0
+      },
+      "ndcg_at_10_difference": 0.1356,
+      "protocol_rule": {
+        "decision": "underpowered",
+        "reason": "pairs 120 < min_items 461"
+      }
+    },
+    "vectors_vs_bm25": {
+      "hit_at_5": {
+        "pairs": 120,
+        "errors": 0,
+        "on_rate": 0.9917,
+        "off_rate": 0.675,
+        "effect": 0.3167,
+        "ci95": [
+          0.2277,
+          0.3952
+        ],
+        "on_only": 38,
+        "off_only": 0
+      },
+      "ndcg_at_10_difference": 0.2928,
+      "protocol_rule": {
+        "decision": "underpowered",
+        "reason": "pairs 120 < min_items 461"
+      }
+    }
+  },
+  "rows": {
+    "bm25": [
+      {
+        "id": "rg_q001",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q002",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q003",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q004",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q005",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q006",
+        "type": "paraphrase",
+        "rank": 19,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q007",
+        "type": "lexical",
+        "rank": 5,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.3869
+      },
+      {
+        "id": "rg_q008",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q009",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q010",
+        "type": "paraphrase",
+        "rank": 4,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.4307
+      },
+      {
+        "id": "rg_q011",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q012",
+        "type": "paraphrase",
+        "rank": 18,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q013",
+        "type": "lexical",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q014",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q015",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q016",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q017",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q018",
+        "type": "paraphrase",
+        "rank": 18,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q019",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q020",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q021",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q022",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q023",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q024",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q025",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q026",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q027",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q028",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q029",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q030",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q031",
+        "type": "lexical",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q032",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q033",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q034",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q035",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q036",
+        "type": "paraphrase",
+        "rank": 21,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q037",
+        "type": "lexical",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q038",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q039",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q040",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q041",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q042",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q043",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q044",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q045",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q046",
+        "type": "paraphrase",
+        "rank": 10,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.2891
+      },
+      {
+        "id": "rg_q047",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q048",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q049",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q050",
+        "type": "paraphrase",
+        "rank": 23,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q051",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q052",
+        "type": "paraphrase",
+        "rank": 24,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q053",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q054",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q055",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q056",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q057",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q058",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q059",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q060",
+        "type": "paraphrase",
+        "rank": 7,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.3333
+      },
+      {
+        "id": "rg_q061",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q062",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q063",
+        "type": "lexical",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q064",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q065",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q066",
+        "type": "paraphrase",
+        "rank": 25,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q067",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q068",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q069",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q070",
+        "type": "paraphrase",
+        "rank": 4,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.4307
+      },
+      {
+        "id": "rg_q071",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q072",
+        "type": "paraphrase",
+        "rank": 7,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.3333
+      },
+      {
+        "id": "rg_q073",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q074",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q075",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q076",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q077",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q078",
+        "type": "paraphrase",
+        "rank": 8,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.3155
+      },
+      {
+        "id": "rg_q079",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q080",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q081",
+        "type": "lexical",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q082",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q083",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q084",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q085",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q086",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q087",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q088",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q089",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q090",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q091",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q092",
+        "type": "paraphrase",
+        "rank": 9,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.301
+      },
+      {
+        "id": "rg_q093",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q094",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q095",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q096",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q097",
+        "type": "lexical",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q098",
+        "type": "paraphrase",
+        "rank": 26,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q099",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q100",
+        "type": "paraphrase",
+        "rank": 16,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q101",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q102",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q103",
+        "type": "lexical",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q104",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q105",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q106",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q107",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q108",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q109",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q110",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q111",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q112",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q113",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q114",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q115",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q116",
+        "type": "paraphrase",
+        "rank": null,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q117",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q118",
+        "type": "paraphrase",
+        "rank": 4,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.4307
+      },
+      {
+        "id": "rg_q119",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q120",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      }
+    ],
+    "vectors": [
+      {
+        "id": "rg_q001",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q002",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q003",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q004",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q005",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q006",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q007",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q008",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q009",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q010",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q011",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q012",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q013",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q014",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q015",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q016",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q017",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q018",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q019",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q020",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q021",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q022",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q023",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q024",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q025",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q026",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q027",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q028",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q029",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q030",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q031",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q032",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q033",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q034",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q035",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q036",
+        "type": "paraphrase",
+        "rank": 4,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.4307
+      },
+      {
+        "id": "rg_q037",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q038",
+        "type": "paraphrase",
+        "rank": 5,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.3869
+      },
+      {
+        "id": "rg_q039",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q040",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q041",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q042",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q043",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q044",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q045",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q046",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q047",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q048",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q049",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q050",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q051",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q052",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q053",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q054",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q055",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q056",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q057",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q058",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q059",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q060",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q061",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q062",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q063",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q064",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q065",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q066",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q067",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q068",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q069",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q070",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q071",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q072",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q073",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q074",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q075",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q076",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q077",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q078",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q079",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q080",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q081",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q082",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q083",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q084",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q085",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q086",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q087",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q088",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q089",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q090",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q091",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q092",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q093",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q094",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q095",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q096",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q097",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q098",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q099",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q100",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q101",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q102",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q103",
+        "type": "lexical",
+        "rank": 8,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.3155
+      },
+      {
+        "id": "rg_q104",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q105",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q106",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q107",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q108",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q109",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q110",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q111",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q112",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q113",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q114",
+        "type": "paraphrase",
+        "rank": 5,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.3869
+      },
+      {
+        "id": "rg_q115",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q116",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q117",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q118",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q119",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q120",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      }
+    ],
+    "hybrid": [
+      {
+        "id": "rg_q001",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q002",
+        "type": "paraphrase",
+        "rank": 5,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.3869
+      },
+      {
+        "id": "rg_q003",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q004",
+        "type": "paraphrase",
+        "rank": 17,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q005",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q006",
+        "type": "paraphrase",
+        "rank": 4,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.4307
+      },
+      {
+        "id": "rg_q007",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q008",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q009",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q010",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q011",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q012",
+        "type": "paraphrase",
+        "rank": 4,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.4307
+      },
+      {
+        "id": "rg_q013",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q014",
+        "type": "paraphrase",
+        "rank": 13,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q015",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q016",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q017",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q018",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q019",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q020",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q021",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q022",
+        "type": "paraphrase",
+        "rank": 21,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q023",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q024",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q025",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q026",
+        "type": "paraphrase",
+        "rank": 15,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q027",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q028",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q029",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q030",
+        "type": "paraphrase",
+        "rank": 27,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q031",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q032",
+        "type": "paraphrase",
+        "rank": 16,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q033",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q034",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q035",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q036",
+        "type": "paraphrase",
+        "rank": 6,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.3562
+      },
+      {
+        "id": "rg_q037",
+        "type": "lexical",
+        "rank": 14,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q038",
+        "type": "paraphrase",
+        "rank": 27,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q039",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q040",
+        "type": "paraphrase",
+        "rank": 19,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q041",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q042",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q043",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q044",
+        "type": "paraphrase",
+        "rank": 32,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q045",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q046",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q047",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q048",
+        "type": "paraphrase",
+        "rank": 5,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.3869
+      },
+      {
+        "id": "rg_q049",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q050",
+        "type": "paraphrase",
+        "rank": 5,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.3869
+      },
+      {
+        "id": "rg_q051",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q052",
+        "type": "paraphrase",
+        "rank": 8,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.3155
+      },
+      {
+        "id": "rg_q053",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q054",
+        "type": "paraphrase",
+        "rank": 29,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q055",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q056",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q057",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q058",
+        "type": "paraphrase",
+        "rank": 5,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.3869
+      },
+      {
+        "id": "rg_q059",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q060",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q061",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q062",
+        "type": "paraphrase",
+        "rank": 10,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.2891
+      },
+      {
+        "id": "rg_q063",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q064",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q065",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q066",
+        "type": "paraphrase",
+        "rank": 6,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.3562
+      },
+      {
+        "id": "rg_q067",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q068",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q069",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q070",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q071",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q072",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q073",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q074",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q075",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q076",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q077",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q078",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q079",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q080",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q081",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q082",
+        "type": "paraphrase",
+        "rank": 7,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.3333
+      },
+      {
+        "id": "rg_q083",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q084",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q085",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q086",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q087",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q088",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q089",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q090",
+        "type": "paraphrase",
+        "rank": 25,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q091",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q092",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q093",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q094",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q095",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q096",
+        "type": "paraphrase",
+        "rank": 7,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.3333
+      },
+      {
+        "id": "rg_q097",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q098",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q099",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q100",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q101",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q102",
+        "type": "paraphrase",
+        "rank": 12,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q103",
+        "type": "lexical",
+        "rank": 28,
+        "hit_at_5": false,
+        "ndcg_at_10": 0.0
+      },
+      {
+        "id": "rg_q104",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q105",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q106",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q107",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q108",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q109",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q110",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q111",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q112",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q113",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q114",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q115",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q116",
+        "type": "paraphrase",
+        "rank": 3,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.5
+      },
+      {
+        "id": "rg_q117",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q118",
+        "type": "paraphrase",
+        "rank": 2,
+        "hit_at_5": true,
+        "ndcg_at_10": 0.6309
+      },
+      {
+        "id": "rg_q119",
+        "type": "lexical",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      },
+      {
+        "id": "rg_q120",
+        "type": "paraphrase",
+        "rank": 1,
+        "hit_at_5": true,
+        "ndcg_at_10": 1.0
+      }
+    ]
+  },
+  "measurement_limits": [
+    "bank_authored_by_a_developer_family_one_gold_passage_per_query_not_blind",
+    "sixty_short_passages_a_small_corpus_so_absolute_scores_run_high",
+    "bm25_arm_has_no_morphological_expansion_unlike_the_product_hybrid_retriever",
+    "embedder_is_a_retriever_not_a_judge_gold_labels_decide",
+    "single_run_deterministic_ci_from_wilson_and_seeded_bootstrap",
+    "ablation_rule_for_vectors_needs_461_pairs_so_120_queries_are_underpowered_by_the_protocol"
+  ],
+  "baseline": {
+    "embedder": {
+      "model": "bge-m3",
+      "digest": "7907646426070047a77226ac3e684fbbe8410524f7b4a74d02837e43f2146bab"
+    },
+    "arms": {
+      "vectors": {
+        "overall": {
+          "queries": 120,
+          "hit_at_5": 0.9833,
+          "hit_at_5_ci95": [
+            0.9413,
+            0.9954
+          ],
+          "ndcg_at_10": 0.9633,
+          "ndcg_at_10_ci95": [
+            0.9367,
+            0.9863
+          ],
+          "mrr": 0.9515
+        },
+        "by_type": {
+          "lexical": {
+            "queries": 60,
+            "hit_at_5": 0.9833,
+            "hit_at_5_ci95": [
+              0.9114,
+              0.9971
+            ],
+            "ndcg_at_10": 0.9889,
+            "ndcg_at_10_ci95": [
+              0.9667,
+              1.0
+            ],
+            "mrr": 0.9857
+          },
+          "paraphrase": {
+            "queries": 60,
+            "hit_at_5": 0.9833,
+            "hit_at_5_ci95": [
+              0.9114,
+              0.9971
+            ],
+            "ndcg_at_10": 0.9378,
+            "ndcg_at_10_ci95": [
+              0.892,
+              0.977
+            ],
+            "mrr": 0.9172
+          }
+        }
+      },
+      "hybrid": {
+        "overall": {
+          "queries": 120,
+          "hit_at_5": 0.8333,
+          "hit_at_5_ci95": [
+            0.7565,
+            0.8894
+          ],
+          "ndcg_at_10": 0.7775,
+          "ndcg_at_10_ci95": [
+            0.7105,
+            0.8386
+          ],
+          "mrr": 0.7504
+        },
+        "by_type": {
+          "lexical": {
+            "queries": 60,
+            "hit_at_5": 0.9667,
+            "hit_at_5_ci95": [
+              0.8864,
+              0.9908
+            ],
+            "ndcg_at_10": 0.9667,
+            "ndcg_at_10_ci95": [
+              0.9167,
+              1.0
+            ],
+            "mrr": 0.9686
+          },
+          "paraphrase": {
+            "queries": 60,
+            "hit_at_5": 0.7,
+            "hit_at_5_ci95": [
+              0.5749,
+              0.801
+            ],
+            "ndcg_at_10": 0.5884,
+            "ndcg_at_10_ci95": [
+              0.4866,
+              0.6786
+            ],
+            "mrr": 0.5322
+          }
+        }
+      }
+    }
+  }
+}
