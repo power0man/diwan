@@ -254,3 +254,15 @@ def test_the_governing_plan_no_longer_waits_on_the_canceled_gemini_reviewer():
     assert "NEW-gemini-app" not in guides
     live = json.dumps(plan["tasks"] + plan["owner_steps"], ensure_ascii=False)
     assert "gemini_review.py" not in live and not re.search(r"gemini-review(?!er)", live)
+
+
+def test_every_guide_step_that_sets_up_gemini_is_marked_canceled():
+    """ملاحظةُ Codex على #125: لافتةٌ في رأس الدليل وتحتها خطواتُ تثبيت Gemini كما هي يتبعها المالكُ خطوةً خطوة."""
+    gemini = re.compile(r"gemini[- ]code[- ]assist|GEMINI_API_KEY|GEMINI_MODEL|gemini-review(?!er)|\.gemini/", re.I)
+    for name in ("G1", "G2", "G3"):
+        text = (ROOT / "docs" / "guides" / f"{name}.md").read_text(encoding="utf-8")
+        preamble, *sections = re.split(r"(?m)^(?=### )", text)
+        assert "ق٦٥" in preamble, name
+        for section in sections:
+            if gemini.search(section):
+                assert "ق٦٥" in section.split("\n\n", 2)[0] + section.split("\n\n", 2)[1], section.splitlines()[0]
