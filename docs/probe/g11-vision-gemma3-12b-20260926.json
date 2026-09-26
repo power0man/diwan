@@ -1,0 +1,300 @@
+{
+ "schema_version": 1,
+ "probe": "g11-vision-gemma3-12b",
+ "task": "غ١١ (#52)",
+ "date": "2026-09-26",
+ "agent": "anthropic/claude-opus-5-5",
+ "question": "ما دقّةُ gemma3:12b في Ollama المحلي على بطاقة Nitro، على شطر الفهم المجمَّد من بنك غ٧ (40 صورة)، وهل يبلغ العتباتِ المسجَّلة سلفًا؟",
+ "answer": "لا يبلغها. الدقّة الكلّية 0.775 فوق 0.75 بقليل، لكن العدّ 0.2 (2 من 10) دون حدِّ الفئة، والرسمُ البيانيّ 0.875.",
+ "command": "uv run python evaluation/vision_runner.py --model gemma3:12b --out docs/probe/g11-vision-gemma3-12b-20260926.json — ومنه engine وreport وerrors وitems كما هي؛ والسؤالُ والجوابُ والبيئةُ والحدودُ أُضيفت بعده",
+ "environment": {
+  "machine": "Acer Nitro AN515-58 (docs/SECOND-NODE.md)",
+  "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU, 8188 MiB, driver 610.62",
+  "os": "Windows 11 (Ollama 0.34.4 on Windows); runner in WSL2 Ubuntu 26.04, Python 3.12.14 (uv env)",
+  "ollama_url": "http://127.0.0.1:11434 (WSL mirrored networking)"
+ },
+ "measurement_limits": [
+  "القياسُ للنموذج وحده عبر `evaluation/ocr_runner.py` و`evaluation/vision_runner.py`، لا لطريق المنتج (لا واجهة ولا حلقة وكيلة ولا حَجر).",
+  "على Nitro: RTX 4060 Laptop بذاكرة 8 GB، وOllama 0.34.4 على ويندوز، والمشغِّلُ في WSL2. والأزمنةُ تخصّ هذا الجهاز.",
+  "نداءٌ واحد لكل صورة بـtemperature 0 وseed 0، فلا تقديرَ لتباين. والموجّهُ والإعدادُ كما في المشغِّل، ولم يُضبط شيءٌ بعد رؤية النتائج.",
+  "النماذجُ الثلاثة سُجّلت في التكليف قبل أيّ قياس، ونُشرت نتائجُها كلُّها.",
+  "البطاقة: 31 من 49 طبقةً على البطاقة والباقي على المعالج (8.1 GB على 8 GB). والزمن 133 ثانية لأربعين صورة.",
+  "أربعون صورةً مصطنعة في ستّ فئات، والحكمُ على سطر «الجواب:» وحده؛ فالجوابُ الصحيح بلا السطر خطأ.",
+  "فئةُ العدّ هي التي تُسقط الحكم عند النموذجين الأعليين، وعشرُ صورٍ لا تكفي لتمييز فرقٍ صغير بينهما."
+ ],
+ "suite_id": "media_v1_vision",
+ "bank_manifest_sha256": "b942ed8763b139810e990b05285ac1e22bad9c5a6546a535a0f55fb69e3ec742",
+ "engine": {
+  "name": "ollama:gemma3:12b",
+  "version": "f4031aab637d / ollama 0.34.4",
+  "settings": {
+   "options": {
+    "temperature": 0,
+    "seed": 0,
+    "num_predict": 2048
+   },
+   "think": null,
+   "digest": "f4031aab637d1ffa37b42570452ae0e4fad0314754d17ded67322e4b95836f8a",
+   "ollama": "0.34.4"
+  }
+ },
+ "thresholds": {
+  "accuracy": 0.75,
+  "min_category_accuracy": 0.5
+ },
+ "report": {
+  "accuracy": 0.775,
+  "categories": {
+   "counting": 0.2,
+   "colors": 1.0,
+   "spatial": 1.0,
+   "chart": 0.875,
+   "table": 1.0,
+   "sign": 1.0
+  },
+  "meets": false
+ },
+ "errors": {},
+ "items": [
+  {
+   "id": "v01",
+   "category": "counting",
+   "response": "هناك 5 أشكال في الصورة.\n\nالجواب: 5",
+   "correct": false
+  },
+  {
+   "id": "v02",
+   "category": "counting",
+   "response": "هناك 5 مربعات زرقاء في الصورة.\n\nالجواب: 5",
+   "correct": false
+  },
+  {
+   "id": "v03",
+   "category": "counting",
+   "response": "هناك 6 مثلثات في الصورة.\n\nالجواب: 6",
+   "correct": false
+  },
+  {
+   "id": "v04",
+   "category": "counting",
+   "response": "هناك 7 مثلثات زرقاء في الصورة.\n\nالجواب: 7",
+   "correct": false
+  },
+  {
+   "id": "v05",
+   "category": "counting",
+   "response": "هناك 3 دوائر في الصورة.\n\nالجواب: 3",
+   "correct": true
+  },
+  {
+   "id": "v06",
+   "category": "counting",
+   "response": "هناك 8 مثلثات حمراء في الصورة.\n\nالجواب: 8",
+   "correct": false
+  },
+  {
+   "id": "v07",
+   "category": "counting",
+   "response": "هناك 4 دوائر في الصورة.\n\nالجواب: 4",
+   "correct": true
+  },
+  {
+   "id": "v08",
+   "category": "counting",
+   "response": "هناك ثلاثة مثلثات حمراء في الصورة.\n\nالجواب: 3",
+   "correct": false
+  },
+  {
+   "id": "v09",
+   "category": "counting",
+   "response": "هناك 4 مربعات في الصورة.\n\nالجواب: 4",
+   "correct": false
+  },
+  {
+   "id": "v10",
+   "category": "counting",
+   "response": "الجواب: 11",
+   "correct": false
+  },
+  {
+   "id": "v11",
+   "category": "colors",
+   "response": "الجواب: أزرق",
+   "correct": true
+  },
+  {
+   "id": "v12",
+   "category": "colors",
+   "response": "الجواب: أحمر",
+   "correct": true
+  },
+  {
+   "id": "v13",
+   "category": "colors",
+   "response": "الجواب: أحمر",
+   "correct": true
+  },
+  {
+   "id": "v14",
+   "category": "colors",
+   "response": "الجواب: أصفر",
+   "correct": true
+  },
+  {
+   "id": "v15",
+   "category": "colors",
+   "response": "الجواب: أصفر",
+   "correct": true
+  },
+  {
+   "id": "v16",
+   "category": "colors",
+   "response": "الجواب: أحمر",
+   "correct": true
+  },
+  {
+   "id": "v17",
+   "category": "spatial",
+   "response": "الجواب: المربع",
+   "correct": true
+  },
+  {
+   "id": "v18",
+   "category": "spatial",
+   "response": "الجواب: فوق",
+   "correct": true
+  },
+  {
+   "id": "v19",
+   "category": "spatial",
+   "response": "الجواب: المثلث",
+   "correct": true
+  },
+  {
+   "id": "v20",
+   "category": "spatial",
+   "response": "الجواب: تحت",
+   "correct": true
+  },
+  {
+   "id": "v21",
+   "category": "spatial",
+   "response": "الجواب: المربع",
+   "correct": true
+  },
+  {
+   "id": "v22",
+   "category": "spatial",
+   "response": "الجواب: فوق",
+   "correct": true
+  },
+  {
+   "id": "v23",
+   "category": "chart",
+   "response": "الجواب: ٧٢",
+   "correct": true
+  },
+  {
+   "id": "v24",
+   "category": "chart",
+   "response": "الجواب: 72",
+   "correct": true
+  },
+  {
+   "id": "v25",
+   "category": "chart",
+   "response": "الجواب: 10",
+   "correct": false
+  },
+  {
+   "id": "v26",
+   "category": "chart",
+   "response": "الجواب: 68",
+   "correct": true
+  },
+  {
+   "id": "v27",
+   "category": "chart",
+   "response": "The bar graph shows monthly sales in thousands. The highest bar corresponds to March.\n\nالجواب: مارس",
+   "correct": true
+  },
+  {
+   "id": "v28",
+   "category": "chart",
+   "response": "يونيو هو الشهر الذي له أعلى قيمة.\n\nالجواب: يونيو",
+   "correct": true
+  },
+  {
+   "id": "v29",
+   "category": "chart",
+   "response": "أبريل هو الشهر الذي له أعلى قيمة.\n\nالجواب: أبريل",
+   "correct": true
+  },
+  {
+   "id": "v30",
+   "category": "chart",
+   "response": "The bar graph shows monthly sales in thousands of dollars. The highest bar corresponds to March with a value of 75.\n\nالجواب: مارس",
+   "correct": true
+  },
+  {
+   "id": "v31",
+   "category": "table",
+   "response": "الجواب: 12",
+   "correct": true
+  },
+  {
+   "id": "v32",
+   "category": "table",
+   "response": "الجواب: ٢٣",
+   "correct": true
+  },
+  {
+   "id": "v33",
+   "category": "table",
+   "response": "الجواب: ٨",
+   "correct": true
+  },
+  {
+   "id": "v34",
+   "category": "table",
+   "response": "الجواب: ٨",
+   "correct": true
+  },
+  {
+   "id": "v35",
+   "category": "table",
+   "response": "الجواب: 21",
+   "correct": true
+  },
+  {
+   "id": "v36",
+   "category": "sign",
+   "response": "العبارة المكتوبة على اللافتة هي \"مغلق للصيانة\".\n\nالجواب: مغلق للصيانة",
+   "correct": true
+  },
+  {
+   "id": "v37",
+   "category": "sign",
+   "response": "العبارة المكتوبة على اللافتة هي \"ممنوع التدخين\".\n\nالجواب: ممنوع التدخين",
+   "correct": true
+  },
+  {
+   "id": "v38",
+   "category": "sign",
+   "response": "العبارة المكتوبة على اللافتة هي \"المخرج\".\n\nالجواب: المخرج",
+   "correct": true
+  },
+  {
+   "id": "v39",
+   "category": "sign",
+   "response": "العبارة المكتوبة على اللافتة هي \"الطابق الثاني\".\n\nالجواب: الطابق الثاني",
+   "correct": true
+  },
+  {
+   "id": "v40",
+   "category": "sign",
+   "response": "العبارة المكتوبة على اللافتة هي \"الدفع نقداً فقط\".\n\nالجواب: الدفع نقداً فقط",
+   "correct": true
+  }
+ ]
+}
