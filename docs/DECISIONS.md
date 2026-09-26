@@ -1044,7 +1044,7 @@ DALUB بقيةُ غ٦. وبقيةُ §٦ من `AGENTS.md` للمالك: تسمي
 ١. يُحذف مراجِعُ Gemini: `.github/workflows/gemini-review.yml` و`tools/gemini_review.py` واختبارُه و`.gemini/styleguide.md`. ويخرج
    `gemini-code-assist[bot]` من `registry/reviewers.json`، فلا تُحتسب مراجعةٌ باسمه (اختبارٌ في `tests/test_family_review.py`).
 ٢. **البديل Codex:** المراجِعُ المحتسب من عائلةٍ أخرى على طلبات anthropic وgoogle. وكلُّ عميلٍ يكتب `@codex review` بعد كل دفعٍ إلى طلبٍ
-   مفتوح (`AGENTS.md` §٥)، لأن المراجعة لا تُحتسب إلا على الرأس الحالي.
+   مفتوحٍ ليس من عائلة openai (`AGENTS.md` §٥؛ وطلبُ openai في البند ٤)، لأن المراجعة لا تُحتسب إلا على الرأس الحالي.
 ٣. **تعليقُ المراجعة النظيفة:** Codex حين لا يجد ملاحظةً لا ينشر «مراجعة» بل تعليقًا («Didn't find any major issues» مع
    «Reviewed commit»)، فيُقرأ تعليقُه هذا مراجعةً على الإيداع الذي يسمّيه، ولا يُحتسب إلا إن كان الرأسَ الحاليّ
    (`tools/family_review.py`). وينتظر الفحصُ مراجِعَه حتى ١٥ دقيقة بعد الدفع، لأن Codex يأتي بعده بدقائق.

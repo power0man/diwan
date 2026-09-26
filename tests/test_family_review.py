@@ -281,3 +281,11 @@ def test_deleting_the_counted_comment_reruns_the_gate():
     workflow = (ROOT / ".github" / "workflows" / "family-review-recheck.yml").read_text(encoding="utf-8")
     types = re.search(r"types:\s*\[([^\]]*)\]", workflow).group(1)
     assert {t.strip() for t in types.split(",")} == {"created", "edited", "deleted"}
+
+
+def test_the_codex_review_instruction_excludes_openai_authored_pull_requests():
+    """ملاحظةُ Codex على #125: طلبُ Codex على طلبٍ من عائلته لا يُحتسب ويستهلك حصّته، فالتعليمةُ تستثنيه وتسمّي بديله."""
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    start = agents.index("`@codex review` (ق٦٥)")
+    rule = agents[agents.rindex("\n", 0, start):agents.index("\n3. ", start)]
+    assert "ليس من عائلة openai" in rule and "`@claude`" in rule
