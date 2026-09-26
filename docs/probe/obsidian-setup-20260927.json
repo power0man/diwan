@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-27",
+  "task": "جديد-obsidian-setup",
+  "agent": "anthropic/claude-opus-5-5",
+  "host": {"machine": "MacBook Pro (Apple silicon)", "os": "Darwin 25.6.0"},
+  "obsidian": {"installed_by": "brew install --cask obsidian", "version": "1.13.7"},
+  "vault": "~/Diwan-Vault",
+  "built_from_commit": "49446b2",
+  "build": {"command": "uv run python tools/obsidian_vault.py build --vault ~/Diwan-Vault",
+            "written": 0, "unchanged": 90, "kept_edited": 0, "removed": 0, "kept_seed": 1},
+  "manifest": {"path": "Diwan/.diwan-mirror.json", "files": 91,
+               "sha256": "31532e79697f47fd3a7be7f021b206a90cbc4ee47b5be15b629e23cb85441185"},
+  "check": {"command": "uv run python tools/obsidian_vault.py check --vault ~/Diwan-Vault", "exit_code": 0},
+  "inbox": {"command": "uv run python tools/obsidian_vault.py list-inbox --vault ~/Diwan-Vault", "requests": 0},
+  "not_measured": [
+    "the_owner_opening_the_folder_as_a_vault_in_obsidian_g10_step_2_is_an_owner_step",
+    "nitro_install_by_winget_belongs_to_claude_nitro"
+  ],
+  "measurement_limits": [
+    "kept_seed_is_the_owner_steps_note_which_the_tool_never_overwrites_after_creation",
+    "nothing_from_the_vault_enters_the_repository_only_counts_and_the_manifest_digest"
+  ]
+}
