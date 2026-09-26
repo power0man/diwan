@@ -59,12 +59,12 @@ def _public_repo(diwan: Path, url: str = "https://github.com/power0man/diwan.git
     subprocess.run(["git", "-C", str(diwan), "remote", "add", "origin", url], check=True)
 
 
-def _run(tmp: Path, src: Path, url: str = "https://github.com/power0man/diwan.git") -> subprocess.CompletedProcess:
+def _run(tmp: Path, src: Path, url: str = "https://github.com/power0man/diwan.git", **extra) -> subprocess.CompletedProcess:
     diwan = tmp / "diwan"
     if not (diwan / ".git").exists():
         _public_repo(diwan, url)
     env = {"PATH": "/usr/bin:/bin:/usr/local/bin", "HOME": str(tmp), "SRC": str(src),
-           "DIWAN": str(diwan), "SEALED_DST": str(tmp / "diwan-sealed" / "kimi_v1")}
+           "DIWAN": str(diwan), "SEALED_DST": str(tmp / "diwan-sealed" / "kimi_v1"), **extra}
     return subprocess.run(["bash", "-c", _script()], cwd=src, env=env,
                           capture_output=True, text=True, timeout=60)
 
@@ -169,3 +169,72 @@ def test_the_private_copy_is_refused_before_anything_is_copied(tmp_path):
     assert proc.returncode != 0 and "ليس نسخةَ power0man/diwan العامة" in proc.stdout
     assert not (tmp_path / "diwan" / "evaluation").exists()
     assert not (tmp_path / "diwan-sealed").exists()
+
+
+def _commit_all(diwan: Path) -> None:
+    git = ["git", "-C", str(diwan), "-c", "user.name=t", "-c", "user.email=t@t"]
+    subprocess.run([*git, "add", "-A"], check=True)
+    subprocess.run([*git, "commit", "-qm", "v1.1"], check=True)
+
+
+def test_an_update_replaces_the_bank_and_keeps_the_old_sealed_beside_it(tmp_path):
+    assert _run(tmp_path, _kimi(tmp_path)).returncode == 0
+    _commit_all(tmp_path / "diwan")
+    newer = _kimi(tmp_path / "v1.2")
+    (newer / "open" / "tier_a" / "kimi_a_001.json").write_text(json.dumps(_suite(["o1", "o2"])))
+    result = _run(tmp_path, newer, UPDATE="1")
+    assert result.returncode == 0, result.stdout + result.stderr
+    bank = tmp_path / "diwan" / "evaluation" / "banks" / "kimi_v1"
+    assert '"o2"' in (bank / "open" / "tier_a" / "kimi_a_001.json").read_text()
+    backups = list((tmp_path / "diwan-sealed").glob("kimi_v1.before-*"))
+    assert len(backups) == 1 and (backups[0] / "tier_a" / "kimi_a_101.json").is_file()
+    assert (tmp_path / "diwan-sealed" / "kimi_v1" / "tier_a" / "kimi_a_101.json").is_file()
+    assert '"s1"' not in result.stdout
+
+
+def test_an_update_refuses_uncommitted_changes_or_a_missing_bank(tmp_path):
+    missing = _run(tmp_path, _kimi(tmp_path), UPDATE="1")
+    assert missing.returncode != 0 and "لا بنكَ قائمًا" in missing.stdout
+    assert not (tmp_path / "diwan" / "evaluation").exists()
+    assert _run(tmp_path, _kimi(tmp_path / "a")).returncode == 0
+    _commit_all(tmp_path / "diwan")
+    bank = tmp_path / "diwan" / "evaluation" / "banks" / "kimi_v1"
+    (bank / "REPORT.md").write_text("تعديلٌ لم يُودَع")
+    dirty = _run(tmp_path, _kimi(tmp_path / "b"), UPDATE="1")
+    assert dirty.returncode != 0 and "غيرُ مودَعة" in dirty.stdout
+    assert (bank / "REPORT.md").read_text() == "تعديلٌ لم يُودَع"
+    assert not list((tmp_path / "diwan-sealed").glob("kimi_v1.before-*"))
+
+
+def _open_only(tmp: Path) -> Path:
+    src = _kimi(tmp)
+    subprocess.run(["rm", "-rf", str(src / "sealed")], check=True)
+    (src / "open" / "tier_a" / "kimi_a_001.json").write_text(json.dumps(_suite(["o1", "o9"])))
+    return src
+
+
+def test_an_open_only_update_never_touches_the_sealed_half(tmp_path):
+    assert _run(tmp_path, _kimi(tmp_path)).returncode == 0
+    _commit_all(tmp_path / "diwan")
+    sealed = tmp_path / "diwan-sealed" / "kimi_v1"
+    before = {p: p.read_bytes() for p in sealed.rglob("*") if p.is_file()}
+    bank = tmp_path / "diwan" / "evaluation" / "banks" / "kimi_v1"
+    manifest = (bank / "sealed" / "MANIFEST.json").read_bytes()
+    result = _run(tmp_path, _open_only(tmp_path / "v1.2"), UPDATE="1", OPEN_ONLY="1")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert '"o9"' in (bank / "open" / "tier_a" / "kimi_a_001.json").read_text()
+    assert {p: p.read_bytes() for p in sealed.rglob("*") if p.is_file()} == before
+    assert (bank / "sealed" / "MANIFEST.json").read_bytes() == manifest
+    assert not list((tmp_path / "diwan-sealed").glob("kimi_v1.before-*"))
+
+
+def test_an_open_only_delivery_with_a_sealed_folder_or_without_update_is_refused(tmp_path):
+    assert _run(tmp_path, _kimi(tmp_path)).returncode == 0
+    _commit_all(tmp_path / "diwan")
+    bank = tmp_path / "diwan" / "evaluation" / "banks" / "kimi_v1"
+    kept = (bank / "open" / "tier_a" / "kimi_a_001.json").read_text()
+    with_sealed = _run(tmp_path, _kimi(tmp_path / "x"), UPDATE="1", OPEN_ONLY="1")
+    assert with_sealed.returncode != 0 and "لا محجوبَ فيها" in with_sealed.stdout
+    no_update = _run(tmp_path, _open_only(tmp_path / "y"), OPEN_ONLY="1")
+    assert no_update.returncode != 0 and "UPDATE=1" in no_update.stdout
+    assert (bank / "open" / "tier_a" / "kimi_a_001.json").read_text() == kept

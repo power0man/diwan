@@ -36,9 +36,17 @@ Kimi كلُّها في أنه لم يرَها (`docs/KIMI-BENCHMARK-BRIEF.md` §
 يعمل في `~/kimi-work`، خارج `~/diwan-work` تمامًا، **ولا يُعطى مسار المستودع أبدًا**.
 فأداةُ سطر الأوامر تقرأ ما يُدلّ عليه، ومن عرف مكان المستودع قرأه.
 
-والملفُّ الوحيد الذي ينتقل من المستودع إليه مثالُ `evaluation/suites/agentic_v1.json`،
-يُنسخ إلى `~/kimi-work/examples/`. ورأسُ التشغيل يحوّل إليه إشارةَ التكليف إلى ذلك المسار،
+وينتقل من المستودع إليه شيئان: مثالُ `evaluation/suites/agentic_v1.json` إلى
+`~/kimi-work/examples/`، **والشطرُ المفتوح من البنك الحاليّ** إلى `~/kimi-work/current/open/`
+(قرار المالك، ٢٦ سبتمبر ٢٠٢٦). وسببُه أن مجلّد Kimi كان يحمل نسخةً أخرى من البنك لم تدخل
+المستودعَ العام، فطُلب منه إصلاحُ ١٥٠ حالةً لا يراها. وهي مخرجُه هو، ولا تحمل شيئًا من شيفرة
+ديوان ولا نتائجه. **والمحجوبُ لا يصله أبدًا:** Kimi نموذجٌ سحابيّ، والمحجوبُ لا يُرسل، فدورةُ
+v1.2 للمفتوح وحده (`OPEN_ONLY=1` في `intake` و`place`). ورأسُ التشغيل يحوّل إليه إشارةَ التكليف إلى ذلك المسار،
 فلا يبحث Kimi عنه في مكانٍ آخر.
+
+ويتوقّف `setup` إن وُجد `current/` قبله بأي محتوى، لا `current/open` وحده، لأن `current/` القائم قد
+يحمل `sealed/` من دورةٍ سابقة فيبقى في متناول Kimi. و`intake --open-only` لا يمرّ إلا إن حمل التسليمُ كلَّ
+ملفٍّ وكلَّ حالةٍ في المفتوح القائم، لأن `place` يستبدله فيمحو التسليمُ الفارغُ البنك. والزيادةُ مقبولة.
 
 ويتأكّد `tools/kimi_drive.sh` من أن `$KIMI_WORK` ليس داخل `~/diwan-work`، ويتوقّف إن كان.
 
@@ -136,6 +144,20 @@ cd "$KIMI_WORK" && kimi --prompt "$(cat "$bundle")" --output-format text \
 
 ```bash
 tools/kimi_drive.sh run && tools/kimi_drive.sh inspect && tools/kimi_drive.sh intake && tools/kimi_drive.sh place
+```
+
+**ودورةُ v1.2 للشطر المفتوح وحده** (قرار المالك، ٢٦ سبتمبر ٢٠٢٦): تحديثٌ لا يمسّ `~/diwan-sealed` ولا البيان،
+ويُرفض فيه تسليمٌ يحمل `sealed/`. والحكمُ الوكيل في حاويةٍ زائلة شرطٌ قبل التوزيع: المهمّةُ تسقط قبل الحلّ،
+والحلُّ المرجعيُّ يمرّ. وصورةُ `diwan-intake` تُبنى مرّةً كما في `docs/guides/G6.md` الخطوة ٢٢:
+
+```bash
+tools/kimi_drive.sh setup && tools/kimi_drive.sh run && tools/kimi_drive.sh inspect \
+  && OPEN_ONLY=1 tools/kimi_drive.sh intake \
+  && docker run --rm --network none -e DIWAN_DISPOSABLE_HOST=intake \
+       -v ~/kimi-work/kimi-benchmark:/src:ro -v "$PWD":/workspace:ro -v ~/kimi-work/logs:/logs -w /workspace \
+       diwan-intake python tools/kimi_intake.py /src --open-only --agentic \
+       --out /logs/intake-agentic-open-$(date +%Y%m%d-%H%M%S).json \
+  && UPDATE=1 OPEN_ONLY=1 tools/kimi_drive.sh place
 ```
 
 **وعطبٌ واحدٌ صادفناه يستحقّ الذكر:** توقّف التوزيع لأن Kimi كتب البيانَ المختوم

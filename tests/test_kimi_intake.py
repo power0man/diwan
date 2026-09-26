@@ -178,3 +178,144 @@ def test_an_incomplete_delivery_stops_at_the_structure(tmp_path):
     report = intake(src)
     assert not report["passed"] and "sealed/MANIFEST.json" in report["structure"]["missing"]
     assert "bank" not in report
+
+
+def test_an_open_only_delivery_passes_without_a_manifest_and_refuses_a_sealed_folder(tmp_path):
+    """دورةُ الشطر المفتوح: لا يصل Kimi محجوبٌ، فلا بيانَ يُطلب، ويُرفض تسليمٌ فيه sealed/."""
+    import shutil
+    src = delivery(tmp_path)
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    with_sealed = intake(src, open_only=True, current=current)
+    assert not with_sealed["passed"] and with_sealed["structure"]["missing"]
+    shutil.rmtree(src / "sealed")
+    assert not intake(src)["passed"], "بلا open_only يبقى البيانُ مطلوبًا"
+    report = intake(src, open_only=True, current=current)
+    assert report["passed"], report
+    assert report["manifest"]["skipped"] == "open_only"
+    assert report["bank"]["counts"]["sealed"]["files"] == 0
+
+
+def test_an_open_only_delivery_must_carry_every_current_file_and_case(tmp_path):
+    """ملاحظةُ Codex على #128: التوزيعُ يستبدل المفتوح، فالتسليمُ الفارغ أو الناقص كان يمرّ ثم يمحو البنك."""
+    import shutil
+    src = delivery(tmp_path)
+    shutil.rmtree(src / "sealed")
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    _write(current / "tier_a" / "kimi_a_002.json", _suite("kimi_a_002", [_case("o9")]))
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_file_missing"}
+    _write(src / "open" / "tier_a" / "kimi_a_002.json", _suite("kimi_a_002", []))
+    assert "open_case_missing" in _codes(intake(src, open_only=True, current=current), "replacement")
+    _write(src / "open" / "tier_a" / "kimi_a_002.json", _suite("kimi_a_002", [_case("o9"), _case("o10")]))
+    _write(src / "open" / "tier_a" / "kimi_a_003.json", _suite("kimi_a_003", [_case("n1")]))
+    assert intake(src, open_only=True, current=current)["passed"], "الزيادةُ لا تمحو شيئًا"
+    shutil.rmtree(src / "open")
+    (src / "open").mkdir()
+    empty = intake(src, open_only=True, current=current)
+    assert not empty["passed"] and "open_file_missing" in _codes(empty, "replacement")
+    assert _codes(intake(src, open_only=True, current=tmp_path / "absent"), "replacement") == {
+        "current_open_bank_missing"}
+
+
+def test_an_open_only_delivery_must_keep_every_sidecar_and_its_tasks(tmp_path):
+    """ملاحظةُ Codex على #128: الملفُّ الجانبيّ كان خارج الحصر، فيمحو التوزيعُ حلولَه المرجعية بصمت."""
+    import shutil
+    src = delivery(tmp_path)
+    shutil.rmtree(src / "sealed")
+    meta = {"tasks": {"t1": {"reference_solution": {"notes.txt": "new"}}}}
+    _write(src / "open" / "tier_d" / "kimi_d_001.meta.json", meta)
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    assert intake(src, open_only=True, current=current)["passed"]
+    _write(src / "open" / "tier_d" / "kimi_d_001.meta.json", {"tasks": {}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_case_missing"}
+    (src / "open" / "tier_d" / "kimi_d_001.meta.json").unlink()
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_file_missing"}
+
+
+def test_a_case_sidecar_keeps_its_cases_and_an_unreadable_one_is_refused(tmp_path):
+    """ملاحظةُ Codex على #128: ملفّاتُ الطبقات أ–ج الجانبية مفتاحُها cases لا tasks، فكان حذفُ مصادرها يمرّ."""
+    import shutil
+    src = delivery(tmp_path)
+    shutil.rmtree(src / "sealed")
+    sidecar = src / "open" / "tier_a" / "kimi_a_001.meta.json"
+    _write(sidecar, {"suite_id": "kimi_a_001", "cases": {"o1": {"source": "s"}, "o2": {"source": "s"}}})
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    assert intake(src, open_only=True, current=current)["passed"]
+    _write(sidecar, {"suite_id": "kimi_a_001", "cases": {"o1": {"source": "s"}}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_case_missing"}
+    sidecar.write_text("{not json", encoding="utf-8")
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_unreadable"}
+
+
+def _dup_bank(tmp_path):
+    """بنكٌ قائمٌ فيه معرّفُ مهمّةٍ مكرّرٌ بين ملفّين، كالستّة والعشرين في v1.1، وملفّان جانبيّان."""
+    import shutil
+    src = delivery(tmp_path)
+    shutil.rmtree(src / "sealed")
+    d = src / "open" / "tier_d"
+    _write(d / "kimi_d_001.json", _agentic("kimi_d_001", [_task("t1"), _task("dup")]))
+    _write(d / "kimi_d_002.json", _agentic("kimi_d_002", [_task("dup")]))
+    for name, ids in (("kimi_d_001", ("t1", "dup")), ("kimi_d_002", ("dup",))):
+        _write(d / f"{name}.meta.json", {"tasks": {i: {"reference_solution": {"notes.txt": "new"}, "why": "w"}
+                                                   for i in ids}})
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    return src, current
+
+
+def test_only_duplicated_ids_may_be_renamed_and_a_swapped_case_is_refused(tmp_path):
+    """ملاحظاتُ Codex على #128: التكليفُ يطلب إعادةَ تسمية المكرّر، لكن حذفَ حالةٍ وإضافةَ غيرها بالعدد نفسِه محوٌ."""
+    src, current = _dup_bank(tmp_path)
+    d = src / "open" / "tier_d"
+    ref = {"reference_solution": {"notes.txt": "new"}, "why": "w"}
+    _write(d / "kimi_d_001.json", _agentic("kimi_d_001", [_task("t1"), _task("kimi_d_001-dup")]))
+    _write(d / "kimi_d_001.meta.json", {"tasks": {"t1": ref, "kimi_d_001-dup": ref}})
+    _write(d / "kimi_d_002.json", _agentic("kimi_d_002", [_task("kimi_d_002-dup")]))
+    _write(d / "kimi_d_002.meta.json", {"tasks": {"kimi_d_002-dup": ref}})
+    assert intake(src, open_only=True, current=current)["passed"], "إعادةُ تسمية المكرّر يطلبها التكليف"
+    _write(d / "kimi_d_002.json", _agentic("kimi_d_002", []))
+    _write(d / "kimi_d_002.meta.json", {"tasks": {}})
+    assert "open_case_missing" in _codes(intake(src, open_only=True, current=current), "replacement"), \
+        "المكرّرُ يُعاد تسميتُه لا يُحذف"
+    _write(d / "kimi_d_002.json", _agentic("kimi_d_002", [_task("kimi_d_002-dup")]))
+    _write(d / "kimi_d_002.meta.json", {"tasks": {"kimi_d_002-dup": ref}})
+    _write(d / "kimi_d_001.json", _agentic("kimi_d_001", [_task("other"), _task("kimi_d_001-dup")]))
+    _write(d / "kimi_d_001.meta.json", {"tasks": {"other": ref, "kimi_d_001-dup": ref}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_case_missing"}
+
+
+def test_a_sidecar_entry_keeps_every_field_it_had_even_optional_ones(tmp_path):
+    """ملاحظةُ Codex على #128: حقولٌ في بعض المدخلات دون بعض (trap، correct_solution) كانت تسقط من الشرط."""
+    src, current = _dup_bank(tmp_path)
+    d = src / "open" / "tier_d"
+    rich = {"reference_solution": {"notes.txt": "new"}, "why": "w", "trap": "t"}
+    _write(current / "tier_d" / "kimi_d_001.meta.json", {"tasks": {"t1": rich, "dup": rich}})
+    _write(d / "kimi_d_001.meta.json", {"tasks": {"t1": rich, "dup": rich}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == set()
+    _write(d / "kimi_d_001.meta.json", {"tasks": {"t1": {**rich, "trap": ""}, "dup": rich}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_entry_incomplete"}
+    _write(d / "kimi_d_001.meta.json", {"tasks": {"t1": {}, "dup": rich}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_entry_incomplete"}
+
+
+def test_a_renamed_entry_carries_what_its_replaced_entries_shared(tmp_path):
+    src, current = _dup_bank(tmp_path)
+    d = src / "open" / "tier_d"
+    _write(d / "kimi_d_002.json", _agentic("kimi_d_002", [_task("kimi_d_002-dup")]))
+    _write(d / "kimi_d_002.meta.json", {"tasks": {"kimi_d_002-dup": {"why": "w"}}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_entry_incomplete"}
+
+
+def test_bank_reference_solutions_in_sibling_sidecars_are_judged(tmp_path):
+    """ملاحظةُ Codex على #128: --agentic كان يحكم «تسقط قبل الحلّ» وحده في البنك، ويتخطّى حلوله المرجعية."""
+    src, _ = _dup_bank(tmp_path)
+    report = check_agentic(src)
+    assert report["counts"]["reference_passes"] == 3 + AGENTIC_MIN_TASKS and not report["failures"]
+    _write(src / "open" / "tier_d" / "kimi_d_002.meta.json",
+           {"tasks": {"dup": {"reference_solution": {"notes.txt": "still old"}}}})
+    report = check_agentic(src)
+    assert {f["file"] for f in report["failures"]} == {"open/tier_d/kimi_d_002.json"}
+    assert {f["code"] for f in report["failures"]} == {"reference_solution_fails"}
