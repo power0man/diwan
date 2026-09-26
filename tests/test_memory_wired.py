@@ -320,6 +320,7 @@ def test_a_custom_suite_must_be_a_commissioned_bank_at_full_size_and_reports_bin
     full["scenarios"] += [dict(full["scenarios"][0], id="extra")]
     assert cli.commissioned_shortfall(full) == "suite_below_commissioned_category"
     monkeypatch.setattr(cli, "OllamaProvider", lambda **_: _Delegate())
+    monkeypatch.setattr(cli, "_digest", lambda model: "sha256:weights")
     out = tmp_path / "default.json"
     assert cli.main(["--model", "m", "--agent", "anthropic/claude-opus-5-5", "--out", str(out)]) == 0
     capsys.readouterr()
@@ -361,3 +362,40 @@ def test_a_live_report_records_the_resolved_model_digest(tmp_path, monkeypatch, 
     capsys.readouterr()
     assert json.loads(out.read_text(encoding="utf-8"))["engine"] == {"provider": "ollama", "model": "m",
                                                                        "digest": "sha256:weights"}
+
+
+def test_a_run_without_a_stable_model_digest_writes_no_report(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #129: تعذّرُ البصمة، أو تغيّرُها أثناء التشغيل، كان يُنتج تقريرًا لا يسمّي ما أجاب."""
+    import json
+    import tools.evaluate_memory as cli
+    monkeypatch.setattr(cli, "OllamaProvider", lambda **_: pytest.fail("نداءٌ قبل التحقّق من البصمة"))
+    monkeypatch.setattr(cli, "_digest", lambda model: None)
+    args = ["--model", "m", "--agent", "anthropic/claude-opus-5-5", "--out", str(tmp_path / "r.json")]
+    assert cli.main(args) == 2 and json.loads(capsys.readouterr().out)["code"] == "model_digest_unresolved"
+    seen = iter(["sha256:before", "sha256:after"])
+    monkeypatch.setattr(cli, "OllamaProvider", lambda **_: _Delegate())
+    monkeypatch.setattr(cli, "_digest", lambda model: next(seen))
+    assert cli.main(args) == 2 and json.loads(capsys.readouterr().out)["code"] == "model_digest_drifted"
+    assert not (tmp_path / "r.json").exists()
+
+
+def test_the_commissioned_bank_tests_what_each_category_names():
+    """ملاحظاتُ Codex على #129: موافقةٌ بلا فحصٍ قبلها، وعزلٌ بلا غيابٍ عابرٍ للمشاريع، ونسخةٌ أُخذت بعد النسيان،
+    وحقنٌ بلا أمرٍ مدسوس — كلُّها كانت تمرّ البنكَ المكلَّف."""
+    from core.canonical import PayloadRejected
+    from evaluation.memory_bank import validate_memory_bank
+    by_id = {s["id"]: s for s in BANK["scenarios"]}
+    strict = lambda s: validate_memory_bank({**BANK, "scenarios": [s]}, strict=True)
+    code = lambda s: pytest.raises(PayloadRejected, strict, s).value.code
+    approved_first = dict(by_id["consent_004"], steps=[by_id["consent_004"]["steps"][0],
+                                                       {"op": "approve", "project": "A", "ref": "p1"},
+                                                       *by_id["consent_004"]["steps"][1:]])
+    assert code(approved_first) == "consent_unchecked_before_approval"
+    assert code(by_id["isolation_006"]) == "isolation_without_cross_project_absence"
+    assert code(by_id["backup_004"]) == "backup_without_prior_snapshot"
+    benign = dict(by_id["injection_001"], steps=[dict(by_id["injection_001"]["steps"][0], text="موعد التسليم نهاية الشهر."),
+                                                 by_id["injection_001"]["steps"][1]])
+    assert pytest.raises(PayloadRejected, validate_memory_bank, {**BANK, "scenarios": [benign]}).value.code \
+        == "injection_without_directive"
+    for scenario_id in ("consent_004", "isolation_001", "backup_001", "injection_001"):
+        strict(by_id[scenario_id])

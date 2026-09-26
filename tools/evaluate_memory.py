@@ -91,10 +91,19 @@ def main(argv=None) -> int:
     if shortfall:
         print(json.dumps({"status": "refused", "code": shortfall}, ensure_ascii=False))
         return 2
+    # البصمةُ قبل أيّ نداءٍ وبعد آخره: تقريرٌ بالوسم وحده، أو بوسمٍ تغيّرت أوزانُه أثناء التشغيل، لا يسمّي
+    # ما أجاب (ملاحظتا Codex على #129)
+    digest = _digest(args.model)
+    if not digest:
+        print(json.dumps({"status": "refused", "code": "model_digest_unresolved"}, ensure_ascii=False))
+        return 2
     provider = OllamaProvider(model=args.model)
     report = run_memory_bank(bank, driver="live", delegate=provider)
+    if _digest(args.model) != digest:
+        print(json.dumps({"status": "refused", "code": "model_digest_drifted"}, ensure_ascii=False))
+        return 2
     report.update(suite_sha256=hashlib.sha256(raw).hexdigest(), date=datetime.date.today().isoformat(), agent=args.agent,
-                  engine={"provider": "ollama", "model": args.model, "digest": _digest(args.model)},
+                  engine={"provider": "ollama", "model": args.model, "digest": digest},
                   measurement_limits=LIMITS)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

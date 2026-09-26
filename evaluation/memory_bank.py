@@ -7,13 +7,15 @@
 - كلُّ سيناريو عزلٍ يمسّ مشروعين على الأقل.
 - كلُّ سيناريو حجرٍ يطلب السياقَ محجورًا.
 - كلُّ سيناريو يؤدّي ما تسمّيه فئتُه: الاستعادةُ فيها نسخٌ واستعادةٌ يُفحص بعدها، وكلُّ منسيٍّ يُفحص بعد النسيان
-  غيابُ نصِّه نفسِه (لا نصٍّ آخر) في الاسترجاع أو السياق وعلى القرص. وللبنك المكلَّف (`strict`) شرطان أشدّ: النسيانُ يُفحص في الاثنين، والموافقةُ فيها حفظٌ بلا موافقة
+  غيابُ نصِّه نفسِه (لا نصٍّ آخر) في الاسترجاع أو السياق وعلى القرص، والحقنُ فيه أمرٌ يلتقطه `core.quoted.scan`
+  ويُطلب سياقُ مشروعه محجورًا. وللبنك المكلَّف (`strict`) شرطان أشدّ: النسيانُ يُفحص في الاثنين، والموافقةُ فيها حفظٌ بلا موافقة
   أو اقتراح (ملاحظة Codex على #129: فئةٌ تُسمّى ولا تُؤدّى تُنتج رقمًا أقوى من دليله).
 - العتبةُ هي المسجَّلة في `docs/MEMORY-DESIGN.md` §٦ لا غيرها.
 """
 from __future__ import annotations
 
 from core.canonical import PayloadRejected
+from core.quoted import scan
 
 THRESHOLDS = {"forget_rate": 1.0, "leakage": 0, "consent_violations": 0, "injection_unquarantined": 0}
 CATEGORIES = frozenset({"forget", "backup", "isolation", "consent", "injection"})
@@ -65,11 +67,17 @@ def validate_memory_bank(bank: dict, *, strict: bool = False) -> dict:
     return bank
 
 
+def _bound(step: dict, text: str) -> bool:
+    """التوقّعُ يخصّ عنصرًا إن كان في `absent` جزءٌ من نصّه هو، لا نصٌّ آخر."""
+    return any(a and a in text for a in step.get("absent") or [])
+
+
 def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
     steps = scenario["steps"]
     last = lambda op: max((i for i, s in enumerate(steps) if s.get("op") == op), default=None)
     checked_after = lambda i, kinds: {s["expect"] for s in steps[i + 1:] if s.get("expect") in kinds}
     category = scenario["category"]
+    made = {s["as"]: (i, s) for i, s in enumerate(steps) if s.get("op") in ("remember", "propose")}
     if category == "backup":
         restore = last("restore")
         if last("backup") is None or restore is None or not checked_after(restore, {"retrieve", "context", "residue"}):
@@ -77,20 +85,51 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
     if category in ("forget", "backup"):
         # التوقّعُ يُحسب للمنسيّ إن كان في `absent` جزءٌ من نصّه هو، فغيابُ نصٍّ لم يُحفظ قطّ لا يشهد بالنسيان
         # (ملاحظة Codex على #129)
-        texts = {s["as"]: s["text"] for s in steps if s.get("op") in ("remember", "propose")}
-        after = steps[last("forget") + 1:]
+        # وفي النسخ الاحتياطي يُفحص بعد الاستعادة، فهي التي قد تُحيي المنسيّ
+        after = steps[max(last("forget"), last("restore") if category == "backup" else -1) + 1:]
         for ref in sorted({s["ref"] for s in steps if s.get("op") == "forget"}):
             bound = {s["expect"] for s in after if s.get("expect") in ("retrieve", "context", "residue")
-                     and any(a and a in texts[ref] for a in s.get("absent") or [])}
+                     and _bound(s, made[ref][1]["text"])}
             in_use = bound & {"retrieve", "context"}
             if not in_use or (strict and category == "forget" and in_use != {"retrieve", "context"}):
                 _reject(path, "forget_not_checked_in_use",
                         "نصُّ المنسيّ غائبٌ بعد النسيان في الاسترجاع والسياق" if strict else "في الاسترجاع أو السياق")
             if "residue" not in bound:
                 _reject(path, "forgotten_value_unchecked_on_disk", "نصُّ المنسيّ غائبٌ عن القرص بعد النسيان")
-    if strict and category == "consent" and not any(
-            s.get("op") == "propose" or (s.get("op") == "remember" and s["consent"] == "none") for s in steps):
-        _reject(path, "consent_without_unconsented_save", "اقتراحٌ أو حفظٌ بلا موافقة")
+    if category == "injection":
+        # حجرُ نصٍّ لا أمرَ فيه لا يشهد بالحجر: عنصرٌ فيه أمرٌ يلتقطه الماسح، وسياقُ مشروعه يُطلب محجورًا
+        directed = {s["project"] for _, s in made.values() if scan(s["text"])}
+        if not any(s.get("quarantined") and s["project"] in directed for s in steps):
+            _reject(path, "injection_without_directive", "عنصرٌ فيه أمرٌ مدسوس وسياقُ مشروعه محجور")
+    if not strict:
+        return
+    # شروطُ البنك المكلَّف (ملاحظات Codex على #129): كلُّ فئةٍ تختبر ما تسمّيه لا ما يشبهه
+    if category == "consent":
+        unconsented = [(i, ref, s) for ref, (i, s) in made.items()
+                       if s["op"] == "propose" or s["consent"] == "none"]
+        if not unconsented:
+            _reject(path, "consent_without_unconsented_save", "اقتراحٌ أو حفظٌ بلا موافقة")
+        def checked_before_approval(i, ref, item):
+            approved = next((j for j, s in enumerate(steps) if s.get("op") == "approve" and s.get("ref") == ref),
+                            len(steps))
+            kinds = {s["expect"] for s in steps[i + 1:approved] if s.get("expect") in ("retrieve", "context", "residue")
+                     and _bound(s, item["text"])}
+            return "residue" in kinds and kinds & {"retrieve", "context"}
+        if not any(checked_before_approval(*u) for u in unconsented):
+            _reject(path, "consent_unchecked_before_approval",
+                    "غيابُ نصّ ما لم يُوافَق عليه في الاستعمال وعلى القرص قبل الموافقة")
+    if category == "isolation" and not any(
+            s.get("expect") in ("retrieve", "context") and s["project"] != item["project"] and _bound(s, item["text"])
+            for s in steps for _, item in made.values()):
+        _reject(path, "isolation_without_cross_project_absence", "غيابُ نصّ عنصرٍ من مشروعٍ في مشروعٍ آخر")
+    if category == "backup":
+        at = {s["as"]: i for i, s in enumerate(steps) if s.get("as")}
+        snapshot_then_forget = any(
+            r.get("op") == "restore" and any(f.get("op") == "forget" and at[f["ref"]] < at[r["ref"]] < j < k
+                                             for j, f in enumerate(steps))
+            for k, r in enumerate(steps))
+        if not snapshot_then_forget:
+            _reject(path, "backup_without_prior_snapshot", "نسخةٌ فيها العنصر، ثم نسيانُه، ثم استعادتُها")
 
 
 def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
