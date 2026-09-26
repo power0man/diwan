@@ -6,8 +6,8 @@
 - كلُّ عنصرٍ يُنسى في سيناريو نسيانٍ أو استعادة يُفحص فيه الإيصالُ وبقايا القرص.
 - كلُّ سيناريو عزلٍ يمسّ مشروعين على الأقل.
 - كلُّ سيناريو حجرٍ يطلب السياقَ محجورًا.
-- كلُّ سيناريو يؤدّي ما تسمّيه فئتُه: الاستعادةُ فيها نسخٌ واستعادةٌ يُفحص بعدها، والنسيانُ يُفحص بعده في الاسترجاع
-  أو السياق. وللبنك المكلَّف (`strict`) شرطان أشدّ: النسيانُ يُفحص في الاثنين، والموافقةُ فيها حفظٌ بلا موافقة
+- كلُّ سيناريو يؤدّي ما تسمّيه فئتُه: الاستعادةُ فيها نسخٌ واستعادةٌ يُفحص بعدها، وكلُّ منسيٍّ يُفحص بعد النسيان
+  غيابُ نصِّه نفسِه (لا نصٍّ آخر) في الاسترجاع أو السياق وعلى القرص. وللبنك المكلَّف (`strict`) شرطان أشدّ: النسيانُ يُفحص في الاثنين، والموافقةُ فيها حفظٌ بلا موافقة
   أو اقتراح (ملاحظة Codex على #129: فئةٌ تُسمّى ولا تُؤدّى تُنتج رقمًا أقوى من دليله).
 - العتبةُ هي المسجَّلة في `docs/MEMORY-DESIGN.md` §٦ لا غيرها.
 """
@@ -74,11 +74,20 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         restore = last("restore")
         if last("backup") is None or restore is None or not checked_after(restore, {"retrieve", "context", "residue"}):
             _reject(path, "backup_semantics_missing", "نسخٌ واستعادةٌ ثم فحصٌ بعد الاستعادة")
-    if category == "forget":
-        seen = checked_after(last("forget"), {"retrieve", "context"})
-        if not seen or (strict and seen != {"retrieve", "context"}):
-            _reject(path, "forget_not_checked_in_use",
-                    "المنسيُّ يُفحص بعد النسيان في الاسترجاع والسياق" if strict else "في الاسترجاع أو السياق")
+    if category in ("forget", "backup"):
+        # التوقّعُ يُحسب للمنسيّ إن كان في `absent` جزءٌ من نصّه هو، فغيابُ نصٍّ لم يُحفظ قطّ لا يشهد بالنسيان
+        # (ملاحظة Codex على #129)
+        texts = {s["as"]: s["text"] for s in steps if s.get("op") in ("remember", "propose")}
+        after = steps[last("forget") + 1:]
+        for ref in sorted({s["ref"] for s in steps if s.get("op") == "forget"}):
+            bound = {s["expect"] for s in after if s.get("expect") in ("retrieve", "context", "residue")
+                     and any(a and a in texts[ref] for a in s.get("absent") or [])}
+            in_use = bound & {"retrieve", "context"}
+            if not in_use or (strict and category == "forget" and in_use != {"retrieve", "context"}):
+                _reject(path, "forget_not_checked_in_use",
+                        "نصُّ المنسيّ غائبٌ بعد النسيان في الاسترجاع والسياق" if strict else "في الاسترجاع أو السياق")
+            if "residue" not in bound:
+                _reject(path, "forgotten_value_unchecked_on_disk", "نصُّ المنسيّ غائبٌ عن القرص بعد النسيان")
     if strict and category == "consent" and not any(
             s.get("op") == "propose" or (s.get("op") == "remember" and s["consent"] == "none") for s in steps):
         _reject(path, "consent_without_unconsented_save", "اقتراحٌ أو حفظٌ بلا موافقة")

@@ -15,6 +15,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import urllib.request
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
@@ -31,6 +32,17 @@ DEFAULT_SUITE = ROOT / "evaluation" / "suites" / "memory_v1.json"
 COMMISSIONED = {
     "memory_kimi_v1": {"total": 40, "forget": 10, "isolation": 8, "consent": 8, "backup": 6, "injection": 8},
 }
+
+
+def _digest(model: str, base: str = "http://127.0.0.1:11434") -> str | None:
+    """بصمةُ النموذج المثبَّت كما يعرضها Ollama، فالوسمُ وحده يتغيّر بسحبٍ جديد (ملاحظة Codex على #129)."""
+    try:
+        with urllib.request.urlopen(base + "/api/tags", timeout=10) as response:
+            models = json.loads(response.read().decode("utf-8"))["models"]
+    except (OSError, ValueError, KeyError):
+        return None
+    wanted = model if ":" in model else model + ":latest"
+    return next((m.get("digest") for m in models if m.get("name") == wanted), None)
 
 
 def commissioned_shortfall(bank: dict) -> str | None:
@@ -82,7 +94,8 @@ def main(argv=None) -> int:
     provider = OllamaProvider(model=args.model)
     report = run_memory_bank(bank, driver="live", delegate=provider)
     report.update(suite_sha256=hashlib.sha256(raw).hexdigest(), date=datetime.date.today().isoformat(), agent=args.agent,
-                  engine={"provider": "ollama", "model": args.model}, measurement_limits=LIMITS)
+                  engine={"provider": "ollama", "model": args.model, "digest": _digest(args.model)},
+                  measurement_limits=LIMITS)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"metrics": report["metrics"], "meets_thresholds": report["meets_thresholds"],

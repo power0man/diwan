@@ -333,3 +333,31 @@ def test_the_published_memory_evidence_is_bound_to_the_committed_suite_bytes():
     evidence = json.loads((ROOT / "docs" / "probe" / "memory-live-20260926.json").read_text(encoding="utf-8"))
     assert evidence["suite_sha256"] == hashlib.sha256(
         (ROOT / "evaluation" / "suites" / "memory_v1.json").read_bytes()).hexdigest()
+
+
+def test_post_forget_checks_must_name_the_forgotten_value_itself():
+    """ملاحظةُ Codex على #129: توقّعاتٌ بعد النسيان تُثبت غيابَ نصٍّ لم يُحفظ قطّ تمرّ ولا تشهد بالنسيان."""
+    from core.canonical import PayloadRejected
+    from evaluation.memory_bank import validate_memory_bank
+    scenario = next(s for s in BANK["scenarios"] if s["id"] == "forget_001")
+    unrelated = dict(scenario, steps=[dict(s, absent=["نصٌّ لم يُحفظ قطّ"]) if s.get("expect") in ("retrieve", "context")
+                                      else s for s in scenario["steps"]])
+    off_disk = dict(scenario, steps=[dict(s, absent=["نصٌّ لم يُحفظ قطّ"]) if s.get("expect") == "residue"
+                                     else s for s in scenario["steps"]])
+    one = lambda s: validate_memory_bank({**BANK, "scenarios": [s]})
+    assert pytest.raises(PayloadRejected, one, unrelated).value.code == "forget_not_checked_in_use"
+    assert pytest.raises(PayloadRejected, one, off_disk).value.code == "forgotten_value_unchecked_on_disk"
+    validate_memory_bank(BANK)
+
+
+def test_a_live_report_records_the_resolved_model_digest(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #129: الوسمُ وحده (qwen3.5:9b) يتغيّر بسحبٍ جديد، فالتقريرُ يحمل البصمةَ من Ollama."""
+    import json
+    import tools.evaluate_memory as cli
+    monkeypatch.setattr(cli, "OllamaProvider", lambda **_: _Delegate())
+    monkeypatch.setattr(cli, "_digest", lambda model: "sha256:weights")
+    out = tmp_path / "r.json"
+    assert cli.main(["--model", "m", "--agent", "anthropic/claude-opus-5-5", "--out", str(out)]) == 0
+    capsys.readouterr()
+    assert json.loads(out.read_text(encoding="utf-8"))["engine"] == {"provider": "ollama", "model": "m",
+                                                                       "digest": "sha256:weights"}

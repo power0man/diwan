@@ -300,7 +300,8 @@
   "agent": "anthropic/claude-opus-5-5",
   "engine": {
     "provider": "ollama",
-    "model": "qwen3.5:9b"
+    "model": "qwen3.5:9b",
+    "digest": null
   },
   "measurement_limits": [
     "measures_what_reaches_the_model_and_what_stays_on_disk_not_what_the_model_does_with_a_memory",
@@ -308,6 +309,7 @@
     "retrieval_is_lexical_so_a_paraphrased_question_can_miss_a_stored_item",
     "the_context_checked_is_the_first_request_of_each_turn_later_tool_steps_are_not_inspected",
     "single_run_on_one_local_model_no_variance_estimate",
-    "suite_sha256_backfilled_after_the_run_from_the_committed_suite_unchanged_since_fd8fdb0"
+    "suite_sha256_backfilled_after_the_run_from_the_committed_suite_unchanged_since_fd8fdb0",
+    "model_digest_not_recorded_at_run_time_the_ollama_tag_is_mutable_a_rerun_records_it"
   ]
 }
