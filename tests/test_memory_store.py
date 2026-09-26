@@ -71,3 +71,40 @@ def test_forgetting_an_unknown_item_is_named(store):
     with pytest.raises(MemoryRefused) as err:
         store.forget("0" * 16)
     assert err.value.code == "item_unknown"
+
+
+def test_approving_a_forgotten_proposal_again_is_refused(store):
+    """قبولُ الاقتراح نفسِه بعد نسيانه كان يُحيي العنصرَ بمعرّفه القديم، فلا يُنسى ثانيةً."""
+    proposal = store.propose("عنوان البيت القديم")
+    item = store.approve(proposal)
+    store.forget(item)
+    with pytest.raises(MemoryRefused) as err:
+        store.approve(proposal)
+    assert err.value.code == "item_forgotten" and store.items() == []
+
+
+@pytest.mark.parametrize("item_id", ["../../escaped", "0" * 15, "A" * 16])
+def test_a_snapshot_whose_id_leaves_the_store_is_refused_before_anything_changes(store, item_id):
+    kept = store.remember("عنصرٌ قائم", consent="owner")
+    text = "مدسوس"
+    payload = json.dumps({"item_id": item_id, "text": text,
+                          "sha256": __import__("hashlib").sha256(text.encode()).hexdigest()}).encode()
+    with pytest.raises(MemoryRefused) as err:
+        store.restore({f"items/{item_id}.json": payload})
+    assert err.value.code == "snapshot_invalid"
+    assert [it["item_id"] for it in store.items()] == [kept]
+    assert not (store.root.parent / "escaped.json").exists()
+
+
+def test_a_snapshot_item_that_does_not_match_its_digest_is_refused(store):
+    snapshot = {f"items/{'1' * 16}.json": json.dumps({"item_id": "1" * 16, "text": "نص",
+                                                     "sha256": "0" * 64}).encode()}
+    with pytest.raises(MemoryRefused) as err:
+        store.restore(snapshot)
+    assert err.value.code == "snapshot_invalid"
+
+
+def test_a_malformed_receipt_in_a_snapshot_is_refused(store):
+    with pytest.raises(MemoryRefused) as err:
+        store.restore({"receipts.jsonl": b'{"item_id": "../x"}\n'})
+    assert err.value.code == "snapshot_invalid"

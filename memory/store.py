@@ -133,7 +133,10 @@ class MemoryStore:
 
     def _store(self, text: str, item_id: str, source: dict) -> str:
         # حفظُ نصٍّ نُسي سابقًا فعلُ مالكٍ جديد صريح: عنصرٌ جديد بمعرّفٍ جديد، وإيصالُ الأول باقٍ.
+        # أمّا المعرّفُ المنسيّ فلا يعود: قبولُ الاقتراح نفسِه بعد نسيانه يُحيي عنصرًا لا يُنسى ثانيةً.
         with self._lock():
+            if self.receipts(item_id):
+                raise MemoryRefused("item_forgotten", "هذا المعرّفُ نُسي؛ الحفظُ من جديد اقتراحٌ جديد")
             item = {"schema_version": 1, "item_id": item_id, "text": text, "sha256": _digest(text),
                     "approved_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "source": source}
             self._write_atomic(self.root / "items" / f"{item_id}.json",
@@ -221,23 +224,52 @@ class MemoryStore:
             snapshot["receipts.jsonl"] = self._receipts.read_bytes()
         return snapshot
 
+    @staticmethod
+    def _check_snapshot(snapshot) -> tuple[dict[str, tuple[dict, bytes]], list[dict]]:
+        """اللقطةُ تُفحص كلُّها قبل أن يُمسّ شيء: معرّفٌ من خارج الصيغة مسارٌ يخرج من المخزن."""
+        def bad(why: str) -> MemoryRefused:
+            return MemoryRefused("snapshot_invalid", f"لقطةٌ لا تُستعاد: {why}")
+        if not isinstance(snapshot, dict):
+            raise bad("ليست قاموسًا")
+        items, receipts = {}, []
+        for name, payload in snapshot.items():
+            if name == "receipts.jsonl":
+                try:
+                    receipts = [json.loads(line) for line in payload.decode("utf-8").splitlines() if line.strip()]
+                except (UnicodeDecodeError, json.JSONDecodeError, AttributeError) as exc:
+                    raise bad("إيصالاتٌ غير مقروءة") from exc
+                continue
+            try:
+                item = json.loads(payload.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError, AttributeError) as exc:
+                raise bad(f"عنصرٌ غير مقروء {name!r}") from exc
+            item_id = item.get("item_id") if isinstance(item, dict) else None
+            if not isinstance(item_id, str) or not _ID.fullmatch(item_id) or name != f"items/{item_id}.json":
+                raise bad(f"اسمٌ أو معرّفٌ خارج الصيغة {name!r}")
+            if not isinstance(item.get("text"), str) or item.get("sha256") != _digest(item["text"]):
+                raise bad(f"عنصرٌ لا يطابق بصمته {name!r}")
+            items[item_id] = (item, payload)
+        for receipt in receipts:
+            if (not isinstance(receipt, dict) or not isinstance(receipt.get("item_id"), str)
+                    or not _ID.fullmatch(receipt["item_id"]) or not isinstance(receipt.get("sha256"), str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", receipt["sha256"])
+                    or not isinstance(receipt.get("forgotten_at"), str)):
+                raise bad("إيصالٌ خارج الصيغة")
+        return items, receipts
+
     def restore(self, snapshot: dict[str, bytes]) -> None:
         """يستعيد لقطةً، ثم يطبّق الإيصالاتِ كلَّها (القائمة والمستعادة) قبل أن يكتب عنصرًا واحدًا."""
+        items, restored = self._check_snapshot(snapshot)
         with self._lock():
             current = self._read_receipts()
-            restored = [json.loads(line) for line in snapshot.get("receipts.jsonl", b"").decode("utf-8").splitlines()
-                        if line.strip()]
             merged = {r["item_id"]: r for r in restored + current}
             tomb = {r["sha256"] for r in merged.values()}
             for path in (self.root / "items").glob("*.json"):
                 os.unlink(path)
-            for name, payload in snapshot.items():
-                if not name.startswith("items/"):
-                    continue
-                item = json.loads(payload.decode("utf-8"))
-                if item["sha256"] in tomb or item["item_id"] in merged:
+            for item_id, (item, payload) in items.items():
+                if item["sha256"] in tomb or item_id in merged:
                     continue            # المنسيُّ لا يعود بالاستعادة
-                self._write_atomic(self.root / "items" / f"{item['item_id']}.json", payload)
+                self._write_atomic(self.root / "items" / f"{item_id}.json", payload)
             self._write_atomic(self._receipts, "".join(
                 json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n"
                 for r in sorted(merged.values(), key=lambda r: r["forgotten_at"])).encode("utf-8"))
