@@ -223,7 +223,7 @@ def test_a_huge_result_is_truncated_with_a_visible_marker(registry, context, spa
 def test_every_declared_tool_states_a_consent_grade_and_keeps_its_promise(registry):
     specs = registry.specs()
     assert {s.name for s in specs} == {"read_file", "search_files", "list_files",
-                                       "run_tests", "write_file", "run_command"}
+                                       "run_tests", "write_file", "edit_file", "run_command"}
     for spec in specs:
         assert spec.consent in ("auto", "logged", "owner")
         assert spec.description.strip()
@@ -266,7 +266,7 @@ def test_sovereign_tools_integration_with_agent(space):
     sov = get_sovereign_tools()
     assert len(sov) == 6
     all_tools = get_all_tools()
-    assert len(all_tools) == 12
+    assert len(all_tools) == 13
 
     reg = ToolRegistry(*all_tools)
     ctx = ToolContext(root=space, journal=Journal(space), allowed_consents=frozenset({"auto", "logged"}))

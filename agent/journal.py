@@ -390,16 +390,56 @@ class Journal:
         raw = content.encode("utf-8", "strict")
         if len(raw) > MAX_BYTES:
             _fail("file_too_large", f"فوق {MAX_BYTES} بايت")
+        return self._write(relative, lambda snapshot: raw, create=True)
+
+    def edit_file(self, relative: str, old: str, new: str) -> tuple[Action, str, str]:
+        """يعدّل ملفًّا قائمًا في موضعه (ج١١): يستبدل مقطعًا يرد فيه مرّةً واحدة.
+
+        التعديلُ يُحسب من اللقطة نفسِها التي يُودَع ما قبلها وتُستبدل ذرّيًّا، تحت قفل العملية:
+        فلا يكتب فوق تغييرٍ وقع بين القراءة والكتابة. ويُعاد النصّان قبله وبعده ليُعرض الفرق،
+        والرجوعُ رجوعُ `write_file` نفسُه.
+        """
+        if not isinstance(old, str) or not old:
+            _fail("edit_invalid", "المقطعُ المستبدَل نصٌّ غير فارغ")
+        if not isinstance(new, str):
+            _fail("edit_invalid", "المقطعُ البديل نصّ")
+        texts = {}
+
+        def compute(snapshot):
+            if snapshot is None:
+                _fail("file_not_found", "لا ملفَّ قائمًا يُعدَّل في موضعه")
+            try:
+                before = snapshot[0].decode("utf-8")
+            except UnicodeDecodeError:
+                _fail("file_not_text", "الملفُّ ليس نصًّا بترميز UTF-8")
+            count = before.count(old)
+            if count == 0:
+                _fail("edit_match_missing", "المقطعُ المستبدَل غير موجودٍ في الملف")
+            if count > 1:
+                _fail("edit_match_ambiguous", f"المقطعُ يرد {count} مرّات؛ وسّعه حتى يرد مرّةً واحدة")
+            after = before.replace(old, new, 1)
+            raw = after.encode("utf-8", "strict")
+            if len(raw) > MAX_BYTES:
+                _fail("file_too_large", f"فوق {MAX_BYTES} بايت")
+            texts.update(before=before, after=after)
+            return raw
+        action = self._write(relative, compute, create=False)
+        return action, texts["before"], texts["after"]
+
+    def _write(self, relative: str, compute, *, create: bool) -> Action:
         target = self._target(relative)
         relative = _relative(relative, writing=True)
         with self._operation(create=True):
             self.actions()  # Refuse unsafe/corrupt history before changing any target.
             try:
-                parent = self._parent(relative, create=True)
-            except OSError:
+                parent = self._parent(relative, create=create)
+            except OSError as exc:
+                if isinstance(exc, FileNotFoundError) and not create:
+                    _fail("file_not_found", "لا ملفَّ قائمًا يُعدَّل في موضعه")
                 _fail("unsafe_path", "دليل الهدف غير آمن")
             try:
                 snapshot = _read(parent, target.name, MAX_BYTES)
+                raw = compute(snapshot)
                 before_sha = None if snapshot is None else self._keep(snapshot[0])
                 action = Action(action_id="act-" + uuid.uuid4().hex[:16], kind="write_file",
                                 path=relative, before_sha256=before_sha, after_sha256=_sha(raw),
