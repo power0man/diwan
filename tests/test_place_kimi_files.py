@@ -204,3 +204,37 @@ def test_an_update_refuses_uncommitted_changes_or_a_missing_bank(tmp_path):
     assert dirty.returncode != 0 and "غيرُ مودَعة" in dirty.stdout
     assert (bank / "REPORT.md").read_text() == "تعديلٌ لم يُودَع"
     assert not list((tmp_path / "diwan-sealed").glob("kimi_v1.before-*"))
+
+
+def _open_only(tmp: Path) -> Path:
+    src = _kimi(tmp)
+    subprocess.run(["rm", "-rf", str(src / "sealed")], check=True)
+    (src / "open" / "tier_a" / "kimi_a_001.json").write_text(json.dumps(_suite(["o1", "o9"])))
+    return src
+
+
+def test_an_open_only_update_never_touches_the_sealed_half(tmp_path):
+    assert _run(tmp_path, _kimi(tmp_path)).returncode == 0
+    _commit_all(tmp_path / "diwan")
+    sealed = tmp_path / "diwan-sealed" / "kimi_v1"
+    before = {p: p.read_bytes() for p in sealed.rglob("*") if p.is_file()}
+    bank = tmp_path / "diwan" / "evaluation" / "banks" / "kimi_v1"
+    manifest = (bank / "sealed" / "MANIFEST.json").read_bytes()
+    result = _run(tmp_path, _open_only(tmp_path / "v1.2"), UPDATE="1", OPEN_ONLY="1")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert '"o9"' in (bank / "open" / "tier_a" / "kimi_a_001.json").read_text()
+    assert {p: p.read_bytes() for p in sealed.rglob("*") if p.is_file()} == before
+    assert (bank / "sealed" / "MANIFEST.json").read_bytes() == manifest
+    assert not list((tmp_path / "diwan-sealed").glob("kimi_v1.before-*"))
+
+
+def test_an_open_only_delivery_with_a_sealed_folder_or_without_update_is_refused(tmp_path):
+    assert _run(tmp_path, _kimi(tmp_path)).returncode == 0
+    _commit_all(tmp_path / "diwan")
+    bank = tmp_path / "diwan" / "evaluation" / "banks" / "kimi_v1"
+    kept = (bank / "open" / "tier_a" / "kimi_a_001.json").read_text()
+    with_sealed = _run(tmp_path, _kimi(tmp_path / "x"), UPDATE="1", OPEN_ONLY="1")
+    assert with_sealed.returncode != 0 and "لا محجوبَ فيها" in with_sealed.stdout
+    no_update = _run(tmp_path, _open_only(tmp_path / "y"), OPEN_ONLY="1")
+    assert no_update.returncode != 0 and "UPDATE=1" in no_update.stdout
+    assert (bank / "open" / "tier_a" / "kimi_a_001.json").read_text() == kept

@@ -83,14 +83,14 @@ def test_run_refuses_when_the_tool_is_absent(tmp_path):
 
 
 def test_setup_gives_kimi_the_current_open_bank_and_no_sealed_file(tmp_path):
-    """المفتوحُ وبيانُ المحجوب العام إلى current/، ولا ملفَّ محجوب؛ ولا كتابةَ فوق current/ قائم."""
+    """المفتوحُ وحده إلى current/open، ولا محجوبَ ولا بيان؛ ولا كتابةَ فوق current/ قائم."""
     bank = ROOT / "evaluation" / "banks" / "kimi_v1"
     done = _run(["setup"], tmp_path)
     assert done.returncode == 0, done.stderr
     cur = tmp_path / "current"
     rel = lambda base: {p.relative_to(base) for p in base.rglob("*") if p.is_file()}
     assert rel(cur / "open") == rel(bank / "open")
-    assert rel(cur / "sealed") == {Path("MANIFEST.json")}
+    assert not (cur / "sealed").exists(), "Kimi نموذجٌ سحابيّ: لا محجوبَ ولا بيانَ يصله"
     marker = next((cur / "open").rglob("*.json"))
     marker.write_text("نسختُه", encoding="utf-8")
     again = _run(["setup"], tmp_path)

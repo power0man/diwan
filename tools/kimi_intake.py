@@ -44,6 +44,8 @@ from evaluation.agentic_runner import (evaluate_success, harness_tampering, mate
 from evaluation.capabilities import validate_suite  # noqa: E402
 
 REQUIRED = ("open", "sealed/MANIFEST.json", "REPORT.md", "disputed.json")
+# دورةُ الشطر المفتوح (قرار المالك، ٢٦ سبتمبر): لا يرى Kimi المحجوب، فلا بيانَ ولا sealed/ في تسليمه
+REQUIRED_OPEN_ONLY = ("open", "REPORT.md", "disputed.json")
 # بنكُ العربية العامة ملفّان، لأن المدقّقَ لا يقبل فوق مئة حالةٍ في الملف (`validate_suite`)
 DEV_GENERAL = ("arabic_general_v3_1.json", "arabic_general_v3_2.json")
 DEV_AGENTIC, DEV_AGENTIC_META = "agentic_v3.json", "agentic_v3.meta.json"
@@ -72,8 +74,10 @@ def _json(path: Path):
         return None
 
 
-def check_structure(src: Path) -> dict:
-    missing = [p for p in REQUIRED if not (src / p).exists()]
+def check_structure(src: Path, *, open_only: bool = False) -> dict:
+    missing = [p for p in (REQUIRED_OPEN_ONLY if open_only else REQUIRED) if not (src / p).exists()]
+    if open_only and (src / "sealed").exists():
+        missing.append("sealed/ ممنوعٌ في دورة الشطر المفتوح")
     return {"missing": missing, "dev_files": sorted(p for p in (*DEV_GENERAL, DEV_AGENTIC, DEV_AGENTIC_META)
                                                     if (src / p).exists())}
 
@@ -259,13 +263,14 @@ def check_agentic(src: Path, *, judge=_judge) -> dict:
     return {"counts": counts, "failures": failures}
 
 
-def intake(src: Path, *, agentic: bool = False, judge=_judge) -> dict:
-    structure = check_structure(src)
-    report = {"schema_version": 1, "kind": "kimi_intake", "source": src.name, "structure": structure}
+def intake(src: Path, *, agentic: bool = False, open_only: bool = False, judge=_judge) -> dict:
+    structure = check_structure(src, open_only=open_only)
+    report = {"schema_version": 1, "kind": "kimi_intake", "source": src.name, "structure": structure,
+              "open_only": open_only}
     if structure["missing"]:
         report.update(passed=False, measurement_limits=LIMITS)
         return report
-    report["manifest"] = check_manifest(src)
+    report["manifest"] = {"files": 0, "failures": [], "skipped": "open_only"} if open_only else check_manifest(src)
     report["bank"] = check_bank(src)
     report["dev"] = check_dev(src)
     if agentic:
@@ -279,9 +284,11 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("source", type=Path, help="مجلّدُ تسليم Kimi (kimi-benchmark)")
     parser.add_argument("--agentic", action="store_true", help="يحكم على المهامّ الوكيلة؛ في حاويةٍ زائلة وحدها")
+    parser.add_argument("--open-only", action="store_true",
+                        help="دورةُ الشطر المفتوح: لا بيانَ، ويُرفض تسليمٌ فيه sealed/")
     parser.add_argument("--out", required=True, help="مسارُ التقرير، أو - للطباعة")
     args = parser.parse_args(argv)
-    report = intake(args.source.resolve(), agentic=args.agentic)
+    report = intake(args.source.resolve(), agentic=args.agentic, open_only=args.open_only)
     text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.out == "-":
         sys.stdout.write(text)

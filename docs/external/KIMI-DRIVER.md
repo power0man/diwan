@@ -37,12 +37,11 @@ Kimi كلُّها في أنه لم يرَها (`docs/KIMI-BENCHMARK-BRIEF.md` §
 فأداةُ سطر الأوامر تقرأ ما يُدلّ عليه، ومن عرف مكان المستودع قرأه.
 
 وينتقل من المستودع إليه شيئان: مثالُ `evaluation/suites/agentic_v1.json` إلى
-`~/kimi-work/examples/`، **والبنكُ الحاليّ** إلى `~/kimi-work/current/` (قرار المالك، ٢٦ سبتمبر
-٢٠٢٦): الشطرُ المفتوح من `evaluation/banks/kimi_v1/open/` وبيانُ المحجوب العام. وسببُه أن
-مجلّد Kimi كان يحمل نسخةً أخرى من البنك (١٠ مفتوحة و١٦ محجوبة) لم تدخل المستودعَ العام، فطُلب
-منه إصلاحُ ١٥٠ حالةً لا يراها. وهي مخرجُه هو، ولا تحمل شيئًا من شيفرة ديوان ولا نتائجه.
-**والمحجوبُ لا ينسخه القائد:** يضعه المالكُ بيده من `~/diwan-sealed/kimi_v1/` في
-`~/kimi-work/current/sealed/`، فلا يمرّ بسياق القائد. ورأسُ التشغيل يحوّل إليه إشارةَ التكليف إلى ذلك المسار،
+`~/kimi-work/examples/`، **والشطرُ المفتوح من البنك الحاليّ** إلى `~/kimi-work/current/open/`
+(قرار المالك، ٢٦ سبتمبر ٢٠٢٦). وسببُه أن مجلّد Kimi كان يحمل نسخةً أخرى من البنك لم تدخل
+المستودعَ العام، فطُلب منه إصلاحُ ١٥٠ حالةً لا يراها. وهي مخرجُه هو، ولا تحمل شيئًا من شيفرة
+ديوان ولا نتائجه. **والمحجوبُ لا يصله أبدًا:** Kimi نموذجٌ سحابيّ، والمحجوبُ لا يُرسل، فدورةُ
+v1.2 للمفتوح وحده (`OPEN_ONLY=1` في `intake` و`place`). ورأسُ التشغيل يحوّل إليه إشارةَ التكليف إلى ذلك المسار،
 فلا يبحث Kimi عنه في مكانٍ آخر.
 
 ويتأكّد `tools/kimi_drive.sh` من أن `$KIMI_WORK` ليس داخل `~/diwan-work`، ويتوقّف إن كان.
@@ -141,6 +140,14 @@ cd "$KIMI_WORK" && kimi --prompt "$(cat "$bundle")" --output-format text \
 
 ```bash
 tools/kimi_drive.sh run && tools/kimi_drive.sh inspect && tools/kimi_drive.sh intake && tools/kimi_drive.sh place
+```
+
+**ودورةُ v1.2 للشطر المفتوح وحده** (قرار المالك، ٢٦ سبتمبر ٢٠٢٦): تحديثٌ لا يمسّ `~/diwan-sealed` ولا البيان،
+ويُرفض فيه تسليمٌ يحمل `sealed/`:
+
+```bash
+tools/kimi_drive.sh setup && tools/kimi_drive.sh run && tools/kimi_drive.sh inspect \
+  && OPEN_ONLY=1 tools/kimi_drive.sh intake && UPDATE=1 OPEN_ONLY=1 tools/kimi_drive.sh place
 ```
 
 **وعطبٌ واحدٌ صادفناه يستحقّ الذكر:** توقّف التوزيع لأن Kimi كتب البيانَ المختوم

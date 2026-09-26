@@ -178,3 +178,17 @@ def test_an_incomplete_delivery_stops_at_the_structure(tmp_path):
     report = intake(src)
     assert not report["passed"] and "sealed/MANIFEST.json" in report["structure"]["missing"]
     assert "bank" not in report
+
+
+def test_an_open_only_delivery_passes_without_a_manifest_and_refuses_a_sealed_folder(tmp_path):
+    """دورةُ الشطر المفتوح: لا يصل Kimi محجوبٌ، فلا بيانَ يُطلب، ويُرفض تسليمٌ فيه sealed/."""
+    import shutil
+    src = delivery(tmp_path)
+    with_sealed = intake(src, open_only=True)
+    assert not with_sealed["passed"] and with_sealed["structure"]["missing"]
+    shutil.rmtree(src / "sealed")
+    assert not intake(src)["passed"], "بلا open_only يبقى البيانُ مطلوبًا"
+    report = intake(src, open_only=True)
+    assert report["passed"], report
+    assert report["manifest"]["skipped"] == "open_only"
+    assert report["bank"]["counts"]["sealed"]["files"] == 0

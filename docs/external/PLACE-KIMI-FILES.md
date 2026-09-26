@@ -46,7 +46,15 @@ SEALED_DST="${SEALED_DST:-$HOME/diwan-sealed/kimi_v1}"
 BANK="$DIWAN/evaluation/banks/kimi_v1"
 
 # ١ — المصدر كامل، والمستودع موجود
-for p in open sealed/MANIFEST.json REPORT.md disputed.json; do
+# ودورةُ الشطر المفتوح (OPEN_ONLY=1، تحديثٌ وحده): لا محجوبَ في التسليم، ولا يُمسّ المحجوبُ القائم.
+if [ "${OPEN_ONLY:-0}" = 1 ]; then
+  [ "${UPDATE:-0}" = 1 ] || { echo "توقّفت: OPEN_ONLY=1 تحديثٌ لبنكٍ قائم، فيلزمه UPDATE=1"; exit 1; }
+  [ ! -e "$SRC/sealed" ] || { echo "توقّفت: في التسليم sealed/ ودورةُ الشطر المفتوح لا محجوبَ فيها، ولم أغيّر شيئًا"; exit 1; }
+  NEED="open REPORT.md disputed.json"
+else
+  NEED="open sealed/MANIFEST.json REPORT.md disputed.json"
+fi
+for p in $NEED; do
   [ -e "$SRC/$p" ] || { echo "توقّفت: ينقص المصدرَ $p"; exit 1; }
 done
 [ -d "$DIWAN/.git" ] || { echo "توقّفت: لا مستودع ديوان في $DIWAN"; exit 1; }
@@ -73,7 +81,7 @@ for f in $DEV; do
 done
 
 # ٣ — البيان يطابق الملفّات المحجوبة قبل أي نسخ (أعدادٌ وعلامات فقط، بلا محتوى)
-( cd "$SRC" && python3 - <<'PY'
+[ "${OPEN_ONLY:-0}" = 1 ] || ( cd "$SRC" && python3 - <<'PY'
 import hashlib, json, pathlib, sys
 manifest = json.load(open("sealed/MANIFEST.json", encoding="utf-8"))
 files = manifest["files"]
@@ -111,17 +119,20 @@ PY
 ) || { echo "توقّفت: البيان لا يطابق الملفّات المحجوبة، ولم أنسخ شيئًا"; exit 1; }
 
 # ٤ — النسخ
-if [ "${UPDATE:-0}" = 1 ]; then
+if [ "${UPDATE:-0}" = 1 ] && [ "${OPEN_ONLY:-0}" != 1 ]; then
   BACKUP="$SEALED_DST.before-$(date +%Y%m%d-%H%M%S)"
   mv "$SEALED_DST" "$BACKUP" && echo "المحجوبُ السابق في $BACKUP"
-  rm -rf "$BANK/open"
 fi
-mkdir -p "$BANK/sealed" "$(dirname "$SEALED_DST")"
+[ "${UPDATE:-0}" != 1 ] || rm -rf "$BANK/open"
+mkdir -p "$BANK"
 cp -R "$SRC/open" "$BANK/open"
 cp "$SRC/REPORT.md" "$SRC/disputed.json" "$BANK/"
-cp "$SRC/sealed/MANIFEST.json" "$BANK/sealed/MANIFEST.json"
-cp -R "$SRC/sealed" "$SEALED_DST"
-chmod -R go-rwx "$SEALED_DST"
+if [ "${OPEN_ONLY:-0}" != 1 ]; then
+  mkdir -p "$BANK/sealed" "$(dirname "$SEALED_DST")"
+  cp "$SRC/sealed/MANIFEST.json" "$BANK/sealed/MANIFEST.json"
+  cp -R "$SRC/sealed" "$SEALED_DST"
+  chmod -R go-rwx "$SEALED_DST"
+fi
 for f in $DEV; do
   [ ! -e "$SRC/$f" ] || { mkdir -p "$DIWAN/evaluation/suites"
     cp "$SRC/$f" "$DIWAN/evaluation/suites/$f"; echo "✓ بنك تطوير: $f"; }

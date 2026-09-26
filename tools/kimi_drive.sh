@@ -21,15 +21,14 @@ esac
 cmd_setup() {
   mkdir -p "$KIMI_WORK/examples" "$KIMI_WORK/logs" "$KIMI_WORK/prompts"
   cp "$DIWAN/evaluation/suites/agentic_v1.json" "$KIMI_WORK/examples/agentic_v1.json"
-  # والبنكُ الحاليّ من المستودع إلى current/ (قرار المالك، ٢٦ سبتمبر): المفتوحُ وبيانُ
-  # المحجوب وحدهما. والمحجوبُ نفسُه يضعه المالكُ بيده من ~/diwan-sealed، فلا يمرّ بالقائد.
+  # والشطرُ المفتوح من البنك الحاليّ إلى current/open (قرار المالك، ٢٦ سبتمبر): دورةُ v1.2
+  # للمفتوح وحده، فلا يصل Kimi محجوبٌ ولا بيانُه — فـKimi نموذجٌ سحابيّ، والمحجوبُ لا يُرسل.
   local cur="$KIMI_WORK/current"
   [ ! -e "$cur/open" ] || die "$cur/open موجود من قبل، ولم أغيّر شيئًا"
-  mkdir -p "$cur/sealed"
+  mkdir -p "$cur"
   cp -R "$DIWAN/evaluation/banks/kimi_v1/open" "$cur/open"
-  cp "$DIWAN/evaluation/banks/kimi_v1/sealed/MANIFEST.json" "$cur/sealed/MANIFEST.json"
   echo "مجلّد Kimi جاهز: $KIMI_WORK (examples/ و logs/ و prompts/ و current/)"
-  echo "  current/open: $(find "$cur/open" -name '*.json' ! -name '*.meta.json' | wc -l | tr -d ' ') ملفًّا مفتوحًا؛ والمحجوبُ يضعه المالك في $cur/sealed"
+  echo "  current/open: $(find "$cur/open" -name '*.json' ! -name '*.meta.json' | wc -l | tr -d ' ') ملفًّا مفتوحًا، ولا محجوب"
 }
 
 # يجمع الرأسَ والتكليفَ والتحديث، كلٌّ من بعد أول خطٍّ فاصل فيه
@@ -92,7 +91,8 @@ cmd_intake() {
   local out="$KIMI_WORK/logs/intake-$STAMP.json"
   mkdir -p "$KIMI_WORK/logs"
   local rc=0
-  "${PYTHON:-python3}" "$DIWAN/tools/kimi_intake.py" "$src" --out "$out" || rc=$?
+  local mode=(); [ "${OPEN_ONLY:-0}" != 1 ] || mode=(--open-only)
+  "${PYTHON:-python3}" "$DIWAN/tools/kimi_intake.py" "$src" ${mode[@]+"${mode[@]}"} --out "$out" || rc=$?
   echo "تقريرُ الاستلام في $out — أعدادٌ ورموزٌ فقط، فيُقرأ."
   echo "والمهامُّ الوكيلة تُحكم في حاويةٍ زائلة: انظر رأسَ tools/kimi_intake.py."
   return "$rc"
