@@ -71,6 +71,7 @@ tools/kimi_drive.sh setup     # يبني ~/kimi-work وينسخ المثال
 tools/kimi_drive.sh bundle    # يجمع الرأس+التكليف+التحديث، ويطبع مسار الحزمة
 tools/kimi_drive.sh run       # يشغّل Kimi في مجلّده، والمخرجات إلى سجلٍّ لا يُفتح
 tools/kimi_drive.sh inspect   # أعدادُ ما سلّمه، بلا محتوى
+tools/kimi_drive.sh intake    # الاستلام (ك٦): المدقّقاتُ الحقيقية وشروطُ التكليف، أعدادٌ ورموزٌ بلا محتوى
 tools/kimi_drive.sh place     # يوزّع بأمر PLACE-KIMI-FILES.md مع SRC=~/kimi-work/kimi-benchmark
 ```
 
@@ -130,10 +131,10 @@ cd "$KIMI_WORK" && kimi --prompt "$(cat "$bundle")" --output-format text \
 البصماتُ كلُّها قبل النسخ، ونُفِّذت المهمّة ك١ على الشطر المفتوح
 (`docs/probe/k1-kimi-open-validation-20260924.json`).
 
-والدورةُ من بعدها ثلاثةُ أوامر:
+والدورةُ من بعدها أربعةُ أوامر:
 
 ```bash
-tools/kimi_drive.sh run && tools/kimi_drive.sh inspect && tools/kimi_drive.sh place
+tools/kimi_drive.sh run && tools/kimi_drive.sh inspect && tools/kimi_drive.sh intake && tools/kimi_drive.sh place
 ```
 
 **وعطبٌ واحدٌ صادفناه يستحقّ الذكر:** توقّف التوزيع لأن Kimi كتب البيانَ المختوم
