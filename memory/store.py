@@ -27,6 +27,7 @@ from core.attribution import content_tokens
 from core.quoted import quarantine, wrap
 
 MEMORY_DIR = "memory"
+LOCK_NAME = "memory.lock"       # باسمه تؤجّره النسخةُ الاحتياطية فلا يُكتب المخزنُ أثناء نسخه
 MAX_ITEM_CHARS = 2000
 MAX_CONTEXT_ITEMS = 50
 MAX_CONTEXT_CHARS = 8000
@@ -97,7 +98,9 @@ class MemoryStore:
         self.root = project.resolve() / MEMORY_DIR
         if self.root.is_symlink():
             raise MemoryRefused("memory_path_unsafe", "مجلدُ الذاكرة رابط")
-        (self.root / "items").mkdir(parents=True, exist_ok=True, mode=0o700)
+        # خاصّان صراحةً: `parents=True` كان يُنشئ `memory/` بإذن الـumask فيقرؤه غيرُ المالك
+        self.root.mkdir(exist_ok=True, mode=0o700)
+        (self.root / "items").mkdir(exist_ok=True, mode=0o700)
         for path in (self.root, self.root / "items"):
             if path.is_symlink() or not stat.S_ISDIR(os.lstat(path).st_mode):
                 raise MemoryRefused("memory_path_unsafe", "مسارُ الذاكرة ليس مجلدًا")
@@ -129,7 +132,7 @@ class MemoryStore:
 
         class _Held:
             def __enter__(self_inner):
-                self_inner.fd = os.open(store.root / ".lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+                self_inner.fd = os.open(store.root / LOCK_NAME, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
                 filelock.lock(self_inner.fd)
                 return self_inner
 
@@ -260,7 +263,7 @@ class MemoryStore:
         return snapshot
 
     @staticmethod
-    def _check_snapshot(snapshot) -> tuple[dict[str, tuple[dict, bytes]], list[dict]]:
+    def check_snapshot(snapshot) -> tuple[dict[str, tuple[dict, bytes]], list[dict]]:
         """اللقطةُ تُفحص كلُّها قبل أن يُمسّ شيء: معرّفٌ من خارج الصيغة مسارٌ يخرج من المخزن."""
         def bad(why: str) -> MemoryRefused:
             return MemoryRefused("snapshot_invalid", f"لقطةٌ لا تُستعاد: {why}")
@@ -294,7 +297,7 @@ class MemoryStore:
 
     def restore(self, snapshot: dict[str, bytes]) -> None:
         """يستعيد لقطةً، ثم يطبّق الإيصالاتِ كلَّها (القائمة والمستعادة) قبل أن يكتب عنصرًا واحدًا."""
-        items, restored = self._check_snapshot(snapshot)
+        items, restored = self.check_snapshot(snapshot)
         with self._lock():
             current = self._read_receipts()
             merged = {r["item_id"]: r for r in restored + current}

@@ -23,6 +23,7 @@ from conversation import ChatSession
 from conversation.session import SYSTEM
 from core import filelock
 from core.canonical import canonical_bytes, digest
+from memory.store import LOCK_NAME as MEMORY_LOCK, MemoryRefused, MemoryStore
 from multimodal.codec import MEDIA_SYSTEM, decode_request
 from services.assistant_workspace import _decode_context
 from services.media_assistant import MediaAssistant
@@ -38,6 +39,10 @@ PROVENANCE = "restore-provenance.json"
 _SHA = re.compile(r"[a-f0-9]{64}\Z")
 _ID = re.compile(r"[a-f0-9]{32}\Z")
 _DIR = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+_MEMORY_ITEM = re.compile(r"items/[0-9a-f]{16}\.json\Z")
+# قفلُ الذاكرة قبل ك٥٥ (الجزء ٢) كان `.lock`؛ يُقبل في النسخة ولا يُستعاد
+_MEMORY_LOCKS = {MEMORY_LOCK, ".lock"}
+_UNSET = object()
 
 
 class BackupError(ValueError):
@@ -210,8 +215,9 @@ def _take_snapshot(root_fd, root):
         stack.enter_context(_lease(root_fd, "app.lock"))
         before = _inventory(root_fd)
         for path, (directory, _, _) in sorted(before.items()):
-            if not directory and path != "app.lock" and path.rsplit("/", 1)[-1] in {
-                    "session.lock", "preferences.lock", "store.lock"}:
+            if not directory and path != "app.lock" and (path.rsplit("/", 1)[-1] in {
+                    "session.lock", "preferences.lock", "store.lock"}
+                    or _memory_part(path) in _MEMORY_LOCKS):
                 stack.enter_context(_lease(root_fd, path))
         _need(_inventory(root_fd) == before, "backup_source_changed")
         directories, files, total = [], [], 0
@@ -281,6 +287,21 @@ def _unpack(bundle):
     return dirs, data, identities, total
 
 
+def _memory_part(path):
+    """ما بعد `projects/<id>/memory/` في المسار، أو None إن لم يكن من ذاكرة مشروع."""
+    parts = path.split("/")
+    if len(parts) >= 4 and parts[0] == "projects" and parts[2] == "memory":
+        return "/".join(parts[3:])
+    return None
+
+
+def _memory_snapshot(data, memory):
+    """لقطةُ مخزن الذاكرة كما يقبلها `MemoryStore.restore`: العناصرُ والإيصالات، بلا القفل."""
+    prefix = memory + "/"
+    return {path[len(prefix):]: raw for path, raw in data.items()
+            if path.startswith(prefix) and path[len(prefix):] not in _MEMORY_LOCKS}
+
+
 def _metadata(raw, expected, *, session=False):
     value = _json(raw)
     fields = {"id", "name"}
@@ -302,7 +323,7 @@ def _shape(dirs, data):
           "backup_staging_not_empty")
     projects = sorted(p for p in dirs if p.startswith("projects/") and p.count("/") == 1)
     _need(len(projects) <= 64, "backup_limit")
-    sessions, stores, preferences = [], [], []
+    sessions, stores, preferences, memories = [], [], [], []
     for project in projects:
         pid = project.split("/")[-1]
         _need(_ID.fullmatch(pid), "backup_invalid")
@@ -316,6 +337,17 @@ def _shape(dirs, data):
             _need(all(p in data for p in (pref + "/state.json", pref + "/preferences.lock")),
                   "backup_incomplete")
             preferences.append(pref)
+        memory = project + "/memory"
+        if memory in dirs:
+            # الذاكرةُ المحكومة (ك٥٥): عناصرُها وإيصالاتُها، وتُفحص بصمةً بصمة في `_validate_tree`
+            _need(memory + "/items" in dirs, "backup_incomplete")
+            allowed_dirs.update({memory, memory + "/items"})
+            for path in data:
+                part = _memory_part(path) if path.startswith(memory + "/") else None
+                if part is not None and (part in _MEMORY_LOCKS or part == "receipts.jsonl"
+                                         or _MEMORY_ITEM.match(part)):
+                    allowed_files.add(path)
+            memories.append(memory)
         current = sorted(p for p in dirs if p.startswith(project + "/sessions/") and p.count("/") == 3)
         _need(len(current) <= 64, "backup_limit")
         for session in current:
@@ -354,7 +386,7 @@ def _shape(dirs, data):
         _need(type(previous) is dict and previous.get("schema_version") == 1
               and type(previous.get("archive_sha256")) is str
               and _SHA.fullmatch(previous["archive_sha256"]), "backup_invalid")
-    return sessions, stores, preferences
+    return sessions, stores, preferences, memories
 
 
 def _write_file(root_fd, path, raw, *, replace=False):
@@ -383,7 +415,7 @@ def _materialize(root, dirs, data):
 
 
 def _validate_tree(root, bundle, dirs, data, identities, shape):
-    sessions, stores, preferences = shape
+    sessions, stores, preferences, memories = shape
     migrations = []
     fd = _open_directory(root)
     try:
@@ -436,6 +468,11 @@ def _validate_tree(root, bundle, dirs, data, identities, shape):
                                "new_config_sha256": digest(new_config), "owners": changed})
         for path in preferences:
             Preferences(root / path).snapshot()
+        for memory in memories:
+            try:
+                MemoryStore.check_snapshot(_memory_snapshot(data, memory))
+            except MemoryRefused:
+                _fail("backup_memory_invalid", "ذاكرةُ مشروعٍ في النسخة لا تطابق بصماتها")
         for chat, sid, mode in sessions:
             config = _json(data[chat + "/manifest.json"])
             envelope = _json(data[chat + "/state.json"])
@@ -494,6 +531,8 @@ def _guard(function):
             return function(*args, **kwargs)
         except BackupError:
             raise
+        except MemoryRefused:
+            _fail("backup_memory_invalid", "ذاكرةُ مشروعٍ لا تُستعاد بصمتها")
         except FileExistsError:
             _fail("backup_destination_exists", "الوجهة موجودة؛ لا استبدال")
         except (OSError, ValueError, TypeError, KeyError, RecursionError, AttributeError):
@@ -531,10 +570,60 @@ def inspect_archive(archive, expected_sha256):
     return _report("verified", expected_sha256, dirs, data, total)
 
 
+def _live_receipts(live_root, memory):
+    """إيصالاتُ النسيان في المساحة الحيّة لهذا المشروع، أو لا شيء إن لم يكن له مخزنٌ فيها."""
+    fd = _open_directory(live_root)
+    try:
+        try:
+            raw, _ = _read_at(fd, memory + "/receipts.jsonl", MAX_RAW_BYTES)
+        except FileNotFoundError:
+            return None
+    finally:
+        os.close(fd)
+    try:
+        MemoryStore.check_snapshot({"receipts.jsonl": raw})
+    except MemoryRefused:
+        _fail("backup_memory_invalid", "إيصالاتُ النسيان في المساحة الحيّة غير صالحة")
+    return raw
+
+
+def _restore_memory(destination, data, memories, live_root):
+    """الذاكرةُ تُستعاد عبر `MemoryStore.restore` وحده (§٣.٣): الإيصالاتُ كلُّها، القائمةُ في
+    المساحة الحيّة ثم ما في النسخة، تُطبَّق قبل أن يُكتب عنصرٌ واحد. فالمنسيُّ بعد النسخة لا يعود."""
+    report = {"projects": len(memories), "items_in_archive": 0, "items_restored": 0,
+              "live_receipts_applied": live_root is not None}
+    for memory in memories:
+        snapshot = _memory_snapshot(data, memory)
+        store = MemoryStore(destination / Path(memory).parent)
+        if live_root is not None:
+            live = _live_receipts(live_root, memory)
+            if live is not None:
+                store.restore({"receipts.jsonl": live})
+        store.restore(snapshot)
+        report["items_in_archive"] += sum(name.startswith("items/") for name in snapshot)
+        report["items_restored"] += len(store.items())
+    return report
+
+
 @_guard
-def restore_workspace(archive, destination, expected_sha256):
+def restore_workspace(archive, destination, expected_sha256, *, tombstones_from=_UNSET):
+    """`tombstones_from` جذرُ المساحة الحيّة إن بقيت، فتُطبَّق إيصالاتُ نسيانها على ذاكرة النسخة؛
+    أو None صراحةً إن فُقدت. ونسخةٌ فيها ذاكرة لا تُستعاد بلا هذا الاختيار: فاستعادةُ نسخةٍ أقدم
+    من نسيانٍ بلا إيصالاته تُعيد المنسيّ."""
     bundle = _read_archive(archive, expected_sha256)
     dirs, data, identities, total, shape = _validate_bundle(bundle)
+    memories = shape[3]
+    if memories:
+        _need(tombstones_from is not _UNSET, "backup_tombstones_required")
+    live_root = None if tombstones_from in (_UNSET, None) else _path(tombstones_from)
+    if live_root is not None:
+        fd = _open_directory(live_root)
+        try:
+            _private(os.fstat(fd), directory=True)
+        finally:
+            os.close(fd)
+    memory_paths = {path for path in set(dirs) | set(data)
+                    if any(path == m or path.startswith(m + "/") for m in memories)}
     destination = _path(destination)
     parent = _open_directory(destination.parent)
     intent = restore_intent_name(destination)
@@ -561,10 +650,13 @@ def restore_workspace(archive, destination, expected_sha256):
         fd = _open_directory(destination)
         try:
             _write_file(fd, INCOMPLETE, b"diwan restore incomplete\n")
-            _materialize(destination, dirs, data)
+            _materialize(destination, {k: v for k, v in dirs.items() if k not in memory_paths},
+                         {k: v for k, v in data.items() if k not in memory_paths})
             migrations = _validate_tree(destination, bundle, dirs, data, identities, shape)
+            memory_report = _restore_memory(destination, data, memories, live_root)
             provenance = {"schema_version": 1, "archive_sha256": expected_sha256,
-                          "workspace_migrations": migrations}
+                          "workspace_migrations": migrations,
+                          **({"memory": memory_report} if memories else {})}
             _write_file(fd, PROVENANCE, canonical_bytes(provenance), replace=PROVENANCE in data)
             os.unlink(INCOMPLETE, dir_fd=fd)
             os.fsync(fd)
@@ -576,4 +668,5 @@ def restore_workspace(archive, destination, expected_sha256):
         os.fsync(parent)
     finally:
         os.close(parent)
-    return _report("restored", expected_sha256, dirs, data, total)
+    report = _report("restored", expected_sha256, dirs, data, total)
+    return {**report, "memory": memory_report} if memories else report

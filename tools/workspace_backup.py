@@ -23,6 +23,12 @@ def main(argv=None):
     restore.add_argument("--archive", type=Path, required=True)
     restore.add_argument("--destination", type=Path, required=True)
     restore.add_argument("--sha256", required=True)
+    # نسخةٌ فيها ذاكرة لا تُستعاد بلا اختيارٍ صريح (ك٥٥): إيصالاتُ نسيان المساحة الحيّة، أو لا شيء
+    live = restore.add_mutually_exclusive_group()
+    live.add_argument("--tombstones-from", type=Path,
+                      help="جذرُ المساحة الحيّة: ما نُسي فيها بعد النسخة لا يعود")
+    live.add_argument("--no-live-tombstones", action="store_true",
+                      help="المساحةُ الحيّة فُقدت: تُطبَّق إيصالاتُ النسخة وحدها")
     args = parser.parse_args(argv)
     try:
         if args.command == "backup":
@@ -30,7 +36,9 @@ def main(argv=None):
         elif args.command == "inspect":
             result = inspect_archive(args.archive, args.sha256)
         else:
-            result = restore_workspace(args.archive, args.destination, args.sha256)
+            live = ({"tombstones_from": args.tombstones_from} if args.tombstones_from is not None
+                    else {"tombstones_from": None} if args.no_live_tombstones else {})
+            result = restore_workspace(args.archive, args.destination, args.sha256, **live)
     except KeyboardInterrupt:
         return 130
     except Exception as exc:
