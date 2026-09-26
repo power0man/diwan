@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 from evaluation.media_bank import BANK
-from evaluation.ocr_runner import Engine, OCRRefused, rescore, run, tesseract
+from evaluation.ocr_runner import Engine, OCRRefused, easyocr, rescore, run, tesseract
 
 ROOT = Path(__file__).resolve().parents[1]
 OCR = json.loads((BANK / "ocr.json").read_text(encoding="utf-8"))
@@ -78,6 +78,13 @@ def test_a_missing_tesseract_is_refused_by_name(tmp_path, monkeypatch):
     monkeypatch.setenv("PATH", str(tmp_path))
     with pytest.raises(OCRRefused) as err:
         tesseract()
+    assert err.value.code == "ocr_engine_unavailable"
+
+
+def test_a_missing_easyocr_is_refused_by_name(monkeypatch):
+    monkeypatch.setitem(__import__("sys").modules, "easyocr", None)
+    with pytest.raises(OCRRefused) as err:
+        easyocr()
     assert err.value.code == "ocr_engine_unavailable"
 
 
