@@ -232,3 +232,19 @@ def test_an_open_only_delivery_must_keep_every_sidecar_and_its_tasks(tmp_path):
     assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_case_missing"}
     (src / "open" / "tier_d" / "kimi_d_001.meta.json").unlink()
     assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_file_missing"}
+
+
+def test_a_case_sidecar_keeps_its_cases_and_an_unreadable_one_is_refused(tmp_path):
+    """ملاحظةُ Codex على #128: ملفّاتُ الطبقات أ–ج الجانبية مفتاحُها cases لا tasks، فكان حذفُ مصادرها يمرّ."""
+    import shutil
+    src = delivery(tmp_path)
+    shutil.rmtree(src / "sealed")
+    sidecar = src / "open" / "tier_a" / "kimi_a_001.meta.json"
+    _write(sidecar, {"suite_id": "kimi_a_001", "cases": {"o1": {"source": "s"}, "o2": {"source": "s"}}})
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    assert intake(src, open_only=True, current=current)["passed"]
+    _write(sidecar, {"suite_id": "kimi_a_001", "cases": {"o1": {"source": "s"}}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_case_missing"}
+    sidecar.write_text("{not json", encoding="utf-8")
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"sidecar_unreadable"}

@@ -147,11 +147,17 @@ tools/kimi_drive.sh run && tools/kimi_drive.sh inspect && tools/kimi_drive.sh in
 ```
 
 **ودورةُ v1.2 للشطر المفتوح وحده** (قرار المالك، ٢٦ سبتمبر ٢٠٢٦): تحديثٌ لا يمسّ `~/diwan-sealed` ولا البيان،
-ويُرفض فيه تسليمٌ يحمل `sealed/`:
+ويُرفض فيه تسليمٌ يحمل `sealed/`. والحكمُ الوكيل في حاويةٍ زائلة شرطٌ قبل التوزيع: المهمّةُ تسقط قبل الحلّ،
+والحلُّ المرجعيُّ يمرّ. وصورةُ `diwan-intake` تُبنى مرّةً كما في `docs/guides/G6.md` الخطوة ٢٢:
 
 ```bash
 tools/kimi_drive.sh setup && tools/kimi_drive.sh run && tools/kimi_drive.sh inspect \
-  && OPEN_ONLY=1 tools/kimi_drive.sh intake && UPDATE=1 OPEN_ONLY=1 tools/kimi_drive.sh place
+  && OPEN_ONLY=1 tools/kimi_drive.sh intake \
+  && docker run --rm --network none -e DIWAN_DISPOSABLE_HOST=intake \
+       -v ~/kimi-work/kimi-benchmark:/src:ro -v "$PWD":/workspace:ro -v ~/kimi-work/logs:/logs -w /workspace \
+       diwan-intake python tools/kimi_intake.py /src --open-only --agentic \
+       --out /logs/intake-agentic-open-$(date +%Y%m%d-%H%M%S).json \
+  && UPDATE=1 OPEN_ONLY=1 tools/kimi_drive.sh place
 ```
 
 **وعطبٌ واحدٌ صادفناه يستحقّ الذكر:** توقّف التوزيع لأن Kimi كتب البيانَ المختوم

@@ -114,13 +114,16 @@ def check_manifest(src: Path) -> dict:
 
 
 def _open_ids(root: Path) -> dict[str, set]:
-    """كلُّ ملفٍّ بمعرّفاته. والملفُّ الجانبيّ (`.meta.json`) داخلٌ بمفاتيح مهامّه، فحلولُه المرجعية ومصادرُه تُمحى معه."""
+    """كلُّ ملفٍّ بمعرّفاته. والملفُّ الجانبيّ (`.meta.json`) داخلٌ بمفاتيح حالاته أو مهامّه، فمصادرُه وحلولُه تُمحى معه."""
     out = {}
     for path in sorted(root.rglob("*.json")):
         data = _json(path)
         if path.name.endswith(".meta.json"):
-            tasks = data.get("tasks") if isinstance(data, dict) else None
-            out[path.relative_to(root).as_posix()] = set(tasks) if isinstance(tasks, dict) else set()
+            entries = None
+            if isinstance(data, dict):
+                entries = next((data[k] for k in ("cases", "tasks") if isinstance(data.get(k), dict)), None)
+            # ملفٌّ جانبيٌّ بلا cases ولا tasks قاموسًا لا يُقرأ، فلا يُحكم بتمامه (None)
+            out[path.relative_to(root).as_posix()] = set(entries) if entries is not None else None
             continue
         items = (data.get("cases") or data.get("tasks") or []) if isinstance(data, dict) else []
         out[path.relative_to(root).as_posix()] = {
@@ -143,7 +146,9 @@ def check_open_replacement(src: Path, current: Path) -> dict:
     for relative, ids in expected.items():
         if relative not in delivered:
             _failure(failures, f"open/{relative}", "open_file_missing")
-        elif not ids <= delivered[relative]:
+        elif delivered[relative] is None:
+            _failure(failures, f"open/{relative}", "sidecar_unreadable")
+        elif not (ids or set()) <= delivered[relative]:
             _failure(failures, f"open/{relative}", "open_case_missing")
     return {"files": len(expected), "failures": failures}
 

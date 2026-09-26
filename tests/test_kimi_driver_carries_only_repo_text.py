@@ -115,3 +115,13 @@ def test_the_open_only_bundle_never_asks_kimi_for_a_sealed_half(tmp_path):
     assert "ولا `sealed/`" in request and "هذه الدورةُ للشطر المفتوح وحده" in request
     header = (ROOT / "docs" / "external" / "KIMI-WORKSPACE-HEADER.md").read_text(encoding="utf-8")
     assert "يتقدّم على كل ما يخالفه بعده" in header
+
+
+def test_the_open_only_chain_judges_agentic_tasks_in_a_container_before_placing(tmp_path):
+    """ملاحظةُ Codex على #128: سلسلةُ v1.2 الموثّقة كانت توزّع بلا حكمٍ وكيل، فتدخل مهمّةٌ لا تسقط قبل حلّها."""
+    import re
+    doc = (ROOT / "docs" / "external" / "KIMI-DRIVER.md").read_text(encoding="utf-8")
+    chain = next(b for b in re.findall(r"```bash\n(.*?)```", doc, re.S) if "OPEN_ONLY=1 tools/kimi_drive.sh place" in b)
+    judge = chain.index("--agentic")
+    assert "--network none" in chain and "--open-only --agentic" in chain
+    assert judge < chain.index("UPDATE=1 OPEN_ONLY=1 tools/kimi_drive.sh place")
