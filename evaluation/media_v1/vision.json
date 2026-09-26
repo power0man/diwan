@@ -1,0 +1,547 @@
+{
+  "schema_version": 1,
+  "suite_id": "media_v1_vision",
+  "description": "أربعون صورةً مولَّدة لفهم الصور (غ٧)، وجوابُ كلٍّ معروفٌ بالبناء: العدّ، والألوان، والمواضع، والرسوم البيانية، والجداول، وقراءةُ اللافتات.",
+  "license": "Apache-2.0 (مولَّدةٌ لهذا البنك؛ الخطّان برخصة OFL-1.1)",
+  "answer_format": "سطرٌ أخير: الجواب: <...>، ويُحكم عليه وحده (evaluation/media_bank.py).",
+  "thresholds": {
+    "accuracy": 0.75,
+    "min_category_accuracy": 0.5
+  },
+  "items": [
+    {
+      "id": "v01",
+      "category": "counting",
+      "image": "vision/v01.png",
+      "sha256": "5dadfcdab573950c8172774122f3005023653effb7286c5f5c69f89a980c46ba",
+      "question": "كم مربعًا في الصورة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 2
+      }
+    },
+    {
+      "id": "v02",
+      "category": "counting",
+      "image": "vision/v02.png",
+      "sha256": "91611093fcf8c994c345d226fe0b5918e6ca3d002868f1f64ddf2568eefe8ed8",
+      "question": "كم مربعًا أزرق في الصورة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 8
+      }
+    },
+    {
+      "id": "v03",
+      "category": "counting",
+      "image": "vision/v03.png",
+      "sha256": "94d6b039a967f3d8f920ecf06c80e2fbb31ccdf66cafedb21dec451506eaa686",
+      "question": "كم مثلثًا في الصورة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 7
+      }
+    },
+    {
+      "id": "v04",
+      "category": "counting",
+      "image": "vision/v04.png",
+      "sha256": "88d49b9c3fb32410811954b4bc6aa95d1b66f7c2626d03ea78ddc4ec8027ac4f",
+      "question": "كم مثلثًا أزرق في الصورة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 8
+      }
+    },
+    {
+      "id": "v05",
+      "category": "counting",
+      "image": "vision/v05.png",
+      "sha256": "c95e8828e67b9f81ec75108282c42381d8255f1a2734bcf291948421fe422d3b",
+      "question": "كم دائرةً في الصورة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 3
+      }
+    },
+    {
+      "id": "v06",
+      "category": "counting",
+      "image": "vision/v06.png",
+      "sha256": "ceb9dcee43394c6a8d9af09ba025ca25c521ad9736dc645e7ac48afe9111cf1e",
+      "question": "كم مثلثًا أحمر في الصورة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 9
+      }
+    },
+    {
+      "id": "v07",
+      "category": "counting",
+      "image": "vision/v07.png",
+      "sha256": "281221981b8dcc7fec03dabcd6e11ba8e42d64b9bcf8fe66a1cc9cc23db6f325",
+      "question": "كم دائرةً في الصورة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 4
+      }
+    },
+    {
+      "id": "v08",
+      "category": "counting",
+      "image": "vision/v08.png",
+      "sha256": "28af3923ea609facd1defc574aeb02db523da7972974c7f97c6502dd091d66ce",
+      "question": "كم مثلثًا أحمر في الصورة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 4
+      }
+    },
+    {
+      "id": "v09",
+      "category": "counting",
+      "image": "vision/v09.png",
+      "sha256": "c7883561ad6969dd07831cbfd96d27ff515908a4bb173d6f12813e416797a03e",
+      "question": "كم مربعًا في الصورة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 2
+      }
+    },
+    {
+      "id": "v10",
+      "category": "counting",
+      "image": "vision/v10.png",
+      "sha256": "fef8812a28001af287963cdf64ca8b9a8a61d8d0d0f4c90ae611240501ef4179",
+      "question": "كم دائرةً حمراء في الصورة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 9
+      }
+    },
+    {
+      "id": "v11",
+      "category": "colors",
+      "image": "vision/v11.png",
+      "sha256": "ff70713f84e772f86d75b31f84be92953cb73a384d13fad996104eeba35ac478",
+      "question": "ما لونُ الدائرة الكبيرة؟ اختر من: أحمر، أزرق، أخضر، أصفر، أسود. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "أزرق",
+        "choices": [
+          "أحمر",
+          "أزرق",
+          "أخضر",
+          "أصفر",
+          "أسود"
+        ]
+      }
+    },
+    {
+      "id": "v12",
+      "category": "colors",
+      "image": "vision/v12.png",
+      "sha256": "7de2ad44a2657566e1cadc57b81446044dc5db544407efb2c3cd537e940a26d5",
+      "question": "ما لونُ الدائرة الكبيرة؟ اختر من: أحمر، أزرق، أخضر، أصفر، أسود. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "أحمر",
+        "choices": [
+          "أحمر",
+          "أزرق",
+          "أخضر",
+          "أصفر",
+          "أسود"
+        ]
+      }
+    },
+    {
+      "id": "v13",
+      "category": "colors",
+      "image": "vision/v13.png",
+      "sha256": "937e28d8db007964506208e22c1c1e85f8cf2230c281c2471d204afc345decd9",
+      "question": "ما لونُ المربع الكبير؟ اختر من: أحمر، أزرق، أخضر، أصفر، أسود. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "أحمر",
+        "choices": [
+          "أحمر",
+          "أزرق",
+          "أخضر",
+          "أصفر",
+          "أسود"
+        ]
+      }
+    },
+    {
+      "id": "v14",
+      "category": "colors",
+      "image": "vision/v14.png",
+      "sha256": "5230b104fc7aeed70c8ea05eaa86bc490255640608e117ad39939ceac7dcf9ba",
+      "question": "ما لونُ المربع الكبير؟ اختر من: أحمر، أزرق، أخضر، أصفر، أسود. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "أصفر",
+        "choices": [
+          "أحمر",
+          "أزرق",
+          "أخضر",
+          "أصفر",
+          "أسود"
+        ]
+      }
+    },
+    {
+      "id": "v15",
+      "category": "colors",
+      "image": "vision/v15.png",
+      "sha256": "89f134dd34ba8f59d41239b72029ec2e50c439cf9240dd824b4f9d9e304939bd",
+      "question": "ما لونُ الدائرة الكبيرة؟ اختر من: أحمر، أزرق، أخضر، أصفر، أسود. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "أصفر",
+        "choices": [
+          "أحمر",
+          "أزرق",
+          "أخضر",
+          "أصفر",
+          "أسود"
+        ]
+      }
+    },
+    {
+      "id": "v16",
+      "category": "colors",
+      "image": "vision/v16.png",
+      "sha256": "1a9529d5863414b1ae2bde2ea10c06097b4679dbd863970969560c063a0335a5",
+      "question": "ما لونُ المربع الكبير؟ اختر من: أحمر، أزرق، أخضر، أصفر، أسود. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "أحمر",
+        "choices": [
+          "أحمر",
+          "أزرق",
+          "أخضر",
+          "أصفر",
+          "أسود"
+        ]
+      }
+    },
+    {
+      "id": "v17",
+      "category": "spatial",
+      "image": "vision/v17.png",
+      "sha256": "63fc44a354372ee991144cf1e21c9f0d0929d7ddd543af2e6288823dd5be6574",
+      "question": "أيُّ الشكلين على يسار الصورة: المربع أم المثلث؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "المربع",
+        "choices": [
+          "المربع",
+          "المثلث"
+        ]
+      }
+    },
+    {
+      "id": "v18",
+      "category": "spatial",
+      "image": "vision/v18.png",
+      "sha256": "09dc6a78727b31d1c6a601d35c6e8c7db78827269cff8548b3d153b6dad25c72",
+      "question": "هل الدائرة فوق المربع أم تحته؟ اختر: فوق، تحت. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "فوق",
+        "choices": [
+          "فوق",
+          "تحت"
+        ]
+      }
+    },
+    {
+      "id": "v19",
+      "category": "spatial",
+      "image": "vision/v19.png",
+      "sha256": "0a0346eee6d10b803314cfde329f65d1ebeca21b351bbbfdece174b239d5363c",
+      "question": "أيُّ الشكلين على يسار الصورة: المربع أم المثلث؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "المثلث",
+        "choices": [
+          "المربع",
+          "المثلث"
+        ]
+      }
+    },
+    {
+      "id": "v20",
+      "category": "spatial",
+      "image": "vision/v20.png",
+      "sha256": "0128ee2f9302cd3de8f43184e1a1a311987d1cc432c8f921d122009ac8026b4f",
+      "question": "هل الدائرة فوق المربع أم تحته؟ اختر: فوق، تحت. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "تحت",
+        "choices": [
+          "فوق",
+          "تحت"
+        ]
+      }
+    },
+    {
+      "id": "v21",
+      "category": "spatial",
+      "image": "vision/v21.png",
+      "sha256": "393d28bc0757a1216ca0a5b62e3ead95ebc4f969528b6a32f6b3e495146bff10",
+      "question": "أيُّ الشكلين على يسار الصورة: المثلث أم المربع؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "المربع",
+        "choices": [
+          "المثلث",
+          "المربع"
+        ]
+      }
+    },
+    {
+      "id": "v22",
+      "category": "spatial",
+      "image": "vision/v22.png",
+      "sha256": "47077f64f61727afc7cd863239a39a17f3a0d8bafdddf5f170fd63fcbc611719",
+      "question": "هل المربع فوق المثلث أم تحته؟ اختر: فوق، تحت. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "فوق",
+        "choices": [
+          "فوق",
+          "تحت"
+        ]
+      }
+    },
+    {
+      "id": "v23",
+      "category": "chart",
+      "image": "vision/v23.png",
+      "sha256": "e2b0ed810a5f86a8287f0eeb6d0aeaca6215f8d08aeacb2b160d84664c1c01d3",
+      "question": "ما القيمةُ المكتوبة فوق عمود يونيو؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 72
+      }
+    },
+    {
+      "id": "v24",
+      "category": "chart",
+      "image": "vision/v24.png",
+      "sha256": "a051ca4dae89233b0346b54bbaeefb34d04b29c17873c472a6e8d555a4a4193e",
+      "question": "ما القيمةُ المكتوبة فوق عمود أبريل؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 72
+      }
+    },
+    {
+      "id": "v25",
+      "category": "chart",
+      "image": "vision/v25.png",
+      "sha256": "cf58ee5bea67f06f48fdd9838a796233ee631c7eebf8f425f780a93e1def048f",
+      "question": "ما القيمةُ المكتوبة فوق عمود مايو؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 15
+      }
+    },
+    {
+      "id": "v26",
+      "category": "chart",
+      "image": "vision/v26.png",
+      "sha256": "c8bb3a96ccaa7f5c3370b5ea76aedf41c99a43d6aa48f56287463741a6657aca",
+      "question": "ما القيمةُ المكتوبة فوق عمود مايو؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 68
+      }
+    },
+    {
+      "id": "v27",
+      "category": "chart",
+      "image": "vision/v27.png",
+      "sha256": "f73b3936e9719421b996ab1256c191f37b806ceff7785565cf127e2ac3ac17f6",
+      "question": "أيُّ شهرٍ له أعلى قيمة؟ اختر من: مارس، أبريل، مايو، يونيو، يوليو. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "مارس",
+        "choices": [
+          "مارس",
+          "أبريل",
+          "مايو",
+          "يونيو",
+          "يوليو"
+        ]
+      }
+    },
+    {
+      "id": "v28",
+      "category": "chart",
+      "image": "vision/v28.png",
+      "sha256": "ebee7f49c3726d875ee1c6b51dc900fc0d795af26990e1eda0bce9d2c76fe401",
+      "question": "أيُّ شهرٍ له أعلى قيمة؟ اختر من: فبراير، مارس، أبريل، مايو، يونيو، يوليو. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "يونيو",
+        "choices": [
+          "فبراير",
+          "مارس",
+          "أبريل",
+          "مايو",
+          "يونيو",
+          "يوليو"
+        ]
+      }
+    },
+    {
+      "id": "v29",
+      "category": "chart",
+      "image": "vision/v29.png",
+      "sha256": "6749fc525cf9e4443eadc39fd7ae86631b256a360b6f514aea90826e8c59a7b7",
+      "question": "أيُّ شهرٍ له أعلى قيمة؟ اختر من: فبراير، مارس، أبريل، مايو، يونيو. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "أبريل",
+        "choices": [
+          "فبراير",
+          "مارس",
+          "أبريل",
+          "مايو",
+          "يونيو"
+        ]
+      }
+    },
+    {
+      "id": "v30",
+      "category": "chart",
+      "image": "vision/v30.png",
+      "sha256": "f7f07926649dcb47cf49eef31a94494a8456106269cf090f171cb6fccf0a9cac",
+      "question": "أيُّ شهرٍ له أعلى قيمة؟ اختر من: يناير، فبراير، مارس، أبريل. أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "choice",
+        "expected": "مارس",
+        "choices": [
+          "يناير",
+          "فبراير",
+          "مارس",
+          "أبريل"
+        ]
+      }
+    },
+    {
+      "id": "v31",
+      "category": "table",
+      "image": "vision/v31.png",
+      "sha256": "5e0e6d584c1db1730023d1e24cd1090f61c3b84c53364e4dc57c435ee6722a7e",
+      "question": "كم سعرُ الماء في الجدول؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 12
+      }
+    },
+    {
+      "id": "v32",
+      "category": "table",
+      "image": "vision/v32.png",
+      "sha256": "4b9f0f781d0c4ee17effc048621f7126be9bf4543993f4ca50c5d3a09722b1ab",
+      "question": "كم سعرُ الخبز في الجدول؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 23
+      }
+    },
+    {
+      "id": "v33",
+      "category": "table",
+      "image": "vision/v33.png",
+      "sha256": "23132eba93eb9fc5450396cdf3920a34041ec6a846c752b548c113ffa08e4b86",
+      "question": "كم سعرُ الكعكة في الجدول؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 8
+      }
+    },
+    {
+      "id": "v34",
+      "category": "table",
+      "image": "vision/v34.png",
+      "sha256": "4ca628c90e668e17248aae6460cb5710132cc39faffe3f4e254309839eac8fff",
+      "question": "كم سعرُ السلطة في الجدول؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 8
+      }
+    },
+    {
+      "id": "v35",
+      "category": "table",
+      "image": "vision/v35.png",
+      "sha256": "cfd6306ce6d4bdc599b2e6f3e9e2f1e6a42399100e5fb3301a7d212409f622a2",
+      "question": "كم سعرُ عصير البرتقال في الجدول؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "number",
+        "expected": 21
+      }
+    },
+    {
+      "id": "v36",
+      "category": "sign",
+      "image": "vision/v36.png",
+      "sha256": "467c342fefd43b6e407f362de73411e8ef127f4322db9ca191438621f0ed29b6",
+      "question": "ما العبارةُ المكتوبة على اللافتة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "text",
+        "expected": "مغلق للصيانة"
+      }
+    },
+    {
+      "id": "v37",
+      "category": "sign",
+      "image": "vision/v37.png",
+      "sha256": "bd1af38bc7cd00cb042fc3e401211372c207d23a21b14afcabe388d0db348af9",
+      "question": "ما العبارةُ المكتوبة على اللافتة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "text",
+        "expected": "ممنوع التدخين"
+      }
+    },
+    {
+      "id": "v38",
+      "category": "sign",
+      "image": "vision/v38.png",
+      "sha256": "dd9da98fa820a9c9198b5c1775edd7b8d83a6780a2ff8a77ae574d4b33e28b1b",
+      "question": "ما العبارةُ المكتوبة على اللافتة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "text",
+        "expected": "المخرج"
+      }
+    },
+    {
+      "id": "v39",
+      "category": "sign",
+      "image": "vision/v39.png",
+      "sha256": "918b140862c107967bcfd66343a8906048afc01fb3840699bdcf80cb5699275a",
+      "question": "ما العبارةُ المكتوبة على اللافتة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "text",
+        "expected": "الطابق الثاني"
+      }
+    },
+    {
+      "id": "v40",
+      "category": "sign",
+      "image": "vision/v40.png",
+      "sha256": "b8e807eb07b90663ae26a6fa23637e2a1b08e13c7dcbe8032066ed916182122f",
+      "question": "ما العبارةُ المكتوبة على اللافتة؟ أجب في سطرٍ أخير بصيغة: الجواب: <جوابك>",
+      "check": {
+        "type": "text",
+        "expected": "الدفع نقدًا فقط"
+      }
+    }
+  ]
+}
