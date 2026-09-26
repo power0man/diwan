@@ -44,6 +44,9 @@ from evaluation.agentic_runner import (evaluate_success, harness_tampering, mate
 from evaluation.capabilities import validate_suite  # noqa: E402
 
 REQUIRED = ("open", "sealed/MANIFEST.json", "REPORT.md", "disputed.json")
+# دورةُ الشطر المفتوح (قرار المالك، ٢٦ سبتمبر): لا يرى Kimi المحجوب، فلا بيانَ ولا sealed/ في تسليمه
+REQUIRED_OPEN_ONLY = ("open", "REPORT.md", "disputed.json")
+CURRENT_OPEN = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
 # بنكُ العربية العامة ملفّان، لأن المدقّقَ لا يقبل فوق مئة حالةٍ في الملف (`validate_suite`)
 DEV_GENERAL = ("arabic_general_v3_1.json", "arabic_general_v3_2.json")
 DEV_AGENTIC, DEV_AGENTIC_META = "agentic_v3.json", "agentic_v3.meta.json"
@@ -72,8 +75,10 @@ def _json(path: Path):
         return None
 
 
-def check_structure(src: Path) -> dict:
-    missing = [p for p in REQUIRED if not (src / p).exists()]
+def check_structure(src: Path, *, open_only: bool = False) -> dict:
+    missing = [p for p in (REQUIRED_OPEN_ONLY if open_only else REQUIRED) if not (src / p).exists()]
+    if open_only and (src / "sealed").exists():
+        missing.append("sealed/ ممنوعٌ في دورة الشطر المفتوح")
     return {"missing": missing, "dev_files": sorted(p for p in (*DEV_GENERAL, DEV_AGENTIC, DEV_AGENTIC_META)
                                                     if (src / p).exists())}
 
@@ -106,6 +111,82 @@ def check_manifest(src: Path) -> dict:
         if extra.name != "MANIFEST.json" and relative not in listed:
             _failure(failures, relative, "sealed_file_unlisted")
     return {"files": len(entries), "failures": failures}
+
+
+def _open_inventory(root: Path) -> dict[str, dict | None]:
+    """لكلِّ ملفٍّ معرّفاتُ حالاته أو مهامّه؛ وللملفّ الجانبيّ (`.meta.json`) مدخلاتُه كاملةً، فمصادرُه وحلولُه تُمحى معه.
+
+    وملفٌّ جانبيٌّ بلا `cases` ولا `tasks` قاموسًا لا يُقرأ: قيمتُه None.
+    """
+    out: dict[str, dict | None] = {}
+    for path in sorted(root.rglob("*.json")):
+        data = _json(path)
+        relative = path.relative_to(root).as_posix()
+        if path.name.endswith(".meta.json"):
+            entries = None
+            if isinstance(data, dict):
+                entries = next((data[k] for k in ("cases", "tasks") if isinstance(data.get(k), dict)), None)
+            out[relative] = None if entries is None else {"ids": set(entries), "entries": entries}
+            continue
+        items = (data.get("cases") or data.get("tasks") or []) if isinstance(data, dict) else []
+        out[relative] = {"ids": {item.get("case_id") or item.get("task_id") for item in items if isinstance(item, dict)}}
+    return out
+
+
+def _empty(value) -> bool:
+    return value is None or value == "" or value == [] or value == {}
+
+
+def _filled(entry) -> set:
+    return {key for key, value in entry.items() if not _empty(value)} if isinstance(entry, dict) else set()
+
+
+def check_open_replacement(src: Path, current: Path) -> dict:
+    """دورةُ المفتوح تستبدل المفتوحَ القائم (`UPDATE=1 OPEN_ONLY=1 place`)، فلا تمرّ إلا بكلِّ ملفٍّ وكلِّ حالةٍ فيه.
+
+    كان تسليمٌ فارغٌ يمرّ: البيانُ يُتخطّى، ولا ملفَّ يسقط في المدقّقات، فيمحو التوزيعُ البنك (ملاحظة Codex على #128).
+    - **الزيادة مقبولة:** ملفٌّ جديد، أو حالةٌ جديدة.
+    - **المعرّفُ يبقى:** إلا المكرّرَ بين ملفّين. تكليفُ v1.2 يطلب إعادةَ تسميته، فغيابُه يغطّيه معرّفٌ جديدٌ في الملف نفسِه.
+    - **الملفُّ الجانبيّ:** كلُّ مدخلٍ يُبقي كلَّ حقلٍ كان فيه غيرَ فارغ. والمدخلُ المُعادُ تسميتُه يحمل ما تشترك فيه المدخلاتُ التي حلّ محلَّها.
+    """
+    failures: list = []
+    expected = _open_inventory(current) if current.is_dir() else {}
+    if not expected:
+        _failure(failures, "open", "current_open_bank_missing")
+        return {"files": 0, "failures": failures}
+    seen: dict = {}
+    for relative, before in expected.items():
+        if before is not None and "entries" not in before:
+            for identifier in before["ids"]:
+                seen[identifier] = seen.get(identifier, 0) + 1
+    duplicated = {identifier for identifier, n in seen.items() if n > 1}
+    delivered = _open_inventory(src / "open")
+    for relative, before in expected.items():
+        where = f"open/{relative}"
+        if relative not in delivered:
+            _failure(failures, where, "open_file_missing")
+            continue
+        after = delivered[relative]
+        if after is None:
+            _failure(failures, where, "sidecar_unreadable")
+            continue
+        if before is None:
+            continue
+        missing = before["ids"] - after["ids"]
+        renamed = missing & duplicated
+        added = after["ids"] - before["ids"]
+        if missing - duplicated or len(added) < len(renamed):
+            _failure(failures, where, "open_case_missing")
+        if "entries" not in before:
+            continue
+        kept = [(before["entries"][i], after["entries"][i]) for i in before["ids"] & after["ids"]]
+        replaced = [_filled(before["entries"][i]) for i in renamed]
+        shared = set.intersection(*replaced) if replaced else set()
+        kept_short = any(not _filled(new) >= _filled(old) for old, new in kept)
+        added_short = replaced and any(not _filled(after["entries"][i]) >= shared for i in added)
+        if kept_short or added_short:
+            _failure(failures, where, "sidecar_entry_incomplete")
+    return {"files": len(expected), "failures": failures}
 
 
 def _bank_files(src: Path) -> list[tuple[str, Path]]:
@@ -226,7 +307,12 @@ def check_agentic(src: Path, *, judge=_judge) -> dict:
     failures: list = []
     counts = {"tasks": 0, "fail_before_fix": 0, "pass_before_fix": 0, "unjudged": 0,
               "reference_passes": 0, "reference_fails": 0, "decoy_passes": 0}
-    suites = [(path.relative_to(src).as_posix(), _json(path), None) for _, path in _bank_files(src)]
+    # حلولُ البنك المرجعية في الملف الجانبيّ المجاور (`kimi_agentic_001.meta.json`)، فتُحكم كحلول التطوير
+    suites = []
+    for _, path in _bank_files(src):
+        sidecar = _json(path.with_name(path.name[:-len(".json")] + ".meta.json"))
+        tasks = sidecar.get("tasks") if isinstance(sidecar, dict) else None
+        suites.append((path.relative_to(src).as_posix(), _json(path), tasks if isinstance(tasks, dict) else None))
     if (src / DEV_AGENTIC).exists():
         meta = _json(src / DEV_AGENTIC_META) or {}
         suites.append((DEV_AGENTIC, _json(src / DEV_AGENTIC), meta.get("tasks") or {}))
@@ -259,18 +345,23 @@ def check_agentic(src: Path, *, judge=_judge) -> dict:
     return {"counts": counts, "failures": failures}
 
 
-def intake(src: Path, *, agentic: bool = False, judge=_judge) -> dict:
-    structure = check_structure(src)
-    report = {"schema_version": 1, "kind": "kimi_intake", "source": src.name, "structure": structure}
+def intake(src: Path, *, agentic: bool = False, open_only: bool = False, current: Path | None = None,
+           judge=_judge) -> dict:
+    structure = check_structure(src, open_only=open_only)
+    report = {"schema_version": 1, "kind": "kimi_intake", "source": src.name, "structure": structure,
+              "open_only": open_only}
     if structure["missing"]:
         report.update(passed=False, measurement_limits=LIMITS)
         return report
-    report["manifest"] = check_manifest(src)
+    report["manifest"] = {"files": 0, "failures": [], "skipped": "open_only"} if open_only else check_manifest(src)
+    if open_only:
+        report["replacement"] = check_open_replacement(src, current or CURRENT_OPEN)
     report["bank"] = check_bank(src)
     report["dev"] = check_dev(src)
     if agentic:
         report["agentic"] = check_agentic(src, judge=judge)
-    report["passed"] = not any(report[k]["failures"] for k in ("manifest", "bank", "dev", "agentic") if k in report)
+    report["passed"] = not any(report[k]["failures"] for k in ("manifest", "replacement", "bank", "dev", "agentic")
+                               if k in report)
     report["measurement_limits"] = LIMITS
     return report
 
@@ -279,9 +370,13 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("source", type=Path, help="مجلّدُ تسليم Kimi (kimi-benchmark)")
     parser.add_argument("--agentic", action="store_true", help="يحكم على المهامّ الوكيلة؛ في حاويةٍ زائلة وحدها")
+    parser.add_argument("--open-only", action="store_true",
+                        help="دورةُ الشطر المفتوح: لا بيانَ، ويُرفض تسليمٌ فيه sealed/")
+    parser.add_argument("--current", type=Path, default=None,
+                        help="المفتوحُ القائم الذي يستبدله التسليم (الافتراضيُّ بنكُ المستودع)")
     parser.add_argument("--out", required=True, help="مسارُ التقرير، أو - للطباعة")
     args = parser.parse_args(argv)
-    report = intake(args.source.resolve(), agentic=args.agentic)
+    report = intake(args.source.resolve(), agentic=args.agentic, open_only=args.open_only, current=args.current)
     text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.out == "-":
         sys.stdout.write(text)
