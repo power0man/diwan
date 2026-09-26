@@ -111,3 +111,29 @@ def test_an_existing_target_is_never_overwritten(tmp_path):
     result = _run(tmp_path, src)
     assert result.returncode != 0 and "موجود من قبل" in result.stdout
     assert [p.name for p in earlier.iterdir()] == ["keep.json"]
+
+
+DEV = ("arabic_general_v3.json", "agentic_v2.json", "agentic_v2.meta.json")
+
+
+def test_the_development_suites_are_placed_beside_the_bank(tmp_path):
+    src = _kimi(tmp_path)
+    for name in DEV:
+        (src / name).write_text("{}")
+    result = _run(tmp_path, src)
+    assert result.returncode == 0, result.stdout + result.stderr
+    suites = tmp_path / "diwan" / "evaluation" / "suites"
+    assert sorted(p.name for p in suites.iterdir()) == sorted(DEV)
+
+
+def test_an_existing_development_suite_stops_before_anything_is_copied(tmp_path):
+    src = _kimi(tmp_path)
+    (src / "agentic_v2.json").write_text('{"new": true}')
+    suites = tmp_path / "diwan" / "evaluation" / "suites"
+    suites.mkdir(parents=True)
+    (suites / "agentic_v2.json").write_text('{"old": true}')
+    result = _run(tmp_path, src)
+    assert result.returncode != 0 and "موجود من قبل" in result.stdout
+    assert (suites / "agentic_v2.json").read_text() == '{"old": true}'
+    assert not (tmp_path / "diwan" / "evaluation" / "banks").exists()
+    assert not (tmp_path / "diwan-sealed").exists()
