@@ -52,6 +52,8 @@ RETRY_WAITS = (5, 15)
 RATE_WAITS = (30, 60)
 LOCKFILES = frozenset({"uv.lock", "requirements-ci.lock"})
 MAX_DIFF_CHARS = 300_000
+# التفكيرُ في نماذج 2.5 وما بعدها يُحسب من هذا الحدّ؛ فبـ8192 انقطعت مراجعاتٌ عند نحو ألف محرف (#118، #119)
+MAX_OUTPUT_TOKENS = 32768
 MAX_RESPONSE_BYTES = 8_000_000
 STYLEGUIDE = ".gemini/styleguide.md"
 DATA_NOT_INSTRUCTIONS = (
@@ -137,7 +139,7 @@ def build_request(diff: str, styleguide: str, pr: int, head: str,
     user = f"Pull request #{pr}, head {head}.{note} The diff is inside the fence <<<مادة:{nonce}>>>.\n\n{fenced}"
     payload = {"systemInstruction": {"parts": [{"text": system}]},
                "contents": [{"role": "user", "parts": [{"text": user}]}],
-               "generationConfig": {"temperature": 0.2, "maxOutputTokens": 8192}}
+               "generationConfig": {"temperature": 0.2, "maxOutputTokens": MAX_OUTPUT_TOKENS}}
     return payload, nonce
 
 
@@ -159,9 +161,19 @@ def _text(raw: bytes) -> str:
         return ""
 
 
+def _cut_off(raw: bytes) -> str:
+    """سببُ انقطاع الجواب قبل تمامه، أو فارغٌ إن تمّ (`STOP`). ومنه `MAX_TOKENS`: التفكيرُ يُحسب من الحدّ نفسِه،
+    فانقطعت مراجعاتُ #118 و#119 عند نحو ألف محرف ونُشرت كأنها تامّة."""
+    try:
+        reason = json.loads(raw)["candidates"][0].get("finishReason") or ""
+    except (ValueError, KeyError, IndexError, TypeError, AttributeError):
+        return ""
+    return "" if reason == "STOP" or not isinstance(reason, str) else reason[:40]
+
+
 def ask_gemini(payload: dict, key: str, http: Http, models: tuple[str, ...],
-               sleep=time.sleep) -> tuple[str, str, str]:
-    """(النص، النموذج، النقطة). 404 ينقل إلى النموذج التالي، ورفضُ الصلاحية إلى النقطة التالية،
+               sleep=time.sleep) -> tuple[str, str, str, str]:
+    """(النص، النموذج، النقطة، سببُ الانقطاع إن انقطع). 404 ينقل إلى النموذج التالي، ورفضُ الصلاحية إلى النقطة التالية،
     وانشغالُ الخادم (500/503/504) يُعاد مرّتين بمهلةٍ ثم ينقل إلى النموذج التالي، وحدُّ الدقيقة (429)
     يُعاد مرّتين بمهلةٍ أطول ثم يُسمّى، وحصّةُ اليوم تُسمّى بلا انتظار."""
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -185,7 +197,7 @@ def ask_gemini(payload: dict, key: str, http: Http, models: tuple[str, ...],
                 text = _text(raw)
                 if not text:
                     raise GeminiReviewError("gemini_empty_response", model)
-                return text, model, endpoint
+                return text, model, endpoint, _cut_off(raw)
             if status == 404:
                 continue
             if status in (401, 403) or (status == 400 and "API_KEY" in raw.decode("utf-8", "replace")):
@@ -207,9 +219,14 @@ def _per_day(raw: bytes) -> bool:
     return b"PerDay" in raw and b"PerMinute" not in raw
 
 
-def review_body(text: str, model: str, endpoint: str, omitted: list[str], truncated: bool) -> str:
-    """نصُّ المراجعة: ما كتبه النموذج، وتذييلٌ بالنموذج والحدود. لا تعليقَ HTML من النموذج يمرّ حرفيًّا."""
+def review_body(text: str, model: str, endpoint: str, omitted: list[str], truncated: bool,
+                cut_off: str = "") -> str:
+    """نصُّ المراجعة: ما كتبه النموذج، وتذييلٌ بالنموذج والحدود. لا تعليقَ HTML من النموذج يمرّ حرفيًّا.
+    والمراجعةُ المنقطعة تُقال في رأسها، فلا يُقرأ حكمُها ولا قائمتُها كاملةً."""
     safe = text.replace("<!--", "&lt;!--")
+    if cut_off:
+        safe = (f"> **مراجعةٌ منقطعة (`{cut_off}`):** توقّف النموذجُ قبل أن يتمّ، فما بعد آخر سطرٍ لم يُكتب، "
+                "والحكمُ لا يشمل ما لم يُذكر.\n\n" + safe)
     notes = [f"النموذج `{model}` عبر `{endpoint}`.",
              "مراجعةٌ استشاريّة من عائلة Google بمفتاح المستودع؛ لا يحتسبها فحصُ `family-review` (ك٥٤).",
              "تشهد أن نموذجًا قرأ الفرق، لا أن ملاحظاتِه صحيحةٌ أو عولجت."]
@@ -249,10 +266,10 @@ def run(*, families: set[str], environ: dict, http: Http, slug: str, pr: int, he
     sent, omitted, truncated = split_diff(fetch_diff(slug, pr, token, http))
     payload, _ = build_request(sent, styleguide, pr, head, omitted)
     chosen = environ.get(MODEL_ENV) or ""
-    text, model, endpoint = ask_gemini(payload, key, http, (chosen,) if chosen else MODELS, sleep)
-    post_review(slug, pr, head, review_body(text, model, endpoint, omitted, truncated), token, http)
+    text, model, endpoint, cut_off = ask_gemini(payload, key, http, (chosen,) if chosen else MODELS, sleep)
+    post_review(slug, pr, head, review_body(text, model, endpoint, omitted, truncated, cut_off), token, http)
     return {"status": "posted", "model": model, "endpoint": endpoint, "head": head,
-            "omitted": omitted, "truncated": truncated}
+            "omitted": omitted, "truncated": truncated, "cut_off": cut_off}
 
 
 def main(argv: list[str] | None = None, environ=os.environ, http: Http | None = None,
@@ -279,7 +296,8 @@ def main(argv: list[str] | None = None, environ=os.environ, http: Http | None = 
                          ensure_ascii=False))
         return 1
     print(json.dumps(report, ensure_ascii=False))
-    return 0
+    # مراجعةٌ منقطعة نُشرت بعلامتها، والفحصُ يحمرّ ليُرى أنها ناقصة
+    return 1 if report.get("cut_off") else 0
 
 
 if __name__ == "__main__":

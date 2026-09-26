@@ -304,3 +304,30 @@ def _repo_with_one_commit(tmp_path, agent):
         subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True, capture_output=True)
         subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", message], check=True, capture_output=True, env=env)
     return repo
+
+
+# — المراجعةُ المنقطعة —
+
+def gemini_answer(text="الحكم: عوائق\n- **عالٍ:** يوجد تناقضٌ بين حقل", reason="MAX_TOKENS"):
+    return 200, json.dumps({"candidates": [{"content": {"parts": [{"text": text}]},
+                                            "finishReason": reason}]}).encode()
+
+
+def test_a_review_cut_off_by_the_output_limit_says_so_at_its_top_and_reddens_the_check(tmp_path, capsys):
+    """مراجعتا #118 و#119 انقطعتا عند نحو ألف محرف (`MAX_TOKENS`) ونُشرتا كأنهما تامّتان."""
+    http = FakeHttp([gemini_answer()])
+    report = run(http)
+    [posted] = http.posted()
+    top = posted["body"].split("\n\n")[1]
+    assert report["cut_off"] == "MAX_TOKENS" and "منقطعة" in top and "`MAX_TOKENS`" in top
+    repo = _repo_with_one_commit(tmp_path, "anthropic/claude-opus-5-5")
+    code = gr.main(["--range", "HEAD~1..HEAD", "--head", HEAD, "--pr", "7", "--repo-slug", "o/r", "--repo", str(repo)],
+                   environ={"GEMINI_API_KEY": KEY}, http=FakeHttp([gemini_answer()]), sleep=SLEPT.append)
+    assert code == 1 and '"cut_off": "MAX_TOKENS"' in capsys.readouterr().out
+
+
+def test_a_complete_review_is_unmarked_and_the_output_budget_leaves_room_for_thinking():
+    http = FakeHttp([gemini_answer("الحكم: لا عوائق", reason="STOP")])
+    assert run(http)["cut_off"] == "" and "منقطعة" not in http.posted()[0]["body"]
+    payload, _ = gr.build_request("diff", STYLE, 7, HEAD)
+    assert payload["generationConfig"]["maxOutputTokens"] >= 32768
