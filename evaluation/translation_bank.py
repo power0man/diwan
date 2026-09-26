@@ -28,11 +28,15 @@ def load():
 # - **الطول:** المدقّقُ لا يقيسه لمصدرٍ دون ستِّ كلمات، فما زاد على max(8، أربعة أضعاف المصدر) لا يمرّ.
 # - **علاماتُ الرفض والتمهيد** بلغة الهدف، إلا إن كان في المصدر ما يقابلها فتُترجم.
 SHORT_SOURCE_WORDS = 6
-REFUSAL = {
-    "ar": ("لا أستطيع", "لم أستطع", "لا يمكنني", "لم يتم تقديم", "يرجى تزويدي", "يرجى تقديم", "بصفتي",
-           "مساعد ترجمة", "لا أملك صلاحية"),
-    "en": ("i can't", "i cannot", "i'm unable", "i am unable", "please provide", "as an ai", "as a translation"),
-}
+# كلُّ مجموعةٍ علاماتٌ متقابلة في اللغتين؛ فالعلامةُ في المصدر تُعفي مقابلَها وحده في الترجمة، لا المعيارَ كلَّه
+# («Please provide the report» ← «لا أستطيع تقديم التقرير» رفضٌ؛ ملاحظة Codex على #131).
+REFUSAL_GROUPS = (
+    {"ar": ("لا أستطيع", "لم أستطع", "لا يمكنني"), "en": ("i can't", "i cannot", "i'm unable", "i am unable")},
+    {"ar": ("يرجى تزويدي", "يرجى تقديم"), "en": ("please provide",)},
+    {"ar": ("بصفتي", "مساعد ترجمة"), "en": ("as an ai", "as a translation")},
+    {"ar": ("لم يتم تقديم",), "en": ("no text was provided",)},
+    {"ar": ("لا أملك صلاحية",), "en": ("i don't have access", "i do not have access")},
+)
 
 
 def overlong_for_short_source(source: str, translation: str) -> bool:
@@ -41,10 +45,12 @@ def overlong_for_short_source(source: str, translation: str) -> bool:
 
 
 def refusal_or_preamble(source: str, translation: str, target: str) -> bool:
-    other = "en" if target == "ar" else "ar"
-    if any(_contains(source, cue) for cue in REFUSAL[other] + REFUSAL[target]):
-        return False
-    return any(_contains(translation, cue) for cue in REFUSAL[target])
+    for group in REFUSAL_GROUPS:
+        if any(_contains(source, cue) for cue in group["ar"] + group["en"]):
+            continue
+        if any(_contains(translation, cue) for cue in group[target]):
+            return True
+    return False
 
 
 def score_item(item: dict, translation: str) -> dict:

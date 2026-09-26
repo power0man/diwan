@@ -169,3 +169,12 @@ def test_the_committed_translation_evidence_is_what_the_scorer_gives_today():
     """الرقمُ المنشور يُعاد من ترجماته المسجَّلة بالمقيّم الحاليّ، فتغييرُ المقيّم بلا إعادة الدليل يُسقط هذا."""
     evidence = json.loads((ROOT / "docs" / "probe" / "g4-translation-20260926.json").read_text(encoding="utf-8"))
     assert rescore(copy.deepcopy(evidence)) == evidence["summary"]
+
+
+
+def test_a_cue_in_the_source_exempts_only_its_counterpart_not_every_refusal():
+    """ملاحظةُ Codex على #131: «please provide» في المصدر كان يُعطّل المعيارَ كلَّه فيمرّ رفضٌ مقلوب."""
+    from evaluation.translation_bank import refusal_or_preamble
+    assert refusal_or_preamble("Please provide the report", "لا أستطيع تقديم التقرير", "ar")
+    assert not refusal_or_preamble("Please provide the report", "يرجى تقديم التقرير", "ar")
+    assert not refusal_or_preamble("I cannot attend the meeting", "لا أستطيع حضور الاجتماع", "ar")
