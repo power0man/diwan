@@ -1,7 +1,7 @@
 """غ٨ (#48): قياسُ محرّكات OCR على شطر OCR من بنك الوسائط المجمَّد (غ٧) بعتباته المسجَّلة.
 
 - **البنكُ يُفحص أوّلًا:** `validate_media_bank` قبل أيّ قراءة، فلا يُقاس محرّكٌ على بنكٍ عُدّل بعد التجميد.
-- **المحرّكُ دالّةٌ من صورةٍ إلى نصّ** (Tesseract وEasyOCR اليوم) باسمٍ وإصدارٍ وإعدادات. وما يرميه محرّكٌ على صفحةٍ يُسمّى في التقرير
+- **المحرّكُ دالّةٌ من صورةٍ إلى نصّ** (Tesseract وEasyOCR ونماذجُ الرؤية في Ollama المحلي) باسمٍ وإصدارٍ وإعدادات. وما يرميه محرّكٌ على صفحةٍ يُسمّى في التقرير
   وتُعدّ الصفحةُ خطأً كاملًا (CER ١)، ولا تُسقط من المقام.
 - **الإعداداتُ الافتراضية:** المحرّكُ لا يُضبط على هذا البنك. فإعدادٌ يُختار بعد رؤية نتائجه على البنك نفسِه
   رقمٌ مضبوطٌ على الاختبار.
@@ -132,16 +132,35 @@ def easyocr(languages: tuple[str, ...] = ("ar",)) -> Engine:
     return Engine("easyocr", f"easyocr {module.__version__} / torch {torch.__version__}", read, settings)
 
 
-ENGINES = {"tesseract": tesseract, "easyocr": easyocr}
+# مسجَّلٌ قبل أيّ تشغيلٍ لنموذج رؤية، ولا يُعدَّل بعد ظهور نتيجة
+OCR_PROMPT = ("انسخ كلَّ النصّ العربيّ الظاهر في هذه الصورة حرفًا بحرف، بترتيب قراءته وأسطره، "
+              "بلا مقدّمةٍ ولا شرحٍ ولا ترجمة. اكتب النصَّ وحده.")
+
+
+def ollama(model: str, **client_options) -> Engine:
+    """نموذجُ رؤيةٍ في Ollama المحلي بموجّهٍ ثابت (OCR_PROMPT)، وهويّتُه ببصمته."""
+    from evaluation.ollama_vision import OllamaVision, VisionRefused
+    try:
+        client = OllamaVision(model, **client_options)
+    except VisionRefused as exc:
+        raise OCRRefused("ocr_engine_unavailable", exc.reason) from None
+    return Engine(f"ollama:{model}", f"{client.digest[:12]} / ollama {client.runtime}",
+                  lambda image: client.ask(image, OCR_PROMPT), {"prompt": OCR_PROMPT, **client.settings})
+
+
+ENGINES = {"tesseract": tesseract, "easyocr": easyocr, "ollama": ollama}
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--engine", choices=sorted(ENGINES), required=True)
+    parser.add_argument("--model", help="اسمُ النموذج في Ollama (مع --engine ollama)")
     parser.add_argument("--out", type=Path, help="يُكتب التقرير هنا (JSON)؛ وإلّا يُطبع")
     args = parser.parse_args(argv)
+    if (args.engine == "ollama") != bool(args.model):
+        parser.error("--model مع --engine ollama وحده")
     try:
-        result = run(ENGINES[args.engine]())
+        result = run(ENGINES[args.engine](args.model) if args.model else ENGINES[args.engine]())
     except OCRRefused as exc:
         print(json.dumps({"status": "refused", "code": exc.code, "reason": exc.reason}, ensure_ascii=False))
         return 2
