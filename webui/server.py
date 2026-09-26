@@ -39,7 +39,7 @@ from multimodal.codec import (MEDIA_PREFIX, MEDIA_SYSTEM, MEDIA_CONTEXT_CHARS,
                               pack_media, decode_request)
 from services.media_assistant import MediaAssistant, present as present_media
 from services.assistant_workspace import AssistantWorkspace, _present, _decode_context
-from services import agent_workspace
+from services import agent_workspace, project_archive
 from workspace_tools.files import (TextWorkspace, _open_directory, _private,
                                    _read_json, _write_json, _relative)
 from workspace_tools.preferences import Preferences
@@ -429,6 +429,16 @@ class LocalApp:
             return agent_workspace.catalog(workspace)
         if action == "agent_read":
             return agent_workspace.read_text(workspace, request["path"])
+        if action == "agent_export":
+            # مشروعُ المستخدم (ج٩): مجلّدٌ من المساحة أو كلُّها أرشيفًا حتميًّا، قراءةً بلا أثر
+            return project_archive.export_archive(workspace, request["folder"])
+        if action == "agent_import":
+            # الاستيرادُ يكتب في المساحة، فلا يجري وجولةٌ تعمل فيها
+            need(self.generation.acquire(blocking=False), "generation_busy")
+            try:
+                return project_archive.import_archive(workspace, request["folder"], request["archive"])
+            finally:
+                self.generation.release()
         key = (project.name, identifier(request["session"]))
         session_mode = self.metadata(project / "sessions" / key[1]).get("mode")
         need(session_mode in AGENT_MODES, "session_mode_mismatch")
@@ -580,6 +590,7 @@ class LocalApp:
             "agent_decide": {"project", "session", "action_id", "call_digest", "expected_revision", "approve"},
             "agent_revert": {"project", "session", "action_id", "request"},
             "agent_turn_changes": {"project", "session", "turn"},
+            "agent_import": {"project", "folder", "archive"}, "agent_export": {"project", "folder"},
             "agent_revert_turn": {"project", "session", "turn", "request"},
             "memory": {"project"},
             "memory_remember": {"project", "text"},
