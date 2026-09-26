@@ -4,8 +4,11 @@
 > `docs/external/KIMI-DRIVER.md`)، أو لصقًا في محادثة Kimi نفسِها. فإن كانت محادثةً جديدة،
 > فيُلصق قبله `docs/KIMI-BENCHMARK-BRIEF.md` كاملًا.
 >
-> **ما يغطّيه هذا التكليف:** ك١٧ (#27)، وك٤٣ (#28)، وك٤٤ (#29). والنسخة v1.1 التي سبقته في تاريخ
+> **ما يغطّيه هذا التكليف:** ك١٧ (#27)، وك٤٣ (#28)، وبنكٌ وكيلٌ أعمى. والنسخة v1.1 التي سبقته في تاريخ
 > git.
+>
+> **الجزء ٣ باسم `agentic_v3`:** `agentic_v2` بنكٌ وكيلٌ ألّفه Claude في ك٤٤ (#101)، فهو من عائلةٍ
+> مطوِّرة وليس أعمى. وبنكُ Kimi مستقلٌّ عنه يكمّله، والاسمُ الجديد يمنع أن يقف التوزيعُ على ملفٍّ قائم.
 >
 > **وحين يسلّم Kimi:**
 > 1. يُوزَّع البنك بالأمر في `docs/external/PLACE-KIMI-FILES.md`.
@@ -103,13 +106,13 @@
 
 - **الملفاتُ المحظورة:** ملفاتُ الاختبار في `forbidden` دائمًا.
 - **الصياغة:** التعليماتُ بالعربية، وأسماءُ الملفات والمتغيّرات كما تشاء.
-- **الملف:** سلّمه `agentic_v2.json` بالمفاتيح `schema_version` و`suite_id` و`kind: "agentic_tasks"` و`description` و`tasks`، ومعه `agentic_v2.meta.json`.
+- **الملف:** سلّمه `agentic_v3.json` بالمفاتيح `schema_version` و`suite_id` و`kind: "agentic_tasks"` و`description` و`tasks`، ومعه `agentic_v3.meta.json`.
 
 ---
 
 **وسلّم** في مجلّد `kimi-benchmark/` نفسِه:
 - `open/` و`sealed/` كما في v1.1، بالنسخة v1.2.
-- وفي جذر المجلّد: `arabic_general_v3.json`، و`agentic_v2.json`، و`agentic_v2.meta.json`.
+- وفي جذر المجلّد: `arabic_general_v3.json`، و`agentic_v3.json`، و`agentic_v3.meta.json`.
 - في أول `REPORT.md` سطرٌ يذكر ما تغيّر بين v1.1 وv1.2.
 - رسالتك الأخيرة **أعدادٌ فقط**، بلا محتوى أي حالة:
   - كم حالةً أُعطيت فحصًا في الجزء ١.

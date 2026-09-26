@@ -25,7 +25,7 @@
 | `REPORT.md` و`disputed.json` | `~/diwan-work/diwan/evaluation/banks/kimi_v1/` (يحلّان محلّ نسختَي v1، وهما محفوظتان في git) |
 | `sealed/MANIFEST.json` | `~/diwan-work/diwan/evaluation/banks/kimi_v1/sealed/` |
 | `sealed/` كلّه | `~/diwan-sealed/kimi_v1/`، خارج ديوان، ولا يقرؤه غيرك |
-| `arabic_general_v3.json` و`agentic_v2.json` و`agentic_v2.meta.json` (منذ v1.2، إن وُجدت) | `~/diwan-work/diwan/evaluation/suites/`، وهي مفتوحةٌ كلُّها فلا تمرّ بالبيان |
+| `arabic_general_v3.json` و`agentic_v3.json` و`agentic_v3.meta.json` (منذ v1.2، إن وُجدت) | `~/diwan-work/diwan/evaluation/suites/`، وهي مفتوحةٌ كلُّها فلا تمرّ بالبيان |
 
 5. يتأكّد أنه لا يوجد ملفٌّ محجوب داخل ديوان عدا البيان.
 6. **لا يُودع ولا يدفع.** ذلك عمل ذكاء ديوان المحلّي، بعد أن ينفّذ ك١ (الفحص) وك٥ (المراجعة
@@ -55,7 +55,7 @@ done
 [ ! -e "$BANK/open" ] || { echo "توقّفت: $BANK/open موجود من قبل، ولم أغيّر شيئًا"; exit 1; }
 [ ! -e "$SEALED_DST" ] || { echo "توقّفت: $SEALED_DST موجود من قبل، ولم أغيّر شيئًا"; exit 1; }
 # بنكا التطوير (منذ v1.2) مفتوحان كلُّهما، ويُنسخان إن سلّمهما Kimi
-DEV="arabic_general_v3.json agentic_v2.json agentic_v2.meta.json"
+DEV="arabic_general_v3.json agentic_v3.json agentic_v3.meta.json"
 for f in $DEV; do
   [ ! -e "$SRC/$f" ] || [ ! -e "$DIWAN/evaluation/suites/$f" ] || {
     echo "توقّفت: $DIWAN/evaluation/suites/$f موجود من قبل، ولم أغيّر شيئًا"; exit 1; }
