@@ -22,6 +22,8 @@ from conversation.session import ConversationError
 from agent.builtin_tools import DEFAULT_TOOLS
 from agent.citations import check as check_citations
 from agent.coder import CODER_SYSTEM, coder_tools
+from agent.translation import (CHECK_TRANSLATION, TRANSLATE_SYSTEM, check as check_translation,
+                               load_glossary, split_request, translation_request)
 from agent.registry import ToolRegistry
 from agent.research import RESEARCH_SYSTEM, returned_urls
 from agent.web_search import web_search_tool
@@ -40,7 +42,7 @@ from multimodal.codec import (MEDIA_PREFIX, MEDIA_SYSTEM, MEDIA_CONTEXT_CHARS,
 from services.media_assistant import MediaAssistant, present as present_media
 from services.assistant_workspace import AssistantWorkspace, _present, _decode_context
 from services import agent_workspace, project_archive
-from workspace_tools.files import (TextWorkspace, _open_directory, _private,
+from workspace_tools.files import (TextWorkspace, WorkspaceError, _open_directory, _private,
                                    _read_json, _write_json, _relative)
 from workspace_tools.preferences import Preferences
 from workspace_tools.backup import restore_pending
@@ -89,8 +91,10 @@ def decode(raw):
 
 
 # جلسةُ البحث المعمّق (ك٥٣) جلسةٌ وكيلة بتعليماتٍ وأداةٍ واحدة: web_search؛
-# وجلسةُ المبرمج (ج٩) جلسةٌ وكيلة بتعليماتها وأدوات الشيفرة وحدها
-AGENT_MODES = ("agent", "research", "coder")
+# وجلسةُ المبرمج (ج٩) جلسةٌ وكيلة بتعليماتها وأدوات الشيفرة وحدها؛ وجلسةُ الترجمة (غ٤) بتعليماتها ومدقّقها
+AGENT_MODES = ("agent", "research", "coder", "translate")
+MODE_SYSTEMS = {"research": RESEARCH_SYSTEM, "coder": CODER_SYSTEM, "translate": TRANSLATE_SYSTEM}
+GLOSSARY_FILE = "glossary.csv"
 SESSION_MODES = ("text", "media", *AGENT_MODES)
 
 
@@ -192,6 +196,7 @@ class LocalApp:
                 need(mode != "agent" or self.agent_enabled, "agent_unavailable")
                 need(mode != "research" or self.research_enabled, "research_unavailable")
                 need(mode != "coder" or self.agent_enabled, "coder_unavailable")
+                need(mode != "translate" or self.agent_enabled, "translate_unavailable")
                 value["mode"] = mode
             staging = self.root / "staging"
             with self.directory(staging, create=True) as fd:
@@ -313,8 +318,30 @@ class LocalApp:
         return ToolRegistry(*coder_tools(DEFAULT_TOOLS, execution=execution))
 
     def mode_registry(self, project, mode):
+        if mode == "translate":
+            self.agent_workspace(project)
+            return ToolRegistry(CHECK_TRANSLATION)
         return (self.research_registry(project) if mode == "research" else
                 self.coder_registry(project) if mode == "coder" else self.agent_registry(project))
+
+    def project_glossary(self, project):
+        """مسردُ المشروع الاختياريّ للترجمة (غ٤): ملفُّ glossary.csv مرفوعًا بزرّ الرفع، وإلّا لا مسرد."""
+        root = project / "uploads"
+        if not (root.exists() or root.is_symlink()):
+            return []
+        with self.directory(root):
+            uploads = TextWorkspace(root, root)
+            # الرفعُ يحفظ الملفَّ باسم «<معرّف الرفع>--glossary.csv»، والأحدثُ رفعًا هو المسرد
+            named = [doc["path"] for doc in uploads.verified_outputs()["files"]
+                     if doc["path"].split("--", 1)[-1] == GLOSSARY_FILE]
+            if not named:
+                return []
+            try:
+                pairs = load_glossary(uploads.read_text(named[-1]).content)
+            except WorkspaceError as exc:
+                raise UIError(exc.code) from None
+        need(len(pairs) <= 200, "glossary_too_large")
+        return pairs
 
     def agent_session(self, project, session_id, *, create=False, mode="agent"):
         workspace = self.agent_workspace(project)
@@ -322,8 +349,8 @@ class LocalApp:
         if create:
             config = {"model": self.model, "model_version": self.model_version}
             registry = self.mode_registry(project, mode)
-            if mode in ("research", "coder"):
-                config["system"] = RESEARCH_SYSTEM if mode == "research" else CODER_SYSTEM
+            if mode in MODE_SYSTEMS:
+                config["system"] = MODE_SYSTEMS[mode]
         else:
             with self.directory(root / identifier(session_id)) as fd:
                 saved = _read_json(fd, "manifest.json")
@@ -331,9 +358,9 @@ class LocalApp:
             need(type(saved) is dict and saved.get("schema_version") in (2, 3), "metadata_invalid")
             need(saved.get("project_id") == project.name and saved.get("session_id") == session_id,
                  "metadata_invalid")
-            # كلُّ أداةٍ قد تُعلنها جلسةٌ محفوظة: الافتراضيةُ، والبحثُ والمحلّلُ (يرفضان بالاسم إن لم يُضبطا)، والذاكرة
+            # كلُّ أداةٍ قد تُعلنها جلسةٌ محفوظة: الافتراضيةُ، والبحثُ والمحلّلُ (يرفضان بالاسم إن لم يُضبطا)، والذاكرة، ومدقّقُ الترجمة
             available = {tool.spec.name: tool for tool in (*DEFAULT_TOOLS, web_search_tool(self.web_search),
-                                                           ANALYZE_DATA, self.memory_tool(project))}
+                                                           ANALYZE_DATA, self.memory_tool(project), CHECK_TRANSLATION)}
             need(type(saved.get("tools")) is list and all(type(spec) is dict and
                 spec.get("name") in available and spec == available[spec["name"]].spec.declared()
                 for spec in saved["tools"]), "agent_tool_contract_changed")
@@ -352,6 +379,11 @@ class LocalApp:
             result["pending"] = [{**view, **agent_workspace.snapshot_preview(
                 session.action_store.inputs(view["action_id"]))} for view in result["pending"]]
         citations = {}
+        if mode == "translate" and result.get("status") == "complete":
+            # الترجمةُ يُحكم عليها عند العرض بالمدقّق الحتميّ، بالنصّ والمسرد اللذين رآهما النموذج (غ٤)
+            source, glossary = split_request(inputs["user_request"])
+            report = check_translation(source, result.get("content") or "", glossary=glossary)
+            citations = {"translation": {**report.public(), "glossary_terms": len(glossary)}}
         if mode == "research" and result.get("status") == "complete":
             # الإسنادُ يُحكم عليه عند العرض من الجواب وما أعاده البحثُ في الجولة نفسِها (ك٥٣)
             returned = returned_urls(result.get("steps") or ())
@@ -502,9 +534,13 @@ class LocalApp:
                 return session.revert_turn(request["turn"], request["request"])
             history = session.history()["turns"]
             old = next((turn for turn in history if turn["turn_id"] == request["turn"]), None)
+            message = request.get("message")
+            if action == "agent_ask" and session_mode == "translate":
+                # رسالةُ الترجمة: النصُّ ومسردُ المشروع إن وُضع، وهي ما يراه النموذج ويُحفظ ويُفحص به
+                message = translation_request(request["message"], self.project_glossary(project))
             if action == "agent_ask" and old is not None:
                 prior = agent_workspace.decode_input(old["text"])
-                need(prior["user_request"] == request["message"] and
+                need(prior["user_request"] == message and
                      [doc["source_path"] for doc in prior["attachments"]] == request["files"]
                      and old.get("thinking", False) == request.get("thinking", False), "turn_conflict")
                 return {**self.present_agent(old, session, mode=session_mode), "replayed": True}
@@ -533,7 +569,7 @@ class LocalApp:
                 preferences_root = project / "preferences"
                 preferences = (Preferences(preferences_root).snapshot()
                     if preferences_root.exists() or preferences_root.is_symlink() else None)
-                text = agent_workspace.encode_input(request["message"], docs, preferences)
+                text = agent_workspace.encode_input(message, docs, preferences)
                 session.validate_turn(request["turn"], text, request.get("thinking", False))
                 provider = self.agent_provider_factory()
                 need(getattr(provider, "is_local", None) is True, "policy_requires_local")

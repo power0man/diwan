@@ -63,8 +63,8 @@ _WORKSPACE_DIRS = {".diwan-journal", ".diwan-journal/blobs", ".diwan-workspace"}
 _WORKSPACE_FILES = {".diwan-journal/journal.jsonl", ".diwan-journal/journal.lock",
                     ".diwan-workspace/identity.json"}
 _JOURNAL_BLOB = re.compile(r"\.diwan-journal/blobs/[a-f0-9]{64}\Z")
-# جلسةُ البحث المعمّق (ك٥٣) وجلسةُ المبرمج (ج٩) جلستان وكيلتان بتعليماتهما، فتُنسخان كما تُنسخ الوكيلة
-_AGENT_MODES = ("agent", "research", "coder")
+# جلساتُ البحث المعمّق (ك٥٣) والمبرمج (ج٩) والترجمة (غ٤) وكيلةٌ بتعليماتها، فتُنسخ كما تُنسخ الوكيلة
+_AGENT_MODES = ("agent", "research", "coder", "translate")
 _LOCKS = {"session.lock", "preferences.lock", "store.lock", "journal.lock"}
 
 

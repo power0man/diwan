@@ -102,3 +102,4 @@ def test_english_terms_match_whole_words_only():
     from agent.translation import _contains
     assert _contains("The handle broke.", "handle") and not _contains("The handle broke.", "hand")
     assert not check("Contact our support team.", "تواصل مع فريق الدعم.", glossary=[("port", "ميناء")]).codes
+    assert _contains("A naïve plan.", "naïve") and not _contains("The naïveté showed.", "naïve")

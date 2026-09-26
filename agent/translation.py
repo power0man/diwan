@@ -115,7 +115,8 @@ def _contains(haystack: str, needle: str) -> bool:
     h, n = fold(haystack), fold(needle)
     if not n:
         return True
-    if n.isascii():
+    if not any(map(is_arabic, n)):
+        # ما ليس عربيًّا يُطابَق كلمةً تامّة، ولو كان فيه حرفٌ مُشكَّل مثل «naïve»
         return re.search(r"(?<![\w])" + re.escape(n) + r"(?![\w])", h) is not None
     # العربيةُ تلتصق بها السوابق: «والميناء» فيها «الميناء»، ولامُ الجرّ تُسقط ألفَ التعريف: «للبالغين»
     return n in h or (n.startswith("ال") and "لل" + n[2:] in h)
