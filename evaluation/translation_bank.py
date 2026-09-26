@@ -23,9 +23,16 @@ def load():
     return (json.loads(SUITE.read_text(encoding="utf-8")), json.loads(META.read_text(encoding="utf-8")))
 
 
-# المدقّقُ لا يقيس الطولَ لمصدرٍ دون ستِّ كلمات، فرفضٌ أو شرحٌ طويلٌ لنصّ واجهةٍ قصير كان يُحسب ترجمة
-# (tr55 «Save changes» وtr57 في قياس غ٤ الأول؛ ملاحظة Codex على #131). فما زاد على max(8، أربعة أضعاف) لا يمرّ.
+# معيارٌ للبنك وحده، لا للمدقّق الذي تعرضه الواجهة (`agent/translation.check`)، فنسبةُ المدقّق تبقى نسبتَه:
+# جوابٌ يرفض أو يشرح بدل أن يترجم ليس ترجمة (tr55 «Save changes» وtr57 في قياس غ٤ الأول؛ ملاحظتا Codex على #131).
+# - **الطول:** المدقّقُ لا يقيسه لمصدرٍ دون ستِّ كلمات، فما زاد على max(8، أربعة أضعاف المصدر) لا يمرّ.
+# - **علاماتُ الرفض والتمهيد** بلغة الهدف، إلا إن كان في المصدر ما يقابلها فتُترجم.
 SHORT_SOURCE_WORDS = 6
+REFUSAL = {
+    "ar": ("لا أستطيع", "لم أستطع", "لا يمكنني", "لم يتم تقديم", "يرجى تزويدي", "يرجى تقديم", "بصفتي",
+           "مساعد ترجمة", "لا أملك صلاحية"),
+    "en": ("i can't", "i cannot", "i'm unable", "i am unable", "please provide", "as an ai", "as a translation"),
+}
 
 
 def overlong_for_short_source(source: str, translation: str) -> bool:
@@ -33,17 +40,26 @@ def overlong_for_short_source(source: str, translation: str) -> bool:
     return words < SHORT_SOURCE_WORDS and len(_WORD.findall(translation)) > max(8, 4 * words)
 
 
+def refusal_or_preamble(source: str, translation: str, target: str) -> bool:
+    other = "en" if target == "ar" else "ar"
+    if any(_contains(source, cue) for cue in REFUSAL[other] + REFUSAL[target]):
+        return False
+    return any(_contains(translation, cue) for cue in REFUSAL[target])
+
+
 def score_item(item: dict, translation: str) -> dict:
     report = check(item["source"], translation, target=item["target"],
                    glossary=[tuple(pair) for pair in item["glossary"]])
-    codes = list(report.codes)
+    bank_codes = []
     if overlong_for_short_source(item["source"], translation):
-        codes.append("overlong_for_short_source")
-    check_passed = report.passed and "overlong_for_short_source" not in codes
+        bank_codes.append("overlong_for_short_source")
+    if refusal_or_preamble(item["source"], translation, item["target"]):
+        bank_codes.append("refusal_or_preamble")
     missing = [group for group in item["must_include"] if not any(_contains(translation, alt) for alt in group)]
     forbidden = [phrase for phrase in item["must_not_include"] if _contains(translation, phrase)]
-    return {"passed": check_passed and not missing and not forbidden, "check_passed": check_passed,
-            "codes": codes, "missing_meaning": [group[0] for group in missing], "forbidden_found": forbidden}
+    return {"passed": report.passed and not bank_codes and not missing and not forbidden,
+            "check_passed": report.passed, "codes": report.codes, "bank_codes": bank_codes,
+            "missing_meaning": [group[0] for group in missing], "forbidden_found": forbidden}
 
 
 def summarize(results: list[dict], thresholds: dict) -> dict:

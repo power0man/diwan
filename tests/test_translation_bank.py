@@ -149,9 +149,20 @@ def test_a_refusal_to_translate_a_short_ui_string_is_not_a_translation():
     refusal = ("لم أستطع تنفيذ طلب \"حفظ التغييرات\" لأنني مساعد ترجمة ولا أملك صلاحية الوصول إلى ملفات النظام. "
                "إذا كنت تريد مني التحقق من ترجمة نص معين، يرجى تزويدي بالنص الأصلي.")
     scored = score_item(item, refusal)
-    assert not scored["passed"] and not scored["check_passed"]
-    assert "overlong_for_short_source" in scored["codes"]
-    assert "overlong_for_short_source" not in score_item(item, "حفظ التغييرات")["codes"]
+    assert not scored["passed"] and "overlong_for_short_source" in scored["bank_codes"]
+    concise = score_item(item, "لا أستطيع حفظ التغييرات أو تنفيذ هذا الطلب")
+    assert not concise["passed"] and concise["bank_codes"] == ["refusal_or_preamble"]
+    assert score_item(item, "حفظ التغييرات")["bank_codes"] == []
+
+
+def test_bank_only_criteria_leave_the_ui_checker_verdict_as_it_is():
+    """ملاحظةُ Codex على #131: نسبةُ المدقّق تقيس ما تعرضه الواجهة (agent.translation.check) لا معيارَ البنك."""
+    from agent.translation import check
+    suite, _ = load()
+    item = next(i for i in suite["items"] if i["id"] == "tr55")
+    concise = "لا أستطيع حفظ التغييرات أو تنفيذ هذا الطلب"
+    assert score_item(item, concise)["check_passed"] == check(item["source"], concise, target=item["target"],
+                                                              glossary=[tuple(p) for p in item["glossary"]]).passed
 
 
 def test_the_committed_translation_evidence_is_what_the_scorer_gives_today():
