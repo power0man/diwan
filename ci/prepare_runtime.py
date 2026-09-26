@@ -19,6 +19,8 @@ import tempfile
 IMAGE_REF = re.compile(r"(?:docker\.io/)?(?:library/)?(?:python|node):[A-Za-z0-9_.-]+@sha256:[0-9a-f]{64}\Z")
 IMAGE_ID = re.compile(r"sha256:[0-9a-f]{64}\Z")
 HEX = re.compile(r"[0-9a-f]{64}\Z")
+# The Mac supervisor builds linux/arm64; Nitro (x86_64) builds linux/amd64 natively (ج٥).
+PLATFORMS = ("linux/arm64", "linux/amd64")
 
 
 def run(argv: list[str], **kwargs) -> str:
@@ -110,7 +112,11 @@ def main() -> int:
     parser.add_argument("--trust-json", type=Path, required=True, help="reviewed external public-key trust file")
     parser.add_argument("--receipt", type=Path, required=True)
     parser.add_argument("--runner-receipt", type=Path, help="also build the disposable runner image")
+    parser.add_argument("--platform", choices=PLATFORMS, default="linux/arm64",
+                        help="runtime image platform; the runner image exists for linux/arm64 only")
     args = parser.parse_args()
+    if args.runner_receipt and args.platform != "linux/arm64":
+        parser.error("the reviewed runner image is linux/arm64 only; build the runtime alone on other platforms")
     for ref, prefix in ((args.python_image, "python:3.14"), (args.node_image, "node:24")):
         if not IMAGE_REF.fullmatch(ref) or prefix not in ref:
             parser.error("base images must be the expected official runtimes pinned by SHA-256 digest")
@@ -125,7 +131,7 @@ def main() -> int:
         shutil.copyfile(source / "Dockerfile.runtime", context / "Dockerfile")
         (context / "requirements-ci.lock").write_bytes(lock)
         iid = context / "image-id"
-        subprocess.run(["docker", "build", "--platform", "linux/arm64", "--iidfile", str(iid),
+        subprocess.run(["docker", "build", "--platform", args.platform, "--iidfile", str(iid),
                         "--build-arg", f"PYTHON_IMAGE={args.python_image}", "--build-arg", f"NODE_IMAGE={args.node_image}",
                         "--build-arg", f"LOCK_SHA256={lock_hash}", str(context)], check=True)
         image_id = build_image_id(iid)
