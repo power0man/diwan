@@ -96,7 +96,8 @@ cmd_place() {
   local doc="$DIWAN/docs/external/PLACE-KIMI-FILES.md"
   local block; block="$(awk '/^```bash$/{f=1;next} /^```$/{f=0} f' "$doc")"
   [ -n "$block" ] || die "لم أجد أمرَ التوزيع في $doc"
-  SRC="$KIMI_WORK/kimi-benchmark" bash -c "$block"
+  # المستودعُ هو الذي فيه هذا الملفّ، لا الافتراضيُّ في الوثيقة
+  SRC="$KIMI_WORK/kimi-benchmark" DIWAN="$DIWAN" bash -c "$block"
 }
 
 case "${1:-}" in

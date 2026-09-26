@@ -21,11 +21,11 @@
 
 | من مجلّد Kimi | إلى |
 |---|---|
-| `open/` | `~/diwan-work/diwan/evaluation/banks/kimi_v1/open/` |
-| `REPORT.md` و`disputed.json` | `~/diwan-work/diwan/evaluation/banks/kimi_v1/` (يحلّان محلّ نسختَي v1، وهما محفوظتان في git) |
-| `sealed/MANIFEST.json` | `~/diwan-work/diwan/evaluation/banks/kimi_v1/sealed/` |
+| `open/` | `~/diwan-work/diwan-public/evaluation/banks/kimi_v1/open/` |
+| `REPORT.md` و`disputed.json` | `~/diwan-work/diwan-public/evaluation/banks/kimi_v1/` (يحلّان محلّ نسختَي v1، وهما محفوظتان في git) |
+| `sealed/MANIFEST.json` | `~/diwan-work/diwan-public/evaluation/banks/kimi_v1/sealed/` |
 | `sealed/` كلّه | `~/diwan-sealed/kimi_v1/`، خارج ديوان، ولا يقرؤه غيرك |
-| `arabic_general_v3_1.json` و`arabic_general_v3_2.json` و`agentic_v3.json` و`agentic_v3.meta.json` (منذ v1.2، إن وُجدت) | `~/diwan-work/diwan/evaluation/suites/`، وهي مفتوحةٌ كلُّها فلا تمرّ بالبيان |
+| `arabic_general_v3_1.json` و`arabic_general_v3_2.json` و`agentic_v3.json` و`agentic_v3.meta.json` (منذ v1.2، إن وُجدت) | `~/diwan-work/diwan-public/evaluation/suites/`، وهي مفتوحةٌ كلُّها فلا تمرّ بالبيان |
 
 5. يتأكّد أنه لا يوجد ملفٌّ محجوب داخل ديوان عدا البيان.
 6. **لا يُودع ولا يدفع.** ذلك عمل ذكاء ديوان المحلّي، بعد أن ينفّذ ك١ (الفحص) وك٥ (المراجعة
@@ -41,7 +41,7 @@ bash <<'KIMI'
 # لا يقرأ شيئًا من مستودع ديوان، ولا يعرض محتوى أي ملفٍّ محجوب، ولا يُودع ولا يدفع.
 set -euo pipefail
 SRC="${SRC:-$PWD}"
-DIWAN="${DIWAN:-$HOME/diwan-work/diwan}"
+DIWAN="${DIWAN:-$HOME/diwan-work/diwan-public}"
 SEALED_DST="${SEALED_DST:-$HOME/diwan-sealed/kimi_v1}"
 BANK="$DIWAN/evaluation/banks/kimi_v1"
 
@@ -50,6 +50,11 @@ for p in open sealed/MANIFEST.json REPORT.md disputed.json; do
   [ -e "$SRC/$p" ] || { echo "توقّفت: ينقص المصدرَ $p"; exit 1; }
 done
 [ -d "$DIWAN/.git" ] || { echo "توقّفت: لا مستودع ديوان في $DIWAN"; exit 1; }
+# النسخةُ العامة وحدها: diwan-private على الماك في ~/diwan-work/diwan
+case "$(git -C "$DIWAN" remote get-url origin)" in
+  *power0man/diwan|*power0man/diwan.git) ;;
+  *) echo "توقّفت: $DIWAN ليس نسخةَ power0man/diwan العامة"; exit 1 ;;
+esac
 
 # ٢ — لا كتابة فوق ما ليس محفوظًا في git
 [ ! -e "$BANK/open" ] || { echo "توقّفت: $BANK/open موجود من قبل، ولم أغيّر شيئًا"; exit 1; }
