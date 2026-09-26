@@ -3,8 +3,9 @@
 - الجلسةُ الجديدة مربوطةٌ بهويّة مساحتها لا بموضعها: تُفتح بعد الاستعادة، وتُعرض جولاتُها بلا مزوّد،
   ويُرجع عن فعلٍ سابقٍ للنسخة بزرّ الرجوع نفسِه.
 - الهويّةُ تُكتب مرّةً في المساحة، في دليلٍ مخفيّ لا تكتبه أداة، ولا تُفتح جلسةٌ على مساحةٍ أخرى.
+- هويّةٌ في دليلٍ يقرؤه غيرُ مالكه، أو بسجلٍّ غير صالح، تُرفض باسمها ولا تُقرأ.
 - جولةٌ تنتظر قرار المالك تمنع النسخ باسمها.
-- جلسةٌ من قبل الهويّة (مخطّط ٢) لا تُفتح في موضعٍ جديد: تُرفض استعادتُها بلا اختيار، وتُستعاد أرشيفًا
+- جلسةٌ من قبل الهويّة (مخطّط ٢) تبقى تعمل في موضعها بربطها القديم، ولا تُفتح في موضعٍ جديد: تُرفض استعادتُها بلا اختيار، وتُستعاد أرشيفًا
   للقراءة باختيارٍ صريح، ويُسجَّل ذلك في `restore-provenance.json`.
 - والنسخةُ المعدَّلة في سجلّ جلسةٍ وكيلة تُرفض.
 """
@@ -150,6 +151,37 @@ def test_a_session_does_not_open_on_another_workspace(live, tmp_path):
     assert not (other / WORKSPACE_ID_DIR).exists()            # لا تُنشأ هويّةٌ لمساحةِ جلسةٍ قائمة
 
 
+def _open_directly(ws):
+    project_dir = ws["root"] / "projects" / ws["project"]
+    manifest = json.loads((project_dir / "agent-control" / ws["session"] / "manifest.json").read_bytes())
+    return AgentSession(project_dir / "agent-control", ws["session"], workspace_root=project_dir / "agent-workspace",
+                        project_id=ws["project"], registry=ToolRegistry(*DEFAULT_TOOLS),
+                        model=manifest["model"], model_version=manifest["model_version"])
+
+
+@pytest.mark.parametrize("loosen", ["directory", "file"])
+def test_an_identity_others_can_read_is_refused_by_name(live, loosen):
+    identity = live["root"] / "projects" / live["project"] / "agent-workspace" / WORKSPACE_ID_DIR
+    (identity if loosen == "directory" else identity / WORKSPACE_ID_FILE).chmod(0o755 if loosen == "directory"
+                                                                                 else 0o644)
+    with pytest.raises(ConversationError) as err:
+        _open_directly(live)
+    assert err.value.code == "unsafe_permissions"
+
+
+@pytest.mark.parametrize("record", [
+    {"schema_version": 1, "workspace_id": "0" * 31 + "G"},
+    {"schema_version": 1, "workspace_id": "0" * 32, "path": "/elsewhere"},
+    {"schema_version": 2, "workspace_id": "0" * 32},
+], ids=["not_hex", "extra_key", "unknown_schema"])
+def test_an_invalid_identity_record_is_refused_not_trusted(live, record):
+    identity = live["root"] / "projects" / live["project"] / "agent-workspace" / WORKSPACE_ID_DIR / WORKSPACE_ID_FILE
+    identity.write_bytes(canonical_bytes(record))
+    with pytest.raises(ConversationError) as err:
+        _open_directly(live)
+    assert err.value.code == "state_corrupt"
+
+
 def test_a_turn_awaiting_the_owner_blocks_the_backup_by_name(tmp_path):
     base = tmp_path.resolve()
     base.chmod(0o700)
@@ -195,6 +227,49 @@ def _legacy(ws):
         return {"record": inner, "sha256": digest(inner)}
     for path in (control / "actions").glob("*.json"):
         rewrite(path, record)
+    identity = work / WORKSPACE_ID_DIR                         # ومساحتُها يومها بلا هويّة
+    (identity / WORKSPACE_ID_FILE).unlink()
+    identity.rmdir()
+
+
+def test_a_legacy_session_keeps_working_in_place_on_its_old_binding(live):
+    """جلسةٌ أُنشئت قبل ج١٢ على مساحةٍ بلا هويّة: تُفتح في موضعها، وتعمل، ويُرجع فيها عن فعلها بربطها القديم."""
+    project_dir = live["root"] / "projects" / live["project"]
+    wired = _reopen(live["root"])
+    try:
+        old = wired.api("create_session", project=live["project"], name="قديمة", mode="agent")["id"]
+        wired.app.agent_session(wired.app.project(live["project"]), old)
+    finally:
+        wired.close()
+    control, work = project_dir / "agent-control" / old, project_dir / "agent-workspace"
+    info = work.stat()
+    manifest = json.loads((control / "manifest.json").read_bytes())
+    manifest.update(schema_version=2, workspace={"path": str(work), "device": str(info.st_dev),
+                                                 "inode": str(info.st_ino)})
+    (control / "manifest.json").write_bytes(canonical_bytes(manifest))
+    envelope = json.loads((control / "state.json").read_bytes())
+    assert envelope["state"]["turns"] == []
+    envelope["state"]["config_digest"] = digest(manifest)
+    (control / "state.json").write_bytes(canonical_bytes({"state": envelope["state"],
+                                                          "sha256": digest(envelope["state"])}))
+    store = {"schema_version": 1, "workspace": manifest["workspace"]}   # ومخزنُ أفعالها كما كتبه يومها
+    (control / "actions" / "manifest.json").write_bytes(canonical_bytes({"record": store, "sha256": digest(store)}))
+    for path in (control / "manifest.json", control / "state.json", control / "actions" / "manifest.json"):
+        path.chmod(0o600)
+    (work / WORKSPACE_ID_DIR / WORKSPACE_ID_FILE).unlink()
+    (work / WORKSPACE_ID_DIR).rmdir()
+    wired = _reopen(live["root"])
+    try:
+        action = _write_turn(wired, live["project"], old, "notes/old.md", "في الموضع")
+        receipt = json.loads((control / "actions" / (action + ".json")).read_bytes())["record"]
+        assert set(receipt["binding"]["workspace"]) == {"path", "device", "inode"}
+        reverted = wired.api("agent_revert", project=live["project"], session=old, action_id=action,
+                             request=uuid.uuid4().hex)
+        assert reverted["status"] == "reverted", reverted
+    finally:
+        wired.close()
+    assert json.loads((control / "manifest.json").read_bytes())["schema_version"] == 2
+    assert not (work / WORKSPACE_ID_DIR).exists()              # لا تُرحَّل ضمنًا
 
 
 def test_a_legacy_session_is_refused_as_a_live_session_and_archived_only_by_choice(live):
