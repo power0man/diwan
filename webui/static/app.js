@@ -8,6 +8,9 @@ const errors = {
   changed_since_turn: "تغيّر ملفٌّ بعد الجولة؛ لا يُرجع عنها كلِّها حتى لا يُمحى تعديلٌ أحدث. ارجع عن أفعالها واحدًا واحدًا.",
   turn_partially_reverted: "رُدّ بعضُ الجولة وحده من قبل؛ ارجع عن الباقي فعلًا فعلًا.",
   turn_not_revertible: "تغيّر ملفٌّ بين فعلين داخل الجولة؛ لا يُرجع عنها دفعةً واحدة.",
+  archive_path_unsafe: "في الأرشيف مسارٌ غير آمن (عبورٌ أو مسارٌ مطلق أو رابطٌ رمزيّ)؛ لم يُكتب شيء.",
+  import_target_exists: "المجلّدُ قائمٌ في المساحة؛ اختر اسمًا جديدًا حتى لا يُكتب فوقه.",
+  archive_too_large: "الأرشيفُ أكبرُ من حدّ الاستيراد.",
   action_binding_conflict: "تغير الفعل أو مدخلاته منذ عرضه؛ لم تُنقل الموافقة إلى نسخة مختلفة.",
   action_revision_conflict: "سبق اتخاذ قرار لهذا الفعل. استرجع الحالة الحالية.",
   outcome_unknown: "وقع انقطاع ولا يوجد دليل كافٍ على نتيجة الأثر. لن يُعاد تلقائيًا.",
@@ -256,10 +259,36 @@ $("agent-files").onclick = async () => {
     const data = await api("agent_files", {project});
     if(!currentDialog(epoch,ticket)) return;
     const body = dialog("ملفات عمل المشروع");
+    renderProjectArchive(body, project, epoch, ticket);
     if(!data.files.length) body.append(element("p", "لا توجد ملفات عمل حاليًا."));
     for(const file of data.files) body.append(button(file.path, () => showAgentFile(project,file.path)));
   } catch(error) {if(currentDialog(epoch,ticket)) showError(error);}
 };
+// مشروعُ المستخدم (ج٩): استيرادُ zip إلى مجلّدٍ جديد عبر دفتر الرجوع، وتصديرُ مجلّدٍ أو المساحة كلِّها
+function renderProjectArchive(body, project, epoch, ticket) {
+  const box = element("details"); box.append(element("summary", "استيرادُ مشروعٍ مضغوط أو تصديرُه"));
+  box.append(element("p", "يُفحص الأرشيفُ كلُّه قبل أن يُكتب شيء، ويُتخطّى المخفيُّ (.git و.env…) ويُسمّى. ويُكتب كلُّ ملفٍّ بدفتر الرجوع في مجلّدٍ جديد، فلا يُكتب فوق مجلّدٍ قائم."));
+  const file = element("input"); file.type = "file"; file.accept = ".zip,application/zip";
+  const folder = element("input"); folder.placeholder = "اسمُ المجلّد في المساحة"; folder.maxLength = 80;
+  const importButton = button("استيراد", async () => {
+    const chosen = file.files[0];
+    if(!chosen || !folder.value.trim()) {notice("اختر أرشيفًا واكتب اسمَ المجلّد.", true); return;}
+    const bytes = new Uint8Array(await chosen.arrayBuffer()); let binary = "";
+    for(let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    const result = await api("agent_import", {project, folder: folder.value.trim(), archive: btoa(binary)});
+    if(!currentDialog(epoch,ticket)) return;
+    box.append(element("p", `استُورد ${result.files} ملفًّا إلى ${result.folder}/` + (result.skipped.length ? `، وتُخطّي ${result.skipped.length}: ${result.skipped.slice(0, 10).join("، ")}` : "")));
+  });
+  const exportButton = button("تصدير المجلّد (أو المساحة كلِّها إن تُرك الاسمُ فارغًا)", async () => {
+    const result = await api("agent_export", {project, folder: folder.value.trim()});
+    const raw = atob(result.archive), bytes = new Uint8Array(raw.length);
+    for(let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], {type: "application/zip"})); state.urls.push(url);
+    const link = element("a", `تنزيل ${result.name} (${result.files} ملفًّا)`); link.href = url; link.download = result.name;
+    if(currentDialog(epoch,ticket)) box.append(link);
+  });
+  box.append(file, folder, importButton, exportButton); body.append(box);
+}
 async function showAgentFile(project, path) {
   const epoch = state.epoch, ticket = ++state.dialogEpoch;
   const data = await api("agent_read", {project,path});
