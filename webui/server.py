@@ -28,6 +28,8 @@ from core.canonical import canonical_bytes, digest
 from core.contracts import Message as ContractMessage, Request as ContractRequest
 from core.router_sovereign import PIISanitizer, SovereignRouter, SovereignRoutingError
 from core.tools_registry import default_tools_registry
+from memory.store import MemoryRefused, MemoryStore
+from memory.tool import propose_memory_tool
 from multimodal.codec import (MEDIA_PREFIX, MEDIA_SYSTEM, MEDIA_CONTEXT_CHARS,
                               pack_media, decode_request)
 from services.media_assistant import MediaAssistant, present as present_media
@@ -249,7 +251,23 @@ class LocalApp:
                  if execution or tool.spec.name not in {"run_command", "run_tests"}]
         if self.web_search is not None:
             tools.append(web_search_tool(self.web_search))
+        tools.append(self.memory_tool(project))
         return ToolRegistry(*tools)
+
+    @staticmethod
+    def memory_tool(project):
+        # المخزنُ يُفتح (ويُنشأ) حين يقبل المالكُ نداءً بعينه، لا حين تُعلَن الأداة
+        return propose_memory_tool(lambda: MemoryStore(project))
+
+    def memory_store(self, project, *, create=False):
+        """مخزنُ ذاكرة المشروع (ك٥٥)، أو لا شيء قبل أول حفظ: فلا ينشأ مجلدٌ لم يطلبه المالك."""
+        path = project / "memory"
+        if not create and not (path.exists() or path.is_symlink()):
+            return None
+        try:
+            return MemoryStore(project)
+        except MemoryRefused as exc:
+            raise UIError(exc.code) from None
 
     def agent_session(self, project, session_id, *, create=False):
         workspace = self.agent_workspace(project)
@@ -263,7 +281,9 @@ class LocalApp:
             need(type(saved) is dict and saved.get("schema_version") == 2, "metadata_invalid")
             need(saved.get("project_id") == project.name and saved.get("session_id") == session_id,
                  "metadata_invalid")
-            available = {tool.spec.name: tool for tool in DEFAULT_TOOLS}
+            # كلُّ أداةٍ قد تُعلنها جلسةٌ محفوظة: الافتراضيةُ، والبحثُ (يرفض بالاسم إن لم يُضبط محرّك)، والذاكرة
+            available = {tool.spec.name: tool for tool in (*DEFAULT_TOOLS, web_search_tool(self.web_search),
+                                                           self.memory_tool(project))}
             need(type(saved.get("tools")) is list and all(type(spec) is dict and
                 spec.get("name") in available and spec == available[spec["name"]].spec.declared()
                 for spec in saved["tools"]), "agent_tool_contract_changed")
@@ -272,7 +292,7 @@ class LocalApp:
                 "deadline_s", "max_context_chars", "max_turns", "system")}
             config["deadline_s"] = float(saved["deadline_s"])
         return AgentSession(root, session_id, workspace_root=workspace, project_id=project.name,
-                            registry=registry, **config)
+                            registry=registry, memory=self.memory_store(project), **config)
 
     @staticmethod
     def present_agent(turn, session=None):
@@ -283,7 +303,58 @@ class LocalApp:
                 session.action_store.inputs(view["action_id"]))} for view in result["pending"]]
         return {**result, "user_request": inputs["user_request"],
                 "inputs": {"attachments": inputs["attachments"], "preferences": inputs.get("preferences")}, "verification": "unverified",
-                "mode": "agent"}
+                "mode": "agent", **({"memory_items": turn["memory_items"]} if turn.get("memory_items") else {})}
+
+    def memory_dispatch(self, request, project):
+        """فعلُ المالك في الواجهة (ك٥٥، §٣.٢–٣.٣): «تذكّر هذا» بموافقته، و«انسَ» بإيصالٍ يعدّ ما رآه."""
+        action = request["action"]
+        try:
+            if action == "memory":
+                store = self.memory_store(project)
+                if store is None:
+                    return {"items": [], "receipts": []}
+                return {"items": [{key: item[key] for key in ("item_id", "text", "approved_at", "source")}
+                                  for item in store.items()], "receipts": store.receipts()}
+            if action == "memory_remember":
+                need(isinstance(request["text"], str), "memory_text_invalid")
+                source = request.get("source", {})
+                need(type(source) is dict and set(source) <= {"session", "turn"}
+                     and all(identifier(value) for value in source.values()), "memory_source_invalid")
+                item_id = self.memory_store(project, create=True).remember(
+                    request["text"], consent="owner", source={"via": "owner_ui", **source})
+                return {"status": "remembered", "item_id": item_id}
+            store = self.memory_store(project)
+            need(store is not None and isinstance(request["item_id"], str), "item_unknown")
+            item = store.find(request["item_id"])
+            if item is None:
+                prior = store.receipts(request["item_id"])
+                need(bool(prior), "item_unknown")
+                return {"status": "forgotten", "receipt": prior[0], "replayed": True}
+            # الإيصالُ يعدّ الجولاتِ التي رأى النموذجُ فيها العنصر؛ والجلسةُ لا تُقرأ وهي تعمل
+            need(self.generation.acquire(blocking=False), "generation_busy")
+            try:
+                references = self.memory_references(project, item["sha256"])
+            finally:
+                self.generation.release()
+            return {"status": "forgotten", "receipt": store.forget(item["item_id"], references=references),
+                    "replayed": False}
+        except MemoryRefused as exc:
+            raise UIError(exc.code) from None
+
+    def memory_references(self, project, sha256):
+        references = []
+        for meta in self.collection(project / "sessions"):
+            mode = meta.get("mode", "text")
+            if mode == "media":
+                continue            # جلساتُ الوسائط لا تحمل ذاكرة
+            try:
+                session = (self.agent_session(project, meta["id"]) if mode == "agent"
+                           else self.session(project, meta["id"]))
+                references.extend(session.memory_references(sha256))
+            except (ConversationError, UIError, OSError, ValueError):
+                # جلسةٌ لا تُقرأ لا تحجب النسيان؛ والإيصالُ يسمّيها فلا يدّعي أنها خلت منه
+                references.append(f"{mode}:{meta['id']}/unreadable")
+        return sorted(references)
 
     def agent_dispatch(self, request, project):
         action = request["action"]
@@ -437,6 +508,9 @@ class LocalApp:
             "agent_stop": {"project", "session", "turn"},
             "agent_decide": {"project", "session", "action_id", "call_digest", "expected_revision", "approve"},
             "agent_revert": {"project", "session", "action_id", "request"},
+            "memory": {"project"},
+            "memory_remember": {"project", "text"},
+            "memory_forget": {"project", "item_id"},
         }
         need(action in schemas)
         fields = set(request)
@@ -450,6 +524,8 @@ class LocalApp:
             fields -= {"tier", "data_policy"}
         elif action == "agent_ask":
             fields -= {"thinking"}      # اختياريّ: طلبُ التفكير في الجولة (ك٤٧)
+        elif action == "memory_remember":
+            fields -= {"source"}        # اختياريّ: الجولةُ التي جاء منها النصّ (ك٥٥)
         need(fields == schemas[action] | {"action"})
         if action == "projects":
             with self.lock:
@@ -457,6 +533,8 @@ class LocalApp:
                         "agent_enabled": self.agent_enabled, "default_session_mode": self.default_session_mode}
         if action == "create_project":
             return self.create(self.root / "projects", request["name"])
+        if action in ("memory", "memory_remember", "memory_forget"):
+            return self.memory_dispatch(request, self.project(request["project"]))
         if action == "mlx_status":
             _, handlers = default_tools_registry()
             res = handlers["check_mlx_hardware"]({})
@@ -662,7 +740,8 @@ class LocalApp:
                     available = self.dispatch({"action": "files", "project": request["project"]})
                     need(set(request["files"]) <= {doc["path"] for doc in available["files"]}, "attachment_unavailable")
                 assistant = AssistantWorkspace(session, self.provider_factory(),
-                                               self.workspace(project), Preferences(project / "preferences"))
+                                               self.workspace(project), Preferences(project / "preferences"),
+                                               memory=self.memory_store(project))
                 result = assistant.ask(request["turn"], message_to_send, files=tuple(request["files"]))
 
             if token_map and result.get("content"):

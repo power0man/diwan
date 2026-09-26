@@ -22,6 +22,7 @@ from core.canonical import canonical_bytes, digest
 from core.contracts import Message, Request, Response, Usage
 from core.ledger import GENESIS, Ledger, LedgerCorrupt
 from core.quoted import quarantine_quoted
+from memory.store import MemoryRefused, turn_memory, valid_turn_memory
 from core.run import _check_response, execute
 from core.validate import validated
 
@@ -196,12 +197,15 @@ class ChatSession:
     def _save(self, state):
         _write(self.directory / "state.json", {"state": state, "sha256": digest(state)})
 
-    def _messages(self, turns, text):
+    def _messages(self, turns, text, memory=""):
         """ما يُرسل إلى النموذج محجورُ الأوامرِ المقتبسة؛ والسجلّ يحفظ الأصل.
 
         `core.quoted.quarantine_quoted` يَحجُر الأوامر داخل المناطق المقتبسة
         وحدها، فأمرُ صاحبِ الطلب باقٍ. والدالّة محضةٌ فلا يختلف إعادةُ العرض.
         والنصُّ الأصليّ يبقى في `turn["text"]` — درءٌ بالسجل لا بالإزاحة.
+
+        وكتلةُ الذاكرة (ك٥٥) تسبق رسالةَ الجولة الجديدة وحدها: الجولاتُ السابقة تُبنى من نصوصها،
+        فلا يعود إليها عنصرٌ نُسي من كتلةٍ قديمة.
         """
         messages = [Message("system", self.system)]
         for turn in turns:
@@ -209,11 +213,12 @@ class ChatSession:
             if result is not None and result["status"] == "complete":
                 messages.extend((Message("user", quarantine_quoted(turn["text"]).text),
                                  Message("assistant", result["content"])))
-        messages.append(Message("user", quarantine_quoted(text).text))
+        held = quarantine_quoted(text).text
+        messages.append(Message("user", f"{memory}\n\n{held}" if memory else held))
         return tuple(messages)
 
-    def _request(self, turns, turn_id, text):
-        messages = self._messages(turns, text)
+    def _request(self, turns, turn_id, text, memory=""):
+        messages = self._messages(turns, text, memory)
         req = Request(messages, self.config["model"], self.config["model_version"],
                       self.config["max_output"], self.deadline_s, "local_only",
                       self._turn_key(turn_id))
@@ -248,6 +253,8 @@ class ChatSession:
             "content": "", "status": "error", "error_code": "outcome_uncertain",
             "stop_reason": "error", "usage": {"input_tokens": 0, "output_tokens": 0},
             "cost_micros": 0, "ledger_sha256": None,
+            # كم عنصرًا من ذاكرة المشروع دخل سياقَ الجولة (ك٥٥)؛ جولاتُ ما قبلها بلا مفتاح
+            **({"memory_items": len(turn["memory"]["items"])} if "memory" in turn else {}),
         }
         if entry is None:
             return result
@@ -302,12 +309,14 @@ class ChatSession:
         ids, index = set(), 0
         turns = state["turns"]
         for i, turn in enumerate(turns):
-            if (not isinstance(turn, dict) or set(turn) !=
+            if (not isinstance(turn, dict) or set(turn) - {"memory"} !=
                     {"turn_id", "text", "request_sha256", "context_sha256", "result"}
+                    or ("memory" in turn and not valid_turn_memory(turn["memory"]))
                     or not _id(turn["turn_id"]) or turn["turn_id"] in ids or not _text(turn["text"])):
                 _fail("state_corrupt", "هوية جولة أو نص أو ترتيب غير صالح")
             ids.add(turn["turn_id"])
-            req, context = self._request(turns[:i], turn["turn_id"], turn["text"])
+            req, context = self._request(turns[:i], turn["turn_id"], turn["text"],
+                                         turn.get("memory", {}).get("block", ""))
             if (turn["request_sha256"] != digest(req.fingerprint_payload())
                     or turn["context_sha256"] != context
                     or sum(len(m.content) for m in req.messages) > self.config["max_context_chars"]):
@@ -361,8 +370,16 @@ class ChatSession:
                 turn["result"] = self._result(turn, entry)
             return [self._public(t, replayed=True) for t in state["turns"]]
 
+    def memory_references(self, sha256):
+        """جولاتُ هذه الجلسة التي رأى النموذجُ فيها العنصرَ بهذه البصمة (ك٥٥)، بالمعرّف لا بالنص."""
+        with self._lock():
+            state, _, _ = self._load()
+            return [f"text:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
+                    if sha256 in turn.get("memory", {}).get("items", ())]
+
     def turn(self, turn_id: str, text: str, provider, *, max_turns=None,
-             max_saved_input_bytes=None, request_validator=None):
+             max_saved_input_bytes=None, request_validator=None, memory=None, question=None):
+        """`memory` مخزنُ ذاكرة المشروع (ك٥٥)، و`question` ما تُرتَّب به عناصرُه (الافتراضيّ النصّ)."""
         if not _id(turn_id):
             _fail("turn_id_invalid", "هوية الجولة غير صالحة")
         if not _text(text):
@@ -388,7 +405,11 @@ class ChatSession:
                 _fail("session_admission_limit", "بلغت الجلسة حد الحفظ؛ ابدأ جلسة جديدة")
             if len(state["turns"]) >= 1000:
                 _fail("session_limit", "بلغت الجلسة حد ألف جولة؛ ابدأ جلسة جديدة")
-            req, context = self._request(state["turns"], turn_id, text)
+            try:
+                held = turn_memory(memory, text if question is None else question)
+            except MemoryRefused as exc:
+                _fail(exc.code, exc.reason)
+            req, context = self._request(state["turns"], turn_id, text, held["block"] if held else "")
             if sum(len(m.content) for m in req.messages) > self.config["max_context_chars"]:
                 _fail("context_limit", "تجاوز السياق الحد؛ ابدأ جلسة جديدة دون حذف صامت")
             if request_validator is not None:
@@ -398,7 +419,7 @@ class ChatSession:
             if getattr(provider, "is_local", None) is not True:
                 _fail("policy_requires_local", "المحادثة تتطلب مزودًا محليًا")
             turn = {"turn_id": turn_id, "text": text, "request_sha256": digest(req.fingerprint_payload()),
-                    "context_sha256": context, "result": None}
+                    "context_sha256": context, "result": None, **({"memory": held} if held else {})}
             state["turns"].append(turn)
             self._save(state)  # A crash after here must never cause another provider call.
             interrupted = None
