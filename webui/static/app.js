@@ -112,7 +112,8 @@ function renderAgentActions(answer, actions, ctx, turn) {
     for(const result of step.tool_results || []) {
       details.append(element("p", `${result.name} · ${result.status}${result.code ? ` · ${result.code}` : ""}`));
       if(result.content) details.append(element("pre", result.content));
-      if(result.status === "ok" && result.action_id && result.journal_action_id) {
+      // فعلٌ كتب ملفًّا (journal_action_id) أو ملفّاتٍ عدّة تُرجع معًا (journal_action_ids، ج٨)
+      if(result.status === "ok" && result.action_id && (result.journal_action_id || (result.journal_action_ids || []).length)) {
         details.append(button("الرجوع عن هذا التعديل", () => reviewAgentRevert(ctx, result)));
       }
     }

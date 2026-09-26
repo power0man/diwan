@@ -1,0 +1,46 @@
+name: analysis
+# ج٨ (#44): صورةُ المحلّل تُبنى من analysis/Dockerfile وقفلِه المثبَّت البصمات، ويُكتب إيصالُها، ثم تجري عليها
+# الاختباراتُ الحيّة: حلولٌ من فئات بنك ك٥٠ كلِّها يحكم عليها البنكُ نفسُه، وحدُّ الحاوية (بلا شبكة، وبلا جذر،
+# ولا كتابةَ في الصورة، ولا ترى إلا المدخلات المسمّاة). `DIWAN_REQUIRE_ANALYSIS=1` يجعل الغيابَ سقوطًا لا تخطّيًا.
+# بلا أسرار وبصلاحية قراءةٍ وحدها؛ والشبكةُ في بناء الصورة وحده.
+on:
+  pull_request:
+    paths: [analysis/**, core/execution.py, agent/journal.py, agent/actions.py, agent/action_revert.py,
+            evaluation/agentic_runner.py, evaluation/suites/analyst_v1.json, tests/test_analysis_*.py,
+            tests/test_analyze_data_tool.py, .github/workflows/analysis.yml]
+  push:
+    branches: [main]
+    paths: [analysis/**, core/execution.py, agent/journal.py, agent/actions.py, agent/action_revert.py,
+            evaluation/agentic_runner.py, evaluation/suites/analyst_v1.json, tests/test_analysis_*.py,
+            tests/test_analyze_data_tool.py, .github/workflows/analysis.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: analysis-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install the locked runtime
+        run: |
+          set -eu
+          python3 -m pip install --user 'uv==0.8.17'
+          "$HOME/.local/bin/uv" python install 3.14
+          "$HOME/.local/bin/uv" sync --frozen --python 3.14 --extra dev
+      - name: Build the analysis image and write its receipt
+        run: .venv/bin/python analysis/prepare.py --receipt "$RUNNER_TEMP/analysis/receipt.json" --docker "$(command -v docker)"
+      - name: Live analysis, no skip allowed
+        run: |
+          set -eu
+          DIWAN_REQUIRE_ANALYSIS=1 DIWAN_ANALYSIS_RECEIPT="$RUNNER_TEMP/analysis/receipt.json" \
+          DIWAN_DOCKER="$(command -v docker)" .venv/bin/python -m pytest -q -p no:cacheprovider -rs \
+            tests/test_analysis_live.py tests/test_analysis_backend.py tests/test_analyze_data_tool.py

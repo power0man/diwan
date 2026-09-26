@@ -478,6 +478,33 @@ class Journal:
             finally:
                 os.close(parent)
 
+    def check_revert(self, action_id: str) -> str:
+        """حالُ الفعل قبل رجوعٍ جماعيّ (ج٨)، بلا أثر: `revertible` أو `already_reverted`، وإلّا
+        `changed_since_action`. فيُفحص كلُّ ملفٍّ في المجموعة قبل أن يُرجع عن أيٍّ منها."""
+        with self._operation(mutate=True) as state:
+            if state is None:
+                _fail("action_unknown", "فعل الرجوع غير موجود")
+            action = self.action(action_id)
+            target = self._target(action.path)
+            try:
+                parent = self._parent(action.path)
+            except FileNotFoundError:
+                if action.before_sha256 is None:
+                    return "already_reverted"
+                _fail("changed_since_action", "الملف السابق أو دليله مفقود")
+            except OSError:
+                _fail("unsafe_path", "دليل الهدف غير آمن")
+            try:
+                snapshot = _read(parent, target.name, MAX_BYTES)
+            finally:
+                os.close(parent)
+            current = None if snapshot is None else _sha(snapshot[0])
+            if current == action.after_sha256:
+                return "revertible"
+            if current == action.before_sha256:
+                return "already_reverted"
+            _fail("changed_since_action", "تغيّر الملفُّ بعد الفعل؛ الرجوعُ يردّ فعلَ الوكيل لا يمحو غيره")
+
     def _revert(self, action, target, parent):
         action_id = action.action_id
         snapshot = _read(parent, target.name, MAX_BYTES)

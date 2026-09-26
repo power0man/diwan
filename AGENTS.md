@@ -284,6 +284,7 @@ python3 tools/lane_handoff.py --range origin/main..HEAD
 | `conversation/` | جلسات المحادثة والوضع الوكيل |
 | `providers/` | مزوّدو النماذج (Ollama، وMLX...). المحرّك الافتراضي `qwen3.5:9b` (ق٥٤، `DEFAULT_MODEL` في موضعٍ واحد) |
 | `webui/`، `tools/serve_ui.py` | الواجهة اليومية |
+| `analysis/` | المحلّل (ج٨): صورةُ Docker للتحليل وقفلُها، وأداةُ `analyze_data`، ونتائجُها ملفّاتٌ بإيصال (`docs/ANALYST.md`) |
 | `evaluation/` | المُشغِّلات والمدقّقات، و`suites/` بنوك التطوير، و`banks/` بنوك Kimi |
 | `nodes/` | العقد: البحري، واللسانيات، والفلسفة |
 | `corpus/`، `sources/`، `glossaries/`، `rulings/` | متون عقدة السياسات ومعاجمها |

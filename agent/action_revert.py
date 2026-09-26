@@ -14,6 +14,9 @@ from core.canonical import digest
 from core.contracts import ToolCall, ToolSpec
 
 
+MAX_GROUP = 16
+
+
 def revert_prepared(store: ActionStore, context: ToolContext, source_action_id: str, *,
                     session_id: str, request_id: str) -> dict:
     if (not isinstance(store, ActionStore) or not isinstance(context, ToolContext)
@@ -29,26 +32,48 @@ def revert_prepared(store: ActionStore, context: ToolContext, source_action_id: 
     if source["position"]["session_id"] != session_id:
         raise ActionRefused("action_session_mismatch", "الفعل لا يتبع جلسة طلب الرجوع")
     journal_id = saved.get("journal_action_id")
-    if (not source["reversible"] or saved.get("status") != "ok"
-            or not isinstance(journal_id, str)):
+    # A call that wrote several files (analyze_data) is reverted as one group.
+    group = saved.get("journal_action_ids")
+    if not source["reversible"] or saved.get("status") != "ok":
         raise ActionRefused("action_not_reversible", "لا إيصال رجوع مثبت لهذا الفعل")
+    if group is None:
+        if not isinstance(journal_id, str):
+            raise ActionRefused("action_not_reversible", "لا إيصال رجوع مثبت لهذا الفعل")
+        linked = [journal_id]
+    elif (journal_id is not None or not isinstance(group, list) or not 1 <= len(group) <= MAX_GROUP
+          or not all(isinstance(item, str) for item in group) or len(set(group)) != len(group)):
+        raise ActionRefused("action_not_reversible", "مجموعةُ إيصالات الرجوع غير صالحة")
+    else:
+        linked = list(group)
     try:
-        context.journal.action(journal_id)  # Verify the linked Journal record exists.
+        for item in linked:
+            context.journal.action(item)  # Verify every linked Journal record exists.
     except JournalRefused as exc:
         raise ActionRefused(exc.code, exc.reason) from exc
-    binding = {"control": "journal_revert_v1", "session_id": session_id,
+    if group is None:
+        control, link = "journal_revert_v1", {"journal_action_id": journal_id}
+    else:
+        control, link = "journal_revert_group_v1", {"journal_action_ids": linked}
+    binding = {"control": control, "session_id": session_id,
                "request_id": request_id, "source_action_id": source_action_id,
-               "source_call_digest": source["call_digest"], "journal_action_id": journal_id}
+               "source_call_digest": source["call_digest"], **link}
     request_digest = digest(binding)
     turn_id = "revert-" + digest({"request_id": request_id})
     call = ToolCall("revert-" + request_digest[:40], "revert_prepared_action",
-                    {"source_action_id": source_action_id, "journal_action_id": journal_id})
+                    {"source_action_id": source_action_id, **link})
 
     def handler(arguments, tool_context):
-        result = tool_context.journal.revert(arguments["journal_action_id"])
-        # Keep Journal's semantic result under content. Its status is distinct
-        # from the registry's ok/refused execution status.
-        return {"content": result, "action_id": journal_id}
+        if group is None:
+            result = tool_context.journal.revert(arguments["journal_action_id"])
+            # Keep Journal's semantic result under content. Its status is distinct
+            # from the registry's ok/refused execution status.
+            return {"content": result, "action_id": journal_id}
+        # Every file is checked before any is reverted: a later owner edit to one
+        # output refuses the whole group instead of leaving it half reverted.
+        for item in arguments["journal_action_ids"]:
+            tool_context.journal.check_revert(item)
+        results = [tool_context.journal.revert(item) for item in reversed(arguments["journal_action_ids"])]
+        return {"content": results, "action_ids": linked}
 
     spec = ToolSpec("revert_prepared_action", "Owner-requested Journal reversal", {},
                     consent="owner", reversible=False)
