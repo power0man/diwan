@@ -14,7 +14,7 @@ permissions:
 jobs:
   family-review:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -27,4 +27,4 @@ jobs:
           HEAD: ${{ github.event.pull_request.head.sha }}
           PR: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
-        run: python3 tools/family_review.py --range "$BASE..$HEAD" --head "$HEAD" --pr "$PR" --repo-slug "$REPO"
+        run: python3 tools/family_review.py --range "$BASE..$HEAD" --head "$HEAD" --pr "$PR" --repo-slug "$REPO" --wait-seconds 900
