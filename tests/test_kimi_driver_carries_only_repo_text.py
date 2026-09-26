@@ -80,3 +80,18 @@ def test_run_refuses_when_the_tool_is_absent(tmp_path):
     assert done.returncode != 0
     assert "لا توجد أداة kimi" in done.stderr
     assert not list((tmp_path / "prompts").glob("*.txt")) if (tmp_path / "prompts").exists() else True
+
+
+def test_setup_gives_kimi_the_current_open_bank_and_no_sealed_file(tmp_path):
+    """المفتوحُ وبيانُ المحجوب العام إلى current/، ولا ملفَّ محجوب؛ ولا كتابةَ فوق current/ قائم."""
+    bank = ROOT / "evaluation" / "banks" / "kimi_v1"
+    done = _run(["setup"], tmp_path)
+    assert done.returncode == 0, done.stderr
+    cur = tmp_path / "current"
+    rel = lambda base: {p.relative_to(base) for p in base.rglob("*") if p.is_file()}
+    assert rel(cur / "open") == rel(bank / "open")
+    assert rel(cur / "sealed") == {Path("MANIFEST.json")}
+    marker = next((cur / "open").rglob("*.json"))
+    marker.write_text("نسختُه", encoding="utf-8")
+    again = _run(["setup"], tmp_path)
+    assert again.returncode != 0 and marker.read_text(encoding="utf-8") == "نسختُه"

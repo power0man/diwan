@@ -17,3 +17,8 @@
 
 والمثالُ الذي يذكره التكليف باسم `evaluation/suites/agentic_v1.json` موضعُه عندك
 `examples/agentic_v1.json`. اقرأه من هناك، ولا تبحث عنه في أي مكانٍ آخر.
+
+والبنكُ الذي يتحدّث عنه التحديثُ بـ«v1.1» هو ما في `current/`: الشطرُ المفتوح في
+`current/open/`، والمحجوبُ في `current/sealed/` ومعه بيانُه `current/sealed/MANIFEST.json`.
+اقرأه من هناك وعدّل عليه، وسلّم النسخةَ الجديدة كاملةً في `kimi-benchmark/`، ولا تكتب
+في `current/`.

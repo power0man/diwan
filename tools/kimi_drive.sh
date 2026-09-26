@@ -20,9 +20,16 @@ esac
 
 cmd_setup() {
   mkdir -p "$KIMI_WORK/examples" "$KIMI_WORK/logs" "$KIMI_WORK/prompts"
-  # الملفُّ الوحيد الذي ينتقل من المستودع إلى Kimi
   cp "$DIWAN/evaluation/suites/agentic_v1.json" "$KIMI_WORK/examples/agentic_v1.json"
-  echo "مجلّد Kimi جاهز: $KIMI_WORK (examples/ و logs/ و prompts/)"
+  # والبنكُ الحاليّ من المستودع إلى current/ (قرار المالك، ٢٦ سبتمبر): المفتوحُ وبيانُ
+  # المحجوب وحدهما. والمحجوبُ نفسُه يضعه المالكُ بيده من ~/diwan-sealed، فلا يمرّ بالقائد.
+  local cur="$KIMI_WORK/current"
+  [ ! -e "$cur/open" ] || die "$cur/open موجود من قبل، ولم أغيّر شيئًا"
+  mkdir -p "$cur/sealed"
+  cp -R "$DIWAN/evaluation/banks/kimi_v1/open" "$cur/open"
+  cp "$DIWAN/evaluation/banks/kimi_v1/sealed/MANIFEST.json" "$cur/sealed/MANIFEST.json"
+  echo "مجلّد Kimi جاهز: $KIMI_WORK (examples/ و logs/ و prompts/ و current/)"
+  echo "  current/open: $(find "$cur/open" -name '*.json' ! -name '*.meta.json' | wc -l | tr -d ' ') ملفًّا مفتوحًا؛ والمحجوبُ يضعه المالك في $cur/sealed"
 }
 
 # يجمع الرأسَ والتكليفَ والتحديث، كلٌّ من بعد أول خطٍّ فاصل فيه
