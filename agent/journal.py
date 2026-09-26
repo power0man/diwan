@@ -392,6 +392,14 @@ class Journal:
             _fail("file_too_large", f"فوق {MAX_BYTES} بايت")
         return self._write(relative, lambda snapshot: raw, create=True)
 
+    def write_bytes(self, relative: str, raw: bytes) -> Action:
+        """يودِع ثم يكتب بايتاتٍ (ج١٠): المستندُ المصدَّر يُرجع عنه كما يُرجع عن النصّ."""
+        if not isinstance(raw, bytes):
+            _fail("content_invalid", "بايتاتٌ مطلوبة")
+        if len(raw) > MAX_BYTES:
+            _fail("file_too_large", f"فوق {MAX_BYTES} بايت")
+        return self._write(relative, lambda snapshot: raw, create=True)
+
     def edit_file(self, relative: str, old: str, new: str) -> tuple[Action, str, str]:
         """يعدّل ملفًّا قائمًا في موضعه (ج١١): يستبدل مقطعًا يرد فيه مرّةً واحدة.
 
