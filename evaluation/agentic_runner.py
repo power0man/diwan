@@ -53,16 +53,18 @@ import tempfile
 import time
 
 from agent.actions import ActionStore
+from agent.coder import EXECUTION_TOOLS
 from agent.journal import Journal
 from agent.loop import SYSTEM, run_agent
 from agent.registry import ToolContext, ToolRegistry
 from core.budget import Budget
 from core.canonical import PayloadRejected, digest
-from core.execution import DockerExecutionBackend, ExecutionRefused, ExecutionResult
+from core.execution import (DockerExecutionBackend, ExecutionRefused, ExecutionResult,
+                            configure_execution_backend, release_execution_backend)
 from core.ledger import Ledger
 from core.sandbox import DISPOSABLE_HOST_ENV, sandbox_configuration
 
-RUNNER_VERSION = 6   # ٦: تعليماتُ النظام تُختار وتُسجَّل ببصمتها (وضعُ المبرمج، ج٩)؛ ٥: صورةُ المحلّل لكل مهمّة إن أُعطي إيصالُها (ج٨)؛ ٤: ملفّاتٌ ثنائية في المساحة (ك٥٠)؛ ٣: أمرُ النجاح في Docker؛ ٢: حارسُ ملفات الحكم
+RUNNER_VERSION = 7   # ٧: أدواتُ التنفيذ للوكيل بمنفذ حاويةٍ لكل مهمّة كما في الواجهة، ويُسجَّل ما أُعلن منها بلا منفذ؛ ٦: تعليماتُ النظام تُختار وتُسجَّل ببصمتها (وضعُ المبرمج، ج٩)؛ ٥: صورةُ المحلّل لكل مهمّة إن أُعطي إيصالُها (ج٨)؛ ٤: ملفّاتٌ ثنائية في المساحة (ك٥٠)؛ ٣: أمرُ النجاح في Docker؛ ٢: حارسُ ملفات الحكم
 SUCCESS_KINDS = ("tests_pass", "file_equals", "file_contains", "command_exit_zero")
 _ROOT_FIELDS = {"schema_version", "suite_id", "kind", "description", "tasks"}
 _TASK_FIELDS = {"task_id", "capability", "workspace", "instruction", "success",
@@ -453,7 +455,8 @@ def forbidden_touches(task: dict, journal: Journal) -> list[str]:
 def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
              model_version: str, host: str | None, charter=frozenset({"auto", "logged"}),
              deadline_s: float = 120.0, max_output: int = 1024, success_executor=None,
-             analysis_receipt=None, docker_executable: str | None = None, system: str = SYSTEM) -> dict:
+             analysis_receipt=None, docker_executable: str | None = None, system: str = SYSTEM,
+             execution_receipt=None) -> dict:
     started = time.monotonic_ns()
     # `.resolve()` لا يُستغنى عنه: على ماك المالك يعطي `mkdtemp` مسارًا تحت
     # `/var` وهو رابطٌ رمزيّ إلى `/private/var`، وحارسُ دفتر الرجوع يفتح
@@ -471,6 +474,12 @@ def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
         # دليلُ التحكم خارج مساحة الفعل شرطٌ في الجلسة الوكيلة: الإيصالاتُ
         # لا تسكن المساحةَ التي يكتب فيها الوكيل، وإلّا كتب فوق إيصاله.
         store = ActionStore(scratch / "control", workspace)
+        if execution_receipt is not None:
+            # أدواتُ التنفيذ (run_tests وrun_command) كما في الواجهة: منفذُ حاويةٍ بإيصال التشغيل على
+            # مساحة هذه المهمّة وحدها، وبلقطة المعيار نفسِها، ويُحرَّر بعدها. وبدونه يُردّ نداؤها
+            # بـ`execution_backend_unavailable` — عطبُ ج٨ في أول قياسٍ حيّ (#117).
+            configure_execution_backend(execution_receipt, workspace, snapshot_selector=workspace_snapshot,
+                                        docker_executable=docker_executable)
         if analysis_receipt is not None:
             # صورةُ المحلّل (ج٨) تُضبط لمساحة هذه المهمّة وحدها، وتُحرَّر بعدها
             from analysis.backend import configure_analysis_backend
@@ -518,6 +527,8 @@ def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
                 "answer": run.answer[:1000],
                 "elapsed_ms": (time.monotonic_ns() - started) // 1_000_000}
     finally:
+        if execution_receipt is not None:
+            release_execution_backend(scratch / "workspace")
         if analysis_receipt is not None:
             from analysis.backend import release_analysis_backend
             release_analysis_backend(scratch / "workspace")
@@ -561,7 +572,8 @@ def run_agentic_suite(suite: dict, provider, registry: ToolRegistry, *, model: s
     results = [{**run_task(task, provider, registry, model=model,
                            model_version=model_version, host=host,
                            success_executor=executor, analysis_receipt=analysis_receipt,
-                           docker_executable=docker_executable, **kwargs),
+                           docker_executable=docker_executable, execution_receipt=execution_receipt,
+                           **kwargs),
                 "qualified_id": qualified_task_id(suite["suite_id"], task["task_id"])}
                for task in suite["tasks"]]
     config = {"runner_version": RUNNER_VERSION, "suite_id": suite["suite_id"],
@@ -579,7 +591,12 @@ def run_agentic_suite(suite: dict, provider, registry: ToolRegistry, *, model: s
               "analysis": analysis,
               # التعليماتُ التي قيس بها (الحلقةُ العامة أو وضعُ المبرمج) ببصمتها
               "system_sha256": hashlib.sha256(kwargs.get("system", SYSTEM).encode("utf-8")).hexdigest(),
-              "tools": [spec.name for spec in registry.specs()]}
+              "tools": [spec.name for spec in registry.specs()],
+              # منفذُ أدوات التنفيذ للوكيل، وما أُعلن منها بلا منفذٍ فيُردّ نداؤه
+              "agent_execution": "docker" if execution_receipt is not None else None,
+              "execution_tools_without_backend": (
+                  [] if execution_receipt is not None
+                  else sorted({spec.name for spec in registry.specs()} & EXECUTION_TOOLS))}
     attempted = len(results)
     errors = sum(r["status"] == "error" for r in results)
     measured = attempted - errors

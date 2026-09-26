@@ -13,6 +13,7 @@
 - **`source_malformed` و`source_duplicate`:** سطرٌ في القائمة ليس `[n] عنوان`، أو رقمٌ مكرَّر.
 - **`marker_undefined`:** مرجعٌ في المتن لا مصدرَ له في القائمة.
 - **`source_not_returned`:** مصدرٌ لم يُعِده البحثُ في هذه الجولة. وهو الاختلاق، أو الاستشهادُ من الذاكرة.
+  ويُعدّ كذلك كلُّ رابطٍ في سطرٍ معطوبٍ من القائمة (`[1] رابط - وصف`)، فلا يُخفي العطبُ الاختلاق.
 - **`uncited_claim`:** جملةُ ادّعاءٍ بلا مرجع.
 
 **ما الادّعاء:** جملةٌ فيها رقم، أو فيها أربعُ كلماتٍ فأكثر. وتُستثنى جملُ الإقرار بالعجز («لم أجد في المصادر…»)
@@ -29,6 +30,8 @@ SOURCES_HEADER = re.compile(r"^\s*(?:#+\s*)?\**\s*(?:المصادر|المراج
                             re.IGNORECASE)
 MARKER = re.compile(r"\[\s*([0-9٠-٩۰-۹]+(?:\s*[,،]\s*[0-9٠-٩۰-۹]+)*)\s*\]")
 SOURCE_LINE = re.compile(r"^\s*[-*]?\s*\[\s*([0-9٠-٩۰-۹]+)\s*\]\s*[:：\-–—]?\s*<?(\S+?)>?\s*$")
+URL = re.compile(r"https?://[^\s<>\[\]]+")
+_URL_TAIL = ".,;:!?،؛。\"'»”"
 _SENTENCE_END = re.compile(r"(?<=[.!؟?])\s+|\n+")
 _WORD = re.compile(r"[^\W\d_]+", re.UNICODE)
 _DIGIT = re.compile(r"[0-9٠-٩۰-۹]")
@@ -68,6 +71,14 @@ class CitationReport:
         return {self.sources[n] for n in sentence.cites if n in self.sources}
 
 
+def _url(raw: str) -> str:
+    """الرابطُ بلا ما لصق به من ترقيم الجملة، وبلا قوسٍ يُغلق ما لم يفتحه الرابط (`(رابط)`)."""
+    url = raw.rstrip(_URL_TAIL)
+    while url.endswith(")") and url.count(")") > url.count("("):
+        url = url[:-1].rstrip(_URL_TAIL)
+    return url
+
+
 def insufficient(text: str) -> bool:
     return any(cue in text for cue in INSUFFICIENT)
 
@@ -105,6 +116,9 @@ def check(answer: str, returned_urls) -> CitationReport:
         match = SOURCE_LINE.match(line)
         if match is None:
             findings.append(("source_malformed", line.strip()[:120]))
+            for url in map(_url, URL.findall(line)):
+                if url not in returned:
+                    findings.append(("source_not_returned", url[:200]))
             continue
         number, url = int(match.group(1).translate(DIGITS)), match.group(2)
         if number in sources:
