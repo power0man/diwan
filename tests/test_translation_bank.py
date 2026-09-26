@@ -227,3 +227,27 @@ def test_every_report_carries_the_limits_of_the_bank_only_criteria():
         assert any(limit.startswith(prefix) for limit in report["measurement_limits"])
     evidence = json.loads((ROOT / "docs" / "probe" / "g4-translation-20260926.json").read_text(encoding="utf-8"))
     assert set(LIMITS) <= set(evidence["measurement_limits"])
+
+
+def test_the_cli_records_the_provenance_the_plan_requires(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #131: دليلُ الماك يحمل المُشغِّلَ والتاريخَ والمحرّكَ ببصمته ورخصته والبذرةَ والأمرَ الحرفيّ
+    (`docs/PLAN-20260926.md`، claude-mac)، والبصمةُ تُقرأ من Ollama لا من الوسم."""
+    import shlex
+    import providers.ollama as ollama
+    import tools.evaluate_translation as cli
+    monkeypatch.setattr(ollama, "OllamaProvider", lambda model: Replay("reference"))
+    monkeypatch.setattr(cli, "_digest", lambda model: "sha256:weights")
+    args = ["--model", "qwen3.5:9b", "--license", "Apache-2.0", "--agent", "anthropic/claude-opus-5-5",
+            "--out", str(tmp_path / "r.json")]
+    assert cli.main(args) == 0
+    report = json.loads((tmp_path / "r.json").read_text(encoding="utf-8"))
+    assert report["agent"] == "anthropic/claude-opus-5-5" and report["date"]
+    assert report["engine"] == {"provider": "ollama", "model": "qwen3.5:9b", "model_version": "sha256:weights",
+                                "license": "Apache-2.0"}
+    assert report["config"]["model_version"] == "sha256:weights"
+    assert report["sampling"] == {"temperature": 0, "seed": ollama.SAMPLING_SEED}
+    assert report["command"] == shlex.join(["python3", "tools/evaluate_translation.py", *args])
+    stranger = [*args[:5], "someone/unknown", "--out", str(tmp_path / "s.json")]
+    assert cli.main(stranger) == 1 and "agent_unregistered" in capsys.readouterr().out
+    evidence = json.loads((ROOT / "docs" / "probe" / "g4-translation-20260926.json").read_text(encoding="utf-8"))
+    assert {"agent", "date", "engine", "sampling", "command"} <= set(evidence)

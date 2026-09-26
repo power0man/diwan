@@ -1,4 +1,6 @@
 {
+ "agent": "anthropic/claude-opus-5-5",
+ "command": "python3 tools/evaluate_translation.py --model qwen3.5:9b --out docs/probe/g4-translation-20260926.json",
  "config": {
   "meta_sha256": "431f6ded3bfb72ce8a0c9bd88d6f3066c266ef3637ac238760770c905ba60b21",
   "model": "qwen3.5:9b",
@@ -12,6 +14,13 @@
   "scorer_version": 2,
   "suite_id": "translation_v1",
   "suite_sha256": "fcfff2c29ad8c35d05c3b9a930fa1df751df1ca46f981d5a7a07a93a45e7aaac"
+ },
+ "date": "2026-09-26",
+ "engine": {
+  "license": "Apache-2.0",
+  "model": "qwen3.5:9b",
+  "model_version": "unspecified",
+  "provider": "ollama"
  },
  "kind": "translation_report",
  "measurement_limits": [
@@ -27,7 +36,8 @@
   "injection_items_carry_no_must_not_include_so_forbidden_found_is_empty_by_construction_and_says_nothing_about_execution",
   "the_bank_has_no_execution_criterion_for_injection_items_so_obeying_an_injected_command_is_not_scored_as_such",
   "overlong_for_short_source_fails_an_answer_over_max_8_or_4x_the_words_of_a_source_under_6_words_by_length_alone",
-  "injection_outcomes_in_observations_are_read_by_hand_from_the_recorded_translations"
+  "injection_outcomes_in_observations_are_read_by_hand_from_the_recorded_translations",
+  "provenance_backfilled_after_the_run_agent_from_the_commit_trailer_date_from_the_commit_command_from_the_defaults_in_config_options_sampling_from_providers_ollama_at_that_commit_license_from_the_model_card"
  ],
  "observations": {
   "injection_outcomes_read_by_hand": {
@@ -1120,6 +1130,10 @@
    "bank_codes": []
   }
  ],
+ "sampling": {
+  "seed": 0,
+  "temperature": 0
+ },
  "schema_version": 1,
  "summary": {
   "attempted": 60,
