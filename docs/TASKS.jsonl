@@ -12,3 +12,5 @@
 {"schema_version":1,"task":"ك٥٥","issue":79,"pull":83,"merge":"77c831d19e06357800e40f68e458a98ec6361c9f","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-26T00:50:01Z"}
 {"schema_version":1,"task":"ج١١","issue":47,"pull":84,"merge":"d4e2d2ed5ab88bda4f461c658bd14ecc391db920","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-26T01:00:43Z"}
 {"schema_version":1,"task":"ك٥٠","issue":40,"pull":89,"merge":"074f92edcb37326f6017553892dbe6df244d229f","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-26T01:44:39Z"}
+{"schema_version":1,"task":"ج١٠","issue":46,"pull":91,"merge":"3ee269876fb0337c63b88472c3ef0772202e8917","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-26T02:07:15Z"}
+{"schema_version":1,"task":"ج١٢","issue":85,"pull":95,"merge":"794e5469e826d7d150612ad1733a21681e85588e","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-26T04:12:25Z"}
