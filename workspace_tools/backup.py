@@ -4,6 +4,12 @@ The archive is plaintext. Hashes detect corruption relative to the explicitly
 supplied archive digest; they do not authenticate a hostile account owner.
 Existing receipt checks remain intact. Only files created by this restore get
 new inode receipts, after their original archived receipt was verified.
+
+Agent sessions (ج١٢، ق٦٣) travel with their control state and project workspace.
+A session bound to its workspace identity (manifest schema 3) is opened and verified
+in place after restore. A session from before that identity (schema 2) is bound to
+path and inode, so it cannot open at a new path: it is restored only as a read-only
+archive under ``agent-archive/`` when the caller asks for that explicitly.
 """
 from __future__ import annotations
 
@@ -19,15 +25,21 @@ import stat
 import tempfile
 import unicodedata
 
+from agent.actions import ActionRefused
+from agent.registry import Tool, ToolRegistry
 from conversation import ChatSession
-from conversation.session import SYSTEM
+from conversation.agent_session import AgentSession
+from conversation.session import SYSTEM, ConversationError
 from core import filelock
 from core.canonical import canonical_bytes, digest
+from core.contracts import ToolSpec
+from core.ledger import GENESIS
 from memory.store import LOCK_NAME as MEMORY_LOCK, MemoryRefused, MemoryStore
 from multimodal.codec import MEDIA_SYSTEM, decode_request
+from services.agent_workspace import decode_input as _decode_agent_input
 from services.assistant_workspace import _decode_context
 from services.media_assistant import MediaAssistant
-from workspace_tools.files import TextWorkspace, _relative
+from workspace_tools.files import TextWorkspace, WorkspaceError, _relative
 from workspace_tools.preferences import Preferences
 
 MAX_RAW_BYTES = 32 * 1024 * 1024
@@ -43,6 +55,15 @@ _MEMORY_ITEM = re.compile(r"items/[0-9a-f]{16}\.json\Z")
 # قفلُ الذاكرة قبل ك٥٥ (الجزء ٢) كان `.lock`؛ يُقبل في النسخة ولا يُستعاد
 _MEMORY_LOCKS = {MEMORY_LOCK, ".lock"}
 _UNSET = object()
+# الجلسات الوكيلة (ج١٢): ما في دليل تحكّم الجلسة، وما في مساحة المشروع غيرَ ملفّاتها العادية
+_CONTROL_FILES = {"manifest.json", "state.json", "calls.jsonl", "session.lock",
+                  "actions/manifest.json", "actions/store.lock"}
+_CONTROL_RECORD = re.compile(r"(stop-[a-f0-9]{64}\.json|actions/(step|action)-[a-f0-9]{64}\.json)\Z")
+_WORKSPACE_DIRS = {".diwan-journal", ".diwan-journal/blobs", ".diwan-workspace"}
+_WORKSPACE_FILES = {".diwan-journal/journal.jsonl", ".diwan-journal/journal.lock",
+                    ".diwan-workspace/identity.json"}
+_JOURNAL_BLOB = re.compile(r"\.diwan-journal/blobs/[a-f0-9]{64}\Z")
+_LOCKS = {"session.lock", "preferences.lock", "store.lock", "journal.lock"}
 
 
 class BackupError(ValueError):
@@ -215,8 +236,7 @@ def _take_snapshot(root_fd, root):
         stack.enter_context(_lease(root_fd, "app.lock"))
         before = _inventory(root_fd)
         for path, (directory, _, _) in sorted(before.items()):
-            if not directory and path != "app.lock" and (path.rsplit("/", 1)[-1] in {
-                    "session.lock", "preferences.lock", "store.lock"}
+            if not directory and path != "app.lock" and (path.rsplit("/", 1)[-1] in _LOCKS
                     or _memory_part(path) in _MEMORY_LOCKS):
                 stack.enter_context(_lease(root_fd, path))
         _need(_inventory(root_fd) == before, "backup_source_changed")
@@ -311,8 +331,28 @@ def _metadata(raw, expected, *, session=False):
     _need(value["id"] == expected and type(name) is str and 1 <= len(name.strip()) <= 80
           and not any(unicodedata.category(c).startswith("C") for c in name))
     mode = value.get("mode", "text")
-    _need(mode in ("text", "media"))
+    _need(mode in ("text", "media", "agent"))
     return mode
+
+
+def _ordinary(relative):
+    try:
+        _relative(relative, writing=True)
+        return True
+    except WorkspaceError:
+        return False
+
+
+def _control(prefix, dirs, data, allowed_dirs, allowed_files):
+    """دليلُ تحكّم جلسةٍ وكيلة: ملفّاتُه المعروفة حاضرةً كلُّها، ولا غيرُها."""
+    _need(prefix in dirs and prefix + "/actions" in dirs
+          and {prefix + "/" + name for name in _CONTROL_FILES} <= data.keys(), "backup_incomplete")
+    allowed_dirs.update({prefix, prefix + "/actions"})
+    for path in data:
+        if path.startswith(prefix + "/"):
+            rest = path[len(prefix) + 1:]
+            if rest in _CONTROL_FILES or _CONTROL_RECORD.fullmatch(rest):
+                allowed_files.add(path)
 
 
 def _shape(dirs, data):
@@ -324,6 +364,7 @@ def _shape(dirs, data):
     projects = sorted(p for p in dirs if p.startswith("projects/") and p.count("/") == 1)
     _need(len(projects) <= 64, "backup_limit")
     sessions, stores, preferences, memories = [], [], [], []
+    agents, archived = [], []
     for project in projects:
         pid = project.split("/")[-1]
         _need(_ID.fullmatch(pid), "backup_invalid")
@@ -354,6 +395,13 @@ def _shape(dirs, data):
             sid = session.split("/")[-1]
             _need(_ID.fullmatch(sid), "backup_invalid")
             mode = _metadata(data[session + "/meta.json"], sid, session=True)
+            if mode == "agent":
+                # الجلسةُ الوكيلة (ج١٢): بيانُها هنا، وتحكّمُها في agent-control، ومساحتُها للمشروع كلِّه
+                allowed_dirs.add(session)
+                allowed_files.add(session + "/meta.json")
+                _control(project + "/agent-control/" + sid, dirs, data, allowed_dirs, allowed_files)
+                agents.append((project, sid))
+                continue
             chat = session + "/chat/" + sid
             allowed_dirs.update({session, session + "/chat", chat})
             expected = {session + "/meta.json"} | {chat + "/" + name for name in (
@@ -361,6 +409,30 @@ def _shape(dirs, data):
             _need(expected <= data.keys() and chat in dirs, "backup_incomplete")
             allowed_files.update(expected)
             sessions.append((chat, sid, mode))
+        if project + "/agent-control" in dirs:
+            allowed_dirs.add(project + "/agent-control")   # وأبناؤه جلساتٌ ذاتُ بيانٍ فقط
+        work = project + "/agent-workspace"
+        if work in dirs:
+            allowed_dirs.add(work)
+            for path in set(dirs) | set(data):
+                if not path.startswith(work + "/"):
+                    continue
+                rest, directory = path[len(work) + 1:], path in dirs
+                if (rest in (_WORKSPACE_DIRS if directory else _WORKSPACE_FILES) or _ordinary(rest)
+                        or (not directory and _JOURNAL_BLOB.fullmatch(rest))):
+                    (allowed_dirs if directory else allowed_files).add(path)
+        shelf = project + "/agent-archive"
+        if shelf in dirs:
+            # جلساتٌ من قبل ج١٢ استُعيدت أرشيفًا للقراءة: بيانُها وتحكّمُها كما كانا، ولا تُفتح
+            allowed_dirs.add(shelf)
+            for entry in sorted(p for p in dirs if p.startswith(shelf + "/") and p.count("/") == 3):
+                sid = entry.split("/")[-1]
+                _need(_ID.fullmatch(sid), "backup_invalid")
+                _need(_metadata(data[entry + "/meta.json"], sid, session=True) == "agent", "backup_invalid")
+                allowed_dirs.add(entry)
+                allowed_files.add(entry + "/meta.json")
+                _control(entry + "/control", dirs, data, allowed_dirs, allowed_files)
+                archived.append(entry + "/control")
         for category in ("uploads", "outputs"):
             artifact = project + "/" + category
             if artifact not in dirs:
@@ -386,7 +458,7 @@ def _shape(dirs, data):
         _need(type(previous) is dict and previous.get("schema_version") == 1
               and type(previous.get("archive_sha256")) is str
               and _SHA.fullmatch(previous["archive_sha256"]), "backup_invalid")
-    return sessions, stores, preferences, memories
+    return sessions, stores, preferences, memories, (agents, archived)
 
 
 def _write_file(root_fd, path, raw, *, replace=False):
@@ -414,8 +486,63 @@ def _materialize(root, dirs, data):
         os.close(root_fd)
 
 
+def _schema(data, project, sid):
+    config = _json(data[f"{project}/agent-control/{sid}/manifest.json"])
+    _need(type(config) is dict, "backup_agent_session_invalid")
+    return config.get("schema_version")
+
+
+def _check_legacy_control(data, prefix):
+    """جلسةٌ من قبل ج١٢ لا تُفتح في غير موضعها، فتُفحص بنيةً وبصمات: بيانُها، وحالتُها المربوطة
+    به، وسلسلةُ نداءاتها ورأسُها المحفوظ، وبصمةُ كلِّ إيصال فعل."""
+    config = _json(data[prefix + "/manifest.json"])
+    _need(type(config) is dict and config.get("schema_version") == 2 and type(config.get("workspace")) is dict
+          and set(config["workspace"]) == {"path", "device", "inode"}, "backup_agent_session_invalid")
+    envelope = _json(data[prefix + "/state.json"])
+    state = envelope.get("state") if type(envelope) is dict else None
+    _need(type(state) is dict and set(envelope) == {"state", "sha256"} and envelope["sha256"] == digest(state)
+          and state.get("config_digest") == digest(config), "backup_agent_session_invalid")
+    previous, heads = GENESIS, []
+    for index, line in enumerate(line for line in data[prefix + "/calls.jsonl"].splitlines() if line.strip()):
+        entry = _json(line)
+        _need(type(entry) is dict and set(entry) == {"prev", "seq", "record", "digest"}
+              and entry["prev"] == previous and entry["seq"] == index
+              and digest({"prev": entry["prev"], "seq": entry["seq"], "record": entry["record"]}) == entry["digest"],
+              "backup_agent_session_invalid")
+        previous = entry["digest"]
+        heads.append(previous)
+    ledger = state.get("ledger")
+    _need(type(ledger) is dict and type(ledger.get("count")) is int and 0 <= ledger["count"] <= len(heads)
+          and ledger.get("head") == (heads[ledger["count"] - 1] if ledger["count"] else GENESIS),
+          "backup_agent_session_invalid")
+    for path, raw in data.items():
+        if path.startswith(prefix + "/actions/") and not path.endswith("/store.lock"):
+            record = _json(raw)
+            _need(type(record) is dict and set(record) == {"record", "sha256"}
+                  and digest(record["record"]) == record["sha256"], "backup_agent_session_invalid")
+
+
+def _refuse_tool(arguments, context):
+    raise RuntimeError("التحقّق من النسخة لا ينفّذ أداة")
+
+
+def _open_agent(root, project, sid, config):
+    """الجلسةُ بهويّة مساحتها تُفتح في موضعها الجديد: البناءُ يفحص البيان والحالة والسجلّ وكلَّ إيصال فعل،
+    بسجلّ أدواتٍ مجمَّدٍ من عقدها لا ينفّذ شيئًا."""
+    try:
+        registry = ToolRegistry(*(Tool(ToolSpec(**spec), _refuse_tool) for spec in config["tools"]))
+        AgentSession(root / project / "agent-control", sid, workspace_root=root / project / "agent-workspace",
+                     project_id=project.split("/")[-1], registry=registry, model=config["model"],
+                     model_version=config["model_version"], max_steps=config["max_steps"],
+                     max_output=config["max_output"], deadline_s=float(config["deadline_s"]),
+                     max_context_chars=config["max_context_chars"], max_turns=config["max_turns"],
+                     system=config["system"])
+    except (ConversationError, ActionRefused):
+        _fail("backup_agent_session_invalid", "جلسةٌ وكيلة في النسخة لا تطابق حالتها أو إيصالاتها")
+
+
 def _validate_tree(root, bundle, dirs, data, identities, shape):
-    sessions, stores, preferences, memories = shape
+    sessions, stores, preferences, memories, (agents, archived) = shape
     migrations = []
     fd = _open_directory(root)
     try:
@@ -491,6 +618,23 @@ def _validate_tree(root, bundle, dirs, data, identities, shape):
             # It may touch only this copied staging ledger; never the source.
             for turn in turns:
                 (decode_request if mode == "media" else _decode_context)(turn["text"])
+        for project, sid in agents:
+            prefix = f"{project}/agent-control/{sid}"
+            envelope = _json(data[prefix + "/state.json"])
+            _need(type(envelope) is dict and type(envelope.get("state")) is dict)
+            turns = envelope["state"].get("turns")
+            _need(type(turns) is list and all(type(turn) is dict for turn in turns))
+            # جولةٌ جارية أو تنتظر قرار المالك تُحسم قبل النسخ؛ والمجهولةُ النتيجة تُنسخ كما هي ولا تُعاد
+            _need(all(type(turn.get("result")) is dict and turn["result"].get("status") != "awaiting_owner"
+                      for turn in turns), "backup_pending")
+            for turn in turns:
+                _decode_agent_input(turn["text"])
+            if _schema(data, project, sid) == 3:
+                _open_agent(root, project, sid, _json(data[prefix + "/manifest.json"]))
+            else:
+                _check_legacy_control(data, prefix)
+        for prefix in archived:
+            _check_legacy_control(data, prefix)
     finally:
         os.close(fd)
     return migrations
@@ -605,14 +749,38 @@ def _restore_memory(destination, data, memories, live_root):
     return report
 
 
+def _archive_moves(dirs, data, legacy):
+    """جلساتُ ما قبل ج١٢ تنتقل إلى agent-archive: بيانُها ودليلُ تحكّمها كما هما، ولا تُفتح جلسةً حيّة."""
+    moves = {}
+    for project, sid in legacy:
+        sources = {f"{project}/sessions/{sid}": f"{project}/agent-archive/{sid}",
+                   f"{project}/agent-control/{sid}": f"{project}/agent-archive/{sid}/control"}
+        for path in set(dirs) | set(data):
+            for old, new in sources.items():
+                if path == old or path.startswith(old + "/"):
+                    moves[path] = new + path[len(old):]
+    return moves
+
+
 @_guard
-def restore_workspace(archive, destination, expected_sha256, *, tombstones_from=_UNSET):
+def restore_workspace(archive, destination, expected_sha256, *, tombstones_from=_UNSET,
+                      legacy_agent_sessions=_UNSET):
     """`tombstones_from` جذرُ المساحة الحيّة إن بقيت، فتُطبَّق إيصالاتُ نسيانها على ذاكرة النسخة؛
     أو None صراحةً إن فُقدت. ونسخةٌ فيها ذاكرة لا تُستعاد بلا هذا الاختيار: فاستعادةُ نسخةٍ أقدم
-    من نسيانٍ بلا إيصالاته تُعيد المنسيّ."""
+    من نسيانٍ بلا إيصالاته تُعيد المنسيّ.
+
+    `legacy_agent_sessions="archive"` اختيارٌ صريح لجلساتٍ وكيلةٍ من قبل ج١٢: مربوطةٌ بالمسار وinode
+    فلا تُفتح في موضعٍ جديد، فتُستعاد أرشيفًا للقراءة في `agent-archive/`. ونسخةٌ فيها منها لا تُستعاد
+    بلا هذا الاختيار (`backup_agent_session_not_portable`)."""
     bundle = _read_archive(archive, expected_sha256)
     dirs, data, identities, total, shape = _validate_bundle(bundle)
     memories = shape[3]
+    agents = shape[4][0]
+    legacy = [(project, sid) for project, sid in agents if _schema(data, project, sid) != 3]
+    _need(legacy_agent_sessions in (_UNSET, "archive"), "backup_invalid")
+    if legacy:
+        _need(legacy_agent_sessions == "archive", "backup_agent_session_not_portable")
+    moves = _archive_moves(dirs, data, legacy)
     if memories:
         _need(tombstones_from is not _UNSET, "backup_tombstones_required")
     live_root = None if tombstones_from in (_UNSET, None) else _path(tombstones_from)
@@ -650,13 +818,18 @@ def restore_workspace(archive, destination, expected_sha256, *, tombstones_from=
         fd = _open_directory(destination)
         try:
             _write_file(fd, INCOMPLETE, b"diwan restore incomplete\n")
-            _materialize(destination, {k: v for k, v in dirs.items() if k not in memory_paths},
-                         {k: v for k, v in data.items() if k not in memory_paths})
+            live_dirs = {moves.get(k, k): v for k, v in dirs.items() if k not in memory_paths}
+            live_dirs.update({f"{project}/agent-archive": dirs[project] for project, _ in legacy})
+            _materialize(destination, live_dirs,
+                         {moves.get(k, k): v for k, v in data.items() if k not in memory_paths})
             migrations = _validate_tree(destination, bundle, dirs, data, identities, shape)
             memory_report = _restore_memory(destination, data, memories, live_root)
+            agent_report = {"sessions": len(agents) - len(legacy),
+                            "archived": [f"{project}/agent-archive/{sid}" for project, sid in legacy]}
             provenance = {"schema_version": 1, "archive_sha256": expected_sha256,
                           "workspace_migrations": migrations,
-                          **({"memory": memory_report} if memories else {})}
+                          **({"memory": memory_report} if memories else {}),
+                          **({"agent_sessions": agent_report} if agents else {})}
             _write_file(fd, PROVENANCE, canonical_bytes(provenance), replace=PROVENANCE in data)
             os.unlink(INCOMPLETE, dir_fd=fd)
             os.fsync(fd)
@@ -669,4 +842,5 @@ def restore_workspace(archive, destination, expected_sha256, *, tombstones_from=
     finally:
         os.close(parent)
     report = _report("restored", expected_sha256, dirs, data, total)
-    return {**report, "memory": memory_report} if memories else report
+    return {**report, **({"memory": memory_report} if memories else {}),
+            **({"agent_sessions": agent_report} if agents else {})}

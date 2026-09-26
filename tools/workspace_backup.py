@@ -29,6 +29,9 @@ def main(argv=None):
                       help="جذرُ المساحة الحيّة: ما نُسي فيها بعد النسخة لا يعود")
     live.add_argument("--no-live-tombstones", action="store_true",
                       help="المساحةُ الحيّة فُقدت: تُطبَّق إيصالاتُ النسخة وحدها")
+    # جلساتٌ وكيلة من قبل ج١٢ لا تُفتح في موضعٍ جديد: تُستعاد أرشيفًا للقراءة باختيارٍ صريح
+    restore.add_argument("--archive-legacy-agent-sessions", action="store_true",
+                         help="الجلساتُ الوكيلة القديمة إلى agent-archive/ للقراءة، لا جلساتٍ حيّة")
     args = parser.parse_args(argv)
     try:
         if args.command == "backup":
@@ -38,6 +41,8 @@ def main(argv=None):
         else:
             live = ({"tombstones_from": args.tombstones_from} if args.tombstones_from is not None
                     else {"tombstones_from": None} if args.no_live_tombstones else {})
+            if args.archive_legacy_agent_sessions:
+                live["legacy_agent_sessions"] = "archive"
             result = restore_workspace(args.archive, args.destination, args.sha256, **live)
     except KeyboardInterrupt:
         return 130
