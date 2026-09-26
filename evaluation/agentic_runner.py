@@ -41,6 +41,8 @@
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import json
 import os
@@ -60,7 +62,7 @@ from core.execution import DockerExecutionBackend, ExecutionRefused, ExecutionRe
 from core.ledger import Ledger
 from core.sandbox import DISPOSABLE_HOST_ENV, sandbox_configuration
 
-RUNNER_VERSION = 3   # ٣: أمرُ النجاح في خُلفيّة Docker؛ ٢: حارسُ ملفات الحكم، وتمييزُ غياب المُشغِّل عن الرسوب
+RUNNER_VERSION = 4   # ٤: ملفّاتٌ ثنائية في المساحة (ك٥٠)؛ ٣: أمرُ النجاح في Docker؛ ٢: حارسُ ملفات الحكم
 SUCCESS_KINDS = ("tests_pass", "file_equals", "file_contains", "command_exit_zero")
 _ROOT_FIELDS = {"schema_version", "suite_id", "kind", "description", "tasks"}
 _TASK_FIELDS = {"task_id", "capability", "workspace", "instruction", "success",
@@ -72,6 +74,23 @@ COMMAND_TIMEOUT_S = 120
 
 def _reject(path: str, code: str, reason: str):
     raise PayloadRejected(path, code, reason)
+
+
+def workspace_bytes(content) -> bytes:
+    """محتوى ملفٍّ في المساحة: نصٌّ يُكتب UTF-8، أو {"base64": …} لملفٍّ ثنائيّ كـxlsx (ك٥٠).
+
+    والترميزُ قانونيٌّ وحده: ما لا يعود بعينه بعد فكّه وإعادة ترميزه يُردّ، فلا يمرّ ملفٌّ بشكلين.
+    """
+    if isinstance(content, str):
+        return content.encode("utf-8")
+    if isinstance(content, dict) and content.keys() == {"base64"} and isinstance(content["base64"], str):
+        try:
+            raw = base64.b64decode(content["base64"], validate=True)
+        except (binascii.Error, ValueError):
+            raw = None
+        if raw is not None and base64.b64encode(raw).decode("ascii") == content["base64"]:
+            return raw
+    _reject("workspace", "workspace_invalid", "محتوًى نصّيّ أو {\"base64\": …} قانونيّ مطلوب")
 
 
 def _text(value, path, *, limit=20_000):
@@ -120,9 +139,7 @@ def validate_agentic_suite(suite: dict) -> dict:
         total = 0
         for name, content in workspace.items():
             _relative_inside(name, path + ".workspace")
-            if not isinstance(content, str):
-                _reject(path + ".workspace", "workspace_invalid", "محتوًى نصّيّ مطلوب")
-            total += len(content.encode("utf-8"))
+            total += len(workspace_bytes(content))
         if total > MAX_WORKSPACE_BYTES:
             _reject(path + ".workspace", "workspace_too_large",
                     f"فوق {MAX_WORKSPACE_BYTES} بايت")
@@ -206,7 +223,7 @@ def materialize(task: dict, root: Path) -> None:
     for name, content in sorted(task["workspace"].items()):
         target = root / name
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content, encoding="utf-8")
+        target.write_bytes(workspace_bytes(content))
 
 
 # ————— أين يُشغَّل أمرُ النجاح: في حاويةٍ زائلة لا على الجهاز (ج٣) —————
@@ -391,7 +408,7 @@ def harness_tampering(task: dict, root: Path) -> list[str]:
     فيُحكم على القرص: كلُّ ملفِّ إعدادٍ لمُشغِّل الاختبارات جديدٍ أو متغيّر،
     وكلُّ ملفٍّ يسمّيه أمرُ النجاح كان موجودًا فتغيّر أو غاب.
     """
-    initial = {name: hashlib.sha256(content.encode("utf-8")).hexdigest()
+    initial = {name: hashlib.sha256(workspace_bytes(content)).hexdigest()
                for name, content in task["workspace"].items()}
     protected = protected_paths(task)
     tampered: list[str] = []
