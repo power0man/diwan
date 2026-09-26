@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-27",
+  "task": "جديد-hf-jais2-mac",
+  "agent": "anthropic/claude-opus-5-5",
+  "succeeds": "docs/probe/k12b-jais2-hf-20260926.json",
+  "host": {"machine": "MacBook Pro (Apple silicon, arm64)", "os": "Darwin 25.6.0", "ollama": "0.34.4"},
+  "status": "run_invalid_degenerate_output",
+  "model": {
+    "pulled_as": "huggingface.co/inception42/Jais-2-8B-Chat-GGUF:Q4_K_M",
+    "repo": "inception42/Jais-2-8B-Chat-GGUF",
+    "revision": "61365d41aad6a2ffa9d7b7f79dfce21b65833254",
+    "file": "Q4_K_M.gguf",
+    "gguf_sha256": "26aef0cee0f9960cb12cc74ffa1049ca5e35e8159621aa1bacd9f9f703239923",
+    "ollama_id": "f0295e22075b",
+    "architecture": "jais2",
+    "parameters": "8.09B",
+    "license": "apache-2.0"
+  },
+  "access": "The owner accepted the gated terms and linked the Ollama key; the pull succeeded after one CDN TLS-handshake timeout was retried.",
+  "k2_run": {
+    "command": "uv run python tools/measure_engine.py var/k2-sample --model huggingface.co/inception42/Jais-2-8B-Chat-GGUF:Q4_K_M --require-same-suites docs/probe/k2-qwen35-9b-sample.json --sandbox-receipt <private runtime receipt> --out <scratch>",
+    "sample": {"cases": 376, "suites": 41, "salt": "k2", "target": 300, "critical_dropped": 0},
+    "overall": {"offered": 376, "judged": 2, "passes": 1, "execution_errors": 374, "coverage": 0.0053},
+    "elapsed_s": 1080.5,
+    "published": false,
+    "why_not_published": "374 of 376 cases ended as execution errors; the raw report is kept out of the repository so that 0.0027 is never read as a score"
+  },
+  "diagnosis": [
+    {"request": "/api/chat, Arabic: ما عاصمة السعودية؟, num_predict 40", "output": "40 tokens of repeated apostrophes", "done_reason": "length"},
+    {"request": "/api/chat, English: What is the capital of France?, temperature 0, num_predict 30", "output": "30 repeated apostrophes"}
+  ],
+  "finding": "Ollama 0.34.4 loads the jais2 GGUF (architecture jais2, completion capability, ChatML stop tokens) but its generation is degenerate in Arabic and English alike, so no ك٢ number exists for Jais-2 on this path.",
+  "next": [
+    "Try the safetensors model inception42/Jais-2-8B-Chat through the MLX path (providers/mlx_provider.py) if mlx-lm supports jais2, or a newer llama.cpp/Ollama release that lists jais2 support.",
+    "Only a run whose coverage matches qwen3.5:9b (0.92 on the same sample) is comparable under ك٢."
+  ],
+  "measurement_limits": [
+    "no_score_is_published_the_run_is_invalid",
+    "diagnosis_is_two_direct_prompts_not_a_systematic_study_of_the_runtime",
+    "whether_the_fault_is_ollama_support_for_jais2_or_the_gguf_conversion_is_not_separated"
+  ]
+}
