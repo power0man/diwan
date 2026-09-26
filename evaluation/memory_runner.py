@@ -16,8 +16,9 @@
 - النسيانُ `memory_forget`، والاسترجاعُ قائمةُ المالك (`memory`).
 - السياقُ ما رآه النموذج فعلًا: جولةٌ وكيلة وجولةٌ نصّية في جلستين دائمتين لكل مشروع. والغائبُ
   يُفحص في كل كتلة ذاكرةٍ في الطلب، الحاليةِ وما قد يبقى في التاريخ؛ والحاضرُ في الكتلة الحالية.
-- النسخُ والاستعادة على المخزن مباشرةً بعد: طريقُ النسخة الاحتياطية للمشروع جزءٌ ثانٍ من ك٥٥،
-  والتقريرُ يسمّي ذلك في `paths`.
+- النسخُ والاستعادة طريقُ المنتج نفسُه (`workspace_tools/backup.py`): تُغلق الواجهة، وتُنسخ المساحةُ
+  كلُّها، وتُستعاد إلى جذرٍ جديد بإيصالات نسيان المساحة الحيّة، ثم تُفتح الواجهةُ عليه. والجلساتُ
+  تُنشأ حين تُطلب، لأنّ النسخةَ الاحتياطية لا تقبل الجلساتِ الوكيلة بعد.
 """
 from __future__ import annotations
 
@@ -159,27 +160,58 @@ class _Wired:
     """الطريقُ الموصول: خادمُ الواجهة نفسُه، بلا شبكةٍ ولا نموذجٍ حيّ."""
 
     def __init__(self, root: Path):
-        from webui.server import LocalApp
         self.provider = _ScriptedProvider()
-        self.app = LocalApp(root, model="memory-bank", model_version="0" * 64,
+        self.root, self.generation = root, 0
+        self.projects: dict[str, dict] = {}
+        self._open()
+
+    def _open(self):
+        from webui.server import LocalApp
+        self.app = LocalApp(self.root, model="memory-bank", model_version="0" * 64,
                             provider_factory=lambda: self.provider,
                             agent_provider_factory=lambda: self.provider)
-        self.projects: dict[str, dict] = {}
 
     def close(self):
         self.app.close()
+
+    def backup(self):
+        """نسخةُ المساحة كلِّها بأداة المنتج؛ والواجهةُ مغلقةٌ أثناءها كما يشترط النسخ."""
+        from workspace_tools.backup import export_workspace
+        self.generation += 1
+        archive = self.root.parent / f"backup-{self.generation}.json"
+        self.app.close()
+        try:
+            return archive, export_workspace(self.root, archive)["sha256"]
+        finally:
+            self._open()
+
+    def restore(self, backup):
+        """استعادةٌ إلى جذرٍ جديد بإيصالات نسيان المساحة الحيّة، ثم تُفتح الواجهةُ عليه."""
+        from workspace_tools.backup import restore_workspace
+        archive, sha256 = backup
+        self.generation += 1
+        destination = self.root.parent / f"restored-{self.generation}"
+        self.app.close()
+        try:
+            restore_workspace(archive, destination, sha256, tombstones_from=self.root)
+            self.root = destination
+        finally:
+            self._open()
 
     def api(self, action, **values):
         return self.app.dispatch({"action": action, **values})
 
     def project(self, name):
         if name not in self.projects:
-            pid = self.api("create_project", name=f"مشروع {name}")["id"]
-            self.projects[name] = {"id": pid, **{kind: self.api("create_session", project=pid, name=kind,
-                                                                mode=mode)["id"]
-                                                 for kind, mode in (("agent", "agent"), ("text", "text"),
-                                                                    ("proposals", "agent"))}}
+            self.projects[name] = {"id": self.api("create_project", name=f"مشروع {name}")["id"]}
         return self.projects[name]
+
+    def session(self, name, kind):
+        ids = self.project(name)
+        if kind not in ids:
+            mode = "text" if kind == "text" else "agent"
+            ids[kind] = self.api("create_session", project=ids["id"], name=kind, mode=mode)["id"]
+        return ids[kind]
 
     def store(self, name) -> MemoryStore:
         return MemoryStore(self.app.project(self.project(name)["id"]))
@@ -191,7 +223,7 @@ class _Wired:
         self.provider.responses.append(Response("", Usage(1, 1), "complete", 0, provider="memory-bank",
                                                 model_version="0" * 64, tool_calls=(call,)))
         turn = uuid.uuid4().hex
-        result = self.api("agent_ask", project=ids["id"], session=ids["proposals"], turn=turn,
+        result = self.api("agent_ask", project=ids["id"], session=self.session(name, "proposals"), turn=turn,
                           message="اقترح ما يستحق الحفظ", files=[])
         pending = [a for a in result["pending"] if a["name"] == "propose_memory"]
         if result["status"] != "awaiting_owner" or len(pending) != 1:
@@ -215,7 +247,7 @@ class _Wired:
         """ما رآه النموذجُ في جولةٍ وكيلة وجولةٍ نصّية بالسؤال نفسِه."""
         ids = self.project(name)
         seen = []
-        for action, session in (("agent_ask", ids["agent"]), ("ask", ids["text"])):
+        for action, session in (("agent_ask", self.session(name, "agent")), ("ask", self.session(name, "text"))):
             before = len(self.provider.requests)
             self.api(action, project=ids["id"], session=session, turn=uuid.uuid4().hex, message=question, files=[])
             (request,) = self.provider.requests[before:]
@@ -254,9 +286,9 @@ def run_wired_scenario(scenario: dict, root: Path) -> dict:
             elif op == "forget":
                 wired.api("memory_forget", project=wired.project(name)["id"], item_id=refs[step["ref"]])
             elif op == "backup":
-                refs[step["as"]] = wired.store(name).backup()
+                refs[step["as"]] = wired.backup()
             elif op == "restore":
-                wired.store(name).restore(refs[step["ref"]])
+                wired.restore(refs[step["ref"]])
             elif expect in ("retrieve", "context"):
                 views = ([(wired.items_text(name), wired.items_text(name))] if expect == "retrieve"
                          else wired.contexts(name, step["question"]))
@@ -307,8 +339,9 @@ def run_wired_scenario(scenario: dict, root: Path) -> dict:
 WIRED_PATHS = {"remember": "memory_remember (واجهة المالك)", "remember_without_consent": "propose_memory يرفضه المالك",
                "propose": "propose_memory (awaiting_owner)", "approve": "agent_decide ثم agent_resume",
                "forget": "memory_forget", "retrieve": "memory (قائمة المالك)",
-               "context": "طلبُ النموذج في agent_ask وask", "backup": "MemoryStore.backup (الجزء ٢: النسخة الاحتياطية)",
-               "restore": "MemoryStore.restore (الجزء ٢: النسخة الاحتياطية)"}
+               "context": "طلبُ النموذج في agent_ask وask",
+               "backup": "workspace_tools.backup.export_workspace (المساحة كلُّها)",
+               "restore": "workspace_tools.backup.restore_workspace(tombstones_from=المساحة الحيّة) إلى جذرٍ جديد"}
 
 
 def run_memory_bank(bank: dict, driver: str = "store") -> dict:

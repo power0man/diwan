@@ -33,7 +33,7 @@ def wired(tmp_path):
 def _ask(wired, name, kind, message):
     ids = wired.project(name)
     before = len(wired.provider.requests)
-    result = wired.api("agent_ask" if kind == "agent" else "ask", project=ids["id"], session=ids[kind],
+    result = wired.api("agent_ask" if kind == "agent" else "ask", project=ids["id"], session=wired.session(name, kind),
                        turn=uuid.uuid4().hex, message=message, files=[])
     (request,) = wired.provider.requests[before:]
     return result, request

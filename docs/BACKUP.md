@@ -22,9 +22,19 @@ python3 tools/workspace_backup.py backup --root var/daily-ui --output var/backup
 
 ```sh
 python3 tools/workspace_backup.py inspect --archive var/backups/first.json --sha256 'بصمة النسخة'
-python3 tools/workspace_backup.py restore --archive var/backups/first.json --sha256 'بصمة النسخة' --destination var/backups/restored-first
+python3 tools/workspace_backup.py restore --archive var/backups/first.json --sha256 'بصمة النسخة' --destination var/backups/restored-first --tombstones-from var/daily-ui
 python3 tools/serve_ui.py --root var/backups/restored-first
 ```
+
+**ذاكرة المشروع (ك٥٥):** إن كان في النسخة ذاكرةُ مشروع، فالاستعادةُ تطلب اختيارًا صريحًا لإيصالات
+النسيان، وتُرفض بدونه برمز `backup_tombstones_required`:
+- **`--tombstones-from <جذر المساحة الحيّة>`** إن بقيت المساحةُ الحيّة. ما نسيتَه فيها بعد أخذ النسخة
+  لا يعود بالاستعادة، لأن الذاكرة تُستعاد عبر `MemoryStore.restore` وحده، وإيصالاتُ المساحة الحيّة
+  والنسخة كلُّها تُطبَّق قبل أن يُكتب عنصرٌ واحد.
+- **`--no-live-tombstones`** إن فُقدت المساحةُ الحيّة. تُطبَّق إيصالاتُ النسخة وحدها، فما نُسي بعد
+  أخذها يعود. والتقريرُ يقول ذلك في `memory.live_receipts_applied`.
+
+وتقريرُ الاستعادة يعدّ عناصرَ الذاكرة في النسخة وما استُعيد منها.
 
 تشغيل الواجهة يحتاج إعداد المزود المحلي المعتاد في `DAILY-UI.md`
 و`MEDIA.md`. تشغيل الاستعادة والفحص لا يحتاج نموذجًا أو اتصالًا.
@@ -33,7 +43,8 @@ python3 tools/serve_ui.py --root var/backups/restored-first
 ## ما تحفظه النسخة
 
 المشروعات والجلسات النصية والوسائط ومدخلاتها الأصلية وسجل الجولات،
-التفضيلات، الملفات المرفوعة، المخرجات المطبقة، والمسودات غير المطبقة.
+التفضيلات، ذاكرة المشروع وإيصالات نسيانها، الملفات المرفوعة، المخرجات المطبقة، والمسودات غير المطبقة.
+والجلساتُ الوكيلة لا تُنسخ بعد، ومشروعٌ فيه جلسةٌ وكيلة تُرفض نسخته صراحة.
 المخزن الاختياري الغائب يبقى غائبًا. الملفات الأخرى أو حالة مرحلية
 غير مكتملة تُرفض صراحة ولا تُسقط من النسخة صامتًا.
 
