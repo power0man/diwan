@@ -22,14 +22,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from evaluation.agentic_runner import evaluate_success, qualified_task_id, validate_agentic_suite
-
-
-def materialize(task: dict, root: Path) -> None:
-    for name, content in task["workspace"].items():
-        target = root / name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content, encoding="utf-8")
+# بناءُ المساحة بدالّة المُشغِّل نفسِها: نصٌّ وملفّاتٌ ثنائية (ك٥٠)، لا بنسخةٍ نصّية منها
+from evaluation.agentic_runner import evaluate_success, materialize, qualified_task_id, validate_agentic_suite
 
 
 def main(argv: list[str]) -> int:

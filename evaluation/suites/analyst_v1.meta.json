@@ -1,0 +1,265 @@
+{
+ "suite_id": "analyst_v1",
+ "authored_by": "anthropic/claude-opus-5-5",
+ "generator": "tools/make_analyst_bank.py",
+ "thresholds": {
+  "pass_rate": 0.7,
+  "min_category_pass_rate": 0.5
+ },
+ "tasks": {
+  "an01": {
+   "category": "aggregation",
+   "reference_solution": {
+    "answer.json": "{\n  \"إجمالي_الإيرادات\": 19766.5\n}\n"
+   }
+  },
+  "an02": {
+   "category": "aggregation",
+   "reference_solution": {
+    "answer.json": "{\n  \"متوسط_السعر\": 14.33\n}\n"
+   }
+  },
+  "an03": {
+   "category": "aggregation",
+   "reference_solution": {
+    "answer.json": "{\n  \"عدد_الطلبات\": 19\n}\n"
+   }
+  },
+  "an04": {
+   "category": "aggregation",
+   "reference_solution": {
+    "answer.json": "{\n  \"أكبر_كمية\": 36,\n  \"عدد_الطلبات\": 2\n}\n"
+   }
+  },
+  "an05": {
+   "category": "aggregation",
+   "reference_solution": {
+    "answer.json": "{\n  \"النسبة\": 33.79\n}\n"
+   }
+  },
+  "an06": {
+   "category": "groupby",
+   "reference_solution": {
+    "result.csv": "الفرع,الكمية\nالرياض,498\nجدة,318\nالدمام,309\nمكة,290\nالمدينة,263\n"
+   }
+  },
+  "an07": {
+   "category": "groupby",
+   "reference_solution": {
+    "result.csv": "المنتج,الإيراد\nكعك,6973.20\nقهوة,5089.00\nعصير,3637.20\nشاي,3152.10\nماء,915.00\n"
+   }
+  },
+  "an08": {
+   "category": "groupby",
+   "reference_solution": {
+    "result.csv": "القسم,متوسط_الراتب\nالمبيعات,17830.25\nالتقنية,17625.82\nالموارد البشرية,17036.20\nالمالية,15734.73\n"
+   }
+  },
+  "an09": {
+   "category": "groupby",
+   "reference_solution": {
+    "result.csv": "المدينة,العدد\nالرياض,14\nتبوك,9\nجدة,8\nأبها,6\nالدمام,3\n"
+   }
+  },
+  "an10": {
+   "category": "groupby",
+   "reference_solution": {
+    "result.csv": "الفرع,قهوة,شاي,عصير,كعك,ماء\nالرياض,1941.80,347.70,1489.20,2761.20,140.10\nجدة,434.00,815.10,72.00,2199.60,224.70\nالدمام,305.20,553.85,958.80,907.20,321.30\nمكة,742.00,998.45,769.20,925.20,52.80\nالمدينة,1666.00,437.00,348.00,180.00,176.10\n"
+   }
+  },
+  "an11": {
+   "category": "filtering",
+   "reference_solution": {
+    "answer.json": "{\n  \"العدد\": 24\n}\n"
+   }
+  },
+  "an12": {
+   "category": "filtering",
+   "reference_solution": {
+    "result.csv": "الرقم,الاسم\n103,نورة العتيبي\n104,سلمان الحربي\n105,طلال الحربي\n116,رهف العتيبي\n122,دانة الزهراني\n123,زياد المطيري\n130,رهف الزهراني\n135,شهد القحطاني\n136,دانة الحربي\n139,منى المطيري\n"
+   }
+  },
+  "an13": {
+   "category": "filtering",
+   "reference_solution": {
+    "result.csv": "الطالب\nريم 1\nيوسف 2\nيوسف 3\nبدر 4\nرهف 5\nسارة 9\nزياد 10\nأروى 14\nنايف 15\nشهد 17\nأحمد 18\nدانة 19\nهند 20\nنايف 21\nغادة 22\nنورة 24\nماجد 25\nدانة 26\nمنى 27\nمنى 28\nريم 29\nطلال 30\nفهد 31\nزياد 32\nسلمان 34\nشهد 35\nرهف 36\n"
+   }
+  },
+  "an14": {
+   "category": "filtering",
+   "reference_solution": {
+    "answer.json": "{\n  \"الإيراد\": 3673.75\n}\n"
+   }
+  },
+  "an15": {
+   "category": "topk",
+   "reference_solution": {
+    "result.csv": "الترتيب,المنتج,الإيراد\n1,كعك,6973.20\n2,قهوة,5089.00\n3,عصير,3637.20\n"
+   }
+  },
+  "an16": {
+   "category": "topk",
+   "reference_solution": {
+    "result.csv": "الطالب,المعدل\nشهد 35,42.00\nيوسف 2,44.67\nفهد 31,45.00\nسارة 9,50.00\nهند 20,52.00\n"
+   }
+  },
+  "an17": {
+   "category": "topk",
+   "reference_solution": {
+    "result.csv": "القسم,الاسم,الراتب\nالمبيعات,بدر الغامدي,25928\nالتقنية,دانة الحربي,23936\nالموارد البشرية,رهف الغامدي,25726\nالمالية,طلال الدوسري,24490\n"
+   }
+  },
+  "an18": {
+   "category": "topk",
+   "reference_solution": {
+    "result.csv": "التاريخ,الكمية\n2025-03-30,69\n2025-03-29,62\n2025-04-01,60\n"
+   }
+  },
+  "an19": {
+   "category": "dates",
+   "reference_solution": {
+    "result.csv": "الشهر,الإيراد\n2025-01,3825.70\n2025-02,3300.45\n2025-03,4015.45\n2025-04,5096.35\n2025-05,3528.55\n"
+   }
+  },
+  "an20": {
+   "category": "dates",
+   "reference_solution": {
+    "result.csv": "اليوم,العدد\nالاثنين,10\nالثلاثاء,9\nالأربعاء,11\nالخميس,15\nالجمعة,15\nالسبت,17\nالأحد,13\n"
+   }
+  },
+  "an21": {
+   "category": "dates",
+   "reference_solution": {
+    "answer.json": "{\n  \"متوسط_السنوات\": 8.1\n}\n"
+   }
+  },
+  "an22": {
+   "category": "dates",
+   "reference_solution": {
+    "answer.json": "{\n  \"أول\": \"2025-01-01\",\n  \"آخر\": \"2025-05-30\",\n  \"الأيام\": 149\n}\n"
+   }
+  },
+  "an23": {
+   "category": "dates",
+   "reference_solution": {
+    "result.csv": "الأسبوع,الإيراد\n2025-W01,469.70\n2025-W02,288.00\n2025-W03,720.00\n2025-W04,1623.20\n2025-W05,990.00\n2025-W06,1134.40\n2025-W07,179.40\n2025-W08,603.65\n2025-W09,1315.80\n2025-W10,182.70\n2025-W11,126.10\n2025-W12,1443.55\n2025-W13,2065.10\n2025-W14,1724.80\n2025-W15,1009.10\n2025-W16,587.35\n2025-W17,1327.10\n2025-W18,1875.80\n2025-W19,1372.40\n2025-W20,183.60\n2025-W21,309.85\n2025-W22,234.90\n"
+   }
+  },
+  "an24": {
+   "category": "joins",
+   "reference_solution": {
+    "result.csv": "المدينة,الإجمالي\nتبوك,7972.71\nالرياض,7647.34\nالدمام,5901.69\nجدة,4020.63\nأبها,1026.03\n"
+   }
+  },
+  "an25": {
+   "category": "joins",
+   "reference_solution": {
+    "result.csv": "رقم_العميل,الاسم\n13,شهد الحربي\n19,بدر القحطاني\n22,أروى العتيبي\n23,يوسف الزهراني\n24,خالد الزهراني\n25,نايف الدوسري\n"
+   }
+  },
+  "an26": {
+   "category": "joins",
+   "reference_solution": {
+    "answer.json": "{\n  \"الاسم\": \"نورة الحربي\",\n  \"الإجمالي\": 2603.54\n}\n"
+   }
+  },
+  "an27": {
+   "category": "joins",
+   "reference_solution": {
+    "answer.json": "{\n  \"العدد\": 10\n}\n"
+   }
+  },
+  "an28": {
+   "category": "cleaning",
+   "reference_solution": {
+    "answer.json": "{\n  \"المجموع\": 414224\n}\n"
+   }
+  },
+  "an29": {
+   "category": "cleaning",
+   "reference_solution": {
+    "answer.json": "{\n  \"الصفوف\": 28\n}\n"
+   }
+  },
+  "an30": {
+   "category": "cleaning",
+   "reference_solution": {
+    "answer.json": "{\n  \"الإيراد\": 4332.7\n}\n"
+   }
+  },
+  "an31": {
+   "category": "cleaning",
+   "reference_solution": {
+    "result.csv": "المدينة,العدد\nالرياض,8\nجدة,5\nالدمام,5\n"
+   }
+  },
+  "an32": {
+   "category": "cleaning",
+   "reference_solution": {
+    "result.csv": "الشهر,العدد\n2025-01,12\n2025-02,6\n2025-03,9\n2025-04,9\n"
+   }
+  },
+  "an33": {
+   "category": "xlsx",
+   "reference_solution": {
+    "result.csv": "الصنف,الكمية,حد_الطلب\nصنف 04,28,38\nصنف 07,26,39\nصنف 09,8,40\nصنف 10,24,28\nصنف 12,6,30\nصنف 15,2,31\nصنف 19,5,37\nصنف 23,20,25\n"
+   }
+  },
+  "an34": {
+   "category": "xlsx",
+   "reference_solution": {
+    "answer.json": "{\n  \"القيمة\": 37038.3\n}\n"
+   }
+  },
+  "an35": {
+   "category": "xlsx",
+   "reference_solution": {
+    "report.xlsx": {
+     "base64": "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"
+    }
+   }
+  },
+  "an36": {
+   "category": "xlsx",
+   "reference_solution": {
+    "result.csv": "الصنف,الكمية,السعر,القيمة\nصنف 01,22,43.42,955.24\nصنف 02,30,23.21,696.30\nصنف 03,9,30.00,270.00\nصنف 04,12,12.54,150.48\nصنف 05,11,44.70,491.70\nصنف 06,16,15.11,241.76\nصنف 07,10,20.68,206.80\nصنف 08,12,36.94,443.28\nصنف 09,7,29.64,207.48\nصنف 10,27,24.63,665.01\nصنف 11,12,42.54,510.48\nصنف 12,4,44.15,176.60\n"
+   }
+  },
+  "an37": {
+   "category": "charts",
+   "reference_solution": {
+    "chart_data.csv": "الفرع,الإيراد\nالرياض,6680.00\nجدة,3745.40\nمكة,3487.65\nالدمام,3046.35\nالمدينة,2807.10\n",
+    "chart.png": {
+     "base64": "iVBORw0KGgoAAAANSUhEUgAAAeAAAAFACAAAAABBo/CnAAAChUlEQVR42u3SwQ0AIAgEQQqz/7akB2MM4GwB92CIrdGFEwAWYAEWYAEWYAEGLMACLMACLMACDFiABViAVQ94neS4gAVYgAUYMGDAgAEDBizAAizAAgwYMGDAgAVYgAVYgAEDBgwYMGDAAizAAgwYMGDAgAEDFmABFmABBgwYMGDAAizAAizAgAEDBgwYMGABFmABFmDAgAEDBizAAizAAgwYMGDAgAVYgAVYgAEDBgwYMGDAAizAAizAgAEDBgxYgAVYgAUYMGDAgAEDBizAAizAgAEDBgwYMGABFmABFmDAgAEDBizAAizAAgwYMGDAgAEDFmABFmDAgAEDBgwYsAALsAALMGDAgAEDFmABFmABBgwY8HVgjwMYMGABBgwYMGDAgAEDBgwYsP4G9jiAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAdsFDBgwYMCAAQMGARgwYLuA7QIGDNguYMAOBtjBAIMAbBewXcB2AdsFDNjBAIMAbBewXcB2AdsFDNjBAIMADAKwXcB2AdsFDNjBADsYYBCA7QK2C9guYLuAATsYYBCA7QK2C9guYLuAATsYYBCAQQC2C9guYLuAAQMG7GCAQQC2C9guYLuA7QIG7GCAQQC2C9guYLuA7QIG7GCAQQAGAdguYLuA7QK2CxiwgwEGAdguYLuA7QK2CxiwgwEGARgEYLuA7QK2CxiwgwF2MMAgANsFbBewXcB2AQN2MMAgANsFbBewXcB2AQN2MMAgAIMAbBewXcB2AQMGDNjBAIMAbBewXcB2AdsFDNjBAIMAbBew3QrAahtgwAIswAIswAIswIAFWIAFWIAFWIABC7AAC7Celr+YgNh1A1vZAAAAAElFTkSuQmCC"
+    }
+   }
+  },
+  "an38": {
+   "category": "charts",
+   "reference_solution": {
+    "chart_data.csv": "الشهر,الإيراد\n2025-01,3825.70\n2025-02,3300.45\n2025-03,4015.45\n2025-04,5096.35\n2025-05,3528.55\n",
+    "chart.png": {
+     "base64": "iVBORw0KGgoAAAANSUhEUgAAAeAAAAFACAAAAABBo/CnAAACr0lEQVR42u3SQQ0AIAwEwQrDvy3wwIP0ypyATehQ20avnACwATbABtgAG2ADDNgAG2ADbIANsAEGbIANsAE2wF23bgYYMGDAgAEDBmyAAQMGDBgwYMCAAQMGTA2wAQYMGDBgwIABAwYMGLABBgwYMGDAgAEDBgwYsAEGDBgwYMCAAQMGDBgwYMAGGDBgwIABAwYMGDBgwAYYMGDAgAEDBgwYMGDABtgAAwYMGDBgwIABAwYM2AADBgwYcAwEYMCAAQMGDBgwYMCAAQMGDBgw4O7AaQ8DDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQNO/jiAAQMGDBgwYMCAAQMGDBgwYMCAAQMG/D2wLmBdwLqAATsYYAcDDAKwLmBdwLqAdQEDdjDAIADrAtYFrAtYFzBgBwMMAjAIwLqAdQHrAgbsYIAdDDAIwLqAdQHrAtYFDNjBAIMArAtYF7AuYF3AgB0MMAjAIADrAtYFrAsYMGDADgYYBGBdwLqAdQHrAgbsYIBBANYFrAtYF7AuYMAOBtjBAIMArAtYF7AuYF3AgB0MMAjAuoB1AesC1gUM2MEAgwAMArAuYF3AuoABOxhgBwMMArAuYF3AuoB1AQN2MMAgAOsC1gWsC1gXMGAHAwwCMAjAuoB1AesCBgwYsIMBBgFYF7AuYF3AuoABOxhgEIB1AesC1gWsCxiwgwEGARgEYF3AuoB1AesCBuxggEEA1gWsC1gXsC5gwA4GGARgEIB1AesC1gUM2MEAOxhgEIB1AesC1gWsCxiwgwEGAVgXsC5gXcC6gAE7GGAQgEEA1gWsC1gXMGDAgB0MMAjAuoB1AesC1gUM2MEAgwCsC1gXsC5gXcCAbeIAAzbABtgAG2ADbIABG2ADbIANsAE2wIANsAE2wPZ0B5AhzrPuYFZeAAAAAElFTkSuQmCC"
+    }
+   }
+  },
+  "an39": {
+   "category": "charts",
+   "reference_solution": {
+    "chart_data.csv": "المنتج,النسبة\nكعك,35.28\nقهوة,25.75\nعصير,18.40\nشاي,15.95\nماء,4.63\n",
+    "chart.png": {
+     "base64": "iVBORw0KGgoAAAANSUhEUgAAAeAAAAFACAAAAABBo/CnAAACjklEQVR42u3SQREAMAgDQYTh31brgQfTZvYE5MFSR9GVEwAWYAEWYAEWYAEGLMACLMACLMACDFiABViA9R5wT3JcwAIswAIMGDBgwIABAxZgARZgAQYMGDBgwAIswAIswIABAwYMGDBgARZgAQYMGDBgwIABC7AAC7AAAwYMGDBgARZgARZgwIABAwYMGLAAC7AACzBgwIABAxZgARZgAQYMGDBgwAIswAIswIABAwYMGDBgARZgARZgwIABAwYswIoE9jiAAQMWYMCAAQMGDBgwYMCAAQuwAAMGDBgwYMCAAQMGDFiAAQMGDBgwYMCAAQMGLMCAAQMGDBgwYMCAAQOGBliAAQMGDBgwYMCAAQMGLMCAAQMGDBgwYMCAAQMWYAEGDBgwYMCAAQMGDBiwAAMGDBgwYI8DGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwICjHgcwYBCAAQO2CxgwYMCAAQMGDAIwYMB2AdsFDBgwYMCAQQAGARgwYLuAAQMGDBgwYMAgAAMGbBcwYMCAAQMGDBgEYMCAAQO2CxgwYMCAAYMADAIwYMB2AQMGDBgwYMCAQQAGDNguYLuAAQMGDBgwCMCAAQMGbBcwYMCAAQMGDBgEYMCA7QIGDBgwYMCAAYMADBiwXcB2AQMGDBgwYBCAAQMGDNguYMCAAQMGDBgwCMCAAdsFDBgwYMCAAQMGkfQ4gAE7GGAQgO0CtgvYLmC7gAE7GGAQgO0CtgvYLmC7gAE7GGAHAwwCsF3AdgHbBWwXMGAHAwwCsF3AdgHbBWwXMGAHAwwCMAjAdgHbXQLWtwEGLMACLMACLMACDFiABViABViABRiwAAuwAGu1C/x73cFWvwzkAAAAAElFTkSuQmCC"
+    }
+   }
+  },
+  "an40": {
+   "category": "charts",
+   "reference_solution": {
+    "chart_data.csv": "الفئة,العدد\n40-49,3\n50-59,9\n60-69,11\n70-79,7\n80-89,2\n90-100,4\n",
+    "chart.png": {
+     "base64": "iVBORw0KGgoAAAANSUhEUgAAAeAAAAFACAAAAABBo/CnAAACt0lEQVR42u3SCw0AIAhAQYLZv5ZGcG5M/NwrgHBG19OFEwAWYAEWYAEWYAEGLMACLMACLMACDFiABViABXhWWwgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQM+HzjNBTBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwbspwAGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAAQMGDBgwYMCAa4GTnwQYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAHwDnTQQMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwZcvBtgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIABAwYMGDBgwIA/AtbNAQYswAIswAIswAIMWIAFWIAFWIAFGLAAC7AAa2sDfdlA0bKFjwYAAAAASUVORK5CYII="
+    }
+   }
+  }
+ }
+}
