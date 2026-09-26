@@ -181,16 +181,17 @@ def _edit_file(arguments, context):
 
 
 def _export_document(arguments, context):
-    """تصديرُ مستندٍ باتّجاهٍ عربيّ (ج١٠): docx أو xlsx بحسب امتداد المسار، ويُرجع عنه بالدفتر."""
+    """تصديرُ مستندٍ باتّجاهٍ عربيّ (ج١٠): docx أو xlsx أو pdf بحسب امتداد المسار، ويُرجع عنه بالدفتر.
+    وPDF يحوّله LibreOffice إن وُجد، وإلّا رُفض بالاسم ولم يُكتب شيء."""
     path = _need(arguments, "path")
     fmt = path.rsplit(".", 1)[-1].lower() if "." in path else ""
     if fmt not in FORMATS:
         raise ToolRefused("format_unsupported", f"امتدادُ المسار أحدُ: {'، '.join(FORMATS)}")
+    _inside(context, path, writing=True)              # المسارُ قبل التصدير: لا يُشغَّل محوِّلُ PDF لطلبٍ مرفوض
     try:
         raw = export(arguments.get("document"), fmt)
     except ExportRefused as exc:
         raise ToolRefused(exc.code, exc.reason) from None
-    _inside(context, path, writing=True)
     action = context.journal.write_bytes(path, raw)
     return {"content": f"صُدِّر {action.path} ({fmt}، {len(raw)} بايت، من اليمين إلى اليسار). للرجوع: {action.action_id}",
             "action_id": action.action_id, "format": fmt, "bytes": len(raw),
@@ -248,7 +249,7 @@ EDIT_FILE = Tool(ToolSpec(
      "required": ["path", "old_text", "new_text"]}, consent="logged", reversible=True), _edit_file)
 
 EXPORT_DOCUMENT = Tool(ToolSpec(
-    "export_document", "يصدّر مستندًا باتّجاهٍ عربيّ إلى docx أو xlsx داخل مساحة العمل (بحسب امتداد المسار)، "
+    "export_document", "يصدّر مستندًا باتّجاهٍ عربيّ إلى docx أو xlsx أو pdf داخل مساحة العمل (بحسب امتداد المسار)، "
     "ويودِع ما قبله فيُمكن الرجوع. المستند: عنوانٌ وكتلٌ من heading وparagraph وlist وtable.",
     {"type": "object", "properties": {
         "path": {"type": "string"},
