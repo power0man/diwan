@@ -87,11 +87,12 @@ def _present(result):
 
 
 class AssistantWorkspace:
-    def __init__(self, session, provider, workspace, preferences=None):
+    def __init__(self, session, provider, workspace, preferences=None, memory=None):
         self.session = session
         self.provider = provider
         self.workspace = workspace
         self.preferences = preferences
+        self.memory = memory        # مخزنُ ذاكرة المشروع (ك٥٥)، أو لا شيء قبل أول حفظ
 
     def ask(self, turn_id: str, user_request: str, *, files: tuple[str, ...] = ()) -> dict:
         if not isinstance(user_request, str) or not user_request.strip():
@@ -111,7 +112,8 @@ class AssistantWorkspace:
             "attachments": documents,
         })
         context = ENVELOPE_PREFIX + canonical_bytes(value).decode("utf-8")
-        return _present(self.session.turn(turn_id, context, self.provider))
+        return _present(self.session.turn(turn_id, context, self.provider,
+                                          memory=self.memory, question=user_request))
 
     def replay(self, turn_id: str) -> dict:
         # Does not reopen selected files or refresh preferences; their original bytes

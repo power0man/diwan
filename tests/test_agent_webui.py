@@ -197,7 +197,7 @@ def test_http_capabilities_are_explicit_and_text_mode_remains_available(live):
     assert live.api("projects")["agent_enabled"] is True
     capabilities = live.api("agent_capabilities", project=ctx['project'])
     assert capabilities['execution_enabled'] is False and capabilities['execution_status'] == 'not_configured'
-    assert {item['name'] for item in capabilities['tools']} == {'read_file', 'write_file', 'list_files', 'search_files'}
+    assert {item['name'] for item in capabilities['tools']} == {'read_file', 'write_file', 'list_files', 'search_files', 'propose_memory'}
     legacy = live.api("create_session", project=ctx['project'], name="نص", mode="text")
     assert legacy['mode'] == 'text'
     live.provider.responses = [response("نص قديم")]

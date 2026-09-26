@@ -27,12 +27,14 @@ from core.contracts import Message, Request, ToolCall, ToolSpec, _message_payloa
 from core.ledger import GENESIS, Ledger, LedgerCorrupt
 from core.run import RouteRefused
 from core.validate import validated
-from services.agent_workspace import model_facing_input
+from memory.store import MemoryRefused, turn_memory, valid_turn_memory
+from services.agent_workspace import INPUT_PREFIX, INPUT_PREFIX_V2, decode_input, model_facing_input
 
 MAX_STATE_BYTES = 32 * 1024 * 1024
 MAX_LEDGER_BYTES = 32 * 1024 * 1024
 TERMINAL = frozenset({"complete", "truncated", "timed_out", "failed", "refused", "step_limit", "cancelled"})
 _TURN_KEYS = frozenset({"turn_id", "text", "initial_messages", "input_digest", "calls", "result", "transcript"})
+_OPTIONAL_TURN_KEYS = frozenset({"thinking", "memory"})
 
 
 def _copy(value):
@@ -54,6 +56,17 @@ def _user_message(text):
     والواجهة، و`input_digest` يُحسب عليه لا على المحجور.
     """
     return Message("user", model_facing_input(text))
+
+
+def _task_message(turn):
+    """رسالةُ المهمّة كما رآها النموذج في كل طلبٍ من جولتها: كتلةُ الذاكرة ثم المدخل.
+
+    هي نفسُها ما يبنيه `run_agent(memory=…)`. والتاريخُ (`transcript`) يحفظ المدخلَ بلا
+    الكتلة، فلا يعود عنصرٌ نُسي إلى جولةٍ لاحقة من تاريخ هذه.
+    """
+    plain = _user_message(turn["text"])
+    block = turn.get("memory", {}).get("block", "")
+    return Message("user", f"{block}\n\n{plain.content}") if block else plain
 
 
 class _SessionLedger(Ledger):
@@ -122,7 +135,7 @@ class AgentSession:
                  project_id: str, registry: ToolRegistry, model: str, model_version: str,
                  max_steps: int = 8, max_output: int = 1024, deadline_s: float = 120,
                  max_context_chars: int = 24000, max_turns: int = 128,
-                 system: str = SYSTEM):
+                 system: str = SYSTEM, memory=None):
         if not _id(session_id) or not _id(project_id):
             _fail("session_identity_invalid", "هوية مشروع وجلسة صريحتان مطلوبتان")
         if not isinstance(registry, ToolRegistry) or not _text(model) or not _text(model_version):
@@ -143,6 +156,9 @@ class AgentSession:
         if self.root == self.workspace or self.workspace in self.root.parents:
             _fail("control_root_in_workspace", "دليل التحكم يجب أن يكون خارج مساحة الفعل")
         self.session_id, self.project_id, self.registry = session_id, project_id, registry
+        # مخزنُ ذاكرة المشروع (ك٥٥) يمدّ الجولاتِ الجديدة بكتلتها؛ ولا يدخل الإعداد، فالجولةُ
+        # المحفوظة تحمل كتلتها بنفسها، وإعادةُ عرضها واستئنافُها لا يقرآن المخزن.
+        self.memory = memory
         self._fd = None
         self._thread_lock = threading.Lock()
         try:
@@ -327,20 +343,21 @@ class AgentSession:
             for turn in state["turns"]:
                 # طلبُ التفكير مفتاحٌ اختياريّ قيمتُه True وحدها (ك٤٧)، فحالاتُ ما قبله صالحة كما هي
                 thinking = turn.get("thinking", False)
-                if (set(turn) - {"thinking"} != _TURN_KEYS or ("thinking" in turn and thinking is not True)
+                if (set(turn) - _OPTIONAL_TURN_KEYS != _TURN_KEYS or ("thinking" in turn and thinking is not True)
+                        or ("memory" in turn and not valid_turn_memory(turn["memory"]))
                         or not _id(turn["turn_id"]) or turn["turn_id"] in seen or not _text(turn["text"])
                         or unresolved or turn["initial_messages"] != previous
                         or turn["input_digest"] != self._input_digest(turn)
                         or not isinstance(turn["calls"], list) or len(turn["calls"]) > self.config["max_steps"]):
                     _fail("state_corrupt", "مدخلات الجولة أو ترتيبها غير صالح")
                 seen.add(turn["turn_id"])
-                self._request(_messages(turn["initial_messages"]) + (_user_message(turn["text"]),), thinking)
+                self._request(_messages(turn["initial_messages"]) + (_task_message(turn),), thinking)
                 for intent in turn["calls"]:
                     payload = intent["request"]
                     request = self._request(_messages(payload["messages"]), thinking)
                     expected_key = "agent-" + digest({"request": payload, "session_id": self.session_id,
                                                       "turn_id": turn["turn_id"]})
-                    prefix = turn["initial_messages"] + [_message_payload(_user_message(turn["text"]))]
+                    prefix = turn["initial_messages"] + [_message_payload(_task_message(turn))]
                     if (set(intent) != {"request", "request_digest", "idempotency_key"}
                             or payload != request.fingerprint_payload() or digest(payload) != intent["request_digest"]
                             or payload["messages"][:len(prefix)] != prefix
@@ -370,7 +387,8 @@ class AgentSession:
     def _input_digest(self, turn):
         return digest({"config": digest(self.config), "turn_id": turn["turn_id"],
                        "text": turn["text"], "initial_messages": turn["initial_messages"],
-                       **({"thinking": True} if turn.get("thinking") else {})})
+                       **({"thinking": True} if turn.get("thinking") else {}),
+                       **({"memory": turn["memory"]} if "memory" in turn else {})})
 
     def _verify_result(self, turn, entries):
         result = turn["result"]
@@ -381,7 +399,7 @@ class AgentSession:
             _fail("state_corrupt", "نتيجة الجولة غير صالحة")
         by_digest = {entry["digest"]: entry["record"] for entry in entries}
         intents = {item["idempotency_key"]: item for item in turn["calls"]}
-        messages = list(_messages(turn["initial_messages"])) + [_user_message(turn["text"])]
+        messages = list(_messages(turn["initial_messages"])) + [_task_message(turn)]
         for index, step in enumerate(result["steps"]):
             record = by_digest.get(step["ledger_digest"])
             if (record is None or step["index"] != index
@@ -431,8 +449,14 @@ class AgentSession:
                     or result["steps"][-1]["tool_calls"]
                     or result["steps"][-1]["stop_reason"] != "complete"
                     or result["content"] != result["steps"][-1]["content"]
-                    or turn["transcript"] != [_message_payload(message) for message in messages]):
+                    or turn["transcript"] != self._transcript(turn, messages)):
                 _fail("state_corrupt", "اكتمال أو تاريخ لا يطابق السجل وإيصالات الأدوات")
+
+    @staticmethod
+    def _transcript(turn, messages):
+        at = len(turn["initial_messages"])
+        plain = [*messages[:at], _user_message(turn["text"]), *messages[at + 1:]]
+        return [_message_payload(message) for message in plain]
 
     def _find(self, state, turn_id):
         if not _id(turn_id):
@@ -480,10 +504,29 @@ class AgentSession:
             _fail("turn_unresolved", "توجد جولة غير محسومة؛ استأنفها أولًا")
         complete = [turn for turn in state["turns"] if turn["result"]["status"] == "complete"]
         initial = complete[-1]["transcript"] if complete else [_message_payload(Message("system", self.config["system"]))]
-        request = self._request(_messages(initial) + (_user_message(text),), thinking)
+        self._check_context({"text": text, "initial_messages": initial}, thinking)
+        return None, initial
+
+    def _check_context(self, turn, thinking):
+        request = self._request(_messages(turn["initial_messages"]) + (_task_message(turn),), thinking)
         if len(canonical_bytes(request.fingerprint_payload()).decode("utf-8")) > self.config["max_context_chars"]:
             _fail("context_limit", "سياق الجلسة تجاوز الحد؛ أنشئ جلسة جديدة")
-        return None, initial
+
+    def _memory_for(self, text):
+        """كتلةُ ذاكرة المشروع لجولةٍ جديدة، أو لا شيء. والسؤالُ طلبُ المستخدم لا غلافُ المدخل."""
+        question = (decode_input(text)["user_request"] if text.startswith((INPUT_PREFIX, INPUT_PREFIX_V2))
+                    else text)
+        try:
+            return turn_memory(self.memory, question)
+        except MemoryRefused as exc:
+            _fail(exc.code, exc.reason)
+
+    def memory_references(self, sha256):
+        """جولاتُ هذه الجلسة التي رأى النموذجُ فيها العنصرَ بهذه البصمة (§٣.٥)، بالمعرّف لا بالنص."""
+        with self._lock():
+            state = self._load()
+            return [f"agent:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
+                    if sha256 in turn.get("memory", {}).get("items", ())]
 
     def _stopped_steps(self, turn):
         """Restore evidence only: no provider, registry invocation or new receipt.
@@ -600,9 +643,14 @@ class AgentSession:
         """
         with self._lock():
             state = self._load()
-            existing, _ = self._admit_turn(state, turn_id, text, thinking)
-            return ({"status": "replayed", "result": self._public(existing)} if existing is not None
-                    else {"status": "ready"})
+            existing, initial = self._admit_turn(state, turn_id, text, thinking)
+            if existing is not None:
+                return {"status": "replayed", "result": self._public(existing)}
+            # كتلةُ الذاكرة تُحسب في القبول أيضًا: فلا يرفض `start_turn` بحدّ السياق بعد نسخ المرفقات
+            memory = self._memory_for(text)
+            if memory:
+                self._check_context({"text": text, "initial_messages": initial, "memory": memory}, thinking)
+            return {"status": "ready"}
 
     def start_turn(self, turn_id, text, provider, *, thinking=False):
         with self._lock():
@@ -613,10 +661,14 @@ class AgentSession:
                 return self._public(existing)
             if getattr(provider, "is_local", None) is not True:
                 _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
+            memory = self._memory_for(text)
             turn = {"turn_id": turn_id, "text": text, "initial_messages": _copy(initial),
                     "input_digest": "", "calls": [], "result": None, "transcript": [],
                     # يُحفظ حين يُطلب فقط (ك٤٧): جولاتُ ما قبله بلا مفتاح
-                    **({"thinking": True} if thinking else {})}
+                    **({"thinking": True} if thinking else {}),
+                    **({"memory": memory} if memory else {})}
+            if memory:
+                self._check_context(turn, thinking)
             turn["input_digest"] = self._input_digest(turn)
             state["turns"].append(turn)
             self._save(state)
@@ -650,7 +702,8 @@ class AgentSession:
                             action_store=self.action_store, session_id=self.session_id, turn_id=turn["turn_id"],
                             initial_messages=_messages(turn["initial_messages"]),
                             stop_check=lambda: self._stop_signals.requested(turn),
-                            thinking=turn.get("thinking", False))
+                            thinking=turn.get("thinking", False),
+                            memory=turn.get("memory", {}).get("block", ""))
             turn["result"] = {"turn_id": turn["turn_id"], "content": run.answer, "status": run.status,
                               "error_code": run.code, "steps": [{"index": step.index, "content": step.content,
                                   "request_digest": step.request_digest, "ledger_digest": step.ledger_digest,
@@ -725,7 +778,8 @@ class AgentSession:
             return {"schema_version": 2, "session_id": self.session_id, "project_id": self.project_id,
                     "workspace_root": str(self.workspace),
                     "turns": [{"turn_id": turn["turn_id"], "text": turn["text"], "result": self._public(turn),
-                               **({"thinking": True} if turn.get("thinking") else {})}
+                               **({"thinking": True} if turn.get("thinking") else {}),
+                               **({"memory_items": len(turn["memory"]["items"])} if "memory" in turn else {})}
                               for turn in state["turns"]],
                     "pending": [view for view in self.action_store.pending()
                                 if any(turn["turn_id"] == view["position"]["turn_id"]

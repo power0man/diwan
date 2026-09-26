@@ -144,7 +144,12 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
               system: str = SYSTEM, idempotency_prefix: str | None = None,
               action_store=None, session_id: str | None = None,
               turn_id: str | None = None, initial_messages: tuple[Message, ...] = (),
-              stop_check=None, thinking: bool = False) -> Run:
+              stop_check=None, thinking: bool = False, memory: str = "") -> Run:
+    """`memory` كتلةُ ذاكرة المشروع (ك٥٥)، محجورةٌ مسيَّجة سلفًا (`memory.store`).
+
+    تدخل رسالةَ المهمّة في كل طلبٍ من هذه الجولة، ولا تدخل `transcript`: فالجولةُ
+    التالية تبني كتلتها من المخزن حين تبدأ، ولا يعود إليها عنصرٌ نُسي من تاريخ جولةٍ سابقة.
+    """
     if not isinstance(task, str) or not task.strip():
         raise ValueError("المهمّةُ نصٌّ غير فارغ")
     if type(max_steps) is not int or not 1 <= max_steps <= 64:
@@ -155,12 +160,20 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
         raise ValueError("stop_check must be callable")
     if not isinstance(thinking, bool):
         raise ValueError("طلبُ التفكير True أو False")
+    if not isinstance(memory, str):
+        raise ValueError("كتلةُ الذاكرة نصّ")
     def stopped():
         return stop_check is not None and stop_check() is True
     specs = registry.specs()
     messages = list(initial_messages) if initial_messages else [Message("system", system)]
     messages.append(Message("user", task))
+    task_at = len(messages) - 1
     steps: list[Step] = []
+
+    def outgoing():
+        if not memory:
+            return tuple(messages)
+        return (*messages[:task_at], Message("user", f"{memory}\n\n{task}"), *messages[task_at + 1:])
 
     def finish(status, code, answer, pending=()):
         return Run(status, code, answer, tuple(steps), tuple(pending), tuple(messages))
@@ -172,7 +185,7 @@ def run_agent(task: str, provider, registry: ToolRegistry, context: ToolContext,
     for index in range(max_steps):
         if stopped():
             return finish("cancelled", "stop_requested", steps[-1].content if steps else "")
-        request = Request(messages=tuple(messages), model=model,
+        request = Request(messages=outgoing(), model=model,
                           model_version=model_version, max_output=max_output,
                           deadline_s=deadline_s, data_policy=data_policy,
                           idempotency_key=None, tools=specs, thinking=thinking)

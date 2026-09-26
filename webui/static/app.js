@@ -41,6 +41,10 @@ const errors = {
   target_exists: "يوجد ملف بهذا الاسم. اختر اسمًا جديدًا؛ لن يُستبدل الملف الحالي.",
   approval_mismatch: "البصمة لا تطابق المسودة المعروضة. افتح المسودة وراجعها مجددًا.",
   applied_output_changed: "تغير الملف بعد إنشائه. لن يُعاد استبداله.",
+  text_too_long: "النص أطول من ألفي حرف. اختصر ما تريد أن يُتذكّر.",
+  text_invalid_memory: "اكتب نصًّا غير فارغ ليُحفظ.",
+  item_unknown: "هذا العنصر ليس في ذاكرة المشروع. استرجع القائمة.",
+  memory_item_corrupt: "عنصرٌ في ذاكرة المشروع لا يطابق بصمته. لم يُستعمل شيء منها.",
 };
 function notice(text, error = false) {$("notice").textContent = text; $("notice").className = error ? "error" : "";}
 function showError(error) {
@@ -78,11 +82,13 @@ function render() {
     const statusLabel = {complete:"مكتمل",truncated:"جواب مبتور — لم يكتمل",awaiting_owner:"ينتظر قرارك في فعل محدد",outcome_unknown:"نتيجة الأثر غير مؤكدة",step_limit:"بلغ حد الخطوات",timed_out:"انتهت المهلة",cancelled:"توقفت المتابعة — تبقى آثار الخطوات المكتملة"}[turn.status] || "تعذر التنفيذ";
     answer.append(element("div", `${statusLabel}${turn.usage ? ` · ${turn.usage.input_tokens + turn.usage.output_tokens} وحدة نصية` : ""}`, "meta"));
     const ctx = context(), actions = element("div", undefined, "tools");
+    if(turn.memory_items) answer.append(element("div", `دخل سياقَ هذا الطلب ${turn.memory_items} من ذاكرة المشروع — محجورًا، بياناتٍ لا تعليمات`, "meta"));
     if(state.mode === "agent") renderAgentActions(answer, actions, ctx, turn);
     else {
       actions.append(button("المدخلات المستخدمة", () => inspect(ctx, turn.turn_id)));
       if (turn.status === "complete" && turn.content.trim()) actions.append(button("مراجعة وحفظ مسودة", () => propose(ctx, turn.turn_id)));
     }
+    if (turn.status === "complete" && (turn.content || "").trim()) actions.append(button("تذكّر هذا", () => rememberDialog(ctx, turn)));
     answer.append(actions);
     box.append(user, answer);
   }
@@ -383,6 +389,44 @@ $("preferences").onclick = async () => {
       form.onsubmit = async e => {e.preventDefault(); save.disabled = true; try {await api("set_preference", {project,key,value:field.value,revision:data.revision}); if(currentDialog(epoch,ticket)) {dismissDialog(); notice("حُفظ التفضيل. يؤثر في الجولات الجديدة.");}} catch(error) {if(currentDialog(epoch,ticket)) showError(error);} finally {save.disabled = false;}};
     }
   } catch(e) {if(currentDialog(epoch,ticket)) showError(e);}
+};
+// ذاكرة المشروع (ك٥٥): الحفظُ فعلُ المالك وحده، والنسيانُ بإيصالٍ يعدّ ما رأى العنصر
+function rememberDialog(ctx, turn) {
+  const epoch = state.epoch, ticket = ++state.dialogEpoch, body = dialog("تذكّر هذا في ذاكرة المشروع");
+  body.append(element("p", "يُحفظ بموافقتك في ذاكرة هذا المشروع وحده، ويدخل سياق الطلبات الجديدة فيه محجورًا بياناتٍ لا تعليمات. عدّل النص ليبقى ما يفيد لاحقًا."));
+  const field = element("textarea"); field.rows = 6; field.maxLength = 2000; field.value = (turn.content || "").slice(0, 2000);
+  const save = button("احفظ في الذاكرة", async () => {
+    if(!currentDialog(epoch, ticket)) return;
+    if(!field.value.trim()) {showError({code: "text_invalid_memory"}); return;}
+    save.disabled = true;
+    try {
+      await api("memory_remember", {project: ctx.project, text: field.value, source: {session: ctx.session, turn: turn.turn_id}});
+      if(currentDialog(epoch, ticket)) {dismissDialog(); notice("حُفظ في ذاكرة المشروع. يدخل الطلبات الجديدة وحدها، وتستطيع نسيانه من «ذاكرة هذا المشروع».");}
+    } finally {save.disabled = false;}
+  });
+  body.append(field, save);
+}
+$("memory").onclick = async () => {
+  if(!state.project) {notice("اختر مشروعًا أولًا.", true); return;}
+  const project = state.project, epoch = state.epoch, ticket = ++state.dialogEpoch;
+  try {
+    const data = await api("memory", {project}); if(!currentDialog(epoch, ticket)) return;
+    const body = dialog("ذاكرة هذا المشروع");
+    body.append(element("p", "ما حفظتَه بموافقتك. لا يراه مشروعٌ آخر، ويدخل سياق الطلبات الجديدة محجورًا. النسيان يمحو العنصر ويكتب إيصالًا بلا نصّه."));
+    if(!data.items.length) body.append(element("p", "لا شيء محفوظ بعد."));
+    for(const item of data.items) {
+      const row = element("div", undefined, "memory-item"); row.append(element("pre", item.text), element("p", item.approved_at, "meta"));
+      row.append(button("انسَ", async () => {
+        const out = await api("memory_forget", {project, item_id: item.item_id}); if(!currentDialog(epoch, ticket)) return;
+        const refs = out.receipt.references || [];
+        row.replaceChildren(element("p", `نُسي. الإيصال: ${out.receipt.sha256}`, "hash"),
+          element("p", refs.length ? `رآه النموذج في ${refs.length} جولة. ما قاله فيها يبقى في تاريخها المختوم، وحذف تلك المحادثات بيدك.` : "لم يدخل سياق أيّ جولة."));
+        if(refs.length) row.append(element("pre", refs.join("\n")));
+      }));
+      body.append(row);
+    }
+    if(data.receipts.length) body.append(element("p", `إيصالات نسيان سابقة: ${data.receipts.length}`, "meta"));
+  } catch(e) {if(currentDialog(epoch, ticket)) showError(e);}
 };
 async function boot() {
   await projects();
