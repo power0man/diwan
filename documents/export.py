@@ -335,7 +335,8 @@ def to_pdf(document: dict, *, converter: str | None = None, timeout_s: float = P
         raise ExportRefused("pdf_converter_unavailable",
                             "تصديرُ PDF يحتاج LibreOffice (soffice) على هذا الجهاز؛ وdocx وxlsx متاحان بدونه")
     with tempfile.TemporaryDirectory(prefix="diwan-pdf-") as tmp:
-        workdir = Path(tmp)
+        workdir = Path(tmp).resolve()           # على الماك /var رابطٌ إلى /private/var
+        tmp = str(workdir)
         (workdir / "document.docx").write_bytes(docx)
         env = {key: os.environ[key] for key in _ENV_KEEP if key in os.environ}
         env.update(HOME=tmp, TMPDIR=tmp, TEMP=tmp, TMP=tmp)
