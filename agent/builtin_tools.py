@@ -1,4 +1,4 @@
-"""سبعُ أدواتٍ أولى — درجةُ كلٍّ منها تتبع أثرَها لا خطورةَ اسمها.
+"""ثماني أدواتٍ أولى — درجةُ كلٍّ منها تتبع أثرَها لا خطورةَ اسمها.
 
   auto   — لا أثرَ يبقى بعد النداء (قراءةٌ وبحثٌ وسردٌ واختبارات).
   logged — أثرٌ يبقى وهو **رَجعيّ** بدفتر الرجوع (كتابةٌ داخل المساحة).
@@ -17,6 +17,7 @@ import re
 
 from core.contracts import ToolSpec
 from core.execution import execute_candidate
+from documents.export import FORMATS, ExportRefused, export
 from agent.registry import Tool, ToolContext, ToolRefused
 from workspace_tools.files import _relative
 
@@ -179,6 +180,23 @@ def _edit_file(arguments, context):
             "reverts_to": action.before_sha256[:12]}
 
 
+def _export_document(arguments, context):
+    """تصديرُ مستندٍ باتّجاهٍ عربيّ (ج١٠): docx أو xlsx بحسب امتداد المسار، ويُرجع عنه بالدفتر."""
+    path = _need(arguments, "path")
+    fmt = path.rsplit(".", 1)[-1].lower() if "." in path else ""
+    if fmt not in FORMATS:
+        raise ToolRefused("format_unsupported", f"امتدادُ المسار أحدُ: {'، '.join(FORMATS)}")
+    try:
+        raw = export(arguments.get("document"), fmt)
+    except ExportRefused as exc:
+        raise ToolRefused(exc.code, exc.reason) from None
+    _inside(context, path, writing=True)
+    action = context.journal.write_bytes(path, raw)
+    return {"content": f"صُدِّر {action.path} ({fmt}، {len(raw)} بايت، من اليمين إلى اليسار). للرجوع: {action.action_id}",
+            "action_id": action.action_id, "format": fmt, "bytes": len(raw),
+            "reverts_to": "غير موجود" if action.before_sha256 is None else action.before_sha256[:12]}
+
+
 # ————— owner: لا يُردّ —————
 
 def _run_command(arguments, context):
@@ -229,13 +247,30 @@ EDIT_FILE = Tool(ToolSpec(
                                       "new_text": {"type": "string"}},
      "required": ["path", "old_text", "new_text"]}, consent="logged", reversible=True), _edit_file)
 
+EXPORT_DOCUMENT = Tool(ToolSpec(
+    "export_document", "يصدّر مستندًا باتّجاهٍ عربيّ إلى docx أو xlsx داخل مساحة العمل (بحسب امتداد المسار)، "
+    "ويودِع ما قبله فيُمكن الرجوع. المستند: عنوانٌ وكتلٌ من heading وparagraph وlist وtable.",
+    {"type": "object", "properties": {
+        "path": {"type": "string"},
+        "document": {"type": "object", "properties": {
+            "title": {"type": "string"},
+            "blocks": {"type": "array", "items": {"type": "object", "properties": {
+                "type": {"type": "string", "enum": ["heading", "paragraph", "list", "table"]},
+                "text": {"type": "string"}, "level": {"type": "integer"},
+                "items": {"type": "array", "items": {"type": "string"}},
+                "rows": {"type": "array", "items": {"type": "array"}},
+                "header": {"type": "boolean"}, "name": {"type": "string"}},
+                "required": ["type"]}}},
+            "required": ["blocks"]}},
+     "required": ["path", "document"]}, consent="logged", reversible=True), _export_document)
+
 RUN_COMMAND = Tool(ToolSpec(
     "run_command", "يشغّل أمرًا في مساحة العمل — أثرُه لا يُردّ، فينتظر إذن المالك.",
     {"type": "object", "properties": {"argv": {"type": "array",
                                                "items": {"type": "string"}}},
      "required": ["argv"]}, consent="owner"), _run_command)
 
-DEFAULT_TOOLS = (READ_FILE, SEARCH_FILES, LIST_FILES, RUN_TESTS, WRITE_FILE, EDIT_FILE, RUN_COMMAND)
+DEFAULT_TOOLS = (READ_FILE, SEARCH_FILES, LIST_FILES, RUN_TESTS, WRITE_FILE, EDIT_FILE, EXPORT_DOCUMENT, RUN_COMMAND)
 
 
 def get_sovereign_tools() -> tuple[Tool, ...]:
