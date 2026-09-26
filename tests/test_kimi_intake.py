@@ -216,3 +216,19 @@ def test_an_open_only_delivery_must_carry_every_current_file_and_case(tmp_path):
     assert not empty["passed"] and "open_file_missing" in _codes(empty, "replacement")
     assert _codes(intake(src, open_only=True, current=tmp_path / "absent"), "replacement") == {
         "current_open_bank_missing"}
+
+
+def test_an_open_only_delivery_must_keep_every_sidecar_and_its_tasks(tmp_path):
+    """ملاحظةُ Codex على #128: الملفُّ الجانبيّ كان خارج الحصر، فيمحو التوزيعُ حلولَه المرجعية بصمت."""
+    import shutil
+    src = delivery(tmp_path)
+    shutil.rmtree(src / "sealed")
+    meta = {"tasks": {"t1": {"reference_solution": {"notes.txt": "new"}}}}
+    _write(src / "open" / "tier_d" / "kimi_d_001.meta.json", meta)
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    assert intake(src, open_only=True, current=current)["passed"]
+    _write(src / "open" / "tier_d" / "kimi_d_001.meta.json", {"tasks": {}})
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_case_missing"}
+    (src / "open" / "tier_d" / "kimi_d_001.meta.json").unlink()
+    assert _codes(intake(src, open_only=True, current=current), "replacement") == {"open_file_missing"}

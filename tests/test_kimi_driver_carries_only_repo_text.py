@@ -105,3 +105,13 @@ def test_setup_refuses_any_existing_current_folder_not_only_its_open_half(tmp_pa
     done = _run(["setup"], tmp_path)
     assert done.returncode != 0
     assert not (tmp_path / "current" / "open").exists()
+
+
+def test_the_open_only_bundle_never_asks_kimi_for_a_sealed_half(tmp_path):
+    """ملاحظةُ Codex على #128: الرأسُ قال «لا sealed/» والتحديثُ بعده طلب بيانًا ومحجوبًا، فتناقضت الحزمة."""
+    request = (ROOT / "docs" / "external" / "KIMI-NEXT.md").read_text(encoding="utf-8").split("\n---\n", 1)[1]
+    assert "أصدر `sealed/MANIFEST.json`" not in request
+    assert "`open/` و`sealed/` كما في v1.1" not in request
+    assert "ولا `sealed/`" in request and "هذه الدورةُ للشطر المفتوح وحده" in request
+    header = (ROOT / "docs" / "external" / "KIMI-WORKSPACE-HEADER.md").read_text(encoding="utf-8")
+    assert "يتقدّم على كل ما يخالفه بعده" in header

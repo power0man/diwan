@@ -114,11 +114,14 @@ def check_manifest(src: Path) -> dict:
 
 
 def _open_ids(root: Path) -> dict[str, set]:
+    """كلُّ ملفٍّ بمعرّفاته. والملفُّ الجانبيّ (`.meta.json`) داخلٌ بمفاتيح مهامّه، فحلولُه المرجعية ومصادرُه تُمحى معه."""
     out = {}
     for path in sorted(root.rglob("*.json")):
-        if path.name.endswith(".meta.json"):
-            continue
         data = _json(path)
+        if path.name.endswith(".meta.json"):
+            tasks = data.get("tasks") if isinstance(data, dict) else None
+            out[path.relative_to(root).as_posix()] = set(tasks) if isinstance(tasks, dict) else set()
+            continue
         items = (data.get("cases") or data.get("tasks") or []) if isinstance(data, dict) else []
         out[path.relative_to(root).as_posix()] = {
             item.get("case_id") or item.get("task_id") for item in items if isinstance(item, dict)}
