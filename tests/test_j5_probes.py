@@ -633,7 +633,10 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
              "A /tmp/sxng_cache_ENGINES_CACHE.db-wal")
     monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, changes=mac_k))
     assert j5._searxng("http://127.0.0.1:8888", "searxng", "docker")[1]["writable_layer_changes"] == []
-    for extra in ("A /tmp/other.sock", "A /etc/ssl/certs/evil.pem", "A /etc/ssl/openssl.cnf", "A /tmp/sxng_cache"):
+    # ولا جارُ الحزمة باسمها، ولا ما تحت اسمها لو صارت مجلّدًا، ولا مخبأٌ بغير اسم الصورة (ملاحظة Codex على #144)
+    for extra in ("A /tmp/other.sock", "A /etc/ssl/certs/evil.pem", "A /etc/ssl/openssl.cnf", "A /tmp/sxng_cache",
+                  "A /etc/ssl/certs/ca-certificates.crt.evil", "A /etc/ssl/certs/ca-certificates.crt/evil.pem",
+                  "A /tmp/sxng_cache_evil", "A /tmp/sxng_cache_DATA_CACHE.db/x", "A /tmp/sxng_cache_DATA_CACHE.db-evil"):
         monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, changes=(*mac_k, extra)))
         with pytest.raises(SystemExit) as refused:
             j5._searxng("http://127.0.0.1:8888", "searxng", "docker")

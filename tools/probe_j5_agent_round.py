@@ -85,10 +85,12 @@ SOURCES = ("core/execution.py", "agent/web_search.py", "agent/builtin_tools.py",
 # ما يجوز أن يُركَّب في حاوية SearXNG: إعداداتُها ومخبؤها وحدهما. فتركيبٌ فوق برنامجها أو مدخلها يُبقي `.Path` و`.Args`
 # والصورةَ والمنفذَ كما هي ويشغّل غيرَها (ملاحظة Codex على #144)
 SEARXNG_MOUNTS = ("/etc/searxng", "/var/cache/searxng")
-# وما تكتبه صورةُ SearXNG نفسُها في تشغيلها العاديّ، بعينه لا بمجلّده: مخبؤها في /tmp (قواعدُ SQLite وملفّاتُ WAL لها)،
-# وحزمةُ الشهادات التي يحدّثها مدخلُها عند الإقلاع. قيس على الماك في جولة k المرفوضة على 5023045 (#144): المساراتُ المرفوضةُ
-# كلُّها من هذين، ولا يُقبل في /tmp أو /etc/ssl سواهما
-SEARXNG_RUNTIME_WRITES = ("/tmp/sxng_cache_", "/etc/ssl/certs/ca-certificates.crt")
+# وما تكتبه صورةُ SearXNG نفسُها في تشغيلها العاديّ، بعينه لا بمجلّده ولا بجاره ولا بما تحته: حزمةُ الشهادات التي يحدّثها
+# مدخلُها عند الإقلاع باسمها كاملًا، ومخبؤها في /tmp قواعدُ SQLite باسمٍ من الصورة المثبَّتة (وملفّا WAL وSHM لكلٍّ). قيس على
+# الماك في جولة k المرفوضة على 5023045 (#144): المساراتُ المرفوضةُ كلُّها من هذين، ولا يُقبل في /tmp أو /etc/ssl سواهما؛
+# و«ca-certificates.crt.evil» أو ملفٌّ تحت اسم الحزمة لو صارت مجلّدًا ليسا الحزمةَ (ملاحظة Codex على #144)
+SEARXNG_RUNTIME_FILES = ("/etc/ssl/certs/ca-certificates.crt",)
+SEARXNG_RUNTIME_CACHE = re.compile(r"/tmp/sxng_cache_[A-Z_]+\.db(-wal|-shm)?")
 # الصورةُ المثبَّتة بالبصمة في docs/guides/G5.md (الخطوتان ٢١–٢٢)، وقيست بها ج٥ أول مرّة
 PINNED_SEARXNG = "searxng/searxng@sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6"
 # عنوانُ الجهاز حرفيًّا لا اسمًا: «localhost» يُحلّ إلى أحدهما، والحاويةُ تنشر على عنوانٍ بعينه (ملاحظة Codex على #144)
@@ -195,8 +197,8 @@ def _foreign_changes(changes: list[tuple[str, str]]) -> list[str]:
     وحده، فمفسّرٌ أو مكتبةٌ أو صدفةٌ مُبدَلة تشغّل غيرَها بالعملية نفسِها (ملاحظة Codex على #144). وتغيُّرُ مجلّدٍ أبٍ لهما
     («C /etc») هو أثرُ إنشاء نقطة التركيب فيه لا غير."""
     allowed = lambda path: (any(path == m or path.startswith(m + "/") for m in SEARXNG_MOUNTS)
-                            or any(path.startswith(prefix) for prefix in SEARXNG_RUNTIME_WRITES))
-    roots = (*SEARXNG_MOUNTS, *SEARXNG_RUNTIME_WRITES)
+                            or path in SEARXNG_RUNTIME_FILES or SEARXNG_RUNTIME_CACHE.fullmatch(path) is not None)
+    roots = (*SEARXNG_MOUNTS, *SEARXNG_RUNTIME_FILES, "/tmp/sxng_cache_")
     parent = lambda kind, path: kind == "C" and any(root.startswith(path.rstrip("/") + "/") for root in roots)
     return sorted(path for kind, path in changes if not (allowed(path) or parent(kind, path)))
 
@@ -460,7 +462,7 @@ def main(argv=None) -> int:
             "searxng_container_runs_its_image_default_entrypoint_and_command_on_a_port_the_image_exposes",
             "searxng_container_mounts_only_its_configuration_and_cache",
             "searxng_writable_layer_unchanged_outside_its_mounts_and_its_named_runtime_writes_before_and_after_the_round",
-            "files_under_the_searxng_cache_prefix_and_the_ca_bundle_are_allowed_by_name_not_inspected",
+            "the_searxng_cache_files_and_the_ca_bundle_are_allowed_by_their_exact_names_not_inspected",
             "every_loaded_repo_module_is_hashed_before_the_measured_code_is_imported_and_must_match_after_the_round",
             "every_loaded_repo_module_is_compiled_from_its_source_into_a_fresh_empty_bytecode_cache",
             "a_deliberate_same_user_process_rewriting_files_or_containers_between_checks_is_out_of_scope",
