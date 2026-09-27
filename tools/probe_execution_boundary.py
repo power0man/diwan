@@ -72,11 +72,15 @@ def _shape(boundary: str) -> str:
     return "docker:<64hex>" if re.fullmatch(r"docker:[0-9a-f]{64}", boundary or "") else "unexpected"
 
 
-def _containers(docker: str) -> set[str]:
+def _containers(docker: str) -> set[str] | None:
     """معرّفاتُ الحاويات كاملةً لا عددُها: حاويةٌ غريبة تُحذف وحاويةُ مجسٍّ تبقى يتساوى بهما العدد (ملاحظة Codex على #136).
-    والمعرّفاتُ لا تُكتب في التقرير، بل عددُها وعددُ ما بقي."""
-    out = subprocess.run([docker, "ps", "-aq", "--no-trunc"], capture_output=True, text=True, timeout=30).stdout
-    return set(out.split())
+    والمعرّفاتُ لا تُكتب في التقرير، بل عددُها وعددُ ما بقي. وتعذُّرُ العدّ `None` لا مجموعةٌ فارغة، فلا يُقرأ خادمٌ
+    غائب تنظيفًا تامًّا (ملاحظة Codex على #136)."""
+    try:
+        done = subprocess.run([docker, "ps", "-aq", "--no-trunc"], capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return set(done.stdout.split()) if done.returncode == 0 else None
 
 
 def _case(name: str, backend, argv: tuple[str, ...], *, timeout_s: float = 20) -> dict:
@@ -148,6 +152,9 @@ def main(argv=None) -> int:
                           "expected": SANDBOX_DOCKER}))
         return 2
     before = _containers(args.docker)
+    if before is None:
+        print(json.dumps({"status": "refused", "code": "container_enumeration_failed"}))
+        return 2
     work = Path(tempfile.mkdtemp(prefix="diwan-j5-")).resolve()
     private = Path(tempfile.mkdtemp(prefix="diwan-j5-receipt-", dir=Path.home())).resolve()
     try:
@@ -190,13 +197,15 @@ def main(argv=None) -> int:
     common = {"date": today, "agent": "anthropic/claude-opus-5-5", "task": "ج٥", "issue": "power0man/diwan#23",
               "host": {"machine": "MacBook Pro (Apple silicon)", "os": os.uname().sysname + " " + os.uname().release},
               "runtime_image_id": receipt.get("image_id"), "runtime_lock_sha256": receipt.get("lock_sha256")}
-    leaked = after - before
-    boundary_failed = boundary_failures(cases, not leaked)
+    leaked = None if after is None else after - before
+    cleanup_verified = leaked is not None and not leaked
+    boundary_failed = boundary_failures(cases, cleanup_verified)
     boundary_report = {
         "schema_version": 1, **common, "source_sha256": execution_sha, "source": "core/execution.py",
         "via": "core.execution.DockerExecutionBackend.run", "cases": cases,
-        "cleanup_verified": not leaked, "containers_before_after": [len(before), len(after)],
-        "containers_left_by_the_run": len(leaked),
+        "cleanup_verified": cleanup_verified,
+        "containers_before_after": [len(before), None if after is None else len(after)],
+        "containers_left_by_the_run": None if leaked is None else len(leaked),
         "acceptance": {"passed": not boundary_failed, "failed": boundary_failed},
         "scope": "Disposable Docker test fixtures only; not proof against Docker VM/kernel escape.",
         "human_review": False,
@@ -219,7 +228,7 @@ def main(argv=None) -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"cases": {c["case"]: c.get("code", c.get("exit_code")) for c in cases},
-                      "cleanup_verified": not leaked,
+                      "cleanup_verified": cleanup_verified,
                       "sandbox": [good.passed, bad.passed, forged_verdict.passed],
                       "sandbox_failed": sandbox_failed,
                       "boundary_failed": boundary_failed}, ensure_ascii=False))
