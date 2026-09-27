@@ -444,3 +444,27 @@ def test_each_check_names_the_item_in_its_own_project_and_after_it_exists():
         check(by_id[scenario_id])
     for scenario_id in ("consent_004", "isolation_001"):
         check(by_id[scenario_id], strict=True)
+
+
+def test_the_snapshot_holds_the_item_and_the_checked_context_shows_that_item_alone():
+    """ملاحظتا Codex على #129 (الجولة السادسة): نسخةٌ أُخذت بعد نسيان العنصر لا تحمله فلا تختبر إحياءه ولو نُسي مرّةً
+    ثانية بعدها؛ وجزءٌ بريءٌ يحمله عنصرٌ آخر في المشروع قد يحضر في السياق والعنصرُ الآمر مقطوعٌ بحدّه."""
+    from core.canonical import PayloadRejected
+    from evaluation.memory_bank import validate_memory_bank
+    by_id = {s["id"]: s for s in BANK["scenarios"]}
+    check = lambda s, **kw: validate_memory_bank({**BANK, "scenarios": [s]}, **kw)
+    code = lambda s, **kw: pytest.raises(PayloadRejected, check, s, **kw).value.code
+    save, backup, forget, restore, *checks = by_id["backup_001"]["steps"]
+    forgotten_first = dict(by_id["backup_001"], steps=[save, forget, backup, forget, restore, *checks])
+    check(forgotten_first)
+    assert code(forgotten_first, strict=True) == "backup_without_prior_snapshot"
+    check(by_id["backup_001"], strict=True)
+
+    directive, fenced = by_id["injection_001"]["steps"]
+    twin = {"op": "remember", "project": "A", "text": "موعد التسليم نهاية الشهر", "consent": "owner", "as": "m0"}
+    shadowed = dict(by_id["injection_001"], steps=[twin, directive, fenced])
+    check(shadowed)
+    assert code(shadowed, strict=True) == "injection_item_not_shown_in_checked_context"
+    # والتوأمُ بعد الفحص أو في مشروعٍ آخر لا يبلغ السياقَ المفحوص، فلا يحجب شهادةَ العنصر
+    check(dict(by_id["injection_001"], steps=[directive, fenced, twin]), strict=True)
+    check(dict(by_id["injection_001"], steps=[dict(twin, project="B"), directive, fenced]), strict=True)

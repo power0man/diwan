@@ -109,15 +109,19 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         def names_the_directive(step, item):
             spans = [item["text"][f.start:f.end] for f in scan(item["text"])]
             return any(a and any(a in span for span in spans) for a in step.get("absent") or [])
-        fenced = [(s, item) for i, item in made.values() if scan(item["text"]) for s in steps[i + 1:]
-                  if s.get("expect") == "context" and s.get("quarantined") and s["project"] == item["project"]
-                  and names_the_directive(s, item)]
+        fenced = [(k, s, ref, item) for ref, (i, item) in made.items() if scan(item["text"])
+                  for k, s in enumerate(steps) if k > i and s.get("expect") == "context" and s.get("quarantined")
+                  and s["project"] == item["project"] and names_the_directive(s, item)]
         if not fenced:
             _reject(path, "injection_without_directive",
                     "عنصرٌ فيه أمرٌ مدسوس ثم سياقُ مشروعه محجورًا يطلب غيابَ الأمر نفسِه")
-        # وفي البنك المكلَّف يطلب السياقُ نفسُه في `present` جزءًا من نصّ العنصر الآمر، فيثبت أنه بلغ السياقَ المفحوص
-        # محجورًا؛ وإلا فقد يُفحص سياقُ عنصرٍ بريءٍ آخر والأمرُ غائبٌ عنه طبيعةً (ملاحظة Codex على #129)
-        if strict and not any(_names(s, item["text"], ("present",)) for s, item in fenced):
+        # وفي البنك المكلَّف يطلب السياقُ نفسُه في `present` جزءًا من نصّ العنصر الآمر لا يحمله عنصرٌ غيرُه في مشروعه
+        # حُفظ قبل الفحص، فحضورُه يثبت أن العنصرَ الآمرَ نفسَه بلغ السياقَ المفحوص محجورًا؛ وإلا فقد يُفحص سياقُ عنصرٍ
+        # بريءٍ آخر أو نسخةٍ من جزئه البريء والأمرُ غائبٌ عنه طبيعةً أو مقطوعٌ بحدّ السياق (ملاحظتا Codex على #129)
+        def shown_only_by_the_item(k, s, ref, item):
+            others = [o["text"] for r, (j, o) in made.items() if r != ref and j < k and o["project"] == item["project"]]
+            return any(p and p in item["text"] and not any(p in t for t in others) for p in s.get("present") or [])
+        if strict and not any(shown_only_by_the_item(*f) for f in fenced):
             _reject(path, "injection_item_not_shown_in_checked_context",
                     "السياقُ المحجور يحضر فيه جزءٌ من نصّ العنصر الآمر نفسِه")
     if not strict:
@@ -144,9 +148,21 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         _reject(path, "isolation_without_cross_project_absence", "غيابُ نصّ عنصرٍ من مشروعٍ في مشروعٍ آخر بعد حفظه")
     if category == "backup":
         at = {s["as"]: i for i, s in enumerate(steps) if s.get("as")}
+
+        def active_at(ref, index):
+            """العنصرُ قائمٌ في المخزن عند هذه الخطوة: حُفظ قبلها بموافقة المالك أو وُوفق على اقتراحه قبلها، ولم يُنسَ
+            قبلها. فنسخةٌ أُخذت بعد نسيانه لا تحمله، واستعادتُها لا تختبر إحياءه (ملاحظة Codex على #129)."""
+            if ref not in made or made[ref][0] >= index:
+                return False
+            item = made[ref][1]
+            if item["op"] == "propose" or item.get("consent") != "owner":
+                if not any(s.get("op") == "approve" and s.get("ref") == ref for s in steps[:index]):
+                    return False
+            return not any(s.get("op") == "forget" and s.get("ref") == ref for s in steps[:index])
+
         snapshot_then_forget = any(
-            r.get("op") == "restore" and any(f.get("op") == "forget" and at[f["ref"]] < at[r["ref"]] < j < k
-                                             for j, f in enumerate(steps))
+            r.get("op") == "restore" and any(f.get("op") == "forget" and active_at(f["ref"], at[r["ref"]])
+                                             and at[r["ref"]] < j < k for j, f in enumerate(steps))
             for k, r in enumerate(steps))
         if not snapshot_then_forget:
             _reject(path, "backup_without_prior_snapshot", "نسخةٌ فيها العنصر، ثم نسيانُه، ثم استعادتُها")
