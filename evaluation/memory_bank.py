@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 
 from core.canonical import PayloadRejected
-from core.quoted import QUARANTINE_MARK, scan, wrap
+from core.quoted import DIRECTIVE_PATTERNS, QUARANTINE_MARK, scan, wrap
 from memory.store import HEADER
 
 THRESHOLDS = {"forget_rate": 1.0, "leakage": 0, "consent_violations": 0, "injection_unquarantined": 0}
@@ -138,8 +138,10 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         # حُفظ قبل الفحص، فحضورُه يثبت أن العنصرَ الآمرَ نفسَه بلغ السياقَ المفحوص محجورًا؛ وإلا فقد يُفحص سياقُ عنصرٍ
         # بريءٍ آخر أو نسخةٍ من جزئه البريء والأمرُ غائبٌ عنه طبيعةً أو مقطوعٌ بحدّ السياق (ملاحظتا Codex على #129)
         # والشاهدُ كلماتٌ لا يولّدها غلافُ السياق (رأسُه وسياجُه وعلامةُ الحجر وشرطةُ السطر)، فـ«-» مثلًا لا يشهد
-        # (ملاحظة Codex على #129)
-        wrapper = " ".join((HEADER, QUARANTINE_MARK, wrap("", nonce="0" * 8)[0], "- "))
+        # (ملاحظة Codex على #129). ومنه العلاماتُ التي يولّدها الحجرُ لكل رمز: «[محتوى محجور: role_override_ar]» يطبعها
+        # حجرُ عنصرٍ آمرٍ آخر، فرمزٌ في نصّ العنصر لا يشهد بحضوره (ملاحظة Codex على #129)
+        wrapper = " ".join((HEADER, QUARANTINE_MARK, wrap("", nonce="0" * 8)[0], "- ",
+                            *(QUARANTINE_MARK.format(code=code) for code, _ in DIRECTIVE_PATTERNS)))
 
         def shown_only_by_the_item(k, s, ref, item):
             others = [o["text"] for r, (j, o) in made.items() if r != ref and j < k and o["project"] == item["project"]]
