@@ -20,7 +20,9 @@ concurrency:
 jobs:
   mutation-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # المدى الكامل لطلبٍ كبير (باقةُ الفاحص نفسِه نحو سبعين طفرة تشغّل git وpytest) استغرق محليًّا نحو عشر دقائق، وعلى المشغّل
+    # المستضاف أبطأُ؛ والتشغيلُ الأساسيّ وحده تجاوز ٣٠٠ ثانية فيه (تشغيلةُ #149 على d80c46e)، فمهلةُ كلِّ تشغيلٍ ١٢٠٠ ثانية
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -43,7 +45,7 @@ jobs:
           set -eu
           report="$RUNNER_TEMP/mutation-check.json"
           if [ "$EVENT_NAME" = "pull_request" ]; then
-            .venv/bin/python tools/mutation_check.py --range "$BASE..$HEAD" --head "$HEAD" --report "$report"
+            .venv/bin/python tools/mutation_check.py --range "$BASE..$HEAD" --head "$HEAD" --report "$report" --timeout-s 1200
           else
-            .venv/bin/python tools/mutation_check.py --all --head "$HEAD" --report "$report"
+            .venv/bin/python tools/mutation_check.py --all --head "$HEAD" --report "$report" --timeout-s 1200
           fi
