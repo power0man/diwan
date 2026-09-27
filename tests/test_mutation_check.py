@@ -550,6 +550,32 @@ def test_an_attribute_that_shadows_an_inherited_test_removes_it_and_a_function_a
     _clean(repo, git)
 
 
+def test_a_module_level_alias_of_a_class_or_a_function_is_a_collected_guard_and_a_none_assignment_shadows_a_test(repo, git, capsys):
+    """`TestAlias = Helper` في مستوى الوحدة يجمع له pytest `TestAlias::test_*` بكلِّ دوالّ Helper، و`test_alias = _zero` يجمعه
+    دالّةً، والقراءةُ كانت ترى التعريفات وحدها فلا يُمسّ شيء (ملاحظة Codex على #149)؛ صار التعيينُ يُقرأ بسطره،
+    و`test_x = None` بعد تعريفها يحجبها فتُعاد بياناتُها كالمحذوفة."""
+    based = TESTS + "\n\nclass Helper:\n    def test_zero_again(self):\n        assert positive(0) is False\n\n\ndef _zero():\n    assert positive(0) is False\n"
+    (repo / "tests/test_guard.py").write_text(based)
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    git("add", "-A")
+    git("commit", "-qm", "a helper class and a helper function, neither collected")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_guard.py").write_text(based + "\n\nTestAlias = Helper\ntest_alias = _zero\ntest_always_passes = None\n")
+    git("add", "-A")
+    git("commit", "-qm", "aliases and a shadowing assignment")
+    rng = lambda: f"{base}..{git('rev-parse', 'HEAD')}"
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::TestAlias::test_zero_again", "tests/test_guard.py::test_alias"]
+    assert report["revalidated_tests"] == ["tests/test_guard.py::test_always_passes"] and report["status"] == "failed"
+    _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": [*KILL["tests"], "tests/test_guard.py::TestAlias::test_zero_again",
+                                                                    "tests/test_guard.py::test_alias"]})
+    git("add", "-A")
+    git("commit", "-qm", "named")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["unproved_touched_tests"] == []
+    _clean(repo, git)
+
+
 def test_a_unittest_subclass_is_collected_whatever_its_name_and_a_base_imported_under_another_name_is_a_declared_limit(repo, git, capsys):
     """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة فتمرّ حرّاسُه بلا بيانٍ ولا إثبات (ملاحظة Codex
     على #149)؛ والوارثُ منه في الوحدة نفسِها مثلُه. والصنفُ العاديّ لا يجمعه pytest ولا تراه الأداة؛ والوارثُ أصلًا مستوردًا
