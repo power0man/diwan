@@ -126,11 +126,11 @@ def _sources() -> dict[str, str]:
     return {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in sorted(paths)}
 
 
-def _inspect(docker: str, target: str, fmt: str) -> str:
+def _inspect(docker: str, target: str, fmt: str, kind: str = "container") -> str:
     """حاويةٌ لا صورة: `docker inspect` وحده يقبل اسمَ صورةٍ أيضًا. وبالبيئة النظيفة نفسِها التي يشغّل بها
     `DockerExecutionBackend` Docker: `DOCKER_HOST` أو `DOCKER_CONTEXT` الموروثان يشهدان لحاويةٍ على خادمٍ غيرِ خادم
     الجولة (ملاحظة Codex على #144)."""
-    return subprocess.run([docker, "container", "inspect", "--format", fmt, target], capture_output=True, text=True,
+    return subprocess.run([docker, kind, "inspect", "--format", fmt, target], capture_output=True, text=True,
                           timeout=30, env=_clean_env()).stdout.strip()
 
 
@@ -142,16 +142,26 @@ def _serving(url: str, container_id: str, docker: str) -> dict:
     ports = json.loads(_inspect(docker, container_id, "{{json .NetworkSettings.Ports}}") or "null") or {}
     # والبروتوكولُ من مفتاح المنفذ («8080/tcp»): نشرُ UDP على العنوان والمنفذ لا يشهد لرابط HTTP قد يخدمه غيرُها
     # (ملاحظة Codex على #144)
-    published = {(key.rpartition("/")[2], b.get("HostIp"), b.get("HostPort"))
-                 for key, bindings in ports.items() for b in bindings or []}
+    published = {(key, b.get("HostIp"), b.get("HostPort")) for key, bindings in ports.items() for b in bindings or []}
+    image_id = _inspect(docker, container_id, "{{.Image}}")
+    # وما يعمل في الحاوية عمليةُ صورتها نفسُها (مدخلُها وأمرُها الافتراضيّان)، والمنفذُ الداخليّ منفذٌ تعلنه الصورة: حاويةٌ من
+    # الصورة المثبَّتة بمدخلٍ أو أمرٍ مُبدَل تشغّل خادمًا آخر يُجيب بـJSON ولا يُقاس SearXNG (ملاحظة Codex على #144)
+    loads = lambda text: json.loads(text or "null")
+    process = [loads(_inspect(docker, container_id, "{{json .Path}}")), *(loads(_inspect(docker, container_id,
+                                                                                          "{{json .Args}}")) or [])]
+    image = lambda fmt: loads(_inspect(docker, image_id, fmt, "image")) if image_id else None
+    default = [*(image("{{json .Config.Entrypoint}}") or []), *(image("{{json .Config.Cmd}}") or [])]
+    exposed = image("{{json .Config.ExposedPorts}}") or {}
     return {"id": container_id,
             "image": _inspect(docker, container_id, "{{.Config.Image}}"),
-            "image_id": _inspect(docker, container_id, "{{.Image}}"),
+            "image_id": image_id,
             "running": _inspect(docker, container_id, "{{.State.Running}}") == "true",
             "started_at": _inspect(docker, container_id, "{{.State.StartedAt}}"),
+            "runs_the_image_default": process == default,
             # والعنوانُ المنشور هو عنوانُ الرابط نفسُه، لا أيُّ عنوانٍ للجهاز: حاويةٌ على 127.0.0.1 لا تشهد لرابطٍ على ::1
-            # قد يخدمه غيرُها (ملاحظة Codex على #144)
-            "serves_url": any(proto == "tcp" and ip == host and p == port for proto, ip, p in published)}
+            # قد يخدمه غيرُها (ملاحظة Codex على #144)؛ وبروتوكولُه TCP ومنفذُه الداخليّ ممّا تعلنه الصورة
+            "serves_url": any(key.endswith("/tcp") and key in exposed and ip == host and p == port
+                              for key, ip, p in published)}
 
 
 def _searxng(url: str, container: str, docker: str) -> tuple[dict, dict]:
@@ -167,6 +177,8 @@ def _searxng(url: str, container: str, docker: str) -> tuple[dict, dict]:
     pinned = _serving(url, container_id, docker)
     if pinned["image"] != PINNED_SEARXNG:
         raise SystemExit(json.dumps({"status": "refused", "code": "searxng_image_not_pinned"}))
+    if not pinned["runs_the_image_default"]:
+        raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_process_overridden"}))
     if not (pinned["running"] and pinned["serves_url"]):
         raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_does_not_serve_the_url"}))
     return {"url": url, "container": container, "image": pinned["image"], "image_id": pinned["image_id"]}, pinned
@@ -349,6 +361,7 @@ def main(argv=None) -> int:
             "runtime_receipt_read_before_the_round_and_rechecked_before_writing",
             "the_ui_runs_against_a_private_copy_of_the_hashed_receipt_bytes_not_the_receipt_path",
             "searxng_container_pinned_by_id_and_start_time_and_engine_digest_rechecked_after_the_round",
+            "searxng_container_runs_its_image_default_entrypoint_and_command_on_a_port_the_image_exposes",
             "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
             "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host",
         ],

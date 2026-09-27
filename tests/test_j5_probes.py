@@ -146,7 +146,7 @@ class _EmptyThenFoundApp:
 
 
 PIN = {"id": "c" * 64, "image": j5.PINNED_SEARXNG, "image_id": "sha256:" + "a" * 64, "running": True,
-       "started_at": "2026-09-27T03:00:00Z", "serves_url": True}
+       "started_at": "2026-09-27T03:00:00Z", "runs_the_image_default": True, "serves_url": True}
 
 
 def _ui_receipt(tmp_path, **fields):
@@ -400,20 +400,33 @@ def test_a_round_where_the_model_never_searches_is_written_as_failed_and_exits_n
     assert "web_search_never_succeeded" in report["acceptance"]["failed"]
 
 
+IMAGE_PROCESS = ["/sbin/tini", "--", "/usr/local/searxng/entrypoint.sh"]
+
+
 def _docker(image: str, bindings: list[dict], running: str = "true", asked: list | None = None,
-            started: str = "2026-09-27T03:00:00Z", container_id: str = "c" * 64, proto: str = "tcp"):
-    """Docker يعرف حاويةً واحدة: الاسمُ «searxng» يُحلّ إلى معرّفها، وما سواه يُسأل بالمعرّف."""
+            started: str = "2026-09-27T03:00:00Z", container_id: str = "c" * 64, proto: str = "tcp",
+            process: list | None = None, container_port: str = "8080"):
+    """Docker يعرف حاويةً واحدة: الاسمُ «searxng» يُحلّ إلى معرّفها، وما سواه يُسأل بالمعرّف؛ وصورتُها بمعرّفها تعلن
+    مدخلَها وأمرَها ومنفذَها 8080/tcp."""
+    process = IMAGE_PROCESS if process is None else process
 
     def run(argv, **kwargs):
-        assert argv[1:3] == ["container", "inspect"]
         fmt, target = argv[argv.index("--format") + 1], argv[-1]
+        if argv[1:3] == ["image", "inspect"]:
+            if target != "sha256:" + "a" * 64:
+                return SimpleNamespace(stdout="", returncode=1)
+            out = {"{{json .Config.Entrypoint}}": json.dumps(IMAGE_PROCESS), "{{json .Config.Cmd}}": "null",
+                   "{{json .Config.ExposedPorts}}": json.dumps({"8080/tcp": {}})}[fmt]
+            return SimpleNamespace(stdout=out + "\n", returncode=0)
+        assert argv[1:3] == ["container", "inspect"]
         if asked is not None:
             asked.append((fmt, target))
         if target not in ("searxng", container_id):
             return SimpleNamespace(stdout="", returncode=1)
         out = {"{{.Id}}": container_id, "{{.Config.Image}}": image, "{{.Image}}": "sha256:" + "a" * 64,
                "{{.State.Running}}": running, "{{.State.StartedAt}}": started,
-               "{{json .NetworkSettings.Ports}}": json.dumps({f"8080/{proto}": bindings})}[fmt]
+               "{{json .Path}}": json.dumps(process[0]), "{{json .Args}}": json.dumps(process[1:]),
+               "{{json .NetworkSettings.Ports}}": json.dumps({f"{container_port}/{proto}": bindings})}[fmt]
         return SimpleNamespace(stdout=out + "\n", returncode=0)
     return run
 
@@ -466,6 +479,17 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
         j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
     assert json.loads(str(refused.value))["code"] == "searxng_container_does_not_serve_the_url"
     monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, running="false"))
+    with pytest.raises(SystemExit) as refused:
+        j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
+    assert json.loads(str(refused.value))["code"] == "searxng_container_does_not_serve_the_url"
+    # وما يعمل فيها عمليةُ صورتها، على منفذٍ تعلنه: حاويةٌ من الصورة المثبَّتة بأمرٍ أو مدخلٍ مُبدَل تشغّل خادمًا آخر، أو
+    # تنشر منفذًا داخليًّا غيرَ منفذ SearXNG (ملاحظة Codex على #144)
+    for process in (["/bin/sh", "-c", "python3 -m http.server 8080"], [*IMAGE_PROCESS, "--other"]):
+        monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, process=process))
+        with pytest.raises(SystemExit) as refused:
+            j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
+        assert json.loads(str(refused.value))["code"] == "searxng_container_process_overridden"
+    monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, container_port="9999"))
     with pytest.raises(SystemExit) as refused:
         j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
     assert json.loads(str(refused.value))["code"] == "searxng_container_does_not_serve_the_url"
