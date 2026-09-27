@@ -399,3 +399,35 @@ def test_the_commissioned_bank_tests_what_each_category_names():
         == "injection_without_directive"
     for scenario_id in ("consent_004", "isolation_001", "backup_001", "injection_001"):
         strict(by_id[scenario_id])
+
+
+def test_each_check_names_the_item_in_its_own_project_and_after_it_exists():
+    """ملاحظاتُ Codex على #129 (الجولة الثالثة): غيابُ المنسيّ أو غيرِ الموافَق عليه يُفحص في مشروعه هو لا في مشروعٍ
+    آخر يغيب عنه طبيعةً؛ والعزلُ يُفحص بعد حفظ العنصر لا قبله؛ والسياقُ المحجور بعد حفظ الأمر ويذكر عنصرَه."""
+    from core.canonical import PayloadRejected
+    from evaluation.memory_bank import validate_memory_bank
+    by_id = {s["id"]: s for s in BANK["scenarios"]}
+    check = lambda s, **kw: validate_memory_bank({**BANK, "scenarios": [s]}, **kw)
+    code = lambda s, **kw: pytest.raises(PayloadRejected, check, s, **kw).value.code
+    elsewhere = lambda scenario, kinds: dict(scenario, steps=[dict(s, project="B") if s.get("expect") in kinds else s
+                                                              for s in scenario["steps"]])
+    unrelated_residue = {"expect": "residue", "project": "A", "absent": ["نصٌّ لم يُحفظ قطّ"]}
+    for scenario_id in ("forget_001", "backup_001"):
+        assert code(elsewhere(by_id[scenario_id], ("retrieve", "context"))) == "forget_not_checked_in_use"
+        # فحصُ قرصٍ لا صلةَ له في المشروع يستوفي الحارسَ البنيويّ، وفحصُ المنسيّ نفسِه في مشروعٍ آخر
+        moved = elsewhere(by_id[scenario_id], ("residue",))
+        assert code(dict(moved, steps=[*moved["steps"], unrelated_residue])) == "forgotten_value_unchecked_on_disk"
+    assert code(elsewhere(by_id["consent_004"], ("context", "residue")), strict=True) \
+        == "consent_unchecked_before_approval"
+    save, probe = by_id["isolation_001"]["steps"]
+    assert code(dict(by_id["isolation_001"], steps=[probe, save]), strict=True) \
+        == "isolation_without_cross_project_absence"
+    directive, fenced = by_id["injection_001"]["steps"]
+    assert code(dict(by_id["injection_001"], steps=[fenced, directive])) == "injection_without_directive"
+    benign = {"op": "remember", "project": "A", "text": "ملاحظة عابرة", "consent": "owner", "as": "m0"}
+    other_item = dict(fenced, absent=[], present=["ملاحظة عابرة"])
+    assert code(dict(by_id["injection_001"], steps=[benign, directive, other_item])) == "injection_without_directive"
+    for scenario_id in ("forget_001", "backup_001", "injection_001"):
+        check(by_id[scenario_id])
+    for scenario_id in ("consent_004", "isolation_001"):
+        check(by_id[scenario_id], strict=True)
