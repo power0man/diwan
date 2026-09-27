@@ -372,7 +372,7 @@ def test_a_round_where_the_model_never_searches_is_written_as_failed_and_exits_n
 
 
 def _docker(image: str, bindings: list[dict], running: str = "true", asked: list | None = None,
-            started: str = "2026-09-27T03:00:00Z", container_id: str = "c" * 64):
+            started: str = "2026-09-27T03:00:00Z", container_id: str = "c" * 64, proto: str = "tcp"):
     """Docker يعرف حاويةً واحدة: الاسمُ «searxng» يُحلّ إلى معرّفها، وما سواه يُسأل بالمعرّف."""
 
     def run(argv, **kwargs):
@@ -384,7 +384,7 @@ def _docker(image: str, bindings: list[dict], running: str = "true", asked: list
             return SimpleNamespace(stdout="", returncode=1)
         out = {"{{.Id}}": container_id, "{{.Config.Image}}": image, "{{.Image}}": "sha256:" + "a" * 64,
                "{{.State.Running}}": running, "{{.State.StartedAt}}": started,
-               "{{json .NetworkSettings.Ports}}": json.dumps({"8080/tcp": bindings})}[fmt]
+               "{{json .NetworkSettings.Ports}}": json.dumps({f"8080/{proto}": bindings})}[fmt]
         return SimpleNamespace(stdout=out + "\n", returncode=0)
     return run
 
@@ -414,6 +414,11 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
         assert json.loads(str(refused.value))["code"] == "searxng_container_does_not_serve_the_url"
     monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, [{"HostIp": "::1", "HostPort": "8888"}]))
     assert j5._searxng("http://[::1]:8888", "searxng", "docker")[1]["serves_url"]
+    # والنشرُ TCP: نشرُ UDP على العنوان والمنفذ نفسيهما لا يشهد لرابط HTTP (ملاحظة Codex على #144)
+    monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, proto="udp"))
+    with pytest.raises(SystemExit) as refused:
+        j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
+    assert json.loads(str(refused.value))["code"] == "searxng_container_does_not_serve_the_url"
     monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, running="false"))
     with pytest.raises(SystemExit) as refused:
         j5._searxng("http://127.0.0.1:8888", "searxng", "docker")

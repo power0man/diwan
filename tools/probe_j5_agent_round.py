@@ -138,7 +138,10 @@ def _serving(url: str, container_id: str, docker: str) -> dict:
     parts = urllib.parse.urlsplit(url)
     host, port = parts.hostname, str(parts.port)
     ports = json.loads(_inspect(docker, container_id, "{{json .NetworkSettings.Ports}}") or "null") or {}
-    published = {(b.get("HostIp"), b.get("HostPort")) for bindings in ports.values() for b in bindings or []}
+    # والبروتوكولُ من مفتاح المنفذ («8080/tcp»): نشرُ UDP على العنوان والمنفذ لا يشهد لرابط HTTP قد يخدمه غيرُها
+    # (ملاحظة Codex على #144)
+    published = {(key.rpartition("/")[2], b.get("HostIp"), b.get("HostPort"))
+                 for key, bindings in ports.items() for b in bindings or []}
     return {"id": container_id,
             "image": _inspect(docker, container_id, "{{.Config.Image}}"),
             "image_id": _inspect(docker, container_id, "{{.Image}}"),
@@ -146,7 +149,7 @@ def _serving(url: str, container_id: str, docker: str) -> dict:
             "started_at": _inspect(docker, container_id, "{{.State.StartedAt}}"),
             # والعنوانُ المنشور هو عنوانُ الرابط نفسُه، لا أيُّ عنوانٍ للجهاز: حاويةٌ على 127.0.0.1 لا تشهد لرابطٍ على ::1
             # قد يخدمه غيرُها (ملاحظة Codex على #144)
-            "serves_url": any(ip == host and p == port for ip, p in published)}
+            "serves_url": any(proto == "tcp" and ip == host and p == port for proto, ip, p in published)}
 
 
 def _searxng(url: str, container: str, docker: str) -> tuple[dict, dict]:
