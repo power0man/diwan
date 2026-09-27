@@ -1,0 +1,1 @@
+{"id": "archived-row-reopened", "file": "docs/TASKS-ARCHIVE.md", "old": "| منجزة: diwan-private@268b7df —", "new": "| مفتوحة: diwan-private@268b7df —", "tests": ["tests/test_tasks_ledger.py::test_the_task_table_is_frozen", "tests/test_context_index.py::test_the_archive_holds_only_done_rows_and_verbatim_when_history_is_present"], "why": "الأرشيفُ يحمل غيرَ منجز"}
