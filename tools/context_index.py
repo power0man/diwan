@@ -29,6 +29,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INDEX_MD = "docs/INDEX.md"
 INDEX_JSON = "docs/INDEX.json"
+ARCHIVE = "docs/TASKS-ARCHIVE.md"
+PROBE = "docs/probe/context-index-20260927.json"
 AGENTS = "AGENTS.md"
 BLOCK = "context-index"
 # حدُّ Codex الافتراضي لملفّ التعليمات (project_doc_max_bytes في openai/codex)؛ ما بعده لا يراه
@@ -129,6 +131,28 @@ def open_tasks(text: str) -> list[dict]:
     return [row for row in task_rows(text) if not row["status"].startswith("منجزة")]
 
 
+def archive_done(agents_text: str, archive_text: str) -> tuple[str, str, list[str]]:
+    """الصفُّ الذي كُتب فيه «منجزة» في §٣ يُنقل بنصّه إلى آخر جدول الأرشيف، فلا يبقى في AGENTS.md إلا المفتوح، ولا
+    يُعلن الفهرسُ منجزًا مفتوحًا (ملاحظة Codex على #148). يعيد (نصَّ AGENTS.md، نصَّ الأرشيف، أرقامَ ما نُقل)."""
+    lines = agents_text.split("\n")
+    starts = [i for i, line in enumerate(lines) if line.startswith("## ٣ — المهام")]
+    if not starts:
+        return agents_text, archive_text, []
+    start = starts[0]
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    moved = [line for line in lines[start:end] if TASK_ROW.match(line) and task_rows(line)
+             and task_rows(line)[0]["status"].startswith("منجزة")]
+    if not moved:
+        return agents_text, archive_text, []
+    kept = lines[:start] + [line for line in lines[start:end] if line not in moved] + lines[end:]
+    archive = archive_text.split("\n")
+    rows = [i for i, line in enumerate(archive) if TASK_ROW.match(line)]
+    if not rows:
+        raise IndexError_("archive_table_missing")
+    archive[rows[-1] + 1:rows[-1] + 1] = moved
+    return "\n".join(kept), "\n".join(archive), [task_rows(line)[0]["id"] for line in moved]
+
+
 def latest_decision(text: str) -> int:
     numbers = [int(m.group(1).translate(ARABIC_DIGITS)) for line in text.split("\n") if (m := DECISION_HEADING.match(line))]
     return max(numbers) if numbers else 0
@@ -139,37 +163,48 @@ def _masked_agents(text: str) -> str:
     return with_block(text, "")
 
 
+def _document(source: Source, text: str, measured: str | None = None) -> dict:
+    """وصفُ وثيقةٍ من نصّها: الحجمُ والأسطرُ والرموزُ والعناوينُ من النصّ كما يُقرأ، والبصمةُ من `measured` إن أُعطي."""
+    raw = text.encode("utf-8")
+    return {"path": source.path, "role": source.role, "purpose": source.purpose, "read_when": source.read_when,
+            "bytes": len(raw), "lines": text.count("\n") + (0 if text.endswith("\n") or not text else 1),
+            "tokens_estimate": tokens_estimate(text), "sha256_12": digest((measured if measured is not None else text).encode("utf-8")),
+            "headings": headings(text) if source.path.endswith(".md") else []}
+
+
+def _snapshot(root: Path) -> tuple[dict, str, str, list[str]]:
+    """(بيانُ الفهرس، نصُّ AGENTS.md بكتلته الجديدة وبلا صفوفٍ منجزة، نصُّ الأرشيف بما نُقل إليه، أرقامُ ما نُقل). الكتلةُ تُبنى من الوثائق الأخرى ومن جدول §٣، ثم يُقاس AGENTS.md
+    بنصّه البديل كما سيُقرأ (حجمًا وأسطرًا ورموزًا وعناوين)، وبصمتُه وحدها من النصّ المفرَّغ الكتلة؛ فلا دورَ، و--write ثابتٌ
+    مهما كانت الكتلةُ القديمة (ملاحظتا Codex على #148)."""
+    for source in SOURCES:
+        if not (root / source.path).is_file():
+            raise IndexError_(f"source_missing:{source.path}")
+    agents_source = next(s for s in SOURCES if s.path == AGENTS)
+    agents_text, archive_new, moved = archive_done((root / AGENTS).read_text(encoding="utf-8"),
+                                                   (root / ARCHIVE).read_text(encoding="utf-8"))
+    others = [_document(s, archive_new if s.path == ARCHIVE else (root / s.path).read_text(encoding="utf-8"))
+              for s in SOURCES if s.path != AGENTS]
+    decisions = (root / "docs/DECISIONS.md").read_text(encoding="utf-8")
+    partial = {"documents": others, "open_tasks": open_tasks(agents_text), "latest_decision": latest_decision(decisions)}
+    agents_new = with_block(agents_text, render_block(partial))
+    agents_doc = _document(agents_source, agents_new, measured=_masked_agents(agents_new))
+    state = {"schema_version": 1, "generator": "tools/context_index.py", "block": BLOCK,
+             "codex_project_doc_max_bytes": CODEX_PROJECT_DOC_MAX_BYTES,
+             "open_tasks": partial["open_tasks"], "latest_decision": partial["latest_decision"],
+             "documents": [agents_doc, *others],
+             "measurement_limits": [
+                 "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
+                 "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
+                 "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
+                 "documents_outside_SOURCES_are_not_indexed",
+                 "no_git_history_is_read_so_the_output_is_identical_in_shallow_and_full_clones",
+             ]}
+    return state, agents_new, archive_new, moved
+
+
 def describe(root: Path) -> dict:
     """بيانُ الفهرس من الوثائق وحدها؛ لا زمنَ ولا git."""
-    docs = []
-    agents_text = None
-    for source in SOURCES:
-        path = root / source.path
-        if not path.is_file():
-            raise IndexError_(f"source_missing:{source.path}")
-        raw = path.read_bytes()
-        text = raw.decode("utf-8")
-        if source.path == AGENTS:
-            # الكتلةُ المولَّدة تُفرَّغ قبل كلِّ قياس، فلا يغيّر ما يُكتب فيها حجمَ الملف ولا بصمتَه في الفهرس (وإلا لم يثبت --write)
-            agents_text = text
-            text = _masked_agents(text)
-            raw = text.encode("utf-8")
-        docs.append({"path": source.path, "role": source.role, "purpose": source.purpose, "read_when": source.read_when,
-                     "bytes": len(raw), "lines": text.count("\n") + (0 if text.endswith("\n") or not text else 1),
-                     "tokens_estimate": tokens_estimate(text), "sha256_12": digest(raw),
-                     "headings": headings(text) if source.path.endswith(".md") else []})
-    decisions = (root / "docs/DECISIONS.md").read_text(encoding="utf-8")
-    return {"schema_version": 1, "generator": "tools/context_index.py", "block": BLOCK,
-            "codex_project_doc_max_bytes": CODEX_PROJECT_DOC_MAX_BYTES,
-            "open_tasks": open_tasks(agents_text), "latest_decision": latest_decision(decisions),
-            "documents": docs,
-            "measurement_limits": [
-                "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
-                "agents_md_is_digested_with_its_generated_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
-                "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
-                "documents_outside_SOURCES_are_not_indexed",
-                "no_git_history_is_read_so_the_output_is_identical_in_shallow_and_full_clones",
-            ]}
+    return _snapshot(root)[0]
 
 
 def _kb(n: int) -> str:
@@ -178,7 +213,9 @@ def _kb(n: int) -> str:
 
 def render_md(state: dict) -> str:
     docs = {d["path"]: d for d in state["documents"]}
-    reading = sum(docs[p]["bytes"] for p in READING_SET if p in docs)
+    # هذا الفهرسُ نفسُه ليس في المصادر، وحجمُه لا يُكتب داخله (لدارَ على نفسه)؛ فمجموعُ §٠ هنا بلا الفهرس، وبه في --print-budget
+    counted = [p for p in READING_SET if p in docs]
+    reading = sum(docs[p]["bytes"] for p in counted)
     lines = [
         "# فهرسُ السياق: ما تقرؤه وما لا تقرؤه",
         "",
@@ -187,7 +224,8 @@ def render_md(state: dict) -> str:
         f"**كيف يُستعمل (ق٦٧-٥):** اقرأ `AGENTS.md` كاملًا ({_kb(docs[AGENTS]['bytes'])}، وهو دون حدِّ Codex "
         f"{_kb(state['codex_project_doc_max_bytes'])}) ثم هذا الفهرس، و`docs/VISION.md` في أول جلسةٍ لك. ولا تفتح وثيقةً أخرى إلا إن سمّاها",
         "الفهرسُ لمهمّتك، أو تغيّرت بصمتُها عمّا رأيتَه آخرَ مرّة؛ فالبصمةُ الثابتة تعني أن ما تعرفه عن الوثيقة ما زال صحيحًا.",
-        f"حجمُ ما يُقرأ في §٠: {_kb(reading)} (≈{sum(docs[p]['tokens_estimate'] for p in READING_SET if p in docs)} رمزًا تقديرًا).",
+        f"حجمُ ما يُقرأ في §٠ **بلا هذا الفهرس** ({' و'.join(f'`{p}`' for p in counted)}): {_kb(reading)} "
+        f"(≈{sum(docs[p]['tokens_estimate'] for p in counted)} رمزًا تقديرًا)؛ وبالفهرس معه يقوله `--print-budget`، لأن حجمَ الفهرس لا يُكتب داخله.",
         "",
         f"## المفتوحُ من جدول §٣ ({len(state['open_tasks'])})؛ وما سواه مسائلُ GitHub بوسم عائلتك",
         "",
@@ -235,11 +273,67 @@ def render_block(state: dict) -> str:
 
 
 def expected_files(root: Path) -> dict[Path, str]:
-    state = describe(root)
-    agents = (root / AGENTS).read_text(encoding="utf-8")
-    return {root / INDEX_MD: render_md(state),
-            root / INDEX_JSON: json.dumps(state, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
-            root / AGENTS: with_block(agents, render_block(state))}
+    return _expected(root)[0]
+
+
+def _cut_line(raw: bytes) -> int | None:
+    """السطرُ الذي يقع فيه حدُّ Codex، أو None إن كان الملفُّ كلُّه دونه."""
+    if len(raw) <= CODEX_PROJECT_DOC_MAX_BYTES:
+        return None
+    return raw[:CODEX_PROJECT_DOC_MAX_BYTES].decode("utf-8", "ignore").count("\n") + 1
+
+
+def probe_text(root: Path, state: dict, agents_new: str, archive_new: str, index_md: str) -> str | None:
+    """قسمُ «بعد» في دليل القياس يُولَّد من اللقطة نفسِها التي تُكتب، فيصف دائمًا شجرةَ الإيداع الذي يحمله ولا يُحرَّر بيد
+    (ملاحظات Codex على #148)؛ وقسمُ «قبل» تاريخٌ لا يُمسّ. None حين لا دليلَ في هذه النسخة."""
+    path = root / PROBE
+    if not path.is_file():
+        return None
+    probe = json.loads(path.read_text(encoding="utf-8"))
+    docs = {d["path"]: d for d in state["documents"]}
+    raw = agents_new.encode("utf-8")
+    cut = _cut_line(raw)
+    lines = agents_new.split("\n")
+    section_start = next((i for i, line in enumerate(lines) if line.startswith("## ٣ — المهام")), len(lines))
+    section_end = next((i for i in range(section_start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    row_lines = [i + 1 for i in range(section_start, section_end) if TASK_ROW.match(lines[i])]
+    heading_lines = [i + 1 for i, line in enumerate(lines) if line.startswith("## ")]
+    visible = (lambda numbers: len(numbers)) if cut is None else (lambda numbers: sum(1 for n in numbers if n < cut))
+    index_raw = index_md.encode("utf-8")
+    sizes = {AGENTS: (len(raw), tokens_estimate(agents_new)), INDEX_MD: (len(index_raw), tokens_estimate(index_md))}
+    reading = {p: {"bytes": sizes[p][0] if p in sizes else docs[p]["bytes"],
+                   "tokens_estimate": sizes[p][1] if p in sizes else docs[p]["tokens_estimate"]}
+               for p in READING_SET if p in sizes or p in docs}
+    after = probe.setdefault("after", {})
+    after["AGENTS.md"] = {"bytes": len(raw), "lines": agents_new.count("\n"), "tokens_estimate": tokens_estimate(agents_new),
+                          "codex_cut_line": cut, "task_rows": len(row_lines), "task_rows_visible_to_codex": visible(row_lines),
+                          "sections": len(heading_lines), "sections_visible_to_codex": visible(heading_lines)}
+    after["reading_set_in_section_0"] = reading
+    after["reading_set_total"] = {"bytes": sum(v["bytes"] for v in reading.values()),
+                                  "tokens_estimate": sum(v["tokens_estimate"] for v in reading.values())}
+    after["archived_rows"] = sum(1 for line in archive_new.split("\n") if TASK_ROW.match(line))
+    after["open_rows_in_agents_md"] = len(row_lines)
+    after["regenerated_by"] = "tools/context_index.py --write"
+    probe["every_indexed_document_after"] = {p: {"bytes": d["bytes"], "tokens_estimate": d["tokens_estimate"]} for p, d in docs.items()}
+    probe["tool"] = "tools/context_index.py --write (قسمُ «بعد» يُولَّد مع الفهرس من اللقطة نفسِها؛ و--print-budget يقرأ القرص)"
+    limit = "the_after_section_is_regenerated_by_context_index_write_from_the_same_snapshot_as_the_index_so_it_describes_the_tree_of_the_commit_that_carries_it_while_before_stays_the_113d1b4_measurement"
+    limits = probe.setdefault("measurement_limits", [])
+    if limit not in limits:
+        limits.append(limit)
+    return json.dumps(probe, ensure_ascii=False, indent=2) + "\n"
+
+
+def _expected(root: Path) -> tuple[dict[Path, str], list[str]]:
+    """(ما يجب أن تكون عليه الملفّاتُ المولَّدة، أرقامُ الصفوف المنجزة التي تنتظر النقلَ إلى الأرشيف)."""
+    state, agents_new, archive_new, moved = _snapshot(root)
+    index_md = render_md(state)
+    expected = {root / INDEX_MD: index_md,
+                root / INDEX_JSON: json.dumps(state, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
+                root / AGENTS: agents_new, root / ARCHIVE: archive_new}
+    probe = probe_text(root, state, agents_new, archive_new, index_md)
+    if probe is not None:
+        expected[root / PROBE] = probe
+    return expected, moved
 
 
 def budget(root: Path) -> dict:
@@ -272,18 +366,19 @@ def main(argv=None) -> int:
         if args.print_budget:
             print(json.dumps(budget(args.root), ensure_ascii=False, indent=1, sort_keys=True))
             return 0
-        expected = expected_files(args.root)
+        expected, moved = _expected(args.root)
         stale = [path for path, value in expected.items()
                  if not path.exists() or path.read_text(encoding="utf-8") != value]
         if args.write:
             for path in stale:
                 path.write_text(expected[path], encoding="utf-8")
         elif stale:
-            print(json.dumps({"status": "index_stale", "files": [p.relative_to(args.root).as_posix() for p in stale]},
-                             ensure_ascii=False))
+            print(json.dumps({"status": "index_stale", "files": [p.relative_to(args.root).as_posix() for p in stale],
+                              "done_rows_to_archive": moved}, ensure_ascii=False))
             return 1
         print(json.dumps({"status": "updated" if args.write else "verified", "written": [p.relative_to(args.root).as_posix() for p in stale]
-                          if args.write else [], "agents_md_bytes": (args.root / AGENTS).stat().st_size}, ensure_ascii=False))
+                          if args.write else [], "archived": moved if args.write else [],
+                          "agents_md_bytes": (args.root / AGENTS).stat().st_size}, ensure_ascii=False))
         return 0
     except IndexError_ as exc:
         print(json.dumps({"status": "error", "code": str(exc)}, ensure_ascii=False))

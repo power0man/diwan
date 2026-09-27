@@ -3,7 +3,7 @@
  "codex_project_doc_max_bytes": 32768,
  "documents": [
   {
-   "bytes": 29225,
+   "bytes": 30265,
    "headings": [
     {
      "level": 2,
@@ -12,62 +12,62 @@
     },
     {
      "level": 2,
-     "line": 47,
+     "line": 49,
      "title": "١ — ما هو ديوان"
     },
     {
      "level": 3,
-     "line": 70,
+     "line": 72,
      "title": "لماذا انحصر العمل في السياسات مرّةً بعد مرّة — وكيف يُمنع"
     },
     {
      "level": 2,
-     "line": 87,
+     "line": 89,
      "title": "٢ — الأدوار"
     },
     {
      "level": 2,
-     "line": 117,
+     "line": 119,
      "title": "٣ — المهام (العملاء يحدّثون هذا الجدول بأنفسهم)"
     },
     {
      "level": 2,
-     "line": 150,
+     "line": 153,
      "title": "٤ — قواعد المراجعة والقياس"
     },
     {
      "level": 2,
-     "line": 167,
+     "line": 170,
      "title": "٥ — قواعد العمل وبروتوكول الإنهاء"
     },
     {
      "level": 2,
-     "line": 203,
+     "line": 206,
      "title": "٦ — متى تتوقف وتسأل المالك"
     },
     {
      "level": 2,
-     "line": 217,
+     "line": 220,
      "title": "٧ — الذكاءات الخارجية: كيف تعمل دون أن ترى المستودع"
     },
     {
      "level": 2,
-     "line": 252,
+     "line": 255,
      "title": "٨ — خريطة المستودع"
     },
     {
      "level": 2,
-     "line": 273,
+     "line": 276,
      "title": "٩ — حدود هذا الملف"
     }
    ],
-   "lines": 283,
+   "lines": 286,
    "path": "AGENTS.md",
    "purpose": "الأدوار والقواعد وبروتوكول البدء، وما بقي مفتوحًا من جدول §٣",
    "read_when": "كل جلسة، كاملًا",
    "role": "حاكمة",
-   "sha256_12": "c99ce4400224",
-   "tokens_estimate": 6194
+   "sha256_12": "8b5c854de41c",
+   "tokens_estimate": 6432
   },
   {
    "bytes": 22893,
@@ -934,7 +934,7 @@
    "tokens_estimate": 1140
   },
   {
-   "bytes": 32390,
+   "bytes": 32499,
    "headings": [
     {
      "level": 2,
@@ -947,8 +947,8 @@
    "purpose": "صفوفُ §٣ المنجزة بنصّها كما كانت عند أرشفتها (ق٦٧-٥)",
    "read_when": "بإحالةٍ فقط",
    "role": "أرشيف",
-   "sha256_12": "78ee935c0ad3",
-   "tokens_estimate": 6995
+   "sha256_12": "3fa08177473d",
+   "tokens_estimate": 7020
   },
   {
    "bytes": 42526,
@@ -1518,7 +1518,7 @@
  "latest_decision": 67,
  "measurement_limits": [
   "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
-  "agents_md_is_digested_with_its_generated_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
+  "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
   "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
   "documents_outside_SOURCES_are_not_indexed",
   "no_git_history_is_read_so_the_output_is_identical_in_shallow_and_full_clones"
