@@ -2,7 +2,9 @@
 
 - مجسُّ الحدّ لا يخرج بـ0 إلا إن انتهت كلُّ حالةٍ إلى ما يجب وتحقّق التنظيف، ولا يُسمّي حدَّ الصندوق «مراجَعًا» إن لم تؤدِّ
   البرامجُ الثلاثة ما يثبته؛ ويرفض مسارَ Docker غيرَ الذي تبني به `core.sandbox` خلفيّتَها (ق٦٦: الملفُّ لمسار openai).
-- جولةُ الواجهة لا تخرج بـ0 إلا إن نجح web_search، وانتظر run_command المالكَ ثم نجح في الحاوية.
+- جولةُ الواجهة لا تخرج بـ0 إلا إن نجح web_search، وانتظر run_command المالكَ ثم نجح في الحاوية، بحدٍّ يُقرأ من حقل
+  نتيجته نفسِها بصيغته كاملةً؛ ولا تبدأ بمسار Docker لا تبني به الواجهةُ خلفيّتَه.
+- والبرامجُ الثلاثة في الصندوق تنتهي كلٌّ إلى حالِه ورمزَي خروجه وخطئه بعينها، لا إلى نجاحٍ أو سقوطٍ وحده.
 - والبحثُ من SearXNG على عنوان الجهاز وحده، بحاويةٍ تنشر منفذَ الرابط بالصورة المثبَّتة في G5.
 """
 from __future__ import annotations
@@ -21,10 +23,19 @@ ROOT = Path(__file__).resolve().parent.parent
 EVIDENCE = ROOT / "docs" / "probe" / "j5-docker-searxng-20260927.json"
 
 
-def test_the_published_round_meets_every_acceptance_condition():
+def test_the_published_round_records_the_acceptance_its_fields_give():
+    """الحكمُ المنشور يُعاد من حقول الدليل؛ وهذه الجولةُ سبقت قراءةَ الحدّ من حقل النتيجة فلا تشهد به."""
     evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    failed = j5.acceptance(evidence)
+    assert evidence["acceptance"] == {"passed": not failed, "failed": failed}
+
+
+def _passing():
+    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    evidence["docker_execution"]["tool_calls_by_the_model"] = [
+        {"name": "run_command", "status": "ok", "boundary": "docker:<64hex>"}]
     assert j5.acceptance(evidence) == []
-    assert evidence["acceptance"] == {"passed": True, "failed": []}
+    return evidence
 
 
 @pytest.mark.parametrize("change, code", [
@@ -34,14 +45,35 @@ def test_the_published_round_meets_every_acceptance_condition():
                 for a in e["web_search"]["attempts"]], "web_search_never_succeeded"),
     (lambda e: e["docker_execution"].update(first_status="complete"), "run_command_did_not_wait_for_the_owner"),
     (lambda e: e["docker_execution"].update(owner_approved=False), "run_command_did_not_wait_for_the_owner"),
-    (lambda e: e["docker_execution"].update(tool_calls_by_the_model=[{"name": "run_command", "status": "error"}]),
-     "run_command_did_not_succeed"),
-    (lambda e: e["docker_execution"].update(boundary_shapes=[]), "run_command_boundary_is_not_docker"),
+    (lambda e: e["docker_execution"].update(tool_calls_by_the_model=[{"name": "run_command", "status": "error",
+                                                                      "boundary": "docker:<64hex>"}]),
+     ["run_command_did_not_succeed", "run_command_boundary_is_not_docker"]),
+    (lambda e: e["docker_execution"].update(tool_calls_by_the_model=[{"name": "run_command", "status": "ok",
+                                                                      "boundary": "malformed"}]),
+     "run_command_boundary_is_not_docker"),
+    (lambda e: e["docker_execution"].update(tool_calls_by_the_model=[{"name": "run_command", "status": "ok"}]),
+     "run_command_boundary_is_not_docker"),
 ])
 def test_each_missing_condition_is_named(change, code):
-    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    evidence = _passing()
     change(evidence)
-    assert j5.acceptance(evidence) == [code]
+    assert j5.acceptance(evidence) == (code if isinstance(code, list) else [code])
+
+
+def test_the_boundary_is_read_whole_from_the_tool_result_not_from_the_reply_text():
+    """ملاحظةُ Codex على #136: معرّفٌ مبتور كان يُطبَّع إلى الشكل المقبول، ورمزٌ في نصّ النموذج كان يكفي."""
+    full = "docker:" + "a" * 64
+
+    def reply(boundary=None, **extra):
+        result = {"name": "run_command", "status": "ok", "content": "4", **extra}
+        if boundary is not None:
+            result["boundary"] = boundary
+        return {"status": "complete", "content": f"الحاوية {full}", "steps": [{"tool_results": [result]}]}
+
+    assert j5._tools(reply(full)) == [{"name": "run_command", "status": "ok", "boundary": "docker:<64hex>"}]
+    for truncated in ("docker:deadbeefdead", full[:-1], full + "0", full.upper(), "docker:" + "g" * 64, 7):
+        assert j5._tools(reply(truncated))[0]["boundary"] == "malformed"
+    assert j5._tools(reply()) == [{"name": "run_command", "status": "ok"}]
 
 
 class _SilentApp:
@@ -57,6 +89,18 @@ class _SilentApp:
 
     def close(self):
         pass
+
+
+def test_a_docker_path_the_run_command_backend_cannot_use_is_refused_before_the_round(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #136: الواجهةُ تبني خلفيّةَ run_command بالمسار الافتراضي وحده (#142)."""
+    monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: pytest.fail("جولةٌ قبل الرفض"))
+    monkeypatch.setattr(j5, "_searxng", lambda *a, **k: pytest.fail("Docker سُئل قبل الرفض"))
+    out = tmp_path / "r.json"
+    code = j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888", "--docker", "/usr/bin/docker",
+                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)])
+    assert code == 2 and json.loads(capsys.readouterr().out)["code"] == "run_command_backend_uses_the_default_docker_path"
+    assert not out.exists()
+    assert j5.EXECUTION_DOCKER == boundary.SANDBOX_DOCKER == "/usr/local/bin/docker"
 
 
 def test_a_round_where_the_model_never_searches_is_written_as_failed_and_exits_non_zero(tmp_path, monkeypatch):
@@ -103,6 +147,27 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
 
 
 BOUNDARY = ROOT / "docs" / "probe" / "execution-boundary-20260927.json"
+SANDBOX = ROOT / "docs" / "probe" / "sandbox-container-20260927.json"
+
+
+def test_the_published_sandbox_run_ends_each_program_where_it_must():
+    evidence = json.loads(SANDBOX.read_text(encoding="utf-8"))
+    assert boundary.sandbox_failures(evidence) == []
+    assert evidence["acceptance"] == {"passed": True, "failed": []}
+
+
+@pytest.mark.parametrize("name, change", [
+    ("correct_program", {"passed": False, "exit_code": 1, "error_code": "exit_1"}),
+    ("incorrect_program", {"error_code": "execution_runtime_mismatch", "exit_code": -1}),
+    ("incorrect_program", {"error_code": "exit_2", "exit_code": 2}),
+    ("exit_zero_before_the_harness", {"error_code": "execution_timeout", "exit_code": -1}),
+    ("exit_zero_before_the_harness", {"error_code": "exit_1", "exit_code": 1}),
+])
+def test_a_program_that_falls_for_another_reason_is_named(name, change):
+    """ملاحظةُ Codex على #136: رفضُ الخلفية أو خطأُ الصياغة يُسقطان الخاطئَ والمبكّرَ دون أن يحكم المدقّق."""
+    evidence = json.loads(SANDBOX.read_text(encoding="utf-8"))
+    evidence[name].update(change)
+    assert boundary.sandbox_failures(evidence) == [name]
 
 
 def test_the_published_boundary_run_meets_every_case():
@@ -176,12 +241,16 @@ def test_the_run_succeeds_only_when_every_case_and_the_sandbox_hold(tmp_path, mo
     monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
     monkeypatch.setattr(boundary, "_containers", lambda docker: next(counts))
     monkeypatch.setattr(boundary.sandbox, "configure_sandbox_backend", lambda receipt, work: None)
-    verdicts = iter([good, False, False])
-    monkeypatch.setattr(boundary.sandbox, "run_in_sandbox",
-                        lambda code, harness: SimpleNamespace(passed=next(verdicts), exit_code=0, error_code=None))
+    verdicts = iter([SimpleNamespace(passed=True, exit_code=0, error_code=None) if good
+                     else SimpleNamespace(passed=False, exit_code=-1, error_code="execution_runtime_mismatch"),
+                     SimpleNamespace(passed=False, exit_code=1, error_code="exit_1"),
+                     SimpleNamespace(passed=False, exit_code=0, error_code="verdict_missing")])
+    monkeypatch.setattr(boundary.sandbox, "run_in_sandbox", lambda code, harness: next(verdicts))
     out_boundary, out_sandbox = tmp_path / "b.json", tmp_path / "s.json"
     code = boundary.main(["--receipt", str(_receipt(tmp_path)), "--out-boundary", str(out_boundary),
                           "--out-sandbox", str(out_sandbox)])
     assert code == expected_exit
-    assert json.loads(out_sandbox.read_text(encoding="utf-8"))["boundary"] == expected_label
+    sandbox_report = json.loads(out_sandbox.read_text(encoding="utf-8"))
+    assert sandbox_report["boundary"] == expected_label
+    assert sandbox_report["acceptance"]["passed"] is good
     assert json.loads(out_boundary.read_text(encoding="utf-8"))["acceptance"]["passed"] is cleanup

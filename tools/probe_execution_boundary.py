@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import hashlib
+import inspect
 import json
 import os
 from pathlib import Path
@@ -31,8 +32,16 @@ from core import sandbox  # noqa: E402
 from core.execution import DockerExecutionBackend, ExecutionRefused  # noqa: E402
 
 # `core.sandbox.configure_sandbox_backend` يبني خلفيّته بمسار Docker الافتراضي في `DockerExecutionBackend`، ولا يقبل غيرَه.
-# وتمريرُ المسار إليه من مسار openai (ق٦٦)، فالمجسُّ يرفض مسارًا آخر قبل أن يسمّي حدًّا لم يختبره (ملاحظة Codex على #136)
-SANDBOX_DOCKER = "/usr/local/bin/docker"
+# وتمريرُ المسار إليه من مسار openai (ق٦٦، #142)، فالمجسُّ يرفض مسارًا آخر قبل أن يسمّي حدًّا لم يختبره (ملاحظة Codex على #136).
+# ويُقرأ الافتراضيُّ من الشيفرة نفسها لا من نسخةٍ هنا، فإن تغيّر هناك تبعه المجسّ
+SANDBOX_DOCKER = inspect.signature(DockerExecutionBackend).parameters["docker_executable"].default
+# ما يجب أن ينتهي إليه كلُّ برنامجٍ من الثلاثة بعينه، لا نجاحُه أو سقوطُه وحده: سقوطٌ لرفض الخلفية أو خطأِ صياغة
+# لا يشهد بأن المدقّق حكم ولا بأن الخروج المبكّر رُدّ (ملاحظة Codex على #136)
+SANDBOX_EXPECTED = {
+    "correct_program": {"passed": True, "exit_code": 0, "error_code": None},
+    "incorrect_program": {"passed": False, "exit_code": 1, "error_code": "exit_1"},
+    "exit_zero_before_the_harness": {"passed": False, "exit_code": 0, "error_code": "verdict_missing"},
+}
 
 BOUNDARY_PROBE = r"""
 import json, os, socket
@@ -118,6 +127,12 @@ def _private_copy(receipt: Path, tmp: Path, **changes) -> Path:
     return path
 
 
+def sandbox_failures(verdicts: dict) -> list[str]:
+    """البرامجُ الثلاثة التي لم تنتهِ إلى ما يجب بحالها ورمزِ خروجها ورمزِ خطئها، بأسمائها."""
+    return [name for name, expected in SANDBOX_EXPECTED.items()
+            if {key: (verdicts.get(name) or {}).get(key) for key in expected} != expected]
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--receipt", required=True, type=Path)
@@ -164,7 +179,11 @@ def main(argv=None) -> int:
     after = _containers(args.docker)
     # الحدُّ لا يُسمّى «مراجَعًا» إلا إن أدّت البرامجُ الثلاثة ما يثبته: الصحيحُ ينجح، والخاطئُ يسقط، والخروجُ
     # بصفرٍ قبل المدقّق يسقط. فإن تعذّرت الحاويةُ نفسُها سقط الصحيحُ ولم يُسمَّ الحدّ.
-    sandbox_ok = good.passed and not bad.passed and not forged_verdict.passed
+    verdicts = {name: {"passed": r.passed, "exit_code": r.exit_code, "error_code": r.error_code}
+                for name, r in (("correct_program", good), ("incorrect_program", bad),
+                                ("exit_zero_before_the_harness", forged_verdict))}
+    sandbox_failed = sandbox_failures(verdicts)
+    sandbox_ok = not sandbox_failed
     today = datetime.date.today().isoformat()
     execution_sha = _sha(ROOT / "core" / "execution.py")
     receipt = json.loads(args.receipt.read_text(encoding="utf-8"))
@@ -186,11 +205,9 @@ def main(argv=None) -> int:
     sandbox_report = {
         "schema_version": 1, **common, "source_sha256": _sha(ROOT / "core" / "sandbox.py"), "source": "core/sandbox.py",
         "execution_sha256": execution_sha, "via": "core.sandbox.run_in_sandbox",
-        "correct_program": {"passed": good.passed, "exit_code": good.exit_code, "error_code": good.error_code},
-        "incorrect_program": {"passed": bad.passed, "exit_code": bad.exit_code, "error_code": bad.error_code},
-        "exit_zero_before_the_harness": {"passed": forged_verdict.passed, "exit_code": forged_verdict.exit_code,
-                                         "error_code": forged_verdict.error_code},
+        **verdicts,
         "boundary": "reviewed_disposable_docker" if sandbox_ok else "not_established",
+        "acceptance": {"passed": sandbox_ok, "failed": sandbox_failed},
         "limits": ["A harness in the same interpreter as arbitrary candidate code is not a tamper-proof grader.",
                    "No product certification."],
         "measurement_limits": ["three_fixed_programs_not_a_grading_benchmark"],
@@ -201,6 +218,7 @@ def main(argv=None) -> int:
     print(json.dumps({"cases": {c["case"]: c.get("code", c.get("exit_code")) for c in cases},
                       "cleanup_verified": after == before,
                       "sandbox": [good.passed, bad.passed, forged_verdict.passed],
+                      "sandbox_failed": sandbox_failed,
                       "boundary_failed": boundary_failed}, ensure_ascii=False))
     return 0 if sandbox_ok and not boundary_failed else 1
 

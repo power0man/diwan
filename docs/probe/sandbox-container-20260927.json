@@ -30,11 +30,16 @@
     "error_code": "verdict_missing"
   },
   "boundary": "reviewed_disposable_docker",
+  "acceptance": {
+    "passed": true,
+    "failed": []
+  },
   "limits": [
     "A harness in the same interpreter as arbitrary candidate code is not a tamper-proof grader.",
     "No product certification."
   ],
   "measurement_limits": [
-    "three_fixed_programs_not_a_grading_benchmark"
+    "three_fixed_programs_not_a_grading_benchmark",
+    "acceptance_was_computed_after_the_run_from_the_recorded_verdicts_with_probe_execution_boundary_sandbox_failures"
   ]
 }

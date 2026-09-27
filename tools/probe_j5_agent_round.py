@@ -6,7 +6,9 @@
 
 - الطريقُ `webui.server.LocalApp.dispatch` بالمزوّدين اللذين تبنيهما `tools/serve_ui.py`، لا نداءً مباشرًا للأداة.
 - البحثُ في جلسة «research»، والأمرُ في جلسة «agent» بموافقة المالك (`agent_decide`) كما في الواجهة.
-- يُسجَّل ما نادى به النموذجُ وحالُ كل نتيجة، وعناوينُ المصادر، وشكلُ حدّ التنفيذ لا معرّفُه.
+- يُسجَّل ما نادى به النموذجُ وحالُ كل نتيجة، وعناوينُ المصادر، وشكلُ حدّ التنفيذ لا معرّفُه، من حقل `boundary` في نتيجة
+  الأداة نفسِها لا من نصّ الردّ.
+- ومسارُ Docker هو الذي تبني به الواجهةُ خلفيّةَ run_command، وإلا فلا قياس.
 - البحثُ من SearXNG محليٍّ وحده: الرابطُ على عنوان الجهاز، والحاويةُ التي تنشر منفذَه بالصورة المثبَّتة في G5.
 - ولا يخرج بـ0 إلا إن تحقّقت شروطُ القبول (`acceptance`)، ويُكتب التقريرُ في الحالين بحكمه.
 """
@@ -15,6 +17,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import hashlib
+import inspect
 import json
 import os
 from pathlib import Path
@@ -32,6 +35,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from agent.web_search import SearxngBackend  # noqa: E402
+from core.execution import DockerExecutionBackend  # noqa: E402
 from providers.local_chat import LocalChatProvider  # noqa: E402
 from providers.local_tools import LocalToolProvider  # noqa: E402
 from webui.server import LocalApp  # noqa: E402
@@ -45,6 +49,11 @@ COMMAND_REQUEST = 'شغّل الأمر python3 -c "print(2+2)" وأخبرني ب
 # الصورةُ المثبَّتة بالبصمة في docs/guides/G5.md (الخطوتان ٢١–٢٢)، وقيست بها ج٥ أول مرّة
 PINNED_SEARXNG = "searxng/searxng@sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6"
 LOOPBACK = frozenset({"127.0.0.1", "localhost", "::1"})
+# `LocalApp.agent_workspace` يبني خلفيّةَ run_command بمسار Docker الافتراضي في `DockerExecutionBackend` ولا يمرّر غيرَه،
+# وتمريرُه من مسار openai (ق٦٦، #142)؛ فمسارٌ آخر يُرفض قبل الجولة لا يُترك يُسقطها صامتًا (ملاحظة Codex على #136)
+EXECUTION_DOCKER = inspect.signature(DockerExecutionBackend).parameters["docker_executable"].default
+# الحدُّ كما يصنعه `DockerExecutionBackend`: «docker:» ثم معرّفُ الحاوية كاملًا
+BOUNDARY = re.compile(r"docker:[0-9a-f]{64}")
 
 
 def acceptance(report: dict) -> list[str]:
@@ -60,7 +69,10 @@ def acceptance(report: dict) -> list[str]:
     if execution["final_status"] != "complete" or not any(
             t["name"] == "run_command" and t["status"] == "ok" for t in execution["tool_calls_by_the_model"]):
         failed.append("run_command_did_not_succeed")
-    if "docker:<hex>" not in execution["boundary_shapes"]:
+    # الحدُّ من حقل نتيجة run_command الناجحة نفسِها، بصيغته كاملةً (ملاحظة Codex على #136): معرّفٌ مبتور أو رمزٌ
+    # في نصّ النموذج لا يشهد بحاوية
+    if not any(t["name"] == "run_command" and t["status"] == "ok" and t.get("boundary") == "docker:<64hex>"
+               for t in execution["tool_calls_by_the_model"]):
         failed.append("run_command_boundary_is_not_docker")
     return failed
 
@@ -89,12 +101,16 @@ def _digest(model: str, base: str = "http://127.0.0.1:11434") -> str:
 
 
 def _tools(result: dict) -> list[dict]:
-    return [{"name": r.get("name"), "status": r.get("status")}
-            for step in result.get("steps", []) for r in step.get("tool_results", [])]
-
-
-def _shape(text: str) -> list[str]:
-    return sorted(set(re.sub(r"[0-9a-f]{12,}", "<hex>", b) for b in re.findall(r"docker:[\w:@<>]+", text)))
+    calls = []
+    for step in result.get("steps", []):
+        for r in step.get("tool_results", []):
+            call = {"name": r.get("name"), "status": r.get("status")}
+            if "boundary" in r:
+                boundary = r["boundary"]
+                call["boundary"] = ("docker:<64hex>" if isinstance(boundary, str) and BOUNDARY.fullmatch(boundary)
+                                    else "malformed")
+            calls.append(call)
+    return calls
 
 
 def main(argv=None) -> int:
@@ -102,12 +118,16 @@ def main(argv=None) -> int:
     parser.add_argument("--model", required=True)
     parser.add_argument("--web-search-url", required=True, help="SearXNG على عنوان الجهاز، مثل http://127.0.0.1:8888")
     parser.add_argument("--searxng-container", default="searxng", help="اسمُ حاوية SearXNG التي تنشر منفذ الرابط")
-    parser.add_argument("--docker", default=shutil.which("docker") or "/usr/local/bin/docker")
+    parser.add_argument("--docker", default=EXECUTION_DOCKER)
     parser.add_argument("--runtime-receipt", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args(argv)
     if args.out.exists():
         parser.error(f"التقريرُ قائم: {args.out}")
+    if args.docker != EXECUTION_DOCKER:
+        print(json.dumps({"status": "refused", "code": "run_command_backend_uses_the_default_docker_path",
+                          "expected": EXECUTION_DOCKER}))
+        return 2
     searxng = _searxng(args.web_search_url, args.searxng_container, args.docker)
     version = _digest(args.model)
     root = Path(tempfile.mkdtemp(prefix="diwan-j5-ui-")).resolve()
@@ -147,7 +167,6 @@ def main(argv=None) -> int:
                           call_digest=action["call_digest"], expected_revision=action["revision"], approve=True)
             resumed = api("agent_resume", project=project, session=agent, turn=turn)
         final = resumed or asked
-        command_text = json.dumps(final, ensure_ascii=False)
         app.close()
     finally:
         shutil.rmtree(root, ignore_errors=True)
@@ -166,13 +185,13 @@ def main(argv=None) -> int:
                              "request": COMMAND_REQUEST, "first_status": asked.get("status"),
                              "owner_approved": decided is not None, "final_status": final.get("status"),
                              "tool_calls_by_the_model": _tools(final),
-                             "boundary_shapes": _shape(command_text),
                              "answer": (final.get("content") or "")[:300]},
         "measurement_limits": [
             "one_live_round_each_on_one_local_model_no_variance_estimate",
             "the_model_decides_whether_to_call_the_tool_every_attempt_is_recorded_including_those_without_a_call",
             "search_results_come_from_public_engines_through_a_local_searxng_and_change_over_time",
             "container_ids_recorded_by_shape_not_value",
+            "boundary_read_from_the_run_command_result_field_not_from_the_serialized_reply",
         ],
     }
     failed = acceptance(report)
@@ -184,7 +203,6 @@ def main(argv=None) -> int:
                                    for a in attempts],
                       "command": [report["docker_execution"]["first_status"], report["docker_execution"]["final_status"]],
                       "tools": report["docker_execution"]["tool_calls_by_the_model"],
-                      "boundary": report["docker_execution"]["boundary_shapes"],
                       "acceptance": report["acceptance"]}, ensure_ascii=False))
     return 0 if not failed else 1
 
