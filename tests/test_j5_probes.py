@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import subprocess
 from types import SimpleNamespace
@@ -237,7 +238,7 @@ def test_a_docker_path_the_sandbox_cannot_use_is_refused_before_any_case(tmp_pat
 ])
 def test_the_run_succeeds_only_when_every_case_and_the_sandbox_hold(tmp_path, monkeypatch, good, cleanup,
                                                                      expected_label, expected_exit):
-    counts = iter([0, 0 if cleanup else 1])
+    counts = iter([{"a" * 64}, {"a" * 64} if cleanup else {"a" * 64, "b" * 64}])
     monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
     monkeypatch.setattr(boundary, "_containers", lambda docker: next(counts))
     monkeypatch.setattr(boundary.sandbox, "configure_sandbox_backend", lambda receipt, work: None)
@@ -254,3 +255,43 @@ def test_the_run_succeeds_only_when_every_case_and_the_sandbox_hold(tmp_path, mo
     assert sandbox_report["boundary"] == expected_label
     assert sandbox_report["acceptance"]["passed"] is good
     assert json.loads(out_boundary.read_text(encoding="utf-8"))["acceptance"]["passed"] is cleanup
+
+
+def test_cleanup_compares_container_ids_not_their_count(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #136: حاويةٌ غريبة تُحذف وحاويةُ مجسٍّ تبقى، فيتساوى العددُ قبل وبعد."""
+    sets = iter([{"a" * 64}, {"b" * 64}])
+    monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
+    monkeypatch.setattr(boundary, "_containers", lambda docker: next(sets))
+    monkeypatch.setattr(boundary.sandbox, "configure_sandbox_backend", lambda receipt, work: None)
+    verdicts = iter([SimpleNamespace(passed=True, exit_code=0, error_code=None),
+                     SimpleNamespace(passed=False, exit_code=1, error_code="exit_1"),
+                     SimpleNamespace(passed=False, exit_code=0, error_code="verdict_missing")])
+    monkeypatch.setattr(boundary.sandbox, "run_in_sandbox", lambda code, harness: next(verdicts))
+    out_boundary = tmp_path / "b.json"
+    assert boundary.main(["--receipt", str(_receipt(tmp_path)), "--out-boundary", str(out_boundary),
+                          "--out-sandbox", str(tmp_path / "s.json")]) == 1
+    report = json.loads(out_boundary.read_text(encoding="utf-8"))
+    assert report["cleanup_verified"] is False and report["acceptance"]["failed"] == ["cleanup"]
+    assert report["containers_before_after"] == [1, 1] and report["containers_left_by_the_run"] == 1
+    assert "a" * 64 not in out_boundary.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("flag, expected", [(0, False), (os.ST_RDONLY, True)])
+def test_the_read_only_root_is_read_from_the_mount_flag(monkeypatch, capsys, flag, expected):
+    """ملاحظةُ Codex على #136: كتابةُ UID 1000 في `/` تفشل ولو كان الجذرُ قابلًا للكتابة، فلا تشهد بالقراءة وحدها."""
+    import socket
+
+    class _Closed:
+        def settimeout(self, _):
+            pass
+
+        def connect(self, _):
+            raise OSError("unreachable")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(os, "statvfs", lambda path: SimpleNamespace(f_flag=flag))
+    monkeypatch.setattr(socket, "socket", lambda *a, **k: _Closed())
+    exec(compile(boundary.BOUNDARY_PROBE, "<boundary-probe>", "exec"), {})
+    assert json.loads(capsys.readouterr().out)["rootfs_readonly"] is expected
