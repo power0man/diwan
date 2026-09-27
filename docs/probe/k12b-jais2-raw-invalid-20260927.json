@@ -641,5 +641,9 @@
     "هويةُ النموذج اسمُ خدمةٍ في Ollama ما لم يُمرَّر model_version ببصمة أوزان.",
     "نداءٌ واحد لكل حالة، بلا تقدير تباينٍ ولا إعادة.",
     "published_to_let_the_execution_errors_be_checked_not_to_be_read_as_a_score_the_model_output_was_degenerate"
-  ]
+  ],
+  "per_case": "docs/probe/k12b-jais2-cases-20260927.json",
+  "error_codes": {
+    "http_500": 374
+  }
 }

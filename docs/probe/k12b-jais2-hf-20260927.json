@@ -41,7 +41,12 @@
     "elapsed_s": 1080.5,
     "published": false,
     "why_not_published": "374 of 376 cases ended as execution errors; the raw report is committed as docs/probe/k12b-jais2-raw-invalid-20260927.json (status run_invalid_not_a_score, published_score null) so the errors can be checked, and no score is published",
-    "raw_report": "docs/probe/k12b-jais2-raw-invalid-20260927.json"
+    "raw_report": "docs/probe/k12b-jais2-raw-invalid-20260927.json",
+    "per_case": "docs/probe/k12b-jais2-cases-20260927.json",
+    "error_codes": {
+      "http_500": 374
+    },
+    "failure_mode": "In the ك٢ run the 374 failures are http_500 responses from the local Ollama server (retryable, one attempt each); the 2 cases that completed returned short text. The degenerate apostrophes appear in the two direct /api/chat prompts of the diagnosis. Both point to the jais2 path in Ollama 0.34.4; which layer fails is not separated."
   },
   "diagnosis": [
     {
