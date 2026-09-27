@@ -346,7 +346,7 @@ def test_discovery_ignores_remote_or_empty_local_aliases(monkeypatch):
             assert request.full_url == 'http://127.0.0.1:11434/api/tags'
             return Reply()
     monkeypatch.setattr(urllib.request, 'build_opener', lambda *args: Opener())
-    assert _discover_ollama() == ('llama3.1:8b', 'c' * 64, None, None)
+    assert _discover_ollama() == ('llama3.1:8b', 'c' * 64, None, None, None)
 
 
 @pytest.mark.parametrize('provider', ['local', 'mlx'])

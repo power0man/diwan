@@ -1,0 +1,1 @@
+{"id": "corruption-unnamed", "file": "core/streams.py", "old": "        self.corrupt = f\"offsets_corrupt:{type(exc).__name__}\"", "new": "        self.corrupt = None", "tests": ["tests/test_stream_offsets_corrupt.py::test_corrupt_offsets_are_named_and_restart_from_zero"], "why": "الإسقاطُ الفاسد يعود من الصفر صامتًا"}
