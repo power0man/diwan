@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import argparse
+import atexit
 import datetime
 import hashlib
 import inspect
@@ -34,6 +35,15 @@ SOURCES = ("core/execution.py", "core/sandbox.py", "tools/probe_execution_bounda
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
+
+# والشيفرةُ المقيسة تُترجم من مصدرها المبصوم في مخبأ بايتاتٍ جديدٍ فارغ، لا من `.pyc` في `__pycache__`: بايتاتٌ قديمة
+# يطابق وقتُها وحجمُها مصدرًا عُدّل تُنفَّذ والبصمةُ للجديد (ملاحظة Codex على #144). ويُضبط حين يُشغَّل المجسُّ وحده،
+# فاستيرادُه في الاختبارات لا يغيّر مخبأ العملية، ولا يُقبل تشغيلٌ بغيره (`_cached_elsewhere`)
+PYCACHE = None
+if __name__ == "__main__":
+    PYCACHE = tempfile.mkdtemp(prefix="diwan-probe-pycache-")
+    sys.pycache_prefix = PYCACHE
+    atexit.register(shutil.rmtree, PYCACHE, True)
 
 # بصماتُ الشيفرة المقيسة قبل تحميلها: وحدةٌ استُبدلت بين تحميلها وأول بصمةٍ تُنفَّذ قديمةً ويُسجَّل جديدُها، ويُبقيه
 # الفحصُ بعد التشغيل؛ فكلُّ بصمةٍ تُسجَّل تساوي ما قبل التحميل (ملاحظة Codex على #144)
@@ -78,6 +88,26 @@ FORGED_PAYLOAD = '{"exit_code":0,"success":true}'
 # ما يُبصم قبل التشغيل ويُعاد بصمُه قبل الكتابة: الشيفرةُ المقيسة، والمجسُّ الذي يقيسها (ملاحظة Codex على #136)
 def _sources() -> dict[str, str]:
     return {path: _sha(ROOT / path) for path in SOURCES}
+
+
+def _cached_elsewhere(modules=None) -> list[str]:
+    """وحداتُ المستودع المحمَّلة (بلا الاختبارات والحزم المثبَّتة) التي لم تُترجم في مخبأ المجسّ الجديد (`PYCACHE`)، فقد
+    تُنفَّذ من بايتاتٍ قديمة. والمجسُّ نفسُه (`__main__`) يُترجم من مصدره حين يُشغَّل."""
+    fresh = lambda cached: (PYCACHE is not None and isinstance(cached, str)
+                            and Path(cached).resolve().is_relative_to(Path(PYCACHE).resolve()))
+    stale = set()
+    for module in list((sys.modules if modules is None else modules).values()):
+        file = getattr(module, "__file__", None)
+        if not isinstance(file, str) or not file.endswith(".py") or module.__name__ == "__main__":
+            continue
+        try:
+            rel = Path(file).resolve().relative_to(ROOT)
+        except ValueError:
+            continue
+        if not {"tests", "site-packages"}.intersection(rel.parts) and not any(p.startswith(".") for p in rel.parts) \
+                and not fresh(getattr(module, "__cached__", None)):
+            stale.add(rel.as_posix())
+    return sorted(stale)
 
 
 def _shape(boundary: str) -> str:
@@ -165,6 +195,10 @@ def main(argv=None) -> int:
         print(json.dumps({"status": "refused", "code": "sandbox_backend_uses_the_default_docker_path",
                           "expected": SANDBOX_DOCKER}))
         return 2
+    if stale := _cached_elsewhere():
+        print(json.dumps({"status": "refused", "code": "measured_code_not_compiled_from_its_hashed_source",
+                          "modules": stale}))
+        return 2
     before = _containers(args.docker)
     if before is None:
         print(json.dumps({"status": "refused", "code": "container_enumeration_failed"}))
@@ -215,6 +249,10 @@ def main(argv=None) -> int:
     if changed:
         print(json.dumps({"status": "refused", "code": "sources_changed_during_the_run", "changed": changed}))
         return 2
+    if stale := _cached_elsewhere():
+        print(json.dumps({"status": "refused", "code": "measured_code_not_compiled_from_its_hashed_source",
+                          "modules": stale}))
+        return 2
     # الحدُّ لا يُسمّى «مراجَعًا» إلا إن أدّت البرامجُ الثلاثة ما يثبته: الصحيحُ ينجح، والخاطئُ يسقط، والخروجُ
     # بصفرٍ قبل المدقّق يسقط. فإن تعذّرت الحاويةُ نفسُها سقط الصحيحُ ولم يُسمَّ الحدّ.
     verdicts = {name: {"passed": r.passed, "exit_code": r.exit_code, "error_code": r.error_code}
@@ -250,6 +288,7 @@ def main(argv=None) -> int:
                                "runtime_receipt_read_before_the_first_case_and_rechecked_before_writing",
                                "the_backends_run_against_a_private_copy_of_the_hashed_receipt_bytes_not_the_receipt_path",
                                "sources_hashed_before_the_measured_code_is_imported_and_must_match_before_and_after",
+                               "every_loaded_repo_module_is_compiled_from_its_source_into_a_fresh_empty_bytecode_cache",
                                "a_deliberate_same_user_process_rewriting_files_or_containers_between_checks_is_out_of_scope"],
     }
     sandbox_report = {

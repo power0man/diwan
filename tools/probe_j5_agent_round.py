@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import argparse
+import atexit
 import datetime
 import hashlib
 import inspect
@@ -51,6 +52,15 @@ def _tree() -> dict[str, str]:
                 out[path.relative_to(ROOT).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
     return out
 
+
+# والشيفرةُ المقيسة تُترجم من مصدرها المبصوم في مخبأ بايتاتٍ جديدٍ فارغ، لا من `.pyc` في `__pycache__`: بايتاتٌ قديمة
+# يطابق وقتُها وحجمُها مصدرًا عُدّل تُنفَّذ والبصمةُ للجديد (ملاحظة Codex على #144). ويُضبط حين يُشغَّل المجسُّ وحده،
+# فاستيرادُه في الاختبارات لا يغيّر مخبأ العملية، ولا يُقبل تشغيلٌ بغيره (`_cached_elsewhere`)
+PYCACHE = None
+if __name__ == "__main__":
+    PYCACHE = tempfile.mkdtemp(prefix="diwan-probe-pycache-")
+    sys.pycache_prefix = PYCACHE
+    atexit.register(shutil.rmtree, PYCACHE, True)
 
 # بصماتُ المستودع قبل تحميل الشيفرة المقيسة: وحدةٌ استُبدلت بين تحميلها وأول بصمةٍ تُنفَّذ قديمةً ويُسجَّل جديدُها، ويُبقيه
 # الفحصُ بعد الجولة؛ فكلُّ بصمةٍ تُسجَّل تساوي ما قبل التحميل (ملاحظة Codex على #144)
@@ -131,9 +141,9 @@ def requested_command(argv) -> bool:
     return argv == REQUESTED_ARGV
 
 
-def _sources() -> dict[str, str]:
-    paths = set(SOURCES)
-    for module in list(sys.modules.values()):
+def _repo_modules(modules=None):
+    """وحداتُ المستودع المحمَّلة: (مسارُها النسبيّ، الوحدة)، بلا الاختبارات والحزم المثبَّتة والمجلّدات المخفيّة."""
+    for module in list((sys.modules if modules is None else modules).values()):
         file = getattr(module, "__file__", None)
         if not isinstance(file, str) or not file.endswith(".py"):
             continue
@@ -142,8 +152,21 @@ def _sources() -> dict[str, str]:
         except ValueError:
             continue
         if not NOT_SOURCE.intersection(rel.parts) and not any(part.startswith(".") for part in rel.parts):
-            paths.add(rel.as_posix())
+            yield rel.as_posix(), module
+
+
+def _sources() -> dict[str, str]:
+    paths = set(SOURCES) | {path for path, _ in _repo_modules()}
     return {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in sorted(paths)}
+
+
+def _cached_elsewhere(modules=None) -> list[str]:
+    """وحداتُ المستودع المحمَّلة التي لم تُترجم في مخبأ المجسّ الجديد (`PYCACHE`)، فقد تُنفَّذ من بايتاتٍ قديمة.
+    والمجسُّ نفسُه (`__main__`) يُترجم من مصدره حين يُشغَّل."""
+    fresh = lambda cached: (PYCACHE is not None and isinstance(cached, str)
+                            and Path(cached).resolve().is_relative_to(Path(PYCACHE).resolve()))
+    return sorted(path for path, module in _repo_modules(modules)
+                  if module.__name__ != "__main__" and not fresh(getattr(module, "__cached__", None)))
 
 
 def _inspect(docker: str, target: str, fmt: str, kind: str = "container") -> str:
@@ -304,6 +327,10 @@ def main(argv=None) -> int:
         print(json.dumps({"status": "refused", "code": "run_command_backend_uses_the_default_docker_path",
                           "expected": EXECUTION_DOCKER}))
         return 2
+    if stale := _cached_elsewhere():
+        print(json.dumps({"status": "refused", "code": "measured_code_not_compiled_from_its_hashed_source",
+                          "modules": stale}))
+        return 2
     sources = _sources()
     # والإيصالُ الذي تبني به الواجهةُ خلفيّةَ run_command يُقرأ قبل الجولة ويُعاد قبل الكتابة، ومنه وحده تُسجَّل الصورة،
     # كما في مجسّ الحدّ: إيصالٌ استُبدل في أثنائها ينسب الدليلَ إلى صورةٍ لم تُشغَّل
@@ -384,6 +411,11 @@ def main(argv=None) -> int:
     if changed:
         print(json.dumps({"status": "refused", "code": "sources_changed_during_the_run", "changed": changed}))
         return 2
+    # ووحدةٌ حُمّلت أولَ مرّةٍ في أثناء الجولة تُترجم في المخبأ نفسِه، وإلا فلا تقرير
+    if stale := _cached_elsewhere():
+        print(json.dumps({"status": "refused", "code": "measured_code_not_compiled_from_its_hashed_source",
+                          "modules": stale}))
+        return 2
 
     report = {
         "schema_version": 1, "date": datetime.date.today().isoformat(), "task": "ج٥", "issue": "power0man/diwan#23",
@@ -423,6 +455,7 @@ def main(argv=None) -> int:
             "searxng_container_mounts_only_its_configuration_and_cache",
             "searxng_writable_layer_unchanged_outside_its_configuration_and_cache_mounts_before_and_after_the_round",
             "every_loaded_repo_module_is_hashed_before_the_measured_code_is_imported_and_must_match_after_the_round",
+            "every_loaded_repo_module_is_compiled_from_its_source_into_a_fresh_empty_bytecode_cache",
             "a_deliberate_same_user_process_rewriting_files_or_containers_between_checks_is_out_of_scope",
             "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
             "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host",

@@ -23,6 +23,14 @@ import tools.probe_j5_agent_round as j5
 
 ROOT = Path(__file__).resolve().parent.parent
 EVIDENCE = ROOT / "docs" / "probe" / "j5-docker-searxng-20260927j.json"
+CACHED_ELSEWHERE = {j5: j5._cached_elsewhere, boundary: boundary._cached_elsewhere}
+
+
+@pytest.fixture(autouse=True)
+def _compiled_from_source(monkeypatch):
+    """المجسّان مستوردان هنا لا مشغَّلان، فلا مخبأَ بايتاتٍ جديدًا لهما؛ وفحصُه مختبَرٌ وحده أدناه."""
+    for probe in CACHED_ELSEWHERE:
+        monkeypatch.setattr(probe, "_cached_elsewhere", lambda modules=None: [])
 
 
 def test_the_published_round_records_the_acceptance_its_fields_give():
@@ -881,3 +889,85 @@ def test_a_failed_container_enumeration_is_never_read_as_a_clean_run(tmp_path, m
     report = json.loads(out.read_text(encoding="utf-8"))
     assert report["cleanup_verified"] is False and report["acceptance"]["failed"] == ["cleanup"]
     assert report["containers_left_by_the_run"] is None
+
+
+@pytest.mark.parametrize("probe", [j5, boundary])
+def test_measured_code_must_be_compiled_from_its_source_into_the_probes_fresh_cache(tmp_path, monkeypatch, capsys,
+                                                                                    probe):
+    """ملاحظةُ Codex على #144: `.pyc` قديمٌ في `__pycache__` يطابق وقتُه وحجمُه مصدرًا عُدّل يُنفَّذ والبصمةُ للجديد.
+    فوحدةُ المستودع المحمَّلة تُقبل إن تُرجمت في مخبأ المجسّ الجديد وحده."""
+    import types
+    check = CACHED_ELSEWHERE[probe]
+    module = lambda name, file, cached: types.SimpleNamespace(__name__=name, __file__=str(file), __cached__=cached)
+    fresh = tmp_path / "pycache"
+    fresh.mkdir()
+    modules = {"core.execution": module("core.execution", ROOT / "core" / "execution.py",
+                                        str(fresh / "core" / "execution.cpython-311.pyc")),
+               "core.sandbox": module("core.sandbox", ROOT / "core" / "sandbox.py",
+                                      str(ROOT / "core" / "__pycache__" / "sandbox.cpython-311.pyc")),
+               "__main__": module("__main__", ROOT / "tools" / "probe.py", None),
+               "tests.x": module("tests.x", ROOT / "tests" / "x.py", None),
+               "json": module("json", "/usr/lib/python3/json/__init__.py", None)}
+    monkeypatch.setattr(probe, "PYCACHE", str(fresh))
+    assert check(modules) == ["core/sandbox.py"]
+    monkeypatch.setattr(probe, "PYCACHE", None)
+    assert check(modules) == ["core/execution.py", "core/sandbox.py"]
+    # ومجسٌّ يرى وحدةً لم تُترجم في مخبئه لا يكتب تقريرًا
+    monkeypatch.setattr(probe, "_cached_elsewhere", lambda modules=None: ["core/sandbox.py"])
+    args = (["--model", "m", "--web-search-url", "http://127.0.0.1:8888", "--runtime-receipt", str(tmp_path / "r"),
+             "--out", str(tmp_path / "o.json")] if probe is j5 else
+            ["--receipt", str(tmp_path / "r"), "--out-boundary", str(tmp_path / "b.json"),
+             "--out-sandbox", str(tmp_path / "s.json")])
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: pytest.fail("سُئل Docker قبل فحص المخبأ"))
+    assert probe.main(args) == 2
+    assert json.loads(capsys.readouterr().out.strip().splitlines()[-1]) == {
+        "status": "refused", "code": "measured_code_not_compiled_from_its_hashed_source", "modules": ["core/sandbox.py"]}
+    assert not any(tmp_path.glob("*.json"))
+
+
+def test_a_module_first_loaded_during_the_run_outside_the_fresh_cache_writes_no_report(tmp_path, monkeypatch, capsys):
+    """ووحدةٌ حُمّلت أولَ مرّةٍ في أثناء التشغيل تُفحص بعده: لم تكن محمَّلةً في الفحص الأول."""
+    app = _PendingApp(["python3", "-c", "print(2+2)"])
+    monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: app)
+    _attest(monkeypatch)
+    seen = iter([[], ["providers/local_tools.py"]])
+    monkeypatch.setattr(j5, "_cached_elsewhere", lambda modules=None: next(seen))
+    out = tmp_path / "r.json"
+    assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
+                    "--runtime-receipt", str(_ui_receipt(tmp_path)), "--out", str(out)]) == 2
+    refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert refused == {"status": "refused", "code": "measured_code_not_compiled_from_its_hashed_source",
+                       "modules": ["providers/local_tools.py"]}
+    assert not out.exists()
+    monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
+    monkeypatch.setattr(boundary, "_containers", lambda docker: {"a" * 64})
+    monkeypatch.setattr(boundary.sandbox, "configure_sandbox_backend", lambda receipt, work: None)
+    verdicts = iter([SimpleNamespace(passed=True, exit_code=0, error_code=None),
+                     SimpleNamespace(passed=False, exit_code=1, error_code="exit_1"),
+                     SimpleNamespace(passed=False, exit_code=0, error_code="verdict_missing")])
+    monkeypatch.setattr(boundary.sandbox, "run_in_sandbox", lambda code, harness: next(verdicts))
+    seen = iter([[], ["core/filelock.py"]])
+    monkeypatch.setattr(boundary, "_cached_elsewhere", lambda modules=None: next(seen))
+    out_boundary, out_sandbox = tmp_path / "b.json", tmp_path / "s.json"
+    assert boundary.main(["--receipt", str(_receipt(tmp_path)), "--out-boundary", str(out_boundary),
+                          "--out-sandbox", str(out_sandbox)]) == 2
+    refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert refused["modules"] == ["core/filelock.py"] and not out_boundary.exists() and not out_sandbox.exists()
+
+
+@pytest.mark.parametrize("script", ["tools/probe_j5_agent_round.py", "tools/probe_execution_boundary.py"])
+def test_a_probe_run_as_a_script_compiles_the_measured_code_into_a_fresh_cache(tmp_path, script):
+    """المجسُّ مشغَّلًا كما يشغّله الماك: الشيفرةُ المقيسة تُترجم في مخبئه الجديد، فلا يرفض بفحص المخبأ، ثم يرفض بما بعده
+    (إيصالٌ غائب أو Docker غائب) قبل أيّ قياس."""
+    import sys
+    args = (["--model", "m", "--web-search-url", "http://127.0.0.1:8888"] if "j5" in script else
+            ["--out-sandbox", str(tmp_path / "s.json")])
+    out_flag = "--out" if "j5" in script else "--out-boundary"
+    receipt_flag = "--runtime-receipt" if "j5" in script else "--receipt"
+    done = subprocess.run([sys.executable, str(ROOT / script), *args, receipt_flag, str(tmp_path / "missing"),
+                           out_flag, str(tmp_path / "o.json")], capture_output=True, text=True, timeout=120, cwd=ROOT,
+                          env={**os.environ, "PYTHONPYCACHEPREFIX": ""})
+    assert "measured_code_not_compiled_from_its_hashed_source" not in done.stdout + done.stderr
+    if "j5" in script:
+        assert json.loads(done.stdout.strip().splitlines()[-1])["code"] == "runtime_receipt_unreadable"
+    assert not any(tmp_path.glob("*.json"))
