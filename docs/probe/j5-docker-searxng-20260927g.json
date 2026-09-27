@@ -19,7 +19,7 @@
     "agent/builtin_tools.py": "d0b9d3d25cb6ff8bc66f1c78baf382a15672ceb1097bb91292cb4e639e47caef",
     "agent/loop.py": "a2424f43c0be6b40ac4433c682b50bba517689ffd3c2b20c2118325a58fcb76b",
     "webui/server.py": "6c5634808257a5961573465b6d6dbfe4e21488b5a2a2be053312b250bc673404",
-    "tools/probe_j5_agent_round.py": "3d386246287d9ee07b414f2dbd634d50721a1d9741d88fc119babecc5e6d3987"
+    "tools/probe_j5_agent_round.py": "3d5e823defd580d650e9e98be55be0a9ec686f123b63d0fbfd650645ae29afdc"
   },
   "web_search": {
     "via": "webui.server.LocalApp.dispatch agent_ask (research session)",
@@ -58,16 +58,18 @@
         "called_web_search": true,
         "citations_passed": false,
         "answer_urls": [
-          "https://aawsat.com/%D8%A7%D9%84%D8%B9%D8%A7%D9%84%D9%85",
+          "https://english.alarabiya.net/News/saudi-arabia",
+          "https://prh.gov.sa/ar/",
+          "https://sabq.org/",
           "https://www.alarabiya.net/saudi-today",
-          "https://www.alriyadh.com/news",
           "https://www.argaam.com/",
+          "https://www.facebook.com/AlArabiya.Saudi/?locale=ar_AR",
           "https://www.okaz.com.sa/",
           "https://www.spa.gov.sa/",
           "https://www.uqn.gov.sa/",
           "https://x.com/SaudiNews50?lang=ar"
         ],
-        "answer_chars": 1136
+        "answer_chars": 1911
       }
     ],
     "attempts_until_called": 2
@@ -104,10 +106,9 @@
     "web_search_accepted_only_with_a_result_carrying_a_url_counted_from_the_tool_result_not_the_answer",
     "only_the_requested_command_is_approved_its_pending_argv_recorded",
     "sources_and_probe_hashed_before_the_round_and_rechecked_before_writing",
+    "searxng_container_pinned_by_id_and_start_time_and_engine_digest_rechecked_after_the_round",
     "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
-    "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host",
-    "probe_changed_after_this_run_searxng_container_now_pinned_by_id_and_rechecked_with_the_engine_digest_after_the_round",
-    "superseded_by_j5-docker-searxng-20260927g_with_the_final_probe"
+    "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host"
   ],
   "acceptance": {
     "passed": true,
