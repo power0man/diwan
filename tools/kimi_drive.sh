@@ -18,6 +18,52 @@ case "$KIMI_WORK" in
   "$HOME/diwan-work"|"$HOME/diwan-work"/*) die "مجلّد Kimi داخل diwan-work: $KIMI_WORK" ;;
 esac
 
+# المزوّد: kimi (حسابُ Kimi Code، الافتراضيّ)، أو ollama (kimi-k2.6:cloud عبر Ollama المحلي)، أو hf
+# (moonshotai/Kimi-K2.6 عبر Hugging Face Inference Providers). النموذجُ نفسُه من مزوّدٍ آخر حين تنفد
+# حصّةُ Kimi Code. والبديلُ يُعرَّف بمتغيّرات KIMI_MODEL_* في بيئة Kimi وحدها، فلا يُمسّ config.toml
+# ولا يُكتب سرٌّ في ملفّ.
+KIMI_BACKEND="${KIMI_BACKEND:-kimi}"
+case "$KIMI_BACKEND" in
+  kimi|ollama|hf) ;;
+  *) die "KIMI_BACKEND مجهول: $KIMI_BACKEND (kimi أو ollama أو hf)" ;;
+esac
+OLLAMA_KIMI_MODEL="kimi-k2.6:cloud"
+HF_KIMI_MODEL="moonshotai/Kimi-K2.6"
+
+# يطبع اسمَ النموذج الذي سيؤلّف، ولا يطبع مفتاحًا
+backend_model() {
+  case "$KIMI_BACKEND" in
+    kimi)   echo "kimi-code (default_model في config.toml)" ;;
+    ollama) echo "$OLLAMA_KIMI_MODEL" ;;
+    hf)     echo "$HF_KIMI_MODEL" ;;
+  esac
+}
+
+# شرطُ المزوّد قبل التشغيل، فيُرى الرفضُ لا يُدفن في سجلّ الأخطاء
+backend_ready() {
+  if [ "$KIMI_BACKEND" = hf ]; then
+    [ -s "${HF_TOKEN_PATH:-$HOME/.cache/huggingface/token}" ] \
+      || die "لا توكن hf في ${HF_TOKEN_PATH:-$HOME/.cache/huggingface/token} — hf auth login بيد المالك"
+  fi
+}
+
+# يشغّل ما بعده ببيئة المزوّد المختار؛ المفتاحُ يُقرأ وقتَ التشغيل إلى بيئة العملية وحدها
+with_backend() {
+  case "$KIMI_BACKEND" in
+    kimi) "$@" ;;
+    ollama)
+      KIMI_MODEL_NAME="$OLLAMA_KIMI_MODEL" KIMI_MODEL_PROVIDER_TYPE=openai \
+      KIMI_MODEL_BASE_URL="${OLLAMA_OPENAI_URL:-http://localhost:11434/v1}" KIMI_MODEL_API_KEY=ollama \
+      KIMI_MODEL_CAPABILITIES="tool_use,thinking" "$@" ;;
+    hf)
+      local token_file="${HF_TOKEN_PATH:-$HOME/.cache/huggingface/token}"
+      KIMI_MODEL_NAME="$HF_KIMI_MODEL" KIMI_MODEL_PROVIDER_TYPE=openai \
+      KIMI_MODEL_BASE_URL="${HF_ROUTER_URL:-https://router.huggingface.co/v1}" \
+      KIMI_MODEL_API_KEY="$(tr -d '[:space:]' <"$token_file")" \
+      KIMI_MODEL_CAPABILITIES="tool_use,thinking" "$@" ;;
+  esac
+}
+
 cmd_setup() {
   mkdir -p "$KIMI_WORK/examples" "$KIMI_WORK/logs" "$KIMI_WORK/prompts"
   cp "$DIWAN/evaluation/suites/agentic_v1.json" "$KIMI_WORK/examples/agentic_v1.json"
@@ -71,11 +117,15 @@ cmd_run() {
   [ -s "$bundle" ] || die "حزمةُ الطلب فارغة: $bundle"
   # السجلّان كلاهما لا يُفتحان: Kimi يكتب تفكيرَه في مجرى الأخطاء، وفيه أسماءُ حالاتٍ
   # محجوبة وفحوصُها (قيس في ٢٦ سبتمبر ٢٠٢٦). فلا يُطبع منهما إلا الرمزُ والحجم.
+  backend_ready
+  mkdir -p "$KIMI_WORK/logs"
   local log="$KIMI_WORK/logs/run-$STAMP.log"
   local errlog="$KIMI_WORK/logs/run-$STAMP.err.log"
   local rc=0
-  ( cd "$KIMI_WORK" && "$kimi_bin" --prompt "$(cat "$bundle")" --output-format text )     >"$log" 2>"$errlog" || rc=$?
+  ( cd "$KIMI_WORK" && with_backend "$kimi_bin" --prompt "$(cat "$bundle")" --output-format text ) \
+    >"$log" 2>"$errlog" || rc=$?
   chmod 600 "$log" "$errlog"
+  echo "المزوّد: ${KIMI_BACKEND}، والنموذج: $(backend_model)"
   echo "انتهى التشغيل (رمز $rc). السجلّان لا يُفتحان: $log ($(wc -c <"$log" | tr -d ' ') بايت)، و$errlog ($(wc -c <"$errlog" | tr -d ' ') بايت)."
   if [ "$rc" != 0 ]; then
     echo "تعذّر التشغيل: يشخّصه المالكُ بنفسه، فمجرى الأخطاء قد يحمل حالاتٍ محجوبة."
