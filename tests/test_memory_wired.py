@@ -49,6 +49,20 @@ def test_the_frozen_bank_passes_through_the_wired_path():
     assert report["meets_thresholds"] is True
 
 
+def test_a_retrieve_expectation_runs_the_query_through_retrieval(tmp_path):
+    """ملاحظةُ Codex على #129: فحصُ الاسترجاع في المسار الموصول كان يقرأ قائمةَ المالك كلّها ولا يقرأ السؤال، فيمرّ
+    ما لا يسترجعه المخزنُ بالسؤال."""
+    from evaluation.memory_runner import run_scenario, run_wired_scenario
+    save = {"op": "remember", "project": "A", "text": "رقم هاتف مكتب المحاماة ٠١١٤٥٦٧٨٩٠", "consent": "owner", "as": "m1"}
+    probe = lambda query: {"expect": "retrieve", "project": "A", "query": query, "absent": [], "present": ["٠١١٤٥٦٧٨٩٠"]}
+    scenario = lambda query: {"id": "retrieve_x", "category": "isolation", "note": "", "steps": [save, probe(query)]}
+    for driver, run in (("store", run_scenario), ("wired", run_wired_scenario)):
+        for query, passed in (("موعد الطبيب غدا", False), ("هاتف مكتب المحاماة", True)):
+            root = tmp_path / f"{driver}-{passed}"
+            root.mkdir()
+            assert run(scenario(query), root)["passed"] is passed, (driver, query)
+
+
 @pytest.mark.parametrize("kind", ["agent", "text"])
 def test_a_forgotten_item_never_returns_through_session_history(wired, kind):
     project = wired.project("A")["id"]

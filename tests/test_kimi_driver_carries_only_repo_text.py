@@ -174,6 +174,18 @@ def test_a_memory_run_points_to_the_memory_tool_not_the_bank_intake(tmp_path):
     done = subprocess.run(["bash", str(DRIVER), "run"], capture_output=True, text=True, env=env)
     assert done.returncode == 0, done.stderr
     assert "tools/evaluate_memory.py --suite" in done.stdout and "intake'" not in done.stdout
+    # التسليمُ في kimi-memory/ لا في kimi-benchmark/ حيث تسليمُ v1.2، ولا يُكتب فوق تسليمٍ قائم (ملاحظة Codex على #129)
+    assert f"{work}/kimi-memory/memory_kimi_v1.json" in done.stdout and "kimi-benchmark/memory" not in done.stdout
+    (work / "kimi-benchmark").mkdir()
+    (work / "kimi-benchmark" / "REPORT.md").write_text("تسليم v1.2", encoding="utf-8")
+    again = subprocess.run(["bash", str(DRIVER), "run"], capture_output=True, text=True, env=env)
+    assert again.returncode == 0, again.stderr
+    for delivered in ("REPORT.md", "memory_kimi_v1.json"):
+        (work / "kimi-memory" / delivered).write_text("{}", encoding="utf-8")
+        refused = subprocess.run(["bash", str(DRIVER), "run"], capture_output=True, text=True, env=env)
+        assert refused.returncode != 0 and "تسليمُ ذاكرةٍ قائم" in refused.stderr
+        (work / "kimi-memory" / delivered).unlink()
+    assert (work / "kimi-benchmark" / "REPORT.md").read_text(encoding="utf-8") == "تسليم v1.2"
     for cmd in ("inspect", "intake", "place"):
         refused = subprocess.run(["bash", str(DRIVER), cmd], capture_output=True, text=True, env=env)
         assert refused.returncode != 0 and "evaluate_memory" in refused.stderr

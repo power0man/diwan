@@ -117,6 +117,15 @@ cmd_run() {
   [ -s "$bundle" ] || die "حزمةُ الطلب فارغة: $bundle"
   # السجلّان كلاهما لا يُفتحان: Kimi يكتب تفكيرَه في مجرى الأخطاء، وفيه أسماءُ حالاتٍ
   # محجوبة وفحوصُها (قيس في ٢٦ سبتمبر ٢٠٢٦). فلا يُطبع منهما إلا الرمزُ والحجم.
+  # تسليمُ الذاكرة في مجلّدٍ خاصٍّ به، لا في kimi-benchmark/ الذي يحمل تسليمَ v1.2؛ ولا يُكتب فوق تسليمٍ قائم
+  # (ملاحظة Codex على #129)
+  if [ "${KIMI_TASK:-next}" = memory ]; then
+    local f
+    for f in "$KIMI_WORK/kimi-memory/memory_kimi_v1.json" "$KIMI_WORK/kimi-memory/REPORT.md"; do
+      [ ! -e "$f" ] || die "تسليمُ ذاكرةٍ قائم: $f — انقله أو أرشفه قبل تشغيلٍ جديد"
+    done
+    mkdir -p "$KIMI_WORK/kimi-memory"
+  fi
   backend_ready
   mkdir -p "$KIMI_WORK/logs"
   local log="$KIMI_WORK/logs/run-$STAMP.log"
@@ -132,8 +141,8 @@ cmd_run() {
   fi
   # تسليمُ الذاكرة ملفٌّ واحد لا شجرةُ open/sealed، فلا يمرّ بالاستلام والتوزيع (ملاحظة Codex على #129)
   if [ "${KIMI_TASK:-next}" = memory ]; then
-    echo "التالي: التسليمُ $KIMI_WORK/kimi-benchmark/memory_kimi_v1.json يُفحص ويُشغَّل بأداةٍ واحدة تفحصه بالمدقّق وبأعداد التكليف قبل أي نداء:"
-    echo "  python3 tools/evaluate_memory.py --suite $KIMI_WORK/kimi-benchmark/memory_kimi_v1.json --model <النموذج> --agent <معرّفك> --out docs/probe/memory-kimi-<التاريخ>.json"
+    echo "التالي: التسليمُ $KIMI_WORK/kimi-memory/memory_kimi_v1.json يُفحص ويُشغَّل بأداةٍ واحدة تفحصه بالمدقّق وبأعداد التكليف قبل أي نداء:"
+    echo "  python3 tools/evaluate_memory.py --suite $KIMI_WORK/kimi-memory/memory_kimi_v1.json --model <النموذج> --agent <معرّفك> --out docs/probe/memory-kimi-<التاريخ>.json"
     echo "ولا inspect ولا intake ولا place: تلك لبنك v1.2."
   else
     echo "التالي: تحقّق من البنية بـ '$0 inspect'، واستلم بـ '$0 intake'، ثم وزّع بـ '$0 place'."

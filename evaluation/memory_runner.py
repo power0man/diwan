@@ -256,6 +256,9 @@ class _Wired:
                  if r["name"] == "propose_memory" and r["status"] == "ok"]
         return found[0] if found else None
 
+    def retrieved_text(self, name, query):
+        return " ".join(item["text"] for item in self.store(name).retrieve(query))
+
     def items_text(self, name):
         return " ".join(item["text"] for item in self.api("memory", project=self.project(name)["id"])["items"])
 
@@ -309,7 +312,9 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
             elif op == "restore":
                 wired.restore(refs[step["ref"]])
             elif expect in ("retrieve", "context"):
-                views = ([(wired.items_text(name), wired.items_text(name))] if expect == "retrieve"
+                # الحضورُ في الاسترجاع من استرجاع المخزن بالسؤال نفسِه، لا من قائمة المالك كلّها؛ والغيابُ من القائمة كلّها،
+                # وهو أشدّ (ملاحظة Codex على #129)
+                views = ([(wired.retrieved_text(name, step["query"]), wired.items_text(name))] if expect == "retrieve"
                          else wired.contexts(name, step["question"]))
                 for current, every in views:
                     for needle in step["absent"]:
@@ -357,7 +362,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
 
 WIRED_PATHS = {"remember": "memory_remember (واجهة المالك)", "remember_without_consent": "propose_memory يرفضه المالك",
                "propose": "propose_memory (awaiting_owner)", "approve": "agent_decide ثم agent_resume",
-               "forget": "memory_forget", "retrieve": "memory (قائمة المالك)",
+               "forget": "memory_forget", "retrieve": "MemoryStore.retrieve(query) للحضور، وmemory (قائمة المالك) للغياب",
                "context": "طلبُ النموذج في agent_ask وask",
                "backup": "workspace_tools.backup.export_workspace (المساحة كلُّها)",
                "restore": "workspace_tools.backup.restore_workspace(tombstones_from=المساحة الحيّة) إلى جذرٍ جديد"}
