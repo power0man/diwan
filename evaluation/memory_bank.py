@@ -108,10 +108,14 @@ def probe_collisions(scenario: dict) -> list[str]:
 
 
 def question_collisions(scenario: dict) -> list[str]:
-    """شاهدُ غيابٍ يكرّره سؤالُ خطوة السياق نفسِها: يبلغ النموذجَ في رسالة المالك الحاليّة لا من الذاكرة، ولا يراه فحصُ
-    الغياب لأنه يقرأ كتلَ الذاكرة وحدها، فيمرّ النسيانُ بلا شاهد (ملاحظة Codex على #129، الجولة السابعة عشرة)."""
-    return [a for s in scenario["steps"] if s.get("expect") == "context"
-            for a in (s.get("absent") or []) if a and contains(s.get("question", ""), a)]
+    """شاهدُ غيابٍ يكرّره سؤالُ خطوة السياق نفسِها أو سؤالُ خطوة سياقٍ سبقتها في مشروعها: جلسةُ الفحص واحدةٌ للمشروع تحمل
+    تاريخَها، فيبلغ الشاهدُ النموذجَ في رسالة مالكٍ حاليّة أو سابقة لا من الذاكرة، ولا يراه فحصُ الغياب لأنه يقرأ كتلَ
+    الذاكرة وحدها، فيمرّ النسيانُ بلا شاهد (ملاحظتا Codex على #129، الجولتان السابعة عشرة والثامنة عشرة)."""
+    steps = scenario["steps"]
+    return [a for i, s in enumerate(steps) if s.get("expect") == "context"
+            for a in (s.get("absent") or []) if a and any(
+                q.get("expect") == "context" and q.get("project") == s.get("project") and contains(q.get("question", ""), a)
+                for q in steps[:i + 1])]
 
 
 def _names(step: dict, text: str, fields=("absent",), least: int = 0) -> bool:
@@ -131,7 +135,7 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
     if collisions := probe_collisions(scenario):
         _reject(path, "probe_question_collides_with_scenario", f"«{collisions[0][:40]}» يرد في سؤال فحص العرض أو يحويه، فيبقى في تاريخ الفحص")
     if repeated := question_collisions(scenario):
-        _reject(path, "context_question_repeats_absent_witness", f"«{repeated[0][:40]}» يكرّره سؤالُ خطوة السياق التي تفحص غيابَه")
+        _reject(path, "context_question_repeats_absent_witness", f"«{repeated[0][:40]}» يكرّره سؤالُ خطوة سياقٍ في مشروعه تفحص غيابَه أو تسبقها")
 
 
 def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:

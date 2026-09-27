@@ -109,6 +109,20 @@ def test_a_context_question_that_repeats_its_absent_witness_is_rejected_by_the_v
     _refused(bank, "context_question_repeats_absent_witness")
 
 
+def test_an_earlier_context_question_of_the_same_project_that_repeats_a_later_absent_witness_is_rejected_by_the_validator():
+    """ملاحظةُ Codex على #129 (الجولة الثامنة عشرة): سؤالُ خطوة سياقٍ سابقة يحمل الشاهدَ يبقى في تاريخ جلسة المشروع، فيبلغ النموذجَ
+    عند فحص غيابه لاحقًا وهو كلامُ المالك؛ يُرفض في مشروع الفحص نفسِه، ولا يُرفض من مشروعٍ آخر لأن جلسته غيرُ جلسته."""
+    bank, scenario = _scenario("forget_001")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    check = next(i for i, s in enumerate(scenario["steps"]) if s.get("expect") == "context")
+    earlier = {"expect": "context", "project": "A", "question": f"هل تتذكّر {remembered['text']}؟",
+               "absent": ["عنوان المكتب الجديد"], "present": []}                 # تفحص غيابَ غيره، والسؤالُ يحمل الشاهد
+    scenario["steps"].insert(check, earlier)
+    _refused(bank, "context_question_repeats_absent_witness")
+    earlier["project"] = "B"
+    validate_memory_bank(bank)
+
+
 def test_forgotten_content_erases_at_restore_only_in_the_project_that_forgot_it():
     """ملاحظةُ Codex على #129 (الجولة السابعة عشرة): كان المحوُ بالبصمة عند الاستعادة عامًّا على السيناريو، فخمسةُ عناصر قائمة
     في B بنصّ عنصرٍ نُسي في D كانت تُعدّ زائلة، فيُحسب مصدرُ A في حدّ الاسترجاع ويُقبل عزلٌ يحجبه مسترجعٌ معطوبٌ خلفها؛
