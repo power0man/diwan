@@ -110,7 +110,12 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         # التوقّعُ يُحسب للمنسيّ إن كان في `absent` جزءٌ من نصّه هو، فغيابُ نصٍّ لم يُحفظ قطّ لا يشهد بالنسيان
         # (ملاحظة Codex على #129)
         # وفي النسخ الاحتياطي يُفحص بعد الاستعادة، فهي التي قد تُحيي المنسيّ
-        after = steps[max(last("forget"), last("restore") if category == "backup" else -1) + 1:]
+        start = max(last("forget"), last("restore") if category == "backup" else -1) + 1
+        # وفي سيناريو النسيان لا يُحسب فحصٌ بعد استعادةٍ لاحقة: الاستعادةُ من نسخةٍ أقدم تمحو ما قد يكون بقي خطأً قبل أن
+        # يُفحص، فيمرّ نسيانٌ لم يحذف شيئًا (ملاحظة Codex على #129)
+        stop = next((i for i in range(start, len(steps)) if steps[i].get("op") == "restore"), len(steps)) \
+            if category == "forget" else len(steps)
+        after = steps[start:stop]
         for ref in sorted({s["ref"] for s in steps if s.get("op") == "forget"}):
             bound = {s["expect"] for s in after if s.get("expect") in ("retrieve", "context", "residue")
                      and _bound(s, made[ref][1])}

@@ -511,6 +511,18 @@ def test_only_a_persisted_item_witnesses_isolation_injection_or_restoration():
             == "injection_item_not_shown_in_checked_context"
     check(by_id["injection_001"], strict=True)
 
+    # ولا يُحسب في النسيان فحصٌ بعد استعادةٍ لاحقة، فهي تمحو ما بقي خطأً قبل أن يُفحص (ملاحظة Codex على #129)
+    secret, forgot, *forget_checks = by_id["forget_001"]["steps"]
+    dummy = {"op": "remember", "project": "A", "text": "موعد الاجتماع الأسبوعي", "consent": "owner", "as": "m0"}
+    old_snapshot = {"op": "backup", "project": "A", "as": "b0"}
+    erased = dict(by_id["forget_001"], steps=[dummy, old_snapshot, secret, forgot,
+                                              {"op": "restore", "project": "A", "ref": "b0"}, *forget_checks])
+    for strict in (False, True):
+        assert code(erased, strict=strict) == "forget_not_checked_in_use"
+    check(dict(by_id["forget_001"], steps=[dummy, old_snapshot, secret, forgot, *forget_checks,
+                                           {"op": "restore", "project": "A", "ref": "b0"}]), strict=True)
+    check(by_id["forget_001"], strict=True)
+
     save, backup, forget, restore, *checks = by_id["backup_001"]["steps"]
     safe = {"op": "backup", "project": "A", "as": "b2"}
     overwritten = dict(by_id["backup_001"], steps=[save, backup, forget, safe, restore,
