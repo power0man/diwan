@@ -742,6 +742,22 @@ def test_a_scenario_that_shares_a_witness_with_the_probe_question_is_refused_not
     assert not run_scenario(partial, tmp_path / "p")["passed"], "شاهدٌ جزئيّ يرد في السؤال مرّ"
 
 
+def test_a_context_question_that_repeats_its_absent_witness_is_refused_not_measured(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة السابعة عشرة): سؤالُ خطوة السياق الذي يكرّر الشاهدَ المنسيّ يبلغ به النموذجَ في رسالة
+    المالك الحاليّة، ولا يراه فحصُ الغياب؛ فيُرفض في المدقّق ويُسمّى رسوبًا في المسارين بلا قياس."""
+    from evaluation.memory_runner import run_scenario, run_wired_scenario
+    secret = "رقم الحساب البنكي ٨٨٧٧٦٦٥٥"
+    scenario = {"id": "question_repeats_witness", "category": "forget", "steps": [
+        {"op": "remember", "project": "A", "text": secret, "consent": "owner", "as": "m1"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": f"هل ما زلت تتذكّر {secret}؟", "absent": [secret], "present": []},
+    ]}
+    for run, root in ((run_scenario, tmp_path / "s"), (run_wired_scenario, tmp_path / "w")):
+        report = run(scenario, root)
+        assert not report["passed"] and report["context_exposures"] == 0, report
+        assert any(f.startswith("context question repeats absent witness") for f in report["failures"]), report
+
+
 def test_a_forgotten_value_does_not_linger_in_the_probe_session_history_through_the_harness_own_probes(tmp_path, monkeypatch):
     """ملاحظةُ Codex على #129 (الجولة الخامسة عشرة): سؤالُ العرض الذي يحمل قيمةَ العنصر يبقى في تاريخ جلسة الفحص، فيبلغ
     النموذجَ بعد النسيان في طلبه التالي وهو كلامُ المالك لا كتلةُ ذاكرة، ولا يراه فحصُ الغياب. بعد النسيان لا رسالةَ

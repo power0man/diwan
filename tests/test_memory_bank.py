@@ -98,6 +98,39 @@ def test_a_witness_that_appears_in_the_probe_question_is_rejected_by_the_validat
     _refused(bank, "probe_question_collides_with_scenario")
 
 
+def test_a_context_question_that_repeats_its_absent_witness_is_rejected_by_the_validator():
+    """ملاحظةُ Codex على #129 (الجولة السابعة عشرة): شاهدُ الغياب المكرَّر في سؤال خطوته يبلغ النموذجَ من رسالة المالك."""
+    bank, scenario = _scenario("forget_001")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    for step in scenario["steps"]:
+        if step.get("expect") == "context" and step.get("absent"):
+            step["question"] = f"هل تتذكّر {remembered['text']}؟"
+            step["absent"] = [remembered["text"]]
+    _refused(bank, "context_question_repeats_absent_witness")
+
+
+def test_forgotten_content_erases_at_restore_only_in_the_project_that_forgot_it():
+    """ملاحظةُ Codex على #129 (الجولة السابعة عشرة): كان المحوُ بالبصمة عند الاستعادة عامًّا على السيناريو، فخمسةُ عناصر قائمة
+    في B بنصّ عنصرٍ نُسي في D كانت تُعدّ زائلة، فيُحسب مصدرُ A في حدّ الاسترجاع ويُقبل عزلٌ يحجبه مسترجعٌ معطوبٌ خلفها؛
+    صار المحوُ في مشروع النسيان وحده."""
+    bank, scenario = _scenario("isolation_002")
+    twin = "رقم لوحة السيارة القديمة ٧٧٧"
+    scenario["steps"] = [
+        {"op": "remember", "project": "A", "text": "رقم لوحة السيارة أ ب ج ١٢٣", "consent": "owner", "as": "src"},
+        {"op": "remember", "project": "D", "text": twin, "consent": "owner", "as": "d1"},
+        *[{"op": "remember", "project": "B", "text": twin, "consent": "owner", "as": f"b{i}"} for i in range(5)],
+        {"op": "backup", "project": "A", "as": "bk"},
+        {"op": "forget", "project": "D", "ref": "d1"},
+        {"op": "restore", "project": "A", "ref": "bk"},
+        {"expect": "retrieve", "project": "B", "query": "ما رقم لوحة السيارة؟", "absent": ["رقم لوحة السيارة أ ب ج ١٢٣"],
+         "present": []},
+    ]
+    bank["scenarios"], bank["projects"] = [scenario], sorted({*bank["projects"], "D"})
+    with pytest.raises(PayloadRejected) as err:                     # خمسةُ منافسين قائمين في B يزيحون المصدر عن الحدّ
+        validate_memory_bank(bank, strict=True)
+    assert err.value.code == "isolation_without_cross_project_absence"
+
+
 def test_isolation_measured_on_one_project_is_refused():
     bank, scenario = _scenario("isolation_001")
     for step in scenario["steps"]:

@@ -107,6 +107,13 @@ def probe_collisions(scenario: dict) -> list[str]:
     return found
 
 
+def question_collisions(scenario: dict) -> list[str]:
+    """شاهدُ غيابٍ يكرّره سؤالُ خطوة السياق نفسِها: يبلغ النموذجَ في رسالة المالك الحاليّة لا من الذاكرة، ولا يراه فحصُ
+    الغياب لأنه يقرأ كتلَ الذاكرة وحدها، فيمرّ النسيانُ بلا شاهد (ملاحظة Codex على #129، الجولة السابعة عشرة)."""
+    return [a for s in scenario["steps"] if s.get("expect") == "context"
+            for a in (s.get("absent") or []) if a and contains(s.get("question", ""), a)]
+
+
 def _names(step: dict, text: str, fields=("absent",), least: int = 0) -> bool:
     """في حقول التوقّع جزءٌ من هذا النصّ نفسِه، لا نصٌّ آخر، فيه `least` كلماتٍ أو حروفٍ على الأقل."""
     return any(a and a in text and len(re.findall(r"\w", a)) >= least for field in fields for a in step.get(field) or [])
@@ -123,6 +130,8 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
     # آخرُ بوابة بعد صحّة المعنى: شاهدٌ يرد في سؤال فحص العرض أو نصٌّ يحويه يبقى في تاريخ الفحص كلامًا للمالك
     if collisions := probe_collisions(scenario):
         _reject(path, "probe_question_collides_with_scenario", f"«{collisions[0][:40]}» يرد في سؤال فحص العرض أو يحويه، فيبقى في تاريخ الفحص")
+    if repeated := question_collisions(scenario):
+        _reject(path, "context_question_repeats_absent_witness", f"«{repeated[0][:40]}» يكرّره سؤالُ خطوة السياق التي تفحص غيابَه")
 
 
 def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
@@ -139,8 +148,11 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
         بها، والمنسيُّ قبلها يبقى منسيًّا (`tombstones_from`)، فلا يشهد مصدرٌ محته استعادةٌ بشيء (ملاحظة Codex على #129).
         والاستعادةُ تمحو ببصمة النصّ لا بالمعرّف (`MemoryStore.restore`): عنصرٌ في النسخة نصُّه نصُّ منسيٍّ يزول بها ولو
         لم يُنسَ هو، فنسخةٌ فيها نصٌّ واحد بمعرّفين يُنسى أحدُهما لا يبقى منها الآخر (ملاحظة Codex على #129)."""
-        saved, active, forgotten, gone, snapshots = set(), set(), set(), set(), {}
+        # والمحوُ بالبصمة في مشروع النسيان وحده: إيصالاتُ كلِّ مشروعٍ تُطبَّق على مخزنه هو عند الاستعادة، فنصٌّ نُسي في
+        # مشروعٍ لا يمحو نظيرَه القائمَ في مشروعٍ آخر (ملاحظة Codex على #129، الجولة السابعة عشرة)
+        saved, active, forgotten, gone, snapshots = set(), set(), set(), {}, {}
         content = lambda r: made[r][1]["text"].strip()
+        project = lambda r: made[r][1]["project"]
         for s in steps[:index]:
             op = s.get("op")
             if op in ("remember", "propose"):
@@ -151,14 +163,14 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
                 active.add(s["ref"])
             elif op == "forget":
                 # وبصمةُ إيصاله تمحو نصَّه عند كلّ استعادةٍ بعده
-                gone.add(content(s["ref"]))
+                gone.setdefault(project(s["ref"]), set()).add(content(s["ref"]))
                 forgotten.add(s["ref"])
                 saved.discard(s["ref"])
                 active.discard(s["ref"])
             elif op == "backup":
                 snapshots[s["as"]] = (set(saved), set(active))
             elif op == "restore" and s["ref"] in snapshots:
-                saved, active = ({r for r in state - forgotten if content(r) not in gone}
+                saved, active = ({r for r in state - forgotten if content(r) not in gone.get(project(r), set())}
                                  for state in snapshots[s["ref"]])
         return ref in active
 

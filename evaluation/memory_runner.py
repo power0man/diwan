@@ -30,7 +30,8 @@ from pathlib import Path
 import uuid
 
 from core.quoted import QUARANTINE_MARK, scan
-from evaluation.memory_bank import EXPOSURE_QUESTION, contains as _contains, names_every_directive, probe_collisions
+from evaluation.memory_bank import (EXPOSURE_QUESTION, contains as _contains, names_every_directive, probe_collisions,
+                                    question_collisions)
 from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, unfenced
 
 
@@ -92,10 +93,12 @@ def _exposed(shown: str, text: str) -> bool:
 def _collision_result(scenario: dict, wired: bool) -> dict | None:
     """سيناريو يرد شاهدُ غيابه في سؤال العرض أو يحفظه نصًّا: رسوبٌ مسمًّى بلا قياس، لا نجاحٌ يعتمد على تاريخٍ يحمل الشاهد."""
     collisions = probe_collisions(scenario)
-    if not collisions:
+    repeated = question_collisions(scenario)
+    if not collisions and not repeated:
         return None
     result = {"id": scenario["id"], "category": scenario["category"], "passed": False,
-              "failures": [f"probe question collides with witness «{c[:30]}»" for c in collisions],
+              "failures": [f"probe question collides with witness «{c[:30]}»" for c in collisions]
+                          + [f"context question repeats absent witness «{c[:30]}»" for c in repeated],
               "leaks": 0, "consent_violations": 0, "injection_unquarantined": 0, "context_exposures": 0}
     return {**result, "probe_sessions_reset": 0, "stuck_probe_turns": []} if wired else result
 
