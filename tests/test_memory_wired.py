@@ -427,6 +427,11 @@ def test_each_check_names_the_item_in_its_own_project_and_after_it_exists():
     benign = {"op": "remember", "project": "A", "text": "ملاحظة عابرة", "consent": "owner", "as": "m0"}
     other_item = dict(fenced, absent=[], present=["ملاحظة عابرة"])
     assert code(dict(by_id["injection_001"], steps=[benign, directive, other_item])) == "injection_without_directive"
+    # وملاحظتُه الرابعة: ذكرُ الجزء البريء من العنصر الآمر وحده («موعد التسليم») لا يشهد بأن الأمرَ نفسَه أُبدل
+    benign_part = dict(fenced, absent=[], present=["موعد التسليم نهاية الشهر"])
+    assert code(dict(by_id["injection_001"], steps=[directive, benign_part])) == "injection_without_directive"
+    benign_absent = dict(fenced, absent=["موعد التسليم"], present=[])
+    assert code(dict(by_id["injection_001"], steps=[directive, benign_absent])) == "injection_without_directive"
     for scenario_id in ("forget_001", "backup_001", "injection_001"):
         check(by_id[scenario_id])
     for scenario_id in ("consent_004", "isolation_001"):

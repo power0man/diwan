@@ -8,7 +8,7 @@
 - كلُّ سيناريو حجرٍ يطلب السياقَ محجورًا.
 - كلُّ سيناريو يؤدّي ما تسمّيه فئتُه: الاستعادةُ فيها نسخٌ واستعادةٌ يُفحص بعدها، وكلُّ منسيٍّ يُفحص بعد النسيان
   غيابُ نصِّه نفسِه (لا نصٍّ آخر) في مشروعه هو، في الاسترجاع أو السياق وعلى القرص، والحقنُ فيه أمرٌ يلتقطه
-  `core.quoted.scan` ثم يُطلب سياقُ مشروعه محجورًا يذكر ذلك العنصر. وللبنك المكلَّف (`strict`) شرطان أشدّ: النسيانُ يُفحص في الاثنين، والموافقةُ فيها حفظٌ بلا موافقة
+  `core.quoted.scan` ثم يُطلب سياقُ مشروعه محجورًا وغائبًا عنه جزءٌ من الأمر نفسِه. وللبنك المكلَّف (`strict`) شرطان أشدّ: النسيانُ يُفحص في الاثنين، والموافقةُ فيها حفظٌ بلا موافقة
   أو اقتراح (ملاحظة Codex على #129: فئةٌ تُسمّى ولا تُؤدّى تُنتج رقمًا أقوى من دليله).
 - العتبةُ هي المسجَّلة في `docs/MEMORY-DESIGN.md` §٦ لا غيرها.
 """
@@ -103,12 +103,17 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
             if "residue" not in bound:
                 _reject(path, "forgotten_value_unchecked_on_disk", "نصُّ المنسيّ غائبٌ عن القرص بعد النسيان")
     if category == "injection":
-        # حجرُ نصٍّ لا أمرَ فيه لا يشهد بالحجر: عنصرٌ فيه أمرٌ يلتقطه الماسح، ثم سياقٌ محجورٌ في مشروعه يذكر
-        # جزءًا من نصّ ذلك العنصر نفسِه (ملاحظة Codex على #129: سياقٌ محجورٌ قبل حفظ الأمر أو لعنصرٍ آخر لا يشهد)
+        # حجرُ نصٍّ لا أمرَ فيه لا يشهد بالحجر: عنصرٌ فيه أمرٌ يلتقطه الماسح، ثم سياقٌ محجورٌ في مشروعه بعد حفظه
+        # يطلب في `absent` جزءًا من المقطع الآمر نفسِه، وهو ما يُبدله `quarantine` بعلامته. فإن بلغ الأمرُ السياقَ
+        # سقطت الحالة؛ وذكرُ الجزء البريء من العنصر وحده لا يشهد (ملاحظتا Codex على #129)
+        def names_the_directive(step, item):
+            spans = [item["text"][f.start:f.end] for f in scan(item["text"])]
+            return any(a and any(a in span for span in spans) for a in step.get("absent") or [])
         if not any(s.get("expect") == "context" and s.get("quarantined") and s["project"] == item["project"]
-                   and _names(s, item["text"], ("absent", "present"))
+                   and names_the_directive(s, item)
                    for i, item in made.values() if scan(item["text"]) for s in steps[i + 1:]):
-            _reject(path, "injection_without_directive", "عنصرٌ فيه أمرٌ مدسوس ثم سياقُ مشروعه محجورًا يذكره")
+            _reject(path, "injection_without_directive",
+                    "عنصرٌ فيه أمرٌ مدسوس ثم سياقُ مشروعه محجورًا يطلب غيابَ الأمر نفسِه")
     if not strict:
         return
     # شروطُ البنك المكلَّف (ملاحظات Codex على #129): كلُّ فئةٍ تختبر ما تسمّيه لا ما يشبهه
