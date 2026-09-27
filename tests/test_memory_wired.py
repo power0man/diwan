@@ -831,6 +831,34 @@ def test_the_serialized_tool_wrapper_and_the_whole_agent_envelope_are_inspected_
             assert any(f.startswith(failure) for f in report["failures"]), report
 
 
+def test_wire_message_fields_are_inspected_and_the_collision_tools_match_a_captured_request(tmp_path):
+    """ملاحظتا Codex على #129 (الجولة الخامسة والعشرون): الرسائلُ تُقرأ كما يسلسلها المزوّد بأسماء حقولها الثابتة، وأدواتُ التصادم
+    هي أدواتُ المُقيِّم نفسِها كما تظهر في طلبٍ ملتقَط لا كلُّ الأدوات الافتراضية."""
+    from core.contracts import Message, Request
+    from evaluation.memory_bank import declared_tool_specs
+    from evaluation.memory_runner import _memory_parts, run_scenario, run_wired_scenario
+    request = Request((Message("assistant", "حسنًا."), Message("user", "ما رقم الجواز؟")), "m", "0" * 64, 64, 30.0, "local_only", None)
+    current, every, echoed, question, tools = _memory_parts(request)
+    assert "role" in every and "content" in every and "role" in echoed and "حسنًا." in echoed
+    wired = _Wired(tmp_path / "ui")
+    try:
+        wired.api("memory_remember", project=wired.project("A")["id"], text="رقم هاتف مكتب المحاماة ٠١١٤٥٦٧٨٩٠")
+        wired.contexts("A", "ما رقم مكتب المحاماة؟")
+        captured = next(r for r in wired.provider.requests if r.tools)
+        assert {t.name for t in captured.tools} == {s.name for s in declared_tool_specs()}
+    finally:
+        wired.close()
+    scenario = {"id": "wire_witness", "category": "forget", "steps": [
+        {"op": "remember", "project": "A", "text": "role passport secret note", "consent": "owner", "as": "m1"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": "ما رقم الجواز؟", "absent": ["role"], "present": []},
+    ]}
+    for run, root in ((run_scenario, tmp_path / "s"), (run_wired_scenario, tmp_path / "w")):
+        report = run(scenario, root)
+        assert not report["passed"] and report["context_exposures"] == 0, report
+        assert any(f.startswith("witness collides with the message envelope") for f in report["failures"]), report
+
+
 def test_an_earlier_context_question_of_the_same_project_that_repeats_a_later_absent_witness_is_refused_not_measured(tmp_path):
     """ملاحظةُ Codex على #129 (الجولة الثامنة عشرة): خطوةُ سياقٍ سؤالُها يحمل السرَّ وتفحص غيابَ غيره، ثم خطوةٌ محايدة تفحص غيابَ
     السرّ: الأولى تُبقي السرَّ في تاريخ جلسة المشروع فيبلغ النموذجَ عند الثانية ولا يراه فحصُ الغياب؛ يُرفض في المسارين بلا قياس."""

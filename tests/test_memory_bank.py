@@ -156,6 +156,28 @@ def test_a_witness_inside_the_fixed_agent_envelope_is_rejected_by_the_validator(
     _refused(bank, "witness_collides_with_agent_envelope")
 
 
+def test_a_witness_inside_the_wire_message_envelope_is_rejected_by_the_validator():
+    """ملاحظةُ Codex على #129 (الجولة الخامسة والعشرون): المزوّدُ يرسل كلَّ رسالةٍ بحقولها الثابتة (`role`، `content`…)، فشاهدٌ مثل
+    «role» يُرسل مع كلِّ رسالة ولا يشهد غيابُه بشيء."""
+    bank, scenario = _scenario("forget_001")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["text"] = "role passport secret note"
+    for step in scenario["steps"]:
+        if step.get("absent"):
+            step["absent"] = ["role"]
+    _refused(bank, "witness_collides_with_message_envelope")
+
+
+def test_the_collision_tools_are_the_evaluator_s_own_registry_not_every_default_tool():
+    """ملاحظةُ Codex على #129 (الجولة الخامسة والعشرون): المُقيِّم بلا خلفية تنفيذٍ فلا يرسل `run_command` ولا `run_tests`؛ فشاهدٌ
+    لا يقع إلا في مواصفتيهما لا يُرفض تصادمًا."""
+    from evaluation.memory_bank import declared_tool_specs, declared_tools_text
+    names = {spec.name for spec in declared_tool_specs()}
+    assert "propose_memory" in names and "read_file" in names
+    assert not {"run_command", "run_tests"} & names
+    assert "run_tests" not in declared_tools_text() and "run_command" not in declared_tools_text()
+
+
 def test_a_context_question_whose_sent_form_carries_the_absent_witness_is_rejected_by_the_validator():
     """ملاحظةُ Codex على #129 (الجولة الثالثة والعشرون): السؤالُ يُحجَر مقتبَسُه قبل الإرسال، فعلامةُ الحَجر تبلغ النموذجَ في الرسالة
     الحاليّة ولو لم تُكتب في السؤال؛ يُقرأ السؤالُ كما يُرسل لا كما كُتب."""

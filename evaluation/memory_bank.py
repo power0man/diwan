@@ -112,15 +112,41 @@ def _flat_text(value) -> str:
     return str(value)
 
 
-def declared_tools_text() -> str:
-    """مواصفاتُ الأدوات كما تُرسل فعلًا مع كلِّ طلبٍ وكيل: مسلسلةً كما يسلسلها مزوّدُ Ollama (`serialize_tools`: غلافُ
-    `type: function` و`function` حول الاسم والوصف والوسائط) لا كما تُعلَن مجرّدةً؛ أدواتُ الواجهة الافتراضية وأداةُ اقتراح
-    الذاكرة. فالمُشغِّلُ الموصول يقرأ ما في الطلب مسلسلًا، والمدقّقُ يقرأ هذه قبل أيّ طلب (ملاحظتا Codex على #129، الجولتان
-    الثالثة والعشرون والرابعة والعشرون)."""
+EVALUATOR_DISABLED_TOOLS = frozenset({"run_command", "run_tests"})   # ما يُسقطه سجلُّ الواجهة بلا خلفية تنفيذ
+
+
+def declared_tool_specs() -> list:
+    """مواصفاتُ الأدوات التي يرسلها المُقيِّمُ فعلًا لا كلُّ الأدوات الافتراضية: سجلُّ الواجهة للمُقيِّم بلا خلفية تنفيذٍ ولا تحليلٍ
+    ولا بحثٍ في الويب (كما يبنيه `LocalApp.agent_registry`) يُسقط `run_command` و`run_tests` ويضيف أداةَ اقتراح الذاكرة؛
+    والاختبارُ الموصول يطابق هذه بما في طلبٍ ملتقَط (ملاحظة Codex على #129، الجولة الخامسة والعشرون)."""
     from agent.builtin_tools import DEFAULT_TOOLS
     from memory.tool import PROPOSE_MEMORY_SPEC
+    return [tool.spec for tool in DEFAULT_TOOLS if tool.spec.name not in EVALUATOR_DISABLED_TOOLS] + [PROPOSE_MEMORY_SPEC]
+
+
+def declared_tools_text() -> str:
+    """مواصفاتُ الأدوات كما تُرسل فعلًا مع كلِّ طلبٍ وكيل: أدواتُ المُقيِّم (`declared_tool_specs`) مسلسلةً كما يسلسلها مزوّدُ
+    Ollama (`serialize_tools`: غلافُ `type: function` و`function` حول الاسم والوصف والوسائط) لا كما تُعلَن مجرّدةً. فالمُشغِّلُ
+    الموصول يقرأ ما في الطلب مسلسلًا، والمدقّقُ يقرأ هذه قبل أيّ طلب (ملاحظات Codex على #129، الجولات ٢٣–٢٥)."""
     from providers.ollama_codec import serialize_tools
-    return _flat_text(serialize_tools([*(tool.spec for tool in DEFAULT_TOOLS), PROPOSE_MEMORY_SPEC]))
+    return _flat_text(serialize_tools(declared_tool_specs()))
+
+
+def declared_message_envelope_text() -> str:
+    """غلافُ الرسائل كما يسلسلها المزوّد مع كلِّ رسالة: أسماءُ حقولها الثابتة (`role`، `content`، `tool_calls`، `id`، `function`،
+    `index`، `name`، `arguments`، `tool_call_id`، `tool_name`) وقيمُ الأدوار، من طلبٍ عيّنةٍ فارغ المحتوى بأدواره الأربعة؛ شاهدُ
+    غيابٍ يقع فيها يبلغ النموذجَ مع كلِّ رسالة (ملاحظة Codex على #129، الجولة الخامسة والعشرون)."""
+    from types import SimpleNamespace
+    from core.contracts import Message, ToolCall
+    from providers.ollama_codec import serialize_messages
+    sample = (Message("system", ""), Message("user", ""), Message("assistant", "", None, (ToolCall("", "", {}),)), Message("tool", "", ""))
+    return _flat_text(serialize_messages(SimpleNamespace(messages=sample)))
+
+
+def message_envelope_collisions(scenario: dict, envelope_text: str | None = None) -> list[str]:
+    """شاهدُ غيابٍ يقع في غلاف الرسائل الثابت كما يُرسل؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الخامسة والعشرون)."""
+    text = declared_message_envelope_text() if envelope_text is None else envelope_text
+    return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
 
 
 def declared_envelope_text() -> str:
@@ -201,6 +227,8 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         _reject(path, "witness_collides_with_tool_schema", f"«{tools[0][:40]}» يقع في مواصفة أداةٍ معلَنة فيُرسل مع كلِّ طلبٍ وكيل")
     if envelope := envelope_collisions(scenario):
         _reject(path, "witness_collides_with_agent_envelope", f"«{envelope[0][:40]}» يقع في غلاف الطلب الوكيل الثابت فيُرسل مع كلِّ رسالة")
+    if wire := message_envelope_collisions(scenario):
+        _reject(path, "witness_collides_with_message_envelope", f"«{wire[0][:40]}» يقع في غلاف الرسائل كما يسلسله المزوّد فيُرسل مع كلِّ رسالة")
 
 
 def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:

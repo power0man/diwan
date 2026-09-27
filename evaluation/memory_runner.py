@@ -31,7 +31,8 @@ import uuid
 
 from core.quoted import QUARANTINE_MARK, scan
 from evaluation.memory_bank import (EXPOSURE_QUESTION, contains as _contains, names_every_directive, probe_collisions,
-                                    envelope_collisions, question_collisions, role_collisions, tool_collisions)
+                                    envelope_collisions, message_envelope_collisions, question_collisions, role_collisions,
+                                    tool_collisions)
 from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, unfenced
 
 
@@ -97,14 +98,16 @@ def _collision_result(scenario: dict, wired: bool) -> dict | None:
     roles = role_collisions(scenario)
     tools = tool_collisions(scenario)
     envelope = envelope_collisions(scenario)
-    if not collisions and not repeated and not roles and not tools and not envelope:
+    wire = message_envelope_collisions(scenario)
+    if not collisions and not repeated and not roles and not tools and not envelope and not wire:
         return None
     result = {"id": scenario["id"], "category": scenario["category"], "passed": False,
               "failures": [f"probe question collides with witness «{c[:30]}»" for c in collisions]
                           + [f"context question repeats absent witness «{c[:30]}»" for c in repeated]
                           + [f"witness collides with a message role «{c[:30]}»" for c in roles]
                           + [f"witness collides with a declared tool schema «{c[:30]}»" for c in tools]
-                          + [f"witness collides with the agent envelope «{c[:30]}»" for c in envelope],
+                          + [f"witness collides with the agent envelope «{c[:30]}»" for c in envelope]
+                          + [f"witness collides with the message envelope «{c[:30]}»" for c in wire],
               "leaks": 0, "consent_violations": 0, "injection_unquarantined": 0, "context_exposures": 0}
     return {**result, "probe_sessions_reset": 0, "stuck_probe_turns": []} if wired else result
 
@@ -273,11 +276,16 @@ def _flat(value) -> str:
 
 
 def _payload(message) -> str:
-    """الرسالةُ كلُّها كما تبلغ النموذج: نصُّها، ومعرّفُ النداء الذي تردّ عليه، ونداءاتُ الأدوات فيها بمعرّفاتها وأسمائها
-    ووسائطها — فالقيمةُ التي يردّدها النموذج في وسيط `propose_memory` أو في معرّف النداء نفسِه تبقى في التاريخ كما يبقى نصُّه
-    (ملاحظتا Codex على #129، الجولتان العشرون والحادية والعشرون)."""
-    return "\n".join([message.role, message.content, message.tool_call_id or "",
-                      *(f"{c.call_id} {c.name} {_flat(c.arguments)}" for c in message.tool_calls)])
+    """رسالةٌ واحدة كما يسلسلها مزوّدُ Ollama (`serialize_messages`): بأسماء حقولها الثابتة (`role`، `content`، `tool_calls`، `id`،
+    `function`…) ومعرّفات نداءاتها ووسائطها — لا تسطيحٌ يدويّ يُسقط أسماءَ الحقول؛ وردُّ الأداة يُسلسل خلف نداءٍ مصطنع يحمل معرّفَه
+    ليُحلّ (ملاحظات Codex على #129: الجولات العشرون والحادية والعشرون والخامسة والعشرون)."""
+    from types import SimpleNamespace
+    from core.contracts import Message, ToolCall
+    from providers.ollama_codec import serialize_messages
+    messages = (message,)
+    if message.role == "tool":
+        messages = (Message("assistant", "", None, (ToolCall(message.tool_call_id or "", "", {}),)), message)
+    return _flat(serialize_messages(SimpleNamespace(messages=messages))[-1])
 
 
 def _sent_question(content: str, block: str) -> str:
@@ -297,20 +305,22 @@ def _sent_question(content: str, block: str) -> str:
 
 def _memory_parts(request) -> tuple[str, str, str, str, str]:
     """(كتلةُ الطلب الحالي، كلُّ ما يبلغ النموذج سوى الكتلة، رسائلُ النموذج السابقة وحدها، السؤالُ الحاليّ كما أُرسل، مواصفاتُ
-    الأدوات المعلَنة): المنسيُّ الذي يبلغ النموذجَ من أيّ جزءٍ في الطلب — كتلةِ ذاكرةٍ لم تُمحَ، أو كلامِ مالكٍ سابق، أو صدى جوابه
-    هو على فحص العرض في الجلسة المعادة نصًّا أو وسيطَ نداءِ أداة، أو علامةِ حَجرٍ في السؤال الحاليّ كما حُوِّل، أو اسمِ أداةٍ
-    في مواصفاتها المرسَلة مع كلِّ طلب — ليس منسيًّا، فلا يُقرأ فحصُ الغياب كتلَ الذاكرة وحدها (ملاحظات Codex على #129:
-    الخامسة عشرة والتاسعة عشرة والعشرون والثالثة والعشرون)."""
+    الأدوات المعلَنة) — كلُّها كما يسلسلها المزوّدُ فعلًا (`serialize_messages` و`serialize_tools`): بأسماء حقول الرسائل الثابتة
+    وغلافِ الأدوات. المنسيُّ الذي يبلغ النموذجَ من أيّ جزءٍ في الطلب — كتلةِ ذاكرةٍ لم تُمحَ، أو كلامِ مالكٍ سابق، أو صدى جوابه هو
+    على فحص العرض في الجلسة المعادة نصًّا أو وسيطَ نداءِ أداة، أو علامةِ حَجرٍ في السؤال الحاليّ كما حُوِّل، أو اسمِ أداةٍ أو حقلٍ في
+    مواصفاتها ورسائلها المرسَلة مع كلِّ طلب — ليس منسيًّا، فلا يُقرأ فحصُ الغياب كتلَ الذاكرة وحدها (ملاحظات Codex على #129:
+    الخامسة عشرة والتاسعة عشرة والعشرون والثالثة والعشرون والخامسة والعشرون)."""
+    from providers.ollama_codec import serialize_messages, serialize_tools
     messages = list(request.messages)
     last = messages[-1] if messages and messages[-1].role == "user" else None
     current = _block_of(last.content) if last else ""
     question = _sent_question(last.content, current) if last else ""
-    # مواصفاتُ الأدوات كما يسلسلها المزوّدُ فعلًا (غلافُ `type: function`)، لا كما تُعلَن مجرّدةً (ملاحظة Codex، الجولة ٢٤)
-    from providers.ollama_codec import serialize_tools
+    wire = serialize_messages(request)
     tools = _flat(serialize_tools(getattr(request, "tools", ())))
-    history = [_payload(m) for m in messages[:-1]]
-    return (current, "\n".join([*history, question, tools]),
-            "\n".join(_payload(m) for m in messages[:-1] if m.role == "assistant"), question, tools)
+    history = [_flat(m) for m in wire[:-1]]
+    sent = _flat({**wire[-1], "content": question}) if last else (_flat(wire[-1]) if wire else "")
+    return (current, "\n".join([*history, sent, tools]),
+            "\n".join(_flat(m) for m in wire[:-1] if m.get("role") == "assistant"), question, tools)
 
 
 class _ConsentBypassed(RuntimeError):
