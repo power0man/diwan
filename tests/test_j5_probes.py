@@ -333,6 +333,35 @@ def test_a_receipt_replaced_during_the_round_or_unreadable_writes_no_report(tmp_
     assert json.loads(capsys.readouterr().out.strip().splitlines()[-1])["code"] == "runtime_receipt_unreadable"
 
 
+def test_the_ui_runs_against_a_private_copy_of_the_hashed_receipt_not_its_path(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #144: الواجهةُ تفتح الإيصالَ في أثناء الجولة، فإيصالٌ استُبدل مؤقتًا ثم أُعيد قبل إعادة القراءة
+    كان يُشغّل صورةً غيرَ المسجَّلة. فتُعطى نسخةً خاصّةً من البايتات المبصومة، تُمحى بعد الجولة."""
+    receipt = _ui_receipt(tmp_path)
+    original = receipt.read_bytes()
+    seen = {}
+
+    class _Swapping(_PendingApp):
+        def __init__(self, *args, runtime_receipt=None, **kwargs):
+            super().__init__(["python3", "-c", "print(2+2)"])
+            seen["path"] = Path(runtime_receipt)
+
+        def dispatch(self, request):
+            if request["action"] == "agent_resume":
+                _ui_receipt(tmp_path, image_id="sha256:" + "d" * 64)
+                seen["used"], seen["mode"] = seen["path"].read_bytes(), seen["path"].stat().st_mode & 0o777
+                receipt.write_bytes(original)
+            return super().dispatch(request)
+
+    monkeypatch.setattr(j5, "LocalApp", _Swapping)
+    _attest(monkeypatch)
+    out = tmp_path / "r.json"
+    assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888", "--runtime-receipt", str(receipt),
+                    "--out", str(out)]) == 0
+    assert seen["path"] != receipt.resolve() and not seen["path"].is_relative_to(tmp_path)
+    assert seen["used"] == original and seen["mode"] == 0o600 and not seen["path"].exists()
+    assert json.loads(out.read_text(encoding="utf-8"))["runtime"]["receipt_sha256"] == hashlib.sha256(original).hexdigest()
+
+
 class _SilentApp:
     """واجهةٌ يجيب فيها النموذجُ بلا أداة: لا بحثَ ولا أمر."""
 

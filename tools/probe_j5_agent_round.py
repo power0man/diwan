@@ -245,11 +245,17 @@ def main(argv=None) -> int:
     searxng, pinned = _searxng(args.web_search_url, args.searxng_container, args.docker)
     version = _digest(args.model)
     root = Path(tempfile.mkdtemp(prefix="diwan-j5-ui-")).resolve()
+    # والواجهةُ تفتح الإيصالَ حين تُنشئ أولَ مساحة، أي في أثناء الجولة؛ فتُعطى نسخةً خاصّةً من البايتات المبصومة لا مسارَه:
+    # إيصالٌ استُبدل مؤقتًا في أثنائها ثم أُعيد قبل إعادة القراءة يُشغّل صورةً غيرَ المسجَّلة (ملاحظة Codex على #144)
+    pin = Path(tempfile.mkdtemp(prefix="diwan-j5-receipt-")).resolve()
     try:
+        pinned_receipt = pin / "runtime-receipt.json"
+        with os.fdopen(os.open(pinned_receipt, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as stream:
+            stream.write(receipt_bytes)
         app = LocalApp(root, model=args.model, model_version=version,
                        provider_factory=lambda: LocalChatProvider(args.model, version),
                        agent_provider_factory=lambda: LocalToolProvider(args.model, version),
-                       runtime_receipt=args.runtime_receipt.resolve(),
+                       runtime_receipt=pinned_receipt,
                        web_search=SearxngBackend(args.web_search_url),
                        docker_executable=args.docker)
         api = lambda action, **values: app.dispatch({"action": action, **values})
@@ -286,6 +292,7 @@ def main(argv=None) -> int:
         app.close()
     finally:
         shutil.rmtree(root, ignore_errors=True)
+        shutil.rmtree(pin, ignore_errors=True)
     # ملفٌّ تغيّر في أثناء الجولة يجعل البصمةَ تشهد لبايتاتٍ لم تُنفَّذ، فلا يُكتب تقرير (ملاحظة Codex على #136)
     # وحدةٌ حُمّلت أولَ مرّةٍ في أثناء الجولة تُبصم بعدها، فلا بصمةَ لها قبلها تُقارن بها
     after = _sources()
@@ -338,6 +345,7 @@ def main(argv=None) -> int:
             "sources_and_probe_hashed_before_the_round_and_rechecked_before_writing",
             "every_repo_module_loaded_is_hashed_those_first_imported_during_the_round_only_after_it",
             "runtime_receipt_read_before_the_round_and_rechecked_before_writing",
+            "the_ui_runs_against_a_private_copy_of_the_hashed_receipt_bytes_not_the_receipt_path",
             "searxng_container_pinned_by_id_and_start_time_and_engine_digest_rechecked_after_the_round",
             "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
             "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host",
