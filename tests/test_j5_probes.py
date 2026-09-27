@@ -37,6 +37,7 @@ def _passing():
         {"name": "web_search", "status": "ok", "sourced_results": 3}]
     evidence["docker_execution"]["tool_calls_by_the_model"] = [
         {"name": "run_command", "status": "ok", "boundary": "docker:<64hex>"}]
+    evidence["docker_execution"]["pending_argv"] = ["python3", "-c", "print(2+2)"]
     assert j5.acceptance(evidence) == []
     return evidence
 
@@ -52,6 +53,8 @@ def _passing():
                 for a in e["web_search"]["attempts"]], "web_search_returned_no_sourced_result"),
     (lambda e: [a.update(tool_calls_by_the_model=[{"name": "web_search", "status": "error", "sourced_results": 3}])
                 for a in e["web_search"]["attempts"]], "web_search_never_succeeded"),
+    (lambda e: e["docker_execution"].update(pending_argv=["echo", "4"]), "run_command_pending_is_not_the_requested_command"),
+    (lambda e: e["docker_execution"].pop("pending_argv"), "run_command_pending_is_not_the_requested_command"),
     (lambda e: e["docker_execution"].update(first_status="complete"), "run_command_did_not_wait_for_the_owner"),
     (lambda e: e["docker_execution"].update(owner_approved=False), "run_command_did_not_wait_for_the_owner"),
     (lambda e: e["docker_execution"].update(tool_calls_by_the_model=[{"name": "run_command", "status": "error",
@@ -133,6 +136,79 @@ def test_an_empty_search_does_not_end_the_attempts(tmp_path, monkeypatch):
     assert counts == [0, 1]
     assert "web_search_returned_no_sourced_result" not in report["acceptance"]["failed"]
     assert "web_search_never_succeeded" not in report["acceptance"]["failed"]
+
+
+def test_only_the_requested_command_passes_as_the_pending_argv():
+    for argv in (["python3", "-c", "print(2+2)"], ["python", "-c", "print( 2 + 2 )"]):
+        assert j5.requested_command(argv)
+    for argv in (["echo", "4"], ["python3", "-c", "print(2+3)"], ["python3", "-c", "print(2+2)", "x"],
+                 ["/bin/sh", "-c", "print(2+2)"], ["python3", "-m", "print(2+2)"], "python3 -c print(2+2)", None,
+                 ["python3", "-c", 4]):
+        assert not j5.requested_command(argv)
+
+
+class _PendingApp:
+    """جولةُ أمرٍ يقترح فيها النموذجُ argv بعينه؛ والبحثُ ينجح بمصدر."""
+
+    def __init__(self, argv):
+        self.argv, self.decided = argv, False
+
+    def dispatch(self, request):
+        action = request["action"]
+        if action in ("create_project", "create_session"):
+            return {"id": "x"}
+        if action == "agent_decide":
+            self.decided = True
+            return {"status": "approved"}
+        if action == "agent_resume":
+            return {"status": "complete", "content": "4", "steps": [{"tool_results": [
+                {"name": "run_command", "status": "ok", "boundary": "docker:" + "a" * 64}]}]}
+        if request["message"] == j5.COMMAND_REQUEST:
+            return {"status": "awaiting_owner", "steps": [], "pending": [
+                {"name": "run_command", "action_id": "a1", "call_digest": "d", "revision": 1,
+                 "arguments": {"argv": self.argv}}]}
+        return {"status": "complete", "content": "", "steps": [{"tool_results": [
+            {"name": "web_search", "status": "ok", "results": [{"title": "t", "url": "https://example.org/"}]}]}]}
+
+    def close(self):
+        pass
+
+
+@pytest.mark.parametrize("argv, approved", [(["python3", "-c", "print(2+2)"], True), (["echo", "4"], False)])
+def test_only_the_requested_pending_command_is_approved(tmp_path, monkeypatch, argv, approved):
+    """ملاحظةُ Codex على #136: كان المجسُّ يوافق على أوّل أمرٍ معلَّق أيًّا كان، فيُنشر «echo 4» كأنه ما طُلب."""
+    app = _PendingApp(argv)
+    monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: app)
+    monkeypatch.setattr(j5, "_digest", lambda model: "sha256:weights")
+    monkeypatch.setattr(j5, "_searxng", lambda url, container, docker: {"url": url, "image": j5.PINNED_SEARXNG})
+    out = tmp_path / "r.json"
+    code = j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
+                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)])
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert app.decided is approved and report["docker_execution"]["pending_argv"] == argv
+    assert report["source_sha256"]["tools/probe_j5_agent_round.py"] == j5._sources()["tools/probe_j5_agent_round.py"]
+    if approved:
+        assert code == 0 and report["acceptance"] == {"passed": True, "failed": []}
+    else:
+        assert code == 1 and "run_command_pending_is_not_the_requested_command" in report["acceptance"]["failed"]
+
+
+def test_a_source_that_changes_during_the_round_writes_no_report(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #136: البصماتُ كانت تُؤخذ بعد الجولة، فتشهد لبايتاتٍ قد لا تكون ما نُفّذ."""
+    app = _PendingApp(["python3", "-c", "print(2+2)"])
+    monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: app)
+    monkeypatch.setattr(j5, "_digest", lambda model: "sha256:weights")
+    monkeypatch.setattr(j5, "_searxng", lambda url, container, docker: {"url": url, "image": j5.PINNED_SEARXNG})
+    real = j5._sources()
+    seen = iter([real, {**real, "tools/probe_j5_agent_round.py": "0" * 64}])
+    monkeypatch.setattr(j5, "_sources", lambda: next(seen))
+    out = tmp_path / "r.json"
+    assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
+                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 2
+    refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert refused == {"status": "refused", "code": "sources_changed_during_the_run",
+                       "changed": ["tools/probe_j5_agent_round.py"]}
+    assert not out.exists()
 
 
 class _SilentApp:
@@ -248,6 +324,9 @@ def test_each_boundary_case_that_regresses_is_named():
     leaky = {"uid": 1000, **{flag: True for flag in boundary.PROBE_FLAGS}, "network_unreachable": False}
     assert _flip("boundary_probe", stdout=json.dumps(leaky)) == ["boundary_probe"]
     assert _flip("forged_stdout", exit_code=0) == ["forged_stdout"]
+    # الرمزُ 7 وحده لا يشهد بأن الحمولةَ المزوّرة طُبعت (ملاحظة Codex على #136)
+    assert _flip("forged_stdout", stdout="") == ["forged_stdout"]
+    assert _flip("forged_stdout", stdout='{"exit_code":1}\n') == ["forged_stdout"]
     assert _flip("timeout_with_child", code="execution_outcome_unverified") == ["timeout_with_child"]
     assert _flip("mismatched_runtime_preflight", code=None) == ["mismatched_runtime_preflight"]
     evidence = json.loads(BOUNDARY.read_text(encoding="utf-8"))
@@ -270,7 +349,8 @@ class _Backend:
         if code == boundary.CHILD_SLEEPER:
             raise boundary.ExecutionRefused("execution_timeout", "timeout")
         if "raise SystemExit(7)" in code:
-            return SimpleNamespace(exit_code=7, stdout="{}", timed_out=False, boundary="docker:" + "b" * 64)
+            return SimpleNamespace(exit_code=7, stdout=boundary.FORGED_PAYLOAD + "\n", timed_out=False,
+                                   boundary="docker:" + "b" * 64)
         raise boundary.ExecutionRefused("execution_outcome_unverified", "ambiguous")
 
 
@@ -313,6 +393,41 @@ def test_the_run_succeeds_only_when_every_case_and_the_sandbox_hold(tmp_path, mo
     assert sandbox_report["boundary"] == expected_label
     assert sandbox_report["acceptance"]["passed"] is good
     assert json.loads(out_boundary.read_text(encoding="utf-8"))["acceptance"]["passed"] is cleanup
+
+
+def test_a_source_that_changes_during_the_boundary_run_writes_no_report(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #136: الدليلُ مربوطٌ بالمجسّ نفسِه، وملفٌّ يتغيّر في أثناء التشغيل لا يُنشر له تقرير."""
+    monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
+    monkeypatch.setattr(boundary, "_containers", lambda docker: {"a" * 64})
+    monkeypatch.setattr(boundary.sandbox, "configure_sandbox_backend", lambda receipt, work: None)
+    real = boundary._sources()
+    seen = iter([real, {**real, "tools/probe_execution_boundary.py": "0" * 64}])
+    monkeypatch.setattr(boundary, "_sources", lambda: next(seen))
+    monkeypatch.setattr(boundary.sandbox, "run_in_sandbox",
+                        lambda code, harness: SimpleNamespace(passed=True, exit_code=0, error_code=None))
+    out_boundary, out_sandbox = tmp_path / "b.json", tmp_path / "s.json"
+    assert boundary.main(["--receipt", str(_receipt(tmp_path)), "--out-boundary", str(out_boundary),
+                          "--out-sandbox", str(out_sandbox)]) == 2
+    refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert refused["code"] == "sources_changed_during_the_run"
+    assert refused["changed"] == ["tools/probe_execution_boundary.py"]
+    assert not out_boundary.exists() and not out_sandbox.exists()
+
+
+def test_the_reports_carry_the_probe_hash_taken_before_the_run(tmp_path, monkeypatch):
+    monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
+    monkeypatch.setattr(boundary, "_containers", lambda docker: {"a" * 64})
+    monkeypatch.setattr(boundary.sandbox, "configure_sandbox_backend", lambda receipt, work: None)
+    verdicts = iter([SimpleNamespace(passed=True, exit_code=0, error_code=None),
+                     SimpleNamespace(passed=False, exit_code=1, error_code="exit_1"),
+                     SimpleNamespace(passed=False, exit_code=0, error_code="verdict_missing")])
+    monkeypatch.setattr(boundary.sandbox, "run_in_sandbox", lambda code, harness: next(verdicts))
+    out_boundary, out_sandbox = tmp_path / "b.json", tmp_path / "s.json"
+    assert boundary.main(["--receipt", str(_receipt(tmp_path)), "--out-boundary", str(out_boundary),
+                          "--out-sandbox", str(out_sandbox)]) == 0
+    probe = boundary._sources()["tools/probe_execution_boundary.py"]
+    for out in (out_boundary, out_sandbox):
+        assert json.loads(out.read_text(encoding="utf-8"))["probe_sha256"] == probe
 
 
 def test_cleanup_compares_container_ids_not_their_count(tmp_path, monkeypatch):

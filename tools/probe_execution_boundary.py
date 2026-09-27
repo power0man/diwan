@@ -6,7 +6,8 @@
         --out-sandbox docs/probe/sandbox-container-<التاريخ>.json
 
 - كلُّ حالةٍ تمرّ بـ`core.execution.DockerExecutionBackend` أو `core.sandbox.run_in_sandbox`، لا بـDocker مباشرةً.
-- والدليلُ مربوطٌ ببصمة الملفّين كما هما على القرص لحظةَ التشغيل (`source_sha256`).
+- والدليلُ مربوطٌ ببصمة الملفّين وبصمةِ المجسّ نفسِه، تُؤخذ قبل أولى الحالات ويُرفض التقريرُ إن تغيّرت قبل كتابته
+  (`source_sha256` و`probe_sha256`).
 - ولا يُطبع معرّفُ الحاوية: الحدُّ يُسجَّل بشكله (`docker:<64 hex>`) لا بقيمته.
 """
 from __future__ import annotations
@@ -62,10 +63,18 @@ print(json.dumps({"uid": os.getuid(), "no_owner_mounts": "/Users" not in mounts 
                   "network_unreachable": unreachable("1.1.1.1", 80)}))
 """
 CHILD_SLEEPER = "import subprocess, time; subprocess.Popen(['sleep', '60']); time.sleep(60)"
+# الحمولةُ المزوّرة التي تطبعها الحالةُ قبل خروجها بـ7؛ ولا تُقبل الحالةُ إلا إن رُئيت في stdout (ملاحظة Codex على #136)
+FORGED_PAYLOAD = '{"exit_code":0,"success":true}'
+# ما يُبصم قبل التشغيل ويُعاد بصمُه قبل الكتابة: الشيفرةُ المقيسة، والمجسُّ الذي يقيسها (ملاحظة Codex على #136)
+SOURCES = ("core/execution.py", "core/sandbox.py", "tools/probe_execution_boundary.py")
 
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _sources() -> dict[str, str]:
+    return {path: _sha(ROOT / path) for path in SOURCES}
 
 
 def _shape(boundary: str) -> str:
@@ -111,7 +120,7 @@ def boundary_failures(cases: list[dict], cleanup_verified: bool) -> list[str]:
             or not all(seen.get(flag) is True for flag in PROBE_FLAGS)):
         failed.append("boundary_probe")
     forged = by_name.get("forged_stdout", {})
-    if forged.get("exit_code") != 7:
+    if forged.get("exit_code") != 7 or (forged.get("stdout") or "").strip() != FORGED_PAYLOAD:
         failed.append("forged_stdout")
     failed += [name for name, code in EXPECTED_CODES.items() if by_name.get(name, {}).get("code") != code]
     if not cleanup_verified:
@@ -155,6 +164,7 @@ def main(argv=None) -> int:
     if before is None:
         print(json.dumps({"status": "refused", "code": "container_enumeration_failed"}))
         return 2
+    sources = _sources()
     work = Path(tempfile.mkdtemp(prefix="diwan-j5-")).resolve()
     private = Path(tempfile.mkdtemp(prefix="diwan-j5-receipt-", dir=Path.home())).resolve()
     try:
@@ -163,7 +173,7 @@ def main(argv=None) -> int:
         cases = [
             _case("boundary_probe", backend, (py, "-I", "-c", BOUNDARY_PROBE)),
             _case("forged_stdout", backend,
-                  (py, "-I", "-c", "print('{\"exit_code\":0,\"success\":true}'); raise SystemExit(7)")),
+                  (py, "-I", "-c", f"print({FORGED_PAYLOAD!r}); raise SystemExit(7)")),
             _case("timeout_with_child", backend, (py, "-I", "-c", CHILD_SLEEPER), timeout_s=3),
             _case("missing_executable", backend, ("/nonexistent-executable",)),
             _case("ambiguous_exit_125", backend, (py, "-I", "-c", "raise SystemExit(125)")),
@@ -184,6 +194,11 @@ def main(argv=None) -> int:
         shutil.rmtree(work, ignore_errors=True)
         shutil.rmtree(private, ignore_errors=True)
     after = _containers(args.docker)
+    # ملفٌّ تغيّر في أثناء التشغيل يجعل البصمةَ تشهد لبايتاتٍ لم تُنفَّذ، فلا يُكتب تقرير
+    changed = sorted(path for path, digest in _sources().items() if digest != sources[path])
+    if changed:
+        print(json.dumps({"status": "refused", "code": "sources_changed_during_the_run", "changed": changed}))
+        return 2
     # الحدُّ لا يُسمّى «مراجَعًا» إلا إن أدّت البرامجُ الثلاثة ما يثبته: الصحيحُ ينجح، والخاطئُ يسقط، والخروجُ
     # بصفرٍ قبل المدقّق يسقط. فإن تعذّرت الحاويةُ نفسُها سقط الصحيحُ ولم يُسمَّ الحدّ.
     verdicts = {name: {"passed": r.passed, "exit_code": r.exit_code, "error_code": r.error_code}
@@ -192,11 +207,12 @@ def main(argv=None) -> int:
     sandbox_failed = sandbox_failures(verdicts)
     sandbox_ok = not sandbox_failed
     today = datetime.date.today().isoformat()
-    execution_sha = _sha(ROOT / "core" / "execution.py")
+    execution_sha = sources["core/execution.py"]
     receipt = json.loads(args.receipt.read_text(encoding="utf-8"))
     common = {"date": today, "agent": "anthropic/claude-opus-5-5", "task": "ج٥", "issue": "power0man/diwan#23",
               "host": {"machine": "MacBook Pro (Apple silicon)", "os": os.uname().sysname + " " + os.uname().release},
-              "runtime_image_id": receipt.get("image_id"), "runtime_lock_sha256": receipt.get("lock_sha256")}
+              "runtime_image_id": receipt.get("image_id"), "runtime_lock_sha256": receipt.get("lock_sha256"),
+              "probe_sha256": sources["tools/probe_execution_boundary.py"]}
     leaked = None if after is None else after - before
     cleanup_verified = leaked is not None and not leaked
     boundary_failed = boundary_failures(cases, cleanup_verified)
@@ -212,10 +228,11 @@ def main(argv=None) -> int:
         "measurement_limits": ["container_boundary_on_docker_desktop_not_a_separate_host",
                                "container_ids_recorded_by_shape_not_value",
                                "cleanup_checked_by_container_ids_present_after_the_run_and_absent_before",
-                               "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly"],
+                               "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly",
+                               "sources_and_probe_hashed_before_the_first_case_and_rechecked_before_writing"],
     }
     sandbox_report = {
-        "schema_version": 1, **common, "source_sha256": _sha(ROOT / "core" / "sandbox.py"), "source": "core/sandbox.py",
+        "schema_version": 1, **common, "source_sha256": sources["core/sandbox.py"], "source": "core/sandbox.py",
         "execution_sha256": execution_sha, "via": "core.sandbox.run_in_sandbox",
         **verdicts,
         "boundary": "reviewed_disposable_docker" if sandbox_ok else "not_established",

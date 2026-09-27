@@ -10,6 +10,8 @@
   الأداة نفسِها لا من نصّ الردّ.
 - ومسارُ Docker هو الذي تبني به الواجهةُ خلفيّةَ run_command، وإلا فلا قياس.
 - البحثُ من SearXNG محليٍّ وحده: الرابطُ على عنوان الجهاز، والحاويةُ التي تنشر منفذَه بالصورة المثبَّتة في G5.
+- ولا يُوافَق إلا على الأمر المطلوب نفسِه (argv الأمر المعلَّق)، ويُسجَّل argv في التقرير.
+- والبصماتُ، ومنها بصمةُ المجسّ، تُؤخذ قبل الجولة ويُرفض التقريرُ إن تغيّرت قبل كتابته.
 - ولا يُقبل البحثُ إلا بنتيجة web_search فيها رابطٌ واحدٌ على الأقل، يُعدّ من نتائج الأداة نفسِها لا من جواب النموذج.
 - ولا يخرج بـ0 إلا إن تحقّقت شروطُ القبول (`acceptance`)، ويُكتب التقريرُ في الحالين بحكمه.
 """
@@ -47,6 +49,8 @@ SEARCH_QUESTIONS = (
     "ابحث في الويب عن موقع المشروع الرسمي لـSearXNG، وأعطني رابطه.",
 )
 COMMAND_REQUEST = 'شغّل الأمر python3 -c "print(2+2)" وأخبرني بالناتج.'
+# ما يُبصم قبل الجولة ويُعاد بصمُه قبل الكتابة: الشيفرةُ المقيسة، والمجسُّ نفسُه (ملاحظة Codex على #136)
+SOURCES = ("core/execution.py", "agent/web_search.py", "webui/server.py", "tools/probe_j5_agent_round.py")
 # الصورةُ المثبَّتة بالبصمة في docs/guides/G5.md (الخطوتان ٢١–٢٢)، وقيست بها ج٥ أول مرّة
 PINNED_SEARXNG = "searxng/searxng@sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6"
 LOOPBACK = frozenset({"127.0.0.1", "localhost", "::1"})
@@ -61,6 +65,9 @@ def acceptance(report: dict) -> list[str]:
     """شروطُ ج٥ التي يشهد بها الدليل، وما لم يتحقّق منها بالاسم (ملاحظة Codex على #136)."""
     execution = report["docker_execution"]
     failed = []
+    # الموافقةُ على الأمر المطلوب بعينه، لا على أوّل أمرٍ معلَّق (ملاحظة Codex على #136)
+    if not requested_command(execution.get("pending_argv")):
+        failed.append("run_command_pending_is_not_the_requested_command")
     # نداءٌ ردّه SearXNG بخطأ لا يشهد ببحثٍ حيّ: المقبولُ نتيجةُ web_search بحالة ok (ملاحظة Codex على #136)
     succeeded = [t for attempt in report["web_search"]["attempts"] for t in attempt["tool_calls_by_the_model"]
                  if t["name"] == "web_search" and t["status"] == "ok"]
@@ -80,6 +87,16 @@ def acceptance(report: dict) -> list[str]:
                for t in execution["tool_calls_by_the_model"]):
         failed.append("run_command_boundary_is_not_docker")
     return failed
+
+
+def requested_command(argv) -> bool:
+    """argv الأمر المعلَّق هو ما طُلب: python3 (أو python) بـ-c وprint(2+2)، والمسافاتُ في الشيفرة لا تُحسب."""
+    return (isinstance(argv, list) and len(argv) == 3 and all(isinstance(a, str) for a in argv)
+            and argv[0] in ("python3", "python") and argv[1] == "-c" and "".join(argv[2].split()) == "print(2+2)")
+
+
+def _sources() -> dict[str, str]:
+    return {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in SOURCES}
 
 
 def _searxng(url: str, container: str, docker: str) -> dict:
@@ -145,6 +162,7 @@ def main(argv=None) -> int:
         print(json.dumps({"status": "refused", "code": "run_command_backend_uses_the_default_docker_path",
                           "expected": EXECUTION_DOCKER}))
         return 2
+    sources = _sources()
     searxng = _searxng(args.web_search_url, args.searxng_container, args.docker)
     version = _digest(args.model)
     root = Path(tempfile.mkdtemp(prefix="diwan-j5-ui-")).resolve()
@@ -178,7 +196,9 @@ def main(argv=None) -> int:
         asked = api("agent_ask", project=project, session=agent, turn=turn, message=COMMAND_REQUEST, files=[])
         decided = resumed = None
         pending = [a for a in asked.get("pending", []) if a.get("name") == "run_command"]
-        if asked.get("status") == "awaiting_owner" and pending:
+        pending_argv = (pending[0].get("arguments") or {}).get("argv") if pending else None
+        # لا يُوافَق إلا على الأمر المطلوب: أمرٌ آخر يُترك معلَّقًا ويُسجَّل argv، فلا يُنشر كأنه ما طُلب
+        if asked.get("status") == "awaiting_owner" and pending and requested_command(pending_argv):
             action = pending[0]
             decided = api("agent_decide", project=project, session=agent, action_id=action["action_id"],
                           call_digest=action["call_digest"], expected_revision=action["revision"], approve=True)
@@ -187,19 +207,24 @@ def main(argv=None) -> int:
         app.close()
     finally:
         shutil.rmtree(root, ignore_errors=True)
+    # ملفٌّ تغيّر في أثناء الجولة يجعل البصمةَ تشهد لبايتاتٍ لم تُنفَّذ، فلا يُكتب تقرير (ملاحظة Codex على #136)
+    changed = sorted(path for path, digest in _sources().items() if digest != sources[path])
+    if changed:
+        print(json.dumps({"status": "refused", "code": "sources_changed_during_the_run", "changed": changed}))
+        return 2
 
     report = {
         "schema_version": 1, "date": datetime.date.today().isoformat(), "task": "ج٥", "issue": "power0man/diwan#23",
         "author": "anthropic/claude-opus-5-5",
         "host": {"machine": "MacBook Pro (Apple silicon)", "os": os.uname().sysname + " " + os.uname().release},
         "engine": {"provider": "ollama-local", "model": args.model, "digest": version},
-        "source_sha256": {p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
-                          for p in ("core/execution.py", "agent/web_search.py", "webui/server.py")},
+        "source_sha256": sources,
         "web_search": {"via": "webui.server.LocalApp.dispatch agent_ask (research session)", "backend": searxng,
                        "called_web_search": any(a["called_web_search"] for a in attempts),
                        "attempts": attempts, "attempts_until_called": len(attempts)},
         "docker_execution": {"via": "webui.server.LocalApp.dispatch agent_ask → agent_decide(approve) → agent_resume",
                              "request": COMMAND_REQUEST, "first_status": asked.get("status"),
+                             "pending_argv": pending_argv,
                              "owner_approved": decided is not None, "final_status": final.get("status"),
                              "tool_calls_by_the_model": _tools(final),
                              "answer": (final.get("content") or "")[:300]},
@@ -210,6 +235,8 @@ def main(argv=None) -> int:
             "container_ids_recorded_by_shape_not_value",
             "boundary_read_from_the_run_command_result_field_not_from_the_serialized_reply",
             "web_search_accepted_only_with_a_result_carrying_a_url_counted_from_the_tool_result_not_the_answer",
+            "only_the_requested_command_is_approved_its_pending_argv_recorded",
+            "sources_and_probe_hashed_before_the_round_and_rechecked_before_writing",
         ],
     }
     failed = acceptance(report)

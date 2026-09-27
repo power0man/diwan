@@ -87,11 +87,13 @@
     "search_results_come_from_public_engines_through_a_local_searxng_and_change_over_time",
     "container_ids_recorded_by_shape_not_value",
     "boundary_read_from_the_run_command_result_field_not_from_the_serialized_reply",
-    "acceptance_recomputed_under_the_sourced_result_rule_this_run_recorded_only_the_status_of_web_search_so_it_does_not_show_that_the_tool_returned_a_result_with_a_url"
+    "acceptance_recomputed_under_the_sourced_result_rule_this_run_recorded_only_the_status_of_web_search_so_it_does_not_show_that_the_tool_returned_a_result_with_a_url",
+    "acceptance_recomputed_under_the_requested_command_rule_this_run_did_not_record_the_pending_argv_it_approved"
   ],
   "acceptance": {
     "passed": false,
     "failed": [
+      "run_command_pending_is_not_the_requested_command",
       "web_search_returned_no_sourced_result"
     ]
   }

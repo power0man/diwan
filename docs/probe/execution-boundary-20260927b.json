@@ -61,6 +61,7 @@
     "container_boundary_on_docker_desktop_not_a_separate_host",
     "container_ids_recorded_by_shape_not_value",
     "cleanup_checked_by_container_ids_present_after_the_run_and_absent_before",
-    "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly"
+    "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly",
+    "probe_implementation_not_hashed_in_this_run_rerun_with_probe_sha256_pending"
   ]
 }
