@@ -1,0 +1,1 @@
+{"id": "undecodable-skipped-uncounted", "file": "core/vector_retrieval.py", "old": "                skipped_undecodable.append(relative)\n                continue", "new": "                continue", "tests": ["tests/test_vector_index_counts_skipped_files.py::test_an_undecodable_file_is_counted_and_named_not_skipped_silently"], "why": "الملفُّ غيرُ المقروء يُتخطّى بلا عدّ"}
