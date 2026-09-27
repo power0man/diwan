@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-27",
+  "agent": "anthropic/claude-opus-5-5",
+  "task": "ج٥",
+  "issue": "power0man/diwan#23",
+  "host": {
+    "machine": "arm64",
+    "os": "Darwin 25.6.0"
+  },
+  "runtime_image_id": "sha256:3dd092e52cdc7267dda816809f32be0f1d42765935906fed46eabef17193f0e0",
+  "runtime_lock_sha256": "b5af0840d9ff3421030f25466ee4d95619c5894d64e8d2bb6e8ac44a20563318",
+  "probe_sha256": "74447de55f63cab93dd7ccfa1c919b93278f9688a0c3e949bb573a26766b907b",
+  "runtime_receipt_sha256": "02a46f763dc07422cf3c7bc8b4b72a5018f4ad7b8823dc9bcba85267f8493634",
+  "source_sha256": "c7fe33bc1c65ef1d615cb56873662a7bff2289d8c3f9bea3ec34f4c2eaf47e0e",
+  "source": "core/execution.py",
+  "via": "core.execution.DockerExecutionBackend.run",
+  "cases": [
+    {
+      "case": "boundary_probe",
+      "exit_code": 0,
+      "stdout": "{\"uid\": 1000, \"no_owner_mounts\": true, \"no_docker_socket\": true, \"rootfs_readonly\": true, \"ollama_unreachable\": true, \"network_unreachable\": true}\n",
+      "timed_out": false,
+      "boundary": "docker:<64hex>"
+    },
+    {
+      "case": "forged_stdout",
+      "exit_code": 7,
+      "stdout": "{\"exit_code\":0,\"success\":true}\n",
+      "timed_out": false,
+      "boundary": "docker:<64hex>"
+    },
+    {
+      "case": "timeout_with_child",
+      "code": "execution_timeout"
+    },
+    {
+      "case": "missing_executable",
+      "code": "execution_outcome_unverified"
+    },
+    {
+      "case": "ambiguous_exit_125",
+      "code": "execution_outcome_unverified"
+    },
+    {
+      "case": "mismatched_runtime_preflight",
+      "code": "execution_runtime_mismatch"
+    }
+  ],
+  "cleanup_verified": true,
+  "containers_before_after": [
+    6,
+    6
+  ],
+  "containers_left_by_the_run": 0,
+  "acceptance": {
+    "passed": true,
+    "failed": []
+  },
+  "scope": "Disposable Docker test fixtures only; not proof against Docker VM/kernel escape.",
+  "human_review": false,
+  "measurement_limits": [
+    "container_boundary_on_docker_desktop_not_a_separate_host",
+    "container_ids_recorded_by_shape_not_value",
+    "cleanup_checked_by_container_ids_present_after_the_run_and_absent_before",
+    "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly",
+    "sources_and_probe_hashed_before_the_first_case_and_rechecked_before_writing",
+    "runtime_receipt_read_before_the_first_case_and_rechecked_before_writing",
+    "probe_changed_after_this_run_the_backends_now_use_a_private_copy_of_the_hashed_receipt_not_its_path",
+    "superseded_by_execution-boundary-20260927e"
+  ]
+}
