@@ -586,6 +586,16 @@ def test_only_a_persisted_item_witnesses_isolation_injection_or_restoration():
     for strict in (False, True):
         assert code(both([{"op": "restore", "project": "A", "ref": "b0"}]), strict=strict) == "forget_not_checked_in_use"
         check(both([]), strict=strict)
+    # ولكلّ نسيانٍ نافذتُه: نسيانٌ ثانٍ للعنصر نفسِه بعد الاستعادة لا يفتح نافذةً للأول (ملاحظة Codex على #129)
+    snapshot_with = {"op": "backup", "project": "A", "as": "b1"}
+    again = dict(by_id["forget_001"], steps=[secret, snapshot_with, forgot, {"op": "restore", "project": "A", "ref": "b1"},
+                                             forgot, *forget_checks])
+    checked_twice = dict(by_id["forget_001"], steps=[secret, snapshot_with, forgot, *forget_checks,
+                                                     {"op": "restore", "project": "A", "ref": "b1"}, forgot,
+                                                     *forget_checks])
+    for strict in (False, True):
+        assert code(again, strict=strict) == "forget_not_checked_in_use"
+        check(checked_twice, strict=strict)
     check(by_id["forget_001"], strict=True)
 
     save, backup, forget, restore, *checks = by_id["backup_001"]["steps"]

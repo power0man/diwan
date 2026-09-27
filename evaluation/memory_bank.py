@@ -132,20 +132,25 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         # ونافذةُ كلّ منسيٍّ من نسيانه هو، لا من آخر نسيانٍ في السيناريو (ملاحظة Codex على #129)
         restores = [i for i, s in enumerate(steps) if s.get("op") == "restore"]
         for ref in sorted({s["ref"] for s in steps if s.get("op") == "forget"}):
-            forgot = max(i for i, s in enumerate(steps) if s.get("op") == "forget" and s.get("ref") == ref)
-            # وفي النسخ الاحتياطي يُفحص بعد الاستعادة، فهي التي قد تُحيي المنسيّ
-            start = max(forgot, last("restore") if category == "backup" else -1) + 1
-            # وفي سيناريو النسيان لا يُحسب فحصٌ بعد استعادةٍ تلي نسيانَه: الاستعادةُ من نسخةٍ أقدم تمحو ما قد يكون بقي
-            # خطأً قبل أن يُفحص، فيمرّ نسيانٌ لم يحذف شيئًا، ولو جاء بعدها نسيانٌ آخر يفتح نافذةً لغيره (ملاحظتا Codex على #129)
-            stop = next((i for i in restores if i > forgot), len(steps)) if category == "forget" else len(steps)
-            bound = {s["expect"] for s in steps[start:stop] if s.get("expect") in ("retrieve", "context", "residue")
-                     and _bound(s, made[ref][1])}
-            in_use = bound & {"retrieve", "context"}
-            if not in_use or (strict and category == "forget" and in_use != {"retrieve", "context"}):
-                _reject(path, "forget_not_checked_in_use",
-                        "نصُّ المنسيّ غائبٌ بعد النسيان في الاسترجاع والسياق" if strict else "في الاسترجاع أو السياق")
-            if "residue" not in bound:
-                _reject(path, "forgotten_value_unchecked_on_disk", "نصُّ المنسيّ غائبٌ عن القرص بعد النسيان")
+            forgets = [i for i, s in enumerate(steps) if s.get("op") == "forget" and s.get("ref") == ref]
+            # وفي النسخ الاحتياطي يُفحص بعد آخر استعادة، فهي التي قد تُحيي المنسيّ
+            if category == "backup":
+                windows = [(max(forgets[-1], last("restore")) + 1, len(steps))]
+            # وفي سيناريو النسيان لكلّ نسيانٍ نافذتُه حتى أول استعادةٍ تليه: الاستعادةُ من نسخةٍ أقدم تمحو ما قد يكون بقي
+            # خطأً قبل أن يُفحص، فيمرّ نسيانٌ لم يحذف شيئًا، ولو جاء بعدها نسيانٌ آخر للعنصر نفسِه أو لغيره يفتح نافذةً
+            # تُفحص فيها (ملاحظات Codex على #129)
+            else:
+                windows = [(forgot + 1, next((i for i in restores if i > forgot), len(steps))) for forgot in forgets]
+            for start, stop in windows:
+                bound = {s["expect"] for s in steps[start:stop] if s.get("expect") in ("retrieve", "context", "residue")
+                         and _bound(s, made[ref][1])}
+                in_use = bound & {"retrieve", "context"}
+                if not in_use or (strict and category == "forget" and in_use != {"retrieve", "context"}):
+                    _reject(path, "forget_not_checked_in_use",
+                            "نصُّ المنسيّ غائبٌ بعد كلّ نسيانٍ في الاسترجاع والسياق" if strict
+                            else "في الاسترجاع أو السياق")
+                if "residue" not in bound:
+                    _reject(path, "forgotten_value_unchecked_on_disk", "نصُّ المنسيّ غائبٌ عن القرص بعد النسيان")
     if category == "injection":
         # حجرُ نصٍّ لا أمرَ فيه لا يشهد بالحجر: عنصرٌ فيه أمرٌ يلتقطه الماسح، ثم سياقٌ محجورٌ في مشروعه بعد حفظه
         # يطلب في `absent` جزءًا من المقطع الآمر نفسِه، وهو ما يُبدله `quarantine` بعلامته. فإن بلغ الأمرُ السياقَ
