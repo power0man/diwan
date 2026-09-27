@@ -260,9 +260,11 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         # أسبق تمحوها التالية فلا يشهد الفحصُ بها (ملاحظة Codex على #129)
         k = last("restore")
         final = steps[k]
-        snapshot_then_forget = any(f.get("op") == "forget" and active_at(f["ref"], at[final["ref"]])
-                                   and at[final["ref"]] < j < k for j, f in enumerate(steps))
-        if not snapshot_then_forget:
+        # وكلُّ منسيٍّ يُفحص بعدها كان قائمًا في النسخة، لا أحدُها: عنصرٌ حُفظ بعد النسخة تمحوه الاستعادةُ ولو لم يُنسَ، فيُعدّ
+        # نسيانُه ولم يُختبر (ملاحظة Codex على #129). والقائمُ في النسخة لا يُنسى إلا بعدها، ولا نسيانَ بعد آخر استعادة (أعلاه)،
+        # فنسيانُه بينهما
+        forgotten = {s["ref"] for s in steps if s.get("op") == "forget"}
+        if not all(active_at(ref, at[final["ref"]]) for ref in forgotten):
             _reject(path, "backup_without_prior_snapshot", "نسخةٌ فيها العنصر، ثم نسيانُه، ثم استعادتُها")
 
 

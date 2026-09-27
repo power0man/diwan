@@ -589,6 +589,28 @@ def test_every_standing_directive_item_is_checked_not_one_of_them():
     strict(directive, {"op": "propose", "project": "A", "text": text, "as": "m2"}, fenced)
 
 
+def test_every_item_forgotten_before_the_restore_was_in_the_restored_snapshot():
+    """ملاحظةُ Codex على #129: كان يكفي منسيٌّ واحدٌ في النسخة المستعادة. فعنصرٌ حُفظ بعد النسخة ثم نُسي تمحوه الاستعادةُ
+    ولو لم يُنسَ، فيُعدّ نسيانُه في forget_rate ولم يُختبر."""
+    from core.canonical import PayloadRejected
+    from evaluation.memory_bank import validate_memory_bank
+    backup = {s["id"]: s for s in BANK["scenarios"]}["backup_001"]
+    first, snapshot, forget_first, restore, *checks = backup["steps"]
+    text = "رمز الخزنة الاحتياطي ٧٧٤١"
+    late = {"op": "remember", "project": "A", "text": text, "consent": "owner", "as": "m2"}
+    forget_late = {"op": "forget", "project": "A", "ref": "m2"}
+    late_checks = [{"expect": "retrieve", "project": "A", "query": "رمز الخزنة", "absent": [text], "present": []},
+                   {"expect": "context", "project": "A", "question": "ما رمز الخزنة؟", "absent": [text], "present": []},
+                   {"expect": "residue", "project": "A", "absent": [text]},
+                   {"expect": "receipt", "project": "A", "ref": "m2", "count": 1}]
+    strict = lambda *steps: validate_memory_bank({**BANK, "scenarios": [dict(backup, steps=list(steps))]}, strict=True)
+    with pytest.raises(PayloadRejected) as refused:
+        strict(first, snapshot, late, forget_late, forget_first, restore, *checks, *late_checks)
+    assert refused.value.code == "backup_without_prior_snapshot"
+    # والعنصرُ نفسُه محفوظًا قبل النسخة يشهد
+    strict(first, late, snapshot, forget_late, forget_first, restore, *checks, *late_checks)
+
+
 def test_each_check_names_the_item_in_its_own_project_and_after_it_exists():
     """ملاحظاتُ Codex على #129 (الجولة الثالثة): غيابُ المنسيّ أو غيرِ الموافَق عليه يُفحص في مشروعه هو لا في مشروعٍ
     آخر يغيب عنه طبيعةً؛ والعزلُ يُفحص بعد حفظ العنصر لا قبله؛ والسياقُ المحجور بعد حفظ الأمر ويذكر عنصرَه."""
