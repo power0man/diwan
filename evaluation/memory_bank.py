@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import re
 
-from core.attribution import normalize
+from core.attribution import content_tokens, normalize
 from core.canonical import PayloadRejected
 from core.quoted import DIRECTIVE_PATTERNS, QUARANTINE_MARK, scan, wrap
 from memory.store import HEADER, held_text
@@ -219,9 +219,11 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
     # والمصدرُ قائمٌ في المخزن عند الفحص: غيابُ ما لم يُحفظ عن مشروعٍ آخر غيابٌ طبيعيّ (ملاحظة Codex على #129)
     # والشاهدُ `retrieve` لا `context` وحده: غيابُ الاسترجاع يُفحص في قائمة المشروع كلّها، والسياقُ محدودٌ بـMAX_CONTEXT_ITEMS
     # فيسقط منه عنصرٌ متسرّبٌ خلف خمسين قبله ولا يُرى (ملاحظة Codex على #129)
+    # والسؤالُ يشارك نصَّ المصدر كلمةً بمفردات الاسترجاع نفسِه (`content_tokens`): فسؤالٌ لا صلةَ له بالمصدر لا يُعيده ولو
+    # عبر الاسترجاعُ المشاريع، فيغيب طبيعةً ولا يشهد بالعزل (ملاحظة Codex على #129)
     if category == "isolation" and not any(
             s.get("expect") == "retrieve" and s["project"] != item["project"] and _names(s, item["text"])
-            and active_at(ref, k)
+            and set(content_tokens(s["query"])) & set(content_tokens(item["text"])) and active_at(ref, k)
             for ref, (i, item) in made.items() for k, s in enumerate(steps) if k > i):
         _reject(path, "isolation_without_cross_project_absence",
                 "غيابُ نصّ عنصرٍ من مشروعٍ في استرجاع مشروعٍ آخر (قائمته كلّها) بعد حفظه")

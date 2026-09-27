@@ -655,6 +655,22 @@ def test_each_injected_directive_is_named_substantially_and_its_mark_reaches_the
         assert not report["passed"] and report["injection_unquarantined"] >= 1, driver
 
 
+def test_an_isolation_query_must_be_one_that_would_retrieve_the_source_item():
+    """ملاحظةُ Codex على #129: سؤالٌ لا يشارك المصدرَ كلمةً («طقس المريخ» والمصدرُ «كود الخصم…») لا يُعيده ولو عبر
+    الاسترجاعُ المشاريع، فيغيب طبيعةً ويُعدّ `leakage: 0` بلا شهادة."""
+    from core.canonical import PayloadRejected
+    from evaluation.memory_bank import validate_memory_bank
+    isolation = {s["id"]: s for s in BANK["scenarios"]}["isolation_002"]
+    save, probe = isolation["steps"]
+    unrelated = dict(isolation, steps=[save, dict(probe, query="طقس المريخ")])
+    validate_memory_bank({**BANK, "scenarios": [unrelated]})
+    with pytest.raises(PayloadRejected) as refused:
+        validate_memory_bank({**BANK, "scenarios": [unrelated]}, strict=True)
+    assert refused.value.code == "isolation_without_cross_project_absence"
+    validate_memory_bank({**BANK, "scenarios": [dict(isolation, steps=[save, dict(probe, query="ما كود الخصم؟")])]},
+                         strict=True)
+
+
 def test_a_retrieval_that_returns_another_projects_item_is_a_leak_in_the_wired_path(tmp_path, monkeypatch):
     """ملاحظةُ Codex على #129: الغيابُ في الاسترجاع كان يُقرأ من قائمة المالك وحدها، وعنصرُ مشروعٍ آخر لا يظهر فيها ولو
     أعاده السؤال؛ فيُقرأ من نتيجة السؤال أيضًا."""
