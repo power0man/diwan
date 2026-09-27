@@ -79,23 +79,19 @@ cmd_setup() {
 }
 
 # يجمع الرأسَ والتكليفَ والتحديث، كلٌّ من بعد أول خطٍّ فاصل فيه
-# والتكليفُ يُختار بـKIMI_TASK: next (الافتراضيّ، KIMI-NEXT.md) أو memory (KIMI-MEMORY-BANK.md). وتكليفُ الذاكرة
-# يأخذ من الرأس فقرتَه الأولى وحدها (حدُّ المجلّد وشكلُ الرسالة الأخيرة)، فما بعدها خاصٌّ بدورة v1.2.
+# والتكليفُ يُختار بـKIMI_TASK: next (الافتراضيّ، KIMI-NEXT.md) أو memory (KIMI-MEMORY-BANK.md)، ولكلٍّ رأسُه: رأسُ
+# v1.2 يسمّي kimi-benchmark/ موضعًا للتسليم، ورأسُ الذاكرة يسمّي kimi-memory/ وحده (ملاحظة Codex على #129).
 cmd_bundle() {
-  local out="$KIMI_WORK/prompts/prompt-$STAMP.txt" header="$DIWAN/docs/external/KIMI-WORKSPACE-HEADER.md"
-  local task="${KIMI_TASK:-next}" assignment
+  local out="$KIMI_WORK/prompts/prompt-$STAMP.txt"
+  local task="${KIMI_TASK:-next}" assignment header
   case "$task" in
-    next) assignment="$DIWAN/docs/external/KIMI-NEXT.md" ;;
-    memory) assignment="$DIWAN/docs/external/KIMI-MEMORY-BANK.md" ;;
+    next) header="$DIWAN/docs/external/KIMI-WORKSPACE-HEADER.md"; assignment="$DIWAN/docs/external/KIMI-NEXT.md" ;;
+    memory) header="$DIWAN/docs/external/KIMI-MEMORY-HEADER.md"; assignment="$DIWAN/docs/external/KIMI-MEMORY-BANK.md" ;;
     *) die "KIMI_TASK: next أو memory، لا $task" ;;
   esac
   mkdir -p "$KIMI_WORK/prompts"
   {
-    if [ "$task" = next ]; then
-      sed -n '/^---$/,$p' "$header" | tail -n +2
-    else
-      sed -n '/^---$/,$p' "$header" | tail -n +2 | awk 'NF {seen=1} seen && !NF {exit} seen {print}'
-    fi
+    sed -n '/^---$/,$p' "$header" | tail -n +2
     printf '\n'
     cat "$DIWAN/docs/KIMI-BENCHMARK-BRIEF.md"
     printf '\n'

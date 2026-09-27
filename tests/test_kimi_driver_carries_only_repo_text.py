@@ -128,18 +128,20 @@ def test_the_open_only_chain_judges_agentic_tasks_in_a_container_before_placing(
 
 
 
-def test_the_memory_assignment_is_bundled_with_the_header_rule_only(tmp_path):
-    """ملاحظةُ Codex على #129: الحزمةُ كانت تحمل KIMI-NEXT.md دائمًا، فلا طريقَ موثّقًا لإرسال تكليف الذاكرة."""
+def test_the_memory_assignment_is_bundled_with_its_own_header(tmp_path):
+    """ملاحظاتُ Codex على #129: الحزمةُ كانت تحمل KIMI-NEXT.md دائمًا، فلا طريقَ موثّقًا لإرسال تكليف الذاكرة؛ ثم حملت
+    أولَ فقرةٍ من رأس v1.2 وفيها «سلّم في kimi-benchmark/»، فيتعارض الأمران ويُكتب تقريرُ الذاكرة فوق تقرير v1.2."""
     env = dict(os.environ, KIMI_WORK=str(tmp_path), DIWAN=str(ROOT), KIMI_TASK="memory")
     done = subprocess.run(["bash", str(DRIVER), "bundle"], capture_output=True, text=True, env=env)
     assert done.returncode == 0, done.stderr
     produced = Path(done.stdout.strip()).read_text(encoding="utf-8")
-    header = _after_first_rule(ROOT / "docs" / "external" / "KIMI-WORKSPACE-HEADER.md").strip("\n").split("\n\n")[0]
-    expected = (header + "\n" + "\n"
+    expected = (_after_first_rule(ROOT / "docs" / "external" / "KIMI-MEMORY-HEADER.md") + "\n"
                 + (ROOT / "docs" / "KIMI-BENCHMARK-BRIEF.md").read_text(encoding="utf-8") + "\n"
                 + _after_first_rule(ROOT / "docs" / "external" / "KIMI-MEMORY-BANK.md"))
     assert produced == expected
     assert "current/open" not in produced and "KIMI-NEXT" not in produced
+    # موضعُ التسليم واحد: kimi-memory/، ولا أمرَ بالتسليم في kimi-benchmark/
+    assert "سلّم في `kimi-memory/`" in produced and "سلّم في `kimi-benchmark/`" not in produced
     bad = subprocess.run(["bash", str(DRIVER), "bundle"], capture_output=True, text=True,
                          env={**env, "KIMI_TASK": "other"})
     assert bad.returncode != 0

@@ -122,15 +122,16 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
     if category in ("forget", "backup"):
         # التوقّعُ يُحسب للمنسيّ إن كان في `absent` جزءٌ من نصّه هو، فغيابُ نصٍّ لم يُحفظ قطّ لا يشهد بالنسيان
         # (ملاحظة Codex على #129)
-        # وفي النسخ الاحتياطي يُفحص بعد الاستعادة، فهي التي قد تُحيي المنسيّ
-        start = max(last("forget"), last("restore") if category == "backup" else -1) + 1
-        # وفي سيناريو النسيان لا يُحسب فحصٌ بعد استعادةٍ لاحقة: الاستعادةُ من نسخةٍ أقدم تمحو ما قد يكون بقي خطأً قبل أن
-        # يُفحص، فيمرّ نسيانٌ لم يحذف شيئًا (ملاحظة Codex على #129)
-        stop = next((i for i in range(start, len(steps)) if steps[i].get("op") == "restore"), len(steps)) \
-            if category == "forget" else len(steps)
-        after = steps[start:stop]
+        # ونافذةُ كلّ منسيٍّ من نسيانه هو، لا من آخر نسيانٍ في السيناريو (ملاحظة Codex على #129)
+        restores = [i for i, s in enumerate(steps) if s.get("op") == "restore"]
         for ref in sorted({s["ref"] for s in steps if s.get("op") == "forget"}):
-            bound = {s["expect"] for s in after if s.get("expect") in ("retrieve", "context", "residue")
+            forgot = max(i for i, s in enumerate(steps) if s.get("op") == "forget" and s.get("ref") == ref)
+            # وفي النسخ الاحتياطي يُفحص بعد الاستعادة، فهي التي قد تُحيي المنسيّ
+            start = max(forgot, last("restore") if category == "backup" else -1) + 1
+            # وفي سيناريو النسيان لا يُحسب فحصٌ بعد استعادةٍ تلي نسيانَه: الاستعادةُ من نسخةٍ أقدم تمحو ما قد يكون بقي
+            # خطأً قبل أن يُفحص، فيمرّ نسيانٌ لم يحذف شيئًا، ولو جاء بعدها نسيانٌ آخر يفتح نافذةً لغيره (ملاحظتا Codex على #129)
+            stop = next((i for i in restores if i > forgot), len(steps)) if category == "forget" else len(steps)
+            bound = {s["expect"] for s in steps[start:stop] if s.get("expect") in ("retrieve", "context", "residue")
                      and _bound(s, made[ref][1])}
             in_use = bound & {"retrieve", "context"}
             if not in_use or (strict and category == "forget" and in_use != {"retrieve", "context"}):
@@ -179,8 +180,11 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         def checked_before_approval(i, ref, item):
             approved = next((j for j, s in enumerate(steps) if s.get("op") == "approve" and s.get("ref") == ref),
                             len(steps))
-            kinds = {s["expect"] for s in steps[i + 1:approved] if s.get("expect") in ("retrieve", "context", "residue")
-                     and _bound(s, item)}
+            # ولا يُحسب فحصٌ بعد استعادةٍ تلي الحفظ: استعادةُ نسخةٍ أقدم تمحو ما حُفظ خطأً قبل الموافقة، فيغيب ولو تسرّب
+            # (ملاحظة Codex على #129)
+            restored = next((j for j in range(i + 1, len(steps)) if steps[j].get("op") == "restore"), len(steps))
+            kinds = {s["expect"] for s in steps[i + 1:min(approved, restored)]
+                     if s.get("expect") in ("retrieve", "context", "residue") and _bound(s, item)}
             return "residue" in kinds and kinds & {"retrieve", "context"}
         if not any(checked_before_approval(*u) for u in unconsented):
             _reject(path, "consent_unchecked_before_approval",

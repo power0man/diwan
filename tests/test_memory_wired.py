@@ -405,6 +405,13 @@ def test_the_commissioned_bank_tests_what_each_category_names():
                                                        {"op": "approve", "project": "A", "ref": "p1"},
                                                        *by_id["consent_004"]["steps"][1:]])
     assert code(approved_first) == "consent_unchecked_before_approval"
+    # واستعادةٌ بين الحفظ والفحص تمحو ما حُفظ خطأً قبل الموافقة، فلا يشهد غيابُه بعدها (ملاحظة Codex على #129)
+    first, *rest = by_id["consent_004"]["steps"]
+    dummy = {"op": "remember", "project": "A", "text": "موعد الاجتماع الأسبوعي", "consent": "owner", "as": "m0"}
+    snapshot, restore = {"op": "backup", "project": "A", "as": "b0"}, {"op": "restore", "project": "A", "ref": "b0"}
+    assert code(dict(by_id["consent_004"], steps=[dummy, snapshot, first, restore, *rest])) \
+        == "consent_unchecked_before_approval"
+    strict(dict(by_id["consent_004"], steps=[dummy, snapshot, first, *rest]))
     assert code(by_id["isolation_006"]) == "isolation_without_cross_project_absence"
     assert code(by_id["backup_004"]) == "backup_without_prior_snapshot"
     benign = dict(by_id["injection_001"], steps=[dict(by_id["injection_001"]["steps"][0], text="موعد التسليم نهاية الشهر."),
@@ -547,6 +554,16 @@ def test_only_a_persisted_item_witnesses_isolation_injection_or_restoration():
         assert code(erased, strict=strict) == "forget_not_checked_in_use"
     check(dict(by_id["forget_001"], steps=[dummy, old_snapshot, secret, forgot, *forget_checks,
                                            {"op": "restore", "project": "A", "ref": "b0"}]), strict=True)
+    # ونافذةُ كلّ منسيٍّ من نسيانه هو: نسيانٌ لاحقٌ لعنصرٍ آخر بعد الاستعادة لا يفتح نافذةً للأول (ملاحظة Codex على #129)
+    other = {"op": "remember", "project": "A", "text": "موعد الاجتماع الأسبوعي", "consent": "owner", "as": "m0"}
+    other_checks = [dict(s, absent=["موعد الاجتماع الأسبوعي"]) for s in forget_checks if s.get("expect") != "receipt"]
+    both = lambda middle: dict(by_id["forget_001"], steps=[other, old_snapshot, secret, forgot, *middle,
+                                                           {"op": "forget", "project": "A", "ref": "m0"},
+                                                           *forget_checks, *other_checks,
+                                                           {"expect": "receipt", "project": "A", "ref": "m0", "count": 1}])
+    for strict in (False, True):
+        assert code(both([{"op": "restore", "project": "A", "ref": "b0"}]), strict=strict) == "forget_not_checked_in_use"
+        check(both([]), strict=strict)
     check(by_id["forget_001"], strict=True)
 
     save, backup, forget, restore, *checks = by_id["backup_001"]["steps"]
