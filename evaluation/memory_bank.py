@@ -88,6 +88,9 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         restore = last("restore")
         if last("backup") is None or restore is None or not checked_after(restore, {"retrieve", "context", "residue"}):
             _reject(path, "backup_semantics_missing", "نسخٌ واستعادةٌ ثم فحصٌ بعد الاستعادة")
+        # نسيانٌ بعد آخر استعادة يمحو ما قد تكون أحيته قبل أن يُفحص، فلا يشهد الفحصُ بالاستعادة (ملاحظة Codex على #129)
+        if any(s.get("op") == "forget" for s in steps[restore + 1:]):
+            _reject(path, "backup_checked_after_a_later_forget", "لا نسيانَ بعد آخر استعادة، فالفحصُ يشهد بما أعادته هي")
     if category in ("forget", "backup"):
         # التوقّعُ يُحسب للمنسيّ إن كان في `absent` جزءٌ من نصّه هو، فغيابُ نصٍّ لم يُحفظ قطّ لا يشهد بالنسيان
         # (ملاحظة Codex على #129)

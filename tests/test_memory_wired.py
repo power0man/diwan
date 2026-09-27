@@ -459,6 +459,9 @@ def test_the_snapshot_holds_the_item_and_the_checked_context_shows_that_item_alo
     check(forgotten_first)
     assert code(forgotten_first, strict=True) == "backup_without_prior_snapshot"
     check(by_id["backup_001"], strict=True)
+    # وملاحظتُه السابعة: نسيانٌ ثانٍ بعد الاستعادة يمحو ما أحيته قبل الفحص، في كل بنك
+    forgotten_again = dict(by_id["backup_001"], steps=[save, backup, forget, restore, forget, *checks])
+    assert code(forgotten_again) == code(forgotten_again, strict=True) == "backup_checked_after_a_later_forget"
 
     directive, fenced = by_id["injection_001"]["steps"]
     twin = {"op": "remember", "project": "A", "text": "موعد التسليم نهاية الشهر", "consent": "owner", "as": "m0"}
