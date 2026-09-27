@@ -50,13 +50,15 @@ def _interpreter() -> str:
         return executable.name
 
 
-def _reproduction(argv: list[str], out: Path | None) -> str:
-    """الأمرُ الذي يعيد القياس: الوسائطُ نفسُها، والتقريرُ إلى مسارٍ جديد فلا يردّه `output_exists`."""
-    args = list(argv)
-    if out is not None:
-        fresh = out.with_name(out.stem + ".rerun" + out.suffix)
-        args = [str(fresh) if a == str(out) else (f"--out={fresh}" if a == f"--out={out}" else a) for a in args]
-    return shlex.join([_interpreter(), "tools/evaluate_translation.py", *args])
+def _reproduction(args: argparse.Namespace, model_version: str) -> str:
+    """الأمرُ الذي يعيد القياس، مبنيًّا من الوسائط بعد تحليلها لا من نصّها (ملاحظتا Codex على #131):
+    البصمةُ المحلولة مثبَّتةٌ فيه، فوسمٌ أُعيد توجيهُه يُردّ بـ`model_version_mismatch` ولا يُقاس بأوزانٍ أخرى؛
+    والتقريرُ إلى مسارٍ جديد أيًّا كانت كتابةُ `--out` (‎./ أو ‎--out=)، فلا يردّه `output_exists`."""
+    parts = ["--model", args.model, "--model-version", model_version, "--license", args.license, "--agent", args.agent,
+             "--max-steps", str(args.max_steps), "--deadline-s", str(args.deadline_s)]
+    if args.out is not None:
+        parts += ["--out", str(args.out.with_name(args.out.stem + ".rerun" + args.out.suffix))]
+    return shlex.join([_interpreter(), "tools/evaluate_translation.py", *parts])
 
 
 def main(argv=None) -> int:
@@ -91,7 +93,7 @@ def main(argv=None) -> int:
                   engine={"provider": "ollama", "model": args.model, "model_version": model_version,
                           "license": args.license},
                   sampling={"temperature": 0, "seed": SAMPLING_SEED}, python=platform.python_version(),
-                  command=_reproduction(argv if argv is not None else sys.argv[1:], args.out))
+                  command=_reproduction(args, model_version))
     if args.out is not None:
         args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     summary = report["summary"]

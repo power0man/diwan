@@ -246,12 +246,26 @@ def test_the_cli_records_the_provenance_the_plan_requires(tmp_path, monkeypatch,
                                 "license": "Apache-2.0"}
     assert report["config"]["model_version"] == "sha256:weights"
     assert report["sampling"] == {"temperature": 0, "seed": ollama.SAMPLING_SEED} and report["python"]
-    # الأمرُ يعيد القياسَ حرفيًّا: الوسائطُ اللازمة، وتقريرٌ إلى مسارٍ جديد، والمفسّرُ الذي قاس بلا مسارٍ مطلق
+    # الأمرُ يعيد القياسَ حرفيًّا: الوسائطُ اللازمة والبصمةُ المحلولة، وتقريرٌ إلى مسارٍ جديد، والمفسّرُ الذي قاس
+    # بلا مسارٍ مطلق
     command = shlex.split(report["command"])
-    assert command[1:-1] == ["tools/evaluate_translation.py", *args[:-1]]
-    assert command[-1] == str(tmp_path / "r.rerun.json") and not command[0].startswith("/")
-    assert Path(command[0]).name == Path(sys.executable).name
+    assert command[1:] == ["tools/evaluate_translation.py", "--model", "qwen3.5:9b", "--model-version", "sha256:weights",
+                           "--license", "Apache-2.0", "--agent", "anthropic/claude-opus-5-5", "--max-steps", "4",
+                           "--deadline-s", "180.0", "--out", str(tmp_path / "r.rerun.json")]
+    assert not command[0].startswith("/") and Path(command[0]).name == Path(sys.executable).name
     assert cli.main(command[2:]) == 0 and (tmp_path / "r.rerun.json").exists()
+    # ملاحظتا Codex على #131: وسمٌ أُعيد توجيهُه قبل الإعادة يُردّ لا يُقاس، و`--out` بكتابةٍ أخرى يُعاد إلى مسارٍ جديد
+    capsys.readouterr()
+    monkeypatch.setattr(cli, "_digest", lambda model: "sha256:repointed")
+    assert cli.main([*command[2:-2], "--out", str(tmp_path / "again.json")]) == 1
+    assert "model_version_mismatch" in capsys.readouterr().out
+    monkeypatch.setattr(cli, "_digest", lambda model: "sha256:weights")
+    monkeypatch.chdir(tmp_path)
+    for spelling in (["--out", "./dot.json"], ["--out=./eq.json"]):
+        assert cli.main([*args[:6], *spelling]) == 0
+        written = Path(spelling[-1].split("=")[-1])
+        replay = shlex.split(json.loads(written.read_text(encoding="utf-8"))["command"])
+        assert cli.main(replay[2:]) == 0 and written.with_name(written.stem + ".rerun.json").exists()
     stranger = [*args[:5], "someone/unknown", "--out", str(tmp_path / "s.json")]
     assert cli.main(stranger) == 1 and "agent_unregistered" in capsys.readouterr().out
     evidence = json.loads((ROOT / "docs" / "probe" / "g4-translation-20260926.json").read_text(encoding="utf-8"))
