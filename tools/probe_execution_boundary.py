@@ -30,10 +30,23 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 SOURCES = ("core/execution.py", "core/sandbox.py", "tools/probe_execution_boundary.py")
+NOT_SOURCE = frozenset({"tests", "__pycache__", "site-packages", "venv"})
 
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _tree() -> dict[str, str]:
+    """بصماتُ كلّ وحدةٍ من المستودع، بلا الاختبارات والحزم المثبَّتة والمجلّدات المخفيّة."""
+    out = {}
+    for folder, dirs, files in os.walk(ROOT):
+        dirs[:] = [d for d in dirs if d not in NOT_SOURCE and not d.startswith(".")]
+        for name in files:
+            if name.endswith(".py"):
+                path = Path(folder) / name
+                out[path.relative_to(ROOT).as_posix()] = _sha(path)
+    return out
 
 
 # والشيفرةُ المقيسة تُترجم من مصدرها المبصوم في مخبأ بايتاتٍ جديدٍ فارغ، لا من `.pyc` في `__pycache__`: بايتاتٌ قديمة
@@ -45,9 +58,9 @@ if __name__ == "__main__":
     sys.pycache_prefix = PYCACHE
     atexit.register(shutil.rmtree, PYCACHE, True)
 
-# بصماتُ الشيفرة المقيسة قبل تحميلها: وحدةٌ استُبدلت بين تحميلها وأول بصمةٍ تُنفَّذ قديمةً ويُسجَّل جديدُها، ويُبقيه
+# بصماتُ المستودع قبل تحميل الشيفرة المقيسة: وحدةٌ استُبدلت بين تحميلها وأول بصمةٍ تُنفَّذ قديمةً ويُسجَّل جديدُها، ويُبقيه
 # الفحصُ بعد التشغيل؛ فكلُّ بصمةٍ تُسجَّل تساوي ما قبل التحميل (ملاحظة Codex على #144)
-BEFORE_IMPORT = {path: _sha(ROOT / path) for path in SOURCES}
+BEFORE_IMPORT = _tree()
 
 from core import sandbox  # noqa: E402
 from core.execution import DockerExecutionBackend, ExecutionRefused, _clean_env  # noqa: E402
@@ -85,29 +98,35 @@ print(json.dumps({"uid": os.getuid(), "no_owner_mounts": "/Users" not in mounts 
 CHILD_SLEEPER = "import subprocess, time; subprocess.Popen(['sleep', '60']); time.sleep(60)"
 # الحمولةُ المزوّرة التي تطبعها الحالةُ قبل خروجها بـ7؛ ولا تُقبل الحالةُ إلا إن رُئيت في stdout (ملاحظة Codex على #136)
 FORGED_PAYLOAD = '{"exit_code":0,"success":true}'
-# ما يُبصم قبل التشغيل ويُعاد بصمُه قبل الكتابة: الشيفرةُ المقيسة، والمجسُّ الذي يقيسها (ملاحظة Codex على #136)
-def _sources() -> dict[str, str]:
-    return {path: _sha(ROOT / path) for path in SOURCES}
-
-
-def _cached_elsewhere(modules=None) -> list[str]:
-    """وحداتُ المستودع المحمَّلة (بلا الاختبارات والحزم المثبَّتة) التي لم تُترجم في مخبأ المجسّ الجديد (`PYCACHE`)، فقد
-    تُنفَّذ من بايتاتٍ قديمة. والمجسُّ نفسُه (`__main__`) يُترجم من مصدره حين يُشغَّل."""
-    fresh = lambda cached: (PYCACHE is not None and isinstance(cached, str)
-                            and Path(cached).resolve().is_relative_to(Path(PYCACHE).resolve()))
-    stale = set()
+def _repo_modules(modules=None):
+    """وحداتُ المستودع المحمَّلة: (مسارُها النسبيّ، الوحدة)، بلا الاختبارات والحزم المثبَّتة والمجلّدات المخفيّة."""
     for module in list((sys.modules if modules is None else modules).values()):
         file = getattr(module, "__file__", None)
-        if not isinstance(file, str) or not file.endswith(".py") or module.__name__ == "__main__":
+        if not isinstance(file, str) or not file.endswith(".py"):
             continue
         try:
             rel = Path(file).resolve().relative_to(ROOT)
         except ValueError:
             continue
-        if not {"tests", "site-packages"}.intersection(rel.parts) and not any(p.startswith(".") for p in rel.parts) \
-                and not fresh(getattr(module, "__cached__", None)):
-            stale.add(rel.as_posix())
-    return sorted(stale)
+        if not NOT_SOURCE.intersection(rel.parts) and not any(part.startswith(".") for part in rel.parts):
+            yield rel.as_posix(), module
+
+
+# ما يُبصم قبل التشغيل ويُعاد بصمُه قبل الكتابة: الشيفرةُ المقيسة، والمجسُّ الذي يقيسها (ملاحظة Codex على #136)؛ ومعها
+# كلُّ وحدةٍ من المستودع محمَّلةٍ في العملية، لا قائمةٌ منتقاة: `ExecutionRefused` يرث `.code` من `core/canonical.py`
+# (ملاحظة Codex على #144)
+def _sources() -> dict[str, str]:
+    paths = set(SOURCES) | {path for path, _ in _repo_modules()}
+    return {path: _sha(ROOT / path) for path in sorted(paths)}
+
+
+def _cached_elsewhere(modules=None) -> list[str]:
+    """وحداتُ المستودع المحمَّلة التي لم تُترجم في مخبأ المجسّ الجديد (`PYCACHE`)، فقد تُنفَّذ من بايتاتٍ قديمة.
+    والمجسُّ نفسُه (`__main__`) يُترجم من مصدره حين يُشغَّل."""
+    fresh = lambda cached: (PYCACHE is not None and isinstance(cached, str)
+                            and Path(cached).resolve().is_relative_to(Path(PYCACHE).resolve()))
+    return sorted(path for path, module in _repo_modules(modules)
+                  if module.__name__ != "__main__" and not fresh(getattr(module, "__cached__", None)))
 
 
 def _shape(boundary: str) -> str:
@@ -242,8 +261,11 @@ def main(argv=None) -> int:
         shutil.rmtree(private, ignore_errors=True)
     after = _containers(args.docker)
     # ملفٌّ تغيّر في أثناء التشغيل يجعل البصمةَ تشهد لبايتاتٍ لم تُنفَّذ، فلا يُكتب تقرير
-    changed = sorted(path for path, digest in _sources().items()
-                     if not digest == sources[path] == BEFORE_IMPORT[path])
+    # ووحدةٌ حُمّلت أولَ مرّةٍ في أثناء التشغيل تُبصم بعده، فلا بصمةَ لها قبله تُقارن بها إلا بصمةُ ما قبل التحميل
+    after_sources = _sources()
+    changed = sorted(path for path, digest in sources.items() if after_sources.get(path) != digest)
+    changed += sorted(path for path, digest in after_sources.items()
+                      if BEFORE_IMPORT.get(path) != digest and path not in changed)
     if args.receipt.read_bytes() != receipt_bytes:
         changed.append("runtime_receipt")
     if changed:
@@ -267,6 +289,7 @@ def main(argv=None) -> int:
               "host": {"machine": os.uname().machine, "os": os.uname().sysname + " " + os.uname().release},
               "runtime_image_id": receipt.get("image_id"), "runtime_lock_sha256": receipt.get("lock_sha256"),
               "probe_sha256": sources["tools/probe_execution_boundary.py"],
+              "loaded_source_sha256": {**after_sources, **sources},
               "runtime_receipt_sha256": hashlib.sha256(receipt_bytes).hexdigest()}
     leaked = None if after is None else after - before
     cleanup_verified = leaked is not None and not leaked
@@ -288,6 +311,7 @@ def main(argv=None) -> int:
                                "runtime_receipt_read_before_the_first_case_and_rechecked_before_writing",
                                "the_backends_run_against_a_private_copy_of_the_hashed_receipt_bytes_not_the_receipt_path",
                                "sources_hashed_before_the_measured_code_is_imported_and_must_match_before_and_after",
+                               "every_loaded_repo_module_is_hashed_those_first_imported_during_the_run_only_after_it",
                                "every_loaded_repo_module_is_compiled_from_its_source_into_a_fresh_empty_bytecode_cache",
                                "a_deliberate_same_user_process_rewriting_files_or_containers_between_checks_is_out_of_scope"],
     }

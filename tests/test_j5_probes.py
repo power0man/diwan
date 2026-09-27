@@ -331,6 +331,53 @@ def test_a_module_whose_bytes_differ_from_before_the_measured_imports_writes_no_
     assert refused["changed"] == ["core/sandbox.py"] and not out_boundary.exists()
 
 
+def test_the_boundary_probe_hashes_every_loaded_repo_module_not_a_fixed_list(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #144: قائمةُ مجسّ الحدّ الثابتة فاتها `core/canonical.py`، و`ExecutionRefused` يرث منه `.code`
+    الذي يقرؤه المجسّ؛ فتغييرُه بعد تشغيلٍ ناجح يُبقي كلَّ بصمةٍ مسجَّلةٍ مطابقة."""
+    assert {"core/canonical.py", *boundary.SOURCES} <= set(boundary._sources())
+    assert not [p for p in boundary._sources() if p.startswith("tests/") or "site-packages" in p]
+    monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
+    monkeypatch.setattr(boundary, "_containers", lambda docker: {"a" * 64})
+    monkeypatch.setattr(boundary.sandbox, "configure_sandbox_backend", lambda receipt, work: None)
+
+    def verdicts():
+        return iter([SimpleNamespace(passed=True, exit_code=0, error_code=None),
+                     SimpleNamespace(passed=False, exit_code=1, error_code="exit_1"),
+                     SimpleNamespace(passed=False, exit_code=0, error_code="verdict_missing")])
+    run = lambda name: boundary.main(["--receipt", str(_receipt(tmp_path / name)), "--out-boundary",
+                                      str(tmp_path / name / "b.json"), "--out-sandbox", str(tmp_path / name / "s.json")])
+    given = verdicts()
+    monkeypatch.setattr(boundary.sandbox, "run_in_sandbox", lambda code, harness: next(given))
+    (tmp_path / "ok").mkdir()
+    run("ok")
+    report = json.loads((tmp_path / "ok" / "b.json").read_text(encoding="utf-8"))
+    assert report["loaded_source_sha256"]["core/canonical.py"] == hashlib.sha256(
+        (ROOT / "core" / "canonical.py").read_bytes()).hexdigest()
+    given = verdicts()
+    monkeypatch.setitem(boundary.BEFORE_IMPORT, "core/canonical.py", "0" * 64)
+    (tmp_path / "changed").mkdir()
+    assert run("changed") == 2
+    refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert refused == {"status": "refused", "code": "sources_changed_during_the_run", "changed": ["core/canonical.py"]}
+    assert not (tmp_path / "changed" / "b.json").exists()
+    # ووحدةٌ حُمّلت أولَ مرّةٍ في أثناء التشغيل تُقارن ببصمة ما قبل التحميل
+    monkeypatch.setitem(boundary.BEFORE_IMPORT, "core/canonical.py", hashlib.sha256(
+        (ROOT / "core" / "canonical.py").read_bytes()).hexdigest())
+    real = boundary._sources()
+    seen = iter([real, {**real, "core/late.py": "1" * 64}])
+    monkeypatch.setattr(boundary, "_sources", lambda: next(seen))
+    given = verdicts()
+    (tmp_path / "late").mkdir()
+    assert run("late") == 2
+    assert json.loads(capsys.readouterr().out.strip().splitlines()[-1])["changed"] == ["core/late.py"]
+    # وملفٌّ بُصم قبل التشغيل على غير ما حُمّل ثم أُعيد في أثنائه يُرفض، وإن طابق ما قبل التحميل بعده
+    seen = iter([{**real, "core/sandbox.py": "0" * 64}, real])
+    given = verdicts()
+    (tmp_path / "restored").mkdir()
+    assert run("restored") == 2
+    assert json.loads(capsys.readouterr().out.strip().splitlines()[-1])["changed"] == ["core/sandbox.py"]
+
+
 def test_every_repo_module_the_round_loads_is_hashed_not_a_hand_picked_list():
     """ملاحظةُ Codex على #144: القائمةُ المنتقاة فاتها مهايئا المزوّد اللذان يبنيان طلبَ النموذج ويقرآن نداءات الأدوات؛
     فصار كلُّ ما حُمّل من المستودع يُبصم، ولا يُبصم ما ليس منه (الاختبارات والحزم المثبَّتة)."""
