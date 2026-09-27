@@ -886,11 +886,13 @@ class Server(ThreadingHTTPServer):
     block_on_close = True
     allow_reuse_address = False
 
-    def __init__(self, app, port=0):
+    def __init__(self, app, port=0, *, listen="127.0.0.1"):
+        if listen not in {"127.0.0.1", "0.0.0.0"}:
+            raise ValueError("invalid_listen_address")
         self.app = app
         self.token = secrets.token_hex(32)
         self.slots = threading.BoundedSemaphore(8)
-        super().__init__(("127.0.0.1", port), Handler)
+        super().__init__((listen, port), Handler)
         self.origin = f"http://127.0.0.1:{self.server_port}"
 
     def process_request(self, request, client_address):

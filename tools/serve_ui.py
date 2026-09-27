@@ -48,10 +48,12 @@ def _discover_ollama() -> tuple[str | None, str | None, str | None, str | None]:
         return None, None, None, None
 
 
-def main():
+def main(argv=None, *, default_root=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=ROOT / "var/daily-ui")
+    parser.add_argument("--root", type=Path, default=default_root or ROOT / "var/daily-ui")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--listen", choices=("127.0.0.1", "0.0.0.0"), default="127.0.0.1",
+                        help="0.0.0.0 للحاوية فقط مع نشر المنفذ على 127.0.0.1؛ الأصل المقبول يبقى محليًا")
     parser.add_argument("--provider", choices=("local", "mlx"), default=os.environ.get("DIWAN_PROVIDER", "local"))
     parser.add_argument("--runtime-receipt", type=Path,
                         help="إيصال bootstrap صريح لتفعيل أدوات الحاوية؛ لا تشغيل Docker عند فتح الواجهة")
@@ -59,7 +61,7 @@ def main():
                         help="عنوانُ SearXNG (مثل http://127.0.0.1:8080) لتفعيل أداة البحث في الويب (ج٢)؛ بدونه لا تُعلَن")
     parser.add_argument("--analysis-receipt", type=Path,
                         help="إيصالُ صورة المحلّل من analysis/prepare.py لتفعيل analyze_data (ج٨)؛ بدونه لا تُعلَن")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     media_model, media_version = os.environ.get("DIWAN_MEDIA_MODEL"), os.environ.get("DIWAN_MEDIA_DIGEST")
     if args.provider == "mlx":
         agent_factory = None
@@ -101,7 +103,7 @@ def main():
                        web_search=(SearxngBackend(args.web_search_url) if args.web_search_url else None),
                        analysis_receipt=args.analysis_receipt,
                        docker_executable=shutil.which("docker") or "/usr/local/bin/docker")
-        server = Server(app, args.port)
+        server = Server(app, args.port, listen=args.listen)
         print(f"ديوان المحلي: {server.origin}", flush=True)
         print("Ctrl+C للإغلاق؛ تُحفظ الجولات التي انتهت. انتظار النداء الجاري محدود بمهلته.", flush=True)
         server.serve_forever()

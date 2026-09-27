@@ -5,3 +5,38 @@
 **/*.pyc
 .pytest_cache
 var/
+.codex/
+.agents/
+.opencode/
+dist/
+.env
+**/*.env
+streams/
+ledger/
+projections/*
+!projections/*.py
+keys/*
+!keys/anchor-ed25519.pub
+!keys/anchor-policy.json
+evaluation/holdout/
+**/sealed/**
+# Public metadata already shipped on origin/main; AGENTS.md section 5 permits
+# this manifest alone. The sealed bank contents remain outside this image.
+!evaluation/banks/kimi_v1/sealed/MANIFEST.json
+# k29 can restore these to a PUBLIC checkout; gitignore alone does not keep
+# them out of a Docker build context. Mirror the public-export exclusions.
+corpus/
+!corpus/lexicons/qamus-muhit.jsonl
+!corpus/lexicons/qamus-muhit.jsonl.anchor
+glossaries/
+sources/
+publish/
+evaluation/suites/benchmark_m14.json
+nodes/maritime/evidence/golden-answers.json
+services/evidence/research-m6.json
+nodes/linguistics/evidence/roots-20.json
+docs/probe/m14-human-sample-review.json
+docs/probe/policy-library-index.md
+docs/probe/drive-library-index.md
+tools/build_benchmark_suite.py
+tools/seed_acquisitions.py

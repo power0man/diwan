@@ -12,7 +12,7 @@ requires-python = ">=3.11"
 dependencies = ["cryptography==50.0.1", "camel-tools>=1.6", "torch>=2.4"]
 
 [project.optional-dependencies]
-dev = ["pytest==9.1.1"]
+dev = ["pytest==9.1.1", "hatchling==1.27.0"]
 mlx = [
     "mlx>=0.32.0",
     "mlx-lm>=0.31.0",
@@ -31,3 +31,55 @@ torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+diwan = "diwan.cli:main"
+
+# Keep the existing relative resource paths together inside the installed app.
+# This allowlist applies to wheels AND sdists; owner stores, keys and local state
+# never enter either distribution, even when building from an owner's checkout.
+[tool.hatch.build]
+dev-mode-dirs = ["."]
+include = [
+    "/diwan/*.py", "/agent/**/*.py", "/analysis/**/*.py",
+    "/conversation/**/*.py", "/core/**/*.py", "/documents/**/*.py",
+    "/evaluation/*.py", "/memory/**/*.py", "/multimodal/**/*.py",
+    "/nodes/**/*.py", "/projections/**/*.py", "/providers/**/*.py",
+    "/services/**/*.py", "/tools/*.py", "/webui/**/*.py", "/workspace_tools/**/*.py",
+    "/webui/static/*.html", "/webui/static/*.js", "/webui/static/*.css",
+    "/keys/anchor-ed25519.pub", "/keys/anchor-policy.json",
+    "/registry/nodes.jsonl", "/registry/nodes.jsonl.anchor", "/registry/nodes.jsonl.anchor.sig",
+    "/PUBLIC-EXPORT.json", "/uv.lock", "/pyproject.toml", "/LICENSE", "/README.md",
+]
+exclude = ["/tools/build_benchmark_suite.py", "/tools/seed_acquisitions.py"]
+
+[tool.hatch.build.targets.wheel]
+exclude = ["/uv.lock", "/PUBLIC-EXPORT.json", "/pyproject.toml", "/LICENSE", "/README.md",
+           "/tools/build_benchmark_suite.py", "/tools/seed_acquisitions.py"]
+
+[tool.hatch.build.targets.wheel.sources]
+"agent" = "diwan/_runtime/agent"
+"analysis" = "diwan/_runtime/analysis"
+"conversation" = "diwan/_runtime/conversation"
+"core" = "diwan/_runtime/core"
+"documents" = "diwan/_runtime/documents"
+"evaluation" = "diwan/_runtime/evaluation"
+"keys" = "diwan/_runtime/keys"
+"memory" = "diwan/_runtime/memory"
+"multimodal" = "diwan/_runtime/multimodal"
+"nodes" = "diwan/_runtime/nodes"
+"projections" = "diwan/_runtime/projections"
+"providers" = "diwan/_runtime/providers"
+"registry" = "diwan/_runtime/registry"
+"services" = "diwan/_runtime/services"
+"tools" = "diwan/_runtime/tools"
+"webui" = "diwan/_runtime/webui"
+"workspace_tools" = "diwan/_runtime/workspace_tools"
+
+[tool.hatch.build.targets.wheel.force-include]
+"uv.lock" = "diwan/_runtime/uv.lock"
+"PUBLIC-EXPORT.json" = "diwan/_runtime/PUBLIC-EXPORT.json"

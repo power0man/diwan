@@ -370,8 +370,8 @@ def test_serve_ui_bootstrap_tools_only_for_local_with_same_identity(monkeypatch,
             pass
     class FakeServer:
         origin = 'http://127.0.0.1:0'
-        def __init__(self, *args):
-            pass
+        def __init__(self, *args, listen):
+            assert listen == '127.0.0.1'
         def serve_forever(self):
             raise KeyboardInterrupt()
         def server_close(self):
