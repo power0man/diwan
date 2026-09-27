@@ -291,15 +291,23 @@ def test_a_new_method_whose_name_collides_across_classes_is_not_covered_by_the_o
 
 
 def test_a_case_added_to_a_parametrize_decorator_touches_its_test(repo, git, capsys):
-    """حالةٌ جديدة في مزخرف parametrize حارسٌ جديد: مدى الاختبار يبدأ من أول مزخرفٍ لا من سطر def."""
-    decorated = TESTS + "\n\nimport pytest\n\n\n@pytest.mark.parametrize(\"x\", [\n    0,\n])\ndef test_not_positive(x):\n    assert positive(x) is False\n"
+    """حالةٌ جديدة في مزخرف parametrize حارسٌ جديد (يستجدّ في الجمع)؛ وقيمةُ حالةٍ قائمة تتغيّر بمعرّفها نفسِه لا تستجدّ في
+    الجمع، فيمسّها السطرُ المضاف في المزخرف: مدى الاختبار يبدأ من أول مزخرفٍ لا من سطر def."""
+    decorated = TESTS + "\n\nimport pytest\n\n\n@pytest.mark.parametrize(\"x\", [\n    pytest.param(0, id=\"zero\"),\n])\ndef test_not_positive(x):\n    assert positive(x) is False\n"
     (repo / "tests/test_guard.py").write_text(decorated)
     git("add", "-A")
     git("commit", "-qm", "decorated")
     base = git("rev-parse", "HEAD")
-    (repo / "tests/test_guard.py").write_text(decorated.replace("    0,\n", "    0,\n    -1,\n"))
+    (repo / "tests/test_guard.py").write_text(decorated.replace("    pytest.param(0, id=\"zero\"),\n", "    pytest.param(0, id=\"zero\"),\n    pytest.param(-1, id=\"negative\"),\n"))
     git("add", "-A")
     git("commit", "-qm", "a new case")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::test_not_positive"] and report["status"] == "failed"
+    git("checkout", "-q", base)
+    git("checkout", "-q", "-b", "same-id")
+    (repo / "tests/test_guard.py").write_text(decorated.replace("    pytest.param(0, id=\"zero\"),\n", "    pytest.param(-3, id=\"zero\"),\n"))
+    git("add", "-A")
+    git("commit", "-qm", "the same case id with another value: only the decorator line changed")
     report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
     assert report["unmanifested_new_tests"] == ["tests/test_guard.py::test_not_positive"] and report["status"] == "failed"
     _clean(repo, git)
@@ -615,6 +623,31 @@ def test_a_guard_reaching_an_unchanged_module_through_a_changed_helper_is_collec
     git("commit", "-qm", "named in the importing module's manifest")
     report = _run(repo, "--range", rng(), capsys=capsys)
     assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["unproved_touched_tests"] == []
+    _clean(repo, git)
+
+
+def test_a_parameter_case_generated_outside_the_module_touches_its_test_and_must_itself_be_proved(repo, git, capsys):
+    """حالةٌ تُضاف إلى اختبارٍ قائم من `pytest_generate_tests` في conftest وحده: الوحدةُ لم تتغيّر، والجمعُ المردودُ إلى الدوالّ قبل
+    المقارنة لا يراها (ملاحظة Codex على #149)؛ صارت المقارنةُ بالمعرّفات الكاملة فتمسّ الحالةُ الجديدة دالّتَها وتُثبَت هي نفسُها."""
+    (repo / "tests/test_guard.py").write_text(TESTS + "\n\ndef test_sign(x):\n    assert positive(x) is False\n")
+    (repo / "tests/conftest.py").write_text("def pytest_generate_tests(metafunc):\n    if \"x\" in metafunc.fixturenames:\n        metafunc.parametrize(\"x\", [0], ids=[\"zero\"])\n")
+    _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": [*KILL["tests"], "tests/test_guard.py::test_sign"]})
+    git("add", "-A")
+    git("commit", "-qm", "a generated single case, proved by the manifest")
+    base = git("rev-parse", "HEAD")
+    rng = lambda: f"{base}..{git('rev-parse', 'HEAD')}"
+    (repo / "tests/conftest.py").write_text("def pytest_generate_tests(metafunc):\n    if \"x\" in metafunc.fixturenames:\n        metafunc.parametrize(\"x\", [0, -1], ids=[\"zero\", \"negative\"])\n")
+    git("add", "-A")
+    git("commit", "-qm", "conftest alone adds the negative case")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["touched_cases"] == {"tests/test_guard.py::test_sign": ["tests/test_guard.py::test_sign[zero]", "tests/test_guard.py::test_sign[negative]"]}
+    assert report["totals"]["partially_killed"] == 1 and report["status"] == "failed"        # [negative] لا تسقط تحت x >= 0
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"},
+              {**KILL, "id": "kill-sign", "new": "return x > -5", "tests": ["tests/test_guard.py::test_sign"]})
+    git("add", "-A")
+    git("commit", "-qm", "a mutation every generated case detects")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 2 and report["unproved_touched_tests"] == []
     _clean(repo, git)
 
 
