@@ -23,7 +23,7 @@ if str(ROOT) not in sys.path:
 
 from core.canonical import PayloadRejected  # noqa: E402
 from core.vector_retrieval import (HashEmbedder, OllamaEmbedder, VectorIndex,  # noqa: E402
-                                   corpus_passages, file_passages)
+                                   corpus_passages, file_passages_report)
 
 
 def embedder_from(args):
@@ -48,8 +48,11 @@ def main(argv=None) -> int:
     try:
         embedder = embedder_from(args)
         if args.corpus or args.files:
-            passages = corpus_passages(args.corpus) if args.corpus else file_passages(args.files)
-            summary = VectorIndex.build(args.out, passages, embedder, replace=args.replace)
+            if args.corpus:
+                passages, notes = corpus_passages(args.corpus), None
+            else:
+                passages, notes = file_passages_report(args.files)     # ما تُرك يُعلَن في الفهرس والملخّص
+            summary = VectorIndex.build(args.out, passages, embedder, replace=args.replace, notes=notes)
             print(json.dumps({"status": "built", **summary}, ensure_ascii=False))
         if args.query:
             hits = VectorIndex(args.out).search(args.query, embedder, limit=10)
