@@ -89,6 +89,27 @@ def test_write_is_idempotent_whatever_the_old_block_looked_like_and_measures_age
     assert doc["lines"] == on_disk.count("\n")
 
 
+def test_the_last_legacy_task_can_leave_the_table_and_the_block_renders_the_empty_state(tmp_path, capsys):
+    """ملاحظةُ Codex على #148: إنجازُ آخر مهمّةٍ قديمة يُفرغ §٣، والفراغُ حالٌ مشروعة: الكتلةُ تقول «لا شيء» والفهرسُ
+    يُكتب ويتحقّق، ولا حارسَ يشترط صفًّا حيًّا."""
+    root = _copy(tmp_path)
+    agents = root / ci.AGENTS
+    text = agents.read_text(encoding="utf-8")
+    open_ids = [task["id"] for task in ci.open_tasks(text)]
+    assert open_ids, "الاختبارُ يحتاج جدولًا فيه مفتوح"
+    for task_id in open_ids:
+        line = next(l for l in text.split("\n") if l.startswith(f"| {task_id} |"))
+        text = text.replace(line, line[: line.rstrip().rfind("| ") + 2] + "منجزة: 0123abc — أُنجزت في الاختبار |")
+    agents.write_text(text, encoding="utf-8")
+    code, report = _run(root, "--write", capsys=capsys)
+    assert code == 0 and report["archived"] == open_ids
+    state = ci.describe(root)
+    assert state["open_tasks"] == [] and "المفتوحُ من §٣: لا شيء." in ci.render_block(state)
+    section = agents.read_text(encoding="utf-8").split("## ٣ — المهام", 1)[1].split("\n## ", 1)[0]
+    assert not [l for l in section.split("\n") if ROW.match(l)], "صفٌّ بقي في §٣"
+    assert _run(root, "--check", capsys=capsys)[0] == 0
+
+
 def test_a_missing_or_doubled_block_is_a_named_refusal(tmp_path, capsys):
     root = _copy(tmp_path)
     agents = root / ci.AGENTS
@@ -114,7 +135,7 @@ def test_the_block_names_every_open_task_and_no_done_row_remains_in_agents_md():
     text = (ROOT / ci.AGENTS).read_text(encoding="utf-8")
     section = text.split("## ٣ — المهام", 1)[1].split("\n## ", 1)[0]
     rows = [line for line in section.split("\n") if ROW.match(line)]
-    assert rows and not any("| منجزة" in line for line in rows), "صفٌّ منجز بقي في §٣ بدل الأرشيف"
+    assert not any("| منجزة" in line for line in rows), "صفٌّ منجز بقي في §٣ بدل الأرشيف"   # وجدولٌ خالٍ حالٌ مشروعة
     state = ci.describe(ROOT)
     ids = [line.split("|")[1].strip() for line in rows]
     assert [task["id"] for task in state["open_tasks"]] == ids
