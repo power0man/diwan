@@ -185,7 +185,10 @@ def _searxng(url: str, container: str, docker: str) -> tuple[dict, dict]:
 
 
 def _digest(model: str, base: str = "http://127.0.0.1:11434") -> str:
-    with urllib.request.urlopen(base + "/api/tags", timeout=10) as response:
+    """بصمةُ النموذج من Ollama على الجهاز نفسِه، بلا وسيط البيئة: `HTTP_PROXY` بلا `NO_PROXY` كان يُرسل الطلبَ إلى الوسيط
+    فيُجيب ببصمةٍ لأوزانٍ لم تُشغَّل، والمزوّدُ يتّصل بـOllama مباشرةً (ملاحظة Codex على #144)."""
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    with opener.open(base + "/api/tags", timeout=10) as response:
         models = json.loads(response.read().decode("utf-8"))["models"]
     return next(m["digest"] for m in models if m["name"] == model)
 

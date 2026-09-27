@@ -431,6 +431,20 @@ def _docker(image: str, bindings: list[dict], running: str = "true", asked: list
     return run
 
 
+def test_the_model_digest_is_read_from_the_local_ollama_not_through_an_environment_proxy(monkeypatch):
+    """ملاحظةُ Codex على #144: `HTTP_PROXY` بلا `NO_PROXY` كان يُرسل طلبَ البصمة إلى الوسيط، فيُجيب ببصمةٍ لأوزانٍ لم تُشغَّل."""
+    from tests.test_web_search_tool import _local_servers
+    tags = lambda digest: lambda path: (200, {"Content-Type": "application/json"},
+                                        json.dumps({"models": [{"name": "m", "digest": digest}]}).encode())
+    for name in ("no_proxy", "NO_PROXY"):
+        monkeypatch.delenv(name, raising=False)
+    with _local_servers(tags("sha256:local"), tags("sha256:proxy")) as ((ollama, proxy), (direct, proxied)):
+        for name in ("http_proxy", "HTTP_PROXY"):
+            monkeypatch.setenv(name, f"http://127.0.0.1:{proxy}")
+        assert j5._digest("m", base=f"http://127.0.0.1:{ollama}") == "sha256:local"
+        assert direct == ["/api/tags"] and proxied == []
+
+
 def test_docker_is_asked_with_the_execution_backends_clean_environment(monkeypatch):
     """ملاحظةُ Codex على #144: فحصُ الحاوية وعدُّ الحاويات كانا يرثان `DOCKER_HOST` و`DOCKER_CONTEXT`، والخلفيّةُ تُسقطهما،
     فيُشهد لحاويةٍ على خادمٍ غيرِ خادم الجولة."""
