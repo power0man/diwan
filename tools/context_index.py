@@ -149,15 +149,17 @@ def describe(root: Path) -> dict:
             raise IndexError_(f"source_missing:{source.path}")
         raw = path.read_bytes()
         text = raw.decode("utf-8")
+        original = text
         if source.path == AGENTS:
-            # الكتلةُ المولَّدة تُفرَّغ قبل كلِّ قياس، فلا يغيّر ما يُكتب فيها حجمَ الملف ولا بصمتَه في الفهرس (وإلا لم يثبت --write)
+            # الكتلةُ المولَّدة تُفرَّغ قبل قياس الحجم والبصمة، فلا يغيّر ما يُكتب فيها حجمَ الملف ولا بصمتَه في الفهرس (وإلا لم يثبت
+            # --write)؛ أمّا العناوينُ فبأسطرها في الملفّ كما هو على القرص، لأنها للقفز إليه (ملاحظة Codex على #148)
             agents_text = text
             text = _masked_agents(text)
             raw = text.encode("utf-8")
         docs.append({"path": source.path, "role": source.role, "purpose": source.purpose, "read_when": source.read_when,
                      "bytes": len(raw), "lines": text.count("\n") + (0 if text.endswith("\n") or not text else 1),
                      "tokens_estimate": tokens_estimate(text), "sha256_12": digest(raw),
-                     "headings": headings(text) if source.path.endswith(".md") else []})
+                     "headings": headings(original) if source.path.endswith(".md") else []})
     decisions = (root / "docs/DECISIONS.md").read_text(encoding="utf-8")
     return {"schema_version": 1, "generator": "tools/context_index.py", "block": BLOCK,
             "codex_project_doc_max_bytes": CODEX_PROJECT_DOC_MAX_BYTES,
@@ -178,7 +180,9 @@ def _kb(n: int) -> str:
 
 def render_md(state: dict) -> str:
     docs = {d["path"]: d for d in state["documents"]}
-    reading = sum(docs[p]["bytes"] for p in READING_SET if p in docs)
+    # هذا الفهرسُ نفسُه ليس في المصادر، وحجمُه لا يُكتب داخله (لدارَ على نفسه)؛ فمجموعُ §٠ هنا بلا الفهرس، وبه في --print-budget
+    counted = [p for p in READING_SET if p in docs]
+    reading = sum(docs[p]["bytes"] for p in counted)
     lines = [
         "# فهرسُ السياق: ما تقرؤه وما لا تقرؤه",
         "",
@@ -187,7 +191,8 @@ def render_md(state: dict) -> str:
         f"**كيف يُستعمل (ق٦٧-٥):** اقرأ `AGENTS.md` كاملًا ({_kb(docs[AGENTS]['bytes'])}، وهو دون حدِّ Codex "
         f"{_kb(state['codex_project_doc_max_bytes'])}) ثم هذا الفهرس، و`docs/VISION.md` في أول جلسةٍ لك. ولا تفتح وثيقةً أخرى إلا إن سمّاها",
         "الفهرسُ لمهمّتك، أو تغيّرت بصمتُها عمّا رأيتَه آخرَ مرّة؛ فالبصمةُ الثابتة تعني أن ما تعرفه عن الوثيقة ما زال صحيحًا.",
-        f"حجمُ ما يُقرأ في §٠: {_kb(reading)} (≈{sum(docs[p]['tokens_estimate'] for p in READING_SET if p in docs)} رمزًا تقديرًا).",
+        f"حجمُ ما يُقرأ في §٠ **بلا هذا الفهرس** ({' و'.join(f'`{p}`' for p in counted)}): {_kb(reading)} "
+        f"(≈{sum(docs[p]['tokens_estimate'] for p in counted)} رمزًا تقديرًا)؛ وبالفهرس معه يقوله `--print-budget`، لأن حجمَ الفهرس لا يُكتب داخله.",
         "",
         f"## المفتوحُ من جدول §٣ ({len(state['open_tasks'])})؛ وما سواه مسائلُ GitHub بوسم عائلتك",
         "",

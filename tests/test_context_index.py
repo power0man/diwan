@@ -64,7 +64,10 @@ def test_the_generated_block_cannot_change_the_digest_it_reports(tmp_path, capsy
     root = _copy(tmp_path)
     reported = ci.describe(root)["documents"][0]["sha256_12"]
     agents = root / ci.AGENTS
-    agents.write_text(ci.with_block(agents.read_text(encoding="utf-8"), "> كتلةٌ عبثية"), encoding="utf-8")
+    text = agents.read_text(encoding="utf-8")
+    # كتلةٌ عبثية بعدد أسطر الكتلة الحقيقية، فلا تتحرّك أسطرُ العناوين ويبقى الاختبارُ على البصمة وحدها
+    rows = len(ci.split_block(text)[1].strip("\n").split("\n"))
+    agents.write_text(ci.with_block(text, "\n".join(["> كتلةٌ عبثية"] * rows)), encoding="utf-8")
     assert ci.describe(root)["documents"][0]["sha256_12"] == reported, "الكتلةُ غيّرت بصمةَ AGENTS.md"
     code, report = _run(root, "--check", capsys=capsys)
     assert code == 1 and report["files"] == [ci.AGENTS], "الكتلةُ العبثية وحدها هي المتأخّرة"
@@ -126,6 +129,14 @@ def test_the_index_lists_every_source_with_its_current_digest():
     assert state["latest_decision"] >= 67
     md = (ROOT / ci.INDEX_MD).read_text(encoding="utf-8")
     assert all(f"`{s.path}`" in md and s.read_when in md for s in ci.SOURCES)
+    # عناوينُ AGENTS.md بأسطرها على القرص لا في النصّ المفرَّغ الكتلة (ملاحظة Codex على #148)
+    on_disk = (ROOT / ci.AGENTS).read_text(encoding="utf-8").split("\n")
+    agents = next(d for d in state["documents"] if d["path"] == ci.AGENTS)
+    assert agents["headings"], "لا عناوين"
+    for heading in agents["headings"]:
+        assert on_disk[heading["line"] - 1] == "#" * heading["level"] + " " + heading["title"], heading
+    # ومجموعُ §٠ في الفهرس بلا الفهرس نفسِه، معلَنًا؛ والمجموعُ به في --print-budget
+    assert "بلا هذا الفهرس" in md and ci.INDEX_MD in ci.budget(ROOT)["reading_set"]
 
 
 def test_the_budget_report_is_deterministic_and_names_its_heuristic():
