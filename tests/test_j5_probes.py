@@ -147,8 +147,8 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
     assert backend["image"] == j5.PINNED_SEARXNG and backend["url"] == "http://127.0.0.1:8888"
 
 
-BOUNDARY = ROOT / "docs" / "probe" / "execution-boundary-20260927.json"
-SANDBOX = ROOT / "docs" / "probe" / "sandbox-container-20260927.json"
+BOUNDARY = ROOT / "docs" / "probe" / "execution-boundary-20260927b.json"
+SANDBOX = ROOT / "docs" / "probe" / "sandbox-container-20260927b.json"
 
 
 def test_the_published_sandbox_run_ends_each_program_where_it_must():
