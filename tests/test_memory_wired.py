@@ -503,6 +503,18 @@ def test_only_a_persisted_item_witnesses_isolation_injection_or_restoration():
     for source in (proposed, unconsented):
         assert code(dict(by_id["isolation_001"], steps=[source, probe]), strict=True) \
             == "isolation_without_cross_project_absence"
+    # ومصدرٌ محته استعادةُ نسخةٍ أُخذت قبله لا يشهد بالعزل، ومصدرٌ تحمله النسخةُ يبقى بعدها (ملاحظة Codex على #129)
+    filler = {"op": "remember", "project": "A", "text": "موعد الاجتماع الأسبوعي", "consent": "owner", "as": "m0"}
+    before, after = {"op": "backup", "project": "A", "as": "b0"}, {"op": "backup", "project": "A", "as": "b1"}
+    restore = lambda ref: {"op": "restore", "project": "A", "ref": ref}
+    assert code(dict(by_id["isolation_001"], steps=[filler, before, save, restore("b0"), probe]), strict=True) \
+        == "isolation_without_cross_project_absence"
+    check(dict(by_id["isolation_001"], steps=[filler, save, after, restore("b1"), probe]), strict=True)
+    approve = {"op": "approve", "project": "A", "ref": save["as"]}
+    forget = {"op": "forget", "project": "A", "ref": save["as"]}
+    for steps in ([proposed, before, approve, restore("b0"), probe], [before, proposed, restore("b0"), approve, probe],
+                  [save, after, forget, restore("b1"), probe]):
+        assert code(dict(by_id["isolation_001"], steps=steps), strict=True) == "isolation_without_cross_project_absence"
     check(by_id["isolation_001"], strict=True)
 
     directive, fenced = by_id["injection_001"]["steps"]

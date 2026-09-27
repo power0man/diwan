@@ -90,14 +90,27 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
 
     def active_at(ref, index):
         """العنصرُ قائمٌ في المخزن عند هذه الخطوة: حُفظ قبلها بموافقة المالك أو وُوفق على اقتراحه قبلها، ولم يُنسَ
-        قبلها. فاقتراحٌ لم يُوافَق عليه أو حفظٌ بلا موافقة أو منسيٌّ لا يشهد غيابُه ولا حضورُه بشيء (ملاحظات Codex على #129)."""
-        if ref not in made or made[ref][0] >= index:
-            return False
-        item = made[ref][1]
-        if item["op"] == "propose" or item.get("consent") != "owner":
-            if not any(s.get("op") == "approve" and s.get("ref") == ref for s in steps[:index]):
-                return False
-        return not any(s.get("op") == "forget" and s.get("ref") == ref for s in steps[:index])
+        قبلها. فاقتراحٌ لم يُوافَق عليه أو حفظٌ بلا موافقة أو منسيٌّ لا يشهد غيابُه ولا حضورُه بشيء (ملاحظات Codex على #129).
+        ويُتتبَّع المخزنُ خطوةً خطوة لأن الاستعادةَ تُرجعه إلى ما كان عند نسختها: ما حُفظ أو وُوفق عليه بعد النسخة يزول
+        بها، والمنسيُّ قبلها يبقى منسيًّا (`tombstones_from`)، فلا يشهد مصدرٌ محته استعادةٌ بشيء (ملاحظة Codex على #129)."""
+        saved, active, forgotten, snapshots = set(), set(), set(), {}
+        for s in steps[:index]:
+            op = s.get("op")
+            if op in ("remember", "propose"):
+                saved.add(s["as"])
+                if op == "remember" and s.get("consent") == "owner":
+                    active.add(s["as"])
+            elif op == "approve" and s["ref"] in saved:
+                active.add(s["ref"])
+            elif op == "forget":
+                forgotten.add(s["ref"])
+                saved.discard(s["ref"])
+                active.discard(s["ref"])
+            elif op == "backup":
+                snapshots[s["as"]] = (set(saved), set(active))
+            elif op == "restore" and s["ref"] in snapshots:
+                saved, active = (state - forgotten for state in snapshots[s["ref"]])
+        return ref in active
 
     if category == "backup":
         restore = last("restore")
