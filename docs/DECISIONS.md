@@ -1038,7 +1038,8 @@ DALUB بقيةُ غ٦. وبقيةُ §٦ من `AGENTS.md` للمالك: تسمي
 
 **القرار:**
 ١. يُسحب احتياطُ Claude في مسار openai (ق٦٢، ومدُّه إلى ٨ نوفمبر في ق٦٤ OD1) من ٢٧ سبتمبر ٢٠٢٦. فلا يأخذ Claude مهمّةً من
-   مهامّ المسار، ولا يعدّل ملفاته (`conversation/` و`agent/actions.py` و`core/execution.py` و`core/sandbox.py` و`webui/`). وما
+   مهامّ المسار، ولا يعدّل ملفاته: كلَّ ما تحت مفتاح `openai` في `registry/lanes.json`، وهي الخريطةُ الحاكمة (ومنها `conversation/`
+   و`agent/actions.py` و`core/execution.py` و`core/sandbox.py` و`webui/` و`services/*workspace.py` و`workspace_tools/`). وما
    يحتاجه عملُ Claude من تغييرٍ فيها يُطلب بمسألةٍ بوسم `family:openai`.
 ٢. ما بدأه Claude في المسار قبل السحب يُتمّه في ملفاته هو وحدها: أدلّةُ ج٥ (#23) وأدواتُ قياسها في `tools/` و`docs/probe/`.
    وما مسّ ملفاتِ المسار منه يُعاد إلى أصله.
