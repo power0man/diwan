@@ -14,7 +14,8 @@
     manifest_missing         ملفُّ اختبارٍ أُضيف (أو أُعيدت تسميتُه) في المدى بلا بيانِ طفرات باسمه؛ والوحدةُ في مجلّدٍ فرعيّ
                              tests/a/test_x.py بيانُها tests/mutations/a__test_x.jsonl
     unmanifested_new_tests   اختبارٌ مسّه المدى (كلُّ اختبارٍ في ملفٍّ مضاف، أو اختبارٌ دخل سطرٌ مضاف في مداه) ولا يسمّيه بيانٌ بمعرّفه الكامل
-    unproved_touched_tests   اختبارٌ ممسوس سمّاه بيانٌ لكنه لم يسقط هو نفسُه تحت أيّ طفرةٍ في المدى (ذكرُه بجانب قاتلٍ لا يثبته)
+    unproved_touched_tests   اختبارٌ ممسوس سمّاه بيانٌ لكنه لم يسقط هو نفسُه تحت أيّ طفرةٍ في المدى (ذكرُه بجانب قاتلٍ لا يثبته)؛
+                             والدالّةُ المعلَّمة بـparametrize حالاتٌ كما يجمعها pytest، وكلُّ حالةٍ منها حارسٌ يُثبَت وحده
     orphaned_manifests       بيانٌ حُذف في المدى ووحدتُه باقية (تُعرف الوحدةُ بالاتجاه الأمامي: أيُّ وحدةٍ عند الرأس بيانُها هذا)
     manifest_invalid         سطرٌ بلا حقوله أو بمفتاحٍ مجهول (يُرفض قبل أيّ شجرة عمل)
     manifest_name_collision  وحدتان عند الرأس تؤولان إلى بيانٍ واحد (tests/test_a/test_x.py وtests/test_a__test_x.py)؛ يُرفض قبل أيّ شجرة عمل
@@ -66,6 +67,7 @@ LIMITS = [
     "tests_are_found_by_parsing_the_head_file_for_the_default_pytest_names_test_functions_Test_classes_and_unittest_TestCase_subclasses_named_in_the_module_not_by_collecting_with_pytest",
     "a_class_whose_base_is_imported_under_a_name_that_does_not_end_in_TestCase_is_not_seen_as_a_unittest_class_so_its_methods_are_not_touched_tests",
     "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
+    "a_touched_parametrized_test_is_proved_case_by_case_every_case_pytest_collects_for_it_must_fail_a_mutation_since_parsing_cannot_tell_the_added_case_from_the_old_ones",
 ]
 
 
@@ -291,7 +293,29 @@ def _collect_missing(result: subprocess.CompletedProcess, node_ids: list[str]) -
     return [t for t in node_ids if any("not found: " in line and line.rstrip().endswith(t) for line in lines)]
 
 
-def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, keep: bool) -> dict:
+def _touched_cases(python: str, worktree: Path, touched: list[str], timeout: int) -> dict[str, list[str]]:
+    """حالاتُ كلِّ اختبارٍ ممسوس كما يجمعها pytest عند الرأس: الدالّةُ المعلَّمة بـparametrize حالاتٌ عدّة بمعرّفاتها، وكلُّ
+    حالةٍ حارسٌ يُثبَت وحده لأن القراءة لا تميّز الحالةَ المضافة من القديمة (ملاحظة Codex على #149)."""
+    if not touched:
+        return {}
+    collected = _pytest(python, worktree, ["--collect-only", *touched], timeout)
+    if collected is None:
+        raise Refused("timeout", "جمعُ الاختبارات الممسوسة تجاوز مهلتَه")
+    cases: dict[str, list[str]] = {node: [] for node in touched}
+    for line in collected.stdout.splitlines():
+        function = line.strip().split("[", 1)[0]
+        if function in cases:
+            cases[function].append(line.strip())
+    return cases
+
+
+def _covers(name: str, failed: list[str]) -> list[str]:
+    """ما سقط مما يسمّيه الاسم: هو نفسُه، أو حالاتُه إن سُمّيت الدالّةُ المعلَّمة بلا معامل."""
+    return [f for f in failed if f == name or f.startswith(name + "[")]
+
+
+def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, keep: bool,
+        touched: list[str] | None = None) -> dict:
     """يطبّق كلَّ طفرةٍ في شجرة عملٍ منفصلة عند `head` ويحكم بالرمز؛ الشجرةُ تُزال دائمًا إلا بـkeep."""
     head_sha = _git(root, "rev-parse", "--verify", f"{head}^{{commit}}")
     tmp = Path(tempfile.mkdtemp(prefix="diwan-mutation-", dir=os.environ.get("RUNNER_TEMP") or None))
@@ -302,11 +326,12 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
             subprocess.run(["git", "-C", str(root), "worktree", "remove", "--force", str(worktree)], capture_output=True)
             subprocess.run(["git", "-C", str(root), "worktree", "prune"], capture_output=True)
     atexit.register(cleanup)
-    results, baseline = [], {"collected": 0, "missing": [], "failing_before_mutation": []}
+    results, baseline, cases = [], {"collected": 0, "missing": [], "failing_before_mutation": []}, {}
     try:
         _git(root, "worktree", "add", "--detach", str(worktree), head_sha)
         for entry in entries:
             _refuse_escape(worktree, entry["file"])
+        cases = _touched_cases(python, worktree, touched or [], timeout)
         node_ids = sorted({t for e in entries for t in e["tests"]})
         collected = _pytest(python, worktree, ["--collect-only", *node_ids], timeout)
         if collected is None:
@@ -326,7 +351,7 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
     finally:
         cleanup()
     totals = {code: sum(1 for r in results if r["code"] == code) for code in VERDICTS}
-    return {"commit": head_sha, "baseline": baseline, "results": results, "totals": totals,
+    return {"commit": head_sha, "baseline": baseline, "results": results, "totals": totals, "touched_cases": cases,
             "worktree_kept": str(worktree) if keep else None}
 
 
@@ -335,7 +360,7 @@ def _apply(entry: dict, worktree: Path, baseline: dict, python: str, timeout: in
     record.update({k: entry[k] for k in ("id", "task", "why") if k in entry})
     target = worktree / entry["file"]
     missing = [t for t in entry["tests"] if t in baseline["missing"]]
-    failing = [t for t in entry["tests"] if t in baseline["failing_before_mutation"]]
+    failing = [t for t in entry["tests"] if _covers(t, baseline["failing_before_mutation"])]
     if missing:
         return {**record, "code": "test_missing", "verdict": VERDICTS["test_missing"], "detail": missing}
     if failing:
@@ -355,10 +380,11 @@ def _apply(entry: dict, worktree: Path, baseline: dict, python: str, timeout: in
     if result is None:
         return {**record, "code": "timeout", "verdict": VERDICTS["timeout"]}
     failed = _failed(result)
-    named_failed = [t for t in entry["tests"] if t in failed]
-    if result.returncode == 1 and named_failed:
-        return {**record, "code": "killed", "verdict": VERDICTS["killed"], "failed_tests": named_failed,
-                "named_but_passed": [t for t in entry["tests"] if t not in failed], "pytest_exit": 1}
+    # ما سقط يُسجَّل بمعرّفه الكامل بالمعامل، فالدالّةُ المسمّاةُ بلا معامل تُثبَت حالةً حالة
+    failed_tests = list(dict.fromkeys(f for t in entry["tests"] for f in _covers(t, failed)))
+    if result.returncode == 1 and failed_tests:
+        return {**record, "code": "killed", "verdict": VERDICTS["killed"], "failed_tests": failed_tests,
+                "named_but_passed": [t for t in entry["tests"] if not _covers(t, failed)], "pytest_exit": 1}
     if result.returncode == 0:
         return {**record, "code": "survived", "verdict": VERDICTS["survived"], "pytest_exit": 0}
     return {**record, "code": "invalid", "verdict": VERDICTS["invalid"], "pytest_exit": result.returncode,
@@ -398,14 +424,17 @@ def main(argv=None) -> int:
         for key in ("manifest_missing", "unmanifested_changed_tests", "unmanifested_new_tests", "orphaned_manifests"):
             report[key] = scope[key]
         if entries:
-            report.update(run(root, entries, args.head, args.python, args.timeout_s, args.keep_worktree))
+            report.update(run(root, entries, args.head, args.python, args.timeout_s, args.keep_worktree, scope["touched"]))
         else:
             report.update({"commit": _git(root, "rev-parse", "--verify", f"{args.head}^{{commit}}"),
                            "baseline": {"collected": 0, "missing": [], "failing_before_mutation": []},
                            "results": [], "totals": {code: 0 for code in VERDICTS}})
-        # الاختبارُ الممسوس يجب أن يسقط هو نفسُه تحت طفرةٍ ما في المدى؛ فذكرُه بجانب اختبارٍ قاتل لا يثبته (ملاحظة Codex على #149)
-        proved = {t.split("[", 1)[0] for r in report["results"] if r["code"] == "killed" for t in r["failed_tests"]}
-        unproved = [node for node in scope["touched"] if node not in proved and node not in scope["unmanifested_new_tests"]]
+        # الاختبارُ الممسوس يجب أن يسقط هو نفسُه تحت طفرةٍ ما في المدى؛ فذكرُه بجانب اختبارٍ قاتل لا يثبته، وحالاتُ الدالّة
+        # المعلَّمة تُثبَت حالةً حالة بمعرّفها (ملاحظتا Codex على #149)
+        proved = {t for r in report["results"] if r["code"] == "killed" for t in r["failed_tests"]}
+        cases = report.get("touched_cases", {})
+        unproved = [case for node in scope["touched"] if node not in scope["unmanifested_new_tests"]
+                    for case in (cases.get(node) or [node]) if case not in proved]
         report["unproved_touched_tests"] = unproved
         bad = [r for r in report["results"] if r["code"] != "killed"]
         missing, unnamed, orphaned = scope["manifest_missing"], scope["unmanifested_new_tests"], scope["orphaned_manifests"]

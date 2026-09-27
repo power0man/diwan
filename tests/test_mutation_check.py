@@ -303,6 +303,37 @@ def test_a_case_added_to_a_parametrize_decorator_touches_its_test(repo, git, cap
     _clean(repo, git)
 
 
+def test_a_case_added_to_a_parametrized_test_must_itself_fail_a_mutation_not_hide_behind_an_older_case(repo, git, capsys):
+    """بيانٌ يسمّي `test[zero]` وحدها كان يُثبت الدالّةَ كلَّها بعد حذف المعامل، فتمرّ حالةُ `negative` المضافة وهي لم تسقط
+    (ملاحظة Codex على #149)؛ صارت حالاتُ الدالّة الممسوسة كما يجمعها pytest تُثبَت حالةً حالة. وتسميةُ الدالّة بلا معامل
+    تُشغّل حالاتِها كلَّها وتسجّل ما سقط منها بمعرّفه (كانت تُحكم invalid)."""
+    decorated = TESTS + "\n\nimport pytest\n\n\n@pytest.mark.parametrize(\"x\", [\n    0,\n], ids=[\"zero\"])\ndef test_not_positive(x):\n    assert positive(x) is False\n"
+    (repo / "tests/test_guard.py").write_text(decorated)
+    _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": ["tests/test_guard.py::test_not_positive[zero]"]})
+    git("add", "-A")
+    git("commit", "-qm", "decorated and proved for zero")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_guard.py").write_text(decorated.replace("    0,\n], ids=[\"zero\"]", "    0,\n    -1,\n], ids=[\"zero\", \"negative\"]"))
+    git("add", "-A")
+    git("commit", "-qm", "a new case that x >= 0 does not catch")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    (result,) = report["results"]
+    assert result["code"] == "killed" and result["failed_tests"] == ["tests/test_guard.py::test_not_positive[zero]"]
+    assert report["touched_cases"] == {"tests/test_guard.py::test_not_positive": [
+        "tests/test_guard.py::test_not_positive[zero]", "tests/test_guard.py::test_not_positive[negative]"]}
+    assert report["unproved_touched_tests"] == ["tests/test_guard.py::test_not_positive[negative]"] and report["status"] == "failed"
+    _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": ["tests/test_guard.py::test_not_positive[zero]"]},
+              {**KILL, "id": "kill-negative", "new": "return x > -5", "tests": ["tests/test_guard.py::test_not_positive"]})
+    git("add", "-A")
+    git("commit", "-qm", "a mutation the negative case catches, named without a parameter")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    second = report["results"][1]
+    assert second["code"] == "killed" and second["failed_tests"] == [
+        "tests/test_guard.py::test_not_positive[zero]", "tests/test_guard.py::test_not_positive[negative]"]
+    assert report["unproved_touched_tests"] == [] and report["status"] == "passed"
+    _clean(repo, git)
+
+
 def test_a_symlink_target_is_refused_before_any_mutation(repo, git, capsys):
     """وصلةٌ رمزية باسم شيفرة إنتاج إلى اختبارٍ كانت تُتبع فتُطفَّر الاختبارُ نفسُه وتُحسب قتلًا (ملاحظة Codex على #149)."""
     (repo / "tools").mkdir()
