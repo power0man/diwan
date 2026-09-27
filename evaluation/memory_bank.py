@@ -207,6 +207,13 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         if strict and not any(shown_only_by_the_item(*f) for f in fenced):
             _reject(path, "injection_item_not_shown_in_checked_context",
                     "السياقُ المحجور يحضر فيه جزءٌ من نصّ العنصر الآمر نفسِه")
+        # وكلُّ عنصرٍ آمرٍ يقوم في المخزن يُفحص هكذا، لا أحدُها: عنصرٌ آمرٌ ثانٍ بلا فحصٍ يبلغ النموذجَ أمرُه حرفيًّا ولا يُعدّ
+        # (ملاحظة Codex على #129)
+        directed = [ref for ref, (i, item) in made.items() if scan(item["text"])
+                    and any(active_at(ref, k) for k in range(i + 1, len(steps) + 1))]
+        if strict and not all(any(shown_only_by_the_item(*f) for f in fenced if f[2] == ref) for ref in directed):
+            _reject(path, "injection_directive_left_unchecked",
+                    "كلُّ عنصرٍ آمرٍ قائمٍ في المخزن يُفحص سياقُه محجورًا بشاهدٍ منه")
     if not strict:
         return
     # شروطُ البنك المكلَّف (ملاحظات Codex على #129): كلُّ فئةٍ تختبر ما تسمّيه لا ما يشبهه
