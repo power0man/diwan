@@ -1,0 +1,1 @@
+{"id": "unreadable-harness-called-tampered", "file": "evaluation/agentic_runner.py", "old": "            tampered.append(f\"{relative} (harness_unreadable)\")\n            continue", "new": "            current = None", "tests": ["tests/test_agentic_harness_guard.py::test_an_unreadable_harness_file_is_named_unreadable_not_tampered"], "why": "غيرُ المقروء يُسمّى عبثًا كما كان"}

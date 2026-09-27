@@ -548,8 +548,10 @@ class Journal:
                     return blob[0]
             try:
                 parent = self._parent(relative)
-            except (FileNotFoundError, OSError):
+            except FileNotFoundError:
                 return None
+            except OSError:
+                _fail("unsafe_path", "دليل الهدف غير آمن")     # كما في current_sha256: تعذُّرُ الوصول ليس غيابًا
             try:
                 snapshot = _read(parent, relative.rsplit("/", 1)[-1], MAX_BYTES)
             finally:

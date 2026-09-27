@@ -83,6 +83,17 @@ def test_a_document_title_refuses_the_export_in_prose_and_as_doc_id(tmp_path):
     assert ex.build(root, tmp_path / "b" / "out", tracked=tracked)["code"] == "private_title_in_export"
 
 
+def test_a_source_line_that_cannot_be_parsed_refuses_the_export_by_name(tmp_path):
+    """سطرٌ لا يُقرأ JSON لا يُبصَم ولا يُعنوَن، فالحارسُ أضعفُ ما يكون عليه؛ كان يُتخطّى صامتًا (مسحُ الإخفاقات الصامتة، ق٦٧-٦)."""
+    root, tracked = mini_root(tmp_path, extra={"corpus/maritime/_catalog.jsonl":
+                                               json.dumps({"record": {"doc_id": TITLE_FILE[:-6]}}, ensure_ascii=False) + "\n{ليس json\n"})
+    fingerprints = ex.private_fingerprints(root, tracked)
+    assert fingerprints.unparsed == ("corpus/maritime/_catalog.jsonl:2",)
+    report = ex.build(root, tmp_path / "out", tracked=tracked)
+    assert report["status"] == "refused" and report["code"] == "fingerprint_source_unparseable"
+    assert report["unparsed"] == ["corpus/maritime/_catalog.jsonl:2"] and not (tmp_path / "out").exists()
+
+
 def test_title_fingerprints_come_from_file_names_and_catalog_doc_ids(tmp_path):
     root, tracked = mini_root(tmp_path, extra={
         "corpus/maritime/_catalog.jsonl": json.dumps({"record": {"doc_id": "031__لائحة-ثانية-من-الفهرس-وحده"}}) + "\n"})
@@ -172,7 +183,9 @@ def test_an_included_dictionary_is_exported_and_its_text_is_public(tmp_path):
     assert (out / "docs/note.md").is_file(), "اقتباسُ نصٍّ صار عامًّا ليس تسرّبًا"
     marker = read_marker(out)
     assert marker["included_paths"] == list(ex.INCLUDED_PATHS)
-    assert "corpus/lexicons/qamus-muhit.jsonl" not in marker["fingerprints"]["sources"]
+    # العلامةُ العامة لا تحمل أسماءَ ملفات المالك (عناوينُ مسوداتٍ غير منشورة)، بل عددَها وبصمةَ قائمتها
+    assert isinstance(marker["fingerprints"]["sources"], int) and len(marker["fingerprints"]["sources_sha256"]) == 64
+    assert TITLE_FILE not in json.dumps(marker, ensure_ascii=False), "اسمُ ملفٍّ للمالك في العلامة العامة"
     assert report["files_excluded"] == 3 and report["files_exported"] == len(tracked) - 3   # اللائحة وفهرسها والوسيط
 
 

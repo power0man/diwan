@@ -423,7 +423,9 @@ def harness_tampering(task: dict, root: Path) -> list[str]:
         try:
             current = hashlib.sha256(path.read_bytes()).hexdigest()
         except OSError:
-            current = None
+            # لا يُقرأ فلا يُعرف: يبقى الحكمُ مغلقًا لكنّه يُسمّى غيرَ مقروء لا مُعبَثًا به
+            tampered.append(f"{relative} (harness_unreadable)")
+            continue
         if initial.get(relative) != current:
             tampered.append(relative)
     for relative in sorted(protected):

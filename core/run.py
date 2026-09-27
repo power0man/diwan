@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, replace
 
 from core.budget import Budget, BudgetRefused
@@ -270,10 +271,16 @@ def execute(request: Request, provider, budget: Budget, ledger) -> Outcome:
         if not settled and handle in budget.reservations:
             # انقطاعٌ أو عطلٌ لم يُصنَّف: النتيجة غير مؤكّدة، فتُسوّى بالمحجوز،
             # ويُقيَّد أثرٌ يمنع إعادة الفعل بالمفتاح نفسه.
+            original = sys.exc_info()[1]
             spent = budget.settle_unknown(handle)
             try:
                 ledger.append(_record("error", req, req_digest,
                                       error_code="aborted_unclassified",
                                       retryable=False, settled_micros=spent))
-            except Exception:
-                pass  # لا يُخفى الاستثناء الأصلي بخطأ قيدٍ تابع
+            except Exception as ledger_exc:
+                # لا يُخفى الاستثناءُ الأصلي بخطأ قيدٍ تابع، ولا يُبتلع القيدُ الضائع: يُعلَّق على الأصلي باسمه ويُكتب
+                # للمشغّل، فالمالُ سُوّي بلا أثرٍ في السجل وهذا لا يُخفى
+                note = f"ledger_append_failed_after_abort:{type(ledger_exc).__name__}"
+                if original is not None:
+                    original.add_note(note)
+                print(f"[core.run] {note}", file=sys.stderr)

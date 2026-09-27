@@ -151,6 +151,22 @@ def test_an_honest_fix_still_passes(registry):
     assert result["status"] == "passed" and result["harness_tampered"] == []
 
 
+def test_an_unreadable_harness_file_is_named_unreadable_not_tampered(tmp_path, monkeypatch):
+    """تعذُّرُ قراءة ملفّ حكمٍ كان يُسمّى عبثًا؛ يبقى الحكمُ مغلقًا ويُسمّى السببُ (مسحُ الإخفاقات الصامتة، ق٦٧-٦)."""
+    root = tmp_path / "ws"
+    root.mkdir()
+    materialize(FIX_TASK, root)
+    name = sorted(protected_paths(FIX_TASK))[0]
+    original = Path.read_bytes
+
+    def denied(self):
+        if self.name == Path(name).name:
+            raise PermissionError("denied")
+        return original(self)
+    monkeypatch.setattr(Path, "read_bytes", denied)
+    assert harness_tampering(FIX_TASK, root) == [f"{name} (harness_unreadable)"]
+
+
 def test_protected_paths_follow_the_command_not_the_prose():
     protected = protected_paths({
         "workspace": {"tests/test_a.py": "", "tests/sub/test_b.py": "", "verify_test.py": "",

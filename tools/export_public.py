@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -141,6 +142,7 @@ class Fingerprints:
     shingles: frozenset[int]
     titles: tuple[str, ...]
     sources: tuple[str, ...]
+    unparsed: tuple[str, ...] = ()        # أسطرٌ في المصادر لم تُقرأ JSON، بموضعها؛ وجودُها يرفض التصدير
 
 
 def private_fingerprints(root: Path, tracked: list[str]) -> Fingerprints:
@@ -148,6 +150,7 @@ def private_fingerprints(root: Path, tracked: list[str]) -> Fingerprints:
     shingles: set[int] = set()
     titles: set[str] = set()
     sources: list[str] = []
+    unparsed: list[str] = []
     for rel in tracked:
         if not any(rel.startswith(src) for src in FINGERPRINT_SOURCES) or is_included(rel):
             continue                       # المضمَّنُ بقرارٍ نصٌّ عام لا خاص
@@ -160,10 +163,12 @@ def private_fingerprints(root: Path, tracked: list[str]) -> Fingerprints:
                 titles.add(title)
         sources.append(rel)
         with (root / rel).open(encoding="utf-8") as handle:
-            for line in handle:
+            for number, line in enumerate(handle, 1):
                 try:
                     record = json.loads(line)
                 except ValueError:
+                    # سطرٌ لا يُقرأ لا يُبصَم، فالحارسُ أضعفُ ما يكون عليه: يُسمّى ويُرفض التصدير حتى يُصلَح
+                    unparsed.append(f"{rel}:{number}")
                     continue
                 if name == "_catalog.jsonl" and isinstance(record, dict):
                     doc_id = (record.get("record") or {}).get("doc_id")
@@ -175,7 +180,7 @@ def private_fingerprints(root: Path, tracked: list[str]) -> Fingerprints:
                     tokens = words(text)
                     for i in range(len(tokens) - SHINGLE_WORDS + 1):
                         shingles.add(hash(tuple(tokens[i:i + SHINGLE_WORDS])))
-    return Fingerprints(frozenset(shingles), tuple(sorted(titles)), tuple(sources))
+    return Fingerprints(frozenset(shingles), tuple(sorted(titles)), tuple(sources), tuple(unparsed))
 
 
 @dataclass(frozen=True)
@@ -267,6 +272,8 @@ def build(root: Path, dest: Path, *, tracked: list[str] | None = None) -> dict:
     if dest.exists() and any(dest.iterdir()):
         return {"status": "refused", "code": "dest_not_empty", "dest": str(dest)}
     fingerprints = private_fingerprints(root, tracked)
+    if fingerprints.unparsed:
+        return {"status": "refused", "code": "fingerprint_source_unparseable", "unparsed": list(fingerprints.unparsed)}
     kept = [rel for rel in tracked if not is_excluded(rel)]
     excluded = [rel for rel in tracked if is_excluded(rel)]
     findings: list[Finding] = []
@@ -306,7 +313,9 @@ def build(root: Path, dest: Path, *, tracked: list[str] | None = None) -> dict:
         "excluded_streams": list(excluded_signed_ledgers()),
         "files_exported": len(kept),
         "files_excluded": len(excluded),
-        "fingerprints": dict(report["fingerprints"], sources=list(fingerprints.sources)),
+        # أسماءُ ملفات المالك (وفيها عناوينُ مسوداتٍ غير منشورة) لا تُكتب في العلامة العامة: عددٌ وبصمةٌ لقائمتها المرتّبة
+        "fingerprints": dict(report["fingerprints"],
+                             sources_sha256=hashlib.sha256("\n".join(sorted(fingerprints.sources)).encode("utf-8")).hexdigest()),
     }
     (dest / MARKER_NAME).write_text(json.dumps(marker, ensure_ascii=False, indent=2) + "\n",
                                     encoding="utf-8")
