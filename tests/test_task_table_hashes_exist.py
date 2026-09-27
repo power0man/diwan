@@ -20,10 +20,21 @@ DONE = re.compile(r"منجزة:\s*(diwan-private@)?([0-9a-f]{7,40})\b")
 RUNNING = re.compile(r"جارية:\s*([a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9._-]*)")
 
 
-def task_rows() -> list[tuple[str, str]]:
-    """صفوفُ جدول §٣: (الرقم، خليةُ الحالة)."""
-    text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-    section = text.split("## ٣ — المهام", 1)[1].split("\n## ", 1)[0]
+# الجدولُ المجمَّد موزَّعٌ على موضعين منذ ق٦٧-٥: ما بقي مفتوحًا في §٣، والمنجزُ بنصّه في الأرشيف
+TASK_TABLES = ("AGENTS.md", "docs/TASKS-ARCHIVE.md")
+
+
+def task_rows(paths: tuple[str, ...] = TASK_TABLES) -> list[tuple[str, str]]:
+    """صفوفُ جدول §٣ من الموضعين معًا: (الرقم، خليةُ الحالة)."""
+    rows = []
+    for path in paths:
+        text = (ROOT / path).read_text(encoding="utf-8")
+        section = text.split("## ٣ — المهام", 1)[1].split("\n## ", 1)[0]
+        rows.extend(_rows(section))
+    return rows
+
+
+def _rows(section: str) -> list[tuple[str, str]]:
     rows = []
     for line in section.splitlines():
         if not line.startswith("| ") or line.startswith("| رقم") or line.startswith("|---"):
