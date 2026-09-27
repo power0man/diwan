@@ -154,7 +154,7 @@ sources/         المصادر
 | المقياس | القيمة | كيف تتحقق بنفسك |
 |---|---|---|
 | اختبارات مجموعة | **4557** | `.venv/bin/python -m pytest` (هذا عدد جمع؛ النجاح له دليله المنفصل) |
-| قرارات | **65** بلا فجوة | `grep -oE 'ق[٠-٩]+' docs/DECISIONS.md \| sort -u \| wc -l` |
+| قرارات | **66** بلا فجوة | `grep -oE 'ق[٠-٩]+' docs/DECISIONS.md \| sort -u \| wc -l` |
 | وثائق قبول | **19** | `ls docs/M*-ACCEPTANCE.md` |
 | ملفات بايثون | **410** / **81876** سطرًا | `git ls-files '*.py' \| xargs wc -l` |
 | المخزن البحري النافذ | **117** وثيقة / **1279** صفحة | `docs/probe/project-status.json` |
