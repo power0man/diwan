@@ -418,6 +418,23 @@ def _docker(image: str, bindings: list[dict], running: str = "true", asked: list
     return run
 
 
+def test_docker_is_asked_with_the_execution_backends_clean_environment(monkeypatch):
+    """ملاحظةُ Codex على #144: فحصُ الحاوية وعدُّ الحاويات كانا يرثان `DOCKER_HOST` و`DOCKER_CONTEXT`، والخلفيّةُ تُسقطهما،
+    فيُشهد لحاويةٍ على خادمٍ غيرِ خادم الجولة."""
+    from core.execution import _clean_env
+    monkeypatch.setenv("DOCKER_HOST", "tcp://elsewhere:2375")
+    monkeypatch.setenv("DOCKER_CONTEXT", "remote")
+    seen = []
+
+    def run(argv, **kwargs):
+        seen.append(kwargs.get("env"))
+        return SimpleNamespace(stdout="x\n", returncode=0)
+    monkeypatch.setattr(subprocess, "run", run)
+    j5._inspect("docker", "searxng", "{{.Id}}")
+    boundary._containers("docker")
+    assert seen == [_clean_env(), _clean_env()]
+
+
 def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypatch):
     local = [{"HostIp": "127.0.0.1", "HostPort": "8888"}]
     monkeypatch.setattr(subprocess, "run", lambda *a, **k: pytest.fail("Docker سُئل قبل فحص الرابط"))

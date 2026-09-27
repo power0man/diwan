@@ -16,6 +16,7 @@ SearXNG بواجهته JSON — يديره المالك محليًّا أو يخ
 from __future__ import annotations
 
 from dataclasses import dataclass
+import ipaddress
 import json
 import re
 import urllib.error
@@ -106,12 +107,25 @@ class SearxngBackend:
     def identity(self) -> dict:
         return {"backend": self.name, "endpoint": self.endpoint.rstrip("/")}
 
+    def _default_opener(self):
+        """لا تحويل، ولا وسيطَ لعنوانٍ على الجهاز نفسِه: `HTTP_PROXY` بلا `NO_PROXY` يُرسل طلبَ 127.0.0.1 إلى الوسيط، فيُجيب
+        هو ويُنسب ردُّه إلى المحرّك المضبوط (ملاحظة Codex على #144). وللعنوان البعيد وسيطُ البيئة كما هو."""
+        handlers = [_NoRedirect()]
+        host = urllib.parse.urlsplit(self.endpoint).hostname or ""
+        try:
+            loopback = host == "localhost" or ipaddress.ip_address(host).is_loopback
+        except ValueError:
+            loopback = False
+        if loopback:
+            handlers.append(urllib.request.ProxyHandler({}))
+        return urllib.request.build_opener(*handlers)
+
     def search(self, query: str, *, timeout_s: float = TIMEOUT_S) -> list[dict]:
         url = (self.endpoint.rstrip("/") + "/search?"
                + urllib.parse.urlencode({"q": query, "format": "json"}))
         request = urllib.request.Request(url, headers={"Accept": "application/json",
                                                        "User-Agent": "diwan-web-search/1"})
-        opener = urllib.request.build_opener(_NoRedirect()) if self.opener is None else self.opener
+        opener = self._default_opener() if self.opener is None else self.opener
         try:
             with opener.open(request, timeout=timeout_s) as response:
                 raw = response.read(MAX_BODY_BYTES + 1)

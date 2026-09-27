@@ -39,7 +39,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from agent.web_search import SearxngBackend  # noqa: E402
-from core.execution import DockerExecutionBackend  # noqa: E402
+from core.execution import DockerExecutionBackend, _clean_env  # noqa: E402
 from providers.local_chat import LocalChatProvider  # noqa: E402
 from providers.local_tools import LocalToolProvider  # noqa: E402
 from webui.server import LocalApp  # noqa: E402
@@ -127,9 +127,11 @@ def _sources() -> dict[str, str]:
 
 
 def _inspect(docker: str, target: str, fmt: str) -> str:
-    """حاويةٌ لا صورة: `docker inspect` وحده يقبل اسمَ صورةٍ أيضًا."""
+    """حاويةٌ لا صورة: `docker inspect` وحده يقبل اسمَ صورةٍ أيضًا. وبالبيئة النظيفة نفسِها التي يشغّل بها
+    `DockerExecutionBackend` Docker: `DOCKER_HOST` أو `DOCKER_CONTEXT` الموروثان يشهدان لحاويةٍ على خادمٍ غيرِ خادم
+    الجولة (ملاحظة Codex على #144)."""
     return subprocess.run([docker, "container", "inspect", "--format", fmt, target], capture_output=True, text=True,
-                          timeout=30).stdout.strip()
+                          timeout=30, env=_clean_env()).stdout.strip()
 
 
 def _serving(url: str, container_id: str, docker: str) -> dict:

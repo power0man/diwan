@@ -30,7 +30,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from core import sandbox  # noqa: E402
-from core.execution import DockerExecutionBackend, ExecutionRefused  # noqa: E402
+from core.execution import DockerExecutionBackend, ExecutionRefused, _clean_env  # noqa: E402
 
 # `core.sandbox.configure_sandbox_backend` يبني خلفيّته بمسار Docker الافتراضي في `DockerExecutionBackend`، ولا يقبل غيرَه.
 # وتمريرُ المسار إليه من مسار openai (ق٦٦، #142)، فالمجسُّ يرفض مسارًا آخر قبل أن يسمّي حدًّا لم يختبره (ملاحظة Codex على #136).
@@ -84,9 +84,11 @@ def _shape(boundary: str) -> str:
 def _containers(docker: str) -> set[str] | None:
     """معرّفاتُ الحاويات كاملةً لا عددُها: حاويةٌ غريبة تُحذف وحاويةُ مجسٍّ تبقى يتساوى بهما العدد (ملاحظة Codex على #136).
     والمعرّفاتُ لا تُكتب في التقرير، بل عددُها وعددُ ما بقي. وتعذُّرُ العدّ `None` لا مجموعةٌ فارغة، فلا يُقرأ خادمٌ
-    غائب تنظيفًا تامًّا (ملاحظة Codex على #136)."""
+    غائب تنظيفًا تامًّا (ملاحظة Codex على #136). وبالبيئة النظيفة التي تشغّل بها الخلفيّةُ Docker، فلا يُعدّ خادمٌ غيرُ
+    خادم الحالات (ملاحظة Codex على #144)."""
     try:
-        done = subprocess.run([docker, "ps", "-aq", "--no-trunc"], capture_output=True, text=True, timeout=30)
+        done = subprocess.run([docker, "ps", "-aq", "--no-trunc"], capture_output=True, text=True, timeout=30,
+                              env=_clean_env())
     except (OSError, subprocess.SubprocessError):
         return None
     return set(done.stdout.split()) if done.returncode == 0 else None
