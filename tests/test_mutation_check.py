@@ -421,6 +421,45 @@ def test_deleting_a_manifest_whose_module_remains_fails_the_range(repo, git, cap
     assert report["orphaned_manifests"] == [] and report["status"] == "passed"
 
 
+def test_removing_or_narrowing_a_manifest_row_whose_test_remains_drops_its_proof_and_fails_the_range(repo, git, capsys):
+    """حذفُ سطرٍ واحد من بيانٍ باقٍ كان يمرّ لأن المدى يقرأ نسخةَ الرأس وحدها ولا يقارنها بأصل الدمج، فيفقد الحارسُ إثباتَه
+    صامتًا (ملاحظة Codex على #149)؛ يُقبل إن سمّاه سطرٌ آخر (ولو باسم دالّته)، أو زالت الحالةُ من الجمع، أو زالت الدالّة."""
+    decorated = TESTS + "\n\nimport pytest\n\n\n@pytest.mark.parametrize(\"x\", [\n    pytest.param(0, id=\"zero\"),\n    pytest.param(-1, id=\"negative\"),\n])\ndef test_not_positive(x):\n    assert positive(x) is False\n"
+    (repo / "tests/test_guard.py").write_text(decorated)
+    negative = {**KILL, "id": "kill-negative", "new": "return x > -5", "tests": ["tests/test_guard.py::test_not_positive[negative]"]}
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"}, negative)
+    git("add", "-A")
+    git("commit", "-qm", "guards and their manifest")
+    base = git("rev-parse", "HEAD")
+    rng = lambda: f"{base}..{git('rev-parse', 'HEAD')}"
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})                     # السطرُ الثاني حُذف والحالةُ باقية
+    git("add", "-A")
+    git("commit", "-qm", "drop one row only")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["dropped_proofs"] == ["tests/test_guard.py::test_not_positive[negative]"] and report["status"] == "failed"
+    assert report["manifests"] == ["tests/mutations/test_guard.jsonl"] and report["totals"]["killed"] == 1
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"}, {**negative, "id": "kill-all", "tests": ["tests/test_guard.py::test_not_positive"]})
+    git("add", "-A")
+    git("commit", "-qm", "another row names the function, so every case")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["dropped_proofs"] == [] and report["status"] == "passed" and report["totals"]["killed"] == 2
+    (repo / "tests/test_guard.py").write_text(decorated.replace("    pytest.param(-1, id=\"negative\"),\n", ""))
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"}, {**negative, "id": "kill-zero", "tests": ["tests/test_guard.py::test_not_positive[zero]"]})
+    git("add", "-A")
+    git("commit", "-qm", "the negative case is gone and the row names the remaining one")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["dropped_proofs"] == [] and report["status"] == "passed"
+    assert report["revalidated_tests"] == ["tests/test_guard.py::test_not_positive"] and report["totals"]["killed"] == 2
+    (repo / "tests/test_guard.py").write_text((repo / "tests/test_guard.py").read_text().replace(
+        "def test_zero_is_not_positive():\n    assert positive(0) is False\n\n\n", ""))
+    _manifest(repo, "test_guard", {**negative, "id": "kill-zero", "tests": ["tests/test_guard.py::test_not_positive[zero]"]})
+    git("add", "-A")
+    git("commit", "-qm", "the function is gone with its row")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["dropped_proofs"] == [] and report["status"] == "passed" and report["totals"]["killed"] == 1
+    _clean(repo, git)
+
+
 def test_a_unittest_subclass_is_collected_whatever_its_name_and_a_base_imported_under_another_name_is_a_declared_limit(repo, git, capsys):
     """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة فتمرّ حرّاسُه بلا بيانٍ ولا إثبات (ملاحظة Codex
     على #149)؛ والوارثُ منه في الوحدة نفسِها مثلُه. والصنفُ العاديّ لا يجمعه pytest ولا تراه الأداة؛ والوارثُ أصلًا مستوردًا

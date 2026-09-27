@@ -19,6 +19,8 @@
     unproved_touched_tests   اختبارٌ ممسوس سمّاه بيانٌ لكنه لم يسقط هو نفسُه تحت أيّ طفرةٍ في المدى (ذكرُه بجانب قاتلٍ لا يثبته)؛
                              والدالّةُ المعلَّمة بـparametrize حالاتٌ كما يجمعها pytest، وكلُّ حالةٍ منها حارسٌ يُثبَت وحده
     orphaned_manifests       بيانٌ حُذف في المدى ووحدتُه باقية (تُعرف الوحدةُ بالاتجاه الأمامي: أيُّ وحدةٍ عند الرأس بيانُها هذا)
+    dropped_proofs           سطرٌ حُذف أو ضُيّقت قائمتُه في بيانٍ باقٍ: اختبارٌ (أو حالةٌ) كان يسمّيه البيانُ عند أصل الدمج ولا يسمّيه
+                             سطرٌ عند الرأس وهو ما زال يُجمع، ففقد إثباتَه صامتًا؛ يُقبل إن زال الاختبارُ أو سمّاه سطرٌ آخر
     revalidated_tests        اختبارٌ زال في المدى أو فقد سطرًا من مداه: بياناتُه تُعاد في المدى (فحذفُ اختبارٍ أو حالةٍ يسمّيها بيانٌ
                              يُحكم test_missing هنا لا في الأسبوعيّ وحده)، ولا يُطلب إثباتُه من جديد
     manifest_invalid         سطرٌ بلا حقوله أو بمفتاحٍ مجهول، أو يسمّي اختبارًا من وحدةٍ أخرى — بيانُ الوحدة يسمّي اختباراتِها
@@ -74,6 +76,7 @@ LIMITS = [
     "a_class_whose_base_is_imported_under_a_name_that_does_not_end_in_TestCase_is_not_seen_as_a_unittest_class_so_its_methods_are_not_touched_tests",
     "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
     "a_touched_parametrized_test_is_proved_case_by_case_every_case_pytest_collects_for_it_must_fail_a_mutation_since_parsing_cannot_tell_the_added_case_from_the_old_ones",
+    "a_manifest_changed_in_the_range_is_compared_with_its_merge_base_version_by_the_exact_names_it_carried_a_test_or_case_still_collected_at_the_head_that_no_line_names_any_more_is_a_dropped_proof_a_bare_function_name_at_the_head_covers_all_its_cases",
 ]
 
 
@@ -238,19 +241,46 @@ def _touched_test_nodes(root: Path, base: str, head: str, test_file: str, new_fi
     return sorted(node for node, (start, end) in nodes.items() if any(start <= n <= end for n in added))
 
 
+def _named_exactly(text: str) -> set[str]:
+    """ما يسمّيه نصُّ بيانٍ من اختبارات بمعرّفها كما كُتب، بمعاملاته (قراءةٌ متسامحة؛ الصلاحيةُ في load_manifest)."""
+    named: set[str] = set()
+    for line in text.splitlines():
+        try:
+            tests = json.loads(line).get("tests", []) if line.strip() else []
+        except (json.JSONDecodeError, AttributeError):
+            continue
+        named.update(t for t in tests if isinstance(t, str))
+    return named
+
+
 def _manifest_names(root: Path) -> dict[Path, set[str]]:
-    """ما يسمّيه كلُّ بيانٍ في المستودع من اختبارات بمعرّفها الكامل بلا معاملات (قراءةٌ متسامحة؛ الصلاحيةُ في load_manifest)."""
-    names: dict[Path, set[str]] = {}
-    for path in sorted((root / MANIFESTS).glob("*.jsonl")) if (root / MANIFESTS).is_dir() else []:
-        named: set[str] = set()
-        for line in path.read_text(encoding="utf-8").splitlines():
-            try:
-                tests = json.loads(line).get("tests", []) if line.strip() else []
-            except (json.JSONDecodeError, AttributeError):
+    """ما يسمّيه كلُّ بيانٍ في المستودع من اختبارات بمعرّفها الكامل بلا معاملات."""
+    return {path: {t.split("[", 1)[0] for t in _named_exactly(path.read_text(encoding="utf-8"))}
+            for path in (sorted((root / MANIFESTS).glob("*.jsonl")) if (root / MANIFESTS).is_dir() else [])}
+
+
+def _dropped_candidates(root: Path, base: str, head: str, manifests: list[str], modules_at_head: set[str]) -> tuple[list[str], set[str]]:
+    """اختباراتٌ كان يسمّيها بيانٌ عند أصل الدمج ولا يسمّيها سطرٌ في بيان وحدتها عند الرأس (حُذف السطرُ أو ضُيّقت قائمتُه)
+    ودالّتُها باقية عند الرأس: مرشّحةٌ لفقد إثباتها صامتةً، فيُرفض إلا إن زالت أو سمّاها سطرٌ آخر بمعرّفها أو باسم دالّتها
+    (ملاحظة Codex على #149)؛ ومعها ما يسمّيه بيانُ كلِّ وحدةٍ منها عند الرأس، فالحالةُ المسمّاة بمعاملها تُحسم بجمع pytest في شجرة العمل."""
+    candidates, named_at_head, nodes, own = set(), set(), {}, {}
+    for manifest in manifests:
+        for test in sorted(_named_exactly(_git(root, "show", f"{base}:{manifest}"))):
+            function = test.split("[", 1)[0]
+            module = function.split("::", 1)[0]
+            if module not in modules_at_head:
                 continue
-            named.update(t.split("[", 1)[0] for t in tests if isinstance(t, str))
-        names[path] = named
-    return names
+            if module not in own:       # ما يسمّيه بيانُ الوحدة نفسِها عند الرأس — وهو وحدَه من يسمّي اختباراتِها
+                path = root / manifest_for(module)
+                own[module] = _named_exactly(path.read_text(encoding="utf-8")) if path.is_file() else set()
+                named_at_head |= own[module]
+            if test in own[module] or function in own[module]:
+                continue
+            if module not in nodes:
+                nodes[module] = _test_nodes_at(root, head, module)
+            if function in nodes[module]:
+                candidates.add(test)
+    return sorted(candidates), named_at_head
 
 
 def _is_test_module(path: str) -> bool:
@@ -315,10 +345,14 @@ def _range_scope(root: Path, rng: str) -> dict:
     # بيانٌ حُذف ووحدتُه باقية عند الرأس: حرّاسُها تفقد إثباتَها صامتة، فيُرفض الحذفُ إلا مع الوحدة
     owned = _manifests_owned_at(root, head)
     orphaned = [m for m in changed("D", f"{MANIFESTS}/*.jsonl") if m in owned]
+    # وسطرٌ حُذف أو ضُيّق في بيانٍ باقٍ: ما سمّاه عند أصل الدمج ولا يسمّيه سطرٌ عند الرأس ودالّتُه باقية يفقد إثباتَه صامتًا
+    # (ملاحظة Codex على #149)؛ يُحسم بالجمع في شجرة العمل أيُّ حالاته ما زالت تُجمع
+    candidates, named_at_head = _dropped_candidates(root, base, head, changed("M", f"{MANIFESTS}/*.jsonl"), set(owned.values()))
     return {"paths": paths, "touched": touched, "revalidated_tests": revalidated,
             "manifest_missing": [t for t in added if not has_manifest(t)],
             "unmanifested_changed_tests": [t for t in modified if not has_manifest(t)],
-            "unmanifested_new_tests": unnamed, "orphaned_manifests": orphaned}
+            "unmanifested_new_tests": unnamed, "orphaned_manifests": orphaned,
+            "dropped_candidates": candidates, "named_at_head": sorted(named_at_head)}
 
 
 def _pytest(python: str, cwd: Path, argv: list[str], timeout: int) -> subprocess.CompletedProcess | None:
@@ -380,7 +414,7 @@ def _covers(name: str, failed: list[str]) -> list[str]:
 
 
 def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, keep: bool,
-        touched: list[str] | None = None) -> dict:
+        touched: list[str] | None = None, probe: list[str] | None = None) -> dict:
     """يطبّق كلَّ طفرةٍ في شجرة عملٍ منفصلة عند `head` ويحكم بالرمز؛ الشجرةُ تُزال دائمًا إلا بـkeep."""
     head_sha = _git(root, "rev-parse", "--verify", f"{head}^{{commit}}")
     tmp = Path(tempfile.mkdtemp(prefix="diwan-mutation-", dir=os.environ.get("RUNNER_TEMP") or None))
@@ -391,12 +425,13 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
             subprocess.run(["git", "-C", str(root), "worktree", "remove", "--force", str(worktree)], capture_output=True)
             subprocess.run(["git", "-C", str(root), "worktree", "prune"], capture_output=True)
     atexit.register(cleanup)
-    results, baseline, cases = [], {"collected": 0, "missing": [], "failing_before_mutation": []}, {}
+    results, baseline, cases, probed = [], {"collected": 0, "missing": [], "failing_before_mutation": []}, {}, {}
     try:
         _git(root, "worktree", "add", "--detach", str(worktree), head_sha)
         for entry in entries:
             _refuse_escape(worktree, entry["file"])
         cases = _touched_cases(python, worktree, touched or [], timeout)
+        probed = _touched_cases(python, worktree, probe or [], timeout)     # حالاتُ ما زال ذكرُه من البيانات، لحسم ما فقد إثباتَه
         node_ids = sorted({t for e in entries for t in e["tests"]})
         # الاسمُ المسمّى بلا معامل يُبسط إلى حالاته المجموعة، فلا يُحكم له بالقتل إلا إذا سقطت كلُّها (ملاحظة Codex على #149)
         selectors = _touched_cases(python, worktree, [t for t in node_ids if "[" not in t], timeout)
@@ -419,7 +454,7 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
         cleanup()
     totals = {code: sum(1 for r in results if r["code"] == code) for code in VERDICTS}
     return {"commit": head_sha, "baseline": baseline, "results": results, "totals": totals, "touched_cases": cases,
-            "worktree_kept": str(worktree) if keep else None}
+            "probed_cases": probed, "worktree_kept": str(worktree) if keep else None}
 
 
 def _apply(entry: dict, worktree: Path, baseline: dict, python: str, timeout: int, selectors: dict | None = None) -> dict:
@@ -483,7 +518,7 @@ def main(argv=None) -> int:
               "scope": "range" if args.range else "all" if args.all else "manifest", "measurement_limits": LIMITS}
     try:
         scope = {"touched": [], "revalidated_tests": [], "manifest_missing": [], "unmanifested_changed_tests": [],
-                 "unmanifested_new_tests": [], "orphaned_manifests": []}
+                 "unmanifested_new_tests": [], "orphaned_manifests": [], "dropped_candidates": [], "named_at_head": []}
         if args.range:
             scope = _range_scope(root, args.range)
             paths = scope["paths"]
@@ -497,7 +532,8 @@ def main(argv=None) -> int:
         for key in ("manifest_missing", "unmanifested_changed_tests", "unmanifested_new_tests", "orphaned_manifests", "revalidated_tests"):
             report[key] = scope[key]
         if entries:
-            report.update(run(root, entries, args.head, args.python, args.timeout_s, args.keep_worktree, scope["touched"]))
+            report.update(run(root, entries, args.head, args.python, args.timeout_s, args.keep_worktree, scope["touched"],
+                              sorted({t.split("[", 1)[0] for t in scope["dropped_candidates"]})))
         else:
             report.update({"commit": _git(root, "rev-parse", "--verify", f"{args.head}^{{commit}}"),
                            "baseline": {"collected": 0, "missing": [], "failing_before_mutation": []},
@@ -509,10 +545,17 @@ def main(argv=None) -> int:
         unproved = [case for node in scope["touched"] if node not in scope["unmanifested_new_tests"]
                     for case in (cases.get(node) or [node]) if case not in proved]
         report["unproved_touched_tests"] = unproved
+        # وما زال ذكرُه من بيانٍ باقٍ يفقد إثباتَه إن كان ما زال يُجمع: الحالةُ بمعرّفها، والدالّةُ بكلِّ حالةٍ لا يسمّيها سطرٌ عند الرأس
+        # (ملاحظة Codex على #149)؛ وما لم يُجمع لغياب شجرة العمل يُعدّ فاقدًا
+        probed, named = report.get("probed_cases", {}), set(scope["named_at_head"])
+        report["dropped_proofs"] = dropped = sorted({
+            case for test in scope["dropped_candidates"] for function in [test.split("[", 1)[0]]
+            for case in (probed[function] if function in probed else [test])
+            if case == test or (test == function and case not in named)})
         bad = [r for r in report["results"] if r["code"] != "killed"]
         missing, unnamed, orphaned = scope["manifest_missing"], scope["unmanifested_new_tests"], scope["orphaned_manifests"]
         strict_bad = scope["unmanifested_changed_tests"] if args.strict_unmanifested else []
-        report["status"] = "failed" if bad or missing or unnamed or unproved or orphaned or strict_bad else "passed"
+        report["status"] = "failed" if bad or missing or unnamed or unproved or orphaned or dropped or strict_bad else "passed"
         report["exit_code"] = 1 if report["status"] == "failed" else 0
     except Refused as exc:
         report.update({"status": "refused", "code": exc.code, "detail": exc.detail, "exit_code": 2})
