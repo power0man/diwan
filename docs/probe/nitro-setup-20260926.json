@@ -187,7 +187,8 @@
     }
   },
   "g5_steps_21_22": {
-    "status": "done",
+    "status": "done_on_a_named_volume_not_the_g5_bind_mount",
+    "deviation_from_g5": "الخطوتان ٢١–٢٢ في docs/guides/G5.md تكتبان الضبطَ في ~/searxng وتربطانه بـ-v ~/searxng:/etc/searxng، والقائمُ على Nitro يربط مجلّد Docker المسمّى searxng-config بـ/etc/searxng بلا sudo. فاتّباعُ الخطوتين حرفيًّا يُنشئ مخزنَ ضبطٍ آخر لا يعيد ما قيس؛ وإعادةُ إنشاء الحاوية تُبقي -v searxng-config:/etc/searxng. والأوامرُ التي كتبت الضبطَ في المجلّد لم تُسجَّل هنا",
     "detail": "SearXNG بالصورة المثبَّتة بالبصمة على 127.0.0.1:8888 وحده بـ--restart unless-stopped؛ والضبطُ في مجلّد Docker باسم searxng-config كُتب داخل حاويةٍ عابرة ومالكُه 977، فلا sudo على المضيف ولا تحذير ملكية. استعلامٌ عربيّ مباشر أعاد 20 نتيجة. وهذا فحصٌ مباشر لـSearXNG لا عبر المنتج. ودليلُ طريق المنتج للبحث (الواجهة والحلقة ونداءُ web_search من النموذج) في docs/probe/j5-search-product-path-20260927.json، دُمج في #139 (6d00f98). و#139 شهد بالبحث وحده بلا إيصال، فشقُّ الحاوية من الخطوة ٢٣ لم يُتحقَّق منه. وما بقي، وهو بيد المالك: بناءُ إيصال صورة التشغيل (١٦–٢٠)، ثم الخطوة ٢٣ كاملةً: تشغيلُ الواجهة بـ--runtime-receipt و--web-search-url معًا، والتحقّقُ من execution_status: configured بجانب web_search_status: configured، ثم دليلُ طريق المنتج للشقّين في docs/probe/"
   },
   "g5_steps_16_20_23": {
