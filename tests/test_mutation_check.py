@@ -723,6 +723,28 @@ def test_an_aliased_helper_function_collected_as_a_test_is_traced_to_its_definin
     _clean(repo, git)
 
 
+def test_a_test_whose_implementation_moves_to_an_added_helper_is_touched_by_the_lines_added_there(repo, git, capsys):
+    """`guard` ينتقل من `tests/helpers_old.py` إلى `tests/helpers_new.py` المضاف ويُحدَّث الاستيرادُ في وحدةٍ تبقي معرّفَه المجموع
+    (ملاحظة Codex على #149): المساعدُ الجديد مضافٌ لا معدَّل، فقراءةُ الأصول في المعدَّل وحده لا ترى تأكيدًا يُضاف هناك؛ صار الأصلُ
+    يُقرأ في المضاف أيضًا للمعرّفات الباقية، فيُمسّ الاختبارُ ويُطبَّق بيانُه."""
+    (repo / "tests/helpers_old.py").write_text("from pkg.guard import positive\n\n\ndef guard():\n    assert positive(0) is False\n")
+    (repo / "tests/test_alias.py").write_text("from helpers_old import guard as test_guard  # noqa: F401\n")
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    _manifest(repo, "test_alias", {**KILL, "id": "kill", "tests": ["tests/test_alias.py::test_guard"]})
+    git("add", "-A")
+    git("commit", "-qm", "an aliased helper, named")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/helpers_old.py").unlink()
+    (repo / "tests/helpers_new.py").write_text("from pkg.guard import positive\n\n\ndef guard():\n    assert positive(0) is False\n    assert positive(-1) is False\n")
+    (repo / "tests/test_alias.py").write_text("from helpers_new import guard as test_guard  # noqa: F401\n")
+    git("add", "-A")
+    git("commit", "-qm", "the implementation moves to an added helper and grows there")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert "tests/test_alias.py::test_guard" in report["touched_cases"] and report["unmanifested_new_tests"] == []
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["unproved_touched_tests"] == []
+    _clean(repo, git)
+
+
 def test_a_unittest_subclass_is_placed_whatever_its_name_so_a_grown_method_touches_it_and_its_heir(repo, git, capsys):
     """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة (ملاحظة Codex على #149)؛ صار يُقرأ هو ووارثُه في
     الوحدة، فسطرٌ مضاف في دالّته يمسّها فيه وفي الوارث. والصنفُ العاديّ لا يجمعه pytest فلا يُمسّ ولو قُرئ؛ والوارثُ أصلًا

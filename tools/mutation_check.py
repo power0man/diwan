@@ -76,7 +76,7 @@ LIMITS = [
     "what_is_collected_is_decided_by_pytest_over_the_whole_tests_tree_at_the_head_and_at_the_merge_base_compared_by_full_node_ids_with_their_parameters_a_case_new_at_the_head_touches_its_test_wherever_it_appears_and_a_vanished_node_re_applies_its_manifests",
     "an_existing_collected_test_is_touched_when_an_added_line_of_the_range_falls_inside_the_span_of_the_callable_that_defines_it_as_pytest_resolves_it_file_and_decorator_inclusive_span_from_inspect_wherever_that_callable_lives_a_helper_conftest_or_package_imported_by_its_own_name_or_an_alias_or_inherited_from_another_file_and_a_removed_line_inside_that_span_re_applies_its_manifests",
     "changes_to_fixtures_or_helpers_outside_any_test_callable_s_span_are_not_re_proven_and_a_collected_node_whose_callable_has_no_readable_source_such_as_one_built_by_exec_is_touched_only_when_its_node_id_is_new_and_is_named_with_its_error_in_the_collection_output",
-    "origins_are_read_in_modified_python_files_only_the_tests_of_an_added_file_are_new_node_ids_and_those_of_a_deleted_file_vanish_from_the_collection_so_both_are_decided_by_the_collection_diff",
+    "origins_place_only_the_node_ids_collected_at_both_ends_of_the_range_new_and_vanished_ids_belong_to_the_collection_diff_an_added_line_in_a_modified_or_added_python_file_touches_a_surviving_test_whose_callable_lives_there_and_a_removed_line_in_a_modified_or_deleted_file_revalidates_it",
     "renames_are_not_detected_in_the_range_a_moved_file_is_its_source_deleted_and_its_destination_added_so_both_sides_are_checked",
     "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
     "a_touched_parametrized_test_is_proved_case_by_case_every_case_pytest_collects_for_it_must_fail_a_mutation_since_parsing_cannot_tell_the_added_case_from_the_old_ones",
@@ -292,14 +292,18 @@ def _range_scope(root: Path, rng: str, python: str = sys.executable, timeout: in
     # أو conftest أو حزمة، مستورَدٌ باسمه أو باسمٍ مستعار (`from helpers import guard as test_guard`)، أو موروثٌ من ملفٍّ
     # آخر — سطرٌ مضاف في مدى تعريفه يمسّه، وسطرٌ محذوف منه يُعيد بياناتِه؛ وما لا مصدرَ له يُقرأ (يُبنى بـexec) لا يُمسّ إلا
     # باستجداد معرّفه، ويُسمّى بخطئه في خرج الجمع (ملاحظتا Codex على #149)
-    # في الملفّات المعدَّلة وحدها: اختباراتُ ملفٍّ مضاف معرّفاتٌ جديدة يمسّها فرقُ الجمع، وملفٌّ محذوف تزول معرّفاتُه منه
-    edited = [p for p in changed("M", ".") if p.endswith(".py")]
-    added_in = {p: _added_lines(root, base, head, p) for p in edited}
-    removed_in = {p: _removed_lines(root, base, head, p) for p in edited}
-    reached = {node for node, (origin, first, last) in origins_head.items() if any(first <= n <= last for n in added_in.get(origin, ()))}
-    gone = {node for node, (origin, first, last) in origins_base.items() if any(first <= n <= last for n in removed_in.get(origin, ()))}
-    touched = sorted({*touched, *(functions(reached) & collected_head)})
-    revalidated = sorted({*revalidated, *(functions(gone) & collected_base)})
+    # الأصلُ يضع المعرّفاتِ الباقية وحدها (ما استجدّ وما زال لفرق الجمع): سطرٌ مضاف في مدى تعريفٍ باقٍ يمسّه، ولو انتقل
+    # التعريفُ إلى ملفٍّ مضاف (`guard` من مساعدٍ قديم إلى جديد مع تحديث الاستيراد، ملاحظة Codex على #149)؛ وسطرٌ محذوف من
+    # مدى تعريفه عند الأصل — في ملفٍّ معدَّل أو محذوف — يُعيد بياناتِه
+    grown_in = {p: _added_lines(root, base, head, p) for p in changed("AM", ".") if p.endswith(".py")}
+    shed_in = {p: _removed_lines(root, base, head, p) for p in changed("MD", ".") if p.endswith(".py")}
+    surviving = collected_head & collected_base
+    reached = {node for node, (origin, first, last) in origins_head.items()
+               if node.split("[", 1)[0] in surviving and any(first <= n <= last for n in grown_in.get(origin, ()))}
+    gone = {node for node, (origin, first, last) in origins_base.items()
+            if node.split("[", 1)[0] in surviving and any(first <= n <= last for n in shed_in.get(origin, ()))}
+    touched = sorted({*touched, *functions(reached)})
+    revalidated = sorted({*revalidated, *functions(gone)})
     unnamed = [node for node in touched if node not in names.get(own(node), set())]
     naming = [path for path in dict.fromkeys(own(node) for node in [*touched, *revalidated]) if path in names]
     paths = [root / p for p in changed("AMR", f"{MANIFESTS}/*.jsonl") if (root / p).is_file()]
