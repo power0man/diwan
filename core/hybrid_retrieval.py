@@ -15,6 +15,7 @@ from pathlib import Path
 import sqlite3
 from typing import Any
 
+from core.canonical import PayloadRejected
 from core.chunking import LegislativeChunk, LegislativeChunker
 from core.corpus import CorpusCatalog, CorpusFile
 from core.linguistics.morphology import analyze, singularize_broken_plural
@@ -74,6 +75,8 @@ class HybridRetriever:
                 lemmas.append(analysis.lemma)
 
         # بحث موسع بالمفردات أو أي كلمة إن لم نجد نتائج كافية بالبحث الصارم
+        # وعطبُ الفهرس في أثنائه رفضٌ مسمًّى يصعد، لا صمتٌ يُقرأ «لا نتائج» فيُحسب الاسترجاعُ ناقصًا أو امتناعًا
+        # (صنفُ ك٢١؛ صيّادُ الإخفاقات الصامتة، ق٦٧). ورفضُ `fts_search` المسمّى (فهرسٌ غائب) يصعد كما هو
         any_results = []
         if len(exact_results) < limit:
             try:
@@ -84,8 +87,9 @@ class HybridRetriever:
                     exact_results.extend([r for r in lemma_results if r not in exact_results])
 
                 any_results = fts_search(clean_q, limit=limit * 2, match_any=True, corpus=corpus)
-            except Exception:
-                any_results = []
+            except sqlite3.Error as exc:
+                raise PayloadRejected("index", "fts_expansion_failed",
+                                      f"عطبُ فهرس البحث في التوسيع: {type(exc).__name__}: {exc}") from exc
 
         # 2ب. قناةُ المتّجهات (غ٢): رفضُها رفضٌ مسمًّى يصعد، لا صمتٌ يُقرأ «لا نتائج»
         vector_results: list[dict] = []
