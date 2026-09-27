@@ -56,7 +56,19 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFESTS = "tests/mutations"
 REQUIRED = ("file", "old", "new", "tests")
 OPTIONAL = ("id", "task", "why", "count", "added")
-NODE_ID = re.compile(r"^tests/[\w./-]+\.py(::[^\W\d]\w*)+(\[.*\])?$")   # ومنه دوالُّ الأصناف، وبأيّ أبجدية (ملاحظة Codex على #149)
+NODE_PATH = re.compile(r"^tests/[^\s:\\]+\.py$")   # ملفُّ الاختبار: تحت tests/ وينتهي بـ.py، بلا فراغٍ ولا نقطتين ولا شرطةٍ عكسية
+NODE_PARTS = re.compile(r"^([^\[\]]*)(\[.*\])?$")   # مكوّناتُ المعرّف (أصنافٌ ثم الدالّة)، ثم معاملُ parametrize في آخرها إن وُجد
+
+
+def valid_node_id(node_id: str) -> bool:
+    """معرّفُ pytest كامل: ملفٌّ تحت tests/ ثم مكوّناتٌ (دوالُّ الأصناف ومنها) كلٌّ منها معرّفُ بايثون صالح بقاعدة اللغة نفسِها
+    (`str.isidentifier`) لا بـ`\\w`: فعلامةُ تشكيلٍ مركّبة (`test_اَ`) و`℘` معرّفاتٌ يجمعها pytest ويرفضها `\\w`، فكان الاختبارُ
+    الممسوس بها لا يُثبَت بحال — غيابُه نقصُ إثباتٍ وتسميتُه مرفوضة (ملاحظتا Codex على #149). وأيُّ أبجديةٍ مقبولة."""
+    path, sep, rest = node_id.partition("::")
+    if not sep or not NODE_PATH.match(path) or ".." in path.split("/"):
+        return False
+    parts = NODE_PARTS.match(rest)
+    return parts is not None and all(part.isidentifier() for part in parts.group(1).split("::"))
 VERDICTS = {
     "killed": "قُتلت: سقط كلُّ اختبارٍ مسمًّى عند الطفرة",
     "partially_killed": "سقط بعضُ المسمّى لا كلُّه؛ ما لم يسقط لا يحرس هذه الطفرة",
@@ -141,7 +153,7 @@ def load_manifest(path: Path, root: Path) -> list[dict]:
         if not all(isinstance(entry[key], str) and entry[key] for key in ("file", "old", "new")) or entry["old"] == entry["new"]:
             raise Refused("manifest_invalid", f"{rel}:{number}: file وold وnew نصوصٌ غيرُ فارغة وold ≠ new")
         tests = entry["tests"]
-        if not isinstance(tests, list) or not tests or not all(isinstance(t, str) and NODE_ID.match(t) for t in tests):
+        if not isinstance(tests, list) or not tests or not all(isinstance(t, str) and valid_node_id(t) for t in tests):
             raise Refused("manifest_invalid", f"{rel}:{number}: tests قائمةُ معرّفات pytest غيرُ فارغة")
         foreign = [t for t in tests if manifest_for(t.split("::", 1)[0]) != rel]
         if foreign:
@@ -484,6 +496,8 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
         if worktree.exists() and not keep:
             subprocess.run(["git", "-C", str(root), "worktree", "remove", "--force", str(worktree)], capture_output=True)
             subprocess.run(["git", "-C", str(root), "worktree", "prune"], capture_output=True)
+        if not keep:
+            shutil.rmtree(tmp, ignore_errors=True)   # الحاضنُ المؤقّت نفسُه لا الشجرةُ وحدها: كان يبقى فارغًا بعد كلِّ تشغيلٍ فتتراكم آلافُه
     atexit.register(cleanup)
     results, baseline, cases, probed = [], {"collected": 0, "missing": [], "failing_before_mutation": []}, {}, {}
     try:

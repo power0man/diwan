@@ -782,6 +782,44 @@ def test_a_unicode_test_identifier_is_accepted_in_a_manifest_and_proved(repo, gi
     _clean(repo, git)
 
 
+def test_an_identifier_with_a_combining_mark_or_a_letterlike_symbol_is_accepted_as_python_accepts_it(repo, git, capsys):
+    """`test_اَ` (ألفٌ تتبعها فتحةٌ مركّبة) و`test_℘` معرّفان صالحان في بايثون يجمعهما pytest، ويرفضهما `\\w` لأن العلامةَ المركّبة
+    و℘ ليسا أبجديَّين رقميَّين (ملاحظة Codex على #149 بعد 72d1c55)؛ فصار المكوّنُ يُقبل بقاعدة اللغة (`str.isidentifier`) ويُثبَت.
+    وما ليس معرّفًا (يبدأ برقم، أو فيه فراغ) يبقى مرفوضًا، ومعاملُ parametrize بأقواسٍ متداخلة مقبول."""
+    assert mc.valid_node_id("tests/test_x.py::TestA::test_℘[x[1]]") and mc.valid_node_id("tests/sub/test_x.py::test_اَ")
+    assert not mc.valid_node_id("tests/test_x.py::1abc") and not mc.valid_node_id("tests/test_x.py::a b")
+    assert not mc.valid_node_id("tests/../core/x.py::test_a") and not mc.valid_node_id("tests/test_x.py")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_marks.py").write_text(
+        "from pkg.guard import positive\n\n\ndef test_اَ():\n    assert positive(0) is False\n\n\ndef test_℘():\n    assert positive(0) is False\n")
+    _manifest(repo, "test_marks", {**KILL, "id": "kill", "tests": ["tests/test_marks.py::test_اَ", "tests/test_marks.py::test_℘"]})
+    git("add", "-A")
+    git("commit", "-qm", "identifiers a word class rejects, named")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["unmanifested_new_tests"] == []
+    assert report["results"][0]["failed_tests"] == ["tests/test_marks.py::test_اَ", "tests/test_marks.py::test_℘"]
+    _clean(repo, git)
+
+
+def test_a_run_removes_its_temporary_directory_not_only_the_worktree_inside_it(repo, git, capsys, monkeypatch, tmp_path):
+    """التنظيفُ كان يزيل شجرةَ العمل ويترك حاضنَها المؤقّت فارغًا (`diwan-mutation-*`)، فتراكم منه آلافٌ في مجلّد النظام المؤقّت
+    بعد يومٍ من التشغيل — إخفاقٌ صامت لا يسمّيه تقرير. صار الحاضنُ يُزال مع الشجرة، و`--keep` وحده يُبقيهما."""
+    runner_temp = tmp_path / "runner-temp"
+    runner_temp.mkdir()
+    monkeypatch.setenv("RUNNER_TEMP", str(runner_temp))
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    git("add", "-A")
+    git("commit", "-qm", "a manifest")
+    report = _run(repo, "--all", capsys=capsys)
+    assert report["status"] == "passed" and report["worktree_kept"] is None
+    assert sorted(runner_temp.iterdir()) == [], "بقي حاضنٌ مؤقّت بعد التشغيل"
+    report = _run(repo, "--all", "--keep", capsys=capsys)
+    kept = Path(report["worktree_kept"])
+    assert kept.is_relative_to(runner_temp) and kept.is_dir()
+    git("worktree", "remove", "--force", str(kept))
+    _clean(repo, git)
+
+
 def test_a_unittest_subclass_is_placed_whatever_its_name_so_a_grown_method_touches_it_and_its_heir(repo, git, capsys):
     """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة (ملاحظة Codex على #149)؛ صار يُقرأ هو ووارثُه في
     الوحدة، فسطرٌ مضاف في دالّته يمسّها فيه وفي الوارث. والصنفُ العاديّ لا يجمعه pytest فلا يُمسّ ولو قُرئ؛ والوارثُ أصلًا
