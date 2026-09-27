@@ -108,7 +108,8 @@
     "sources_and_probe_hashed_before_the_round_and_rechecked_before_writing",
     "searxng_container_pinned_by_id_and_start_time_and_engine_digest_rechecked_after_the_round",
     "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
-    "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host"
+    "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host",
+    "probe_changed_after_this_run_every_loaded_repo_module_and_the_runtime_receipt_now_hashed"
   ],
   "acceptance": {
     "passed": true,

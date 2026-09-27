@@ -50,9 +50,11 @@ SEARCH_QUESTIONS = (
     "ابحث في الويب عن موقع المشروع الرسمي لـSearXNG، وأعطني رابطه.",
 )
 COMMAND_REQUEST = 'شغّل الأمر python3 -c "print(2+2)" وأخبرني بالناتج.'
-# ما يُبصم قبل الجولة ويُعاد بصمُه قبل الكتابة: الشيفرةُ المقيسة، والمجسُّ نفسُه (ملاحظة Codex على #136)
+# ما يُبصم قبل الجولة ويُعاد بصمُه قبل الكتابة: الشيفرةُ المقيسة، والمجسُّ نفسُه (ملاحظة Codex على #136)؛ ومعها كلُّ
+# وحدةٍ من المستودع محمَّلةٍ في العملية، فلا يفوت قائمةً منتقاةً ما تمرّ به الجولة، كمهايئَي المزوّد (ملاحظة Codex على #144)
 SOURCES = ("core/execution.py", "agent/web_search.py", "agent/builtin_tools.py", "agent/loop.py", "webui/server.py",
            "tools/probe_j5_agent_round.py")
+NOT_SOURCE = frozenset({"tests", "__pycache__", "site-packages", "venv"})
 # الصورةُ المثبَّتة بالبصمة في docs/guides/G5.md (الخطوتان ٢١–٢٢)، وقيست بها ج٥ أول مرّة
 PINNED_SEARXNG = "searxng/searxng@sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6"
 LOOPBACK = frozenset({"127.0.0.1", "localhost", "::1"})
@@ -109,7 +111,18 @@ def requested_command(argv) -> bool:
 
 
 def _sources() -> dict[str, str]:
-    return {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in SOURCES}
+    paths = set(SOURCES)
+    for module in list(sys.modules.values()):
+        file = getattr(module, "__file__", None)
+        if not isinstance(file, str) or not file.endswith(".py"):
+            continue
+        try:
+            rel = Path(file).resolve().relative_to(ROOT)
+        except ValueError:
+            continue
+        if not NOT_SOURCE.intersection(rel.parts) and not any(part.startswith(".") for part in rel.parts):
+            paths.add(rel.as_posix())
+    return {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in sorted(paths)}
 
 
 def _inspect(docker: str, target: str, fmt: str) -> str:
@@ -214,6 +227,14 @@ def main(argv=None) -> int:
                           "expected": EXECUTION_DOCKER}))
         return 2
     sources = _sources()
+    # والإيصالُ الذي تبني به الواجهةُ خلفيّةَ run_command يُقرأ قبل الجولة ويُعاد قبل الكتابة، ومنه وحده تُسجَّل الصورة،
+    # كما في مجسّ الحدّ: إيصالٌ استُبدل في أثنائها ينسب الدليلَ إلى صورةٍ لم تُشغَّل
+    try:
+        receipt_bytes = args.runtime_receipt.read_bytes()
+        receipt = json.loads(receipt_bytes.decode("utf-8"))
+    except (OSError, ValueError):
+        print(json.dumps({"status": "refused", "code": "runtime_receipt_unreadable"}))
+        return 2
     searxng, pinned = _searxng(args.web_search_url, args.searxng_container, args.docker)
     version = _digest(args.model)
     root = Path(tempfile.mkdtemp(prefix="diwan-j5-ui-")).resolve()
@@ -259,13 +280,21 @@ def main(argv=None) -> int:
     finally:
         shutil.rmtree(root, ignore_errors=True)
     # ملفٌّ تغيّر في أثناء الجولة يجعل البصمةَ تشهد لبايتاتٍ لم تُنفَّذ، فلا يُكتب تقرير (ملاحظة Codex على #136)
-    changed = sorted(path for path, digest in _sources().items() if digest != sources[path])
+    # وحدةٌ حُمّلت أولَ مرّةٍ في أثناء الجولة تُبصم بعدها، فلا بصمةَ لها قبلها تُقارن بها
+    after = _sources()
+    changed = sorted(path for path, digest in sources.items() if after.get(path) != digest)
     # وحاويةُ SearXNG التي شُهد لها، والنموذجُ الذي بُصم: حاويةٌ أُعيد تشغيلُها أو استُبدلت أو كفّت عن نشر المنفذ، أو نموذجٌ
     # سُحب من جديد، في أثناء الجولة يجعلان التقريرَ يشهد لما لم يُقَس (ملاحظة Codex على #144)
     if _serving(args.web_search_url, pinned["id"], args.docker) != pinned:
         changed.append("searxng_container")
     if _digest(args.model) != version:
         changed.append("engine_digest")
+    try:
+        receipt_now = args.runtime_receipt.read_bytes()
+    except OSError:
+        receipt_now = None
+    if receipt_now != receipt_bytes:
+        changed.append("runtime_receipt")
     if changed:
         print(json.dumps({"status": "refused", "code": "sources_changed_during_the_run", "changed": changed}))
         return 2
@@ -275,7 +304,10 @@ def main(argv=None) -> int:
         "author": "anthropic/claude-opus-5-5",
         "host": {"machine": os.uname().machine, "os": os.uname().sysname + " " + os.uname().release},
         "engine": {"provider": "ollama-local", "model": args.model, "digest": version},
-        "source_sha256": sources,
+        "runtime": {"image_id": receipt.get("image_id") if isinstance(receipt, dict) else None,
+                    "lock_sha256": receipt.get("lock_sha256") if isinstance(receipt, dict) else None,
+                    "receipt_sha256": hashlib.sha256(receipt_bytes).hexdigest()},
+        "source_sha256": {**after, **sources},
         "web_search": {"via": "webui.server.LocalApp.dispatch agent_ask (research session)", "backend": searxng,
                        "called_web_search": any(a["called_web_search"] for a in attempts),
                        "attempts": attempts, "attempts_until_called": len(attempts)},
@@ -297,6 +329,8 @@ def main(argv=None) -> int:
             "web_search_accepted_only_with_a_result_carrying_a_url_counted_from_the_tool_result_not_the_answer",
             "only_the_requested_command_is_approved_its_pending_argv_recorded",
             "sources_and_probe_hashed_before_the_round_and_rechecked_before_writing",
+            "every_repo_module_loaded_is_hashed_those_first_imported_during_the_round_only_after_it",
+            "runtime_receipt_read_before_the_round_and_rechecked_before_writing",
             "searxng_container_pinned_by_id_and_start_time_and_engine_digest_rechecked_after_the_round",
             "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
             "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host",

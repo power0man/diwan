@@ -9,6 +9,7 @@
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -148,6 +149,13 @@ PIN = {"id": "c" * 64, "image": j5.PINNED_SEARXNG, "image_id": "sha256:" + "a" *
        "started_at": "2026-09-27T03:00:00Z", "serves_url": True}
 
 
+def _ui_receipt(tmp_path, **fields):
+    """إيصالُ تشغيلٍ بصورته وقفله، كما يكتبه ci/prepare_runtime.py."""
+    path = tmp_path / "receipt.json"
+    path.write_text(json.dumps({"image_id": "sha256:" + "b" * 64, "lock_sha256": "c" * 64, **fields}), encoding="utf-8")
+    return path
+
+
 def _attest(monkeypatch, serving=None, digests=None):
     """SearXNG مشهودٌ له بمعرّفه، والنموذجُ ببصمته؛ وما يُرى منهما بعد الجولة كما قبلها ما لم يُمرَّر غيرُه."""
     digests = iter(digests or ["sha256:weights"] * 2)
@@ -161,7 +169,7 @@ def test_an_empty_search_does_not_end_the_attempts(tmp_path, monkeypatch):
     _attest(monkeypatch)
     out = tmp_path / "r.json"
     assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
-                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 1
+                    "--runtime-receipt", str(_ui_receipt(tmp_path)), "--out", str(out)]) == 1
     report = json.loads(out.read_text(encoding="utf-8"))
     counts = [a["tool_calls_by_the_model"][0]["sourced_results"] for a in report["web_search"]["attempts"]]
     assert counts == [0, 1]
@@ -216,11 +224,15 @@ def test_only_the_requested_pending_command_is_approved(tmp_path, monkeypatch, a
     _attest(monkeypatch)
     out = tmp_path / "r.json"
     code = j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
-                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)])
+                    "--runtime-receipt", str(_ui_receipt(tmp_path)), "--out", str(out)])
     report = json.loads(out.read_text(encoding="utf-8"))
     assert app.decided is approved and report["docker_execution"]["pending_argv"] == argv
     assert report["host"]["machine"] == os.uname().machine
     assert report["source_sha256"]["tools/probe_j5_agent_round.py"] == j5._sources()["tools/probe_j5_agent_round.py"]
+    # والصورةُ من الإيصال المقروء قبل الجولة، وبصمتُه معها
+    receipt = (tmp_path / "receipt.json").read_bytes()
+    assert report["runtime"] == {"image_id": "sha256:" + "b" * 64, "lock_sha256": "c" * 64,
+                                 "receipt_sha256": hashlib.sha256(receipt).hexdigest()}
     if approved:
         assert code == 0 and report["acceptance"] == {"passed": True, "failed": []}
     else:
@@ -234,7 +246,7 @@ def test_a_decision_the_action_store_did_not_approve_is_not_an_approval(tmp_path
     _attest(monkeypatch)
     out = tmp_path / "r.json"
     assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
-                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 1
+                    "--runtime-receipt", str(_ui_receipt(tmp_path)), "--out", str(out)]) == 1
     execution = json.loads(out.read_text(encoding="utf-8"))["docker_execution"]
     assert execution["owner_approved"] is False and execution["decision_state"] is None
     assert "run_command_did_not_wait_for_the_owner" in j5.acceptance(json.loads(out.read_text(encoding="utf-8")))
@@ -250,7 +262,7 @@ def test_a_source_that_changes_during_the_round_writes_no_report(tmp_path, monke
     monkeypatch.setattr(j5, "_sources", lambda: next(seen))
     out = tmp_path / "r.json"
     assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
-                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 2
+                    "--runtime-receipt", str(_ui_receipt(tmp_path)), "--out", str(out)]) == 2
     refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert refused == {"status": "refused", "code": "sources_changed_during_the_run",
                        "changed": ["tools/probe_j5_agent_round.py"]}
@@ -275,10 +287,50 @@ def test_a_searxng_container_or_engine_that_changes_during_the_round_writes_no_r
             digests=digests)
     out = tmp_path / "r.json"
     assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
-                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 2
+                    "--runtime-receipt", str(_ui_receipt(tmp_path)), "--out", str(out)]) == 2
     refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert refused == {"status": "refused", "code": "sources_changed_during_the_run", "changed": changed}
     assert asked == [PIN["id"]] and not out.exists()
+
+
+def test_every_repo_module_the_round_loads_is_hashed_not_a_hand_picked_list():
+    """ملاحظةُ Codex على #144: القائمةُ المنتقاة فاتها مهايئا المزوّد اللذان يبنيان طلبَ النموذج ويقرآن نداءات الأدوات؛
+    فصار كلُّ ما حُمّل من المستودع يُبصم، ولا يُبصم ما ليس منه (الاختبارات والحزم المثبَّتة)."""
+    hashed = j5._sources()
+    assert set(j5.SOURCES) <= set(hashed)
+    assert {"providers/local_tools.py", "providers/local_chat.py"} <= set(hashed)
+    import sys
+    loaded = {Path(m.__file__).resolve().relative_to(ROOT).as_posix() for m in list(sys.modules.values())
+              if isinstance(getattr(m, "__file__", None), str) and m.__file__.endswith(".py")
+              and Path(m.__file__).resolve().is_relative_to(ROOT)}
+    assert {p for p in loaded if p.startswith(("core/", "agent/", "providers/", "webui/"))} <= set(hashed)
+    assert not [p for p in hashed if p.startswith("tests/") or "site-packages" in p]
+
+
+def test_a_receipt_replaced_during_the_round_or_unreadable_writes_no_report(tmp_path, monkeypatch, capsys):
+    """الإيصالُ يُقرأ قبل الجولة ويُعاد قبل الكتابة كما في مجسّ الحدّ: إيصالٌ صالحٌ آخر يُكتب في أثنائها لا يُنسب إليه الدليل."""
+    receipt = _ui_receipt(tmp_path)
+
+    class _Swapping(_PendingApp):
+        def dispatch(self, request):
+            if request["action"] == "agent_resume":
+                _ui_receipt(tmp_path, image_id="sha256:" + "d" * 64)
+            return super().dispatch(request)
+
+    app = _Swapping(["python3", "-c", "print(2+2)"])
+    monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: app)
+    _attest(monkeypatch)
+    out = tmp_path / "r.json"
+    args = ["--model", "m", "--web-search-url", "http://127.0.0.1:8888", "--runtime-receipt", str(receipt),
+            "--out", str(out)]
+    assert j5.main(args) == 2
+    refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert refused["code"] == "sources_changed_during_the_run" and refused["changed"] == ["runtime_receipt"]
+    assert not out.exists()
+    receipt.write_text("{not json", encoding="utf-8")
+    monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: pytest.fail("جولةٌ بإيصالٍ لا يُقرأ"))
+    assert j5.main(args) == 2
+    assert json.loads(capsys.readouterr().out.strip().splitlines()[-1])["code"] == "runtime_receipt_unreadable"
 
 
 class _SilentApp:
@@ -302,7 +354,7 @@ def test_a_docker_path_the_run_command_backend_cannot_use_is_refused_before_the_
     monkeypatch.setattr(j5, "_searxng", lambda *a, **k: pytest.fail("Docker سُئل قبل الرفض"))
     out = tmp_path / "r.json"
     code = j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888", "--docker", "/usr/bin/docker",
-                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)])
+                    "--runtime-receipt", str(_ui_receipt(tmp_path)), "--out", str(out)])
     assert code == 2 and json.loads(capsys.readouterr().out)["code"] == "run_command_backend_uses_the_default_docker_path"
     assert not out.exists()
     assert j5.EXECUTION_DOCKER == boundary.SANDBOX_DOCKER == "/usr/local/bin/docker"
@@ -313,7 +365,7 @@ def test_a_round_where_the_model_never_searches_is_written_as_failed_and_exits_n
     _attest(monkeypatch)
     out = tmp_path / "r.json"
     assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
-                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 1
+                    "--runtime-receipt", str(_ui_receipt(tmp_path)), "--out", str(out)]) == 1
     report = json.loads(out.read_text(encoding="utf-8"))
     assert report["acceptance"]["passed"] is False
     assert "web_search_never_succeeded" in report["acceptance"]["failed"]
