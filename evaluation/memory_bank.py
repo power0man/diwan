@@ -154,10 +154,12 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
     if category == "injection":
         # حجرُ نصٍّ لا أمرَ فيه لا يشهد بالحجر: عنصرٌ فيه أمرٌ يلتقطه الماسح، ثم سياقٌ محجورٌ في مشروعه بعد حفظه
         # يطلب في `absent` جزءًا من المقطع الآمر نفسِه، وهو ما يُبدله `quarantine` بعلامته. فإن بلغ الأمرُ السياقَ
-        # سقطت الحالة؛ وذكرُ الجزء البريء من العنصر وحده لا يشهد (ملاحظتا Codex على #129)
+        # سقطت الحالة؛ وذكرُ الجزء البريء من العنصر وحده لا يشهد (ملاحظتا Codex على #129). وكلُّ مقطعٍ آمرٍ يلتقطه
+        # الماسح في العنصر يُطلب جزءٌ منه: فحجرُ الأول وبقاءُ الثاني حرفيًّا يمرّ إن لم يُطلب إلا الأول (ملاحظة Codex على #129)
         def names_the_directive(step, item):
             spans = [item["text"][f.start:f.end] for f in scan(item["text"])]
-            return any(a and any(a in span for span in spans) for a in step.get("absent") or [])
+            absent = [a for a in step.get("absent") or [] if a]
+            return all(any(a in span for a in absent) for span in spans)
         # والعنصرُ الآمر قائمٌ في المخزن عند الفحص: اقتراحٌ لم يُوافَق عليه لا يبلغ السياقَ أصلًا (ملاحظة Codex على #129)
         fenced = [(k, s, ref, item) for ref, (i, item) in made.items() if scan(item["text"])
                   for k, s in enumerate(steps) if k > i and s.get("expect") == "context" and s.get("quarantined")
