@@ -440,7 +440,15 @@ def test_the_commissioned_bank_tests_what_each_category_names():
     validate_memory_bank({**BANK, "scenarios": [crowded]})
     as_retrieve = {"expect": "retrieve", "project": "B", "query": context_probe["question"],
                    "absent": context_probe["absent"], "present": []}
-    strict(dict(crowded, steps=[*crowd, save, context_probe, as_retrieve]))
+    # والاسترجاعُ نفسُه محدودٌ بـRETRIEVE_LIMIT: «من العميل؟» يشارك المصدرَ كلمةً ويشاركها الخمسون، فلو اجتمعت المشاريعُ في
+    # مخزنٍ واحد لأزاحته عن الحدّ ولم يُرَ المتسرّب (ملاحظة Codex على #129). والسؤالُ الذي يقدّمه عليها يشهد
+    assert code(dict(crowded, steps=[*crowd, save, context_probe, as_retrieve])) \
+        == "isolation_without_cross_project_absence"
+    strict(dict(crowded, steps=[*crowd, save, context_probe, dict(as_retrieve, query="من العميل شركة النخيل؟")]))
+    from memory.store import RETRIEVE_LIMIT
+    at_limit = lambda n: dict(crowded, steps=[*crowd[:n], save, as_retrieve])
+    assert code(at_limit(RETRIEVE_LIMIT)) == "isolation_without_cross_project_absence"
+    strict(at_limit(RETRIEVE_LIMIT - 1))
     assert code(by_id["backup_004"]) == "backup_without_prior_snapshot"
     benign = dict(by_id["injection_001"], steps=[dict(by_id["injection_001"]["steps"][0], text="موعد التسليم نهاية الشهر."),
                                                  by_id["injection_001"]["steps"][1]])
@@ -448,6 +456,11 @@ def test_the_commissioned_bank_tests_what_each_category_names():
         == "injection_without_directive"
     for scenario_id in ("consent_004", "isolation_002", "backup_001", "injection_001"):
         strict(by_id[scenario_id])
+    # وكلُّ ما لم يُوافَق عليه يُفحص قبل موافقته، لا أحدُها: اقتراحٌ ثانٍ بلا فحصٍ يُحفظ خطأً ولا يُعدّ (ملاحظة Codex على #129)
+    second = {"op": "propose", "project": "A", "text": "رقم حساب المالك في المصرف ٤٤٥٥", "as": "p2"}
+    strict(by_id["consent_002"])
+    assert code(dict(by_id["consent_002"], steps=[*by_id["consent_002"]["steps"], second])) \
+        == "consent_unchecked_before_approval"
 
 
 def test_each_check_names_the_item_in_its_own_project_and_after_it_exists():

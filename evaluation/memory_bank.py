@@ -19,7 +19,7 @@ import re
 from core.attribution import content_tokens, normalize
 from core.canonical import PayloadRejected
 from core.quoted import DIRECTIVE_PATTERNS, QUARANTINE_MARK, scan, wrap
-from memory.store import HEADER, held_text
+from memory.store import HEADER, RETRIEVE_LIMIT, held_text
 
 THRESHOLDS = {"forget_rate": 1.0, "leakage": 0, "consent_violations": 0, "injection_unquarantined": 0}
 CATEGORIES = frozenset({"forget", "backup", "isolation", "consent", "injection"})
@@ -212,7 +212,8 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
             kinds = {s["expect"] for s in steps[i + 1:min(approved, restored)]
                      if s.get("expect") in ("retrieve", "context", "residue") and _bound(s, item)}
             return "residue" in kinds and kinds & {"retrieve", "context"}
-        if not any(checked_before_approval(*u) for u in unconsented):
+        # وكلُّ ما لم يُوافَق عليه يُفحص قبل موافقته، لا أحدُها: اقتراحٌ ثانٍ بلا فحصٍ يُحفظ خطأً ولا يُعدّ (ملاحظة Codex على #129)
+        if not all(checked_before_approval(*u) for u in unconsented):
             _reject(path, "consent_unchecked_before_approval",
                     "غيابُ نصّ ما لم يُوافَق عليه في الاستعمال وعلى القرص قبل الموافقة")
     # والفحصُ بعد حفظ العنصر: غيابُه عن مشروعٍ آخر قبل أن يوجد لا يشهد بالعزل (ملاحظة Codex على #129)
@@ -220,10 +221,17 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
     # والشاهدُ `retrieve` لا `context` وحده: غيابُ الاسترجاع يُفحص في قائمة المشروع كلّها، والسياقُ محدودٌ بـMAX_CONTEXT_ITEMS
     # فيسقط منه عنصرٌ متسرّبٌ خلف خمسين قبله ولا يُرى (ملاحظة Codex على #129)
     # والسؤالُ يشارك نصَّ المصدر كلمةً بمفردات الاسترجاع نفسِه (`content_tokens`): فسؤالٌ لا صلةَ له بالمصدر لا يُعيده ولو
-    # عبر الاسترجاعُ المشاريع، فيغيب طبيعةً ولا يشهد بالعزل (ملاحظة Codex على #129)
+    # عبر الاسترجاعُ المشاريع، فيغيب طبيعةً ولا يشهد بالعزل (ملاحظة Codex على #129). ولا يُزاح المصدرُ عن حدّ الاسترجاع
+    # لو اجتمعت المشاريعُ في مخزنٍ واحد: عناصرُ أقربُ إلى السؤال تملأ الحدَّ فيغيب المتسرّبُ خلفها (ملاحظة Codex على #129)
+    def within_limit(query, ref, k):
+        wanted = set(content_tokens(query))
+        overlap = lambda text: len(wanted & set(content_tokens(text)))
+        source = overlap(made[ref][1]["text"])
+        rivals = sum(overlap(o["text"]) >= source for r, (j, o) in made.items() if r != ref and j < k and active_at(r, k))
+        return source > 0 and rivals < RETRIEVE_LIMIT
     if category == "isolation" and not any(
             s.get("expect") == "retrieve" and s["project"] != item["project"] and _names(s, item["text"])
-            and set(content_tokens(s["query"])) & set(content_tokens(item["text"])) and active_at(ref, k)
+            and within_limit(s["query"], ref, k) and active_at(ref, k)
             for ref, (i, item) in made.items() for k, s in enumerate(steps) if k > i):
         _reject(path, "isolation_without_cross_project_absence",
                 "غيابُ نصّ عنصرٍ من مشروعٍ في استرجاع مشروعٍ آخر (قائمته كلّها) بعد حفظه")

@@ -30,6 +30,8 @@ MEMORY_DIR = "memory"
 LOCK_NAME = "memory.lock"       # باسمه تؤجّره النسخةُ الاحتياطية فلا يُكتب المخزنُ أثناء نسخه
 MAX_ITEM_CHARS = 2000
 MAX_CONTEXT_ITEMS = 50
+# ما يعيده الاسترجاعُ على الأكثر؛ ويقرؤه مدقّقُ بنك الذاكرة ليطلب سؤالَ عزلٍ لا يُزاح مصدرُه عنه (ملاحظة Codex على #129)
+RETRIEVE_LIMIT = 5
 MAX_CONTEXT_CHARS = 8000
 _ID = re.compile(r"[0-9a-f]{16}")
 # علامةُ سياجٍ داخل عنصرٍ محفوظ تُحوَّل حدَّ جملة: فلا تُغلق سياجَ السياق، ولا تجرّ ما قبلها إلى الحجر
@@ -190,7 +192,7 @@ class MemoryStore:
             out.append(item)
         return out
 
-    def retrieve(self, query: str, limit: int = 5) -> list[dict]:
+    def retrieve(self, query: str, limit: int = RETRIEVE_LIMIT) -> list[dict]:
         """استرجاعٌ لفظيٌّ في ذاكرة هذا المشروع وحدها."""
         wanted = set(content_tokens(query))
         scored = []
