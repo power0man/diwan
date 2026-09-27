@@ -572,6 +572,51 @@ def test_a_touched_test_must_be_named_by_its_own_module_s_manifest_not_another_s
     _clean(repo, git)
 
 
+def test_a_module_named_by_the_second_pytest_pattern_is_scanned_too(repo, git, capsys):
+    """pytest يجمع *_test.py كما يجمع test_*.py؛ كان المرشّحُ يقبل الأولَ وحده فيمرّ حارسٌ في tests/guard_test.py بلا بيان
+    (ملاحظة Codex على #149)."""
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/guard_test.py").write_text("from pkg.guard import positive\n\n\ndef test_second_pattern():\n    assert positive(0) is False\n")
+    git("add", "-A")
+    git("commit", "-qm", "second pattern")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["manifest_missing"] == ["tests/guard_test.py"] and report["status"] == "failed"
+    assert report["unmanifested_new_tests"] == ["tests/guard_test.py::test_second_pattern"]
+    _manifest(repo, "guard_test", {**KILL, "id": "second", "tests": ["tests/guard_test.py::test_second_pattern"]})
+    git("add", "-A")
+    git("commit", "-qm", "its manifest")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1
+    _clean(repo, git)
+
+
+def test_removed_lines_are_read_against_the_merge_base_not_the_base_tip(repo, git, capsys):
+    """الفرقُ base...head يُقاس من أصل الدمج، فأسطرُه المُزالة بإحداثياته؛ ورأسُ الأساس الذي تقدّم بأسطرٍ قبل الاختبار كان
+    يُقرأ منه مدى الاختبار فيُزاح ويضيع حذفُ الحالة (ملاحظة Codex على #149)."""
+    decorated = TESTS + "\n\nimport pytest\n\n\n@pytest.mark.parametrize(\"x\", [\n    pytest.param(0, id=\"zero\"),\n    pytest.param(-1, id=\"negative\"),\n])\ndef test_not_positive(x):\n    assert positive(x) is False\n"
+    (repo / "tests/test_guard.py").write_text(decorated)
+    _manifest(repo, "test_guard", {**KILL, "id": "kill-negative", "new": "return x > -5", "tests": ["tests/test_guard.py::test_not_positive[negative]"]})
+    git("add", "-A")
+    git("commit", "-qm", "guards and manifest")
+    fork = git("rev-parse", "HEAD")
+    git("checkout", "-q", "-b", "pr")
+    (repo / "tests/test_guard.py").write_text(decorated.replace("    pytest.param(-1, id=\"negative\"),\n", ""))
+    git("add", "-A")
+    git("commit", "-qm", "remove the negative case")
+    head = git("rev-parse", "HEAD")
+    git("checkout", "-q", "-")                                     # الأساسُ يتقدّم بأسطرٍ كثيرة قبل الاختبار
+    padding = "".join(f"\n\ndef test_padding_{i}():\n    assert True\n" for i in range(12))
+    (repo / "tests/test_guard.py").write_text("from pkg.guard import positive\n" + padding + "\n" + decorated.split("\n", 1)[1])
+    git("add", "-A")
+    git("commit", "-qm", "base advances above the test")
+    base_tip = git("rev-parse", "HEAD")
+    assert git("merge-base", base_tip, head) == fork
+    report = _run(repo, "--range", f"{base_tip}..{head}", "--head", head, capsys=capsys)     # كما يمرّره CI
+    assert report["revalidated_tests"] == ["tests/test_guard.py::test_not_positive"], report
+    assert report["totals"]["test_missing"] == 1 and report["status"] == "failed"
+    git("checkout", "-q", "pr")
+
+
 def test_a_collection_error_is_invalid_not_a_kill(repo, capsys, git):
     _manifest(repo, "test_guard", {**KILL, "id": "broken", "new": "return x > 0 ("})
     git("add", "-A")
@@ -596,7 +641,7 @@ def test_the_repository_manifests_are_valid_and_target_only_production_code():
     """بياناتُ المستودع نفسِه تُحمَّل بلا رفض، وكلُّ هدفٍ فيها شيفرةُ إنتاجٍ موجودة."""
     paths = sorted((ROOT / mc.MANIFESTS).glob("*.jsonl"))
     assert paths, "لا بياناتَ في المستودع"
-    owned = {mc.manifest_for(m.relative_to(ROOT).as_posix()) for m in (ROOT / "tests").rglob("test_*.py")}
+    owned = {mc.manifest_for(m.relative_to(ROOT).as_posix()) for m in (ROOT / "tests").rglob("*.py") if mc._is_test_module(m.name)}
     for path in paths:
         assert path.relative_to(ROOT).as_posix() in owned, f"{path.name} بلا وحدة اختبارٍ يؤول بيانُها إليه"
         for entry in mc.load_manifest(path, ROOT):

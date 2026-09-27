@@ -250,9 +250,16 @@ def _manifest_names(root: Path) -> dict[Path, set[str]]:
     return names
 
 
+def _is_test_module(path: str) -> bool:
+    """أنماطُ pytest الافتراضية لملفّ الاختبار (python_files): test_*.py و*_test.py."""
+    name = PurePosixPath(path).name
+    return name.endswith(".py") and (name.startswith("test_") or name.endswith("_test.py"))
+
+
 def _test_modules(paths: list[str]) -> list[str]:
-    """وحداتُ الاختبار تحت tests/ في أيّ عمق (test_*.py)، فنقلُ الاختبارات إلى مجلّدٍ فرعيّ لا يُخرجها من المدى."""
-    return [p for p in paths if p.startswith("tests/") and p.endswith(".py") and PurePosixPath(p).name.startswith("test_")]
+    """وحداتُ الاختبار تحت tests/ في أيّ عمق وبنمطَي pytest (test_*.py و*_test.py)، فنقلُ الاختبارات إلى مجلّدٍ فرعيّ أو
+    تسميتُها بالنمط الثاني لا يُخرجها من المدى (ملاحظتا Codex على #149)."""
+    return [p for p in paths if p.startswith("tests/") and _is_test_module(p)]
 
 
 def manifest_for(test: str) -> str:
@@ -277,6 +284,9 @@ def _range_scope(root: Path, rng: str) -> dict:
     أن يسقط كلٌّ منها تحت طفرةٍ ما، وما يُسقط المدى: ملفُّ اختبارٍ مضاف أو مُعادُ التسمية بلا بيانٍ باسمه، واختبارٌ ممسوس لا
     يسمّيه بيان، وبيانٌ حُذف ووحدتُه باقية (ملاحظات Codex على #149)."""
     base, head = rng.split("..", 1)
+    # الشجرةُ القديمة هي أصلُ الدمج لا رأسُ الأساس: فالفرقُ base...head يُقاس منه، وأسطرُه المُزالة بإحداثياته؛ ورأسُ الأساس
+    # الذي تقدّم بأسطرٍ مُدرَجة قبل الاختبار يُزيح مدياتِه فيضيع ما زال (ملاحظة Codex على #149)
+    base = _git(root, "merge-base", base, head)
 
     def changed(status: str, *pathspec: str) -> list[str]:
         return _git(root, "diff", "--name-only", f"--diff-filter={status}", f"{base}...{head}", "--", *pathspec).split()
