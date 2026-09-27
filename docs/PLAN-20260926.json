@@ -552,7 +552,7 @@
     "compute:جديد-is-local-guard",
     "team:جديد-privacy-gate-local"
    ],
-   "description": "١) في providers/ollama.py يُشتقّ is_local من الاسم والمضيف: يُرفض النمط (?:^|[-:/])cloud، ويُشترط base_url على loopback. اليوم السطر 50 يضع self.is_local = True لكل نموذج، فوصلت حمولة local_only إلى gpt-oss:120b-cloud فعلًا. ٢) في core/run.py فحص ثانٍ مستقل على req.model قبل _is_local. ٣) المواضع الخمسة (conversation/agent_session.py وconversation/session.py وwebui/server.py) تقرأ من المصدر الواحد. ٤) tests/test_provider_locality.py: local_only إلى OllamaProvider('x:cloud') وإلى مضيف غير loopback يُردّ policy_requires_local في كل موضع. ٥) طفرة لكل موضع، ≥٥ مقتولة. providers/ مسار google: الإيداع يحمل «تسليم:» بق٦٢-٥ (صالح حتى ٨ نوفمبر)، لا Jules غير المثبَّت. **ومنذ ق٦٦ الشقُّ ٣ (المواضع الخمسة في conversation/ وwebui/) لـCodex**، وClaude يُتمّ ١ و٢ و٤ في غير مسار openai؛ وطلبُ #137 فُتح قبل ق٦٦ ويمسّ تلك المواضع، فقرارُ دمجه أو تقسيمه للمالك. المراجعة من غير anthropic، وحتى يخضرّ family-review تسري القاعدة الانتقالية.",
+   "description": "١) في providers/ollama.py يُشتقّ is_local من الاسم والمضيف: يُرفض النمط (?:^|[-:/])cloud، ويُشترط base_url على loopback. اليوم السطر 50 يضع self.is_local = True لكل نموذج، فوصلت حمولة local_only إلى gpt-oss:120b-cloud فعلًا. ٢) في core/run.py فحص ثانٍ مستقل على req.model قبل _is_local. ٣) المواضع الخمسة (conversation/agent_session.py وconversation/session.py وwebui/server.py) تقرأ من المصدر الواحد. ٤) tests/test_provider_locality.py: local_only إلى OllamaProvider('x:cloud') وإلى مضيف غير loopback يُردّ policy_requires_local في كل موضع. ٥) طفرة لكل موضع، ≥٥ مقتولة. providers/ مسار google: الإيداع يحمل «تسليم:» بق٦٢-٥ (صالح حتى ٨ نوفمبر)، لا Jules غير المثبَّت. **ومنذ ق٦٦ الشقُّ ٣ (المواضع الخمسة في conversation/ وwebui/) مهمّةٌ مستقلّة لـCodex: جديد-is-local-guard-openai**، وClaude يُتمّ ١ و٢ و٤ في غير مسار openai؛ وطلبُ #137 فُتح قبل ق٦٦ ويمسّ تلك المواضع، فقرارُ دمجه أو تقسيمه للمالك. المراجعة من غير anthropic، وحتى يخضرّ family-review تسري القاعدة الانتقالية.",
    "deliverable": "طلب دمج على providers/ollama.py وcore/run.py والمواضع الخمسة + tests/test_provider_locality.py",
    "acceptance_evidence": "tests/test_provider_locality.py أخضر ويسقط بكل طفرة من ≥٥ مسمّاة في الطلب (منها إعادة is_local=True)؛ سطر في docs/STATUS.md يعلن إغلاق core-g1 وcore-m3.",
    "unblocks": [
@@ -560,6 +560,30 @@
     "جديد-judge-sealed-tools",
     "جديد-upload-extract"
    ],
+   "cost": "صفر"
+  },
+  {
+   "id": "جديد-is-local-guard-openai",
+   "title": "المواضعُ الخمسة في مسار openai تقرأ مصدرَ المحليّة الواحد (الشقُّ ٣ من is-local-guard بعد ق٦٦)",
+   "assignee": "codex",
+   "block": "ب٧",
+   "phase": "م٠-أ",
+   "effort": "S",
+   "depends_on": [
+    "جديد-is-local-guard"
+   ],
+   "gap_ids": [
+    "core-g1",
+    "core-m3"
+   ],
+   "sources": [
+    "decision:ق٦٦",
+    "split:جديد-is-local-guard"
+   ],
+   "description": "قُسمت من جديد-is-local-guard بق٦٦ لأن Claude لا يعدّل مسار openai. ١) _ProviderGuard وstart_turn وresume في conversation/agent_session.py، والمحادثةُ في conversation/session.py، والواجهةُ في webui/server.py تقرأ المصدر الواحد الذي يبنيه جديد-is-local-guard، بدل getattr على إعلان المزوّد. ٢) local_only إلى مزوّدٍ سحابيّ الاسم أو مضيفٍ غير loopback يُردّ policy_requires_local في كل موضع، والواجهةُ تردّ قبل أن تُمسّ الجلسة. ٣) طفرةٌ لكل موضع تُقتل. وطلبُ #137 فُتح قبل ق٦٦ ويحمل تنفيذًا لهذه المواضع، فالمالك يقرّر: يُدمج كما هو، أو يُقسم فيأخذ Codex هذا الشقّ. المراجعة من غير openai.",
+   "deliverable": "طلب دمج على conversation/agent_session.py وconversation/session.py وwebui/server.py + اختباراتها",
+   "acceptance_evidence": "في tests/test_provider_locality.py حالةٌ لكل موضع من الخمسة تسقط بطفرة إعادته إلى الإعلان وحده.",
+   "unblocks": [],
    "cost": "صفر"
   },
   {
@@ -994,7 +1018,7 @@
     "compute:جديد-execution-evidence-rebind",
     "team:جديد-mac-batch1"
    ],
-   "description": "الأدلة الحيّة القائمة لا تثبت المسار الحالي. execution-boundary مربوط ببصمة قديمة لـcore/execution.py (1ee094)، وagent-runtime ببصمة ثالثة للملف نفسه (0d9f6e)، وsandbox-container ببصمة قديمة لـcore/sandbox.py (ecb1d4). والبصمتان الحاليتان c7fe33 وe55833. ودليل j5-live-evidence-20260926.json على Nitro شغّل Docker مباشرةً لا عبر core/execution.py، ونادى web_search مباشرةً لا من النموذج. ١) على الماك بإيصال Docker معتمد: إعادة مجسّي execution-boundary وsandbox-container وربطهما بالبصمات الحالية. ٢) SearXNG محليًّا والواجهة بالأدوات (G6 الخطوتان ١٥–١٦). ٣) جولة وكيلة بـqwen3.5:9b يستدعي فيها النموذج web_search بنفسه، لا نداءً مباشرًا، وrun_command يمرّ بـcore/execution.py بإيصال. ٤) الأدلة القديمة توسم تاريخية في INDEX. ٥) احتياطًا على Nitro بعد G5. مسار openai: «تسليم:» بق٦٢-٥ إن مُسّت شيفرة. المراجعة من غير anthropic.",
+   "description": "الأدلة الحيّة القائمة لا تثبت المسار الحالي. execution-boundary مربوط ببصمة قديمة لـcore/execution.py (1ee094)، وagent-runtime ببصمة ثالثة للملف نفسه (0d9f6e)، وsandbox-container ببصمة قديمة لـcore/sandbox.py (ecb1d4). والبصمتان الحاليتان c7fe33 وe55833. ودليل j5-live-evidence-20260926.json على Nitro شغّل Docker مباشرةً لا عبر core/execution.py، ونادى web_search مباشرةً لا من النموذج. ١) على الماك بإيصال Docker معتمد: إعادة مجسّي execution-boundary وsandbox-container وربطهما بالبصمات الحالية. ٢) SearXNG محليًّا والواجهة بالأدوات (G6 الخطوتان ١٥–١٦). ٣) جولة وكيلة بـqwen3.5:9b يستدعي فيها النموذج web_search بنفسه، لا نداءً مباشرًا، وrun_command يمرّ بـcore/execution.py بإيصال. ٤) الأدلة القديمة توسم تاريخية في INDEX. ٥) احتياطًا على Nitro بعد G5. ولا تُمسّ شيفرةُ مسار openai منذ ق٦٦، وما يلزم منها يُطلب بمسألةٍ بوسم family:openai (#142). المراجعة من غير anthropic.",
    "deliverable": "docs/probe/j5-docker-searxng-<date>.json + execution-boundary-<date>.json + sandbox-container-<date>.json",
    "acceptance_evidence": "source_sha256 في الأدلة يطابق بصمة الملفين على main؛ forged_stdout يخرج غير صفر؛ web_search نُودي من النموذج، وmeasurement_limits لا تقول «نودي مباشرةً».",
    "unblocks": [],
@@ -1686,9 +1710,30 @@
     "measurement:جديد-legacy-archive",
     "compute:جديد-mac-run-archive"
    ],
-   "description": "١) core/semantic_governance.py (مسار google) يمنح الادعاء المنفي 10000bp، وهو مصدَّر أداة auto في core/tools_registry.py:238 وفي webui/server.py:620-674 (مسار openai). يُخرج من التصدير والواجهة، باختبار تُثبته طفرة، وسطر تسليم: لـopenai. ٢) بقرار مرقَّم في جلسة المالك: نقل (لا حذف) إلى archive/ مع ملاحظة «تاريخي» لكلٍّ من tools/mac_run.sh (مشغّل مقيم رفضه ق٣٦، ويدفع إلى main مباشرة)، وdocs/MAC-AGENT-PROMPT.md، وTieredSovereignRouter في core/router.py، وcore/action_loop.py، وtashkeel.py وsyntax_guard.py، وhermes_gate إن لم يُعطَ مستهلكًا. ٣) ما في مسار google يحمل تسليم:، ويُنجز قبل ٨ نوفمبر أو بق٦٤. ٤) tests/test_no_push_in_tools.py يمنع git push في tools/. ٥) المالك يلغي تسجيل mac-diwan إن بقي. يراجعه غير anthropic.",
+   "description": "١) core/semantic_governance.py (مسار google) يمنح الادعاء المنفي 10000bp، وهو مصدَّر أداة auto في core/tools_registry.py:238 وفي webui/server.py:620-674 (مسار openai). يُخرج من أدوات auto في core/tools_registry.py باختبار تُثبته طفرة؛ وإخراجُه من الواجهة (webui/server.py، مسار openai) في جديد-legacy-archive-openai لـCodex منذ ق٦٦. ٢) بقرار مرقَّم في جلسة المالك: نقل (لا حذف) إلى archive/ مع ملاحظة «تاريخي» لكلٍّ من tools/mac_run.sh (مشغّل مقيم رفضه ق٣٦، ويدفع إلى main مباشرة)، وdocs/MAC-AGENT-PROMPT.md، وTieredSovereignRouter في core/router.py، وcore/action_loop.py، وtashkeel.py وsyntax_guard.py، وhermes_gate إن لم يُعطَ مستهلكًا. ٣) ما في مسار google يحمل تسليم:، ويُنجز قبل ٨ نوفمبر أو بق٦٤. ٤) tests/test_no_push_in_tools.py يمنع git push في tools/. ٥) المالك يلغي تسجيل mac-diwan إن بقي. يراجعه غير anthropic.",
    "deliverable": "طلب دمج بالأرشفة، وإخراج evaluate_governance، وtests/test_no_push_in_tools.py، والقرار المرقَّم",
-   "acceptance_evidence": "evaluate_governance غائب عن أدوات auto والواجهة، وطفرة إعادته تُقتل؛ grep 'git push' tools/ فارغ والحارس يسقط عند إعادته؛ pytest أخضر بعد النقل",
+   "acceptance_evidence": "evaluate_governance غائب عن أدوات auto (والواجهة في جديد-legacy-archive-openai)، وطفرة إعادته تُقتل؛ grep 'git push' tools/ فارغ والحارس يسقط عند إعادته؛ pytest أخضر بعد النقل",
+   "unblocks": [],
+   "cost": "$0"
+  },
+  {
+   "id": "جديد-legacy-archive-openai",
+   "title": "إخراج evaluate_governance من واجهة webui/server.py (شقُّ مسار openai من legacy-archive بعد ق٦٦)",
+   "assignee": "codex",
+   "block": "ب٩",
+   "phase": "م١",
+   "effort": "S",
+   "depends_on": [
+    "جديد-legacy-archive"
+   ],
+   "gap_ids": [],
+   "sources": [
+    "decision:ق٦٦",
+    "split:جديد-legacy-archive"
+   ],
+   "description": "قُسمت من جديد-legacy-archive بق٦٦. evaluate_governance (من core/semantic_governance.py، ويمنح الادعاءَ المنفيّ 10000bp) مصدَّرٌ في webui/server.py:620-674. يُخرج من الواجهة باختبارٍ تُثبته طفرة، بعد أن يُخرجه جديد-legacy-archive من أدوات auto في core/tools_registry.py. المراجعة من غير openai.",
+   "deliverable": "طلب دمج على webui/server.py واختباره",
+   "acceptance_evidence": "evaluate_governance غائب عن الواجهة، وطفرةُ إعادته تُقتل.",
    "unblocks": [],
    "cost": "$0"
   },
@@ -2703,13 +2748,15 @@
    "name": "codex",
    "family": "openai",
    "role": "مطوِّر ومراجع مسار openai: المحادثة والواجهة والتنفيذ والمحلّل والمستندات وagent/actions.py. يعمل في مساره منذ ٢٧ سبتمبر بقول المالك (ق٦٦). وهو المراجِع المحتسب من عائلة openai على طلبات anthropic وgoogle منذ ق٦٥: يراجع عند الفتح وعند تعليق `@codex review`.",
-   "how_it_works": "يعمل في مساره منذ ٢٧ سبتمبر (ق٦٦)، فمهامُّه تُسند إليه الآن لا في م٢، ومنها مهمّتا م٠ `جديد-delete-path` و`جديد-max-output-download` والشقُّ ٣ من `جديد-is-local-guard`. يُكلَّف بـ@codex على مسألة ready:openai، ويفتح طلبًا بذيل Diwan-Agent: openai/codex. يراجعه claude[bot] (Gemini ملغًى بق٦٥). وهو نفسه مراجع محسوب لطلبات anthropic وgoogle باسم chatgpt-codex-connector[bot]، فيعطي البوابة عائلة ثانية. يُتحقَّق من عمله بفحص verify-hosted واختبارات بالطفرة، منها لقطة الأفعال بحسب الأثر وقفل الجلسة. ولا تعود مهامُّه إلى Claude إن توقّف: سُحب احتياطُ Claude في المسار بق٦٦، فتنتظر أو يقرّر المالك.",
+   "how_it_works": "يعمل في مساره منذ ٢٧ سبتمبر (ق٦٦)، فمهامُّه تُسند إليه الآن لا في م٢، ومنها مهمّتا م٠ `جديد-delete-path` و`جديد-max-output-download`، وشقّا المسار المقسومان بق٦٦ `جديد-is-local-guard-openai` و`جديد-legacy-archive-openai`. يُكلَّف بـ@codex على مسألة ready:openai، ويفتح طلبًا بذيل Diwan-Agent: openai/codex. يراجعه claude[bot] (Gemini ملغًى بق٦٥). وهو نفسه مراجع محسوب لطلبات anthropic وgoogle باسم chatgpt-codex-connector[bot]، فيعطي البوابة عائلة ثانية. يُتحقَّق من عمله بفحص verify-hosted واختبارات بالطفرة، منها لقطة الأفعال بحسب الأثر وقفل الجلسة. ولا تعود مهامُّه إلى Claude إن توقّف: سُحب احتياطُ Claude في المسار بق٦٦، فتنتظر أو يقرّر المالك.",
    "task_ids": [
     "جديد-action-snapshot",
     "جديد-backup-roots",
     "جديد-per-session-lock",
     "جديد-delete-path",
-    "جديد-max-output-download"
+    "جديد-max-output-download",
+    "جديد-is-local-guard-openai",
+    "جديد-legacy-archive-openai"
    ],
    "constraints": [
     "نفادُ رصيده يوقفه بصمت، فتُراقَب طلباتُه ويُرفع التوقّفُ إلى المالك (ق٦٦)",
