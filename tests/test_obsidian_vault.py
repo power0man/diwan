@@ -152,6 +152,14 @@ def test_the_real_repository_builds(tmp_path):
     assert len(list((tmp_path / "vault/Diwan/المهام").glob("*.md"))) == len(plan["tasks"])
 
 
+def test_every_plan_task_is_on_the_board_of_the_phase_it_declares():
+    """اللوحةُ تُبنى من phases[].task_ids وحدها: مهمّةٌ غائبةٌ عن قائمة مرحلتها تُكتب ملاحظتُها وتسقط من اللوحة صامتة
+    (ملاحظة Codex على #141 في مهمّتَي ق٦٦ المقسومتين)."""
+    plan = json.loads((ROOT / ov.PLAN).read_text(encoding="utf-8"))
+    listed = {(tid, p["id"]) for p in plan["phases"] for tid in p["task_ids"]}
+    assert [t["id"] for t in plan["tasks"] if (t["id"], t["phase"]) not in listed] == []
+
+
 def test_a_written_file_the_owner_edited_is_not_removed_when_it_leaves_the_plan(repo, vault):
     ov.build(vault, root=repo)
     task = vault / "Diwan/المهام/جديد-x.md"
