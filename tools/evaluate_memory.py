@@ -36,9 +36,12 @@ COMMISSIONED = {
 
 
 def _digest(model: str, base: str = "http://127.0.0.1:11434") -> str | None:
-    """بصمةُ النموذج المثبَّت كما يعرضها Ollama، فالوسمُ وحده يتغيّر بسحبٍ جديد (ملاحظة Codex على #129)."""
+    """بصمةُ النموذج المثبَّت كما يعرضها Ollama، فالوسمُ وحده يتغيّر بسحبٍ جديد (ملاحظة Codex على #129). وتُطلب من
+    Ollama على الجهاز بلا وسيط البيئة، كما يتّصل به المزوّد: `HTTP_PROXY` بلا `NO_PROXY` كان يُرسلها إلى الوسيط فيُجيب
+    ببصمةٍ لأوزانٍ لم تُشغَّل (ملاحظة Codex على #144، والفجوةُ نفسُها هنا)."""
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     try:
-        with urllib.request.urlopen(base + "/api/tags", timeout=10) as response:
+        with opener.open(base + "/api/tags", timeout=10) as response:
             models = json.loads(response.read().decode("utf-8"))["models"]
     except (OSError, ValueError, KeyError):
         return None

@@ -794,3 +794,41 @@ def test_residue_is_found_in_the_escaped_form_the_store_writes(tmp_path, monkeyp
         {"op": "forget", "project": "A", "ref": "m1"},
         {"expect": "residue", "project": "A", "absent": [text]}]}
     assert any("residue holds" in failure for failure in run_scenario(kept, tmp_path)["failures"])
+
+
+def test_the_evaluator_reads_the_model_digest_from_the_local_ollama_not_through_a_proxy(monkeypatch):
+    """ملاحظةُ Codex على #144 (والفجوةُ نفسُها هنا): `HTTP_PROXY` بلا `NO_PROXY` كان يُرسل طلبَ البصمة إلى الوسيط، فيُجيب
+    ببصمةٍ لأوزانٍ لم تُشغَّل والتقريرُ ينسب القياسَ إليها."""
+    import http.server
+    import threading
+    import tools.evaluate_memory as cli
+
+    def serve(digest, hits):
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                hits.append(self.path)
+                body = json.dumps({"models": [{"name": "m:latest", "digest": digest}]}).encode()
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *args):
+                pass
+        server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        return server
+
+    direct, proxied = [], []
+    ollama, proxy = serve("sha256:local", direct), serve("sha256:proxy", proxied)
+    try:
+        for name in ("no_proxy", "NO_PROXY"):
+            monkeypatch.delenv(name, raising=False)
+        for name in ("http_proxy", "HTTP_PROXY"):
+            monkeypatch.setenv(name, f"http://127.0.0.1:{proxy.server_port}")
+        assert cli._digest("m", base=f"http://127.0.0.1:{ollama.server_port}") == "sha256:local"
+        assert direct == ["/api/tags"] and proxied == []
+    finally:
+        for server in (ollama, proxy):
+            server.shutdown()
+            server.server_close()
