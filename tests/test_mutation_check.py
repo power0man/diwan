@@ -745,6 +745,43 @@ def test_a_test_whose_implementation_moves_to_an_added_helper_is_touched_by_the_
     _clean(repo, git)
 
 
+def test_a_test_wrapped_by_a_decorator_without_wraps_is_traced_to_its_own_definition(repo, git, capsys):
+    """مزخرفٌ يلفّ الاختبارَ بلا `functools.wraps`: الدالّةُ الفعلية التي يجمعها pytest غلافُ المزخرف، فمدى الأصل الفعليّ في
+    المزخرف لا في جسم الاختبار (ملاحظة Codex على #149)؛ صار التعريفُ النحويّ الذي يسمّيه المعرّفُ في وحدته أصلًا ثانيًا،
+    فتأكيدٌ يُضاف في جسمه يمسّه."""
+    wrapped = TESTS + "\n\ndef announce(fn):\n    def wrapper(*a, **k):\n        return fn(*a, **k)\n    return wrapper\n\n\n@announce\ndef test_wrapped():\n    assert positive(0) is False\n"
+    (repo / "tests/test_guard.py").write_text(wrapped)
+    git("add", "-A")
+    git("commit", "-qm", "a wrapped test")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_guard.py").write_text(wrapped.replace("def test_wrapped():\n    assert positive(0) is False\n",
+                                                            "def test_wrapped():\n    assert positive(0) is False\n    assert positive(-1) is False\n"))
+    git("add", "-A")
+    git("commit", "-qm", "a guard grows inside the wrapped test")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::test_wrapped"] and report["status"] == "failed"
+    _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": [*KILL["tests"], "tests/test_guard.py::test_wrapped"]})
+    git("add", "-A")
+    git("commit", "-qm", "named")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["unproved_touched_tests"] == []
+    _clean(repo, git)
+
+
+def test_a_unicode_test_identifier_is_accepted_in_a_manifest_and_proved(repo, git, capsys):
+    """معرّفٌ عربيٌّ صالح في بايثون (`tests/test_عربي.py::test_العربية`) يجمعه pytest؛ كان النمطُ اللاتينيّ يرفض بيانَه
+    (ملاحظة Codex على #149)، فصار المعرّفُ يُقبل بأيّ أبجدية ويُثبَت اختبارُه."""
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_عربي.py").write_text("from pkg.guard import positive\n\n\ndef test_العربية():\n    assert positive(0) is False\n")
+    _manifest(repo, "test_عربي", {**KILL, "id": "kill", "tests": ["tests/test_عربي.py::test_العربية"]})
+    git("add", "-A")
+    git("commit", "-qm", "an arabic test identifier, named")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["unmanifested_new_tests"] == []
+    assert report["results"][0]["failed_tests"] == ["tests/test_عربي.py::test_العربية"]
+    _clean(repo, git)
+
+
 def test_a_unittest_subclass_is_placed_whatever_its_name_so_a_grown_method_touches_it_and_its_heir(repo, git, capsys):
     """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة (ملاحظة Codex على #149)؛ صار يُقرأ هو ووارثُه في
     الوحدة، فسطرٌ مضاف في دالّته يمسّها فيه وفي الوارث. والصنفُ العاديّ لا يجمعه pytest فلا يُمسّ ولو قُرئ؛ والوارثُ أصلًا

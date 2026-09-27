@@ -56,7 +56,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFESTS = "tests/mutations"
 REQUIRED = ("file", "old", "new", "tests")
 OPTIONAL = ("id", "task", "why", "count", "added")
-NODE_ID = re.compile(r"^tests/[A-Za-z0-9_./-]+\.py(::[A-Za-z_][A-Za-z0-9_]*)+(\[.*\])?$")   # ومنه دوالُّ الأصناف
+NODE_ID = re.compile(r"^tests/[\w./-]+\.py(::[^\W\d]\w*)+(\[.*\])?$")   # ومنه دوالُّ الأصناف، وبأيّ أبجدية (ملاحظة Codex على #149)
 VERDICTS = {
     "killed": "قُتلت: سقط كلُّ اختبارٍ مسمًّى عند الطفرة",
     "partially_killed": "سقط بعضُ المسمّى لا كلُّه؛ ما لم يسقط لا يحرس هذه الطفرة",
@@ -74,7 +74,7 @@ LIMITS = [
     "tests_run_with_the_given_python_in_a_detached_worktree_of_the_head_commit_uncommitted_changes_are_not_measured",
     "a_kill_is_judged_by_the_named_tests_failing_another_test_that_fails_is_not_counted",
     "what_is_collected_is_decided_by_pytest_over_the_whole_tests_tree_at_the_head_and_at_the_merge_base_compared_by_full_node_ids_with_their_parameters_a_case_new_at_the_head_touches_its_test_wherever_it_appears_and_a_vanished_node_re_applies_its_manifests",
-    "an_existing_collected_test_is_touched_when_an_added_line_of_the_range_falls_inside_the_span_of_the_callable_that_defines_it_as_pytest_resolves_it_file_and_decorator_inclusive_span_from_inspect_wherever_that_callable_lives_a_helper_conftest_or_package_imported_by_its_own_name_or_an_alias_or_inherited_from_another_file_and_a_removed_line_inside_that_span_re_applies_its_manifests",
+    "an_existing_collected_test_is_touched_when_an_added_line_of_the_range_falls_inside_the_span_of_the_callable_that_defines_it_as_pytest_resolves_it_through___wrapped___file_and_decorator_inclusive_span_from_inspect_wherever_that_callable_lives_a_helper_conftest_or_package_imported_by_its_own_name_or_an_alias_or_inherited_from_another_file_or_inside_the_syntactic_definition_its_node_id_names_in_its_own_module_so_a_wrapper_decorator_without_functools_wraps_hides_nothing_and_a_removed_line_inside_either_span_re_applies_its_manifests",
     "changes_to_fixtures_or_helpers_outside_any_test_callable_s_span_are_not_re_proven_and_a_collected_node_whose_callable_has_no_readable_source_such_as_one_built_by_exec_is_touched_only_when_its_node_id_is_new_and_is_named_with_its_error_in_the_collection_output",
     "origins_place_only_the_node_ids_collected_at_both_ends_of_the_range_new_and_vanished_ids_belong_to_the_collection_diff_an_added_line_in_a_modified_or_added_python_file_touches_a_surviving_test_whose_callable_lives_there_and_a_removed_line_in_a_modified_or_deleted_file_revalidates_it",
     "renames_are_not_detected_in_the_range_a_moved_file_is_its_source_deleted_and_its_destination_added_so_both_sides_are_checked",
@@ -298,10 +298,10 @@ def _range_scope(root: Path, rng: str, python: str = sys.executable, timeout: in
     grown_in = {p: _added_lines(root, base, head, p) for p in changed("AM", ".") if p.endswith(".py")}
     shed_in = {p: _removed_lines(root, base, head, p) for p in changed("MD", ".") if p.endswith(".py")}
     surviving = collected_head & collected_base
-    reached = {node for node, (origin, first, last) in origins_head.items()
-               if node.split("[", 1)[0] in surviving and any(first <= n <= last for n in grown_in.get(origin, ()))}
-    gone = {node for node, (origin, first, last) in origins_base.items()
-            if node.split("[", 1)[0] in surviving and any(first <= n <= last for n in shed_in.get(origin, ()))}
+    reached = {node for node, spans in origins_head.items()
+               if node.split("[", 1)[0] in surviving and any(first <= n <= last for origin, first, last in spans for n in grown_in.get(origin, ()))}
+    gone = {node for node, spans in origins_base.items()
+            if node.split("[", 1)[0] in surviving and any(first <= n <= last for origin, first, last in spans for n in shed_in.get(origin, ()))}
     touched = sorted({*touched, *functions(reached)})
     revalidated = sorted({*revalidated, *functions(gone)})
     unnamed = [node for node in touched if node not in names.get(own(node), set())]
@@ -348,6 +348,13 @@ import os
 def pytest_collection_finish(session):
     root = str(session.config.rootpath)
     for item in session.items:
+        parts = item.nodeid.split("::")
+        names = parts[1:]
+        if names:
+            names[-1] = getattr(item, "originalname", None) or names[-1].split("[", 1)[0]
+        # التعريفُ النحويّ الذي يسمّيه المعرّف في وحدته (صنفٌ فدالّة): يُقرأ بجانب الدالّة الفعلية، فمزخرفٌ يلفّ الاختبارَ
+        # بلا functools.wraps يجعل الفعليةَ غلافَه ويُخفي جسمَ التعريف (ملاحظة Codex على #149)
+        print("@@syntax", item.nodeid, parts[0], "::".join(names), sep="\\t")
         try:
             func = inspect.unwrap(item.obj)
             file = inspect.getsourcefile(func)
@@ -359,14 +366,38 @@ def pytest_collection_finish(session):
 '''
 
 
-def _origins(result: subprocess.CompletedProcess | None) -> dict[str, tuple[str, int, int]]:
-    """أصلُ كل اختبارٍ مجموع كما كتبته الإضافة: (الملفُّ، أولُ سطر، آخرُ سطر)؛ وما بلا مصدرٍ يُقرأ لا أصلَ له."""
-    origins: dict[str, tuple[str, int, int]] = {}
+def _def_span(tree: ast.Module, names: list[str]) -> tuple[int, int] | None:
+    """مدى التعريف النحويّ الذي تسمّيه أجزاءُ المعرّف في وحدته (صنفٌ فصنفٌ فدالّة)، بمزخرفاته؛ وما لا يُعرَّف هناك (موروثٌ أو
+    مستورَد) لا مدى له فيها."""
+    node: ast.AST = tree
+    for name in names:
+        node = next((n for n in getattr(node, "body", []) if isinstance(n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+                     and n.name == name), None)
+        if node is None:
+            return None
+    return min([node.lineno, *(d.lineno for d in node.decorator_list)]), node.end_lineno or node.lineno
+
+
+def _origins(root: Path, sha: str, result: subprocess.CompletedProcess | None) -> dict[str, list[tuple[str, int, int]]]:
+    """أصولُ كل اختبارٍ مجموع: الدالّةُ الفعلية كما كتبتها الإضافة (الملفُّ وأولُ سطرٍ وآخرُه)، والتعريفُ النحويّ الذي يسمّيه معرّفُه
+    في وحدته عند هذا الإيداع؛ وما بلا مصدرٍ يُقرأ ولا تعريفٍ في وحدته لا أصلَ له."""
+    origins: dict[str, list[tuple[str, int, int]]] = {}
+    trees: dict[str, ast.Module | None] = {}
     for line in result.stdout.splitlines() if result else []:
         if line.startswith("@@origin\t"):
             _, node, origin, first, last, *_ = line.split("\t")
             if origin != "?":
-                origins[node] = (origin, int(first), int(last))
+                origins.setdefault(node, []).append((origin, int(first), int(last)))
+        elif line.startswith("@@syntax\t"):
+            _, node, path, names = line.split("\t")[:4]
+            if path not in trees:
+                try:
+                    trees[path] = ast.parse(_show(root, sha, path))
+                except (SyntaxError, subprocess.CalledProcessError):
+                    trees[path] = None
+            span = _def_span(trees[path], names.split("::")) if trees[path] is not None and names else None
+            if span is not None:
+                origins.setdefault(node, []).append((path, *span))
     return origins
 
 
@@ -390,7 +421,7 @@ def _collected_origins_at(root: Path, sha: str, python: str, modules: list[str],
             raise Refused("timeout", f"جمعُ الاختبارات عند {sha[:12]} تجاوز مهلتَه")
         if result.returncode not in (0, 5):        # 5: لا اختبارَ في هذه الوحدات
             raise Refused("collection_failed", f"عند {sha[:12]}: " + (result.stdout + result.stderr)[-2000:])
-        return set(_listed(result)), _origins(result)
+        return set(_listed(result)), _origins(root, sha, result)
     finally:
         subprocess.run(["git", "-C", str(root), "worktree", "remove", "--force", str(worktree)], capture_output=True)
         subprocess.run(["git", "-C", str(root), "worktree", "prune"], capture_output=True)
