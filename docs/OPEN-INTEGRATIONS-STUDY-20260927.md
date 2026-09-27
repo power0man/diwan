@@ -42,12 +42,12 @@
 | ٦ | `srt` (Anthropic sandbox-runtime) غلافًا لـ`python_sandbox` وأمرِ النجاح الوكيل | anthropics/sandbox-runtime | Apache-2.0 | **openai (ب٥)** بمسألة `family:openai` | عزلُ ملفّاتٍ وشبكةٍ افتراضيُّ الرفض على الماك (Seatbelt) ولينكس (bubblewrap) بلا Docker؛ يسدّ حدَّ `docs/EXECUTION-BOUNDARY.md` | ٢–٣ أيام |
 | ٧ | sqlite-vec جدولًا متجهيًّا في ملف SQLite نفسِه — **خلف بوابة غ٣ القائمة** (فوزُ المتّجهات بفارق ≥٣ نقاط، ثم مسألةٌ لـJules في م٢ كما تنصّ الخطة) | asg017/sqlite-vec | MIT أو Apache-2.0 | **google (ب٧)** | الاسترجاعُ الهجين والنسخُ والمراسي في ملفٍّ واحد | ١–٢ يوم |
 | ٨ | inspect_ai مُشغِّلًا ثانيًا على الشطر المفتوح من البنوك | UKGovernmentBEIS/inspect_ai | MIT | anthropic (ب٨) | تنفيذٌ مستقلّ ثانٍ للفحوص الخمسة يكشف أعطالَ المُشغِّل (ك٨، ك٢١، ك٢٤) خلافًا | ٢–٣ أيام |
-| ٩ | نصوصٌ من superpowers وclaude-plugins-official وcompound-engineering وkarpathy-skills تُقتبس مكيَّفةً في `AGENTS.md`/`docs/` | obra/superpowers وغيرها | MIT، Apache-2.0 | anthropic (وثائق) | «لا ادعاءَ إنجازٍ بلا دليلٍ طازج»، ومراجِعٌ مستقلّ لكل مهمّة، وتسجيلُ الدروس بمعيار الدوام | يوم |
+| ٩ | نصوصٌ من superpowers وclaude-plugins-official وcompound-engineering وkarpathy-skills **وPonytail** تُقتبس مكيَّفةً في `AGENTS.md` متداخلٍ أو `docs/` (بإضافة المالك: §٢.١) | obra/superpowers وDietrichGebert/ponytail وغيرها | MIT، Apache-2.0 | anthropic (وثائق) | «لا ادعاءَ إنجازٍ بلا دليلٍ طازج»، ومراجِعٌ مستقلّ لكل مهمّة، وتسجيلُ الدروس بمعيار الدوام، **وسلّمُ الكسل (YAGNI) بأربع قواعد** | يوم |
 | ١٠ | pyright صارمًا على `core/` و`agent/` مع `reportUnusedCallResult` | microsoft/pyright | MIT | anthropic (ب١/ب٢) | نظيرُ صيد الإخفاق الصامت على مستوى الأنواع: نتيجةُ تحقّقٍ تُهمل | ١–٣ أيام |
 | ١١ | تجذيعُ Snowball العربي (PyStemmer) خطوةً في `tools/rebuild_index.normalize` بعد القياس | snowballstem/pystemmer | BSD-3 | **google (ب٧)** | جمعُ «الاتفاقيات/اتفاقية» الذي لا يفعله FTS5؛ بلا خدمةٍ جديدة | يوم + قياس |
 | ١٢ | رقمٌ عربيٌّ خارجيٌّ واحد بجانب رقم بنك Kimi (OALL v2 عبر lighteval أو lm-eval + Arabic IFEval) | huggingface/lighteval، EleutherAI/lm-evaluation-harness | MIT (الشيفرة)؛ البياناتُ غيرُ تجارية تُسحب وقتَ التشغيل ولا تُودَع | anthropic (ب٨) + الماك | رقمٌ يقارَن بالمجتمع بلا اختراع عقدة | ٢–٣ أيام + إنفاق |
 
-**ما لا يُدمج (باسمه):** ECC كأداة وخطّافاتُها (ق٦٧-٦)؛ ruflo/claude-flow؛ BMAD؛ SuperClaude؛ Pimzino؛ vibe-kanban
+**ما لا يُدمج (باسمه):** ECC كأداة وخطّافاتُها (ق٦٧-٦)؛ خطّافاتُ Ponytail وأداةُ Graphify (`graphify install` يكتب خطّافاتٍ ويعدّل `AGENTS.md`؛ يُؤخذ منهما نصٌّ وتصميم، §٢.١ و§٤.٣)؛ ruflo/claude-flow؛ BMAD؛ SuperClaude؛ Pimzino؛ vibe-kanban
 (يُطوى)؛ GSD الأصل (مؤرشف)؛ disler (بلا رخصة)؛ awesome-claude-code (CC-BY-NC-ND)؛ semgrep/opengrep (قواعدُها غيرُ
 مفتوحة)؛ bandit (يغطّيه ruff)؛ deepeval وpromptfoo (مُشغِّلٌ ثالث بلا مقابل)؛ llm-guard وrebuff (مؤرشفان)؛ Prompt-Guard-2 (بلا
 عربية، ورخصةُ Llama)؛ Farasa (بحثيّةٌ فقط)؛ mem0/Letta/Graphiti/cognee كمكتبات (تصميمٌ فقط).
@@ -97,6 +97,7 @@ CAMeL الصرفية GPL-2.0 فلا تدخل اللقطةَ العامة؛ وEmb
 | trailofbits/skills | **CC-BY-SA-4.0** [متحقَّق] | ٧ آلاف / ٢٥ سبتمبر | ٤٤ إضافةَ أمنٍ واختبار | `property-based-testing` (Hypothesis؛ يحذّر من الخصائص التافهة والفارغة — عطبُ ك١٩ نفسُه)، `modern-python` (uv، ruff، ty، pytest)، `differential-review`، `post-patch-validation` | **تركيبٌ لا نسخ** (سوقُ Claude Code وCodex) | المشاركةُ بالمثل: نسخُ النصّ يجعل الملفَّ CC-BY-SA داخل شجرةٍ Apache |
 | wshobson/agents | MIT [متحقَّق] | ٤٠ ألف / ٢٦ سبتمبر | ٩٤ إضافة، ٢٠٢ عميل | خطّافُ `block-no-verify` (سطرٌ واحد يمنع `--no-verify`)؛ `tdd-workflows`، `comprehensive-review` | نصًّا | جودةٌ متفاوتة؛ حجمٌ كبير |
 | karanb192/claude-code-hooks | MIT [متحقَّق] | ٥٢٦ / ١٨ سبتمبر | ٢٢ خطّافًا (Node ≥18) | **`protect-tests`** (يمنع حذفَ الاختبارات وإعادةَ تسميتها وإضافةَ skip/xfail — صنفُ ك٢٤ الذي يلتقطه ديوان اليوم بعد الوقوع بـ`harness_tampered`)، **`config-guard`** (يمنع العميلَ من تعديل الحرّاس أنفسِهم؛ لا نظيرَ له في ديوان)، `protect-secrets` | تُنقل أنماطُه إلى خطّافات بايثون صغيرة | مشرفٌ واحد؛ لم يُثبت أنه يلتقط حيلةَ `conftest.py exitstatus=0` بعينها |
+| **DietrichGebert/ponytail** (بإضافة المالك، ٢٧ سبتمبر) | MIT [متحقَّق] | ١٤٧ ألف / ١٤ سبتمبر (v4.10.0؛ ٣٠٩ مسألة مفتوحة) | «سلّمُ الكسل» بسبع درجات (هل يلزم أصلًا؟ ← موجودٌ في المشروع؟ ← المكتبةُ القياسية؟ ← ميزةُ المنصّة؟ ← اعتماديةٌ مركَّبة؟ ← سطرٌ واحد؟ ← الحدُّ الأدنى) في `skills/ponytail/SKILL.md` و`AGENTS.md`؛ ستُّ مهارات (`/ponytail`، `-review`، `-audit`، `-debt`، `-gain`، `-help`)؛ ثلاثةُ خطّافات Node تُحقن عند البدء وتقرأ كلَّ طلبٍ وتكتب أعلامًا في `~/.claude/`؛ إضافةُ OpenCode تُلحق الحزمة بمطالبة النظام كلَّ دورة؛ Gemini عبر `AGENTS.md`؛ خادمُ MCP اختياري؛ بلا اعتماديات ولا قياسٍ عن بُعد [متحقَّق] | نصُّ السلّم وأربعُ قواعد: الكسلُ في الحلّ لا في القراءة؛ إصلاحُ السبب لا العَرَض بفحص كلِّ مستدعٍ للدالّة الممسوسة؛ لا كسلَ عند حدود الثقة وفقدان البيانات والأمن والوصول؛ منطقٌ غيرُ تافه يترك فحصًا واحدًا قابلًا للتشغيل. يُطوى مع «التغيير الجراحي» في البند ٩ من §٠، فديوان بلا قاعدة YAGNI اليوم؛ وقائمةُ `-review` قائمةَ فحصٍ للمراجِع المحتسب (Codex) لا للكاتب | نصًّا مكيَّفًا في `AGENTS.md` متداخلٍ لمسارٍ أو في `docs/`، لا في الجذر (هامشُه ~٣ ك.ب تحت حدّ Codex)؛ و`ilindaniel/ponytail-lite` (MIT، ملفٌّ واحد بلا خطّافات) مصدرٌ أنقى للنصّ نفسِه | خطّافاتُه على شكل ECC ← لا تُركَّب (ق٦٧-٦)؛ قاعدتا «شيفرةٌ أولًا ثم ثلاثةُ أسطر» و«فحصٌ واحد بلا أطرٍ ولا fixtures» تصادمان §٥ (حارسٌ بالطفرة، وخلاصةُ خمسة أسطر) فتُليَّنان؛ أرقامُه (−٥٤٪ أسطر، −٢٢٪ رموز) من مؤلّفه على نماذج Claude بمهامَّ إنجليزية — **لا دليلَ على `qwen3.5:9b` ولا على العربية**، ونموذجٌ صغير قد يفرّط في التحقّق «كسلًا» فيُقاس قبل أن يدخل مطالبةَ المنتج؛ `-review` مراجعةُ ذاتٍ إن احتُسبت (§٤.١) |
 | multica-ai/andrej-karpathy-skills | MIT | ٢١٥ ألف / أبريل | صفحةٌ واحدة | «التغييرُ الجراحي» و«التنفيذُ الموجَّه بالهدف» يُطويان في §٥ | نصًّا | لا شيء |
 | anthropics/skills | Apache-2.0 عدا docx/pdf/pptx/xlsx | ١٧٩ ألف / ٢٤ سبتمبر | ١٩ مهارةً رسمية ومواصفةُ Agent Skills | `skill-creator`، المواصفةُ والقالب | نصًّا | ليست مجموعةَ عملية تطوير |
 | davila7/claude-code-templates | MIT | ٣٢ ألف / ٢٧ سبتمبر | مثبِّتٌ وكتالوج | خطّافاتُ `security/` و`quality-gates/` منفردةً | نسخُ الملفّ لا الأداة | أداةُ JS ثقيلة؛ القياسُ عن بُعد لم يُفحص |
@@ -106,7 +107,7 @@ CAMeL الصرفية GPL-2.0 فلا تدخل اللقطةَ العامة؛ وEmb
 
 ### ٢.٢ ما يخصّ العربية
 
-- **لا مجموعةَ منها فيها عربية.** ECC اثنتا عشرة ترجمةً بلا عربية؛ SuperClaude صينية ويابانية وكورية؛ الباقي إنجليزية.
+- **لا مجموعةَ منها فيها عربية.** ECC اثنتا عشرة ترجمةً بلا عربية؛ SuperClaude صينية ويابانية وكورية؛ Ponytail إسبانية وكورية؛ الباقي إنجليزية.
 - `Moshe-ship/artok` (MIT) يقيس «ضريبةَ الرمز العربي»: العربيةُ تكلّف ٢–٥ أضعاف الإنجليزية في الرموز [مُبلَّغ]. **نتيجتُه
   المباشرة على ECC ٥:** ميزانيةُ السياق تُقاس برموز مرمِّز المحرّك المعتمَد (Qwen) لا بالمحارف؛ و`--print-budget` اليومَ تقديرٌ.
 - `turky015-oss/Arab-Writer` (MIT على الصفحة؛ الواجهةُ لم تُرجع رخصة): مهارةٌ مكتوبةٌ بالعربية تزيل علاماتِ الكتابة الآلية من
@@ -245,6 +246,8 @@ check-typed-exception = true   # وإلا تجاهل S110 «except ValueError: p
 | BIPIA | NOASSERTION (شروطٌ خاصة)، مؤرشف | — | يُتحقَّق قبل الاستعمال |
 | qualifire prompt-injections-benchmark | CC-BY-NC-4.0 | — | **مستبعَد** |
 
+**رموزُ القوالب (من Graphify، بإضافة المالك):** يعطّل `SECURITY.md` في Graphify رموزَ القوالب (`<|im_start|>`، و`[INST]`، و`<<SYS>>`، و`### system`) بفراغٍ صفريّ العرض قبل أن يُحقن نصُّ الملف في المطالبة، ويغلّف كلَّ ملفٍّ بوسم `<untrusted_source>` ببصمته [متحقَّق]. و`<|im_start|>` رمزُ ChatML في **Qwen محرّكِ ديوان** بعينه: يُفحص هل يلتقطه `quarantine` (ك٢٠/ك٢٣) ويُضاف حالةً مُثبتةً بالطفرة (§٧).
+
 **لا بنكَ حقنٍ عربيًّا على Hub** (بحثُ HF عاد فارغًا). فالبنكُ يُؤلَّف: ترجمةُ حمولات AgentDojo وgarak + صورٌ عربيةٌ أصيلة
 (ومنها صورُ ك٢٠ اليونيكودية) — بنكٌ طبيعيّ يؤلّفه Kimi (§٧).
 
@@ -261,6 +264,8 @@ check-typed-exception = true   # وإلا تجاهل S110 «except ValueError: p
 | bm25s | MIT | 0.3.11 في أغسطس ٢٠٢٦ | رمزٌ يونيكوديٌّ يحفظ العربية؛ مجذّعُ Snowball العربي قابلٌ للحقن؛ **لا قائمةَ كلماتٍ فارغةٍ عربية** | BM25 في الذاكرة لبحث الذاكرة ودفتر الرجوع |
 | LanceDB | Apache-2.0 | 0.39.0 في ١٧ سبتمبر ٢٠٢٦ | FTS على Tantivy بتجذيعٍ عربي؛ كلماتُه الفارغة بلا عربية | مخزنٌ مضمَّن بديل؛ ثنائيٌّ Rust ومخزنٌ ثانٍ بجانب SQLite |
 | txtai، rank_bm25 | Apache-2.0 | — | — | لا شيء أساسي |
+
+| **Graphify-Labs/graphify** (`graphifyy`؛ كان `safishamsi/graphify`؛ بإضافة المالك) | Apache-2.0 [متحقَّق: أعيد ترخيصُه من MIT و`NOTICE` يذكر ذلك] | 0.9.70 في ٢٧ سبتمبر ٢٠٢٦؛ ١٢٢ ألف نجمة؛ ٣٧ إصدارًا في ٥٣ يومًا و١٬٤٧٧ مسألة مفتوحة | يُبقي الحروفَ العربية في معرّفات العقد ويطبّع NFKC فقط؛ **لا تطبيعَ عربيًّا** (الإضافةُ اللغوية الوحيدة صينية)؛ لا README عربيًّا | خريطةُ شيفرةٍ حتمية بـtree-sitter بلا LLM (٣٧ لغة؛ ~٣٠ عجلةَ قواعد اعتمادياتٍ أساسية + networkx وnumpy وrapidfuzz) ومرورٌ دلاليّ للوثائق يقوم به العميلُ المضيف أو خلفيةٌ منها Ollama؛ كلُّ حافةٍ موسومة `EXTRACTED|INFERRED|AMBIGUOUS`؛ خادمُ MCP؛ `graphify install` يكتب `SKILL.md` ويُلحق كتلةً بـ`AGENTS.md`/`CLAUDE.md`/`GEMINI.md` ويكتب خطّافات PreToolUse في `settings.json` و`.codex/hooks.json` و`.opencode/`؛ سجلُّ الاستعلامات معطّلٌ افتراضًا [متحقَّق]. **تصميمٌ فقط:** (١) وسمُ الأصل على الحواف يُضمّ إلى بند CaMeL (§٠-٥) وإلى `channels` في `core/hybrid_retrieval.py`؛ (٢) قائمةُ رموز القوالب إلى `quarantine` (§٤.٢)؛ (٣) خريطةُ شيفرةٍ حتمية بـ`ast` القياسي على نمط `docs/INDEX.md` إن أثبت تدقيقُ ECC ٥ هدرًا في إعادة اشتقاق بنية `core/`/`agent/`، بلا tree-sitter؛ (٤) مُصدِّرُ `--obsidian` يلتقي بخزنة المالك (`tools/obsidian_vault.py`) تحت حرّاسها. لا `graphify install` (ق٦٧-٦ وحارسُ حدّ Codex)، ولا مرورَ دلاليًّا على المستودع (يرسل الملفّاتِ كاملةً إلى نموذج)، والمحجوبُ خارج أيّ مسحٍ ويُثبَّت في `.graphifyignore` احتياطًا. المخاطر: ثقلُ الاعتمادية وتقلّبُها، وإصدارُ اليوم نفسُه يُصلح ثلاثَ ثغرات (قراءةُ ملفّات المضيف عبر `#include`، وحقنُ صدفةٍ في `--watch`، وتسريبُ أسرار)، وكتلةُ `## graphify` تُلزم العميلَ بتشغيل الأداة قبل كل شيء = قاعدةٌ من أداةٍ خارجية داخل `AGENTS.md`، وذراعٌ تجاريّ مستضاف |
 
 **نتيجةٌ مقيسةٌ محليًّا [مقيس في الجلسة، SQLite 3.45.1]:** مرمّزُ `unicode61` يعامل التشكيلَ فاصلًا: «السَّفينةُ تُبحِرُ» تُفهرس
 `الس`، `فينة`، `ت`، `بح`، `ر`؛ و`remove_diacritics` لا أثرَ له (لاتينيٌّ فقط)؛ واستعلامُ «السفينة» لا يصيب المستندَ المشكول.
@@ -381,7 +386,8 @@ SILMA-9B (شروط Gemma-2)؛ **Fanar-1-9B: بطاقتُه تقول Apache-2.0 �
 | inspect_ai مُشغِّلًا ثانيًا على `open/` بقاعدة فضّ الخلاف (§٣.٤) | anthropic / ب٨ | ك١، ك٢١ | — |
 | pyright صارمًا على `core/` و`agent/` (§٣.٣) | anthropic / ب١، ب٢ | — | — |
 | ثلاثةُ خطّافاتٍ بايثونية: حمايةُ الاختبارات، وضبطُ الحرّاس، والأسرار (§٢) | anthropic / ب٩ | ك٢٤ | — |
-| نصوصٌ مكيَّفة: التحقّقُ قبل الإنجاز، والمراجِعُ المستقلّ لكل مهمّة، ومعيارُ دوام الدرس، والتغييرُ الجراحي (§٢) | anthropic / وثائق | — | — |
+| نصوصٌ مكيَّفة: التحقّقُ قبل الإنجاز، والمراجِعُ المستقلّ لكل مهمّة، ومعيارُ دوام الدرس، والتغييرُ الجراحي، وسلّمُ الكسل من Ponytail (§٢) | anthropic / وثائق | — | — |
+| رموزُ قوالب المحرّك (`<|im_start|>` وأخواتُه) حالاتٌ في `quarantine` مُثبتةٌ بالطفرة (§٤.٢، من Graphify) | anthropic / ب٢ | ك٢٠، ك٢٣ | — |
 | `srt` غلافًا لـ`python_sandbox` وأمرِ النجاح (§٤.٥) | **openai / ب٥** | `docs/EXECUTION-BOUNDARY.md`، ج٣ | مسألةٌ بوسم `family:openai`؛ وقرارُ Node (§١٠) |
 | sqlite-vec خلف `VectorIndex` (§٤.٣) — **ليست مسألةً جديدة**: الخطةُ الحاكمة تفتحها لـJules في م٢ إن ربحت المتّجهات | **google / ب٧** | غ٢، غ٣ (`docs/PLAN-20260926.md` §٣، البند ٥ من غ٣) | **بوابةُ غ٣**: فوزُ قناة المتّجهات بفارق ≥٣ نقاط على BM25 على ≥١٠٠ استعلام؛ وإلا فلا تُدخَل الاعتمادية (ملاحظة Codex على #155) |
 | تجذيعُ Snowball داخل `normalize()` بعد القياس (§٤.٣) | **google / ب٧** | DALUB، بنك Kimi | القياسُ أولًا |
@@ -422,7 +428,7 @@ SILMA-9B (شروط Gemma-2)؛ **Fanar-1-9B: بطاقتُه تقول Apache-2.0 �
    يُصحَّح النصُّ بسطر «تسليم:» (مسارُ google).
 4. **ك١٦ (`exact` والنقطة الأخيرة):** MCQ بالاحتمال اللوغاريتمي (lm-eval) محصَّنٌ منه بطبيعته؛ وق٥٧ أبقى الصارمَ عمدًا. لا تغيير.
 5. **ك٢٠/ك٢٣ (الحَجر):** يُقاس برقمٍ قابلٍ للإعادة من حزمة هجومٍ لا بحالاتٍ يدوية؛ والبنكُ العربي غيرُ موجودٍ فيُؤلَّف.
-6. **ECC ٥ (ميزانيةُ السياق):** تُقاس برموز مرمِّز Qwen لا بالمحارف (artok)؛ و`--print-budget` يبقى تقديرًا حتى يُقاس.
+6. **ECC ٥ (ميزانيةُ السياق):** تُقاس برموز مرمِّز Qwen لا بالمحارف (artok)؛ و`--print-budget` يبقى تقديرًا حتى يُقاس. وإن أثبت التدقيقُ هدرًا في إعادة اشتقاق بنية الشيفرة كلَّ جلسة، فخريطةُ شيفرةٍ حتمية مولَّدة بـ`ast` على نمط `docs/INDEX.md` (فكرةُ Graphify بلا أداته، §٤.٣).
 7. **ك٣٠ (التنسيق):** «طابعُ الحجز» على «جارية» هو الحقلُ الوحيد الذي تتّفق عليه دفاترُ المهامّ الناشئة ولا يملكه ديوان.
 8. **ح١ (Rulesets):** ما يتاح على المستودع المملوك لمستخدم محدَّدٌ الآن (§٥.٢)؛ طابورُ الدمج يحتاج منظّمة.
 
@@ -458,6 +464,7 @@ SILMA-9B (شروط Gemma-2)؛ **Fanar-1-9B: بطاقتُه تقول Apache-2.0 �
 - خياراتُ Dependabot (تجميع، فترةُ تهدئة) من مصدرها الأولي؛ نصُّ مواصفة SLSA نفسُها.
 - نتائجُ لوحة Arabic RAG Leaderboard (محجوبة)؛ فاختيارُ نماذج التضمين بالرخصة واللغة لا بالجودة المقيسة.
 - سلوكُ قياس promptfoo عن بُعد؛ وترتيبُ الأداء لأيّ أداةٍ (لم يُشغَّل شيءٌ منها هنا سوى FTS5 وPyStemmer محليًّا).
+- Ponytail وGraphify (إضافةُ المالك): نصُّ خطّاف PreToolUse الذي يكتبه `graphify install` وهل يُنبّه أم يمنع؛ ادعاءُ تخطّي الملفّات الحسّاسة (`.env`) في `skill.md` لم يُوجد في `detect.py` [مُبلَّغ]؛ ملفّاتُ `ponytail-subagent.js` و`ponytail-runtime.js` وخادمُ MCP لم تُقرأ؛ أرقامُ الأداتين من مؤلّفيهما (Ponytail على نماذج Claude، وGraphify بحكم Kimi K2.6) غيرُ معادة؛ ولم يُشغَّل شيءٌ منهما هنا.
 
 ---
 
@@ -487,5 +494,7 @@ SILMA-9B (شروط Gemma-2)؛ **Fanar-1-9B: بطاقتُه تقول Apache-2.0 �
   gotalab/cc-sdd؛ automazeio/ccpm؛ ruvnet/ruflo؛ stoneforge-ai/stoneforge؛ BloopAI/vibe-kanban؛ gsd-build/get-shit-done؛
   markedo-org/ledger؛ tmchow/hzl؛ yylo-dev/yylo-ledger؛ ossf/scorecard وscorecard-action وallstar؛ renovatebot/renovate؛
   actions/attest-build-provenance؛ cli/cli.
+
+- **إضافةُ المالك (٢٧ سبتمبر):** DietrichGebert/ponytail (`LICENSE`، `README.md`، `AGENTS.md`، `package.json`، `hooks/claude-codex-hooks.json`، `hooks/ponytail-activate.js`، `hooks/ponytail-mode-tracker.js`، `skills/*/SKILL.md`، `.opencode/plugins/ponytail.mjs`، `gemini-extension.json`، `benchmarks/README.md`)؛ ilindaniel/ponytail-lite؛ Graphify-Labs/graphify على الفرع `v8` (`LICENSE`، `NOTICE`، `README.md`، `pyproject.toml`، `SECURITY.md`، `ARCHITECTURE.md`، `BENCHMARKS.md`، `CHANGELOG.md`، `graphify/{install,hooks,llm,querylog,skill.md,always_on/agents-md.md}`)؛ PyPI `graphifyy`؛ وبحثُ واجهة GitHub بالاسمين (٣٠٢ مستودع باسم ponytail، وأكثرُها مشتقٌّ أو لا صلةَ له؛ وgraphify القديمُ لـkbastani مؤرشف).
 
 نسخُ المصادر الخام محفوظةٌ في مساحة الجلسة المؤقّتة ولم تُودَع (حجمًا ورخصًا).
