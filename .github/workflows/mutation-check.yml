@@ -1,6 +1,7 @@
 name: mutation-check
 # فاحصُ الطفرات (ق٦٧-٦): «قُتلت الطفرة» يُثبَت بالآلة. على كلِّ طلبٍ تُطبَّق بياناتُ الطفرات التي تغيّرت في مداه
-# (tests/mutations/*.jsonl) في شجرة عملٍ منفصلة، ويُرفض اختبارٌ مسّه الطلب لا يسمّيه بيانٌ بمعرّفه الكامل. وأسبوعيًّا تُطبَّق البياناتُ كلُّها.
+# (tests/mutations/*.jsonl) في شجرة عملٍ منفصلة، ويُرفض اختبارٌ مسّه الطلب لا يسمّيه بيانٌ بمعرّفه الكامل. وأسبوعيًّا وعند التشغيل اليدويّ
+# تُطبَّق البياناتُ كلُّها (لا مدى بلا طلب دمج — ملاحظة Codex على #149).
 # بلا أسرار وبصلاحية قراءةٍ وحدها، على المشغّل المستضاف نفسِه الذي يشغّل verify-hosted.
 on:
   pull_request:
@@ -8,12 +9,6 @@ on:
   schedule:
     - cron: "23 5 * * 1"
   workflow_dispatch:
-    inputs:
-      scope:
-        description: "changed (بياناتُ المدى) أو all (كلُّ البيانات)"
-        type: choice
-        options: [changed, all]
-        default: changed
 
 permissions:
   contents: read
@@ -40,7 +35,6 @@ jobs:
       - name: Apply the mutations of this range (or all of them)
         env:
           EVENT_NAME: ${{ github.event_name }}
-          SCOPE: ${{ github.event.inputs.scope || 'changed' }}
           BASE: ${{ github.event.pull_request.base.sha }}
           # على طلب الدمج github.sha هو إيداعُ الدمج المرتقَب (refs/pull/N/merge) لا رأسُ الفرع: فتُطبَّق الطفراتُ على الشجرة
           # التي ستُدمج فعلًا، وتغييرٌ متوافقٌ في الأساس يُبطل طفرةً لا يفلت (ملاحظة Codex على #149)
@@ -48,7 +42,7 @@ jobs:
         run: |
           set -eu
           report="$RUNNER_TEMP/mutation-check.json"
-          if [ "$EVENT_NAME" = "pull_request" ] && [ "$SCOPE" = "changed" ]; then
+          if [ "$EVENT_NAME" = "pull_request" ]; then
             .venv/bin/python tools/mutation_check.py --range "$BASE..$HEAD" --head "$HEAD" --report "$report"
           else
             .venv/bin/python tools/mutation_check.py --all --head "$HEAD" --report "$report"

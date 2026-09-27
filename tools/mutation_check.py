@@ -73,7 +73,7 @@ LIMITS = [
     "tests_run_with_the_given_python_in_a_detached_worktree_of_the_head_commit_uncommitted_changes_are_not_measured",
     "a_kill_is_judged_by_the_named_tests_failing_another_test_that_fails_is_not_counted",
     "an_existing_test_is_touched_by_an_added_line_inside_its_span_at_the_head_so_changes_to_fixtures_or_helpers_outside_test_functions_are_not_re_proven_while_a_test_that_vanished_or_lost_a_line_only_has_its_manifests_re_applied",
-    "what_is_collected_is_decided_by_pytest_at_the_head_and_at_the_merge_base_a_node_new_at_the_head_is_touched_and_an_existing_node_is_touched_only_when_the_parser_places_an_added_line_in_its_span",
+    "what_is_collected_is_decided_by_pytest_over_the_whole_tests_tree_at_the_head_and_at_the_merge_base_a_node_new_at_the_head_is_touched_wherever_it_appears_and_an_existing_node_is_touched_only_when_the_parser_places_an_added_line_in_its_span",
     "the_parser_places_definitions_Test_classes_unittest_subclasses_named_in_the_module_and_same_file_inheritance_so_an_existing_collected_node_it_cannot_place_such_as_an_imported_test_an_alias_or_a_method_of_a_class_whose_base_is_imported_under_another_name_is_not_touched_by_an_added_line",
     "inherited_test_methods_are_placed_through_bases_defined_at_module_level_in_the_same_file_first_base_wins_so_an_added_line_in_a_base_method_touches_every_heir_of_that_file",
     "renames_are_not_detected_in_the_range_a_moved_file_is_its_source_deleted_and_its_destination_added_so_both_sides_are_checked",
@@ -352,11 +352,12 @@ def _range_scope(root: Path, rng: str, python: str = sys.executable, timeout: in
     # كلُّ اختبارٍ مسّه المدى يسمّيه بيانُ وحدته هو بمعرّفه الكامل (بالصنف الحاوي) — لا بيانُ وحدةٍ أخرى، فإثباتٌ مستعار
     # يزول بزوال معيره (ملاحظة Codex على #149) — والبيانُ الذي يسمّيه يُطبَّق في المدى ولو لم يتغيّر
     deleted = _test_modules(changed("D", "tests/"))
-    # ما يُجمع يحسمه pytest عند الرأس وعند أصل الدمج (وارثٌ بلا تعريف، وسمةٌ حاجبة، واسمٌ مستعار، واستيراد — ملاحظات Codex
-    # على #149): ما استجدّ عند الرأس ممسوس، وما بقي يُمسّ بسطرٍ مضاف في مداه المقروء نحويًّا؛ وما زال، أو فقد سطرًا من مداه
-    # (ومنه الاسمُ القديم لملفٍّ نُقل)، تُعاد بياناتُه فيُحكم ما يسمّيه test_missing هنا لا في الأسبوعيّ وحده
-    collected_head = _collected_at(root, head, python, added + modified, timeout)
-    collected_base = _collected_at(root, base, python, modified + deleted, timeout)
+    # ما يُجمع يحسمه pytest عند الرأس وعند أصل الدمج، للمجموعة كلِّها لا للوحدات المتغيّرة وحدها (وارثٌ بلا تعريف، وسمةٌ
+    # حاجبة، واسمٌ مستعار، واستيراد، وحارسٌ يبلغ وحدةً لم تتغيّر عبر `import *` من مساعدٍ تغيّر — ملاحظات Codex على #149):
+    # ما استجدّ عند الرأس ممسوس، وما بقي يُمسّ بسطرٍ مضاف في مداه المقروء نحويًّا؛ وما زال، أو فقد سطرًا من مداه (ومنه
+    # الاسمُ القديم لملفٍّ نُقل)، تُعاد بياناتُه فيُحكم ما يسمّيه test_missing هنا لا في الأسبوعيّ وحده
+    collected_head = _collected_at(root, head, python, ["tests/"], timeout)
+    collected_base = _collected_at(root, base, python, ["tests/"], timeout)
     grown = [node for test in modified for node in _touched_test_nodes(root, base, head, test)]
     touched = sorted((collected_head - collected_base) | {node for node in grown if node in collected_head})
     unnamed = [node for node in touched if node not in names.get(own(node), set())]
@@ -397,15 +398,16 @@ def _listed(result: subprocess.CompletedProcess | None) -> list[str]:
 
 
 def _collected_at(root: Path, sha: str, python: str, modules: list[str], timeout: int) -> set[str]:
-    """ما يجمعه pytest فعلًا من هذه الوحدات عند الإيداع، بمعرّفاته بلا معاملات، في شجرة عملٍ مؤقّتة تُزال: هو الحكمُ فيما يُجمع
-    (وارثٌ بلا تعريف، وسمةٌ حاجبة، واسمٌ مستعار، واستيراد…) والقراءةُ النحوية للمديات وحدها (ملاحظات Codex على #149)."""
-    if not modules:
-        return set()
+    """ما يجمعه pytest فعلًا من هذه المسارات عند الإيداع، بمعرّفاته بلا معاملات، في شجرة عملٍ مؤقّتة تُزال: هو الحكمُ فيما
+    يُجمع (وارثٌ بلا تعريف، وسمةٌ حاجبة، واسمٌ مستعار، واستيراد…) والقراءةُ النحوية للمديات وحدها (ملاحظات Codex على #149)."""
     tmp = Path(tempfile.mkdtemp(prefix="diwan-mutation-scope-", dir=os.environ.get("RUNNER_TEMP") or None))
     worktree = tmp / "worktree"
     try:
         _git(root, "worktree", "add", "--detach", str(worktree), sha)
-        result = _pytest(python, worktree, ["--collect-only", *modules], timeout)
+        present = [m for m in modules if (worktree / m).exists()]      # ما زال منها عند هذا الإيداع لا يُجمع
+        if not present:
+            return set()
+        result = _pytest(python, worktree, ["--collect-only", *present], timeout)
         if result is None:
             raise Refused("timeout", f"جمعُ الاختبارات عند {sha[:12]} تجاوز مهلتَه")
         if result.returncode not in (0, 5):        # 5: لا اختبارَ في هذه الوحدات
