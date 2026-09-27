@@ -362,7 +362,6 @@ def test_a_test_module_in_a_nested_directory_is_scanned_and_its_manifest_is_name
     assert report["manifest_missing"] == ["tests/unit/test_nested.py"] and report["status"] == "failed"
     assert report["unmanifested_new_tests"] == ["tests/unit/test_nested.py::test_nested_zero"]
     assert mc.manifest_for("tests/unit/test_nested.py") == "tests/mutations/unit__test_nested.jsonl"
-    assert mc.module_for("unit__test_nested.jsonl") == "tests/unit/test_nested.py"
     _manifest(repo, "unit__test_nested", {**KILL, "id": "nested", "tests": ["tests/unit/test_nested.py::test_nested_zero"]})
     git("add", "-A")
     git("commit", "-qm", "its manifest")
@@ -389,6 +388,91 @@ def test_deleting_a_manifest_whose_module_remains_fails_the_range(repo, git, cap
     assert report["orphaned_manifests"] == [] and report["status"] == "passed"
 
 
+def test_a_unittest_subclass_is_collected_whatever_its_name_and_a_base_imported_under_another_name_is_a_declared_limit(repo, git, capsys):
+    """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة فتمرّ حرّاسُه بلا بيانٍ ولا إثبات (ملاحظة Codex
+    على #149)؛ والوارثُ منه في الوحدة نفسِها مثلُه. والصنفُ العاديّ لا يجمعه pytest ولا تراه الأداة؛ والوارثُ أصلًا مستوردًا
+    باسمٍ لا ينتهي بـTestCase يجمعه pytest ولا تراه الأداة — حدٌّ معلَن باسمه."""
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    git("add", "-A")
+    git("commit", "-qm", "manifest")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/base.py").write_text("import unittest\n\n\nclass Base(unittest.TestCase):\n    pass\n")
+    (repo / "tests/test_guard.py").write_text(TESTS + """
+
+import unittest
+
+from base import Base
+
+
+class GuardCase(unittest.TestCase):
+    def test_case_zero(self):
+        assert positive(0) is False
+
+
+class Derived(GuardCase):
+    def test_derived_zero(self):
+        assert positive(0) is False
+
+
+class Helper:
+    def test_never_collected(self):
+        assert False
+
+
+class FromImport(Base):
+    def test_imported_base(self):
+        assert positive(0) is False
+""")
+    git("add", "-A")
+    git("commit", "-qm", "unittest classes")
+    head = git("rev-parse", "HEAD")
+    report = _run(repo, "--range", f"{base}..{head}", capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::Derived::test_derived_zero",
+                                                "tests/test_guard.py::GuardCase::test_case_zero"]
+    assert report["status"] == "failed"
+    assert "tests/test_guard.py::FromImport::test_imported_base" not in report["unmanifested_new_tests"], "الحدُّ المعلَن أُغلق: حدِّث اسمه"
+    named = [*KILL["tests"], "tests/test_guard.py::GuardCase::test_case_zero", "tests/test_guard.py::Derived::test_derived_zero"]
+    _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": named})
+    git("add", "-A")
+    git("commit", "-qm", "named")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    (result,) = report["results"]
+    assert result["code"] == "killed" and result["failed_tests"] == named
+    assert report["unproved_touched_tests"] == [] and report["status"] == "passed"
+    _clean(repo, git)
+
+
+def test_a_manifest_is_matched_to_its_module_forward_so_double_underscores_in_a_module_name_cannot_hide_an_orphan(repo, git, capsys):
+    """عكسُ الاسم (__ → /) كان يحوّل test_a__b.jsonl إلى tests/test_a/b.py فلا يُرى حذفُ بيان tests/test_a__b.py يتيمًا
+    (ملاحظة Codex على #149)؛ صار البيانُ يُنسب إلى وحدته بالاتجاه الأمامي على الوحدات الموجودة عند الرأس."""
+    (repo / "tests/test_a__b.py").write_text("from pkg.guard import positive\n\n\ndef test_ab_zero():\n    assert positive(0) is False\n")
+    _manifest(repo, "test_a__b", {**KILL, "id": "ab", "tests": ["tests/test_a__b.py::test_ab_zero"]})
+    git("add", "-A")
+    git("commit", "-qm", "module and manifest")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/mutations/test_a__b.jsonl").unlink()
+    git("add", "-A")
+    git("commit", "-qm", "drop the manifest only")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["orphaned_manifests"] == ["tests/mutations/test_a__b.jsonl"] and report["status"] == "failed"
+    _clean(repo, git)
+
+
+def test_two_modules_whose_manifest_names_collide_are_refused_before_any_worktree(repo, git, capsys):
+    """tests/test_unit/test_x.py وtests/test_unit__test_x.py يؤولان إلى بيانٍ واحد (test_unit__test_x.jsonl) فيدّعي أحدُهما
+    إثباتَ الآخر؛ يُرفضان باسمهما قبل أيّ شجرة عمل."""
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_unit").mkdir()
+    (repo / "tests/test_unit/test_x.py").write_text("def test_x():\n    assert True\n")
+    (repo / "tests/test_unit__test_x.py").write_text("def test_y():\n    assert True\n")
+    git("add", "-A")
+    git("commit", "-qm", "colliding modules")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["status"] == "refused" and report["code"] == "manifest_name_collision"
+    assert "tests/test_unit/test_x.py" in report["detail"] and "tests/test_unit__test_x.py" in report["detail"]
+    _clean(repo, git)
+
+
 def test_a_collection_error_is_invalid_not_a_kill(repo, capsys, git):
     _manifest(repo, "test_guard", {**KILL, "id": "broken", "new": "return x > 0 ("})
     git("add", "-A")
@@ -413,8 +497,9 @@ def test_the_repository_manifests_are_valid_and_target_only_production_code():
     """بياناتُ المستودع نفسِه تُحمَّل بلا رفض، وكلُّ هدفٍ فيها شيفرةُ إنتاجٍ موجودة."""
     paths = sorted((ROOT / mc.MANIFESTS).glob("*.jsonl"))
     assert paths, "لا بياناتَ في المستودع"
+    owned = {mc.manifest_for(m.relative_to(ROOT).as_posix()) for m in (ROOT / "tests").rglob("test_*.py")}
     for path in paths:
-        assert (ROOT / mc.module_for(path.name)).is_file(), f"{path.name} بلا وحدة اختبارٍ باسمه"
+        assert path.relative_to(ROOT).as_posix() in owned, f"{path.name} بلا وحدة اختبارٍ يؤول بيانُها إليه"
         for entry in mc.load_manifest(path, ROOT):
             target = ROOT / entry["file"]
             assert target.is_file(), entry["file"]

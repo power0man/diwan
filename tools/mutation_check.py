@@ -15,8 +15,9 @@
                              tests/a/test_x.py بيانُها tests/mutations/a__test_x.jsonl
     unmanifested_new_tests   اختبارٌ مسّه المدى (كلُّ اختبارٍ في ملفٍّ مضاف، أو اختبارٌ دخل سطرٌ مضاف في مداه) ولا يسمّيه بيانٌ بمعرّفه الكامل
     unproved_touched_tests   اختبارٌ ممسوس سمّاه بيانٌ لكنه لم يسقط هو نفسُه تحت أيّ طفرةٍ في المدى (ذكرُه بجانب قاتلٍ لا يثبته)
-    orphaned_manifests       بيانٌ حُذف في المدى ووحدتُه باقية
+    orphaned_manifests       بيانٌ حُذف في المدى ووحدتُه باقية (تُعرف الوحدةُ بالاتجاه الأمامي: أيُّ وحدةٍ عند الرأس بيانُها هذا)
     manifest_invalid         سطرٌ بلا حقوله أو بمفتاحٍ مجهول (يُرفض قبل أيّ شجرة عمل)
+    manifest_name_collision  وحدتان عند الرأس تؤولان إلى بيانٍ واحد (tests/test_a/test_x.py وtests/test_a__test_x.py)؛ يُرفض قبل أيّ شجرة عمل
     target_refused           هدفٌ مطلق أو صاعد أو تحت tests/ أو في مسارٍ فيه sealed (يُرفض قبل أيّ شجرة عمل)، أو يمرّ
                              بوصلةٍ رمزية في شجرة العمل (يُرفض قبل أيّ طفرة)
 
@@ -62,7 +63,8 @@ LIMITS = [
     "tests_run_with_the_given_python_in_a_detached_worktree_of_the_head_commit_uncommitted_changes_are_not_measured",
     "a_kill_is_judged_by_the_named_tests_failing_another_test_that_fails_is_not_counted",
     "a_touched_test_is_one_with_an_added_line_inside_its_span_at_the_head_so_removed_or_moved_lines_and_changes_to_fixtures_or_helpers_outside_test_functions_are_not_re_proven",
-    "tests_are_found_by_parsing_the_head_file_for_the_default_pytest_names_test_functions_and_Test_classes_not_by_collecting_with_pytest",
+    "tests_are_found_by_parsing_the_head_file_for_the_default_pytest_names_test_functions_Test_classes_and_unittest_TestCase_subclasses_named_in_the_module_not_by_collecting_with_pytest",
+    "a_class_whose_base_is_imported_under_a_name_that_does_not_end_in_TestCase_is_not_seen_as_a_unittest_class_so_its_methods_are_not_touched_tests",
     "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
 ]
 
@@ -144,21 +146,40 @@ def _show(root: Path, head: str, path: str) -> str:
     return subprocess.run(["git", "-C", str(root), "show", f"{head}:{path}"], check=True, capture_output=True, text=True).stdout
 
 
+def _base_name(expr: ast.expr) -> str | None:
+    """آخرُ مقطعٍ من اسم الأصل: unittest.TestCase → TestCase، وBase → Base؛ وما ليس اسمًا لا يُعرف."""
+    return expr.id if isinstance(expr, ast.Name) else expr.attr if isinstance(expr, ast.Attribute) else None
+
+
+def _unittest_classes(tree: ast.Module) -> set[str]:
+    """أصنافُ الوحدة التي يجمعها pytest أيًّا كان اسمُها لأنها ترث unittest.TestCase (اسمُ الأصل ينتهي بـTestCase) أو ترث
+    صنفًا من الوحدة نفسِها يرثه — ملاحظةُ Codex على #149. والأصلُ المستورد باسمٍ آخر حدٌّ معلَن."""
+    classes = [node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
+    found: set[str] = set()
+    while True:
+        more = {c.name for c in classes if c.name not in found
+                and any((base := _base_name(b)) is not None and (base.endswith("TestCase") or base in found) for b in c.bases)}
+        if not more:
+            return found
+        found |= more
+
+
 def _test_nodes_at(root: Path, head: str, test_file: str) -> dict[str, tuple[int, int]]:
-    """اختباراتُ الملفّ عند الرأس بأسماء pytest الافتراضية (دوالُّ test* في الوحدة وفي أصناف Test*)، كلٌّ بمعرّفه الكامل
-    بالصنف الحاوي ومدى أسطره من أول مزخرفٍ إلى آخر سطر."""
+    """اختباراتُ الملفّ عند الرأس بأسماء pytest الافتراضية (دوالُّ test* في الوحدة وفي أصناف Test* وفي أصناف unittest أيًّا
+    كان اسمُها)، كلٌّ بمعرّفه الكامل بالصنف الحاوي ومدى أسطره من أول مزخرفٍ إلى آخر سطر."""
     try:
         tree = ast.parse(_show(root, head, test_file))
     except SyntaxError as exc:
         raise Refused("test_file_unparsable", f"{test_file}: {exc.msg} (السطر {exc.lineno})") from None
     nodes: dict[str, tuple[int, int]] = {}
+    unittest_classes = _unittest_classes(tree)
 
     def visit(body, prefix: str) -> None:
         for node in body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
                 start = min([node.lineno, *(d.lineno for d in node.decorator_list)])
                 nodes[f"{test_file}::{prefix}{node.name}"] = (start, node.end_lineno or node.lineno)
-            elif isinstance(node, ast.ClassDef) and node.name.startswith("Test"):
+            elif isinstance(node, ast.ClassDef) and (node.name.startswith("Test") or node.name in unittest_classes):
                 visit(node.body, f"{prefix}{node.name}::")
 
     visit(tree.body, "")
@@ -210,13 +231,16 @@ def manifest_for(test: str) -> str:
     return f"{MANIFESTS}/{'__'.join(PurePosixPath(test).with_suffix('').parts[1:])}.jsonl"
 
 
-def module_for(manifest: str) -> str:
-    """الوحدةُ التي يخصّها بيانٌ باسمه."""
-    return "tests/" + PurePosixPath(manifest).stem.replace("__", "/") + ".py"
-
-
-def _exists_at(root: Path, head: str, path: str) -> bool:
-    return subprocess.run(["git", "-C", str(root), "cat-file", "-e", f"{head}:{path}"], capture_output=True).returncode == 0
+def _manifests_owned_at(root: Path, head: str) -> dict[str, str]:
+    """بيانُ كلِّ وحدة اختبارٍ عند الرأس بالاتجاه الأمامي (manifest_for على الوحدات الموجودة)، فلا يُعكس الاسمُ — وعكسُه
+    ملتبس: test_a__b.jsonl بيانُ tests/test_a__b.py لا tests/test_a/b.py (ملاحظة Codex على #149). وحدتان تؤولان إلى بيانٍ واحد تُرفضان باسمهما."""
+    owned: dict[str, str] = {}
+    for module in _test_modules(_git(root, "ls-tree", "-r", "--name-only", head, "--", "tests/").split()):
+        manifest = manifest_for(module)
+        if manifest in owned:
+            raise Refused("manifest_name_collision", f"{owned[manifest]} و{module} كلاهما بيانُه {manifest}")
+        owned[manifest] = module
+    return owned
 
 
 def _range_scope(root: Path, rng: str) -> dict:
@@ -241,7 +265,8 @@ def _range_scope(root: Path, rng: str) -> dict:
     paths = [root / p for p in changed("AMR", f"{MANIFESTS}/*.jsonl") if (root / p).is_file()]
     paths += [path for path in naming if path not in paths]
     # بيانٌ حُذف ووحدتُه باقية عند الرأس: حرّاسُها تفقد إثباتَها صامتة، فيُرفض الحذفُ إلا مع الوحدة
-    orphaned = [m for m in changed("D", f"{MANIFESTS}/*.jsonl") if _exists_at(root, head, module_for(m))]
+    owned = _manifests_owned_at(root, head)
+    orphaned = [m for m in changed("D", f"{MANIFESTS}/*.jsonl") if m in owned]
     return {"paths": paths, "touched": touched, "manifest_missing": [t for t in added if not has_manifest(t)],
             "unmanifested_changed_tests": [t for t in modified if not has_manifest(t)],
             "unmanifested_new_tests": unnamed, "orphaned_manifests": orphaned}
