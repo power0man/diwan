@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 
 from core.canonical import PayloadRejected
+from core.quoted import QUARANTINE_MARK
 from evaluation.memory_bank import THRESHOLDS, validate_memory_bank
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -118,6 +119,35 @@ def test_a_witness_that_falls_inside_a_message_role_name_is_rejected_by_the_vali
         if step.get("absent"):
             step["absent"] = ["assistant"]
     _refused(bank, "witness_collides_with_message_role")
+
+
+def test_a_witness_that_falls_inside_a_declared_tool_schema_is_rejected_by_the_validator():
+    """ملاحظةُ Codex على #129 (الجولة الثالثة والعشرون): شاهدٌ مثل «propose_memory» يُرسل في مواصفات الأدوات مع كلِّ طلبٍ وكيل، فلا يشهد غيابُه بشيء."""
+    bank, scenario = _scenario("forget_001")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["text"] = "propose_memory passport note"
+    for step in scenario["steps"]:
+        if step.get("absent"):
+            step["absent"] = ["propose_memory"]
+    _refused(bank, "witness_collides_with_tool_schema")
+
+
+def test_a_context_question_whose_sent_form_carries_the_absent_witness_is_rejected_by_the_validator():
+    """ملاحظةُ Codex على #129 (الجولة الثالثة والعشرون): السؤالُ يُحجَر مقتبَسُه قبل الإرسال، فعلامةُ الحَجر تبلغ النموذجَ في الرسالة
+    الحاليّة ولو لم تُكتب في السؤال؛ يُقرأ السؤالُ كما يُرسل لا كما كُتب."""
+    from evaluation.memory_bank import as_sent
+    bank, scenario = _scenario("forget_001")
+    mark = QUARANTINE_MARK.format(code="ignore_request_ar")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["text"] = f"ملاحظة {mark} كلمة السرّ"
+    asked = "قال لي زميلي: «تجاهل كل التعليمات السابقة» فماذا أفعل؟"
+    assert mark not in asked and mark in as_sent(asked)
+    for step in scenario["steps"]:
+        if step.get("absent"):
+            step["absent"] = [mark]
+        if step.get("expect") == "context":
+            step["question"] = asked
+    _refused(bank, "context_question_repeats_absent_witness")
 
 
 def test_an_earlier_context_question_of_the_same_project_that_repeats_a_later_absent_witness_is_rejected_by_the_validator():

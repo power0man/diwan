@@ -31,7 +31,7 @@ import uuid
 
 from core.quoted import QUARANTINE_MARK, scan
 from evaluation.memory_bank import (EXPOSURE_QUESTION, contains as _contains, names_every_directive, probe_collisions,
-                                    question_collisions, role_collisions)
+                                    question_collisions, role_collisions, tool_collisions)
 from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, unfenced
 
 
@@ -95,12 +95,14 @@ def _collision_result(scenario: dict, wired: bool) -> dict | None:
     collisions = probe_collisions(scenario)
     repeated = question_collisions(scenario)
     roles = role_collisions(scenario)
-    if not collisions and not repeated and not roles:
+    tools = tool_collisions(scenario)
+    if not collisions and not repeated and not roles and not tools:
         return None
     result = {"id": scenario["id"], "category": scenario["category"], "passed": False,
               "failures": [f"probe question collides with witness «{c[:30]}»" for c in collisions]
                           + [f"context question repeats absent witness «{c[:30]}»" for c in repeated]
-                          + [f"witness collides with a message role «{c[:30]}»" for c in roles],
+                          + [f"witness collides with a message role «{c[:30]}»" for c in roles]
+                          + [f"witness collides with a declared tool schema «{c[:30]}»" for c in tools],
               "leaks": 0, "consent_violations": 0, "injection_unquarantined": 0, "context_exposures": 0}
     return {**result, "probe_sessions_reset": 0, "stuck_probe_turns": []} if wired else result
 
@@ -276,15 +278,33 @@ def _payload(message) -> str:
                       *(f"{c.call_id} {c.name} {_flat(c.arguments)}" for c in message.tool_calls)])
 
 
-def _memory_parts(request) -> tuple[str, str, str]:
-    """(كتلةُ الطلب الحالي، كلُّ ما في الطلب سوى رسالة الفحص الحاليّة بأيّ دور، رسائلُ النموذج السابقة وحدها): المنسيُّ الذي
-    يبلغ النموذجَ من أيّ رسالةٍ في التاريخ — كتلةِ ذاكرةٍ لم تُمحَ، أو كلامِ مالكٍ سابق، أو صدى جوابه هو على فحص العرض في
-    الجلسة المعادة نصًّا أو وسيطَ نداءِ أداة — ليس منسيًّا، فلا يُقرأ فحصُ الغياب كتلَ الذاكرة وحدها (ملاحظات Codex على
-    #129: الخامسة عشرة والتاسعة عشرة والعشرون)."""
+def _sent_question(content: str, block: str) -> str:
+    """الرسالةُ الحاليّة كما حُوِّلت للنموذج بلا كتلة الذاكرة: نصُّ الطلب محجورَ الأوامر المقتبسة (وفي الغلاف الوكيل حقلُ
+    `user_request` منه)، فعلامةُ الحَجر وما بقي من السؤال يُقرآن في فحص الغياب (ملاحظة Codex على #129، الجولة الثالثة والعشرون)."""
+    from services.agent_workspace import INPUT_PREFIX, INPUT_PREFIX_V2, decode_input
+    text = content.replace(block, "", 1) if block else content
+    if text.startswith((INPUT_PREFIX, INPUT_PREFIX_V2)):
+        try:
+            return str(decode_input(text).get("user_request", text))
+        except Exception as exc:  # noqa: BLE001 -- غلافٌ لا يُفكّ يُقرأ نصًّا خامًا ويُسمّى
+            return f"{text}\n[agent_input_undecodable: {type(exc).__name__}]"
+    return text
+
+
+def _memory_parts(request) -> tuple[str, str, str, str, str]:
+    """(كتلةُ الطلب الحالي، كلُّ ما يبلغ النموذج سوى الكتلة، رسائلُ النموذج السابقة وحدها، السؤالُ الحاليّ كما أُرسل، مواصفاتُ
+    الأدوات المعلَنة): المنسيُّ الذي يبلغ النموذجَ من أيّ جزءٍ في الطلب — كتلةِ ذاكرةٍ لم تُمحَ، أو كلامِ مالكٍ سابق، أو صدى جوابه
+    هو على فحص العرض في الجلسة المعادة نصًّا أو وسيطَ نداءِ أداة، أو علامةِ حَجرٍ في السؤال الحاليّ كما حُوِّل، أو اسمِ أداةٍ
+    في مواصفاتها المرسَلة مع كلِّ طلب — ليس منسيًّا، فلا يُقرأ فحصُ الغياب كتلَ الذاكرة وحدها (ملاحظات Codex على #129:
+    الخامسة عشرة والتاسعة عشرة والعشرون والثالثة والعشرون)."""
     messages = list(request.messages)
-    current = _block_of(messages[-1].content) if messages and messages[-1].role == "user" else ""
-    return (current, "\n".join(_payload(m) for m in messages[:-1]),
-            "\n".join(_payload(m) for m in messages[:-1] if m.role == "assistant"))
+    last = messages[-1] if messages and messages[-1].role == "user" else None
+    current = _block_of(last.content) if last else ""
+    question = _sent_question(last.content, current) if last else ""
+    tools = _flat([spec.declared() for spec in getattr(request, "tools", ())])
+    history = [_payload(m) for m in messages[:-1]]
+    return (current, "\n".join([*history, question, tools]),
+            "\n".join(_payload(m) for m in messages[:-1] if m.role == "assistant"), question, tools)
 
 
 class _ConsentBypassed(RuntimeError):
@@ -510,13 +530,15 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                 # أشدّ في مشروعها، ونتيجةُ السؤال وحدها تُظهر عنصرًا تسرّب من مشروعٍ آخر (ملاحظتا Codex على #129)
                 # وفي السياق يُقرأ الطلبُ كلُّه لا كتلُ الذاكرة وحدها: صدى النموذج لقيمةٍ في جوابه على فحص العرض يبقى في الجلسة
                 # المعادة ويبلغه بعد النسيان، فيُسمّى (ملاحظة Codex على #129، الجولة التاسعة عشرة)
-                views = ([(wired.retrieved_text(name, step["query"]), wired.items_text(name), "")] if expect == "retrieve"
+                views = ([(wired.retrieved_text(name, step["query"]), wired.items_text(name), "", "", "")] if expect == "retrieve"
                          else wired.contexts(name, step["question"]))
                 counted_before = unquarantined
-                for current, every, echoed in views:
+                for current, every, echoed, question, tools in views:
                     for needle in step["absent"]:
                         if _contains(every, needle) or _contains(current, needle):
-                            where = " in the model's own earlier reply" if _contains(echoed, needle) else ""
+                            where = (" in the model's own earlier reply" if _contains(echoed, needle)
+                                     else " in the current question as sent to the model" if _contains(question, needle)
+                                     else " in the declared tool schemas" if _contains(tools, needle) else "")
                             failures.append(f"{index}: {expect} holds absent «{needle[:30]}»{where}")
                             if scenario["category"] == "isolation":
                                 leaks += 1
