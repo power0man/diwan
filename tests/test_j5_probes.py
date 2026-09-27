@@ -22,7 +22,7 @@ import tools.probe_execution_boundary as boundary
 import tools.probe_j5_agent_round as j5
 
 ROOT = Path(__file__).resolve().parent.parent
-EVIDENCE = ROOT / "docs" / "probe" / "j5-docker-searxng-20260927j.json"
+EVIDENCE = ROOT / "docs" / "probe" / "j5-docker-searxng-20260927k.json"
 CACHED_ELSEWHERE = {j5: j5._cached_elsewhere, boundary: boundary._cached_elsewhere}
 
 
@@ -663,8 +663,8 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
         assert j5._serving("http://127.0.0.1:8888", "c" * 64, "docker") != pinned
 
 
-BOUNDARY = ROOT / "docs" / "probe" / "execution-boundary-20260927d.json"
-SANDBOX = ROOT / "docs" / "probe" / "sandbox-container-20260927d.json"
+BOUNDARY = ROOT / "docs" / "probe" / "execution-boundary-20260927e.json"
+SANDBOX = ROOT / "docs" / "probe" / "sandbox-container-20260927e.json"
 
 
 def test_the_published_sandbox_run_ends_each_program_where_it_must():

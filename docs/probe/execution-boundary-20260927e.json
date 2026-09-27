@@ -10,7 +10,14 @@
   },
   "runtime_image_id": "sha256:3dd092e52cdc7267dda816809f32be0f1d42765935906fed46eabef17193f0e0",
   "runtime_lock_sha256": "b5af0840d9ff3421030f25466ee4d95619c5894d64e8d2bb6e8ac44a20563318",
-  "probe_sha256": "74447de55f63cab93dd7ccfa1c919b93278f9688a0c3e949bb573a26766b907b",
+  "probe_sha256": "e97f06843810c5e58f4bfc10a24906aa8c6bb609d2fc722ea1d2fb0bafa3d395",
+  "loaded_source_sha256": {
+    "core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "core/canonical.py": "f7bbeac7731580603c2981d9b5c4dc82a8eb56d7e890c9b8e70a6171aa8a2167",
+    "core/execution.py": "c7fe33bc1c65ef1d615cb56873662a7bff2289d8c3f9bea3ec34f4c2eaf47e0e",
+    "core/sandbox.py": "e5583347898c78bfb2b57cf35c6e75baaf8f2062bf0ca21d9efb8d4679c08826",
+    "tools/probe_execution_boundary.py": "e97f06843810c5e58f4bfc10a24906aa8c6bb609d2fc722ea1d2fb0bafa3d395"
+  },
   "runtime_receipt_sha256": "02a46f763dc07422cf3c7bc8b4b72a5018f4ad7b8823dc9bcba85267f8493634",
   "source_sha256": "c7fe33bc1c65ef1d615cb56873662a7bff2289d8c3f9bea3ec34f4c2eaf47e0e",
   "source": "core/execution.py",
@@ -66,7 +73,10 @@
     "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly",
     "sources_and_probe_hashed_before_the_first_case_and_rechecked_before_writing",
     "runtime_receipt_read_before_the_first_case_and_rechecked_before_writing",
-    "probe_changed_after_this_run_the_backends_now_use_a_private_copy_of_the_hashed_receipt_not_its_path",
-    "superseded_by_execution-boundary-20260927e"
+    "the_backends_run_against_a_private_copy_of_the_hashed_receipt_bytes_not_the_receipt_path",
+    "sources_hashed_before_the_measured_code_is_imported_and_must_match_before_and_after",
+    "every_loaded_repo_module_is_hashed_those_first_imported_during_the_run_only_after_it",
+    "every_loaded_repo_module_is_compiled_from_its_source_into_a_fresh_empty_bytecode_cache",
+    "a_deliberate_same_user_process_rewriting_files_or_containers_between_checks_is_out_of_scope"
   ]
 }
