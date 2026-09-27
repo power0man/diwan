@@ -13,7 +13,7 @@
     stale                    النصُّ القديم ليس في الملف بعدد مرّاته المعلَن
     invalid                  الطفرةُ كسرت الجمعَ نفسَه (خطأُ صياغة): ليست قتلًا
     timeout                  تجاوزت الاختباراتُ مهلتَها
-    manifest_missing         ملفُّ اختبارٍ أُضيف (أو أُعيدت تسميتُه) في المدى بلا بيانِ طفرات باسمه؛ والوحدةُ في مجلّدٍ فرعيّ
+    manifest_missing         ملفُّ اختبارٍ أُضيف (أو نُقل إليه) في المدى بلا بيانِ طفرات باسمه؛ والوحدةُ في مجلّدٍ فرعيّ
                              tests/a/test_x.py بيانُها tests/mutations/a__test_x.jsonl
     unmanifested_new_tests   اختبارٌ مسّه المدى (كلُّ اختبارٍ في ملفٍّ مضاف، أو اختبارٌ دخل سطرٌ مضاف في مداه) ولا يسمّيه بيانٌ بمعرّفه الكامل؛
                              والدالّةُ الموروثة من أصلٍ في الوحدة نفسِها اختبارٌ للوارث مداه رأسُ الوارث ومدى تعريفها
@@ -76,6 +76,8 @@ LIMITS = [
     "tests_are_found_by_parsing_the_head_file_for_the_default_pytest_names_test_functions_Test_classes_and_unittest_TestCase_subclasses_named_in_the_module_not_by_collecting_with_pytest",
     "a_class_whose_base_is_imported_under_a_name_that_does_not_end_in_TestCase_is_not_seen_as_a_unittest_class_so_its_methods_are_not_touched_tests",
     "inherited_test_methods_are_resolved_through_bases_defined_at_module_level_in_the_same_file_first_base_wins_a_base_imported_from_another_module_is_not_seen_so_a_subclass_of_it_adds_no_touched_tests",
+    "a_class_attribute_shadows_an_inherited_test_of_the_same_name_and_a_test_named_attribute_assigned_a_name_an_attribute_or_a_lambda_is_read_as_a_test_whether_or_not_the_object_is_a_function",
+    "renames_are_not_detected_in_the_range_a_moved_file_is_its_source_deleted_and_its_destination_added_so_both_sides_are_checked",
     "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
     "a_touched_parametrized_test_is_proved_case_by_case_every_case_pytest_collects_for_it_must_fail_a_mutation_since_parsing_cannot_tell_the_added_case_from_the_old_ones",
     "a_manifest_changed_in_the_range_is_compared_with_its_merge_base_version_by_the_exact_names_it_carried_a_test_or_case_still_collected_at_the_head_that_no_line_names_any_more_is_a_dropped_proof_a_bare_function_name_at_the_head_covers_all_its_cases",
@@ -206,6 +208,14 @@ def _test_nodes_at(root: Path, head: str, test_file: str) -> dict[str, list[tupl
         for node in cls.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
                 found[node.name] = [(first(node), node.end_lineno or node.lineno)]
+            elif isinstance(node, (ast.Assign, ast.AnnAssign)) and node.value is not None:
+                # سمةٌ تحجب الموروثةَ فلا يجمعها pytest (`test_value = None`)؛ وسمةُ test* منسوبةٌ اسمًا أو صفةً أو lambda دالّةٌ
+                # يجمعها pytest فتُقرأ اختبارًا بسطر نسبتها (ملاحظة Codex على #149)
+                for target in (node.targets if isinstance(node, ast.Assign) else [node.target]):
+                    if isinstance(target, ast.Name):
+                        found.pop(target.id, None)
+                        if target.id.startswith("test") and isinstance(node.value, (ast.Name, ast.Attribute, ast.Lambda)):
+                            found[target.id] = [(node.lineno, node.end_lineno or node.lineno)]
         return found
 
     def visit(body, prefix: str) -> None:
@@ -343,10 +353,11 @@ def _range_scope(root: Path, rng: str) -> dict:
     base = _git(root, "merge-base", base, head)
 
     def changed(status: str, *pathspec: str) -> list[str]:
-        return _git(root, "diff", "--name-only", f"--diff-filter={status}", f"{base}...{head}", "--", *pathspec).split()
+        # بلا كشفِ إعادة التسمية: المنقولُ محذوفٌ في مصدره ومضافٌ في وجهته فتُفحص الجهتان — ملفُّ اختبارٍ نُقل وجهتُه كالمضاف
+        # (كلُّ اختبارٍ فيها ممسوس ويلزمها بيانٌ باسمها)، وبيانٌ نُقل باسم وحدةٍ أخرى يتيمٌ لمصدره (ملاحظتا Codex على #149)
+        return _git(root, "diff", "--name-only", "--no-renames", f"--diff-filter={status}", f"{base}...{head}", "--", *pathspec).split()
 
-    # الملفُّ المعادُ تسميتُه يُعامل كالمضاف: كلُّ اختبارٍ فيه ممسوس ويلزمه بيانٌ باسمه الجديد
-    added = _test_modules(changed("A", "tests/")) + _test_modules(changed("R", "tests/"))
+    added = _test_modules(changed("A", "tests/"))
     modified = _test_modules(changed("M", "tests/"))
     has_manifest = lambda test: (root / manifest_for(test)).is_file()
     names = _manifest_names(root)
@@ -357,7 +368,7 @@ def _range_scope(root: Path, rng: str) -> dict:
     touched += [node for test in modified for node in _touched_test_nodes(root, base, head, test, False)]
     unnamed = [node for node in touched if node not in names.get(own(node), set())]
     # والاختبارُ الذي زال (ومنه الاسمُ القديم لملفٍّ أُعيدت تسميتُه) أو فقد سطرًا: بياناتُه تُعاد فيُحكم ما يسمّيه test_missing هنا
-    deleted = _test_modules(_git(root, "diff", "--name-only", "--diff-filter=D", "--no-renames", f"{base}...{head}", "--", "tests/").split())
+    deleted = _test_modules(changed("D", "tests/"))
     revalidated = [node for test in deleted for node in _revalidated_test_nodes(root, base, head, test, True)]
     revalidated += [node for test in modified for node in _revalidated_test_nodes(root, base, head, test, False)]
     naming = [path for path in dict.fromkeys(own(node) for node in [*touched, *revalidated]) if path in names]
