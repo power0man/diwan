@@ -393,7 +393,7 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
     local = [{"HostIp": "127.0.0.1", "HostPort": "8888"}]
     monkeypatch.setattr(subprocess, "run", lambda *a, **k: pytest.fail("Docker سُئل قبل فحص الرابط"))
     for url in ("http://search.example.com:8888", "https://127.0.0.1:8888", "http://10.0.0.5:8888",
-                "http://127.0.0.1"):
+                "http://127.0.0.1", "http://localhost:8888"):
         with pytest.raises(SystemExit) as refused:
             j5._searxng(url, "searxng", "docker")
         assert json.loads(str(refused.value))["code"] == "web_search_url_not_loopback"
@@ -406,6 +406,14 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
         with pytest.raises(SystemExit) as refused:
             j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
         assert json.loads(str(refused.value))["code"] == "searxng_container_does_not_serve_the_url"
+    # والعنوانُ المنشور هو عنوانُ الرابط بعينه: حاويةٌ على 127.0.0.1 لا تشهد لرابطٍ على ::1، ولا العكس (ملاحظة Codex على #144)
+    for url, host_ip in (("http://[::1]:8888", "127.0.0.1"), ("http://127.0.0.1:8888", "::1")):
+        monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, [{"HostIp": host_ip, "HostPort": "8888"}]))
+        with pytest.raises(SystemExit) as refused:
+            j5._searxng(url, "searxng", "docker")
+        assert json.loads(str(refused.value))["code"] == "searxng_container_does_not_serve_the_url"
+    monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, [{"HostIp": "::1", "HostPort": "8888"}]))
+    assert j5._searxng("http://[::1]:8888", "searxng", "docker")[1]["serves_url"]
     monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, running="false"))
     with pytest.raises(SystemExit) as refused:
         j5._searxng("http://127.0.0.1:8888", "searxng", "docker")

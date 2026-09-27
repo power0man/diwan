@@ -57,7 +57,8 @@ SOURCES = ("core/execution.py", "agent/web_search.py", "agent/builtin_tools.py",
 NOT_SOURCE = frozenset({"tests", "__pycache__", "site-packages", "venv"})
 # الصورةُ المثبَّتة بالبصمة في docs/guides/G5.md (الخطوتان ٢١–٢٢)، وقيست بها ج٥ أول مرّة
 PINNED_SEARXNG = "searxng/searxng@sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6"
-LOOPBACK = frozenset({"127.0.0.1", "localhost", "::1"})
+# عنوانُ الجهاز حرفيًّا لا اسمًا: «localhost» يُحلّ إلى أحدهما، والحاويةُ تنشر على عنوانٍ بعينه (ملاحظة Codex على #144)
+LOOPBACK = frozenset({"127.0.0.1", "::1"})
 # `LocalApp.agent_workspace` يبني خلفيّةَ run_command بمسار Docker الافتراضي في `DockerExecutionBackend` ولا يمرّر غيرَه،
 # وتمريرُه من مسار openai (ق٦٦، #142)؛ فمسارٌ آخر يُرفض قبل الجولة لا يُترك يُسقطها صامتًا (ملاحظة Codex على #136)
 EXECUTION_DOCKER = inspect.signature(DockerExecutionBackend).parameters["docker_executable"].default
@@ -134,7 +135,8 @@ def _inspect(docker: str, target: str, fmt: str) -> str:
 def _serving(url: str, container_id: str, docker: str) -> dict:
     """حالُ الحاوية بمعرّفها الثابت: صورتُها، وهل تعمل ومنذ متى، وهل تنشر منفذَ الرابط على عنوان الجهاز. فحاويةٌ أُعيد
     تشغيلُها أو أُزيلت تختلف حالُها، ولا يُسأل الاسمُ الذي قد تحمله حاويةٌ أخرى (ملاحظة Codex على #144)."""
-    port = str(urllib.parse.urlsplit(url).port)
+    parts = urllib.parse.urlsplit(url)
+    host, port = parts.hostname, str(parts.port)
     ports = json.loads(_inspect(docker, container_id, "{{json .NetworkSettings.Ports}}") or "null") or {}
     published = {(b.get("HostIp"), b.get("HostPort")) for bindings in ports.values() for b in bindings or []}
     return {"id": container_id,
@@ -142,7 +144,9 @@ def _serving(url: str, container_id: str, docker: str) -> dict:
             "image_id": _inspect(docker, container_id, "{{.Image}}"),
             "running": _inspect(docker, container_id, "{{.State.Running}}") == "true",
             "started_at": _inspect(docker, container_id, "{{.State.StartedAt}}"),
-            "serves_url": any(ip in LOOPBACK and p == port for ip, p in published)}
+            # والعنوانُ المنشور هو عنوانُ الرابط نفسُه، لا أيُّ عنوانٍ للجهاز: حاويةٌ على 127.0.0.1 لا تشهد لرابطٍ على ::1
+            # قد يخدمه غيرُها (ملاحظة Codex على #144)
+            "serves_url": any(ip == host and p == port for ip, p in published)}
 
 
 def _searxng(url: str, container: str, docker: str) -> tuple[dict, dict]:
