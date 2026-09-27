@@ -244,3 +244,17 @@ def test_verdict_reached_requires_the_exact_last_line():
     assert not sandbox.verdict_reached(marker + " extra", marker)
     assert not sandbox.verdict_reached(marker + "\nlater", marker)
     assert not sandbox.verdict_reached(sandbox.verdict_marker("cd" * 16), marker)
+
+
+def test_trusted_bootstrap_passes_an_explicit_docker_path(monkeypatch, tmp_path):
+    """ملاحظةُ Codex على #136: مجسُّ الحدّ يُعطى مسارَ Docker، والصندوقُ كان يبني خلفيّتَه بالمسار الافتراضي."""
+    captured = []
+    backend = RecordingBackend()
+    def constructor(receipt, root, files, **kwargs):
+        captured.append(kwargs)
+        return backend
+    monkeypatch.setattr(sandbox, "DockerExecutionBackend", constructor)
+    receipt, root = tmp_path / "receipt.json", tmp_path / "workspace"
+    sandbox.configure_sandbox_backend(receipt, root, docker_executable="/usr/bin/docker")
+    sandbox.configure_sandbox_backend(receipt, root)
+    assert captured == [{"docker_executable": "/usr/bin/docker"}, {}]

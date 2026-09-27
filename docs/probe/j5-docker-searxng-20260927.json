@@ -81,6 +81,12 @@
     "one_live_round_each_on_one_local_model_no_variance_estimate",
     "the_model_decides_whether_to_call_the_tool_every_attempt_is_recorded_including_those_without_a_call",
     "search_results_come_from_public_engines_through_a_local_searxng_and_change_over_time",
-    "container_ids_recorded_by_shape_not_value"
-  ]
+    "container_ids_recorded_by_shape_not_value",
+    "acceptance_was_computed_after_the_run_from_the_recorded_fields_with_probe_j5_agent_round_acceptance",
+    "the_searxng_url_and_image_were_not_recorded_at_run_time_the_probe_now_refuses_a_non_loopback_url_or_an_image_other_than_the_g5_pin"
+  ],
+  "acceptance": {
+    "passed": true,
+    "failed": []
+  }
 }

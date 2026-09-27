@@ -90,7 +90,7 @@ def _private_copy(receipt: Path, tmp: Path, **changes) -> Path:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--receipt", required=True, type=Path)
-    parser.add_argument("--docker", default="/usr/local/bin/docker")
+    parser.add_argument("--docker", default=shutil.which("docker") or "/usr/local/bin/docker")
     parser.add_argument("--out-boundary", required=True, type=Path)
     parser.add_argument("--out-sandbox", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -118,7 +118,8 @@ def main(argv=None) -> int:
         except ExecutionRefused as exc:
             cases.append({"case": "mismatched_runtime_preflight", "code": exc.code})
 
-        sandbox.configure_sandbox_backend(args.receipt.resolve(), work)
+        # بالمسار نفسه الذي تمرّ به الحالاتُ أعلاه، لا بمسار الخلفية الافتراضي (ملاحظة Codex على #136)
+        sandbox.configure_sandbox_backend(args.receipt.resolve(), work, docker_executable=args.docker)
         harness = "assert add(2, 3) == 5"
         good = sandbox.run_in_sandbox("def add(a, b):\n    return a + b\n", harness)
         bad = sandbox.run_in_sandbox("def add(a, b):\n    return a - b\n", harness)
@@ -127,6 +128,9 @@ def main(argv=None) -> int:
         shutil.rmtree(work, ignore_errors=True)
         shutil.rmtree(private, ignore_errors=True)
     after = _containers(args.docker)
+    # الحدُّ لا يُسمّى «مراجَعًا» إلا إن أدّت البرامجُ الثلاثة ما يثبته: الصحيحُ ينجح، والخاطئُ يسقط، والخروجُ
+    # بصفرٍ قبل المدقّق يسقط. فإن تعذّرت الحاويةُ نفسُها سقط الصحيحُ ولم يُسمَّ الحدّ.
+    sandbox_ok = good.passed and not bad.passed and not forged_verdict.passed
     today = datetime.date.today().isoformat()
     execution_sha = _sha(ROOT / "core" / "execution.py")
     receipt = json.loads(args.receipt.read_text(encoding="utf-8"))
@@ -150,7 +154,7 @@ def main(argv=None) -> int:
         "incorrect_program": {"passed": bad.passed, "exit_code": bad.exit_code, "error_code": bad.error_code},
         "exit_zero_before_the_harness": {"passed": forged_verdict.passed, "exit_code": forged_verdict.exit_code,
                                          "error_code": forged_verdict.error_code},
-        "boundary": "reviewed_disposable_docker",
+        "boundary": "reviewed_disposable_docker" if sandbox_ok else "not_established",
         "limits": ["A harness in the same interpreter as arbitrary candidate code is not a tamper-proof grader.",
                    "No product certification."],
         "measurement_limits": ["three_fixed_programs_not_a_grading_benchmark"],
@@ -161,7 +165,7 @@ def main(argv=None) -> int:
     print(json.dumps({"cases": {c["case"]: c.get("code", c.get("exit_code")) for c in cases},
                       "cleanup_verified": after == before,
                       "sandbox": [good.passed, bad.passed, forged_verdict.passed]}, ensure_ascii=False))
-    return 0
+    return 0 if sandbox_ok else 1
 
 
 if __name__ == "__main__":
