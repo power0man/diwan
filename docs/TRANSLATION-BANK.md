@@ -77,10 +77,12 @@
 ## ٥ — التشغيل
 
 ```sh
-python3 tools/evaluate_translation.py --model qwen3.5:9b --out docs/probe/g4-translation-<التاريخ>.json
+python3 tools/evaluate_translation.py --model qwen3.5:9b --license Apache-2.0 --agent <معرّفك> \
+    --out docs/probe/g4-translation-<التاريخ>.json
 ```
 
-لا شبكةَ إلا إلى Ollama المحلي.
+لا شبكةَ إلا إلى Ollama المحلي. و`--license` رخصةُ أوزان النموذج كما في بطاقته، و`--agent` معرّفُك المسجَّل في
+`registry/agents.json`. والبصمةُ تُقرأ من Ollama قبل القياس وبعده، ويسجّل التقريرُ أمرَ إعادته بها.
 
 ## ٦ — الحدود
 
