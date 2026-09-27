@@ -126,12 +126,35 @@ def test_the_block_names_every_open_task_and_no_done_row_remains_in_agents_md():
 def test_the_archive_holds_only_done_rows_and_verbatim_when_history_is_present():
     archive = (ROOT / "docs/TASKS-ARCHIVE.md").read_text(encoding="utf-8")
     rows = [line for line in archive.split("\n") if ROW.match(line)]
-    assert len(rows) == 41 and all("| منجزة" in line for line in rows)
+    assert len(rows) >= 41 and all("| منجزة" in line for line in rows)
     shown = subprocess.run(["git", "-C", str(ROOT), "show", f"{ARCHIVED_FROM}:AGENTS.md"], capture_output=True, text=True)
     if shown.returncode != 0:
         pytest.skip("history_unavailable: الإيداعُ الأصلي ليس في هذه النسخة")
     before = {line for line in shown.stdout.split("\n") if ROW.match(line) and "| منجزة" in line}
-    assert set(rows) == before, "صفٌّ في الأرشيف ليس بنصّه الأصلي"
+    assert len(before) == 41 and before <= set(rows), "صفٌّ من الأرشفة الأولى ليس بنصّه الأصلي"
+    # وما زاد عليها نقله --write من §٣ حين أُنجز (والاتحادُ مع §٣ هو المجمَّد: tests/test_tasks_ledger.py)
+
+
+def test_a_row_marked_done_in_agents_md_moves_to_the_archive_verbatim_on_write_and_is_stale_before(tmp_path, capsys):
+    """الانتقالُ المدعوم لمهمّةٍ قديمة تُنجَز (ملاحظة Codex على #148): يكتب العميلُ «منجزة» في §٣ كما تقول القاعدة، فيُسقط
+    --check حتى يُشغَّل --write الذي ينقل الصفَّ بنصّه إلى آخر جدول الأرشيف ويُخرجه من المفتوح؛ والكتابةُ الثانية لا شيء."""
+    root = _copy(tmp_path)
+    agents = root / ci.AGENTS
+    text = agents.read_text(encoding="utf-8")
+    task_id = ci.open_tasks(text)[0]["id"]
+    line = next(l for l in text.split("\n") if l.startswith(f"| {task_id} |"))
+    done_line = line[: line.rstrip().rfind("| ") + 2] + "منجزة: 0123abc — أُنجزت في الاختبار |"
+    agents.write_text(text.replace(line, done_line), encoding="utf-8")
+    code, report = _run(root, "--check", capsys=capsys)
+    assert code == 1 and report["status"] == "index_stale" and report["done_rows_to_archive"] == [task_id]
+    assert {ci.AGENTS, ci.ARCHIVE} <= set(report["files"])
+    code, report = _run(root, "--write", capsys=capsys)
+    assert code == 0 and report["archived"] == [task_id]
+    assert done_line not in agents.read_text(encoding="utf-8")
+    assert task_id not in [t["id"] for t in ci.describe(root)["open_tasks"]], "منجزٌ ما زال يُعلَن مفتوحًا"
+    archived = [l for l in (root / ci.ARCHIVE).read_text(encoding="utf-8").split("\n") if ROW.match(l)]
+    assert archived[-1] == done_line, "الصفُّ لم يُنقل بنصّه إلى آخر الجدول"
+    assert _run(root, "--write", capsys=capsys)[1]["written"] == [] and _run(root, "--check", capsys=capsys)[0] == 0
 
 
 def test_the_index_lists_every_source_with_its_current_digest():

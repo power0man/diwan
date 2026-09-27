@@ -29,6 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INDEX_MD = "docs/INDEX.md"
 INDEX_JSON = "docs/INDEX.json"
+ARCHIVE = "docs/TASKS-ARCHIVE.md"
 AGENTS = "AGENTS.md"
 BLOCK = "context-index"
 # حدُّ Codex الافتراضي لملفّ التعليمات (project_doc_max_bytes في openai/codex)؛ ما بعده لا يراه
@@ -129,6 +130,28 @@ def open_tasks(text: str) -> list[dict]:
     return [row for row in task_rows(text) if not row["status"].startswith("منجزة")]
 
 
+def archive_done(agents_text: str, archive_text: str) -> tuple[str, str, list[str]]:
+    """الصفُّ الذي كُتب فيه «منجزة» في §٣ يُنقل بنصّه إلى آخر جدول الأرشيف، فلا يبقى في AGENTS.md إلا المفتوح، ولا
+    يُعلن الفهرسُ منجزًا مفتوحًا (ملاحظة Codex على #148). يعيد (نصَّ AGENTS.md، نصَّ الأرشيف، أرقامَ ما نُقل)."""
+    lines = agents_text.split("\n")
+    starts = [i for i, line in enumerate(lines) if line.startswith("## ٣ — المهام")]
+    if not starts:
+        return agents_text, archive_text, []
+    start = starts[0]
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    moved = [line for line in lines[start:end] if TASK_ROW.match(line) and task_rows(line)
+             and task_rows(line)[0]["status"].startswith("منجزة")]
+    if not moved:
+        return agents_text, archive_text, []
+    kept = lines[:start] + [line for line in lines[start:end] if line not in moved] + lines[end:]
+    archive = archive_text.split("\n")
+    rows = [i for i, line in enumerate(archive) if TASK_ROW.match(line)]
+    if not rows:
+        raise IndexError_("archive_table_missing")
+    archive[rows[-1] + 1:rows[-1] + 1] = moved
+    return "\n".join(kept), "\n".join(archive), [task_rows(line)[0]["id"] for line in moved]
+
+
 def latest_decision(text: str) -> int:
     numbers = [int(m.group(1).translate(ARABIC_DIGITS)) for line in text.split("\n") if (m := DECISION_HEADING.match(line))]
     return max(numbers) if numbers else 0
@@ -148,16 +171,18 @@ def _document(source: Source, text: str, measured: str | None = None) -> dict:
             "headings": headings(text) if source.path.endswith(".md") else []}
 
 
-def _snapshot(root: Path) -> tuple[dict, str]:
-    """(بيانُ الفهرس، نصُّ AGENTS.md بكتلته الجديدة). الكتلةُ تُبنى من الوثائق الأخرى ومن جدول §٣، ثم يُقاس AGENTS.md
+def _snapshot(root: Path) -> tuple[dict, str, str, list[str]]:
+    """(بيانُ الفهرس، نصُّ AGENTS.md بكتلته الجديدة وبلا صفوفٍ منجزة، نصُّ الأرشيف بما نُقل إليه، أرقامُ ما نُقل). الكتلةُ تُبنى من الوثائق الأخرى ومن جدول §٣، ثم يُقاس AGENTS.md
     بنصّه البديل كما سيُقرأ (حجمًا وأسطرًا ورموزًا وعناوين)، وبصمتُه وحدها من النصّ المفرَّغ الكتلة؛ فلا دورَ، و--write ثابتٌ
     مهما كانت الكتلةُ القديمة (ملاحظتا Codex على #148)."""
     for source in SOURCES:
         if not (root / source.path).is_file():
             raise IndexError_(f"source_missing:{source.path}")
     agents_source = next(s for s in SOURCES if s.path == AGENTS)
-    agents_text = (root / AGENTS).read_text(encoding="utf-8")
-    others = [_document(s, (root / s.path).read_text(encoding="utf-8")) for s in SOURCES if s.path != AGENTS]
+    agents_text, archive_new, moved = archive_done((root / AGENTS).read_text(encoding="utf-8"),
+                                                   (root / ARCHIVE).read_text(encoding="utf-8"))
+    others = [_document(s, archive_new if s.path == ARCHIVE else (root / s.path).read_text(encoding="utf-8"))
+              for s in SOURCES if s.path != AGENTS]
     decisions = (root / "docs/DECISIONS.md").read_text(encoding="utf-8")
     partial = {"documents": others, "open_tasks": open_tasks(agents_text), "latest_decision": latest_decision(decisions)}
     agents_new = with_block(agents_text, render_block(partial))
@@ -173,7 +198,7 @@ def _snapshot(root: Path) -> tuple[dict, str]:
                  "documents_outside_SOURCES_are_not_indexed",
                  "no_git_history_is_read_so_the_output_is_identical_in_shallow_and_full_clones",
              ]}
-    return state, agents_new
+    return state, agents_new, archive_new, moved
 
 
 def describe(root: Path) -> dict:
@@ -247,10 +272,15 @@ def render_block(state: dict) -> str:
 
 
 def expected_files(root: Path) -> dict[Path, str]:
-    state, agents_new = _snapshot(root)
-    return {root / INDEX_MD: render_md(state),
-            root / INDEX_JSON: json.dumps(state, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
-            root / AGENTS: agents_new}
+    return _expected(root)[0]
+
+
+def _expected(root: Path) -> tuple[dict[Path, str], list[str]]:
+    """(ما يجب أن تكون عليه الملفّاتُ المولَّدة، أرقامُ الصفوف المنجزة التي تنتظر النقلَ إلى الأرشيف)."""
+    state, agents_new, archive_new, moved = _snapshot(root)
+    return ({root / INDEX_MD: render_md(state),
+             root / INDEX_JSON: json.dumps(state, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
+             root / AGENTS: agents_new, root / ARCHIVE: archive_new}, moved)
 
 
 def budget(root: Path) -> dict:
@@ -283,18 +313,19 @@ def main(argv=None) -> int:
         if args.print_budget:
             print(json.dumps(budget(args.root), ensure_ascii=False, indent=1, sort_keys=True))
             return 0
-        expected = expected_files(args.root)
+        expected, moved = _expected(args.root)
         stale = [path for path, value in expected.items()
                  if not path.exists() or path.read_text(encoding="utf-8") != value]
         if args.write:
             for path in stale:
                 path.write_text(expected[path], encoding="utf-8")
         elif stale:
-            print(json.dumps({"status": "index_stale", "files": [p.relative_to(args.root).as_posix() for p in stale]},
-                             ensure_ascii=False))
+            print(json.dumps({"status": "index_stale", "files": [p.relative_to(args.root).as_posix() for p in stale],
+                              "done_rows_to_archive": moved}, ensure_ascii=False))
             return 1
         print(json.dumps({"status": "updated" if args.write else "verified", "written": [p.relative_to(args.root).as_posix() for p in stale]
-                          if args.write else [], "agents_md_bytes": (args.root / AGENTS).stat().st_size}, ensure_ascii=False))
+                          if args.write else [], "archived": moved if args.write else [],
+                          "agents_md_bytes": (args.root / AGENTS).stat().st_size}, ensure_ascii=False))
         return 0
     except IndexError_ as exc:
         print(json.dumps({"status": "error", "code": str(exc)}, ensure_ascii=False))
