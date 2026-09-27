@@ -107,6 +107,15 @@ def probe_collisions(scenario: dict) -> list[str]:
     return found
 
 
+MESSAGE_ROLES = ("system", "user", "assistant", "tool")
+
+
+def role_collisions(scenario: dict) -> list[str]:
+    """شاهدُ غيابٍ يقع في اسم دورٍ من أدوار الرسائل (`assistant`…): الدورُ يُرسل مع كلِّ رسالةٍ في الطلب، فلا يميّز الفحصُ غيابَه
+    ولا يُدَّعى به نسيان؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الثانية والعشرون)."""
+    return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and any(contains(role, a) for role in MESSAGE_ROLES)]
+
+
 def question_collisions(scenario: dict) -> list[str]:
     """شاهدُ غيابٍ يكرّره سؤالُ خطوة السياق نفسِها أو سؤالُ خطوة سياقٍ سبقتها في مشروعها: جلسةُ الفحص واحدةٌ للمشروع تحمل
     تاريخَها، فيبلغ الشاهدُ النموذجَ في رسالة مالكٍ حاليّة أو سابقة لا من الذاكرة، ولا يراه فحصُ الغياب لأنه يقرأ كتلَ
@@ -136,6 +145,8 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         _reject(path, "probe_question_collides_with_scenario", f"«{collisions[0][:40]}» يرد في سؤال فحص العرض أو يحويه، فيبقى في تاريخ الفحص")
     if repeated := question_collisions(scenario):
         _reject(path, "context_question_repeats_absent_witness", f"«{repeated[0][:40]}» يكرّره سؤالُ خطوة سياقٍ في مشروعه تفحص غيابَه أو تسبقها")
+    if roles := role_collisions(scenario):
+        _reject(path, "witness_collides_with_message_role", f"«{roles[0][:40]}» يقع في اسم دورٍ من أدوار الرسائل فيُرسل مع كلِّ رسالة")
 
 
 def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:

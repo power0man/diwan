@@ -109,6 +109,17 @@ def test_a_context_question_that_repeats_its_absent_witness_is_rejected_by_the_v
     _refused(bank, "context_question_repeats_absent_witness")
 
 
+def test_a_witness_that_falls_inside_a_message_role_name_is_rejected_by_the_validator():
+    """ملاحظةُ Codex على #129 (الجولة الثانية والعشرون): شاهدٌ مثل «assistant» يُرسل دورًا مع كلِّ رسالة، فلا يشهد غيابُه بشيء."""
+    bank, scenario = _scenario("forget_001")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["text"] = "assistant passport note"
+    for step in scenario["steps"]:
+        if step.get("absent"):
+            step["absent"] = ["assistant"]
+    _refused(bank, "witness_collides_with_message_role")
+
+
 def test_an_earlier_context_question_of_the_same_project_that_repeats_a_later_absent_witness_is_rejected_by_the_validator():
     """ملاحظةُ Codex على #129 (الجولة الثامنة عشرة): سؤالُ خطوة سياقٍ سابقة يحمل الشاهدَ يبقى في تاريخ جلسة المشروع، فيبلغ النموذجَ
     عند فحص غيابه لاحقًا وهو كلامُ المالك؛ يُرفض في مشروع الفحص نفسِه، ولا يُرفض من مشروعٍ آخر لأن جلسته غيرُ جلسته."""

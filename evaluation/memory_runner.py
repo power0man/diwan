@@ -31,7 +31,7 @@ import uuid
 
 from core.quoted import QUARANTINE_MARK, scan
 from evaluation.memory_bank import (EXPOSURE_QUESTION, contains as _contains, names_every_directive, probe_collisions,
-                                    question_collisions)
+                                    question_collisions, role_collisions)
 from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, unfenced
 
 
@@ -94,11 +94,13 @@ def _collision_result(scenario: dict, wired: bool) -> dict | None:
     """سيناريو يرد شاهدُ غيابه في سؤال العرض أو يحفظه نصًّا: رسوبٌ مسمًّى بلا قياس، لا نجاحٌ يعتمد على تاريخٍ يحمل الشاهد."""
     collisions = probe_collisions(scenario)
     repeated = question_collisions(scenario)
-    if not collisions and not repeated:
+    roles = role_collisions(scenario)
+    if not collisions and not repeated and not roles:
         return None
     result = {"id": scenario["id"], "category": scenario["category"], "passed": False,
               "failures": [f"probe question collides with witness «{c[:30]}»" for c in collisions]
-                          + [f"context question repeats absent witness «{c[:30]}»" for c in repeated],
+                          + [f"context question repeats absent witness «{c[:30]}»" for c in repeated]
+                          + [f"witness collides with a message role «{c[:30]}»" for c in roles],
               "leaks": 0, "consent_violations": 0, "injection_unquarantined": 0, "context_exposures": 0}
     return {**result, "probe_sessions_reset": 0, "stuck_probe_turns": []} if wired else result
 
@@ -270,7 +272,7 @@ def _payload(message) -> str:
     """الرسالةُ كلُّها كما تبلغ النموذج: نصُّها، ومعرّفُ النداء الذي تردّ عليه، ونداءاتُ الأدوات فيها بمعرّفاتها وأسمائها
     ووسائطها — فالقيمةُ التي يردّدها النموذج في وسيط `propose_memory` أو في معرّف النداء نفسِه تبقى في التاريخ كما يبقى نصُّه
     (ملاحظتا Codex على #129، الجولتان العشرون والحادية والعشرون)."""
-    return "\n".join([message.content, message.tool_call_id or "",
+    return "\n".join([message.role, message.content, message.tool_call_id or "",
                       *(f"{c.call_id} {c.name} {_flat(c.arguments)}" for c in message.tool_calls)])
 
 

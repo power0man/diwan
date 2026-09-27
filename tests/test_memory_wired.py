@@ -758,6 +758,22 @@ def test_a_context_question_that_repeats_its_absent_witness_is_refused_not_measu
         assert any(f.startswith("context question repeats absent witness") for f in report["failures"]), report
 
 
+def test_a_witness_inside_a_message_role_name_is_refused_not_measured_and_roles_are_in_the_payload(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة الثانية والعشرون): الدورُ جزءٌ من الطلب المرسَل، فيُقرأ في `_payload` ويُرفض شاهدٌ يقع فيه قبل القياس."""
+    from core.contracts import Message
+    from evaluation.memory_runner import run_scenario, run_wired_scenario
+    assert "assistant" in _payload(Message("assistant", "حسنًا."))
+    scenario = {"id": "role_witness", "category": "forget", "steps": [
+        {"op": "remember", "project": "A", "text": "assistant passport note", "consent": "owner", "as": "m1"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": "ما رقم الجواز؟", "absent": ["assistant"], "present": []},
+    ]}
+    for run, root in ((run_scenario, tmp_path / "s"), (run_wired_scenario, tmp_path / "w")):
+        report = run(scenario, root)
+        assert not report["passed"] and report["context_exposures"] == 0, report
+        assert any(f.startswith("witness collides with a message role") for f in report["failures"]), report
+
+
 def test_an_earlier_context_question_of_the_same_project_that_repeats_a_later_absent_witness_is_refused_not_measured(tmp_path):
     """ملاحظةُ Codex على #129 (الجولة الثامنة عشرة): خطوةُ سياقٍ سؤالُها يحمل السرَّ وتفحص غيابَ غيره، ثم خطوةٌ محايدة تفحص غيابَ
     السرّ: الأولى تُبقي السرَّ في تاريخ جلسة المشروع فيبلغ النموذجَ عند الثانية ولا يراه فحصُ الغياب؛ يُرفض في المسارين بلا قياس."""
