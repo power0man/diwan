@@ -20,6 +20,7 @@ def commands(python: str, node: str) -> tuple[Check, ...]:
     return (
         Check("pytest", (python, "-m", "pytest", "tests/", "-q"), 900),
         Check("docs", (python, "tools/check_docs.py", "--check")),
+        Check("context-index", (python, "tools/context_index.py", "--check")),
         Check("acceptance-0", (python, "acceptance.py")),
         *(Check(f"acceptance-{milestone}", (python, f"acceptance_m{milestone}.py"))
           for milestone in ("8b", "9", "10", "11", "12", "13")),

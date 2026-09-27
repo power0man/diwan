@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "task": "ق٦٧-٥ وبند ECC ٥ (تدقيقُ ميزانية السياق)",
+  "date": "2026-09-27",
+  "agent": "anthropic/claude-fable-5-1",
+  "tool": "tools/context_index.py --write (قسمُ «بعد» يُولَّد مع الفهرس من اللقطة نفسِها؛ و--print-budget يقرأ القرص)",
+  "codex_project_doc_max_bytes": 32768,
+  "before": {
+    "commit": "113d1b4",
+    "AGENTS.md": {
+      "bytes": 58840,
+      "lines": 312,
+      "tokens_estimate": 12578,
+      "codex_cut_line": 159,
+      "task_rows": 45,
+      "task_rows_visible_to_codex": 28,
+      "sections": 10,
+      "sections_visible_to_codex": 4
+    },
+    "reading_set_in_section_0": {
+      "AGENTS.md": {
+        "bytes": 58840,
+        "tokens_estimate": 12578
+      },
+      "docs/VISION.md": {
+        "bytes": 10397,
+        "tokens_estimate": 1986
+      }
+    },
+    "reading_set_total": {
+      "bytes": 69237,
+      "tokens_estimate": 14564
+    },
+    "note": "§٠ كان يوجب قراءة AGENTS.md كاملًا ثم docs/VISION.md كلَّ جلسة؛ وCodex لا يرى من AGENTS.md إلا ما قبل الحدّ"
+  },
+  "after": {
+    "AGENTS.md": {
+      "bytes": 29775,
+      "lines": 284,
+      "tokens_estimate": 6323,
+      "codex_cut_line": null,
+      "task_rows": 4,
+      "task_rows_visible_to_codex": 4,
+      "sections": 10,
+      "sections_visible_to_codex": 10
+    },
+    "reading_set_in_section_0": {
+      "AGENTS.md": {
+        "bytes": 29775,
+        "tokens_estimate": 6323
+      },
+      "docs/INDEX.md": {
+        "bytes": 18384,
+        "tokens_estimate": 3877
+      },
+      "docs/VISION.md": {
+        "bytes": 10397,
+        "tokens_estimate": 1986
+      }
+    },
+    "reading_set_total": {
+      "bytes": 58556,
+      "tokens_estimate": 12186
+    },
+    "archived_rows": 41,
+    "open_rows_in_agents_md": 4,
+    "note": "§٠ يقرأ AGENTS.md ثم docs/INDEX.md، وdocs/VISION.md في أول جلسةٍ فقط؛ وما سواها بالبصمة والإحالة",
+    "regenerated_by": "tools/context_index.py --write"
+  },
+  "every_indexed_document_after": {
+    "AGENTS.md": {
+      "bytes": 29775,
+      "tokens_estimate": 6323
+    },
+    "docs/STATUS.md": {
+      "bytes": 22893,
+      "tokens_estimate": 4796
+    },
+    "docs/VISION.md": {
+      "bytes": 10397,
+      "tokens_estimate": 1986
+    },
+    "docs/DECISIONS.md": {
+      "bytes": 150199,
+      "tokens_estimate": 29948
+    },
+    "docs/PLAN-20260926.md": {
+      "bytes": 215198,
+      "tokens_estimate": 47064
+    },
+    "docs/TASKS.jsonl": {
+      "bytes": 3470,
+      "tokens_estimate": 1140
+    },
+    "docs/TASKS-ARCHIVE.md": {
+      "bytes": 32499,
+      "tokens_estimate": 7020
+    },
+    "docs/PROJECT-PLAN-20260925.md": {
+      "bytes": 42526,
+      "tokens_estimate": 9022
+    },
+    "docs/LAUNCH-PLAN-20260925.md": {
+      "bytes": 29252,
+      "tokens_estimate": 6075
+    },
+    "docs/REBUILD-2026-09-23.md": {
+      "bytes": 17832,
+      "tokens_estimate": 3589
+    },
+    "docs/EVALUATION-20260925.md": {
+      "bytes": 38324,
+      "tokens_estimate": 7919
+    },
+    "docs/AGENT-ONBOARD-REFUTE.md": {
+      "bytes": 7831,
+      "tokens_estimate": 1609
+    },
+    "docs/START-PROMPT.md": {
+      "bytes": 1771,
+      "tokens_estimate": 361
+    },
+    "docs/HANDOFF-PROMPT.md": {
+      "bytes": 57388,
+      "tokens_estimate": 11887
+    }
+  },
+  "measurement_limits": [
+    "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
+    "agents_md_is_digested_with_its_generated_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
+    "agents_md_bytes_lines_and_tokens_are_measured_from_the_file_as_written_with_its_generated_block_only_its_digest_is_taken_with_the_block_emptied",
+    "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
+    "documents_outside_SOURCES_are_not_indexed",
+    "no_git_history_is_read_so_the_output_is_identical_in_shallow_and_full_clones",
+    "the_reading_set_after_counts_docs_VISION_md_although_section_0_now_asks_for_it_only_in_the_first_session_so_the_saving_is_understated",
+    "documents_an_agent_opens_by_reference_from_the_index_are_not_counted_in_either_reading_set",
+    "codex_visibility_is_computed_by_cutting_the_file_at_32768_bytes_as_project_doc_max_bytes_does_by_default_not_by_running_codex",
+    "the_after_section_is_regenerated_by_context_index_write_from_the_same_snapshot_as_the_index_so_it_describes_the_tree_of_the_commit_that_carries_it_while_before_stays_the_113d1b4_measurement"
+  ],
+  "measurement": "الأرقامُ بعد e8b6425: AGENTS.md يُقاس بنصّه على القرص بكتلته المولَّدة (حجمًا وأسطرًا ورموزًا وعناوين)، وبصمتُه وحدها من المفرَّغ"
+}

@@ -42,7 +42,8 @@ def test_superseded_decisions_are_marked_in_place_not_deleted(decision):
 
 def test_every_done_task_row_carries_a_commit_hash():
     """قاعدةُ §٣: «حين تنتهي، اكتب منجزة وبصمة الإيداع الذي أنجزها»."""
-    rows = [line for line in read("AGENTS.md").split("\n") if line.startswith("| ك") or line.startswith("| ج") or line.startswith("| غ") or line.startswith("| ع")]
+    table = "\n".join(read(path) for path in ("AGENTS.md", "docs/TASKS-ARCHIVE.md"))
+    rows = [line for line in table.split("\n") if line.startswith("| ك") or line.startswith("| ج") or line.startswith("| غ") or line.startswith("| ع")]
     done = [line for line in rows if "| منجزة" in line]
     assert done, "لا صفوفَ منجزة؟"
     # ما سبق الفتحَ موسومٌ diwan-private@ (ك٣٠)، وما بعده بصمةٌ في هذا المستودع
