@@ -14,7 +14,7 @@ import pytest
 
 from conversation.session import ConversationError
 from core.canonical import canonical_bytes, digest
-from evaluation.memory_runner import _Wired, _block_of, run_memory_bank
+from evaluation.memory_runner import _Wired, _block_of, _payload, run_memory_bank
 from memory.store import HEADER
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -813,6 +813,34 @@ class _EchoingDelegate:
         from core.contracts import Response, Usage
         seen = any(self.value in m.content for m in request.messages)
         return Response(f"أتذكّر: {self.value}" if seen else "لا أتذكّر شيئًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64)
+
+
+class _ToolEchoingDelegate(_EchoingDelegate):
+    """نموذجٌ يردّد القيمةَ في وسيط نداءِ أداة لا في نصّه: يطلب propose_memory بها حين يراها، ويجيب نصًّا بلا قيمةٍ بعد ردّ الأداة."""
+    name = "tool-echo"
+
+    def complete(self, request):
+        from core.contracts import Response, ToolCall, Usage
+        seen = any(self.value in _payload(m) for m in request.messages)
+        if seen and request.tools and request.messages[-1].role != "tool":
+            call = ToolCall("call_" + uuid.uuid4().hex[:8], "propose_memory", {"text": self.value})
+            return Response("", Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64, tool_calls=(call,))
+        return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64)
+
+
+def test_a_forgotten_value_echoed_inside_a_tool_call_argument_in_the_reused_session_fails_the_scenario(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة العشرون): الصدى في وسيط `propose_memory` يبقى في نصّ الجلسة (`Message.tool_calls`) ولا
+    يُرى إن قُرئ `content` وحده؛ صار فحصُ الغياب يقرأ الرسالةَ كلَّها بنداءاتها."""
+    from evaluation.memory_runner import run_wired_scenario
+    value = "رقم جواز السفر ب ٤٤٥٥٦٦"
+    scenario = {"id": "forget_tool_echo", "category": "forget", "steps": [
+        {"op": "remember", "project": "A", "text": value, "consent": "owner", "as": "m1"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": "ما رقم الجواز؟", "absent": [value], "present": []},
+    ]}
+    report = run_wired_scenario(scenario, tmp_path / "w", delegate=_ToolEchoingDelegate(value))
+    assert not report["passed"] and report["context_exposures"] == 1, report
+    assert any(f.endswith("in the model's own earlier reply") for f in report["failures"]), report["failures"]
 
 
 def test_the_model_s_own_echo_of_a_forgotten_value_in_the_reused_session_fails_the_scenario(tmp_path):

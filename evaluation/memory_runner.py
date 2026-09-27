@@ -257,14 +257,30 @@ def _block_of(content: str) -> str:
     return "" if end < 0 else content[:end + len(close)]
 
 
+def _flat(value) -> str:
+    """نصوصُ قيمةٍ متشعّبة (وسائطُ نداء أداة) متتاليةً كما هي، بلا تهريب JSON يغيّر حرفًا."""
+    if isinstance(value, dict):
+        return " ".join(f"{k} {_flat(v)}" for k, v in value.items())
+    if isinstance(value, (list, tuple)):
+        return " ".join(_flat(v) for v in value)
+    return str(value)
+
+
+def _payload(message) -> str:
+    """الرسالةُ كلُّها كما تبلغ النموذج: نصُّها ونداءاتُ الأدوات فيها بأسمائها ووسائطها — فالقيمةُ التي يردّدها النموذج في
+    وسيط `propose_memory` تبقى في التاريخ كما يبقى نصُّه (ملاحظة Codex على #129، الجولة العشرون)."""
+    return "\n".join([message.content, *(f"{c.name} {_flat(c.arguments)}" for c in message.tool_calls)])
+
+
 def _memory_parts(request) -> tuple[str, str, str]:
-    """(كتلةُ الطلب الحالي، كلُّ ما في الطلب سوى رسالة الفحص الحاليّة بأيّ دور، أجوبةُ النموذج السابقة وحدها): المنسيُّ الذي
+    """(كتلةُ الطلب الحالي، كلُّ ما في الطلب سوى رسالة الفحص الحاليّة بأيّ دور، رسائلُ النموذج السابقة وحدها): المنسيُّ الذي
     يبلغ النموذجَ من أيّ رسالةٍ في التاريخ — كتلةِ ذاكرةٍ لم تُمحَ، أو كلامِ مالكٍ سابق، أو صدى جوابه هو على فحص العرض في
-    الجلسة المعادة — ليس منسيًّا، فلا يُقرأ فحصُ الغياب كتلَ الذاكرة وحدها (ملاحظتا Codex على #129: الخامسة عشرة والتاسعة عشرة)."""
+    الجلسة المعادة نصًّا أو وسيطَ نداءِ أداة — ليس منسيًّا، فلا يُقرأ فحصُ الغياب كتلَ الذاكرة وحدها (ملاحظات Codex على
+    #129: الخامسة عشرة والتاسعة عشرة والعشرون)."""
     messages = list(request.messages)
     current = _block_of(messages[-1].content) if messages and messages[-1].role == "user" else ""
-    return (current, "\n".join(m.content for m in messages[:-1]),
-            "\n".join(m.content for m in messages[:-1] if m.role == "assistant"))
+    return (current, "\n".join(_payload(m) for m in messages[:-1]),
+            "\n".join(_payload(m) for m in messages[:-1] if m.role == "assistant"))
 
 
 class _ConsentBypassed(RuntimeError):
