@@ -302,3 +302,32 @@ def test_the_read_only_root_is_read_from_the_mount_flag(monkeypatch, capsys, fla
     monkeypatch.setattr(socket, "socket", lambda *a, **k: _Closed())
     exec(compile(boundary.BOUNDARY_PROBE, "<boundary-probe>", "exec"), {})
     assert json.loads(capsys.readouterr().out)["rootfs_readonly"] is expected
+
+
+def test_a_failed_container_enumeration_is_never_read_as_a_clean_run(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #136: `docker ps` الساقطُ يعيد مخرجًا فارغًا، فكان يُقرأ «لا حاويةَ بقيت»."""
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: SimpleNamespace(returncode=1, stdout="", stderr="daemon"))
+    assert boundary._containers("docker") is None
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: SimpleNamespace(returncode=0, stdout="a\nb\n", stderr=""))
+    assert boundary._containers("docker") == {"a", "b"}
+
+    monkeypatch.setattr(boundary, "DockerExecutionBackend", lambda *a, **k: pytest.fail("حالةٌ قبل الرفض"))
+    monkeypatch.setattr(boundary, "_containers", lambda docker: None)
+    assert boundary.main(["--receipt", str(_receipt(tmp_path)), "--out-boundary", str(tmp_path / "b.json"),
+                          "--out-sandbox", str(tmp_path / "s.json")]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "container_enumeration_failed"
+
+    listed = iter([{"a" * 64}, None])
+    monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
+    monkeypatch.setattr(boundary, "_containers", lambda docker: next(listed))
+    monkeypatch.setattr(boundary.sandbox, "configure_sandbox_backend", lambda receipt, work: None)
+    verdicts = iter([SimpleNamespace(passed=True, exit_code=0, error_code=None),
+                     SimpleNamespace(passed=False, exit_code=1, error_code="exit_1"),
+                     SimpleNamespace(passed=False, exit_code=0, error_code="verdict_missing")])
+    monkeypatch.setattr(boundary.sandbox, "run_in_sandbox", lambda code, harness: next(verdicts))
+    out = tmp_path / "b2.json"
+    assert boundary.main(["--receipt", str(_receipt(tmp_path)), "--out-boundary", str(out),
+                          "--out-sandbox", str(tmp_path / "s2.json")]) == 1
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["cleanup_verified"] is False and report["acceptance"]["failed"] == ["cleanup"]
+    assert report["containers_left_by_the_run"] is None
