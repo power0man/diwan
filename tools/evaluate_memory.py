@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from core.attribution import normalize  # noqa: E402
 from core.canonical import PayloadRejected  # noqa: E402
 from evaluation.memory_bank import validate_memory_bank  # noqa: E402
 from evaluation.memory_runner import run_memory_bank  # noqa: E402
@@ -50,6 +51,14 @@ def commissioned_shortfall(bank: dict) -> str | None:
     if wanted is None:
         return "suite_not_commissioned"
     scenarios = bank["scenarios"]
+    # نسخةُ سيناريو باسمٍ آخر لا تزيد البنكَ سعةً، فلا تُعدّ في أعداده: كلُّ نصٍّ يُحفظ في سيناريو واحد، ويُقارن
+    # بعد التطبيع العربيّ فلا يفلت تكرارٌ بتشكيلٍ أو مسافة (ملاحظة Codex على #129)
+    owner = {}
+    for scenario in scenarios:
+        for step in scenario["steps"]:
+            if step.get("op") in ("remember", "propose"):
+                if owner.setdefault(" ".join(normalize(step["text"]).split()), scenario["id"]) != scenario["id"]:
+                    return "suite_duplicate_scenario"
     if len(scenarios) < wanted["total"]:
         return "suite_below_commissioned_total"
     for category, minimum in wanted.items():
@@ -63,6 +72,7 @@ LIMITS = [
     "retrieval_is_lexical_so_a_paraphrased_question_can_miss_a_stored_item",
     "the_context_checked_is_the_first_request_of_each_turn_later_tool_steps_are_not_inspected",
     "single_run_on_one_local_model_no_variance_estimate",
+    "commissioned_scenarios_are_distinct_by_saved_text_a_near_copy_with_new_text_still_counts",
 ]
 
 

@@ -324,14 +324,30 @@ def test_a_custom_suite_must_be_a_commissioned_bank_at_full_size_and_reports_bin
     full = _strict_only(BANK)
     full["suite_id"] = "memory_kimi_v1"
     by = {c: [s for s in full["scenarios"] if s["category"] == c] for c in cli.COMMISSIONED["memory_kimi_v1"] if c != "total"}
-    grown = []
+
+    def distinct(scenario, tag, mark=None):
+        steps = [dict(s, text=f"{s['text']} ({mark or tag})") if s.get("op") in ("remember", "propose") else s
+                 for s in scenario["steps"]]
+        return dict(scenario, id=tag, steps=steps)
+
+    grown, copies = [], []
     for category, minimum in cli.COMMISSIONED["memory_kimi_v1"].items():
         if category != "total":
-            grown += [dict(by[category][i % len(by[category])], id=f"{category}_{i}") for i in range(minimum)]
+            grown += [distinct(by[category][i % len(by[category])], f"{category}_{i}") for i in range(minimum)]
+            copies += [dict(by[category][0], id=f"{category}_{i}") for i in range(minimum)]
     full["scenarios"] = grown
     assert cli.commissioned_shortfall(full) is None
+    # ملاحظة Codex على #129: سيناريو واحدٌ لكلّ فئةٍ منسوخٌ بأسماءٍ أخرى كان يُقبل ٤٠ حالة؛ ولا يفلت بتشكيلٍ أو مسافة
+    full["scenarios"] = copies
+    assert cli.commissioned_shortfall(full) == "suite_duplicate_scenario"
+    forget_0 = next(s for s in grown if s["id"] == "forget_0")
+    text = next(s["text"] for s in forget_0["steps"] if s.get("op") == "remember")
+    marked = [dict(s, text="  " + text[:1] + "\u064e" + text[1:].replace(" ", "   ")) if s.get("op") == "remember" else s
+              for s in forget_0["steps"]]
+    full["scenarios"] = grown + [dict(forget_0, id="forget_again", steps=marked)]
+    assert cli.commissioned_shortfall(full) == "suite_duplicate_scenario"
     full["scenarios"] = [s for s in grown if s["category"] != "backup"] + [s for s in grown if s["category"] == "backup"][:5]
-    full["scenarios"] += [dict(full["scenarios"][0], id="extra")]
+    full["scenarios"] += [distinct(full["scenarios"][0], "extra")]
     assert cli.commissioned_shortfall(full) == "suite_below_commissioned_category"
     monkeypatch.setattr(cli, "OllamaProvider", lambda **_: _Delegate())
     monkeypatch.setattr(cli, "_digest", lambda model: "sha256:weights")
