@@ -1,0 +1,294 @@
+"""فهرسُ السياق (ق٦٧-٥): ما في كل وثيقةٍ حاكمة، ومتى تُقرأ، وبصمتُها؛ فلا يُقرأ السياقُ كلُّه كلَّ مرّة.
+
+يولّد `docs/INDEX.md` (للقارئ) و`docs/INDEX.json` (للآلة) من نصوص الوثائق نفسِها، حتميًّا: لا زمنَ فيه ولا تاريخَ git،
+فيتساوى ناتجُه في نسخةٍ ضحلة وكاملة، ويسقط `--check` حين تتغيّر وثيقةٌ بلا إعادة توليد. ويكتب في `AGENTS.md` §٠ كتلةً
+مولَّدةً قصيرة (ما بقي مفتوحًا من §٣، وبصماتُ الوثائق الحاكمة) لقارئٍ لا يفتح إلا ملفًّا واحدًا: Codex يبتر ملفَّ
+التعليمات بعد ٣٢ كيلوبايت (`project_doc_max_bytes`)، فيلزم أن يبقى `AGENTS.md` دون ذلك.
+
+بصمةُ `AGENTS.md` في الفهرس تُحسب والكتلةُ المولَّدة فارغة، والكتلةُ لا تحمل بصمةَ الفهرس؛ فلا دورَ بين الاثنين.
+
+الاستعمال:
+    python tools/context_index.py --write          # يكتب الفهرسين والكتلة
+    python tools/context_index.py --check          # يسقط بـ1 إن كان أحدُها متأخّرًا عن الوثائق
+    python tools/context_index.py --print-budget   # حجمُ ما يُقرأ في §٠ بالبايت وبتقدير الرموز
+
+الحدود: عدُّ الرموز تقديرٌ (الأحرفُ على ثلاثة) لا عدُّ مُرمِّزٍ بعينه؛ والفهرسُ يصف الوثائق ولا يحكم صحّتَها؛ وما ليس في
+`SOURCES` ليس مفهرسًا.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import math
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+INDEX_MD = "docs/INDEX.md"
+INDEX_JSON = "docs/INDEX.json"
+AGENTS = "AGENTS.md"
+BLOCK = "context-index"
+# حدُّ Codex الافتراضي لملفّ التعليمات (project_doc_max_bytes في openai/codex)؛ ما بعده لا يراه
+CODEX_PROJECT_DOC_MAX_BYTES = 32_768
+# ما يقرؤه العميلُ في §٠ قبل أن يعمل: هذا الملفُّ والفهرس، والرؤيةُ في أول جلسة
+READING_SET = (AGENTS, INDEX_MD, "docs/VISION.md")
+ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+TASK_ROW = re.compile(r"^\| ([كجغع][٠-٩]+) \|")
+DECISION_HEADING = re.compile(r"^## ق([٠-٩]+)")
+HEADING = re.compile(r"^(#{2,3}) (.+?)\s*$")
+HEADINGS_SHOWN = 40
+
+
+class IndexError_(Exception):
+    """رفضٌ مسمًّى: الكتلةُ المولَّدة مفقودة أو مكرَّرة، أو مصدرٌ غائب."""
+
+
+@dataclass(frozen=True)
+class Source:
+    path: str
+    role: str
+    purpose: str
+    read_when: str
+
+
+SOURCES = (
+    Source(AGENTS, "حاكمة", "الأدوار والقواعد وبروتوكول البدء، وما بقي مفتوحًا من جدول §٣", "كل جلسة، كاملًا"),
+    Source("docs/STATUS.md", "حاكمة (الحالة)", "ما بُني، والعملُ الحالي بروايةٍ واحدة، وما يحكم وما هو تاريخ، وما ينتظر المالك",
+           "كل جلسة: §٢ و§٥؛ والبقيةُ عند الحاجة"),
+    Source("docs/VISION.md", "حاكمة (الاتجاه)", "ديوان مساعدٌ عام محوره العربية، والسياساتُ عقدة", "أول جلسة، وعند كلِّ شكٍّ في النطاق"),
+    Source("docs/DECISIONS.md", "سجلُّ القرارات الحاكم", "القراراتُ المعتمدة بمصدرها وسببها وحدِّها المعلَن؛ يُقرأ بالعناوين لا بالترتيب",
+           "القرارَ الذي تسمّيه مهمّتُك فقط، من عنوانه"),
+    Source("docs/PLAN-20260926.md", "الخطةُ الحاكمة (ق٦٤)", "المراحلُ وبواباتُها، والمهامُّ بأدلّتها، والذكاءات، وخطواتُ المالك G1–G10",
+           "المهمّةَ التي تعمل عليها فقط، من عنوانها"),
+    Source("docs/TASKS.jsonl", "سجلُّ الإثبات", "سطرٌ لكل مسألةٍ أُثبت إنجازُها بطلبٍ مدموج بذيولٍ مسجَّلة (ك٤١)", "عند التحقّق من إنجازٍ"),
+    Source("docs/TASKS-ARCHIVE.md", "أرشيف", "صفوفُ §٣ المنجزة بنصّها كما كانت عند أرشفتها (ق٦٧-٥)", "بإحالةٍ فقط"),
+    Source("docs/PROJECT-PLAN-20260925.md", "تاريخ (ق٦١)", "خطةُ ما بعد الإطلاق: البلوكاتُ ب١–ب١٢ وقواعدُها باقية؛ وما خالف ق٦٤ منسوخ",
+           "بإحالةٍ من مهمّتك"),
+    Source("docs/LAUNCH-PLAN-20260925.md", "تاريخ (ك٢٧)", "خطةُ الإطلاق الأول وتحضيرُ فتح المصدر؛ قراراتُها حُسمت (ق٥١–ق٦٠)", "بإحالةٍ فقط"),
+    Source("docs/REBUILD-2026-09-23.md", "تاريخ (ق٤٩)", "إعادةُ البناء ومراحلُها السبع وأدلّتُها", "بإحالةٍ فقط"),
+    Source("docs/EVALUATION-20260925.md", "تقييم", "آخرُ تقييمٍ شامل (٥١/١٠٠) وما أُغلق منه موسومٌ داخله", "بإحالةٍ فقط"),
+    Source("docs/AGENT-ONBOARD-REFUTE.md", "بروتوكول", "دحضُ آخر ثلاثة قرارات قبل البناء فوقها", "أول جلسةٍ لك فقط"),
+    Source("docs/START-PROMPT.md", "برومبتُ المالك", "ما يلصقه المالك في أول جلسةٍ لأيّ ذكاءٍ مطوِّر", "لا يُقرأ؛ للمالك"),
+    Source("docs/HANDOFF-PROMPT.md", "تاريخ", "برومبتُ تسليمٍ متنُه حتى ق٣٨ ورأسُه ق٤٩", "لا يُقرأ؛ الحالةُ في docs/STATUS.md"),
+)
+
+
+def _block_markers(name: str = BLOCK) -> tuple[str, str]:
+    return f"<!-- generated:{name}:begin -->", f"<!-- generated:{name}:end -->"
+
+
+def split_block(text: str, name: str = BLOCK) -> tuple[str, str, str]:
+    """(ما قبل الكتلة مع علامة البدء، متنُ الكتلة، علامةُ الختام وما بعدها)؛ وكتلةٌ مفقودة أو مكرَّرة رفضٌ مسمًّى."""
+    begin, end = _block_markers(name)
+    if text.count(begin) != 1 or text.count(end) != 1 or text.index(begin) >= text.index(end):
+        raise IndexError_("generated_block_invalid")
+    left, rest = text.split(begin)
+    body, right = rest.split(end)
+    return left + begin, body, end + right
+
+
+def with_block(text: str, value: str, name: str = BLOCK) -> str:
+    left, _, right = split_block(text, name)
+    return left + "\n" + value.rstrip() + "\n" + right
+
+
+def digest(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()[:12]
+
+
+def tokens_estimate(text: str) -> int:
+    """تقديرٌ لا عدٌّ: الأحرفُ على ثلاثة، وهو ما تقاربه المُرمِّزاتُ العامة على العربية المشكولة تقريبًا."""
+    return math.ceil(len(text) / 3)
+
+
+def headings(text: str) -> list[dict]:
+    found = []
+    for number, line in enumerate(text.split("\n"), 1):
+        match = HEADING.match(line)
+        if match:
+            found.append({"line": number, "level": len(match.group(1)), "title": match.group(2)})
+    return found
+
+
+def task_rows(text: str) -> list[dict]:
+    """صفوفُ جدول §٣: (الرقم، المسؤول، الحالة) من خلايا الصفّ."""
+    rows = []
+    for line in text.split("\n"):
+        if not TASK_ROW.match(line):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split(" | ")]
+        if len(cells) >= 5:
+            rows.append({"id": cells[0], "owner": cells[2], "status": cells[-1]})
+    return rows
+
+
+def open_tasks(text: str) -> list[dict]:
+    return [row for row in task_rows(text) if not row["status"].startswith("منجزة")]
+
+
+def latest_decision(text: str) -> int:
+    numbers = [int(m.group(1).translate(ARABIC_DIGITS)) for line in text.split("\n") if (m := DECISION_HEADING.match(line))]
+    return max(numbers) if numbers else 0
+
+
+def _masked_agents(text: str) -> str:
+    """نصُّ AGENTS.md والكتلةُ المولَّدة فارغة: هو ما يُبصَم، فلا تغيّر الكتلةُ بصمةَ الملفّ الذي تصفه."""
+    return with_block(text, "")
+
+
+def describe(root: Path) -> dict:
+    """بيانُ الفهرس من الوثائق وحدها؛ لا زمنَ ولا git."""
+    docs = []
+    agents_text = None
+    for source in SOURCES:
+        path = root / source.path
+        if not path.is_file():
+            raise IndexError_(f"source_missing:{source.path}")
+        raw = path.read_bytes()
+        text = raw.decode("utf-8")
+        if source.path == AGENTS:
+            # الكتلةُ المولَّدة تُفرَّغ قبل كلِّ قياس، فلا يغيّر ما يُكتب فيها حجمَ الملف ولا بصمتَه في الفهرس (وإلا لم يثبت --write)
+            agents_text = text
+            text = _masked_agents(text)
+            raw = text.encode("utf-8")
+        docs.append({"path": source.path, "role": source.role, "purpose": source.purpose, "read_when": source.read_when,
+                     "bytes": len(raw), "lines": text.count("\n") + (0 if text.endswith("\n") or not text else 1),
+                     "tokens_estimate": tokens_estimate(text), "sha256_12": digest(raw),
+                     "headings": headings(text) if source.path.endswith(".md") else []})
+    decisions = (root / "docs/DECISIONS.md").read_text(encoding="utf-8")
+    return {"schema_version": 1, "generator": "tools/context_index.py", "block": BLOCK,
+            "codex_project_doc_max_bytes": CODEX_PROJECT_DOC_MAX_BYTES,
+            "open_tasks": open_tasks(agents_text), "latest_decision": latest_decision(decisions),
+            "documents": docs,
+            "measurement_limits": [
+                "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
+                "agents_md_is_digested_with_its_generated_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
+                "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
+                "documents_outside_SOURCES_are_not_indexed",
+                "no_git_history_is_read_so_the_output_is_identical_in_shallow_and_full_clones",
+            ]}
+
+
+def _kb(n: int) -> str:
+    return f"{n / 1024:.1f} ك.ب"
+
+
+def render_md(state: dict) -> str:
+    docs = {d["path"]: d for d in state["documents"]}
+    reading = sum(docs[p]["bytes"] for p in READING_SET if p in docs)
+    lines = [
+        "# فهرسُ السياق: ما تقرؤه وما لا تقرؤه",
+        "",
+        "<!-- مولَّد بـ`tools/context_index.py --write` من الوثائق نفسِها؛ لا يُحرَّر يدويًّا، و`--check` يفرض حداثته في CI -->",
+        "",
+        f"**كيف يُستعمل (ق٦٧-٥):** اقرأ `AGENTS.md` كاملًا ({_kb(docs[AGENTS]['bytes'])}، وهو دون حدِّ Codex "
+        f"{_kb(state['codex_project_doc_max_bytes'])}) ثم هذا الفهرس، و`docs/VISION.md` في أول جلسةٍ لك. ولا تفتح وثيقةً أخرى إلا إن سمّاها",
+        "الفهرسُ لمهمّتك، أو تغيّرت بصمتُها عمّا رأيتَه آخرَ مرّة؛ فالبصمةُ الثابتة تعني أن ما تعرفه عن الوثيقة ما زال صحيحًا.",
+        f"حجمُ ما يُقرأ في §٠: {_kb(reading)} (≈{sum(docs[p]['tokens_estimate'] for p in READING_SET if p in docs)} رمزًا تقديرًا).",
+        "",
+        f"## المفتوحُ من جدول §٣ ({len(state['open_tasks'])})؛ وما سواه مسائلُ GitHub بوسم عائلتك",
+        "",
+        "| رقم | المسؤول | الحالة |",
+        "|---|---|---|",
+        *(f"| {t['id']} | {t['owner']} | {t['status']} |" for t in state["open_tasks"]),
+        "",
+        f"## الوثائق (آخرُ قرارٍ في السجلّ: ق{str(state['latest_decision']).translate(str.maketrans('0123456789', '٠١٢٣٤٥٦٧٨٩'))})",
+        "",
+        "| الوثيقة | دورها | ما فيها | متى تُقرأ | الحجم | رموز≈ | البصمة |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for d in state["documents"]:
+        lines.append(f"| `{d['path']}` | {d['role']} | {d['purpose']} | {d['read_when']} | {_kb(d['bytes'])} | {d['tokens_estimate']} | `{d['sha256_12']}` |")
+    lines += ["", "## عناوينُ الوثائق (للقفز إلى الموضع، لا لقراءتها كلِّها)", ""]
+    for d in state["documents"]:
+        shown = [h for h in d["headings"] if h["level"] == 2]
+        if not shown:
+            continue
+        lines.append(f"### `{d['path']}`")
+        lines.append("")
+        parts = [f"{h['line']}: {h['title']}" for h in shown[:HEADINGS_SHOWN]]
+        more = len(shown) - HEADINGS_SHOWN
+        if more > 0:
+            parts.append(f"(+{more} في `docs/INDEX.json`)")
+        lines.append(" · ".join(parts))
+        lines.append("")
+    lines += ["## حدودُ هذا الفهرس", ""]
+    lines += [f"- `{limit}`" for limit in state["measurement_limits"]]
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_block(state: dict) -> str:
+    """كتلةُ §٠: أسطرٌ قليلة لقارئٍ لا يفتح غيرَ AGENTS.md."""
+    docs = {d["path"]: d for d in state["documents"]}
+    tasks = "، ".join(f"{t['id']} ({t['owner']}؛ {t['status'].split(' — ')[0].split(' (')[0].split('؛')[0]})"
+                      for t in state["open_tasks"]) or "لا شيء"
+    pinned = " · ".join(f"`{p}` `{docs[p]['sha256_12']}`" for p in
+                        ("docs/STATUS.md", "docs/VISION.md", "docs/DECISIONS.md", "docs/PLAN-20260926.md"))
+    return "\n".join([
+        f"> **فهرسُ السياق** (`docs/INDEX.md`، مولَّد بـ`tools/context_index.py`؛ لا يُحرَّر يدويًّا). المفتوحُ من §٣: {tasks}.",
+        f"> بصماتُ الوثائق الحاكمة: {pinned}؛ وآخرُ قرار ق{str(state['latest_decision']).translate(str.maketrans('0123456789', '٠١٢٣٤٥٦٧٨٩'))}.",
+        "> بصمةٌ تغيّرت عمّا رأيتَه في جلستك السابقة تعني أن الوثيقة تغيّرت فتُقرأ من الفهرس؛ وما لم يتغيّر لا يُعاد.",
+    ])
+
+
+def expected_files(root: Path) -> dict[Path, str]:
+    state = describe(root)
+    agents = (root / AGENTS).read_text(encoding="utf-8")
+    return {root / INDEX_MD: render_md(state),
+            root / INDEX_JSON: json.dumps(state, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
+            root / AGENTS: with_block(agents, render_block(state))}
+
+
+def budget(root: Path) -> dict:
+    state = describe(root)
+    docs = {d["path"]: d for d in state["documents"]}
+    on_disk = (root / AGENTS).stat().st_size          # الحجمُ الحقيقي بالكتلة، وهو ما يراه Codex
+    reading = {p: {"bytes": (on_disk if p == AGENTS else (root / p).stat().st_size),
+                   "tokens_estimate": tokens_estimate((root / p).read_text(encoding="utf-8"))}
+               for p in READING_SET if (root / p).is_file()}
+    return {"schema_version": 1, "tool": "tools/context_index.py --print-budget",
+            "codex_project_doc_max_bytes": CODEX_PROJECT_DOC_MAX_BYTES,
+            "agents_md_bytes": on_disk, "agents_md_fits_codex": on_disk <= CODEX_PROJECT_DOC_MAX_BYTES,
+            "open_task_rows_in_agents_md": len(state["open_tasks"]),
+            "reading_set": reading,
+            "reading_set_total": {"bytes": sum(v["bytes"] for v in reading.values()),
+                                  "tokens_estimate": sum(v["tokens_estimate"] for v in reading.values())},
+            "every_indexed_document": {p: {"bytes": d["bytes"], "tokens_estimate": d["tokens_estimate"]} for p, d in docs.items()},
+            "measurement_limits": state["measurement_limits"]}
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--check", action="store_true")
+    group.add_argument("--write", action="store_true")
+    group.add_argument("--print-budget", action="store_true")
+    parser.add_argument("--root", type=Path, default=ROOT)
+    args = parser.parse_args(argv)
+    try:
+        if args.print_budget:
+            print(json.dumps(budget(args.root), ensure_ascii=False, indent=1, sort_keys=True))
+            return 0
+        expected = expected_files(args.root)
+        stale = [path for path, value in expected.items()
+                 if not path.exists() or path.read_text(encoding="utf-8") != value]
+        if args.write:
+            for path in stale:
+                path.write_text(expected[path], encoding="utf-8")
+        elif stale:
+            print(json.dumps({"status": "index_stale", "files": [p.relative_to(args.root).as_posix() for p in stale]},
+                             ensure_ascii=False))
+            return 1
+        print(json.dumps({"status": "updated" if args.write else "verified", "written": [p.relative_to(args.root).as_posix() for p in stale]
+                          if args.write else [], "agents_md_bytes": (args.root / AGENTS).stat().st_size}, ensure_ascii=False))
+        return 0
+    except IndexError_ as exc:
+        print(json.dumps({"status": "error", "code": str(exc)}, ensure_ascii=False))
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

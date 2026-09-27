@@ -1,4 +1,5 @@
 @AGENTS.md
+@docs/INDEX.md
 
 أنت **Claude**: مطوِّرٌ ومدقّق في ديوان. قبل أي عمل نفّذ بروتوكول البدء في §٠ من
 `AGENTS.md`، وابدأ رسالتك الأولى بالإعلان الذي يطلبه. مهامّك مسائلُ GitHub الموسومة `family:anthropic` (ق٦١، `docs/PROJECT-PLAN-20260925.md` §٥)،
