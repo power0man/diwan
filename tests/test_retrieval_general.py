@@ -12,7 +12,7 @@ import pytest
 from core.vector_retrieval import HashEmbedder
 from evaluation import ablation
 from evaluation.retrieval_general import (BANK, MIN_QUERIES, ROOT, RetrievalBankError, cluster_bootstrap, comparisons,
-                                          design_effect, hit_interval, hybrid_rows_from_channels, load_bank, paired,
+                                          arm_rows_from_channels, design_effect, hit_interval, load_bank, paired,
                                           rows_from_report, rrf, run, summaries, wilson)
 
 EVIDENCE = ROOT / "docs" / "probe" / "g3-hybrid-vs-bm25-20260927.json"
@@ -68,19 +68,16 @@ def test_the_published_numbers_are_recomputed_from_the_recorded_rows():
     evidence, rows, arms = _recorded()
     assert evidence["arms"] == arms
     assert evidence["comparisons"] == comparisons(rows, arms)
-    # وصفوفُ الهجين تُعاد من رتبتَي القناتين إن سُجّلتا، وإلا فالدليلُ يعلن أنها تسبق ترتيبَ التعادل في المنتج
-    if "channels" in evidence:
-        assert evidence["rows"]["hybrid"] == hybrid_rows_from_channels(evidence["channels"], load_bank())
-    else:
-        assert any(limit.startswith("hybrid_rows_predate_the_product_tie_order")
-                   for limit in evidence["measurement_limits"])
+    # وصفوفُ الأذرع الثلاث تُعاد من رتبتَي القناتين المسجَّلتين، فلا صفَّ يخالف رتبتَه
+    assert evidence["rows"] == arm_rows_from_channels(evidence["channels"], load_bank())
 
 
 def test_a_full_run_records_both_channels_so_the_fusion_is_recomputed_without_a_model():
     report = run(load_bank(), HashEmbedder())
     channels = {qid: {name: " ".join(ids) for name, ids in pair.items()} for qid, pair in report["channels"].items()}
-    recorded = [{k: r[k] for k in ("id", "type", "rank", "hit_at_5", "ndcg_at_10")} for r in report["rows"]["hybrid"]]
-    assert hybrid_rows_from_channels(channels, load_bank()) == recorded
+    recorded = {arm: [{k: r[k] for k in ("id", "type", "rank", "hit_at_5", "ndcg_at_10")} for r in rows]
+                for arm, rows in report["rows"].items()}
+    assert arm_rows_from_channels(channels, load_bank()) == recorded
 
 
 def test_rrf_ties_go_to_the_earlier_channel_as_in_the_product():
@@ -97,6 +94,10 @@ def test_a_sample_where_everything_succeeds_keeps_its_uncertainty():
     twins = [{"cluster": f"p{i}", "hit_at_5": i % 2 == 0} for i in range(60) for _ in range(2)]
     assert design_effect(twins, lambda r: float(r["hit_at_5"])) == 2.0
     assert hit_interval(twins) == wilson(30, 60)
+    # وملاحظتُه الثانية: ستون مقطعًا نجح استعلاماها كلاهما لا تُقدِّر ارتباطًا (المقامُ صفر)، فتُعدّ ستين لا مئةً وعشرين
+    perfect = [{"cluster": f"p{i}", "hit_at_5": True} for i in range(60) for _ in range(2)]
+    assert design_effect(perfect, lambda r: float(r["hit_at_5"])) == 2.0
+    assert hit_interval(perfect) == wilson(60, 60)
 
 
 def test_these_synthetic_arms_never_yield_a_protocol_decision(monkeypatch):
@@ -136,3 +137,35 @@ def test_intervals_resample_gold_passages_not_queries():
     singles = [{"cluster": f"q{i}", "v": row["v"]} for i, row in enumerate(twins)]
     width = lambda ci: ci[1] - ci[0]
     assert width(cluster_bootstrap(twins, lambda r: r["v"])) > 1.3 * width(cluster_bootstrap(singles, lambda r: r["v"]))
+
+
+def test_an_embedder_repointed_during_the_run_writes_no_report(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #132: وسمٌ أُعيد توجيهُه أثناء التضمين كان يُنسب إلى البصمة الأخيرة."""
+    import tools.evaluate_retrieval as cli
+    monkeypatch.setattr(cli, "OllamaEmbedder", lambda model: HashEmbedder())
+    calls: dict[str, int] = {}
+
+    def digest(model):
+        calls[model] = calls.get(model, 0) + 1
+        return "sha256:before" if model == "bge-m3" or calls[model] == 1 else "sha256:after"
+
+    monkeypatch.setattr(cli, "_digest", digest)
+    args = ["--embedder", "qwen3-embedding:0.6b", "--baseline", "bge-m3", "--agent", "anthropic/claude-opus-5-5",
+            "--out", str(tmp_path / "r.json")]
+    assert cli.main(args) == 2
+    assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "embedder_digest_drifted",
+                                                   "models": ["qwen3-embedding:0.6b"]}
+    assert not (tmp_path / "r.json").exists()
+
+
+def test_a_run_without_the_bge_m3_baseline_is_refused(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #132: مواصفةُ غ٣ تقارن بـbge-m3، وكان إغفالُ `--baseline` يكتب تقريرًا ناجحًا بلا خطّ أساس."""
+    import tools.evaluate_retrieval as cli
+    monkeypatch.setattr(cli, "OllamaEmbedder", lambda model: pytest.fail("تضمينٌ بلا خطّ أساس"))
+    monkeypatch.setattr(cli, "_digest", lambda model: "sha256:weights")
+    for extra in ([], ["--baseline", "qwen3-embedding:0.6b"]):
+        with pytest.raises(SystemExit) as exit_:
+            cli.main(["--embedder", "qwen3-embedding:0.6b", *extra, "--agent", "anthropic/claude-opus-5-5",
+                      "--out", str(tmp_path / "r.json")])
+        assert exit_.value.code == 2
+    assert not (tmp_path / "r.json").exists()

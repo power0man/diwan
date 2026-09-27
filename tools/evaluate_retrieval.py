@@ -58,7 +58,8 @@ def _digest(model: str, base: str = "http://127.0.0.1:11434") -> str | None:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--embedder", default="qwen3-embedding:0.6b")
-    parser.add_argument("--baseline", help="مُضمِّنٌ ثانٍ خطَّ أساس (مثل bge-m3)")
+    # خطُّ الأساس لازم: مواصفةُ غ٣ تقارن بـbge-m3، وتقريرٌ بلا خطّ أساسٍ لا يستوفي المهمّة (ملاحظة Codex على #132)
+    parser.add_argument("--baseline", required=True, help="مُضمِّنُ خطّ الأساس (bge-m3 في مواصفة غ٣)")
     parser.add_argument("--agent", required=True, help="معرّفُ من يشغّل القياس، مسجَّلًا في registry/agents.json")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -67,7 +68,9 @@ def main(argv=None) -> int:
     if args.agent not in json.loads((ROOT / "registry" / "agents.json").read_text(encoding="utf-8"))["agents"]:
         parser.error(f"agent_unregistered: {args.agent}")
     # البصمةُ قبل أيّ تضمين: تقريرٌ بالوسم وحده لا يسمّي الأوزانَ التي أنتجت المتّجهات (ملاحظة Codex على #132)
-    digests = {name: _digest(name) for name in filter(None, (args.embedder, args.baseline))}
+    if args.baseline == args.embedder:
+        parser.error("baseline_is_the_embedder: خطُّ الأساس مُضمِّنٌ آخر")
+    digests = {name: _digest(name) for name in (args.embedder, args.baseline)}
     missing = sorted(name for name, value in digests.items() if not value)
     if missing:
         print(json.dumps({"status": "refused", "code": "embedder_digest_unresolved", "models": missing},
@@ -75,6 +78,13 @@ def main(argv=None) -> int:
         return 2
     bank = load_bank()
     main_run = run(bank, OllamaEmbedder(args.embedder))
+    base = run(bank, OllamaEmbedder(args.baseline))
+    # والبصمةُ نفسُها بعد آخر تضمين، فوسمٌ أُعيد توجيهُه أثناء التشغيل لا يُنسب إليه ما ضمّنه غيرُه
+    drifted = sorted(name for name, value in digests.items() if _digest(name) != value)
+    if drifted:
+        print(json.dumps({"status": "refused", "code": "embedder_digest_drifted", "models": drifted},
+                         ensure_ascii=False))
+        return 2
     rows = main_run.pop("rows")
     channels = main_run.pop("channels")
     protocol = ablation.protocol()
@@ -91,14 +101,12 @@ def main(argv=None) -> int:
         "channels": _channels(channels),
         "measurement_limits": LIMITS,
     }
-    if args.baseline:
-        base = run(bank, OllamaEmbedder(args.baseline))
-        base_rows = base.pop("rows")
-        base_channels = base.pop("channels")
-        report["baseline"] = {"embedder": {"model": args.baseline, "digest": digests[args.baseline]},
-                              "arms": {arm: base["arms"][arm] for arm in ("vectors", "hybrid")},
-                              "rows": _recorded({arm: base_rows[arm] for arm in ("vectors", "hybrid")}),
-                              "channels": _channels(base_channels)}
+    base_rows = base.pop("rows")
+    base_channels = base.pop("channels")
+    report["baseline"] = {"embedder": {"model": args.baseline, "digest": digests[args.baseline]},
+                          "arms": {arm: base["arms"][arm] for arm in ("vectors", "hybrid")},
+                          "rows": _recorded({arm: base_rows[arm] for arm in ("vectors", "hybrid")}),
+                          "channels": _channels(base_channels)}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({arm: report["arms"][arm]["overall"] for arm in report["arms"]}, ensure_ascii=False))

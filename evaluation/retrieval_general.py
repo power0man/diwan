@@ -110,7 +110,8 @@ def _cluster(query: dict) -> str:
 
 
 def design_effect(rows: list[dict], value) -> float:
-    """أثرُ التصميم (Kish): ١ + (م − ١)·ρ، وρ الارتباطُ داخل المقطع بتقدير تحليل التباين، ولا يقلّ عن ١."""
+    """أثرُ التصميم (Kish): ١ + (م − ١)·ρ، وρ الارتباطُ داخل المقطع بتقدير تحليل التباين، ولا يقلّ عن ١.
+    وحين تتساوى النتائجُ كلُّها يُعدّ ρ واحدًا، فالحجمُ الفعليّ عددُ المقاطع."""
     grouped: dict[str, list[float]] = {}
     for row in rows:
         grouped.setdefault(row["cluster"], []).append(value(row))
@@ -123,7 +124,9 @@ def design_effect(rows: list[dict], value) -> float:
     msw = sum((x - means[c]) ** 2 for c, v in grouped.items() for x in v) / (n - k)
     m0 = (n - sum(len(v) ** 2 for v in grouped.values()) / n) / (k - 1)
     denominator = msb + (m0 - 1) * msw
-    icc = (msb - msw) / denominator if denominator > 0 else 0.0
+    # نتائجُ ثابتةٌ كلُّها (المقامُ صفر) لا تُقدِّر الارتباطَ فيُفترض أقصاه: المقاطعُ هي المستقلّة لا الاستعلامات
+    # (ملاحظة Codex على #132: مئةٌ وعشرون نجاحًا في ستين مقطعًا كانت تُعامل مستقلّةً فيضيق المجال)
+    icc = (msb - msw) / denominator if denominator > 0 else 1.0
     return max(1.0, 1 + (n / k - 1) * icc)
 
 
@@ -200,14 +203,16 @@ def run(bank: dict, embedder, *, depth: int = DEPTH) -> dict:
     return {"arms": summaries(rows), "rows": rows, "channels": channels}
 
 
-def hybrid_rows_from_channels(channels: dict, bank: dict) -> list[dict]:
-    """صفوفُ الهجين من رتبتَي القناتين المسجَّلتين، فيُعاد الدمجُ بلا مُضمِّن."""
-    rows = []
+def arm_rows_from_channels(channels: dict, bank: dict) -> dict[str, list[dict]]:
+    """صفوفُ الأذرع الثلاث من رتبتَي القناتين المسجَّلتين وحدهما، فيُعاد كلُّ ذراعٍ بلا مُضمِّن ولا يُوثَق بصفٍّ مسجَّل
+    يخالف رتبتَه (ملاحظة Codex على #132)."""
+    rows: dict[str, list[dict]] = {arm: [] for arm in ARMS}
     for q in bank["queries"]:
-        ranking = rrf([channels[q["id"]]["bm25"].split(), channels[q["id"]]["vectors"].split()])
-        metrics = _metrics(ranking, set(q["relevant"]))
-        rows.append({"id": q["id"], "type": q["type"], "rank": metrics["rank"], "hit_at_5": metrics["hit_at_5"],
-                     "ndcg_at_10": metrics["ndcg_at_10"]})
+        lexical, semantic = channels[q["id"]]["bm25"].split(), channels[q["id"]]["vectors"].split()
+        for arm, ranking in (("bm25", lexical), ("vectors", semantic), ("hybrid", rrf([lexical, semantic]))):
+            metrics = _metrics(ranking, set(q["relevant"]))
+            rows[arm].append({"id": q["id"], "type": q["type"], "rank": metrics["rank"],
+                              "hit_at_5": metrics["hit_at_5"], "ndcg_at_10": metrics["ndcg_at_10"]})
     return rows
 
 
