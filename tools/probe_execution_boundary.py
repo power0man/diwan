@@ -171,7 +171,12 @@ def main(argv=None) -> int:
     work = Path(tempfile.mkdtemp(prefix="diwan-j5-")).resolve()
     private = Path(tempfile.mkdtemp(prefix="diwan-j5-receipt-", dir=Path.home())).resolve()
     try:
-        backend = DockerExecutionBackend(args.receipt.resolve(), work, (), docker_executable=args.docker)
+        # والخلفيّتان تُبنيان من نسخةٍ خاصّة (0600) من البايتات المبصومة نفسِها، لا من مسار المشغّل: إيصالٌ استُبدل مؤقتًا
+        # قبل أن تقرأه إحداهما ثم أُعيد قبل إعادة القراءة ينسب الحالاتِ إلى صورةٍ غيرِ المسجَّلة (ملاحظة Codex على #144)
+        pinned = private / "runtime.json"
+        with os.fdopen(os.open(pinned, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as stream:
+            stream.write(receipt_bytes)
+        backend = DockerExecutionBackend(pinned, work, (), docker_executable=args.docker)
         py = "/opt/venv/bin/python"
         cases = [
             _case("boundary_probe", backend, (py, "-I", "-c", BOUNDARY_PROBE)),
@@ -182,13 +187,13 @@ def main(argv=None) -> int:
             _case("ambiguous_exit_125", backend, (py, "-I", "-c", "raise SystemExit(125)")),
         ]
         try:
-            forged = _private_copy(args.receipt.resolve(), private, lock_sha256="0" * 64)
+            forged = _private_copy(pinned, private, lock_sha256="0" * 64)
             mismatched = DockerExecutionBackend(forged, work, (), docker_executable=args.docker)
             cases.append(_case("mismatched_runtime_preflight", mismatched, (py, "-I", "-c", "print(1)")))
         except ExecutionRefused as exc:
             cases.append({"case": "mismatched_runtime_preflight", "code": exc.code})
 
-        sandbox.configure_sandbox_backend(args.receipt.resolve(), work)
+        sandbox.configure_sandbox_backend(pinned, work)
         harness = "assert add(2, 3) == 5"
         good = sandbox.run_in_sandbox("def add(a, b):\n    return a + b\n", harness)
         bad = sandbox.run_in_sandbox("def add(a, b):\n    return a - b\n", harness)
@@ -236,7 +241,8 @@ def main(argv=None) -> int:
                                "cleanup_checked_by_container_ids_present_after_the_run_and_absent_before",
                                "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly",
                                "sources_and_probe_hashed_before_the_first_case_and_rechecked_before_writing",
-                               "runtime_receipt_read_before_the_first_case_and_rechecked_before_writing"],
+                               "runtime_receipt_read_before_the_first_case_and_rechecked_before_writing",
+                               "the_backends_run_against_a_private_copy_of_the_hashed_receipt_bytes_not_the_receipt_path"],
     }
     sandbox_report = {
         "schema_version": 1, **common, "source_sha256": sources["core/sandbox.py"], "source": "core/sandbox.py",

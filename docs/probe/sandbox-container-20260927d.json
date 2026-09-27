@@ -41,6 +41,7 @@
     "No product certification."
   ],
   "measurement_limits": [
-    "three_fixed_programs_not_a_grading_benchmark"
+    "three_fixed_programs_not_a_grading_benchmark",
+    "probe_changed_after_this_run_the_backends_now_use_a_private_copy_of_the_hashed_receipt_not_its_path"
   ]
 }

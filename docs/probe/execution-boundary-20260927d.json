@@ -65,6 +65,7 @@
     "cleanup_checked_by_container_ids_present_after_the_run_and_absent_before",
     "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly",
     "sources_and_probe_hashed_before_the_first_case_and_rechecked_before_writing",
-    "runtime_receipt_read_before_the_first_case_and_rechecked_before_writing"
+    "runtime_receipt_read_before_the_first_case_and_rechecked_before_writing",
+    "probe_changed_after_this_run_the_backends_now_use_a_private_copy_of_the_hashed_receipt_not_its_path"
   ]
 }

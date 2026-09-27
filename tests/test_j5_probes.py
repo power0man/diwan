@@ -625,6 +625,43 @@ def test_a_receipt_replaced_during_the_run_writes_no_report(tmp_path, monkeypatc
     assert not out_boundary.exists() and not out_sandbox.exists()
 
 
+def test_both_backends_run_against_a_private_copy_of_the_hashed_receipt_not_its_path(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #144: الخلفيّتان كانتا تُبنيان من مسار المشغّل، فإيصالٌ استُبدل مؤقتًا قبل أن تقرأه إحداهما ثم
+    أُعيد قبل إعادة القراءة ينسب الحالاتِ إلى صورةٍ غيرِ المسجَّلة. فتُبنيان من نسخةٍ خاصّة من البايتات المبصومة."""
+    receipt = _receipt(tmp_path)
+    original = receipt.read_bytes()
+    seen = {}
+
+    def swapped(read):
+        """يُستبدل الإيصالُ حين تُبنى الخلفيّة، ثم يُعاد: ما تقرؤه هو ما يُعطى لها."""
+        receipt.write_text(json.dumps({"image_id": "sha256:" + "e" * 64, "lock_sha256": "d" * 64}), encoding="utf-8")
+        try:
+            return read()
+        finally:
+            receipt.write_bytes(original)
+
+    class _Recording(_Backend):
+        def __init__(self, path, work, files, *, docker_executable):
+            if "execution" not in seen:
+                seen["execution"] = (Path(path), swapped(Path(path).read_bytes), Path(path).stat().st_mode & 0o777)
+            super().__init__(path, work, files, docker_executable=docker_executable)
+
+    monkeypatch.setattr(boundary, "DockerExecutionBackend", _Recording)
+    monkeypatch.setattr(boundary, "_containers", lambda docker: {"a" * 64})
+    monkeypatch.setattr(boundary.sandbox, "configure_sandbox_backend",
+                        lambda path, work: seen.setdefault("sandbox", (Path(path), swapped(Path(path).read_bytes),
+                                                                        Path(path).stat().st_mode & 0o777)))
+    verdicts = iter([SimpleNamespace(passed=True, exit_code=0, error_code=None),
+                     SimpleNamespace(passed=False, exit_code=1, error_code="exit_1"),
+                     SimpleNamespace(passed=False, exit_code=0, error_code="verdict_missing")])
+    monkeypatch.setattr(boundary.sandbox, "run_in_sandbox", lambda code, harness: next(verdicts))
+    assert boundary.main(["--receipt", str(receipt), "--out-boundary", str(tmp_path / "b.json"),
+                          "--out-sandbox", str(tmp_path / "s.json")]) == 0
+    for name in ("execution", "sandbox"):
+        path, read, mode = seen[name]
+        assert path != receipt.resolve() and read == original and mode == 0o600 and not path.exists(), name
+
+
 def test_the_reports_carry_the_probe_hash_taken_before_the_run(tmp_path, monkeypatch):
     monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
     monkeypatch.setattr(boundary, "_containers", lambda docker: {"a" * 64})
