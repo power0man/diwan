@@ -96,6 +96,32 @@ cd "$KIMI_WORK" && kimi --prompt "$(cat "$bundle")" --output-format text \
 
 ---
 
+## المزوّد البديل حين تنفد حصّةُ Kimi Code
+
+**السبب:** في ٢٧ سبتمبر ٢٠٢٦ خرج `run` بـ`403 You've reached your monthly usage limit` (#27). فصار لـ`run` متغيّرٌ
+`KIMI_BACKEND` يختار **النموذجَ نفسَه من مزوّدٍ آخر**، والأداةُ وقواعدُها الأربع كما هي:
+
+| `KIMI_BACKEND` | النموذج | المزوّد | الكلفة |
+|---|---|---|---|
+| `kimi` (الافتراضيّ) | `default_model` في `config.toml` | حسابُ Kimi Code | الاشتراك |
+| `ollama` | `kimi-k2.6:cloud` | Ollama المحلي (`http://localhost:11434/v1`) ← ollama.com بتسجيل الدخول القائم | خطّةُ Ollama |
+| `hf` | `moonshotai/Kimi-K2.6` | Hugging Face Inference Providers (`https://router.huggingface.co/v1`) | **على حساب المالك**: لا تشغيلةَ كاملة قبل موافقته |
+
+- **كيف:** البديلُ يُعرَّف بمتغيّرات `KIMI_MODEL_*` الموثّقة في Kimi Code، في بيئة عملية Kimi وحدها. فلا يُمسّ
+  `~/.kimi-code/config.toml`، ولا يُكتب سرٌّ في ملفّ.
+- **مفتاح `hf`:** يُقرأ وقتَ التشغيل من ملفّ توكن `hf` المحلي (`~/.cache/huggingface/token`) إلى تلك البيئة، ولا يُطبع.
+- **سطرُ نهاية التشغيل** يسمّي المزوّدَ والنموذج. ويُكتب اسمُ النموذج الذي ألّف في تقرير الاستلام ودليله، فـ`kimi-k2.6:cloud`
+  غيرُ نموذج Kimi Code.
+- **وقيمةٌ مجهولة تُرفض** قبل أي تشغيل (`tests/test_kimi_driver_carries_only_repo_text.py`، وطفرتان قُتلتا).
+
+```bash
+KIMI_BACKEND=ollama tools/kimi_drive.sh run
+```
+
+**حدٌّ مقيس على الماك (٢٧ سبتمبر):** على شبكة نقطة اتصال الهاتف يُحلّ `ollama.com` إلى عنوان NAT64
+(`64:ff9b::…`) وتنقضي مصافحةُ TLS، بينما IPv4 يصل (`curl -4`). فمسارُ `ollama` السحابيّ يحتاج شبكةً عادية أو DNS يعيد IPv4،
+وهذا إعدادُ نظامٍ للمالك.
+
 ## الخيارات: ما تُحقِّق منه وما لم يُتحقَّق
 
 **تُحقِّق منه على هذا الجهاز بـ`kimi --help`** (٢٤ سبتمبر ٢٠٢٦، النسخة **2.1.0**):
