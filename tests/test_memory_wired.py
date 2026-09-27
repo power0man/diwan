@@ -828,6 +828,34 @@ class _ToolEchoingDelegate(_EchoingDelegate):
         return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64)
 
 
+class _CallIdEchoingDelegate(_EchoingDelegate):
+    """نموذجٌ يردّد القيمةَ معرّفًا لنداء الأداة لا نصًّا ولا وسيطًا: يبقى المعرّفُ في نداءه وفي ردّ الأداة عليه في الجلسة."""
+    name = "call-id-echo"
+
+    def complete(self, request):
+        from core.contracts import Response, ToolCall, Usage
+        seen = any(self.value in _payload(m) for m in request.messages)
+        if seen and request.tools and request.messages[-1].role != "tool":
+            call = ToolCall(self.value, "propose_memory", {"text": "ملاحظة"})
+            return Response("", Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64, tool_calls=(call,))
+        return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64)
+
+
+def test_a_forgotten_value_echoed_as_a_tool_call_id_in_the_reused_session_fails_the_scenario(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة الحادية والعشرون): شاهدٌ صالحٌ معرّفَ نداءٍ (`passport-secret-445566`) يردّده النموذجُ
+    `call_id` فيبقى في نداءه وفي `tool_call_id` ردِّ الأداة ويُرسلان إليه بعد النسيان؛ صار `_payload` يقرأ المعرّفين."""
+    from evaluation.memory_runner import run_wired_scenario
+    value = "passport-secret-445566"
+    scenario = {"id": "forget_call_id_echo", "category": "forget", "steps": [
+        {"op": "remember", "project": "A", "text": value, "consent": "owner", "as": "m1"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": "ما رقم الجواز؟", "absent": [value], "present": []},
+    ]}
+    report = run_wired_scenario(scenario, tmp_path / "w", delegate=_CallIdEchoingDelegate(value))
+    assert not report["passed"] and report["context_exposures"] == 1, report
+    assert any(f.endswith("in the model's own earlier reply") for f in report["failures"]), report["failures"]
+
+
 def test_a_forgotten_value_echoed_inside_a_tool_call_argument_in_the_reused_session_fails_the_scenario(tmp_path):
     """ملاحظةُ Codex على #129 (الجولة العشرون): الصدى في وسيط `propose_memory` يبقى في نصّ الجلسة (`Message.tool_calls`) ولا
     يُرى إن قُرئ `content` وحده؛ صار فحصُ الغياب يقرأ الرسالةَ كلَّها بنداءاتها."""

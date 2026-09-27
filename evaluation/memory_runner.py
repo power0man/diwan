@@ -267,9 +267,11 @@ def _flat(value) -> str:
 
 
 def _payload(message) -> str:
-    """الرسالةُ كلُّها كما تبلغ النموذج: نصُّها ونداءاتُ الأدوات فيها بأسمائها ووسائطها — فالقيمةُ التي يردّدها النموذج في
-    وسيط `propose_memory` تبقى في التاريخ كما يبقى نصُّه (ملاحظة Codex على #129، الجولة العشرون)."""
-    return "\n".join([message.content, *(f"{c.name} {_flat(c.arguments)}" for c in message.tool_calls)])
+    """الرسالةُ كلُّها كما تبلغ النموذج: نصُّها، ومعرّفُ النداء الذي تردّ عليه، ونداءاتُ الأدوات فيها بمعرّفاتها وأسمائها
+    ووسائطها — فالقيمةُ التي يردّدها النموذج في وسيط `propose_memory` أو في معرّف النداء نفسِه تبقى في التاريخ كما يبقى نصُّه
+    (ملاحظتا Codex على #129، الجولتان العشرون والحادية والعشرون)."""
+    return "\n".join([message.content, message.tool_call_id or "",
+                      *(f"{c.call_id} {c.name} {_flat(c.arguments)}" for c in message.tool_calls)])
 
 
 def _memory_parts(request) -> tuple[str, str, str]:
