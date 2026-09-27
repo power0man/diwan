@@ -37,6 +37,24 @@ import uuid
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+NOT_SOURCE = frozenset({"tests", "__pycache__", "site-packages", "venv"})
+
+
+def _tree() -> dict[str, str]:
+    """بصماتُ كلّ وحدةٍ من المستودع، بلا الاختبارات والحزم المثبَّتة والمجلّدات المخفيّة."""
+    out = {}
+    for folder, dirs, files in os.walk(ROOT):
+        dirs[:] = [d for d in dirs if d not in NOT_SOURCE and not d.startswith(".")]
+        for name in files:
+            if name.endswith(".py"):
+                path = Path(folder) / name
+                out[path.relative_to(ROOT).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return out
+
+
+# بصماتُ المستودع قبل تحميل الشيفرة المقيسة: وحدةٌ استُبدلت بين تحميلها وأول بصمةٍ تُنفَّذ قديمةً ويُسجَّل جديدُها، ويُبقيه
+# الفحصُ بعد الجولة؛ فكلُّ بصمةٍ تُسجَّل تساوي ما قبل التحميل (ملاحظة Codex على #144)
+BEFORE_IMPORT = _tree()
 
 from agent.web_search import SearxngBackend  # noqa: E402
 from core.execution import DockerExecutionBackend, _clean_env  # noqa: E402
@@ -54,7 +72,9 @@ COMMAND_REQUEST = 'شغّل الأمر python3 -c "print(2+2)" وأخبرني ب
 # وحدةٍ من المستودع محمَّلةٍ في العملية، فلا يفوت قائمةً منتقاةً ما تمرّ به الجولة، كمهايئَي المزوّد (ملاحظة Codex على #144)
 SOURCES = ("core/execution.py", "agent/web_search.py", "agent/builtin_tools.py", "agent/loop.py", "webui/server.py",
            "tools/probe_j5_agent_round.py")
-NOT_SOURCE = frozenset({"tests", "__pycache__", "site-packages", "venv"})
+# ما يجوز أن يُركَّب في حاوية SearXNG: إعداداتُها ومخبؤها وحدهما. فتركيبٌ فوق برنامجها أو مدخلها يُبقي `.Path` و`.Args`
+# والصورةَ والمنفذَ كما هي ويشغّل غيرَها (ملاحظة Codex على #144)
+SEARXNG_MOUNTS = ("/etc/searxng", "/var/cache/searxng")
 # الصورةُ المثبَّتة بالبصمة في docs/guides/G5.md (الخطوتان ٢١–٢٢)، وقيست بها ج٥ أول مرّة
 PINNED_SEARXNG = "searxng/searxng@sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6"
 # عنوانُ الجهاز حرفيًّا لا اسمًا: «localhost» يُحلّ إلى أحدهما، والحاويةُ تنشر على عنوانٍ بعينه (ملاحظة Codex على #144)
@@ -152,12 +172,16 @@ def _serving(url: str, container_id: str, docker: str) -> dict:
     image = lambda fmt: loads(_inspect(docker, image_id, fmt, "image")) if image_id else None
     default = [*(image("{{json .Config.Entrypoint}}") or []), *(image("{{json .Config.Cmd}}") or [])]
     exposed = image("{{json .Config.ExposedPorts}}") or {}
+    mounts = sorted(str(m.get("Destination")) for m in loads(_inspect(docker, container_id, "{{json .Mounts}}")) or [])
     return {"id": container_id,
             "image": _inspect(docker, container_id, "{{.Config.Image}}"),
             "image_id": image_id,
             "running": _inspect(docker, container_id, "{{.State.Running}}") == "true",
             "started_at": _inspect(docker, container_id, "{{.State.StartedAt}}"),
             "runs_the_image_default": process == default,
+            "mounts": mounts,
+            "overlays_the_image": any(not any(m == allowed or m.startswith(allowed + "/") for allowed in SEARXNG_MOUNTS)
+                                      for m in mounts),
             # والعنوانُ المنشور هو عنوانُ الرابط نفسُه، لا أيُّ عنوانٍ للجهاز: حاويةٌ على 127.0.0.1 لا تشهد لرابطٍ على ::1
             # قد يخدمه غيرُها (ملاحظة Codex على #144)؛ وبروتوكولُه TCP ومنفذُه الداخليّ ممّا تعلنه الصورة
             "serves_url": any(key.endswith("/tcp") and key in exposed and ip == host and p == port
@@ -179,6 +203,8 @@ def _searxng(url: str, container: str, docker: str) -> tuple[dict, dict]:
         raise SystemExit(json.dumps({"status": "refused", "code": "searxng_image_not_pinned"}))
     if not pinned["runs_the_image_default"]:
         raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_process_overridden"}))
+    if pinned["overlays_the_image"]:
+        raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_overlays_the_image"}))
     if not (pinned["running"] and pinned["serves_url"]):
         raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_does_not_serve_the_url"}))
     return {"url": url, "container": container, "image": pinned["image"], "image_id": pinned["image_id"]}, pinned
@@ -314,6 +340,7 @@ def main(argv=None) -> int:
     # وحدةٌ حُمّلت أولَ مرّةٍ في أثناء الجولة تُبصم بعدها، فلا بصمةَ لها قبلها تُقارن بها
     after = _sources()
     changed = sorted(path for path, digest in sources.items() if after.get(path) != digest)
+    changed += sorted(path for path, digest in after.items() if BEFORE_IMPORT.get(path) != digest and path not in changed)
     # وحاويةُ SearXNG التي شُهد لها، والنموذجُ الذي بُصم: حاويةٌ أُعيد تشغيلُها أو استُبدلت أو كفّت عن نشر المنفذ، أو نموذجٌ
     # سُحب من جديد، في أثناء الجولة يجعلان التقريرَ يشهد لما لم يُقَس (ملاحظة Codex على #144)
     if _serving(args.web_search_url, pinned["id"], args.docker) != pinned:
@@ -365,6 +392,9 @@ def main(argv=None) -> int:
             "the_ui_runs_against_a_private_copy_of_the_hashed_receipt_bytes_not_the_receipt_path",
             "searxng_container_pinned_by_id_and_start_time_and_engine_digest_rechecked_after_the_round",
             "searxng_container_runs_its_image_default_entrypoint_and_command_on_a_port_the_image_exposes",
+            "searxng_container_mounts_only_its_configuration_and_cache",
+            "every_loaded_repo_module_is_hashed_before_the_measured_code_is_imported_and_must_match_after_the_round",
+            "a_deliberate_same_user_process_rewriting_files_or_containers_between_checks_is_out_of_scope",
             "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
             "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host",
         ],

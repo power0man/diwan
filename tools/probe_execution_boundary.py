@@ -28,6 +28,16 @@ import tempfile
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+SOURCES = ("core/execution.py", "core/sandbox.py", "tools/probe_execution_boundary.py")
+
+
+def _sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+# بصماتُ الشيفرة المقيسة قبل تحميلها: وحدةٌ استُبدلت بين تحميلها وأول بصمةٍ تُنفَّذ قديمةً ويُسجَّل جديدُها، ويُبقيه
+# الفحصُ بعد التشغيل؛ فكلُّ بصمةٍ تُسجَّل تساوي ما قبل التحميل (ملاحظة Codex على #144)
+BEFORE_IMPORT = {path: _sha(ROOT / path) for path in SOURCES}
 
 from core import sandbox  # noqa: E402
 from core.execution import DockerExecutionBackend, ExecutionRefused, _clean_env  # noqa: E402
@@ -66,13 +76,6 @@ CHILD_SLEEPER = "import subprocess, time; subprocess.Popen(['sleep', '60']); tim
 # الحمولةُ المزوّرة التي تطبعها الحالةُ قبل خروجها بـ7؛ ولا تُقبل الحالةُ إلا إن رُئيت في stdout (ملاحظة Codex على #136)
 FORGED_PAYLOAD = '{"exit_code":0,"success":true}'
 # ما يُبصم قبل التشغيل ويُعاد بصمُه قبل الكتابة: الشيفرةُ المقيسة، والمجسُّ الذي يقيسها (ملاحظة Codex على #136)
-SOURCES = ("core/execution.py", "core/sandbox.py", "tools/probe_execution_boundary.py")
-
-
-def _sha(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def _sources() -> dict[str, str]:
     return {path: _sha(ROOT / path) for path in SOURCES}
 
@@ -205,7 +208,8 @@ def main(argv=None) -> int:
         shutil.rmtree(private, ignore_errors=True)
     after = _containers(args.docker)
     # ملفٌّ تغيّر في أثناء التشغيل يجعل البصمةَ تشهد لبايتاتٍ لم تُنفَّذ، فلا يُكتب تقرير
-    changed = sorted(path for path, digest in _sources().items() if digest != sources[path])
+    changed = sorted(path for path, digest in _sources().items()
+                     if not digest == sources[path] == BEFORE_IMPORT[path])
     if args.receipt.read_bytes() != receipt_bytes:
         changed.append("runtime_receipt")
     if changed:
@@ -244,7 +248,9 @@ def main(argv=None) -> int:
                                "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly",
                                "sources_and_probe_hashed_before_the_first_case_and_rechecked_before_writing",
                                "runtime_receipt_read_before_the_first_case_and_rechecked_before_writing",
-                               "the_backends_run_against_a_private_copy_of_the_hashed_receipt_bytes_not_the_receipt_path"],
+                               "the_backends_run_against_a_private_copy_of_the_hashed_receipt_bytes_not_the_receipt_path",
+                               "sources_hashed_before_the_measured_code_is_imported_and_must_match_before_and_after",
+                               "a_deliberate_same_user_process_rewriting_files_or_containers_between_checks_is_out_of_scope"],
     }
     sandbox_report = {
         "schema_version": 1, **common, "source_sha256": sources["core/sandbox.py"], "source": "core/sandbox.py",

@@ -146,7 +146,8 @@ class _EmptyThenFoundApp:
 
 
 PIN = {"id": "c" * 64, "image": j5.PINNED_SEARXNG, "image_id": "sha256:" + "a" * 64, "running": True,
-       "started_at": "2026-09-27T03:00:00Z", "runs_the_image_default": True, "serves_url": True}
+       "started_at": "2026-09-27T03:00:00Z", "runs_the_image_default": True, "mounts": ["/etc/searxng"],
+       "overlays_the_image": False, "serves_url": True}
 
 
 def _ui_receipt(tmp_path, **fields):
@@ -293,6 +294,34 @@ def test_a_searxng_container_or_engine_that_changes_during_the_round_writes_no_r
     assert asked == [PIN["id"]] and not out.exists()
 
 
+def test_a_module_whose_bytes_differ_from_before_the_measured_imports_writes_no_report(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #144: وحدةٌ استُبدلت بين تحميلها وأول بصمةٍ تُنفَّذ قديمةً ويُسجَّل جديدُها، ويُبقيه الفحصُ بعد
+    الجولة. فكلُّ بصمةٍ تُسجَّل تساوي بصمتَها قبل تحميل الشيفرة المقيسة، في المجسّين."""
+    app = _PendingApp(["python3", "-c", "print(2+2)"])
+    monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: app)
+    _attest(monkeypatch)
+    monkeypatch.setitem(j5.BEFORE_IMPORT, "providers/local_tools.py", "0" * 64)
+    out = tmp_path / "r.json"
+    assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
+                    "--runtime-receipt", str(_ui_receipt(tmp_path)), "--out", str(out)]) == 2
+    refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert refused["code"] == "sources_changed_during_the_run" and refused["changed"] == ["providers/local_tools.py"]
+    assert not out.exists()
+    monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
+    monkeypatch.setattr(boundary, "_containers", lambda docker: {"a" * 64})
+    monkeypatch.setattr(boundary.sandbox, "configure_sandbox_backend", lambda receipt, work: None)
+    verdicts = iter([SimpleNamespace(passed=True, exit_code=0, error_code=None),
+                     SimpleNamespace(passed=False, exit_code=1, error_code="exit_1"),
+                     SimpleNamespace(passed=False, exit_code=0, error_code="verdict_missing")])
+    monkeypatch.setattr(boundary.sandbox, "run_in_sandbox", lambda code, harness: next(verdicts))
+    monkeypatch.setitem(boundary.BEFORE_IMPORT, "core/sandbox.py", "0" * 64)
+    out_boundary, out_sandbox = tmp_path / "b.json", tmp_path / "s.json"
+    assert boundary.main(["--receipt", str(_receipt(tmp_path)), "--out-boundary", str(out_boundary),
+                          "--out-sandbox", str(out_sandbox)]) == 2
+    refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert refused["changed"] == ["core/sandbox.py"] and not out_boundary.exists()
+
+
 def test_every_repo_module_the_round_loads_is_hashed_not_a_hand_picked_list():
     """ملاحظةُ Codex على #144: القائمةُ المنتقاة فاتها مهايئا المزوّد اللذان يبنيان طلبَ النموذج ويقرآن نداءات الأدوات؛
     فصار كلُّ ما حُمّل من المستودع يُبصم، ولا يُبصم ما ليس منه (الاختبارات والحزم المثبَّتة)."""
@@ -405,7 +434,7 @@ IMAGE_PROCESS = ["/sbin/tini", "--", "/usr/local/searxng/entrypoint.sh"]
 
 def _docker(image: str, bindings: list[dict], running: str = "true", asked: list | None = None,
             started: str = "2026-09-27T03:00:00Z", container_id: str = "c" * 64, proto: str = "tcp",
-            process: list | None = None, container_port: str = "8080"):
+            process: list | None = None, container_port: str = "8080", mounts: tuple = ("/etc/searxng",)):
     """Docker يعرف حاويةً واحدة: الاسمُ «searxng» يُحلّ إلى معرّفها، وما سواه يُسأل بالمعرّف؛ وصورتُها بمعرّفها تعلن
     مدخلَها وأمرَها ومنفذَها 8080/tcp."""
     process = IMAGE_PROCESS if process is None else process
@@ -426,6 +455,7 @@ def _docker(image: str, bindings: list[dict], running: str = "true", asked: list
         out = {"{{.Id}}": container_id, "{{.Config.Image}}": image, "{{.Image}}": "sha256:" + "a" * 64,
                "{{.State.Running}}": running, "{{.State.StartedAt}}": started,
                "{{json .Path}}": json.dumps(process[0]), "{{json .Args}}": json.dumps(process[1:]),
+               "{{json .Mounts}}": json.dumps([{"Type": "volume", "Destination": m} for m in mounts]),
                "{{json .NetworkSettings.Ports}}": json.dumps({f"{container_port}/{proto}": bindings})}[fmt]
         return SimpleNamespace(stdout=out + "\n", returncode=0)
     return run
@@ -503,6 +533,16 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
         with pytest.raises(SystemExit) as refused:
             j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
         assert json.loads(str(refused.value))["code"] == "searxng_container_process_overridden"
+    # ولا يُركَّب فيها إلا إعداداتُها ومخبؤها: تركيبٌ فوق برنامجها يُبقي عمليتَها وصورتَها كما هي ويشغّل غيرَها
+    # (ملاحظة Codex على #144)
+    for mounts in (("/usr/local/searxng",), ("/etc/searxng", "/usr/local/searxng/searx"), ("/etc/searxng2",)):
+        monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, mounts=mounts))
+        with pytest.raises(SystemExit) as refused:
+            j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
+        assert json.loads(str(refused.value))["code"] == "searxng_container_overlays_the_image"
+    monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, mounts=("/etc/searxng",
+                                                                                     "/var/cache/searxng/cache")))
+    assert not j5._searxng("http://127.0.0.1:8888", "searxng", "docker")[1]["overlays_the_image"]
     monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, container_port="9999"))
     with pytest.raises(SystemExit) as refused:
         j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
