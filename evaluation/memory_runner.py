@@ -82,6 +82,17 @@ def _exposed(shown: str, text: str) -> bool:
     return _contains(shown, held_text(text))
 
 
+def _probe_question(text: str) -> str:
+    """سؤالُ فحص العرض: العنصرُ بصورته المحجورة لا بنصّه، فلا يبلغ النموذجَ أمرٌ مدسوسٌ في عنصرٍ على أنه طلبُ المالك نفسِه
+    (ملاحظة Codex على #129، الجولة الثالثة عشرة)؛ وكلماتُه الباقية تقدّمه في ترتيب السياق."""
+    return "ما الذي تتذكّره عن: " + held_text(text)
+
+
+def _leaked_directive(shown: str, text: str) -> bool:
+    """أمرٌ في العنصر بلغ السياقَ بنصّه لا بعلامته — يُعدّ غيرَ محجورٍ في أيّ فئةٍ كان السيناريو."""
+    return any(_contains(shown, finding.excerpt) for finding in scan(unfenced(text)) if finding.excerpt)
+
+
 def run_scenario(scenario: dict, root: Path) -> dict:
     stores: dict[str, MemoryStore] = {}
     refs: dict[str, object] = {}
@@ -115,8 +126,12 @@ def run_scenario(scenario: dict, root: Path) -> dict:
             if isinstance(item, str) and item in {i["item_id"] for i in s.items()}:
                 exposures += 1
                 text = _saved_text(scenario, step["ref"])
-                if not _exposed(s.context_block(text), text):
+                shown = s.context_block(_probe_question(text))
+                if not _exposed(shown, text):
                     failures.append(f"{index}: item not exposed in context before forget")
+                if _leaked_directive(shown, text):
+                    failures.append(f"{index}: directive reached the context unquarantined before forget")
+                    unquarantined += 1
             s.forget(item)
         elif op == "backup":
             # وكلُّ عنصرٍ قائمٍ في كلِّ مشروعٍ يُعرض قبل اللقطة أيضًا (فاللقطةُ للمساحة كلِّها لا للمشروع المسمّى)، فتحمل
@@ -124,11 +139,19 @@ def run_scenario(scenario: dict, root: Path) -> dict:
             for other in stores.values():
                 for item in other.items():
                     exposures += 1
-                    if not _exposed(other.context_block(item["text"]), item["text"]):
+                    shown = other.context_block(_probe_question(item["text"]))
+                    if not _exposed(shown, item["text"]):
                         failures.append(f"{index}: item not exposed in context before backup")
-            refs[step["as"]] = s.backup()
+                    if _leaked_directive(shown, item["text"]):
+                        failures.append(f"{index}: directive reached the context unquarantined before backup")
+                        unquarantined += 1
+            # واللقطةُ لكلِّ المخازن معًا كما تُنسخ المساحةُ كلُّها، فتُفحص الاستعادةُ في كلِّ مشروعٍ لا في المسمّى وحده
+            # (ملاحظة Codex على #129، الجولة الثالثة عشرة)
+            refs[step["as"]] = {name: other.backup() for name, other in stores.items()}
         elif op == "restore":
-            s.restore(refs[step["ref"]])
+            snapshot = refs[step["ref"]]
+            for name, other in stores.items():
+                other.restore(snapshot.get(name, {}))    # مخزنٌ أُنشئ بعد اللقطة ليس فيها: يُستعاد فارغًا بإيصالاته
         elif expect in ("retrieve", "context"):
             text = (" ".join(i["text"] for i in s.retrieve(step["query"])) if expect == "retrieve"
                     else s.context_block(step["question"]))
@@ -410,8 +433,12 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                 if isinstance(item, str) and item in {i["item_id"] for i in wired.store(name).items()}:
                     exposures += 1
                     text = _saved_text(scenario, step["ref"])
-                    if any(not _exposed(current, text) for current, _ in wired.contexts(name, text)):
+                    shown = [current for current, _ in wired.contexts(name, _probe_question(text))]
+                    if any(not _exposed(current, text) for current in shown):
                         failures.append(f"{index}: item not exposed in context before forget")
+                    if any(_leaked_directive(current, text) for current in shown):
+                        failures.append(f"{index}: directive reached the context unquarantined before forget")
+                        unquarantined += 1
                 wired.api("memory_forget", project=wired.project(name)["id"], item_id=item)
             elif op == "backup":
                 # كلُّ عنصرٍ قائمٍ في كلِّ مشروع (فاللقطةُ للمساحة كلِّها) يُعرض في جلستَي مشروعه قبل اللقطة، فتحمل اللقطةُ
@@ -420,8 +447,12 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                 for other in list(wired.projects):
                     for item in wired.store(other).items():
                         exposures += 1
-                        if any(not _exposed(current, item["text"]) for current, _ in wired.contexts(other, item["text"])):
+                        shown = [current for current, _ in wired.contexts(other, _probe_question(item["text"]))]
+                        if any(not _exposed(current, item["text"]) for current in shown):
                             failures.append(f"{index}: item not exposed in context before backup")
+                        if any(_leaked_directive(current, item["text"]) for current in shown):
+                            failures.append(f"{index}: directive reached the context unquarantined before backup")
+                            unquarantined += 1
                 refs[step["as"]] = wired.backup()
             elif op == "restore":
                 wired.restore(refs[step["ref"]])
