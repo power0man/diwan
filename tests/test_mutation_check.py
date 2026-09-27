@@ -630,6 +630,29 @@ def test_an_entry_is_killed_only_when_every_named_test_fails(repo, git, capsys):
     _clean(repo, git)
 
 
+def test_a_bare_function_selector_is_killed_only_when_every_collected_case_fails(repo, git, capsys):
+    """الدالّةُ المعلَّمة المسمّاةُ بلا معامل كانت تُحكم killed متى سقطت حالةٌ واحدة من حالاتها (ملاحظة Codex على #149)؛
+    صارت تُبسط إلى حالاتها كما يجمعها pytest فيلزم سقوطُها كلُّها وإلا partially_killed."""
+    decorated = TESTS + "\n\nimport pytest\n\n\n@pytest.mark.parametrize(\"x\", [\n    pytest.param(0, id=\"zero\"),\n    pytest.param(-1, id=\"negative\"),\n])\ndef test_not_positive(x):\n    assert positive(x) is False\n"
+    (repo / "tests/test_guard.py").write_text(decorated)
+    _manifest(repo, "test_guard", {**KILL, "id": "bare", "tests": ["tests/test_guard.py::test_not_positive"]})
+    git("add", "-A")
+    git("commit", "-qm", "bare selector, x >= 0 catches zero only")
+    report = _run(repo, "--all", capsys=capsys)
+    (result,) = report["results"]
+    assert result["code"] == "partially_killed" and result["named_but_passed"] == ["tests/test_guard.py::test_not_positive"]
+    assert result["failed_tests"] == ["tests/test_guard.py::test_not_positive[zero]"] and report["status"] == "failed"
+    _manifest(repo, "test_guard", {**KILL, "id": "bare", "new": "return x > -5", "tests": ["tests/test_guard.py::test_not_positive"]})
+    git("add", "-A")
+    git("commit", "-qm", "x > -5 catches both")
+    report = _run(repo, "--all", capsys=capsys)
+    (result,) = report["results"]
+    assert result["code"] == "killed" and result["failed_tests"] == [
+        "tests/test_guard.py::test_not_positive[zero]", "tests/test_guard.py::test_not_positive[negative]"]
+    assert report["status"] == "passed"
+    _clean(repo, git)
+
+
 def test_the_workflow_applies_mutations_to_the_prospective_merge_commit_not_the_pr_head():
     """على طلب الدمج يبني CI شجرةَ العمل من إيداع الدمج المرتقَب (github.sha) لا من رأس الفرع، فتغييرٌ متوافقٌ في الأساس
     يُبطل طفرةً لا يفلت حتى الأسبوعيّ (ملاحظة Codex على #149)."""

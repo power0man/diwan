@@ -5,7 +5,8 @@
 التي يجب أن تسقط، وهذه الأداةُ تطبّقه في شجرة عملٍ مؤقّتة منفصلة، وتحكم بالرمز:
 
     killed                   سقط كلُّ اختبارٍ مسمًّى عند الطفرة (وهو المطلوب)
-    partially_killed         سقط بعضُ المسمّى لا كلُّه: ما لم يسقط لا يحرس هذه الطفرة فلا يُدَّعى له ذلك
+    partially_killed         سقط بعضُ المسمّى لا كلُّه: ما لم يسقط لا يحرس هذه الطفرة فلا يُدَّعى له ذلك؛ والدالّةُ المسمّاةُ
+                             بلا معامل تُبسط إلى حالاتها كما يجمعها pytest فيلزم سقوطُها كلِّها
     survived                 لم يسقط اختبارٌ مسمًّى: الحارسُ لا يحرس
     test_missing             اختبارٌ مسمًّى لا يُجمع
     failing_before_mutation  اختبارٌ مسمًّى ساقطٌ قبل الطفرة، فسقوطُه بعدها لا يثبت شيئًا
@@ -397,6 +398,8 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
             _refuse_escape(worktree, entry["file"])
         cases = _touched_cases(python, worktree, touched or [], timeout)
         node_ids = sorted({t for e in entries for t in e["tests"]})
+        # الاسمُ المسمّى بلا معامل يُبسط إلى حالاته المجموعة، فلا يُحكم له بالقتل إلا إذا سقطت كلُّها (ملاحظة Codex على #149)
+        selectors = _touched_cases(python, worktree, [t for t in node_ids if "[" not in t], timeout)
         collected = _pytest(python, worktree, ["--collect-only", *node_ids], timeout)
         if collected is None:
             raise Refused("timeout", "جمعُ الاختبارات تجاوز مهلتَه")
@@ -411,7 +414,7 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
                 raise Refused("timeout", "التشغيلُ الأساسيّ تجاوز مهلتَه")
             baseline["failing_before_mutation"] = _failed(before)
         for entry in entries:
-            results.append(_apply(entry, worktree, baseline, python, timeout))
+            results.append(_apply(entry, worktree, baseline, python, timeout, selectors))
     finally:
         cleanup()
     totals = {code: sum(1 for r in results if r["code"] == code) for code in VERDICTS}
@@ -419,7 +422,7 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
             "worktree_kept": str(worktree) if keep else None}
 
 
-def _apply(entry: dict, worktree: Path, baseline: dict, python: str, timeout: int) -> dict:
+def _apply(entry: dict, worktree: Path, baseline: dict, python: str, timeout: int, selectors: dict | None = None) -> dict:
     record = {k: entry[k] for k in ("manifest", "line", "file", "old", "new", "tests", "count")}
     record.update({k: entry[k] for k in ("id", "task", "why") if k in entry})
     target = worktree / entry["file"]
@@ -445,8 +448,9 @@ def _apply(entry: dict, worktree: Path, baseline: dict, python: str, timeout: in
         return {**record, "code": "timeout", "verdict": VERDICTS["timeout"]}
     failed = _failed(result)
     # ما سقط يُسجَّل بمعرّفه الكامل بالمعامل، فالدالّةُ المسمّاةُ بلا معامل تُثبَت حالةً حالة
-    failed_tests = list(dict.fromkeys(f for t in entry["tests"] for f in _covers(t, failed)))
-    named_but_passed = [t for t in entry["tests"] if not _covers(t, failed)]
+    expected = lambda t: (selectors or {}).get(t) or [t]        # الدالّةُ بلا معامل: حالاتُها كلُّها
+    failed_tests = list(dict.fromkeys(c for t in entry["tests"] for c in expected(t) if c in failed))
+    named_but_passed = [t for t in entry["tests"] if any(c not in failed for c in expected(t))]
     # القتلُ حكمٌ على كلِّ اسمٍ في السطر: اسمٌ لم يسقط لا يُنسب إليه ما لم يفعل (ملاحظة Codex على #149)
     if result.returncode == 1 and failed_tests and not named_but_passed:
         return {**record, "code": "killed", "verdict": VERDICTS["killed"], "failed_tests": failed_tests,
