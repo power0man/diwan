@@ -43,10 +43,15 @@ MAX_TURN_BLOCK = 16000
 _SHA = re.compile(r"[0-9a-f]{64}")
 
 
+def unfenced(text: str) -> str:
+    """نصُّ العنصر وعلاماتُ السياج فيه مُبدَلة، قبل الحجر."""
+    return _FENCE_MARK.sub(". ", text)
+
+
 def held_text(text: str) -> str:
     """نصُّ العنصر كما يبلغ كتلةَ السياق: علاماتُ السياج فيه مُبدَلة ثم محجورًا. ويقرؤه مدقّقُ بنك الذاكرة ليقارن
     الشاهدَ بما يبلغ السياقَ من غير العنصر المفحوص (ملاحظة Codex على #129)."""
-    return quarantine(_FENCE_MARK.sub(". ", text)).text
+    return quarantine(unfenced(text)).text
 
 
 def valid_turn_memory(memory) -> bool:

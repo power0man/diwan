@@ -22,26 +22,44 @@
 """
 from __future__ import annotations
 
+import json
 import re
 import tempfile
-from collections import Counter
 from pathlib import Path
 
 import uuid
 
 from core.quoted import QUARANTINE_MARK, scan
 from evaluation.memory_bank import contains as _contains, names_every_directive
-from memory.store import HEADER, MemoryRefused, MemoryStore
+from memory.store import HEADER, MemoryRefused, MemoryStore, unfenced
+
+
+def _expected_line(text: str) -> str:
+    """سطرُ العنصر الآمر كما يجب أن يبلغ السياق: كلُّ مقطعٍ يلتقطه الماسح مُبدَلٌ بعلامته. ويُبنى هنا من مقاطع الماسح لا من
+    `quarantine`، فحجرٌ يحذف من العنصر جزءَه المطلوبَ وحده لا يطابقه ولو طابقه هو."""
+    text = unfenced(text)
+    pieces, cursor = [], 0
+    for finding in scan(text):
+        pieces += [text[cursor:finding.start], QUARANTINE_MARK.format(code=finding.code)]
+        cursor = finding.end
+    return "- " + "".join(pieces) + text[cursor:]
 
 
 def _marked(inside: str, scenario: dict, index: int, active: set) -> bool:
-    """كلُّ أمرٍ في كلّ عنصرٍ آمرٍ قائمٍ يسمّيه التوقّع (`names_every_directive`) تحلّ محلَّه في السياق علامتُه برمزه.
-    فغيابُ جزءٍ من الأمر لا يشهد وحده بالحجر: حجرٌ يحذف «I» وحده ويُمرّر ما بعده يُغيّبه أيضًا (ملاحظة Codex على #129)."""
+    """كلُّ عنصرٍ آمرٍ قائمٍ يسمّيه التوقّع (`names_every_directive`) يبلغ السياقَ بسطره المحجور كاملًا، كلُّ أمرٍ فيه مُبدَلٌ
+    بعلامته في موضعه. فغيابُ جزءٍ من الأمر لا يشهد وحده بالحجر، ولا عدُّ العلامات في السياق كلّه: علامةُ عنصرٍ آخر بالرمز
+    نفسِه تستوفيه والعنصرُ المفحوص يُمرّر ما بقي من أمره (ملاحظتا Codex على #129)."""
     step = scenario["steps"][index]
-    wanted = Counter(finding.code for s in scenario["steps"][:index]
-                     if s.get("op") in ("remember", "propose") and s["project"] == step["project"] and s["as"] in active
-                     and names_every_directive(step, s["text"]) for finding in scan(s["text"]))
-    return all(inside.count(QUARANTINE_MARK.format(code=code)) >= n for code, n in wanted.items())
+    return all(_expected_line(s["text"]) in inside for s in scenario["steps"][:index]
+               if s.get("op") in ("remember", "propose") and s["project"] == step["project"] and s["as"] in active
+               and names_every_directive(step, s["text"]))
+
+
+def _on_disk(raw: bytes, needle: str) -> bool:
+    """النصُّ على القرص بصورته أو بصورته في JSON: المخزنُ يكتب عناصرَه JSON، فسطرٌ جديد أو علامةُ تنصيص في النصّ تُكتب
+    مهرَّبةً ولا تطابقها بايتاتُه الخام (ملاحظة Codex على #129)."""
+    forms = {needle, json.dumps(needle, ensure_ascii=False)[1:-1], json.dumps(needle)[1:-1]}
+    return any(form.encode("utf-8") in raw for form in forms)
 
 
 def _active(refs: dict, store: MemoryStore) -> set:
@@ -111,7 +129,7 @@ def run_scenario(scenario: dict, root: Path) -> dict:
         elif expect == "residue":
             raw = _residue(s)
             for needle in step["absent"]:
-                if needle.encode("utf-8") in raw:
+                if _on_disk(raw, needle):
                     failures.append(f"{index}: residue holds «{needle[:30]}»")
                     if scenario["category"] == "consent":
                         consent_violations += 1
@@ -355,7 +373,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                 store = wired.store(name)
                 raw = _residue(store)
                 for needle in step["absent"]:
-                    if needle.encode("utf-8") in raw:
+                    if _on_disk(raw, needle):
                         failures.append(f"{index}: residue holds «{needle[:30]}»")
                         if scenario["category"] == "consent":
                             consent_violations += 1
