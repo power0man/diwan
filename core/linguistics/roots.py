@@ -39,20 +39,35 @@ class RootVerdict:
     source: str                 # "camel" | "template"
     reason: str | None
     candidates: tuple[str, ...] = ()
+    fallback: str | None = None     # لماذا لم يُستعمل المصدرُ المفضَّل (camel_not_installed أو camel_db_load_failed:<النوع>)، وإلا None
+
+
+def _load_camel():
+    """يحمّل محلّلَ CAMeL وقاعدتَه؛ يرفع ImportError عند غياب الحزمة وخطأَ القاعدة كما هو."""
+    from camel_tools.morphology.analyzer import Analyzer
+    from camel_tools.morphology.database import MorphologyDB
+    return Analyzer(MorphologyDB.builtin_db(CAMEL_DB))
 
 
 @lru_cache(maxsize=1)
-def camel_analyzer():
-    """محلّلُ CAMeL إن حضر هو وقاعدتُه، وإلا None — ويُحسم مرّةً واحدة."""
+def camel_status() -> tuple[object | None, str | None]:
+    """(المحلّل، None) إن حضر هو وقاعدتُه، وإلا (None، السببُ باسمه) — يُحسم مرّةً واحدة، والسببُ يُحفظ مع الحسم لا
+    يُطوى في None (مسحُ الإخفاقات الصامتة، ٢٧ سبتمبر ٢٠٢٦)."""
     try:
-        from camel_tools.morphology.analyzer import Analyzer
-        from camel_tools.morphology.database import MorphologyDB
+        return _load_camel(), None
     except ImportError:
-        return None
-    try:
-        return Analyzer(MorphologyDB.builtin_db(CAMEL_DB))
-    except Exception:                          # قاعدةٌ غير منزَّلة أو معطوبة
-        return None
+        return None, "camel_not_installed"
+    except Exception as exc:                   # قاعدةٌ غير منزَّلة أو معطوبة: يُسمّى نوعُ العطب
+        return None, f"camel_db_load_failed:{type(exc).__name__}"
+
+
+def camel_analyzer():
+    """محلّلُ CAMeL إن حضر هو وقاعدتُه، وإلا None؛ والسببُ في camel_unavailable_reason()."""
+    return camel_status()[0]
+
+
+def camel_unavailable_reason() -> str | None:
+    return camel_status()[1]
 
 
 def camel_available() -> bool:
@@ -86,6 +101,10 @@ def template_verdict(word: str) -> RootVerdict:
 
 def root_verdict(word: str, *, prefer: str = "camel") -> RootVerdict:
     """الجذرُ من المصدر المفضَّل إن حضر، وإلا من الاحتياطيّ المسمّى."""
-    if prefer == "camel" and camel_available():
-        return camel_verdict(word)
+    if prefer == "camel":
+        if camel_available():
+            return camel_verdict(word)
+        verdict = template_verdict(word)
+        return RootVerdict(verdict.word, verdict.root, verdict.source, verdict.reason, verdict.candidates,
+                           fallback=camel_unavailable_reason() or "camel_unavailable")
     return template_verdict(word)

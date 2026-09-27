@@ -24,6 +24,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import re
 import sys
 from pathlib import Path
@@ -271,18 +272,22 @@ class MaritimeNode:
         يُستعمل `LookupError` هنا**: الخدمةُ تبتلعه بوصفه غيابَ معرفة.
         و`RetrievalFailed` يعبُر فيُقيَّد خطأَ تشغيلٍ لا امتناعًا (ق٢٥).
 
-        ويبقى `TypeError` وحده مُلتقَطًا: فهو مُوافِقةُ توقيعٍ لدالّةِ بحثٍ
-        لا تعرف `match_any`، لا عطبُ بحث.
+        والتوقيعُ يُقرأ قبل النداء (`inspect.signature`): دالّةُ بحثٍ لا تعرف `match_any`
+        تُنادى بتوقيعها، و`TypeError` من داخل البحث عطبٌ يُسمّى لا مجسُّ توقيع (مسحُ
+        الإخفاقات الصامتة، ٢٧ سبتمبر ٢٠٢٦).
         """
         try:
-            return list(self.search(q, limit=limit, match_any=match_any))
-        except TypeError:
-            pass
-        except Exception as exc:
-            raise RetrievalFailed(f"عطبُ بحثٍ في المخزن: {type(exc).__name__}: "
-                                  f"{str(exc)[:200]}") from exc
+            parameters = inspect.signature(self.search).parameters
+            accepts_match_any = ("match_any" in parameters
+                                 or any(p.kind is inspect.Parameter.VAR_KEYWORD for p in parameters.values()))
+        except (TypeError, ValueError):
+            accepts_match_any = True        # توقيعٌ لا يُقرأ (كائنٌ مبنيّ): يُفترض الحديث، وما يرفعه يُرفع باسمه
         try:
+            if accepts_match_any:
+                return list(self.search(q, limit=limit, match_any=match_any))
             return list(self.search(q, limit=limit))
+        except TypeError as exc:
+            raise RetrievalFailed(f"عطبُ بحثٍ في المخزن: TypeError: {str(exc)[:200]}") from exc
         except Exception as exc:
             raise RetrievalFailed(f"عطبُ بحثٍ في المخزن: {type(exc).__name__}: "
                                   f"{str(exc)[:200]}") from exc
