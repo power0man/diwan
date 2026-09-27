@@ -20,6 +20,12 @@
   },
   "web_search": {
     "via": "webui.server.LocalApp.dispatch agent_ask (research session)",
+    "backend": {
+      "url": "http://127.0.0.1:8080",
+      "container": "searxng",
+      "image": "searxng/searxng@sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6",
+      "image_id": "sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6"
+    },
     "called_web_search": true,
     "attempts": [
       {
@@ -48,14 +54,14 @@
         "citations_passed": null,
         "answer_urls": [
           "https://www.alarabiya.net/saudi-today",
-          "https://www.alriyadh.com/news",
+          "https://www.alarabiya.net/saudi-today/last-news",
+          "https://www.annahar.com/economy/350356/%D8%A7%D9%84%D9%8A%D9%88%D9%85-%D8%A7%D9%84%D9%88%D8%B7%D9%86%D9%8A-%D8%A7%D9%84%D8%B3%D8%B9%D9%88%D8%AF%D9%8A-2026-%D9%83%D9%8A%D9%81-%D8%A8%D9%86%D8%AA-%D8%A7%D9%84%D9%85%D9%85%D9%84%D9%83%D8%A9-%D8%A7%D9%82%D8%AA%D8%B5%D8%A7%D8%AF%D8%A7-%D9%84%D9%84%D8%B0%D9%83%D8%A7-%D8%A7%D9%84%D8%A7%D8%B5%D8%B7%D9%",
+          "https://www.annahar.com/economy/350356/%D8%A7%D9%84%D9%8A%D9%88%D9%85-%D8%A7%D9%84%D9%88%D8%B7%D9%86%D9%8A-%D8%A7%D9%84%D8%B3%D8%B9%D9%88%D8%AF%D9%8A-2026-%D9%83%D9%8A%D9%81-%D8%A8%D9%86%D8%AA-%D8%A7%D9%84%D9%85%D9%85%D9%84%D9%83%D8%A9-%D8%A7%D9%82%D8%AA%D8%B5%D8%A7%D8%AF%D8%A7-%D9%84%D9%84%D8%B0%D9%83%D8%A7-%D8%A7%D9%84%D8%A7%D8%B5%D8%B7%D9%86%D8%A7%D8%B9%D9%8A-%D8%AE%D9%84%D8%A7%D9%84-%D8%B9%D8%A7%D9%85",
           "https://www.argaam.com/",
-          "https://www.facebook.com/AlArabiya.Saudi/?locale=ar_AR",
           "https://www.okaz.com.sa/",
-          "https://www.spa.gov.sa/",
-          "https://x.com/SaudiNews50?lang=ar"
+          "https://www.spa.gov.sa/"
         ],
-        "answer_chars": 3285
+        "answer_chars": 2402
       }
     ],
     "attempts_until_called": 2
@@ -81,10 +87,7 @@
     "one_live_round_each_on_one_local_model_no_variance_estimate",
     "the_model_decides_whether_to_call_the_tool_every_attempt_is_recorded_including_those_without_a_call",
     "search_results_come_from_public_engines_through_a_local_searxng_and_change_over_time",
-    "container_ids_recorded_by_shape_not_value",
-    "acceptance_was_computed_after_the_run_from_the_recorded_fields_with_probe_j5_agent_round_acceptance",
-    "the_searxng_url_and_image_were_not_recorded_at_run_time_the_probe_now_refuses_a_non_loopback_url_or_an_image_other_than_the_g5_pin",
-    "superseded_by_j5-docker-searxng-20260927b_with_the_searxng_attestation"
+    "container_ids_recorded_by_shape_not_value"
   ],
   "acceptance": {
     "passed": true,
