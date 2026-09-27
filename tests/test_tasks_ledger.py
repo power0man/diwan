@@ -68,4 +68,10 @@ def test_every_entry_names_registered_agents():
 
 
 def test_the_task_table_is_frozen():
-    assert tuple(number for number, _ in task_rows()) == FROZEN_TASKS
+    """المجمَّدُ اتحادُ ما بقي في §٣ وما أُرشف منه بنصّه في `docs/TASKS-ARCHIVE.md` (ق٦٧-٥): لا صفٌّ جديد ولا مكرَّر،
+    والأرشيفُ لا يحمل إلا منجزًا."""
+    live = [number for number, _ in task_rows(("AGENTS.md",))]
+    archived = task_rows(("docs/TASKS-ARCHIVE.md",))
+    assert not set(live) & {number for number, _ in archived}, "صفٌّ في الموضعين"
+    assert sorted(live + [number for number, _ in archived]) == sorted(FROZEN_TASKS)
+    assert archived and all(status.startswith("منجزة") for _, status in archived)
