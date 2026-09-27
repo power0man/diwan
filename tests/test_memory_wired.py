@@ -496,6 +496,48 @@ def test_the_commissioned_bank_tests_what_each_category_names():
         == "consent_unchecked_before_approval"
 
 
+def test_erased_and_unconsented_witnesses_are_substantial_and_only_active_items_rival_a_witness():
+    """ملاحظتا Codex على #129: حرفٌ واحد («ر») في `absent` بعد النسيان أو قبل الموافقة يغيب ولو بقي ما سواه، فيمرّ
+    البنكُ المكلَّف بفحصٍ لا يشهد؛ وشاهدُ الحقن كان يُرفض لأن عنصرًا منسيًّا أو اقتراحًا لم يُوافَق عليه يحمله، وهما لا
+    يبلغان السياق."""
+    from core.canonical import PayloadRejected
+    from evaluation.memory_bank import validate_memory_bank
+    by_id = {s["id"]: s for s in BANK["scenarios"]}
+    strict = lambda s: validate_memory_bank({**BANK, "scenarios": [s]}, strict=True)
+    loose = lambda s: validate_memory_bank({**BANK, "scenarios": [s]})
+    code = lambda s: pytest.raises(PayloadRejected, strict, s).value.code
+
+    def witnessed(scenario, witness, kinds):
+        return dict(scenario, steps=[dict(s, absent=[witness]) if s.get("expect") in kinds else s
+                                     for s in scenario["steps"]])
+    # النسيان: الرقمُ المنسيّ عشرةُ أرقام، وحدُّه أربع
+    for witness, accepted in (("ر", False), ("٠١١", False), ("٠١١٤", True)):
+        scenario = witnessed(by_id["forget_001"], witness, ("retrieve", "context"))
+        loose(scenario)
+        if accepted:
+            strict(scenario)
+        else:
+            assert code(scenario) == "forget_not_checked_in_use"
+    # الموافقة: ما لم يُوافَق عليه يُذكر في السياق بحرفٍ واحد، أو بـ«جدة» وهي ثلاثة
+    for witness, accepted in (("ج", False), ("جدة", False), ("إلى جدة", True)):
+        scenario = witnessed(by_id["consent_002"], witness, ("context",))
+        scenario["steps"][-1] = by_id["consent_002"]["steps"][-1]
+        loose(scenario)
+        if accepted:
+            strict(scenario)
+        else:
+            assert code(scenario) == "consent_unchecked_before_approval"
+    # الحقن: الشاهدُ نفسُه في عنصرٍ منسيّ أو اقتراحٍ لم يُوافَق عليه لا ينافسه، وفي عنصرٍ قائمٍ ينافسه
+    directive, fenced = by_id["injection_001"]["steps"]
+    twin = {"op": "remember", "project": "A", "text": "موعد التسليم نهاية الشهر", "consent": "owner", "as": "m0"}
+    forget_twin = {"op": "forget", "project": "A", "ref": "m0"}
+    strict(dict(by_id["injection_001"], steps=[twin, forget_twin, directive, fenced]))
+    strict(dict(by_id["injection_001"], steps=[{"op": "propose", "project": "A", "text": twin["text"], "as": "m0"},
+                                               directive, fenced]))
+    assert code(dict(by_id["injection_001"], steps=[twin, directive, fenced])) \
+        == "injection_item_not_shown_in_checked_context"
+
+
 def test_each_check_names_the_item_in_its_own_project_and_after_it_exists():
     """ملاحظاتُ Codex على #129 (الجولة الثالثة): غيابُ المنسيّ أو غيرِ الموافَق عليه يُفحص في مشروعه هو لا في مشروعٍ
     آخر يغيب عنه طبيعةً؛ والعزلُ يُفحص بعد حفظ العنصر لا قبله؛ والسياقُ المحجور بعد حفظ الأمر ويذكر عنصرَه."""

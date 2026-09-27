@@ -86,15 +86,20 @@ def validate_memory_bank(bank: dict, *, strict: bool = False) -> dict:
     return bank
 
 
-def _names(step: dict, text: str, fields=("absent",)) -> bool:
-    """في حقول التوقّع جزءٌ من هذا النصّ نفسِه، لا نصٌّ آخر."""
-    return any(a and a in text for field in fields for a in step.get(field) or [])
+# أقلُّ ما يشهد من نصٍّ في البنك المكلَّف: أربعُ كلماتٍ أو حروف. فحرفٌ واحد («ر») يغيب ولو بقي ما سواه من المنسيّ أو غير
+# الموافَق عليه (ملاحظة Codex على #129)
+SUBSTANTIVE = 4
 
 
-def _bound(step: dict, item: dict) -> bool:
+def _names(step: dict, text: str, fields=("absent",), least: int = 0) -> bool:
+    """في حقول التوقّع جزءٌ من هذا النصّ نفسِه، لا نصٌّ آخر، فيه `least` كلماتٍ أو حروفٍ على الأقل."""
+    return any(a and a in text and len(re.findall(r"\w", a)) >= least for field in fields for a in step.get(field) or [])
+
+
+def _bound(step: dict, item: dict, least: int = 0) -> bool:
     """التوقّعُ يخصّ عنصرًا إن كان في `absent` جزءٌ من نصّه، وفي مشروعه هو: غيابُه عن مشروعٍ آخر غيابٌ طبيعيّ
     لا يشهد بالنسيان ولا بالموافقة (ملاحظة Codex على #129). والعزلُ وحده يفحص مشروعًا آخر عمدًا."""
-    return step["project"] == item["project"] and _names(step, item["text"])
+    return step["project"] == item["project"] and _names(step, item["text"], least=least)
 
 
 def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
@@ -152,7 +157,7 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
                 windows = [(forgot + 1, next((i for i in restores if i > forgot), len(steps))) for forgot in forgets]
             for start, stop in windows:
                 bound = {s["expect"] for s in steps[start:stop] if s.get("expect") in ("retrieve", "context", "residue")
-                         and _bound(s, made[ref][1])}
+                         and _bound(s, made[ref][1], SUBSTANTIVE if strict else 0)}
                 in_use = bound & {"retrieve", "context"}
                 if not in_use or (strict and category == "forget" and in_use != {"retrieve", "context"}):
                     _reject(path, "forget_not_checked_in_use",
@@ -187,8 +192,9 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         # عنصرٍ وأول تاليه يحضر في السياق ولو غاب العنصرُ الآمر عنه (ملاحظة Codex على #129). وشرطةُ السطر يُسقطها التطبيعُ
         # في `contains`، فشاهدٌ يبدأ بها يُقارن بما بعدها
         def shown_only_by_the_item(k, s, ref, item):
+            # وما لا يبلغ السياقَ لا ينافس الشاهد: منسيٌّ أو غيرُ موافَقٍ عليه (ملاحظة Codex على #129)
             others = [held_text(o["text"]) for r, (j, o) in made.items()
-                      if r != ref and j < k and o["project"] == item["project"]]
+                      if r != ref and j < k and o["project"] == item["project"] and active_at(r, k)]
             return any(p and "\n" not in p and contains(item["text"], p) and len(re.findall(r"\w", p)) >= 4
                        and not contains(wrapper, p) and not any(contains(held, p) for held in others)
                        for p in s.get("present") or [])
@@ -210,7 +216,7 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
             # (ملاحظة Codex على #129)
             restored = next((j for j in range(i + 1, len(steps)) if steps[j].get("op") == "restore"), len(steps))
             kinds = {s["expect"] for s in steps[i + 1:min(approved, restored)]
-                     if s.get("expect") in ("retrieve", "context", "residue") and _bound(s, item)}
+                     if s.get("expect") in ("retrieve", "context", "residue") and _bound(s, item, SUBSTANTIVE)}
             return "residue" in kinds and kinds & {"retrieve", "context"}
         # وكلُّ ما لم يُوافَق عليه يُفحص قبل موافقته، لا أحدُها: اقتراحٌ ثانٍ بلا فحصٍ يُحفظ خطأً ولا يُعدّ (ملاحظة Codex على #129)
         if not all(checked_before_approval(*u) for u in unconsented):
