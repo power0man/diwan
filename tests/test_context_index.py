@@ -73,6 +73,22 @@ def test_the_generated_block_cannot_change_the_digest_it_reports(tmp_path, capsy
     assert code == 1 and report["files"] == [ci.AGENTS], "الكتلةُ العبثية وحدها هي المتأخّرة"
 
 
+def test_write_is_idempotent_whatever_the_old_block_looked_like_and_measures_agents_as_written(tmp_path, capsys):
+    """ملاحظتا Codex على #148: كتلةٌ قديمة بعددِ أسطرٍ مختلف كانت تجعل --write ينجح ثم --check يسقط، وكان AGENTS.md
+    يُقاس مفرَّغَ الكتلة فيُبخَس حجمُه. صار القياسُ من النصّ البديل، والكتابةُ ثابتةٌ من أول مرّة."""
+    root = _copy(tmp_path)
+    agents = root / ci.AGENTS
+    agents.write_text(ci.with_block(agents.read_text(encoding="utf-8"), "> سطرٌ واحد"), encoding="utf-8")
+    code, report = _run(root, "--write", capsys=capsys)
+    assert code == 0 and ci.AGENTS in report["written"]
+    assert _run(root, "--check", capsys=capsys)[0] == 0, "كتابةٌ واحدة يجب أن تكفي"
+    state = json.loads((root / ci.INDEX_JSON).read_text(encoding="utf-8"))
+    doc = next(d for d in state["documents"] if d["path"] == ci.AGENTS)
+    on_disk = agents.read_text(encoding="utf-8")
+    assert doc["bytes"] == len(on_disk.encode("utf-8")) and doc["tokens_estimate"] == ci.tokens_estimate(on_disk)
+    assert doc["lines"] == on_disk.count("\n")
+
+
 def test_a_missing_or_doubled_block_is_a_named_refusal(tmp_path, capsys):
     root = _copy(tmp_path)
     agents = root / ci.AGENTS

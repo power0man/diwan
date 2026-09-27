@@ -3,7 +3,7 @@
  "codex_project_doc_max_bytes": 32768,
  "documents": [
   {
-   "bytes": 28735,
+   "bytes": 29462,
    "headings": [
     {
      "level": 2,
@@ -61,13 +61,13 @@
      "title": "٩ — حدود هذا الملف"
     }
    ],
-   "lines": 281,
+   "lines": 283,
    "path": "AGENTS.md",
    "purpose": "الأدوار والقواعد وبروتوكول البدء، وما بقي مفتوحًا من جدول §٣",
    "read_when": "كل جلسة، كاملًا",
    "role": "حاكمة",
    "sha256_12": "7310f0884073",
-   "tokens_estimate": 6084
+   "tokens_estimate": 6252
   },
   {
    "bytes": 22605,
@@ -1518,7 +1518,7 @@
  "latest_decision": 67,
  "measurement_limits": [
   "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
-  "agents_md_is_digested_with_its_generated_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
+  "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
   "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
   "documents_outside_SOURCES_are_not_indexed",
   "no_git_history_is_read_so_the_output_is_identical_in_shallow_and_full_clones"

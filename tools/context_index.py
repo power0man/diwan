@@ -139,39 +139,46 @@ def _masked_agents(text: str) -> str:
     return with_block(text, "")
 
 
+def _document(source: Source, text: str, measured: str | None = None) -> dict:
+    """وصفُ وثيقةٍ من نصّها: الحجمُ والأسطرُ والرموزُ والعناوينُ من النصّ كما يُقرأ، والبصمةُ من `measured` إن أُعطي."""
+    raw = text.encode("utf-8")
+    return {"path": source.path, "role": source.role, "purpose": source.purpose, "read_when": source.read_when,
+            "bytes": len(raw), "lines": text.count("\n") + (0 if text.endswith("\n") or not text else 1),
+            "tokens_estimate": tokens_estimate(text), "sha256_12": digest((measured if measured is not None else text).encode("utf-8")),
+            "headings": headings(text) if source.path.endswith(".md") else []}
+
+
+def _snapshot(root: Path) -> tuple[dict, str]:
+    """(بيانُ الفهرس، نصُّ AGENTS.md بكتلته الجديدة). الكتلةُ تُبنى من الوثائق الأخرى ومن جدول §٣، ثم يُقاس AGENTS.md
+    بنصّه البديل كما سيُقرأ (حجمًا وأسطرًا ورموزًا وعناوين)، وبصمتُه وحدها من النصّ المفرَّغ الكتلة؛ فلا دورَ، و--write ثابتٌ
+    مهما كانت الكتلةُ القديمة (ملاحظتا Codex على #148)."""
+    for source in SOURCES:
+        if not (root / source.path).is_file():
+            raise IndexError_(f"source_missing:{source.path}")
+    agents_source = next(s for s in SOURCES if s.path == AGENTS)
+    agents_text = (root / AGENTS).read_text(encoding="utf-8")
+    others = [_document(s, (root / s.path).read_text(encoding="utf-8")) for s in SOURCES if s.path != AGENTS]
+    decisions = (root / "docs/DECISIONS.md").read_text(encoding="utf-8")
+    partial = {"documents": others, "open_tasks": open_tasks(agents_text), "latest_decision": latest_decision(decisions)}
+    agents_new = with_block(agents_text, render_block(partial))
+    agents_doc = _document(agents_source, agents_new, measured=_masked_agents(agents_new))
+    state = {"schema_version": 1, "generator": "tools/context_index.py", "block": BLOCK,
+             "codex_project_doc_max_bytes": CODEX_PROJECT_DOC_MAX_BYTES,
+             "open_tasks": partial["open_tasks"], "latest_decision": partial["latest_decision"],
+             "documents": [agents_doc, *others],
+             "measurement_limits": [
+                 "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
+                 "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
+                 "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
+                 "documents_outside_SOURCES_are_not_indexed",
+                 "no_git_history_is_read_so_the_output_is_identical_in_shallow_and_full_clones",
+             ]}
+    return state, agents_new
+
+
 def describe(root: Path) -> dict:
     """بيانُ الفهرس من الوثائق وحدها؛ لا زمنَ ولا git."""
-    docs = []
-    agents_text = None
-    for source in SOURCES:
-        path = root / source.path
-        if not path.is_file():
-            raise IndexError_(f"source_missing:{source.path}")
-        raw = path.read_bytes()
-        text = raw.decode("utf-8")
-        original = text
-        if source.path == AGENTS:
-            # الكتلةُ المولَّدة تُفرَّغ قبل قياس الحجم والبصمة، فلا يغيّر ما يُكتب فيها حجمَ الملف ولا بصمتَه في الفهرس (وإلا لم يثبت
-            # --write)؛ أمّا العناوينُ فبأسطرها في الملفّ كما هو على القرص، لأنها للقفز إليه (ملاحظة Codex على #148)
-            agents_text = text
-            text = _masked_agents(text)
-            raw = text.encode("utf-8")
-        docs.append({"path": source.path, "role": source.role, "purpose": source.purpose, "read_when": source.read_when,
-                     "bytes": len(raw), "lines": text.count("\n") + (0 if text.endswith("\n") or not text else 1),
-                     "tokens_estimate": tokens_estimate(text), "sha256_12": digest(raw),
-                     "headings": headings(original) if source.path.endswith(".md") else []})
-    decisions = (root / "docs/DECISIONS.md").read_text(encoding="utf-8")
-    return {"schema_version": 1, "generator": "tools/context_index.py", "block": BLOCK,
-            "codex_project_doc_max_bytes": CODEX_PROJECT_DOC_MAX_BYTES,
-            "open_tasks": open_tasks(agents_text), "latest_decision": latest_decision(decisions),
-            "documents": docs,
-            "measurement_limits": [
-                "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
-                "agents_md_is_digested_with_its_generated_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
-                "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
-                "documents_outside_SOURCES_are_not_indexed",
-                "no_git_history_is_read_so_the_output_is_identical_in_shallow_and_full_clones",
-            ]}
+    return _snapshot(root)[0]
 
 
 def _kb(n: int) -> str:
@@ -240,11 +247,10 @@ def render_block(state: dict) -> str:
 
 
 def expected_files(root: Path) -> dict[Path, str]:
-    state = describe(root)
-    agents = (root / AGENTS).read_text(encoding="utf-8")
+    state, agents_new = _snapshot(root)
     return {root / INDEX_MD: render_md(state),
             root / INDEX_JSON: json.dumps(state, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
-            root / AGENTS: with_block(agents, render_block(state))}
+            root / AGENTS: agents_new}
 
 
 def budget(root: Path) -> dict:
