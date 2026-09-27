@@ -89,11 +89,22 @@ cmd_bundle() {
     memory) header="$DIWAN/docs/external/KIMI-MEMORY-HEADER.md"; assignment="$DIWAN/docs/external/KIMI-MEMORY-BANK.md" ;;
     *) die "KIMI_TASK: next أو memory، لا $task" ;;
   esac
+  local brief="$DIWAN/docs/KIMI-BENCHMARK-BRIEF.md"
+  # وتكليفُ الذاكرة يأخذ من التكليف العامّ §٠ و§١ وحدهما (مَن أنت، وقواعدُ الاستقلال) كما هما: ما بعدهما عقدُ بنك
+  # v1.2 وتسليمُه في open/ وsealed/ وkimi-benchmark/، فيعارض تسليمَ الذاكرة في kimi-memory/ (ملاحظة Codex على #129)
+  if [ "$task" = memory ]; then
+    grep -q '^## ٠ — ' "$brief" && grep -q '^## ٢ — ' "$brief" \
+      || die "لم يُعثر على §٠ و§٢ في $brief؛ فلا يُقتطع منه شيءٌ بتخمين"
+  fi
   mkdir -p "$KIMI_WORK/prompts"
   {
     sed -n '/^---$/,$p' "$header" | tail -n +2
     printf '\n'
-    cat "$DIWAN/docs/KIMI-BENCHMARK-BRIEF.md"
+    if [ "$task" = memory ]; then
+      awk '/^## ٢ — /{exit} /^## ٠ — /{on=1} on' "$brief"
+    else
+      cat "$brief"
+    fi
     printf '\n'
     sed -n '/^---$/,$p' "$assignment" | tail -n +2
   } > "$out"

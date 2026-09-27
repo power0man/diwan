@@ -135,16 +135,36 @@ def test_the_memory_assignment_is_bundled_with_its_own_header(tmp_path):
     done = subprocess.run(["bash", str(DRIVER), "bundle"], capture_output=True, text=True, env=env)
     assert done.returncode == 0, done.stderr
     produced = Path(done.stdout.strip()).read_text(encoding="utf-8")
+    brief = (ROOT / "docs" / "KIMI-BENCHMARK-BRIEF.md").read_text(encoding="utf-8")
+    independence = brief[brief.index("## ٠ — "):brief.index("## ٢ — ")]
     expected = (_after_first_rule(ROOT / "docs" / "external" / "KIMI-MEMORY-HEADER.md") + "\n"
-                + (ROOT / "docs" / "KIMI-BENCHMARK-BRIEF.md").read_text(encoding="utf-8") + "\n"
+                + independence + "\n"
                 + _after_first_rule(ROOT / "docs" / "external" / "KIMI-MEMORY-BANK.md"))
     assert produced == expected
     assert "current/open" not in produced and "KIMI-NEXT" not in produced
-    # موضعُ التسليم واحد: kimi-memory/، ولا أمرَ بالتسليم في kimi-benchmark/
+    # موضعُ التسليم واحد: kimi-memory/، ولا أمرَ بالتسليم في kimi-benchmark/، ولا عقدُ تسليم بنك v1.2 من التكليف العامّ
+    # (open/ وsealed/ وMANIFEST)؛ وقواعدُ الاستقلال حاضرة (ملاحظتا Codex على #129)
     assert "سلّم في `kimi-memory/`" in produced and "سلّم في `kimi-benchmark/`" not in produced
+    assert "## ١ — قواعدُ الاستقلال" in produced
+    for contract in ("## ١١ — ما تُسلِّمه", "sealed/MANIFEST.json", "├── open/", "## ٨ — الشطرُ المحجوب"):
+        assert contract not in produced
     bad = subprocess.run(["bash", str(DRIVER), "bundle"], capture_output=True, text=True,
                          env={**env, "KIMI_TASK": "other"})
     assert bad.returncode != 0
+
+
+def test_a_brief_whose_sections_moved_is_refused_not_cut_by_guess(tmp_path):
+    """إن لم يوجد §٢ في التكليف العامّ لاقتطع awk منه حتى آخره، ومعه عقدُ تسليم بنك v1.2؛ فالأداةُ ترفض بدل أن تخمّن."""
+    diwan = tmp_path / "diwan"
+    for rel in ("docs/external/KIMI-MEMORY-HEADER.md", "docs/external/KIMI-MEMORY-BANK.md"):
+        (diwan / rel).parent.mkdir(parents=True, exist_ok=True)
+        (diwan / rel).write_text((ROOT / rel).read_text(encoding="utf-8"), encoding="utf-8")
+    brief = (ROOT / "docs" / "KIMI-BENCHMARK-BRIEF.md").read_text(encoding="utf-8")
+    (diwan / "docs" / "KIMI-BENCHMARK-BRIEF.md").write_text(brief.replace("## ٢ — ", "## 2 — "), encoding="utf-8")
+    env = dict(os.environ, KIMI_WORK=str(tmp_path / "work"), DIWAN=str(diwan), KIMI_TASK="memory")
+    done = subprocess.run(["bash", str(DRIVER), "bundle"], capture_output=True, text=True, env=env)
+    assert done.returncode != 0 and "§٠ و§٢" in done.stderr
+    assert not list((tmp_path / "work").rglob("prompt-*.txt"))
 
 
 def test_the_memory_brief_documents_exactly_the_fields_the_validator_accepts():

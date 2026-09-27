@@ -1,7 +1,8 @@
 # تكليف Kimi: بنكُ تذكّرٍ مستقلّ للذاكرة المحكومة
 
-> **للمالك أو لجلسة الماك:** يُرسل ما تحت الخطّ كما هو بـ`KIMI_TASK=memory tools/kimi_drive.sh run`، وتأخذ الحزمةُ
-> من رأس التشغيل فقرتَه الأولى وحدها (`docs/external/KIMI-DRIVER.md`)، أو لصقًا في محادثةٍ جديدة بعد `docs/KIMI-BENCHMARK-BRIEF.md` كاملًا.
+> **للمالك أو لجلسة الماك:** يُرسل ما تحت الخطّ كما هو بـ`KIMI_TASK=memory tools/kimi_drive.sh run`، والحزمةُ رأسُها
+> `docs/external/KIMI-MEMORY-HEADER.md` ثم §٠ و§١ من `docs/KIMI-BENCHMARK-BRIEF.md` (`docs/external/KIMI-DRIVER.md`)؛
+> أو لصقًا في محادثةٍ جديدة بعد §٠ و§١ من ذلك التكليف وحدهما، لا كاملًا، فما بعدهما تسليمُ بنكٍ آخر.
 >
 > **لماذا:** بنكُ الذاكرة الحاليّ (`evaluation/suites/memory_v1.json`، ٣٠ سيناريو) كتبته عائلةُ المطوِّر
 > نفسُها، ويمرّ ٣٠/٣٠ على الطريق الموصول وعلى المحرّك الحيّ (`docs/probe/memory-live-20260927b.json`). فالرقمُ
