@@ -460,44 +460,38 @@ def test_removing_or_narrowing_a_manifest_row_whose_test_remains_drops_its_proof
     _clean(repo, git)
 
 
-def test_an_inherited_test_method_is_a_touched_guard_of_its_heir_and_a_base_imported_from_elsewhere_is_a_declared_limit(repo, git, capsys):
+def test_an_inherited_test_method_is_touched_when_its_base_grows_and_a_new_heir_is_collected(repo, git, capsys):
     """وارثٌ بلا تعريف (`class TestAgain(TestBase)`) يجمع له pytest `TestAgain::test_value` والقراءةُ كانت ترى جسمَ الوارث وحده
-    فلا يُمسّ شيء (ملاحظة Codex على #149)؛ صارت الموروثةُ اختبارًا للوارث مداه رأسُه ومدى تعريفها، فإضافةُ الوارث أو دالّةٍ في
-    الأصل تمسّها. والأصلُ المستورد من وحدةٍ أخرى لا يُرى: حدٌّ معلَن."""
-    based = TESTS + "\n\nclass TestBase:\n    x = 0\n\n    def test_value(self):\n        assert positive(self.x) is False\n"
+    (ملاحظة Codex على #149): صارت الموروثةُ تُوضع للوارث بمدى تعريفها ورأسِه، فسطرٌ مضاف في دالّة الأصل يمسّها في كلِّ وارثٍ
+    قائم؛ والوارثُ الجديد — ولو من أصلٍ مستورد — يُمسّ لأنه استجدّ في جمع pytest."""
+    based = TESTS + "\n\nclass TestBase:\n    def test_value(self):\n        assert positive(0) is False\n\n\nclass TestAgain(TestBase):\n    note = \"inherits test_value untouched\"\n"
     (repo / "tests/test_guard.py").write_text(based)
     row = {**KILL, "id": "kill-base", "tests": ["tests/test_guard.py::TestBase::test_value"]}
     _manifest(repo, "test_guard", {**KILL, "id": "kill"}, row)
     git("add", "-A")
-    git("commit", "-qm", "a base class guard and its manifest")
+    git("commit", "-qm", "a base class guard, an heir, and a manifest naming the base only")
     base = git("rev-parse", "HEAD")
     rng = lambda: f"{base}..{git('rev-parse', 'HEAD')}"
-    heir = based + "\n\nclass TestAgain(TestBase):\n    note = \"inherits test_value untouched\"\n"
-    (repo / "tests/test_guard.py").write_text(heir)
+    grown = based.replace("        assert positive(0) is False\n", "        assert positive(0) is False\n        assert positive(-1) is False\n", 1)
+    (repo / "tests/test_guard.py").write_text(grown)
     git("add", "-A")
-    git("commit", "-qm", "an heir that overrides nothing")
+    git("commit", "-qm", "the base method grows, so the heir's inherited guard is touched too")
     report = _run(repo, "--range", rng(), capsys=capsys)
     assert report["unmanifested_new_tests"] == ["tests/test_guard.py::TestAgain::test_value"] and report["status"] == "failed"
+    assert report["touched_cases"] == {"tests/test_guard.py::TestAgain::test_value": ["tests/test_guard.py::TestAgain::test_value"],
+                                       "tests/test_guard.py::TestBase::test_value": ["tests/test_guard.py::TestBase::test_value"]}
     _manifest(repo, "test_guard", {**KILL, "id": "kill"}, {**row, "tests": [*row["tests"], "tests/test_guard.py::TestAgain::test_value"]})
     git("add", "-A")
     git("commit", "-qm", "the heir's inherited guard is named")
     report = _run(repo, "--range", rng(), capsys=capsys)
     assert report["status"] == "passed" and report["totals"]["killed"] == 2 and report["unproved_touched_tests"] == []
-    assert report["touched_cases"] == {"tests/test_guard.py::TestAgain::test_value": ["tests/test_guard.py::TestAgain::test_value"]}
-    (repo / "tests/test_guard.py").write_text(heir.replace("        assert positive(self.x) is False\n",
-                                                            "        assert positive(self.x) is False\n\n    def test_zero(self):\n        assert positive(0) is False\n"))
-    git("add", "-A")
-    git("commit", "-qm", "the base gains a method, so every heir gains a guard")
-    report = _run(repo, "--range", rng(), capsys=capsys)
-    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::TestAgain::test_zero", "tests/test_guard.py::TestBase::test_zero"]
-    assert report["status"] == "failed"
     (repo / "tests/shared.py").write_text("from pkg.guard import positive\n\n\nclass Shared:\n    def test_shared(self):\n        assert positive(0) is False\n")
-    (repo / "tests/test_guard.py").write_text(heir + "\n\nfrom shared import Shared\n\n\nclass TestImported(Shared):\n    pass\n")
+    (repo / "tests/test_guard.py").write_text(grown + "\n\nfrom shared import Shared\n\n\nclass TestMore(TestBase):\n    pass\n\n\nclass TestImported(Shared):\n    pass\n")
     git("add", "-A")
-    git("commit", "-qm", "an heir of an imported base: not seen (declared limit)")
+    git("commit", "-qm", "two new heirs, one of an imported base: both collected, so both touched")
     report = _run(repo, "--range", rng(), capsys=capsys)
-    assert "tests/test_guard.py::TestImported::test_shared" not in report["touched_cases"]
-    assert report["unmanifested_new_tests"] == [] and report["status"] == "passed"
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::TestImported::test_shared", "tests/test_guard.py::TestMore::test_value"]
+    assert report["status"] == "failed"
     _clean(repo, git)
 
 
@@ -524,9 +518,9 @@ def test_a_manifest_renamed_onto_another_module_leaves_its_source_module_an_orph
     _clean(repo, git)
 
 
-def test_an_attribute_that_shadows_an_inherited_test_removes_it_and_a_function_alias_is_a_test(repo, git, capsys):
+def test_a_shadowing_attribute_is_not_collected_and_an_attribute_alias_is_collected_as_pytest_decides(repo, git, capsys):
     """`test_value = None` في الوارث يحجب الموروثةَ فلا يجمعها pytest، والقراءةُ كانت تخترع `TestChild::test_value` فلا يُرضى
-    المدى: حذفُه غيرُ مسمًّى وتسميتُه test_missing (ملاحظة Codex على #149)؛ صارت السمةُ تحجب، والاسمُ المنسوب دالّةً اختبارًا."""
+    المدى (ملاحظة Codex على #149)؛ صار جمعُ pytest هو الحكمَ: المحجوبةُ لا تُمسّ، والسمةُ المنسوبة دالّةً تُمسّ لأنها استجدّت."""
     based = TESTS + "\n\nclass TestBase:\n    def test_value(self):\n        assert positive(0) is False\n"
     (repo / "tests/test_guard.py").write_text(based)
     row = {**KILL, "id": "kill-base", "tests": ["tests/test_guard.py::TestBase::test_value"]}
@@ -550,10 +544,10 @@ def test_an_attribute_that_shadows_an_inherited_test_removes_it_and_a_function_a
     _clean(repo, git)
 
 
-def test_a_module_level_alias_of_a_class_or_a_function_is_a_collected_guard_and_a_none_assignment_shadows_a_test(repo, git, capsys):
+def test_a_module_level_alias_of_a_class_or_a_function_is_collected_and_a_none_assignment_uncollects(repo, git, capsys):
     """`TestAlias = Helper` في مستوى الوحدة يجمع له pytest `TestAlias::test_*` بكلِّ دوالّ Helper، و`test_alias = _zero` يجمعه
-    دالّةً، والقراءةُ كانت ترى التعريفات وحدها فلا يُمسّ شيء (ملاحظة Codex على #149)؛ صار التعيينُ يُقرأ بسطره،
-    و`test_x = None` بعد تعريفها يحجبها فتُعاد بياناتُها كالمحذوفة."""
+    دالّةً، والقراءةُ كانت ترى التعريفات وحدها فلا يُمسّ شيء (ملاحظة Codex على #149)؛ صار جمعُ pytest هو الحكمَ، و`test_x = None`
+    بعد تعريفها يُخرجها من الجمع فتُعاد بياناتُها كالمحذوفة."""
     based = TESTS + "\n\nclass Helper:\n    def test_zero_again(self):\n        assert positive(0) is False\n\n\ndef _zero():\n    assert positive(0) is False\n"
     (repo / "tests/test_guard.py").write_text(based)
     _manifest(repo, "test_guard", {**KILL, "id": "kill"})
@@ -576,16 +570,36 @@ def test_a_module_level_alias_of_a_class_or_a_function_is_a_collected_guard_and_
     _clean(repo, git)
 
 
-def test_a_unittest_subclass_is_collected_whatever_its_name_and_a_base_imported_under_another_name_is_a_declared_limit(repo, git, capsys):
-    """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة فتمرّ حرّاسُه بلا بيانٍ ولا إثبات (ملاحظة Codex
-    على #149)؛ والوارثُ منه في الوحدة نفسِها مثلُه. والصنفُ العاديّ لا يجمعه pytest ولا تراه الأداة؛ والوارثُ أصلًا مستوردًا
-    باسمٍ لا ينتهي بـTestCase يجمعه pytest ولا تراه الأداة — حدٌّ معلَن باسمه."""
+def test_an_imported_test_function_or_class_is_collected_in_the_importing_module(repo, git, capsys):
+    """`from pkg.helper import test_guard` و`from shared import TestShared` في وحدة اختبارٍ قائمة يجمعهما pytest تحتها
+    (ملاحظة Codex على #149)، والقراءةُ لا ترى الاستيراد؛ صار ما استجدّ في جمع pytest ممسوسًا أيًّا كان مصدرُه."""
+    (repo / "pkg/helper.py").write_text("from pkg.guard import positive\n\n\ndef test_guard():\n    assert positive(0) is False\n")
+    (repo / "tests/shared.py").write_text("from pkg.guard import positive\n\n\nclass TestShared:\n    def test_shared(self):\n        assert positive(0) is False\n")
     _manifest(repo, "test_guard", {**KILL, "id": "kill"})
     git("add", "-A")
-    git("commit", "-qm", "manifest")
+    git("commit", "-qm", "helpers that are not collected where they live")
     base = git("rev-parse", "HEAD")
+    (repo / "tests/test_guard.py").write_text(TESTS + "\n\nfrom pkg.helper import test_guard\nfrom shared import TestShared\n")
+    git("add", "-A")
+    git("commit", "-qm", "imported into the test module, so collected there")
+    rng = lambda: f"{base}..{git('rev-parse', 'HEAD')}"
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::TestShared::test_shared", "tests/test_guard.py::test_guard"]
+    assert report["status"] == "failed"
+    _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": [*KILL["tests"], "tests/test_guard.py::TestShared::test_shared", "tests/test_guard.py::test_guard"]})
+    git("add", "-A")
+    git("commit", "-qm", "named")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["unproved_touched_tests"] == []
+    _clean(repo, git)
+
+
+def test_a_unittest_subclass_is_placed_whatever_its_name_so_a_grown_method_touches_it_and_its_heir(repo, git, capsys):
+    """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة (ملاحظة Codex على #149)؛ صار يُقرأ هو ووارثُه في
+    الوحدة، فسطرٌ مضاف في دالّته يمسّها فيه وفي الوارث. والصنفُ العاديّ لا يجمعه pytest فلا يُمسّ ولو قُرئ؛ والوارثُ أصلًا
+    مستوردًا باسمٍ لا ينتهي بـTestCase يجمعه pytest ولا تضعه القراءةُ، فسطرٌ مضاف فيه لا يمسّه — حدٌّ معلَن باسمه."""
     (repo / "tests/base.py").write_text("import unittest\n\n\nclass Base(unittest.TestCase):\n    pass\n")
-    (repo / "tests/test_guard.py").write_text(TESTS + """
+    module = TESTS + """
 
 import unittest
 
@@ -610,21 +624,30 @@ class Helper:
 class FromImport(Base):
     def test_imported_base(self):
         assert positive(0) is False
-""")
-    git("add", "-A")
-    git("commit", "-qm", "unittest classes")
-    head = git("rev-parse", "HEAD")
-    report = _run(repo, "--range", f"{base}..{head}", capsys=capsys)
-    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::Derived::test_case_zero",       # موروثةٌ فهي للوارث أيضًا
-                                                "tests/test_guard.py::Derived::test_derived_zero",
-                                                "tests/test_guard.py::GuardCase::test_case_zero"]
-    assert report["status"] == "failed"
-    assert "tests/test_guard.py::FromImport::test_imported_base" not in report["unmanifested_new_tests"], "الحدُّ المعلَن أُغلق: حدِّث اسمه"
-    named = [*KILL["tests"], "tests/test_guard.py::GuardCase::test_case_zero", "tests/test_guard.py::Derived::test_derived_zero",
-             "tests/test_guard.py::Derived::test_case_zero"]
+"""
+    (repo / "tests/test_guard.py").write_text(module)
+    named = [*KILL["tests"], "tests/test_guard.py::GuardCase::test_case_zero", "tests/test_guard.py::Derived::test_case_zero",
+             "tests/test_guard.py::Derived::test_derived_zero", "tests/test_guard.py::FromImport::test_imported_base"]
     _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": named})
     git("add", "-A")
-    git("commit", "-qm", "named")
+    git("commit", "-qm", "unittest classes, all named")
+    base = git("rev-parse", "HEAD")
+    grown = module.replace("    def test_case_zero(self):\n        assert positive(0) is False\n",
+                           "    def test_case_zero(self):\n        assert positive(0) is False\n        assert positive(-1) is False\n")
+    grown = grown.replace("    def test_never_collected(self):\n        assert False\n", "    def test_never_collected(self):\n        assert False\n        assert False\n")
+    grown = grown.replace("    def test_imported_base(self):\n        assert positive(0) is False\n",
+                          "    def test_imported_base(self):\n        assert positive(0) is False\n        assert positive(-2) is False\n")
+    (repo / "tests/test_guard.py").write_text(grown)
+    _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": KILL["tests"]})
+    git("add", "-A")
+    git("commit", "-qm", "lines added inside three methods; the manifest names none of them")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::Derived::test_case_zero", "tests/test_guard.py::GuardCase::test_case_zero"]
+    assert report["status"] == "failed"
+    assert "tests/test_guard.py::FromImport::test_imported_base" not in report["unmanifested_new_tests"], "الحدُّ المعلَن أُغلق: حدِّث اسمه"
+    _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": named})
+    git("add", "-A")
+    git("commit", "-qm", "named again")
     report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
     (result,) = report["results"]
     assert result["code"] == "killed" and result["failed_tests"] == named
