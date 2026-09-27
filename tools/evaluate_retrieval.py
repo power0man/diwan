@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """يشغّل غ٣: BM25 مقابل المتّجهات مقابل الهجين على البنك العام المجمَّد، بمُضمِّنٍ في Ollama المحلي.
 
-    python3 tools/evaluate_retrieval.py --embedder qwen3-embedding:0.6b --baseline bge-m3 --agent <معرّفك> \\
-        --out docs/probe/g3-hybrid-vs-bm25-<التاريخ>.json
+    python3 tools/evaluate_retrieval.py --embedder qwen3-embedding:0.6b --license Apache-2.0 --baseline bge-m3 \\
+        --agent <معرّفك> --out docs/probe/g3-hybrid-vs-bm25-<التاريخ>.json
 
 والتضمينُ محليٌّ وحده: التضمينُ السحابيّ مرفوضٌ لأنه يمرّر النصوص (خطة ٢٦ سبتمبر، غ٣).
 """
@@ -21,7 +21,11 @@ if str(ROOT) not in sys.path:
 
 from core.vector_retrieval import OllamaEmbedder  # noqa: E402
 from evaluation import ablation  # noqa: E402
-from evaluation.retrieval_general import BANK, BANK_SHA256, RRF_K, comparisons, load_bank, run  # noqa: E402
+from evaluation.retrieval_general import BANK, BANK_SHA256, BOOTSTRAP, RRF_K, comparisons, load_bank, run  # noqa: E402
+
+# خطُّ الأساس المسجَّل في مواصفة غ٣ (docs/PLAN-20260926.md)، ورخصتُه من بطاقته (BAAI/bge-m3)
+BASELINE = "bge-m3"
+BASELINE_LICENSE = "MIT"
 
 LIMITS = [
     "bank_authored_by_a_developer_family_one_gold_passage_per_query_not_blind",
@@ -59,7 +63,8 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--embedder", default="qwen3-embedding:0.6b")
     # خطُّ الأساس لازم: مواصفةُ غ٣ تقارن بـbge-m3، وتقريرٌ بلا خطّ أساسٍ لا يستوفي المهمّة (ملاحظة Codex على #132)
-    parser.add_argument("--baseline", required=True, help="مُضمِّنُ خطّ الأساس (bge-m3 في مواصفة غ٣)")
+    parser.add_argument("--license", required=True, help="رخصةُ أوزان المُضمِّن كما في بطاقته")
+    parser.add_argument("--baseline", required=True, help="مُضمِّنُ خطّ الأساس، وهو bge-m3 في مواصفة غ٣ لا غيرُه")
     parser.add_argument("--agent", required=True, help="معرّفُ من يشغّل القياس، مسجَّلًا في registry/agents.json")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -68,6 +73,9 @@ def main(argv=None) -> int:
     if args.agent not in json.loads((ROOT / "registry" / "agents.json").read_text(encoding="utf-8"))["agents"]:
         parser.error(f"agent_unregistered: {args.agent}")
     # البصمةُ قبل أيّ تضمين: تقريرٌ بالوسم وحده لا يسمّي الأوزانَ التي أنتجت المتّجهات (ملاحظة Codex على #132)
+    # bge-m3 بعينه لا أيُّ مُضمِّنٍ آخر (ملاحظة Codex على #132)؛ والوسمُ بلا إصدارٍ هو latest عند Ollama
+    if args.baseline not in (BASELINE, BASELINE + ":latest"):
+        parser.error(f"baseline_not_registered: خطُّ أساس غ٣ هو {BASELINE}")
     if args.baseline == args.embedder:
         parser.error("baseline_is_the_embedder: خطُّ الأساس مُضمِّنٌ آخر")
     digests = {name: _digest(name) for name in (args.embedder, args.baseline)}
@@ -91,11 +99,14 @@ def main(argv=None) -> int:
     report = {
         "schema_version": 1, "kind": "g3_retrieval", "task": "غ٣", "issue": "power0man/diwan#24",
         "date": datetime.date.today().isoformat(), "agent": args.agent,
-        "engine": None,
+        # المحرّكُ هنا المُضمِّن: لا نموذجَ توليد في غ٣ (ملاحظة Codex على #132: التقريرُ يحمل المحرّكَ ورخصتَه وبذورَه)
+        "engine": {"provider": "ollama-local", "model": args.embedder, "digest": digests[args.embedder],
+                   "license": args.license},
         "config": {"bank": str(BANK.relative_to(ROOT)), "bank_sha256": BANK_SHA256, "rrf_k": RRF_K,
                    "embedder": {"model": args.embedder, "digest": digests[args.embedder], "provider": "ollama-local"},
                    "protocol_sha256": ablation._sha(ablation.PROTOCOL.read_bytes()),
-                   "protocol_vectors_status": protocol["components"]["vectors"]["status"]},
+                   "protocol_vectors_status": protocol["components"]["vectors"]["status"],
+                   "bootstrap": BOOTSTRAP},
         "arms": main_run["arms"], "comparisons": comparisons(rows, main_run["arms"]),
         "rows": _recorded(rows),
         "channels": _channels(channels),
@@ -103,7 +114,8 @@ def main(argv=None) -> int:
     }
     base_rows = base.pop("rows")
     base_channels = base.pop("channels")
-    report["baseline"] = {"embedder": {"model": args.baseline, "digest": digests[args.baseline]},
+    report["baseline"] = {"embedder": {"model": args.baseline, "digest": digests[args.baseline],
+                                       "license": BASELINE_LICENSE},
                           "arms": {arm: base["arms"][arm] for arm in ("vectors", "hybrid")},
                           "rows": _recorded({arm: base_rows[arm] for arm in ("vectors", "hybrid")}),
                           "channels": _channels(base_channels)}

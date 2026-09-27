@@ -121,7 +121,7 @@ def test_a_report_without_the_embedder_digest_is_refused_before_any_embedding(tm
     import tools.evaluate_retrieval as cli
     monkeypatch.setattr(cli, "OllamaEmbedder", lambda model: pytest.fail("تضمينٌ قبل التحقّق من البصمة"))
     monkeypatch.setattr(cli, "_digest", lambda model: None if model == "bge-m3" else "sha256:weights")
-    args = ["--embedder", "qwen3-embedding:0.6b", "--baseline", "bge-m3", "--agent", "anthropic/claude-opus-5-5",
+    args = ["--embedder", "qwen3-embedding:0.6b", "--license", "Apache-2.0", "--baseline", "bge-m3", "--agent", "anthropic/claude-opus-5-5",
             "--out", str(tmp_path / "r.json")]
     assert cli.main(args) == 2
     assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "embedder_digest_unresolved",
@@ -150,7 +150,7 @@ def test_an_embedder_repointed_during_the_run_writes_no_report(tmp_path, monkeyp
         return "sha256:before" if model == "bge-m3" or calls[model] == 1 else "sha256:after"
 
     monkeypatch.setattr(cli, "_digest", digest)
-    args = ["--embedder", "qwen3-embedding:0.6b", "--baseline", "bge-m3", "--agent", "anthropic/claude-opus-5-5",
+    args = ["--embedder", "qwen3-embedding:0.6b", "--license", "Apache-2.0", "--baseline", "bge-m3", "--agent", "anthropic/claude-opus-5-5",
             "--out", str(tmp_path / "r.json")]
     assert cli.main(args) == 2
     assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "embedder_digest_drifted",
@@ -159,13 +159,36 @@ def test_an_embedder_repointed_during_the_run_writes_no_report(tmp_path, monkeyp
 
 
 def test_a_run_without_the_bge_m3_baseline_is_refused(tmp_path, monkeypatch):
-    """ملاحظةُ Codex على #132: مواصفةُ غ٣ تقارن بـbge-m3، وكان إغفالُ `--baseline` يكتب تقريرًا ناجحًا بلا خطّ أساس."""
+    """ملاحظتا Codex على #132: مواصفةُ غ٣ تقارن بـbge-m3، وكان إغفالُ `--baseline` أو تسميةُ مُضمِّنٍ آخر يكتب تقريرًا
+    ناجحًا بلا خطّ الأساس المسجَّل."""
     import tools.evaluate_retrieval as cli
     monkeypatch.setattr(cli, "OllamaEmbedder", lambda model: pytest.fail("تضمينٌ بلا خطّ أساس"))
     monkeypatch.setattr(cli, "_digest", lambda model: "sha256:weights")
-    for extra in ([], ["--baseline", "qwen3-embedding:0.6b"]):
+    for extra in ([], ["--baseline", "qwen3-embedding:0.6b"], ["--baseline", "nomic-embed-text"]):
         with pytest.raises(SystemExit) as exit_:
-            cli.main(["--embedder", "qwen3-embedding:0.6b", *extra, "--agent", "anthropic/claude-opus-5-5",
+            cli.main(["--embedder", "qwen3-embedding:0.6b", "--license", "Apache-2.0", *extra,
+                      "--agent", "anthropic/claude-opus-5-5",
                       "--out", str(tmp_path / "r.json")])
         assert exit_.value.code == 2
     assert not (tmp_path / "r.json").exists()
+
+
+def test_every_report_carries_the_engine_license_and_bootstrap_it_was_measured_with(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #132: التقريرُ كان يكتب `engine: null` بلا رخصةٍ ولا إعداد إعادة المعاينة، فلا تُعاد المجالاتُ
+    منه وحده إن تغيّرت القيمُ الافتراضية. والدليلُ المنشور يحملها، ومجالاتُه تُعاد بها."""
+    import tools.evaluate_retrieval as cli
+    from evaluation.retrieval_general import BOOTSTRAP
+    monkeypatch.setattr(cli, "OllamaEmbedder", lambda model: HashEmbedder())
+    monkeypatch.setattr(cli, "_digest", lambda model: "sha256:" + model)
+    out = tmp_path / "r.json"
+    assert cli.main(["--embedder", "qwen3-embedding:0.6b", "--license", "Apache-2.0", "--baseline", "bge-m3",
+                     "--agent", "anthropic/claude-opus-5-5", "--out", str(out)]) == 0
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["engine"] == {"provider": "ollama-local", "model": "qwen3-embedding:0.6b",
+                                "digest": "sha256:qwen3-embedding:0.6b", "license": "Apache-2.0"}
+    assert report["config"]["bootstrap"] == BOOTSTRAP
+    assert report["baseline"]["embedder"] == {"model": "bge-m3", "digest": "sha256:bge-m3", "license": "MIT"}
+    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    assert evidence["config"]["bootstrap"] == BOOTSTRAP
+    assert evidence["engine"]["license"] == "Apache-2.0" and evidence["baseline"]["embedder"]["license"] == "MIT"
+    assert evidence["engine"]["digest"] == evidence["config"]["embedder"]["digest"]

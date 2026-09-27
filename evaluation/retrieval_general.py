@@ -137,7 +137,12 @@ def hit_interval(rows: list[dict]) -> list[float]:
     return wilson(sum(r["hit_at_5"] for r in rows) / deff, len(rows) / deff)
 
 
-def cluster_bootstrap(rows: list[dict], value, *, resamples: int = 2000, seed: int = 0) -> list[float]:
+# إعدادُ إعادة المعاينة كما يُسجَّل في كل تقرير (`config.bootstrap`)، فتُعاد المجالاتُ منه لا من قيمٍ افتراضيةٍ قد تتغيّر
+BOOTSTRAP = {"unit": "gold_passage", "resamples": 2000, "seed": 0, "interval": "percentile_95"}
+
+
+def cluster_bootstrap(rows: list[dict], value, *, resamples: int = BOOTSTRAP["resamples"],
+                      seed: int = BOOTSTRAP["seed"]) -> list[float]:
     """مجالٌ ٩٥٪ بإعادة معاينة المقاطع الذهبية، لا الاستعلامات.
 
     استعلاما المقطع الواحد (اللفظيّ والمُعادُ صياغتُه) يتشاركان الذهبيَّ والمنافسين، فلا يُعاملان مستقلَّين

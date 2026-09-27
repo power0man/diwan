@@ -5,7 +5,12 @@
   "issue": "power0man/diwan#24",
   "date": "2026-09-27",
   "agent": "anthropic/claude-opus-5-5",
-  "engine": null,
+  "engine": {
+    "provider": "ollama-local",
+    "model": "qwen3-embedding:0.6b",
+    "digest": "ac6da0dfba84a81fdbfbaf330198c33cd77c4cdfc53e8bc50eb581914a15621d",
+    "license": "Apache-2.0"
+  },
   "config": {
     "bank": "evaluation/suites/retrieval_general_v1.json",
     "bank_sha256": "df7ca9456ae1f451d79b021b981d2ed23ef374a6025f546c373f525354a8da4f",
@@ -16,7 +21,13 @@
       "provider": "ollama-local"
     },
     "protocol_sha256": "4df31babe1b15899fe3e9c7eb3359cf3a213530d44e86b823e21540fb3328105",
-    "protocol_vectors_status": "blocked"
+    "protocol_vectors_status": "blocked",
+    "bootstrap": {
+      "unit": "gold_passage",
+      "resamples": 2000,
+      "seed": 0,
+      "interval": "percentile_95"
+    }
   },
   "arms": {
     "bm25": {
@@ -3239,12 +3250,14 @@
     "vectors_vs_bm25_is_descriptive_the_k46_vector_rule_decides_the_hybrid_channel_only",
     "no_protocol_decision_here_the_k46_vector_rule_needs_the_product_hybrid_retriever_with_only_vector_toggled",
     "rerun_after_review_with_the_product_tie_order_same_embedder",
-    "digests_were_read_once_after_embedding_in_this_run_the_before_and_after_drift_check_postdates_it"
+    "digests_were_read_once_after_embedding_in_this_run_the_before_and_after_drift_check_postdates_it",
+    "engine_license_and_bootstrap_config_were_backfilled_after_the_run_licenses_from_the_model_cards_bootstrap_from_the_code_defaults_the_intervals_are_recomputed_from_it"
   ],
   "baseline": {
     "embedder": {
       "model": "bge-m3",
-      "digest": "7907646426070047a77226ac3e684fbbe8410524f7b4a74d02837e43f2146bab"
+      "digest": "7907646426070047a77226ac3e684fbbe8410524f7b4a74d02837e43f2146bab",
+      "license": "MIT"
     },
     "arms": {
       "vectors": {
