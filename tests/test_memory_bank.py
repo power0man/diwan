@@ -132,6 +132,30 @@ def test_a_witness_that_falls_inside_a_declared_tool_schema_is_rejected_by_the_v
     _refused(bank, "witness_collides_with_tool_schema")
 
 
+def test_a_witness_inside_the_provider_serialized_tool_wrapper_is_rejected_by_the_validator():
+    """ملاحظةُ Codex على #129 (الجولة الرابعة والعشرون): مزوّدُ Ollama يغلّف كلَّ أداةٍ بـ`type: function` و`function`، فشاهدٌ مثل
+    «function» يُرسل مع كلِّ أداةٍ ولا يشهد غيابُه بشيء؛ يُقرأ نصُّ الأدوات مسلسلًا لا مجرّدًا."""
+    bank, scenario = _scenario("forget_001")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["text"] = "function passport note"
+    for step in scenario["steps"]:
+        if step.get("absent"):
+            step["absent"] = ["function"]
+    _refused(bank, "witness_collides_with_tool_schema")
+
+
+def test_a_witness_inside_the_fixed_agent_envelope_is_rejected_by_the_validator():
+    """ملاحظةُ Codex على #129 (الجولة الرابعة والعشرون): غلافُ الطلب الوكيل يحمل أسماءَ حقوله ونصوصَ سياساته الثابتة مع كلِّ رسالة،
+    فشاهدٌ مثل «attachment_policy» لا يشهد غيابُه بشيء."""
+    bank, scenario = _scenario("forget_001")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["text"] = "attachment_policy passport secret note"
+    for step in scenario["steps"]:
+        if step.get("absent"):
+            step["absent"] = ["attachment_policy"]
+    _refused(bank, "witness_collides_with_agent_envelope")
+
+
 def test_a_context_question_whose_sent_form_carries_the_absent_witness_is_rejected_by_the_validator():
     """ملاحظةُ Codex على #129 (الجولة الثالثة والعشرون): السؤالُ يُحجَر مقتبَسُه قبل الإرسال، فعلامةُ الحَجر تبلغ النموذجَ في الرسالة
     الحاليّة ولو لم تُكتب في السؤال؛ يُقرأ السؤالُ كما يُرسل لا كما كُتب."""

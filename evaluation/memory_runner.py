@@ -31,7 +31,7 @@ import uuid
 
 from core.quoted import QUARANTINE_MARK, scan
 from evaluation.memory_bank import (EXPOSURE_QUESTION, contains as _contains, names_every_directive, probe_collisions,
-                                    question_collisions, role_collisions, tool_collisions)
+                                    envelope_collisions, question_collisions, role_collisions, tool_collisions)
 from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, unfenced
 
 
@@ -96,13 +96,15 @@ def _collision_result(scenario: dict, wired: bool) -> dict | None:
     repeated = question_collisions(scenario)
     roles = role_collisions(scenario)
     tools = tool_collisions(scenario)
-    if not collisions and not repeated and not roles and not tools:
+    envelope = envelope_collisions(scenario)
+    if not collisions and not repeated and not roles and not tools and not envelope:
         return None
     result = {"id": scenario["id"], "category": scenario["category"], "passed": False,
               "failures": [f"probe question collides with witness «{c[:30]}»" for c in collisions]
                           + [f"context question repeats absent witness «{c[:30]}»" for c in repeated]
                           + [f"witness collides with a message role «{c[:30]}»" for c in roles]
-                          + [f"witness collides with a declared tool schema «{c[:30]}»" for c in tools],
+                          + [f"witness collides with a declared tool schema «{c[:30]}»" for c in tools]
+                          + [f"witness collides with the agent envelope «{c[:30]}»" for c in envelope],
               "leaks": 0, "consent_violations": 0, "injection_unquarantined": 0, "context_exposures": 0}
     return {**result, "probe_sessions_reset": 0, "stuck_probe_turns": []} if wired else result
 
@@ -284,8 +286,10 @@ def _sent_question(content: str, block: str) -> str:
     from services.agent_workspace import INPUT_PREFIX, INPUT_PREFIX_V2, decode_input
     text = content.replace(block, "", 1) if block else content
     if text.startswith((INPUT_PREFIX, INPUT_PREFIX_V2)):
+        # الغلافُ كلُّه كما أُرسل (بادئتُه وحقولُه وسياساتُه الثابتة)، ومعه حقولُه مفكوكةً بلا تهريب JSON حتى يُقرأ العربيُّ فيها
+        # كما هو — لا حقلُ الطلب وحده (ملاحظة Codex على #129، الجولة الرابعة والعشرون)
         try:
-            return str(decode_input(text).get("user_request", text))
+            return text + "\n" + _flat(decode_input(text))
         except Exception as exc:  # noqa: BLE001 -- غلافٌ لا يُفكّ يُقرأ نصًّا خامًا ويُسمّى
             return f"{text}\n[agent_input_undecodable: {type(exc).__name__}]"
     return text
@@ -301,7 +305,9 @@ def _memory_parts(request) -> tuple[str, str, str, str, str]:
     last = messages[-1] if messages and messages[-1].role == "user" else None
     current = _block_of(last.content) if last else ""
     question = _sent_question(last.content, current) if last else ""
-    tools = _flat([spec.declared() for spec in getattr(request, "tools", ())])
+    # مواصفاتُ الأدوات كما يسلسلها المزوّدُ فعلًا (غلافُ `type: function`)، لا كما تُعلَن مجرّدةً (ملاحظة Codex، الجولة ٢٤)
+    from providers.ollama_codec import serialize_tools
+    tools = _flat(serialize_tools(getattr(request, "tools", ())))
     history = [_payload(m) for m in messages[:-1]]
     return (current, "\n".join([*history, question, tools]),
             "\n".join(_payload(m) for m in messages[:-1] if m.role == "assistant"), question, tools)

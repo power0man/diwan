@@ -806,6 +806,31 @@ def test_tool_schemas_and_the_question_as_sent_are_inspected_and_a_witness_insid
         assert any(f.startswith("witness collides with a declared tool schema") for f in report["failures"]), report
 
 
+def test_the_serialized_tool_wrapper_and_the_whole_agent_envelope_are_inspected_and_their_witnesses_refused(tmp_path):
+    """ملاحظتا Codex على #129 (الجولة الرابعة والعشرون): الأدواتُ تُقرأ كما يسلسلها المزوّد (غلافُ `function`)، والرسالةُ الوكيلة
+    الحاليّة تُقرأ غلافًا كاملًا (حقولُها وسياساتُها الثابتة) لا حقلَ الطلب وحده؛ وشاهدٌ يقع في أيٍّ منهما يُرفض قبل القياس."""
+    from core.contracts import Message, Request
+    from evaluation.memory_runner import _memory_parts, run_scenario, run_wired_scenario
+    from memory.tool import PROPOSE_MEMORY_SPEC
+    from services.agent_workspace import ATTACHMENT_POLICY, encode_input
+    request = Request((Message("user", encode_input("ما رقم الجواز؟", [], None)),), "m", "0" * 64, 64, 30.0, "local_only", None,
+                      tools=(PROPOSE_MEMORY_SPEC,))
+    current, every, echoed, question, tools = _memory_parts(request)
+    assert "function" in tools and "propose_memory" in tools
+    assert "attachment_policy" in question and ATTACHMENT_POLICY in question and "ما رقم الجواز؟" in question and "attachment_policy" in every
+    for witness, failure in (("function", "witness collides with a declared tool schema"),
+                             ("attachment_policy", "witness collides with the agent envelope")):
+        scenario = {"id": f"envelope_{witness}", "category": "forget", "steps": [
+            {"op": "remember", "project": "A", "text": f"{witness} passport secret note", "consent": "owner", "as": "m1"},
+            {"op": "forget", "project": "A", "ref": "m1"},
+            {"expect": "context", "project": "A", "question": "ما رقم الجواز؟", "absent": [witness], "present": []},
+        ]}
+        for run, root in ((run_scenario, tmp_path / f"s-{witness}"), (run_wired_scenario, tmp_path / f"w-{witness}")):
+            report = run(scenario, root)
+            assert not report["passed"] and report["context_exposures"] == 0, report
+            assert any(f.startswith(failure) for f in report["failures"]), report
+
+
 def test_an_earlier_context_question_of_the_same_project_that_repeats_a_later_absent_witness_is_refused_not_measured(tmp_path):
     """ملاحظةُ Codex على #129 (الجولة الثامنة عشرة): خطوةُ سياقٍ سؤالُها يحمل السرَّ وتفحص غيابَ غيره، ثم خطوةٌ محايدة تفحص غيابَ
     السرّ: الأولى تُبقي السرَّ في تاريخ جلسة المشروع فيبلغ النموذجَ عند الثانية ولا يراه فحصُ الغياب؛ يُرفض في المسارين بلا قياس."""

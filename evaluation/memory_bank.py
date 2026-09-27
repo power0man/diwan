@@ -113,12 +113,28 @@ def _flat_text(value) -> str:
 
 
 def declared_tools_text() -> str:
-    """مواصفاتُ الأدوات كما تُعلَن للنموذج مع كلِّ طلبٍ وكيل (أسماءٌ وأوصافٌ ووسائط): أدواتُ الواجهة الافتراضية وأداةُ اقتراح
-    الذاكرة؛ فالمُشغِّلُ الموصول يقرأ ما في الطلب فعلًا، والمدقّقُ يقرأ هذه قبل أيّ طلب (ملاحظة Codex على #129، الجولة الثالثة
-    والعشرون)."""
+    """مواصفاتُ الأدوات كما تُرسل فعلًا مع كلِّ طلبٍ وكيل: مسلسلةً كما يسلسلها مزوّدُ Ollama (`serialize_tools`: غلافُ
+    `type: function` و`function` حول الاسم والوصف والوسائط) لا كما تُعلَن مجرّدةً؛ أدواتُ الواجهة الافتراضية وأداةُ اقتراح
+    الذاكرة. فالمُشغِّلُ الموصول يقرأ ما في الطلب مسلسلًا، والمدقّقُ يقرأ هذه قبل أيّ طلب (ملاحظتا Codex على #129، الجولتان
+    الثالثة والعشرون والرابعة والعشرون)."""
     from agent.builtin_tools import DEFAULT_TOOLS
     from memory.tool import PROPOSE_MEMORY_SPEC
-    return _flat_text([*(tool.spec.declared() for tool in DEFAULT_TOOLS), PROPOSE_MEMORY_SPEC.declared()])
+    from providers.ollama_codec import serialize_tools
+    return _flat_text(serialize_tools([*(tool.spec for tool in DEFAULT_TOOLS), PROPOSE_MEMORY_SPEC]))
+
+
+def declared_envelope_text() -> str:
+    """غلافُ الطلب الوكيل كما يُرسل مع كلِّ رسالة مالكٍ في الطريق الوكيل (`encode_input`): بادئتُه وأسماءُ حقوله ونصوصُ
+    سياساته الثابتة (`attachment_policy`، `preference_policy`…) بلا طلبٍ ولا مرفقات؛ شاهدُ غيابٍ يقع فيها يبلغ النموذجَ مع كلِّ
+    طلب (ملاحظة Codex على #129، الجولة الرابعة والعشرون)."""
+    from services.agent_workspace import INPUT_PREFIX_V2, decode_input, encode_input
+    return INPUT_PREFIX_V2 + _flat_text(decode_input(encode_input("", [], None)))
+
+
+def envelope_collisions(scenario: dict, envelope_text: str | None = None) -> list[str]:
+    """شاهدُ غيابٍ يقع في غلاف الطلب الوكيل الثابت؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الرابعة والعشرون)."""
+    text = declared_envelope_text() if envelope_text is None else envelope_text
+    return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
 
 
 def tool_collisions(scenario: dict, tools_text: str | None = None) -> list[str]:
@@ -183,6 +199,8 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         _reject(path, "witness_collides_with_message_role", f"«{roles[0][:40]}» يقع في اسم دورٍ من أدوار الرسائل فيُرسل مع كلِّ رسالة")
     if tools := tool_collisions(scenario):
         _reject(path, "witness_collides_with_tool_schema", f"«{tools[0][:40]}» يقع في مواصفة أداةٍ معلَنة فيُرسل مع كلِّ طلبٍ وكيل")
+    if envelope := envelope_collisions(scenario):
+        _reject(path, "witness_collides_with_agent_envelope", f"«{envelope[0][:40]}» يقع في غلاف الطلب الوكيل الثابت فيُرسل مع كلِّ رسالة")
 
 
 def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
