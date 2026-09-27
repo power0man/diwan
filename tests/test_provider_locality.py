@@ -1,10 +1,11 @@
-"""المحليّةُ من الاسم والمضيف لا من الإعلان (جديد-is-local-guard، الفجوة core-g1).
+"""المحليّةُ من الاسم والمضيف لا من الإعلان (ك٥٦ #138، مهمّة الخطة جديد-is-local-guard، الفجوة core-g1).
 
 `OllamaProvider` كان يعلن `is_local = True` لكل نموذج، فوصلت حمولةُ `local_only` إلى
-`gpt-oss:120b-cloud` فعلًا. وهنا يُثبت كلُّ موضعٍ يقرّر المحليّةَ أنه يقرأ المصدرَ الواحد
-(`core/locality.py`): المزوّد، والنواة بفحصٍ ثانٍ على `req.model`، وحارسُ المزوّد في الجلسة
-الوكيلة، وبدءُ جولتها واستئنافُها، والمحادثةُ النصية، والواجهة. والمزوّداتُ هنا تُعلن
-`is_local = True` عمدًا: الإعلانُ وحده كان يكفي، ولا يكفي بعد اليوم.
+`gpt-oss:120b-cloud` فعلًا. وهنا يُثبت أن المصدرَ الواحد (`core/locality.py`) يقرؤه المزوّدُ والنواةُ
+(بفحصٍ ثانٍ على `req.model`)، فيصدق إعلانُ `OllamaProvider`. والمواضعُ الخمسة في الجلسات والواجهة من
+مسار openai، ولم تُمَسّ بعد سحب احتياط Claude فيه (ق٦٦): تقرأ الإعلانَ، فتُردّ `OllamaProvider` السحابيَّ
+لأن إعلانه صار صادقًا. أمّا مزوّدٌ آخر يعلن المحليّةَ ونموذجُه سحابيّ فيعبرها، والحدُّ مسجَّلٌ اختبارًا
+(`test_limit_…`)، ونقلُها إلى المصدر الواحد مسألةٌ لـCodex.
 """
 from __future__ import annotations
 
@@ -135,18 +136,32 @@ def test_a_public_payload_may_still_reach_a_cloud_model(tmp_path):
     assert outcome.response.content == "جواب" and len(provider.requests) == 1
 
 
-# ── المحادثة النصية ──
+# ── المواضعُ الخمسة (مسار openai): تقرأ الإعلانَ، وإعلانُ Ollama صار صادقًا ──
+
+class CountedOllama(OllamaProvider):
+    """`OllamaProvider` الحقيقيّ بمحليّته المشتقّة، يعدّ ما وصله بدل أن يتصل."""
+
+    def __init__(self, *outputs, model=DEFAULT_MODEL, base_url=BASE_URL):
+        super().__init__(model, base_url)
+        self.outputs, self.requests, self.estimates = list(outputs), [], 0
+
+    def estimate_micros(self, request):
+        self.estimates += 1
+        return 0
+
+    def complete(self, request):
+        self.requests.append(request)
+        return self.outputs.pop(0)
+
 
 @pytest.mark.parametrize("leak", LEAKY)
-def test_a_chat_turn_never_reaches_a_cloud_provider(tmp_path, leak):
+def test_a_chat_turn_never_reaches_a_cloud_ollama(tmp_path, leak):
     session = ChatSession(tmp_path.resolve() / "chat", "s", model="m", model_version="v")
-    provider = Declared(_say("لا يصل"), **leak)
+    provider = CountedOllama(_say("لا يصل"), **leak)
     with pytest.raises(ConversationError, match="policy_requires_local"):
         session.turn("one", "سرّ", provider)
     assert provider.estimates == 0 and not provider.requests and session.history() == []
 
-
-# ── الجلسة الوكيلة ──
 
 @pytest.fixture
 def agent(tmp_path):
@@ -162,45 +177,54 @@ def agent(tmp_path):
 
 
 @pytest.mark.parametrize("leak", LEAKY)
-def test_the_provider_guard_reads_the_one_source(leak):
-    assert _ProviderGuard(None, None, None, Declared()).is_local is True
-    assert _ProviderGuard(None, None, None, Declared(**leak)).is_local is False
+def test_the_provider_guard_sees_a_cloud_ollama_as_remote(leak):
+    assert _ProviderGuard(None, None, None, CountedOllama()).is_local is True
+    assert _ProviderGuard(None, None, None, CountedOllama(**leak)).is_local is False
 
 
 @pytest.mark.parametrize("leak", LEAKY)
-def test_an_agent_turn_never_starts_on_a_cloud_provider(agent, leak):
-    provider = Declared(_say("لا يصل"), **leak)
+def test_an_agent_turn_never_starts_on_a_cloud_ollama(agent, leak):
+    provider = CountedOllama(_say("لا يصل"), **leak)
     with pytest.raises(ConversationError, match="policy_requires_local"):
         agent().start_turn("t1", "سرّ", provider)
     assert provider.estimates == 0 and not provider.requests
 
 
 @pytest.mark.parametrize("leak", LEAKY)
-def test_an_agent_turn_never_resumes_on_a_cloud_provider(agent, leak):
+def test_an_agent_turn_never_resumes_on_a_cloud_ollama(agent, leak):
     session = agent()
-    pending = session.start_turn("t1", "اكتب", Declared(_say(calls=(
+    pending = session.start_turn("t1", "اكتب", CountedOllama(_say(calls=(
         ToolCall("c1", "write", {"path": "a.txt", "content": "x"}),))))
     assert pending["status"] == "awaiting_owner"
     first = pending["pending"][0]
     session.decide(first["action_id"], first["call_digest"], True, first["revision"])
-    provider = Declared(_say("لا يصل"), **leak)
+    provider = CountedOllama(_say("لا يصل"), **leak)
     with pytest.raises(ConversationError, match="policy_requires_local"):
         agent().resume("t1", provider)
     assert provider.estimates == 0 and not provider.requests
 
 
-# ── الواجهة ──
-
 @pytest.mark.parametrize("leak", LEAKY)
-def test_the_web_ui_refuses_before_the_session_is_touched(tmp_path, monkeypatch, leak):
+def test_the_web_ui_refuses_a_cloud_ollama_before_the_session_is_touched(tmp_path, monkeypatch, leak):
     from tests.test_webui_agent_default import ask_payload, new_session, serving
 
     started = []
     monkeypatch.setattr(AgentSession, "start_turn", lambda self, *args, **kwargs: started.append(args))
     with serving(tmp_path.resolve() / "ui") as running:
-        leaky = Declared(**leak)
+        leaky = CountedOllama(**leak)
         running.providers["agent"] = leaky
         context, _ = new_session(running)
         status, refused, _ = running.request({**ask_payload(context, "agent_ask"), "turn": uuid.uuid4().hex})
         assert refused["error_code"] == "policy_requires_local", (status, refused)
         assert started == [] and leaky.estimates == 0 and not leaky.requests
+
+
+@pytest.mark.parametrize("leak", LEAKY)
+def test_limit_the_session_sites_still_trust_a_declaration_the_name_contradicts(leak):
+    """حدٌّ معلن: المواضعُ الخمسة تقرأ الإعلانَ لا المصدرَ الواحد (مسار openai، ق٦٦).
+
+    فمزوّدٌ غير Ollama يعلن المحليّةَ ونموذجُه سحابيّ يعبر حارسَ الجلسة. وإغلاقُه بنقل المواضع إلى
+    `core.locality.is_local_provider` يقلب هذا الاختبارَ تأكيدًا على الرفض.
+    """
+    assert is_local_provider(Declared(**leak)) is False
+    assert _ProviderGuard(None, None, None, Declared(**leak)).is_local is True
