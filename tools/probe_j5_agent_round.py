@@ -11,7 +11,8 @@
 - ومسارُ Docker هو الذي تبني به الواجهةُ خلفيّةَ run_command، وإلا فلا قياس.
 - البحثُ من SearXNG محليٍّ وحده: الرابطُ على عنوان الجهاز، والحاويةُ التي تنشر منفذَه بالصورة المثبَّتة في G5.
 - ولا يُوافَق إلا على الأمر المطلوب نفسِه (argv الأمر المعلَّق)، ويُسجَّل argv في التقرير.
-- والبصماتُ، ومنها بصمةُ المجسّ، تُؤخذ قبل الجولة ويُرفض التقريرُ إن تغيّرت قبل كتابته.
+- والبصماتُ، ومنها بصمةُ المجسّ، تُؤخذ قبل الجولة ويُرفض التقريرُ إن تغيّرت قبل كتابته؛ ومثلُها حاويةُ SearXNG بمعرّفها
+  ووقتِ تشغيلها، وبصمةُ النموذج.
 - ولا يُقبل البحثُ إلا بنتيجة web_search فيها رابطٌ واحدٌ على الأقل، يُعدّ من نتائج الأداة نفسِها لا من جواب النموذج.
 - ولا يخرج بـ0 إلا إن تحقّقت شروطُ القبول (`acceptance`)، ويُكتب التقريرُ في الحالين بحكمه.
 """
@@ -111,21 +112,42 @@ def _sources() -> dict[str, str]:
     return {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in SOURCES}
 
 
-def _searxng(url: str, container: str, docker: str) -> dict:
-    """الرابطُ على عنوان الجهاز، والحاويةُ تنشر منفذَه على عنوان الجهاز، وصورتُها المثبَّتة؛ وإلا فلا قياس."""
+def _inspect(docker: str, target: str, fmt: str) -> str:
+    """حاويةٌ لا صورة: `docker inspect` وحده يقبل اسمَ صورةٍ أيضًا."""
+    return subprocess.run([docker, "container", "inspect", "--format", fmt, target], capture_output=True, text=True,
+                          timeout=30).stdout.strip()
+
+
+def _serving(url: str, container_id: str, docker: str) -> dict:
+    """حالُ الحاوية بمعرّفها الثابت: صورتُها، وهل تعمل ومنذ متى، وهل تنشر منفذَ الرابط على عنوان الجهاز. فحاويةٌ أُعيد
+    تشغيلُها أو أُزيلت تختلف حالُها، ولا يُسأل الاسمُ الذي قد تحمله حاويةٌ أخرى (ملاحظة Codex على #144)."""
+    port = str(urllib.parse.urlsplit(url).port)
+    ports = json.loads(_inspect(docker, container_id, "{{json .NetworkSettings.Ports}}") or "null") or {}
+    published = {(b.get("HostIp"), b.get("HostPort")) for bindings in ports.values() for b in bindings or []}
+    return {"id": container_id,
+            "image": _inspect(docker, container_id, "{{.Config.Image}}"),
+            "image_id": _inspect(docker, container_id, "{{.Image}}"),
+            "running": _inspect(docker, container_id, "{{.State.Running}}") == "true",
+            "started_at": _inspect(docker, container_id, "{{.State.StartedAt}}"),
+            "serves_url": any(ip in LOOPBACK and p == port for ip, p in published)}
+
+
+def _searxng(url: str, container: str, docker: str) -> tuple[dict, dict]:
+    """الرابطُ على عنوان الجهاز، والحاويةُ تعمل وتنشر منفذَه على عنوان الجهاز، وصورتُها المثبَّتة؛ وإلا فلا قياس.
+    ويُعاد معها حالُها بمعرّفها، فتُفحص بعد الجولة."""
     parts = urllib.parse.urlsplit(url)
     if parts.scheme != "http" or parts.hostname not in LOOPBACK or not parts.port:
         raise SystemExit(json.dumps({"status": "refused", "code": "web_search_url_not_loopback"}))
-    inspect = lambda fmt: subprocess.run([docker, "inspect", "--format", fmt, container], capture_output=True,
-                                         text=True, timeout=30).stdout.strip()
-    image = inspect("{{.Config.Image}}")
-    ports = json.loads(inspect("{{json .NetworkSettings.Ports}}") or "null") or {}
-    published = {(b.get("HostIp"), b.get("HostPort")) for bindings in ports.values() for b in bindings or []}
-    if image != PINNED_SEARXNG:
+    # الاسمُ يُحلّ إلى معرّفٍ مرّةً واحدة، وكلُّ ما بعده بالمعرّف
+    container_id = _inspect(docker, container, "{{.Id}}")
+    if not re.fullmatch(r"[0-9a-f]{64}", container_id):
+        raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_not_found"}))
+    pinned = _serving(url, container_id, docker)
+    if pinned["image"] != PINNED_SEARXNG:
         raise SystemExit(json.dumps({"status": "refused", "code": "searxng_image_not_pinned"}))
-    if not any(ip in LOOPBACK and port == str(parts.port) for ip, port in published):
+    if not (pinned["running"] and pinned["serves_url"]):
         raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_does_not_serve_the_url"}))
-    return {"url": url, "container": container, "image": image, "image_id": inspect("{{.Image}}")}
+    return {"url": url, "container": container, "image": pinned["image"], "image_id": pinned["image_id"]}, pinned
 
 
 def _digest(model: str, base: str = "http://127.0.0.1:11434") -> str:
@@ -192,7 +214,7 @@ def main(argv=None) -> int:
                           "expected": EXECUTION_DOCKER}))
         return 2
     sources = _sources()
-    searxng = _searxng(args.web_search_url, args.searxng_container, args.docker)
+    searxng, pinned = _searxng(args.web_search_url, args.searxng_container, args.docker)
     version = _digest(args.model)
     root = Path(tempfile.mkdtemp(prefix="diwan-j5-ui-")).resolve()
     try:
@@ -238,6 +260,12 @@ def main(argv=None) -> int:
         shutil.rmtree(root, ignore_errors=True)
     # ملفٌّ تغيّر في أثناء الجولة يجعل البصمةَ تشهد لبايتاتٍ لم تُنفَّذ، فلا يُكتب تقرير (ملاحظة Codex على #136)
     changed = sorted(path for path, digest in _sources().items() if digest != sources[path])
+    # وحاويةُ SearXNG التي شُهد لها، والنموذجُ الذي بُصم: حاويةٌ أُعيد تشغيلُها أو استُبدلت أو كفّت عن نشر المنفذ، أو نموذجٌ
+    # سُحب من جديد، في أثناء الجولة يجعلان التقريرَ يشهد لما لم يُقَس (ملاحظة Codex على #144)
+    if _serving(args.web_search_url, pinned["id"], args.docker) != pinned:
+        changed.append("searxng_container")
+    if _digest(args.model) != version:
+        changed.append("engine_digest")
     if changed:
         print(json.dumps({"status": "refused", "code": "sources_changed_during_the_run", "changed": changed}))
         return 2
@@ -269,6 +297,7 @@ def main(argv=None) -> int:
             "web_search_accepted_only_with_a_result_carrying_a_url_counted_from_the_tool_result_not_the_answer",
             "only_the_requested_command_is_approved_its_pending_argv_recorded",
             "sources_and_probe_hashed_before_the_round_and_rechecked_before_writing",
+            "searxng_container_pinned_by_id_and_start_time_and_engine_digest_rechecked_after_the_round",
             "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
             "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host",
         ],

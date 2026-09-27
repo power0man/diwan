@@ -144,10 +144,21 @@ class _EmptyThenFoundApp:
         pass
 
 
+PIN = {"id": "c" * 64, "image": j5.PINNED_SEARXNG, "image_id": "sha256:" + "a" * 64, "running": True,
+       "started_at": "2026-09-27T03:00:00Z", "serves_url": True}
+
+
+def _attest(monkeypatch, serving=None, digests=None):
+    """SearXNG مشهودٌ له بمعرّفه، والنموذجُ ببصمته؛ وما يُرى منهما بعد الجولة كما قبلها ما لم يُمرَّر غيرُه."""
+    digests = iter(digests or ["sha256:weights"] * 2)
+    monkeypatch.setattr(j5, "_digest", lambda model: next(digests))
+    monkeypatch.setattr(j5, "_searxng", lambda url, container, docker: ({"url": url, "image": j5.PINNED_SEARXNG}, PIN))
+    monkeypatch.setattr(j5, "_serving", serving or (lambda url, container_id, docker: dict(PIN)))
+
+
 def test_an_empty_search_does_not_end_the_attempts(tmp_path, monkeypatch):
     monkeypatch.setattr(j5, "LocalApp", _EmptyThenFoundApp)
-    monkeypatch.setattr(j5, "_digest", lambda model: "sha256:weights")
-    monkeypatch.setattr(j5, "_searxng", lambda url, container, docker: {"url": url, "image": j5.PINNED_SEARXNG})
+    _attest(monkeypatch)
     out = tmp_path / "r.json"
     assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
                     "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 1
@@ -202,8 +213,7 @@ def test_only_the_requested_pending_command_is_approved(tmp_path, monkeypatch, a
     """ملاحظةُ Codex على #136: كان المجسُّ يوافق على أوّل أمرٍ معلَّق أيًّا كان، فيُنشر «echo 4» كأنه ما طُلب."""
     app = _PendingApp(argv)
     monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: app)
-    monkeypatch.setattr(j5, "_digest", lambda model: "sha256:weights")
-    monkeypatch.setattr(j5, "_searxng", lambda url, container, docker: {"url": url, "image": j5.PINNED_SEARXNG})
+    _attest(monkeypatch)
     out = tmp_path / "r.json"
     code = j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
                     "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)])
@@ -221,8 +231,7 @@ def test_a_decision_the_action_store_did_not_approve_is_not_an_approval(tmp_path
     """ردُّ الواجهة على agent_decide قد يكون خطأً مسمًّى؛ فالموافقةُ حالةُ approved من مخزن الأفعال وحدها."""
     app = _PendingApp(["python3", "-c", "print(2+2)"], decision={"error": "action_revision_stale"})
     monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: app)
-    monkeypatch.setattr(j5, "_digest", lambda model: "sha256:weights")
-    monkeypatch.setattr(j5, "_searxng", lambda url, container, docker: {"url": url, "image": j5.PINNED_SEARXNG})
+    _attest(monkeypatch)
     out = tmp_path / "r.json"
     assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
                     "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 1
@@ -235,8 +244,7 @@ def test_a_source_that_changes_during_the_round_writes_no_report(tmp_path, monke
     """ملاحظةُ Codex على #136: البصماتُ كانت تُؤخذ بعد الجولة، فتشهد لبايتاتٍ قد لا تكون ما نُفّذ."""
     app = _PendingApp(["python3", "-c", "print(2+2)"])
     monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: app)
-    monkeypatch.setattr(j5, "_digest", lambda model: "sha256:weights")
-    monkeypatch.setattr(j5, "_searxng", lambda url, container, docker: {"url": url, "image": j5.PINNED_SEARXNG})
+    _attest(monkeypatch)
     real = j5._sources()
     seen = iter([real, {**real, "tools/probe_j5_agent_round.py": "0" * 64}])
     monkeypatch.setattr(j5, "_sources", lambda: next(seen))
@@ -247,6 +255,30 @@ def test_a_source_that_changes_during_the_round_writes_no_report(tmp_path, monke
     assert refused == {"status": "refused", "code": "sources_changed_during_the_run",
                        "changed": ["tools/probe_j5_agent_round.py"]}
     assert not out.exists()
+
+
+@pytest.mark.parametrize("after, digests, changed", [
+    ({"started_at": "2026-09-27T03:05:00Z"}, None, ["searxng_container"]),
+    ({"id": "", "image": "", "image_id": "", "running": False, "started_at": "", "serves_url": False}, None,
+     ["searxng_container"]),
+    ({"serves_url": False}, None, ["searxng_container"]),
+    ({}, ["sha256:weights", "sha256:repulled"], ["engine_digest"]),
+])
+def test_a_searxng_container_or_engine_that_changes_during_the_round_writes_no_report(tmp_path, monkeypatch, capsys,
+                                                                                      after, digests, changed):
+    """ملاحظةُ Codex على #144: الحاويةُ كانت تُفحص باسمها قبل الجولة وحدها، فحاويةٌ أُعيد تشغيلُها أو استُبدلت في أثنائها
+    يشهد لها التقريرُ بالصورة المثبَّتة. فتُفحص بعدها بمعرّفها، ومعها بصمةُ النموذج."""
+    app = _PendingApp(["python3", "-c", "print(2+2)"])
+    monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: app)
+    asked = []
+    _attest(monkeypatch, serving=lambda url, container_id, docker: asked.append(container_id) or {**PIN, **after},
+            digests=digests)
+    out = tmp_path / "r.json"
+    assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
+                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 2
+    refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert refused == {"status": "refused", "code": "sources_changed_during_the_run", "changed": changed}
+    assert asked == [PIN["id"]] and not out.exists()
 
 
 class _SilentApp:
@@ -278,8 +310,7 @@ def test_a_docker_path_the_run_command_backend_cannot_use_is_refused_before_the_
 
 def test_a_round_where_the_model_never_searches_is_written_as_failed_and_exits_non_zero(tmp_path, monkeypatch):
     monkeypatch.setattr(j5, "LocalApp", _SilentApp)
-    monkeypatch.setattr(j5, "_digest", lambda model: "sha256:weights")
-    monkeypatch.setattr(j5, "_searxng", lambda url, container, docker: {"url": url, "image": j5.PINNED_SEARXNG})
+    _attest(monkeypatch)
     out = tmp_path / "r.json"
     assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
                     "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 1
@@ -288,10 +319,19 @@ def test_a_round_where_the_model_never_searches_is_written_as_failed_and_exits_n
     assert "web_search_never_succeeded" in report["acceptance"]["failed"]
 
 
-def _docker(image: str, bindings: list[dict]):
+def _docker(image: str, bindings: list[dict], running: str = "true", asked: list | None = None,
+            started: str = "2026-09-27T03:00:00Z", container_id: str = "c" * 64):
+    """Docker يعرف حاويةً واحدة: الاسمُ «searxng» يُحلّ إلى معرّفها، وما سواه يُسأل بالمعرّف."""
+
     def run(argv, **kwargs):
-        fmt = argv[argv.index("--format") + 1]
-        out = {"{{.Config.Image}}": image, "{{.Image}}": "sha256:" + "a" * 64,
+        assert argv[1:3] == ["container", "inspect"]
+        fmt, target = argv[argv.index("--format") + 1], argv[-1]
+        if asked is not None:
+            asked.append((fmt, target))
+        if target not in ("searxng", container_id):
+            return SimpleNamespace(stdout="", returncode=1)
+        out = {"{{.Id}}": container_id, "{{.Config.Image}}": image, "{{.Image}}": "sha256:" + "a" * 64,
+               "{{.State.Running}}": running, "{{.State.StartedAt}}": started,
                "{{json .NetworkSettings.Ports}}": json.dumps({"8080/tcp": bindings})}[fmt]
         return SimpleNamespace(stdout=out + "\n", returncode=0)
     return run
@@ -314,9 +354,29 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
         with pytest.raises(SystemExit) as refused:
             j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
         assert json.loads(str(refused.value))["code"] == "searxng_container_does_not_serve_the_url"
-    monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local))
-    backend = j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
-    assert backend["image"] == j5.PINNED_SEARXNG and backend["url"] == "http://127.0.0.1:8888"
+    monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, running="false"))
+    with pytest.raises(SystemExit) as refused:
+        j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
+    assert json.loads(str(refused.value))["code"] == "searxng_container_does_not_serve_the_url"
+    with pytest.raises(SystemExit) as refused:
+        j5._searxng("http://127.0.0.1:8888", "other", "docker")
+    assert json.loads(str(refused.value))["code"] == "searxng_container_not_found"
+    asked = []
+    monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, asked=asked))
+    backend, pinned = j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
+    assert backend == {"url": "http://127.0.0.1:8888", "container": "searxng", "image": j5.PINNED_SEARXNG,
+                       "image_id": "sha256:" + "a" * 64}
+    assert pinned["id"] == "c" * 64 and pinned["running"] and pinned["serves_url"]
+    # الاسمُ يُسأل مرّةً واحدة عن معرّفه، وكلُّ ما بعده بالمعرّف (ملاحظة Codex على #144)
+    assert asked[0] == ("{{.Id}}", "searxng") and all(target == "c" * 64 for _, target in asked[1:])
+    assert j5._serving("http://127.0.0.1:8888", "c" * 64, "docker") == pinned
+    # وبعد الجولة: حاويةٌ أُعيد تشغيلُها، أو أُزيلت وحلّت محلَّها أخرى بالاسم نفسِه، أو كفّت عن النشر، لا تُقرأ كما كانت
+    for later in (_docker(j5.PINNED_SEARXNG, local, started="2026-09-27T03:05:00Z"),
+                  _docker(j5.PINNED_SEARXNG, local, container_id="d" * 64),
+                  _docker(j5.PINNED_SEARXNG, local, running="false"),
+                  _docker(j5.PINNED_SEARXNG, [])):
+        monkeypatch.setattr(subprocess, "run", later)
+        assert j5._serving("http://127.0.0.1:8888", "c" * 64, "docker") != pinned
 
 
 BOUNDARY = ROOT / "docs" / "probe" / "execution-boundary-20260927d.json"
