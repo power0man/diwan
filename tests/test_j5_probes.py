@@ -626,6 +626,18 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
     monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, changes=(
         "C /etc", "A /etc/searxng", "A /etc/searxng/settings.yml", "C /var", "C /var/cache", "A /var/cache/searxng")))
     assert j5._searxng("http://127.0.0.1:8888", "searxng", "docker")[1]["writable_layer_changes"] == []
+    # وما تكتبه الصورةُ نفسُها في تشغيلها، بعينه: ما رُفض على الماك في جولة k (#144) يُقبل كلُّه، ولا يُقبل جارُه
+    mac_k = ("C /etc/ssl", "C /etc/ssl/certs", "C /etc/ssl/certs/ca-certificates.crt", "C /tmp",
+             "A /tmp/sxng_cache_DATA_CACHE.db", "A /tmp/sxng_cache_DATA_CACHE.db-shm", "A /tmp/sxng_cache_DATA_CACHE.db-wal",
+             "A /tmp/sxng_cache_ENGINES_CACHE.db", "A /tmp/sxng_cache_ENGINES_CACHE.db-shm",
+             "A /tmp/sxng_cache_ENGINES_CACHE.db-wal")
+    monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, changes=mac_k))
+    assert j5._searxng("http://127.0.0.1:8888", "searxng", "docker")[1]["writable_layer_changes"] == []
+    for extra in ("A /tmp/other.sock", "A /etc/ssl/certs/evil.pem", "A /etc/ssl/openssl.cnf", "A /tmp/sxng_cache"):
+        monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, changes=(*mac_k, extra)))
+        with pytest.raises(SystemExit) as refused:
+            j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
+        assert json.loads(str(refused.value))["paths"] == [extra.split(" ", 1)[1]]
     monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, container_port="9999"))
     with pytest.raises(SystemExit) as refused:
         j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
