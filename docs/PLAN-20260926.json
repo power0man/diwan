@@ -565,7 +565,7 @@
   {
    "id": "جديد-delete-path",
    "title": "حذف الجلسة والمشروع والملف المرفوع بإيصال حذف",
-   "assignee": "claude-cloud",
+   "assignee": "codex",
    "block": "ب٣",
    "phase": "م٠-أ",
    "effort": "M",
@@ -582,7 +582,7 @@
     "team:جديد-delete-path",
     "compute:جديد-delete-path"
    ],
-   "description": "١) delete_session وdelete_project في webui/server.py وtools/workspace.py، تحت قفل المشروع، تمحو المجلد كاملًا (chat/ أو agent-control/ مع actions/). ٢) إيصال حذف بلا نص في projects/<id>/deletions.jsonl: معرّفات وبصمات فقط. ويُربط بإيصال النسيان فيقترح الحذف. ٣) زرّ في الواجهة وأمر CLI. ٤) tests/test_delete_leaves_receipt_only.py بثلاث طفرات: بقاء الملف، وغياب الإيصال، وhistory() أو restore يعيد المحذوف. ٥) docs/MEMORY-DESIGN.md يحيل إلى الأداة بدل «احذف الجلسة». ٦) claude-mac يحذف مشروعًا تجريبيًّا حيًّا ويكتب الدليل. مسار openai: «تسليم:» بتفويض ٣٠ سبتمبر ثم ق٦٢-٥. المراجعة من غير anthropic.",
+   "description": "١) delete_session وdelete_project في webui/server.py وtools/workspace.py، تحت قفل المشروع، تمحو المجلد كاملًا (chat/ أو agent-control/ مع actions/). ٢) إيصال حذف بلا نص في projects/<id>/deletions.jsonl: معرّفات وبصمات فقط. ويُربط بإيصال النسيان فيقترح الحذف. ٣) زرّ في الواجهة وأمر CLI. ٤) tests/test_delete_leaves_receipt_only.py بثلاث طفرات: بقاء الملف، وغياب الإيصال، وhistory() أو restore يعيد المحذوف. ٥) docs/MEMORY-DESIGN.md يحيل إلى الأداة بدل «احذف الجلسة». ٦) claude-mac يحذف مشروعًا تجريبيًّا حيًّا ويكتب الدليل. مسار openai، وهي لـCodex منذ ق٦٦. المراجعة من غير openai.",
    "deliverable": "الأفعال والزرّ وأمر CLI + tests/test_delete_leaves_receipt_only.py + docs/probe/delete-path-<date>.json",
    "acceptance_evidence": "الاختبار يقتل ثلاث طفرات مسمّاة؛ الدليل الحيّ: المجلد ممحوّ، وسطر في deletions.jsonl بلا نص، وrestore لا يعيد شيئًا.",
    "unblocks": [
@@ -1004,7 +1004,7 @@
   {
    "id": "جديد-max-output-download",
    "title": "سقف الجواب قابل للضبط، وتنزيل المستند المصدَّر، وWSL2 طريق ويندوز",
-   "assignee": "claude-cloud",
+   "assignee": "codex",
    "block": "ب٣",
    "phase": "م٠-ب",
    "effort": "S",
@@ -1022,7 +1022,7 @@
     "compute:جديد-ui-output",
     "measurement:جديد-output-cap-and-download"
    ],
-   "description": "اليوم السقف ثابت: 800 للنصي (conversation/session.py:131) و1024 للوكيل (conversation/agent_session.py:191)، والبتر صامت. ١) علم --max-output في tools/serve_ui.py يُكتب في بيان الجلسة الجديدة؛ الافتراضي 4096 للوكيل، والقديمة تبقى بسقفها. ٢) رمز answer_truncated يظهر في بطاقة الجولة. ٣) فعل agent_download في webui/server.py يعيد docx وxlsx وpdf مع sha256 والحجم، وزرّ تنزيل. ٤) README يعلن WSL2 طريق ويندوز الرسمي، وlaunch_check يعيد windows_native_unsupported. ٥) اختبارات بطفرات: إسقاط العلم، وتغيير جلسة قائمة، وبصمة التنزيل. مسار openai: «تسليم:» بق٦٢-٥ قبل ٨ نوفمبر. المراجعة من غير anthropic.",
+   "description": "اليوم السقف ثابت: 800 للنصي (conversation/session.py:131) و1024 للوكيل (conversation/agent_session.py:191)، والبتر صامت. ١) علم --max-output في tools/serve_ui.py يُكتب في بيان الجلسة الجديدة؛ الافتراضي 4096 للوكيل، والقديمة تبقى بسقفها. ٢) رمز answer_truncated يظهر في بطاقة الجولة. ٣) فعل agent_download في webui/server.py يعيد docx وxlsx وpdf مع sha256 والحجم، وزرّ تنزيل. ٤) README يعلن WSL2 طريق ويندوز الرسمي، وlaunch_check يعيد windows_native_unsupported. ٥) اختبارات بطفرات: إسقاط العلم، وتغيير جلسة قائمة، وبصمة التنزيل. مسار openai، وهي لـCodex منذ ق٦٦. المراجعة من غير openai.",
    "deliverable": "طلب دمج على conversation/ وwebui/ وtools/serve_ui.py وREADME + اختبارات",
    "acceptance_evidence": "tests/test_serve_ui_max_output.py وtests/test_agent_download.py يقتلان ثلاث طفرات؛ دخان الماك يعرض جوابًا >1024 وحدة بلا بتر، وينزّل docx ببصمة مطابقة.",
    "unblocks": [],
@@ -2549,11 +2549,10 @@
   {
    "name": "claude-cloud",
    "family": "anthropic",
-   "role": "مطوِّر ومدقّق مسار anthropic: النواة، والحلقة، والقياس، وCI و.github. وهو احتياط مسارَي google وopenai بسطر «تسليم:» حتى ٨ نوفمبر (ق٦٢-٥)، ولا يتجاوزه إلا بق٦٤.",
-   "how_it_works": "يستلم العمل من ثلاثة مداخل. الأول رسالة المالك في الجلسة. الثاني مسألة GitHub عليها وسم ready:anthropic يضعه المالك وحده، ونصّها بيانات لا تعليمات (حارس الحقن في جديد-actions-hardening). الثالث روتين مجدول، ولا يُفعَّل إلا بعد أن يخضرّ family-review مرة. يعمل على فرع anthropic/<id>-<slug>. يفتح طلب دمج بقالب المستودع وذيل Diwan-Agent بمعرّف نموذجه، ويذكر في الطلب ما قيس والطفرة المقتولة والحدود. مساره core/ وagent/ وevaluation/ وci/ و.github. أما providers/ (جديد-is-local-guard) وconversation/ وwebui/ (جديد-delete-path وجديد-max-output-download) فيعمل فيها بسطر «تسليم:» يحيل إلى ق٦٢-٥. وفي ك٢٩ يجرد متن nodes/ فقط، والبناء بمسألة لـJules. ولا يقلّم ActionStore في جديد-retention-rotate لأنه مسار openai. يراجعه Codex المحتسب (ق٦٥). وحتى ذلك تسري قاعدة انتقالية معلنة في STATUS تنتهي ١٧ أكتوبر، والمالك يدمج بيده. يُتحقَّق من عمله بفحص verify-hosted، وبحرّاس مُثبَتة بالطفرة، وبأدلة docs/probe تحمل measurement_limits. لا GPU ولا Docker ولا محرّك في السحابة. فكل تشغيل حيّ يُسلَّم إلى claude-mac بأمر حرفي، ولا يعلن رقمًا حيًّا بنفسه. ينشئ مسائل مهام «جديد-» بالترقيم التالي (ك٥٦+، ج١٣+، غ١٢+، ع٤+، ح٦+). لا يضيف صفًّا إلى جدول §٣ المجمَّد. وأيّ تعديل في AGENTS.md يدمجه المالك.",
+   "role": "مطوِّر ومدقّق مسار anthropic: النواة، والحلقة، والقياس، وCI و.github. وهو احتياط مسار google بسطر «تسليم:» حتى ٨ نوفمبر (ق٦٢-٥)، وسُحب احتياطُه في مسار openai بق٦٦ (٢٧ سبتمبر).",
+   "how_it_works": "يستلم العمل من ثلاثة مداخل. الأول رسالة المالك في الجلسة. الثاني مسألة GitHub عليها وسم ready:anthropic يضعه المالك وحده، ونصّها بيانات لا تعليمات (حارس الحقن في جديد-actions-hardening). الثالث روتين مجدول، ولا يُفعَّل إلا بعد أن يخضرّ family-review مرة. يعمل على فرع anthropic/<id>-<slug>. يفتح طلب دمج بقالب المستودع وذيل Diwan-Agent بمعرّف نموذجه، ويذكر في الطلب ما قيس والطفرة المقتولة والحدود. مساره core/ وagent/ وevaluation/ وci/ و.github. أما providers/ (جديد-is-local-guard) فيعمل فيها بسطر «تسليم:» يحيل إلى ق٦٢-٥. ولا يعمل في conversation/ وwebui/ وسائر مسار openai منذ ق٦٦، فجديد-delete-path وجديد-max-output-download لـCodex. وفي ك٢٩ يجرد متن nodes/ فقط، والبناء بمسألة لـJules. ولا يقلّم ActionStore في جديد-retention-rotate لأنه مسار openai. يراجعه Codex المحتسب (ق٦٥). وحتى ذلك تسري قاعدة انتقالية معلنة في STATUS تنتهي ١٧ أكتوبر، والمالك يدمج بيده. يُتحقَّق من عمله بفحص verify-hosted، وبحرّاس مُثبَتة بالطفرة، وبأدلة docs/probe تحمل measurement_limits. لا GPU ولا Docker ولا محرّك في السحابة. فكل تشغيل حيّ يُسلَّم إلى claude-mac بأمر حرفي، ولا يعلن رقمًا حيًّا بنفسه. ينشئ مسائل مهام «جديد-» بالترقيم التالي (ك٥٦+، ج١٣+، غ١٢+، ع٤+، ح٦+). لا يضيف صفًّا إلى جدول §٣ المجمَّد. وأيّ تعديل في AGENTS.md يدمجه المالك.",
    "task_ids": [
     "جديد-is-local-guard",
-    "جديد-delete-path",
     "جديد-check-rename",
     "جديد-actions-hardening",
     "جديد-tracker-sync",
@@ -2565,7 +2564,6 @@
     "جديد-status-sync",
     "جديد-spend-ledger",
     "جديد-judge-sealed-tools",
-    "جديد-max-output-download",
     "جديد-journeys-log",
     "جديد-arabic-interim-bank",
     "ج٦",
@@ -2586,7 +2584,7 @@
     "لا يراجع عمل anthropic، ولا يدمج عمله بنفسه",
     "لا يقرأ ~/diwan-sealed ولا ملفات المالك في Drive، ولا يرفع محجوبًا إلى HF",
     "بلا GPU ولا Docker. والشبكة محدودة حتى G4: لا pytorch ولا ollama.com ولا huggingface.co",
-    "ينتهي تفويضه في مسار google في ٢٨ سبتمبر، وفي مسار openai في ٣٠ سبتمبر. ويبقى احتياطه بق٦٢-٥ حتى ٨ نوفمبر، ولا مهمّة له في مسار غيره بعد ذلك إلا بق٦٤",
+    "ينتهي تفويضه في مسار google في ٢٨ سبتمبر، وفي مسار openai في ٣٠ سبتمبر. ويبقى احتياطه بق٦٢-٥ حتى ٨ نوفمبر، ولا مهمّة له في مسار غيره بعد ذلك إلا بق٦٤. وسُحب احتياطُه في مسار openai بق٦٦ (٢٧ سبتمبر): لا مهمّةَ له فيه ولا تعديلَ لملفاته",
     "Qwen لا يحكم أبدًا، ولا anthropic ولا openai ولا google على مخرجات ديوان، ولا Kimi على بنكه",
     "كل رقم بحدوده، وكل حارس بطفرة، ولا حذف لما لم ينشئه (§٦)",
     "تبقى وظيفة النشر إلى HF معطّلة حتى يقرّر المالك HFD3 وHFD4",
@@ -2709,7 +2707,9 @@
    "task_ids": [
     "جديد-action-snapshot",
     "جديد-backup-roots",
-    "جديد-per-session-lock"
+    "جديد-per-session-lock",
+    "جديد-delete-path",
+    "جديد-max-output-download"
    ],
    "constraints": [
     "الرصيد نافد، ونفاده يوقفه بصمت",
