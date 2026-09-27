@@ -73,12 +73,10 @@ LIMITS = [
     "only_manifests_under_tests_mutations_are_applied_guards_older_than_the_manifests_have_no_proof_until_one_is_written",
     "tests_run_with_the_given_python_in_a_detached_worktree_of_the_head_commit_uncommitted_changes_are_not_measured",
     "a_kill_is_judged_by_the_named_tests_failing_another_test_that_fails_is_not_counted",
-    "an_existing_test_is_touched_by_an_added_line_inside_its_span_at_the_head_so_changes_to_fixtures_or_helpers_outside_test_functions_are_not_re_proven_while_a_test_that_vanished_or_lost_a_line_only_has_its_manifests_re_applied",
-    "what_is_collected_is_decided_by_pytest_over_the_whole_tests_tree_at_the_head_and_at_the_merge_base_compared_by_full_node_ids_with_their_parameters_a_case_new_at_the_head_touches_its_test_wherever_it_appears_and_an_existing_test_is_touched_only_when_the_parser_places_an_added_line_in_its_span",
-    "the_parser_places_definitions_Test_classes_unittest_subclasses_named_in_the_module_and_same_file_inheritance_in_the_test_module_itself",
-    "every_collected_node_is_also_traced_to_the_callable_that_defines_it_as_pytest_resolves_it_file_and_decorator_inclusive_span_from_inspect_so_an_added_line_in_that_span_touches_it_and_a_removed_line_revalidates_it_wherever_it_is_defined_a_helper_conftest_or_package_imported_by_its_own_name_or_an_alias_or_inherited_from_another_file",
-    "a_collected_node_whose_callable_has_no_readable_source_such_as_one_built_by_exec_is_placed_by_the_parser_only_and_is_named_with_its_error_in_the_collection_output",
-    "inherited_test_methods_are_placed_through_bases_defined_at_module_level_in_the_same_file_first_base_wins_so_an_added_line_in_a_base_method_touches_every_heir_of_that_file",
+    "what_is_collected_is_decided_by_pytest_over_the_whole_tests_tree_at_the_head_and_at_the_merge_base_compared_by_full_node_ids_with_their_parameters_a_case_new_at_the_head_touches_its_test_wherever_it_appears_and_a_vanished_node_re_applies_its_manifests",
+    "an_existing_collected_test_is_touched_when_an_added_line_of_the_range_falls_inside_the_span_of_the_callable_that_defines_it_as_pytest_resolves_it_file_and_decorator_inclusive_span_from_inspect_wherever_that_callable_lives_a_helper_conftest_or_package_imported_by_its_own_name_or_an_alias_or_inherited_from_another_file_and_a_removed_line_inside_that_span_re_applies_its_manifests",
+    "changes_to_fixtures_or_helpers_outside_any_test_callable_s_span_are_not_re_proven_and_a_collected_node_whose_callable_has_no_readable_source_such_as_one_built_by_exec_is_touched_only_when_its_node_id_is_new_and_is_named_with_its_error_in_the_collection_output",
+    "origins_are_read_in_modified_python_files_only_the_tests_of_an_added_file_are_new_node_ids_and_those_of_a_deleted_file_vanish_from_the_collection_so_both_are_decided_by_the_collection_diff",
     "renames_are_not_detected_in_the_range_a_moved_file_is_its_source_deleted_and_its_destination_added_so_both_sides_are_checked",
     "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
     "a_touched_parametrized_test_is_proved_case_by_case_every_case_pytest_collects_for_it_must_fail_a_mutation_since_parsing_cannot_tell_the_added_case_from_the_old_ones",
@@ -167,64 +165,6 @@ def _show(root: Path, head: str, path: str) -> str:
     return subprocess.run(["git", "-C", str(root), "show", f"{head}:{path}"], check=True, capture_output=True, text=True).stdout
 
 
-def _base_name(expr: ast.expr) -> str | None:
-    """آخرُ مقطعٍ من اسم الأصل: unittest.TestCase → TestCase، وBase → Base؛ وما ليس اسمًا لا يُعرف."""
-    return expr.id if isinstance(expr, ast.Name) else expr.attr if isinstance(expr, ast.Attribute) else None
-
-
-def _unittest_classes(tree: ast.Module) -> set[str]:
-    """أصنافُ الوحدة التي يجمعها pytest أيًّا كان اسمُها لأنها ترث unittest.TestCase (اسمُ الأصل ينتهي بـTestCase) أو ترث
-    صنفًا من الوحدة نفسِها يرثه — ملاحظةُ Codex على #149. والأصلُ المستورد باسمٍ آخر حدٌّ معلَن."""
-    classes = [node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
-    found: set[str] = set()
-    while True:
-        more = {c.name for c in classes if c.name not in found
-                and any((base := _base_name(b)) is not None and (base.endswith("TestCase") or base in found) for b in c.bases)}
-        if not more:
-            return found
-        found |= more
-
-
-def _test_nodes_at(root: Path, head: str, test_file: str) -> dict[str, list[tuple[int, int]]]:
-    """مدياتُ اختبارات الملفّ عند الرأس كما تقرؤها الشجرةُ النحوية (دوالُّ test* في الوحدة وفي أصناف Test* وأصناف unittest
-    أيًّا كان اسمُها)، كلٌّ بمعرّفه الكامل: مدى الدالّة من أول مزخرفٍ إلى آخر سطر، والموروثةُ من أصلٍ في الوحدة نفسِها تحمل
-    فوقه رأسَ كلِّ وارثٍ في السلسلة (مزخرفاتِه وسطرَ class) فإضافةُ دالّةٍ في الأصل أو تغييرُ أصل الوارث يمسّها. والقراءةُ
-    للمديات وحدها؛ أما ما يُجمع فعلًا فيحسمه pytest في `_range_scope` (ملاحظات Codex على #149)."""
-    try:
-        tree = ast.parse(_show(root, head, test_file))
-    except SyntaxError as exc:
-        raise Refused("test_file_unparsable", f"{test_file}: {exc.msg} (السطر {exc.lineno})") from None
-    nodes: dict[str, list[tuple[int, int]]] = {}
-    unittest_classes = _unittest_classes(tree)
-    classes = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
-    first = lambda node: min([node.lineno, *(d.lineno for d in node.decorator_list)])
-
-    def methods(cls: ast.ClassDef, seen: tuple[str, ...] = ()) -> dict[str, list[tuple[int, int]]]:
-        """دوالُّ test* التي تقرؤها الشجرةُ من الصنف: الموروثةُ من أصوله في الوحدة (الأولُ يغلب كما في MRO) ثم ما يعرّفه هو فيغلب."""
-        found: dict[str, list[tuple[int, int]]] = {}
-        for base in reversed(cls.bases):
-            name = _base_name(base)
-            if name in classes and name not in (*seen, cls.name):
-                for method, spans in methods(classes[name], (*seen, cls.name)).items():
-                    found[method] = [*spans, (first(cls), cls.lineno)]
-        for node in cls.body:
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
-                found[node.name] = [(first(node), node.end_lineno or node.lineno)]
-        return found
-
-    def visit(body, prefix: str) -> None:
-        for node in body:
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
-                nodes[f"{test_file}::{prefix}{node.name}"] = [(first(node), node.end_lineno or node.lineno)]
-            elif isinstance(node, ast.ClassDef) and (node.name.startswith("Test") or node.name in unittest_classes):
-                for method, spans in methods(node).items():
-                    nodes[f"{test_file}::{prefix}{node.name}::{method}"] = spans
-                visit([n for n in node.body if isinstance(n, ast.ClassDef)], f"{prefix}{node.name}::")
-
-    visit(tree.body, "")
-    return nodes
-
-
 def _added_lines(root: Path, base: str, head: str, test_file: str) -> set[int]:
     """أرقامُ الأسطر المضافة في الرأس، من رؤوس مقاطع الفرق."""
     lines: set[int] = set()
@@ -245,23 +185,6 @@ def _removed_lines(root: Path, base: str, head: str, test_file: str) -> set[int]
     return lines
 
 
-def _revalidated_test_nodes(root: Path, base: str, head: str, test_file: str) -> list[str]:
-    """اختباراتُ الأساس التي زالت من القراءة أو فقدت سطرًا من مداها: بياناتُها تُعاد في المدى، فحذفُ اختبارٍ أو حالةٍ يسمّيها
-    بيانٌ يُحكم test_missing في الطلب لا في التدقيق الأسبوعيّ وحده (ملاحظة Codex على #149)."""
-    nodes = _test_nodes_at(root, base, test_file)
-    removed, at_head = _removed_lines(root, base, head, test_file), _test_nodes_at(root, head, test_file)
-    return sorted(node for node, spans in nodes.items()
-                  if node not in at_head or any(start <= n <= end for start, end in spans for n in removed))
-
-
-def _touched_test_nodes(root: Path, base: str, head: str, test_file: str) -> list[str]:
-    """الاختباراتُ القائمة التي مسّها المدى: كلُّ اختبارٍ دخل سطرٌ مضاف في مداه (تأكيدٌ جديد في دالّةٍ قائمة، أو حالةٌ في مزخرفها،
-    أو دالّةٌ في أصلٍ يرثه) — ملاحظاتُ Codex على #149؛ أما ما استجدّ فيحسمه جمعُ pytest."""
-    nodes = _test_nodes_at(root, head, test_file)
-    added = _added_lines(root, base, head, test_file)
-    return sorted(node for node, spans in nodes.items() if any(start <= n <= end for start, end in spans for n in added))
-
-
 def _named_exactly(text: str) -> set[str]:
     """ما يسمّيه نصُّ بيانٍ من اختبارات بمعرّفها كما كُتب، بمعاملاته (قراءةٌ متسامحة؛ الصلاحيةُ في load_manifest)."""
     named: set[str] = set()
@@ -280,11 +203,11 @@ def _manifest_names(root: Path) -> dict[Path, set[str]]:
             for path in (sorted((root / MANIFESTS).glob("*.jsonl")) if (root / MANIFESTS).is_dir() else [])}
 
 
-def _dropped_candidates(root: Path, base: str, head: str, manifests: list[str], modules_at_head: set[str]) -> tuple[list[str], set[str]]:
+def _dropped_candidates(root: Path, base: str, head: str, manifests: list[str], modules_at_head: set[str], collected_head: set[str]) -> tuple[list[str], set[str]]:
     """اختباراتٌ كان يسمّيها بيانٌ عند أصل الدمج ولا يسمّيها سطرٌ في بيان وحدتها عند الرأس (حُذف السطرُ أو ضُيّقت قائمتُه)
     ودالّتُها باقية عند الرأس: مرشّحةٌ لفقد إثباتها صامتةً، فيُرفض إلا إن زالت أو سمّاها سطرٌ آخر بمعرّفها أو باسم دالّتها
     (ملاحظة Codex على #149)؛ ومعها ما يسمّيه بيانُ كلِّ وحدةٍ منها عند الرأس، فالحالةُ المسمّاة بمعاملها تُحسم بجمع pytest في شجرة العمل."""
-    candidates, named_at_head, nodes, own = set(), set(), {}, {}
+    candidates, named_at_head, own = set(), set(), {}
     for manifest in manifests:
         for test in sorted(_named_exactly(_git(root, "show", f"{base}:{manifest}"))):
             function = test.split("[", 1)[0]
@@ -297,9 +220,7 @@ def _dropped_candidates(root: Path, base: str, head: str, manifests: list[str], 
                 named_at_head |= own[module]
             if test in own[module] or function in own[module]:
                 continue
-            if module not in nodes:
-                nodes[module] = _test_nodes_at(root, head, module)
-            if function in nodes[module]:
+            if function in collected_head:      # ما زالت الدالّةُ تُجمع عند الرأس، فإثباتُها سقط صامتًا
                 candidates.add(test)
     return sorted(candidates), named_at_head
 
@@ -357,23 +278,22 @@ def _range_scope(root: Path, rng: str, python: str = sys.executable, timeout: in
     deleted = _test_modules(changed("D", "tests/"))
     # ما يُجمع يحسمه pytest عند الرأس وعند أصل الدمج، للمجموعة كلِّها لا للوحدات المتغيّرة وحدها (وارثٌ بلا تعريف، وسمةٌ
     # حاجبة، واسمٌ مستعار، واستيراد، وحارسٌ يبلغ وحدةً لم تتغيّر عبر `import *` من مساعدٍ تغيّر — ملاحظات Codex على #149):
-    # ما استجدّ عند الرأس ممسوس، وما بقي يُمسّ بسطرٍ مضاف في مداه المقروء نحويًّا؛ وما زال، أو فقد سطرًا من مداه (ومنه
-    # الاسمُ القديم لملفٍّ نُقل)، تُعاد بياناتُه فيُحكم ما يسمّيه test_missing هنا لا في الأسبوعيّ وحده
+    # ما استجدّ عند الرأس ممسوس، وما بقي يُمسّ بسطرٍ مضاف في مدى الدالّة التي تعرّفه (أدناه)؛ وما زال (ومنه الاسمُ القديم
+    # لملفٍّ نُقل)، أو فقد سطرًا من مدى تعريفه، تُعاد بياناتُه فيُحكم ما يسمّيه test_missing هنا لا في الأسبوعيّ وحده
     # والمقارنةُ بالمعرّفات الكاملة بمعاملاتها قبل ردّها إلى دوالّها: حالةٌ تولَّد خارج الوحدة (conftest أو مساعد) لاختبارٍ
     # قائم تمسّه (ملاحظة Codex على #149)
     cases_head, origins_head = _collected_origins_at(root, head, python, ["tests/"], timeout)
     cases_base, origins_base = _collected_origins_at(root, base, python, ["tests/"], timeout)
     functions = lambda cases: {case.split("[", 1)[0] for case in cases}
     collected_head, collected_base = functions(cases_head), functions(cases_base)
-    grown = [node for test in modified for node in _touched_test_nodes(root, base, head, test)]
-    touched = sorted(functions(cases_head - cases_base) | {node for node in grown if node in collected_head})
-    shrunk = [node for test in modified for node in _revalidated_test_nodes(root, base, head, test)]
-    revalidated = sorted(functions(cases_base - cases_head) | {node for node in shrunk if node in collected_base})
+    touched = sorted(functions(cases_head - cases_base))
+    revalidated = sorted(functions(cases_base - cases_head))
     # وكلُّ اختبارٍ مجموع يُردّ إلى الدالّة التي تعرّفه كما يراها pytest نفسُه (ملفُّها ومداها من inspect)، لا إلى اسمه: مساعدٌ
     # أو conftest أو حزمة، مستورَدٌ باسمه أو باسمٍ مستعار (`from helpers import guard as test_guard`)، أو موروثٌ من ملفٍّ
-    # آخر — سطرٌ مضاف في مدى تعريفه يمسّه، وسطرٌ محذوف منه يُعيد بياناتِه؛ وما لا مصدرَ له يُوضع بالقراءة النحوية وحدها
-    # (ملاحظتا Codex على #149)
-    edited = [p for p in changed("AMD", ".") if p.endswith(".py")]
+    # آخر — سطرٌ مضاف في مدى تعريفه يمسّه، وسطرٌ محذوف منه يُعيد بياناتِه؛ وما لا مصدرَ له يُقرأ (يُبنى بـexec) لا يُمسّ إلا
+    # باستجداد معرّفه، ويُسمّى بخطئه في خرج الجمع (ملاحظتا Codex على #149)
+    # في الملفّات المعدَّلة وحدها: اختباراتُ ملفٍّ مضاف معرّفاتٌ جديدة يمسّها فرقُ الجمع، وملفٌّ محذوف تزول معرّفاتُه منه
+    edited = [p for p in changed("M", ".") if p.endswith(".py")]
     added_in = {p: _added_lines(root, base, head, p) for p in edited}
     removed_in = {p: _removed_lines(root, base, head, p) for p in edited}
     reached = {node for node, (origin, first, last) in origins_head.items() if any(first <= n <= last for n in added_in.get(origin, ()))}
@@ -389,7 +309,7 @@ def _range_scope(root: Path, rng: str, python: str = sys.executable, timeout: in
     orphaned = [m for m in changed("D", f"{MANIFESTS}/*.jsonl") if m in owned]
     # وسطرٌ حُذف أو ضُيّق في بيانٍ باقٍ: ما سمّاه عند أصل الدمج ولا يسمّيه سطرٌ عند الرأس ودالّتُه باقية يفقد إثباتَه صامتًا
     # (ملاحظة Codex على #149)؛ يُحسم بالجمع في شجرة العمل أيُّ حالاته ما زالت تُجمع
-    candidates, named_at_head = _dropped_candidates(root, base, head, changed("M", f"{MANIFESTS}/*.jsonl"), set(owned.values()))
+    candidates, named_at_head = _dropped_candidates(root, base, head, changed("M", f"{MANIFESTS}/*.jsonl"), set(owned.values()), collected_head)
     return {"paths": paths, "touched": touched, "revalidated_tests": revalidated,
             "manifest_missing": [t for t in added if not has_manifest(t)],
             "unmanifested_changed_tests": [t for t in modified if not has_manifest(t)],
