@@ -74,7 +74,8 @@ LIMITS = [
     "a_kill_is_judged_by_the_named_tests_failing_another_test_that_fails_is_not_counted",
     "an_existing_test_is_touched_by_an_added_line_inside_its_span_at_the_head_so_changes_to_fixtures_or_helpers_outside_test_functions_are_not_re_proven_while_a_test_that_vanished_or_lost_a_line_only_has_its_manifests_re_applied",
     "what_is_collected_is_decided_by_pytest_over_the_whole_tests_tree_at_the_head_and_at_the_merge_base_compared_by_full_node_ids_with_their_parameters_a_case_new_at_the_head_touches_its_test_wherever_it_appears_and_an_existing_test_is_touched_only_when_the_parser_places_an_added_line_in_its_span",
-    "the_parser_places_definitions_Test_classes_unittest_subclasses_named_in_the_module_and_same_file_inheritance_so_an_existing_collected_node_it_cannot_place_such_as_an_imported_test_an_alias_or_a_method_of_a_class_whose_base_is_imported_under_another_name_is_not_touched_by_an_added_line",
+    "the_parser_places_definitions_Test_classes_unittest_subclasses_named_in_the_module_and_same_file_inheritance_so_an_existing_collected_node_it_cannot_place_such_as_an_alias_or_a_method_of_a_class_whose_base_is_imported_under_another_name_is_not_touched_by_an_added_line_in_the_test_module",
+    "an_added_or_removed_line_inside_a_test_named_function_of_a_python_file_that_is_not_a_test_module_touches_or_revalidates_every_collected_test_of_that_bare_name_since_collection_does_not_say_where_a_test_was_defined",
     "inherited_test_methods_are_placed_through_bases_defined_at_module_level_in_the_same_file_first_base_wins_so_an_added_line_in_a_base_method_touches_every_heir_of_that_file",
     "renames_are_not_detected_in_the_range_a_moved_file_is_its_source_deleted_and_its_destination_added_so_both_sides_are_checked",
     "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
@@ -271,6 +272,30 @@ def _named_exactly(text: str) -> set[str]:
     return named
 
 
+def _test_names_edited_outside_modules(root: Path, base: str, head: str, paths: list[str]) -> tuple[set[str], set[str]]:
+    """أسماءُ دوالّ test* (في أيّ صنفٍ وعمق) التي دخل سطرٌ مضاف في مداها، أو زالت أو فقدت سطرًا، في ملفّات بايثون ليست وحداتِ
+    اختبار (مساعدٌ تحت tests/ أو conftest أو حزمة): الاختبارُ المجموعُ في وحدةٍ لم تتغيّر قد يكون معرَّفًا هناك ومستورَدًا،
+    والجمعُ لا يقول أين عُرّف، فيُمسّ كلُّ اختبارٍ مجموعٍ بذلك الاسم (ملاحظة Codex على #149)."""
+    def names_at(sha: str, path: str) -> dict[str, tuple[int, int]]:
+        try:
+            tree = ast.parse(_show(root, sha, path))
+        except (SyntaxError, subprocess.CalledProcessError):
+            return {}
+        return {node.name: (min([node.lineno, *(d.lineno for d in node.decorator_list)]), node.end_lineno or node.lineno)
+                for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test")}
+
+    grown: set[str] = set()
+    shed: set[str] = set()
+    for path in paths:
+        if not path.endswith(".py") or (path.startswith("tests/") and _is_test_module(path)):
+            continue
+        at_head, at_base = names_at(head, path), names_at(base, path)
+        added, removed = _added_lines(root, base, head, path), _removed_lines(root, base, head, path)
+        grown |= {name for name, (start, end) in at_head.items() if any(start <= n <= end for n in added)}
+        shed |= {name for name, (start, end) in at_base.items() if name not in at_head or any(start <= n <= end for n in removed)}
+    return grown, shed
+
+
 def _manifest_names(root: Path) -> dict[Path, set[str]]:
     """ما يسمّيه كلُّ بيانٍ في المستودع من اختبارات بمعرّفها الكامل بلا معاملات."""
     return {path: {t.split("[", 1)[0] for t in _named_exactly(path.read_text(encoding="utf-8"))}
@@ -364,9 +389,14 @@ def _range_scope(root: Path, rng: str, python: str = sys.executable, timeout: in
     collected_head, collected_base = functions(cases_head), functions(cases_base)
     grown = [node for test in modified for node in _touched_test_nodes(root, base, head, test)]
     touched = sorted(functions(cases_head - cases_base) | {node for node in grown if node in collected_head})
-    unnamed = [node for node in touched if node not in names.get(own(node), set())]
     shrunk = [node for test in modified for node in _revalidated_test_nodes(root, base, head, test)]
     revalidated = sorted(functions(cases_base - cases_head) | {node for node in shrunk if node in collected_base})
+    # والاختبارُ المعرَّف في ملفٍّ ليس وحدةَ اختبار (مساعدٌ، conftest، حزمة) ومستورَدٌ في وحدةٍ لم تتغيّر: تعديلُ جسمه هناك
+    # يمسّ كلَّ اختبارٍ مجموعٍ باسمه، وزوالُه أو نقصُه يُعيد بياناتِه (ملاحظة Codex على #149)
+    reached, gone = _test_names_edited_outside_modules(root, base, head, changed("AMD", "."))
+    touched = sorted({*touched, *(node for node in collected_head if node.rsplit("::", 1)[-1] in reached)})
+    revalidated = sorted({*revalidated, *(node for node in collected_base if node.rsplit("::", 1)[-1] in gone)})
+    unnamed = [node for node in touched if node not in names.get(own(node), set())]
     naming = [path for path in dict.fromkeys(own(node) for node in [*touched, *revalidated]) if path in names]
     paths = [root / p for p in changed("AMR", f"{MANIFESTS}/*.jsonl") if (root / p).is_file()]
     paths += [path for path in naming if path not in paths]
