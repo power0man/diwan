@@ -50,8 +50,8 @@
         "tokens_estimate": 6252
       },
       "docs/INDEX.md": {
-        "bytes": 18160,
-        "tokens_estimate": 3821
+        "bytes": 18384,
+        "tokens_estimate": 3877
       },
       "docs/VISION.md": {
         "bytes": 10397,
@@ -59,8 +59,8 @@
       }
     },
     "reading_set_total": {
-      "bytes": 58019,
-      "tokens_estimate": 12059
+      "bytes": 58243,
+      "tokens_estimate": 12115
     },
     "archived_rows": 41,
     "open_rows_in_agents_md": 4,
@@ -68,12 +68,12 @@
   },
   "every_indexed_document_after": {
     "AGENTS.md": {
-      "bytes": 28735,
-      "tokens_estimate": 6084
+      "bytes": 29462,
+      "tokens_estimate": 6252
     },
     "docs/STATUS.md": {
-      "bytes": 22605,
-      "tokens_estimate": 4725
+      "bytes": 22893,
+      "tokens_estimate": 4796
     },
     "docs/VISION.md": {
       "bytes": 10397,
@@ -104,8 +104,8 @@
       "tokens_estimate": 6075
     },
     "docs/REBUILD-2026-09-23.md": {
-      "bytes": 17103,
-      "tokens_estimate": 3420
+      "bytes": 17832,
+      "tokens_estimate": 3589
     },
     "docs/EVALUATION-20260925.md": {
       "bytes": 38324,
@@ -127,11 +127,13 @@
   "measurement_limits": [
     "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
     "agents_md_is_digested_with_its_generated_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
+    "agents_md_bytes_lines_and_tokens_are_measured_from_the_file_as_written_with_its_generated_block_only_its_digest_is_taken_with_the_block_emptied",
     "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
     "documents_outside_SOURCES_are_not_indexed",
     "no_git_history_is_read_so_the_output_is_identical_in_shallow_and_full_clones",
     "the_reading_set_after_counts_docs_VISION_md_although_section_0_now_asks_for_it_only_in_the_first_session_so_the_saving_is_understated",
     "documents_an_agent_opens_by_reference_from_the_index_are_not_counted_in_either_reading_set",
     "codex_visibility_is_computed_by_cutting_the_file_at_32768_bytes_as_project_doc_max_bytes_does_by_default_not_by_running_codex"
-  ]
+  ],
+  "measurement": "الأرقامُ بعد e8b6425: AGENTS.md يُقاس بنصّه على القرص بكتلته المولَّدة (حجمًا وأسطرًا ورموزًا وعناوين)، وبصمتُه وحدها من المفرَّغ"
 }
