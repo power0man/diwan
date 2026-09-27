@@ -78,7 +78,7 @@
     "services/assistant_workspace.py": "0f47e680bbb9e74fb88a475c9f009ecfd914f2cb04cfee5fb97bd2ad0266fcf5",
     "services/media_assistant.py": "095908e7b26bf5a73b8fb3a9dc1166710a420cd5a5a15136bb75853da9a17909",
     "services/project_archive.py": "ef44a0ba36cf988c8f69925e5d6356231a16e78e26aeaf2dc756fe0ab3ace019",
-    "tools/probe_j5_agent_round.py": "e05a6cc0df097e3e66b2a9c39ccac6b66da56f95e28500a0af29b65c86af8b50",
+    "tools/probe_j5_agent_round.py": "4123ae048c8c57d74ccbc08e59daab6cd471c7b54e0a180df90155cc3611b5f1",
     "tools/rebuild_index.py": "2905b5a3e1ce1a1a03e045997f9621a3f45aa2571a48ab932d37403c00cbe50e",
     "webui/__init__.py": "eba31e62aa39e69597feb600b3f2b38badaf694203f80a13464a5322680e78af",
     "webui/server.py": "6c5634808257a5961573465b6d6dbfe4e21488b5a2a2be053312b250bc673404",
@@ -122,13 +122,18 @@
           }
         ],
         "called_web_search": true,
-        "citations_passed": false,
+        "citations_passed": true,
         "answer_urls": [
+          "https://sabq.org/",
           "https://www.alarabiya.net/saudi-today",
+          "https://www.alriyadh.com/news",
+          "https://www.argaam.com/",
           "https://www.okaz.com.sa/",
-          "https://www.spa.gov.sa/"
+          "https://www.spa.gov.sa/",
+          "https://www.uqn.gov.sa/",
+          "https://x.com/SaudiNews50?lang=ar"
         ],
-        "answer_chars": 570
+        "answer_chars": 1666
       }
     ],
     "attempts_until_called": 2
@@ -169,9 +174,7 @@
     "runtime_receipt_read_before_the_round_and_rechecked_before_writing",
     "searxng_container_pinned_by_id_and_start_time_and_engine_digest_rechecked_after_the_round",
     "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
-    "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host",
-    "probe_changed_after_this_run_the_binding_must_now_also_be_tcp_docker_port_showed_8080_tcp_on_127_0_0_1",
-    "superseded_by_j5-docker-searxng-20260927j_with_the_final_probe"
+    "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host"
   ],
   "acceptance": {
     "passed": true,
