@@ -78,6 +78,14 @@ def normalize_results(raw) -> list[dict]:
     return results
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """لا يُتّبع إلا العنوانُ المضبوط: التحويلُ يُرسل الاستعلامَ إلى عنوانٍ لم يُضبط، ثم يُنسب ردُّه إلى المضبوط في
+    `identity` (ملاحظة Codex على #144)."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ToolRefused("web_search_redirect_refused", "محرّكُ البحث حوّل الطلبَ إلى عنوانٍ آخر")
+
+
 @dataclass(frozen=True)
 class SearxngBackend:
     """واجهة SearXNG بصيغة JSON: `GET <endpoint>/search?q=…&format=json`.
@@ -103,7 +111,7 @@ class SearxngBackend:
                + urllib.parse.urlencode({"q": query, "format": "json"}))
         request = urllib.request.Request(url, headers={"Accept": "application/json",
                                                        "User-Agent": "diwan-web-search/1"})
-        opener = urllib.request.build_opener() if self.opener is None else self.opener
+        opener = urllib.request.build_opener(_NoRedirect()) if self.opener is None else self.opener
         try:
             with opener.open(request, timeout=timeout_s) as response:
                 raw = response.read(MAX_BODY_BYTES + 1)

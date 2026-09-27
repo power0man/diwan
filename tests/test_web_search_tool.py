@@ -162,6 +162,51 @@ def test_the_backend_sends_only_the_query_to_the_configured_endpoint():
     assert backend.identity() == {"backend": "searxng", "endpoint": "http://127.0.0.1:8080"}
 
 
+def test_the_default_transport_refuses_a_redirect_away_from_the_configured_endpoint(monkeypatch):
+    """ملاحظةُ Codex على #144: الناقلُ الافتراضيّ كان يتّبع التحويلَ، فيُرسل الاستعلامَ إلى عنوانٍ لم يُضبط ويُنسب ردُّه
+    إلى المضبوط. والآن التحويلُ رفضٌ مسمًّى، والعنوانُ الآخر لا يبلغه شيء."""
+    import http.server
+    import threading
+    monkeypatch.setenv("no_proxy", "*")
+    monkeypatch.setenv("NO_PROXY", "*")
+    hits = []
+
+    class Elsewhere(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            hits.append(self.path)
+            body = json.dumps({"results": RAW_RESULTS[:1]}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    other = http.server.HTTPServer(("127.0.0.1", 0), Elsewhere)
+
+    class Redirecting(Elsewhere):
+        def do_GET(self):
+            self.send_response(302)
+            self.send_header("Location", f"http://127.0.0.1:{other.server_port}{self.path}")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+    configured = http.server.HTTPServer(("127.0.0.1", 0), Redirecting)
+    for server in (other, configured):
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        with pytest.raises(ToolRefused) as refused:
+            SearxngBackend(f"http://127.0.0.1:{configured.server_port}").search("q")
+        assert refused.value.code == "web_search_redirect_refused" and hits == []
+        assert SearxngBackend(f"http://127.0.0.1:{other.server_port}").search("q") and len(hits) == 1
+    finally:
+        for server in (other, configured):
+            server.shutdown()
+            server.server_close()
+
+
 @pytest.mark.parametrize("endpoint", ["ftp://x", "127.0.0.1:8080", "", None,
                                       "http://u:p@host/", "http://host/?format=json", "http://host/#f"])
 def test_the_endpoint_must_be_a_plain_http_url(endpoint):
