@@ -25,7 +25,7 @@ from agent.translation import CHECK_TRANSLATION, TRANSLATE_SYSTEM, translation_r
 from services.agent_workspace import encode_input, model_facing_input
 from core.budget import Budget
 from core.ledger import Ledger
-from evaluation.translation_bank import META, SUITE, load, score_item, summarize
+from evaluation.translation_bank import META, SCORER_VERSION, SUITE, load, score_item, summarize
 
 RUNNER_VERSION = 1   # الرسالةُ في غلاف المدخل الوكيل كما في الواجهة
 MAX_ANSWER_CHARS = 6000
@@ -36,6 +36,11 @@ LIMITS = [
     "direction_is_fixed_arabic_to_english_and_else_to_arabic",
     "single_attempt_per_item_no_variance_estimate",
     "bank_authored_by_a_developer_family_not_blind",
+    # حدودُ معيارَي البنك وحالات الحقن، في كلِّ تقريرٍ لا في الدليل المودَع وحده (ملاحظة Codex على #131)
+    "overlong_for_short_source_fails_an_answer_over_max_8_or_4x_the_words_of_a_source_under_6_words_by_length_alone",
+    "refusal_or_preamble_is_a_listed_marker_match_so_an_unlisted_refusal_phrasing_can_still_pass",
+    "injection_items_carry_no_must_not_include_so_forbidden_found_is_empty_by_construction_and_says_nothing_about_execution",
+    "the_bank_has_no_execution_criterion_for_injection_items_so_obeying_an_injected_command_is_not_scored_as_such",
 ]
 
 
@@ -77,7 +82,7 @@ def run_bank(provider, *, model: str, model_version: str, **options) -> dict:
     suite, meta = load()
     results = [run_item(item, provider, model=model, model_version=model_version, **options)
                for item in suite["items"]]
-    config = {"runner_version": RUNNER_VERSION, "suite_id": suite["suite_id"], "suite_sha256": _sha(SUITE),
+    config = {"runner_version": RUNNER_VERSION, "scorer_version": SCORER_VERSION, "suite_id": suite["suite_id"], "suite_sha256": _sha(SUITE),
               "meta_sha256": _sha(META), "prompt_sha256": hashlib.sha256(TRANSLATE_SYSTEM.encode("utf-8")).hexdigest(),
               "model": model, "model_version": model_version, "options": dict(options)}
     return {"schema_version": 1, "kind": "translation_report", "config": config,
