@@ -372,7 +372,7 @@ def test_a_docker_path_the_sandbox_cannot_use_is_refused_before_any_case(tmp_pat
 @pytest.mark.parametrize("good, cleanup, expected_label, expected_exit", [
     (True, True, "reviewed_disposable_docker", 0),
     (False, True, "not_established", 1),
-    (True, False, "reviewed_disposable_docker", 1),
+    (True, False, "not_established", 1),
 ])
 def test_the_run_succeeds_only_when_every_case_and_the_sandbox_hold(tmp_path, monkeypatch, good, cleanup,
                                                                      expected_label, expected_exit):

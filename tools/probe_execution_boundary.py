@@ -235,7 +235,8 @@ def main(argv=None) -> int:
         "schema_version": 1, **common, "source_sha256": sources["core/sandbox.py"], "source": "core/sandbox.py",
         "execution_sha256": execution_sha, "via": "core.sandbox.run_in_sandbox",
         **verdicts,
-        "boundary": "reviewed_disposable_docker" if sandbox_ok else "not_established",
+        # الحدُّ لا يُسمّى «مراجَعًا» في تقرير الصندوق وتقريرُ الحدّ المرافق ينقضه (ملاحظة Codex على #144)
+        "boundary": "reviewed_disposable_docker" if sandbox_ok and not boundary_failed else "not_established",
         "acceptance": {"passed": sandbox_ok, "failed": sandbox_failed},
         "limits": ["A harness in the same interpreter as arbitrary candidate code is not a tamper-proof grader.",
                    "No product certification."],
