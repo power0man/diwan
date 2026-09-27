@@ -663,6 +663,42 @@ def test_every_persisted_item_is_shown_in_its_session_before_it_is_forgotten(tmp
     assert not report["passed"] and any("not exposed" in f for f in report["failures"])
 
 
+CROSS_PROJECT_BACKUP = {
+    "id": "backup_cross", "category": "backup", "steps": [
+        {"op": "remember", "project": "B", "text": "رقم لوحة السيارة أ ب ج ١٢٣", "consent": "owner", "as": "m1"},
+        {"op": "backup", "project": "A", "as": "b1"},
+        {"op": "forget", "project": "B", "ref": "m1"},
+        {"op": "restore", "project": "A", "ref": "b1"},
+        {"expect": "context", "project": "B", "question": "ما رقم اللوحة؟", "absent": ["رقم لوحة السيارة أ ب ج ١٢٣"], "present": []},
+        {"expect": "receipt", "project": "B", "ref": "m1", "count": 1},
+    ]}
+
+
+def test_a_backup_exposes_every_project_not_only_the_one_named_by_the_step(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة الثانية عشرة): اللقطةُ للمساحة كلِّها، فعنصرٌ في B ونسخةٌ عبر A كان يُعرض بعد اللقطة
+    فقط فتُنسى جلستُه عند الاستعادة؛ صار كلُّ مشروعٍ يُعرض قبل اللقطة، وجلسةُ B تبقى بعد الاستعادة."""
+    from evaluation.memory_runner import _Wired, run_scenario, run_wired_scenario
+    report = run_scenario(CROSS_PROJECT_BACKUP, tmp_path / "s")
+    assert report["passed"] and report["context_exposures"] == 2, report
+    report = run_wired_scenario(CROSS_PROJECT_BACKUP, tmp_path / "w")
+    assert report["passed"] and report["context_exposures"] == 2, report
+    # وفي الطريق الموصول: جلستا B اللتان رأتا العنصر قبل اللقطة هما جلستا الفحص بعد الاستعادة
+    wired = _Wired(tmp_path / "ui")
+    try:
+        b = wired.project("B")
+        wired.api("memory_remember", project=b["id"], text="رقم لوحة السيارة أ ب ج ١٢٣")
+        wired.project("A")
+        for other in list(wired.projects):
+            for item in wired.store(other).items():
+                wired.contexts(other, item["text"])
+        before = {kind: b[kind] for kind in ("agent", "text")}
+        snapshot = wired.backup()
+        wired.restore(snapshot)
+        assert {kind: wired.projects["B"][kind] for kind in ("agent", "text")} == before
+    finally:
+        wired.close()
+
+
 def test_the_snapshot_keeps_the_probe_sessions_that_saw_the_item_and_restore_forgets_only_the_later_ones(tmp_path):
     """ملاحظةُ Codex على #129 (الجولة الحادية عشرة): جلسةُ الفحص التي رأت العنصرَ قبل اللقطة تبقى بعد الاستعادة هي
     جلسةَ الفحص، فانحدارٌ يُبقي كتلةَ الذاكرة في تاريخها يُرى؛ وما أُنشئ بعد اللقطة وحده يُنسى."""

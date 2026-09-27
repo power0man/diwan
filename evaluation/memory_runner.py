@@ -119,12 +119,13 @@ def run_scenario(scenario: dict, root: Path) -> dict:
                     failures.append(f"{index}: item not exposed in context before forget")
             s.forget(item)
         elif op == "backup":
-            # وكلُّ عنصرٍ قائمٍ يُعرض قبل اللقطة أيضًا، فتحمل اللقطةُ ما رأى العنصر، ويُفحص غيابُه بعد الاستعادة فيما رآه
-            # (ملاحظة Codex على #129)
-            for item in s.items():
-                exposures += 1
-                if not _exposed(s.context_block(item["text"]), item["text"]):
-                    failures.append(f"{index}: item not exposed in context before backup")
+            # وكلُّ عنصرٍ قائمٍ في كلِّ مشروعٍ يُعرض قبل اللقطة أيضًا (فاللقطةُ للمساحة كلِّها لا للمشروع المسمّى)، فتحمل
+            # اللقطةُ ما رأى العنصر، ويُفحص غيابُه بعد الاستعادة فيما رآه (ملاحظتا Codex على #129)
+            for other in stores.values():
+                for item in other.items():
+                    exposures += 1
+                    if not _exposed(other.context_block(item["text"]), item["text"]):
+                        failures.append(f"{index}: item not exposed in context before backup")
             refs[step["as"]] = s.backup()
         elif op == "restore":
             s.restore(refs[step["ref"]])
@@ -413,12 +414,14 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                         failures.append(f"{index}: item not exposed in context before forget")
                 wired.api("memory_forget", project=wired.project(name)["id"], item_id=item)
             elif op == "backup":
-                # كلُّ عنصرٍ قائمٍ يُعرض في جلستَي مشروعه قبل اللقطة، فتحمل اللقطةُ جلسةً رأت العنصر، وبعد الاستعادة تبقى هي
-                # جلسةَ الفحص (لا تُنسى لأنها في اللقطة) فيُفحص غيابُه في تاريخها هي (ملاحظة Codex على #129)
-                for item in wired.store(name).items():
-                    exposures += 1
-                    if any(not _exposed(current, item["text"]) for current, _ in wired.contexts(name, item["text"])):
-                        failures.append(f"{index}: item not exposed in context before backup")
+                # كلُّ عنصرٍ قائمٍ في كلِّ مشروع (فاللقطةُ للمساحة كلِّها) يُعرض في جلستَي مشروعه قبل اللقطة، فتحمل اللقطةُ
+                # جلسةً رأته، وبعد الاستعادة تبقى هي جلسةَ الفحص (لا تُنسى لأنها في اللقطة) فيُفحص غيابُه في تاريخها هي
+                # (ملاحظتا Codex على #129)
+                for other in list(wired.projects):
+                    for item in wired.store(other).items():
+                        exposures += 1
+                        if any(not _exposed(current, item["text"]) for current, _ in wired.contexts(other, item["text"])):
+                            failures.append(f"{index}: item not exposed in context before backup")
                 refs[step["as"]] = wired.backup()
             elif op == "restore":
                 wired.restore(refs[step["ref"]])
