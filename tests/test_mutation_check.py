@@ -129,7 +129,7 @@ def test_a_refused_target_is_refused_before_any_worktree_exists(repo, target, re
 
 @pytest.mark.parametrize("entry, reason", [
     ({**KILL, "extra": 1}, "مفتاحٌ مجهول"), ({k: v for k, v in KILL.items() if k != "tests"}, "بلا tests"),
-    ({**KILL, "tests": []}, "tests فارغة"), ({**KILL, "tests": ["not a node id"]}, "معرّفٌ غيرُ صالح"),
+    ({**KILL, "tests": []}, "tests فارغة"), ({**KILL, "tests": ["tests/test_guard.py::not a node id"]}, "معرّفٌ غيرُ صالح"),
     ({**KILL, "new": KILL["old"]}, "old = new"), ({**KILL, "count": 0}, "count صفر"), ({**KILL, "count": True}, "count منطقيّ"),
 ], ids=["unknown_key", "no_tests", "empty_tests", "bad_node_id", "old_equals_new", "count_zero", "count_bool"])
 def test_an_invalid_manifest_line_is_refused_before_any_worktree_exists(repo, entry, reason, capsys, git):
@@ -146,9 +146,9 @@ def test_a_line_that_is_not_json_is_refused_by_name(repo, capsys, git):
 
 
 def test_range_mode_applies_the_changed_manifests_and_names_an_added_test_file_without_one(repo, capsys, git):
+    """ملفُّ اختبارٍ مضاف بلا بيانٍ باسمه يُسمّى في manifest_missing، واختباراتُه بلا بيان وحدتها في unmanifested_new_tests."""
     base = git("rev-parse", "HEAD")
-    _manifest(repo, "test_guard", {**KILL, "id": "kill"}, {**KILL, "id": "more", "tests": ["tests/test_guard.py::test_more"]},
-              {**KILL, "id": "other-named-elsewhere", "tests": ["tests/test_other.py::test_other"]})
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"}, {**KILL, "id": "more", "tests": ["tests/test_guard.py::test_more"]})
     (repo / "tests/test_other.py").write_text("from pkg.guard import positive\n\n\ndef test_other():\n    assert positive(0) is False\n")
     (repo / "tests/test_guard.py").write_text(TESTS + "\n\ndef test_more():\n    assert positive(0) is False\n")
     git("add", "-A")
@@ -157,13 +157,14 @@ def test_range_mode_applies_the_changed_manifests_and_names_an_added_test_file_w
     report = _run(repo, "--range", f"{base}..{head}", capsys=capsys)
     assert report["manifests"] == ["tests/mutations/test_guard.jsonl"]
     assert report["manifest_missing"] == ["tests/test_other.py"], "ملفُّ اختبارٍ مضاف بلا بيان"
-    assert report["unmanifested_changed_tests"] == [] and report["unmanifested_new_tests"] == [] and report["totals"]["killed"] == 3
-    assert report["status"] == "failed", "غيابُ البيان باسم الملفّ يُسقط المدى ولو سمّى اختباراتِه بيانٌ آخر"
+    assert report["unmanifested_changed_tests"] == [] and report["unmanifested_new_tests"] == ["tests/test_other.py::test_other"]
+    assert report["totals"]["killed"] == 2 and report["status"] == "failed", "غيابُ بيان الوحدة يُسقط المدى"
     _manifest(repo, "test_other", {**KILL, "id": "other", "tests": ["tests/test_other.py::test_other"]})
     git("add", "-A")
     git("commit", "-qm", "manifest for other")
     report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
-    assert report["manifest_missing"] == [] and report["status"] == "passed" and report["totals"]["killed"] == 4
+    assert report["manifest_missing"] == [] and report["unmanifested_new_tests"] == []
+    assert report["status"] == "passed" and report["totals"]["killed"] == 3
     _clean(repo, git)
 
 
@@ -250,17 +251,18 @@ def test_the_manifest_that_names_a_touched_test_is_applied_in_the_range_even_whe
 
 
 def test_every_test_in_a_new_file_must_be_named_not_only_its_manifest_file(repo, git, capsys):
-    """بيانٌ باسم الملفّ الجديد لا يكفي (ملاحظة Codex على #149 بعد 7b19902): كلُّ اختبارٍ فيه، ولو داخل صنف، يسمّيه بيان."""
+    """بيانٌ باسم الملفّ الجديد لا يكفي (ملاحظة Codex على #149 بعد 7b19902): كلُّ اختبارٍ فيه، ولو داخل صنف، يسمّيه بيان
+    الوحدة بمعرّفه الكامل، فبيانٌ يسمّي أحدَ اختباري الملفّ لا يغطّي الآخر."""
     base = git("rev-parse", "HEAD")
     (repo / "tests/test_other.py").write_text(
         "from pkg.guard import positive\n\n\ndef test_other_zero():\n    assert positive(0) is False\n\n\n"
         "class TestOther:\n    def test_negative(self):\n        assert positive(-1) is False\n")
-    _manifest(repo, "test_other", {**KILL, "id": "old-only", "tests": ["tests/test_guard.py::test_zero_is_not_positive"]})
+    _manifest(repo, "test_other", {**KILL, "id": "one-only", "tests": ["tests/test_other.py::test_other_zero"]})
     git("add", "-A")
-    git("commit", "-qm", "new file whose manifest names an old test only")
+    git("commit", "-qm", "new file whose manifest names one of its two tests")
     report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
     assert report["manifest_missing"] == [] and report["totals"]["killed"] == 1
-    assert report["unmanifested_new_tests"] == ["tests/test_other.py::TestOther::test_negative", "tests/test_other.py::test_other_zero"]
+    assert report["unmanifested_new_tests"] == ["tests/test_other.py::TestOther::test_negative"]
     assert report["status"] == "failed"
     _manifest(repo, "test_other", {**KILL, "id": "both", "new": "return x > -5",
                                    "tests": ["tests/test_other.py::test_other_zero", "tests/test_other.py::TestOther::test_negative"]})
@@ -531,6 +533,42 @@ def test_removing_a_test_its_module_or_a_case_re_applies_the_manifest_that_named
     assert report["revalidated_tests"] == expected and report["manifests"] == ["tests/mutations/test_guard.jsonl"]
     assert report["totals"]["test_missing"] >= 1 and report["status"] == "failed"
     assert report["touched_cases"] == {} and report["unmanifested_new_tests"] == []
+    _clean(repo, git)
+
+
+def test_a_manifest_that_names_a_test_of_another_module_is_refused_by_name(repo, git, capsys):
+    """بيانُ الوحدة يسمّي اختباراتِها وحدها: إثباتٌ مستعارٌ من بيان وحدةٍ أخرى يزول بزوال تلك الوحدة صامتًا (ملاحظة Codex على #149)."""
+    (repo / "tests/test_other.py").write_text("def test_other():\n    assert True\n")
+    _manifest(repo, "test_other", {**KILL, "id": "borrowed"})          # يسمّي tests/test_guard.py::… من بيان test_other
+    git("add", "-A")
+    git("commit", "-qm", "foreign name")
+    report = _run(repo, "--all", capsys=capsys)
+    assert report["status"] == "refused" and report["code"] == "manifest_invalid"
+    assert "tests/mutations/test_other.jsonl:1" in report["detail"] and "tests/test_guard.py::test_zero_is_not_positive" in report["detail"]
+    _clean(repo, git)
+
+
+def test_a_touched_test_must_be_named_by_its_own_module_s_manifest_not_another_s(repo, git, capsys):
+    """حارسٌ جديد في test_guard.py كان يُحسب مسمًّى إن ورد معرّفُه في بيان أيّ وحدة (ملاحظة Codex على #149)؛ صار بيانُ وحدته
+    وحدَه ما يسمّيه ويُطبَّق، فالبيانُ الغريب لا يُحمَّل ولا يُعير."""
+    (repo / "tests/test_other.py").write_text("from pkg.guard import positive\n\n\ndef test_other():\n    assert positive(0) is False\n")
+    _manifest(repo, "test_other", {**KILL, "id": "borrowed", "tests": ["tests/test_guard.py::test_more"]})
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    git("add", "-A")
+    git("commit", "-qm", "manifests")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_guard.py").write_text(TESTS + "\n\ndef test_more():\n    assert positive(0) is False\n")
+    git("add", "-A")
+    git("commit", "-qm", "a guard named only by another module's manifest")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::test_more"] and report["status"] == "failed"
+    assert report["manifests"] == ["tests/mutations/test_guard.jsonl"], "البيانُ الغريب حُمّل"
+    _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": [*KILL["tests"], "tests/test_guard.py::test_more"]})
+    _manifest(repo, "test_other", {**KILL, "id": "own", "tests": ["tests/test_other.py::test_other"]})
+    git("add", "-A")
+    git("commit", "-qm", "each named by its own manifest")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["unmanifested_new_tests"] == [] and report["status"] == "passed"
     _clean(repo, git)
 
 

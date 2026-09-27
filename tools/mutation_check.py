@@ -19,7 +19,8 @@
     orphaned_manifests       بيانٌ حُذف في المدى ووحدتُه باقية (تُعرف الوحدةُ بالاتجاه الأمامي: أيُّ وحدةٍ عند الرأس بيانُها هذا)
     revalidated_tests        اختبارٌ زال في المدى أو فقد سطرًا من مداه: بياناتُه تُعاد في المدى (فحذفُ اختبارٍ أو حالةٍ يسمّيها بيانٌ
                              يُحكم test_missing هنا لا في الأسبوعيّ وحده)، ولا يُطلب إثباتُه من جديد
-    manifest_invalid         سطرٌ بلا حقوله أو بمفتاحٍ مجهول (يُرفض قبل أيّ شجرة عمل)
+    manifest_invalid         سطرٌ بلا حقوله أو بمفتاحٍ مجهول، أو يسمّي اختبارًا من وحدةٍ أخرى — بيانُ الوحدة يسمّي اختباراتِها
+                             وحدها فلا يعيرها بيانُ غيرها إثباتًا يزول بزواله (يُرفض قبل أيّ شجرة عمل)
     manifest_name_collision  وحدتان عند الرأس تؤولان إلى بيانٍ واحد (tests/test_a/test_x.py وtests/test_a__test_x.py)؛ يُرفض قبل أيّ شجرة عمل
     target_refused           هدفٌ مطلق أو صاعد أو تحت tests/ أو في مسارٍ فيه sealed (يُرفض قبل أيّ شجرة عمل)، أو يمرّ
                              بوصلةٍ رمزية في شجرة العمل (يُرفض قبل أيّ طفرة)
@@ -132,6 +133,9 @@ def load_manifest(path: Path, root: Path) -> list[dict]:
         tests = entry["tests"]
         if not isinstance(tests, list) or not tests or not all(isinstance(t, str) and NODE_ID.match(t) for t in tests):
             raise Refused("manifest_invalid", f"{rel}:{number}: tests قائمةُ معرّفات pytest غيرُ فارغة")
+        foreign = [t for t in tests if manifest_for(t.split("::", 1)[0]) != rel]
+        if foreign:
+            raise Refused("manifest_invalid", f"{rel}:{number}: يسمّي اختبارًا من وحدةٍ أخرى {foreign[0]}؛ بيانُ الوحدة يسمّي اختباراتِها وحدها")
         count = entry.get("count", 1)
         if not isinstance(count, int) or isinstance(count, bool) or count < 1:
             raise Refused("manifest_invalid", f"{rel}:{number}: count عددٌ صحيح ≥ 1")
@@ -282,15 +286,17 @@ def _range_scope(root: Path, rng: str) -> dict:
     modified = _test_modules(changed("M", "tests/"))
     has_manifest = lambda test: (root / manifest_for(test)).is_file()
     names = _manifest_names(root)
-    # كلُّ اختبارٍ مسّه المدى يسمّيه بيانٌ بمعرّفه الكامل (بالصنف الحاوي)، والبيانُ الذي يسمّيه يُطبَّق في المدى ولو لم يتغيّر
+    own = lambda node: root / manifest_for(node.split("::", 1)[0])
+    # كلُّ اختبارٍ مسّه المدى يسمّيه بيانُ وحدته هو بمعرّفه الكامل (بالصنف الحاوي) — لا بيانُ وحدةٍ أخرى، فإثباتٌ مستعار
+    # يزول بزوال معيره (ملاحظة Codex على #149) — والبيانُ الذي يسمّيه يُطبَّق في المدى ولو لم يتغيّر
     touched = [node for test in added for node in _touched_test_nodes(root, base, head, test, True)]
     touched += [node for test in modified for node in _touched_test_nodes(root, base, head, test, False)]
-    unnamed = [node for node in touched if not any(node in named for named in names.values())]
+    unnamed = [node for node in touched if node not in names.get(own(node), set())]
     # والاختبارُ الذي زال (ومنه الاسمُ القديم لملفٍّ أُعيدت تسميتُه) أو فقد سطرًا: بياناتُه تُعاد فيُحكم ما يسمّيه test_missing هنا
     deleted = _test_modules(_git(root, "diff", "--name-only", "--diff-filter=D", "--no-renames", f"{base}...{head}", "--", "tests/").split())
     revalidated = [node for test in deleted for node in _revalidated_test_nodes(root, base, head, test, True)]
     revalidated += [node for test in modified for node in _revalidated_test_nodes(root, base, head, test, False)]
-    naming = [path for path, named in names.items() if named & (set(touched) | set(revalidated))]
+    naming = [path for path in dict.fromkeys(own(node) for node in [*touched, *revalidated]) if path in names]
     paths = [root / p for p in changed("AMR", f"{MANIFESTS}/*.jsonl") if (root / p).is_file()]
     paths += [path for path in naming if path not in paths]
     # بيانٌ حُذف ووحدتُه باقية عند الرأس: حرّاسُها تفقد إثباتَها صامتة، فيُرفض الحذفُ إلا مع الوحدة
