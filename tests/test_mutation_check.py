@@ -676,6 +676,28 @@ def test_an_edit_inside_an_imported_test_implementation_touches_the_importing_mo
     _clean(repo, git)
 
 
+def test_a_helper_defining_the_same_test_name_in_two_classes_keeps_every_span(repo, git, capsys):
+    """مساعدٌ يعرّف `test_same` في صنفين مستورَدين في وحدةٍ لم تتغيّر: القراءةُ التي تحتفظ بآخر تعريفٍ وحده لا ترى تأكيدًا يُضاف
+    إلى الأول (ملاحظة Codex على #149)؛ صارت تحتفظ بكلِّ مديات الاسم، فيُمسّ كلُّ اختبارٍ مجموعٍ باسمه."""
+    (repo / "tests/helpers.py").write_text("from pkg.guard import positive\n\n\nclass TestA:\n    def test_same(self):\n        assert positive(0) is False\n\n\n"
+                                          "class TestB:\n    def test_same(self):\n        assert positive(0) is False\n")
+    (repo / "tests/test_existing.py").write_text("from helpers import TestA, TestB  # noqa: F401\n")
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    _manifest(repo, "test_existing", {**KILL, "id": "kill", "tests": ["tests/test_existing.py::TestA::test_same", "tests/test_existing.py::TestB::test_same"]})
+    git("add", "-A")
+    git("commit", "-qm", "two imported classes with the same test name, both named")
+    base = git("rev-parse", "HEAD")
+    rng = lambda: f"{base}..{git('rev-parse', 'HEAD')}"
+    (repo / "tests/helpers.py").write_text("from pkg.guard import positive\n\n\nclass TestA:\n    def test_same(self):\n        assert positive(0) is False\n        assert positive(-1) is False\n\n\n"
+                                          "class TestB:\n    def test_same(self):\n        assert positive(0) is False\n")
+    _manifest(repo, "test_existing", {**KILL, "id": "kill", "tests": ["tests/test_existing.py::TestB::test_same"]})
+    git("add", "-A")
+    git("commit", "-qm", "the earlier definition grows; the manifest names only the later class")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_existing.py::TestA::test_same"] and report["status"] == "failed"
+    _clean(repo, git)
+
+
 def test_a_unittest_subclass_is_placed_whatever_its_name_so_a_grown_method_touches_it_and_its_heir(repo, git, capsys):
     """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة (ملاحظة Codex على #149)؛ صار يُقرأ هو ووارثُه في
     الوحدة، فسطرٌ مضاف في دالّته يمسّها فيه وفي الوارث. والصنفُ العاديّ لا يجمعه pytest فلا يُمسّ ولو قُرئ؛ والوارثُ أصلًا

@@ -276,13 +276,17 @@ def _test_names_edited_outside_modules(root: Path, base: str, head: str, paths: 
     """أسماءُ دوالّ test* (في أيّ صنفٍ وعمق) التي دخل سطرٌ مضاف في مداها، أو زالت أو فقدت سطرًا، في ملفّات بايثون ليست وحداتِ
     اختبار (مساعدٌ تحت tests/ أو conftest أو حزمة): الاختبارُ المجموعُ في وحدةٍ لم تتغيّر قد يكون معرَّفًا هناك ومستورَدًا،
     والجمعُ لا يقول أين عُرّف، فيُمسّ كلُّ اختبارٍ مجموعٍ بذلك الاسم (ملاحظة Codex على #149)."""
-    def names_at(sha: str, path: str) -> dict[str, tuple[int, int]]:
+    def names_at(sha: str, path: str) -> dict[str, list[tuple[int, int]]]:
+        """كلُّ مديات الاسم الواحد: الاسمُ يتكرّر في أصنافٍ عدّة (`TestA.test_same` و`TestB.test_same`) فلا يُكتفى بآخر تعريف."""
         try:
             tree = ast.parse(_show(root, sha, path))
         except (SyntaxError, subprocess.CalledProcessError):
             return {}
-        return {node.name: (min([node.lineno, *(d.lineno for d in node.decorator_list)]), node.end_lineno or node.lineno)
-                for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test")}
+        spans: dict[str, list[tuple[int, int]]] = {}
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
+                spans.setdefault(node.name, []).append((min([node.lineno, *(d.lineno for d in node.decorator_list)]), node.end_lineno or node.lineno))
+        return spans
 
     grown: set[str] = set()
     shed: set[str] = set()
@@ -291,8 +295,9 @@ def _test_names_edited_outside_modules(root: Path, base: str, head: str, paths: 
             continue
         at_head, at_base = names_at(head, path), names_at(base, path)
         added, removed = _added_lines(root, base, head, path), _removed_lines(root, base, head, path)
-        grown |= {name for name, (start, end) in at_head.items() if any(start <= n <= end for n in added)}
-        shed |= {name for name, (start, end) in at_base.items() if name not in at_head or any(start <= n <= end for n in removed)}
+        grown |= {name for name, spans in at_head.items() if any(start <= n <= end for start, end in spans for n in added)}
+        shed |= {name for name, spans in at_base.items()
+                 if len(at_head.get(name, [])) < len(spans) or any(start <= n <= end for start, end in spans for n in removed)}
     return grown, shed
 
 
