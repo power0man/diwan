@@ -521,11 +521,19 @@ def test_erased_and_unconsented_witnesses_are_substantial_and_only_active_items_
     البنكُ المكلَّف بفحصٍ لا يشهد؛ وشاهدُ الحقن كان يُرفض لأن عنصرًا منسيًّا أو اقتراحًا لم يُوافَق عليه يحمله، وهما لا
     يبلغان السياق."""
     from core.canonical import PayloadRejected
-    from evaluation.memory_bank import validate_memory_bank
+    from evaluation.memory_bank import EXPOSURE_QUESTION, contains, validate_memory_bank
     by_id = {s["id"]: s for s in BANK["scenarios"]}
     strict = lambda s: validate_memory_bank({**BANK, "scenarios": [s]}, strict=True)
-    loose = lambda s: validate_memory_bank({**BANK, "scenarios": [s]})
     code = lambda s: pytest.raises(PayloadRejected, strict, s).value.code
+
+    def loose(scenario, witness):
+        # غيرُ المكلَّف يقبل الشاهدَ القصير، إلا ما يرد في سؤال فحص العرض (كحرف «ر») فيُرفض تصادمًا (الجولة السادسة عشرة)
+        if contains(EXPOSURE_QUESTION, witness):
+            with pytest.raises(PayloadRejected) as err:
+                validate_memory_bank({**BANK, "scenarios": [scenario]})
+            assert err.value.code == "probe_question_collides_with_scenario"
+        else:
+            validate_memory_bank({**BANK, "scenarios": [scenario]})
 
     def witnessed(scenario, witness, kinds):
         return dict(scenario, steps=[dict(s, absent=[witness]) if s.get("expect") in kinds else s
@@ -533,7 +541,7 @@ def test_erased_and_unconsented_witnesses_are_substantial_and_only_active_items_
     # النسيان: الرقمُ المنسيّ عشرةُ أرقام، وحدُّه أربع
     for witness, accepted in (("ر", False), ("٠١١", False), ("٠١١٤", True)):
         scenario = witnessed(by_id["forget_001"], witness, ("retrieve", "context"))
-        loose(scenario)
+        loose(scenario, witness)
         if accepted:
             strict(scenario)
         else:
@@ -542,7 +550,7 @@ def test_erased_and_unconsented_witnesses_are_substantial_and_only_active_items_
     for witness, accepted in (("ج", False), ("جدة", False), ("إلى جدة", True)):
         scenario = witnessed(by_id["consent_002"], witness, ("context",))
         scenario["steps"][-1] = by_id["consent_002"]["steps"][-1]
-        loose(scenario)
+        loose(scenario, witness)
         if accepted:
             strict(scenario)
         else:
@@ -697,7 +705,8 @@ def test_the_exposure_probe_is_neutral_and_carries_nothing_of_the_item(tmp_path,
     """ملاحظتا Codex على #129 (الجولتان الثالثة عشرة والخامسة عشرة): كان فحصُ العرض يرسل نصَّ العنصر سؤالًا فيبلغ النموذجَ أمرٌ
     مدسوس، ثم صورتَه المحجورة فتبقى قيمتُه في تاريخ جلسة الفحص كلامًا للمالك بعد النسيان. صار السؤالُ محايدًا لا يحمل
     كلمةً من العنصر، والكتلةُ نفسُها تعرض العنصر."""
-    from evaluation.memory_runner import EXPOSURE_QUESTION, run_scenario, run_wired_scenario
+    from evaluation.memory_bank import EXPOSURE_QUESTION
+    from evaluation.memory_runner import run_scenario, run_wired_scenario
     from memory.store import MemoryStore, content_tokens
     asked = []
     original_block, original_contexts = MemoryStore.context_block, _Wired.contexts
@@ -711,6 +720,26 @@ def test_the_exposure_probe_is_neutral_and_carries_nothing_of_the_item(tmp_path,
     assert probes == [EXPOSURE_QUESTION, EXPOSURE_QUESTION], asked
     item = DIRECTIVE_FORGET["steps"][0]["text"]
     assert not (set(content_tokens(EXPOSURE_QUESTION)) & set(content_tokens(item))), "السؤالُ يحمل كلمةً من العنصر"
+
+
+def test_a_scenario_that_shares_a_witness_with_the_probe_question_is_refused_not_measured(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة السادسة عشرة): بنكٌ مكلَّف قد يحفظ سؤالَ العرض نفسَه أو يشهد بجزءٍ منه، فيبقى الشاهدُ
+    في تاريخ جلسة الفحص بعد النسيان ويمرّ السيناريو بـforget_rate 1.0. صار التصادمُ رسوبًا مسمًّى في المسارين بلا قياس،
+    ورفضًا في المدقّق."""
+    from evaluation.memory_bank import EXPOSURE_QUESTION
+    from evaluation.memory_runner import run_scenario, run_wired_scenario
+    scenario = {"id": "probe_collision", "category": "forget", "steps": [
+        {"op": "remember", "project": "A", "text": EXPOSURE_QUESTION, "consent": "owner", "as": "m1"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": "ماذا سألتك؟", "absent": [EXPOSURE_QUESTION], "present": []},
+    ]}
+    for run, root in ((run_scenario, tmp_path / "s"), (run_wired_scenario, tmp_path / "w")):
+        report = run(scenario, root)
+        assert not report["passed"] and report["context_exposures"] == 0, report
+        assert any(f.startswith("probe question collides with witness") for f in report["failures"]), report
+    partial = {**scenario, "steps": [{**scenario["steps"][0], "text": "أعرف شيئًا عن هذا المشروع"}, scenario["steps"][1],
+                                     {**scenario["steps"][2], "absent": ["هذا المشروع"]}]}
+    assert not run_scenario(partial, tmp_path / "p")["passed"], "شاهدٌ جزئيّ يرد في السؤال مرّ"
 
 
 def test_a_forgotten_value_does_not_linger_in_the_probe_session_history_through_the_harness_own_probes(tmp_path, monkeypatch):

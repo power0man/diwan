@@ -85,6 +85,19 @@ def test_an_isolation_witness_must_be_substantive():
     assert err.value.code == "isolation_without_cross_project_absence"
 
 
+def test_a_witness_that_appears_in_the_probe_question_is_rejected_by_the_validator():
+    """ملاحظةُ Codex على #129 (الجولة السادسة عشرة): شاهدُ غيابٍ يرد في سؤال فحص العرض يبقى في تاريخ الفحص، فيُرفض البنكُ
+    قبل القياس لا بعده."""
+    from evaluation.memory_bank import EXPOSURE_QUESTION
+    bank, scenario = _scenario("forget_001")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["text"] = EXPOSURE_QUESTION
+    for step in scenario["steps"]:
+        if step.get("absent"):
+            step["absent"] = [EXPOSURE_QUESTION]
+    _refused(bank, "probe_question_collides_with_scenario")
+
+
 def test_isolation_measured_on_one_project_is_refused():
     bank, scenario = _scenario("isolation_001")
     for step in scenario["steps"]:

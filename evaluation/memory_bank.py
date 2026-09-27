@@ -90,6 +90,22 @@ def validate_memory_bank(bank: dict, *, strict: bool = False) -> dict:
 # الموافَق عليه (ملاحظة Codex على #129)
 SUBSTANTIVE = 4
 
+# سؤالُ فحص العرض في المُشغِّل (كلا المسارين): محايدٌ ثابت لا يحمل شيئًا من عناصر البنك. وفي الطريق الموصول يبقى في تاريخ
+# جلسة الفحص كلامًا للمالك، فلو ورد فيه شاهدُ غيابٍ أو حُفظ هو نفسُه عنصرًا لبقي الشاهدُ في التاريخ بعد النسيان ولا يراه
+# فحصُ الغياب؛ فالتصادمُ يُرفض في المدقّق ويُسمّى رسوبًا في المُشغِّل قبل أيّ قياس (ملاحظة Codex على #129، الجولة السادسة عشرة)
+EXPOSURE_QUESTION = "ما الذي تتذكّره عنّي في هذا المشروع؟"
+
+
+def probe_collisions(scenario: dict) -> list[str]:
+    """ما يتصادم مع سؤال العرض: شاهدُ غيابٍ يرد في السؤال، أو نصٌّ محفوظ يحوي السؤالَ أو يرد فيه."""
+    found = []
+    for s in scenario["steps"]:
+        found += [a for a in (s.get("absent") or []) if a and contains(EXPOSURE_QUESTION, a)]
+        text = s.get("text")
+        if s.get("op") in ("remember", "propose") and text and (contains(text, EXPOSURE_QUESTION) or contains(EXPOSURE_QUESTION, text)):
+            found.append(text)
+    return found
+
 
 def _names(step: dict, text: str, fields=("absent",), least: int = 0) -> bool:
     """في حقول التوقّع جزءٌ من هذا النصّ نفسِه، لا نصٌّ آخر، فيه `least` كلماتٍ أو حروفٍ على الأقل."""
@@ -103,6 +119,13 @@ def _bound(step: dict, item: dict, least: int = 0) -> bool:
 
 
 def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
+    _validate_meaning(scenario, path, strict)
+    # آخرُ بوابة بعد صحّة المعنى: شاهدٌ يرد في سؤال فحص العرض أو نصٌّ يحويه يبقى في تاريخ الفحص كلامًا للمالك
+    if collisions := probe_collisions(scenario):
+        _reject(path, "probe_question_collides_with_scenario", f"«{collisions[0][:40]}» يرد في سؤال فحص العرض أو يحويه، فيبقى في تاريخ الفحص")
+
+
+def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
     steps = scenario["steps"]
     last = lambda op: max((i for i, s in enumerate(steps) if s.get("op") == op), default=None)
     checked_after = lambda i, kinds: {s["expect"] for s in steps[i + 1:] if s.get("expect") in kinds}
