@@ -594,6 +594,30 @@ def test_an_imported_test_function_or_class_is_collected_in_the_importing_module
     _clean(repo, git)
 
 
+def test_a_guard_reaching_an_unchanged_module_through_a_changed_helper_is_collected(repo, git, capsys):
+    """وحدةُ اختبارٍ لم تتغيّر فيها `from pkg.helpers import *`، والطلبُ يضيف `test_new_guard` إلى المساعد وحده: يجمعه pytest تحت
+    الوحدة التي لم تتغيّر، والجمعُ المحصور في الوحدات المتغيّرة لا يراه (ملاحظة Codex على #149)؛ صار الجمعُ للمجموعة كلِّها."""
+    (repo / "pkg/helpers.py").write_text("from pkg.guard import positive\n\n\ndef helper():\n    return positive\n")
+    (repo / "tests/test_existing.py").write_text("from pkg.helpers import *\n\n\ndef test_existing():\n    assert positive(0) is False\n")
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    _manifest(repo, "test_existing", {**KILL, "id": "kill", "tests": ["tests/test_existing.py::test_existing"]})
+    git("add", "-A")
+    git("commit", "-qm", "a star-importing module with its own manifest")
+    base = git("rev-parse", "HEAD")
+    (repo / "pkg/helpers.py").write_text("from pkg.guard import positive\n\n\ndef helper():\n    return positive\n\n\ndef test_new_guard():\n    assert positive(0) is False\n")
+    git("add", "-A")
+    git("commit", "-qm", "the helper alone gains an exported guard")
+    rng = lambda: f"{base}..{git('rev-parse', 'HEAD')}"
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_existing.py::test_new_guard"] and report["status"] == "failed"
+    _manifest(repo, "test_existing", {**KILL, "id": "kill", "tests": ["tests/test_existing.py::test_existing", "tests/test_existing.py::test_new_guard"]})
+    git("add", "-A")
+    git("commit", "-qm", "named in the importing module's manifest")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["unproved_touched_tests"] == []
+    _clean(repo, git)
+
+
 def test_a_unittest_subclass_is_placed_whatever_its_name_so_a_grown_method_touches_it_and_its_heir(repo, git, capsys):
     """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة (ملاحظة Codex على #149)؛ صار يُقرأ هو ووارثُه في
     الوحدة، فسطرٌ مضاف في دالّته يمسّها فيه وفي الوارث. والصنفُ العاديّ لا يجمعه pytest فلا يُمسّ ولو قُرئ؛ والوارثُ أصلًا
@@ -839,6 +863,8 @@ def test_the_workflow_applies_mutations_to_the_prospective_merge_commit_not_the_
     text = (ROOT / ".github/workflows/mutation-check.yml").read_text(encoding="utf-8")
     assert "HEAD: ${{ github.sha }}" in text and "pull_request.head.sha" not in text
     assert 'HEAD: ${{ github.sha }}' in text and 'BASE: ${{ github.event.pull_request.base.sha }}' in text
+    # والتشغيلُ اليدويّ كلُّ البيانات بلا خيارٍ يعد بمدًى لا أساسَ له (ملاحظة Codex على #149)
+    assert "inputs:" not in text and 'if [ "$EVENT_NAME" = "pull_request" ]; then' in text
 
 
 def test_a_collection_error_is_invalid_not_a_kill(repo, capsys, git):
