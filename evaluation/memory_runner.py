@@ -203,6 +203,8 @@ class _Wired:
         self.provider = _ScriptedProvider(delegate)
         self.root, self.generation = root, 0
         self.projects: dict[str, dict] = {}
+        # جلساتُ فحصٍ أُعيد إنشاؤها لأن جولتها بقيت تنتظر المالك بعد رفض ما طلبه النموذج؛ ففحصُها التالي بلا تاريخها
+        self.probe_resets = 0
         self._open()
 
     def _open(self):
@@ -254,13 +256,25 @@ class _Wired:
         return ids[kind]
 
     def probe_session(self, name, kind):
-        """جلسةُ الفحص. بالمزوّد المكتوب جلسةٌ واحدة للمشروع؛ وبالحيّ جلسةٌ جديدة لكل فحص، فأداةٌ يطلبها النموذجُ
-        من تلقاء نفسه (propose_memory ينتظر المالك) لا تُبقي جولةً معلّقة تُسقط الفحصَ التالي بـturn_unresolved."""
-        if self.provider.delegate is None:
-            return self.session(name, kind)
-        mode = "text" if kind == "text" else "agent"
-        return self.api("create_session", project=self.project(name)["id"], name=f"{kind}-{uuid.uuid4().hex[:8]}",
-                        mode=mode)["id"]
+        """جلسةُ الفحص واحدةٌ للمشروع ونوعِ الجولة، بالمزوّد المكتوب والحيّ معًا: فالفحصُ بعد النسيان يحمل تاريخَ ما قبله،
+        ويشهد بأن كتلةَ الذاكرة القديمة مُحيت من التاريخ لا من المخزن وحده (ملاحظة Codex على #129)."""
+        return self.session(name, kind)
+
+    def settle(self, name, kind, turn, result, rounds=3):
+        """النموذجُ الحيّ قد يطلب من تلقاء نفسه أداةً تنتظر المالك (propose_memory)، فتقف الجولة. يُرفض ما طلبه وتُستأنف
+        حتى تنتهي، فتبقى الجلسةُ نفسُها للفحص التالي. فإن بقيت تنتظره بعد ثلاث جولاتٍ من الرفض أُعيد إنشاءُ الجلسة، فلا
+        يسقط الفحصُ التالي بـturn_unresolved، ويُعدّ ذلك في التقرير لأن الفحصَ التالي فيها بلا تاريخه."""
+        ids = self.project(name)
+        for _ in range(rounds):
+            if not (isinstance(result, dict) and result.get("status") == "awaiting_owner"):
+                return
+            for pending in result.get("pending", []):
+                self.api("agent_decide", project=ids["id"], session=ids[kind], action_id=pending["action_id"],
+                         call_digest=pending["call_digest"], expected_revision=pending["revision"], approve=False)
+            result = self.api("agent_resume", project=ids["id"], session=ids[kind], turn=turn)
+        if isinstance(result, dict) and result.get("status") == "awaiting_owner":
+            del ids[kind]
+            self.probe_resets += 1
 
     def store(self, name) -> MemoryStore:
         return MemoryStore(self.app.project(self.project(name)["id"]))
@@ -299,10 +313,11 @@ class _Wired:
         """ما رآه النموذجُ في جولةٍ وكيلة وجولةٍ نصّية بالسؤال نفسِه."""
         ids = self.project(name)
         seen = []
-        for action, session in (("agent_ask", self.probe_session(name, "agent")),
-                                ("ask", self.probe_session(name, "text"))):
-            before = len(self.provider.requests)
-            self.api(action, project=ids["id"], session=session, turn=uuid.uuid4().hex, message=question, files=[])
+        for action, kind in (("agent_ask", "agent"), ("ask", "text")):
+            before, turn = len(self.provider.requests), uuid.uuid4().hex
+            result = self.api(action, project=ids["id"], session=self.probe_session(name, kind), turn=turn,
+                              message=question, files=[])
+            self.settle(name, kind, turn, result)
             new = self.provider.requests[before:]
             # النموذجُ الحيّ قد يستدعي أداةً فتطول الجولة؛ والذاكرةُ في أول طلبٍ منها
             (request,) = new if self.provider.delegate is None else new[:1]
@@ -391,7 +406,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
         wired.close()
     return {"id": scenario["id"], "category": scenario["category"], "passed": not failures,
             "failures": failures, "leaks": leaks, "consent_violations": consent_violations,
-            "injection_unquarantined": unquarantined}
+            "injection_unquarantined": unquarantined, "probe_sessions_reset": wired.probe_resets}
 
 
 WIRED_PATHS = {"remember": "memory_remember (واجهة المالك)", "remember_without_consent": "propose_memory يرفضه المالك",
@@ -428,5 +443,6 @@ def run_memory_bank(bank: dict, driver: str = "store", delegate=None) -> dict:
     return {"schema_version": 1, "suite_id": bank["suite_id"], "driver": driver,
             **({"paths": WIRED_PATHS} if driver != "store" else {}),
             **({"provider": delegate.name} if delegate is not None else {}),
+            **({"probe_sessions_reset": sum(r["probe_sessions_reset"] for r in results)} if driver != "store" else {}),
             "metrics": metrics, "meets_thresholds": meets,
             "passed": sum(r["passed"] for r in results), "total": len(results), "results": results}

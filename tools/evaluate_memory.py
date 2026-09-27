@@ -73,6 +73,7 @@ LIMITS = [
     "the_context_checked_is_the_first_request_of_each_turn_later_tool_steps_are_not_inspected",
     "single_run_on_one_local_model_no_variance_estimate",
     "commissioned_scenarios_are_distinct_by_saved_text_a_near_copy_with_new_text_still_counts",
+    "probes_reuse_one_session_per_project_a_turn_still_awaiting_the_owner_after_three_denials_resets_it_and_is_counted",
 ]
 
 

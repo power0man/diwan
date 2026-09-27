@@ -239,9 +239,42 @@ class _ProposingDelegate(_Delegate):
 
 
 def test_a_tool_the_live_model_asks_for_does_not_leave_a_turn_that_fails_the_next_probe():
-    """ملاحظةُ Codex على #129: جولةٌ وكيلة تقف awaiting_owner كانت تُسقط فحصَ السياق التالي بـturn_unresolved."""
+    """ملاحظةُ Codex على #129: جولةٌ وكيلة تقف awaiting_owner كانت تُسقط فحصَ السياق التالي بـturn_unresolved. ونموذجٌ
+    يطلب الأداةَ بعد كلّ رفضٍ تُعاد جلستُه، ويُعدّ ذلك في التقرير لأن فحصَه التالي بلا تاريخه."""
     report = run_memory_bank(BANK, driver="live", delegate=_ProposingDelegate())
     assert report["passed"] == report["total"] == 30, [r for r in report["results"] if not r["passed"]][:2]
+    assert report["probe_sessions_reset"] > 0
+
+
+class _ProposingOnceDelegate(_Delegate):
+    """نموذجٌ حيٌّ يطلب propose_memory أولَ الجولة، ويجيب بعد ردّ الأداة كما يفعل نموذجٌ حقيقيٌّ رُفض طلبُه."""
+    name = "proposing-once-live"
+
+    def complete(self, request):
+        from core.contracts import Response, ToolCall, Usage
+        self.calls += 1
+        if request.tools and request.messages[-1].role != "tool":
+            call = ToolCall("call_" + uuid.uuid4().hex[:8], "propose_memory", {"text": "ملاحظة"})
+            return Response("", Usage(1, 1), "complete", 0, provider=self.name, model_version="1" * 64,
+                            tool_calls=(call,))
+        return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="1" * 64)
+
+
+def test_live_probes_keep_their_session_so_history_is_checked_after_forget(tmp_path):
+    """ملاحظةُ Codex على #129: الطريقُ الحيّ كان يفتح جلسةً لكلّ فحص، فالفحصُ بعد النسيان بلا تاريخ ما قبله، ولا يُرى
+    تراجعٌ يمحو العنصرَ من المخزن ويُبقي كتلتَه القديمة في التاريخ. الآن الجلسةُ نفسُها، وما طلبه النموذجُ يُرفض."""
+    wired = _Wired(tmp_path / "ui", _ProposingOnceDelegate())
+    try:
+        wired.api("memory_remember", project=wired.project("A")["id"], text="رقم هاتف مكتب المحاماة ٠١١٤٥٦٧٨٩٠")
+        wired.contexts("A", "ما رقم مكتب المحاماة؟")
+        before = len(wired.provider.requests)
+        wired.contexts("A", "ما رقم مكتب المحاماة؟")
+        later = [r for r in wired.provider.requests[before:] if r.tools][0]
+        assert sum(m.role == "user" for m in later.messages) > 1 and wired.probe_resets == 0
+    finally:
+        wired.close()
+    report = run_memory_bank(BANK, driver="live", delegate=_ProposingOnceDelegate())
+    assert report["passed"] == report["total"] == 30 and report["probe_sessions_reset"] == 0
 
 
 def test_the_cli_validates_the_suite_and_names_the_runner_before_any_call(tmp_path, monkeypatch, capsys):
