@@ -215,7 +215,7 @@ def main(argv=None) -> int:
     execution_sha = sources["core/execution.py"]
     receipt = json.loads(receipt_bytes.decode("utf-8"))
     common = {"date": today, "agent": "anthropic/claude-opus-5-5", "task": "ج٥", "issue": "power0man/diwan#23",
-              "host": {"machine": "MacBook Pro (Apple silicon)", "os": os.uname().sysname + " " + os.uname().release},
+              "host": {"machine": os.uname().machine, "os": os.uname().sysname + " " + os.uname().release},
               "runtime_image_id": receipt.get("image_id"), "runtime_lock_sha256": receipt.get("lock_sha256"),
               "probe_sha256": sources["tools/probe_execution_boundary.py"],
               "runtime_receipt_sha256": hashlib.sha256(receipt_bytes).hexdigest()}

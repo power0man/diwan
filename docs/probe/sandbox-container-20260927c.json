@@ -41,6 +41,7 @@
     "No product certification."
   ],
   "measurement_limits": [
-    "three_fixed_programs_not_a_grading_benchmark"
+    "three_fixed_programs_not_a_grading_benchmark",
+    "probe_changed_after_this_run_host_now_read_from_os_uname_so_probe_sha256_is_of_the_previous_probe_rerun_pending"
   ]
 }

@@ -209,6 +209,7 @@ def test_only_the_requested_pending_command_is_approved(tmp_path, monkeypatch, a
                     "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)])
     report = json.loads(out.read_text(encoding="utf-8"))
     assert app.decided is approved and report["docker_execution"]["pending_argv"] == argv
+    assert report["host"]["machine"] == os.uname().machine
     assert report["source_sha256"]["tools/probe_j5_agent_round.py"] == j5._sources()["tools/probe_j5_agent_round.py"]
     if approved:
         assert code == 0 and report["acceptance"] == {"passed": True, "failed": []}
@@ -488,6 +489,8 @@ def test_the_reports_carry_the_probe_hash_taken_before_the_run(tmp_path, monkeyp
         report = json.loads(out.read_text(encoding="utf-8"))
         assert report["probe_sha256"] == probe and report["runtime_receipt_sha256"] == receipt_sha
         assert report["runtime_image_id"] == "sha256:" + "c" * 64
+        # الجهازُ من المضيف نفسِه لا نصٌّ ثابت (ملاحظة Codex على #144)
+        assert report["host"]["machine"] == os.uname().machine
 
 
 def test_cleanup_compares_container_ids_not_their_count(tmp_path, monkeypatch):
