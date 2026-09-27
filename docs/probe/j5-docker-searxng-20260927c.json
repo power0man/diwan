@@ -42,7 +42,7 @@
       },
       {
         "question": "ما أبرز أخبار اليوم في السعودية؟ ابحث في الويب واذكر روابط المصادر.",
-        "status": "truncated",
+        "status": "complete",
         "steps": 2,
         "tool_calls_by_the_model": [
           {
@@ -51,17 +51,17 @@
           }
         ],
         "called_web_search": true,
-        "citations_passed": null,
+        "citations_passed": false,
         "answer_urls": [
+          "https://english.alarabiya.net/News/saudi-arabia",
           "https://www.alarabiya.net/saudi-today",
-          "https://www.alarabiya.net/saudi-today/last-news",
-          "https://www.annahar.com/economy/350356/%D8%A7%D9%84%D9%8A%D9%88%D9%85-%D8%A7%D9%84%D9%88%D8%B7%D9%86%D9%8A-%D8%A7%D9%84%D8%B3%D8%B9%D9%88%D8%AF%D9%8A-2026-%D9%83%D9%8A%D9%81-%D8%A8%D9%86%D8%AA-%D8%A7%D9%84%D9%85%D9%85%D9%84%D9%83%D8%A9-%D8%A7%D9%82%D8%AA%D8%B5%D8%A7%D8%AF%D8%A7-%D9%84%D9%84%D8%B0%D9%83%D8%A7-%D8%A7%D9%84%D8%A7%D8%B5%D8%B7%D9%",
           "https://www.annahar.com/economy/350356/%D8%A7%D9%84%D9%8A%D9%88%D9%85-%D8%A7%D9%84%D9%88%D8%B7%D9%86%D9%8A-%D8%A7%D9%84%D8%B3%D8%B9%D9%88%D8%AF%D9%8A-2026-%D9%83%D9%8A%D9%81-%D8%A8%D9%86%D8%AA-%D8%A7%D9%84%D9%85%D9%85%D9%84%D9%83%D8%A9-%D8%A7%D9%82%D8%AA%D8%B5%D8%A7%D8%AF%D8%A7-%D9%84%D9%84%D8%B0%D9%83%D8%A7-%D8%A7%D9%84%D8%A7%D8%B5%D8%B7%D9%86%D8%A7%D8%B9%D9%8A-%D8%AE%D9%84%D8%A7%D9%84-%D8%B9%D8%A7%D9%85",
           "https://www.argaam.com/",
           "https://www.okaz.com.sa/",
-          "https://www.spa.gov.sa/"
+          "https://www.spa.gov.sa/",
+          "https://x.com/SaudiNews50?lang=ar"
         ],
-        "answer_chars": 2402
+        "answer_chars": 2318
       }
     ],
     "attempts_until_called": 2
@@ -75,11 +75,9 @@
     "tool_calls_by_the_model": [
       {
         "name": "run_command",
-        "status": "ok"
+        "status": "ok",
+        "boundary": "docker:<64hex>"
       }
-    ],
-    "boundary_shapes": [
-      "docker:<hex>"
     ],
     "answer": "الناتج هو: 4"
   },
@@ -88,13 +86,10 @@
     "the_model_decides_whether_to_call_the_tool_every_attempt_is_recorded_including_those_without_a_call",
     "search_results_come_from_public_engines_through_a_local_searxng_and_change_over_time",
     "container_ids_recorded_by_shape_not_value",
-    "acceptance_recomputed_under_the_exact_boundary_rule_this_run_recorded_only_a_shape_scanned_from_the_serialized_reply_so_it_does_not_show_the_run_command_result_field",
-    "superseded_by_j5-docker-searxng-20260927c_with_the_exact_boundary_field"
+    "boundary_read_from_the_run_command_result_field_not_from_the_serialized_reply"
   ],
   "acceptance": {
-    "passed": false,
-    "failed": [
-      "run_command_boundary_is_not_docker"
-    ]
+    "passed": true,
+    "failed": []
   }
 }
