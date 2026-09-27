@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-27",
+  "task": "ج٥",
+  "issue": "power0man/diwan#23",
+  "author": "anthropic/claude-opus-5-5",
+  "host": {
+    "machine": "MacBook Pro (Apple silicon)",
+    "os": "Darwin 25.6.0"
+  },
+  "engine": {
+    "provider": "ollama-local",
+    "model": "qwen3.5:9b",
+    "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7"
+  },
+  "source_sha256": {
+    "core/execution.py": "c7fe33bc1c65ef1d615cb56873662a7bff2289d8c3f9bea3ec34f4c2eaf47e0e",
+    "agent/web_search.py": "90f89d858ac9ea9fbf68e5a4fe3251ff57adeafef146984ceb23c1dd8929ef5d",
+    "webui/server.py": "6c5634808257a5961573465b6d6dbfe4e21488b5a2a2be053312b250bc673404"
+  },
+  "web_search": {
+    "via": "webui.server.LocalApp.dispatch agent_ask (research session)",
+    "backend": {
+      "url": "http://127.0.0.1:8080",
+      "container": "searxng",
+      "image": "searxng/searxng@sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6",
+      "image_id": "sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6"
+    },
+    "called_web_search": true,
+    "attempts": [
+      {
+        "question": "ابحث في الويب: ما أحدث إصدارٍ من لغة بايثون، ومتى صدر؟ اذكر المصادر.",
+        "status": "complete",
+        "steps": 1,
+        "tool_calls_by_the_model": [],
+        "called_web_search": false,
+        "citations_passed": false,
+        "answer_urls": [
+          "https://www.python.org/downloads/"
+        ],
+        "answer_chars": 189
+      },
+      {
+        "question": "ما أبرز أخبار اليوم في السعودية؟ ابحث في الويب واذكر روابط المصادر.",
+        "status": "complete",
+        "steps": 2,
+        "tool_calls_by_the_model": [
+          {
+            "name": "web_search",
+            "status": "ok"
+          }
+        ],
+        "called_web_search": true,
+        "citations_passed": false,
+        "answer_urls": [
+          "https://english.alarabiya.net/News/saudi-arabia",
+          "https://www.alarabiya.net/saudi-today",
+          "https://www.annahar.com/economy/350356/%D8%A7%D9%84%D9%8A%D9%88%D9%85-%D8%A7%D9%84%D9%88%D8%B7%D9%86%D9%8A-%D8%A7%D9%84%D8%B3%D8%B9%D9%88%D8%AF%D9%8A-2026-%D9%83%D9%8A%D9%81-%D8%A8%D9%86%D8%AA-%D8%A7%D9%84%D9%85%D9%85%D9%84%D9%83%D8%A9-%D8%A7%D9%82%D8%AA%D8%B5%D8%A7%D8%AF%D8%A7-%D9%84%D9%84%D8%B0%D9%83%D8%A7-%D8%A7%D9%84%D8%A7%D8%B5%D8%B7%D9%86%D8%A7%D8%B9%D9%8A-%D8%AE%D9%84%D8%A7%D9%84-%D8%B9%D8%A7%D9%85",
+          "https://www.argaam.com/",
+          "https://www.okaz.com.sa/",
+          "https://www.spa.gov.sa/",
+          "https://x.com/SaudiNews50?lang=ar"
+        ],
+        "answer_chars": 2318
+      }
+    ],
+    "attempts_until_called": 2
+  },
+  "docker_execution": {
+    "via": "webui.server.LocalApp.dispatch agent_ask → agent_decide(approve) → agent_resume",
+    "request": "شغّل الأمر python3 -c \"print(2+2)\" وأخبرني بالناتج.",
+    "first_status": "awaiting_owner",
+    "owner_approved": true,
+    "final_status": "complete",
+    "tool_calls_by_the_model": [
+      {
+        "name": "run_command",
+        "status": "ok",
+        "boundary": "docker:<64hex>"
+      }
+    ],
+    "answer": "الناتج هو: 4"
+  },
+  "measurement_limits": [
+    "one_live_round_each_on_one_local_model_no_variance_estimate",
+    "the_model_decides_whether_to_call_the_tool_every_attempt_is_recorded_including_those_without_a_call",
+    "search_results_come_from_public_engines_through_a_local_searxng_and_change_over_time",
+    "container_ids_recorded_by_shape_not_value",
+    "boundary_read_from_the_run_command_result_field_not_from_the_serialized_reply"
+  ],
+  "acceptance": {
+    "passed": true,
+    "failed": []
+  }
+}
