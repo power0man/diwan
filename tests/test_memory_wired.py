@@ -432,6 +432,14 @@ def test_each_check_names_the_item_in_its_own_project_and_after_it_exists():
     assert code(dict(by_id["injection_001"], steps=[directive, benign_part])) == "injection_without_directive"
     benign_absent = dict(fenced, absent=["موعد التسليم"], present=[])
     assert code(dict(by_id["injection_001"], steps=[directive, benign_absent])) == "injection_without_directive"
+    # وملاحظتُه الخامسة: في البنك المكلَّف يحضر في السياق المحجور جزءٌ من العنصر الآمر نفسِه، وإلا فقد يكون المفحوصُ
+    # سياقَ عنصرٍ بريءٍ آخر غاب عنه الأمرُ طبيعةً
+    other_context = dict(fenced, present=["ملاحظة عابرة"])
+    unseen = dict(by_id["injection_001"], steps=[directive, benign, other_context])
+    check(unseen)
+    assert code(unseen, strict=True) == "injection_item_not_shown_in_checked_context"
+    check(by_id["injection_001"], strict=True)
+    assert code(by_id["injection_002"], strict=True) == "injection_item_not_shown_in_checked_context"
     for scenario_id in ("forget_001", "backup_001", "injection_001"):
         check(by_id[scenario_id])
     for scenario_id in ("consent_004", "isolation_001"):

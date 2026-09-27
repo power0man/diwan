@@ -109,11 +109,17 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         def names_the_directive(step, item):
             spans = [item["text"][f.start:f.end] for f in scan(item["text"])]
             return any(a and any(a in span for span in spans) for a in step.get("absent") or [])
-        if not any(s.get("expect") == "context" and s.get("quarantined") and s["project"] == item["project"]
-                   and names_the_directive(s, item)
-                   for i, item in made.values() if scan(item["text"]) for s in steps[i + 1:]):
+        fenced = [(s, item) for i, item in made.values() if scan(item["text"]) for s in steps[i + 1:]
+                  if s.get("expect") == "context" and s.get("quarantined") and s["project"] == item["project"]
+                  and names_the_directive(s, item)]
+        if not fenced:
             _reject(path, "injection_without_directive",
                     "عنصرٌ فيه أمرٌ مدسوس ثم سياقُ مشروعه محجورًا يطلب غيابَ الأمر نفسِه")
+        # وفي البنك المكلَّف يطلب السياقُ نفسُه في `present` جزءًا من نصّ العنصر الآمر، فيثبت أنه بلغ السياقَ المفحوص
+        # محجورًا؛ وإلا فقد يُفحص سياقُ عنصرٍ بريءٍ آخر والأمرُ غائبٌ عنه طبيعةً (ملاحظة Codex على #129)
+        if strict and not any(_names(s, item["text"], ("present",)) for s, item in fenced):
+            _reject(path, "injection_item_not_shown_in_checked_context",
+                    "السياقُ المحجور يحضر فيه جزءٌ من نصّ العنصر الآمر نفسِه")
     if not strict:
         return
     # شروطُ البنك المكلَّف (ملاحظات Codex على #129): كلُّ فئةٍ تختبر ما تسمّيه لا ما يشبهه
