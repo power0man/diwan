@@ -94,7 +94,7 @@ def test_shared_checks_use_one_python_and_strict_public_verifier():
     checks = commands("/explicit/python", "/explicit/node")
     assert len({check.name for check in checks}) == len(checks)
     assert {c.name for c in checks} == {
-        "pytest", "docs", "acceptance-0", "acceptance-7", "acceptance-8b",
+        "pytest", "docs", "context-index", "acceptance-0", "acceptance-7", "acceptance-8b",
         "acceptance-9", "acceptance-10", "acceptance-11", "acceptance-12",
         "acceptance-13", "frontend-syntax", "frontend-behavior", "public-signatures"}
     assert all(c.argv[0] == ("/explicit/node" if c.name.startswith("frontend-")
