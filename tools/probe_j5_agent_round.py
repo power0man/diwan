@@ -51,8 +51,10 @@ def acceptance(report: dict) -> list[str]:
     """شروطُ ج٥ التي يشهد بها الدليل، وما لم يتحقّق منها بالاسم (ملاحظة Codex على #136)."""
     execution = report["docker_execution"]
     failed = []
-    if not report["web_search"]["called_web_search"]:
-        failed.append("web_search_never_called_by_the_model")
+    # نداءٌ ردّه SearXNG بخطأ لا يشهد ببحثٍ حيّ: المقبولُ نتيجةُ web_search بحالة ok (ملاحظة Codex على #136)
+    if not any(t["name"] == "web_search" and t["status"] == "ok"
+               for attempt in report["web_search"]["attempts"] for t in attempt["tool_calls_by_the_model"]):
+        failed.append("web_search_never_succeeded")
     if execution["first_status"] != "awaiting_owner" or not execution["owner_approved"]:
         failed.append("run_command_did_not_wait_for_the_owner")
     if execution["final_status"] != "complete" or not any(
@@ -131,7 +133,7 @@ def main(argv=None) -> int:
                              "citations_passed": (searched.get("citations") or {}).get("passed"),
                              "answer_urls": sorted(set(re.findall(r"https?://[^\s\"\\)\]]+", content)))[:10],
                              "answer_chars": len(content)})
-            if attempts[-1]["called_web_search"]:
+            if any(t["name"] == "web_search" and t["status"] == "ok" for t in attempts[-1]["tool_calls_by_the_model"]):
                 break
 
         agent = api("create_session", project=project, name="أمر", mode="agent")["id"]

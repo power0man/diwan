@@ -55,6 +55,11 @@
   "measurement_limits": [
     "container_boundary_on_docker_desktop_not_a_separate_host",
     "container_ids_recorded_by_shape_not_value",
-    "cleanup_checked_by_container_count_before_and_after_the_run"
-  ]
+    "cleanup_checked_by_container_count_before_and_after_the_run",
+    "acceptance_was_computed_after_the_run_from_the_recorded_cases_with_probe_execution_boundary_boundary_failures"
+  ],
+  "acceptance": {
+    "passed": true,
+    "failed": []
+  }
 }

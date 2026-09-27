@@ -30,6 +30,10 @@ if str(ROOT) not in sys.path:
 from core import sandbox  # noqa: E402
 from core.execution import DockerExecutionBackend, ExecutionRefused  # noqa: E402
 
+# `core.sandbox.configure_sandbox_backend` يبني خلفيّته بمسار Docker الافتراضي في `DockerExecutionBackend`، ولا يقبل غيرَه.
+# وتمريرُ المسار إليه من مسار openai (ق٦٦)، فالمجسُّ يرفض مسارًا آخر قبل أن يسمّي حدًّا لم يختبره (ملاحظة Codex على #136)
+SANDBOX_DOCKER = "/usr/local/bin/docker"
+
 BOUNDARY_PROBE = r"""
 import json, os, socket
 def unreachable(host, port):
@@ -75,6 +79,33 @@ def _case(name: str, backend, argv: tuple[str, ...], *, timeout_s: float = 20) -
             "timed_out": result.timed_out, "boundary": _shape(result.boundary)}
 
 
+# ما يجب أن تنتهي إليه كلُّ حالة؛ فالخروجُ بصفرٍ لا يكون إلا إن انتهت كلُّها إليه وتحقّق التنظيف (ملاحظة Codex على #136)
+EXPECTED_CODES = {"timeout_with_child": "execution_timeout", "missing_executable": "execution_outcome_unverified",
+                  "ambiguous_exit_125": "execution_outcome_unverified",
+                  "mismatched_runtime_preflight": "execution_runtime_mismatch"}
+PROBE_FLAGS = ("no_owner_mounts", "no_docker_socket", "rootfs_readonly", "ollama_unreachable", "network_unreachable")
+
+
+def boundary_failures(cases: list[dict], cleanup_verified: bool) -> list[str]:
+    by_name = {case["case"]: case for case in cases}
+    failed = []
+    probe = by_name.get("boundary_probe", {})
+    try:
+        seen = json.loads(probe.get("stdout") or "")
+    except ValueError:
+        seen = {}
+    if (probe.get("exit_code") != 0 or probe.get("boundary") != "docker:<64hex>" or seen.get("uid") in (None, 0)
+            or not all(seen.get(flag) is True for flag in PROBE_FLAGS)):
+        failed.append("boundary_probe")
+    forged = by_name.get("forged_stdout", {})
+    if forged.get("exit_code") != 7:
+        failed.append("forged_stdout")
+    failed += [name for name, code in EXPECTED_CODES.items() if by_name.get(name, {}).get("code") != code]
+    if not cleanup_verified:
+        failed.append("cleanup")
+    return failed
+
+
 def _private_copy(receipt: Path, tmp: Path, **changes) -> Path:
     """نسخةٌ خاصة (0600، خارج المساحة) من الإيصال بحقلٍ مغيَّر: الفحصُ المسبق يجب أن يرفضها."""
     folder = tmp / "receipt"
@@ -90,13 +121,17 @@ def _private_copy(receipt: Path, tmp: Path, **changes) -> Path:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--receipt", required=True, type=Path)
-    parser.add_argument("--docker", default=shutil.which("docker") or "/usr/local/bin/docker")
+    parser.add_argument("--docker", default=SANDBOX_DOCKER)
     parser.add_argument("--out-boundary", required=True, type=Path)
     parser.add_argument("--out-sandbox", required=True, type=Path)
     args = parser.parse_args(argv)
     for out in (args.out_boundary, args.out_sandbox):
         if out.exists():
             parser.error(f"التقريرُ قائم: {out}")
+    if args.docker != SANDBOX_DOCKER:
+        print(json.dumps({"status": "refused", "code": "sandbox_backend_uses_the_default_docker_path",
+                          "expected": SANDBOX_DOCKER}))
+        return 2
     before = _containers(args.docker)
     work = Path(tempfile.mkdtemp(prefix="diwan-j5-")).resolve()
     private = Path(tempfile.mkdtemp(prefix="diwan-j5-receipt-", dir=Path.home())).resolve()
@@ -118,8 +153,7 @@ def main(argv=None) -> int:
         except ExecutionRefused as exc:
             cases.append({"case": "mismatched_runtime_preflight", "code": exc.code})
 
-        # بالمسار نفسه الذي تمرّ به الحالاتُ أعلاه، لا بمسار الخلفية الافتراضي (ملاحظة Codex على #136)
-        sandbox.configure_sandbox_backend(args.receipt.resolve(), work, docker_executable=args.docker)
+        sandbox.configure_sandbox_backend(args.receipt.resolve(), work)
         harness = "assert add(2, 3) == 5"
         good = sandbox.run_in_sandbox("def add(a, b):\n    return a + b\n", harness)
         bad = sandbox.run_in_sandbox("def add(a, b):\n    return a - b\n", harness)
@@ -137,10 +171,12 @@ def main(argv=None) -> int:
     common = {"date": today, "agent": "anthropic/claude-opus-5-5", "task": "ج٥", "issue": "power0man/diwan#23",
               "host": {"machine": "MacBook Pro (Apple silicon)", "os": os.uname().sysname + " " + os.uname().release},
               "runtime_image_id": receipt.get("image_id"), "runtime_lock_sha256": receipt.get("lock_sha256")}
+    boundary_failed = boundary_failures(cases, after == before)
     boundary_report = {
         "schema_version": 1, **common, "source_sha256": execution_sha, "source": "core/execution.py",
         "via": "core.execution.DockerExecutionBackend.run", "cases": cases,
         "cleanup_verified": after == before, "containers_before_after": [before, after],
+        "acceptance": {"passed": not boundary_failed, "failed": boundary_failed},
         "scope": "Disposable Docker test fixtures only; not proof against Docker VM/kernel escape.",
         "human_review": False,
         "measurement_limits": ["container_boundary_on_docker_desktop_not_a_separate_host",
@@ -164,8 +200,9 @@ def main(argv=None) -> int:
         out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"cases": {c["case"]: c.get("code", c.get("exit_code")) for c in cases},
                       "cleanup_verified": after == before,
-                      "sandbox": [good.passed, bad.passed, forged_verdict.passed]}, ensure_ascii=False))
-    return 0 if sandbox_ok else 1
+                      "sandbox": [good.passed, bad.passed, forged_verdict.passed],
+                      "boundary_failed": boundary_failed}, ensure_ascii=False))
+    return 0 if sandbox_ok and not boundary_failed else 1
 
 
 if __name__ == "__main__":
