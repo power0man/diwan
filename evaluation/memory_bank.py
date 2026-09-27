@@ -19,7 +19,7 @@ import re
 from core.attribution import normalize
 from core.canonical import PayloadRejected
 from core.quoted import DIRECTIVE_PATTERNS, QUARANTINE_MARK, scan, wrap
-from memory.store import HEADER
+from memory.store import HEADER, held_text
 
 THRESHOLDS = {"forget_rate": 1.0, "leakage": 0, "consent_violations": 0, "injection_unquarantined": 0}
 CATEGORIES = frozenset({"forget", "backup", "isolation", "consent", "injection"})
@@ -44,6 +44,15 @@ def contains(haystack: str, needle: str) -> bool:
     """المطابقةُ التي يفحص بها المُشغِّلُ الحضورَ والغياب: حرفيًّا أو بعد التطبيع العربيّ (التشكيل وأشكال الحروف).
     وهي هنا لا في المُشغِّل ليحكم بها المدقّقُ كما يحكم المُشغِّل (ملاحظة Codex على #129)."""
     return needle in haystack or normalize(needle).strip() in normalize(haystack)
+
+
+def names_every_directive(step: dict, text: str) -> bool:
+    """في `absent` لكلّ مقطعٍ آمرٍ يلتقطه الماسحُ في النصّ جزءٌ منه، أربعُ كلماتٍ أو حروفٍ فأكثر. فحجرُ الأول وبقاءُ الثاني
+    حرفيًّا يمرّ إن لم يُطلب إلا الأول، و«I» وحده يغيب ولو بقي الأمرُ كلُّه بعده (ملاحظتا Codex على #129).
+    ويقرؤها المُشغِّلُ ليطلب في السياق علامةَ كلِّ أمرٍ في العنصر الذي يسمّيه التوقّع."""
+    absent = [a for a in step.get("absent") or [] if len(re.findall(r"\w", a)) >= 4]
+    spans = [text[f.start:f.end] for f in scan(text)]
+    return bool(spans) and all(any(a in span for a in absent) for span in spans)
 
 
 def _reject(path: str, code: str, reason: str):
@@ -155,15 +164,11 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         # حجرُ نصٍّ لا أمرَ فيه لا يشهد بالحجر: عنصرٌ فيه أمرٌ يلتقطه الماسح، ثم سياقٌ محجورٌ في مشروعه بعد حفظه
         # يطلب في `absent` جزءًا من المقطع الآمر نفسِه، وهو ما يُبدله `quarantine` بعلامته. فإن بلغ الأمرُ السياقَ
         # سقطت الحالة؛ وذكرُ الجزء البريء من العنصر وحده لا يشهد (ملاحظتا Codex على #129). وكلُّ مقطعٍ آمرٍ يلتقطه
-        # الماسح في العنصر يُطلب جزءٌ منه: فحجرُ الأول وبقاءُ الثاني حرفيًّا يمرّ إن لم يُطلب إلا الأول (ملاحظة Codex على #129)
-        def names_the_directive(step, item):
-            spans = [item["text"][f.start:f.end] for f in scan(item["text"])]
-            absent = [a for a in step.get("absent") or [] if a]
-            return all(any(a in span for a in absent) for span in spans)
+        # الماسح في العنصر يُطلب جزءٌ منه ذو شأن (`names_every_directive`)
         # والعنصرُ الآمر قائمٌ في المخزن عند الفحص: اقتراحٌ لم يُوافَق عليه لا يبلغ السياقَ أصلًا (ملاحظة Codex على #129)
-        fenced = [(k, s, ref, item) for ref, (i, item) in made.items() if scan(item["text"])
+        fenced = [(k, s, ref, item) for ref, (i, item) in made.items()
                   for k, s in enumerate(steps) if k > i and s.get("expect") == "context" and s.get("quarantined")
-                  and s["project"] == item["project"] and names_the_directive(s, item) and active_at(ref, k)]
+                  and s["project"] == item["project"] and names_every_directive(s, item["text"]) and active_at(ref, k)]
         if not fenced:
             _reject(path, "injection_without_directive",
                     "عنصرٌ فيه أمرٌ مدسوس ثم سياقُ مشروعه محجورًا يطلب غيابَ الأمر نفسِه")
@@ -177,11 +182,16 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
                             *(QUARANTINE_MARK.format(code=code) for code, _ in DIRECTIVE_PATTERNS)))
 
         # والمقارنةُ بمطابقة المُشغِّل نفسِها: «موعدُ التسليم» شاهدًا وفي عنصرٍ آخر «موعد التسليم» يحضر بها في سياقه
-        # فيشهد الشاهدُ بعنصرٍ ليس الآمر (ملاحظة Codex على #129)
+        # فيشهد الشاهدُ بعنصرٍ ليس الآمر (ملاحظة Codex على #129). ويُقارن بكلّ عنصرٍ آخر كما يبلغ السياق، محجورًا: فعلامةُ
+        # حجرِ عنصرٍ آمرٍ آخر وما يليها تحضر في السياق ولا تحضر في نصّه الخام. ولا يعبر الشاهدُ سطرًا، فشاهدٌ يُجمع من آخر
+        # عنصرٍ وأول تاليه يحضر في السياق ولو غاب العنصرُ الآمر عنه (ملاحظة Codex على #129). وشرطةُ السطر يُسقطها التطبيعُ
+        # في `contains`، فشاهدٌ يبدأ بها يُقارن بما بعدها
         def shown_only_by_the_item(k, s, ref, item):
-            others = [o["text"] for r, (j, o) in made.items() if r != ref and j < k and o["project"] == item["project"]]
-            return any(p and contains(item["text"], p) and len(re.findall(r"\w", p)) >= 4 and not contains(wrapper, p)
-                       and not any(contains(t, p) for t in others) for p in s.get("present") or [])
+            others = [held_text(o["text"]) for r, (j, o) in made.items()
+                      if r != ref and j < k and o["project"] == item["project"]]
+            return any(p and "\n" not in p and contains(item["text"], p) and len(re.findall(r"\w", p)) >= 4
+                       and not contains(wrapper, p) and not any(contains(held, p) for held in others)
+                       for p in s.get("present") or [])
         if strict and not any(shown_only_by_the_item(*f) for f in fenced):
             _reject(path, "injection_item_not_shown_in_checked_context",
                     "السياقُ المحجور يحضر فيه جزءٌ من نصّ العنصر الآمر نفسِه")

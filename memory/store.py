@@ -41,6 +41,12 @@ MAX_TURN_BLOCK = 16000
 _SHA = re.compile(r"[0-9a-f]{64}")
 
 
+def held_text(text: str) -> str:
+    """نصُّ العنصر كما يبلغ كتلةَ السياق: علاماتُ السياج فيه مُبدَلة ثم محجورًا. ويقرؤه مدقّقُ بنك الذاكرة ليقارن
+    الشاهدَ بما يبلغ السياقَ من غير العنصر المفحوص (ملاحظة Codex على #129)."""
+    return quarantine(_FENCE_MARK.sub(". ", text)).text
+
+
 def valid_turn_memory(memory) -> bool:
     """كتلةُ ذاكرةٍ محفوظة مع جولة (ك٥٥): النصُّ الذي رآه النموذج وبصماتُ عناصره، مرتّبةً بلا تكرار."""
     return (isinstance(memory, dict) and set(memory) == {"block", "items"}
@@ -204,7 +210,7 @@ class MemoryStore:
         items.sort(key=lambda it: (-len(wanted & set(content_tokens(it["text"]))), it["approved_at"]))
         lines, seen, used = [], [], 0
         for item in items[:MAX_CONTEXT_ITEMS]:
-            held = quarantine(_FENCE_MARK.sub(". ", item["text"])).text
+            held = held_text(item["text"])
             if used + len(held) > MAX_CONTEXT_CHARS:
                 break
             lines.append(f"- {held}")

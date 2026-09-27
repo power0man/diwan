@@ -24,12 +24,30 @@ from __future__ import annotations
 
 import re
 import tempfile
+from collections import Counter
 from pathlib import Path
 
 import uuid
 
-from evaluation.memory_bank import contains as _contains
+from core.quoted import QUARANTINE_MARK, scan
+from evaluation.memory_bank import contains as _contains, names_every_directive
 from memory.store import HEADER, MemoryRefused, MemoryStore
+
+
+def _marked(inside: str, scenario: dict, index: int, active: set) -> bool:
+    """كلُّ أمرٍ في كلّ عنصرٍ آمرٍ قائمٍ يسمّيه التوقّع (`names_every_directive`) تحلّ محلَّه في السياق علامتُه برمزه.
+    فغيابُ جزءٍ من الأمر لا يشهد وحده بالحجر: حجرٌ يحذف «I» وحده ويُمرّر ما بعده يُغيّبه أيضًا (ملاحظة Codex على #129)."""
+    step = scenario["steps"][index]
+    wanted = Counter(finding.code for s in scenario["steps"][:index]
+                     if s.get("op") in ("remember", "propose") and s["project"] == step["project"] and s["as"] in active
+                     and names_every_directive(step, s["text"]) for finding in scan(s["text"]))
+    return all(inside.count(QUARANTINE_MARK.format(code=code)) >= n for code, n in wanted.items())
+
+
+def _active(refs: dict, store: MemoryStore) -> set:
+    """أسماءُ ما هو قائمٌ في المخزن الآن من العناصر التي أنشأتها الخطوات."""
+    ids = {item["item_id"] for item in store.items()}
+    return {name for name, ref in refs.items() if isinstance(ref, str) and ref in ids}
 
 
 def _residue(store: MemoryStore) -> bytes:
@@ -86,7 +104,8 @@ def run_scenario(scenario: dict, root: Path) -> dict:
             if step.get("quarantined"):
                 fenced = text.startswith(HEADER) and "<<<مادة:" in text and "<<</مادة:" in text
                 inside = text.split("<<<مادة:", 1)[-1].rsplit("<<</مادة:", 1)[0] if fenced else ""
-                if not fenced or any(not _contains(inside, n) for n in step["present"]):
+                if (not fenced or any(not _contains(inside, n) for n in step["present"])
+                        or not _marked(inside, scenario, index, _active(refs, s))):
                     failures.append(f"{index}: context not fenced")
                     unquarantined += 1
         elif expect == "residue":
@@ -308,13 +327,13 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
             elif op == "restore":
                 wired.restore(refs[step["ref"]])
             elif expect in ("retrieve", "context"):
-                # الحضورُ في الاسترجاع من استرجاع المخزن بالسؤال نفسِه، لا من قائمة المالك كلّها؛ والغيابُ من القائمة كلّها،
-                # وهو أشدّ (ملاحظة Codex على #129)
+                # الحضورُ في الاسترجاع من استرجاع المخزن بالسؤال نفسِه، لا من قائمة المالك كلّها؛ والغيابُ منهما معًا: فالقائمةُ
+                # أشدّ في مشروعها، ونتيجةُ السؤال وحدها تُظهر عنصرًا تسرّب من مشروعٍ آخر (ملاحظتا Codex على #129)
                 views = ([(wired.retrieved_text(name, step["query"]), wired.items_text(name))] if expect == "retrieve"
                          else wired.contexts(name, step["question"]))
                 for current, every in views:
                     for needle in step["absent"]:
-                        if _contains(every, needle):
+                        if _contains(every, needle) or _contains(current, needle):
                             failures.append(f"{index}: {expect} holds absent «{needle[:30]}»")
                             if scenario["category"] == "isolation":
                                 leaks += 1
@@ -328,7 +347,8 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                     if step.get("quarantined"):
                         fenced = current.startswith(HEADER) and "<<<مادة:" in current and "<<</مادة:" in current
                         inside = (current.split("<<<مادة:", 1)[-1].rsplit("<<</مادة:", 1)[0] if fenced else "")
-                        if not fenced or any(not _contains(inside, n) for n in step["present"]):
+                        if (not fenced or any(not _contains(inside, n) for n in step["present"])
+                                or not _marked(inside, scenario, index, _active(refs, wired.store(name)))):
                             failures.append(f"{index}: context not fenced")
                             unquarantined += 1
             elif expect == "residue":
