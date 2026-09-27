@@ -147,35 +147,68 @@ def test_a_line_that_is_not_json_is_refused_by_name(repo, capsys, git):
 
 def test_range_mode_applies_the_changed_manifests_and_names_an_added_test_file_without_one(repo, capsys, git):
     base = git("rev-parse", "HEAD")
-    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"}, {**KILL, "id": "more", "tests": ["tests/test_guard.py::test_more"]})
     (repo / "tests/test_other.py").write_text("def test_other():\n    assert True\n")
-    (repo / "tests/test_guard.py").write_text(TESTS + "\n\ndef test_more():\n    assert True\n")
+    (repo / "tests/test_guard.py").write_text(TESTS + "\n\ndef test_more():\n    assert positive(0) is False\n")
     git("add", "-A")
     git("commit", "-qm", "range")
     head = git("rev-parse", "HEAD")
     report = _run(repo, "--range", f"{base}..{head}", capsys=capsys)
     assert report["manifests"] == ["tests/mutations/test_guard.jsonl"]
     assert report["manifest_missing"] == ["tests/test_other.py"], "ملفُّ اختبارٍ مضاف بلا بيان"
-    assert report["unmanifested_changed_tests"] == [] and report["totals"]["killed"] == 1
+    assert report["unmanifested_changed_tests"] == [] and report["unmanifested_new_tests"] == [] and report["totals"]["killed"] == 2
     assert report["status"] == "failed", "غيابُ البيان يُسقط المدى"
     _manifest(repo, "test_other", {**KILL, "id": "other", "tests": ["tests/test_guard.py::test_zero_is_not_positive"]})
     git("add", "-A")
     git("commit", "-qm", "manifest for other")
     report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
-    assert report["manifest_missing"] == [] and report["status"] == "passed" and report["totals"]["killed"] == 2
+    assert report["manifest_missing"] == [] and report["status"] == "passed" and report["totals"]["killed"] == 3
     _clean(repo, git)
 
 
-def test_a_modified_test_file_without_a_manifest_is_a_declared_limit_unless_strict(repo, capsys, git):
+def test_a_new_test_in_an_existing_file_must_be_named_by_a_manifest(repo, git, capsys):
+    """الحالةُ الشائعة: حارسٌ جديد في ملفٍّ قائم (ملاحظة Codex على #149) — يُسقط المدى حتى يسمّيه بيان؛ وتعديلُ ملفٍّ
+    بلا دالّةٍ جديدة حدٌّ معلَن لا يُسقط إلا بـ--strict-unmanifested."""
     base = git("rev-parse", "HEAD")
-    (repo / "tests/test_guard.py").write_text(TESTS + "\n\ndef test_more():\n    assert True\n")
+    (repo / "tests/test_guard.py").write_text(TESTS + "\n\ndef test_more():\n    assert positive(0) is False\n")
     git("add", "-A")
-    git("commit", "-qm", "modify a test")
+    git("commit", "-qm", "add a guard to an existing file")
     rng = f"{base}..{git('rev-parse', 'HEAD')}"
     report = _run(repo, "--range", rng, capsys=capsys)
-    assert report["unmanifested_changed_tests"] == ["tests/test_guard.py"] and report["status"] == "passed"
-    report = _run(repo, "--range", rng, "--strict-unmanifested", capsys=capsys)
-    assert report["status"] == "failed"
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::test_more"] and report["status"] == "failed"
+    _manifest(repo, "test_guard", {**KILL, "id": "more", "tests": ["tests/test_guard.py::test_more"]})
+    git("add", "-A")
+    git("commit", "-qm", "its manifest")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["unmanifested_new_tests"] == [] and report["status"] == "passed" and report["totals"]["killed"] == 1
+    # تعديلٌ بلا دالّةٍ جديدة في ملفٍّ بلا بيان: حدٌّ معلَن، ويُسقط بالصرامة وحدها
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_guard.py").write_text((repo / "tests/test_guard.py").read_text() + "\n# تعليق\n")
+    (repo / "tests/mutations/test_guard.jsonl").unlink()
+    git("add", "-A")
+    git("commit", "-qm", "touch without a new guard")
+    rng = f"{base}..{git('rev-parse', 'HEAD')}"
+    report = _run(repo, "--range", rng, capsys=capsys)
+    assert report["unmanifested_changed_tests"] == ["tests/test_guard.py"] and report["unmanifested_new_tests"] == []
+    assert report["status"] == "passed"
+    assert _run(repo, "--range", rng, "--strict-unmanifested", capsys=capsys)["status"] == "failed"
+
+
+def test_an_empty_manifest_does_not_satisfy_the_gate(repo, git, capsys):
+    """بيانٌ فارغ كان يُحسب موجودًا فيمرّ ملفُّ اختبارٍ جديد بلا طفرة (ملاحظة Codex على #149)."""
+    (repo / "tests/mutations/test_guard.jsonl").write_text("\n", encoding="utf-8")
+    report = _run(repo, "--all", capsys=capsys)
+    assert (report["status"], report["code"]) == ("refused", "manifest_invalid") and "بلا طفرة" in report["detail"]
+
+
+def test_a_class_method_node_id_is_accepted_and_killed(repo, git, capsys):
+    """حارسٌ داخل صنف اختبار (`file::Class::test`) يُقبل معرّفُه ويُقتل به (ملاحظة Codex على #149)."""
+    (repo / "tests/test_guard.py").write_text(TESTS + "\n\nclass TestGuard:\n    def test_zero_in_class(self):\n        assert positive(0) is False\n")
+    _manifest(repo, "test_guard", {**KILL, "id": "in-class", "tests": ["tests/test_guard.py::TestGuard::test_zero_in_class"]})
+    git("add", "-A")
+    git("commit", "-qm", "class guard")
+    report = _run(repo, "--all", capsys=capsys)
+    assert report["status"] == "passed" and report["results"][0]["code"] == "killed"
 
 
 def test_a_collection_error_is_invalid_not_a_kill(repo, capsys, git):

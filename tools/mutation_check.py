@@ -12,6 +12,7 @@
     invalid                  الطفرةُ كسرت الجمعَ نفسَه (خطأُ صياغة): ليست قتلًا
     timeout                  تجاوزت الاختباراتُ مهلتَها
     manifest_missing         ملفُّ اختبارٍ أُضيف في المدى بلا بيانِ طفرات
+    unmanifested_new_tests   دالّةُ اختبارٍ أُضيفت إلى ملفٍّ قائم في المدى ولا يسمّيها بيان
     manifest_invalid         سطرٌ بلا حقوله أو بمفتاحٍ مجهول (يُرفض قبل أيّ شجرة عمل)
     target_refused           هدفٌ مطلق أو صاعد أو تحت tests/ أو في مسارٍ فيه sealed (يُرفض قبل أيّ شجرة عمل)
 
@@ -39,7 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFESTS = "tests/mutations"
 REQUIRED = ("file", "old", "new", "tests")
 OPTIONAL = ("id", "task", "why", "count", "added")
-NODE_ID = re.compile(r"^tests/[A-Za-z0-9_./-]+\.py::[A-Za-z_][A-Za-z0-9_]*(\[.*\])?$")
+NODE_ID = re.compile(r"^tests/[A-Za-z0-9_./-]+\.py(::[A-Za-z_][A-Za-z0-9_]*)+(\[.*\])?$")   # ومنه دوالُّ الأصناف
 VERDICTS = {
     "killed": "قُتلت: سقط الاختبارُ المسمّى عند الطفرة",
     "survived": "نجت: لم يسقط اختبارٌ مسمًّى، فالحارسُ لا يحرس هذا",
@@ -107,18 +108,45 @@ def load_manifest(path: Path, root: Path) -> list[dict]:
             raise Refused("manifest_invalid", f"{rel}:{number}: count عددٌ صحيح ≥ 1")
         _refuse_target(entry["file"])
         entries.append({**entry, "count": count, "manifest": rel, "line": number})
+    if not entries:
+        raise Refused("manifest_invalid", f"{rel}: بيانٌ بلا طفرة؛ لا يُغني عن البيان")
     return entries
 
 
-def _range_scope(root: Path, rng: str) -> tuple[list[Path], list[str], list[str]]:
-    """(بياناتُ المدى، ملفّاتُ اختبارٍ مضافة بلا بيان، ملفّاتُ اختبارٍ معدَّلة بلا بيان)."""
+NEW_TEST_DEF = re.compile(r"^\+\s*def (test_[A-Za-z0-9_]*)\(")
+
+
+def _new_test_nodes(root: Path, base: str, head: str, test_file: str) -> list[str]:
+    """دوالُّ الاختبار التي أُضيفت إلى ملفٍّ قائم في المدى، بمعرّفاتها (بلا اعتبارٍ للصنف الحاوي)."""
+    diff = _git(root, "diff", "--unified=0", f"{base}...{head}", "--", test_file)
+    return [f"{test_file}::{m.group(1)}" for line in diff.splitlines() if (m := NEW_TEST_DEF.match(line))]
+
+
+def _named_in_manifests(root: Path, node: str) -> bool:
+    """أيُّ بيانٍ في المستودع يسمّي هذا الاختبار (باسم الدالّة، ولو داخل صنفٍ أو بمعاملات)."""
+    file, name = node.split("::", 1)
+    for path in sorted((root / MANIFESTS).glob("*.jsonl")) if (root / MANIFESTS).is_dir() else []:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            try:
+                tests = json.loads(line).get("tests", []) if line.strip() else []
+            except (json.JSONDecodeError, AttributeError):
+                continue
+            if any(isinstance(t, str) and t.startswith(file + "::") and t.split("::")[-1].split("[")[0] == name for t in tests):
+                return True
+    return False
+
+
+def _range_scope(root: Path, rng: str) -> tuple[list[Path], list[str], list[str], list[str]]:
+    """(بياناتُ المدى، ملفّاتُ اختبارٍ مضافة بلا بيان، ملفّاتُ اختبارٍ معدَّلة بلا بيان، اختباراتٌ جديدة في ملفٍّ قائم لا يسمّيها بيان)."""
     base, head = rng.split("..", 1)
     changed = _git(root, "diff", "--name-only", "--diff-filter=AMR", f"{base}...{head}", "--", f"{MANIFESTS}/*.jsonl").split()
     added = _git(root, "diff", "--name-only", "--diff-filter=A", f"{base}...{head}", "--", "tests/test_*.py").split()
     modified = _git(root, "diff", "--name-only", "--diff-filter=M", f"{base}...{head}", "--", "tests/test_*.py").split()
     has_manifest = lambda test: (root / MANIFESTS / (Path(test).stem + ".jsonl")).is_file()
+    # حارسٌ جديد في ملفٍّ قائم هو الحالةُ الشائعة: كلُّ دالّةِ اختبارٍ أُضيفت يجب أن يسمّيها بيانٌ (ملاحظة Codex على #149)
+    unnamed = [node for test in modified for node in _new_test_nodes(root, base, head, test) if not _named_in_manifests(root, node)]
     return ([root / p for p in changed if (root / p).is_file()],
-            [t for t in added if not has_manifest(t)], [t for t in modified if not has_manifest(t)])
+            [t for t in added if not has_manifest(t)], [t for t in modified if not has_manifest(t)], unnamed)
 
 
 def _pytest(python: str, cwd: Path, argv: list[str], timeout: int) -> subprocess.CompletedProcess | None:
@@ -230,9 +258,9 @@ def main(argv=None) -> int:
     report = {"schema_version": 1, "tool": "tools/mutation_check.py", "python": sys.version.split()[0],
               "scope": "range" if args.range else "all" if args.all else "manifest", "measurement_limits": LIMITS}
     try:
-        manifest_missing, unmanifested = [], []
+        manifest_missing, unmanifested, unnamed = [], [], []
         if args.range:
-            paths, manifest_missing, unmanifested = _range_scope(root, args.range)
+            paths, manifest_missing, unmanifested, unnamed = _range_scope(root, args.range)
             report["range"] = args.range
         elif args.all:
             paths = sorted((root / MANIFESTS).glob("*.jsonl")) if (root / MANIFESTS).is_dir() else []
@@ -242,6 +270,7 @@ def main(argv=None) -> int:
         report["manifests"] = [p.resolve().relative_to(root).as_posix() for p in paths]
         report["manifest_missing"] = manifest_missing
         report["unmanifested_changed_tests"] = unmanifested
+        report["unmanifested_new_tests"] = unnamed
         if entries:
             report.update(run(root, entries, args.head, args.python, args.timeout_s, args.keep_worktree))
         else:
@@ -250,7 +279,7 @@ def main(argv=None) -> int:
                            "results": [], "totals": {code: 0 for code in VERDICTS}})
         bad = [r for r in report["results"] if r["code"] != "killed"]
         strict_bad = unmanifested if args.strict_unmanifested else []
-        report["status"] = "failed" if bad or manifest_missing or strict_bad else "passed"
+        report["status"] = "failed" if bad or manifest_missing or unnamed or strict_bad else "passed"
         report["exit_code"] = 1 if report["status"] == "failed" else 0
     except Refused as exc:
         report.update({"status": "refused", "code": exc.code, "detail": exc.detail, "exit_code": 2})
