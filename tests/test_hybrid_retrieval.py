@@ -90,3 +90,29 @@ def test_hybrid_search_morphology_root_expansion():
 def test_hybrid_search_empty_query():
     results = hybrid_search("   ", limit=5)
     assert results == []
+
+
+def test_an_index_error_during_expansion_is_a_named_refusal_not_no_results(monkeypatch):
+    """صيّادُ الإخفاقات الصامتة (ق٦٧): `except Exception: any_results = []` كان يحوّل عطبَ الفهرس في التوسيع إلى «لا
+    نتائج»، فيُحسب الاسترجاعُ ناقصًا أو امتناعًا (صنفُ ك٢١). فالعطبُ رفضٌ مسمًّى يصعد، والرفضُ المسمّى من الفهرس يصعد كما هو."""
+    import sqlite3
+    import core.hybrid_retrieval as hr
+    from core.canonical import PayloadRejected
+
+    def broken(query, limit=10, match_any=False, corpus="maritime"):
+        if match_any:
+            raise sqlite3.OperationalError("database disk image is malformed")
+        return []
+    monkeypatch.setattr(hr, "fts_search", broken)
+    with pytest.raises(PayloadRejected) as refused:
+        HybridRetriever().search("مياه الصابورة", limit=5)
+    assert refused.value.code == "fts_expansion_failed"
+
+    def missing(query, limit=10, match_any=False, corpus="maritime"):
+        if match_any:
+            raise PayloadRejected("index", "index_missing", "لا إسقاط بحث")
+        return []
+    monkeypatch.setattr(hr, "fts_search", missing)
+    with pytest.raises(PayloadRejected) as refused:
+        HybridRetriever().search("مياه الصابورة", limit=5)
+    assert refused.value.code == "index_missing"

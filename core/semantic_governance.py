@@ -92,12 +92,9 @@ def is_structural_phrase(text: str) -> bool:
 
 
 def _get_root(word: str) -> str:
-    """استخراج الجذر الصرفي الحتمي للكلمة."""
-    try:
-        res = analyze(word)
-        return res.root or word
-    except Exception:
-        return word
+    """استخراج الجذر الصرفي الحتمي للكلمة. تعذُّرُ الجذر حالةٌ مسمّاة يعيدها `analyze` (`reason`) فتُعامل كلمةً بلا جذر؛
+    أما عطبُ المحلّل نفسِه فيصعد كما هو ولا يُبتلع جذرًا مزيَّفًا يغيّر درجةَ الاستلزام صامتًا (صيّادُ الإخفاقات الصامتة، ق٦٧)."""
+    return analyze(word).root or word
 
 
 def semantic_match_basis_points(
