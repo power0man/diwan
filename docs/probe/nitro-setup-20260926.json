@@ -206,5 +206,17 @@
       "exit_code": 3,
       "steps": "runtime وmorphology (camel_ready) وengine وagent_turn_live وui ok، وpolicies corpus_missing"
     }
+  },
+  "smoke_check_recheck_py312": {
+    "date": "2026-09-27",
+    "commit": "34d4a64",
+    "why": "إعادةٌ بعد تركيب build-essential وpython3-venv، على البيئة اليومية (بايثون 3.12)",
+    "checks": {
+      "gcc": "gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "venv": "python3 -m venv يعمل"
+    },
+    "exit_code": 3,
+    "first_try": true,
+    "steps": "runtime وmorphology (camel_ready) وengine وagent_turn_live وui ok، وpolicies corpus_missing"
   }
 }
