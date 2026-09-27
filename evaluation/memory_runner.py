@@ -82,10 +82,11 @@ def _exposed(shown: str, text: str) -> bool:
     return _contains(shown, held_text(text))
 
 
-def _probe_question(text: str) -> str:
-    """سؤالُ فحص العرض: العنصرُ بصورته المحجورة لا بنصّه، فلا يبلغ النموذجَ أمرٌ مدسوسٌ في عنصرٍ على أنه طلبُ المالك نفسِه
-    (ملاحظة Codex على #129، الجولة الثالثة عشرة)؛ وكلماتُه الباقية تقدّمه في ترتيب السياق."""
-    return "ما الذي تتذكّره عن: " + held_text(text)
+# سؤالُ فحص العرض محايدٌ لا يحمل شيئًا من العنصر: في الطريق الموصول يبقى السؤالُ في تاريخ جلسة الفحص كلامًا للمالك، فلو
+# حمل قيمةَ العنصر لبلغت النموذجَ بعد النسيان من التاريخ لا من الذاكرة، ولا يراها فحصُ الغياب لأنه يقرأ كتلَ الذاكرة وحدها
+# (ملاحظة Codex على #129، الجولة الخامسة عشرة؛ وقبلها الثالثة عشرة: لا أمرَ مدسوسًا في السؤال). والكتلةُ تعرض عناصرَ المشروع
+# كلَّها بلا سؤالٍ يقدّمها ما دامت في سعة السياق (MAX_CONTEXT_ITEMS وMAX_CONTEXT_CHARS)، وما جاوزها يُسمّى «لم يُعرض».
+EXPOSURE_QUESTION = "ما الذي تتذكّره عنّي في هذا المشروع؟"
 
 
 def _leaked_directive(shown: str, text: str = "") -> bool:
@@ -127,7 +128,7 @@ def run_scenario(scenario: dict, root: Path) -> dict:
             if isinstance(item, str) and item in {i["item_id"] for i in s.items()}:
                 exposures += 1
                 text = _saved_text(scenario, step["ref"])
-                shown = s.context_block(_probe_question(text))
+                shown = s.context_block(EXPOSURE_QUESTION)
                 if not _exposed(shown, text):
                     failures.append(f"{index}: item not exposed in context before forget")
                 if _leaked_directive(shown, text):
@@ -140,7 +141,7 @@ def run_scenario(scenario: dict, root: Path) -> dict:
             for other in stores.values():
                 for item in other.items():
                     exposures += 1
-                    shown = other.context_block(_probe_question(item["text"]))
+                    shown = other.context_block(EXPOSURE_QUESTION)
                     if not _exposed(shown, item["text"]):
                         failures.append(f"{index}: item not exposed in context before backup")
                     if _leaked_directive(shown, item["text"]):
@@ -441,7 +442,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                 if isinstance(item, str) and item in {i["item_id"] for i in wired.store(name).items()}:
                     exposures += 1
                     text = _saved_text(scenario, step["ref"])
-                    shown = [current for current, _ in wired.contexts(name, _probe_question(text))]
+                    shown = [current for current, _ in wired.contexts(name, EXPOSURE_QUESTION)]
                     if any(not _exposed(current, text) for current in shown):
                         failures.append(f"{index}: item not exposed in context before forget")
                     if any(_leaked_directive(current, text) for current in shown):
@@ -455,7 +456,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                 for other in list(wired.projects):
                     for item in wired.store(other).items():
                         exposures += 1
-                        shown = [current for current, _ in wired.contexts(other, _probe_question(item["text"]))]
+                        shown = [current for current, _ in wired.contexts(other, EXPOSURE_QUESTION)]
                         if any(not _exposed(current, item["text"]) for current in shown):
                             failures.append(f"{index}: item not exposed in context before backup")
                         if any(_leaked_directive(current, item["text"]) for current in shown):
