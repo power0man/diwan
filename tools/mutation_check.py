@@ -77,6 +77,7 @@ LIMITS = [
     "a_class_whose_base_is_imported_under_a_name_that_does_not_end_in_TestCase_is_not_seen_as_a_unittest_class_so_its_methods_are_not_touched_tests",
     "inherited_test_methods_are_resolved_through_bases_defined_at_module_level_in_the_same_file_first_base_wins_a_base_imported_from_another_module_is_not_seen_so_a_subclass_of_it_adds_no_touched_tests",
     "a_class_attribute_shadows_an_inherited_test_of_the_same_name_and_a_test_named_attribute_assigned_a_name_an_attribute_or_a_lambda_is_read_as_a_test_whether_or_not_the_object_is_a_function",
+    "a_Test_named_alias_of_a_class_defined_at_module_level_in_the_same_file_is_read_with_all_its_methods_an_alias_of_an_imported_or_computed_class_is_not_seen",
     "renames_are_not_detected_in_the_range_a_moved_file_is_its_source_deleted_and_its_destination_added_so_both_sides_are_checked",
     "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
     "a_touched_parametrized_test_is_proved_case_by_case_every_case_pytest_collects_for_it_must_fail_a_mutation_since_parsing_cannot_tell_the_added_case_from_the_old_ones",
@@ -218,16 +219,36 @@ def _test_nodes_at(root: Path, head: str, test_file: str) -> dict[str, list[tupl
                             found[target.id] = [(node.lineno, node.end_lineno or node.lineno)]
         return found
 
-    def visit(body, prefix: str) -> None:
+    def assigned(node: ast.stmt) -> list[str]:
+        """أسماءُ التعيين البسيطة في العبارة (تعيينٌ أو تعيينٌ معنون بقيمة)."""
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)) or node.value is None:
+            return []
+        return [t.id for t in (node.targets if isinstance(node, ast.Assign) else [node.target]) if isinstance(t, ast.Name)]
+
+    def visit(body, prefix: str, module_level: bool) -> None:
         for node in body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
                 nodes[f"{test_file}::{prefix}{node.name}"] = [(first(node), node.end_lineno or node.lineno)]
             elif isinstance(node, ast.ClassDef) and (node.name.startswith("Test") or node.name in unittest_classes):
                 for method, spans in methods(node).items():
                     nodes[f"{test_file}::{prefix}{node.name}::{method}"] = spans
-                visit([n for n in node.body if isinstance(n, ast.ClassDef)], f"{prefix}{node.name}::")
+                visit([n for n in node.body if isinstance(n, (ast.ClassDef, ast.Assign, ast.AnnAssign))], f"{prefix}{node.name}::", False)
+            for name in assigned(node):
+                # تعيينٌ في الوحدة أو الصنف يجمعه pytest كما يجمع التعريف (ملاحظة Codex على #149): `TestAlias = Helper` صنفٌ
+                # مستعار بكلِّ دوالّه (مداها مدى تعريفها وسطرُ النسبة)، و`test_alias = f` دالّةٌ منسوبة، و`test_x = None` يحجب
+                span = (node.lineno, node.end_lineno or node.lineno)
+                if module_level and name.startswith("test"):
+                    nodes.pop(f"{test_file}::{prefix}{name}", None)
+                    if isinstance(node.value, (ast.Name, ast.Attribute, ast.Lambda)):
+                        nodes[f"{test_file}::{prefix}{name}"] = [span]
+                elif name.startswith("Test"):
+                    for key in [k for k in nodes if k.startswith(f"{test_file}::{prefix}{name}::")]:
+                        del nodes[key]
+                    if isinstance(node.value, ast.Name) and node.value.id in classes:
+                        for method, spans in methods(classes[node.value.id]).items():
+                            nodes[f"{test_file}::{prefix}{name}::{method}"] = [*spans, span]
 
-    visit(tree.body, "")
+    visit(tree.body, "", True)
     return nodes
 
 
