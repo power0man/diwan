@@ -11,8 +11,11 @@
     stale                    النصُّ القديم ليس في الملف بعدد مرّاته المعلَن
     invalid                  الطفرةُ كسرت الجمعَ نفسَه (خطأُ صياغة): ليست قتلًا
     timeout                  تجاوزت الاختباراتُ مهلتَها
-    manifest_missing         ملفُّ اختبارٍ أُضيف (أو أُعيدت تسميتُه) في المدى بلا بيانِ طفرات باسمه
+    manifest_missing         ملفُّ اختبارٍ أُضيف (أو أُعيدت تسميتُه) في المدى بلا بيانِ طفرات باسمه؛ والوحدةُ في مجلّدٍ فرعيّ
+                             tests/a/test_x.py بيانُها tests/mutations/a__test_x.jsonl
     unmanifested_new_tests   اختبارٌ مسّه المدى (كلُّ اختبارٍ في ملفٍّ مضاف، أو اختبارٌ دخل سطرٌ مضاف في مداه) ولا يسمّيه بيانٌ بمعرّفه الكامل
+    unproved_touched_tests   اختبارٌ ممسوس سمّاه بيانٌ لكنه لم يسقط هو نفسُه تحت أيّ طفرةٍ في المدى (ذكرُه بجانب قاتلٍ لا يثبته)
+    orphaned_manifests       بيانٌ حُذف في المدى ووحدتُه باقية
     manifest_invalid         سطرٌ بلا حقوله أو بمفتاحٍ مجهول (يُرفض قبل أيّ شجرة عمل)
     target_refused           هدفٌ مطلق أو صاعد أو تحت tests/ أو في مسارٍ فيه sealed (يُرفض قبل أيّ شجرة عمل)، أو يمرّ
                              بوصلةٍ رمزية في شجرة العمل (يُرفض قبل أيّ طفرة)
@@ -197,25 +200,51 @@ def _manifest_names(root: Path) -> dict[Path, set[str]]:
     return names
 
 
-def _range_scope(root: Path, rng: str) -> tuple[list[Path], list[str], list[str], list[str]]:
-    """(بياناتُ المدى ومعها كلُّ بيانٍ يسمّي اختبارًا مسّه المدى، ملفّاتُ اختبارٍ مضافة بلا بيانٍ باسمها، ملفّاتُ اختبارٍ
-    معدَّلة بلا بيانٍ باسمها، اختباراتٌ مسّها المدى لا يسمّيها بيانٌ بمعرّفها الكامل)."""
+def _test_modules(paths: list[str]) -> list[str]:
+    """وحداتُ الاختبار تحت tests/ في أيّ عمق (test_*.py)، فنقلُ الاختبارات إلى مجلّدٍ فرعيّ لا يُخرجها من المدى."""
+    return [p for p in paths if p.startswith("tests/") and p.endswith(".py") and PurePosixPath(p).name.startswith("test_")]
+
+
+def manifest_for(test: str) -> str:
+    """بيانُ وحدة اختبار: tests/unit/test_x.py → tests/mutations/unit__test_x.jsonl (المجلّداتُ تُوصل بـ__)."""
+    return f"{MANIFESTS}/{'__'.join(PurePosixPath(test).with_suffix('').parts[1:])}.jsonl"
+
+
+def module_for(manifest: str) -> str:
+    """الوحدةُ التي يخصّها بيانٌ باسمه."""
+    return "tests/" + PurePosixPath(manifest).stem.replace("__", "/") + ".py"
+
+
+def _exists_at(root: Path, head: str, path: str) -> bool:
+    return subprocess.run(["git", "-C", str(root), "cat-file", "-e", f"{head}:{path}"], capture_output=True).returncode == 0
+
+
+def _range_scope(root: Path, rng: str) -> dict:
+    """مدى الطلب: البياناتُ التي تُطبَّق (المتغيّرةُ ومعها كلُّ بيانٍ يسمّي اختبارًا ممسوسًا)، والاختباراتُ الممسوسة التي يجب
+    أن يسقط كلٌّ منها تحت طفرةٍ ما، وما يُسقط المدى: ملفُّ اختبارٍ مضاف أو مُعادُ التسمية بلا بيانٍ باسمه، واختبارٌ ممسوس لا
+    يسمّيه بيان، وبيانٌ حُذف ووحدتُه باقية (ملاحظات Codex على #149)."""
     base, head = rng.split("..", 1)
-    changed = _git(root, "diff", "--name-only", "--diff-filter=AMR", f"{base}...{head}", "--", f"{MANIFESTS}/*.jsonl").split()
-    added = _git(root, "diff", "--name-only", "--diff-filter=A", f"{base}...{head}", "--", "tests/test_*.py").split()
-    # الملفُّ المعادُ تسميتُه يُعامل كالمضاف: كلُّ اختبارٍ فيه ممسوس ويلزمه بيانٌ باسمه الجديد (ملاحظة Codex على #149)
-    renamed = _git(root, "diff", "--name-only", "--diff-filter=R", f"{base}...{head}", "--", "tests/test_*.py").split()
-    modified = _git(root, "diff", "--name-only", "--diff-filter=M", f"{base}...{head}", "--", "tests/test_*.py").split()
-    has_manifest = lambda test: (root / MANIFESTS / (Path(test).stem + ".jsonl")).is_file()
+
+    def changed(status: str, *pathspec: str) -> list[str]:
+        return _git(root, "diff", "--name-only", f"--diff-filter={status}", f"{base}...{head}", "--", *pathspec).split()
+
+    # الملفُّ المعادُ تسميتُه يُعامل كالمضاف: كلُّ اختبارٍ فيه ممسوس ويلزمه بيانٌ باسمه الجديد
+    added = _test_modules(changed("A", "tests/")) + _test_modules(changed("R", "tests/"))
+    modified = _test_modules(changed("M", "tests/"))
+    has_manifest = lambda test: (root / manifest_for(test)).is_file()
     names = _manifest_names(root)
     # كلُّ اختبارٍ مسّه المدى يسمّيه بيانٌ بمعرّفه الكامل (بالصنف الحاوي)، والبيانُ الذي يسمّيه يُطبَّق في المدى ولو لم يتغيّر
-    touched = [node for test in added + renamed for node in _touched_test_nodes(root, base, head, test, True)]
+    touched = [node for test in added for node in _touched_test_nodes(root, base, head, test, True)]
     touched += [node for test in modified for node in _touched_test_nodes(root, base, head, test, False)]
     unnamed = [node for node in touched if not any(node in named for named in names.values())]
     naming = [path for path, named in names.items() if named & set(touched)]
-    paths = [root / p for p in changed if (root / p).is_file()]
+    paths = [root / p for p in changed("AMR", f"{MANIFESTS}/*.jsonl") if (root / p).is_file()]
     paths += [path for path in naming if path not in paths]
-    return (paths, [t for t in added + renamed if not has_manifest(t)], [t for t in modified if not has_manifest(t)], unnamed)
+    # بيانٌ حُذف ووحدتُه باقية عند الرأس: حرّاسُها تفقد إثباتَها صامتة، فيُرفض الحذفُ إلا مع الوحدة
+    orphaned = [m for m in changed("D", f"{MANIFESTS}/*.jsonl") if _exists_at(root, head, module_for(m))]
+    return {"paths": paths, "touched": touched, "manifest_missing": [t for t in added if not has_manifest(t)],
+            "unmanifested_changed_tests": [t for t in modified if not has_manifest(t)],
+            "unmanifested_new_tests": unnamed, "orphaned_manifests": orphaned}
 
 
 def _pytest(python: str, cwd: Path, argv: list[str], timeout: int) -> subprocess.CompletedProcess | None:
@@ -329,9 +358,11 @@ def main(argv=None) -> int:
     report = {"schema_version": 1, "tool": "tools/mutation_check.py", "python": sys.version.split()[0],
               "scope": "range" if args.range else "all" if args.all else "manifest", "measurement_limits": LIMITS}
     try:
-        manifest_missing, unmanifested, unnamed = [], [], []
+        scope = {"touched": [], "manifest_missing": [], "unmanifested_changed_tests": [], "unmanifested_new_tests": [],
+                 "orphaned_manifests": []}
         if args.range:
-            paths, manifest_missing, unmanifested, unnamed = _range_scope(root, args.range)
+            scope = _range_scope(root, args.range)
+            paths = scope["paths"]
             report["range"] = args.range
         elif args.all:
             paths = sorted((root / MANIFESTS).glob("*.jsonl")) if (root / MANIFESTS).is_dir() else []
@@ -339,18 +370,22 @@ def main(argv=None) -> int:
             paths = [args.manifest if args.manifest.is_absolute() else root / args.manifest]
         entries = [e for path in paths for e in load_manifest(path, root)]
         report["manifests"] = [p.resolve().relative_to(root).as_posix() for p in paths]
-        report["manifest_missing"] = manifest_missing
-        report["unmanifested_changed_tests"] = unmanifested
-        report["unmanifested_new_tests"] = unnamed
+        for key in ("manifest_missing", "unmanifested_changed_tests", "unmanifested_new_tests", "orphaned_manifests"):
+            report[key] = scope[key]
         if entries:
             report.update(run(root, entries, args.head, args.python, args.timeout_s, args.keep_worktree))
         else:
             report.update({"commit": _git(root, "rev-parse", "--verify", f"{args.head}^{{commit}}"),
                            "baseline": {"collected": 0, "missing": [], "failing_before_mutation": []},
                            "results": [], "totals": {code: 0 for code in VERDICTS}})
+        # الاختبارُ الممسوس يجب أن يسقط هو نفسُه تحت طفرةٍ ما في المدى؛ فذكرُه بجانب اختبارٍ قاتل لا يثبته (ملاحظة Codex على #149)
+        proved = {t.split("[", 1)[0] for r in report["results"] if r["code"] == "killed" for t in r["failed_tests"]}
+        unproved = [node for node in scope["touched"] if node not in proved and node not in scope["unmanifested_new_tests"]]
+        report["unproved_touched_tests"] = unproved
         bad = [r for r in report["results"] if r["code"] != "killed"]
-        strict_bad = unmanifested if args.strict_unmanifested else []
-        report["status"] = "failed" if bad or manifest_missing or unnamed or strict_bad else "passed"
+        missing, unnamed, orphaned = scope["manifest_missing"], scope["unmanifested_new_tests"], scope["orphaned_manifests"]
+        strict_bad = scope["unmanifested_changed_tests"] if args.strict_unmanifested else []
+        report["status"] = "failed" if bad or missing or unnamed or unproved or orphaned or strict_bad else "passed"
         report["exit_code"] = 1 if report["status"] == "failed" else 0
     except Refused as exc:
         report.update({"status": "refused", "code": exc.code, "detail": exc.detail, "exit_code": 2})

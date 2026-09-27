@@ -182,15 +182,17 @@ def test_a_new_test_in_an_existing_file_must_be_named_by_a_manifest(repo, git, c
     git("commit", "-qm", "its manifest")
     report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
     assert report["unmanifested_new_tests"] == [] and report["status"] == "passed" and report["totals"]["killed"] == 1
-    # تعديلٌ بلا دالّةٍ جديدة في ملفٍّ بلا بيان: حدٌّ معلَن، ويُسقط بالصرامة وحدها
+    # تعديلٌ بلا دالّةٍ جديدة في ملفٍّ بلا بيان (أُضيف خارج المدى): حدٌّ معلَن، ويُسقط بالصرامة وحدها
+    (repo / "tests/test_other.py").write_text("def test_other():\n    assert True\n")
+    git("add", "-A")
+    git("commit", "-qm", "a module without a manifest, outside the range")
     base = git("rev-parse", "HEAD")
-    (repo / "tests/test_guard.py").write_text((repo / "tests/test_guard.py").read_text() + "\n# تعليق\n")
-    (repo / "tests/mutations/test_guard.jsonl").unlink()
+    (repo / "tests/test_other.py").write_text("def test_other():\n    assert True\n\n# تعليق\n")
     git("add", "-A")
     git("commit", "-qm", "touch without a new guard")
     rng = f"{base}..{git('rev-parse', 'HEAD')}"
     report = _run(repo, "--range", rng, capsys=capsys)
-    assert report["unmanifested_changed_tests"] == ["tests/test_guard.py"] and report["unmanifested_new_tests"] == []
+    assert report["unmanifested_changed_tests"] == ["tests/test_other.py"] and report["unmanifested_new_tests"] == []
     assert report["status"] == "passed"
     assert _run(repo, "--range", rng, "--strict-unmanifested", capsys=capsys)["status"] == "failed"
 
@@ -329,6 +331,64 @@ def test_a_renamed_test_file_is_inspected_like_an_added_one(repo, git, capsys):
                                                 ("test_already_failing", "test_always_passes", "test_more", "test_zero_is_not_positive")]
 
 
+def test_a_touched_test_must_itself_fail_a_mutation_not_merely_be_listed_beside_a_killer(repo, git, capsys):
+    """ذكرُ الاختبار الجديد بجانب اختبارٍ قاتل في السطر نفسِه كان يجعله «مسمًّى» ويمرّ وهو لم يسقط قطّ (ملاحظة Codex على #149)."""
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_guard.py").write_text(TESTS + "\n\ndef test_more():\n    assert True\n")
+    _manifest(repo, "test_guard", {**KILL, "id": "kill-and-tag-along", "tests": [*KILL["tests"], "tests/test_guard.py::test_more"]})
+    git("add", "-A")
+    git("commit", "-qm", "tag along")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    (result,) = report["results"]
+    assert result["code"] == "killed" and result["named_but_passed"] == ["tests/test_guard.py::test_more"]
+    assert report["unmanifested_new_tests"] == [] and report["unproved_touched_tests"] == ["tests/test_guard.py::test_more"]
+    assert report["status"] == "failed"
+    (repo / "tests/test_guard.py").write_text(TESTS + "\n\ndef test_more():\n    assert positive(0) is False\n")
+    git("add", "-A")
+    git("commit", "-qm", "a real guard")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["unproved_touched_tests"] == [] and report["status"] == "passed"
+    _clean(repo, git)
+
+
+def test_a_test_module_in_a_nested_directory_is_scanned_and_its_manifest_is_named_by_its_path(repo, git, capsys):
+    """tests/unit/test_x.py كان خارج مرشّح tests/test_*.py فيمرّ بلا بيان (ملاحظة Codex على #149)."""
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/unit").mkdir()
+    (repo / "tests/unit/test_nested.py").write_text("from pkg.guard import positive\n\n\ndef test_nested_zero():\n    assert positive(0) is False\n")
+    git("add", "-A")
+    git("commit", "-qm", "nested")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["manifest_missing"] == ["tests/unit/test_nested.py"] and report["status"] == "failed"
+    assert report["unmanifested_new_tests"] == ["tests/unit/test_nested.py::test_nested_zero"]
+    assert mc.manifest_for("tests/unit/test_nested.py") == "tests/mutations/unit__test_nested.jsonl"
+    assert mc.module_for("unit__test_nested.jsonl") == "tests/unit/test_nested.py"
+    _manifest(repo, "unit__test_nested", {**KILL, "id": "nested", "tests": ["tests/unit/test_nested.py::test_nested_zero"]})
+    git("add", "-A")
+    git("commit", "-qm", "its manifest")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1
+    _clean(repo, git)
+
+
+def test_deleting_a_manifest_whose_module_remains_fails_the_range(repo, git, capsys):
+    """حذفُ البيان وحده كان يخرج من المدى فتفقد الحرّاسُ إثباتَها صامتة (ملاحظة Codex على #149)؛ يُقبل مع حذف الوحدة."""
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    git("add", "-A")
+    git("commit", "-qm", "manifest")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/mutations/test_guard.jsonl").unlink()
+    git("add", "-A")
+    git("commit", "-qm", "drop the manifest only")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["orphaned_manifests"] == ["tests/mutations/test_guard.jsonl"] and report["status"] == "failed"
+    (repo / "tests/test_guard.py").unlink()
+    git("add", "-A")
+    git("commit", "-qm", "drop the module too")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["orphaned_manifests"] == [] and report["status"] == "passed"
+
+
 def test_a_collection_error_is_invalid_not_a_kill(repo, capsys, git):
     _manifest(repo, "test_guard", {**KILL, "id": "broken", "new": "return x > 0 ("})
     git("add", "-A")
@@ -354,7 +414,7 @@ def test_the_repository_manifests_are_valid_and_target_only_production_code():
     paths = sorted((ROOT / mc.MANIFESTS).glob("*.jsonl"))
     assert paths, "لا بياناتَ في المستودع"
     for path in paths:
-        assert (ROOT / "tests" / (path.stem + ".py")).is_file(), f"{path.name} بلا وحدة اختبارٍ باسمه"
+        assert (ROOT / mc.module_for(path.name)).is_file(), f"{path.name} بلا وحدة اختبارٍ باسمه"
         for entry in mc.load_manifest(path, ROOT):
             target = ROOT / entry["file"]
             assert target.is_file(), entry["file"]
