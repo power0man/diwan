@@ -301,6 +301,34 @@ def test_a_case_added_to_a_parametrize_decorator_touches_its_test(repo, git, cap
     _clean(repo, git)
 
 
+def test_a_symlink_target_is_refused_before_any_mutation(repo, git, capsys):
+    """وصلةٌ رمزية باسم شيفرة إنتاج إلى اختبارٍ كانت تُتبع فتُطفَّر الاختبارُ نفسُه وتُحسب قتلًا (ملاحظة Codex على #149)."""
+    (repo / "tools").mkdir()
+    (repo / "tools/link.py").symlink_to("../tests/test_guard.py")
+    _manifest(repo, "test_guard", {**KILL, "file": "tools/link.py", "old": "assert True", "new": "assert False",
+                                   "tests": ["tests/test_guard.py::test_always_passes"]})
+    git("add", "-A")
+    git("commit", "-qm", "link")
+    report = _run(repo, "--all", capsys=capsys)
+    assert (report["status"], report["code"], report["exit_code"]) == ("refused", "target_refused", 2)
+    assert "وصلة" in report["detail"] and "results" not in report
+    _clean(repo, git)
+
+
+def test_a_renamed_test_file_is_inspected_like_an_added_one(repo, git, capsys):
+    """إعادةُ تسمية ملفّ اختبارٍ مع إضافة حارسٍ كانت تخرج من المدى كلِّه (ملاحظة Codex على #149): الوجهةُ تُعامل كالمضاف."""
+    base = git("rev-parse", "HEAD")
+    git("mv", "tests/test_guard.py", "tests/test_guardian.py")
+    (repo / "tests/test_guardian.py").write_text(TESTS + "\n\ndef test_more():\n    assert positive(0) is False\n")
+    git("add", "-A")
+    git("commit", "-qm", "rename and add a guard")
+    assert git("diff", "--name-status", "--diff-filter=R", f"{base}..HEAD").startswith("R"), "ليست إعادةَ تسمية عند git"
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["manifest_missing"] == ["tests/test_guardian.py"] and report["status"] == "failed"
+    assert report["unmanifested_new_tests"] == [f"tests/test_guardian.py::{name}" for name in
+                                                ("test_already_failing", "test_always_passes", "test_more", "test_zero_is_not_positive")]
+
+
 def test_a_collection_error_is_invalid_not_a_kill(repo, capsys, git):
     _manifest(repo, "test_guard", {**KILL, "id": "broken", "new": "return x > 0 ("})
     git("add", "-A")

@@ -11,10 +11,11 @@
     stale                    النصُّ القديم ليس في الملف بعدد مرّاته المعلَن
     invalid                  الطفرةُ كسرت الجمعَ نفسَه (خطأُ صياغة): ليست قتلًا
     timeout                  تجاوزت الاختباراتُ مهلتَها
-    manifest_missing         ملفُّ اختبارٍ أُضيف في المدى بلا بيانِ طفرات
+    manifest_missing         ملفُّ اختبارٍ أُضيف (أو أُعيدت تسميتُه) في المدى بلا بيانِ طفرات باسمه
     unmanifested_new_tests   اختبارٌ مسّه المدى (كلُّ اختبارٍ في ملفٍّ مضاف، أو اختبارٌ دخل سطرٌ مضاف في مداه) ولا يسمّيه بيانٌ بمعرّفه الكامل
     manifest_invalid         سطرٌ بلا حقوله أو بمفتاحٍ مجهول (يُرفض قبل أيّ شجرة عمل)
-    target_refused           هدفٌ مطلق أو صاعد أو تحت tests/ أو في مسارٍ فيه sealed (يُرفض قبل أيّ شجرة عمل)
+    target_refused           هدفٌ مطلق أو صاعد أو تحت tests/ أو في مسارٍ فيه sealed (يُرفض قبل أيّ شجرة عمل)، أو يمرّ
+                             بوصلةٍ رمزية في شجرة العمل (يُرفض قبل أيّ طفرة)
 
 الاستعمال:
     python tools/mutation_check.py --range origin/main..HEAD     # بياناتُ المدى، وكلُّ بيانٍ يسمّي اختبارًا مسّه المدى
@@ -83,6 +84,21 @@ def _refuse_target(file: str) -> None:
         raise Refused("target_refused", f"{file}: الطفرةُ في شيفرة الإنتاج لا في الاختبارات")
     if any(part.lower() == "sealed" for part in pure.parts):
         raise Refused("target_refused", f"{file}: المحجوبُ لا يُمسّ")
+
+
+def _refuse_escape(worktree: Path, file: str) -> None:
+    """الهدفُ في شجرة العمل ملفٌّ لا يمرّ بوصلةٍ رمزية: وصلةٌ إلى tests/ أو إلى خارج الشجرة تجعل الطفرةَ تمسّ غيرَ ما
+    سُمّي فتُحسب قتلًا زائفًا (ملاحظة Codex على #149)."""
+    target = worktree / file
+    if not target.exists():
+        return                                  # غيابُه يُحكم عليه stale في موضعه
+    root = Path(os.path.realpath(worktree))
+    try:
+        real = Path(os.path.realpath(target)).relative_to(root).as_posix()
+    except ValueError:
+        raise Refused("target_refused", f"{file}: يمرّ بوصلةٍ رمزية إلى خارج شجرة العمل") from None
+    if real != file:
+        raise Refused("target_refused", f"{file}: وصلةٌ رمزية إلى {real}")
 
 
 def load_manifest(path: Path, root: Path) -> list[dict]:
@@ -187,17 +203,19 @@ def _range_scope(root: Path, rng: str) -> tuple[list[Path], list[str], list[str]
     base, head = rng.split("..", 1)
     changed = _git(root, "diff", "--name-only", "--diff-filter=AMR", f"{base}...{head}", "--", f"{MANIFESTS}/*.jsonl").split()
     added = _git(root, "diff", "--name-only", "--diff-filter=A", f"{base}...{head}", "--", "tests/test_*.py").split()
+    # الملفُّ المعادُ تسميتُه يُعامل كالمضاف: كلُّ اختبارٍ فيه ممسوس ويلزمه بيانٌ باسمه الجديد (ملاحظة Codex على #149)
+    renamed = _git(root, "diff", "--name-only", "--diff-filter=R", f"{base}...{head}", "--", "tests/test_*.py").split()
     modified = _git(root, "diff", "--name-only", "--diff-filter=M", f"{base}...{head}", "--", "tests/test_*.py").split()
     has_manifest = lambda test: (root / MANIFESTS / (Path(test).stem + ".jsonl")).is_file()
     names = _manifest_names(root)
     # كلُّ اختبارٍ مسّه المدى يسمّيه بيانٌ بمعرّفه الكامل (بالصنف الحاوي)، والبيانُ الذي يسمّيه يُطبَّق في المدى ولو لم يتغيّر
-    touched = [node for test in added for node in _touched_test_nodes(root, base, head, test, True)]
+    touched = [node for test in added + renamed for node in _touched_test_nodes(root, base, head, test, True)]
     touched += [node for test in modified for node in _touched_test_nodes(root, base, head, test, False)]
     unnamed = [node for node in touched if not any(node in named for named in names.values())]
     naming = [path for path, named in names.items() if named & set(touched)]
     paths = [root / p for p in changed if (root / p).is_file()]
     paths += [path for path in naming if path not in paths]
-    return (paths, [t for t in added if not has_manifest(t)], [t for t in modified if not has_manifest(t)], unnamed)
+    return (paths, [t for t in added + renamed if not has_manifest(t)], [t for t in modified if not has_manifest(t)], unnamed)
 
 
 def _pytest(python: str, cwd: Path, argv: list[str], timeout: int) -> subprocess.CompletedProcess | None:
@@ -233,6 +251,8 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
     results, baseline = [], {"collected": 0, "missing": [], "failing_before_mutation": []}
     try:
         _git(root, "worktree", "add", "--detach", str(worktree), head_sha)
+        for entry in entries:
+            _refuse_escape(worktree, entry["file"])
         node_ids = sorted({t for e in entries for t in e["tests"]})
         collected = _pytest(python, worktree, ["--collect-only", *node_ids], timeout)
         if collected is None:
