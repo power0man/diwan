@@ -69,6 +69,7 @@ def _analyze_morphology_handler(args: dict, context: dict | None = None) -> dict
         "root": verdict.root,
         "root_source": verdict.source,
         "root_reason": verdict.reason,
+        "root_fallback": verdict.fallback,      # لماذا لم يُستعمل CAMeL، وإلا None (مسحُ الإخفاقات الصامتة)
         "root_candidates": list(verdict.candidates),
         "template_root": res.root,
         "pattern": res.pattern,

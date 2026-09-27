@@ -95,8 +95,11 @@ class MLXProvider:
                 )
                 if isinstance(formatted, str):
                     return formatted
-            except Exception:
-                pass
+            except Exception as exc:
+                # لا صياغةَ يدويةً صامتة بدل قالبٍ أخفق: المحثُّ المرسَل يجب أن يكون معلومًا لكل تشغيل
+                raise ProviderError("mlx_chat_template_failed",
+                                    f"قالبُ المحادثة في المرمِّز أخفق ({type(exc).__name__})؛ لا يُستبدل بصياغةٍ يدوية",
+                                    retryable=False) from exc
 
         # الصياغة القياسية المتوافقة مع نماذج Qwen
         lines: list[str] = []
@@ -127,8 +130,10 @@ class MLXProvider:
         # حساب توكنات المدخل
         try:
             prompt_tokens = len(tokenizer.encode(prompt_str))
-        except Exception:
-            prompt_tokens = max(1, len(prompt_str) // 4)
+        except Exception as exc:
+            raise ProviderError("mlx_tokenizer_failed",
+                                f"المرمِّز لم يعدّ توكنات المدخل ({type(exc).__name__})؛ لا يُلفَّق العدُّ تقديرًا",
+                                retryable=False) from exc
 
         max_tokens = min(request.max_output, 4096) if request.max_output > 0 else 2048
 
@@ -155,8 +160,10 @@ class MLXProvider:
         # حساب توكنات المخرج
         try:
             output_tokens = len(tokenizer.encode(response_text))
-        except Exception:
-            output_tokens = max(1, len(response_text) // 4)
+        except Exception as exc:
+            raise ProviderError("mlx_tokenizer_failed",
+                                f"المرمِّز لم يعدّ توكنات المخرج ({type(exc).__name__})؛ لا يُلفَّق العدُّ تقديرًا",
+                                retryable=False) from exc
 
         usage = Usage(input_tokens=prompt_tokens, output_tokens=output_tokens)
         return Response(

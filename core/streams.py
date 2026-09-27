@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 
 from core.canonical import digest
@@ -114,6 +115,11 @@ class Offsets:
 
     def __init__(self, path: str | os.PathLike):
         self.path = Path(path)
+        self.corrupt: str | None = None    # آخرُ إسقاطٍ فاسد باسمه، إن وقع؛ فالعودةُ من الصفر لا تكون صامتة
+
+    def _name_corruption(self, exc: Exception) -> None:
+        self.corrupt = f"offsets_corrupt:{type(exc).__name__}"
+        print(f"[core.streams] {self.corrupt}: {self.path.name}؛ يُعاد من الصفر والدرءُ في السجلات", file=sys.stderr)
 
     def get(self, stream_key: str) -> int:
         if not self.path.exists():
@@ -121,7 +127,8 @@ class Offsets:
         try:
             return int(json.loads(self.path.read_text(encoding="utf-8"))
                        .get(stream_key, 0))
-        except (json.JSONDecodeError, ValueError, TypeError):
+        except (json.JSONDecodeError, ValueError, TypeError) as exc:
+            self._name_corruption(exc)
             return 0   # إسقاطٌ فاسد يُعاد من الصفر — والدرء في السجلات
 
     def set(self, stream_key: str, offset: int) -> None:
@@ -129,7 +136,8 @@ class Offsets:
         if self.path.exists():
             try:
                 data = json.loads(self.path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as exc:
+                self._name_corruption(exc)
                 data = {}
         data[stream_key] = offset
         self.path.parent.mkdir(parents=True, exist_ok=True)
