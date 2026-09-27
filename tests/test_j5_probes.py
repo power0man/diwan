@@ -22,7 +22,7 @@ import tools.probe_execution_boundary as boundary
 import tools.probe_j5_agent_round as j5
 
 ROOT = Path(__file__).resolve().parent.parent
-EVIDENCE = ROOT / "docs" / "probe" / "j5-docker-searxng-20260927k.json"
+EVIDENCE = ROOT / "docs" / "probe" / "j5-docker-searxng-20260927l.json"
 CACHED_ELSEWHERE = {j5: j5._cached_elsewhere, boundary: boundary._cached_elsewhere}
 
 

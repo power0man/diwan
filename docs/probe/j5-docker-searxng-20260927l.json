@@ -78,7 +78,7 @@
     "services/assistant_workspace.py": "0f47e680bbb9e74fb88a475c9f009ecfd914f2cb04cfee5fb97bd2ad0266fcf5",
     "services/media_assistant.py": "095908e7b26bf5a73b8fb3a9dc1166710a420cd5a5a15136bb75853da9a17909",
     "services/project_archive.py": "ef44a0ba36cf988c8f69925e5d6356231a16e78e26aeaf2dc756fe0ab3ace019",
-    "tools/probe_j5_agent_round.py": "0c5902a7b4f84bf0ddbea98c2ed230224fd727d2127924fed4aa0dcebc77aaea",
+    "tools/probe_j5_agent_round.py": "762fa17ca9496ec54d0cb88ba638d9553c89333257c4820972d06c40c5a8f836",
     "tools/rebuild_index.py": "2905b5a3e1ce1a1a03e045997f9621a3f45aa2571a48ab932d37403c00cbe50e",
     "webui/__init__.py": "eba31e62aa39e69597feb600b3f2b38badaf694203f80a13464a5322680e78af",
     "webui/server.py": "6c5634808257a5961573465b6d6dbfe4e21488b5a2a2be053312b250bc673404",
@@ -122,15 +122,15 @@
           }
         ],
         "called_web_search": true,
-        "citations_passed": true,
+        "citations_passed": false,
         "answer_urls": [
           "https://english.alarabiya.net/News/saudi-arabia",
+          "https://www.alarabiya.net/saudi-today",
           "https://www.argaam.com/",
-          "https://www.bayut.sa/blog/%D8%A7%D9%83%D8%AA%D8%B4%D9%81-%D8%A7%D9%84%D8%B3%D8%B9%D9%88%D8%AF%D9%8A%D8%A9/%D9%81%D8%B9%D8%A7%D9%84%D9%8A%D8%A7%D8%AA-%D8%A7%D9%84%D8%B3%D8%B9%D9%88%D8%AF%D9%8A%D8%A9-2025/",
-          "https://www.spa.gov.sa/",
-          "https://x.com/SaudiNews50?lang=ar"
+          "https://www.moe.gov.sa/ar/mediacenter/MOEnews/Pages/default.aspx",
+          "https://www.spa.gov.sa/"
         ],
-        "answer_chars": 975
+        "answer_chars": 1380
       }
     ],
     "attempts_until_called": 2
@@ -174,13 +174,12 @@
     "searxng_container_runs_its_image_default_entrypoint_and_command_on_a_port_the_image_exposes",
     "searxng_container_mounts_only_its_configuration_and_cache",
     "searxng_writable_layer_unchanged_outside_its_mounts_and_its_named_runtime_writes_before_and_after_the_round",
-    "files_under_the_searxng_cache_prefix_and_the_ca_bundle_are_allowed_by_name_not_inspected",
+    "the_searxng_cache_files_and_the_ca_bundle_are_allowed_by_their_exact_names_not_inspected",
     "every_loaded_repo_module_is_hashed_before_the_measured_code_is_imported_and_must_match_after_the_round",
     "every_loaded_repo_module_is_compiled_from_its_source_into_a_fresh_empty_bytecode_cache",
     "a_deliberate_same_user_process_rewriting_files_or_containers_between_checks_is_out_of_scope",
     "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
-    "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host",
-    "superseded_by_j5-docker-searxng-20260927l"
+    "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host"
   ],
   "acceptance": {
     "passed": true,
