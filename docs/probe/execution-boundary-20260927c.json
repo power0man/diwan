@@ -10,6 +10,8 @@
   },
   "runtime_image_id": "sha256:3dd092e52cdc7267dda816809f32be0f1d42765935906fed46eabef17193f0e0",
   "runtime_lock_sha256": "b5af0840d9ff3421030f25466ee4d95619c5894d64e8d2bb6e8ac44a20563318",
+  "probe_sha256": "3985466d7058063bec8e55f47c1a8a2c0e62ef455180ba99d66e98123df813db",
+  "runtime_receipt_sha256": "02a46f763dc07422cf3c7bc8b4b72a5018f4ad7b8823dc9bcba85267f8493634",
   "source_sha256": "c7fe33bc1c65ef1d615cb56873662a7bff2289d8c3f9bea3ec34f4c2eaf47e0e",
   "source": "core/execution.py",
   "via": "core.execution.DockerExecutionBackend.run",
@@ -62,8 +64,7 @@
     "container_ids_recorded_by_shape_not_value",
     "cleanup_checked_by_container_ids_present_after_the_run_and_absent_before",
     "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly",
-    "probe_implementation_not_hashed_in_this_run_rerun_with_probe_sha256_pending",
-    "runtime_receipt_not_pinned_before_the_run_in_this_run",
-    "superseded_by_execution-boundary-20260927c"
+    "sources_and_probe_hashed_before_the_first_case_and_rechecked_before_writing",
+    "runtime_receipt_read_before_the_first_case_and_rechecked_before_writing"
   ]
 }

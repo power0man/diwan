@@ -21,7 +21,7 @@ import tools.probe_execution_boundary as boundary
 import tools.probe_j5_agent_round as j5
 
 ROOT = Path(__file__).resolve().parent.parent
-EVIDENCE = ROOT / "docs" / "probe" / "j5-docker-searxng-20260927d.json"
+EVIDENCE = ROOT / "docs" / "probe" / "j5-docker-searxng-20260927e.json"
 
 
 def test_the_published_round_records_the_acceptance_its_fields_give():
@@ -281,8 +281,8 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
     assert backend["image"] == j5.PINNED_SEARXNG and backend["url"] == "http://127.0.0.1:8888"
 
 
-BOUNDARY = ROOT / "docs" / "probe" / "execution-boundary-20260927b.json"
-SANDBOX = ROOT / "docs" / "probe" / "sandbox-container-20260927b.json"
+BOUNDARY = ROOT / "docs" / "probe" / "execution-boundary-20260927c.json"
+SANDBOX = ROOT / "docs" / "probe" / "sandbox-container-20260927c.json"
 
 
 def test_the_published_sandbox_run_ends_each_program_where_it_must():
