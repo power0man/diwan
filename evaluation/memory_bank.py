@@ -191,11 +191,14 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
                     "غيابُ نصّ ما لم يُوافَق عليه في الاستعمال وعلى القرص قبل الموافقة")
     # والفحصُ بعد حفظ العنصر: غيابُه عن مشروعٍ آخر قبل أن يوجد لا يشهد بالعزل (ملاحظة Codex على #129)
     # والمصدرُ قائمٌ في المخزن عند الفحص: غيابُ ما لم يُحفظ عن مشروعٍ آخر غيابٌ طبيعيّ (ملاحظة Codex على #129)
+    # والشاهدُ `retrieve` لا `context` وحده: غيابُ الاسترجاع يُفحص في قائمة المشروع كلّها، والسياقُ محدودٌ بـMAX_CONTEXT_ITEMS
+    # فيسقط منه عنصرٌ متسرّبٌ خلف خمسين قبله ولا يُرى (ملاحظة Codex على #129)
     if category == "isolation" and not any(
-            s.get("expect") in ("retrieve", "context") and s["project"] != item["project"] and _names(s, item["text"])
+            s.get("expect") == "retrieve" and s["project"] != item["project"] and _names(s, item["text"])
             and active_at(ref, k)
             for ref, (i, item) in made.items() for k, s in enumerate(steps) if k > i):
-        _reject(path, "isolation_without_cross_project_absence", "غيابُ نصّ عنصرٍ من مشروعٍ في مشروعٍ آخر بعد حفظه")
+        _reject(path, "isolation_without_cross_project_absence",
+                "غيابُ نصّ عنصرٍ من مشروعٍ في استرجاع مشروعٍ آخر (قائمته كلّها) بعد حفظه")
     if category == "backup":
         at = {s["as"]: i for i, s in enumerate(steps) if s.get("as")}
         # الاستعادةُ التي تسبق الفحوص هي آخرُ استعادة، فهي التي تُستعاد منها نسخةٌ أُخذت والعنصرُ قائم ثم نُسي؛ واستعادةٌ
