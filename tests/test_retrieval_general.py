@@ -147,7 +147,7 @@ def test_an_embedder_repointed_during_the_run_writes_no_report(tmp_path, monkeyp
 
     def digest(model):
         calls[model] = calls.get(model, 0) + 1
-        return "sha256:before" if model == "bge-m3" or calls[model] == 1 else "sha256:after"
+        return "sha256:baseline" if model == "bge-m3" else ("sha256:before" if calls[model] == 1 else "sha256:after")
 
     monkeypatch.setattr(cli, "_digest", digest)
     args = ["--embedder", "qwen3-embedding:0.6b", "--license", "Apache-2.0", "--baseline", "bge-m3", "--agent", "anthropic/claude-opus-5-5",
@@ -170,6 +170,12 @@ def test_a_run_without_the_bge_m3_baseline_is_refused(tmp_path, monkeypatch):
                       "--agent", "anthropic/claude-opus-5-5",
                       "--out", str(tmp_path / "r.json")])
         assert exit_.value.code == 2
+    # وملاحظتُه الثالثة: bge-m3 وbge-m3:latest نموذجٌ واحد، ووسمان على البصمة نفسِها كذلك
+    with pytest.raises(SystemExit):
+        cli.main(["--embedder", "bge-m3:latest", "--license", "MIT", "--baseline", "bge-m3",
+                  "--agent", "anthropic/claude-opus-5-5", "--out", str(tmp_path / "r.json")])
+    assert cli.main(["--embedder", "bge-m3-copy", "--license", "MIT", "--baseline", "bge-m3",
+                     "--agent", "anthropic/claude-opus-5-5", "--out", str(tmp_path / "r.json")]) == 2
     assert not (tmp_path / "r.json").exists()
 
 

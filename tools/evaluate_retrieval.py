@@ -49,13 +49,17 @@ def _recorded(rows: dict) -> dict:
             for arm in rows}
 
 
+def _canonical(model: str) -> str:
+    return model if ":" in model else model + ":latest"
+
+
 def _digest(model: str, base: str = "http://127.0.0.1:11434") -> str | None:
     try:
         with urllib.request.urlopen(base + "/api/tags", timeout=10) as response:
             models = json.loads(response.read().decode("utf-8"))["models"]
     except (OSError, ValueError, KeyError):
         return None
-    wanted = model if ":" in model else model + ":latest"
+    wanted = _canonical(model)
     return next((m.get("digest") for m in models if m.get("name") == wanted), None)
 
 
@@ -74,14 +78,20 @@ def main(argv=None) -> int:
         parser.error(f"agent_unregistered: {args.agent}")
     # البصمةُ قبل أيّ تضمين: تقريرٌ بالوسم وحده لا يسمّي الأوزانَ التي أنتجت المتّجهات (ملاحظة Codex على #132)
     # bge-m3 بعينه لا أيُّ مُضمِّنٍ آخر (ملاحظة Codex على #132)؛ والوسمُ بلا إصدارٍ هو latest عند Ollama
-    if args.baseline not in (BASELINE, BASELINE + ":latest"):
+    if _canonical(args.baseline) != _canonical(BASELINE):
         parser.error(f"baseline_not_registered: خطُّ أساس غ٣ هو {BASELINE}")
-    if args.baseline == args.embedder:
+    # الوسمُ بلا إصدارٍ هو latest، فـbge-m3 وbge-m3:latest نموذجٌ واحد (ملاحظة Codex على #132)
+    if _canonical(args.baseline) == _canonical(args.embedder):
         parser.error("baseline_is_the_embedder: خطُّ الأساس مُضمِّنٌ آخر")
     digests = {name: _digest(name) for name in (args.embedder, args.baseline)}
     missing = sorted(name for name, value in digests.items() if not value)
     if missing:
         print(json.dumps({"status": "refused", "code": "embedder_digest_unresolved", "models": missing},
+                         ensure_ascii=False))
+        return 2
+    # ووسمان مختلفان على الأوزان نفسها مقارنةُ نموذجٍ بنفسه كذلك
+    if digests[args.embedder] == digests[args.baseline]:
+        print(json.dumps({"status": "refused", "code": "baseline_is_the_embedder", "models": sorted(digests)},
                          ensure_ascii=False))
         return 2
     bank = load_bank()
