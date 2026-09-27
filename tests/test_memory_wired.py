@@ -242,8 +242,24 @@ def test_a_tool_the_live_model_asks_for_does_not_leave_a_turn_that_fails_the_nex
     """ملاحظةُ Codex على #129: جولةٌ وكيلة تقف awaiting_owner كانت تُسقط فحصَ السياق التالي بـturn_unresolved. ونموذجٌ
     يطلب الأداةَ بعد كلّ رفضٍ تُعاد جلستُه، ويُعدّ ذلك في التقرير لأن فحصَه التالي بلا تاريخه."""
     report = run_memory_bank(BANK, driver="live", delegate=_ProposingDelegate())
-    assert report["passed"] == report["total"] == 30, [r for r in report["results"] if not r["passed"]][:2]
+    assert not any("turn_unresolved" in f for r in report["results"] for f in r["failures"])
+    assert report["passed"] == 29 and [r["id"] for r in report["results"] if not r["passed"]] == ["backup_004"]
     assert report["probe_sessions_reset"] > 0
+
+
+def test_limit_a_stuck_probe_turn_the_product_cannot_stop_is_named_and_blocks_the_backup_after_it():
+    """حدٌّ معلَن (#147، مسار openai): الجولةُ العالقة تُوقَف بـagent_stop قبل هجر جلستها، لكنّ agent_stop يعيد حسابَ بصمة
+    المدخل بلا كتلة الذاكرة فيرفض بـstate_corrupt كلَّ جولةٍ حُقنت فيها ذاكرة. فتبقى الجولةُ على القرص تنتظر المالك، ويرفض
+    النسخُ الذي يليها المساحةَ بـbackup_pending، ويسمّي التقريرُ السببَ. وحين يُصلَح #147 يسقط هذا الاختبار فيُقلب: ٣٠/٣٠
+    وstuck_probe_turns صفر."""
+    report = run_memory_bank(BANK, driver="live", delegate=_ProposingDelegate())
+    (failed,) = [r for r in report["results"] if not r["passed"]]
+    assert failed["id"] == "backup_004" and failed["failures"] == ["2: raised BackupError backup_pending"]
+    stuck = [t for r in report["results"] for t in r["stuck_probe_turns"]]
+    # الإيقافُ ينجح في الجولات التي لم تُحقن فيها ذاكرة (مشروعٌ بلا عنصرٍ قائم) ويخفق في التي حُقنت: فالعالقُ بعضُ المُعاد
+    assert 0 < report["stuck_probe_turns"] == len(stuck) < report["probe_sessions_reset"]
+    assert {t["stop"] for t in stuck} == {"raised ConversationError state_corrupt"}
+    assert all(t["kind"] == "agent" and len(t["turn"]) == 32 for t in stuck)
 
 
 class _ProposingOnceDelegate(_Delegate):
@@ -609,6 +625,33 @@ def test_every_item_forgotten_before_the_restore_was_in_the_restored_snapshot():
     assert refused.value.code == "backup_without_prior_snapshot"
     # والعنصرُ نفسُه محفوظًا قبل النسخة يشهد
     strict(first, late, snapshot, forget_late, forget_first, restore, *checks, *late_checks)
+
+
+def test_every_persisted_item_is_shown_in_its_session_before_it_is_forgotten(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #129: سيناريو «حفظٌ ثم نسيانٌ ثم سياق» لا يضع العنصرَ في تاريخ الجلسة قطّ، فانحدارٌ يُبقي كتلَ
+    الذاكرة السابقة في الطلبات اللاحقة يمرّ بـforget_rate 1.0. فالمُشغِّلُ يعرض كلَّ عنصرٍ قائمٍ في سياق مشروعه، في
+    الجلسات نفسِها، قبل نسيانه؛ ويرسب إن لم يبلغه."""
+    from evaluation.memory_runner import _Wired, run_scenario, run_wired_scenario
+    from memory.store import MemoryStore
+    forget = {s["id"]: s for s in BANK["scenarios"]}["forget_001"]
+    (tmp_path / "s").mkdir()
+    (tmp_path / "w").mkdir()
+    assert run_scenario(forget, tmp_path / "s")["pre_forget_exposures"] == 1
+    assert run_wired_scenario(forget, tmp_path / "w")["pre_forget_exposures"] == 1
+    # والمنسيُّ ثانيةً (forget_006) يُعرض مرّةً واحدة: النسيانُ الثاني على عنصرٍ لم يعد قائمًا
+    twice = {s["id"]: s for s in BANK["scenarios"]}["forget_006"]
+    (tmp_path / "t").mkdir()
+    assert run_scenario(twice, tmp_path / "t")["pre_forget_exposures"] == 1
+    # وسياقٌ لا يحمل العنصر قبل نسيانه رسوبٌ مسمًّى في الطريقين
+    monkeypatch.setattr(MemoryStore, "context_block", lambda self, question: HEADER + "\n")
+    (tmp_path / "s2").mkdir()
+    report = run_scenario(forget, tmp_path / "s2")
+    assert not report["passed"] and any("not exposed" in f for f in report["failures"])
+    monkeypatch.undo()
+    monkeypatch.setattr(_Wired, "contexts", lambda self, name, question: [(HEADER + "\n", ""), (HEADER + "\n", "")])
+    (tmp_path / "w2").mkdir()
+    report = run_wired_scenario(forget, tmp_path / "w2")
+    assert not report["passed"] and any("not exposed" in f for f in report["failures"])
 
 
 def test_each_check_names_the_item_in_its_own_project_and_after_it_exists():

@@ -77,6 +77,8 @@ LIMITS = [
     "single_run_on_one_local_model_no_variance_estimate",
     "commissioned_scenarios_are_distinct_by_saved_text_a_near_copy_with_new_text_still_counts",
     "probes_reuse_one_session_per_project_a_turn_still_awaiting_the_owner_after_three_denials_resets_it_and_is_counted",
+    "every_persisted_item_is_shown_in_its_project_context_turns_before_it_is_forgotten_so_the_same_session_history_held_it",
+    "a_probe_turn_the_model_leaves_awaiting_the_owner_is_stopped_by_agent_stop_before_its_session_is_abandoned_and_a_stop_that_fails_is_named_in_stuck_probe_turns",
 ]
 
 

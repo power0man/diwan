@@ -31,7 +31,7 @@ import uuid
 
 from core.quoted import QUARANTINE_MARK, scan
 from evaluation.memory_bank import contains as _contains, names_every_directive
-from memory.store import HEADER, MemoryRefused, MemoryStore, unfenced
+from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, unfenced
 
 
 def _expected_line(text: str) -> str:
@@ -72,11 +72,21 @@ def _residue(store: MemoryStore) -> bytes:
     return b"\n".join(p.read_bytes() for p in sorted(store.root.rglob("*")) if p.is_file())
 
 
+def _saved_text(scenario: dict, ref: str) -> str:
+    """نصُّ العنصر الذي أنشأته خطوةٌ باسمه."""
+    return next(s["text"] for s in scenario["steps"] if s.get("op") in ("remember", "propose") and s.get("as") == ref)
+
+
+def _exposed(shown: str, text: str) -> bool:
+    """العنصرُ كما يبلغ السياقَ (محجورًا) حاضرٌ فيما رآه النموذج."""
+    return _contains(shown, held_text(text))
+
+
 def run_scenario(scenario: dict, root: Path) -> dict:
     stores: dict[str, MemoryStore] = {}
     refs: dict[str, object] = {}
     failures: list[str] = []
-    leaks = consent_violations = unquarantined = 0
+    leaks = consent_violations = unquarantined = exposures = 0
 
     def store(project):
         if project not in stores:
@@ -99,7 +109,15 @@ def run_scenario(scenario: dict, root: Path) -> dict:
         elif op == "approve":
             refs[step["ref"]] = s.approve(refs[step["ref"]])
         elif op == "forget":
-            s.forget(refs[step["ref"]])
+            # كلُّ عنصرٍ قائمٍ يُعرض في سياق مشروعه قبل نسيانه، فيكون في تاريخ الجلسة ما يُفحص غيابُه بعده: نسيانٌ لم يسبقه
+            # عرضٌ لا يختبر أن الذاكرةَ لا تعود من التاريخ (ملاحظة Codex على #129)
+            item = refs[step["ref"]]
+            if isinstance(item, str) and item in {i["item_id"] for i in s.items()}:
+                exposures += 1
+                text = _saved_text(scenario, step["ref"])
+                if not _exposed(s.context_block(text), text):
+                    failures.append(f"{index}: item not exposed in context before forget")
+            s.forget(item)
         elif op == "backup":
             refs[step["as"]] = s.backup()
         elif op == "restore":
@@ -141,7 +159,7 @@ def run_scenario(scenario: dict, root: Path) -> dict:
                 failures.append(f"{index}: receipts {count} != {step['count']}")
     return {"id": scenario["id"], "category": scenario["category"], "passed": not failures,
             "failures": failures, "leaks": leaks, "consent_violations": consent_violations,
-            "injection_unquarantined": unquarantined}
+            "injection_unquarantined": unquarantined, "pre_forget_exposures": exposures}
 
 
 class _ScriptedProvider:
@@ -205,6 +223,8 @@ class _Wired:
         self.projects: dict[str, dict] = {}
         # جلساتُ فحصٍ أُعيد إنشاؤها لأن جولتها بقيت تنتظر المالك بعد رفض ما طلبه النموذج؛ ففحصُها التالي بلا تاريخها
         self.probe_resets = 0
+        # جولاتُ فحصٍ بقيت تنتظر المالك ولم يُحسمها الإيقاف: (نوعُها، ومعرّفُها، وما ردّ به agent_stop)
+        self.stuck_turns: list[dict] = []
         self._open()
 
     def _open(self):
@@ -239,6 +259,16 @@ class _Wired:
             self.root = destination
         finally:
             self._open()
+        self._drop_sessions_outside_snapshot()
+
+    def _drop_sessions_outside_snapshot(self):
+        """المستعادُ لا يحمل إلا جلساتِ اللقطة: جلسةُ فحصٍ أُنشئت بعد النسخ (كعرض العنصر قبل نسيانه) ليست فيه، فيُنسى
+        معرّفُها ويُفتح غيرُها عند الفحص التالي بدل أن يسقط بـfile_missing."""
+        for ids in self.projects.values():
+            kept = {meta["id"] for meta in self.api("sessions", project=ids["id"])["sessions"]}
+            for kind in ("agent", "text"):
+                if kind in ids and ids[kind] not in kept:
+                    del ids[kind]
 
     def api(self, action, **values):
         return self.app.dispatch({"action": action, **values})
@@ -273,6 +303,14 @@ class _Wired:
                          call_digest=pending["call_digest"], expected_revision=pending["revision"], approve=False)
             result = self.api("agent_resume", project=ids["id"], session=ids[kind], turn=turn)
         if isinstance(result, dict) and result.get("status") == "awaiting_owner":
+            # الجولةُ العالقة تُوقَف بطريق المنتج (agent_stop) فتُحسم «ملغاة» قبل هجر جلستها. فإن أخفق الإيقافُ بقيت على القرص
+            # تنتظر المالك، فيرفض النسخُ المساحةَ كلَّها بـbackup_pending؛ ويُسمّى سببُه في التقرير لا يُخفى
+            try:
+                outcome = self.api("agent_stop", project=ids["id"], session=ids[kind], turn=turn).get("status")
+            except Exception as exc:
+                outcome = f"raised {type(exc).__name__} {getattr(exc, 'code', '')}".rstrip()
+            if outcome != "cancelled":
+                self.stuck_turns.append({"kind": kind, "turn": turn, "stop": outcome})
             del ids[kind]
             self.probe_resets += 1
 
@@ -333,7 +371,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
     wired = _Wired(root / "ui", delegate)
     refs: dict[str, object] = {}
     failures: list[str] = []
-    leaks = consent_violations = unquarantined = 0
+    leaks = consent_violations = unquarantined = exposures = 0
     index = -1
     try:
         for index, step in enumerate(scenario["steps"]):
@@ -354,7 +392,15 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
             elif op == "approve":
                 refs[step["ref"]] = wired.decide(refs[step["ref"]], approve=True)
             elif op == "forget":
-                wired.api("memory_forget", project=wired.project(name)["id"], item_id=refs[step["ref"]])
+                # يُعرض العنصرُ في جولتَي مشروعه (الوكيلة والنصّية) في الجلستين اللتين يُفحص فيهما غيابُه بعد النسيان
+                # (ملاحظة Codex على #129)
+                item = refs[step["ref"]]
+                if isinstance(item, str) and item in {i["item_id"] for i in wired.store(name).items()}:
+                    exposures += 1
+                    text = _saved_text(scenario, step["ref"])
+                    if any(not _exposed(current, text) for current, _ in wired.contexts(name, text)):
+                        failures.append(f"{index}: item not exposed in context before forget")
+                wired.api("memory_forget", project=wired.project(name)["id"], item_id=item)
             elif op == "backup":
                 refs[step["as"]] = wired.backup()
             elif op == "restore":
@@ -406,7 +452,8 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
         wired.close()
     return {"id": scenario["id"], "category": scenario["category"], "passed": not failures,
             "failures": failures, "leaks": leaks, "consent_violations": consent_violations,
-            "injection_unquarantined": unquarantined, "probe_sessions_reset": wired.probe_resets}
+            "injection_unquarantined": unquarantined, "probe_sessions_reset": wired.probe_resets,
+            "stuck_probe_turns": wired.stuck_turns, "pre_forget_exposures": exposures}
 
 
 WIRED_PATHS = {"remember": "memory_remember (واجهة المالك)", "remember_without_consent": "propose_memory يرفضه المالك",
@@ -443,6 +490,8 @@ def run_memory_bank(bank: dict, driver: str = "store", delegate=None) -> dict:
     return {"schema_version": 1, "suite_id": bank["suite_id"], "driver": driver,
             **({"paths": WIRED_PATHS} if driver != "store" else {}),
             **({"provider": delegate.name} if delegate is not None else {}),
-            **({"probe_sessions_reset": sum(r["probe_sessions_reset"] for r in results)} if driver != "store" else {}),
+            **({"probe_sessions_reset": sum(r["probe_sessions_reset"] for r in results),
+                "stuck_probe_turns": sum(len(r["stuck_probe_turns"]) for r in results)} if driver != "store" else {}),
+            "pre_forget_exposures": sum(r["pre_forget_exposures"] for r in results),
             "metrics": metrics, "meets_thresholds": meets,
             "passed": sum(r["passed"] for r in results), "total": len(results), "results": results}
