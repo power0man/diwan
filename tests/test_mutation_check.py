@@ -119,7 +119,7 @@ def test_a_clean_manifest_passes_and_the_worktree_is_removed_even_when_kept_is_o
 @pytest.mark.parametrize("target, reason", [
     ("/etc/passwd", "مطلق"), ("../outside.py", "صاعد"), ("tests/test_guard.py", "تحت tests/"),
     ("evaluation/banks/x/sealed/case.json", "محجوب"), ("evaluation/banks/x/Sealed/case.json", "محجوب بحرفٍ كبير"),
-])
+], ids=["absolute", "parent", "tests_dir", "sealed", "sealed_capitalised"])
 def test_a_refused_target_is_refused_before_any_worktree_exists(repo, target, reason, capsys, git):
     _manifest(repo, "test_guard", {**KILL, "file": target})
     report = _run(repo, "--all", capsys=capsys)
@@ -131,7 +131,7 @@ def test_a_refused_target_is_refused_before_any_worktree_exists(repo, target, re
     ({**KILL, "extra": 1}, "مفتاحٌ مجهول"), ({k: v for k, v in KILL.items() if k != "tests"}, "بلا tests"),
     ({**KILL, "tests": []}, "tests فارغة"), ({**KILL, "tests": ["not a node id"]}, "معرّفٌ غيرُ صالح"),
     ({**KILL, "new": KILL["old"]}, "old = new"), ({**KILL, "count": 0}, "count صفر"), ({**KILL, "count": True}, "count منطقيّ"),
-])
+], ids=["unknown_key", "no_tests", "empty_tests", "bad_node_id", "old_equals_new", "count_zero", "count_bool"])
 def test_an_invalid_manifest_line_is_refused_before_any_worktree_exists(repo, entry, reason, capsys, git):
     _manifest(repo, "test_guard", entry)
     report = _run(repo, "--all", capsys=capsys)
