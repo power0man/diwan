@@ -288,3 +288,19 @@ def test_a_run_without_a_stable_model_digest_writes_no_report(tmp_path, monkeypa
     assert cli.main([*args[:-2], "--model-version", "sha256:other", "--out", str(tmp_path / "r.json")]) == 1
     assert "model_version_mismatch" in capsys.readouterr().out
     assert not (tmp_path / "r.json").exists()
+
+
+def test_the_documented_command_runs_as_written(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #131: أمرُ التشغيل في docs/TRANSLATION-BANK.md بقي بلا --license و--agent بعد أن صارا لازمَين،
+    فمن يتبع الوثيقة يسقط عند argparse. الأمرُ يُقرأ من الوثيقة ويُشغَّل بمعرّفٍ مسجَّل وتقريرٍ في مجلّدٍ مؤقّت."""
+    import re
+    import shlex
+    import providers.ollama as ollama
+    import tools.evaluate_translation as cli
+    doc = (ROOT / "docs" / "TRANSLATION-BANK.md").read_text(encoding="utf-8")
+    block = re.search(r"```sh\n(python3 tools/evaluate_translation\.py.*?)\n```", doc, re.S).group(1)
+    argv = shlex.split(block.replace("\\\n", " ").replace("<معرّفك>", "anthropic/claude-opus-5-5"))[2:]
+    argv[argv.index("--out") + 1] = str(tmp_path / "r.json")
+    monkeypatch.setattr(ollama, "OllamaProvider", lambda model: Replay("reference"))
+    monkeypatch.setattr(cli, "_digest", lambda model: "sha256:weights")
+    assert cli.main(argv) == 0 and (tmp_path / "r.json").exists()
