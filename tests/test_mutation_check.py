@@ -501,6 +501,55 @@ def test_an_inherited_test_method_is_a_touched_guard_of_its_heir_and_a_base_impo
     _clean(repo, git)
 
 
+def test_a_manifest_renamed_onto_another_module_leaves_its_source_module_an_orphan(repo, git, capsys):
+    """بيانٌ نُقل باسم وحدةٍ أخرى وعُدّل لها يصنّفه git إعادةَ تسمية (R) لا حذفًا، فكان خارج فحص اليتيم (D) وفحص فقد الإثبات (M)،
+    فيمرّ المدى ومصدرُه باقٍ بحرّاسه بلا بيان (ملاحظة Codex على #149)؛ صار الفرقُ بلا كشف إعادة التسمية فالمصدرُ محذوفٌ يتيم."""
+    (repo / "tests/test_other.py").write_text("from pkg.guard import positive\n\n\ndef test_other():\n    assert positive(0) is False\n")
+    why = "حارسُ الصفر لا يُخفّف إلى ≥: " + "الصفرُ ليس موجبًا، والطفرةُ تجعله موجبًا فيسقط الحارسُ الذي يشهد بذلك. " * 6
+    # نصٌّ طويل و`tests` آخرَ المفاتيح، ليرى git النقلَ المعدَّل إعادةَ تسمية (تشابهُه يُحسب بمقاطع السطر من أوّله)
+    row = {"id": "kill", "file": KILL["file"], "old": KILL["old"], "new": KILL["new"], "task": "ك٠", "why": why, "added": "2026-09-27",
+           "tests": KILL["tests"]}
+    _manifest(repo, "test_guard", row)
+    git("add", "-A")
+    git("commit", "-qm", "two modules, one manifest")
+    base = git("rev-parse", "HEAD")
+    git("mv", "tests/mutations/test_guard.jsonl", "tests/mutations/test_other.jsonl")
+    _manifest(repo, "test_other", {**row, "tests": ["tests/test_other.py::test_other"]})
+    git("add", "-A")
+    git("commit", "-qm", "renamed onto the other module and edited for it")
+    assert git("diff", "--name-status", f"{base}...HEAD", "--", "tests/mutations/").startswith("R"), "git لا يراها إعادةَ تسمية"
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["orphaned_manifests"] == ["tests/mutations/test_guard.jsonl"] and report["status"] == "failed"
+    assert report["manifests"] == ["tests/mutations/test_other.jsonl"] and report["totals"]["killed"] == 1
+    _clean(repo, git)
+
+
+def test_an_attribute_that_shadows_an_inherited_test_removes_it_and_a_function_alias_is_a_test(repo, git, capsys):
+    """`test_value = None` في الوارث يحجب الموروثةَ فلا يجمعها pytest، والقراءةُ كانت تخترع `TestChild::test_value` فلا يُرضى
+    المدى: حذفُه غيرُ مسمًّى وتسميتُه test_missing (ملاحظة Codex على #149)؛ صارت السمةُ تحجب، والاسمُ المنسوب دالّةً اختبارًا."""
+    based = TESTS + "\n\nclass TestBase:\n    def test_value(self):\n        assert positive(0) is False\n"
+    (repo / "tests/test_guard.py").write_text(based)
+    row = {**KILL, "id": "kill-base", "tests": ["tests/test_guard.py::TestBase::test_value"]}
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"}, row)
+    git("add", "-A")
+    git("commit", "-qm", "a base class guard")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_guard.py").write_text(based + "\n\ndef _zero(self):\n    assert positive(0) is False\n\n\n"
+                                              "class TestChild(TestBase):\n    test_value = None\n\n\nclass TestAlias(TestBase):\n    test_alias = _zero\n")
+    git("add", "-A")
+    git("commit", "-qm", "a shadowing heir and an aliasing one")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::TestAlias::test_alias", "tests/test_guard.py::TestAlias::test_value"]
+    assert "tests/test_guard.py::TestChild::test_value" not in report["touched_cases"] and report["status"] == "failed"
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"},
+              {**row, "tests": [*row["tests"], "tests/test_guard.py::TestAlias::test_alias", "tests/test_guard.py::TestAlias::test_value"]})
+    git("add", "-A")
+    git("commit", "-qm", "named")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 2 and report["unproved_touched_tests"] == []
+    _clean(repo, git)
+
+
 def test_a_unittest_subclass_is_collected_whatever_its_name_and_a_base_imported_under_another_name_is_a_declared_limit(repo, git, capsys):
     """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة فتمرّ حرّاسُه بلا بيانٍ ولا إثبات (ملاحظة Codex
     على #149)؛ والوارثُ منه في الوحدة نفسِها مثلُه. والصنفُ العاديّ لا يجمعه pytest ولا تراه الأداة؛ والوارثُ أصلًا مستوردًا
