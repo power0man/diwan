@@ -243,18 +243,22 @@ def test_a_tool_the_live_model_asks_for_does_not_leave_a_turn_that_fails_the_nex
     يطلب الأداةَ بعد كلّ رفضٍ تُعاد جلستُه، ويُعدّ ذلك في التقرير لأن فحصَه التالي بلا تاريخه."""
     report = run_memory_bank(BANK, driver="live", delegate=_ProposingDelegate())
     assert not any("turn_unresolved" in f for r in report["results"] for f in r["failures"])
-    assert report["passed"] == 29 and [r["id"] for r in report["results"] if not r["passed"]] == ["backup_004"]
+    failed = [r["id"] for r in report["results"] if not r["passed"]]
+    # كلُّ سيناريو فيه نسخةٌ احتياطية وعنصرٌ قائم: العرضُ قبل اللقطة يعلق فيرفض النسخُ (الحدُّ المعلَن في الاختبار التالي)
+    assert report["passed"] == 25 and failed == ["backup_001", "backup_002", "backup_003", "backup_004", "isolation_007"]
     assert report["probe_sessions_reset"] > 0
 
 
 def test_limit_a_stuck_probe_turn_the_product_cannot_stop_is_named_and_blocks_the_backup_after_it():
     """حدٌّ معلَن (#147، مسار openai): الجولةُ العالقة تُوقَف بـagent_stop قبل هجر جلستها، لكنّ agent_stop يعيد حسابَ بصمة
     المدخل بلا كتلة الذاكرة فيرفض بـstate_corrupt كلَّ جولةٍ حُقنت فيها ذاكرة. فتبقى الجولةُ على القرص تنتظر المالك، ويرفض
-    النسخُ الذي يليها المساحةَ بـbackup_pending، ويسمّي التقريرُ السببَ. وحين يُصلَح #147 يسقط هذا الاختبار فيُقلب: ٣٠/٣٠
-    وstuck_probe_turns صفر."""
+    النسخُ الذي يليها المساحةَ بـbackup_pending، ويسمّي التقريرُ السببَ. وكلُّ سيناريو فيه نسخةٌ وعنصرٌ قائم (النسخُ الأربعة
+    وisolation_007) يعرض قبل اللقطة فيعلق. وحين يُصلَح #147 يسقط هذا الاختبار فيُقلب: ٣٠/٣٠ وstuck_probe_turns صفر."""
     report = run_memory_bank(BANK, driver="live", delegate=_ProposingDelegate())
-    (failed,) = [r for r in report["results"] if not r["passed"]]
-    assert failed["id"] == "backup_004" and failed["failures"] == ["2: raised BackupError backup_pending"]
+    failed = {r["id"]: r["failures"] for r in report["results"] if not r["passed"]}
+    assert failed == {"backup_001": ["1: raised BackupError backup_pending"], "backup_002": ["2: raised BackupError backup_pending"],
+                      "backup_003": ["1: raised BackupError backup_pending"], "backup_004": ["2: raised BackupError backup_pending"],
+                      "isolation_007": ["1: raised BackupError backup_pending"]}
     stuck = [t for r in report["results"] for t in r["stuck_probe_turns"]]
     # الإيقافُ ينجح في الجولات التي لم تُحقن فيها ذاكرة (مشروعٌ بلا عنصرٍ قائم) ويخفق في التي حُقنت: فالعالقُ بعضُ المُعاد
     assert 0 < report["stuck_probe_turns"] == len(stuck) < report["probe_sessions_reset"]
@@ -636,12 +640,17 @@ def test_every_persisted_item_is_shown_in_its_session_before_it_is_forgotten(tmp
     forget = {s["id"]: s for s in BANK["scenarios"]}["forget_001"]
     (tmp_path / "s").mkdir()
     (tmp_path / "w").mkdir()
-    assert run_scenario(forget, tmp_path / "s")["pre_forget_exposures"] == 1
-    assert run_wired_scenario(forget, tmp_path / "w")["pre_forget_exposures"] == 1
+    assert run_scenario(forget, tmp_path / "s")["context_exposures"] == 1
+    assert run_wired_scenario(forget, tmp_path / "w")["context_exposures"] == 1
     # والمنسيُّ ثانيةً (forget_006) يُعرض مرّةً واحدة: النسيانُ الثاني على عنصرٍ لم يعد قائمًا
     twice = {s["id"]: s for s in BANK["scenarios"]}["forget_006"]
     (tmp_path / "t").mkdir()
-    assert run_scenario(twice, tmp_path / "t")["pre_forget_exposures"] == 1
+    assert run_scenario(twice, tmp_path / "t")["context_exposures"] == 1
+    # والنسخةُ الاحتياطية تسبقها عرضٌ لكل قائم (backup_001: عرضٌ قبل اللقطة وعرضٌ قبل النسيان) في الطريقين
+    # (الجذرُ يُنشئه المُشغِّل خاصًّا؛ مجلّدٌ يُنشأ هنا بصلاحيات المجموعة يرفضه النسخُ بـbackup_unsafe_path)
+    backup = {s["id"]: s for s in BANK["scenarios"]}["backup_001"]
+    assert run_scenario(backup, tmp_path / "b")["context_exposures"] == 2
+    assert run_wired_scenario(backup, tmp_path / "bw")["context_exposures"] == 2
     # وسياقٌ لا يحمل العنصر قبل نسيانه رسوبٌ مسمًّى في الطريقين
     monkeypatch.setattr(MemoryStore, "context_block", lambda self, question: HEADER + "\n")
     (tmp_path / "s2").mkdir()
@@ -652,6 +661,30 @@ def test_every_persisted_item_is_shown_in_its_session_before_it_is_forgotten(tmp
     (tmp_path / "w2").mkdir()
     report = run_wired_scenario(forget, tmp_path / "w2")
     assert not report["passed"] and any("not exposed" in f for f in report["failures"])
+
+
+def test_the_snapshot_keeps_the_probe_sessions_that_saw_the_item_and_restore_forgets_only_the_later_ones(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة الحادية عشرة): جلسةُ الفحص التي رأت العنصرَ قبل اللقطة تبقى بعد الاستعادة هي
+    جلسةَ الفحص، فانحدارٌ يُبقي كتلةَ الذاكرة في تاريخها يُرى؛ وما أُنشئ بعد اللقطة وحده يُنسى."""
+    from evaluation.memory_runner import _Wired
+    wired = _Wired(tmp_path / "ui")
+    try:
+        ids = wired.project("A")
+        wired.api("memory_remember", project=ids["id"], text="رصيد الحساب المشترك سري")
+        wired.contexts("A", "رصيد الحساب المشترك سري")
+        before = {kind: ids[kind] for kind in ("agent", "text")}
+        snapshot = wired.backup()
+        later = wired.project("B")
+        wired.api("memory_remember", project=later["id"], text="موعد الطبيب الثلاثاء")
+        wired.contexts("B", "موعد الطبيب الثلاثاء")
+        assert {"agent", "text"} <= set(later)
+        wired.restore(snapshot)
+        assert {kind: wired.projects["A"][kind] for kind in ("agent", "text")} == before, "جلسةُ اللقطة نُسيت"
+        assert "B" not in wired.projects, "مشروعٌ أُنشئ بعد اللقطة بقي معرّفُه"
+        kept = {meta["id"] for meta in wired.api("sessions", project=ids["id"])["sessions"]}
+        assert set(before.values()) <= kept
+    finally:
+        wired.close()
 
 
 def test_each_check_names_the_item_in_its_own_project_and_after_it_exists():

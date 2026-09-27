@@ -119,6 +119,12 @@ def run_scenario(scenario: dict, root: Path) -> dict:
                     failures.append(f"{index}: item not exposed in context before forget")
             s.forget(item)
         elif op == "backup":
+            # وكلُّ عنصرٍ قائمٍ يُعرض قبل اللقطة أيضًا، فتحمل اللقطةُ ما رأى العنصر، ويُفحص غيابُه بعد الاستعادة فيما رآه
+            # (ملاحظة Codex على #129)
+            for item in s.items():
+                exposures += 1
+                if not _exposed(s.context_block(item["text"]), item["text"]):
+                    failures.append(f"{index}: item not exposed in context before backup")
             refs[step["as"]] = s.backup()
         elif op == "restore":
             s.restore(refs[step["ref"]])
@@ -159,7 +165,7 @@ def run_scenario(scenario: dict, root: Path) -> dict:
                 failures.append(f"{index}: receipts {count} != {step['count']}")
     return {"id": scenario["id"], "category": scenario["category"], "passed": not failures,
             "failures": failures, "leaks": leaks, "consent_violations": consent_violations,
-            "injection_unquarantined": unquarantined, "pre_forget_exposures": exposures}
+            "injection_unquarantined": unquarantined, "context_exposures": exposures}
 
 
 class _ScriptedProvider:
@@ -262,9 +268,14 @@ class _Wired:
         self._drop_sessions_outside_snapshot()
 
     def _drop_sessions_outside_snapshot(self):
-        """المستعادُ لا يحمل إلا جلساتِ اللقطة: جلسةُ فحصٍ أُنشئت بعد النسخ (كعرض العنصر قبل نسيانه) ليست فيه، فيُنسى
-        معرّفُها ويُفتح غيرُها عند الفحص التالي بدل أن يسقط بـfile_missing."""
-        for ids in self.projects.values():
+        """المستعادُ لا يحمل إلا ما في اللقطة: مشروعٌ أو جلسةُ فحصٍ أُنشئا بعد النسخ ليسا فيه، فيُنسى معرّفُهما ويُفتح غيرُهما
+        عند الفحص التالي بدل أن يسقط بـfile_missing. وما كان في اللقطة (كجلسةٍ رأت العنصرَ قبل النسخ) يبقى جلسةَ الفحص."""
+        present = {project["id"] for project in self.api("projects")["projects"]}
+        for name in list(self.projects):
+            ids = self.projects[name]
+            if ids["id"] not in present:
+                del self.projects[name]
+                continue
             kept = {meta["id"] for meta in self.api("sessions", project=ids["id"])["sessions"]}
             for kind in ("agent", "text"):
                 if kind in ids and ids[kind] not in kept:
@@ -402,6 +413,12 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                         failures.append(f"{index}: item not exposed in context before forget")
                 wired.api("memory_forget", project=wired.project(name)["id"], item_id=item)
             elif op == "backup":
+                # كلُّ عنصرٍ قائمٍ يُعرض في جلستَي مشروعه قبل اللقطة، فتحمل اللقطةُ جلسةً رأت العنصر، وبعد الاستعادة تبقى هي
+                # جلسةَ الفحص (لا تُنسى لأنها في اللقطة) فيُفحص غيابُه في تاريخها هي (ملاحظة Codex على #129)
+                for item in wired.store(name).items():
+                    exposures += 1
+                    if any(not _exposed(current, item["text"]) for current, _ in wired.contexts(name, item["text"])):
+                        failures.append(f"{index}: item not exposed in context before backup")
                 refs[step["as"]] = wired.backup()
             elif op == "restore":
                 wired.restore(refs[step["ref"]])
@@ -453,7 +470,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
     return {"id": scenario["id"], "category": scenario["category"], "passed": not failures,
             "failures": failures, "leaks": leaks, "consent_violations": consent_violations,
             "injection_unquarantined": unquarantined, "probe_sessions_reset": wired.probe_resets,
-            "stuck_probe_turns": wired.stuck_turns, "pre_forget_exposures": exposures}
+            "stuck_probe_turns": wired.stuck_turns, "context_exposures": exposures}
 
 
 WIRED_PATHS = {"remember": "memory_remember (واجهة المالك)", "remember_without_consent": "propose_memory يرفضه المالك",
@@ -492,6 +509,6 @@ def run_memory_bank(bank: dict, driver: str = "store", delegate=None) -> dict:
             **({"provider": delegate.name} if delegate is not None else {}),
             **({"probe_sessions_reset": sum(r["probe_sessions_reset"] for r in results),
                 "stuck_probe_turns": sum(len(r["stuck_probe_turns"]) for r in results)} if driver != "store" else {}),
-            "pre_forget_exposures": sum(r["pre_forget_exposures"] for r in results),
+            "context_exposures": sum(r["context_exposures"] for r in results),
             "metrics": metrics, "meets_thresholds": meets,
             "passed": sum(r["passed"] for r in results), "total": len(results), "results": results}
