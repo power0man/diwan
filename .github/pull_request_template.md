@@ -15,7 +15,7 @@ Closes #
 ## الطفرة
 
 <!-- لكل حارسٍ جديد سطرٌ في tests/mutations/<وحدةُ الاختبار>.jsonl (الملفّ، والنصُّ القديم والجديد، والاختباراتُ التي تسقط)، وناتجُ
-     `python tools/mutation_check.py --range origin/main..HEAD` يُلصق هنا. وملفُّ اختبارٍ جديد بلا بيانٍ يحمرّ عليه mutation-check -->
+     `python tools/mutation_check.py --range origin/main..HEAD` يُلصق هنا. وكلُّ اختبارٍ مسّه الطلب يسمّيه بيانٌ بمعرّفه الكامل وإلا احمرّ عليه mutation-check -->
 
 ## الحدود
 

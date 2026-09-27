@@ -12,12 +12,12 @@
     invalid                  الطفرةُ كسرت الجمعَ نفسَه (خطأُ صياغة): ليست قتلًا
     timeout                  تجاوزت الاختباراتُ مهلتَها
     manifest_missing         ملفُّ اختبارٍ أُضيف في المدى بلا بيانِ طفرات
-    unmanifested_new_tests   دالّةُ اختبارٍ أُضيفت إلى ملفٍّ قائم في المدى ولا يسمّيها بيان
+    unmanifested_new_tests   اختبارٌ مسّه المدى (كلُّ اختبارٍ في ملفٍّ مضاف، أو اختبارٌ دخل سطرٌ مضاف في مداه) ولا يسمّيه بيانٌ بمعرّفه الكامل
     manifest_invalid         سطرٌ بلا حقوله أو بمفتاحٍ مجهول (يُرفض قبل أيّ شجرة عمل)
     target_refused           هدفٌ مطلق أو صاعد أو تحت tests/ أو في مسارٍ فيه sealed (يُرفض قبل أيّ شجرة عمل)
 
 الاستعمال:
-    python tools/mutation_check.py --range origin/main..HEAD     # بياناتُ المدى وملفّاتُ الاختبار المضافة فيه
+    python tools/mutation_check.py --range origin/main..HEAD     # بياناتُ المدى، وكلُّ بيانٍ يسمّي اختبارًا مسّه المدى
     python tools/mutation_check.py --all                          # كلُّ البيانات (التدقيقُ الأسبوعي)
     python tools/mutation_check.py --manifest tests/mutations/x.jsonl
 
@@ -27,6 +27,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import atexit
 import json
 import os
@@ -56,6 +57,9 @@ LIMITS = [
     "only_manifests_under_tests_mutations_are_applied_guards_older_than_the_manifests_have_no_proof_until_one_is_written",
     "tests_run_with_the_given_python_in_a_detached_worktree_of_the_head_commit_uncommitted_changes_are_not_measured",
     "a_kill_is_judged_by_the_named_tests_failing_another_test_that_fails_is_not_counted",
+    "a_touched_test_is_one_with_an_added_line_inside_its_span_at_the_head_so_removed_or_moved_lines_and_changes_to_fixtures_or_helpers_outside_test_functions_are_not_re_proven",
+    "tests_are_found_by_parsing_the_head_file_for_the_default_pytest_names_test_functions_and_Test_classes_not_by_collecting_with_pytest",
+    "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
 ]
 
 
@@ -113,40 +117,87 @@ def load_manifest(path: Path, root: Path) -> list[dict]:
     return entries
 
 
-NEW_TEST_DEF = re.compile(r"^\+\s*def (test_[A-Za-z0-9_]*)\(")
+HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
 
 
-def _new_test_nodes(root: Path, base: str, head: str, test_file: str) -> list[str]:
-    """دوالُّ الاختبار التي أُضيفت إلى ملفٍّ قائم في المدى، بمعرّفاتها (بلا اعتبارٍ للصنف الحاوي)."""
-    diff = _git(root, "diff", "--unified=0", f"{base}...{head}", "--", test_file)
-    return [f"{test_file}::{m.group(1)}" for line in diff.splitlines() if (m := NEW_TEST_DEF.match(line))]
+def _show(root: Path, head: str, path: str) -> str:
+    """نصُّ الملفّ عند الرأس كما هو، بلا قصٍّ يحرّك أرقامَ الأسطر."""
+    return subprocess.run(["git", "-C", str(root), "show", f"{head}:{path}"], check=True, capture_output=True, text=True).stdout
 
 
-def _named_in_manifests(root: Path, node: str) -> bool:
-    """أيُّ بيانٍ في المستودع يسمّي هذا الاختبار (باسم الدالّة، ولو داخل صنفٍ أو بمعاملات)."""
-    file, name = node.split("::", 1)
+def _test_nodes_at(root: Path, head: str, test_file: str) -> dict[str, tuple[int, int]]:
+    """اختباراتُ الملفّ عند الرأس بأسماء pytest الافتراضية (دوالُّ test* في الوحدة وفي أصناف Test*)، كلٌّ بمعرّفه الكامل
+    بالصنف الحاوي ومدى أسطره من أول مزخرفٍ إلى آخر سطر."""
+    try:
+        tree = ast.parse(_show(root, head, test_file))
+    except SyntaxError as exc:
+        raise Refused("test_file_unparsable", f"{test_file}: {exc.msg} (السطر {exc.lineno})") from None
+    nodes: dict[str, tuple[int, int]] = {}
+
+    def visit(body, prefix: str) -> None:
+        for node in body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
+                start = min([node.lineno, *(d.lineno for d in node.decorator_list)])
+                nodes[f"{test_file}::{prefix}{node.name}"] = (start, node.end_lineno or node.lineno)
+            elif isinstance(node, ast.ClassDef) and node.name.startswith("Test"):
+                visit(node.body, f"{prefix}{node.name}::")
+
+    visit(tree.body, "")
+    return nodes
+
+
+def _added_lines(root: Path, base: str, head: str, test_file: str) -> set[int]:
+    """أرقامُ الأسطر المضافة في الرأس، من رؤوس مقاطع الفرق."""
+    lines: set[int] = set()
+    for line in _git(root, "diff", "--unified=0", f"{base}...{head}", "--", test_file).splitlines():
+        if m := HUNK.match(line):
+            start, count = int(m.group(1)), int(m.group(2)) if m.group(2) is not None else 1
+            lines.update(range(start, start + count))
+    return lines
+
+
+def _touched_test_nodes(root: Path, base: str, head: str, test_file: str, new_file: bool) -> list[str]:
+    """الاختباراتُ التي مسّها المدى: كلُّ اختبارٍ في ملفٍّ مضاف، وفي الملفّ القائم كلُّ اختبارٍ دخل سطرٌ مضاف في مداه
+    (دالّةٌ جديدة، أو تأكيدٌ جديد في دالّةٍ قائمة، أو حالةٌ في مزخرفها) — ملاحظاتُ Codex على #149."""
+    nodes = _test_nodes_at(root, head, test_file)
+    if new_file:
+        return sorted(nodes)
+    added = _added_lines(root, base, head, test_file)
+    return sorted(node for node, (start, end) in nodes.items() if any(start <= n <= end for n in added))
+
+
+def _manifest_names(root: Path) -> dict[Path, set[str]]:
+    """ما يسمّيه كلُّ بيانٍ في المستودع من اختبارات بمعرّفها الكامل بلا معاملات (قراءةٌ متسامحة؛ الصلاحيةُ في load_manifest)."""
+    names: dict[Path, set[str]] = {}
     for path in sorted((root / MANIFESTS).glob("*.jsonl")) if (root / MANIFESTS).is_dir() else []:
+        named: set[str] = set()
         for line in path.read_text(encoding="utf-8").splitlines():
             try:
                 tests = json.loads(line).get("tests", []) if line.strip() else []
             except (json.JSONDecodeError, AttributeError):
                 continue
-            if any(isinstance(t, str) and t.startswith(file + "::") and t.split("::")[-1].split("[")[0] == name for t in tests):
-                return True
-    return False
+            named.update(t.split("[", 1)[0] for t in tests if isinstance(t, str))
+        names[path] = named
+    return names
 
 
 def _range_scope(root: Path, rng: str) -> tuple[list[Path], list[str], list[str], list[str]]:
-    """(بياناتُ المدى، ملفّاتُ اختبارٍ مضافة بلا بيان، ملفّاتُ اختبارٍ معدَّلة بلا بيان، اختباراتٌ جديدة في ملفٍّ قائم لا يسمّيها بيان)."""
+    """(بياناتُ المدى ومعها كلُّ بيانٍ يسمّي اختبارًا مسّه المدى، ملفّاتُ اختبارٍ مضافة بلا بيانٍ باسمها، ملفّاتُ اختبارٍ
+    معدَّلة بلا بيانٍ باسمها، اختباراتٌ مسّها المدى لا يسمّيها بيانٌ بمعرّفها الكامل)."""
     base, head = rng.split("..", 1)
     changed = _git(root, "diff", "--name-only", "--diff-filter=AMR", f"{base}...{head}", "--", f"{MANIFESTS}/*.jsonl").split()
     added = _git(root, "diff", "--name-only", "--diff-filter=A", f"{base}...{head}", "--", "tests/test_*.py").split()
     modified = _git(root, "diff", "--name-only", "--diff-filter=M", f"{base}...{head}", "--", "tests/test_*.py").split()
     has_manifest = lambda test: (root / MANIFESTS / (Path(test).stem + ".jsonl")).is_file()
-    # حارسٌ جديد في ملفٍّ قائم هو الحالةُ الشائعة: كلُّ دالّةِ اختبارٍ أُضيفت يجب أن يسمّيها بيانٌ (ملاحظة Codex على #149)
-    unnamed = [node for test in modified for node in _new_test_nodes(root, base, head, test) if not _named_in_manifests(root, node)]
-    return ([root / p for p in changed if (root / p).is_file()],
-            [t for t in added if not has_manifest(t)], [t for t in modified if not has_manifest(t)], unnamed)
+    names = _manifest_names(root)
+    # كلُّ اختبارٍ مسّه المدى يسمّيه بيانٌ بمعرّفه الكامل (بالصنف الحاوي)، والبيانُ الذي يسمّيه يُطبَّق في المدى ولو لم يتغيّر
+    touched = [node for test in added for node in _touched_test_nodes(root, base, head, test, True)]
+    touched += [node for test in modified for node in _touched_test_nodes(root, base, head, test, False)]
+    unnamed = [node for node in touched if not any(node in named for named in names.values())]
+    naming = [path for path, named in names.items() if named & set(touched)]
+    paths = [root / p for p in changed if (root / p).is_file()]
+    paths += [path for path in naming if path not in paths]
+    return (paths, [t for t in added if not has_manifest(t)], [t for t in modified if not has_manifest(t)], unnamed)
 
 
 def _pytest(python: str, cwd: Path, argv: list[str], timeout: int) -> subprocess.CompletedProcess | None:
@@ -243,7 +294,7 @@ def _apply(entry: dict, worktree: Path, baseline: dict, python: str, timeout: in
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     scope = parser.add_mutually_exclusive_group(required=True)
-    scope.add_argument("--range", help="BASE..HEAD: بياناتُ المدى وملفّاتُ الاختبار المضافة فيه")
+    scope.add_argument("--range", help="BASE..HEAD: بياناتُ المدى، وكلُّ بيانٍ يسمّي اختبارًا مسّه المدى")
     scope.add_argument("--all", action="store_true")
     scope.add_argument("--manifest", type=Path)
     parser.add_argument("--head", default="HEAD")

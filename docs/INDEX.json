@@ -3,7 +3,7 @@
  "codex_project_doc_max_bytes": 32768,
  "documents": [
   {
-   "bytes": 29097,
+   "bytes": 29225,
    "headings": [
     {
      "level": 2,
@@ -66,8 +66,8 @@
    "purpose": "الأدوار والقواعد وبروتوكول البدء، وما بقي مفتوحًا من جدول §٣",
    "read_when": "كل جلسة، كاملًا",
    "role": "حاكمة",
-   "sha256_12": "9565da244cef",
-   "tokens_estimate": 6170
+   "sha256_12": "c99ce4400224",
+   "tokens_estimate": 6194
   },
   {
    "bytes": 22605,
