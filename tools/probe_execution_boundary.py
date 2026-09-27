@@ -54,10 +54,8 @@ def unreachable(host, port):
     finally:
         s.close()
 mounts = open("/proc/mounts").read()
-try:
-    open("/probe-write", "w").close(); readonly = False
-except OSError:
-    readonly = True
+# علَمُ التركيب نفسُه لا محاولةُ كتابة: مستخدمٌ غيرُ الجذر لا يكتب في `/` ولو كان الجذرُ قابلًا للكتابة
+readonly = bool(os.statvfs("/").f_flag & os.ST_RDONLY)
 print(json.dumps({"uid": os.getuid(), "no_owner_mounts": "/Users" not in mounts and "/home" not in mounts,
                   "no_docker_socket": not os.path.exists("/var/run/docker.sock"), "rootfs_readonly": readonly,
                   "ollama_unreachable": unreachable("host.docker.internal", 11434) and unreachable("127.0.0.1", 11434),
@@ -74,9 +72,11 @@ def _shape(boundary: str) -> str:
     return "docker:<64hex>" if re.fullmatch(r"docker:[0-9a-f]{64}", boundary or "") else "unexpected"
 
 
-def _containers(docker: str) -> int:
-    out = subprocess.run([docker, "ps", "-aq"], capture_output=True, text=True, timeout=30).stdout
-    return len(out.split())
+def _containers(docker: str) -> set[str]:
+    """معرّفاتُ الحاويات كاملةً لا عددُها: حاويةٌ غريبة تُحذف وحاويةُ مجسٍّ تبقى يتساوى بهما العدد (ملاحظة Codex على #136).
+    والمعرّفاتُ لا تُكتب في التقرير، بل عددُها وعددُ ما بقي."""
+    out = subprocess.run([docker, "ps", "-aq", "--no-trunc"], capture_output=True, text=True, timeout=30).stdout
+    return set(out.split())
 
 
 def _case(name: str, backend, argv: tuple[str, ...], *, timeout_s: float = 20) -> dict:
@@ -190,17 +190,20 @@ def main(argv=None) -> int:
     common = {"date": today, "agent": "anthropic/claude-opus-5-5", "task": "ج٥", "issue": "power0man/diwan#23",
               "host": {"machine": "MacBook Pro (Apple silicon)", "os": os.uname().sysname + " " + os.uname().release},
               "runtime_image_id": receipt.get("image_id"), "runtime_lock_sha256": receipt.get("lock_sha256")}
-    boundary_failed = boundary_failures(cases, after == before)
+    leaked = after - before
+    boundary_failed = boundary_failures(cases, not leaked)
     boundary_report = {
         "schema_version": 1, **common, "source_sha256": execution_sha, "source": "core/execution.py",
         "via": "core.execution.DockerExecutionBackend.run", "cases": cases,
-        "cleanup_verified": after == before, "containers_before_after": [before, after],
+        "cleanup_verified": not leaked, "containers_before_after": [len(before), len(after)],
+        "containers_left_by_the_run": len(leaked),
         "acceptance": {"passed": not boundary_failed, "failed": boundary_failed},
         "scope": "Disposable Docker test fixtures only; not proof against Docker VM/kernel escape.",
         "human_review": False,
         "measurement_limits": ["container_boundary_on_docker_desktop_not_a_separate_host",
                                "container_ids_recorded_by_shape_not_value",
-                               "cleanup_checked_by_container_count_before_and_after_the_run"],
+                               "cleanup_checked_by_container_ids_present_after_the_run_and_absent_before",
+                               "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly"],
     }
     sandbox_report = {
         "schema_version": 1, **common, "source_sha256": _sha(ROOT / "core" / "sandbox.py"), "source": "core/sandbox.py",
@@ -216,7 +219,7 @@ def main(argv=None) -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"cases": {c["case"]: c.get("code", c.get("exit_code")) for c in cases},
-                      "cleanup_verified": after == before,
+                      "cleanup_verified": not leaked,
                       "sandbox": [good.passed, bad.passed, forged_verdict.passed],
                       "sandbox_failed": sandbox_failed,
                       "boundary_failed": boundary_failed}, ensure_ascii=False))
