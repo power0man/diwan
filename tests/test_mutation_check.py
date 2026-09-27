@@ -117,7 +117,7 @@ def test_a_clean_manifest_passes_and_the_worktree_is_removed_even_when_kept_is_o
 
 
 @pytest.mark.parametrize("target, reason", [
-    ("/etc/passwd", "مطلق"), ("../outside.py", "صاعد"), ("tests/test_guard.py", "تحت tests/"),
+    ("/no/such/guard.py", "مطلق"), ("../outside.py", "صاعد"), ("tests/test_guard.py", "تحت tests/"),
     ("evaluation/banks/x/sealed/case.json", "محجوب"), ("evaluation/banks/x/Sealed/case.json", "محجوب بحرفٍ كبير"),
 ], ids=["absolute", "parent", "tests_dir", "sealed", "sealed_capitalised"])
 def test_a_refused_target_is_refused_before_any_worktree_exists(repo, target, reason, capsys, git):
