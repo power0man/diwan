@@ -162,6 +162,73 @@ def test_the_backend_sends_only_the_query_to_the_configured_endpoint():
     assert backend.identity() == {"backend": "searxng", "endpoint": "http://127.0.0.1:8080"}
 
 
+@contextmanager
+def _local_servers(*responders):
+    """خوادمُ HTTP محلّيّة حقيقيّة؛ لكلٍّ مجيبٌ يأخذ (المسار، المنفذ) ويعيد (الحالة، الترويسات، الجسم)، وسجلُّ ما بلغه."""
+    import http.server
+    import threading
+    servers, hits = [], [[] for _ in responders]
+
+    def handler(index, respond):
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                hits[index].append(self.path)
+                status, headers, body = respond(self.path)
+                self.send_response(status)
+                for name, value in {**headers, "Content-Length": str(len(body))}.items():
+                    self.send_header(name, value)
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *args):
+                pass
+        return Handler
+
+    for index, respond in enumerate(responders):
+        server = http.server.HTTPServer(("127.0.0.1", 0), handler(index, respond))
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        servers.append(server)
+    try:
+        yield [server.server_port for server in servers], hits
+    finally:
+        for server in servers:
+            server.shutdown()
+            server.server_close()
+
+
+def _results(path):
+    return 200, {"Content-Type": "application/json"}, json.dumps({"results": RAW_RESULTS[:1]}).encode()
+
+
+def test_the_default_transport_refuses_a_redirect_away_from_the_configured_endpoint(monkeypatch):
+    """ملاحظةُ Codex على #144: الناقلُ الافتراضيّ كان يتّبع التحويلَ، فيُرسل الاستعلامَ إلى عنوانٍ لم يُضبط ويُنسب ردُّه
+    إلى المضبوط. والآن التحويلُ رفضٌ مسمًّى، والعنوانُ الآخر لا يبلغه شيء."""
+    monkeypatch.setenv("no_proxy", "*")
+    monkeypatch.setenv("NO_PROXY", "*")
+    ports = []
+    redirect = lambda path: (302, {"Location": f"http://127.0.0.1:{ports[0]}{path}"}, b"")
+    with _local_servers(_results, redirect) as ((other, configured), (elsewhere, _)):
+        ports.append(other)
+        with pytest.raises(ToolRefused) as refused:
+            SearxngBackend(f"http://127.0.0.1:{configured}").search("q")
+        assert refused.value.code == "web_search_redirect_refused" and elsewhere == []
+        assert SearxngBackend(f"http://127.0.0.1:{other}").search("q") and len(elsewhere) == 1
+
+
+def test_a_loopback_endpoint_is_reached_directly_not_through_an_environment_proxy(monkeypatch):
+    """ملاحظةُ Codex على #144: `HTTP_PROXY` بلا `NO_PROXY` كان يُرسل طلبَ 127.0.0.1 إلى الوسيط، فيُجيب هو ويُنسب ردُّه إلى
+    SearXNG المضبوط. والعنوانُ على الجهاز نفسِه يُطلب مباشرةً، والبعيدُ يبقى عبر وسيط البيئة."""
+    for name in ("no_proxy", "NO_PROXY"):
+        monkeypatch.delenv(name, raising=False)
+    with _local_servers(_results, _results) as ((endpoint, proxy), (direct, proxied)):
+        for name in ("http_proxy", "HTTP_PROXY"):
+            monkeypatch.setenv(name, f"http://127.0.0.1:{proxy}")
+        for host in ("127.0.0.1", "localhost"):
+            assert SearxngBackend(f"http://{host}:{endpoint}").search("q")
+        assert len(direct) == 2 and proxied == []
+        assert SearxngBackend("http://search.invalid:8080").search("q") and len(proxied) == 1
+
+
 @pytest.mark.parametrize("endpoint", ["ftp://x", "127.0.0.1:8080", "", None,
                                       "http://u:p@host/", "http://host/?format=json", "http://host/#f"])
 def test_the_endpoint_must_be_a_plain_http_url(endpoint):
