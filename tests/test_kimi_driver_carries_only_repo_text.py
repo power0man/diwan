@@ -125,3 +125,60 @@ def test_the_open_only_chain_judges_agentic_tasks_in_a_container_before_placing(
     judge = chain.index("--agentic")
     assert "--network none" in chain and "--open-only --agentic" in chain
     assert judge < chain.index("UPDATE=1 OPEN_ONLY=1 tools/kimi_drive.sh place")
+
+
+FAKE_KIMI = """#!/bin/sh
+python3 - <<'PY'
+import json, os
+keys = ("KIMI_MODEL_NAME", "KIMI_MODEL_PROVIDER_TYPE", "KIMI_MODEL_BASE_URL", "KIMI_MODEL_CAPABILITIES")
+seen = {k: os.environ.get(k) for k in keys}
+seen["api_key_set"] = bool(os.environ.get("KIMI_MODEL_API_KEY"))
+open("seen.json", "w").write(json.dumps(seen))
+PY
+"""
+
+
+def _run_backend(tmp_path, backend, **extra):
+    fake = tmp_path / "bin"
+    fake.mkdir(exist_ok=True)
+    (fake / "kimi").write_text(FAKE_KIMI)
+    (fake / "kimi").chmod(0o755)
+    work = tmp_path / "work"
+    work.mkdir(exist_ok=True)
+    env = dict(os.environ, KIMI_WORK=str(work), DIWAN=str(ROOT), KIMI_BACKEND=backend,
+               PATH=f"{fake}:{os.environ['PATH']}", **extra)
+    done = subprocess.run(["bash", str(DRIVER), "run"], capture_output=True, text=True, env=env)
+    seen = work / "seen.json"
+    return done, (__import__("json").loads(seen.read_text()) if seen.exists() else None)
+
+
+@pytest.mark.parametrize("backend, model, url", [
+    ("ollama", "kimi-k2.6:cloud", "http://localhost:11434/v1"),
+    ("hf", "moonshotai/Kimi-K2.6", "https://router.huggingface.co/v1"),
+])
+def test_each_backend_passes_its_model_through_the_environment_only(tmp_path, backend, model, url):
+    token = tmp_path / "token"
+    token.write_text("hf_fake_for_test\n")
+    done, seen = _run_backend(tmp_path, backend, HF_TOKEN_PATH=str(token))
+    assert done.returncode == 0, done.stderr
+    assert seen == {"KIMI_MODEL_NAME": model, "KIMI_MODEL_PROVIDER_TYPE": "openai", "KIMI_MODEL_BASE_URL": url,
+                    "KIMI_MODEL_CAPABILITIES": "tool_use,thinking", "api_key_set": True}
+    assert f"المزوّد: {backend}، والنموذج: {model}" in done.stdout
+    assert "hf_fake_for_test" not in done.stdout + done.stderr, "المفتاحُ لا يُطبع"
+
+
+def test_the_default_backend_leaves_the_kimi_environment_untouched(tmp_path):
+    done, seen = _run_backend(tmp_path, "kimi")
+    assert done.returncode == 0, done.stderr
+    assert seen["KIMI_MODEL_NAME"] is None and not seen["api_key_set"]
+
+
+def test_an_unknown_backend_is_refused_before_anything_runs(tmp_path):
+    done, seen = _run_backend(tmp_path, "openrouter")
+    assert done.returncode != 0 and "KIMI_BACKEND مجهول" in done.stderr
+    assert seen is None
+
+
+def test_hf_without_a_token_file_stops(tmp_path):
+    done, seen = _run_backend(tmp_path, "hf", HF_TOKEN_PATH=str(tmp_path / "missing"))
+    assert done.returncode != 0 and "لا توكن hf" in done.stderr and seen is None
