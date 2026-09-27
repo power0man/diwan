@@ -139,9 +139,9 @@ def test_an_empty_search_does_not_end_the_attempts(tmp_path, monkeypatch):
 
 
 def test_only_the_requested_command_passes_as_the_pending_argv():
-    for argv in (["python3", "-c", "print(2+2)"], ["python", "-c", "print( 2 + 2 )"]):
-        assert j5.requested_command(argv)
-    for argv in (["echo", "4"], ["python3", "-c", "print(2+3)"], ["python3", "-c", "print(2+2)", "x"],
+    """ملاحظةُ Codex على #144: الأمرُ المطلوب حرفيًّا، لا python بدل python3 ولا شيفرةٌ بمسافاتٍ أخرى."""
+    assert j5.requested_command(["python3", "-c", "print(2+2)"])
+    for argv in (["python", "-c", "print(2+2)"], ["python3", "-c", "print( 2 + 2 )"], ["echo", "4"], ["python3", "-c", "print(2+3)"], ["python3", "-c", "print(2+2)", "x"],
                  ["/bin/sh", "-c", "print(2+2)"], ["python3", "-m", "print(2+2)"], "python3 -c print(2+2)", None,
                  ["python3", "-c", 4]):
         assert not j5.requested_command(argv)
@@ -414,6 +414,25 @@ def test_a_source_that_changes_during_the_boundary_run_writes_no_report(tmp_path
     assert not out_boundary.exists() and not out_sandbox.exists()
 
 
+def test_a_receipt_replaced_during_the_run_writes_no_report(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #144: الخلفيّةُ تحفظ الإيصالَ الذي قرأته، فإيصالٌ يُستبدل بعدها لا يُنسب إليه الدليل."""
+    receipt = _receipt(tmp_path)
+    monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
+    monkeypatch.setattr(boundary, "_containers", lambda docker: {"a" * 64})
+    monkeypatch.setattr(boundary.sandbox, "configure_sandbox_backend", lambda receipt, work: None)
+
+    def swap_then_pass(code, harness):
+        receipt.write_text(json.dumps({"image_id": "sha256:" + "e" * 64, "lock_sha256": "d" * 64}), encoding="utf-8")
+        return SimpleNamespace(passed=True, exit_code=0, error_code=None)
+    monkeypatch.setattr(boundary.sandbox, "run_in_sandbox", swap_then_pass)
+    out_boundary, out_sandbox = tmp_path / "b.json", tmp_path / "s.json"
+    assert boundary.main(["--receipt", str(receipt), "--out-boundary", str(out_boundary),
+                          "--out-sandbox", str(out_sandbox)]) == 2
+    refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert refused["code"] == "sources_changed_during_the_run" and refused["changed"] == ["runtime_receipt"]
+    assert not out_boundary.exists() and not out_sandbox.exists()
+
+
 def test_the_reports_carry_the_probe_hash_taken_before_the_run(tmp_path, monkeypatch):
     monkeypatch.setattr(boundary, "DockerExecutionBackend", _Backend)
     monkeypatch.setattr(boundary, "_containers", lambda docker: {"a" * 64})
@@ -426,8 +445,12 @@ def test_the_reports_carry_the_probe_hash_taken_before_the_run(tmp_path, monkeyp
     assert boundary.main(["--receipt", str(_receipt(tmp_path)), "--out-boundary", str(out_boundary),
                           "--out-sandbox", str(out_sandbox)]) == 0
     probe = boundary._sources()["tools/probe_execution_boundary.py"]
+    import hashlib
+    receipt_sha = hashlib.sha256((tmp_path / "runtime.json").read_bytes()).hexdigest()
     for out in (out_boundary, out_sandbox):
-        assert json.loads(out.read_text(encoding="utf-8"))["probe_sha256"] == probe
+        report = json.loads(out.read_text(encoding="utf-8"))
+        assert report["probe_sha256"] == probe and report["runtime_receipt_sha256"] == receipt_sha
+        assert report["runtime_image_id"] == "sha256:" + "c" * 64
 
 
 def test_cleanup_compares_container_ids_not_their_count(tmp_path, monkeypatch):

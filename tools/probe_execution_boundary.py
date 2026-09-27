@@ -165,6 +165,9 @@ def main(argv=None) -> int:
         print(json.dumps({"status": "refused", "code": "container_enumeration_failed"}))
         return 2
     sources = _sources()
+    # الإيصالُ يُقرأ ويُبصم قبل أولى الحالات: الخلفيّةُ تحفظ ما قرأته، فإيصالٌ يُستبدل في أثناء التشغيل يجعل التقريرَ
+    # ينسب الدليلَ إلى صورةٍ لم تُشغَّل (ملاحظة Codex على #144)
+    receipt_bytes = args.receipt.read_bytes()
     work = Path(tempfile.mkdtemp(prefix="diwan-j5-")).resolve()
     private = Path(tempfile.mkdtemp(prefix="diwan-j5-receipt-", dir=Path.home())).resolve()
     try:
@@ -196,6 +199,8 @@ def main(argv=None) -> int:
     after = _containers(args.docker)
     # ملفٌّ تغيّر في أثناء التشغيل يجعل البصمةَ تشهد لبايتاتٍ لم تُنفَّذ، فلا يُكتب تقرير
     changed = sorted(path for path, digest in _sources().items() if digest != sources[path])
+    if args.receipt.read_bytes() != receipt_bytes:
+        changed.append("runtime_receipt")
     if changed:
         print(json.dumps({"status": "refused", "code": "sources_changed_during_the_run", "changed": changed}))
         return 2
@@ -208,11 +213,12 @@ def main(argv=None) -> int:
     sandbox_ok = not sandbox_failed
     today = datetime.date.today().isoformat()
     execution_sha = sources["core/execution.py"]
-    receipt = json.loads(args.receipt.read_text(encoding="utf-8"))
+    receipt = json.loads(receipt_bytes.decode("utf-8"))
     common = {"date": today, "agent": "anthropic/claude-opus-5-5", "task": "ج٥", "issue": "power0man/diwan#23",
               "host": {"machine": "MacBook Pro (Apple silicon)", "os": os.uname().sysname + " " + os.uname().release},
               "runtime_image_id": receipt.get("image_id"), "runtime_lock_sha256": receipt.get("lock_sha256"),
-              "probe_sha256": sources["tools/probe_execution_boundary.py"]}
+              "probe_sha256": sources["tools/probe_execution_boundary.py"],
+              "runtime_receipt_sha256": hashlib.sha256(receipt_bytes).hexdigest()}
     leaked = None if after is None else after - before
     cleanup_verified = leaked is not None and not leaked
     boundary_failed = boundary_failures(cases, cleanup_verified)
@@ -229,7 +235,8 @@ def main(argv=None) -> int:
                                "container_ids_recorded_by_shape_not_value",
                                "cleanup_checked_by_container_ids_present_after_the_run_and_absent_before",
                                "rootfs_readonly_read_from_the_mount_flag_statvfs_st_rdonly",
-                               "sources_and_probe_hashed_before_the_first_case_and_rechecked_before_writing"],
+                               "sources_and_probe_hashed_before_the_first_case_and_rechecked_before_writing",
+                               "runtime_receipt_read_before_the_first_case_and_rechecked_before_writing"],
     }
     sandbox_report = {
         "schema_version": 1, **common, "source_sha256": sources["core/sandbox.py"], "source": "core/sandbox.py",

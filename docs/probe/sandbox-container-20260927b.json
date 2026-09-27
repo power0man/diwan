@@ -40,6 +40,7 @@
   ],
   "measurement_limits": [
     "three_fixed_programs_not_a_grading_benchmark",
-    "probe_implementation_not_hashed_in_this_run_rerun_with_probe_sha256_pending"
+    "probe_implementation_not_hashed_in_this_run_rerun_with_probe_sha256_pending",
+    "runtime_receipt_not_pinned_before_the_run_in_this_run"
   ]
 }

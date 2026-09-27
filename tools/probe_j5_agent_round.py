@@ -89,10 +89,13 @@ def acceptance(report: dict) -> list[str]:
     return failed
 
 
+# الأمرُ المطلوب حرفيًّا: لا python بدل python3، ولا شيفرةٌ تساويه بعد حذف المسافات (ملاحظة Codex على #144)
+REQUESTED_ARGV = ["python3", "-c", "print(2+2)"]
+
+
 def requested_command(argv) -> bool:
-    """argv الأمر المعلَّق هو ما طُلب: python3 (أو python) بـ-c وprint(2+2)، والمسافاتُ في الشيفرة لا تُحسب."""
-    return (isinstance(argv, list) and len(argv) == 3 and all(isinstance(a, str) for a in argv)
-            and argv[0] in ("python3", "python") and argv[1] == "-c" and "".join(argv[2].split()) == "print(2+2)")
+    """argv الأمر المعلَّق هو ما طُلب بعينه."""
+    return argv == REQUESTED_ARGV
 
 
 def _sources() -> dict[str, str]:
