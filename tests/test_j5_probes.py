@@ -291,6 +291,13 @@ def test_the_read_only_root_is_read_from_the_mount_flag(monkeypatch, capsys, fla
         def close(self):
             pass
 
+    import builtins
+    import io
+    real_open = builtins.open
+    # المجسُّ يقرأ /proc/mounts داخل الحاوية؛ وعلى مضيفٍ بلا /proc (الماك) يُعطى ملفَّ تركيبٍ مصطنعًا
+    fake_open = lambda path, *a, **k: (io.StringIO("overlay / overlay ro 0 0\n") if path == "/proc/mounts"
+                                       else real_open(path, *a, **k))
+    monkeypatch.setattr(builtins, "open", fake_open)
     monkeypatch.setattr(os, "statvfs", lambda path: SimpleNamespace(f_flag=flag))
     monkeypatch.setattr(socket, "socket", lambda *a, **k: _Closed())
     exec(compile(boundary.BOUNDARY_PROBE, "<boundary-probe>", "exec"), {})
