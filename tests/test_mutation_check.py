@@ -460,6 +460,47 @@ def test_removing_or_narrowing_a_manifest_row_whose_test_remains_drops_its_proof
     _clean(repo, git)
 
 
+def test_an_inherited_test_method_is_a_touched_guard_of_its_heir_and_a_base_imported_from_elsewhere_is_a_declared_limit(repo, git, capsys):
+    """وارثٌ بلا تعريف (`class TestAgain(TestBase)`) يجمع له pytest `TestAgain::test_value` والقراءةُ كانت ترى جسمَ الوارث وحده
+    فلا يُمسّ شيء (ملاحظة Codex على #149)؛ صارت الموروثةُ اختبارًا للوارث مداه رأسُه ومدى تعريفها، فإضافةُ الوارث أو دالّةٍ في
+    الأصل تمسّها. والأصلُ المستورد من وحدةٍ أخرى لا يُرى: حدٌّ معلَن."""
+    based = TESTS + "\n\nclass TestBase:\n    x = 0\n\n    def test_value(self):\n        assert positive(self.x) is False\n"
+    (repo / "tests/test_guard.py").write_text(based)
+    row = {**KILL, "id": "kill-base", "tests": ["tests/test_guard.py::TestBase::test_value"]}
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"}, row)
+    git("add", "-A")
+    git("commit", "-qm", "a base class guard and its manifest")
+    base = git("rev-parse", "HEAD")
+    rng = lambda: f"{base}..{git('rev-parse', 'HEAD')}"
+    heir = based + "\n\nclass TestAgain(TestBase):\n    note = \"inherits test_value untouched\"\n"
+    (repo / "tests/test_guard.py").write_text(heir)
+    git("add", "-A")
+    git("commit", "-qm", "an heir that overrides nothing")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::TestAgain::test_value"] and report["status"] == "failed"
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"}, {**row, "tests": [*row["tests"], "tests/test_guard.py::TestAgain::test_value"]})
+    git("add", "-A")
+    git("commit", "-qm", "the heir's inherited guard is named")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 2 and report["unproved_touched_tests"] == []
+    assert report["touched_cases"] == {"tests/test_guard.py::TestAgain::test_value": ["tests/test_guard.py::TestAgain::test_value"]}
+    (repo / "tests/test_guard.py").write_text(heir.replace("        assert positive(self.x) is False\n",
+                                                            "        assert positive(self.x) is False\n\n    def test_zero(self):\n        assert positive(0) is False\n"))
+    git("add", "-A")
+    git("commit", "-qm", "the base gains a method, so every heir gains a guard")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::TestAgain::test_zero", "tests/test_guard.py::TestBase::test_zero"]
+    assert report["status"] == "failed"
+    (repo / "tests/shared.py").write_text("from pkg.guard import positive\n\n\nclass Shared:\n    def test_shared(self):\n        assert positive(0) is False\n")
+    (repo / "tests/test_guard.py").write_text(heir + "\n\nfrom shared import Shared\n\n\nclass TestImported(Shared):\n    pass\n")
+    git("add", "-A")
+    git("commit", "-qm", "an heir of an imported base: not seen (declared limit)")
+    report = _run(repo, "--range", rng(), capsys=capsys)
+    assert "tests/test_guard.py::TestImported::test_shared" not in report["touched_cases"]
+    assert report["unmanifested_new_tests"] == [] and report["status"] == "passed"
+    _clean(repo, git)
+
+
 def test_a_unittest_subclass_is_collected_whatever_its_name_and_a_base_imported_under_another_name_is_a_declared_limit(repo, git, capsys):
     """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة فتمرّ حرّاسُه بلا بيانٍ ولا إثبات (ملاحظة Codex
     على #149)؛ والوارثُ منه في الوحدة نفسِها مثلُه. والصنفُ العاديّ لا يجمعه pytest ولا تراه الأداة؛ والوارثُ أصلًا مستوردًا
@@ -499,11 +540,13 @@ class FromImport(Base):
     git("commit", "-qm", "unittest classes")
     head = git("rev-parse", "HEAD")
     report = _run(repo, "--range", f"{base}..{head}", capsys=capsys)
-    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::Derived::test_derived_zero",
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::Derived::test_case_zero",       # موروثةٌ فهي للوارث أيضًا
+                                                "tests/test_guard.py::Derived::test_derived_zero",
                                                 "tests/test_guard.py::GuardCase::test_case_zero"]
     assert report["status"] == "failed"
     assert "tests/test_guard.py::FromImport::test_imported_base" not in report["unmanifested_new_tests"], "الحدُّ المعلَن أُغلق: حدِّث اسمه"
-    named = [*KILL["tests"], "tests/test_guard.py::GuardCase::test_case_zero", "tests/test_guard.py::Derived::test_derived_zero"]
+    named = [*KILL["tests"], "tests/test_guard.py::GuardCase::test_case_zero", "tests/test_guard.py::Derived::test_derived_zero",
+             "tests/test_guard.py::Derived::test_case_zero"]
     _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": named})
     git("add", "-A")
     git("commit", "-qm", "named")

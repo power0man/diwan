@@ -15,7 +15,8 @@
     timeout                  تجاوزت الاختباراتُ مهلتَها
     manifest_missing         ملفُّ اختبارٍ أُضيف (أو أُعيدت تسميتُه) في المدى بلا بيانِ طفرات باسمه؛ والوحدةُ في مجلّدٍ فرعيّ
                              tests/a/test_x.py بيانُها tests/mutations/a__test_x.jsonl
-    unmanifested_new_tests   اختبارٌ مسّه المدى (كلُّ اختبارٍ في ملفٍّ مضاف، أو اختبارٌ دخل سطرٌ مضاف في مداه) ولا يسمّيه بيانٌ بمعرّفه الكامل
+    unmanifested_new_tests   اختبارٌ مسّه المدى (كلُّ اختبارٍ في ملفٍّ مضاف، أو اختبارٌ دخل سطرٌ مضاف في مداه) ولا يسمّيه بيانٌ بمعرّفه الكامل؛
+                             والدالّةُ الموروثة من أصلٍ في الوحدة نفسِها اختبارٌ للوارث مداه رأسُ الوارث ومدى تعريفها
     unproved_touched_tests   اختبارٌ ممسوس سمّاه بيانٌ لكنه لم يسقط هو نفسُه تحت أيّ طفرةٍ في المدى (ذكرُه بجانب قاتلٍ لا يثبته)؛
                              والدالّةُ المعلَّمة بـparametrize حالاتٌ كما يجمعها pytest، وكلُّ حالةٍ منها حارسٌ يُثبَت وحده
     orphaned_manifests       بيانٌ حُذف في المدى ووحدتُه باقية (تُعرف الوحدةُ بالاتجاه الأمامي: أيُّ وحدةٍ عند الرأس بيانُها هذا)
@@ -74,6 +75,7 @@ LIMITS = [
     "a_touched_test_is_one_with_an_added_line_inside_its_span_at_the_head_so_changes_to_fixtures_or_helpers_outside_test_functions_are_not_re_proven_while_a_test_that_vanished_or_lost_a_line_only_has_its_manifests_re_applied",
     "tests_are_found_by_parsing_the_head_file_for_the_default_pytest_names_test_functions_Test_classes_and_unittest_TestCase_subclasses_named_in_the_module_not_by_collecting_with_pytest",
     "a_class_whose_base_is_imported_under_a_name_that_does_not_end_in_TestCase_is_not_seen_as_a_unittest_class_so_its_methods_are_not_touched_tests",
+    "inherited_test_methods_are_resolved_through_bases_defined_at_module_level_in_the_same_file_first_base_wins_a_base_imported_from_another_module_is_not_seen_so_a_subclass_of_it_adds_no_touched_tests",
     "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
     "a_touched_parametrized_test_is_proved_case_by_case_every_case_pytest_collects_for_it_must_fail_a_mutation_since_parsing_cannot_tell_the_added_case_from_the_old_ones",
     "a_manifest_changed_in_the_range_is_compared_with_its_merge_base_version_by_the_exact_names_it_carried_a_test_or_case_still_collected_at_the_head_that_no_line_names_any_more_is_a_dropped_proof_a_bare_function_name_at_the_head_covers_all_its_cases",
@@ -179,23 +181,41 @@ def _unittest_classes(tree: ast.Module) -> set[str]:
         found |= more
 
 
-def _test_nodes_at(root: Path, head: str, test_file: str) -> dict[str, tuple[int, int]]:
+def _test_nodes_at(root: Path, head: str, test_file: str) -> dict[str, list[tuple[int, int]]]:
     """اختباراتُ الملفّ عند الرأس بأسماء pytest الافتراضية (دوالُّ test* في الوحدة وفي أصناف Test* وفي أصناف unittest أيًّا
-    كان اسمُها)، كلٌّ بمعرّفه الكامل بالصنف الحاوي ومدى أسطره من أول مزخرفٍ إلى آخر سطر."""
+    كان اسمُها)، كلٌّ بمعرّفه الكامل بالصنف الحاوي ومدياتِ أسطره: مدى الدالّة من أول مزخرفٍ إلى آخر سطر، والموروثةُ من أصلٍ
+    في الوحدة نفسِها تحمل فوقه رأسَ كلِّ صنفٍ وارث (مزخرفاتِه وسطرَ class)، فإضافةُ وارثٍ بلا تعريفٍ أو تغييرُ أصله يمسّها
+    (ملاحظة Codex على #149)."""
     try:
         tree = ast.parse(_show(root, head, test_file))
     except SyntaxError as exc:
         raise Refused("test_file_unparsable", f"{test_file}: {exc.msg} (السطر {exc.lineno})") from None
-    nodes: dict[str, tuple[int, int]] = {}
+    nodes: dict[str, list[tuple[int, int]]] = {}
     unittest_classes = _unittest_classes(tree)
+    classes = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
+    first = lambda node: min([node.lineno, *(d.lineno for d in node.decorator_list)])
+
+    def methods(cls: ast.ClassDef, seen: tuple[str, ...] = ()) -> dict[str, list[tuple[int, int]]]:
+        """دوالُّ test* كما يجمعها pytest من الصنف: الموروثةُ من أصوله في الوحدة (الأولُ يغلب كما في MRO) ثم ما يعرّفه هو فيغلب."""
+        found: dict[str, list[tuple[int, int]]] = {}
+        for base in reversed(cls.bases):
+            name = _base_name(base)
+            if name in classes and name not in (*seen, cls.name):
+                for method, spans in methods(classes[name], (*seen, cls.name)).items():
+                    found[method] = [*spans, (first(cls), cls.lineno)]
+        for node in cls.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
+                found[node.name] = [(first(node), node.end_lineno or node.lineno)]
+        return found
 
     def visit(body, prefix: str) -> None:
         for node in body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
-                start = min([node.lineno, *(d.lineno for d in node.decorator_list)])
-                nodes[f"{test_file}::{prefix}{node.name}"] = (start, node.end_lineno or node.lineno)
+                nodes[f"{test_file}::{prefix}{node.name}"] = [(first(node), node.end_lineno or node.lineno)]
             elif isinstance(node, ast.ClassDef) and (node.name.startswith("Test") or node.name in unittest_classes):
-                visit(node.body, f"{prefix}{node.name}::")
+                for method, spans in methods(node).items():
+                    nodes[f"{test_file}::{prefix}{node.name}::{method}"] = spans
+                visit([n for n in node.body if isinstance(n, ast.ClassDef)], f"{prefix}{node.name}::")
 
     visit(tree.body, "")
     return nodes
@@ -228,7 +248,8 @@ def _revalidated_test_nodes(root: Path, base: str, head: str, test_file: str, de
     if deleted:
         return sorted(nodes)
     removed, at_head = _removed_lines(root, base, head, test_file), _test_nodes_at(root, head, test_file)
-    return sorted(node for node, (start, end) in nodes.items() if node not in at_head or any(start <= n <= end for n in removed))
+    return sorted(node for node, spans in nodes.items()
+                  if node not in at_head or any(start <= n <= end for start, end in spans for n in removed))
 
 
 def _touched_test_nodes(root: Path, base: str, head: str, test_file: str, new_file: bool) -> list[str]:
@@ -238,7 +259,7 @@ def _touched_test_nodes(root: Path, base: str, head: str, test_file: str, new_fi
     if new_file:
         return sorted(nodes)
     added = _added_lines(root, base, head, test_file)
-    return sorted(node for node, (start, end) in nodes.items() if any(start <= n <= end for n in added))
+    return sorted(node for node, spans in nodes.items() if any(start <= n <= end for start, end in spans for n in added))
 
 
 def _named_exactly(text: str) -> set[str]:
