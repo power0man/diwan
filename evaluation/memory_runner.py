@@ -28,12 +28,8 @@ from pathlib import Path
 
 import uuid
 
-from core.attribution import normalize
+from evaluation.memory_bank import contains as _contains
 from memory.store import HEADER, MemoryRefused, MemoryStore
-
-
-def _contains(haystack: str, needle: str) -> bool:
-    return needle in haystack or normalize(needle).strip() in normalize(haystack)
 
 
 def _residue(store: MemoryStore) -> bytes:

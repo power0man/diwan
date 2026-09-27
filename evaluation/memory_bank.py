@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import re
 
+from core.attribution import normalize
 from core.canonical import PayloadRejected
 from core.quoted import DIRECTIVE_PATTERNS, QUARANTINE_MARK, scan, wrap
 from memory.store import HEADER
@@ -37,6 +38,12 @@ EXPECTS = {
     "receipt": {"expect", "project", "ref", "count"},
 }
 CONSENTS = frozenset({"owner", "none"})
+
+
+def contains(haystack: str, needle: str) -> bool:
+    """المطابقةُ التي يفحص بها المُشغِّلُ الحضورَ والغياب: حرفيًّا أو بعد التطبيع العربيّ (التشكيل وأشكال الحروف).
+    وهي هنا لا في المُشغِّل ليحكم بها المدقّقُ كما يحكم المُشغِّل (ملاحظة Codex على #129)."""
+    return needle in haystack or normalize(needle).strip() in normalize(haystack)
 
 
 def _reject(path: str, code: str, reason: str):
@@ -162,10 +169,12 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         wrapper = " ".join((HEADER, QUARANTINE_MARK, wrap("", nonce="0" * 8)[0], "- ",
                             *(QUARANTINE_MARK.format(code=code) for code, _ in DIRECTIVE_PATTERNS)))
 
+        # والمقارنةُ بمطابقة المُشغِّل نفسِها: «موعدُ التسليم» شاهدًا وفي عنصرٍ آخر «موعد التسليم» يحضر بها في سياقه
+        # فيشهد الشاهدُ بعنصرٍ ليس الآمر (ملاحظة Codex على #129)
         def shown_only_by_the_item(k, s, ref, item):
             others = [o["text"] for r, (j, o) in made.items() if r != ref and j < k and o["project"] == item["project"]]
-            return any(p and p in item["text"] and len(re.findall(r"\w", p)) >= 4 and p not in wrapper
-                       and not any(p in t for t in others) for p in s.get("present") or [])
+            return any(p and contains(item["text"], p) and len(re.findall(r"\w", p)) >= 4 and not contains(wrapper, p)
+                       and not any(contains(t, p) for t in others) for p in s.get("present") or [])
         if strict and not any(shown_only_by_the_item(*f) for f in fenced):
             _reject(path, "injection_item_not_shown_in_checked_context",
                     "السياقُ المحجور يحضر فيه جزءٌ من نصّ العنصر الآمر نفسِه")
