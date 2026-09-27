@@ -17,6 +17,8 @@
     unproved_touched_tests   اختبارٌ ممسوس سمّاه بيانٌ لكنه لم يسقط هو نفسُه تحت أيّ طفرةٍ في المدى (ذكرُه بجانب قاتلٍ لا يثبته)؛
                              والدالّةُ المعلَّمة بـparametrize حالاتٌ كما يجمعها pytest، وكلُّ حالةٍ منها حارسٌ يُثبَت وحده
     orphaned_manifests       بيانٌ حُذف في المدى ووحدتُه باقية (تُعرف الوحدةُ بالاتجاه الأمامي: أيُّ وحدةٍ عند الرأس بيانُها هذا)
+    revalidated_tests        اختبارٌ زال في المدى أو فقد سطرًا من مداه: بياناتُه تُعاد في المدى (فحذفُ اختبارٍ أو حالةٍ يسمّيها بيانٌ
+                             يُحكم test_missing هنا لا في الأسبوعيّ وحده)، ولا يُطلب إثباتُه من جديد
     manifest_invalid         سطرٌ بلا حقوله أو بمفتاحٍ مجهول (يُرفض قبل أيّ شجرة عمل)
     manifest_name_collision  وحدتان عند الرأس تؤولان إلى بيانٍ واحد (tests/test_a/test_x.py وtests/test_a__test_x.py)؛ يُرفض قبل أيّ شجرة عمل
     target_refused           هدفٌ مطلق أو صاعد أو تحت tests/ أو في مسارٍ فيه sealed (يُرفض قبل أيّ شجرة عمل)، أو يمرّ
@@ -63,7 +65,7 @@ LIMITS = [
     "only_manifests_under_tests_mutations_are_applied_guards_older_than_the_manifests_have_no_proof_until_one_is_written",
     "tests_run_with_the_given_python_in_a_detached_worktree_of_the_head_commit_uncommitted_changes_are_not_measured",
     "a_kill_is_judged_by_the_named_tests_failing_another_test_that_fails_is_not_counted",
-    "a_touched_test_is_one_with_an_added_line_inside_its_span_at_the_head_so_removed_or_moved_lines_and_changes_to_fixtures_or_helpers_outside_test_functions_are_not_re_proven",
+    "a_touched_test_is_one_with_an_added_line_inside_its_span_at_the_head_so_changes_to_fixtures_or_helpers_outside_test_functions_are_not_re_proven_while_a_test_that_vanished_or_lost_a_line_only_has_its_manifests_re_applied",
     "tests_are_found_by_parsing_the_head_file_for_the_default_pytest_names_test_functions_Test_classes_and_unittest_TestCase_subclasses_named_in_the_module_not_by_collecting_with_pytest",
     "a_class_whose_base_is_imported_under_a_name_that_does_not_end_in_TestCase_is_not_seen_as_a_unittest_class_so_its_methods_are_not_touched_tests",
     "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
@@ -141,6 +143,7 @@ def load_manifest(path: Path, root: Path) -> list[dict]:
 
 
 HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
+HUNK_BASE = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+")
 
 
 def _show(root: Path, head: str, path: str) -> str:
@@ -196,6 +199,26 @@ def _added_lines(root: Path, base: str, head: str, test_file: str) -> set[int]:
             start, count = int(m.group(1)), int(m.group(2)) if m.group(2) is not None else 1
             lines.update(range(start, start + count))
     return lines
+
+
+def _removed_lines(root: Path, base: str, head: str, test_file: str) -> set[int]:
+    """أرقامُ أسطر الأساس التي أُزيلت، من رؤوس مقاطع الفرق."""
+    lines: set[int] = set()
+    for line in _git(root, "diff", "--unified=0", f"{base}...{head}", "--", test_file).splitlines():
+        if m := HUNK_BASE.match(line):
+            start, count = int(m.group(1)), int(m.group(2)) if m.group(2) is not None else 1
+            lines.update(range(start, start + count))
+    return lines
+
+
+def _revalidated_test_nodes(root: Path, base: str, head: str, test_file: str, deleted: bool) -> list[str]:
+    """اختباراتُ الأساس التي زالت أو فقدت سطرًا من مداها: بياناتُها تُعاد في المدى، فحذفُ اختبارٍ أو حالةٍ يسمّيها بيانٌ يُحكم
+    test_missing في الطلب لا في التدقيق الأسبوعيّ وحده (ملاحظة Codex على #149)."""
+    nodes = _test_nodes_at(root, base, test_file)
+    if deleted:
+        return sorted(nodes)
+    removed, at_head = _removed_lines(root, base, head, test_file), _test_nodes_at(root, head, test_file)
+    return sorted(node for node, (start, end) in nodes.items() if node not in at_head or any(start <= n <= end for n in removed))
 
 
 def _touched_test_nodes(root: Path, base: str, head: str, test_file: str, new_file: bool) -> list[str]:
@@ -263,13 +286,18 @@ def _range_scope(root: Path, rng: str) -> dict:
     touched = [node for test in added for node in _touched_test_nodes(root, base, head, test, True)]
     touched += [node for test in modified for node in _touched_test_nodes(root, base, head, test, False)]
     unnamed = [node for node in touched if not any(node in named for named in names.values())]
-    naming = [path for path, named in names.items() if named & set(touched)]
+    # والاختبارُ الذي زال (ومنه الاسمُ القديم لملفٍّ أُعيدت تسميتُه) أو فقد سطرًا: بياناتُه تُعاد فيُحكم ما يسمّيه test_missing هنا
+    deleted = _test_modules(_git(root, "diff", "--name-only", "--diff-filter=D", "--no-renames", f"{base}...{head}", "--", "tests/").split())
+    revalidated = [node for test in deleted for node in _revalidated_test_nodes(root, base, head, test, True)]
+    revalidated += [node for test in modified for node in _revalidated_test_nodes(root, base, head, test, False)]
+    naming = [path for path, named in names.items() if named & (set(touched) | set(revalidated))]
     paths = [root / p for p in changed("AMR", f"{MANIFESTS}/*.jsonl") if (root / p).is_file()]
     paths += [path for path in naming if path not in paths]
     # بيانٌ حُذف ووحدتُه باقية عند الرأس: حرّاسُها تفقد إثباتَها صامتة، فيُرفض الحذفُ إلا مع الوحدة
     owned = _manifests_owned_at(root, head)
     orphaned = [m for m in changed("D", f"{MANIFESTS}/*.jsonl") if m in owned]
-    return {"paths": paths, "touched": touched, "manifest_missing": [t for t in added if not has_manifest(t)],
+    return {"paths": paths, "touched": touched, "revalidated_tests": revalidated,
+            "manifest_missing": [t for t in added if not has_manifest(t)],
             "unmanifested_changed_tests": [t for t in modified if not has_manifest(t)],
             "unmanifested_new_tests": unnamed, "orphaned_manifests": orphaned}
 
@@ -287,10 +315,26 @@ def _failed(result: subprocess.CompletedProcess) -> list[str]:
     return [line.split(" ", 1)[1].split(" - ", 1)[0] for line in result.stdout.splitlines() if line.startswith("FAILED ")]
 
 
-def _collect_missing(result: subprocess.CompletedProcess, node_ids: list[str]) -> list[str]:
-    """pytest يسمّي المفقودَ بمساره المطلق في شجرة العمل، فيُطابَق بذيل السطر لا بنصّه كلِّه."""
-    lines = (result.stdout + result.stderr).splitlines()
-    return [t for t in node_ids if any("not found: " in line and line.rstrip().endswith(t) for line in lines)]
+def _listed(result: subprocess.CompletedProcess | None) -> list[str]:
+    """معرّفاتُ ما جمعه pytest بترتيبه كما يطبعها --collect-only -q (لا يطبعها متى فُقد أيُّ اسمٍ مسمًّى)."""
+    return [l.strip() for l in result.stdout.splitlines() if l.strip().startswith("tests/")] if result and result.returncode == 0 else []
+
+
+def _collect_missing(node_ids: list[str], python: str, worktree: Path, timeout: int) -> list[str]:
+    """المفقودُ ما سُمّي ولم يُجمع. متى أخفق الجمعُ الجامع كتم pytest قائمةَ المجموع وسمّى أولَ مفقودٍ وحده، ويسمّي
+    الحالةَ المفقودة من parametrize بدالّتها بلا معامل؛ فتُجمع كلُّ دالّةٍ مسمّاة وحدها، فيُعرف ما فُقد من دوالَّ وحالات —
+    والدالّةُ المسمّاةُ بلا معامل مجموعةٌ بحالاتها. وعطبُ جمعٍ ليس فقدانًا (خطأُ صياغة) يُرفض باسمه."""
+    function = lambda t: t.split("[", 1)[0]
+    missing: list[str] = []
+    for name in sorted({function(t) for t in node_ids}):
+        again = _pytest(python, worktree, ["--collect-only", name], timeout)
+        if again is None:
+            raise Refused("timeout", "جمعُ الاختبارات تجاوز مهلتَه")
+        if again.returncode and "not found" not in again.stdout + again.stderr:
+            raise Refused("collection_failed", (again.stdout + again.stderr)[-2000:])
+        present = _listed(again)
+        missing += [t for t in node_ids if function(t) == name and t not in present and not any(c.startswith(t + "[") for c in present)]
+    return missing
 
 
 def _touched_cases(python: str, worktree: Path, touched: list[str], timeout: int) -> dict[str, list[str]]:
@@ -301,11 +345,13 @@ def _touched_cases(python: str, worktree: Path, touched: list[str], timeout: int
     collected = _pytest(python, worktree, ["--collect-only", *touched], timeout)
     if collected is None:
         raise Refused("timeout", "جمعُ الاختبارات الممسوسة تجاوز مهلتَه")
+    # متى لم يُجمع اسمٌ واحد كتم pytest القائمةَ كلَّها، فيُجمع كلُّ ممسوسٍ وحده حتى لا تضيع حالاتُ الباقين صامتةً
+    listed = _listed(collected) if collected.returncode == 0 else [c for node in touched for c in _listed(_pytest(python, worktree, ["--collect-only", node], timeout))]
     cases: dict[str, list[str]] = {node: [] for node in touched}
-    for line in collected.stdout.splitlines():
-        function = line.strip().split("[", 1)[0]
+    for case in dict.fromkeys(listed):
+        function = case.split("[", 1)[0]
         if function in cases:
-            cases[function].append(line.strip())
+            cases[function].append(case)
     return cases
 
 
@@ -336,7 +382,7 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
         collected = _pytest(python, worktree, ["--collect-only", *node_ids], timeout)
         if collected is None:
             raise Refused("timeout", "جمعُ الاختبارات تجاوز مهلتَه")
-        baseline["missing"] = _collect_missing(collected, node_ids) if collected.returncode else []
+        baseline["missing"] = _collect_missing(node_ids, python, worktree, timeout) if collected.returncode else []
         if collected.returncode and not baseline["missing"]:
             raise Refused("collection_failed", (collected.stdout + collected.stderr)[-2000:])
         runnable = [t for t in node_ids if t not in baseline["missing"]]
@@ -409,8 +455,8 @@ def main(argv=None) -> int:
     report = {"schema_version": 1, "tool": "tools/mutation_check.py", "python": sys.version.split()[0],
               "scope": "range" if args.range else "all" if args.all else "manifest", "measurement_limits": LIMITS}
     try:
-        scope = {"touched": [], "manifest_missing": [], "unmanifested_changed_tests": [], "unmanifested_new_tests": [],
-                 "orphaned_manifests": []}
+        scope = {"touched": [], "revalidated_tests": [], "manifest_missing": [], "unmanifested_changed_tests": [],
+                 "unmanifested_new_tests": [], "orphaned_manifests": []}
         if args.range:
             scope = _range_scope(root, args.range)
             paths = scope["paths"]
@@ -421,7 +467,7 @@ def main(argv=None) -> int:
             paths = [args.manifest if args.manifest.is_absolute() else root / args.manifest]
         entries = [e for path in paths for e in load_manifest(path, root)]
         report["manifests"] = [p.resolve().relative_to(root).as_posix() for p in paths]
-        for key in ("manifest_missing", "unmanifested_changed_tests", "unmanifested_new_tests", "orphaned_manifests"):
+        for key in ("manifest_missing", "unmanifested_changed_tests", "unmanifested_new_tests", "orphaned_manifests", "revalidated_tests"):
             report[key] = scope[key]
         if entries:
             report.update(run(root, entries, args.head, args.python, args.timeout_s, args.keep_worktree, scope["touched"]))

@@ -504,6 +504,36 @@ def test_two_modules_whose_manifest_names_collide_are_refused_before_any_worktre
     _clean(repo, git)
 
 
+@pytest.mark.parametrize("removal", ["module", "function", "parameter_case"], ids=["module", "function", "parameter_case"])
+def test_removing_a_test_its_module_or_a_case_re_applies_the_manifest_that_named_it_so_the_range_fails_test_missing(repo, git, capsys, removal):
+    """حذفُ اختبارٍ أو وحدته أو حالةٍ من parametrize بلا مسّ بيانه كان يخرج من المدى (لا سطرَ مضاف)، فيمرّ الطلبُ ثم يسقط
+    التدقيقُ الأسبوعيّ بـtest_missing (ملاحظة Codex على #149)؛ صار ما زال أو فقد سطرًا يُعيد بياناتِه في المدى."""
+    decorated = TESTS + "\n\nimport pytest\n\n\n@pytest.mark.parametrize(\"x\", [\n    pytest.param(0, id=\"zero\"),\n    pytest.param(-1, id=\"negative\"),\n])\ndef test_not_positive(x):\n    assert positive(x) is False\n"
+    (repo / "tests/test_guard.py").write_text(decorated)
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"},
+              {**KILL, "id": "kill-negative", "new": "return x > -5", "tests": ["tests/test_guard.py::test_not_positive[negative]"]})
+    git("add", "-A")
+    git("commit", "-qm", "guards and their manifest")
+    base = git("rev-parse", "HEAD")
+    if removal == "module":
+        (repo / "tests/test_guard.py").unlink()
+        expected = ["tests/test_guard.py::test_already_failing", "tests/test_guard.py::test_always_passes",
+                    "tests/test_guard.py::test_not_positive", "tests/test_guard.py::test_zero_is_not_positive"]
+    elif removal == "function":
+        (repo / "tests/test_guard.py").write_text(decorated.replace("def test_zero_is_not_positive():\n    assert positive(0) is False\n\n\n", ""))
+        expected = ["tests/test_guard.py::test_zero_is_not_positive"]
+    else:
+        (repo / "tests/test_guard.py").write_text(decorated.replace("    pytest.param(-1, id=\"negative\"),\n", ""))
+        expected = ["tests/test_guard.py::test_not_positive"]
+    git("add", "-A")
+    git("commit", "-qm", f"remove the {removal}")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["revalidated_tests"] == expected and report["manifests"] == ["tests/mutations/test_guard.jsonl"]
+    assert report["totals"]["test_missing"] >= 1 and report["status"] == "failed"
+    assert report["touched_cases"] == {} and report["unmanifested_new_tests"] == []
+    _clean(repo, git)
+
+
 def test_a_collection_error_is_invalid_not_a_kill(repo, capsys, git):
     _manifest(repo, "test_guard", {**KILL, "id": "broken", "new": "return x > 0 ("})
     git("add", "-A")
