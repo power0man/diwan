@@ -257,12 +257,14 @@ def _block_of(content: str) -> str:
     return "" if end < 0 else content[:end + len(close)]
 
 
-def _memory_parts(request) -> tuple[str, str]:
-    """(كتلةُ الطلب الحالي، كلُّ كتل الذاكرة في رسائل المستخدم) — وما سواها كلامُ المالك نفسِه."""
-    blocks = [(index, _block_of(message.content)) for index, message in enumerate(request.messages)
-              if message.role == "user"]
-    current = next((block for index, block in blocks if index == len(request.messages) - 1), "")
-    return current, "\n".join(block for _, block in blocks if block)
+def _memory_parts(request) -> tuple[str, str, str]:
+    """(كتلةُ الطلب الحالي، كلُّ ما في الطلب سوى رسالة الفحص الحاليّة بأيّ دور، أجوبةُ النموذج السابقة وحدها): المنسيُّ الذي
+    يبلغ النموذجَ من أيّ رسالةٍ في التاريخ — كتلةِ ذاكرةٍ لم تُمحَ، أو كلامِ مالكٍ سابق، أو صدى جوابه هو على فحص العرض في
+    الجلسة المعادة — ليس منسيًّا، فلا يُقرأ فحصُ الغياب كتلَ الذاكرة وحدها (ملاحظتا Codex على #129: الخامسة عشرة والتاسعة عشرة)."""
+    messages = list(request.messages)
+    current = _block_of(messages[-1].content) if messages and messages[-1].role == "user" else ""
+    return (current, "\n".join(m.content for m in messages[:-1]),
+            "\n".join(m.content for m in messages[:-1] if m.role == "assistant"))
 
 
 class _ConsentBypassed(RuntimeError):
@@ -460,7 +462,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                 if isinstance(item, str) and item in {i["item_id"] for i in wired.store(name).items()}:
                     exposures += 1
                     text = _saved_text(scenario, step["ref"])
-                    shown = [current for current, _ in wired.contexts(name, EXPOSURE_QUESTION)]
+                    shown = [current for current, *_ in wired.contexts(name, EXPOSURE_QUESTION)]
                     if any(not _exposed(current, text) for current in shown):
                         failures.append(f"{index}: item not exposed in context before forget")
                     if any(_leaked_directive(current, text) for current in shown):
@@ -474,7 +476,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                 for other in list(wired.projects):
                     for item in wired.store(other).items():
                         exposures += 1
-                        shown = [current for current, _ in wired.contexts(other, EXPOSURE_QUESTION)]
+                        shown = [current for current, *_ in wired.contexts(other, EXPOSURE_QUESTION)]
                         if any(not _exposed(current, item["text"]) for current in shown):
                             failures.append(f"{index}: item not exposed in context before backup")
                         if any(_leaked_directive(current, item["text"]) for current in shown):
@@ -486,13 +488,16 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
             elif expect in ("retrieve", "context"):
                 # الحضورُ في الاسترجاع من استرجاع المخزن بالسؤال نفسِه، لا من قائمة المالك كلّها؛ والغيابُ منهما معًا: فالقائمةُ
                 # أشدّ في مشروعها، ونتيجةُ السؤال وحدها تُظهر عنصرًا تسرّب من مشروعٍ آخر (ملاحظتا Codex على #129)
-                views = ([(wired.retrieved_text(name, step["query"]), wired.items_text(name))] if expect == "retrieve"
+                # وفي السياق يُقرأ الطلبُ كلُّه لا كتلُ الذاكرة وحدها: صدى النموذج لقيمةٍ في جوابه على فحص العرض يبقى في الجلسة
+                # المعادة ويبلغه بعد النسيان، فيُسمّى (ملاحظة Codex على #129، الجولة التاسعة عشرة)
+                views = ([(wired.retrieved_text(name, step["query"]), wired.items_text(name), "")] if expect == "retrieve"
                          else wired.contexts(name, step["question"]))
                 counted_before = unquarantined
-                for current, every in views:
+                for current, every, echoed in views:
                     for needle in step["absent"]:
                         if _contains(every, needle) or _contains(current, needle):
-                            failures.append(f"{index}: {expect} holds absent «{needle[:30]}»")
+                            where = " in the model's own earlier reply" if _contains(echoed, needle) else ""
+                            failures.append(f"{index}: {expect} holds absent «{needle[:30]}»{where}")
                             if scenario["category"] == "isolation":
                                 leaks += 1
                             if scenario["category"] == "consent":

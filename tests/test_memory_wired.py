@@ -802,6 +802,35 @@ def test_a_forgotten_value_does_not_linger_in_the_probe_session_history_through_
     assert len(after_forget) >= 2 and not any(value in m for m in after_forget), after_forget
 
 
+class _EchoingDelegate:
+    """نموذجٌ يردّد ما رآه في الذاكرة: جوابُه على فحص العرض يحمل القيمةَ فيبقى في تاريخ الجلسة بعد نسيانها."""
+    name, is_local = "echo", True
+
+    def __init__(self, value):
+        self.value = value
+
+    def complete(self, request):
+        from core.contracts import Response, Usage
+        seen = any(self.value in m.content for m in request.messages)
+        return Response(f"أتذكّر: {self.value}" if seen else "لا أتذكّر شيئًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64)
+
+
+def test_the_model_s_own_echo_of_a_forgotten_value_in_the_reused_session_fails_the_scenario(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة التاسعة عشرة): النموذجُ الذي يردّد القيمةَ في جوابه على فحص العرض قبل النسيان يُبقيها في
+    الجلسة المعادة رسالةَ مساعد، وكان فحصُ الغياب يقرأ كتلَ الذاكرة في رسائل المالك وحدها فيمرّ النسيانُ والقيمةُ تبلغ النموذج؛
+    صار يقرأ الطلبَ كلَّه ويسمّي الصدى."""
+    from evaluation.memory_runner import run_wired_scenario
+    value = "رقم جواز السفر ب ٤٤٥٥٦٦"
+    scenario = {"id": "forget_echo", "category": "forget", "steps": [
+        {"op": "remember", "project": "A", "text": value, "consent": "owner", "as": "m1"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": "ما رقم الجواز؟", "absent": [value], "present": []},
+    ]}
+    report = run_wired_scenario(scenario, tmp_path / "w", delegate=_EchoingDelegate(value))
+    assert not report["passed"] and report["context_exposures"] == 1, report
+    assert any(f.endswith("in the model's own earlier reply") for f in report["failures"]), report["failures"]
+
+
 def test_a_directive_shown_raw_during_an_exposure_probe_is_counted_unquarantined_in_any_category(tmp_path, monkeypatch):
     """انحدارٌ يُبلغ الأمرَ بنصّه في كتلة الذاكرة كان يمرّ في سيناريوهات النسيان والنسخ لأن العدَّ محصورٌ في فئة الحقن؛ صار
     يُعدّ غيرَ محجورٍ حيثما وقع."""
