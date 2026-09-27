@@ -1,0 +1,249 @@
+"""تدقيقُ ميزانية السياق (ECC ٥، ق٦٧-٦): كم رمزًا يكلّف ما يُقرأ قبل أول كلمةٍ من المستخدم — مقيسًا بمرمِّزٍ مسمًّى لا مقدَّرًا.
+
+ميزانيتان تُقاسان معًا لأنهما تختلفان قارئًا:
+- **مجموعةُ قراءة §٠** (`AGENTS.md` و`docs/INDEX.md` و`docs/VISION.md` كما يسمّيها `tools/context_index.py`): ما يقرؤه العميلُ
+  في بداية كل جلسة. مرمِّزاتُ Claude وCodex وGemini ليست عامّة، فيُقاس بمرمِّز العامل المحلّي المسجَّل (`openai/gpt-oss-20b`)
+  وبمرمِّز المحرّك المعتمَد؛ والتقديرُ القائم في الفهرس (الأحرفُ على ثلاثة) يُقابَل بالمقيس فيُعرف انحرافُه.
+- **سابقةُ التشغيل**: ما يبلغ المحرّكَ (qwen3.5:9b عبر Ollama) قبل رسالة المستخدم في كل جولة — نصُّ النظام الوكيل والنصّي
+  وأنماطُه، ومخطّطاتُ الأدوات كما يسلسلها `providers/ollama_codec.py`، وغلافُ المدخل الوكيل — ونصيبُها من نافذة السياق
+  المضبوطة في المزوّد (`CONTEXT_TOKENS`).
+
+القاعدة: لا رقمَ بلا مرمِّز. بلا `--tokenizer` أو `--tokenizer-file` يُرفض التشغيل برمزٍ مسمًّى، وغيابُ حزمة `tokenizers` أو
+تعذّرُ تحميل المرمِّز رفضٌ مسمًّى لا سقوطٌ إلى التقدير. والدالّةُ `audit()` تقبل عدّاداتٍ محقونة فتُختبر بلا الحزمة وبلا شبكة.
+
+    python tools/context_budget.py --tokenizer qwen3.5-9b=Qwen/Qwen3.5-9B --tokenizer gpt-oss-20b=openai/gpt-oss-20b \\
+        --report docs/probe/context-budget-<التاريخ>.json
+    python tools/context_budget.py --tokenizer-file qwen3.5-9b=/path/tokenizer.json --report out.json   # بلا شبكة
+
+الخرجُ JSON: لكل نصٍّ بايتاتُه وأحرفُه وتقديرُ الفهرس ورموزُه بكل مرمِّز، ونسبةُ التقدير إلى المقيس، ومجاميعُ المجموعتين،
+ونصيبُ سابقة التشغيل من النافذة، وضريبةُ الرمز العربي على عيّنةٍ ثابتة، ونتائجُ مسمّاة، وحدودُ القياس.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as _dt
+import hashlib
+import json
+import subprocess
+import sys
+from collections.abc import Callable
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tools"))
+
+import context_index  # noqa: E402  (مجموعةُ قراءة §٠ وتقديرُها من مصدرٍ واحد)
+
+SCHEMA_VERSION = 1
+TOOL = "tools/context_budget.py"
+Counter = Callable[[str], int]
+
+# عيّنةٌ ثابتة لضريبة الرمز العربي: الفقرةُ نفسُها بالعربية وبالإنجليزية، فالفرقُ فرقُ المرمِّز لا فرقُ المعنى
+ARABIC_SAMPLE = (
+    "ديوان مساعدٌ ذكيٌّ عام محوره العربية: يحادث، ويكتب، ويبرمج، ويبحث، ويحلّل، ويعمل على الملفات، وينفّذ المهام بالأدوات، "
+    "ويتذكّر. والعربية محور جودة فهمه وتعبيره واستدلاله. القاعدة الثابتة: ديوان عام، والسياسات عقدة."
+)
+ENGLISH_SAMPLE = (
+    "Diwan is a general intelligent assistant centred on Arabic: it converses, writes, programs, searches, analyses, works on "
+    "files, carries out tasks with tools, and remembers. Arabic is the axis of the quality of its understanding, expression and "
+    "reasoning. The fixed rule: Diwan is general, and policies are a node."
+)
+
+# عتباتُ النتائج المسمّاة؛ أرقامٌ معلَنة لا مخفيّة
+ESTIMATE_DRIFT = 0.20          # انحرافُ تقدير الفهرس عن المقيس الذي يستحق نتيجةً مسمّاة
+PREFIX_SHARE_WARNING = 0.10    # نصيبُ سابقة التشغيل من النافذة الذي يستحق نتيجةً مسمّاة
+
+LIMITS = [
+    "the_tokenizers_named_are_public_stand_ins_for_the_agents_that_read_section_0_since_claude_codex_and_gemini_tokenizers_are_not_public",
+    "the_runtime_prefix_counts_fixed_texts_only_the_memory_block_attachments_quarantine_findings_and_history_vary_per_turn_and_are_not_counted",
+    "tool_schemas_are_counted_as_the_json_the_provider_serializes_not_as_the_engine_s_own_chat_template_renders_them",
+    "special_tokens_and_chat_template_framing_are_excluded_so_measured_totals_are_lower_bounds_of_what_the_engine_sees",
+    "the_arabic_token_tax_is_one_fixed_paragraph_pair_not_a_corpus_statistic",
+    "the_context_window_is_the_provider_constant_context_tokens_not_a_measurement_of_the_served_model",
+]
+
+
+class Refused(Exception):
+    def __init__(self, code: str, detail: str = ""):
+        super().__init__(code)
+        self.code, self.detail = code, detail
+
+
+def _text_entry(text: str, counters: dict[str, Counter]) -> dict:
+    """بايتاتُ نصٍّ وأحرفُه وتقديرُ الفهرس ورموزُه بكل مرمِّز مع الأحرف لكل رمز ونسبة التقدير إلى المقيس."""
+    estimate = context_index.tokens_estimate(text)
+    tokens = {name: int(count(text)) for name, count in counters.items()}
+    return {"bytes": len(text.encode("utf-8")), "chars": len(text), "tokens_estimate": estimate, "tokens": tokens,
+            "chars_per_token": {name: (round(len(text) / n, 2) if n else None) for name, n in tokens.items()},
+            "estimate_ratio": {name: (round(estimate / n, 3) if n else None) for name, n in tokens.items()}}
+
+
+def _sum(entries: dict[str, dict], counters: dict[str, Counter]) -> dict:
+    return {"bytes": sum(e["bytes"] for e in entries.values()),
+            "tokens_estimate": sum(e["tokens_estimate"] for e in entries.values()),
+            "tokens": {name: sum(e["tokens"][name] for e in entries.values()) for name in counters}}
+
+
+def reading_set(root: Path, counters: dict[str, Counter]) -> dict[str, dict]:
+    """مجموعةُ قراءة §٠ كما يسمّيها الفهرس، بنصّها على القرص عند التشغيل."""
+    return {path: _text_entry((root / path).read_text(encoding="utf-8"), counters)
+            for path in context_index.READING_SET if (root / path).is_file()}
+
+
+def runtime_texts() -> dict[str, dict[str, str]]:
+    """النصوصُ الثابتة التي تسبق رسالةَ المستخدم على الطريقين، من وحدات المنتج نفسِها لا من نسخٍ مكتوبة هنا."""
+    from agent.builtin_tools import DEFAULT_TOOLS
+    from agent.coder import CODER_SYSTEM
+    from agent.loop import SYSTEM as AGENT_SYSTEM
+    from agent.research import RESEARCH_SYSTEM
+    from agent.translation import TRANSLATE_SYSTEM
+    from conversation.session import SYSTEM as TEXT_SYSTEM
+    from memory.tool import PROPOSE_MEMORY_SPEC
+    from providers.ollama_codec import serialize_tools
+    from services.agent_workspace import encode_input
+
+    specs = [tool.spec for tool in DEFAULT_TOOLS] + [PROPOSE_MEMORY_SPEC]
+    serialized = serialize_tools(specs)
+    tools = {spec.name: json.dumps(one, ensure_ascii=False) for spec, one in zip(specs, serialized, strict=True)}
+    return {
+        "agent": {"system": AGENT_SYSTEM, "tools": json.dumps(serialized, ensure_ascii=False),
+                  "envelope": encode_input("", [], None)},
+        "agent_tools": tools,
+        "modes": {"coder": CODER_SYSTEM, "research": RESEARCH_SYSTEM, "translate": TRANSLATE_SYSTEM},
+        "text": {"system": TEXT_SYSTEM},
+    }
+
+
+def context_window() -> int:
+    from providers.ollama import CONTEXT_TOKENS
+    return int(CONTEXT_TOKENS)
+
+
+def _findings(report: dict) -> list[dict]:
+    """نتائجُ مسمّاة تُشتقّ من الأرقام لا تُكتب بيدٍ؛ كلٌّ برمزٍ وقيمته وعتبته."""
+    found = []
+    agents = report["reading_set"].get(context_index.AGENTS)
+    if agents and agents["bytes"] > context_index.CODEX_PROJECT_DOC_MAX_BYTES:
+        found.append({"code": "agents_md_exceeds_codex_cap", "bytes": agents["bytes"],
+                      "cap": context_index.CODEX_PROJECT_DOC_MAX_BYTES})
+    totals = report["reading_set_totals"]
+    for name, measured in totals["tokens"].items():
+        if measured and abs(totals["tokens_estimate"] / measured - 1) > ESTIMATE_DRIFT:
+            found.append({"code": "index_estimate_drifts_from_measured", "tokenizer": name,
+                          "estimate": totals["tokens_estimate"], "measured": measured,
+                          "ratio": round(totals["tokens_estimate"] / measured, 3), "threshold": ESTIMATE_DRIFT})
+    for name, share in report["runtime_prefix"]["agent"]["share_of_context_window"].items():
+        if share > PREFIX_SHARE_WARNING:
+            found.append({"code": "agent_prefix_share_of_window_high", "tokenizer": name, "share": share,
+                          "threshold": PREFIX_SHARE_WARNING})
+    tools = report["runtime_prefix"]["agent_tools"]
+    for name in report["tokenizers"]:
+        costliest = max(tools, key=lambda t: tools[t]["tokens"][name]) if tools else None
+        if costliest:
+            found.append({"code": "costliest_tool_schema", "tokenizer": name, "tool": costliest,
+                          "tokens": tools[costliest]["tokens"][name],
+                          "share_of_tools": round(tools[costliest]["tokens"][name]
+                                                  / max(1, report["runtime_prefix"]["agent"]["tools"]["tokens"][name]), 3)})
+    return found
+
+
+def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str, dict] | None = None,
+          window: int | None = None) -> dict:
+    """التقريرُ كاملًا بعدّاداتٍ محقونة (اسمٌ ← دالّةٌ تعدّ رموزَ نصّ). بلا عدّادٍ يُرفض: لا رقمَ بلا مرمِّز."""
+    if not counters:
+        raise Refused("no_tokenizer_named", "لا عدّادَ رموزٍ مسمًّى؛ التقديرُ وحده لا يُنشر رقمًا")
+    window = context_window() if window is None else window
+    texts = runtime_texts()
+    reading = reading_set(root, counters)
+    agent = {key: _text_entry(text, counters) for key, text in texts["agent"].items()}
+    agent_total = {name: sum(e["tokens"][name] for e in agent.values()) for name in counters}
+    report = {
+        "schema_version": SCHEMA_VERSION, "tool": TOOL,
+        "generated_at": _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat(),
+        "commit": _commit(root), "tokenizers": tokenizer_sources or {name: {"source": "injected"} for name in counters},
+        "context_window_tokens": window,
+        "reading_set": reading, "reading_set_totals": _sum(reading, counters),
+        "runtime_prefix": {
+            "agent": {**agent, "total_tokens": agent_total,
+                      "share_of_context_window": {name: round(n / window, 4) for name, n in agent_total.items()}},
+            "agent_tools": {name: _text_entry(text, counters) for name, text in texts["agent_tools"].items()},
+            "modes": {mode: _text_entry(text, counters) for mode, text in texts["modes"].items()},
+            "text": {key: _text_entry(text, counters) for key, text in texts["text"].items()},
+        },
+        "arabic_token_tax": {name: _token_tax(count) for name, count in counters.items()},
+        "thresholds": {"estimate_drift": ESTIMATE_DRIFT, "prefix_share_warning": PREFIX_SHARE_WARNING},
+        "measurement_limits": list(LIMITS),
+    }
+    report["findings"] = _findings(report)
+    return report
+
+
+def _token_tax(count: Counter) -> dict:
+    arabic, english = count(ARABIC_SAMPLE), count(ENGLISH_SAMPLE)
+    return {"arabic_tokens": arabic, "english_tokens": english,
+            "arabic_chars_per_token": round(len(ARABIC_SAMPLE) / arabic, 2) if arabic else None,
+            "english_chars_per_token": round(len(ENGLISH_SAMPLE) / english, 2) if english else None,
+            "tokens_ratio_arabic_to_english": round(arabic / english, 2) if english else None}
+
+
+def _commit(root: Path) -> str | None:
+    try:
+        return subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], capture_output=True, text=True,
+                              check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def load_tokenizers(named: list[str], files: list[str]) -> tuple[dict[str, Counter], dict[str, dict]]:
+    """يحمّل المرمِّزات المسمّاة (`اسم=معرّفُ HF` أو `اسم=مسارُ tokenizer.json`) بحزمة `tokenizers`؛ كلُّ تعذّرٍ رفضٌ مسمًّى."""
+    try:
+        from tokenizers import Tokenizer
+    except ImportError:
+        raise Refused("tokenizers_unavailable", "حزمةُ tokenizers غيرُ مركَّبة؛ لا يُقاس بلا مرمِّز") from None
+    counters: dict[str, Counter] = {}
+    sources: dict[str, dict] = {}
+    for spec, from_file in [(s, False) for s in named] + [(s, True) for s in files]:
+        name, sep, source = spec.partition("=")
+        if not sep or not name or not source:
+            raise Refused("tokenizer_spec_invalid", f"الصيغةُ اسم=مصدر: {spec!r}")
+        if name in counters:
+            raise Refused("tokenizer_spec_invalid", f"الاسمُ مكرَّر: {name!r}")
+        try:
+            tokenizer = Tokenizer.from_file(source) if from_file else Tokenizer.from_pretrained(source)
+        except Exception as exc:                                       # noqa: BLE001 -- أيُّ تعذّرٍ في التحميل يُسمّى برمزه ولا يُبتلع
+            raise Refused("tokenizer_unavailable", f"{name}: {source}: {type(exc).__name__}: {exc}"[:400]) from None
+        counters[name] = lambda text, _t=tokenizer: len(_t.encode(text, add_special_tokens=False).ids)
+        sources[name] = {"source": source, "loaded_from": "file" if from_file else "hub",
+                         **({"file_sha256_12": hashlib.sha256(Path(source).read_bytes()).hexdigest()[:12]} if from_file else {})}
+    return counters, sources
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--tokenizer", action="append", default=[], metavar="NAME=HF_ID")
+    parser.add_argument("--tokenizer-file", action="append", default=[], metavar="NAME=PATH")
+    parser.add_argument("--report", type=Path)
+    parser.add_argument("--root", type=Path, default=ROOT)
+    args = parser.parse_args(argv)
+    try:
+        if not args.tokenizer and not args.tokenizer_file:
+            raise Refused("no_tokenizer_named", "سمِّ مرمِّزًا بـ--tokenizer أو --tokenizer-file؛ لا رقمَ بلا مرمِّز")
+        counters, sources = load_tokenizers(args.tokenizer, args.tokenizer_file)
+        report = audit(args.root, counters, sources)
+    except Refused as exc:
+        print(json.dumps({"status": "refused", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
+        return 2
+    text = json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
+    if args.report:
+        args.report.write_text(text, encoding="utf-8")
+    summary = {"status": "measured", "tokenizers": sorted(counters), "reading_set_tokens": report["reading_set_totals"]["tokens"],
+               "agent_prefix_tokens": report["runtime_prefix"]["agent"]["total_tokens"],
+               "findings": [f["code"] for f in report["findings"]], "report": str(args.report) if args.report else None}
+    print(json.dumps(summary, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

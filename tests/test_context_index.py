@@ -222,7 +222,8 @@ def test_the_budget_report_is_deterministic_and_names_its_heuristic():
     first, second = ci.budget(ROOT), ci.budget(ROOT)
     assert first == second
     assert tuple(first["reading_set"]) == ci.READING_SET
-    assert "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count" in first["measurement_limits"]
+    assert "tokens_estimate_is_characters_divided_by_2_4_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count" in first["measurement_limits"]
+    assert ci.tokens_estimate("x" * 240) == 100, "القاسمُ المعايَر ٢٫٤ لا ٣"
     assert first["reading_set_total"]["bytes"] == sum(v["bytes"] for v in first["reading_set"].values())
 
 

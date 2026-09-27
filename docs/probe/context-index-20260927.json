@@ -37,7 +37,7 @@
     "AGENTS.md": {
       "bytes": 29775,
       "lines": 284,
-      "tokens_estimate": 6323,
+      "tokens_estimate": 7903,
       "codex_cut_line": null,
       "task_rows": 4,
       "task_rows_visible_to_codex": 4,
@@ -47,20 +47,20 @@
     "reading_set_in_section_0": {
       "AGENTS.md": {
         "bytes": 29775,
-        "tokens_estimate": 6323
+        "tokens_estimate": 7903
       },
       "docs/INDEX.md": {
-        "bytes": 18384,
-        "tokens_estimate": 3877
+        "bytes": 19017,
+        "tokens_estimate": 5035
       },
       "docs/VISION.md": {
         "bytes": 10397,
-        "tokens_estimate": 1986
+        "tokens_estimate": 2483
       }
     },
     "reading_set_total": {
-      "bytes": 58556,
-      "tokens_estimate": 12186
+      "bytes": 59189,
+      "tokens_estimate": 15421
     },
     "archived_rows": 41,
     "open_rows_in_agents_md": 4,
@@ -70,59 +70,63 @@
   "every_indexed_document_after": {
     "AGENTS.md": {
       "bytes": 29775,
-      "tokens_estimate": 6323
+      "tokens_estimate": 7903
     },
     "docs/STATUS.md": {
-      "bytes": 22893,
-      "tokens_estimate": 4796
+      "bytes": 23035,
+      "tokens_estimate": 6036
     },
     "docs/VISION.md": {
       "bytes": 10397,
-      "tokens_estimate": 1986
+      "tokens_estimate": 2483
     },
     "docs/DECISIONS.md": {
       "bytes": 150199,
-      "tokens_estimate": 29948
+      "tokens_estimate": 37435
     },
     "docs/PLAN-20260926.md": {
       "bytes": 215198,
-      "tokens_estimate": 47064
+      "tokens_estimate": 58830
     },
     "docs/TASKS.jsonl": {
       "bytes": 3470,
-      "tokens_estimate": 1140
+      "tokens_estimate": 1425
     },
     "docs/TASKS-ARCHIVE.md": {
       "bytes": 32499,
-      "tokens_estimate": 7020
+      "tokens_estimate": 8775
     },
     "docs/PROJECT-PLAN-20260925.md": {
       "bytes": 42526,
-      "tokens_estimate": 9022
+      "tokens_estimate": 11277
     },
     "docs/LAUNCH-PLAN-20260925.md": {
       "bytes": 29252,
-      "tokens_estimate": 6075
+      "tokens_estimate": 7593
     },
     "docs/REBUILD-2026-09-23.md": {
       "bytes": 17832,
-      "tokens_estimate": 3589
+      "tokens_estimate": 4487
     },
     "docs/EVALUATION-20260925.md": {
       "bytes": 38324,
-      "tokens_estimate": 7919
+      "tokens_estimate": 9899
+    },
+    "docs/CONTEXT-BUDGET-AUDIT-20260927.md": {
+      "bytes": 9657,
+      "tokens_estimate": 2526
     },
     "docs/AGENT-ONBOARD-REFUTE.md": {
       "bytes": 7831,
-      "tokens_estimate": 1609
+      "tokens_estimate": 2012
     },
     "docs/START-PROMPT.md": {
       "bytes": 1771,
-      "tokens_estimate": 361
+      "tokens_estimate": 451
     },
     "docs/HANDOFF-PROMPT.md": {
       "bytes": 57388,
-      "tokens_estimate": 11887
+      "tokens_estimate": 14859
     }
   },
   "measurement_limits": [

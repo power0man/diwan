@@ -72,6 +72,8 @@ SOURCES = (
     Source("docs/LAUNCH-PLAN-20260925.md", "تاريخ (ك٢٧)", "خطةُ الإطلاق الأول وتحضيرُ فتح المصدر؛ قراراتُها حُسمت (ق٥١–ق٦٠)", "بإحالةٍ فقط"),
     Source("docs/REBUILD-2026-09-23.md", "تاريخ (ق٤٩)", "إعادةُ البناء ومراحلُها السبع وأدلّتُها", "بإحالةٍ فقط"),
     Source("docs/EVALUATION-20260925.md", "تقييم", "آخرُ تقييمٍ شامل (٥١/١٠٠) وما أُغلق منه موسومٌ داخله", "بإحالةٍ فقط"),
+    Source("docs/CONTEXT-BUDGET-AUDIT-20260927.md", "تدقيق (ECC ٥)", "ميزانيةُ السياق مقيسةً بمرمِّزَين: §٠ نحو ١٥ ألف رمز، والسابقةُ ٣٫٥٪ من النافذة",
+           "عند تعديل §٠ أو نصوص النظام أو مخطّطات الأدوات"),
     Source("docs/AGENT-ONBOARD-REFUTE.md", "بروتوكول", "دحضُ آخر ثلاثة قرارات قبل البناء فوقها", "أول جلسةٍ لك فقط"),
     Source("docs/START-PROMPT.md", "برومبتُ المالك", "ما يلصقه المالك في أول جلسةٍ لأيّ ذكاءٍ مطوِّر", "لا يُقرأ؛ للمالك"),
     Source("docs/HANDOFF-PROMPT.md", "تاريخ", "برومبتُ تسليمٍ متنُه حتى ق٣٨ ورأسُه ق٤٩", "لا يُقرأ؛ الحالةُ في docs/STATUS.md"),
@@ -101,9 +103,15 @@ def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()[:12]
 
 
+# نسبةُ الأحرف إلى الرموز على مجموعة قراءة §٠ كلِّها بمرمِّز المحرّك المعتمَد (Qwen3.5-9B): ٣٦٬٥٥٥ حرفًا ÷ ١٥٬١٦٨ رمزًا
+# (`docs/probe/context-budget-20260927.json`؛ التدقيقُ `docs/CONTEXT-BUDGET-AUDIT-20260927.md`). كانت ٣ فبخست بخُمس، لأن
+# جداولَ الفهرس وعلاماتَه أغلى من النثر؛ ويُعاد القياسُ بـtools/context_budget.py عند كل تغييرٍ في §٠
+CHARS_PER_TOKEN = 2.4
+
+
 def tokens_estimate(text: str) -> int:
-    """تقديرٌ لا عدٌّ: الأحرفُ على ثلاثة، وهو ما تقاربه المُرمِّزاتُ العامة على العربية المشكولة تقريبًا."""
-    return math.ceil(len(text) / 3)
+    """تقديرٌ لا عدٌّ: الأحرفُ على النسبة المقيسة أعلاه؛ يقارب مجموعَ المجموعة ولا يصدق على كلِّ وثيقةٍ وحدها."""
+    return math.ceil(len(text) / CHARS_PER_TOKEN)
 
 
 def headings(text: str) -> list[dict]:
@@ -193,7 +201,7 @@ def _snapshot(root: Path) -> tuple[dict, str, str, list[str]]:
              "open_tasks": partial["open_tasks"], "latest_decision": partial["latest_decision"],
              "documents": [agents_doc, *others],
              "measurement_limits": [
-                 "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
+                 "tokens_estimate_is_characters_divided_by_2_4_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count",
                  "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
                  "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
                  "documents_outside_SOURCES_are_not_indexed",
