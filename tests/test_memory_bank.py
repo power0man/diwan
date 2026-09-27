@@ -71,6 +71,20 @@ def test_forgetting_without_a_receipt_check_is_refused():
     _refused(bank, "receipt_unchecked")
 
 
+def test_an_isolation_witness_must_be_substantive():
+    """ملاحظةُ Codex على #129 (الجولة الرابعة عشرة): شاهدُ الغياب في العزل كان يقبل حرفًا واحدًا من المصدر، فتسرّبٌ مبتور
+    يفلت منه؛ صار يشترط ما تشترطه حالاتُ النسيان والموافقة (SUBSTANTIVE)."""
+    bank, scenario = _scenario("isolation_002")
+    bank["scenarios"] = [scenario]                  # بنكٌ من سيناريو عزلٍ واحد يمرّ الصرامةَ (التكليفَ) بشاهده الكامل
+    validate_memory_bank(bank, strict=True)
+    for step in scenario["steps"]:
+        if step.get("expect") == "retrieve":
+            step["absent"] = [witness[:1] for witness in step["absent"]]
+    with pytest.raises(PayloadRejected) as err:
+        validate_memory_bank(bank, strict=True)
+    assert err.value.code == "isolation_without_cross_project_absence"
+
+
 def test_isolation_measured_on_one_project_is_refused():
     bank, scenario = _scenario("isolation_001")
     for step in scenario["steps"]:

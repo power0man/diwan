@@ -88,9 +88,10 @@ def _probe_question(text: str) -> str:
     return "ما الذي تتذكّره عن: " + held_text(text)
 
 
-def _leaked_directive(shown: str, text: str) -> bool:
-    """أمرٌ في العنصر بلغ السياقَ بنصّه لا بعلامته — يُعدّ غيرَ محجورٍ في أيّ فئةٍ كان السيناريو."""
-    return any(_contains(shown, finding.excerpt) for finding in scan(unfenced(text)) if finding.excerpt)
+def _leaked_directive(shown: str, text: str = "") -> bool:
+    """أمرٌ بلغ السياقَ بنصّه لا بعلامته — يُعدّ غيرَ محجورٍ في أيّ فئةٍ كان السيناريو. يُمسح النصُّ الظاهرُ نفسُه بالماسح
+    (فأمرٌ بُتر ذيلُه البريء أمرٌ بعدُ)، ويُبحث أيضًا عن مقطع الأمر الأصليّ في العنصر إن أُعطي (ملاحظتا Codex على #129)."""
+    return bool(scan(shown)) or (bool(text) and any(_contains(shown, f.excerpt) for f in scan(unfenced(text)) if f.excerpt))
 
 
 def run_scenario(scenario: dict, root: Path) -> dict:
@@ -153,6 +154,7 @@ def run_scenario(scenario: dict, root: Path) -> dict:
             for name, other in stores.items():
                 other.restore(snapshot.get(name, {}))    # مخزنٌ أُنشئ بعد اللقطة ليس فيها: يُستعاد فارغًا بإيصالاته
         elif expect in ("retrieve", "context"):
+            counted_before = unquarantined
             text = (" ".join(i["text"] for i in s.retrieve(step["query"])) if expect == "retrieve"
                     else s.context_block(step["question"]))
             for needle in step["absent"]:
@@ -173,6 +175,12 @@ def run_scenario(scenario: dict, root: Path) -> dict:
                 if (not fenced or any(not _contains(inside, n) for n in step["present"])
                         or not _marked(inside, scenario, index, _active(refs, s))):
                     failures.append(f"{index}: context not fenced")
+                    unquarantined += 1
+            # وكلُّ كتلة سياقٍ تُمسح من أمرٍ ظاهرٍ بنصّه أيًّا كانت فئةُ السيناريو وسواءٌ طلبت الخطوةُ الحجر أم لا، ويُعدّ مرّةً
+            # للخطوة (ملاحظة Codex على #129، الجولة الرابعة عشرة)
+            if expect == "context" and _leaked_directive(text):
+                failures.append(f"{index}: directive reached the context unquarantined")
+                if unquarantined == counted_before:
                     unquarantined += 1
         elif expect == "residue":
             raw = _residue(s)
@@ -461,6 +469,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                 # أشدّ في مشروعها، ونتيجةُ السؤال وحدها تُظهر عنصرًا تسرّب من مشروعٍ آخر (ملاحظتا Codex على #129)
                 views = ([(wired.retrieved_text(name, step["query"]), wired.items_text(name))] if expect == "retrieve"
                          else wired.contexts(name, step["question"]))
+                counted_before = unquarantined
                 for current, every in views:
                     for needle in step["absent"]:
                         if _contains(every, needle) or _contains(current, needle):
@@ -480,6 +489,10 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                         if (not fenced or any(not _contains(inside, n) for n in step["present"])
                                 or not _marked(inside, scenario, index, _active(refs, wired.store(name)))):
                             failures.append(f"{index}: context not fenced")
+                            unquarantined += 1
+                    if expect == "context" and _leaked_directive(current):
+                        failures.append(f"{index}: directive reached the context unquarantined")
+                        if unquarantined == counted_before:
                             unquarantined += 1
             elif expect == "residue":
                 store = wired.store(name)

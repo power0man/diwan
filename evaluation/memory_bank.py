@@ -249,7 +249,8 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         rivals = sum(overlap(o["text"]) >= source for r, (j, o) in made.items() if r != ref and j < k and active_at(r, k))
         return source > 0 and rivals < RETRIEVE_LIMIT
     if category == "isolation" and not any(
-            s.get("expect") == "retrieve" and s["project"] != item["project"] and _names(s, item["text"])
+            s.get("expect") == "retrieve" and s["project"] != item["project"]
+            and _names(s, item["text"], least=SUBSTANTIVE if strict else 0)     # شاهدٌ جوهريّ لا حرفٌ (ملاحظة Codex على #129)
             and within_limit(s["query"], ref, k) and active_at(ref, k)
             for ref, (i, item) in made.items() for k, s in enumerate(steps) if k > i):
         _reject(path, "isolation_without_cross_project_absence",
