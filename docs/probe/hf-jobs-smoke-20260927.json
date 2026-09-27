@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "task": "ق٦٧-٣ (Hugging Face بالكامل ضمن سقف HFD2)",
+  "date": "2026-09-27",
+  "agent": "anthropic/claude-fable-5-1",
+  "account": "Hussain091 (PRO)",
+  "how": "hf_jobs عبر موصّل Hugging Face من جلسة Claude السحابية؛ بلا أسرار ولا تركيبات، الأمرُ في سطرٍ واحد",
+  "jobs": [
+    {
+      "job_id": "6ab8d6716b030d633f698704",
+      "label": "diwan-ci-smoke",
+      "flavor": "cpu-basic",
+      "image": "python:3.12",
+      "created_at": "2026-09-27T08:40:17Z",
+      "finished_at": "2026-09-27T08:40:29Z",
+      "commit": "cad838c",
+      "what": "استنساخٌ ضحل، uv sync --frozen بالبايثون الافتراضي، استيرادُ الحزم؛ pytest ليس في الاعتماديات الافتراضية فلم تُشغَّل الاختبارات",
+      "result": "imports_ok_pytest_missing_without_extra_dev",
+      "seconds": 12,
+      "list_price_usd": 3e-05
+    },
+    {
+      "job_id": "6ab8d6ba52d0dbd7f1d9ae58",
+      "label": "diwan-full-tests",
+      "flavor": "cpu-upgrade",
+      "image": "python:3.12",
+      "created_at": "2026-09-27T08:41:30Z",
+      "finished_at": "2026-09-27T08:45:32Z",
+      "commit": "cad838c",
+      "what": "استنساخٌ ضحل (--depth 1)، بايثون 3.14، --extra dev، قاعدةُ CAMeL، pytest -x",
+      "result": "one_failure_test_task_table_hashes_exist_because_the_shallow_clone_lacks_history",
+      "seconds": 242,
+      "list_price_usd": 0.00202
+    },
+    {
+      "job_id": "6ab8d89752d0dbd7f1d9aeb9",
+      "label": "diwan-full-tests-fullclone",
+      "flavor": "cpu-upgrade",
+      "image": "python:3.12",
+      "created_at": "2026-09-27T08:49:27Z",
+      "finished_at": "2026-09-27T08:55:21Z",
+      "commit": "cad838c",
+      "what": "استنساخٌ كامل، بايثون 3.14، --extra dev، قاعدةُ CAMeL، pytest كاملًا",
+      "result": "full_suite_passed_exit_0",
+      "seconds": 354,
+      "list_price_usd": 0.00295
+    }
+  ],
+  "spend": {
+    "list_price_usd_total": 0.005,
+    "cap_usd": 20,
+    "cap": "HFD2",
+    "billed_usd": null,
+    "note": "الرقمُ من أسعار القائمة وأزمنة المهامّ لا من صفحة الفوترة؛ واشتراكُ PRO يحمل رصيدًا شهريًّا قد يغطّيه"
+  },
+  "what_it_proves": "الاختباراتُ كاملةً تمرّ على لينكس مستضاف خارج الماك (Python 3.14، uv مجمَّد، قاعدةُ CAMeL منزَّلة)، أي أن «تعمل بلا متون» ليست حكرًا على جهاز المالك؛ والنسخةُ الضحلة تُسقط حارسَ بصمات الجدول وحده لغياب التاريخ",
+  "measurement_limits": [
+    "costs_are_list_prices_times_job_duration_not_the_billing_page",
+    "no_engine_ran_in_these_jobs_so_no_model_answer_was_measured",
+    "one_run_each_no_variance",
+    "the_full_suite_ran_at_main_cad838c_before_the_index_and_mutation_checker_landed"
+  ]
+}
