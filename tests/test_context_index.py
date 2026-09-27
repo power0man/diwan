@@ -28,7 +28,7 @@ ARCHIVED_FROM = "113d1b4"
 
 def _copy(tmp_path: Path) -> Path:
     root = tmp_path / "repo"
-    for rel in [s.path for s in ci.SOURCES] + [ci.INDEX_MD, ci.INDEX_JSON]:
+    for rel in [s.path for s in ci.SOURCES] + [ci.INDEX_MD, ci.INDEX_JSON, ci.PROBE]:
         (root / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(ROOT / rel, root / rel)
     return root
@@ -51,10 +51,10 @@ def test_writing_is_idempotent_and_a_changed_document_is_stale_until_rewritten(t
     status.write_text(status.read_text(encoding="utf-8") + "\n## عنوانٌ جديد\n", encoding="utf-8")
     code, report = _run(root, "--check", capsys=capsys)
     assert code == 1 and report["status"] == "index_stale"
-    # الفهرسان يتأخّران، ومعهما كتلةُ §٠ لأنها تحمل بصمةَ الوثيقة التي تغيّرت
-    assert set(report["files"]) == {ci.INDEX_MD, ci.INDEX_JSON, ci.AGENTS}, "تغيّرُ الوثيقة يجب أن يُسقط الفهرسين والكتلة"
+    # الفهرسان يتأخّران، ومعهما كتلةُ §٠ لأنها تحمل بصمةَ الوثيقة التي تغيّرت، وقسمُ «بعد» في الدليل لأنه يقيس الوثيقة
+    assert set(report["files"]) == {ci.INDEX_MD, ci.INDEX_JSON, ci.AGENTS, ci.PROBE}, "تغيّرُ الوثيقة يجب أن يُسقط الفهرسين والكتلة والدليل"
     code, report = _run(root, "--write", capsys=capsys)
-    assert code == 0 and set(report["written"]) == {ci.INDEX_MD, ci.INDEX_JSON, ci.AGENTS}
+    assert code == 0 and set(report["written"]) == {ci.INDEX_MD, ci.INDEX_JSON, ci.AGENTS, ci.PROBE}
     code, report = _run(root, "--write", capsys=capsys)
     assert code == 0 and report["written"] == [], "الكتابةُ الثانية يجب ألّا تغيّر شيئًا"
     assert _run(root, "--check", capsys=capsys)[0] == 0
@@ -197,6 +197,25 @@ def test_the_index_lists_every_source_with_its_current_digest():
         assert on_disk[heading["line"] - 1] == "#" * heading["level"] + " " + heading["title"], heading
     # ومجموعُ §٠ في الفهرس بلا الفهرس نفسِه، معلَنًا؛ والمجموعُ به في --print-budget
     assert "بلا هذا الفهرس" in md and ci.INDEX_MD in ci.budget(ROOT)["reading_set"]
+
+
+def test_the_probe_after_section_is_generated_with_the_index_and_matches_the_budget_on_disk(tmp_path, capsys):
+    """ملاحظاتُ Codex على #148 (ثلاث مرّات): الدليلُ كان يتأخّر عن كلِّ تعديل. صار قسمُ «بعد» يُولَّد مع الفهرس من اللقطة
+    نفسِها، فبعد --write يطابق --print-budget على القرص حرفًا، وقسمُ «قبل» لا يُمسّ."""
+    root = _copy(tmp_path)
+    before = json.loads((root / ci.PROBE).read_text(encoding="utf-8"))["before"]
+    status = root / "docs/STATUS.md"
+    status.write_text(status.read_text(encoding="utf-8") + "\n## فقرةٌ تغيّر القياس\n", encoding="utf-8")
+    assert _run(root, "--write", capsys=capsys)[0] == 0
+    probe = json.loads((root / ci.PROBE).read_text(encoding="utf-8"))
+    budget = ci.budget(root)
+    assert probe["before"] == before, "قسمُ «قبل» تاريخٌ لا يُمسّ"
+    assert probe["after"]["reading_set_total"] == budget["reading_set_total"]
+    assert probe["after"]["reading_set_in_section_0"] == budget["reading_set"]
+    assert probe["every_indexed_document_after"] == budget["every_indexed_document"]
+    assert probe["after"]["AGENTS.md"]["bytes"] == (root / ci.AGENTS).stat().st_size
+    assert probe["after"]["open_rows_in_agents_md"] == len(ci.open_tasks((root / ci.AGENTS).read_text(encoding="utf-8")))
+    assert _run(root, "--check", capsys=capsys)[0] == 0
 
 
 def test_the_budget_report_is_deterministic_and_names_its_heuristic():

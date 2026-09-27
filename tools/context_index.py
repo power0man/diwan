@@ -30,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 INDEX_MD = "docs/INDEX.md"
 INDEX_JSON = "docs/INDEX.json"
 ARCHIVE = "docs/TASKS-ARCHIVE.md"
+PROBE = "docs/probe/context-index-20260927.json"
 AGENTS = "AGENTS.md"
 BLOCK = "context-index"
 # حدُّ Codex الافتراضي لملفّ التعليمات (project_doc_max_bytes في openai/codex)؛ ما بعده لا يراه
@@ -275,12 +276,64 @@ def expected_files(root: Path) -> dict[Path, str]:
     return _expected(root)[0]
 
 
+def _cut_line(raw: bytes) -> int | None:
+    """السطرُ الذي يقع فيه حدُّ Codex، أو None إن كان الملفُّ كلُّه دونه."""
+    if len(raw) <= CODEX_PROJECT_DOC_MAX_BYTES:
+        return None
+    return raw[:CODEX_PROJECT_DOC_MAX_BYTES].decode("utf-8", "ignore").count("\n") + 1
+
+
+def probe_text(root: Path, state: dict, agents_new: str, archive_new: str, index_md: str) -> str | None:
+    """قسمُ «بعد» في دليل القياس يُولَّد من اللقطة نفسِها التي تُكتب، فيصف دائمًا شجرةَ الإيداع الذي يحمله ولا يُحرَّر بيد
+    (ملاحظات Codex على #148)؛ وقسمُ «قبل» تاريخٌ لا يُمسّ. None حين لا دليلَ في هذه النسخة."""
+    path = root / PROBE
+    if not path.is_file():
+        return None
+    probe = json.loads(path.read_text(encoding="utf-8"))
+    docs = {d["path"]: d for d in state["documents"]}
+    raw = agents_new.encode("utf-8")
+    cut = _cut_line(raw)
+    lines = agents_new.split("\n")
+    section_start = next((i for i, line in enumerate(lines) if line.startswith("## ٣ — المهام")), len(lines))
+    section_end = next((i for i in range(section_start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    row_lines = [i + 1 for i in range(section_start, section_end) if TASK_ROW.match(lines[i])]
+    heading_lines = [i + 1 for i, line in enumerate(lines) if line.startswith("## ")]
+    visible = (lambda numbers: len(numbers)) if cut is None else (lambda numbers: sum(1 for n in numbers if n < cut))
+    index_raw = index_md.encode("utf-8")
+    sizes = {AGENTS: (len(raw), tokens_estimate(agents_new)), INDEX_MD: (len(index_raw), tokens_estimate(index_md))}
+    reading = {p: {"bytes": sizes[p][0] if p in sizes else docs[p]["bytes"],
+                   "tokens_estimate": sizes[p][1] if p in sizes else docs[p]["tokens_estimate"]}
+               for p in READING_SET if p in sizes or p in docs}
+    after = probe.setdefault("after", {})
+    after["AGENTS.md"] = {"bytes": len(raw), "lines": agents_new.count("\n"), "tokens_estimate": tokens_estimate(agents_new),
+                          "codex_cut_line": cut, "task_rows": len(row_lines), "task_rows_visible_to_codex": visible(row_lines),
+                          "sections": len(heading_lines), "sections_visible_to_codex": visible(heading_lines)}
+    after["reading_set_in_section_0"] = reading
+    after["reading_set_total"] = {"bytes": sum(v["bytes"] for v in reading.values()),
+                                  "tokens_estimate": sum(v["tokens_estimate"] for v in reading.values())}
+    after["archived_rows"] = sum(1 for line in archive_new.split("\n") if TASK_ROW.match(line))
+    after["open_rows_in_agents_md"] = len(row_lines)
+    after["regenerated_by"] = "tools/context_index.py --write"
+    probe["every_indexed_document_after"] = {p: {"bytes": d["bytes"], "tokens_estimate": d["tokens_estimate"]} for p, d in docs.items()}
+    probe["tool"] = "tools/context_index.py --write (قسمُ «بعد» يُولَّد مع الفهرس من اللقطة نفسِها؛ و--print-budget يقرأ القرص)"
+    limit = "the_after_section_is_regenerated_by_context_index_write_from_the_same_snapshot_as_the_index_so_it_describes_the_tree_of_the_commit_that_carries_it_while_before_stays_the_113d1b4_measurement"
+    limits = probe.setdefault("measurement_limits", [])
+    if limit not in limits:
+        limits.append(limit)
+    return json.dumps(probe, ensure_ascii=False, indent=2) + "\n"
+
+
 def _expected(root: Path) -> tuple[dict[Path, str], list[str]]:
     """(ما يجب أن تكون عليه الملفّاتُ المولَّدة، أرقامُ الصفوف المنجزة التي تنتظر النقلَ إلى الأرشيف)."""
     state, agents_new, archive_new, moved = _snapshot(root)
-    return ({root / INDEX_MD: render_md(state),
-             root / INDEX_JSON: json.dumps(state, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
-             root / AGENTS: agents_new, root / ARCHIVE: archive_new}, moved)
+    index_md = render_md(state)
+    expected = {root / INDEX_MD: index_md,
+                root / INDEX_JSON: json.dumps(state, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
+                root / AGENTS: agents_new, root / ARCHIVE: archive_new}
+    probe = probe_text(root, state, agents_new, archive_new, index_md)
+    if probe is not None:
+        expected[root / PROBE] = probe
+    return expected, moved
 
 
 def budget(root: Path) -> dict:
