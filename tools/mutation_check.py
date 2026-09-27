@@ -46,6 +46,7 @@ import atexit
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -74,8 +75,9 @@ LIMITS = [
     "a_kill_is_judged_by_the_named_tests_failing_another_test_that_fails_is_not_counted",
     "an_existing_test_is_touched_by_an_added_line_inside_its_span_at_the_head_so_changes_to_fixtures_or_helpers_outside_test_functions_are_not_re_proven_while_a_test_that_vanished_or_lost_a_line_only_has_its_manifests_re_applied",
     "what_is_collected_is_decided_by_pytest_over_the_whole_tests_tree_at_the_head_and_at_the_merge_base_compared_by_full_node_ids_with_their_parameters_a_case_new_at_the_head_touches_its_test_wherever_it_appears_and_an_existing_test_is_touched_only_when_the_parser_places_an_added_line_in_its_span",
-    "the_parser_places_definitions_Test_classes_unittest_subclasses_named_in_the_module_and_same_file_inheritance_so_an_existing_collected_node_it_cannot_place_such_as_an_alias_or_a_method_of_a_class_whose_base_is_imported_under_another_name_is_not_touched_by_an_added_line_in_the_test_module",
-    "an_added_or_removed_line_inside_a_test_named_function_of_a_python_file_that_is_not_a_test_module_touches_or_revalidates_every_collected_test_of_that_bare_name_since_collection_does_not_say_where_a_test_was_defined",
+    "the_parser_places_definitions_Test_classes_unittest_subclasses_named_in_the_module_and_same_file_inheritance_in_the_test_module_itself",
+    "every_collected_node_is_also_traced_to_the_callable_that_defines_it_as_pytest_resolves_it_file_and_decorator_inclusive_span_from_inspect_so_an_added_line_in_that_span_touches_it_and_a_removed_line_revalidates_it_wherever_it_is_defined_a_helper_conftest_or_package_imported_by_its_own_name_or_an_alias_or_inherited_from_another_file",
+    "a_collected_node_whose_callable_has_no_readable_source_such_as_one_built_by_exec_is_placed_by_the_parser_only_and_is_named_with_its_error_in_the_collection_output",
     "inherited_test_methods_are_placed_through_bases_defined_at_module_level_in_the_same_file_first_base_wins_so_an_added_line_in_a_base_method_touches_every_heir_of_that_file",
     "renames_are_not_detected_in_the_range_a_moved_file_is_its_source_deleted_and_its_destination_added_so_both_sides_are_checked",
     "naming_a_touched_test_in_a_manifest_re_applies_that_manifest_in_the_range_but_the_manifests_themselves_are_read_from_the_working_tree",
@@ -272,35 +274,6 @@ def _named_exactly(text: str) -> set[str]:
     return named
 
 
-def _test_names_edited_outside_modules(root: Path, base: str, head: str, paths: list[str]) -> tuple[set[str], set[str]]:
-    """أسماءُ دوالّ test* (في أيّ صنفٍ وعمق) التي دخل سطرٌ مضاف في مداها، أو زالت أو فقدت سطرًا، في ملفّات بايثون ليست وحداتِ
-    اختبار (مساعدٌ تحت tests/ أو conftest أو حزمة): الاختبارُ المجموعُ في وحدةٍ لم تتغيّر قد يكون معرَّفًا هناك ومستورَدًا،
-    والجمعُ لا يقول أين عُرّف، فيُمسّ كلُّ اختبارٍ مجموعٍ بذلك الاسم (ملاحظة Codex على #149)."""
-    def names_at(sha: str, path: str) -> dict[str, list[tuple[int, int]]]:
-        """كلُّ مديات الاسم الواحد: الاسمُ يتكرّر في أصنافٍ عدّة (`TestA.test_same` و`TestB.test_same`) فلا يُكتفى بآخر تعريف."""
-        try:
-            tree = ast.parse(_show(root, sha, path))
-        except (SyntaxError, subprocess.CalledProcessError):
-            return {}
-        spans: dict[str, list[tuple[int, int]]] = {}
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
-                spans.setdefault(node.name, []).append((min([node.lineno, *(d.lineno for d in node.decorator_list)]), node.end_lineno or node.lineno))
-        return spans
-
-    grown: set[str] = set()
-    shed: set[str] = set()
-    for path in paths:
-        if not path.endswith(".py") or (path.startswith("tests/") and _is_test_module(path)):
-            continue
-        at_head, at_base = names_at(head, path), names_at(base, path)
-        added, removed = _added_lines(root, base, head, path), _removed_lines(root, base, head, path)
-        grown |= {name for name, spans in at_head.items() if any(start <= n <= end for start, end in spans for n in added)}
-        shed |= {name for name, spans in at_base.items()
-                 if len(at_head.get(name, [])) < len(spans) or any(start <= n <= end for start, end in spans for n in removed)}
-    return grown, shed
-
-
 def _manifest_names(root: Path) -> dict[Path, set[str]]:
     """ما يسمّيه كلُّ بيانٍ في المستودع من اختبارات بمعرّفها الكامل بلا معاملات."""
     return {path: {t.split("[", 1)[0] for t in _named_exactly(path.read_text(encoding="utf-8"))}
@@ -388,19 +361,25 @@ def _range_scope(root: Path, rng: str, python: str = sys.executable, timeout: in
     # الاسمُ القديم لملفٍّ نُقل)، تُعاد بياناتُه فيُحكم ما يسمّيه test_missing هنا لا في الأسبوعيّ وحده
     # والمقارنةُ بالمعرّفات الكاملة بمعاملاتها قبل ردّها إلى دوالّها: حالةٌ تولَّد خارج الوحدة (conftest أو مساعد) لاختبارٍ
     # قائم تمسّه (ملاحظة Codex على #149)
-    cases_head = _collected_at(root, head, python, ["tests/"], timeout)
-    cases_base = _collected_at(root, base, python, ["tests/"], timeout)
+    cases_head, origins_head = _collected_origins_at(root, head, python, ["tests/"], timeout)
+    cases_base, origins_base = _collected_origins_at(root, base, python, ["tests/"], timeout)
     functions = lambda cases: {case.split("[", 1)[0] for case in cases}
     collected_head, collected_base = functions(cases_head), functions(cases_base)
     grown = [node for test in modified for node in _touched_test_nodes(root, base, head, test)]
     touched = sorted(functions(cases_head - cases_base) | {node for node in grown if node in collected_head})
     shrunk = [node for test in modified for node in _revalidated_test_nodes(root, base, head, test)]
     revalidated = sorted(functions(cases_base - cases_head) | {node for node in shrunk if node in collected_base})
-    # والاختبارُ المعرَّف في ملفٍّ ليس وحدةَ اختبار (مساعدٌ، conftest، حزمة) ومستورَدٌ في وحدةٍ لم تتغيّر: تعديلُ جسمه هناك
-    # يمسّ كلَّ اختبارٍ مجموعٍ باسمه، وزوالُه أو نقصُه يُعيد بياناتِه (ملاحظة Codex على #149)
-    reached, gone = _test_names_edited_outside_modules(root, base, head, changed("AMD", "."))
-    touched = sorted({*touched, *(node for node in collected_head if node.rsplit("::", 1)[-1] in reached)})
-    revalidated = sorted({*revalidated, *(node for node in collected_base if node.rsplit("::", 1)[-1] in gone)})
+    # وكلُّ اختبارٍ مجموع يُردّ إلى الدالّة التي تعرّفه كما يراها pytest نفسُه (ملفُّها ومداها من inspect)، لا إلى اسمه: مساعدٌ
+    # أو conftest أو حزمة، مستورَدٌ باسمه أو باسمٍ مستعار (`from helpers import guard as test_guard`)، أو موروثٌ من ملفٍّ
+    # آخر — سطرٌ مضاف في مدى تعريفه يمسّه، وسطرٌ محذوف منه يُعيد بياناتِه؛ وما لا مصدرَ له يُوضع بالقراءة النحوية وحدها
+    # (ملاحظتا Codex على #149)
+    edited = [p for p in changed("AMD", ".") if p.endswith(".py")]
+    added_in = {p: _added_lines(root, base, head, p) for p in edited}
+    removed_in = {p: _removed_lines(root, base, head, p) for p in edited}
+    reached = {node for node, (origin, first, last) in origins_head.items() if any(first <= n <= last for n in added_in.get(origin, ()))}
+    gone = {node for node, (origin, first, last) in origins_base.items() if any(first <= n <= last for n in removed_in.get(origin, ()))}
+    touched = sorted({*touched, *(functions(reached) & collected_head)})
+    revalidated = sorted({*revalidated, *(functions(gone) & collected_base)})
     unnamed = [node for node in touched if node not in names.get(own(node), set())]
     naming = [path for path in dict.fromkeys(own(node) for node in [*touched, *revalidated]) if path in names]
     paths = [root / p for p in changed("AMR", f"{MANIFESTS}/*.jsonl") if (root / p).is_file()]
@@ -418,8 +397,8 @@ def _range_scope(root: Path, rng: str, python: str = sys.executable, timeout: in
             "dropped_candidates": candidates, "named_at_head": sorted(named_at_head)}
 
 
-def _pytest(python: str, cwd: Path, argv: list[str], timeout: int) -> subprocess.CompletedProcess | None:
-    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+def _pytest(python: str, cwd: Path, argv: list[str], timeout: int, env_extra: dict | None = None) -> subprocess.CompletedProcess | None:
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", **(env_extra or {})}
     try:
         return subprocess.run([python, "-m", "pytest", "-p", "no:cacheprovider", "-q", "-o", "addopts=", *argv],
                               cwd=cwd, env=env, capture_output=True, text=True, timeout=timeout)
@@ -436,26 +415,67 @@ def _listed(result: subprocess.CompletedProcess | None) -> list[str]:
     return [l.strip() for l in result.stdout.splitlines() if l.strip().startswith("tests/")] if result and result.returncode == 0 else []
 
 
-def _collected_at(root: Path, sha: str, python: str, modules: list[str], timeout: int) -> set[str]:
+ORIGIN_PLUGIN = '''"""إضافةُ جمعٍ تكتب لكل اختبارٍ مجموع الدالّةَ التي تعرّفه كما يراها pytest: ملفُّها ومداها (بمزخرفاتها) من inspect،
+لا اسمَها؛ فالمستورَدُ باسمٍ مستعار والموروثُ من ملفٍّ آخر يُردّان إلى مصدرهما (ملاحظة Codex على #149)."""
+import inspect
+import os
+
+
+def pytest_collection_finish(session):
+    root = str(session.config.rootpath)
+    for item in session.items:
+        try:
+            func = inspect.unwrap(item.obj)
+            file = inspect.getsourcefile(func)
+            lines, first = inspect.getsourcelines(func)
+        except (AttributeError, TypeError, OSError) as exc:   # بلا مصدرٍ يُقرأ: يُسمّى بخطئه ولا يُوضع
+            print("@@origin", item.nodeid, "?", 0, 0, type(exc).__name__, sep="\\t")
+            continue
+        print("@@origin", item.nodeid, os.path.relpath(file, root), first, first + len(lines) - 1, sep="\\t")
+'''
+
+
+def _origins(result: subprocess.CompletedProcess | None) -> dict[str, tuple[str, int, int]]:
+    """أصلُ كل اختبارٍ مجموع كما كتبته الإضافة: (الملفُّ، أولُ سطر، آخرُ سطر)؛ وما بلا مصدرٍ يُقرأ لا أصلَ له."""
+    origins: dict[str, tuple[str, int, int]] = {}
+    for line in result.stdout.splitlines() if result else []:
+        if line.startswith("@@origin\t"):
+            _, node, origin, first, last, *_ = line.split("\t")
+            if origin != "?":
+                origins[node] = (origin, int(first), int(last))
+    return origins
+
+
+def _collected_origins_at(root: Path, sha: str, python: str, modules: list[str], timeout: int) -> tuple[set[str], dict[str, tuple[str, int, int]]]:
     """ما يجمعه pytest فعلًا من هذه المسارات عند الإيداع، بمعرّفاته الكاملة بمعاملاتها، في شجرة عملٍ مؤقّتة تُزال: هو الحكمُ
     فيما يُجمع (وارثٌ بلا تعريف، وسمةٌ حاجبة، واسمٌ مستعار، واستيراد، وحالةٌ تولَّد خارج الوحدة…) والقراءةُ النحوية للمديات
-    وحدها (ملاحظات Codex على #149)."""
+    وحدها؛ ومعه أصلُ كلِّ مجموع: الدالّةُ التي تعرّفه بملفّها ومداها (ملاحظات Codex على #149)."""
     tmp = Path(tempfile.mkdtemp(prefix="diwan-mutation-scope-", dir=os.environ.get("RUNNER_TEMP") or None))
-    worktree = tmp / "worktree"
+    worktree, plugin = tmp / "worktree", tmp / "plugin"
     try:
         _git(root, "worktree", "add", "--detach", str(worktree), sha)
         present = [m for m in modules if (worktree / m).exists()]      # ما زال منها عند هذا الإيداع لا يُجمع
         if not present:
-            return set()
-        result = _pytest(python, worktree, ["--collect-only", *present], timeout)
+            return set(), {}
+        plugin.mkdir()
+        (plugin / "diwan_collect_origins.py").write_text(ORIGIN_PLUGIN, encoding="utf-8")
+        path = os.pathsep.join(p for p in (str(plugin), os.environ.get("PYTHONPATH", "")) if p)
+        result = _pytest(python, worktree, ["-p", "diwan_collect_origins", "--collect-only", *present], timeout,
+                         env_extra={"PYTHONPATH": path})
         if result is None:
             raise Refused("timeout", f"جمعُ الاختبارات عند {sha[:12]} تجاوز مهلتَه")
         if result.returncode not in (0, 5):        # 5: لا اختبارَ في هذه الوحدات
             raise Refused("collection_failed", f"عند {sha[:12]}: " + (result.stdout + result.stderr)[-2000:])
-        return set(_listed(result))
+        return set(_listed(result)), _origins(result)
     finally:
         subprocess.run(["git", "-C", str(root), "worktree", "remove", "--force", str(worktree)], capture_output=True)
         subprocess.run(["git", "-C", str(root), "worktree", "prune"], capture_output=True)
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def _collected_at(root: Path, sha: str, python: str, modules: list[str], timeout: int) -> set[str]:
+    """معرّفاتُ ما يُجمع وحدها (انظر _collected_origins_at)."""
+    return _collected_origins_at(root, sha, python, modules, timeout)[0]
 
 
 def _collect_missing(node_ids: list[str], python: str, worktree: Path, timeout: int) -> list[str]:
