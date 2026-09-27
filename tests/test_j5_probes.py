@@ -147,7 +147,7 @@ class _EmptyThenFoundApp:
 
 PIN = {"id": "c" * 64, "image": j5.PINNED_SEARXNG, "image_id": "sha256:" + "a" * 64, "running": True,
        "started_at": "2026-09-27T03:00:00Z", "runs_the_image_default": True, "mounts": ["/etc/searxng"],
-       "overlays_the_image": False, "serves_url": True}
+       "application_changes": [], "overlays_the_image": False, "serves_url": True}
 
 
 def _ui_receipt(tmp_path, **fields):
@@ -275,6 +275,7 @@ def test_a_source_that_changes_during_the_round_writes_no_report(tmp_path, monke
     ({"id": "", "image": "", "image_id": "", "running": False, "started_at": "", "serves_url": False}, None,
      ["searxng_container"]),
     ({"serves_url": False}, None, ["searxng_container"]),
+    ({"application_changes": ["/usr/local/searxng/searx/webapp.py"]}, None, ["searxng_container"]),
     ({}, ["sha256:weights", "sha256:repulled"], ["engine_digest"]),
 ])
 def test_a_searxng_container_or_engine_that_changes_during_the_round_writes_no_report(tmp_path, monkeypatch, capsys,
@@ -434,18 +435,24 @@ IMAGE_PROCESS = ["/sbin/tini", "--", "/usr/local/searxng/entrypoint.sh"]
 
 def _docker(image: str, bindings: list[dict], running: str = "true", asked: list | None = None,
             started: str = "2026-09-27T03:00:00Z", container_id: str = "c" * 64, proto: str = "tcp",
-            process: list | None = None, container_port: str = "8080", mounts: tuple = ("/etc/searxng",)):
+            process: list | None = None, container_port: str = "8080", mounts: tuple = ("/etc/searxng",),
+            changes: tuple | None = ("C /tmp", "A /tmp/granian.sock"), workdir: str = "/usr/local/searxng"):
     """Docker يعرف حاويةً واحدة: الاسمُ «searxng» يُحلّ إلى معرّفها، وما سواه يُسأل بالمعرّف؛ وصورتُها بمعرّفها تعلن
-    مدخلَها وأمرَها ومنفذَها 8080/tcp."""
+    مدخلَها وأمرَها ومنفذَها 8080/tcp ومجلّدَ عملها، وطبقتُها القابلة للكتابة فيها `changes` (None: تعذّرت قراءتُها)."""
     process = IMAGE_PROCESS if process is None else process
 
     def run(argv, **kwargs):
+        if argv[1:3] == ["container", "diff"]:
+            if changes is None or argv[-1] != container_id:
+                return SimpleNamespace(stdout="", returncode=1)
+            return SimpleNamespace(stdout="".join(line + "\n" for line in changes), returncode=0)
         fmt, target = argv[argv.index("--format") + 1], argv[-1]
         if argv[1:3] == ["image", "inspect"]:
             if target != "sha256:" + "a" * 64:
                 return SimpleNamespace(stdout="", returncode=1)
             out = {"{{json .Config.Entrypoint}}": json.dumps(IMAGE_PROCESS), "{{json .Config.Cmd}}": "null",
-                   "{{json .Config.ExposedPorts}}": json.dumps({"8080/tcp": {}})}[fmt]
+                   "{{json .Config.ExposedPorts}}": json.dumps({"8080/tcp": {}}),
+                   "{{json .Config.WorkingDir}}": json.dumps(workdir)}[fmt]
             return SimpleNamespace(stdout=out + "\n", returncode=0)
         assert argv[1:3] == ["container", "inspect"]
         if asked is not None:
@@ -488,8 +495,9 @@ def test_docker_is_asked_with_the_execution_backends_clean_environment(monkeypat
         return SimpleNamespace(stdout="x\n", returncode=0)
     monkeypatch.setattr(subprocess, "run", run)
     j5._inspect("docker", "searxng", "{{.Id}}")
+    j5._changes("docker", "c" * 64)
     boundary._containers("docker")
-    assert seen == [_clean_env(), _clean_env()]
+    assert seen == [_clean_env(), _clean_env(), _clean_env()]
 
 
 def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypatch):
@@ -543,6 +551,25 @@ def test_search_comes_only_from_the_pinned_searxng_on_the_loopback_port(monkeypa
     monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, mounts=("/etc/searxng",
                                                                                      "/var/cache/searxng/cache")))
     assert not j5._searxng("http://127.0.0.1:8888", "searxng", "docker")[1]["overlays_the_image"]
+    # وطبقتُها القابلة للكتابة لم يُبدَّل فيها برنامجُها: مدخلٌ أو تطبيقٌ مُبدَل بعد الإنشاء يُبقي الصورةَ والعمليةَ والتركيبَ
+    # والمنفذ كما هي ويخدم غيرُه (ملاحظة Codex على #144). وما تكتبه في غير برنامجها (/tmp) لا يُرفض
+    for changes in (("C /usr/local/searxng", "C /usr/local/searxng/entrypoint.sh"),
+                    ("C /usr/local/searxng/searx", "A /usr/local/searxng/searx/webapp.py"), ("D /sbin/tini",)):
+        monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, changes=changes))
+        with pytest.raises(SystemExit) as refused:
+            j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
+        body = json.loads(str(refused.value))
+        assert body["code"] == "searxng_container_application_modified" and body["paths"]
+    monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, changes=None))
+    with pytest.raises(SystemExit) as refused:
+        j5._searxng("http://127.0.0.1:8888", "searxng", "docker")
+    assert json.loads(str(refused.value))["code"] == "searxng_container_writable_layer_unreadable"
+    monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local,
+                                                   changes=("C /usr", "C /usr/local", "A /usr/local/searxng2")))
+    assert j5._searxng("http://127.0.0.1:8888", "searxng", "docker")[1]["application_changes"] == []
+    # ومجلّدُ عملٍ هو الجذر لا يجعل كلَّ ما تكتبه الحاويةُ تبديلًا لبرنامجها
+    monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, workdir="/"))
+    assert j5._searxng("http://127.0.0.1:8888", "searxng", "docker")[1]["application_changes"] == []
     monkeypatch.setattr(subprocess, "run", _docker(j5.PINNED_SEARXNG, local, container_port="9999"))
     with pytest.raises(SystemExit) as refused:
         j5._searxng("http://127.0.0.1:8888", "searxng", "docker")

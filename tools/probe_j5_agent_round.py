@@ -154,6 +154,15 @@ def _inspect(docker: str, target: str, fmt: str, kind: str = "container") -> str
                           timeout=30, env=_clean_env()).stdout.strip()
 
 
+def _changes(docker: str, container_id: str) -> list[str] | None:
+    """مساراتُ ما تغيّر في طبقة الحاوية القابلة للكتابة (`docker container diff`)، أو None إن تعذّرت قراءتُها."""
+    done = subprocess.run([docker, "container", "diff", container_id], capture_output=True, text=True, timeout=30,
+                          env=_clean_env())
+    if done.returncode != 0:
+        return None
+    return sorted(line.split(" ", 1)[1] for line in done.stdout.splitlines() if " " in line)
+
+
 def _serving(url: str, container_id: str, docker: str) -> dict:
     """حالُ الحاوية بمعرّفها الثابت: صورتُها، وهل تعمل ومنذ متى، وهل تنشر منفذَ الرابط على عنوان الجهاز. فحاويةٌ أُعيد
     تشغيلُها أو أُزيلت تختلف حالُها، ولا يُسأل الاسمُ الذي قد تحمله حاويةٌ أخرى (ملاحظة Codex على #144)."""
@@ -173,6 +182,13 @@ def _serving(url: str, container_id: str, docker: str) -> dict:
     default = [*(image("{{json .Config.Entrypoint}}") or []), *(image("{{json .Config.Cmd}}") or [])]
     exposed = image("{{json .Config.ExposedPorts}}") or {}
     mounts = sorted(str(m.get("Destination")) for m in loads(_inspect(docker, container_id, "{{json .Mounts}}")) or [])
+    # وبرنامجُها في طبقتها القابلة للكتابة كما في صورتها: حاويةٌ من الصورة المثبَّتة بُدّل فيها المدخلُ أو التطبيقُ بعد
+    # إنشائها تُبقي الصورةَ والعمليةَ والتركيبَ والمنفذ كما هي ويخدم غيرُها (ملاحظة Codex على #144). فما تغيّر تحت مجلّد عمل
+    # الصورة أو في ملفّات عمليتها يُرفض، ويُقارن بعد الجولة كغيره
+    workdir = image("{{json .Config.WorkingDir}}") or ""
+    roots = {r.rstrip("/") for r in [workdir, *default] if isinstance(r, str) and r.startswith("/") and r.strip("/")}
+    changed = _changes(docker, container_id)
+    under = lambda path: any(path == root or path.startswith(root + "/") for root in roots)
     return {"id": container_id,
             "image": _inspect(docker, container_id, "{{.Config.Image}}"),
             "image_id": image_id,
@@ -180,6 +196,7 @@ def _serving(url: str, container_id: str, docker: str) -> dict:
             "started_at": _inspect(docker, container_id, "{{.State.StartedAt}}"),
             "runs_the_image_default": process == default,
             "mounts": mounts,
+            "application_changes": None if changed is None else [path for path in changed if under(path)],
             "overlays_the_image": any(not any(m == allowed or m.startswith(allowed + "/") for allowed in SEARXNG_MOUNTS)
                                       for m in mounts),
             # والعنوانُ المنشور هو عنوانُ الرابط نفسُه، لا أيُّ عنوانٍ للجهاز: حاويةٌ على 127.0.0.1 لا تشهد لرابطٍ على ::1
@@ -205,6 +222,11 @@ def _searxng(url: str, container: str, docker: str) -> tuple[dict, dict]:
         raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_process_overridden"}))
     if pinned["overlays_the_image"]:
         raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_overlays_the_image"}))
+    if pinned["application_changes"] is None:
+        raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_writable_layer_unreadable"}))
+    if pinned["application_changes"]:
+        raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_application_modified",
+                                     "paths": pinned["application_changes"]}))
     if not (pinned["running"] and pinned["serves_url"]):
         raise SystemExit(json.dumps({"status": "refused", "code": "searxng_container_does_not_serve_the_url"}))
     return {"url": url, "container": container, "image": pinned["image"], "image_id": pinned["image_id"]}, pinned
@@ -393,6 +415,7 @@ def main(argv=None) -> int:
             "searxng_container_pinned_by_id_and_start_time_and_engine_digest_rechecked_after_the_round",
             "searxng_container_runs_its_image_default_entrypoint_and_command_on_a_port_the_image_exposes",
             "searxng_container_mounts_only_its_configuration_and_cache",
+            "searxng_writable_layer_unchanged_under_the_image_working_directory_and_process_paths_changes_elsewhere_not_checked",
             "every_loaded_repo_module_is_hashed_before_the_measured_code_is_imported_and_must_match_after_the_round",
             "a_deliberate_same_user_process_rewriting_files_or_containers_between_checks_is_out_of_scope",
             "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
