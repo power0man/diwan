@@ -31,40 +31,55 @@ def test_the_published_round_records_the_acceptance_its_fields_give():
     assert evidence["acceptance"] == {"passed": not failed, "failed": failed}
 
 
+ATTESTED = "http://127.0.0.1:8080"
+
+
+def _ws(**change):
+    """نتيجةُ web_search مقبولة: ناجحة، بمصدرٍ واحدٍ على الأقل، من SearXNG المشهود له."""
+    return {"name": "web_search", "status": "ok", "sourced_results": 3, "source_endpoint": ATTESTED, **change}
+
+
+def _run(**change):
+    """نتيجةُ run_command مقبولة: ناجحة في الحاوية، بخروجٍ صفر وخرجٍ «4»؛ ومفتاحٌ قيمتُه None يُحذف."""
+    call = {"name": "run_command", "status": "ok", "boundary": "docker:<64hex>", "exit_code": 0, "output": "4", **change}
+    return {k: v for k, v in call.items() if v is not None or k not in change}
+
+
 def _passing():
     evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
-    evidence["web_search"]["attempts"][-1]["tool_calls_by_the_model"] = [
-        {"name": "web_search", "status": "ok", "sourced_results": 3}]
-    evidence["docker_execution"]["tool_calls_by_the_model"] = [
-        {"name": "run_command", "status": "ok", "boundary": "docker:<64hex>"}]
+    evidence["web_search"]["backend"]["url"] = ATTESTED
+    evidence["web_search"]["attempts"][-1]["tool_calls_by_the_model"] = [_ws()]
+    evidence["docker_execution"]["tool_calls_by_the_model"] = [_run()]
     evidence["docker_execution"]["pending_argv"] = ["python3", "-c", "print(2+2)"]
     assert j5.acceptance(evidence) == []
     return evidence
 
 
+NO_SOURCE = ["web_search_returned_no_sourced_result", "web_search_source_is_not_the_attested_searxng"]
+set_search = lambda call: (lambda e: [a.update(tool_calls_by_the_model=call) for a in e["web_search"]["attempts"]])
+set_run = lambda calls: (lambda e: e["docker_execution"].update(tool_calls_by_the_model=calls))
+
+
 @pytest.mark.parametrize("change, code", [
-    (lambda e: [a.update(tool_calls_by_the_model=[]) for a in e["web_search"]["attempts"]],
-     "web_search_never_succeeded"),
-    (lambda e: [a.update(tool_calls_by_the_model=[{"name": "web_search", "status": "error"}])
-                for a in e["web_search"]["attempts"]], "web_search_never_succeeded"),
-    (lambda e: [a.update(tool_calls_by_the_model=[{"name": "web_search", "status": "ok", "sourced_results": 0}])
-                for a in e["web_search"]["attempts"]], "web_search_returned_no_sourced_result"),
-    (lambda e: [a.update(tool_calls_by_the_model=[{"name": "web_search", "status": "ok"}])
-                for a in e["web_search"]["attempts"]], "web_search_returned_no_sourced_result"),
-    (lambda e: [a.update(tool_calls_by_the_model=[{"name": "web_search", "status": "error", "sourced_results": 3}])
-                for a in e["web_search"]["attempts"]], "web_search_never_succeeded"),
+    (set_search([]), "web_search_never_succeeded"),
+    (set_search([_ws(status="error")]), "web_search_never_succeeded"),
+    (set_search([_ws(sourced_results=0)]), NO_SOURCE),
+    (set_search([{"name": "web_search", "status": "ok"}]), NO_SOURCE),
+    # ملاحظةُ Codex على #144 (الجولة التالية): النتيجةُ من SearXNG المشهود له بعينه
+    (set_search([_ws(source_endpoint="http://127.0.0.1:9999")]), "web_search_source_is_not_the_attested_searxng"),
+    (set_search([_ws(source_endpoint=None)]), "web_search_source_is_not_the_attested_searxng"),
     (lambda e: e["docker_execution"].update(pending_argv=["echo", "4"]), "run_command_pending_is_not_the_requested_command"),
     (lambda e: e["docker_execution"].pop("pending_argv"), "run_command_pending_is_not_the_requested_command"),
     (lambda e: e["docker_execution"].update(first_status="complete"), "run_command_did_not_wait_for_the_owner"),
     (lambda e: e["docker_execution"].update(owner_approved=False), "run_command_did_not_wait_for_the_owner"),
-    (lambda e: e["docker_execution"].update(tool_calls_by_the_model=[{"name": "run_command", "status": "error",
-                                                                      "boundary": "docker:<64hex>"}]),
-     ["run_command_did_not_succeed", "run_command_boundary_is_not_docker"]),
-    (lambda e: e["docker_execution"].update(tool_calls_by_the_model=[{"name": "run_command", "status": "ok",
-                                                                      "boundary": "malformed"}]),
-     "run_command_boundary_is_not_docker"),
-    (lambda e: e["docker_execution"].update(tool_calls_by_the_model=[{"name": "run_command", "status": "ok"}]),
-     "run_command_boundary_is_not_docker"),
+    (set_run([_run(status="error")]),
+     ["run_command_did_not_succeed", "run_command_boundary_is_not_docker", "run_command_output_is_not_4"]),
+    (set_run([_run(boundary="malformed")]), "run_command_boundary_is_not_docker"),
+    (set_run([_run(boundary=None)]), "run_command_boundary_is_not_docker"),
+    # والأمرُ أدّى ما طُلب: خروجٌ بصفر وخرجٌ «4» من نتيجة الأداة نفسِها
+    (set_run([_run(output="5")]), "run_command_output_is_not_4"),
+    (set_run([_run(exit_code=1)]), "run_command_output_is_not_4"),
+    (set_run([_run(output=None)]), "run_command_output_is_not_4"),
 ])
 def test_each_missing_condition_is_named(change, code):
     evidence = _passing()
@@ -82,10 +97,11 @@ def test_the_boundary_is_read_whole_from_the_tool_result_not_from_the_reply_text
             result["boundary"] = boundary
         return {"status": "complete", "content": f"الحاوية {full}", "steps": [{"tool_results": [result]}]}
 
-    assert j5._tools(reply(full)) == [{"name": "run_command", "status": "ok", "boundary": "docker:<64hex>"}]
+    assert j5._tools(reply(full)) == [{"name": "run_command", "status": "ok", "exit_code": None, "output": "4",
+                                       "boundary": "docker:<64hex>"}]
     for truncated in ("docker:deadbeefdead", full[:-1], full + "0", full.upper(), "docker:" + "g" * 64, 7):
         assert j5._tools(reply(truncated))[0]["boundary"] == "malformed"
-    assert j5._tools(reply()) == [{"name": "run_command", "status": "ok"}]
+    assert j5._tools(reply()) == [{"name": "run_command", "status": "ok", "exit_code": None, "output": "4"}]
 
 
 def test_sources_are_counted_from_the_tool_result_not_from_the_answer():
@@ -98,10 +114,14 @@ def test_sources_are_counted_from_the_tool_result_not_from_the_answer():
 
     sourced = [{"title": "Python", "url": "https://www.python.org/", "snippet": ""},
                {"title": "Docs", "url": "http://docs.python.org/", "snippet": ""}]
-    assert j5._tools(reply(sourced)) == [{"name": "web_search", "status": "ok", "sourced_results": 2}]
+    assert j5._tools(reply(sourced)) == [{"name": "web_search", "status": "ok", "sourced_results": 2,
+                                          "source_endpoint": None}]
+    # وبادئةٌ بلا مضيف لا تُعدّ مصدرًا (ملاحظة Codex على #144)
     for unsourced in ([], None, "x", [{"title": "t", "url": ""}], [{"title": "t", "url": "ftp://x"}], ["https://x"],
-                      [{"title": "t", "url": 7}]):
-        assert j5._tools(reply(unsourced)) == [{"name": "web_search", "status": "ok", "sourced_results": 0}]
+                      [{"title": "t", "url": 7}], [{"title": "t", "url": "https://"}], [{"title": "t", "url": "http:///p"}],
+                      [{"title": "t", "url": "https://[::1"}]):
+        assert j5._tools(reply(unsourced)) == [{"name": "web_search", "status": "ok", "sourced_results": 0,
+                                                "source_endpoint": None}]
 
 
 class _EmptyThenFoundApp:
@@ -150,8 +170,9 @@ def test_only_the_requested_command_passes_as_the_pending_argv():
 class _PendingApp:
     """جولةُ أمرٍ يقترح فيها النموذجُ argv بعينه؛ والبحثُ ينجح بمصدر."""
 
-    def __init__(self, argv):
+    def __init__(self, argv, decision=None):
         self.argv, self.decided = argv, False
+        self.decision = decision or {"state": "approved"}
 
     def dispatch(self, request):
         action = request["action"]
@@ -159,16 +180,18 @@ class _PendingApp:
             return {"id": "x"}
         if action == "agent_decide":
             self.decided = True
-            return {"status": "approved"}
+            return self.decision
         if action == "agent_resume":
             return {"status": "complete", "content": "4", "steps": [{"tool_results": [
-                {"name": "run_command", "status": "ok", "boundary": "docker:" + "a" * 64}]}]}
+                {"name": "run_command", "status": "ok", "boundary": "docker:" + "a" * 64, "exit_code": 0,
+                 "content": "4\n"}]}]}
         if request["message"] == j5.COMMAND_REQUEST:
             return {"status": "awaiting_owner", "steps": [], "pending": [
                 {"name": "run_command", "action_id": "a1", "call_digest": "d", "revision": 1,
                  "arguments": {"argv": self.argv}}]}
         return {"status": "complete", "content": "", "steps": [{"tool_results": [
-            {"name": "web_search", "status": "ok", "results": [{"title": "t", "url": "https://example.org/"}]}]}]}
+            {"name": "web_search", "status": "ok", "results": [{"title": "t", "url": "https://example.org/"}],
+             "source": {"backend": "searxng", "endpoint": "http://127.0.0.1:8888"}}]}]}
 
     def close(self):
         pass
@@ -191,6 +214,20 @@ def test_only_the_requested_pending_command_is_approved(tmp_path, monkeypatch, a
         assert code == 0 and report["acceptance"] == {"passed": True, "failed": []}
     else:
         assert code == 1 and "run_command_pending_is_not_the_requested_command" in report["acceptance"]["failed"]
+
+
+def test_a_decision_the_action_store_did_not_approve_is_not_an_approval(tmp_path, monkeypatch):
+    """ردُّ الواجهة على agent_decide قد يكون خطأً مسمًّى؛ فالموافقةُ حالةُ approved من مخزن الأفعال وحدها."""
+    app = _PendingApp(["python3", "-c", "print(2+2)"], decision={"error": "action_revision_stale"})
+    monkeypatch.setattr(j5, "LocalApp", lambda *a, **k: app)
+    monkeypatch.setattr(j5, "_digest", lambda model: "sha256:weights")
+    monkeypatch.setattr(j5, "_searxng", lambda url, container, docker: {"url": url, "image": j5.PINNED_SEARXNG})
+    out = tmp_path / "r.json"
+    assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
+                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 1
+    execution = json.loads(out.read_text(encoding="utf-8"))["docker_execution"]
+    assert execution["owner_approved"] is False and execution["decision_state"] is None
+    assert "run_command_did_not_wait_for_the_owner" in j5.acceptance(json.loads(out.read_text(encoding="utf-8")))
 
 
 def test_a_source_that_changes_during_the_round_writes_no_report(tmp_path, monkeypatch, capsys):

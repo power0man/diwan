@@ -50,7 +50,8 @@ SEARCH_QUESTIONS = (
 )
 COMMAND_REQUEST = 'شغّل الأمر python3 -c "print(2+2)" وأخبرني بالناتج.'
 # ما يُبصم قبل الجولة ويُعاد بصمُه قبل الكتابة: الشيفرةُ المقيسة، والمجسُّ نفسُه (ملاحظة Codex على #136)
-SOURCES = ("core/execution.py", "agent/web_search.py", "webui/server.py", "tools/probe_j5_agent_round.py")
+SOURCES = ("core/execution.py", "agent/web_search.py", "agent/builtin_tools.py", "agent/loop.py", "webui/server.py",
+           "tools/probe_j5_agent_round.py")
 # الصورةُ المثبَّتة بالبصمة في docs/guides/G5.md (الخطوتان ٢١–٢٢)، وقيست بها ج٥ أول مرّة
 PINNED_SEARXNG = "searxng/searxng@sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6"
 LOOPBACK = frozenset({"127.0.0.1", "localhost", "::1"})
@@ -76,6 +77,10 @@ def acceptance(report: dict) -> list[str]:
     # وردٌّ بحالة ok وقائمةٍ فارغة لا يشهد بمصدرٍ واحد: المقبولُ نتيجةٌ بمصدرٍ على الأقل (ملاحظة Codex على #136)
     elif not any(_sourced(t) for t in succeeded):
         failed.append("web_search_returned_no_sourced_result")
+    # والنتيجةُ من SearXNG الذي شُهد له بعينه: مصدرُ الأداة نفسُها لا ما ضُبط في المجسّ وحده
+    attested = str((report["web_search"].get("backend") or {}).get("url") or "").rstrip("/")
+    if succeeded and not any(_sourced(t) and attested and t.get("source_endpoint") == attested for t in succeeded):
+        failed.append("web_search_source_is_not_the_attested_searxng")
     if execution["first_status"] != "awaiting_owner" or not execution["owner_approved"]:
         failed.append("run_command_did_not_wait_for_the_owner")
     if execution["final_status"] != "complete" or not any(
@@ -86,6 +91,10 @@ def acceptance(report: dict) -> list[str]:
     if not any(t["name"] == "run_command" and t["status"] == "ok" and t.get("boundary") == "docker:<64hex>"
                for t in execution["tool_calls_by_the_model"]):
         failed.append("run_command_boundary_is_not_docker")
+    # والأمرُ نفسُه أدّى ما طُلب: خروجٌ بصفر، وخرجُه «4» من نتيجة الأداة لا من جواب النموذج
+    if not any(t["name"] == "run_command" and t["status"] == "ok" and t.get("exit_code") == 0
+               and t.get("output") == "4" for t in execution["tool_calls_by_the_model"]):
+        failed.append("run_command_output_is_not_4")
     return failed
 
 
@@ -125,6 +134,17 @@ def _digest(model: str, base: str = "http://127.0.0.1:11434") -> str:
     return next(m["digest"] for m in models if m["name"] == model)
 
 
+def _source_url(value) -> bool:
+    """رابطٌ http(s) له مضيف، لا بادئةٌ وحدها مثل «https://» (ملاحظة Codex على #144)."""
+    if not isinstance(value, str):
+        return False
+    try:
+        parts = urllib.parse.urlsplit(value)
+        return parts.scheme in ("http", "https") and bool(parts.hostname)
+    except ValueError:
+        return False
+
+
 def _sourced(call: dict) -> bool:
     """نتيجةُ web_search ناجحةٌ وفيها نتيجةٌ واحدةٌ على الأقل برابط."""
     count = call.get("sourced_results")
@@ -139,9 +159,15 @@ def _tools(result: dict) -> list[dict]:
             if r.get("name") == "web_search":
                 # يُعدّ من نتائج الأداة نفسِها ما له رابط، لا من روابط جواب النموذج
                 results = r.get("results")
-                call["sourced_results"] = sum(
-                    1 for item in results if isinstance(item, dict) and isinstance(item.get("url"), str)
-                    and item["url"].startswith(("http://", "https://"))) if isinstance(results, list) else 0
+                call["sourced_results"] = sum(1 for item in results if isinstance(item, dict)
+                                              and _source_url(item.get("url"))) if isinstance(results, list) else 0
+                source = r.get("source")
+                call["source_endpoint"] = source.get("endpoint") if isinstance(source, dict) else None
+            if r.get("name") == "run_command":
+                # رمزُ الخروج والخرجُ المقصوص من نتيجة الأداة نفسِها، لا من جواب النموذج
+                call["exit_code"] = r.get("exit_code")
+                content = r.get("content")
+                call["output"] = content.strip()[:40] if isinstance(content, str) else None
             if "boundary" in r:
                 boundary = r["boundary"]
                 call["boundary"] = ("docker:<64hex>" if isinstance(boundary, str) and BOUNDARY.fullmatch(boundary)
@@ -219,7 +245,7 @@ def main(argv=None) -> int:
     report = {
         "schema_version": 1, "date": datetime.date.today().isoformat(), "task": "ج٥", "issue": "power0man/diwan#23",
         "author": "anthropic/claude-opus-5-5",
-        "host": {"machine": "MacBook Pro (Apple silicon)", "os": os.uname().sysname + " " + os.uname().release},
+        "host": {"machine": os.uname().machine, "os": os.uname().sysname + " " + os.uname().release},
         "engine": {"provider": "ollama-local", "model": args.model, "digest": version},
         "source_sha256": sources,
         "web_search": {"via": "webui.server.LocalApp.dispatch agent_ask (research session)", "backend": searxng,
@@ -228,7 +254,10 @@ def main(argv=None) -> int:
         "docker_execution": {"via": "webui.server.LocalApp.dispatch agent_ask → agent_decide(approve) → agent_resume",
                              "request": COMMAND_REQUEST, "first_status": asked.get("status"),
                              "pending_argv": pending_argv,
-                             "owner_approved": decided is not None, "final_status": final.get("status"),
+                             # الموافقةُ ما ردّه مخزنُ الأفعال بحالة approved، لا أيُّ ردٍّ على الطلب ولو خطأً
+                             "decision_state": decided.get("state") if isinstance(decided, dict) else None,
+                             "owner_approved": isinstance(decided, dict) and decided.get("state") == "approved",
+                             "final_status": final.get("status"),
                              "tool_calls_by_the_model": _tools(final),
                              "answer": (final.get("content") or "")[:300]},
         "measurement_limits": [
@@ -240,6 +269,8 @@ def main(argv=None) -> int:
             "web_search_accepted_only_with_a_result_carrying_a_url_counted_from_the_tool_result_not_the_answer",
             "only_the_requested_command_is_approved_its_pending_argv_recorded",
             "sources_and_probe_hashed_before_the_round_and_rechecked_before_writing",
+            "run_command_accepted_only_with_exit_code_0_and_output_4_from_the_tool_result",
+            "web_search_accepted_only_from_the_attested_searxng_endpoint_with_a_url_that_has_a_host",
         ],
     }
     failed = acceptance(report)
