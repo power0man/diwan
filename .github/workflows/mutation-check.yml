@@ -42,7 +42,9 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           SCOPE: ${{ github.event.inputs.scope || 'changed' }}
           BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          # على طلب الدمج github.sha هو إيداعُ الدمج المرتقَب (refs/pull/N/merge) لا رأسُ الفرع: فتُطبَّق الطفراتُ على الشجرة
+          # التي ستُدمج فعلًا، وتغييرٌ متوافقٌ في الأساس يُبطل طفرةً لا يفلت (ملاحظة Codex على #149)
+          HEAD: ${{ github.sha }}
         run: |
           set -eu
           report="$RUNNER_TEMP/mutation-check.json"

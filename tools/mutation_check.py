@@ -4,7 +4,8 @@
 إنتاجُه. صارت سطرًا في بيانٍ `tests/mutations/<وحدةُ الاختبار>.jsonl` يسمّي الملفَّ والنصَّ القديم والجديد والاختباراتِ
 التي يجب أن تسقط، وهذه الأداةُ تطبّقه في شجرة عملٍ مؤقّتة منفصلة، وتحكم بالرمز:
 
-    killed                   سقط اختبارٌ مسمًّى عند الطفرة (وهو المطلوب)
+    killed                   سقط كلُّ اختبارٍ مسمًّى عند الطفرة (وهو المطلوب)
+    partially_killed         سقط بعضُ المسمّى لا كلُّه: ما لم يسقط لا يحرس هذه الطفرة فلا يُدَّعى له ذلك
     survived                 لم يسقط اختبارٌ مسمًّى: الحارسُ لا يحرس
     test_missing             اختبارٌ مسمًّى لا يُجمع
     failing_before_mutation  اختبارٌ مسمًّى ساقطٌ قبل الطفرة، فسقوطُه بعدها لا يثبت شيئًا
@@ -52,7 +53,8 @@ REQUIRED = ("file", "old", "new", "tests")
 OPTIONAL = ("id", "task", "why", "count", "added")
 NODE_ID = re.compile(r"^tests/[A-Za-z0-9_./-]+\.py(::[A-Za-z_][A-Za-z0-9_]*)+(\[.*\])?$")   # ومنه دوالُّ الأصناف
 VERDICTS = {
-    "killed": "قُتلت: سقط الاختبارُ المسمّى عند الطفرة",
+    "killed": "قُتلت: سقط كلُّ اختبارٍ مسمًّى عند الطفرة",
+    "partially_killed": "سقط بعضُ المسمّى لا كلُّه؛ ما لم يسقط لا يحرس هذه الطفرة",
     "survived": "نجت: لم يسقط اختبارٌ مسمًّى، فالحارسُ لا يحرس هذا",
     "test_missing": "اختبارٌ مسمًّى لا يُجمع",
     "failing_before_mutation": "اختبارٌ مسمًّى ساقطٌ قبل الطفرة، فسقوطُه لا يثبت شيئًا",
@@ -444,9 +446,14 @@ def _apply(entry: dict, worktree: Path, baseline: dict, python: str, timeout: in
     failed = _failed(result)
     # ما سقط يُسجَّل بمعرّفه الكامل بالمعامل، فالدالّةُ المسمّاةُ بلا معامل تُثبَت حالةً حالة
     failed_tests = list(dict.fromkeys(f for t in entry["tests"] for f in _covers(t, failed)))
-    if result.returncode == 1 and failed_tests:
+    named_but_passed = [t for t in entry["tests"] if not _covers(t, failed)]
+    # القتلُ حكمٌ على كلِّ اسمٍ في السطر: اسمٌ لم يسقط لا يُنسب إليه ما لم يفعل (ملاحظة Codex على #149)
+    if result.returncode == 1 and failed_tests and not named_but_passed:
         return {**record, "code": "killed", "verdict": VERDICTS["killed"], "failed_tests": failed_tests,
-                "named_but_passed": [t for t in entry["tests"] if not _covers(t, failed)], "pytest_exit": 1}
+                "named_but_passed": [], "pytest_exit": 1}
+    if result.returncode == 1 and failed_tests:
+        return {**record, "code": "partially_killed", "verdict": VERDICTS["partially_killed"], "failed_tests": failed_tests,
+                "named_but_passed": named_but_passed, "detail": named_but_passed, "pytest_exit": 1}
     if result.returncode == 0:
         return {**record, "code": "survived", "verdict": VERDICTS["survived"], "pytest_exit": 0}
     return {**record, "code": "invalid", "verdict": VERDICTS["invalid"], "pytest_exit": result.returncode,

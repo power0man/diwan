@@ -373,7 +373,7 @@ def test_a_touched_test_must_itself_fail_a_mutation_not_merely_be_listed_beside_
     git("commit", "-qm", "tag along")
     report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
     (result,) = report["results"]
-    assert result["code"] == "killed" and result["named_but_passed"] == ["tests/test_guard.py::test_more"]
+    assert result["code"] == "partially_killed" and result["named_but_passed"] == ["tests/test_guard.py::test_more"]
     assert report["unmanifested_new_tests"] == [] and report["unproved_touched_tests"] == ["tests/test_guard.py::test_more"]
     assert report["status"] == "failed"
     (repo / "tests/test_guard.py").write_text(TESTS + "\n\ndef test_more():\n    assert positive(0) is False\n")
@@ -615,6 +615,27 @@ def test_removed_lines_are_read_against_the_merge_base_not_the_base_tip(repo, gi
     assert report["revalidated_tests"] == ["tests/test_guard.py::test_not_positive"], report
     assert report["totals"]["test_missing"] == 1 and report["status"] == "failed"
     git("checkout", "-q", "pr")
+
+
+def test_an_entry_is_killed_only_when_every_named_test_fails(repo, git, capsys):
+    """سطرٌ يسمّي اختبارين ويسقط أحدُهما كان يُحكم killed والآخرُ في named_but_passed للعرض وحده، فيُنسب إلى الحارس ما لم
+    يفعل ويمرّ الأسبوعيُّ (ملاحظة Codex على #149)؛ صار partially_killed حكمًا مسمًّى يُسقط المدى."""
+    _manifest(repo, "test_guard", {**KILL, "id": "half", "tests": [*KILL["tests"], "tests/test_guard.py::test_always_passes"]})
+    git("add", "-A")
+    git("commit", "-qm", "half")
+    report = _run(repo, "--all", capsys=capsys)
+    (result,) = report["results"]
+    assert result["code"] == "partially_killed" and result["named_but_passed"] == ["tests/test_guard.py::test_always_passes"]
+    assert result["failed_tests"] == KILL["tests"] and report["totals"]["partially_killed"] == 1 and report["status"] == "failed"
+    _clean(repo, git)
+
+
+def test_the_workflow_applies_mutations_to_the_prospective_merge_commit_not_the_pr_head():
+    """على طلب الدمج يبني CI شجرةَ العمل من إيداع الدمج المرتقَب (github.sha) لا من رأس الفرع، فتغييرٌ متوافقٌ في الأساس
+    يُبطل طفرةً لا يفلت حتى الأسبوعيّ (ملاحظة Codex على #149)."""
+    text = (ROOT / ".github/workflows/mutation-check.yml").read_text(encoding="utf-8")
+    assert "HEAD: ${{ github.sha }}" in text and "pull_request.head.sha" not in text
+    assert 'HEAD: ${{ github.sha }}' in text and 'BASE: ${{ github.event.pull_request.base.sha }}' in text
 
 
 def test_a_collection_error_is_invalid_not_a_kill(repo, capsys, git):
