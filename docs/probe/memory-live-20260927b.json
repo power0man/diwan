@@ -8,7 +8,7 @@
     "propose": "propose_memory (awaiting_owner)",
     "approve": "agent_decide ثم agent_resume",
     "forget": "memory_forget",
-    "retrieve": "memory (قائمة المالك)",
+    "retrieve": "MemoryStore.retrieve(query) للحضور، وmemory (قائمة المالك) للغياب",
     "context": "طلبُ النموذج في agent_ask وask",
     "backup": "workspace_tools.backup.export_workspace (المساحة كلُّها)",
     "restore": "workspace_tools.backup.restore_workspace(tombstones_from=المساحة الحيّة) إلى جذرٍ جديد"
@@ -308,7 +308,6 @@
     "proposals_are_scripted_the_bank_measures_consent_not_that_the_model_proposes",
     "retrieval_is_lexical_so_a_paraphrased_question_can_miss_a_stored_item",
     "the_context_checked_is_the_first_request_of_each_turn_later_tool_steps_are_not_inspected",
-    "single_run_on_one_local_model_no_variance_estimate",
-    "superseded_by_memory-live-20260927b_with_retrieval_through_the_query"
+    "single_run_on_one_local_model_no_variance_estimate"
   ]
 }
