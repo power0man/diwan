@@ -153,17 +153,10 @@ sources/         المصادر
 <!-- generated:study-numbers:begin -->
 | المقياس | القيمة | كيف تتحقق بنفسك |
 |---|---|---|
-<<<<<<< HEAD
-| اختبارات مجموعة | **4609** | `.venv/bin/python -m pytest` (هذا عدد جمع؛ النجاح له دليله المنفصل) |
-| قرارات | **66** بلا فجوة | `grep -oE 'ق[٠-٩]+' docs/DECISIONS.md \| sort -u \| wc -l` |
-| وثائق قبول | **19** | `ls docs/M*-ACCEPTANCE.md` |
-| ملفات بايثون | **415** / **83977** سطرًا | `git ls-files '*.py' \| xargs wc -l` |
-=======
-| اختبارات مجموعة | **4577** | `.venv/bin/python -m pytest` (هذا عدد جمع؛ النجاح له دليله المنفصل) |
+| اختبارات مجموعة | **4611** | `.venv/bin/python -m pytest` (هذا عدد جمع؛ النجاح له دليله المنفصل) |
 | قرارات | **67** بلا فجوة | `grep -oE 'ق[٠-٩]+' docs/DECISIONS.md \| sort -u \| wc -l` |
 | وثائق قبول | **19** | `ls docs/M*-ACCEPTANCE.md` |
-| ملفات بايثون | **414** / **82573** سطرًا | `git ls-files '*.py' \| xargs wc -l` |
->>>>>>> origin/main
+| ملفات بايثون | **415** / **84018** سطرًا | `git ls-files '*.py' \| xargs wc -l` |
 | المخزن البحري النافذ | **117** وثيقة / **1279** صفحة | `docs/probe/project-status.json` |
 | أحدث نطاق موثق | **م١٦** | `docs/M16-ACCEPTANCE.md` |
 <!-- generated:study-numbers:end -->
