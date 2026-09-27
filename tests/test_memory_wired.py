@@ -538,6 +538,37 @@ def test_erased_and_unconsented_witnesses_are_substantial_and_only_active_items_
         == "injection_item_not_shown_in_checked_context"
 
 
+def test_a_restore_erases_every_snapshotted_copy_of_a_forgotten_text(tmp_path):
+    """ملاحظةُ Codex على #129: الاستعادةُ تمحو ببصمة النصّ لا بالمعرّف، فنسخةٌ فيها نصٌّ واحد بمعرّفين يُنسى أحدُهما لا
+    يبقى منها الآخر. والمدقّقُ كان يعدّ الآخرَ قائمًا، فيشهد غيابُه عن مشروعٍ آخر بالعزل ولا مصدرَ في المخزن."""
+    from core.canonical import PayloadRejected
+    from evaluation.memory_bank import validate_memory_bank
+    from memory.store import MemoryStore
+    text = "كود الخصم السري للموردين ZX-9"
+    # ما يفعله المخزن نفسُه
+    store = MemoryStore(tmp_path)
+    first, second = (store.remember(text, consent="owner") for _ in range(2))
+    snapshot = store.backup()
+    store.forget(first)
+    assert [i["item_id"] for i in store.items()] == [second]
+    store.restore(snapshot)
+    assert store.items() == []
+    # وما يعدّه المدقّق
+    isolation = {s["id"]: s for s in BANK["scenarios"]}["isolation_002"]
+    save, probe = isolation["steps"]
+    strict = lambda twin: validate_memory_bank({**BANK, "scenarios": [dict(isolation, steps=[
+        save, dict(save, text=twin, **{"as": "m2"}), {"op": "backup", "project": "A", "as": "b0"},
+        {"op": "forget", "project": "A", "ref": "m1"}, {"op": "restore", "project": "A", "ref": "b0"},
+        dict(probe, absent=[twin])])]}, strict=True)
+    with pytest.raises(PayloadRejected) as refused:
+        strict(text)
+    assert refused.value.code == "isolation_without_cross_project_absence"
+    with pytest.raises(PayloadRejected) as refused:
+        strict("  " + text + "\n")
+    assert refused.value.code == "isolation_without_cross_project_absence"
+    strict(text + " للعام القادم")
+
+
 def test_each_check_names_the_item_in_its_own_project_and_after_it_exists():
     """ملاحظاتُ Codex على #129 (الجولة الثالثة): غيابُ المنسيّ أو غيرِ الموافَق عليه يُفحص في مشروعه هو لا في مشروعٍ
     آخر يغيب عنه طبيعةً؛ والعزلُ يُفحص بعد حفظ العنصر لا قبله؛ والسياقُ المحجور بعد حفظ الأمر ويذكر عنصرَه."""

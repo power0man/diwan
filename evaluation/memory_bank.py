@@ -113,8 +113,11 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         """العنصرُ قائمٌ في المخزن عند هذه الخطوة: حُفظ قبلها بموافقة المالك أو وُوفق على اقتراحه قبلها، ولم يُنسَ
         قبلها. فاقتراحٌ لم يُوافَق عليه أو حفظٌ بلا موافقة أو منسيٌّ لا يشهد غيابُه ولا حضورُه بشيء (ملاحظات Codex على #129).
         ويُتتبَّع المخزنُ خطوةً خطوة لأن الاستعادةَ تُرجعه إلى ما كان عند نسختها: ما حُفظ أو وُوفق عليه بعد النسخة يزول
-        بها، والمنسيُّ قبلها يبقى منسيًّا (`tombstones_from`)، فلا يشهد مصدرٌ محته استعادةٌ بشيء (ملاحظة Codex على #129)."""
-        saved, active, forgotten, snapshots = set(), set(), set(), {}
+        بها، والمنسيُّ قبلها يبقى منسيًّا (`tombstones_from`)، فلا يشهد مصدرٌ محته استعادةٌ بشيء (ملاحظة Codex على #129).
+        والاستعادةُ تمحو ببصمة النصّ لا بالمعرّف (`MemoryStore.restore`): عنصرٌ في النسخة نصُّه نصُّ منسيٍّ يزول بها ولو
+        لم يُنسَ هو، فنسخةٌ فيها نصٌّ واحد بمعرّفين يُنسى أحدُهما لا يبقى منها الآخر (ملاحظة Codex على #129)."""
+        saved, active, forgotten, gone, snapshots = set(), set(), set(), set(), {}
+        content = lambda r: made[r][1]["text"].strip()
         for s in steps[:index]:
             op = s.get("op")
             if op in ("remember", "propose"):
@@ -124,13 +127,16 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
             elif op == "approve" and s["ref"] in saved:
                 active.add(s["ref"])
             elif op == "forget":
+                # وبصمةُ إيصاله تمحو نصَّه عند كلّ استعادةٍ بعده
+                gone.add(content(s["ref"]))
                 forgotten.add(s["ref"])
                 saved.discard(s["ref"])
                 active.discard(s["ref"])
             elif op == "backup":
                 snapshots[s["as"]] = (set(saved), set(active))
             elif op == "restore" and s["ref"] in snapshots:
-                saved, active = (state - forgotten for state in snapshots[s["ref"]])
+                saved, active = ({r for r in state - forgotten if content(r) not in gone}
+                                 for state in snapshots[s["ref"]])
         return ref in active
 
     if category == "backup":
