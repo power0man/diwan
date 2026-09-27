@@ -2,7 +2,7 @@
 
 - مجسُّ الحدّ لا يخرج بـ0 إلا إن انتهت كلُّ حالةٍ إلى ما يجب وتحقّق التنظيف، ولا يُسمّي حدَّ الصندوق «مراجَعًا» إن لم تؤدِّ
   البرامجُ الثلاثة ما يثبته؛ ويرفض مسارَ Docker غيرَ الذي تبني به `core.sandbox` خلفيّتَها (ق٦٦: الملفُّ لمسار openai).
-- جولةُ الواجهة لا تخرج بـ0 إلا إن نجح web_search، وانتظر run_command المالكَ ثم نجح في الحاوية، بحدٍّ يُقرأ من حقل
+- جولةُ الواجهة لا تخرج بـ0 إلا إن نجح web_search بنتيجةٍ فيها رابط، وانتظر run_command المالكَ ثم نجح في الحاوية، بحدٍّ يُقرأ من حقل
   نتيجته نفسِها بصيغته كاملةً؛ ولا تبدأ بمسار Docker لا تبني به الواجهةُ خلفيّتَه.
 - والبرامجُ الثلاثة في الصندوق تنتهي كلٌّ إلى حالِه ورمزَي خروجه وخطئه بعينها، لا إلى نجاحٍ أو سقوطٍ وحده.
 - والبحثُ من SearXNG على عنوان الجهاز وحده، بحاويةٍ تنشر منفذَ الرابط بالصورة المثبَّتة في G5.
@@ -25,7 +25,7 @@ EVIDENCE = ROOT / "docs" / "probe" / "j5-docker-searxng-20260927c.json"
 
 
 def test_the_published_round_records_the_acceptance_its_fields_give():
-    """الحكمُ المنشور يُعاد من حقول الدليل؛ وهذه الجولةُ سبقت قراءةَ الحدّ من حقل النتيجة فلا تشهد به."""
+    """الحكمُ المنشور يُعاد من حقول الدليل؛ وهذه الجولةُ سبقت عدَّ المصادر في نتيجة web_search فلا تشهد بها."""
     evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     failed = j5.acceptance(evidence)
     assert evidence["acceptance"] == {"passed": not failed, "failed": failed}
@@ -33,6 +33,8 @@ def test_the_published_round_records_the_acceptance_its_fields_give():
 
 def _passing():
     evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    evidence["web_search"]["attempts"][-1]["tool_calls_by_the_model"] = [
+        {"name": "web_search", "status": "ok", "sourced_results": 3}]
     evidence["docker_execution"]["tool_calls_by_the_model"] = [
         {"name": "run_command", "status": "ok", "boundary": "docker:<64hex>"}]
     assert j5.acceptance(evidence) == []
@@ -43,6 +45,12 @@ def _passing():
     (lambda e: [a.update(tool_calls_by_the_model=[]) for a in e["web_search"]["attempts"]],
      "web_search_never_succeeded"),
     (lambda e: [a.update(tool_calls_by_the_model=[{"name": "web_search", "status": "error"}])
+                for a in e["web_search"]["attempts"]], "web_search_never_succeeded"),
+    (lambda e: [a.update(tool_calls_by_the_model=[{"name": "web_search", "status": "ok", "sourced_results": 0}])
+                for a in e["web_search"]["attempts"]], "web_search_returned_no_sourced_result"),
+    (lambda e: [a.update(tool_calls_by_the_model=[{"name": "web_search", "status": "ok"}])
+                for a in e["web_search"]["attempts"]], "web_search_returned_no_sourced_result"),
+    (lambda e: [a.update(tool_calls_by_the_model=[{"name": "web_search", "status": "error", "sourced_results": 3}])
                 for a in e["web_search"]["attempts"]], "web_search_never_succeeded"),
     (lambda e: e["docker_execution"].update(first_status="complete"), "run_command_did_not_wait_for_the_owner"),
     (lambda e: e["docker_execution"].update(owner_approved=False), "run_command_did_not_wait_for_the_owner"),
@@ -75,6 +83,56 @@ def test_the_boundary_is_read_whole_from_the_tool_result_not_from_the_reply_text
     for truncated in ("docker:deadbeefdead", full[:-1], full + "0", full.upper(), "docker:" + "g" * 64, 7):
         assert j5._tools(reply(truncated))[0]["boundary"] == "malformed"
     assert j5._tools(reply()) == [{"name": "run_command", "status": "ok"}]
+
+
+def test_sources_are_counted_from_the_tool_result_not_from_the_answer():
+    """ملاحظةُ Codex على #136: ردُّ SearXNG بقائمةٍ فارغة كان نتيجةً بحالة ok تُقبل بلا مصدرٍ واحد."""
+    def reply(results):
+        result = {"name": "web_search", "status": "ok", "content": "(لا نتائج)", "result_count": len(results or [])}
+        if results is not None:
+            result["results"] = results
+        return {"status": "complete", "content": "المصدر: https://www.python.org/", "steps": [{"tool_results": [result]}]}
+
+    sourced = [{"title": "Python", "url": "https://www.python.org/", "snippet": ""},
+               {"title": "Docs", "url": "http://docs.python.org/", "snippet": ""}]
+    assert j5._tools(reply(sourced)) == [{"name": "web_search", "status": "ok", "sourced_results": 2}]
+    for unsourced in ([], None, "x", [{"title": "t", "url": ""}], [{"title": "t", "url": "ftp://x"}], ["https://x"],
+                      [{"title": "t", "url": 7}]):
+        assert j5._tools(reply(unsourced)) == [{"name": "web_search", "status": "ok", "sourced_results": 0}]
+
+
+class _EmptyThenFoundApp:
+    """بحثٌ أول يعود بلا نتائج، ثم بحثٌ بمصدر؛ ولا أمر."""
+
+    def __init__(self, *args, **kwargs):
+        self.searches = 0
+
+    def dispatch(self, request):
+        if request["action"] in ("create_project", "create_session"):
+            return {"id": "x"}
+        if request["message"] == j5.COMMAND_REQUEST:
+            return {"status": "complete", "steps": [], "content": "لا أعرف."}
+        self.searches += 1
+        results = [{"title": "t", "url": "https://example.org/", "snippet": ""}] if self.searches > 1 else []
+        return {"status": "complete", "content": "",
+                "steps": [{"tool_results": [{"name": "web_search", "status": "ok", "results": results}]}]}
+
+    def close(self):
+        pass
+
+
+def test_an_empty_search_does_not_end_the_attempts(tmp_path, monkeypatch):
+    monkeypatch.setattr(j5, "LocalApp", _EmptyThenFoundApp)
+    monkeypatch.setattr(j5, "_digest", lambda model: "sha256:weights")
+    monkeypatch.setattr(j5, "_searxng", lambda url, container, docker: {"url": url, "image": j5.PINNED_SEARXNG})
+    out = tmp_path / "r.json"
+    assert j5.main(["--model", "m", "--web-search-url", "http://127.0.0.1:8888",
+                    "--runtime-receipt", str(tmp_path / "receipt.json"), "--out", str(out)]) == 1
+    report = json.loads(out.read_text(encoding="utf-8"))
+    counts = [a["tool_calls_by_the_model"][0]["sourced_results"] for a in report["web_search"]["attempts"]]
+    assert counts == [0, 1]
+    assert "web_search_returned_no_sourced_result" not in report["acceptance"]["failed"]
+    assert "web_search_never_succeeded" not in report["acceptance"]["failed"]
 
 
 class _SilentApp:

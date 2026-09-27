@@ -10,6 +10,7 @@
   الأداة نفسِها لا من نصّ الردّ.
 - ومسارُ Docker هو الذي تبني به الواجهةُ خلفيّةَ run_command، وإلا فلا قياس.
 - البحثُ من SearXNG محليٍّ وحده: الرابطُ على عنوان الجهاز، والحاويةُ التي تنشر منفذَه بالصورة المثبَّتة في G5.
+- ولا يُقبل البحثُ إلا بنتيجة web_search فيها رابطٌ واحدٌ على الأقل، يُعدّ من نتائج الأداة نفسِها لا من جواب النموذج.
 - ولا يخرج بـ0 إلا إن تحقّقت شروطُ القبول (`acceptance`)، ويُكتب التقريرُ في الحالين بحكمه.
 """
 from __future__ import annotations
@@ -61,9 +62,13 @@ def acceptance(report: dict) -> list[str]:
     execution = report["docker_execution"]
     failed = []
     # نداءٌ ردّه SearXNG بخطأ لا يشهد ببحثٍ حيّ: المقبولُ نتيجةُ web_search بحالة ok (ملاحظة Codex على #136)
-    if not any(t["name"] == "web_search" and t["status"] == "ok"
-               for attempt in report["web_search"]["attempts"] for t in attempt["tool_calls_by_the_model"]):
+    succeeded = [t for attempt in report["web_search"]["attempts"] for t in attempt["tool_calls_by_the_model"]
+                 if t["name"] == "web_search" and t["status"] == "ok"]
+    if not succeeded:
         failed.append("web_search_never_succeeded")
+    # وردٌّ بحالة ok وقائمةٍ فارغة لا يشهد بمصدرٍ واحد: المقبولُ نتيجةٌ بمصدرٍ على الأقل (ملاحظة Codex على #136)
+    elif not any(_sourced(t) for t in succeeded):
+        failed.append("web_search_returned_no_sourced_result")
     if execution["first_status"] != "awaiting_owner" or not execution["owner_approved"]:
         failed.append("run_command_did_not_wait_for_the_owner")
     if execution["final_status"] != "complete" or not any(
@@ -100,11 +105,23 @@ def _digest(model: str, base: str = "http://127.0.0.1:11434") -> str:
     return next(m["digest"] for m in models if m["name"] == model)
 
 
+def _sourced(call: dict) -> bool:
+    """نتيجةُ web_search ناجحةٌ وفيها نتيجةٌ واحدةٌ على الأقل برابط."""
+    count = call.get("sourced_results")
+    return call["name"] == "web_search" and call["status"] == "ok" and type(count) is int and count >= 1
+
+
 def _tools(result: dict) -> list[dict]:
     calls = []
     for step in result.get("steps", []):
         for r in step.get("tool_results", []):
             call = {"name": r.get("name"), "status": r.get("status")}
+            if r.get("name") == "web_search":
+                # يُعدّ من نتائج الأداة نفسِها ما له رابط، لا من روابط جواب النموذج
+                results = r.get("results")
+                call["sourced_results"] = sum(
+                    1 for item in results if isinstance(item, dict) and isinstance(item.get("url"), str)
+                    and item["url"].startswith(("http://", "https://"))) if isinstance(results, list) else 0
             if "boundary" in r:
                 boundary = r["boundary"]
                 call["boundary"] = ("docker:<64hex>" if isinstance(boundary, str) and BOUNDARY.fullmatch(boundary)
@@ -153,7 +170,7 @@ def main(argv=None) -> int:
                              "citations_passed": (searched.get("citations") or {}).get("passed"),
                              "answer_urls": sorted(set(re.findall(r"https?://[^\s\"\\)\]]+", content)))[:10],
                              "answer_chars": len(content)})
-            if any(t["name"] == "web_search" and t["status"] == "ok" for t in attempts[-1]["tool_calls_by_the_model"]):
+            if any(_sourced(t) for t in attempts[-1]["tool_calls_by_the_model"]):
                 break
 
         agent = api("create_session", project=project, name="أمر", mode="agent")["id"]
@@ -192,6 +209,7 @@ def main(argv=None) -> int:
             "search_results_come_from_public_engines_through_a_local_searxng_and_change_over_time",
             "container_ids_recorded_by_shape_not_value",
             "boundary_read_from_the_run_command_result_field_not_from_the_serialized_reply",
+            "web_search_accepted_only_with_a_result_carrying_a_url_counted_from_the_tool_result_not_the_answer",
         ],
     }
     failed = acceptance(report)
