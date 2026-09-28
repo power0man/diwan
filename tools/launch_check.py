@@ -7,7 +7,8 @@
 1. **runtime** — بايثون ≥ 3.11، والوحداتُ تُستورد، وuv.lock حاضر، ونوعُ النسخة (عامة/خاصة).
 2. **morphology** — CAMeL Tools وقاعدتُه الصرفية حاضران (ق٥٥: لازمان للإطلاق، والقالبيُّ
    احتياطيٌّ مسمًّى لا بديل)؛ وإلا `camel_missing` أو `camel_db_missing` مع أمر التركيب.
-3. **engine** — خادمُ Ollama يجيب على `/api/tags` والمحرّكُ المطلوب مسحوب.
+3. **engine** — خادمُ Ollama يجيب على `/api/tags` والمحرّكُ المطلوب مسحوب ببصمةٍ صالحة بقاعدة المزوّد المحليّ نفسِه
+   (sha256 كاملة)؛ وبصمةٌ غائبة أو مشوّهة عطبٌ مسمًّى `engine_metadata_invalid`، لأن أولَ جوابٍ في الواجهة يرفضها.
 4. **agent_turn** — جولةٌ وكيلة محكومة كاملة في مساحةٍ مؤقّتة: النموذجُ يقرأ ملفًّا بأداة
    `read_file` ويجيب، والسجلُّ يقيّد. بالمحرّك الحيّ إن وُجد؛ وإلا بمزوّدٍ آليّ مكتوبٍ سلفًا
    يُثبت الحلقةَ والأدواتِ والحَجرَ دون النموذج (`mechanism_only`).
@@ -30,6 +31,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import os
 import queue
@@ -127,7 +129,15 @@ def locate_engine(engine: str, base_url: str, *, probe=probe_engine) -> tuple[St
     if engine not in models:
         return Step("engine", "unavailable", "model_missing",
                     f"المحرّك {engine} غيرُ مسحوب — `ollama pull {engine}`؛ الموجود: {sorted(n for n in models if n)[:6]}"), None
-    return Step("engine", "ok", "engine_ready", f"{engine} على {base_url}"), models[engine]
+    digest = models[engine]
+    # بصمةُ المحرّك بقاعدة الفحص المسبق في المزوّد المحليّ نفسِه (providers/local_chat._SHA256: ٦٤ محرفًا ست عشريًّا صغيرًا):
+    # بصمةٌ غائبة أو مشوّهة يرفضها أولُ جوابٍ في الواجهة، فهي عطبٌ مسمًّى لا محرّكٌ غائب ولا جاهز
+    from providers.local_chat import _SHA256 as ARTIFACT_DIGEST
+    if not isinstance(digest, str) or not ARTIFACT_DIGEST.fullmatch(digest):
+        return Step("engine", "failed", "engine_metadata_invalid",
+                    f"Ollama يسرد {engine} ببصمةٍ غيرِ صالحة ({type(digest).__name__}، {len(digest or '')} محرفًا)؛ "
+                    f"المزوّدُ المحليّ يطلب sha256 كاملة — أعد `ollama pull {engine}`"), None
+    return Step("engine", "ok", "engine_ready", f"{engine} على {base_url}"), digest
 
 
 def check_engine(engine: str, base_url: str, *, probe=probe_engine) -> Step:
@@ -228,15 +238,44 @@ UI_TOKEN = re.compile(r'<meta name="diwan-token" content="([0-9a-f]{64})">')
 UI_RTL = re.compile(r'<html\b[^>]*\bdir="rtl"')
 
 
-def reaches_default_engine(base_url: str) -> bool:
-    """هل يبلغ serve_ui.py المحرّكَ الذي فُحص؟ مزوّدُه المحليّ يتّصل بـ127.0.0.1:11434 حرفيًّا (providers/local_chat.py)
-    ولا يقبل عنوانًا آخر؛ و`localhost` على المنفذ نفسِه هو العنوانُ نفسُه."""
+LOOPBACK = frozenset({"127.0.0.1", "localhost"})
+
+
+def ui_engine_endpoint(source: str | None = None) -> tuple[str, int] | None:
+    """العنوانُ الذي يبلغ به المزوّدُ المحليّ (الذي تنشئه serve_ui.py) خادمَ Ollama، مقروءًا من شيفرته نفسِها لا منسوخًا:
+    وسيطا `HTTPConnection(<مضيف>, <منفذ>, …)` في providers/local_chat.py. None إن لم يكونا حرفيَّين (صار العنوانُ مضبوطًا،
+    #176) فلا يُدّعى أن الواجهة تبلغ المحرّكَ المفحوص."""
+    if source is None:
+        source = (ROOT / "providers" / "local_chat.py").read_text(encoding="utf-8")
+    found = set()
+    for node in ast.walk(ast.parse(source)):
+        if (isinstance(node, ast.Call) and getattr(node.func, "attr", getattr(node.func, "id", None)) == "HTTPConnection"
+                and len(node.args) >= 2):
+            host, port = node.args[0], node.args[1]
+            if not (isinstance(host, ast.Constant) and isinstance(host.value, str)
+                    and isinstance(port, ast.Constant) and type(port.value) is int):
+                return None
+            found.add((host.value, port.value))
+    return found.pop() if len(found) == 1 else None
+
+
+def reaches_ui_engine(base_url: str, endpoint: tuple[str, int] | None = None) -> bool:
+    """هل `--base-url` هو العنوانُ نفسُه الذي تبلغه الواجهة؟ مقارنةٌ موجبة كاملة: http، والمضيفُ نفسُه أو مكافئُه على
+    loopback، والمنفذُ نفسُه، والمسارُ فارغ أو «/»، ولا مستخدمَ ولا استعلامَ ولا جزء. وأيُّ فرقٍ ليس ui_ready."""
+    endpoint = endpoint or ui_engine_endpoint()
+    if endpoint is None:
+        return False
+    host, port = endpoint
     try:
         parts = urllib.parse.urlsplit(base_url)
-        port = parts.port
+        given_port = parts.port
     except ValueError:
         return False
-    return parts.scheme == "http" and parts.hostname in ("127.0.0.1", "localhost") and port == 11434
+    same_host = parts.hostname == host or (parts.hostname in LOOPBACK and host in LOOPBACK)
+    return (parts.scheme == "http" and same_host and given_port == port
+            and parts.path in ("", "/")
+            and not parts.query and not parts.fragment
+            and parts.username is None and parts.password is None)
 
 
 def _drain(stream, lines: "queue.Queue[str | None]") -> None:
@@ -348,7 +387,7 @@ def check_ui(root: Path, *, model: str = DEFAULT_ENGINE, digest: str | None = No
             _stop(process, readers)
     if isinstance(probed, Step):
         return probed
-    if not reaches_default_engine(base_url):
+    if not reaches_ui_engine(base_url):
         return Step("ui", "unavailable", "ui_engine_endpoint_unpassed",
                     f"الواجهةُ تُقلع وتخدم الصفحة، لكن serve_ui.py يبلغ Ollama على 127.0.0.1:11434 وحده والمحرّكُ فُحص على "
                     f"{base_url}: أولُ جوابٍ في الواجهة لن يبلغه")

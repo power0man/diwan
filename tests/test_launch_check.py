@@ -20,7 +20,7 @@ import launch_check as lc  # noqa: E402
 
 
 def _tags_with(*names):
-    return lambda base_url: {"models": [{"name": n, "digest": "d" * 12} for n in names]}
+    return lambda base_url: {"models": [{"name": n, "digest": "d" * 64} for n in names]}
 
 
 def _down(base_url):
@@ -270,9 +270,46 @@ def test_an_engine_probed_elsewhere_is_not_a_ready_ui(tmp_path, monkeypatch):
     step, _ = _fake_ui(tmp_path, monkeypatch, "ok", base_url="http://127.0.0.1:11500")
     assert step.status == "unavailable" and step.code == "ui_engine_endpoint_unpassed", step
     assert "http://127.0.0.1:11500" in step.detail
-    assert lc.reaches_default_engine("http://localhost:11434") and lc.reaches_default_engine(lc.DEFAULT_BASE_URL)
+    assert lc.reaches_ui_engine("http://localhost:11434") and lc.reaches_ui_engine(lc.DEFAULT_BASE_URL)
     for other in ("http://127.0.0.1:11500", "http://192.168.1.5:11434", "https://127.0.0.1:11434", "http://127.0.0.1"):
-        assert not lc.reaches_default_engine(other), other
+        assert not lc.reaches_ui_engine(other), other
+
+
+def test_only_the_exact_endpoint_the_ui_reaches_counts_as_the_ui_engine():
+    """ملاحظة Codex الخامسة على #175: `http://localhost:11434/ollama` مرّ لأن الموازنةَ لم تنظر في المسار، والمحرّكُ فُحص على
+    /ollama/api/… والمزوّدُ يبلغ /api/…. صارت الموازنةُ موجبةً كاملة بالعنوان الذي في شيفرة المزوّد نفسِه."""
+    assert lc.ui_engine_endpoint() == ("127.0.0.1", 11434), "العنوانُ من HTTPConnection في providers/local_chat.py"
+    for same in ("http://localhost:11434", "http://127.0.0.1:11434/", "HTTP://LOCALHOST:11434"):
+        assert lc.reaches_ui_engine(same), same
+    for other in ("http://localhost:11434/ollama", "http://127.0.0.1:11434/?x=1", "http://127.0.0.1:11434#f",
+                  "http://u:p@127.0.0.1:11434", "http://u@127.0.0.1:11434", "http://127.0.0.1:11500",
+                  "https://127.0.0.1:11434", "http://127.0.0.1"):
+        assert not lc.reaches_ui_engine(other), other
+    # العنوانُ يُقرأ من شيفرة المزوّد لا من نسخة: غيرُه يغيّر الحكم، وعنوانٌ غيرُ حرفيّ (#176) لا يُدّعى
+    other_source = 'conn = http.client.HTTPConnection("10.1.2.3", 9999, timeout=t)'
+    assert lc.ui_engine_endpoint(other_source) == ("10.1.2.3", 9999)
+    assert lc.reaches_ui_engine("http://10.1.2.3:9999", ("10.1.2.3", 9999))
+    assert not lc.reaches_ui_engine("http://localhost:11434", ("10.1.2.3", 9999))
+    assert lc.ui_engine_endpoint("conn = http.client.HTTPConnection(host, port, timeout=t)") is None
+    mixed = 'a = http.client.HTTPConnection("127.0.0.1", 11434)\nb = http.client.HTTPConnection(host, port)'
+    assert lc.ui_engine_endpoint(mixed) is None, "مسارٌ مضبوطٌ بجانب الحرفيّ فلا يُدّعى عنوانٌ واحد"
+
+
+def test_a_model_without_a_valid_artifact_digest_is_a_named_failure():
+    """ملاحظة Codex الخامسة على #175: محرّكٌ مسرودٌ بلا بصمة كان «جاهزًا» فتُشغَّل الواجهةُ ببصمةٍ بديلة ويخرج الفحصُ 0، وأولُ
+    جوابٍ يرفضه الفحصُ المسبق في المزوّد. البصمةُ بقاعدة المزوّد نفسِه وإلا engine_metadata_invalid وخروجٌ غيرُ صفر."""
+    def tags(**entry):
+        return lambda base_url: {"models": [{"name": "qwen3.5:9b", **entry}]}
+    for entry in ({}, {"digest": None}, {"digest": ""}, {"digest": "a" * 63}, {"digest": "g" * 64}, {"digest": "A" * 64},
+                  {"digest": "sha256:" + "a" * 64}):
+        step, digest = lc.locate_engine("qwen3.5:9b", "http://x", probe=tags(**entry))
+        assert (step.status, step.code, digest) == ("failed", "engine_metadata_invalid", None), entry
+    step, digest = lc.locate_engine("qwen3.5:9b", "http://x", probe=tags(digest="a" * 64))
+    assert (step.status, step.code, digest) == ("ok", "engine_ready", "a" * 64)
+    ui = lambda root, **kwargs: lc.Step("ui", "ok", "ui_ready_without_engine")
+    steps = lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x", probe=tags(digest=""), with_agent=False,
+                          ui_check=ui)
+    assert lc.exit_code(steps) == 1, "بصمةٌ غائبة لا تنتهي بخروجٍ صفر"
 
 
 def test_a_journal_that_refuses_its_root_is_a_named_failure_not_a_traceback(monkeypatch):
