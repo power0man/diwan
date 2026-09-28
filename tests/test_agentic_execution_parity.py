@@ -71,7 +71,7 @@ def test_a_suite_with_a_receipt_gives_every_task_its_executor_and_says_so(receip
     [row], config = report["results"], report["config"]
     assert row["loop_status"] == "complete" and row["code"] != "execution_backend_unavailable", row
     assert (config["agent_execution"], config["execution_tools_without_backend"]) == ("docker", [])
-    assert config["runner_version"] == 7 and not execution._BACKENDS
+    assert config["runner_version"] == 8 and not execution._BACKENDS
 
 
 def test_the_report_names_execution_tools_announced_without_a_backend(registry, monkeypatch):
