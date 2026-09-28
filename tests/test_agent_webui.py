@@ -209,6 +209,52 @@ def test_http_capabilities_are_explicit_and_text_mode_remains_available(live):
     assert [tier['id'] for tier in live.api('sovereign_status')['available_tiers']] == ['local_edge']
 
 
+def test_all_projects_memory_disambiguates_labels_and_does_not_create_stores(live, monkeypatch):
+    first = live.api("create_project", name="متكرر")['id']
+    second = live.api("create_project", name="متكرر")['id']
+    third = live.api("create_project", name="منفرد")['id']
+    live.api("memory_remember", project=first, text="حقيقة محفوظة")
+    captured = {}
+
+    class Scope:
+        def __init__(self, stores):
+            captured["stores"] = stores
+
+    monkeypatch.setattr("webui.server.importlib.import_module",
+                        lambda name: type("ScopeModule", (), {"AllProjects": Scope}))
+    live.app.all_projects_memory()
+    stores = captured["stores"]
+    labels = [project_label for project_label, _ in stores]
+    duplicate_labels = {f"متكرر — {first[:8]}", f"متكرر — {second[:8]}"}
+    assert set(labels[:2]) == duplicate_labels and labels[2:] == ["منفرد"]
+    by_label = {project_label: store for project_label, store in stores}
+    assert by_label[f"متكرر — {first[:8]}"] is not None
+    assert by_label[f"متكرر — {second[:8]}"] is None and by_label["منفرد"] is None
+    assert not (live.app.project(second) / "memory").exists()
+    assert not (live.app.project(third) / "memory").exists()
+
+
+def test_forget_receipt_counts_unified_turn_that_saw_another_project_memory(live, monkeypatch):
+    source = live.api("create_project", name="المصدر")['id']
+    item_id = live.api("memory_remember", project=source, text="الموعد الخميس")['item_id']
+    item = live.app.memory_store(live.app.project(source)).find(item_id)
+    general = live.api("create_project", name="عام")['id']
+    session = live.api("create_session", project=general, name="محادثة عامة", mode="agent")['id']
+
+    class Scope:
+        def context(self, question):
+            return ("ذاكرة كل المشاريع:\n- الموعد الخميس", [item["sha256"]])
+
+    scope = Scope()
+    monkeypatch.setattr(live.app, "all_projects_memory", lambda: scope)
+    live.provider.responses = [response("الخميس")]
+    turn = uuid.uuid4().hex
+    live.api("agent_ask", project=general, session=session, turn=turn,
+             message="متى الموعد؟", files=[])
+    forgotten = live.api("memory_forget", project=source, item_id=item_id)
+    assert forgotten["receipt"]["references"] == [f"agent:{session}/{turn}"]
+
+
 @pytest.mark.parametrize('path', ['../uploads/x', '/etc/passwd', '.diwan-journal/journal.jsonl', 'alias.txt'])
 def test_agent_read_refuses_paths_links_and_hidden_state(live, path):
     ctx = live.agent()

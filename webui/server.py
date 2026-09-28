@@ -4,6 +4,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 import base64
 import hmac
+import importlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
@@ -302,6 +303,35 @@ class LocalApp:
         except MemoryRefused as exc:
             raise UIError(exc.code) from None
 
+    def all_projects_memory(self):
+        """نطاق القراءة للصفحة الموحّدة، بلا إنشاء مخزنٍ لأي مشروع.
+
+        الاستيراد مؤجّل كي يستطيع هذا الفرع أن يُبنى فوق #168 قبل دمج #169؛ عند
+        تشغيل الصفحة الموحّدة يكون ``memory.scope`` اعتمادًا لازمًا لا بديلًا
+        صامتًا يعيد عزل مشروع واحد.
+        """
+        AllProjects = importlib.import_module("memory.scope").AllProjects
+        projects = self.collection(self.root / "projects")
+        counts = {}
+        for meta in projects:
+            counts[meta["name"]] = counts.get(meta["name"], 0) + 1
+        stores = []
+        for meta in projects:
+            project = self.project(meta["id"])
+            project_label = meta["name"]
+            if counts[project_label] > 1:
+                project_label = f"{project_label} — {meta['id'][:8]}"
+            stores.append((project_label, self.memory_store(project)))
+        try:
+            return AllProjects(stores)
+        except MemoryRefused as exc:
+            raise UIError(exc.code) from None
+
+    def is_unified_session(self, project, session_id):
+        """تمييز المحادثة الافتراضية التي أنشأتها الصفحة الموحّدة في #168."""
+        return (self.metadata(project)["name"] == "عام"
+                and self.metadata(project / "sessions" / identifier(session_id))["name"] == "محادثة عامة")
+
     @property
     def research_enabled(self):
         return self.agent_enabled and self.web_search is not None
@@ -343,7 +373,7 @@ class LocalApp:
         need(len(pairs) <= 200, "glossary_too_large")
         return pairs
 
-    def agent_session(self, project, session_id, *, create=False, mode="agent"):
+    def agent_session(self, project, session_id, *, create=False, mode="agent", memory=None):
         workspace = self.agent_workspace(project)
         root = project / "agent-control"
         if create:
@@ -368,8 +398,10 @@ class LocalApp:
             config = {key: saved[key] for key in ("model", "model_version", "max_steps", "max_output",
                 "deadline_s", "max_context_chars", "max_turns", "system")}
             config["deadline_s"] = float(saved["deadline_s"])
+        if memory is None:
+            memory = self.memory_store(project)
         return AgentSession(root, session_id, workspace_root=workspace, project_id=project.name,
-                            registry=registry, memory=self.memory_store(project), **config)
+                            registry=registry, memory=memory, **config)
 
     @staticmethod
     def present_agent(turn, session=None, mode="agent"):
@@ -435,13 +467,25 @@ class LocalApp:
 
     def memory_references(self, project, sha256):
         references = []
-        for meta in self.collection(project / "sessions"):
+        sessions = [(project, meta) for meta in self.collection(project / "sessions")]
+        # جولات الصفحة الموحّدة قد تكون في المشروع العام وهي ترى ذاكرة المشروع
+        # المطلوب نسيانُ عنصره. لذلك تدخل إيصالَ أي مشروع، ولا ندخل سائر الجلسات
+        # المحصورة في مشاريع أخرى.
+        for project_meta in self.collection(self.root / "projects"):
+            other = self.project(project_meta["id"])
+            if other == project:
+                continue
+            sessions.extend((other, meta) for meta in self.collection(other / "sessions")
+                            if self.is_unified_session(other, meta["id"]))
+        for session_project, meta in sessions:
             mode = meta.get("mode", "text")
             if mode == "media":
                 continue            # جلساتُ الوسائط لا تحمل ذاكرة
             try:
-                session = (self.agent_session(project, meta["id"]) if mode in AGENT_MODES
-                           else self.session(project, meta["id"]))
+                memory = self.all_projects_memory() if self.is_unified_session(
+                    session_project, meta["id"]) else None
+                session = (self.agent_session(session_project, meta["id"], memory=memory)
+                           if mode in AGENT_MODES else self.session(session_project, meta["id"]))
                 references.extend(session.memory_references(sha256))
             except (ConversationError, UIError, OSError, ValueError):
                 # جلسةٌ لا تُقرأ لا تحجب النسيان؛ والإيصالُ يسمّيها فلا يدّعي أنها خلت منه
@@ -486,7 +530,8 @@ class LocalApp:
                     session = None
             # The running session owns its execution lock. A stop request uses
             # the session's separate durable control channel, not generation.
-            session = session if session is not None else self.agent_session(project, key[1])
+            memory = self.all_projects_memory() if self.is_unified_session(project, key[1]) else None
+            session = session if session is not None else self.agent_session(project, key[1], memory=memory)
             try:
                 return session.request_stop(turn_id)
             except ConversationError as exc:
@@ -520,7 +565,8 @@ class LocalApp:
             need(self.generation.acquire(blocking=False), "generation_busy")
             self.active, self.active_payload = (*key, operation), fingerprint
         try:
-            session = self.agent_session(project, key[1])
+            memory = self.all_projects_memory() if self.is_unified_session(project, key[1]) else None
+            session = self.agent_session(project, key[1], memory=memory)
             with self.lock:
                 self.active_agent_session = session
             if action == "agent_decide":
@@ -752,7 +798,8 @@ class LocalApp:
             with self.lock:
                 if self.active and self.active[:2] == key:
                     return {"status": "running", "turn": self.active[2]}
-            agent = self.agent_session(project, key[1]) if mode in AGENT_MODES else None
+            memory = self.all_projects_memory() if self.is_unified_session(project, key[1]) else None
+            agent = self.agent_session(project, key[1], memory=memory) if mode in AGENT_MODES else None
             history = agent.history()["turns"] if agent else self.session(project, key[1]).history()
             before = request["before"]
             need(before is None or (type(before) is int and 0 <= before <= len(history)))
@@ -861,9 +908,11 @@ class LocalApp:
                 if request["files"]:
                     available = self.dispatch({"action": "files", "project": request["project"]})
                     need(set(request["files"]) <= {doc["path"] for doc in available["files"]}, "attachment_unavailable")
+                memory = (self.all_projects_memory() if self.is_unified_session(project, key[1])
+                          else self.memory_store(project))
                 assistant = AssistantWorkspace(session, self.provider_factory(),
                                                self.workspace(project), Preferences(project / "preferences"),
-                                               memory=self.memory_store(project))
+                                               memory=memory)
                 result = assistant.ask(request["turn"], message_to_send, files=tuple(request["files"]))
 
             if token_map and result.get("content"):
