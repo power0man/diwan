@@ -217,7 +217,13 @@ def test_a_completion_mark_follows_the_step_s_title_not_its_number(repo, vault):
     assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"]
     again = steps.read_text(encoding="utf-8")
     assert "- [x] **2. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ٥ دقائق · $0" in again
-    assert "- [x] **2. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0" in again.split("\n## ملاحظاتي")[1], "سطرُها القديم يُنقل لا يُمحى"
+    assert "١٠ دقائق" not in again, "سطرُها القديم كما كتبته الأداةُ لا شيءَ فيه للمالك غيرُ علامته، فلا يُنقل (الجولة الرابعة عشرة)"
+    # أمّا إن عدّل المالكُ داخل النصّ الذي كتبته الأداة فيُنقل سطرُه كما هو ولا يُمحى
+    edited = "- [x] **2. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ٥ دقائق (أخذت ساعة) · $0"
+    steps.write_text(again.replace("- [x] **2. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ٥ دقائق · $0", edited), encoding="utf-8")
+    assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"]
+    body, notes = steps.read_text(encoding="utf-8").split("\n## ملاحظاتي")
+    assert "- [x] **2. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ٥ دقائق · $0\n" in body and edited in notes, "سطرُها المعدَّل يُنقل لا يُمحى"
 
 
 def test_an_owner_line_that_reuses_a_generated_step_s_number_is_carried_whichever_side_it_sits(repo, vault):
@@ -259,12 +265,12 @@ def test_a_lifted_deferral_and_a_step_gone_from_the_plan_migrate_without_losing_
     text = steps.read_text(encoding="utf-8")
     label = "مؤجَّلة (ق٦٨ حتى 2026-10-19: الجهازُ غيرُ قابلٍ للوصول)"
     assert f"- ⏸ **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — {label}" in text
-    text = (text.replace(f"- ⏸ **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — {label}",
-                         f"- [x] **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — {label} — أُنجزت قبل التأجيل (بالرام الجديدة)")
-                .replace(f"- ⏸ **3. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0 — {label}",
-                         f"- ⏸ **3. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0 — {label}")
-            + "- [ ] **9. خطوةٌ أضفتُها بنفسي** · بلا دليل · ساعة · $0\n")
-    steps.write_text(text, encoding="utf-8")
+    steps.write_text(text.replace(f"- ⏸ **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — {label}",
+                                  f"- [x] **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — {label} (بالرام الجديدة)"), encoding="utf-8")
+    ov.build(vault, root=repo)                                  # الأداةُ تكتب علامةَ الإنجاز قبل التأجيل بنفسها
+    text = steps.read_text(encoding="utf-8")
+    assert f"- [x] **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — {label} — أُنجزت قبل التأجيل (بالرام الجديدة)" in text
+    steps.write_text(text + "- [ ] **9. خطوةٌ أضفتُها بنفسي** · بلا دليل · ساعة · $0\n", encoding="utf-8")
     # يعود Nitro: يزول التأجيلُ عن ٢، ويتغيّر سببُه على ٣، وتُحذف الخطوةُ ١ من الخطة
     plan["owner_steps"] = [s for s in plan["owner_steps"] if s["order"] != 1]
     del plan["owner_steps"][0]["deferred"]
@@ -353,6 +359,91 @@ def test_an_owner_written_deferral_on_an_active_step_survives_and_the_tool_s_own
     assert "ق٦٩" not in text and ov.DONE_BEFORE_DEFERRAL not in text
 
 
+ONE = "**1. خطوة** · [[الأدلة/G1|G1]] · ٥ دقائق · $0"
+TWO = "**2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0"
+PAUSED = f"- ⏸ {ONE} — مؤجَّلة (بقرار شخصي)"
+
+
+def _label(d):
+    return f" — مؤجَّلة ({d['by']} حتى {d['until']}: {d['reason']})"
+
+
+def _paused_vault(repo, vault, why):
+    """خطةٌ فيها خطوتان: ١ نشطة أوقفها المالكُ بيده بعلامته ونصّه، و٢ أجّلتها الخطةُ وكتب المالكُ بعد علامة الأداة تعليقَه."""
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    plan["owner_steps"].append({"order": 2, "guide_id": "G5", "title": "تجهيز Nitro", "time": "ساعة", "cost": "$0", "deferred": why})
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    steps = vault / "Diwan/خطواتي.md"
+    text = steps.read_text(encoding="utf-8")
+    assert f"- [ ] {ONE}\n" in text and f"- ⏸ {TWO}{_label(why)}\n" in text
+    steps.write_text(text.replace(f"- [ ] {ONE}\n", PAUSED + "\n")
+                     .replace(f"- ⏸ {TWO}{_label(why)}\n", f"- ⏸ {TWO}{_label(why)} (سألت المورّد)\n"), encoding="utf-8")
+    return plan, steps
+
+
+def test_an_active_step_the_owner_paused_by_hand_keeps_its_pause_and_text_through_every_rebuild(repo, vault):
+    """ملاحظةُ Codex على #161 (الجولة الرابعة عشرة): المالكُ أوقف خطوةً نشطة بيده («- ⏸ **1. …** — مؤجَّلة (بقرار شخصي)») فكان البناءُ
+    يحسب «⏸» علامةَ الأداة لأنه شكلُها، فيعيد «[ ]» ويمحو نصَّه. صار المصدرُ سجلَّ ما كتبته الأداةُ نفسُها (`.diwan-steps.json`) لا
+    شكلَ السطر: ما غيّره المالكُ عمّا كتبته الأداةُ له. فتبقى وقفتُه ونصُّه بايتًا بايتًا عبر إعادة البناء، وتأجيلِ الخطة للخطوة نفسِها،
+    وتغيّرِ السبب، ورفعِ التأجيل؛ ويُحترم رفعُه لها بيده. وعلامةُ الأداة على الخطوة المؤجَّلة بالخطة تُعرف ولا تتكرّر وتزول برفع
+    التأجيل، ولو تبعها نصُّ المالك."""
+    why = {"by": "ق٦٨", "until": "2026-10-19", "reason": "الجهازُ غيرُ قابلٍ للوصول (Nitro)"}
+    plan, steps = _paused_vault(repo, vault, why)
+    ov.build(vault, root=repo)
+    text = steps.read_text(encoding="utf-8")
+    assert PAUSED + "\n" in text, "وقفةُ المالك بيده تبقى ولا تعود «[ ]»"
+    assert f"- ⏸ {TWO}{_label(why)} (سألت المورّد)\n" in text and text.count("مؤجَّلة (ق٦٨") == 1
+    assert ov.build(vault, root=repo)["migrated"] == [] and ov.check(vault, root=repo) == [] and steps.read_text(encoding="utf-8") == text
+    # الخطةُ تؤجّل الخطوةَ ١ نفسَها، ثم يتغيّر السبب، ثم يُرفع التأجيل: وقفةُ المالك ونصُّه لا يزولان، وعلامةُ الأداة وحدها تتبدّل
+    new_why = {"by": "ق٦٩", "until": "2026-11-01", "reason": "سببٌ آخر"}
+    for why_now in (why, new_why, None):
+        for step in plan["owner_steps"]:
+            step.pop("deferred", None)
+            if why_now:
+                step["deferred"] = why_now
+        (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+        ov.build(vault, root=repo)
+        text = steps.read_text(encoding="utf-8")
+        tool = _label(why_now) if why_now else ""
+        assert f"- ⏸ {ONE}{tool} — مؤجَّلة (بقرار شخصي)\n" in text, why_now
+        assert f"- {'⏸' if why_now else '[ ]'} {TWO}{tool} (سألت المورّد)\n" in text, why_now
+        assert text.count(" — مؤجَّلة (ق") == (2 if why_now else 0), "علامةُ الأداة مرّةً واحدة لكل خطوةٍ مؤجَّلة، وتزول برفع التأجيل"
+        assert ov.build(vault, root=repo)["migrated"] == [] and steps.read_text(encoding="utf-8") == text, "والبناءُ التالي لا يغيّر شيئًا"
+    # ويرفع المالكُ وقفتَه بيده: يُحترم، ونصُّه يبقى حتى يمحوه هو
+    steps.write_text(text.replace(PAUSED, f"- [ ] {ONE} — مؤجَّلة (بقرار شخصي)"), encoding="utf-8")
+    ov.build(vault, root=repo)
+    assert f"- [ ] {ONE} — مؤجَّلة (بقرار شخصي)\n" in steps.read_text(encoding="utf-8")
+    assert ov.build(vault, root=repo)["migrated"] == []
+
+
+@pytest.mark.parametrize("damage", ["missing", "corrupt", "wrong_schema"])
+def test_a_missing_or_corrupt_steps_record_never_deletes_the_owner_s_text(repo, vault, damage):
+    """من الجولة الرابعة عشرة: سجلُّ ما كتبته الأداةُ مفقودٌ (خزنةٌ من قبله، أو حُذف) أو تالف أو بغير صيغته: لا يسقط البناء ولا يُمحى
+    شيءٌ للمالك. القاعدةُ المحافِظة: لا يُنزع إلا ما تولّده الخطةُ الآن بنصّه — علامةُ الخطوة المؤجَّلة الحالية — ووقفةُ المالك على
+    خطوةٍ نشطة ونصُّه باقيان؛ ثم يُكتب سجلٌّ سليم فيعود التمييزُ بالمصدر."""
+    why = {"by": "ق٦٨", "until": "2026-10-19", "reason": "الجهازُ غيرُ قابلٍ للوصول (Nitro)"}
+    plan, steps = _paused_vault(repo, vault, why)
+    state = vault / "Diwan" / ov.STEPS_STATE
+    assert json.loads(state.read_text(encoding="utf-8"))["schema_version"] == 1
+    if damage == "missing":
+        state.unlink()
+    else:
+        state.write_text("{لا json" if damage == "corrupt" else '{"schema_version": 1, "steps": {"1. خطوة": {"mark": "[ ]", "text": 5}}}',
+                         encoding="utf-8")
+    ov.build(vault, root=repo)
+    text = steps.read_text(encoding="utf-8")
+    assert PAUSED + "\n" in text, "وقفةُ المالك ونصُّه يبقيان بلا سجلّ"
+    assert f"- ⏸ {TWO}{_label(why)} (سألت المورّد)\n" in text and text.count("مؤجَّلة (ق٦٨") == 1, "علامةُ الأداة الحالية وحدها تُنزع ولا تتكرّر"
+    assert json.loads(state.read_text(encoding="utf-8"))["steps"]["1. خطوة"]["override"] == "⏸", "ثم يُكتب سجلٌّ سليم"
+    assert ov.build(vault, root=repo)["migrated"] == [] and steps.read_text(encoding="utf-8") == text
+    del plan["owner_steps"][-1]["deferred"]
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    text = steps.read_text(encoding="utf-8")
+    assert PAUSED + "\n" in text and f"- [ ] {TWO} (سألت المورّد)\n" in text and "ق٦٨" not in text
+
+
 @pytest.mark.parametrize("instruction", [ov.LEGACY_INSTRUCTION, ov.INSTRUCTION], ids=["legacy", "current"])
 def test_an_annotation_appended_to_the_instruction_line_is_carried_not_deleted(repo, vault, instruction):
     """ملاحظةُ Codex على #161 (الجولة الحادية عشرة): سطرُ التعليمات كان يُعرف ببدايته «علّم الخطوة حين تنتهي»، فتعليقٌ ألحقه المالكُ
@@ -420,6 +511,7 @@ def test_a_symlinked_note_is_refused_by_name_and_what_it_points_to_is_untouched(
     refused("المهام/ك١.md", elsewhere / "ك١.md")
     refused("المهام", elsewhere / "مهام", content=None)
     refused(".diwan-mirror.json", elsewhere / "بيان.json", content=b'{"files": {}}')
+    refused(".diwan-steps.json", elsewhere / "سجل.json", content=b'{"schema_version": 1, "steps": {}}')
     # مهمّةٌ متقادمة (حُذفت من الخطة) مربوطةٌ بملفٍّ بنصّها المسجَّل: لا يُحذف الرابطُ ولا يُقرأ الهدف
     plan["tasks"] = plan["tasks"][:1]
     plan["phases"][0]["task_ids"] = ["ك١"]

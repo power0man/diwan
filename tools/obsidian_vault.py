@@ -21,14 +21,19 @@
   البيانُ ملفًّا كتبته الأداة ولم يتغيّر.
 - «اقرأني» في صندوق الوارد تُكتب مرّةً إن غابت ثم هي ملكُ المالك. أمّا «خطواتي» فتُعاد كتابتُها من الخطة عند كل بناء
   **مع الحفاظ على علامات المالك** (`[x]` تبقى، وما أُنجز ثم أُجّل يبقى منجزًا) وعلى ما كتبه تحت «## ملاحظاتي»؛ فتأجيلٌ جديد
-  في الخطة (ق٦٨) يبلغ خزنةً قائمة لا الخزنةَ الجديدة وحدها (ملاحظة Codex على #161).
+  في الخطة (ق٦٨) يبلغ خزنةً قائمة لا الخزنةَ الجديدة وحدها (ملاحظة Codex على #161). والتمييزُ بين نصّ الأداة ونصّ المالك من سجلّ
+  ما كتبته الأداةُ نفسُها لكل خطوة (`Diwan/.diwan-steps.json`، يُكتب دفعةً واحدة) لا من شكل السطر: «⏸» أو «— مؤجَّلة (…)» كتبهما
+  المالكُ بيده يبقيان له (ملاحظتا Codex الثالثة عشرة والرابعة عشرة). وبلا سجلٍّ (خزنةٌ من قبله، أو فُقد أو تلف) لا يُنزع إلا ما تولّده
+  الخطةُ الآن بنصّه.
 - لا يُكتب ولا يُقرأ ولا يُحذف عبر رابطٍ رمزيّ في `Diwan/` (`symlink_refused`)، ولا في غير ملفٍّ عاديّ (`not_a_regular_file`):
   يُفحص كلُّ مسارٍ ستمسّه الأداةُ قبل أيّ كتابة، فرابطٌ وضعه المالكُ (خطواتي مربوطةٌ بمجلّد ملاحظاتٍ آخر) يُرفض باسمه ولا يُكتب
   فوق ما يشير إليه ولو بـ`--force` (ملاحظة Codex الثانية عشرة على #161). و«اقرأني» إن كانت رابطًا تُترك كما هي.
 
 **الحدُّ المعلَن:** الأداةُ لا تمنع المالكَ من وضع الخزنة في مجلّد مزامنةٍ سحابيّ؛ ذلك خيارُه (G10). والمرآةُ
 لقطةٌ عند البناء: تتقادم حتى يُعاد البناء بعد الدمج. وفحصُ الروابط يسبق الكتابة ولا يلازمها: رابطٌ يُنشأ بينهما لا يُرى،
-وجذرُ الخزنة نفسُه يُحلّ إلى مساره الحقيقيّ، ومجلّدُ `Inbox/` للمالك يربطه حيث شاء.
+وجذرُ الخزنة نفسُه يُحلّ إلى مساره الحقيقيّ، ومجلّدُ `Inbox/` للمالك يربطه حيث شاء. وسجلُّ «خطواتي» يُكتب بعدها: إن انقطع البناءُ
+بينهما قُرئ سجلٌّ أقدم منها، فيُنقل سطرٌ للأداة إلى قسم الملاحظات أو تبقى علامتُها لاحقةً للمالك، ولا يُمحى له شيء. و«[ ]» غيابُ
+علامة المالك لا علامة: خطوةٌ أجّلتها الخطةُ وأعادها المالكُ «[ ]» بيده تعود «⏸» ما دام التأجيلُ قائمًا.
 """
 from __future__ import annotations
 
@@ -40,6 +45,7 @@ import re
 import shutil
 import stat
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -50,6 +56,7 @@ OUT = "Diwan"
 INBOX = "Inbox"
 DONE = "منجز"
 MANIFEST = ".diwan-mirror.json"
+STEPS_STATE = ".diwan-steps.json"          # ما كتبته الأداةُ نفسُها في «خطواتي» لكل خطوة: مصدرُ التمييز بين نصّها ونصّ المالك
 SEED_NOTES = ("خطواتي.md",)
 INBOX_README = "اقرأني.md"
 HEADER = "> **مرآةٌ للقراءة** من `{src}` في المستودع. لا تحرّرها هنا: أعيد بناؤها بعد كل دمج.\n\n"
@@ -244,7 +251,7 @@ def _refuse_links(vault: Path, rels) -> None:
 
 def _checked_manifest(vault: Path, wanted) -> dict[str, str]:
     """البيانُ بعد فحص كلِّ ما ستمسّه الأداة: البيانُ نفسُه والمولَّدُ قبل قراءته، ثم ما سجّله البيانُ مما قد يُحذف."""
-    _refuse_links(vault, [f"{OUT}/{MANIFEST}", *(f"{OUT}/{rel}" for rel in wanted)])
+    _refuse_links(vault, [f"{OUT}/{MANIFEST}", f"{OUT}/{STEPS_STATE}", *(f"{OUT}/{rel}" for rel in wanted)])
     old = _load_manifest(vault / OUT)["files"]
     _refuse_links(vault, [f"{OUT}/{rel}" for rel in old])
     return old
@@ -270,34 +277,69 @@ LEGACY_INSTRUCTION = "علّم الخطوة حين تنتهي. هذه الملا
 _KNOWN_LINES = ("# خطواتي", INSTRUCTION, LEGACY_INSTRUCTION, "## خطواتٌ مؤجَّلة", "لا تُطلب منك الآن؛ تعود إلى القائمة بإشعارك.")
 
 
-def _label_end(text: str, start: int) -> int | None:
-    """نهايةُ علامة التأجيل التي تبدأ عند `start`: حتى قوسها الذي يُغلقها بعدّ الأقواس (فسببُ التأجيل قد يحمل قوسين مثل «(ق٦٨)»)، لا
-    عند آخر السطر — فما بعد القوس المُغلق لاحقةُ المالك، وكان يُبتلع فيُمحى في البناء التالي (ملاحظة Codex السابعة على #161).
-    وعلامةٌ لم تُغلق: `None`، فلا تُنزع بالتخمين."""
-    depth = 0
-    for i in range(start + len(_DEFERRAL_LABEL) - 1, len(text)):
-        depth += {"(": 1, ")": -1}.get(text[i], 0)
-        if depth == 0:
-            return i + 1
-    return None
+_OWNER_MARKS = ("[x]", "[X]", "⏸")          # علامةٌ وضعها المالكُ بيده: أنجز الخطوة، أو أوقفها؛ و«[ ]» غيابُ علامته لا علامة
 
 
-def _owner_suffix(mark: str, existing: str, rendered: str) -> str | None:
-    """لاحقةُ المالك على سطر خطوته: ما زاد في ذيل سطره الموجود (`existing`) على نصّ الخطوة كما تولّده الأداةُ الآن (`rendered` بلا علامة
-    تأجيله)، أو `None` إن عُدّل النصُّ المولَّد نفسُه فيُنقل السطرُ كاملًا. وعلامةُ التأجيل في أول اللاحقة تُنزع — ومعها علامةُ الإنجاز
-    قبل التأجيل بعدها — إن كانت الأداةُ هي التي ولّدتها: السطرُ مؤجَّل (⏸)، أو منجزٌ قبل التأجيل، أو العلامةُ هي نصُّ ما تولّده الخطةُ
-    الآن لهذه الخطوة؛ فعلامةٌ قديمة زالت أو تغيّر سببُها لا تبقى ولا تتكرّر (ملاحظة Codex السادسة على #161). وما عدا ذلك للمالك:
-    «- [ ] **1. عمل** · G1 — مؤجَّلة (بقرار شخصي)» على خطوةٍ نشطة يبقى كما كتبه، وكانت كلُّ علامةٍ بهذا اللفظ تُنزع أينما وقعت
-    فيُمحى نصُّه في البناء التالي (ملاحظة Codex الثالثة عشرة على #161)."""
+def _load_steps_state(out_dir: Path) -> dict | None:
+    """سجلُّ ما كتبته الأداةُ في «خطواتي» في البناء السابق، لكل خطوةٍ بهويّتها: `{mark, text, override}` — العلامةُ التي كتبتها،
+    ونصُّها بعد الرقم (بعلامة التأجيل وعلامة الإنجاز قبل التأجيل إن ولّدتهما)، وعلامةُ المالك التي حفظتها. سجلٌّ مفقود (أولُ بناء، أو خزنةٌ
+    من قبل هذا التغيير) أو تالفٌ أو بغير صيغته: `None`، فيُرحَّل الملفُّ بالقاعدة المحافِظة ولا يُسقط البناء."""
+    try:
+        data = json.loads((out_dir / STEPS_STATE).read_bytes().decode("utf-8"))
+    except (OSError, ValueError):
+        return None
+    steps = data.get("steps") if isinstance(data, dict) and data.get("schema_version") == 1 else None
+    ok = isinstance(steps, dict) and all(
+        isinstance(r, dict) and isinstance(r.get("mark"), str) and isinstance(r.get("text"), str) and r.get("override") in (None, *_OWNER_MARKS)
+        for r in steps.values())
+    return steps if ok else None
+
+
+def _write_atomic(path: Path, data: bytes) -> None:
+    """يُكتب في ملفٍّ مؤقّتٍ فريد بجانبه ثم يحلّ محلَّه دفعةً واحدة (`os.replace` لا يتبع رابطًا)، فلا يبقى السجلُّ نصفَ مكتوب."""
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def _owner_mark(mine: tuple | None, record: dict | None, default: str) -> str | None:
+    """علامةُ المالك على خطوته من مصدرها لا من شكلها: إن بقيت العلامةُ كما كتبتها الأداةُ في البناء السابق فعلامتُه ما حفظه السجلّ؛ وإن
+    غيّرها فهي علامتُه ما كانت «[x]» أو «⏸» — فخطوةٌ نشطة أوقفها بيده (⏸) تبقى موقوفة ولا تعود «[ ]»، وكان «⏸» يُحسب علامةَ الأداة
+    لأنه شكلُها (ملاحظة Codex الرابعة عشرة على #161). وبلا سجلٍّ لا يُعرف المصدر، فالقاعدةُ المحافِظة: ما يطابق ما تولّده الخطةُ الآن
+    (`default`) لها، وكلُّ «[x]» و«⏸» سواه للمالك."""
+    if mine is None:
+        return None
+    if record is not None and mine[1] == record["mark"]:
+        return record.get("override")
+    if record is None and mine[1] == default:
+        return None
+    return mine[1] if mine[1] in _OWNER_MARKS else None
+
+
+def _owner_suffix(existing: str, rendered: str, record: dict | None, completed: bool) -> str | None:
+    """لاحقةُ المالك على سطر خطوته: ما بعد النصّ الذي كتبته الأداةُ نفسُها لهذه الخطوة كما حفظه السجلّ — فلا يُنزع إلا ما كتبته هي
+    بايتًا بايتًا (علامةُ تأجيلٍ زالت أو تغيّر سببُها، وعلامةُ الإنجاز قبل التأجيل)، وكلُّ ما عداه للمالك: تأجيلٌ كتبه بيده، وتعليقٌ بعد
+    علامة الأداة ولو بقوسين. و`None` إن عدّل النصَّ الذي كتبته الأداةُ نفسَه فيُنقل سطرُه كاملًا (ملاحظاتُ Codex على #161: الخامسة
+    والسادسة والسابعة والثالثة عشرة والرابعة عشرة).
+    وبلا سجلٍّ لهذه الخطوة القاعدةُ المحافِظة: لا يُنزع إلا ما تولّده الخطةُ الآن بنصّه — علامةُ تأجيلها الحالية، ثم علامةُ الإنجاز
+    قبل التأجيل إن كانت منجزة — وما سواه يبقى للمالك ولو كان علامةَ تأجيلٍ قديمة."""
+    if record is not None:
+        written = record["text"]
+        return existing[len(written):] if existing.startswith(written) else None
     start = rendered.find(_DEFERRAL_LABEL)
     body, label = (rendered, "") if start < 0 else (rendered[:start], rendered[start:])
     if not existing.startswith(body):
         return None
     rest = existing[len(body):]
-    if rest.startswith(_DEFERRAL_LABEL) and (end := _label_end(rest, 0)) is not None:
-        done = rest.startswith(DONE_BEFORE_DEFERRAL, end)
-        if mark == "⏸" or done or rest[:end] == label:
-            rest = rest[end + (len(DONE_BEFORE_DEFERRAL) if done else 0):]
+    if label and rest.startswith(label):
+        rest = rest[len(label):]
+        if completed and rest.startswith(DONE_BEFORE_DEFERRAL):
+            rest = rest[len(DONE_BEFORE_DEFERRAL):]
     return rest
 
 
@@ -307,15 +349,16 @@ def _title(tail: str) -> str:
     return tail.split("**", 1)[0].strip()
 
 
-def migrate_steps(existing: str, rendered: str) -> str:
-    """«خطواتي» تُعاد كتابتُها من الخطة مع الحفاظ على ما للمالك فيها: الخطوةُ المعلَّمة `[x]` في الموجود تبقى معلَّمةً في المولَّد
-    بهويّتها — رقمُها وعنوانُها معًا — لا برقمها وحده (وإن أُجّلت بعد إنجازها بقيت منجزةً باسمها)، ولاحقةٌ كتبها بعد نصّ الخطوة المولَّد («… — سألت المحامي») تبقى على سطرها،
-    وسطرُ خطوةٍ عُدّل داخلَ نصّه المولَّد يُنقل كما هو، وما كتبه تحت «## ملاحظاتي» يُنقل كما هو، وما كتبه في غير ذلك من سطورٍ
-    (النسخةُ القديمة دعته إلى التعديل حيث شاء) يُنقل تحت «### سطورٌ نُقلت من النسخة السابقة» في قسم ملاحظاته لا يُمحى بصمت.
-    وسطورُ الرقم الواحد تُحفظ كلُّها لا آخرُها: سطرٌ كتبه المالك برقم خطوةٍ مولَّدة ووضعه قبلها كان يُكتب فوقه في قاموسٍ مفتاحُه الرقم
-    فيُمحى بصمت في البناء التالي؛ فصار كلُّ سطرٍ يُقرأ على حدة، وتأخذ الخطوةُ المولَّدة سطرًا واحدًا يوافقها هويّةً، وما لم تأخذه
-    خطوةٌ يُنقل كما هو بترتيبه — قبل المولَّد كان أم بعده (ملاحظة Codex التاسعة على #161).
-    كانت البذرةُ تُحفظ حرفيًّا حتى مع `--force`، فلا يبلغ التأجيلُ (ق٦٨) خزنةً قائمة (ملاحظات Codex على #161)."""
+def migrate_steps(existing: str, rendered: str, state: dict | None = None) -> tuple[str, dict]:
+    """«خطواتي» تُعاد كتابتُها من الخطة مع الحفاظ على ما للمالك فيها، ويُعاد معها سجلُّ ما كتبته الأداةُ لكل خطوة (`STEPS_STATE`).
+    الخطوةُ يوافقها سطرُها الموجود بهويّتها — رقمُها وعنوانُها معًا — لا برقمها وحده. علامةُ المالك («[x]» أنجزها، «⏸» أوقفها بيده)
+    تبقى، وما أُنجز ثم أُجّل يبقى منجزًا باسمه؛ ولاحقتُه بعد النصّ الذي كتبته الأداةُ تبقى على سطرها؛ وسطرٌ عدّل فيه نصَّ الأداة نفسَه
+    يُنقل كما هو؛ وما تحت «## ملاحظاتي» يُنقل كما هو؛ وما كتبه في غير ذلك من سطور (النسخةُ القديمة دعته إلى التعديل حيث شاء) يُنقل
+    تحت «### سطورٌ نُقلت من النسخة السابقة» في قسم ملاحظاته لا يُمحى بصمت. وسطورُ الرقم الواحد تُحفظ كلُّها لا آخرُها: تأخذ الخطوةُ
+    المولَّدة سطرًا واحدًا يوافقها هويّةً، وما لم تأخذه خطوةٌ يُنقل كما هو بترتيبه (ملاحظة Codex التاسعة على #161).
+    ومصدرُ التمييز بين نصّ الأداة ونصّ المالك هو السجلّ لا شكلُ السطر: كانت علامةُ «⏸» أو لفظُ «— مؤجَّلة (…)» يُحسبان للأداة أينما
+    وقعا فيُمحى تأجيلٌ كتبه المالكُ بيده (ملاحظتا Codex الثالثة عشرة والرابعة عشرة على #161). كانت البذرةُ تُحفظ حرفيًّا حتى مع
+    `--force`، فلا يبلغ التأجيلُ (ق٦٨) خزنةً قائمة (ملاحظات Codex على #161)."""
     head, sep, notes = existing.partition("\n" + NOTES_HEADING)
     entries, carry = [], {}                                           # سطورُ الخطوات في الموجود كلُّها: (الموضع، العلامة، الرقم، الذيل، السطر)
     for pos, line in enumerate(head.splitlines()):
@@ -323,31 +366,32 @@ def migrate_steps(existing: str, rendered: str) -> str:
             entries.append((pos, m.group(1), m.group(2), line[m.end():], line))
         elif line.strip() and line.strip() not in _KNOWN_LINES:
             carry[pos] = line
-    lines, claimed = [], set()
+    lines, claimed, written = [], set(), {}
     for line in rendered.splitlines():
         if not (m := _STEP_LINE.match(line)):
             lines.append(line)
             continue
-        mark, order, tail = m.group(1), m.group(2), line[m.end():]
-        extra = ""
+        default, order, tail = m.group(1), m.group(2), line[m.end():]
+        key = f"{order}. {_title(tail)}"
         # سطرُ الخطوة في الموجود هو ما وافقها هويّةً — رقمًا وعنوانًا — ولم يأخذه سطرٌ مولَّدٌ قبلها؛ وكلُّ سطرٍ لا يأخذه أحدٌ يُنقل
         mine = next((e for e in entries if e[0] not in claimed and e[2] == order and _title(e[3]) == _title(tail)), None)
         if mine is not None:
             claimed.add(mine[0])
-        completed = mine is not None and mine[1] in ("[x]", "[X]")
-        if completed and mark == "[ ]":
-            mark = "[x]"
-        elif completed and mark == "⏸":
-            mark, extra = "[x]", DONE_BEFORE_DEFERRAL
+        record = (state or {}).get(key) if mine is not None else None
+        override = _owner_mark(mine, record, default)
+        completed = override in ("[x]", "[X]")
+        mark = "[x]" if completed else (override or default)
+        text = tail + (DONE_BEFORE_DEFERRAL if completed and default == "⏸" else "")
+        suffix = ""
         if mine is not None:
-            # لاحقةُ المالك هي ما زاد على نصّ الخطوة كما تولّده الأداة بعد علامةِ تأجيلٍ ولّدتها هي (`_owner_suffix`)؛ وما عُدّل داخل
-            # النصّ نفسِه يُنقل سطرًا كاملًا (ملاحظاتُ Codex على #161)
-            suffix = _owner_suffix(mine[1], mine[3], tail)
-            if suffix is not None:
-                extra += suffix
+            # لاحقةُ المالك هي ما زاد على النصّ الذي كتبته الأداةُ نفسُها (`_owner_suffix`)؛ وما عُدّل داخل ذلك النصّ يُنقل سطرًا كاملًا
+            owned = _owner_suffix(mine[3], tail, record, completed)
+            if owned is not None:
+                suffix = owned
             else:
                 carry[mine[0]] = mine[4]
-        lines.append(f"- {mark} **{order}.{tail}{extra}")
+        written[key] = {"mark": mark, "text": text, "override": override}
+        lines.append(f"- {mark} **{order}.{text}{suffix}")
     # وسطرٌ مرقَّم لم يوافق خطوةً في الخطة الجديدة لا يُمحى: يُنقل كما هو — خطوةٌ أضافها المالك بنفسه (برقمٍ جديد أو برقم خطوةٍ
     # مولَّدة، قبلها أو بعدها)، أو خطوةٌ حُذفت أو أُعيد ترقيمُها وعليها تعليقُه؛ والمنقولُ كلُّه بترتيبه في الموجود
     carry.update({e[0]: e[4] for e in entries if e[0] not in claimed})
@@ -357,11 +401,11 @@ def migrate_steps(existing: str, rendered: str) -> str:
         text += "\n" + NOTES_HEADING + (notes.rstrip("\n") if sep else "") + "\n"
     if stray:
         text += "\n" + LEGACY_HEADING + "\n\n" + "\n".join(stray) + "\n"
-    return text
+    return text, written
 
 
-def migrate_seed(rel: str, existing: str, rendered: str) -> str:
-    return migrate_steps(existing, rendered) if rel == "خطواتي.md" else existing
+def migrate_seed(rel: str, existing: str, rendered: str, state: dict | None = None) -> tuple[str, dict | None]:
+    return migrate_steps(existing, rendered, state) if rel == "خطواتي.md" else (existing, None)
 
 
 def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
@@ -369,6 +413,7 @@ def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
     out_dir = vault / OUT
     wanted = render(root)
     old = _checked_manifest(vault, wanted)                             # يُرفض الرابطُ قبل أن يُكتب شيء
+    state, steps_state = _load_steps_state(out_dir), None
     out_dir.mkdir(parents=True, exist_ok=True)
     (vault / INBOX / DONE).mkdir(parents=True, exist_ok=True)
     readme = vault / INBOX / INBOX_README
@@ -381,20 +426,21 @@ def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
     for rel, text in wanted.items():
         target = out_dir / rel
         data = text.encode("utf-8")
+        if rel in SEED_NOTES:
+            # البذرةُ لا تُكتب فوقها حرفيًّا: تُرحَّل بما للمالك فيها (علاماتُه وملاحظاتُه) وتُطبَّق عليها الخطةُ الحالية، ويُحفظ ما كتبته الأداة
+            existing = target.read_bytes().decode("utf-8") if target.exists() else ""
+            merged, steps_state = migrate_seed(rel, existing, text, state if existing else None)
+            data = merged.encode("utf-8")
+            new_manifest[rel] = sha(data)
+            if target.exists() and data == target.read_bytes():
+                report["unchanged"].append(rel)
+                continue
+            report["migrated" if target.exists() else "written"].append(rel)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+            continue
         if target.exists():
             current = sha(target.read_bytes())
-            if rel in SEED_NOTES:
-                # البذرةُ لا تُكتب فوقها حرفيًّا: تُرحَّل بما للمالك فيها (علاماتُه وملاحظاتُه) وتُطبَّق عليها الخطةُ الحالية
-                merged = migrate_seed(rel, target.read_bytes().decode("utf-8"), text)
-                if merged.encode("utf-8") == target.read_bytes():
-                    report["unchanged"].append(rel)
-                    new_manifest[rel] = current
-                    continue
-                data = merged.encode("utf-8")
-                target.write_bytes(data)
-                new_manifest[rel] = sha(data)
-                report["migrated"].append(rel)
-                continue
             if current == sha(data):
                 report["unchanged"].append(rel)
                 new_manifest[rel] = current
@@ -415,6 +461,10 @@ def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
             target.unlink()
             report["removed"].append(rel)
     (out_dir / MANIFEST).write_text(json.dumps({"schema_version": 1, "files": new_manifest}, ensure_ascii=False, indent=1), encoding="utf-8")
+    if steps_state is not None:
+        blob = json.dumps({"schema_version": 1, "steps": steps_state}, ensure_ascii=False, indent=1).encode("utf-8")
+        if not ((out_dir / STEPS_STATE).is_file() and (out_dir / STEPS_STATE).read_bytes() == blob):
+            _write_atomic(out_dir / STEPS_STATE, blob)                # بعد «خطواتي»: سجلٌّ أقدمُ منها يُقرأ بالقاعدة المحافِظة
     return report
 
 
@@ -423,7 +473,9 @@ def check(vault: Path, root: Path = ROOT) -> list[str]:
     out_dir = vault / OUT
     drift = []
     wanted = render(root)
-    for rel, recorded in _checked_manifest(vault, wanted).items():   # ما سيحذفه build ولم يُحذف بعد
+    manifest = _checked_manifest(vault, wanted)
+    state = _load_steps_state(out_dir)
+    for rel, recorded in manifest.items():                           # ما سيحذفه build ولم يُحذف بعد
         target = out_dir / rel
         if rel not in wanted and target.is_file() and sha(target.read_bytes()) == recorded:
             drift.append(f"obsolete {rel}")
@@ -432,7 +484,7 @@ def check(vault: Path, root: Path = ROOT) -> list[str]:
         if rel in SEED_NOTES:
             if not target.exists():
                 drift.append(f"missing {rel}")
-            elif migrate_seed(rel, target.read_bytes().decode("utf-8"), text) != target.read_bytes().decode("utf-8"):
+            elif migrate_seed(rel, target.read_bytes().decode("utf-8"), text, state)[0] != target.read_bytes().decode("utf-8"):
                 drift.append(f"stale {rel}")
             continue
         if not target.is_file() or target.read_bytes() != text.encode("utf-8"):
