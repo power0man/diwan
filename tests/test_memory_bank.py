@@ -678,3 +678,23 @@ def test_transport_collisions_read_only_the_witnesses_of_context_steps(tmp_path)
     _strict_refused(bank, "witness_collides_with_request_payload")
     context["absent"] = ["للفريق", "المشروع"]
     _strict_refused(bank, "probe_question_collides_with_scenario")
+
+
+def test_every_rejection_the_intake_can_raise_is_named_in_the_kimi_brief():
+    """ملاحظتا Codex على #129 (الجولة الخامسة والأربعون): تكليفُ Kimi مواصفتُه الوحيدة، وكان يسكت عن قاعدتين يفرضهما المدقّق
+    (شاهدُ السياق في تعليمات النظام، وشاهدُ البقايا فيما يكتبه المخزنُ ثابتًا) وعن شرط العزل لكلِّ عنصرٍ في كلِّ خطوةٍ تعرضه،
+    فيُردّ بعد التسليم بنكٌ اتّبعه. صار كلُّ رمزٍ يردّ به المدقّقُ (`_reject`) أو فحصُ الأعداد في الأداة مسمًّى في التكليف،
+    فلا تُضاف قاعدةٌ إلى المدقّق دون أن تبلغ المؤلِّف."""
+    import ast
+    brief = (ROOT / "docs" / "external" / "KIMI-MEMORY-BANK.md").read_text(encoding="utf-8")
+    codes = set()
+    for tree in (ast.parse((ROOT / "evaluation" / "memory_bank.py").read_text(encoding="utf-8")),):
+        codes |= {node.args[1].value for node in ast.walk(tree) if isinstance(node, ast.Call)
+                  and getattr(node.func, "id", None) == "_reject" and isinstance(node.args[1], ast.Constant)}
+    tool = ast.parse((ROOT / "tools" / "evaluate_memory.py").read_text(encoding="utf-8"))
+    shortfall = next(node for node in ast.walk(tool) if isinstance(node, ast.FunctionDef) and node.name == "commissioned_shortfall")
+    codes |= {node.value.value for node in ast.walk(shortfall) if isinstance(node, ast.Return)
+              and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)}
+    assert len(codes) > 60 and {"text_too_long", "witness_collides_with_system_prompt", "witness_collides_with_persisted_schema",
+                                "isolation_item_unchecked", "suite_duplicate_scenario"} <= codes
+    assert sorted(code for code in codes if f"`{code}`" not in brief) == []
