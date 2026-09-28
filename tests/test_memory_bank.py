@@ -128,6 +128,23 @@ def test_a_second_proposal_while_the_project_s_proposal_awaits_the_owner_is_reje
     _refused(bank, "propose_while_pending")
 
 
+def test_a_proposal_erased_by_a_restore_is_neither_approvable_nor_still_pending():
+    """ملاحظةُ Codex على #129 (الجولة التاسعة والثلاثون): استعادةُ نسخةٍ أُخذت قبل الاقتراح تمحو جلستَه وفعلَه، لكنّ مجموعةَ
+    الاقتراحات المعلَّقة كانت لا تنقص: فكانت الموافقةُ بعد الاستعادة تمرّ المدقّقَ ويسقط المُشغِّل بـKeyError، وكانت نسخةٌ لاحقة
+    صحيحة تُردّ backup_with_pending_proposal. صار المحوّ يُتتبَّع: الموافقةُ على الممحوّ تُردّ باسمها، والنسخةُ بعده تمرّ."""
+    bank, scenario = _scenario("consent_002")
+    steps = scenario["steps"]
+    propose = next(s for s in steps if s.get("op") == "propose")
+    approve = next(s for s in steps if s.get("op") == "approve")
+    steps.insert(steps.index(propose), {"op": "backup", "project": "A", "as": "b0"})
+    steps.insert(steps.index(approve), {"op": "restore", "project": "A", "ref": "b0"})
+    _refused(bank, "approve_of_erased_proposal")
+    steps.remove(approve)
+    steps.insert(steps.index(next(s for s in steps if s.get("op") == "restore")) + 1, {"op": "backup", "project": "A", "as": "b1"})
+    scenario["steps"] = [s for s in steps if not (s.get("expect") == "context" and s.get("present"))]
+    validate_memory_bank(bank)                                       # لا اقتراحَ معلَّقًا بعد المحو فالنسخةُ b1 تمرّ
+
+
 def test_forgetting_without_a_receipt_check_is_refused():
     bank, scenario = _scenario("forget_001")
     scenario["steps"] = [s for s in scenario["steps"] if s.get("expect") != "receipt"]

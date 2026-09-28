@@ -561,6 +561,8 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
     forgotten, checked_residue, receipted, touched = set(), set(), set(), set()
     approved: set[str] = set()           # اقتراحٌ وُوفق عليه لا يُوافَق عليه ثانيةً
     pending: set[str] = set()            # اقتراحاتٌ تنتظر المالك: ما دامت قائمةً يرفض المنتجُ النسخَ الاحتياطية
+    born: dict[str, int] = {}            # المرجع ← خطوةُ إنشائه (لمعرفة ما محته استعادةُ نسخةٍ أُخذت قبله)
+    erased: set[str] = set()             # اقتراحاتٌ محتها استعادةٌ فلا تُوافَق عليها (المُشغِّلُ لا يجدها: KeyError)
     expects = 0
     for i, step in enumerate(scenario["steps"]):
         where = f"{path}.steps[{i}]"
@@ -584,6 +586,7 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
                 if step["as"] in refs:
                     _reject(where + ".as", "ref_reused", "مرجعٌ معرَّفٌ سابقًا")
                 refs[step["as"]] = step["project"]
+                born[step["as"]] = i
                 kinds[step["as"]] = {"backup": "backup", "propose": "proposal"}.get(op, "item")
                 if op == "propose":
                     # واقتراحٌ واحد ينتظر المالك في المشروع: جلسةُ الاقتراحات واحدةٌ للمشروع في المُشغِّل الموصول، فاقتراحٌ ثانٍ
@@ -603,8 +606,16 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
                 if op == "approve":
                     if ref in approved:
                         _reject(where + ".ref", "approve_repeated", "اقتراحٌ وُوفق عليه سابقًا")
+                    if ref in erased:
+                        _reject(where + ".ref", "approve_of_erased_proposal", "اقتراحٌ محته استعادةُ نسخةٍ أُخذت قبله")
                     approved.add(ref)
                     pending.discard(ref)
+                if op == "restore":
+                    # الاستعادةُ تمحو ما اقتُرح بعد النسخة (جلسةَ الاقتراح وفعلَه)، فلا يبقى ينتظر المالك ولا يُوافَق عليه بعدها
+                    # (ملاحظة Codex على #129، الجولة التاسعة والثلاثون)
+                    for proposal in [p for p in pending if born[p] > born[ref]]:
+                        pending.discard(proposal)
+                        erased.add(proposal)
                 if op == "forget":
                     forgotten.add(ref)
         elif "expect" in step:

@@ -1349,9 +1349,11 @@ def test_only_a_persisted_item_witnesses_isolation_injection_or_restoration():
     check(dict(by_id["isolation_002"], steps=[filler, save, after, restore("b1"), named]), strict=True)
     approve = {"op": "approve", "project": "A", "ref": save["as"]}
     forget = {"op": "forget", "project": "A", "ref": save["as"]}
-    for steps in ([before, proposed, approve, restore("b0"), probe], [before, proposed, restore("b0"), approve, probe],
-                  [save, after, forget, restore("b1"), probe]):
+    for steps in ([before, proposed, approve, restore("b0"), probe], [save, after, forget, restore("b1"), probe]):
         assert code(dict(by_id["isolation_002"], steps=steps), strict=True) == "isolation_without_cross_project_absence"
+    # والموافقةُ على اقتراحٍ محته الاستعادةُ تُردّ قبل ذلك باسمها (الجولة التاسعة والثلاثون): المُشغِّلُ لا يجد جلستَه
+    assert code(dict(by_id["isolation_002"], steps=[before, proposed, restore("b0"), approve, probe]), strict=True) \
+        == "approve_of_erased_proposal"
     # ونسخةٌ واقتراحٌ ينتظر المالك تُردّ قبل ذلك باسمها (الجولة السابعة والثلاثون): المنتجُ يرفضها backup_pending
     assert code(dict(by_id["isolation_002"], steps=[proposed, before, approve, restore("b0"), probe]), strict=True) \
         == "backup_with_pending_proposal"
