@@ -1489,6 +1489,16 @@ def test_a_quarantine_mark_counts_only_on_the_line_of_its_own_item(tmp_path, mon
         assert not report["passed"] and report["injection_unquarantined"] >= 1, driver
 
 
+def test_the_published_limits_disclose_the_masked_residue_values():
+    """ملاحظةُ Codex على #129 (الجولة الرابعة والثلاثون): القناعُ يزيل المعرّفَ والبصمةَ والوقتين من مسح البقايا، فنصٌّ منسيٌّ يساوي
+    أحدَها بحروفه يبقى على القرص وforget_rate يقول ١٫٠؛ الحدُّ المعلَن في شرح `mask_persisted` يجب أن يبلغ التقريرَ المنشور."""
+    import tools.evaluate_memory as cli
+    from evaluation.memory_bank import PERSISTED_DYNAMIC
+    (limit,) = [l for l in cli.LIMITS if l.startswith("the_residue_scan_masks_the_store_s_generated_")]
+    assert all(field in limit for field in PERSISTED_DYNAMIC) and "is_not_seen_on_disk" in limit
+    assert "measurement_limits=LIMITS" in (ROOT / "tools" / "evaluate_memory.py").read_text(encoding="utf-8")
+
+
 def test_a_residue_witness_that_falls_in_the_store_s_dynamic_values_is_not_counted_as_residue(tmp_path, monkeypatch):
     """ملاحظةُ Codex على #129 (الجولة الثالثة والثلاثون): إيصالُ النسيان يحمل `forgotten_at` بسنة اليوم والمعرّفَ والبصمة، فشاهدُ
     بقايا يقع فيها (سنةُ الإيصال، أو أرقامٌ في معرّفٍ) كان يسقط «residue holds» بالمنتج الصحيح وإن نجح النسيان، بينما نصُّ
