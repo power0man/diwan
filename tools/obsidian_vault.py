@@ -28,6 +28,8 @@
 - لا يُكتب ولا يُقرأ ولا يُحذف عبر رابطٍ رمزيّ في `Diwan/` (`symlink_refused`)، ولا في غير ملفٍّ عاديّ (`not_a_regular_file`):
   يُفحص كلُّ مسارٍ ستمسّه الأداةُ قبل أيّ كتابة، فرابطٌ وضعه المالكُ (خطواتي مربوطةٌ بمجلّد ملاحظاتٍ آخر) يُرفض باسمه ولا يُكتب
   فوق ما يشير إليه ولو بـ`--force` (ملاحظة Codex الثانية عشرة على #161). و«اقرأني» إن كانت رابطًا تُترك كما هي.
+- كلُّ كتابةٍ في الخزنة ذرّية (`_write_atomic`: ملفٌّ مؤقّت، ثم `fsync`، ثم `os.replace`)، فانقطاعُ البناء لا يترك «خطواتي» ولا غيرَها
+  نصفَ مكتوبة؛ و«خطواتي» تُكتب قبل سجلّها (ملاحظة Codex الثامنة عشرة على #161).
 
 **الحدُّ المعلَن:** الأداةُ لا تمنع المالكَ من وضع الخزنة في مجلّد مزامنةٍ سحابيّ؛ ذلك خيارُه (G10). والمرآةُ
 لقطةٌ عند البناء: تتقادم حتى يُعاد البناء بعد الدمج. وفحصُ الروابط يسبق الكتابة ولا يلازمها: رابطٌ يُنشأ بينهما لا يُرى،
@@ -298,11 +300,23 @@ def _load_steps_state(out_dir: Path) -> dict | None:
 
 
 def _write_atomic(path: Path, data: bytes) -> None:
-    """يُكتب في ملفٍّ مؤقّتٍ فريد بجانبه ثم يحلّ محلَّه دفعةً واحدة (`os.replace` لا يتبع رابطًا)، فلا يبقى السجلُّ نصفَ مكتوب."""
+    """الكتابةُ الوحيدة في الخزنة: ملفٌّ مؤقّتٌ فريد بجانب الهدف، ثم `fsync`، ثم يحلّ محلَّه دفعةً واحدة (`os.replace` لا يتبع رابطًا).
+    فانقطاعُ العملية أو خطأُ كتابةٍ جزئيّ يترك الملفَّ السابق كما هو بايتًا بايتًا ولا يترك المؤقّت: كان `write_bytes` يمسح «خطواتي»
+    قبل أن يكتبها فتضيع علاماتُ المالك وملاحظاتُه (ملاحظة Codex الثامنة عشرة على #161). ويبقى للملف القائم إذنُه، وللجديد إذنُ `umask`.
+    و`tests/test_obsidian_vault.py` يفحص المصدرَ نفسَه: لا كتابةَ إلى ملفٍّ في الأداة إلا هنا."""
+    try:
+        mode = stat.S_IMODE(os.lstat(path).st_mode)
+    except FileNotFoundError:
+        mask = os.umask(0)
+        os.umask(mask)
+        mode = 0o666 & ~mask
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
         with os.fdopen(fd, "wb") as f:
             f.write(data)
+            f.flush()
+            os.fsync(f.fileno())
+        os.chmod(tmp, mode)
         os.replace(tmp, path)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
@@ -421,9 +435,9 @@ def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
     (vault / INBOX / DONE).mkdir(parents=True, exist_ok=True)
     readme = vault / INBOX / INBOX_README
     if not readme.exists() and not readme.is_symlink():                # رابطٌ للمالك مكانَها — ولو معلَّقًا — يُترك
-        readme.write_text("# صندوق الوارد\n\nاكتب هنا طلبك لـClaude ملاحظةً جديدة (ملاحظة لكل طلب). يقرؤها Claude على الماك في بداية "
-                          "جلسته، ويحوّل ما يلزم إلى مسألة GitHub بموافقتك، ثم ينقلها إلى «منجز». لا تكتب هنا مفتاحًا ولا توكنًا.\n",
-                          encoding="utf-8")
+        _write_atomic(readme, ("# صندوق الوارد\n\nاكتب هنا طلبك لـClaude ملاحظةً جديدة (ملاحظة لكل طلب). يقرؤها Claude على الماك في "
+                               "بداية جلسته، ويحوّل ما يلزم إلى مسألة GitHub بموافقتك، ثم ينقلها إلى «منجز». لا تكتب هنا مفتاحًا ولا "
+                               "توكنًا.\n").encode("utf-8"))
     report = {"written": [], "unchanged": [], "kept_edited": [], "removed": [], "migrated": []}
     new_manifest: dict[str, str] = {}
     for rel, text in wanted.items():
@@ -440,7 +454,7 @@ def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
                 continue
             report["migrated" if target.exists() else "written"].append(rel)
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(data)
+            _write_atomic(target, data)                               # قائمةُ المالك لا تُمسح قبل أن تُكتب، وتُكتب قبل سجلّها
             continue
         if target.exists():
             current = sha(target.read_bytes())
@@ -453,7 +467,7 @@ def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
                 new_manifest[rel] = old.get(rel, "")
                 continue
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(data)
+        _write_atomic(target, data)
         new_manifest[rel] = sha(data)
         report["written"].append(rel)
     for rel, recorded in old.items():
@@ -463,7 +477,7 @@ def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
         if target.is_file() and sha(target.read_bytes()) == recorded:
             target.unlink()
             report["removed"].append(rel)
-    (out_dir / MANIFEST).write_text(json.dumps({"schema_version": 1, "files": new_manifest}, ensure_ascii=False, indent=1), encoding="utf-8")
+    _write_atomic(out_dir / MANIFEST, json.dumps({"schema_version": 1, "files": new_manifest}, ensure_ascii=False, indent=1).encode("utf-8"))
     if steps_state is not None:
         blob = json.dumps({"schema_version": 1, "steps": steps_state}, ensure_ascii=False, indent=1).encode("utf-8")
         if not ((out_dir / STEPS_STATE).is_file() and (out_dir / STEPS_STATE).read_bytes() == blob):

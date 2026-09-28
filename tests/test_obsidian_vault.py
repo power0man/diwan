@@ -4,9 +4,13 @@
 """
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
+import os
+import stat
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -476,6 +480,96 @@ def test_an_uncheck_after_a_completed_deferral_leaves_no_stale_completion_text_w
     assert f"{paused} (لم أُكملها بعد)\n" in text, "لا «أُنجزت قبل التأجيل» على خطوةٍ رفع المالكُ علامتَها، ونصُّه باقٍ"
     assert ov.DONE_BEFORE_DEFERRAL not in text and "[x]" not in text
     assert ov.build(vault, root=repo)["migrated"] == [] and steps.read_text(encoding="utf-8") == text
+
+
+@pytest.mark.parametrize("fault", ["replace", "write"])
+def test_a_failed_write_leaves_the_owner_s_checklist_and_its_record_untouched(repo, vault, monkeypatch, fault):
+    """ملاحظةُ Codex على #161 (الجولة الثامنة عشرة): كانت «خطواتي» تُكتب بـ`write_bytes` الذي يمسح الملفَّ قبل أن يكتبه، فانقطاعُ
+    العملية أو خطأُ كتابةٍ جزئيّ يُضيع علاماتِ المالك وملاحظاتِه بلا رجعة. صارت كلُّ كتابةٍ في الخزنة تمرّ بـ`_write_atomic`: ملفٌّ
+    مؤقّت ثم `fsync` ثم `os.replace`. فشلٌ يُحقن في منتصف كتابة «خطواتي» — عند الاستبدال، أو بعد نصف البايتات — يُسقط البناء، ويترك
+    «خطواتي» وسجلَّها كما كانا بايتًا بايتًا بلا ملفٍّ مؤقّت؛ ثم ينجح البناءُ التالي ويُبقي للملف إذنَه."""
+    ov.build(vault, root=repo)
+    out = vault / "Diwan"
+    steps, state = out / "خطواتي.md", out / ov.STEPS_STATE
+    steps.write_text(steps.read_text(encoding="utf-8").replace(f"- [ ] {ONE}", f"- [x] {ONE} — أنجزتُها مع المحامي")
+                     + "\n## ملاحظاتي\n\nلا تُمحَ.\n", encoding="utf-8")
+    steps.chmod(0o640)
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    plan["owner_steps"].append({"order": 2, "guide_id": "G5", "title": "تجهيز Nitro", "time": "ساعة", "cost": "$0",
+                                "deferred": {"by": "ق٦٨", "until": "2026-10-19", "reason": "الجهازُ غيرُ قابلٍ للوصول"}})
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")   # فيُرحَّل الملفُّ في البناء التالي
+    before, state_before = steps.read_bytes(), state.read_bytes()
+    real_replace, real_mkstemp, real_fdopen = os.replace, tempfile.mkstemp, os.fdopen
+    made: dict[int, str] = {}
+
+    def replace(src, dst, *a, **k):
+        if Path(dst).name == "خطواتي.md":
+            raise OSError(5, "Input/output error")
+        return real_replace(src, dst, *a, **k)
+
+    def mkstemp(*a, **k):
+        fd, name = real_mkstemp(*a, **k)
+        made[fd] = name
+        return fd, name
+
+    class HalfWritten:
+        def __init__(self, f):
+            self.f = f
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            self.f.close()
+            return False
+
+        def write(self, data):
+            self.f.write(data[: len(data) // 2])
+            self.f.flush()
+            raise OSError(28, "No space left on device")
+
+    def fdopen(fd, *a, **k):
+        f = real_fdopen(fd, *a, **k)
+        return HalfWritten(f) if "خطواتي" in made.get(fd, "") else f
+
+    if fault == "replace":
+        monkeypatch.setattr(os, "replace", replace)
+    else:
+        monkeypatch.setattr(tempfile, "mkstemp", mkstemp)
+        monkeypatch.setattr(os, "fdopen", fdopen)
+    with pytest.raises(OSError):
+        ov.build(vault, root=repo)
+    assert steps.read_bytes() == before and state.read_bytes() == state_before, "لا يُمسّ شيءٌ للمالك ولا سجلُّه"
+    assert [p.name for p in out.iterdir() if p.name.endswith(".tmp")] == [], "ولا يبقى ملفٌّ مؤقّت"
+    monkeypatch.undo()
+    assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"]
+    text = steps.read_text(encoding="utf-8")
+    assert f"- [x] {ONE} — أنجزتُها مع المحامي\n" in text and text.rstrip().endswith("## ملاحظاتي\n\nلا تُمحَ.") and "- ⏸ **2." in text
+    assert stat.S_IMODE(steps.stat().st_mode) == 0o640, "الملفُّ القائم يبقى بإذنه"
+
+
+def test_every_write_in_the_tool_goes_through_the_atomic_helper():
+    """الحارسُ البنيويّ للجولة الثامنة عشرة: المصدرُ نفسُه لا يكتب إلى ملفٍّ إلا داخل `_write_atomic` — لا `write_bytes` ولا
+    `write_text` ولا `open`/`os.fdopen` بوضعِ كتابة في غيرها — فكتابةٌ مباشرة جديدة إلى قائمة المالك أو المرايا أو اللوحة أو صندوق
+    الوارد أو البيان تُسقط هذا الاختبار قبل أن تبلغ خزنة."""
+    tree = ast.parse((ROOT / "tools/obsidian_vault.py").read_text(encoding="utf-8"))
+    offending = []
+
+    def visit(node, owner):
+        for child in ast.iter_child_nodes(node):
+            inside = child.name if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)) else owner
+            if isinstance(child, ast.Call):
+                name = child.func.attr if isinstance(child.func, ast.Attribute) else getattr(child.func, "id", "")
+                mode = next((a.value for a in child.args[1:2] if isinstance(a, ast.Constant)), None)
+                mode = next((k.value.value for k in child.keywords if k.arg == "mode" and isinstance(k.value, ast.Constant)), mode)
+                writes = name in ("write_bytes", "write_text") or (name in ("open", "fdopen") and any(c in str(mode or "") for c in "wax+"))
+                if writes and inside != "_write_atomic":
+                    offending.append((child.lineno, name, inside))
+            visit(child, inside)
+
+    visit(tree, None)
+    assert offending == []
+    assert "_write_atomic" in {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
 
 
 @pytest.mark.parametrize("instruction", [ov.LEGACY_INSTRUCTION, ov.INSTRUCTION], ids=["legacy", "current"])
