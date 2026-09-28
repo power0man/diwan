@@ -89,12 +89,15 @@ def _sum(entries: dict[str, dict], counters: dict[str, Counter]) -> dict:
 
 
 def reading_set(root: Path, counters: dict[str, Counter]) -> dict[str, dict]:
-    """مجموعةُ قراءة §٠ كما يسمّيها الفهرس، بنصّها على القرص عند التشغيل."""
+    """مجموعةُ قراءة §٠ كما يسمّيها الفهرس، بنصّها على القرص عند التشغيل. ملفٌّ غائب منها رفضٌ مسمًّى لا تخطٍّ صامت: مجموعٌ
+    جزئيّ يُنشر بصفة `reading_set_totals` قياسٌ كاذب (ملاحظة Codex على #157)."""
+    missing = [path for path in context_index.READING_SET if not (root / path).is_file()]
+    if missing:
+        raise Refused("reading_set_incomplete", "مجموعةُ القراءة ناقصة فلا يُنشر مجموعٌ جزئيّ: " + ", ".join(missing))
     found = {}
     for path in context_index.READING_SET:
-        if (root / path).is_file():
-            text = (root / path).read_text(encoding="utf-8")
-            found[path] = {**_text_entry(text, counters), "sha256_12": hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]}
+        text = (root / path).read_text(encoding="utf-8")
+        found[path] = {**_text_entry(text, counters), "sha256_12": hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]}
     return found
 
 
@@ -199,6 +202,10 @@ def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str,
     """التقريرُ كاملًا بعدّاداتٍ محقونة (اسمٌ ← دالّةٌ تعدّ رموزَ نصّ). بلا عدّادٍ يُرفض: لا رقمَ بلا مرمِّز."""
     if not counters:
         raise Refused("no_tokenizer_named", "لا عدّادَ رموزٍ مسمًّى؛ التقديرُ وحده لا يُنشر رقمًا")
+    if Path(root).resolve() != ROOT:
+        # نصوصُ التشغيل (نصوصُ النظام ومخطّطاتُ الأدوات والغلاف) تُستورد من شجرة الأداة نفسِها، فجذرٌ آخر ينسب أرقامَ تشغيلٍ
+        # حديثة إلى إيداعٍ غيرِ إيداعها؛ الأداةُ تقيس النسخةَ التي تعمل منها وحدها (ملاحظة Codex على #157)
+        raise Refused("root_is_not_this_checkout", f"الأداةُ تقيس النسخةَ التي تعمل منها ({ROOT})، لا {root}")
     window = context_window() if window is None else window
     texts = runtime_texts()
     reading = reading_set(root, counters)
@@ -272,13 +279,12 @@ def main(argv=None) -> int:
     parser.add_argument("--tokenizer", action="append", default=[], metavar="NAME=HF_ID")
     parser.add_argument("--tokenizer-file", action="append", default=[], metavar="NAME=PATH")
     parser.add_argument("--report", type=Path)
-    parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args(argv)
     try:
         if not args.tokenizer and not args.tokenizer_file:
             raise Refused("no_tokenizer_named", "سمِّ مرمِّزًا بـ--tokenizer أو --tokenizer-file؛ لا رقمَ بلا مرمِّز")
         counters, sources = load_tokenizers(args.tokenizer, args.tokenizer_file)
-        report = audit(args.root, counters, sources)
+        report = audit(ROOT, counters, sources)
     except Refused as exc:
         print(json.dumps({"status": "refused", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
         return 2

@@ -31,7 +31,7 @@ def _chars(text: str) -> int:
 
 def test_the_reading_set_is_the_index_s_reading_set_measured_by_every_named_counter():
     report = cb.audit(ROOT, {"ws": _ws, "thirds": _thirds})
-    assert set(report["reading_set"]) == {p for p in ci.READING_SET if (ROOT / p).is_file()}
+    assert set(report["reading_set"]) == set(ci.READING_SET)
     for path, entry in report["reading_set"].items():
         assert entry["bytes"] == (ROOT / path).stat().st_size
         text = (ROOT / path).read_text(encoding="utf-8")
@@ -47,6 +47,27 @@ def test_no_counter_is_refused_not_estimated(capsys):
     assert caught.value.code == "no_tokenizer_named"
     assert cb.main([]) == 2
     assert json.loads(capsys.readouterr().out)["code"] == "no_tokenizer_named"
+
+
+def test_a_missing_reading_set_file_is_refused_not_skipped(monkeypatch):
+    """ملاحظةُ Codex على #157: لقطةٌ ناقصة كانت تُقاس بصمتٍ فيُنشر مجموعٌ جزئيّ بصفة `reading_set_totals`."""
+    monkeypatch.setattr(ci, "READING_SET", (*ci.READING_SET, "docs/NOT-IN-THIS-TREE.md"))
+    with pytest.raises(cb.Refused) as caught:
+        cb.audit(ROOT, {"ws": _ws})
+    assert caught.value.code == "reading_set_incomplete" and "docs/NOT-IN-THIS-TREE.md" in caught.value.detail
+
+
+def test_a_root_other_than_the_tool_s_own_checkout_is_refused(tmp_path):
+    """ملاحظةُ Codex على #157: نصوصُ التشغيل تُستورد من شجرة الأداة، فجذرٌ آخر كان ينسب أرقامَ تشغيلٍ حديثة إلى إيداعٍ غيرِ
+    إيداعها؛ الأداةُ تقيس النسخةَ التي تعمل منها وحدها، ولا خيارَ `--root` في سطر الأوامر."""
+    for path in ci.READING_SET:
+        (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / path).write_text((ROOT / path).read_text(encoding="utf-8"), encoding="utf-8")
+    with pytest.raises(cb.Refused) as caught:
+        cb.audit(tmp_path, {"ws": _ws})
+    assert caught.value.code == "root_is_not_this_checkout"
+    with pytest.raises(SystemExit):
+        cb.main(["--tokenizer", "x=y", "--root", str(tmp_path)])
 
 
 def test_totals_and_the_share_of_the_window_are_sums_and_ratios():
