@@ -17,7 +17,9 @@
    على منفذٍ زائل في 127.0.0.1 وجذرٍ مؤقّت فارغ: `GET /` ← 200 وصفحةٌ `dir="rtl"` برمز جلستها، ثم نداءُ قراءةٍ واحد
    بلا نموذج (`projects`) ← 200، ثم يُوقَف. بمهلةٍ ورموزٍ مسمّاة: `ui_start_failed` (لم يعلن عنوانَه أو خرج)،
    `ui_http_failed` (ردٌّ غيرُ 200 أو انقطاع)، `ui_page_unexpected` (الصفحةُ أو الردُّ على غير ما يُنتظر). وبلا محرّك
-   يُشغَّل ببصمةٍ بديلة معلنة (`ui_ready_without_engine`): الصفحةُ لا تنادي النموذج، والجوابُ يحتاجه.
+   يُشغَّل ببصمةٍ بديلة معلنة (`ui_ready_without_engine`): الصفحةُ لا تنادي النموذج، والجوابُ يحتاجه. وserve_ui.py
+   ومزوّدُه المحليّ يبلغان Ollama على 127.0.0.1:11434 وحده، فإن فُحص المحرّكُ على `--base-url` غيرِه لم تُسمَّ الواجهةُ
+   جاهزة: `ui_engine_endpoint_unpassed` (تعذّرٌ معلن)، لأن نداءَ القراءة لا يبلغ النموذجَ فلا يكشف ذلك وحده.
 
     python tools/launch_check.py [--engine qwen3.5:9b] [--base-url http://127.0.0.1:11434] [--json]
 
@@ -39,6 +41,7 @@ import tempfile
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -225,6 +228,17 @@ UI_TOKEN = re.compile(r'<meta name="diwan-token" content="([0-9a-f]{64})">')
 UI_RTL = re.compile(r'<html\b[^>]*\bdir="rtl"')
 
 
+def reaches_default_engine(base_url: str) -> bool:
+    """هل يبلغ serve_ui.py المحرّكَ الذي فُحص؟ مزوّدُه المحليّ يتّصل بـ127.0.0.1:11434 حرفيًّا (providers/local_chat.py)
+    ولا يقبل عنوانًا آخر؛ و`localhost` على المنفذ نفسِه هو العنوانُ نفسُه."""
+    try:
+        parts = urllib.parse.urlsplit(base_url)
+        port = parts.port
+    except ValueError:
+        return False
+    return parts.scheme == "http" and parts.hostname in ("127.0.0.1", "localhost") and port == 11434
+
+
 def _drain(stream, lines: "queue.Queue[str | None]") -> None:
     try:
         for line in stream:
@@ -290,7 +304,8 @@ def probe_ui(origin: str, timeout_s: float = UI_HTTP_TIMEOUT_S) -> Step | int:
 
 
 def check_ui(root: Path, *, model: str = DEFAULT_ENGINE, digest: str | None = None,
-             timeout_s: float = UI_START_TIMEOUT_S, script: Path | None = None) -> Step:
+             base_url: str = DEFAULT_BASE_URL, timeout_s: float = UI_START_TIMEOUT_S,
+             script: Path | None = None) -> Step:
     """يشغّل `serve_ui.py` بالمزوّد المحليّ على منفذٍ زائل وجذرٍ مؤقّت، ويفحص الصفحةَ ونداءَ قراءة، ثم يوقفه.
 
     `digest=None` (لا محرّك) يعني بصمةً بديلة معلنة فيُسمّى النجاحُ `ui_ready_without_engine`."""
@@ -333,6 +348,10 @@ def check_ui(root: Path, *, model: str = DEFAULT_ENGINE, digest: str | None = No
             _stop(process, readers)
     if isinstance(probed, Step):
         return probed
+    if not reaches_default_engine(base_url):
+        return Step("ui", "unavailable", "ui_engine_endpoint_unpassed",
+                    f"الواجهةُ تُقلع وتخدم الصفحة، لكن serve_ui.py يبلغ Ollama على 127.0.0.1:11434 وحده والمحرّكُ فُحص على "
+                    f"{base_url}: أولُ جوابٍ في الواجهة لن يبلغه")
     code = "ui_ready" if digest else "ui_ready_without_engine"
     engine = f"بالمحرّك {model}" if digest else f"ببصمةٍ بديلة لـ{model} (لا محرّك؛ الجوابُ يحتاجه)"
     return Step("ui", "ok", code, f"serve_ui.py {engine} على منفذٍ زائل: GET / ← 200 وdir=rtl، "
@@ -352,7 +371,8 @@ def run_checks(root: Path, *, engine: str, base_url: str, probe=probe_engine,
     steps.append(check_policies(root))
     if with_ui:
         # الواجهةُ بالمحرّك الذي وجدته خطوةُ المحرّك وبصمتِه، كما يشغّلها المستخدم
-        steps.append(ui_check(root, model=engine, digest=digest if engine_step.status == "ok" else None))
+        steps.append(ui_check(root, model=engine, digest=digest if engine_step.status == "ok" else None,
+                              base_url=base_url))
     return steps
 
 

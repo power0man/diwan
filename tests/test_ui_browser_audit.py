@@ -22,25 +22,50 @@ import ui_browser_audit as audit  # noqa: E402
 # — تغطيةُ رموز الرفض —
 
 SERVER = '''
-def check(value):
+def need(condition, code="request_invalid"):
+    if not condition:
+        raise UIError(code)
+
+
+def check(value, exc):
     need(value.get("mode", "text") in MODES, "metadata_invalid")
     need(len(value) < 3, "collection_limit")  # تعليق
     need(ok, "turn_missing")
+    need(value)
+    need(value.get("tools") == value.get("contract"),
+         "tool_contract_changed")
+    need(value, code="keyword_code")
+    need(value, value.code)
     raise UIError("id_invalid")
+
+
+def handle(exc):
+    status = {"error_code": "http_refused"}
+    code = getattr(exc, "code", "request_failed")
+    shown = getattr(exc, "code", "status_field_only")
+    configured.update(error_code=getattr(exc, "code", "capability_field_only"))
 '''
 APP = '''const errors = {
   collection_limit: "بلغت المشروعاتُ حدَّها.",
+  http_refused: "انتهت جلسة الواجهة.",
 };
 if(["turn_missing"].includes(e.code)) notice("لم تُسجَّل الجولة.");
+if(error.code === "keyword_code") notice("…");
+const label = "tool_contract_changed";
 '''
 
 
-def test_error_coverage_reads_the_code_as_the_last_argument_and_counts_handled_branches():
+def test_error_coverage_parses_calls_structurally_with_defaults_keywords_and_fallbacks():
+    """ملاحظة Codex على #175: نداءُ need الممتدّ أسطرًا، والنداءُ بقيمته الافتراضية request_invalid، والرمزُ باسمه code،
+    وبديلُ المعالج request_failed كلُّها رموزٌ تبلغ المستخدم؛ وحقلُ الحالة والرمزُ المتغيّر ليسا رمزًا حرفيًّا."""
     coverage = audit.error_code_coverage(SERVER, APP)
-    assert coverage["server_codes"] == 4, coverage          # لا "text" من وسيطٍ داخليّ
-    assert coverage["with_arabic_message"] == 1
-    assert coverage["handled_by_a_branch"] == ["turn_missing"]
-    assert coverage["raw_codes"] == ["id_invalid", "metadata_invalid"]
+    assert coverage["server_codes"] == 9, coverage          # لا "text" من وسيطٍ داخليّ، ولا حقولُ الحالة
+    assert coverage["with_arabic_message"] == 2
+    assert coverage["handled_by_a_branch"] == ["keyword_code", "turn_missing"]   # ذكرُ الرمز نصًّا ليس فرعًا
+    assert coverage["raw_codes"] == ["id_invalid", "metadata_invalid", "request_failed", "request_invalid",
+                                     "tool_contract_changed"]
+    assert coverage["raw_code_lines"]["tool_contract_changed"] == 12   # سطرُ النداء لا سطرُ الرمز
+    assert coverage["dynamic_code_lines"] == [4, 15]   # UIError(code) في need نفسِها، وneed(value, value.code)
 
 
 # — النتائجُ من ملاحظات المتصفّح —
@@ -196,6 +221,20 @@ def test_the_audited_server_is_the_real_app_answering_with_the_scripted_provider
         history = json.loads(_http(origin, "POST", "/api", {"action": "history", "project": project,
                                                            "session": session, "before": None}, token)[1])
         assert audit.ANSWER_MARKER in history["turns"][0]["content"] and provider.calls == 1
+
+
+def test_an_axe_that_did_not_run_refuses_the_evidence(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #175: طُلب axe فلم يعمل (ملفٌّ غائب أو سكربتٌ غيرُ صالح) فلا يُكتب دليلٌ يبدو نظيفًا."""
+    ran = {"status": "run", "states": [{"state": "empty-desktop"}], "violations": [], "errors": []}
+    assert audit.axe_problem(ran, True) is None
+    assert audit.axe_problem({"status": "not_run"}, False) is None
+    assert audit.axe_problem({"status": "failed", "code": "axe_unavailable", "errors": ["ENOENT"]}, True) == "axe_unavailable"
+    assert audit.axe_problem({**ran, "errors": ["axe is not defined"]}, True) == "axe_failed"
+    assert audit.axe_problem({**ran, "states": []}, True) == "axe_failed"
+    assert audit.axe_problem({"status": "not_run"}, True) == "axe_failed"
+    monkeypatch.setattr(audit, "browser_prerequisites", lambda node=None: ("node_missing", None, None))
+    assert audit.main(["--axe", str(tmp_path / "missing-axe.min.js")]) == 3
+    assert json.loads(capsys.readouterr().out)["code"] == "axe_unavailable"
 
 
 def test_a_missing_browser_is_named_not_a_traceback():

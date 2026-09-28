@@ -24,6 +24,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import datetime as _dt
 import hashlib
 import json
@@ -76,7 +77,7 @@ MEASUREMENT_LIMITS = [
     "one_scripted_journey_by_the_tool_not_a_user_study_and_not_owner_acceptance",
     "linux_fonts_tahoma_and_arial_absent_arabic_falls_back_to_dejavu_so_glyph_shapes_differ_from_mac_and_windows",
     "axe_core_catches_a_subset_of_wcag_failures_and_a_clean_rule_is_not_an_accessible_page",
-    "error_code_coverage_counts_literal_codes_in_webui_server_py_only_codes_raised_by_other_modules_are_not_counted",
+    "error_code_coverage_parses_webui_server_py_only_codes_raised_by_other_modules_are_listed_as_dynamic_lines_not_counted",
     "first_run_configuration_only_research_media_and_command_execution_are_disabled_as_serve_ui_starts_without_searxng_vision_or_docker",
     "timings_are_loopback_with_a_fake_provider_they_bound_the_ui_and_http_path_not_a_real_answer",
 ]
@@ -166,23 +167,70 @@ def serving(root: Path):
 
 # — المنطقُ الخالص: التغطية، والمواضع، والنتائج، والحارس —
 
-def error_code_coverage(server_source: str, app_source: str) -> dict:
-    """رموزُ الرفض الحرفية في الخادم مقابل مفاتيح رسائلها العربية في الواجهة (`const errors = {…}`).
+def _text(node) -> str | None:
+    return node.value if isinstance(node, ast.Constant) and isinstance(node.value, str) else None
 
-    ما لا رسالةَ له يعرضه `showError` بصيغة «تعذر إكمال العملية (<الرمز>)…»: رمزٌ خامٌ أمام المستخدم."""
-    # الرمزُ آخرُ وسيطٍ في `need(…)` على سطرٍ واحد: `need(value.get("mode", "text") in …, "metadata_invalid")` رمزُه
-    # الأخير لا "text"
-    codes = set(re.findall(r'need\(.*,\s*"([a-z][a-z0-9_]*)"\)\s*(?:#.*)?$', server_source, re.MULTILINE))
-    codes |= set(re.findall(r'UIError\("([a-z][a-z0-9_]*)"\)', server_source))
+
+def server_codes(server_source: str) -> tuple[dict[str, int], list[int]]:
+    """رموزُ الرفض في الخادم بنيويًّا (`ast`) لا سطرًا سطرًا: `need(…)` برمزه وسيطًا ثانيًا أو باسمه `code` ولو امتدّ
+    النداءُ أسطرًا، وإلا فقيمتُه الافتراضية من تعريف `need` نفسِه؛ و`UIError(…)`؛ وقيمُ `"error_code"` الحرفية في القواميس؛
+    وبديلُ الرفض `code = getattr(exc, "code", …)` في معالج الطلب (لا حقولُ الحالة مثل `error_code=getattr(…)` في وصف
+    القدرات، فتلك لا يعرضها `showError`). يُعيد {الرمز: أولُ سطرٍ له}، وأسطرَ ما رمزُه متغيّرٌ يأتي من وحدةٍ أخرى."""
+    tree = ast.parse(server_source)
+    default = None
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == "need":
+            params = [arg.arg for arg in node.args.args]
+            defaults = dict(zip(params[len(params) - len(node.args.defaults):], node.args.defaults))
+            default = _text(defaults.get("code"))
+    codes: dict[str, int] = {}
+    dynamic: list[int] = []
+    for node in ast.walk(tree):
+        found = []
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in ("need", "UIError"):
+            position = 1 if node.func.id == "need" else 0
+            argument = (node.args[position] if len(node.args) > position
+                        else next((word.value for word in node.keywords if word.arg == "code"), None))
+            if argument is None:
+                found.append(default if node.func.id == "need" else None)
+            elif _text(argument) is None:
+                dynamic.append(node.lineno)
+            else:
+                found.append(_text(argument))
+        elif (isinstance(node, ast.Assign) and isinstance(node.value, ast.Call)
+              and isinstance(node.value.func, ast.Name) and node.value.func.id == "getattr"
+              and len(node.value.args) == 3 and _text(node.value.args[1]) == "code"
+              and [getattr(target, "id", None) for target in node.targets] == ["code"]):
+            found.append(_text(node.value.args[2]))
+        elif isinstance(node, ast.Dict):
+            found.extend(_text(value) for key, value in zip(node.keys, node.values)
+                         if key is not None and _text(key) == "error_code")
+        for code in found:
+            if code:
+                codes.setdefault(code, node.lineno)
+    return codes, sorted(set(dynamic))
+
+
+# فرعٌ في الواجهة يعالج رمزًا بعينه: `["a", "b"].includes(e.code)` أو `x.code === "a"`
+BRANCH_LIST = re.compile(r"\[([^\[\]]*)\]\.includes\(\s*[\w.]*\bcode\s*\)")
+BRANCH_EQUAL = re.compile(r'\bcode\s*===\s*"([a-z][a-z0-9_]*)"')
+
+
+def error_code_coverage(server_source: str, app_source: str) -> dict:
+    """رموزُ الرفض في الخادم مقابل مفاتيح رسائلها العربية في الواجهة (`const errors = {…}`) وفروعِها الخاصّة.
+
+    ما لا رسالةَ له ولا فرع يعرضه `showError` بصيغة «تعذر إكمال العملية (<الرمز>)…»: رمزٌ خامٌ أمام المستخدم."""
+    codes, dynamic = server_codes(server_source)
     block = re.search(r"const errors = \{(.*?)\n\};", app_source, re.DOTALL)
     mapped = set(re.findall(r"^\s*([a-z][a-z0-9_]*):", block.group(1), re.MULTILINE)) if block else set()
     rest = app_source.replace(block.group(0), "") if block else app_source
-    # رمزٌ تعالجه الواجهةُ بفرعٍ خاصّ (مثل workspace_turn_missing) ليس خامًا
-    branched = set(re.findall(r'"([a-z][a-z0-9_]*)"', rest)) & codes - mapped
-    raw = sorted(codes - mapped - branched)
-    return {"server_codes": len(codes), "with_arabic_message": len(codes & mapped),
+    branched = {code for match in BRANCH_LIST.finditer(rest) for code in re.findall(r'"([a-z][a-z0-9_]*)"', match.group(1))}
+    branched = (branched | set(BRANCH_EQUAL.findall(rest))) & set(codes) - mapped
+    raw = sorted(set(codes) - mapped - branched)
+    return {"server_codes": len(codes), "with_arabic_message": len(set(codes) & mapped),
             "handled_by_a_branch": sorted(branched), "raw_codes": raw,
-            "scope": "literal_codes_in_webui_server_py"}
+            "raw_code_lines": {code: codes[code] for code in raw}, "dynamic_code_lines": dynamic,
+            "scope": "need_UIError_error_code_literals_and_the_handler_code_fallback_in_webui_server_py_parsed_with_ast"}
 
 
 def locate(anchor: str, sources: dict[str, str]) -> str | None:
@@ -337,6 +385,17 @@ def evidence_guard(evidence: dict, shots_dir: Path | None = None) -> list[str]:
     return violations
 
 
+def axe_problem(axe: dict | None, requested: bool) -> str | None:
+    """طُلب axe فلم يعمل في كل حالةٍ فُحصت: رمزُه المسمّى (`axe_unavailable` أو `axe_failed`)، فلا يُكتب دليلٌ يبدو نظيفًا
+    وهو لم يُفحص. وبلا طلبٍ لا حكم: الدليلُ يقول `not_run` صراحةً."""
+    if not requested:
+        return None
+    axe = axe or {}
+    if axe.get("status") != "run" or axe.get("errors") or not axe.get("states"):
+        return axe.get("code") or "axe_failed"
+    return None
+
+
 def summarize_steps(journeys: dict) -> dict:
     """عددُ الخطوات الناجحة والساقطة لكل رحلة، وأولُ ساقطةٍ باسمها."""
     out = {}
@@ -437,6 +496,9 @@ def main(argv: list[str] | None = None) -> int:
         if not sep or not issue.isdigit():
             parser.error(f"--tracked بصيغة FINDING=ISSUE: {item}")
         tracked[finding] = f"#{issue}"
+    if args.axe and not Path(args.axe).is_file():
+        print(json.dumps({"status": "unavailable", "code": "axe_unavailable"}))
+        return 3
     code, node, env = browser_prerequisites(args.node)
     if code:
         print(json.dumps({"status": "unavailable", "code": code}))
@@ -465,6 +527,11 @@ def main(argv: list[str] | None = None) -> int:
     if status == 3:
         print(json.dumps({"status": "unavailable", "code": raw.get("code", "chromium_missing")}))
         return 3
+    problem = axe_problem(raw.get("axe"), bool(args.axe))
+    if problem:
+        print(json.dumps({"status": "failed", "code": problem, "errors": (raw.get("axe") or {}).get("errors", [])[:3]},
+                         ensure_ascii=False))
+        return 1
     sources = {path: (ROOT / path).read_text(encoding="utf-8") for path in UI_SOURCES}
     coverage = error_code_coverage(sources["webui/server.py"], sources["webui/static/app.js"])
     shots_rel = shots.relative_to(ROOT).as_posix() if shots.is_relative_to(ROOT) else shots.name

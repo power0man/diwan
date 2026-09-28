@@ -254,14 +254,25 @@ def test_run_checks_hands_the_engine_and_its_digest_to_the_ui_step():
     """الواجهةُ تُشغَّل بالمحرّك الذي وجدته خطوةُ المحرّك وبصمتِه كما في /api/tags؛ وبلا محرّكٍ بلا بصمة."""
     seen = []
 
-    def ui_check(root, *, model, digest):
-        seen.append((model, digest))
+    def ui_check(root, *, model, digest, base_url):
+        seen.append((model, digest, base_url))
         return lc.Step("ui", "ok", "ui_ready")
 
     tags = lambda base_url: {"models": [{"name": "qwen3.5:9b", "digest": "b" * 64}]}
-    lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x", probe=tags, with_agent=False, ui_check=ui_check)
-    lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x", probe=_down, with_agent=False, ui_check=ui_check)
-    assert seen == [("qwen3.5:9b", "b" * 64), ("qwen3.5:9b", None)]
+    lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x:1", probe=tags, with_agent=False, ui_check=ui_check)
+    lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x:2", probe=_down, with_agent=False, ui_check=ui_check)
+    assert seen == [("qwen3.5:9b", "b" * 64, "http://x:1"), ("qwen3.5:9b", None, "http://x:2")]
+
+
+def test_an_engine_probed_elsewhere_is_not_a_ready_ui(tmp_path, monkeypatch):
+    """ملاحظة Codex على #175: serve_ui.py يبلغ Ollama على 127.0.0.1:11434 وحده، ونداءُ القراءة لا يبلغ النموذج؛ فمحرّكٌ فُحص
+    على منفذٍ آخر لا تُسمّى معه الواجهةُ جاهزة وإن خدمت صفحتَها."""
+    step, _ = _fake_ui(tmp_path, monkeypatch, "ok", base_url="http://127.0.0.1:11500")
+    assert step.status == "unavailable" and step.code == "ui_engine_endpoint_unpassed", step
+    assert "http://127.0.0.1:11500" in step.detail
+    assert lc.reaches_default_engine("http://localhost:11434") and lc.reaches_default_engine(lc.DEFAULT_BASE_URL)
+    for other in ("http://127.0.0.1:11500", "http://192.168.1.5:11434", "https://127.0.0.1:11434", "http://127.0.0.1"):
+        assert not lc.reaches_default_engine(other), other
 
 
 def test_a_journal_that_refuses_its_root_is_a_named_failure_not_a_traceback(monkeypatch):

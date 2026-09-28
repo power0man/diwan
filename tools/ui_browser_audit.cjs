@@ -135,10 +135,20 @@ async function tabOrder(page, cdp) {
   return order;
 }
 
+// axe طُلب فلم يعمل: الحالةُ `failed` برمزٍ مسمًّى، فلا يبدو الفحصُ نظيفًا وهو لم يجرِ (ويرفض الجانبُ البايثونيّ كتابتَه)
+function axeFailed(axe, code, error) {
+  axe.status = "failed";
+  axe.code = axe.code || code;
+  axe.errors.push(short(error && error.message || error));
+}
+
 async function runAxe(page, state, axe) {
   if (!config.axe_path) return;
+  let source;
+  try {source = fs.readFileSync(config.axe_path, "utf8");}
+  catch (error) {axeFailed(axe, "axe_unavailable", error); return;}
   try {
-    await page.evaluate(fs.readFileSync(config.axe_path, "utf8"));
+    await page.evaluate(source);
     const result = await page.evaluate(async () => {
       const run = await window.axe.run(document, {runOnly: {type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"]}});
       return {version: window.axe.version, violations: run.violations.map(v => ({id: v.id, impact: v.impact, nodes: v.nodes.length,
@@ -151,7 +161,7 @@ async function runAxe(page, state, axe) {
       if (known) {known.nodes = Math.max(known.nodes, v.nodes); if (!known.states.includes(state)) known.states.push(state);}
       else axe.violations.push({...v, states: [state]});
     }
-  } catch (error) {axe.errors.push(short(error.message));}
+  } catch (error) {axeFailed(axe, "axe_failed", error);}
 }
 
 // — ما يُقرأ من الصفحة —
