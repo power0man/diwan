@@ -37,7 +37,7 @@
     "AGENTS.md": {
       "bytes": 30265,
       "lines": 286,
-      "tokens_estimate": 6432,
+      "tokens_estimate": 8040,
       "codex_cut_line": null,
       "task_rows": 4,
       "task_rows_visible_to_codex": 4,
@@ -47,20 +47,20 @@
     "reading_set_in_section_0": {
       "AGENTS.md": {
         "bytes": 30265,
-        "tokens_estimate": 6432
+        "tokens_estimate": 8040
       },
       "docs/INDEX.md": {
-        "bytes": 18384,
-        "tokens_estimate": 3877
+        "bytes": 18458,
+        "tokens_estimate": 4877
       },
       "docs/VISION.md": {
         "bytes": 10397,
-        "tokens_estimate": 1986
+        "tokens_estimate": 2483
       }
     },
     "reading_set_total": {
-      "bytes": 59046,
-      "tokens_estimate": 12295
+      "bytes": 59120,
+      "tokens_estimate": 15400
     },
     "archived_rows": 41,
     "open_rows_in_agents_md": 4,
@@ -70,63 +70,62 @@
   "every_indexed_document_after": {
     "AGENTS.md": {
       "bytes": 30265,
-      "tokens_estimate": 6432
+      "tokens_estimate": 8040
     },
     "docs/STATUS.md": {
-      "bytes": 22893,
-      "tokens_estimate": 4796
+      "bytes": 23222,
+      "tokens_estimate": 6084
     },
     "docs/VISION.md": {
       "bytes": 10397,
-      "tokens_estimate": 1986
+      "tokens_estimate": 2483
     },
     "docs/DECISIONS.md": {
       "bytes": 150199,
-      "tokens_estimate": 29948
+      "tokens_estimate": 37435
     },
     "docs/PLAN-20260926.md": {
       "bytes": 215511,
-      "tokens_estimate": 47124
+      "tokens_estimate": 58905
     },
     "docs/TASKS.jsonl": {
       "bytes": 3470,
-      "tokens_estimate": 1140
+      "tokens_estimate": 1425
     },
     "docs/TASKS-ARCHIVE.md": {
       "bytes": 32499,
-      "tokens_estimate": 7020
+      "tokens_estimate": 8775
     },
     "docs/PROJECT-PLAN-20260925.md": {
       "bytes": 42526,
-      "tokens_estimate": 9022
+      "tokens_estimate": 11277
     },
     "docs/LAUNCH-PLAN-20260925.md": {
       "bytes": 29252,
-      "tokens_estimate": 6075
+      "tokens_estimate": 7593
     },
     "docs/REBUILD-2026-09-23.md": {
       "bytes": 17832,
-      "tokens_estimate": 3589
+      "tokens_estimate": 4487
     },
     "docs/EVALUATION-20260925.md": {
       "bytes": 38324,
-      "tokens_estimate": 7919
+      "tokens_estimate": 9899
     },
     "docs/AGENT-ONBOARD-REFUTE.md": {
       "bytes": 7831,
-      "tokens_estimate": 1609
+      "tokens_estimate": 2012
     },
     "docs/START-PROMPT.md": {
       "bytes": 1771,
-      "tokens_estimate": 361
+      "tokens_estimate": 451
     },
     "docs/HANDOFF-PROMPT.md": {
       "bytes": 57388,
-      "tokens_estimate": 11887
+      "tokens_estimate": 14859
     }
   },
   "measurement_limits": [
-    "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
     "agents_md_is_digested_with_its_generated_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
     "agents_md_bytes_lines_and_tokens_are_measured_from_the_file_as_written_with_its_generated_block_only_its_digest_is_taken_with_the_block_emptied",
     "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
@@ -135,7 +134,9 @@
     "the_reading_set_after_counts_docs_VISION_md_although_section_0_now_asks_for_it_only_in_the_first_session_so_the_saving_is_understated",
     "documents_an_agent_opens_by_reference_from_the_index_are_not_counted_in_either_reading_set",
     "codex_visibility_is_computed_by_cutting_the_file_at_32768_bytes_as_project_doc_max_bytes_does_by_default_not_by_running_codex",
-    "the_after_section_is_regenerated_by_context_index_write_from_the_same_snapshot_as_the_index_so_it_describes_the_tree_of_the_commit_that_carries_it_while_before_stays_the_113d1b4_measurement"
+    "the_after_section_is_regenerated_by_context_index_write_from_the_same_snapshot_as_the_index_so_it_describes_the_tree_of_the_commit_that_carries_it_while_before_stays_the_113d1b4_measurement",
+    "before_tokens_estimate_is_characters_divided_by_three_the_pre_calibration_heuristic_of_the_113d1b4_measurement_not_a_tokenizer_count",
+    "after_tokens_estimate_is_characters_divided_by_2_4_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count"
   ],
   "measurement": "الأرقامُ بعد e8b6425: AGENTS.md يُقاس بنصّه على القرص بكتلته المولَّدة (حجمًا وأسطرًا ورموزًا وعناوين)، وبصمتُه وحدها من المفرَّغ"
 }
