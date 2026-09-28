@@ -894,6 +894,35 @@ def test_the_fixed_request_body_fields_are_inspected_as_the_provider_builds_them
         assert any(f.startswith("witness collides with the request payload") for f in report["failures"]), report
 
 
+class _NamedDelegate(_Delegate):
+    """مزوّدٌ حيٌّ مصطنع باسم نموذجٍ غير الافتراضيّ، كما يفعل `tools/evaluate_memory.py --model`."""
+    name, model = "named-live", "secret-model-445566"
+
+
+def test_the_inspected_request_body_names_the_live_model_not_the_default_one(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة السادسة والعشرون): بمزوّدٍ حيّ باسم نموذجٍ آخر كان الجسدُ المفحوص يُبنى بالمزوّد الافتراضيّ
+    فيحمل `qwen3.5:9b` لا النموذجَ المرسَل، فشاهدُ غيابٍ هو اسمُ النموذج الحيّ يمرّ مع أنه في كل طلب."""
+    from core.contracts import Message, Request
+    from evaluation.memory_bank import declared_request_payload_text, request_provider
+    from evaluation.memory_runner import _memory_parts, run_wired_scenario
+    from providers.ollama import OllamaProvider
+
+    delegate = _NamedDelegate()
+    request = Request((Message("user", "ما رقم المكتب؟"),), "m", "0" * 64, 64, 30.0, "local_only", None)
+    assert "secret-model-445566" in _memory_parts(request, delegate)[1] and "secret-model-445566" in declared_request_payload_text(delegate)
+    assert "secret-model-445566" not in _memory_parts(request)[1], "بلا مزوّدٍ حيّ يُفحص النموذجُ المعتمَد"
+    live = OllamaProvider(model="secret-model-445566")
+    assert request_provider(live) is live and request_provider(delegate).model == "secret-model-445566"
+    scenario = {"id": "model_witness", "category": "forget", "steps": [
+        {"op": "remember", "project": "A", "text": "secret-model-445566 passport note", "consent": "owner", "as": "m1"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": "ما رقم المكتب؟", "absent": ["secret-model-445566"], "present": []},
+    ]}
+    report = run_wired_scenario(scenario, tmp_path / "w", delegate)
+    assert not report["passed"] and any(f.startswith("witness collides with the request payload") for f in report["failures"]), report
+    assert run_wired_scenario(scenario, tmp_path / "s")["passed"], "بلا هذا النموذج الحيّ لا تصادم"
+
+
 def test_an_earlier_context_question_of_the_same_project_that_repeats_a_later_absent_witness_is_refused_not_measured(tmp_path):
     """ملاحظةُ Codex على #129 (الجولة الثامنة عشرة): خطوةُ سياقٍ سؤالُها يحمل السرَّ وتفحص غيابَ غيره، ثم خطوةٌ محايدة تفحص غيابَ
     السرّ: الأولى تُبقي السرَّ في تاريخ جلسة المشروع فيبلغ النموذجَ عند الثانية ولا يراه فحصُ الغياب؛ يُرفض في المسارين بلا قياس."""

@@ -32,7 +32,7 @@ import uuid
 from core.quoted import QUARANTINE_MARK, scan
 from evaluation.memory_bank import (EXPOSURE_QUESTION, contains as _contains, names_every_directive, probe_collisions,
                                     envelope_collisions, message_envelope_collisions, question_collisions,
-                                    request_payload_collisions, role_collisions, tool_collisions)
+                                    request_payload_collisions, request_provider, role_collisions, tool_collisions)
 from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, unfenced
 
 
@@ -91,7 +91,7 @@ def _exposed(shown: str, text: str) -> bool:
 # وMAX_CONTEXT_CHARS)، وما جاوزها يُسمّى «لم يُعرض». وسيناريو يشترك مع السؤال في شاهدٍ يُرفض قبل القياس (الجولة السادسة عشرة).
 
 
-def _collision_result(scenario: dict, wired: bool) -> dict | None:
+def _collision_result(scenario: dict, wired: bool, delegate=None) -> dict | None:
     """سيناريو يرد شاهدُ غيابه في سؤال العرض أو يحفظه نصًّا: رسوبٌ مسمًّى بلا قياس، لا نجاحٌ يعتمد على تاريخٍ يحمل الشاهد."""
     collisions = probe_collisions(scenario)
     repeated = question_collisions(scenario)
@@ -99,7 +99,7 @@ def _collision_result(scenario: dict, wired: bool) -> dict | None:
     tools = tool_collisions(scenario)
     envelope = envelope_collisions(scenario)
     wire = message_envelope_collisions(scenario)
-    body = request_payload_collisions(scenario)
+    body = request_payload_collisions(scenario, delegate=delegate)     # بالنموذج الحيّ نفسِه لا بالافتراضيّ (ملاحظة Codex على #129)
     if not collisions and not repeated and not roles and not tools and not envelope and not wire and not body:
         return None
     result = {"id": scenario["id"], "category": scenario["category"], "passed": False,
@@ -305,7 +305,7 @@ def _sent_question(content: str, block: str) -> str:
     return text
 
 
-def _memory_parts(request) -> tuple[str, str, str, str, str]:
+def _memory_parts(request, delegate=None) -> tuple[str, str, str, str, str]:
     """(كتلةُ الطلب الحالي، كلُّ ما يبلغ النموذج سوى الكتلة، رسائلُ النموذج السابقة وحدها، السؤالُ الحاليّ كما أُرسل، مواصفاتُ
     الأدوات المعلَنة) — كلُّها كما يسلسلها المزوّدُ فعلًا (`serialize_messages` و`serialize_tools`): بأسماء حقول الرسائل الثابتة
     وغلافِ الأدوات. المنسيُّ الذي يبلغ النموذجَ من أيّ جزءٍ في الطلب — كتلةِ ذاكرةٍ لم تُمحَ، أو كلامِ مالكٍ سابق، أو صدى جوابه هو
@@ -317,12 +317,11 @@ def _memory_parts(request) -> tuple[str, str, str, str, str]:
     last = messages[-1] if messages and messages[-1].role == "user" else None
     current = _block_of(last.content) if last else ""
     question = _sent_question(last.content, current) if last else ""
-    from providers.ollama import OllamaProvider
     wire = serialize_messages(request)
     tools = _flat(serialize_tools(getattr(request, "tools", ())))
-    # الحقولُ الثابتة خارج الرسائل والأدوات في جسد الطلب كما يبنيه المزوّدُ نفسُه (model وstream وthink وoptions…): تُقرأ من
-    # الموضع الذي يبنيها لا من نسخة (ملاحظة Codex على #129، الجولة الخامسة والعشرون)
-    outer = _flat({k: v for k, v in OllamaProvider().payload(request).items() if k not in ("messages", "tools")})
+    # الحقولُ الثابتة خارج الرسائل والأدوات في جسد الطلب كما يبنيه المزوّدُ الذي يرسله فعلًا (model الحيّ وstream وthink
+    # وoptions…): تُقرأ من الموضع الذي يبنيها لا من نسخة ولا من مزوّدٍ افتراضيّ (ملاحظتا Codex على #129)
+    outer = _flat({k: v for k, v in request_provider(delegate).payload(request).items() if k not in ("messages", "tools")})
     history = [_flat(m) for m in wire[:-1]]
     sent = _flat({**wire[-1], "content": question}) if last else (_flat(wire[-1]) if wire else "")
     return (current, "\n".join([*history, sent, tools, outer]),
@@ -483,7 +482,7 @@ class _Wired:
             new = self.provider.requests[before:]
             # النموذجُ الحيّ قد يستدعي أداةً فتطول الجولة؛ والذاكرةُ في أول طلبٍ منها
             (request,) = new if self.provider.delegate is None else new[:1]
-            seen.append(_memory_parts(request))
+            seen.append(_memory_parts(request, self.provider.delegate))
         return seen
 
     def receipts(self, name, item_id):
@@ -492,7 +491,7 @@ class _Wired:
 
 
 def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
-    if collided := _collision_result(scenario, wired=True):
+    if collided := _collision_result(scenario, wired=True, delegate=delegate):
         return collided
     wired = _Wired(root / "ui", delegate)
     refs: dict[str, object] = {}

@@ -157,19 +157,27 @@ def declared_envelope_text() -> str:
     return INPUT_PREFIX_V2 + _flat_text(decode_input(encode_input("", [], None)))
 
 
-def declared_request_payload_text() -> str:
-    """الحقولُ الثابتة في جسد طلب Ollama كما يبنيه المزوّدُ نفسُه (`OllamaProvider.payload`: `model` و`stream` و`think`
-    و`options` بـ`num_predict` و`temperature` و`num_ctx` و`seed`) بلا رسائل ولا أدوات؛ شاهدُ غيابٍ يقع فيها يُرسل مع كلِّ
-    نداءٍ حيّ فلا يشهد بغياب (ملاحظة Codex على #129، الجولة الخامسة والعشرون)."""
-    from core.contracts import Request
+def request_provider(delegate=None):
+    """المزوّدُ الذي يبني جسدَ الطلب المفحوص: المزوّدُ الحيُّ نفسُه إن كان يبني جسدًا (`payload`)، وإلا مزوّدُ Ollama بالنموذج الذي
+    يسمّيه المزوّدُ الحيّ أو المعتمَد — فلا يُفحص جسدٌ باسم نموذجٍ غير الذي يُرسل (ملاحظة Codex على #129، الجولة السادسة والعشرون)."""
     from providers.ollama import OllamaProvider
+    if delegate is not None and callable(getattr(delegate, "payload", None)):
+        return delegate
+    return OllamaProvider(model=getattr(delegate, "model", None) or OllamaProvider().model)
+
+
+def declared_request_payload_text(delegate=None) -> str:
+    """الحقولُ الثابتة في جسد طلب Ollama كما يبنيه المزوّدُ الذي سيرسله (`OllamaProvider.payload`: `model` و`stream` و`think`
+    و`options` بـ`num_predict` و`temperature` و`num_ctx` و`seed`) بلا رسائل ولا أدوات؛ شاهدُ غيابٍ يقع فيها — ومنه اسمُ النموذج
+    الحيّ — يُرسل مع كلِّ نداءٍ فلا يشهد بغياب (ملاحظتا Codex على #129، الجولتان الخامسة والعشرون والسادسة والعشرون)."""
+    from core.contracts import Request
     empty = Request((), "memory-bank", "0" * 64, 1, 30.0, "local_only", None)
-    return _flat_text({k: v for k, v in OllamaProvider().payload(empty).items() if k not in ("messages", "tools")})
+    return _flat_text({k: v for k, v in request_provider(delegate).payload(empty).items() if k not in ("messages", "tools")})
 
 
-def request_payload_collisions(scenario: dict, payload_text: str | None = None) -> list[str]:
-    """شاهدُ غيابٍ يقع في حقلٍ ثابت من جسد الطلب كما يبنيه المزوّد؛ يُرفض قبل القياس (ملاحظة Codex على #129)."""
-    text = declared_request_payload_text() if payload_text is None else payload_text
+def request_payload_collisions(scenario: dict, payload_text: str | None = None, delegate=None) -> list[str]:
+    """شاهدُ غيابٍ يقع في حقلٍ ثابت من جسد الطلب كما يبنيه المزوّدُ الذي سيرسله؛ يُرفض قبل القياس (ملاحظة Codex على #129)."""
+    text = declared_request_payload_text(delegate) if payload_text is None else payload_text
     return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
 
 
