@@ -289,8 +289,8 @@ class _Reply(io.BytesIO):
 class _Fail:
     """ردُّ HTTP فاشلٌ بجسمٍ ونوع محتوى."""
 
-    def __init__(self, code: int, body: bytes = b"", content_type: str = "application/json"):
-        self.code, self.body, self.content_type = code, body, content_type
+    def __init__(self, code: int, body: bytes = b"", content_type: str = "application/json", location: str | None = None):
+        self.code, self.body, self.content_type, self.location = code, body, content_type, location
 
 
 class FreeOpener:
@@ -314,8 +314,8 @@ class FreeOpener:
         if isinstance(reply, int):
             raise urllib.error.HTTPError(request.full_url, reply, "refused", {}, None)
         if isinstance(reply, _Fail):
-            raise urllib.error.HTTPError(request.full_url, reply.code, "refused", {"Content-Type": reply.content_type},
-                                         io.BytesIO(reply.body))
+            headers = {"Content-Type": reply.content_type, **({"Location": reply.location} if reply.location else {})}
+            raise urllib.error.HTTPError(request.full_url, reply.code, "refused", headers, io.BytesIO(reply.body))
         if isinstance(reply, bytes):
             return _Reply(reply, "text/plain")
         if request.data is not None:
@@ -715,3 +715,20 @@ def test_a_backend_that_answers_ok_to_everything_is_unavailable_not_failed(tmp_p
                      "--brief", str(BRIEF)]) == 3
     result = json.loads(capsys.readouterr().out)
     assert result["status"] == "unavailable" and result["unavailable_codes"] == ["response_not_json"]
+
+
+def test_a_redirect_is_refused_by_name_with_its_target_and_the_key_is_not_resent(tmp_path, monkeypatch, capsys):
+    """فرضيّةُ التحويل تُحسم بالتسجيل: 3xx رمزُه redirected، ووجهتُه مضيفًا ومسارًا (بلا استعلام) في الشكل، ولا يُتبع."""
+    assert [cli.http_code(c) for c in (301, 302, 307, 308)] == ["redirected"] * 4
+    chat = cli.OpenAICompatChat("github-models", KEY)
+    chat.opener = FreeOpener(replies={DS: [_Fail(307, b"", "text/html", location="https://elsewhere.example/v2/chat?token=abc")],
+                                      MI: [_Fail(301, b"", "text/html", location="/inference/chat/completions/")]})
+    with pytest.raises(AutomaticReviewError) as moved:
+        chat(DS, "s", "u", {})
+    assert moved.value.code == "redirected"
+    assert chat.failures[DS]["status"] == 307 and chat.failures[DS]["redirect_to"] == "elsewhere.example/v2/chat"
+    with pytest.raises(AutomaticReviewError):
+        chat(MI, "s", "u", {})
+    assert chat.failures[MI]["redirect_to"] == "models.github.ai/inference/chat/completions/"
+    assert len(chat.opener.requests) == 2, "لا طلبَ ثانٍ إلى الوجهة"
+    assert "token=abc" not in json.dumps(chat.failures)

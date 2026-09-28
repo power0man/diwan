@@ -267,6 +267,8 @@ def http_code(status: int) -> str:
     """رمزُ حالة HTTP على الواجهات المجانية: الشائعُ مسمًّى، وما سواه http_<الرمز>."""
     if status in (402, 429):
         return "quota_exhausted"          # 429 حدُّ الطلبات، و402 نفادُ رصيد الموجّه
+    if 300 <= status < 400:
+        return "redirected"               # التحويلُ مرفوضٌ ولا يُتبع؛ ووجهتُه (مضيفٌ ومسار) في الشكل
     return {401: "unauthorized", 403: "forbidden", 404: "not_found",
             413: "request_too_large"}.get(status, f"http_{status}")    # 413 حدُّ المدخل في الطبقة المجانية
 
@@ -359,6 +361,10 @@ class OpenAICompatChat:
                 body = b""
             _, self.failures[label] = response_shape(
                 exc.code, body, exc.headers.get("Content-Type") if exc.headers is not None else None)
+            if 300 <= exc.code < 400 and exc.headers is not None and exc.headers.get("Location"):
+                # وجهةُ التحويل: المضيفُ والمسارُ وحدهما (لا استعلامَ قد يحمل رمزًا)؛ ولا يُتبع ولا يُعاد المفتاحُ إليها
+                target = urllib.parse.urlsplit(urllib.parse.urljoin(url, exc.headers["Location"]))
+                self.failures[label]["redirect_to"] = f"{target.hostname}{target.path}"
             exc.close()
             error = AutomaticReviewError(http_code(exc.code), label)
             error.shape = self.failures[label]
