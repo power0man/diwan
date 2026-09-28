@@ -6,11 +6,13 @@
 المالك في جلسة) حقائقَ لا نصَّ فيها: وضعُ الجلسة، وعددُ الخطوات ونداءاتِ الأدوات، وصنفُ النتيجة ورمزُها، والتاريخُ بتوقيت
 UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع التراكمية: بالنتيجة وبالوضع وبالتاريخ، ونسبةُ الإنجاز؛ ثم خطُّ الأساس.
 
-خطُّ الأساس («أولُ ٣٠ رحلة في م١»، خطةُ ٢٦ سبتمبر) فوجٌ منفصل عن المجاميع التراكمية: الرحلاتُ المؤرَّخة داخل نافذة م١
-وحدها، والنافذةُ بدءُ مرحلة م١ ونهايتُها كما تسجّلهما الخطة (`docs/PLAN-20260926.json`) ما لم يمرّر المالك
-`--baseline-from`/`--baseline-until`، ولا تُخترع. ولا يجهز خطُّ الأساس، ولا تُحسب نسبةُ إنجازٍ يُظنّ أنها كاملة، ما دامت
-جلسةٌ لا تُقرأ (`unreadable_entries`) أو رحلةٌ بلا تاريخ قد تقع في النافذة (`undated_journeys_in_window`): رحلاتُها
-الغائبة قد تكون المتعثّرة، فالنسبةُ حينئذٍ `null` بسببها المسمّى لا رقمٌ نظيفُ المظهر.
+خطُّ الأساس («أولُ ٣٠ رحلة في م١»، خطةُ ٢٦ سبتمبر) فوجٌ منفصل عن المجاميع التراكمية، وهو **أولُ ثلاثين** رحلةً مؤرَّخة
+داخل نافذة م١ لا كلُّها، فلا يتحرّك بما يُضاف بعدها. والنافذةُ بدءُ مرحلة م١ ونهايتُها كما تسجّلهما الخطة
+(`docs/PLAN-20260926.json`) ما لم يمرّر المالك `--baseline-from`/`--baseline-until`، ولا تُخترع. والترتيبُ باليوم، ثم
+بزمن إنشاء الجلسة (زمنُ تعديل meta.json، ومعرّفُها عند التساوي)، ثم بموضع الجولة في جلستها؛ لا بترتيب قراءة الدليل.
+ولا يجهز خطُّ الأساس، ولا تُحسب نسبةُ إنجازٍ يُظنّ أنها كاملة، ما دام موضعٌ في الثلاثين لا يُعرف: جلسةٌ لا تُقرأ
+(`unreadable_entries`)، أو رحلةٌ بلا تاريخ قد تقع قبل القطع (`undated_journeys_before_cut`)، أو قطعٌ بين جلستين تداخلت
+كتابتُهما في يومه (`baseline_cut_order_unknown`). فالنسبةُ حينئذٍ `null` بسببها المسمّى لا رقمٌ نظيفُ المظهر.
 
 لا يحمل التقريرُ نصًّا ولا مسارًا ولا معرّفَ مشروعٍ أو جلسةٍ أو جولة ولا اسمًا ولا بصمةَ نصّ ولا جوابَ نموذج ولا شيئًا من
 محتوى local_only: أعدادٌ ورموزُ آلةٍ وتواريخُ وأزمنةٌ فقط. والأداةُ تفحص تقريرَها بذلك قبل كتابته، فتقريرٌ فيه نصٌّ أو معرّفٌ
@@ -96,7 +98,8 @@ OUTCOME_LABELS = {
 BASELINE_MIN_DATED_JOURNEYS = 30
 BASELINE_MIN_DISTINCT_DATES = 2
 UNREADABLE_ENTRIES = "unreadable_entries"
-UNDATED_IN_WINDOW = "undated_journeys_in_window"
+UNDATED_BEFORE_CUT = "undated_journeys_before_cut"
+CUT_ORDER_UNKNOWN = "baseline_cut_order_unknown"
 DURATION_UNKNOWN = "turn_timestamps_not_stored"
 MEASUREMENT_LIMITS = (
     "counts_only_what_the_daily_ui_stored_under_projects_a_session_left_in_staging_by_an_interrupted_creation_is_not_counted",
@@ -110,8 +113,10 @@ MEASUREMENT_LIMITS = (
     "the_outcome_is_what_the_ui_stored_and_says_nothing_about_the_quality_or_truth_of_the_answer",
     "the_data_is_the_owner_s_own_use_on_one_machine_not_a_sample_of_users",
     "the_report_carries_counts_machine_codes_utc_dates_and_durations_only_and_the_tool_refuses_to_write_a_report_with_any_other_string",
-    "the_baseline_cohort_is_the_dated_journeys_inside_the_m1_window_recorded_in_the_plan_unless_the_owner_passes_baseline_from_or_baseline_until_and_the_cumulative_totals_are_not_the_baseline",
-    "an_unreadable_entry_or_an_undated_journey_that_may_fall_in_the_window_blocks_baseline_ready_and_nulls_the_completion_rate_it_would_bias",
+    "the_baseline_cohort_is_the_first_30_dated_journeys_inside_the_m1_window_recorded_in_the_plan_unless_the_owner_passes_baseline_from_or_baseline_until_and_the_cumulative_totals_are_not_the_baseline",
+    "within_a_utc_day_journeys_are_ordered_by_their_session_s_creation_mtime_then_their_position_in_it_and_a_cut_between_sessions_whose_writes_overlap_that_day_is_refused_not_guessed",
+    "an_unreadable_entry_or_an_undated_journey_that_may_fall_before_the_cut_blocks_baseline_ready_and_nulls_the_completion_rate_it_would_bias",
+    "a_later_write_to_a_session_that_holds_baseline_journeys_can_undate_or_reorder_them_so_the_baseline_is_the_first_report_that_says_baseline_ready",
 )
 CARRIES = "counts_machine_codes_utc_dates_and_durations_only"
 # مخطّطُ التقرير مغلق: مفتاحٌ لا تبنيه `build_report` أو `_journey` تسرّبٌ ولو كانت قيمتُه رمزَ آلة
@@ -121,9 +126,10 @@ REPORT_FIELDS = frozenset({"schema_version", "tool", "task", "commit", "generate
                            "journeys", "measurement_limits"})
 JOURNEY_FIELDS = frozenset({"mode", "outcome", "status", "error_code", "steps", "tool_calls", "date", "date_basis",
                             "date_unknown_reason", "session_first_day", "session_last_day", "duration_s",
-                            "duration_unknown_reason"})
-BASELINE_RULE = ("at_least_30_dated_journeys_on_at_least_2_distinct_utc_dates_inside_the_m1_window_"
-                 "with_no_unreadable_entry_and_no_undated_journey_that_may_fall_in_the_window")
+                            "duration_unknown_reason", "baseline_position"})
+BASELINE_RULE = ("the_first_30_dated_journeys_inside_the_m1_window_by_utc_date_then_session_creation_then_turn_"
+                 "on_at_least_2_distinct_utc_dates_with_no_unreadable_entry_no_undated_journey_before_the_cut_"
+                 "and_a_provable_order_at_the_cut")
 
 _DIR = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | os.O_NOFOLLOW
 _FILE = os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_NONBLOCK", 0)
@@ -281,7 +287,10 @@ def _session(project_fd: int, sessions_fd: int, name: str) -> list[dict]:
     finally:
         os.close(state_fd)
     dating = _dating(created, last)
-    return [_journey(turn, mode, mode in AGENT_MODES, dating) for turn in _state_turns(envelope)]
+    # ترتيبُ الرحلة لقطع خطّ الأساس؛ داخليٌّ يُنزع قبل التقرير (معرّفُ الجلسة وأزمنتُها الدقيقة لا تخرج)
+    return [{**_journey(turn, mode, mode in AGENT_MODES, dating),
+             "_order": {"created": created, "last": last, "session": name, "index": index}}
+            for index, turn in enumerate(_state_turns(envelope))]
 
 
 def _entries(dir_fd: int) -> list[str]:
@@ -429,6 +438,19 @@ def _rate(by_outcome: dict, total: int, blockers: list[str]) -> tuple[float | No
     return round(by_outcome["completed"] / total, 4), None
 
 
+def _order(journey: dict) -> tuple:
+    """اليومُ، ثم زمنُ إنشاء الجلسة ومعرّفُها، ثم موضعُ الجولة فيها: ترتيبٌ لا يتعلّق بترتيب قراءة الدليل."""
+    order = journey["_order"]
+    return journey["date"], order["created"], order["session"], order["index"]
+
+
+def _cut_order_unknown(members: list[dict], rest: list[dict], cut: str) -> bool:
+    """القطعُ بين جلستين في يومه لا يُثبت ترتيبُه إن كُتبت جلسةٌ فيها رحلةٌ مختارة بعد أن أُنشئت جلسةٌ فيها رحلةٌ متروكة."""
+    chosen = {j["_order"]["session"]: j["_order"] for j in members if j["date"] == cut}
+    left = {j["_order"]["session"]: j["_order"] for j in rest if j["date"] == cut}
+    return any(a["last"] > b["created"] for sa, a in chosen.items() for sb, b in left.items() if sa != sb)
+
+
 def _may_fall_in(journey: dict, start: str, end: str) -> bool:
     """رحلةٌ بلا تاريخ قد تقع في النافذة: مدى جلستها يتقاطع معها، أو مداها مجهول."""
     first, final = journey["session_first_day"], journey["session_last_day"]
@@ -439,36 +461,47 @@ def _may_fall_in(journey: dict, start: str, end: str) -> bool:
 
 def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit: str | None,
                  window: dict) -> dict:
-    journeys = sorted(scanned["journeys"], key=lambda j: (j["date"] or "", j["mode"], j["outcome"], j["status"],
-                                                          j["error_code"] or "", j["steps"], j["tool_calls"]))
-    total = len(journeys)
-    by_outcome, by_date = _tally(journeys)
+    records = scanned["journeys"]
+    total = len(records)
+    by_outcome, by_date = _tally(records)
     by_mode = {name: 0 for name in MODES}
-    for journey in journeys:
+    for journey in records:
         by_mode[journey["mode"]] = by_mode.get(journey["mode"], 0) + 1
     dated = sum(by_date.values())
     counts = scanned["counts"]
     unreadable = [UNREADABLE_ENTRIES] if counts["unreadable_projects"] or counts["unreadable_sessions"] else []
     completion_rate, rate_reason = _rate(by_outcome, total, unreadable)
     start, end = window["from"], window["until"]
-    missing, cohort = [], None
+    missing, cohort, positions = [], None, {}
     if start is None or end is None:
         missing.extend(["baseline_window_unknown", *unreadable])
     else:
-        members = [journey for journey in journeys if journey["date"] is not None and start <= journey["date"] <= end]
-        undated = sum(1 for journey in journeys if journey["date"] is None and _may_fall_in(journey, start, end))
+        in_window = sorted((journey for journey in records
+                            if journey["date"] is not None and start <= journey["date"] <= end), key=_order)
+        members, rest = in_window[:BASELINE_MIN_DATED_JOURNEYS], in_window[BASELINE_MIN_DATED_JOURNEYS:]
+        full = len(members) == BASELINE_MIN_DATED_JOURNEYS
+        cut = members[-1]["date"] if full else end
+        undated = sum(1 for journey in records if journey["date"] is None and _may_fall_in(journey, start, cut))
+        order_unknown = full and _cut_order_unknown(members, rest, cut)
+        positions = {id(journey): index for index, journey in enumerate(members, 1)}
         cohort_outcomes, cohort_dates = _tally(members)
-        blockers = unreadable + ([UNDATED_IN_WINDOW] if undated else [])
+        blockers = (unreadable + ([UNDATED_BEFORE_CUT] if undated else [])
+                    + ([CUT_ORDER_UNKNOWN] if order_unknown else []))
         cohort_rate, cohort_reason = _rate(cohort_outcomes, len(members), blockers)
-        cohort = {"journeys": len(members), "distinct_dates": len(cohort_dates),
-                  "by_date": dict(sorted(cohort_dates.items())), "by_outcome": cohort_outcomes,
-                  "completion_rate": cohort_rate, "completion_rate_unavailable_reason": cohort_reason,
-                  "undated_journeys_in_window": undated}
+        cohort = {"journeys": len(members), "window_dated_journeys": len(in_window),
+                  "distinct_dates": len(cohort_dates), "by_date": dict(sorted(cohort_dates.items())),
+                  "by_outcome": cohort_outcomes, "completion_rate": cohort_rate,
+                  "completion_rate_unavailable_reason": cohort_reason, "cut_date": cut if full else None,
+                  "undated_journeys_before_cut": undated, "cut_order_known": not order_unknown}
         missing.extend(blockers)
     if cohort is None or cohort["journeys"] < BASELINE_MIN_DATED_JOURNEYS:
         missing.append("too_few_dated_journeys")
     if cohort is None or cohort["distinct_dates"] < BASELINE_MIN_DISTINCT_DATES:
         missing.append("too_few_distinct_dates")
+    journeys = sorted(({**{key: value for key, value in journey.items() if not key.startswith("_")},
+                        "baseline_position": positions.get(id(journey))} for journey in records),
+                      key=lambda j: (j["date"] or "", j["baseline_position"] or 0, j["mode"], j["outcome"], j["status"],
+                                     j["error_code"] or "", j["steps"], j["tool_calls"]))
     return {
         "schema_version": SCHEMA_VERSION,
         "tool": TOOL,

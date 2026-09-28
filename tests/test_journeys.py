@@ -453,7 +453,7 @@ def test_baseline_ready_needs_thirty_dated_journeys_on_two_dates_inside_the_m1_w
     place(*fourteen[:2], DAY_ONE + DAY, DAY_ONE + DAY + 60)
     place(*one[:2], DAY_ONE + DAY, DAY_ONE + DAY + 60)
     report, cohort, missing = baseline()
-    assert cohort["by_date"] == {"2026-10-01": 15, "2026-10-02": 15} and cohort["undated_journeys_in_window"] == 0
+    assert cohort["by_date"] == {"2026-10-01": 15, "2026-10-02": 15} and cohort["undated_journeys_before_cut"] == 0
     assert report["baseline_ready"] is True and missing == []
     assert cohort["completion_rate"] == 1.0 and report["completion_rate"] == 1.0
     assert report["baseline"]["window"] == {"from": "2026-10-01", "from_source": "option", "until": "2026-10-31",
@@ -469,14 +469,14 @@ def test_baseline_ready_needs_thirty_dated_journeys_on_two_dates_inside_the_m1_w
     # رحلةٌ بلا تاريخ قد تقع في النافذة: الفوجُ ناقصٌ ونسبتُه مجهولة، وإن بقيت المجاميعُ التراكمية كاملة
     place(*one[:2], DAY_ONE, DAY_ONE + DAY)
     report, cohort, missing = baseline()
-    assert cohort["undated_journeys_in_window"] == 1 and missing == ["undated_journeys_in_window", "too_few_dated_journeys"]
+    assert cohort["undated_journeys_before_cut"] == 1 and missing == ["undated_journeys_before_cut", "too_few_dated_journeys"]
     assert (cohort["completion_rate"], cohort["completion_rate_unavailable_reason"]) == \
-        (None, "undated_journeys_in_window")
+        (None, "undated_journeys_before_cut")
     assert report["completion_rate"] == 1.0
     # ورحلةٌ بلا تاريخ امتدّت جلستُها يومين قبل النافذة كلِّها لا تحجبها
     place(*one[:2], DAY_ONE - 5 * DAY, DAY_ONE - 4 * DAY)
     report, cohort, missing = baseline()
-    assert cohort["undated_journeys_in_window"] == 0 and missing == ["too_few_dated_journeys"]
+    assert cohort["undated_journeys_before_cut"] == 0 and missing == ["too_few_dated_journeys"]
     # مشروعٌ لا يُقرأ يحجب خطَّ الأساس ولو بلغ الفوجُ حدَّه، ويجعل النسبتين مجهولتين
     place(*one[:2], DAY_ONE + DAY, DAY_ONE + DAY + 60)
     (root / "projects" / "not-an-identifier").mkdir()
@@ -484,6 +484,102 @@ def test_baseline_ready_needs_thirty_dated_journeys_on_two_dates_inside_the_m1_w
     assert report["unreadable"]["projects"] == 1 and cohort["journeys"] == 30 and cohort["distinct_dates"] == 2
     assert report["baseline_ready"] is False and missing == ["unreadable_entries"]
     assert report["completion_rate"] is None and cohort["completion_rate"] is None
+
+
+@pytest.fixture(scope="module")
+def cohort_store(tmp_path_factory):
+    """جلساتٌ نصّية بأدوارٍ يضع الاختبارُ أزمنتَها: A ١٢ (١٠ منجزة ثم ٢ مبتورة)، وB ١٢ منجزة، وC ٦ (٥ منجزة ثم مبتورة)،
+    وD ٥ مبتورة، وE ٣ معطوبة، وF وG رحلةٌ منجزة لكلٍّ."""
+    root = tmp_path_factory.mktemp("cohort").resolve() / "ui"
+    provider = Provider()
+    app = LocalApp(root, model="fixture", model_version=VERSION, provider_factory=lambda: provider)
+    plan = {"A": ["complete"] * 10 + ["truncated"] * 2, "B": ["complete"] * 12, "C": ["complete"] * 5 + ["truncated"],
+            "D": ["truncated"] * 5, "E": ["error"] * 3, "F": ["complete"], "G": ["complete"]}
+    reply = {"complete": lambda: respond("تم."), "truncated": lambda: respond("تم.", stop="max_output"),
+             "error": lambda: respond("", stop="error")}
+    roles = {}
+    try:
+        project = app.dispatch({"action": "create_project", "name": "م"})["id"]
+        for role, outcomes in plan.items():
+            roles[role] = app.dispatch({"action": "create_session", "project": project, "name": role,
+                                        "mode": "text"})["id"]
+            for outcome in outcomes:
+                provider.responses.append(reply[outcome]())
+                result = app.dispatch({"action": "ask", "project": project, "session": roles[role],
+                                       "turn": uuid.uuid4().hex, "message": "سؤال", "files": []})
+                assert result["status"] == outcome
+    finally:
+        app.close()
+    return root, project, roles
+
+
+HOUR = 3600
+# اليومُ الأول: A ثم B؛ والثاني: C ثم D؛ والثالث: E؛ وF امتدّت من الثالث إلى الرابع، وG من الأول إلى الثاني
+COHORT_TIMES = {"A": (DAY_ONE, DAY_ONE + HOUR / 2), "B": (DAY_ONE + HOUR, DAY_ONE + 1.5 * HOUR),
+                "C": (DAY_ONE + DAY - HOUR, DAY_ONE + DAY - HOUR / 2), "D": (DAY_ONE + DAY, DAY_ONE + DAY + HOUR / 2),
+                "E": (DAY_ONE + 2 * DAY, DAY_ONE + 2 * DAY + HOUR / 2), "F": (DAY_ONE + 2 * DAY + HOUR, DAY_ONE + 3 * DAY),
+                "G": (DAY_ONE + 2 * HOUR, DAY_ONE + DAY + 2 * HOUR)}
+
+
+def placed(store, tmp_path, *, drop=(), **moved) -> Path:
+    """نسخةٌ من المخزن بلا جلسات `drop`، وأزمنةُ كلِّ جلسةٍ من COHORT_TIMES أو ممّا مُرِّر لها."""
+    source, project, roles = store
+    root = tmp_path / f"cohort-{uuid.uuid4().hex[:6]}"
+    shutil.copytree(source, root)
+    sessions = root / "projects" / project / "sessions"
+    for role, session in roles.items():
+        if role in drop:
+            shutil.rmtree(sessions / session)
+            continue
+        created, last = moved.get(role, COHORT_TIMES[role])
+        os.utime(sessions / session / "meta.json", (created, created))
+        os.utime(sessions / session / "chat" / session / "state.json", (last, last))
+    return root
+
+
+def members_of(report) -> list[tuple]:
+    return sorted((j["baseline_position"], j["date"], j["status"]) for j in report["journeys"]
+                  if j["baseline_position"] is not None)
+
+
+def test_the_baseline_is_exactly_the_first_thirty_and_later_journeys_do_not_move_it(cohort_store, tmp_path, capsys,
+                                                                                    monkeypatch):
+    # ٣٥ رحلةً في النافذة (A وB في اليوم الأول، وC وD في الثاني): الفوجُ أولُ ثلاثين، A وB وC، لا كلُّ الخمس والثلاثين
+    first = report_of(placed(cohort_store, tmp_path, drop="EFG"), tmp_path, capsys, *WINDOW)
+    cohort = first["baseline"]["cohort"]
+    assert (cohort["journeys"], cohort["window_dated_journeys"], cohort["cut_date"]) == (30, 35, "2026-10-02")
+    assert cohort["by_date"] == {"2026-10-01": 24, "2026-10-02": 6} and cohort["cut_order_known"] is True
+    assert cohort["by_outcome"]["completed"] == 27 and cohort["by_outcome"]["truncated"] == 3
+    assert cohort["completion_rate"] == 0.9 and first["completion_rate"] == round(27 / 35, 4)
+    assert first["baseline_ready"] is True and first["baseline"]["missing"] == []
+    assert [position for position, _, _ in members_of(first)] == list(range(1, 31))
+    # ترتيبُ قراءة الدليل لا يغيّر شيئًا
+    listed = journeys._entries
+    monkeypatch.setattr(journeys, "_entries", lambda fd: list(reversed(listed(fd))))
+    assert report_of(placed(cohort_store, tmp_path, drop="EFG"), tmp_path, capsys, *WINDOW) == first
+    monkeypatch.undo()
+    # رحلاتٌ بعد القطع (E في اليوم الثالث، وF بلا تاريخٍ بين الثالث والرابع) لا تمسّ أعضاءَه ولا نسبتَه
+    later = report_of(placed(cohort_store, tmp_path, drop="G"), tmp_path, capsys, *WINDOW)
+    assert members_of(later) == members_of(first) and later["baseline"]["cohort"]["completion_rate"] == 0.9
+    assert later["baseline"]["cohort"]["window_dated_journeys"] == 38 and later["baseline_ready"] is True
+    assert later["baseline"]["cohort"]["undated_journeys_before_cut"] == 0
+    # وG بلا تاريخٍ بين اليوم الأول والثاني قد تكون من الثلاثين: لا يُخمَّن موضعُها
+    blocked = report_of(placed(cohort_store, tmp_path), tmp_path, capsys, *WINDOW)
+    assert blocked["baseline_ready"] is False and blocked["baseline"]["missing"] == ["undated_journeys_before_cut"]
+    assert blocked["baseline"]["cohort"]["completion_rate"] is None
+    # الفوجُ يتبع زمنَ إنشاء الجلسة لا معرّفَها: D قبل C يومَ القطع فيدخل D كلُّه وأولُ جولةٍ من C (المنجزة)
+    early_d = {"D": COHORT_TIMES["C"], "C": COHORT_TIMES["D"]}
+    swapped = report_of(placed(cohort_store, tmp_path, drop="EFG", **early_d), tmp_path, capsys, *WINDOW)
+    cohort = swapped["baseline"]["cohort"]
+    assert cohort["by_outcome"]["completed"] == 23 and cohort["by_outcome"]["truncated"] == 7
+    assert cohort["completion_rate"] == round(23 / 30, 4) and swapped["baseline_ready"] is True
+    assert members_of(swapped)[-1] == (30, "2026-10-02", "complete")
+    # وقطعٌ بين جلستين تداخلت كتابتُهما في يومه لا يُثبت ترتيبُه: D كُتبت بعد أن أُنشئت C
+    overlap = {"D": (DAY_ONE + DAY - HOUR, DAY_ONE + DAY + HOUR / 4), "C": COHORT_TIMES["D"]}
+    unknown = report_of(placed(cohort_store, tmp_path, drop="EFG", **overlap), tmp_path, capsys, *WINDOW)
+    assert unknown["baseline_ready"] is False and unknown["baseline"]["missing"] == ["baseline_cut_order_unknown"]
+    assert unknown["baseline"]["cohort"]["cut_order_known"] is False
+    assert unknown["baseline"]["cohort"]["completion_rate"] is None
 
 
 def test_the_baseline_window_is_the_m1_phase_the_plan_records_and_is_never_invented(world, tmp_path, capsys,
