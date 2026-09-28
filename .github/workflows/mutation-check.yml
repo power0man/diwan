@@ -1,0 +1,51 @@
+name: mutation-check
+# فاحصُ الطفرات (ق٦٧-٦): «قُتلت الطفرة» يُثبَت بالآلة. على كلِّ طلبٍ تُطبَّق بياناتُ الطفرات التي تغيّرت في مداه
+# (tests/mutations/*.jsonl) في شجرة عملٍ منفصلة، ويُرفض اختبارٌ مسّه الطلب لا يسمّيه بيانٌ بمعرّفه الكامل. وأسبوعيًّا وعند التشغيل اليدويّ
+# تُطبَّق البياناتُ كلُّها (لا مدى بلا طلب دمج — ملاحظة Codex على #149).
+# بلا أسرار وبصلاحية قراءةٍ وحدها، على المشغّل المستضاف نفسِه الذي يشغّل verify-hosted.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mutation-check:
+    runs-on: ubuntu-latest
+    # المدى الكامل لطلبٍ كبير (باقةُ الفاحص نفسِه نحو سبعين طفرة تشغّل git وpytest) استغرق محليًّا نحو عشر دقائق، وعلى المشغّل
+    # المستضاف أبطأُ؛ والتشغيلُ الأساسيّ وحده تجاوز ٣٠٠ ثانية فيه (تشغيلةُ #149 على d80c46e)، فمهلةُ كلِّ تشغيلٍ ١٢٠٠ ثانية
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install the locked runtime
+        run: |
+          set -eu
+          python3 -m pip install --user 'uv==0.8.17'
+          "$HOME/.local/bin/uv" python install 3.14
+          "$HOME/.local/bin/uv" sync --frozen --python 3.14 --extra dev
+      - name: Apply the mutations of this range (or all of them)
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          # على طلب الدمج github.sha هو إيداعُ الدمج المرتقَب (refs/pull/N/merge) لا رأسُ الفرع: فتُطبَّق الطفراتُ على الشجرة
+          # التي ستُدمج فعلًا، وتغييرٌ متوافقٌ في الأساس يُبطل طفرةً لا يفلت (ملاحظة Codex على #149)
+          HEAD: ${{ github.sha }}
+        run: |
+          set -eu
+          report="$RUNNER_TEMP/mutation-check.json"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            .venv/bin/python tools/mutation_check.py --range "$BASE..$HEAD" --head "$HEAD" --report "$report" --timeout-s 1200
+          else
+            .venv/bin/python tools/mutation_check.py --all --head "$HEAD" --report "$report" --timeout-s 1200
+          fi

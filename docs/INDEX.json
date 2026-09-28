@@ -3,7 +3,7 @@
  "codex_project_doc_max_bytes": 32768,
  "documents": [
   {
-   "bytes": 29775,
+   "bytes": 30265,
    "headings": [
     {
      "level": 2,
@@ -42,32 +42,32 @@
     },
     {
      "level": 2,
-     "line": 204,
+     "line": 206,
      "title": "٦ — متى تتوقف وتسأل المالك"
     },
     {
      "level": 2,
-     "line": 218,
+     "line": 220,
      "title": "٧ — الذكاءات الخارجية: كيف تعمل دون أن ترى المستودع"
     },
     {
      "level": 2,
-     "line": 253,
+     "line": 255,
      "title": "٨ — خريطة المستودع"
     },
     {
      "level": 2,
-     "line": 274,
+     "line": 276,
      "title": "٩ — حدود هذا الملف"
     }
    ],
-   "lines": 284,
+   "lines": 286,
    "path": "AGENTS.md",
    "purpose": "الأدوار والقواعد وبروتوكول البدء، وما بقي مفتوحًا من جدول §٣",
    "read_when": "كل جلسة، كاملًا",
    "role": "حاكمة",
-   "sha256_12": "9125b356f37d",
-   "tokens_estimate": 6323
+   "sha256_12": "8b5c854de41c",
+   "tokens_estimate": 6432
   },
   {
    "bytes": 22893,
