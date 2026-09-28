@@ -40,7 +40,7 @@
 
 <!-- generated:context-index:begin -->
 > **فهرسُ السياق** (`docs/INDEX.md`، مولَّد بـ`tools/context_index.py`؛ لا يُحرَّر يدويًّا). المفتوحُ من §٣: ك٦ (Claude؛ مفتوحة)، ع٢ (أيّ عميلٍ على Nitro؛ مفتوحة)، ك١٧ (Claude؛ مفتوحة)، ك٣٧ (Claude؛ مفتوحة).
-> بصماتُ الوثائق الحاكمة: `docs/STATUS.md` `dc9ef758adee` · `docs/VISION.md` `df9b1b18e0bb` · `docs/DECISIONS.md` `0f792908ea40` · `docs/PLAN-20260926.md` `41058022bf04`؛ وآخرُ قرار ق٦٧.
+> بصماتُ الوثائق الحاكمة: `docs/STATUS.md` `dc9ef758adee` · `docs/VISION.md` `df9b1b18e0bb` · `docs/DECISIONS.md` `0f792908ea40` · `docs/PLAN-20260926.md` `7a4c416abbb8`؛ وآخرُ قرار ق٦٧.
 > بصمةٌ تغيّرت عمّا رأيتَه في جلستك السابقة تعني أن الوثيقة تغيّرت فتُقرأ من الفهرس؛ وما لم يتغيّر لا يُعاد.
 <!-- generated:context-index:end -->
 
