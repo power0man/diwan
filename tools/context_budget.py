@@ -308,14 +308,18 @@ def load_tokenizers(named: list[str], files: list[str]) -> tuple[dict[str, Count
 
 def tree_state(root: Path) -> dict:
     """حالةُ شجرة العمل: نصوصُ التشغيل تُستورد من الشجرة لا من HEAD، فتعديلٌ غيرُ مودَع يُنسب إلى إيداعٍ ليس إيداعَه
-    (ملاحظة Codex على #157). الملفّاتُ غيرُ المتتبَّعة لا تُعدّ لأنها لا تُستورد إلا بالاسم؛ وتعذُّرُ git حالةٌ مجهولة لا نظيفة."""
+    (ملاحظة Codex على #157). والملفّاتُ غيرُ المتتبَّعة تُعدّ إن كانت بايثون: `tools/` أولُ `sys.path` فملفٌّ غيرُ متتبَّع مثل
+    `tools/webui/server.py` يحجب `webui.server` الحقيقيَّ ويُقاس سجلُّ أدواتٍ آخر باسم HEAD والحالةُ «نظيفة» (ملاحظة Codex
+    الثانية على #157)؛ وغيرُ البايثون (تقريرٌ يُكتب بجانب الشجرة) لا يُستورد فلا يُعدّ. وتعذُّرُ git حالةٌ مجهولة لا نظيفة."""
     try:
-        out = subprocess.run(["git", "-C", str(root), "status", "--porcelain", "--untracked-files=no"],
+        out = subprocess.run(["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all"],
                              capture_output=True, text=True, check=True).stdout
     except (OSError, subprocess.CalledProcessError) as exc:
-        return {"dirty": None, "changed_paths": [], "error": type(exc).__name__}
-    paths = sorted(line[3:] for line in out.splitlines() if line.strip())
-    return {"dirty": bool(paths), "changed_paths": paths}
+        return {"dirty": None, "changed_paths": [], "untracked_python": [], "error": type(exc).__name__}
+    entries = [(line[:2], line[3:]) for line in out.splitlines() if line.strip()]
+    changed = sorted(path for status, path in entries if status != "??")
+    untracked = sorted(path for status, path in entries if status == "??" and path.endswith((".py", ".pth")))
+    return {"dirty": bool(changed or untracked), "changed_paths": changed, "untracked_python": untracked}
 
 
 def main(argv=None) -> int:

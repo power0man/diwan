@@ -248,6 +248,27 @@ def test_a_dirty_tree_is_refused_by_the_cli_and_recorded_by_the_audit(monkeypatc
         assert cb.audit(ROOT, {"ws": _ws})["tree_state"] == state, "المكتبةُ تسجّل الحالةَ ولا ترفض؛ سطرُ الأوامر هو الذي ينشر"
 
 
+def test_an_untracked_python_file_makes_the_tree_dirty_but_an_untracked_report_does_not(tmp_path):
+    """ملاحظةُ Codex الثانية على #157: `--untracked-files=no` كان يترك `tools/webui/server.py` غيرَ المتتبَّع يحجب
+    `webui.server` والحالةُ «نظيفة»؛ ملفُّ بايثون غيرُ متتبَّع يُعدّ، وتقريرٌ غيرُ متتبَّع لا يُستورد فلا يُعدّ."""
+    import subprocess
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    run = lambda *args: subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True, text=True)
+    run("init", "-q")
+    run("-c", "user.name=t", "-c", "user.email=t@x", "commit", "-q", "--allow-empty", "-m", "root")
+    assert cb.tree_state(repo) == {"dirty": False, "changed_paths": [], "untracked_python": []}
+    (repo / "report.json").write_text("{}", encoding="utf-8")
+    assert cb.tree_state(repo)["dirty"] is False
+    (repo / "tools" / "webui").mkdir(parents=True)
+    (repo / "tools" / "webui" / "server.py").write_text("LocalApp = None\n", encoding="utf-8")
+    state = cb.tree_state(repo)
+    assert state["dirty"] is True and state["untracked_python"] == ["tools/webui/server.py"] and state["changed_paths"] == []
+    (repo / "tracked.txt").write_text("a", encoding="utf-8")
+    run("add", "tracked.txt")
+    assert cb.tree_state(repo)["changed_paths"] == ["tracked.txt"]
+
+
 def test_the_cli_writes_the_report_and_summarises_it(monkeypatch, tmp_path, capsys):
     _fake_tokenizers(monkeypatch)
     hub_file, _ = _fake_hub(monkeypatch, tmp_path)
