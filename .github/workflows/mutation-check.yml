@@ -1,11 +1,9 @@
 name: mutation-check
-# فاحصُ الطفرات (ق٦٧-٦): «قُتلت الطفرة» يُثبَت بالآلة. على كلِّ طلبٍ تُطبَّق بياناتُ الطفرات التي تغيّرت في مداه
-# (tests/mutations/*.jsonl) في شجرة عملٍ منفصلة، ويُرفض اختبارٌ مسّه الطلب لا يسمّيه بيانٌ بمعرّفه الكامل. وأسبوعيًّا وعند التشغيل اليدويّ
-# تُطبَّق البياناتُ كلُّها (لا مدى بلا طلب دمج — ملاحظة Codex على #149).
+# فاحصُ الطفرات (ق٦٧-٦) بالبيانات كلِّها (tests/mutations/*.jsonl) أسبوعيًّا وعند التشغيل اليدويّ، بلا خيارِ مدًى لا أساسَ له
+# (ملاحظة Codex على #149). أمّا على طلبات الدمج فالفاحصُ خطوةٌ في الفحص الإلزاميّ verify نفسِه (verify-hosted.yml) على مدى
+# الطلب وإيداعِ الدمج المرتقَب — قرارُ المالك في ٢٨ سبتمبر ٢٠٢٦ أن يكون مطلوبًا، فصار مطلوبًا بالبناء ولا يعمل هنا مرّتين.
 # بلا أسرار وبصلاحية قراءةٍ وحدها، على المشغّل المستضاف نفسِه الذي يشغّل verify-hosted.
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
   schedule:
     - cron: "23 5 * * 1"
   workflow_dispatch:
@@ -34,18 +32,9 @@ jobs:
           python3 -m pip install --user 'uv==0.8.17'
           "$HOME/.local/bin/uv" python install 3.14
           "$HOME/.local/bin/uv" sync --frozen --python 3.14 --extra dev
-      - name: Apply the mutations of this range (or all of them)
+      - name: Apply every mutation manifest
         env:
-          EVENT_NAME: ${{ github.event_name }}
-          BASE: ${{ github.event.pull_request.base.sha }}
-          # على طلب الدمج github.sha هو إيداعُ الدمج المرتقَب (refs/pull/N/merge) لا رأسُ الفرع: فتُطبَّق الطفراتُ على الشجرة
-          # التي ستُدمج فعلًا، وتغييرٌ متوافقٌ في الأساس يُبطل طفرةً لا يفلت (ملاحظة Codex على #149)
           HEAD: ${{ github.sha }}
         run: |
           set -eu
-          report="$RUNNER_TEMP/mutation-check.json"
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            .venv/bin/python tools/mutation_check.py --range "$BASE..$HEAD" --head "$HEAD" --report "$report" --timeout-s 1200
-          else
-            .venv/bin/python tools/mutation_check.py --all --head "$HEAD" --report "$report" --timeout-s 1200
-          fi
+          .venv/bin/python tools/mutation_check.py --all --head "$HEAD" --report "$RUNNER_TEMP/mutation-check.json" --timeout-s 1200

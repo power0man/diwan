@@ -1131,14 +1131,22 @@ def test_a_bare_function_selector_is_killed_only_when_every_collected_case_fails
     _clean(repo, git)
 
 
-def test_the_workflow_applies_mutations_to_the_prospective_merge_commit_not_the_pr_head():
-    """على طلب الدمج يبني CI شجرةَ العمل من إيداع الدمج المرتقَب (github.sha) لا من رأس الفرع، فتغييرٌ متوافقٌ في الأساس
-    يُبطل طفرةً لا يفلت حتى الأسبوعيّ (ملاحظة Codex على #149)."""
-    text = (ROOT / ".github/workflows/mutation-check.yml").read_text(encoding="utf-8")
-    assert "HEAD: ${{ github.sha }}" in text and "pull_request.head.sha" not in text
-    assert 'HEAD: ${{ github.sha }}' in text and 'BASE: ${{ github.event.pull_request.base.sha }}' in text
-    # والتشغيلُ اليدويّ كلُّ البيانات بلا خيارٍ يعد بمدًى لا أساسَ له (ملاحظة Codex على #149)
-    assert "inputs:" not in text and 'if [ "$EVENT_NAME" = "pull_request" ]; then' in text
+def test_the_mutation_check_is_a_step_of_the_required_verify_check_on_the_prospective_merge_commit():
+    """قرارُ المالك في ٢٨ سبتمبر ٢٠٢٦: فاحصُ الطفرات مطلوبٌ على main. حمايةُ main تشترط الفحصَ `verify` (docs/guides/G1.md)،
+    فالفاحصُ خطوةٌ في مهمّة verify نفسِها في verify-hosted.yml — مطلوبٌ بالبناء لا بإعدادٍ في الواجهة — على مدى الإسناد نفسِه
+    وعلى إيداع الدمج المرتقَب (github.sha) لا رأس الفرع (ملاحظة Codex على #149)، وبلا مدًى البياناتُ كلُّها. وسيرُ
+    mutation-check.yml لا يعمل على الطلبات (فلا تشغيلَ مزدوج) بل أسبوعيًّا ويدويًّا بالبيانات كلِّها بلا خيارٍ يعد بمدًى لا أساسَ له."""
+    import re
+    hosted = (ROOT / ".github/workflows/verify-hosted.yml").read_text(encoding="utf-8")
+    jobs = hosted.index("\njobs:\n  verify:\n")
+    step = hosted.index('tools/mutation_check.py --range "$RANGE" --head "$HEAD" --report "$report" --timeout-s 1200')
+    assert step > jobs and re.findall(r"^  ([\w-]+):\s*$", hosted[jobs:step], re.M) == ["verify"]      # في المهمّة الإلزامية نفسِها
+    assert "          HEAD: ${{ github.sha }}" in hosted and "pull_request.head.sha" not in hosted
+    assert "RANGE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}" in hosted   # مدى الإسناد نفسُه
+    assert '*..*) .venv/bin/python tools/mutation_check.py --range "$RANGE"' in hosted and '*)    .venv/bin/python tools/mutation_check.py --all --head "$HEAD"' in hosted
+    weekly = (ROOT / ".github/workflows/mutation-check.yml").read_text(encoding="utf-8")
+    assert "pull_request" not in weekly and "inputs:" not in weekly and "--range" not in weekly
+    assert 'tools/mutation_check.py --all --head "$HEAD"' in weekly and "HEAD: ${{ github.sha }}" in weekly
 
 
 def test_a_collection_error_is_invalid_not_a_kill(repo, capsys, git):
