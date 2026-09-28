@@ -58,6 +58,8 @@ PREFIX_SHARE_WARNING = 0.10    # نصيبُ سابقة التشغيل من ال�
 LIMITS = [
     "the_tokenizers_named_are_public_stand_ins_for_the_agents_that_read_section_0_since_claude_codex_and_gemini_tokenizers_are_not_public",
     "the_runtime_prefix_counts_fixed_texts_only_the_memory_block_attachments_quarantine_findings_and_history_vary_per_turn_and_are_not_counted",
+    "tool_registries_are_built_by_the_web_app_itself_per_named_configuration_of_execution_search_analysis_and_mode_the_headline_is_the_minimal_one_ci_and_the_sandbox_see",
+    "reading_set_entries_carry_sha256_12_so_a_report_can_be_tied_to_the_exact_texts_it_measured",
     "tool_schemas_are_counted_as_the_json_the_provider_serializes_not_as_the_engine_s_own_chat_template_renders_them",
     "special_tokens_and_chat_template_framing_are_excluded_so_measured_totals_are_lower_bounds_of_what_the_engine_sees",
     "the_arabic_token_tax_is_one_fixed_paragraph_pair_not_a_corpus_statistic",
@@ -88,32 +90,74 @@ def _sum(entries: dict[str, dict], counters: dict[str, Counter]) -> dict:
 
 def reading_set(root: Path, counters: dict[str, Counter]) -> dict[str, dict]:
     """مجموعةُ قراءة §٠ كما يسمّيها الفهرس، بنصّها على القرص عند التشغيل."""
-    return {path: _text_entry((root / path).read_text(encoding="utf-8"), counters)
-            for path in context_index.READING_SET if (root / path).is_file()}
+    found = {}
+    for path in context_index.READING_SET:
+        if (root / path).is_file():
+            text = (root / path).read_text(encoding="utf-8")
+            found[path] = {**_text_entry(text, counters), "sha256_12": hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]}
+    return found
 
 
-def runtime_texts() -> dict[str, dict[str, str]]:
-    """النصوصُ الثابتة التي تسبق رسالةَ المستخدم على الطريقين، من وحدات المنتج نفسِها لا من نسخٍ مكتوبة هنا."""
-    from agent.builtin_tools import DEFAULT_TOOLS
+CONFIGURATIONS = (
+    # (الاسم، التنفيذُ مفعّل، البحثُ مضبوط، التحليلُ مفعّل، النمط) — كلُّ تهيئةٍ يبنيها التطبيقُ نفسُه (`LocalApp.mode_registry`)
+    ("agent_minimal", False, False, False, "agent"),
+    ("agent_execution", True, False, False, "agent"),
+    ("agent_search", False, True, False, "agent"),
+    ("agent_analysis", False, False, True, "agent"),
+    ("agent_full", True, True, True, "agent"),
+    ("coder", False, False, False, "coder"),
+    ("coder_execution", True, False, False, "coder"),
+    ("research", False, True, False, "research"),
+    ("translate", False, False, False, "translate"),
+)
+HEADLINE = "agent_minimal"      # التهيئةُ التي يراها CI والصندوق (بلا Docker ولا محرّك بحث)؛ الأثقلُ agent_full
+
+
+def _registries() -> dict[str, tuple]:
+    """مخطّطاتُ الأدوات كما يبنيها التطبيقُ نفسُه لكل تهيئة: `LocalApp` حقيقيّ في مجلّدٍ مؤقّت، ومشروعٌ يُنشأ بواجهته، ثم
+    `mode_registry` بعد ضبط أعلام الخُلفيّات (التنفيذُ والتحليل) في سجلّ المشروع ومحرّكِ البحث في التطبيق — لا نسخةٌ من
+    قائمة الأدوات تُكتب هنا (ملاحظة Codex على #157)."""
+    import tempfile
+    from webui.server import LocalApp
+
+    def provider():
+        raise RuntimeError("لا يُنادى مزوّدٌ في القياس")
+
+    found: dict[str, tuple] = {}
+    with tempfile.TemporaryDirectory(prefix="diwan-context-budget-") as tmp:
+        apps = {searched: LocalApp(Path(tmp) / ("s" if searched else "n"), model="context-budget", model_version="0" * 64,
+                                   provider_factory=provider, agent_provider_factory=provider,
+                                   web_search=object() if searched else None)
+                for searched in (False, True)}
+        for name, execution, searched, analysis, mode in CONFIGURATIONS:
+            app = apps[searched]
+            project = app.project(app.dispatch({"action": "create_project", "name": f"budget-{name}"})["id"])
+            app.agent_workspace(project)
+            app.agent_backends[project.name].update(execution_enabled=execution, analysis_enabled=analysis)
+            found[name] = app.mode_registry(project, mode).specs()
+    return found
+
+
+def runtime_texts() -> dict:
+    """النصوصُ الثابتة التي تسبق رسالةَ المستخدم على الطريقين، من وحدات المنتج نفسِها لا من نسخٍ مكتوبة هنا: نصوصُ النظام
+    بأنماطها، ومخطّطاتُ الأدوات لكل تهيئةٍ كما يبنيها التطبيق، وغلافُ المدخل."""
     from agent.coder import CODER_SYSTEM
     from agent.loop import SYSTEM as AGENT_SYSTEM
     from agent.research import RESEARCH_SYSTEM
     from agent.translation import TRANSLATE_SYSTEM
     from conversation.session import SYSTEM as TEXT_SYSTEM
-    from memory.tool import PROPOSE_MEMORY_SPEC
     from providers.ollama_codec import serialize_tools
     from services.agent_workspace import encode_input
 
-    specs = [tool.spec for tool in DEFAULT_TOOLS] + [PROPOSE_MEMORY_SPEC]
-    serialized = serialize_tools(specs)
-    tools = {spec.name: json.dumps(one, ensure_ascii=False) for spec, one in zip(specs, serialized, strict=True)}
-    return {
-        "agent": {"system": AGENT_SYSTEM, "tools": json.dumps(serialized, ensure_ascii=False),
-                  "envelope": encode_input("", [], None)},
-        "agent_tools": tools,
-        "modes": {"coder": CODER_SYSTEM, "research": RESEARCH_SYSTEM, "translate": TRANSLATE_SYSTEM},
-        "text": {"system": TEXT_SYSTEM},
-    }
+    systems = {"agent": AGENT_SYSTEM, "coder": CODER_SYSTEM, "research": RESEARCH_SYSTEM, "translate": TRANSLATE_SYSTEM}
+    configurations = {}
+    for name, specs in _registries().items():
+        mode = next(c[4] for c in CONFIGURATIONS if c[0] == name)
+        serialized = serialize_tools(specs)
+        configurations[name] = {"mode": mode, "system": systems[mode], "tools": json.dumps(serialized, ensure_ascii=False),
+                                "tool_names": [spec.name for spec in specs],
+                                "each_tool": {spec.name: json.dumps(one, ensure_ascii=False) for spec, one in zip(specs, serialized, strict=True)}}
+    return {"configurations": configurations, "envelope": encode_input("", [], None), "text_system": TEXT_SYSTEM}
 
 
 def context_window() -> int:
@@ -134,18 +178,19 @@ def _findings(report: dict) -> list[dict]:
             found.append({"code": "index_estimate_drifts_from_measured", "tokenizer": name,
                           "estimate": totals["tokens_estimate"], "measured": measured,
                           "ratio": round(totals["tokens_estimate"] / measured, 3), "threshold": ESTIMATE_DRIFT})
-    for name, share in report["runtime_prefix"]["agent"]["share_of_context_window"].items():
-        if share > PREFIX_SHARE_WARNING:
-            found.append({"code": "agent_prefix_share_of_window_high", "tokenizer": name, "share": share,
-                          "threshold": PREFIX_SHARE_WARNING})
-    tools = report["runtime_prefix"]["agent_tools"]
+    for configuration, entry in report["runtime_prefix"]["configurations"].items():
+        for name, share in entry["share_of_context_window"].items():
+            if share > PREFIX_SHARE_WARNING:
+                found.append({"code": "prefix_share_of_window_high", "configuration": configuration, "tokenizer": name,
+                              "share": share, "threshold": PREFIX_SHARE_WARNING})
+    tools = report["runtime_prefix"]["configurations"][HEADLINE]["each_tool"]
     for name in report["tokenizers"]:
         costliest = max(tools, key=lambda t: tools[t]["tokens"][name]) if tools else None
         if costliest:
-            found.append({"code": "costliest_tool_schema", "tokenizer": name, "tool": costliest,
+            found.append({"code": "costliest_tool_schema", "configuration": HEADLINE, "tokenizer": name, "tool": costliest,
                           "tokens": tools[costliest]["tokens"][name],
                           "share_of_tools": round(tools[costliest]["tokens"][name]
-                                                  / max(1, report["runtime_prefix"]["agent"]["tools"]["tokens"][name]), 3)})
+                                                  / max(1, report["runtime_prefix"]["configurations"][HEADLINE]["tools"]["tokens"][name]), 3)})
     return found
 
 
@@ -157,21 +202,23 @@ def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str,
     window = context_window() if window is None else window
     texts = runtime_texts()
     reading = reading_set(root, counters)
-    agent = {key: _text_entry(text, counters) for key, text in texts["agent"].items()}
-    agent_total = {name: sum(e["tokens"][name] for e in agent.values()) for name in counters}
+    envelope = _text_entry(texts["envelope"], counters)
+    configurations = {}
+    for name, entry in texts["configurations"].items():
+        system, tools = _text_entry(entry["system"], counters), _text_entry(entry["tools"], counters)
+        total = {tok: system["tokens"][tok] + tools["tokens"][tok] + envelope["tokens"][tok] for tok in counters}
+        configurations[name] = {"mode": entry["mode"], "tool_names": entry["tool_names"], "system": system, "tools": tools,
+                                "each_tool": {tool: _text_entry(text, counters) for tool, text in entry["each_tool"].items()},
+                                "total_tokens": total,
+                                "share_of_context_window": {tok: round(n / window, 4) for tok, n in total.items()}}
     report = {
         "schema_version": SCHEMA_VERSION, "tool": TOOL,
         "generated_at": _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat(),
         "commit": _commit(root), "tokenizers": tokenizer_sources or {name: {"source": "injected"} for name in counters},
         "context_window_tokens": window,
         "reading_set": reading, "reading_set_totals": _sum(reading, counters),
-        "runtime_prefix": {
-            "agent": {**agent, "total_tokens": agent_total,
-                      "share_of_context_window": {name: round(n / window, 4) for name, n in agent_total.items()}},
-            "agent_tools": {name: _text_entry(text, counters) for name, text in texts["agent_tools"].items()},
-            "modes": {mode: _text_entry(text, counters) for mode, text in texts["modes"].items()},
-            "text": {key: _text_entry(text, counters) for key, text in texts["text"].items()},
-        },
+        "runtime_prefix": {"headline": HEADLINE, "envelope": envelope, "configurations": configurations,
+                           "text": {"system": _text_entry(texts["text_system"], counters)}},
         "arabic_token_tax": {name: _token_tax(count) for name, count in counters.items()},
         "thresholds": {"estimate_drift": ESTIMATE_DRIFT, "prefix_share_warning": PREFIX_SHARE_WARNING},
         "measurement_limits": list(LIMITS),
@@ -239,7 +286,7 @@ def main(argv=None) -> int:
     if args.report:
         args.report.write_text(text, encoding="utf-8")
     summary = {"status": "measured", "tokenizers": sorted(counters), "reading_set_tokens": report["reading_set_totals"]["tokens"],
-               "agent_prefix_tokens": report["runtime_prefix"]["agent"]["total_tokens"],
+               "prefix_tokens": {name: c["total_tokens"] for name, c in report["runtime_prefix"]["configurations"].items()},
                "findings": [f["code"] for f in report["findings"]], "report": str(args.report) if args.report else None}
     print(json.dumps(summary, ensure_ascii=False))
     return 0

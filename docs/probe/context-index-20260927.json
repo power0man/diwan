@@ -50,8 +50,8 @@
         "tokens_estimate": 7903
       },
       "docs/INDEX.md": {
-        "bytes": 19017,
-        "tokens_estimate": 5035
+        "bytes": 18458,
+        "tokens_estimate": 4877
       },
       "docs/VISION.md": {
         "bytes": 10397,
@@ -59,8 +59,8 @@
       }
     },
     "reading_set_total": {
-      "bytes": 59189,
-      "tokens_estimate": 15421
+      "bytes": 58630,
+      "tokens_estimate": 15263
     },
     "archived_rows": 41,
     "open_rows_in_agents_md": 4,
@@ -111,10 +111,6 @@
     "docs/EVALUATION-20260925.md": {
       "bytes": 38324,
       "tokens_estimate": 9899
-    },
-    "docs/CONTEXT-BUDGET-AUDIT-20260927.md": {
-      "bytes": 9657,
-      "tokens_estimate": 2526
     },
     "docs/AGENT-ONBOARD-REFUTE.md": {
       "bytes": 7831,

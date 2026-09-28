@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import types
@@ -36,6 +37,7 @@ def test_the_reading_set_is_the_index_s_reading_set_measured_by_every_named_coun
         text = (ROOT / path).read_text(encoding="utf-8")
         assert entry["tokens"] == {"ws": _ws(text), "thirds": _thirds(text)} and entry["tokens_estimate"] == _thirds(text)
         assert entry["estimate_ratio"]["thirds"] == 1.0 and entry["chars_per_token"]["thirds"] == round(len(text) / _thirds(text), 2)
+        assert entry["sha256_12"] == hashlib.sha256(text.encode("utf-8")).hexdigest()[:12], "البصمةُ تربط التقريرَ بالنصّ المقيس"
 
 
 def test_no_counter_is_refused_not_estimated(capsys):
@@ -53,13 +55,17 @@ def test_totals_and_the_share_of_the_window_are_sums_and_ratios():
     assert report["reading_set_totals"] == {"bytes": sum(e["bytes"] for e in reading.values()),
                                             "tokens_estimate": sum(e["tokens_estimate"] for e in reading.values()),
                                             "tokens": {"ws": sum(e["tokens"]["ws"] for e in reading.values())}}
-    agent = report["runtime_prefix"]["agent"]
-    total = agent["system"]["tokens"]["ws"] + agent["tools"]["tokens"]["ws"] + agent["envelope"]["tokens"]["ws"]
-    assert agent["total_tokens"] == {"ws": total} and report["context_window_tokens"] == 1000
-    assert agent["share_of_context_window"] == {"ws": round(total / 1000, 4)}
+    prefix = report["runtime_prefix"]
+    assert prefix["headline"] == cb.HEADLINE and report["context_window_tokens"] == 1000
+    for configuration in prefix["configurations"].values():
+        total = configuration["system"]["tokens"]["ws"] + configuration["tools"]["tokens"]["ws"] + prefix["envelope"]["tokens"]["ws"]
+        assert configuration["total_tokens"] == {"ws": total}
+        assert configuration["share_of_context_window"] == {"ws": round(total / 1000, 4)}
 
 
-def test_the_runtime_prefix_comes_from_the_product_modules_not_from_copies():
+def test_the_runtime_prefix_is_built_by_the_web_app_s_own_registries_per_configuration():
+    """ملاحظةُ Codex على #157: مخطّطاتُ الأدوات ليست قائمةً ثابتة؛ التطبيقُ يحذف أداتَي التنفيذ بلا Docker ويضيف البحثَ والتحليل
+    حين يُضبطان ويبني سجلّاتٍ أخرى للأنماط. فتُقاس كلُّ تهيئةٍ كما يبنيها `LocalApp.mode_registry` نفسُه."""
     from agent.builtin_tools import DEFAULT_TOOLS
     from agent.loop import SYSTEM as AGENT_SYSTEM
     from conversation.session import SYSTEM as TEXT_SYSTEM
@@ -67,27 +73,40 @@ def test_the_runtime_prefix_comes_from_the_product_modules_not_from_copies():
 
     report = cb.audit(ROOT, {"chars": _chars})
     prefix = report["runtime_prefix"]
-    assert prefix["agent"]["system"]["chars"] == len(AGENT_SYSTEM) and prefix["text"]["system"]["chars"] == len(TEXT_SYSTEM)
-    expected = [t.spec.name for t in DEFAULT_TOOLS] + ["propose_memory"]
-    assert list(prefix["agent_tools"]) == expected
-    assert sum(e["tokens"]["chars"] for e in prefix["agent_tools"].values()) < prefix["agent"]["tools"]["tokens"]["chars"]
-    assert set(prefix["modes"]) == {"coder", "research", "translate"} and report["context_window_tokens"] == CONTEXT_TOKENS
+    assert list(prefix["configurations"]) == [c[0] for c in cb.CONFIGURATIONS] and report["context_window_tokens"] == CONTEXT_TOKENS
+    names = {name: set(c["tool_names"]) for name, c in prefix["configurations"].items()}
+    defaults = {t.spec.name for t in DEFAULT_TOOLS}
+    assert names["agent_minimal"] == (defaults - {"run_command", "run_tests"}) | {"propose_memory"}
+    assert names["agent_execution"] == defaults | {"propose_memory"}
+    assert names["agent_search"] == names["agent_minimal"] | {"web_search"}
+    assert names["agent_analysis"] == names["agent_minimal"] | {"analyze_data"}
+    assert names["agent_full"] == defaults | {"propose_memory", "web_search", "analyze_data"}
+    assert "run_command" not in names["coder"] and "run_command" in names["coder_execution"] and "propose_memory" not in names["coder"]
+    assert names["research"] == {"web_search"} and names["translate"] == {"check_translation"}
+    for name, configuration in prefix["configurations"].items():
+        assert list(configuration["each_tool"]) == configuration["tool_names"]
+        assert sum(e["tokens"]["chars"] for e in configuration["each_tool"].values()) < configuration["tools"]["tokens"]["chars"]
+    assert prefix["configurations"]["agent_minimal"]["system"]["chars"] == len(AGENT_SYSTEM)
+    assert prefix["text"]["system"]["chars"] == len(TEXT_SYSTEM)
 
 
 def test_findings_are_derived_from_the_numbers_with_their_thresholds():
     exact = cb.audit(ROOT, {"thirds": _thirds}, window=10**9)
     codes = [f["code"] for f in exact["findings"]]
-    assert "index_estimate_drifts_from_measured" not in codes and "agent_prefix_share_of_window_high" not in codes
-    # نافذةٌ تجعل نصيبَ السابقة بين العتبة (١٠٪) والكلّ (١٠٠٪) — ربعَها — فطفرةُ رفع العتبة إلى ١٫٠ تُسقط النتيجةَ ولا تبقيها
-    window = 4 * cb.audit(ROOT, {"ws": _ws}, window=10**9)["runtime_prefix"]["agent"]["total_tokens"]["ws"]
+    assert "index_estimate_drifts_from_measured" not in codes and "prefix_share_of_window_high" not in codes
+    # نافذةٌ تجعل نصيبَ التهيئة الرئيسة بين العتبة (١٠٪) والكلّ (١٠٠٪) — ربعَها — فطفرةُ رفع العتبة إلى ١٫٠ تُسقط النتيجةَ ولا تبقيها
+    window = 4 * cb.audit(ROOT, {"ws": _ws}, window=10**9)["runtime_prefix"]["configurations"][cb.HEADLINE]["total_tokens"]["ws"]
     drift = cb.audit(ROOT, {"ws": _ws}, window=window)
-    by_code = {f["code"]: f for f in drift["findings"]}
-    assert by_code["agent_prefix_share_of_window_high"]["share"] == 0.25
+    by_code = {f["code"]: f for f in drift["findings"] if f.get("configuration") in (None, cb.HEADLINE)}
     assert by_code["index_estimate_drifts_from_measured"]["tokenizer"] == "ws"
     assert by_code["index_estimate_drifts_from_measured"]["ratio"] == round(
         drift["reading_set_totals"]["tokens_estimate"] / drift["reading_set_totals"]["tokens"]["ws"], 3)
-    assert by_code["agent_prefix_share_of_window_high"]["share"] == drift["runtime_prefix"]["agent"]["share_of_context_window"]["ws"]
-    tools = drift["runtime_prefix"]["agent_tools"]
+    assert by_code["prefix_share_of_window_high"]["share"] == 0.25
+    heavy = {f["configuration"] for f in drift["findings"] if f["code"] == "prefix_share_of_window_high"}
+    configurations = drift["runtime_prefix"]["configurations"]
+    assert heavy == {name for name, c in configurations.items() if c["share_of_context_window"]["ws"] > cb.PREFIX_SHARE_WARNING}
+    assert configurations["agent_full"]["share_of_context_window"]["ws"] > configurations[cb.HEADLINE]["share_of_context_window"]["ws"]
+    tools = drift["runtime_prefix"]["configurations"][cb.HEADLINE]["each_tool"]
     assert by_code["costliest_tool_schema"]["tool"] == max(tools, key=lambda t: tools[t]["tokens"]["ws"])
     assert drift["thresholds"] == {"estimate_drift": cb.ESTIMATE_DRIFT, "prefix_share_warning": cb.PREFIX_SHARE_WARNING}
 
@@ -160,10 +179,10 @@ def test_the_cli_writes_the_report_and_summarises_it(monkeypatch, tmp_path, caps
     report = json.loads(out.read_text(encoding="utf-8"))
     assert summary["status"] == "measured" and summary["tokenizers"] == ["fake"] and summary["report"] == str(out)
     assert summary["reading_set_tokens"] == report["reading_set_totals"]["tokens"]
-    assert summary["agent_prefix_tokens"] == report["runtime_prefix"]["agent"]["total_tokens"]
+    assert summary["prefix_tokens"] == {name: c["total_tokens"] for name, c in report["runtime_prefix"]["configurations"].items()}
     assert summary["findings"] == [f["code"] for f in report["findings"]]
     assert report["schema_version"] == cb.SCHEMA_VERSION and report["tool"] == cb.TOOL
-    assert report["measurement_limits"] == cb.LIMITS and len(cb.LIMITS) >= 5
+    assert report["measurement_limits"] == cb.LIMITS and len(cb.LIMITS) >= 7
     assert report["tokenizers"] == {"fake": {"source": "org/model", "loaded_from": "hub"}}
     assert cb.main(["--tokenizer", "fake=gone/model"]) == 2
     assert json.loads(capsys.readouterr().out)["code"] == "tokenizer_unavailable"
