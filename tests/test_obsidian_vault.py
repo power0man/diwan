@@ -371,6 +371,89 @@ def test_deferred_plan_entries_are_labelled_and_leave_the_active_checklist(repo,
     assert any(o["decision"] == "ق٦٨" for o in real.get("overrides", []))
 
 
+def test_a_deferred_role_reaches_its_own_tasks_and_the_mixed_tasks_that_name_it(repo, vault):
+    """ملاحظةُ Codex على #161 (الجولة العاشرة): الخطةُ تؤجّل دورَ `claude-nitro` كلَّه (`agents[].deferred`، ق٦٨)، لكن البناء كان
+    لا يقرأ إلا حقلَ `deferred` في المهمّة نفسِها: فمهمّةٌ مسنَدةٌ إلى الدور بلا حقلٍ باسمها (غ١١) تُعرض نشطة، ومهمّةٌ نشطة لغيره
+    تأمر الدورَ المؤجَّل («وclaude-nitro يركّبه على ويندوز (`winget …`)» في جديد-obsidian-setup) تُعرض عليه عملًا حاليًّا. صارت
+    الأولى تَرِث تأجيلَ دورها، والثانيةُ تحمل في ملاحظتها وعلى اللوحة أن دورَه فيها مؤجَّل وباقيها نشط؛ ويزول ذلك بعودة الدور."""
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    plan["agents"] = [{"name": "claude-nitro", "deferred": {"by": "ق٦٨", "until": "2026-10-19", "reason": "Nitro غيرُ قابلٍ للوصول"}},
+                      {"name": "claude-mac"}]
+    plan["tasks"][0].update(assignee="claude-mac",
+                            description="١) claude-mac يركّب Obsidian وclaude-nitro يركّبه على ويندوز (`winget install -e --id Obsidian.Obsidian`).")
+    plan["tasks"][1]["assignee"] = "claude-nitro"
+    plan["tasks"].append({"id": "جديد-y", "title": "ثالثة", "assignee": "claude-mac", "block": "ب٩", "phase": "م٠", "effort": "S",
+                          "depends_on": [], "description": "claude-nitro-2 عقدةٌ أخرى لم تُؤجَّل", "deliverable": "مخرج", "acceptance_evidence": "دليل"})
+    plan["phases"][0]["task_ids"].append("جديد-y")
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    out = vault / "Diwan"
+    read = lambda rel: (out / rel).read_text(encoding="utf-8")  # noqa: E731
+    mixed = read("المهام/ك١.md")
+    assert "deferred_roles: claude-nitro" in mixed.split("---")[1] and "status: deferred" not in mixed
+    assert ("> ⏸ **دورُ Claude على Nitro (`claude-nitro`) في هذه المهمّة مؤجَّل (ق٦٨ حتى 2026-10-19: Nitro غيرُ قابلٍ للوصول)؛ "
+            "فما نُسب إليه فيها لا يُنفَّذ الآن، وباقيها نشط**") in mixed, "الحرفُ العربيُّ المتّصل «وclaude-nitro» لا يُخفي الدور"
+    own = read("المهام/جديد-x.md")
+    assert "status: deferred" in own.split("---")[1] and "> ⏸ **مؤجَّلة (ق٦٨ حتى 2026-10-19: Nitro غيرُ قابلٍ للوصول)**" in own
+    assert "⏸" not in read("المهام/جديد-y.md") and "deferred_roles" not in read("المهام/جديد-y.md"), "claude-nitro-2 ليس claude-nitro"
+    board = read("لوحة المراحل.md")
+    assert "- [[المهام/ك١|ك١]] مهمّة · Claude على الماك — ⏸ دورُ Claude على Nitro فيها مؤجَّل (ق٦٨)\n" in board
+    assert "- ⏸ [[المهام/جديد-x|جديد-x]] ثانية · Claude على Nitro — **مؤجَّلة (ق٦٨ حتى 2026-10-19: Nitro غيرُ قابلٍ للوصول)**\n" in board
+    assert "- [[المهام/جديد-y|جديد-y]] ثالثة · Claude على الماك\n" in board
+    # يعود الدور بإشعار المالك: تزول العلاماتُ في البناء التالي
+    del plan["agents"][0]["deferred"]
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    assert all("⏸" not in read(rel) for rel in ("المهام/ك١.md", "المهام/جديد-x.md", "لوحة المراحل.md"))
+    # والخطةُ الحقيقية: غ١١ لـclaude-nitro مؤجَّلةٌ بدوره، وجديد-obsidian-setup (الماك) تحمل أن دورَ Nitro فيها مؤجَّل
+    real = ov.render(root=ROOT)
+    assert "status: deferred" in real["المهام/غ١١.md"].split("---")[1]
+    assert "deferred_roles: claude-nitro" in real["المهام/جديد-obsidian-setup.md"].split("---")[1]
+
+
+def test_a_deferred_owner_step_marks_the_active_task_it_unblocks_and_a_deferred_dependency_is_named(repo, vault):
+    """من صنف ملاحظة Codex العاشرة على #161 (عملُ Nitro في مهمّةٍ مختلطة يُعرض حاليًّا): ح٢ «فكّ حجب جلستَي الماك وNitro» مسنَدةٌ
+    إلى المالك ولا تسمّي `claude-nitro`، وشطرُ Nitro منها خطوةُ المالك ٤ (G4 ١٧–١٨) المؤجَّلةُ بق٦٨ التي تفتحها، فكانت ملاحظتُها
+    تعرضه عملًا حاليًّا؛ وجديد-v1-acceptance تعتمد على ع٣ المؤجَّلة وسطرُ اعتمادها لا يقول ذلك. صارت المهمّةُ النشطة التي تفتحها
+    خطوةٌ مؤجَّلة تحمل ذلك في رأسها وملاحظتها وعلى اللوحة، والمهمّةُ المؤجَّلة تُسمّى مؤجَّلةً في سطرَي «يعتمد على» و«يفتح»؛ ويزول
+    ذلك كلُّه بعودة الخطوة والمهمّة."""
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    why = {"by": "ق٦٨", "until": "2026-10-19", "reason": "الجهازُ غيرُ قابلٍ للوصول"}
+    plan["tasks"][1]["deferred"] = why
+    plan["tasks"].append({"id": "جديد-z", "title": "ثالثة", "assignee": "claude-mac", "block": "ب٩", "phase": "م٠", "effort": "S",
+                          "depends_on": ["ك١", "جديد-x"], "description": "وصف", "deliverable": "مخرج", "acceptance_evidence": "دليل"})
+    plan["phases"][0]["task_ids"].append("جديد-z")
+    plan["owner_steps"] += [{"order": 2, "guide_id": "G4", "title": "صلاحيات Nitro", "time": "١٠ دقائق", "cost": "$0",
+                             "unblocks": ["ك١", "جديد-x"], "deferred": why},
+                            {"order": 3, "guide_id": "G4", "title": "صلاحيات الماك", "time": "١٠ دقائق", "cost": "$0", "unblocks": ["ك١", "جديد-z"]}]
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    out = vault / "Diwan"
+    read = lambda rel: (out / rel).read_text(encoding="utf-8")  # noqa: E731
+    held = read("المهام/ك١.md")
+    assert "deferred_steps: 2\n" in held.split("---")[1] and "status: deferred" not in held
+    assert ("> ⏸ **خطوةُ المالك 2 «صلاحيات Nitro» التي تفتح هذه المهمّة مؤجَّلة (ق٦٨ حتى 2026-10-19: الجهازُ غيرُ قابلٍ للوصول)؛ "
+            "فما يتوقّف عليها منها لا يُنتظر الآن، وباقيها نشط**") in held and "خطوةُ المالك 3" not in held
+    assert "**يفتح:** [[المهام/جديد-x|جديد-x]] (⏸ مؤجَّلة)\n" in held
+    own = read("المهام/جديد-x.md")
+    assert "status: deferred" in own.split("---")[1] and "deferred_steps" not in own, "المؤجَّلةُ كلُّها لا تُوسم بخطوتها"
+    other = read("المهام/جديد-z.md")
+    assert "deferred_steps" not in other and "خطوةُ المالك" not in other, "خطوةٌ مؤجَّلة لا تفتح جديد-z"
+    assert "**يعتمد على:** [[المهام/ك١|ك١]]، [[المهام/جديد-x|جديد-x]] (⏸ مؤجَّلة)\n" in other
+    board = read("لوحة المراحل.md")
+    assert "- [[المهام/ك١|ك١]] مهمّة · Claude السحابي — ⏸ خطوةُ المالك 2 لها مؤجَّلة (ق٦٨)\n" in board
+    assert "- [[المهام/جديد-z|جديد-z]] ثالثة · Claude على الماك\n" in board
+    # تعود الخطوةُ والمهمّة بإشعار المالك: تزول العلاماتُ في البناء التالي
+    del plan["tasks"][1]["deferred"], plan["owner_steps"][1]["deferred"]
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    assert all("⏸" not in read(rel) and "deferred_" not in read(rel) for rel in ("المهام/ك١.md", "المهام/جديد-z.md", "لوحة المراحل.md"))
+    # والخطةُ الحقيقية: ح٢ تفتحها خطوةُ المالك ٤ المؤجَّلة، وجديد-v1-acceptance تعتمد على ع٣ المؤجَّلة
+    real = ov.render(root=ROOT)
+    assert "deferred_steps: 4\n" in real["المهام/ح٢.md"].split("---")[1]
+    assert "[[المهام/ع٣|ع٣]] (⏸ مؤجَّلة)" in real["المهام/جديد-v1-acceptance.md"]
+
+
 def test_every_plan_task_is_on_the_board_of_the_phase_it_declares():
     """اللوحةُ تُبنى من phases[].task_ids وحدها: مهمّةٌ غائبةٌ عن قائمة مرحلتها تُكتب ملاحظتُها وتسقط من اللوحة صامتة
     (ملاحظة Codex على #141 في مهمّتَي ق٦٦ المقسومتين)."""

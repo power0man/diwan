@@ -101,6 +101,43 @@ def deferred_label(entry: dict) -> str | None:
     return f"مؤجَّلة ({d['by']} حتى {d['until']}: {d['reason']})" if d else None
 
 
+_TASK_TEXT = ("title", "description", "deliverable", "acceptance_evidence")
+
+
+def task_deferral(task: dict, agents: dict[str, dict]) -> str | None:
+    """تأجيلُ المهمّة: تأجيلُها هي، أو تأجيلُ الدور المسنَدة إليه — فالخطةُ تؤجّل دورًا كاملًا (`agents[].deferred`، ق٦٨: دورُ
+    `claude-nitro`)، ومهمّةٌ مسنَدةٌ إليه بلا حقلٍ باسمها (غ١١) كانت تُعرض عملًا نشطًا (ملاحظة Codex العاشرة على #161)."""
+    return deferred_label(task) or deferred_label(agents.get(task["assignee"], {}))
+
+
+def deferred_roles(task: dict, agents: dict[str, dict]) -> list[str]:
+    """أدوارٌ مؤجَّلة يسمّيها نصُّ مهمّةٍ نشطة مسنَدةٍ إلى غيرها (مهمّةٌ مختلطة): «claude-nitro يركّبه على ويندوز (`winget …`)» في
+    مهمّةٍ لـclaude-mac كانت تُعرض على الدور المؤجَّل عملًا حاليًّا (ملاحظة Codex العاشرة على #161). الاسمُ يُطابَق معرّفًا لاتينيًّا
+    تامًّا، فلا يُحسب `claude-nitro-2` مثلًا `claude-nitro`؛ وحرفٌ عربيٌّ متّصلٌ به («وclaude-nitro») لا يمنع المطابقة."""
+    text = "\n".join(str(task.get(k, "")) for k in _TASK_TEXT)
+    return [name for name, agent in agents.items()
+            if agent.get("deferred") and name != task["assignee"]
+            and re.search(rf"(?<![A-Za-z0-9_-]){re.escape(name)}(?![A-Za-z0-9_-])", text)]
+
+
+def role_deferral_note(name: str, agent: dict) -> str:
+    d = agent["deferred"]
+    return (f"دورُ {ASSIGNEE.get(name, name)} (`{name}`) في هذه المهمّة مؤجَّل ({d['by']} حتى {d['until']}: {d['reason']})؛ "
+            "فما نُسب إليه فيها لا يُنفَّذ الآن، وباقيها نشط")
+
+
+def deferred_steps(task: dict, owner_steps: list[dict]) -> list[dict]:
+    """خطواتُ المالك المؤجَّلة التي تفتح مهمّةً نشطة (`owner_steps[].unblocks`): ح٢ «فكّ حجب جلستَي الماك وNitro» تفتحها خطوةُ
+    المالك ٤ (صلاحياتُ جلسة Nitro، مؤجَّلةٌ بق٦٨)، فكان شطرُ Nitro منها يُعرض عملًا حاليًّا — من صنف ملاحظة Codex العاشرة على #161."""
+    return [s for s in sorted(owner_steps, key=lambda s: s["order"]) if s.get("deferred") and task["id"] in s.get("unblocks", [])]
+
+
+def step_deferral_note(step: dict) -> str:
+    d = step["deferred"]
+    return (f"خطوةُ المالك {step['order']} «{step['title']}» التي تفتح هذه المهمّة مؤجَّلة ({d['by']} حتى {d['until']}: {d['reason']})؛ "
+            "فما يتوقّف عليها منها لا يُنتظر الآن، وباقيها نشط")
+
+
 def render(root: Path = ROOT) -> dict[str, str]:
     """ما يجب أن يكون في `Diwan/`: المسارُ النسبيّ ← النصّ."""
     out: dict[str, str] = {}
@@ -113,20 +150,29 @@ def render(root: Path = ROOT) -> dict[str, str]:
         return out
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
     tasks = {t["id"]: t for t in plan["tasks"]}
+    agents = {a["name"]: a for a in plan.get("agents", [])}
     link = lambda tid: f"[[المهام/{safe_name(tid)}|{tid}]]"  # noqa: E731
+    # مهمّةٌ تعتمد على مؤجَّلةٍ أو تفتحها تسمّيها مؤجَّلةً في سطرها (جديد-v1-acceptance تعتمد على ع٣)
+    ref = lambda tid: link(tid) + (" (⏸ مؤجَّلة)" if task_deferral(tasks[tid], agents) else "")  # noqa: E731
     for t in plan["tasks"]:
-        deferred = deferred_label(t)
+        deferred = task_deferral(t, agents)
+        roles = [] if deferred else deferred_roles(t, agents)
+        held = [] if deferred else deferred_steps(t, plan["owner_steps"])
         lines = [
             "---", f"id: {t['id']}", f"phase: {t['phase']}", f"assignee: {t['assignee']}", f"block: {t['block']}",
-            f"effort: {t['effort']}", *(["status: deferred"] if deferred else []), "---", "", f"# {t['id']} — {t['title']}", "",
+            f"effort: {t['effort']}", *(["status: deferred"] if deferred else []),
+            *([f"deferred_roles: {', '.join(roles)}"] if roles else []),
+            *([f"deferred_steps: {', '.join(str(s['order']) for s in held)}"] if held else []), "---", "", f"# {t['id']} — {t['title']}", "",
             f"**المنفّذ:** {ASSIGNEE.get(t['assignee'], t['assignee'])} · **المرحلة:** [[لوحة المراحل#{t['phase']}|{t['phase']}]] · **البلوك:** {t['block']}", "",
             *([f"> ⏸ **{deferred}**", ""] if deferred else []),
+            *[x for name in roles for x in (f"> ⏸ **{role_deferral_note(name, agents[name])}**", "")],
+            *[x for s in held for x in (f"> ⏸ **{step_deferral_note(s)}**", "")],
             t.get("description", ""), "", f"**المُخرج:** {t.get('deliverable', '')}", "", f"**دليل القبول:** {t.get('acceptance_evidence', '')}",
         ]
         if t.get("depends_on"):
-            lines += ["", "**يعتمد على:** " + "، ".join(link(d) if d in tasks else d for d in t["depends_on"])]
+            lines += ["", "**يعتمد على:** " + "، ".join(ref(d) if d in tasks else d for d in t["depends_on"])]
         if t.get("unblocks"):
-            lines += ["", "**يفتح:** " + "، ".join(link(d) if d in tasks else d for d in t["unblocks"])]
+            lines += ["", "**يفتح:** " + "، ".join(ref(d) if d in tasks else d for d in t["unblocks"])]
         if t.get("guide_id"):
             lines += ["", f"**الدليل:** [[الأدلة/{t['guide_id']}|{t['guide_id']}]]"]
         out[f"المهام/{safe_name(t['id'])}.md"] = "\n".join(lines) + "\n"
@@ -137,9 +183,13 @@ def render(root: Path = ROOT) -> dict[str, str]:
         for tid in p["task_ids"]:
             t = tasks.get(tid)
             if t:
-                deferred = deferred_label(t)
+                deferred = task_deferral(t, agents)
+                roles = [] if deferred else deferred_roles(t, agents)
+                held = [] if deferred else deferred_steps(t, plan["owner_steps"])
                 board.append(f"- {'⏸ ' if deferred else ''}{link(tid)} {t['title']} · {ASSIGNEE.get(t['assignee'], t['assignee'])}"
-                             + (f" — **{deferred}**" if deferred else ""))
+                             + (f" — **{deferred}**" if deferred else "")
+                             + "".join(f" — ⏸ دورُ {ASSIGNEE.get(n, n)} فيها مؤجَّل ({agents[n]['deferred']['by']})" for n in roles)
+                             + "".join(f" — ⏸ خطوةُ المالك {s['order']} لها مؤجَّلة ({s['deferred']['by']})" for s in held))
         board.append("")
     out["لوحة المراحل.md"] = "\n".join(board)
     steps = ["# خطواتي", "", "علّم الخطوة حين تنتهي. تُعاد كتابةُ القائمة من الخطة عند كل بناء وتبقى علاماتُك؛ وما تكتبه تحت "
