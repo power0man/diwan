@@ -32,7 +32,7 @@ import uuid
 from core.quoted import QUARANTINE_MARK, scan
 from evaluation.memory_bank import (EXPOSURE_QUESTION, contains as _contains, names_every_directive, probe_collisions,
                                     envelope_collisions, message_envelope_collisions, question_collisions,
-                                    request_payload_collisions, request_provider, role_collisions, tool_collisions)
+                                    request_payload_collisions, request_provider, role_collisions, scalar_text, tool_collisions)
 from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, unfenced
 
 
@@ -269,12 +269,14 @@ def _block_of(content: str) -> str:
 
 
 def _flat(value) -> str:
-    """نصوصُ قيمةٍ متشعّبة (وسائطُ نداء أداة) متتاليةً كما هي، بلا تهريب JSON يغيّر حرفًا."""
+    """نصوصُ قيمةٍ متشعّبة (وسائطُ نداء أداة) متتاليةً كما هي، بلا تهريب JSON يغيّر حرفًا في النصّ؛ والقيمُ الأوّلية بإملاء JSON
+    المرسَل (`scalar_text`: `false` لا `False`) فيطابق المُشغِّلُ المدقّقَ ويطابقان ما يُرسل (ملاحظة Codex على #129، الجولة
+    السابعة والعشرون)."""
     if isinstance(value, dict):
         return " ".join(f"{k} {_flat(v)}" for k, v in value.items())
     if isinstance(value, (list, tuple)):
         return " ".join(_flat(v) for v in value)
-    return str(value)
+    return scalar_text(value)
 
 
 def _payload(message) -> str:

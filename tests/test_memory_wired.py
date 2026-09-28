@@ -870,6 +870,7 @@ def test_the_fixed_request_body_fields_are_inspected_as_the_provider_builds_them
     request = Request((Message("user", "ما رقم المكتب؟"),), "qwen3.5:9b", "0" * 64, 64, 30.0, "local_only", None)
     every = _memory_parts(request)[1]
     assert all(field in every for field in ("model", "stream", "think", "temperature", "num_ctx", "seed"))
+    assert "stream false" in every and "False" not in every, "القيمُ بإملاء JSON المرسَل لا بإملاء بايثون (ملاحظة Codex، الجولة ٢٧)"
     provider, sent = OllamaProvider(), {}
 
     class _Stop(Exception):
@@ -883,15 +884,16 @@ def test_the_fixed_request_body_fields_are_inspected_as_the_provider_builds_them
     with pytest.raises(_Stop):
         provider.complete(request)
     assert sent == provider.payload(validated(request)), "ما يرسله complete هو ما يبنيه payload، لا نسخةٌ تنحرف"
-    scenario = {"id": "body_witness", "category": "forget", "steps": [
-        {"op": "remember", "project": "A", "text": "temperature passport secret note", "consent": "owner", "as": "m1"},
-        {"op": "forget", "project": "A", "ref": "m1"},
-        {"expect": "context", "project": "A", "question": "ما رقم المكتب؟", "absent": ["temperature"], "present": []},
-    ]}
-    for run, root in ((run_scenario, tmp_path / "s"), (run_wired_scenario, tmp_path / "w")):
-        report = run(scenario, root)
-        assert not report["passed"] and report["context_exposures"] == 0, report
-        assert any(f.startswith("witness collides with the request payload") for f in report["failures"]), report
+    for witness in ("temperature", "false"):
+        scenario = {"id": "body_witness", "category": "forget", "steps": [
+            {"op": "remember", "project": "A", "text": f"{witness} passport secret note", "consent": "owner", "as": "m1"},
+            {"op": "forget", "project": "A", "ref": "m1"},
+            {"expect": "context", "project": "A", "question": "ما رقم المكتب؟", "absent": [witness], "present": []},
+        ]}
+        for run, root in ((run_scenario, tmp_path / f"s-{witness}"), (run_wired_scenario, tmp_path / f"w-{witness}")):
+            report = run(scenario, root)
+            assert not report["passed"] and report["context_exposures"] == 0, (witness, report)
+            assert any(f.startswith("witness collides with the request payload") for f in report["failures"]), (witness, report)
 
 
 class _NamedDelegate(_Delegate):

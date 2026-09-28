@@ -184,6 +184,23 @@ def test_a_witness_inside_the_fixed_request_body_is_rejected_by_the_validator():
     _refused(bank, "witness_collides_with_request_payload")
 
 
+def test_a_witness_spelled_as_a_json_scalar_in_the_request_body_is_rejected_by_the_validator():
+    """ملاحظةُ Codex على #129 (الجولة السابعة والعشرون): المزوّدُ يرسل `stream: false` و`think: false` بإملاء JSON، فشاهدُ «false»
+    يُرسل مع كلِّ نداءٍ حيّ؛ وكان التسطيحُ يكتب `False` بإملاء بايثون فيمرّ الشاهدُ مع أنه في كل طلب."""
+    from evaluation.memory_bank import declared_request_payload_text, scalar_text
+    assert scalar_text(False) == "false" and scalar_text(True) == "true" and scalar_text(None) == "null" and scalar_text(0) == "0"
+    assert scalar_text("نصٌّ فيه \"تنصيص\"") == "نصٌّ فيه \"تنصيص\"", "النصُّ بلا تهريب: النموذجُ يقرؤه مفكوكًا"
+    text = declared_request_payload_text()
+    assert "false" in text and "False" not in text, text
+    bank, scenario = _scenario("forget_001")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["text"] = "false passport secret note"
+    for step in scenario["steps"]:
+        if step.get("absent"):
+            step["absent"] = ["false"]
+    _refused(bank, "witness_collides_with_request_payload")
+
+
 def test_the_collision_tools_are_the_evaluator_s_own_registry_not_every_default_tool():
     """ملاحظةُ Codex على #129 (الجولة الخامسة والعشرون): المُقيِّم بلا خلفية تنفيذٍ فلا يرسل `run_command` ولا `run_tests`؛ فشاهدٌ
     لا يقع إلا في مواصفتيهما لا يُرفض تصادمًا."""

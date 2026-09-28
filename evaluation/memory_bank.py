@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 
+import json
 import re
 
 from core.attribution import content_tokens, normalize
@@ -103,13 +104,25 @@ def as_sent(question: str) -> str:
     return quarantine_quoted(question).text
 
 
+def scalar_text(value) -> str:
+    """القيمةُ الأوّلية كما تُكتب في JSON الذي يُرسل فعلًا (`OllamaProvider._post` يرسل `json.dumps(payload)`): `None` → `null`،
+    و`True`/`False` → `true`/`false`، والأعدادُ بصورتها؛ والنصُّ كما هو بلا تهريب لأن النموذج يقرؤه مفكوكًا. فشاهدُ غيابٍ
+    «false» يقع في `stream: false` و`think: false` كما يُرسلان، لا في «False» التي لا تُرسل قطّ (ملاحظة Codex على #129،
+    الجولة السابعة والعشرون)؛ والمُشغِّل يسطّح بالقاعدة نفسِها."""
+    if isinstance(value, str):
+        return value
+    if value is None or isinstance(value, (bool, int, float)):
+        return json.dumps(value)
+    return str(value)
+
+
 def _flat_text(value) -> str:
-    """نصوصُ قيمةٍ متشعّبة متتاليةً كما هي، كما يقرؤها المُشغِّل."""
+    """نصوصُ قيمةٍ متشعّبة متتاليةً كما هي، كما يقرؤها المُشغِّل؛ والقيمُ الأوّلية بإملاء JSON المرسَل (`scalar_text`)."""
     if isinstance(value, dict):
         return " ".join(f"{k} {_flat_text(v)}" for k, v in value.items())
     if isinstance(value, (list, tuple)):
         return " ".join(_flat_text(v) for v in value)
-    return str(value)
+    return scalar_text(value)
 
 
 EVALUATOR_DISABLED_TOOLS = frozenset({"run_command", "run_tests"})   # ما يُسقطه سجلُّ الواجهة بلا خلفية تنفيذ
