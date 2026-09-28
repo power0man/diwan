@@ -304,6 +304,55 @@ def test_a_legacy_checklist_s_free_lines_are_carried_into_the_notes_section_not_
     assert ov.check(vault, root=repo) == [] and ov.build(vault, root=repo)["migrated"] == [], "لا يُعاد النقلُ في كل بناء"
 
 
+def test_an_owner_written_deferral_on_an_active_step_survives_and_the_tool_s_own_label_is_not_duplicated(repo, vault):
+    """ملاحظةُ Codex على #161 (الجولة الثالثة عشرة): كانت كلُّ علامةٍ بلفظ « — مؤجَّلة (…)» تُنزع من سطر الخطوة أينما وقعت على أنها
+    مولَّدة، فالمالكُ الذي أجّل خطوةً نشطة بيده («- [ ] **1. …** — مؤجَّلة (بقرار شخصي)») يُمحى نصُّه في البناء التالي. صارت العلامةُ
+    تُنزع حيث ولّدتها الأداةُ وحدها: في أول اللاحقة، والسطرُ مؤجَّل (⏸) أو منجزٌ قبل التأجيل أو العلامةُ نصُّ ما تولّده الخطةُ الآن.
+    والاتجاهُ الآخر: علامةُ الأداة تُعرف ولا تتكرّر — بعد أن يحوّل المالكُ ⏸ إلى [x] بيده، وبعد تغيّر السبب، وبعد رفع التأجيل."""
+    why = {"by": "ق٦٨", "until": "2026-10-19", "reason": "الجهازُ غيرُ قابلٍ للوصول (Nitro)"}
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    plan["owner_steps"] += [{"order": 2, "guide_id": "G5", "title": "تجهيز Nitro", "time": "ساعة", "cost": "$0", "deferred": why},
+                            {"order": 3, "guide_id": "G4", "title": "صلاحيات Nitro", "time": "١٠ دقائق", "cost": "$0", "deferred": why}]
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    steps = vault / "Diwan/خطواتي.md"
+    label = lambda d: f" — مؤجَّلة ({d['by']} حتى {d['until']}: {d['reason']})"  # noqa: E731
+    one = "- [ ] **1. خطوة** · [[الأدلة/G1|G1]] · ٥ دقائق · $0"
+    two = "**2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0"
+    three = "**3. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0"
+    text = steps.read_text(encoding="utf-8")
+    assert f"- ⏸ {two}{label(why)}\n" in text and f"- ⏸ {three}{label(why)}\n" in text
+    mine = one + " — مؤجَّلة (بقرار شخصي)"
+    text = (text.replace(one + "\n", mine + "\n")
+            .replace(f"- ⏸ {two}{label(why)}\n", f"- [x] {two}{label(why)} — تمّ\n")          # حوّل ⏸ إلى [x] بيده
+            .replace(f"- ⏸ {three}{label(why)}\n", f"- ⏸ {three}{label(why)} — مؤجَّلة (وأنا أيضًا)\n"))
+    steps.write_text(text, encoding="utf-8")
+    ov.build(vault, root=repo)
+    text = steps.read_text(encoding="utf-8")
+    assert mine + "\n" in text, "تأجيلُ المالك بيده على خطوةٍ نشطة يبقى بايتًا بايتًا"
+    assert f"- [x] {two}{label(why)}{ov.DONE_BEFORE_DEFERRAL} — تمّ\n" in text and text.count("مؤجَّلة (ق٦٨") == 2
+    assert f"- ⏸ {three}{label(why)} — مؤجَّلة (وأنا أيضًا)\n" in text
+    assert ov.build(vault, root=repo)["migrated"] == [] and ov.check(vault, root=repo) == [], "ولا يتغيّر في البناء التالي"
+    # تغيّر السبب: علامةُ الأداة تُستبدل مرّةً واحدة، ونصُّ المالك في مكانه
+    new_why = {"by": "ق٦٩", "until": "2026-11-01", "reason": "سببٌ آخر"}
+    for step in plan["owner_steps"][1:]:
+        step["deferred"] = new_why
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    text = steps.read_text(encoding="utf-8")
+    assert mine + "\n" in text and "ق٦٨" not in text
+    assert f"- [x] {two}{label(new_why)}{ov.DONE_BEFORE_DEFERRAL} — تمّ\n" in text
+    assert f"- ⏸ {three}{label(new_why)} — مؤجَّلة (وأنا أيضًا)\n" in text
+    # رُفع التأجيل: تزول علامةُ الأداة، ويبقى ما كتبه المالك — ولو كان بلفظ التأجيل
+    for step in plan["owner_steps"][1:]:
+        del step["deferred"]
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    text = steps.read_text(encoding="utf-8")
+    assert mine + "\n" in text and f"- [x] {two} — تمّ\n" in text and f"- [ ] {three} — مؤجَّلة (وأنا أيضًا)\n" in text
+    assert "ق٦٩" not in text and ov.DONE_BEFORE_DEFERRAL not in text
+
+
 @pytest.mark.parametrize("instruction", [ov.LEGACY_INSTRUCTION, ov.INSTRUCTION], ids=["legacy", "current"])
 def test_an_annotation_appended_to_the_instruction_line_is_carried_not_deleted(repo, vault, instruction):
     """ملاحظةُ Codex على #161 (الجولة الحادية عشرة): سطرُ التعليمات كان يُعرف ببدايته «علّم الخطوة حين تنتهي»، فتعليقٌ ألحقه المالكُ

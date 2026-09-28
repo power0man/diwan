@@ -270,21 +270,35 @@ LEGACY_INSTRUCTION = "علّم الخطوة حين تنتهي. هذه الملا
 _KNOWN_LINES = ("# خطواتي", INSTRUCTION, LEGACY_INSTRUCTION, "## خطواتٌ مؤجَّلة", "لا تُطلب منك الآن؛ تعود إلى القائمة بإشعارك.")
 
 
-def _strip_generated(tail: str) -> str:
-    """ينزع من ذيل سطر الخطوة ما تولّده الأداةُ وحدها: علامةَ التأجيل حتى قوسها الذي يُغلقها (بعدّ الأقواس، فسببُ التأجيل قد يحمل
-    قوسين مثل «(ق٦٨)»)، وعلامةَ الإنجاز قبل التأجيل. وما بعد القوس المُغلق لاحقةُ المالك تبقى: كان القوسُ يُطلَب عند آخر السطر
-    فيبتلع تعليقًا كتبه المالك بعد العلامة «(سألت المالك)» ويُمحى في البناء التالي (ملاحظة Codex السابعة على #161)."""
-    while (start := tail.find(_DEFERRAL_LABEL)) >= 0:
-        depth, end = 0, None
-        for i in range(start + len(_DEFERRAL_LABEL) - 1, len(tail)):
-            depth += {"(": 1, ")": -1}.get(tail[i], 0)
-            if depth == 0:
-                end = i + 1
-                break
-        if end is None:
-            break                                                   # علامةٌ لم تُغلق: تبقى كما هي ولا تُنزع بالتخمين
-        tail = tail[:start] + tail[end:]
-    return tail.replace(DONE_BEFORE_DEFERRAL, "")
+def _label_end(text: str, start: int) -> int | None:
+    """نهايةُ علامة التأجيل التي تبدأ عند `start`: حتى قوسها الذي يُغلقها بعدّ الأقواس (فسببُ التأجيل قد يحمل قوسين مثل «(ق٦٨)»)، لا
+    عند آخر السطر — فما بعد القوس المُغلق لاحقةُ المالك، وكان يُبتلع فيُمحى في البناء التالي (ملاحظة Codex السابعة على #161).
+    وعلامةٌ لم تُغلق: `None`، فلا تُنزع بالتخمين."""
+    depth = 0
+    for i in range(start + len(_DEFERRAL_LABEL) - 1, len(text)):
+        depth += {"(": 1, ")": -1}.get(text[i], 0)
+        if depth == 0:
+            return i + 1
+    return None
+
+
+def _owner_suffix(mark: str, existing: str, rendered: str) -> str | None:
+    """لاحقةُ المالك على سطر خطوته: ما زاد في ذيل سطره الموجود (`existing`) على نصّ الخطوة كما تولّده الأداةُ الآن (`rendered` بلا علامة
+    تأجيله)، أو `None` إن عُدّل النصُّ المولَّد نفسُه فيُنقل السطرُ كاملًا. وعلامةُ التأجيل في أول اللاحقة تُنزع — ومعها علامةُ الإنجاز
+    قبل التأجيل بعدها — إن كانت الأداةُ هي التي ولّدتها: السطرُ مؤجَّل (⏸)، أو منجزٌ قبل التأجيل، أو العلامةُ هي نصُّ ما تولّده الخطةُ
+    الآن لهذه الخطوة؛ فعلامةٌ قديمة زالت أو تغيّر سببُها لا تبقى ولا تتكرّر (ملاحظة Codex السادسة على #161). وما عدا ذلك للمالك:
+    «- [ ] **1. عمل** · G1 — مؤجَّلة (بقرار شخصي)» على خطوةٍ نشطة يبقى كما كتبه، وكانت كلُّ علامةٍ بهذا اللفظ تُنزع أينما وقعت
+    فيُمحى نصُّه في البناء التالي (ملاحظة Codex الثالثة عشرة على #161)."""
+    start = rendered.find(_DEFERRAL_LABEL)
+    body, label = (rendered, "") if start < 0 else (rendered[:start], rendered[start:])
+    if not existing.startswith(body):
+        return None
+    rest = existing[len(body):]
+    if rest.startswith(_DEFERRAL_LABEL) and (end := _label_end(rest, 0)) is not None:
+        done = rest.startswith(DONE_BEFORE_DEFERRAL, end)
+        if mark == "⏸" or done or rest[:end] == label:
+            rest = rest[end + (len(DONE_BEFORE_DEFERRAL) if done else 0):]
+    return rest
 
 
 def _title(tail: str) -> str:
@@ -326,11 +340,11 @@ def migrate_steps(existing: str, rendered: str) -> str:
         elif completed and mark == "⏸":
             mark, extra = "[x]", DONE_BEFORE_DEFERRAL
         if mine is not None:
-            # لاحقةُ المالك هي ما زاد على نصّ الخطوة كما تولّده الأداة بعد نزع ما تولّده هي من لواحق (علامةُ تأجيلٍ سابقة قد زالت
-            # أو تغيّر سببُها، وعلامةُ الإنجاز قبل التأجيل)؛ وما عُدّل داخل النصّ نفسِه يُنقل سطرًا كاملًا (ملاحظاتُ Codex على #161)
-            edited, base = _strip_generated(mine[3]), _strip_generated(tail)
-            if edited.startswith(base):
-                extra += edited[len(base):]
+            # لاحقةُ المالك هي ما زاد على نصّ الخطوة كما تولّده الأداة بعد علامةِ تأجيلٍ ولّدتها هي (`_owner_suffix`)؛ وما عُدّل داخل
+            # النصّ نفسِه يُنقل سطرًا كاملًا (ملاحظاتُ Codex على #161)
+            suffix = _owner_suffix(mine[1], mine[3], tail)
+            if suffix is not None:
+                extra += suffix
             else:
                 carry[mine[0]] = mine[4]
         lines.append(f"- {mark} **{order}.{tail}{extra}")
