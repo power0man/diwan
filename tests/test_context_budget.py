@@ -295,6 +295,18 @@ def test_tampered_bytecode_in_the_tree_s_pycache_is_not_loaded_once_bytecode_is_
     monkeypatch.delitem(_sys.modules, name)
 
 
+def test_the_tool_isolates_bytecode_before_importing_context_index():
+    """ملاحظةُ Codex الرابعة على #157: `import context_index` كان يسبق العزل، فpyc مزوَّر له في `tools/__pycache__` يبدّل مجموعةَ
+    القراءة والتقدير. في عمليةٍ جديدة يُستورد context_index بعد ضبط `pycache_prefix` فمسارُ ذاكرته تحت المجلّد الخاصّ."""
+    import subprocess
+    script = ("import sys; sys.path.insert(0, 'tools'); import context_budget as cb, context_index as ci; "
+              "print(ci.__cached__); print(cb._PYCACHE_PREFIX); print(sys.pycache_prefix)")
+    out = subprocess.run([sys.executable, "-c", script], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split("\n")
+    cached, prefix, live = out[0], out[1], out[2]
+    assert prefix and live == prefix and cached.startswith(prefix), out
+    assert "/tools/__pycache__/" not in cached
+
+
 def test_the_cli_writes_the_report_and_summarises_it(monkeypatch, tmp_path, capsys):
     _fake_tokenizers(monkeypatch)
     hub_file, _ = _fake_hub(monkeypatch, tmp_path)

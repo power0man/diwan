@@ -35,6 +35,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
+_PYCACHE_PREFIX: str | None = None
+
+
+def isolate_bytecode() -> str:
+    """يقرأ بايثون ويكتب الـbytecode تحت مجلّدٍ خاصّ بهذه العملية (`sys.pycache_prefix`) لا تحت `__pycache__` في الشجرة: ملفُّ
+    `.pyc` متجاهَلٌ في git ومبنيٌّ بوضع `unchecked-hash` كان يُحمَّل بدل `webui/server.py` المتتبَّع والحالةُ «نظيفة»، فتُقاس
+    سجلّاتُ أدواتٍ ليست في HEAD باسمه (ملاحظة Codex الثالثة على #157). يُنادى عند استيراد هذه الوحدة قبل استيراد `context_index` (فملفُّ
+    `tools/__pycache__/context_index.*.pyc` مزوَّرٌ كان يبدّل مجموعةَ القراءة والتقدير — ملاحظة Codex الرابعة) وقبل أول
+    استيرادٍ لوحدة منتج؛ وما استُورد قبل هذه الوحدة خارجُ متناوله (حدٌّ معلَن)."""
+    global _PYCACHE_PREFIX
+    if _PYCACHE_PREFIX is None:
+        import tempfile
+        _PYCACHE_PREFIX = tempfile.mkdtemp(prefix="diwan-context-budget-pycache-")
+    sys.pycache_prefix = _PYCACHE_PREFIX
+    return _PYCACHE_PREFIX
+
+
+isolate_bytecode()                                        # قبل استيراد context_index وأيّ وحدة منتج
 
 import context_index  # noqa: E402  (مجموعةُ قراءة §٠ وتقديرُها من مصدرٍ واحد)
 
@@ -67,7 +85,7 @@ LIMITS = [
     "the_arabic_token_tax_is_one_fixed_paragraph_pair_not_a_corpus_statistic",
     "the_context_window_is_the_provider_constant_context_tokens_not_a_measurement_of_the_served_model",
     "the_hub_tokenizer_named_for_the_engine_is_a_proxy_the_ollama_tag_qwen3_5_9b_is_a_service_name_not_an_artifact_digest_so_the_pinned_hub_revision_is_not_bound_to_the_served_model_s_embedded_tokenizer",
-    "bytecode_is_read_and_written_under_a_private_pycache_prefix_so_a_stale_or_tampered_pyc_in_the_tree_s___pycache___is_never_loaded_but_a_product_module_imported_before_the_audit_started_is_out_of_its_reach",
+    "bytecode_is_read_and_written_under_a_private_pycache_prefix_set_when_this_tool_is_imported_so_a_stale_or_tampered_pyc_in_the_tree_s___pycache___is_never_loaded_for_context_index_or_a_product_module_but_a_module_imported_before_this_tool_is_out_of_its_reach",
 ]
 
 
@@ -204,22 +222,6 @@ def _findings(report: dict) -> list[dict]:
                           "share_of_tools": round(tools[costliest]["tokens"][name]
                                                   / max(1, report["runtime_prefix"]["configurations"][HEADLINE]["tools"]["tokens"][name]), 3)})
     return found
-
-
-_PYCACHE_PREFIX: str | None = None
-
-
-def isolate_bytecode() -> str:
-    """يقرأ بايثون ويكتب الـbytecode تحت مجلّدٍ خاصّ بهذه العملية (`sys.pycache_prefix`) لا تحت `__pycache__` في الشجرة: ملفُّ
-    `.pyc` متجاهَلٌ في git ومبنيٌّ بوضع `unchecked-hash` كان يُحمَّل بدل `webui/server.py` المتتبَّع والحالةُ «نظيفة»، فتُقاس
-    سجلّاتُ أدواتٍ ليست في HEAD باسمه (ملاحظة Codex الثالثة على #157). يُنادى قبل أول استيرادٍ لوحدة منتج؛ وما استُورد قبله
-    خارجُ متناوله (حدٌّ معلَن)."""
-    global _PYCACHE_PREFIX
-    if _PYCACHE_PREFIX is None:
-        import tempfile
-        _PYCACHE_PREFIX = tempfile.mkdtemp(prefix="diwan-context-budget-pycache-")
-    sys.pycache_prefix = _PYCACHE_PREFIX
-    return _PYCACHE_PREFIX
 
 
 def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str, dict] | None = None,
