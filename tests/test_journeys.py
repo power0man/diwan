@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -180,6 +181,15 @@ def session_files(root: Path) -> list[tuple[Path, Path, str]]:
                      else session / "chat" / session.name) / "state.json"
             found.append((session / "meta.json", state, mode))
     return found
+
+
+@pytest.fixture(autouse=True)
+def probe(tmp_path, monkeypatch):
+    """دليلُ docs/probe في كل اختبارٍ دليلٌ مؤقّت: لا يُقرأ منه ولا يُجمَّد فيه شيءٌ من المستودع."""
+    directory = tmp_path / "probe"
+    directory.mkdir()
+    monkeypatch.setattr(journeys, "PROBE_DIR", directory)
+    return directory
 
 
 @pytest.fixture(scope="module")
@@ -729,6 +739,69 @@ def test_the_m2_gate_compares_the_first_twenty_of_m2_with_the_baseline_not_the_c
     _, unknown, _ = m2()
     assert unknown["source"] is None and unknown["window"] is None and unknown["comparison"] is None
     assert unknown["missing"] == ["comparison_gate_unknown"] and unknown["passed"] is None
+
+
+def test_a_published_baseline_is_frozen_and_later_runs_compare_against_it(m2_store, probe, tmp_path, capsys):
+    frozen_file = probe / "journeys-baseline.json"
+
+    def publish(name, *options, **placement):
+        out = probe / f"journeys-{name}.json"
+        code, printed = run(placed(m2_store, tmp_path, times=M2_TIMES, **placement), out, capsys, *options)
+        return (code, printed) if code else json.loads(out.read_text(encoding="utf-8"))
+
+    def frozen_digest():
+        return hashlib.sha256(frozen_file.read_bytes()).hexdigest()
+
+    # نافذةٌ مرّرها المالك (أكتوبر) فجهز خطُّ الأساس ونُشر: جُمِّد في journeys-baseline.json بنافذته ومصدرها
+    first = publish("r1", *WINDOW)
+    assert first["baseline_ready"] is True and first["baseline"]["frozen"]["state"] == "frozen_now"
+    artifact = json.loads(frozen_file.read_text(encoding="utf-8"))
+    assert artifact["window"] == {"from": "2026-10-01", "from_source": "option", "until": "2026-10-31",
+                                  "until_source": "option"}
+    assert artifact["cohort"]["completion_rate"] == 0.7 and artifact["cohort"]["journeys"] == 30
+    assert first["baseline"]["frozen"]["digest"] == frozen_digest() and artifact["history"] == []
+    assert artifact["members_digest"] not in json.dumps(first) and not any(
+        session in frozen_file.read_text(encoding="utf-8") for session in m2_store[2].values())
+    # تشغيلٌ أسبوعيٌّ عاديّ بلا خيار: نافذةُ الخطة (١٢ أكتوبر) كانت ستُفرغ خطَّ الأساس؛ المجمَّدُ يحكم
+    second = publish("r2")
+    frozen = second["baseline"]["frozen"]
+    assert (frozen["state"], frozen["digest"], frozen["drift"]) == ("loaded", first["baseline"]["frozen"]["digest"], [])
+    assert second["baseline"]["window"] == artifact["window"] and second["baseline_ready"] is True
+    assert second["m2_gate"]["baseline_completion_rate"] == 0.7 and second["m2_gate"]["passed"] is True
+    # بياناتُ اليوم تغيّرت (Q2 غابت): الفرقُ يُعلَن باسمه ولا يحلّ محلَّ المجمَّد
+    drifted = publish("r3", drop=("Q2",))
+    assert drifted["baseline"]["frozen"]["drift"] == ["baseline_members_changed", "baseline_outcomes_changed",
+                                                      "baseline_not_ready_now"]
+    assert "too_few_dated_journeys" in drifted["baseline"]["frozen"]["recomputed_missing"]
+    assert drifted["baseline"]["cohort"]["completion_rate"] == 0.7 and drifted["m2_gate"]["passed"] is True
+    # تغييرُ المجمَّد يحتاج --refreeze-baseline برمز سببٍ ونشرًا في docs/probe
+    assert publish("r4", "--baseline-from", "2026-09-01", "--baseline-until", "2026-10-31") == \
+        (2, {"status": "refused", "code": "baseline_already_frozen"})
+    assert publish("r4", *WINDOW, "--refreeze-baseline", "سببٌ حرّ") == \
+        (2, {"status": "refused", "code": "refreeze_reason_invalid"})
+    assert run(placed(m2_store, tmp_path, times=M2_TIMES), tmp_path / "dry.json", capsys, *WINDOW,
+               "--refreeze-baseline", "owner_restart") == (2, {"status": "refused", "code": "refreeze_requires_probe_output"})
+    assert not (probe / "journeys-r4.json").exists() and not (tmp_path / "dry.json").exists()
+    old = frozen_digest()
+    refrozen = publish("r5", "--baseline-from", "2026-09-01", "--baseline-until", "2026-10-31",
+                       "--refreeze-baseline", "owner_restart")
+    assert refrozen["baseline"]["frozen"]["state"] == "refrozen" and frozen_digest() != old
+    artifact = json.loads(frozen_file.read_text(encoding="utf-8"))
+    assert artifact["refreeze_reason"] == "owner_restart" and [item["digest"] for item in artifact["history"]] == [old]
+    assert artifact["cohort"]["completion_rate"] == round(10 / 30, 4)
+    later = publish("r6")
+    assert later["baseline"]["window"]["from"] == "2026-09-01" and later["m2_gate"]["improvement_points"] == 66.67
+    # مجمَّدٌ أُعيدت كتابتُه (المحتوى نفسُه بصياغةٍ أخرى) لا تعرف بصمتَه التقاريرُ المنشورة: رفضٌ مسمًّى
+    frozen_file.write_text(json.dumps(json.loads(frozen_file.read_text(encoding="utf-8"))), encoding="utf-8")
+    assert publish("r7") == (2, {"status": "refused", "code": "frozen_baseline_changed"})
+    # ومجمَّدٌ ضاع بعد أن نُشر: رفضٌ مسمًّى لا إعادةُ حساب، ولا يُعاد تجميدُه إلا بسبب
+    frozen_file.unlink()
+    assert publish("r7") == (2, {"status": "refused", "code": "frozen_baseline_lost"})
+    restored = publish("r8", *WINDOW, "--refreeze-baseline", "restored_after_loss")
+    assert restored["baseline"]["frozen"]["state"] == "frozen_now"
+    assert {item["digest"] for item in json.loads(frozen_file.read_text(encoding="utf-8"))["history"]} == \
+        {old, refrozen["baseline"]["frozen"]["digest"]}
+    assert publish("r9")["baseline"]["frozen"]["state"] == "loaded"
 
 
 def test_the_baseline_window_is_the_m1_phase_the_plan_records_and_is_never_invented(world, tmp_path, capsys,

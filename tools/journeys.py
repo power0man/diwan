@@ -30,7 +30,14 @@ UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع
 
 الرفضُ مسمًّى وبرمز خروجٍ غير صفري: `root_missing` (المخزنُ غائب أو ليس دليلًا)، `root_unsafe` (وصلةٌ رمزية)، `root_unreadable`،
 `output_exists` (لا يُكتب فوق ملفٍّ قائم)، `output_dir_missing`، `output_unwritable`، `baseline_date_invalid`،
-`baseline_window_invalid` (البدءُ بعد النهاية)، `report_leak`. والجلسةُ التي لا تُقرأ أو فسدت لا تُسقط
+`baseline_window_invalid` (البدءُ بعد النهاية)، `report_leak`؛ ولخطّ الأساس المجمَّد: `baseline_already_frozen`،
+`frozen_baseline_lost` (نُشر تقريرٌ يشير إليه ثم غاب)، `frozen_baseline_changed`، `frozen_baseline_unreadable`،
+`refreeze_reason_invalid`، `refreeze_requires_probe_output`، `refreeze_baseline_not_ready`، `journeys_report_unreadable`.
+
+التجميد: أولُ تقريرٍ في docs/probe يجهز فيه خطُّ الأساس يكتب معه `docs/probe/journeys-baseline.json` (النافذةُ ومصدرُها،
+والفوجُ بأعداده ونسبته، وبصمةُ هويّة أعضائه من معرّفاتٍ عشوائية، وإصدارُ الأداة). وكلُّ تشغيلٍ بعده يقارن به ولا يعيد
+حسابه، ويُعلن ما اختلف فيه حسابُ اليوم (`baseline.frozen.drift`). وتغييرُه بـ`--refreeze-baseline <رمز سبب>` وحده. وما
+يفرّق «لم يُجمَّد قطّ» من «جُمِّد ثم ضاع» بصمتُه في التقارير المنشورة (`baseline.frozen.digest`). والجلسةُ التي لا تُقرأ أو فسدت لا تُسقط
 الأداة: تُعدّ في `unreadable` برمزها.
 
 الحدود (وهي في التقرير `measurement_limits`): الواجهةُ لا تحفظ زمنَ الجولة، فالزمنُ فارغٌ بسببه المسمّى، والتاريخُ يوم
@@ -40,6 +47,7 @@ UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع
 from __future__ import annotations
 
 import argparse
+import hashlib
 from collections import Counter
 from datetime import datetime, timezone
 from fractions import Fraction
@@ -73,6 +81,8 @@ MACHINE_CODE = re.compile(r"[a-z][a-z0-9_]{0,63}\Z")
 HEX_RUN = re.compile(r"[0-9a-f]{12,}")          # معرّفٌ أو بصمةٌ داخل ما يبدو رمزًا
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
 COMMIT = re.compile(r"[0-9a-f]{40}\Z")
+SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+FROZEN_NAME = "journeys-baseline.json"            # خطُّ الأساس المجمَّد في docs/probe بجانب التقارير
 
 TEXT_MODES = ("text", "media")                  # جلساتٌ حالتُها في sessions/<id>/chat/<id>/state.json
 AGENT_MODES = ("agent", "research", "coder", "translate")   # حالتُها في agent-control/<id>/state.json
@@ -107,6 +117,14 @@ OUTCOME_LABELS = {
     "stopped": "أوقفها المالك",
 }
 BASELINE_MIN_DATED_JOURNEYS = 30
+FROZEN_FIELDS = frozenset({"schema_version", "tool", "task", "kind", "commit", "frozen_on", "window", "cohort",
+                           "members_digest", "refreeze_reason", "history", "measurement_limits"})
+FROZEN_COHORT_FIELDS = ("journeys", "distinct_dates", "by_date", "by_outcome", "completion_rate", "cut_date")
+FROZEN_LIMITS = (
+    "the_frozen_baseline_is_the_first_ready_baseline_published_in_docs_probe_and_later_runs_compare_against_it_without_recomputing_it",
+    "members_digest_is_a_sha256_of_opaque_session_ids_and_turn_positions_and_carries_no_text",
+    "a_recompute_that_differs_is_reported_as_drift_and_replaces_nothing_without_refreeze_baseline_and_its_reason_code",
+)
 BASELINE_MIN_DISTINCT_DATES = 2
 # نوعا القيد اللذان بلغ فيهما النداءُ المزوّد (`core/run.py`)؛ و"refused" رفضٌ قبله فليس خطوة
 CALL_KINDS = frozenset({"ok", "error"})
@@ -132,6 +150,7 @@ MEASUREMENT_LIMITS = (
     "a_later_write_to_a_session_that_holds_baseline_journeys_can_undate_or_reorder_them_so_the_baseline_is_the_first_report_that_says_baseline_ready",
     "the_m2_comparison_cohort_is_the_first_journeys_dated_inside_the_m2_window_the_plan_records_as_many_as_the_m2_gate_count_minus_the_30_of_the_baseline_and_has_no_rate_until_it_is_complete",
     "m1_journeys_after_the_baseline_30_belong_to_neither_cohort_and_are_counted_in_m1_after_baseline",
+    "once_a_ready_baseline_is_published_in_docs_probe_it_is_frozen_in_journeys_baseline_json_and_later_runs_use_its_window_and_cohort_reporting_any_recompute_difference_as_drift",
     "the_cumulative_completion_rate_covers_every_stored_journey_pre_m1_and_baseline_included_and_is_not_an_input_of_any_gate",
 )
 CARRIES = "counts_machine_codes_utc_dates_and_durations_only"
@@ -538,13 +557,13 @@ def _may_fall_in(journey: dict, start: str, end: str) -> bool:
 
 
 def _m2_gate(records: list[dict], window: dict, gate: dict | None, baseline: dict | None,
-             baseline_missing: list[str], unreadable: list[str]) -> tuple[dict, dict]:
+             baseline_missing: list[str], unreadable: list[str], m1_after: int | None) -> tuple[dict, dict]:
     """بوابةُ م٢: أولُ الرحلات المؤرَّخة داخل نافذة م٢ بالترتيب نفسِه، بعددِ الخطة ناقصَ الثلاثين، ونسبتُها مقابل نسبة
     الفوج الأول. فلا يدخلها ما قبل م٢ (ولا ما بعد الثلاثين في م١: يُعدّ في m1_after_baseline) ولا ما بعدها ولا النسبةُ
     التراكمية؛ ولا حكمَ قبل أن يكتمل فوجُها ويُعرف موضعُ كلِّ رحلةٍ فيه."""
     block = {"rule": M2_RULE, "source": None, "baseline_journeys": BASELINE_MIN_DATED_JOURNEYS, "target_journeys": None,
              "required_points": None, "comparison_size": None, "window": None,
-             "m1_after_baseline": None if baseline is None else baseline["window_dated_journeys"] - baseline["journeys"],
+             "m1_after_baseline": m1_after,
              "comparison": None, "baseline_completion_rate": None, "comparison_completion_rate": None,
              "improvement_points": None, "passed": None, "missing": []}
     if gate is None:
@@ -583,20 +602,10 @@ def _m2_gate(records: list[dict], window: dict, gate: dict | None, baseline: dic
     return block, {id(journey): index for index, journey in enumerate(after, 1)}
 
 
-def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit: str | None,
-                 window: dict, gate: dict | None = None) -> dict:
-    records = scanned["journeys"]
-    total = len(records)
-    by_outcome, by_date = _tally(records)
-    by_mode = {name: 0 for name in MODES}
-    for journey in records:
-        by_mode[journey["mode"]] = by_mode.get(journey["mode"], 0) + 1
-    dated = sum(by_date.values())
-    counts = scanned["counts"]
-    unreadable = [UNREADABLE_ENTRIES] if counts["unreadable_projects"] or counts["unreadable_sessions"] else []
-    completion_rate, rate_reason = _rate(by_outcome, total, unreadable)
+def _baseline(records: list[dict], window: dict, unreadable: list[str]) -> tuple[dict | None, list[str], list[dict]]:
+    """(الفوج، وما ينقصه، وأعضاؤه) من بيانات اليوم بنافذةٍ معطاة: أولُ ثلاثين مؤرَّخةٍ فيها بالترتيب الثابت."""
     start, end = window["from"], window["until"]
-    missing, cohort, positions = [], None, {}
+    missing, cohort, members = [], None, []
     if start is None or end is None:
         missing.extend(["baseline_window_unknown", *unreadable])
     else:
@@ -607,7 +616,6 @@ def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit
         cut = members[-1]["date"] if full else end
         undated = sum(1 for journey in records if journey["date"] is None and _may_fall_in(journey, start, cut))
         order_unknown = full and _cut_order_unknown(members, rest, cut)
-        positions = {id(journey): index for index, journey in enumerate(members, 1)}
         cohort_outcomes, cohort_dates = _tally(members)
         blockers = (unreadable + ([UNDATED_BEFORE_CUT] if undated else [])
                     + ([CUT_ORDER_UNKNOWN] if order_unknown else []))
@@ -622,7 +630,54 @@ def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit
         missing.append("too_few_dated_journeys")
     if cohort is None or cohort["distinct_dates"] < BASELINE_MIN_DISTINCT_DATES:
         missing.append("too_few_distinct_dates")
-    m2_gate, compared = _m2_gate(records, window, gate, cohort, missing, unreadable)
+    return cohort, missing, members
+
+
+def _members_digest(members: list[dict]) -> str:
+    """بصمةُ هويّة أعضاء الفوج: معرّفاتُ جلساتٍ عشوائية ومواضعُ جولات، لا نصّ؛ لا تخرج إلا في خطّ الأساس المجمَّد."""
+    return digest(sorted([member["_order"]["session"], member["_order"]["index"]] for member in members))
+
+
+def _drift(frozen: dict, cohort: dict | None, missing: list[str], members: list[dict]) -> list[str]:
+    """ما اختلف فيه الحسابُ من بيانات اليوم عن خطّ الأساس المجمَّد، بأسمائه؛ يُعلَن ولا يحلّ محلَّه."""
+    drift = []
+    if not members or _members_digest(members) != frozen["members_digest"]:
+        drift.append("baseline_members_changed")
+    if cohort is None or cohort["by_outcome"] != frozen["cohort"]["by_outcome"]:
+        drift.append("baseline_outcomes_changed")
+    if missing:
+        drift.append("baseline_not_ready_now")
+    return drift
+
+
+def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit: str | None,
+                 window: dict, gate: dict | None = None, frozen: dict | None = None) -> dict:
+    """التقرير. ومع خطّ أساسٍ مجمَّد يُقارَن به هو ونافذتُه، ويُعلَن ما اختلف فيه الحسابُ من بيانات اليوم (drift)."""
+    records = scanned["journeys"]
+    total = len(records)
+    by_outcome, by_date = _tally(records)
+    by_mode = {name: 0 for name in MODES}
+    for journey in records:
+        by_mode[journey["mode"]] = by_mode.get(journey["mode"], 0) + 1
+    dated = sum(by_date.values())
+    counts = scanned["counts"]
+    unreadable = [UNREADABLE_ENTRIES] if counts["unreadable_projects"] or counts["unreadable_sessions"] else []
+    completion_rate, rate_reason = _rate(by_outcome, total, unreadable)
+    if frozen is not None:
+        window = frozen["window"]
+    now, missing_now, members = _baseline(records, window, unreadable)
+    positions = {id(journey): index for index, journey in enumerate(members, 1)}
+    m1_after = None if now is None else now["window_dated_journeys"] - now["journeys"]
+    if frozen is None:
+        cohort, missing = now, missing_now
+        state = {"state": "not_frozen", "digest": None, "frozen_on": None, "refreeze_reason": None, "drift": [],
+                 "recomputed_missing": None}
+    else:
+        cohort, missing = dict(frozen["cohort"]), []
+        state = {"state": "loaded", "digest": frozen["digest"], "frozen_on": frozen["frozen_on"],
+                 "refreeze_reason": frozen["refreeze_reason"], "drift": _drift(frozen, now, missing_now, members),
+                 "recomputed_missing": missing_now}
+    m2_gate, compared = _m2_gate(records, window, gate, cohort, missing, unreadable, m1_after)
     journeys = sorted(({**{key: value for key, value in journey.items() if not key.startswith("_")},
                         "baseline_position": positions.get(id(journey)),
                         "comparison_position": compared.get(id(journey))} for journey in records),
@@ -649,7 +704,8 @@ def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit
         "cumulative_completion_rate_unavailable_reason": rate_reason,
         "baseline_ready": not missing,
         "baseline": {"rule": BASELINE_RULE, "window": window, "min_dated_journeys": BASELINE_MIN_DATED_JOURNEYS,
-                     "min_distinct_dates": BASELINE_MIN_DISTINCT_DATES, "cohort": cohort, "missing": missing},
+                     "min_distinct_dates": BASELINE_MIN_DISTINCT_DATES, "cohort": cohort, "missing": missing,
+                     "frozen": state},
         "m2_gate": m2_gate,
         "outcome_labels": OUTCOME_LABELS,
         "journeys": journeys,
@@ -657,41 +713,119 @@ def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit
     }
 
 
-_CONSTANTS = frozenset({TOOL, TASK, CARRIES, BASELINE_RULE, M2_RULE, *MEASUREMENT_LIMITS, *OUTCOME_LABELS.values()})
+_CONSTANTS = frozenset({TOOL, TASK, CARRIES, BASELINE_RULE, M2_RULE, *MEASUREMENT_LIMITS, *FROZEN_LIMITS,
+                        *OUTCOME_LABELS.values()})
+
+
+def _allowed(text) -> bool:
+    return (text in _CONSTANTS or bool(DATE.fullmatch(text))
+            or (bool(MACHINE_CODE.fullmatch(text)) and not HEX_RUN.search(text)))
+
+
+def _only_codes(value, hex_paths: frozenset, path: tuple = ()) -> None:
+    """كلُّ نصٍّ (مفتاحًا أو قيمة) ثابتٌ أو تاريخٌ أو رمزُ آلةٍ بلا تسلسلٍ ستّ عشريّ؛ والبصماتُ في مواضعها المسمّاة وحدها."""
+    if path in hex_paths:
+        if value is not None and not (isinstance(value, str) and (SHA256.fullmatch(value) or COMMIT.fullmatch(value))):
+            raise Refused("report_leak")
+        return
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str) or not _allowed(key):
+                raise Refused("report_leak")
+            _only_codes(item, hex_paths, (*path, key))
+    elif isinstance(value, list):
+        for item in value:
+            _only_codes(item, hex_paths, (*path, "[]"))
+    elif isinstance(value, str):
+        if not _allowed(value):
+            raise Refused("report_leak")
+    elif value is not None and not isinstance(value, (bool, int, float)):
+        raise Refused("report_leak")
 
 
 def check_report(report: dict) -> None:
     """التقريرُ أعدادٌ ورموزُ آلةٍ وتواريخُ وأزمنةٌ فقط: مفاتيحُه ومفاتيحُ كلِّ رحلةٍ هي ما تبنيه هذه الوحدةُ لا غير، وكلُّ
-    نصٍّ فيه (مفتاحًا أو قيمة) ثابتٌ من هذه الوحدة أو تاريخٌ أو رمزُ آلةٍ بلا تسلسلٍ ستّ عشريٍّ طويل، والبصمةُ الوحيدة
-    بصمةُ الإيداع في `commit`. وما سوى ذلك `report_leak`. وحدُّه المعلَن: قيمةٌ بشكل رمز آلة في حقلٍ مفتوح (الحالة ورمزُ
-    الخطأ) لا يُعرف أهي من المنتج أم من نصّ المالك؛ ذلك يحرسه الاختبارُ ببايتات التقرير لا هذا الفحص."""
+    نصٍّ فيه (مفتاحًا أو قيمة) ثابتٌ من هذه الوحدة أو تاريخٌ أو رمزُ آلةٍ بلا تسلسلٍ ستّ عشريٍّ طويل، والبصمتان الوحيدتان
+    بصمةُ الإيداع في `commit` وبصمةُ خطّ الأساس المجمَّد في `baseline.frozen.digest`. وما سوى ذلك `report_leak`. وحدُّه
+    المعلَن: قيمةٌ بشكل رمز آلة في حقلٍ مفتوح (الحالة ورمزُ الخطأ) لا يُعرف أهي من المنتج أم من نصّ المالك؛ ذلك يحرسه
+    الاختبارُ ببايتات التقرير لا هذا الفحص."""
     if report.get("commit") is not None and not COMMIT.fullmatch(str(report["commit"])):
         raise Refused("report_leak")
     if (set(report) != REPORT_FIELDS or not isinstance(report["journeys"], list)
             or any(not isinstance(journey, dict) or set(journey) != JOURNEY_FIELDS for journey in report["journeys"])):
         raise Refused("report_leak")
+    frozen = report["baseline"].get("frozen") if isinstance(report["baseline"], dict) else None
+    if frozen is not None and (not isinstance(frozen, dict) or (frozen.get("digest") is not None
+                                                                 and not SHA256.fullmatch(str(frozen["digest"])))):
+        raise Refused("report_leak")
+    _only_codes(report, frozenset({("commit",), ("baseline", "frozen", "digest")}))
 
-    def allowed(text) -> bool:
-        return (text in _CONSTANTS or bool(DATE.fullmatch(text))
-                or (bool(MACHINE_CODE.fullmatch(text)) and not HEX_RUN.search(text)))
 
-    def walk(value, top=False):
-        if isinstance(value, dict):
-            for key, item in value.items():
-                if not isinstance(key, str) or not allowed(key):
-                    raise Refused("report_leak")
-                if not (top and key == "commit"):
-                    walk(item)
-        elif isinstance(value, list):
-            for item in value:
-                walk(item)
-        elif isinstance(value, str):
-            if not allowed(value):
-                raise Refused("report_leak")
-        elif value is not None and not isinstance(value, (bool, int, float)):
-            raise Refused("report_leak")
+_FROZEN_HEX = frozenset({("commit",), ("members_digest",), ("history", "[]", "digest")})
 
-    walk(report, top=True)
+
+def _artifact(report: dict, members: list[dict], *, today: str, previous: dict | None, reason: str | None,
+              lost: set[str]) -> dict:
+    """خطُّ الأساس المجمَّد: نافذتُه ومصدرُها، وفوجُه بأعداده ونسبته، وبصمةُ هويّة أعضائه، وإصدارُ الأداة؛ وسجلُّ ما جُمِّد
+    قبله ببصماته وسبب إعادة التجميد، فلا يضيع أثرُ خطّ أساسٍ نُشر."""
+    history = [] if previous is None else [*previous["history"], {"digest": previous["digest"],
+                                                                  "frozen_on": previous["frozen_on"], "reason": reason}]
+    history += [{"digest": value, "frozen_on": None, "reason": reason} for value in sorted(lost)]
+    return {"schema_version": SCHEMA_VERSION, "tool": TOOL, "task": TASK, "kind": "journeys_baseline",
+            "commit": report["commit"], "frozen_on": today, "window": report["baseline"]["window"],
+            "cohort": {key: report["baseline"]["cohort"][key] for key in FROZEN_COHORT_FIELDS},
+            "members_digest": _members_digest(members), "refreeze_reason": reason, "history": history,
+            "measurement_limits": list(FROZEN_LIMITS)}
+
+
+def _load_frozen(path: Path) -> dict | None:
+    """خطُّ الأساس المجمَّد، أو None إن لم يُجمَّد قطّ؛ وما لا يُقرأ أو خالف مخطّطَه رفضٌ مسمًّى لا إعادةُ حساب."""
+    try:
+        data = path.read_bytes()
+    except FileNotFoundError:
+        return None
+    except OSError:
+        raise Refused("frozen_baseline_unreadable") from None
+    try:
+        value = json.loads(data.decode("utf-8"))
+        cohort, window = value["cohort"], value["window"]
+        valid = (set(value) == FROZEN_FIELDS and value["kind"] == "journeys_baseline"
+                 and set(cohort) == set(FROZEN_COHORT_FIELDS) and cohort["journeys"] == BASELINE_MIN_DATED_JOURNEYS
+                 and isinstance(cohort["completion_rate"], (int, float)) and isinstance(cohort["by_outcome"], dict)
+                 and set(window) == {"from", "from_source", "until", "until_source"}
+                 and _day(window["from"]) and _day(window["until"]) and SHA256.fullmatch(value["members_digest"])
+                 and isinstance(value["history"], list))
+        if valid:
+            _only_codes(value, _FROZEN_HEX)
+    except (ValueError, UnicodeError, KeyError, TypeError, AttributeError, Refused):
+        valid = False
+    if not valid:
+        raise Refused("frozen_baseline_unreadable")
+    return {**value, "digest": hashlib.sha256(data).hexdigest(),
+            "known": {hashlib.sha256(data).hexdigest(), *(item["digest"] for item in value["history"])}}
+
+
+def _pointers(probe: Path, frozen_name: str) -> set[str]:
+    """بصماتُ خطّ الأساس المجمَّد التي سجّلتها تقاريرُ الرحلات المنشورة: أثرٌ يفرّق «لم يُجمَّد قطّ» من «جُمِّد ثم ضاع»."""
+    found = set()
+    for path in sorted(probe.glob("journeys-*.json")):
+        if path.name == frozen_name:
+            continue
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+            pointer = value["baseline"]["frozen"]["digest"] if "frozen" in value["baseline"] else None
+        except (OSError, ValueError, UnicodeError, KeyError, TypeError):
+            raise Refused("journeys_report_unreadable") from None
+        if pointer is not None:
+            found.add(pointer)
+    return found
+
+
+def _replace(path: Path, data: bytes) -> None:
+    """كتابةٌ ذرّية فوق ملفٍّ قائم (إعادةُ التجميد بطلبٍ صريح وحدها)."""
+    temporary = path.with_name(f".{path.name}.tmp")
+    _write(temporary, data)
+    os.replace(temporary, path)
 
 
 def _write(out: Path, data: bytes) -> None:
@@ -719,15 +853,57 @@ def main(argv=None) -> int:
     parser.add_argument("--out", type=Path, default=None, help="ملفُّ التقرير (الافتراضيّ docs/probe/journeys-<اليوم>.json)")
     parser.add_argument("--baseline-from", default=None, help="أولُ يومٍ في نافذة خطّ الأساس YYYY-MM-DD (الافتراضيّ بدءُ م١ في الخطة)")
     parser.add_argument("--baseline-until", default=None, help="آخرُ يومٍ فيها YYYY-MM-DD (الافتراضيّ نهايةُ م١ في الخطة)")
+    parser.add_argument("--refreeze-baseline", default=None, metavar="REASON_CODE",
+                        help="إعادةُ تجميد خطّ الأساس بسببٍ برمز آلة (مثل cut_order_unknown_on_first_day)")
     args = parser.parse_args(argv)
     today = datetime.now(timezone.utc).date()
     root = DEFAULT_ROOT if args.root is None else args.root
     out = args.out if args.out is not None else PROBE_DIR / f"journeys-{today:%Y%m%d}.json"
+    # التقريرُ في docs/probe منشور: فيه يُجمَّد خطُّ الأساس أولَ ما يجهز، ومنه تُقرأ آثارُ ما جُمِّد
+    publish = out.resolve().parent == PROBE_DIR.resolve()
+    frozen_path = PROBE_DIR / FROZEN_NAME
+    reason = args.refreeze_baseline
     try:
-        window = baseline_window(args.baseline_from, args.baseline_until)
-        report = build_report(scan(root), generated_on=today.isoformat(), default_root=args.root is None,
-                              commit=_commit(), window=window, gate=plan_m2_gate())
-        check_report(report)
+        if reason is not None and (not MACHINE_CODE.fullmatch(reason) or HEX_RUN.search(reason)):
+            raise Refused("refreeze_reason_invalid")
+        if reason is not None and not publish:
+            raise Refused("refreeze_requires_probe_output")
+        requested = baseline_window(args.baseline_from, args.baseline_until)
+        pointers = _pointers(PROBE_DIR, FROZEN_NAME)
+        frozen = _load_frozen(frozen_path)
+        if frozen is None and pointers and reason is None:
+            raise Refused("frozen_baseline_lost")
+        if frozen is not None and reason is None:
+            if pointers - frozen["known"]:
+                raise Refused("frozen_baseline_changed")
+            if ((args.baseline_from is not None or args.baseline_until is not None)
+                    and (requested["from"], requested["until"]) != (frozen["window"]["from"], frozen["window"]["until"])):
+                raise Refused("baseline_already_frozen")
+        if publish and os.path.lexists(out):
+            raise Refused("output_exists")
+        scanned = scan(root)
+        report = build_report(scanned, generated_on=today.isoformat(), default_root=args.root is None,
+                              commit=_commit(), window=requested, gate=plan_m2_gate(),
+                              frozen=None if reason is not None else frozen)
+        state = report["baseline"]["frozen"]
+        if publish and (frozen is None or reason is not None) and report["baseline_ready"]:
+            _, _, members = _baseline(scanned["journeys"], report["baseline"]["window"],
+                                      [UNREADABLE_ENTRIES] if report["unreadable"]["projects"] or
+                                      report["unreadable"]["sessions"] else [])
+            artifact = _artifact(report, members, today=today.isoformat(), previous=frozen, reason=reason,
+                                 lost=pointers if frozen is None else set())
+            _only_codes(artifact, _FROZEN_HEX)
+            data = (json.dumps(artifact, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+            state.update(state="refrozen" if frozen is not None else "frozen_now",
+                         digest=hashlib.sha256(data).hexdigest(), frozen_on=today.isoformat(), refreeze_reason=reason)
+            check_report(report)
+            (_replace if frozen is not None else _write)(frozen_path, data)
+        elif reason is not None:
+            raise Refused("refreeze_baseline_not_ready")
+        else:
+            if report["baseline_ready"] and state["state"] == "not_frozen":
+                state["state"] = "ready_not_published"
+            check_report(report)
         _write(out, (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     except Refused as exc:
         print(json.dumps({"status": "refused", "code": exc.code}))
