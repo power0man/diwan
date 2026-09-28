@@ -4,6 +4,8 @@
   "enforced_from": "2026-09-25T14:35:00Z",
   "lanes": {
     "anthropic": [
+      "tools/mutation_check.py",
+      "tools/context_index.py",
       "core/run.py",
       "core/contracts.py",
       "core/validate.py",
