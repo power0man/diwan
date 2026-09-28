@@ -608,12 +608,15 @@ def test_the_free_llm_workflow_is_least_privilege_pinned_and_guarded():
     # أحكامُ البنك وقائمةُ المالك تُحفظ أثرًا مثبَّتًا، ولو أخفقت المراجعة، بعد فحصٍ أنها سجلّاتُ شطرٍ مفتوح بلا رمز (ملاحظة Codex على #174)
     check = text.split("- name: Check the bank review records before upload", 1)[1].split("- name:", 1)[0]
     assert "if: always() && env.MODE == 'bank'" in check and "id: artifact_check" in check
-    assert "--check-artifact evaluation/banks/kimi_v1/reviews" in check and "set -euo pipefail" in check
+    assert '--check-artifact "evaluation/banks/kimi_v1/runs/$RUN_KEY/reviews"' in check and "set -euo pipefail" in check
+    assert '--run-id "$RUN_KEY"' in check, "الفحصُ يرفض ما لا يحمل معرّفَ هذا التشغيل"
     upload = text.split("- name: Upload the bank review records for the owner", 1)[1]
     assert "if: always() && env.MODE == 'bank' && steps.artifact_check.outcome == 'success'" in upload
-    assert "path: evaluation/banks/kimi_v1/reviews/" in upload and "if-no-files-found: error" in upload
+    assert "path: evaluation/banks/kimi_v1/runs/${{ env.RUN_KEY }}/reviews/" in upload and "if-no-files-found: error" in upload
+    assert "RUN_KEY: ${{ github.run_id }}-${{ github.run_attempt }}" in text
     assert "retention-days: 30" in upload and "name: ${{ env.ARTIFACT_NAME }}" in upload
-    assert '--artifact-name "$ARTIFACT_NAME"' in text.split("- name: Review the open part of kimi_v1", 1)[1].split("- name:", 1)[0]
+    bank_run = text.split("- name: Review the open part of kimi_v1", 1)[1].split("- name:", 1)[0]
+    assert '--run-id "$RUN_KEY" --artifact-name "$ARTIFACT_NAME"' in bank_run
     assert "persist-credentials: false" in text
     assert "      - tools/external_review.py\n" in text and "      - .github/workflows/free-llm-review.yml\n" in text
     assert "options: [smoke, bank]" in text and "default: smoke" in text
@@ -897,3 +900,73 @@ def test_the_uploaded_review_records_are_open_split_json_without_tokens(tmp_path
     assert missing.value.code == "artifact_missing"
     assert cli.main(["--check-artifact", str(tmp_path / "absent")]) == 2
     assert _printed(capsys)["code"] == "artifact_missing"
+
+
+def test_the_bank_run_writes_a_clean_run_directory_and_the_upload_refuses_anything_else(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174: الخلاصةُ المتتبَّعة لا تُرفع باسم تشغيلٍ لم يولّدها، ولو خرج قبل الخلاصة."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "tracked")
+    (bank / "reviews").mkdir()
+    (bank / "reviews" / "SUMMARY.json").write_text(json.dumps({"owner_queue": [{"id": "old"}]}), encoding="utf-8")
+    # خروجٌ قبل الخلاصة: فهرسٌ فيه عائلةٌ صالحةٌ واحدة فلا زوج
+    _free(monkeypatch, FreeOpener(catalog=[_gh(DS)]))
+    assert cli.main([str(bank), "--backend", "github-models", "--run-id", "R1", "--brief", str(BRIEF)]) == 2
+    assert _printed(capsys)["code"] == "reviewers_unavailable"
+    run_reviews = bank / "runs" / "R1" / "reviews"
+    assert sorted(p.name for p in run_reviews.rglob("*")) == ["RUN.json"], "سجلُّ الرفض المسمّى وحده"
+    state = json.loads((run_reviews / "RUN.json").read_text(encoding="utf-8"))
+    assert (state["run_id"], state["status"], state["code"]) == ("R1", "refused", "reviewers_unavailable")
+    assert cli.check_artifact(run_reviews, environ={}, run_id="R1") == {
+        "status": "clean", "files": 1, "owner_queue": None,
+        "run": {"run_id": "R1", "status": "refused", "code": "reviewers_unavailable"}}
+    with pytest.raises(AutomaticReviewError) as stale:
+        cli.check_artifact(bank / "reviews", environ={}, run_id="R1")
+    assert stale.value.code == "artifact_stale_summary", "الخلاصةُ المتتبَّعة تُرفض باسمها"
+    assert cli.main(["--check-artifact", str(bank / "reviews"), "--run-id", "R1"]) == 2
+    assert _printed(capsys)["code"] == "artifact_stale_summary"
+    # تشغيلٌ ناجح: كلُّ سجلٍّ والخلاصةُ يحملان المعرّف، والخلاصةُ المتتبَّعة لم تُمسّ
+    _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    args = [str(bank), "--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--run-id", "R2",
+            "--brief", str(BRIEF)]
+    assert cli.main(args) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["run_id"] == "R2" and result["summary"].endswith("runs/R2/reviews/SUMMARY.json")
+    run_reviews = bank / "runs" / "R2" / "reviews"
+    assert cli.check_artifact(run_reviews, environ={}, run_id="R2")["files"] == 4
+    assert json.loads((run_reviews / "RUN.json").read_text(encoding="utf-8"))["status"] == "reviewed"
+    assert json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8")) == {"owner_queue": [{"id": "old"}]}
+    with pytest.raises(AutomaticReviewError) as mixed:
+        cli.check_artifact(run_reviews, environ={}, run_id="R3")
+    assert mixed.value.code in ("artifact_stale_record", "artifact_stale_summary")
+    stray = run_reviews / "zz_old" / "a" / "kimi_x.json"
+    stray.parent.mkdir(parents=True)
+    stray.write_text(json.dumps({"model": "old", "file": "a/kimi_x.json", "error": None}), encoding="utf-8")
+    with pytest.raises(AutomaticReviewError) as record:
+        cli.check_artifact(run_reviews, environ={}, run_id="R2")
+    assert record.value.code == "artifact_stale_record"
+    # التشغيلُ لا يُعاد في مجلّدٍ قائم، ومعرّفُه لا يصعد
+    assert cli.main(args) == 2 and _printed(capsys)["code"] == "run_dir_exists"
+    for bad in ("..", "../x", "a/b"):
+        assert cli.main([str(bank), "--backend", "github-models", "--run-id", bad]) == 2
+        assert _printed(capsys)["code"] == "run_id_invalid"
+
+
+def test_bank_counts_come_from_the_final_set_and_attempts_are_named_apart(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174: A تنفد حصّتُه وB ينجح وC يحلّ محلّ A — الأعدادُ النهائية بلا فشل، ومجاميعُ المحاولات منفصلة."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "counts")
+    args = [str(bank), "--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--fallback", LL,
+            "--brief", str(BRIEF)]
+    _free(monkeypatch, FreeOpener(replies={DS: [429], MI: [_ok(ids)], LL: [_ok(ids)]}))
+    assert cli.main(args) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert {k: result[k] for k in ("reviewed", "skipped", "failed")} == {"reviewed": 2, "skipped": 0, "failed": 0}
+    assert result["attempts"] == {"reviewed": 2, "skipped": 1, "failed": 1}
+    # استدعاءٌ ثانٍ: ما سبق يُعدّ skipped لا reviewed
+    _free(monkeypatch, FreeOpener(replies={MI: [_ok(ids)], LL: [_ok(ids)]}))
+    assert cli.main([str(bank), "--backend", "github-models", "--reviewer", MI, "--reviewer", LL,
+                     "--brief", str(BRIEF)]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert {k: result[k] for k in ("reviewed", "skipped", "failed")} == {"reviewed": 0, "skipped": 2, "failed": 0}

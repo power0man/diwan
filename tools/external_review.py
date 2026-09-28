@@ -39,6 +39,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import sys
 import tempfile
 import urllib.error
@@ -702,17 +703,48 @@ def other_reviewer_errors(bank: Path, final_models: set[str]) -> int:
     return count
 
 
+def _successful_records(bank: Path) -> set[str]:
+    """مساراتُ السجلّات الناجحة في reviews/ (خارج superseded/) نسبةً إليه: ما سبق هذا الاستدعاءَ يُعدّ «skipped» لا «reviewed»."""
+    root = bank / "reviews"
+    found = set()
+    for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
+        relative = path.relative_to(root)
+        if path.name in ("SUMMARY.json", RUN_FILE) or relative.parts[0] == SUPERSEDED_DIR:
+            continue
+        if json.loads(path.read_text(encoding="utf-8")).get("error") is None:
+            found.add(relative.as_posix())
+    return found
+
+
+def final_set_counts(bank: Path, final_models: set[str], pre_existing: set[str]) -> dict:
+    """أعدادُ المجموعة الأخيرة وحدها (ملاحظة Codex على #174): ناجحٌ أُنتج في هذا الاستدعاء reviewed، وناجحٌ سبقه skipped،
+    وفاشلٌ failed. ومجاميعُ المحاولات كلِّها (ومنها المستبدَلون) في حقلٍ مسمًّى منفصل."""
+    counts = {"reviewed": 0, "skipped": 0, "failed": 0}
+    for model in sorted(final_models):
+        root = bank / "reviews" / _slug(model)
+        for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
+            relative = path.relative_to(bank / "reviews").as_posix()
+            if json.loads(path.read_text(encoding="utf-8")).get("error"):
+                counts["failed"] += 1
+            elif relative in pre_existing:
+                counts["skipped"] += 1
+            else:
+                counts["reviewed"] += 1
+    return counts
+
+
 def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     check_public_bank(args.bank)
     candidates, source = _free_candidates(args, transport)
     want = max(2, len(args.reviewers or []))
-    totals = {"reviewed": 0, "skipped": 0, "failed": 0}
+    attempts = {"reviewed": 0, "skipped": 0, "failed": 0}
+    pre_existing = _successful_records(args.bank)
 
     def run(chosen: list[dict]) -> set[str]:
         models = [c["model"] for c in chosen]
         counts = review_bank(args.bank, models, transport, brief_path=args.brief)
-        for key in totals:
-            totals[key] += counts[key]
+        for key in attempts:
+            attempts[key] += counts[key]
         return _quota_models(args.bank, models)
 
     def replaced(identity: dict, replacement: list[str]) -> None:
@@ -735,7 +767,11 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
         counted = []  # المستبدَلُ ناجحًا تاريخٌ لا خطأ
         superseded = [{**e, "superseded_by": replaced_by[e["model"]]} for e in quota_errors]
     status = "failed" if failure or counted else "reviewed"
-    result = {"status": status, **({"code": failure} if failure else {}), **totals,
+    if args.run_id:          # كلُّ سجلٍّ وخلاصةٍ في مجلّد هذا التشغيل يحمل معرّفَه، فيُرفض عند الرفع ما لا يحمله
+        stamp_run(args.bank / "reviews", args.run_id)
+    final_counts = final_set_counts(args.bank, final_models, pre_existing)
+    result = {"status": status, **({"code": failure} if failure else {}), **final_counts,
+              "attempts": attempts, **({"run_id": args.run_id} if args.run_id else {}),
               "backend": transport.describe(), **source,
               "reviewers": {c["model"]: c["family"] for c in chosen}, "fallbacks": fallbacks,
               "pairs": summary["pairs"], "errors": len(counted),
@@ -745,9 +781,57 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
               **({"artifact": args.artifact_name} if args.artifact_name else {}),
               "owner_queue": len(summary["owner_queue"]), "last_failure_shapes": transport.failures,
               "summary": str(args.bank / "reviews" / "SUMMARY.json")}
-    if not totals["reviewed"] and not totals["skipped"]:        # لم يُجب نموذجٌ واحد في هذا التشغيل
+    if not attempts["reviewed"] and not attempts["skipped"]:        # لم يُجب نموذجٌ واحد في هذا التشغيل
         _mark_unavailable(result, [e["error"] for e in final_errors])
+    if args.run_id:
+        finish_run(args.bank, result["status"], result.get("code"))
     return result, EXIT_CODES.get(result["status"], 1)
+
+
+# ————— مجلّدُ تشغيلٍ نظيف (ملاحظة Codex على #174): لا يُرفع باسم تشغيلٍ ما لم يولّده هو —————
+
+RUN_FILE = "RUN.json"
+_RUN_ID = re.compile(r"(?!\.{1,2}$)[A-Za-z0-9_.-]{1,64}")
+
+
+def prepare_run(bank: Path, run_id: str) -> Path:
+    """`<البنك>/runs/<run_id>/`: نسخةٌ من الشطر المفتوح وحده، ومراجعاتٌ تبدأ فارغة، وRUN.json بحالة started.
+
+    فالخلاصةُ المتتبَّعة في `<البنك>/reviews/` لا تُقرأ ولا تُرفع باسم هذا التشغيل، وما يُرفع وُلد فيه وحده.
+    """
+    if not _RUN_ID.fullmatch(run_id):
+        raise AutomaticReviewError("run_id_invalid", run_id)
+    run = bank / "runs" / run_id
+    if run.exists():
+        raise AutomaticReviewError("run_dir_exists", run_id)
+    source = bank / "open"
+    if not source.is_dir():
+        raise AutomaticReviewError("open_split_missing", str(source))
+    shutil.copytree(source, run / "open")
+    _write_json(run / "reviews" / RUN_FILE, {"run_id": run_id, "started_at": _utc_now(), "status": "started"})
+    return run
+
+
+def finish_run(run: Path, status: str, code: str | None = None) -> None:
+    """حالةُ التشغيل في RUN.json: reviewed أو failed أو unavailable أو refused برمزه — فإن خرج قبل الخلاصة بقي هذا وحده."""
+    path = run / "reviews" / RUN_FILE
+    record = json.loads(path.read_text(encoding="utf-8"))
+    record.update(status=status, finished_at=_utc_now(), **({"code": code} if code else {}))
+    _write_json(path, record)
+
+
+def stamp_run(reviews: Path, run_id: str) -> None:
+    """كلُّ ملفّ JSON في مراجعات هذا التشغيل (السجلّاتُ والمستبدَلون والخلاصة) يحمل run_id."""
+    for path in sorted(reviews.rglob("*.json")):
+        record = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(record, dict) and record.get("run_id") != run_id:
+            record["run_id"] = run_id
+            _write_json(path, record)
+
+
+def _utc_now() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 # نمطُ الرمز نفسُه في tools/export_public.py::PERSONAL_PATTERNS["token"] (اختبارٌ يربطهما، فلا يُستورد هنا ما يجرّ core)
@@ -756,7 +840,7 @@ _TOKEN_PATTERN = re.compile(r"(?<![A-Za-z0-9])(?:gh[pousr]|github_pat)_[A-Za-z0-
                             r"|(?<![A-Za-z0-9])AKIA[0-9A-Z]{16}(?![A-Za-z0-9])")
 
 
-def check_artifact(root: Path, environ=os.environ) -> dict:
+def check_artifact(root: Path, environ=os.environ, run_id: str | None = None) -> dict:
     """ما يُرفع من `reviews/` في Actions (ملاحظة Codex على #174): سجلّاتُ JSON لشطرٍ مفتوح وحدها — لا مسارَ فيه «sealed» بأيّ
     حالة أحرف، ولا سجلَّ ملفُّه محجوب، ولا نمطَ رمز، ولا قيمةَ مفتاح واجهةٍ من البيئة. يُعيد {status, files, owner_queue} أو
     يرفض برمزٍ مسمًّى باسم الملفّ وحده (لا بمحتواه)."""
@@ -778,6 +862,10 @@ def check_artifact(root: Path, environ=os.environ) -> dict:
             raise AutomaticReviewError("artifact_not_json", relative) from None
         if isinstance(record, dict) and "sealed" in str(record.get("file", "")).lower():
             raise AutomaticReviewError("artifact_sealed_path", relative)
+        # مربوطٌ بهذا التشغيل: خلاصةٌ أو سجلٌّ لا يحمل معرّفَه تاريخٌ لا يُرفع باسمه (ملاحظة Codex على #174)
+        if run_id is not None and (not isinstance(record, dict) or record.get("run_id") != run_id):
+            raise AutomaticReviewError(
+                "artifact_stale_summary" if path.name == "SUMMARY.json" else "artifact_stale_record", relative)
         if _TOKEN_PATTERN.search(text):
             raise AutomaticReviewError("artifact_token_pattern", relative)
         if any(key in text for key in keys):
@@ -785,7 +873,11 @@ def check_artifact(root: Path, environ=os.environ) -> dict:
         files += 1
     summary = root / "SUMMARY.json"
     queue = len(json.loads(summary.read_text(encoding="utf-8"))["owner_queue"]) if summary.is_file() else None
-    return {"status": "clean", "files": files, "owner_queue": queue}
+    run = root / RUN_FILE
+    run_state = json.loads(run.read_text(encoding="utf-8")) if run.is_file() else None
+    return {"status": "clean", "files": files, "owner_queue": queue,
+            **({"run": {k: run_state.get(k) for k in ("run_id", "status", "code") if run_state.get(k)}}
+               if isinstance(run_state, dict) else {})}
 
 
 def _write_json(path: Path, value: dict) -> None:
@@ -794,7 +886,11 @@ def _write_json(path: Path, value: dict) -> None:
 
 
 def _free_main(args, parser) -> int:
+    run = None
     try:
+        if args.run_id and args.bank is not None and not (args.smoke or args.list_catalog):
+            check_public_bank(args.bank)
+            run = args.bank = prepare_run(args.bank, args.run_id)
         transport = build_free_transport(args.backend, max_tokens=args.max_tokens)
         if args.list_catalog:
             assessed = assess_catalog(transport.catalog(), args.backend)
@@ -827,6 +923,8 @@ def _free_main(args, parser) -> int:
             parser.error("مجلّد البنك مطلوب، أو --smoke، أو --list-catalog")
         result, code = _free_bank(args, transport)
     except AutomaticReviewError as exc:
+        if run is not None:          # خرج قبل الخلاصة: يُرفع سجلُّ الرفض المسمّى وحده، لا ملفّاتٌ تاريخية
+            finish_run(run, "refused", exc.code)
         shape = getattr(exc, "shape", None)
         print(json.dumps({"status": "refused", "code": exc.code, **({"shape": shape} if shape else {})},
                          ensure_ascii=False))
@@ -858,12 +956,15 @@ def main(argv: list[str] | None = None) -> int:
                         help="حدُّ مخرج الردّ على الواجهات المجانية")
     parser.add_argument("--check-artifact", type=Path, metavar="REVIEWS_DIR",
                         help="يفحص سجلّاتِ المراجعة قبل رفعها أثرًا (لا محجوب ولا رمز) ويطبع عددَها وطولَ قائمة المالك")
+    parser.add_argument("--run-id", default=None,
+                        help="لمراجعة البنك على واجهةٍ مجانية: تُكتب في <البنك>/runs/<run-id>/ نظيفًا، ويحمل كلُّ سجلٍّ معرّفَه؛ "
+                             "ومع --check-artifact يُرفض ما لا يحمله")
     parser.add_argument("--artifact-name", default=None,
                         help="اسمُ الأثر الذي تُرفع فيه السجلّات، يُروى في الخلاصة ليعرف المالكُ أين يحكم")
     args = parser.parse_args(argv)
     if args.check_artifact:
         try:
-            checked = check_artifact(args.check_artifact)
+            checked = check_artifact(args.check_artifact, run_id=args.run_id)
         except AutomaticReviewError as exc:
             print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
             return 2
@@ -875,7 +976,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"status": "refused", "code": "base_url_is_ollama_only"}, ensure_ascii=False))
             return 2
         return _free_main(args, parser)
-    if args.list_catalog or args.every_family or args.fallbacks:
+    if args.list_catalog or args.every_family or args.fallbacks or args.run_id:
         print(json.dumps({"status": "refused", "code": "free_backend_option_without_free_backend"},
                          ensure_ascii=False))
         return 2
