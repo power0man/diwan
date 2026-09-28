@@ -44,6 +44,12 @@
           "job_id": 109131793253,
           "head": "2e7eb89",
           "result": "unavailable؛ والطريقةُ والرابطُ المرسَلُ والنهائيُّ مسجَّلةٌ لكل نداء: GET https://models.github.ai/catalog/models وPOST https://models.github.ai/inference/chat/completions، والنهائيُّ هو المرسَلُ نفسُه، والردُّ 200 وtext/plain و٤ بايتات في نحو ٤٠٠ ms لكل نموذج (محاولتان)"
+        },
+        {
+          "run_id": 36488780341,
+          "job_id": 109152067164,
+          "head": "4d20045",
+          "result": "تشخيصٌ مؤقّت بـcurl على المشغّل نفسِه قبل الأداة (أُزيل بعده): الطلباتُ الثلاثة كلُّها HTTP/2 200 وtext/plain و«OK\\r\\n»؛ والأداةُ بعدها unavailable كما كانت"
         }
       ],
       "catalog": {
@@ -232,7 +238,36 @@
           },
           "source": "last_failure_shapes في تشغيل 36482650241 (2e7eb89)"
         },
-        "path_not_lost_in_client": "المسارُ والطريقةُ كما وُثّقا مرسَلًا ونهائيًّا (tests/test_external_review.py::test_the_exact_url_and_method_go_out_and_are_recorded_for_chat_and_catalog يثبته بلا شبكة، والتشغيلُ الحيّ سجّله)؛ وcurl من شبكةٍ أخرى (صندوق HF) إلى الرابطين نفسيهما ردّ «OK» نفسَه"
+        "path_not_lost_in_client": "المسارُ والطريقةُ كما وُثّقا مرسَلًا ونهائيًّا (tests/test_external_review.py::test_the_exact_url_and_method_go_out_and_are_recorded_for_chat_and_catalog يثبته بلا شبكة، والتشغيلُ الحيّ سجّله)؛ وcurl من شبكةٍ أخرى (صندوق HF) إلى الرابطين نفسيهما ردّ «OK» نفسَه",
+        "curl_on_the_runner": {
+          "run_id": 36488780341,
+          "job_id": 109152067164,
+          "token_length": 377,
+          "a_catalog_no_auth": {
+            "request": "GET https://models.github.ai/catalog/models",
+            "status": "HTTP/2 200",
+            "content_type": "text/plain",
+            "body_bytes": 4,
+            "head16_hex": "4f4b0d0a"
+          },
+          "b_catalog_with_bearer_accept_and_api_version": {
+            "request": "GET https://models.github.ai/catalog/models",
+            "status": "HTTP/2 200",
+            "content_type": "text/plain",
+            "body_bytes": 4,
+            "head16_hex": "4f4b0d0a"
+          },
+          "c_chat_post_with_bearer": {
+            "request": "POST https://models.github.ai/inference/chat/completions (deepseek/DeepSeek-V3-0324، max_tokens 5)",
+            "status": "HTTP/2 200",
+            "content_type": "text/plain",
+            "body_bytes": 4,
+            "head16_hex": "4f4b0d0a"
+          },
+          "absent_headers": "لا server ولا x-github-request-id ولا location في أيٍّ من الثلاثة، وواجهاتُ GitHub تحمل x-github-request-id عادةً",
+          "verdict": "curl يلقى ما تلقاه الأداةُ بالضبط، بالرمز وبدونه: فالعلّةُ في الخدمة أو في طريق المشغّل إليها لا في العميل؛ وتبقى الحالةُ unavailable غيرَ مُسقِطة"
+        },
+        "not_the_client": "المسارُ والطريقةُ والرمزُ (طولُه ٣٧٧ على المشغّل) كلُّها على السلك، وcurl بالترويسات الموثّقة يلقى «OK» نفسَه؛ فلا إصلاحَ في العميل"
       }
     },
     {

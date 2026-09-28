@@ -45,30 +45,6 @@ jobs:
           python3 -m pip install --user 'uv==0.8.17'
           "$HOME/.local/bin/uv" python install 3.14
           "$HOME/.local/bin/uv" sync --frozen --python 3.14
-      # تشخيصٌ مؤقّت (#174) يُزال حين يُعرف السبب: curl على المشغّل نفسِه قبل الأداة — سطرُ الحالة وترويساتٌ مختارة وطولُ الجسم
-      # وأوّلُ ١٦ بايتًا منه ست عشريًّا، وطولُ الرمز لا الرمز. والنموذجُ في (c) من عائلةٍ مسموحة (ق٥٠)
-      - name: Temporary diagnostic - curl the GitHub Models endpoints
-        continue-on-error: true
-        env:
-          GH_MODELS_TOKEN: ${{ github.token }}
-        run: |
-          set -u
-          probe() {
-            label="$1"; shift
-            rc=0
-            curl -sS -o "$RUNNER_TEMP/body" -D "$RUNNER_TEMP/hdrs" "$@" || rc=$?
-            echo "== $label curl_exit=$rc"
-            grep -E '^HTTP/' "$RUNNER_TEMP/hdrs" || true
-            grep -iE '^(content-type|content-length|server|x-github-request-id|location):' "$RUNNER_TEMP/hdrs" || true
-            echo "body_bytes=$(wc -c < "$RUNNER_TEMP/body") head16=$(head -c 16 "$RUNNER_TEMP/body" | od -An -tx1 | tr -d ' \n')"
-          }
-          echo "token_length=${#GH_MODELS_TOKEN}"
-          probe a_catalog_no_auth https://models.github.ai/catalog/models
-          probe b_catalog_auth -H "Authorization: Bearer $GH_MODELS_TOKEN" -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" https://models.github.ai/catalog/models
-          probe c_chat_auth -X POST -H "Authorization: Bearer $GH_MODELS_TOKEN" -H "Content-Type: application/json" \
-            --data '{"model":"deepseek/DeepSeek-V3-0324","messages":[{"role":"user","content":"hi"}],"max_tokens":5}' \
-            https://models.github.ai/inference/chat/completions
       # الفهرسُ جردٌ لا بوّابة: إن لم يُقرأ سُمّي رمزُه وشكلُه (لا نصُّه)، واختارت التجربةُ من القائمة المفضَّلة وقالت ذلك في تقريرها
       - name: List the GitHub Models catalog
         continue-on-error: true
