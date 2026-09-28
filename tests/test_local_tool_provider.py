@@ -134,7 +134,7 @@ def test_endpoint_and_proxy_behavior_are_inherited_without_override(monkeypatch)
     monkeypatch.setenv("OLLAMA_HOST", "http://unexpected.invalid")
     transport = Transport(monkeypatch, replies())
     provider = LocalToolProvider(MODEL, VERSION)
-    with pytest.raises(TypeError):
+    with pytest.raises(ProviderError, match="local_chat_endpoint_invalid"):
         LocalToolProvider(MODEL, VERSION, base_url="https://unexpected.invalid")
     with pytest.raises(AttributeError):
         provider.base_url = "https://unexpected.invalid"

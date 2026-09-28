@@ -8,7 +8,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from providers.local_chat import LocalChatProvider
+from providers.base import ProviderError
+from providers.local_chat import LocalChatProvider, local_ollama_endpoint
 from providers.ollama import DEFAULT_MODEL
 from providers.local_media import LocalMediaProvider
 from providers.local_tools import LocalToolProvider
@@ -16,13 +17,16 @@ from agent.web_search import SearxngBackend
 from webui.server import LocalApp, Server
 
 
-def _discover_ollama() -> tuple[str | None, str | None, str | None, str | None, str | None]:
-    """اكتشاف تلقائي للنماذج المحلية النشطة على Ollama (127.0.0.1:11434): (نموذجُ الحوار، بصمتُه، نموذجُ الوسائط،
+def _discover_ollama(
+        base_url: str = "http://127.0.0.1:11434",
+) -> tuple[str | None, str | None, str | None, str | None, str | None]:
+    """اكتشاف تلقائي للنماذج النشطة على عنوان Ollama المحلي الصريح: (نموذجُ الحوار، بصمتُه، نموذجُ الوسائط،
     بصمتُه، سببُ التعذّر باسمه حين لا يُوجد نموذجُ حوار — انقطاعٌ بنوعه أو غيابُ نموذجٍ صالح)."""
     import json
     import urllib.request
+    local_ollama_endpoint(base_url)
     try:
-        req = urllib.request.Request("http://127.0.0.1:11434/api/tags")
+        req = urllib.request.Request(base_url.rstrip("/") + "/api/tags")
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         with opener.open(req, timeout=1.0) as resp:
             data = json.loads(resp.read().decode("utf-8"))
@@ -54,6 +58,8 @@ def main():
     parser.add_argument("--root", type=Path, default=ROOT / "var/daily-ui")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--provider", choices=("local", "mlx"), default=os.environ.get("DIWAN_PROVIDER", "local"))
+    parser.add_argument("--ollama-url", default=os.environ.get("DIWAN_OLLAMA_URL", "http://127.0.0.1:11434"),
+                        help="عنوان Ollama محلي على loopback (أو DIWAN_OLLAMA_URL)")
     parser.add_argument("--runtime-receipt", type=Path,
                         help="إيصال bootstrap صريح لتفعيل أدوات الحاوية؛ لا تشغيل Docker عند فتح الواجهة")
     parser.add_argument("--web-search-url",
@@ -70,10 +76,14 @@ def main():
         factory = lambda: MLXProvider(model_name=model)
         factory()
     else:
+        try:
+            local_ollama_endpoint(args.ollama_url)
+        except ProviderError as exc:
+            parser.error(exc.code)
         model, version = os.environ.get("DIWAN_CHAT_MODEL"), os.environ.get("DIWAN_CHAT_DIGEST")
         why = None
         if not model or not version:
-            auto_cm, auto_cv, auto_mm, auto_mv, why = _discover_ollama()
+            auto_cm, auto_cv, auto_mm, auto_mv, why = _discover_ollama(args.ollama_url)
             if not model and auto_cm:
                 model, version = auto_cm, auto_cv
                 print(f"تم اكتشاف نموذج الحوار المحلي تلقائيًا: {model} ({version[:12]}...)", flush=True)
@@ -83,9 +93,9 @@ def main():
         if not model or not version:
             parser.error("يلزم متغيرا DIWAN_CHAT_MODEL وDIWAN_CHAT_DIGEST المحليان أو تشغيل خادم Ollama محليًا"
                          + (f" — سببُ تعذّر الاكتشاف: {why}" if why else ""))
-        factory = lambda: LocalChatProvider(model, version)
+        factory = lambda: LocalChatProvider(model, version, base_url=args.ollama_url)
         factory()  # تحقق إعداد المزود دون شبكة قبل فتح المنفذ.
-        agent_factory = lambda: LocalToolProvider(model, version)
+        agent_factory = lambda: LocalToolProvider(model, version, base_url=args.ollama_url)
         agent_factory()
     if not 0 <= args.port <= 65535:
         parser.error("منفذ غير صالح")
@@ -94,7 +104,8 @@ def main():
     app = None
     server = None
     try:
-        media_factory = (lambda: LocalMediaProvider(media_model, media_version)) if media_model else None
+        media_factory = (lambda: LocalMediaProvider(media_model, media_version,
+                                                    base_url=args.ollama_url)) if media_model else None
         if media_factory:
             media_factory()
         app = LocalApp(args.root, model=model, model_version=version, provider_factory=factory,
