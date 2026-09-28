@@ -173,8 +173,9 @@ Gemini وClaude وChatGPT: يحادث، ويكتب، ويبرمج، ويبحث،
 - **وسم كل إيداع** بسطر `Diwan-Agent: <معرّفك>` في آخر مقطع ذيولٍ مع بقية
   الذيول (`registry/agents.json`، `tools/agent_attribution.py`). والعميل غير المسجَّل
   يُردّ في CI.
-- **كل حارسٍ جديد يُثبت بالطفرة:** اكسر الشيفرة التي يحرسها، وتأكّد أن الاختبار يسقط،
-  ثم أعدها.
+- **كل حارسٍ جديد يُثبت بالطفرة، بالآلة:** سطرٌ في `tests/mutations/<وحدةُ الاختبار>.jsonl` يسمّي الملفَّ والنصَّ
+  القديم والجديد والاختباراتِ التي تسقط، و`tools/mutation_check.py` يطبّقه في شجرة عملٍ منفصلة ويحكم بالرمز (ق٦٧-٦)؛
+  وكلُّ اختبارٍ مسّه الطلب (في ملفٍّ مضاف، أو دالّةٍ دخلها سطرٌ جديد) يسمّيه بيانٌ بمعرّفه الكامل وإلا احمرّ عليه `mutation-check` في CI.
 - **لا حذف لشيءٍ لم تُنشئه، ولا `push --force`، ولا `sudo`، ولا أسرار في المستودع.**
 - إن أخفق اختبار استرجاع وCI أخضر، فشغّل `python3 tools/rebuild_index.py rebuild`
   قبل أن تعلن انحدارًا.
@@ -185,6 +186,7 @@ Gemini وClaude وChatGPT: يحادث، ويكتب، ويبرمج، ويبحث،
 python3 -m pytest
 python3 tools/check_docs.py --write && python3 tools/check_docs.py --check
 python3 tools/context_index.py --write && python3 tools/context_index.py --check
+python3 tools/mutation_check.py --range origin/main..HEAD
 python3 tools/sign_anchors.py verify
 python3 tools/agent_attribution.py --range origin/main..HEAD
 python3 tools/lane_handoff.py --range origin/main..HEAD
