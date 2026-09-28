@@ -219,6 +219,16 @@ def _git_ok(*argv):
     return subprocess.run(["git", "-C", str(ROOT), *argv], capture_output=True).returncode == 0
 
 
+def test_the_tracked_public_marker_carries_no_owner_file_names():
+    """ملاحظةُ Codex على #158: تغييرُ المولِّد لا يطهّر العلامةَ المتتبَّعة؛ فهي تُفحص بعينها: عددٌ لا قائمةُ أسماء ولا بصمة."""
+    marker = read_marker(ROOT)
+    if marker is None:
+        pytest.skip("لا علامةَ لقطةٍ عامة في هذه النسخة")
+    fingerprints = marker["fingerprints"]
+    assert isinstance(fingerprints["sources"], int) and "sources_sha256" not in fingerprints
+    assert not any(isinstance(v, (list, dict)) for v in fingerprints.values()), "قائمةٌ في بصمات العلامة العامة"
+
+
 def test_a_marker_never_coexists_with_a_tracked_private_stream():
     """المستودعُ الخاص بلا علامة؛ واللقطةُ العامة بعلامةٍ لا تتتبّع مخزنًا خاصًّا ولا تدعه يُتتبَّع (ك٣٥).
 

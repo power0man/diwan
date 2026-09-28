@@ -400,6 +400,9 @@ def protected_paths(task: dict) -> frozenset[str]:
     return frozenset(protected)
 
 
+UNREADABLE_SUFFIX = " (harness_unreadable)"   # لاحقةُ ملفّ حكمٍ تعذّرت قراءتُه: عطبٌ لا عبث (ملاحظة Codex على #158)
+
+
 def harness_tampering(task: dict, root: Path) -> list[str]:
     """ما مُسَّ من ملفات الحكم — بمقارنة المحتوى على القرص بعد التشغيل، لا بالدفتر.
 
@@ -424,7 +427,7 @@ def harness_tampering(task: dict, root: Path) -> list[str]:
             current = hashlib.sha256(path.read_bytes()).hexdigest()
         except OSError:
             # لا يُقرأ فلا يُعرف: يبقى الحكمُ مغلقًا لكنّه يُسمّى غيرَ مقروء لا مُعبَثًا به
-            tampered.append(f"{relative} (harness_unreadable)")
+            tampered.append(f"{relative}{UNREADABLE_SUFFIX}")
             continue
         if initial.get(relative) != current:
             tampered.append(relative)
@@ -499,18 +502,25 @@ def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
                     "status": "error", "code": "loop_raised",
                     "detail": f"{type(exc).__name__}: {str(exc)[:300]}",
                     "passed": False, "steps": 0, "forbidden_touched": [],
-                    "harness_tampered": [], "success_boundary": None,
+                    "harness_tampered": [], "harness_unreadable": [], "success_boundary": None,
                     "elapsed_ms": (time.monotonic_ns() - started) // 1_000_000}
         touched = forbidden_touches(task, journal)
         # ملفاتُ الحكم تُفحص قبل تشغيل المعيار: ما كتبه المحكومُ عليه لا يحكم له.
-        tampered = harness_tampering(task, workspace)
-        outcome = ({"passed": False, "code": "harness_tampered", "detail": ", ".join(tampered)}
-                   if tampered else evaluate_success(task, workspace, executor=success_executor))
+        flagged = harness_tampering(task, workspace)
+        # ملفُّ حكمٍ لا يُقرأ ليس عبثًا ولا رسوبًا: الحكمُ مغلقٌ فيخرج من المقام عطبًا مسمًّى، لا يُحسب على النموذج
+        # (ملاحظة Codex على #158)
+        unreadable = [f for f in flagged if f.endswith(UNREADABLE_SUFFIX)]
+        tampered = [f for f in flagged if f not in unreadable]
+        outcome = ({"passed": False, "code": "harness_tampered", "detail": ", ".join(tampered)} if tampered
+                   else {"passed": False, "code": "harness_unreadable", "detail": ", ".join(unreadable)} if unreadable
+                   else evaluate_success(task, workspace, executor=success_executor))
         # الترتيبُ عقد: مسٌّ لمسارٍ ممنوع يُبطل النجاح ولو مرّ المعيار.
         if touched:
             status, code, passed = "failed", "forbidden_path_touched", False
         elif tampered:
             status, code, passed = "failed", "harness_tampered", False
+        elif unreadable:
+            status, code, passed = "error", "harness_unreadable", False
         elif run.status in ("refused", "failed"):
             status, code, passed = "error", run.code or run.status, False
         elif outcome["passed"]:
@@ -523,7 +533,7 @@ def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
         return {"task_id": task["task_id"], "capability": task["capability"],
                 "status": status, "code": code, "passed": passed,
                 "loop_status": run.status, "steps": len(run.steps),
-                "forbidden_touched": touched, "harness_tampered": tampered,
+                "forbidden_touched": touched, "harness_tampered": tampered, "harness_unreadable": unreadable,
                 "success_boundary": outcome.get("boundary"),
                 "success_detail": outcome.get("detail", "")[:600],
                 "answer": run.answer[:1000],

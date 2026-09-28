@@ -167,6 +167,20 @@ def test_an_unreadable_harness_file_is_named_unreadable_not_tampered(tmp_path, m
     assert harness_tampering(FIX_TASK, root) == [f"{name} (harness_unreadable)"]
 
 
+def test_an_unreadable_harness_file_is_an_error_outside_the_denominator_not_a_tampering_failure(registry, monkeypatch):
+    """ملاحظةُ Codex على #158: اللاحقةُ في نصّ التفصيل وحدها كانت تُبقي الحكمَ «عبثًا» راسبًا يُحسب على النموذج؛ صار عطبًا
+    مسمًّى `harness_unreadable` بحالة `error` خارج المقام."""
+    import evaluation.agentic_runner as runner
+    name = sorted(protected_paths(FIX_TASK))[0]
+    monkeypatch.setattr(runner, "harness_tampering", lambda task, root: [f"{name}{runner.UNREADABLE_SUFFIX}"])
+    result = _run(FIX_TASK, Scripted(says("لم أفعل شيئًا.")), registry)
+    assert result["status"] == "error" and result["code"] == "harness_unreadable" and result["passed"] is False
+    assert result["harness_unreadable"] == [f"{name}{runner.UNREADABLE_SUFFIX}"] and result["harness_tampered"] == []
+    monkeypatch.setattr(runner, "harness_tampering", lambda task, root: [name, f"{name}{runner.UNREADABLE_SUFFIX}"])
+    result = _run(FIX_TASK, Scripted(says("لم أفعل شيئًا.")), registry)
+    assert result["status"] == "failed" and result["code"] == "harness_tampered", "عبثٌ مقروءٌ بجانب غير مقروء يبقى عبثًا"
+
+
 def test_protected_paths_follow_the_command_not_the_prose():
     protected = protected_paths({
         "workspace": {"tests/test_a.py": "", "tests/sub/test_b.py": "", "verify_test.py": "",
