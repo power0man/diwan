@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sys
 import types
 from pathlib import Path
@@ -196,6 +197,9 @@ def _fake_hub(monkeypatch, tmp_path):
         return str(path)
     monkeypatch.setitem(sys.modules, "huggingface_hub", types.SimpleNamespace(hf_hub_download=download))
     monkeypatch.setattr(cb, "tree_state", lambda root: {"dirty": False, "changed_paths": []})
+    # طريقُ الطفل في العملية نفسِها: البدائلُ المحقونة لا تبلغ مفسّرًا آخر، والآليةُ الحقيقية (اللقطةُ والمفسّرُ المعزول) تُختبر وحدها
+    monkeypatch.setattr(cb, "measure_in_snapshot",
+                        lambda argv, commit, state: cb.main([*argv, "--in-snapshot", commit, "--tree-state", json.dumps(state)]))
     return path, asked
 
 
@@ -257,16 +261,95 @@ def test_an_untracked_python_file_makes_the_tree_dirty_but_an_untracked_report_d
     run = lambda *args: subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True, text=True)
     run("init", "-q")
     run("-c", "user.name=t", "-c", "user.email=t@x", "commit", "-q", "--allow-empty", "-m", "root")
-    assert cb.tree_state(repo) == {"dirty": False, "changed_paths": [], "untracked_python": []}
+    assert cb.tree_state(repo) == {"dirty": False, "changed_paths": [], "untracked_importable": []}
     (repo / "report.json").write_text("{}", encoding="utf-8")
     assert cb.tree_state(repo)["dirty"] is False
     (repo / "tools" / "webui").mkdir(parents=True)
     (repo / "tools" / "webui" / "server.py").write_text("LocalApp = None\n", encoding="utf-8")
     state = cb.tree_state(repo)
-    assert state["dirty"] is True and state["untracked_python"] == ["tools/webui/server.py"] and state["changed_paths"] == []
+    assert state["dirty"] is True and state["untracked_importable"] == ["tools/webui/server.py"] and state["changed_paths"] == []
+    # ملاحظةُ Codex السابعة على #157: رابطٌ رمزيّ غيرُ متتبَّع إلى حزمةٍ خارجية يُدرجه git باسمه وحده (بلا لاحقة) وكان يمرّ نظيفًا؛
+    # وbytecode بلا مصدر يُحمَّل من مجلّدٍ على sys.path (السادسة)
+    (repo / "tools" / "webui" / "server.py").unlink()
+    (repo / "tools" / "webui").rmdir()
+    (tmp_path / "elsewhere").mkdir()
+    (repo / "tools" / "webui").symlink_to(tmp_path / "elsewhere")
+    (repo / "tools" / "json.pyc").write_bytes(b"\x00")
+    assert cb.tree_state(repo)["untracked_importable"] == ["tools/json.pyc", "tools/webui"]
     (repo / "tracked.txt").write_text("a", encoding="utf-8")
     run("add", "tracked.txt")
     assert cb.tree_state(repo)["changed_paths"] == ["tracked.txt"]
+
+
+def test_a_snapshot_holds_the_commit_s_tracked_files_only(tmp_path):
+    """ملاحظتا Codex السادسة والسابعة على #157: القياسُ يجري في لقطة `git archive` من الإيداع، فلا ملفَّ غيرَ متتبَّع ولا متجاهَلًا
+    (pyc بلا مصدر) ولا رابطًا رمزيًّا فيها، أيًّا كانت حالُ شجرة العمل."""
+    import shutil, subprocess
+    repo = tmp_path / "repo"
+    (repo / "tools").mkdir(parents=True)
+    run = lambda *args: subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True, text=True)
+    run("init", "-q")
+    (repo / ".gitignore").write_text("*.pyc\n", encoding="utf-8")
+    (repo / "tools" / "a.py").write_text("A = 1\n", encoding="utf-8")
+    run("add", "-A")
+    run("-c", "user.name=t", "-c", "user.email=t@x", "commit", "-q", "-m", "tracked")
+    (repo / "tools" / "b.py").write_text("B = 2\n", encoding="utf-8")                 # غيرُ متتبَّع
+    (repo / "tools" / "json.pyc").write_bytes(b"\x00")                               # متجاهَل
+    (tmp_path / "elsewhere").mkdir()
+    (repo / "tools" / "webui").symlink_to(tmp_path / "elsewhere")                     # رابطٌ غيرُ متتبَّع
+    snapshot = cb.snapshot_head(repo, "HEAD")
+    try:
+        assert snapshot != repo and snapshot.is_dir()
+        assert sorted(str(p.relative_to(snapshot)) for p in snapshot.rglob("*") if not p.is_dir()) == [".gitignore", "tools/a.py"]
+        assert not (snapshot / ".git").exists()
+    finally:
+        shutil.rmtree(snapshot, ignore_errors=True)
+
+
+def test_the_cli_measures_a_git_archive_snapshot_of_head_with_an_isolated_interpreter(monkeypatch, tmp_path):
+    """ملاحظةُ Codex السادسة على #157: `tools/json.pyc` بلا مصدر كان يُحمَّل من أول `sys.path` قبل العزل والحالةُ نظيفة. سطرُ
+    الأوامر لا يقيس الشجرةَ: يفكّ لقطةَ HEAD في مجلّدٍ مؤقّت ويشغّل فيها نسخةَ الأداة بالمفسّر نفسِه معزولًا (`-I -P`)، بمساراتٍ
+    مطلقة، ويمرّر الإيداعَ وحالةَ الشجرة، ويحذف اللقطةَ بعد القياس، ويعيد رمزَ خروج الطفل."""
+    real = cb.measure_in_snapshot
+    _fake_tokenizers(monkeypatch)
+    _fake_hub(monkeypatch, tmp_path)
+    monkeypatch.setattr(cb, "measure_in_snapshot", real)
+    seen = {}
+
+    def child(command, cwd):
+        snapshot = Path(command[3]).parents[1]
+        seen.update(command=command, cwd=Path(cwd), snapshot=snapshot, existed=snapshot.is_dir(),
+                    tool=(snapshot / "tools" / "context_budget.py").is_file() and (snapshot / "tools" / "context_index.py").is_file()
+                    and (snapshot / "AGENTS.md").is_file(), git=(snapshot / ".git").exists(),
+                    stray=sorted(str(p) for p in snapshot.rglob("*") if p.is_symlink() or p.suffix == ".pyc" or p.name == "__pycache__"))
+        return 7
+    monkeypatch.setattr(cb, "_run_child", child)
+    out = tmp_path / "r.json"
+    assert cb.main(["--tokenizer", f"fake=org/model@{SHA}", "--tokenizer-file", "f=rel/tok.json", "--report", str(out)]) == 7
+    command, snapshot = seen["command"], seen["snapshot"]
+    assert command[:3] == [sys.executable, "-I", "-P"] and command[3] == str(snapshot / "tools" / "context_budget.py")
+    assert snapshot != cb.ROOT and seen["cwd"] == snapshot and seen["existed"] and seen["tool"] and not seen["git"] and seen["stray"] == []
+    assert not snapshot.exists(), "اللقطةُ تُحذف بعد القياس"
+    commit = command[command.index("--in-snapshot") + 1]
+    assert re.fullmatch(r"[0-9a-f]{40}", commit) and commit == cb._commit(cb.ROOT)
+    assert json.loads(command[command.index("--tree-state") + 1]) == {"dirty": False, "changed_paths": []}
+    assert command[command.index("--tokenizer-file") + 1] == f"f={Path('rel/tok.json').resolve()}"
+    assert command[command.index("--report") + 1] == str(out.resolve()) and "--tokenizer" in command
+
+
+def test_the_child_records_the_snapshot_commit_and_the_parent_s_tree_state(monkeypatch, tmp_path, capsys):
+    """داخل اللقطة لا git: الإيداعُ وحالةُ الشجرة يأتيان من الأب ويُسجَّلان كما هما، وبصمةٌ ليست كاملة تُرفض باسمها."""
+    _fake_tokenizers(monkeypatch)
+    _fake_hub(monkeypatch, tmp_path)
+    out, commit = tmp_path / "child.json", "a" * 40
+    state = {"dirty": False, "changed_paths": [], "untracked_importable": []}
+    assert cb.main(["--tokenizer", f"fake=org/model@{SHA}", "--report", str(out), "--in-snapshot", commit, "--tree-state", json.dumps(state)]) == 0
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["commit"] == commit and report["tree_state"] == state
+    assert report["measured_in"] == {"snapshot_of_commit": commit, "interpreter_isolated": False}
+    assert json.loads(capsys.readouterr().out)["status"] == "measured"
+    assert cb.main(["--tokenizer", f"fake=org/model@{SHA}", "--in-snapshot", "abc123"]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "snapshot_commit_invalid"
 
 
 def test_tampered_bytecode_in_the_tree_s_pycache_is_not_loaded_once_bytecode_is_isolated(tmp_path, monkeypatch):

@@ -11,6 +11,10 @@
 القاعدة: لا رقمَ بلا مرمِّز. بلا `--tokenizer` أو `--tokenizer-file` يُرفض التشغيل برمزٍ مسمًّى، وغيابُ حزمة `tokenizers` أو
 تعذّرُ تحميل المرمِّز رفضٌ مسمًّى لا سقوطٌ إلى التقدير. والدالّةُ `audit()` تقبل عدّاداتٍ محقونة فتُختبر بلا الحزمة وبلا شبكة.
 
+ولا رقمَ لغير إيداعه: سطرُ الأوامر يرفض شجرةً فيها تعديلٌ غيرُ مودَع أو ملفٌّ غيرُ متتبَّع يؤثّر في الاستيراد، ثم **يقيس لقطةَ
+HEAD** (`git archive` تُفكّ في مجلّدٍ مؤقّت) بمفسّرٍ معزول (`-I -P`) لا يرى شجرةَ العمل: فلا يُحمَّل فيه ملفٌّ متجاهَل (pyc بلا
+مصدر) ولا رابطٌ رمزيّ ولا شيءٌ ليس في الإيداع (ملاحظاتُ Codex على #157).
+
     python tools/context_budget.py --tokenizer qwen3.5-9b=Qwen/Qwen3.5-9B@c202236235762e1c871ad0ccb60c8ee5ba337b9a \\
         --tokenizer gpt-oss-20b=openai/gpt-oss-20b@6cee5e81ee83917806bbde320786a8fb61efebee \\
         --report docs/probe/context-budget-<التاريخ>.json                                     # repo@<بصمةُ إيداعٍ كاملة>
@@ -25,10 +29,14 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import hashlib
+import io
 import json
 import re
+import shutil
 import subprocess
 import sys
+import tarfile
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
@@ -46,7 +54,6 @@ def isolate_bytecode() -> str:
     استيرادٍ لوحدة منتج؛ وما استُورد قبل هذه الوحدة خارجُ متناوله (حدٌّ معلَن)."""
     global _PYCACHE_PREFIX
     if _PYCACHE_PREFIX is None:
-        import tempfile
         _PYCACHE_PREFIX = tempfile.mkdtemp(prefix="diwan-context-budget-pycache-")
     sys.pycache_prefix = _PYCACHE_PREFIX
     return _PYCACHE_PREFIX
@@ -86,6 +93,7 @@ LIMITS = [
     "the_context_window_is_the_provider_constant_context_tokens_not_a_measurement_of_the_served_model",
     "the_hub_tokenizer_named_for_the_engine_is_a_proxy_the_ollama_tag_qwen3_5_9b_is_a_service_name_not_an_artifact_digest_so_the_pinned_hub_revision_is_not_bound_to_the_served_model_s_embedded_tokenizer",
     "bytecode_is_read_and_written_under_a_private_pycache_prefix_set_when_this_tool_is_imported_so_a_stale_or_tampered_pyc_in_the_tree_s___pycache___is_never_loaded_for_context_index_or_a_product_module_but_a_module_imported_before_this_tool_is_out_of_its_reach",
+    "the_cli_measures_a_git_archive_snapshot_of_head_extracted_to_a_temporary_directory_by_an_isolated_interpreter_i_p_so_nothing_untracked_ignored_or_linked_in_the_working_tree_is_imported_the_working_tree_is_refused_for_intent_only_while_a_library_call_to_audit_measures_the_tree_it_runs_from",
 ]
 
 
@@ -225,8 +233,9 @@ def _findings(report: dict) -> list[dict]:
 
 
 def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str, dict] | None = None,
-          window: int | None = None) -> dict:
-    """التقريرُ كاملًا بعدّاداتٍ محقونة (اسمٌ ← دالّةٌ تعدّ رموزَ نصّ). بلا عدّادٍ يُرفض: لا رقمَ بلا مرمِّز."""
+          window: int | None = None, commit: str | None = None, state: dict | None = None) -> dict:
+    """التقريرُ كاملًا بعدّاداتٍ محقونة (اسمٌ ← دالّةٌ تعدّ رموزَ نصّ). بلا عدّادٍ يُرفض: لا رقمَ بلا مرمِّز. داخل اللقطة يمرّر
+    الأبُ الإيداعَ وحالةَ شجرة العمل (`commit` و`state`) لأن اللقطة بلا git؛ وبلاهما تُقاس الشجرةُ التي تعمل منها الأداة."""
     if not counters:
         raise Refused("no_tokenizer_named", "لا عدّادَ رموزٍ مسمًّى؛ التقديرُ وحده لا يُنشر رقمًا")
     if Path(root).resolve() != ROOT:
@@ -249,7 +258,11 @@ def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str,
     report = {
         "schema_version": SCHEMA_VERSION, "tool": TOOL,
         "generated_at": _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat(),
-        "commit": _commit(root), "tree_state": tree_state(root), "bytecode_isolated": sys.pycache_prefix == _PYCACHE_PREFIX,
+        "commit": commit if commit is not None else _commit(root),
+        "tree_state": state if state is not None else tree_state(root),
+        "measured_in": {"snapshot_of_commit": commit,
+                        "interpreter_isolated": sys.flags.isolated == 1 and getattr(sys.flags, "safe_path", 0) == 1},
+        "bytecode_isolated": sys.pycache_prefix == _PYCACHE_PREFIX,
         "tokenizers": tokenizer_sources or {name: {"source": "injected"} for name in counters},
         "context_window_tokens": window,
         "reading_set": reading, "reading_set_totals": _sum(reading, counters),
@@ -326,20 +339,75 @@ def load_tokenizers(named: list[str], files: list[str]) -> tuple[dict[str, Count
     return counters, sources
 
 
+IMPORTABLE_SUFFIXES = (".py", ".pth", ".pyc", ".pyo", ".so", ".pyd", ".dylib")
+
+
+def _affects_imports(root: Path, path: str) -> bool:
+    """عنصرٌ غيرُ متتبَّع يؤثّر في الاستيراد: بايثون، أو bytecode بلا مصدر، أو وحدةُ امتداد، أو ملفُّ `.pth`، أو رابطٌ رمزيّ أيًّا كان
+    اسمُه — فgit يُدرج الرابطَ باسمه وحده، ورابطُ `tools/webui` إلى حزمةٍ خارجية كان يمرّ «نظيفًا» ثم يُستورد هدفُه (ملاحظة
+    Codex السابعة على #157). التقريرُ الذي يُكتب بجانب الشجرة لا يُستورد فلا يُعدّ."""
+    return (root / path).is_symlink() or path.endswith(IMPORTABLE_SUFFIXES)
+
+
 def tree_state(root: Path) -> dict:
-    """حالةُ شجرة العمل: نصوصُ التشغيل تُستورد من الشجرة لا من HEAD، فتعديلٌ غيرُ مودَع يُنسب إلى إيداعٍ ليس إيداعَه
-    (ملاحظة Codex على #157). والملفّاتُ غيرُ المتتبَّعة تُعدّ إن كانت بايثون: `tools/` أولُ `sys.path` فملفٌّ غيرُ متتبَّع مثل
-    `tools/webui/server.py` يحجب `webui.server` الحقيقيَّ ويُقاس سجلُّ أدواتٍ آخر باسم HEAD والحالةُ «نظيفة» (ملاحظة Codex
-    الثانية على #157)؛ وغيرُ البايثون (تقريرٌ يُكتب بجانب الشجرة) لا يُستورد فلا يُعدّ. وتعذُّرُ git حالةٌ مجهولة لا نظيفة."""
+    """حالةُ شجرة العمل: تعديلٌ غيرُ مودَع أو عنصرٌ غيرُ متتبَّع يؤثّر في الاستيراد (`_affects_imports`) يجعلها متّسخةً فيُرفض
+    القياسُ باسم HEAD (ملاحظتا Codex الأولى والثانية على #157: `tools/webui/server.py` غيرُ المتتبَّع كان يحجب `webui.server`
+    والحالةُ «نظيفة»). القياسُ نفسُه يجري في لقطة الإيداع لا في الشجرة (`snapshot_head`)، فهذه الحالةُ فحصُ نيّةٍ: من عدّل ولم
+    يودع يريد قياسَ ما عدّل. وتعذُّرُ git حالةٌ مجهولة لا نظيفة."""
     try:
         out = subprocess.run(["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all"],
                              capture_output=True, text=True, check=True).stdout
     except (OSError, subprocess.CalledProcessError) as exc:
-        return {"dirty": None, "changed_paths": [], "untracked_python": [], "error": type(exc).__name__}
+        return {"dirty": None, "changed_paths": [], "untracked_importable": [], "error": type(exc).__name__}
     entries = [(line[:2], line[3:]) for line in out.splitlines() if line.strip()]
     changed = sorted(path for status, path in entries if status != "??")
-    untracked = sorted(path for status, path in entries if status == "??" and path.endswith((".py", ".pth")))
-    return {"dirty": bool(changed or untracked), "changed_paths": changed, "untracked_python": untracked}
+    untracked = sorted(path for status, path in entries if status == "??" and _affects_imports(root, path))
+    return {"dirty": bool(changed or untracked), "changed_paths": changed, "untracked_importable": untracked}
+
+
+def snapshot_head(root: Path, commit: str) -> Path:
+    """لقطةُ إيداعٍ بملفّاته المتتبَّعة وحدها (`git archive`) تُفكّ في مجلّدٍ مؤقّت فيُقاس فيها لا في شجرة العمل: لا ملفَّ غيرَ
+    متتبَّع ولا متجاهَلًا (pyc بلا مصدر في `tools/` كان يُحمَّل قبل العزل والحالةُ نظيفة — ملاحظة Codex السادسة على #157) ولا
+    رابطًا رمزيًّا غيرَ متتبَّع (رابطُ `tools/webui` إلى حزمةٍ خارجية — السابعة). المجلّدُ يُحذف بعد القياس."""
+    archive = subprocess.run(["git", "-C", str(root), "archive", "--format=tar", commit], capture_output=True, check=True).stdout
+    target = Path(tempfile.mkdtemp(prefix="diwan-context-budget-snapshot-"))
+    with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+        tar.extractall(target, filter="data")
+    return target
+
+
+def child_command(snapshot: Path, argv: list[str], commit: str, state: dict) -> list[str]:
+    """أمرُ القياس داخل اللقطة: مفسّرُ هذه العملية نفسُه معزولًا — `-I` بلا متغيّرات `PYTHON*` ولا site المستخدم، و`-P` بلا
+    مجلّد السكربت في `sys.path` — يشغّل نسخةَ الأداة التي في اللقطة على اللقطة، فلا يرى شيئًا من شجرة العمل ولا يُحمَّل فيه ما
+    ليس في الإيداع؛ والإيداعُ وحالةُ الشجرة يُمرَّران إليه لأنه لا يرى git."""
+    return [sys.executable, "-I", "-P", str(snapshot / "tools" / "context_budget.py"), *argv,
+            "--in-snapshot", commit, "--tree-state", json.dumps(state, ensure_ascii=False)]
+
+
+def _run_child(command: list[str], cwd: Path) -> int:
+    return subprocess.run(command, cwd=str(cwd)).returncode
+
+
+def measure_in_snapshot(argv: list[str], commit: str, state: dict) -> int:
+    """يقيس الإيداعَ في لقطته بمفسّرٍ معزول ويعيد رمزَ خروج الطفل؛ خرجُ الطفل (الملخّصُ أو الرفض) يمرّ كما هو، واللقطةُ تُحذف."""
+    snapshot = snapshot_head(ROOT, commit)
+    try:
+        return _run_child(child_command(snapshot, argv, commit, state), snapshot)
+    finally:
+        shutil.rmtree(snapshot, ignore_errors=True)
+
+
+def _child_argv(args) -> list[str]:
+    """وسائطُ الطفل بمساراتٍ مطلقة، لأن مجلّدَ عمله اللقطةُ لا مجلّدُ المستخدم."""
+    argv = []
+    for spec in args.tokenizer:
+        argv += ["--tokenizer", spec]
+    for spec in args.tokenizer_file:
+        name, eq, path = spec.partition("=")
+        argv += ["--tokenizer-file", f"{name}={Path(path).resolve()}" if eq and path else spec]
+    if args.report:
+        argv += ["--report", str(args.report.resolve())]
+    return argv
 
 
 def main(argv=None) -> int:
@@ -347,18 +415,30 @@ def main(argv=None) -> int:
     parser.add_argument("--tokenizer", action="append", default=[], metavar="NAME=HF_REPO@REVISION")
     parser.add_argument("--tokenizer-file", action="append", default=[], metavar="NAME=PATH")
     parser.add_argument("--report", type=Path)
+    parser.add_argument("--in-snapshot", metavar="COMMIT", help=argparse.SUPPRESS)      # داخليّ: الطفلُ داخل لقطة الإيداع
+    parser.add_argument("--tree-state", metavar="JSON", help=argparse.SUPPRESS)         # داخليّ: حالةُ شجرة العمل من الأب
     args = parser.parse_args(argv)
     try:
         if not args.tokenizer and not args.tokenizer_file:
             raise Refused("no_tokenizer_named", "سمِّ مرمِّزًا بـ--tokenizer أو --tokenizer-file؛ لا رقمَ بلا مرمِّز")
+        if args.in_snapshot is None:
+            # الأب: يرفض شجرةً متّسخة أو مجهولة (تقريرٌ باسم إيداعٍ يقيس شجرةً غيرَ شجرته كذبٌ مسمًّى — ملاحظة Codex على #157)،
+            # ثم يقيس لقطةَ HEAD بمفسّرٍ معزول لا في الشجرة (الملاحظتان السادسة والسابعة)
+            commit = _commit(ROOT)
+            if commit is None:
+                raise Refused("commit_unknown", "تعذّر git rev-parse HEAD فلا إيداعَ يُنسب إليه القياس")
+            state = tree_state(ROOT)
+            if state["dirty"] is not False:
+                raise Refused("worktree_dirty" if state["dirty"] else "worktree_state_unknown",
+                              "الشجرةُ فيها تعديلٌ غيرُ مودَع: " + ", ".join((state["changed_paths"] + state.get("untracked_importable", []))[:8])
+                              if state["dirty"] else "تعذّر git status فلا تُعرف حالةُ الشجرة")
+            return measure_in_snapshot(_child_argv(args), commit, state)
+        if not re.fullmatch(r"[0-9a-f]{40}", args.in_snapshot):
+            raise Refused("snapshot_commit_invalid", "بصمةُ إيداع اللقطة ليست بصمةً كاملة")
+        state = json.loads(args.tree_state) if args.tree_state else {"dirty": None, "changed_paths": [], "untracked_importable": [],
+                                                                     "error": "tree_state_not_passed"}
         counters, sources = load_tokenizers(args.tokenizer, args.tokenizer_file)
-        state = tree_state(ROOT)
-        if state["dirty"] is not False:
-            # تقريرٌ يُنشر باسم إيداعٍ يقيس شجرةً غيرَ شجرته كذبٌ مسمًّى؛ الشجرةُ المتّسخة أو المجهولة تُرفض (ملاحظة Codex على #157)
-            raise Refused("worktree_dirty" if state["dirty"] else "worktree_state_unknown",
-                          "الشجرةُ فيها تعديلٌ غيرُ مودَع: " + ", ".join(state["changed_paths"][:8]) if state["dirty"]
-                          else "تعذّر git status فلا تُعرف حالةُ الشجرة")
-        report = audit(ROOT, counters, sources)
+        report = audit(ROOT, counters, sources, commit=args.in_snapshot, state=state)
     except Refused as exc:
         print(json.dumps({"status": "refused", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
         return 2
