@@ -216,6 +216,20 @@ def test_a_forget_of_an_item_not_active_at_that_step_is_rejected_by_the_strict_v
         validate_memory_bank(bank)
     except PayloadRejected as exc:
         assert exc.code != "forget_of_inactive_item", "البنكُ المودَع يتعمّد نسيانَ ما ليس قائمًا (forget_006) فالشرطُ للمكلَّف"
+    # وما محته استعادةُ نسخةٍ أُخذت قبل حفظه لا إيصالَ له فيُرفض (الجولة التاسعة والعشرون)؛ ونسيانُ ما نُسي له إيصالُه فيمرّ
+    bank, scenario = _scenario("forget_001")
+    bank["scenarios"] = [scenario]
+    remembered, forgot, *checks = scenario["steps"]
+    scenario["steps"] = [{"op": "backup", "project": "A", "as": "b0"}, remembered, {"op": "restore", "project": "A", "ref": "b0"},
+                         forgot, *checks]
+    with pytest.raises(PayloadRejected) as err:
+        validate_memory_bank(bank, strict=True)
+    assert err.value.code == "forget_of_inactive_item"
+    scenario["steps"] = [remembered, forgot, dict(forgot), *checks]
+    try:
+        validate_memory_bank(bank, strict=True)
+    except PayloadRejected as exc:
+        assert exc.code != "forget_of_inactive_item", "نسيانٌ ثانٍ لما نُسي له إيصالُه"
 
 
 def test_every_item_active_at_a_cross_project_retrieve_must_be_named_absent_in_the_strict_validator():
@@ -231,6 +245,14 @@ def test_every_item_active_at_a_cross_project_retrieve_must_be_named_absent_in_t
         validate_memory_bank(bank, strict=True)
     assert err.value.code == "isolation_item_unchecked"
     probe["absent"] = [*probe["absent"], "778899"]
+    validate_memory_bank(bank, strict=True)
+    # وفي كلِّ استرجاعٍ أجنبيّ لا في أحدها: استرجاعٌ ثانٍ من B يسمّي الثاني وحده يترك الأولَ يتسرّب فيه (الجولة التاسعة والعشرون)
+    silent = dict(probe, query="رقم حساب المورد الرئيسي", absent=["778899"])
+    scenario["steps"] = [save, second, silent, probe]
+    with pytest.raises(PayloadRejected) as err:
+        validate_memory_bank(bank, strict=True)
+    assert err.value.code == "isolation_item_unchecked"
+    silent["absent"] = ["778899", "الخصم السري"]              # شاهدٌ جوهريّ (أربعةُ حروفٍ فأكثر)، لا «ZX-9» القصير
     validate_memory_bank(bank, strict=True)
 
 

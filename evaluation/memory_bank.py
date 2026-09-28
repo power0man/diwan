@@ -432,14 +432,13 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
         if not checked:
             _reject(path, "isolation_without_cross_project_absence",
                     "غيابُ نصّ عنصرٍ من مشروعٍ في استرجاع مشروعٍ آخر (قائمته كلّها) بعد حفظه")
-        # وفي البنك المكلَّف كلُّ عنصرٍ قائمٍ لحظةَ استرجاعٍ من مشروعٍ غير مشروعه يُسمّى غائبًا فيه بشاهدٍ جوهريّ، لا أحدُ
-        # العناصر: عنصرٌ ثانٍ محفوظٌ بلا شاهدٍ يتسرّب وحده إلى ذلك المشروع ويمرّ السيناريو بلا تسرّب (ملاحظة Codex على #129،
-        # الجولة الثامنة والعشرون). والشاهدُ يكفي ولو لم يبلغ العنصرُ حدَّ الاسترجاع بسؤاله، فحدُّ `within_limit` لمصدر العزل وحده
-        cross = lambda ref, i, item, named: any(
-            s.get("expect") == "retrieve" and s["project"] != item["project"] and active_at(ref, k)
-            and (not named or _names(s, item["text"], least=SUBSTANTIVE)) for k, s in enumerate(steps) if k > i)
+        # وفي البنك المكلَّف كلُّ عنصرٍ قائمٍ لحظةَ استرجاعٍ من مشروعٍ غير مشروعه يُسمّى غائبًا فيه بشاهدٍ جوهريّ — في **كلِّ**
+        # استرجاعٍ كهذا لا في أحدها: المُشغِّلُ يفحص في كل خطوةٍ شواهدَها المعلَنة وحدها، فعنصرٌ سُمّي في استرجاع C وسكت عنه
+        # استرجاعُ B يتسرّب إلى B ويمرّ السيناريو بلا تسرّب (ملاحظتا Codex على #129، الجولتان الثامنة والعشرون والتاسعة والعشرون).
+        # والشاهدُ يكفي ولو لم يبلغ العنصرُ حدَّ الاسترجاع بسؤاله، فحدُّ `within_limit` لمصدر العزل وحده
         unchecked = [ref for ref, (i, item) in made.items()
-                     if ref not in checked and cross(ref, i, item, False) and not cross(ref, i, item, True)]
+                     if any(s.get("expect") == "retrieve" and s["project"] != item["project"] and active_at(ref, k)
+                            and not _names(s, item["text"], least=SUBSTANTIVE) for k, s in enumerate(steps) if k > i)]
         if strict and unchecked:
             _reject(path, "isolation_item_unchecked", f"«{unchecked[0]}» قائمٌ ولا يفحص عزلَه استرجاعٌ من مشروعٍ آخر")
     if category == "backup":
@@ -454,14 +453,15 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
         forgotten = {s["ref"] for s in steps if s.get("op") == "forget"}
         if not all(active_at(ref, at[final["ref"]]) for ref in forgotten):
             _reject(path, "backup_without_prior_snapshot", "نسخةٌ فيها العنصر، ثم نسيانُه، ثم استعادتُها")
-    # وآخرًا — بعد أحكام الفئة الأدقّ — النسيانُ يقع على عنصرٍ قام في المخزن قبل خطوته: اقتراحٌ لم يُوافَق عليه أو حفظٌ بلا
-    # موافقة لا يُنسى، فالمُشغِّلُ يردّه `item_id_invalid` والموصولُ `item_unknown` ويُحسبان على المنتج لا على البنك (ملاحظة
-    # Codex على #129، الجولة الثامنة والعشرون). أمّا نسيانُ ما نُسي أو ما محته استعادةٌ فيبقى مسموحًا: المنتجُ يقبله بإيصالٍ
-    # واحد (forget_006)، والبنكُ يقيس ذلك عمدًا. والشرطُ للبنك المكلَّف وحده
+    # وآخرًا — بعد أحكام الفئة الأدقّ — النسيانُ يقع على عنصرٍ قائمٍ في المخزن عند خطوته، أو على ما نُسي قبلها فله إيصالٌ يعيده
+    # المنتج: اقتراحٌ لم يُوافَق عليه أو حفظٌ بلا موافقة أو ما محته استعادةُ نسخةٍ أُخذت قبل حفظه لا إيصالَ له، فالمُشغِّلُ يردّه
+    # `item_id_invalid` والموصولُ `item_unknown` ويُحسبان على المنتج لا على البنك (ملاحظتا Codex على #129، الجولتان الثامنة
+    # والعشرون والتاسعة والعشرون). ونسيانُ ما نُسي مسموحٌ بإيصاله الواحد (forget_006). والشرطُ للبنك المكلَّف وحده
     if strict:
         for i, s in enumerate(steps):
-            if s.get("op") == "forget" and not any(active_at(s["ref"], k) for k in range(i + 1)):
-                _reject(path, "forget_of_inactive_item", f"«{s['ref']}» لم يقم في المخزن قطّ قبل نسيانه")
+            if s.get("op") == "forget" and not active_at(s["ref"], i) and not any(
+                    p.get("op") == "forget" and p.get("ref") == s["ref"] for p in steps[:i]):
+                _reject(path, "forget_of_inactive_item", f"«{s['ref']}» ليس قائمًا في المخزن عند نسيانه ولا إيصالَ نسيانٍ سابقٍ له")
 
 
 def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
