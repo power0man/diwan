@@ -782,6 +782,115 @@ def test_a_unicode_test_identifier_is_accepted_in_a_manifest_and_proved(repo, gi
     _clean(repo, git)
 
 
+def test_an_identifier_with_a_combining_mark_or_a_letterlike_symbol_is_accepted_as_python_accepts_it(repo, git, capsys):
+    """`test_اَ` (ألفٌ تتبعها فتحةٌ مركّبة) و`test_℘` معرّفان صالحان في بايثون يجمعهما pytest، ويرفضهما `\\w` لأن العلامةَ المركّبة
+    و℘ ليسا أبجديَّين رقميَّين (ملاحظة Codex على #149 بعد 72d1c55)؛ فصار المكوّنُ يُقبل بقاعدة اللغة (`str.isidentifier`) ويُثبَت.
+    وما ليس معرّفًا (يبدأ برقم، أو فيه فراغ) يبقى مرفوضًا، ومعاملُ parametrize بأقواسٍ متداخلة مقبول."""
+    assert mc.valid_node_id("tests/test_x.py::TestA::test_℘[x[1]]") and mc.valid_node_id("tests/sub/test_x.py::test_اَ")
+    assert not mc.valid_node_id("tests/test_x.py::1abc") and not mc.valid_node_id("tests/test_x.py::a b")
+    assert not mc.valid_node_id("tests/../core/x.py::test_a") and not mc.valid_node_id("tests/test_x.py")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_marks.py").write_text(
+        "from pkg.guard import positive\n\n\ndef test_اَ():\n    assert positive(0) is False\n\n\ndef test_℘():\n    assert positive(0) is False\n")
+    _manifest(repo, "test_marks", {**KILL, "id": "kill", "tests": ["tests/test_marks.py::test_اَ", "tests/test_marks.py::test_℘"]})
+    git("add", "-A")
+    git("commit", "-qm", "identifiers a word class rejects, named")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["unmanifested_new_tests"] == []
+    assert report["results"][0]["failed_tests"] == ["tests/test_marks.py::test_اَ", "tests/test_marks.py::test_℘"]
+    _clean(repo, git)
+
+
+def test_a_run_removes_its_temporary_directory_not_only_the_worktree_inside_it(repo, git, capsys, monkeypatch, tmp_path):
+    """التنظيفُ كان يزيل شجرةَ العمل ويترك حاضنَها المؤقّت فارغًا (`diwan-mutation-*`)، فتراكم منه آلافٌ في مجلّد النظام المؤقّت
+    بعد يومٍ من التشغيل — إخفاقٌ صامت لا يسمّيه تقرير. صار الحاضنُ يُزال مع الشجرة، و`--keep` وحده يُبقيهما."""
+    runner_temp = tmp_path / "runner-temp"
+    runner_temp.mkdir()
+    monkeypatch.setenv("RUNNER_TEMP", str(runner_temp))
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    git("add", "-A")
+    git("commit", "-qm", "a manifest")
+    report = _run(repo, "--all", capsys=capsys)
+    assert report["status"] == "passed" and report["worktree_kept"] is None
+    assert sorted(runner_temp.iterdir()) == [], "بقي حاضنٌ مؤقّت بعد التشغيل"
+    report = _run(repo, "--all", "--keep", capsys=capsys)
+    kept = Path(report["worktree_kept"])
+    assert kept.is_relative_to(runner_temp) and kept.is_dir()
+    git("worktree", "remove", "--force", str(kept))
+    _clean(repo, git)
+
+
+def test_a_test_module_path_with_a_space_is_accepted_as_pytest_collects_it(repo, git, capsys):
+    """`tests/test_space name.py::test_ok` معرّفٌ يجمعه pytest، وكان نمطُ المسار يرفض الفراغَ فلا يُثبَت اختبارٌ في ملفٍّ كهذا
+    بحال (ملاحظة Codex على #149)؛ صار المسارُ يُفحص بنيةً (تحت tests/ وينتهي بـ.py ومقاطعُه سليمة) لا بنمطٍ يستثني الفراغ."""
+    assert mc.valid_node_id("tests/test_space name.py::test_ok") and mc.valid_node_id("tests/sub dir/test_x.py::TestA::test_y")
+    assert not mc.valid_node_id("tests/test_x.py\n::test_ok") and not mc.valid_node_id("tests//test_x.py::test_ok")
+    assert not mc.valid_node_id("tests/./test_x.py::test_ok") and not mc.valid_node_id("core/test_x.py::test_ok")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_space name.py").write_text("from pkg.guard import positive\n\n\ndef test_ok():\n    assert positive(0) is False\n")
+    _manifest(repo, "test_space name", {**KILL, "id": "kill", "tests": ["tests/test_space name.py::test_ok"]})
+    git("add", "-A")
+    git("commit", "-qm", "a test module with a space in its name, named")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["unmanifested_new_tests"] == []
+    assert report["results"][0]["failed_tests"] == ["tests/test_space name.py::test_ok"]
+    _clean(repo, git)
+
+
+def test_the_live_later_definition_of_a_duplicated_test_name_is_its_syntactic_origin(repo, git, capsys):
+    """اسمُ اختبارٍ معرَّف مرّتين في الوحدة والأخيرُ (الحيُّ بربط الأسماء) ملفوفٌ بمزخرفٍ بلا wraps: كان التعريفُ النحويّ يقع على
+    الأول الميّت والأصلُ الفعليّ على الغلاف، فتأكيدٌ يُضاف في الحيّ لا يمسّ شيئًا ويمرّ المدى بلا إثبات (ملاحظة Codex على #149)؛
+    صار الأخيرُ هو المدى."""
+    module = TESTS + """
+
+def test_dup():
+    assert positive(1) is True
+
+
+def announce(fn):
+    def wrapper(*a, **k):
+        return fn(*a, **k)
+    return wrapper
+
+
+@announce
+def test_dup():
+    assert positive(0) is False
+"""
+    (repo / "tests/test_guard.py").write_text(module)
+    git("add", "-A")
+    git("commit", "-qm", "a duplicated test name whose live definition is wrapped")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/test_guard.py").write_text(module.replace("@announce\ndef test_dup():\n    assert positive(0) is False\n",
+                                                           "@announce\ndef test_dup():\n    assert positive(0) is False\n    assert positive(-1) is False\n"))
+    git("add", "-A")
+    git("commit", "-qm", "a guard grows inside the live definition")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["unmanifested_new_tests"] == ["tests/test_guard.py::test_dup"] and report["status"] == "failed"
+    _manifest(repo, "test_guard", {**KILL, "id": "kill", "tests": [*KILL["tests"], "tests/test_guard.py::test_dup"]})
+    git("add", "-A")
+    git("commit", "-qm", "named")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["unproved_touched_tests"] == []
+    _clean(repo, git)
+
+
+def test_a_deleted_manifest_of_a_module_whose_name_has_a_space_is_still_orphaned(repo, git, capsys):
+    """قوائمُ مسارات git كانت تُقرأ بالفراغ فينشطر `tests/test_space name.py` مسارين: لا تُعرف وحدتُه باقيةً ولا يُرى بيانُه
+    المحذوف، فيمرّ المدى بلا إثبات (ملاحظة Codex على #149)؛ صارت تُقرأ بفاصل NUL."""
+    (repo / "tests/test_space name.py").write_text("from pkg.guard import positive\n\n\ndef test_ok():\n    assert positive(0) is False\n")
+    _manifest(repo, "test_space name", {**KILL, "id": "kill", "tests": ["tests/test_space name.py::test_ok"]})
+    git("add", "-A")
+    git("commit", "-qm", "a spaced module with its manifest")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/mutations/test_space name.jsonl").unlink()
+    git("add", "-A")
+    git("commit", "-qm", "the manifest deleted, the module kept")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["orphaned_manifests"] == ["tests/mutations/test_space name.jsonl"] and report["status"] == "failed"
+    _clean(repo, git)
+
+
 def test_a_unittest_subclass_is_placed_whatever_its_name_so_a_grown_method_touches_it_and_its_heir(repo, git, capsys):
     """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة (ملاحظة Codex على #149)؛ صار يُقرأ هو ووارثُه في
     الوحدة، فسطرٌ مضاف في دالّته يمسّها فيه وفي الوارث. والصنفُ العاديّ لا يجمعه pytest فلا يُمسّ ولو قُرئ؛ والوارثُ أصلًا

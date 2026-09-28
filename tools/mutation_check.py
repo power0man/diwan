@@ -56,7 +56,27 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFESTS = "tests/mutations"
 REQUIRED = ("file", "old", "new", "tests")
 OPTIONAL = ("id", "task", "why", "count", "added")
-NODE_ID = re.compile(r"^tests/[\w./-]+\.py(::[^\W\d]\w*)+(\[.*\])?$")   # ومنه دوالُّ الأصناف، وبأيّ أبجدية (ملاحظة Codex على #149)
+NODE_PARTS = re.compile(r"^([^\[\]]*)(\[.*\])?$")   # مكوّناتُ المعرّف (أصنافٌ ثم الدالّة)، ثم معاملُ parametrize في آخرها إن وُجد
+
+
+def _valid_test_path(path: str) -> bool:
+    """ملفُّ الاختبار بنيةً لا نمطًا: تحت tests/ وينتهي بـ.py، ومقاطعُه غيرُ فارغة وليست . ولا ..، وبلا سطرٍ جديد ولا جدولةٍ (فاصلا
+    مخرجات الجمع)؛ والفراغُ في الاسم مقبولٌ كما يقبله pytest، فكان نمطٌ يستثنيه يجعل الاختبارَ الممسوس فيه لا يُثبَت بحال
+    (ملاحظة Codex على #149)."""
+    parts = path.split("/")
+    return (parts[0] == "tests" and len(parts) > 1 and path.endswith(".py")
+            and all(part and part not in (".", "..") for part in parts) and not any(c in path for c in "\t\n\r"))
+
+
+def valid_node_id(node_id: str) -> bool:
+    """معرّفُ pytest كامل: ملفٌّ تحت tests/ ثم مكوّناتٌ (دوالُّ الأصناف ومنها) كلٌّ منها معرّفُ بايثون صالح بقاعدة اللغة نفسِها
+    (`str.isidentifier`) لا بـ`\\w`: فعلامةُ تشكيلٍ مركّبة (`test_اَ`) و`℘` معرّفاتٌ يجمعها pytest ويرفضها `\\w`، فكان الاختبارُ
+    الممسوس بها لا يُثبَت بحال — غيابُه نقصُ إثباتٍ وتسميتُه مرفوضة (ملاحظتا Codex على #149). وأيُّ أبجديةٍ مقبولة."""
+    path, sep, rest = node_id.partition("::")
+    if not sep or not _valid_test_path(path):
+        return False
+    parts = NODE_PARTS.match(rest)
+    return parts is not None and all(part.isidentifier() for part in parts.group(1).split("::"))
 VERDICTS = {
     "killed": "قُتلت: سقط كلُّ اختبارٍ مسمًّى عند الطفرة",
     "partially_killed": "سقط بعضُ المسمّى لا كلُّه؛ ما لم يسقط لا يحرس هذه الطفرة",
@@ -141,7 +161,7 @@ def load_manifest(path: Path, root: Path) -> list[dict]:
         if not all(isinstance(entry[key], str) and entry[key] for key in ("file", "old", "new")) or entry["old"] == entry["new"]:
             raise Refused("manifest_invalid", f"{rel}:{number}: file وold وnew نصوصٌ غيرُ فارغة وold ≠ new")
         tests = entry["tests"]
-        if not isinstance(tests, list) or not tests or not all(isinstance(t, str) and NODE_ID.match(t) for t in tests):
+        if not isinstance(tests, list) or not tests or not all(isinstance(t, str) and valid_node_id(t) for t in tests):
             raise Refused("manifest_invalid", f"{rel}:{number}: tests قائمةُ معرّفات pytest غيرُ فارغة")
         foreign = [t for t in tests if manifest_for(t.split("::", 1)[0]) != rel]
         if foreign:
@@ -242,11 +262,17 @@ def manifest_for(test: str) -> str:
     return f"{MANIFESTS}/{'__'.join(PurePosixPath(test).with_suffix('').parts[1:])}.jsonl"
 
 
+def _paths(listing: str) -> list[str]:
+    """قوائمُ مسارات git تُقرأ بفاصل NUL (`-z`) لا بالفراغ: مسارٌ فيه فراغٌ كان ينشطر مسارين فيضيع بيانُه اليتيم أو وحدتُه
+    (ملاحظة Codex على #149)."""
+    return [path for path in listing.split("\0") if path]
+
+
 def _manifests_owned_at(root: Path, head: str) -> dict[str, str]:
     """بيانُ كلِّ وحدة اختبارٍ عند الرأس بالاتجاه الأمامي (manifest_for على الوحدات الموجودة)، فلا يُعكس الاسمُ — وعكسُه
     ملتبس: test_a__b.jsonl بيانُ tests/test_a__b.py لا tests/test_a/b.py (ملاحظة Codex على #149). وحدتان تؤولان إلى بيانٍ واحد تُرفضان باسمهما."""
     owned: dict[str, str] = {}
-    for module in _test_modules(_git(root, "ls-tree", "-r", "--name-only", head, "--", "tests/").split()):
+    for module in _test_modules(_paths(_git(root, "ls-tree", "-r", "--name-only", "-z", head, "--", "tests/"))):
         manifest = manifest_for(module)
         if manifest in owned:
             raise Refused("manifest_name_collision", f"{owned[manifest]} و{module} كلاهما بيانُه {manifest}")
@@ -266,7 +292,7 @@ def _range_scope(root: Path, rng: str, python: str = sys.executable, timeout: in
     def changed(status: str, *pathspec: str) -> list[str]:
         # بلا كشفِ إعادة التسمية: المنقولُ محذوفٌ في مصدره ومضافٌ في وجهته فتُفحص الجهتان — ملفُّ اختبارٍ نُقل وجهتُه كالمضاف
         # (كلُّ اختبارٍ فيها ممسوس ويلزمها بيانٌ باسمها)، وبيانٌ نُقل باسم وحدةٍ أخرى يتيمٌ لمصدره (ملاحظتا Codex على #149)
-        return _git(root, "diff", "--name-only", "--no-renames", f"--diff-filter={status}", f"{base}...{head}", "--", *pathspec).split()
+        return _paths(_git(root, "diff", "--name-only", "--no-renames", "-z", f"--diff-filter={status}", f"{base}...{head}", "--", *pathspec))
 
     added = _test_modules(changed("A", "tests/"))
     modified = _test_modules(changed("M", "tests/"))
@@ -371,10 +397,12 @@ def _def_span(tree: ast.Module, names: list[str]) -> tuple[int, int] | None:
     مستورَد) لا مدى له فيها."""
     node: ast.AST = tree
     for name in names:
-        node = next((n for n in getattr(node, "body", []) if isinstance(n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
-                     and n.name == name), None)
-        if node is None:
+        # الاسمُ المكرَّر في الوحدة: التعريفُ الأخير هو الحيّ (ربطُ الأسماء في بايثون)، فهو المدى لا الأولُ الميّت (ملاحظة Codex على #149)
+        matches = [n for n in getattr(node, "body", []) if isinstance(n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+                   and n.name == name]
+        if not matches:
             return None
+        node = matches[-1]
     return min([node.lineno, *(d.lineno for d in node.decorator_list)]), node.end_lineno or node.lineno
 
 
@@ -484,6 +512,8 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
         if worktree.exists() and not keep:
             subprocess.run(["git", "-C", str(root), "worktree", "remove", "--force", str(worktree)], capture_output=True)
             subprocess.run(["git", "-C", str(root), "worktree", "prune"], capture_output=True)
+        if not keep:
+            shutil.rmtree(tmp, ignore_errors=True)   # الحاضنُ المؤقّت نفسُه لا الشجرةُ وحدها: كان يبقى فارغًا بعد كلِّ تشغيلٍ فتتراكم آلافُه
     atexit.register(cleanup)
     results, baseline, cases, probed = [], {"collected": 0, "missing": [], "failing_before_mutation": []}, {}, {}
     try:
