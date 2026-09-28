@@ -327,19 +327,52 @@ def test_axe_incomplete_checks_are_kept_and_surfaced_for_review():
                                "incomplete": 1}],
                    "incomplete": [{"id": "color-contrast", "impact": "serious", "nodes": 2, "targets": ["#dialog button"],
                                    "help_url": "https://dequeuniversity.com/rules/axe/4.13/color-contrast",
-                                   "reasons": ["س" * 500], "states": ["approval-dialog-desktop", "remember-dialog-desktop"]}]}}
+                                   "reasons": ["س" * 500], "reasons_total": 4, "state": "approval-dialog-desktop"},
+                                  {"id": "color-contrast", "impact": "serious", "nodes": 1, "targets": ["textarea"],
+                                   "reasons": ["خلفيةٌ متراكبة"], "state": "remember-dialog-desktop"}]}}
     evidence = audit.build_evidence(raw, commit="abc", date="2026-09-28", coverage={}, sources={})
-    [kept] = evidence["axe"]["incomplete"]
-    assert kept["id"] == "color-contrast" and kept["targets"] == ["#dialog button"] and kept["impact"] == "serious"
-    assert kept["states"] == ["approval-dialog-desktop", "remember-dialog-desktop"]
-    assert len(kept["reasons"][0]) <= audit.AXE_TEXT and kept["help_url"].startswith("https://")
+    first, second = evidence["axe"]["incomplete"]
+    assert first["id"] == "color-contrast" and first["targets"] == ["#dialog button"] and first["impact"] == "serious"
+    assert first["state"] == "approval-dialog-desktop" and first["reasons_total"] == 4
+    assert len(first["reasons"][0]) <= audit.AXE_TEXT and first["help_url"].startswith("https://")
+    assert (second["state"], second["targets"], second["reasons_total"]) == ("remember-dialog-desktop", ["textarea"], 1)
     verdicts = {state["state"]: state["verdict"] for state in evidence["axe"]["states"]}
     assert verdicts == {"approval-dialog-desktop": "needs_review", "empty-desktop": "clean",
                         "remember-dialog-desktop": "violations"}, "حالةٌ فيها ما لم يُحسم ليست نظيفة"
-    review = [(f["id"], f["state"]) for f in evidence["findings"] if f["kind"] == "needs_review"]
-    assert review == [("a11y-review-color-contrast", "approval-dialog-desktop"),
-                      ("a11y-review-color-contrast", "remember-dialog-desktop")]
+    review = [(f["id"], f["state"], f["targets"]) for f in evidence["findings"] if f["kind"] == "needs_review"]
+    assert review == [("a11y-review-color-contrast", "approval-dialog-desktop", ["#dialog button"]),
+                      ("a11y-review-color-contrast", "remember-dialog-desktop", ["textarea"])]
     assert audit.evidence_guard(evidence) == []
+
+
+def test_one_rule_in_two_states_keeps_each_states_own_elements():
+    """ملاحظة Codex السابعة على #175: كان دمجُ القاعدة بين الحالات يُبقي عناصرَ أول حالة، فتُوجّه كلُّ نتيجةٍ إلى عناصر غيرها.
+    صار السجلُّ لكل (قاعدة، حالة)، وكلُّ نتيجةٍ بعناصر حالتها وأسبابها."""
+    raw = {"journeys": {}, "axe": {"status": "run", "errors": [], "incomplete": [],
+           "states": [{"journey": "current", "state": s, "violations": 1, "incomplete": 0} for s in ("a-desktop", "b-mobile")],
+           "violations": [{"id": "label", "impact": "critical", "nodes": 1, "targets": ["#one"], "state": "a-desktop"},
+                          {"id": "label", "impact": "critical", "nodes": 2, "targets": ["#two", "#three"], "state": "b-mobile"}]}}
+    evidence = audit.build_evidence(raw, commit="abc", date="2026-09-28", coverage={}, sources={})
+    found = [(f["id"], f["state"], f["targets"]) for f in evidence["findings"] if f["kind"] == "violation"]
+    assert found == [("a11y-label", "a-desktop", ["#one"]), ("a11y-label", "b-mobile", ["#two", "#three"])]
+
+
+def test_axe_records_beyond_the_cap_are_named_not_silently_dropped():
+    """ملاحظة Codex السابعة على #175: فوق السقف كانت السجلّاتُ تسقط صامتةً والعدّاداتُ تحسبها. صار الباقي مسمًّى في omitted
+    ونتيجةً a11y-omitted بقواعده، والحالةُ لا تكون clean، والسقفُ في حدود القياس."""
+    extra = audit.AXE_KEPT + 5
+    raw = {"journeys": {}, "axe": {"status": "run", "errors": [], "violations": [],
+           "states": [{"journey": "single-page", "state": "sp-empty-desktop", "violations": 0, "incomplete": extra}],
+           "incomplete": [{"id": f"rule-{i:02d}", "impact": "minor", "nodes": 1, "targets": ["x"],
+                           "state": "sp-empty-desktop"} for i in range(extra)]}}
+    evidence = audit.build_evidence(raw, commit="abc", date="2026-09-28", coverage={}, sources={})
+    assert len(evidence["axe"]["incomplete"]) == audit.AXE_KEPT and evidence["axe"]["records_cap"] == audit.AXE_KEPT
+    named = [f"rule-{i:02d}" for i in range(audit.AXE_KEPT, extra)]
+    assert [item["id"] for item in evidence["axe"]["omitted"]] == named
+    [omitted] = [f for f in evidence["findings"] if f["kind"] == "omitted"]
+    assert omitted["omitted_ids"] == named and omitted["omitted_total"] == 5 and omitted["state"] == "sp-empty-desktop"
+    assert evidence["axe"]["states"][0]["verdict"] == "needs_review", "حالةٌ حُذف بعضُ سجلّاتها ليست clean"
+    assert any("at_most_20_per_kind" in limit for limit in evidence["measurement_limits"])
 
 
 def test_every_published_axe_state_that_needs_review_names_its_items():
@@ -350,7 +383,7 @@ def test_every_published_axe_state_that_needs_review_names_its_items():
     for state in axe["states"]:
         assert state["verdict"] == audit.axe_state_verdict(state), state
         if state["incomplete"]:
-            items = [item for item in axe["incomplete"] if state["state"] in item["states"]]
+            items = [item for item in axe["incomplete"] if item["state"] == state["state"]]
             assert items and all(item["id"] and item["targets"] for item in items), state["state"]
             assert any(f["kind"] == "needs_review" and f["state"] == state["state"] for f in evidence["findings"])
 

@@ -27,6 +27,12 @@ function short(text, limit = 160) {
 const LATIN_TOKEN = /[A-Za-z_][A-Za-z0-9_]*(?:[._:-][A-Za-z0-9_]+)*/g;
 const HEX64 = /\b[0-9a-f]{64}\b/g;
 
+// السطرُ الأول من رسالة خطأ، مقصوصًا بعلامة، ومعلَنًا إن كان بعده غيرُه
+function firstLine(error) {
+  const lines = String(error && error.message || error).split("\n");
+  return short(lines[0], 200) + (lines.length > 1 ? " (…)" : "");
+}
+
 class Journey {
   constructor(name) {this.name = name; this.steps = []; this.checks = {}; this.timings = {};}
   async step(id, viewport, fn) {
@@ -37,7 +43,7 @@ class Journey {
       return true;
     } catch (error) {
       this.steps.push({id, viewport, ok: false, ms: Date.now() - started,
-        error: short(String(error && error.message || error).split("\n")[0], 200)});
+        error: firstLine(error)});
       return false;
     }
   }
@@ -110,17 +116,18 @@ async function unnamedControls(cdp, state) {
   return out;
 }
 
+// ترتيبُ التركيز حتى يعود إلى أوّله أو يخرج من الصفحة، وإلا فحتى السقف؛ و`complete` يقول أيَّهما وقع
 async function tabOrder(page, cdp) {
   await page.evaluate(() => {document.activeElement && document.activeElement.blur(); window.scrollTo(0, 0);});
   const order = [];
-  let first = null;
+  let first = null, complete = false;
   for (let i = 0; i < MAX_TAB_STOPS; i++) {
     await page.keyboard.press("Tab");
     const {result} = await cdp.send("Runtime.evaluate", {expression: "document.activeElement"});
-    if (!result.objectId) break;
+    if (!result.objectId) {complete = true; break;}
     const {node} = await cdp.send("DOM.describeNode", {objectId: result.objectId});
-    if (["body", "html"].includes(node.localName)) break;
-    if (first === node.backendNodeId) break;
+    if (["body", "html"].includes(node.localName)) {complete = true; break;}
+    if (first === node.backendNodeId) {complete = true; break;}
     first = first ?? node.backendNodeId;
     const {nodes} = await cdp.send("Accessibility.getPartialAXTree", {backendNodeId: node.backendNodeId, fetchRelatives: false});
     const ax = nodes.find(n => n.backendDOMNodeId === node.backendNodeId) || nodes[0] || {};
@@ -133,7 +140,7 @@ async function tabOrder(page, cdp) {
     order.push({index: i + 1, role: ax.role ? ax.role.value : null, name: short(ax.name ? ax.name.value : "", 80),
                 tag: info.tag, id: info.id, ...look});
   }
-  return order;
+  return {order, complete};
 }
 
 // axe طُلب فلم يعمل: الحالةُ `failed` برمزٍ مسمًّى، فلا يبدو الفحصُ نظيفًا وهو لم يجرِ (ويرفض الجانبُ البايثونيّ كتابتَه)
@@ -153,22 +160,24 @@ async function runAxe(page, state, axe, journeyName = "current") {
     const result = await page.evaluate(async () => {
       const run = await window.axe.run(document, {runOnly: {type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"]}});
       // المخالفاتُ وما يحتاج مراجعةً يدوية (incomplete) بتفاصيلها: القاعدة، والأثر، والرابط، والعناصر، والأسباب
-      const record = v => ({id: v.id, impact: v.impact, help_url: v.helpUrl, nodes: v.nodes.length,
-        targets: v.nodes.slice(0, 3).map(n => String(n.target.join(" "))),
-        reasons: [...new Set(v.nodes.flatMap(n => [...n.any, ...n.all, ...n.none].map(c => String(c.message))))].slice(0, 3)});
+      // أولُ ثلاثة عناصر وثلاثة أسباب، ومعها عددُها كلِّها (nodes وreasons_total) فلا يخفى ما قُصّ
+      const record = v => {
+        const reasons = [...new Set(v.nodes.flatMap(n => [...n.any, ...n.all, ...n.none].map(c => String(c.message))))];
+        return {id: v.id, impact: v.impact, help_url: v.helpUrl, nodes: v.nodes.length,
+                targets: v.nodes.slice(0, 3).map(n => String(n.target.join(" "))), reasons: reasons.slice(0, 3),
+                reasons_total: reasons.length};
+      };
       return {version: window.axe.version, violations: run.violations.map(record), incomplete: run.incomplete.map(record),
               passes: run.passes.length};
     });
     axe.version = result.version;
     axe.states.push({journey: journeyName, state, violations: result.violations.length, passes: result.passes,
                      incomplete: result.incomplete.length});
+    // سجلٌّ لكل (قاعدة، حالة) بعناصر تلك الحالة وأسبابها: لا دمجَ يُلبس حالةً عناصرَ غيرها
     for (const [kind, items] of [["violations", result.violations], ["incomplete", result.incomplete]]) {
       for (const v of items) {
-        const item = {...v, help_url: short(v.help_url, 160), targets: v.targets.map(t => short(t, 80)),
-                      reasons: v.reasons.map(r => short(r, 160))};
-        const known = axe[kind].find(x => x.id === item.id);
-        if (known) {known.nodes = Math.max(known.nodes, item.nodes); if (!known.states.includes(state)) known.states.push(state);}
-        else axe[kind].push({...item, states: [state]});
+        axe[kind].push({...v, help_url: short(v.help_url, 160), targets: v.targets.map(t => short(t, 80)),
+                        reasons: v.reasons.map(r => short(r, 160)), journey: journeyName, state});
       }
     }
   } catch (error) {axeFailed(axe, "axe_failed", error);}
@@ -199,7 +208,7 @@ async function latinIn(page, selector) {
       for (const hex of text.match(/[0-9a-f]{64}/g) || []) hashes.push(hex.length);
       for (const word of text.replace(/[0-9a-f]{64}/g, " ").match(pattern) || []) out.add(word);
     }
-    return {tokens: [...out].slice(0, 40), hashes: hashes.length, json_blocks: json.length};
+    return {tokens: [...out].slice(0, 40), tokens_total: out.size, hashes: hashes.length, json_blocks: json.length};
   }, {selector, source: LATIN_TOKEN.source});
 }
 
@@ -289,7 +298,10 @@ async function currentDesktop(browser, journey, shots, axe) {
       return `${disabled.length} disabled of ${modes.length}`;
     });
     await journey.step("tab_order", vp, async () => {
-      checks.tab_order = await tabOrder(page, cdp);
+      const tabs = await tabOrder(page, cdp);
+      checks.tab_order = tabs.order;
+      checks.tab_order_complete = tabs.complete;
+      checks.tab_order_cap = MAX_TAB_STOPS;
       return `${checks.tab_order.length} stops`;
     });
     await journey.step("send_before_session", vp, async () => {
@@ -374,6 +386,7 @@ async function currentDesktop(browser, journey, shots, axe) {
       checks.composer_viewport_share = Math.round(100 * layout.composer / VIEWPORTS.desktop.height) / 100;
       const card = await latinIn(page, "#messages");
       checks.text_answer_latin_outside_answer = card.tokens.filter(w => !answer.text.includes(w));
+      checks.text_answer_latin_total = card.tokens_total;
       await shot(page, "02-text-answer-desktop.png", shots, "ask_text");
       checks.unnamed_controls.push(...await unnamedControls(cdp, "text-answer"));
       await runAxe(page, "text-answer-desktop", axe);
@@ -400,9 +413,9 @@ async function currentDesktop(browser, journey, shots, axe) {
       await waitText(page, "تم إنشاء الملف:");
       await shot(page, "03-draft-review-desktop.png", shots, "draft_review_apply");
       await page.locator("#close-dialog").click();
-      checks.focus_after_dialog_close = await page.evaluate(() => {
-        const el = document.activeElement; return el && el !== document.body ? el.textContent.trim().slice(0, 40) || el.id : "body";
-      });
+      checks.focus_after_dialog_close = short(await page.evaluate(() => {
+        const el = document.activeElement; return el && el !== document.body ? el.textContent.trim() || el.id : "body";
+      }), 40);
     });
     await journey.step("memory_dialog", vp, async () => {
       await clickButton(page, "تذكّر هذا");
@@ -425,6 +438,7 @@ async function currentDesktop(browser, journey, shots, axe) {
       checks.dialog_focus.memory_panel = await focusInDialog(page);
       const listed = await latinIn(page, "#dialog");
       checks.memory_panel_latin = listed.tokens;
+      checks.memory_panel_latin_total = listed.tokens_total;
       checks.memory_panel_iso_timestamp = await page.evaluate(() =>
         /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(document.getElementById("dialog").textContent));
       checks.unnamed_controls.push(...await unnamedControls(cdp, "memory-panel"));
@@ -457,10 +471,11 @@ async function currentDesktop(browser, journey, shots, axe) {
       await page.evaluate(() => {for (const d of document.querySelectorAll("#messages details")) d.open = true;});
       const facts = await latinIn(page, "#messages");
       checks.agent_stream_latin = facts.tokens;
+      checks.agent_stream_latin_total = facts.tokens_total;
       checks.agent_stream_hashes = facts.hashes;
       checks.agent_stream_json_blocks = facts.json_blocks;
       checks.agent_turn_buttons = await page.evaluate(() => [...[...document.querySelectorAll(".message:not(.user)")].pop()
-        .querySelectorAll(".tools button, details button")].map(b => b.textContent.trim().slice(0, 40)));
+        .querySelectorAll(".tools button, details button")].map(b => b.textContent.trim())).then(labels => labels.map(l => short(l, 40)));
       checks.hashes.push(...await hashRendering(page, "agent-steps", "#messages"));
       await page.locator("#messages details").last().scrollIntoViewIfNeeded();
       await shot(page, "04-agent-steps-desktop.png", shots, "agent_write");
@@ -480,6 +495,7 @@ async function currentDesktop(browser, journey, shots, axe) {
       checks.dialog_focus.approval = await focusInDialog(page);
       const facts = await latinIn(page, "#dialog");
       checks.approval_dialog_latin = facts.tokens;
+      checks.approval_dialog_latin_total = facts.tokens_total;
       checks.approval_dialog_json_blocks = facts.json_blocks;
       checks.approval_dialog_hashes = facts.hashes;
       checks.hashes.push(...await hashRendering(page, "approval-dialog", "#dialog"));

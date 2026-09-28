@@ -301,7 +301,7 @@ def test_a_model_without_a_valid_artifact_digest_is_a_named_failure():
     def tags(**entry):
         return lambda base_url: {"models": [{"name": "qwen3.5:9b", **entry}]}
     for entry in ({}, {"digest": None}, {"digest": ""}, {"digest": "a" * 63}, {"digest": "g" * 64}, {"digest": "A" * 64},
-                  {"digest": "sha256:" + "a" * 64}):
+                  {"digest": "sha256:" + "a" * 64}, {"digest": 5}, {"digest": True}, {"digest": []}):
         step, digest = lc.locate_engine("qwen3.5:9b", "http://x", probe=tags(**entry))
         assert (step.status, step.code, digest) == ("failed", "engine_metadata_invalid", None), entry
     step, digest = lc.locate_engine("qwen3.5:9b", "http://x", probe=tags(digest="a" * 64))
@@ -310,6 +310,31 @@ def test_a_model_without_a_valid_artifact_digest_is_a_named_failure():
     steps = lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x", probe=tags(digest=""), with_agent=False,
                           ui_check=ui)
     assert lc.exit_code(steps) == 1, "بصمةٌ غائبة لا تنتهي بخروجٍ صفر"
+
+
+def test_malformed_engine_metadata_is_named_with_a_complete_report():
+    """ملاحظة Codex السابعة على #175: بصمةٌ رقمية أو منطقية أو قائمة كانت ترمي TypeError في فرع التفصيل (len)، فيخرج الفحصُ بلا
+    تقريره. وكذلك ردٌّ ليس قاموسًا أو models فيه ليست قائمة أو اسمٌ غيرُ نصّيّ. كلُّها engine_metadata_invalid وتقريرٌ كامل."""
+    ui = lambda root, **kwargs: lc.Step("ui", "ok", "ui_ready_without_engine")
+    for tags in ({"models": [{"name": "qwen3.5:9b", "digest": 5}]}, {"models": [{"name": "qwen3.5:9b", "digest": True}]},
+                 {"models": [{"name": "qwen3.5:9b", "digest": []}]}, [], {"models": "qwen3.5:9b"}, {"models": None}):
+        steps = lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x", probe=lambda base_url, t=tags: t,
+                              with_agent=False, ui_check=ui)
+        assert [s.step for s in steps] == ["runtime", "morphology", "engine", "policies", "ui"], tags
+        engine = steps[2]
+        assert (engine.status, engine.code) == ("failed", "engine_metadata_invalid"), tags
+        assert lc.exit_code(steps) == 1
+    odd_names = {"models": [{"name": ["qwen3.5:9b"]}, {"name": 7}, {"name": "qwen3.5:9b", "digest": "a" * 64}]}
+    assert lc.locate_engine("qwen3.5:9b", "http://x", probe=lambda base_url: odd_names)[0].code == "engine_ready"
+
+
+def test_trimmed_details_say_that_they_are_trimmed():
+    """لا قصَّ صامت في تفاصيل الفحص: النصُّ المقصوص ينتهي بـ«…»، وقائمةُ النماذج تذكر عددَ ما لم يُعرض."""
+    assert lc._clip("ا" * 300).endswith("…") and len(lc._clip("ا" * 300)) == 200
+    assert lc._clip("قصير") == "قصير"
+    many = {"models": [{"name": f"m{i}", "digest": "a" * 64} for i in range(10)]}
+    step = lc.check_engine("absent", "http://x", probe=lambda base_url: many)
+    assert step.code == "model_missing" and "و4 غيرها" in step.detail
 
 
 def test_a_journal_that_refuses_its_root_is_a_named_failure_not_a_traceback(monkeypatch):

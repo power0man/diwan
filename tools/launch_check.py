@@ -61,6 +61,19 @@ NOTE_TEXT = "مرحبًا بديوان على هذا الجهاز"
 TASK = "اقرأ الملف notes.txt بأداة read_file ثم أخبرني في جملةٍ واحدة بما فيه."
 
 
+def _clip(text, limit: int = 200) -> str:
+    """نصُّ التفصيل مقصوصًا بعلامة: ما قُصّ ينتهي بـ«…» فلا يُقرأ تفصيلٌ ناقص كاملًا."""
+    text = str(text)
+    return text if len(text) <= limit else text[:limit - 1] + "…"
+
+
+def _listing(names, shown: int = 6) -> str:
+    """أولُ `shown` أسماءٍ مرتّبة، ومعها عددُ ما لم يُعرض إن وُجد."""
+    names = sorted(str(name) for name in names)
+    rest = len(names) - shown
+    return f"{names[:shown]}" + (f" و{rest} غيرها" if rest > 0 else "")
+
+
 @dataclass(frozen=True)
 class Step:
     step: str
@@ -78,7 +91,7 @@ def check_runtime(root: Path) -> Step:
         import agent.loop  # noqa: F401
         import providers.ollama  # noqa: F401
     except Exception as exc:  # noqa: BLE001 — أيُّ عطب استيرادٍ يُسمّى
-        return Step("runtime", "failed", "import_failed", f"{type(exc).__name__}: {exc}"[:200])
+        return Step("runtime", "failed", "import_failed", _clip(f"{type(exc).__name__}: {exc}"))
     if not (root / "uv.lock").is_file():
         return Step("runtime", "failed", "lock_missing", "uv.lock غائب: التثبيتُ غيرُ مقفول")
     from core.public_export import read_marker
@@ -118,6 +131,11 @@ def probe_engine(base_url: str, timeout: float = 3.0) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
+def _shape(value) -> str:
+    """وصفُ قيمةٍ لا يرمي أيًّا كان نوعُها: النصُّ بطوله، وغيرُه بنوعه (رقمٌ أو منطقيّ أو قائمة من /api/tags)."""
+    return f"نصٌّ من {len(value)} محرفًا" if isinstance(value, str) else f"قيمةٌ من نوع {type(value).__name__}"
+
+
 def locate_engine(engine: str, base_url: str, *, probe=probe_engine) -> tuple[Step, str | None]:
     """خطوةُ المحرّك وبصمتُه كما يقرؤها `serve_ui.py` من `/api/tags` (`digest`)، أو لا بصمة إن لم يُوجد."""
     try:
@@ -125,17 +143,22 @@ def locate_engine(engine: str, base_url: str, *, probe=probe_engine) -> tuple[St
     except (OSError, urllib.error.URLError, ValueError) as exc:
         return Step("engine", "unavailable", "engine_unreachable",
                     f"لا يجيب Ollama على {base_url}: {type(exc).__name__} — شغّل `ollama serve`"), None
-    models = {m.get("name"): m.get("digest") for m in tags.get("models", []) if isinstance(m, dict)}
+    # ردٌّ على غير شكله (ليس قاموسًا، أو models ليست قائمة) عطبٌ مسمًّى لا تعقّب؛ والاسمُ غيرُ النصّيّ لا يُعدّ محرّكًا
+    entries = tags.get("models") if isinstance(tags, dict) else None
+    if not isinstance(entries, list):
+        return Step("engine", "failed", "engine_metadata_invalid",
+                    f"ردُّ /api/tags على {base_url} بلا قائمة models ({_shape(entries)})"), None
+    models = {m["name"]: m.get("digest") for m in entries if isinstance(m, dict) and isinstance(m.get("name"), str)}
     if engine not in models:
         return Step("engine", "unavailable", "model_missing",
-                    f"المحرّك {engine} غيرُ مسحوب — `ollama pull {engine}`؛ الموجود: {sorted(n for n in models if n)[:6]}"), None
+                    f"المحرّك {engine} غيرُ مسحوب — `ollama pull {engine}`؛ الموجود: {_listing(n for n in models if n)}"), None
     digest = models[engine]
     # بصمةُ المحرّك بقاعدة الفحص المسبق في المزوّد المحليّ نفسِه (providers/local_chat._SHA256: ٦٤ محرفًا ست عشريًّا صغيرًا):
     # بصمةٌ غائبة أو مشوّهة يرفضها أولُ جوابٍ في الواجهة، فهي عطبٌ مسمًّى لا محرّكٌ غائب ولا جاهز
     from providers.local_chat import _SHA256 as ARTIFACT_DIGEST
     if not isinstance(digest, str) or not ARTIFACT_DIGEST.fullmatch(digest):
         return Step("engine", "failed", "engine_metadata_invalid",
-                    f"Ollama يسرد {engine} ببصمةٍ غيرِ صالحة ({type(digest).__name__}، {len(digest or '')} محرفًا)؛ "
+                    f"Ollama يسرد {engine} ببصمةٍ غيرِ صالحة ({_shape(digest)})؛ "
                     f"المزوّدُ المحليّ يطلب sha256 كاملة — أعد `ollama pull {engine}`"), None
     return Step("engine", "ok", "engine_ready", f"{engine} على {base_url}"), digest
 
@@ -194,16 +217,16 @@ def check_agent_turn(engine: str, base_url: str, *, live: bool) -> Step:
                             session_id="launch-check", turn_id="turn-1",
                             model=model, model_version=version, max_steps=4, deadline_s=120.0)
         except Exception as exc:  # noqa: BLE001 — يُسمّى ولا يُبتلع
-            return Step("agent_turn", "failed", "agent_turn_raised", f"{type(exc).__name__}: {exc}"[:200])
+            return Step("agent_turn", "failed", "agent_turn_raised", _clip(f"{type(exc).__name__}: {exc}"))
         read_calls = [call for step in run.steps for call in step.tool_calls if getattr(call, "name", "") == "read_file"]
         if run.status != "complete":
-            return Step("agent_turn", "failed", f"agent_turn_{run.status}", f"{run.code}: {run.answer[:120]}")
+            return Step("agent_turn", "failed", f"agent_turn_{run.status}", f"{run.code}: {_clip(run.answer, 120)}")
         if not read_calls:
             return Step("agent_turn", "failed", "tool_not_used", "أجاب النموذجُ بلا قراءة الملف بأداة read_file")
         if not run.answer.strip():
             return Step("agent_turn", "failed", "empty_answer", "جولةٌ تمّت بلا جواب")
         code = "agent_turn_live" if live else "mechanism_only"
-        return Step("agent_turn", "ok", code, f"{len(run.steps)} خطوات، والجواب: {run.answer[:80]}")
+        return Step("agent_turn", "ok", code, f"{len(run.steps)} خطوات، والجواب: {_clip(run.answer, 80)}")
 
 
 def check_policies(root: Path) -> Step:
@@ -215,15 +238,15 @@ def check_policies(root: Path) -> Step:
         import rebuild_index
         from core.canonical import PayloadRejected
     except Exception as exc:  # noqa: BLE001
-        return Step("policies", "failed", "import_failed", f"{type(exc).__name__}: {exc}"[:200])
+        return Step("policies", "failed", "import_failed", _clip(f"{type(exc).__name__}: {exc}"))
     try:
         hits = rebuild_index.search("سفينة", limit=1, match_any=True)
     except PayloadRejected as exc:
         if getattr(exc, "code", "") == "index_missing":
             return Step("policies", "unavailable", "index_missing", "الإسقاطُ غيرُ مبني — `python tools/rebuild_index.py rebuild`")
-        return Step("policies", "failed", getattr(exc, "code", "search_refused"), str(exc)[:200])
+        return Step("policies", "failed", getattr(exc, "code", "search_refused"), _clip(exc))
     except Exception as exc:  # noqa: BLE001
-        return Step("policies", "failed", "search_raised", f"{type(exc).__name__}: {exc}"[:200])
+        return Step("policies", "failed", "search_raised", _clip(f"{type(exc).__name__}: {exc}"))
     if not hits:
         return Step("policies", "failed", "no_evidence", "استعلامٌ بسيط بلا شاهد رغم وجود المتن والإسقاط")
     return Step("policies", "ok", "policies_ready", f"شاهدٌ من {hits[0].get('doc_id', '?')}")
@@ -358,7 +381,7 @@ def check_ui(root: Path, *, model: str = DEFAULT_ENGINE, digest: str | None = No
             process = subprocess.Popen(argv, cwd=root, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
         except OSError as exc:
-            return Step("ui", "failed", "ui_start_failed", f"{type(exc).__name__}: {exc}"[:200])
+            return Step("ui", "failed", "ui_start_failed", _clip(f"{type(exc).__name__}: {exc}"))
         lines: "queue.Queue[str | None]" = queue.Queue()
         errors: list[str] = []
         readers = (threading.Thread(target=_drain, args=(process.stdout, lines), daemon=True),
@@ -379,7 +402,7 @@ def check_ui(root: Path, *, model: str = DEFAULT_ENGINE, digest: str | None = No
                     process.wait(UI_STOP_TIMEOUT_S)
                     tail = "".join(errors).strip().splitlines()[-1:] or [""]
                     return Step("ui", "failed", "ui_start_failed",
-                                f"خرج serve_ui.py برمز {process.returncode} قبل أن يعلن عنوانه: {tail[0]}"[:200])
+                                _clip(f"خرج serve_ui.py برمز {process.returncode} قبل أن يعلن عنوانه؛ آخرُ سطرٍ من خطئه: {tail[0]}"))
                 found = UI_ORIGIN.search(line)
                 origin = found.group(1) if found else None
             probed = probe_ui(origin)

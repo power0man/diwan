@@ -92,6 +92,11 @@ MEASUREMENT_LIMITS = [
     "error_code_coverage_parses_webui_server_py_only_codes_raised_by_other_modules_are_listed_as_dynamic_lines_not_counted",
     "first_run_configuration_only_research_media_and_command_execution_are_disabled_as_serve_ui_starts_without_searxng_vision_or_docker",
     "timings_are_loopback_with_a_fake_provider_they_bound_the_ui_and_http_path_not_a_real_answer",
+    "axe_records_are_one_per_rule_and_state_at_most_20_per_kind_the_rest_are_named_in_omitted_and_as_a_finding",
+    "each_axe_record_keeps_its_first_three_targets_and_reasons_nodes_and_reasons_total_count_them_all",
+    "latin_token_lists_keep_the_first_40_their_total_is_recorded_beside_them",
+    "the_tab_order_stops_at_15_stops_tab_order_complete_says_whether_the_cycle_closed_before_the_cap",
+    "page_texts_are_trimmed_to_a_few_hundred_characters_and_a_trimmed_text_ends_with_an_ellipsis",
 ]
 
 
@@ -292,7 +297,7 @@ FINDING_RULES = (
     ("console-errors", "medium", "recheck", "boot().catch(showError)", "open", None,
      "أخطاءٌ في سجلّ وحدة المتصفّح أثناء الرحلة (غيرُ سطور الشبكة لردود الرفض المقصودة)"),
 )
-AXE_KEPT = 20      # سجلّاتُ axe (مخالفاتٍ أو ما يحتاج مراجعة) في الدليل، وأطولُ النصوص فيها
+AXE_KEPT = 20      # سجلّاتُ axe لكل نوعٍ في الدليل (وما زاد يُسمّى في omitted)، وأطولُ النصوص فيها
 AXE_TEXT = 160
 
 
@@ -312,18 +317,27 @@ def axe_state_verdict(state: dict) -> str:
 
 
 def normalize_axe(axe: dict | None) -> dict | None:
-    """سجلُّ axe في الدليل: كلُّ حالةٍ بحكمها، والمخالفاتُ وما يحتاج مراجعةً يدوية بقاعدتها وأثرها ورابطها وعناصرها وأسبابها،
-    محدودةَ العدد والطول (ويمرّ الكلُّ بحارس الدليل)."""
+    """سجلُّ axe في الدليل: كلُّ حالةٍ بحكمها، وسجلٌّ لكل (قاعدة، حالة) من المخالفات وما يحتاج مراجعةً يدوية بقاعدته وأثره
+    ورابطه وعناصر تلك الحالة وأسبابها. ولا قصَّ صامت: فوق AXE_KEPT سجلًّا لكل نوعٍ يُسمّى الباقي في `omitted` بقاعدته وحالته،
+    والعناصرُ والأسبابُ أولُ ثلاثةٍ ومعها عددُها كلِّها (`nodes`، `reasons_total`)، والنصُّ المقصوص ينتهي بـ«…»."""
     if not axe or axe.get("status") != "run":
         return axe
 
     def record(item: dict) -> dict:
+        reasons = list(item.get("reasons") or [])
         return {"id": _trim(item.get("id"), 80), "impact": item.get("impact"), "nodes": item.get("nodes", 0),
                 "help_url": _trim(item.get("help_url")), "targets": [_trim(t, 80) for t in (item.get("targets") or [])[:3]],
-                "reasons": [_trim(r) for r in (item.get("reasons") or [])[:3]], "states": list(item.get("states") or [])}
+                "reasons": [_trim(r) for r in reasons[:3]], "reasons_total": item.get("reasons_total", len(reasons)),
+                "journey": item.get("journey"), "state": item.get("state")}
+    kept, omitted = {}, []
+    for kind in ("violations", "incomplete"):
+        items = axe.get(kind) or []
+        kept[kind] = [record(item) for item in items[:AXE_KEPT]]
+        omitted.extend({"kind": kind, "id": _trim(item.get("id"), 80), "state": item.get("state")}
+                       for item in items[AXE_KEPT:])
     return {**axe, "states": [{**state, "verdict": axe_state_verdict(state)} for state in axe.get("states") or []],
-            "violations": [record(item) for item in (axe.get("violations") or [])[:AXE_KEPT]],
-            "incomplete": [record(item) for item in (axe.get("incomplete") or [])[:AXE_KEPT]]}
+            "records_cap": AXE_KEPT, "violations": kept["violations"], "incomplete": kept["incomplete"],
+            "omitted": omitted}
 
 
 SEVERITY_BY_IMPACT = {"critical": "high", "serious": "high", "moderate": "medium", "minor": "low"}
@@ -379,22 +393,32 @@ def derive_findings(checks: dict, coverage: dict, axe: dict | None, sources: dic
         findings.append({"id": rule_id, "kind": "defect", "severity": severity, "summary": summary, "step": step,
                          "screenshot": shot, "points_to": locate(anchor, sources),
                          "survives_single_page": survives, "tracked_in": tracked.get(rule_id)})
+    # سجلٌّ لكل (قاعدة، حالة): كلُّ نتيجةٍ بعناصر حالتها لا بعناصر أول حالةٍ ظهرت فيها القاعدة
     for violation in (axe or {}).get("violations", ()):
         rule_id = f"a11y-{violation['id']}"
         findings.append({"id": rule_id, "kind": "violation", "severity": SEVERITY_BY_IMPACT.get(violation.get("impact"), "low"),
+                         "state": violation.get("state"),
                          "summary": f"axe: {violation['id']} ({violation.get('impact')}) على {violation.get('nodes', 0)} عنصرًا",
                          "step": "axe", "screenshot": None, "points_to": None, "survives_single_page": "recheck",
                          "targets": violation.get("targets") or [], "tracked_in": tracked.get(rule_id)})
     # ما لم يحسمه axe (incomplete) نتيجةٌ صريحة لكل قاعدةٍ وحالة: «يحتاج مراجعة»، لا صمتٌ يُقرأ نظافة
     for item in (axe or {}).get("incomplete", ()):
         rule_id = f"a11y-review-{item['id']}"
-        for state in item.get("states") or [None]:
-            findings.append({"id": rule_id, "kind": "needs_review", "severity": "needs_review", "state": state,
-                             "summary": f"axe لم يحسم {item['id']} ({item.get('impact')}) على {item.get('nodes', 0)} عنصرًا: "
-                                        "يحتاج مراجعةً يدوية",
-                             "step": "axe", "screenshot": None, "points_to": None, "survives_single_page": "recheck",
-                             "targets": item.get("targets") or [], "reasons": item.get("reasons") or [],
-                             "help_url": item.get("help_url"), "tracked_in": tracked.get(rule_id)})
+        findings.append({"id": rule_id, "kind": "needs_review", "severity": "needs_review", "state": item.get("state"),
+                         "summary": f"axe لم يحسم {item['id']} ({item.get('impact')}) على {item.get('nodes', 0)} عنصرًا: "
+                                    "يحتاج مراجعةً يدوية",
+                         "step": "axe", "screenshot": None, "points_to": None, "survives_single_page": "recheck",
+                         "targets": item.get("targets") or [], "reasons": item.get("reasons") or [],
+                         "help_url": item.get("help_url"), "tracked_in": tracked.get(rule_id)})
+    # وما زاد على السقف نتيجةٌ مسمّاة لكل (نوع، حالة) بقواعده، فلا تبدو القائمةُ كاملةً وهي ليست كذلك
+    omitted: dict[tuple, list[str]] = {}
+    for item in (axe or {}).get("omitted", ()):
+        omitted.setdefault((item.get("kind"), item.get("state")), []).append(item.get("id"))
+    for (kind, state), ids in omitted.items():
+        findings.append({"id": "a11y-omitted", "kind": "omitted", "severity": "needs_review", "state": state,
+                         "summary": f"{len(ids)} سجلًّا من {kind} فوق سقف الدليل ({AXE_KEPT}) لم تُحفظ تفاصيلُها: تُراجَع بإعادة الفحص",
+                         "omitted_ids": ids[:AXE_KEPT], "omitted_total": len(ids), "step": "axe", "screenshot": None,
+                         "points_to": None, "survives_single_page": "recheck", "tracked_in": tracked.get("a11y-omitted")})
     return findings
 
 
@@ -427,7 +451,7 @@ def evidence_guard(evidence: dict, shots_dir: Path | None = None) -> list[str]:
     for shot in shots:
         name = shot.get("file", "")
         if not SHOT_NAME.fullmatch(name):
-            violations.append(f"screenshot_name:{name[:40]}")
+            violations.append(f"screenshot_name:{_trim(name, 40)}")
             continue
         size = shot.get("bytes")
         if shots_dir is not None:
@@ -548,7 +572,8 @@ def run_browser(node: str, env: dict, config: dict, workdir: Path) -> tuple[int,
     result = subprocess.run([node, str(SCRIPT), str(config_path)], env=env, capture_output=True, text=True,
                             timeout=900)
     raw = json.loads(raw_path.read_text(encoding="utf-8")) if raw_path.is_file() else None
-    return result.returncode, raw, (result.stderr or result.stdout)[-600:]
+    output = result.stderr or result.stdout
+    return result.returncode, raw, (output if len(output) <= 600 else "…" + output[-599:])
 
 
 def previous_shots(out: Path) -> set[str]:
@@ -643,7 +668,8 @@ def _validate_and_publish(args, raw, status, tail, journeys, tracked, staging: P
         return 3
     problem = axe_problem(raw.get("axe"), bool(args.axe), journeys)
     if problem:
-        print(json.dumps({"status": "failed", "code": problem, "errors": (raw.get("axe") or {}).get("errors", [])[:3]},
+        errors = (raw.get("axe") or {}).get("errors", [])
+        print(json.dumps({"status": "failed", "code": problem, "errors": errors[:3], "errors_total": len(errors)},
                          ensure_ascii=False))
         return 1
     sources = {path: (ROOT / path).read_text(encoding="utf-8") for path in UI_SOURCES}
@@ -657,8 +683,8 @@ def _validate_and_publish(args, raw, status, tail, journeys, tracked, staging: P
         shot["bytes"] = path.stat().st_size if path.is_file() else None
     violations = evidence_guard(evidence, staging)
     if violations:
-        print(json.dumps({"status": "failed", "code": "evidence_guard", "violations": violations[:20]},
-                         ensure_ascii=False))
+        print(json.dumps({"status": "failed", "code": "evidence_guard", "violations": violations[:20],
+                          "violations_total": len(violations)}, ensure_ascii=False))
         return 1
     publish(evidence, staging, shots, out)
     print(json.dumps({"status": "written", "evidence": args.out, "summary": evidence["summary"],
