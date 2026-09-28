@@ -253,7 +253,8 @@ def test_limit_a_stuck_probe_turn_the_product_cannot_stop_is_named_and_blocks_th
     """حدٌّ معلَن (#147، مسار openai): الجولةُ العالقة تُوقَف بـagent_stop قبل هجر جلستها، لكنّ agent_stop يعيد حسابَ بصمة
     المدخل بلا كتلة الذاكرة فيرفض بـstate_corrupt كلَّ جولةٍ حُقنت فيها ذاكرة. فتبقى الجولةُ على القرص تنتظر المالك، ويرفض
     النسخُ الذي يليها المساحةَ بـbackup_pending، ويسمّي التقريرُ السببَ. وكلُّ سيناريو فيه نسخةٌ وعنصرٌ قائم (النسخُ الأربعة
-    وisolation_007) يعرض قبل اللقطة فيعلق. وحين يُصلَح #147 يسقط هذا الاختبار فيُقلب: ٣٠/٣٠ وstuck_probe_turns صفر."""
+    وisolation_007) يعرض قبل اللقطة فيعلق. وحين يبلغ إصلاحُ #147 (#180) main يسقط هذا الاختبار، فيُقلب تأكيدًا في الإيداع
+    نفسِه الذي يدمجه: ٣٠/٣٠، وstuck_probe_turns صفر، ونجاحُ agent_stop مسمًّى بصفّ طفرة."""
     report = run_memory_bank(BANK, driver="live", delegate=_ProposingDelegate())
     failed = {r["id"]: r["failures"] for r in report["results"] if not r["passed"]}
     assert failed == {"backup_001": ["1: raised BackupError backup_pending"], "backup_002": ["2: raised BackupError backup_pending"],
