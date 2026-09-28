@@ -51,8 +51,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from evaluation.external_review import (AUTHOR_FAMILY, DEFAULT_REVIEWERS,  # noqa: E402
-                                        DEVELOPER_FAMILIES, ENGINE_FAMILY, _slug,
-                                        review_bank, smoke, summarize)
+                                        DEVELOPER_FAMILIES, ENGINE_FAMILY, SUPERSEDED_DIR,
+                                        _slug, review_bank, smoke, summarize)
 from evaluation.multi_system_review import AutomaticReviewError, model_family  # noqa: E402
 
 MAX_RESPONSE_BYTES = 8_000_000
@@ -516,8 +516,10 @@ def _quota_models(bank: Path, models: list[str]) -> set[str]:
     return spent
 
 
-def with_fallback(candidates: list[dict], want: int, run: Callable[[list[dict]], set[str]]) -> tuple:
-    """يشغّل `run` على المختارين؛ ومن نفدت حصّتُه يُستبدل بمرشّحٍ من عائلةٍ أخرى حتى لا يبقى بديل.
+def with_fallback(candidates: list[dict], want: int, run: Callable[[list[dict]], set[str]],
+                  on_replaced: Callable[[dict, list[str]], None] | None = None) -> tuple:
+    """يشغّل `run` على المختارين؛ ومن نفدت حصّتُه يُستبدل بمرشّحٍ من عائلةٍ أخرى حتى لا يبقى بديل، ويُبلَّغ `on_replaced`
+    بكل مستبدَلٍ وبديله قبل التشغيل التالي.
 
     يُعيد (المختارين الأخيرين، سجلَّ الاستبدال، رمزَ الإخفاق أو None).
     """
@@ -538,6 +540,10 @@ def with_fallback(candidates: list[dict], want: int, run: Callable[[list[dict]],
             return chosen, fallbacks, exc.code
         fallbacks.append({"exhausted": sorted(spent), "code": "quota_exhausted",
                           "replacement": [i["model"] for i in replacement if i not in chosen]})
+        if on_replaced is not None:
+            for identity in chosen:
+                if identity["model"] in spent:
+                    on_replaced(identity, fallbacks[-1]["replacement"])
         chosen = replacement
 
 
@@ -645,6 +651,57 @@ def check_public_bank(bank: Path, root: Path | None = None) -> None:
         raise AutomaticReviewError("bank_outside_evaluation_banks", str(bank)) from None
 
 
+def supersede_records(bank: Path, model: str, replacement: list[str]) -> Path:
+    """سجلّاتُ مراجعٍ استُبدل به تُنقل إلى `reviews/superseded/<النموذج>/` تاريخًا مسمًّى، ومعها SUPERSEDED.json باسم بديله.
+
+    فلا تدخل زوجًا ولا κ ولا قائمةَ المالك، ولا يرثها البديل: يراجع البديلُ البنكَ كلَّه — ومنه ما أتمّه المستبدَل — فيُحسب
+    الاتفاقُ على زوجٍ واحدٍ متّسق (ملاحظة Codex على #174).
+    """
+    source = bank / "reviews" / _slug(model)
+    destination = bank / "reviews" / SUPERSEDED_DIR / _slug(model)
+    for path in sorted(source.rglob("*.json")) if source.is_dir() else []:
+        target = destination / path.relative_to(source)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        os.replace(path, target)
+    if source.is_dir():                       # المجلّداتُ التي فرغت تُزال، وما بقي فيه شيءٌ (غيرُ سجلّ) يبقى
+        for directory in sorted((d for d in source.rglob("*") if d.is_dir()), reverse=True) + [source]:
+            if not any(directory.iterdir()):
+                directory.rmdir()
+    _write_json(destination / "SUPERSEDED.json", {"model": model, "superseded_by": replacement,
+                                                  "code": "quota_exhausted"})
+    return destination
+
+
+def superseded_history(bank: Path, replaced_by: dict[str, list[str] | None]) -> tuple[list[dict], dict[str, int]]:
+    """(أخطاءُ المستبدَلين، عددُ ما أتمّه كلٌّ منهم) من `reviews/superseded/`: تاريخٌ يُروى ولا يُحكم به."""
+    errors: list[dict] = []
+    completed: dict[str, int] = {}
+    for model in sorted(replaced_by):
+        root = bank / "reviews" / SUPERSEDED_DIR / _slug(model)
+        for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
+            if path.name == "SUPERSEDED.json":
+                continue
+            record = json.loads(path.read_text(encoding="utf-8"))
+            if record.get("error"):
+                errors.append({"model": record["model"], "file": record["file"], "error": record["error"]})
+            else:
+                completed[model] = completed.get(model, 0) + 1
+    return errors, completed
+
+
+def other_reviewer_errors(bank: Path, final_models: set[str]) -> int:
+    """أخطاءُ سجلّاتٍ في `reviews/` لمراجعين خارج المجموعة الأخيرة ولا المستبدَلين (تشغيلاتٌ سابقة): تُروى عددًا ولا تُسقط."""
+    root = bank / "reviews"
+    count = 0
+    for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
+        if path.name == "SUMMARY.json" or path.relative_to(root).parts[0] == SUPERSEDED_DIR:
+            continue
+        record = json.loads(path.read_text(encoding="utf-8"))
+        if record.get("error") and record.get("model") not in final_models:
+            count += 1
+    return count
+
+
 def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     check_public_bank(args.bank)
     candidates, source = _free_candidates(args, transport)
@@ -658,15 +715,20 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
             totals[key] += counts[key]
         return _quota_models(args.bank, models)
 
-    chosen, fallbacks, failure = with_fallback(candidates, want, run)
-    summary = summarize(args.bank)
-    # النجاحُ يُحكم من المجموعة الأخيرة (ملاحظة Codex على #174): نفادُ حصّة مراجعٍ استُبدل به بديلٌ أتمّ عملَه تاريخٌ مسمًّى
-    # (superseded ومعه البديل) لا خطأٌ يُسقط التشغيل؛ فإن أخفق البديلُ أيضًا عُدّ الخطآن كلاهما. وأخطاءُ مراجعين خارج هذا
-    # التشغيل (سجلّاتٌ قديمة في reviews/) لا تُحسب عليه، وتُروى عددًا.
+    def replaced(identity: dict, replacement: list[str]) -> None:
+        supersede_records(args.bank, identity["model"], replacement)
+
+    chosen, fallbacks, failure = with_fallback(candidates, want, run, on_replaced=replaced)
+    # النجاحُ والاتفاقُ وقائمةُ المالك من المجموعة الأخيرة وحدها (ملاحظتا Codex على #174): المستبدَلُ نُقلت سجلّاتُه إلى
+    # reviews/superseded/ وراجع بديلُه البنكَ كلَّه؛ ونفادُ حصّته تاريخٌ مسمًّى (superseded ومعه البديل) لا خطأٌ يُسقط التشغيل،
+    # فإن أخفق البديلُ أيضًا عُدّ الخطآن كلاهما. وأخطاءُ مراجعين خارج هذا التشغيل لا تُحسب عليه، وتُروى عددًا.
     final_models = {c["model"] for c in chosen}
-    replaced_by = {model: entry["replacement"] for entry in fallbacks for model in entry["exhausted"]}
-    final_errors = [e for e in summary["errors"] if e["model"] in final_models]
-    quota_errors = [e for e in summary["errors"] if e["model"] in replaced_by and e["error"] == "quota_exhausted"]
+    summary = summarize(args.bank, reviewers=final_models)
+    replaced_by = {model: entry["replacement"] for entry in fallbacks for model in entry["exhausted"]
+                   if entry["replacement"] is not None}
+    final_errors = summary["errors"]
+    history_errors, completed = superseded_history(args.bank, replaced_by)
+    quota_errors = [e for e in history_errors if e["error"] == "quota_exhausted"]
     if failure or final_errors:
         counted, superseded = final_errors + quota_errors, []
     else:
@@ -678,12 +740,52 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
               "reviewers": {c["model"]: c["family"] for c in chosen}, "fallbacks": fallbacks,
               "pairs": summary["pairs"], "errors": len(counted),
               "error_codes": sorted({e["error"] for e in counted}), "superseded": superseded,
-              "errors_of_other_reviewers": len(summary["errors"]) - len(final_errors) - len(quota_errors),
+              "superseded_completed": completed,
+              "errors_of_other_reviewers": other_reviewer_errors(args.bank, final_models),
+              **({"artifact": args.artifact_name} if args.artifact_name else {}),
               "owner_queue": len(summary["owner_queue"]), "last_failure_shapes": transport.failures,
               "summary": str(args.bank / "reviews" / "SUMMARY.json")}
     if not totals["reviewed"] and not totals["skipped"]:        # لم يُجب نموذجٌ واحد في هذا التشغيل
         _mark_unavailable(result, [e["error"] for e in final_errors])
     return result, EXIT_CODES.get(result["status"], 1)
+
+
+# نمطُ الرمز نفسُه في tools/export_public.py::PERSONAL_PATTERNS["token"] (اختبارٌ يربطهما، فلا يُستورد هنا ما يجرّ core)
+_TOKEN_PATTERN = re.compile(r"(?<![A-Za-z0-9])(?:gh[pousr]|github_pat)_[A-Za-z0-9_]{20,}"
+                            r"|(?<![A-Za-z0-9])sk-[A-Za-z0-9_-]{20,}"
+                            r"|(?<![A-Za-z0-9])AKIA[0-9A-Z]{16}(?![A-Za-z0-9])")
+
+
+def check_artifact(root: Path, environ=os.environ) -> dict:
+    """ما يُرفع من `reviews/` في Actions (ملاحظة Codex على #174): سجلّاتُ JSON لشطرٍ مفتوح وحدها — لا مسارَ فيه «sealed» بأيّ
+    حالة أحرف، ولا سجلَّ ملفُّه محجوب، ولا نمطَ رمز، ولا قيمةَ مفتاح واجهةٍ من البيئة. يُعيد {status, files, owner_queue} أو
+    يرفض برمزٍ مسمًّى باسم الملفّ وحده (لا بمحتواه)."""
+    if not root.is_dir():
+        raise AutomaticReviewError("artifact_missing", str(root))
+    keys = [environ.get(name) for name in [CLOUD_KEY_ENV, *(spec["key_env"] for spec in BACKENDS.values())]]
+    keys = [key for key in keys if key]
+    files = 0
+    for path in sorted(root.rglob("*")):
+        if path.is_dir():
+            continue
+        relative = path.relative_to(root).as_posix()
+        if "sealed" in relative.lower():
+            raise AutomaticReviewError("artifact_sealed_path", relative)
+        try:
+            text = path.read_text(encoding="utf-8")
+            record = json.loads(text)
+        except (UnicodeDecodeError, ValueError):
+            raise AutomaticReviewError("artifact_not_json", relative) from None
+        if isinstance(record, dict) and "sealed" in str(record.get("file", "")).lower():
+            raise AutomaticReviewError("artifact_sealed_path", relative)
+        if _TOKEN_PATTERN.search(text):
+            raise AutomaticReviewError("artifact_token_pattern", relative)
+        if any(key in text for key in keys):
+            raise AutomaticReviewError("artifact_key_value", relative)
+        files += 1
+    summary = root / "SUMMARY.json"
+    queue = len(json.loads(summary.read_text(encoding="utf-8"))["owner_queue"]) if summary.is_file() else None
+    return {"status": "clean", "files": files, "owner_queue": queue}
 
 
 def _write_json(path: Path, value: dict) -> None:
@@ -754,7 +856,20 @@ def main(argv: list[str] | None = None) -> int:
                         help="مع --smoke على واجهةٍ مجانية: يجرّب أفضلَ نموذجٍ من كل عائلةٍ مسموحة، أزواجًا")
     parser.add_argument("--max-tokens", type=int, default=4000,
                         help="حدُّ مخرج الردّ على الواجهات المجانية")
+    parser.add_argument("--check-artifact", type=Path, metavar="REVIEWS_DIR",
+                        help="يفحص سجلّاتِ المراجعة قبل رفعها أثرًا (لا محجوب ولا رمز) ويطبع عددَها وطولَ قائمة المالك")
+    parser.add_argument("--artifact-name", default=None,
+                        help="اسمُ الأثر الذي تُرفع فيه السجلّات، يُروى في الخلاصة ليعرف المالكُ أين يحكم")
     args = parser.parse_args(argv)
+    if args.check_artifact:
+        try:
+            checked = check_artifact(args.check_artifact)
+        except AutomaticReviewError as exc:
+            print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+            return 2
+        print(json.dumps({**checked, **({"artifact": args.artifact_name} if args.artifact_name else {})},
+                         ensure_ascii=False))
+        return 0
     if args.backend != "ollama":
         if args.base_url is not None:
             print(json.dumps({"status": "refused", "code": "base_url_is_ollama_only"}, ensure_ascii=False))

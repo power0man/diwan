@@ -314,15 +314,24 @@ def _flagged(judgment: dict) -> bool:
     return judgment["reference"] != "correct" or judgment["rubric"] != "sufficient"
 
 
-def summarize(bank_dir: Path) -> dict:
-    """يجمع أحكام كل المراجعين: الاتفاق وκ لكل زوج، وقائمة ما يعرض على المالك."""
+SUPERSEDED_DIR = "superseded"   # reviews/superseded/<النموذج>/…: سجلّاتُ مراجعٍ استُبدل به، تاريخٌ لا يدخل الاتفاق ولا قائمة المالك
+
+
+def summarize(bank_dir: Path, reviewers: list[str] | set[str] | None = None) -> dict:
+    """يجمع أحكام المراجعين: الاتفاق وκ لكل زوج، وقائمة ما يعرض على المالك.
+
+    سجلّاتُ `reviews/superseded/` لا تُقرأ أبدًا؛ و`reviewers` إن أُعطيت فهي المجموعةُ الأخيرة وحدها: سجلُّ مراجعٍ خارجها
+    لا يدخل زوجًا ولا κ ولا قائمةَ المالك ولا الأخطاء (ملاحظة Codex على #174).
+    """
     reviews_root = bank_dir / "reviews"
     by_model: dict[str, dict[tuple[str, str], dict]] = {}
     errors = []
     for path in sorted(reviews_root.rglob("*.json")):
-        if path.name == "SUMMARY.json":
+        if path.name == "SUMMARY.json" or path.relative_to(reviews_root).parts[0] == SUPERSEDED_DIR:
             continue
         record = json.loads(path.read_text(encoding="utf-8"))
+        if reviewers is not None and record.get("model") not in reviewers:
+            continue
         if record.get("error"):
             errors.append({"model": record["model"], "file": record["file"],
                            "error": record["error"]})

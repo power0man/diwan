@@ -34,6 +34,7 @@ jobs:
     timeout-minutes: 30
     env:
       MODE: ${{ inputs.mode || 'smoke' }}
+      ARTIFACT_NAME: free-llm-review-kimi_v1-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -93,9 +94,29 @@ jobs:
           set -u
           status=0
           .venv/bin/python tools/external_review.py evaluation/banks/kimi_v1 --backend github-models \
-            > "$RUNNER_TEMP/bank-line.json" || status=$?
+            --artifact-name "$ARTIFACT_NAME" > "$RUNNER_TEMP/bank-line.json" || status=$?
           cat "$RUNNER_TEMP/bank-line.json"
           { echo '### bank'; echo '```json'; cat "$RUNNER_TEMP/bank-line.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           # 3 = الواجهةُ غيرُ متاحة (رفضُ خدمةٍ مسمًّى، لا خطأُ مراجع): تنبيهٌ لا يُسقط الطلب، والرمزُ في السطر أعلاه
           if [ "$status" -eq 3 ]; then echo "::warning title=free-llm-review::service_unavailable (bank)"; status=0; fi
           exit "$status"
+      # الأحكامُ وSUMMARY.json (وفيه owner_queue) تُحفظ أثرًا يحكم فيه المالك (ملاحظة Codex على #174)، ولو أخفقت المراجعة؛ وقبل الرفع
+      # فحصٌ أنها سجلّاتُ شطرٍ مفتوح وحدها: لا مسارَ محجوب ولا نمطَ رمز ولا قيمةَ الرمز (tools/external_review.py --check-artifact)
+      - name: Check the bank review records before upload
+        id: artifact_check
+        if: always() && env.MODE == 'bank'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          .venv/bin/python tools/external_review.py --check-artifact evaluation/banks/kimi_v1/reviews \
+            --artifact-name "$ARTIFACT_NAME" | tee "$RUNNER_TEMP/artifact-line.json"
+          { echo '### artifact'; echo '```json'; cat "$RUNNER_TEMP/artifact-line.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the bank review records for the owner
+        if: always() && env.MODE == 'bank' && steps.artifact_check.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: evaluation/banks/kimi_v1/reviews/
+          if-no-files-found: error
+          retention-days: 30

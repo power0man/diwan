@@ -603,7 +603,17 @@ def test_the_free_llm_workflow_is_least_privilege_pinned_and_guarded():
     assert "\npermissions:\n  contents: read\n  models: read\n\n" in text
     assert ": write" not in text and "secrets." not in text
     assert [line.strip() for line in text.splitlines() if "uses:" in line] == [
-        f"- uses: actions/checkout@{pin.group(1)} # v4"]
+        f"- uses: actions/checkout@{pin.group(1)} # v4",
+        "uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2"]
+    # أحكامُ البنك وقائمةُ المالك تُحفظ أثرًا مثبَّتًا، ولو أخفقت المراجعة، بعد فحصٍ أنها سجلّاتُ شطرٍ مفتوح بلا رمز (ملاحظة Codex على #174)
+    check = text.split("- name: Check the bank review records before upload", 1)[1].split("- name:", 1)[0]
+    assert "if: always() && env.MODE == 'bank'" in check and "id: artifact_check" in check
+    assert "--check-artifact evaluation/banks/kimi_v1/reviews" in check and "set -euo pipefail" in check
+    upload = text.split("- name: Upload the bank review records for the owner", 1)[1]
+    assert "if: always() && env.MODE == 'bank' && steps.artifact_check.outcome == 'success'" in upload
+    assert "path: evaluation/banks/kimi_v1/reviews/" in upload and "if-no-files-found: error" in upload
+    assert "retention-days: 30" in upload and "name: ${{ env.ARTIFACT_NAME }}" in upload
+    assert '--artifact-name "$ARTIFACT_NAME"' in text.split("- name: Review the open part of kimi_v1", 1)[1].split("- name:", 1)[0]
     assert "persist-credentials: false" in text
     assert "      - tools/external_review.py\n" in text and "      - .github/workflows/free-llm-review.yml\n" in text
     assert "options: [smoke, bank]" in text and "default: smoke" in text
@@ -617,7 +627,7 @@ def test_the_free_llm_workflow_is_least_privilege_pinned_and_guarded():
         assert 'if [ "$status" -eq 3 ]; then' in step and "status=0; fi" in step, "الواجهةُ غيرُ المتاحة تنبيهٌ لا سقوط"
     install = text.split("- name: Install the locked runtime", 1)[1].split("- name:", 1)[0]
     assert "GITHUB_TOKEN" not in install and "'uv==0.8.17'" in install and "--frozen" in install
-    assert text.count("GITHUB_TOKEN: ${{ github.token }}") == 4
+    assert text.count("GITHUB_TOKEN: ${{ github.token }}") == 5
     assert "tools/external_review.py evaluation/banks/kimi_v1 --backend github-models" in text
 
 
@@ -803,3 +813,87 @@ def test_a_bank_quota_superseded_by_a_successful_fallback_is_history_not_failure
     result = json.loads(capsys.readouterr().out)
     assert result["status"] == "failed" and result["code"] == "quota_exhausted_no_fallback"
     assert result["error_codes"] == ["quota_exhausted"]
+
+
+def _record(bank: Path, model: str, relative: str, judgments=None, error=None, *, under: str = "") -> None:
+    path = bank / "reviews" / under / model.replace("/", "_") / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"model": model, "family": "x", "file": relative, "judgments": judgments,
+                                "error": error}, ensure_ascii=False), encoding="utf-8")
+
+
+def test_summarize_counts_only_the_final_reviewers_and_never_the_superseded_history(tmp_path):
+    """ملاحظة Codex على #174: سجلُّ مراجعٍ خارج المجموعة الأخيرة، أو في reviews/superseded/، لا يدخل زوجًا ولا κ ولا قائمةَ المالك."""
+    from evaluation.external_review import SUPERSEDED_DIR
+    bank = _bank(tmp_path)
+    relative = "tier_a/kimi_t_a_001.json"
+    agree = [_judgment("c1"), _judgment("c2"), _judgment("c3")]
+    _record(bank, MI, relative, agree)
+    _record(bank, LL, relative, agree)
+    _record(bank, DS, relative, [_judgment("c1", reference="incorrect"), _judgment("c2"), _judgment("c3")])
+    _record(bank, "cohere/cohere-command-a", relative, [_judgment("c1"), _judgment("c2", reference="incorrect"),
+                                                        _judgment("c3")], under=SUPERSEDED_DIR)
+    final = summarize(bank, reviewers={MI, LL})
+    assert [p["reviewers"] for p in final["pairs"]] == [[LL, MI]] and final["owner_queue"] == []
+    assert final["reviewers"] == [LL, MI]
+    everyone = summarize(bank)
+    assert everyone["reviewers"] == sorted([DS, LL, MI]), "التاريخُ المستبدَل لا يُقرأ ولو بلا مجموعة"
+    assert [entry["id"] for entry in everyone["owner_queue"]] == ["c1"]
+
+
+def test_a_superseded_reviewer_leaves_one_final_pair_and_the_fallback_covers_every_file(tmp_path, monkeypatch, capsys):
+    """سيناريو Codex على #174: ملفّان، والمراجعُ الأول يُتمّ الأوّلَ ثم تنفد حصّتُه في الثاني."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "two")
+    (bank / "open" / "a" / "kimi_y.json").write_bytes((bank / "open" / "a" / "kimi_x.json").read_bytes())
+    dispute = {"judgments": [_judgment("c1", reference="incorrect"), _judgment("c2"), _judgment("c3")]}
+    _free(monkeypatch, FreeOpener(replies={DS: [dispute, 429], MI: [_ok(ids)], LL: [_ok(ids)]}))
+    assert cli.main([str(bank), "--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--fallback", LL,
+                     "--brief", str(BRIEF), "--artifact-name", "art-2"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["artifact"] == "art-2", "المالكُ يعرف من الخلاصة أين يحكم"
+    assert [p["reviewers"] for p in result["pairs"]] == [[LL, MI]] and result["pairs"][0]["items"] == 6
+    assert result["owner_queue"] == 0, "خلافُ المستبدَل لا يُرفع إلى المالك"
+    assert result["superseded"] == [{"model": DS, "file": "a/kimi_y.json", "error": "quota_exhausted",
+                                     "superseded_by": [LL]}]
+    assert result["superseded_completed"] == {DS: 1}
+    for name in ("kimi_x.json", "kimi_y.json"):
+        record = json.loads((bank / "reviews" / LL.replace("/", "_") / "a" / name).read_text(encoding="utf-8"))
+        assert record["model"] == LL and record["error"] is None, "البديلُ راجع الملفَّ الذي أتمّه المستبدَل أيضًا"
+    history = bank / "reviews" / "superseded" / DS.replace("/", "_")
+    assert json.loads((history / "SUPERSEDED.json").read_text(encoding="utf-8"))["superseded_by"] == [LL]
+    assert not (bank / "reviews" / DS.replace("/", "_")).exists()
+
+
+def test_the_uploaded_review_records_are_open_split_json_without_tokens(tmp_path, monkeypatch, capsys):
+    """ما يُرفع أثرًا من Actions يُفحص قبل الرفع (ملاحظة Codex على #174)."""
+    from export_public import PERSONAL_PATTERNS
+    assert cli._TOKEN_PATTERN.pattern == PERSONAL_PATTERNS["token"].pattern, "نمطُ الرمز نفسُه في المصدِّر"
+    bank = _bank(tmp_path)
+    _record(bank, MI, "tier_a/kimi_t_a_001.json", [_judgment("c1")])
+    reviews = bank / "reviews"
+    (reviews / "SUMMARY.json").write_text(json.dumps({"owner_queue": [{"id": "c1"}]}), encoding="utf-8")
+    assert cli.check_artifact(reviews, environ={}) == {"status": "clean", "files": 2, "owner_queue": 1}
+    assert cli.main(["--check-artifact", str(reviews), "--artifact-name", "art-1"]) == 0
+    assert _printed(capsys) == {"status": "clean", "files": 2, "owner_queue": 1, "artifact": "art-1"}
+    fake_token = "gh" + "p_" + "A" * 36                      # يُبنى عند التشغيل فلا يقع نمطُ رمزٍ في المصدر
+    cases = [
+        ("Sealed/kimi.json", json.dumps({"file": "a.json"}), "artifact_sealed_path"),
+        ("m/tier_a/x.json", json.dumps({"file": "sealed/kimi_x.json"}), "artifact_sealed_path"),
+        ("m/tier_a/y.json", json.dumps({"file": "a.json", "raw_output": fake_token}), "artifact_token_pattern"),
+        ("m/tier_a/z.json", json.dumps({"file": "a.json", "raw_output": KEY}), "artifact_key_value"),
+        ("m/notes.txt", "not json", "artifact_not_json"),
+    ]
+    for relative, content, code in cases:
+        root = tmp_path / code / relative.replace("/", "_")
+        (root / relative).parent.mkdir(parents=True)
+        (root / relative).write_text(content, encoding="utf-8")
+        with pytest.raises(AutomaticReviewError) as refused:
+            cli.check_artifact(root, environ={"GITHUB_TOKEN": KEY})
+        assert refused.value.code == code and KEY not in str(refused.value), relative
+    with pytest.raises(AutomaticReviewError) as missing:
+        cli.check_artifact(tmp_path / "absent", environ={})
+    assert missing.value.code == "artifact_missing"
+    assert cli.main(["--check-artifact", str(tmp_path / "absent")]) == 2
+    assert _printed(capsys)["code"] == "artifact_missing"
