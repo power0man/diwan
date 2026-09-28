@@ -299,6 +299,36 @@ def test_a_rerun_touches_the_target_only_after_validation_and_only_its_own_shots
     assert sorted(p.name for p in shots.iterdir()) == ["01-empty-desktop.png", "01-notes.png"]
 
 
+EVIDENCE = ROOT / "docs" / "probe" / "ui-browser-audit-20260928.json"
+
+
+def test_the_published_evidence_names_the_tool_it_was_made_with():
+    """ملاحظة Codex على #175: سجّل الدليلُ مراجعةً ليست في تاريخ الفرع، والأداةُ تغيّرت بعدها، فلا يُعاد إنتاجُه منها. صار
+    الدليلُ يحمل بصمةَ محتوى الأداة وسائقها وملفّات الواجهة، وأنها كانت في المراجعة المسجَّلة بلا تعديل؛ وهذا الاختبارُ يسقط
+    متى تغيّرت الأداةُ أو سائقُها بلا إعادة الفحص. وبصماتُ الواجهة تعرّف النسخةَ المفحوصة ولا تُحرس: تفترق بعد #166 بحقّ."""
+    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    assert evidence["commit_contains_inputs"] is True, "الدليلُ أُنتج من شجرةٍ فيها تعديلٌ غيرُ مودَع"
+    recorded = evidence["content_sha256_12"]
+    assert set(recorded) == set(audit.DIGESTED)
+    assert {path: recorded[path] for path in audit.IMPLEMENTATION} == audit.content_digests(audit.IMPLEMENTATION), \
+        "تغيّرت الأداةُ بعد الدليل: أعد الفحص بـtools/ui_browser_audit.py ثم أودِع الدليلَ فوق إيداع الشيفرة"
+
+
+def test_content_digests_and_the_committed_check(tmp_path):
+    import hashlib
+    import subprocess
+    (tmp_path / "a.txt").write_text("أ", encoding="utf-8")
+    assert audit.content_digests(["a.txt"], root=tmp_path) == {"a.txt": hashlib.sha256("أ".encode()).hexdigest()[:12]}
+    git = ["git", "-C", str(tmp_path), "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+    subprocess.run([*git, "init", "-q"], check=True)
+    assert audit.inputs_committed(["a.txt"], root=tmp_path) is False, "ملفٌّ غيرُ متتبَّع ليس في المراجعة"
+    subprocess.run([*git, "add", "a.txt"], check=True)
+    subprocess.run([*git, "commit", "-q", "-m", "a"], check=True)
+    assert audit.inputs_committed(["a.txt"], root=tmp_path) is True
+    (tmp_path / "a.txt").write_text("ب", encoding="utf-8")
+    assert audit.inputs_committed(["a.txt"], root=tmp_path) is False, "ملفٌّ معدَّل ليس ما في المراجعة"
+
+
 def test_a_missing_browser_is_named_not_a_traceback():
     assert audit.browser_prerequisites(which=lambda name: None)[0] == "node_missing"
 

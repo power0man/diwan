@@ -47,6 +47,10 @@ AGENT = "anthropic/claude-opus-5-5"
 JOURNEYS = ("current", "single-page")
 VIEWPORTS = ("desktop", "mobile")
 UI_SOURCES = ("webui/static/index.html", "webui/static/app.js", "webui/static/style.css", "webui/server.py")
+# ما يتعلّق به الناتج: الأداةُ وسائقُها (يحرسهما اختبارٌ على الدليل المنشور) وملفّاتُ الواجهة المخدومة (تعرّف النسخةَ المفحوصة،
+# ويُنتظر أن تفترق عنها بعد #166 فلا يحرسها اختبار)
+IMPLEMENTATION = (TOOL, "tools/ui_browser_audit.cjs")
+DIGESTED = (*IMPLEMENTATION, *UI_SOURCES)
 MODEL, VERSION = "scripted-audit", "0" * 64
 
 # ما يقوله المزوّدُ المكتوب: جوابٌ عربيّ فيه Markdown وأسماءٌ لاتينية (لفحص العرض والاتجاه)، وأفعالٌ بكلماتٍ مفتاحية
@@ -419,8 +423,28 @@ def summarize_steps(journeys: dict) -> dict:
     return out
 
 
+def content_digests(paths, root: Path = ROOT) -> dict[str, str]:
+    """بصمةُ محتوى كلِّ ملفٍّ يتعلّق به الناتج (sha256، أولُ ١٢ حرفًا): يبقى الدليلُ قابلًا للتحقّق من الملفّات نفسِها وإن زالت
+    المراجعةُ المسجَّلة من التاريخ."""
+    return {path: hashlib.sha256((root / path).read_bytes()).hexdigest()[:12] for path in paths}
+
+
+def inputs_committed(paths, root: Path = ROOT) -> bool | None:
+    """هل الملفّاتُ كما هي في HEAD (لا تعديلَ ولا ملفَّ غيرَ متتبَّع)؟ فالمراجعةُ المسجَّلة تحمل ما أنتج الدليلَ فعلًا.
+    None إن تعذّر git."""
+    try:
+        result = subprocess.run(["git", "-C", str(root), "status", "--porcelain", "--", *paths],
+                                capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() == ""
+
+
 def build_evidence(raw: dict, *, commit: str, date: str, coverage: dict, sources: dict[str, str],
-                   tracked: dict[str, str] | None = None, shots_rel: str = "") -> dict:
+                   tracked: dict[str, str] | None = None, shots_rel: str = "",
+                   digests: dict[str, str] | None = None, committed: bool | None = None) -> dict:
     """الدليلُ من ناتج المتصفّح الخام: بلا نصّ صفحةٍ غيرِ التسميات القصيرة، وكلُّ رقمٍ بحدوده."""
     journeys = raw.get("journeys") or {}
     checks = (journeys.get("current") or {}).get("checks") or {}
@@ -431,8 +455,8 @@ def build_evidence(raw: dict, *, commit: str, date: str, coverage: dict, sources
         "agent": AGENT,
         "date": date,
         "commit": commit,
-        "ui_sources_sha256": {path: hashlib.sha256(text.encode("utf-8")).hexdigest()
-                              for path, text in sources.items()},
+        "commit_contains_inputs": committed,
+        "content_sha256_12": digests or {},
         "browser": raw.get("browser"),
         "viewports": raw.get("viewports"),
         "provider": {"kind": "scripted_fake", "model_time": "zero", "quality": "not_measured"},
@@ -582,7 +606,8 @@ def _validate_and_publish(args, raw, status, tail, journeys, tracked, staging: P
     coverage = error_code_coverage(sources["webui/server.py"], sources["webui/static/app.js"])
     shots_rel = shots.relative_to(ROOT).as_posix() if shots.is_relative_to(ROOT) else shots.name
     evidence = build_evidence(raw, commit=_git_commit(), date=_dt.date.today().isoformat(), coverage=coverage,
-                              sources=sources, tracked=tracked, shots_rel=shots_rel)
+                              sources=sources, tracked=tracked, shots_rel=shots_rel,
+                              digests=content_digests(DIGESTED), committed=inputs_committed(DIGESTED))
     for shot in evidence["screenshots"]:
         path = staging / shot["file"]
         shot["bytes"] = path.stat().st_size if path.is_file() else None
