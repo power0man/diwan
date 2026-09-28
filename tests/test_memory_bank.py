@@ -83,6 +83,27 @@ def test_a_receipt_asserted_in_another_project_or_before_the_forget_is_rejected(
     _refused(bank, "receipt_before_forget")
 
 
+def test_a_second_approval_of_the_same_proposal_is_rejected():
+    """ملاحظةُ Codex على #129 (الجولة السادسة والثلاثون): نوعُ المرجع يبقى «اقتراحًا» بعد موافقته، فموافقتان متتاليتان كانتا
+    تمرّان المدقّقَ ثم يُرسل المُشغِّلان عنصرًا حيث يُنتظر اقتراحٌ ويُحسب الردُّ على المنتج."""
+    bank, scenario = _scenario("consent_002")
+    steps = scenario["steps"]
+    approve = next(s for s in steps if s.get("op") == "approve")
+    steps.insert(steps.index(approve) + 1, copy.deepcopy(approve))
+    _refused(bank, "approve_repeated")
+
+
+def test_a_receipt_count_other_than_one_is_rejected():
+    """ملاحظةُ Codex على #129 (الجولة السادسة والثلاثون): المخزنُ يعيد إيصالَ النسيان الأول عند تكرار النسيان، فإيصالٌ
+    بعددٍ غير واحدٍ كان يمرّ المدقّقَ ثم يحكم المُشغِّلان «receipts 1 != 2» على مخزنٍ صحيح."""
+    bank, scenario = _scenario("forget_001")
+    receipt = next(s for s in scenario["steps"] if s.get("expect") == "receipt")
+    receipt["count"] = 2
+    _refused(bank, "receipt_count_invalid")
+    receipt["count"] = 0
+    _refused(bank, "receipt_invalid")
+
+
 def test_forgetting_without_a_receipt_check_is_refused():
     bank, scenario = _scenario("forget_001")
     scenario["steps"] = [s for s in scenario["steps"] if s.get("expect") != "receipt"]

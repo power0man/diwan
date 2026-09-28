@@ -559,6 +559,7 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
     refs: dict[str, str] = {}            # المرجع ← مشروعه
     kinds: dict[str, str] = {}           # المرجع ← نوعه (عنصر، اقتراح، نسخة)
     forgotten, checked_residue, receipted, touched = set(), set(), set(), set()
+    approved: set[str] = set()           # اقتراحٌ وُوفق عليه لا يُوافَق عليه ثانيةً
     expects = 0
     for i, step in enumerate(scenario["steps"]):
         where = f"{path}.steps[{i}]"
@@ -586,6 +587,12 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
                 wanted = {"approve": ("proposal",), "forget": ("item", "proposal"), "restore": ("backup",)}[op]
                 if kinds[ref] not in wanted:
                     _reject(where + ".ref", "ref_kind", f"{op} لا يقع على {kinds[ref]}")
+                # والموافقةُ على الاقتراح مرّةٌ واحدة: بعدها يحمل المرجعُ عنصرَه في المُشغِّلَين، فموافقةٌ ثانية تُرسل عنصرًا
+                # حيث يُنتظر اقتراحٌ ويُحسب ردُّها على المنتج (ملاحظة Codex على #129، الجولة السادسة والثلاثون)
+                if op == "approve":
+                    if ref in approved:
+                        _reject(where + ".ref", "approve_repeated", "اقتراحٌ وُوفق عليه سابقًا")
+                    approved.add(ref)
                 if op == "forget":
                     forgotten.add(ref)
         elif "expect" in step:
@@ -605,6 +612,10 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
             if kind == "receipt":
                 if step["ref"] not in refs or type(step["count"]) is not int or step["count"] < 1:
                     _reject(where, "receipt_invalid", "إيصالٌ لمرجعٍ معرَّف بعددٍ موجب")
+                # والعددُ واحدٌ لا غير: المخزنُ يعيد إيصالَ النسيان الأول عند تكرار النسيان، فعددٌ غيرُه يحكم على مخزنٍ صحيح
+                # «receipts 1 != n» (ملاحظة Codex على #129، الجولة السادسة والثلاثون)
+                if step["count"] != 1:
+                    _reject(where, "receipt_count_invalid", "إيصالُ النسيان واحدٌ لكلّ عنصر")
                 # الإيصالُ يُفحص في مشروع مرجعه وبعد نسيانه، وإلا حُكم على مخزنٍ صحيح بـ«receipts 0 != 1» وعُدّ انحدارًا
                 # (ملاحظة Codex على #129، الجولة الخامسة والثلاثون)
                 if step["project"] != refs[step["ref"]]:
