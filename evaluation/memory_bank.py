@@ -157,6 +157,22 @@ def declared_envelope_text() -> str:
     return INPUT_PREFIX_V2 + _flat_text(decode_input(encode_input("", [], None)))
 
 
+def declared_request_payload_text() -> str:
+    """الحقولُ الثابتة في جسد طلب Ollama كما يبنيه المزوّدُ نفسُه (`OllamaProvider.payload`: `model` و`stream` و`think`
+    و`options` بـ`num_predict` و`temperature` و`num_ctx` و`seed`) بلا رسائل ولا أدوات؛ شاهدُ غيابٍ يقع فيها يُرسل مع كلِّ
+    نداءٍ حيّ فلا يشهد بغياب (ملاحظة Codex على #129، الجولة الخامسة والعشرون)."""
+    from core.contracts import Request
+    from providers.ollama import OllamaProvider
+    empty = Request((), "memory-bank", "0" * 64, 1, 30.0, "local_only", None)
+    return _flat_text({k: v for k, v in OllamaProvider().payload(empty).items() if k not in ("messages", "tools")})
+
+
+def request_payload_collisions(scenario: dict, payload_text: str | None = None) -> list[str]:
+    """شاهدُ غيابٍ يقع في حقلٍ ثابت من جسد الطلب كما يبنيه المزوّد؛ يُرفض قبل القياس (ملاحظة Codex على #129)."""
+    text = declared_request_payload_text() if payload_text is None else payload_text
+    return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
+
+
 def envelope_collisions(scenario: dict, envelope_text: str | None = None) -> list[str]:
     """شاهدُ غيابٍ يقع في غلاف الطلب الوكيل الثابت؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الرابعة والعشرون)."""
     text = declared_envelope_text() if envelope_text is None else envelope_text
@@ -229,6 +245,8 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         _reject(path, "witness_collides_with_agent_envelope", f"«{envelope[0][:40]}» يقع في غلاف الطلب الوكيل الثابت فيُرسل مع كلِّ رسالة")
     if wire := message_envelope_collisions(scenario):
         _reject(path, "witness_collides_with_message_envelope", f"«{wire[0][:40]}» يقع في غلاف الرسائل كما يسلسله المزوّد فيُرسل مع كلِّ رسالة")
+    if body := request_payload_collisions(scenario):
+        _reject(path, "witness_collides_with_request_payload", f"«{body[0][:40]}» يقع في حقلٍ ثابت من جسد طلب Ollama كما يبنيه المزوّد فيُرسل مع كلِّ نداء")
 
 
 def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:

@@ -93,8 +93,9 @@ class OllamaProvider:
                                 f"جسد الجواب ليس JSON: {raw[:120]!r}",
                                 retryable=False) from e
 
-    def complete(self, request: Request) -> Response:
-        request = validated(request)
+    def payload(self, request: Request) -> dict:
+        """جسدُ طلب /api/chat كما يُرسل، يُبنى هنا وحده: يقرؤه `complete` ليرسله، ويقرؤه القياسُ (بنكُ الذاكرة) ليفحص كلَّ حقلٍ
+        ثابت فيه — `model` و`stream` و`think` و`options` — لا الرسائلَ والأدواتِ وحدها (ملاحظة Codex على #129)."""
         payload = {
             "model": self.model,
             "messages": self._messages(request),
@@ -109,6 +110,11 @@ class OllamaProvider:
         }
         if request.tools:
             payload["tools"] = [self._tool_payload(tool) for tool in request.tools]
+        return payload
+
+    def complete(self, request: Request) -> Response:
+        request = validated(request)
+        payload = self.payload(request)
         try:
             out = self._post(payload, request.deadline_s)
         except ProviderError as e:

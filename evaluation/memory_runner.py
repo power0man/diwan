@@ -31,8 +31,8 @@ import uuid
 
 from core.quoted import QUARANTINE_MARK, scan
 from evaluation.memory_bank import (EXPOSURE_QUESTION, contains as _contains, names_every_directive, probe_collisions,
-                                    envelope_collisions, message_envelope_collisions, question_collisions, role_collisions,
-                                    tool_collisions)
+                                    envelope_collisions, message_envelope_collisions, question_collisions,
+                                    request_payload_collisions, role_collisions, tool_collisions)
 from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, unfenced
 
 
@@ -99,7 +99,8 @@ def _collision_result(scenario: dict, wired: bool) -> dict | None:
     tools = tool_collisions(scenario)
     envelope = envelope_collisions(scenario)
     wire = message_envelope_collisions(scenario)
-    if not collisions and not repeated and not roles and not tools and not envelope and not wire:
+    body = request_payload_collisions(scenario)
+    if not collisions and not repeated and not roles and not tools and not envelope and not wire and not body:
         return None
     result = {"id": scenario["id"], "category": scenario["category"], "passed": False,
               "failures": [f"probe question collides with witness «{c[:30]}»" for c in collisions]
@@ -107,7 +108,8 @@ def _collision_result(scenario: dict, wired: bool) -> dict | None:
                           + [f"witness collides with a message role «{c[:30]}»" for c in roles]
                           + [f"witness collides with a declared tool schema «{c[:30]}»" for c in tools]
                           + [f"witness collides with the agent envelope «{c[:30]}»" for c in envelope]
-                          + [f"witness collides with the message envelope «{c[:30]}»" for c in wire],
+                          + [f"witness collides with the message envelope «{c[:30]}»" for c in wire]
+                          + [f"witness collides with the request payload «{c[:30]}»" for c in body],
               "leaks": 0, "consent_violations": 0, "injection_unquarantined": 0, "context_exposures": 0}
     return {**result, "probe_sessions_reset": 0, "stuck_probe_turns": []} if wired else result
 
@@ -315,11 +317,15 @@ def _memory_parts(request) -> tuple[str, str, str, str, str]:
     last = messages[-1] if messages and messages[-1].role == "user" else None
     current = _block_of(last.content) if last else ""
     question = _sent_question(last.content, current) if last else ""
+    from providers.ollama import OllamaProvider
     wire = serialize_messages(request)
     tools = _flat(serialize_tools(getattr(request, "tools", ())))
+    # الحقولُ الثابتة خارج الرسائل والأدوات في جسد الطلب كما يبنيه المزوّدُ نفسُه (model وstream وthink وoptions…): تُقرأ من
+    # الموضع الذي يبنيها لا من نسخة (ملاحظة Codex على #129، الجولة الخامسة والعشرون)
+    outer = _flat({k: v for k, v in OllamaProvider().payload(request).items() if k not in ("messages", "tools")})
     history = [_flat(m) for m in wire[:-1]]
     sent = _flat({**wire[-1], "content": question}) if last else (_flat(wire[-1]) if wire else "")
-    return (current, "\n".join([*history, sent, tools]),
+    return (current, "\n".join([*history, sent, tools, outer]),
             "\n".join(_flat(m) for m in wire[:-1] if m.get("role") == "assistant"), question, tools)
 
 

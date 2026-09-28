@@ -168,6 +168,22 @@ def test_a_witness_inside_the_wire_message_envelope_is_rejected_by_the_validator
     _refused(bank, "witness_collides_with_message_envelope")
 
 
+def test_a_witness_inside_the_fixed_request_body_is_rejected_by_the_validator():
+    """ملاحظةُ Codex على #129 (الجولة الخامسة والعشرون): «temperature» تقع في `options` الثابتة لجسد الطلب كما يبنيه المزوّد،
+    فتُرسل مع كلِّ نداءٍ حيّ ولا تشهد بغياب."""
+    from evaluation.memory_bank import declared_request_payload_text
+    text = declared_request_payload_text()
+    assert all(field in text for field in ("model", "stream", "think", "temperature", "num_ctx", "seed"))
+    assert "role" not in text and "propose_memory" not in text, "الرسائلُ والأدواتُ لهما فحصاهما"
+    bank, scenario = _scenario("forget_001")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["text"] = "temperature passport secret note"
+    for step in scenario["steps"]:
+        if step.get("absent"):
+            step["absent"] = ["temperature"]
+    _refused(bank, "witness_collides_with_request_payload")
+
+
 def test_the_collision_tools_are_the_evaluator_s_own_registry_not_every_default_tool():
     """ملاحظةُ Codex على #129 (الجولة الخامسة والعشرون): المُقيِّم بلا خلفية تنفيذٍ فلا يرسل `run_command` ولا `run_tests`؛ فشاهدٌ
     لا يقع إلا في مواصفتيهما لا يُرفض تصادمًا."""

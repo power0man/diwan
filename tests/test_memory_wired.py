@@ -859,6 +859,41 @@ def test_wire_message_fields_are_inspected_and_the_collision_tools_match_a_captu
         assert any(f.startswith("witness collides with the message envelope") for f in report["failures"]), report
 
 
+def test_the_fixed_request_body_fields_are_inspected_as_the_provider_builds_them(monkeypatch, tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة الخامسة والعشرون): فحصُ الغياب يقرأ جسدَ الطلب كلَّه كما يبنيه المزوّد — الحقولُ الخارجية
+    (`model`، `stream`، `think`، `options`) لا الرسائلَ والأدواتِ وحدها — ومن الموضع الذي يرسله `complete` نفسِه."""
+    from core.contracts import Message, Request
+    from core.validate import validated
+    from evaluation.memory_runner import _memory_parts, run_scenario, run_wired_scenario
+    from providers.ollama import OllamaProvider
+
+    request = Request((Message("user", "ما رقم المكتب؟"),), "qwen3.5:9b", "0" * 64, 64, 30.0, "local_only", None)
+    every = _memory_parts(request)[1]
+    assert all(field in every for field in ("model", "stream", "think", "temperature", "num_ctx", "seed"))
+    provider, sent = OllamaProvider(), {}
+
+    class _Stop(Exception):
+        pass
+
+    def capture(payload, timeout):
+        sent.update(payload)
+        raise _Stop
+
+    monkeypatch.setattr(provider, "_post", capture)
+    with pytest.raises(_Stop):
+        provider.complete(request)
+    assert sent == provider.payload(validated(request)), "ما يرسله complete هو ما يبنيه payload، لا نسخةٌ تنحرف"
+    scenario = {"id": "body_witness", "category": "forget", "steps": [
+        {"op": "remember", "project": "A", "text": "temperature passport secret note", "consent": "owner", "as": "m1"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": "ما رقم المكتب؟", "absent": ["temperature"], "present": []},
+    ]}
+    for run, root in ((run_scenario, tmp_path / "s"), (run_wired_scenario, tmp_path / "w")):
+        report = run(scenario, root)
+        assert not report["passed"] and report["context_exposures"] == 0, report
+        assert any(f.startswith("witness collides with the request payload") for f in report["failures"]), report
+
+
 def test_an_earlier_context_question_of_the_same_project_that_repeats_a_later_absent_witness_is_refused_not_measured(tmp_path):
     """ملاحظةُ Codex على #129 (الجولة الثامنة عشرة): خطوةُ سياقٍ سؤالُها يحمل السرَّ وتفحص غيابَ غيره، ثم خطوةٌ محايدة تفحص غيابَ
     السرّ: الأولى تُبقي السرَّ في تاريخ جلسة المشروع فيبلغ النموذجَ عند الثانية ولا يراه فحصُ الغياب؛ يُرفض في المسارين بلا قياس."""
