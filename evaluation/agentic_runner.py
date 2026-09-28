@@ -64,7 +64,7 @@ from core.execution import (DockerExecutionBackend, ExecutionRefused, ExecutionR
 from core.ledger import Ledger
 from core.sandbox import DISPOSABLE_HOST_ENV, sandbox_configuration
 
-RUNNER_VERSION = 8   # ٨: ملفُّ حكمٍ لا يُقرأ عطبٌ `harness_unreadable` خارج المقام لا رسوبٌ داخله (#158)؛ ٧: ٧: أدواتُ التنفيذ للوكيل بمنفذ حاويةٍ لكل مهمّة كما في الواجهة، ويُسجَّل ما أُعلن منها بلا منفذ؛ ٦: تعليماتُ النظام تُختار وتُسجَّل ببصمتها (وضعُ المبرمج، ج٩)؛ ٥: صورةُ المحلّل لكل مهمّة إن أُعطي إيصالُها (ج٨)؛ ٤: ملفّاتٌ ثنائية في المساحة (ك٥٠)؛ ٣: أمرُ النجاح في Docker؛ ٢: حارسُ ملفات الحكم
+RUNNER_VERSION = 8   # ٨: ملفُّ حكمٍ لا يُقرأ عطبٌ `harness_unreadable` خارج المقام لا رسوبٌ داخله (#158)؛ ٧: أدواتُ التنفيذ للوكيل بمنفذ حاويةٍ لكل مهمّة كما في الواجهة، ويُسجَّل ما أُعلن منها بلا منفذ؛ ٦: تعليماتُ النظام تُختار وتُسجَّل ببصمتها (وضعُ المبرمج، ج٩)؛ ٥: صورةُ المحلّل لكل مهمّة إن أُعطي إيصالُها (ج٨)؛ ٤: ملفّاتٌ ثنائية في المساحة (ك٥٠)؛ ٣: أمرُ النجاح في Docker؛ ٢: حارسُ ملفات الحكم
 SUCCESS_KINDS = ("tests_pass", "file_equals", "file_contains", "command_exit_zero")
 _ROOT_FIELDS = {"schema_version", "suite_id", "kind", "description", "tasks"}
 _TASK_FIELDS = {"task_id", "capability", "workspace", "instruction", "success",
