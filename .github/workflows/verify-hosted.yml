@@ -20,7 +20,7 @@ jobs:
   verify:
     if: github.event_name == 'workflow_dispatch' || github.event.repository.private == false
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -59,3 +59,18 @@ jobs:
         run: .venv/bin/python tools/lane_handoff.py --range "$RANGE"
       - name: Shared checks and strict public signature verification
         run: .venv/bin/python tools/run_verification.py --node "$(command -v node)"
+      # ق٦٧-٦ وقرارُ المالك في ٢٨ سبتمبر ٢٠٢٦ («نفّذ: جعلُ mutation-check مطلوبًا»): فاحصُ الطفرات خطوةٌ في الفحص الإلزاميّ
+      # نفسِه (verify، الذي تشترطه حمايةُ main اليوم — docs/guides/G1.md) فصار مطلوبًا بالبناء لا بإعدادٍ في الواجهة، وسقط
+      # تشغيلُه المستقلّ على الطلبات (mutation-check.yml يبقى للأسبوعيّ واليدويّ بالبيانات كلِّها). المدى مدى الإسناد نفسُه:
+      # على طلب الدمج base..github.sha (إيداعُ الدمج المرتقَب لا رأسُ الفرع — ملاحظة Codex على #149)، وعلى الدفع before..sha،
+      # وبلا مدًى (تشغيلٌ يدويّ أو فرعٌ بلا أساس) البياناتُ كلُّها.
+      - name: mutation-check — every mutation in range is killed and every touched test is manifested
+        env:
+          HEAD: ${{ github.sha }}
+        run: |
+          set -eu
+          report="$RUNNER_TEMP/mutation-check.json"
+          case "$RANGE" in
+            *..*) .venv/bin/python tools/mutation_check.py --range "$RANGE" --head "$HEAD" --report "$report" --timeout-s 1200 ;;
+            *)    .venv/bin/python tools/mutation_check.py --all --head "$HEAD" --report "$report" --timeout-s 1200 ;;
+          esac
