@@ -632,9 +632,11 @@ def test_deferred_plan_entries_are_labelled_and_leave_the_active_checklist(repo,
     assert f"- ⏸ **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — {label}" in postponed
     real = json.loads((ROOT / ov.PLAN).read_text(encoding="utf-8"))
     deferred_tasks = sorted(t["id"] for t in real["tasks"] if t.get("deferred"))
-    assert deferred_tasks == sorted(t["id"] for t in real["tasks"] if t["title"].startswith(("G5: تجهيز Nitro", "المشغّل الزائل diwan-live على Nitro", "معايرة المُشغِّل على لوحة عامة")))
+    assert deferred_tasks == sorted(t["id"] for t in real["tasks"] if t["title"].startswith(
+        ("G5: تجهيز Nitro", "المشغّل الزائل diwan-live على Nitro", "معايرة المُشغِّل على لوحة عامة", "G4 الخطوتان ١٧–١٨: صلاحيات جلسة Nitro")))
     deferred_steps = sorted(s["order"] for s in real["owner_steps"] if s.get("deferred"))
-    assert len(deferred_tasks) == 3 and deferred_steps == [4, 24, 25], "خطواتُ المالك الثلاث التي لا تُنفَّذ إلا على Nitro"
+    assert len(deferred_tasks) == 4 and "ح٢-ن" in deferred_tasks, "وجلسةُ Nitro التي فُصلت من ح٢ (الجولة السادسة عشرة)"
+    assert deferred_steps == [4, 24, 25], "خطواتُ المالك الثلاث التي لا تُنفَّذ إلا على Nitro"
     assert all(s["deferred"]["by"] == "ق٦٨" for s in real["owner_steps"] if s.get("deferred"))
     assert any(o["decision"] == "ق٦٨" for o in real.get("overrides", []))
 
@@ -716,9 +718,10 @@ def test_a_deferred_owner_step_marks_the_active_task_it_unblocks_and_a_deferred_
     (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
     ov.build(vault, root=repo)
     assert all("⏸" not in read(rel) and "deferred_" not in read(rel) for rel in ("المهام/ك١.md", "المهام/جديد-z.md", "لوحة المراحل.md"))
-    # والخطةُ الحقيقية: ح٢ تفتحها خطوةُ المالك ٤ المؤجَّلة، وجديد-v1-acceptance تعتمد على ع٣ المؤجَّلة
+    # والخطةُ الحقيقية: خطوةُ المالك ٤ المؤجَّلة صارت تفتح ح٢-ن المؤجَّلة لا ح٢ (الجولة السادسة عشرة)، فلا تَسِم مهمّةً نشطة؛
+    # وجديد-v1-acceptance تعتمد على ع٣ المؤجَّلة
     real = ov.render(root=ROOT)
-    assert "deferred_steps: 4\n" in real["المهام/ح٢.md"].split("---")[1]
+    assert "deferred_steps" not in real["المهام/ح٢.md"] and "status: deferred" in real["المهام/ح٢-ن.md"].split("---")[1]
     assert "[[المهام/ع٣|ع٣]] (⏸ مؤجَّلة)" in real["المهام/جديد-v1-acceptance.md"]
 
 

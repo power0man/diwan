@@ -140,8 +140,10 @@ def role_deferral_note(name: str, agent: dict) -> str:
 
 
 def deferred_steps(task: dict, owner_steps: list[dict]) -> list[dict]:
-    """خطواتُ المالك المؤجَّلة التي تفتح مهمّةً نشطة (`owner_steps[].unblocks`): ح٢ «فكّ حجب جلستَي الماك وNitro» تفتحها خطوةُ
-    المالك ٤ (صلاحياتُ جلسة Nitro، مؤجَّلةٌ بق٦٨)، فكان شطرُ Nitro منها يُعرض عملًا حاليًّا — من صنف ملاحظة Codex العاشرة على #161."""
+    """خطواتُ المالك المؤجَّلة التي تفتح مهمّةً نشطة (`owner_steps[].unblocks`): كانت ح٢ «فكّ حجب جلستَي الماك وNitro» تفتحها خطوةُ
+    المالك ٤ (صلاحياتُ جلسة Nitro، مؤجَّلةٌ بق٦٨)، فكان شطرُ Nitro منها يُعرض عملًا حاليًّا — من صنف ملاحظة Codex العاشرة على #161.
+    ثم فُصل ذلك الشطرُ في ح٢-ن المؤجَّلة (الجولة السادسة عشرة)؛ والوسمُ باقٍ لكل مهمّةٍ نشطة تفتحها خطوةٌ مؤجَّلة، و`tests/test_plan_deferrals.py`
+    يمنع الخطةَ الحاكمة من ذلك إلا لمهمّةٍ فيها شطرٌ مؤجَّل يسمّي دورَه."""
     return [s for s in sorted(owner_steps, key=lambda s: s["order"]) if s.get("deferred") and task["id"] in s.get("unblocks", [])]
 
 
