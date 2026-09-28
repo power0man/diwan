@@ -56,8 +56,16 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFESTS = "tests/mutations"
 REQUIRED = ("file", "old", "new", "tests")
 OPTIONAL = ("id", "task", "why", "count", "added")
-NODE_PATH = re.compile(r"^tests/[^\s:\\]+\.py$")   # ملفُّ الاختبار: تحت tests/ وينتهي بـ.py، بلا فراغٍ ولا نقطتين ولا شرطةٍ عكسية
 NODE_PARTS = re.compile(r"^([^\[\]]*)(\[.*\])?$")   # مكوّناتُ المعرّف (أصنافٌ ثم الدالّة)، ثم معاملُ parametrize في آخرها إن وُجد
+
+
+def _valid_test_path(path: str) -> bool:
+    """ملفُّ الاختبار بنيةً لا نمطًا: تحت tests/ وينتهي بـ.py، ومقاطعُه غيرُ فارغة وليست . ولا ..، وبلا سطرٍ جديد ولا جدولةٍ (فاصلا
+    مخرجات الجمع)؛ والفراغُ في الاسم مقبولٌ كما يقبله pytest، فكان نمطٌ يستثنيه يجعل الاختبارَ الممسوس فيه لا يُثبَت بحال
+    (ملاحظة Codex على #149)."""
+    parts = path.split("/")
+    return (parts[0] == "tests" and len(parts) > 1 and path.endswith(".py")
+            and all(part and part not in (".", "..") for part in parts) and not any(c in path for c in "\t\n\r"))
 
 
 def valid_node_id(node_id: str) -> bool:
@@ -65,7 +73,7 @@ def valid_node_id(node_id: str) -> bool:
     (`str.isidentifier`) لا بـ`\\w`: فعلامةُ تشكيلٍ مركّبة (`test_اَ`) و`℘` معرّفاتٌ يجمعها pytest ويرفضها `\\w`، فكان الاختبارُ
     الممسوس بها لا يُثبَت بحال — غيابُه نقصُ إثباتٍ وتسميتُه مرفوضة (ملاحظتا Codex على #149). وأيُّ أبجديةٍ مقبولة."""
     path, sep, rest = node_id.partition("::")
-    if not sep or not NODE_PATH.match(path) or ".." in path.split("/"):
+    if not sep or not _valid_test_path(path):
         return False
     parts = NODE_PARTS.match(rest)
     return parts is not None and all(part.isidentifier() for part in parts.group(1).split("::"))
@@ -383,10 +391,12 @@ def _def_span(tree: ast.Module, names: list[str]) -> tuple[int, int] | None:
     مستورَد) لا مدى له فيها."""
     node: ast.AST = tree
     for name in names:
-        node = next((n for n in getattr(node, "body", []) if isinstance(n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
-                     and n.name == name), None)
-        if node is None:
+        # الاسمُ المكرَّر في الوحدة: التعريفُ الأخير هو الحيّ (ربطُ الأسماء في بايثون)، فهو المدى لا الأولُ الميّت (ملاحظة Codex على #149)
+        matches = [n for n in getattr(node, "body", []) if isinstance(n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+                   and n.name == name]
+        if not matches:
             return None
+        node = matches[-1]
     return min([node.lineno, *(d.lineno for d in node.decorator_list)]), node.end_lineno or node.lineno
 
 
