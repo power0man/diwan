@@ -9117,6 +9117,7 @@
     "single_attempt_per_case_per_arm_no_variance_across_seeds",
     "the_engine_is_the_frozen_default_of_m1_q54_other_engines_may_differ",
     "cases_without_automatic_checks_are_excluded_no_judge_is_used",
-    "measures_quoted_material_in_the_user_message_not_tool_or_file_results_which_need_a_bank_with_injected_files"
+    "measures_quoted_material_in_the_user_message_not_tool_or_file_results_which_need_a_bank_with_injected_files",
+    "engine_revision_unrecorded_model_version_unspecified_so_the_mutable_ollama_tag_qwen3_5_9b_may_later_point_to_other_weights_and_the_rates_are_attributable_to_the_tag_not_to_a_weight_digest"
   ]
 }
