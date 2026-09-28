@@ -184,7 +184,9 @@ def test_an_included_dictionary_is_exported_and_its_text_is_public(tmp_path):
     marker = read_marker(out)
     assert marker["included_paths"] == list(ex.INCLUDED_PATHS)
     # العلامةُ العامة لا تحمل أسماءَ ملفات المالك (عناوينُ مسوداتٍ غير منشورة)، بل عددَها وبصمةَ قائمتها
-    assert isinstance(marker["fingerprints"]["sources"], int) and len(marker["fingerprints"]["sources_sha256"]) == 64
+    assert isinstance(marker["fingerprints"]["sources"], int) and "sources_sha256" not in marker["fingerprints"], \
+        "بصمةُ قائمة ملفات المالك بلا مفتاحٍ وحيٌ يؤكّد اسمًا مخمَّنًا (ملاحظة Codex على #158)"
+    assert not any(len(v) == 64 and set(v) <= set("0123456789abcdef") for v in json.dumps(marker).split('"')), "بصمةٌ في العلامة"
     assert TITLE_FILE not in json.dumps(marker, ensure_ascii=False), "اسمُ ملفٍّ للمالك في العلامة العامة"
     assert report["files_excluded"] == 3 and report["files_exported"] == len(tracked) - 3   # اللائحة وفهرسها والوسيط
 

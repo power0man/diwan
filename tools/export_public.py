@@ -313,9 +313,9 @@ def build(root: Path, dest: Path, *, tracked: list[str] | None = None) -> dict:
         "excluded_streams": list(excluded_signed_ledgers()),
         "files_exported": len(kept),
         "files_excluded": len(excluded),
-        # أسماءُ ملفات المالك (وفيها عناوينُ مسوداتٍ غير منشورة) لا تُكتب في العلامة العامة: عددٌ وبصمةٌ لقائمتها المرتّبة
-        "fingerprints": dict(report["fingerprints"],
-                             sources_sha256=hashlib.sha256("\n".join(sorted(fingerprints.sources)).encode("utf-8")).hexdigest()),
+        # أسماءُ ملفات المالك (وفيها عناوينُ مسوداتٍ غير منشورة) لا تُكتب في العلامة العامة، ولا بصمةٌ لقائمتها: بصمةٌ بلا
+        # مفتاحٍ وحيٌ يؤكّد اسمًا مخمَّنًا بحساب بصمة المرشَّحات (ملاحظة Codex على #158)؛ يبقى العددُ وحده
+        "fingerprints": dict(report["fingerprints"]),
     }
     (dest / MARKER_NAME).write_text(json.dumps(marker, ensure_ascii=False, indent=2) + "\n",
                                     encoding="utf-8")
