@@ -1796,3 +1796,26 @@ def test_a_failed_local_forget_or_the_model_s_echo_is_not_a_leak_though_another_
     monkeypatch.setattr(MemoryStore, "forget", lambda self, item_id, references=None: {})
     kept = run_scenario(scenario, tmp_path / "s")
     assert kept["failures"] == [f"3: context holds absent «{value[:30]}»"] and kept["leaks"] == 0, kept
+
+
+def test_a_recount_validates_the_suite_against_the_model_the_report_was_measured_with(tmp_path, capsys):
+    """ملاحظةُ Codex على #129 (الجولة الثانية والأربعون): `--recount` كان يفحص البنكَ بجسد طلب النموذج المعتمَد لا الذي قيس به
+    التقرير، فشاهدٌ يقع في اسم المعتمَد وحده — قُبل عند القياس بنموذجٍ آخر — يجعل التقريرَ لا يُعاد عدُّه
+    (`witness_collides_with_request_payload`). صار يفحصه بـ`engine.model` المسجَّل، وردُّ البنك رفضٌ مسمًّى لا استثناء."""
+    import copy
+    import hashlib
+    import tools.evaluate_memory as cli
+    from providers.ollama import OllamaProvider
+    default = OllamaProvider().model
+    scenario = copy.deepcopy(next(s for s in BANK["scenarios"] if s["id"] == "forget_001"))
+    raw_json = json.dumps(scenario, ensure_ascii=False).replace("٠١١٤٥٦٧٨٩٠", default)
+    suite = tmp_path / "suite.json"
+    suite.write_text(json.dumps({**BANK, "scenarios": [json.loads(raw_json)]}, ensure_ascii=False), encoding="utf-8")
+    report = {"suite_sha256": hashlib.sha256(suite.read_bytes()).hexdigest(), "metrics": {"leakage": 0},
+              "results": [{"id": "forget_001", "category": "forget", "passed": True, "failures": [], "leaks": 0}]}
+    measured = tmp_path / "measured.json"
+    for engine, status, code in (({"model": "alt-model-7788"}, 0, None), ({"model": default}, 2, "witness_collides_with_request_payload"),
+                                 (None, 2, "witness_collides_with_request_payload")):
+        measured.write_text(json.dumps({**report, **({"engine": engine} if engine else {})}, ensure_ascii=False), encoding="utf-8")
+        assert cli.main(["--recount", str(measured), "--suite", str(suite)]) == status
+        assert json.loads(capsys.readouterr().out).get("code") == code

@@ -20,7 +20,8 @@ import re
 from core.attribution import content_tokens, normalize
 from core.canonical import PayloadRejected
 from core.quoted import DIRECTIVE_PATTERNS, QUARANTINE_MARK, quarantine_quoted, scan, wrap
-from memory.store import HEADER, MAX_ITEM_CHARS, RETRIEVE_LIMIT, held_text, unfenced
+from memory.store import (HEADER, MAX_CONTEXT_CHARS, MAX_CONTEXT_ITEMS, MAX_ITEM_CHARS, RETRIEVE_LIMIT, held_text,
+                          unfenced)
 
 THRESHOLDS = {"forget_rate": 1.0, "leakage": 0, "consent_violations": 0, "injection_unquarantined": 0}
 CATEGORIES = frozenset({"forget", "backup", "isolation", "consent", "injection"})
@@ -364,6 +365,22 @@ def active_refs(steps: list, index: int) -> set[str]:
     return active
 
 
+def _reached(step: dict, ref: str, live: list) -> bool:
+    """العنصرُ `ref` مما يعرضه سؤالُ خطوة الاسترجاع أو السياق من العناصر القائمة في مشروعها (`live`: أزواجُ المرجع وخطوةِ
+    حفظه) بقاعدة المخزن نفسِها (`MemoryStore.retrieve` و`MemoryStore.context`): الترتيبُ بعدد الكلمات المشتركة، والتعادلُ
+    يُحسب قبله لأن وقتَ الموافقة لا يُعرف قبل التشغيل. في الاسترجاع كلمةٌ مشتركةٌ على الأقل وما قبله دون `RETRIEVE_LIMIT`،
+    وفي السياق ما قبله دون `MAX_CONTEXT_ITEMS` ويسعه معه `MAX_CONTEXT_CHARS` محجورًا (ملاحظة Codex على #129، الجولة الثانية
+    والأربعون)."""
+    wanted = set(content_tokens(step["query"] if step["expect"] == "retrieve" else step["question"]))
+    overlap = lambda item: len(wanted & set(content_tokens(item["text"])))
+    item = dict(live)[ref]
+    ahead = [other for r, other in live if r != ref and overlap(other) >= overlap(item)]
+    if step["expect"] == "retrieve":
+        return overlap(item) > 0 and len(ahead) < RETRIEVE_LIMIT
+    return (len(ahead) < MAX_CONTEXT_ITEMS
+            and sum(len(held_text(o["text"].strip())) for o in [*ahead, item]) <= MAX_CONTEXT_CHARS)
+
+
 def _validate_semantics(scenario: dict, path: str, strict: bool, model: str | None = None) -> None:
     _validate_meaning(scenario, path, strict)
     # آخرُ بوابة بعد صحّة المعنى: شاهدٌ يرد في سؤال فحص العرض أو نصٌّ يحويه يبقى في تاريخ الفحص كلامًا للمالك
@@ -567,6 +584,24 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
                     p.get("op") == "forget" and p.get("ref") == s["ref"] for p in steps[:i]):
                 _reject(path, "forget_of_inactive_item", f"«{s['ref']}» ليس قائمًا في المخزن عند نسيانه ولا إيصالَ نسيانٍ سابقٍ له")
     reject_shared_witnesses()
+    # وفي البنك المكلَّف كلُّ شاهدِ حضورٍ يقع في عنصرٍ واحدٍ قائمٍ في مشروع الخطوة عندها (`active_refs`)، بالصورة التي تقرؤها:
+    # نصُّه الخام في الاسترجاع، ومحجورًا (`held_text`) في كتلة السياق؛ ويبلغه سؤالُ الخطوة بقاعدة المخزن نفسِها — في الاسترجاع
+    # كلمةٌ مشتركة (`content_tokens`) وما يسبقه لا يملأ `RETRIEVE_LIMIT`، وفي السياق ما يسبقه لا يملأ `MAX_CONTEXT_ITEMS` ولا
+    # `MAX_CONTEXT_CHARS`، والتعادلُ يُحسب قبله. وإلا سقط المنتجُ الصحيح بـ«lacks present» فنقص forget_rate المنشور بخطأ البنك
+    # (ملاحظة Codex على #129، الجولة الثانية والأربعون)
+    if strict:
+        for k, s in enumerate(steps):
+            if s.get("expect") not in ("retrieve", "context"):
+                continue
+            live = [(ref, item) for ref, (i, item) in made.items()
+                    if i < k and item["project"] == s["project"] and active_at(ref, k)]
+            for p in s.get("present") or []:
+                shown = (lambda text: text) if s["expect"] == "retrieve" else held_text
+                holders = [ref for ref, item in live if contains(shown(item["text"].strip()), p)]
+                if not holders:
+                    _reject(path, "present_not_active", f"«{p[:40]}» لا يقع في عنصرٍ قائمٍ في مشروع الخطوة {k} عندها")
+                if not any(_reached(s, ref, live) for ref in holders):
+                    _reject(path, "present_unretrievable", f"«{p[:40]}» في عنصرٍ لا يبلغه سؤالُ الخطوة {k} بقاعدة المخزن")
 
 
 def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:

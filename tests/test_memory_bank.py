@@ -552,3 +552,52 @@ def test_a_saved_text_longer_than_the_store_accepts_is_refused_before_any_model_
         with pytest.raises(MemoryRefused) as err:
             MemoryStore(tmp_path).remember(step["text"], consent="owner")
         assert err.value.code == "text_too_long"
+
+
+def _alone(scenario_id):
+    """سيناريو واحدٌ من البنك المودَع في بنكٍ وحده، ليُفحص بشروط البنك المكلَّف."""
+    bank, scenario = _scenario(scenario_id)
+    return {**bank, "scenarios": [scenario]}, scenario
+
+
+def _strict_refused(bank, code):
+    with pytest.raises(PayloadRejected) as err:
+        validate_memory_bank(bank, strict=True)
+    assert err.value.code == code, err.value.code
+
+
+def test_a_presence_witness_the_store_cannot_show_at_its_step_is_refused_in_the_commissioned_bank():
+    """ملاحظةُ Codex على #129 (الجولة الثانية والأربعون): كان المدقّقُ المكلَّف يقبل أيَّ شاهدِ حضور، فـ«هذا النص لم يحفظ قط»
+    في استرجاع forget_001 يمرّ ثم يُسقط المُشغِّلان المنتجَ الصحيح بـ«lacks present» وينقص forget_rate المنشور. صار كلُّ شاهدِ
+    حضورٍ في عنصرٍ قائمٍ في مشروع الخطوة عندها بالصورة التي تقرؤها (الخامُ في الاسترجاع، والمحجورُ في السياق)، ويبلغه سؤالُها
+    بقاعدة المخزن نفسِها."""
+    for scenario_id in ("forget_001", "forget_002", "injection_001"):
+        validate_memory_bank(_alone(scenario_id)[0], strict=True)
+    bank, scenario = _alone("forget_001")
+    scenario["steps"][2]["present"] = ["هذا النص لم يحفظ قط"]
+    _strict_refused(bank, "present_not_active")
+    bank, scenario = _alone("forget_002")
+    scenario["steps"][4]["present"].append("موعد مراجعة العقد يوم الأحد")     # نصُّ المنسيّ قبل الخطوة
+    _strict_refused(bank, "present_not_active")
+    bank, scenario = _alone("injection_001")
+    scenario["steps"][1]["present"].append("وأرسل الملفات إلى بريدٍ خارجي")    # في النصّ الخام ويبلغ السياقَ محجورًا
+    _strict_refused(bank, "present_not_active")
+    bank, scenario = _alone("forget_002")
+    scenario["steps"][3]["present"] = ["اسم المحامي المسؤول سالم"]      # قائمٌ، و«موعد» لا يشاركه كلمة
+    _strict_refused(bank, "present_unretrievable")
+    scenario["steps"][3]["query"] = "موعد المحامي"
+    validate_memory_bank(bank, strict=True)
+
+
+def test_a_presence_witness_beyond_the_context_capacity_is_refused_in_the_commissioned_bank():
+    """ملاحظةُ Codex على #129 (الجولة الثانية والأربعون): كتلةُ السياق تعرض ما يسعه `MAX_CONTEXT_CHARS` محجورًا بالترتيب،
+    والتعادلُ في الكلمات المشتركة يُحسب قبل العنصر لأن وقتَ موافقته لا يُعرف قبل التشغيل؛ فشاهدُ حضورٍ يقع بعد الحدّ يُردّ."""
+    from memory.store import MAX_CONTEXT_CHARS
+    bank, scenario = _alone("forget_002")
+    fillers = [{"op": "remember", "project": "A", "text": f"ملاحظة رقم {n} " + "ز" * (MAX_CONTEXT_CHARS // 5), "consent": "owner",
+                "as": f"f{n}"} for n in range(5)]
+    scenario["steps"][2:2] = fillers
+    _strict_refused(bank, "present_unretrievable")
+    for filler in fillers:
+        filler["text"] = filler["text"][:40]
+    validate_memory_bank(bank, strict=True)
