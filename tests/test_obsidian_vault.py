@@ -166,6 +166,31 @@ def test_an_annotation_appended_to_a_checklist_line_survives_the_migration(repo,
     assert steps.read_text(encoding="utf-8") == migrated, "لا تتضاعف اللواحق"
 
 
+def test_an_annotation_after_a_deferral_label_survives_the_migration(repo, vault):
+    """ملاحظةُ Codex على #161 (الجولة السابعة): تعليقٌ كتبه المالك بقوسين بعد علامة التأجيل المولَّدة «… مؤجَّلة (…) (سألت المالك)»
+    كان يُحسب من العلامة (كان قوسُها يُطلَب عند آخر السطر) فيُمحى في البناء التالي. صارت العلامةُ تُنزع حتى قوسها الذي يُغلقها
+    بعدّ الأقواس، فيبقى التعليقُ حتى لو حمل سببُ التأجيل قوسين مثل «(ق٦٨)»، ويتبع العلامةَ الجديدة إذا تغيّر السبب."""
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    why = {"by": "ق٦٨", "until": "2026-10-19", "reason": "الجهازُ غيرُ قابلٍ للوصول (ق٦٨)؛ يعود بإشعار المالك"}
+    plan["owner_steps"].append({"order": 2, "guide_id": "G5", "title": "تجهيز Nitro", "time": "ساعة", "cost": "$0", "deferred": why})
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    steps = vault / "Diwan/خطواتي.md"
+    label = "- ⏸ **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — مؤجَّلة (ق٦٨ حتى 2026-10-19: الجهازُ غيرُ قابلٍ للوصول (ق٦٨)؛ يعود بإشعار المالك)"
+    text = steps.read_text(encoding="utf-8")
+    assert label in text
+    steps.write_text(text.replace(label, label + " (سألت المالك)"), encoding="utf-8")
+    assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"] or ov.check(vault, root=repo) == []
+    assert label + " (سألت المالك)" in steps.read_text(encoding="utf-8"), "التعليقُ بعد العلامة يبقى"
+    why["reason"] = "الجهازُ غيرُ قابلٍ للوصول"
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"]
+    migrated = steps.read_text(encoding="utf-8")
+    assert "- ⏸ **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — مؤجَّلة (ق٦٨ حتى 2026-10-19: الجهازُ غيرُ قابلٍ للوصول) (سألت المالك)" in migrated
+    assert migrated.count("مؤجَّلة (") == 1 and "### سطورٌ نُقلت" not in migrated, "العلامةُ القديمة تُنزع ولا يُنقل السطرُ إلى الملاحظات"
+    assert ov.build(vault, root=repo)["migrated"] == [] and steps.read_text(encoding="utf-8") == migrated
+
+
 def test_a_lifted_deferral_and_a_step_gone_from_the_plan_migrate_without_losing_the_owner_s_text(repo, vault):
     """ملاحظتا Codex على #161 (الجولة السادسة): (١) حين يزول التأجيلُ عن خطوةٍ أو يتغيّر سببُه كانت علامةُ التأجيل القديمة تُحسب
     لاحقةً للمالك فتعود الخطوةُ النشطة تقول إنها مؤجَّلة؛ (٢) سطرٌ مرقَّم أضافه المالك بنفسه أو خطوةٌ حُذفت من الخطة وعليها تعليقُه

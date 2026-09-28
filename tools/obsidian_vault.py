@@ -176,8 +176,25 @@ NOTES_HEADING = "## ملاحظاتي"
 LEGACY_HEADING = "### سطورٌ نُقلت من النسخة السابقة"
 DONE_BEFORE_DEFERRAL = " — أُنجزت قبل التأجيل"
 _STEP_LINE = re.compile(r"^- (\[[ xX]\]|⏸) \*\*(\d+)\.")
-_GENERATED_SUFFIXES = re.compile(r" — مؤجَّلة \(.*?\)(?= — |$)|" + re.escape(DONE_BEFORE_DEFERRAL))
+_DEFERRAL_LABEL = " — مؤجَّلة ("
 _KNOWN_LINES = ("# خطواتي", "## خطواتٌ مؤجَّلة", "لا تُطلب منك الآن؛ تعود إلى القائمة بإشعارك.")
+
+
+def _strip_generated(tail: str) -> str:
+    """ينزع من ذيل سطر الخطوة ما تولّده الأداةُ وحدها: علامةَ التأجيل حتى قوسها الذي يُغلقها (بعدّ الأقواس، فسببُ التأجيل قد يحمل
+    قوسين مثل «(ق٦٨)»)، وعلامةَ الإنجاز قبل التأجيل. وما بعد القوس المُغلق لاحقةُ المالك تبقى: كان القوسُ يُطلَب عند آخر السطر
+    فيبتلع تعليقًا كتبه المالك بعد العلامة «(سألت المالك)» ويُمحى في البناء التالي (ملاحظة Codex السابعة على #161)."""
+    while (start := tail.find(_DEFERRAL_LABEL)) >= 0:
+        depth, end = 0, None
+        for i in range(start + len(_DEFERRAL_LABEL) - 1, len(tail)):
+            depth += {"(": 1, ")": -1}.get(tail[i], 0)
+            if depth == 0:
+                end = i + 1
+                break
+        if end is None:
+            break                                                   # علامةٌ لم تُغلق: تبقى كما هي ولا تُنزع بالتخمين
+        tail = tail[:start] + tail[end:]
+    return tail.replace(DONE_BEFORE_DEFERRAL, "")
 
 
 def migrate_steps(existing: str, rendered: str) -> str:
@@ -210,7 +227,7 @@ def migrate_steps(existing: str, rendered: str) -> str:
         if order in edits:
             # لاحقةُ المالك هي ما زاد على نصّ الخطوة كما تولّده الأداة بعد نزع ما تولّده هي من لواحق (علامةُ تأجيلٍ سابقة قد زالت
             # أو تغيّر سببُها، وعلامةُ الإنجاز قبل التأجيل)؛ وما عُدّل داخل النصّ نفسِه يُنقل سطرًا كاملًا (ملاحظاتُ Codex على #161)
-            edited, base = _GENERATED_SUFFIXES.sub("", edits[order][0]), _GENERATED_SUFFIXES.sub("", tail)
+            edited, base = _strip_generated(edits[order][0]), _strip_generated(tail)
             if edited.startswith(base):
                 extra += edited[len(base):]
             else:
