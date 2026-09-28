@@ -283,4 +283,9 @@ def execute(request: Request, provider, budget: Budget, ledger) -> Outcome:
                 note = f"ledger_append_failed_after_abort:{type(ledger_exc).__name__}"
                 if original is not None:
                     original.add_note(note)
-                print(f"[core.run] {note}", file=sys.stderr)
+                # والإبلاغُ للمشغّل جهدٌ لا ضمان: stderr مغلقٌ أو غائبٌ في عمليةٍ مضمَّنة أو خفيّة يرفع من finally فيستبدل
+                # الأصليَّ الذي يحمل الملاحظةَ بعطب الإبلاغ (ملاحظة Codex على #158)
+                try:
+                    print(f"[core.run] {note}", file=sys.stderr)
+                except Exception:                                  # noqa: BLE001 -- الأصليُّ بملاحظته هو المرفوع لا عطبُ stderr
+                    pass
