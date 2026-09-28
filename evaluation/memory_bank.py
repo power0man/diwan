@@ -20,7 +20,7 @@ import re
 from core.attribution import content_tokens, normalize
 from core.canonical import PayloadRejected
 from core.quoted import DIRECTIVE_PATTERNS, QUARANTINE_MARK, quarantine_quoted, scan, wrap
-from memory.store import HEADER, RETRIEVE_LIMIT, held_text
+from memory.store import HEADER, RETRIEVE_LIMIT, held_text, unfenced
 
 THRESHOLDS = {"forget_rate": 1.0, "leakage": 0, "consent_violations": 0, "injection_unquarantined": 0}
 CATEGORIES = frozenset({"forget", "backup", "isolation", "consent", "injection"})
@@ -413,11 +413,15 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
     # عمدًا، يغيب لأن المنتج يسيّجه لا لأن حاملَه زال
     # وفي البنك المكلَّف بعد أحكام الفئات الأدقّ (الموافقةُ بلا فحصٍ قبلها تُسمّى باسمها لا بمشاركة الشاهد)
     def reject_shared_witnesses():
+        # ويُقارَن الشاهدُ بالعنصر القائم بصوره الثلاث كما يبلغ كلَّ فحص: نصُّه الخام (الاسترجاعُ والبقايا على القرص)، وبعلامات
+        # السياج مُبدَلة، ومحجورًا كما يبلغ كتلةَ السياق (`held_text`): عنصرٌ يحمل أمرًا مدسوسًا يُعرض في السياق علامةَ حجرٍ
+        # `[محتوى محجور: …]`، فشاهدٌ نصُّه هذه العلامةُ يسقط بالمنتج الصحيح (ملاحظة Codex على #129، الجولة الحادية والثلاثون)
+        forms = lambda text: (text, unfenced(text), held_text(text))
         for k, s in enumerate(steps):
             if s.get("expect") in ("retrieve", "context", "residue") and not s.get("quarantined"):
                 for a in s.get("absent") or []:
                     live = [ref for ref, (i, item) in made.items() if i < k and item["project"] == s.get("project")
-                            and a and contains(item["text"], a) and active_at(ref, k)]
+                            and a and any(contains(form, a) for form in forms(item["text"])) and active_at(ref, k)]
                     if live:
                         _reject(path, "witness_shared_with_live_item", f"«{a[:40]}» يقع في نصّ «{live[0]}» القائم في مشروع الخطوة عند فحص غيابه")
     if not strict:
