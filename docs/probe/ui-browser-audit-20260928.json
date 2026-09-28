@@ -3,11 +3,11 @@
   "tool": "tools/ui_browser_audit.py",
   "agent": "anthropic/claude-opus-5-5",
   "date": "2026-09-28",
-  "commit": "d414d54714e7",
+  "commit": "1ef5c58884ca",
   "commit_contains_inputs": true,
   "content_sha256_12": {
-    "tools/ui_browser_audit.py": "575b6e55b860",
-    "tools/ui_browser_audit.cjs": "32bf357a7692",
+    "tools/ui_browser_audit.py": "15a1ad1c6400",
+    "tools/ui_browser_audit.cjs": "d5dac5cdc222",
     "webui/static/index.html": "8701079ea405",
     "webui/static/app.js": "fef96d0774c9",
     "webui/static/style.css": "7d11d97ed48a",
@@ -59,112 +59,112 @@
           "id": "open",
           "viewport": "desktop",
           "ok": true,
-          "ms": 576,
+          "ms": 591,
           "note": "lang=ar dir=rtl"
         },
         {
           "id": "empty_state",
           "viewport": "desktop",
           "ok": true,
-          "ms": 394,
+          "ms": 347,
           "note": "2 disabled of 6"
         },
         {
           "id": "tab_order",
           "viewport": "desktop",
           "ok": true,
-          "ms": 134,
+          "ms": 105,
           "note": "12 stops"
         },
         {
           "id": "send_before_session",
           "viewport": "desktop",
           "ok": true,
-          "ms": 81,
+          "ms": 79,
           "note": "اختر محادثة واسترجع حالة أي إرسال سابق أولًا."
         },
         {
           "id": "create_project",
           "viewport": "desktop",
           "ok": true,
-          "ms": 97
+          "ms": 73
         },
         {
           "id": "create_text_session",
           "viewport": "desktop",
           "ok": true,
-          "ms": 99
+          "ms": 97
         },
         {
           "id": "keyboard_send",
           "viewport": "desktop",
           "ok": true,
-          "ms": 2481,
+          "ms": 2486,
           "note": "ctrl+enter=false enter=false"
         },
         {
           "id": "ask_text",
           "viewport": "desktop",
           "ok": true,
-          "ms": 284,
-          "note": "answer in 89 ms"
+          "ms": 300,
+          "note": "answer in 85 ms"
         },
         {
           "id": "draft_review_apply",
           "viewport": "desktop",
           "ok": true,
-          "ms": 393
+          "ms": 355
         },
         {
           "id": "memory_dialog",
           "viewport": "desktop",
           "ok": true,
-          "ms": 537
+          "ms": 533
         },
         {
           "id": "create_agent_session",
           "viewport": "desktop",
           "ok": true,
-          "ms": 201
+          "ms": 207
         },
         {
           "id": "agent_write",
           "viewport": "desktop",
           "ok": true,
-          "ms": 481,
-          "note": "answer in 373 ms"
+          "ms": 496,
+          "note": "answer in 389 ms"
         },
         {
           "id": "agent_approval",
           "viewport": "desktop",
           "ok": true,
-          "ms": 1694
+          "ms": 1675
         },
         {
           "id": "error_path",
           "viewport": "desktop",
           "ok": true,
-          "ms": 134,
+          "ms": 153,
           "note": "name_invalid"
         },
         {
           "id": "mobile_open",
           "viewport": "mobile",
           "ok": true,
-          "ms": 554
+          "ms": 559
         },
         {
           "id": "mobile_empty",
           "viewport": "mobile",
           "ok": true,
-          "ms": 286,
+          "ms": 268,
           "note": "composer at 1116px of 844"
         },
         {
           "id": "mobile_ask_text",
           "viewport": "mobile",
           "ok": true,
-          "ms": 387
+          "ms": 397
         }
       ],
       "checks": {
@@ -340,6 +340,8 @@
             "in_viewport": true
           }
         ],
+        "tab_order_complete": true,
+        "tab_order_cap": 15,
         "send_before_session_notice": "اختر محادثة واسترجع حالة أي إرسال سابق أولًا.",
         "send_before_session_refused": true,
         "ctrl_enter_sends": false,
@@ -358,6 +360,7 @@
         "composer_position": "sticky",
         "composer_viewport_share": 0.4,
         "text_answer_latin_outside_answer": [],
+        "text_answer_latin_total": 2,
         "dialog_focus": {
           "propose": true,
           "review": false,
@@ -403,8 +406,9 @@
         "memory_empty_error_role": "alert",
         "memory_saved_notice": "حُفظ في ذاكرة المشروع. يدخل الطلبات الجديدة وحدها، وتستطيع نسيانه من «ذاكرة هذا المشروع».",
         "memory_panel_latin": [
-          "T22:27:41Z"
+          "T23:43:56Z"
         ],
+        "memory_panel_latin_total": 1,
         "memory_panel_iso_timestamp": true,
         "agent_capabilities_text": "أدوات ملفات المشروع متاحة. تنفيذ الأوامر غير مهيأ.",
         "thinking_checkbox_width_px": 943,
@@ -412,8 +416,9 @@
           "write_file",
           "ok",
           "txt",
-          "act-e83cf5ee637740b1"
+          "act-c1cfd30459464183"
         ],
+        "agent_stream_latin_total": 4,
         "agent_stream_hashes": 1,
         "agent_stream_json_blocks": 1,
         "agent_turn_buttons": [
@@ -431,6 +436,7 @@
           "sha256",
           "size_bytes"
         ],
+        "approval_dialog_latin_total": 6,
         "approval_dialog_json_blocks": 2,
         "approval_dialog_hashes": 2,
         "error_notice": "تعذر إكمال العملية (name_invalid). استرجع الحالة وراجع المدخلات.",
@@ -470,19 +476,19 @@
         "mobile_console_errors": []
       },
       "timings_ms": {
-        "open_to_idle": 564,
-        "dom_content_loaded": 25,
-        "first_api_response": 30,
-        "create_project": 97,
-        "create_session": 99,
-        "ask_to_answer": 89,
-        "create_agent_session": 188,
-        "agent_write_to_answer": 373,
-        "agent_request_to_approval": 865,
-        "approval_to_answer": 510,
-        "mobile_open_to_idle": 554,
-        "mobile_setup": 199,
-        "mobile_ask_to_answer": 117
+        "open_to_idle": 580,
+        "dom_content_loaded": 66,
+        "first_api_response": 72,
+        "create_project": 73,
+        "create_session": 97,
+        "ask_to_answer": 85,
+        "create_agent_session": 193,
+        "agent_write_to_answer": 389,
+        "agent_request_to_approval": 845,
+        "approval_to_answer": 550,
+        "mobile_open_to_idle": 558,
+        "mobile_setup": 242,
+        "mobile_ask_to_answer": 85
       }
     },
     "single-page": {
@@ -491,38 +497,38 @@
           "id": "sp_open",
           "viewport": "desktop",
           "ok": true,
-          "ms": 557
+          "ms": 558
         },
         {
           "id": "sp_question_field",
           "viewport": "desktop",
           "ok": true,
-          "ms": 69
+          "ms": 71
         },
         {
           "id": "sp_enter_answers",
           "viewport": "desktop",
           "ok": false,
-          "ms": 8044,
+          "ms": 8075,
           "error": "page.waitForFunction: Timeout 8000ms exceeded."
         },
         {
           "id": "sp_open",
           "viewport": "mobile",
           "ok": true,
-          "ms": 564
+          "ms": 551
         },
         {
           "id": "sp_question_field",
           "viewport": "mobile",
           "ok": true,
-          "ms": 90
+          "ms": 64
         },
         {
           "id": "sp_enter_answers",
           "viewport": "mobile",
           "ok": false,
-          "ms": 8049,
+          "ms": 8031,
           "error": "page.waitForFunction: Timeout 8000ms exceeded."
         }
       ],
@@ -547,31 +553,31 @@
         }
       },
       "timings_ms": {
-        "sp_open_desktop": 555,
-        "sp_open_mobile": 564
+        "sp_open_desktop": 558,
+        "sp_open_mobile": 551
       }
     }
   },
   "timings_ms": {
     "model_time": "zero_by_scripted_provider",
     "current": {
-      "open_to_idle": 564,
-      "dom_content_loaded": 25,
-      "first_api_response": 30,
-      "create_project": 97,
-      "create_session": 99,
-      "ask_to_answer": 89,
-      "create_agent_session": 188,
-      "agent_write_to_answer": 373,
-      "agent_request_to_approval": 865,
-      "approval_to_answer": 510,
-      "mobile_open_to_idle": 554,
-      "mobile_setup": 199,
-      "mobile_ask_to_answer": 117
+      "open_to_idle": 580,
+      "dom_content_loaded": 66,
+      "first_api_response": 72,
+      "create_project": 73,
+      "create_session": 97,
+      "ask_to_answer": 85,
+      "create_agent_session": 193,
+      "agent_write_to_answer": 389,
+      "agent_request_to_approval": 845,
+      "approval_to_answer": 550,
+      "mobile_open_to_idle": 558,
+      "mobile_setup": 242,
+      "mobile_ask_to_answer": 85
     },
     "single-page": {
-      "sp_open_desktop": 555,
-      "sp_open_mobile": 564
+      "sp_open_desktop": 558,
+      "sp_open_mobile": 551
     }
   },
   "error_code_coverage": {
@@ -748,9 +754,9 @@
           "Element does not have an explicit <label>",
           "aria-label attribute does not exist or is empty"
         ],
-        "states": [
-          "remember-dialog-desktop"
-        ]
+        "reasons_total": 7,
+        "journey": "current",
+        "state": "remember-dialog-desktop"
       }
     ],
     "incomplete": [
@@ -766,12 +772,14 @@
         "reasons": [
           "Element's background color could not be determined because it partially overlaps other elements"
         ],
-        "states": [
-          "approval-dialog-desktop"
-        ]
+        "reasons_total": 1,
+        "journey": "current",
+        "state": "approval-dialog-desktop"
       }
     ],
-    "errors": []
+    "errors": [],
+    "records_cap": 20,
+    "omitted": []
   },
   "findings": [
     {
@@ -921,6 +929,7 @@
       "id": "a11y-label",
       "kind": "violation",
       "severity": "high",
+      "state": "remember-dialog-desktop",
       "summary": "axe: label (critical) على 1 عنصرًا",
       "step": "axe",
       "screenshot": null,
@@ -958,7 +967,7 @@
       "file": "01-empty-desktop.png",
       "step": "empty_state",
       "viewport": "1366x768",
-      "bytes": 61628
+      "bytes": 61620
     },
     {
       "file": "02-text-answer-desktop.png",
@@ -976,13 +985,13 @@
       "file": "09-memory-desktop.png",
       "step": "memory_dialog",
       "viewport": "1366x768",
-      "bytes": 73811
+      "bytes": 73822
     },
     {
       "file": "04-agent-steps-desktop.png",
       "step": "agent_write",
       "viewport": "1366x768",
-      "bytes": 56925
+      "bytes": 56937
     },
     {
       "file": "05-approval-desktop.png",
@@ -1006,7 +1015,7 @@
       "file": "08-mobile-answer.png",
       "step": "mobile_ask_text",
       "viewport": "390x844",
-      "bytes": 47140
+      "bytes": 47150
     }
   ],
   "measurement_limits": [
@@ -1017,6 +1026,11 @@
     "axe_core_catches_a_subset_of_wcag_failures_and_a_clean_rule_is_not_an_accessible_page",
     "error_code_coverage_parses_webui_server_py_only_codes_raised_by_other_modules_are_listed_as_dynamic_lines_not_counted",
     "first_run_configuration_only_research_media_and_command_execution_are_disabled_as_serve_ui_starts_without_searxng_vision_or_docker",
-    "timings_are_loopback_with_a_fake_provider_they_bound_the_ui_and_http_path_not_a_real_answer"
+    "timings_are_loopback_with_a_fake_provider_they_bound_the_ui_and_http_path_not_a_real_answer",
+    "axe_records_are_one_per_rule_and_state_at_most_20_per_kind_the_rest_are_named_in_omitted_and_as_a_finding",
+    "each_axe_record_keeps_its_first_three_targets_and_reasons_nodes_and_reasons_total_count_them_all",
+    "latin_token_lists_keep_the_first_40_their_total_is_recorded_beside_them",
+    "the_tab_order_stops_at_15_stops_tab_order_complete_says_whether_the_cycle_closed_before_the_cap",
+    "page_texts_are_trimmed_to_a_few_hundred_characters_and_a_trimmed_text_ends_with_an_ellipsis"
   ]
 }
