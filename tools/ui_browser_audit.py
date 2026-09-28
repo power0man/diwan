@@ -292,6 +292,40 @@ FINDING_RULES = (
     ("console-errors", "medium", "recheck", "boot().catch(showError)", "open", None,
      "أخطاءٌ في سجلّ وحدة المتصفّح أثناء الرحلة (غيرُ سطور الشبكة لردود الرفض المقصودة)"),
 )
+AXE_KEPT = 20      # سجلّاتُ axe (مخالفاتٍ أو ما يحتاج مراجعة) في الدليل، وأطولُ النصوص فيها
+AXE_TEXT = 160
+
+
+def _trim(value, limit: int = AXE_TEXT) -> str:
+    text = " ".join(str(value or "").split())
+    return text if len(text) <= limit else text[:limit - 1] + "…"
+
+
+def axe_state_verdict(state: dict) -> str:
+    """حكمُ حالةٍ فحصها axe: مخالفاتٌ، أو ما يحتاج مراجعةً يدوية (incomplete)، أو نظيفة. فحالةٌ بلا مخالفةٍ وفيها ما لم
+    يُحسم لا تُعدّ نظيفة."""
+    if state.get("violations"):
+        return "violations"
+    if state.get("incomplete"):
+        return "needs_review"
+    return "clean"
+
+
+def normalize_axe(axe: dict | None) -> dict | None:
+    """سجلُّ axe في الدليل: كلُّ حالةٍ بحكمها، والمخالفاتُ وما يحتاج مراجعةً يدوية بقاعدتها وأثرها ورابطها وعناصرها وأسبابها،
+    محدودةَ العدد والطول (ويمرّ الكلُّ بحارس الدليل)."""
+    if not axe or axe.get("status") != "run":
+        return axe
+
+    def record(item: dict) -> dict:
+        return {"id": _trim(item.get("id"), 80), "impact": item.get("impact"), "nodes": item.get("nodes", 0),
+                "help_url": _trim(item.get("help_url")), "targets": [_trim(t, 80) for t in (item.get("targets") or [])[:3]],
+                "reasons": [_trim(r) for r in (item.get("reasons") or [])[:3]], "states": list(item.get("states") or [])}
+    return {**axe, "states": [{**state, "verdict": axe_state_verdict(state)} for state in axe.get("states") or []],
+            "violations": [record(item) for item in (axe.get("violations") or [])[:AXE_KEPT]],
+            "incomplete": [record(item) for item in (axe.get("incomplete") or [])[:AXE_KEPT]]}
+
+
 SEVERITY_BY_IMPACT = {"critical": "high", "serious": "high", "moderate": "medium", "minor": "low"}
 
 
@@ -342,15 +376,25 @@ def derive_findings(checks: dict, coverage: dict, axe: dict | None, sources: dic
     for rule_id, severity, survives, anchor, step, shot, summary in FINDING_RULES:
         if not _observed(rule_id, checks, coverage):
             continue
-        findings.append({"id": rule_id, "severity": severity, "summary": summary, "step": step,
+        findings.append({"id": rule_id, "kind": "defect", "severity": severity, "summary": summary, "step": step,
                          "screenshot": shot, "points_to": locate(anchor, sources),
                          "survives_single_page": survives, "tracked_in": tracked.get(rule_id)})
     for violation in (axe or {}).get("violations", ()):
         rule_id = f"a11y-{violation['id']}"
-        findings.append({"id": rule_id, "severity": SEVERITY_BY_IMPACT.get(violation.get("impact"), "low"),
+        findings.append({"id": rule_id, "kind": "violation", "severity": SEVERITY_BY_IMPACT.get(violation.get("impact"), "low"),
                          "summary": f"axe: {violation['id']} ({violation.get('impact')}) على {violation.get('nodes', 0)} عنصرًا",
                          "step": "axe", "screenshot": None, "points_to": None, "survives_single_page": "recheck",
                          "targets": violation.get("targets") or [], "tracked_in": tracked.get(rule_id)})
+    # ما لم يحسمه axe (incomplete) نتيجةٌ صريحة لكل قاعدةٍ وحالة: «يحتاج مراجعة»، لا صمتٌ يُقرأ نظافة
+    for item in (axe or {}).get("incomplete", ()):
+        rule_id = f"a11y-review-{item['id']}"
+        for state in item.get("states") or [None]:
+            findings.append({"id": rule_id, "kind": "needs_review", "severity": "needs_review", "state": state,
+                             "summary": f"axe لم يحسم {item['id']} ({item.get('impact')}) على {item.get('nodes', 0)} عنصرًا: "
+                                        "يحتاج مراجعةً يدوية",
+                             "step": "axe", "screenshot": None, "points_to": None, "survives_single_page": "recheck",
+                             "targets": item.get("targets") or [], "reasons": item.get("reasons") or [],
+                             "help_url": item.get("help_url"), "tracked_in": tracked.get(rule_id)})
     return findings
 
 
@@ -448,7 +492,7 @@ def build_evidence(raw: dict, *, commit: str, date: str, coverage: dict, sources
     """الدليلُ من ناتج المتصفّح الخام: بلا نصّ صفحةٍ غيرِ التسميات القصيرة، وكلُّ رقمٍ بحدوده."""
     journeys = raw.get("journeys") or {}
     checks = (journeys.get("current") or {}).get("checks") or {}
-    axe = raw.get("axe")
+    axe = normalize_axe(raw.get("axe"))
     return {
         "schema_version": 1,
         "tool": TOOL,

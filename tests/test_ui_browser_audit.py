@@ -314,6 +314,47 @@ def test_the_published_evidence_names_the_tool_it_was_made_with():
         "تغيّرت الأداةُ بعد الدليل: أعد الفحص بـtools/ui_browser_audit.py ثم أودِع الدليلَ فوق إيداع الشيفرة"
 
 
+def test_axe_incomplete_checks_are_kept_and_surfaced_for_review():
+    """ملاحظة Codex السادسة على #175: كان السائقُ يحفظ عددَ ما لم يحسمه axe وحده ويُسقط قاعدتَه وعناصرَه وأسبابَه، فتبدو حالةٌ
+    بلا مخالفةٍ نظيفةً وفيها ما يحتاج مراجعةً يدوية. صار كلُّ سجلٍّ محفوظًا بتفاصيله، ولكل حالةٍ حكمُها، ولكل قاعدةٍ وحالةٍ نتيجةٌ
+    needs_review."""
+    raw = {"journeys": {"current": {"steps": [{"id": "open", "ok": True}], "checks": {}}},
+           "axe": {"status": "run", "version": "4.13.0", "errors": [], "violations": [],
+                   "states": [{"journey": "current", "state": "approval-dialog-desktop", "violations": 0, "passes": 11,
+                               "incomplete": 1},
+                              {"journey": "current", "state": "empty-desktop", "violations": 0, "passes": 34, "incomplete": 0},
+                              {"journey": "current", "state": "remember-dialog-desktop", "violations": 1, "passes": 13,
+                               "incomplete": 1}],
+                   "incomplete": [{"id": "color-contrast", "impact": "serious", "nodes": 2, "targets": ["#dialog button"],
+                                   "help_url": "https://dequeuniversity.com/rules/axe/4.13/color-contrast",
+                                   "reasons": ["س" * 500], "states": ["approval-dialog-desktop", "remember-dialog-desktop"]}]}}
+    evidence = audit.build_evidence(raw, commit="abc", date="2026-09-28", coverage={}, sources={})
+    [kept] = evidence["axe"]["incomplete"]
+    assert kept["id"] == "color-contrast" and kept["targets"] == ["#dialog button"] and kept["impact"] == "serious"
+    assert kept["states"] == ["approval-dialog-desktop", "remember-dialog-desktop"]
+    assert len(kept["reasons"][0]) <= audit.AXE_TEXT and kept["help_url"].startswith("https://")
+    verdicts = {state["state"]: state["verdict"] for state in evidence["axe"]["states"]}
+    assert verdicts == {"approval-dialog-desktop": "needs_review", "empty-desktop": "clean",
+                        "remember-dialog-desktop": "violations"}, "حالةٌ فيها ما لم يُحسم ليست نظيفة"
+    review = [(f["id"], f["state"]) for f in evidence["findings"] if f["kind"] == "needs_review"]
+    assert review == [("a11y-review-color-contrast", "approval-dialog-desktop"),
+                      ("a11y-review-color-contrast", "remember-dialog-desktop")]
+    assert audit.evidence_guard(evidence) == []
+
+
+def test_every_published_axe_state_that_needs_review_names_its_items():
+    """الدليلُ المنشور لا يقول أقوى من حجّته: كلُّ حالةٍ فيها ما لم يحسمه axe تُسمّى needs_review، وله سجلٌّ بقاعدته
+    وعناصره، ونتيجةٌ صريحة."""
+    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    axe = evidence["axe"]
+    for state in axe["states"]:
+        assert state["verdict"] == audit.axe_state_verdict(state), state
+        if state["incomplete"]:
+            items = [item for item in axe["incomplete"] if state["state"] in item["states"]]
+            assert items and all(item["id"] and item["targets"] for item in items), state["state"]
+            assert any(f["kind"] == "needs_review" and f["state"] == state["state"] for f in evidence["findings"])
+
+
 def test_content_digests_and_the_committed_check(tmp_path):
     import hashlib
     import subprocess

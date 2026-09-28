@@ -152,16 +152,24 @@ async function runAxe(page, state, axe, journeyName = "current") {
     await page.evaluate(source);
     const result = await page.evaluate(async () => {
       const run = await window.axe.run(document, {runOnly: {type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"]}});
-      return {version: window.axe.version, violations: run.violations.map(v => ({id: v.id, impact: v.impact, nodes: v.nodes.length,
-        targets: v.nodes.slice(0, 3).map(n => String(n.target.join(" ")).slice(0, 60))})), passes: run.passes.length, incomplete: run.incomplete.length};
+      // المخالفاتُ وما يحتاج مراجعةً يدوية (incomplete) بتفاصيلها: القاعدة، والأثر، والرابط، والعناصر، والأسباب
+      const record = v => ({id: v.id, impact: v.impact, help_url: v.helpUrl, nodes: v.nodes.length,
+        targets: v.nodes.slice(0, 3).map(n => String(n.target.join(" "))),
+        reasons: [...new Set(v.nodes.flatMap(n => [...n.any, ...n.all, ...n.none].map(c => String(c.message))))].slice(0, 3)});
+      return {version: window.axe.version, violations: run.violations.map(record), incomplete: run.incomplete.map(record),
+              passes: run.passes.length};
     });
     axe.version = result.version;
     axe.states.push({journey: journeyName, state, violations: result.violations.length, passes: result.passes,
-                     incomplete: result.incomplete});
-    for (const v of result.violations) {
-      const known = axe.violations.find(x => x.id === v.id);
-      if (known) {known.nodes = Math.max(known.nodes, v.nodes); if (!known.states.includes(state)) known.states.push(state);}
-      else axe.violations.push({...v, states: [state]});
+                     incomplete: result.incomplete.length});
+    for (const [kind, items] of [["violations", result.violations], ["incomplete", result.incomplete]]) {
+      for (const v of items) {
+        const item = {...v, help_url: short(v.help_url, 160), targets: v.targets.map(t => short(t, 80)),
+                      reasons: v.reasons.map(r => short(r, 160))};
+        const known = axe[kind].find(x => x.id === item.id);
+        if (known) {known.nodes = Math.max(known.nodes, item.nodes); if (!known.states.includes(state)) known.states.push(state);}
+        else axe[kind].push({...item, states: [state]});
+      }
     }
   } catch (error) {axeFailed(axe, "axe_failed", error);}
 }
@@ -605,7 +613,8 @@ async function singlePage(browser, journey, viewportName, axe) {
                          playwright: require("playwright/package.json").version},
                viewports: Object.entries(VIEWPORTS).map(([name, size]) => ({name, ...size, device_scale_factor: 1})),
                journeys: {}, screenshots: [],
-               axe: config.axe_path ? {status: "run", version: null, states: [], violations: [], errors: []} : {status: "not_run"}};
+               axe: config.axe_path ? {status: "run", version: null, states: [], violations: [], incomplete: [], errors: []}
+                                    : {status: "not_run"}};
   try {
     if (config.journeys.includes("current")) {
       const journey = new Journey("current");
