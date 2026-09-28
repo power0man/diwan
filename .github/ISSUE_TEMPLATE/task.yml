@@ -58,5 +58,5 @@ body:
       label: تعريفُ «منجز» (الخطة §٦)
       options:
         - label: دُمج بطلبٍ بإيداع دمج، و`verify-hosted` و`family-review` خضراوان
-        - label: كلُّ حارسٍ جديد مُثبَتٌ بالطفرة، والطفرةُ مسمّاةٌ في الطلب
+        - label: كلُّ حارسٍ جديد مُثبَتٌ بالطفرة، والطفرةُ مسمّاةٌ في `tests/mutations/` ويقتلها `tools/mutation_check.py`
         - label: كلُّ رقمٍ في `docs/probe/*.json` مع حدوده، ولا «يعمل» بلا دليلٍ حيّ
