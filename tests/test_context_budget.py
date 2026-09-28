@@ -102,6 +102,28 @@ def test_the_registries_builder_closes_both_apps_it_opens(monkeypatch):
     assert set(found) == {c[0] for c in cb.CONFIGURATIONS} and len(closed) == 2 and len(set(closed)) == 2
 
 
+def test_the_registries_are_built_when_the_temporary_directory_sits_behind_a_symlink(tmp_path, monkeypatch):
+    """دليلُ جلسة الماك على #181: مجلّدُ macOS المؤقّت تحت `/var`، وهو رابطٌ إلى `/private/var`، والتطبيقُ يرفض كلَّ رابطٍ
+    في أسلاف جذره؛ فسقطت ستُّ اختباراتٍ هنا بـ`NotADirectoryError: 'var'`. يُحاكى ذلك بمجلّدٍ مؤقّتٍ خلف رابط، ويُبنى جذرُ
+    التطبيق من المسار الحقيقيّ فلا رابطَ في أسلافه."""
+    import tempfile
+    import webui.server as server
+    real, link = tmp_path / "real", tmp_path / "link"
+    real.mkdir()
+    link.symlink_to(real, target_is_directory=True)
+    monkeypatch.setattr(tempfile, "tempdir", str(link))
+    roots = []
+
+    class Recording(server.LocalApp):
+        def __init__(self, root, *args, **kwargs):
+            roots.append(Path(root))
+            super().__init__(root, *args, **kwargs)
+    monkeypatch.setattr(server, "LocalApp", Recording)
+    found = cb._registries()
+    assert set(found) == {c[0] for c in cb.CONFIGURATIONS}
+    assert len(roots) == 2 and all(root.is_relative_to(real) and not root.is_relative_to(link) for root in roots)
+
+
 def test_the_runtime_prefix_is_built_by_the_web_app_s_own_registries_per_configuration():
     """ملاحظةُ Codex على #157: مخطّطاتُ الأدوات ليست قائمةً ثابتة؛ التطبيقُ يحذف أداتَي التنفيذ بلا Docker ويضيف البحثَ والتحليل
     حين يُضبطان ويبني سجلّاتٍ أخرى للأنماط. فتُقاس كلُّ تهيئةٍ كما يبنيها `LocalApp.mode_registry` نفسُه."""

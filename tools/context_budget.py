@@ -186,7 +186,10 @@ def _registries() -> dict[str, tuple]:
 
     found: dict[str, tuple] = {}
     with tempfile.TemporaryDirectory(prefix="diwan-context-budget-") as tmp:
-        apps = {searched: LocalApp(Path(tmp) / ("s" if searched else "n"), model="context-budget", model_version="0" * 64,
+        # الجذرُ بمساره الحقيقيّ: التطبيقُ يرفض كلَّ رابطٍ رمزيّ في أسلاف جذره، ومجلّدُ macOS المؤقّت تحت `/var` وهو رابطٌ إلى
+        # `/private/var`، فكانت ستُّ اختباراتٍ تسقط على الماك بـ`NotADirectoryError: 'var'` (دليلُ جلسة الماك على #181)
+        root = Path(tmp).resolve()
+        apps = {searched: LocalApp(root / ("s" if searched else "n"), model="context-budget", model_version="0" * 64,
                                    provider_factory=provider, agent_provider_factory=provider,
                                    web_search=object() if searched else None)
                 for searched in (False, True)}
