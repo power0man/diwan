@@ -69,6 +69,8 @@ jobs:
           cat "$RUNNER_TEMP/smoke-line.json"
           if [ -f "$RUNNER_TEMP/smoke.json" ]; then cat "$RUNNER_TEMP/smoke.json"; fi
           { echo '### smoke'; echo '```json'; cat "$RUNNER_TEMP/smoke-line.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # 3 = الواجهةُ غيرُ متاحة (رفضُ خدمةٍ مسمًّى، لا خطأُ مراجع): تنبيهٌ لا يُسقط الطلب، والرمزُ في السطر أعلاه
+          if [ "$status" -eq 3 ]; then echo "::warning title=free-llm-review::service_unavailable (see unavailable_codes above)"; status=0; fi
           exit "$status"
       - name: Planted-error smoke on every allowed family (inventory)
         if: env.MODE == 'smoke'
@@ -94,4 +96,6 @@ jobs:
             > "$RUNNER_TEMP/bank-line.json" || status=$?
           cat "$RUNNER_TEMP/bank-line.json"
           { echo '### bank'; echo '```json'; cat "$RUNNER_TEMP/bank-line.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # 3 = الواجهةُ غيرُ متاحة (رفضُ خدمةٍ مسمًّى، لا خطأُ مراجع): تنبيهٌ لا يُسقط الطلب، والرمزُ في السطر أعلاه
+          if [ "$status" -eq 3 ]; then echo "::warning title=free-llm-review::service_unavailable (bank)"; status=0; fi
           exit "$status"

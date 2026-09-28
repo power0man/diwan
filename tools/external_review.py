@@ -264,11 +264,44 @@ class _RefuseRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def http_code(status: int) -> str:
+    """رمزُ حالة HTTP على الواجهات المجانية: الشائعُ مسمًّى، وما سواه http_<الرمز>."""
     if status in (402, 429):
         return "quota_exhausted"          # 429 حدُّ الطلبات، و402 نفادُ رصيد الموجّه
-    if status == 413:
-        return "request_too_large"        # حدُّ المدخل في الطبقة المجانية
-    return f"http_{status}"
+    return {401: "unauthorized", 403: "forbidden", 404: "not_found",
+            413: "request_too_large"}.get(status, f"http_{status}")    # 413 حدُّ المدخل في الطبقة المجانية
+
+
+# رفضُ الخدمة نفسِها لا خطأُ نموذج: إن لم يُجب نموذجٌ واحد وكانت الأخطاءُ كلُّها من هذه فالحالةُ «unavailable» لا «failed».
+# قيس في ٢٨ سبتمبر ٢٠٢٦: models.github.ai يردّ 200 و`OK` نصًّا عاديًّا (٤ بايتات) على كل طلب، ومن Actions برمز المهمّة أيضًا.
+SERVICE_UNAVAILABLE = frozenset({"response_not_json", "unauthorized", "forbidden"})
+_SAFE_TOKEN = re.compile(r"[A-Za-z0-9_.:-]{1,64}")
+
+
+def unavailable_codes(errors: list) -> list[str] | None:
+    """رموزُ رفض الخدمة إن كانت كلُّ الأخطاء منها (ولا نجاحَ بينها)، وإلا None."""
+    if errors and all(error in SERVICE_UNAVAILABLE for error in errors):
+        return sorted(set(errors))
+    return None
+
+
+def response_shape(status: int | None, raw: bytes, content_type: str | None) -> tuple[object, dict]:
+    """(الجسمُ المحلَّل، الشكل): الحالةُ ونوعُ المحتوى والحجمُ والنوعُ الأعلى وأسماءُ المفاتيح، ومن جسم الخطأ `error.code`
+    و`error.type` وحدهما إن كانا معرّفين قصيرين — لا رسالةٌ ولا نصُّ نموذجٍ ولا مفتاح."""
+    shape: dict = {"status": status, "content_type": content_type, "bytes": len(raw)}
+    try:
+        body = json.loads(raw)
+    except ValueError:
+        return None, {**shape, "top": "not_json"}
+    shape["top"] = type(body).__name__
+    if isinstance(body, dict):
+        shape["keys"] = sorted(str(key) for key in body)[:20]
+        error = body.get("error")
+        if isinstance(error, dict):
+            for field in ("code", "type"):
+                value = error.get(field)
+                if isinstance(value, str) and _SAFE_TOKEN.fullmatch(value):
+                    shape[f"error_{field}"] = value
+    return body, shape
 
 
 class OpenAICompatChat:
@@ -293,6 +326,7 @@ class OpenAICompatChat:
                          **spec["headers"]}
         self.timeout, self.max_tokens = timeout, max_tokens
         self.catalog_shape: dict | None = None
+        self.failures: dict[str, dict] = {}     # آخرُ شكلٍ فاشل لكل نموذجٍ (وللفهرس): لا نصَّ فيه
         self.opener = urllib.request.build_opener(_RefuseRedirect())
 
     def __repr__(self) -> str:
@@ -305,8 +339,8 @@ class OpenAICompatChat:
     def describe(self) -> dict:
         return {"name": self.backend, "endpoint_host": self.endpoint_host, "key_env": self.key_env}
 
-    def _send(self, url: str, payload: dict | None, label: str) -> tuple[bytes, str | None]:
-        """(البايتات، نوعُ المحتوى)."""
+    def _send(self, url: str, payload: dict | None, label: str) -> tuple[bytes, str | None, int | None]:
+        """(البايتات، نوعُ المحتوى، حالةُ HTTP). والخطأُ يحمل رمزَ حالته المسمّى وشكلَ جسمه (`shape`) لا نصَّه."""
         data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
         request = urllib.request.Request(url, data=data, method="GET" if data is None else "POST")
         for name, value in self._headers.items():
@@ -317,26 +351,40 @@ class OpenAICompatChat:
                 raw = response.read(MAX_RESPONSE_BYTES + 1)
                 headers = getattr(response, "headers", None)
                 content_type = headers.get("Content-Type") if headers is not None else None
+                status = getattr(response, "status", None)
         except urllib.error.HTTPError as exc:
+            try:
+                body = exc.read(65536)
+            except OSError:
+                body = b""
+            _, self.failures[label] = response_shape(
+                exc.code, body, exc.headers.get("Content-Type") if exc.headers is not None else None)
             exc.close()
-            raise AutomaticReviewError(http_code(exc.code), label) from None
+            error = AutomaticReviewError(http_code(exc.code), label)
+            error.shape = self.failures[label]
+            raise error from None
         except TimeoutError:
             raise AutomaticReviewError("transport_timeout", label) from None
         except (urllib.error.URLError, OSError):
             raise AutomaticReviewError("transport_error", label) from None
         if len(raw) > MAX_RESPONSE_BYTES:
             raise AutomaticReviewError("response_too_large", label)
-        return raw, content_type
+        return raw, content_type, status
 
     def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
         # المخطّطُ موصوفٌ في التكليف نفسِه («JSON فقط»)، ولا يُرسل حقلَ response_format لأن نماذجَ في الفهرس تردّه 400
         payload = {"model": model, "stream": False, "temperature": 0, "max_tokens": self.max_tokens,
                    "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
-        raw, _ = self._send(self.chat_url, payload, model)
+        raw, content_type, status = self._send(self.chat_url, payload, model)
+        body, shape = response_shape(status, raw, content_type)
+        if shape["top"] == "not_json":
+            self.failures[model] = shape
+            raise AutomaticReviewError("response_not_json", model)
         try:
-            choice = json.loads(raw)["choices"][0]
+            choice = body["choices"][0]
             content = choice["message"].get("content")
-        except (ValueError, KeyError, IndexError, TypeError, AttributeError):
+        except (KeyError, IndexError, TypeError, AttributeError):
+            self.failures[model] = shape
             raise AutomaticReviewError("openai_response_malformed", model) from None
         if isinstance(content, list):          # أجزاءُ نصٍّ عند بعض المزوّدين
             content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
@@ -352,9 +400,10 @@ class OpenAICompatChat:
         وما سواهما `catalog_malformed` ومعه شكلُه وحده (`catalog_shape`) لا نصُّه: قيس في ٢٨ سبتمبر ٢٠٢٦ أنّ
         models.github.ai يردّ `OK` نصًّا عاديًّا بأربعة بايتات لأيّ مسارٍ بلا تفويض، فكان الرمزُ وحده لا يفرّق بينه وبين غلافٍ مجهول.
         """
-        raw, content_type = self._send(self.catalog_url, None, "catalog")
-        entries, self.catalog_shape = catalog_shape(raw, content_type)
+        raw, content_type, status = self._send(self.catalog_url, None, "catalog")
+        entries, self.catalog_shape = catalog_shape(raw, content_type, status)
         if entries is None:
+            self.failures["catalog"] = self.catalog_shape
             error = AutomaticReviewError("catalog_malformed", self.backend)
             error.shape = self.catalog_shape
             raise error
@@ -362,18 +411,12 @@ class OpenAICompatChat:
                 if isinstance(entry, dict) and isinstance(entry.get("id"), str)]
 
 
-def catalog_shape(raw: bytes, content_type: str | None) -> tuple[list | None, dict]:
-    """(المدخلات أو None، الشكل): نوعُ المحتوى والحجمُ والنوعُ الأعلى وأسماءُ المفاتيح والعدد — لا نصُّ نموذجٍ ولا مفتاح."""
-    shape: dict = {"content_type": content_type, "bytes": len(raw)}
-    try:
-        body = json.loads(raw)
-    except ValueError:
-        return None, {**shape, "top": "not_json"}
-    shape["top"] = type(body).__name__
+def catalog_shape(raw: bytes, content_type: str | None, status: int | None = None) -> tuple[list | None, dict]:
+    """(المدخلات أو None، الشكل): شكلُ الردّ (`response_shape`) ومعه العددُ وأسماءُ حقول المدخلات — لا نصُّ نموذجٍ ولا مفتاح."""
+    body, shape = response_shape(status, raw, content_type)
     if isinstance(body, dict):
-        shape["keys"] = sorted(str(key) for key in body)[:20]
         body = body.get("data")
-    if not isinstance(body, list):
+    if shape["top"] == "not_json" or not isinstance(body, list):
         return None, shape
     shape["count"] = len(body)
     shape["item_keys"] = sorted({str(key) for item in body[:50] if isinstance(item, dict) for key in item})[:40]
@@ -505,6 +548,17 @@ def _smoke_digest(report: dict) -> dict:
             for model, r in report["reviewers"].items()}
 
 
+EXIT_CODES = {"passed": 0, "reviewed": 0, "unavailable": 3}     # وما سواها 1؛ و3 «الواجهةُ غيرُ متاحة» لا «المراجعُ أخطأ»
+
+
+def _mark_unavailable(report: dict, errors: list) -> dict:
+    """إن لم يُجب نموذجٌ واحد وكانت الأخطاءُ كلُّها رفضَ خدمة: الحالةُ unavailable برمزٍ مسمًّى لا failed."""
+    codes = unavailable_codes(errors)
+    if report["status"] != "passed" and "code" not in report and codes:
+        report.update(status="unavailable", code="service_unavailable", unavailable_codes=codes)
+    return report
+
+
 def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     candidates, source = _free_candidates(args, transport)
     identities = {c["model"]: c for c in candidates}
@@ -534,8 +588,10 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
                   "status": "passed" if all(r["status"] == "passed" for r in runs) else "failed",
                   "backend": transport.describe(), **source, "models": models,
                   "pairs": [[p["model"] for p in pair] for pair in pairs],
-                  "runs": runs, "measurement_limits": sorted(set(runs[0]["measurement_limits"]) | set(FREE_LIMITS))}
-        return report, 0 if report["status"] == "passed" else 1
+                  "runs": runs, "measurement_limits": sorted(set(runs[0]["measurement_limits"]) | set(FREE_LIMITS)),
+                  "last_failure_shapes": transport.failures}
+        _mark_unavailable(report, [m["error"] for m in models.values()])
+        return report, EXIT_CODES.get(report["status"], 1)
     tmp = tempfile.TemporaryDirectory()
     try:
         reports: list[dict] = []
@@ -555,9 +611,11 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     report.update(source)
     report["fallbacks"] = fallbacks
     report["measurement_limits"] = sorted(set(report["measurement_limits"]) | set(FREE_LIMITS))
+    report["last_failure_shapes"] = transport.failures
     if failure:
         report["status"], report["code"] = "failed", failure
-    return report, 0 if report["status"] == "passed" else 1
+    _mark_unavailable(report, [r["error"] for r in report["reviewers"].values()])
+    return report, EXIT_CODES.get(report["status"], 1)
 
 
 def check_public_bank(bank: Path, root: Path | None = None) -> None:
@@ -584,13 +642,17 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     chosen, fallbacks, failure = with_fallback(candidates, want, run)
     summary = summarize(args.bank)
     status = "failed" if failure or summary["errors"] else "reviewed"
-    return {"status": status, **({"code": failure} if failure else {}), **totals,
-            "backend": transport.describe(), **source,
-            "reviewers": {c["model"]: c["family"] for c in chosen}, "fallbacks": fallbacks,
-            "pairs": summary["pairs"], "errors": len(summary["errors"]),
-            "error_codes": sorted({e["error"] for e in summary["errors"]}),
-            "owner_queue": len(summary["owner_queue"]),
-            "summary": str(args.bank / "reviews" / "SUMMARY.json")}, 1 if status == "failed" else 0
+    result = {"status": status, **({"code": failure} if failure else {}), **totals,
+              "backend": transport.describe(), **source,
+              "reviewers": {c["model"]: c["family"] for c in chosen}, "fallbacks": fallbacks,
+              "pairs": summary["pairs"], "errors": len(summary["errors"]),
+              "error_codes": sorted({e["error"] for e in summary["errors"]}),
+              "owner_queue": len(summary["owner_queue"]), "last_failure_shapes": transport.failures,
+              "summary": str(args.bank / "reviews" / "SUMMARY.json")}
+    if not totals["reviewed"] and not totals["skipped"]:        # لم يُجب نموذجٌ واحد في هذا التشغيل
+        chosen_models = {c["model"] for c in chosen}
+        _mark_unavailable(result, [e["error"] for e in summary["errors"] if e["model"] in chosen_models])
+    return result, EXIT_CODES.get(result["status"], 1)
 
 
 def _write_json(path: Path, value: dict) -> None:
@@ -621,6 +683,9 @@ def _free_main(args, parser) -> int:
             print(json.dumps({"status": report["status"], **({"code": report["code"]} if "code" in report else {}),
                               "backend": report["backend"], "candidates_from": report["candidates_from"],
                               **({"catalog_error": report["catalog_error"]} if "catalog_error" in report else {}),
+                              **({"unavailable_codes": report["unavailable_codes"]}
+                                 if "unavailable_codes" in report else {}),
+                              "last_failure_shapes": report["last_failure_shapes"],
                               "reviewers": digest,
                               "fallbacks": report.get("fallbacks", []), "out": str(args.smoke)},
                              ensure_ascii=False))

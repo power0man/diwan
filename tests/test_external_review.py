@@ -283,15 +283,24 @@ class _Reply(io.BytesIO):
     def __init__(self, raw: bytes, content_type: str):
         super().__init__(raw)
         self.headers = {"Content-Type": content_type}
+        self.status = 200
+
+
+class _Fail:
+    """ردُّ HTTP فاشلٌ بجسمٍ ونوع محتوى."""
+
+    def __init__(self, code: int, body: bytes = b"", content_type: str = "application/json"):
+        self.code, self.body, self.content_type = code, body, content_type
 
 
 class FreeOpener:
     """مُفتِّحٌ محقون: الفهرسُ لطلب GET (وبايتاتٌ خامٌ = نصٌّ عاديّ)، ولكل نموذجٍ ردودُه بالترتيب (والأخيرُ يتكرّر). عددٌ =
     خطأ HTTP بذلك الرمز، وصفٌّ (نصّ، سببُ الانتهاء) = ردٌّ خام، وقاموسٌ = أحكامٌ تُرمَّز JSON."""
 
-    def __init__(self, catalog=None, replies=None):
+    def __init__(self, catalog=None, replies=None, default=None):
         self.catalog = catalog
         self.replies = {m: list(r) for m, r in (replies or {}).items()}
+        self.default = default
         self.requests: list[urllib.request.Request] = []
 
     def open(self, request, timeout=None):
@@ -299,10 +308,14 @@ class FreeOpener:
         if request.data is None:
             reply = self.catalog
         else:
-            queue = self.replies[json.loads(request.data)["model"]]
+            model = json.loads(request.data)["model"]
+            queue = self.replies[model] if self.default is None else self.replies.setdefault(model, list(self.default))
             reply = queue.pop(0) if len(queue) > 1 else queue[0]
         if isinstance(reply, int):
             raise urllib.error.HTTPError(request.full_url, reply, "refused", {}, None)
+        if isinstance(reply, _Fail):
+            raise urllib.error.HTTPError(request.full_url, reply.code, "refused", {"Content-Type": reply.content_type},
+                                         io.BytesIO(reply.body))
         if isinstance(reply, bytes):
             return _Reply(reply, "text/plain")
         if request.data is not None:
@@ -352,8 +365,9 @@ def test_free_backend_key_rides_only_the_request_never_the_report_output_or_erro
     chat.opener = FreeOpener(replies={DS: [401]})
     with pytest.raises(AutomaticReviewError) as failed:
         chat(DS, "s", "u", {})
-    assert failed.value.code == "http_401"
+    assert failed.value.code == "unauthorized"
     assert KEY not in str(failed.value) and KEY not in repr(failed.value) and failed.value.__cause__ is None
+    assert KEY not in json.dumps(chat.failures) and chat.failures[DS]["status"] == 401
 
 
 def test_the_free_key_comes_from_the_environment_only(tmp_path, monkeypatch, capsys):
@@ -594,6 +608,9 @@ def test_the_free_llm_workflow_is_least_privilege_pinned_and_guarded():
     smoke_step = text.split("- name: Planted-error smoke with two reviewers", 1)[1].split("- name:", 1)[0]
     assert "continue-on-error: true" in catalog_step, "الفهرسُ جردٌ لا بوّابة"
     assert "continue-on-error" not in smoke_step, "تجربةُ الخطأ المزروع هي البوّابة"
+    bank_step = text.split("- name: Review the open part of kimi_v1", 1)[1]
+    for step in (smoke_step, bank_step):
+        assert 'if [ "$status" -eq 3 ]; then' in step and "status=0; fi" in step, "الواجهةُ غيرُ المتاحة تنبيهٌ لا سقوط"
     install = text.split("- name: Install the locked runtime", 1)[1].split("- name:", 1)[0]
     assert "GITHUB_TOKEN" not in install and "'uv==0.8.17'" in install and "--frozen" in install
     assert text.count("GITHUB_TOKEN: ${{ github.token }}") == 4
@@ -608,8 +625,8 @@ def test_the_github_catalog_array_is_parsed_and_its_shape_named(tmp_path, monkey
     assert cli.main(["--backend", "github-models", "--list-catalog", str(out)]) == 0
     printed = _printed(capsys)
     size = len(json.dumps(catalog, ensure_ascii=False).encode("utf-8"))
-    assert printed["shape"] == {"content_type": "application/json", "bytes": size, "top": "list", "count": 3,
-                                "item_keys": list(GH_FIELDS)}
+    assert printed["shape"] == {"status": 200, "content_type": "application/json", "bytes": size, "top": "list",
+                                "count": 3, "item_keys": list(GH_FIELDS)}
     assert printed["eligible"] == {"deepseek": [DS], "mistral": [MI]} and printed["candidates"] == [DS, MI]
     assert printed["refused"] == {"not_a_chat_model": 1}
     written = json.loads(out.read_text(encoding="utf-8"))
@@ -624,17 +641,77 @@ def test_a_catalog_that_is_not_json_is_named_by_shape_and_the_smoke_uses_the_pre
     with pytest.raises(AutomaticReviewError) as malformed:
         chat.catalog()
     assert malformed.value.code == "catalog_malformed"
-    assert malformed.value.shape == {"content_type": "text/plain", "bytes": 4, "top": "not_json"}
+    assert malformed.value.shape == {"status": 200, "content_type": "text/plain", "bytes": 4, "top": "not_json"}
     wrapped = json.dumps({"models": [_gh_full(DS)]}).encode("utf-8")
-    assert cli.catalog_shape(wrapped, "application/json") == (
-        None, {"content_type": "application/json", "bytes": len(wrapped), "top": "dict", "keys": ["models"]})
+    assert cli.catalog_shape(wrapped, "application/json", 200) == (
+        None, {"status": 200, "content_type": "application/json", "bytes": len(wrapped), "top": "dict", "keys": ["models"]})
     _free(monkeypatch, FreeOpener(catalog=ok, replies={DS: [CATCH], MI: [CATCH]}))
     assert cli.main(["--backend", "github-models", "--list-catalog", str(tmp_path / "c.json")]) == 2
     assert _printed(capsys) == {"status": "refused", "code": "catalog_malformed",
-                                "shape": {"content_type": "text/plain", "bytes": 4, "top": "not_json"}}
+                                "shape": {"status": 200, "content_type": "text/plain", "bytes": 4, "top": "not_json"}}
     out = tmp_path / "smoke.json"
     assert cli.main(["--backend", "github-models", "--smoke", str(out)]) == 0
     report = json.loads(out.read_text(encoding="utf-8"))
     assert report["status"] == "passed" and set(report["reviewers"]) == {DS, MI}
     assert report["candidates_from"] == "preferred_list" and report["catalog_error"] == "catalog_malformed"
     assert _printed(capsys)["catalog_error"] == "catalog_malformed"
+
+
+def test_http_statuses_are_named_and_only_a_safe_shape_of_the_body_is_recorded():
+    assert [cli.http_code(c) for c in (401, 402, 403, 404, 413, 429, 500)] == [
+        "unauthorized", "quota_exhausted", "forbidden", "not_found", "request_too_large", "quota_exhausted", "http_500"]
+    secret_text = "PRIVATE-MESSAGE-TEXT"
+    body = json.dumps({"error": {"code": "no_access", "type": "invalid_request_error", "message": secret_text}}).encode()
+    chat = cli.OpenAICompatChat("github-models", KEY)
+    chat.opener = FreeOpener(replies={DS: [_Fail(403, body)], MI: [b"OK\r\n"],
+                                      LL: [_Fail(404, b"<html>nope</html>", "text/html")]})
+    with pytest.raises(AutomaticReviewError) as forbidden:
+        chat(DS, "s", "u", {})
+    assert forbidden.value.code == "forbidden"
+    assert chat.failures[DS] == {"status": 403, "content_type": "application/json", "bytes": len(body), "top": "dict",
+                                 "keys": ["error"], "error_code": "no_access", "error_type": "invalid_request_error"}
+    assert forbidden.value.shape == chat.failures[DS]
+    with pytest.raises(AutomaticReviewError) as stub:
+        chat(MI, "s", "u", {})
+    assert stub.value.code == "response_not_json"
+    assert chat.failures[MI] == {"status": 200, "content_type": "text/plain", "bytes": 4, "top": "not_json"}
+    with pytest.raises(AutomaticReviewError) as missing:
+        chat(LL, "s", "u", {})
+    assert missing.value.code == "not_found" and chat.failures[LL]["content_type"] == "text/html"
+    recorded = json.dumps(chat.failures)
+    assert secret_text not in recorded and "nope" not in recorded and KEY not in recorded
+    loose = json.dumps({"error": {"code": "a code with spaces", "type": "x" * 100}}).encode()
+    assert cli.response_shape(400, loose, "application/json")[1] == {
+        "status": 400, "content_type": "application/json", "bytes": len(loose), "top": "dict", "keys": ["error"]}
+
+
+def test_a_backend_that_answers_ok_to_everything_is_unavailable_not_failed(tmp_path, monkeypatch, capsys):
+    """قيس في ٢٨ سبتمبر ٢٠٢٦ من Actions ومن صندوق HF: models.github.ai يردّ 200 و«OK» على كل طلب."""
+    ok = b"OK\r\n"
+    stub = {"status": 200, "content_type": "text/plain", "bytes": 4, "top": "not_json"}
+    _free(monkeypatch, FreeOpener(catalog=ok, replies={DS: [ok], MI: [ok]}))
+    out = tmp_path / "smoke.json"
+    assert cli.main(["--backend", "github-models", "--smoke", str(out)]) == 3
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert (report["status"], report["code"], report["unavailable_codes"]) == (
+        "unavailable", "service_unavailable", ["response_not_json"])
+    assert report["last_failure_shapes"] == {"catalog": stub, DS: stub, MI: stub}
+    printed = _printed(capsys)
+    assert printed["status"] == "unavailable" and printed["unavailable_codes"] == ["response_not_json"]
+    _free(monkeypatch, FreeOpener(catalog=ok, replies={DS: [ok], MI: [CATCH]}))
+    assert cli.main(["--backend", "github-models", "--smoke", str(out)]) == 1, "نموذجٌ أجاب فالإخفاقُ إخفاق"
+    assert json.loads(out.read_text(encoding="utf-8"))["status"] == "failed"
+    _free(monkeypatch, FreeOpener(catalog=ok, default=[ok]))
+    assert cli.main(["--backend", "github-models", "--smoke", str(out), "--every-family"]) == 3
+    assert json.loads(out.read_text(encoding="utf-8"))["status"] == "unavailable"
+    capsys.readouterr()
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    bank = tmp_path / "evaluation" / "banks" / "b"
+    source = _bank(tmp_path / "src") / "open" / "tier_a" / "kimi_t_a_001.json"
+    (bank / "open" / "a").mkdir(parents=True)
+    (bank / "open" / "a" / "kimi_x.json").write_bytes(source.read_bytes())
+    _free(monkeypatch, FreeOpener(default=[ok]))
+    assert cli.main([str(bank), "--backend", "github-models", "--reviewer", DS, "--reviewer", MI,
+                     "--brief", str(BRIEF)]) == 3
+    result = json.loads(capsys.readouterr().out)
+    assert result["status"] == "unavailable" and result["unavailable_codes"] == ["response_not_json"]

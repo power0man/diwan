@@ -45,6 +45,12 @@ GITHUB_TOKEN=… python3 tools/external_review.py evaluation/banks/kimi_v1 --bac
 - **نفادُ الحصّة** (HTTP 429 أو 402) رمزُه `quota_exhausted`، فيُستبدل بالمراجع مرشّحٌ من عائلةٍ أخرى مسموحة، وإلا
   `quota_exhausted_no_fallback`. وحدُّ المدخل (413) `request_too_large`.
 - **الردُّ الفارغ أو المبتور** (`reply_empty`، `reply_incomplete`) يُعاد مرّةً ثم يُسجَّل برمزه.
+- **حالةُ HTTP مسمّاة** (`unauthorized` 401، `forbidden` 403، `not_found` 404)، والردُّ الذي ليس JSON `response_not_json`؛
+  ويُسجَّل لكل نموذجٍ (وللفهرس) آخرُ شكلٍ فاشل (`last_failure_shapes`): الحالةُ ونوعُ المحتوى والحجمُ وأسماءُ المفاتيح، ومن
+  جسم الخطأ `error.code` و`error.type` إن كانا معرّفين قصيرين — لا رسالةٌ ولا نصُّ نموذجٍ ولا مفتاح.
+- **الواجهةُ غيرُ المتاحة ليست إخفاقَ مراجع:** إن لم يُجب نموذجٌ واحد وكانت الأخطاءُ كلُّها رفضَ خدمة (`response_not_json`
+  أو `unauthorized` أو `forbidden`) فالحالةُ `unavailable` برمز `service_unavailable` وخروجٌ بـ3، وتجعلها المهمّةُ في Actions
+  تنبيهًا لا يُسقط الطلب. وفهرسٌ لا يُقرأ لا يوقف التجربة: تختار من القائمة المفضَّلة وتقول ذلك (`candidates_from`).
 - **المحجوبُ لا يُرسل**، والبنكُ على هذه الواجهات من `evaluation/banks/` وحدها، فلا تُرسل ملفّاتُ المالك.
 
 ## الحدود
