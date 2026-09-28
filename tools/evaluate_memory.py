@@ -2,6 +2,7 @@
 """يشغّل بنكَ الذاكرة المحكومة (ك٤٨) على الطريق الموصول بمحرّكٍ حيّ في Ollama المحلي (جديد-memory-probe).
 
     python3 tools/evaluate_memory.py --model qwen3.5:9b --agent <معرّفك> --out docs/probe/memory-live-<التاريخ>.json
+    python3 tools/evaluate_memory.py --recount docs/probe/memory-live-<التاريخ>.json   # إعادةُ عدّ التسرّب من الرسوبات المسجَّلة
 
 - كلُّ جولةٍ تذهب إلى النموذج الحقيقيّ عبر `webui.server.LocalApp`، والاقتراحُ وحده مكتوبٌ سلفًا
   (البنكُ يقيس الموافقةَ عليه، لا أن النموذج يقترح).
@@ -24,7 +25,7 @@ if str(ROOT) not in sys.path:
 from core.attribution import normalize  # noqa: E402
 from core.canonical import PayloadRejected  # noqa: E402
 from evaluation.memory_bank import validate_memory_bank  # noqa: E402
-from evaluation.memory_runner import run_memory_bank  # noqa: E402
+from evaluation.memory_runner import recount_leakage, run_memory_bank  # noqa: E402
 from providers.ollama import OllamaProvider  # noqa: E402
 
 REGISTRY = ROOT / "registry" / "agents.json"
@@ -81,17 +82,39 @@ LIMITS = [
     "a_probe_turn_the_model_leaves_awaiting_the_owner_is_stopped_by_agent_stop_before_its_session_is_abandoned_and_a_stop_that_fails_is_named_in_stuck_probe_turns",
     "exposure_probes_ask_a_neutral_question_that_carries_nothing_of_the_item_so_neither_a_directive_nor_a_value_enters_the_probe_session_history_as_the_owner_s_own_words_and_every_item_within_the_context_capacity_is_exposed_by_the_block_itself_and_a_scenario_whose_absent_witness_or_saved_text_overlaps_the_probe_question_is_refused_before_measurement_as_is_a_context_step_whose_own_question_or_an_earlier_context_question_of_its_project_repeats_an_absent_witness_or_whose_absent_witness_falls_inside_a_message_role_name_or_the_fixed_wire_message_fields_or_a_tool_schema_of_the_evaluator_s_own_registry_as_the_provider_serializes_it_not_every_default_tool_or_the_fixed_agent_request_envelope_or_a_fixed_field_of_the_ollama_request_body_as_the_live_provider_builds_it_including_the_live_model_name_or_inside_the_question_as_sent_after_quoted_directives_are_quarantined_and_the_wired_absence_check_reads_the_whole_request_body_as_the_provider_builds_it_with_its_fixed_outer_fields_roles_field_names_tool_call_ids_and_arguments_the_tool_schemas_as_serialized_and_the_whole_current_agent_envelope_as_sent_including_the_model_s_own_earlier_replies_so_a_model_that_echoes_a_value_before_it_is_forgotten_fails_the_scenario_because_the_memory_system_does_not_redact_the_model_s_past_words_and_every_rendered_context_block_is_scanned_for_a_raw_directive_in_any_category_and_any_explicit_probe_counted_once_per_step",
     "the_store_driver_snapshots_and_restores_every_store_together_as_the_workspace_backup_does_a_store_created_after_the_snapshot_is_restored_empty",
-    "the_residue_scan_masks_the_store_s_generated_item_id_sha256_approved_at_and_forgotten_at_values_by_their_json_values_so_forgotten_text_identical_to_one_of_them_is_not_seen_on_disk_while_forget_rate_still_reports_it_forgotten",
+    "the_residue_scan_masks_the_store_s_generated_item_id_sha256_approved_at_and_forgotten_at_values_and_the_receipt_s_generated_references_by_their_json_values_so_forgotten_text_identical_to_one_of_them_is_not_seen_on_disk_while_forget_rate_still_reports_it_forgotten",
+    "leakage_counts_only_an_absent_witness_that_is_the_text_of_another_project_s_item_and_not_of_the_checked_project_s_own_so_a_same_project_absence_failure_in_an_isolation_scenario_is_named_in_failures_but_not_counted_as_a_cross_project_leak",
 ]
+
+
+def recount(path: Path, suite: Path, parser) -> int:
+    """يعيد عدَّ `leakage` في تقريرٍ منشور من رسوباته المسجَّلة بالقاعدة الحالية (`recount_leakage`)، على البنك الذي قيس به
+    وحده (بصمتُه في التقرير)، ويكتب التقريرَ في موضعه مع `recount.leakage` القديمِ والجديد وتاريخِ الإعادة؛ الرسوباتُ
+    والحدودُ كما قيست لا تُمسّ (ملاحظة Codex على #129، الجولة الأربعون)."""
+    raw = suite.read_bytes()
+    report = json.loads(path.read_text(encoding="utf-8"))
+    if report.get("suite_sha256") != hashlib.sha256(raw).hexdigest():
+        print(json.dumps({"status": "refused", "code": "suite_digest_mismatch"}, ensure_ascii=False))
+        return 2
+    bank = validate_memory_bank(json.loads(raw.decode("utf-8")))
+    recounted = recount_leakage(report, bank, {"date": datetime.date.today().isoformat()})
+    path.write_text(json.dumps(recounted, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({"status": "recounted", "leakage": recounted["recount"]["leakage"], "out": str(path)}, ensure_ascii=False))
+    return 0
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--model", required=True, help="اسمُ النموذج كما يعرفه Ollama")
+    parser.add_argument("--model", help="اسمُ النموذج كما يعرفه Ollama")
     parser.add_argument("--suite", type=Path, default=DEFAULT_SUITE)
-    parser.add_argument("--agent", required=True, help="معرّفُ من يشغّل القياس، مسجَّلًا في registry/agents.json")
-    parser.add_argument("--out", required=True, type=Path, help="مسارُ التقرير؛ لا يُستبدل ملفٌّ قائم")
+    parser.add_argument("--agent", help="معرّفُ من يشغّل القياس، مسجَّلًا في registry/agents.json")
+    parser.add_argument("--out", type=Path, help="مسارُ التقرير؛ لا يُستبدل ملفٌّ قائم")
+    parser.add_argument("--recount", type=Path, help="تقريرٌ منشور يُعاد فيه عدُّ التسرّب من رسوباته المسجَّلة بلا قياس")
     args = parser.parse_args(argv)
+    if args.recount is not None:
+        return recount(args.recount, args.suite, parser)
+    if not (args.model and args.agent and args.out):
+        parser.error("--model و--agent و--out لازمة للقياس الحيّ")
     if args.out.exists():
         parser.error(f"التقريرُ قائم: {args.out}")
     if args.agent not in json.loads(REGISTRY.read_text(encoding="utf-8"))["agents"]:

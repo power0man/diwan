@@ -1634,3 +1634,98 @@ def test_the_evaluator_reads_the_model_digest_from_the_local_ollama_not_through_
         for server in (ollama, proxy):
             server.shutdown()
             server.server_close()
+
+
+def test_a_same_project_absence_failure_in_an_isolation_scenario_is_not_counted_as_leakage(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة الأربعون): شرطُ الغياب الموسَّع يلتقط صدى النموذج لعنصرٍ منسيٍّ من المشروع نفسِه، وكان
+    فرعُ الفئة يعدّ كلَّ غيابٍ ساقط في سيناريو عزلٍ تسرّبًا بين المشاريع — فقال التقريرُ المنشور `leakage: 1` عن `isolation_003`
+    وخطوتُه الساقطة تفحص المشروع A بعد نسيان عنصرٍ من A. صار التسرّبُ يُعدّ لشاهدٍ أجنبيٍّ وحده (`_foreign`): الرسوبُ يبقى
+    مسمًّى والعدُّ صفر، في المُشغِّل الموصول والمخزن معًا."""
+    from evaluation.memory_runner import _foreign, run_scenario, run_wired_scenario
+    value = "اجتماع الفريق كل صباح أحد في القاعة الكبرى"
+    other = "موعد تسليم التقرير المالي نهاية الشهر"
+    scenario = {"id": "isolation_same_project_echo", "category": "isolation", "steps": [
+        {"op": "remember", "project": "A", "text": value, "consent": "owner", "as": "m1"},
+        {"op": "remember", "project": "B", "text": other, "consent": "owner", "as": "m2"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": "ما جدول الأسبوع؟", "absent": [value], "present": []},
+        {"expect": "retrieve", "project": "B", "query": "اجتماع الفريق", "absent": [value], "present": []},
+    ]}
+    assert _foreign(scenario, "B", value) and _foreign(scenario, "A", other), "شاهدٌ من مشروعٍ آخر أجنبيّ"
+    assert not _foreign(scenario, "A", value) and not _foreign(scenario, "B", other), "شاهدٌ من المشروع نفسِه ليس أجنبيًّا"
+    report = run_wired_scenario(scenario, tmp_path / "w", delegate=_EchoingDelegate(value))
+    assert not report["passed"] and any(f.endswith("in the model's own earlier reply") for f in report["failures"]), report
+    assert report["leaks"] == 0, "صدى عنصرٍ من المشروع نفسِه ليس تسرّبًا بين المشاريع"
+    own = {"id": "isolation_own_item_named_absent", "category": "isolation", "steps": scenario["steps"][:2] + scenario["steps"][3:]}
+    report = run_scenario(own, tmp_path / "s")
+    assert not report["passed"] and any("holds absent" in f for f in report["failures"]) and report["leaks"] == 0, report
+
+
+def test_the_published_leakage_is_recounted_from_its_recorded_failures():
+    """ملاحظةُ Codex على #129 (الجولة الأربعون): الدليلُ المنشور عدّ رسوبَ `isolation_003` (صدى عنصرٍ منسيٍّ من المشروع نفسِه)
+    تسرّبًا. أُعيد عدُّه من رسوباته المسجَّلة نفسِها بقاعدة الشاهد الأجنبيّ بلا إعادة قياس (`recount_leakage`)، والرسوبُ باقٍ
+    باسمه والعدُّ القديم والجديد في `recount.leakage`؛ وشاهدٌ أجنبيٌّ ساقط يبقى تسرّبًا معدودًا."""
+    from evaluation.memory_runner import recount_leakage
+    evidence = json.loads((ROOT / "docs" / "probe" / "memory-live-20260928.json").read_text(encoding="utf-8"))
+    assert evidence["recount"]["leakage"]["from"] == 1 and evidence["recount"]["leakage"]["to"] == 0 == evidence["metrics"]["leakage"]
+    assert evidence["recount"]["leakage"]["rule"] == "foreign_project_witness_only" and evidence["recount"]["leakage"]["date"]
+    iso = next(r for r in evidence["results"] if r["id"] == "isolation_003")
+    assert iso["leaks"] == 0 and any("holds absent" in f for f in iso["failures"]), "الرسوبُ يبقى مسمًّى والعدُّ وحده يتغيّر"
+    again = recount_leakage(evidence, BANK, {"date": "2026-09-28"})
+    assert again["metrics"]["leakage"] == 0 and again["recount"]["leakage"]["from"] == 0 and again["results"] == evidence["results"]
+    value, other = "اجتماع الفريق كل صباح أحد في القاعة الكبرى", "موعد تسليم التقرير المالي نهاية الشهر"
+    bank = {**BANK, "scenarios": [{"id": "iso", "category": "isolation", "steps": [
+        {"op": "remember", "project": "A", "text": value, "consent": "owner", "as": "m1"},
+        {"op": "remember", "project": "B", "text": other, "consent": "owner", "as": "m2"},
+        {"expect": "context", "project": "A", "question": "ما جدول الأسبوع؟", "absent": [value], "present": []},
+        {"expect": "retrieve", "project": "B", "query": "اجتماع الفريق", "absent": [value], "present": []},
+    ]}]}
+    synthetic = {"metrics": {"leakage": 2}, "results": [{"id": "iso", "category": "isolation", "passed": False, "leaks": 2, "failures": [
+        f"2: context holds absent «{value[:30]}» in the model's own earlier reply", f"3: retrieve holds absent «{value[:30]}»"]}]}
+    out = recount_leakage(synthetic, bank)
+    assert out["metrics"]["leakage"] == 1 and out["results"][0]["leaks"] == 1, "الشاهدُ الأجنبيّ في B يُعدّ، والذاتيُّ في A لا"
+    assert out["recount"]["leakage"] == {"from": 2, "to": 1, "rule": "foreign_project_witness_only"}
+    assert out["results"][0]["failures"] == synthetic["results"][0]["failures"]
+
+
+def test_the_evaluator_recounts_a_published_report_in_place_on_its_own_suite_only(tmp_path, capsys):
+    """ملاحظةُ Codex على #129 (الجولة الأربعون): `--recount` يعيد عدَّ التسرّب في تقريرٍ منشور في موضعه ويسجّل الإعادة
+    بتاريخها، ولا يمسّ الرسوباتِ ولا حدودَ القياس كما قيست؛ وعلى بنكٍ غيرِ الذي قيس به (بصمتُه في التقرير) يُرفض."""
+    import tools.evaluate_memory as cli
+    src = json.loads((ROOT / "docs" / "probe" / "memory-live-20260928.json").read_text(encoding="utf-8"))
+    copy = tmp_path / "report.json"
+    copy.write_text(json.dumps(src, ensure_ascii=False), encoding="utf-8")
+    assert cli.main(["--recount", str(copy)]) == 0
+    out = json.loads(capsys.readouterr().out)
+    written = json.loads(copy.read_text(encoding="utf-8"))
+    assert out["status"] == "recounted" and written["metrics"]["leakage"] == 0 and written["recount"]["leakage"]["to"] == 0
+    assert written["recount"]["leakage"]["date"] and written["measurement_limits"] == src["measurement_limits"]
+    assert [r["failures"] for r in written["results"]] == [r["failures"] for r in src["results"]]
+    other = tmp_path / "other.json"
+    other.write_text(json.dumps({**BANK, "suite_id": "memory_other_v1"}, ensure_ascii=False), encoding="utf-8")
+    assert cli.main(["--recount", str(copy), "--suite", str(other)]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "suite_digest_mismatch"
+
+
+def test_generated_receipt_references_are_masked_in_the_residue_scan(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة الأربعون): النسيانُ الموصول يكتب في الإيصال مراجعَ مولَّدة `agent:<جلسة>/<جولة>`، وكان
+    القناعُ يزيل الحقولَ الأربعة وحدها وعيّنةُ المخطّط تنسى بإيصالٍ خالي المراجع؛ فسيناريو نسيانٍ مكلَّف نصُّه «agent: …»
+    وشاهدُ بقاياه «agent:» يمرّ المدقّقَ ويسقط بالمنتج الصحيح «residue holds «agent:»» من بيانات الإيصال وحدها. صارت قيمُ
+    المراجع تُقنَّع بقيمها كالحقول، والعيّنةُ تنسى بمراجعَ فتراها."""
+    from evaluation.memory_bank import persisted_schema_collisions, validate_memory_bank
+    from evaluation.memory_runner import run_wired_scenario
+    value = "agent: ملاحظة جواز السفر السرية ٤٤٥٥٦٦"
+    scenario = {"id": "forget_reference_prefix", "category": "forget", "note": "شاهدُ بقايا في بادئة مرجعٍ مولَّد", "steps": [
+        {"op": "remember", "project": "A", "text": value, "consent": "owner", "as": "m1"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": "ما رقم الجواز؟", "absent": ["٤٤٥٥٦٦"], "present": []},
+        {"expect": "retrieve", "project": "A", "query": "جواز السفر", "absent": ["٤٤٥٥٦٦"], "present": []},
+        {"expect": "residue", "project": "A", "absent": ["agent:"]},
+        {"expect": "receipt", "project": "A", "ref": "m1", "count": 1},
+    ]}
+    assert persisted_schema_collisions(scenario) == []
+    validate_memory_bank({**BANK, "scenarios": [scenario]}, strict=True)
+    report = run_wired_scenario(scenario, tmp_path / "w", delegate=_Delegate())
+    receipts = next(p for p in (tmp_path / "w").rglob("receipts.jsonl"))
+    assert "agent:" in receipts.read_text(encoding="utf-8"), "الإيصالُ الموصول يحمل مراجعَ الجولات المولَّدة"
+    assert report["passed"], report["failures"]

@@ -521,3 +521,15 @@ def test_a_reference_is_defined_before_use_in_its_own_project():
     bank, scenario = _scenario("forget_001")
     scenario["steps"][1]["project"] = "B"
     _refused(bank, "ref_unknown")
+
+
+def test_generated_receipt_references_are_masked_by_their_values_like_the_scalar_fields():
+    """ملاحظةُ Codex على #129 (الجولة الأربعون): قائمةُ `references` في الإيصال قيمٌ مولَّدة (`agent:<جلسة>/<جولة>`) تُقنَّع بقيمها
+    كالحقول الأربعة، في المسح وفي عيّنة المخطّط التي صارت تنسى بمراجع."""
+    from evaluation.memory_bank import declared_persisted_schema_text, mask_persisted
+    line = json.dumps({"schema_version": 1, "item_id": "a1" * 8, "sha256": "b" * 64, "forgotten_at": "2026-09-28T00:00:00Z",
+                       "references": ["agent:s1/t1", "text:s1/t2"]}, ensure_ascii=False).encode("utf-8")
+    masked = mask_persisted(line).decode("utf-8")
+    assert "agent:" not in masked and "text:s1" not in masked and "references" in masked and "schema_version" in masked
+    schema = declared_persisted_schema_text()
+    assert "agent:" not in schema and "sample-session" not in schema and "references" in schema

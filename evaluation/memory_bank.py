@@ -215,14 +215,18 @@ def system_prompt_collisions(scenario: dict, prompts_text: str | None = None) ->
 
 PERSISTED_SAMPLE = "عيّنةُ مخزنٍ لفحص بنك الذاكرة"     # نصُّ عنصرٍ بديل يُقنَّع بعد الكتابة فلا يبقى إلا ما يكتبه المخزنُ ثابتًا
 PERSISTED_DYNAMIC = ("item_id", "sha256", "approved_at", "forgotten_at")   # ما يكتبه المخزنُ متغيّرًا في كلِّ كتابة، بلا نصّ العنصر
+PERSISTED_DYNAMIC_LISTS = ("references",)   # وقوائمُ يكتبها المنتجُ في الإيصال بقيمٍ مولَّدة: `agent:<جلسة>/<جولة>` وأمثالُها
 
 
 def mask_persisted(payload: bytes) -> bytes:
     """قيمُ المخزن المتغيّرة (المعرّفُ، والبصمةُ، ووقتا الحفظ والنسيان) تُزال من بايتات الملفّ **بقيمها المقروءة من JSON نفسِه**
     لا بنمطٍ يصيب نصَّ العنصر؛ فالمقنَّعُ في نصّ المخطّط الثابت الذي يُفحص به الشاهدُ قبل القياس هو المقنَّعُ في مسح البقايا
     نفسِه في المُشغِّلَين، وإلّا سقط شاهدٌ يقع في سنة الإيصال أو في أرقام معرّفٍ بالمنتج الصحيح «residue holds» وإن نجح النسيان
-    (ملاحظة Codex على #129، الجولة الثالثة والثلاثون). النصُّ والمصدرُ والمفاتيحُ تبقى خامًا فالبقايا الحقيقية تُرى، وملفٌّ ليس
-    JSON يبقى خامًا كلُّه. الحدُّ: نصٌّ منسيٌّ يساوي بحروفه معرّفَ عنصرٍ أو بصمتَه أو وقتَه لا يُرى بقايا."""
+    (ملاحظة Codex على #129، الجولة الثالثة والثلاثون). ومعها قيمُ قوائم الإيصال المولَّدة (`references`: `agent:<جلسة>/<جولة>`
+    التي يكتبها النسيانُ الموصول لكلّ جولةٍ رأت العنصر) بقيمها كاملةً، وإلا سقط شاهدٌ يقع في بادئتها الثابتة «agent:» بالمنتج
+    الصحيح وعيّنةُ المخطّط بإيصالٍ خالي المراجع لا تراه (الجولة الأربعون). النصُّ والمصدرُ والمفاتيحُ تبقى خامًا فالبقايا
+    الحقيقية تُرى، وملفٌّ ليس JSON يبقى خامًا كلُّه. الحدُّ: نصٌّ منسيٌّ يساوي بحروفه معرّفَ عنصرٍ أو بصمتَه أو وقتَه أو مرجعَ
+    جولةٍ لا يُرى بقايا."""
     text = payload.decode("utf-8", "replace")
     values: set[str] = set()
     for candidate in [text, *text.splitlines()]:                # ملفُّ العنصر سطرٌ واحد، والإيصالاتُ سطرٌ لكلِّ إيصال
@@ -232,6 +236,8 @@ def mask_persisted(payload: bytes) -> bytes:
             continue
         if isinstance(record, dict):
             values.update(v for k, v in record.items() if k in PERSISTED_DYNAMIC and isinstance(v, str) and v)
+            for key in PERSISTED_DYNAMIC_LISTS:
+                values.update(v for v in record.get(key, []) if isinstance(v, str) and v)
     for value in sorted(values, key=len, reverse=True):
         payload = payload.replace(value.encode("utf-8"), b" ")
     return payload
@@ -252,7 +258,8 @@ def declared_persisted_schema_text() -> str:
         item_id = store.remember(PERSISTED_SAMPLE, consent="owner")
         files = lambda: [mask_persisted(f.read_bytes()).decode("utf-8", "replace") for f in sorted(Path(tmp).rglob("*")) if f.is_file()]
         written = files()
-        store.forget(item_id)
+        # بمراجعِ جولاتٍ كما يكتبها النسيانُ الموصول (`agent:<جلسة>/<جولة>` و`text:…`)، فتُقنَّع هنا كما تُقنَّع في المسح
+        store.forget(item_id, references=["agent:sample-session/sample-turn", "text:sample-session/sample-turn"])
         written += files()
     return "\n".join(written).replace(PERSISTED_SAMPLE, " ")     # القيمُ المتغيّرة قُنّعت بـmask_persisted نفسِه الذي يمسح البقايا
 

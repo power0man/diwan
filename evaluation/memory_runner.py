@@ -81,6 +81,38 @@ def _saved_text(scenario: dict, ref: str) -> str:
     return next(s["text"] for s in scenario["steps"] if s.get("op") in ("remember", "propose") and s.get("as") == ref)
 
 
+def _foreign(scenario: dict, project: str, needle: str) -> bool:
+    """شاهدُ غيابٍ يقع في نصّ عنصرٍ أنشأته خطوةٌ في مشروعٍ آخر ولا يقع في نصّ عنصرٍ من المشروع المفحوص نفسِه: التسرّبُ عبر
+    المشاريع يُعدّ به وحده. فغيابُ عنصرٍ منسيٍّ من المشروع نفسِه — أو صداه في ردّ النموذج — رسوبٌ يُسمّى في السيناريو ولا
+    يُحسب تسرّبًا، وإلا ادّعى الرقمُ المنشور تسرّبًا بين مشروعين لم يقع (ملاحظة Codex على #129، الجولة الأربعون)."""
+    made = [(s["project"], s["text"]) for s in scenario["steps"] if s.get("op") in ("remember", "propose")]
+    return (any(_contains(text, needle) for owner, text in made if owner != project)
+            and not any(_contains(text, needle) for owner, text in made if owner == project))
+
+
+_ABSENT_FAILURE = re.compile(r"^(\d+): (?:retrieve|context) holds absent «(.*?)»")
+
+
+def recount_leakage(report: dict, bank: dict, stamp: dict | None = None) -> dict:
+    """يعيد عدَّ `leakage` في تقريرٍ منشور من رسوباته المسجَّلة بقاعدة الشاهد الأجنبيّ (`_foreign`) بلا إعادة قياس: الرسوبُ
+    نفسُه يبقى مسمًّى في `failures`، ويتغيّر العدُّ وحده، ويُسجَّل القديمُ والجديدُ في `recount.leakage` مع `stamp`. فتقريرُ
+    ٢٨ سبتمبر عدّ رسوبَ `isolation_003` (صدى عنصرٍ منسيٍّ من المشروع نفسِه) تسرّبًا (ملاحظة Codex على #129، الجولة الأربعون)."""
+    scenarios = {s["id"]: s for s in bank["scenarios"]}
+    results = []
+    for result in report["results"]:
+        scenario, leaks = scenarios[result["id"]], 0
+        if scenario["category"] == "isolation":
+            for failure in result["failures"]:
+                if m := _ABSENT_FAILURE.match(failure):
+                    step = scenario["steps"][int(m.group(1))]
+                    leaks += any(_foreign(scenario, step["project"], n) for n in step["absent"] if n[:30] == m.group(2))
+        results.append({**result, "leaks": leaks})
+    metrics = {**report["metrics"], "leakage": sum(r["leaks"] for r in results)}
+    recount = {"from": report["metrics"]["leakage"], "to": metrics["leakage"], "rule": "foreign_project_witness_only",
+               **(stamp or {})}
+    return {**report, "results": results, "metrics": metrics, "recount": {**report.get("recount", {}), "leakage": recount}}
+
+
 def _exposed(shown: str, text: str) -> bool:
     """العنصرُ كما يبلغ السياقَ (محجورًا) حاضرٌ فيما رآه النموذج."""
     return _contains(shown, held_text(text))
@@ -190,7 +222,7 @@ def run_scenario(scenario: dict, root: Path) -> dict:
             for needle in step["absent"]:
                 if _contains(text, needle):
                     failures.append(f"{index}: {expect} holds absent «{needle[:30]}»")
-                    if scenario["category"] == "isolation":
+                    if scenario["category"] == "isolation" and _foreign(scenario, step["project"], needle):
                         leaks += 1
                     if scenario["category"] == "consent":
                         consent_violations += 1
@@ -571,7 +603,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                                      else " in the current question as sent to the model" if _contains(question, needle)
                                      else " in the declared tool schemas" if _contains(tools, needle) else "")
                             failures.append(f"{index}: {expect} holds absent «{needle[:30]}»{where}")
-                            if scenario["category"] == "isolation":
+                            if scenario["category"] == "isolation" and _foreign(scenario, name, needle):
                                 leaks += 1
                             if scenario["category"] == "consent":
                                 consent_violations += 1
