@@ -835,6 +835,28 @@ def test_a_damaged_frozen_baseline_is_refused_by_name_and_a_refreeze_repairs_it(
     assert published(m2_store, probe, tmp_path, capsys, "r4")["baseline"]["frozen"]["state"] == "loaded"
 
 
+@pytest.mark.parametrize("pointer", [["0" * 64], {"digest": "0" * 64}], ids=["list", "dict"])
+def test_a_damaged_published_report_is_refused_by_name_and_a_refreeze_acknowledges_it(pointer, m2_store, probe,
+                                                                                      tmp_path, capsys):
+    frozen_file = probe / "journeys-baseline.json"
+    first = published(m2_store, probe, tmp_path, capsys, "r1", *WINDOW)
+    old = first["baseline"]["frozen"]["digest"]
+    # مؤشّرُ التقرير المنشور ليس بصمةً: رفضٌ مسمًّى لا أثرٌ خام
+    first["baseline"]["frozen"]["digest"] = pointer
+    damaged = (json.dumps(first, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    (probe / "journeys-r1.json").write_bytes(damaged)
+    assert published(m2_store, probe, tmp_path, capsys, "r2") == \
+        (2, {"status": "refused", "code": "journeys_report_unreadable"})
+    # إعادةُ التجميد بسببٍ تُقرّ بالتقرير التالف ببصمة ملفّه بعينها، ويعود التشغيلُ العاديّ
+    refrozen = published(m2_store, probe, tmp_path, capsys, "r2", *WINDOW, "--refreeze-baseline",
+                         "acknowledged_damaged_report")
+    assert refrozen["baseline"]["frozen"]["state"] == "refrozen"
+    artifact = json.loads(frozen_file.read_text(encoding="utf-8"))
+    assert artifact["acknowledged_reports"] == [hashlib.sha256(damaged).hexdigest()]
+    assert [entry["digest"] for entry in artifact["history"]] == [old]
+    assert published(m2_store, probe, tmp_path, capsys, "r3")["baseline"]["frozen"]["state"] == "loaded"
+
+
 def test_the_report_and_the_frozen_baseline_are_published_together(m2_store, probe, tmp_path, capsys, monkeypatch):
     frozen_file = probe / "journeys-baseline.json"
 

@@ -33,7 +33,8 @@ UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع
 `baseline_window_invalid` (البدءُ بعد النهاية)، `report_leak`؛ ولخطّ الأساس المجمَّد: `baseline_already_frozen`،
 `frozen_baseline_lost` (نُشر تقريرٌ يشير إليه ثم غاب)، `frozen_baseline_changed`، `frozen_baseline_unreadable`،
 `frozen_baseline_unpublished` (لا تقريرَ منشورًا يشير إليه)، `baseline_publish_failed`، `refreeze_reason_invalid`،
-`refreeze_requires_probe_output`، `refreeze_baseline_not_ready`، `journeys_report_unreadable`.
+`refreeze_requires_probe_output`، `refreeze_baseline_not_ready`، `journeys_report_unreadable` (تقريرٌ منشور تالف؛ تُقرّ به
+إعادةُ التجميد ببصمة ملفّه في `acknowledged_reports`).
 
 التجميد: أولُ تقريرٍ في docs/probe يجهز فيه خطُّ الأساس يكتب معه `docs/probe/journeys-baseline.json` (النافذةُ ومصدرُها،
 والفوجُ بأعداده ونسبته، وبصمةُ هويّة أعضائه من معرّفاتٍ عشوائية، وإصدارُ الأداة). وكلُّ تشغيلٍ بعده يقارن به ولا يعيد
@@ -120,7 +121,8 @@ OUTCOME_LABELS = {
 }
 BASELINE_MIN_DATED_JOURNEYS = 30
 FROZEN_FIELDS = frozenset({"schema_version", "tool", "task", "kind", "commit", "frozen_on", "window", "cohort",
-                           "members_digest", "refreeze_reason", "history", "measurement_limits"})
+                           "members_digest", "refreeze_reason", "history", "acknowledged_reports",
+                           "measurement_limits"})
 FROZEN_COHORT_FIELDS = ("journeys", "distinct_dates", "by_date", "by_outcome", "completion_rate", "cut_date")
 FROZEN_LIMITS = (
     "the_frozen_baseline_is_the_first_ready_baseline_published_in_docs_probe_and_later_runs_compare_against_it_without_recomputing_it",
@@ -763,11 +765,11 @@ def check_report(report: dict) -> None:
     _only_codes(report, frozenset({("commit",), ("baseline", "frozen", "digest")}))
 
 
-_FROZEN_HEX = frozenset({("commit",), ("members_digest",), ("history", "[]", "digest")})
+_FROZEN_HEX = frozenset({("commit",), ("members_digest",), ("history", "[]", "digest"), ("acknowledged_reports", "[]")})
 
 
 def _artifact(report: dict, members: list[dict], *, today: str, previous: dict | None, reason: str | None,
-              lost: set[str]) -> dict:
+              lost: set[str], damaged: set[str] = frozenset()) -> dict:
     """خطُّ الأساس المجمَّد: نافذتُه ومصدرُها، وفوجُه بأعداده ونسبته، وبصمةُ هويّة أعضائه، وإصدارُ الأداة؛ وسجلُّ ما جُمِّد
     قبله ببصماته وسبب إعادة التجميد، فلا يضيع أثرُ خطّ أساسٍ نُشر."""
     history = [] if previous is None else [*previous["history"], {"digest": previous["digest"],
@@ -777,6 +779,7 @@ def _artifact(report: dict, members: list[dict], *, today: str, previous: dict |
             "commit": report["commit"], "frozen_on": today, "window": report["baseline"]["window"],
             "cohort": {key: report["baseline"]["cohort"][key] for key in FROZEN_COHORT_FIELDS},
             "members_digest": _members_digest(members), "refreeze_reason": reason, "history": history,
+            "acknowledged_reports": sorted({*(previous["acknowledged_reports"] if previous else ()), *damaged}),
             "measurement_limits": list(FROZEN_LIMITS)}
 
 
@@ -819,6 +822,8 @@ def _frozen_schema(value) -> bool:
             and isinstance(value["members_digest"], str) and bool(SHA256.fullmatch(value["members_digest"]))
             and _code_or_none(value["refreeze_reason"])
             and isinstance(history, list) and all(_history_entry(item) for item in history)
+            and isinstance(value["acknowledged_reports"], list)
+            and all(isinstance(item, str) and SHA256.fullmatch(item) for item in value["acknowledged_reports"])
             and value["measurement_limits"] == list(FROZEN_LIMITS))
 
 
@@ -843,20 +848,33 @@ def _load_frozen(path: Path) -> dict | None:
     return {**value, "digest": own, "known": {own, *(item["digest"] for item in value["history"])}}
 
 
-def _pointers(probe: Path, frozen_name: str) -> set[str]:
-    """بصماتُ خطّ الأساس المجمَّد التي سجّلتها تقاريرُ الرحلات المنشورة: أثرٌ يفرّق «لم يُجمَّد قطّ» من «جُمِّد ثم ضاع»."""
-    found = set()
+def _pointers(probe: Path, frozen_name: str, acknowledged: frozenset = frozenset()) -> tuple[set[str], set[str]]:
+    """(بصماتُ خطّ الأساس المجمَّد التي سجّلتها تقاريرُ الرحلات المنشورة، وبصماتُ ملفّات التقارير التالفة): أثرٌ يفرّق «لم
+    يُجمَّد قطّ» من «جُمِّد ثم ضاع». والتقريرُ التالف (مؤشّرُه ليس بصمةً من ٦٤ محرفًا) لا يُخمَّن مؤشّرُه؛ إلا ما أقرّت به
+    إعادةُ تجميدٍ سابقة ببصمة ملفّه بعينها (`acknowledged_reports`)."""
+    found, damaged = set(), set()
     for path in sorted(probe.glob("journeys-*.json")):
         if path.name == frozen_name:
             continue
         try:
-            value = json.loads(path.read_text(encoding="utf-8"))
-            pointer = value["baseline"]["frozen"]["digest"] if "frozen" in value["baseline"] else None
-        except (OSError, ValueError, UnicodeError, KeyError, TypeError):
+            data = path.read_bytes()
+        except OSError:
             raise Refused("journeys_report_unreadable") from None
+        own = hashlib.sha256(data).hexdigest()
+        if own in acknowledged:
+            continue
+        try:
+            value = json.loads(data.decode("utf-8"))
+            state = value["baseline"].get("frozen")
+            pointer = None if state is None else state["digest"]
+            if pointer is not None and not (isinstance(pointer, str) and SHA256.fullmatch(pointer)):
+                raise ValueError("frozen_pointer_invalid")
+        except (ValueError, UnicodeError, KeyError, TypeError, AttributeError, RecursionError):
+            damaged.add(own)
+            continue
         if pointer is not None:
             found.add(pointer)
-    return found
+    return found, damaged
 
 
 # عمليتا النشر الذرّيتان، باسمين في الوحدة ليُحقن فيهما العطبُ في الاختبار
@@ -934,13 +952,16 @@ def main(argv=None) -> int:
         if reason is not None and not publish:
             raise Refused("refreeze_requires_probe_output")
         requested = baseline_window(args.baseline_from, args.baseline_until)
-        pointers = _pointers(PROBE_DIR, FROZEN_NAME)
         try:
             frozen = _load_frozen(frozen_path)
         except Refused:
             if reason is None:
                 raise
             frozen = None                   # إعادةُ التجميد تستبدل مجمَّدًا تالفًا، وبصماتُ ما نُشر تبقى في history
+        pointers, damaged = _pointers(PROBE_DIR, FROZEN_NAME,
+                                      frozenset(frozen["acknowledged_reports"]) if frozen is not None else frozenset())
+        if damaged and reason is None:
+            raise Refused("journeys_report_unreadable")
         if frozen is None and pointers and reason is None:
             raise Refused("frozen_baseline_lost")
         if frozen is not None and reason is None:
@@ -963,7 +984,7 @@ def main(argv=None) -> int:
                                       [UNREADABLE_ENTRIES] if report["unreadable"]["projects"] or
                                       report["unreadable"]["sessions"] else [])
             artifact = _artifact(report, members, today=today.isoformat(), previous=frozen, reason=reason,
-                                 lost=pointers - (frozen["known"] if frozen is not None else set()))
+                                 lost=pointers - (frozen["known"] if frozen is not None else set()), damaged=damaged)
             _only_codes(artifact, _FROZEN_HEX)
             data = (json.dumps(artifact, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
             state.update(state="refrozen" if frozen is not None else "frozen_now",
