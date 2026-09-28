@@ -33,6 +33,28 @@ SYSTEM = (
     "هذه محادثة نصية فقط: لا تتوفر لك أدوات أو ملفات أو ذاكرة خارج هذه الجلسة. "
     "لا تدّع تنفيذ فعل خارجي أو حفظ تفضيل دائم."
 )
+FORGOTTEN = "‹نُسي›"
+
+
+def _scrub_value(value, text):
+    """Return a deep copy with exact textual occurrences replaced, plus their count."""
+    if isinstance(value, str):
+        return value.replace(text, FORGOTTEN), value.count(text)
+    if isinstance(value, list):
+        output, count = [], 0
+        for item in value:
+            scrubbed, found = _scrub_value(item, text)
+            output.append(scrubbed)
+            count += found
+        return output, count
+    if isinstance(value, dict):
+        output, count = {}, 0
+        for key, item in value.items():
+            scrubbed, found = _scrub_value(item, text)
+            output[key] = scrubbed
+            count += found
+        return output, count
+    return value, 0
 
 
 class ConversationError(ValueError):
@@ -296,10 +318,12 @@ class ChatSession:
         if not isinstance(envelope, dict) or set(envelope) != {"state", "sha256"}:
             _fail("state_corrupt", "غلاف حالة غير صالح")
         state = envelope["state"]
-        if (not isinstance(state, dict) or set(state) != {"config_sha256", "head", "count", "turns"}
+        if (not isinstance(state, dict) or set(state) - {"scrubbed_through"} != {"config_sha256", "head", "count", "turns"}
                 or digest(state) != envelope["sha256"] or state["config_sha256"] != digest(self.config)
                 or type(state["count"]) is not int or state["count"] < 0
-                or not isinstance(state["turns"], list) or len(state["turns"]) > 1000):
+                or not isinstance(state["turns"], list) or len(state["turns"]) > 1000
+                or type(state.get("scrubbed_through", 0)) is not int
+                or not 0 <= state.get("scrubbed_through", 0) <= len(state["turns"])):
             _fail("state_corrupt", "حالة غير صالحة أو لا تطابق البصمة")
         ledger, entries = self._ledger()
         checkpoint = state["count"]
@@ -315,6 +339,16 @@ class ChatSession:
                     or not _id(turn["turn_id"]) or turn["turn_id"] in ids or not _text(turn["text"])):
                 _fail("state_corrupt", "هوية جولة أو نص أو ترتيب غير صالح")
             ids.add(turn["turn_id"])
+            if i < state.get("scrubbed_through", 0):
+                # The immutable ledger remains authoritative, but the reusable state is
+                # deliberately redacted.  Its envelope still detects accidental damage.
+                if turn["result"] is None or not isinstance(turn["result"], dict):
+                    _fail("state_corrupt", "جولة مكشوطة غير مكتملة")
+                if turn["result"].get("ledger_sha256") is not None:
+                    if index >= checkpoint or entries[index]["digest"] != turn["result"]["ledger_sha256"]:
+                        _fail("state_corrupt", "جولة مكشوطة لا تطابق قيدها")
+                    index += 1
+                continue
             req, context = self._request(turns[:i], turn["turn_id"], turn["text"],
                                          turn.get("memory", {}).get("block", ""))
             if (turn["request_sha256"] != digest(req.fingerprint_payload())
@@ -376,6 +410,17 @@ class ChatSession:
             state, _, _ = self._load()
             return [f"text:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
                     if sha256 in turn.get("memory", {}).get("items", ())]
+
+    def scrub_memory_text(self, text):
+        """Scrub exact occurrences from reusable state, atomically under this session's lock."""
+        if not _text(text):
+            _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
+        with self._lock():
+            state, _, _ = self._load()
+            state["turns"], count = _scrub_value(state["turns"], text)
+            state["scrubbed_through"] = len(state["turns"])
+            self._save(state)
+            return count
 
     def turn(self, turn_id: str, text: str, provider, *, max_turns=None,
              max_saved_input_bytes=None, request_validator=None, memory=None, question=None):

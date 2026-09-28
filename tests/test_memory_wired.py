@@ -21,6 +21,23 @@ ROOT = Path(__file__).resolve().parents[1]
 BANK = json.loads((ROOT / "evaluation" / "suites" / "memory_v1.json").read_text(encoding="utf-8"))
 
 
+class _EchoingDelegate:
+    """Deterministic local provider that repeats the sensitive value in its own answer."""
+    name, is_local = "echoing-memory", True
+
+    def __init__(self, value):
+        self.value, self.requests = value, []
+
+    def estimate_micros(self, request):
+        return 0
+
+    def complete(self, request):
+        from core.contracts import Response, Usage
+        self.requests.append(request)
+        return Response(self.value if any(self.value in m.content for m in request.messages) else "لا أتذكره.",
+                        Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64)
+
+
 @pytest.fixture
 def wired(tmp_path):
     running = _Wired(tmp_path.resolve() / "ui")
@@ -62,6 +79,30 @@ def test_a_forgotten_item_never_returns_through_session_history(wired, kind):
     assert all(not m.content.startswith(HEADER) for m in later.messages)
     assert "٤٤٢١" not in "".join(m.content for m in later.messages)
     assert len(later.messages) > len(seen.messages)
+
+
+@pytest.mark.parametrize("kind", ["agent", "text"])
+def test_the_model_s_own_echo_of_a_forgotten_value_in_the_reused_session_fails_the_scenario(wired, kind):
+    value = "رمز الخزنة ٨١٩٣"
+    delegate = _EchoingDelegate(value)
+    wired.provider = delegate
+    project = wired.project("echo")["id"]
+    item = wired.api("memory_remember", project=project, text=value)["item_id"]
+    first, _ = _ask(wired, "echo", kind, "ما رمز الخزنة؟")
+    assert first["content"] == value
+    session_id = wired.project("echo")[kind]
+    project_root = wired.app.project(project)
+    ledger = (project_root / "agent-control" / session_id / "calls.jsonl" if kind == "agent" else
+              project_root / "sessions" / session_id / "chat" / session_id / "calls.jsonl")
+    sealed_before = ledger.read_bytes()
+
+    forgotten = wired.api("memory_forget", project=project, item_id=item)
+    session_key = f"{kind}:{session_id}"
+    assert forgotten["receipt"]["scrubbed"][session_key] >= 2
+    assert ledger.read_bytes() == sealed_before
+    _, later = _ask(wired, "echo", kind, "هل تتذكر الرمز؟")
+    assert value not in "".join(message.content for message in later.messages)
+    assert later.messages[-2].content == "‹نُسي›"
 
 
 def test_the_forget_receipt_names_every_turn_that_saw_the_item(wired):

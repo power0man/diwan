@@ -1,0 +1,27 @@
+{
+  "agent": "openai/codex",
+  "date": "2026-09-28",
+  "claims": [
+    {
+      "decision": "ق٦٧",
+      "claim": "فهرس السياق المولد حديث ومتسق مع وثائقه الحاكمة",
+      "how_i_tried": "شغلت python tools/context_index.py --check مباشرة على الشجرة الحالية",
+      "result": "held",
+      "evidence": "exit 0; {\"status\": \"verified\", \"written\": [], \"archived\": [], \"agents_md_bytes\": 30265}"
+    },
+    {
+      "decision": "ق٦٦",
+      "claim": "خريطة المسارات تسند conversation/ وwebui/ إلى عائلة openai",
+      "how_i_tried": "حمّلت registry/lanes.json ببايثون وفحصت قائمة lanes.openai دون الاستناد إلى الاختبارات",
+      "result": "held",
+      "evidence": "lanes.openai contains both conversation/ and webui/"
+    },
+    {
+      "decision": "ق٦٥",
+      "claim": "سجل المراجعين يحتسب Codex ويستبعد Gemini بعد إلغائه",
+      "how_i_tried": "حمّلت registry/reviewers.json ببايثون وفحصت مفاتيح reviewers دون الاستناد إلى الاختبارات",
+      "result": "held",
+      "evidence": "reviewers={chatgpt-codex-connector[bot]: openai, claude[bot]: anthropic}; no Gemini reviewer"
+    }
+  ]
+}

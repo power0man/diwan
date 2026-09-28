@@ -231,7 +231,8 @@ class MemoryStore:
     def receipts(self, item_id: str | None = None) -> list[dict]:
         return [r for r in self._read_receipts() if item_id is None or r["item_id"] == item_id]
 
-    def forget(self, item_id: str, *, references: list[str] | None = None) -> dict:
+    def forget(self, item_id: str, *, references: list[str] | None = None,
+               scrubbed: dict[str, int] | None = None) -> dict:
         """يمحو العنصر ويكتب إيصالًا بلا نصّ. والنسيانُ الثاني يعيد الإيصالَ الأول ولا يكتب غيره."""
         if not isinstance(item_id, str) or not _ID.fullmatch(item_id):
             raise MemoryRefused("item_id_invalid", "معرّفُ عنصرٍ غير صالح")
@@ -248,6 +249,8 @@ class MemoryStore:
             receipt = {"schema_version": 1, "item_id": item_id, "sha256": item["sha256"],
                        "forgotten_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                        "references": sorted(references or [])}
+            if scrubbed is not None:
+                receipt["scrubbed"] = dict(sorted(scrubbed.items()))
             lines = self._read_receipts() + [receipt]
             self._write_atomic(self._receipts, "".join(
                 json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in lines).encode("utf-8"))

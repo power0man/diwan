@@ -27,7 +27,7 @@ from agent.journal import Journal, JournalRefused, _directory, _identity, _open_
 from agent.loop import SYSTEM, _result_message, run_agent
 from agent.registry import ToolContext, ToolRegistry
 from conversation.agent_stop import StopSignals
-from conversation.session import ConversationError, _decode, _fail, _id, _text
+from conversation.session import ConversationError, _decode, _fail, _id, _scrub_value, _text
 from core import filelock
 from core.budget import Budget
 from core.canonical import canonical_bytes, digest
@@ -392,9 +392,11 @@ class AgentSession:
             state = envelope["state"]
             if set(envelope) != {"state", "sha256"} or digest(state) != envelope["sha256"]:
                 _fail("state_corrupt", "بصمة حالة الجلسة لا تطابق")
-            if (set(state) != {"schema_version", "config_digest", "turns", "ledger"}
+            if (set(state) - {"scrubbed_through"} != {"schema_version", "config_digest", "turns", "ledger"}
                     or state["schema_version"] != 2 or state["config_digest"] != digest(self.config)
                     or not isinstance(state["turns"], list) or len(state["turns"]) > self.config["max_turns"]
+                    or type(state.get("scrubbed_through", 0)) is not int
+                    or not 0 <= state.get("scrubbed_through", 0) <= len(state["turns"])
 ):
                 _fail("state_corrupt", "بنية حالة الجلسة غير صالحة")
             self.ledger.verify_chain()
@@ -407,17 +409,33 @@ class AgentSession:
             seen, intents = set(), {}
             previous = [_message_payload(Message("system", self.config["system"]))]
             unresolved = False
-            for turn in state["turns"]:
+            scrubbed_through = state.get("scrubbed_through", 0)
+            old_intents = set()
+            for turn_index, turn in enumerate(state["turns"]):
                 # طلبُ التفكير مفتاحٌ اختياريّ قيمتُه True وحدها (ك٤٧)، فحالاتُ ما قبله صالحة كما هي
                 thinking = turn.get("thinking", False)
                 if (set(turn) - _OPTIONAL_TURN_KEYS != _TURN_KEYS or ("thinking" in turn and thinking is not True)
                         or ("memory" in turn and not valid_turn_memory(turn["memory"]))
                         or not _id(turn["turn_id"]) or turn["turn_id"] in seen or not _text(turn["text"])
-                        or unresolved or turn["initial_messages"] != previous
-                        or turn["input_digest"] != self._input_digest(turn)
+                        or unresolved
+                        or (turn_index >= scrubbed_through and turn["initial_messages"] != previous)
+                        or (turn_index >= scrubbed_through and turn["input_digest"] != self._input_digest(turn))
                         or not isinstance(turn["calls"], list) or len(turn["calls"]) > self.config["max_steps"]):
                     _fail("state_corrupt", "مدخلات الجولة أو ترتيبها غير صالح")
                 seen.add(turn["turn_id"])
+                if turn_index < scrubbed_through:
+                    for intent in turn["calls"]:
+                        if not isinstance(intent, dict) or not isinstance(intent.get("idempotency_key"), str):
+                            _fail("state_corrupt", "نداء مكشوط غير صالح")
+                        intents[intent["idempotency_key"]] = intent
+                        old_intents.add(intent["idempotency_key"])
+                    result = turn["result"]
+                    if not isinstance(result, dict) or result.get("status") not in TERMINAL:
+                        _fail("state_corrupt", "جولة مكشوطة غير مكتملة")
+                    if result["status"] == "complete":
+                        previous = turn["transcript"]
+                    unresolved = False
+                    continue
                 self._request(_messages(turn["initial_messages"]) + (_task_message(turn),), thinking)
                 for intent in turn["calls"]:
                     payload = intent["request"]
@@ -443,7 +461,8 @@ class AgentSession:
             for entry in entries:
                 record = entry["record"]
                 intent = intents.get(record.get("idempotency_key"))
-                if intent is None or record.get("request_digest") != intent["request_digest"]:
+                if intent is None or (record.get("idempotency_key") not in old_intents
+                                      and record.get("request_digest") != intent["request_digest"]):
                     _fail("ledger_binding_invalid", "قيد نداء لا ينتمي إلى مدخلات محفوظة")
             return state
         except (KeyError, TypeError, ValueError, AttributeError, LedgerCorrupt) as exc:
@@ -594,6 +613,17 @@ class AgentSession:
             state = self._load()
             return [f"agent:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
                     if sha256 in turn.get("memory", {}).get("items", ())]
+
+    def scrub_memory_text(self, text):
+        """Scrub exact occurrences from reusable state; the sealed call ledger is untouched."""
+        if not _text(text):
+            _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
+        with self._lock():
+            state = self._load()
+            state["turns"], count = _scrub_value(state["turns"], text)
+            state["scrubbed_through"] = len(state["turns"])
+            self._save(state)
+            return count
 
     def _stopped_steps(self, turn):
         """Restore evidence only: no provider, registry invocation or new receipt.

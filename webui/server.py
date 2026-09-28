@@ -425,16 +425,18 @@ class LocalApp:
             # الإيصالُ يعدّ الجولاتِ التي رأى النموذجُ فيها العنصر؛ والجلسةُ لا تُقرأ وهي تعمل
             need(self.generation.acquire(blocking=False), "generation_busy")
             try:
-                references = self.memory_references(project, item["sha256"])
+                references, scrubbed = self.memory_references(project, item["sha256"], item["text"])
             finally:
                 self.generation.release()
-            return {"status": "forgotten", "receipt": store.forget(item["item_id"], references=references),
+            return {"status": "forgotten", "receipt": store.forget(item["item_id"], references=references,
+                                                                      scrubbed=scrubbed),
                     "replayed": False}
         except MemoryRefused as exc:
             raise UIError(exc.code) from None
 
-    def memory_references(self, project, sha256):
+    def memory_references(self, project, sha256, text):
         references = []
+        scrubbed = {}
         for meta in self.collection(project / "sessions"):
             mode = meta.get("mode", "text")
             if mode == "media":
@@ -442,11 +444,15 @@ class LocalApp:
             try:
                 session = (self.agent_session(project, meta["id"]) if mode in AGENT_MODES
                            else self.session(project, meta["id"]))
-                references.extend(session.memory_references(sha256))
+                found = session.memory_references(sha256)
+                references.extend(found)
+                if found:
+                    scrubbed[f"{mode}:{meta['id']}"] = session.scrub_memory_text(text)
             except (ConversationError, UIError, OSError, ValueError):
                 # جلسةٌ لا تُقرأ لا تحجب النسيان؛ والإيصالُ يسمّيها فلا يدّعي أنها خلت منه
                 references.append(f"{mode}:{meta['id']}/unreadable")
-        return sorted(references)
+                scrubbed[f"{mode}:{meta['id']}"] = 0
+        return sorted(references), scrubbed
 
     def agent_dispatch(self, request, project):
         action = request["action"]
