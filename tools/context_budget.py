@@ -26,23 +26,30 @@ HEAD** (`git archive` تُفكّ في مجلّدٍ مؤقّت) بمفسّرٍ م
 
 from __future__ import annotations
 
+import sys                                                # مضمَّنٌ في المفسّر فلا يُحجب
+
+if __name__ == "__main__" and not (sys.flags.isolated == 1 and getattr(sys.flags, "safe_path", 0) == 1):
+    # الأبُ يعيد تشغيلَ نفسه معزولًا (`-I -P`) قبل أيّ استيرادٍ يمكن حجبُه: `python tools/context_budget.py` يضع `tools/` أولَ
+    # `sys.path`، فملفُّ `tools/tarfile.pyc` أو `tools/subprocess.pyc` بلا مصدر كان يُحمَّل في الأب قبل العزل ويستطيع دسَّ ملفاتٍ
+    # في اللقطة التي يقيسها الطفلُ المعزول (ملاحظة Codex الثامنة على #157). `os` مستوردٌ عند إقلاع المفسّر فلا يُحجب.
+    import os
+    os.execv(sys.executable, [sys.executable, "-I", "-P", *sys.argv])
+
 import argparse
 import datetime as _dt
 import hashlib
+import inspect
 import io
 import json
 import re
 import shutil
 import subprocess
-import sys
 import tarfile
 import tempfile
 from collections.abc import Callable
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "tools"))
 _PYCACHE_PREFIX: str | None = None
 
 
@@ -61,7 +68,22 @@ def isolate_bytecode() -> str:
 
 isolate_bytecode()                                        # قبل استيراد context_index وأيّ وحدة منتج
 
-import context_index  # noqa: E402  (مجموعةُ قراءة §٠ وتقديرُها من مصدرٍ واحد)
+
+def _context_index():
+    """`tools/context_index.py` (مجموعةُ قراءة §٠ وتقديرُها من مصدرٍ واحد) يُستورد عند الحاجة لا عند استيراد هذه الوحدة: الأبُ
+    لا يضيف `tools/` ولا الجذرَ إلى `sys.path` فلا يُستورد فيه شيءٌ من الشجرة، والطفلُ داخل اللقطة يضيفهما ولا يرى غيرَ الإيداع
+    (ملاحظة Codex الثامنة على #157)."""
+    tools = str(ROOT / "tools")
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    import context_index
+    return context_index
+
+
+def _product_path() -> None:
+    """جذرُ الشجرة على `sys.path` عند أول استيرادٍ لوحدة منتج وحده (`webui`…)، لا عند استيراد هذه الوحدة."""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
 
 SCHEMA_VERSION = 1
 TOOL = "tools/context_budget.py"
@@ -94,6 +116,7 @@ LIMITS = [
     "the_hub_tokenizer_named_for_the_engine_is_a_proxy_the_ollama_tag_qwen3_5_9b_is_a_service_name_not_an_artifact_digest_so_the_pinned_hub_revision_is_not_bound_to_the_served_model_s_embedded_tokenizer",
     "bytecode_is_read_and_written_under_a_private_pycache_prefix_set_when_this_tool_is_imported_so_a_stale_or_tampered_pyc_in_the_tree_s___pycache___is_never_loaded_for_context_index_or_a_product_module_but_a_module_imported_before_this_tool_is_out_of_its_reach",
     "the_cli_measures_a_git_archive_snapshot_of_head_extracted_to_a_temporary_directory_by_an_isolated_interpreter_i_p_so_nothing_untracked_ignored_or_linked_in_the_working_tree_is_imported_the_working_tree_is_refused_for_intent_only_while_a_library_call_to_audit_measures_the_tree_it_runs_from",
+    "the_cli_re_executes_itself_with_i_p_before_any_hijackable_import_and_never_puts_tools_or_the_root_on_sys_path_in_the_parent_so_the_interpreter_ignores_python_env_vars_and_the_user_site_and_tokenizers_must_be_importable_from_the_interpreter_s_own_site",
 ]
 
 
@@ -105,7 +128,7 @@ class Refused(Exception):
 
 def _text_entry(text: str, counters: dict[str, Counter]) -> dict:
     """بايتاتُ نصٍّ وأحرفُه وتقديرُ الفهرس ورموزُه بكل مرمِّز مع الأحرف لكل رمز ونسبة التقدير إلى المقيس."""
-    estimate = context_index.tokens_estimate(text)
+    estimate = _context_index().tokens_estimate(text)
     tokens = {name: int(count(text)) for name, count in counters.items()}
     return {"bytes": len(text.encode("utf-8")), "chars": len(text), "tokens_estimate": estimate, "tokens": tokens,
             "chars_per_token": {name: (round(len(text) / n, 2) if n else None) for name, n in tokens.items()},
@@ -121,11 +144,12 @@ def _sum(entries: dict[str, dict], counters: dict[str, Counter]) -> dict:
 def reading_set(root: Path, counters: dict[str, Counter]) -> dict[str, dict]:
     """مجموعةُ قراءة §٠ كما يسمّيها الفهرس، بنصّها على القرص عند التشغيل. ملفٌّ غائب منها رفضٌ مسمًّى لا تخطٍّ صامت: مجموعٌ
     جزئيّ يُنشر بصفة `reading_set_totals` قياسٌ كاذب (ملاحظة Codex على #157)."""
-    missing = [path for path in context_index.READING_SET if not (root / path).is_file()]
+    index = _context_index()
+    missing = [path for path in index.READING_SET if not (root / path).is_file()]
     if missing:
         raise Refused("reading_set_incomplete", "مجموعةُ القراءة ناقصة فلا يُنشر مجموعٌ جزئيّ: " + ", ".join(missing))
     found = {}
-    for path in context_index.READING_SET:
+    for path in index.READING_SET:
         text = (root / path).read_text(encoding="utf-8")
         found[path] = {**_text_entry(text, counters), "sha256_12": hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]}
     return found
@@ -150,7 +174,7 @@ def _registries() -> dict[str, tuple]:
     """مخطّطاتُ الأدوات كما يبنيها التطبيقُ نفسُه لكل تهيئة: `LocalApp` حقيقيّ في مجلّدٍ مؤقّت، ومشروعٌ يُنشأ بواجهته، ثم
     `mode_registry` بعد ضبط أعلام الخُلفيّات (التنفيذُ والتحليل) في سجلّ المشروع ومحرّكِ البحث في التطبيق — لا نسخةٌ من
     قائمة الأدوات تُكتب هنا (ملاحظة Codex على #157)."""
-    import tempfile
+    _product_path()
     from webui.server import LocalApp
 
     def provider():
@@ -206,10 +230,11 @@ def context_window() -> int:
 def _findings(report: dict) -> list[dict]:
     """نتائجُ مسمّاة تُشتقّ من الأرقام لا تُكتب بيدٍ؛ كلٌّ برمزٍ وقيمته وعتبته."""
     found = []
-    agents = report["reading_set"].get(context_index.AGENTS)
-    if agents and agents["bytes"] > context_index.CODEX_PROJECT_DOC_MAX_BYTES:
+    index = _context_index()
+    agents = report["reading_set"].get(index.AGENTS)
+    if agents and agents["bytes"] > index.CODEX_PROJECT_DOC_MAX_BYTES:
         found.append({"code": "agents_md_exceeds_codex_cap", "bytes": agents["bytes"],
-                      "cap": context_index.CODEX_PROJECT_DOC_MAX_BYTES})
+                      "cap": index.CODEX_PROJECT_DOC_MAX_BYTES})
     totals = report["reading_set_totals"]
     for name, measured in totals["tokens"].items():
         if measured and abs(totals["tokens_estimate"] / measured - 1) > ESTIMATE_DRIFT:
@@ -372,8 +397,22 @@ def snapshot_head(root: Path, commit: str) -> Path:
     archive = subprocess.run(["git", "-C", str(root), "archive", "--format=tar", commit], capture_output=True, check=True).stdout
     target = Path(tempfile.mkdtemp(prefix="diwan-context-budget-snapshot-"))
     with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
-        tar.extractall(target, filter="data")
+        _extract(tar, target)
     return target
+
+
+def _extract(tar: tarfile.TarFile, target: Path) -> None:
+    """فكُّ أرشيف الإيداع بأعضاءٍ متحقَّقٍ منها هنا — ملفّاتٌ ومجلّداتٌ بمساراتٍ نسبية بلا `..`، لا روابطُ ولا أجهزة — وبمرشّح
+    `data` حيث يدعمه المفسّر، وبلاه على 3.11.0–3.11.3 التي يعلنها pyproject (`extractall(filter=)` من 3.11.4 — ملاحظة Codex
+    التاسعة على #157)؛ فالتحقّقُ واحدٌ في الحالين ولا يعتمد على المرشّح."""
+    members = []
+    for member in tar.getmembers():
+        name = PurePosixPath(member.name)
+        if name.is_absolute() or ".." in name.parts or not (member.isfile() or member.isdir()):
+            raise Refused("snapshot_member_unsafe", f"عضوٌ في أرشيف الإيداع ليس ملفًّا أو مجلّدًا بمسارٍ نسبيّ: {member.name}")
+        members.append(member)
+    kwargs = {"filter": "data"} if "filter" in inspect.signature(tar.extractall).parameters else {}
+    tar.extractall(target, members=members, **kwargs)
 
 
 def child_command(snapshot: Path, argv: list[str], commit: str, state: dict) -> list[str]:

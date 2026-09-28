@@ -352,6 +352,73 @@ def test_the_child_records_the_snapshot_commit_and_the_parent_s_tree_state(monke
     assert json.loads(capsys.readouterr().out)["code"] == "snapshot_commit_invalid"
 
 
+def test_the_cli_re_executes_itself_isolated_before_any_hijackable_import():
+    """ملاحظةُ Codex الثامنة على #157: الأبُ نفسُه كان يستورد tarfile وsubprocess من أول sys.path (tools/) قبل العزل، فpyc بلا
+    مصدر لأحدهما يدسّ ملفاتٍ في اللقطة. الآن أولُ ما يفعله السكربت — قبل أيّ استيرادٍ غيرِ sys وos المضمَّنين — إعادةُ تشغيل
+    نفسه بـ`-I -P`؛ وتحت هذين العلمين لا يعيد."""
+    import subprocess
+    source = (ROOT / "tools" / "context_budget.py").read_text(encoding="utf-8")
+    boot = source.index("os.execv(sys.executable, [sys.executable, \"-I\", \"-P\", *sys.argv])")
+    assert boot < source.index("\nimport argparse") and "\nimport context_index" not in source
+    assert source.index("\nimport sys") < boot and "sys.path.insert" not in source[:boot]
+    probe = ("import json, os, sys\n"
+             "os.execv = lambda exe, args: (print(json.dumps([exe] + list(args))), sys.exit(97))\n"
+             "import runpy\n"
+             "sys.argv = ['tools/context_budget.py', '--tokenizer', 'x=y@" + SHA + "']\n"
+             "runpy.run_path('tools/context_budget.py', run_name='__main__')\n")
+    for flags in ([], ["-P"]):                                   # -I وحده يستلزم -P منذ 3.11 فلا يعيد
+        run = subprocess.run([sys.executable, *flags, "-c", probe], cwd=ROOT, capture_output=True, text=True)
+        assert run.returncode == 97, (flags, run.stderr[-400:])
+        assert json.loads(run.stdout.strip().splitlines()[-1]) == [sys.executable, sys.executable, "-I", "-P", "tools/context_budget.py",
+                                                                    "--tokenizer", f"x=y@{SHA}"], flags
+    run = subprocess.run([sys.executable, "-I", "-P", "-c", probe], cwd=ROOT, capture_output=True, text=True)
+    assert run.returncode != 97 and "no_tokenizer_named" not in run.stdout, "تحت -I -P لا إعادةَ تشغيل؛ يمضي إلى القياس"
+    assert "context_index" not in subprocess.run(
+        [sys.executable, "-I", "-P", "-c", "import sys; sys.path.insert(0, 'tools'); import context_budget as cb; "
+         "print(sorted(m for m in sys.modules if m in ('context_index', 'webui', 'webui.server')), str(cb.ROOT) in sys.path)"],
+        cwd=ROOT, capture_output=True, text=True, check=True).stdout.replace("False", ""), "استيرادُ الأداة لا يستورد الفهرسَ ولا المنتج ولا يضيف الجذر"
+
+
+def test_snapshot_extraction_checks_members_itself_and_works_without_the_filter_argument(tmp_path, monkeypatch):
+    """ملاحظةُ Codex التاسعة على #157: `extractall(filter=)` من 3.11.4، وpyproject يعلن 3.11؛ الأعضاءُ تُفحص هنا (ملفٌّ أو مجلّد
+    بمسارٍ نسبيّ) فلا يعتمد الأمانُ على المرشّح، ويُمرَّر المرشّحُ حيث يوجد فقط."""
+    import io, tarfile
+    def archive(*entries):
+        buf = io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w") as tar:
+            for name, kind in entries:
+                info = tarfile.TarInfo(name)
+                if kind == "file":
+                    info.size = 3
+                    tar.addfile(info, io.BytesIO(b"abc"))
+                elif kind == "dir":
+                    info.type = tarfile.DIRTYPE
+                    tar.addfile(info)
+                else:
+                    info.type = tarfile.SYMTYPE
+                    info.linkname = kind
+                    tar.addfile(info)
+        buf.seek(0)
+        return buf
+    real = tarfile.TarFile.extractall
+    def without_filter(self, path=".", members=None, *, numeric_owner=False):            # 3.11.0–3.11.3
+        return real(self, path, members=members, numeric_owner=numeric_owner)
+    monkeypatch.setattr(tarfile.TarFile, "extractall", without_filter)
+    target = tmp_path / "snap"
+    target.mkdir()
+    with tarfile.open(fileobj=archive(("tools", "dir"), ("tools/a.py", "file"))) as tar:
+        cb._extract(tar, target)
+    assert (target / "tools" / "a.py").read_bytes() == b"abc"
+    for entries in ((("tools/webui", "/etc"),), (("../escape.py", "file"),), (("/abs.py", "file"),)):
+        with tarfile.open(fileobj=archive(*entries)) as tar, pytest.raises(cb.Refused) as caught:
+            cb._extract(tar, tmp_path / "bad")
+        assert caught.value.code == "snapshot_member_unsafe", entries
+    monkeypatch.setattr(tarfile.TarFile, "extractall", real)
+    with tarfile.open(fileobj=archive(("b.py", "file"))) as tar:
+        cb._extract(tar, target)
+    assert (target / "b.py").is_file()
+
+
 def test_tampered_bytecode_in_the_tree_s_pycache_is_not_loaded_once_bytecode_is_isolated(tmp_path, monkeypatch):
     """ملاحظةُ Codex الثالثة على #157: ملفُّ `.pyc` متجاهَلٌ في git ومبنيٌّ بوضع unchecked-hash يُحمَّل بدل المصدر المتتبَّع والحالةُ
     «نظيفة». تحت `sys.pycache_prefix` خاصٍّ لا يُقرأ `__pycache__` الشجرة، فيُحمَّل المصدر."""
