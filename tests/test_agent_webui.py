@@ -2,6 +2,7 @@
 from contextlib import contextmanager
 import hashlib
 import json
+from pathlib import Path
 import threading
 import uuid
 
@@ -84,6 +85,19 @@ def ask(live, ctx, *, message="اقرأ واكتب", files=(), turn=None):
 def write_script(live, *, path="output.txt", content="أثر حقيقي"):
     live.provider.responses = [response("أكتب", ToolCall("write1", "write_file", {"path": path, "content": content})),
                                response("تمت الكتابة")]
+
+
+def test_unified_page_keeps_setup_in_details_and_automates_the_general_chat():
+    index = (Path(__file__).parents[1] / "webui/static/index.html").read_text()
+    script = (Path(__file__).parents[1] / "webui/static/app.js").read_text()
+    assert '<details id="details-panel"><summary>التفاصيل</summary><aside>' in index
+    assert 'placeholder="اسأل ديوان…"' in index
+    assert 'event.key === "Enter" && !event.shiftKey && !event.isComposing' in script
+    assert 'api("create_project", {name:"عام"})' in script
+    assert 'name:"محادثة عامة", mode:state.defaultSessionMode' in script
+    assert 'button("موافقة", () => decideAgentAction' in script
+    assert 'button("رفض", () => decideAgentAction' in script
+    assert 'آخر خطأ: ${code}' in script
 
 
 def test_http_reads_only_selected_upload_writes_real_file_and_replays_without_provider(live):

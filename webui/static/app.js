@@ -54,7 +54,9 @@ const errors = {
 };
 function notice(text, error = false) {$("notice").textContent = text; $("notice").className = error ? "error" : "";}
 function showError(error) {
-  const text = errors[error.code] || `تعذر إكمال العملية (${error.code || "request_failed"}). استرجع الحالة وراجع المدخلات.`;
+  const code = error.code || "request_failed";
+  const text = errors[code] || "تعذر إكمال العملية. استرجع الحالة وراجع المدخلات من رابط التفاصيل.";
+  $("technical-errors").textContent = `آخر خطأ: ${code}`;
   notice(text, true);
   if($("dialog").open) {let feedback = $("dialog-feedback"); if(!feedback) {feedback = element("p"); feedback.id = "dialog-feedback"; feedback.setAttribute("role", "alert"); $("dialog-body").append(feedback);} feedback.textContent = text;}
 }
@@ -157,12 +159,28 @@ function renderAgentActions(answer, actions, ctx, turn) {
   }
   const pending = turn.pending || [];
   for(const action of turn.status === "awaiting_owner" ? pending : []) {
-    if(action.state === "prepared" || action.status === "awaiting_owner") actions.append(button(`مراجعة فعل ${action.name}`, () => reviewAgentAction(ctx, turn.turn_id, action)));
+    if(action.state === "prepared" || action.status === "awaiting_owner") {
+      const approval = element("div", undefined, "approval");
+      approval.append(element("span", `${action.name} — يحتاج قرارك`));
+      approval.append(button("موافقة", () => decideAgentAction(ctx, turn.turn_id, action, true)));
+      approval.append(button("رفض", () => decideAgentAction(ctx, turn.turn_id, action, false)));
+      answer.append(approval);
+    }
   }
   if(turn.status === "awaiting_owner" && !pending.some(a => a.state === "prepared" || a.status === "awaiting_owner")) {
     actions.append(button("متابعة الجولة بالقرار المحفوظ", () => resumeAgent(ctx, turn.turn_id)));
   }
   if(turn.status === "outcome_unknown") answer.append(element("p", errors.outcome_unknown, "pending"));
+}
+async function decideAgentAction(ctx, turn, action, approve) {
+  if(ctx.project !== state.project || ctx.session !== state.session || state.busy) return;
+  state.busy = true; syncPending();
+  try {
+    await api("agent_decide", {...ctx, action_id:action.action_id, call_digest:action.call_digest,
+      expected_revision:action.revision, approve});
+    state.busy = false;
+    await resumeAgent(ctx, turn);
+  } finally {state.busy = false; syncPending();}
 }
 $("agent-stop").onclick = async () => {
   const turn = stoppableTurn(), ctx = context(), epoch = state.epoch;
@@ -411,6 +429,12 @@ $("composer").onsubmit = async event => {
   } catch(e) {if(epoch === state.epoch) showError(e);}
   finally {state.busy = false; syncPending();}
 };
+$("message").addEventListener("keydown", event => {
+  if(event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+    event.preventDefault();
+    $("composer").requestSubmit();
+  }
+});
 $("release-pending").onclick = () => {sessionStorage.removeItem(pendingKey()); syncPending(); notice("يمكنك مراجعة الرسالة وإرسال طلب جديد.");};
 $("older").onclick = async () => {try {const epoch = state.epoch, data = await api("history", {...context(), before: state.before}); if(epoch !== state.epoch || data.status === "running") return; state.turns = [...data.turns, ...state.turns]; state.before = data.before; $("older").hidden = !data.before; render();} catch(e) {showError(e);}};
 function clearPreviewURLs() {for(const url of state.urls) URL.revokeObjectURL(url); state.urls = [];}
@@ -533,7 +557,23 @@ async function boot() {
     $("projects").value = last.project; await chooseProject(last.project);
     const saved = [...$("sessions").children].find(el => el.dataset.session === last.session);
     if(saved) await chooseSession(last.session, saved.textContent, saved.dataset.mode);
+    if(saved) return;
   }
+  let general = [...$("projects").options].find(option => option.textContent === "عام");
+  if(!general) {
+    const created = await api("create_project", {name:"عام"});
+    await projects();
+    general = [...$("projects").options].find(option => option.value === created.id);
+  }
+  if(!general) throw {code:"default_project_unavailable"};
+  $("projects").value = general.value; await chooseProject(general.value);
+  let session = [...$("sessions").children].find(item => item.textContent === "محادثة عامة");
+  if(!session) {
+    const created = await api("create_session", {project:general.value, name:"محادثة عامة", mode:state.defaultSessionMode});
+    await chooseProject(general.value);
+    session = [...$("sessions").children].find(item => item.dataset.session === created.id);
+  }
+  if(session) await chooseSession(session.dataset.session, session.textContent, session.dataset.mode);
 }
 boot().catch(showError);
 // سطح قراءة فقط للوكيل؛ لا نمنحه إرسال طلب أو تطبيق ملف من نص النموذج.
