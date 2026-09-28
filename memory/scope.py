@@ -11,6 +11,7 @@
   عنصرٍ يُبطَل قوسُه، وقوسا الوسم وفواصلُ السطر في اسم المشروع تُبطَل، ولا يُكتب مشروعان بوسمٍ واحد؛ فلا يظهر عنصرٌ
   تحت مشروعٍ غير مشروعه.
 - **العطبُ مسمًّى:** عنصرٌ غير مقروء أو بغير شكله رفضٌ `memory_item_corrupt` يسمّي مشروعه، لا استثناءٌ داخليّ.
+  وعنصرٌ نُسي بين سرده وقراءته غائبٌ بقراءةٍ ثانية؛ ومخزنٌ لا يُقرأ بعدها رفضٌ `memory_store_unreadable` يسمّي مشروعه.
 - **ترتيبٌ واحدٌ حتميّ:** التداخلُ مع السؤال، ثم الأقدمُ موافقةً (كما يرتّب المخزن)، ثم الوسم، ثم موضعُ العنصر في مخزنه؛
   فلا يتبع ترتيبَ المخازن الممرَّرة. وفي مشروعٍ واحد هو ترتيبُ `MemoryStore.retrieve` نفسُه.
 - **الحدّان على المجموع:** `MAX_CONTEXT_ITEMS` و`MAX_CONTEXT_CHARS` للكتلة كلِّها لا لكل مشروع.
@@ -36,6 +37,8 @@ _LINE_BREAK = re.compile(r"[\n\r\v\f\x1c-\x1e\x85\u2028\u2029]+")
 _BRACKETS = str.maketrans("[]", "()")
 # ما يقرؤه النطاقُ من كل عنصر: نصوصٌ كلُّها، وإلا فالعنصرُ عطبٌ يُسمّى بمشروعه
 _ITEM_KEYS = ("item_id", "text", "sha256", "approved_at")
+# قراءةُ المخزن مرّتين على الأكثر: الثانيةُ لنسيانٍ تمّ بين سرد عنصرٍ وقراءته
+READ_ATTEMPTS = 2
 
 Stores = Mapping[str, "MemoryStore | None"] | Iterable[tuple[str, "MemoryStore | None"]]
 
@@ -103,13 +106,21 @@ class AllProjects:
     @staticmethod
     def _read(label: str, store: MemoryStore) -> list[dict]:
         """عناصرُ المخزن من القرص في كل نداء، فالمنسيُّ يغيب فورًا. وعطبُ مخزنٍ يُسمّى بمشروعه، ولا يُتخطّى صامتًا."""
-        try:
-            items = store.items()
-        except MemoryRefused as exc:
-            raise MemoryRefused(exc.code, f"{exc.reason} (المشروع: {label})") from exc
-        # عنصرٌ ليس JSON (ValueError)، أو JSON ليس قاموسًا أو نصُّه ليس نصًّا (AttributeError): المخزنُ يرفعهما خامًا
-        except (ValueError, AttributeError) as exc:
-            raise MemoryRefused("memory_item_corrupt", f"عنصرٌ غير مقروء (المشروع: {label})") from exc
+        for attempt in range(1, READ_ATTEMPTS + 1):
+            try:
+                items = store.items()
+            except MemoryRefused as exc:
+                raise MemoryRefused(exc.code, f"{exc.reason} (المشروع: {label})") from exc
+            # عنصرٌ ليس JSON (ValueError)، أو JSON ليس قاموسًا أو نصُّه ليس نصًّا (AttributeError): المخزنُ يرفعهما خامًا
+            except (ValueError, AttributeError) as exc:
+                raise MemoryRefused("memory_item_corrupt", f"عنصرٌ غير مقروء (المشروع: {label})") from exc
+            # عنصرٌ سُرد ثم نُسي قبل قراءته (الخادمُ متعدّد الخيوط): القراءةُ التالية لا تراه، فالمنسيُّ غائبٌ لا عطب.
+            # وما يبقى بعدها عطبُ قراءةٍ لا عطبُ محتوى
+            except OSError as exc:
+                if attempt < READ_ATTEMPTS:
+                    continue
+                raise MemoryRefused("memory_store_unreadable", f"مخزنٌ لا يُقرأ (المشروع: {label})") from exc
+            break
         for item in items:
             if not all(isinstance(item.get(key), str) for key in _ITEM_KEYS):
                 raise MemoryRefused("memory_item_corrupt", f"عنصرٌ ناقصٌ أو بغير شكله (المشروع: {label})")

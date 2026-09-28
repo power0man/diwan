@@ -314,3 +314,42 @@ def test_a_malformed_item_is_refused_by_its_project(tmp_path, case):
         with pytest.raises(MemoryRefused) as err:
             read(AllProjects(stores))
         assert err.value.code == "memory_item_corrupt" and "المالية" in err.value.reason
+
+
+def test_an_item_forgotten_between_listing_and_reading_is_simply_absent(tmp_path, monkeypatch):
+    """ملاحظة Codex الثانية على #169: نسيانٌ في خيطٍ آخر بين سرد المخزن وقراءة العنصر كان يُفلت FileNotFoundError."""
+    stores = _projects(tmp_path, "أ", "ب")
+    gone = stores["أ"].remember("موعد التسليم نهاية الشهر", consent="owner")
+    kept = stores["أ"].remember("موعد الاجتماع يوم الأحد", consent="owner")
+    stores["ب"].remember("موعد الرحلة يوم الخميس", consent="owner")
+    target = stores["أ"].root / "items" / f"{gone}.json"
+    original, raced = Path.read_text, []
+
+    def read_text(path, *args, **kwargs):
+        if path == target and not raced:
+            raced.append(path)
+            stores["أ"].forget(gone)            # النسيانُ الحقيقيّ يتمّ بعد السرد وقبل القراءة
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", read_text)
+    hits = AllProjects(stores).retrieve("موعد", 10)
+    assert raced and stores["أ"].receipts(gone)
+    assert gone not in {hit["item_id"] for hit in hits} and kept in {hit["item_id"] for hit in hits}
+    assert sorted(hit["project"] for hit in hits) == ["أ", "ب"]
+
+
+def test_a_store_that_stays_unreadable_is_refused_by_its_project(tmp_path, monkeypatch):
+    stores = _projects(tmp_path, "أ", "المالية")
+    stores["أ"].remember("موعد التسليم نهاية الشهر", consent="owner")
+    calls = []
+
+    def unreadable():
+        calls.append(1)
+        raise PermissionError("لا إذن")
+
+    monkeypatch.setattr(stores["المالية"], "items", unreadable)
+    for read in (lambda scope: scope.retrieve("موعد"), lambda scope: scope.context("موعد")):
+        with pytest.raises(MemoryRefused) as err:
+            read(AllProjects(stores))
+        assert err.value.code == "memory_store_unreadable" and "المالية" in err.value.reason
+    assert len(calls) == 4                      # قراءتان لكل نداء، ثم الرفض
