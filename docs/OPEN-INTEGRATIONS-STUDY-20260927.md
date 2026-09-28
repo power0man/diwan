@@ -34,7 +34,7 @@
 
 | # | ما يُدمج | من أين | الرخصة | المسار | ما يعطيه ديوان | الجهد |
 |---|---|---|---|---|---|---|
-| ١ | حزمةُ قواعد ruff لصيد الإخفاق الصامت (§٣.٣) بوابةً في CI على ملفّات مسار anthropic (كما تسمّيها `registry/lanes.json`)، وشقّا openai وgoogle مسألتان لصاحبيهما | astral-sh/ruff | MIT | anthropic (ب٩) | يحوّل مسحَ ECC ١ من «أصلحنا ما وجدنا» إلى «لا يدخل جديد» | ساعات |
+| ١ | حزمةُ قواعد ruff لصيد الإخفاق الصامت (§٣.٣) بوابةً في CI على كلِّ ملفِّ بايثون ناقصَ مسارَي openai وgoogle — أي ملفّاتُ مسار anthropic وكلُّ ما ليس في مسار (٣٠٧ ملفًّا بلا مسار) كما يسمّيها `registry/lanes.json` — وشقّا openai وgoogle مسألتان لصاحبيهما | astral-sh/ruff | MIT | anthropic (ب٩) | يحوّل مسحَ ECC ١ من «أصلحنا ما وجدنا» إلى «لا يدخل جديد» | ساعات |
 | ٢ | اختباراتُ الخصائص بـHypothesis على النواة المحكومة، مُثبتةً ببيان الطفرات | HypothesisWorks/hypothesis | MPL-2.0 (اعتماديةُ تطوير) | anthropic (ب١) | حرّاسُ ك١٩ وك٢٠ وك٢٦ يصيرون خصائصَ يولّد المولّدُ صورةَ تجاوزها الحاديةَ والعشرين | ٢–٤ أيام |
 | ٣ | mutmut صيّادَ الناجين يغذّي `tests/mutations/*.jsonl` | boxed/mutmut | BSD-3 | anthropic (ب٨/ب٩) | يسدّ الفجوةَ المعلنة في #149: الحرّاسُ الأقدمُ من البيانات بلا إثبات | ١–٢ يوم |
 | ٤ | garak + AgentDojo حزمةَ هجومٍ للحَجر، وبنكُ حقنٍ عربيّ يؤلّفه Kimi | NVIDIA/garak، ethz-spylab/agentdojo | Apache-2.0، MIT | anthropic (ب٢/ب٨) | رقمٌ قابلٌ للإعادة للحَجر (ك٢٠/ك٢٣) بدل الحالات المكتوبة يدويًّا | ٢–٣ أيام |
@@ -56,7 +56,7 @@
 وهل يُقبل اعتمادُ Node (لـ`srt`) في مسارٍ بايثونيّ؛ ونقلُ المستودع إلى منظّمةٍ لأجل طابور الدمج.
 
 **ما يصحّح مهامَّ قائمة (§٩):** Jais-2-8B لم يعد «غائبًا نهائيًّا» لكن تشغيلَه الأول على الماك ردّ خرجًا منحلًّا (k12b)؛ وقاعدةُ بيانات
-CAMeL الصرفية GPL-2.0 فلا تدخل اللقطةَ العامة؛ وEmbeddingGemma المذكورُ مرشَّحًا في `core/vector_retrieval.py` تحت
+CAMeL الصرفية GPL-2.0 فلا تدخل اللقطةَ العامة ولا طبقةَ صورة Docker (`Dockerfile:23-25` ينزّلها عند البناء)؛ وEmbeddingGemma المذكورُ مرشَّحًا في `core/vector_retrieval.py` تحت
 شروط Gemma لا Apache؛ وFTS5 يفتّت المشكولَ فتبقى `normalize()` أمام كل جدول FTS جديد.
 
 ---
@@ -291,7 +291,7 @@ openai وgoogle — ويصلح مخالفاتَ غير المملوك من يم�
 
 | المكوّن | الرخصة [متحقَّق] | الحكم |
 |---|---|---|
-| CAMeL Tools 1.6.0 | الشيفرة MIT؛ **البيانات مجزّأة**: `morphology-db-msa-r13` و`disambig-mle-calima-msa-r13` و`-egy-r13` **GPL-2.0**؛ `-msa-s31` رخصةُ LDC (مدفوعةٌ مقيَّدة)؛ `glf-01`/`lev-01` CC-BY-4.0؛ نماذجُ BERT MIT | يبقى (غ١). لكن `pyproject.toml` يوجّه إلى `camel_data -i morphology-db-msa-r13` وهي GPL: **لا تُودَع ولا تُعاد توزيعًا في الشجرة ولا في اللقطة العامة (ك٢٧)**؛ تنزيلُها عند المستخدم جائز. ويُفحص هل `projections/morphology.py` يُملأ من خرج CALIMA، فإسقاطٌ منشور مشتقٌّ من بيانات GPL |
+| CAMeL Tools 1.6.0 | الشيفرة MIT؛ **البيانات مجزّأة**: `morphology-db-msa-r13` و`disambig-mle-calima-msa-r13` و`-egy-r13` **GPL-2.0**؛ `-msa-s31` رخصةُ LDC (مدفوعةٌ مقيَّدة)؛ `glf-01`/`lev-01` CC-BY-4.0؛ نماذجُ BERT MIT | يبقى (غ١). لكن `pyproject.toml` يوجّه إلى `camel_data -i morphology-db-msa-r13` وهي GPL: **لا تُودَع ولا تُعاد توزيعًا في الشجرة ولا في اللقطة العامة (ك٢٧)**؛ تنزيلُها عند المستخدم جائز. وقناةُ التوزيع الفعلية اليومَ ليست اللقطةَ بل **صورةُ Docker**: `Dockerfile` (السطور ٢٣–٢٥) ينفّذ `camel_data -i morphology-db-msa-r13` عند البناء فتدخل القاعدةُ GPL طبقةَ الصورة العامة، بينما `pyproject.toml` يذكر الأمرَ تعليقًا لا تنفيذًا؛ فالمعالجةُ تشمل `Dockerfile` — نقلُ التنزيل إلى أول تشغيلٍ عند المستخدم (نقطةُ الدخول أو `tools/launch_check.py`) لا إلى البناء (ملاحظة Codex على #155). ويُفحص هل `projections/morphology.py` يُملأ من خرج CALIMA، فإسقاطٌ منشور مشتقٌّ من بيانات GPL |
 | Farasa (QCRI) | **بحثيٌّ فقط**؛ farasapy غلافٌ MIT ينزّل JAR بشروطه | مستبعَد |
 | SinaTools (بيرزيت) | MIT (الشيفرة)؛ رخصةُ النماذج غيرُ مذكورة | رأيٌ ثانٍ رخيص على عيّنة غ١ الذهبية بعد سؤالٍ عن رخصة النماذج |
 
@@ -388,7 +388,7 @@ SILMA-9B (شروط Gemma-2)؛ **Fanar-1-9B: بطاقتُه تقول Apache-2.0 �
 
 | المسألة | المسار/البلوك | يبني على | شرطُ البدء |
 |---|---|---|---|
-| بوابةُ ruff لصيد الإخفاق الصامت على ملفّات مسار anthropic (§٣.٣)؛ وشقّا openai وgoogle مسألتان لصاحبيهما | anthropic / ب٩ | ECC ١ (#146، #153، والشطر الثالث) | دمجُ الشطر الثالث |
+| بوابةُ ruff لصيد الإخفاق الصامت على كلِّ ملفِّ بايثون ناقصَ مسارَي openai وgoogle: ملفّاتُ مسار anthropic وغيرُ المملوك معًا، محسوبةً من `git ls-files` (§٣.٣)؛ وشقّا openai وgoogle مسألتان لصاحبيهما | anthropic / ب٩ | ECC ١ (#146، #153، والشطر الثالث) | دمجُ الشطر الثالث |
 | Hypothesis على النواة المحكومة بخصائصَ مُثبتة ببيان الطفرات (§٣.٢) | anthropic / ب١ | #149 | دمجُ #149 |
 | mutmut صيّادَ ناجين يكتب أسطرَ بيانٍ مرشَّحة (§٣.١) | anthropic / ب٩ | #149 | دمجُ #149 |
 | حزمةُ هجومٍ للحَجر (garak + AgentDojo) وتكليفُ Kimi ببنك حقنٍ عربيّ (§٤.٢) | anthropic / ب٢، ب٨ | ك٢٠، ك٢٣، `docs/external/` | — |
@@ -404,7 +404,7 @@ SILMA-9B (شروط Gemma-2)؛ **Fanar-1-9B: بطاقتُه تقول Apache-2.0 �
 | حارسٌ: كلُّ جدول FTS يمرّ بـ`normalize()` (§٤.٣) | google / ب٧ (بتسليم) | — | — |
 | رقمٌ عربيٌّ خارجيّ (OALL v2 أو lm-eval + Arabic IFEval) على محرّكات ك٢ (§٣.٥) | anthropic / ب٨ + الماك | ك٢، ك١٢ | **قرارُ المالك في البيانات غير التجارية** |
 | Scorecard + Renovate + شهادةُ اللقطة العامة (§٥.٢) | anthropic / ب٩ | ك٢٧ | — |
-| استبعادُ بيانات CAMeL GPL من اللقطة العامة وفحصُ `projections/morphology.py` (§٩) | anthropic / ب٩ + google | ك٢٧ | — |
+| استبعادُ بيانات CAMeL GPL من اللقطة العامة **ومن طبقة صورة Docker** (`Dockerfile:23-25` ينزّلها عند البناء؛ تُنقل إلى أول تشغيلٍ عند المستخدم) وفحصُ `projections/morphology.py` (§٩) | anthropic / ب٩ + google | ك٢٧ | — |
 
 ---
 
@@ -416,7 +416,7 @@ SILMA-9B (شروط Gemma-2)؛ **Fanar-1-9B: بطاقتُه تقول Apache-2.0 �
 - **بلا رخصةٍ معلنة (= كلُّ الحقوق محفوظة):** disler/claude-code-hooks-mastery؛ AlGhafa الأصلي، MMLU-HT، ALRAGE، AraGen،
   Dialectal-Arabic-MMLU، ArabLegalEval، وحزمُ `qimma/*`؛ SinaTools (نماذجُه).
 - **مشتقّاتٌ ممنوعة / مشاركةٌ بالمثل:** awesome-claude-code (CC-BY-NC-ND)؛ trailofbits/skills (CC-BY-SA-4.0: تُركَّب لا تُنسخ).
-- **GPL:** بياناتُ CAMeL `morphology-db-msa-r13` و`-egy-r13` و`disambig-mle-calima-*-r13` (تنزيلٌ عند المستخدم فقط)؛ firejail
+- **GPL:** بياناتُ CAMeL `morphology-db-msa-r13` و`-egy-r13` و`disambig-mle-calima-*-r13` (تنزيلٌ عند المستخدم فقط؛ لا عند بناء الصورة — `Dockerfile:23-25` اليومَ يخالف ذلك، §٤.٣)؛ firejail
   (GPL-2.0 + setuid). وLGPL (bubblewrap، محرّكُ semgrep) كثنائيٍّ خارجيّ مقبول.
 - **شروطُ نماذج غيرُ OSI:** Gemma Terms (SILMA، EmbeddingGemma، Gemma 3 وما قبله، وFanar بالنسب رغم وسمه)؛ Falcon LLM
   Licence (Falcon-H1، 3LM، QIMMA)؛ Llama 4 (Prompt-Guard-2). وق٦٢-٨ يحكم: لا نموذجَ برخصةٍ غيرِ تجارية.
