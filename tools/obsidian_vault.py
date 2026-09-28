@@ -19,7 +19,9 @@
 - لا يُنسخ إلا ما في القائمة المسمّاة `MIRROR_FILES` والأدلّةُ `docs/guides/G*.md`؛ لا مجلّدات ولا أنماطٌ عامة.
 - لا يُكتب فوق ملفٍّ عدّله المالك في `Diwan/` (بصمتُه تخالف البيان) إلا بـ`--force`، ولا يُحذف إلا ما سجّله
   البيانُ ملفًّا كتبته الأداة ولم يتغيّر.
-- ملاحظاتُ «البذرة» (خطواتي، واقرأني) تُكتب مرّةً إن غابت ثم هي ملكُ المالك.
+- «اقرأني» في صندوق الوارد تُكتب مرّةً إن غابت ثم هي ملكُ المالك. أمّا «خطواتي» فتُعاد كتابتُها من الخطة عند كل بناء
+  **مع الحفاظ على علامات المالك** (`[x]` تبقى، وما أُنجز ثم أُجّل يبقى منجزًا) وعلى ما كتبه تحت «## ملاحظاتي»؛ فتأجيلٌ جديد
+  في الخطة (ق٦٨) يبلغ خزنةً قائمة لا الخزنةَ الجديدة وحدها (ملاحظة Codex على #161).
 
 **الحدُّ المعلَن:** الأداةُ لا تمنع المالكَ من وضع الخزنة في مجلّد مزامنةٍ سحابيّ؛ ذلك خيارُه (G10). والمرآةُ
 لقطةٌ عند البناء: تتقادم حتى يُعاد البناء بعد الدمج.
@@ -140,7 +142,8 @@ def render(root: Path = ROOT) -> dict[str, str]:
                              + (f" — **{deferred}**" if deferred else ""))
         board.append("")
     out["لوحة المراحل.md"] = "\n".join(board)
-    steps = ["# خطواتي", "", "علّم الخطوة حين تنتهي. هذه الملاحظة لك: لا تكتب الأداةُ فوقها بعد إنشائها.", ""]
+    steps = ["# خطواتي", "", "علّم الخطوة حين تنتهي. تُعاد كتابةُ القائمة من الخطة عند كل بناء وتبقى علاماتُك؛ وما تكتبه تحت "
+             "«## ملاحظاتي» في آخر الملاحظة يبقى كما هو.", ""]
     postponed = []
     for s in sorted(plan["owner_steps"], key=lambda s: s["order"]):
         guide = f"[[الأدلة/{s['guide_id']}|{s['guide_id']}]]" if re.fullmatch(r"G\d+", s["guide_id"]) else s["guide_id"]
@@ -169,6 +172,32 @@ def _load_manifest(out_dir: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+NOTES_HEADING = "## ملاحظاتي"
+
+
+def migrate_steps(existing: str, rendered: str) -> str:
+    """«خطواتي» تُعاد كتابتُها من الخطة مع الحفاظ على ما للمالك فيها: الخطوةُ المعلَّمة `[x]` في الموجود تبقى معلَّمةً في المولَّد
+    (وإن أُجّلت بعد إنجازها بقيت منجزةً باسمها)، وما كتبه تحت «## ملاحظاتي» يُنقل كما هو. كانت البذرةُ تُحفظ حرفيًّا حتى مع
+    `--force`، فلا يبلغ التأجيلُ (ق٦٨) خزنةً قائمة (ملاحظة Codex على #161)."""
+    done = set(re.findall(r"^- \[[xX]\] \*\*(\d+)\.", existing, re.M))
+    lines = []
+    for line in rendered.splitlines():
+        if (m := re.match(r"^- \[ \] \*\*(\d+)\.", line)) and m.group(1) in done:
+            line = "- [x]" + line[5:]
+        elif (m := re.match(r"^- ⏸ \*\*(\d+)\.", line)) and m.group(1) in done:
+            line = "- [x] " + line[len("- ⏸ "):] + " — أُنجزت قبل التأجيل"
+        lines.append(line)
+    text = "\n".join(lines) + "\n"
+    head, sep, notes = existing.partition("\n" + NOTES_HEADING)
+    if sep:
+        text += "\n" + NOTES_HEADING + notes.rstrip("\n") + "\n"
+    return text
+
+
+def migrate_seed(rel: str, existing: str, rendered: str) -> str:
+    return migrate_steps(existing, rendered) if rel == "خطواتي.md" else existing
+
+
 def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
     vault = check_vault_location(vault, root)
     out_dir = vault / OUT
@@ -181,7 +210,7 @@ def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
                           encoding="utf-8")
     old = _load_manifest(out_dir)["files"]
     wanted = render(root)
-    report = {"written": [], "unchanged": [], "kept_edited": [], "removed": [], "kept_seed": []}
+    report = {"written": [], "unchanged": [], "kept_edited": [], "removed": [], "migrated": []}
     new_manifest: dict[str, str] = {}
     for rel, text in wanted.items():
         target = out_dir / rel
@@ -189,8 +218,16 @@ def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
         if target.exists():
             current = sha(target.read_bytes())
             if rel in SEED_NOTES:
-                report["kept_seed"].append(rel)
-                new_manifest[rel] = old.get(rel, current)
+                # البذرةُ لا تُكتب فوقها حرفيًّا: تُرحَّل بما للمالك فيها (علاماتُه وملاحظاتُه) وتُطبَّق عليها الخطةُ الحالية
+                merged = migrate_seed(rel, target.read_bytes().decode("utf-8"), text)
+                if merged.encode("utf-8") == target.read_bytes():
+                    report["unchanged"].append(rel)
+                    new_manifest[rel] = current
+                    continue
+                data = merged.encode("utf-8")
+                target.write_bytes(data)
+                new_manifest[rel] = sha(data)
+                report["migrated"].append(rel)
                 continue
             if current == sha(data):
                 report["unchanged"].append(rel)
@@ -229,6 +266,8 @@ def check(vault: Path, root: Path = ROOT) -> list[str]:
         if rel in SEED_NOTES:
             if not target.exists():
                 drift.append(f"missing {rel}")
+            elif migrate_seed(rel, target.read_bytes().decode("utf-8"), text) != target.read_bytes().decode("utf-8"):
+                drift.append(f"stale {rel}")
             continue
         if not target.is_file() or target.read_bytes() != text.encode("utf-8"):
             drift.append(f"stale {rel}")

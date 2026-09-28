@@ -105,12 +105,35 @@ def test_an_owner_edit_is_kept_unless_forced(repo, vault):
     assert board.read_text(encoding="utf-8") != "ملاحظتي"
 
 
-def test_the_steps_note_is_seeded_once_and_then_belongs_to_the_owner(repo, vault):
+def test_the_steps_note_keeps_the_owner_s_checkmarks_and_notes_while_the_plan_s_deferrals_reach_it(repo, vault):
+    """ملاحظةُ Codex على #161 (الجولة الثالثة): البذرةُ «خطواتي» كانت تُحفظ حرفيًّا حتى مع `--force`، فتأجيلٌ جديد في الخطة (ق٦٨)
+    لا يبلغ خزنةً قائمة، وتبقى خطواتُ Nitro القديمة عملًا نشطًا. صارت تُرحَّل: علاماتُ المالك تبقى، وما أُنجز ثم أُجّل يبقى
+    منجزًا باسمه، وما كتبه تحت «## ملاحظاتي» يُنقل، والتأجيلُ يصل."""
     ov.build(vault, root=repo)
     steps = vault / "Diwan/خطواتي.md"
-    steps.write_text(steps.read_text(encoding="utf-8").replace("- [ ]", "- [x]"), encoding="utf-8")
-    ov.build(vault, root=repo, force=True)
-    assert "- [x]" in steps.read_text(encoding="utf-8")
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    plan["owner_steps"] += [{"order": 2, "guide_id": "G5", "title": "تجهيز Nitro", "time": "ساعة", "cost": "$0"},
+                            {"order": 3, "guide_id": "G4", "title": "صلاحيات Nitro", "time": "١٠ دقائق", "cost": "$0"}]
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    text = steps.read_text(encoding="utf-8")
+    text = text.replace("- [ ] **1. خطوة**", "- [x] **1. خطوة**").replace("- [ ] **3. صلاحيات Nitro**", "- [x] **3. صلاحيات Nitro**")
+    steps.write_text(text + "\n## ملاحظاتي\n\nسألت المحامي عن الخطوة ٢.\n", encoding="utf-8")
+    why = {"by": "ق٦٨", "until": "2026-10-19", "reason": "الجهازُ غيرُ قابلٍ للوصول"}
+    for step in plan["owner_steps"]:
+        if step["order"] in (2, 3):
+            step["deferred"] = why
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    assert ov.check(vault, root=repo) == ["stale خطواتي.md"]
+    report = ov.build(vault, root=repo)                       # بلا --force: الترحيلُ يحفظ ما للمالك
+    assert report["migrated"] == ["خطواتي.md"] and ov.check(vault, root=repo) == []
+    migrated = steps.read_text(encoding="utf-8")
+    active, postponed = migrated.split("## خطواتٌ مؤجَّلة")
+    assert "- [x] **1. خطوة**" in active and "تجهيز Nitro" not in active
+    assert "- ⏸ **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — مؤجَّلة (ق٦٨" in postponed
+    assert "- [x] **3. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0 — مؤجَّلة (ق٦٨ حتى 2026-10-19: الجهازُ غيرُ قابلٍ للوصول) — أُنجزت قبل التأجيل" in postponed
+    assert migrated.rstrip().endswith("## ملاحظاتي\n\nسألت المحامي عن الخطوة ٢.")
+    assert ov.build(vault, root=repo, force=True)["migrated"] == [] and steps.read_text(encoding="utf-8") == migrated
 
 
 def test_inbox_notes_survive_rebuilds_and_only_written_files_are_removed(repo, vault):
@@ -174,7 +197,9 @@ def test_deferred_plan_entries_are_labelled_and_leave_the_active_checklist(repo,
     real = json.loads((ROOT / ov.PLAN).read_text(encoding="utf-8"))
     deferred_tasks = sorted(t["id"] for t in real["tasks"] if t.get("deferred"))
     assert deferred_tasks == sorted(t["id"] for t in real["tasks"] if t["title"].startswith(("G5: تجهيز Nitro", "المشغّل الزائل diwan-live على Nitro", "معايرة المُشغِّل على لوحة عامة")))
-    assert len(deferred_tasks) == 3 and sum(1 for s in real["owner_steps"] if s.get("deferred")) == 2
+    deferred_steps = sorted(s["order"] for s in real["owner_steps"] if s.get("deferred"))
+    assert len(deferred_tasks) == 3 and deferred_steps == [4, 24, 25], "خطواتُ المالك الثلاث التي لا تُنفَّذ إلا على Nitro"
+    assert all(s["deferred"]["by"] == "ق٦٨" for s in real["owner_steps"] if s.get("deferred"))
     assert any(o["decision"] == "ق٦٨" for o in real.get("overrides", []))
 
 
