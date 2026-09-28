@@ -94,7 +94,7 @@ cmd_bundle() {
   # v1.2 وتسليمُه في open/ وsealed/ وkimi-benchmark/، فيعارض تسليمَ الذاكرة في kimi-memory/ (ملاحظة Codex على #129)
   if [ "$task" = memory ]; then
     grep -q '^## ٠ — ' "$brief" && grep -q '^## ٢ — ' "$brief" \
-      || die "لم يُعثر على §٠ و§٢ في $brief؛ فلا يُقتطع منه شيءٌ بتخمين"
+      || die "لم يُعثر على §٠ و§٢ في ${brief}؛ فلا يُقتطع منه شيءٌ بتخمين"
   fi
   mkdir -p "$KIMI_WORK/prompts"
   {
