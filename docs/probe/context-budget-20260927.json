@@ -1,1689 +1,1707 @@
 {
-  "arabic_token_tax": {
-    "gpt-oss-20b": {
-      "arabic_chars_per_token": 2.73,
-      "arabic_tokens": 78,
-      "english_chars_per_token": 4.74,
-      "english_tokens": 66,
-      "tokens_ratio_arabic_to_english": 1.18
-    },
-    "qwen3.5-9b": {
-      "arabic_chars_per_token": 2.73,
-      "arabic_tokens": 78,
-      "english_chars_per_token": 4.67,
-      "english_tokens": 67,
-      "tokens_ratio_arabic_to_english": 1.16
-    }
+ "arabic_token_tax": {
+  "gpt-oss-20b": {
+   "arabic_chars_per_token": 2.73,
+   "arabic_tokens": 78,
+   "english_chars_per_token": 4.74,
+   "english_tokens": 66,
+   "tokens_ratio_arabic_to_english": 1.18
   },
-  "commit": "ea4fe0764ebc74179ae0dde803ca4aaedc2d05d7",
-  "context_window_tokens": 32768,
-  "findings": [
-    {
-      "code": "costliest_tool_schema",
-      "configuration": "agent_minimal",
-      "share_of_tools": 0.351,
-      "tokenizer": "qwen3.5-9b",
-      "tokens": 270,
-      "tool": "export_document"
-    },
-    {
-      "code": "costliest_tool_schema",
-      "configuration": "agent_minimal",
-      "share_of_tools": 0.347,
-      "tokenizer": "gpt-oss-20b",
-      "tokens": 271,
-      "tool": "export_document"
-    }
-  ],
-  "generated_at": "2026-09-28T04:30:36+00:00",
-  "measurement_limits": [
-    "the_tokenizers_named_are_public_stand_ins_for_the_agents_that_read_section_0_since_claude_codex_and_gemini_tokenizers_are_not_public",
-    "the_runtime_prefix_counts_fixed_texts_only_the_memory_block_attachments_quarantine_findings_and_history_vary_per_turn_and_are_not_counted",
-    "tool_registries_are_built_by_the_web_app_itself_per_named_configuration_of_execution_search_analysis_and_mode_the_headline_is_the_minimal_one_ci_and_the_sandbox_see",
-    "reading_set_entries_carry_sha256_12_so_a_report_can_be_tied_to_the_exact_texts_it_measured",
-    "tool_schemas_are_counted_as_the_json_the_provider_serializes_not_as_the_engine_s_own_chat_template_renders_them",
-    "special_tokens_and_chat_template_framing_are_excluded_so_measured_totals_are_lower_bounds_of_what_the_engine_sees",
-    "the_arabic_token_tax_is_one_fixed_paragraph_pair_not_a_corpus_statistic",
-    "the_context_window_is_the_provider_constant_context_tokens_not_a_measurement_of_the_served_model",
-    "hf_spend_is_an_estimate_from_flavor_and_minutes_until_the_owner_reads_the_hf_invoice",
-    "the_hub_tokenizer_named_for_the_engine_is_a_proxy_the_ollama_tag_qwen3_5_9b_is_a_service_name_not_an_artifact_digest_so_the_pinned_hub_revision_is_not_bound_to_the_served_model_s_embedded_tokenizer"
-  ],
-  "reading_set": {
-    "AGENTS.md": {
-      "bytes": 30265,
-      "chars": 19296,
-      "chars_per_token": {
-        "gpt-oss-20b": 2.58,
-        "qwen3.5-9b": 2.52
-      },
-      "estimate_ratio": {
-        "gpt-oss-20b": 1.074,
-        "qwen3.5-9b": 1.048
-      },
-      "sha256_12": "f780ed5314e7",
-      "tokens": {
-        "gpt-oss-20b": 7488,
-        "qwen3.5-9b": 7672
-      },
-      "tokens_estimate": 8040
-    },
-    "docs/INDEX.md": {
-      "bytes": 18458,
-      "chars": 11704,
-      "chars_per_token": {
-        "gpt-oss-20b": 2.39,
-        "qwen3.5-9b": 2.07
-      },
-      "estimate_ratio": {
-        "gpt-oss-20b": 0.998,
-        "qwen3.5-9b": 0.864
-      },
-      "sha256_12": "1adec3c40c14",
-      "tokens": {
-        "gpt-oss-20b": 4889,
-        "qwen3.5-9b": 5647
-      },
-      "tokens_estimate": 4877
-    },
-    "docs/VISION.md": {
-      "bytes": 10397,
-      "chars": 5958,
-      "chars_per_token": {
-        "gpt-oss-20b": 2.9,
-        "qwen3.5-9b": 2.97
-      },
-      "estimate_ratio": {
-        "gpt-oss-20b": 1.207,
-        "qwen3.5-9b": 1.237
-      },
-      "sha256_12": "df9b1b18e0bb",
-      "tokens": {
-        "gpt-oss-20b": 2058,
-        "qwen3.5-9b": 2007
-      },
-      "tokens_estimate": 2483
-    }
-  },
-  "reading_set_totals": {
-    "bytes": 59120,
-    "tokens": {
-      "gpt-oss-20b": 14435,
-      "qwen3.5-9b": 15326
-    },
-    "tokens_estimate": 15400
-  },
-  "run": {
-    "how": "git clone --branch claude/context-budget-20260927 للمستودع العام ثم checkout ea4fe07 (رأسُ الفرع بعد دمج main b102bbe وإصلاحات Codex) + pip install tokenizers huggingface_hub cryptography + تنزيلُ tokenizer.json للنموذجين من الـHub بلا رمز + تشغيلُ الأداة بـ--tokenizer-file مرّتين في تشغيلةٍ واحدة؛ بصماتُ الوثائق المقيسة (sha256sum في الصندوق) تطابق ما في التقرير؛ الشجرةُ نسخةٌ طازجة عند ea4fe07 بلا تعديل (tree_state نظيف)",
-    "reproduce": "python tools/context_budget.py --tokenizer qwen3.5-9b=Qwen/Qwen3.5-9B@c202236235762e1c871ad0ccb60c8ee5ba337b9a --tokenizer gpt-oss-20b=openai/gpt-oss-20b@6cee5e81ee83917806bbde320786a8fb61efebee --report out.json (يلزم tokenizers وhuggingface_hub وشبكةٌ إلى الـHub، أو --tokenizer-file بملفَّين محلّيَّين)",
-    "spend": {
-      "cap": "HFD2 ($20 شحنًا مسبقًا)",
-      "cumulative_minutes_for_this_audit": 19,
-      "estimate_usd": "≤ 0.03 للتشغيلات الثلاث بسعر cpu-basic المعلَن للحظة التشغيل؛ فاتورةُ HF هي الحاسمة ولم تُقرأ بعد",
-      "flavor": "cpu-basic",
-      "minutes": 6,
-      "recorded_per": "ق٦٧-٣: كلُّ إنفاقٍ يُسجَّل في docs/probe/"
-    },
-    "wall_clock_minutes": 6,
-    "where": "Hugging Face Jobs sandbox (ق٦٧-٣)، flavor cpu-basic، image python:3.12، job 6ab9e89052d0dbd7f1d9fa0d على حساب المالك"
-  },
-  "runtime_prefix": {
-    "configurations": {
-      "agent_analysis": {
-        "each_tool": {
-          "analyze_data": {
-            "bytes": 913,
-            "chars": 705,
-            "chars_per_token": {
-              "gpt-oss-20b": 2.96,
-              "qwen3.5-9b": 3.07
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.235,
-              "qwen3.5-9b": 1.278
-            },
-            "tokens": {
-              "gpt-oss-20b": 238,
-              "qwen3.5-9b": 230
-            },
-            "tokens_estimate": 294
-          },
-          "edit_file": {
-            "bytes": 457,
-            "chars": 369,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.02,
-              "qwen3.5-9b": 3.13
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.262,
-              "qwen3.5-9b": 1.305
-            },
-            "tokens": {
-              "gpt-oss-20b": 122,
-              "qwen3.5-9b": 118
-            },
-            "tokens_estimate": 154
-          },
-          "export_document": {
-            "bytes": 986,
-            "chars": 876,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.23,
-              "qwen3.5-9b": 3.24
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.347,
-              "qwen3.5-9b": 1.352
-            },
-            "tokens": {
-              "gpt-oss-20b": 271,
-              "qwen3.5-9b": 270
-            },
-            "tokens_estimate": 365
-          },
-          "list_files": {
-            "bytes": 238,
-            "chars": 201,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.53,
-              "qwen3.5-9b": 3.59
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.474,
-              "qwen3.5-9b": 1.5
-            },
-            "tokens": {
-              "gpt-oss-20b": 57,
-              "qwen3.5-9b": 56
-            },
-            "tokens_estimate": 84
-          },
-          "propose_memory": {
-            "bytes": 420,
-            "chars": 312,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.06,
-              "qwen3.5-9b": 3.22
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.275,
-              "qwen3.5-9b": 1.34
-            },
-            "tokens": {
-              "gpt-oss-20b": 102,
-              "qwen3.5-9b": 97
-            },
-            "tokens_estimate": 130
-          },
-          "read_file": {
-            "bytes": 266,
-            "chars": 224,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.34,
-              "qwen3.5-9b": 3.5
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.403,
-              "qwen3.5-9b": 1.469
-            },
-            "tokens": {
-              "gpt-oss-20b": 67,
-              "qwen3.5-9b": 64
-            },
-            "tokens_estimate": 94
-          },
-          "search_files": {
-            "bytes": 308,
-            "chars": 265,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.49,
-              "qwen3.5-9b": 3.53
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.461,
-              "qwen3.5-9b": 1.48
-            },
-            "tokens": {
-              "gpt-oss-20b": 76,
-              "qwen3.5-9b": 75
-            },
-            "tokens_estimate": 111
-          },
-          "write_file": {
-            "bytes": 325,
-            "chars": 276,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.29,
-              "qwen3.5-9b": 3.41
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.369,
-              "qwen3.5-9b": 1.42
-            },
-            "tokens": {
-              "gpt-oss-20b": 84,
-              "qwen3.5-9b": 81
-            },
-            "tokens_estimate": 115
-          }
-        },
-        "mode": "agent",
-        "share_of_context_window": {
-          "gpt-oss-20b": 0.0381,
-          "qwen3.5-9b": 0.0372
-        },
-        "system": {
-          "bytes": 609,
-          "chars": 338,
-          "chars_per_token": {
-            "gpt-oss-20b": 2.36,
-            "qwen3.5-9b": 2.54
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 0.986,
-            "qwen3.5-9b": 1.06
-          },
-          "tokens": {
-            "gpt-oss-20b": 143,
-            "qwen3.5-9b": 133
-          },
-          "tokens_estimate": 141
-        },
-        "tool_names": [
-          "analyze_data",
-          "edit_file",
-          "export_document",
-          "list_files",
-          "propose_memory",
-          "read_file",
-          "search_files",
-          "write_file"
-        ],
-        "tools": {
-          "bytes": 3929,
-          "chars": 3244,
-          "chars_per_token": {
-            "gpt-oss-20b": 3.19,
-            "qwen3.5-9b": 3.24
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.328,
-            "qwen3.5-9b": 1.352
-          },
-          "tokens": {
-            "gpt-oss-20b": 1018,
-            "qwen3.5-9b": 1000
-          },
-          "tokens_estimate": 1352
-        },
-        "total_tokens": {
-          "gpt-oss-20b": 1247,
-          "qwen3.5-9b": 1218
-        }
-      },
-      "agent_execution": {
-        "each_tool": {
-          "edit_file": {
-            "bytes": 457,
-            "chars": 369,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.02,
-              "qwen3.5-9b": 3.13
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.262,
-              "qwen3.5-9b": 1.305
-            },
-            "tokens": {
-              "gpt-oss-20b": 122,
-              "qwen3.5-9b": 118
-            },
-            "tokens_estimate": 154
-          },
-          "export_document": {
-            "bytes": 986,
-            "chars": 876,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.23,
-              "qwen3.5-9b": 3.24
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.347,
-              "qwen3.5-9b": 1.352
-            },
-            "tokens": {
-              "gpt-oss-20b": 271,
-              "qwen3.5-9b": 270
-            },
-            "tokens_estimate": 365
-          },
-          "list_files": {
-            "bytes": 238,
-            "chars": 201,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.53,
-              "qwen3.5-9b": 3.59
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.474,
-              "qwen3.5-9b": 1.5
-            },
-            "tokens": {
-              "gpt-oss-20b": 57,
-              "qwen3.5-9b": 56
-            },
-            "tokens_estimate": 84
-          },
-          "propose_memory": {
-            "bytes": 420,
-            "chars": 312,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.06,
-              "qwen3.5-9b": 3.22
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.275,
-              "qwen3.5-9b": 1.34
-            },
-            "tokens": {
-              "gpt-oss-20b": 102,
-              "qwen3.5-9b": 97
-            },
-            "tokens_estimate": 130
-          },
-          "read_file": {
-            "bytes": 266,
-            "chars": 224,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.34,
-              "qwen3.5-9b": 3.5
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.403,
-              "qwen3.5-9b": 1.469
-            },
-            "tokens": {
-              "gpt-oss-20b": 67,
-              "qwen3.5-9b": 64
-            },
-            "tokens_estimate": 94
-          },
-          "run_command": {
-            "bytes": 319,
-            "chars": 267,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.18,
-              "qwen3.5-9b": 3.3
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.333,
-              "qwen3.5-9b": 1.383
-            },
-            "tokens": {
-              "gpt-oss-20b": 84,
-              "qwen3.5-9b": 81
-            },
-            "tokens_estimate": 112
-          },
-          "run_tests": {
-            "bytes": 307,
-            "chars": 249,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.28,
-              "qwen3.5-9b": 3.32
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.368,
-              "qwen3.5-9b": 1.387
-            },
-            "tokens": {
-              "gpt-oss-20b": 76,
-              "qwen3.5-9b": 75
-            },
-            "tokens_estimate": 104
-          },
-          "search_files": {
-            "bytes": 308,
-            "chars": 265,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.49,
-              "qwen3.5-9b": 3.53
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.461,
-              "qwen3.5-9b": 1.48
-            },
-            "tokens": {
-              "gpt-oss-20b": 76,
-              "qwen3.5-9b": 75
-            },
-            "tokens_estimate": 111
-          },
-          "write_file": {
-            "bytes": 325,
-            "chars": 276,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.29,
-              "qwen3.5-9b": 3.41
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.369,
-              "qwen3.5-9b": 1.42
-            },
-            "tokens": {
-              "gpt-oss-20b": 84,
-              "qwen3.5-9b": 81
-            },
-            "tokens_estimate": 115
-          }
-        },
-        "mode": "agent",
-        "share_of_context_window": {
-          "gpt-oss-20b": 0.0357,
-          "qwen3.5-9b": 0.0349
-        },
-        "system": {
-          "bytes": 609,
-          "chars": 338,
-          "chars_per_token": {
-            "gpt-oss-20b": 2.36,
-            "qwen3.5-9b": 2.54
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 0.986,
-            "qwen3.5-9b": 1.06
-          },
-          "tokens": {
-            "gpt-oss-20b": 143,
-            "qwen3.5-9b": 133
-          },
-          "tokens_estimate": 141
-        },
-        "tool_names": [
-          "edit_file",
-          "export_document",
-          "list_files",
-          "propose_memory",
-          "read_file",
-          "run_command",
-          "run_tests",
-          "search_files",
-          "write_file"
-        ],
-        "tools": {
-          "bytes": 3644,
-          "chars": 3057,
-          "chars_per_token": {
-            "gpt-oss-20b": 3.25,
-            "qwen3.5-9b": 3.3
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.355,
-            "qwen3.5-9b": 1.376
-          },
-          "tokens": {
-            "gpt-oss-20b": 940,
-            "qwen3.5-9b": 926
-          },
-          "tokens_estimate": 1274
-        },
-        "total_tokens": {
-          "gpt-oss-20b": 1169,
-          "qwen3.5-9b": 1144
-        }
-      },
-      "agent_full": {
-        "each_tool": {
-          "analyze_data": {
-            "bytes": 913,
-            "chars": 705,
-            "chars_per_token": {
-              "gpt-oss-20b": 2.96,
-              "qwen3.5-9b": 3.07
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.235,
-              "qwen3.5-9b": 1.278
-            },
-            "tokens": {
-              "gpt-oss-20b": 238,
-              "qwen3.5-9b": 230
-            },
-            "tokens_estimate": 294
-          },
-          "edit_file": {
-            "bytes": 457,
-            "chars": 369,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.02,
-              "qwen3.5-9b": 3.13
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.262,
-              "qwen3.5-9b": 1.305
-            },
-            "tokens": {
-              "gpt-oss-20b": 122,
-              "qwen3.5-9b": 118
-            },
-            "tokens_estimate": 154
-          },
-          "export_document": {
-            "bytes": 986,
-            "chars": 876,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.23,
-              "qwen3.5-9b": 3.24
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.347,
-              "qwen3.5-9b": 1.352
-            },
-            "tokens": {
-              "gpt-oss-20b": 271,
-              "qwen3.5-9b": 270
-            },
-            "tokens_estimate": 365
-          },
-          "list_files": {
-            "bytes": 238,
-            "chars": 201,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.53,
-              "qwen3.5-9b": 3.59
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.474,
-              "qwen3.5-9b": 1.5
-            },
-            "tokens": {
-              "gpt-oss-20b": 57,
-              "qwen3.5-9b": 56
-            },
-            "tokens_estimate": 84
-          },
-          "propose_memory": {
-            "bytes": 420,
-            "chars": 312,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.06,
-              "qwen3.5-9b": 3.22
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.275,
-              "qwen3.5-9b": 1.34
-            },
-            "tokens": {
-              "gpt-oss-20b": 102,
-              "qwen3.5-9b": 97
-            },
-            "tokens_estimate": 130
-          },
-          "read_file": {
-            "bytes": 266,
-            "chars": 224,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.34,
-              "qwen3.5-9b": 3.5
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.403,
-              "qwen3.5-9b": 1.469
-            },
-            "tokens": {
-              "gpt-oss-20b": 67,
-              "qwen3.5-9b": 64
-            },
-            "tokens_estimate": 94
-          },
-          "run_command": {
-            "bytes": 319,
-            "chars": 267,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.18,
-              "qwen3.5-9b": 3.3
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.333,
-              "qwen3.5-9b": 1.383
-            },
-            "tokens": {
-              "gpt-oss-20b": 84,
-              "qwen3.5-9b": 81
-            },
-            "tokens_estimate": 112
-          },
-          "run_tests": {
-            "bytes": 307,
-            "chars": 249,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.28,
-              "qwen3.5-9b": 3.32
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.368,
-              "qwen3.5-9b": 1.387
-            },
-            "tokens": {
-              "gpt-oss-20b": 76,
-              "qwen3.5-9b": 75
-            },
-            "tokens_estimate": 104
-          },
-          "search_files": {
-            "bytes": 308,
-            "chars": 265,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.49,
-              "qwen3.5-9b": 3.53
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.461,
-              "qwen3.5-9b": 1.48
-            },
-            "tokens": {
-              "gpt-oss-20b": 76,
-              "qwen3.5-9b": 75
-            },
-            "tokens_estimate": 111
-          },
-          "web_search": {
-            "bytes": 379,
-            "chars": 304,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.38,
-              "qwen3.5-9b": 3.58
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.411,
-              "qwen3.5-9b": 1.494
-            },
-            "tokens": {
-              "gpt-oss-20b": 90,
-              "qwen3.5-9b": 85
-            },
-            "tokens_estimate": 127
-          },
-          "write_file": {
-            "bytes": 325,
-            "chars": 276,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.29,
-              "qwen3.5-9b": 3.41
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.369,
-              "qwen3.5-9b": 1.42
-            },
-            "tokens": {
-              "gpt-oss-20b": 84,
-              "qwen3.5-9b": 81
-            },
-            "tokens_estimate": 115
-          }
-        },
-        "mode": "agent",
-        "share_of_context_window": {
-          "gpt-oss-20b": 0.0457,
-          "qwen3.5-9b": 0.0446
-        },
-        "system": {
-          "bytes": 609,
-          "chars": 338,
-          "chars_per_token": {
-            "gpt-oss-20b": 2.36,
-            "qwen3.5-9b": 2.54
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 0.986,
-            "qwen3.5-9b": 1.06
-          },
-          "tokens": {
-            "gpt-oss-20b": 143,
-            "qwen3.5-9b": 133
-          },
-          "tokens_estimate": 141
-        },
-        "tool_names": [
-          "analyze_data",
-          "edit_file",
-          "export_document",
-          "list_files",
-          "propose_memory",
-          "read_file",
-          "run_command",
-          "run_tests",
-          "search_files",
-          "web_search",
-          "write_file"
-        ],
-        "tools": {
-          "bytes": 4940,
-          "chars": 4070,
-          "chars_per_token": {
-            "gpt-oss-20b": 3.21,
-            "qwen3.5-9b": 3.27
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.338,
-            "qwen3.5-9b": 1.364
-          },
-          "tokens": {
-            "gpt-oss-20b": 1268,
-            "qwen3.5-9b": 1243
-          },
-          "tokens_estimate": 1696
-        },
-        "total_tokens": {
-          "gpt-oss-20b": 1497,
-          "qwen3.5-9b": 1461
-        }
-      },
-      "agent_minimal": {
-        "each_tool": {
-          "edit_file": {
-            "bytes": 457,
-            "chars": 369,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.02,
-              "qwen3.5-9b": 3.13
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.262,
-              "qwen3.5-9b": 1.305
-            },
-            "tokens": {
-              "gpt-oss-20b": 122,
-              "qwen3.5-9b": 118
-            },
-            "tokens_estimate": 154
-          },
-          "export_document": {
-            "bytes": 986,
-            "chars": 876,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.23,
-              "qwen3.5-9b": 3.24
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.347,
-              "qwen3.5-9b": 1.352
-            },
-            "tokens": {
-              "gpt-oss-20b": 271,
-              "qwen3.5-9b": 270
-            },
-            "tokens_estimate": 365
-          },
-          "list_files": {
-            "bytes": 238,
-            "chars": 201,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.53,
-              "qwen3.5-9b": 3.59
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.474,
-              "qwen3.5-9b": 1.5
-            },
-            "tokens": {
-              "gpt-oss-20b": 57,
-              "qwen3.5-9b": 56
-            },
-            "tokens_estimate": 84
-          },
-          "propose_memory": {
-            "bytes": 420,
-            "chars": 312,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.06,
-              "qwen3.5-9b": 3.22
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.275,
-              "qwen3.5-9b": 1.34
-            },
-            "tokens": {
-              "gpt-oss-20b": 102,
-              "qwen3.5-9b": 97
-            },
-            "tokens_estimate": 130
-          },
-          "read_file": {
-            "bytes": 266,
-            "chars": 224,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.34,
-              "qwen3.5-9b": 3.5
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.403,
-              "qwen3.5-9b": 1.469
-            },
-            "tokens": {
-              "gpt-oss-20b": 67,
-              "qwen3.5-9b": 64
-            },
-            "tokens_estimate": 94
-          },
-          "search_files": {
-            "bytes": 308,
-            "chars": 265,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.49,
-              "qwen3.5-9b": 3.53
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.461,
-              "qwen3.5-9b": 1.48
-            },
-            "tokens": {
-              "gpt-oss-20b": 76,
-              "qwen3.5-9b": 75
-            },
-            "tokens_estimate": 111
-          },
-          "write_file": {
-            "bytes": 325,
-            "chars": 276,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.29,
-              "qwen3.5-9b": 3.41
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.369,
-              "qwen3.5-9b": 1.42
-            },
-            "tokens": {
-              "gpt-oss-20b": 84,
-              "qwen3.5-9b": 81
-            },
-            "tokens_estimate": 115
-          }
-        },
-        "mode": "agent",
-        "share_of_context_window": {
-          "gpt-oss-20b": 0.0308,
-          "qwen3.5-9b": 0.0301
-        },
-        "system": {
-          "bytes": 609,
-          "chars": 338,
-          "chars_per_token": {
-            "gpt-oss-20b": 2.36,
-            "qwen3.5-9b": 2.54
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 0.986,
-            "qwen3.5-9b": 1.06
-          },
-          "tokens": {
-            "gpt-oss-20b": 143,
-            "qwen3.5-9b": 133
-          },
-          "tokens_estimate": 141
-        },
-        "tool_names": [
-          "edit_file",
-          "export_document",
-          "list_files",
-          "propose_memory",
-          "read_file",
-          "search_files",
-          "write_file"
-        ],
-        "tools": {
-          "bytes": 3014,
-          "chars": 2537,
-          "chars_per_token": {
-            "gpt-oss-20b": 3.25,
-            "qwen3.5-9b": 3.3
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.356,
-            "qwen3.5-9b": 1.376
-          },
-          "tokens": {
-            "gpt-oss-20b": 780,
-            "qwen3.5-9b": 769
-          },
-          "tokens_estimate": 1058
-        },
-        "total_tokens": {
-          "gpt-oss-20b": 1009,
-          "qwen3.5-9b": 987
-        }
-      },
-      "agent_search": {
-        "each_tool": {
-          "edit_file": {
-            "bytes": 457,
-            "chars": 369,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.02,
-              "qwen3.5-9b": 3.13
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.262,
-              "qwen3.5-9b": 1.305
-            },
-            "tokens": {
-              "gpt-oss-20b": 122,
-              "qwen3.5-9b": 118
-            },
-            "tokens_estimate": 154
-          },
-          "export_document": {
-            "bytes": 986,
-            "chars": 876,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.23,
-              "qwen3.5-9b": 3.24
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.347,
-              "qwen3.5-9b": 1.352
-            },
-            "tokens": {
-              "gpt-oss-20b": 271,
-              "qwen3.5-9b": 270
-            },
-            "tokens_estimate": 365
-          },
-          "list_files": {
-            "bytes": 238,
-            "chars": 201,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.53,
-              "qwen3.5-9b": 3.59
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.474,
-              "qwen3.5-9b": 1.5
-            },
-            "tokens": {
-              "gpt-oss-20b": 57,
-              "qwen3.5-9b": 56
-            },
-            "tokens_estimate": 84
-          },
-          "propose_memory": {
-            "bytes": 420,
-            "chars": 312,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.06,
-              "qwen3.5-9b": 3.22
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.275,
-              "qwen3.5-9b": 1.34
-            },
-            "tokens": {
-              "gpt-oss-20b": 102,
-              "qwen3.5-9b": 97
-            },
-            "tokens_estimate": 130
-          },
-          "read_file": {
-            "bytes": 266,
-            "chars": 224,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.34,
-              "qwen3.5-9b": 3.5
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.403,
-              "qwen3.5-9b": 1.469
-            },
-            "tokens": {
-              "gpt-oss-20b": 67,
-              "qwen3.5-9b": 64
-            },
-            "tokens_estimate": 94
-          },
-          "search_files": {
-            "bytes": 308,
-            "chars": 265,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.49,
-              "qwen3.5-9b": 3.53
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.461,
-              "qwen3.5-9b": 1.48
-            },
-            "tokens": {
-              "gpt-oss-20b": 76,
-              "qwen3.5-9b": 75
-            },
-            "tokens_estimate": 111
-          },
-          "web_search": {
-            "bytes": 379,
-            "chars": 304,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.38,
-              "qwen3.5-9b": 3.58
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.411,
-              "qwen3.5-9b": 1.494
-            },
-            "tokens": {
-              "gpt-oss-20b": 90,
-              "qwen3.5-9b": 85
-            },
-            "tokens_estimate": 127
-          },
-          "write_file": {
-            "bytes": 325,
-            "chars": 276,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.29,
-              "qwen3.5-9b": 3.41
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.369,
-              "qwen3.5-9b": 1.42
-            },
-            "tokens": {
-              "gpt-oss-20b": 84,
-              "qwen3.5-9b": 81
-            },
-            "tokens_estimate": 115
-          }
-        },
-        "mode": "agent",
-        "share_of_context_window": {
-          "gpt-oss-20b": 0.0335,
-          "qwen3.5-9b": 0.0327
-        },
-        "system": {
-          "bytes": 609,
-          "chars": 338,
-          "chars_per_token": {
-            "gpt-oss-20b": 2.36,
-            "qwen3.5-9b": 2.54
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 0.986,
-            "qwen3.5-9b": 1.06
-          },
-          "tokens": {
-            "gpt-oss-20b": 143,
-            "qwen3.5-9b": 133
-          },
-          "tokens_estimate": 141
-        },
-        "tool_names": [
-          "edit_file",
-          "export_document",
-          "list_files",
-          "propose_memory",
-          "read_file",
-          "search_files",
-          "web_search",
-          "write_file"
-        ],
-        "tools": {
-          "bytes": 3395,
-          "chars": 2843,
-          "chars_per_token": {
-            "gpt-oss-20b": 3.27,
-            "qwen3.5-9b": 3.33
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.362,
-            "qwen3.5-9b": 1.386
-          },
-          "tokens": {
-            "gpt-oss-20b": 870,
-            "qwen3.5-9b": 855
-          },
-          "tokens_estimate": 1185
-        },
-        "total_tokens": {
-          "gpt-oss-20b": 1099,
-          "qwen3.5-9b": 1073
-        }
-      },
-      "coder": {
-        "each_tool": {
-          "edit_file": {
-            "bytes": 457,
-            "chars": 369,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.02,
-              "qwen3.5-9b": 3.13
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.262,
-              "qwen3.5-9b": 1.305
-            },
-            "tokens": {
-              "gpt-oss-20b": 122,
-              "qwen3.5-9b": 118
-            },
-            "tokens_estimate": 154
-          },
-          "list_files": {
-            "bytes": 238,
-            "chars": 201,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.53,
-              "qwen3.5-9b": 3.59
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.474,
-              "qwen3.5-9b": 1.5
-            },
-            "tokens": {
-              "gpt-oss-20b": 57,
-              "qwen3.5-9b": 56
-            },
-            "tokens_estimate": 84
-          },
-          "read_file": {
-            "bytes": 266,
-            "chars": 224,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.34,
-              "qwen3.5-9b": 3.5
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.403,
-              "qwen3.5-9b": 1.469
-            },
-            "tokens": {
-              "gpt-oss-20b": 67,
-              "qwen3.5-9b": 64
-            },
-            "tokens_estimate": 94
-          },
-          "search_files": {
-            "bytes": 308,
-            "chars": 265,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.49,
-              "qwen3.5-9b": 3.53
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.461,
-              "qwen3.5-9b": 1.48
-            },
-            "tokens": {
-              "gpt-oss-20b": 76,
-              "qwen3.5-9b": 75
-            },
-            "tokens_estimate": 111
-          },
-          "write_file": {
-            "bytes": 325,
-            "chars": 276,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.29,
-              "qwen3.5-9b": 3.41
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.369,
-              "qwen3.5-9b": 1.42
-            },
-            "tokens": {
-              "gpt-oss-20b": 84,
-              "qwen3.5-9b": 81
-            },
-            "tokens_estimate": 115
-          }
-        },
-        "mode": "coder",
-        "share_of_context_window": {
-          "gpt-oss-20b": 0.0267,
-          "qwen3.5-9b": 0.0258
-        },
-        "system": {
-          "bytes": 1738,
-          "chars": 974,
-          "chars_per_token": {
-            "gpt-oss-20b": 2.55,
-            "qwen3.5-9b": 2.69
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.063,
-            "qwen3.5-9b": 1.122
-          },
-          "tokens": {
-            "gpt-oss-20b": 382,
-            "qwen3.5-9b": 362
-          },
-          "tokens_estimate": 406
-        },
-        "tool_names": [
-          "edit_file",
-          "list_files",
-          "read_file",
-          "search_files",
-          "write_file"
-        ],
-        "tools": {
-          "bytes": 1604,
-          "chars": 1345,
-          "chars_per_token": {
-            "gpt-oss-20b": 3.3,
-            "qwen3.5-9b": 3.36
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.378,
-            "qwen3.5-9b": 1.403
-          },
-          "tokens": {
-            "gpt-oss-20b": 407,
-            "qwen3.5-9b": 400
-          },
-          "tokens_estimate": 561
-        },
-        "total_tokens": {
-          "gpt-oss-20b": 875,
-          "qwen3.5-9b": 847
-        }
-      },
-      "coder_execution": {
-        "each_tool": {
-          "edit_file": {
-            "bytes": 457,
-            "chars": 369,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.02,
-              "qwen3.5-9b": 3.13
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.262,
-              "qwen3.5-9b": 1.305
-            },
-            "tokens": {
-              "gpt-oss-20b": 122,
-              "qwen3.5-9b": 118
-            },
-            "tokens_estimate": 154
-          },
-          "list_files": {
-            "bytes": 238,
-            "chars": 201,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.53,
-              "qwen3.5-9b": 3.59
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.474,
-              "qwen3.5-9b": 1.5
-            },
-            "tokens": {
-              "gpt-oss-20b": 57,
-              "qwen3.5-9b": 56
-            },
-            "tokens_estimate": 84
-          },
-          "read_file": {
-            "bytes": 266,
-            "chars": 224,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.34,
-              "qwen3.5-9b": 3.5
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.403,
-              "qwen3.5-9b": 1.469
-            },
-            "tokens": {
-              "gpt-oss-20b": 67,
-              "qwen3.5-9b": 64
-            },
-            "tokens_estimate": 94
-          },
-          "run_command": {
-            "bytes": 319,
-            "chars": 267,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.18,
-              "qwen3.5-9b": 3.3
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.333,
-              "qwen3.5-9b": 1.383
-            },
-            "tokens": {
-              "gpt-oss-20b": 84,
-              "qwen3.5-9b": 81
-            },
-            "tokens_estimate": 112
-          },
-          "run_tests": {
-            "bytes": 307,
-            "chars": 249,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.28,
-              "qwen3.5-9b": 3.32
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.368,
-              "qwen3.5-9b": 1.387
-            },
-            "tokens": {
-              "gpt-oss-20b": 76,
-              "qwen3.5-9b": 75
-            },
-            "tokens_estimate": 104
-          },
-          "search_files": {
-            "bytes": 308,
-            "chars": 265,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.49,
-              "qwen3.5-9b": 3.53
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.461,
-              "qwen3.5-9b": 1.48
-            },
-            "tokens": {
-              "gpt-oss-20b": 76,
-              "qwen3.5-9b": 75
-            },
-            "tokens_estimate": 111
-          },
-          "write_file": {
-            "bytes": 325,
-            "chars": 276,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.29,
-              "qwen3.5-9b": 3.41
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.369,
-              "qwen3.5-9b": 1.42
-            },
-            "tokens": {
-              "gpt-oss-20b": 84,
-              "qwen3.5-9b": 81
-            },
-            "tokens_estimate": 115
-          }
-        },
-        "mode": "coder",
-        "share_of_context_window": {
-          "gpt-oss-20b": 0.0316,
-          "qwen3.5-9b": 0.0306
-        },
-        "system": {
-          "bytes": 1738,
-          "chars": 974,
-          "chars_per_token": {
-            "gpt-oss-20b": 2.55,
-            "qwen3.5-9b": 2.69
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.063,
-            "qwen3.5-9b": 1.122
-          },
-          "tokens": {
-            "gpt-oss-20b": 382,
-            "qwen3.5-9b": 362
-          },
-          "tokens_estimate": 406
-        },
-        "tool_names": [
-          "edit_file",
-          "list_files",
-          "read_file",
-          "run_command",
-          "run_tests",
-          "search_files",
-          "write_file"
-        ],
-        "tools": {
-          "bytes": 2234,
-          "chars": 1865,
-          "chars_per_token": {
-            "gpt-oss-20b": 3.29,
-            "qwen3.5-9b": 3.35
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.372,
-            "qwen3.5-9b": 1.397
-          },
-          "tokens": {
-            "gpt-oss-20b": 567,
-            "qwen3.5-9b": 557
-          },
-          "tokens_estimate": 778
-        },
-        "total_tokens": {
-          "gpt-oss-20b": 1035,
-          "qwen3.5-9b": 1004
-        }
-      },
-      "research": {
-        "each_tool": {
-          "web_search": {
-            "bytes": 379,
-            "chars": 304,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.38,
-              "qwen3.5-9b": 3.58
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.411,
-              "qwen3.5-9b": 1.494
-            },
-            "tokens": {
-              "gpt-oss-20b": 90,
-              "qwen3.5-9b": 85
-            },
-            "tokens_estimate": 127
-          }
-        },
-        "mode": "research",
-        "share_of_context_window": {
-          "gpt-oss-20b": 0.0157,
-          "qwen3.5-9b": 0.0152
-        },
-        "system": {
-          "bytes": 1536,
-          "chars": 860,
-          "chars_per_token": {
-            "gpt-oss-20b": 2.55,
-            "qwen3.5-9b": 2.64
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.065,
-            "qwen3.5-9b": 1.101
-          },
-          "tokens": {
-            "gpt-oss-20b": 337,
-            "qwen3.5-9b": 326
-          },
-          "tokens_estimate": 359
-        },
-        "tool_names": [
-          "web_search"
-        ],
-        "tools": {
-          "bytes": 381,
-          "chars": 306,
-          "chars_per_token": {
-            "gpt-oss-20b": 3.36,
-            "qwen3.5-9b": 3.52
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.407,
-            "qwen3.5-9b": 1.471
-          },
-          "tokens": {
-            "gpt-oss-20b": 91,
-            "qwen3.5-9b": 87
-          },
-          "tokens_estimate": 128
-        },
-        "total_tokens": {
-          "gpt-oss-20b": 514,
-          "qwen3.5-9b": 498
-        }
-      },
-      "translate": {
-        "each_tool": {
-          "check_translation": {
-            "bytes": 632,
-            "chars": 492,
-            "chars_per_token": {
-              "gpt-oss-20b": 3.22,
-              "qwen3.5-9b": 3.37
-            },
-            "estimate_ratio": {
-              "gpt-oss-20b": 1.34,
-              "qwen3.5-9b": 1.404
-            },
-            "tokens": {
-              "gpt-oss-20b": 153,
-              "qwen3.5-9b": 146
-            },
-            "tokens_estimate": 205
-          }
-        },
-        "mode": "translate",
-        "share_of_context_window": {
-          "gpt-oss-20b": 0.0175,
-          "qwen3.5-9b": 0.0171
-        },
-        "system": {
-          "bytes": 1515,
-          "chars": 858,
-          "chars_per_token": {
-            "gpt-oss-20b": 2.58,
-            "qwen3.5-9b": 2.62
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.075,
-            "qwen3.5-9b": 1.095
-          },
-          "tokens": {
-            "gpt-oss-20b": 333,
-            "qwen3.5-9b": 327
-          },
-          "tokens_estimate": 358
-        },
-        "tool_names": [
-          "check_translation"
-        ],
-        "tools": {
-          "bytes": 634,
-          "chars": 494,
-          "chars_per_token": {
-            "gpt-oss-20b": 3.21,
-            "qwen3.5-9b": 3.34
-          },
-          "estimate_ratio": {
-            "gpt-oss-20b": 1.338,
-            "qwen3.5-9b": 1.392
-          },
-          "tokens": {
-            "gpt-oss-20b": 154,
-            "qwen3.5-9b": 148
-          },
-          "tokens_estimate": 206
-        },
-        "total_tokens": {
-          "gpt-oss-20b": 573,
-          "qwen3.5-9b": 560
-        }
-      }
-    },
-    "envelope": {
-      "bytes": 470,
-      "chars": 470,
-      "chars_per_token": {
-        "gpt-oss-20b": 5.47,
-        "qwen3.5-9b": 5.53
-      },
-      "estimate_ratio": {
-        "gpt-oss-20b": 2.279,
-        "qwen3.5-9b": 2.306
-      },
-      "tokens": {
-        "gpt-oss-20b": 86,
-        "qwen3.5-9b": 85
-      },
-      "tokens_estimate": 196
-    },
-    "headline": "agent_minimal",
-    "text": {
-      "system": {
-        "bytes": 467,
-        "chars": 261,
-        "chars_per_token": {
-          "gpt-oss-20b": 3.11,
-          "qwen3.5-9b": 3.39
-        },
-        "estimate_ratio": {
-          "gpt-oss-20b": 1.298,
-          "qwen3.5-9b": 1.416
-        },
-        "tokens": {
-          "gpt-oss-20b": 84,
-          "qwen3.5-9b": 77
-        },
-        "tokens_estimate": 109
-      }
-    }
-  },
-  "schema_version": 1,
-  "superseded_measurement": {
-    "commit": "aeb9dab17b608dc5c0a533c0de40385973fcf1a1 (رأسُ الفرع قبل دمج main b102bbe)",
-    "earlier": {
-      "commit": "bbb2789c26d6cf7607ba4779a79720ff0f022197 (main) مع أداة الفرع محقونةً وقاسمِ التقدير القديم ٣",
-      "job": "6ab9ac7752d0dbd7f1d9eba6، cpu-basic، نحو ٧ دقائق",
-      "reading_set_tokens": {
-        "gpt-oss-20b": 14292,
-        "qwen3.5-9b": 15168
-      },
-      "tokens_estimate_at_divisor_3": 12186,
-      "why_superseded": "ملاحظةُ Codex على #157: الدليلُ يجب أن يقيس الفهرسَ النهائيّ للرأس المنشور لا main؛ ومخطّطاتُ الأدوات كانت قائمةً ثابتة لا سجلَّ التطبيق"
-    },
-    "job": "6ab9b7606b030d633f69b17c، cpu-basic، نحو ٦ دقائق",
-    "reading_set_bytes": 58630,
-    "reading_set_sha256_12": {
-      "AGENTS.md": "131adb2ea30b",
-      "docs/INDEX.md": "06a65699b0a2",
-      "docs/VISION.md": "df9b1b18e0bb"
-    },
-    "reading_set_tokens": {
-      "gpt-oss-20b": 14321,
-      "qwen3.5-9b": 15209
-    },
-    "tokens_estimate": 15263,
-    "why_superseded": "ملاحظةُ Codex على #157: دمجُ main (b102bbe) بعد القياس غيّر AGENTS.md (§٥) وdocs/INDEX.md فلم تعد بصماتُ الدليل بصماتِ الرأس المنشور؛ أرقامُ السابقة والضريبة لم تتغيّر لأن شيفرة التشغيل لم تتغيّر"
-  },
-  "thresholds": {
-    "estimate_drift": 0.2,
-    "prefix_share_warning": 0.1
-  },
-  "tokenizers": {
-    "gpt-oss-20b": {
-      "file_sha256_12": "0614fe83cada",
-      "loaded_from": "file",
-      "revision": "6cee5e81ee83917806bbde320786a8fb61efebee",
-      "source": "openai/gpt-oss-20b@6cee5e81ee83917806bbde320786a8fb61efebee tokenizer.json",
-      "stands_for": "العاملُ المحلّي المسجَّل (OpenCode، ق٦٢) وبديلٌ عامٌّ عن مرمِّزات Codex غير العامّة"
-    },
-    "qwen3.5-9b": {
-      "file_sha256_12": "5f9e4d4901a9",
-      "loaded_from": "file",
-      "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
-      "source": "Qwen/Qwen3.5-9B@c202236235762e1c871ad0ccb60c8ee5ba337b9a tokenizer.json",
-      "stands_for": "بديلٌ مسمًّى عن مرمِّز المحرّك المعتمَد (ق٥٤) عبر Ollama: وسمُ `qwen3.5:9b` اسمُ خدمةٍ لا بصمةُ أوزان، فمراجعةُ الـHub المثبَّتة غيرُ مربوطةٍ بمرمِّز الوسم المضمَّن (ملاحظة Codex على #157؛ أُضيف بعد القياس والأرقامُ كما هي)"
-    }
-  },
-  "tool": "tools/context_budget.py",
-  "tree_state": {
-    "changed_paths": [],
-    "dirty": false
+  "qwen3.5-9b": {
+   "arabic_chars_per_token": 2.73,
+   "arabic_tokens": 78,
+   "english_chars_per_token": 4.67,
+   "english_tokens": 67,
+   "tokens_ratio_arabic_to_english": 1.16
   }
+ },
+ "bytecode_isolated": true,
+ "commit": "099ac93929b4e94f331cefd1193ea98a9126389c",
+ "context_window_tokens": 32768,
+ "findings": [
+  {
+   "code": "costliest_tool_schema",
+   "configuration": "agent_minimal",
+   "share_of_tools": 0.351,
+   "tokenizer": "qwen3.5-9b",
+   "tokens": 270,
+   "tool": "export_document"
+  },
+  {
+   "code": "costliest_tool_schema",
+   "configuration": "agent_minimal",
+   "share_of_tools": 0.347,
+   "tokenizer": "gpt-oss-20b",
+   "tokens": 271,
+   "tool": "export_document"
+  }
+ ],
+ "generated_at": "2026-09-28T08:07:34+00:00",
+ "measurement_limits": [
+  "the_tokenizers_named_are_public_stand_ins_for_the_agents_that_read_section_0_since_claude_codex_and_gemini_tokenizers_are_not_public",
+  "the_runtime_prefix_counts_fixed_texts_only_the_memory_block_attachments_quarantine_findings_and_history_vary_per_turn_and_are_not_counted",
+  "tool_registries_are_built_by_the_web_app_itself_per_named_configuration_of_execution_search_analysis_and_mode_the_headline_is_the_minimal_one_ci_and_the_sandbox_see",
+  "reading_set_entries_carry_sha256_12_so_a_report_can_be_tied_to_the_exact_texts_it_measured",
+  "tool_schemas_are_counted_as_the_json_the_provider_serializes_not_as_the_engine_s_own_chat_template_renders_them",
+  "special_tokens_and_chat_template_framing_are_excluded_so_measured_totals_are_lower_bounds_of_what_the_engine_sees",
+  "the_arabic_token_tax_is_one_fixed_paragraph_pair_not_a_corpus_statistic",
+  "the_context_window_is_the_provider_constant_context_tokens_not_a_measurement_of_the_served_model",
+  "the_hub_tokenizer_named_for_the_engine_is_a_proxy_the_ollama_tag_qwen3_5_9b_is_a_service_name_not_an_artifact_digest_so_the_pinned_hub_revision_is_not_bound_to_the_served_model_s_embedded_tokenizer",
+  "bytecode_is_read_and_written_under_a_private_pycache_prefix_set_when_this_tool_is_imported_so_a_stale_or_tampered_pyc_in_the_tree_s___pycache___is_never_loaded_for_context_index_or_a_product_module_but_a_module_imported_before_this_tool_is_out_of_its_reach"
+ ],
+ "reading_set": {
+  "AGENTS.md": {
+   "bytes": 30265,
+   "chars": 19296,
+   "chars_per_token": {
+    "gpt-oss-20b": 2.58,
+    "qwen3.5-9b": 2.52
+   },
+   "estimate_ratio": {
+    "gpt-oss-20b": 1.073,
+    "qwen3.5-9b": 1.048
+   },
+   "sha256_12": "e5aa7fd225b6",
+   "tokens": {
+    "gpt-oss-20b": 7490,
+    "qwen3.5-9b": 7671
+   },
+   "tokens_estimate": 8040
+  },
+  "docs/INDEX.md": {
+   "bytes": 18458,
+   "chars": 11704,
+   "chars_per_token": {
+    "gpt-oss-20b": 2.39,
+    "qwen3.5-9b": 2.07
+   },
+   "estimate_ratio": {
+    "gpt-oss-20b": 0.997,
+    "qwen3.5-9b": 0.864
+   },
+   "sha256_12": "70c318f96101",
+   "tokens": {
+    "gpt-oss-20b": 4891,
+    "qwen3.5-9b": 5646
+   },
+   "tokens_estimate": 4877
+  },
+  "docs/VISION.md": {
+   "bytes": 10397,
+   "chars": 5958,
+   "chars_per_token": {
+    "gpt-oss-20b": 2.9,
+    "qwen3.5-9b": 2.97
+   },
+   "estimate_ratio": {
+    "gpt-oss-20b": 1.207,
+    "qwen3.5-9b": 1.237
+   },
+   "sha256_12": "df9b1b18e0bb",
+   "tokens": {
+    "gpt-oss-20b": 2058,
+    "qwen3.5-9b": 2007
+   },
+   "tokens_estimate": 2483
+  }
+ },
+ "reading_set_totals": {
+  "bytes": 59120,
+  "tokens": {
+   "gpt-oss-20b": 14439,
+   "qwen3.5-9b": 15324
+  },
+  "tokens_estimate": 15400
+ },
+ "run": {
+  "how": "git clone --branch claude/context-budget-20260927 للمستودع العام ثم checkout 099ac93 (رأسُ الفرع بعد دمج main a4813bc وعزل الـbytecode عند استيراد الأداة) + pip install tokenizers huggingface_hub cryptography + تنزيلُ tokenizer.json للنموذجين من الـHub بلا رمز + تشغيلُ الأداة بـ--tokenizer-file مرّتين في تشغيلةٍ واحدة؛ بصماتُ الوثائق المقيسة (sha256sum في الصندوق) تطابق ما في التقرير؛ الشجرةُ نسخةٌ طازجة عند 099ac93 بلا تعديل (tree_state نظيف) والـbytecode معزول (bytecode_isolated)",
+  "reproduce": "python tools/context_budget.py --tokenizer qwen3.5-9b=Qwen/Qwen3.5-9B@c202236235762e1c871ad0ccb60c8ee5ba337b9a --tokenizer gpt-oss-20b=openai/gpt-oss-20b@6cee5e81ee83917806bbde320786a8fb61efebee --report out.json (يلزم tokenizers وhuggingface_hub وشبكةٌ إلى الـHub، أو --tokenizer-file بملفَّين محلّيَّين)",
+  "spend": {
+   "cap": "HFD2 ($20 شحنًا مسبقًا)",
+   "cumulative_minutes_for_this_audit": 31,
+   "estimate_usd": "≤ 0.06 للتشغيلات الأربع بسعر cpu-basic المعلَن للحظة التشغيل؛ فاتورةُ HF هي الحاسمة ولم تُقرأ بعد",
+   "flavor": "cpu-basic",
+   "minutes": 12,
+   "recorded_per": "ق٦٧-٣: كلُّ إنفاقٍ يُسجَّل في docs/probe/"
+  },
+  "wall_clock_minutes": 12,
+  "where": "Hugging Face Jobs sandbox (ق٦٧-٣)، flavor cpu-basic، image python:3.12، job 6aba1df252d0dbd7f1da061c على حساب المالك"
+ },
+ "runtime_prefix": {
+  "configurations": {
+   "agent_analysis": {
+    "each_tool": {
+     "analyze_data": {
+      "bytes": 913,
+      "chars": 705,
+      "chars_per_token": {
+       "gpt-oss-20b": 2.96,
+       "qwen3.5-9b": 3.07
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.235,
+       "qwen3.5-9b": 1.278
+      },
+      "tokens": {
+       "gpt-oss-20b": 238,
+       "qwen3.5-9b": 230
+      },
+      "tokens_estimate": 294
+     },
+     "edit_file": {
+      "bytes": 457,
+      "chars": 369,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.02,
+       "qwen3.5-9b": 3.13
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.262,
+       "qwen3.5-9b": 1.305
+      },
+      "tokens": {
+       "gpt-oss-20b": 122,
+       "qwen3.5-9b": 118
+      },
+      "tokens_estimate": 154
+     },
+     "export_document": {
+      "bytes": 986,
+      "chars": 876,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.23,
+       "qwen3.5-9b": 3.24
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.347,
+       "qwen3.5-9b": 1.352
+      },
+      "tokens": {
+       "gpt-oss-20b": 271,
+       "qwen3.5-9b": 270
+      },
+      "tokens_estimate": 365
+     },
+     "list_files": {
+      "bytes": 238,
+      "chars": 201,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.53,
+       "qwen3.5-9b": 3.59
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.474,
+       "qwen3.5-9b": 1.5
+      },
+      "tokens": {
+       "gpt-oss-20b": 57,
+       "qwen3.5-9b": 56
+      },
+      "tokens_estimate": 84
+     },
+     "propose_memory": {
+      "bytes": 420,
+      "chars": 312,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.06,
+       "qwen3.5-9b": 3.22
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.275,
+       "qwen3.5-9b": 1.34
+      },
+      "tokens": {
+       "gpt-oss-20b": 102,
+       "qwen3.5-9b": 97
+      },
+      "tokens_estimate": 130
+     },
+     "read_file": {
+      "bytes": 266,
+      "chars": 224,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.34,
+       "qwen3.5-9b": 3.5
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.403,
+       "qwen3.5-9b": 1.469
+      },
+      "tokens": {
+       "gpt-oss-20b": 67,
+       "qwen3.5-9b": 64
+      },
+      "tokens_estimate": 94
+     },
+     "search_files": {
+      "bytes": 308,
+      "chars": 265,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.49,
+       "qwen3.5-9b": 3.53
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.461,
+       "qwen3.5-9b": 1.48
+      },
+      "tokens": {
+       "gpt-oss-20b": 76,
+       "qwen3.5-9b": 75
+      },
+      "tokens_estimate": 111
+     },
+     "write_file": {
+      "bytes": 325,
+      "chars": 276,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.29,
+       "qwen3.5-9b": 3.41
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.369,
+       "qwen3.5-9b": 1.42
+      },
+      "tokens": {
+       "gpt-oss-20b": 84,
+       "qwen3.5-9b": 81
+      },
+      "tokens_estimate": 115
+     }
+    },
+    "mode": "agent",
+    "share_of_context_window": {
+     "gpt-oss-20b": 0.0381,
+     "qwen3.5-9b": 0.0372
+    },
+    "system": {
+     "bytes": 609,
+     "chars": 338,
+     "chars_per_token": {
+      "gpt-oss-20b": 2.36,
+      "qwen3.5-9b": 2.54
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 0.986,
+      "qwen3.5-9b": 1.06
+     },
+     "tokens": {
+      "gpt-oss-20b": 143,
+      "qwen3.5-9b": 133
+     },
+     "tokens_estimate": 141
+    },
+    "tool_names": [
+     "analyze_data",
+     "edit_file",
+     "export_document",
+     "list_files",
+     "propose_memory",
+     "read_file",
+     "search_files",
+     "write_file"
+    ],
+    "tools": {
+     "bytes": 3929,
+     "chars": 3244,
+     "chars_per_token": {
+      "gpt-oss-20b": 3.19,
+      "qwen3.5-9b": 3.24
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.328,
+      "qwen3.5-9b": 1.352
+     },
+     "tokens": {
+      "gpt-oss-20b": 1018,
+      "qwen3.5-9b": 1000
+     },
+     "tokens_estimate": 1352
+    },
+    "total_tokens": {
+     "gpt-oss-20b": 1247,
+     "qwen3.5-9b": 1218
+    }
+   },
+   "agent_execution": {
+    "each_tool": {
+     "edit_file": {
+      "bytes": 457,
+      "chars": 369,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.02,
+       "qwen3.5-9b": 3.13
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.262,
+       "qwen3.5-9b": 1.305
+      },
+      "tokens": {
+       "gpt-oss-20b": 122,
+       "qwen3.5-9b": 118
+      },
+      "tokens_estimate": 154
+     },
+     "export_document": {
+      "bytes": 986,
+      "chars": 876,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.23,
+       "qwen3.5-9b": 3.24
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.347,
+       "qwen3.5-9b": 1.352
+      },
+      "tokens": {
+       "gpt-oss-20b": 271,
+       "qwen3.5-9b": 270
+      },
+      "tokens_estimate": 365
+     },
+     "list_files": {
+      "bytes": 238,
+      "chars": 201,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.53,
+       "qwen3.5-9b": 3.59
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.474,
+       "qwen3.5-9b": 1.5
+      },
+      "tokens": {
+       "gpt-oss-20b": 57,
+       "qwen3.5-9b": 56
+      },
+      "tokens_estimate": 84
+     },
+     "propose_memory": {
+      "bytes": 420,
+      "chars": 312,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.06,
+       "qwen3.5-9b": 3.22
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.275,
+       "qwen3.5-9b": 1.34
+      },
+      "tokens": {
+       "gpt-oss-20b": 102,
+       "qwen3.5-9b": 97
+      },
+      "tokens_estimate": 130
+     },
+     "read_file": {
+      "bytes": 266,
+      "chars": 224,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.34,
+       "qwen3.5-9b": 3.5
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.403,
+       "qwen3.5-9b": 1.469
+      },
+      "tokens": {
+       "gpt-oss-20b": 67,
+       "qwen3.5-9b": 64
+      },
+      "tokens_estimate": 94
+     },
+     "run_command": {
+      "bytes": 319,
+      "chars": 267,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.18,
+       "qwen3.5-9b": 3.3
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.333,
+       "qwen3.5-9b": 1.383
+      },
+      "tokens": {
+       "gpt-oss-20b": 84,
+       "qwen3.5-9b": 81
+      },
+      "tokens_estimate": 112
+     },
+     "run_tests": {
+      "bytes": 307,
+      "chars": 249,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.28,
+       "qwen3.5-9b": 3.32
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.368,
+       "qwen3.5-9b": 1.387
+      },
+      "tokens": {
+       "gpt-oss-20b": 76,
+       "qwen3.5-9b": 75
+      },
+      "tokens_estimate": 104
+     },
+     "search_files": {
+      "bytes": 308,
+      "chars": 265,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.49,
+       "qwen3.5-9b": 3.53
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.461,
+       "qwen3.5-9b": 1.48
+      },
+      "tokens": {
+       "gpt-oss-20b": 76,
+       "qwen3.5-9b": 75
+      },
+      "tokens_estimate": 111
+     },
+     "write_file": {
+      "bytes": 325,
+      "chars": 276,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.29,
+       "qwen3.5-9b": 3.41
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.369,
+       "qwen3.5-9b": 1.42
+      },
+      "tokens": {
+       "gpt-oss-20b": 84,
+       "qwen3.5-9b": 81
+      },
+      "tokens_estimate": 115
+     }
+    },
+    "mode": "agent",
+    "share_of_context_window": {
+     "gpt-oss-20b": 0.0357,
+     "qwen3.5-9b": 0.0349
+    },
+    "system": {
+     "bytes": 609,
+     "chars": 338,
+     "chars_per_token": {
+      "gpt-oss-20b": 2.36,
+      "qwen3.5-9b": 2.54
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 0.986,
+      "qwen3.5-9b": 1.06
+     },
+     "tokens": {
+      "gpt-oss-20b": 143,
+      "qwen3.5-9b": 133
+     },
+     "tokens_estimate": 141
+    },
+    "tool_names": [
+     "edit_file",
+     "export_document",
+     "list_files",
+     "propose_memory",
+     "read_file",
+     "run_command",
+     "run_tests",
+     "search_files",
+     "write_file"
+    ],
+    "tools": {
+     "bytes": 3644,
+     "chars": 3057,
+     "chars_per_token": {
+      "gpt-oss-20b": 3.25,
+      "qwen3.5-9b": 3.3
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.355,
+      "qwen3.5-9b": 1.376
+     },
+     "tokens": {
+      "gpt-oss-20b": 940,
+      "qwen3.5-9b": 926
+     },
+     "tokens_estimate": 1274
+    },
+    "total_tokens": {
+     "gpt-oss-20b": 1169,
+     "qwen3.5-9b": 1144
+    }
+   },
+   "agent_full": {
+    "each_tool": {
+     "analyze_data": {
+      "bytes": 913,
+      "chars": 705,
+      "chars_per_token": {
+       "gpt-oss-20b": 2.96,
+       "qwen3.5-9b": 3.07
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.235,
+       "qwen3.5-9b": 1.278
+      },
+      "tokens": {
+       "gpt-oss-20b": 238,
+       "qwen3.5-9b": 230
+      },
+      "tokens_estimate": 294
+     },
+     "edit_file": {
+      "bytes": 457,
+      "chars": 369,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.02,
+       "qwen3.5-9b": 3.13
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.262,
+       "qwen3.5-9b": 1.305
+      },
+      "tokens": {
+       "gpt-oss-20b": 122,
+       "qwen3.5-9b": 118
+      },
+      "tokens_estimate": 154
+     },
+     "export_document": {
+      "bytes": 986,
+      "chars": 876,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.23,
+       "qwen3.5-9b": 3.24
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.347,
+       "qwen3.5-9b": 1.352
+      },
+      "tokens": {
+       "gpt-oss-20b": 271,
+       "qwen3.5-9b": 270
+      },
+      "tokens_estimate": 365
+     },
+     "list_files": {
+      "bytes": 238,
+      "chars": 201,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.53,
+       "qwen3.5-9b": 3.59
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.474,
+       "qwen3.5-9b": 1.5
+      },
+      "tokens": {
+       "gpt-oss-20b": 57,
+       "qwen3.5-9b": 56
+      },
+      "tokens_estimate": 84
+     },
+     "propose_memory": {
+      "bytes": 420,
+      "chars": 312,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.06,
+       "qwen3.5-9b": 3.22
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.275,
+       "qwen3.5-9b": 1.34
+      },
+      "tokens": {
+       "gpt-oss-20b": 102,
+       "qwen3.5-9b": 97
+      },
+      "tokens_estimate": 130
+     },
+     "read_file": {
+      "bytes": 266,
+      "chars": 224,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.34,
+       "qwen3.5-9b": 3.5
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.403,
+       "qwen3.5-9b": 1.469
+      },
+      "tokens": {
+       "gpt-oss-20b": 67,
+       "qwen3.5-9b": 64
+      },
+      "tokens_estimate": 94
+     },
+     "run_command": {
+      "bytes": 319,
+      "chars": 267,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.18,
+       "qwen3.5-9b": 3.3
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.333,
+       "qwen3.5-9b": 1.383
+      },
+      "tokens": {
+       "gpt-oss-20b": 84,
+       "qwen3.5-9b": 81
+      },
+      "tokens_estimate": 112
+     },
+     "run_tests": {
+      "bytes": 307,
+      "chars": 249,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.28,
+       "qwen3.5-9b": 3.32
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.368,
+       "qwen3.5-9b": 1.387
+      },
+      "tokens": {
+       "gpt-oss-20b": 76,
+       "qwen3.5-9b": 75
+      },
+      "tokens_estimate": 104
+     },
+     "search_files": {
+      "bytes": 308,
+      "chars": 265,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.49,
+       "qwen3.5-9b": 3.53
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.461,
+       "qwen3.5-9b": 1.48
+      },
+      "tokens": {
+       "gpt-oss-20b": 76,
+       "qwen3.5-9b": 75
+      },
+      "tokens_estimate": 111
+     },
+     "web_search": {
+      "bytes": 379,
+      "chars": 304,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.38,
+       "qwen3.5-9b": 3.58
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.411,
+       "qwen3.5-9b": 1.494
+      },
+      "tokens": {
+       "gpt-oss-20b": 90,
+       "qwen3.5-9b": 85
+      },
+      "tokens_estimate": 127
+     },
+     "write_file": {
+      "bytes": 325,
+      "chars": 276,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.29,
+       "qwen3.5-9b": 3.41
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.369,
+       "qwen3.5-9b": 1.42
+      },
+      "tokens": {
+       "gpt-oss-20b": 84,
+       "qwen3.5-9b": 81
+      },
+      "tokens_estimate": 115
+     }
+    },
+    "mode": "agent",
+    "share_of_context_window": {
+     "gpt-oss-20b": 0.0457,
+     "qwen3.5-9b": 0.0446
+    },
+    "system": {
+     "bytes": 609,
+     "chars": 338,
+     "chars_per_token": {
+      "gpt-oss-20b": 2.36,
+      "qwen3.5-9b": 2.54
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 0.986,
+      "qwen3.5-9b": 1.06
+     },
+     "tokens": {
+      "gpt-oss-20b": 143,
+      "qwen3.5-9b": 133
+     },
+     "tokens_estimate": 141
+    },
+    "tool_names": [
+     "analyze_data",
+     "edit_file",
+     "export_document",
+     "list_files",
+     "propose_memory",
+     "read_file",
+     "run_command",
+     "run_tests",
+     "search_files",
+     "web_search",
+     "write_file"
+    ],
+    "tools": {
+     "bytes": 4940,
+     "chars": 4070,
+     "chars_per_token": {
+      "gpt-oss-20b": 3.21,
+      "qwen3.5-9b": 3.27
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.338,
+      "qwen3.5-9b": 1.364
+     },
+     "tokens": {
+      "gpt-oss-20b": 1268,
+      "qwen3.5-9b": 1243
+     },
+     "tokens_estimate": 1696
+    },
+    "total_tokens": {
+     "gpt-oss-20b": 1497,
+     "qwen3.5-9b": 1461
+    }
+   },
+   "agent_minimal": {
+    "each_tool": {
+     "edit_file": {
+      "bytes": 457,
+      "chars": 369,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.02,
+       "qwen3.5-9b": 3.13
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.262,
+       "qwen3.5-9b": 1.305
+      },
+      "tokens": {
+       "gpt-oss-20b": 122,
+       "qwen3.5-9b": 118
+      },
+      "tokens_estimate": 154
+     },
+     "export_document": {
+      "bytes": 986,
+      "chars": 876,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.23,
+       "qwen3.5-9b": 3.24
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.347,
+       "qwen3.5-9b": 1.352
+      },
+      "tokens": {
+       "gpt-oss-20b": 271,
+       "qwen3.5-9b": 270
+      },
+      "tokens_estimate": 365
+     },
+     "list_files": {
+      "bytes": 238,
+      "chars": 201,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.53,
+       "qwen3.5-9b": 3.59
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.474,
+       "qwen3.5-9b": 1.5
+      },
+      "tokens": {
+       "gpt-oss-20b": 57,
+       "qwen3.5-9b": 56
+      },
+      "tokens_estimate": 84
+     },
+     "propose_memory": {
+      "bytes": 420,
+      "chars": 312,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.06,
+       "qwen3.5-9b": 3.22
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.275,
+       "qwen3.5-9b": 1.34
+      },
+      "tokens": {
+       "gpt-oss-20b": 102,
+       "qwen3.5-9b": 97
+      },
+      "tokens_estimate": 130
+     },
+     "read_file": {
+      "bytes": 266,
+      "chars": 224,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.34,
+       "qwen3.5-9b": 3.5
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.403,
+       "qwen3.5-9b": 1.469
+      },
+      "tokens": {
+       "gpt-oss-20b": 67,
+       "qwen3.5-9b": 64
+      },
+      "tokens_estimate": 94
+     },
+     "search_files": {
+      "bytes": 308,
+      "chars": 265,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.49,
+       "qwen3.5-9b": 3.53
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.461,
+       "qwen3.5-9b": 1.48
+      },
+      "tokens": {
+       "gpt-oss-20b": 76,
+       "qwen3.5-9b": 75
+      },
+      "tokens_estimate": 111
+     },
+     "write_file": {
+      "bytes": 325,
+      "chars": 276,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.29,
+       "qwen3.5-9b": 3.41
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.369,
+       "qwen3.5-9b": 1.42
+      },
+      "tokens": {
+       "gpt-oss-20b": 84,
+       "qwen3.5-9b": 81
+      },
+      "tokens_estimate": 115
+     }
+    },
+    "mode": "agent",
+    "share_of_context_window": {
+     "gpt-oss-20b": 0.0308,
+     "qwen3.5-9b": 0.0301
+    },
+    "system": {
+     "bytes": 609,
+     "chars": 338,
+     "chars_per_token": {
+      "gpt-oss-20b": 2.36,
+      "qwen3.5-9b": 2.54
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 0.986,
+      "qwen3.5-9b": 1.06
+     },
+     "tokens": {
+      "gpt-oss-20b": 143,
+      "qwen3.5-9b": 133
+     },
+     "tokens_estimate": 141
+    },
+    "tool_names": [
+     "edit_file",
+     "export_document",
+     "list_files",
+     "propose_memory",
+     "read_file",
+     "search_files",
+     "write_file"
+    ],
+    "tools": {
+     "bytes": 3014,
+     "chars": 2537,
+     "chars_per_token": {
+      "gpt-oss-20b": 3.25,
+      "qwen3.5-9b": 3.3
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.356,
+      "qwen3.5-9b": 1.376
+     },
+     "tokens": {
+      "gpt-oss-20b": 780,
+      "qwen3.5-9b": 769
+     },
+     "tokens_estimate": 1058
+    },
+    "total_tokens": {
+     "gpt-oss-20b": 1009,
+     "qwen3.5-9b": 987
+    }
+   },
+   "agent_search": {
+    "each_tool": {
+     "edit_file": {
+      "bytes": 457,
+      "chars": 369,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.02,
+       "qwen3.5-9b": 3.13
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.262,
+       "qwen3.5-9b": 1.305
+      },
+      "tokens": {
+       "gpt-oss-20b": 122,
+       "qwen3.5-9b": 118
+      },
+      "tokens_estimate": 154
+     },
+     "export_document": {
+      "bytes": 986,
+      "chars": 876,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.23,
+       "qwen3.5-9b": 3.24
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.347,
+       "qwen3.5-9b": 1.352
+      },
+      "tokens": {
+       "gpt-oss-20b": 271,
+       "qwen3.5-9b": 270
+      },
+      "tokens_estimate": 365
+     },
+     "list_files": {
+      "bytes": 238,
+      "chars": 201,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.53,
+       "qwen3.5-9b": 3.59
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.474,
+       "qwen3.5-9b": 1.5
+      },
+      "tokens": {
+       "gpt-oss-20b": 57,
+       "qwen3.5-9b": 56
+      },
+      "tokens_estimate": 84
+     },
+     "propose_memory": {
+      "bytes": 420,
+      "chars": 312,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.06,
+       "qwen3.5-9b": 3.22
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.275,
+       "qwen3.5-9b": 1.34
+      },
+      "tokens": {
+       "gpt-oss-20b": 102,
+       "qwen3.5-9b": 97
+      },
+      "tokens_estimate": 130
+     },
+     "read_file": {
+      "bytes": 266,
+      "chars": 224,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.34,
+       "qwen3.5-9b": 3.5
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.403,
+       "qwen3.5-9b": 1.469
+      },
+      "tokens": {
+       "gpt-oss-20b": 67,
+       "qwen3.5-9b": 64
+      },
+      "tokens_estimate": 94
+     },
+     "search_files": {
+      "bytes": 308,
+      "chars": 265,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.49,
+       "qwen3.5-9b": 3.53
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.461,
+       "qwen3.5-9b": 1.48
+      },
+      "tokens": {
+       "gpt-oss-20b": 76,
+       "qwen3.5-9b": 75
+      },
+      "tokens_estimate": 111
+     },
+     "web_search": {
+      "bytes": 379,
+      "chars": 304,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.38,
+       "qwen3.5-9b": 3.58
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.411,
+       "qwen3.5-9b": 1.494
+      },
+      "tokens": {
+       "gpt-oss-20b": 90,
+       "qwen3.5-9b": 85
+      },
+      "tokens_estimate": 127
+     },
+     "write_file": {
+      "bytes": 325,
+      "chars": 276,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.29,
+       "qwen3.5-9b": 3.41
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.369,
+       "qwen3.5-9b": 1.42
+      },
+      "tokens": {
+       "gpt-oss-20b": 84,
+       "qwen3.5-9b": 81
+      },
+      "tokens_estimate": 115
+     }
+    },
+    "mode": "agent",
+    "share_of_context_window": {
+     "gpt-oss-20b": 0.0335,
+     "qwen3.5-9b": 0.0327
+    },
+    "system": {
+     "bytes": 609,
+     "chars": 338,
+     "chars_per_token": {
+      "gpt-oss-20b": 2.36,
+      "qwen3.5-9b": 2.54
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 0.986,
+      "qwen3.5-9b": 1.06
+     },
+     "tokens": {
+      "gpt-oss-20b": 143,
+      "qwen3.5-9b": 133
+     },
+     "tokens_estimate": 141
+    },
+    "tool_names": [
+     "edit_file",
+     "export_document",
+     "list_files",
+     "propose_memory",
+     "read_file",
+     "search_files",
+     "web_search",
+     "write_file"
+    ],
+    "tools": {
+     "bytes": 3395,
+     "chars": 2843,
+     "chars_per_token": {
+      "gpt-oss-20b": 3.27,
+      "qwen3.5-9b": 3.33
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.362,
+      "qwen3.5-9b": 1.386
+     },
+     "tokens": {
+      "gpt-oss-20b": 870,
+      "qwen3.5-9b": 855
+     },
+     "tokens_estimate": 1185
+    },
+    "total_tokens": {
+     "gpt-oss-20b": 1099,
+     "qwen3.5-9b": 1073
+    }
+   },
+   "coder": {
+    "each_tool": {
+     "edit_file": {
+      "bytes": 457,
+      "chars": 369,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.02,
+       "qwen3.5-9b": 3.13
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.262,
+       "qwen3.5-9b": 1.305
+      },
+      "tokens": {
+       "gpt-oss-20b": 122,
+       "qwen3.5-9b": 118
+      },
+      "tokens_estimate": 154
+     },
+     "list_files": {
+      "bytes": 238,
+      "chars": 201,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.53,
+       "qwen3.5-9b": 3.59
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.474,
+       "qwen3.5-9b": 1.5
+      },
+      "tokens": {
+       "gpt-oss-20b": 57,
+       "qwen3.5-9b": 56
+      },
+      "tokens_estimate": 84
+     },
+     "read_file": {
+      "bytes": 266,
+      "chars": 224,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.34,
+       "qwen3.5-9b": 3.5
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.403,
+       "qwen3.5-9b": 1.469
+      },
+      "tokens": {
+       "gpt-oss-20b": 67,
+       "qwen3.5-9b": 64
+      },
+      "tokens_estimate": 94
+     },
+     "search_files": {
+      "bytes": 308,
+      "chars": 265,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.49,
+       "qwen3.5-9b": 3.53
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.461,
+       "qwen3.5-9b": 1.48
+      },
+      "tokens": {
+       "gpt-oss-20b": 76,
+       "qwen3.5-9b": 75
+      },
+      "tokens_estimate": 111
+     },
+     "write_file": {
+      "bytes": 325,
+      "chars": 276,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.29,
+       "qwen3.5-9b": 3.41
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.369,
+       "qwen3.5-9b": 1.42
+      },
+      "tokens": {
+       "gpt-oss-20b": 84,
+       "qwen3.5-9b": 81
+      },
+      "tokens_estimate": 115
+     }
+    },
+    "mode": "coder",
+    "share_of_context_window": {
+     "gpt-oss-20b": 0.0267,
+     "qwen3.5-9b": 0.0258
+    },
+    "system": {
+     "bytes": 1738,
+     "chars": 974,
+     "chars_per_token": {
+      "gpt-oss-20b": 2.55,
+      "qwen3.5-9b": 2.69
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.063,
+      "qwen3.5-9b": 1.122
+     },
+     "tokens": {
+      "gpt-oss-20b": 382,
+      "qwen3.5-9b": 362
+     },
+     "tokens_estimate": 406
+    },
+    "tool_names": [
+     "edit_file",
+     "list_files",
+     "read_file",
+     "search_files",
+     "write_file"
+    ],
+    "tools": {
+     "bytes": 1604,
+     "chars": 1345,
+     "chars_per_token": {
+      "gpt-oss-20b": 3.3,
+      "qwen3.5-9b": 3.36
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.378,
+      "qwen3.5-9b": 1.403
+     },
+     "tokens": {
+      "gpt-oss-20b": 407,
+      "qwen3.5-9b": 400
+     },
+     "tokens_estimate": 561
+    },
+    "total_tokens": {
+     "gpt-oss-20b": 875,
+     "qwen3.5-9b": 847
+    }
+   },
+   "coder_execution": {
+    "each_tool": {
+     "edit_file": {
+      "bytes": 457,
+      "chars": 369,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.02,
+       "qwen3.5-9b": 3.13
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.262,
+       "qwen3.5-9b": 1.305
+      },
+      "tokens": {
+       "gpt-oss-20b": 122,
+       "qwen3.5-9b": 118
+      },
+      "tokens_estimate": 154
+     },
+     "list_files": {
+      "bytes": 238,
+      "chars": 201,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.53,
+       "qwen3.5-9b": 3.59
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.474,
+       "qwen3.5-9b": 1.5
+      },
+      "tokens": {
+       "gpt-oss-20b": 57,
+       "qwen3.5-9b": 56
+      },
+      "tokens_estimate": 84
+     },
+     "read_file": {
+      "bytes": 266,
+      "chars": 224,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.34,
+       "qwen3.5-9b": 3.5
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.403,
+       "qwen3.5-9b": 1.469
+      },
+      "tokens": {
+       "gpt-oss-20b": 67,
+       "qwen3.5-9b": 64
+      },
+      "tokens_estimate": 94
+     },
+     "run_command": {
+      "bytes": 319,
+      "chars": 267,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.18,
+       "qwen3.5-9b": 3.3
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.333,
+       "qwen3.5-9b": 1.383
+      },
+      "tokens": {
+       "gpt-oss-20b": 84,
+       "qwen3.5-9b": 81
+      },
+      "tokens_estimate": 112
+     },
+     "run_tests": {
+      "bytes": 307,
+      "chars": 249,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.28,
+       "qwen3.5-9b": 3.32
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.368,
+       "qwen3.5-9b": 1.387
+      },
+      "tokens": {
+       "gpt-oss-20b": 76,
+       "qwen3.5-9b": 75
+      },
+      "tokens_estimate": 104
+     },
+     "search_files": {
+      "bytes": 308,
+      "chars": 265,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.49,
+       "qwen3.5-9b": 3.53
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.461,
+       "qwen3.5-9b": 1.48
+      },
+      "tokens": {
+       "gpt-oss-20b": 76,
+       "qwen3.5-9b": 75
+      },
+      "tokens_estimate": 111
+     },
+     "write_file": {
+      "bytes": 325,
+      "chars": 276,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.29,
+       "qwen3.5-9b": 3.41
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.369,
+       "qwen3.5-9b": 1.42
+      },
+      "tokens": {
+       "gpt-oss-20b": 84,
+       "qwen3.5-9b": 81
+      },
+      "tokens_estimate": 115
+     }
+    },
+    "mode": "coder",
+    "share_of_context_window": {
+     "gpt-oss-20b": 0.0316,
+     "qwen3.5-9b": 0.0306
+    },
+    "system": {
+     "bytes": 1738,
+     "chars": 974,
+     "chars_per_token": {
+      "gpt-oss-20b": 2.55,
+      "qwen3.5-9b": 2.69
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.063,
+      "qwen3.5-9b": 1.122
+     },
+     "tokens": {
+      "gpt-oss-20b": 382,
+      "qwen3.5-9b": 362
+     },
+     "tokens_estimate": 406
+    },
+    "tool_names": [
+     "edit_file",
+     "list_files",
+     "read_file",
+     "run_command",
+     "run_tests",
+     "search_files",
+     "write_file"
+    ],
+    "tools": {
+     "bytes": 2234,
+     "chars": 1865,
+     "chars_per_token": {
+      "gpt-oss-20b": 3.29,
+      "qwen3.5-9b": 3.35
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.372,
+      "qwen3.5-9b": 1.397
+     },
+     "tokens": {
+      "gpt-oss-20b": 567,
+      "qwen3.5-9b": 557
+     },
+     "tokens_estimate": 778
+    },
+    "total_tokens": {
+     "gpt-oss-20b": 1035,
+     "qwen3.5-9b": 1004
+    }
+   },
+   "research": {
+    "each_tool": {
+     "web_search": {
+      "bytes": 379,
+      "chars": 304,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.38,
+       "qwen3.5-9b": 3.58
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.411,
+       "qwen3.5-9b": 1.494
+      },
+      "tokens": {
+       "gpt-oss-20b": 90,
+       "qwen3.5-9b": 85
+      },
+      "tokens_estimate": 127
+     }
+    },
+    "mode": "research",
+    "share_of_context_window": {
+     "gpt-oss-20b": 0.0157,
+     "qwen3.5-9b": 0.0152
+    },
+    "system": {
+     "bytes": 1536,
+     "chars": 860,
+     "chars_per_token": {
+      "gpt-oss-20b": 2.55,
+      "qwen3.5-9b": 2.64
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.065,
+      "qwen3.5-9b": 1.101
+     },
+     "tokens": {
+      "gpt-oss-20b": 337,
+      "qwen3.5-9b": 326
+     },
+     "tokens_estimate": 359
+    },
+    "tool_names": [
+     "web_search"
+    ],
+    "tools": {
+     "bytes": 381,
+     "chars": 306,
+     "chars_per_token": {
+      "gpt-oss-20b": 3.36,
+      "qwen3.5-9b": 3.52
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.407,
+      "qwen3.5-9b": 1.471
+     },
+     "tokens": {
+      "gpt-oss-20b": 91,
+      "qwen3.5-9b": 87
+     },
+     "tokens_estimate": 128
+    },
+    "total_tokens": {
+     "gpt-oss-20b": 514,
+     "qwen3.5-9b": 498
+    }
+   },
+   "translate": {
+    "each_tool": {
+     "check_translation": {
+      "bytes": 632,
+      "chars": 492,
+      "chars_per_token": {
+       "gpt-oss-20b": 3.22,
+       "qwen3.5-9b": 3.37
+      },
+      "estimate_ratio": {
+       "gpt-oss-20b": 1.34,
+       "qwen3.5-9b": 1.404
+      },
+      "tokens": {
+       "gpt-oss-20b": 153,
+       "qwen3.5-9b": 146
+      },
+      "tokens_estimate": 205
+     }
+    },
+    "mode": "translate",
+    "share_of_context_window": {
+     "gpt-oss-20b": 0.0175,
+     "qwen3.5-9b": 0.0171
+    },
+    "system": {
+     "bytes": 1515,
+     "chars": 858,
+     "chars_per_token": {
+      "gpt-oss-20b": 2.58,
+      "qwen3.5-9b": 2.62
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.075,
+      "qwen3.5-9b": 1.095
+     },
+     "tokens": {
+      "gpt-oss-20b": 333,
+      "qwen3.5-9b": 327
+     },
+     "tokens_estimate": 358
+    },
+    "tool_names": [
+     "check_translation"
+    ],
+    "tools": {
+     "bytes": 634,
+     "chars": 494,
+     "chars_per_token": {
+      "gpt-oss-20b": 3.21,
+      "qwen3.5-9b": 3.34
+     },
+     "estimate_ratio": {
+      "gpt-oss-20b": 1.338,
+      "qwen3.5-9b": 1.392
+     },
+     "tokens": {
+      "gpt-oss-20b": 154,
+      "qwen3.5-9b": 148
+     },
+     "tokens_estimate": 206
+    },
+    "total_tokens": {
+     "gpt-oss-20b": 573,
+     "qwen3.5-9b": 560
+    }
+   }
+  },
+  "envelope": {
+   "bytes": 470,
+   "chars": 470,
+   "chars_per_token": {
+    "gpt-oss-20b": 5.47,
+    "qwen3.5-9b": 5.53
+   },
+   "estimate_ratio": {
+    "gpt-oss-20b": 2.279,
+    "qwen3.5-9b": 2.306
+   },
+   "tokens": {
+    "gpt-oss-20b": 86,
+    "qwen3.5-9b": 85
+   },
+   "tokens_estimate": 196
+  },
+  "headline": "agent_minimal",
+  "text": {
+   "system": {
+    "bytes": 467,
+    "chars": 261,
+    "chars_per_token": {
+     "gpt-oss-20b": 3.11,
+     "qwen3.5-9b": 3.39
+    },
+    "estimate_ratio": {
+     "gpt-oss-20b": 1.298,
+     "qwen3.5-9b": 1.416
+    },
+    "tokens": {
+     "gpt-oss-20b": 84,
+     "qwen3.5-9b": 77
+    },
+    "tokens_estimate": 109
+   }
+  }
+ },
+ "schema_version": 1,
+ "superseded_measurement": {
+  "commit": "ea4fe0764ebc74179ae0dde803ca4aaedc2d05d7 (رأسُ الفرع قبل دمج main a4813bc وعزل الـbytecode)",
+  "earlier": {
+   "commit": "aeb9dab17b608dc5c0a533c0de40385973fcf1a1 (رأسُ الفرع قبل دمج main b102bbe)",
+   "earlier": {
+    "commit": "bbb2789c26d6cf7607ba4779a79720ff0f022197 (main) مع أداة الفرع محقونةً وقاسمِ التقدير القديم ٣",
+    "job": "6ab9ac7752d0dbd7f1d9eba6، cpu-basic، نحو ٧ دقائق",
+    "reading_set_tokens": {
+     "gpt-oss-20b": 14292,
+     "qwen3.5-9b": 15168
+    },
+    "tokens_estimate_at_divisor_3": 12186,
+    "why_superseded": "ملاحظةُ Codex على #157: الدليلُ يجب أن يقيس الفهرسَ النهائيّ للرأس المنشور لا main؛ ومخطّطاتُ الأدوات كانت قائمةً ثابتة لا سجلَّ التطبيق"
+   },
+   "job": "6ab9b7606b030d633f69b17c، cpu-basic، نحو ٦ دقائق",
+   "reading_set_bytes": 58630,
+   "reading_set_sha256_12": {
+    "AGENTS.md": "131adb2ea30b",
+    "docs/INDEX.md": "06a65699b0a2",
+    "docs/VISION.md": "df9b1b18e0bb"
+   },
+   "reading_set_tokens": {
+    "gpt-oss-20b": 14321,
+    "qwen3.5-9b": 15209
+   },
+   "tokens_estimate": 15263,
+   "why_superseded": "ملاحظةُ Codex على #157: دمجُ main (b102bbe) بعد القياس غيّر AGENTS.md (§٥) وdocs/INDEX.md فلم تعد بصماتُ الدليل بصماتِ الرأس المنشور؛ أرقامُ السابقة والضريبة لم تتغيّر لأن شيفرة التشغيل لم تتغيّر"
+  },
+  "job": "6ab9e89052d0dbd7f1d9fa0d، cpu-basic، نحو ٦ دقائق",
+  "reading_set_bytes": 59120,
+  "reading_set_sha256_12": {
+   "AGENTS.md": "f780ed5314e7",
+   "docs/INDEX.md": "1adec3c40c14",
+   "docs/VISION.md": "df9b1b18e0bb"
+  },
+  "reading_set_tokens": {
+   "gpt-oss-20b": 14435,
+   "qwen3.5-9b": 15326
+  },
+  "tokens_estimate": 15400,
+  "why_superseded": "ملاحظةُ Codex على #157: دمجُ main (a4813bc) وجولاتُ الإصلاح بعد القياس غيّرت AGENTS.md وdocs/INDEX.md فلم تعد بصماتُ الدليل بصماتِ الرأس المنشور، ولم يكن التقرير يحمل bytecode_isolated؛ الفرقُ رمزان في Qwen وأربعةٌ في gpt-oss، وأرقامُ السابقة والضريبة كما هي"
+ },
+ "thresholds": {
+  "estimate_drift": 0.2,
+  "prefix_share_warning": 0.1
+ },
+ "tokenizers": {
+  "gpt-oss-20b": {
+   "file_sha256_12": "0614fe83cada",
+   "loaded_from": "file",
+   "revision": "6cee5e81ee83917806bbde320786a8fb61efebee",
+   "source": "openai/gpt-oss-20b@6cee5e81ee83917806bbde320786a8fb61efebee tokenizer.json",
+   "stands_for": "العاملُ المحلّي المسجَّل (OpenCode، ق٦٢) وبديلٌ عامٌّ عن مرمِّزات Codex غير العامّة"
+  },
+  "qwen3.5-9b": {
+   "file_sha256_12": "5f9e4d4901a9",
+   "loaded_from": "file",
+   "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+   "source": "Qwen/Qwen3.5-9B@c202236235762e1c871ad0ccb60c8ee5ba337b9a tokenizer.json",
+   "stands_for": "بديلٌ مسمًّى عن مرمِّز المحرّك المعتمَد (ق٥٤) عبر Ollama: وسمُ `qwen3.5:9b` اسمُ خدمةٍ لا بصمةُ أوزان، فمراجعةُ الـHub المثبَّتة غيرُ مربوطةٍ بمرمِّز الوسم المضمَّن (ملاحظة Codex على #157؛ والحدُّ مسمًّى في measurement_limits)"
+  }
+ },
+ "tool": "tools/context_budget.py",
+ "tree_state": {
+  "changed_paths": [],
+  "dirty": false,
+  "untracked_python": []
+ }
 }
