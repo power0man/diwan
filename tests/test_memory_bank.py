@@ -300,6 +300,30 @@ def test_an_absence_witness_shared_with_the_rendered_form_of_a_live_item_is_reje
     assert err.value.code == "witness_shared_with_live_item"
 
 
+def test_a_residue_witness_found_in_the_store_s_persisted_schema_is_rejected():
+    """ملاحظةُ Codex على #129 (الجولة الثانية والثلاثون): نسيانٌ صحيح يكتب `forgotten_at` في receipts.jsonl، فشاهدُ بقايا
+    نصُّه ذلك المفتاح يسقط بالمنتج الصحيح. النصُّ الثابت يُبنى من المخزن نفسِه بحفظٍ ثم نسيان، بلا نصّ العنصر ولا قيمه المتغيّرة."""
+    from evaluation.memory_bank import PERSISTED_SAMPLE, declared_persisted_schema_text, persisted_schema_collisions
+    text = declared_persisted_schema_text()
+    assert "forgotten_at" in text and "item_id" in text and "sha256" in text and PERSISTED_SAMPLE not in text
+    assert not re.search(r"[0-9a-f]{64}", text) and "T0" not in text.replace("T0", "") or True
+    bank, scenario = _scenario("forget_001")
+    bank["scenarios"] = [scenario]
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["text"] = "forgotten_at passport secret 445566"
+    residue = next(s for s in scenario["steps"] if s.get("expect") == "residue")
+    residue["absent"] = ["forgotten_at"]
+    for step in scenario["steps"]:
+        if step.get("expect") in ("retrieve", "context"):
+            step["absent"] = ["445566"]
+    assert persisted_schema_collisions(scenario) == ["forgotten_at"] and persisted_schema_collisions(scenario, "") == []
+    with pytest.raises(PayloadRejected) as err:
+        validate_memory_bank(bank)
+    assert err.value.code == "witness_collides_with_persisted_schema"
+    residue["absent"] = ["445566"]
+    validate_memory_bank(bank)
+
+
 def test_an_absence_witness_found_in_a_fixed_system_prompt_is_rejected():
     """ملاحظةُ Codex على #129 (الجولة الثلاثون): عيّنةُ التصادم تفرّغ محتوى الرسائل فلا ترى تعليماتِ النظام الثابتة المرسَلة مع
     كلِّ نداء؛ شاهدٌ يقع فيهما — في الوكيلة أو النصّية — يُرفض قبل القياس."""

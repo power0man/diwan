@@ -213,6 +213,38 @@ def system_prompt_collisions(scenario: dict, prompts_text: str | None = None) ->
     return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
 
 
+PERSISTED_SAMPLE = "عيّنةُ مخزنٍ لفحص بنك الذاكرة"     # نصُّ عنصرٍ بديل يُقنَّع بعد الكتابة فلا يبقى إلا ما يكتبه المخزنُ ثابتًا
+
+
+def declared_persisted_schema_text() -> str:
+    """ما يكتبه المخزنُ على القرص ثابتًا بلا نصّ العنصر: ملفُّ العنصر JSON بمفاتيحه، وإيصالُ النسيان في `receipts.jsonl`
+    (`forgotten_at` و`item_id` و`sha256`…) الذي يكتبه كلُّ نسيانٍ صحيح؛ فشاهدُ بقايا يقع فيه يسقط بالمنتج الصحيح كأن النسيانَ
+    انحدر (ملاحظة Codex على #129، الجولة الثانية والثلاثون). يُبنى من المخزن نفسِه في مجلّدٍ مؤقّت — حفظٌ ثم نسيان — لا من
+    نسخةٍ مكتوبة هنا؛ وتُقنَّع القيمُ المتغيّرة (النصُّ البديل، والبصمةُ، والمعرّفُ، والوقتُ) فيبقى الثابت."""
+    import tempfile
+    from pathlib import Path
+    from memory.store import MemoryStore
+    with tempfile.TemporaryDirectory(prefix="diwan-memory-schema-") as tmp:
+        project = Path(tmp) / "p"
+        project.mkdir()                                    # المخزنُ يرفض مجلّدَ مشروعٍ غائبًا أو رابطًا (project_invalid)
+        store = MemoryStore(project)
+        item_id = store.remember(PERSISTED_SAMPLE, consent="owner")
+        files = lambda: [f.read_bytes().decode("utf-8", "replace") for f in sorted(Path(tmp).rglob("*")) if f.is_file()]
+        written = files()
+        store.forget(item_id)
+        written += files()
+    text = "\n".join(written).replace(PERSISTED_SAMPLE, " ").replace(item_id, " ")
+    text = re.sub(r"[0-9a-f]{64}", " ", text)
+    return re.sub(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", " ", text)
+
+
+def persisted_schema_collisions(scenario: dict, schema_text: str | None = None) -> list[str]:
+    """شاهدُ بقايا يقع فيما يكتبه المخزنُ ثابتًا على القرص؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الثانية والثلاثون).
+    البقايا وحدها تُفحص على القرص، فشاهدُ استرجاعٍ أو سياقٍ لا يُقارَن به."""
+    text = declared_persisted_schema_text() if schema_text is None else schema_text
+    return [a for s in scenario["steps"] if s.get("expect") == "residue" for a in (s.get("absent") or []) if a and contains(text, a)]
+
+
 def envelope_collisions(scenario: dict, envelope_text: str | None = None) -> list[str]:
     """شاهدُ غيابٍ يقع في غلاف الطلب الوكيل الثابت؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الرابعة والعشرون)."""
     text = declared_envelope_text() if envelope_text is None else envelope_text
@@ -289,6 +321,8 @@ def _validate_semantics(scenario: dict, path: str, strict: bool, model: str | No
         _reject(path, "witness_collides_with_request_payload", f"«{body[0][:40]}» يقع في حقلٍ ثابت من جسد طلب Ollama كما يبنيه المزوّد فيُرسل مع كلِّ نداء")
     if prompts := system_prompt_collisions(scenario):
         _reject(path, "witness_collides_with_system_prompt", f"«{prompts[0][:40]}» يقع في تعليمات النظام الثابتة فيُرسل مع كلِّ نداءٍ ولو نجح النسيان")
+    if disk := persisted_schema_collisions(scenario):
+        _reject(path, "witness_collides_with_persisted_schema", f"«{disk[0][:40]}» يقع فيما يكتبه المخزنُ ثابتًا على القرص (إيصالُ النسيان أو مفاتيحُ العنصر) فيبقى بعد نسيانٍ صحيح")
 
 
 def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
