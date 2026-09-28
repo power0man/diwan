@@ -106,5 +106,5 @@ python tools/context_budget.py --tokenizer qwen3.5-9b=Qwen/Qwen3.5-9B@c202236235
     --report docs/probe/context-budget-<التاريخ>.json
 ```
 
-يلزم `pip install tokenizers huggingface_hub` وشبكةٌ إلى الـHub، والمراجعةُ الثابتة `repo@revision` شرطٌ (بلا مراجعةٍ رفضٌ `tokenizer_revision_unpinned`)، أو `--tokenizer-file اسم=مسار/tokenizer.json` بملفَّين محلّيَّين؛ وكلُّ مرمِّزٍ يُسجَّل ببصمة ملفه. وشجرةٌ فيها تعديلٌ غيرُ مودَع تُرفض (`worktree_dirty`) لأن نصوصَ التشغيل تُستورد منها لا من HEAD، ويُسجَّل `tree_state` في التقرير. يُعاد القياس
+يلزم `pip install tokenizers huggingface_hub` وشبكةٌ إلى الـHub، والمراجعةُ بصمةُ إيداعٍ كاملة `repo@<commit>` شرطٌ (بلا مراجعةٍ أو بفرعٍ مثل `main` أو وسمٍ أو بصمةٍ مبتورة رفضٌ `tokenizer_revision_unpinned`، لأن الفرعَ والوسمَ يتحرّكان فلا يعيد الأمرُ المسجَّل المرمِّزَ نفسَه)، أو `--tokenizer-file اسم=مسار/tokenizer.json` بملفَّين محلّيَّين؛ وكلُّ مرمِّزٍ يُسجَّل ببصمة ملفه. وشجرةٌ فيها تعديلٌ غيرُ مودَع تُرفض (`worktree_dirty`) لأن نصوصَ التشغيل تُستورد منها لا من HEAD، ويُسجَّل `tree_state` في التقرير. يُعاد القياس
 عند كل تغييرٍ في §٠ أو في نصوص النظام أو مخطّطات الأدوات، على الرأس الذي سيُنشر، ويُقابَل بالأرقام أعلاه.

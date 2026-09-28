@@ -11,8 +11,9 @@
 القاعدة: لا رقمَ بلا مرمِّز. بلا `--tokenizer` أو `--tokenizer-file` يُرفض التشغيل برمزٍ مسمًّى، وغيابُ حزمة `tokenizers` أو
 تعذّرُ تحميل المرمِّز رفضٌ مسمًّى لا سقوطٌ إلى التقدير. والدالّةُ `audit()` تقبل عدّاداتٍ محقونة فتُختبر بلا الحزمة وبلا شبكة.
 
-    python tools/context_budget.py --tokenizer qwen3.5-9b=Qwen/Qwen3.5-9B --tokenizer gpt-oss-20b=openai/gpt-oss-20b \\
-        --report docs/probe/context-budget-<التاريخ>.json
+    python tools/context_budget.py --tokenizer qwen3.5-9b=Qwen/Qwen3.5-9B@c202236235762e1c871ad0ccb60c8ee5ba337b9a \\
+        --tokenizer gpt-oss-20b=openai/gpt-oss-20b@6cee5e81ee83917806bbde320786a8fb61efebee \\
+        --report docs/probe/context-budget-<التاريخ>.json                                     # repo@<بصمةُ إيداعٍ كاملة>
     python tools/context_budget.py --tokenizer-file qwen3.5-9b=/path/tokenizer.json --report out.json   # بلا شبكة
 
 الخرجُ JSON: لكل نصٍّ بايتاتُه وأحرفُه وتقديرُ الفهرس ورموزُه بكل مرمِّز، ونسبةُ التقدير إلى المقيس، ومجاميعُ المجموعتين،
@@ -25,6 +26,7 @@ import argparse
 import datetime as _dt
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from collections.abc import Callable
@@ -252,11 +254,15 @@ def _commit(root: Path) -> str | None:
 
 
 def _hub_tokenizer_file(name: str, source: str) -> tuple[str, dict]:
-    """ملفُّ tokenizer.json من الـHub بمراجعةٍ ثابتة `repo@revision` وحدها: الفرعُ الافتراضيّ يتحرّك فيعطي أمرُ إعادة القياس
-    نفسُه أرقامًا أخرى بلا أثرٍ في التقرير (ملاحظة Codex على #157)."""
+    """ملفُّ tokenizer.json من الـHub ببصمة إيداعٍ كاملة `repo@<40 حرفًا ستّ‌عشريًّا>` وحدها: الفرعُ الافتراضيّ يتحرّك، وكذا فرعٌ
+    مسمًّى مثل `main` ووسمٌ يُعاد وضعُه، فيعطي أمرُ إعادة القياس نفسُه مرمِّزًا آخر؛ وبصمةُ الملف في التقرير تكشف الاختلافَ بعد وقوعه
+    ولا تجعل الأمرَ المسجَّل قابلًا للإعادة (ملاحظتا Codex على #157)."""
     repo, at, revision = source.partition("@")
     if not at or not repo or not revision:
-        raise Refused("tokenizer_revision_unpinned", f"{name}: {source}: سمِّ المستودع بمراجعةٍ ثابتة repo@revision")
+        raise Refused("tokenizer_revision_unpinned", f"{name}: {source}: سمِّ المستودع ببصمة إيداعٍ كاملة repo@<commit>")
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise Refused("tokenizer_revision_unpinned",
+                      f"{name}: {source}: المراجعةُ بصمةُ إيداعٍ كاملة (٤٠ حرفًا ستّ‌عشريًّا) لا فرعٌ ولا وسمٌ يتحرّكان")
     try:
         from huggingface_hub import hf_hub_download
     except ImportError:
