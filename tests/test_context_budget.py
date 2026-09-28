@@ -166,14 +166,15 @@ class _FakeEncoding:
 class _FakeTokenizer:
     """بديلُ `tokenizers.Tokenizer`: يعدّ الكلمات، ويعطّل حسب المصدر."""
 
-    def __init__(self, source):
-        self.source = source
+    built_from: list[bytes] = []                                    # البايتاتُ التي بُني منها كلُّ مرمِّز، بترتيب التحميل
+
+    def __init__(self, data):
+        self.data = data
 
     @classmethod
-    def from_file(cls, source):
-        if source.endswith("missing.json"):
-            raise OSError("no such file")
-        return cls(source)
+    def from_buffer(cls, data):
+        cls.built_from.append(bytes(data))
+        return cls(data)
 
     def encode(self, text, add_special_tokens=True):
         assert add_special_tokens is False, "الرموزُ الخاصة تُستثنى فالمقيس حدٌّ أدنى معلَن"
@@ -253,6 +254,24 @@ def test_tokenizer_loading_refuses_by_name(monkeypatch, tmp_path):
                               "file_sha256_12": hashlib.sha256(hub_file.read_bytes()).hexdigest()[:12]}
     assert sources["file"] == {"source": str(path), "loaded_from": "file",
                                "file_sha256_12": hashlib.sha256(path.read_bytes()).hexdigest()[:12]}
+
+
+def test_the_tokenizer_and_its_digest_come_from_one_read_of_the_file(monkeypatch, tmp_path):
+    """ملاحظةُ Codex السابعة عشرة على #157: ملفٌّ يُستبدل بين تحميل المرمِّز وقراءة البصمة كان يُسجَّل ببصمة النسخة الثانية
+    والعدُّ بالأولى؛ البصمةُ الآن بصمةُ البايتات التي بُني منها المرمِّز نفسُها."""
+    _fake_tokenizers(monkeypatch)
+    path = tmp_path / "tok.json"
+    path.write_bytes(b'{"version": "first"}')
+    built = []
+
+    def build_then_swap(cls, data):
+        built.append(bytes(data))
+        path.write_bytes(b'{"version": "second"}')                   # الاستبدالُ بعد التحميل وقبل البصمة
+        return cls(data)
+    monkeypatch.setattr(_FakeTokenizer, "from_buffer", classmethod(build_then_swap))
+    _, sources = cb.load_tokenizers([], [f"file={path}"])
+    assert built == [b'{"version": "first"}']
+    assert sources["file"]["file_sha256_12"] == hashlib.sha256(b'{"version": "first"}').hexdigest()[:12]
 
 
 def test_a_dirty_tree_is_refused_by_the_cli_and_recorded_by_the_audit(monkeypatch, tmp_path, capsys):

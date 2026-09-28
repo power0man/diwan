@@ -364,12 +364,15 @@ def load_tokenizers(named: list[str], files: list[str]) -> tuple[dict[str, Count
         if name in counters:
             raise Refused("tokenizer_spec_invalid", f"الاسمُ مكرَّر: {name!r}")
         path, origin = (source, {"source": source, "loaded_from": "file"}) if from_file else _hub_tokenizer_file(name, source)
+        # تُقرأ البايتاتُ مرّةً واحدة ويُبنى منها المرمِّزُ وبصمتُه معًا: ملفٌّ يُستبدل بين التحميل والبصمة كان ينسب الأرقامَ إلى
+        # نسخةٍ لم تَعُدّ شيئًا (ملاحظة Codex السابعة عشرة على #157)
         try:
-            tokenizer = Tokenizer.from_file(path)
+            data = Path(path).read_bytes()
+            tokenizer = Tokenizer.from_buffer(data)
         except Exception as exc:                                       # noqa: BLE001 -- أيُّ تعذّرٍ في التحميل يُسمّى برمزه ولا يُبتلع
             raise Refused("tokenizer_unavailable", f"{name}: {source}: {type(exc).__name__}: {exc}"[:400]) from None
         counters[name] = lambda text, _t=tokenizer: len(_t.encode(text, add_special_tokens=False).ids)
-        sources[name] = {**origin, "file_sha256_12": hashlib.sha256(Path(path).read_bytes()).hexdigest()[:12]}
+        sources[name] = {**origin, "file_sha256_12": hashlib.sha256(data).hexdigest()[:12]}
     return counters, sources
 
 
