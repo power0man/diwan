@@ -62,12 +62,15 @@ def _stamp(info):
 
 
 def _exact(parent, name):
-    if name in os.listdir(parent):
-        return True
-    try:
-        os.stat(name, dir_fd=parent, follow_symlinks=False)
-    except FileNotFoundError:
-        return False
+    """الاسمُ موجودٌ بتهجئته هذه بعينها. القائمةُ تُقرأ قبل الـstat، فمدخلٌ ينشئه خيطٌ آخر بينهما يظهر للـstat ويغيب عن القائمة
+    كأنه تهجئةٌ بديلة؛ فتُعاد القراءةُ مرّةً قبل الحكم (سباقُ خيطَي الإيقاف في test_agent_cooperative_stop تحت الحِمل)."""
+    for _attempt in range(2):
+        if name in os.listdir(parent):
+            return True
+        try:
+            os.stat(name, dir_fd=parent, follow_symlinks=False)
+        except FileNotFoundError:
+            return False
     _fail("path_alias", "تهجئة بديلة لمسار قائم")
 
 
