@@ -238,3 +238,338 @@ def test_the_smoke_probe_passes_only_when_the_planted_error_is_caught(tmp_path):
     report = smoke(tmp_path / "again", REVIEWERS, fake, brief_path=BRIEF)
     assert report["status"] == "failed"
     assert report["reviewers"][REVIEWERS[1]]["caught_planted_error"] is False
+
+
+# ————— الواجهاتُ المجانية: GitHub Models وموجّه HF (#168، قرار المالك في ٢٨ سبتمبر ٢٠٢٦) —————
+# بلا شبكة: المُفتِّحُ محقونٌ يلتقط كلَّ طلبٍ قبل أن يخرج، ويردّ بما كُتب لكل نموذج.
+
+import io  # noqa: E402
+import sys  # noqa: E402
+import urllib.error  # noqa: E402
+import urllib.request  # noqa: E402
+
+sys.path.insert(0, str(ROOT / "tools"))
+import external_review as cli  # noqa: E402
+
+# مفتاحٌ مصطنع لا يطابق أنماطَ الأسرار في tools/export_public.py (لا `sk-` ولا `gh?_` ولا `AKIA`)
+KEY = "test-key-not-a-secret-0123456789"
+DS, MI, LL = "deepseek/DeepSeek-V3-0324", "mistral-ai/mistral-medium-2505", "meta/Llama-3.3-70B-Instruct"
+GH_CHAT = "https://models.github.ai/inference/chat/completions"
+GH_CATALOG = "https://models.github.ai/catalog/models"
+SMOKE_IDS = ("smoke_1", "smoke_2", "smoke_3")
+CATCH = {"judgments": [_judgment("smoke_1"), _judgment("smoke_2", reference="incorrect"), _judgment("smoke_3")]}
+YES_MAN = _ok(SMOKE_IDS)
+
+
+def _gh(model, outputs=("text",)):
+    return {"id": model, "publisher": model.split("/")[0], "rate_limit_tier": "low",
+            "supported_output_modalities": list(outputs)}
+
+
+class FreeOpener:
+    """مُفتِّحٌ محقون: الفهرسُ لطلب GET، ولكل نموذجٍ ردودُه بالترتيب (والأخيرُ يتكرّر). عددٌ = خطأ HTTP بذلك الرمز،
+    وصفٌّ (نصّ، سببُ الانتهاء) = ردٌّ خام، وقاموسٌ = أحكامٌ تُرمَّز JSON."""
+
+    def __init__(self, catalog=None, replies=None):
+        self.catalog = catalog
+        self.replies = {m: list(r) for m, r in (replies or {}).items()}
+        self.requests: list[urllib.request.Request] = []
+
+    def open(self, request, timeout=None):
+        self.requests.append(request)
+        if request.data is None:
+            reply = self.catalog
+        else:
+            queue = self.replies[json.loads(request.data)["model"]]
+            reply = queue.pop(0) if len(queue) > 1 else queue[0]
+        if isinstance(reply, int):
+            raise urllib.error.HTTPError(request.full_url, reply, "refused", {}, None)
+        if request.data is not None:
+            content, finish = reply if isinstance(reply, tuple) else (json.dumps(reply, ensure_ascii=False), "stop")
+            reply = {"choices": [{"message": {"role": "assistant", "content": content}, "finish_reason": finish}]}
+        return io.BytesIO(json.dumps(reply, ensure_ascii=False).encode("utf-8"))
+
+    def chat_models(self):
+        return [json.loads(r.data)["model"] for r in self.requests if r.data is not None]
+
+
+def _free(monkeypatch, opener):
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: opener)
+    monkeypatch.setenv("GITHUB_TOKEN", KEY)
+    monkeypatch.setenv("HF_TOKEN", KEY)
+    return opener
+
+
+def _printed(capsys) -> dict:
+    return json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+
+
+def test_free_backend_key_rides_only_the_request_never_the_report_output_or_errors(tmp_path, monkeypatch, capsys):
+    opener = _free(monkeypatch, FreeOpener(catalog=[_gh(DS), _gh(MI)], replies={DS: [CATCH], MI: [CATCH]}))
+    out = tmp_path / "smoke.json"
+    assert cli.main(["--backend", "github-models", "--smoke", str(out)]) == 0
+    assert [r.full_url for r in opener.requests] == [GH_CATALOG, GH_CHAT, GH_CHAT]
+    for request in opener.requests:
+        # في ترويسةٍ لا تُعاد عند التحويل، ومع ترويستَي واجهة GitHub
+        assert request.unredirected_hdrs.get("Authorization") == f"Bearer {KEY}"
+        assert "Authorization" not in request.headers
+        assert request.get_header("Accept") == "application/vnd.github+json"
+        assert request.get_header("X-github-api-version") == "2022-11-28"
+    body = json.loads(opener.requests[1].data)
+    assert body["model"] == DS and body["temperature"] == 0 and body["stream"] is False
+    assert [m["role"] for m in body["messages"]] == ["system", "user"]
+    assert body["messages"][0]["content"].startswith("## من أنت")
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["status"] == "passed"
+    assert report["backend"] == {"name": "github-models", "endpoint_host": "models.github.ai", "key_env": "GITHUB_TOKEN"}
+    assert {m: r["family"] for m, r in report["reviewers"].items()} == {DS: "deepseek", MI: "mistral"}
+    assert "free_tier_rate_limits_and_input_caps_apply" in report["measurement_limits"]
+    printed = capsys.readouterr().out
+    assert KEY not in printed and KEY not in out.read_text(encoding="utf-8")
+    chat = cli.build_free_transport("github-models", environ={"GITHUB_TOKEN": KEY})
+    assert KEY not in repr(chat) and KEY not in json.dumps(chat.describe())
+    chat.opener = FreeOpener(replies={DS: [401]})
+    with pytest.raises(AutomaticReviewError) as failed:
+        chat(DS, "s", "u", {})
+    assert failed.value.code == "http_401"
+    assert KEY not in str(failed.value) and KEY not in repr(failed.value) and failed.value.__cause__ is None
+
+
+def test_the_free_key_comes_from_the_environment_only(tmp_path, monkeypatch, capsys):
+    options = [c for c in cli.main.__code__.co_consts if isinstance(c, str) and c.startswith("--")]
+    assert options and not any("key" in o or "api" in o or o.endswith("-token") for o in options)
+    for backend, env in (("github-models", "GITHUB_TOKEN"), ("hf-router", "HF_TOKEN")):
+        with pytest.raises(AutomaticReviewError) as refused:
+            cli.build_free_transport(backend, environ={})
+        assert refused.value.code == "key_missing" and env in str(refused.value)
+        assert cli.build_free_transport(backend, environ={env: KEY}).key_env == env
+    opener = FreeOpener()
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: opener)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    assert cli.main(["--backend", "github-models", "--smoke", str(tmp_path / "s.json")]) == 2
+    assert _printed(capsys)["code"] == "key_missing" and opener.requests == []
+    assert not (tmp_path / "s.json").exists()
+
+
+@pytest.mark.parametrize("url", [
+    "http://models.github.ai/inference/chat/completions",        # بلا تشفير
+    "https://evilmodels.github.ai/inference/chat/completions",   # مضيفٌ يشبه المسموح
+    "https://example.com/v1/chat/completions",
+    "https://models.github.ai:8443/inference/chat/completions",  # منفذٌ صريح
+    "https://user@models.github.ai/inference/chat/completions",  # هويةٌ في الرابط
+    "https://models.github.ai:abc/inference/chat/completions",   # منفذٌ غيرُ عدديّ
+    "https://[models.github.ai/inference/chat/completions",      # رابطٌ لا يُحلَّل
+], ids=["plain_http", "lookalike_host", "other_host", "explicit_port", "userinfo", "non_numeric_port", "unparsable"])
+def test_only_the_listed_endpoints_are_allowed(url):
+    with pytest.raises(AutomaticReviewError) as refused:
+        cli.allowed_endpoint(url)
+    assert refused.value.code == "endpoint_not_allowed"
+    with pytest.raises(AutomaticReviewError) as refused:
+        cli.OpenAICompatChat("github-models", KEY, chat_url=url)
+    assert refused.value.code == "endpoint_not_allowed"
+    for spec in cli.BACKENDS.values():
+        assert cli.allowed_endpoint(spec["chat_url"]) and cli.allowed_endpoint(spec["catalog_url"])
+    assert cli.allowed_endpoint(cli.CLOUD_ENDPOINT + "/api/chat")
+
+
+@pytest.mark.parametrize("model,code", [
+    ("Qwen/Qwen3-235B-A22B-Instruct-2507", "reviewer_is_engine_family"),
+    ("moonshotai/Kimi-K2-Instruct", "reviewer_is_author_family"),
+    ("openai/gpt-4.1", "reviewer_is_developer_family"),
+    ("google/gemma-3-27b-it", "reviewer_is_developer_family"),
+    ("anthropic/claude-sonnet", "reviewer_is_developer_family"),
+    ("deepseek-ai/DeepSeek-R1-Distill-Qwen-32B", "reviewer_is_engine_family"),   # المقطَّرُ من Qwen سلالتُه Qwen
+    ("xai/grok-3", "publisher_unknown"),
+    ("deepseek", "publisher_unknown"),                                            # بلا ناشر
+    ("meta/DeepSeek-V3-0324", "family_mismatch"),                                 # الاسمُ يكذّب الناشر
+    ("microsoft/MAI-DS-R1", "reviewer_family_unknown"),                           # الاسمُ لا يقول عائلة
+], ids=["qwen_engine", "kimi_author", "openai_developer", "google_developer", "anthropic_developer", "qwen_distilled",
+        "unknown_publisher", "no_publisher", "name_contradicts_publisher", "name_says_no_family"])
+def test_free_reviewer_families_are_refused_by_name(model, code):
+    with pytest.raises(AutomaticReviewError) as refused:
+        cli.resolve_reviewer(model)
+    assert refused.value.code == code
+
+
+@pytest.mark.parametrize("model,family", [
+    ("deepseek/DeepSeek-V3-0324", "deepseek"), ("deepseek-ai/DeepSeek-V3.1", "deepseek"),
+    ("mistral-ai/mistral-medium-2505", "mistral"), ("mistralai/Mistral-Small-3.1-24B-Instruct-2503", "mistral"),
+    ("meta/Meta-Llama-3.1-405B-Instruct", "meta"), ("meta-llama/Llama-3.3-70B-Instruct", "meta"),
+    ("cohere/cohere-command-a", "cohere"), ("CohereLabs/c4ai-command-a-03-2025", "cohere"),
+    ("ai21-labs/AI21-Jamba-1.5-Large", "ai21"), ("microsoft/Phi-4", "microsoft"),
+], ids=["github_deepseek", "hf_deepseek", "github_mistral", "hf_mistral", "github_meta_llama", "hf_meta_llama",
+        "github_cohere", "hf_cohere", "github_ai21", "github_microsoft"])
+def test_preferred_free_families_resolve_from_publisher_and_name(model, family):
+    identity = cli.resolve_reviewer(model)
+    assert identity["family"] == family and identity["lineage"] == [family]
+    assert identity["publisher"] == model.split("/")[0]
+    # والقاعدةُ في `evaluation/external_review.py` تقرأ العائلةَ نفسَها من المعرّف نفسِه (الجدولُ الواحد)
+    assert check_reviewers([model, "granite-4:probe"]) == {model: family, "granite-4:probe": "ibm"}
+
+
+def test_two_free_reviewers_never_share_a_family_or_a_lineage(tmp_path, monkeypatch, capsys):
+    same = [cli.resolve_reviewer(DS), cli.resolve_reviewer("deepseek-ai/DeepSeek-V3.1")]
+    with pytest.raises(AutomaticReviewError) as refused:
+        cli.check_distinct(same)
+    assert refused.value.code == "duplicate_reviewer_family"
+    distill = cli.resolve_reviewer("deepseek-ai/DeepSeek-R1-Distill-Llama-70B")
+    assert distill["lineage"] == ["deepseek", "meta"]
+    with pytest.raises(AutomaticReviewError) as refused:
+        cli.check_distinct([distill, cli.resolve_reviewer("meta-llama/Llama-3.3-70B-Instruct")])
+    assert refused.value.code == "duplicate_reviewer_family"
+    chosen = cli.choose_reviewers(same + [cli.resolve_reviewer(MI)])
+    assert [c["model"] for c in chosen] == [DS, MI], "المرشّحُ من عائلةٍ مختارة يُتخطّى"
+    opener = _free(monkeypatch, FreeOpener(replies={DS: [CATCH], "deepseek-ai/DeepSeek-V3.1": [CATCH]}))
+    code = cli.main(["--backend", "github-models", "--smoke", str(tmp_path / "s.json"),
+                     "--reviewer", DS, "--reviewer", "deepseek-ai/DeepSeek-V3.1"])
+    assert code == 2 and _printed(capsys)["code"] == "duplicate_reviewer_family" and opener.requests == []
+
+
+def test_quota_exhaustion_falls_back_to_a_reviewer_of_another_family(tmp_path, monkeypatch, capsys):
+    opener = _free(monkeypatch, FreeOpener(catalog=[_gh(DS), _gh(MI), _gh(LL)],
+                                           replies={DS: [429], MI: [CATCH], LL: [CATCH]}))
+    out = tmp_path / "smoke.json"
+    assert cli.main(["--backend", "github-models", "--smoke", str(out)]) == 0
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["status"] == "passed" and set(report["reviewers"]) == {MI, LL}
+    assert report["fallbacks"] == [{"exhausted": [DS], "code": "quota_exhausted", "replacement": [LL]}]
+    assert opener.chat_models() == [DS, DS, MI, LL], "النافدُ يُعاد مرّةً، والباقي لا يُعاد نداؤه"
+    assert _printed(capsys)["fallbacks"] == report["fallbacks"]
+
+
+def test_quota_with_no_other_family_left_is_a_named_failure(tmp_path, monkeypatch, capsys):
+    assert cli.http_code(429) == cli.http_code(402) == "quota_exhausted"
+    assert cli.http_code(413) == "request_too_large" and cli.http_code(500) == "http_500"
+    other_deepseek = "deepseek/DeepSeek-R1-0528"
+    _free(monkeypatch, FreeOpener(catalog=[_gh(DS), _gh(other_deepseek), _gh(MI)],
+                                  replies={DS: [429], other_deepseek: [CATCH], MI: [CATCH]}))
+    out = tmp_path / "smoke.json"
+    assert cli.main(["--backend", "github-models", "--smoke", str(out)]) == 1
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["status"] == "failed" and report["code"] == "quota_exhausted_no_fallback"
+    assert report["fallbacks"] == [{"exhausted": [DS], "code": "quota_exhausted", "replacement": None}]
+    assert _printed(capsys)["code"] == "quota_exhausted_no_fallback"
+    with pytest.raises(AutomaticReviewError) as unavailable:
+        cli.choose_reviewers([cli.resolve_reviewer(DS)])
+    assert unavailable.value.code == "reviewers_unavailable"
+
+
+def test_an_empty_or_truncated_free_reply_is_retried_once_then_named(tmp_path):
+    ids = ["c1", "c2", "c3"]
+    hf_ds, hf_ll = "deepseek-ai/DeepSeek-V3-0324", "meta-llama/Llama-3.3-70B-Instruct"
+    chat = cli.OpenAICompatChat("hf-router", KEY)
+    assert chat.chat_url == "https://router.huggingface.co/v1/chat/completions"
+    chat.opener = FreeOpener(replies={hf_ds: [("  ", "stop")],
+                                      hf_ll: [(json.dumps(_ok(ids)), "length")]})
+    bank = _bank(tmp_path)
+    assert review_bank(bank, [hf_ds, hf_ll], chat, brief_path=BRIEF)["failed"] == 2
+    records = {m: json.loads((bank / "reviews" / m.replace("/", "_") / "tier_a" / "kimi_t_a_001.json")
+                             .read_text(encoding="utf-8")) for m in (hf_ds, hf_ll)}
+    assert records[hf_ds]["error"] == "reply_empty" and len(records[hf_ds]["attempts"]) == 2
+    assert records[hf_ll]["error"] == "reply_incomplete" and len(records[hf_ll]["attempts"]) == 2
+    assert records[hf_ds]["family"] == "deepseek" and records[hf_ll]["family"] == "meta"
+    chat.opener = FreeOpener(replies={hf_ds: [("", "stop"), _ok(ids)], hf_ll: [{"no": "choices"}, _ok(ids)]})
+    again = _bank(tmp_path / "again")
+    assert review_bank(again, [hf_ds, hf_ll], chat, brief_path=BRIEF)["failed"] == 0
+
+    class NoChoices:
+        def open(self, request, timeout=None):
+            return io.BytesIO(b'{"choices": []}')
+
+    chat.opener = NoChoices()
+    with pytest.raises(AutomaticReviewError) as malformed:
+        chat(hf_ds, "s", "u", {})
+    assert malformed.value.code == "openai_response_malformed"
+
+
+def test_free_backends_send_no_sealed_file_and_no_bank_outside_evaluation_banks(tmp_path, monkeypatch, capsys):
+    opener = _free(monkeypatch, FreeOpener(replies={DS: [_ok(["c1", "c2", "c3"])], MI: [_ok(["c1", "c2", "c3"])]}))
+    outside = _bank(tmp_path / "owner")
+    args = ["--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF)]
+    assert cli.main([str(outside), *args]) == 2
+    assert _printed(capsys)["code"] == "bank_outside_evaluation_banks" and opener.requests == []
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    bank = tmp_path / "evaluation" / "banks" / "b"
+    source = _bank(tmp_path / "src") / "open" / "tier_a" / "kimi_t_a_001.json"
+    for relative in ("a/kimi_x.json", "sealed/kimi_y.json"):
+        (bank / "open" / relative).parent.mkdir(parents=True)
+        (bank / "open" / relative).write_bytes(source.read_bytes())
+    assert cli.main([str(bank), *args]) == 2
+    assert _printed(capsys)["code"] == "sealed_never_reviewed_externally"
+    assert opener.requests == [], "لا نداءَ واحدًا قبل الرفض، ولو سبق الملفُّ المفتوحُ المحجوبَ في الترتيب"
+
+
+def test_the_free_catalog_is_assessed_and_ranked_by_preferred_family():
+    catalog = [_gh("openai/gpt-4.1"), _gh("deepseek/DeepSeek-R1"), _gh(DS),
+               _gh("meta/Llama-3.2-90B-Vision-Instruct"), _gh("meta/Meta-Llama-3.1-405B-Instruct"), _gh(LL),
+               _gh("cohere/Cohere-rerank-v3", outputs=("embeddings",)), _gh("cohere/cohere-command-a"),
+               _gh("microsoft/Phi-4-reasoning"), _gh("microsoft/Phi-4-multimodal-instruct"), _gh("microsoft/MAI-DS-R1"),
+               _gh("xai/grok-3"), _gh("mistral-ai/Codestral-2501")]
+    assessed = cli.assess_catalog([cli._catalog_entry(e) for e in catalog], "github-models")
+    assert [c["model"] for c in assessed["candidates"]] == [
+        DS, "mistral-ai/Codestral-2501", LL, "cohere/cohere-command-a", "microsoft/Phi-4-multimodal-instruct",
+        "deepseek/DeepSeek-R1", "meta/Meta-Llama-3.1-405B-Instruct", "meta/Llama-3.2-90B-Vision-Instruct",
+        "microsoft/Phi-4-reasoning"]
+    assert assessed["refused"] == {"not_a_chat_model": 1, "publisher_unknown": 1,
+                                   "reviewer_family_unknown": 1, "reviewer_is_developer_family": 1}
+    assert assessed["models"] == len(catalog)
+    hf = cli.OpenAICompatChat("hf-router", KEY)
+    hf.opener = FreeOpener(catalog={"object": "list", "data": [
+        {"id": "deepseek-ai/DeepSeek-V3-0324", "providers": [{"provider": "p", "status": "live"}]},
+        {"id": "meta-llama/Llama-3.3-70B-Instruct", "providers": [{"provider": "p", "status": "staging"}]},
+        {"id": "CohereLabs/c4ai-command-a-03-2025", "architecture": {"output_modalities": ["text"]}}]})
+    entries = hf.catalog()
+    assert hf.opener.requests[0].full_url == "https://router.huggingface.co/v1/models"
+    assert [(e["id"], e["chat"], e["reason"]) for e in entries] == [
+        ("deepseek-ai/DeepSeek-V3-0324", True, None), ("meta-llama/Llama-3.3-70B-Instruct", False, "no_live_provider"),
+        ("CohereLabs/c4ai-command-a-03-2025", True, None)]
+
+
+def test_every_family_mode_probes_each_allowed_family_in_pairs(tmp_path, monkeypatch, capsys):
+    catalog = [_gh(DS), _gh(MI), _gh(LL)]
+    _free(monkeypatch, FreeOpener(catalog=catalog, replies={DS: [CATCH], MI: [CATCH], LL: [CATCH]}))
+    out = tmp_path / "every.json"
+    assert cli.main(["--backend", "github-models", "--smoke", str(out), "--every-family"]) == 0
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["status"] == "passed" and report["pairs"] == [[DS, MI], [LL, DS]]
+    assert {m: (r["family"], r["caught_planted_error"], r["reachable"]) for m, r in report["models"].items()} == {
+        DS: ("deepseek", True, True), MI: ("mistral", True, True), LL: ("meta", True, True)}
+    capsys.readouterr()
+    _free(monkeypatch, FreeOpener(catalog=catalog, replies={DS: [CATCH], MI: [CATCH], LL: [YES_MAN]}))
+    assert cli.main(["--backend", "github-models", "--smoke", str(out), "--every-family"]) == 1
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["status"] == "failed" and report["models"][LL]["caught_planted_error"] is False
+
+
+def test_free_options_leave_the_ollama_path_as_it_was(tmp_path, capsys, monkeypatch):
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    assert cli.main(["--list-catalog", str(tmp_path / "c.json")]) == 2
+    assert _printed(capsys)["code"] == "free_backend_option_without_free_backend"
+    assert cli.main(["--backend", "github-models", "--base-url", cli.CLOUD_ENDPOINT, "--smoke", str(tmp_path / "s.json")]) == 2
+    assert _printed(capsys)["code"] == "base_url_is_ollama_only"
+
+
+def test_free_transport_refuses_redirects():
+    chat = cli.OpenAICompatChat("github-models", KEY)
+    assert any(isinstance(h, cli._RefuseRedirect) for h in chat.opener.handlers)
+    request = urllib.request.Request(GH_CHAT, data=b"{}")
+    request.add_unredirected_header("Authorization", f"Bearer {KEY}")
+    assert cli._RefuseRedirect().redirect_request(request, None, 302, "Found", {}, "https://evil.example/") is None
+
+
+def test_the_free_llm_workflow_is_least_privilege_pinned_and_guarded():
+    workflows = ROOT / ".github" / "workflows"
+    text = (workflows / "free-llm-review.yml").read_text(encoding="utf-8")
+    pin = __import__("re").search(r"actions/checkout@([0-9a-f]{40})", (workflows / "verify.yml").read_text(encoding="utf-8"))
+    assert "\npermissions:\n  contents: read\n  models: read\n\n" in text
+    assert ": write" not in text and "secrets." not in text
+    assert [line.strip() for line in text.splitlines() if "uses:" in line] == [
+        f"- uses: actions/checkout@{pin.group(1)} # v4"]
+    assert "persist-credentials: false" in text
+    assert "      - tools/external_review.py\n" in text and "      - .github/workflows/free-llm-review.yml\n" in text
+    assert "options: [smoke, bank]" in text and "default: smoke" in text
+    assert "github.event.pull_request.head.repo.full_name == github.repository" in text
+    install = text.split("- name: Install the locked runtime", 1)[1].split("- name:", 1)[0]
+    assert "GITHUB_TOKEN" not in install and "'uv==0.8.17'" in install and "--frozen" in install
+    assert text.count("GITHUB_TOKEN: ${{ github.token }}") == 4
+    assert "tools/external_review.py evaluation/banks/kimi_v1 --backend github-models" in text
