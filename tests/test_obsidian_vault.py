@@ -215,7 +215,34 @@ def test_a_completion_mark_follows_the_step_s_title_not_its_number(repo, vault):
     plan["owner_steps"][-1]["time"] = "٥ دقائق"
     (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
     assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"]
-    assert "- [x] **2. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ٥ دقائق · $0" in steps.read_text(encoding="utf-8")
+    again = steps.read_text(encoding="utf-8")
+    assert "- [x] **2. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ٥ دقائق · $0" in again
+    assert "- [x] **2. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0" in again.split("\n## ملاحظاتي")[1], "سطرُها القديم يُنقل لا يُمحى"
+
+
+def test_an_owner_line_that_reuses_a_generated_step_s_number_is_carried_whichever_side_it_sits(repo, vault):
+    """ملاحظةُ Codex على #161 (الجولة التاسعة): سطرٌ مرقَّم كتبه المالك برقم خطوةٍ مولَّدة ووضعه قبلها كان يُكتب فوقه في قاموس
+    السطور (الرقمُ مفتاحٌ واحد) فلا يُرى إلا المولَّد: لا يبقى سطرُه ولا يُنقل، بل يُمحى بصمت في البناء التالي. صارت سطورُ الرقم
+    الواحد تُحفظ كلُّها: ما وافق الخطوةَ بهويّتها يبقى على سطرها بعلامته، وما سواه يُنقل إلى قسم الملاحظات — قبل المولَّد كان أم بعده."""
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    plan["owner_steps"].append({"order": 2, "guide_id": "G5", "title": "تجهيز Nitro", "time": "ساعة", "cost": "$0"})
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    steps = vault / "Diwan/خطواتي.md"
+    text = steps.read_text(encoding="utf-8")
+    gen = "- [ ] **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0"
+    done, custom = gen.replace("[ ]", "[x]"), "- [ ] **2. مهمّتي: شراء قرص خارجي** · بلا دليل"
+    assert gen in text
+    for arrangement in (f"{custom}\n{done}", f"{done}\n{custom}"):
+        steps.write_text(text.replace(gen, arrangement), encoding="utf-8")
+        assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"]
+        migrated = steps.read_text(encoding="utf-8")
+        active, notes = migrated.split("\n## ملاحظاتي")
+        assert done in active and custom not in active, "المولَّدةُ تبقى بعلامتها وسطرُ المالك لا يبقى في القائمة النشطة"
+        carried = [line for line in notes.split("### سطورٌ نُقلت من النسخة السابقة")[1].splitlines() if line.strip()]
+        assert carried == [custom], "سطرُ المالك يُنقل بنصّه لا يُمحى، قبل المولَّد كان أم بعده"
+        assert ov.check(vault, root=repo) == [] and ov.build(vault, root=repo)["migrated"] == []
+        assert steps.read_text(encoding="utf-8") == migrated, "لا يتكرّر النقلُ في البناء التالي"
 
 
 def test_a_lifted_deferral_and_a_step_gone_from_the_plan_migrate_without_losing_the_owner_s_text(repo, vault):

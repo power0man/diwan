@@ -208,40 +208,46 @@ def migrate_steps(existing: str, rendered: str) -> str:
     بهويّتها — رقمُها وعنوانُها معًا — لا برقمها وحده (وإن أُجّلت بعد إنجازها بقيت منجزةً باسمها)، ولاحقةٌ كتبها بعد نصّ الخطوة المولَّد («… — سألت المحامي») تبقى على سطرها،
     وسطرُ خطوةٍ عُدّل داخلَ نصّه المولَّد يُنقل كما هو، وما كتبه تحت «## ملاحظاتي» يُنقل كما هو، وما كتبه في غير ذلك من سطورٍ
     (النسخةُ القديمة دعته إلى التعديل حيث شاء) يُنقل تحت «### سطورٌ نُقلت من النسخة السابقة» في قسم ملاحظاته لا يُمحى بصمت.
+    وسطورُ الرقم الواحد تُحفظ كلُّها لا آخرُها: سطرٌ كتبه المالك برقم خطوةٍ مولَّدة ووضعه قبلها كان يُكتب فوقه في قاموسٍ مفتاحُه الرقم
+    فيُمحى بصمت في البناء التالي؛ فصار كلُّ سطرٍ يُقرأ على حدة، وتأخذ الخطوةُ المولَّدة سطرًا واحدًا يوافقها هويّةً، وما لم تأخذه
+    خطوةٌ يُنقل كما هو بترتيبه — قبل المولَّد كان أم بعده (ملاحظة Codex التاسعة على #161).
     كانت البذرةُ تُحفظ حرفيًّا حتى مع `--force`، فلا يبلغ التأجيلُ (ق٦٨) خزنةً قائمة (ملاحظات Codex على #161)."""
     head, sep, notes = existing.partition("\n" + NOTES_HEADING)
-    done, edits, stray = {}, {}, []                                   # المنجز: الرقمُ ← عنوانُه في الموجود
-    for line in head.splitlines():
+    entries, carry = [], {}                                           # سطورُ الخطوات في الموجود كلُّها: (الموضع، العلامة، الرقم، الذيل، السطر)
+    for pos, line in enumerate(head.splitlines()):
         if m := _STEP_LINE.match(line):
-            if m.group(1) in ("[x]", "[X]"):
-                done[m.group(2)] = _title(line[m.end():])
-            edits[m.group(2)] = (line[m.end():], line)
+            entries.append((pos, m.group(1), m.group(2), line[m.end():], line))
         elif line.strip() and line.strip() not in _KNOWN_LINES and not line.startswith("علّم الخطوة حين تنتهي"):
-            stray.append(line)
-    lines, seen = [], set()
+            carry[pos] = line
+    lines, claimed = [], set()
     for line in rendered.splitlines():
         if not (m := _STEP_LINE.match(line)):
             lines.append(line)
             continue
         mark, order, tail = m.group(1), m.group(2), line[m.end():]
-        seen.add(order)
         extra = ""
-        completed = done.get(order) == _title(tail)                   # الهويّةُ العنوانُ مع الرقم، لا الرقمُ وحده
+        # سطرُ الخطوة في الموجود هو ما وافقها هويّةً — رقمًا وعنوانًا — ولم يأخذه سطرٌ مولَّدٌ قبلها؛ وكلُّ سطرٍ لا يأخذه أحدٌ يُنقل
+        mine = next((e for e in entries if e[0] not in claimed and e[2] == order and _title(e[3]) == _title(tail)), None)
+        if mine is not None:
+            claimed.add(mine[0])
+        completed = mine is not None and mine[1] in ("[x]", "[X]")
         if completed and mark == "[ ]":
             mark = "[x]"
         elif completed and mark == "⏸":
             mark, extra = "[x]", DONE_BEFORE_DEFERRAL
-        if order in edits:
+        if mine is not None:
             # لاحقةُ المالك هي ما زاد على نصّ الخطوة كما تولّده الأداة بعد نزع ما تولّده هي من لواحق (علامةُ تأجيلٍ سابقة قد زالت
             # أو تغيّر سببُها، وعلامةُ الإنجاز قبل التأجيل)؛ وما عُدّل داخل النصّ نفسِه يُنقل سطرًا كاملًا (ملاحظاتُ Codex على #161)
-            edited, base = _strip_generated(edits[order][0]), _strip_generated(tail)
+            edited, base = _strip_generated(mine[3]), _strip_generated(tail)
             if edited.startswith(base):
                 extra += edited[len(base):]
             else:
-                stray.append(edits[order][1])
+                carry[mine[0]] = mine[4]
         lines.append(f"- {mark} **{order}.{tail}{extra}")
-    # وسطرٌ مرقَّم ليس في الخطة الجديدة (خطوةٌ أضافها المالك بنفسه، أو خطوةٌ حُذفت أو أُعيد ترقيمُها وعليها تعليقُه) لا يُمحى: يُنقل كما هو
-    stray += [edits[order][1] for order in edits if order not in seen]
+    # وسطرٌ مرقَّم لم يوافق خطوةً في الخطة الجديدة لا يُمحى: يُنقل كما هو — خطوةٌ أضافها المالك بنفسه (برقمٍ جديد أو برقم خطوةٍ
+    # مولَّدة، قبلها أو بعدها)، أو خطوةٌ حُذفت أو أُعيد ترقيمُها وعليها تعليقُه؛ والمنقولُ كلُّه بترتيبه في الموجود
+    carry.update({e[0]: e[4] for e in entries if e[0] not in claimed})
+    stray = [carry[pos] for pos in sorted(carry)]
     text = "\n".join(lines) + "\n"
     if sep or stray:
         text += "\n" + NOTES_HEADING + (notes.rstrip("\n") if sep else "") + "\n"
