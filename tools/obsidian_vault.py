@@ -176,6 +176,7 @@ NOTES_HEADING = "## ملاحظاتي"
 LEGACY_HEADING = "### سطورٌ نُقلت من النسخة السابقة"
 DONE_BEFORE_DEFERRAL = " — أُنجزت قبل التأجيل"
 _STEP_LINE = re.compile(r"^- (\[[ xX]\]|⏸) \*\*(\d+)\.")
+_GENERATED_SUFFIXES = re.compile(r" — مؤجَّلة \(.*?\)(?= — |$)|" + re.escape(DONE_BEFORE_DEFERRAL))
 _KNOWN_LINES = ("# خطواتي", "## خطواتٌ مؤجَّلة", "لا تُطلب منك الآن؛ تعود إلى القائمة بإشعارك.")
 
 
@@ -194,25 +195,29 @@ def migrate_steps(existing: str, rendered: str) -> str:
             edits[m.group(2)] = (line[m.end():], line)
         elif line.strip() and line.strip() not in _KNOWN_LINES and not line.startswith("علّم الخطوة حين تنتهي"):
             stray.append(line)
-    lines = []
+    lines, seen = [], set()
     for line in rendered.splitlines():
         if not (m := _STEP_LINE.match(line)):
             lines.append(line)
             continue
         mark, order, tail = m.group(1), m.group(2), line[m.end():]
+        seen.add(order)
         extra = ""
         if order in done and mark == "[ ]":
             mark = "[x]"
         elif order in done and mark == "⏸":
             mark, extra = "[x]", DONE_BEFORE_DEFERRAL
-        if order in edits and (edited := edits[order][0]) != tail:
-            # لاحقةُ المالك هي ما زاد على نصّ الخطوة كما تولّده الأداة (بعلامة التأجيل أو الإنجاز إن كانت)؛ وما عُدّل داخل النصّ يُنقل سطرًا كاملًا
-            known = next((k for k in (tail + extra, tail, tail.split(" — مؤجَّلة")[0]) if edited.startswith(k)), None)
-            if known is not None:
-                extra += edited[len(known):]
+        if order in edits:
+            # لاحقةُ المالك هي ما زاد على نصّ الخطوة كما تولّده الأداة بعد نزع ما تولّده هي من لواحق (علامةُ تأجيلٍ سابقة قد زالت
+            # أو تغيّر سببُها، وعلامةُ الإنجاز قبل التأجيل)؛ وما عُدّل داخل النصّ نفسِه يُنقل سطرًا كاملًا (ملاحظاتُ Codex على #161)
+            edited, base = _GENERATED_SUFFIXES.sub("", edits[order][0]), _GENERATED_SUFFIXES.sub("", tail)
+            if edited.startswith(base):
+                extra += edited[len(base):]
             else:
                 stray.append(edits[order][1])
         lines.append(f"- {mark} **{order}.{tail}{extra}")
+    # وسطرٌ مرقَّم ليس في الخطة الجديدة (خطوةٌ أضافها المالك بنفسه، أو خطوةٌ حُذفت أو أُعيد ترقيمُها وعليها تعليقُه) لا يُمحى: يُنقل كما هو
+    stray += [edits[order][1] for order in edits if order not in seen]
     text = "\n".join(lines) + "\n"
     if sep or stray:
         text += "\n" + NOTES_HEADING + (notes.rstrip("\n") if sep else "") + "\n"
