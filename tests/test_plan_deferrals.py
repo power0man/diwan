@@ -1,4 +1,4 @@
-"""الخطةُ الحاكمة سليمةُ الإحالات، وتأجيلُها لا يعطّل ما لم يُؤجَّل (ق٦٨، ملاحظة Codex السادسة عشرة على #161).
+"""الخطةُ الحاكمة سليمةُ الإحالات، وتأجيلُها لا يعطّل ما لم يُؤجَّل (ق٦٨، ملاحظتا Codex السادسة عشرة والسابعة عشرة على #161).
 
 كانت ح٢ تعدّ جلسةَ Nitro من مُخرجها («جلستا الماك وNitro مأذونتان») وخطوةُ المالك ٤ (G4 ١٧–١٨) التي تفتحها مؤجَّلةٌ بق٦٨، والخطةُ
 بلا حالةِ إنجازٍ جزئيّ: فإمّا تُعلَن ح٢ منجزةً بلا مُخرجها، وإمّا يبقى كلُّ ما يعتمد عليها من عمل الماك والسحابة معطَّلًا حتى يعود
@@ -54,20 +54,18 @@ def test_every_deferral_names_a_recorded_decision_a_date_and_a_reason():
     assert ("task", "ح٢-ن") in {(k, key) for k, key, _ in deferred}, "جلسةُ Nitro التي فُصلت من ح٢ مؤجَّلةٌ بق٦٨"
 
 
-def test_no_active_task_waits_on_deferred_work_unless_its_own_deferred_part_does():
-    """مهمّةٌ غيرُ مؤجَّلة لا تعتمد على مهمّةٍ مؤجَّلة، ولا تفتحها خطوةُ مالكٍ مؤجَّلة، إلا إن كان فيها هي شطرٌ مؤجَّل يسمّي دورَه
-    (مهمّةٌ مختلطة، مثل جديد-v1-acceptance وبندِ claude-nitro فيها). فعملُ الماك والسحابة لا ينتظر Nitro: كانت ح٢ نشطةً تفتحها
-    خطوةُ المالك ٤ المؤجَّلة ومُخرجُها جلسةُ Nitro، فتعطّل كلُّ ما يعتمد عليها."""
-    offending = []
-    for t in PLAN["tasks"]:
-        if _deferred(t["id"]) or ov.deferred_roles(t, AGENTS):
-            continue
-        offending += [(t["id"], "يعتمد على", d) for d in t.get("depends_on", []) if _deferred(d)]
-    for s in PLAN["owner_steps"]:
-        if s.get("deferred"):
-            offending += [(f"خطوة المالك {s['order']}", "تفتح", tid) for tid in s.get("unblocks", [])
-                          if not _deferred(tid) and not ov.deferred_roles(TASKS[tid], AGENTS)]
+def test_no_active_task_waits_on_deferred_work():
+    """مهمّةٌ غيرُ مؤجَّلة لا تعتمد اعتمادًا صلبًا (`depends_on`) على مهمّةٍ مؤجَّلة، ولا تفتحها خطوةُ مالكٍ مؤجَّلة. فعملُ الماك
+    والسحابة لا ينتظر Nitro: كانت ح٢ نشطةً تفتحها خطوةُ المالك ٤ المؤجَّلة ومُخرجُها جلسةُ Nitro، فتعطّل كلُّ ما يعتمد عليها
+    (الجولة السادسة عشرة). ولا استثناءَ للمهمّة المختلطة: جديد-v1-acceptance تقبل «مشغّل Nitro (ع٣) أو العقدة الثانية»، وكانت
+    تعتمد على ع٣ صلبًا فتبقى معطَّلةً ولو توفّرت العقدةُ الثانية (الجولة السابعة عشرة). ومخطّطُ الخطة بلا اعتمادٍ بديل، فالبديلُ
+    يُكتب في نصّ المهمّة لا في `depends_on`."""
+    offending = [(t["id"], "يعتمد على", d) for t in PLAN["tasks"] if not _deferred(t["id"])
+                 for d in t.get("depends_on", []) if _deferred(d)]
+    offending += [(f"خطوة المالك {s['order']}", "تفتح", tid) for s in PLAN["owner_steps"] if s.get("deferred")
+                  for tid in s.get("unblocks", []) if not _deferred(tid)]
     assert offending == []
     # والفصلُ نفسُه: ح٢ نشطةٌ لا تسمّي جلسةَ Nitro في مُخرجها، وما يحتاج Nitro بعينه يعتمد على ح٢-ن
     assert not _deferred("ح٢") and "Nitro" not in TASKS["ح٢"]["deliverable"]
     assert {t["id"] for t in PLAN["tasks"] if "ح٢-ن" in t.get("depends_on", [])} == {"ح٥", "ع٣"}
+    assert "مشغّل Nitro (ع٣، claude-nitro) أو العقدة الثانية" in TASKS["جديد-v1-acceptance"]["description"], "البديلُ في نصّها"

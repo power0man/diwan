@@ -719,10 +719,10 @@ def test_a_deferred_owner_step_marks_the_active_task_it_unblocks_and_a_deferred_
     ov.build(vault, root=repo)
     assert all("⏸" not in read(rel) and "deferred_" not in read(rel) for rel in ("المهام/ك١.md", "المهام/جديد-z.md", "لوحة المراحل.md"))
     # والخطةُ الحقيقية: خطوةُ المالك ٤ المؤجَّلة صارت تفتح ح٢-ن المؤجَّلة لا ح٢ (الجولة السادسة عشرة)، فلا تَسِم مهمّةً نشطة؛
-    # وجديد-v1-acceptance تعتمد على ع٣ المؤجَّلة
+    # وح٥ تعتمد على ح٢-ن المؤجَّلة، وح٢ تفتح ح٥ المؤجَّلة
     real = ov.render(root=ROOT)
     assert "deferred_steps" not in real["المهام/ح٢.md"] and "status: deferred" in real["المهام/ح٢-ن.md"].split("---")[1]
-    assert "[[المهام/ع٣|ع٣]] (⏸ مؤجَّلة)" in real["المهام/جديد-v1-acceptance.md"]
+    assert "[[المهام/ح٢-ن|ح٢-ن]] (⏸ مؤجَّلة)" in real["المهام/ح٥.md"] and "[[المهام/ح٥|ح٥]] (⏸ مؤجَّلة)" in real["المهام/ح٢.md"]
 
 
 def test_every_plan_task_is_on_the_board_of_the_phase_it_declares():
