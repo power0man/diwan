@@ -197,6 +197,22 @@ def request_payload_collisions(scenario: dict, payload_text: str | None = None, 
     return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
 
 
+def declared_system_prompts() -> tuple[str, ...]:
+    """تعليماتُ النظام الثابتة التي يرسلها المُقيِّم مع كلِّ نداءٍ حيّ: تعليماتُ الجلسة الوكيلة (`agent.loop.SYSTEM`، وضعُ
+    `agent` الذي يفتحه المُشغِّل) وتعليماتُ الجلسة النصّية (`conversation.session.SYSTEM`، جلسةُ فحص السياق). عيّنةُ غلاف
+    الرسائل تفرّغ محتواها عمدًا فلا تراهما؛ وشاهدٌ يقع فيهما يبلغ النموذجَ مع كلِّ نداءٍ فلا يشهد بغيابٍ ولو نجح النسيان
+    (ملاحظة Codex على #129، الجولة الثلاثون). والاختبارُ الموصول يطابقهما بما أُرسل فعلًا."""
+    from agent.loop import SYSTEM as AGENT_SYSTEM
+    from conversation.session import SYSTEM as TEXT_SYSTEM
+    return (AGENT_SYSTEM, TEXT_SYSTEM)
+
+
+def system_prompt_collisions(scenario: dict, prompts_text: str | None = None) -> list[str]:
+    """شاهدُ غيابٍ يقع في تعليمات النظام الثابتة كما تُرسل؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الثلاثون)."""
+    text = _flat_text(declared_system_prompts()) if prompts_text is None else prompts_text
+    return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
+
+
 def envelope_collisions(scenario: dict, envelope_text: str | None = None) -> list[str]:
     """شاهدُ غيابٍ يقع في غلاف الطلب الوكيل الثابت؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الرابعة والعشرون)."""
     text = declared_envelope_text() if envelope_text is None else envelope_text
@@ -271,6 +287,8 @@ def _validate_semantics(scenario: dict, path: str, strict: bool, model: str | No
         _reject(path, "witness_collides_with_message_envelope", f"«{wire[0][:40]}» يقع في غلاف الرسائل كما يسلسله المزوّد فيُرسل مع كلِّ رسالة")
     if body := request_payload_collisions(scenario, model=model):
         _reject(path, "witness_collides_with_request_payload", f"«{body[0][:40]}» يقع في حقلٍ ثابت من جسد طلب Ollama كما يبنيه المزوّد فيُرسل مع كلِّ نداء")
+    if prompts := system_prompt_collisions(scenario):
+        _reject(path, "witness_collides_with_system_prompt", f"«{prompts[0][:40]}» يقع في تعليمات النظام الثابتة فيُرسل مع كلِّ نداءٍ ولو نجح النسيان")
 
 
 def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
@@ -388,7 +406,22 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
         if strict and not all(any(shown_only_by_the_item(*f) for f in fenced if f[2] == ref) for ref in directed):
             _reject(path, "injection_directive_left_unchecked",
                     "كلُّ عنصرٍ آمرٍ قائمٍ في المخزن يُفحص سياقُه محجورًا بشاهدٍ منه")
+    # شاهدُ غيابٍ يقع في نصّ عنصرٍ آخر قائمٍ في مشروع الخطوة عند فحصها يسقط بالمنتج الصحيح: `_names` تثبت أن الشاهد من نصّ
+    # مصدره ولا تسأل هل يشاركه قائمٌ آخر، فعنصران يبدآن بعبارةٍ واحدة يُنسى أحدُهما وتُفحص العبارةُ غيابًا يُحسب احتفاظُ الثاني
+    # الصحيحُ انحدارًا — والتكليفُ يطلب عناصرَ متشابهة (ملاحظة Codex على #129، الجولة الثلاثون؛ في البنكين المكلَّف والتطويريّ). والمشروعُ مشروعُ الخطوة:
+    # ما يتسرّب من غيره تسرّبٌ حقٌّ يقيسه العزل. وفحصُ السياق المحجور (`quarantined`) خارجَه: شاهدُه توجيهٌ مدسوس في عنصرٍ قائمٍ
+    # عمدًا، يغيب لأن المنتج يسيّجه لا لأن حاملَه زال
+    # وفي البنك المكلَّف بعد أحكام الفئات الأدقّ (الموافقةُ بلا فحصٍ قبلها تُسمّى باسمها لا بمشاركة الشاهد)
+    def reject_shared_witnesses():
+        for k, s in enumerate(steps):
+            if s.get("expect") in ("retrieve", "context", "residue") and not s.get("quarantined"):
+                for a in s.get("absent") or []:
+                    live = [ref for ref, (i, item) in made.items() if i < k and item["project"] == s.get("project")
+                            and a and contains(item["text"], a) and active_at(ref, k)]
+                    if live:
+                        _reject(path, "witness_shared_with_live_item", f"«{a[:40]}» يقع في نصّ «{live[0]}» القائم في مشروع الخطوة عند فحص غيابه")
     if not strict:
+        reject_shared_witnesses()
         return
     # شروطُ البنك المكلَّف (ملاحظات Codex على #129): كلُّ فئةٍ تختبر ما تسمّيه لا ما يشبهه
     if category == "consent":
@@ -462,6 +495,7 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
             if s.get("op") == "forget" and not active_at(s["ref"], i) and not any(
                     p.get("op") == "forget" and p.get("ref") == s["ref"] for p in steps[:i]):
                 _reject(path, "forget_of_inactive_item", f"«{s['ref']}» ليس قائمًا في المخزن عند نسيانه ولا إيصالَ نسيانٍ سابقٍ له")
+    reject_shared_witnesses()
 
 
 def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:

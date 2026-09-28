@@ -256,6 +256,50 @@ def test_every_item_active_at_a_cross_project_retrieve_must_be_named_absent_in_t
     validate_memory_bank(bank, strict=True)
 
 
+def test_an_absence_witness_shared_with_a_live_item_of_the_same_project_is_rejected():
+    """ملاحظةُ Codex على #129 (الجولة الثلاثون): عنصران يبدآن بعبارةٍ واحدة، يُنسى الأول وتُفحص العبارةُ غيابًا، فيسقط المنتجُ
+    الصحيح لأن الثاني القائم ما زال يحملها. الشاهدُ يُرفض إن شاركه قائمٌ في مشروع الخطوة، ويُقبل إن نُسي الشريكُ أو كان في مشروعٍ آخر."""
+    bank, scenario = _scenario("forget_001")
+    bank["scenarios"] = [scenario]
+    remembered, forget, *rest = scenario["steps"]
+    remembered["text"] = "شيفرة الملف التجريبي 445566"
+    twin = dict(remembered, text="شيفرة الملف التجريبي 998877", **{"as": "twin"})
+    for step in rest:
+        if step.get("absent"):
+            step["absent"] = ["شيفرة الملف التجريبي"]
+    scenario["steps"] = [remembered, twin, forget, *rest]
+    with pytest.raises(PayloadRejected) as err:
+        validate_memory_bank(bank)
+    assert err.value.code == "witness_shared_with_live_item"
+    receipt = next(s for s in rest if s.get("expect") == "receipt")
+    scenario["steps"] = [remembered, twin, forget, dict(forget, ref="twin"), *rest, dict(receipt, ref="twin")]   # الشريكُ منسيٌّ أيضًا
+    validate_memory_bank(bank)
+    validate_memory_bank(bank, strict=True)
+    scenario["steps"] = [remembered, dict(twin, project="B"), forget, *rest]                 # الشريكُ في مشروعٍ آخر: تسرّبُه تسرّبٌ حقّ
+    validate_memory_bank(bank)
+
+
+def test_an_absence_witness_found_in_a_fixed_system_prompt_is_rejected():
+    """ملاحظةُ Codex على #129 (الجولة الثلاثون): عيّنةُ التصادم تفرّغ محتوى الرسائل فلا ترى تعليماتِ النظام الثابتة المرسَلة مع
+    كلِّ نداء؛ شاهدٌ يقع فيهما — في الوكيلة أو النصّية — يُرفض قبل القياس."""
+    from agent.loop import SYSTEM as AGENT_SYSTEM
+    from conversation.session import SYSTEM as TEXT_SYSTEM
+    from evaluation.memory_bank import declared_system_prompts, system_prompt_collisions
+    assert declared_system_prompts() == (AGENT_SYSTEM, TEXT_SYSTEM)
+    for prompt in (AGENT_SYSTEM, TEXT_SYSTEM):
+        phrase = " ".join(prompt.split()[:3])
+        bank, scenario = _scenario("forget_001")
+        remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+        remembered["text"] = f"{phrase} passport secret 445566"
+        for step in scenario["steps"]:
+            if step.get("absent"):
+                step["absent"] = [phrase]
+        assert system_prompt_collisions(scenario) == [phrase] * 3 and system_prompt_collisions(scenario, "") == []
+        with pytest.raises(PayloadRejected) as err:
+            validate_memory_bank(bank)
+        assert err.value.code == "witness_collides_with_system_prompt"
+
+
 def test_the_validator_inspects_the_request_body_of_the_selected_model():
     """ملاحظةُ Codex على #129 (الجولة الثامنة والعشرون): شاهدٌ يقع في اسم النموذج المختار يُرسل مع كلِّ نداءٍ حيّ، فيُرفض في
     الفحص لا بعد القياس."""

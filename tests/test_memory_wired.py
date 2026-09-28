@@ -878,6 +878,20 @@ def test_wire_message_fields_are_inspected_and_the_collision_tools_match_a_captu
         assert any(f.startswith("witness collides with the message envelope") for f in report["failures"]), report
 
 
+def test_the_declared_system_prompts_are_the_ones_the_wired_path_sends(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة الثلاثون): تعليماتُ النظام التي يفحصها المدقّق هي بعينها ما ترسله الجلستان الوكيلة
+    والنصّية في طلبٍ ملتقَط، لا نصًّا مفترَضًا."""
+    from evaluation.memory_bank import declared_system_prompts
+    wired = _Wired(tmp_path / "ui")
+    try:
+        wired.api("memory_remember", project=wired.project("A")["id"], text="رقم هاتف مكتب المحاماة ٠١١٤٥٦٧٨٩٠")
+        wired.contexts("A", "ما رقم مكتب المحاماة؟")
+        sent = {m.content for r in wired.provider.requests for m in r.messages if m.role == "system"}
+    finally:
+        wired.close()
+    assert sent and sent == set(declared_system_prompts()), sent
+
+
 def test_the_fixed_request_body_fields_are_inspected_as_the_provider_builds_them(monkeypatch, tmp_path):
     """ملاحظةُ Codex على #129 (الجولة الخامسة والعشرون): فحصُ الغياب يقرأ جسدَ الطلب كلَّه كما يبنيه المزوّد — الحقولُ الخارجية
     (`model`، `stream`، `think`، `options`) لا الرسائلَ والأدواتِ وحدها — ومن الموضع الذي يرسله `complete` نفسِه."""
