@@ -201,6 +201,54 @@ def test_a_witness_spelled_as_a_json_scalar_in_the_request_body_is_rejected_by_t
     _refused(bank, "witness_collides_with_request_payload")
 
 
+def test_a_forget_of_an_item_not_active_at_that_step_is_rejected_by_the_strict_validator():
+    """ملاحظةُ Codex على #129 (الجولة الثامنة والعشرون): نسيانُ اقتراحٍ لم يُوافَق عليه كان يمرّ الفحصَ الصارم، ثم يردّه المُشغِّل
+    `item_id_invalid` والموصولُ `item_unknown` فيُحسب على المنتج لا على البنك؛ أمّا نسيانُ ما نُسي فمسموحٌ (forget_006)."""
+    bank, scenario = _scenario("forget_001")
+    bank["scenarios"] = [scenario]
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["op"] = "propose"
+    del remembered["consent"]
+    with pytest.raises(PayloadRejected) as err:
+        validate_memory_bank(bank, strict=True)
+    assert err.value.code == "forget_of_inactive_item"
+    try:
+        validate_memory_bank(bank)
+    except PayloadRejected as exc:
+        assert exc.code != "forget_of_inactive_item", "البنكُ المودَع يتعمّد نسيانَ ما ليس قائمًا (forget_006) فالشرطُ للمكلَّف"
+
+
+def test_every_item_active_at_a_cross_project_retrieve_must_be_named_absent_in_the_strict_validator():
+    """ملاحظةُ Codex على #129 (الجولة الثامنة والعشرون): شاهدٌ واحد لعنصرٍ واحد كان يُمرّر سيناريوَ عزلٍ فيه عنصرٌ ثانٍ محفوظٌ بلا
+    شاهد، فمسترجِعٌ يسرّب الثانيَ وحده يمرّ بلا تسرّب."""
+    bank, scenario = _scenario("isolation_002")
+    bank["scenarios"] = [scenario]                       # الصارمُ يُفحص سيناريو سيناريو: البنكُ المودَع ليس كلُّه مكلَّفًا
+    save, probe = scenario["steps"]
+    second = dict(save, text="رقم حساب المورد الرئيسي 778899", **{"as": "m2"})
+    scenario["steps"] = [save, second, probe]
+    validate_memory_bank(bank)
+    with pytest.raises(PayloadRejected) as err:
+        validate_memory_bank(bank, strict=True)
+    assert err.value.code == "isolation_item_unchecked"
+    probe["absent"] = [*probe["absent"], "778899"]
+    validate_memory_bank(bank, strict=True)
+
+
+def test_the_validator_inspects_the_request_body_of_the_selected_model():
+    """ملاحظةُ Codex على #129 (الجولة الثامنة والعشرون): شاهدٌ يقع في اسم النموذج المختار يُرسل مع كلِّ نداءٍ حيّ، فيُرفض في
+    الفحص لا بعد القياس."""
+    bank, scenario = _scenario("forget_001")
+    remembered = next(s for s in scenario["steps"] if s.get("op") == "remember")
+    remembered["text"] = "secret-model-445566 passport secret note"
+    for step in scenario["steps"]:
+        if step.get("absent"):
+            step["absent"] = ["secret-model-445566"]
+    validate_memory_bank(bank)
+    with pytest.raises(PayloadRejected) as err:
+        validate_memory_bank(bank, model="secret-model-445566")
+    assert err.value.code == "witness_collides_with_request_payload"
+
+
 def test_the_collision_tools_are_the_evaluator_s_own_registry_not_every_default_tool():
     """ملاحظةُ Codex على #129 (الجولة الخامسة والعشرون): المُقيِّم بلا خلفية تنفيذٍ فلا يرسل `run_command` ولا `run_tests`؛ فشاهدٌ
     لا يقع إلا في مواصفتيهما لا يُرفض تصادمًا."""

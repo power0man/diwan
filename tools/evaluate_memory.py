@@ -100,7 +100,8 @@ def main(argv=None) -> int:
     # البنكُ المكلَّف بالشروط الأشدّ: كلُّ فئةٍ تؤدّي ما تسمّيه (ملاحظة Codex على #129)
     commissioned = args.suite.resolve() != DEFAULT_SUITE.resolve()
     try:
-        bank = validate_memory_bank(json.loads(raw.decode("utf-8")), strict=commissioned)
+        # بجسد طلب النموذج المختار لا المعتمَد: شاهدٌ يقع في اسمه يُرفض هنا لا بعد القياس (ملاحظة Codex على #129)
+        bank = validate_memory_bank(json.loads(raw.decode("utf-8")), strict=commissioned, model=args.model)
     except (PayloadRejected, ValueError, KeyError, TypeError) as exc:
         print(json.dumps({"status": "refused", "code": getattr(exc, "code", "bank_invalid")}, ensure_ascii=False))
         return 2

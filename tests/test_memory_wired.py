@@ -314,6 +314,25 @@ def test_the_cli_validates_the_suite_and_names_the_runner_before_any_call(tmp_pa
 
 
 
+def test_the_cli_validates_against_the_selected_model_s_request_body(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #129 (الجولة الثامنة والعشرون): فحصُ الأداة قبل أيّ نداء كان يفحص جسدَ طلب النموذج المعتمَد لا المختار
+    بـ`--model`، فشاهدٌ يقع في اسم المختار يمرّ الفحصَ ثم يُحسب رسوبَ منتج."""
+    import json
+    import tools.evaluate_memory as cli
+    from core.canonical import PayloadRejected
+    seen = {}
+
+    def recorder(bank, **kw):
+        seen.update(kw)
+        raise PayloadRejected("bank", "stop_here", "")
+    monkeypatch.setattr(cli, "validate_memory_bank", recorder)
+    suite = tmp_path / "bank.json"
+    suite.write_text(json.dumps(BANK, ensure_ascii=False), encoding="utf-8")
+    assert cli.main(["--model", "secret-model-445566", "--suite", str(suite), "--agent", "anthropic/claude-opus-5-5",
+                     "--out", str(tmp_path / "r.json")]) == 2
+    assert seen == {"strict": True, "model": "secret-model-445566"}
+
+
 def _strict_only(bank: dict) -> dict:
     """سيناريوهاتُ البنك المودَع التي تستوفي شروطَ البنك المكلَّف الأشدّ."""
     import json
@@ -1262,7 +1281,9 @@ def test_only_a_persisted_item_witnesses_isolation_injection_or_restoration():
     restore = lambda ref: {"op": "restore", "project": "A", "ref": ref}
     assert code(dict(by_id["isolation_002"], steps=[filler, before, save, restore("b0"), probe]), strict=True) \
         == "isolation_without_cross_project_absence"
-    check(dict(by_id["isolation_002"], steps=[filler, save, after, restore("b1"), probe]), strict=True)
+    # والحشوُ القائمُ لحظةَ الفحص يُسمّى غائبًا فيه هو أيضًا (الجولة الثامنة والعشرون: كلُّ عنصرٍ قائم يُفحص عزلُه)
+    named = dict(probe, absent=[*probe["absent"], filler["text"]])
+    check(dict(by_id["isolation_002"], steps=[filler, save, after, restore("b1"), named]), strict=True)
     approve = {"op": "approve", "project": "A", "ref": save["as"]}
     forget = {"op": "forget", "project": "A", "ref": save["as"]}
     for steps in ([proposed, before, approve, restore("b0"), probe], [before, proposed, restore("b0"), approve, probe],

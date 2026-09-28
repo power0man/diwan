@@ -65,7 +65,9 @@ def _texts(value, path):
         _reject(path, "texts_invalid", "قائمةُ نصوصٍ غير فارغة")
 
 
-def validate_memory_bank(bank: dict, *, strict: bool = False) -> dict:
+def validate_memory_bank(bank: dict, *, strict: bool = False, model: str | None = None) -> dict:
+    """`model`: النموذجُ الذي سيُقاس به (`--model` في الأداة)، فيُفحص جسدُ طلبه هو لا جسدُ المعتمَد: شاهدٌ يقع في اسم
+    النموذج المختار يُرفض هنا لا بعد القياس (ملاحظة Codex على #129، الجولة الثامنة والعشرون)."""
     if not isinstance(bank, dict) or set(bank) != {"schema_version", "suite_id", "kind", "description", "projects",
                                                     "thresholds", "scenarios"}:
         _reject("bank", "schema_fields", "حقولُ البنك المعلنة وحدها")
@@ -83,7 +85,7 @@ def validate_memory_bank(bank: dict, *, strict: bool = False) -> dict:
             _reject(path + ".id", "scenario_id_duplicate", "معرّفٌ مكرّر")
         seen.add(scenario["id"])
         _validate_steps(scenario, path, projects)
-        _validate_semantics(scenario, path, strict)
+        _validate_semantics(scenario, path, strict, model)
     return bank
 
 
@@ -170,27 +172,28 @@ def declared_envelope_text() -> str:
     return INPUT_PREFIX_V2 + _flat_text(decode_input(encode_input("", [], None)))
 
 
-def request_provider(delegate=None):
+def request_provider(delegate=None, model: str | None = None):
     """المزوّدُ الذي يبني جسدَ الطلب المفحوص: المزوّدُ الحيُّ نفسُه إن كان يبني جسدًا (`payload`)، وإلا مزوّدُ Ollama بالنموذج الذي
     يسمّيه المزوّدُ الحيّ أو المعتمَد — فلا يُفحص جسدٌ باسم نموذجٍ غير الذي يُرسل (ملاحظة Codex على #129، الجولة السادسة والعشرون)."""
     from providers.ollama import OllamaProvider
     if delegate is not None and callable(getattr(delegate, "payload", None)):
         return delegate
-    return OllamaProvider(model=getattr(delegate, "model", None) or OllamaProvider().model)
+    return OllamaProvider(model=model or getattr(delegate, "model", None) or OllamaProvider().model)
 
 
-def declared_request_payload_text(delegate=None) -> str:
+def declared_request_payload_text(delegate=None, model: str | None = None) -> str:
     """الحقولُ الثابتة في جسد طلب Ollama كما يبنيه المزوّدُ الذي سيرسله (`OllamaProvider.payload`: `model` و`stream` و`think`
     و`options` بـ`num_predict` و`temperature` و`num_ctx` و`seed`) بلا رسائل ولا أدوات؛ شاهدُ غيابٍ يقع فيها — ومنه اسمُ النموذج
     الحيّ — يُرسل مع كلِّ نداءٍ فلا يشهد بغياب (ملاحظتا Codex على #129، الجولتان الخامسة والعشرون والسادسة والعشرون)."""
     from core.contracts import Request
     empty = Request((), "memory-bank", "0" * 64, 1, 30.0, "local_only", None)
-    return _flat_text({k: v for k, v in request_provider(delegate).payload(empty).items() if k not in ("messages", "tools")})
+    return _flat_text({k: v for k, v in request_provider(delegate, model).payload(empty).items() if k not in ("messages", "tools")})
 
 
-def request_payload_collisions(scenario: dict, payload_text: str | None = None, delegate=None) -> list[str]:
-    """شاهدُ غيابٍ يقع في حقلٍ ثابت من جسد الطلب كما يبنيه المزوّدُ الذي سيرسله؛ يُرفض قبل القياس (ملاحظة Codex على #129)."""
-    text = declared_request_payload_text(delegate) if payload_text is None else payload_text
+def request_payload_collisions(scenario: dict, payload_text: str | None = None, delegate=None, model: str | None = None) -> list[str]:
+    """شاهدُ غيابٍ يقع في حقلٍ ثابت من جسد الطلب كما يبنيه المزوّدُ الذي سيرسله؛ يُرفض قبل القياس (ملاحظة Codex على #129).
+    `model` اسمُ النموذج المختار للقياس حين لا مزوّدَ بعد (فحصُ الأداة قبل أيّ نداء)."""
+    text = declared_request_payload_text(delegate, model) if payload_text is None else payload_text
     return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
 
 
@@ -251,7 +254,7 @@ def _bound(step: dict, item: dict, least: int = 0) -> bool:
     return step["project"] == item["project"] and _names(step, item["text"], least=least)
 
 
-def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
+def _validate_semantics(scenario: dict, path: str, strict: bool, model: str | None = None) -> None:
     _validate_meaning(scenario, path, strict)
     # آخرُ بوابة بعد صحّة المعنى: شاهدٌ يرد في سؤال فحص العرض أو نصٌّ يحويه يبقى في تاريخ الفحص كلامًا للمالك
     if collisions := probe_collisions(scenario):
@@ -266,7 +269,7 @@ def _validate_semantics(scenario: dict, path: str, strict: bool) -> None:
         _reject(path, "witness_collides_with_agent_envelope", f"«{envelope[0][:40]}» يقع في غلاف الطلب الوكيل الثابت فيُرسل مع كلِّ رسالة")
     if wire := message_envelope_collisions(scenario):
         _reject(path, "witness_collides_with_message_envelope", f"«{wire[0][:40]}» يقع في غلاف الرسائل كما يسلسله المزوّد فيُرسل مع كلِّ رسالة")
-    if body := request_payload_collisions(scenario):
+    if body := request_payload_collisions(scenario, model=model):
         _reject(path, "witness_collides_with_request_payload", f"«{body[0][:40]}» يقع في حقلٍ ثابت من جسد طلب Ollama كما يبنيه المزوّد فيُرسل مع كلِّ نداء")
 
 
@@ -419,13 +422,26 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
         source = overlap(made[ref][1]["text"])
         rivals = sum(overlap(o["text"]) >= source for r, (j, o) in made.items() if r != ref and j < k and active_at(r, k))
         return source > 0 and rivals < RETRIEVE_LIMIT
-    if category == "isolation" and not any(
-            s.get("expect") == "retrieve" and s["project"] != item["project"]
-            and _names(s, item["text"], least=SUBSTANTIVE if strict else 0)     # شاهدٌ جوهريّ لا حرفٌ (ملاحظة Codex على #129)
-            and within_limit(s["query"], ref, k) and active_at(ref, k)
-            for ref, (i, item) in made.items() for k, s in enumerate(steps) if k > i):
-        _reject(path, "isolation_without_cross_project_absence",
-                "غيابُ نصّ عنصرٍ من مشروعٍ في استرجاع مشروعٍ آخر (قائمته كلّها) بعد حفظه")
+    def isolated(ref, i, item):
+        return any(s.get("expect") == "retrieve" and s["project"] != item["project"]
+                   and _names(s, item["text"], least=SUBSTANTIVE if strict else 0)     # شاهدٌ جوهريّ لا حرفٌ (ملاحظة Codex على #129)
+                   and within_limit(s["query"], ref, k) and active_at(ref, k)
+                   for k, s in enumerate(steps) if k > i)
+    if category == "isolation":
+        checked = {ref for ref, (i, item) in made.items() if isolated(ref, i, item)}
+        if not checked:
+            _reject(path, "isolation_without_cross_project_absence",
+                    "غيابُ نصّ عنصرٍ من مشروعٍ في استرجاع مشروعٍ آخر (قائمته كلّها) بعد حفظه")
+        # وفي البنك المكلَّف كلُّ عنصرٍ قائمٍ لحظةَ استرجاعٍ من مشروعٍ غير مشروعه يُسمّى غائبًا فيه بشاهدٍ جوهريّ، لا أحدُ
+        # العناصر: عنصرٌ ثانٍ محفوظٌ بلا شاهدٍ يتسرّب وحده إلى ذلك المشروع ويمرّ السيناريو بلا تسرّب (ملاحظة Codex على #129،
+        # الجولة الثامنة والعشرون). والشاهدُ يكفي ولو لم يبلغ العنصرُ حدَّ الاسترجاع بسؤاله، فحدُّ `within_limit` لمصدر العزل وحده
+        cross = lambda ref, i, item, named: any(
+            s.get("expect") == "retrieve" and s["project"] != item["project"] and active_at(ref, k)
+            and (not named or _names(s, item["text"], least=SUBSTANTIVE)) for k, s in enumerate(steps) if k > i)
+        unchecked = [ref for ref, (i, item) in made.items()
+                     if ref not in checked and cross(ref, i, item, False) and not cross(ref, i, item, True)]
+        if strict and unchecked:
+            _reject(path, "isolation_item_unchecked", f"«{unchecked[0]}» قائمٌ ولا يفحص عزلَه استرجاعٌ من مشروعٍ آخر")
     if category == "backup":
         at = {s["as"]: i for i, s in enumerate(steps) if s.get("as")}
         # الاستعادةُ التي تسبق الفحوص هي آخرُ استعادة، فهي التي تُستعاد منها نسخةٌ أُخذت والعنصرُ قائم ثم نُسي؛ واستعادةٌ
@@ -438,6 +454,14 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
         forgotten = {s["ref"] for s in steps if s.get("op") == "forget"}
         if not all(active_at(ref, at[final["ref"]]) for ref in forgotten):
             _reject(path, "backup_without_prior_snapshot", "نسخةٌ فيها العنصر، ثم نسيانُه، ثم استعادتُها")
+    # وآخرًا — بعد أحكام الفئة الأدقّ — النسيانُ يقع على عنصرٍ قام في المخزن قبل خطوته: اقتراحٌ لم يُوافَق عليه أو حفظٌ بلا
+    # موافقة لا يُنسى، فالمُشغِّلُ يردّه `item_id_invalid` والموصولُ `item_unknown` ويُحسبان على المنتج لا على البنك (ملاحظة
+    # Codex على #129، الجولة الثامنة والعشرون). أمّا نسيانُ ما نُسي أو ما محته استعادةٌ فيبقى مسموحًا: المنتجُ يقبله بإيصالٍ
+    # واحد (forget_006)، والبنكُ يقيس ذلك عمدًا. والشرطُ للبنك المكلَّف وحده
+    if strict:
+        for i, s in enumerate(steps):
+            if s.get("op") == "forget" and not any(active_at(s["ref"], k) for k in range(i + 1)):
+                _reject(path, "forget_of_inactive_item", f"«{s['ref']}» لم يقم في المخزن قطّ قبل نسيانه")
 
 
 def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
