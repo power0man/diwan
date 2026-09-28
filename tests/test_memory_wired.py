@@ -311,6 +311,24 @@ def test_a_proposal_the_live_model_makes_after_an_approval_is_settled_before_the
     assert delegate.calls >= 2, "النموذجُ الحيّ لم يُسأل بعد الموافقة"
 
 
+def test_a_proposal_session_created_after_the_snapshot_is_forgotten_on_restore(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة الثامنة والثلاثون): بعد الاستعادة كان المُشغِّل ينسى معرّفَي جلستَي الفحص وحدهما ويُبقي معرّفَ
+    جلسة الاقتراحات التي أُنشئت بعد اللقطة، فيسقط الاقتراحُ التالي بـfile_missing على منتجٍ صحيح. صار ينسى كلَّ جلسةٍ ليست في المستعاد."""
+    from evaluation.memory_runner import run_wired_scenario
+    scenario = {"id": "restore_then_propose", "category": "backup", "steps": [
+        {"op": "remember", "project": "A", "text": "موعد تسليم العقد ١٢ مارس", "consent": "owner", "as": "m1"},
+        {"op": "backup", "project": "A", "as": "b0"},
+        {"op": "propose", "project": "A", "text": "رقم مكتب المحاماة ٠١١٤٥٦٧٨٩٠", "as": "p1"},
+        {"op": "approve", "project": "A", "ref": "p1"},
+        {"op": "restore", "project": "A", "ref": "b0"},
+        {"op": "propose", "project": "A", "text": "اسم الطبيب د. هالة", "as": "p2"},
+        {"op": "approve", "project": "A", "ref": "p2"},
+        {"expect": "retrieve", "project": "A", "query": "الطبيب", "absent": ["٠١١٤٥٦٧٨٩٠"], "present": ["د. هالة"]},
+    ]}
+    report = run_wired_scenario(scenario, tmp_path / "w")
+    assert report["passed"] and report["failures"] == [], report
+
+
 def test_live_probes_keep_their_session_so_history_is_checked_after_forget(tmp_path):
     """ملاحظةُ Codex على #129: الطريقُ الحيّ كان يفتح جلسةً لكلّ فحص، فالفحصُ بعد النسيان بلا تاريخ ما قبله، ولا يُرى
     تراجعٌ يمحو العنصرَ من المخزن ويُبقي كتلتَه القديمة في التاريخ. الآن الجلسةُ نفسُها، وما طلبه النموذجُ يُرفض."""

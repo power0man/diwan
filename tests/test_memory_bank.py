@@ -118,6 +118,16 @@ def test_a_backup_while_a_proposal_awaits_the_owner_is_rejected():
     validate_memory_bank(bank)
 
 
+def test_a_second_proposal_while_the_project_s_proposal_awaits_the_owner_is_rejected():
+    """ملاحظةُ Codex على #129 (الجولة الثامنة والثلاثون): اقتراحان في مشروعٍ واحد قبل البتّ في الأول كانا يمرّان المدقّقَ، والمُشغِّلُ
+    الموصول يعيد استعمال جلسة اقتراحاتٍ واحدة للمشروع فيصطدم الثاني بدورٍ لم يُحسم (turn_unresolved) ويُعدّ انحدارًا في المنتج."""
+    bank, scenario = _scenario("consent_002")
+    steps = scenario["steps"]
+    first = next(s for s in steps if s.get("op") == "propose")
+    steps.insert(steps.index(first) + 1, {"op": "propose", "project": first["project"], "text": "اقتراحٌ ثانٍ قبل البتّ", "as": "p_second"})
+    _refused(bank, "propose_while_pending")
+
+
 def test_forgetting_without_a_receipt_check_is_refused():
     bank, scenario = _scenario("forget_001")
     scenario["steps"] = [s for s in scenario["steps"] if s.get("expect") != "receipt"]

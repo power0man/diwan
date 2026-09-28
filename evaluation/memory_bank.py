@@ -586,6 +586,10 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
                 refs[step["as"]] = step["project"]
                 kinds[step["as"]] = {"backup": "backup", "propose": "proposal"}.get(op, "item")
                 if op == "propose":
+                    # واقتراحٌ واحد ينتظر المالك في المشروع: جلسةُ الاقتراحات واحدةٌ للمشروع في المُشغِّل الموصول، فاقتراحٌ ثانٍ
+                    # قبل البتّ في الأول يصطدم بدورٍ لم يُحسم (turn_unresolved) ويُحسب على المنتج (الجولة الثامنة والثلاثون)
+                    if any(refs[r] == step["project"] for r in pending):
+                        _reject(where, "propose_while_pending", "اقتراحٌ ثانٍ في مشروعٍ اقتراحُه ينتظر المالك")
                     pending.add(step["as"])
             if "ref" in step:
                 ref = step["ref"]

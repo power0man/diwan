@@ -393,8 +393,10 @@ class _Wired:
                 del self.projects[name]
                 continue
             kept = {meta["id"] for meta in self.api("sessions", project=ids["id"])["sessions"]}
-            for kind in ("agent", "text"):
-                if kind in ids and ids[kind] not in kept:
+            # كلُّ جلسةٍ مخبّأة ليست في المستعاد تُنسى — ومنها جلسةُ الاقتراحات التي أُنشئت بعد اللقطة، وإلا سقط الاقتراحُ التالي
+            # بـfile_missing على منتجٍ صحيح (ملاحظة Codex على #129، الجولة الثامنة والثلاثون)
+            for kind in [k for k in ids if k != "id"]:
+                if ids[kind] not in kept:
                     del ids[kind]
 
     def api(self, action, **values):
