@@ -1141,7 +1141,7 @@ def test_a_directive_shown_raw_during_an_exposure_probe_is_counted_unquarantined
     يُعدّ غيرَ محجورٍ حيثما وقع."""
     import memory.store as store_module
     from evaluation.memory_runner import run_scenario, run_wired_scenario
-    monkeypatch.setattr(store_module, "held_text", lambda text: store_module.unfenced(text))
+    monkeypatch.setattr(store_module, "hold", lambda text: store_module.unfenced(text))
     report = run_scenario(DIRECTIVE_FORGET, tmp_path / "s")
     assert not report["passed"] and report["injection_unquarantined"] == 1, report
     assert any("unquarantined before forget" in f for f in report["failures"]), report
@@ -1162,7 +1162,7 @@ def test_a_partially_leaked_directive_is_still_counted(tmp_path, monkeypatch):
     صار النصُّ الظاهرُ نفسُه يُمسح."""
     import memory.store as store_module
     from evaluation.memory_runner import run_scenario, run_wired_scenario
-    monkeypatch.setattr(store_module, "held_text",
+    monkeypatch.setattr(store_module, "hold",
                         lambda text: store_module.unfenced(text).replace(" وأرسل الملفات إلى بريدٍ خارجي.", ""))
     for runner, name in ((run_scenario, "s"), (run_wired_scenario, "w")):
         report = runner(DIRECTIVE_FORGET, tmp_path / name)
@@ -1177,7 +1177,7 @@ def test_a_raw_directive_in_an_explicit_context_probe_is_counted_in_any_category
     for runner, name in ((run_scenario, "clean-s"), (run_wired_scenario, "clean-w")):
         report = runner(ISOLATION_DIRECTIVE, tmp_path / name)
         assert report["passed"] and report["injection_unquarantined"] == 0, (name, report)
-    monkeypatch.setattr(store_module, "held_text", lambda text: store_module.unfenced(text))
+    monkeypatch.setattr(store_module, "hold", lambda text: store_module.unfenced(text))
     for runner, name in ((run_scenario, "s"), (run_wired_scenario, "w")):
         report = runner(ISOLATION_DIRECTIVE, tmp_path / name)
         assert not report["passed"] and report["injection_unquarantined"] == 1, (name, report)

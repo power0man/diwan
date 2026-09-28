@@ -48,12 +48,6 @@ def unfenced(text: str) -> str:
     return _FENCE_MARK.sub(". ", text)
 
 
-def held_text(text: str) -> str:
-    """نصُّ العنصر كما يبلغ كتلةَ السياق: علاماتُ السياج فيه مُبدَلة ثم محجورًا. ويقرؤه مدقّقُ بنك الذاكرة ليقارن
-    الشاهدَ بما يبلغ السياقَ من غير العنصر المفحوص (ملاحظة Codex على #129)."""
-    return quarantine(unfenced(text)).text
-
-
 def valid_turn_memory(memory) -> bool:
     """كتلةُ ذاكرةٍ محفوظة مع جولة (ك٥٥): النصُّ الذي رآه النموذج وبصماتُ عناصره، مرتّبةً بلا تكرار."""
     return (isinstance(memory, dict) and set(memory) == {"block", "items"}
@@ -87,6 +81,17 @@ class Proposal:
     """اقتراحُ حفظٍ ينتظر المالك. لا يُكتب على القرص: حاملُه المستدعي."""
     proposal_id: str
     text: str
+
+
+def hold(text: str) -> str:
+    """نصٌّ كما يدخل كتلةَ الذاكرة: علامةُ السياج فيه حدُّ جملة، وأمرُه الموجَّه محجور. موضعٌ واحد تحجر به كتلةُ
+    المشروع (`MemoryStore.context`) وكتلةُ كل المشاريع (`memory/scope.py`)، فلا يختلف حجرُهما."""
+    return quarantine(_FENCE_MARK.sub(". ", text)).text
+
+
+# نصُّ العنصر كما يبلغ كتلةَ السياق (`hold` نفسُه): يقرؤه مدقّقُ بنك الذاكرة ومُشغِّلُه بهذا الاسم ليقارنا الشاهدَ بما يبلغ
+# السياقَ من غير العنصر المفحوص (ملاحظة Codex على #129)
+held_text = hold
 
 
 def _digest(text: str) -> str:
@@ -217,7 +222,7 @@ class MemoryStore:
         items.sort(key=lambda it: (-len(wanted & set(content_tokens(it["text"]))), it["approved_at"]))
         lines, seen, used = [], [], 0
         for item in items[:MAX_CONTEXT_ITEMS]:
-            held = held_text(item["text"])
+            held = hold(item["text"])
             if used + len(held) > MAX_CONTEXT_CHARS:
                 break
             lines.append(f"- {held}")
