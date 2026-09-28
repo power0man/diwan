@@ -67,10 +67,10 @@
    "read_when": "كل جلسة، كاملًا",
    "role": "حاكمة",
    "sha256_12": "8b5c854de41c",
-   "tokens_estimate": 6432
+   "tokens_estimate": 8040
   },
   {
-   "bytes": 22893,
+   "bytes": 23222,
    "headings": [
     {
      "level": 2,
@@ -84,27 +84,27 @@
     },
     {
      "level": 2,
-     "line": 99,
+     "line": 100,
      "title": "٣ — خريطةُ الوثائق: ما يحكم وما هو تاريخ"
     },
     {
      "level": 2,
-     "line": 119,
+     "line": 120,
      "title": "٤ — الأرقامُ التي يُعتدّ بها اليوم، وحدودُها"
     },
     {
      "level": 2,
-     "line": 131,
+     "line": 132,
      "title": "٥ — ما ينتظر المالك"
     }
    ],
-   "lines": 149,
+   "lines": 150,
    "path": "docs/STATUS.md",
    "purpose": "ما بُني، والعملُ الحالي بروايةٍ واحدة، وما يحكم وما هو تاريخ، وما ينتظر المالك",
    "read_when": "كل جلسة: §٢ و§٥؛ والبقيةُ عند الحاجة",
    "role": "حاكمة (الحالة)",
-   "sha256_12": "dc9ef758adee",
-   "tokens_estimate": 4796
+   "sha256_12": "29234f9c6486",
+   "tokens_estimate": 6084
   },
   {
    "bytes": 10397,
@@ -161,7 +161,7 @@
    "read_when": "أول جلسة، وعند كلِّ شكٍّ في النطاق",
    "role": "حاكمة (الاتجاه)",
    "sha256_12": "df9b1b18e0bb",
-   "tokens_estimate": 1986
+   "tokens_estimate": 2483
   },
   {
    "bytes": 150199,
@@ -383,7 +383,7 @@
    "read_when": "القرارَ الذي تسمّيه مهمّتُك فقط، من عنوانه",
    "role": "سجلُّ القرارات الحاكم",
    "sha256_12": "0f792908ea40",
-   "tokens_estimate": 29948
+   "tokens_estimate": 37435
   },
   {
    "bytes": 215511,
@@ -920,7 +920,7 @@
    "read_when": "المهمّةَ التي تعمل عليها فقط، من عنوانها",
    "role": "الخطةُ الحاكمة (ق٦٤)",
    "sha256_12": "7a4c416abbb8",
-   "tokens_estimate": 47124
+   "tokens_estimate": 58905
   },
   {
    "bytes": 3470,
@@ -931,7 +931,7 @@
    "read_when": "عند التحقّق من إنجازٍ",
    "role": "سجلُّ الإثبات",
    "sha256_12": "83e486c89dc4",
-   "tokens_estimate": 1140
+   "tokens_estimate": 1425
   },
   {
    "bytes": 32499,
@@ -948,7 +948,7 @@
    "read_when": "بإحالةٍ فقط",
    "role": "أرشيف",
    "sha256_12": "3fa08177473d",
-   "tokens_estimate": 7020
+   "tokens_estimate": 8775
   },
   {
    "bytes": 42526,
@@ -1045,7 +1045,7 @@
    "read_when": "بإحالةٍ من مهمّتك",
    "role": "تاريخ (ق٦١)",
    "sha256_12": "6bc88d27b0ef",
-   "tokens_estimate": 9022
+   "tokens_estimate": 11277
   },
   {
    "bytes": 29252,
@@ -1142,7 +1142,7 @@
    "read_when": "بإحالةٍ فقط",
    "role": "تاريخ (ك٢٧)",
    "sha256_12": "b430e9e3c85c",
-   "tokens_estimate": 6075
+   "tokens_estimate": 7593
   },
   {
    "bytes": 17832,
@@ -1199,7 +1199,7 @@
    "read_when": "بإحالةٍ فقط",
    "role": "تاريخ (ق٤٩)",
    "sha256_12": "dbeda564be35",
-   "tokens_estimate": 3589
+   "tokens_estimate": 4487
   },
   {
    "bytes": 38324,
@@ -1276,7 +1276,7 @@
    "read_when": "بإحالةٍ فقط",
    "role": "تقييم",
    "sha256_12": "4cf999f8620a",
-   "tokens_estimate": 7919
+   "tokens_estimate": 9899
   },
   {
    "bytes": 7831,
@@ -1313,7 +1313,7 @@
    "read_when": "أول جلسةٍ لك فقط",
    "role": "بروتوكول",
    "sha256_12": "4ba99d893fea",
-   "tokens_estimate": 1609
+   "tokens_estimate": 2012
   },
   {
    "bytes": 1771,
@@ -1324,7 +1324,7 @@
    "read_when": "لا يُقرأ؛ للمالك",
    "role": "برومبتُ المالك",
    "sha256_12": "621c82b8b54a",
-   "tokens_estimate": 361
+   "tokens_estimate": 451
   },
   {
    "bytes": 57388,
@@ -1511,13 +1511,13 @@
    "read_when": "لا يُقرأ؛ الحالةُ في docs/STATUS.md",
    "role": "تاريخ",
    "sha256_12": "8645fe3a77b2",
-   "tokens_estimate": 11887
+   "tokens_estimate": 14859
   }
  ],
  "generator": "tools/context_index.py",
  "latest_decision": 67,
  "measurement_limits": [
-  "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
+  "tokens_estimate_is_characters_divided_by_2_4_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count",
   "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
   "the_index_describes_documents_by_their_text_and_never_judges_their_truth",
   "documents_outside_SOURCES_are_not_indexed",
