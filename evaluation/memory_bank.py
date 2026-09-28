@@ -20,7 +20,7 @@ import re
 from core.attribution import content_tokens, normalize
 from core.canonical import PayloadRejected
 from core.quoted import DIRECTIVE_PATTERNS, QUARANTINE_MARK, quarantine_quoted, scan, wrap
-from memory.store import HEADER, RETRIEVE_LIMIT, held_text, unfenced
+from memory.store import HEADER, MAX_ITEM_CHARS, RETRIEVE_LIMIT, held_text, unfenced
 
 THRESHOLDS = {"forget_rate": 1.0, "leakage": 0, "consent_violations": 0, "injection_unquarantined": 0}
 CATEGORIES = frozenset({"forget", "backup", "isolation", "consent", "injection"})
@@ -328,6 +328,42 @@ def _bound(step: dict, item: dict, least: int = 0) -> bool:
     return step["project"] == item["project"] and _names(step, item["text"], least=least)
 
 
+def active_refs(steps: list, index: int) -> set[str]:
+    """أسماءُ العناصر القائمة في المخزن عند هذه الخطوة كما يرسمها السيناريو، بلا تشغيل: ما حُفظ قبلها بموافقة المالك أو
+    وُوفق على اقتراحه قبلها، ولم يُنسَ قبلها. فاقتراحٌ لم يُوافَق عليه أو حفظٌ بلا موافقة أو منسيٌّ لا يشهد غيابُه ولا
+    حضورُه بشيء (ملاحظات Codex على #129). ويقرؤها المدقّقُ ومُشغِّلُ البنك حين يعيد عدَّ التسرّب من رسوبٍ منشور.
+    ويُتتبَّع المخزنُ خطوةً خطوة لأن الاستعادةَ تُرجعه إلى ما كان عند نسختها: ما حُفظ أو وُوفق عليه بعد النسخة يزول
+    بها، والمنسيُّ قبلها يبقى منسيًّا (`tombstones_from`)، فلا يشهد مصدرٌ محته استعادةٌ بشيء (ملاحظة Codex على #129).
+    والاستعادةُ تمحو ببصمة النصّ لا بالمعرّف (`MemoryStore.restore`): عنصرٌ في النسخة نصُّه نصُّ منسيٍّ يزول بها ولو
+    لم يُنسَ هو، فنسخةٌ فيها نصٌّ واحد بمعرّفين يُنسى أحدُهما لا يبقى منها الآخر (ملاحظة Codex على #129)."""
+    # والمحوُ بالبصمة في مشروع النسيان وحده: إيصالاتُ كلِّ مشروعٍ تُطبَّق على مخزنه هو عند الاستعادة، فنصٌّ نُسي في
+    # مشروعٍ لا يمحو نظيرَه القائمَ في مشروعٍ آخر (ملاحظة Codex على #129، الجولة السابعة عشرة)
+    made = {s["as"]: (i, s) for i, s in enumerate(steps) if s.get("op") in ("remember", "propose")}
+    saved, active, forgotten, gone, snapshots = set(), set(), set(), {}, {}
+    content = lambda r: made[r][1]["text"].strip()
+    project = lambda r: made[r][1]["project"]
+    for s in steps[:index]:
+        op = s.get("op")
+        if op in ("remember", "propose"):
+            saved.add(s["as"])
+            if op == "remember" and s.get("consent") == "owner":
+                active.add(s["as"])
+        elif op == "approve" and s["ref"] in saved:
+            active.add(s["ref"])
+        elif op == "forget":
+            # وبصمةُ إيصاله تمحو نصَّه عند كلّ استعادةٍ بعده
+            gone.setdefault(project(s["ref"]), set()).add(content(s["ref"]))
+            forgotten.add(s["ref"])
+            saved.discard(s["ref"])
+            active.discard(s["ref"])
+        elif op == "backup":
+            snapshots[s["as"]] = (set(saved), set(active))
+        elif op == "restore" and s["ref"] in snapshots:
+            saved, active = ({r for r in state - forgotten if content(r) not in gone.get(project(r), set())}
+                             for state in snapshots[s["ref"]])
+    return active
+
+
 def _validate_semantics(scenario: dict, path: str, strict: bool, model: str | None = None) -> None:
     _validate_meaning(scenario, path, strict)
     # آخرُ بوابة بعد صحّة المعنى: شاهدٌ يرد في سؤال فحص العرض أو نصٌّ يحويه يبقى في تاريخ الفحص كلامًا للمالك
@@ -359,37 +395,8 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
     made = {s["as"]: (i, s) for i, s in enumerate(steps) if s.get("op") in ("remember", "propose")}
 
     def active_at(ref, index):
-        """العنصرُ قائمٌ في المخزن عند هذه الخطوة: حُفظ قبلها بموافقة المالك أو وُوفق على اقتراحه قبلها، ولم يُنسَ
-        قبلها. فاقتراحٌ لم يُوافَق عليه أو حفظٌ بلا موافقة أو منسيٌّ لا يشهد غيابُه ولا حضورُه بشيء (ملاحظات Codex على #129).
-        ويُتتبَّع المخزنُ خطوةً خطوة لأن الاستعادةَ تُرجعه إلى ما كان عند نسختها: ما حُفظ أو وُوفق عليه بعد النسخة يزول
-        بها، والمنسيُّ قبلها يبقى منسيًّا (`tombstones_from`)، فلا يشهد مصدرٌ محته استعادةٌ بشيء (ملاحظة Codex على #129).
-        والاستعادةُ تمحو ببصمة النصّ لا بالمعرّف (`MemoryStore.restore`): عنصرٌ في النسخة نصُّه نصُّ منسيٍّ يزول بها ولو
-        لم يُنسَ هو، فنسخةٌ فيها نصٌّ واحد بمعرّفين يُنسى أحدُهما لا يبقى منها الآخر (ملاحظة Codex على #129)."""
-        # والمحوُ بالبصمة في مشروع النسيان وحده: إيصالاتُ كلِّ مشروعٍ تُطبَّق على مخزنه هو عند الاستعادة، فنصٌّ نُسي في
-        # مشروعٍ لا يمحو نظيرَه القائمَ في مشروعٍ آخر (ملاحظة Codex على #129، الجولة السابعة عشرة)
-        saved, active, forgotten, gone, snapshots = set(), set(), set(), {}, {}
-        content = lambda r: made[r][1]["text"].strip()
-        project = lambda r: made[r][1]["project"]
-        for s in steps[:index]:
-            op = s.get("op")
-            if op in ("remember", "propose"):
-                saved.add(s["as"])
-                if op == "remember" and s.get("consent") == "owner":
-                    active.add(s["as"])
-            elif op == "approve" and s["ref"] in saved:
-                active.add(s["ref"])
-            elif op == "forget":
-                # وبصمةُ إيصاله تمحو نصَّه عند كلّ استعادةٍ بعده
-                gone.setdefault(project(s["ref"]), set()).add(content(s["ref"]))
-                forgotten.add(s["ref"])
-                saved.discard(s["ref"])
-                active.discard(s["ref"])
-            elif op == "backup":
-                snapshots[s["as"]] = (set(saved), set(active))
-            elif op == "restore" and s["ref"] in snapshots:
-                saved, active = ({r for r in state - forgotten if content(r) not in gone.get(project(r), set())}
-                                 for state in snapshots[s["ref"]])
-        return ref in active
+        """العنصرُ قائمٌ في المخزن عند هذه الخطوة (`active_refs`)."""
+        return ref in active_refs(steps, index)
 
     if category == "backup":
         restore = last("restore")
@@ -583,6 +590,10 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
             if op in ("remember", "propose"):
                 if not isinstance(step["text"], str) or not step["text"].strip():
                     _reject(where + ".text", "text_invalid", "نصٌّ غير فارغ")
+                # وبحدِّ المخزن نفسِه (`MAX_ITEM_CHARS`، قبل التشذيب كما يعدّه): نصٌّ أطولُ يُردّ في الحفظ الأول بـtext_too_long
+                # في المُشغِّلَين ويُحسب انحدارًا على المنتج (ملاحظة Codex على #129، الجولة الحادية والأربعون)
+                if len(step["text"]) > MAX_ITEM_CHARS:
+                    _reject(where + ".text", "text_too_long", f"نصٌّ أطولُ مما يقبله المخزن ({MAX_ITEM_CHARS} محرف)")
                 if op == "remember" and step["consent"] not in CONSENTS:
                     _reject(where + ".consent", "consent_invalid", "owner أو none")
             if op == "backup" and pending:

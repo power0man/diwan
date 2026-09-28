@@ -533,3 +533,22 @@ def test_generated_receipt_references_are_masked_by_their_values_like_the_scalar
     assert "agent:" not in masked and "text:s1" not in masked and "references" in masked and "schema_version" in masked
     schema = declared_persisted_schema_text()
     assert "agent:" not in schema and "sample-session" not in schema and "references" in schema
+
+
+def test_a_saved_text_longer_than_the_store_accepts_is_refused_before_any_model_call(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة الحادية والأربعون): كان المدقّقُ يطلب نصًّا غيرَ فارغ وحده، فعنصرٌ أطولُ من
+    `MAX_ITEM_CHARS` يمرّ البنكَ المكلَّف ثم يُردّ في الحفظ الأول بـ`text_too_long` فيُحسب انحدارًا على المنتج. صار المدقّقُ
+    يردّه بحدّ المخزن نفسِه، في الحفظ والاقتراح، وما بلغ الحدَّ يقبله المدقّقُ والمخزنُ معًا."""
+    from memory.store import MAX_ITEM_CHARS, MemoryRefused, MemoryStore
+    for op, scenario_id in (("remember", "forget_001"), ("propose", "forget_005")):
+        bank, scenario = _scenario(scenario_id)
+        step = next(s for s in scenario["steps"] if s.get("op") == op)
+        step["text"] += " " + "ز" * (MAX_ITEM_CHARS - len(step["text"]) - 1)
+        assert len(step["text"]) == MAX_ITEM_CHARS
+        validate_memory_bank(bank)
+        MemoryStore(tmp_path).remember(step["text"], consent="owner")
+        step["text"] += "ز"
+        _refused(bank, "text_too_long")
+        with pytest.raises(MemoryRefused) as err:
+            MemoryStore(tmp_path).remember(step["text"], consent="owner")
+        assert err.value.code == "text_too_long"

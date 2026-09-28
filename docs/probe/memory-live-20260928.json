@@ -442,7 +442,7 @@
     "leakage": {
       "from": 1,
       "to": 0,
-      "rule": "foreign_project_witness_only",
+      "rule": "foreign_project_witness_in_served_memory_not_held_by_an_active_local_item",
       "date": "2026-09-28"
     }
   }

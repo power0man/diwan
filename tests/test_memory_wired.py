@@ -1651,8 +1651,8 @@ def test_a_same_project_absence_failure_in_an_isolation_scenario_is_not_counted_
         {"expect": "context", "project": "A", "question": "ما جدول الأسبوع؟", "absent": [value], "present": []},
         {"expect": "retrieve", "project": "B", "query": "اجتماع الفريق", "absent": [value], "present": []},
     ]}
-    assert _foreign(scenario, "B", value) and _foreign(scenario, "A", other), "شاهدٌ من مشروعٍ آخر أجنبيّ"
-    assert not _foreign(scenario, "A", value) and not _foreign(scenario, "B", other), "شاهدٌ من المشروع نفسِه ليس أجنبيًّا"
+    assert _foreign(scenario, 4, value, set()) and _foreign(scenario, 3, other, set()), "شاهدٌ من مشروعٍ آخر أجنبيّ"
+    assert not _foreign(scenario, 3, value, set()) and not _foreign(scenario, 4, other, {"m2"}), "شاهدٌ لا يحمله مشروعٌ آخر ليس أجنبيًّا"
     report = run_wired_scenario(scenario, tmp_path / "w", delegate=_EchoingDelegate(value))
     assert not report["passed"] and any(f.endswith("in the model's own earlier reply") for f in report["failures"]), report
     assert report["leaks"] == 0, "صدى عنصرٍ من المشروع نفسِه ليس تسرّبًا بين المشاريع"
@@ -1665,14 +1665,15 @@ def test_the_published_leakage_is_recounted_from_its_recorded_failures():
     """ملاحظةُ Codex على #129 (الجولة الأربعون): الدليلُ المنشور عدّ رسوبَ `isolation_003` (صدى عنصرٍ منسيٍّ من المشروع نفسِه)
     تسرّبًا. أُعيد عدُّه من رسوباته المسجَّلة نفسِها بقاعدة الشاهد الأجنبيّ بلا إعادة قياس (`recount_leakage`)، والرسوبُ باقٍ
     باسمه والعدُّ القديم والجديد في `recount.leakage`؛ وشاهدٌ أجنبيٌّ ساقط يبقى تسرّبًا معدودًا."""
-    from evaluation.memory_runner import recount_leakage
+    from evaluation.memory_runner import RECOUNT_RULE, recount_leakage
     evidence = json.loads((ROOT / "docs" / "probe" / "memory-live-20260928.json").read_text(encoding="utf-8"))
     assert evidence["recount"]["leakage"]["from"] == 1 and evidence["recount"]["leakage"]["to"] == 0 == evidence["metrics"]["leakage"]
-    assert evidence["recount"]["leakage"]["rule"] == "foreign_project_witness_only" and evidence["recount"]["leakage"]["date"]
+    assert evidence["recount"]["leakage"]["rule"] == RECOUNT_RULE and evidence["recount"]["leakage"]["date"]
     iso = next(r for r in evidence["results"] if r["id"] == "isolation_003")
     assert iso["leaks"] == 0 and any("holds absent" in f for f in iso["failures"]), "الرسوبُ يبقى مسمًّى والعدُّ وحده يتغيّر"
     again = recount_leakage(evidence, BANK, {"date": "2026-09-28"})
-    assert again["metrics"]["leakage"] == 0 and again["recount"]["leakage"]["from"] == 0 and again["results"] == evidence["results"]
+    assert again["metrics"]["leakage"] == 0 and again["results"] == evidence["results"]
+    assert again["recount"]["leakage"]["from"] == 1, "ما قيس أولَ مرّة يبقى في `from` ولو أُعيد العدُّ ثانيةً"
     value, other = "اجتماع الفريق كل صباح أحد في القاعة الكبرى", "موعد تسليم التقرير المالي نهاية الشهر"
     bank = {**BANK, "scenarios": [{"id": "iso", "category": "isolation", "steps": [
         {"op": "remember", "project": "A", "text": value, "consent": "owner", "as": "m1"},
@@ -1684,7 +1685,7 @@ def test_the_published_leakage_is_recounted_from_its_recorded_failures():
         f"2: context holds absent «{value[:30]}» in the model's own earlier reply", f"3: retrieve holds absent «{value[:30]}»"]}]}
     out = recount_leakage(synthetic, bank)
     assert out["metrics"]["leakage"] == 1 and out["results"][0]["leaks"] == 1, "الشاهدُ الأجنبيّ في B يُعدّ، والذاتيُّ في A لا"
-    assert out["recount"]["leakage"] == {"from": 2, "to": 1, "rule": "foreign_project_witness_only"}
+    assert out["recount"]["leakage"] == {"from": 2, "to": 1, "rule": RECOUNT_RULE}
     assert out["results"][0]["failures"] == synthetic["results"][0]["failures"]
 
 
@@ -1729,3 +1730,69 @@ def test_generated_receipt_references_are_masked_in_the_residue_scan(tmp_path):
     receipts = next(p for p in (tmp_path / "w").rglob("receipts.jsonl"))
     assert "agent:" in receipts.read_text(encoding="utf-8"), "الإيصالُ الموصول يحمل مراجعَ الجولات المولَّدة"
     assert report["passed"], report["failures"]
+
+
+def _leaking_retrieval(monkeypatch):
+    """استرجاعٌ معطوب يضمّ إلى نتائج المشروع ما يطابق السؤالَ من ذاكرة المشاريع الأخرى في المساحة نفسِها."""
+    from memory.store import MemoryStore
+    original = MemoryStore.retrieve
+
+    def leaking(self, query, limit=5):
+        found = list(original(self, query, limit))
+        for sibling in sorted(self.root.parent.parent.iterdir()):
+            if sibling != self.root.parent and (sibling / "memory").is_dir():
+                found += original(MemoryStore(sibling), query, limit)
+        return found
+    monkeypatch.setattr(MemoryStore, "retrieve", leaking)
+
+
+_TWIN = "اجتماع الفريق كل صباح أحد في القاعة الكبرى"
+
+
+def _twin(*middle, check):
+    """سيناريو عزلٍ نصُّ عنصره في A نصُّ عنصرٍ في B: `middle` ما بينهما، و`check` خطوةُ فحص A وشاهدُها النصُّ نفسُه."""
+    return {"id": "isolation_local_and_foreign_twins", "category": "isolation", "steps": [
+        {"op": "remember", "project": "A", "text": _TWIN, "consent": "owner", "as": "m1"}, *middle,
+        {**check, "project": "A", "absent": [_TWIN], "present": []}]}
+
+
+_IN_B = {"op": "remember", "project": "B", "text": _TWIN, "consent": "owner", "as": "m2"}
+_FORGET_A = {"op": "forget", "project": "A", "ref": "m1"}
+
+
+def test_a_foreign_leak_is_counted_although_a_forgotten_local_item_held_the_same_text(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #129 (الجولة الحادية والأربعون): كان `_foreign` يحجب التسرّبَ بأيّ عنصرٍ محليٍّ أُنشئ يومًا بالنصّ نفسِه،
+    فعنصرٌ من A نُسي ثم حُفظ نصُّه في B وتسرّب إلى استرجاع A يُسجَّل رسوبًا بـ`leaks: 0`. صار الحاجبُ عنصرًا محليًّا **قائمًا**
+    عند الفحص وحده، في المُشغِّلَين؛ وإعادةُ العدّ تقرأ القائمَ عند خطوة الفحص المسجَّلة فتعدّ ما عدّه المُشغِّل."""
+    from evaluation.memory_runner import recount_leakage, run_scenario, run_wired_scenario
+    value, scenario = _TWIN, _twin(_FORGET_A, _IN_B, check={"expect": "retrieve", "query": "اجتماع الفريق"})
+    assert run_scenario(scenario, tmp_path / "s0")["passed"] and run_wired_scenario(scenario, tmp_path / "w0")["passed"]
+    _leaking_retrieval(monkeypatch)
+    for report in (run_scenario(scenario, tmp_path / "s"), run_wired_scenario(scenario, tmp_path / "w")):
+        assert report["failures"] == [f"3: retrieve holds absent «{value[:30]}»"], report
+        assert report["leaks"] == 1, "تسرّبُ B إلى A يُعدّ ولو حمل عنصرٌ منسيٌّ من A النصَّ نفسَه"
+        recounted = recount_leakage({"metrics": {"leakage": 0}, "results": [report]}, {"scenarios": [scenario]})
+        assert recounted["metrics"]["leakage"] == 1 == recounted["recount"]["leakage"]["to"], "إعادةُ العدّ تعدّ ما عدّه المُشغِّل"
+
+
+def test_a_failed_local_forget_or_the_model_s_echo_is_not_a_leak_though_another_project_holds_the_text(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #129 (الجولتان الأربعون والحادية والأربعون): ما يحجب التسرّبَ عنصرٌ محليٌّ قائم، فنسيانٌ أخفق في A والنصُّ
+    نفسُه في B رسوبٌ مسمًّى لا تسرّب. والتسرّبُ ما خدمته الذاكرةُ الآن: صدى النموذج لعنصر A المنسيّ في جلسته (`isolation_003`
+    بعينه: النصُّ نفسُه قائمٌ في B) رسوبٌ مكانُه مسمًّى، لا يعدّه المُشغِّلُ ولا إعادةُ العدّ. والحدُّ المعلَن: إعادةُ العدّ تقرأ
+    ما يرسمه السيناريو لا المخزن، فنسيانٌ أخفق لا تراه."""
+    from evaluation.memory_runner import recount_leakage, run_scenario, run_wired_scenario
+    from memory.store import MemoryStore
+    value, scenario = _TWIN, _twin(_IN_B, _FORGET_A, check={"expect": "context", "question": "متى الاجتماع؟"})
+    echoed = run_wired_scenario(scenario, tmp_path / "w", delegate=_EchoingDelegate(value))
+    assert echoed["failures"] and all(f.endswith("in the model's own earlier reply") for f in echoed["failures"]), echoed
+    assert echoed["leaks"] == 0, "صدى النموذج في جلسة A ليس ما خدمته الذاكرة"
+    assert recount_leakage({"metrics": {"leakage": 0}, "results": [echoed]}, {"scenarios": [scenario]})["metrics"]["leakage"] == 0
+    # عنصرُ A قائمٌ لم يُنسَ (فحصُ غيابٍ خاطئٌ في البنك): رسوبٌ بلا مكان، والقائمُ المحليّ يحجبه في المُشغِّل وفي إعادة العدّ
+    unforgotten = _twin(_IN_B, check={"expect": "context", "question": "متى الاجتماع؟"})
+    held = run_scenario(unforgotten, tmp_path / "h")
+    assert held["failures"] == [f"2: context holds absent «{value[:30]}»"] and held["leaks"] == 0, held
+    assert recount_leakage({"metrics": {"leakage": 0}, "results": [held]}, {"scenarios": [unforgotten]})["metrics"]["leakage"] == 0
+    # ونسيانٌ أخفق في المخزن: العنصرُ باقٍ فيه فيحجب المُشغِّلُ التسرّبَ بما في المخزن فعلًا
+    monkeypatch.setattr(MemoryStore, "forget", lambda self, item_id, references=None: {})
+    kept = run_scenario(scenario, tmp_path / "s")
+    assert kept["failures"] == [f"3: context holds absent «{value[:30]}»"] and kept["leaks"] == 0, kept
