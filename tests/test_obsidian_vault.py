@@ -136,6 +136,36 @@ def test_the_steps_note_keeps_the_owner_s_checkmarks_and_notes_while_the_plan_s_
     assert ov.build(vault, root=repo, force=True)["migrated"] == [] and steps.read_text(encoding="utf-8") == migrated
 
 
+def test_an_annotation_appended_to_a_checklist_line_survives_the_migration(repo, vault):
+    """ملاحظةُ Codex على #161 (الجولة الخامسة): لاحقةٌ كتبها المالك على سطر الخطوة نفسِه («… — سألت المحامي») كانت تُمحى مع السطر
+    كلِّه عند الترحيل. صارت تبقى على سطرها (وعلى الخطوة المؤجَّلة بعد إنجازها كذلك)، وسطرُ خطوةٍ عُدّل داخل نصّه المولَّد يُنقل كما هو
+    إلى قسم الملاحظات، ولا تتضاعف اللواحقُ في البناء التالي."""
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    plan["owner_steps"] += [{"order": 2, "guide_id": "G5", "title": "تجهيز Nitro", "time": "ساعة", "cost": "$0"},
+                            {"order": 3, "guide_id": "G4", "title": "صلاحيات Nitro", "time": "١٠ دقائق", "cost": "$0"}]
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    steps = vault / "Diwan/خطواتي.md"
+    text = steps.read_text(encoding="utf-8")
+    text = (text.replace("- [ ] **1. خطوة** · [[الأدلة/G1|G1]] · ٥ دقائق · $0", "- [x] **1. خطوة** · [[الأدلة/G1|G1]] · ٥ دقائق · $0 — سألت المحامي")
+                .replace("- [ ] **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0", "- [x] **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 (نصف ساعة فقط)")
+                .replace("- [ ] **3. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0", "- [ ] **3. صلاحيات Nitro (على الماك أولًا)** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0"))
+    steps.write_text(text, encoding="utf-8")
+    why = {"by": "ق٦٨", "until": "2026-10-19", "reason": "الجهازُ غيرُ قابلٍ للوصول"}
+    plan["owner_steps"][1]["deferred"] = why
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"]
+    migrated = steps.read_text(encoding="utf-8")
+    active, rest = migrated.split("## خطواتٌ مؤجَّلة")
+    assert "- [x] **1. خطوة** · [[الأدلة/G1|G1]] · ٥ دقائق · $0 — سألت المحامي" in active
+    assert "- [ ] **3. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0" in active, "السطرُ المولَّد يعود والمعدَّلُ داخله يُنقل"
+    assert "- [x] **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — مؤجَّلة (ق٦٨ حتى 2026-10-19: الجهازُ غيرُ قابلٍ للوصول) — أُنجزت قبل التأجيل (نصف ساعة فقط)" in rest
+    carried = [line for line in rest.split("### سطورٌ نُقلت من النسخة السابقة")[1].splitlines() if line.strip()]
+    assert carried == ["- [ ] **3. صلاحيات Nitro (على الماك أولًا)** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0"]
+    assert ov.check(vault, root=repo) == [] and ov.build(vault, root=repo)["migrated"] == []
+    assert steps.read_text(encoding="utf-8") == migrated, "لا تتضاعف اللواحق"
+
+
 def test_a_legacy_checklist_s_free_lines_are_carried_into_the_notes_section_not_discarded(repo, vault):
     """ملاحظةُ Codex على #161 (الجولة الرابعة): النسخةُ القديمة من «خطواتي» دعت المالكَ إلى التعديل حيث شاء بلا قسم «## ملاحظاتي»،
     فالترحيلُ الذي لا يحفظ إلا ما تحت ذلك العنوان كان يمحو سطورَه الأخرى بصمت عند أول بناء. صارت تُنقل تحت عنوانٍ باسمها في قسم

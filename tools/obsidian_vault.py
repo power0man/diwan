@@ -174,33 +174,46 @@ def _load_manifest(out_dir: Path) -> dict:
 
 NOTES_HEADING = "## ملاحظاتي"
 LEGACY_HEADING = "### سطورٌ نُقلت من النسخة السابقة"
-_STEP_LINE = re.compile(r"^- (\[[ xX]\]|⏸) \*\*\d+\.")
+DONE_BEFORE_DEFERRAL = " — أُنجزت قبل التأجيل"
+_STEP_LINE = re.compile(r"^- (\[[ xX]\]|⏸) \*\*(\d+)\.")
 _KNOWN_LINES = ("# خطواتي", "## خطواتٌ مؤجَّلة", "لا تُطلب منك الآن؛ تعود إلى القائمة بإشعارك.")
-
-
-def _owner_lines(head: str) -> list[str]:
-    """ما كتبه المالك في النسخة القائمة خارج ما تولّده الأداة: لا العنوانَ ولا سطرَ التعليمات ولا الخطواتِ ولا قسمَ المؤجَّل."""
-    return [line for line in head.splitlines()
-            if line.strip() and line.strip() not in _KNOWN_LINES and not _STEP_LINE.match(line)
-            and not line.startswith("علّم الخطوة حين تنتهي")]
 
 
 def migrate_steps(existing: str, rendered: str) -> str:
     """«خطواتي» تُعاد كتابتُها من الخطة مع الحفاظ على ما للمالك فيها: الخطوةُ المعلَّمة `[x]` في الموجود تبقى معلَّمةً في المولَّد
-    (وإن أُجّلت بعد إنجازها بقيت منجزةً باسمها)، وما كتبه تحت «## ملاحظاتي» يُنقل كما هو، وما كتبه في غير ذلك من سطورٍ (النسخةُ
-    القديمة دعته إلى التعديل حيث شاء) يُنقل تحت «### سطورٌ نُقلت من النسخة السابقة» في قسم ملاحظاته لا يُمحى بصمت. كانت البذرةُ
-    تُحفظ حرفيًّا حتى مع `--force`، فلا يبلغ التأجيلُ (ق٦٨) خزنةً قائمة (ملاحظتا Codex على #161)."""
-    done = set(re.findall(r"^- \[[xX]\] \*\*(\d+)\.", existing, re.M))
+    (وإن أُجّلت بعد إنجازها بقيت منجزةً باسمها)، ولاحقةٌ كتبها بعد نصّ الخطوة المولَّد («… — سألت المحامي») تبقى على سطرها،
+    وسطرُ خطوةٍ عُدّل داخلَ نصّه المولَّد يُنقل كما هو، وما كتبه تحت «## ملاحظاتي» يُنقل كما هو، وما كتبه في غير ذلك من سطورٍ
+    (النسخةُ القديمة دعته إلى التعديل حيث شاء) يُنقل تحت «### سطورٌ نُقلت من النسخة السابقة» في قسم ملاحظاته لا يُمحى بصمت.
+    كانت البذرةُ تُحفظ حرفيًّا حتى مع `--force`، فلا يبلغ التأجيلُ (ق٦٨) خزنةً قائمة (ملاحظات Codex على #161)."""
+    head, sep, notes = existing.partition("\n" + NOTES_HEADING)
+    done, edits, stray = set(), {}, []
+    for line in head.splitlines():
+        if m := _STEP_LINE.match(line):
+            if m.group(1) in ("[x]", "[X]"):
+                done.add(m.group(2))
+            edits[m.group(2)] = (line[m.end():], line)
+        elif line.strip() and line.strip() not in _KNOWN_LINES and not line.startswith("علّم الخطوة حين تنتهي"):
+            stray.append(line)
     lines = []
     for line in rendered.splitlines():
-        if (m := re.match(r"^- \[ \] \*\*(\d+)\.", line)) and m.group(1) in done:
-            line = "- [x]" + line[5:]
-        elif (m := re.match(r"^- ⏸ \*\*(\d+)\.", line)) and m.group(1) in done:
-            line = "- [x] " + line[len("- ⏸ "):] + " — أُنجزت قبل التأجيل"
-        lines.append(line)
+        if not (m := _STEP_LINE.match(line)):
+            lines.append(line)
+            continue
+        mark, order, tail = m.group(1), m.group(2), line[m.end():]
+        extra = ""
+        if order in done and mark == "[ ]":
+            mark = "[x]"
+        elif order in done and mark == "⏸":
+            mark, extra = "[x]", DONE_BEFORE_DEFERRAL
+        if order in edits and (edited := edits[order][0]) != tail:
+            # لاحقةُ المالك هي ما زاد على نصّ الخطوة كما تولّده الأداة (بعلامة التأجيل أو الإنجاز إن كانت)؛ وما عُدّل داخل النصّ يُنقل سطرًا كاملًا
+            known = next((k for k in (tail + extra, tail, tail.split(" — مؤجَّلة")[0]) if edited.startswith(k)), None)
+            if known is not None:
+                extra += edited[len(known):]
+            else:
+                stray.append(edits[order][1])
+        lines.append(f"- {mark} **{order}.{tail}{extra}")
     text = "\n".join(lines) + "\n"
-    head, sep, notes = existing.partition("\n" + NOTES_HEADING)
-    stray = _owner_lines(head)
     if sep or stray:
         text += "\n" + NOTES_HEADING + (notes.rstrip("\n") if sep else "") + "\n"
     if stray:
