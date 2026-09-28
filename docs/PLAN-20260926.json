@@ -1073,7 +1073,7 @@
    "deliverable": "tools/journeys.py + الحارس + أول docs/probe/journeys-<date>.json من الماك",
    "acceptance_evidence": "الحارس يسقط بطفرة تسريب النص؛ ملف خط الأساس يحمل ≥٣٠ رحلة بتواريخ مختلفة وmeasurement_limits.",
    "unblocks": [],
-   "guide_id": "NEW-daily-use",
+   "guide_id": "G11",
    "cost": "صفر؛ ووقت المالك اختياري"
   },
   {

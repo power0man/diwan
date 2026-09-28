@@ -37,6 +37,7 @@
       "requirements-ci.lock",
       "Dockerfile",
       "tools/launch_check.py",
+      "tools/journeys.py",
       "tools/export_public.py",
       "tools/place_private_stores.py",
       "tools/agent_attribution.py",

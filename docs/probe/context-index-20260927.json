@@ -73,8 +73,8 @@
       "tokens_estimate": 6432
     },
     "docs/STATUS.md": {
-      "bytes": 22893,
-      "tokens_estimate": 4796
+      "bytes": 23236,
+      "tokens_estimate": 4868
     },
     "docs/VISION.md": {
       "bytes": 10397,
@@ -85,8 +85,8 @@
       "tokens_estimate": 29948
     },
     "docs/PLAN-20260926.md": {
-      "bytes": 215511,
-      "tokens_estimate": 47124
+      "bytes": 215501,
+      "tokens_estimate": 47121
     },
     "docs/TASKS.jsonl": {
       "bytes": 3470,
