@@ -214,13 +214,34 @@ def system_prompt_collisions(scenario: dict, prompts_text: str | None = None) ->
 
 
 PERSISTED_SAMPLE = "عيّنةُ مخزنٍ لفحص بنك الذاكرة"     # نصُّ عنصرٍ بديل يُقنَّع بعد الكتابة فلا يبقى إلا ما يكتبه المخزنُ ثابتًا
+PERSISTED_DYNAMIC = ("item_id", "sha256", "approved_at", "forgotten_at")   # ما يكتبه المخزنُ متغيّرًا في كلِّ كتابة، بلا نصّ العنصر
+
+
+def mask_persisted(payload: bytes) -> bytes:
+    """قيمُ المخزن المتغيّرة (المعرّفُ، والبصمةُ، ووقتا الحفظ والنسيان) تُزال من بايتات الملفّ **بقيمها المقروءة من JSON نفسِه**
+    لا بنمطٍ يصيب نصَّ العنصر؛ فالمقنَّعُ في نصّ المخطّط الثابت الذي يُفحص به الشاهدُ قبل القياس هو المقنَّعُ في مسح البقايا
+    نفسِه في المُشغِّلَين، وإلّا سقط شاهدٌ يقع في سنة الإيصال أو في أرقام معرّفٍ بالمنتج الصحيح «residue holds» وإن نجح النسيان
+    (ملاحظة Codex على #129، الجولة الثالثة والثلاثون). النصُّ والمصدرُ والمفاتيحُ تبقى خامًا فالبقايا الحقيقية تُرى، وملفٌّ ليس
+    JSON يبقى خامًا كلُّه. الحدُّ: نصٌّ منسيٌّ يساوي بحروفه معرّفَ عنصرٍ أو بصمتَه أو وقتَه لا يُرى بقايا."""
+    text = payload.decode("utf-8", "replace")
+    values: set[str] = set()
+    for candidate in [text, *text.splitlines()]:                # ملفُّ العنصر سطرٌ واحد، والإيصالاتُ سطرٌ لكلِّ إيصال
+        try:
+            record = json.loads(candidate)
+        except ValueError:
+            continue
+        if isinstance(record, dict):
+            values.update(v for k, v in record.items() if k in PERSISTED_DYNAMIC and isinstance(v, str) and v)
+    for value in sorted(values, key=len, reverse=True):
+        payload = payload.replace(value.encode("utf-8"), b" ")
+    return payload
 
 
 def declared_persisted_schema_text() -> str:
     """ما يكتبه المخزنُ على القرص ثابتًا بلا نصّ العنصر: ملفُّ العنصر JSON بمفاتيحه، وإيصالُ النسيان في `receipts.jsonl`
     (`forgotten_at` و`item_id` و`sha256`…) الذي يكتبه كلُّ نسيانٍ صحيح؛ فشاهدُ بقايا يقع فيه يسقط بالمنتج الصحيح كأن النسيانَ
     انحدر (ملاحظة Codex على #129، الجولة الثانية والثلاثون). يُبنى من المخزن نفسِه في مجلّدٍ مؤقّت — حفظٌ ثم نسيان — لا من
-    نسخةٍ مكتوبة هنا؛ وتُقنَّع القيمُ المتغيّرة (النصُّ البديل، والبصمةُ، والمعرّفُ، والوقتُ) فيبقى الثابت."""
+    نسخةٍ مكتوبة هنا؛ وتُقنَّع القيمُ المتغيّرة (النصُّ البديل، ثم المعرّفُ والبصمةُ والوقتان بـ`mask_persisted`) فيبقى الثابت."""
     import tempfile
     from pathlib import Path
     from memory.store import MemoryStore
@@ -229,13 +250,11 @@ def declared_persisted_schema_text() -> str:
         project.mkdir()                                    # المخزنُ يرفض مجلّدَ مشروعٍ غائبًا أو رابطًا (project_invalid)
         store = MemoryStore(project)
         item_id = store.remember(PERSISTED_SAMPLE, consent="owner")
-        files = lambda: [f.read_bytes().decode("utf-8", "replace") for f in sorted(Path(tmp).rglob("*")) if f.is_file()]
+        files = lambda: [mask_persisted(f.read_bytes()).decode("utf-8", "replace") for f in sorted(Path(tmp).rglob("*")) if f.is_file()]
         written = files()
         store.forget(item_id)
         written += files()
-    text = "\n".join(written).replace(PERSISTED_SAMPLE, " ").replace(item_id, " ")
-    text = re.sub(r"[0-9a-f]{64}", " ", text)
-    return re.sub(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", " ", text)
+    return "\n".join(written).replace(PERSISTED_SAMPLE, " ")     # القيمُ المتغيّرة قُنّعت بـmask_persisted نفسِه الذي يمسح البقايا
 
 
 def persisted_schema_collisions(scenario: dict, schema_text: str | None = None) -> list[str]:

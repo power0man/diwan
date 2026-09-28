@@ -1489,6 +1489,34 @@ def test_a_quarantine_mark_counts_only_on_the_line_of_its_own_item(tmp_path, mon
         assert not report["passed"] and report["injection_unquarantined"] >= 1, driver
 
 
+def test_a_residue_witness_that_falls_in_the_store_s_dynamic_values_is_not_counted_as_residue(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #129 (الجولة الثالثة والثلاثون): إيصالُ النسيان يحمل `forgotten_at` بسنة اليوم والمعرّفَ والبصمة، فشاهدُ
+    بقايا يقع فيها (سنةُ الإيصال، أو أرقامٌ في معرّفٍ) كان يسقط «residue holds» بالمنتج الصحيح وإن نجح النسيان، بينما نصُّ
+    المخطّط الثابت يقنّعها فلا يرفض الشاهدَ. صار المسحُ يقنّع القيمَ المتغيّرة نفسَها بقيمها لا بنمط، والنصُّ يبقى خامًا فالبقايا
+    الحقيقية تُرى."""
+    import time
+    from evaluation.memory_bank import mask_persisted
+    from evaluation.memory_runner import run_scenario
+    from memory.store import MemoryStore
+    year = time.strftime("%Y", time.gmtime())
+    monkeypatch.setattr("memory.store.secrets.token_hex", lambda n=8: ("445566" + "0" * 32)[:2 * n])
+    scenario = {"id": "dyn", "category": "forget", "note": "", "steps": [
+        {"op": "remember", "project": "A", "text": f"رقمُ جواز السفر 445566 صادرٌ عام {year}", "consent": "owner", "as": "m1"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "residue", "project": "A", "absent": ["445566", year]}]}
+    assert not [f for f in run_scenario(scenario, tmp_path / "ok")["failures"] if "residue holds" in f]
+    # نسيانٌ لا يحذف يُرى بقايا رغم القناع: النصُّ خام
+    monkeypatch.setattr(MemoryStore, "forget", lambda self, item_id, **kwargs: {"item_id": item_id})
+    failures = run_scenario(scenario, tmp_path / "kept")["failures"]
+    assert any("residue holds «445566" in f for f in failures) and any(f"residue holds «{year}" in f for f in failures)
+    # القناعُ بالقيم لا بالنمط: المعرّفُ والبصمةُ والوقتُ تُزال، والمفاتيحُ والنصُّ (وفيه أرقامٌ تشبهها) تبقى
+    raw = b'{"approved_at": "2026-01-01T00:00:00Z", "item_id": "4455660000000000", "sha256": "' + b"a" * 64 + b'", "text": "445566 secret"}'
+    masked = mask_persisted(raw)
+    assert b"4455660000000000" not in masked and b"2026-01-01T00:00:00Z" not in masked and b"a" * 64 not in masked
+    assert b'"text": "445566 secret"' in masked and b"approved_at" in masked and b"item_id" in masked
+    assert mask_persisted(b"not json 4455660000000000") == b"not json 4455660000000000"
+
+
 def test_residue_is_found_in_the_escaped_form_the_store_writes(tmp_path, monkeypatch):
     """ملاحظةُ Codex على #129: المخزنُ يكتب العنصرَ JSON، فسطرٌ جديد أو علامةُ تنصيص تُكتب مهرَّبةً ولا تطابقها البايتاتُ الخام،
     فتبقى نسخةٌ على القرص ولا تُرى."""

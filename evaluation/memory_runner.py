@@ -30,7 +30,7 @@ from pathlib import Path
 import uuid
 
 from core.quoted import QUARANTINE_MARK, scan
-from evaluation.memory_bank import (EXPOSURE_QUESTION, contains as _contains, names_every_directive, probe_collisions,
+from evaluation.memory_bank import (EXPOSURE_QUESTION, contains as _contains, mask_persisted, names_every_directive, probe_collisions,
                                     envelope_collisions, message_envelope_collisions, question_collisions,
                                     request_payload_collisions, request_provider, role_collisions, scalar_text, tool_collisions)
 from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, unfenced
@@ -71,7 +71,9 @@ def _active(refs: dict, store: MemoryStore) -> set:
 
 
 def _residue(store: MemoryStore) -> bytes:
-    return b"\n".join(p.read_bytes() for p in sorted(store.root.rglob("*")) if p.is_file())
+    """بايتاتُ المخزن كلُّها على القرص بعد إزالة قيمه المتغيّرة بـ`mask_persisted`: ما يُمسح هنا هو ما فُحص به شاهدُ البقايا
+    قبل القياس، فلا يسقط شاهدٌ يقع في سنة الإيصال بالمنتج الصحيح (ملاحظة Codex على #129، الجولة الثالثة والثلاثون)."""
+    return b"\n".join(mask_persisted(p.read_bytes()) for p in sorted(store.root.rglob("*")) if p.is_file())
 
 
 def _saved_text(scenario: dict, ref: str) -> str:
