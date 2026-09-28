@@ -78,23 +78,26 @@ def _search_files(arguments, context):
     suffix = arguments.get("suffix")
     if suffix is not None and not isinstance(suffix, str):
         raise ToolRefused("argument_invalid", "الوسيط «suffix» نصّ")
-    hits, scanned = [], 0
-    for path in _walk(context.root.resolve()):
+    hits, scanned, unreadable = [], 0, []
+    root = context.root.resolve()
+    for path in _walk(root):
         if suffix and not path.name.endswith(suffix):
             continue
-        scanned += 1
         try:
             text = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
+            # ما لا يُقرأ أو ليس UTF-8 لا يُعدّ ممسوحًا ولا يُتخطّى صامتًا: يُسمّى، فلا يُقال «لا مطابقات» عمّا لم يُفحص
+            unreadable.append(path.relative_to(root).as_posix())
             continue
+        scanned += 1
         for number, line in enumerate(text.splitlines(), 1):
             if needle.search(line):
-                hits.append(f"{path.relative_to(context.root.resolve())}:{number}: {line.strip()[:200]}")
+                hits.append(f"{path.relative_to(root)}:{number}: {line.strip()[:200]}")
                 if len(hits) >= MAX_MATCHES:
-                    return {"content": "\n".join(hits), "matches": len(hits),
-                            "complete": False, "files_scanned": scanned}
-    return {"content": "\n".join(hits) or "لا مطابقات.", "matches": len(hits),
-            "complete": True, "files_scanned": scanned}
+                    return {"content": "\n".join(hits), "matches": len(hits), "complete": False,
+                            "files_scanned": scanned, "skipped_unreadable": len(unreadable), "unreadable_paths": unreadable[:20]}
+    return {"content": "\n".join(hits) or "لا مطابقات.", "matches": len(hits), "complete": True,
+            "files_scanned": scanned, "skipped_unreadable": len(unreadable), "unreadable_paths": unreadable[:20]}
 
 
 def _list_files(arguments, context):
