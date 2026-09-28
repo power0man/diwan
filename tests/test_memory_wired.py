@@ -464,7 +464,7 @@ def test_a_custom_suite_must_be_a_commissioned_bank_at_full_size_and_reports_bin
 def test_the_published_memory_evidence_is_bound_to_the_committed_suite_bytes():
     """ملاحظةُ Codex على #129: الدليلُ المنشور بلا بصمة البنك، والأداةُ تكتبها الآن في كل تقرير."""
     import hashlib
-    evidence = json.loads((ROOT / "docs" / "probe" / "memory-live-20260927b.json").read_text(encoding="utf-8"))
+    evidence = json.loads((ROOT / "docs" / "probe" / "memory-live-20260928.json").read_text(encoding="utf-8"))
     assert evidence["suite_sha256"] == hashlib.sha256(
         (ROOT / "evaluation" / "suites" / "memory_v1.json").read_bytes()).hexdigest()
 
