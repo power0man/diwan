@@ -70,7 +70,7 @@
    "tokens_estimate": 6432
   },
   {
-   "bytes": 22893,
+   "bytes": 23188,
    "headings": [
     {
      "level": 2,
@@ -98,13 +98,13 @@
      "title": "٥ — ما ينتظر المالك"
     }
    ],
-   "lines": 149,
+   "lines": 150,
    "path": "docs/STATUS.md",
    "purpose": "ما بُني، والعملُ الحالي بروايةٍ واحدة، وما يحكم وما هو تاريخ، وما ينتظر المالك",
    "read_when": "كل جلسة: §٢ و§٥؛ والبقيةُ عند الحاجة",
    "role": "حاكمة (الحالة)",
-   "sha256_12": "dc9ef758adee",
-   "tokens_estimate": 4796
+   "sha256_12": "e94752ec65d4",
+   "tokens_estimate": 4854
   },
   {
    "bytes": 10397,
@@ -164,7 +164,7 @@
    "tokens_estimate": 1986
   },
   {
-   "bytes": 150199,
+   "bytes": 152186,
    "headings": [
     {
      "level": 2,
@@ -375,18 +375,23 @@
      "level": 2,
      "line": 1136,
      "title": "ق٦٧ — ديوان مفتوحٌ بالكامل ويعمل، والحسّاسُ إلى عقدةٍ خاصة، وتفويضٌ كامل لـClaude (٢٧ سبتمبر ٢٠٢٦)"
+    },
+    {
+     "level": 2,
+     "line": 1171,
+     "title": "ق٦٨ — استبعادُ Nitro من المراحل الحالية ثلاثةَ أسابيع (٢٨ سبتمبر ٢٠٢٦)"
     }
    ],
-   "lines": 1169,
+   "lines": 1187,
    "path": "docs/DECISIONS.md",
    "purpose": "القراراتُ المعتمدة بمصدرها وسببها وحدِّها المعلَن؛ يُقرأ بالعناوين لا بالترتيب",
    "read_when": "القرارَ الذي تسمّيه مهمّتُك فقط، من عنوانه",
    "role": "سجلُّ القرارات الحاكم",
-   "sha256_12": "0f792908ea40",
-   "tokens_estimate": 29948
+   "sha256_12": "a2c478bb875f",
+   "tokens_estimate": 30353
   },
   {
-   "bytes": 215511,
+   "bytes": 215983,
    "headings": [
     {
      "level": 2,
@@ -405,522 +410,522 @@
     },
     {
      "level": 3,
-     "line": 78,
+     "line": 80,
      "title": "م٠-ب — البوابة الآلية وحراسة أداة الرقم (v0.1.x) (2026-10-05 ← 2026-10-11)"
     },
     {
      "level": 3,
-     "line": 108,
+     "line": 110,
      "title": "م١ — المركز المقيس: الرقم العام الموثوق (v0.2) (2026-10-12 ← 2026-11-08)"
     },
     {
      "level": 3,
-     "line": 150,
+     "line": 152,
      "title": "م٢ — مساعد يومي: الميزات تُفتح بما قاله الرقم (v0.3) (2026-11-09 ← 2026-12-13)"
     },
     {
      "level": 3,
-     "line": 184,
+     "line": 186,
      "title": "م٣ — الوسائط على عتاد مقيس (v0.4) (2026-12-14 ← 2027-01-17)"
     },
     {
      "level": 3,
-     "line": 203,
+     "line": 205,
      "title": "م٤ — الطبقة السيادية الاختيارية (v0.5) (2027-01-18 ← 2027-02-14)"
     },
     {
      "level": 3,
-     "line": 219,
+     "line": 221,
      "title": "v1.0 — القبول (2027-02-15 ← 2027-04-15)"
     },
     {
      "level": 2,
-     "line": 232,
+     "line": 234,
      "title": "٣ — المهامّ بالتفصيل"
     },
     {
      "level": 3,
-     "line": 234,
+     "line": 236,
      "title": "`ح٢` G4 ثم G3: فكّ حجب جلستَي الماك وNitro، وشبكة السحابة، والأسرار وبيئة live"
     },
     {
      "level": 3,
-     "line": 248,
+     "line": 250,
      "title": "`جديد-q64-decisions` جلسة القرارات الأولى قبل ٣٠ سبتمبر: ق٦٤ للاحتياط والمواعيد، والسقف، ومعنى «١٢٠»"
     },
     {
      "level": 3,
-     "line": 261,
+     "line": 263,
      "title": "`جديد-is-local-guard` is_local يُشتق من اسم النموذج والمضيف لا من إعلان المزوّد"
     },
     {
      "level": 3,
-     "line": 271,
+     "line": 273,
      "title": "`جديد-is-local-guard-openai` المواضعُ الخمسة في مسار openai تقرأ مصدرَ المحليّة الواحد (الشقُّ ٣ من is-local-guard بعد ق٦٦)"
     },
     {
      "level": 3,
-     "line": 283,
+     "line": 285,
      "title": "`جديد-delete-path` حذف الجلسة والمشروع والملف المرفوع بإيصال حذف"
     },
     {
      "level": 3,
-     "line": 293,
+     "line": 295,
      "title": "`جديد-check-rename` فحص verify-hosted موجود باسمه ومحروس، وverify.yml لا يظهر skipped"
     },
     {
      "level": 3,
-     "line": 303,
+     "line": 305,
      "title": "`ح١` حماية main بـRuleset: verify-hosted إلزامي، ودمج بإيداع دمج، وfamily-review بعد أول مراجع محسوب"
     },
     {
      "level": 3,
-     "line": 317,
+     "line": 319,
      "title": "`جديد-actions-hardening` تصليب Actions وحارس الحقن عبر المسائل قبل تفعيل الوكلاء السحابيين"
     },
     {
      "level": 3,
-     "line": 327,
+     "line": 329,
      "title": "`جديد-tracker-sync` مسائل GitHub للمهام الجديدة بترقيم ك/ج/غ/ع/ح، وبرومبتات العملاء على AGENTS.md"
     },
     {
      "level": 3,
-     "line": 337,
+     "line": 339,
      "title": "`جديد-owner-time-plan` ساعات المالك وخط التوقف وتقويم الماك، وبديل لكل خطوة غير مؤكَّدة في الأدلة"
     },
     {
      "level": 3,
-     "line": 347,
+     "line": 349,
      "title": "`ح٤` G2: Jules وأدوات الأمان (مراجِع Gemini ملغًى بق٦٥)"
     },
     {
      "level": 3,
-     "line": 361,
+     "line": 363,
      "title": "`جديد-counted-google-reviewer` مراجِعٌ محتسب من عائلةٍ أخرى: Codex على كل رأس (بدل Gemini الملغى بق٦٥)"
     },
     {
      "level": 3,
-     "line": 371,
+     "line": 373,
      "title": "`جديد-test-health` صحّة الاختبارات: تشغيل كامل مفسَّر، وفرز المتقلّب، وبايثون 3.11 و3.12 و3.14"
     },
     {
      "level": 3,
-     "line": 382,
+     "line": 384,
      "title": "`جديد-measure-engine-guard` حراسة أداة الرقم: اختبارات measure_engine وإعادة توليد ملخّصَي ك٢ وك١٢"
     },
     {
      "level": 3,
-     "line": 392,
+     "line": 394,
      "title": "`جديد-probe-schema-guard` كل رقم بحدوده وحكمه: حارس docs/probe وفهرس بحكم كل رقم منشور"
     },
     {
      "level": 3,
-     "line": 402,
+     "line": 404,
      "title": "`جديد-status-sync` STATUS تعلن بوابة م٠ بندًا بندًا، والقاعدة الانتقالية بتاريخ انتهائها"
     },
     {
      "level": 3,
-     "line": 414,
+     "line": 416,
      "title": "`جديد-spend-ledger` سجل الإنفاق: توكنات وكلفة كل نداء سحابي، والنداءات تمرّ بـcore.run"
     },
     {
      "level": 3,
-     "line": 426,
+     "line": 428,
      "title": "`جديد-judge-sealed-tools` judge_v1.json مبصوم قبل التشغيل، ومُشغِّل محجوب محليٌّ بلا معرّفات"
     },
     {
      "level": 3,
-     "line": 439,
+     "line": 441,
      "title": "`ج٥` أدلة حيّة لتنفيذ Docker وبحث SearXNG بالبصمات الحالية"
     },
     {
      "level": 3,
-     "line": 453,
+     "line": 455,
      "title": "`جديد-max-output-download` سقف الجواب قابل للضبط، وتنزيل المستند المصدَّر، وWSL2 طريق ويندوز"
     },
     {
      "level": 3,
-     "line": 463,
+     "line": 465,
      "title": "`جديد-journeys-log` سجل رحلات المالك بلا نصوص، وخط أساس م١ لبوابة م٢"
     },
     {
      "level": 3,
-     "line": 475,
+     "line": 477,
      "title": "`جديد-mac-stores-backup` نسخة مشفَّرة غير سحابية لمخازن الماك: المحجوب والبيان ومفاتيح التوقيع"
     },
     {
      "level": 3,
-     "line": 489,
+     "line": 491,
      "title": "`ك٦` قيادة Kimi من الماك لتأليف v1.2، والمحجوب إلى ~/diwan-sealed لا يُطبع"
     },
     {
      "level": 3,
-     "line": 503,
+     "line": 505,
      "title": "`ك١٧` بنك v1.2: صفر حالة بلا فحص، وفحوص لا تُسرَد ولا تعمى عن القطبية"
     },
     {
      "level": 3,
-     "line": 515,
+     "line": 517,
      "title": "`ك٤٣` العربية العامة من ٢٣ إلى ≥١٥٠ حالة على القدرات التسع"
     },
     {
      "level": 3,
-     "line": 527,
+     "line": 529,
      "title": "`جديد-arabic-interim-bank` بنك عربي مؤقت not_blind إن تأخّر Kimi، محروس من دخول الرقم العام"
     },
     {
      "level": 3,
-     "line": 537,
+     "line": 539,
      "title": "`جديد-external-review-v12` المراجعة الخارجية على v1.2 بأسماء نماذج متحقَّقة وبمعامل κ"
     },
     {
      "level": 3,
-     "line": 552,
+     "line": 554,
      "title": "`جديد-owner-queue-ruling` جلسة المالك الثانية: owner_queue وتوقيع عيّنة م١٤ والديون المعلّقة"
     },
     {
      "level": 3,
-     "line": 566,
+     "line": 568,
      "title": "`ك٤٥` معايرة المحكِّم على المفتوح، ثم تشغيل المحجوب محليًّا بفاصل ثقة"
     },
     {
      "level": 3,
-     "line": 582,
+     "line": 584,
      "title": "`ك٤٦` خمسة استئصالات على الماك، كلٌّ ينتهي بطلب إبقاء أو حذف"
     },
     {
      "level": 3,
-     "line": 597,
+     "line": 599,
      "title": "`غ٣` الرقم الدلالي الحيّ: الهجين مقابل BM25 مقابل المتّجهات على ≥١٠٠ استعلام"
     },
     {
      "level": 3,
-     "line": 610,
+     "line": 612,
      "title": "`جديد-general-number` الرقم العام الموثوق: كامل v1.2 المفتوح بالطريق الوكيل وثلاث بذور"
     },
     {
      "level": 3,
-     "line": 622,
+     "line": 624,
      "title": "`ج٩` قياس وضع المبرمج بمحرّك على البنك الوكيل (٣٠ مهمّة) بعتبات ك٥١"
     },
     {
      "level": 3,
-     "line": 636,
+     "line": 638,
      "title": "`جديد-hf-jais2-mac` فرضية 27B وJais-2-8B على الماك بصفر دولار (ك١٢ من جديد)"
     },
     {
      "level": 3,
-     "line": 652,
+     "line": 654,
      "title": "`جديد-hf-owner-setup` G9: الشحن المسبق بسقفه وأول Job تجريبي، إن عجز الماك عن 27B"
     },
     {
      "level": 3,
-     "line": 666,
+     "line": 668,
      "title": "`جديد-27b-hf-jobs` قياس ما لم يتّسع له الماك على HF Jobs بسقف مدفوع مسبقًا"
     },
     {
      "level": 3,
-     "line": 680,
+     "line": 682,
      "title": "`ج٦` uv tool install وحاوية التطبيق بـVOLUME وفحص الدخان في حاوية CI"
     },
     {
      "level": 3,
-     "line": 692,
+     "line": 694,
      "title": "`ح٥` G5: تجهيز Nitro (WSL2 وDocker وOllama والمشغّل الزائل)"
     },
     {
      "level": 3,
-     "line": 707,
+     "line": 709,
      "title": "`ع٣` المشغّل الزائل diwan-live على Nitro يجتاز runner-canary"
     },
     {
      "level": 3,
-     "line": 721,
+     "line": 723,
      "title": "`جديد-opencode-worker` OpenCode عاملًا محليًّا: الاختبارات الليلية وأرقام الوثائق والفهرس"
     },
     {
      "level": 3,
-     "line": 735,
+     "line": 737,
      "title": "`ك٣٠` فرض قاعدة العائلة آليًّا بلا CODEOWNERS، وحارس بصمات المنجَز على main"
     },
     {
      "level": 3,
-     "line": 747,
+     "line": 749,
      "title": "`جديد-routines-dashboard` روتينات مجدولة، وعيب مزروع شهري لقياس المراجِعين، ولوحة المالك"
     },
     {
      "level": 3,
-     "line": 759,
+     "line": 761,
      "title": "`جديد-legacy-archive` إخراج evaluate_governance من أدوات auto، وأرشفة الشيفرة الميتة بقرار"
     },
     {
      "level": 3,
-     "line": 771,
+     "line": 773,
      "title": "`جديد-legacy-archive-openai` إخراج evaluate_governance من واجهة webui/server.py (شقُّ مسار openai من legacy-archive بعد ق٦٦)"
     },
     {
      "level": 3,
-     "line": 783,
+     "line": 785,
      "title": "`ك١٦` فحص exact والنقطة الختامية: يُنشر الرقمان معًا حتى يُحسم"
     },
     {
      "level": 3,
-     "line": 793,
+     "line": 795,
      "title": "`جديد-license-tagging` حقل license إلزامي في كل دليل نموذج، وNOTICE للنماذج والمكتبات"
     },
     {
      "level": 3,
-     "line": 805,
+     "line": 807,
      "title": "`غ٧` بنك الوسائط بمواد مرخَّصة يُجمَّد في م١ (ق٦٢-٧)"
     },
     {
      "level": 3,
-     "line": 819,
+     "line": 821,
      "title": "`جديد-hardware-decision` قرار العتاد والمحرّك بالرقم: لا شراء إلا بفارق ≥١٠ نقاط"
     },
     {
      "level": 3,
-     "line": 833,
+     "line": 835,
      "title": "`ك٥٣` البحث المعمّق v2: تخطيط وقفزة ثانية ومدقّق إسناد أوسع، ثم إعادة القياس"
     },
     {
      "level": 3,
-     "line": 847,
+     "line": 849,
      "title": "`جديد-action-snapshot` لقطة الأفعال بحسب أثر الأداة، وبصمات بدل نسخ ملفات المالك"
     },
     {
      "level": 3,
-     "line": 859,
+     "line": 861,
      "title": "`جديد-retention-rotate` تدوير السجلات وسياسة احتفاظ مرقَّمة، وSECURITY.md يعلن ما يبقى على القرص"
     },
     {
      "level": 3,
-     "line": 871,
+     "line": 873,
      "title": "`جديد-backup-roots` نسخ احتياطي واستعادة من الواجهة لكل الجذور، مشفَّرًا ويحترم الحذف"
     },
     {
      "level": 3,
-     "line": 883,
+     "line": 885,
      "title": "`جديد-per-session-lock` قفل توليد لكل جلسة، وبثّ SSE، وعرض Markdown وعدّاد تقدّم"
     },
     {
      "level": 3,
-     "line": 895,
+     "line": 897,
      "title": "`جديد-upload-extract` رفع PDF وdocx وJPEG إلى المحادثة، ومستخرج نص محلي محجور"
     },
     {
      "level": 3,
-     "line": 907,
+     "line": 909,
      "title": "`جديد-runtime-receipt-local` إيصال التشغيل بخطوة واحدة للمالك على الماك وWSL2"
     },
     {
      "level": 3,
-     "line": 921,
+     "line": 923,
      "title": "`ج٨` إعادة قياس المحلّل على مُشغِّل الإصدار ٨ بدليل يسمّي البيئة"
     },
     {
      "level": 3,
-     "line": 935,
+     "line": 937,
      "title": "`غ٤` بنك الترجمة (٦٠ حالة) ووضع الترجمة بمحرّك حقيقي"
     },
     {
      "level": 3,
-     "line": 949,
+     "line": 951,
      "title": "`جديد-memory-probe` دليل حيّ للذاكرة المحكومة بمزوّد حقيقي"
     },
     {
      "level": 3,
-     "line": 963,
+     "line": 965,
      "title": "`ك٤٩` (سياسات) م١٣-ب بقوّة كافية، ومصير رقم م١٤"
     },
     {
      "level": 3,
-     "line": 977,
+     "line": 979,
      "title": "`ك٢٩` (سياسات) ملفات المالك مخازن محلية من Drive بأمر وضع واحد، ومصادر عامة بديلة"
     },
     {
      "level": 3,
-     "line": 991,
+     "line": 993,
      "title": "`غ٨` OCR في المنتج بأداة ocr_image محجورة، وطريق وسائط بإصدارات Ollama معتمدة"
     },
     {
      "level": 3,
-     "line": 1005,
+     "line": 1007,
      "title": "`جديد-lm-eval-calibration` معايرة المُشغِّل على لوحة عامة (OALL v2 عبر lighteval)"
     },
     {
      "level": 3,
-     "line": 1019,
+     "line": 1021,
      "title": "`جديد-hf-publish-open` نشر الشطر المفتوح وأدلة مختارة إلى HF من GitHub بلا توكن مخزَّن"
     },
     {
      "level": 3,
-     "line": 1035,
+     "line": 1037,
      "title": "`غ١٠` التفريغ والنطق العربيان بنماذج تجارية الرخصة"
     },
     {
      "level": 3,
-     "line": 1049,
+     "line": 1051,
      "title": "`غ٩` مولّد الصور المحلي بمحكِّم رؤية من عائلة أخرى"
     },
     {
      "level": 3,
-     "line": 1063,
+     "line": 1065,
      "title": "`غ١١` فهم الصور عبر طريق المنتج بحدّ عدّ معلَن، وميزانية VRAM لكل قدرة"
     },
     {
      "level": 3,
-     "line": 1078,
+     "line": 1080,
      "title": "`جديد-pii-sanitizer` إغلاق ١٣ صورة تسرّب في PIISanitizer بالتطبيع ثم CAMeL NER"
     },
     {
      "level": 3,
-     "line": 1090,
+     "line": 1092,
      "title": "`جديد-pii-bank` بنك بيانات شخصية عدائي أعمى (≥١٠٠ حالة) من Kimi"
     },
     {
      "level": 3,
-     "line": 1102,
+     "line": 1104,
      "title": "`جديد-sovereign-smoke` تجربتان دخانيتان للناقل السيادي على بنوك مفتوحة: Groq الدمّام وOCI الرياض"
     },
     {
      "level": 3,
-     "line": 1114,
+     "line": 1116,
      "title": "`جديد-sovereign-carrier` ناقل خلف router_sovereign بطبقة مسجَّلة في كل إيصال، والافتراضي محلي"
     },
     {
      "level": 3,
-     "line": 1128,
+     "line": 1130,
      "title": "`جديد-hf-board` لوحة أرقام عامة على Space ثابتة من docs/probe بحدودها"
     },
     {
      "level": 3,
-     "line": 1142,
+     "line": 1144,
      "title": "`جديد-v1-acceptance` قبول v1.0: تقييم من عائلة غير مطوِّرة، وم٨-ب على المحجوب، و٣٠ يومًا بلا إشراف"
     },
     {
      "level": 3,
-     "line": 1156,
+     "line": 1158,
      "title": "`جديد-obsidian-vault` خزنة Obsidian للمالك: مرآة الوثائق الحاكمة ولوحة المهام وصندوق الوارد"
     },
     {
      "level": 3,
-     "line": 1168,
+     "line": 1170,
      "title": "`جديد-obsidian-setup` تركيب Obsidian على الماك وNitro وفتح الخزنة وتشغيل المزامنة"
     },
     {
      "level": 3,
-     "line": 1182,
+     "line": 1184,
      "title": "`جديد-obsidian-source` ديوان يقرأ ملاحظات Obsidian مصدرًا محليًّا (local_only)"
     },
     {
      "level": 2,
-     "line": 1194,
+     "line": 1196,
      "title": "٤ — الذكاءات ومهامّها"
     },
     {
      "level": 3,
-     "line": 1196,
+     "line": 1198,
      "title": "Claude السحابي (`claude-cloud`، anthropic)"
     },
     {
      "level": 3,
-     "line": 1223,
+     "line": 1225,
      "title": "Claude على الماك (`claude-mac`، anthropic)"
     },
     {
      "level": 3,
-     "line": 1249,
+     "line": 1251,
      "title": "Claude على Nitro (`claude-nitro`، anthropic)"
     },
     {
      "level": 3,
-     "line": 1271,
+     "line": 1273,
      "title": "Jules (`jules`، google)"
     },
     {
      "level": 3,
-     "line": 1291,
+     "line": 1293,
      "title": "Codex (`codex`، openai)"
     },
     {
      "level": 3,
-     "line": 1308,
+     "line": 1310,
      "title": "OpenCode (`opencode`، openai)"
     },
     {
      "level": 3,
-     "line": 1326,
+     "line": 1328,
      "title": "مراجِع Gemini (`gemini-reviewer`، google)"
     },
     {
      "level": 3,
-     "line": 1338,
+     "line": 1340,
      "title": "Kimi (`kimi`، moonshot)"
     },
     {
      "level": 3,
-     "line": 1357,
+     "line": 1359,
      "title": "DeepSeek وMistral (`deepseek-mistral`، deepseek + mistral)"
     },
     {
      "level": 3,
-     "line": 1376,
+     "line": 1378,
      "title": "المالك (`owner`، human)"
     },
     {
      "level": 3,
-     "line": 1390,
+     "line": 1392,
      "title": "Hermes (`hermes`، google (يعمل بـgemma4 محليًّا))"
     },
     {
      "level": 2,
-     "line": 1405,
+     "line": 1407,
      "title": "٥ — خطوات المالك بالترتيب"
     },
     {
      "level": 2,
-     "line": 1438,
+     "line": 1440,
      "title": "٦ — الخطوة الأكبر"
     },
     {
      "level": 2,
-     "line": 1458,
+     "line": 1460,
      "title": "٧ — القرارات (كلّها معتمدة بتوصيتها في ق٦٤)"
     },
     {
      "level": 2,
-     "line": 1490,
+     "line": 1492,
      "title": "٨ — Hugging Face بجانب GitHub"
     },
     {
      "level": 2,
-     "line": 1514,
+     "line": 1516,
      "title": "٩ — المقترحات"
     },
     {
      "level": 2,
-     "line": 1563,
+     "line": 1565,
      "title": "١٠ — المخاطر"
     },
     {
      "level": 2,
-     "line": 1581,
+     "line": 1583,
      "title": "١١ — الجدول الزمني والميزانية"
     },
     {
      "level": 2,
-     "line": 1615,
+     "line": 1617,
      "title": "١٢ — حدود هذه الخطة"
     }
    ],
-   "lines": 1624,
+   "lines": 1626,
    "path": "docs/PLAN-20260926.md",
    "purpose": "المراحلُ وبواباتُها، والمهامُّ بأدلّتها، والذكاءات، وخطواتُ المالك G1–G10",
    "read_when": "المهمّةَ التي تعمل عليها فقط، من عنوانها",
    "role": "الخطةُ الحاكمة (ق٦٤)",
-   "sha256_12": "7a4c416abbb8",
-   "tokens_estimate": 47124
+   "sha256_12": "14f810d7945a",
+   "tokens_estimate": 47223
   },
   {
    "bytes": 3470,
@@ -1327,7 +1332,7 @@
    "tokens_estimate": 361
   },
   {
-   "bytes": 57388,
+   "bytes": 57514,
    "headings": [
     {
      "level": 2,
@@ -1466,56 +1471,56 @@
     },
     {
      "level": 2,
-     "line": 522,
+     "line": 523,
      "title": "٧ — المراحل السبع: ما أثبتته كلٌّ منها"
     },
     {
      "level": 2,
-     "line": 541,
+     "line": 542,
      "title": "٨ — طقس العمل (سنّة المشروع — اتبعه حرفيًّا في كل مرحلة)"
     },
     {
      "level": 2,
-     "line": 563,
+     "line": 564,
      "title": "٩ — حدودك الستة (نصًّا، ولا اجتهاد فيها)"
     },
     {
      "level": 2,
-     "line": 585,
+     "line": 586,
      "title": "١٠ — البيئة التشغيلية"
     },
     {
      "level": 2,
-     "line": 609,
+     "line": 610,
      "title": "١١ — ألغام معروفة (كلُّها كلّفت وقتًا مرة على الأقل)"
     },
     {
      "level": 2,
-     "line": 646,
+     "line": 647,
      "title": "١٢ — ما بقي: الخارطة العامة والقرارات المستقلة"
     },
     {
      "level": 2,
-     "line": 679,
+     "line": 680,
      "title": "١٣ — كيف تتعامل مع المالك"
     },
     {
      "level": 2,
-     "line": 693,
+     "line": 694,
      "title": "١٤ — خلاصة في سطر"
     }
    ],
-   "lines": 697,
+   "lines": 698,
    "path": "docs/HANDOFF-PROMPT.md",
    "purpose": "برومبتُ تسليمٍ متنُه حتى ق٣٨ ورأسُه ق٤٩",
    "read_when": "لا يُقرأ؛ الحالةُ في docs/STATUS.md",
    "role": "تاريخ",
-   "sha256_12": "8645fe3a77b2",
-   "tokens_estimate": 11887
+   "sha256_12": "8e74eb5654b3",
+   "tokens_estimate": 11912
   }
  ],
  "generator": "tools/context_index.py",
- "latest_decision": 67,
+ "latest_decision": 68,
  "measurement_limits": [
   "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
   "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
