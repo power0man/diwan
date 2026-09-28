@@ -146,15 +146,17 @@ def test_the_evidence_guard_refuses_paths_mail_long_text_and_oversized_shots(tmp
 
 ABSOLUTE = ["/workspace/private/secret", "see /mnt/data", "(/etc/passwd)", "path=/srv/project", "at:/opt/x",
             "~/diwan/notes", "C:\\Users\\me", "D:/data/x", "file:///tmp/x", "FILE://host/share", "\\\\server\\share",
-            "[/var/lib/x]"]
-NOT_ABSOLUTE = ["https://example.org/a/b", "http://127.0.0.1:8000/api", "<origin>/api",
+            "[/var/lib/x]", "المسار «/workspace/private/secret»", "path>/etc/passwd", "a|/srv/x", "x;/opt/y", "{/mnt/z}",
+            "\t/var/x", "line\n/home/u"]
+NOT_ABSOLUTE = ["https://example.org/a/b", "http://127.0.0.1:8000/api", "ORIGIN/api",
                 "docs/probe/ui-browser-audit-20260928/01-empty-desktop.png", "webui/static/app.js:57", "1366x768",
-                "1/2", "GET / ← 200", "and/or", "T18:17:31Z", "a11y-label"]
+                "1/2", "GET / ← 200", "and/or", "T18:17:31Z", "a11y-label", "نعم/لا", "./rel/x", "../up/x", "a-b/c", "x_y/z"]
 
 
 def test_the_evidence_guard_refuses_any_absolute_path_and_passes_urls_and_repo_paths():
-    """ملاحظة Codex على #175: الحارسُ كان يعدّ بادئاتٍ بعينها (/home/ و/tmp/…) فيمرّ /workspace و/mnt و/etc و/srv؛ صار
-    يلتقط أيَّ مسارٍ مطلق، و~/، وحرفَ القرص بشرطتيه، وUNC، وfile://؛ ولا يلتقط عنوانَ URL ولا مسارًا نسبيًّا في المستودع."""
+    """ملاحظتا Codex على #175: الحارسُ كان يعدّ بادئاتٍ (/home/ و/tmp/…) ثم فواصلَ قبل «/» فيمرّ «/workspace» بعد «» أو
+    «>»؛ صار يلتقط «/» لا يسبقها حرفٌ ولا رقمٌ ولا . ولا - ولا _ ولا «/»، و~/، وحرفَ القرص بشرطتيه، وUNC، وfile://؛ ولا
+    يلتقط عنوانَ URL ولا مسارًا نسبيًّا في المستودع ولا كلمتين عربيتين بينهما «/»."""
     missed = [text for text in ABSOLUTE if audit.evidence_guard({"x": text}) != ["absolute_path:$.x"]]
     assert missed == [], missed
     flagged = [text for text in NOT_ABSOLUTE if audit.evidence_guard({"x": text})]
@@ -258,6 +260,43 @@ def test_an_axe_that_did_not_run_refuses_the_evidence(tmp_path, monkeypatch, cap
     monkeypatch.setattr(audit, "browser_prerequisites", lambda node=None: ("node_missing", None, None))
     assert audit.main(["--axe", str(tmp_path / "missing-axe.min.js")]) == 3
     assert json.loads(capsys.readouterr().out)["code"] == "axe_unavailable"
+
+
+def test_a_rerun_touches_the_target_only_after_validation_and_only_its_own_shots(tmp_path, monkeypatch):
+    """ملاحظة Codex على #175: كان التشغيلُ يحذف كلَّ لقطةٍ تطابق النمط قبل أن يعمل المتصفّح، فتشغيلٌ ساقط يترك دليلًا سابقًا
+    يشير إلى لقطاتٍ محذوفة، ويُحذف ملفٌّ للمستخدم يطابق النمط. صارت اللقطاتُ في مجلّدٍ مؤقّت حتى يمرّ الدليل، ثم تُستبدل
+    بأسمائها، وتُحذف القديمةُ بأسمائها من الدليل السابق وحده."""
+    shots, out = tmp_path / "shots", tmp_path / "evidence.json"
+    shots.mkdir()
+    before = {"01-empty-desktop.png": b"old-empty", "02-stale-desktop.png": b"old-stale", "01-notes.png": b"mine"}
+    for name, data in before.items():
+        (shots / name).write_bytes(data)
+    out.write_text(json.dumps({"screenshots": [{"file": "01-empty-desktop.png"}, {"file": "02-stale-desktop.png"}]}))
+    old_json = out.read_bytes()
+    axe_file = tmp_path / "axe.min.js"
+    axe_file.write_text("")
+
+    def browser(axe):
+        def run(node, env, config, workdir):
+            (Path(config["shots_dir"]) / "01-empty-desktop.png").write_bytes(b"new-empty")
+            return 0, {"journeys": {"current": {"steps": [{"id": "open", "ok": True}], "checks": {}}},
+                       "screenshots": [{"file": "01-empty-desktop.png", "step": "open", "viewport": "1366x768"}],
+                       "axe": axe}, ""
+        return run
+
+    monkeypatch.setattr(audit, "browser_prerequisites", lambda node=None: (None, "node", {}))
+    argv = ["--journey", "current", "--out", str(out), "--shots", str(shots)]
+    monkeypatch.setattr(audit, "run_browser", browser({"status": "failed", "code": "axe_failed", "errors": ["x"]}))
+    assert audit.main([*argv, "--axe", str(axe_file)]) == 1
+    assert out.read_bytes() == old_json
+    assert {p.name: p.read_bytes() for p in shots.iterdir()} == before, "تشغيلٌ ساقط مسّ الدليلَ السابق"
+    monkeypatch.setattr(audit, "run_browser", browser({"status": "not_run"}))
+    assert audit.main(argv) == 0
+    assert (shots / "01-empty-desktop.png").read_bytes() == b"new-empty"
+    assert not (shots / "02-stale-desktop.png").exists(), "لقطةُ الدليل السابق التي لم يعد يعلنها باقية"
+    assert (shots / "01-notes.png").read_bytes() == b"mine", "حُذف ملفٌّ لم تنتجه الأداة"
+    assert [s["file"] for s in json.loads(out.read_text())["screenshots"]] == ["01-empty-desktop.png"]
+    assert sorted(p.name for p in shots.iterdir()) == ["01-empty-desktop.png", "01-notes.png"]
 
 
 def test_a_missing_browser_is_named_not_a_traceback():

@@ -68,15 +68,15 @@ MEMORY_DONE = "حُفظ ما طلبتَ في ذاكرة المشروع بعد م
 MAX_TEXT_CHARS = 240
 MAX_SHOTS = 10
 MAX_SHOT_BYTES = 250 * 1024
-# مسارٌ مطلق أيًّا كان جذرُه: «/» في أول النصّ أو بعد فراغٍ أو علامة تنصيصٍ أو «(» أو «=» أو «:» أو «,» أو «[» يتبعها مقطع
-# (لا «//» فذاك عنوانُ URL)، و«~/»، وحرفُ قرصٍ في ويندوز بشرطةٍ أيًّا كانت، ومسارُ UNC، و«file://». والمساراتُ النسبية
-# في المستودع (docs/probe/…، webui/static/app.js:57) وعناوينُ http(s) تمرّ.
+# مسارٌ مطلق أيًّا كان جذرُه وما سبقه، بلا عدٍّ للفواصل: «/» لا يسبقها حرفٌ أو رقم (بأيّ أبجدية) ولا «.» ولا «-» ولا «_»
+# ولا «/» أخرى (فتلك مقطعٌ في مسارٍ نسبيّ أو «//» عنوانِ URL)، ويتبعها مقطع (ومنه «~/…» فـ«/» فيه بعد «~»)؛ وحرفُ قرصٍ في ويندوز بشرطةٍ أيًّا كانت،
+# ومسارُ UNC، و«file://». والمساراتُ النسبية في المستودع (docs/probe/…، webui/static/app.js:57) وعناوينُ http(s) تمرّ.
 ABSOLUTE_PATH = re.compile(
-    r"(?:^|[\s\"'(=:,\[])/(?!/)[^\s/\"'<>]"
-    r"|(?:^|[\s\"'(=:,\[])~/"
-    r"|(?:^|[^A-Za-z0-9])[A-Za-z]:[\\/]"
-    r"|(?:^|[\s\"'(=])\\\\[^\\\s]"
+    r"(?<![\w.\-/])/(?=[^\s/\"'<>|;,)\]}»])"
+    r"|(?<![A-Za-z0-9])[A-Za-z]:[\\/]"
+    r"|(?<![\w\\])\\\\[^\\\s]"
     r"|file://", re.IGNORECASE)
+SHOT_NAME = re.compile(r"[0-9]{2}-[a-z0-9-]+\.png")
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
 
 MEASUREMENT_LIMITS = [
@@ -378,7 +378,7 @@ def evidence_guard(evidence: dict, shots_dir: Path | None = None) -> list[str]:
         violations.append(f"too_many_screenshots:{len(shots)}")
     for shot in shots:
         name = shot.get("file", "")
-        if not re.fullmatch(r"[0-9]{2}-[a-z0-9-]+\.png", name):
+        if not SHOT_NAME.fullmatch(name):
             violations.append(f"screenshot_name:{name[:40]}")
             continue
         size = shot.get("bytes")
@@ -483,6 +483,37 @@ def run_browser(node: str, env: dict, config: dict, workdir: Path) -> tuple[int,
     return result.returncode, raw, (result.stderr or result.stdout)[-600:]
 
 
+def previous_shots(out: Path) -> set[str]:
+    """أسماءُ اللقطات التي أعلنها الدليلُ السابق نفسُه، لا ما يطابق نمطًا في المجلّد: فلا يُحذف ملفٌّ لم تنتجه الأداة."""
+    try:
+        listed = json.loads(out.read_text(encoding="utf-8")).get("screenshots") or []
+    except (OSError, ValueError, AttributeError):
+        return set()
+    return {item["file"] for item in listed
+            if isinstance(item, dict) and isinstance(item.get("file"), str) and SHOT_NAME.fullmatch(item["file"])}
+
+
+def _replace(target: Path, data: bytes) -> None:
+    staged = target.with_name(f".{target.name}.{os.getpid()}.part")
+    staged.write_bytes(data)
+    os.replace(staged, target)
+
+
+def publish(evidence: dict, staging: Path, shots: Path, out: Path) -> None:
+    """بعد أن يمرّ الدليلُ حارسَه وحكمَ axe: تُنقل لقطاتُ هذا التشغيل من مجلّدها المؤقّت بأسمائها (استبدالٌ ذرّيٌّ لكل ملف)،
+    ثم الدليل، ثم تُحذف لقطاتُ الدليل السابق التي لم يعد يعلنها، بأسمائها منه. فتشغيلٌ ساقطٌ لا يمسّ شيئًا، ولا يُحذف ملفٌّ
+    في المجلّد لم يعلنه دليلٌ سابق."""
+    before = previous_shots(out)
+    fresh = [shot["file"] for shot in evidence["screenshots"]]
+    shots.mkdir(parents=True, exist_ok=True)
+    for name in fresh:
+        _replace(shots / name, (staging / name).read_bytes())
+    out.parent.mkdir(parents=True, exist_ok=True)
+    _replace(out, (json.dumps(evidence, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
+    for name in sorted(before - set(fresh)):
+        (shots / name).unlink(missing_ok=True)
+
+
 def _git_commit() -> str:
     try:
         return subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--short=12", "HEAD"], capture_output=True,
@@ -516,22 +547,25 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"status": "unavailable", "code": code}))
         return 3
     out, shots = (ROOT / args.out), (ROOT / args.shots)
-    shots.mkdir(parents=True, exist_ok=True)
-    for old in shots.glob("*.png"):       # لقطاتُ تشغيلٍ سابق بأسماء هذه الأداة وحدها
-        if re.fullmatch(r"[0-9]{2}-[a-z0-9-]+\.png", old.name):
-            old.unlink()
     journeys = list(JOURNEYS) if args.journey == "all" else [args.journey]
-    with tempfile.TemporaryDirectory(prefix="diwan-ui-audit-") as tmp, ExitStack() as stack:
+    with tempfile.TemporaryDirectory(prefix="diwan-ui-audit-") as tmp:
         tmp = Path(tmp).resolve()
-        # لكل رحلةٍ وعرضٍ خادمٌ بجذرٍ فارغ: كلُّ رحلةٍ مستخدمٌ أوّل لا يرث ما أنشأته غيرُها
-        urls = {f"{journey}-{viewport}": stack.enter_context(serving(tmp / f"{journey}-{viewport}"))[0]
-                for journey in journeys for viewport in VIEWPORTS}
-        config = {"urls": urls, "journeys": journeys, "shots_dir": str(shots),
-                  "axe_path": str(Path(args.axe).resolve()) if args.axe else None,
-                  "texts": {"question": QUESTION, "answer_marker": ANSWER_MARKER, "write_request": WRITE_REQUEST,
-                            "memory_request": MEMORY_REQUEST, "memory_text": MEMORY_TEXT, "agent_done": AGENT_DONE,
-                            "memory_done": MEMORY_DONE}}
-        status, raw, tail = run_browser(node, env, config, tmp)
+        staging = tmp / "shots"          # اللقطاتُ هنا حتى يمرّ الدليل؛ ولا يُمسّ مجلّدُ --shots قبل ذلك
+        staging.mkdir()
+        with ExitStack() as stack:
+            # لكل رحلةٍ وعرضٍ خادمٌ بجذرٍ فارغ: كلُّ رحلةٍ مستخدمٌ أوّل لا يرث ما أنشأته غيرُها
+            urls = {f"{journey}-{viewport}": stack.enter_context(serving(tmp / f"{journey}-{viewport}"))[0]
+                    for journey in journeys for viewport in VIEWPORTS}
+            config = {"urls": urls, "journeys": journeys, "shots_dir": str(staging),
+                      "axe_path": str(Path(args.axe).resolve()) if args.axe else None,
+                      "texts": {"question": QUESTION, "answer_marker": ANSWER_MARKER, "write_request": WRITE_REQUEST,
+                                "memory_request": MEMORY_REQUEST, "memory_text": MEMORY_TEXT,
+                                "agent_done": AGENT_DONE, "memory_done": MEMORY_DONE}}
+            status, raw, tail = run_browser(node, env, config, tmp)
+        return _validate_and_publish(args, raw, status, tail, journeys, tracked, staging, shots, out)
+
+
+def _validate_and_publish(args, raw, status, tail, journeys, tracked, staging: Path, shots: Path, out: Path) -> int:
     if raw is None or status not in (0, 3):
         print(json.dumps({"status": "failed", "code": "browser_run_failed", "exit": status, "tail": tail},
                          ensure_ascii=False))
@@ -550,15 +584,14 @@ def main(argv: list[str] | None = None) -> int:
     evidence = build_evidence(raw, commit=_git_commit(), date=_dt.date.today().isoformat(), coverage=coverage,
                               sources=sources, tracked=tracked, shots_rel=shots_rel)
     for shot in evidence["screenshots"]:
-        path = shots / shot["file"]
+        path = staging / shot["file"]
         shot["bytes"] = path.stat().st_size if path.is_file() else None
-    violations = evidence_guard(evidence, shots)
+    violations = evidence_guard(evidence, staging)
     if violations:
         print(json.dumps({"status": "failed", "code": "evidence_guard", "violations": violations[:20]},
                          ensure_ascii=False))
         return 1
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    publish(evidence, staging, shots, out)
     print(json.dumps({"status": "written", "evidence": args.out, "summary": evidence["summary"],
                       "findings": [f["id"] for f in evidence["findings"]]}, ensure_ascii=False))
     return 0

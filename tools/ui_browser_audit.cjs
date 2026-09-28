@@ -20,7 +20,8 @@ catch {write({code: "playwright_missing"}); process.exit(3);}
 // نصٌّ قصير من الصفحة للدليل: سطرٌ واحد، بلا أصل الخادم، ولا يتجاوز الحدّ
 function short(text, limit = 160) {
   let out = String(text ?? "").replace(/\s+/g, " ").trim();
-  for (const origin of Object.values(config.urls)) out = out.split(origin).join("<origin>");
+  // أصلُ الخادم كلمةً بلا «<>»: فـ«ORIGIN/api» مسارٌ نسبيّ عند حارس الدليل، و«>/api» مسارٌ مطلق
+  for (const origin of Object.values(config.urls)) out = out.split(origin).join("ORIGIN");
   return out.length > limit ? out.slice(0, limit - 1) + "…" : out;
 }
 const LATIN_TOKEN = /[A-Za-z_][A-Za-z0-9_]*(?:[._:-][A-Za-z0-9_]+)*/g;

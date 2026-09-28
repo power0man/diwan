@@ -3,7 +3,7 @@
   "tool": "tools/ui_browser_audit.py",
   "agent": "anthropic/claude-opus-5-5",
   "date": "2026-09-28",
-  "commit": "028bc105e489",
+  "commit": "5a8e29ce0a36",
   "ui_sources_sha256": {
     "webui/static/index.html": "8701079ea4055bba884c5ffb210b12e6f924a87695e5c79ce2b0e8125326f169",
     "webui/static/app.js": "fef96d0774c9ff440fc8874b8c2403da838a4e42130e8fdf65c9db963b6838fe",
@@ -56,112 +56,112 @@
           "id": "open",
           "viewport": "desktop",
           "ok": true,
-          "ms": 643,
+          "ms": 615,
           "note": "lang=ar dir=rtl"
         },
         {
           "id": "empty_state",
           "viewport": "desktop",
           "ok": true,
-          "ms": 421,
+          "ms": 552,
           "note": "2 disabled of 6"
         },
         {
           "id": "tab_order",
           "viewport": "desktop",
           "ok": true,
-          "ms": 154,
+          "ms": 198,
           "note": "12 stops"
         },
         {
           "id": "send_before_session",
           "viewport": "desktop",
           "ok": true,
-          "ms": 97,
+          "ms": 94,
           "note": "اختر محادثة واسترجع حالة أي إرسال سابق أولًا."
         },
         {
           "id": "create_project",
           "viewport": "desktop",
           "ok": true,
-          "ms": 81
+          "ms": 94
         },
         {
           "id": "create_text_session",
           "viewport": "desktop",
           "ok": true,
-          "ms": 161
+          "ms": 133
         },
         {
           "id": "keyboard_send",
           "viewport": "desktop",
           "ok": true,
-          "ms": 2495,
+          "ms": 2506,
           "note": "ctrl+enter=false enter=false"
         },
         {
           "id": "ask_text",
           "viewport": "desktop",
           "ok": true,
-          "ms": 349,
-          "note": "answer in 110 ms"
+          "ms": 361,
+          "note": "answer in 107 ms"
         },
         {
           "id": "draft_review_apply",
           "viewport": "desktop",
           "ok": true,
-          "ms": 403
+          "ms": 452
         },
         {
           "id": "memory_dialog",
           "viewport": "desktop",
           "ok": true,
-          "ms": 560
+          "ms": 631
         },
         {
           "id": "create_agent_session",
           "viewport": "desktop",
           "ok": true,
-          "ms": 260
+          "ms": 259
         },
         {
           "id": "agent_write",
           "viewport": "desktop",
           "ok": true,
-          "ms": 536,
-          "note": "answer in 418 ms"
+          "ms": 465,
+          "note": "answer in 341 ms"
         },
         {
           "id": "agent_approval",
           "viewport": "desktop",
           "ok": true,
-          "ms": 1867
+          "ms": 1775
         },
         {
           "id": "error_path",
           "viewport": "desktop",
           "ok": true,
-          "ms": 207,
+          "ms": 143,
           "note": "name_invalid"
         },
         {
           "id": "mobile_open",
           "viewport": "mobile",
           "ok": true,
-          "ms": 592
+          "ms": 562
         },
         {
           "id": "mobile_empty",
           "viewport": "mobile",
           "ok": true,
-          "ms": 279,
+          "ms": 393,
           "note": "composer at 1116px of 844"
         },
         {
           "id": "mobile_ask_text",
           "viewport": "mobile",
           "ok": true,
-          "ms": 494
+          "ms": 509
         }
       ],
       "checks": {
@@ -348,7 +348,7 @@
         "answer_meta": "مكتمل · 42 وحدة نصية",
         "answer_markdown_literal": true,
         "messages_live": false,
-        "notice_when_answer_rendered": "ديوان يكتب… يمكنك استرجاع الحالة إذا انقطع الاتصال.",
+        "notice_when_answer_rendered": "تم استرجاع المحادثة من جهازك. 1 جولة محفوظة.",
         "notice_after_answer": "تم استرجاع المحادثة من جهازك. 1 جولة محفوظة.",
         "answer_announced": false,
         "composer_height_px": 306,
@@ -400,7 +400,7 @@
         "memory_empty_error_role": "alert",
         "memory_saved_notice": "حُفظ في ذاكرة المشروع. يدخل الطلبات الجديدة وحدها، وتستطيع نسيانه من «ذاكرة هذا المشروع».",
         "memory_panel_latin": [
-          "T19:41:17Z"
+          "T20:15:33Z"
         ],
         "memory_panel_iso_timestamp": true,
         "agent_capabilities_text": "أدوات ملفات المشروع متاحة. تنفيذ الأوامر غير مهيأ.",
@@ -409,7 +409,7 @@
           "write_file",
           "ok",
           "txt",
-          "act-ef8e4aee921e4d18"
+          "act-4d3fb338c5964883"
         ],
         "agent_stream_hashes": 1,
         "agent_stream_json_blocks": 1,
@@ -467,19 +467,19 @@
         "mobile_console_errors": []
       },
       "timings_ms": {
-        "open_to_idle": 625,
-        "dom_content_loaded": 94,
-        "first_api_response": 109,
-        "create_project": 81,
-        "create_session": 161,
-        "ask_to_answer": 110,
-        "create_agent_session": 225,
-        "agent_write_to_answer": 418,
-        "agent_request_to_approval": 889,
-        "approval_to_answer": 624,
-        "mobile_open_to_idle": 592,
-        "mobile_setup": 296,
-        "mobile_ask_to_answer": 122
+        "open_to_idle": 591,
+        "dom_content_loaded": 70,
+        "first_api_response": 79,
+        "create_project": 94,
+        "create_session": 133,
+        "ask_to_answer": 107,
+        "create_agent_session": 242,
+        "agent_write_to_answer": 341,
+        "agent_request_to_approval": 898,
+        "approval_to_answer": 537,
+        "mobile_open_to_idle": 561,
+        "mobile_setup": 291,
+        "mobile_ask_to_answer": 130
       }
     },
     "single-page": {
@@ -488,38 +488,38 @@
           "id": "sp_open",
           "viewport": "desktop",
           "ok": true,
-          "ms": 597
+          "ms": 559
         },
         {
           "id": "sp_question_field",
           "viewport": "desktop",
           "ok": true,
-          "ms": 87
+          "ms": 69
         },
         {
           "id": "sp_enter_answers",
           "viewport": "desktop",
           "ok": false,
-          "ms": 8089,
+          "ms": 8064,
           "error": "page.waitForFunction: Timeout 8000ms exceeded."
         },
         {
           "id": "sp_open",
           "viewport": "mobile",
           "ok": true,
-          "ms": 617
+          "ms": 587
         },
         {
           "id": "sp_question_field",
           "viewport": "mobile",
           "ok": true,
-          "ms": 72
+          "ms": 77
         },
         {
           "id": "sp_enter_answers",
           "viewport": "mobile",
           "ok": false,
-          "ms": 8047,
+          "ms": 8037,
           "error": "page.waitForFunction: Timeout 8000ms exceeded."
         }
       ],
@@ -544,31 +544,31 @@
         }
       },
       "timings_ms": {
-        "sp_open_desktop": 597,
-        "sp_open_mobile": 616
+        "sp_open_desktop": 559,
+        "sp_open_mobile": 587
       }
     }
   },
   "timings_ms": {
     "model_time": "zero_by_scripted_provider",
     "current": {
-      "open_to_idle": 625,
-      "dom_content_loaded": 94,
-      "first_api_response": 109,
-      "create_project": 81,
-      "create_session": 161,
-      "ask_to_answer": 110,
-      "create_agent_session": 225,
-      "agent_write_to_answer": 418,
-      "agent_request_to_approval": 889,
-      "approval_to_answer": 624,
-      "mobile_open_to_idle": 592,
-      "mobile_setup": 296,
-      "mobile_ask_to_answer": 122
+      "open_to_idle": 591,
+      "dom_content_loaded": 70,
+      "first_api_response": 79,
+      "create_project": 94,
+      "create_session": 133,
+      "ask_to_answer": 107,
+      "create_agent_session": 242,
+      "agent_write_to_answer": 341,
+      "agent_request_to_approval": 898,
+      "approval_to_answer": 537,
+      "mobile_open_to_idle": 561,
+      "mobile_setup": 291,
+      "mobile_ask_to_answer": 130
     },
     "single-page": {
-      "sp_open_desktop": 597,
-      "sp_open_mobile": 616
+      "sp_open_desktop": 559,
+      "sp_open_mobile": 587
     }
   },
   "error_code_coverage": {
@@ -890,7 +890,7 @@
       "file": "01-empty-desktop.png",
       "step": "empty_state",
       "viewport": "1366x768",
-      "bytes": 61620
+      "bytes": 61641
     },
     {
       "file": "02-text-answer-desktop.png",
@@ -914,7 +914,7 @@
       "file": "04-agent-steps-desktop.png",
       "step": "agent_write",
       "viewport": "1366x768",
-      "bytes": 56774
+      "bytes": 57492
     },
     {
       "file": "05-approval-desktop.png",
@@ -938,7 +938,7 @@
       "file": "08-mobile-answer.png",
       "step": "mobile_ask_text",
       "viewport": "390x844",
-      "bytes": 47150
+      "bytes": 47140
     }
   ],
   "measurement_limits": [
