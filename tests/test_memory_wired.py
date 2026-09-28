@@ -1051,7 +1051,7 @@ def test_a_forgotten_value_does_not_linger_in_the_probe_session_history_through_
     assert len(after_forget) >= 2 and not any(value in m for m in after_forget), after_forget
 
 
-class _EchoingDelegate:
+class _BankEchoingDelegate:
     """نموذجٌ يردّد ما رآه في الذاكرة: جوابُه على فحص العرض يحمل القيمةَ فيبقى في تاريخ الجلسة بعد نسيانها."""
     name, is_local = "echo", True
 
@@ -1064,7 +1064,7 @@ class _EchoingDelegate:
         return Response(f"أتذكّر: {self.value}" if seen else "لا أتذكّر شيئًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64)
 
 
-class _ToolEchoingDelegate(_EchoingDelegate):
+class _ToolEchoingDelegate(_BankEchoingDelegate):
     """نموذجٌ يردّد القيمةَ في وسيط نداءِ أداة لا في نصّه: يطلب propose_memory بها حين يراها، ويجيب نصًّا بلا قيمةٍ بعد ردّ الأداة."""
     name = "tool-echo"
 
@@ -1077,7 +1077,7 @@ class _ToolEchoingDelegate(_EchoingDelegate):
         return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64)
 
 
-class _CallIdEchoingDelegate(_EchoingDelegate):
+class _CallIdEchoingDelegate(_BankEchoingDelegate):
     """نموذجٌ يردّد القيمةَ معرّفًا لنداء الأداة لا نصًّا ولا وسيطًا: يبقى المعرّفُ في نداءه وفي ردّ الأداة عليه في الجلسة."""
     name = "call-id-echo"
 
@@ -1120,7 +1120,7 @@ def test_a_forgotten_value_echoed_inside_a_tool_call_argument_in_the_reused_sess
     assert any(f.endswith("in the model's own earlier reply") for f in report["failures"]), report["failures"]
 
 
-def test_the_model_s_own_echo_of_a_forgotten_value_in_the_reused_session_fails_the_scenario(tmp_path):
+def test_the_memory_bank_fails_a_scenario_whose_model_echoes_a_forgotten_value_in_the_reused_session(tmp_path):
     """ملاحظةُ Codex على #129 (الجولة التاسعة عشرة): النموذجُ الذي يردّد القيمةَ في جوابه على فحص العرض قبل النسيان يُبقيها في
     الجلسة المعادة رسالةَ مساعد، وكان فحصُ الغياب يقرأ كتلَ الذاكرة في رسائل المالك وحدها فيمرّ النسيانُ والقيمةُ تبلغ النموذج؛
     صار يقرأ الطلبَ كلَّه ويسمّي الصدى."""
@@ -1131,7 +1131,7 @@ def test_the_model_s_own_echo_of_a_forgotten_value_in_the_reused_session_fails_t
         {"op": "forget", "project": "A", "ref": "m1"},
         {"expect": "context", "project": "A", "question": "ما رقم الجواز؟", "absent": [value], "present": []},
     ]}
-    report = run_wired_scenario(scenario, tmp_path / "w", delegate=_EchoingDelegate(value))
+    report = run_wired_scenario(scenario, tmp_path / "w", delegate=_BankEchoingDelegate(value))
     assert not report["passed"] and report["context_exposures"] == 1, report
     assert any(f.endswith("in the model's own earlier reply") for f in report["failures"]), report["failures"]
 
@@ -1653,7 +1653,7 @@ def test_a_same_project_absence_failure_in_an_isolation_scenario_is_not_counted_
     ]}
     assert _foreign(scenario, 4, value, set()) and _foreign(scenario, 3, other, set()), "شاهدٌ من مشروعٍ آخر أجنبيّ"
     assert not _foreign(scenario, 3, value, set()) and not _foreign(scenario, 4, other, {"m2"}), "شاهدٌ لا يحمله مشروعٌ آخر ليس أجنبيًّا"
-    report = run_wired_scenario(scenario, tmp_path / "w", delegate=_EchoingDelegate(value))
+    report = run_wired_scenario(scenario, tmp_path / "w", delegate=_BankEchoingDelegate(value))
     assert not report["passed"] and any(f.endswith("in the model's own earlier reply") for f in report["failures"]), report
     assert report["leaks"] == 0, "صدى عنصرٍ من المشروع نفسِه ليس تسرّبًا بين المشاريع"
     own = {"id": "isolation_own_item_named_absent", "category": "isolation", "steps": scenario["steps"][:2] + scenario["steps"][3:]}
@@ -1783,7 +1783,7 @@ def test_a_failed_local_forget_or_the_model_s_echo_is_not_a_leak_though_another_
     from evaluation.memory_runner import recount_leakage, run_scenario, run_wired_scenario
     from memory.store import MemoryStore
     value, scenario = _TWIN, _twin(_IN_B, _FORGET_A, check={"expect": "context", "question": "متى الاجتماع؟"})
-    echoed = run_wired_scenario(scenario, tmp_path / "w", delegate=_EchoingDelegate(value))
+    echoed = run_wired_scenario(scenario, tmp_path / "w", delegate=_BankEchoingDelegate(value))
     assert echoed["failures"] and all(f.endswith("in the model's own earlier reply") for f in echoed["failures"]), echoed
     assert echoed["leaks"] == 0, "صدى النموذج في جلسة A ليس ما خدمته الذاكرة"
     assert recount_leakage({"metrics": {"leakage": 0}, "results": [echoed]}, {"scenarios": [scenario]})["metrics"]["leakage"] == 0
