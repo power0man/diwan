@@ -269,6 +269,32 @@ def test_an_untracked_python_file_makes_the_tree_dirty_but_an_untracked_report_d
     assert cb.tree_state(repo)["changed_paths"] == ["tracked.txt"]
 
 
+def test_tampered_bytecode_in_the_tree_s_pycache_is_not_loaded_once_bytecode_is_isolated(tmp_path, monkeypatch):
+    """ملاحظةُ Codex الثالثة على #157: ملفُّ `.pyc` متجاهَلٌ في git ومبنيٌّ بوضع unchecked-hash يُحمَّل بدل المصدر المتتبَّع والحالةُ
+    «نظيفة». تحت `sys.pycache_prefix` خاصٍّ لا يُقرأ `__pycache__` الشجرة، فيُحمَّل المصدر."""
+    import importlib, importlib.util, py_compile, sys as _sys, uuid
+    name = f"budget_probe_{uuid.uuid4().hex[:8]}"
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    source = pkg / f"{name}.py"
+    source.write_text('VALUE = "source"\n', encoding="utf-8")
+    evil = tmp_path / "evil.py"
+    evil.write_text('VALUE = "tampered"\n', encoding="utf-8")
+    monkeypatch.setattr(_sys, "pycache_prefix", None)
+    monkeypatch.setattr(cb, "_PYCACHE_PREFIX", None)
+    py_compile.compile(str(evil), cfile=importlib.util.cache_from_source(str(source)), dfile=str(source),
+                       invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
+    monkeypatch.syspath_prepend(str(pkg))
+    importlib.invalidate_caches()
+    assert importlib.import_module(name).VALUE == "tampered", "الثغرةُ التي يُغلقها العزل: الـpyc المزوَّر يُحمَّل بدل المصدر"
+    monkeypatch.delitem(_sys.modules, name)
+    prefix = cb.isolate_bytecode()
+    assert _sys.pycache_prefix == prefix and prefix.startswith(("/tmp", "/home", "/private", "/var"))
+    importlib.invalidate_caches()
+    assert importlib.import_module(name).VALUE == "source"
+    monkeypatch.delitem(_sys.modules, name)
+
+
 def test_the_cli_writes_the_report_and_summarises_it(monkeypatch, tmp_path, capsys):
     _fake_tokenizers(monkeypatch)
     hub_file, _ = _fake_hub(monkeypatch, tmp_path)

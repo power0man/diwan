@@ -67,6 +67,7 @@ LIMITS = [
     "the_arabic_token_tax_is_one_fixed_paragraph_pair_not_a_corpus_statistic",
     "the_context_window_is_the_provider_constant_context_tokens_not_a_measurement_of_the_served_model",
     "the_hub_tokenizer_named_for_the_engine_is_a_proxy_the_ollama_tag_qwen3_5_9b_is_a_service_name_not_an_artifact_digest_so_the_pinned_hub_revision_is_not_bound_to_the_served_model_s_embedded_tokenizer",
+    "bytecode_is_read_and_written_under_a_private_pycache_prefix_so_a_stale_or_tampered_pyc_in_the_tree_s___pycache___is_never_loaded_but_a_product_module_imported_before_the_audit_started_is_out_of_its_reach",
 ]
 
 
@@ -205,6 +206,22 @@ def _findings(report: dict) -> list[dict]:
     return found
 
 
+_PYCACHE_PREFIX: str | None = None
+
+
+def isolate_bytecode() -> str:
+    """يقرأ بايثون ويكتب الـbytecode تحت مجلّدٍ خاصّ بهذه العملية (`sys.pycache_prefix`) لا تحت `__pycache__` في الشجرة: ملفُّ
+    `.pyc` متجاهَلٌ في git ومبنيٌّ بوضع `unchecked-hash` كان يُحمَّل بدل `webui/server.py` المتتبَّع والحالةُ «نظيفة»، فتُقاس
+    سجلّاتُ أدواتٍ ليست في HEAD باسمه (ملاحظة Codex الثالثة على #157). يُنادى قبل أول استيرادٍ لوحدة منتج؛ وما استُورد قبله
+    خارجُ متناوله (حدٌّ معلَن)."""
+    global _PYCACHE_PREFIX
+    if _PYCACHE_PREFIX is None:
+        import tempfile
+        _PYCACHE_PREFIX = tempfile.mkdtemp(prefix="diwan-context-budget-pycache-")
+    sys.pycache_prefix = _PYCACHE_PREFIX
+    return _PYCACHE_PREFIX
+
+
 def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str, dict] | None = None,
           window: int | None = None) -> dict:
     """التقريرُ كاملًا بعدّاداتٍ محقونة (اسمٌ ← دالّةٌ تعدّ رموزَ نصّ). بلا عدّادٍ يُرفض: لا رقمَ بلا مرمِّز."""
@@ -215,6 +232,7 @@ def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str,
         # حديثة إلى إيداعٍ غيرِ إيداعها؛ الأداةُ تقيس النسخةَ التي تعمل منها وحدها (ملاحظة Codex على #157)
         raise Refused("root_is_not_this_checkout", f"الأداةُ تقيس النسخةَ التي تعمل منها ({ROOT})، لا {root}")
     window = context_window() if window is None else window
+    isolate_bytecode()                                  # قبل أول استيرادٍ لوحدة منتج
     texts = runtime_texts()
     reading = reading_set(root, counters)
     envelope = _text_entry(texts["envelope"], counters)
@@ -229,7 +247,7 @@ def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str,
     report = {
         "schema_version": SCHEMA_VERSION, "tool": TOOL,
         "generated_at": _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat(),
-        "commit": _commit(root), "tree_state": tree_state(root),
+        "commit": _commit(root), "tree_state": tree_state(root), "bytecode_isolated": sys.pycache_prefix == _PYCACHE_PREFIX,
         "tokenizers": tokenizer_sources or {name: {"source": "injected"} for name in counters},
         "context_window_tokens": window,
         "reading_set": reading, "reading_set_totals": _sum(reading, counters),
