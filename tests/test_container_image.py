@@ -33,6 +33,13 @@ def test_the_smoke_runs_offline_and_expects_the_declared_exit():
     assert "permissions:\n  contents: read\n" in WORKFLOW
 
 
+def test_the_offline_smoke_expects_the_ui_step_without_an_engine():
+    """خطوةُ الواجهة تشغّل serve_ui.py فعلًا ببصمة المحرّك (#175)، والحاويةُ تُشغَّل بلا شبكة فلا محرّك: الخطوةُ تُسمّي بصمتَها
+    البديلة `ui_ready_without_engine`. فانتظارُ `ui_ready` هنا يُسقط الفحصَ على عطبٍ لا وجود له، وانتظارُ غيرِ «ok» يُخفي عطبًا."""
+    assert '"engine": ("unavailable", "engine_unreachable")' in WORKFLOW
+    assert '"ui": ("ok", "ui_ready_without_engine")' in WORKFLOW
+
+
 def test_the_expected_steps_are_the_ones_launch_check_emits():
     expected = dict(re.findall(r'"(\w+)": \("(?:ok|unavailable)", (?:"(\w+)"|None)\)', WORKFLOW))
     assert set(expected) == {"runtime", "morphology", "engine", "agent_turn", "policies", "ui"}

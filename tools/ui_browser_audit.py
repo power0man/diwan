@@ -68,7 +68,15 @@ MEMORY_DONE = "حُفظ ما طلبتَ في ذاكرة المشروع بعد م
 MAX_TEXT_CHARS = 240
 MAX_SHOTS = 10
 MAX_SHOT_BYTES = 250 * 1024
-ABSOLUTE_PATH = re.compile(r"(?:^|[\s\"'(=:])(?:/home/|/Users/|/root/|/tmp/|/var/folders/|/private/|/opt/|[A-Za-z]:\\)")
+# مسارٌ مطلق أيًّا كان جذرُه: «/» في أول النصّ أو بعد فراغٍ أو علامة تنصيصٍ أو «(» أو «=» أو «:» أو «,» أو «[» يتبعها مقطع
+# (لا «//» فذاك عنوانُ URL)، و«~/»، وحرفُ قرصٍ في ويندوز بشرطةٍ أيًّا كانت، ومسارُ UNC، و«file://». والمساراتُ النسبية
+# في المستودع (docs/probe/…، webui/static/app.js:57) وعناوينُ http(s) تمرّ.
+ABSOLUTE_PATH = re.compile(
+    r"(?:^|[\s\"'(=:,\[])/(?!/)[^\s/\"'<>]"
+    r"|(?:^|[\s\"'(=:,\[])~/"
+    r"|(?:^|[^A-Za-z0-9])[A-Za-z]:[\\/]"
+    r"|(?:^|[\s\"'(=])\\\\[^\\\s]"
+    r"|file://", re.IGNORECASE)
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
 
 MEASUREMENT_LIMITS = [
@@ -385,14 +393,18 @@ def evidence_guard(evidence: dict, shots_dir: Path | None = None) -> list[str]:
     return violations
 
 
-def axe_problem(axe: dict | None, requested: bool) -> str | None:
-    """طُلب axe فلم يعمل في كل حالةٍ فُحصت: رمزُه المسمّى (`axe_unavailable` أو `axe_failed`)، فلا يُكتب دليلٌ يبدو نظيفًا
-    وهو لم يُفحص. وبلا طلبٍ لا حكم: الدليلُ يقول `not_run` صراحةً."""
+def axe_problem(axe: dict | None, requested: bool, journeys: tuple[str, ...] | list[str] = JOURNEYS) -> str | None:
+    """طُلب axe فلم يعمل في كل حالةٍ فُحصت: رمزُه المسمّى (`axe_unavailable` أو `axe_failed`)؛ أو عمل في بعض الرحلات دون
+    بعض فبقيت رحلةٌ مطلوبة بلا حالةٍ فُحصت (`axe_journey_unaudited`)، كرحلة الصفحة الموحّدة وهي هدفُ القبول. فلا يُكتب
+    دليلٌ يبدو نظيفًا وهو لم يُفحص. وبلا طلبٍ لا حكم: الدليلُ يقول `not_run` صراحةً."""
     if not requested:
         return None
     axe = axe or {}
     if axe.get("status") != "run" or axe.get("errors") or not axe.get("states"):
         return axe.get("code") or "axe_failed"
+    audited = {state.get("journey") for state in axe["states"]}
+    if any(journey not in audited for journey in journeys):
+        return "axe_journey_unaudited"
     return None
 
 
@@ -527,7 +539,7 @@ def main(argv: list[str] | None = None) -> int:
     if status == 3:
         print(json.dumps({"status": "unavailable", "code": raw.get("code", "chromium_missing")}))
         return 3
-    problem = axe_problem(raw.get("axe"), bool(args.axe))
+    problem = axe_problem(raw.get("axe"), bool(args.axe), journeys)
     if problem:
         print(json.dumps({"status": "failed", "code": problem, "errors": (raw.get("axe") or {}).get("errors", [])[:3]},
                          ensure_ascii=False))

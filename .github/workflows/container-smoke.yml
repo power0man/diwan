@@ -38,7 +38,7 @@ jobs:
           got = {s["step"]: (s["status"], s["code"]) for s in report["steps"]}
           want = {"runtime": ("ok", None), "morphology": ("ok", "camel_ready"),
                   "engine": ("unavailable", "engine_unreachable"), "agent_turn": ("ok", "mechanism_only"),
-                  "policies": ("unavailable", "corpus_missing"), "ui": ("ok", "ui_ready")}
+                  "policies": ("unavailable", "corpus_missing"), "ui": ("ok", "ui_ready_without_engine")}
           bad = {k: (got.get(k), v) for k, v in want.items()
                  if got.get(k) is None or got[k][0] != v[0] or (v[1] and got[k][1] != v[1])}
           assert int(sys.argv[1]) == 3 == report["exit_code"], f"exit {sys.argv[1]} / {report['exit_code']}"

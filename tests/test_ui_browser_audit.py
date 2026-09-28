@@ -144,6 +144,23 @@ def test_the_evidence_guard_refuses_paths_mail_long_text_and_oversized_shots(tmp
     assert f"too_many_screenshots:{audit.MAX_SHOTS + 1}" in audit.evidence_guard(many)
 
 
+ABSOLUTE = ["/workspace/private/secret", "see /mnt/data", "(/etc/passwd)", "path=/srv/project", "at:/opt/x",
+            "~/diwan/notes", "C:\\Users\\me", "D:/data/x", "file:///tmp/x", "FILE://host/share", "\\\\server\\share",
+            "[/var/lib/x]"]
+NOT_ABSOLUTE = ["https://example.org/a/b", "http://127.0.0.1:8000/api", "<origin>/api",
+                "docs/probe/ui-browser-audit-20260928/01-empty-desktop.png", "webui/static/app.js:57", "1366x768",
+                "1/2", "GET / ← 200", "and/or", "T18:17:31Z", "a11y-label"]
+
+
+def test_the_evidence_guard_refuses_any_absolute_path_and_passes_urls_and_repo_paths():
+    """ملاحظة Codex على #175: الحارسُ كان يعدّ بادئاتٍ بعينها (/home/ و/tmp/…) فيمرّ /workspace و/mnt و/etc و/srv؛ صار
+    يلتقط أيَّ مسارٍ مطلق، و~/، وحرفَ القرص بشرطتيه، وUNC، وfile://؛ ولا يلتقط عنوانَ URL ولا مسارًا نسبيًّا في المستودع."""
+    missed = [text for text in ABSOLUTE if audit.evidence_guard({"x": text}) != ["absolute_path:$.x"]]
+    assert missed == [], missed
+    flagged = [text for text in NOT_ABSOLUTE if audit.evidence_guard({"x": text})]
+    assert flagged == [], flagged
+
+
 def test_the_evidence_names_its_limits_and_counts_each_journey():
     raw = {"journeys": {"current": {"steps": [{"id": "open", "ok": True}, {"id": "ask", "ok": False}],
                                     "checks": {}, "timings_ms": {"ask_to_answer": 5}},
@@ -225,8 +242,14 @@ def test_the_audited_server_is_the_real_app_answering_with_the_scripted_provider
 
 def test_an_axe_that_did_not_run_refuses_the_evidence(tmp_path, monkeypatch, capsys):
     """ملاحظة Codex على #175: طُلب axe فلم يعمل (ملفٌّ غائب أو سكربتٌ غيرُ صالح) فلا يُكتب دليلٌ يبدو نظيفًا."""
-    ran = {"status": "run", "states": [{"state": "empty-desktop"}], "violations": [], "errors": []}
+    ran = {"status": "run", "violations": [], "errors": [],
+           "states": [{"journey": "current", "state": "empty-desktop"}, {"journey": "single-page", "state": "sp-empty-mobile"}]}
     assert audit.axe_problem(ran, True) is None
+    # ملاحظة Codex على #175: رحلةٌ مطلوبة بلا حالةٍ فحصها axe (الصفحةُ الموحّدة هدفُ القبول) لا يغطّيها نجاحُ غيرها
+    only_current = {**ran, "states": ran["states"][:1]}
+    assert audit.axe_problem(only_current, True, ["current", "single-page"]) == "axe_journey_unaudited"
+    assert audit.axe_problem(only_current, True, ["single-page"]) == "axe_journey_unaudited"
+    assert audit.axe_problem(only_current, True, ["current"]) is None
     assert audit.axe_problem({"status": "not_run"}, False) is None
     assert audit.axe_problem({"status": "failed", "code": "axe_unavailable", "errors": ["ENOENT"]}, True) == "axe_unavailable"
     assert audit.axe_problem({**ran, "errors": ["axe is not defined"]}, True) == "axe_failed"

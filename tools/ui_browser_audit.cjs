@@ -142,7 +142,7 @@ function axeFailed(axe, code, error) {
   axe.errors.push(short(error && error.message || error));
 }
 
-async function runAxe(page, state, axe) {
+async function runAxe(page, state, axe, journeyName = "current") {
   if (!config.axe_path) return;
   let source;
   try {source = fs.readFileSync(config.axe_path, "utf8");}
@@ -155,7 +155,8 @@ async function runAxe(page, state, axe) {
         targets: v.nodes.slice(0, 3).map(n => String(n.target.join(" ")).slice(0, 60))})), passes: run.passes.length, incomplete: run.incomplete.length};
     });
     axe.version = result.version;
-    axe.states.push({state, violations: result.violations.length, passes: result.passes, incomplete: result.incomplete});
+    axe.states.push({journey: journeyName, state, violations: result.violations.length, passes: result.passes,
+                     incomplete: result.incomplete});
     for (const v of result.violations) {
       const known = axe.violations.find(x => x.id === v.id);
       if (known) {known.nodes = Math.max(known.nodes, v.nodes); if (!known.states.includes(state)) known.states.push(state);}
@@ -556,7 +557,7 @@ async function currentMobile(browser, journey, shots, axe) {
 
 // — رحلةُ الصفحة الموحّدة (قبول #166): افتح ← اكتب في حقل السؤال ← Enter ← جواب، بلا إنشاء شيء —
 
-async function singlePage(browser, journey, viewportName) {
+async function singlePage(browser, journey, viewportName, axe) {
   const {context, page, seen, url} = await open(browser, `single-page-${viewportName}`, viewportName);
   const vp = viewportName, checks = journey.checks[viewportName] = {}, t = journey.timings;
   try {
@@ -575,6 +576,8 @@ async function singlePage(browser, journey, viewportName) {
       checks.question_field_in_first_screen = !!box && box.y + box.height <= VIEWPORTS[vp].height;
       checks.question_field_name = short(await field.evaluate(el => el.labels?.[0]?.textContent || el.getAttribute("aria-label") || el.placeholder || ""), 60);
     });
+    // axe على الصفحة الموحّدة نفسِها: الحالةُ الأولى، ثم بعد الجواب إن ظهر
+    await runAxe(page, `sp-empty-${vp}`, axe, "single-page");
     await journey.step("sp_enter_answers", vp, async () => {
       if (!field) throw new Error("no_question_field");
       const started = Date.now();
@@ -583,6 +586,7 @@ async function singlePage(browser, journey, viewportName) {
       await page.keyboard.press("Enter");
       await page.waitForFunction(m => document.body.innerText.includes(m), config.texts.answer_marker, {timeout: 8000});
       t[`sp_enter_to_answer_${vp}`] = Date.now() - started;
+      await runAxe(page, `sp-answer-${vp}`, axe, "single-page");
     });
     checks.notice_after_enter = short(await page.locator("[role=status],[aria-live]").first().innerText().catch(() => ""));
   } finally {
@@ -610,8 +614,8 @@ async function singlePage(browser, journey, viewportName) {
     }
     if (config.journeys.includes("single-page")) {
       const journey = new Journey("single-page");
-      await singlePage(browser, journey, "desktop");
-      await singlePage(browser, journey, "mobile");
+      await singlePage(browser, journey, "desktop", raw.axe);
+      await singlePage(browser, journey, "mobile", raw.axe);
       raw.journeys["single-page"] = journey.toJSON();
     }
   } finally {
