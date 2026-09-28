@@ -66,6 +66,23 @@ def test_forgetting_without_a_residue_check_is_refused():
     _refused(bank, "residue_unchecked")
 
 
+def test_a_receipt_asserted_in_another_project_or_before_the_forget_is_rejected():
+    """ملاحظةُ Codex على #129 (الجولة الخامسة والثلاثون): إيصالٌ لمرجعٍ في A يُفحص في B، أو يُفحص قبل نسيان مرجعه، كان يمرّ
+    المدقّقَ ثم يحكم المُشغِّلان «receipts 0 != 1» على مخزنٍ صحيح فيُعدّ البنكُ المعطوب انحدارًا في المنتج."""
+    bank, scenario = _scenario("forget_001")
+    steps = scenario["steps"]
+    receipt = next(s for s in steps if s.get("expect") == "receipt")
+    receipt["project"] = "B"
+    _refused(bank, "receipt_project_mismatch")
+    bank, scenario = _scenario("forget_001")
+    steps = scenario["steps"]
+    receipt = next(s for s in steps if s.get("expect") == "receipt")
+    forget = next(s for s in steps if s.get("op") == "forget")
+    steps.remove(receipt)
+    steps.insert(steps.index(forget), receipt)                       # الإيصالُ قبل النسيان
+    _refused(bank, "receipt_before_forget")
+
+
 def test_forgetting_without_a_receipt_check_is_refused():
     bank, scenario = _scenario("forget_001")
     scenario["steps"] = [s for s in scenario["steps"] if s.get("expect") != "receipt"]

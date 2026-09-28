@@ -605,6 +605,12 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
             if kind == "receipt":
                 if step["ref"] not in refs or type(step["count"]) is not int or step["count"] < 1:
                     _reject(where, "receipt_invalid", "إيصالٌ لمرجعٍ معرَّف بعددٍ موجب")
+                # الإيصالُ يُفحص في مشروع مرجعه وبعد نسيانه، وإلا حُكم على مخزنٍ صحيح بـ«receipts 0 != 1» وعُدّ انحدارًا
+                # (ملاحظة Codex على #129، الجولة الخامسة والثلاثون)
+                if step["project"] != refs[step["ref"]]:
+                    _reject(where, "receipt_project_mismatch", "إيصالٌ يُفحص في غير مشروع مرجعه")
+                if step["ref"] not in forgotten:
+                    _reject(where, "receipt_before_forget", "إيصالٌ قبل نسيان مرجعه")
                 receipted.add(step["ref"])
             if step.get("quarantined") not in (None, True):
                 _reject(where + ".quarantined", "quarantined_invalid", "True وحدها")
