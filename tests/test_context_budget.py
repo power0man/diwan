@@ -84,6 +84,20 @@ def test_totals_and_the_share_of_the_window_are_sums_and_ratios():
         assert configuration["share_of_context_window"] == {"ws": round(total / 1000, 4)}
 
 
+def test_the_registries_builder_closes_both_apps_it_opens(monkeypatch):
+    """ملاحظةُ Codex على #157: `_registries` تفتح تطبيقَين ولم تكن تغلقهما، فكلُّ `audit()` في عمليةٍ طويلة يسرّب أربعةَ واصفات."""
+    import webui.server as server
+    closed = []
+
+    class Closing(server.LocalApp):
+        def close(self):
+            closed.append(self.root)
+            super().close()
+    monkeypatch.setattr(server, "LocalApp", Closing)
+    found = cb._registries()
+    assert set(found) == {c[0] for c in cb.CONFIGURATIONS} and len(closed) == 2 and len(set(closed)) == 2
+
+
 def test_the_runtime_prefix_is_built_by_the_web_app_s_own_registries_per_configuration():
     """ملاحظةُ Codex على #157: مخطّطاتُ الأدوات ليست قائمةً ثابتة؛ التطبيقُ يحذف أداتَي التنفيذ بلا Docker ويضيف البحثَ والتحليل
     حين يُضبطان ويبني سجلّاتٍ أخرى للأنماط. فتُقاس كلُّ تهيئةٍ كما يبنيها `LocalApp.mode_registry` نفسُه."""

@@ -3,7 +3,7 @@
 ميزانيتان تُقاسان معًا لأنهما تختلفان قارئًا:
 - **مجموعةُ قراءة §٠** (`AGENTS.md` و`docs/INDEX.md` و`docs/VISION.md` كما يسمّيها `tools/context_index.py`): ما يقرؤه العميلُ
   في بداية كل جلسة. مرمِّزاتُ Claude وCodex وGemini ليست عامّة، فيُقاس بمرمِّز العامل المحلّي المسجَّل (`openai/gpt-oss-20b`)
-  وبمرمِّز المحرّك المعتمَد؛ والتقديرُ القائم في الفهرس (الأحرفُ على ثلاثة) يُقابَل بالمقيس فيُعرف انحرافُه.
+  وبمرمِّز المحرّك المعتمَد؛ والتقديرُ القائم في الفهرس (الأحرفُ على ٢٫٤، القاسمُ المعايَر بقياس ٢٧ سبتمبر) يُقابَل بالمقيس فيُعرف انحرافُه.
 - **سابقةُ التشغيل**: ما يبلغ المحرّكَ (qwen3.5:9b عبر Ollama) قبل رسالة المستخدم في كل جولة — نصُّ النظام الوكيل والنصّي
   وأنماطُه، ومخطّطاتُ الأدوات كما يسلسلها `providers/ollama_codec.py`، وغلافُ المدخل الوكيل — ونصيبُها من نافذة السياق
   المضبوطة في المزوّد (`CONTEXT_TOKENS`).
@@ -134,12 +134,17 @@ def _registries() -> dict[str, tuple]:
                                    provider_factory=provider, agent_provider_factory=provider,
                                    web_search=object() if searched else None)
                 for searched in (False, True)}
-        for name, execution, searched, analysis, mode in CONFIGURATIONS:
-            app = apps[searched]
-            project = app.project(app.dispatch({"action": "create_project", "name": f"budget-{name}"})["id"])
-            app.agent_workspace(project)
-            app.agent_backends[project.name].update(execution_enabled=execution, analysis_enabled=analysis)
-            found[name] = app.mode_registry(project, mode).specs()
+        try:
+            for name, execution, searched, analysis, mode in CONFIGURATIONS:
+                app = apps[searched]
+                project = app.project(app.dispatch({"action": "create_project", "name": f"budget-{name}"})["id"])
+                app.agent_workspace(project)
+                app.agent_backends[project.name].update(execution_enabled=execution, analysis_enabled=analysis)
+                found[name] = app.mode_registry(project, mode).specs()
+        finally:
+            # كلُّ تطبيقٍ يمسك واصفَ جذرٍ وقفلًا؛ بلا إغلاقٍ يزيد كلُّ قياسٍ في عمليةٍ طويلة أربعةَ واصفات (ملاحظة Codex على #157)
+            for app in apps.values():
+                app.close()
     return found
 
 
