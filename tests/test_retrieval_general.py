@@ -15,7 +15,7 @@ from evaluation.retrieval_general import (BANK, MIN_QUERIES, ROOT, RetrievalBank
                                           arm_rows_from_channels, design_effect, hit_interval, load_bank, paired,
                                           rows_from_report, rrf, run, summaries, wilson)
 
-EVIDENCE = ROOT / "docs" / "probe" / "g3-hybrid-vs-bm25-20260927.json"
+EVIDENCE = ROOT / "docs" / "probe" / "g3-hybrid-vs-bm25-20260928.json"
 
 
 def test_the_bank_is_frozen_general_and_large_enough():
