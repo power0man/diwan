@@ -26,7 +26,7 @@ from agent.actions import ActionRefused, ActionStore
 from agent.journal import Journal, JournalRefused, _directory, _identity, _open_directory, _read, _regular
 from agent.loop import SYSTEM, _result_message, run_agent
 from agent.registry import ToolContext, ToolRegistry
-from conversation.agent_stop import StopSignals
+from conversation.agent_stop import StopSignals, input_digest
 from conversation.session import ConversationError, _decode, _fail, _id, _text
 from core import filelock
 from core.budget import Budget
@@ -452,10 +452,7 @@ class AgentSession:
             _fail("state_corrupt", "فشل التحقق من حالة الجلسة أو سجلها")
 
     def _input_digest(self, turn):
-        return digest({"config": digest(self.config), "turn_id": turn["turn_id"],
-                       "text": turn["text"], "initial_messages": turn["initial_messages"],
-                       **({"thinking": True} if turn.get("thinking") else {}),
-                       **({"memory": turn["memory"]} if "memory" in turn else {})})
+        return input_digest(self.config, turn)
 
     def _verify_result(self, turn, entries):
         result = turn["result"]
