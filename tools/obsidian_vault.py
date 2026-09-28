@@ -321,13 +321,14 @@ def _owner_mark(mine: tuple | None, record: dict | None, default: str) -> str | 
     return mine[1] if mine[1] in _OWNER_MARKS else None
 
 
-def _owner_suffix(existing: str, rendered: str, record: dict | None, completed: bool) -> str | None:
+def _owner_suffix(existing: str, rendered: str, record: dict | None) -> str | None:
     """لاحقةُ المالك على سطر خطوته: ما بعد النصّ الذي كتبته الأداةُ نفسُها لهذه الخطوة كما حفظه السجلّ — فلا يُنزع إلا ما كتبته هي
     بايتًا بايتًا (علامةُ تأجيلٍ زالت أو تغيّر سببُها، وعلامةُ الإنجاز قبل التأجيل)، وكلُّ ما عداه للمالك: تأجيلٌ كتبه بيده، وتعليقٌ بعد
     علامة الأداة ولو بقوسين. و`None` إن عدّل النصَّ الذي كتبته الأداةُ نفسَه فيُنقل سطرُه كاملًا (ملاحظاتُ Codex على #161: الخامسة
     والسادسة والسابعة والثالثة عشرة والرابعة عشرة).
     وبلا سجلٍّ لهذه الخطوة القاعدةُ المحافِظة: لا يُنزع إلا ما تولّده الخطةُ الآن بنصّه — علامةُ تأجيلها الحالية، ثم علامةُ الإنجاز
-    قبل التأجيل إن كانت منجزة — وما سواه يبقى للمالك ولو كان علامةَ تأجيلٍ قديمة."""
+    قبل التأجيل إن تلتها مباشرةً، أيًّا كانت علامةُ الخطوة الآن: فالإنجازُ يُعاد حسابُه من علامتها الحالية وحدها، ومالكٌ رفع «[x]» بيده
+    لا تبقى على سطره «أُنجزت قبل التأجيل» (ملاحظة Codex الخامسة عشرة على #161) — وما سواه يبقى للمالك ولو كان علامةَ تأجيلٍ قديمة."""
     if record is not None:
         written = record["text"]
         return existing[len(written):] if existing.startswith(written) else None
@@ -338,7 +339,7 @@ def _owner_suffix(existing: str, rendered: str, record: dict | None, completed: 
     rest = existing[len(body):]
     if label and rest.startswith(label):
         rest = rest[len(label):]
-        if completed and rest.startswith(DONE_BEFORE_DEFERRAL):
+        if rest.startswith(DONE_BEFORE_DEFERRAL):
             rest = rest[len(DONE_BEFORE_DEFERRAL):]
     return rest
 
@@ -385,7 +386,7 @@ def migrate_steps(existing: str, rendered: str, state: dict | None = None) -> tu
         suffix = ""
         if mine is not None:
             # لاحقةُ المالك هي ما زاد على النصّ الذي كتبته الأداةُ نفسُها (`_owner_suffix`)؛ وما عُدّل داخل ذلك النصّ يُنقل سطرًا كاملًا
-            owned = _owner_suffix(mine[3], tail, record, completed)
+            owned = _owner_suffix(mine[3], tail, record)
             if owned is not None:
                 suffix = owned
             else:

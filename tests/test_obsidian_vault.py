@@ -444,6 +444,40 @@ def test_a_missing_or_corrupt_steps_record_never_deletes_the_owner_s_text(repo, 
     assert PAUSED + "\n" in text and f"- [ ] {TWO} (سألت المورّد)\n" in text and "ق٦٨" not in text
 
 
+@pytest.mark.parametrize("unchecked", ["[ ]", "⏸"], ids=["blank", "paused"])
+@pytest.mark.parametrize("damage", ["missing", "corrupt", "wrong_schema"])
+def test_an_uncheck_after_a_completed_deferral_leaves_no_stale_completion_text_without_a_record(repo, vault, damage, unchecked):
+    """ملاحظةُ Codex على #161 (الجولة الخامسة عشرة): بلا سجلّ (مفقود أو تالف أو بغير صيغته) كانت «— أُنجزت قبل التأجيل» التي كتبتها
+    الأداةُ على خطوةٍ منجزةٍ مؤجَّلة لا تُنزع إلا إن بقيت منجزة؛ فالمالكُ الذي رفع «[x]» بيده («[ ]» أو «⏸») يعود سطرُه «⏸» وهو يقول
+    إنها أُنجزت. صارت تُنزع متى تلت علامةَ التأجيل الحالية بنصّها مباشرةً، أيًّا كانت العلامةُ الآن، ويُعاد حسابُ الإنجاز من العلامة
+    الحالية وحدها؛ ونصُّ المالك بعدها يبقى."""
+    why = {"by": "ق٦٨", "until": "2026-10-19", "reason": "الجهازُ غيرُ قابلٍ للوصول (Nitro)"}
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    plan["owner_steps"].append({"order": 2, "guide_id": "G5", "title": "تجهيز Nitro", "time": "ساعة", "cost": "$0", "deferred": why})
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    steps = vault / "Diwan/خطواتي.md"
+    paused = f"- ⏸ {TWO}{_label(why)}"
+    steps.write_text(steps.read_text(encoding="utf-8").replace(paused + "\n", f"- [x] {TWO}{_label(why)}\n"), encoding="utf-8")
+    ov.build(vault, root=repo)                                  # الأداةُ تكتب «أُنجزت قبل التأجيل» بنفسها
+    done = f"- [x] {TWO}{_label(why)}{ov.DONE_BEFORE_DEFERRAL}"
+    assert done + "\n" in steps.read_text(encoding="utf-8")
+    # ثم يرفع المالكُ علامتَه بيده ويكتب بعدها، ويضيع السجلّ
+    steps.write_text(steps.read_text(encoding="utf-8").replace(
+        done + "\n", f"- {unchecked} {TWO}{_label(why)}{ov.DONE_BEFORE_DEFERRAL} (لم أُكملها بعد)\n"), encoding="utf-8")
+    state = vault / "Diwan" / ov.STEPS_STATE
+    if damage == "missing":
+        state.unlink()
+    else:
+        state.write_text("{لا json" if damage == "corrupt" else '{"schema_version": 1, "steps": {"2. تجهيز Nitro": {"mark": "⏸"}}}',
+                         encoding="utf-8")
+    ov.build(vault, root=repo)
+    text = steps.read_text(encoding="utf-8")
+    assert f"{paused} (لم أُكملها بعد)\n" in text, "لا «أُنجزت قبل التأجيل» على خطوةٍ رفع المالكُ علامتَها، ونصُّه باقٍ"
+    assert ov.DONE_BEFORE_DEFERRAL not in text and "[x]" not in text
+    assert ov.build(vault, root=repo)["migrated"] == [] and steps.read_text(encoding="utf-8") == text
+
+
 @pytest.mark.parametrize("instruction", [ov.LEGACY_INSTRUCTION, ov.INSTRUCTION], ids=["legacy", "current"])
 def test_an_annotation_appended_to_the_instruction_line_is_carried_not_deleted(repo, vault, instruction):
     """ملاحظةُ Codex على #161 (الجولة الحادية عشرة): سطرُ التعليمات كان يُعرف ببدايته «علّم الخطوة حين تنتهي»، فتعليقٌ ألحقه المالكُ
