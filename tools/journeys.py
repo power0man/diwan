@@ -14,10 +14,10 @@ UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع
 (`unreadable_entries`)، أو رحلةٌ بلا تاريخ قد تقع قبل القطع (`undated_journeys_before_cut`)، أو قطعٌ بين جلستين تداخلت
 كتابتُهما في يومه (`baseline_cut_order_unknown`). فالنسبةُ حينئذٍ `null` بسببها المسمّى لا رقمٌ نظيفُ المظهر.
 
-وبوابةُ م٢ («من ٣٠ إلى ٥٠ رحلة، والإنجاز +١٠ نقاط فوق خط أساس م١») تُقرأ أعدادُها من الخطة ولا تُخترع، وتقارن فوجَين
-بالترتيب نفسِه: الثلاثين الأولى، والرحلاتِ بعدها حتى الخمسين (`m2_gate.comparison`). فلا يدخل المقارنةَ ما قبل م١ ولا
-الثلاثون نفسُها، ولا نسبةَ للمقارنة حتى يكتمل فوجُها (`too_few_comparison_journeys`). أمّا `cumulative_completion_rate`
-فتراكميةٌ لكل ما حُفظ، ولا تدخل بوابة.
+وبوابةُ م٢ («من ٣٠ إلى ٥٠ رحلة، والإنجاز +١٠ نقاط فوق خط أساس م١») تُقرأ أعدادُها ونافذةُ م٢ من الخطة ولا تُخترع، وتقارن
+فوجَين بالترتيب نفسِه: الثلاثين الأولى في م١، وأولَ عشرين (٥٠ − ٣٠) مؤرَّخةٍ داخل نافذة م٢ (`m2_gate.comparison`). فلا
+يدخل المقارنةَ شيءٌ من م١؛ وما بعد الثلاثين في م١ لا يدخل فوجًا ويُعدّ في `m2_gate.m1_after_baseline`؛ ولا نسبةَ للمقارنة
+حتى يكتمل فوجُها (`too_few_comparison_journeys`). أمّا `cumulative_completion_rate` فتراكميةٌ لكل ما حُفظ، ولا تدخل بوابة.
 
 لا يحمل التقريرُ نصًّا ولا مسارًا ولا معرّفَ مشروعٍ أو جلسةٍ أو جولة ولا اسمًا ولا بصمةَ نصّ ولا جوابَ نموذج ولا شيئًا من
 محتوى local_only: أعدادٌ ورموزُ آلةٍ وتواريخُ وأزمنةٌ فقط. والأداةُ تفحص تقريرَها بذلك قبل كتابته، فتقريرٌ فيه نصٌّ أو معرّفٌ
@@ -130,7 +130,8 @@ MEASUREMENT_LIMITS = (
     "within_a_utc_day_journeys_are_ordered_by_their_session_s_creation_mtime_then_their_position_in_it_and_a_cut_between_sessions_whose_writes_overlap_or_tie_that_day_is_refused_not_guessed",
     "an_unreadable_entry_or_an_undated_journey_that_may_fall_before_the_cut_blocks_baseline_ready_and_nulls_the_completion_rate_it_would_bias",
     "a_later_write_to_a_session_that_holds_baseline_journeys_can_undate_or_reorder_them_so_the_baseline_is_the_first_report_that_says_baseline_ready",
-    "the_m2_comparison_cohort_is_the_journeys_after_the_first_30_in_the_same_order_up_to_the_count_the_plan_s_m2_gate_records_and_has_no_rate_until_it_is_complete",
+    "the_m2_comparison_cohort_is_the_first_journeys_dated_inside_the_m2_window_the_plan_records_as_many_as_the_m2_gate_count_minus_the_30_of_the_baseline_and_has_no_rate_until_it_is_complete",
+    "m1_journeys_after_the_baseline_30_belong_to_neither_cohort_and_are_counted_in_m1_after_baseline",
     "the_cumulative_completion_rate_covers_every_stored_journey_pre_m1_and_baseline_included_and_is_not_an_input_of_any_gate",
 )
 CARRIES = "counts_machine_codes_utc_dates_and_durations_only"
@@ -145,8 +146,8 @@ JOURNEY_FIELDS = frozenset({"mode", "outcome", "status", "error_code", "steps", 
 BASELINE_RULE = ("the_first_30_dated_journeys_inside_the_m1_window_by_utc_date_then_session_creation_then_turn_"
                  "on_at_least_2_distinct_utc_dates_with_no_unreadable_entry_no_undated_journey_before_the_cut_"
                  "and_a_provable_order_at_the_cut")
-M2_RULE = ("the_journeys_after_the_first_30_in_the_same_order_up_to_the_plan_s_m2_count_must_beat_the_baseline_cohort_"
-           "completion_rate_by_the_plan_s_points_and_the_cumulative_rate_is_not_an_input")
+M2_RULE = ("the_first_journeys_inside_the_m2_window_by_the_same_order_as_many_as_the_plan_s_m2_count_minus_30_must_beat_"
+           "the_baseline_cohort_completion_rate_by_the_plan_s_points_and_the_cumulative_rate_is_not_an_input")
 
 _DIR = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | os.O_NOFOLLOW
 _FILE = os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_NONBLOCK", 0)
@@ -463,18 +464,21 @@ def plan_window(plan: Path | None = None) -> tuple[str | None, str | None]:
 
 
 def plan_m2_gate(plan: Path | None = None) -> dict | None:
-    """عددُ رحلات بوابة م٢ ونقاطُها كما تسجّلهما الخطة، أو None لما لم تسجّله أو خالف خطَّ الأساس: البوابةُ لا تُخترع."""
+    """عددُ رحلات بوابة م٢ ونقاطُها ونافذةُ م٢ كما تسجّلها الخطة، أو None لما لم تسجّله أو خالف خطَّ الأساس: البوابةُ لا
+    تُخترع. وفوجُ المقارنة بعددِ البوابة ناقصَ الثلاثين («من ٣٠ إلى ٥٠» ← عشرون)."""
     try:
         phases = json.loads(Path(PLAN if plan is None else plan).read_text(encoding="utf-8"))["phases"]
-        gates = next(item for item in phases if isinstance(item, dict) and item.get("id") == M2)["gate"]
-        found = next(match for gate in gates if isinstance(gate, str)
+        phase = next(item for item in phases if isinstance(item, dict) and item.get("id") == M2)
+        found = next(match for gate in phase["gate"] if isinstance(gate, str)
                      for match in [M2_GATE.search(gate.translate(_ARABIC_DIGITS))] if match)
     except (OSError, ValueError, KeyError, TypeError, StopIteration):
         return None
     base, target, points = (int(value) for value in found.groups())
-    if base != BASELINE_MIN_DATED_JOURNEYS or target <= base:
+    m2_from, m2_until = _day(phase.get("start")), _day(phase.get("end"))
+    if base != BASELINE_MIN_DATED_JOURNEYS or target <= base or m2_from is None or m2_until is None or m2_from > m2_until:
         return None
-    return {"source": "plan_m2_gate", "target_journeys": target, "required_points": points}
+    return {"source": "plan_m2_gate", "target_journeys": target, "required_points": points,
+            "comparison_size": target - base, "window": {"from": m2_from, "until": m2_until}}
 
 
 def baseline_window(start: str | None = None, end: str | None = None) -> dict:
@@ -533,39 +537,42 @@ def _may_fall_in(journey: dict, start: str, end: str) -> bool:
     return not (final < start or first > end)
 
 
-def _m2_gate(records: list[dict], start: str | None, gate: dict | None, baseline: dict | None,
+def _m2_gate(records: list[dict], window: dict, gate: dict | None, baseline: dict | None,
              baseline_missing: list[str], unreadable: list[str]) -> tuple[dict, dict]:
-    """بوابةُ م٢: الرحلاتُ بعد الثلاثين الأولى بترتيبها نفسِه حتى عدد الخطة، ونسبتُها مقابل نسبة الفوج الأول.
-    ولا يدخلها ما قبل م١ ولا الثلاثون نفسُها ولا النسبةُ التراكمية؛ ولا حكمَ قبل أن يكتمل فوجُها ويُعرف موضعُ كلِّ رحلةٍ فيه."""
+    """بوابةُ م٢: أولُ الرحلات المؤرَّخة داخل نافذة م٢ بالترتيب نفسِه، بعددِ الخطة ناقصَ الثلاثين، ونسبتُها مقابل نسبة
+    الفوج الأول. فلا يدخلها ما قبل م٢ (ولا ما بعد الثلاثين في م١: يُعدّ في m1_after_baseline) ولا ما بعدها ولا النسبةُ
+    التراكمية؛ ولا حكمَ قبل أن يكتمل فوجُها ويُعرف موضعُ كلِّ رحلةٍ فيه."""
     block = {"rule": M2_RULE, "source": None, "baseline_journeys": BASELINE_MIN_DATED_JOURNEYS, "target_journeys": None,
-             "required_points": None, "comparison": None, "baseline_completion_rate": None,
-             "comparison_completion_rate": None, "improvement_points": None, "passed": None, "missing": []}
+             "required_points": None, "comparison_size": None, "window": None,
+             "m1_after_baseline": None if baseline is None else baseline["window_dated_journeys"] - baseline["journeys"],
+             "comparison": None, "baseline_completion_rate": None, "comparison_completion_rate": None,
+             "improvement_points": None, "passed": None, "missing": []}
     if gate is None:
         block["missing"].append("comparison_gate_unknown")
     else:
         block.update(gate)
-    if start is None:
+    if window["from"] is None or window["until"] is None:
         block["missing"].append("baseline_window_unknown")
-    if gate is None or start is None:
+    if block["missing"]:
         return block, {}
-    target = gate["target_journeys"]
-    sequence = sorted((journey for journey in records if journey["date"] is not None and start <= journey["date"]),
-                      key=_order)
-    after = sequence[BASELINE_MIN_DATED_JOURNEYS:target]
-    full = len(sequence) >= target
-    cut = sequence[target - 1]["date"] if full else None
-    undated = sum(1 for journey in records
-                  if journey["date"] is None and _may_fall_in(journey, start, cut or "9999-12-31"))
-    order_unknown = full and _cut_order_unknown(sequence[:target], sequence[target:], cut)
+    size, m2_from, m2_until = gate["comparison_size"], gate["window"]["from"], gate["window"]["until"]
+    in_m2 = sorted((journey for journey in records
+                    if journey["date"] is not None and m2_from <= journey["date"] <= m2_until), key=_order)
+    after = in_m2[:size]
+    full = len(after) == size
+    cut = after[-1]["date"] if full else m2_until
+    undated = sum(1 for journey in records if journey["date"] is None and _may_fall_in(journey, m2_from, cut))
+    order_unknown = full and _cut_order_unknown(after, in_m2[size:], cut)
     outcomes, dates = _tally(after)
-    blockers = ((["baseline_not_ready"] if baseline_missing else []) + unreadable
+    blockers = ((["baseline_not_ready"] if baseline_missing else [])
+                + (["baseline_window_overlaps_m2"] if window["until"] >= m2_from else []) + unreadable
                 + ([UNDATED_BEFORE_CUT] if undated else []) + (["comparison_cut_order_unknown"] if order_unknown else [])
                 + (["too_few_comparison_journeys"] if not full else []))
     rate, reason = _rate(outcomes, len(after), blockers)
-    block["comparison"] = {"first_position": BASELINE_MIN_DATED_JOURNEYS + 1, "last_position": target,
-                           "journeys": len(after), "by_date": dict(sorted(dates.items())), "by_outcome": outcomes,
-                           "completion_rate": rate, "completion_rate_unavailable_reason": reason,
-                           "cut_date": cut, "cut_order_known": not order_unknown, "undated_journeys_before_cut": undated}
+    block["comparison"] = {"journeys": len(after), "window_dated_journeys": len(in_m2),
+                           "by_date": dict(sorted(dates.items())), "by_outcome": outcomes, "completion_rate": rate,
+                           "completion_rate_unavailable_reason": reason, "cut_date": cut if full else None,
+                           "cut_order_known": not order_unknown, "undated_journeys_before_cut": undated}
     block["missing"] = blockers
     if not blockers:
         # الحكمُ بالأعداد لا بالنسبتين المقرَّبتين: نسبةُ المقارنة ناقصُ نسبة الفوج الأول، بالنقاط المئوية
@@ -615,7 +622,7 @@ def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit
         missing.append("too_few_dated_journeys")
     if cohort is None or cohort["distinct_dates"] < BASELINE_MIN_DISTINCT_DATES:
         missing.append("too_few_distinct_dates")
-    m2_gate, compared = _m2_gate(records, start if end is not None else None, gate, cohort, missing, unreadable)
+    m2_gate, compared = _m2_gate(records, window, gate, cohort, missing, unreadable)
     journeys = sorted(({**{key: value for key, value in journey.items() if not key.startswith("_")},
                         "baseline_position": positions.get(id(journey)),
                         "comparison_position": compared.get(id(journey))} for journey in records),

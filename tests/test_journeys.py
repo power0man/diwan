@@ -640,15 +640,25 @@ def test_a_timestamp_tie_at_the_cut_is_unprovable_and_a_tie_on_one_side_of_it_is
 @pytest.fixture(scope="module")
 def m2_store(tmp_path_factory):
     """P عشرون معطوبةً قبل م١؛ وQ1 خمس عشرة منجزة وQ2 ستٌّ منجزة وتسعٌ مبتورة (الثلاثون الأولى: ٠٫٧)؛ وR1 وR2 عشرٌ
-    منجزةٌ لكلٍّ (الرحلات ٣١–٥٠: ١٫٠)؛ وS خمسٌ معطوبةٌ بعد الخمسين. فالنسبةُ التراكمية ٤١/٧٥ أدنى من الفوجين كليهما."""
+    منجزةٌ لكلٍّ (أولُ عشرين في م٢: ١٫٠)؛ وS خمسٌ معطوبةٌ بعدها. فالنسبةُ التراكمية ٤١/٧٥ أدنى من الفوجين كليهما."""
     return text_store(tmp_path_factory.mktemp("m2").resolve() / "ui",
                       {"P": ["error"] * 20, "Q1": ["complete"] * 15, "Q2": ["complete"] * 6 + ["truncated"] * 9,
                        "R1": ["complete"] * 10, "R2": ["complete"] * 10, "S": ["error"] * 5})
 
 
+PLAN_PHASES = {phase["id"]: phase
+               for phase in json.loads((ROOT / "docs" / "PLAN-20260926.json").read_text(encoding="utf-8"))["phases"]}
+# أولُ يومٍ في نافذة م٢ كما تسجّله الخطة، الساعةَ العاشرة بتوقيت UTC
+M2_DAY = datetime.strptime(PLAN_PHASES["م٢"]["start"], "%Y-%m-%d").replace(hour=10, tzinfo=timezone.utc).timestamp()
+M2_END = datetime.strptime(PLAN_PHASES["م٢"]["end"], "%Y-%m-%d").replace(hour=10, tzinfo=timezone.utc).timestamp()
+# P قبل م١؛ وQ1 وQ2 في نافذة خطّ الأساس (أكتوبر)؛ وR1 وR2 وS في أول أيام م٢ تباعًا
 M2_TIMES = {"P": (DAY_ONE - 5 * DAY, DAY_ONE - 5 * DAY + HOUR / 2), "Q1": (DAY_ONE, DAY_ONE + HOUR / 2),
-            **{role: (DAY_ONE + day * DAY, DAY_ONE + day * DAY + HOUR / 2)
-               for day, role in enumerate(("Q2", "R1", "R2", "S"), 1)}}
+            "Q2": (DAY_ONE + DAY, DAY_ONE + DAY + HOUR / 2),
+            **{role: (M2_DAY + day * DAY, M2_DAY + day * DAY + HOUR / 2) for day, role in enumerate(("R1", "R2", "S"))}}
+
+
+def day_of(timestamp: float) -> str:
+    return datetime.fromtimestamp(timestamp, timezone.utc).date().isoformat()
 
 
 def compared_of(report) -> list[tuple]:
@@ -656,17 +666,20 @@ def compared_of(report) -> list[tuple]:
                   if j["comparison_position"] is not None)
 
 
-def test_the_m2_gate_compares_journeys_31_to_50_with_the_baseline_not_the_cumulative_rate(m2_store, tmp_path, capsys):
-    def m2(**options):
-        report = report_of(placed(m2_store, tmp_path, times=M2_TIMES, **options), tmp_path, capsys, *WINDOW)
+def test_the_m2_gate_compares_the_first_twenty_of_m2_with_the_baseline_not_the_cumulative_rate(m2_store, tmp_path, capsys,
+                                                                                               monkeypatch):
+    def m2(*window, **options):
+        report = report_of(placed(m2_store, tmp_path, times=M2_TIMES, **options), tmp_path, capsys,
+                           *(window or WINDOW))
         return report, report["m2_gate"], report["m2_gate"]["comparison"]
 
     full, gate, comparison = m2()
-    assert (gate["source"], gate["baseline_journeys"], gate["target_journeys"], gate["required_points"]) == \
-        ("plan_m2_gate", 30, 50, 10)
+    assert (gate["source"], gate["baseline_journeys"], gate["target_journeys"], gate["required_points"],
+            gate["comparison_size"]) == ("plan_m2_gate", 30, 50, 10, 20)
+    assert gate["window"] == {"from": PLAN_PHASES["م٢"]["start"], "until": PLAN_PHASES["م٢"]["end"]}
     assert full["baseline_ready"] is True and full["baseline"]["cohort"]["completion_rate"] == 0.7
-    assert (comparison["first_position"], comparison["last_position"], comparison["journeys"]) == (31, 50, 20)
-    assert comparison["by_date"] == {"2026-10-03": 10, "2026-10-04": 10} and comparison["completion_rate"] == 1.0
+    assert (comparison["journeys"], comparison["window_dated_journeys"], gate["m1_after_baseline"]) == (20, 25, 0)
+    assert comparison["by_date"] == {day_of(M2_DAY): 10, day_of(M2_DAY + DAY): 10} and comparison["completion_rate"] == 1.0
     assert [position for position, _, _ in compared_of(full)] == list(range(1, 21))
     # البوابةُ تقرأ نسبةَ الفوجين لا التراكمية (٤١/٧٥ ≈ ٠٫٥٥ تُسقطها لو قُرئت)
     assert full["cumulative_completion_rate"] == round(41 / 75, 4)
@@ -677,25 +690,45 @@ def test_the_m2_gate_compares_journeys_31_to_50_with_the_baseline_not_the_cumula
     without, gate_without, _ = m2(drop=("P",))
     assert compared_of(without) == compared_of(full) and gate_without["comparison"] == comparison
     assert gate_without["passed"] is True and without["cumulative_completion_rate"] == round(41 / 55, 4)
-    # الحكمُ بنقاط الخطة: خمسُ المعطوبة داخل الخمسين (S قبل R2) تجعل المقارنةَ ١٥/٢٠، أي +٥ نقاط لا +١٠
-    _, short_gate, short = m2(S=(DAY_ONE + 3 * DAY - HOUR, DAY_ONE + 3 * DAY - HOUR / 2))
+    # الحكمُ بنقاط الخطة: خمسُ المعطوبة داخل العشرين (S قبل R2) تجعل المقارنةَ ١٥/٢٠، أي +٥ نقاط لا +١٠
+    _, short_gate, short = m2(S=(M2_DAY + DAY - HOUR, M2_DAY + DAY - HOUR / 2))
     assert short["completion_rate"] == 0.75 and short_gate["improvement_points"] == 5.0
     assert short_gate["passed"] is False and short_gate["missing"] == []
-    # فوجٌ ناقص (بلا R2: خمسٌ وأربعون) لا نسبةَ له ولا حكم
+    # فوجٌ ناقص (بلا R2: خمس عشرة في م٢) لا نسبةَ له ولا حكم
     _, partial_gate, partial = m2(drop=("R2",))
     assert partial["journeys"] == 15 and partial_gate["missing"] == ["too_few_comparison_journeys"]
     assert (partial["completion_rate"], partial["completion_rate_unavailable_reason"]) == \
         (None, "too_few_comparison_journeys")
     assert partial_gate["passed"] is None and partial_gate["comparison_completion_rate"] is None
-    # قطعُ الخمسين بين جلستين بزمنٍ واحد لا يُثبت ترتيبُه
+    # خمسون كلُّها في م١: لا شيءَ منها يقارَن، والعشرون بعد الثلاثين تُعدّ في m1_after_baseline
+    in_m1 = {"R1": (DAY_ONE + 2 * DAY, DAY_ONE + 2 * DAY + HOUR / 2), "R2": (DAY_ONE + 3 * DAY, DAY_ONE + 3 * DAY + HOUR / 2)}
+    _, m1_gate, m1 = m2(drop=("S",), **in_m1)
+    assert (m1["journeys"], m1_gate["m1_after_baseline"]) == (0, 20)
+    assert m1_gate["missing"] == ["too_few_comparison_journeys"] and m1_gate["passed"] is None
+    # وما بعد نهاية م٢ لا يدخل: R2 بعد النافذة فتبقى R1 وS
+    _, late_gate, late = m2(R2=(M2_END + DAY, M2_END + DAY + HOUR / 2))
+    assert (late["journeys"], late["window_dated_journeys"]) == (15, 15)
+    assert late_gate["missing"] == ["too_few_comparison_journeys"]
+    # قطعُ العشرين بين جلستين بزمنٍ واحد لا يُثبت ترتيبُه
     _, tied_gate, tied = m2(S=M2_TIMES["R2"])
     assert tied_gate["missing"] == ["comparison_cut_order_unknown"] and tied["cut_order_known"] is False
     assert tied_gate["passed"] is None
-    # ولا مقارنةَ بخطّ أساسٍ لم يجهز (نافذةٌ من يومٍ واحد لا تبلغ الثلاثين)
-    report = report_of(placed(m2_store, tmp_path, times=M2_TIMES), tmp_path, capsys,
-                       "--baseline-from", "2026-10-01", "--baseline-until", "2026-10-01")
-    assert report["baseline_ready"] is False and report["m2_gate"]["missing"] == ["baseline_not_ready"]
-    assert report["m2_gate"]["passed"] is None and report["m2_gate"]["comparison"]["completion_rate"] is None
+    # ولا مقارنةَ بخطّ أساسٍ لم يجهز (نافذةٌ من يومٍ واحد لا تبلغ الثلاثين)، ولا بنافذةٍ تداخل م٢
+    report, not_ready, _ = m2("--baseline-from", "2026-10-01", "--baseline-until", "2026-10-01")
+    assert report["baseline_ready"] is False and not_ready["missing"] == ["baseline_not_ready"]
+    assert not_ready["passed"] is None and not_ready["comparison"]["completion_rate"] is None
+    _, overlap, _ = m2("--baseline-from", "2026-10-01", "--baseline-until", PLAN_PHASES["م٢"]["start"])
+    assert overlap["missing"] == ["baseline_window_overlaps_m2"] and overlap["passed"] is None
+    # وخطةٌ بلا نافذة م٢ لا تُخترع لها نافذة
+    plan = json.loads((ROOT / "docs" / "PLAN-20260926.json").read_text(encoding="utf-8"))
+    for phase in plan["phases"]:
+        if phase["id"] == "م٢":
+            del phase["start"]
+    (tmp_path / "plan.json").write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(journeys, "PLAN", tmp_path / "plan.json")
+    _, unknown, _ = m2()
+    assert unknown["source"] is None and unknown["window"] is None and unknown["comparison"] is None
+    assert unknown["missing"] == ["comparison_gate_unknown"] and unknown["passed"] is None
 
 
 def test_the_baseline_window_is_the_m1_phase_the_plan_records_and_is_never_invented(world, tmp_path, capsys,
