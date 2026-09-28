@@ -33,6 +33,17 @@
           "job_id": 109117884370,
           "head": "511579f",
           "result": "unavailable (service_unavailable، unavailable_codes=[response_not_json]): الفهرسُ ونداءاتُ النماذج الستّة كلُّها HTTP 200 وtext/plain و٤ بايتات؛ والفحصُ أخضر لأن الواجهةَ غيرَ المتاحة تنبيهٌ لا سقوط"
+        },
+        {
+          "run_id": 36480357245,
+          "head": "ddab178",
+          "result": "unavailable كسابقه (دمجُ main)"
+        },
+        {
+          "run_id": 36482650241,
+          "job_id": 109131793253,
+          "head": "2e7eb89",
+          "result": "unavailable؛ والطريقةُ والرابطُ المرسَلُ والنهائيُّ مسجَّلةٌ لكل نداء: GET https://models.github.ai/catalog/models وPOST https://models.github.ai/inference/chat/completions، والنهائيُّ هو المرسَلُ نفسُه، والردُّ 200 وtext/plain و٤ بايتات في نحو ٤٠٠ ms لكل نموذج (محاولتان)"
         }
       ],
       "catalog": {
@@ -66,7 +77,12 @@
             "status": 200,
             "content_type": "text/plain",
             "bytes": 4,
-            "top": "not_json"
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
           }
         },
         {
@@ -87,7 +103,12 @@
             "status": 200,
             "content_type": "text/plain",
             "bytes": 4,
-            "top": "not_json"
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
           }
         },
         {
@@ -107,7 +128,12 @@
             "status": 200,
             "content_type": "text/plain",
             "bytes": 4,
-            "top": "not_json"
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
           }
         },
         {
@@ -127,7 +153,12 @@
             "status": 200,
             "content_type": "text/plain",
             "bytes": 4,
-            "top": "not_json"
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
           }
         },
         {
@@ -147,7 +178,12 @@
             "status": 200,
             "content_type": "text/plain",
             "bytes": 4,
-            "top": "not_json"
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
           }
         },
         {
@@ -167,7 +203,12 @@
             "status": 200,
             "content_type": "text/plain",
             "bytes": 4,
-            "top": "not_json"
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
           }
         }
       ],
@@ -177,7 +218,21 @@
         "dns": "models.github.ai يُحلّ إلى موازن GitHub العام (glb-*.github.com)",
         "same_without_token": "الردُّ نفسُه بلا ترويسة تفويض (من صندوق HF)، فالرمزُ لم يغيّر شيئًا مقيسًا",
         "request_checked": "POST https://models.github.ai/inference/chat/completions بـAuthorization: Bearer وContent-Type: application/json؛ وGET https://models.github.ai/catalog/models بـAccept: application/vnd.github+json وX-GitHub-Api-Version: 2022-11-28؛ وpermissions: models: read في المهمّة",
-        "owner_step": "لا يُصلَح من الشيفرة: النقطةُ الموثّقة تردّ صفحةَ «OK» ثابتة. يلزم التحقّقُ من أن GitHub Models ما زال يخدم على models.github.ai لهذا الحساب، أو من نقطته الحالية؛ وإضافةُ نقطةٍ جديدة إلى ALLOWED_HOSTS قرارٌ للمالك"
+        "owner_step": "لا يُصلَح من الشيفرة: النقطةُ الموثّقة تردّ صفحةَ «OK» ثابتة. يلزم التحقّقُ من أن GitHub Models ما زال يخدم على models.github.ai لهذا الحساب، أو من نقطته الحالية؛ وإضافةُ نقطةٍ جديدة إلى ALLOWED_HOSTS قرارٌ للمالك",
+        "recorded_requests": {
+          "catalog": {
+            "method": "GET",
+            "sent": "https://models.github.ai/catalog/models",
+            "final": "https://models.github.ai/catalog/models"
+          },
+          "chat": {
+            "method": "POST",
+            "sent": "https://models.github.ai/inference/chat/completions",
+            "final": "https://models.github.ai/inference/chat/completions"
+          },
+          "source": "last_failure_shapes في تشغيل 36482650241 (2e7eb89)"
+        },
+        "path_not_lost_in_client": "المسارُ والطريقةُ كما وُثّقا مرسَلًا ونهائيًّا (tests/test_external_review.py::test_the_exact_url_and_method_go_out_and_are_recorded_for_chat_and_catalog يثبته بلا شبكة، والتشغيلُ الحيّ سجّله)؛ وcurl من شبكةٍ أخرى (صندوق HF) إلى الرابطين نفسيهما ردّ «OK» نفسَه"
       }
     },
     {
