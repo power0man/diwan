@@ -152,6 +152,32 @@ def test_the_real_repository_builds(tmp_path):
     assert len(list((tmp_path / "vault/Diwan/المهام").glob("*.md"))) == len(plan["tasks"])
 
 
+def test_deferred_plan_entries_are_labelled_and_leave_the_active_checklist(repo, vault):
+    """ملاحظةُ Codex على #161: بندٌ مؤجَّل في الخطة (`deferred` — ق٦٨: Nitro) كان يُعرض في الخزنة عملًا نشطًا: مهمّةً عاديةً على
+    اللوحة، وخطوةً غيرَ معلَّمة في «خطواتي». الآن يُسمّى مؤجَّلًا في ملاحظته وعلى اللوحة، وخطوةُ المالك تنتقل إلى قسمها؛ والخطةُ
+    الحقيقية تؤجّل ح٥ وع٣ ومعايرةَ lm-eval وخطوتَي المالك على Nitro بالحقل نفسِه."""
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    why = {"by": "ق٦٨", "until": "2026-10-19", "reason": "الجهازُ غيرُ قابلٍ للوصول"}
+    plan["tasks"][1]["deferred"] = why
+    plan["owner_steps"].append({"order": 2, "guide_id": "G5", "title": "تجهيز Nitro", "time": "ساعة", "cost": "$0", "deferred": why})
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    out = ov.render(root=repo)
+    label = "مؤجَّلة (ق٦٨ حتى 2026-10-19: الجهازُ غيرُ قابلٍ للوصول)"
+    note = out["المهام/جديد-x.md"]
+    assert "status: deferred" in note.split("---")[1] and f"> ⏸ **{label}**" in note and "status: deferred" not in out["المهام/ك١.md"]
+    board = out["لوحة المراحل.md"]
+    assert f"- ⏸ [[المهام/جديد-x|جديد-x]] ثانية · " in board and label in board and "- [[المهام/ك١|ك١]] مهمّة" in board
+    steps = out["خطواتي.md"]
+    active, postponed = steps.split("## خطواتٌ مؤجَّلة")
+    assert "- [ ] **1. خطوة**" in active and "**2. تجهيز Nitro**" not in active
+    assert f"- ⏸ **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0 — {label}" in postponed
+    real = json.loads((ROOT / ov.PLAN).read_text(encoding="utf-8"))
+    deferred_tasks = sorted(t["id"] for t in real["tasks"] if t.get("deferred"))
+    assert deferred_tasks == sorted(t["id"] for t in real["tasks"] if t["title"].startswith(("G5: تجهيز Nitro", "المشغّل الزائل diwan-live على Nitro", "معايرة المُشغِّل على لوحة عامة")))
+    assert len(deferred_tasks) == 3 and sum(1 for s in real["owner_steps"] if s.get("deferred")) == 2
+    assert any(o["decision"] == "ق٦٨" for o in real.get("overrides", []))
+
+
 def test_every_plan_task_is_on_the_board_of_the_phase_it_declares():
     """اللوحةُ تُبنى من phases[].task_ids وحدها: مهمّةٌ غائبةٌ عن قائمة مرحلتها تُكتب ملاحظتُها وتسقط من اللوحة صامتة
     (ملاحظة Codex على #141 في مهمّتَي ق٦٦ المقسومتين)."""

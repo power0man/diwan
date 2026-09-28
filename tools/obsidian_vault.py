@@ -92,6 +92,13 @@ def _sources(root: Path) -> list[Path]:
     return [f for f in files if f.is_file()]
 
 
+def deferred_label(entry: dict) -> str | None:
+    """بندٌ في الخطة (مهمّةٌ أو خطوةُ مالك) أُرجئ بقرارٍ: `deferred: {by, until, reason}` في `docs/PLAN-20260926.json`. الخزنةُ
+    تسمّيه مؤجَّلًا ولا تعرضه عملًا نشطًا (ق٦٨: Nitro؛ ملاحظة Codex على #161)."""
+    d = entry.get("deferred")
+    return f"مؤجَّلة ({d['by']} حتى {d['until']}: {d['reason']})" if d else None
+
+
 def render(root: Path = ROOT) -> dict[str, str]:
     """ما يجب أن يكون في `Diwan/`: المسارُ النسبيّ ← النصّ."""
     out: dict[str, str] = {}
@@ -106,10 +113,12 @@ def render(root: Path = ROOT) -> dict[str, str]:
     tasks = {t["id"]: t for t in plan["tasks"]}
     link = lambda tid: f"[[المهام/{safe_name(tid)}|{tid}]]"  # noqa: E731
     for t in plan["tasks"]:
+        deferred = deferred_label(t)
         lines = [
             "---", f"id: {t['id']}", f"phase: {t['phase']}", f"assignee: {t['assignee']}", f"block: {t['block']}",
-            f"effort: {t['effort']}", "---", "", f"# {t['id']} — {t['title']}", "",
+            f"effort: {t['effort']}", *(["status: deferred"] if deferred else []), "---", "", f"# {t['id']} — {t['title']}", "",
             f"**المنفّذ:** {ASSIGNEE.get(t['assignee'], t['assignee'])} · **المرحلة:** [[لوحة المراحل#{t['phase']}|{t['phase']}]] · **البلوك:** {t['block']}", "",
+            *([f"> ⏸ **{deferred}**", ""] if deferred else []),
             t.get("description", ""), "", f"**المُخرج:** {t.get('deliverable', '')}", "", f"**دليل القبول:** {t.get('acceptance_evidence', '')}",
         ]
         if t.get("depends_on"):
@@ -126,13 +135,23 @@ def render(root: Path = ROOT) -> dict[str, str]:
         for tid in p["task_ids"]:
             t = tasks.get(tid)
             if t:
-                board.append(f"- {link(tid)} {t['title']} · {ASSIGNEE.get(t['assignee'], t['assignee'])}")
+                deferred = deferred_label(t)
+                board.append(f"- {'⏸ ' if deferred else ''}{link(tid)} {t['title']} · {ASSIGNEE.get(t['assignee'], t['assignee'])}"
+                             + (f" — **{deferred}**" if deferred else ""))
         board.append("")
     out["لوحة المراحل.md"] = "\n".join(board)
     steps = ["# خطواتي", "", "علّم الخطوة حين تنتهي. هذه الملاحظة لك: لا تكتب الأداةُ فوقها بعد إنشائها.", ""]
+    postponed = []
     for s in sorted(plan["owner_steps"], key=lambda s: s["order"]):
         guide = f"[[الأدلة/{s['guide_id']}|{s['guide_id']}]]" if re.fullmatch(r"G\d+", s["guide_id"]) else s["guide_id"]
-        steps.append(f"- [ ] **{s['order']}. {s['title']}** · {guide} · {s['time']} · {s['cost']}")
+        deferred = deferred_label(s)
+        if deferred:
+            # خطوةٌ مؤجَّلة لا تُعرض عملًا نشطًا على المالك (ق٦٨)؛ تُذكر باسمها في قسمها حتى يُعلن استئنافَها
+            postponed.append(f"- ⏸ **{s['order']}. {s['title']}** · {guide} · {s['time']} · {s['cost']} — {deferred}")
+        else:
+            steps.append(f"- [ ] **{s['order']}. {s['title']}** · {guide} · {s['time']} · {s['cost']}")
+    if postponed:
+        steps += ["", "## خطواتٌ مؤجَّلة", "", "لا تُطلب منك الآن؛ تعود إلى القائمة بإشعارك.", "", *postponed]
     out["خطواتي.md"] = "\n".join(steps) + "\n"
     out["ابدأ هنا.md"] = "\n".join([
         f"# {plan['title']}", "", plan["thesis"], "",
