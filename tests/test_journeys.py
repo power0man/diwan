@@ -741,13 +741,18 @@ def test_the_m2_gate_compares_the_first_twenty_of_m2_with_the_baseline_not_the_c
     assert unknown["missing"] == ["comparison_gate_unknown"] and unknown["passed"] is None
 
 
+def published(store, probe: Path, tmp_path: Path, capsys, name: str, *options, **placement):
+    """تشغيلٌ ينشر في docs/probe (المؤقّت): التقريرُ إن كُتب، وإلا (رمزُ الخروج، والسطرُ المطبوع)."""
+    out = probe / f"journeys-{name}.json"
+    code, printed = run(placed(store, tmp_path, times=M2_TIMES, **placement), out, capsys, *options)
+    return (code, printed) if code else json.loads(out.read_text(encoding="utf-8"))
+
+
 def test_a_published_baseline_is_frozen_and_later_runs_compare_against_it(m2_store, probe, tmp_path, capsys):
     frozen_file = probe / "journeys-baseline.json"
 
     def publish(name, *options, **placement):
-        out = probe / f"journeys-{name}.json"
-        code, printed = run(placed(m2_store, tmp_path, times=M2_TIMES, **placement), out, capsys, *options)
-        return (code, printed) if code else json.loads(out.read_text(encoding="utf-8"))
+        return published(m2_store, probe, tmp_path, capsys, name, *options, **placement)
 
     def frozen_digest():
         return hashlib.sha256(frozen_file.read_bytes()).hexdigest()
@@ -802,6 +807,65 @@ def test_a_published_baseline_is_frozen_and_later_runs_compare_against_it(m2_sto
     assert {item["digest"] for item in json.loads(frozen_file.read_text(encoding="utf-8"))["history"]} == \
         {old, refrozen["baseline"]["frozen"]["digest"]}
     assert publish("r9")["baseline"]["frozen"]["state"] == "loaded"
+
+
+@pytest.mark.parametrize("damage", [
+    ("history", [{}]), ("history", [{"digest": 5, "frozen_on": None, "reason": None}]), ("history", "x"),
+    ("history", [{"digest": "abc", "frozen_on": None, "reason": None}]), ("members_digest", "abc"),
+    ("cohort", {"journeys": "30"}), ("window", {"from": "2026-02-30"}), ("refreeze_reason", "سببٌ حرّ"),
+], ids=["empty-entry", "numeric-digest", "not-a-list", "short-digest", "short-members-digest", "count-as-text",
+        "impossible-day", "free-text-reason"])
+def test_a_damaged_frozen_baseline_is_refused_by_name_and_a_refreeze_repairs_it(damage, m2_store, probe, tmp_path,
+                                                                                 capsys):
+    frozen_file = probe / "journeys-baseline.json"
+    assert published(m2_store, probe, tmp_path, capsys, "r1", *WINDOW)["baseline"]["frozen"]["state"] == "frozen_now"
+    artifact = json.loads(frozen_file.read_text(encoding="utf-8"))
+    field, value = damage
+    artifact[field] = {**artifact[field], **value} if isinstance(value, dict) else value
+    frozen_file.write_text(json.dumps(artifact, ensure_ascii=False), encoding="utf-8")
+    # رفضٌ مسمًّى لا أثرٌ خام، ولو بنافذةٍ صريحة
+    for options in ((), WINDOW):
+        assert published(m2_store, probe, tmp_path, capsys, "r2", *options) == \
+            (2, {"status": "refused", "code": "frozen_baseline_unreadable"})
+    # وإعادةُ التجميد بسببٍ تصلحه، وتحفظ بصمةَ ما نُشر قبله
+    repaired = published(m2_store, probe, tmp_path, capsys, "r3", *WINDOW, "--refreeze-baseline", "repaired_after_damage")
+    assert repaired["baseline"]["frozen"]["state"] == "frozen_now"
+    history = json.loads(frozen_file.read_text(encoding="utf-8"))["history"]
+    assert [entry["reason"] for entry in history] == ["repaired_after_damage"]
+    assert published(m2_store, probe, tmp_path, capsys, "r4")["baseline"]["frozen"]["state"] == "loaded"
+
+
+def test_the_report_and_the_frozen_baseline_are_published_together(m2_store, probe, tmp_path, capsys, monkeypatch):
+    frozen_file = probe / "journeys-baseline.json"
+
+    def publish(name, *options):
+        return published(m2_store, probe, tmp_path, capsys, name, *options)
+
+    def boom(*_):
+        raise OSError("injected")
+
+    # التقريرُ لا يُنشر: فلا مجمَّدَ يولد بلا تقريرٍ يشير إليه، ولا مؤقّتَ يبقى
+    monkeypatch.setattr(journeys, "_link", boom)
+    assert publish("r1", *WINDOW) == (2, {"status": "refused", "code": "output_unwritable"})
+    assert sorted(path.name for path in probe.iterdir()) == []
+    monkeypatch.undo()
+    monkeypatch.setattr(journeys, "PROBE_DIR", probe)
+    first = publish("r1", *WINDOW)
+    kept = frozen_file.read_bytes()
+    assert first["baseline"]["frozen"]["digest"] == hashlib.sha256(kept).hexdigest()
+    # إعادةُ تجميدٍ سقط استبدالُها: التقريرُ الجديد يُزال والمجمَّدُ السابق باقٍ كما كان
+    monkeypatch.setattr(journeys, "_swap", boom)
+    assert publish("r2", "--baseline-from", "2026-09-01", "--baseline-until", "2026-10-31",
+                   "--refreeze-baseline", "owner_restart") == (2, {"status": "refused", "code": "baseline_publish_failed"})
+    assert frozen_file.read_bytes() == kept
+    assert sorted(path.name for path in probe.iterdir()) == ["journeys-baseline.json", "journeys-r1.json"]
+    monkeypatch.undo()
+    monkeypatch.setattr(journeys, "PROBE_DIR", probe)
+    assert publish("r2")["baseline"]["frozen"]["state"] == "loaded"
+    # ومجمَّدٌ لا يشير إليه تقريرٌ منشور (يتيم) لا يُحمَّل
+    for report in probe.glob("journeys-r*.json"):
+        report.unlink()
+    assert publish("r3") == (2, {"status": "refused", "code": "frozen_baseline_unpublished"})
 
 
 def test_the_baseline_window_is_the_m1_phase_the_plan_records_and_is_never_invented(world, tmp_path, capsys,

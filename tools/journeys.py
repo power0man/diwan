@@ -32,7 +32,8 @@ UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع
 `output_exists` (لا يُكتب فوق ملفٍّ قائم)، `output_dir_missing`، `output_unwritable`، `baseline_date_invalid`،
 `baseline_window_invalid` (البدءُ بعد النهاية)، `report_leak`؛ ولخطّ الأساس المجمَّد: `baseline_already_frozen`،
 `frozen_baseline_lost` (نُشر تقريرٌ يشير إليه ثم غاب)، `frozen_baseline_changed`، `frozen_baseline_unreadable`،
-`refreeze_reason_invalid`، `refreeze_requires_probe_output`، `refreeze_baseline_not_ready`، `journeys_report_unreadable`.
+`frozen_baseline_unpublished` (لا تقريرَ منشورًا يشير إليه)، `baseline_publish_failed`، `refreeze_reason_invalid`،
+`refreeze_requires_probe_output`، `refreeze_baseline_not_ready`، `journeys_report_unreadable`.
 
 التجميد: أولُ تقريرٍ في docs/probe يجهز فيه خطُّ الأساس يكتب معه `docs/probe/journeys-baseline.json` (النافذةُ ومصدرُها،
 والفوجُ بأعداده ونسبته، وبصمةُ هويّة أعضائه من معرّفاتٍ عشوائية، وإصدارُ الأداة). وكلُّ تشغيلٍ بعده يقارن به ولا يعيد
@@ -47,6 +48,7 @@ UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 from collections import Counter
 from datetime import datetime, timezone
@@ -778,8 +780,51 @@ def _artifact(report: dict, members: list[dict], *, today: str, previous: dict |
             "measurement_limits": list(FROZEN_LIMITS)}
 
 
+def _count(value) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def _code_or_none(value) -> bool:
+    return value is None or (isinstance(value, str) and bool(MACHINE_CODE.fullmatch(value)) and not HEX_RUN.search(value))
+
+
+def _history_entry(item) -> bool:
+    return (isinstance(item, dict) and set(item) == {"digest", "frozen_on", "reason"}
+            and isinstance(item["digest"], str) and bool(SHA256.fullmatch(item["digest"]))
+            and (item["frozen_on"] is None or _day(item["frozen_on"]) is not None) and _code_or_none(item["reason"]))
+
+
+def _frozen_schema(value) -> bool:
+    """مخطّطُ خطّ الأساس المجمَّد كلُّه، حقلًا حقلًا ونوعًا نوعًا، قبل أيّ استعمال."""
+    if not isinstance(value, dict) or set(value) != FROZEN_FIELDS:
+        return False
+    window, cohort, history = value["window"], value["cohort"], value["history"]
+    return (value["schema_version"] == SCHEMA_VERSION and value["tool"] == TOOL and value["task"] == TASK
+            and value["kind"] == "journeys_baseline"
+            and (value["commit"] is None or (isinstance(value["commit"], str) and bool(COMMIT.fullmatch(value["commit"]))))
+            and _day(value["frozen_on"]) is not None
+            and isinstance(window, dict) and set(window) == {"from", "from_source", "until", "until_source"}
+            and _day(window["from"]) is not None and _day(window["until"]) is not None
+            and window["from"] <= window["until"]
+            and window["from_source"] in ("option", "plan_m1_phase") and window["until_source"] in ("option", "plan_m1_phase")
+            and isinstance(cohort, dict) and set(cohort) == set(FROZEN_COHORT_FIELDS)
+            and cohort["journeys"] == BASELINE_MIN_DATED_JOURNEYS and _count(cohort["journeys"])
+            and _count(cohort["distinct_dates"]) and cohort["distinct_dates"] >= BASELINE_MIN_DISTINCT_DATES
+            and isinstance(cohort["by_date"], dict)
+            and all(_day(day) is not None and _count(n) for day, n in cohort["by_date"].items())
+            and isinstance(cohort["by_outcome"], dict) and _count(cohort["by_outcome"].get("completed"))
+            and all(_code_or_none(name) and name is not None and _count(n) for name, n in cohort["by_outcome"].items())
+            and isinstance(cohort["completion_rate"], (int, float)) and not isinstance(cohort["completion_rate"], bool)
+            and 0 <= cohort["completion_rate"] <= 1 and _day(cohort["cut_date"]) is not None
+            and isinstance(value["members_digest"], str) and bool(SHA256.fullmatch(value["members_digest"]))
+            and _code_or_none(value["refreeze_reason"])
+            and isinstance(history, list) and all(_history_entry(item) for item in history)
+            and value["measurement_limits"] == list(FROZEN_LIMITS))
+
+
 def _load_frozen(path: Path) -> dict | None:
-    """خطُّ الأساس المجمَّد، أو None إن لم يُجمَّد قطّ؛ وما لا يُقرأ أو خالف مخطّطَه رفضٌ مسمًّى لا إعادةُ حساب."""
+    """خطُّ الأساس المجمَّد، أو None إن لم يُجمَّد قطّ؛ وما لا يُقرأ أو خالف مخطّطَه `frozen_baseline_unreadable`، لا أثرٌ خام
+    ولا إعادةُ حساب."""
     try:
         data = path.read_bytes()
     except FileNotFoundError:
@@ -788,21 +833,14 @@ def _load_frozen(path: Path) -> dict | None:
         raise Refused("frozen_baseline_unreadable") from None
     try:
         value = json.loads(data.decode("utf-8"))
-        cohort, window = value["cohort"], value["window"]
-        valid = (set(value) == FROZEN_FIELDS and value["kind"] == "journeys_baseline"
-                 and set(cohort) == set(FROZEN_COHORT_FIELDS) and cohort["journeys"] == BASELINE_MIN_DATED_JOURNEYS
-                 and isinstance(cohort["completion_rate"], (int, float)) and isinstance(cohort["by_outcome"], dict)
-                 and set(window) == {"from", "from_source", "until", "until_source"}
-                 and _day(window["from"]) and _day(window["until"]) and SHA256.fullmatch(value["members_digest"])
-                 and isinstance(value["history"], list))
-        if valid:
-            _only_codes(value, _FROZEN_HEX)
-    except (ValueError, UnicodeError, KeyError, TypeError, AttributeError, Refused):
+        valid = _frozen_schema(value)
+    except (ValueError, UnicodeError, RecursionError):
         valid = False
     if not valid:
         raise Refused("frozen_baseline_unreadable")
-    return {**value, "digest": hashlib.sha256(data).hexdigest(),
-            "known": {hashlib.sha256(data).hexdigest(), *(item["digest"] for item in value["history"])}}
+    # بعد المخطّط لا شيءَ يُفترض: كلُّ حقلٍ هنا ثبت نوعُه وشكلُه
+    own = hashlib.sha256(data).hexdigest()
+    return {**value, "digest": own, "known": {own, *(item["digest"] for item in value["history"])}}
 
 
 def _pointers(probe: Path, frozen_name: str) -> set[str]:
@@ -821,11 +859,38 @@ def _pointers(probe: Path, frozen_name: str) -> set[str]:
     return found
 
 
-def _replace(path: Path, data: bytes) -> None:
-    """كتابةٌ ذرّية فوق ملفٍّ قائم (إعادةُ التجميد بطلبٍ صريح وحدها)."""
-    temporary = path.with_name(f".{path.name}.tmp")
-    _write(temporary, data)
-    os.replace(temporary, path)
+# عمليتا النشر الذرّيتان، باسمين في الوحدة ليُحقن فيهما العطبُ في الاختبار
+_link = os.link
+_swap = os.replace
+
+
+def _publish(out: Path, report: bytes, frozen_path: Path | None = None, frozen: bytes | None = None) -> None:
+    """ينشر التقريرَ وخطَّ الأساس المجمَّد معًا: يُكتب كلاهما مؤقّتًا كاملًا في دليله، ثم يُنشر التقريرُ بإنشاءٍ حصريٍّ ذرّيّ
+    (وصلةٌ صلبة لا تكتب فوق قائم)، ثم يُستبدل المجمَّدُ ذرّيًّا. فإن سقط الاستبدالُ أُزيل التقريرُ الجديد وبقي المجمَّدُ
+    السابق كما كان (أو غائبًا)؛ فلا يبقى مجمَّدٌ بلا تقريرٍ نشر بصمتَه."""
+    staged = [out.with_name(f".{out.name}.{os.getpid()}.tmp")]
+    if frozen is not None:
+        staged.append(frozen_path.with_name(f".{frozen_path.name}.{os.getpid()}.tmp"))
+    try:
+        _write(staged[0], report)
+        if frozen is not None:
+            _write(staged[1], frozen)
+        try:
+            _link(staged[0], out)
+        except FileExistsError:
+            raise Refused("output_exists") from None
+        except OSError as error:
+            raise Refused("output_unwritable") from error
+        if frozen is not None:
+            try:
+                _swap(staged[1], frozen_path)
+            except OSError:
+                out.unlink(missing_ok=True)
+                raise Refused("baseline_publish_failed") from None
+    finally:
+        for path in staged:                 # ما نُشر صار وصلةً أو استُبدل؛ والمؤقّتُ يُزال، وقد لا يكون كُتب أصلًا
+            with contextlib.suppress(OSError):
+                path.unlink()
 
 
 def _write(out: Path, data: bytes) -> None:
@@ -870,12 +935,19 @@ def main(argv=None) -> int:
             raise Refused("refreeze_requires_probe_output")
         requested = baseline_window(args.baseline_from, args.baseline_until)
         pointers = _pointers(PROBE_DIR, FROZEN_NAME)
-        frozen = _load_frozen(frozen_path)
+        try:
+            frozen = _load_frozen(frozen_path)
+        except Refused:
+            if reason is None:
+                raise
+            frozen = None                   # إعادةُ التجميد تستبدل مجمَّدًا تالفًا، وبصماتُ ما نُشر تبقى في history
         if frozen is None and pointers and reason is None:
             raise Refused("frozen_baseline_lost")
         if frozen is not None and reason is None:
             if pointers - frozen["known"]:
                 raise Refused("frozen_baseline_changed")
+            if frozen["digest"] not in pointers:
+                raise Refused("frozen_baseline_unpublished")
             if ((args.baseline_from is not None or args.baseline_until is not None)
                     and (requested["from"], requested["until"]) != (frozen["window"]["from"], frozen["window"]["until"])):
                 raise Refused("baseline_already_frozen")
@@ -891,20 +963,19 @@ def main(argv=None) -> int:
                                       [UNREADABLE_ENTRIES] if report["unreadable"]["projects"] or
                                       report["unreadable"]["sessions"] else [])
             artifact = _artifact(report, members, today=today.isoformat(), previous=frozen, reason=reason,
-                                 lost=pointers if frozen is None else set())
+                                 lost=pointers - (frozen["known"] if frozen is not None else set()))
             _only_codes(artifact, _FROZEN_HEX)
             data = (json.dumps(artifact, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
             state.update(state="refrozen" if frozen is not None else "frozen_now",
                          digest=hashlib.sha256(data).hexdigest(), frozen_on=today.isoformat(), refreeze_reason=reason)
-            check_report(report)
-            (_replace if frozen is not None else _write)(frozen_path, data)
         elif reason is not None:
             raise Refused("refreeze_baseline_not_ready")
         else:
+            data = None
             if report["baseline_ready"] and state["state"] == "not_frozen":
                 state["state"] = "ready_not_published"
-            check_report(report)
-        _write(out, (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
+        check_report(report)
+        _publish(out, (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8"), frozen_path, data)
     except Refused as exc:
         print(json.dumps({"status": "refused", "code": exc.code}))
         return 2
