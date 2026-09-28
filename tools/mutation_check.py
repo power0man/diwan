@@ -262,11 +262,17 @@ def manifest_for(test: str) -> str:
     return f"{MANIFESTS}/{'__'.join(PurePosixPath(test).with_suffix('').parts[1:])}.jsonl"
 
 
+def _paths(listing: str) -> list[str]:
+    """قوائمُ مسارات git تُقرأ بفاصل NUL (`-z`) لا بالفراغ: مسارٌ فيه فراغٌ كان ينشطر مسارين فيضيع بيانُه اليتيم أو وحدتُه
+    (ملاحظة Codex على #149)."""
+    return [path for path in listing.split("\0") if path]
+
+
 def _manifests_owned_at(root: Path, head: str) -> dict[str, str]:
     """بيانُ كلِّ وحدة اختبارٍ عند الرأس بالاتجاه الأمامي (manifest_for على الوحدات الموجودة)، فلا يُعكس الاسمُ — وعكسُه
     ملتبس: test_a__b.jsonl بيانُ tests/test_a__b.py لا tests/test_a/b.py (ملاحظة Codex على #149). وحدتان تؤولان إلى بيانٍ واحد تُرفضان باسمهما."""
     owned: dict[str, str] = {}
-    for module in _test_modules(_git(root, "ls-tree", "-r", "--name-only", head, "--", "tests/").split()):
+    for module in _test_modules(_paths(_git(root, "ls-tree", "-r", "--name-only", "-z", head, "--", "tests/"))):
         manifest = manifest_for(module)
         if manifest in owned:
             raise Refused("manifest_name_collision", f"{owned[manifest]} و{module} كلاهما بيانُه {manifest}")
@@ -286,7 +292,7 @@ def _range_scope(root: Path, rng: str, python: str = sys.executable, timeout: in
     def changed(status: str, *pathspec: str) -> list[str]:
         # بلا كشفِ إعادة التسمية: المنقولُ محذوفٌ في مصدره ومضافٌ في وجهته فتُفحص الجهتان — ملفُّ اختبارٍ نُقل وجهتُه كالمضاف
         # (كلُّ اختبارٍ فيها ممسوس ويلزمها بيانٌ باسمها)، وبيانٌ نُقل باسم وحدةٍ أخرى يتيمٌ لمصدره (ملاحظتا Codex على #149)
-        return _git(root, "diff", "--name-only", "--no-renames", f"--diff-filter={status}", f"{base}...{head}", "--", *pathspec).split()
+        return _paths(_git(root, "diff", "--name-only", "--no-renames", "-z", f"--diff-filter={status}", f"{base}...{head}", "--", *pathspec))
 
     added = _test_modules(changed("A", "tests/"))
     modified = _test_modules(changed("M", "tests/"))

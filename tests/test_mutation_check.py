@@ -875,6 +875,22 @@ def test_dup():
     _clean(repo, git)
 
 
+def test_a_deleted_manifest_of_a_module_whose_name_has_a_space_is_still_orphaned(repo, git, capsys):
+    """قوائمُ مسارات git كانت تُقرأ بالفراغ فينشطر `tests/test_space name.py` مسارين: لا تُعرف وحدتُه باقيةً ولا يُرى بيانُه
+    المحذوف، فيمرّ المدى بلا إثبات (ملاحظة Codex على #149)؛ صارت تُقرأ بفاصل NUL."""
+    (repo / "tests/test_space name.py").write_text("from pkg.guard import positive\n\n\ndef test_ok():\n    assert positive(0) is False\n")
+    _manifest(repo, "test_space name", {**KILL, "id": "kill", "tests": ["tests/test_space name.py::test_ok"]})
+    git("add", "-A")
+    git("commit", "-qm", "a spaced module with its manifest")
+    base = git("rev-parse", "HEAD")
+    (repo / "tests/mutations/test_space name.jsonl").unlink()
+    git("add", "-A")
+    git("commit", "-qm", "the manifest deleted, the module kept")
+    report = _run(repo, "--range", f"{base}..{git('rev-parse', 'HEAD')}", capsys=capsys)
+    assert report["orphaned_manifests"] == ["tests/mutations/test_space name.jsonl"] and report["status"] == "failed"
+    _clean(repo, git)
+
+
 def test_a_unittest_subclass_is_placed_whatever_its_name_so_a_grown_method_touches_it_and_its_heir(repo, git, capsys):
     """صنفٌ يرث unittest.TestCase واسمُه لا يبدأ بـTest كان خارج الأصناف المقروءة (ملاحظة Codex على #149)؛ صار يُقرأ هو ووارثُه في
     الوحدة، فسطرٌ مضاف في دالّته يمسّها فيه وفي الوارث. والصنفُ العاديّ لا يجمعه pytest فلا يُمسّ ولو قُرئ؛ والوارثُ أصلًا
