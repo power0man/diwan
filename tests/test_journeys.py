@@ -51,6 +51,8 @@ DAY_ONE = datetime(2026, 10, 1, 10, 0, tzinfo=timezone.utc).timestamp()
 # التقديرُ يسقط قبل أن يُقيَّد النداء، فيحفظ المنتجُ الجولةَ النصّية «error» برمز outcome_uncertain (conversation/session.py)
 UNCERTAIN = object()
 DAY = 24 * 3600
+# نافذةُ خطّ أساسٍ يمرّرها الاختبار (أكتوبر ٢٠٢٦ كلُّه)، فلا تتعلّق أعدادُه بتواريخ م١ في الخطة
+WINDOW = ("--baseline-from", "2026-10-01", "--baseline-until", "2026-10-31")
 
 
 def respond(content="تم.", *calls, stop="complete"):
@@ -198,9 +200,9 @@ def run(root: Path, out: Path, capsys, *extra) -> tuple[int, dict]:
     return code, json.loads(capsys.readouterr().out.strip().splitlines()[-1])
 
 
-def report_of(root: Path, tmp_path: Path, capsys) -> dict:
+def report_of(root: Path, tmp_path: Path, capsys, *extra) -> dict:
     out = tmp_path / f"report-{uuid.uuid4().hex[:6]}.json"
-    code, printed = run(root, out, capsys)
+    code, printed = run(root, out, capsys, *extra)
     assert (code, printed["status"]) == (0, "written"), printed
     return json.loads(out.read_text(encoding="utf-8"))
 
@@ -286,7 +288,7 @@ def test_outcomes_modes_and_steps_are_counted_from_the_real_product(world, tmp_p
     assert report["by_outcome"] == {"completed": 5, "truncated": 2, "refused": 4, "awaiting_owner": 1,
                                     "outcome_unknown": 1, "timed_out": 1, "step_limit": 1, "stopped": 1}
     assert report["by_mode"] == {"text": 5, "media": 1, "agent": 8, "research": 0, "coder": 1, "translate": 1}
-    assert report["completion_rate"] == round(5 / 16, 4)
+    assert report["completion_rate"] == round(5 / 16, 4) and report["completion_rate_unavailable_reason"] is None
     assert report["outcome_labels"]["completed"] == "منجزة" and report["outcome_labels"]["refused"] == "مرفوضة"
     seen = sorted((j["mode"], j["status"], j["outcome"], j["error_code"], j["steps"], j["tool_calls"])
                   for j in report["journeys"])
@@ -362,13 +364,20 @@ def test_an_unreadable_or_corrupt_session_is_counted_by_code_and_the_report_is_s
     (media.parent / alias).symlink_to(outside, target_is_directory=True)
     (media.parent / "not-an-identifier").mkdir()
     media_state.unlink()
-    report = report_of(copy, tmp_path, capsys)
+    report = report_of(copy, tmp_path, capsys, *WINDOW)
     assert report["unreadable"] == {"projects": 0, "sessions": 5,
                                     "by_code": {"entry_invalid": 1, "mode_unknown": 1, "state_corrupt": 1,
                                                 "state_missing": 1, "unsafe_path": 1}}
     assert report["totals"]["sessions"] == 9
     assert report["totals"]["journeys"] == 16 - 5 - 1 - 1
     assert report["by_mode"]["text"] == 0 and report["by_mode"]["media"] == 0 and report["by_mode"]["coder"] == 0
+    # رحلاتُ الجلسات الغائبة قد تكون المتعثّرة: لا نسبةَ نظيفةَ المظهر فوق الباقي، ولا خطَّ أساس
+    assert (report["completion_rate"], report["completion_rate_unavailable_reason"]) == (None, "unreadable_entries")
+    cohort = report["baseline"]["cohort"]
+    assert cohort["journeys"] == 9 and (cohort["completion_rate"], cohort["completion_rate_unavailable_reason"]) == \
+        (None, "unreadable_entries")
+    assert report["baseline_ready"] is False
+    assert report["baseline"]["missing"] == ["unreadable_entries", "too_few_dated_journeys", "too_few_distinct_dates"]
 
 
 def test_a_missing_root_an_unsafe_root_and_an_existing_output_are_refused_by_name(world, tmp_path, capsys):
@@ -422,7 +431,7 @@ def thirty(tmp_path_factory):
     return root
 
 
-def test_baseline_ready_needs_thirty_dated_journeys_on_two_dates(thirty, tmp_path, capsys):
+def test_baseline_ready_needs_thirty_dated_journeys_on_two_dates_inside_the_m1_window(thirty, tmp_path, capsys):
     root = tmp_path / "ui"
     shutil.copytree(thirty, root)
     one, fourteen, fifteen = sorted(session_files(root),
@@ -432,21 +441,76 @@ def test_baseline_ready_needs_thirty_dated_journeys_on_two_dates(thirty, tmp_pat
         os.utime(meta, (created, created))
         os.utime(state, (last, last))
 
+    def baseline(*window):
+        report = report_of(root, tmp_path, capsys, *(window or WINDOW))
+        return report, report["baseline"]["cohort"], report["baseline"]["missing"]
+
     for meta, state, _ in (one, fourteen, fifteen):
         place(meta, state, DAY_ONE, DAY_ONE + 60)
-    one_day = report_of(root, tmp_path, capsys)
-    assert (one_day["totals"]["dated_journeys"], one_day["distinct_dates"]) == (30, 1)
-    assert one_day["baseline_ready"] is False and one_day["baseline"]["missing"] == ["too_few_distinct_dates"]
+    report, cohort, missing = baseline()
+    assert (cohort["journeys"], cohort["distinct_dates"]) == (30, 1)
+    assert report["baseline_ready"] is False and missing == ["too_few_distinct_dates"]
     place(*fourteen[:2], DAY_ONE + DAY, DAY_ONE + DAY + 60)
     place(*one[:2], DAY_ONE + DAY, DAY_ONE + DAY + 60)
-    ready = report_of(root, tmp_path, capsys)
-    assert ready["by_date"] == {"2026-10-01": 15, "2026-10-02": 15}
-    assert ready["baseline_ready"] is True and ready["baseline"]["missing"] == []
-    assert ready["completion_rate"] == 1.0
-    place(*one[:2], DAY_ONE, DAY_ONE + DAY)                          # جلسةُ الرحلة الواحدة امتدّت يومين
-    short = report_of(root, tmp_path, capsys)
-    assert (short["totals"]["dated_journeys"], short["distinct_dates"]) == (29, 2)
-    assert short["baseline_ready"] is False and short["baseline"]["missing"] == ["too_few_dated_journeys"]
+    report, cohort, missing = baseline()
+    assert cohort["by_date"] == {"2026-10-01": 15, "2026-10-02": 15} and cohort["undated_journeys_in_window"] == 0
+    assert report["baseline_ready"] is True and missing == []
+    assert cohort["completion_rate"] == 1.0 and report["completion_rate"] == 1.0
+    assert report["baseline"]["window"] == {"from": "2026-10-01", "from_source": "option", "until": "2026-10-31",
+                                            "until_source": "option"}
+    # رحلةٌ قبل النافذة (م٠-ب) تُعدّ في المجاميع التراكمية لا في الفوج: «أولُ ٣٠ رحلة في م١»
+    place(*one[:2], DAY_ONE - 5 * DAY, DAY_ONE - 5 * DAY + 60)
+    report, cohort, missing = baseline()
+    assert (report["totals"]["dated_journeys"], report["distinct_dates"]) == (30, 3)
+    assert cohort["journeys"] == 29 and report["baseline_ready"] is False and missing == ["too_few_dated_journeys"]
+    # وما بعد النافذة كذلك: نافذةٌ تنتهي في اليوم الأول لا تعدّ رحلاتِ اليوم الثاني
+    report, cohort, missing = baseline("--baseline-from", "2026-09-01", "--baseline-until", "2026-10-01")
+    assert cohort["by_date"] == {"2026-09-26": 1, "2026-10-01": 15} and missing == ["too_few_dated_journeys"]
+    # رحلةٌ بلا تاريخ قد تقع في النافذة: الفوجُ ناقصٌ ونسبتُه مجهولة، وإن بقيت المجاميعُ التراكمية كاملة
+    place(*one[:2], DAY_ONE, DAY_ONE + DAY)
+    report, cohort, missing = baseline()
+    assert cohort["undated_journeys_in_window"] == 1 and missing == ["undated_journeys_in_window", "too_few_dated_journeys"]
+    assert (cohort["completion_rate"], cohort["completion_rate_unavailable_reason"]) == \
+        (None, "undated_journeys_in_window")
+    assert report["completion_rate"] == 1.0
+    # ورحلةٌ بلا تاريخ امتدّت جلستُها يومين قبل النافذة كلِّها لا تحجبها
+    place(*one[:2], DAY_ONE - 5 * DAY, DAY_ONE - 4 * DAY)
+    report, cohort, missing = baseline()
+    assert cohort["undated_journeys_in_window"] == 0 and missing == ["too_few_dated_journeys"]
+    # مشروعٌ لا يُقرأ يحجب خطَّ الأساس ولو بلغ الفوجُ حدَّه، ويجعل النسبتين مجهولتين
+    place(*one[:2], DAY_ONE + DAY, DAY_ONE + DAY + 60)
+    (root / "projects" / "not-an-identifier").mkdir()
+    report, cohort, missing = baseline()
+    assert report["unreadable"]["projects"] == 1 and cohort["journeys"] == 30 and cohort["distinct_dates"] == 2
+    assert report["baseline_ready"] is False and missing == ["unreadable_entries"]
+    assert report["completion_rate"] is None and cohort["completion_rate"] is None
+
+
+def test_the_baseline_window_is_the_m1_phase_the_plan_records_and_is_never_invented(world, tmp_path, capsys,
+                                                                                     monkeypatch):
+    plan = json.loads((ROOT / "docs" / "PLAN-20260926.json").read_text(encoding="utf-8"))
+    m1, = [phase for phase in plan["phases"] if phase["id"] == "م١"]
+    assert m1["start"] > "2026-10-01", "رحلاتُ المخزن المبنيّ قبل م١"
+    report = report_of(world.root, tmp_path, capsys)
+    assert report["baseline"]["window"] == {"from": m1["start"], "from_source": "plan_m1_phase", "until": m1["end"],
+                                            "until_source": "plan_m1_phase"}
+    assert report["totals"]["dated_journeys"] == 16 and report["baseline"]["cohort"]["journeys"] == 0
+    mixed = report_of(world.root, tmp_path, capsys, "--baseline-from", "2026-10-01")
+    assert mixed["baseline"]["window"] == {"from": "2026-10-01", "from_source": "option", "until": m1["end"],
+                                           "until_source": "plan_m1_phase"}
+    assert mixed["baseline"]["cohort"]["journeys"] == 16
+    monkeypatch.setattr(journeys, "PLAN", tmp_path / "no-plan.json")
+    unknown = report_of(world.root, tmp_path, capsys)
+    assert unknown["baseline"]["window"] == {"from": None, "from_source": None, "until": None, "until_source": None}
+    assert unknown["baseline"]["cohort"] is None and unknown["baseline_ready"] is False
+    assert unknown["baseline"]["missing"] == ["baseline_window_unknown", "too_few_dated_journeys",
+                                              "too_few_distinct_dates"]
+    out = tmp_path / "refused.json"
+    assert run(world.root, out, capsys, "--baseline-from", "2026-13-01", "--baseline-until", "2026-12-31") == \
+        (2, {"status": "refused", "code": "baseline_date_invalid"})
+    assert run(world.root, out, capsys, "--baseline-from", "2026-10-31", "--baseline-until", "2026-10-01") == \
+        (2, {"status": "refused", "code": "baseline_window_invalid"})
+    assert not out.exists()
 
 
 def test_the_self_check_refuses_text_and_identifiers(world, tmp_path, capsys):

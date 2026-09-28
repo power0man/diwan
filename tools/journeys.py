@@ -4,7 +4,13 @@
 يقرأ مخزنَ الواجهة اليومية (`var/daily-ui` افتراضًا، كما في `tools/serve_ui.py`) **قراءةً وحدها**: لا قفلَ ولا إنشاءَ ولا
 كتابةَ فيه، ولا يتبع وصلةً رمزية. ويكتب `docs/probe/journeys-<YYYYMMDD>.json` فيه لكل رحلةٍ (جولةٌ واحدة: طلبٌ واحد من
 المالك في جلسة) حقائقَ لا نصَّ فيها: وضعُ الجلسة، وعددُ الخطوات ونداءاتِ الأدوات، وصنفُ النتيجة ورمزُها، والتاريخُ بتوقيت
-UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع: بالنتيجة وبالوضع وبالتاريخ، ونسبةُ الإنجاز، وجاهزيةُ خطّ الأساس.
+UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع التراكمية: بالنتيجة وبالوضع وبالتاريخ، ونسبةُ الإنجاز؛ ثم خطُّ الأساس.
+
+خطُّ الأساس («أولُ ٣٠ رحلة في م١»، خطةُ ٢٦ سبتمبر) فوجٌ منفصل عن المجاميع التراكمية: الرحلاتُ المؤرَّخة داخل نافذة م١
+وحدها، والنافذةُ بدءُ مرحلة م١ ونهايتُها كما تسجّلهما الخطة (`docs/PLAN-20260926.json`) ما لم يمرّر المالك
+`--baseline-from`/`--baseline-until`، ولا تُخترع. ولا يجهز خطُّ الأساس، ولا تُحسب نسبةُ إنجازٍ يُظنّ أنها كاملة، ما دامت
+جلسةٌ لا تُقرأ (`unreadable_entries`) أو رحلةٌ بلا تاريخ قد تقع في النافذة (`undated_journeys_in_window`): رحلاتُها
+الغائبة قد تكون المتعثّرة، فالنسبةُ حينئذٍ `null` بسببها المسمّى لا رقمٌ نظيفُ المظهر.
 
 لا يحمل التقريرُ نصًّا ولا مسارًا ولا معرّفَ مشروعٍ أو جلسةٍ أو جولة ولا اسمًا ولا بصمةَ نصّ ولا جوابَ نموذج ولا شيئًا من
 محتوى local_only: أعدادٌ ورموزُ آلةٍ وتواريخُ وأزمنةٌ فقط. والأداةُ تفحص تقريرَها بذلك قبل كتابته، فتقريرٌ فيه نصٌّ أو معرّفٌ
@@ -13,9 +19,11 @@ UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع
 الاستعمال (على الماك بعد الاستعمال):
     python tools/journeys.py                            # var/daily-ui ← docs/probe/journeys-<اليوم>.json
     python tools/journeys.py --root <مخزن> --out <ملف>
+    python tools/journeys.py --baseline-from 2026-10-12 --baseline-until 2026-11-08   # نافذةٌ غيرُ نافذة الخطة
 
 الرفضُ مسمًّى وبرمز خروجٍ غير صفري: `root_missing` (المخزنُ غائب أو ليس دليلًا)، `root_unsafe` (وصلةٌ رمزية)، `root_unreadable`،
-`output_exists` (لا يُكتب فوق ملفٍّ قائم)، `output_dir_missing`، `output_unwritable`، `report_leak`. والجلسةُ التي لا تُقرأ أو فسدت لا تُسقط
+`output_exists` (لا يُكتب فوق ملفٍّ قائم)، `output_dir_missing`، `output_unwritable`، `baseline_date_invalid`،
+`baseline_window_invalid` (البدءُ بعد النهاية)، `report_leak`. والجلسةُ التي لا تُقرأ أو فسدت لا تُسقط
 الأداة: تُعدّ في `unreadable` برمزها.
 
 الحدود (وهي في التقرير `measurement_limits`): الواجهةُ لا تحفظ زمنَ الجولة، فالزمنُ فارغٌ بسببه المسمّى، والتاريخُ يوم
@@ -44,6 +52,8 @@ TOOL = "tools/journeys.py"
 TASK = "جديد-journeys-log"
 DEFAULT_ROOT = ROOT / "var" / "daily-ui"
 PROBE_DIR = ROOT / "docs" / "probe"
+PLAN = ROOT / "docs" / "PLAN-20260926.json"     # الخطةُ الحاكمة (ق٦٤): فيها بدءُ م١ ونهايتُها
+M1 = "م١"
 MAX_STATE_BYTES = 32 * 1024 * 1024              # حدُّ حالة الجلسة الوكيلة في المنتج نفسِه
 IDENTIFIER = re.compile(r"[a-f0-9]{32}\Z")      # معرّفاتُ المشروعات والجلسات في LocalApp
 MACHINE_CODE = re.compile(r"[a-z][a-z0-9_]{0,63}\Z")
@@ -85,6 +95,8 @@ OUTCOME_LABELS = {
 }
 BASELINE_MIN_DATED_JOURNEYS = 30
 BASELINE_MIN_DISTINCT_DATES = 2
+UNREADABLE_ENTRIES = "unreadable_entries"
+UNDATED_IN_WINDOW = "undated_journeys_in_window"
 DURATION_UNKNOWN = "turn_timestamps_not_stored"
 MEASUREMENT_LIMITS = (
     "counts_only_what_the_daily_ui_stored_under_projects_a_session_left_in_staging_by_an_interrupted_creation_is_not_counted",
@@ -98,15 +110,20 @@ MEASUREMENT_LIMITS = (
     "the_outcome_is_what_the_ui_stored_and_says_nothing_about_the_quality_or_truth_of_the_answer",
     "the_data_is_the_owner_s_own_use_on_one_machine_not_a_sample_of_users",
     "the_report_carries_counts_machine_codes_utc_dates_and_durations_only_and_the_tool_refuses_to_write_a_report_with_any_other_string",
+    "the_baseline_cohort_is_the_dated_journeys_inside_the_m1_window_recorded_in_the_plan_unless_the_owner_passes_baseline_from_or_baseline_until_and_the_cumulative_totals_are_not_the_baseline",
+    "an_unreadable_entry_or_an_undated_journey_that_may_fall_in_the_window_blocks_baseline_ready_and_nulls_the_completion_rate_it_would_bias",
 )
 CARRIES = "counts_machine_codes_utc_dates_and_durations_only"
 # مخطّطُ التقرير مغلق: مفتاحٌ لا تبنيه `build_report` أو `_journey` تسرّبٌ ولو كانت قيمتُه رمزَ آلة
 REPORT_FIELDS = frozenset({"schema_version", "tool", "task", "commit", "generated_on", "root", "carries", "totals",
                            "unreadable", "by_outcome", "by_mode", "by_date", "distinct_dates", "completion_rate",
-                           "baseline_ready", "baseline", "outcome_labels", "journeys", "measurement_limits"})
+                           "completion_rate_unavailable_reason", "baseline_ready", "baseline", "outcome_labels",
+                           "journeys", "measurement_limits"})
 JOURNEY_FIELDS = frozenset({"mode", "outcome", "status", "error_code", "steps", "tool_calls", "date", "date_basis",
-                            "date_unknown_reason", "duration_s", "duration_unknown_reason"})
-BASELINE_RULE = "at_least_30_dated_journeys_on_at_least_2_distinct_utc_dates"
+                            "date_unknown_reason", "session_first_day", "session_last_day", "duration_s",
+                            "duration_unknown_reason"})
+BASELINE_RULE = ("at_least_30_dated_journeys_on_at_least_2_distinct_utc_dates_inside_the_m1_window_"
+                 "with_no_unreadable_entry_and_no_undated_journey_that_may_fall_in_the_window")
 
 _DIR = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | os.O_NOFOLLOW
 _FILE = os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_NONBLOCK", 0)
@@ -194,11 +211,15 @@ def _state_turns(envelope) -> list:
 
 
 def _dating(created: float, last: float) -> dict:
+    """تاريخُ رحلات الجلسة، ومداها من يوم إنشائها إلى يوم آخر كتابةٍ فيها (ليُعرف أتقع رحلةٌ بلا تاريخ في نافذة خطّ الأساس)."""
+    first, final = _utc_day(created), _utc_day(last)
     if last < created:
-        return {"date": None, "date_basis": None, "date_unknown_reason": "timestamps_inconsistent"}
-    if _utc_day(created) == _utc_day(last):
-        return {"date": _utc_day(last), "date_basis": "session_single_day", "date_unknown_reason": None}
-    return {"date": None, "date_basis": None, "date_unknown_reason": "session_spans_days"}
+        return {"date": None, "date_basis": None, "date_unknown_reason": "timestamps_inconsistent",
+                "session_first_day": None, "session_last_day": None}
+    span = {"session_first_day": first, "session_last_day": final}
+    if first == final:
+        return {"date": final, "date_basis": "session_single_day", "date_unknown_reason": None, **span}
+    return {"date": None, "date_basis": None, "date_unknown_reason": "session_spans_days", **span}
 
 
 def _journey(turn: dict, mode: str, agent: bool, dating: dict) -> dict:
@@ -353,25 +374,101 @@ def _commit() -> str | None:
     return value if COMMIT.fullmatch(value) else None
 
 
-def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit: str | None) -> dict:
-    journeys = sorted(scanned["journeys"], key=lambda j: (j["date"] or "", j["mode"], j["outcome"], j["status"],
-                                                          j["error_code"] or "", j["steps"], j["tool_calls"]))
-    total = len(journeys)
+def _day(value) -> str | None:
+    """يومٌ صحيحٌ بصيغة YYYY-MM-DD كما هو، وإلا None."""
+    if not isinstance(value, str) or not DATE.fullmatch(value):
+        return None
+    try:
+        datetime.strptime(value, "%Y-%m-%d")
+    except ValueError:
+        return None
+    return value
+
+
+def plan_window(plan: Path | None = None) -> tuple[str | None, str | None]:
+    """بدءُ م١ ونهايتُها كما تسجّلهما الخطة، أو None لما لم تسجّله: النافذةُ لا تُخترع."""
+    try:
+        phases = json.loads(Path(PLAN if plan is None else plan).read_text(encoding="utf-8"))["phases"]
+        phase = next(item for item in phases if isinstance(item, dict) and item.get("id") == M1)
+    except (OSError, ValueError, KeyError, TypeError, StopIteration):
+        return None, None
+    return _day(phase.get("start")), _day(phase.get("end"))
+
+
+def baseline_window(start: str | None = None, end: str | None = None) -> dict:
+    """نافذةُ خطّ الأساس: ما مرّره المالك، وإلا ما في الخطة، وإلا مجهولةٌ فلا يجهز خطُّ الأساس."""
+    for value in (start, end):
+        if value is not None and _day(value) is None:
+            raise Refused("baseline_date_invalid")
+    planned = plan_window() if start is None or end is None else (None, None)
+    window = {"from": start if start is not None else planned[0],
+              "from_source": "option" if start is not None else "plan_m1_phase" if planned[0] else None,
+              "until": end if end is not None else planned[1],
+              "until_source": "option" if end is not None else "plan_m1_phase" if planned[1] else None}
+    if window["from"] and window["until"] and window["from"] > window["until"]:
+        raise Refused("baseline_window_invalid")
+    return window
+
+
+def _tally(journeys: list[dict]) -> tuple[dict, Counter]:
     by_outcome = {name: 0 for name in OUTCOME_LABELS}
-    by_mode = {name: 0 for name in MODES}
     by_date = Counter()
     for journey in journeys:
         by_outcome[journey["outcome"]] = by_outcome.get(journey["outcome"], 0) + 1
-        by_mode[journey["mode"]] = by_mode.get(journey["mode"], 0) + 1
         if journey["date"] is not None:
             by_date[journey["date"]] += 1
+    return by_outcome, by_date
+
+
+def _rate(by_outcome: dict, total: int, blockers: list[str]) -> tuple[float | None, str | None]:
+    """نسبةُ الإنجاز، أو None بسببها: رحلاتٌ غائبة عن العدّ قد تكون المتعثّرة، فلا رقمَ نظيفَ المظهر فوقها."""
+    if blockers:
+        return None, blockers[0]
+    if not total:
+        return None, "no_journeys"
+    return round(by_outcome["completed"] / total, 4), None
+
+
+def _may_fall_in(journey: dict, start: str, end: str) -> bool:
+    """رحلةٌ بلا تاريخ قد تقع في النافذة: مدى جلستها يتقاطع معها، أو مداها مجهول."""
+    first, final = journey["session_first_day"], journey["session_last_day"]
+    if first is None or final is None:
+        return True
+    return not (final < start or first > end)
+
+
+def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit: str | None,
+                 window: dict) -> dict:
+    journeys = sorted(scanned["journeys"], key=lambda j: (j["date"] or "", j["mode"], j["outcome"], j["status"],
+                                                          j["error_code"] or "", j["steps"], j["tool_calls"]))
+    total = len(journeys)
+    by_outcome, by_date = _tally(journeys)
+    by_mode = {name: 0 for name in MODES}
+    for journey in journeys:
+        by_mode[journey["mode"]] = by_mode.get(journey["mode"], 0) + 1
     dated = sum(by_date.values())
-    missing = []
-    if dated < BASELINE_MIN_DATED_JOURNEYS:
-        missing.append("too_few_dated_journeys")
-    if len(by_date) < BASELINE_MIN_DISTINCT_DATES:
-        missing.append("too_few_distinct_dates")
     counts = scanned["counts"]
+    unreadable = [UNREADABLE_ENTRIES] if counts["unreadable_projects"] or counts["unreadable_sessions"] else []
+    completion_rate, rate_reason = _rate(by_outcome, total, unreadable)
+    start, end = window["from"], window["until"]
+    missing, cohort = [], None
+    if start is None or end is None:
+        missing.extend(["baseline_window_unknown", *unreadable])
+    else:
+        members = [journey for journey in journeys if journey["date"] is not None and start <= journey["date"] <= end]
+        undated = sum(1 for journey in journeys if journey["date"] is None and _may_fall_in(journey, start, end))
+        cohort_outcomes, cohort_dates = _tally(members)
+        blockers = unreadable + ([UNDATED_IN_WINDOW] if undated else [])
+        cohort_rate, cohort_reason = _rate(cohort_outcomes, len(members), blockers)
+        cohort = {"journeys": len(members), "distinct_dates": len(cohort_dates),
+                  "by_date": dict(sorted(cohort_dates.items())), "by_outcome": cohort_outcomes,
+                  "completion_rate": cohort_rate, "completion_rate_unavailable_reason": cohort_reason,
+                  "undated_journeys_in_window": undated}
+        missing.extend(blockers)
+    if cohort is None or cohort["journeys"] < BASELINE_MIN_DATED_JOURNEYS:
+        missing.append("too_few_dated_journeys")
+    if cohort is None or cohort["distinct_dates"] < BASELINE_MIN_DISTINCT_DATES:
+        missing.append("too_few_distinct_dates")
     return {
         "schema_version": SCHEMA_VERSION,
         "tool": TOOL,
@@ -388,10 +485,11 @@ def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit
         "by_mode": by_mode,
         "by_date": dict(sorted(by_date.items())),
         "distinct_dates": len(by_date),
-        "completion_rate": round(by_outcome["completed"] / total, 4) if total else None,
+        "completion_rate": completion_rate,
+        "completion_rate_unavailable_reason": rate_reason,
         "baseline_ready": not missing,
-        "baseline": {"rule": BASELINE_RULE, "min_dated_journeys": BASELINE_MIN_DATED_JOURNEYS,
-                     "min_distinct_dates": BASELINE_MIN_DISTINCT_DATES, "missing": missing},
+        "baseline": {"rule": BASELINE_RULE, "window": window, "min_dated_journeys": BASELINE_MIN_DATED_JOURNEYS,
+                     "min_distinct_dates": BASELINE_MIN_DISTINCT_DATES, "cohort": cohort, "missing": missing},
         "outcome_labels": OUTCOME_LABELS,
         "journeys": journeys,
         "measurement_limits": list(MEASUREMENT_LIMITS),
@@ -458,13 +556,16 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="سجلُّ رحلات المالك بلا نصوص: أعدادٌ ورموزٌ وتواريخ من var/daily-ui")
     parser.add_argument("--root", type=Path, default=None, help="مخزنُ الواجهة (الافتراضيّ var/daily-ui)")
     parser.add_argument("--out", type=Path, default=None, help="ملفُّ التقرير (الافتراضيّ docs/probe/journeys-<اليوم>.json)")
+    parser.add_argument("--baseline-from", default=None, help="أولُ يومٍ في نافذة خطّ الأساس YYYY-MM-DD (الافتراضيّ بدءُ م١ في الخطة)")
+    parser.add_argument("--baseline-until", default=None, help="آخرُ يومٍ فيها YYYY-MM-DD (الافتراضيّ نهايةُ م١ في الخطة)")
     args = parser.parse_args(argv)
     today = datetime.now(timezone.utc).date()
     root = DEFAULT_ROOT if args.root is None else args.root
     out = args.out if args.out is not None else PROBE_DIR / f"journeys-{today:%Y%m%d}.json"
     try:
+        window = baseline_window(args.baseline_from, args.baseline_until)
         report = build_report(scan(root), generated_on=today.isoformat(), default_root=args.root is None,
-                              commit=_commit())
+                              commit=_commit(), window=window)
         check_report(report)
         _write(out, (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     except Refused as exc:
