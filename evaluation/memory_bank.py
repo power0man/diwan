@@ -153,6 +153,13 @@ def declared_tools_text() -> str:
     return _flat_text(serialize_tools(declared_tool_specs()))
 
 
+def _sent_absent(scenario: dict) -> list[str]:
+    """شواهدُ الغياب التي تُقرأ في طلب النموذج: شواهدُ توقّعات السياق وحدها. فالاسترجاعُ يقرأ المخزن، والبقايا تقرأ بايتاتِ
+    القرص، ولا يمرّ بأيٍّ منهما جسدُ الطلب ولا غلافاه ولا أدواتُه ولا أدوارُه ولا تعليماتُه ولا سؤالُ العرض؛ فشاهدٌ فيهما يطابق
+    حقلًا ثابتًا في الطلب (`model`) صالحٌ لا يُردّ (ملاحظة Codex على #129، الجولة الرابعة والأربعون)."""
+    return [a for s in scenario["steps"] if s.get("expect") == "context" for a in (s.get("absent") or []) if a]
+
+
 def declared_message_envelope_text() -> str:
     """غلافُ الرسائل كما يسلسلها المزوّد مع كلِّ رسالة: أسماءُ حقولها الثابتة (`role`، `content`، `tool_calls`، `id`، `function`،
     `index`، `name`، `arguments`، `tool_call_id`، `tool_name`) وقيمُ الأدوار، من طلبٍ عيّنةٍ فارغ المحتوى بأدواره الأربعة؛ شاهدُ
@@ -167,7 +174,7 @@ def declared_message_envelope_text() -> str:
 def message_envelope_collisions(scenario: dict, envelope_text: str | None = None) -> list[str]:
     """شاهدُ غيابٍ يقع في غلاف الرسائل الثابت كما يُرسل؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الخامسة والعشرون)."""
     text = declared_message_envelope_text() if envelope_text is None else envelope_text
-    return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
+    return [a for a in _sent_absent(scenario) if contains(text, a)]
 
 
 def declared_envelope_text() -> str:
@@ -200,7 +207,7 @@ def request_payload_collisions(scenario: dict, payload_text: str | None = None, 
     """شاهدُ غيابٍ يقع في حقلٍ ثابت من جسد الطلب كما يبنيه المزوّدُ الذي سيرسله؛ يُرفض قبل القياس (ملاحظة Codex على #129).
     `model` اسمُ النموذج المختار للقياس حين لا مزوّدَ بعد (فحصُ الأداة قبل أيّ نداء)."""
     text = declared_request_payload_text(delegate, model) if payload_text is None else payload_text
-    return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
+    return [a for a in _sent_absent(scenario) if contains(text, a)]
 
 
 def declared_system_prompts() -> tuple[str, ...]:
@@ -216,7 +223,7 @@ def declared_system_prompts() -> tuple[str, ...]:
 def system_prompt_collisions(scenario: dict, prompts_text: str | None = None) -> list[str]:
     """شاهدُ غيابٍ يقع في تعليمات النظام الثابتة كما تُرسل؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الثلاثون)."""
     text = _flat_text(declared_system_prompts()) if prompts_text is None else prompts_text
-    return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
+    return [a for a in _sent_absent(scenario) if contains(text, a)]
 
 
 PERSISTED_SAMPLE = "عيّنةُ مخزنٍ لفحص بنك الذاكرة"     # نصُّ عنصرٍ بديل يُقنَّع بعد الكتابة فلا يبقى إلا ما يكتبه المخزنُ ثابتًا
@@ -280,21 +287,22 @@ def persisted_schema_collisions(scenario: dict, schema_text: str | None = None) 
 def envelope_collisions(scenario: dict, envelope_text: str | None = None) -> list[str]:
     """شاهدُ غيابٍ يقع في غلاف الطلب الوكيل الثابت؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الرابعة والعشرون)."""
     text = declared_envelope_text() if envelope_text is None else envelope_text
-    return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
+    return [a for a in _sent_absent(scenario) if contains(text, a)]
 
 
 def tool_collisions(scenario: dict, tools_text: str | None = None) -> list[str]:
     """شاهدُ غيابٍ يقع في مواصفة أداةٍ معلَنة (اسمِها أو وصفِها أو وسائطها): المواصفةُ تُرسل مع كلِّ طلبٍ وكيل فلا يميّز الفحصُ
     غيابَه؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الثالثة والعشرون)."""
     text = declared_tools_text() if tools_text is None else tools_text
-    return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and contains(text, a)]
+    return [a for a in _sent_absent(scenario) if contains(text, a)]
 
 
 def probe_collisions(scenario: dict) -> list[str]:
     """ما يتصادم مع سؤال العرض: شاهدُ غيابٍ يرد في السؤال (كما كُتب أو كما يُرسل)، أو نصٌّ محفوظ يحوي السؤالَ أو يرد فيه."""
     found = []
     for s in scenario["steps"]:
-        found += [a for a in (s.get("absent") or []) if a and (contains(EXPOSURE_QUESTION, a) or contains(as_sent(EXPOSURE_QUESTION), a))]
+        found += [a for a in (s.get("absent") or []) if a and s.get("expect") == "context"
+                  and (contains(EXPOSURE_QUESTION, a) or contains(as_sent(EXPOSURE_QUESTION), a))]
         text = s.get("text")
         if s.get("op") in ("remember", "propose") and text and (contains(text, EXPOSURE_QUESTION) or contains(EXPOSURE_QUESTION, text)):
             found.append(text)
@@ -307,7 +315,7 @@ MESSAGE_ROLES = ("system", "user", "assistant", "tool")
 def role_collisions(scenario: dict) -> list[str]:
     """شاهدُ غيابٍ يقع في اسم دورٍ من أدوار الرسائل (`assistant`…): الدورُ يُرسل مع كلِّ رسالةٍ في الطلب، فلا يميّز الفحصُ غيابَه
     ولا يُدَّعى به نسيان؛ يُرفض قبل القياس (ملاحظة Codex على #129، الجولة الثانية والعشرون)."""
-    return [a for s in scenario["steps"] for a in (s.get("absent") or []) if a and any(contains(role, a) for role in MESSAGE_ROLES)]
+    return [a for a in _sent_absent(scenario) if any(contains(role, a) for role in MESSAGE_ROLES)]
 
 
 def question_collisions(scenario: dict) -> list[str]:
@@ -328,10 +336,17 @@ def _names(step: dict, text: str, fields=("absent",), least: int = 0) -> bool:
     return any(a and a in text and len(re.findall(r"\w", a)) >= least for field in fields for a in step.get(field) or [])
 
 
+def _rendered(step: dict, text: str) -> str:
+    """نصُّ العنصر بالصورة التي تقرؤها الخطوة: في كتلة السياق محجورًا بـ`held_text` (هو `hold` الذي تحجر به الكتلةُ نفسُها)،
+    وفي الاسترجاع والبقايا كما يكتبه المخزن. فشاهدٌ يقع في أمرٍ مدسوسٍ يبدله الحجرُ بعلامته لا يشهد في السياق بغياب عنصره
+    ولا بحضوره: لو عبر العنصرُ إلى مشروعٍ آخر لغاب الشاهدُ وظهر ما سواه (ملاحظة Codex على #129، الجولة الرابعة والأربعون)."""
+    return held_text(text) if step.get("expect") == "context" else text
+
+
 def _bound(step: dict, item: dict, least: int = 0) -> bool:
-    """التوقّعُ يخصّ عنصرًا إن كان في `absent` جزءٌ من نصّه، وفي مشروعه هو: غيابُه عن مشروعٍ آخر غيابٌ طبيعيّ
-    لا يشهد بالنسيان ولا بالموافقة (ملاحظة Codex على #129). والعزلُ وحده يفحص مشروعًا آخر عمدًا."""
-    return step["project"] == item["project"] and _names(step, item["text"], least=least)
+    """التوقّعُ يخصّ عنصرًا إن كان في `absent` جزءٌ من نصّه كما تقرؤه الخطوة (`_rendered`)، وفي مشروعه هو: غيابُه عن مشروعٍ آخر
+    غيابٌ طبيعيّ لا يشهد بالنسيان ولا بالموافقة (ملاحظة Codex على #129). والعزلُ وحده يفحص مشروعًا آخر عمدًا."""
+    return step["project"] == item["project"] and _names(step, _rendered(step, item["text"]), least=least)
 
 
 def _made(steps: list) -> dict:
@@ -526,6 +541,17 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
                             and a and any(contains(form, a) for form in forms(item["text"])) and active_at(ref, k)]
                     if live:
                         _reject(path, "witness_shared_with_live_item", f"«{a[:40]}» يقع في نصّ «{live[0]}» القائم في مشروع الخطوة عند فحص غيابه")
+    # وشاهدُ غيابٍ في سياقٍ غير محجور يسمّي عنصرًا بنصّه كما يُكتب ولا يبقى في صورته المعروضة (`_rendered`) لا يشهد بشيء:
+    # يقع في أمرٍ مدسوسٍ يبدله الحجرُ بعلامته، فلو عبر العنصرُ إلى مشروعٍ آخر أو بقي بعد نسيانه لغاب الشاهدُ وظهر ما سواه، فلا
+    # رسوبَ ولا تسرّب. والسياقُ المحجور (`quarantined`) خارجَه: شاهدُه الأمرُ نفسُه عمدًا (ملاحظة Codex على #129، الجولة
+    # الرابعة والأربعون)
+    for k, s in enumerate(steps):
+        if s.get("expect") == "context" and not s.get("quarantined"):
+            for a in s.get("absent") or []:
+                named = [item["text"] for ref, (i, item) in made.items() if i < k and a in item["text"]]
+                if named and not any(a in _rendered(s, text) for text in named):
+                    _reject(path, "context_witness_not_rendered",
+                            f"«{a[:40]}» يقع في نصّ عنصره ويبدله الحجرُ في كتلة السياق، فلا يشهد فيها")
     if not strict:
         reject_shared_witnesses()
         return
@@ -579,7 +605,7 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
         # حضورٍ محليٍّ وحده يمرّ بتسرّبٍ صفر وكتلتُه تعرض A (ملاحظة Codex على #129، الجولة الثالثة والأربعون)
         unchecked = [ref for ref, (i, item) in made.items()
                      if any(s.get("expect") in EXPOSING_EXPECTS and s["project"] != item["project"] and active_at(ref, k)
-                            and not _names(s, item["text"], least=SUBSTANTIVE) for k, s in enumerate(steps) if k > i)]
+                            and not _names(s, _rendered(s, item["text"]), least=SUBSTANTIVE) for k, s in enumerate(steps) if k > i)]
         if strict and unchecked:
             _reject(path, "isolation_item_unchecked", f"«{unchecked[0]}» قائمٌ ولا يفحص عزلَه استرجاعٌ من مشروعٍ آخر")
     if category == "backup":
