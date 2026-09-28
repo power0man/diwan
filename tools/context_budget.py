@@ -203,6 +203,7 @@ def _registries() -> dict[str, tuple]:
 def runtime_texts() -> dict:
     """النصوصُ الثابتة التي تسبق رسالةَ المستخدم على الطريقين، من وحدات المنتج نفسِها لا من نسخٍ مكتوبة هنا: نصوصُ النظام
     بأنماطها، ومخطّطاتُ الأدوات لكل تهيئةٍ كما يبنيها التطبيق، وغلافُ المدخل."""
+    _product_path()
     from agent.coder import CODER_SYSTEM
     from agent.loop import SYSTEM as AGENT_SYSTEM
     from agent.research import RESEARCH_SYSTEM
@@ -223,6 +224,7 @@ def runtime_texts() -> dict:
 
 
 def context_window() -> int:
+    _product_path()                                     # أولُ استيرادٍ لوحدة منتج في audit؛ الأبُ المعزول لا يملك الجذرَ على sys.path
     from providers.ollama import CONTEXT_TOKENS
     return int(CONTEXT_TOKENS)
 

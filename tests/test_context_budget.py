@@ -419,6 +419,24 @@ def test_snapshot_extraction_checks_members_itself_and_works_without_the_filter_
     assert (target / "b.py").is_file()
 
 
+def test_the_audit_runs_under_an_isolated_interpreter_without_the_root_on_sys_path():
+    """الطفلُ يعمل بـ`-I -P` ولا يضع الأبُ الجذرَ على `sys.path`، فكلُّ استيرادٍ لوحدة منتج في طريق القياس يمرّ بـ`_product_path()`
+    أولًا؛ أولُ تشغيلٍ حيّ للجولة الثامنة سقط بـ`ModuleNotFoundError: providers` في `context_window()` لأن الاختبارات وحدها
+    كانت تملك الجذرَ على المسار (conftest). كلُّ نداءٍ في عمليةٍ جديدة معزولة بلا الجذر."""
+    import subprocess
+    head = ("import sys; sys.path.insert(0, 'tools'); import context_budget as cb; "
+            "assert str(cb.ROOT) not in sys.path, 'الجذرُ يجب ألا يكون على المسار قبل النداء'; ")
+    calls = {"window": "print(cb.context_window())",
+             "texts": "print(sorted(cb.runtime_texts()['configurations']))",
+             "audit": "r = cb.audit(cb.ROOT, {'ws': lambda t: len(t.split())}, commit='a' * 40, "
+                      "state={'dirty': False, 'changed_paths': [], 'untracked_importable': []}); "
+                      "print(r['commit'], r['context_window_tokens'], r['measured_in']['interpreter_isolated'])"}
+    for name, call in calls.items():
+        run = subprocess.run([sys.executable, "-I", "-P", "-c", head + call], cwd=ROOT, capture_output=True, text=True)
+        assert run.returncode == 0, (name, run.stderr[-600:])
+    assert run.stdout.split() == ["a" * 40, str(cb.context_window()), "True"]
+
+
 def test_tampered_bytecode_in_the_tree_s_pycache_is_not_loaded_once_bytecode_is_isolated(tmp_path, monkeypatch):
     """ملاحظةُ Codex الثالثة على #157: ملفُّ `.pyc` متجاهَلٌ في git ومبنيٌّ بوضع unchecked-hash يُحمَّل بدل المصدر المتتبَّع والحالةُ
     «نظيفة». تحت `sys.pycache_prefix` خاصٍّ لا يُقرأ `__pycache__` الشجرة، فيُحمَّل المصدر."""
