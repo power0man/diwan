@@ -19,7 +19,7 @@ import pytest
 from agent.builtin_tools import DEFAULT_TOOLS
 from agent.registry import ToolRegistry
 from core.contracts import Response, ToolCall, Usage
-from evaluation.agentic_runner import (evaluate_success, harness_tampering, materialize,
+from evaluation.agentic_runner import (evaluate_success, harness_state, harness_tampering, materialize,
                                        protected_paths, run_task)
 
 HOST = "pytest-attested-host"
@@ -172,13 +172,31 @@ def test_an_unreadable_harness_file_is_an_error_outside_the_denominator_not_a_ta
     مسمًّى `harness_unreadable` بحالة `error` خارج المقام."""
     import evaluation.agentic_runner as runner
     name = sorted(protected_paths(FIX_TASK))[0]
-    monkeypatch.setattr(runner, "harness_tampering", lambda task, root: [f"{name}{runner.UNREADABLE_SUFFIX}"])
+    monkeypatch.setattr(runner, "harness_state", lambda task, root: ([], [name]))
     result = _run(FIX_TASK, Scripted(says("لم أفعل شيئًا.")), registry)
     assert result["status"] == "error" and result["code"] == "harness_unreadable" and result["passed"] is False
-    assert result["harness_unreadable"] == [f"{name}{runner.UNREADABLE_SUFFIX}"] and result["harness_tampered"] == []
-    monkeypatch.setattr(runner, "harness_tampering", lambda task, root: [name, f"{name}{runner.UNREADABLE_SUFFIX}"])
+    assert result["harness_unreadable"] == [name] and result["harness_tampered"] == []
+    monkeypatch.setattr(runner, "harness_state", lambda task, root: ([name], [name]))
     result = _run(FIX_TASK, Scripted(says("لم أفعل شيئًا.")), registry)
     assert result["status"] == "failed" and result["code"] == "harness_tampered", "عبثٌ مقروءٌ بجانب غير مقروء يبقى عبثًا"
+
+
+def test_a_harness_file_whose_name_ends_with_the_unreadable_suffix_is_still_tampering_when_modified(tmp_path, registry, monkeypatch):
+    """ملاحظةُ Codex على #158: حين كانت الحالةُ لاحقةً في اسم الملف، كان ملفُّ حكمٍ اسمُه ينتهي بها يُصنَّف عطبًا ولو عُبث به؛
+    الصنفان مبنيّان الآن ولا يُقرآن من الاسم."""
+    import evaluation.agentic_runner as runner
+    name = f"check{runner.UNREADABLE_SUFFIX}"
+    task = {**VERIFY_TASK, "task_id": "suffix_named", "workspace": {name: "raise SystemExit(1)\n"},
+            "success": {"kind": "command_exit_zero", "command": [sys.executable, name]}}
+    assert name in protected_paths(task)
+    root = tmp_path / "ws"
+    root.mkdir()
+    materialize(task, root)
+    (root / name).write_text("raise SystemExit(0)\n", encoding="utf-8")
+    assert harness_state(task, root) == ([name], []) and harness_tampering(task, root) == [name]
+    monkeypatch.setattr(runner, "harness_state", lambda task, root: ([name], []))
+    result = _run(task, Scripted(says("لم أفعل شيئًا.")), registry)
+    assert result["status"] == "failed" and result["code"] == "harness_tampered" and result["harness_unreadable"] == []
 
 
 def test_protected_paths_follow_the_command_not_the_prose():
