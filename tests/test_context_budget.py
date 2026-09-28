@@ -157,12 +157,6 @@ class _FakeTokenizer:
             raise OSError("no such file")
         return cls(source)
 
-    @classmethod
-    def from_pretrained(cls, source):
-        if source.startswith("gone/"):
-            raise RuntimeError("404")
-        return cls(source)
-
     def encode(self, text, add_special_tokens=True):
         assert add_special_tokens is False, "الرموزُ الخاصة تُستثنى فالمقيس حدٌّ أدنى معلَن"
         return _FakeEncoding(text.split())
@@ -172,30 +166,72 @@ def _fake_tokenizers(monkeypatch):
     monkeypatch.setitem(sys.modules, "tokenizers", types.SimpleNamespace(Tokenizer=_FakeTokenizer))
 
 
+def _fake_hub(monkeypatch, tmp_path):
+    """بديلُ `huggingface_hub.hf_hub_download`: ملفٌّ محلّيّ لكل مستودعٍ إلا `gone/`، ويسجّل المراجعةَ المطلوبة."""
+    path = tmp_path / "hub-tokenizer.json"
+    path.write_text('{"hub": true}', encoding="utf-8")
+    asked = []
+
+    def download(repo, filename, revision=None):
+        asked.append((repo, filename, revision))
+        if repo.startswith("gone/"):
+            raise RuntimeError("404")
+        return str(path)
+    monkeypatch.setitem(sys.modules, "huggingface_hub", types.SimpleNamespace(hf_hub_download=download))
+    monkeypatch.setattr(cb, "tree_state", lambda root: {"dirty": False, "changed_paths": []})
+    return path, asked
+
+
 def test_tokenizer_loading_refuses_by_name(monkeypatch, tmp_path):
     monkeypatch.setitem(sys.modules, "tokenizers", None)
     with pytest.raises(cb.Refused) as caught:
-        cb.load_tokenizers(["q=Qwen/x"], [])
+        cb.load_tokenizers(["q=Qwen/x@rev"], [])
     assert caught.value.code == "tokenizers_unavailable"
     _fake_tokenizers(monkeypatch)
-    for named, files, code in ((["q=gone/x"], [], "tokenizer_unavailable"), ([], ["f=/nowhere/missing.json"], "tokenizer_unavailable"),
+    monkeypatch.setitem(sys.modules, "huggingface_hub", None)
+    with pytest.raises(cb.Refused) as caught:
+        cb.load_tokenizers(["q=org/model@rev"], [])
+    assert caught.value.code == "huggingface_hub_unavailable"
+    hub_file, asked = _fake_hub(monkeypatch, tmp_path)
+    # ملاحظةُ Codex على #157: مرمِّزُ الـHub بلا مراجعةٍ ثابتة يتحرّك مع الفرع الافتراضيّ فيعطي الأمرُ نفسُه أرقامًا أخرى بلا أثر
+    for named, files, code in ((["q=gone/x@rev"], [], "tokenizer_unavailable"), ([], ["f=/nowhere/missing.json"], "tokenizer_unavailable"),
                                (["noequals"], [], "tokenizer_spec_invalid"), (["=x"], [], "tokenizer_spec_invalid"),
-                               (["q=a", "q=b"], [], "tokenizer_spec_invalid")):
+                               (["q=a@r", "q=b@r"], [], "tokenizer_spec_invalid"),
+                               (["q=org/model"], [], "tokenizer_revision_unpinned"), (["q=org/model@"], [], "tokenizer_revision_unpinned"),
+                               (["q=@rev"], [], "tokenizer_revision_unpinned")):
         with pytest.raises(cb.Refused) as caught:
             cb.load_tokenizers(named, files)
         assert caught.value.code == code, (named, files)
     path = tmp_path / "tok.json"
     path.write_text("{}", encoding="utf-8")
-    counters, sources = cb.load_tokenizers(["hub=org/model"], [f"file={path}"])
+    counters, sources = cb.load_tokenizers(["hub=org/model@abc123"], [f"file={path}"])
     assert counters["hub"]("a b c") == 3 and counters["file"]("واحد اثنان") == 2
-    assert sources["hub"] == {"source": "org/model", "loaded_from": "hub"}
-    assert sources["file"]["loaded_from"] == "file" and len(sources["file"]["file_sha256_12"]) == 12
+    assert asked[-1] == ("org/model", "tokenizer.json", "abc123")
+    assert sources["hub"] == {"source": "org/model", "revision": "abc123", "loaded_from": "hub",
+                              "file_sha256_12": hashlib.sha256(hub_file.read_bytes()).hexdigest()[:12]}
+    assert sources["file"] == {"source": str(path), "loaded_from": "file",
+                               "file_sha256_12": hashlib.sha256(path.read_bytes()).hexdigest()[:12]}
+
+
+def test_a_dirty_tree_is_refused_by_the_cli_and_recorded_by_the_audit(monkeypatch, tmp_path, capsys):
+    """ملاحظةُ Codex على #157: نصوصُ التشغيل تُستورد من الشجرة، فتعديلٌ غيرُ مودَع كان يُقاس ويُنسب إلى HEAD بلا علامة."""
+    live = cb.tree_state(ROOT)
+    assert isinstance(live["dirty"], bool) and isinstance(live["changed_paths"], list)
+    _fake_tokenizers(monkeypatch)
+    _fake_hub(monkeypatch, tmp_path)
+    for state, code in (({"dirty": True, "changed_paths": ["agent/loop.py"]}, "worktree_dirty"),
+                        ({"dirty": None, "changed_paths": [], "error": "OSError"}, "worktree_state_unknown")):
+        monkeypatch.setattr(cb, "tree_state", lambda root, _s=state: _s)
+        assert cb.main(["--tokenizer", "fake=org/model@rev"]) == 2
+        assert json.loads(capsys.readouterr().out)["code"] == code
+        assert cb.audit(ROOT, {"ws": _ws})["tree_state"] == state, "المكتبةُ تسجّل الحالةَ ولا ترفض؛ سطرُ الأوامر هو الذي ينشر"
 
 
 def test_the_cli_writes_the_report_and_summarises_it(monkeypatch, tmp_path, capsys):
     _fake_tokenizers(monkeypatch)
+    hub_file, _ = _fake_hub(monkeypatch, tmp_path)
     out = tmp_path / "budget.json"
-    assert cb.main(["--tokenizer", "fake=org/model", "--report", str(out)]) == 0
+    assert cb.main(["--tokenizer", "fake=org/model@rev", "--report", str(out)]) == 0
     summary = json.loads(capsys.readouterr().out)
     report = json.loads(out.read_text(encoding="utf-8"))
     assert summary["status"] == "measured" and summary["tokenizers"] == ["fake"] and summary["report"] == str(out)
@@ -204,6 +240,8 @@ def test_the_cli_writes_the_report_and_summarises_it(monkeypatch, tmp_path, caps
     assert summary["findings"] == [f["code"] for f in report["findings"]]
     assert report["schema_version"] == cb.SCHEMA_VERSION and report["tool"] == cb.TOOL
     assert report["measurement_limits"] == cb.LIMITS and len(cb.LIMITS) >= 7
-    assert report["tokenizers"] == {"fake": {"source": "org/model", "loaded_from": "hub"}}
-    assert cb.main(["--tokenizer", "fake=gone/model"]) == 2
+    assert report["tokenizers"] == {"fake": {"source": "org/model", "revision": "rev", "loaded_from": "hub",
+                                             "file_sha256_12": hashlib.sha256(hub_file.read_bytes()).hexdigest()[:12]}}
+    assert report["tree_state"] == {"dirty": False, "changed_paths": []}
+    assert cb.main(["--tokenizer", "fake=gone/model@rev"]) == 2
     assert json.loads(capsys.readouterr().out)["code"] == "tokenizer_unavailable"

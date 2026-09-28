@@ -112,8 +112,8 @@
   "tokens_estimate": 15400
  },
  "run": {
-  "how": "git clone --branch claude/context-budget-20260927 للمستودع العام ثم checkout ea4fe07 (رأسُ الفرع بعد دمج main b102bbe وإصلاحات Codex) + pip install tokenizers huggingface_hub cryptography + تنزيلُ tokenizer.json للنموذجين من الـHub بلا رمز + تشغيلُ الأداة بـ--tokenizer-file مرّتين في تشغيلةٍ واحدة؛ بصماتُ الوثائق المقيسة (sha256sum في الصندوق) تطابق ما في التقرير",
-  "reproduce": "python tools/context_budget.py --tokenizer qwen3.5-9b=Qwen/Qwen3.5-9B --tokenizer gpt-oss-20b=openai/gpt-oss-20b --report out.json (يلزم tokenizers وشبكةٌ إلى الـHub، أو --tokenizer-file بملفَّين محلّيَّين)",
+  "how": "git clone --branch claude/context-budget-20260927 للمستودع العام ثم checkout ea4fe07 (رأسُ الفرع بعد دمج main b102bbe وإصلاحات Codex) + pip install tokenizers huggingface_hub cryptography + تنزيلُ tokenizer.json للنموذجين من الـHub بلا رمز + تشغيلُ الأداة بـ--tokenizer-file مرّتين في تشغيلةٍ واحدة؛ بصماتُ الوثائق المقيسة (sha256sum في الصندوق) تطابق ما في التقرير؛ الشجرةُ نسخةٌ طازجة عند ea4fe07 بلا تعديل (tree_state نظيف)",
+  "reproduce": "python tools/context_budget.py --tokenizer qwen3.5-9b=Qwen/Qwen3.5-9B@c202236235762e1c871ad0ccb60c8ee5ba337b9a --tokenizer gpt-oss-20b=openai/gpt-oss-20b@6cee5e81ee83917806bbde320786a8fb61efebee --report out.json (يلزم tokenizers وhuggingface_hub وشبكةٌ إلى الـHub، أو --tokenizer-file بملفَّين محلّيَّين)",
   "spend": {
    "cap": "HFD2 ($20 شحنًا مسبقًا)",
    "cumulative_minutes_for_this_audit": 19,
@@ -1668,15 +1668,21 @@
   "gpt-oss-20b": {
    "file_sha256_12": "0614fe83cada",
    "loaded_from": "file",
+   "revision": "6cee5e81ee83917806bbde320786a8fb61efebee",
    "source": "openai/gpt-oss-20b@6cee5e81ee83917806bbde320786a8fb61efebee tokenizer.json",
    "stands_for": "العاملُ المحلّي المسجَّل (OpenCode، ق٦٢) وبديلٌ عامٌّ عن مرمِّزات Codex غير العامّة"
   },
   "qwen3.5-9b": {
    "file_sha256_12": "5f9e4d4901a9",
    "loaded_from": "file",
+   "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
    "source": "Qwen/Qwen3.5-9B@c202236235762e1c871ad0ccb60c8ee5ba337b9a tokenizer.json",
    "stands_for": "المحرّكُ المعتمَد (ق٥٤) عبر Ollama؛ الملفُّ الذي يحمّله المحرّكُ نفسُه"
   }
  },
- "tool": "tools/context_budget.py"
+ "tool": "tools/context_budget.py",
+ "tree_state": {
+  "changed_paths": [],
+  "dirty": false
+ }
 }

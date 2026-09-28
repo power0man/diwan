@@ -221,7 +221,8 @@ def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str,
     report = {
         "schema_version": SCHEMA_VERSION, "tool": TOOL,
         "generated_at": _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat(),
-        "commit": _commit(root), "tokenizers": tokenizer_sources or {name: {"source": "injected"} for name in counters},
+        "commit": _commit(root), "tree_state": tree_state(root),
+        "tokenizers": tokenizer_sources or {name: {"source": "injected"} for name in counters},
         "context_window_tokens": window,
         "reading_set": reading, "reading_set_totals": _sum(reading, counters),
         "runtime_prefix": {"headline": HEADLINE, "envelope": envelope, "configurations": configurations,
@@ -250,8 +251,27 @@ def _commit(root: Path) -> str | None:
         return None
 
 
+def _hub_tokenizer_file(name: str, source: str) -> tuple[str, dict]:
+    """ملفُّ tokenizer.json من الـHub بمراجعةٍ ثابتة `repo@revision` وحدها: الفرعُ الافتراضيّ يتحرّك فيعطي أمرُ إعادة القياس
+    نفسُه أرقامًا أخرى بلا أثرٍ في التقرير (ملاحظة Codex على #157)."""
+    repo, at, revision = source.partition("@")
+    if not at or not repo or not revision:
+        raise Refused("tokenizer_revision_unpinned", f"{name}: {source}: سمِّ المستودع بمراجعةٍ ثابتة repo@revision")
+    try:
+        from huggingface_hub import hf_hub_download
+    except ImportError:
+        raise Refused("huggingface_hub_unavailable",
+                      "حزمةُ huggingface_hub غيرُ مركَّبة؛ يُنزَّل tokenizer.json بها أو يُعطى بـ--tokenizer-file") from None
+    try:
+        path = hf_hub_download(repo, "tokenizer.json", revision=revision)
+    except Exception as exc:                                           # noqa: BLE001 -- أيُّ تعذّرٍ في التنزيل يُسمّى برمزه ولا يُبتلع
+        raise Refused("tokenizer_unavailable", f"{name}: {source}: {type(exc).__name__}: {exc}"[:400]) from None
+    return str(path), {"source": repo, "revision": revision, "loaded_from": "hub"}
+
+
 def load_tokenizers(named: list[str], files: list[str]) -> tuple[dict[str, Counter], dict[str, dict]]:
-    """يحمّل المرمِّزات المسمّاة (`اسم=معرّفُ HF` أو `اسم=مسارُ tokenizer.json`) بحزمة `tokenizers`؛ كلُّ تعذّرٍ رفضٌ مسمًّى."""
+    """يحمّل المرمِّزات المسمّاة (`اسم=repo@revision` من الـHub أو `اسم=مسارُ tokenizer.json`) بحزمة `tokenizers`؛ كلُّ تعذّرٍ رفضٌ
+    مسمًّى، وكلُّ مرمِّزٍ يُسجَّل ببصمة ملفه المحمَّل أيًّا كان مصدرُه."""
     try:
         from tokenizers import Tokenizer
     except ImportError:
@@ -264,19 +284,31 @@ def load_tokenizers(named: list[str], files: list[str]) -> tuple[dict[str, Count
             raise Refused("tokenizer_spec_invalid", f"الصيغةُ اسم=مصدر: {spec!r}")
         if name in counters:
             raise Refused("tokenizer_spec_invalid", f"الاسمُ مكرَّر: {name!r}")
+        path, origin = (source, {"source": source, "loaded_from": "file"}) if from_file else _hub_tokenizer_file(name, source)
         try:
-            tokenizer = Tokenizer.from_file(source) if from_file else Tokenizer.from_pretrained(source)
+            tokenizer = Tokenizer.from_file(path)
         except Exception as exc:                                       # noqa: BLE001 -- أيُّ تعذّرٍ في التحميل يُسمّى برمزه ولا يُبتلع
             raise Refused("tokenizer_unavailable", f"{name}: {source}: {type(exc).__name__}: {exc}"[:400]) from None
         counters[name] = lambda text, _t=tokenizer: len(_t.encode(text, add_special_tokens=False).ids)
-        sources[name] = {"source": source, "loaded_from": "file" if from_file else "hub",
-                         **({"file_sha256_12": hashlib.sha256(Path(source).read_bytes()).hexdigest()[:12]} if from_file else {})}
+        sources[name] = {**origin, "file_sha256_12": hashlib.sha256(Path(path).read_bytes()).hexdigest()[:12]}
     return counters, sources
+
+
+def tree_state(root: Path) -> dict:
+    """حالةُ شجرة العمل: نصوصُ التشغيل تُستورد من الشجرة لا من HEAD، فتعديلٌ غيرُ مودَع يُنسب إلى إيداعٍ ليس إيداعَه
+    (ملاحظة Codex على #157). الملفّاتُ غيرُ المتتبَّعة لا تُعدّ لأنها لا تُستورد إلا بالاسم؛ وتعذُّرُ git حالةٌ مجهولة لا نظيفة."""
+    try:
+        out = subprocess.run(["git", "-C", str(root), "status", "--porcelain", "--untracked-files=no"],
+                             capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError) as exc:
+        return {"dirty": None, "changed_paths": [], "error": type(exc).__name__}
+    paths = sorted(line[3:] for line in out.splitlines() if line.strip())
+    return {"dirty": bool(paths), "changed_paths": paths}
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--tokenizer", action="append", default=[], metavar="NAME=HF_ID")
+    parser.add_argument("--tokenizer", action="append", default=[], metavar="NAME=HF_REPO@REVISION")
     parser.add_argument("--tokenizer-file", action="append", default=[], metavar="NAME=PATH")
     parser.add_argument("--report", type=Path)
     args = parser.parse_args(argv)
@@ -284,6 +316,12 @@ def main(argv=None) -> int:
         if not args.tokenizer and not args.tokenizer_file:
             raise Refused("no_tokenizer_named", "سمِّ مرمِّزًا بـ--tokenizer أو --tokenizer-file؛ لا رقمَ بلا مرمِّز")
         counters, sources = load_tokenizers(args.tokenizer, args.tokenizer_file)
+        state = tree_state(ROOT)
+        if state["dirty"] is not False:
+            # تقريرٌ يُنشر باسم إيداعٍ يقيس شجرةً غيرَ شجرته كذبٌ مسمًّى؛ الشجرةُ المتّسخة أو المجهولة تُرفض (ملاحظة Codex على #157)
+            raise Refused("worktree_dirty" if state["dirty"] else "worktree_state_unknown",
+                          "الشجرةُ فيها تعديلٌ غيرُ مودَع: " + ", ".join(state["changed_paths"][:8]) if state["dirty"]
+                          else "تعذّر git status فلا تُعرف حالةُ الشجرة")
         report = audit(ROOT, counters, sources)
     except Refused as exc:
         print(json.dumps({"status": "refused", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
