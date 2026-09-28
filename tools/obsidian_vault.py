@@ -22,17 +22,23 @@
 - «اقرأني» في صندوق الوارد تُكتب مرّةً إن غابت ثم هي ملكُ المالك. أمّا «خطواتي» فتُعاد كتابتُها من الخطة عند كل بناء
   **مع الحفاظ على علامات المالك** (`[x]` تبقى، وما أُنجز ثم أُجّل يبقى منجزًا) وعلى ما كتبه تحت «## ملاحظاتي»؛ فتأجيلٌ جديد
   في الخطة (ق٦٨) يبلغ خزنةً قائمة لا الخزنةَ الجديدة وحدها (ملاحظة Codex على #161).
+- لا يُكتب ولا يُقرأ ولا يُحذف عبر رابطٍ رمزيّ في `Diwan/` (`symlink_refused`)، ولا في غير ملفٍّ عاديّ (`not_a_regular_file`):
+  يُفحص كلُّ مسارٍ ستمسّه الأداةُ قبل أيّ كتابة، فرابطٌ وضعه المالكُ (خطواتي مربوطةٌ بمجلّد ملاحظاتٍ آخر) يُرفض باسمه ولا يُكتب
+  فوق ما يشير إليه ولو بـ`--force` (ملاحظة Codex الثانية عشرة على #161). و«اقرأني» إن كانت رابطًا تُترك كما هي.
 
 **الحدُّ المعلَن:** الأداةُ لا تمنع المالكَ من وضع الخزنة في مجلّد مزامنةٍ سحابيّ؛ ذلك خيارُه (G10). والمرآةُ
-لقطةٌ عند البناء: تتقادم حتى يُعاد البناء بعد الدمج.
+لقطةٌ عند البناء: تتقادم حتى يُعاد البناء بعد الدمج. وفحصُ الروابط يسبق الكتابة ولا يلازمها: رابطٌ يُنشأ بينهما لا يُرى،
+وجذرُ الخزنة نفسُه يُحلّ إلى مساره الحقيقيّ، ومجلّدُ `Inbox/` للمالك يربطه حيث شاء.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
+import stat
 import sys
 from pathlib import Path
 
@@ -214,6 +220,36 @@ def render(root: Path = ROOT) -> dict[str, str]:
     return out
 
 
+def _refuse_links(vault: Path, rels) -> None:
+    """كلُّ مسارٍ ستكتبه الأداةُ أو تقرؤه للترحيل أو تحذفه (نسبيًّا إلى الخزنة) يُفحص بـ`lstat` مكوّنًا مكوّنًا قبل أيّ كتابة: رابطٌ رمزيّ
+    في أيّ مكوّن يُرفض باسمه (`symlink_refused`)، والملفُّ الموجود غيرُ العاديّ (مجلّدٌ أو أنبوب) يُرفض (`not_a_regular_file`). كان
+    ترحيلُ «خطواتي» يكتب عبر الرابط فيستبدل ملاحظةً للمالك خارج الخزنة ولو بلا `--force` (ملاحظة Codex الثانية عشرة على #161)."""
+    seen: set[Path] = set()
+    for rel in rels:
+        parts, cur = Path(rel).parts, vault
+        for i, part in enumerate(parts):
+            cur = cur / part
+            if cur in seen:
+                continue
+            seen.add(cur)
+            try:
+                mode = os.lstat(cur).st_mode
+            except (FileNotFoundError, NotADirectoryError):
+                break                                                   # ما لم يوجد بعدُ يُنشأ ملفًّا عاديًّا
+            if stat.S_ISLNK(mode):
+                raise VaultError("symlink_refused", cur.relative_to(vault).as_posix())
+            if i == len(parts) - 1 and not stat.S_ISREG(mode):
+                raise VaultError("not_a_regular_file", cur.relative_to(vault).as_posix())
+
+
+def _checked_manifest(vault: Path, wanted) -> dict[str, str]:
+    """البيانُ بعد فحص كلِّ ما ستمسّه الأداة: البيانُ نفسُه والمولَّدُ قبل قراءته، ثم ما سجّله البيانُ مما قد يُحذف."""
+    _refuse_links(vault, [f"{OUT}/{MANIFEST}", *(f"{OUT}/{rel}" for rel in wanted)])
+    old = _load_manifest(vault / OUT)["files"]
+    _refuse_links(vault, [f"{OUT}/{rel}" for rel in old])
+    return old
+
+
 def _load_manifest(out_dir: Path) -> dict:
     path = out_dir / MANIFEST
     if not path.is_file():
@@ -317,15 +353,15 @@ def migrate_seed(rel: str, existing: str, rendered: str) -> str:
 def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
     vault = check_vault_location(vault, root)
     out_dir = vault / OUT
+    wanted = render(root)
+    old = _checked_manifest(vault, wanted)                             # يُرفض الرابطُ قبل أن يُكتب شيء
     out_dir.mkdir(parents=True, exist_ok=True)
     (vault / INBOX / DONE).mkdir(parents=True, exist_ok=True)
     readme = vault / INBOX / INBOX_README
-    if not readme.exists():
+    if not readme.exists() and not readme.is_symlink():                # رابطٌ للمالك مكانَها — ولو معلَّقًا — يُترك
         readme.write_text("# صندوق الوارد\n\nاكتب هنا طلبك لـClaude ملاحظةً جديدة (ملاحظة لكل طلب). يقرؤها Claude على الماك في بداية "
                           "جلسته، ويحوّل ما يلزم إلى مسألة GitHub بموافقتك، ثم ينقلها إلى «منجز». لا تكتب هنا مفتاحًا ولا توكنًا.\n",
                           encoding="utf-8")
-    old = _load_manifest(out_dir)["files"]
-    wanted = render(root)
     report = {"written": [], "unchanged": [], "kept_edited": [], "removed": [], "migrated": []}
     new_manifest: dict[str, str] = {}
     for rel, text in wanted.items():
@@ -373,7 +409,7 @@ def check(vault: Path, root: Path = ROOT) -> list[str]:
     out_dir = vault / OUT
     drift = []
     wanted = render(root)
-    for rel, recorded in _load_manifest(out_dir)["files"].items():   # ما سيحذفه build ولم يُحذف بعد
+    for rel, recorded in _checked_manifest(vault, wanted).items():   # ما سيحذفه build ولم يُحذف بعد
         target = out_dir / rel
         if rel not in wanted and target.is_file() and sha(target.read_bytes()) == recorded:
             drift.append(f"obsolete {rel}")

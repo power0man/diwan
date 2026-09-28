@@ -328,6 +328,75 @@ def test_an_annotation_appended_to_the_instruction_line_is_carried_not_deleted(r
     assert ov.LEGACY_HEADING not in rebuilt and "\n" + ov.NOTES_HEADING not in rebuilt and rebuilt.count("علّم الخطوة") == 1
 
 
+@pytest.mark.parametrize("force", [False, True], ids=["plain", "force"])
+def test_a_symlinked_note_is_refused_by_name_and_what_it_points_to_is_untouched(repo, vault, tmp_path, force):
+    """ملاحظةُ Codex على #161 (الجولة الثانية عشرة): «خطواتي» مربوطةٌ برابطٍ رمزيّ إلى مجلّد ملاحظاتٍ آخر كان الترحيلُ يكتب عبره
+    فيستبدل ملاحظةَ المالك الخارجية ولو بلا `--force`، والقالبُ القديم لم يكن يمسّ البذرةَ القائمة. صار كلُّ مسارٍ ستمسّه الأداةُ
+    يُفحص قبل أيّ كتابة: الرابطُ يُرفض باسمه (`symlink_refused`) نسبيًّا إلى الخزنة، ولا يُكتب شيءٌ في البناء، ويبقى ما يشير إليه
+    بايتًا بايتًا؛ وكذلك ملاحظةٌ مولَّدة مربوطة، ومجلّدُ المهامّ مربوطًا، والبيانُ مربوطًا، والمهمّةُ المتقادمة مربوطةً قبل حذفها."""
+    ov.build(vault, root=repo)
+    out = vault / "Diwan"
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    plan["owner_steps"].append({"order": 2, "guide_id": "G1", "title": "أخرى", "time": "٥ دقائق", "cost": "$0"})
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")   # البناءُ التالي يكتب ما تغيّر
+    board_before = (out / "لوحة المراحل.md").read_bytes()
+
+    def refused(rel, target, content="# ملاحظتي خارج الخزنة\n- [x] **1. خطوة** · أنجزتها\n".encode("utf-8")):
+        """يستبدل `rel` برابطٍ إلى `target` (والمجلّدُ يُنقل إليه بما فيه)، ويتحقّق الرفضَ باسمه وبقاءَ الهدف والخزنة كما هما، ثم يعيده."""
+        path = out / rel
+        saved = None if path.is_dir() else path.read_bytes()
+        if saved is None:
+            path.rename(target)
+        else:
+            path.unlink()
+            target.write_bytes(content)
+        path.symlink_to(target)
+        snapshot = sorted((p.relative_to(elsewhere).as_posix(), p.read_bytes() if p.is_file() else b"") for p in elsewhere.rglob("*"))
+        with pytest.raises(ov.VaultError) as e:
+            ov.build(vault, root=repo, force=force)
+        assert (e.value.code, str(e.value)) == ("symlink_refused", f"symlink_refused: Diwan/{rel}")
+        with pytest.raises(ov.VaultError):
+            ov.check(vault, root=repo)
+        assert sorted((p.relative_to(elsewhere).as_posix(), p.read_bytes() if p.is_file() else b"") for p in elsewhere.rglob("*")) == snapshot
+        assert path.is_symlink() and (out / "لوحة المراحل.md").read_bytes() == board_before, "لا يُكتب شيءٌ في بناءٍ مرفوض"
+        path.unlink()
+        if saved is None:
+            target.rename(path)
+        else:
+            path.write_bytes(saved)
+
+    refused("خطواتي.md", elsewhere / "قائمتي.md")
+    refused("المهام/ك١.md", elsewhere / "ك١.md")
+    refused("المهام", elsewhere / "مهام", content=None)
+    refused(".diwan-mirror.json", elsewhere / "بيان.json", content=b'{"files": {}}')
+    # مهمّةٌ متقادمة (حُذفت من الخطة) مربوطةٌ بملفٍّ بنصّها المسجَّل: لا يُحذف الرابطُ ولا يُقرأ الهدف
+    plan["tasks"] = plan["tasks"][:1]
+    plan["phases"][0]["task_ids"] = ["ك١"]
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    refused("المهام/جديد-x.md", elsewhere / "جديد-x.md", content=(out / "المهام/جديد-x.md").read_bytes())
+    assert ov.build(vault, root=repo, force=force)["removed"] == ["المهام/جديد-x.md"], "بعد إزالة الرابط يعود البناءُ كما كان"
+
+
+def test_a_non_regular_file_in_place_of_a_note_is_refused_and_a_readme_link_is_left_alone(repo, vault, tmp_path):
+    """من الجولة الثانية عشرة أيضًا: مجلّدٌ مكانَ «خطواتي» يُرفض باسمه (`not_a_regular_file`) قبل أيّ كتابة لا بخطأ قراءةٍ خام؛
+    و«اقرأني» في صندوق الوارد إن كانت رابطًا — ولو معلَّقًا — تُترك: لا يُنشأ الملفُّ الذي يشير إليه."""
+    ov.build(vault, root=repo)
+    steps = vault / "Diwan/خطواتي.md"
+    steps.unlink()
+    steps.mkdir()
+    with pytest.raises(ov.VaultError) as e:
+        ov.build(vault, root=repo)
+    assert (e.value.code, str(e.value)) == ("not_a_regular_file", "not_a_regular_file: Diwan/خطواتي.md")
+    steps.rmdir()
+    readme = vault / "Inbox/اقرأني.md"
+    readme.unlink()
+    readme.symlink_to(tmp_path / "لم-يوجد.md")
+    ov.build(vault, root=repo)
+    assert readme.is_symlink() and not (tmp_path / "لم-يوجد.md").exists() and steps.is_file()
+
+
 def test_inbox_notes_survive_rebuilds_and_only_written_files_are_removed(repo, vault):
     ov.build(vault, root=repo)
     note = vault / "Inbox/طلب.md"
