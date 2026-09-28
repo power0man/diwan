@@ -16,7 +16,7 @@
   }
  },
  "bytecode_isolated": true,
- "commit": "a9fd600bc776df91f813de63c91f84841edb4849",
+ "commit": "971581aad0acd3ddbf4dbc9c32f4fe9cd22994fb",
  "context_window_tokens": 32768,
  "findings": [
   {
@@ -36,11 +36,11 @@
    "tool": "export_document"
   }
  ],
- "generated_at": "2026-09-28T13:58:06+00:00",
+ "generated_at": "2026-09-28T17:09:15+00:00",
  "measured_in": {
   "interpreter_isolated": true,
-  "snapshot_of_commit": "a9fd600bc776df91f813de63c91f84841edb4849",
-  "tree_digest": "e815345573a9beadfdeee1eabb3e591f16db160d799ef1a4a5a0dfe297c61ef1"
+  "snapshot_of_commit": "971581aad0acd3ddbf4dbc9c32f4fe9cd22994fb",
+  "tree_digest": "eaac82cae87f76af11f9171f7aab0e4e773e5e6c4d012c2b2295f0d52ca4a754"
  },
  "measurement_limits": [
   "the_tokenizers_named_are_public_stand_ins_for_the_agents_that_read_section_0_since_claude_codex_and_gemini_tokenizers_are_not_public",
@@ -69,7 +69,7 @@
     "gpt-oss-20b": 1.073,
     "qwen3.5-9b": 1.048
    },
-   "sha256_12": "e5aa7fd225b6",
+   "sha256_12": "e6a17c5e81a3",
    "tokens": {
     "gpt-oss-20b": 7490,
     "qwen3.5-9b": 7671
@@ -87,7 +87,7 @@
     "gpt-oss-20b": 0.997,
     "qwen3.5-9b": 0.864
    },
-   "sha256_12": "70c318f96101",
+   "sha256_12": "c1925cbe7687",
    "tokens": {
     "gpt-oss-20b": 4891,
     "qwen3.5-9b": 5646
@@ -122,19 +122,19 @@
   "tokens_estimate": 15400
  },
  "run": {
-  "how": "git clone --branch claude/context-budget-20260927 للمستودع العام ثم checkout a9fd600 (رأسُ الفرع بعد الجولة العاشرة: الطفلُ لا يتلقّى إيداعًا، والأبُ يختم الإيداعَ وحالةَ الشجرة بعد مطابقة بصمة اللقطة) + pip install tokenizers huggingface_hub cryptography + تنزيلُ tokenizer.json للنموذجين من الـHub بلا رمز + تشغيلُ الأداة بـ--tokenizer-file مرّتين في تشغيلةٍ واحدة؛ الأداةُ أعادت تشغيلَ نفسها بـ-I -P وفكّت لقطةَ الإيداع في مجلّدٍ مؤقّت وقاس فيها الطفلُ وسجّل بصمةَ شجرتها، والأبُ ختم الإيداعَ بعد مطابقتها ثم حذف اللقطةَ (measured_in في التقرير: snapshot_of_commit وtree_digest؛ لا لقطةَ باقية في /tmp، وبقي مجلّدا pycache المعزولان)؛ بصماتُ الوثائق المقيسة (sha256sum في الصندوق) تطابق ما في التقرير؛ الشجرةُ نسخةٌ طازجة عند a9fd600 بلا تعديل (tree_state نظيف). صندوقٌ أولُ لهذه الجولة (6aba4ab66b030d633f69c8f9) انتهى قبل أن يُقرأ تقريرُه فأُعيد في صندوقٍ ثانٍ؛ القياسُ نفسُه استغرق ثوانيَ. مسارُ ملفِّ المرمِّز الذي سجّلته الأداةُ هو هدفُ رابط مخزن الـHub (blobs/…)؛ استُبدل به هنا اسمُ المستودع والمراجعةُ، والبصمةُ كما هي",
+  "how": "git clone --branch claude/context-budget-20260927 للمستودع العام ثم checkout 971581a (رأسُ الفرع بعد الجولة الرابعة عشرة: تقييدُ أرقام §٠ بالقراءات الشرطية، ومعه توليدُ AGENTS.md والفهرس النهائيّ) + pip install tokenizers huggingface_hub cryptography + تنزيلُ tokenizer.json للنموذجين من الـHub بلا رمز + تشغيلُ الأداة بـ--tokenizer-file مرّتين في تشغيلةٍ واحدة؛ الأداةُ أعادت تشغيلَ نفسها بـ-I -P وفكّت لقطةَ الإيداع في مجلّدٍ مؤقّت وقاس فيها الطفلُ وسجّل بصمةَ شجرتها، والأبُ ختم الإيداعَ بعد مطابقتها ثم حذف اللقطةَ (measured_in في التقرير: snapshot_of_commit وtree_digest؛ لا لقطةَ باقية في /tmp، وبقي مجلّدا pycache المعزولان)؛ بصماتُ الوثائق المقيسة (sha256sum في الصندوق: AGENTS.md e6a17c5e81a3، docs/INDEX.md c1925cbe7687، docs/VISION.md df9b1b18e0bb) تطابق ما في التقرير؛ الشجرةُ نسخةٌ طازجة عند 971581a بلا تعديل (tree_state نظيف). مسارُ ملفِّ المرمِّز الذي سجّلته الأداةُ مسارٌ مؤقّت في الصندوق؛ استُبدل به هنا اسمُ المستودع والمراجعةُ، والبصمةُ كما هي",
   "reproduce": "python tools/context_budget.py --tokenizer qwen3.5-9b=Qwen/Qwen3.5-9B@c202236235762e1c871ad0ccb60c8ee5ba337b9a --tokenizer gpt-oss-20b=openai/gpt-oss-20b@6cee5e81ee83917806bbde320786a8fb61efebee --report out.json (يلزم tokenizers وhuggingface_hub وشبكةٌ إلى الـHub، أو --tokenizer-file بملفَّين محلّيَّين)",
   "spend": {
    "cap": "HFD2 ($20 شحنًا مسبقًا)",
-   "cumulative_minutes_for_this_audit": 176,
-   "estimate_usd": "≤ 0.30 للتشغيلات الثماني بسعر cpu-basic المعلَن للحظة التشغيل؛ فاتورةُ HF هي الحاسمة ولم تُقرأ بعد",
+   "cumulative_minutes_for_this_audit": 188,
+   "estimate_usd": "≤ 0.35 للتشغيلات التسع بسعر cpu-basic المعلَن للحظة التشغيل؛ فاتورةُ HF هي الحاسمة ولم تُقرأ بعد",
    "flavor": "cpu-basic",
-   "minutes": 50,
-   "note": "صندوقان لهذه الجولة: الأول (6aba4ab6…) بمهلة ٤٥ دقيقة انتهى قبل قراءة تقريره فتُحسب مهلتُه كلُّها حدًّا أعلى، والثاني (6aba71b6…) نحو ٥ دقائق حتى إنهائه",
+   "minutes": 12,
+   "note": "صندوقٌ واحدٌ لهذه الجولة (6aba95e4…) نحو ١٢ دقيقة حتى إنهائه",
    "recorded_per": "ق٦٧-٣: كلُّ إنفاقٍ يُسجَّل في docs/probe/"
   },
-  "wall_clock_minutes": 50,
-  "where": "Hugging Face Jobs sandbox (ق٦٧-٣)، flavor cpu-basic، image python:3.12، job 6aba71b66b030d633f69ce4f على حساب المالك"
+  "wall_clock_minutes": 12,
+  "where": "Hugging Face Jobs sandbox (ق٦٧-٣)، flavor cpu-basic، image python:3.12، job 6aba95e46b030d633f69d4f9 على حساب المالك"
  },
  "runtime_prefix": {
   "configurations": {
@@ -1646,54 +1646,70 @@
  },
  "schema_version": 1,
  "superseded_measurement": {
-  "commit": "4152b9a064c5ed7b37889580e577f08ef43b070c (رأسُ الفرع قبل الجولة العاشرة: الطفلُ كان يتلقّى الإيداعَ وحالةَ الشجرة من سطر الأوامر)",
+  "commit": "a9fd600bc776df91f813de63c91f84841edb4849 (رأسُ الفرع قبل الجولات الثانية عشرة إلى الرابعة عشرة: آخرُها 971581a عدّل docs/STATUS.md فأعاد توليدَ AGENTS.md والفهرس فتغيّرت بصمتاهما)",
   "earlier": {
-   "commit": "cb9374c13af349bf810a065861e1fd0b21912a1d (رأسُ الفرع قبل الجولة الثامنة: الإقلاعُ المعزول للأب والاستيرادُ الكسول والفكُّ المتوافق)",
+   "commit": "4152b9a064c5ed7b37889580e577f08ef43b070c (رأسُ الفرع قبل الجولة العاشرة: الطفلُ كان يتلقّى الإيداعَ وحالةَ الشجرة من سطر الأوامر)",
    "earlier": {
-    "commit": "099ac93929b4e94f331cefd1193ea98a9126389c (رأسُ الفرع قبل نقل القياس إلى لقطة HEAD بمفسّرٍ معزول)",
+    "commit": "cb9374c13af349bf810a065861e1fd0b21912a1d (رأسُ الفرع قبل الجولة الثامنة: الإقلاعُ المعزول للأب والاستيرادُ الكسول والفكُّ المتوافق)",
     "earlier": {
-     "commit": "ea4fe0764ebc74179ae0dde803ca4aaedc2d05d7 (رأسُ الفرع قبل دمج main a4813bc وعزل الـbytecode)",
+     "commit": "099ac93929b4e94f331cefd1193ea98a9126389c (رأسُ الفرع قبل نقل القياس إلى لقطة HEAD بمفسّرٍ معزول)",
      "earlier": {
-      "commit": "aeb9dab17b608dc5c0a533c0de40385973fcf1a1 (رأسُ الفرع قبل دمج main b102bbe)",
+      "commit": "ea4fe0764ebc74179ae0dde803ca4aaedc2d05d7 (رأسُ الفرع قبل دمج main a4813bc وعزل الـbytecode)",
       "earlier": {
-       "commit": "bbb2789c26d6cf7607ba4779a79720ff0f022197 (main) مع أداة الفرع محقونةً وقاسمِ التقدير القديم ٣",
-       "job": "6ab9ac7752d0dbd7f1d9eba6، cpu-basic، نحو ٧ دقائق",
-       "reading_set_tokens": {
-        "gpt-oss-20b": 14292,
-        "qwen3.5-9b": 15168
+       "commit": "aeb9dab17b608dc5c0a533c0de40385973fcf1a1 (رأسُ الفرع قبل دمج main b102bbe)",
+       "earlier": {
+        "commit": "bbb2789c26d6cf7607ba4779a79720ff0f022197 (main) مع أداة الفرع محقونةً وقاسمِ التقدير القديم ٣",
+        "job": "6ab9ac7752d0dbd7f1d9eba6، cpu-basic، نحو ٧ دقائق",
+        "reading_set_tokens": {
+         "gpt-oss-20b": 14292,
+         "qwen3.5-9b": 15168
+        },
+        "tokens_estimate_at_divisor_3": 12186,
+        "why_superseded": "ملاحظةُ Codex على #157: الدليلُ يجب أن يقيس الفهرسَ النهائيّ للرأس المنشور لا main؛ ومخطّطاتُ الأدوات كانت قائمةً ثابتة لا سجلَّ التطبيق"
        },
-       "tokens_estimate_at_divisor_3": 12186,
-       "why_superseded": "ملاحظةُ Codex على #157: الدليلُ يجب أن يقيس الفهرسَ النهائيّ للرأس المنشور لا main؛ ومخطّطاتُ الأدوات كانت قائمةً ثابتة لا سجلَّ التطبيق"
+       "job": "6ab9b7606b030d633f69b17c، cpu-basic، نحو ٦ دقائق",
+       "reading_set_bytes": 58630,
+       "reading_set_sha256_12": {
+        "AGENTS.md": "131adb2ea30b",
+        "docs/INDEX.md": "06a65699b0a2",
+        "docs/VISION.md": "df9b1b18e0bb"
+       },
+       "reading_set_tokens": {
+        "gpt-oss-20b": 14321,
+        "qwen3.5-9b": 15209
+       },
+       "tokens_estimate": 15263,
+       "why_superseded": "ملاحظةُ Codex على #157: دمجُ main (b102bbe) بعد القياس غيّر AGENTS.md (§٥) وdocs/INDEX.md فلم تعد بصماتُ الدليل بصماتِ الرأس المنشور؛ أرقامُ السابقة والضريبة لم تتغيّر لأن شيفرة التشغيل لم تتغيّر"
       },
-      "job": "6ab9b7606b030d633f69b17c، cpu-basic، نحو ٦ دقائق",
-      "reading_set_bytes": 58630,
+      "job": "6ab9e89052d0dbd7f1d9fa0d، cpu-basic، نحو ٦ دقائق",
+      "reading_set_bytes": 59120,
       "reading_set_sha256_12": {
-       "AGENTS.md": "131adb2ea30b",
-       "docs/INDEX.md": "06a65699b0a2",
+       "AGENTS.md": "f780ed5314e7",
+       "docs/INDEX.md": "1adec3c40c14",
        "docs/VISION.md": "df9b1b18e0bb"
       },
       "reading_set_tokens": {
-       "gpt-oss-20b": 14321,
-       "qwen3.5-9b": 15209
+       "gpt-oss-20b": 14435,
+       "qwen3.5-9b": 15326
       },
-      "tokens_estimate": 15263,
-      "why_superseded": "ملاحظةُ Codex على #157: دمجُ main (b102bbe) بعد القياس غيّر AGENTS.md (§٥) وdocs/INDEX.md فلم تعد بصماتُ الدليل بصماتِ الرأس المنشور؛ أرقامُ السابقة والضريبة لم تتغيّر لأن شيفرة التشغيل لم تتغيّر"
+      "tokens_estimate": 15400,
+      "why_superseded": "ملاحظةُ Codex على #157: دمجُ main (a4813bc) وجولاتُ الإصلاح بعد القياس غيّرت AGENTS.md وdocs/INDEX.md فلم تعد بصماتُ الدليل بصماتِ الرأس المنشور، ولم يكن التقرير يحمل bytecode_isolated؛ الفرقُ رمزان في Qwen وأربعةٌ في gpt-oss، وأرقامُ السابقة والضريبة كما هي"
      },
-     "job": "6ab9e89052d0dbd7f1d9fa0d، cpu-basic، نحو ٦ دقائق",
+     "job": "6aba1df252d0dbd7f1da061c، cpu-basic، نحو ١٢ دقيقة",
      "reading_set_bytes": 59120,
      "reading_set_sha256_12": {
-      "AGENTS.md": "f780ed5314e7",
-      "docs/INDEX.md": "1adec3c40c14",
+      "AGENTS.md": "e5aa7fd225b6",
+      "docs/INDEX.md": "70c318f96101",
       "docs/VISION.md": "df9b1b18e0bb"
      },
      "reading_set_tokens": {
-      "gpt-oss-20b": 14435,
-      "qwen3.5-9b": 15326
+      "gpt-oss-20b": 14439,
+      "qwen3.5-9b": 15324
      },
      "tokens_estimate": 15400,
-     "why_superseded": "ملاحظةُ Codex على #157: دمجُ main (a4813bc) وجولاتُ الإصلاح بعد القياس غيّرت AGENTS.md وdocs/INDEX.md فلم تعد بصماتُ الدليل بصماتِ الرأس المنشور، ولم يكن التقرير يحمل bytecode_isolated؛ الفرقُ رمزان في Qwen وأربعةٌ في gpt-oss، وأرقامُ السابقة والضريبة كما هي"
+     "why_superseded": "ملاحظتا Codex السادسة والسابعة على #157: القياسُ كان في شجرة العمل (pyc بلا مصدر ورابطٌ غيرُ متتبَّع يفلتان)، فصار في لقطة git archive من HEAD بمفسّرٍ معزول؛ الأرقامُ والبصماتُ نفسُها، وأُضيف measured_in وuntracked_importable وحدُّ اللقطة"
     },
-    "job": "6aba1df252d0dbd7f1da061c، cpu-basic، نحو ١٢ دقيقة",
+    "job": "6aba2acf6b030d633f69bfe0، cpu-basic، مهلتُه ٤٠ دقيقة حُسبت كاملةً",
     "reading_set_bytes": 59120,
     "reading_set_sha256_12": {
      "AGENTS.md": "e5aa7fd225b6",
@@ -1705,10 +1721,13 @@
      "qwen3.5-9b": 15324
     },
     "tokens_estimate": 15400,
-    "why_superseded": "ملاحظتا Codex السادسة والسابعة على #157: القياسُ كان في شجرة العمل (pyc بلا مصدر ورابطٌ غيرُ متتبَّع يفلتان)، فصار في لقطة git archive من HEAD بمفسّرٍ معزول؛ الأرقامُ والبصماتُ نفسُها، وأُضيف measured_in وuntracked_importable وحدُّ اللقطة"
+    "why_superseded": "ملاحظتا Codex الثامنة والتاسعة على #157: الأبُ نفسُه كان يستورد tarfile وsubprocess من tools/ قبل العزل، وفكُّ اللقطة كان يفترض extractall(filter=) غيرَ الموجود في 3.11.0–3.11.3؛ الأرقامُ والبصماتُ نفسُها، ولم يتغيّر في التقرير إلا LIMITS (حدُّ site المستخدم)"
    },
-   "job": "6aba2acf6b030d633f69bfe0، cpu-basic، مهلتُه ٤٠ دقيقة حُسبت كاملةً",
-   "reading_set_bytes": 59120,
+   "job": "6aba326a52d0dbd7f1da0bc9، cpu-basic، نحو ٥٥ دقيقة لتشغيلتين",
+   "measured_in": {
+    "interpreter_isolated": true,
+    "snapshot_of_commit": "4152b9a064c5ed7b37889580e577f08ef43b070c"
+   },
    "reading_set_sha256_12": {
     "AGENTS.md": "e5aa7fd225b6",
     "docs/INDEX.md": "70c318f96101",
@@ -1718,13 +1737,13 @@
     "gpt-oss-20b": 14439,
     "qwen3.5-9b": 15324
    },
-   "tokens_estimate": 15400,
-   "why_superseded": "ملاحظتا Codex الثامنة والتاسعة على #157: الأبُ نفسُه كان يستورد tarfile وsubprocess من tools/ قبل العزل، وفكُّ اللقطة كان يفترض extractall(filter=) غيرَ الموجود في 3.11.0–3.11.3؛ الأرقامُ والبصماتُ نفسُها، ولم يتغيّر في التقرير إلا LIMITS (حدُّ site المستخدم)"
+   "why_superseded": "ملاحظةُ Codex العاشرة على #157: `--in-snapshot <sha> --tree-state <json>` من سطر الأوامر كان ينسب قياسَ أيّ شجرةٍ إلى أيّ إيداع؛ أُعيد القياسُ بعد الإصلاح ليحمل التقريرُ بصمةَ شجرة اللقطة (tree_digest) وختمَ الأب — الأرقامُ والبصماتُ لم تتغيّر"
   },
-  "job": "6aba326a52d0dbd7f1da0bc9، cpu-basic، نحو ٥٥ دقيقة لتشغيلتين",
+  "job": "6aba71b66b030d633f69ce4f، cpu-basic، نحو ٥٠ دقيقة لصندوقين",
   "measured_in": {
    "interpreter_isolated": true,
-   "snapshot_of_commit": "4152b9a064c5ed7b37889580e577f08ef43b070c"
+   "snapshot_of_commit": "a9fd600bc776df91f813de63c91f84841edb4849",
+   "tree_digest": "e815345573a9beadfdeee1eabb3e591f16db160d799ef1a4a5a0dfe297c61ef1"
   },
   "reading_set_sha256_12": {
    "AGENTS.md": "e5aa7fd225b6",
@@ -1735,7 +1754,7 @@
    "gpt-oss-20b": 14439,
    "qwen3.5-9b": 15324
   },
-  "why_superseded": "ملاحظةُ Codex العاشرة على #157: `--in-snapshot <sha> --tree-state <json>` من سطر الأوامر كان ينسب قياسَ أيّ شجرةٍ إلى أيّ إيداع؛ أُعيد القياسُ بعد الإصلاح ليحمل التقريرُ بصمةَ شجرة اللقطة (tree_digest) وختمَ الأب — الأرقامُ والبصماتُ لم تتغيّر"
+  "why_superseded": "ملاحظةُ Codex الخامسة عشرة على #157: الرأسُ 971581a عدّل docs/STATUS.md ثم أعاد توليدَ AGENTS.md وdocs/INDEX.md فصارت بصمتاهما e6a17c5e81a3 وc1925cbe7687 والدليلُ يحمل بصمتَي a9fd600؛ أُعيد القياسُ بعد التوليد النهائيّ على 971581a — الأرقامُ لم تتغيّر (تعديلُ STATUS غيّر بصمتَه في الفهرس لا طولَه)"
  },
  "thresholds": {
   "estimate_drift": 0.2,
