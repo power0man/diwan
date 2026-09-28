@@ -173,12 +173,23 @@ def _load_manifest(out_dir: Path) -> dict:
 
 
 NOTES_HEADING = "## ملاحظاتي"
+LEGACY_HEADING = "### سطورٌ نُقلت من النسخة السابقة"
+_STEP_LINE = re.compile(r"^- (\[[ xX]\]|⏸) \*\*\d+\.")
+_KNOWN_LINES = ("# خطواتي", "## خطواتٌ مؤجَّلة", "لا تُطلب منك الآن؛ تعود إلى القائمة بإشعارك.")
+
+
+def _owner_lines(head: str) -> list[str]:
+    """ما كتبه المالك في النسخة القائمة خارج ما تولّده الأداة: لا العنوانَ ولا سطرَ التعليمات ولا الخطواتِ ولا قسمَ المؤجَّل."""
+    return [line for line in head.splitlines()
+            if line.strip() and line.strip() not in _KNOWN_LINES and not _STEP_LINE.match(line)
+            and not line.startswith("علّم الخطوة حين تنتهي")]
 
 
 def migrate_steps(existing: str, rendered: str) -> str:
     """«خطواتي» تُعاد كتابتُها من الخطة مع الحفاظ على ما للمالك فيها: الخطوةُ المعلَّمة `[x]` في الموجود تبقى معلَّمةً في المولَّد
-    (وإن أُجّلت بعد إنجازها بقيت منجزةً باسمها)، وما كتبه تحت «## ملاحظاتي» يُنقل كما هو. كانت البذرةُ تُحفظ حرفيًّا حتى مع
-    `--force`، فلا يبلغ التأجيلُ (ق٦٨) خزنةً قائمة (ملاحظة Codex على #161)."""
+    (وإن أُجّلت بعد إنجازها بقيت منجزةً باسمها)، وما كتبه تحت «## ملاحظاتي» يُنقل كما هو، وما كتبه في غير ذلك من سطورٍ (النسخةُ
+    القديمة دعته إلى التعديل حيث شاء) يُنقل تحت «### سطورٌ نُقلت من النسخة السابقة» في قسم ملاحظاته لا يُمحى بصمت. كانت البذرةُ
+    تُحفظ حرفيًّا حتى مع `--force`، فلا يبلغ التأجيلُ (ق٦٨) خزنةً قائمة (ملاحظتا Codex على #161)."""
     done = set(re.findall(r"^- \[[xX]\] \*\*(\d+)\.", existing, re.M))
     lines = []
     for line in rendered.splitlines():
@@ -189,8 +200,11 @@ def migrate_steps(existing: str, rendered: str) -> str:
         lines.append(line)
     text = "\n".join(lines) + "\n"
     head, sep, notes = existing.partition("\n" + NOTES_HEADING)
-    if sep:
-        text += "\n" + NOTES_HEADING + notes.rstrip("\n") + "\n"
+    stray = _owner_lines(head)
+    if sep or stray:
+        text += "\n" + NOTES_HEADING + (notes.rstrip("\n") if sep else "") + "\n"
+    if stray:
+        text += "\n" + LEGACY_HEADING + "\n\n" + "\n".join(stray) + "\n"
     return text
 
 

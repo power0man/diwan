@@ -136,6 +136,27 @@ def test_the_steps_note_keeps_the_owner_s_checkmarks_and_notes_while_the_plan_s_
     assert ov.build(vault, root=repo, force=True)["migrated"] == [] and steps.read_text(encoding="utf-8") == migrated
 
 
+def test_a_legacy_checklist_s_free_lines_are_carried_into_the_notes_section_not_discarded(repo, vault):
+    """ملاحظةُ Codex على #161 (الجولة الرابعة): النسخةُ القديمة من «خطواتي» دعت المالكَ إلى التعديل حيث شاء بلا قسم «## ملاحظاتي»،
+    فالترحيلُ الذي لا يحفظ إلا ما تحت ذلك العنوان كان يمحو سطورَه الأخرى بصمت عند أول بناء. صارت تُنقل تحت عنوانٍ باسمها في قسم
+    ملاحظاته، وتبقى العلامات، ولا يتكرّر النقلُ في البناء التالي."""
+    ov.build(vault, root=repo)
+    steps = vault / "Diwan/خطواتي.md"
+    legacy = ["# خطواتي", "", "علّم الخطوة حين تنتهي. هذه الملاحظة لك: لا تكتب الأداةُ فوقها بعد إنشائها.", "",
+              "- [x] **1. خطوة** · [[الأدلة/G1|G1]] · ٥ دقائق · $0", "  أنجزتها يوم الأحد مع المحامي.", "",
+              "تذكير: اسأل عن الفاتورة قبل الخطوة التالية.", ""]
+    steps.write_text("\n".join(legacy), encoding="utf-8")
+    assert ov.check(vault, root=repo) == ["stale خطواتي.md"]
+    assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"]
+    text = steps.read_text(encoding="utf-8")
+    assert "- [x] **1. خطوة**" in text and "لا تكتب الأداةُ فوقها" not in text
+    body, notes = text.split("\n## ملاحظاتي")
+    assert "أنجزتها يوم الأحد" not in body and "تذكير" not in body
+    carried = [line for line in notes.split("### سطورٌ نُقلت من النسخة السابقة")[1].splitlines() if line.strip()]
+    assert carried == ["  أنجزتها يوم الأحد مع المحامي.", "تذكير: اسأل عن الفاتورة قبل الخطوة التالية."], "بنصّها وترتيبها ومسافاتها"
+    assert ov.check(vault, root=repo) == [] and ov.build(vault, root=repo)["migrated"] == [], "لا يُعاد النقلُ في كل بناء"
+
+
 def test_inbox_notes_survive_rebuilds_and_only_written_files_are_removed(repo, vault):
     ov.build(vault, root=repo)
     note = vault / "Inbox/طلب.md"
