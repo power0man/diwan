@@ -192,8 +192,7 @@ def render(root: Path = ROOT) -> dict[str, str]:
                              + "".join(f" — ⏸ خطوةُ المالك {s['order']} لها مؤجَّلة ({s['deferred']['by']})" for s in held))
         board.append("")
     out["لوحة المراحل.md"] = "\n".join(board)
-    steps = ["# خطواتي", "", "علّم الخطوة حين تنتهي. تُعاد كتابةُ القائمة من الخطة عند كل بناء وتبقى علاماتُك؛ وما تكتبه تحت "
-             "«## ملاحظاتي» في آخر الملاحظة يبقى كما هو.", ""]
+    steps = ["# خطواتي", "", INSTRUCTION, ""]
     postponed = []
     for s in sorted(plan["owner_steps"], key=lambda s: s["order"]):
         guide = f"[[الأدلة/{s['guide_id']}|{s['guide_id']}]]" if re.fullmatch(r"G\d+", s["guide_id"]) else s["guide_id"]
@@ -227,7 +226,12 @@ LEGACY_HEADING = "### سطورٌ نُقلت من النسخة السابقة"
 DONE_BEFORE_DEFERRAL = " — أُنجزت قبل التأجيل"
 _STEP_LINE = re.compile(r"^- (\[[ xX]\]|⏸) \*\*(\d+)\.")
 _DEFERRAL_LABEL = " — مؤجَّلة ("
-_KNOWN_LINES = ("# خطواتي", "## خطواتٌ مؤجَّلة", "لا تُطلب منك الآن؛ تعود إلى القائمة بإشعارك.")
+INSTRUCTION = ("علّم الخطوة حين تنتهي. تُعاد كتابةُ القائمة من الخطة عند كل بناء وتبقى علاماتُك؛ وما تكتبه تحت "
+               "«## ملاحظاتي» في آخر الملاحظة يبقى كما هو.")
+LEGACY_INSTRUCTION = "علّم الخطوة حين تنتهي. هذه الملاحظة لك: لا تكتب الأداةُ فوقها بعد إنشائها."
+# ما تولّده الأداةُ من سطورٍ غير الخطوات، بنصّه التامّ: سطرٌ زاد عليه المالكُ شيئًا ليس منها فيُنقل ولا يُمحى — كان سطرُ التعليمات
+# يُعرف ببدايته فيُمحى تعليقٌ ألحقه المالكُ به («… — اتصلتُ بالفريق»)، والنسخةُ القديمة دعته إلى التعديل حيث شاء (ملاحظة Codex الحادية عشرة على #161)
+_KNOWN_LINES = ("# خطواتي", INSTRUCTION, LEGACY_INSTRUCTION, "## خطواتٌ مؤجَّلة", "لا تُطلب منك الآن؛ تعود إلى القائمة بإشعارك.")
 
 
 def _strip_generated(tail: str) -> str:
@@ -267,7 +271,7 @@ def migrate_steps(existing: str, rendered: str) -> str:
     for pos, line in enumerate(head.splitlines()):
         if m := _STEP_LINE.match(line):
             entries.append((pos, m.group(1), m.group(2), line[m.end():], line))
-        elif line.strip() and line.strip() not in _KNOWN_LINES and not line.startswith("علّم الخطوة حين تنتهي"):
+        elif line.strip() and line.strip() not in _KNOWN_LINES:
             carry[pos] = line
     lines, claimed = [], set()
     for line in rendered.splitlines():

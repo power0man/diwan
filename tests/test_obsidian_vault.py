@@ -304,6 +304,30 @@ def test_a_legacy_checklist_s_free_lines_are_carried_into_the_notes_section_not_
     assert ov.check(vault, root=repo) == [] and ov.build(vault, root=repo)["migrated"] == [], "لا يُعاد النقلُ في كل بناء"
 
 
+@pytest.mark.parametrize("instruction", [ov.LEGACY_INSTRUCTION, ov.INSTRUCTION], ids=["legacy", "current"])
+def test_an_annotation_appended_to_the_instruction_line_is_carried_not_deleted(repo, vault, instruction):
+    """ملاحظةُ Codex على #161 (الجولة الحادية عشرة): سطرُ التعليمات كان يُعرف ببدايته «علّم الخطوة حين تنتهي»، فتعليقٌ ألحقه المالكُ
+    به — والنسخةُ القديمة دعته إلى التعديل حيث شاء بلا قسم ملاحظات — يُعدّ مولَّدًا كلُّه ويُمحى بصمت في أول بناء. صار السطرُ يُعرف
+    بنصّه التامّ: المعدَّلُ يُنقل كما هو إلى قسم ملاحظات المالك، والتعليماتُ الحالية تُكتب مكانه، والسطرُ غيرُ المعدَّل لا يُنقل."""
+    assert ov.build(vault, root=repo)["written"] and ov.check(vault, root=repo) == [], "خزنةٌ مبنيّةٌ للتوّ لا تنجرف"
+    steps = vault / "Diwan/خطواتي.md"
+    edited = f"{instruction} — اتصلتُ بالفريق يوم الأحد"
+    steps.write_text("\n".join(["# خطواتي", "", edited, "", "- [x] **1. خطوة** · [[الأدلة/G1|G1]] · ٥ دقائق · $0", ""]), encoding="utf-8")
+    assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"]
+    text = steps.read_text(encoding="utf-8")
+    assert "اتصلتُ بالفريق" in text, "تعليقُ المالك على سطر التعليمات يُنقل ولا يُمحى"
+    body, notes = text.split("\n## ملاحظاتي")
+    assert f"\n{ov.INSTRUCTION}\n" in body and "اتصلتُ بالفريق" not in body and "- [x] **1. خطوة**" in body
+    carried = [line for line in notes.split(ov.LEGACY_HEADING)[1].splitlines() if line.strip()]
+    assert carried == [edited], "تعليقُ المالك يبقى بسطره كاملًا"
+    assert ov.check(vault, root=repo) == [] and ov.build(vault, root=repo)["migrated"] == [], "لا يُعاد النقلُ في كل بناء"
+    # والسطرُ كما ولّدته الأداةُ (القديمُ أو الحالي) لا يُنقل
+    steps.write_text("\n".join(["# خطواتي", "", instruction, "", "- [x] **1. خطوة** · [[الأدلة/G1|G1]] · ٥ دقائق · $0", ""]), encoding="utf-8")
+    ov.build(vault, root=repo)
+    rebuilt = steps.read_text(encoding="utf-8")
+    assert ov.LEGACY_HEADING not in rebuilt and "\n" + ov.NOTES_HEADING not in rebuilt and rebuilt.count("علّم الخطوة") == 1
+
+
 def test_inbox_notes_survive_rebuilds_and_only_written_files_are_removed(repo, vault):
     ov.build(vault, root=repo)
     note = vault / "Inbox/طلب.md"
