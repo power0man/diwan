@@ -197,18 +197,24 @@ def _strip_generated(tail: str) -> str:
     return tail.replace(DONE_BEFORE_DEFERRAL, "")
 
 
+def _title(tail: str) -> str:
+    """عنوانُ الخطوة من ذيل سطرها (ما بين رقمها وإغلاق التخطيط `**`): هويّةُ الخطوة التي تنتقل بها علامةُ الإنجاز، لا رقمُها —
+    فخطوةٌ أخرى أخذت رقمَ خطوةٍ منجزة حُذفت أو أُعيد ترقيمُها لا تظهر منجزةً (ملاحظة Codex الثامنة على #161)."""
+    return tail.split("**", 1)[0].strip()
+
+
 def migrate_steps(existing: str, rendered: str) -> str:
     """«خطواتي» تُعاد كتابتُها من الخطة مع الحفاظ على ما للمالك فيها: الخطوةُ المعلَّمة `[x]` في الموجود تبقى معلَّمةً في المولَّد
-    (وإن أُجّلت بعد إنجازها بقيت منجزةً باسمها)، ولاحقةٌ كتبها بعد نصّ الخطوة المولَّد («… — سألت المحامي») تبقى على سطرها،
+    بهويّتها — رقمُها وعنوانُها معًا — لا برقمها وحده (وإن أُجّلت بعد إنجازها بقيت منجزةً باسمها)، ولاحقةٌ كتبها بعد نصّ الخطوة المولَّد («… — سألت المحامي») تبقى على سطرها،
     وسطرُ خطوةٍ عُدّل داخلَ نصّه المولَّد يُنقل كما هو، وما كتبه تحت «## ملاحظاتي» يُنقل كما هو، وما كتبه في غير ذلك من سطورٍ
     (النسخةُ القديمة دعته إلى التعديل حيث شاء) يُنقل تحت «### سطورٌ نُقلت من النسخة السابقة» في قسم ملاحظاته لا يُمحى بصمت.
     كانت البذرةُ تُحفظ حرفيًّا حتى مع `--force`، فلا يبلغ التأجيلُ (ق٦٨) خزنةً قائمة (ملاحظات Codex على #161)."""
     head, sep, notes = existing.partition("\n" + NOTES_HEADING)
-    done, edits, stray = set(), {}, []
+    done, edits, stray = {}, {}, []                                   # المنجز: الرقمُ ← عنوانُه في الموجود
     for line in head.splitlines():
         if m := _STEP_LINE.match(line):
             if m.group(1) in ("[x]", "[X]"):
-                done.add(m.group(2))
+                done[m.group(2)] = _title(line[m.end():])
             edits[m.group(2)] = (line[m.end():], line)
         elif line.strip() and line.strip() not in _KNOWN_LINES and not line.startswith("علّم الخطوة حين تنتهي"):
             stray.append(line)
@@ -220,9 +226,10 @@ def migrate_steps(existing: str, rendered: str) -> str:
         mark, order, tail = m.group(1), m.group(2), line[m.end():]
         seen.add(order)
         extra = ""
-        if order in done and mark == "[ ]":
+        completed = done.get(order) == _title(tail)                   # الهويّةُ العنوانُ مع الرقم، لا الرقمُ وحده
+        if completed and mark == "[ ]":
             mark = "[x]"
-        elif order in done and mark == "⏸":
+        elif completed and mark == "⏸":
             mark, extra = "[x]", DONE_BEFORE_DEFERRAL
         if order in edits:
             # لاحقةُ المالك هي ما زاد على نصّ الخطوة كما تولّده الأداة بعد نزع ما تولّده هي من لواحق (علامةُ تأجيلٍ سابقة قد زالت

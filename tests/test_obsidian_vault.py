@@ -191,6 +191,33 @@ def test_an_annotation_after_a_deferral_label_survives_the_migration(repo, vault
     assert ov.build(vault, root=repo)["migrated"] == [] and steps.read_text(encoding="utf-8") == migrated
 
 
+def test_a_completion_mark_follows_the_step_s_title_not_its_number(repo, vault):
+    """ملاحظةُ Codex على #161 (الجولة الثامنة): حين تحذف الخطةُ خطوةً منجزة أو تعيد ترقيمها ويأخذ رقمَها خطوةٌ أخرى كانت علامةُ
+    `[x]` تنتقل بالرقم فتظهر الخطوةُ الجديدة منجزةً وقد تُتخطّى. صارت العلامةُ تنتقل بهويّة الخطوة (رقمُها وعنوانُها) لا برقمها:
+    الخطوةُ الأخرى بالرقم نفسِه تعود `[ ]` وسطرُ المنجزة القديم يُنقل إلى قسم الملاحظات، والخطوةُ نفسُها إذا تغيّر وقتُها تبقى منجزة."""
+    plan = json.loads((repo / ov.PLAN).read_text(encoding="utf-8"))
+    plan["owner_steps"].append({"order": 2, "guide_id": "G5", "title": "تجهيز Nitro", "time": "ساعة", "cost": "$0"})
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    ov.build(vault, root=repo)
+    steps = vault / "Diwan/خطواتي.md"
+    old = "- [ ] **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0"
+    steps.write_text(steps.read_text(encoding="utf-8").replace(old, old.replace("[ ]", "[x]")), encoding="utf-8")
+    plan["owner_steps"][-1] = {"order": 2, "guide_id": "G4", "title": "صلاحيات Nitro", "time": "١٠ دقائق", "cost": "$0"}
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"]
+    migrated = steps.read_text(encoding="utf-8")
+    assert "- [ ] **2. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0" in migrated, "خطوةٌ أخرى بالرقم نفسِه ليست منجزة"
+    carried = [line for line in migrated.split("### سطورٌ نُقلت من النسخة السابقة")[1].splitlines() if line.strip()]
+    assert carried == ["- [x] **2. تجهيز Nitro** · [[الأدلة/G5|G5]] · ساعة · $0"], "المنجزةُ القديمة لا تُمحى"
+    # والخطوةُ نفسُها بوقتٍ آخر في الخطة تبقى منجزة، لأن هويّتها لم تتغيّر
+    active = "- [ ] **2. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ١٠ دقائق · $0"
+    steps.write_text(migrated.replace(active, active.replace("[ ]", "[x]")), encoding="utf-8")
+    plan["owner_steps"][-1]["time"] = "٥ دقائق"
+    (repo / ov.PLAN).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    assert ov.build(vault, root=repo)["migrated"] == ["خطواتي.md"]
+    assert "- [x] **2. صلاحيات Nitro** · [[الأدلة/G4|G4]] · ٥ دقائق · $0" in steps.read_text(encoding="utf-8")
+
+
 def test_a_lifted_deferral_and_a_step_gone_from_the_plan_migrate_without_losing_the_owner_s_text(repo, vault):
     """ملاحظتا Codex على #161 (الجولة السادسة): (١) حين يزول التأجيلُ عن خطوةٍ أو يتغيّر سببُه كانت علامةُ التأجيل القديمة تُحسب
     لاحقةً للمالك فتعود الخطوةُ النشطة تقول إنها مؤجَّلة؛ (٢) سطرٌ مرقَّم أضافه المالك بنفسه أو خطوةٌ حُذفت من الخطة وعليها تعليقُه
