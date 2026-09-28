@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import re
+import subprocess
 import sys
+import tempfile
 import types
 from pathlib import Path
 
@@ -180,6 +183,9 @@ class _FakeTokenizer:
 SHA = "c202236235762e1c871ad0ccb60c8ee5ba337b9a"       # بصمةُ إيداعٍ كاملة: المراجعةُ الوحيدة المقبولة لمرمِّز الـHub
 
 
+_REAL = {"snapshot_head": cb.snapshot_head, "tree_digest": cb.tree_digest}
+
+
 def _fake_tokenizers(monkeypatch):
     monkeypatch.setitem(sys.modules, "tokenizers", types.SimpleNamespace(Tokenizer=_FakeTokenizer))
 
@@ -197,10 +203,21 @@ def _fake_hub(monkeypatch, tmp_path):
         return str(path)
     monkeypatch.setitem(sys.modules, "huggingface_hub", types.SimpleNamespace(hf_hub_download=download))
     monkeypatch.setattr(cb, "tree_state", lambda root: {"dirty": False, "changed_paths": []})
-    # طريقُ الطفل في العملية نفسِها: البدائلُ المحقونة لا تبلغ مفسّرًا آخر، والآليةُ الحقيقية (اللقطةُ والمفسّرُ المعزول) تُختبر وحدها
-    monkeypatch.setattr(cb, "measure_in_snapshot",
-                        lambda argv, commit, state: cb.main([*argv, "--in-snapshot", commit, "--tree-state", json.dumps(state)]))
+    # طريقُ الطفل في العملية نفسِها: البدائلُ المحقونة لا تبلغ مفسّرًا آخر، والآليةُ الحقيقية (اللقطةُ والمفسّرُ المعزول وبصمةُ
+    # الشجرة) تُختبر وحدها؛ هنا اللقطةُ مجلّدٌ فارغ وبصمتُها ثابتة والطفلُ نداءٌ لـmain في العملية نفسِها، والأبُ يختم كما في الحقيقة
+    monkeypatch.setattr(cb, "snapshot_head", lambda root, commit: Path(tempfile.mkdtemp(prefix="fake-snapshot-")))
+    monkeypatch.setattr(cb, "tree_digest", lambda root: "fake-digest")
+    monkeypatch.setattr(cb, "_run_child", _in_process_child)
     return path, asked
+
+
+def _in_process_child(command, cwd):
+    """طفلٌ في العملية نفسِها: يشغّل main بوسائط الطفل (بعد المفسّر وعلمَيه ومسار الأداة) ويعيد ما يعيده مفسّرٌ منفصل."""
+    import contextlib
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        code = cb.main(command[4:])
+    return subprocess.CompletedProcess(command, code, out.getvalue(), "")
 
 
 def test_tokenizer_loading_refuses_by_name(monkeypatch, tmp_path):
@@ -310,10 +327,11 @@ def test_the_cli_measures_a_git_archive_snapshot_of_head_with_an_isolated_interp
     """ملاحظةُ Codex السادسة على #157: `tools/json.pyc` بلا مصدر كان يُحمَّل من أول `sys.path` قبل العزل والحالةُ نظيفة. سطرُ
     الأوامر لا يقيس الشجرةَ: يفكّ لقطةَ HEAD في مجلّدٍ مؤقّت ويشغّل فيها نسخةَ الأداة بالمفسّر نفسِه معزولًا (`-I -P`)، بمساراتٍ
     مطلقة، ويمرّر الإيداعَ وحالةَ الشجرة، ويحذف اللقطةَ بعد القياس، ويعيد رمزَ خروج الطفل."""
-    real = cb.measure_in_snapshot
+    real_snapshot, real_digest = cb.snapshot_head, cb.tree_digest
     _fake_tokenizers(monkeypatch)
     _fake_hub(monkeypatch, tmp_path)
-    monkeypatch.setattr(cb, "measure_in_snapshot", real)
+    monkeypatch.setattr(cb, "snapshot_head", real_snapshot)
+    monkeypatch.setattr(cb, "tree_digest", real_digest)
     seen = {}
 
     def child(command, cwd):
@@ -322,7 +340,7 @@ def test_the_cli_measures_a_git_archive_snapshot_of_head_with_an_isolated_interp
                     tool=(snapshot / "tools" / "context_budget.py").is_file() and (snapshot / "tools" / "context_index.py").is_file()
                     and (snapshot / "AGENTS.md").is_file(), git=(snapshot / ".git").exists(),
                     stray=sorted(str(p) for p in snapshot.rglob("*") if p.is_symlink() or p.suffix == ".pyc" or p.name == "__pycache__"))
-        return 7
+        return subprocess.CompletedProcess(command, 7, "", "")
     monkeypatch.setattr(cb, "_run_child", child)
     out = tmp_path / "r.json"
     assert cb.main(["--tokenizer", f"fake=org/model@{SHA}", "--tokenizer-file", "f=rel/tok.json", "--report", str(out)]) == 7
@@ -330,26 +348,81 @@ def test_the_cli_measures_a_git_archive_snapshot_of_head_with_an_isolated_interp
     assert command[:3] == [sys.executable, "-I", "-P"] and command[3] == str(snapshot / "tools" / "context_budget.py")
     assert snapshot != cb.ROOT and seen["cwd"] == snapshot and seen["existed"] and seen["tool"] and not seen["git"] and seen["stray"] == []
     assert not snapshot.exists(), "اللقطةُ تُحذف بعد القياس"
-    commit = command[command.index("--in-snapshot") + 1]
-    assert re.fullmatch(r"[0-9a-f]{40}", commit) and commit == cb._commit(cb.ROOT)
-    assert json.loads(command[command.index("--tree-state") + 1]) == {"dirty": False, "changed_paths": []}
+    # الطفلُ لا يتلقّى إيداعًا ولا حالةَ شجرة (ملاحظة Codex العاشرة): العلمُ وحده، ولا بصمةَ إيداعٍ في الأمر
+    assert command[-1] == "--in-snapshot" and "--tree-state" not in command
+    assert not any(re.fullmatch(r"[0-9a-f]{40}", part) for part in command)
     assert command[command.index("--tokenizer-file") + 1] == f"f={Path('rel/tok.json').resolve()}"
-    assert command[command.index("--report") + 1] == str(out.resolve()) and "--tokenizer" in command
+    child_report = Path(command[command.index("--report") + 1])
+    assert child_report != out.resolve() and child_report.name == "report.json" and not child_report.parent.exists(), \
+        "الطفلُ يكتب في مجلّد الأب المؤقّت لا في ملفّ المستخدم، ويُحذف بعده"
+    assert "--tokenizer" in command and not out.exists()
 
 
-def test_the_child_records_the_snapshot_commit_and_the_parent_s_tree_state(monkeypatch, tmp_path, capsys):
-    """داخل اللقطة لا git: الإيداعُ وحالةُ الشجرة يأتيان من الأب ويُسجَّلان كما هما، وبصمةٌ ليست كاملة تُرفض باسمها."""
+def test_the_child_records_only_its_tree_digest_and_the_parent_stamps_the_commit_after_matching_it(monkeypatch, tmp_path, capsys):
+    """ملاحظةُ Codex العاشرة على #157: `--in-snapshot <sha> --tree-state <json>` من سطر الأوامر كان يقيس شجرةَ العمل وينسبها إلى
+    أيّ إيداع. الطفلُ لا يقبل إيداعًا: يسجّل بصمةَ شجرته ولا إيداعَ ولا حالة؛ والأبُ وحده — بعد أن فكّ اللقطةَ من git — يختم
+    الإيداعَ وحالةَ الشجرة متى طابقت بصمةُ الطفل بصمةَ اللقطة، ويرفض باسمه متى خالفت."""
     _fake_tokenizers(monkeypatch)
     _fake_hub(monkeypatch, tmp_path)
-    out, commit = tmp_path / "child.json", "a" * 40
-    state = {"dirty": False, "changed_paths": [], "untracked_importable": []}
-    assert cb.main(["--tokenizer", f"fake=org/model@{SHA}", "--report", str(out), "--in-snapshot", commit, "--tree-state", json.dumps(state)]) == 0
+    out = tmp_path / "child.json"
+    # (أ) وضعُ الطفل مستدعًى باليد: تقريرٌ بلا إيداعٍ ولا حالة، وبصمةُ الشجرة وحدها؛ ولا يقبل بصمةَ إيداع
+    assert cb.main(["--tokenizer", f"fake=org/model@{SHA}", "--report", str(out), "--in-snapshot"]) == 0
     report = json.loads(out.read_text(encoding="utf-8"))
-    assert report["commit"] == commit and report["tree_state"] == state
-    assert report["measured_in"] == {"snapshot_of_commit": commit, "interpreter_isolated": False}
-    assert json.loads(capsys.readouterr().out)["status"] == "measured"
-    assert cb.main(["--tokenizer", f"fake=org/model@{SHA}", "--in-snapshot", "abc123"]) == 2
-    assert json.loads(capsys.readouterr().out)["code"] == "snapshot_commit_invalid"
+    assert report["commit"] is None and report["tree_state"] is None
+    assert report["measured_in"] == {"snapshot_of_commit": None, "tree_digest": "fake-digest", "interpreter_isolated": False}
+    assert json.loads(capsys.readouterr().out)["commit"] is None
+    with pytest.raises(SystemExit):
+        cb.main(["--tokenizer", f"fake=org/model@{SHA}", "--in-snapshot", "a" * 40])
+    capsys.readouterr()
+    # (ب) الأبُ يختم بعد المطابقة: الإيداعُ من git الشجرة، والحالةُ من الأب، والبصمةُ كما سجّلها الطفل
+    out2 = tmp_path / "parent.json"
+    assert cb.main(["--tokenizer", f"fake=org/model@{SHA}", "--report", str(out2)]) == 0
+    stamped, commit = json.loads(out2.read_text(encoding="utf-8")), cb._commit(cb.ROOT)
+    assert re.fullmatch(r"[0-9a-f]{40}", commit) and stamped["commit"] == commit
+    assert stamped["measured_in"] == {"snapshot_of_commit": commit, "tree_digest": "fake-digest", "interpreter_isolated": False}
+    assert stamped["tree_state"] == {"dirty": False, "changed_paths": []}
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["commit"] == commit and summary["report"] == str(out2)
+    # (ج) بصمةٌ لا تطابق اللقطة: رفضٌ باسمه ولا تقريرَ يُكتب
+    def forged(command, cwd):
+        Path(command[command.index("--report") + 1]).write_text(json.dumps({**report, "measured_in": {**report["measured_in"], "tree_digest": "other"}}),
+                                                                 encoding="utf-8")
+        return subprocess.CompletedProcess(command, 0, "", "")
+    monkeypatch.setattr(cb, "_run_child", forged)
+    out3 = tmp_path / "forged.json"
+    assert cb.main(["--tokenizer", f"fake=org/model@{SHA}", "--report", str(out3)]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "snapshot_digest_mismatch" and not out3.exists()
+    # (د) البصمةُ الحقيقية على اللقطة الحقيقية: طفلٌ يحسبها في اللقطة فيقبلها الأبُ ويختم
+    monkeypatch.setattr(cb, "snapshot_head", _REAL["snapshot_head"])
+    monkeypatch.setattr(cb, "tree_digest", _REAL["tree_digest"])
+
+    def measuring(command, cwd):
+        snapshot = Path(command[3]).parents[1]
+        r = cb.audit(cb.ROOT, {"ws": lambda text: len(text.split())}, snapshot_digest=cb.tree_digest(snapshot))
+        Path(command[command.index("--report") + 1]).write_text(json.dumps(r), encoding="utf-8")
+        return subprocess.CompletedProcess(command, 0, "", "")
+    monkeypatch.setattr(cb, "_run_child", measuring)
+    out4 = tmp_path / "real.json"
+    assert cb.main(["--tokenizer", f"fake=org/model@{SHA}", "--report", str(out4)]) == 0
+    real = json.loads(out4.read_text(encoding="utf-8"))
+    assert real["commit"] == commit and real["measured_in"]["snapshot_of_commit"] == commit
+    assert re.fullmatch(r"[0-9a-f]{64}", real["measured_in"]["tree_digest"])
+
+
+def test_a_tree_digest_binds_paths_and_contents(tmp_path):
+    """بصمةُ الشجرة تتغيّر بتغيّر محتوى ملفٍّ أو اسمه أو موضعه، وتثبت للشجرة نفسِها في مجلّدٍ آخر."""
+    def tree(name, files):
+        root = tmp_path / name
+        for rel, text in files.items():
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_text(text, encoding="utf-8")
+        return root
+    base = {"AGENTS.md": "a", "tools/x.py": "print(1)\n"}
+    same, other = cb.tree_digest(tree("a", base)), cb.tree_digest(tree("b", base))
+    assert same == other and re.fullmatch(r"[0-9a-f]{64}", same)
+    assert cb.tree_digest(tree("c", {**base, "tools/x.py": "print(2)\n"})) != same, "المحتوى"
+    assert cb.tree_digest(tree("d", {"AGENTS.md": "a", "tools/y.py": "print(1)\n"})) != same, "الاسم"
+    assert cb.tree_digest(tree("e", {"AGENTS.md": "a", "x.py": "print(1)\n"})) != same, "الموضع"
 
 
 def test_the_cli_re_executes_itself_isolated_before_any_hijackable_import():
@@ -428,13 +501,12 @@ def test_the_audit_runs_under_an_isolated_interpreter_without_the_root_on_sys_pa
             "assert str(cb.ROOT) not in sys.path, 'الجذرُ يجب ألا يكون على المسار قبل النداء'; ")
     calls = {"window": "print(cb.context_window())",
              "texts": "print(sorted(cb.runtime_texts()['configurations']))",
-             "audit": "r = cb.audit(cb.ROOT, {'ws': lambda t: len(t.split())}, commit='a' * 40, "
-                      "state={'dirty': False, 'changed_paths': [], 'untracked_importable': []}); "
-                      "print(r['commit'], r['context_window_tokens'], r['measured_in']['interpreter_isolated'])"}
+             "audit": "r = cb.audit(cb.ROOT, {'ws': lambda t: len(t.split())}, snapshot_digest='d' * 64); "
+                      "print(r['commit'], r['tree_state'], r['context_window_tokens'], r['measured_in']['interpreter_isolated'])"}
     for name, call in calls.items():
         run = subprocess.run([sys.executable, "-I", "-P", "-c", head + call], cwd=ROOT, capture_output=True, text=True)
         assert run.returncode == 0, (name, run.stderr[-600:])
-    assert run.stdout.split() == ["a" * 40, str(cb.context_window()), "True"]
+    assert run.stdout.split() == ["None", "None", str(cb.context_window()), "True"]
 
 
 def test_tampered_bytecode_in_the_tree_s_pycache_is_not_loaded_once_bytecode_is_isolated(tmp_path, monkeypatch):

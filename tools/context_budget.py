@@ -117,6 +117,7 @@ LIMITS = [
     "bytecode_is_read_and_written_under_a_private_pycache_prefix_set_when_this_tool_is_imported_so_a_stale_or_tampered_pyc_in_the_tree_s___pycache___is_never_loaded_for_context_index_or_a_product_module_but_a_module_imported_before_this_tool_is_out_of_its_reach",
     "the_cli_measures_a_git_archive_snapshot_of_head_extracted_to_a_temporary_directory_by_an_isolated_interpreter_i_p_so_nothing_untracked_ignored_or_linked_in_the_working_tree_is_imported_the_working_tree_is_refused_for_intent_only_while_a_library_call_to_audit_measures_the_tree_it_runs_from",
     "the_cli_re_executes_itself_with_i_p_before_any_hijackable_import_and_never_puts_tools_or_the_root_on_sys_path_in_the_parent_so_the_interpreter_ignores_python_env_vars_and_the_user_site_and_tokenizers_must_be_importable_from_the_interpreter_s_own_site",
+    "the_child_inside_the_snapshot_receives_no_commit_and_records_the_sha256_of_its_tree_s_paths_and_contents_the_parent_that_ran_git_archive_stamps_the_commit_and_tree_state_only_when_that_digest_equals_the_digest_of_the_archive_it_extracted_so_the_internal_mode_run_by_hand_on_any_tree_yields_an_unattributed_report",
 ]
 
 
@@ -260,9 +261,11 @@ def _findings(report: dict) -> list[dict]:
 
 
 def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str, dict] | None = None,
-          window: int | None = None, commit: str | None = None, state: dict | None = None) -> dict:
-    """التقريرُ كاملًا بعدّاداتٍ محقونة (اسمٌ ← دالّةٌ تعدّ رموزَ نصّ). بلا عدّادٍ يُرفض: لا رقمَ بلا مرمِّز. داخل اللقطة يمرّر
-    الأبُ الإيداعَ وحالةَ شجرة العمل (`commit` و`state`) لأن اللقطة بلا git؛ وبلاهما تُقاس الشجرةُ التي تعمل منها الأداة."""
+          window: int | None = None, snapshot_digest: str | None = None) -> dict:
+    """التقريرُ كاملًا بعدّاداتٍ محقونة (اسمٌ ← دالّةٌ تعدّ رموزَ نصّ). بلا عدّادٍ يُرفض: لا رقمَ بلا مرمِّز. داخل اللقطة
+    (`snapshot_digest`: بصمةُ شجرتها) لا git ولا إيداع: الطفلُ يسجّل البصمةَ وحدها ولا يقبل إيداعًا من أحد، والأبُ الذي أنشأ
+    اللقطةَ من git يختم الإيداعَ وحالةَ الشجرة بعد مطابقة البصمة (ملاحظة Codex العاشرة على #157)؛ وبلاها تُقاس الشجرةُ التي
+    تعمل منها الأداة بإيداعها وحالتها."""
     if not counters:
         raise Refused("no_tokenizer_named", "لا عدّادَ رموزٍ مسمًّى؛ التقديرُ وحده لا يُنشر رقمًا")
     if Path(root).resolve() != ROOT:
@@ -270,6 +273,7 @@ def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str,
         # حديثة إلى إيداعٍ غيرِ إيداعها؛ الأداةُ تقيس النسخةَ التي تعمل منها وحدها (ملاحظة Codex على #157)
         raise Refused("root_is_not_this_checkout", f"الأداةُ تقيس النسخةَ التي تعمل منها ({ROOT})، لا {root}")
     window = context_window() if window is None else window
+    in_snapshot = snapshot_digest is not None
     isolate_bytecode()                                  # قبل أول استيرادٍ لوحدة منتج
     texts = runtime_texts()
     reading = reading_set(root, counters)
@@ -285,9 +289,9 @@ def audit(root: Path, counters: dict[str, Counter], tokenizer_sources: dict[str,
     report = {
         "schema_version": SCHEMA_VERSION, "tool": TOOL,
         "generated_at": _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat(),
-        "commit": commit if commit is not None else _commit(root),
-        "tree_state": state if state is not None else tree_state(root),
-        "measured_in": {"snapshot_of_commit": commit,
+        "commit": None if in_snapshot else _commit(root),
+        "tree_state": None if in_snapshot else tree_state(root),
+        "measured_in": {"snapshot_of_commit": None, "tree_digest": snapshot_digest,
                         "interpreter_isolated": sys.flags.isolated == 1 and getattr(sys.flags, "safe_path", 0) == 1},
         "bytecode_isolated": sys.pycache_prefix == _PYCACHE_PREFIX,
         "tokenizers": tokenizer_sources or {name: {"source": "injected"} for name in counters},
@@ -392,6 +396,17 @@ def tree_state(root: Path) -> dict:
     return {"dirty": bool(changed or untracked), "changed_paths": changed, "untracked_importable": untracked}
 
 
+def tree_digest(root: Path) -> str:
+    """بصمةُ شجرةٍ بمساراتها ومحتوياتها: sha256 على المسار النسبيّ ثم الحجم ثم البايتات لكل ملفٍّ بترتيب المسارات. الأبُ يحسبها
+    على اللقطة التي فكّها والطفلُ على جذره أولَ ما يعمل، فلا يُختم إيداعٌ إلا على شجرةٍ هي لقطتُه بعينها؛ ووضعُ الطفل مستدعًى
+    باليد على أيّ شجرة يخرج بلا إيداع (ملاحظة Codex العاشرة على #157)."""
+    digest = hashlib.sha256()
+    for path in sorted((p for p in Path(root).rglob("*") if p.is_file()), key=lambda p: p.relative_to(root).as_posix()):
+        rel, data = path.relative_to(root).as_posix().encode("utf-8"), path.read_bytes()
+        digest.update(rel + b"\0" + str(len(data)).encode("ascii") + b"\0" + data)
+    return digest.hexdigest()
+
+
 def snapshot_head(root: Path, commit: str) -> Path:
     """لقطةُ إيداعٍ بملفّاته المتتبَّعة وحدها (`git archive`) تُفكّ في مجلّدٍ مؤقّت فيُقاس فيها لا في شجرة العمل: لا ملفَّ غيرَ
     متتبَّع ولا متجاهَلًا (pyc بلا مصدر في `tools/` كان يُحمَّل قبل العزل والحالةُ نظيفة — ملاحظة Codex السادسة على #157) ولا
@@ -417,37 +432,64 @@ def _extract(tar: tarfile.TarFile, target: Path) -> None:
     tar.extractall(target, members=members, **kwargs)
 
 
-def child_command(snapshot: Path, argv: list[str], commit: str, state: dict) -> list[str]:
+def child_command(snapshot: Path, argv: list[str]) -> list[str]:
     """أمرُ القياس داخل اللقطة: مفسّرُ هذه العملية نفسُه معزولًا — `-I` بلا متغيّرات `PYTHON*` ولا site المستخدم، و`-P` بلا
     مجلّد السكربت في `sys.path` — يشغّل نسخةَ الأداة التي في اللقطة على اللقطة، فلا يرى شيئًا من شجرة العمل ولا يُحمَّل فيه ما
-    ليس في الإيداع؛ والإيداعُ وحالةُ الشجرة يُمرَّران إليه لأنه لا يرى git."""
-    return [sys.executable, "-I", "-P", str(snapshot / "tools" / "context_budget.py"), *argv,
-            "--in-snapshot", commit, "--tree-state", json.dumps(state, ensure_ascii=False)]
+    ليس في الإيداع. لا يُمرَّر إليه إيداعٌ ولا حالةُ شجرة: يسجّل بصمةَ شجرته، والأبُ يختم."""
+    return [sys.executable, "-I", "-P", str(snapshot / "tools" / "context_budget.py"), *argv, "--in-snapshot"]
 
 
-def _run_child(command: list[str], cwd: Path) -> int:
-    return subprocess.run(command, cwd=str(cwd)).returncode
+def _run_child(command: list[str], cwd: Path) -> subprocess.CompletedProcess:
+    return subprocess.run(command, cwd=str(cwd), capture_output=True, text=True)
 
 
-def measure_in_snapshot(argv: list[str], commit: str, state: dict) -> int:
-    """يقيس الإيداعَ في لقطته بمفسّرٍ معزول ويعيد رمزَ خروج الطفل؛ خرجُ الطفل (الملخّصُ أو الرفض) يمرّ كما هو، واللقطةُ تُحذف."""
+def measure_in_snapshot(argv: list[str], commit: str, state: dict, report_path: Path | None) -> int:
+    """يقيس الإيداعَ في لقطته بمفسّرٍ معزول: الطفلُ يكتب تقريرًا بلا إيداعٍ وفيه بصمةُ شجرته، والأبُ — وهو وحده من رأى git —
+    يطابقها ببصمة اللقطة التي فكّها ثم يختم الإيداعَ وحالةَ الشجرة ويكتب التقريرَ ويطبع الملخّص؛ رفضُ الطفل يمرّ كما هو، واللقطةُ
+    تُحذف. (ملاحظة Codex العاشرة على #157: `--in-snapshot <sha>` من سطر الأوامر كان ينسب قياسَ أيّ شجرةٍ إلى أيّ إيداع.)"""
     snapshot = snapshot_head(ROOT, commit)
     try:
-        return _run_child(child_command(snapshot, argv, commit, state), snapshot)
+        expected = tree_digest(snapshot)
+        with tempfile.TemporaryDirectory(prefix="diwan-context-budget-report-") as tmp:
+            child_report = Path(tmp) / "report.json"
+            run = _run_child(child_command(snapshot, [*argv, "--report", str(child_report)]), snapshot)
+            sys.stderr.write(run.stderr)
+            if run.returncode != 0 or not child_report.is_file():
+                sys.stdout.write(run.stdout)
+                return run.returncode or 1
+            try:
+                report = json.loads(child_report.read_text(encoding="utf-8"))
+            except ValueError as exc:
+                raise Refused("child_report_unreadable", f"تقريرُ الطفل ليس JSON: {exc}") from None
     finally:
         shutil.rmtree(snapshot, ignore_errors=True)
+    if not isinstance(report, dict) or report.get("measured_in", {}).get("tree_digest") != expected:
+        raise Refused("snapshot_digest_mismatch", "بصمةُ الشجرة التي قاسها الطفل ليست بصمةَ لقطة الإيداع")
+    report["commit"], report["tree_state"] = commit, state
+    report["measured_in"]["snapshot_of_commit"] = commit
+    _publish(report, report_path)
+    return 0
+
+
+def _publish(report: dict, report_path: Path | None) -> None:
+    """يكتب التقريرَ إن طُلب ويطبع ملخّصَه."""
+    if report_path:
+        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    summary = {"status": "measured", "commit": report["commit"], "tokenizers": sorted(report["tokenizers"]),
+               "reading_set_tokens": report["reading_set_totals"]["tokens"],
+               "prefix_tokens": {name: c["total_tokens"] for name, c in report["runtime_prefix"]["configurations"].items()},
+               "findings": [f["code"] for f in report["findings"]], "report": str(report_path) if report_path else None}
+    print(json.dumps(summary, ensure_ascii=False))
 
 
 def _child_argv(args) -> list[str]:
-    """وسائطُ الطفل بمساراتٍ مطلقة، لأن مجلّدَ عمله اللقطةُ لا مجلّدُ المستخدم."""
+    """وسائطُ الطفل بمساراتٍ مطلقة، لأن مجلّدَ عمله اللقطةُ لا مجلّدُ المستخدم؛ التقريرُ يكتبه الطفل حيث يسمّي الأب، لا حيث يسمّي المستخدم."""
     argv = []
     for spec in args.tokenizer:
         argv += ["--tokenizer", spec]
     for spec in args.tokenizer_file:
         name, eq, path = spec.partition("=")
         argv += ["--tokenizer-file", f"{name}={Path(path).resolve()}" if eq and path else spec]
-    if args.report:
-        argv += ["--report", str(args.report.resolve())]
     return argv
 
 
@@ -456,13 +498,12 @@ def main(argv=None) -> int:
     parser.add_argument("--tokenizer", action="append", default=[], metavar="NAME=HF_REPO@REVISION")
     parser.add_argument("--tokenizer-file", action="append", default=[], metavar="NAME=PATH")
     parser.add_argument("--report", type=Path)
-    parser.add_argument("--in-snapshot", metavar="COMMIT", help=argparse.SUPPRESS)      # داخليّ: الطفلُ داخل لقطة الإيداع
-    parser.add_argument("--tree-state", metavar="JSON", help=argparse.SUPPRESS)         # داخليّ: حالةُ شجرة العمل من الأب
+    parser.add_argument("--in-snapshot", action="store_true", help=argparse.SUPPRESS)   # داخليّ: الطفلُ داخل اللقطة؛ لا يحمل إيداعًا
     args = parser.parse_args(argv)
     try:
         if not args.tokenizer and not args.tokenizer_file:
             raise Refused("no_tokenizer_named", "سمِّ مرمِّزًا بـ--tokenizer أو --tokenizer-file؛ لا رقمَ بلا مرمِّز")
-        if args.in_snapshot is None:
+        if not args.in_snapshot:
             # الأب: يرفض شجرةً متّسخة أو مجهولة (تقريرٌ باسم إيداعٍ يقيس شجرةً غيرَ شجرته كذبٌ مسمًّى — ملاحظة Codex على #157)،
             # ثم يقيس لقطةَ HEAD بمفسّرٍ معزول لا في الشجرة (الملاحظتان السادسة والسابعة)
             commit = _commit(ROOT)
@@ -473,23 +514,15 @@ def main(argv=None) -> int:
                 raise Refused("worktree_dirty" if state["dirty"] else "worktree_state_unknown",
                               "الشجرةُ فيها تعديلٌ غيرُ مودَع: " + ", ".join((state["changed_paths"] + state.get("untracked_importable", []))[:8])
                               if state["dirty"] else "تعذّر git status فلا تُعرف حالةُ الشجرة")
-            return measure_in_snapshot(_child_argv(args), commit, state)
-        if not re.fullmatch(r"[0-9a-f]{40}", args.in_snapshot):
-            raise Refused("snapshot_commit_invalid", "بصمةُ إيداع اللقطة ليست بصمةً كاملة")
-        state = json.loads(args.tree_state) if args.tree_state else {"dirty": None, "changed_paths": [], "untracked_importable": [],
-                                                                     "error": "tree_state_not_passed"}
+            return measure_in_snapshot(_child_argv(args), commit, state, args.report)
+        # الطفل: بصمةُ شجرته أولًا — قبل أيّ استيرادٍ قد يكتب فيها — ولا إيداعَ ولا حالةَ شجرة من أحد؛ الأبُ يختمهما بعد المطابقة
+        digest = tree_digest(ROOT)
         counters, sources = load_tokenizers(args.tokenizer, args.tokenizer_file)
-        report = audit(ROOT, counters, sources, commit=args.in_snapshot, state=state)
+        report = audit(ROOT, counters, sources, snapshot_digest=digest)
     except Refused as exc:
         print(json.dumps({"status": "refused", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
         return 2
-    text = json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
-    if args.report:
-        args.report.write_text(text, encoding="utf-8")
-    summary = {"status": "measured", "tokenizers": sorted(counters), "reading_set_tokens": report["reading_set_totals"]["tokens"],
-               "prefix_tokens": {name: c["total_tokens"] for name, c in report["runtime_prefix"]["configurations"].items()},
-               "findings": [f["code"] for f in report["findings"]], "report": str(args.report) if args.report else None}
-    print(json.dumps(summary, ensure_ascii=False))
+    _publish(report, args.report)
     return 0
 
 
