@@ -199,6 +199,23 @@ def test_the_index_lists_every_source_with_its_current_digest():
     assert "بلا هذا الفهرس" in md and ci.INDEX_MD in ci.budget(ROOT)["reading_set"]
 
 
+def test_the_probe_names_the_divisor_of_each_section_and_drops_the_single_old_limit(tmp_path, capsys):
+    """ملاحظةُ Codex على #157: قسمُ «بعد» يُحسب بالقاسم ٢٫٤ وقسمُ «قبل» بالقاسم القديم ثلاثة، وكان حدٌّ واحد يقول «الأحرفُ على
+    ثلاثة» عن القسمين معًا. صار لكل قسمٍ حدُّه باسمه، والحدُّ القديم يُزال عند التوليد."""
+    root = _copy(tmp_path)
+    path = root / ci.PROBE
+    probe = json.loads(path.read_text(encoding="utf-8"))
+    probe["measurement_limits"] = ["tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count",
+                                   *[l for l in probe["measurement_limits"] if not l.startswith(("before_tokens", "after_tokens"))]]
+    path.write_text(json.dumps(probe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    assert _run(root, "--write", capsys=capsys)[0] == 0
+    limits = json.loads(path.read_text(encoding="utf-8"))["measurement_limits"]
+    assert not any(l.startswith("tokens_estimate_is_characters_divided_by") for l in limits), limits
+    assert any(l.startswith("before_tokens_estimate_is_characters_divided_by_three") for l in limits)
+    assert any(l.startswith(f"after_tokens_estimate_is_characters_divided_by_{str(ci.CHARS_PER_TOKEN).replace('.', '_')}") for l in limits)
+    assert len(limits) == len(set(limits))
+
+
 def test_the_probe_after_section_is_generated_with_the_index_and_matches_the_budget_on_disk(tmp_path, capsys):
     """ملاحظاتُ Codex على #148 (ثلاث مرّات): الدليلُ كان يتأخّر عن كلِّ تعديل. صار قسمُ «بعد» يُولَّد مع الفهرس من اللقطة
     نفسِها، فبعد --write يطابق --print-budget على القرص حرفًا، وقسمُ «قبل» لا يُمسّ."""
@@ -222,7 +239,8 @@ def test_the_budget_report_is_deterministic_and_names_its_heuristic():
     first, second = ci.budget(ROOT), ci.budget(ROOT)
     assert first == second
     assert tuple(first["reading_set"]) == ci.READING_SET
-    assert "tokens_estimate_is_characters_divided_by_three_not_a_tokenizer_count" in first["measurement_limits"]
+    assert "tokens_estimate_is_characters_divided_by_2_4_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count" in first["measurement_limits"]
+    assert ci.tokens_estimate("x" * 240) == 100, "القاسمُ المعايَر ٢٫٤ لا ٣"
     assert first["reading_set_total"]["bytes"] == sum(v["bytes"] for v in first["reading_set"].values())
 
 
