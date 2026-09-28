@@ -104,6 +104,20 @@ def test_a_receipt_count_other_than_one_is_rejected():
     _refused(bank, "receipt_invalid")
 
 
+def test_a_backup_while_a_proposal_awaits_the_owner_is_rejected():
+    """ملاحظةُ Codex على #129 (الجولة السابعة والثلاثون): المدقّقُ كان يقبل `propose → … → backup` والاقتراحُ لم يُبتّ فيه، والمُشغِّلان
+    يُبقيانه ينتظر المالك فيرفض المنتجُ النسخَ بـbackup_pending ويُحسب على المنتج. بعد الموافقة لا ينتظر شيءٌ فيمرّ."""
+    bank, scenario = _scenario("consent_002")
+    steps = scenario["steps"]
+    approve = next(s for s in steps if s.get("op") == "approve")
+    backup = {"op": "backup", "project": approve["project"], "as": "b_pending"}
+    steps.insert(steps.index(approve), backup)
+    _refused(bank, "backup_with_pending_proposal")
+    steps.remove(backup)
+    steps.insert(steps.index(approve) + 1, backup)
+    validate_memory_bank(bank)
+
+
 def test_forgetting_without_a_receipt_check_is_refused():
     bank, scenario = _scenario("forget_001")
     scenario["steps"] = [s for s in scenario["steps"] if s.get("expect") != "receipt"]

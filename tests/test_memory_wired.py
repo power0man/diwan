@@ -280,6 +280,37 @@ class _ProposingOnceDelegate(_Delegate):
         return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="1" * 64)
 
 
+class _ProposingAfterApprovalDelegate(_Delegate):
+    """نموذجٌ حيّ يجيب على أول ردّ أداةٍ في جلسة الاقتراحات (ردِّ الاقتراح الذي وافق عليه المالك) باقتراحٍ آخر، ثم يجيب نصًّا."""
+    name = "proposing-after-approval-live"
+
+    def complete(self, request):
+        from core.contracts import Response, ToolCall, Usage
+        self.calls += 1
+        if request.tools and sum(m.role == "tool" for m in request.messages) == 1:
+            call = ToolCall("call_" + uuid.uuid4().hex[:8], "propose_memory", {"text": "ملاحظة ثانية"})
+            return Response("", Usage(1, 1), "complete", 0, provider=self.name, model_version="1" * 64,
+                            tool_calls=(call,))
+        return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="1" * 64)
+
+
+def test_a_proposal_the_live_model_makes_after_an_approval_is_settled_before_the_next_step(tmp_path):
+    """ملاحظةُ Codex على #129 (الجولة السابعة والثلاثون): بعد الموافقة يُستأنف الدورُ فيجيب النموذجُ الحيّ باقتراحٍ آخر، فكان
+    `decide` يعيد العنصرَ المحفوظ ويترك الاقتراحَ الجديد ينتظر المالك، فيرفض النسخُ التالي المساحةَ بـbackup_pending ويُعدّ المنتجُ
+    الصحيح ساقطًا. صار ما بعد البتّ يُحسم كما تُحسم جولاتُ الفحص."""
+    from evaluation.memory_runner import run_wired_scenario
+    scenario = {"id": "propose_approve_backup", "category": "backup", "steps": [
+        {"op": "propose", "project": "A", "text": "رقم مكتب المحاماة ٠١١٤٥٦٧٨٩٠", "as": "p1"},
+        {"op": "approve", "project": "A", "ref": "p1"},
+        {"op": "backup", "project": "A", "as": "b1"},
+        {"expect": "retrieve", "project": "A", "query": "مكتب المحاماة", "absent": [], "present": ["٠١١٤٥٦٧٨٩٠"]},
+    ]}
+    delegate = _ProposingAfterApprovalDelegate()
+    report = run_wired_scenario(scenario, tmp_path / "w", delegate=delegate)
+    assert report["passed"] and report["failures"] == [], report
+    assert delegate.calls >= 2, "النموذجُ الحيّ لم يُسأل بعد الموافقة"
+
+
 def test_live_probes_keep_their_session_so_history_is_checked_after_forget(tmp_path):
     """ملاحظةُ Codex على #129: الطريقُ الحيّ كان يفتح جلسةً لكلّ فحص، فالفحصُ بعد النسيان بلا تاريخ ما قبله، ولا يُرى
     تراجعٌ يمحو العنصرَ من المخزن ويُبقي كتلتَه القديمة في التاريخ. الآن الجلسةُ نفسُها، وما طلبه النموذجُ يُرفض."""
@@ -1300,9 +1331,12 @@ def test_only_a_persisted_item_witnesses_isolation_injection_or_restoration():
     check(dict(by_id["isolation_002"], steps=[filler, save, after, restore("b1"), named]), strict=True)
     approve = {"op": "approve", "project": "A", "ref": save["as"]}
     forget = {"op": "forget", "project": "A", "ref": save["as"]}
-    for steps in ([proposed, before, approve, restore("b0"), probe], [before, proposed, restore("b0"), approve, probe],
+    for steps in ([before, proposed, approve, restore("b0"), probe], [before, proposed, restore("b0"), approve, probe],
                   [save, after, forget, restore("b1"), probe]):
         assert code(dict(by_id["isolation_002"], steps=steps), strict=True) == "isolation_without_cross_project_absence"
+    # ونسخةٌ واقتراحٌ ينتظر المالك تُردّ قبل ذلك باسمها (الجولة السابعة والثلاثون): المنتجُ يرفضها backup_pending
+    assert code(dict(by_id["isolation_002"], steps=[proposed, before, approve, restore("b0"), probe]), strict=True) \
+        == "backup_with_pending_proposal"
     check(by_id["isolation_002"], strict=True)
 
     directive, fenced = by_id["injection_001"]["steps"]

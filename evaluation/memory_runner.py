@@ -466,6 +466,10 @@ class _Wired:
         result = self.api("agent_resume", project=ids["id"], session=ids["proposals"], turn=ref["turn"])
         found = [r.get("item_id") for step in result["steps"] for r in step["tool_results"]
                  if r["name"] == "propose_memory" and r["status"] == "ok"]
+        # النموذجُ الحيّ قد يجيب على ردّ الأداة بعد البتّ باقتراحٍ آخر فتقف الجولةُ تنتظر المالك، ويرفض النسخُ التالي المساحةَ
+        # بـbackup_pending ويُحسب على المنتج؛ فيُحسم ما بعد البتّ كما تُحسم جولاتُ الفحص (ملاحظة Codex على #129، الجولة السابعة
+        # والثلاثون)
+        self.settle(ref["project"], "proposals", ref["turn"], result)
         return found[0] if found else None
 
     def retrieved_text(self, name, query):

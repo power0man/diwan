@@ -560,6 +560,7 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
     kinds: dict[str, str] = {}           # المرجع ← نوعه (عنصر، اقتراح، نسخة)
     forgotten, checked_residue, receipted, touched = set(), set(), set(), set()
     approved: set[str] = set()           # اقتراحٌ وُوفق عليه لا يُوافَق عليه ثانيةً
+    pending: set[str] = set()            # اقتراحاتٌ تنتظر المالك: ما دامت قائمةً يرفض المنتجُ النسخَ الاحتياطية
     expects = 0
     for i, step in enumerate(scenario["steps"]):
         where = f"{path}.steps[{i}]"
@@ -575,11 +576,17 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
                     _reject(where + ".text", "text_invalid", "نصٌّ غير فارغ")
                 if op == "remember" and step["consent"] not in CONSENTS:
                     _reject(where + ".consent", "consent_invalid", "owner أو none")
+            if op == "backup" and pending:
+                # المُشغِّلان يُبقيان الاقتراحَ الذي لم يُبتّ فيه فعلًا ينتظر المالك، فيرفض المنتجُ النسخَ بـbackup_pending ويُحسب
+                # على المنتج لا على البنك (ملاحظة Codex على #129، الجولة السابعة والثلاثون)
+                _reject(where, "backup_with_pending_proposal", "نسخةٌ احتياطية واقتراحٌ ينتظر المالك: " + ", ".join(sorted(pending)))
             if "as" in step:
                 if step["as"] in refs:
                     _reject(where + ".as", "ref_reused", "مرجعٌ معرَّفٌ سابقًا")
                 refs[step["as"]] = step["project"]
                 kinds[step["as"]] = {"backup": "backup", "propose": "proposal"}.get(op, "item")
+                if op == "propose":
+                    pending.add(step["as"])
             if "ref" in step:
                 ref = step["ref"]
                 if ref not in refs or refs[ref] != step["project"]:
@@ -593,6 +600,7 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
                     if ref in approved:
                         _reject(where + ".ref", "approve_repeated", "اقتراحٌ وُوفق عليه سابقًا")
                     approved.add(ref)
+                    pending.discard(ref)
                 if op == "forget":
                     forgotten.add(ref)
         elif "expect" in step:
