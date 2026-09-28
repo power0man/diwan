@@ -256,6 +256,12 @@ def choose_reviewers(candidates: list[dict], want: int = 2, exhausted: list[dict
                                f"{len(chosen)}/{want}")
 
 
+def bare_url(url: str) -> str:
+    """المخطّطُ والمضيفُ والمسارُ وحدها: لا هويةَ ولا منفذَ ولا استعلامَ ولا جزء — فلا يدخل التقريرَ ما قد يحمل رمزًا."""
+    parts = urllib.parse.urlsplit(url)
+    return f"{parts.scheme}://{parts.hostname}{parts.path}"
+
+
 class _RefuseRedirect(urllib.request.HTTPRedirectHandler):
     """التحويلُ مرفوض: لا يتبع النقلُ مضيفًا لم يُسمَّ، فلا يخرج المفتاحُ إلى غير نقطته."""
 
@@ -329,6 +335,7 @@ class OpenAICompatChat:
         self.timeout, self.max_tokens = timeout, max_tokens
         self.catalog_shape: dict | None = None
         self.failures: dict[str, dict] = {}     # آخرُ شكلٍ فاشل لكل نموذجٍ (وللفهرس): لا نصَّ فيه
+        self.last_request: dict[str, dict] = {}  # الطريقةُ والرابطُ المرسَل والنهائيّ (bare_url) لكل نموذجٍ وللفهرس
         self.opener = urllib.request.build_opener(_RefuseRedirect())
 
     def __repr__(self) -> str:
@@ -348,19 +355,25 @@ class OpenAICompatChat:
         for name, value in self._headers.items():
             request.add_header(name, value)
         request.add_unredirected_header("Authorization", f"Bearer {self.__key}")
+        # ما خرج فعلًا وما عاد منه: يُسجَّل لكل نداءٍ (بلا استعلامٍ ولا ترويسة) فيُرى المسارُ لا يُفترض
+        where = self.last_request[label] = {"method": request.get_method(), "sent": bare_url(request.full_url),
+                                            "final": None}
         try:
             with self.opener.open(request, timeout=self.timeout) as response:
                 raw = response.read(MAX_RESPONSE_BYTES + 1)
                 headers = getattr(response, "headers", None)
                 content_type = headers.get("Content-Type") if headers is not None else None
                 status = getattr(response, "status", None)
+                where["final"] = bare_url(response.geturl()) if hasattr(response, "geturl") else None
         except urllib.error.HTTPError as exc:
             try:
                 body = exc.read(65536)
             except OSError:
                 body = b""
-            _, self.failures[label] = response_shape(
+            where["final"] = bare_url(exc.geturl()) if exc.geturl() else None
+            _, shape = response_shape(
                 exc.code, body, exc.headers.get("Content-Type") if exc.headers is not None else None)
+            self.failures[label] = {**shape, "request": where}
             if 300 <= exc.code < 400 and exc.headers is not None and exc.headers.get("Location"):
                 # وجهةُ التحويل: المضيفُ والمسارُ وحدهما (لا استعلامَ قد يحمل رمزًا)؛ ولا يُتبع ولا يُعاد المفتاحُ إليها
                 target = urllib.parse.urlsplit(urllib.parse.urljoin(url, exc.headers["Location"]))
@@ -384,13 +397,13 @@ class OpenAICompatChat:
         raw, content_type, status = self._send(self.chat_url, payload, model)
         body, shape = response_shape(status, raw, content_type)
         if shape["top"] == "not_json":
-            self.failures[model] = shape
+            self.failures[model] = {**shape, "request": self.last_request[model]}
             raise AutomaticReviewError("response_not_json", model)
         try:
             choice = body["choices"][0]
             content = choice["message"].get("content")
         except (KeyError, IndexError, TypeError, AttributeError):
-            self.failures[model] = shape
+            self.failures[model] = {**shape, "request": self.last_request[model]}
             raise AutomaticReviewError("openai_response_malformed", model) from None
         if isinstance(content, list):          # أجزاءُ نصٍّ عند بعض المزوّدين
             content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
@@ -409,7 +422,7 @@ class OpenAICompatChat:
         raw, content_type, status = self._send(self.catalog_url, None, "catalog")
         entries, self.catalog_shape = catalog_shape(raw, content_type, status)
         if entries is None:
-            self.failures["catalog"] = self.catalog_shape
+            self.failures["catalog"] = {**self.catalog_shape, "request": self.last_request["catalog"]}
             error = AutomaticReviewError("catalog_malformed", self.backend)
             error.shape = self.catalog_shape
             raise error

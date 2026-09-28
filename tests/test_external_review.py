@@ -280,10 +280,14 @@ def _gh_full(model, outputs=("text",)):
 
 
 class _Reply(io.BytesIO):
-    def __init__(self, raw: bytes, content_type: str):
+    def __init__(self, raw: bytes, content_type: str, url: str):
         super().__init__(raw)
         self.headers = {"Content-Type": content_type}
         self.status = 200
+        self.url = url
+
+    def geturl(self) -> str:
+        return self.url
 
 
 class _Fail:
@@ -317,11 +321,11 @@ class FreeOpener:
             headers = {"Content-Type": reply.content_type, **({"Location": reply.location} if reply.location else {})}
             raise urllib.error.HTTPError(request.full_url, reply.code, "refused", headers, io.BytesIO(reply.body))
         if isinstance(reply, bytes):
-            return _Reply(reply, "text/plain")
+            return _Reply(reply, "text/plain", request.full_url)
         if request.data is not None:
             content, finish = reply if isinstance(reply, tuple) else (json.dumps(reply, ensure_ascii=False), "stop")
             reply = {"choices": [{"message": {"role": "assistant", "content": content}, "finish_reason": finish}]}
-        return _Reply(json.dumps(reply, ensure_ascii=False).encode("utf-8"), "application/json")
+        return _Reply(json.dumps(reply, ensure_ascii=False).encode("utf-8"), "application/json", request.full_url)
 
     def chat_models(self):
         return [json.loads(r.data)["model"] for r in self.requests if r.data is not None]
@@ -669,12 +673,14 @@ def test_http_statuses_are_named_and_only_a_safe_shape_of_the_body_is_recorded()
         chat(DS, "s", "u", {})
     assert forbidden.value.code == "forbidden"
     assert chat.failures[DS] == {"status": 403, "content_type": "application/json", "bytes": len(body), "top": "dict",
-                                 "keys": ["error"], "error_code": "no_access", "error_type": "invalid_request_error"}
+                                 "keys": ["error"], "error_code": "no_access", "error_type": "invalid_request_error",
+                                 "request": {"method": "POST", "sent": GH_CHAT, "final": GH_CHAT}}
     assert forbidden.value.shape == chat.failures[DS]
     with pytest.raises(AutomaticReviewError) as stub:
         chat(MI, "s", "u", {})
     assert stub.value.code == "response_not_json"
-    assert chat.failures[MI] == {"status": 200, "content_type": "text/plain", "bytes": 4, "top": "not_json"}
+    assert chat.failures[MI] == {"status": 200, "content_type": "text/plain", "bytes": 4, "top": "not_json",
+                                 "request": {"method": "POST", "sent": GH_CHAT, "final": GH_CHAT}}
     with pytest.raises(AutomaticReviewError) as missing:
         chat(LL, "s", "u", {})
     assert missing.value.code == "not_found" and chat.failures[LL]["content_type"] == "text/html"
@@ -695,7 +701,9 @@ def test_a_backend_that_answers_ok_to_everything_is_unavailable_not_failed(tmp_p
     report = json.loads(out.read_text(encoding="utf-8"))
     assert (report["status"], report["code"], report["unavailable_codes"]) == (
         "unavailable", "service_unavailable", ["response_not_json"])
-    assert report["last_failure_shapes"] == {"catalog": stub, DS: stub, MI: stub}
+    sent = {"catalog": {"method": "GET", "sent": GH_CATALOG, "final": GH_CATALOG},
+            DS: {"method": "POST", "sent": GH_CHAT, "final": GH_CHAT}, MI: {"method": "POST", "sent": GH_CHAT, "final": GH_CHAT}}
+    assert report["last_failure_shapes"] == {label: {**stub, "request": sent[label]} for label in sent}
     printed = _printed(capsys)
     assert printed["status"] == "unavailable" and printed["unavailable_codes"] == ["response_not_json"]
     _free(monkeypatch, FreeOpener(catalog=ok, replies={DS: [ok], MI: [CATCH]}))
@@ -732,3 +740,24 @@ def test_a_redirect_is_refused_by_name_with_its_target_and_the_key_is_not_resent
     assert chat.failures[MI]["redirect_to"] == "models.github.ai/inference/chat/completions/"
     assert len(chat.opener.requests) == 2, "لا طلبَ ثانٍ إلى الوجهة"
     assert "token=abc" not in json.dumps(chat.failures)
+
+
+def test_the_exact_url_and_method_go_out_and_are_recorded_for_chat_and_catalog():
+    """الردُّ «OK» لكل طلبٍ ليس مسارًا ضاع في العميل: الرابطُ والطريقةُ كما وُثّقا، ومسجَّلان مرسَلًا ونهائيًّا."""
+    ok = b"OK\r\n"
+    for backend, catalog_url, chat_url in (
+            ("github-models", GH_CATALOG, GH_CHAT),
+            ("hf-router", "https://router.huggingface.co/v1/models", "https://router.huggingface.co/v1/chat/completions")):
+        chat = cli.OpenAICompatChat(backend, KEY)
+        chat.opener = FreeOpener(catalog=ok, replies={DS: [ok]})
+        with pytest.raises(AutomaticReviewError):
+            chat.catalog()
+        with pytest.raises(AutomaticReviewError):
+            chat(DS, "s", "u", {})
+        catalog_request, chat_request = chat.opener.requests
+        assert (catalog_request.get_method(), catalog_request.full_url) == ("GET", catalog_url)
+        assert (chat_request.get_method(), chat_request.full_url) == ("POST", chat_url)
+        assert chat.failures["catalog"]["request"] == {"method": "GET", "sent": catalog_url, "final": catalog_url}
+        assert chat.failures[DS]["request"] == {"method": "POST", "sent": chat_url, "final": chat_url}
+        assert chat.last_request[DS] == chat.failures[DS]["request"]
+    assert cli.bare_url("https://user:pw@models.github.ai:443/inference/chat/completions?token=abc#frag") == GH_CHAT
