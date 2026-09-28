@@ -98,12 +98,18 @@ def _digest(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def stored_text(text: str) -> str:
+    """النصُّ كما يكتبه المخزنُ بعد قبوله (`_clean_text`): مشذَّبَ الطرفين. ويقرؤه مدقّقُ بنك الذاكرة ليربط الشواهدَ بما يُكتب
+    فعلًا، لا بنصّ البنك قبل التشذيب (ملاحظة Codex على #129، الجولة الثالثة والأربعون)."""
+    return text.strip()
+
+
 def _clean_text(text) -> str:
     if not isinstance(text, str) or not text.strip():
         raise MemoryRefused("text_invalid", "نصٌّ غير فارغ")
     if len(text) > MAX_ITEM_CHARS:
         raise MemoryRefused("text_too_long", f"العنصرُ أطول من {MAX_ITEM_CHARS} محرف")
-    return text.strip()
+    return stored_text(text)
 
 
 class MemoryStore:

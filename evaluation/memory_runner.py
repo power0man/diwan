@@ -33,13 +33,13 @@ from core.quoted import QUARANTINE_MARK, scan
 from evaluation.memory_bank import (EXPOSURE_QUESTION, active_refs, contains as _contains, mask_persisted, names_every_directive,
                                     probe_collisions, envelope_collisions, message_envelope_collisions, question_collisions,
                                     request_payload_collisions, request_provider, role_collisions, scalar_text, tool_collisions)
-from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, unfenced
+from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, stored_text, unfenced
 
 
 def _expected_line(text: str) -> str:
     """سطرُ العنصر الآمر كما يجب أن يبلغ السياق: كلُّ مقطعٍ يلتقطه الماسح مُبدَلٌ بعلامته. ويُبنى هنا من مقاطع الماسح لا من
-    `quarantine`، فحجرٌ يحذف من العنصر جزءَه المطلوبَ وحده لا يطابقه ولو طابقه هو."""
-    text = unfenced(text)
+    `quarantine`، فحجرٌ يحذف من العنصر جزءَه المطلوبَ وحده لا يطابقه ولو طابقه هو. والنصُّ كما يكتبه المخزن (`stored_text`)."""
+    text = unfenced(stored_text(text))
     pieces, cursor = [], 0
     for finding in scan(text):
         pieces += [text[cursor:finding.start], QUARANTINE_MARK.format(code=finding.code)]
@@ -77,8 +77,9 @@ def _residue(store: MemoryStore) -> bytes:
 
 
 def _saved_text(scenario: dict, ref: str) -> str:
-    """نصُّ العنصر الذي أنشأته خطوةٌ باسمه."""
-    return next(s["text"] for s in scenario["steps"] if s.get("op") in ("remember", "propose") and s.get("as") == ref)
+    """نصُّ العنصر الذي أنشأته خطوةٌ باسمه، كما يكتبه المخزن (`stored_text`)."""
+    texts = (s["text"] for s in scenario["steps"] if s.get("op") in ("remember", "propose") and s.get("as") == ref)
+    return stored_text(next(texts))
 
 
 def _foreign(scenario: dict, index: int, needle: str, active: set) -> bool:
@@ -88,12 +89,16 @@ def _foreign(scenario: dict, index: int, needle: str, active: set) -> bool:
     مشروعٍ آخر، وإلا بقي التسرّبُ صفرًا بتاريخٍ لا بحالةٍ (ملاحظة Codex على #129، الجولة الحادية والأربعون)."""
     steps = scenario["steps"]
     project = steps[index]["project"]
-    made = [(s["project"], s["as"], s["text"]) for s in steps[:index] if s.get("op") in ("remember", "propose")]
+    made = [(s["project"], s["as"], stored_text(s["text"])) for s in steps[:index] if s.get("op") in ("remember", "propose")]
     return (any(_contains(text, needle) for owner, _, text in made if owner != project)
             and not any(_contains(text, needle) for owner, ref, text in made if owner == project and ref in active))
 
 
 RECOUNT_RULE = "foreign_project_witness_in_served_memory_not_held_by_an_active_local_item"
+# حدودُ التسرّب كما تُنشر: `LEAKAGE_LIMIT` مع كلّ قياسٍ حيّ (`tools/evaluate_memory.py` يقرؤه من هنا)، و`RECOUNT_LIMIT` مع كلّ
+# تقريرٍ أُعيد عدُّه، فلا يُنشر رقمٌ جديد بلا حدّه ولا تفترق صيغتاه (ملاحظة Codex على #129، الجولة الثالثة والأربعون)
+LEAKAGE_LIMIT = "leakage_counts_only_an_absent_witness_served_by_the_memory_itself_at_the_check_the_retrieval_the_owner_list_or_the_current_context_block_that_is_the_text_of_another_project_s_item_saved_before_the_check_and_not_of_a_checked_project_item_still_in_its_store_so_the_model_s_own_echo_or_a_failed_forget_of_the_checked_project_is_named_in_failures_but_not_counted_as_a_cross_project_leak_while_a_forgotten_local_twin_does_not_hide_one"
+RECOUNT_LIMIT = "leakage_was_recounted_without_remeasurement_by_the_rule_named_in_recount_leakage_rule_from_the_failures_and_locations_recorded_in_the_original_run_reading_the_scenario_s_expected_store_at_the_recorded_step_not_the_store_so_a_failed_forget_is_not_seen_and_a_failure_recorded_before_locations_were_recorded_is_read_as_served_memory_though_it_may_be_an_earlier_block_in_the_session_history"
 # ومكانُ الرسوب كما يسجّله المُشغِّلُ الموصول بعد الشاهد: لا شيء لما خدمته الذاكرةُ نفسُها، وإلا صدى النموذج أو السؤالُ الحاليّ
 # أو مواصفاتُ الأدوات أو ما سواها من الطلب
 _ABSENT_FAILURE = re.compile(r"^(\d+): (?:retrieve|context) holds absent «(.*?)»(.*)$")
@@ -108,7 +113,8 @@ def recount_leakage(report: dict, bank: dict, stamp: dict | None = None) -> dict
     - ورسوبٌ سُجّل له مكانٌ (صدى النموذج، أو السؤال، أو مواصفاتُ الأدوات، أو ما سواها من الطلب) لم تخدمه الذاكرةُ الآن فلا
       يُعدّ تسرّبًا، كما لا يعدّه المُشغِّل. الحدُّ: في تقريرٍ سبق هذا التسجيل كانت الكتلةُ القديمة في التاريخ بلا مكانٍ أيضًا،
       فيُعدّ رسوبُها إن كان شاهدُه أجنبيًّا.
-    - و`recount.leakage.from` ما قيس أولَ مرّة: إعادةُ العدّ ثانيةً لا تمحوه."""
+    - و`recount.leakage.from` ما قيس أولَ مرّة: إعادةُ العدّ ثانيةً لا تمحوه.
+    - و`measurement_limits` تُضاف إليها `LEAKAGE_LIMIT` و`RECOUNT_LIMIT` (الجولة الثالثة والأربعون)."""
     scenarios = {s["id"]: s for s in bank["scenarios"]}
     results = []
     for result in report["results"]:
@@ -124,7 +130,11 @@ def recount_leakage(report: dict, bank: dict, stamp: dict | None = None) -> dict
     metrics = {**report["metrics"], "leakage": sum(r["leaks"] for r in results)}
     measured = report.get("recount", {}).get("leakage", {}).get("from", report["metrics"]["leakage"])
     recount = {"from": measured, "to": metrics["leakage"], "rule": RECOUNT_RULE, **(stamp or {})}
-    return {**report, "results": results, "metrics": metrics, "recount": {**report.get("recount", {}), "leakage": recount}}
+    # والرقمُ الجديد يُنشر بحدّه: قاعدةُ التسرّب كما تُنشر مع القياس الحيّ، وحدُّ إعادة العدّ نفسِها، بلا تكرارٍ إن أُعيد العدّ
+    measured_limits = report.get("measurement_limits", [])
+    limits = [*measured_limits, *(limit for limit in (LEAKAGE_LIMIT, RECOUNT_LIMIT) if limit not in measured_limits)]
+    return {**report, "results": results, "metrics": metrics, "measurement_limits": limits,
+            "recount": {**report.get("recount", {}), "leakage": recount}}
 
 
 def _exposed(shown: str, text: str) -> bool:

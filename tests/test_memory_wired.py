@@ -1820,3 +1820,53 @@ def test_a_recount_validates_the_suite_against_the_model_the_report_was_measured
         measured.write_text(json.dumps({**report, **({"engine": engine} if engine else {})}, ensure_ascii=False), encoding="utf-8")
         assert cli.main(["--recount", str(measured), "--suite", str(suite)]) == status
         assert json.loads(capsys.readouterr().out).get("code") == code
+
+
+def test_a_recounted_report_publishes_the_leakage_rule_and_the_recount_limit_with_its_new_number():
+    """ملاحظةُ Codex على #129 (الجولة الثالثة والأربعون): إعادةُ العدّ كانت تستبدل `metrics.leakage` وتُبقي `measurement_limits`
+    كما قيست، فنُشر التسرّبُ صفرًا بلا قاعدته ولا حدّ إعادة العدّ. صارت تضيف `LEAKAGE_LIMIT` — الصيغةَ نفسَها التي تنشرها
+    الأداةُ مع كلّ قياسٍ حيّ — و`RECOUNT_LIMIT`، بلا تكرارٍ إن أُعيد العدّ؛ والدليلُ المنشور مُعادُ العدّ بها."""
+    import tools.evaluate_memory as cli
+    from evaluation.memory_runner import LEAKAGE_LIMIT, RECOUNT_LIMIT, recount_leakage
+    assert LEAKAGE_LIMIT in cli.LIMITS and RECOUNT_LIMIT not in cli.LIMITS, "القياسُ الحيّ يقرأ قاعدةَ التسرّب من الموضع نفسِه"
+    evidence = json.loads((ROOT / "docs" / "probe" / "memory-live-20260928.json").read_text(encoding="utf-8"))
+    assert evidence["measurement_limits"][-2:] == [LEAKAGE_LIMIT, RECOUNT_LIMIT]
+    once = recount_leakage({"metrics": {"leakage": 0}, "results": [], "measurement_limits": ["as_measured"]}, {"scenarios": []})
+    assert once["measurement_limits"] == ["as_measured", LEAKAGE_LIMIT, RECOUNT_LIMIT]
+    assert recount_leakage(once, {"scenarios": []})["measurement_limits"] == once["measurement_limits"]
+
+
+def test_a_residue_witness_is_bound_to_the_text_as_the_store_writes_it(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #129 (الجولة الثالثة والأربعون): المدقّقُ كان يربط الشاهدَ بنصّ البنك قبل التشذيب، والمخزنُ يكتبه
+    مشذَّبًا (`_clean_text`). فشاهدُ بقايا بمسافاتٍ في أوّله يُقبل ولا يجده المسحُ على القرص أبدًا، ونسيانٌ معطوب يُبقي النصَّ
+    المشذَّب على القرص يمرّ. صار الربطُ بـ`stored_text` الذي يكتب به المخزنُ نفسُه، فيُردّ ذلك الشاهد، والمربوطُ يلتقط العطب."""
+    from core.canonical import PayloadRejected
+    from evaluation.memory_bank import validate_memory_bank
+    from evaluation.memory_runner import run_scenario
+    from memory.store import MemoryStore
+    value = "ملاحظة جواز السفر السرية ٤٤٥٥٦٦"
+
+    def scenario(residue):
+        return {"id": "forget_padded_text", "category": "forget", "note": "نصٌّ بمسافاتٍ في أوّله", "steps": [
+            {"op": "remember", "project": "A", "text": "   " + value, "consent": "owner", "as": "m1"},
+            {"op": "forget", "project": "A", "ref": "m1"},
+            {"expect": "retrieve", "project": "A", "query": "جواز السفر", "absent": [value], "present": []},
+            {"expect": "context", "project": "A", "question": "ما رقم الجواز؟", "absent": [value], "present": []},
+            {"expect": "residue", "project": "A", "absent": [residue]},
+            {"expect": "receipt", "project": "A", "ref": "m1", "count": 1}]}
+    padded, bound = scenario("   ملاحظة جواز السفر"), scenario("ملاحظة جواز السفر")
+    with pytest.raises(PayloadRejected) as err:
+        validate_memory_bank({**BANK, "scenarios": [padded]}, strict=True)
+    assert err.value.code == "forgotten_value_unchecked_on_disk"
+    validate_memory_bank({**BANK, "scenarios": [bound]}, strict=True)
+    original = MemoryStore.forget
+
+    def forget_leaving_bytes(self, item_id, **kw):
+        text = next(i["text"] for i in self.items() if i["item_id"] == item_id)
+        receipt = original(self, item_id, **kw)
+        (self.root / "leftover.json").write_text(json.dumps({"text": text}, ensure_ascii=False), encoding="utf-8")
+        return receipt
+    monkeypatch.setattr(MemoryStore, "forget", forget_leaving_bytes)
+    assert run_scenario(padded, tmp_path / "padded")["passed"], "الشاهدُ المردود كان يُمرّر النسيانَ المعطوب"
+    caught = run_scenario(bound, tmp_path / "bound")
+    assert not caught["passed"] and any(f.startswith("4: residue holds") for f in caught["failures"]), caught

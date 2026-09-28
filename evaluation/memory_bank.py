@@ -21,7 +21,7 @@ from core.attribution import content_tokens, normalize
 from core.canonical import PayloadRejected
 from core.quoted import DIRECTIVE_PATTERNS, QUARANTINE_MARK, quarantine_quoted, scan, wrap
 from memory.store import (HEADER, MAX_CONTEXT_CHARS, MAX_CONTEXT_ITEMS, MAX_ITEM_CHARS, RETRIEVE_LIMIT, held_text,
-                          unfenced)
+                          stored_text, unfenced)
 
 THRESHOLDS = {"forget_rate": 1.0, "leakage": 0, "consent_violations": 0, "injection_unquarantined": 0}
 CATEGORIES = frozenset({"forget", "backup", "isolation", "consent", "injection"})
@@ -40,6 +40,11 @@ EXPECTS = {
     "receipt": {"expect", "project", "ref", "count"},
 }
 CONSENTS = frozenset({"owner", "none"})
+# التوقّعاتُ التي تقرأ من مشروعها ما قد يعرض عنصرًا من مشروعٍ آخر، فيعدّ المُشغِّلُ غيابَها في العزل تسرّبًا؛ والباقيةُ تقرأ بايتاتِ
+# مخزن المشروع نفسِه أو إيصالَ مرجعٍ منه. وكلُّ توقّعٍ في `EXPECTS` مصنَّفٌ هنا، وما لم يُصنَّف يُردّ باسمه (ملاحظة Codex على #129،
+# الجولة الثالثة والأربعون)
+EXPOSING_EXPECTS = ("retrieve", "context")
+PRIVATE_EXPECTS = ("residue", "receipt")
 
 
 def contains(haystack: str, needle: str) -> bool:
@@ -329,6 +334,14 @@ def _bound(step: dict, item: dict, least: int = 0) -> bool:
     return step["project"] == item["project"] and _names(step, item["text"], least=least)
 
 
+def _made(steps: list) -> dict:
+    """المرجعُ ← (خطوةُ إنشائه، الخطوةُ بنصّها كما يكتبه المخزن `stored_text`): فالشواهدُ تُربط بما يُكتب على القرص ويبلغ
+    الاسترجاعَ والسياق، لا بنصّ البنك قبل التشذيب؛ وإلا ربط شاهدُ بقايا بمسافاتٍ في أوّله عنصرَه ولا يجده المسحُ على القرص
+    ولو بقي النصُّ كلُّه (ملاحظة Codex على #129، الجولة الثالثة والأربعون)."""
+    return {s["as"]: (i, {**s, "text": stored_text(s["text"])})
+            for i, s in enumerate(steps) if s.get("op") in ("remember", "propose")}
+
+
 def active_refs(steps: list, index: int) -> set[str]:
     """أسماءُ العناصر القائمة في المخزن عند هذه الخطوة كما يرسمها السيناريو، بلا تشغيل: ما حُفظ قبلها بموافقة المالك أو
     وُوفق على اقتراحه قبلها، ولم يُنسَ قبلها. فاقتراحٌ لم يُوافَق عليه أو حفظٌ بلا موافقة أو منسيٌّ لا يشهد غيابُه ولا
@@ -339,9 +352,9 @@ def active_refs(steps: list, index: int) -> set[str]:
     لم يُنسَ هو، فنسخةٌ فيها نصٌّ واحد بمعرّفين يُنسى أحدُهما لا يبقى منها الآخر (ملاحظة Codex على #129)."""
     # والمحوُ بالبصمة في مشروع النسيان وحده: إيصالاتُ كلِّ مشروعٍ تُطبَّق على مخزنه هو عند الاستعادة، فنصٌّ نُسي في
     # مشروعٍ لا يمحو نظيرَه القائمَ في مشروعٍ آخر (ملاحظة Codex على #129، الجولة السابعة عشرة)
-    made = {s["as"]: (i, s) for i, s in enumerate(steps) if s.get("op") in ("remember", "propose")}
+    made = _made(steps)
     saved, active, forgotten, gone, snapshots = set(), set(), set(), {}, {}
-    content = lambda r: made[r][1]["text"].strip()
+    content = lambda r: made[r][1]["text"]
     project = lambda r: made[r][1]["project"]
     for s in steps[:index]:
         op = s.get("op")
@@ -378,11 +391,16 @@ def _reached(step: dict, ref: str, live: list) -> bool:
     if step["expect"] == "retrieve":
         return overlap(item) > 0 and len(ahead) < RETRIEVE_LIMIT
     return (len(ahead) < MAX_CONTEXT_ITEMS
-            and sum(len(held_text(o["text"].strip())) for o in [*ahead, item]) <= MAX_CONTEXT_CHARS)
+            and sum(len(held_text(o["text"])) for o in [*ahead, item]) <= MAX_CONTEXT_CHARS)
 
 
 def _validate_semantics(scenario: dict, path: str, strict: bool, model: str | None = None) -> None:
     _validate_meaning(scenario, path, strict)
+    # وبعد أحكام المعنى الأدقّ: شاهدٌ يفرغ بالتطبيع الذي يطابق به المُشغِّل (`contains`) يطابق كلَّ نصّ، فيسقط غيابُه دائمًا
+    # ويصدق حضورُه دائمًا (ملاحظة Codex على #129، الجولة الثالثة والأربعون)
+    for k, step in enumerate(scenario["steps"]):
+        if any(not normalize(t).strip() for key in ("absent", "present") for t in step.get(key) or []):
+            _reject(f"{path}.steps[{k}]", "witness_empty_after_normalization", "شاهدٌ لا يبقى منه شيءٌ بعد التطبيع")
     # آخرُ بوابة بعد صحّة المعنى: شاهدٌ يرد في سؤال فحص العرض أو نصٌّ يحويه يبقى في تاريخ الفحص كلامًا للمالك
     if collisions := probe_collisions(scenario):
         _reject(path, "probe_question_collides_with_scenario", f"«{collisions[0][:40]}» يرد في سؤال فحص العرض أو يحويه، فيبقى في تاريخ الفحص")
@@ -409,7 +427,7 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
     last = lambda op: max((i for i, s in enumerate(steps) if s.get("op") == op), default=None)
     checked_after = lambda i, kinds: {s["expect"] for s in steps[i + 1:] if s.get("expect") in kinds}
     category = scenario["category"]
-    made = {s["as"]: (i, s) for i, s in enumerate(steps) if s.get("op") in ("remember", "propose")}
+    made = _made(steps)
 
     def active_at(ref, index):
         """العنصرُ قائمٌ في المخزن عند هذه الخطوة (`active_refs`)."""
@@ -557,8 +575,10 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
         # استرجاعٍ كهذا لا في أحدها: المُشغِّلُ يفحص في كل خطوةٍ شواهدَها المعلَنة وحدها، فعنصرٌ سُمّي في استرجاع C وسكت عنه
         # استرجاعُ B يتسرّب إلى B ويمرّ السيناريو بلا تسرّب (ملاحظتا Codex على #129، الجولتان الثامنة والعشرون والتاسعة والعشرون).
         # والشاهدُ يكفي ولو لم يبلغ العنصرُ حدَّ الاسترجاع بسؤاله، فحدُّ `within_limit` لمصدر العزل وحده
+        # وكلُّ توقّعٍ يقرأ من مشروعٍ آخر ما قد يعرضه (`EXPOSING_EXPECTS`: الاسترجاعُ والسياق) لا الاسترجاعُ وحده: سياقٌ في C بشاهدِ
+        # حضورٍ محليٍّ وحده يمرّ بتسرّبٍ صفر وكتلتُه تعرض A (ملاحظة Codex على #129، الجولة الثالثة والأربعون)
         unchecked = [ref for ref, (i, item) in made.items()
-                     if any(s.get("expect") == "retrieve" and s["project"] != item["project"] and active_at(ref, k)
+                     if any(s.get("expect") in EXPOSING_EXPECTS and s["project"] != item["project"] and active_at(ref, k)
                             and not _names(s, item["text"], least=SUBSTANTIVE) for k, s in enumerate(steps) if k > i)]
         if strict and unchecked:
             _reject(path, "isolation_item_unchecked", f"«{unchecked[0]}» قائمٌ ولا يفحص عزلَه استرجاعٌ من مشروعٍ آخر")
@@ -597,7 +617,7 @@ def _validate_meaning(scenario: dict, path: str, strict: bool) -> None:
                     if i < k and item["project"] == s["project"] and active_at(ref, k)]
             for p in s.get("present") or []:
                 shown = (lambda text: text) if s["expect"] == "retrieve" else held_text
-                holders = [ref for ref, item in live if contains(shown(item["text"].strip()), p)]
+                holders = [ref for ref, item in live if contains(shown(item["text"]), p)]
                 if not holders:
                     _reject(path, "present_not_active", f"«{p[:40]}» لا يقع في عنصرٍ قائمٍ في مشروع الخطوة {k} عندها")
                 if not any(_reached(s, ref, live) for ref in holders):
@@ -677,6 +697,8 @@ def _validate_steps(scenario: dict, path: str, projects: set[str]) -> None:
             extra = {"quarantined"} if kind == "context" else set()
             if allowed is None or not allowed <= set(step) <= allowed | extra:
                 _reject(where, "expect_invalid", f"توقّعٌ بحقوله المعلنة: {kind!r}")
+            if kind not in EXPOSING_EXPECTS + PRIVATE_EXPECTS:
+                _reject(where, "expect_unclassified", f"توقّعٌ لم يُصنَّف: أيقرأ ما قد يعرض عنصرًا من مشروعٍ آخر؟ {kind!r}")
             for key in ("absent", "present"):
                 if step.get(key):
                     _texts(step[key], f"{where}.{key}")

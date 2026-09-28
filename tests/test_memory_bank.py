@@ -601,3 +601,38 @@ def test_a_presence_witness_beyond_the_context_capacity_is_refused_in_the_commis
     for filler in fillers:
         filler["text"] = filler["text"][:40]
     validate_memory_bank(bank, strict=True)
+
+
+def test_every_expectation_that_can_expose_another_project_must_name_its_active_foreign_items():
+    """ملاحظةُ Codex على #129 (الجولة الثالثة والأربعون): شرطُ العزل المكلَّف كان يطلب تسميةَ العنصر الأجنبيّ القائم في
+    خطوات الاسترجاع وحدها، فسياقٌ في C بشاهدِ حضورٍ محليٍّ وحده يمرّ بتسرّبٍ صفر وإن عرضت كتلتُه عنصرَ A. صار الشرطُ لكلّ توقّعٍ
+    يقرأ ما قد يعرض عنصرًا من مشروعٍ آخر (`EXPOSING_EXPECTS`)، وكلُّ توقّعٍ معلَنٍ مصنَّف، وما لم يُصنَّف يُردّ باسمه."""
+    import evaluation.memory_bank as memory_bank
+    secret, meeting = "كود الخصم السري للموردين ZX-9", "موعد اجتماع المجلس يوم الخميس"
+    context = {"expect": "context", "project": "C", "question": "متى الاجتماع؟", "absent": [], "present": [meeting]}
+    scenario = {"id": "isolation_foreign_context", "category": "isolation", "note": "سياقٌ في مشروعٍ ثالث", "steps": [
+        {"op": "remember", "project": "A", "text": secret, "consent": "owner", "as": "m1"},
+        {"op": "remember", "project": "C", "text": meeting, "consent": "owner", "as": "m2"},
+        {"expect": "retrieve", "project": "B", "query": "كود الخصم السري للموردين", "absent": [secret, meeting], "present": []},
+        context]}
+    bank = {**BANK, "projects": ["A", "B", "C"], "scenarios": [scenario]}
+    _strict_refused(bank, "isolation_item_unchecked")
+    context["absent"] = [secret]
+    validate_memory_bank(bank, strict=True)
+    assert set(memory_bank.EXPECTS) == set(memory_bank.EXPOSING_EXPECTS) | set(memory_bank.PRIVATE_EXPECTS)
+    summary = {"expect": "summary", "project": "C", "absent": [secret]}
+    scenario["steps"].append(summary)
+    original = memory_bank.EXPECTS
+    memory_bank.EXPECTS = {**original, "summary": {"expect", "project", "absent"}}
+    try:
+        _strict_refused(bank, "expect_unclassified")
+    finally:
+        memory_bank.EXPECTS = original
+
+
+def test_a_witness_that_normalizes_to_nothing_is_refused():
+    """ملاحظةُ Codex على #129 (الجولة الثالثة والأربعون): المُشغِّلُ يطابق بعد التطبيع العربيّ (`contains`)، فشاهدٌ لا يبقى منه
+    شيءٌ بعده («؟؟؟») يطابق كلَّ نصّ: غيابُه يسقط دائمًا وحضورُه يصدق دائمًا. يُردّ باسمه في البنكين."""
+    bank, scenario = _scenario("forget_001")
+    scenario["steps"][2]["absent"] = ["؟؟؟"]
+    _refused(bank, "witness_empty_after_normalization")
