@@ -36,10 +36,12 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import shutil
+import stat
 import sys
 import tempfile
 import urllib.error
@@ -175,6 +177,11 @@ FREE_LIMITS = (
     "family_is_derived_from_publisher_and_name_not_attested_by_the_provider",
     "free_tier_rate_limits_and_input_caps_apply",
 )
+
+
+def free_limits(base) -> list[str]:
+    """حدودُ القياس على الواجهات المجانية من موضعٍ واحد، للتجربة وللبنك وللخلاصة المحفوظة (ملاحظة Codex على #174)."""
+    return sorted(set(base) | set(FREE_LIMITS))
 
 
 def _forbidden() -> dict[str, str]:
@@ -614,7 +621,7 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
                   "status": "passed" if all(r["status"] == "passed" for r in runs) else "failed",
                   "backend": transport.describe(), **source, "models": models,
                   "pairs": [[p["model"] for p in pair] for pair in pairs],
-                  "runs": runs, "measurement_limits": sorted(set(runs[0]["measurement_limits"]) | set(FREE_LIMITS)),
+                  "runs": runs, "measurement_limits": free_limits(runs[0]["measurement_limits"]),
                   "last_failure_shapes": transport.failures}
         _mark_unavailable(report, [m["error"] for m in models.values()])
         return report, EXIT_CODES.get(report["status"], 1)
@@ -636,12 +643,51 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     report["backend"] = transport.describe()
     report.update(source)
     report["fallbacks"] = fallbacks
-    report["measurement_limits"] = sorted(set(report["measurement_limits"]) | set(FREE_LIMITS))
+    report["measurement_limits"] = free_limits(report["measurement_limits"])
     report["last_failure_shapes"] = transport.failures
     if failure:
         report["status"], report["code"] = "failed", failure
     _mark_unavailable(report, [r["error"] for r in report["reviewers"].values()])
     return report, EXIT_CODES.get(report["status"], 1)
+
+
+def sealed_digests(root: Path | None = None) -> dict[str, str]:
+    """بصماتُ المحجوب كما تعلنها بياناتُه (`evaluation/banks/*/sealed/MANIFEST.json`، الشكلان: قاموسٌ أو قائمة) ← وسمُها.
+
+    هي البصماتُ نفسُها التي يقارن بها حارسُ المستودع (tests/test_sealed_banks_stay_sealed.py)؛ ولا يُقرأ من المحجوب غيرُ بيانه.
+    """
+    digests: dict[str, str] = {}
+    for manifest in sorted(((root or ROOT) / "evaluation" / "banks").glob("*/sealed/MANIFEST.json")):
+        files = json.loads(manifest.read_text(encoding="utf-8")).get("files") or {}
+        entries = files.items() if isinstance(files, dict) else ((e.get("path"), e) for e in files)
+        for path, entry in entries:
+            if isinstance(entry, dict) and isinstance(entry.get("sha256"), str):
+                digests[entry["sha256"]] = f"{manifest.parent.parent.name}/{path}"
+    return digests
+
+
+def inspect_open_split(bank: Path) -> dict[str, str]:
+    """قبل أيّ نسخٍ أو إرسال (ملاحظة Codex على #174): تُمشى `open/` بـlstat بلا اتّباع روابط — رابطٌ رمزيّ (لملفٍّ أو مجلّد) أو ملفٌّ
+    غيرُ عاديّ `open_split_link_refused`؛ وكلُّ ملفٍّ يُبصم فإن طابقت بصمتُه محجوبًا (ولو غيّر اسمه) `sealed_digest_refused`.
+    يُعيد {المسارُ النسبيّ: البصمة}."""
+    source = bank / "open"
+    if not source.exists() or stat.S_ISLNK(os.lstat(source).st_mode):
+        raise AutomaticReviewError("open_split_link_refused" if source.is_symlink() else "open_split_missing", "open")
+    sealed = sealed_digests()
+    digests: dict[str, str] = {}
+    for directory, dirnames, filenames in os.walk(source, followlinks=False):
+        for name in sorted(dirnames) + sorted(filenames):
+            path = Path(directory) / name
+            mode = os.lstat(path).st_mode
+            if stat.S_ISLNK(mode) or not (stat.S_ISDIR(mode) or stat.S_ISREG(mode)):
+                raise AutomaticReviewError("open_split_link_refused", path.relative_to(source).as_posix())
+        for name in sorted(filenames):
+            path = Path(directory) / name
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            if digest in sealed:
+                raise AutomaticReviewError("sealed_digest_refused", path.relative_to(source).as_posix())
+            digests[path.relative_to(source).as_posix()] = digest
+    return digests
 
 
 def check_public_bank(bank: Path, root: Path | None = None) -> None:
@@ -735,6 +781,7 @@ def final_set_counts(bank: Path, final_models: set[str], pre_existing: set[str])
 
 def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     check_public_bank(args.bank)
+    inspect_open_split(args.bank)              # لا رابطَ ولا محجوبَ بالبصمة قبل أوّل نداء
     candidates, source = _free_candidates(args, transport)
     want = max(2, len(args.reviewers or []))
     attempts = {"reviewed": 0, "skipped": 0, "failed": 0}
@@ -767,11 +814,14 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
         counted = []  # المستبدَلُ ناجحًا تاريخٌ لا خطأ
         superseded = [{**e, "superseded_by": replaced_by[e["model"]]} for e in quota_errors]
     status = "failed" if failure or counted else "reviewed"
+    limits = free_limits(summary["measurement_limits"])
+    _persist_limits(args.bank, limits)
     if args.run_id:          # كلُّ سجلٍّ وخلاصةٍ في مجلّد هذا التشغيل يحمل معرّفَه، فيُرفض عند الرفع ما لا يحمله
         stamp_run(args.bank / "reviews", args.run_id)
     final_counts = final_set_counts(args.bank, final_models, pre_existing)
     result = {"status": status, **({"code": failure} if failure else {}), **final_counts,
               "attempts": attempts, **({"run_id": args.run_id} if args.run_id else {}),
+              "measurement_limits": limits,
               "backend": transport.describe(), **source,
               "reviewers": {c["model"]: c["family"] for c in chosen}, "fallbacks": fallbacks,
               "pairs": summary["pairs"], "errors": len(counted),
@@ -804,12 +854,39 @@ def prepare_run(bank: Path, run_id: str) -> Path:
     run = bank / "runs" / run_id
     if run.exists():
         raise AutomaticReviewError("run_dir_exists", run_id)
+    expected = inspect_open_split(bank)        # قبل أيّ نسخ: لا رابطَ ولا محجوبَ بالبصمة
     source = bank / "open"
-    if not source.is_dir():
-        raise AutomaticReviewError("open_split_missing", str(source))
-    shutil.copytree(source, run / "open")
+    # والنسخُ لا يتبع رابطًا (symlinks=True ينسخه رابطًا فيُرفض بعده)، ثم يُتحقّق من كل منسوخ: ليس رابطًا، ومسارُه الحقيقيّ داخل
+    # نسخة التشغيل، وبصمتُه بصمةُ مصدره المفحوص، ولا زائدَ ولا ناقص
+    shutil.copytree(source, run / "open", symlinks=True)
+    copied = run / "open"
+    found: dict[str, str] = {}
+    for directory, dirnames, filenames in os.walk(copied, followlinks=False):
+        for name in sorted(dirnames) + sorted(filenames):
+            path = Path(directory) / name
+            relative = path.relative_to(copied).as_posix()
+            if stat.S_ISLNK(os.lstat(path).st_mode):
+                raise AutomaticReviewError("open_split_link_refused", relative)
+            try:
+                path.resolve().relative_to(copied.resolve())
+            except ValueError:
+                raise AutomaticReviewError("open_split_copy_mismatch", relative) from None
+        for name in sorted(filenames):
+            path = Path(directory) / name
+            found[path.relative_to(copied).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+    if found != expected:
+        raise AutomaticReviewError("open_split_copy_mismatch", run_id)
     _write_json(run / "reviews" / RUN_FILE, {"run_id": run_id, "started_at": _utc_now(), "status": "started"})
     return run
+
+
+def _persist_limits(bank: Path, limits: list[str]) -> None:
+    """الخلاصةُ المحفوظة تحمل حدودَ الواجهات المجانية نفسَها التي في النتيجة المطبوعة."""
+    path = bank / "reviews" / "SUMMARY.json"
+    if path.is_file():
+        summary = json.loads(path.read_text(encoding="utf-8"))
+        summary["measurement_limits"] = limits
+        _write_json(path, summary)
 
 
 def finish_run(run: Path, status: str, code: str | None = None) -> None:

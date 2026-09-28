@@ -244,6 +244,7 @@ def test_the_smoke_probe_passes_only_when_the_planted_error_is_caught(tmp_path):
 # بلا شبكة: المُفتِّحُ محقونٌ يلتقط كلَّ طلبٍ قبل أن يخرج، ويردّ بما كُتب لكل نموذج.
 
 import io  # noqa: E402
+import os  # noqa: E402
 import sys  # noqa: E402
 import urllib.error  # noqa: E402
 import urllib.request  # noqa: E402
@@ -970,3 +971,78 @@ def test_bank_counts_come_from_the_final_set_and_attempts_are_named_apart(tmp_pa
                      "--brief", str(BRIEF)]) == 0
     result = json.loads(capsys.readouterr().out)
     assert {k: result[k] for k in ("reviewed", "skipped", "failed")} == {"reviewed": 0, "skipped": 2, "failed": 0}
+
+
+def _sealed_fixture(root: Path, bank: Path, *, as_list: bool = False) -> bytes:
+    """ملفٌّ محجوبٌ مصطنع (ليس من بنكٍ حقيقي) وبيانُه ببصمته، كما يعلنه بيانُ المحجوب."""
+    import hashlib
+    sealed = b'{"synthetic": "sealed fixture, not bank content", "form": "%s"}' % (b"list" if as_list else b"dict")
+    (bank / "sealed").mkdir(parents=True, exist_ok=True)
+    (bank / "sealed" / "x.json").write_bytes(sealed)
+    digest = hashlib.sha256(sealed).hexdigest()
+    files = [{"path": "x.json", "sha256": digest}] if as_list else {"x.json": {"sha256": digest}}
+    (bank / "sealed" / "MANIFEST.json").write_text(json.dumps({"generated_at": "t", "files": files}), encoding="utf-8")
+    return sealed
+
+
+def test_links_and_renamed_sealed_copies_in_the_open_split_are_refused_before_any_call(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174 (أمنية): رابطٌ في open/ إلى المحجوب، أو نسخةٌ محجوبةٌ باسمٍ آخر، لا تُنسخ ولا تُرسل."""
+    import hashlib
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    bank = _public_bank(tmp_path, "linked")
+    sealed = _sealed_fixture(tmp_path, bank)
+    assert cli.sealed_digests() == {hashlib.sha256(sealed).hexdigest(): "linked/x.json"}
+    listed = tmp_path / "evaluation" / "banks" / "listed"
+    _sealed_fixture(tmp_path, listed, as_list=True)
+    assert set(cli.sealed_digests().values()) == {"linked/x.json", "listed/x.json"}, "شكلا البيان كلاهما"
+    base = ["--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF)]
+    cases = [("a/link.json", Path("../../sealed/x.json"), "open_split_link_refused"),      # رابطٌ لملفّ
+             ("linked_dir", Path("../sealed"), "open_split_link_refused"),                # رابطٌ لمجلّد
+             ("a/innocent.json", None, "sealed_digest_refused")]                          # نسخةٌ عاديّةٌ باسمٍ آخر
+    for index, (relative, target, code) in enumerate(cases):
+        entry = bank / "open" / relative
+        if target is None:
+            entry.write_bytes(sealed)
+        else:
+            os.symlink(target, entry)
+        for extra in ([], ["--run-id", f"L{index}"]):
+            opener = _free(monkeypatch, FreeOpener(replies={DS: [_ok(["c1", "c2", "c3"])], MI: [_ok(["c1", "c2", "c3"])]}))
+            assert cli.main([str(bank), *base, *extra]) == 2, (relative, extra)
+            assert _printed(capsys)["code"] == code and opener.requests == [], (relative, extra)
+            assert not (bank / "runs" / f"L{index}").exists(), "لا نسخَ قبل الرفض"
+        entry.unlink()
+
+
+def test_a_link_or_changed_file_after_inspection_is_still_caught_after_the_copy(tmp_path, monkeypatch):
+    """النسخُ لا يتبع الروابط، والمنسوخُ يُطابَق ببصمة مصدره المفحوص (دفاعٌ بعد الفحص الأول)."""
+    bank = _public_bank(tmp_path, "late")
+    _sealed_fixture(tmp_path, bank)
+    inspected = cli.inspect_open_split(bank)
+    assert list(inspected) == ["a/kimi_x.json"]
+    os.symlink(Path("../../sealed/x.json"), bank / "open" / "a" / "late.json")    # ظهر بعد الفحص
+    monkeypatch.setattr(cli, "inspect_open_split", lambda _bank: dict(inspected))
+    with pytest.raises(AutomaticReviewError) as linked:
+        cli.prepare_run(bank, "T1")
+    assert linked.value.code == "open_split_link_refused"
+    (bank / "open" / "a" / "late.json").unlink()
+    monkeypatch.setattr(cli, "inspect_open_split", lambda _bank: {"a/kimi_x.json": "0" * 64})
+    with pytest.raises(AutomaticReviewError) as changed:
+        cli.prepare_run(bank, "T2")
+    assert changed.value.code == "open_split_copy_mismatch"
+
+
+def test_bank_results_and_the_saved_summary_carry_the_free_backend_limits(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174: حدودُ الواجهات المجانية من موضعٍ واحد في التجربة وفي نتيجة البنك وفي خلاصته المحفوظة."""
+    from evaluation.external_review import MEASUREMENT_LIMITS
+    assert cli.free_limits(["x"]) == sorted(["x", *cli.FREE_LIMITS])
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "limits")
+    _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    assert cli.main([str(bank), "--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--run-id", "Q1",
+                     "--brief", str(BRIEF)]) == 0
+    result = json.loads(capsys.readouterr().out)
+    expected = sorted(set(MEASUREMENT_LIMITS) | set(cli.FREE_LIMITS))
+    assert result["measurement_limits"] == expected
+    saved = json.loads((bank / "runs" / "Q1" / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert saved["measurement_limits"] == expected and saved["run_id"] == "Q1"
