@@ -7,8 +7,10 @@
 - **قراءةٌ لا كتابة:** لا حفظَ فيه ولا اقتراحَ ولا نسيانَ ولا استعادة. الموافقةُ والنسيانُ يبقيان في مخزن مشروعٍ مسمّى.
 - **النسيانُ يبلغه فورًا:** لا فهرسَ مشتركًا على القرص ولا نسخةً مخبّأة؛ كلُّ نداءٍ يقرأ المخازنَ نفسَها.
 - **الحجرُ نفسُه:** كلُّ عنصرٍ يُحجر بـ`hold` الذي تحجر به كتلةُ المشروع، ويُسيَّج بـ`wrap`. والوسمُ يُحجر كذلك.
-- **الوسم:** كلُّ عنصرٍ يُعاد بمشروعه في `project`، ويُكتب في الكتلة بوسمه. ووسمٌ مزوَّر في نصّ عنصرٍ أو في اسم
-  مشروع يُبطَل قوسُه، فلا يظهر عنصرٌ تحت مشروعٍ غير مشروعه.
+- **الوسم:** كلُّ عنصرٍ يُعاد بمشروعه في `project`، ويُكتب في الكتلة سطرًا واحدًا يبدأ بوسمه. ووسمٌ مزوَّر في نصّ
+  عنصرٍ يُبطَل قوسُه، وقوسا الوسم وفواصلُ السطر في اسم المشروع تُبطَل، ولا يُكتب مشروعان بوسمٍ واحد؛ فلا يظهر عنصرٌ
+  تحت مشروعٍ غير مشروعه.
+- **العطبُ مسمًّى:** عنصرٌ غير مقروء أو بغير شكله رفضٌ `memory_item_corrupt` يسمّي مشروعه، لا استثناءٌ داخليّ.
 - **ترتيبٌ واحدٌ حتميّ:** التداخلُ مع السؤال، ثم الأقدمُ موافقةً (كما يرتّب المخزن)، ثم الوسم، ثم موضعُ العنصر في مخزنه؛
   فلا يتبع ترتيبَ المخازن الممرَّرة. وفي مشروعٍ واحد هو ترتيبُ `MemoryStore.retrieve` نفسُه.
 - **الحدّان على المجموع:** `MAX_CONTEXT_ITEMS` و`MAX_CONTEXT_CHARS` للكتلة كلِّها لا لكل مشروع.
@@ -28,6 +30,12 @@ MAX_LABEL_CHARS = 80
 LABEL_MARK = "[المشروع:"
 # وسمٌ مزوَّر داخل نصٍّ يُبطَل قوسُه: فالوسمُ الوحيد في سطر الكتلة وسمُ مشروع العنصر
 _LABEL_MARK = re.compile(r"\[\s*المشروع\s*:")
+# فواصلُ السطر كلُّها كما يقسم بها `str.splitlines`: فكلُّ عنصرٍ سطرٌ واحد يبدأ بوسمه، ولا يتشظّى على سطور
+_LINE_BREAK = re.compile(r"[\n\r\v\f\x1c-\x1e\x85\u2028\u2029]+")
+# قوسا الوسم داخل اسم المشروع (ومنه علامةُ الحجر «[محتوى محجور: …]») لا يُغلقانه ولا يفتحان غيره
+_BRACKETS = str.maketrans("[]", "()")
+# ما يقرؤه النطاقُ من كل عنصر: نصوصٌ كلُّها، وإلا فالعنصرُ عطبٌ يُسمّى بمشروعه
+_ITEM_KEYS = ("item_id", "text", "sha256", "approved_at")
 
 Stores = Mapping[str, "MemoryStore | None"] | Iterable[tuple[str, "MemoryStore | None"]]
 
@@ -45,9 +53,20 @@ def _unforged(text: str) -> str:
     return _LABEL_MARK.sub("(المشروع:", text)
 
 
+def _one_line(text: str) -> str:
+    return _LINE_BREAK.sub(" ", text)
+
+
+def _marker(project: str) -> str:
+    """وسمُ المشروع كما يُكتب بين قوسي الوسم: محجورٌ، في سطرٍ واحد، بلا قوسٍ يغلق الوسمَ أو يفتح غيره.
+    والتفرّدُ يُفحص عليه لا على الاسم الخام، فلا يظهر مشروعان بوسمٍ واحد."""
+    return hold(_one_line(project)).translate(_BRACKETS)
+
+
 def _line(project: str, text: str) -> str:
-    """سطرُ عنصرٍ في الكتلة: وسمُه ثم نصُّه، وكلاهما محجورٌ كما تحجر كتلةُ المشروع، وبلا وسمٍ مزوَّر."""
-    return f"{LABEL_MARK} {_unforged(hold(project))}] {_unforged(hold(text))}"
+    """سطرُ عنصرٍ في الكتلة: وسمُه ثم نصُّه، كلاهما محجورٌ كما تحجر كتلةُ المشروع، في سطرٍ واحد، بلا وسمٍ مزوَّر.
+    والفواصلُ تُطوى قبل الحجر، فلا يفلت أمرٌ قُسم على سطرين."""
+    return f"{LABEL_MARK} {_marker(project)}] {_unforged(hold(_one_line(text)))}"
 
 
 class AllProjects:
@@ -58,12 +77,13 @@ class AllProjects:
 
     def __init__(self, stores: Stores):
         pairs = stores.items() if isinstance(stores, Mapping) else stores
-        held, labels, roots = [], set(), set()
+        held, markers, roots = [], set(), set()
         for label, store in pairs:
             label = _label(label)
-            if label in labels:
-                raise MemoryRefused("project_label_duplicate", f"وسمُ المشروع مكرَّر: {label}")
-            labels.add(label)
+            marker = _marker(label)
+            if marker in markers:
+                raise MemoryRefused("project_label_duplicate", f"وسمُ المشروع مكرَّر كما يُكتب: {label}")
+            markers.add(marker)
             if store is None:
                 continue
             if not isinstance(store, MemoryStore):
@@ -84,11 +104,16 @@ class AllProjects:
     def _read(label: str, store: MemoryStore) -> list[dict]:
         """عناصرُ المخزن من القرص في كل نداء، فالمنسيُّ يغيب فورًا. وعطبُ مخزنٍ يُسمّى بمشروعه، ولا يُتخطّى صامتًا."""
         try:
-            return store.items()
+            items = store.items()
         except MemoryRefused as exc:
             raise MemoryRefused(exc.code, f"{exc.reason} (المشروع: {label})") from exc
-        except ValueError as exc:       # عنصرٌ ليس JSON: المخزنُ يرفعه خامًا، والنطاقُ يسمّي مشروعه
+        # عنصرٌ ليس JSON (ValueError)، أو JSON ليس قاموسًا أو نصُّه ليس نصًّا (AttributeError): المخزنُ يرفعهما خامًا
+        except (ValueError, AttributeError) as exc:
             raise MemoryRefused("memory_item_corrupt", f"عنصرٌ غير مقروء (المشروع: {label})") from exc
+        for item in items:
+            if not all(isinstance(item.get(key), str) for key in _ITEM_KEYS):
+                raise MemoryRefused("memory_item_corrupt", f"عنصرٌ ناقصٌ أو بغير شكله (المشروع: {label})")
+        return items
 
     def _ranked(self, question: str) -> list[tuple]:
         """كلُّ عناصر المخازن في ترتيبٍ واحد، بمعيار المخزن نفسِه (`MemoryStore.retrieve`)، وكلٌّ بمشروعه."""
