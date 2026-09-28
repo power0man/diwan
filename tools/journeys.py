@@ -54,6 +54,7 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from core.canonical import digest  # noqa: E402
+from core.ledger import ENTRY_KEYS as LEDGER_ENTRY_KEYS, GENESIS  # noqa: E402
 
 SCHEMA_VERSION = 1
 TOOL = "tools/journeys.py"
@@ -107,6 +108,8 @@ OUTCOME_LABELS = {
 }
 BASELINE_MIN_DATED_JOURNEYS = 30
 BASELINE_MIN_DISTINCT_DATES = 2
+# نوعا القيد اللذان بلغ فيهما النداءُ المزوّد (`core/run.py`)؛ و"refused" رفضٌ قبله فليس خطوة
+CALL_KINDS = frozenset({"ok", "error"})
 UNREADABLE_ENTRIES = "unreadable_entries"
 UNDATED_BEFORE_CUT = "undated_journeys_before_cut"
 CUT_ORDER_UNKNOWN = "baseline_cut_order_unknown"
@@ -114,12 +117,12 @@ DURATION_UNKNOWN = "turn_timestamps_not_stored"
 MEASUREMENT_LIMITS = (
     "counts_only_what_the_daily_ui_stored_under_projects_a_session_left_in_staging_by_an_interrupted_creation_is_not_counted",
     "a_journey_is_one_stored_turn_one_request_of_the_owner_in_one_session_whatever_its_length",
-    "steps_are_model_calls_recorded_for_the_turn_one_for_the_text_and_media_paths_and_tool_calls_are_the_calls_the_model_requested",
+    "steps_are_the_provider_calls_the_session_s_call_ledger_recorded_for_the_turn_zero_with_steps_evidence_none_when_it_recorded_none_and_null_with_ledger_unreadable_when_the_ledger_is_missing_corrupt_or_its_chain_broken_and_tool_calls_are_the_calls_the_model_requested",
     "the_ui_stores_no_per_turn_timestamps_so_every_duration_is_null_with_its_named_reason",
     "the_date_is_the_utc_day_of_the_session_when_its_creation_meta_json_mtime_and_its_last_write_state_json_mtime_fall_on_the_same_utc_day_otherwise_null_with_its_reason_so_a_session_reused_across_days_leaves_its_journeys_undated",
     "file_mtimes_are_not_protected_a_restore_or_copy_that_resets_them_moves_or_hides_the_date",
     "a_turn_without_a_stored_result_is_counted_as_outcome_unknown_and_is_not_settled_from_the_call_ledger",
-    "integrity_is_checked_by_the_state_envelope_digest_only_not_by_the_call_ledger_chain_nor_the_action_receipts",
+    "the_outcome_rests_on_the_state_envelope_digest_and_the_steps_on_the_call_ledger_hash_chain_neither_on_the_ledger_anchor_nor_the_action_receipts",
     "the_outcome_is_what_the_ui_stored_and_says_nothing_about_the_quality_or_truth_of_the_answer",
     "the_data_is_the_owner_s_own_use_on_one_machine_not_a_sample_of_users",
     "the_report_carries_counts_machine_codes_utc_dates_and_durations_only_and_the_tool_refuses_to_write_a_report_with_any_other_string",
@@ -136,8 +139,8 @@ REPORT_FIELDS = frozenset({"schema_version", "tool", "task", "commit", "generate
                            "unreadable", "by_outcome", "by_mode", "by_date", "distinct_dates",
                            "cumulative_completion_rate", "cumulative_completion_rate_unavailable_reason",
                            "baseline_ready", "baseline", "m2_gate", "outcome_labels", "journeys", "measurement_limits"})
-JOURNEY_FIELDS = frozenset({"mode", "outcome", "status", "error_code", "steps", "tool_calls", "date", "date_basis",
-                            "date_unknown_reason", "session_first_day", "session_last_day", "duration_s",
+JOURNEY_FIELDS = frozenset({"mode", "outcome", "status", "error_code", "steps", "steps_evidence", "tool_calls", "date",
+                            "date_basis", "date_unknown_reason", "session_first_day", "session_last_day", "duration_s",
                             "duration_unknown_reason", "baseline_position", "comparison_position"})
 BASELINE_RULE = ("the_first_30_dated_journeys_inside_the_m1_window_by_utc_date_then_session_creation_then_turn_"
                  "on_at_least_2_distinct_utc_dates_with_no_unreadable_entry_no_undated_journey_before_the_cut_"
@@ -188,8 +191,8 @@ def _open_dir(name, dir_fd, missing="missing") -> int:
         raise Unreadable("unsafe_path") from None
 
 
-def _read_json(name, dir_fd, missing="state_missing") -> tuple[object, float]:
-    """(القيمة، زمنُ التعديل) لملفٍّ عاديّ بلا اتّباع وصلة؛ وما سواه يُسمّى."""
+def _read_file(name, dir_fd, missing="state_missing") -> tuple[bytes, float]:
+    """(البايتات، زمنُ التعديل) لملفٍّ عاديّ بلا اتّباع وصلة؛ وما سواه يُسمّى."""
     try:
         fd = os.open(name, _FILE, dir_fd=dir_fd)
     except FileNotFoundError:
@@ -209,10 +212,35 @@ def _read_json(name, dir_fd, missing="state_missing") -> tuple[object, float]:
         raise Unreadable("state_unreadable") from None
     finally:
         os.close(fd)
+    return b"".join(chunks), info.st_mtime
+
+
+def _read_json(name, dir_fd, missing="state_missing") -> tuple[object, float]:
+    """(القيمة، زمنُ التعديل) لملفّ JSON؛ وما لا يُحلَّل `state_corrupt`."""
+    raw, mtime = _read_file(name, dir_fd, missing)
     try:
-        return json.loads(b"".join(chunks).decode("utf-8")), info.st_mtime
+        return json.loads(raw.decode("utf-8")), mtime
     except (ValueError, UnicodeError, RecursionError):
         raise Unreadable("state_corrupt") from None
+
+
+def _ledger(dir_fd: int) -> list[dict] | None:
+    """قيودُ سجلّ نداءات الجلسة (`calls.jsonl`) بعد التحقّق من سلسلتها، أو None إن غاب أو فسد أو انكسرت سلسلتُه:
+    دليلُ الخطوات لا يُخمَّن."""
+    try:
+        raw, _ = _read_file("calls.jsonl", dir_fd, missing="ledger_missing")
+        prev, records = GENESIS, []
+        for seq, line in enumerate(raw.decode("utf-8").splitlines()):
+            entry = json.loads(line)
+            if (not isinstance(entry, dict) or set(entry) != LEDGER_ENTRY_KEYS or entry["prev"] != prev
+                    or entry["seq"] != seq or not isinstance(entry["record"], dict)
+                    or digest({"prev": entry["prev"], "seq": entry["seq"], "record": entry["record"]}) != entry["digest"]):
+                return None
+            prev = entry["digest"]
+            records.append(entry["record"])
+    except Exception:                                   # noqa: BLE001 -- سجلٌّ لا يُقرأ أو لا يُبصم مجهولٌ باسمه
+        return None
+    return records
 
 
 def _state_turns(envelope) -> list:
@@ -242,7 +270,24 @@ def _dating(created: float, last: float) -> dict:
     return {"date": None, "date_basis": None, "date_unknown_reason": "session_spans_days", **span}
 
 
-def _journey(turn: dict, mode: str, agent: bool, dating: dict) -> dict:
+def _calls(turn: dict, agent: bool, ledger: list[dict] | None) -> tuple[int | None, str]:
+    """خطواتُ الجولة: نداءاتُ المزوّد التي قيّدها سجلُّ نداءات الجلسة لها، لا ما يُفترض. والطريقان على قاعدةٍ واحدة:
+    الوكيلُ بمفاتيح نداءاته المحفوظة في الجولة، والنصُّ والوسائطُ بمفتاح `<الغرض>:<الجلسة>:<الجولة>`."""
+    if ledger is None:
+        return None, "ledger_unreadable"
+    if agent:
+        calls = turn.get("calls") if isinstance(turn.get("calls"), list) else []
+        keys = {call.get("idempotency_key") for call in calls if isinstance(call, dict)}
+        mine = keys.__contains__
+    else:
+        suffix = f":{turn.get('turn_id')}"
+        mine = lambda key: key.endswith(suffix)                    # noqa: E731
+    steps = sum(1 for record in ledger if record.get("kind") in CALL_KINDS
+                and isinstance(record.get("idempotency_key"), str) and mine(record["idempotency_key"]))
+    return steps, "call_ledger" if steps else "none"
+
+
+def _journey(turn: dict, mode: str, agent: bool, dating: dict, ledger: list[dict] | None) -> dict:
     result = turn["result"]
     if result is None:
         status = "pending"
@@ -250,15 +295,12 @@ def _journey(turn: dict, mode: str, agent: bool, dating: dict) -> dict:
         status = machine_code(result.get("status")) or "unknown"
     else:
         status = "unknown"
-    steps, tool_calls = 1, 0
-    if agent:
-        recorded = result.get("steps") if isinstance(result, dict) else None
-        if isinstance(recorded, list):
-            steps = len(recorded)
-            tool_calls = sum(len(step["tool_calls"]) for step in recorded
-                             if isinstance(step, dict) and isinstance(step.get("tool_calls"), list))
-        else:
-            steps = len(turn["calls"]) if isinstance(turn.get("calls"), list) else 0
+    steps, evidence = _calls(turn, agent, ledger)
+    tool_calls = 0
+    recorded = result.get("steps") if agent and isinstance(result, dict) else None
+    if isinstance(recorded, list):
+        tool_calls = sum(len(step["tool_calls"]) for step in recorded
+                         if isinstance(step, dict) and isinstance(step.get("tool_calls"), list))
     error_code = machine_code(result.get("error_code")) if isinstance(result, dict) else None
     return {
         "mode": mode,
@@ -266,6 +308,7 @@ def _journey(turn: dict, mode: str, agent: bool, dating: dict) -> dict:
         "status": status,
         "error_code": error_code,
         "steps": steps,
+        "steps_evidence": evidence,
         "tool_calls": tool_calls,
         **dating,
         "duration_s": None,
@@ -298,11 +341,12 @@ def _session(project_fd: int, sessions_fd: int, name: str) -> list[dict]:
         os.close(session_fd)
     try:
         envelope, last = _read_json("state.json", state_fd)
+        ledger = _ledger(state_fd)
     finally:
         os.close(state_fd)
     dating = _dating(created, last)
     # ترتيبُ الرحلة لقطع خطّ الأساس؛ داخليٌّ يُنزع قبل التقرير (معرّفُ الجلسة وأزمنتُها الدقيقة لا تخرج)
-    return [{**_journey(turn, mode, mode in AGENT_MODES, dating),
+    return [{**_journey(turn, mode, mode in AGENT_MODES, dating, ledger),
              "_order": {"created": created, "last": last, "session": name, "index": index}}
             for index, turn in enumerate(_state_turns(envelope))]
 
@@ -576,7 +620,8 @@ def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit
                         "baseline_position": positions.get(id(journey)),
                         "comparison_position": compared.get(id(journey))} for journey in records),
                       key=lambda j: (j["date"] or "", j["baseline_position"] or 0, j["comparison_position"] or 0, j["mode"],
-                                     j["outcome"], j["status"], j["error_code"] or "", j["steps"], j["tool_calls"]))
+                                     j["outcome"], j["status"], j["error_code"] or "",
+                                     -1 if j["steps"] is None else j["steps"], j["tool_calls"]))
     return {
         "schema_version": SCHEMA_VERSION,
         "tool": TOOL,

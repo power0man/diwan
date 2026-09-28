@@ -297,7 +297,7 @@ def test_outcomes_modes_and_steps_are_counted_from_the_real_product(world, tmp_p
         ("text", "truncated", "truncated", "output_truncated", 1, 0),
         ("text", "error", "refused", "provider_error", 1, 0),
         ("text", "error", "refused", "provider_unavailable", 1, 0),
-        ("text", "error", "outcome_unknown", "outcome_uncertain", 1, 0),
+        ("text", "error", "outcome_unknown", "outcome_uncertain", 0, 0),       # انقطعت قبل أن يُقيَّد نداؤها
         ("agent", "complete", "completed", None, 2, 1),
         ("agent", "refused", "refused", "response_refused", 1, 0),
         ("agent", "timed_out", "timed_out", "response_deadline", 1, 0),
@@ -310,6 +310,10 @@ def test_outcomes_modes_and_steps_are_counted_from_the_real_product(world, tmp_p
         ("translate", "complete", "completed", None, 1, 0),
         ("media", "complete", "completed", None, 1, 0),
     ])
+    # الخطوةُ نداءٌ قيّده سجلُّ نداءات الجلسة، لا واحدٌ مفترض: الجولةُ التي لا قيدَ لها صفرٌ بدليلٍ مسمًّى
+    assert sorted((j["steps_evidence"], j["error_code"]) for j in report["journeys"] if j["steps"] == 0) == \
+        [("none", "outcome_uncertain")]
+    assert {j["steps_evidence"] for j in report["journeys"] if j["steps"]} == {"call_ledger"}
     assert {(j["duration_s"], j["duration_unknown_reason"]) for j in report["journeys"]} == \
         {(None, "turn_timestamps_not_stored")}
     assert set(report["measurement_limits"]) == set(journeys.MEASUREMENT_LIMITS)
@@ -378,6 +382,29 @@ def test_an_unreadable_or_corrupt_session_is_counted_by_code_and_the_report_is_s
         (None, "unreadable_entries")
     assert report["baseline_ready"] is False
     assert report["baseline"]["missing"] == ["unreadable_entries", "too_few_dated_journeys", "too_few_distinct_dates"]
+
+
+def test_steps_need_the_call_ledger_and_an_unreadable_ledger_is_named_not_zero(copy, tmp_path, capsys):
+    files = session_files(copy)
+    (_, text_state, _), = [item for item in files if item[2] == "text"]
+    (_, coder_state, _), = [item for item in files if item[2] == "coder"]
+    # قيدٌ عُدّل بلا إعادة بصمته في سجلّ الجلسة النصّية: السلسلةُ انكسرت فالخطواتُ مجهولةٌ باسمها
+    ledger = text_state.parent / "calls.jsonl"
+    lines = ledger.read_text(encoding="utf-8").splitlines()
+    entry = json.loads(lines[0])
+    entry["record"]["model"] = "tampered"
+    ledger.write_text("\n".join([json.dumps(entry), *lines[1:]]) + "\n", encoding="utf-8")
+    # وسجلُّ جلسة المبرمج غائب
+    (coder_state.parent / "calls.jsonl").unlink()
+    report = report_of(copy, tmp_path, capsys)
+    unknown = sorted((j["mode"], j["status"], j["steps"], j["steps_evidence"]) for j in report["journeys"]
+                     if j["mode"] in ("text", "coder"))
+    assert unknown == sorted([("text", status, None, "ledger_unreadable")
+                              for status in ("complete", "truncated", "error", "error", "error")]
+                             + [("coder", "complete", None, "ledger_unreadable")])
+    # الجلسةُ نفسُها مقروءة ونتائجُها باقية؛ والجلساتُ الأخرى بخطواتها
+    assert report["unreadable"]["sessions"] == 0 and report["totals"]["journeys"] == 16
+    assert {j["steps_evidence"] for j in report["journeys"] if j["mode"] not in ("text", "coder")} == {"call_ledger"}
 
 
 def test_a_missing_root_an_unsafe_root_and_an_existing_output_are_refused_by_name(world, tmp_path, capsys):
