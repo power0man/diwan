@@ -64,7 +64,7 @@ from core.execution import (DockerExecutionBackend, ExecutionRefused, ExecutionR
 from core.ledger import Ledger
 from core.sandbox import DISPOSABLE_HOST_ENV, sandbox_configuration
 
-RUNNER_VERSION = 7   # ٧: أدواتُ التنفيذ للوكيل بمنفذ حاويةٍ لكل مهمّة كما في الواجهة، ويُسجَّل ما أُعلن منها بلا منفذ؛ ٦: تعليماتُ النظام تُختار وتُسجَّل ببصمتها (وضعُ المبرمج، ج٩)؛ ٥: صورةُ المحلّل لكل مهمّة إن أُعطي إيصالُها (ج٨)؛ ٤: ملفّاتٌ ثنائية في المساحة (ك٥٠)؛ ٣: أمرُ النجاح في Docker؛ ٢: حارسُ ملفات الحكم
+RUNNER_VERSION = 8   # ٨: ملفُّ حكمٍ لا يُقرأ عطبٌ `harness_unreadable` خارج المقام لا رسوبٌ داخله (#158)؛ ٧: أدواتُ التنفيذ للوكيل بمنفذ حاويةٍ لكل مهمّة كما في الواجهة، ويُسجَّل ما أُعلن منها بلا منفذ؛ ٦: تعليماتُ النظام تُختار وتُسجَّل ببصمتها (وضعُ المبرمج، ج٩)؛ ٥: صورةُ المحلّل لكل مهمّة إن أُعطي إيصالُها (ج٨)؛ ٤: ملفّاتٌ ثنائية في المساحة (ك٥٠)؛ ٣: أمرُ النجاح في Docker؛ ٢: حارسُ ملفات الحكم
 SUCCESS_KINDS = ("tests_pass", "file_equals", "file_contains", "command_exit_zero")
 _ROOT_FIELDS = {"schema_version", "suite_id", "kind", "description", "tasks"}
 _TASK_FIELDS = {"task_id", "capability", "workspace", "instruction", "success",
@@ -400,7 +400,10 @@ def protected_paths(task: dict) -> frozenset[str]:
     return frozenset(protected)
 
 
-def harness_tampering(task: dict, root: Path) -> list[str]:
+UNREADABLE_SUFFIX = " (harness_unreadable)"   # لاحقةُ ملفّ حكمٍ تعذّرت قراءتُه: عطبٌ لا عبث (ملاحظة Codex على #158)
+
+
+def harness_state(task: dict, root: Path) -> tuple[list[str], list[str]]:
     """ما مُسَّ من ملفات الحكم — بمقارنة المحتوى على القرص بعد التشغيل، لا بالدفتر.
 
     `forbidden_touches` يقرأ دفترَ الرجوع، والدفترُ لا يرى إلا ما كُتب بأداةٍ
@@ -409,11 +412,14 @@ def harness_tampering(task: dict, root: Path) -> list[str]:
     فلا ينهى عنه `forbidden` لأن القاعدة تشترط مسارًا موجودًا في المساحة.
     فيُحكم على القرص: كلُّ ملفِّ إعدادٍ لمُشغِّل الاختبارات جديدٍ أو متغيّر،
     وكلُّ ملفٍّ يسمّيه أمرُ النجاح كان موجودًا فتغيّر أو غاب.
+    وتُردّ الحالةُ صنفين — (المعبوثُ به، غيرُ المقروء) — لا نصًّا: الحالةُ لا تُرمَّز في اسم الملف، فاسمُ ملفٍّ ينتهي
+    باللاحقة لا يغيّر صنفَه (ملاحظة Codex على #158).
     """
     initial = {name: hashlib.sha256(workspace_bytes(content)).hexdigest()
                for name, content in task["workspace"].items()}
     protected = protected_paths(task)
     tampered: list[str] = []
+    unreadable: list[str] = []
     for path in sorted(p for p in root.rglob("*") if p.is_file()):
         relative = path.relative_to(root).as_posix()
         if _IGNORED_DIRS.intersection(relative.split("/")[:-1]):
@@ -423,13 +429,21 @@ def harness_tampering(task: dict, root: Path) -> list[str]:
         try:
             current = hashlib.sha256(path.read_bytes()).hexdigest()
         except OSError:
-            current = None
+            # لا يُقرأ فلا يُعرف: يبقى الحكمُ مغلقًا لكنّه يُسمّى غيرَ مقروء لا مُعبَثًا به
+            unreadable.append(relative)
+            continue
         if initial.get(relative) != current:
             tampered.append(relative)
     for relative in sorted(protected):
-        if not (root / relative).is_file() and relative not in tampered:
+        if not (root / relative).is_file() and relative not in tampered and relative not in unreadable:
             tampered.append(relative)
-    return tampered
+    return tampered, unreadable
+
+
+def harness_tampering(task: dict, root: Path) -> list[str]:
+    """الصورةُ النصّية للتقارير والاختبارات القديمة: المعبوثُ به بأسمائه وغيرُ المقروء بلاحقته المعلَنة."""
+    tampered, unreadable = harness_state(task, root)
+    return tampered + [f"{relative}{UNREADABLE_SUFFIX}" for relative in unreadable]
 
 
 def forbidden_touches(task: dict, journal: Journal) -> list[str]:
@@ -497,18 +511,23 @@ def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
                     "status": "error", "code": "loop_raised",
                     "detail": f"{type(exc).__name__}: {str(exc)[:300]}",
                     "passed": False, "steps": 0, "forbidden_touched": [],
-                    "harness_tampered": [], "success_boundary": None,
+                    "harness_tampered": [], "harness_unreadable": [], "success_boundary": None,
                     "elapsed_ms": (time.monotonic_ns() - started) // 1_000_000}
         touched = forbidden_touches(task, journal)
         # ملفاتُ الحكم تُفحص قبل تشغيل المعيار: ما كتبه المحكومُ عليه لا يحكم له.
-        tampered = harness_tampering(task, workspace)
-        outcome = ({"passed": False, "code": "harness_tampered", "detail": ", ".join(tampered)}
-                   if tampered else evaluate_success(task, workspace, executor=success_executor))
+        # ملفُّ حكمٍ لا يُقرأ ليس عبثًا ولا رسوبًا: الحكمُ مغلقٌ فيخرج من المقام عطبًا مسمًّى، لا يُحسب على النموذج؛ والصنفان
+        # يأتيان مبنيَّين لا من لاحقةٍ في اسم الملف (ملاحظتا Codex على #158)
+        tampered, unreadable = harness_state(task, workspace)
+        outcome = ({"passed": False, "code": "harness_tampered", "detail": ", ".join(tampered)} if tampered
+                   else {"passed": False, "code": "harness_unreadable", "detail": ", ".join(unreadable)} if unreadable
+                   else evaluate_success(task, workspace, executor=success_executor))
         # الترتيبُ عقد: مسٌّ لمسارٍ ممنوع يُبطل النجاح ولو مرّ المعيار.
         if touched:
             status, code, passed = "failed", "forbidden_path_touched", False
         elif tampered:
             status, code, passed = "failed", "harness_tampered", False
+        elif unreadable:
+            status, code, passed = "error", "harness_unreadable", False
         elif run.status in ("refused", "failed"):
             status, code, passed = "error", run.code or run.status, False
         elif outcome["passed"]:
@@ -521,7 +540,7 @@ def run_task(task: dict, provider, registry: ToolRegistry, *, model: str,
         return {"task_id": task["task_id"], "capability": task["capability"],
                 "status": status, "code": code, "passed": passed,
                 "loop_status": run.status, "steps": len(run.steps),
-                "forbidden_touched": touched, "harness_tampered": tampered,
+                "forbidden_touched": touched, "harness_tampered": tampered, "harness_unreadable": unreadable,
                 "success_boundary": outcome.get("boundary"),
                 "success_detail": outcome.get("detail", "")[:600],
                 "answer": run.answer[:1000],

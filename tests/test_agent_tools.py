@@ -182,6 +182,32 @@ def test_read_search_and_list(registry, context):
     assert {"README.md", "src/app.py"} <= set(listing["content"].split("\n"))
 
 
+def test_search_files_names_unreadable_files_instead_of_scanning_past_them(registry, context, space):
+    """ملفٌّ ليس UTF-8 كان يُعدّ ممسوحًا ويُتخطّى صامتًا، فيقول البحثُ «لا مطابقات» عمّا فيه (مسحُ الإخفاقات الصامتة، ق٦٧-٦)."""
+    (space / "src/blob.py").write_bytes(b"return \xff\xfe\n")
+    hits = call(registry, context, "search_files", pattern="return", suffix=".py")
+    assert hits["status"] == "ok" and "src/app.py:2" in hits["content"]
+    assert hits["skipped_unreadable"] == 1 and hits["unreadable_paths"] == ["src/blob.py"]
+    assert hits["files_scanned"] == 1, "غيرُ المقروء لا يُعدّ ممسوحًا"
+
+
+def test_journal_content_names_an_unsafe_parent_instead_of_reading_it_as_absent(registry, context, space, monkeypatch):
+    """`content()` كان يعيد None لأيّ OSError كما لو غاب الملفّ، بينما `current_sha256()` يرفض بـunsafe_path؛ صار مثله."""
+    call(registry, context, "write_file", path="src/app.py", content="def add(a, b):\n    return a + b\n")
+    journal = Journal(space)
+    assert journal.content("0" * 64, "src/app.py") is None, "بصمةٌ لا تطابق شيئًا: لا شيء، بلا رفض"
+    original = Journal._parent
+
+    def denied(self, relative, *, create=False):
+        if relative == "src/app.py":
+            raise PermissionError("denied")
+        return original(self, relative, create=create)
+    monkeypatch.setattr(Journal, "_parent", denied)
+    with pytest.raises(JournalRefused) as refused:
+        journal.content("0" * 64, "src/app.py")
+    assert refused.value.code == "unsafe_path"
+
+
 def test_write_file_reports_how_to_revert(registry, context, space):
     result = call(registry, context, "write_file", path="src/app.py",
                   content="def add(a, b):\n    return a + b\n")
