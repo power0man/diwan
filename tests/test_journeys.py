@@ -288,7 +288,7 @@ def test_outcomes_modes_and_steps_are_counted_from_the_real_product(world, tmp_p
     assert report["by_outcome"] == {"completed": 5, "truncated": 2, "refused": 4, "awaiting_owner": 1,
                                     "outcome_unknown": 1, "timed_out": 1, "step_limit": 1, "stopped": 1}
     assert report["by_mode"] == {"text": 5, "media": 1, "agent": 8, "research": 0, "coder": 1, "translate": 1}
-    assert report["completion_rate"] == round(5 / 16, 4) and report["completion_rate_unavailable_reason"] is None
+    assert report["cumulative_completion_rate"] == round(5 / 16, 4) and report["cumulative_completion_rate_unavailable_reason"] is None
     assert report["outcome_labels"]["completed"] == "منجزة" and report["outcome_labels"]["refused"] == "مرفوضة"
     seen = sorted((j["mode"], j["status"], j["outcome"], j["error_code"], j["steps"], j["tool_calls"])
                   for j in report["journeys"])
@@ -372,7 +372,7 @@ def test_an_unreadable_or_corrupt_session_is_counted_by_code_and_the_report_is_s
     assert report["totals"]["journeys"] == 16 - 5 - 1 - 1
     assert report["by_mode"]["text"] == 0 and report["by_mode"]["media"] == 0 and report["by_mode"]["coder"] == 0
     # رحلاتُ الجلسات الغائبة قد تكون المتعثّرة: لا نسبةَ نظيفةَ المظهر فوق الباقي، ولا خطَّ أساس
-    assert (report["completion_rate"], report["completion_rate_unavailable_reason"]) == (None, "unreadable_entries")
+    assert (report["cumulative_completion_rate"], report["cumulative_completion_rate_unavailable_reason"]) == (None, "unreadable_entries")
     cohort = report["baseline"]["cohort"]
     assert cohort["journeys"] == 9 and (cohort["completion_rate"], cohort["completion_rate_unavailable_reason"]) == \
         (None, "unreadable_entries")
@@ -455,7 +455,7 @@ def test_baseline_ready_needs_thirty_dated_journeys_on_two_dates_inside_the_m1_w
     report, cohort, missing = baseline()
     assert cohort["by_date"] == {"2026-10-01": 15, "2026-10-02": 15} and cohort["undated_journeys_before_cut"] == 0
     assert report["baseline_ready"] is True and missing == []
-    assert cohort["completion_rate"] == 1.0 and report["completion_rate"] == 1.0
+    assert cohort["completion_rate"] == 1.0 and report["cumulative_completion_rate"] == 1.0
     assert report["baseline"]["window"] == {"from": "2026-10-01", "from_source": "option", "until": "2026-10-31",
                                             "until_source": "option"}
     # رحلةٌ قبل النافذة (م٠-ب) تُعدّ في المجاميع التراكمية لا في الفوج: «أولُ ٣٠ رحلة في م١»
@@ -472,7 +472,7 @@ def test_baseline_ready_needs_thirty_dated_journeys_on_two_dates_inside_the_m1_w
     assert cohort["undated_journeys_before_cut"] == 1 and missing == ["undated_journeys_before_cut", "too_few_dated_journeys"]
     assert (cohort["completion_rate"], cohort["completion_rate_unavailable_reason"]) == \
         (None, "undated_journeys_before_cut")
-    assert report["completion_rate"] == 1.0
+    assert report["cumulative_completion_rate"] == 1.0
     # ورحلةٌ بلا تاريخ امتدّت جلستُها يومين قبل النافذة كلِّها لا تحجبها
     place(*one[:2], DAY_ONE - 5 * DAY, DAY_ONE - 4 * DAY)
     report, cohort, missing = baseline()
@@ -483,18 +483,13 @@ def test_baseline_ready_needs_thirty_dated_journeys_on_two_dates_inside_the_m1_w
     report, cohort, missing = baseline()
     assert report["unreadable"]["projects"] == 1 and cohort["journeys"] == 30 and cohort["distinct_dates"] == 2
     assert report["baseline_ready"] is False and missing == ["unreadable_entries"]
-    assert report["completion_rate"] is None and cohort["completion_rate"] is None
+    assert report["cumulative_completion_rate"] is None and cohort["completion_rate"] is None
 
 
-@pytest.fixture(scope="module")
-def cohort_store(tmp_path_factory):
-    """جلساتٌ نصّية بأدوارٍ يضع الاختبارُ أزمنتَها: A ١٢ (١٠ منجزة ثم ٢ مبتورة)، وB ١٢ منجزة، وC ٦ (٥ منجزة ثم مبتورة)،
-    وD ٥ مبتورة، وE ٣ معطوبة، وF وG رحلةٌ منجزة لكلٍّ."""
-    root = tmp_path_factory.mktemp("cohort").resolve() / "ui"
+def text_store(root: Path, plan: dict) -> tuple[Path, str, dict]:
+    """مخزنٌ بجلساتٍ نصّية بأدوارها، ولكل جولةٍ نتيجتُها المكتوبة سلفًا: منجزة أو مبتورة أو معطوبة."""
     provider = Provider()
     app = LocalApp(root, model="fixture", model_version=VERSION, provider_factory=lambda: provider)
-    plan = {"A": ["complete"] * 10 + ["truncated"] * 2, "B": ["complete"] * 12, "C": ["complete"] * 5 + ["truncated"],
-            "D": ["truncated"] * 5, "E": ["error"] * 3, "F": ["complete"], "G": ["complete"]}
     reply = {"complete": lambda: respond("تم."), "truncated": lambda: respond("تم.", stop="max_output"),
              "error": lambda: respond("", stop="error")}
     roles = {}
@@ -513,6 +508,16 @@ def cohort_store(tmp_path_factory):
     return root, project, roles
 
 
+@pytest.fixture(scope="module")
+def cohort_store(tmp_path_factory):
+    """جلساتٌ نصّية بأدوارٍ يضع الاختبارُ أزمنتَها: A ١٢ (١٠ منجزة ثم ٢ مبتورة)، وB ١٢ منجزة، وC ٦ (٥ منجزة ثم مبتورة)،
+    وD ٥ مبتورة، وE ٣ معطوبة، وF وG رحلةٌ منجزة لكلٍّ."""
+    return text_store(tmp_path_factory.mktemp("cohort").resolve() / "ui",
+                      {"A": ["complete"] * 10 + ["truncated"] * 2, "B": ["complete"] * 12,
+                       "C": ["complete"] * 5 + ["truncated"], "D": ["truncated"] * 5, "E": ["error"] * 3,
+                       "F": ["complete"], "G": ["complete"]})
+
+
 HOUR = 3600
 # اليومُ الأول: A ثم B؛ والثاني: C ثم D؛ والثالث: E؛ وF امتدّت من الثالث إلى الرابع، وG من الأول إلى الثاني
 COHORT_TIMES = {"A": (DAY_ONE, DAY_ONE + HOUR / 2), "B": (DAY_ONE + HOUR, DAY_ONE + 1.5 * HOUR),
@@ -521,8 +526,9 @@ COHORT_TIMES = {"A": (DAY_ONE, DAY_ONE + HOUR / 2), "B": (DAY_ONE + HOUR, DAY_ON
                 "G": (DAY_ONE + 2 * HOUR, DAY_ONE + DAY + 2 * HOUR)}
 
 
-def placed(store, tmp_path, *, drop=(), **moved) -> Path:
-    """نسخةٌ من المخزن بلا جلسات `drop`، وأزمنةُ كلِّ جلسةٍ من COHORT_TIMES أو ممّا مُرِّر لها."""
+def placed(store, tmp_path, *, drop=(), times=None, **moved) -> Path:
+    """نسخةٌ من المخزن بلا جلسات `drop`، وأزمنةُ كلِّ جلسةٍ من `times` (COHORT_TIMES افتراضًا) أو ممّا مُرِّر لها."""
+    times = COHORT_TIMES if times is None else times
     source, project, roles = store
     root = tmp_path / f"cohort-{uuid.uuid4().hex[:6]}"
     shutil.copytree(source, root)
@@ -531,7 +537,7 @@ def placed(store, tmp_path, *, drop=(), **moved) -> Path:
         if role in drop:
             shutil.rmtree(sessions / session)
             continue
-        created, last = moved.get(role, COHORT_TIMES[role])
+        created, last = moved.get(role, times[role])
         os.utime(sessions / session / "meta.json", (created, created))
         os.utime(sessions / session / "chat" / session / "state.json", (last, last))
     return root
@@ -550,7 +556,7 @@ def test_the_baseline_is_exactly_the_first_thirty_and_later_journeys_do_not_move
     assert (cohort["journeys"], cohort["window_dated_journeys"], cohort["cut_date"]) == (30, 35, "2026-10-02")
     assert cohort["by_date"] == {"2026-10-01": 24, "2026-10-02": 6} and cohort["cut_order_known"] is True
     assert cohort["by_outcome"]["completed"] == 27 and cohort["by_outcome"]["truncated"] == 3
-    assert cohort["completion_rate"] == 0.9 and first["completion_rate"] == round(27 / 35, 4)
+    assert cohort["completion_rate"] == 0.9 and first["cumulative_completion_rate"] == round(27 / 35, 4)
     assert first["baseline_ready"] is True and first["baseline"]["missing"] == []
     assert [position for position, _, _ in members_of(first)] == list(range(1, 31))
     # ترتيبُ قراءة الدليل لا يغيّر شيئًا
@@ -604,6 +610,67 @@ def test_a_timestamp_tie_at_the_cut_is_unprovable_and_a_tie_on_one_side_of_it_is
     assert after["baseline"]["cohort"]["completion_rate"] == 0.9
 
 
+@pytest.fixture(scope="module")
+def m2_store(tmp_path_factory):
+    """P عشرون معطوبةً قبل م١؛ وQ1 خمس عشرة منجزة وQ2 ستٌّ منجزة وتسعٌ مبتورة (الثلاثون الأولى: ٠٫٧)؛ وR1 وR2 عشرٌ
+    منجزةٌ لكلٍّ (الرحلات ٣١–٥٠: ١٫٠)؛ وS خمسٌ معطوبةٌ بعد الخمسين. فالنسبةُ التراكمية ٤١/٧٥ أدنى من الفوجين كليهما."""
+    return text_store(tmp_path_factory.mktemp("m2").resolve() / "ui",
+                      {"P": ["error"] * 20, "Q1": ["complete"] * 15, "Q2": ["complete"] * 6 + ["truncated"] * 9,
+                       "R1": ["complete"] * 10, "R2": ["complete"] * 10, "S": ["error"] * 5})
+
+
+M2_TIMES = {"P": (DAY_ONE - 5 * DAY, DAY_ONE - 5 * DAY + HOUR / 2), "Q1": (DAY_ONE, DAY_ONE + HOUR / 2),
+            **{role: (DAY_ONE + day * DAY, DAY_ONE + day * DAY + HOUR / 2)
+               for day, role in enumerate(("Q2", "R1", "R2", "S"), 1)}}
+
+
+def compared_of(report) -> list[tuple]:
+    return sorted((j["comparison_position"], j["date"], j["status"]) for j in report["journeys"]
+                  if j["comparison_position"] is not None)
+
+
+def test_the_m2_gate_compares_journeys_31_to_50_with_the_baseline_not_the_cumulative_rate(m2_store, tmp_path, capsys):
+    def m2(**options):
+        report = report_of(placed(m2_store, tmp_path, times=M2_TIMES, **options), tmp_path, capsys, *WINDOW)
+        return report, report["m2_gate"], report["m2_gate"]["comparison"]
+
+    full, gate, comparison = m2()
+    assert (gate["source"], gate["baseline_journeys"], gate["target_journeys"], gate["required_points"]) == \
+        ("plan_m2_gate", 30, 50, 10)
+    assert full["baseline_ready"] is True and full["baseline"]["cohort"]["completion_rate"] == 0.7
+    assert (comparison["first_position"], comparison["last_position"], comparison["journeys"]) == (31, 50, 20)
+    assert comparison["by_date"] == {"2026-10-03": 10, "2026-10-04": 10} and comparison["completion_rate"] == 1.0
+    assert [position for position, _, _ in compared_of(full)] == list(range(1, 21))
+    # البوابةُ تقرأ نسبةَ الفوجين لا التراكمية (٤١/٧٥ ≈ ٠٫٥٥ تُسقطها لو قُرئت)
+    assert full["cumulative_completion_rate"] == round(41 / 75, 4)
+    assert (gate["baseline_completion_rate"], gate["comparison_completion_rate"], gate["improvement_points"]) == \
+        (0.7, 1.0, 30.0)
+    assert gate["passed"] is True and gate["missing"] == []
+    # ما قبل م١ لا يحرّك المقارنة: بلا P تبقى هي هي وتتغيّر التراكميةُ وحدها
+    without, gate_without, _ = m2(drop=("P",))
+    assert compared_of(without) == compared_of(full) and gate_without["comparison"] == comparison
+    assert gate_without["passed"] is True and without["cumulative_completion_rate"] == round(41 / 55, 4)
+    # الحكمُ بنقاط الخطة: خمسُ المعطوبة داخل الخمسين (S قبل R2) تجعل المقارنةَ ١٥/٢٠، أي +٥ نقاط لا +١٠
+    _, short_gate, short = m2(S=(DAY_ONE + 3 * DAY - HOUR, DAY_ONE + 3 * DAY - HOUR / 2))
+    assert short["completion_rate"] == 0.75 and short_gate["improvement_points"] == 5.0
+    assert short_gate["passed"] is False and short_gate["missing"] == []
+    # فوجٌ ناقص (بلا R2: خمسٌ وأربعون) لا نسبةَ له ولا حكم
+    _, partial_gate, partial = m2(drop=("R2",))
+    assert partial["journeys"] == 15 and partial_gate["missing"] == ["too_few_comparison_journeys"]
+    assert (partial["completion_rate"], partial["completion_rate_unavailable_reason"]) == \
+        (None, "too_few_comparison_journeys")
+    assert partial_gate["passed"] is None and partial_gate["comparison_completion_rate"] is None
+    # قطعُ الخمسين بين جلستين بزمنٍ واحد لا يُثبت ترتيبُه
+    _, tied_gate, tied = m2(S=M2_TIMES["R2"])
+    assert tied_gate["missing"] == ["comparison_cut_order_unknown"] and tied["cut_order_known"] is False
+    assert tied_gate["passed"] is None
+    # ولا مقارنةَ بخطّ أساسٍ لم يجهز (نافذةٌ من يومٍ واحد لا تبلغ الثلاثين)
+    report = report_of(placed(m2_store, tmp_path, times=M2_TIMES), tmp_path, capsys,
+                       "--baseline-from", "2026-10-01", "--baseline-until", "2026-10-01")
+    assert report["baseline_ready"] is False and report["m2_gate"]["missing"] == ["baseline_not_ready"]
+    assert report["m2_gate"]["passed"] is None and report["m2_gate"]["comparison"]["completion_rate"] is None
+
+
 def test_the_baseline_window_is_the_m1_phase_the_plan_records_and_is_never_invented(world, tmp_path, capsys,
                                                                                      monkeypatch):
     plan = json.loads((ROOT / "docs" / "PLAN-20260926.json").read_text(encoding="utf-8"))
@@ -623,6 +690,10 @@ def test_the_baseline_window_is_the_m1_phase_the_plan_records_and_is_never_inven
     assert unknown["baseline"]["cohort"] is None and unknown["baseline_ready"] is False
     assert unknown["baseline"]["missing"] == ["baseline_window_unknown", "too_few_dated_journeys",
                                               "too_few_distinct_dates"]
+    # وبوابةُ م٢ كذلك: عددُها ونقاطُها من الخطة، فإن غابت فلا بوابة
+    assert report["m2_gate"]["source"] == "plan_m2_gate" and report["m2_gate"]["target_journeys"] == 50
+    assert unknown["m2_gate"]["source"] is None and unknown["m2_gate"]["comparison"] is None
+    assert unknown["m2_gate"]["missing"] == ["comparison_gate_unknown", "baseline_window_unknown"]
     out = tmp_path / "refused.json"
     assert run(world.root, out, capsys, "--baseline-from", "2026-13-01", "--baseline-until", "2026-12-31") == \
         (2, {"status": "refused", "code": "baseline_date_invalid"})

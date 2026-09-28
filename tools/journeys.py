@@ -14,6 +14,11 @@ UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع
 (`unreadable_entries`)، أو رحلةٌ بلا تاريخ قد تقع قبل القطع (`undated_journeys_before_cut`)، أو قطعٌ بين جلستين تداخلت
 كتابتُهما في يومه (`baseline_cut_order_unknown`). فالنسبةُ حينئذٍ `null` بسببها المسمّى لا رقمٌ نظيفُ المظهر.
 
+وبوابةُ م٢ («من ٣٠ إلى ٥٠ رحلة، والإنجاز +١٠ نقاط فوق خط أساس م١») تُقرأ أعدادُها من الخطة ولا تُخترع، وتقارن فوجَين
+بالترتيب نفسِه: الثلاثين الأولى، والرحلاتِ بعدها حتى الخمسين (`m2_gate.comparison`). فلا يدخل المقارنةَ ما قبل م١ ولا
+الثلاثون نفسُها، ولا نسبةَ للمقارنة حتى يكتمل فوجُها (`too_few_comparison_journeys`). أمّا `cumulative_completion_rate`
+فتراكميةٌ لكل ما حُفظ، ولا تدخل بوابة.
+
 لا يحمل التقريرُ نصًّا ولا مسارًا ولا معرّفَ مشروعٍ أو جلسةٍ أو جولة ولا اسمًا ولا بصمةَ نصّ ولا جوابَ نموذج ولا شيئًا من
 محتوى local_only: أعدادٌ ورموزُ آلةٍ وتواريخُ وأزمنةٌ فقط. والأداةُ تفحص تقريرَها بذلك قبل كتابته، فتقريرٌ فيه نصٌّ أو معرّفٌ
 يُرفض باسمه (`report_leak`) ولا يُكتب.
@@ -37,6 +42,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from datetime import datetime, timezone
+from fractions import Fraction
 import json
 import os
 from pathlib import Path
@@ -56,6 +62,10 @@ DEFAULT_ROOT = ROOT / "var" / "daily-ui"
 PROBE_DIR = ROOT / "docs" / "probe"
 PLAN = ROOT / "docs" / "PLAN-20260926.json"     # الخطةُ الحاكمة (ق٦٤): فيها بدءُ م١ ونهايتُها
 M1 = "م١"
+M2 = "م٢"
+# بوابةُ م٢ كما تكتبها الخطة: «docs/probe/journeys-<date>.json: من ٣٠ إلى ٥٠ رحلة، والإنجاز +١٠ نقاط فوق خط أساس م١»
+M2_GATE = re.compile(r"journeys-<date>\.json:\s*من\s+(\d+)\s+إلى\s+(\d+)\s+رحلة.*?\+(\d+)\s+نقاط")
+_ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 MAX_STATE_BYTES = 32 * 1024 * 1024              # حدُّ حالة الجلسة الوكيلة في المنتج نفسِه
 IDENTIFIER = re.compile(r"[a-f0-9]{32}\Z")      # معرّفاتُ المشروعات والجلسات في LocalApp
 MACHINE_CODE = re.compile(r"[a-z][a-z0-9_]{0,63}\Z")
@@ -117,19 +127,23 @@ MEASUREMENT_LIMITS = (
     "within_a_utc_day_journeys_are_ordered_by_their_session_s_creation_mtime_then_their_position_in_it_and_a_cut_between_sessions_whose_writes_overlap_or_tie_that_day_is_refused_not_guessed",
     "an_unreadable_entry_or_an_undated_journey_that_may_fall_before_the_cut_blocks_baseline_ready_and_nulls_the_completion_rate_it_would_bias",
     "a_later_write_to_a_session_that_holds_baseline_journeys_can_undate_or_reorder_them_so_the_baseline_is_the_first_report_that_says_baseline_ready",
+    "the_m2_comparison_cohort_is_the_journeys_after_the_first_30_in_the_same_order_up_to_the_count_the_plan_s_m2_gate_records_and_has_no_rate_until_it_is_complete",
+    "the_cumulative_completion_rate_covers_every_stored_journey_pre_m1_and_baseline_included_and_is_not_an_input_of_any_gate",
 )
 CARRIES = "counts_machine_codes_utc_dates_and_durations_only"
 # مخطّطُ التقرير مغلق: مفتاحٌ لا تبنيه `build_report` أو `_journey` تسرّبٌ ولو كانت قيمتُه رمزَ آلة
 REPORT_FIELDS = frozenset({"schema_version", "tool", "task", "commit", "generated_on", "root", "carries", "totals",
-                           "unreadable", "by_outcome", "by_mode", "by_date", "distinct_dates", "completion_rate",
-                           "completion_rate_unavailable_reason", "baseline_ready", "baseline", "outcome_labels",
-                           "journeys", "measurement_limits"})
+                           "unreadable", "by_outcome", "by_mode", "by_date", "distinct_dates",
+                           "cumulative_completion_rate", "cumulative_completion_rate_unavailable_reason",
+                           "baseline_ready", "baseline", "m2_gate", "outcome_labels", "journeys", "measurement_limits"})
 JOURNEY_FIELDS = frozenset({"mode", "outcome", "status", "error_code", "steps", "tool_calls", "date", "date_basis",
                             "date_unknown_reason", "session_first_day", "session_last_day", "duration_s",
-                            "duration_unknown_reason", "baseline_position"})
+                            "duration_unknown_reason", "baseline_position", "comparison_position"})
 BASELINE_RULE = ("the_first_30_dated_journeys_inside_the_m1_window_by_utc_date_then_session_creation_then_turn_"
                  "on_at_least_2_distinct_utc_dates_with_no_unreadable_entry_no_undated_journey_before_the_cut_"
                  "and_a_provable_order_at_the_cut")
+M2_RULE = ("the_journeys_after_the_first_30_in_the_same_order_up_to_the_plan_s_m2_count_must_beat_the_baseline_cohort_"
+           "completion_rate_by_the_plan_s_points_and_the_cumulative_rate_is_not_an_input")
 
 _DIR = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | os.O_NOFOLLOW
 _FILE = os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_NONBLOCK", 0)
@@ -404,6 +418,21 @@ def plan_window(plan: Path | None = None) -> tuple[str | None, str | None]:
     return _day(phase.get("start")), _day(phase.get("end"))
 
 
+def plan_m2_gate(plan: Path | None = None) -> dict | None:
+    """عددُ رحلات بوابة م٢ ونقاطُها كما تسجّلهما الخطة، أو None لما لم تسجّله أو خالف خطَّ الأساس: البوابةُ لا تُخترع."""
+    try:
+        phases = json.loads(Path(PLAN if plan is None else plan).read_text(encoding="utf-8"))["phases"]
+        gates = next(item for item in phases if isinstance(item, dict) and item.get("id") == M2)["gate"]
+        found = next(match for gate in gates if isinstance(gate, str)
+                     for match in [M2_GATE.search(gate.translate(_ARABIC_DIGITS))] if match)
+    except (OSError, ValueError, KeyError, TypeError, StopIteration):
+        return None
+    base, target, points = (int(value) for value in found.groups())
+    if base != BASELINE_MIN_DATED_JOURNEYS or target <= base:
+        return None
+    return {"source": "plan_m2_gate", "target_journeys": target, "required_points": points}
+
+
 def baseline_window(start: str | None = None, end: str | None = None) -> dict:
     """نافذةُ خطّ الأساس: ما مرّره المالك، وإلا ما في الخطة، وإلا مجهولةٌ فلا يجهز خطُّ الأساس."""
     for value in (start, end):
@@ -460,8 +489,51 @@ def _may_fall_in(journey: dict, start: str, end: str) -> bool:
     return not (final < start or first > end)
 
 
+def _m2_gate(records: list[dict], start: str | None, gate: dict | None, baseline: dict | None,
+             baseline_missing: list[str], unreadable: list[str]) -> tuple[dict, dict]:
+    """بوابةُ م٢: الرحلاتُ بعد الثلاثين الأولى بترتيبها نفسِه حتى عدد الخطة، ونسبتُها مقابل نسبة الفوج الأول.
+    ولا يدخلها ما قبل م١ ولا الثلاثون نفسُها ولا النسبةُ التراكمية؛ ولا حكمَ قبل أن يكتمل فوجُها ويُعرف موضعُ كلِّ رحلةٍ فيه."""
+    block = {"rule": M2_RULE, "source": None, "baseline_journeys": BASELINE_MIN_DATED_JOURNEYS, "target_journeys": None,
+             "required_points": None, "comparison": None, "baseline_completion_rate": None,
+             "comparison_completion_rate": None, "improvement_points": None, "passed": None, "missing": []}
+    if gate is None:
+        block["missing"].append("comparison_gate_unknown")
+    else:
+        block.update(gate)
+    if start is None:
+        block["missing"].append("baseline_window_unknown")
+    if gate is None or start is None:
+        return block, {}
+    target = gate["target_journeys"]
+    sequence = sorted((journey for journey in records if journey["date"] is not None and start <= journey["date"]),
+                      key=_order)
+    after = sequence[BASELINE_MIN_DATED_JOURNEYS:target]
+    full = len(sequence) >= target
+    cut = sequence[target - 1]["date"] if full else None
+    undated = sum(1 for journey in records
+                  if journey["date"] is None and _may_fall_in(journey, start, cut or "9999-12-31"))
+    order_unknown = full and _cut_order_unknown(sequence[:target], sequence[target:], cut)
+    outcomes, dates = _tally(after)
+    blockers = ((["baseline_not_ready"] if baseline_missing else []) + unreadable
+                + ([UNDATED_BEFORE_CUT] if undated else []) + (["comparison_cut_order_unknown"] if order_unknown else [])
+                + (["too_few_comparison_journeys"] if not full else []))
+    rate, reason = _rate(outcomes, len(after), blockers)
+    block["comparison"] = {"first_position": BASELINE_MIN_DATED_JOURNEYS + 1, "last_position": target,
+                           "journeys": len(after), "by_date": dict(sorted(dates.items())), "by_outcome": outcomes,
+                           "completion_rate": rate, "completion_rate_unavailable_reason": reason,
+                           "cut_date": cut, "cut_order_known": not order_unknown, "undated_journeys_before_cut": undated}
+    block["missing"] = blockers
+    if not blockers:
+        # الحكمُ بالأعداد لا بالنسبتين المقرَّبتين: نسبةُ المقارنة ناقصُ نسبة الفوج الأول، بالنقاط المئوية
+        improvement = (Fraction(outcomes["completed"], len(after))
+                       - Fraction(baseline["by_outcome"]["completed"], baseline["journeys"])) * 100
+        block.update(baseline_completion_rate=baseline["completion_rate"], comparison_completion_rate=rate,
+                     improvement_points=round(float(improvement), 2), passed=improvement >= gate["required_points"])
+    return block, {id(journey): index for index, journey in enumerate(after, 1)}
+
+
 def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit: str | None,
-                 window: dict) -> dict:
+                 window: dict, gate: dict | None = None) -> dict:
     records = scanned["journeys"]
     total = len(records)
     by_outcome, by_date = _tally(records)
@@ -499,10 +571,12 @@ def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit
         missing.append("too_few_dated_journeys")
     if cohort is None or cohort["distinct_dates"] < BASELINE_MIN_DISTINCT_DATES:
         missing.append("too_few_distinct_dates")
+    m2_gate, compared = _m2_gate(records, start if end is not None else None, gate, cohort, missing, unreadable)
     journeys = sorted(({**{key: value for key, value in journey.items() if not key.startswith("_")},
-                        "baseline_position": positions.get(id(journey))} for journey in records),
-                      key=lambda j: (j["date"] or "", j["baseline_position"] or 0, j["mode"], j["outcome"], j["status"],
-                                     j["error_code"] or "", j["steps"], j["tool_calls"]))
+                        "baseline_position": positions.get(id(journey)),
+                        "comparison_position": compared.get(id(journey))} for journey in records),
+                      key=lambda j: (j["date"] or "", j["baseline_position"] or 0, j["comparison_position"] or 0, j["mode"],
+                                     j["outcome"], j["status"], j["error_code"] or "", j["steps"], j["tool_calls"]))
     return {
         "schema_version": SCHEMA_VERSION,
         "tool": TOOL,
@@ -519,18 +593,19 @@ def build_report(scanned: dict, *, generated_on: str, default_root: bool, commit
         "by_mode": by_mode,
         "by_date": dict(sorted(by_date.items())),
         "distinct_dates": len(by_date),
-        "completion_rate": completion_rate,
-        "completion_rate_unavailable_reason": rate_reason,
+        "cumulative_completion_rate": completion_rate,
+        "cumulative_completion_rate_unavailable_reason": rate_reason,
         "baseline_ready": not missing,
         "baseline": {"rule": BASELINE_RULE, "window": window, "min_dated_journeys": BASELINE_MIN_DATED_JOURNEYS,
                      "min_distinct_dates": BASELINE_MIN_DISTINCT_DATES, "cohort": cohort, "missing": missing},
+        "m2_gate": m2_gate,
         "outcome_labels": OUTCOME_LABELS,
         "journeys": journeys,
         "measurement_limits": list(MEASUREMENT_LIMITS),
     }
 
 
-_CONSTANTS = frozenset({TOOL, TASK, CARRIES, BASELINE_RULE, *MEASUREMENT_LIMITS, *OUTCOME_LABELS.values()})
+_CONSTANTS = frozenset({TOOL, TASK, CARRIES, BASELINE_RULE, M2_RULE, *MEASUREMENT_LIMITS, *OUTCOME_LABELS.values()})
 
 
 def check_report(report: dict) -> None:
@@ -599,7 +674,7 @@ def main(argv=None) -> int:
     try:
         window = baseline_window(args.baseline_from, args.baseline_until)
         report = build_report(scan(root), generated_on=today.isoformat(), default_root=args.root is None,
-                              commit=_commit(), window=window)
+                              commit=_commit(), window=window, gate=plan_m2_gate())
         check_report(report)
         _write(out, (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     except Refused as exc:
