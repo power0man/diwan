@@ -1,0 +1,881 @@
+{
+  "schema_version": 1,
+  "tool": "tools/ui_browser_audit.py",
+  "agent": "anthropic/claude-opus-5-5",
+  "date": "2026-09-28",
+  "commit": "de9aafe3e5ae",
+  "ui_sources_sha256": {
+    "webui/static/index.html": "8701079ea4055bba884c5ffb210b12e6f924a87695e5c79ce2b0e8125326f169",
+    "webui/static/app.js": "fef96d0774c9ff440fc8874b8c2403da838a4e42130e8fdf65c9db963b6838fe",
+    "webui/static/style.css": "7d11d97ed48a9326b4aa35799b1d1a7f33dd910912e19c831ca2d2d902bc082a",
+    "webui/server.py": "6c5634808257a5961573465b6d6dbfe4e21488b5a2a2be053312b250bc673404"
+  },
+  "browser": {
+    "name": "chromium",
+    "headless": true,
+    "version": "141.0.7390.37",
+    "playwright": "1.56.1"
+  },
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1366,
+      "height": 768,
+      "device_scale_factor": 1
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "device_scale_factor": 1
+    }
+  ],
+  "provider": {
+    "kind": "scripted_fake",
+    "model_time": "zero",
+    "quality": "not_measured"
+  },
+  "summary": {
+    "current": {
+      "steps": 17,
+      "passed": 17,
+      "failed": 0,
+      "first_failed": null
+    },
+    "single-page": {
+      "steps": 6,
+      "passed": 4,
+      "failed": 2,
+      "first_failed": "sp_enter_answers"
+    }
+  },
+  "journeys": {
+    "current": {
+      "steps": [
+        {
+          "id": "open",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 589,
+          "note": "lang=ar dir=rtl"
+        },
+        {
+          "id": "empty_state",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 426,
+          "note": "2 disabled of 6"
+        },
+        {
+          "id": "tab_order",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 168,
+          "note": "12 stops"
+        },
+        {
+          "id": "send_before_session",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 94,
+          "note": "اختر محادثة واسترجع حالة أي إرسال سابق أولًا."
+        },
+        {
+          "id": "create_project",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 74
+        },
+        {
+          "id": "create_text_session",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 133
+        },
+        {
+          "id": "keyboard_send",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 2504,
+          "note": "ctrl+enter=false enter=false"
+        },
+        {
+          "id": "ask_text",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 337,
+          "note": "answer in 92 ms"
+        },
+        {
+          "id": "draft_review_apply",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 440
+        },
+        {
+          "id": "memory_dialog",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 611
+        },
+        {
+          "id": "create_agent_session",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 269
+        },
+        {
+          "id": "agent_write",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 505,
+          "note": "answer in 358 ms"
+        },
+        {
+          "id": "agent_approval",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 1843
+        },
+        {
+          "id": "error_path",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 164,
+          "note": "name_invalid"
+        },
+        {
+          "id": "mobile_open",
+          "viewport": "mobile",
+          "ok": true,
+          "ms": 600
+        },
+        {
+          "id": "mobile_empty",
+          "viewport": "mobile",
+          "ok": true,
+          "ms": 325,
+          "note": "composer at 1116px of 844"
+        },
+        {
+          "id": "mobile_ask_text",
+          "viewport": "mobile",
+          "ok": true,
+          "ms": 440
+        }
+      ],
+      "checks": {
+        "lang": "ar",
+        "dir": "rtl",
+        "body_direction": "rtl",
+        "title": "ديوان — مساحة العمل",
+        "live_regions": [
+          {
+            "id": "notice",
+            "role": "status",
+            "aria_live": "polite",
+            "contains_messages": false
+          }
+        ],
+        "horizontal_scroll_1366": false,
+        "empty_state_heading": "ابدأ بمشروعك الأول",
+        "empty_state_notice": "أنشئ مشروعًا ومحادثة لبدء العمل.",
+        "session_modes": [
+          {
+            "value": "text",
+            "label": "نص وملفات نصية",
+            "disabled": false
+          },
+          {
+            "value": "agent",
+            "label": "عمل بالأدوات داخل المشروع",
+            "disabled": false
+          },
+          {
+            "value": "coder",
+            "label": "مبرمج: تعديلُ شيفرة المشروع واختبارُها",
+            "disabled": false
+          },
+          {
+            "value": "translate",
+            "label": "ترجمة: عربي ↔ إنجليزي بفحصٍ آليّ",
+            "disabled": false
+          },
+          {
+            "value": "research",
+            "label": "بحثٌ معمّق في الويب بمصادر",
+            "disabled": true
+          },
+          {
+            "value": "media",
+            "label": "صورة أو صوت قصير — تجريبي",
+            "disabled": true
+          }
+        ],
+        "disabled_session_modes": [
+          "research",
+          "media"
+        ],
+        "default_session_mode": "agent",
+        "disabled_modes_explained": false,
+        "unnamed_controls": [
+          {
+            "state": "remember-dialog",
+            "role": "textbox",
+            "tag": "textarea",
+            "id": null,
+            "type": null
+          }
+        ],
+        "tab_order": [
+          {
+            "index": 1,
+            "role": "combobox",
+            "name": "المشروع",
+            "tag": "select",
+            "id": "projects",
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 2,
+            "role": "textbox",
+            "name": "مشروع جديد",
+            "tag": "input",
+            "id": "project-name",
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 3,
+            "role": "button",
+            "name": "إضافة",
+            "tag": "button",
+            "id": null,
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 4,
+            "role": "combobox",
+            "name": "نوع المحادثة",
+            "tag": "select",
+            "id": "session-mode",
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 5,
+            "role": "textbox",
+            "name": "محادثة جديدة",
+            "tag": "input",
+            "id": "session-name",
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 6,
+            "role": "button",
+            "name": "إضافة",
+            "tag": "button",
+            "id": null,
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 7,
+            "role": "button",
+            "name": "تفضيلات هذا المشروع",
+            "tag": "button",
+            "id": "preferences",
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 8,
+            "role": "button",
+            "name": "ذاكرة هذا المشروع",
+            "tag": "button",
+            "id": "memory",
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 9,
+            "role": "button",
+            "name": "استرجاع الحالة",
+            "tag": "button",
+            "id": "refresh",
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 10,
+            "role": "DisclosureTriangle",
+            "name": "الملفات المختارة لهذا الطلب (0)",
+            "tag": "summary",
+            "id": null,
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 11,
+            "role": "textbox",
+            "name": "رسالتك إلى ديوان",
+            "tag": "textarea",
+            "id": "message",
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 12,
+            "role": "button",
+            "name": "إرسال",
+            "tag": "button",
+            "id": "send",
+            "focus_visible": true,
+            "in_viewport": true
+          }
+        ],
+        "send_before_session_notice": "اختر محادثة واسترجع حالة أي إرسال سابق أولًا.",
+        "send_before_session_refused": true,
+        "ctrl_enter_sends": false,
+        "enter_sends": false,
+        "enter_inserts_newline": true,
+        "answer_direction": "rtl",
+        "answer_unicode_bidi": "plaintext",
+        "answer_label": "ديوان · جواب غير متحقق",
+        "answer_meta": "مكتمل · 42 وحدة نصية",
+        "answer_markdown_literal": true,
+        "messages_live": false,
+        "notice_when_answer_rendered": "ديوان يكتب… يمكنك استرجاع الحالة إذا انقطع الاتصال.",
+        "notice_after_answer": "تم استرجاع المحادثة من جهازك. 1 جولة محفوظة.",
+        "answer_announced": false,
+        "composer_height_px": 306,
+        "composer_position": "sticky",
+        "composer_viewport_share": 0.4,
+        "text_answer_latin_outside_answer": [],
+        "dialog_focus": {
+          "propose": true,
+          "review": false,
+          "remember": true,
+          "memory_panel": true,
+          "forget": false,
+          "approval": true
+        },
+        "hashes": [
+          {
+            "state": "draft-review",
+            "direction": "ltr",
+            "arabic_label": false,
+            "starts_with_digit": true,
+            "contiguous": true
+          },
+          {
+            "state": "forget-receipt",
+            "direction": "ltr",
+            "arabic_label": true,
+            "starts_with_digit": true,
+            "contiguous": false
+          },
+          {
+            "state": "agent-steps",
+            "direction": "ltr",
+            "arabic_label": false,
+            "starts_with_digit": true,
+            "contiguous": true
+          },
+          {
+            "state": "approval-dialog",
+            "direction": "ltr",
+            "arabic_label": true,
+            "starts_with_digit": true,
+            "contiguous": false
+          }
+        ],
+        "draft_hash_direction": "ltr",
+        "draft_hash_shown": true,
+        "focus_after_dialog_close": "مراجعة وحفظ مسودة",
+        "memory_empty_error": "اكتب نصًّا غير فارغ ليُحفظ.",
+        "memory_empty_error_role": "alert",
+        "memory_saved_notice": "حُفظ في ذاكرة المشروع. يدخل الطلبات الجديدة وحدها، وتستطيع نسيانه من «ذاكرة هذا المشروع».",
+        "memory_panel_latin": [
+          "T18:34:45Z"
+        ],
+        "memory_panel_iso_timestamp": true,
+        "agent_capabilities_text": "أدوات ملفات المشروع متاحة. تنفيذ الأوامر غير مهيأ.",
+        "thinking_checkbox_width_px": 943,
+        "agent_stream_latin": [
+          "write_file",
+          "ok",
+          "txt",
+          "act-9d13fd823911457a"
+        ],
+        "agent_stream_hashes": 1,
+        "agent_stream_json_blocks": 1,
+        "agent_turn_buttons": [
+          "الرجوع عن هذا التعديل",
+          "فرقُ الجولة",
+          "التراجع عن الجولة كلِّها",
+          "تذكّر هذا"
+        ],
+        "approval_button_label": "مراجعة فعل propose_memory",
+        "approval_dialog_latin": [
+          "propose_memory",
+          "text",
+          "path",
+          "txt",
+          "sha256",
+          "size_bytes"
+        ],
+        "approval_dialog_json_blocks": 2,
+        "approval_dialog_hashes": 2,
+        "error_notice": "تعذر إكمال العملية (name_invalid). استرجع الحالة وراجع المدخلات.",
+        "raw_error_codes_visible": [
+          "name_invalid"
+        ],
+        "api_actions": [
+          "projects",
+          "create_project",
+          "sessions",
+          "files",
+          "create_session",
+          "history",
+          "ask",
+          "replay",
+          "propose",
+          "review",
+          "apply",
+          "memory_remember",
+          "memory",
+          "memory_forget",
+          "agent_capabilities",
+          "agent_ask",
+          "agent_decide",
+          "agent_resume"
+        ],
+        "console_errors": [],
+        "network_error_logs": 1,
+        "horizontal_overflow_390_px": 0,
+        "horizontal_scroll_390": false,
+        "mobile_composer_top_px": 1116,
+        "mobile_sidebar_bottom_px": 640,
+        "mobile_page_height_px": 1328,
+        "composer_in_first_screen_mobile": false,
+        "mobile_unnamed_controls": [],
+        "horizontal_overflow_390_after_answer_px": 0,
+        "mobile_console_errors": []
+      },
+      "timings_ms": {
+        "open_to_idle": 575,
+        "dom_content_loaded": 62,
+        "first_api_response": 68,
+        "create_project": 74,
+        "create_session": 133,
+        "ask_to_answer": 92,
+        "create_agent_session": 247,
+        "agent_write_to_answer": 358,
+        "agent_request_to_approval": 894,
+        "approval_to_answer": 526,
+        "mobile_open_to_idle": 600,
+        "mobile_setup": 238,
+        "mobile_ask_to_answer": 118
+      }
+    },
+    "single-page": {
+      "steps": [
+        {
+          "id": "sp_open",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 576
+        },
+        {
+          "id": "sp_question_field",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 67
+        },
+        {
+          "id": "sp_enter_answers",
+          "viewport": "desktop",
+          "ok": false,
+          "ms": 8055,
+          "error": "page.waitForFunction: Timeout 8000ms exceeded."
+        },
+        {
+          "id": "sp_open",
+          "viewport": "mobile",
+          "ok": true,
+          "ms": 554
+        },
+        {
+          "id": "sp_question_field",
+          "viewport": "mobile",
+          "ok": true,
+          "ms": 97
+        },
+        {
+          "id": "sp_enter_answers",
+          "viewport": "mobile",
+          "ok": false,
+          "ms": 8054,
+          "error": "page.waitForFunction: Timeout 8000ms exceeded."
+        }
+      ],
+      "checks": {
+        "desktop": {
+          "question_field_in_first_screen": true,
+          "question_field_name": "رسالتك إلى ديوان",
+          "notice_after_enter": "أنشئ مشروعًا ومحادثة لبدء العمل.",
+          "api_actions": [
+            "projects"
+          ],
+          "console_errors": []
+        },
+        "mobile": {
+          "question_field_in_first_screen": false,
+          "question_field_name": "رسالتك إلى ديوان",
+          "notice_after_enter": "أنشئ مشروعًا ومحادثة لبدء العمل.",
+          "api_actions": [
+            "projects"
+          ],
+          "console_errors": []
+        }
+      },
+      "timings_ms": {
+        "sp_open_desktop": 575,
+        "sp_open_mobile": 554
+      }
+    }
+  },
+  "timings_ms": {
+    "model_time": "zero_by_scripted_provider",
+    "current": {
+      "open_to_idle": 575,
+      "dom_content_loaded": 62,
+      "first_api_response": 68,
+      "create_project": 74,
+      "create_session": 133,
+      "ask_to_answer": 92,
+      "create_agent_session": 247,
+      "agent_write_to_answer": 358,
+      "agent_request_to_approval": 894,
+      "approval_to_answer": 526,
+      "mobile_open_to_idle": 600,
+      "mobile_setup": 238,
+      "mobile_ask_to_answer": 118
+    },
+    "single-page": {
+      "sp_open_desktop": 575,
+      "sp_open_mobile": 554
+    }
+  },
+  "error_code_coverage": {
+    "server_codes": 46,
+    "with_arabic_message": 10,
+    "handled_by_a_branch": [
+      "workspace_turn_missing"
+    ],
+    "raw_codes": [
+      "answer_empty",
+      "body_incomplete",
+      "body_limit",
+      "coder_unavailable",
+      "collection_limit",
+      "complete_answer_required",
+      "decision_invalid",
+      "glossary_too_large",
+      "id_conflict",
+      "id_invalid",
+      "json_invalid",
+      "limit_invalid",
+      "media_count",
+      "media_encoding",
+      "media_invalid",
+      "media_size",
+      "memory_text_invalid",
+      "metadata_invalid",
+      "name_invalid",
+      "not_found",
+      "pages_invalid",
+      "policy_requires_local",
+      "query_empty",
+      "receive_timeout",
+      "research_unavailable",
+      "restore_incomplete",
+      "session_mode_invalid",
+      "session_mode_mismatch",
+      "staging_limit",
+      "store_changed",
+      "thinking_invalid",
+      "tier_unavailable",
+      "translate_unavailable",
+      "turn_unknown",
+      "word_invalid"
+    ],
+    "scope": "literal_codes_in_webui_server_py"
+  },
+  "axe": {
+    "status": "run",
+    "version": "4.13.0",
+    "states": [
+      {
+        "state": "empty-desktop",
+        "violations": 0,
+        "passes": 34,
+        "incomplete": 0
+      },
+      {
+        "state": "text-answer-desktop",
+        "violations": 0,
+        "passes": 34,
+        "incomplete": 0
+      },
+      {
+        "state": "remember-dialog-desktop",
+        "violations": 1,
+        "passes": 13,
+        "incomplete": 0
+      },
+      {
+        "state": "approval-dialog-desktop",
+        "violations": 0,
+        "passes": 11,
+        "incomplete": 1
+      },
+      {
+        "state": "empty-mobile",
+        "violations": 0,
+        "passes": 34,
+        "incomplete": 0
+      }
+    ],
+    "violations": [
+      {
+        "id": "label",
+        "impact": "critical",
+        "nodes": 1,
+        "targets": [
+          "textarea[rows=\"6\"]"
+        ],
+        "states": [
+          "remember-dialog-desktop"
+        ]
+      }
+    ],
+    "errors": []
+  },
+  "findings": [
+    {
+      "id": "raw-error-codes",
+      "severity": "high",
+      "summary": "رموزُ رفضٍ بلا رسالةٍ عربية تظهر خامًا للمستخدم",
+      "step": "error_path",
+      "screenshot": "06-raw-error-desktop.png",
+      "points_to": "webui/static/app.js:57",
+      "survives_single_page": "yes",
+      "tracked_in": "#170"
+    },
+    {
+      "id": "first-message-needs-project-and-session",
+      "severity": "high",
+      "summary": "لا يُرسل السؤالُ الأول قبل إنشاء مشروعٍ ثم محادثةٍ مسمّاة",
+      "step": "send_before_session",
+      "screenshot": "01-empty-desktop.png",
+      "points_to": "webui/static/app.js:387",
+      "survives_single_page": "no",
+      "tracked_in": "#166"
+    },
+    {
+      "id": "disabled-modes-unexplained",
+      "severity": "medium",
+      "summary": "أنواعُ محادثاتٍ معطّلة بلا تفسيرٍ لسببها ولا لطريق تفعيلها",
+      "step": "empty_state",
+      "screenshot": "01-empty-desktop.png",
+      "points_to": "webui/static/index.html:11",
+      "survives_single_page": "no",
+      "tracked_in": "#166"
+    },
+    {
+      "id": "mobile-composer-below-fold",
+      "severity": "medium",
+      "summary": "على الجوّال لا يظهر حقلُ السؤال في الشاشة الأولى: الشريطُ الجانبيّ كلُّه قبله",
+      "step": "mobile_empty",
+      "screenshot": "07-mobile-empty.png",
+      "points_to": "webui/static/style.css:3",
+      "survives_single_page": "no",
+      "tracked_in": "#166"
+    },
+    {
+      "id": "no-keyboard-send",
+      "severity": "medium",
+      "summary": "لا اختصارَ لوحة مفاتيح للإرسال: Enter وCtrl+Enter لا يرسلان",
+      "step": "keyboard_send",
+      "screenshot": "02-text-answer-desktop.png",
+      "points_to": "webui/static/index.html:23",
+      "survives_single_page": "yes",
+      "tracked_in": "#166"
+    },
+    {
+      "id": "answers-plain-text",
+      "severity": "medium",
+      "summary": "الجوابُ نصٌّ خام: علاماتُ Markdown تظهر حرفيًّا",
+      "step": "ask_text",
+      "screenshot": "02-text-answer-desktop.png",
+      "points_to": "webui/static/app.js:89",
+      "survives_single_page": "yes",
+      "tracked_in": "#166"
+    },
+    {
+      "id": "technical-details-in-stream",
+      "severity": "medium",
+      "summary": "تفاصيلُ تقنية أمام المستخدم: أسماءُ أدواتٍ وحالاتٌ بالإنجليزية في المجرى وزرّ الموافقة، ومدخلاتُ JSON وبصمات",
+      "step": "agent_write",
+      "screenshot": "04-agent-steps-desktop.png",
+      "points_to": "webui/static/app.js:143",
+      "survives_single_page": "yes",
+      "tracked_in": "#166"
+    },
+    {
+      "id": "answer-not-announced",
+      "severity": "medium",
+      "summary": "الجوابُ الجديد لا يُعلَن لقارئ الشاشة: منطقةُ الرسائل ليست حيّة، والإعلانُ عددُ جولاتٍ لا الجواب",
+      "step": "ask_text",
+      "screenshot": "02-text-answer-desktop.png",
+      "points_to": "webui/static/index.html:19",
+      "survives_single_page": "yes",
+      "tracked_in": "#171"
+    },
+    {
+      "id": "unnamed-controls",
+      "severity": "high",
+      "summary": "عنصرُ إدخالٍ بلا اسمٍ وصوليّ في شجرة Chromium",
+      "step": "memory_dialog",
+      "screenshot": "09-memory-desktop.png",
+      "points_to": "webui/static/app.js:495",
+      "survives_single_page": "yes",
+      "tracked_in": "#171"
+    },
+    {
+      "id": "hash-label-in-ltr-line",
+      "severity": "medium",
+      "summary": "بصمةٌ وعنوانُها العربيّ في سطرٍ واحد اتجاهُه LTR: البصمةُ التي تبدأ برقمٍ ينفصل رقمُها الأول إلى طرف العنوان",
+      "step": "agent_approval",
+      "screenshot": "05-approval-desktop.png",
+      "points_to": "webui/static/app.js:196",
+      "survives_single_page": "yes",
+      "tracked_in": "#172"
+    },
+    {
+      "id": "composer-covers-answer",
+      "severity": "low",
+      "summary": "حقلُ الكتابة الملتصق بأسفل الشاشة يغطّي أكثرَ من ثلثها على 1366×768 فيُقصّ الجوابُ خلفه",
+      "step": "ask_text",
+      "screenshot": "02-text-answer-desktop.png",
+      "points_to": "webui/static/style.css:2",
+      "survives_single_page": "recheck",
+      "tracked_in": "#166"
+    },
+    {
+      "id": "checkbox-full-width",
+      "severity": "low",
+      "summary": "مربّعُ «اطلب تفكير النموذج» بعرض السطر كلِّه فينفصل عن نصّه",
+      "step": "create_agent_session",
+      "screenshot": "06-raw-error-desktop.png",
+      "points_to": "webui/static/style.css:2",
+      "survives_single_page": "no",
+      "tracked_in": "#166"
+    },
+    {
+      "id": "dialog-focus-lost",
+      "severity": "medium",
+      "summary": "استبدالُ محتوى نافذةٍ مفتوحة يُسقط التركيزَ إلى body: مستخدمُ لوحة المفاتيح يفقد موضعه",
+      "step": "draft_review_apply",
+      "screenshot": "03-draft-review-desktop.png",
+      "points_to": "webui/static/app.js:417",
+      "survives_single_page": "yes",
+      "tracked_in": "#171"
+    },
+    {
+      "id": "a11y-label",
+      "severity": "high",
+      "summary": "axe: label (critical) على 1 عنصرًا",
+      "step": "axe",
+      "screenshot": null,
+      "points_to": null,
+      "survives_single_page": "recheck",
+      "targets": [
+        "textarea[rows=\"6\"]"
+      ],
+      "tracked_in": "#171"
+    }
+  ],
+  "screenshots_dir": "docs/probe/ui-browser-audit-20260928",
+  "screenshots": [
+    {
+      "file": "01-empty-desktop.png",
+      "step": "empty_state",
+      "viewport": "1366x768",
+      "bytes": 61628
+    },
+    {
+      "file": "02-text-answer-desktop.png",
+      "step": "ask_text",
+      "viewport": "1366x768",
+      "bytes": 71119
+    },
+    {
+      "file": "03-draft-review-desktop.png",
+      "step": "draft_review_apply",
+      "viewport": "1366x768",
+      "bytes": 73770
+    },
+    {
+      "file": "09-memory-desktop.png",
+      "step": "memory_dialog",
+      "viewport": "1366x768",
+      "bytes": 73828
+    },
+    {
+      "file": "04-agent-steps-desktop.png",
+      "step": "agent_write",
+      "viewport": "1366x768",
+      "bytes": 57054
+    },
+    {
+      "file": "05-approval-desktop.png",
+      "step": "agent_approval",
+      "viewport": "1366x768",
+      "bytes": 58953
+    },
+    {
+      "file": "06-raw-error-desktop.png",
+      "step": "error_path",
+      "viewport": "1366x768",
+      "bytes": 68427
+    },
+    {
+      "file": "07-mobile-empty.png",
+      "step": "mobile_empty",
+      "viewport": "390x844",
+      "bytes": 36908
+    },
+    {
+      "file": "08-mobile-answer.png",
+      "step": "mobile_ask_text",
+      "viewport": "390x844",
+      "bytes": 47150
+    }
+  ],
+  "measurement_limits": [
+    "scripted_fake_provider_so_model_latency_is_zero_and_answer_quality_is_not_measured",
+    "headless_chromium_only_no_safari_no_firefox_no_real_screen_reader",
+    "one_scripted_journey_by_the_tool_not_a_user_study_and_not_owner_acceptance",
+    "linux_fonts_tahoma_and_arial_absent_arabic_falls_back_to_dejavu_so_glyph_shapes_differ_from_mac_and_windows",
+    "axe_core_catches_a_subset_of_wcag_failures_and_a_clean_rule_is_not_an_accessible_page",
+    "error_code_coverage_counts_literal_codes_in_webui_server_py_only_codes_raised_by_other_modules_are_not_counted",
+    "first_run_configuration_only_research_media_and_command_execution_are_disabled_as_serve_ui_starts_without_searxng_vision_or_docker",
+    "timings_are_loopback_with_a_fake_provider_they_bound_the_ui_and_http_path_not_a_real_answer"
+  ]
+}

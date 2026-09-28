@@ -42,7 +42,9 @@
       "tools/agent_attribution.py",
       "tools/family_review.py",
       "tools/issue_ledger.py",
-      "tools/lane_handoff.py"
+      "tools/lane_handoff.py",
+      "tools/ui_browser_audit.py",
+      "tools/ui_browser_audit.cjs"
     ],
     "openai": [
       "conversation/",

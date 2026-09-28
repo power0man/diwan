@@ -125,7 +125,143 @@ def test_run_checks_without_an_engine_is_a_declared_unavailability_not_a_failure
 
 
 def test_the_ui_entry_point_initialises():
-    assert lc.check_ui(ROOT).status == "ok"
+    """خطوةُ الواجهة تشغّل `serve_ui.py` الحقيقيّ على منفذٍ زائل وتقرأ الصفحةَ ونداءَ projects ثم توقفه.
+    بلا محرّكٍ تُسمّي بصمتَها البديلة؛ وبمحرّكٍ وبصمته `ui_ready`."""
+    placeholder = lc.check_ui(ROOT)
+    assert placeholder.status == "ok" and placeholder.code == "ui_ready_without_engine", placeholder
+    ready = lc.check_ui(ROOT, model="qwen3.5:9b", digest="a" * 64)
+    assert ready.status == "ok" and ready.code == "ui_ready", ready
+    assert "qwen3.5:9b" in ready.detail and "dir=rtl" in ready.detail
+
+
+def test_a_digest_serve_ui_refuses_is_a_named_start_failure():
+    """البصمةُ تصل إلى serve_ui.py كما هي: بصمةٌ يرفضها المزوّدُ المحليّ تُسقط التشغيلَ باسمه، لا تُستبدل بالبديلة."""
+    step = lc.check_ui(ROOT, model="qwen3.5:9b", digest="not-a-digest")
+    assert step.status == "failed" and step.code == "ui_start_failed", step
+    assert "local_chat_artifact_invalid" in step.detail
+
+
+# بديلٌ عن serve_ui.py يسلك سلوكًا واحدًا يختاره FAKE_UI_MODE، ويُنهي نفسَه بعد مهلة فلا يبقى إن نجت طفرةُ الإيقاف
+FAKE_UI = r'''
+import http.server, json, os, sys, threading, time
+guard = threading.Timer(30, lambda: os._exit(9))
+guard.daemon = True
+guard.start()
+mode = os.environ["FAKE_UI_MODE"]
+if os.environ.get("FAKE_UI_PID"):
+    with open(os.environ["FAKE_UI_PID"], "w") as handle:
+        handle.write(str(os.getpid()))
+if mode == "exit":
+    print("startup_failed", file=sys.stderr, flush=True)
+    sys.exit(2)
+if mode == "silent":
+    time.sleep(60)
+TOKEN = "" if mode == "notoken" else '<meta name="diwan-token" content="' + "a" * 64 + '">'
+PAGE = '<!doctype html><html lang="ar" dir="' + ("ltr" if mode == "ltr" else "rtl") + '"><head>' + TOKEN + "</head></html>"
+class Handler(http.server.BaseHTTPRequestHandler):
+    def log_message(self, *args):
+        pass
+    def answer(self, status, body, kind):
+        data = body.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", kind)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+    def do_GET(self):
+        self.answer(500 if mode == "get500" else 200, PAGE, "text/html; charset=utf-8")
+    def do_POST(self):
+        self.rfile.read(int(self.headers["Content-Length"]))
+        body = {"items": []} if mode == "apishape" else {"projects": []}
+        self.answer(403 if mode == "api403" else 200, json.dumps(body), "application/json")
+server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+print("ديوان المحلي: http://127.0.0.1:%d" % server.server_port, flush=True)
+try:
+    server.serve_forever()
+except KeyboardInterrupt:
+    pass
+'''
+
+
+def _fake_ui(tmp_path, monkeypatch, mode, **kwargs):
+    script = tmp_path / "fake_serve_ui.py"
+    script.write_text(FAKE_UI, encoding="utf-8")
+    pid = tmp_path / "fake.pid"
+    monkeypatch.setenv("FAKE_UI_MODE", mode)
+    monkeypatch.setenv("FAKE_UI_PID", str(pid))
+    step = lc.check_ui(ROOT, model="qwen3.5:9b", digest="a" * 64, script=script, **kwargs)
+    return step, pid
+
+
+def _alive(pid_file) -> bool:
+    import os
+    pid = int(pid_file.read_text())
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    try:   # عمليةٌ انتهت ولم تُحصد بعد (zombie) ليست خادمًا حيًّا
+        return Path(f"/proc/{pid}/status").read_text().find("State:\tZ") < 0
+    except OSError:
+        return True
+
+
+def test_a_server_that_exits_before_announcing_itself_is_a_start_failure(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "exit", timeout_s=20)
+    assert step.status == "failed" and step.code == "ui_start_failed", step
+    assert "برمز 2" in step.detail and "startup_failed" in step.detail
+
+
+def test_a_server_that_never_announces_itself_times_out_and_is_stopped(tmp_path, monkeypatch):
+    step, pid = _fake_ui(tmp_path, monkeypatch, "silent", timeout_s=1.5)
+    assert step.status == "failed" and step.code == "ui_start_failed", step
+    assert "1.5" in step.detail
+    assert not _alive(pid), "بقي الخادمُ بعد انتهاء المهلة"
+
+
+def test_a_page_error_is_ui_http_failed(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "get500")
+    assert step.status == "failed" and step.code == "ui_http_failed" and "500" in step.detail, step
+
+
+def test_a_page_that_is_not_right_to_left_is_unexpected(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "ltr")
+    assert step.status == "failed" and step.code == "ui_page_unexpected" and "rtl" in step.detail, step
+
+
+def test_a_page_without_its_session_token_is_unexpected(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "notoken")
+    assert step.status == "failed" and step.code == "ui_page_unexpected", step
+
+
+def test_a_refused_read_call_is_ui_http_failed(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "api403")
+    assert step.status == "failed" and step.code == "ui_http_failed" and "403" in step.detail, step
+
+
+def test_a_read_call_without_a_project_list_is_unexpected(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "apishape")
+    assert step.status == "failed" and step.code == "ui_page_unexpected" and "projects" in step.detail, step
+
+
+def test_the_ui_step_stops_the_server_it_started(tmp_path, monkeypatch):
+    step, pid = _fake_ui(tmp_path, monkeypatch, "ok")
+    assert step.status == "ok" and step.code == "ui_ready", step
+    assert not _alive(pid), "بقي خادمُ الواجهة يعمل بعد الخطوة"
+
+
+def test_run_checks_hands_the_engine_and_its_digest_to_the_ui_step():
+    """الواجهةُ تُشغَّل بالمحرّك الذي وجدته خطوةُ المحرّك وبصمتِه كما في /api/tags؛ وبلا محرّكٍ بلا بصمة."""
+    seen = []
+
+    def ui_check(root, *, model, digest):
+        seen.append((model, digest))
+        return lc.Step("ui", "ok", "ui_ready")
+
+    tags = lambda base_url: {"models": [{"name": "qwen3.5:9b", "digest": "b" * 64}]}
+    lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x", probe=tags, with_agent=False, ui_check=ui_check)
+    lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x", probe=_down, with_agent=False, ui_check=ui_check)
+    assert seen == [("qwen3.5:9b", "b" * 64), ("qwen3.5:9b", None)]
 
 
 def test_a_journal_that_refuses_its_root_is_a_named_failure_not_a_traceback(monkeypatch):

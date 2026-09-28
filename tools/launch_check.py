@@ -13,7 +13,11 @@
    يُثبت الحلقةَ والأدواتِ والحَجرَ دون النموذج (`mechanism_only`).
 5. **policies** — عقدةُ السياسات: المتنُ موضوعٌ محليًّا وإسقاطُه مبنيٌّ واستعلامٌ واحد يعيد شاهدًا؛
    وإلا `corpus_missing` أو `index_missing` (النسخةُ العامة بلا متون، ك٢٩).
-6. **ui** — `tools/serve_ui.py --help` يعمل (الواجهةُ تُستورد وتُهيّأ).
+6. **ui** — `tools/serve_ui.py` يُشغَّل كما يشغّله المستخدم (المزوّدُ المحليّ بالمحرّك الذي وجدته الخطوةُ ٣ وبصمتِه)
+   على منفذٍ زائل في 127.0.0.1 وجذرٍ مؤقّت فارغ: `GET /` ← 200 وصفحةٌ `dir="rtl"` برمز جلستها، ثم نداءُ قراءةٍ واحد
+   بلا نموذج (`projects`) ← 200، ثم يُوقَف. بمهلةٍ ورموزٍ مسمّاة: `ui_start_failed` (لم يعلن عنوانَه أو خرج)،
+   `ui_http_failed` (ردٌّ غيرُ 200 أو انقطاع)، `ui_page_unexpected` (الصفحةُ أو الردُّ على غير ما يُنتظر). وبلا محرّك
+   يُشغَّل ببصمةٍ بديلة معلنة (`ui_ready_without_engine`): الصفحةُ لا تنادي النموذج، والجوابُ يحتاجه.
 
     python tools/launch_check.py [--engine qwen3.5:9b] [--base-url http://127.0.0.1:11434] [--json]
 
@@ -25,9 +29,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import queue
+import re
+import signal
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, asdict
@@ -103,17 +113,22 @@ def probe_engine(base_url: str, timeout: float = 3.0) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
-def check_engine(engine: str, base_url: str, *, probe=probe_engine) -> Step:
+def locate_engine(engine: str, base_url: str, *, probe=probe_engine) -> tuple[Step, str | None]:
+    """خطوةُ المحرّك وبصمتُه كما يقرؤها `serve_ui.py` من `/api/tags` (`digest`)، أو لا بصمة إن لم يُوجد."""
     try:
         tags = probe(base_url)
     except (OSError, urllib.error.URLError, ValueError) as exc:
         return Step("engine", "unavailable", "engine_unreachable",
-                    f"لا يجيب Ollama على {base_url}: {type(exc).__name__} — شغّل `ollama serve`")
-    names = {m.get("name") for m in tags.get("models", []) if isinstance(m, dict)}
-    if engine not in names:
+                    f"لا يجيب Ollama على {base_url}: {type(exc).__name__} — شغّل `ollama serve`"), None
+    models = {m.get("name"): m.get("digest") for m in tags.get("models", []) if isinstance(m, dict)}
+    if engine not in models:
         return Step("engine", "unavailable", "model_missing",
-                    f"المحرّك {engine} غيرُ مسحوب — `ollama pull {engine}`؛ الموجود: {sorted(n for n in names if n)[:6]}")
-    return Step("engine", "ok", "engine_ready", f"{engine} على {base_url}")
+                    f"المحرّك {engine} غيرُ مسحوب — `ollama pull {engine}`؛ الموجود: {sorted(n for n in models if n)[:6]}"), None
+    return Step("engine", "ok", "engine_ready", f"{engine} على {base_url}"), models[engine]
+
+
+def check_engine(engine: str, base_url: str, *, probe=probe_engine) -> Step:
+    return locate_engine(engine, base_url, probe=probe)[0]
 
 
 class _Mechanism:
@@ -201,27 +216,143 @@ def check_policies(root: Path) -> Step:
     return Step("policies", "ok", "policies_ready", f"شاهدٌ من {hits[0].get('doc_id', '?')}")
 
 
-def check_ui(root: Path) -> Step:
-    result = subprocess.run([sys.executable, str(root / "tools" / "serve_ui.py"), "--help"],
-                            cwd=root, capture_output=True, text=True, timeout=60)
-    if result.returncode != 0:
-        return Step("ui", "failed", "ui_help_failed", (result.stderr or result.stdout)[-200:])
-    return Step("ui", "ok", "ui_ready", "tools/serve_ui.py يُهيَّأ")
+UI_START_TIMEOUT_S = 60.0     # من تشغيل serve_ui.py إلى سطر عنوانه (الاستيرادُ وتهيئةُ المزوّد والجذر)
+UI_HTTP_TIMEOUT_S = 10.0      # لكل نداء HTTP
+UI_STOP_TIMEOUT_S = 10.0      # بعد إشارة الإيقاف، ثم يُقتل
+PLACEHOLDER_DIGEST = "0" * 64  # بلا محرّك: serve_ui.py يطلب بصمة، والصفحةُ ونداءُ القراءة لا ينادون النموذج
+UI_ORIGIN = re.compile(r"(http://127\.0\.0\.1:[0-9]{1,5})\s*$")
+UI_TOKEN = re.compile(r'<meta name="diwan-token" content="([0-9a-f]{64})">')
+UI_RTL = re.compile(r'<html\b[^>]*\bdir="rtl"')
+
+
+def _drain(stream, lines: "queue.Queue[str | None]") -> None:
+    try:
+        for line in stream:
+            lines.put(line)
+    finally:
+        lines.put(None)
+
+
+def _stop(process: subprocess.Popen, readers: tuple[threading.Thread, ...] = ()) -> None:
+    """إيقافٌ كما يوقفه المستخدم (Ctrl+C فيُغلق الخادمُ جذرَه)، ثم قتلٌ بعد المهلة؛ ولا يبقى الخادمُ بعد الخطوة.
+    وقارئا المخرجات ينتهيان بنهاية الأنبوب قبل أن يُغلق."""
+    if process.poll() is None:
+        try:
+            if os.name == "posix":
+                process.send_signal(signal.SIGINT)
+            else:
+                process.terminate()
+            process.wait(UI_STOP_TIMEOUT_S)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(UI_STOP_TIMEOUT_S)
+    for reader in readers:
+        reader.join(UI_STOP_TIMEOUT_S)
+    for stream in (process.stdout, process.stderr):
+        if stream is not None:
+            stream.close()
+
+
+def probe_ui(origin: str, timeout_s: float = UI_HTTP_TIMEOUT_S) -> Step | int:
+    """`GET /` ثم `projects`؛ يُعيد عددَ المشروعات إن صحّ كلُّه، وإلا خطوةً ساقطة برمزها."""
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))   # 127.0.0.1 لا يمرّ بوكيل البيئة
+    try:
+        with opener.open(f"{origin}/", timeout=timeout_s) as response:  # noqa: S310 — عنوانٌ محلي أعلنه الخادم
+            status, page = response.status, response.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as exc:
+        return Step("ui", "failed", "ui_http_failed", f"GET / ← {exc.code}")
+    except (OSError, urllib.error.URLError) as exc:
+        return Step("ui", "failed", "ui_http_failed", f"GET / ← {type(exc).__name__}")
+    if status != 200:
+        return Step("ui", "failed", "ui_http_failed", f"GET / ← {status}")
+    token = UI_TOKEN.search(page)
+    if not UI_RTL.search(page) or token is None:
+        missing = "dir=\"rtl\"" if not UI_RTL.search(page) else "رمزُ الجلسة"
+        return Step("ui", "failed", "ui_page_unexpected", f"GET / ← 200 بلا {missing}")
+    request = urllib.request.Request(f"{origin}/api", data=b'{"action":"projects"}', method="POST", headers={
+        "Origin": origin, "X-Diwan-CSRF": token.group(1), "Content-Type": "application/json"})
+    try:
+        with opener.open(request, timeout=timeout_s) as response:  # noqa: S310
+            status, raw = response.status, response.read()
+    except urllib.error.HTTPError as exc:
+        return Step("ui", "failed", "ui_http_failed", f"POST /api projects ← {exc.code}")
+    except (OSError, urllib.error.URLError) as exc:
+        return Step("ui", "failed", "ui_http_failed", f"POST /api projects ← {type(exc).__name__}")
+    if status != 200:
+        return Step("ui", "failed", "ui_http_failed", f"POST /api projects ← {status}")
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except (ValueError, UnicodeError):
+        data = None
+    if not isinstance(data, dict) or not isinstance(data.get("projects"), list):
+        return Step("ui", "failed", "ui_page_unexpected", "POST /api projects ← 200 بلا قائمة مشروعات")
+    return len(data["projects"])
+
+
+def check_ui(root: Path, *, model: str = DEFAULT_ENGINE, digest: str | None = None,
+             timeout_s: float = UI_START_TIMEOUT_S, script: Path | None = None) -> Step:
+    """يشغّل `serve_ui.py` بالمزوّد المحليّ على منفذٍ زائل وجذرٍ مؤقّت، ويفحص الصفحةَ ونداءَ قراءة، ثم يوقفه.
+
+    `digest=None` (لا محرّك) يعني بصمةً بديلة معلنة فيُسمّى النجاحُ `ui_ready_without_engine`."""
+    script = script or root / "tools" / "serve_ui.py"
+    env = {**os.environ, "DIWAN_CHAT_MODEL": model, "DIWAN_CHAT_DIGEST": digest or PLACEHOLDER_DIGEST,
+           "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"}
+    with tempfile.TemporaryDirectory(prefix="diwan-launch-ui-") as directory:
+        ui_root = Path(directory).resolve() / "ui"
+        argv = [sys.executable, str(script), "--provider", "local", "--port", "0", "--root", str(ui_root)]
+        try:
+            process = subprocess.Popen(argv, cwd=root, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
+        except OSError as exc:
+            return Step("ui", "failed", "ui_start_failed", f"{type(exc).__name__}: {exc}"[:200])
+        lines: "queue.Queue[str | None]" = queue.Queue()
+        errors: list[str] = []
+        readers = (threading.Thread(target=_drain, args=(process.stdout, lines), daemon=True),
+                   threading.Thread(target=lambda: errors.extend(process.stderr), daemon=True))
+        for reader in readers:
+            reader.start()
+        try:
+            origin, deadline = None, time.monotonic() + timeout_s
+            while origin is None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    return Step("ui", "failed", "ui_start_failed", f"لم يعلن serve_ui.py عنوانَه في {timeout_s:g} ث")
+                try:
+                    line = lines.get(timeout=min(remaining, 0.5))
+                except queue.Empty:
+                    continue
+                if line is None:
+                    process.wait(UI_STOP_TIMEOUT_S)
+                    tail = "".join(errors).strip().splitlines()[-1:] or [""]
+                    return Step("ui", "failed", "ui_start_failed",
+                                f"خرج serve_ui.py برمز {process.returncode} قبل أن يعلن عنوانه: {tail[0]}"[:200])
+                found = UI_ORIGIN.search(line)
+                origin = found.group(1) if found else None
+            probed = probe_ui(origin)
+        finally:
+            _stop(process, readers)
+    if isinstance(probed, Step):
+        return probed
+    code = "ui_ready" if digest else "ui_ready_without_engine"
+    engine = f"بالمحرّك {model}" if digest else f"ببصمةٍ بديلة لـ{model} (لا محرّك؛ الجوابُ يحتاجه)"
+    return Step("ui", "ok", code, f"serve_ui.py {engine} على منفذٍ زائل: GET / ← 200 وdir=rtl، "
+                                  f"وprojects ← 200 ({probed} مشروع)، ثم أُوقف")
 
 
 def run_checks(root: Path, *, engine: str, base_url: str, probe=probe_engine,
-               with_agent: bool = True, with_ui: bool = True) -> list[Step]:
+               with_agent: bool = True, with_ui: bool = True, ui_check=check_ui) -> list[Step]:
     steps = [check_runtime(root)]
     if steps[0].status == "failed":
         return steps
     steps.append(check_morphology())
-    engine_step = check_engine(engine, base_url, probe=probe)
+    engine_step, digest = locate_engine(engine, base_url, probe=probe)
     steps.append(engine_step)
     if with_agent:
         steps.append(check_agent_turn(engine, base_url, live=engine_step.status == "ok"))
     steps.append(check_policies(root))
     if with_ui:
-        steps.append(check_ui(root))
+        # الواجهةُ بالمحرّك الذي وجدته خطوةُ المحرّك وبصمتِه، كما يشغّلها المستخدم
+        steps.append(ui_check(root, model=engine, digest=digest if engine_step.status == "ok" else None))
     return steps
 
 
