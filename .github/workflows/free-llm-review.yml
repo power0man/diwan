@@ -45,7 +45,9 @@ jobs:
           python3 -m pip install --user 'uv==0.8.17'
           "$HOME/.local/bin/uv" python install 3.14
           "$HOME/.local/bin/uv" sync --frozen --python 3.14
+      # الفهرسُ جردٌ لا بوّابة: إن لم يُقرأ سُمّي رمزُه وشكلُه (لا نصُّه)، واختارت التجربةُ من القائمة المفضَّلة وقالت ذلك في تقريرها
       - name: List the GitHub Models catalog
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |

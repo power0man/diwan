@@ -266,9 +266,28 @@ def _gh(model, outputs=("text",)):
             "supported_output_modalities": list(outputs)}
 
 
+# شكلُ مدخلٍ في فهرس GitHub Models كما توثّقه GitHub: قائمةٌ في أعلى الردّ، ولكل نموذجٍ هذه الحقول
+GH_FIELDS = ("capabilities", "html_url", "id", "limits", "name", "publisher", "rate_limit_tier", "registry",
+             "summary", "supported_input_modalities", "supported_output_modalities", "tags", "version")
+
+
+def _gh_full(model, outputs=("text",)):
+    return {"id": model, "name": model.split("/")[1], "publisher": model.split("/")[0].title(), "registry": "azureml",
+            "summary": "synthetic fixture", "html_url": "https://github.com/marketplace/models/azureml/fixture",
+            "version": "1", "capabilities": ["streaming"], "limits": {"max_input_tokens": 8000, "max_output_tokens": 4000},
+            "rate_limit_tier": "low", "supported_input_modalities": ["text"],
+            "supported_output_modalities": list(outputs), "tags": ["multilingual"]}
+
+
+class _Reply(io.BytesIO):
+    def __init__(self, raw: bytes, content_type: str):
+        super().__init__(raw)
+        self.headers = {"Content-Type": content_type}
+
+
 class FreeOpener:
-    """مُفتِّحٌ محقون: الفهرسُ لطلب GET، ولكل نموذجٍ ردودُه بالترتيب (والأخيرُ يتكرّر). عددٌ = خطأ HTTP بذلك الرمز،
-    وصفٌّ (نصّ، سببُ الانتهاء) = ردٌّ خام، وقاموسٌ = أحكامٌ تُرمَّز JSON."""
+    """مُفتِّحٌ محقون: الفهرسُ لطلب GET (وبايتاتٌ خامٌ = نصٌّ عاديّ)، ولكل نموذجٍ ردودُه بالترتيب (والأخيرُ يتكرّر). عددٌ =
+    خطأ HTTP بذلك الرمز، وصفٌّ (نصّ، سببُ الانتهاء) = ردٌّ خام، وقاموسٌ = أحكامٌ تُرمَّز JSON."""
 
     def __init__(self, catalog=None, replies=None):
         self.catalog = catalog
@@ -284,10 +303,12 @@ class FreeOpener:
             reply = queue.pop(0) if len(queue) > 1 else queue[0]
         if isinstance(reply, int):
             raise urllib.error.HTTPError(request.full_url, reply, "refused", {}, None)
+        if isinstance(reply, bytes):
+            return _Reply(reply, "text/plain")
         if request.data is not None:
             content, finish = reply if isinstance(reply, tuple) else (json.dumps(reply, ensure_ascii=False), "stop")
             reply = {"choices": [{"message": {"role": "assistant", "content": content}, "finish_reason": finish}]}
-        return io.BytesIO(json.dumps(reply, ensure_ascii=False).encode("utf-8"))
+        return _Reply(json.dumps(reply, ensure_ascii=False).encode("utf-8"), "application/json")
 
     def chat_models(self):
         return [json.loads(r.data)["model"] for r in self.requests if r.data is not None]
@@ -569,7 +590,51 @@ def test_the_free_llm_workflow_is_least_privilege_pinned_and_guarded():
     assert "      - tools/external_review.py\n" in text and "      - .github/workflows/free-llm-review.yml\n" in text
     assert "options: [smoke, bank]" in text and "default: smoke" in text
     assert "github.event.pull_request.head.repo.full_name == github.repository" in text
+    catalog_step = text.split("- name: List the GitHub Models catalog", 1)[1].split("- name:", 1)[0]
+    smoke_step = text.split("- name: Planted-error smoke with two reviewers", 1)[1].split("- name:", 1)[0]
+    assert "continue-on-error: true" in catalog_step, "الفهرسُ جردٌ لا بوّابة"
+    assert "continue-on-error" not in smoke_step, "تجربةُ الخطأ المزروع هي البوّابة"
     install = text.split("- name: Install the locked runtime", 1)[1].split("- name:", 1)[0]
     assert "GITHUB_TOKEN" not in install and "'uv==0.8.17'" in install and "--frozen" in install
     assert text.count("GITHUB_TOKEN: ${{ github.token }}") == 4
     assert "tools/external_review.py evaluation/banks/kimi_v1 --backend github-models" in text
+
+
+def test_the_github_catalog_array_is_parsed_and_its_shape_named(tmp_path, monkeypatch, capsys):
+    """الشكلُ الموثَّق: قائمةٌ في أعلى الردّ. والخلاصةُ تحمل شكلَه (النوعُ والعددُ وأسماءُ الحقول) لا نصَّه."""
+    catalog = [_gh_full(DS), _gh_full(MI), _gh_full("openai/text-embedding-3-small", outputs=("embeddings",))]
+    _free(monkeypatch, FreeOpener(catalog=catalog))
+    out = tmp_path / "catalog.json"
+    assert cli.main(["--backend", "github-models", "--list-catalog", str(out)]) == 0
+    printed = _printed(capsys)
+    size = len(json.dumps(catalog, ensure_ascii=False).encode("utf-8"))
+    assert printed["shape"] == {"content_type": "application/json", "bytes": size, "top": "list", "count": 3,
+                                "item_keys": list(GH_FIELDS)}
+    assert printed["eligible"] == {"deepseek": [DS], "mistral": [MI]} and printed["candidates"] == [DS, MI]
+    assert printed["refused"] == {"not_a_chat_model": 1}
+    written = json.loads(out.read_text(encoding="utf-8"))
+    assert written["backend"]["endpoint_host"] == "models.github.ai" and written["models"] == 3
+
+
+def test_a_catalog_that_is_not_json_is_named_by_shape_and_the_smoke_uses_the_preferred_list(tmp_path, monkeypatch, capsys):
+    """قيس في ٢٨ سبتمبر ٢٠٢٦: models.github.ai يردّ «OK» نصًّا عاديًّا (٤ بايتات) لأيّ مسارٍ بلا تفويض."""
+    ok = b"OK\r\n"
+    chat = cli.OpenAICompatChat("github-models", KEY)
+    chat.opener = FreeOpener(catalog=ok)
+    with pytest.raises(AutomaticReviewError) as malformed:
+        chat.catalog()
+    assert malformed.value.code == "catalog_malformed"
+    assert malformed.value.shape == {"content_type": "text/plain", "bytes": 4, "top": "not_json"}
+    wrapped = json.dumps({"models": [_gh_full(DS)]}).encode("utf-8")
+    assert cli.catalog_shape(wrapped, "application/json") == (
+        None, {"content_type": "application/json", "bytes": len(wrapped), "top": "dict", "keys": ["models"]})
+    _free(monkeypatch, FreeOpener(catalog=ok, replies={DS: [CATCH], MI: [CATCH]}))
+    assert cli.main(["--backend", "github-models", "--list-catalog", str(tmp_path / "c.json")]) == 2
+    assert _printed(capsys) == {"status": "refused", "code": "catalog_malformed",
+                                "shape": {"content_type": "text/plain", "bytes": 4, "top": "not_json"}}
+    out = tmp_path / "smoke.json"
+    assert cli.main(["--backend", "github-models", "--smoke", str(out)]) == 0
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["status"] == "passed" and set(report["reviewers"]) == {DS, MI}
+    assert report["candidates_from"] == "preferred_list" and report["catalog_error"] == "catalog_malformed"
+    assert _printed(capsys)["catalog_error"] == "catalog_malformed"

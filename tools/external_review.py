@@ -292,6 +292,7 @@ class OpenAICompatChat:
         self._headers = {"Content-Type": "application/json", "User-Agent": "diwan-external-review",
                          **spec["headers"]}
         self.timeout, self.max_tokens = timeout, max_tokens
+        self.catalog_shape: dict | None = None
         self.opener = urllib.request.build_opener(_RefuseRedirect())
 
     def __repr__(self) -> str:
@@ -304,7 +305,8 @@ class OpenAICompatChat:
     def describe(self) -> dict:
         return {"name": self.backend, "endpoint_host": self.endpoint_host, "key_env": self.key_env}
 
-    def _send(self, url: str, payload: dict | None, label: str) -> bytes:
+    def _send(self, url: str, payload: dict | None, label: str) -> tuple[bytes, str | None]:
+        """(البايتات، نوعُ المحتوى)."""
         data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
         request = urllib.request.Request(url, data=data, method="GET" if data is None else "POST")
         for name, value in self._headers.items():
@@ -313,6 +315,8 @@ class OpenAICompatChat:
         try:
             with self.opener.open(request, timeout=self.timeout) as response:
                 raw = response.read(MAX_RESPONSE_BYTES + 1)
+                headers = getattr(response, "headers", None)
+                content_type = headers.get("Content-Type") if headers is not None else None
         except urllib.error.HTTPError as exc:
             exc.close()
             raise AutomaticReviewError(http_code(exc.code), label) from None
@@ -322,13 +326,13 @@ class OpenAICompatChat:
             raise AutomaticReviewError("transport_error", label) from None
         if len(raw) > MAX_RESPONSE_BYTES:
             raise AutomaticReviewError("response_too_large", label)
-        return raw
+        return raw, content_type
 
     def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
         # المخطّطُ موصوفٌ في التكليف نفسِه («JSON فقط»)، ولا يُرسل حقلَ response_format لأن نماذجَ في الفهرس تردّه 400
         payload = {"model": model, "stream": False, "temperature": 0, "max_tokens": self.max_tokens,
                    "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
-        raw = self._send(self.chat_url, payload, model)
+        raw, _ = self._send(self.chat_url, payload, model)
         try:
             choice = json.loads(raw)["choices"][0]
             content = choice["message"].get("content")
@@ -343,17 +347,37 @@ class OpenAICompatChat:
         return content
 
     def catalog(self) -> list[dict]:
-        """الفهرسُ مطبَّعًا: {id, chat, reason, tier}. GitHub يردّ قائمة، والموجّه {data: [...]}."""
-        raw = self._send(self.catalog_url, None, "catalog")
-        try:
-            body = json.loads(raw)
-        except ValueError:
-            raise AutomaticReviewError("catalog_malformed", self.backend) from None
-        entries = body if isinstance(body, list) else body.get("data") if isinstance(body, dict) else None
-        if not isinstance(entries, list):
-            raise AutomaticReviewError("catalog_malformed", self.backend)
+        """الفهرسُ مطبَّعًا: {id, chat, reason, tier}. GitHub يردّ قائمةً في أعلاه، والموجّه {data: [...]}.
+
+        وما سواهما `catalog_malformed` ومعه شكلُه وحده (`catalog_shape`) لا نصُّه: قيس في ٢٨ سبتمبر ٢٠٢٦ أنّ
+        models.github.ai يردّ `OK` نصًّا عاديًّا بأربعة بايتات لأيّ مسارٍ بلا تفويض، فكان الرمزُ وحده لا يفرّق بينه وبين غلافٍ مجهول.
+        """
+        raw, content_type = self._send(self.catalog_url, None, "catalog")
+        entries, self.catalog_shape = catalog_shape(raw, content_type)
+        if entries is None:
+            error = AutomaticReviewError("catalog_malformed", self.backend)
+            error.shape = self.catalog_shape
+            raise error
         return [_catalog_entry(entry) for entry in entries
                 if isinstance(entry, dict) and isinstance(entry.get("id"), str)]
+
+
+def catalog_shape(raw: bytes, content_type: str | None) -> tuple[list | None, dict]:
+    """(المدخلات أو None، الشكل): نوعُ المحتوى والحجمُ والنوعُ الأعلى وأسماءُ المفاتيح والعدد — لا نصُّ نموذجٍ ولا مفتاح."""
+    shape: dict = {"content_type": content_type, "bytes": len(raw)}
+    try:
+        body = json.loads(raw)
+    except ValueError:
+        return None, {**shape, "top": "not_json"}
+    shape["top"] = type(body).__name__
+    if isinstance(body, dict):
+        shape["keys"] = sorted(str(key) for key in body)[:20]
+        body = body.get("data")
+    if not isinstance(body, list):
+        return None, shape
+    shape["count"] = len(body)
+    shape["item_keys"] = sorted({str(key) for item in body[:50] if isinstance(item, dict) for key in item})[:40]
+    return body, shape
 
 
 def _catalog_entry(entry: dict) -> dict:
@@ -455,15 +479,25 @@ def with_fallback(candidates: list[dict], want: int, run: Callable[[list[dict]],
         chosen = replacement
 
 
-def _free_candidates(args, transport: OpenAICompatChat) -> list[dict]:
-    """المرشّحون: `--reviewer` ثم `--fallback` كما أُعطيت بصرامة، أو من الفهرس بترتيب العائلات المفضَّلة."""
+def _free_candidates(args, transport: OpenAICompatChat) -> tuple[list[dict], dict]:
+    """(المرشّحون، مصدرُهم): `--reviewer` ثم `--fallback` كما أُعطيت بصرامة، أو من الفهرس بترتيب العائلات المفضَّلة.
+
+    والفهرسُ الذي لا يُقرأ لا يُسقط التجربة صامتًا ولا يوقفها: المرشّحون من قائمة الواجهة المفضَّلة، ورمزُ الفهرس وشكلُه في التقرير.
+    """
     if args.reviewers:
         explicit = [resolve_reviewer(m) for m in args.reviewers]
         check_distinct(explicit)
-        return explicit + [resolve_reviewer(m) for m in (args.fallbacks or [])]
+        return explicit + [resolve_reviewer(m) for m in (args.fallbacks or [])], {"candidates_from": "explicit"}
     if args.fallbacks:
         raise AutomaticReviewError("fallback_without_reviewers")
-    return assess_catalog(transport.catalog(), args.backend)["candidates"]
+    try:
+        candidates = assess_catalog(transport.catalog(), args.backend)["candidates"]
+    except AutomaticReviewError as exc:          # الفهرسُ غيرُ مقروء: القائمةُ المفضَّلة، والسببُ مسمًّى
+        preferred = [resolve_reviewer(model) for family in PREFERRED_FAMILIES
+                     for model in BACKENDS[args.backend]["preferred"][family]]
+        return preferred, {"candidates_from": "preferred_list", "catalog_error": exc.code,
+                           "catalog_shape": getattr(exc, "shape", None)}
+    return candidates, {"candidates_from": "catalog", "catalog_shape": transport.catalog_shape}
 
 
 def _smoke_digest(report: dict) -> dict:
@@ -472,7 +506,7 @@ def _smoke_digest(report: dict) -> dict:
 
 
 def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
-    candidates = _free_candidates(args, transport)
+    candidates, source = _free_candidates(args, transport)
     identities = {c["model"]: c for c in candidates}
     want = max(2, len(args.reviewers or []))
     if args.every_family:
@@ -498,7 +532,7 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
                                                                                "transport_timeout"}})
         report = {"schema_version": 1, "probe": "external_review_smoke_every_family",
                   "status": "passed" if all(r["status"] == "passed" for r in runs) else "failed",
-                  "backend": transport.describe(), "models": models,
+                  "backend": transport.describe(), **source, "models": models,
                   "pairs": [[p["model"] for p in pair] for pair in pairs],
                   "runs": runs, "measurement_limits": sorted(set(runs[0]["measurement_limits"]) | set(FREE_LIMITS))}
         return report, 0 if report["status"] == "passed" else 1
@@ -518,6 +552,7 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     for model, result in report["reviewers"].items():
         result["lineage"] = identities[model]["lineage"]
     report["backend"] = transport.describe()
+    report.update(source)
     report["fallbacks"] = fallbacks
     report["measurement_limits"] = sorted(set(report["measurement_limits"]) | set(FREE_LIMITS))
     if failure:
@@ -535,7 +570,7 @@ def check_public_bank(bank: Path, root: Path | None = None) -> None:
 
 def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     check_public_bank(args.bank)
-    candidates = _free_candidates(args, transport)
+    candidates, source = _free_candidates(args, transport)
     want = max(2, len(args.reviewers or []))
     totals = {"reviewed": 0, "skipped": 0, "failed": 0}
 
@@ -550,7 +585,7 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     summary = summarize(args.bank)
     status = "failed" if failure or summary["errors"] else "reviewed"
     return {"status": status, **({"code": failure} if failure else {}), **totals,
-            "backend": transport.describe(),
+            "backend": transport.describe(), **source,
             "reviewers": {c["model"]: c["family"] for c in chosen}, "fallbacks": fallbacks,
             "pairs": summary["pairs"], "errors": len(summary["errors"]),
             "error_codes": sorted({e["error"] for e in summary["errors"]}),
@@ -573,7 +608,8 @@ def _free_main(args, parser) -> int:
             for row in assessed["rows"]:
                 if row["eligible"]:
                     eligible.setdefault(row["family"], []).append(row["id"])
-            print(json.dumps({"status": "listed", "backend": transport.describe(), "models": assessed["models"],
+            print(json.dumps({"status": "listed", "backend": transport.describe(), "shape": transport.catalog_shape,
+                              "models": assessed["models"],
                               "eligible": eligible, "refused": assessed["refused"],
                               "candidates": [c["model"] for c in assessed["candidates"][:len(PREFERRED_FAMILIES)]]},
                              ensure_ascii=False))
@@ -583,7 +619,9 @@ def _free_main(args, parser) -> int:
             _write_json(args.smoke, report)
             digest = report.get("models") or _smoke_digest(report)
             print(json.dumps({"status": report["status"], **({"code": report["code"]} if "code" in report else {}),
-                              "backend": report["backend"], "reviewers": digest,
+                              "backend": report["backend"], "candidates_from": report["candidates_from"],
+                              **({"catalog_error": report["catalog_error"]} if "catalog_error" in report else {}),
+                              "reviewers": digest,
                               "fallbacks": report.get("fallbacks", []), "out": str(args.smoke)},
                              ensure_ascii=False))
             return code
@@ -591,7 +629,9 @@ def _free_main(args, parser) -> int:
             parser.error("مجلّد البنك مطلوب، أو --smoke، أو --list-catalog")
         result, code = _free_bank(args, transport)
     except AutomaticReviewError as exc:
-        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        shape = getattr(exc, "shape", None)
+        print(json.dumps({"status": "refused", "code": exc.code, **({"shape": shape} if shape else {})},
+                         ensure_ascii=False))
         return 2
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return code
