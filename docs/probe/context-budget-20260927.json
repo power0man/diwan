@@ -15,7 +15,7 @@
    "tokens_ratio_arabic_to_english": 1.16
   }
  },
- "commit": "aeb9dab17b608dc5c0a533c0de40385973fcf1a1",
+ "commit": "ea4fe0764ebc74179ae0dde803ca4aaedc2d05d7",
  "context_window_tokens": 32768,
  "findings": [
   {
@@ -35,7 +35,7 @@
    "tool": "export_document"
   }
  ],
- "generated_at": "2026-09-28T00:41:44+00:00",
+ "generated_at": "2026-09-28T04:30:36+00:00",
  "measurement_limits": [
   "the_tokenizers_named_are_public_stand_ins_for_the_agents_that_read_section_0_since_claude_codex_and_gemini_tokenizers_are_not_public",
   "the_runtime_prefix_counts_fixed_texts_only_the_memory_block_attachments_quarantine_findings_and_history_vary_per_turn_and_are_not_counted",
@@ -49,22 +49,22 @@
  ],
  "reading_set": {
   "AGENTS.md": {
-   "bytes": 29775,
-   "chars": 18967,
+   "bytes": 30265,
+   "chars": 19296,
    "chars_per_token": {
-    "gpt-oss-20b": 2.57,
-    "qwen3.5-9b": 2.51
+    "gpt-oss-20b": 2.58,
+    "qwen3.5-9b": 2.52
    },
    "estimate_ratio": {
-    "gpt-oss-20b": 1.072,
-    "qwen3.5-9b": 1.046
+    "gpt-oss-20b": 1.074,
+    "qwen3.5-9b": 1.048
    },
-   "sha256_12": "131adb2ea30b",
+   "sha256_12": "f780ed5314e7",
    "tokens": {
-    "gpt-oss-20b": 7374,
-    "qwen3.5-9b": 7554
+    "gpt-oss-20b": 7488,
+    "qwen3.5-9b": 7672
    },
-   "tokens_estimate": 7903
+   "tokens_estimate": 8040
   },
   "docs/INDEX.md": {
    "bytes": 18458,
@@ -75,12 +75,12 @@
    },
    "estimate_ratio": {
     "gpt-oss-20b": 0.998,
-    "qwen3.5-9b": 0.863
+    "qwen3.5-9b": 0.864
    },
-   "sha256_12": "06a65699b0a2",
+   "sha256_12": "1adec3c40c14",
    "tokens": {
     "gpt-oss-20b": 4889,
-    "qwen3.5-9b": 5648
+    "qwen3.5-9b": 5647
    },
    "tokens_estimate": 4877
   },
@@ -104,26 +104,26 @@
   }
  },
  "reading_set_totals": {
-  "bytes": 58630,
+  "bytes": 59120,
   "tokens": {
-   "gpt-oss-20b": 14321,
-   "qwen3.5-9b": 15209
+   "gpt-oss-20b": 14435,
+   "qwen3.5-9b": 15326
   },
-  "tokens_estimate": 15263
+  "tokens_estimate": 15400
  },
  "run": {
-  "how": "git clone --depth 1 --branch claude/context-budget-20260927 للمستودع العام عند aeb9dab (رأسُ الفرع بعد توليد الفهرس النهائيّ) + pip install tokenizers huggingface_hub cryptography + تنزيلُ tokenizer.json للنموذجين من الـHub بلا رمز + تشغيلُ الأداة بـ--tokenizer-file مرّتين في تشغيلةٍ واحدة",
+  "how": "git clone --branch claude/context-budget-20260927 للمستودع العام ثم checkout ea4fe07 (رأسُ الفرع بعد دمج main b102bbe وإصلاحات Codex) + pip install tokenizers huggingface_hub cryptography + تنزيلُ tokenizer.json للنموذجين من الـHub بلا رمز + تشغيلُ الأداة بـ--tokenizer-file مرّتين في تشغيلةٍ واحدة؛ بصماتُ الوثائق المقيسة (sha256sum في الصندوق) تطابق ما في التقرير",
   "reproduce": "python tools/context_budget.py --tokenizer qwen3.5-9b=Qwen/Qwen3.5-9B --tokenizer gpt-oss-20b=openai/gpt-oss-20b --report out.json (يلزم tokenizers وشبكةٌ إلى الـHub، أو --tokenizer-file بملفَّين محلّيَّين)",
   "spend": {
    "cap": "HFD2 ($20 شحنًا مسبقًا)",
-   "cumulative_minutes_for_this_audit": 13,
-   "estimate_usd": "≤ 0.02 للتشغيلتين بسعر cpu-basic المعلَن للحظة التشغيل؛ فاتورةُ HF هي الحاسمة ولم تُقرأ بعد",
+   "cumulative_minutes_for_this_audit": 19,
+   "estimate_usd": "≤ 0.03 للتشغيلات الثلاث بسعر cpu-basic المعلَن للحظة التشغيل؛ فاتورةُ HF هي الحاسمة ولم تُقرأ بعد",
    "flavor": "cpu-basic",
    "minutes": 6,
    "recorded_per": "ق٦٧-٣: كلُّ إنفاقٍ يُسجَّل في docs/probe/"
   },
   "wall_clock_minutes": 6,
-  "where": "Hugging Face Jobs sandbox (ق٦٧-٣)، flavor cpu-basic، image python:3.12، job 6ab9b7606b030d633f69b17c على حساب المالك"
+  "where": "Hugging Face Jobs sandbox (ق٦٧-٣)، flavor cpu-basic، image python:3.12، job 6ab9e89052d0dbd7f1d9fa0d على حساب المالك"
  },
  "runtime_prefix": {
   "configurations": {
@@ -1635,14 +1635,30 @@
  },
  "schema_version": 1,
  "superseded_measurement": {
-  "commit": "bbb2789c26d6cf7607ba4779a79720ff0f022197 (main) مع أداة الفرع محقونةً وقاسمِ التقدير القديم ٣",
-  "job": "6ab9ac7752d0dbd7f1d9eba6، cpu-basic، نحو ٧ دقائق",
-  "reading_set_tokens": {
-   "gpt-oss-20b": 14292,
-   "qwen3.5-9b": 15168
+  "commit": "aeb9dab17b608dc5c0a533c0de40385973fcf1a1 (رأسُ الفرع قبل دمج main b102bbe)",
+  "earlier": {
+   "commit": "bbb2789c26d6cf7607ba4779a79720ff0f022197 (main) مع أداة الفرع محقونةً وقاسمِ التقدير القديم ٣",
+   "job": "6ab9ac7752d0dbd7f1d9eba6، cpu-basic، نحو ٧ دقائق",
+   "reading_set_tokens": {
+    "gpt-oss-20b": 14292,
+    "qwen3.5-9b": 15168
+   },
+   "tokens_estimate_at_divisor_3": 12186,
+   "why_superseded": "ملاحظةُ Codex على #157: الدليلُ يجب أن يقيس الفهرسَ النهائيّ للرأس المنشور لا main؛ ومخطّطاتُ الأدوات كانت قائمةً ثابتة لا سجلَّ التطبيق"
   },
-  "tokens_estimate_at_divisor_3": 12186,
-  "why_superseded": "ملاحظةُ Codex على #157: الدليلُ يجب أن يقيس الفهرسَ النهائيّ للرأس المنشور لا main؛ ومخطّطاتُ الأدوات كانت قائمةً ثابتة لا سجلَّ التطبيق"
+  "job": "6ab9b7606b030d633f69b17c، cpu-basic، نحو ٦ دقائق",
+  "reading_set_bytes": 58630,
+  "reading_set_sha256_12": {
+   "AGENTS.md": "131adb2ea30b",
+   "docs/INDEX.md": "06a65699b0a2",
+   "docs/VISION.md": "df9b1b18e0bb"
+  },
+  "reading_set_tokens": {
+   "gpt-oss-20b": 14321,
+   "qwen3.5-9b": 15209
+  },
+  "tokens_estimate": 15263,
+  "why_superseded": "ملاحظةُ Codex على #157: دمجُ main (b102bbe) بعد القياس غيّر AGENTS.md (§٥) وdocs/INDEX.md فلم تعد بصماتُ الدليل بصماتِ الرأس المنشور؛ أرقامُ السابقة والضريبة لم تتغيّر لأن شيفرة التشغيل لم تتغيّر"
  },
  "thresholds": {
   "estimate_drift": 0.2,
