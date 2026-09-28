@@ -114,7 +114,7 @@ MEASUREMENT_LIMITS = (
     "the_data_is_the_owner_s_own_use_on_one_machine_not_a_sample_of_users",
     "the_report_carries_counts_machine_codes_utc_dates_and_durations_only_and_the_tool_refuses_to_write_a_report_with_any_other_string",
     "the_baseline_cohort_is_the_first_30_dated_journeys_inside_the_m1_window_recorded_in_the_plan_unless_the_owner_passes_baseline_from_or_baseline_until_and_the_cumulative_totals_are_not_the_baseline",
-    "within_a_utc_day_journeys_are_ordered_by_their_session_s_creation_mtime_then_their_position_in_it_and_a_cut_between_sessions_whose_writes_overlap_that_day_is_refused_not_guessed",
+    "within_a_utc_day_journeys_are_ordered_by_their_session_s_creation_mtime_then_their_position_in_it_and_a_cut_between_sessions_whose_writes_overlap_or_tie_that_day_is_refused_not_guessed",
     "an_unreadable_entry_or_an_undated_journey_that_may_fall_before_the_cut_blocks_baseline_ready_and_nulls_the_completion_rate_it_would_bias",
     "a_later_write_to_a_session_that_holds_baseline_journeys_can_undate_or_reorder_them_so_the_baseline_is_the_first_report_that_says_baseline_ready",
 )
@@ -445,10 +445,11 @@ def _order(journey: dict) -> tuple:
 
 
 def _cut_order_unknown(members: list[dict], rest: list[dict], cut: str) -> bool:
-    """القطعُ بين جلستين في يومه لا يُثبت ترتيبُه إن كُتبت جلسةٌ فيها رحلةٌ مختارة بعد أن أُنشئت جلسةٌ فيها رحلةٌ متروكة."""
+    """القطعُ بين جلستين في يومه لا يُثبت ترتيبُه إن كُتبت جلسةٌ فيها رحلةٌ مختارة بعد أن أُنشئت جلسةٌ فيها رحلةٌ متروكة
+    أو في اللحظة نفسِها: تساوي الأزمنة (نسخٌ أو استعادة، أو دقّةُ نظام ملفاتٍ خشنة) لا يُثبت ترتيبًا، ولا يحسمه معرّفٌ عشوائي."""
     chosen = {j["_order"]["session"]: j["_order"] for j in members if j["date"] == cut}
     left = {j["_order"]["session"]: j["_order"] for j in rest if j["date"] == cut}
-    return any(a["last"] > b["created"] for sa, a in chosen.items() for sb, b in left.items() if sa != sb)
+    return any(a["last"] >= b["created"] for sa, a in chosen.items() for sb, b in left.items() if sa != sb)
 
 
 def _may_fall_in(journey: dict, start: str, end: str) -> bool:

@@ -582,6 +582,28 @@ def test_the_baseline_is_exactly_the_first_thirty_and_later_journeys_do_not_move
     assert unknown["baseline"]["cohort"]["completion_rate"] is None
 
 
+def test_a_timestamp_tie_at_the_cut_is_unprovable_and_a_tie_on_one_side_of_it_is_not(cohort_store, tmp_path, capsys):
+    """أزمنةٌ متساوية (نسخٌ أو استعادة، أو دقّةٌ خشنة) لا تُثبت ترتيبًا: عبر القطع تحجبه، وفي جهةٍ واحدة منه لا تمسّه."""
+    tie = DAY_ONE + DAY - HOUR
+    # C وD بزمنٍ واحد يومَ القطع والقطعُ بينهما: أيُّهما سبق لا يُعرف، ولا يحسمه المعرّفُ العشوائي
+    across = report_of(placed(cohort_store, tmp_path, drop="EFG", C=(tie, tie), D=(tie, tie)), tmp_path, capsys,
+                       *WINDOW)
+    assert across["baseline_ready"] is False and across["baseline"]["missing"] == ["baseline_cut_order_unknown"]
+    assert across["baseline"]["cohort"]["completion_rate"] is None
+    # B وC بزمنٍ واحد وكلتاهما داخل الثلاثين، وD بعدهما: الفوجُ هو هو أيًّا سبق
+    inside = report_of(placed(cohort_store, tmp_path, drop="EFG", B=(tie, tie), C=(tie, tie)), tmp_path, capsys,
+                       *WINDOW)
+    cohort = inside["baseline"]["cohort"]
+    assert inside["baseline_ready"] is True and cohort["by_date"] == {"2026-10-01": 12, "2026-10-02": 18}
+    assert cohort["completion_rate"] == 0.9
+    # D وE بزمنٍ واحد وكلتاهما بعد القطع: لا تمسّانه
+    later = DAY_ONE + DAY
+    after = report_of(placed(cohort_store, tmp_path, drop="FG", D=(later, later), E=(later, later)), tmp_path, capsys,
+                      *WINDOW)
+    assert after["baseline_ready"] is True and after["baseline"]["cohort"]["window_dated_journeys"] == 38
+    assert after["baseline"]["cohort"]["completion_rate"] == 0.9
+
+
 def test_the_baseline_window_is_the_m1_phase_the_plan_records_and_is_never_invented(world, tmp_path, capsys,
                                                                                      monkeypatch):
     plan = json.loads((ROOT / "docs" / "PLAN-20260926.json").read_text(encoding="utf-8"))
