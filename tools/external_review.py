@@ -660,17 +660,29 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
 
     chosen, fallbacks, failure = with_fallback(candidates, want, run)
     summary = summarize(args.bank)
-    status = "failed" if failure or summary["errors"] else "reviewed"
+    # النجاحُ يُحكم من المجموعة الأخيرة (ملاحظة Codex على #174): نفادُ حصّة مراجعٍ استُبدل به بديلٌ أتمّ عملَه تاريخٌ مسمًّى
+    # (superseded ومعه البديل) لا خطأٌ يُسقط التشغيل؛ فإن أخفق البديلُ أيضًا عُدّ الخطآن كلاهما. وأخطاءُ مراجعين خارج هذا
+    # التشغيل (سجلّاتٌ قديمة في reviews/) لا تُحسب عليه، وتُروى عددًا.
+    final_models = {c["model"] for c in chosen}
+    replaced_by = {model: entry["replacement"] for entry in fallbacks for model in entry["exhausted"]}
+    final_errors = [e for e in summary["errors"] if e["model"] in final_models]
+    quota_errors = [e for e in summary["errors"] if e["model"] in replaced_by and e["error"] == "quota_exhausted"]
+    if failure or final_errors:
+        counted, superseded = final_errors + quota_errors, []
+    else:
+        counted = []  # المستبدَلُ ناجحًا تاريخٌ لا خطأ
+        superseded = [{**e, "superseded_by": replaced_by[e["model"]]} for e in quota_errors]
+    status = "failed" if failure or counted else "reviewed"
     result = {"status": status, **({"code": failure} if failure else {}), **totals,
               "backend": transport.describe(), **source,
               "reviewers": {c["model"]: c["family"] for c in chosen}, "fallbacks": fallbacks,
-              "pairs": summary["pairs"], "errors": len(summary["errors"]),
-              "error_codes": sorted({e["error"] for e in summary["errors"]}),
+              "pairs": summary["pairs"], "errors": len(counted),
+              "error_codes": sorted({e["error"] for e in counted}), "superseded": superseded,
+              "errors_of_other_reviewers": len(summary["errors"]) - len(final_errors) - len(quota_errors),
               "owner_queue": len(summary["owner_queue"]), "last_failure_shapes": transport.failures,
               "summary": str(args.bank / "reviews" / "SUMMARY.json")}
     if not totals["reviewed"] and not totals["skipped"]:        # لم يُجب نموذجٌ واحد في هذا التشغيل
-        chosen_models = {c["model"] for c in chosen}
-        _mark_unavailable(result, [e["error"] for e in summary["errors"] if e["model"] in chosen_models])
+        _mark_unavailable(result, [e["error"] for e in final_errors])
     return result, EXIT_CODES.get(result["status"], 1)
 
 

@@ -761,3 +761,45 @@ def test_the_exact_url_and_method_go_out_and_are_recorded_for_chat_and_catalog()
         assert chat.failures[DS]["request"] == {"method": "POST", "sent": chat_url, "final": chat_url}
         assert chat.last_request[DS] == chat.failures[DS]["request"]
     assert cli.bare_url("https://user:pw@models.github.ai:443/inference/chat/completions?token=abc#frag") == GH_CHAT
+
+
+def _public_bank(root: Path, name: str) -> Path:
+    bank = root / "evaluation" / "banks" / name
+    source = _bank(root / "src" / name) / "open" / "tier_a" / "kimi_t_a_001.json"
+    (bank / "open" / "a").mkdir(parents=True)
+    (bank / "open" / "a" / "kimi_x.json").write_bytes(source.read_bytes())
+    return bank
+
+
+def test_a_bank_quota_superseded_by_a_successful_fallback_is_history_not_failure(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174: نفادُ حصّة مراجعٍ أتمّ بديلُه من عائلةٍ أخرى عملَه لا يُسقط التشغيل، ويبقى مسمًّى."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    args = ["--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--fallback", LL, "--brief", str(BRIEF)]
+    bank = _public_bank(tmp_path, "b1")
+    stale = bank / "reviews" / "old-reviewer" / "a" / "kimi_x.json"          # سجلٌّ قديم لمراجعٍ خارج هذا التشغيل
+    stale.parent.mkdir(parents=True)
+    stale.write_text(json.dumps({"model": "old-reviewer", "file": "a/kimi_x.json", "error": "transport_error"}),
+                     encoding="utf-8")
+    _free(monkeypatch, FreeOpener(replies={DS: [429], MI: [_ok(ids)], LL: [_ok(ids)]}))
+    assert cli.main([str(bank), *args]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["status"] == "reviewed" and result["errors"] == 0 and result["error_codes"] == []
+    assert result["reviewers"] == {MI: "mistral", LL: "meta"}
+    assert result["superseded"] == [{"model": DS, "file": "a/kimi_x.json", "error": "quota_exhausted",
+                                     "superseded_by": [LL]}]
+    assert result["fallbacks"] == [{"exhausted": [DS], "code": "quota_exhausted", "replacement": [LL]}]
+    assert result["errors_of_other_reviewers"] == 1
+    # البديلُ أخفق أيضًا: الخطآن كلاهما يُعدّان، ولا «مستبدَل»
+    _free(monkeypatch, FreeOpener(replies={DS: [429], MI: [_ok(ids)], LL: [("", "stop")]}))
+    assert cli.main([str(_public_bank(tmp_path, "b2")), *args]) == 1
+    result = json.loads(capsys.readouterr().out)
+    assert result["status"] == "failed" and result["error_codes"] == ["quota_exhausted", "reply_empty"]
+    assert result["errors"] == 2 and result["superseded"] == []
+    # لا بديلَ من عائلةٍ أخرى: إخفاقٌ مسمًّى
+    _free(monkeypatch, FreeOpener(replies={DS: [429], MI: [_ok(ids)]}))
+    assert cli.main([str(_public_bank(tmp_path, "b3")), "--backend", "github-models", "--reviewer", DS,
+                     "--reviewer", MI, "--brief", str(BRIEF)]) == 1
+    result = json.loads(capsys.readouterr().out)
+    assert result["status"] == "failed" and result["code"] == "quota_exhausted_no_fallback"
+    assert result["error_codes"] == ["quota_exhausted"]
