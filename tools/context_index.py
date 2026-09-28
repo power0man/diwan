@@ -322,10 +322,15 @@ def probe_text(root: Path, state: dict, agents_new: str, archive_new: str, index
     after["regenerated_by"] = "tools/context_index.py --write"
     probe["every_indexed_document_after"] = {p: {"bytes": d["bytes"], "tokens_estimate": d["tokens_estimate"]} for p, d in docs.items()}
     probe["tool"] = "tools/context_index.py --write (قسمُ «بعد» يُولَّد مع الفهرس من اللقطة نفسِها؛ و--print-budget يقرأ القرص)"
-    limit = "the_after_section_is_regenerated_by_context_index_write_from_the_same_snapshot_as_the_index_so_it_describes_the_tree_of_the_commit_that_carries_it_while_before_stays_the_113d1b4_measurement"
-    limits = probe.setdefault("measurement_limits", [])
-    if limit not in limits:
-        limits.append(limit)
+    # حدودُ القاسم لكل قسمٍ باسمه: «قبل» بالقاسم القديم ثلاثة (قياسُ 113d1b4 تاريخٌ لا يُمسّ)، و«بعد» بالقاسم المطبَّق في هذه
+    # الأداة نفسِها فلا يتناقض الدليلُ مع أرقامه؛ والحدُّ القديم الذي كان يصف القسمين بقاسمٍ واحد يُزال (ملاحظة Codex على #157)
+    limits = [l for l in probe.get("measurement_limits", []) if not l.startswith("tokens_estimate_is_characters_divided_by")]
+    for limit in ("before_tokens_estimate_is_characters_divided_by_three_the_pre_calibration_heuristic_of_the_113d1b4_measurement_not_a_tokenizer_count",
+                  f"after_tokens_estimate_is_characters_divided_by_{str(CHARS_PER_TOKEN).replace('.', '_')}_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count",
+                  "the_after_section_is_regenerated_by_context_index_write_from_the_same_snapshot_as_the_index_so_it_describes_the_tree_of_the_commit_that_carries_it_while_before_stays_the_113d1b4_measurement"):
+        if limit not in limits:
+            limits.append(limit)
+    probe["measurement_limits"] = limits
     return json.dumps(probe, ensure_ascii=False, indent=2) + "\n"
 
 

@@ -66,6 +66,7 @@ LIMITS = [
     "special_tokens_and_chat_template_framing_are_excluded_so_measured_totals_are_lower_bounds_of_what_the_engine_sees",
     "the_arabic_token_tax_is_one_fixed_paragraph_pair_not_a_corpus_statistic",
     "the_context_window_is_the_provider_constant_context_tokens_not_a_measurement_of_the_served_model",
+    "the_hub_tokenizer_named_for_the_engine_is_a_proxy_the_ollama_tag_qwen3_5_9b_is_a_service_name_not_an_artifact_digest_so_the_pinned_hub_revision_is_not_bound_to_the_served_model_s_embedded_tokenizer",
 ]
 
 
