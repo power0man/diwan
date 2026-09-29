@@ -32,7 +32,8 @@ UTC حين يُعرف، والزمنُ حين يُعرف؛ ثم المجاميع
 `output_exists` (لا يُكتب فوق ملفٍّ قائم)، `output_dir_missing`، `output_unwritable`، `baseline_date_invalid`،
 `baseline_window_invalid` (البدءُ بعد النهاية)، `report_leak`؛ ولخطّ الأساس المجمَّد: `baseline_already_frozen`،
 `frozen_baseline_lost` (نُشر تقريرٌ يشير إليه ثم غاب)، `frozen_baseline_changed`، `frozen_baseline_unreadable`،
-`frozen_baseline_unpublished` (لا تقريرَ منشورًا يشير إليه)، `baseline_publish_failed`، `refreeze_reason_invalid`،
+`frozen_baseline_unpublished` (لا تقريرَ منشورًا يشير إليه)، `probe_output_name_invalid` (تقريرٌ في docs/probe باسمٍ غير
+journeys-*.json، أو باسم المجمَّد)، `baseline_publish_failed`، `refreeze_reason_invalid`،
 `refreeze_requires_probe_output`، `refreeze_baseline_not_ready`، `journeys_report_unreadable` (تقريرٌ منشور تالف؛ تُقرّ به
 إعادةُ التجميد ببصمة ملفّه في `acknowledged_reports`).
 
@@ -50,6 +51,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import fnmatch
 import hashlib
 from collections import Counter
 from datetime import datetime, timezone
@@ -848,13 +850,19 @@ def _load_frozen(path: Path) -> dict | None:
     return {**value, "digest": own, "known": {own, *(item["digest"] for item in value["history"])}}
 
 
-def _pointers(probe: Path, frozen_name: str, acknowledged: frozenset = frozenset()) -> tuple[set[str], set[str]]:
+def _report_name(name: str) -> bool:
+    """اسمُ تقرير رحلاتٍ منشور كما يقرؤه الماسح: journeys-*.json سوى المجمَّد. ولا يُنشر في docs/probe باسمٍ غيره، فلا
+    يولد مجمَّدٌ من تقريرٍ لا يراه التشغيلُ التالي."""
+    return fnmatch.fnmatchcase(name, "journeys-*.json") and name != FROZEN_NAME
+
+
+def _pointers(probe: Path, acknowledged: frozenset = frozenset()) -> tuple[set[str], set[str]]:
     """(بصماتُ خطّ الأساس المجمَّد التي سجّلتها تقاريرُ الرحلات المنشورة، وبصماتُ ملفّات التقارير التالفة): أثرٌ يفرّق «لم
     يُجمَّد قطّ» من «جُمِّد ثم ضاع». والتقريرُ التالف (مؤشّرُه ليس بصمةً من ٦٤ محرفًا) لا يُخمَّن مؤشّرُه؛ إلا ما أقرّت به
     إعادةُ تجميدٍ سابقة ببصمة ملفّه بعينها (`acknowledged_reports`)."""
     found, damaged = set(), set()
     for path in sorted(probe.glob("journeys-*.json")):
-        if path.name == frozen_name:
+        if not _report_name(path.name):
             continue
         try:
             data = path.read_bytes()
@@ -947,6 +955,8 @@ def main(argv=None) -> int:
     frozen_path = PROBE_DIR / FROZEN_NAME
     reason = args.refreeze_baseline
     try:
+        if publish and not _report_name(out.name):
+            raise Refused("probe_output_name_invalid")
         if reason is not None and (not MACHINE_CODE.fullmatch(reason) or HEX_RUN.search(reason)):
             raise Refused("refreeze_reason_invalid")
         if reason is not None and not publish:
@@ -958,7 +968,7 @@ def main(argv=None) -> int:
             if reason is None:
                 raise
             frozen = None                   # إعادةُ التجميد تستبدل مجمَّدًا تالفًا، وبصماتُ ما نُشر تبقى في history
-        pointers, damaged = _pointers(PROBE_DIR, FROZEN_NAME,
+        pointers, damaged = _pointers(PROBE_DIR,
                                       frozenset(frozen["acknowledged_reports"]) if frozen is not None else frozenset())
         if damaged and reason is None:
             raise Refused("journeys_report_unreadable")

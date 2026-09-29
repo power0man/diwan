@@ -857,6 +857,17 @@ def test_a_damaged_published_report_is_refused_by_name_and_a_refreeze_acknowledg
     assert published(m2_store, probe, tmp_path, capsys, "r3")["baseline"]["frozen"]["state"] == "loaded"
 
 
+def test_a_published_report_must_carry_a_name_the_scanner_reads(m2_store, probe, tmp_path, capsys):
+    """تقريرٌ في docs/probe باسمٍ لا يقرؤه الماسح (أو باسم المجمَّد) يُرفض قبل أن يُكتب شيء: وإلا وُلد مجمَّدٌ لا يرى
+    التشغيلُ التالي تقريرَه فيرفضه يتيمًا."""
+    store = placed(m2_store, tmp_path, times=M2_TIMES)
+    for name in ("report.json", "journeys-baseline.json", "journeys-r1.txt"):
+        assert run(store, probe / name, capsys, *WINDOW) == (2, {"status": "refused", "code": "probe_output_name_invalid"})
+        assert sorted(path.name for path in probe.iterdir()) == []
+    assert published(m2_store, probe, tmp_path, capsys, "r1", *WINDOW)["baseline"]["frozen"]["state"] == "frozen_now"
+    assert published(m2_store, probe, tmp_path, capsys, "r2")["baseline"]["frozen"]["state"] == "loaded"
+
+
 def test_the_report_and_the_frozen_baseline_are_published_together(m2_store, probe, tmp_path, capsys, monkeypatch):
     frozen_file = probe / "journeys-baseline.json"
 
