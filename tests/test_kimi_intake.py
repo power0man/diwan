@@ -333,3 +333,15 @@ def test_a_prose_reference_solution_is_named_not_a_crash(tmp_path):
     assert codes.count("reference_solution_not_a_file_map") == 1 and "decoy_solution_not_a_file_map" in codes
     assert report["counts"]["reference_not_a_file_map"] == 1
     assert report["counts"]["reference_passes"] == AGENTIC_MIN_TASKS - 1
+
+
+def test_a_passing_decoy_is_named_even_when_its_reference_is_prose(tmp_path):
+    """الشرَكُ فحصٌ مستقلّ: مرجعٌ نثريّ يُسمّى، وشرَكُ المهمّة نفسِها إن مرّ يُعدّ ويُسمّى (#191)."""
+    src = delivery(tmp_path)
+    meta = json.loads((src / "agentic_v3.meta.json").read_text())
+    meta["tasks"]["d0"] = {"reference_solution": "في notes.txt غيّر old إلى new", "decoy_solution": {"notes.txt": "new"}}
+    _write(src / "agentic_v3.meta.json", meta)
+    report = check_agentic(src)
+    codes = [f["code"] for f in report["failures"]]
+    assert "reference_solution_not_a_file_map" in codes and "decoy_solution_passes" in codes
+    assert report["counts"]["decoy_passes"] == 1

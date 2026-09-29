@@ -85,6 +85,7 @@
     "gameable_check_patterns_of_k17_are_counted_only_as_cases_without_checks",
     "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged",
     "first_container_run_crashed_on_prose_references_so_counts_are_from_the_rerun_after_the_intake_fix",
-    "sealed_half_not_produced_and_not_judged_here"
+    "sealed_half_not_produced_and_not_judged_here",
+    "decoy_checks_were_skipped_for_the_56_tasks_with_a_prose_reference_by_the_intake_that_produced_these_counts_so_decoy_passes_0_covers_only_the_114_tasks_with_a_file_map_reference_the_fixed_intake_judges_decoys_independently_and_the_rerun_after_the_kimi_fix_decides"
   ]
 }

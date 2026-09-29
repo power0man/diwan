@@ -341,13 +341,14 @@ def check_agentic(src: Path, *, judge=_judge) -> dict:
             if not _is_file_map(solution.get("reference_solution")):
                 counts["reference_not_a_file_map"] += 1
                 _failure(failures, relative, "reference_solution_not_a_file_map")
-                continue
-            reference, tampered = judge(task, solution.get("reference_solution"))
-            if reference["passed"] and not tampered:
-                counts["reference_passes"] += 1
             else:
-                counts["reference_fails"] += 1
-                _failure(failures, relative, "reference_solution_fails")
+                reference, tampered = judge(task, solution.get("reference_solution"))
+                if reference["passed"] and not tampered:
+                    counts["reference_passes"] += 1
+                else:
+                    counts["reference_fails"] += 1
+                    _failure(failures, relative, "reference_solution_fails")
+            # الشرَكُ يُحكم مستقلًّا عن الحلّ المرجعيّ: مرجعٌ نثريّ لا يُسقط فحصَ شرَكٍ يمرّ (#191)
             if "decoy_solution" in solution and not _is_file_map(solution["decoy_solution"]):
                 _failure(failures, relative, "decoy_solution_not_a_file_map")
             elif "decoy_solution" in solution and judge(task, solution["decoy_solution"])[0]["passed"]:
