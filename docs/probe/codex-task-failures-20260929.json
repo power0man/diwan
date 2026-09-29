@@ -1,0 +1,106 @@
+{
+ "schema_version": 1,
+ "probe": "codex-task-failures",
+ "task": "ق٧٠: إسنادُ مسائل إلى مهامّ Codex السحابية بتعليق @codex",
+ "date": "2026-09-29",
+ "agent": "anthropic/claude-opus-5-5",
+ "reply_text": "Codex couldn't complete this request. Try again later.",
+ "attempts": [
+  {
+   "issue": 182,
+   "request_comment": 5880810724,
+   "requested_utc": "2026-09-28T23:42:21Z",
+   "reply_comment": 5880820908,
+   "replied_utc": "2026-09-28T23:43:10Z"
+  },
+  {
+   "issue": 151,
+   "request_comment": 5880811546,
+   "requested_utc": "2026-09-28T23:42:25Z",
+   "reply_comment": 5880828077,
+   "replied_utc": "2026-09-28T23:43:42Z"
+  },
+  {
+   "issue": 142,
+   "request_comment": 5880812393,
+   "requested_utc": "2026-09-28T23:42:30Z",
+   "reply_comment": 5880830735,
+   "replied_utc": "2026-09-28T23:43:54Z"
+  },
+  {
+   "issue": 152,
+   "request_comment": 5880813466,
+   "requested_utc": "2026-09-28T23:42:34Z",
+   "reply_comment": 5880834655,
+   "replied_utc": "2026-09-28T23:44:11Z"
+  },
+  {
+   "issue": 186,
+   "request_comment": 5880824861,
+   "requested_utc": "2026-09-28T23:43:29Z",
+   "reply_comment": 5880843372,
+   "replied_utc": "2026-09-28T23:44:50Z"
+  },
+  {
+   "issue": 187,
+   "request_comment": 5880825719,
+   "requested_utc": "2026-09-28T23:43:32Z",
+   "reply_comment": 5880845747,
+   "replied_utc": "2026-09-28T23:45:00Z"
+  },
+  {
+   "issue": 188,
+   "request_comment": 5880826394,
+   "requested_utc": "2026-09-28T23:43:35Z",
+   "reply_comment": 5880838808,
+   "replied_utc": "2026-09-28T23:44:29Z"
+  },
+  {
+   "issue": 190,
+   "request_comment": 5880905604,
+   "requested_utc": "2026-09-28T23:50:28Z",
+   "reply_comment": 5880921628,
+   "replied_utc": "2026-09-28T23:52:02Z"
+  },
+  {
+   "issue": 182,
+   "retry": true,
+   "request_comment": 5881152446,
+   "requested_utc": "2026-09-29T00:14:38Z",
+   "reply_comment": 5881168533,
+   "replied_utc": "2026-09-29T00:16:12Z"
+  }
+ ],
+ "earlier_replies": {
+  "note": "في ٢٧ سبتمبر ردّ Codex على #142 و#151 و#152 بـ«أنشئ بيئة»، والبيئةُ أُنشئت قبل هذه المحاولات",
+  "reply_comments": [
+   5854973981,
+   5855631376,
+   5855845840
+  ]
+ },
+ "same_window_reviews_succeeded": [
+  {
+   "pr": 185,
+   "review": 5346031300,
+   "submitted_utc": "2026-09-28T23:49:19Z"
+  }
+ ],
+ "summary": {
+  "attempts": 9,
+  "assignments": 8,
+  "retries": 1,
+  "failed": 9,
+  "window_utc": [
+   "2026-09-28T23:43:10Z",
+   "2026-09-29T00:16:12Z"
+  ],
+  "totals_rule": "attempts = عددُ صفوف attempts = assignments + retries؛ وfailed ما جاء ردُّه reply_text"
+ },
+ "measurement_limits": [
+  "the_reply_names_no_cause_so_quota_exhaustion_is_an_inference_not_a_measurement",
+  "whether_the_nine_failures_share_one_event_is_unknown_they_fall_within_33_minutes",
+  "codex_task_ids_are_not_exposed_in_the_replies_so_the_comment_ids_are_the_only_identifiers",
+  "one_night_only_no_repeat_after_quota_renewal_yet"
+ ]
+}

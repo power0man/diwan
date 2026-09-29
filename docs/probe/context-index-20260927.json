@@ -81,8 +81,8 @@
       "tokens_estimate": 2483
     },
     "docs/DECISIONS.md": {
-      "bytes": 152321,
-      "tokens_estimate": 37975
+      "bytes": 160545,
+      "tokens_estimate": 40034
     },
     "docs/PLAN-20260926.md": {
       "bytes": 218447,
@@ -121,8 +121,8 @@
       "tokens_estimate": 451
     },
     "docs/HANDOFF-PROMPT.md": {
-      "bytes": 57514,
-      "tokens_estimate": 14890
+      "bytes": 57851,
+      "tokens_estimate": 14970
     }
   },
   "measurement_limits": [
