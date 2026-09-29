@@ -123,8 +123,17 @@
   "new_beyond_the_existing_advisory_review": 0,
   "missed": "لم يلتقط نموذجٌ أيًّا من عيوب #179 الثلاثة من درجة P1 ولا ثغرةَ الهروب في JSON",
   "dominant_false_positive": "DeepSeek وPhi-4 قرأا طفرات tests/mutations/*.jsonl المقصودة تغييراتٍ حقيقية في الشيفرة، فجاءت كلُّ الملاحظات العالية على #178 و#180 من ذلك",
-  "verdict": "النماذجُ المجانية الأربعة لا تُستعمل مراجِعًا للشيفرة؛ تبقى لمراجعة البنوك وتجربة الخطأ المزروع، وجردُ ذلك ودليلُه مع #174",
-  "totals_rule": "findings = عددُ صفوف findings = مجموعُ findings_by_family في كل الطلبات = confirmed + plausible + rejected + unverified_low؛ وكلُّها تُحسب من صفوف findings (tests/test_free_llm_review_probe.py)؛ وnew_beyond_the_existing_advisory_review = المؤكَّدةُ والمحتملة التي لا advisory_item لها"
+  "verdict": "النماذجُ المجانية الأربعة لا تُستعمل مراجِعًا لطلبات Codex على هذا الإعداد (نداءٌ واحد بحرارة ٠ على فرق الطلب وحده)؛ وشيفرةُ العائلات الأخرى والنداءاتُ المتكرّرة لم تُقَس، فلا يمتدّ إليها المنعُ ولا يُنقض إلا بقياسٍ يشملها. وتبقى لمراجعة البنوك وتجربة الخطأ المزروع، وجردُ ذلك ودليلُه مع #174",
+  "totals_rule": "findings = عددُ صفوف findings = مجموعُ findings_by_family في كل الطلبات = confirmed + plausible + rejected + unverified_low؛ وكلُّها تُحسب من صفوف findings (tests/test_free_llm_review_probe.py)؛ وnew_beyond_the_existing_advisory_review = المؤكَّدةُ والمحتملة التي لا advisory_item لها",
+  "verdict_scope": {
+   "measured": "خمسةُ طلباتٍ من عائلة openai، نداءٌ واحد لكل نموذج على كل طلب، بحرارة ٠",
+   "not_measured": [
+    "شيفرةُ عائلاتٍ أخرى",
+    "نداءاتٌ متكرّرة أو بحرارةٍ أخرى",
+    "نماذجُ أخرى في الموجّه نفسِه",
+    "سياقٌ أوسع من فرق الطلب"
+   ]
+  }
  },
  "spend": {
   "sandboxes": [
