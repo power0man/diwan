@@ -100,10 +100,11 @@ def recount(path: Path, suite: Path, parser) -> int:
         # بجسد طلب النموذج الذي قيس به التقريرُ (`engine.model`) لا المعتمَد: شاهدٌ يقع في اسم المعتمَد وحده قُبل عند القياس،
         # فلا يُردّ عند إعادة العدّ (ملاحظة Codex على #129، الجولة الثانية والأربعون)
         bank = validate_memory_bank(json.loads(raw.decode("utf-8")), model=(report.get("engine") or {}).get("model"))
+        # وتقريرٌ لا تُعرف فيه هويّةُ شاهدٍ إلا بنصّه المبتور الملتبس يُردّ باسمه (`witness_prefix_ambiguous`) لا بتخمين
+        recounted = recount_leakage(report, bank, {"date": datetime.date.today().isoformat()})
     except (PayloadRejected, ValueError, KeyError, TypeError) as exc:
         print(json.dumps({"status": "refused", "code": getattr(exc, "code", "bank_invalid")}, ensure_ascii=False))
         return 2
-    recounted = recount_leakage(report, bank, {"date": datetime.date.today().isoformat()})
     path.write_text(json.dumps(recounted, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": "recounted", "leakage": recounted["recount"]["leakage"], "out": str(path)}, ensure_ascii=False))
     return 0

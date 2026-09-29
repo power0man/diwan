@@ -1870,3 +1870,31 @@ def test_a_residue_witness_is_bound_to_the_text_as_the_store_writes_it(tmp_path,
     assert run_scenario(padded, tmp_path / "padded")["passed"], "الشاهدُ المردود كان يُمرّر النسيانَ المعطوب"
     caught = run_scenario(bound, tmp_path / "bound")
     assert not caught["passed"] and any(f.startswith("4: residue holds") for f in caught["failures"]), caught
+
+
+def test_a_recount_identifies_each_witness_by_its_recorded_position_not_its_truncated_text(tmp_path, monkeypatch):
+    """ملاحظةُ Codex على #129 (الجولة السادسة والأربعون): الرسوبُ يسجّل أوّلَ ثلاثين محرفًا من الشاهد، وإعادةُ العدّ كانت تطابق
+    به كلَّ شاهدٍ يبدأ به؛ فشاهدان يتّفقان في أوّلها (منسيٌّ من A ونظيرٌ قائمٌ في B) يُعدّ فيهما نسيانٌ أخفق في A تسرّبًا من B.
+    صار كلُّ رسوبِ غيابٍ يُسجَّل بهويّة شاهده (`absent_found`: الخطوةُ وموضعُه في `absent` وهل خدمته الذاكرة)، وإعادةُ العدّ
+    تقرؤها؛ وتقريرٌ سبقها يُردّ بـ`witness_prefix_ambiguous` إن التبس مبتورُه، لا بتخمين."""
+    from core.canonical import PayloadRejected
+    from evaluation.memory_runner import recount_leakage, run_scenario
+    from memory.store import MemoryStore
+    prefix = "ملاحظة الاجتماع الأسبوعي للفريق في المبنى"
+    ours, theirs = prefix + " القاعة الأولى", prefix + " القاعة الثانية"
+    assert ours[:30] == theirs[:30] and ours != theirs
+    scenario = {"id": "isolation_shared_prefix", "category": "isolation", "steps": [
+        {"op": "remember", "project": "A", "text": ours, "consent": "owner", "as": "m1"},
+        {"op": "remember", "project": "B", "text": theirs, "consent": "owner", "as": "m2"},
+        {"op": "forget", "project": "A", "ref": "m1"},
+        {"expect": "context", "project": "A", "question": "متى الاجتماع؟", "absent": [ours, theirs], "present": []}]}
+    monkeypatch.setattr(MemoryStore, "forget", lambda self, item_id, references=None: {})
+    report = run_scenario(scenario, tmp_path / "s")
+    assert report["failures"] == [f"3: context holds absent «{ours[:30]}»"] and report["leaks"] == 0, report
+    assert report["absent_found"] == [{"step": 3, "witness": 0, "served": True}]
+    measured = {"metrics": {"leakage": 0}, "results": [report]}
+    assert recount_leakage(measured, {"scenarios": [scenario]})["metrics"]["leakage"] == 0
+    legacy = {**measured, "results": [{k: v for k, v in report.items() if k != "absent_found"}]}
+    with pytest.raises(PayloadRejected) as err:
+        recount_leakage(legacy, {"scenarios": [scenario]})
+    assert err.value.code == "witness_prefix_ambiguous"

@@ -29,6 +29,7 @@ from pathlib import Path
 
 import uuid
 
+from core.canonical import PayloadRejected
 from core.quoted import QUARANTINE_MARK, scan
 from evaluation.memory_bank import (EXPOSURE_QUESTION, active_refs, contains as _contains, mask_persisted, names_every_directive,
                                     probe_collisions, envelope_collisions, message_envelope_collisions, question_collisions,
@@ -104,6 +105,26 @@ RECOUNT_LIMIT = "leakage_was_recounted_without_remeasurement_by_the_rule_named_i
 _ABSENT_FAILURE = re.compile(r"^(\d+): (?:retrieve|context) holds absent «(.*?)»(.*)$")
 
 
+def _served_witnesses(result: dict, scenario: dict) -> list[tuple[int, str]]:
+    """شواهدُ الغياب التي خدمتها الذاكرةُ في نتيجة سيناريو، بخطوتها ونصّها كاملًا. تُقرأ من هويّتها المسجَّلة (`absent_found`:
+    الخطوةُ وموضعُ الشاهد في `absent`)، والنصُّ المبتور في `failures` للعرض وحده؛ فشاهدان يتّفقان في أوّل ثلاثين محرفًا لا
+    يلتبسان (ملاحظة Codex على #129، الجولة السادسة والأربعون). وتقريرٌ سبق هذا التسجيلَ يُقرأ من رسوباته المبتورة ما دام
+    المبتورُ يسمّي شاهدًا واحدًا في خطوته، وإلا رُدّت إعادةُ العدّ بـ`witness_prefix_ambiguous` لا بتخمين."""
+    steps = scenario["steps"]
+    if "absent_found" in result:
+        return [(f["step"], steps[f["step"]]["absent"][f["witness"]]) for f in result["absent_found"] if f["served"]]
+    served = []
+    for failure in result["failures"]:
+        if (m := _ABSENT_FAILURE.match(failure)) and not m.group(3):
+            index = int(m.group(1))
+            named = [n for n in steps[index]["absent"] if n[:30] == m.group(2)]
+            if len(named) > 1:
+                raise PayloadRejected(f"results.{result['id']}", "witness_prefix_ambiguous",
+                                      f"«{m.group(2)}» يبدأ به أكثرُ من شاهدٍ في الخطوة {index}")
+            served += [(index, n) for n in named]
+    return served
+
+
 def recount_leakage(report: dict, bank: dict, stamp: dict | None = None) -> dict:
     """يعيد عدَّ `leakage` في تقريرٍ منشور من رسوباته المسجَّلة بقاعدة الشاهد الأجنبيّ (`_foreign`) بلا إعادة قياس: الرسوبُ
     نفسُه يبقى مسمًّى في `failures`، ويتغيّر العدُّ وحده. فتقريرُ ٢٨ سبتمبر عدّ رسوبَ `isolation_003` (صدى النموذج لعنصرٍ منسيٍّ
@@ -120,12 +141,8 @@ def recount_leakage(report: dict, bank: dict, stamp: dict | None = None) -> dict
     for result in report["results"]:
         scenario, leaks = scenarios[result["id"]], 0
         if scenario["category"] == "isolation":
-            for failure in result["failures"]:
-                if (m := _ABSENT_FAILURE.match(failure)) and not m.group(3):
-                    index = int(m.group(1))
-                    active = active_refs(scenario["steps"], index)
-                    leaks += any(_foreign(scenario, index, n, active) for n in scenario["steps"][index]["absent"]
-                                 if n[:30] == m.group(2))
+            for index, needle in _served_witnesses(result, scenario):
+                leaks += _foreign(scenario, index, needle, active_refs(scenario["steps"], index))
         results.append({**result, "leaks": leaks})
     metrics = {**report["metrics"], "leakage": sum(r["leaks"] for r in results)}
     measured = report.get("recount", {}).get("leakage", {}).get("from", report["metrics"]["leakage"])
@@ -168,7 +185,7 @@ def _collision_result(scenario: dict, wired: bool, delegate=None) -> dict | None
                           + [f"witness collides with the agent envelope «{c[:30]}»" for c in envelope]
                           + [f"witness collides with the message envelope «{c[:30]}»" for c in wire]
                           + [f"witness collides with the request payload «{c[:30]}»" for c in body],
-              "leaks": 0, "consent_violations": 0, "injection_unquarantined": 0, "context_exposures": 0}
+              "absent_found": [], "leaks": 0, "consent_violations": 0, "injection_unquarantined": 0, "context_exposures": 0}
     return {**result, "probe_sessions_reset": 0, "stuck_probe_turns": []} if wired else result
 
 
@@ -184,6 +201,7 @@ def run_scenario(scenario: dict, root: Path) -> dict:
     stores: dict[str, MemoryStore] = {}
     refs: dict[str, object] = {}
     failures: list[str] = []
+    found: list[dict] = []           # هويّةُ كلِّ شاهد غيابٍ وُجد: خطوتُه وموضعُه في `absent`، لإعادة العدّ بلا نصٍّ مبتور
     leaks = consent_violations = unquarantined = exposures = 0
 
     def store(project):
@@ -243,9 +261,10 @@ def run_scenario(scenario: dict, root: Path) -> dict:
             counted_before = unquarantined
             text = (" ".join(i["text"] for i in s.retrieve(step["query"])) if expect == "retrieve"
                     else s.context_block(step["question"]))
-            for needle in step["absent"]:
+            for witness, needle in enumerate(step["absent"]):
                 if _contains(text, needle):
                     failures.append(f"{index}: {expect} holds absent «{needle[:30]}»")
+                    found.append({"step": index, "witness": witness, "served": True})
                     if scenario["category"] == "isolation" and _foreign(scenario, index, needle, _active(refs, s)):
                         leaks += 1
                     if scenario["category"] == "consent":
@@ -282,7 +301,7 @@ def run_scenario(scenario: dict, root: Path) -> dict:
             if count != step["count"]:
                 failures.append(f"{index}: receipts {count} != {step['count']}")
     return {"id": scenario["id"], "category": scenario["category"], "passed": not failures,
-            "failures": failures, "leaks": leaks, "consent_violations": consent_violations,
+            "failures": failures, "absent_found": found, "leaks": leaks, "consent_violations": consent_violations,
             "injection_unquarantined": unquarantined, "context_exposures": exposures}
 
 
@@ -562,6 +581,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
     wired = _Wired(root / "ui", delegate)
     refs: dict[str, object] = {}
     failures: list[str] = []
+    found: list[dict] = []           # هويّةُ كلِّ شاهد غيابٍ وُجد ومكانُه، لإعادة العدّ بلا نصٍّ مبتور
     leaks = consent_violations = unquarantined = exposures = 0
     index = -1
     try:
@@ -621,7 +641,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                          else wired.contexts(name, step["question"]))
                 counted_before = unquarantined
                 for current, every, echoed, question, tools in views:
-                    for needle in step["absent"]:
+                    for witness, needle in enumerate(step["absent"]):
                         if _contains(every, needle) or _contains(current, needle):
                             # ما خدمته الذاكرةُ نفسُها الآن (الاسترجاعُ وقائمةُ المالك، أو كتلةُ السياق الحاليّة) بلا مكان، وهو
                             # وحده يُعدّ تسرّبًا إن كان شاهدُه أجنبيًّا؛ لا صدى النموذج ولا كتلةٌ قديمة في التاريخ حملت عنصرَ
@@ -634,6 +654,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                                      else " in the declared tool schemas" if _contains(tools, needle)
                                      else " elsewhere in the request as sent to the model")
                             failures.append(f"{index}: {expect} holds absent «{needle[:30]}»{where}")
+                            found.append({"step": index, "witness": witness, "served": served})
                             if (scenario["category"] == "isolation" and served
                                     and _foreign(scenario, index, needle, _active(refs, wired.store(name)))):
                                 leaks += 1
@@ -676,7 +697,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
     finally:
         wired.close()
     return {"id": scenario["id"], "category": scenario["category"], "passed": not failures,
-            "failures": failures, "leaks": leaks, "consent_violations": consent_violations,
+            "failures": failures, "absent_found": found, "leaks": leaks, "consent_violations": consent_violations,
             "injection_unquarantined": unquarantined, "probe_sessions_reset": wired.probe_resets,
             "stuck_probe_turns": wired.stuck_turns, "context_exposures": exposures}
 
