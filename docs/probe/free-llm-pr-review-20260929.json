@@ -1,0 +1,204 @@
+{
+ "schema_version": 1,
+ "probe": "free-llm-pr-review",
+ "task": "ق٧٠ (#168): النماذجُ المجانية عبر موجّه HF مراجِعين استشاريّين لطلبات Codex",
+ "date": "2026-09-29",
+ "agent": "anthropic/claude-opus-5-5",
+ "pull_requests": [
+  177,
+  178,
+  179,
+  180,
+  189
+ ],
+ "transport": "router.huggingface.co من صندوق HF واحد برمز المالك المُمرَّر إلى الصندوق وحده؛ الرمزُ لم يُطبع",
+ "method": "نداءٌ واحد لكل نموذج على كل طلب (حرارة ٠) بفرق الطلب العامّ داخل سياجٍ بيانًا لا تعليمات؛ ثم تحقّق Claude من كل ملاحظةٍ عالية أو متوسطة على شيفرة الرأس، ونُشرت المؤكَّدةُ والمحتملة وحدها قسمًا في التعليق الاستشاريّ الواحد على كل طلب",
+ "models": {
+  "deepseek-ai/DeepSeek-V3-0324": {
+   "family": "deepseek",
+   "calls": 5,
+   "input_tokens": 26015,
+   "output_tokens": 331,
+   "estimate_usd": 0.00654,
+   "estimate_basis": "router usage.estimated_cost, summed"
+  },
+  "meta-llama/Llama-3.3-70B-Instruct": {
+   "family": "meta",
+   "calls": 5,
+   "input_tokens": 24286,
+   "output_tokens": 403,
+   "estimate_usd": 0.02222,
+   "estimate_basis": "no estimated_cost returned; upper-bound list price $0.9/M input, $0.9/M output"
+  },
+  "CohereLabs/c4ai-command-a-03-2025": {
+   "family": "cohere",
+   "calls": 5,
+   "input_tokens": 28504,
+   "output_tokens": 1882,
+   "estimate_usd": 0.09008,
+   "estimate_basis": "no estimated_cost returned; upper-bound list price $2.5/M input, $10.0/M output"
+  },
+  "microsoft/phi-4": {
+   "family": "microsoft",
+   "calls": 5,
+   "input_tokens": 26876,
+   "output_tokens": 3425,
+   "estimate_usd": 0.00236,
+   "estimate_basis": "router usage.estimated_cost, summed"
+  }
+ },
+ "per_pull_request": {
+  "177": {
+   "findings_by_family": {
+    "deepseek": 0,
+    "meta": 0,
+    "cohere": 4,
+    "microsoft": 7
+   },
+   "confirmed": 0,
+   "plausible": 1,
+   "rejected": 8,
+   "unverified_low": 2,
+   "head": "32ef66837caf5e1a411e02e118317ebeff72b976"
+  },
+  "178": {
+   "findings_by_family": {
+    "deepseek": 3,
+    "meta": 0,
+    "cohere": 4,
+    "microsoft": 8
+   },
+   "confirmed": 1,
+   "plausible": 1,
+   "rejected": 11,
+   "unverified_low": 2,
+   "head": "62e2ed02629cfa4883f15bc7aeb3154f1849c4fa"
+  },
+  "179": {
+   "findings_by_family": {
+    "deepseek": 0,
+    "meta": 0,
+    "cohere": 3,
+    "microsoft": 8
+   },
+   "confirmed": 0,
+   "plausible": 2,
+   "rejected": 8,
+   "unverified_low": 1,
+   "head": "380db575c0cc5b88c2cc63d8ccd746d8f13a32c8"
+  },
+  "180": {
+   "findings_by_family": {
+    "deepseek": 2,
+    "meta": 5,
+    "cohere": 2,
+    "microsoft": 5
+   },
+   "confirmed": 0,
+   "plausible": 0,
+   "rejected": 12,
+   "unverified_low": 2,
+   "head": "345e04e06a63e5117672a4dcfcd08418dcdbf254"
+  },
+  "189": {
+   "findings_by_family": {
+    "deepseek": 0,
+    "meta": 0,
+    "cohere": 3,
+    "microsoft": 7
+   },
+   "confirmed": 0,
+   "plausible": 0,
+   "rejected": 9,
+   "unverified_low": 1,
+   "head": "841d11d7a6be14ef65bb13dc6070c5c22981b99e"
+  }
+ },
+ "summary": {
+  "findings": 56,
+  "confirmed": 1,
+  "plausible": 4,
+  "rejected": 48,
+  "unverified_low": 8,
+  "new_beyond_the_existing_advisory_review": 0,
+  "missed": "لم يلتقط نموذجٌ أيًّا من عيوب #179 الثلاثة من درجة P1 ولا ثغرةَ الهروب في JSON",
+  "dominant_false_positive": "DeepSeek وPhi-4 قرأا طفرات tests/mutations/*.jsonl المقصودة تغييراتٍ حقيقية في الشيفرة، فجاءت كلُّ الملاحظات العالية على #178 و#180 من ذلك",
+  "verdict": "النماذجُ المجانية الأربعة لا تُستعمل مراجِعًا للشيفرة؛ تبقى لمراجعة البنوك وتجربة الخطأ المزروع حيث نجحت (docs/probe/free-api-inventory-20260928.json في #174)"
+ },
+ "spend": {
+  "sandboxes": [
+   {
+    "id": "6abafc1a6b030d633f6a1da5",
+    "flavor": "cpu-basic",
+    "image": "python:3.12",
+    "created_utc": "2026-09-28T23:45:30Z",
+    "terminated_utc": "2026-09-28T23:59:40Z",
+    "minutes": 14.2,
+    "final_stage": "CANCELED (terminated by us)"
+   }
+  ],
+  "total_calls": 20,
+  "total_input_tokens": 105681,
+  "total_output_tokens": 6041,
+  "list_price_estimate_usd": {
+   "inference": 0.1212,
+   "compute": 0.0024,
+   "compute_rate": "cpu-basic $0.01/hour (HF Jobs price list, as used in free-api-inventory-20260928.json)",
+   "total": 0.1236
+  },
+  "cap": "HFD2 ($20)؛ وسقفُ هذا التشغيل $2 و٣٠ دقيقة صندوق",
+  "note": "Estimates are list-price, not the HF billing page; the HF invoice is decisive."
+ },
+ "failures": [
+  {
+   "code": "http_503",
+   "where": "GET https://patch-diff.githubusercontent.com/raw/power0man/diwan/pull/179.diff and later /180.diff (transient, from sandbox)",
+   "effect": "script stopped before any model call for that PR; rerun succeeded; no model call was lost or repeated"
+  }
+ ],
+ "diffs": {
+  "177": {
+   "head": "32ef66837caf5e1a411e02e118317ebeff72b976",
+   "sent_chars": 26207,
+   "truncated": false,
+   "dropped": []
+  },
+  "178": {
+   "head": "62e2ed02629cfa4883f15bc7aeb3154f1849c4fa",
+   "sent_chars": 12634,
+   "truncated": false,
+   "dropped": []
+  },
+  "179": {
+   "head": "380db575c0cc5b88c2cc63d8ccd746d8f13a32c8",
+   "raw_chars": 22423,
+   "sent_chars": 20113,
+   "truncated": false,
+   "dropped": [
+    "docs/STUDY-PROMPT.md",
+    "docs/probe/project-status.json",
+    "README.md number-only hunk (1)"
+   ]
+  },
+  "180": {
+   "head": "345e04e06a63e5117672a4dcfcd08418dcdbf254",
+   "sent_chars": 6151,
+   "truncated": false,
+   "dropped": []
+  },
+  "189": {
+   "head": "841d11d7a6be14ef65bb13dc6070c5c22981b99e",
+   "sent_chars": 17861,
+   "truncated": false,
+   "dropped": []
+  }
+ },
+ "measurement_limits": [
+  "one_call_per_model_per_pull_request_at_temperature_0_no_variance_estimate",
+  "five_openai_authored_pull_requests_only_so_reviewer_quality_on_other_code_is_not_measured",
+  "verification_of_findings_was_done_by_an_anthropic_model_which_is_a_developer_family",
+  "model_identity_is_the_router_catalog_id_not_a_verified_weight_digest",
+  "costs_are_list_price_or_router_estimates_not_the_hf_invoice",
+  "diffs_excluded_generated_files_and_a_number_only_readme_hunk_on_179"
+ ]
+}
