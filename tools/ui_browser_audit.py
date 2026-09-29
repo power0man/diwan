@@ -195,15 +195,21 @@ def server_codes(server_source: str) -> tuple[dict[str, int], list[int]]:
     القدرات، فتلك لا يعرضها `showError`). يُعيد {الرمز: أولُ سطرٍ له}، وأسطرَ ما رمزُه متغيّرٌ يأتي من وحدةٍ أخرى."""
     tree = ast.parse(server_source)
     default = None
+    forwarding: set[int] = set()
     for node in tree.body:
         if isinstance(node, ast.FunctionDef) and node.name == "need":
             params = [arg.arg for arg in node.args.args]
             defaults = dict(zip(params[len(params) - len(node.args.defaults):], node.args.defaults))
             default = _text(defaults.get("code"))
+            # داخل need يمرّر `UIError(code)` معاملَها كما هو: قيمُه معدودةٌ عند كل نداءٍ لـneed، فليس موضعًا متغيّرًا
+            forwarding |= {id(call) for call in ast.walk(node) if isinstance(call, ast.Call)
+                           and any(isinstance(arg, ast.Name) and arg.id in params for arg in call.args)}
     codes: dict[str, int] = {}
     dynamic: list[int] = []
     for node in ast.walk(tree):
         found = []
+        if id(node) in forwarding:
+            continue
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in ("need", "UIError"):
             position = 1 if node.func.id == "need" else 0
             argument = (node.args[position] if len(node.args) > position
@@ -471,10 +477,35 @@ def evidence_guard(evidence: dict, shots_dir: Path | None = None) -> list[str]:
     return violations
 
 
-def axe_problem(axe: dict | None, requested: bool, journeys: tuple[str, ...] | list[str] = JOURNEYS) -> str | None:
+# حالاتُ axe المخطَّطة في السائق لكل رحلة (tools/ui_browser_audit.cjs: runAxe)، وما يُخطَّط بعد خطوةٍ إن نجحت وحدها
+AXE_PLAN = {
+    "current": ("empty-desktop", "text-answer-desktop", "remember-dialog-desktop", "approval-dialog-desktop",
+                "empty-mobile"),
+    "single-page": ("sp-empty-desktop", "sp-empty-mobile"),
+}
+AXE_AFTER_STEP = {("single-page", "sp_enter_answers"): "sp-answer-{viewport}"}
+
+
+def axe_missing_states(axe: dict | None, journeys, raw_journeys: dict | None = None) -> list[str]:
+    """الحالاتُ المخطَّطة التي لم يفحصها axe، بأسمائها («رحلة:حالة»): فخطوةٌ تسقط قبل `runAxe` (كنافذة «تذكّر هذا») لا
+    يغطّيها أن غيرَها من الرحلة نفسِها فُحص. وحالةُ ما بعد الجواب مخطَّطةٌ إن نجحت خطوتُها."""
+    audited = {(state.get("journey"), state.get("state")) for state in (axe or {}).get("states") or []}
+    wanted = []
+    for journey in journeys:
+        wanted += [(journey, state) for state in AXE_PLAN.get(journey, ())]
+        for step in ((raw_journeys or {}).get(journey) or {}).get("steps") or []:
+            template = AXE_AFTER_STEP.get((journey, step.get("id")))
+            if template and step.get("ok") is True:
+                wanted.append((journey, template.format(viewport=step.get("viewport"))))
+    return [f"{journey}:{state}" for journey, state in wanted if (journey, state) not in audited]
+
+
+def axe_problem(axe: dict | None, requested: bool, journeys: tuple[str, ...] | list[str] = JOURNEYS,
+                raw_journeys: dict | None = None) -> str | None:
     """طُلب axe فلم يعمل في كل حالةٍ فُحصت: رمزُه المسمّى (`axe_unavailable` أو `axe_failed`)؛ أو عمل في بعض الرحلات دون
-    بعض فبقيت رحلةٌ مطلوبة بلا حالةٍ فُحصت (`axe_journey_unaudited`)، كرحلة الصفحة الموحّدة وهي هدفُ القبول. فلا يُكتب
-    دليلٌ يبدو نظيفًا وهو لم يُفحص. وبلا طلبٍ لا حكم: الدليلُ يقول `not_run` صراحةً."""
+    بعض فبقيت رحلةٌ مطلوبة بلا حالةٍ فُحصت (`axe_journey_unaudited`)، كرحلة الصفحة الموحّدة وهي هدفُ القبول؛ أو بقيت حالةٌ
+    مخطَّطة بلا فحص (`axe_state_unaudited`، وأسماؤها من `axe_missing_states`). فلا يُكتب دليلٌ يبدو نظيفًا وهو لم يُفحص.
+    وبلا طلبٍ لا حكم: الدليلُ يقول `not_run` صراحةً."""
     if not requested:
         return None
     axe = axe or {}
@@ -483,6 +514,8 @@ def axe_problem(axe: dict | None, requested: bool, journeys: tuple[str, ...] | l
     audited = {state.get("journey") for state in axe["states"]}
     if any(journey not in audited for journey in journeys):
         return "axe_journey_unaudited"
+    if axe_missing_states(axe, journeys, raw_journeys):
+        return "axe_state_unaudited"
     return None
 
 
@@ -686,11 +719,12 @@ def _validate_and_publish(args, raw, status, tail, journeys, tracked, staging: P
     if status == 3:
         print(json.dumps({"status": "unavailable", "code": raw.get("code", "chromium_missing")}))
         return 3
-    problem = axe_problem(raw.get("axe"), bool(args.axe), journeys)
+    problem = axe_problem(raw.get("axe"), bool(args.axe), journeys, raw.get("journeys"))
     if problem:
         errors = (raw.get("axe") or {}).get("errors", [])
-        print(json.dumps({"status": "failed", "code": problem, "errors": errors[:3], "errors_total": len(errors)},
-                         ensure_ascii=False))
+        missing = axe_missing_states(raw.get("axe"), journeys, raw.get("journeys"))
+        print(json.dumps({"status": "failed", "code": problem, "errors": errors[:3], "errors_total": len(errors),
+                          "missing_states": missing}, ensure_ascii=False))
         return 1
     sources = {path: (ROOT / path).read_text(encoding="utf-8") for path in UI_SOURCES}
     coverage = error_code_coverage(sources["webui/server.py"], sources["webui/static/app.js"])

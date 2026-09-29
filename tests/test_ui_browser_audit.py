@@ -45,6 +45,10 @@ def handle(exc):
     shown = getattr(exc, "code", "status_field_only")
     configured.update(error_code=getattr(exc, "code", "capability_field_only"))
     rejected = {"status": "error", "error_code": applied["error_code"]}
+
+
+def refuse(code):
+    raise UIError(code)
 '''
 APP = '''const errors = {
   collection_limit: "بلغت المشروعاتُ حدَّها.",
@@ -66,8 +70,9 @@ def test_error_coverage_parses_calls_structurally_with_defaults_keywords_and_fal
     assert coverage["raw_codes"] == ["id_invalid", "metadata_invalid", "request_failed", "request_invalid",
                                      "tool_contract_changed"]
     assert coverage["raw_code_lines"]["tool_contract_changed"] == 12   # سطرُ النداء لا سطرُ الرمز
-    # UIError(code) في need نفسِها، وneed(value, value.code)، وقاموسُ ردٍّ رمزُه متغيّر (ملاحظة Codex العاشرة على #175)
-    assert coverage["dynamic_code_lines"] == [4, 15, 24]
+    # need(value, value.code)، وقاموسُ ردٍّ رمزُه متغيّر (ملاحظة Codex العاشرة على #175)، وUIError(code) في مساعدٍ غيرِ need
+    # لا تُعدّ نداءاتُه. أما UIError(code) داخل need نفسِها فتمريرٌ قيمُه معدودةٌ عند نداءاتها (ملاحظة Codex الحادية عشرة)
+    assert coverage["dynamic_code_lines"] == [15, 24, 28]
 
 
 # — النتائجُ من ملاحظات المتصفّح —
@@ -247,10 +252,10 @@ def test_the_audited_server_is_the_real_app_answering_with_the_scripted_provider
 def test_an_axe_that_did_not_run_refuses_the_evidence(tmp_path, monkeypatch, capsys):
     """ملاحظة Codex على #175: طُلب axe فلم يعمل (ملفٌّ غائب أو سكربتٌ غيرُ صالح) فلا يُكتب دليلٌ يبدو نظيفًا."""
     ran = {"status": "run", "violations": [], "errors": [],
-           "states": [{"journey": "current", "state": "empty-desktop"}, {"journey": "single-page", "state": "sp-empty-mobile"}]}
+           "states": [{"journey": journey, "state": state} for journey, states in audit.AXE_PLAN.items() for state in states]}
     assert audit.axe_problem(ran, True) is None
     # ملاحظة Codex على #175: رحلةٌ مطلوبة بلا حالةٍ فحصها axe (الصفحةُ الموحّدة هدفُ القبول) لا يغطّيها نجاحُ غيرها
-    only_current = {**ran, "states": ran["states"][:1]}
+    only_current = {**ran, "states": [s for s in ran["states"] if s["journey"] == "current"]}
     assert audit.axe_problem(only_current, True, ["current", "single-page"]) == "axe_journey_unaudited"
     assert audit.axe_problem(only_current, True, ["single-page"]) == "axe_journey_unaudited"
     assert audit.axe_problem(only_current, True, ["current"]) is None
@@ -382,6 +387,7 @@ def test_every_published_axe_state_that_needs_review_names_its_items():
     وعناصره، ونتيجةٌ صريحة."""
     evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     axe = evidence["axe"]
+    assert audit.axe_missing_states(axe, list(evidence["journeys"]), evidence["journeys"]) == []
     for state in axe["states"]:
         assert state["verdict"] == audit.axe_state_verdict(state), state
         if state["incomplete"]:
@@ -437,6 +443,28 @@ def test_a_driver_that_hangs_or_breaks_is_a_named_failure_not_a_traceback(tmp_pa
     printed = json.loads(capsys.readouterr().out)
     assert printed["code"] == "browser_run_failed" and "مهلة" in printed["tail"]
     assert not (tmp_path / "e.json").exists()
+
+
+def test_every_planned_axe_state_must_be_audited_not_just_each_journey():
+    """ملاحظة Codex الحادية عشرة على #175: خطوةٌ تسقط قبل runAxe (نافذةُ «تذكّر هذا» مثلًا) كانت لا تُرى لأن حالاتٍ أخرى من
+    الرحلة نفسِها فُحصت. صار الحكمُ على كل حالةٍ مخطَّطة باسمها، وحالةُ ما بعد الجواب مخطَّطةٌ إن نجحت خطوتُها."""
+    journeys = ["current", "single-page"]
+    states = [{"journey": journey, "state": state} for journey, planned in audit.AXE_PLAN.items() for state in planned]
+    complete = {"status": "run", "errors": [], "states": states}
+    assert audit.axe_problem(complete, True, journeys, {}) is None
+    without_dialog = {**complete, "states": [s for s in states if s["state"] != "remember-dialog-desktop"]}
+    assert audit.axe_problem(without_dialog, True, journeys, {}) == "axe_state_unaudited"
+    assert audit.axe_missing_states(without_dialog, journeys) == ["current:remember-dialog-desktop"]
+    answered = {"single-page": {"steps": [{"id": "sp_enter_answers", "viewport": "desktop", "ok": True},
+                                          {"id": "sp_enter_answers", "viewport": "mobile", "ok": False}]}}
+    assert audit.axe_missing_states(complete, journeys, answered) == ["single-page:sp-answer-desktop"]
+    assert audit.axe_problem(complete, True, journeys, answered) == "axe_state_unaudited"
+    # الخطةُ هي ما يشغّله السائق فعلًا: كلُّ حالةٍ فيها نداءُ runAxe باسمها في tools/ui_browser_audit.cjs
+    driver = (ROOT / "tools" / "ui_browser_audit.cjs").read_text(encoding="utf-8")
+    for state in audit.AXE_PLAN["current"]:
+        assert f'runAxe(page, "{state}", axe)' in driver, state
+    for template in ("sp-empty-${vp}", "sp-answer-${vp}"):
+        assert f'runAxe(page, `{template}`, axe, "single-page")' in driver, template
 
 
 def test_a_missing_browser_is_named_not_a_traceback():
