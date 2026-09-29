@@ -1086,3 +1086,40 @@ def test_the_compact_smoke_lines_carry_the_limits(tmp_path, monkeypatch, capsys)
         saved = json.loads(out.read_text(encoding="utf-8"))
         assert printed["measurement_limits"] == saved["measurement_limits"]
         assert set(cli.FREE_LIMITS) <= set(printed["measurement_limits"])
+
+
+def test_a_record_reviewed_again_after_its_file_changed_counts_as_reviewed_not_skipped(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174: السجلُّ القديم الذي أُعيدت مراجعتُه لتغيّر ملفّه يُعدّ reviewed لا skipped."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "rereview")
+    args = [str(bank), "--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF)]
+    _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    assert cli.main(args) == 0
+    capsys.readouterr()
+    source = bank / "open" / "a" / "kimi_x.json"
+    source.write_text(json.dumps(json.loads(source.read_text(encoding="utf-8")), ensure_ascii=False, indent=1),
+                      encoding="utf-8")                       # المحتوى نفسُه بتنسيقٍ آخر: بصمةٌ أخرى فمراجعةٌ جديدة
+    opener = _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    assert cli.main(args) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert opener.chat_models() == [DS, MI], "أُعيدت المراجعةُ فعلًا"
+    assert {k: result[k] for k in ("reviewed", "skipped", "failed")} == {"reviewed": 2, "skipped": 0, "failed": 0}
+
+
+def test_a_multipart_reply_with_a_non_text_part_is_a_named_error_retried_once(tmp_path):
+    """ملاحظة Codex على #174: جزءٌ نصُّه null لا يُسقط التشغيلَ بـTypeError، بل رمزٌ مسمًّى يُعاد مرّةً ويُسجَّل."""
+    ids = ["c1", "c2", "c3"]
+    chat = cli.OpenAICompatChat("github-models", KEY)
+    chat.opener = FreeOpener(replies={DS: [([{"type": "text", "text": None}], "stop")]})
+    with pytest.raises(AutomaticReviewError) as invalid:
+        chat(DS, "s", "u", {})
+    assert invalid.value.code == "response_part_invalid" and chat.failures[DS]["status"] == 200
+    chat.opener = FreeOpener(replies={DS: [([{"type": "text", "text": None}], "stop")],
+                                      MI: [([{"type": "text", "text": json.dumps(_ok(ids))}], "stop")]})
+    bank = _bank(tmp_path)
+    assert review_bank(bank, [DS, MI], chat, brief_path=BRIEF)["failed"] == 1
+    record = json.loads((bank / "reviews" / DS.replace("/", "_") / "tier_a" / "kimi_t_a_001.json").read_text(encoding="utf-8"))
+    assert record["error"] == "response_part_invalid" and len(record["attempts"]) == 2
+    good = json.loads((bank / "reviews" / MI.replace("/", "_") / "tier_a" / "kimi_t_a_001.json").read_text(encoding="utf-8"))
+    assert good["error"] is None, "الأجزاءُ النصيّةُ الصالحة تُجمع"

@@ -415,7 +415,11 @@ class OpenAICompatChat:
             self.failures[model] = {**shape, "request": self.last_request[model]}
             raise AutomaticReviewError("openai_response_malformed", model) from None
         if isinstance(content, list):          # أجزاءُ نصٍّ عند بعض المزوّدين
-            content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
+            # جزءٌ ليس قاموسًا أو نصُّه ليس نصًّا رمزُه response_part_invalid فيُعاد مرّةً ويُسجَّل (ملاحظة Codex على #174)
+            if not all(isinstance(part, dict) and isinstance(part.get("text", ""), str) for part in content):
+                self.failures[model] = {**shape, "request": self.last_request[model]}
+                raise AutomaticReviewError("response_part_invalid", model)
+            content = "".join(part.get("text", "") for part in content)
         if not isinstance(content, str) or not content.strip():
             raise AutomaticReviewError("reply_empty", model)
         if choice.get("finish_reason") == "length":
@@ -752,20 +756,24 @@ def other_reviewer_errors(bank: Path, final_models: set[str]) -> int:
     return count
 
 
-def _successful_records(bank: Path) -> set[str]:
-    """مساراتُ السجلّات الناجحة في reviews/ (خارج superseded/) نسبةً إليه: ما سبق هذا الاستدعاءَ يُعدّ «skipped» لا «reviewed»."""
+def _successful_records(bank: Path) -> dict[str, str]:
+    """{المسارُ النسبيّ: بصمةُ بايتات السجلّ} للسجلّات الناجحة في reviews/ (خارج superseded/) قبل هذا الاستدعاء.
+
+    السجلُّ «skipped» إن بقي بعده ببايتاته نفسِها (أُعيد استعمالُه)؛ فإن أُعيدت مراجعتُه لتغيّر الملفّ أو التكليف كُتب من جديد
+    فتغيّرت بصمتُه وعُدّ «reviewed» (ملاحظة Codex على #174)."""
     root = bank / "reviews"
-    found = set()
+    found: dict[str, str] = {}
     for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
         relative = path.relative_to(root)
         if path.name in ("SUMMARY.json", RUN_FILE) or relative.parts[0] == SUPERSEDED_DIR:
             continue
-        if json.loads(path.read_text(encoding="utf-8")).get("error") is None:
-            found.add(relative.as_posix())
+        raw = path.read_bytes()
+        if json.loads(raw).get("error") is None:
+            found[relative.as_posix()] = hashlib.sha256(raw).hexdigest()
     return found
 
 
-def final_set_counts(bank: Path, final_models: set[str], pre_existing: set[str]) -> dict:
+def final_set_counts(bank: Path, final_models: set[str], pre_existing: dict[str, str]) -> dict:
     """أعدادُ المجموعة الأخيرة وحدها (ملاحظة Codex على #174): ناجحٌ أُنتج في هذا الاستدعاء reviewed، وناجحٌ سبقه skipped،
     وفاشلٌ failed. ومجاميعُ المحاولات كلِّها (ومنها المستبدَلون) في حقلٍ مسمًّى منفصل."""
     counts = {"reviewed": 0, "skipped": 0, "failed": 0}
@@ -775,7 +783,7 @@ def final_set_counts(bank: Path, final_models: set[str], pre_existing: set[str])
             relative = path.relative_to(bank / "reviews").as_posix()
             if json.loads(path.read_text(encoding="utf-8")).get("error"):
                 counts["failed"] += 1
-            elif relative in pre_existing:
+            elif pre_existing.get(relative) == hashlib.sha256(path.read_bytes()).hexdigest():
                 counts["skipped"] += 1
             else:
                 counts["reviewed"] += 1
