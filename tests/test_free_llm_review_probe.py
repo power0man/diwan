@@ -26,6 +26,10 @@ def test_free_llm_review_totals_are_computed_from_its_findings():
     counts = Counter(row["verdict"] for row in rows)
     assert data["summary"]["findings"] == len(rows)
     assert {v: data["summary"][v] for v in VERDICTS} == {v: counts[v] for v in VERDICTS}
+    # «لا جديد» يُشتقّ من الصفوف: كلُّ مؤكَّدةٍ أو محتملة تكرّر بندًا في المراجعة الاستشارية، ولا منخفضةَ بلا حكم
+    assert data["summary"]["new_beyond_the_existing_advisory_review"] == sum(
+        row["verdict"] in ("confirmed", "plausible") and not row.get("advisory_item") for row in rows)
+    assert data["summary"]["new_beyond_the_existing_advisory_review"] == 0 and counts["unverified_low"] == 0
     assert set(data["advisory_comments"]) == set(data["per_pull_request"]) == {str(pr) for pr in data["pull_requests"]}
 
 

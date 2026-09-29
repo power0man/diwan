@@ -12,7 +12,7 @@
   189
  ],
  "transport": "router.huggingface.co من صندوق HF واحد برمز المالك المُمرَّر إلى الصندوق وحده؛ الرمزُ لم يُطبع",
- "method": "نداءٌ واحد لكل نموذج على كل طلب (حرارة ٠) بفرق الطلب العامّ داخل سياجٍ بيانًا لا تعليمات؛ ثم تحقّق Claude من كل ملاحظةٍ عالية أو متوسطة على شيفرة الرأس، ونُشرت المؤكَّدةُ والمحتملة وحدها قسمًا في التعليق الاستشاريّ الواحد على كل طلب",
+ "method": "نداءٌ واحد لكل نموذج على كل طلب (حرارة ٠) بفرق الطلب العامّ داخل سياجٍ بيانًا لا تعليمات؛ ثم تحقّق Claude من كل ملاحظةٍ عالية أو متوسطة على شيفرة الرأس، ونُشرت المؤكَّدةُ والمحتملة وحدها قسمًا في التعليق الاستشاريّ الواحد على كل طلب. ثم تحقّقتُ من المنخفضات الثماني بعد النشر على الرؤوس نفسِها (verified_after_publication)",
  "models": {
   "deepseek-ai/DeepSeek-V3-0324": {
    "family": "deepseek",
@@ -57,8 +57,8 @@
    },
    "confirmed": 0,
    "plausible": 1,
-   "rejected": 8,
-   "unverified_low": 2,
+   "rejected": 10,
+   "unverified_low": 0,
    "head": "32ef66837caf5e1a411e02e118317ebeff72b976"
   },
   "178": {
@@ -69,9 +69,9 @@
     "microsoft": 8
    },
    "confirmed": 1,
-   "plausible": 1,
-   "rejected": 11,
-   "unverified_low": 2,
+   "plausible": 2,
+   "rejected": 12,
+   "unverified_low": 0,
    "head": "62e2ed02629cfa4883f15bc7aeb3154f1849c4fa"
   },
   "179": {
@@ -82,9 +82,9 @@
     "microsoft": 8
    },
    "confirmed": 0,
-   "plausible": 2,
+   "plausible": 3,
    "rejected": 8,
-   "unverified_low": 1,
+   "unverified_low": 0,
    "head": "380db575c0cc5b88c2cc63d8ccd746d8f13a32c8"
   },
   "180": {
@@ -96,8 +96,8 @@
    },
    "confirmed": 0,
    "plausible": 0,
-   "rejected": 12,
-   "unverified_low": 2,
+   "rejected": 14,
+   "unverified_low": 0,
    "head": "345e04e06a63e5117672a4dcfcd08418dcdbf254"
   },
   "189": {
@@ -109,22 +109,22 @@
    },
    "confirmed": 0,
    "plausible": 0,
-   "rejected": 9,
-   "unverified_low": 1,
+   "rejected": 10,
+   "unverified_low": 0,
    "head": "841d11d7a6be14ef65bb13dc6070c5c22981b99e"
   }
  },
  "summary": {
   "findings": 61,
   "confirmed": 1,
-  "plausible": 4,
-  "rejected": 48,
-  "unverified_low": 8,
+  "plausible": 6,
+  "rejected": 54,
+  "unverified_low": 0,
   "new_beyond_the_existing_advisory_review": 0,
   "missed": "لم يلتقط نموذجٌ أيًّا من عيوب #179 الثلاثة من درجة P1 ولا ثغرةَ الهروب في JSON",
   "dominant_false_positive": "DeepSeek وPhi-4 قرأا طفرات tests/mutations/*.jsonl المقصودة تغييراتٍ حقيقية في الشيفرة، فجاءت كلُّ الملاحظات العالية على #178 و#180 من ذلك",
   "verdict": "النماذجُ المجانية الأربعة لا تُستعمل مراجِعًا للشيفرة؛ تبقى لمراجعة البنوك وتجربة الخطأ المزروع، وجردُ ذلك ودليلُه مع #174",
-  "totals_rule": "findings = عددُ صفوف findings = مجموعُ findings_by_family في كل الطلبات = confirmed + plausible + rejected + unverified_low؛ وكلُّها تُحسب من صفوف findings (tests/test_free_llm_review_probe.py)"
+  "totals_rule": "findings = عددُ صفوف findings = مجموعُ findings_by_family في كل الطلبات = confirmed + plausible + rejected + unverified_low؛ وكلُّها تُحسب من صفوف findings (tests/test_free_llm_review_probe.py)؛ وnew_beyond_the_existing_advisory_review = المؤكَّدةُ والمحتملة التي لا advisory_item لها"
  },
  "spend": {
   "sandboxes": [
@@ -241,8 +241,10 @@
    "line": 547,
    "claim": "Default project creation logic is changed, potentially causing issues if the API call fails.",
    "evidence": "+  let general = [...$(\"projects\").options].find(option => option.textContent === \"عام\");\n+  if(!general) {\n+    const created = await api(\"create_project\", {name:\"عام\"});\n+    await projects();\n+    general = [...$(\"projects\").options].find(option => option.value === created.id);\n+  }\n+  if(!general) throw {code:\"default_project_unavailable\"};",
-   "verdict": "unverified_low",
-   "reason": "منخفضة؛ يقاربها البند ٧"
+   "verdict": "rejected",
+   "reason": "إخفاقُ create_project يرمي رمزَه إلى boot().catch(showError) (app.js:578)، فلا يمضي صامتًا",
+   "class": "not_a_defect",
+   "verified_after_publication": "2026-09-29، بعد مراجعة Codex على 5d1422b؛ لم يُنشر في التعليق الاستشاريّ"
   },
   {
    "n": 4,
@@ -254,8 +256,10 @@
    "line": 14,
    "claim": "Details panel is now a dropdown, which might affect accessibility for users relying on the previous layout.",
    "evidence": "-<aside><header><strong class=\"brand\">ديوان<span>مساحة عربية للعمل والتفكير</span></strong><span class=\"local\">على جهازك</span></header>\n+<main><div class=\"top\"><div><p class=\"eyebrow\" id=\"project-title\">المشروع العام</p><h1 id=\"session-title\">ديوان</h1></div><details id=\"details-panel\"><summary>التفاصيل</summary><aside><header><strong class=\"brand\">ديوان<span>مساحة عربية للعمل والتفكير</span></strong><span class=\"local\">على جهازك</span></header>",
-   "verdict": "unverified_low",
-   "reason": "منخفضة؛ لوحةُ «التفاصيل» المنسدلة والإتاحة"
+   "verdict": "rejected",
+   "reason": "<details> و<summary> عنصرُ إفصاحٍ أصيل يُفتح بلوحة المفاتيح، ولم تُسمَّ عقبةٌ بعينها؛ وقارئُ الشاشة الحقيقيّ لم يُجرَّب",
+   "class": "generic_no_defect",
+   "verified_after_publication": "2026-09-29، بعد مراجعة Codex على 5d1422b؛ لم يُنشر في التعليق الاستشاريّ"
   },
   {
    "n": 5,
@@ -422,8 +426,10 @@
    "line": 368,
    "claim": "Memory store parameter default may be misleading",
    "evidence": "The memory parameter in agent_session defaults to None, but the previous implementation always passed a memory store. This could lead to unexpected behavior if memory is not explicitly provided.",
-   "verdict": "unverified_low",
-   "reason": "منخفضة؛ الافتراضيُّ memory=None"
+   "verdict": "rejected",
+   "reason": "memory=None يعود إلى مخزن المشروع في server.py:401-402",
+   "class": "not_a_defect",
+   "verified_after_publication": "2026-09-29، بعد مراجعة Codex على 5d1422b؛ لم يُنشر في التعليق الاستشاريّ"
   },
   {
    "n": 17,
@@ -449,8 +455,11 @@
    "line": 486,
    "claim": "Potential performance issue with repeated memory scope creation",
    "evidence": "The agent_dispatch method now creates a new memory scope for each request if the session is unified, which could impact performance if the scope creation is expensive.",
-   "verdict": "unverified_low",
-   "reason": "منخفضة؛ كلفةُ بناء النطاق في كل طلب"
+   "verdict": "plausible",
+   "reason": ":485 يبني all_projects_memory() لكل جلسةٍ موحّدة في عدّ المراجع ولا حاجة إليه؛ والكلفةُ نفسُها لم تُقس",
+   "class": "duplicate_of_advisory_item",
+   "verified_after_publication": "2026-09-29، بعد مراجعة Codex على 5d1422b؛ لم يُنشر في التعليق الاستشاريّ",
+   "advisory_item": "البند ٤"
   },
   {
    "n": 19,
@@ -605,8 +614,11 @@
    "line": 448,
    "claim": "scrubbed count is not validated",
    "evidence": "The `scrubbed` count returned by `session.scrub_memory_text(text)` is not validated or checked for correctness. If the scrubbing process fails or returns an incorrect count, this could lead to inaccurate reporting in the receipt.",
-   "verdict": "unverified_low",
-   "reason": "منخفضة؛ يقاربها البند ٧"
+   "verdict": "plausible",
+   "reason": "الجلسةُ غيرُ المقروءة تُسجَّل صفرًا في scrubbed (server.py:451-454)، فلا يتميّز عن «لا شيء كُشط»",
+   "class": "duplicate_of_advisory_item",
+   "verified_after_publication": "2026-09-29، بعد مراجعة Codex على 5d1422b؛ لم يُنشر في التعليق الاستشاريّ",
+   "advisory_item": "البند ٧"
   },
   {
    "n": 30,
@@ -800,8 +812,10 @@
    "line": 457,
    "claim": "The _input_digest method calls input_digest with potentially missing keys",
    "evidence": "return input_digest(self.config, turn)",
-   "verdict": "unverified_low",
-   "reason": "منخفضة؛ input_digest لا يفحص مدخلاته"
+   "verdict": "rejected",
+   "reason": "turn_id وtext وinitial_messages لازمةٌ في كل جولةٍ محفوظة، وكان _input_digest القديم يقرؤها هكذا",
+   "class": "not_a_defect",
+   "verified_after_publication": "2026-09-29، بعد مراجعة Codex على 5d1422b؛ لم يُنشر في التعليق الاستشاريّ"
   },
   {
    "n": 44,
@@ -813,8 +827,10 @@
    "line": 17,
    "claim": "The input_digest function does not validate its inputs",
    "evidence": "return digest({\"config\": digest(config), \"turn_id\": turn[\"turn_id\"], \"text\": turn[\"text\"], \"initial_messages\": turn[\"initial_messages\"], **({\"thinking\": True} if turn.get(\"thinking\") else {}), **({\"memory\": turn[\"memory\"]} if \"memory\" in turn else {})})",
-   "verdict": "unverified_low",
-   "reason": "منخفضة؛ input_digest لا يفحص مدخلاته"
+   "verdict": "rejected",
+   "reason": "turn_id وtext وinitial_messages لازمةٌ في كل جولةٍ محفوظة، وكان _input_digest القديم يقرؤها هكذا",
+   "class": "not_a_defect",
+   "verified_after_publication": "2026-09-29، بعد مراجعة Codex على 5d1422b؛ لم يُنشر في التعليق الاستشاريّ"
   },
   {
    "n": 45,
@@ -952,8 +968,10 @@
    "line": 23,
    "claim": "Test case for non-loopback URL",
    "evidence": "The test case `test_non_loopback_or_ambiguous_ollama_endpoint_is_named` includes a URL with `example.com`, which is not a loopback address. This could lead to false positives or negatives in the test if the validation logic is not robust enough.",
-   "verdict": "unverified_low",
-   "reason": "منخفضة؛ وجودُ example.com في الحالات"
+   "verdict": "rejected",
+   "reason": "http://example.com:11434 حالةٌ مرفوضة يثبتها الاختبار: عنوانٌ غيرُ loopback يُرفض بـlocal_chat_endpoint_invalid",
+   "class": "not_a_defect",
+   "verified_after_publication": "2026-09-29، بعد مراجعة Codex على 5d1422b؛ لم يُنشر في التعليق الاستشاريّ"
   },
   {
    "n": 55,
@@ -1062,6 +1080,7 @@
   "model_identity_is_the_router_catalog_id_not_a_verified_weight_digest",
   "costs_are_list_price_or_router_estimates_not_the_hf_invoice",
   "diffs_excluded_generated_files_and_a_number_only_readme_hunk_on_179",
-  "finding_texts_were_recovered_from_the_run_transcript_of_the_sandbox_reads_after_the_sandbox_was_terminated_the_raw_results_json_itself_was_not_kept"
+  "finding_texts_were_recovered_from_the_run_transcript_of_the_sandbox_reads_after_the_sandbox_was_terminated_the_raw_results_json_itself_was_not_kept",
+  "the_eight_low_severity_findings_were_verified_after_the_advisory_comments_were_published_their_verdicts_live_in_this_ledger_only"
  ]
 }
