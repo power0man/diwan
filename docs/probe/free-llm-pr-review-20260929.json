@@ -115,7 +115,7 @@
   }
  },
  "summary": {
-  "findings": 56,
+  "findings": 61,
   "confirmed": 1,
   "plausible": 4,
   "rejected": 48,
@@ -123,7 +123,8 @@
   "new_beyond_the_existing_advisory_review": 0,
   "missed": "لم يلتقط نموذجٌ أيًّا من عيوب #179 الثلاثة من درجة P1 ولا ثغرةَ الهروب في JSON",
   "dominant_false_positive": "DeepSeek وPhi-4 قرأا طفرات tests/mutations/*.jsonl المقصودة تغييراتٍ حقيقية في الشيفرة، فجاءت كلُّ الملاحظات العالية على #178 و#180 من ذلك",
-  "verdict": "النماذجُ المجانية الأربعة لا تُستعمل مراجِعًا للشيفرة؛ تبقى لمراجعة البنوك وتجربة الخطأ المزروع حيث نجحت (docs/probe/free-api-inventory-20260928.json في #174)"
+  "verdict": "النماذجُ المجانية الأربعة لا تُستعمل مراجِعًا للشيفرة؛ تبقى لمراجعة البنوك وتجربة الخطأ المزروع، وجردُ ذلك ودليلُه مع #174",
+  "totals_rule": "findings = مجموعُ findings_by_family في كل الطلبات = confirmed + plausible + rejected + unverified_low"
  },
  "spend": {
   "sandboxes": [
@@ -143,7 +144,7 @@
   "list_price_estimate_usd": {
    "inference": 0.1212,
    "compute": 0.0024,
-   "compute_rate": "cpu-basic $0.01/hour (HF Jobs price list, as used in free-api-inventory-20260928.json)",
+   "compute_rate": "cpu-basic $0.01/hour (HF Jobs price list)",
    "total": 0.1236
   },
   "cap": "HFD2 ($20)؛ وسقفُ هذا التشغيل $2 و٣٠ دقيقة صندوق",
