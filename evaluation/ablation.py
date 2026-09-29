@@ -35,7 +35,7 @@ from services.agent_workspace import encode_input, model_facing_input
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "evaluation" / "protocols" / "ablation_v1.json"
-RUNNER_VERSION = 1
+RUNNER_VERSION = 2   # ٢: العيّنةُ تُسحب من الحالات المؤهَّلة لا من البنك كلِّه ثم تُصفّى (#185)؛ ١: السحبُ قبل التصفية
 MAX_ANSWER_CHARS = 6000
 Z95 = 1.959963984540054
 # ذراعُ الأساس: ما في المنتج اليوم (الأدواتُ معلنة، والتفكيرُ غير مطلوب، ورسالةُ المستخدم محجورةُ المقتبَس)

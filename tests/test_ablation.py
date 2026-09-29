@@ -201,6 +201,8 @@ def test_every_ablation_report_is_recorded_in_the_run_ledger():
     for evidence, judgment in reports.items():
         run = recorded[evidence]
         assert (run["component"], run["decision"]) == (judgment["component"], judgment["decision"]), evidence
+        report = json.loads((ROOT / evidence).read_text(encoding="utf-8"))
+        assert run["runner_version"] == report["config"]["runner_version"], evidence
         assert judgment["protocol_sha256"] == ledger["protocol_sha256"], evidence
     ran = {run["component"] for run in ledger["runs"]}
     assert ran <= set(DATA["components"])
@@ -216,6 +218,7 @@ def test_the_sample_is_drawn_from_eligible_cases_so_it_reaches_its_target():
         pytest.skip("bank_open_split_absent")
     cases, _ = bank_cases(bank, sample_target=600, salt="k46", sandbox=False)
     assert len(cases) >= 600
+    assert ablation.RUNNER_VERSION >= 2          # الخوارزميةُ المصحَّحة بنسخةٍ غيرِ نسخة الأدلّة القائمة
     assert all(auto_checked(case, sandbox=False) for case in cases)
 
 
