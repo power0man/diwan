@@ -1933,3 +1933,36 @@ def test_a_foreign_directive_item_witnessed_by_its_quarantine_mark_counts_as_lea
         assert report["leaks"] >= 1, "علامةُ حجرِ العنصر الأجنبيّ في سياق B تسرّبٌ بين مشروعين"
         recounted = recount_leakage({"metrics": {"leakage": 0}, "results": [report]}, {"scenarios": [scenario]})
         assert recounted["metrics"]["leakage"] == report["leaks"], "إعادةُ العدّ تعدّ ما عدّه المُشغِّل"
+
+
+def test_every_documented_evaluator_command_passes_the_evaluator_s_own_argument_checks(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #129 (الجولة الثامنة والأربعون): أمرُ التشغيل في تكليف Kimi كان يمرّر `--suite` و`--agent` وحدهما،
+    والأداةُ تطلب `--model` و`--out` أيضًا، فيقف الأمرُ عند فحص الوسائط. صار كلُّ أمرٍ موثَّقٍ للأداة — في التكليف، وفي
+    `tools/kimi_drive.sh`، وفي وصف الأداة نفسِها — يُمرَّر إلى `main` بقيمٍ مكان مواضعه، فيبلغ المدقّقَ لا خطأَ الوسائط."""
+    import hashlib
+    import re
+    import tools.evaluate_memory as cli
+    from core.canonical import PayloadRejected
+    commands = []
+    for path in ("docs/external/KIMI-MEMORY-BANK.md", "tools/kimi_drive.sh", "tools/evaluate_memory.py"):
+        text = (ROOT / path).read_text(encoding="utf-8")
+        # والموضعُ بين قوسين زاويّين وحدةٌ ولو كان فيه مسافة («<معرّف المشغِّل>»)
+        commands += [(path, m.group(1)) for m in re.finditer(r"tools/evaluate_memory\.py((?: --[a-z]+ (?:<[^>]*>|[^\s`\"<])+)+)", text)]
+    assert {path for path, _ in commands} == {"docs/external/KIMI-MEMORY-BANK.md", "tools/kimi_drive.sh", "tools/evaluate_memory.py"}
+
+    def stop(bank, **kw):
+        raise PayloadRejected("bank", "stop_here", "")
+    monkeypatch.setattr(cli, "validate_memory_bank", stop)
+    suite = tmp_path / "suite.json"
+    suite.write_text(json.dumps(BANK, ensure_ascii=False), encoding="utf-8")
+    report = tmp_path / "report.json"
+    # وأمرُ إعادة العدّ الموثَّق بلا `--suite` يعيد العدَّ على البنك المودَع، فالتقريرُ بصمتُه بصمتُه
+    report.write_text(json.dumps({"suite_sha256": hashlib.sha256(cli.DEFAULT_SUITE.read_bytes()).hexdigest()}), encoding="utf-8")
+    values = {"--suite": str(suite), "--model": "m", "--agent": "anthropic/claude-opus-5-5", "--recount": str(report)}
+    for n, (path, command) in enumerate(commands):
+        flags = re.findall(r"(?:^| )--([a-z]+) ", command)
+        argv = [part for flag in flags for part in (f"--{flag}", values.get(f"--{flag}", str(tmp_path / f"out-{n}.json")))]
+        if "--recount" not in argv:
+            argv += ["--suite", str(suite)] if "--suite" not in argv else []
+        assert cli.main(argv) == 2, (path, command)
+        assert json.loads(capsys.readouterr().out)["code"] == "stop_here", (path, command)
