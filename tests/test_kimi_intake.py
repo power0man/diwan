@@ -319,3 +319,17 @@ def test_bank_reference_solutions_in_sibling_sidecars_are_judged(tmp_path):
     report = check_agentic(src)
     assert {f["file"] for f in report["failures"]} == {"open/tier_d/kimi_d_002.json"}
     assert {f["code"] for f in report["failures"]} == {"reference_solution_fails"}
+
+
+def test_a_prose_reference_solution_is_named_not_a_crash(tmp_path):
+    """تسليمُ v1.2: الحلُّ المرجعيّ نثرٌ («غيّر السطر… إلى…») لا خريطةُ ملفات؛ فيُسمّى برمزه ولا يسقط الاستلام."""
+    src = delivery(tmp_path)
+    meta = json.loads((src / "agentic_v3.meta.json").read_text())
+    meta["tasks"]["d0"]["reference_solution"] = "في notes.txt غيّر old إلى new"
+    meta["tasks"]["d1"]["decoy_solution"] = "نثرٌ أيضًا"
+    _write(src / "agentic_v3.meta.json", meta)
+    report = check_agentic(src)
+    codes = [f["code"] for f in report["failures"]]
+    assert codes.count("reference_solution_not_a_file_map") == 1 and "decoy_solution_not_a_file_map" in codes
+    assert report["counts"]["reference_not_a_file_map"] == 1
+    assert report["counts"]["reference_passes"] == AGENTIC_MIN_TASKS - 1

@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "kind": "k6_intake_evidence",
+  "date": "2026-09-29",
+  "delivery": "kimi v1.2 open half (backend ollama, model kimi-k2.6:cloud)",
+  "open_only": true,
+  "placed": false,
+  "bank": {
+    "counts": {
+      "open": {
+        "files": 35,
+        "cases": 1902,
+        "tasks": 140
+      },
+      "sealed": {
+        "files": 0,
+        "cases": 0,
+        "tasks": 0
+      }
+    },
+    "without_checks": {
+      "open": 0,
+      "sealed": 0
+    },
+    "failures": []
+  },
+  "dev": {
+    "general": {
+      "files": 2,
+      "cases": 150,
+      "without_checks": 0,
+      "capabilities_missing": []
+    },
+    "agentic": {
+      "tasks": 30,
+      "without_reference": 0,
+      "without_forbidden": 10
+    },
+    "failures": [
+      {
+        "file": "agentic_v3.json",
+        "code": "forbidden_missing"
+      }
+    ]
+  },
+  "agentic": {
+    "counts": {
+      "tasks": 170,
+      "fail_before_fix": 170,
+      "pass_before_fix": 0,
+      "unjudged": 0,
+      "reference_passes": 108,
+      "reference_fails": 6,
+      "reference_not_a_file_map": 56,
+      "decoy_passes": 0
+    },
+    "failures_by_file": [
+      {
+        "file": "agentic_v3.json",
+        "code": "reference_solution_not_a_file_map",
+        "count": 30
+      },
+      {
+        "file": "open/tier_d/kimi_agentic_002.json",
+        "code": "reference_solution_fails",
+        "count": 1
+      },
+      {
+        "file": "open/tier_d/kimi_agentic_002.json",
+        "code": "reference_solution_not_a_file_map",
+        "count": 26
+      },
+      {
+        "file": "open/tier_d/kimi_agentic_003.json",
+        "code": "reference_solution_fails",
+        "count": 5
+      }
+    ]
+  },
+  "passed": false,
+  "intake_fix": "reference_solution or decoy_solution that is not a {path: content} map is named reference_solution_not_a_file_map instead of crashing the container check",
+  "next": "docs/external/KIMI-V12-FIX.md",
+  "measurement_limits": [
+    "validators_check_schema_and_the_v1_2_conditions_not_whether_a_reference_answer_is_correct",
+    "gameable_check_patterns_of_k17_are_counted_only_as_cases_without_checks",
+    "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged",
+    "first_container_run_crashed_on_prose_references_so_counts_are_from_the_rerun_after_the_intake_fix",
+    "sealed_half_not_produced_and_not_judged_here"
+  ]
+}

@@ -291,6 +291,11 @@ def check_dev(src: Path) -> dict:
     return {**report, "failures": failures}
 
 
+def _is_file_map(value) -> bool:
+    """الحلُّ المرجعيّ (أو الشرَك) خريطةُ «مسارٍ ← محتواه الكامل»؛ فالنثرُ لا يُطبَّق آليًّا."""
+    return isinstance(value, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in value.items())
+
+
 def _judge(task: dict, overlay: dict | None) -> tuple[dict, list[str]]:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp).resolve()
@@ -306,7 +311,7 @@ def check_agentic(src: Path, *, judge=_judge) -> dict:
     """في الحاوية: كلُّ مهمّةٍ تسقط قبل الحلّ، ومهامُّ التطوير تمرّ بحلّها المرجعيّ."""
     failures: list = []
     counts = {"tasks": 0, "fail_before_fix": 0, "pass_before_fix": 0, "unjudged": 0,
-              "reference_passes": 0, "reference_fails": 0, "decoy_passes": 0}
+              "reference_passes": 0, "reference_fails": 0, "reference_not_a_file_map": 0, "decoy_passes": 0}
     # حلولُ البنك المرجعية في الملف الجانبيّ المجاور (`kimi_agentic_001.meta.json`)، فتُحكم كحلول التطوير
     suites = []
     for _, path in _bank_files(src):
@@ -333,13 +338,19 @@ def check_agentic(src: Path, *, judge=_judge) -> dict:
             if solutions is None:
                 continue
             solution = solutions.get(task["task_id"]) or {}
+            if not _is_file_map(solution.get("reference_solution")):
+                counts["reference_not_a_file_map"] += 1
+                _failure(failures, relative, "reference_solution_not_a_file_map")
+                continue
             reference, tampered = judge(task, solution.get("reference_solution"))
             if reference["passed"] and not tampered:
                 counts["reference_passes"] += 1
             else:
                 counts["reference_fails"] += 1
                 _failure(failures, relative, "reference_solution_fails")
-            if "decoy_solution" in solution and judge(task, solution["decoy_solution"])[0]["passed"]:
+            if "decoy_solution" in solution and not _is_file_map(solution["decoy_solution"]):
+                _failure(failures, relative, "decoy_solution_not_a_file_map")
+            elif "decoy_solution" in solution and judge(task, solution["decoy_solution"])[0]["passed"]:
                 counts["decoy_passes"] += 1
                 _failure(failures, relative, "decoy_solution_passes")
     return {"counts": counts, "failures": failures}
