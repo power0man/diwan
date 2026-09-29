@@ -292,8 +292,16 @@ def check_dev(src: Path) -> dict:
 
 
 def _is_file_map(value) -> bool:
-    """الحلُّ المرجعيّ (أو الشرَك) خريطةُ «مسارٍ ← محتواه الكامل»؛ فالنثرُ لا يُطبَّق آليًّا."""
-    return isinstance(value, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in value.items())
+    """الحلُّ المرجعيّ (أو الشرَك) خريطةُ «مسارٍ ← محتواه الكامل» بعقد المساحة نفسِه (`workspace_bytes`): نصٌّ،
+    أو {"base64": …} لملفٍّ ثنائيّ كـxlsx (#191). فالنثرُ لا يُطبَّق آليًّا."""
+    if not isinstance(value, dict) or not all(isinstance(name, str) for name in value):
+        return False
+    try:
+        for content in value.values():
+            workspace_bytes(content)
+    except PayloadRejected:
+        return False
+    return True
 
 
 def _judge(task: dict, overlay: dict | None) -> tuple[dict, list[str]]:

@@ -345,3 +345,17 @@ def test_a_passing_decoy_is_named_even_when_its_reference_is_prose(tmp_path):
     codes = [f["code"] for f in report["failures"]]
     assert "reference_solution_not_a_file_map" in codes and "decoy_solution_passes" in codes
     assert report["counts"]["decoy_passes"] == 1
+
+
+def test_a_binary_file_map_is_judged_not_named_prose(tmp_path):
+    """خريطةُ الملفات تقبل {"base64": …} كما يقبلها `workspace_bytes`، فيُحكم الحلُّ الثنائيّ ولا يُسمّى نثرًا (#191)."""
+    src = delivery(tmp_path)
+    meta = json.loads((src / "agentic_v3.meta.json").read_text())
+    meta["tasks"]["d0"] = {"reference_solution": {"notes.txt": {"base64": "bmV3"}},        # «new»
+                           "decoy_solution": {"notes.txt": {"base64": "bmV3 "}}}          # ترميزٌ غيرُ قانونيّ
+    _write(src / "agentic_v3.meta.json", meta)
+    report = check_agentic(src)
+    codes = [f["code"] for f in report["failures"]]
+    assert "reference_solution_not_a_file_map" not in codes and report["counts"]["reference_passes"] == AGENTIC_MIN_TASKS
+    assert codes == ["decoy_solution_not_a_file_map"]
+
