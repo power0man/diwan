@@ -156,10 +156,10 @@ python tools/ui_browser_audit.py --axe <axe.min.js> [--journey current|single-pa
 فإن اختلف شيءٌ من ذلك، ولو مسارٌ مسبوقٌ مثل `/ollama`، لم تُسمَّ الواجهةُ جاهزة وإن خدمت صفحتَها، وسُجّل الرمز `ui_engine_endpoint_unpassed` (تعذّرٌ معلن). ذلك أن نداءَ القراءة لا يبلغ النموذج، فلا يكشف هذا الانقطاعَ وحده. وطلبُ العنوان الصريح في مسار openai: #176.
 
 **`ui_engine_refused`:** على العنوان الافتراضيّ وبمحرّكٍ موجود، لا تُسمّى الواجهةُ جاهزةً بنداء القراءة وحده، لأن الجولة الحيّة (`agent_turn`) تمرّ بمزوّدٍ أرخى (`OllamaProvider`). فتُشغَّل الخطوةُ بمزوّدَي الواجهة نفسَيهما:
-- الفحصُ المسبق الكامل لمزوّد الأدوات `LocalToolProvider`، ويطلب قدرةَ `tools` لأن جلسات الواجهة وكيلةٌ افتراضيًّا؛
+- جوابٌ قصير عبر `complete()` لمزوّد الأدوات `LocalToolProvider`، بطلبٍ يحمل أداةً واحدة فارغة لا تُنفَّذ، لأن جلسات الواجهة وكيلةٌ افتراضيًّا. وفيه فحصُه المسبق بقدرة `tools`، وتسلسلُ الأدوات، وردُّ الخادم على طلبٍ يحملها، ومحلّلُ الجواب؛
 - ثم جوابٌ قصير عبر `complete()` لمزوّد النصّ `LocalChatProvider`، وفيه فحصُه المسبق (الحجمُ والصيغةُ والبُعد وقدراتُ `/api/show` وسعةُ السياق) وردُّ `/api/chat`.
 
-فإن رفض أحدُهما النموذجَ سُجّل `ui_engine_refused` برمز المزوّد، مثل `local_chat_artifact_invalid` أو `local_chat_remote_model` أو `local_media_capability_missing` أو `local_chat_context_unsupported` أو `local_chat_malformed`.
+فإن رفض أحدُهما النموذجَ سُجّل `ui_engine_refused` برمز المزوّد، مثل `local_chat_artifact_invalid` أو `local_chat_remote_model` أو `local_tools_capability_missing` أو `local_chat_context_unsupported` أو `local_tools_malformed` أو `local_chat_malformed`.
 
 **`engine_metadata_invalid` (خطوةُ المحرّك):** إذا سرد Ollama المحرّكَ ببصمةٍ غائبة أو فارغة أو مشوّهة، أو غيرِ نصّية (رقمٍ أو قيمةٍ منطقية أو قائمة)، أو جاء ردُّ `/api/tags` على غير شكله، فتلك بقاعدة الفحص المسبق في المزوّد المحليّ نفسِه (`_SHA256`: ٦٤ محرفًا ست عشريًّا صغيرًا) عطبٌ مسمًّى، وخروجُ الفحص غيرُ صفر. فلا يُعدّ ذلك محرّكًا غائبًا، ولا جاهزًا تُشغَّل معه الواجهةُ ببصمةٍ بديلة ثم يرفض أولُ جوابٍ فيها.
 

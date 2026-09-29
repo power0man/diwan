@@ -370,19 +370,21 @@ UI_ENGINE_DEADLINE_S = 120.0   # فحصُ المزوّدَين قبل «جاهز
 
 
 def check_ui_engine(model: str, digest: str) -> Step | None:
-    """المحرّكُ كما تستعمله الواجهة، بمزوّدَيها لا بمزوّد الجولة الحيّة (OllamaProvider أرخى): الفحصُ المسبق الكامل لمزوّد
-    الأدوات (جلساتُ الواجهة وكيلةٌ افتراضيًّا، فيُطلب إعلانُ قدرة tools)، ثم جوابٌ قصير عبر `complete()` لمزوّد النصّ، وفيه
-    فحصُه المسبق (الحجم والصيغة والبُعد وقدراتُ /api/show وسعةُ السياق) وردُّ /api/chat. None إن مرّ، وإلا عطبٌ مسمًّى
-    `ui_engine_refused` برمز المزوّد: فلا يُقال «جاهز» وأولُ جوابٍ في الواجهة يُرفض."""
-    from core.contracts import Message, Request
+    """المحرّكُ كما تستعمله الواجهة، بمزوّدَيها لا بمزوّد الجولة الحيّة (OllamaProvider أرخى)، بجوابين قصيرين عبر
+    `complete()` نفسِه: أولُهما عبر مزوّد الأدوات بطلبٍ يحمل أداةً واحدةً فارغة (جلساتُ الواجهة وكيلةٌ افتراضيًّا)، ففيه فحصُه
+    المسبق بقدرة tools وتسلسلُ الأدوات ونداءُ /api/chat ومحلّلُ الجواب؛ ثم عبر مزوّد النصّ، وفيه فحصُه المسبق (الحجم والصيغة
+    والبُعد وقدراتُ /api/show وسعةُ السياق). None إن مرّا، وإلا عطبٌ مسمًّى `ui_engine_refused` برمز المزوّد: فلا يُقال «جاهز»
+    وأولُ جوابٍ في الواجهة يُرفض. والأداةُ لا تُنفَّذ: نداؤها إن جاء جوابٌ فحسب."""
+    from core.contracts import Message, Request, ToolSpec
     from providers.base import ProviderError
     from providers.local_chat import LocalChatProvider
     from providers.local_tools import LocalToolProvider
+    ask = dict(messages=(Message("user", "أجب بكلمةٍ واحدة: نعم."),), model=model, model_version=digest, max_output=8,
+               deadline_s=UI_ENGINE_DEADLINE_S, data_policy="local_only", idempotency_key=None)
+    ping = ToolSpec("launch_check_ping", "أداةٌ فارغة لفحص حمل الأدوات؛ لا تُنفَّذ", {"type": "object", "properties": {}})
     try:
-        LocalToolProvider(model, digest)._preflight(time.monotonic() + UI_ENGINE_DEADLINE_S, required_capabilities=("tools",))
-        LocalChatProvider(model, digest).complete(Request(
-            messages=(Message("user", "أجب بكلمةٍ واحدة: نعم."),), model=model, model_version=digest, max_output=8,
-            deadline_s=UI_ENGINE_DEADLINE_S, data_policy="local_only", idempotency_key=None))
+        LocalToolProvider(model, digest).complete(Request(**ask, tools=(ping,)))
+        LocalChatProvider(model, digest).complete(Request(**ask))
     except ProviderError as exc:
         return Step("ui", "failed", "ui_engine_refused", _clip(f"مزوّدُ الواجهة يرفض {model}: {exc.code} — {exc.reason}"))
     except Exception as exc:  # noqa: BLE001 — أيُّ عطبٍ في المزوّد يُسمّى ولا يقطع التقرير

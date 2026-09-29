@@ -153,10 +153,13 @@ def fake_ollama(monkeypatch):
             pass
 
         def answer(self):
+            route = self.path
             if self.command == "POST":
-                self.rfile.read(int(self.headers.get("Content-Length") or 0))
-            body = _json.dumps(served["routes"].get(self.path, {}), ensure_ascii=False).encode("utf-8")
-            self.send_response(200 if self.path in served["routes"] else 404)
+                sent = _json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+                if route == "/api/chat" and "tools" in sent and "/api/chat+tools" in served["routes"]:
+                    route = "/api/chat+tools"      # ردٌّ آخر للطلب الذي يحمل أدوات وحده
+            body = _json.dumps(served["routes"].get(route, {}), ensure_ascii=False).encode("utf-8")
+            self.send_response(served["routes"].get("status", {}).get(route, 200) if route in served["routes"] else 404)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
@@ -309,10 +312,12 @@ def test_a_model_the_ui_providers_refuse_is_not_ui_ready(tmp_path, monkeypatch, 
     cases = {
         "local_chat_artifact_invalid": _ollama(entry={"size": 0}),
         "local_chat_remote_model": _ollama(entry={"remote_host": "https://ollama.com"}),
-        "local_media_capability_missing": _ollama(show={"capabilities": ["completion"]}),
+        "local_tools_capability_missing": _ollama(show={"capabilities": ["completion"]}),
         "local_chat_context_unsupported": _ollama(show={"model_info": {"general.architecture": "qwen35",
                                                                        "qwen35.context_length": 2048}}),
-        "local_chat_malformed": _ollama(chat={"done": False}),
+        "local_tools_malformed": _ollama(chat={"done": False}),
+        # المحادثةُ بالأدوات سليمة والنصّيةُ وحدها مشوّهة: يلزم الجوابُ عبر مزوّد النصّ أيضًا
+        "local_chat_malformed": {**_ollama(chat={"done": False}), "/api/chat+tools": _ollama()["/api/chat"]},
     }
     for provider_code, routes in cases.items():
         fake_ollama["routes"] = routes
@@ -322,6 +327,21 @@ def test_a_model_the_ui_providers_refuse_is_not_ui_ready(tmp_path, monkeypatch, 
     fake_ollama["routes"] = _ollama()
     step, _ = _fake_ui(tmp_path, monkeypatch, "ok")
     assert (step.status, step.code) == ("ok", "ui_ready"), step
+
+
+def test_a_server_that_refuses_tool_bearing_chat_is_not_ui_ready(tmp_path, monkeypatch, fake_ollama):
+    """ملاحظة Codex التاسعة على #175: خادمٌ يعلن tools ويقبل المحادثةَ النصّية ويرفض /api/chat حين يحمل الطلبُ أدوات: الفحصُ
+    المسبق والجوابُ النصّيّ يمرّان، وأولُ جولةٍ وكيلة (الافتراضُ في الواجهة) ترفض. صار جوابٌ قصير عبر LocalToolProvider.complete()
+    بأداةٍ فارغة قبل «جاهز»."""
+    for name, change in (("http_error", {"status": {"/api/chat+tools": 400}}),
+                         ("malformed", {})):
+        routes = _ollama()
+        routes["/api/chat+tools"] = {"error": "tools unsupported"} if name == "http_error" else {"model": MODEL, "done": False}
+        routes.update(change)
+        fake_ollama["routes"] = routes
+        step, _ = _fake_ui(tmp_path, monkeypatch, "ok")
+        assert (step.status, step.code) == ("failed", "ui_engine_refused"), (name, step)
+        assert "local_" in step.detail, (name, step.detail)
 
 
 def test_run_checks_hands_the_engine_and_its_digest_to_the_ui_step():
