@@ -44,6 +44,7 @@ def handle(exc):
     code = getattr(exc, "code", "request_failed")
     shown = getattr(exc, "code", "status_field_only")
     configured.update(error_code=getattr(exc, "code", "capability_field_only"))
+    rejected = {"status": "error", "error_code": applied["error_code"]}
 '''
 APP = '''const errors = {
   collection_limit: "بلغت المشروعاتُ حدَّها.",
@@ -65,7 +66,8 @@ def test_error_coverage_parses_calls_structurally_with_defaults_keywords_and_fal
     assert coverage["raw_codes"] == ["id_invalid", "metadata_invalid", "request_failed", "request_invalid",
                                      "tool_contract_changed"]
     assert coverage["raw_code_lines"]["tool_contract_changed"] == 12   # سطرُ النداء لا سطرُ الرمز
-    assert coverage["dynamic_code_lines"] == [4, 15]   # UIError(code) في need نفسِها، وneed(value, value.code)
+    # UIError(code) في need نفسِها، وneed(value, value.code)، وقاموسُ ردٍّ رمزُه متغيّر (ملاحظة Codex العاشرة على #175)
+    assert coverage["dynamic_code_lines"] == [4, 15, 24]
 
 
 # — النتائجُ من ملاحظات المتصفّح —
@@ -401,6 +403,40 @@ def test_content_digests_and_the_committed_check(tmp_path):
     assert audit.inputs_committed(["a.txt"], root=tmp_path) is True
     (tmp_path / "a.txt").write_text("ب", encoding="utf-8")
     assert audit.inputs_committed(["a.txt"], root=tmp_path) is False, "ملفٌّ معدَّل ليس ما في المراجعة"
+
+
+def test_a_driver_that_hangs_or_breaks_is_a_named_failure_not_a_traceback(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex العاشرة على #175: انقضاءُ مهلة السائق كان يرمي TimeoutExpired فيخرج الفحصُ بتعقّبٍ بلا JSON. صار هو
+    وتعذّرُ تشغيل node وناتجٌ خامٌ لا يُقرأ طريقَ browser_run_failed المسمّى بالخروج 1."""
+    import subprocess
+
+    def hang(*args, **kwargs):
+        raise subprocess.TimeoutExpired(args[0], audit.BROWSER_TIMEOUT_S)
+    monkeypatch.setattr(audit.subprocess, "run", hang)
+    status, raw, tail = audit.run_browser("node", {}, {}, tmp_path)
+    assert (status, raw) == (None, None) and "مهلة" in tail
+
+    def missing(*args, **kwargs):
+        raise FileNotFoundError("node")
+    monkeypatch.setattr(audit.subprocess, "run", missing)
+    assert audit.run_browser("node", {}, {}, tmp_path)[:2] == (None, None)
+
+    class Done:
+        returncode, stdout, stderr = 0, "", ""
+
+    def garbled(*args, **kwargs):
+        (tmp_path / "raw.json").write_text("{نصف", encoding="utf-8")
+        return Done()
+    monkeypatch.setattr(audit.subprocess, "run", garbled)
+    assert audit.run_browser("node", {}, {}, tmp_path)[1] is None
+
+    monkeypatch.setattr(audit.subprocess, "run", hang)
+    monkeypatch.setattr(audit, "browser_prerequisites", lambda node=None: (None, "node", {}))
+    argv = ["--journey", "single-page", "--out", str(tmp_path / "e.json"), "--shots", str(tmp_path / "shots")]
+    assert audit.main(argv) == 1
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["code"] == "browser_run_failed" and "مهلة" in printed["tail"]
+    assert not (tmp_path / "e.json").exists()
 
 
 def test_a_missing_browser_is_named_not_a_traceback():

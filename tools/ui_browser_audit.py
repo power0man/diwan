@@ -220,8 +220,14 @@ def server_codes(server_source: str) -> tuple[dict[str, int], list[int]]:
               and [getattr(target, "id", None) for target in node.targets] == ["code"]):
             found.append(_text(node.value.args[2]))
         elif isinstance(node, ast.Dict):
-            found.extend(_text(value) for key, value in zip(node.keys, node.values)
-                         if key is not None and _text(key) == "error_code")
+            for key, value in zip(node.keys, node.values):
+                if key is None or _text(key) != "error_code":
+                    continue
+                if _text(value) is None:
+                    # رمزٌ متغيّر في قاموس الردّ (مثل ردّ الرفع المرفوض: applied["error_code"]) يبلغ showError خامًا
+                    dynamic.append(node.lineno)
+                else:
+                    found.append(_text(value))
         for code in found:
             if code:
                 codes.setdefault(code, node.lineno)
@@ -566,14 +572,28 @@ def browser_prerequisites(node: str | None = None, *, which=shutil.which, run=su
     return None, node, env
 
 
-def run_browser(node: str, env: dict, config: dict, workdir: Path) -> tuple[int, dict | None, str]:
+BROWSER_TIMEOUT_S = 900
+
+
+def run_browser(node: str, env: dict, config: dict, workdir: Path) -> tuple[int | None, dict | None, str]:
+    """(رمزُ خروج السائق أو None، ناتجُه الخام أو None، ذيلُ مخرجاته). ما يعطّل السائقَ نفسَه (انقضاءُ المهلة، أو تعذّرُ تشغيل
+    node، أو ناتجٌ خامٌ لا يُقرأ) لا يرمي: يعود بلا ناتجٍ وبسببه، فيسلك `main` طريقَ `browser_run_failed` المسمّى."""
     config_path, raw_path = workdir / "config.json", workdir / "raw.json"
     config_path.write_text(json.dumps({**config, "raw_path": str(raw_path)}, ensure_ascii=False), encoding="utf-8")
-    result = subprocess.run([node, str(SCRIPT), str(config_path)], env=env, capture_output=True, text=True,
-                            timeout=900)
-    raw = json.loads(raw_path.read_text(encoding="utf-8")) if raw_path.is_file() else None
+    try:
+        result = subprocess.run([node, str(SCRIPT), str(config_path)], env=env, capture_output=True, text=True,
+                                timeout=BROWSER_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        return None, None, f"انقضت مهلةُ المتصفّح ({BROWSER_TIMEOUT_S} ث) ولم يكتمل السائق"
+    except OSError as exc:
+        return None, None, _trim(f"تعذّر تشغيلُ السائق: {type(exc).__name__}: {exc}", 600)
     output = result.stderr or result.stdout
-    return result.returncode, raw, (output if len(output) <= 600 else "…" + output[-599:])
+    tail = output if len(output) <= 600 else "…" + output[-599:]
+    try:
+        raw = json.loads(raw_path.read_text(encoding="utf-8")) if raw_path.is_file() else None
+    except (OSError, ValueError) as exc:
+        return result.returncode, None, _trim(f"ناتجُ السائق الخام لا يُقرأ: {type(exc).__name__}", 600)
+    return result.returncode, raw, tail
 
 
 def previous_shots(out: Path) -> set[str]:
