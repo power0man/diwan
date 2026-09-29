@@ -799,6 +799,16 @@ def _history_entry(item) -> bool:
             and (item["frozen_on"] is None or _day(item["frozen_on"]) is not None) and _code_or_none(item["reason"]))
 
 
+def _frozen_consistent(cohort: dict) -> bool:
+    """أعدادُ الفوج المجمَّد متّسقةٌ فيما بينها: النتائجُ والأيامُ تجمع عددَه، وعددُ أيامه عددُ مفاتيحها، ونسبتُه منجزُه على
+    عدده كما تحسبها الأداة. فلا يحمل تقريرٌ نسبةً وتحكم البوابةُ بعددٍ يناقضها."""
+    journeys = cohort["journeys"]
+    return (sum(cohort["by_outcome"].values()) == journeys
+            and sum(cohort["by_date"].values()) == journeys
+            and len(cohort["by_date"]) == cohort["distinct_dates"]
+            and cohort["completion_rate"] == round(cohort["by_outcome"]["completed"] / journeys, 4))
+
+
 def _frozen_schema(value) -> bool:
     """مخطّطُ خطّ الأساس المجمَّد كلُّه، حقلًا حقلًا ونوعًا نوعًا، قبل أيّ استعمال."""
     if not isinstance(value, dict) or set(value) != FROZEN_FIELDS:
@@ -821,6 +831,7 @@ def _frozen_schema(value) -> bool:
             and all(_code_or_none(name) and name is not None and _count(n) for name, n in cohort["by_outcome"].items())
             and isinstance(cohort["completion_rate"], (int, float)) and not isinstance(cohort["completion_rate"], bool)
             and 0 <= cohort["completion_rate"] <= 1 and _day(cohort["cut_date"]) is not None
+            and _frozen_consistent(cohort)
             and isinstance(value["members_digest"], str) and bool(SHA256.fullmatch(value["members_digest"]))
             and _code_or_none(value["refreeze_reason"])
             and isinstance(history, list) and all(_history_entry(item) for item in history)
