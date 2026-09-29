@@ -2,11 +2,11 @@
   "schema_version": 1,
   "tool": "tools/ui_browser_audit.py",
   "agent": "anthropic/claude-opus-5-5",
-  "date": "2026-09-28",
-  "commit": "1ef5c58884ca",
+  "date": "2026-09-29",
+  "commit": "401c541e09f2",
   "commit_contains_inputs": true,
   "content_sha256_12": {
-    "tools/ui_browser_audit.py": "15a1ad1c6400",
+    "tools/ui_browser_audit.py": "d4ab231e3914",
     "tools/ui_browser_audit.cjs": "d5dac5cdc222",
     "webui/static/index.html": "8701079ea405",
     "webui/static/app.js": "fef96d0774c9",
@@ -59,112 +59,112 @@
           "id": "open",
           "viewport": "desktop",
           "ok": true,
-          "ms": 591,
+          "ms": 579,
           "note": "lang=ar dir=rtl"
         },
         {
           "id": "empty_state",
           "viewport": "desktop",
           "ok": true,
-          "ms": 347,
+          "ms": 403,
           "note": "2 disabled of 6"
         },
         {
           "id": "tab_order",
           "viewport": "desktop",
           "ok": true,
-          "ms": 105,
+          "ms": 152,
           "note": "12 stops"
         },
         {
           "id": "send_before_session",
           "viewport": "desktop",
           "ok": true,
-          "ms": 79,
+          "ms": 63,
           "note": "اختر محادثة واسترجع حالة أي إرسال سابق أولًا."
         },
         {
           "id": "create_project",
           "viewport": "desktop",
           "ok": true,
-          "ms": 73
+          "ms": 90
         },
         {
           "id": "create_text_session",
           "viewport": "desktop",
           "ok": true,
-          "ms": 97
+          "ms": 117
         },
         {
           "id": "keyboard_send",
           "viewport": "desktop",
           "ok": true,
-          "ms": 2486,
+          "ms": 2485,
           "note": "ctrl+enter=false enter=false"
         },
         {
           "id": "ask_text",
           "viewport": "desktop",
           "ok": true,
-          "ms": 300,
-          "note": "answer in 85 ms"
+          "ms": 340,
+          "note": "answer in 106 ms"
         },
         {
           "id": "draft_review_apply",
           "viewport": "desktop",
           "ok": true,
-          "ms": 355
+          "ms": 402
         },
         {
           "id": "memory_dialog",
           "viewport": "desktop",
           "ok": true,
-          "ms": 533
+          "ms": 698
         },
         {
           "id": "create_agent_session",
           "viewport": "desktop",
           "ok": true,
-          "ms": 207
+          "ms": 277
         },
         {
           "id": "agent_write",
           "viewport": "desktop",
           "ok": true,
-          "ms": 496,
-          "note": "answer in 389 ms"
+          "ms": 651,
+          "note": "answer in 532 ms"
         },
         {
           "id": "agent_approval",
           "viewport": "desktop",
           "ok": true,
-          "ms": 1675
+          "ms": 1867
         },
         {
           "id": "error_path",
           "viewport": "desktop",
           "ok": true,
-          "ms": 153,
+          "ms": 139,
           "note": "name_invalid"
         },
         {
           "id": "mobile_open",
           "viewport": "mobile",
           "ok": true,
-          "ms": 559
+          "ms": 583
         },
         {
           "id": "mobile_empty",
           "viewport": "mobile",
           "ok": true,
-          "ms": 268,
+          "ms": 318,
           "note": "composer at 1116px of 844"
         },
         {
           "id": "mobile_ask_text",
           "viewport": "mobile",
           "ok": true,
-          "ms": 397
+          "ms": 400
         }
       ],
       "checks": {
@@ -406,7 +406,7 @@
         "memory_empty_error_role": "alert",
         "memory_saved_notice": "حُفظ في ذاكرة المشروع. يدخل الطلبات الجديدة وحدها، وتستطيع نسيانه من «ذاكرة هذا المشروع».",
         "memory_panel_latin": [
-          "T23:43:56Z"
+          "T02:21:52Z"
         ],
         "memory_panel_latin_total": 1,
         "memory_panel_iso_timestamp": true,
@@ -416,7 +416,7 @@
           "write_file",
           "ok",
           "txt",
-          "act-c1cfd30459464183"
+          "act-655200a5c9774755"
         ],
         "agent_stream_latin_total": 4,
         "agent_stream_hashes": 1,
@@ -476,19 +476,19 @@
         "mobile_console_errors": []
       },
       "timings_ms": {
-        "open_to_idle": 580,
-        "dom_content_loaded": 66,
-        "first_api_response": 72,
-        "create_project": 73,
-        "create_session": 97,
-        "ask_to_answer": 85,
-        "create_agent_session": 193,
-        "agent_write_to_answer": 389,
-        "agent_request_to_approval": 845,
-        "approval_to_answer": 550,
-        "mobile_open_to_idle": 558,
-        "mobile_setup": 242,
-        "mobile_ask_to_answer": 85
+        "open_to_idle": 569,
+        "dom_content_loaded": 33,
+        "first_api_response": 42,
+        "create_project": 89,
+        "create_session": 117,
+        "ask_to_answer": 106,
+        "create_agent_session": 258,
+        "agent_write_to_answer": 532,
+        "agent_request_to_approval": 878,
+        "approval_to_answer": 693,
+        "mobile_open_to_idle": 583,
+        "mobile_setup": 231,
+        "mobile_ask_to_answer": 101
       }
     },
     "single-page": {
@@ -497,26 +497,26 @@
           "id": "sp_open",
           "viewport": "desktop",
           "ok": true,
-          "ms": 558
+          "ms": 554
         },
         {
           "id": "sp_question_field",
           "viewport": "desktop",
           "ok": true,
-          "ms": 71
+          "ms": 74
         },
         {
           "id": "sp_enter_answers",
           "viewport": "desktop",
           "ok": false,
-          "ms": 8075,
+          "ms": 8041,
           "error": "page.waitForFunction: Timeout 8000ms exceeded."
         },
         {
           "id": "sp_open",
           "viewport": "mobile",
           "ok": true,
-          "ms": 551
+          "ms": 563
         },
         {
           "id": "sp_question_field",
@@ -528,7 +528,7 @@
           "id": "sp_enter_answers",
           "viewport": "mobile",
           "ok": false,
-          "ms": 8031,
+          "ms": 8069,
           "error": "page.waitForFunction: Timeout 8000ms exceeded."
         }
       ],
@@ -553,31 +553,31 @@
         }
       },
       "timings_ms": {
-        "sp_open_desktop": 558,
-        "sp_open_mobile": 551
+        "sp_open_desktop": 554,
+        "sp_open_mobile": 563
       }
     }
   },
   "timings_ms": {
     "model_time": "zero_by_scripted_provider",
     "current": {
-      "open_to_idle": 580,
-      "dom_content_loaded": 66,
-      "first_api_response": 72,
-      "create_project": 73,
-      "create_session": 97,
-      "ask_to_answer": 85,
-      "create_agent_session": 193,
-      "agent_write_to_answer": 389,
-      "agent_request_to_approval": 845,
-      "approval_to_answer": 550,
-      "mobile_open_to_idle": 558,
-      "mobile_setup": 242,
-      "mobile_ask_to_answer": 85
+      "open_to_idle": 569,
+      "dom_content_loaded": 33,
+      "first_api_response": 42,
+      "create_project": 89,
+      "create_session": 117,
+      "ask_to_answer": 106,
+      "create_agent_session": 258,
+      "agent_write_to_answer": 532,
+      "agent_request_to_approval": 878,
+      "approval_to_answer": 693,
+      "mobile_open_to_idle": 583,
+      "mobile_setup": 231,
+      "mobile_ask_to_answer": 101
     },
     "single-page": {
-      "sp_open_desktop": 558,
-      "sp_open_mobile": 551
+      "sp_open_desktop": 554,
+      "sp_open_mobile": 563
     }
   },
   "error_code_coverage": {
@@ -675,7 +675,9 @@
       303,
       342,
       434,
-      845
+      740,
+      845,
+      1027
     ],
     "scope": "need_UIError_error_code_literals_and_the_handler_code_fallback_in_webui_server_py_parsed_with_ast"
   },
@@ -967,7 +969,7 @@
       "file": "01-empty-desktop.png",
       "step": "empty_state",
       "viewport": "1366x768",
-      "bytes": 61620
+      "bytes": 61664
     },
     {
       "file": "02-text-answer-desktop.png",
@@ -979,19 +981,19 @@
       "file": "03-draft-review-desktop.png",
       "step": "draft_review_apply",
       "viewport": "1366x768",
-      "bytes": 73766
+      "bytes": 73770
     },
     {
       "file": "09-memory-desktop.png",
       "step": "memory_dialog",
       "viewport": "1366x768",
-      "bytes": 73822
+      "bytes": 73831
     },
     {
       "file": "04-agent-steps-desktop.png",
       "step": "agent_write",
       "viewport": "1366x768",
-      "bytes": 56937
+      "bytes": 56990
     },
     {
       "file": "05-approval-desktop.png",
