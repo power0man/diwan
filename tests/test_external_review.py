@@ -1046,3 +1046,14 @@ def test_bank_results_and_the_saved_summary_carry_the_free_backend_limits(tmp_pa
     assert result["measurement_limits"] == expected
     saved = json.loads((bank / "runs" / "Q1" / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
     assert saved["measurement_limits"] == expected and saved["run_id"] == "Q1"
+
+
+def test_the_catalog_listing_and_its_saved_file_carry_the_free_backend_limits(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174: جردُ الفهرس ينشر أعدادًا وعائلاتٍ ومرشّحين، فمعه حدودُه من الموضع الواحد."""
+    _free(monkeypatch, FreeOpener(catalog=[_gh_full(DS), _gh_full(MI)]))
+    out = tmp_path / "catalog.json"
+    assert cli.main(["--backend", "github-models", "--list-catalog", str(out)]) == 0
+    expected = cli.free_limits(cli.CATALOG_LIMITS)
+    assert set(cli.FREE_LIMITS) <= set(expected) and set(cli.CATALOG_LIMITS) <= set(expected)
+    assert _printed(capsys)["measurement_limits"] == expected
+    assert json.loads(out.read_text(encoding="utf-8"))["measurement_limits"] == expected

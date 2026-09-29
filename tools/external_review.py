@@ -172,6 +172,7 @@ PREFERRED_FAMILIES = ("deepseek", "mistral", "meta", "cohere", "ai21", "microsof
 # مقاطعُ في الاسم تؤخّر النموذجَ داخل عائلته: الاستدلاليّ يسبق JSON بنصٍّ طويل، والصغيرُ والمرئيُّ ليسا مراجعَين
 _DEMOTED_TOKENS = {"r1", "reasoning", "thinking", "think", "mini", "tiny", "3b", "8b", "vision", "embed"}
 
+CATALOG_LIMITS = ("catalog_is_one_listing_at_one_moment_not_a_guarantee_of_availability",)
 FREE_LIMITS = (
     "model_identity_is_the_provider_catalog_id_not_a_verified_weight_digest",
     "family_is_derived_from_publisher_and_name_not_attested_by_the_provider",
@@ -971,7 +972,10 @@ def _free_main(args, parser) -> int:
         transport = build_free_transport(args.backend, max_tokens=args.max_tokens)
         if args.list_catalog:
             assessed = assess_catalog(transport.catalog(), args.backend)
-            _write_json(args.list_catalog, {"schema_version": 1, "backend": transport.describe(), **assessed})
+            # حدودُ الجرد من الموضع الواحد (ملاحظة Codex على #174): الهويةُ معرّفُ الفهرس، والعائلةُ مستنتجة، والفهرسُ لحظةٌ واحدة
+            limits = free_limits(CATALOG_LIMITS)
+            _write_json(args.list_catalog, {"schema_version": 1, "backend": transport.describe(), **assessed,
+                                            "measurement_limits": limits})
             eligible: dict[str, list[str]] = {}
             for row in assessed["rows"]:
                 if row["eligible"]:
@@ -979,7 +983,8 @@ def _free_main(args, parser) -> int:
             print(json.dumps({"status": "listed", "backend": transport.describe(), "shape": transport.catalog_shape,
                               "models": assessed["models"],
                               "eligible": eligible, "refused": assessed["refused"],
-                              "candidates": [c["model"] for c in assessed["candidates"][:len(PREFERRED_FAMILIES)]]},
+                              "candidates": [c["model"] for c in assessed["candidates"][:len(PREFERRED_FAMILIES)]],
+                              "measurement_limits": limits},
                              ensure_ascii=False))
             return 0
         if args.smoke:
