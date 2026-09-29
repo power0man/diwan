@@ -183,6 +183,31 @@ def test_the_protocol_is_registered_and_names_six_components():
             assert arm(spec["arms"]["on"]) != arm(spec["arms"]["off"]), name
 
 
+LEDGER = ROOT / "evaluation" / "protocols" / "ablation_v1.runs.json"
+
+
+def test_every_ablation_report_is_recorded_in_the_run_ledger():
+    """البروتوكولُ مبصومٌ فلا تتغيّر حالتُه داخله؛ فكلُّ تقريرِ استئصالٍ في docs/probe صفٌّ في دفتر التشغيل بقراره
+    وبصمةِ البروتوكول التي قيس بها، وحالةُ الدفتر تتبع ما شُغّل من المكوّنات (الخطة §٥٨٦ البند ٥)."""
+    ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
+    assert ledger["protocol_sha256"] == hashlib.sha256(PROTOCOL.read_bytes()).hexdigest()
+    reports = {}
+    for path in sorted((ROOT / "docs" / "probe").glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and data.get("kind") == "ablation_report":
+            reports[path.relative_to(ROOT).as_posix()] = data["judgment"]
+    recorded = {run["evidence"]: run for run in ledger["runs"]}
+    assert set(recorded) == set(reports), "كلُّ تقرير استئصالٍ في docs/probe له صفٌّ في " + LEDGER.name
+    for evidence, judgment in reports.items():
+        run = recorded[evidence]
+        assert (run["component"], run["decision"]) == (judgment["component"], judgment["decision"]), evidence
+        assert judgment["protocol_sha256"] == ledger["protocol_sha256"], evidence
+    ran = {run["component"] for run in ledger["runs"]}
+    assert ran <= set(DATA["components"])
+    expected = "registered_not_run" if not ran else "run" if ran == set(DATA["components"]) else "partially_run"
+    assert ledger["status"] == expected
+
+
 def test_blocked_components_refuse_by_name():
     for name in ("vectors", "camel_expansion"):
         with pytest.raises(AblationError, match="component_blocked"):

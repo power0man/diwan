@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "protocol": "evaluation/protocols/ablation_v1.json",
+  "protocol_sha256": "4df31babe1b15899fe3e9c7eb3359cf3a213530d44e86b823e21540fb3328105",
+  "status": "partially_run",
+  "why_a_ledger": "البروتوكولُ مبصومٌ بايتًا بايتًا قبل التشغيل (tests/test_ablation.py)، وكلُّ تقريرٍ يحمل بصمتَه؛ فحالةُ التشغيل تُسجَّل هنا لا في حقل status داخله، وإلا تغيّرت البصمةُ التي تشهد بها التقاريرُ المنشورة. وstatus في البروتوكول نفسِه حالةُ التسجيل لا حالةُ التشغيل (الخطة §٥٨٦ البند ٥).",
+  "runs": [
+    {"component": "search", "evidence": "docs/probe/k46-search-20260926.json", "date": "2026-09-26",
+     "decision": "keep", "reason": "inconclusive_registered_default"},
+    {"component": "quarantine", "evidence": "docs/probe/k46-quarantine-20260928.json", "date": "2026-09-28",
+     "decision": "underpowered", "reason": "pairs 410 < min_items 461"}
+  ]
+}
