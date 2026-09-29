@@ -32,11 +32,15 @@ def bank_cases(bank_open: Path, *, sample_target: int | None, salt: str, sandbox
     suites = load_capability_suites(bank_open)          # المهامُّ الوكيلة (الطبقة د) لها مُشغِّلُها
     files = [{"path": str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path),
               "sha256": _sha(path.read_bytes())} for path, _ in suites]
+    # المؤهَّلُ يُصفّى قبل السحب لا بعده: كانت العيّنةُ تُسحب من البنك كلِّه ثم يسقط منها ما لا فحصَ آليًّا له، فنقصت عن
+    # الهدف (٦٢٨ ← ٤٥٧ والمؤهَّلُ ١٣٧٣) واختلّ مزيجُ القدرات، فصار «ناقصُ القوة» أثرَ الترتيب لا قلّةَ الحالات (#185)
+    eligible = [(path, {**suite, "cases": [case for case in suite["cases"] if auto_checked(case, sandbox=sandbox)]})
+                for path, suite in suites]
     if sample_target is None:
-        cases = [case for _, suite in suites for case in suite["cases"]]
+        cases = [case for _, suite in eligible for case in suite["cases"]]
     else:
-        cases = [case for group in stratified(suites, sample_target, salt).values() for case in group]
-    return [case for case in cases if auto_checked(case, sandbox=sandbox)], files
+        cases = [case for group in stratified(eligible, sample_target, salt).values() for case in group]
+    return cases, files
 
 
 def run_component(component: str, provider, *, model: str, model_version: str, bank_open: Path,

@@ -208,6 +208,17 @@ def test_every_ablation_report_is_recorded_in_the_run_ledger():
     assert ledger["status"] == expected
 
 
+def test_the_sample_is_drawn_from_eligible_cases_so_it_reaches_its_target():
+    """السحبُ بعد التصفية: بلا حاويةٍ تبلغ العيّنةُ هدفَها من الحالات المؤهَّلة، وكلُّها ذاتُ فحصٍ آليّ بلا حاوية (#185)."""
+    from tools.evaluate_ablation import bank_cases
+    bank = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
+    if not bank.is_dir():
+        pytest.skip("bank_open_split_absent")
+    cases, _ = bank_cases(bank, sample_target=600, salt="k46", sandbox=False)
+    assert len(cases) >= 600
+    assert all(auto_checked(case, sandbox=False) for case in cases)
+
+
 def test_blocked_components_refuse_by_name():
     for name in ("vectors", "camel_expansion"):
         with pytest.raises(AblationError, match="component_blocked"):

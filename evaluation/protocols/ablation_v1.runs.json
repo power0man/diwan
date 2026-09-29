@@ -8,6 +8,7 @@
     {"component": "search", "evidence": "docs/probe/k46-search-20260926.json", "date": "2026-09-26",
      "decision": "keep", "reason": "inconclusive_registered_default"},
     {"component": "quarantine", "evidence": "docs/probe/k46-quarantine-20260928.json", "date": "2026-09-28",
-     "decision": "underpowered", "reason": "pairs 410 < min_items 461"}
+     "decision": "underpowered", "reason": "pairs 410 < min_items 461",
+     "rerun_required": "sampling_order_bias: the sample was drawn before filtering to eligible cases (#185); the fixed runner draws 617"}
   ]
 }
