@@ -73,20 +73,20 @@
       "tokens_estimate": 8040
     },
     "docs/STATUS.md": {
-      "bytes": 23222,
-      "tokens_estimate": 6084
+      "bytes": 23708,
+      "tokens_estimate": 6205
     },
     "docs/VISION.md": {
       "bytes": 10397,
       "tokens_estimate": 2483
     },
     "docs/DECISIONS.md": {
-      "bytes": 150199,
-      "tokens_estimate": 37435
+      "bytes": 152321,
+      "tokens_estimate": 37975
     },
     "docs/PLAN-20260926.md": {
-      "bytes": 215511,
-      "tokens_estimate": 58905
+      "bytes": 218457,
+      "tokens_estimate": 59659
     },
     "docs/TASKS.jsonl": {
       "bytes": 3470,
@@ -121,8 +121,8 @@
       "tokens_estimate": 451
     },
     "docs/HANDOFF-PROMPT.md": {
-      "bytes": 57388,
-      "tokens_estimate": 14859
+      "bytes": 57514,
+      "tokens_estimate": 14890
     }
   },
   "measurement_limits": [
