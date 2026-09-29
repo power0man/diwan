@@ -369,6 +369,17 @@ def probe_ui(origin: str, timeout_s: float = UI_HTTP_TIMEOUT_S) -> Step | int:
 UI_ENGINE_DEADLINE_S = 120.0   # فحصُ المزوّدَين قبل «جاهز»: البيانات، ثم جوابٌ قصير (قد يُحمَّل النموذجُ أولَ مرّة)
 
 
+def has_answer(response) -> bool:
+    """قاعدةُ الواجهة في أن للجولة جوابًا: نصٌّ غيرُ فارغٍ بعد القصّ. فـwebui/static/app.js يعرض `turn.content ||` بديلَ
+    الإخفاق حين يفرغ، ولا يعرض «مراجعة وحفظ مسودة» ولا «تذكّر هذا» إلا لنصٍّ يبقى بعد `trim()`."""
+    return isinstance(response.content, str) and bool(response.content.strip())
+
+
+def has_agent_step(response) -> bool:
+    """خطوةٌ وكيلة صالحة: نداءُ أداةٍ تتابع به الحلقة، أو جوابٌ بقاعدة `has_answer` (فبه تنتهي الجولة في agent/loop.py)."""
+    return bool(response.tool_calls) or has_answer(response)
+
+
 def check_ui_engine(model: str, digest: str) -> Step | None:
     """المحرّكُ كما تستعمله الواجهة، بمزوّدَيها لا بمزوّد الجولة الحيّة (OllamaProvider أرخى)، بجوابين قصيرين عبر
     `complete()` نفسِه: أولُهما عبر مزوّد الأدوات بطلبٍ يحمل أداةً واحدةً فارغة (جلساتُ الواجهة وكيلةٌ افتراضيًّا)، ففيه فحصُه
@@ -379,12 +390,18 @@ def check_ui_engine(model: str, digest: str) -> Step | None:
     from providers.base import ProviderError
     from providers.local_chat import LocalChatProvider
     from providers.local_tools import LocalToolProvider
-    ask = dict(messages=(Message("user", "أجب بكلمةٍ واحدة: نعم."),), model=model, model_version=digest, max_output=8,
+    ask = dict(messages=(Message("user", "أجب بكلمةٍ واحدة: نعم."),), model=model, model_version=digest, max_output=16,
                deadline_s=UI_ENGINE_DEADLINE_S, data_policy="local_only", idempotency_key=None)
     ping = ToolSpec("launch_check_ping", "أداةٌ فارغة لفحص حمل الأدوات؛ لا تُنفَّذ", {"type": "object", "properties": {}})
     try:
-        LocalToolProvider(model, digest).complete(Request(**ask, tools=(ping,)))
-        LocalChatProvider(model, digest).complete(Request(**ask))
+        tool_reply = LocalToolProvider(model, digest).complete(Request(**ask, tools=(ping,)))
+        if not has_agent_step(tool_reply):
+            return Step("ui", "failed", "ui_engine_refused",
+                        f"ui_engine_empty_answer: مزوّدُ الأدوات أعاد لـ{model} جوابًا فارغًا بلا نداء أداة")
+        chat_reply = LocalChatProvider(model, digest).complete(Request(**ask))
+        if not has_answer(chat_reply):
+            return Step("ui", "failed", "ui_engine_refused",
+                        f"ui_engine_empty_answer: مزوّدُ النصّ أعاد لـ{model} جوابًا فارغًا فتعرض الواجهةُ بديلَ الإخفاق")
     except ProviderError as exc:
         return Step("ui", "failed", "ui_engine_refused", _clip(f"مزوّدُ الواجهة يرفض {model}: {exc.code} — {exc.reason}"))
     except Exception as exc:  # noqa: BLE001 — أيُّ عطبٍ في المزوّد يُسمّى ولا يقطع التقرير

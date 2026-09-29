@@ -329,6 +329,26 @@ def test_a_model_the_ui_providers_refuse_is_not_ui_ready(tmp_path, monkeypatch, 
     assert (step.status, step.code) == ("ok", "ui_ready"), step
 
 
+def test_an_empty_answer_is_not_ui_ready(tmp_path, monkeypatch, fake_ollama):
+    """ملاحظة Codex الثانية عشرة على #175: ردٌّ سليمُ البنية (done_reason: stop) بنصٍّ فارغ يقبله المزوّدان، والواجهةُ تعرض معه
+    بديلَ الإخفاق لا جوابًا. صار «جاهز» يطلب قاعدةَ الواجهة نفسَها: نصًّا غيرَ فارغٍ بعد القصّ، أو نداءَ أداةٍ في الطلب الوكيل."""
+    valid = _ollama()["/api/chat"]
+    empty = {**valid, "message": {"role": "assistant", "content": ""}}
+    blank = {**valid, "message": {"role": "assistant", "content": "  \n "}}
+    call = {**valid, "message": {"role": "assistant", "content": "",
+                                 "tool_calls": [{"function": {"name": "launch_check_ping", "arguments": {}}}]}}
+    for name, text_reply, tool_reply in (("text_empty", empty, valid), ("text_blank", blank, valid),
+                                         ("tool_empty", valid, empty), ("tool_blank", valid, blank)):
+        fake_ollama["routes"] = {**_ollama(), "/api/chat": text_reply, "/api/chat+tools": tool_reply}
+        step, _ = _fake_ui(tmp_path, monkeypatch, "ok")
+        assert (step.status, step.code) == ("failed", "ui_engine_refused"), (name, step)
+        assert step.detail.startswith("ui_engine_empty_answer"), (name, step.detail)
+    # نداءُ أداةٍ بلا نصّ خطوةٌ وكيلة صالحة (تتابع بها الحلقة)
+    fake_ollama["routes"] = {**_ollama(), "/api/chat+tools": call}
+    step, _ = _fake_ui(tmp_path, monkeypatch, "ok")
+    assert (step.status, step.code) == ("ok", "ui_ready"), step
+
+
 def test_a_server_that_refuses_tool_bearing_chat_is_not_ui_ready(tmp_path, monkeypatch, fake_ollama):
     """ملاحظة Codex التاسعة على #175: خادمٌ يعلن tools ويقبل المحادثةَ النصّية ويرفض /api/chat حين يحمل الطلبُ أدوات: الفحصُ
     المسبق والجوابُ النصّيّ يمرّان، وأولُ جولةٍ وكيلة (الافتراضُ في الواجهة) ترفض. صار جوابٌ قصير عبر LocalToolProvider.complete()
