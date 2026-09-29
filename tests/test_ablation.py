@@ -15,7 +15,7 @@ import pytest
 
 from agent.builtin_tools import DEFAULT_TOOLS
 from conversation.agent_session import _user_message
-from core.contracts import Response, Usage
+from core.contracts import Response, ToolCall, Usage
 from evaluation import ablation
 from evaluation.ablation import (BASELINE, AblationError, arm, auto_checked, case_messages, compare, decide,
                                  judge, min_items, run_case)
@@ -110,6 +110,39 @@ def test_a_broken_provider_or_an_absent_sandbox_is_an_error_not_a_failure():
     sandboxed = _run(_case("s", "x", [{"kind": "python_sandbox", "value": "assert True"}]),
                      Replay(lambda user, request: "x"))
     assert sandboxed["status"] == "error" and sandboxed["code"].startswith("sandbox_")
+
+
+class Scripted(Replay):
+    """يجيب بالردّ نفسِه في كل خطوة: نداءُ أداةٍ (برقمٍ جديد) أو إيقافٌ بسببٍ مسمًّى."""
+    def __init__(self, stop="complete", call=None):
+        super().__init__(None)
+        self.stop, self.call = stop, call
+
+    def complete(self, request):
+        self.requests.append(request)
+        calls = (ToolCall(f"c{len(self.requests)}", *self.call),) if self.call else ()
+        return Response("x", Usage(1, 1), self.stop, 0, provider="replay", model_version="v1", tool_calls=calls)
+
+
+def test_an_unfinished_turn_is_an_error_not_a_measured_answer():
+    """جولةٌ توقّفت لموافقة المالك، أو بُتر جوابها، أو استنفدت خطواتها: جوابُها الوسيط لا يُقاس (#185)."""
+    case = _case("u", "x", [{"kind": "contains", "value": "x"}])          # الجوابُ الوسيط «x» كان يمرّ الفحص
+    rows = {"awaiting_owner": _run(case, Scripted(call=("write_file", {"path": "a", "content": "y"}))),
+            "truncated": _run(case, Scripted(stop="max_output")),
+            "step_limit": _run(case, Scripted(call=("list_files", {})))}
+    for loop_status, row in rows.items():
+        assert (row["status"], row["loop_status"]) == ("error", loop_status) and "passed" not in row
+    assert rows["awaiting_owner"]["code"] == "consent_required"
+    # وعطبُ كلِّ ذراعٍ برموزه في الحكم، فإن غيّر المكوّنُ ما يكتمل ظهر ولو اتّفقت النسبتان
+    on = [{**row, "id": f"c{i}"} for i, row in enumerate([{"category": "general", "status": "measured", "passed": True},
+                                                           rows["awaiting_owner"], rows["truncated"]])]
+    off = [{**row, "id": f"c{i}"} for i, row in enumerate([{"category": "general", "status": "measured", "passed": True},
+                                                            {"category": "general", "status": "measured", "passed": True},
+                                                            rows["truncated"]])]
+    verdict = judge("tool_announcement", on, off)
+    assert verdict["overall"]["pairs"] == 1 and verdict["overall"]["errors"] == 2
+    assert verdict["errors_by_arm"] == {"on": {"consent_required": 1, "response_max_output": 1},
+                                        "off": {"response_max_output": 1}}
 
 
 def _rows(outcomes, category="general"):

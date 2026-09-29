@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 
+from collections import Counter
 import hashlib
 import json
 import math
@@ -35,7 +36,7 @@ from services.agent_workspace import encode_input, model_facing_input
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "evaluation" / "protocols" / "ablation_v1.json"
-RUNNER_VERSION = 2   # ٢: العيّنةُ تُسحب من الحالات المؤهَّلة لا من البنك كلِّه ثم تُصفّى (#185)؛ ١: السحبُ قبل التصفية
+RUNNER_VERSION = 2   # ٢: العيّنةُ تُسحب من الحالات المؤهَّلة، والجولةُ غيرُ المكتملة عطبٌ لا قياس (#185)؛ ١: السحبُ قبل التصفية
 MAX_ANSWER_CHARS = 6000
 Z95 = 1.959963984540054
 # ذراعُ الأساس: ما في المنتج اليوم (الأدواتُ معلنة، والتفكيرُ غير مطلوب، ورسالةُ المستخدم محجورةُ المقتبَس)
@@ -97,8 +98,8 @@ def run_case(case: dict, provider, arm_config: dict, *, model: str, model_versio
                             turn_id=case["case_id"], initial_messages=initial, thinking=arm_config["thinking"])
         except Exception as exc:                       # عطبُ بنيةٍ لا فشلُ قدرة
             return {**base, "status": "error", "code": "loop_raised", "detail": f"{type(exc).__name__}"}
-        if run.status in ("refused", "failed"):
-            return {**base, "status": "error", "code": run.code or run.status}
+        if run.status != "complete":                   # موافقةٌ معلَّقة، أو بتر، أو حدُّ الخطوات: جوابٌ لم يكتمل فلا يُقاس (#185)
+            return {**base, "status": "error", "code": run.code or run.status, "loop_status": run.status}
         answer = run.answer[:MAX_ANSWER_CHARS]
         try:
             checks = _checks(answer, case["checks"])
@@ -194,6 +195,10 @@ def judge(component: str, on: list[dict], off: list[dict]) -> dict:
         subset = compare(on, off, categories=set(rule["benefit_categories"]))
         rest = {row["category"] for row in on} - set(rule["benefit_categories"])
         overall = compare(on, off, categories=rest)
-    return {"component": component, "overall": overall, "benefit_subset": subset,
+    # عطبُ كلِّ ذراعٍ برموزه: إن غيّر المكوّنُ ما يكتمل (موافقةٌ معلَّقة، بتر) ظهر هنا لا في النسبة (#185)
+    errors_by_arm = {side: dict(sorted(Counter(row.get("code") or "unnamed" for row in rows
+                                               if row["status"] != "measured").items()))
+                     for side, rows in (("on", on), ("off", off))}
+    return {"component": component, "overall": overall, "benefit_subset": subset, "errors_by_arm": errors_by_arm,
             **decide(rule, overall, subset, discordance=data["assumed_discordance"]),
             "meaning": spec["decisions"], "protocol_sha256": _sha(PROTOCOL.read_bytes())}
