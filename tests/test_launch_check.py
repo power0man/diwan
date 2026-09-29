@@ -124,9 +124,61 @@ def test_run_checks_without_an_engine_is_a_declared_unavailability_not_a_failure
     assert lc.exit_code(steps) == 3
 
 
-def test_the_ui_entry_point_initialises():
+# Ollama مزيّف على منفذٍ زائل؛ ومزوّدُ الواجهة يتّصل بـ127.0.0.1:11434 حرفيًّا، فيُحوَّل ذلك العنوانُ وحده إليه في الاختبار
+MODEL, DIGEST = "qwen3.5:9b", "a" * 64
+
+
+def _ollama(**change):
+    entry = {"name": MODEL, "model": MODEL, "digest": DIGEST, "size": 6_600_000_000, "details": {"format": "gguf"}}
+    show = {"details": {"format": "gguf"}, "capabilities": ["completion", "tools"],
+            "model_info": {"general.architecture": "qwen35", "qwen35.context_length": 262144}}
+    chat = {"model": MODEL, "done": True, "done_reason": "stop", "message": {"role": "assistant", "content": "نعم"},
+            "prompt_eval_count": 9, "eval_count": 1}
+    entry.update(change.get("entry", {}))
+    show.update(change.get("show", {}))
+    chat.update(change.get("chat", {}))
+    return {"/api/tags": {"models": [entry]}, "/api/show": show, "/api/chat": chat}
+
+
+@pytest.fixture
+def fake_ollama(monkeypatch):
+    import http.client
+    import http.server
+    import json as _json
+    import threading
+    served = {"routes": _ollama()}
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+        def answer(self):
+            if self.command == "POST":
+                self.rfile.read(int(self.headers.get("Content-Length") or 0))
+            body = _json.dumps(served["routes"].get(self.path, {}), ensure_ascii=False).encode("utf-8")
+            self.send_response(200 if self.path in served["routes"] else 404)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        do_GET = do_POST = answer
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    class Redirected(http.client.HTTPConnection):     # صنفٌ فرعيّ: يبقى ما يستعمله urllib من الصنف كما هو
+        def __init__(self, host, port=None, **kwargs):
+            if (host, port) == ("127.0.0.1", 11434):
+                port = server.server_port
+            super().__init__(host, port, **kwargs)
+    monkeypatch.setattr(http.client, "HTTPConnection", Redirected)
+    yield served
+    server.shutdown()
+    server.server_close()
+
+
+def test_the_ui_entry_point_initialises(fake_ollama):
     """خطوةُ الواجهة تشغّل `serve_ui.py` الحقيقيّ على منفذٍ زائل وتقرأ الصفحةَ ونداءَ projects ثم توقفه.
-    بلا محرّكٍ تُسمّي بصمتَها البديلة؛ وبمحرّكٍ وبصمته `ui_ready`."""
+    بلا محرّكٍ تُسمّي بصمتَها البديلة؛ وبمحرّكٍ وبصمته `ui_ready` بعد أن يمرّ فحصُ مزوّدَي الواجهة."""
     placeholder = lc.check_ui(ROOT)
     assert placeholder.status == "ok" and placeholder.code == "ui_ready_without_engine", placeholder
     ready = lc.check_ui(ROOT, model="qwen3.5:9b", digest="a" * 64)
@@ -244,10 +296,32 @@ def test_a_read_call_without_a_project_list_is_unexpected(tmp_path, monkeypatch)
     assert step.status == "failed" and step.code == "ui_page_unexpected" and "projects" in step.detail, step
 
 
-def test_the_ui_step_stops_the_server_it_started(tmp_path, monkeypatch):
+def test_the_ui_step_stops_the_server_it_started(tmp_path, monkeypatch, fake_ollama):
     step, pid = _fake_ui(tmp_path, monkeypatch, "ok")
     assert step.status == "ok" and step.code == "ui_ready", step
     assert not _alive(pid), "بقي خادمُ الواجهة يعمل بعد الخطوة"
+
+
+def test_a_model_the_ui_providers_refuse_is_not_ui_ready(tmp_path, monkeypatch, fake_ollama):
+    """ملاحظة Codex الثامنة على #175: /api/tags يسرد الاسمَ ببصمةٍ صالحة لكن مزوّدَ الواجهة يرفض النموذج (حجمٌ غيرُ صالح،
+    نموذجٌ بعيد، /api/show بلا قدرة tools أو بسياقٍ أصغر، جوابُ محادثةٍ مشوّه)، والجولةُ الحيّة بمزوّدٍ أرخى؛ فكان «جاهز»
+    وأولُ جوابٍ في الواجهة يُرفض. صارت الخطوةُ تمرّ بفحص مزوّدَي الواجهة المسبق وجوابٍ قصير قبل «جاهز»."""
+    cases = {
+        "local_chat_artifact_invalid": _ollama(entry={"size": 0}),
+        "local_chat_remote_model": _ollama(entry={"remote_host": "https://ollama.com"}),
+        "local_media_capability_missing": _ollama(show={"capabilities": ["completion"]}),
+        "local_chat_context_unsupported": _ollama(show={"model_info": {"general.architecture": "qwen35",
+                                                                       "qwen35.context_length": 2048}}),
+        "local_chat_malformed": _ollama(chat={"done": False}),
+    }
+    for provider_code, routes in cases.items():
+        fake_ollama["routes"] = routes
+        step, _ = _fake_ui(tmp_path, monkeypatch, "ok")
+        assert (step.status, step.code) == ("failed", "ui_engine_refused"), (provider_code, step)
+        assert provider_code in step.detail, (provider_code, step.detail)
+    fake_ollama["routes"] = _ollama()
+    step, _ = _fake_ui(tmp_path, monkeypatch, "ok")
+    assert (step.status, step.code) == ("ok", "ui_ready"), step
 
 
 def test_run_checks_hands_the_engine_and_its_digest_to_the_ui_step():

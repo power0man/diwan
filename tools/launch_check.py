@@ -20,7 +20,8 @@
    `ui_http_failed` (ردٌّ غيرُ 200 أو انقطاع)، `ui_page_unexpected` (الصفحةُ أو الردُّ على غير ما يُنتظر). وبلا محرّك
    يُشغَّل ببصمةٍ بديلة معلنة (`ui_ready_without_engine`): الصفحةُ لا تنادي النموذج، والجوابُ يحتاجه. وserve_ui.py
    ومزوّدُه المحليّ يبلغان Ollama على 127.0.0.1:11434 وحده، فإن فُحص المحرّكُ على `--base-url` غيرِه لم تُسمَّ الواجهةُ
-   جاهزة: `ui_engine_endpoint_unpassed` (تعذّرٌ معلن)، لأن نداءَ القراءة لا يبلغ النموذجَ فلا يكشف ذلك وحده.
+   جاهزة: `ui_engine_endpoint_unpassed` (تعذّرٌ معلن)، لأن نداءَ القراءة لا يبلغ النموذجَ فلا يكشف ذلك وحده. وبمحرّكٍ لا
+   تُسمّى جاهزةً قبل أن يمرّ فحصُ مزوّدَيها المسبق وجوابٌ قصير عبرهما، وإلا `ui_engine_refused` برمز المزوّد.
 
     python tools/launch_check.py [--engine qwen3.5:9b] [--base-url http://127.0.0.1:11434] [--json]
 
@@ -365,6 +366,30 @@ def probe_ui(origin: str, timeout_s: float = UI_HTTP_TIMEOUT_S) -> Step | int:
     return len(data["projects"])
 
 
+UI_ENGINE_DEADLINE_S = 120.0   # فحصُ المزوّدَين قبل «جاهز»: البيانات، ثم جوابٌ قصير (قد يُحمَّل النموذجُ أولَ مرّة)
+
+
+def check_ui_engine(model: str, digest: str) -> Step | None:
+    """المحرّكُ كما تستعمله الواجهة، بمزوّدَيها لا بمزوّد الجولة الحيّة (OllamaProvider أرخى): الفحصُ المسبق الكامل لمزوّد
+    الأدوات (جلساتُ الواجهة وكيلةٌ افتراضيًّا، فيُطلب إعلانُ قدرة tools)، ثم جوابٌ قصير عبر `complete()` لمزوّد النصّ، وفيه
+    فحصُه المسبق (الحجم والصيغة والبُعد وقدراتُ /api/show وسعةُ السياق) وردُّ /api/chat. None إن مرّ، وإلا عطبٌ مسمًّى
+    `ui_engine_refused` برمز المزوّد: فلا يُقال «جاهز» وأولُ جوابٍ في الواجهة يُرفض."""
+    from core.contracts import Message, Request
+    from providers.base import ProviderError
+    from providers.local_chat import LocalChatProvider
+    from providers.local_tools import LocalToolProvider
+    try:
+        LocalToolProvider(model, digest)._preflight(time.monotonic() + UI_ENGINE_DEADLINE_S, required_capabilities=("tools",))
+        LocalChatProvider(model, digest).complete(Request(
+            messages=(Message("user", "أجب بكلمةٍ واحدة: نعم."),), model=model, model_version=digest, max_output=8,
+            deadline_s=UI_ENGINE_DEADLINE_S, data_policy="local_only", idempotency_key=None))
+    except ProviderError as exc:
+        return Step("ui", "failed", "ui_engine_refused", _clip(f"مزوّدُ الواجهة يرفض {model}: {exc.code} — {exc.reason}"))
+    except Exception as exc:  # noqa: BLE001 — أيُّ عطبٍ في المزوّد يُسمّى ولا يقطع التقرير
+        return Step("ui", "failed", "ui_engine_refused", _clip(f"مزوّدُ الواجهة تعطّل مع {model}: {type(exc).__name__}: {exc}"))
+    return None
+
+
 def check_ui(root: Path, *, model: str = DEFAULT_ENGINE, digest: str | None = None,
              base_url: str = DEFAULT_BASE_URL, timeout_s: float = UI_START_TIMEOUT_S,
              script: Path | None = None) -> Step:
@@ -414,8 +439,13 @@ def check_ui(root: Path, *, model: str = DEFAULT_ENGINE, digest: str | None = No
         return Step("ui", "unavailable", "ui_engine_endpoint_unpassed",
                     f"الواجهةُ تُقلع وتخدم الصفحة، لكن serve_ui.py يبلغ Ollama على 127.0.0.1:11434 وحده والمحرّكُ فُحص على "
                     f"{base_url}: أولُ جوابٍ في الواجهة لن يبلغه")
+    if digest:
+        refused = check_ui_engine(model, digest)
+        if refused is not None:
+            return refused
     code = "ui_ready" if digest else "ui_ready_without_engine"
-    engine = f"بالمحرّك {model}" if digest else f"ببصمةٍ بديلة لـ{model} (لا محرّك؛ الجوابُ يحتاجه)"
+    engine = (f"بالمحرّك {model} (فحصُ مزوّدَي الواجهة المسبق وجوابٌ قصير مرّا)" if digest
+              else f"ببصمةٍ بديلة لـ{model} (لا محرّك؛ الجوابُ يحتاجه)")
     return Step("ui", "ok", code, f"serve_ui.py {engine} على منفذٍ زائل: GET / ← 200 وdir=rtl، "
                                   f"وprojects ← 200 ({probed} مشروع)، ثم أُوقف")
 
