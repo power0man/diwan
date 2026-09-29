@@ -648,7 +648,9 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     report["last_failure_shapes"] = transport.failures
     if failure:
         report["status"], report["code"] = "failed", failure
-    _mark_unavailable(report, [r["error"] for r in report["reviewers"].values()])
+    # نفادُ حصّة مستبدَلٍ خطأٌ لا رفضُ خدمة: فالإخفاقُ المختلط يبقى failed ولا يصير unavailable (ملاحظة Codex على #174)
+    _mark_unavailable(report, [r["error"] for r in report["reviewers"].values()]
+                      + ["quota_exhausted" for entry in fallbacks for _model in entry["exhausted"]])
     return report, EXIT_CODES.get(report["status"], 1)
 
 
@@ -833,7 +835,7 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
               "owner_queue": len(summary["owner_queue"]), "last_failure_shapes": transport.failures,
               "summary": str(args.bank / "reviews" / "SUMMARY.json")}
     if not attempts["reviewed"] and not attempts["skipped"]:        # لم يُجب نموذجٌ واحد في هذا التشغيل
-        _mark_unavailable(result, [e["error"] for e in final_errors])
+        _mark_unavailable(result, [e["error"] for e in counted])      # كلُّ ما عُدّ، ومنه نفادُ حصّة المستبدَل
     if args.run_id:
         finish_run(args.bank, result["status"], result.get("code"))
     return result, EXIT_CODES.get(result["status"], 1)
@@ -997,6 +999,7 @@ def _free_main(args, parser) -> int:
                               **({"unavailable_codes": report["unavailable_codes"]}
                                  if "unavailable_codes" in report else {}),
                               "last_failure_shapes": report["last_failure_shapes"],
+                              "measurement_limits": report["measurement_limits"],
                               "reviewers": digest,
                               "fallbacks": report.get("fallbacks", []), "out": str(args.smoke)},
                              ensure_ascii=False))

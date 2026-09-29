@@ -1057,3 +1057,32 @@ def test_the_catalog_listing_and_its_saved_file_carry_the_free_backend_limits(tm
     assert set(cli.FREE_LIMITS) <= set(expected) and set(cli.CATALOG_LIMITS) <= set(expected)
     assert _printed(capsys)["measurement_limits"] == expected
     assert json.loads(out.read_text(encoding="utf-8"))["measurement_limits"] == expected
+
+
+def test_a_quota_history_keeps_a_service_refusal_failed_not_unavailable(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174: مراجعٌ نفدت حصّتُه فاستُبدل، ثم رفضت الخدمةُ المجموعةَ الأخيرة كلَّها — إخفاقٌ مختلط يبقى failed."""
+    ok = b"OK\r\n"
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    bank = _public_bank(tmp_path, "mixed")
+    _free(monkeypatch, FreeOpener(replies={DS: [429], MI: [ok], LL: [ok]}))
+    assert cli.main([str(bank), "--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--fallback", LL,
+                     "--brief", str(BRIEF)]) == 1
+    result = json.loads(capsys.readouterr().out)
+    assert result["status"] == "failed" and "unavailable_codes" not in result
+    assert result["error_codes"] == ["quota_exhausted", "response_not_json"]
+    out = tmp_path / "smoke.json"
+    _free(monkeypatch, FreeOpener(catalog=[_gh(DS), _gh(MI), _gh(LL)], replies={DS: [429], MI: [ok], LL: [ok]}))
+    assert cli.main(["--backend", "github-models", "--smoke", str(out), "--brief", str(BRIEF)]) == 1
+    assert json.loads(out.read_text(encoding="utf-8"))["status"] == "failed"
+
+
+def test_the_compact_smoke_lines_carry_the_limits(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174: السطرُ المضغوط هو ما يصل ملخّصَ المهمّة، فمعه حدودُه كما في التقرير المحفوظ."""
+    _free(monkeypatch, FreeOpener(catalog=[_gh(DS), _gh(MI), _gh(LL)], replies={DS: [CATCH], MI: [CATCH], LL: [CATCH]}))
+    for extra in ([], ["--every-family"]):
+        out = tmp_path / f"smoke{len(extra)}.json"
+        assert cli.main(["--backend", "github-models", "--smoke", str(out), *extra]) == 0
+        printed = _printed(capsys)
+        saved = json.loads(out.read_text(encoding="utf-8"))
+        assert printed["measurement_limits"] == saved["measurement_limits"]
+        assert set(cli.FREE_LIMITS) <= set(printed["measurement_limits"])
