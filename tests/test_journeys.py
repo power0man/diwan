@@ -812,7 +812,10 @@ def test_a_published_baseline_is_frozen_and_later_runs_compare_against_it(m2_sto
 @pytest.mark.parametrize("damage", [
     ("history", [{}]), ("history", [{"digest": 5, "frozen_on": None, "reason": None}]), ("history", "x"),
     ("history", [{"digest": "abc", "frozen_on": None, "reason": None}]), ("members_digest", "abc"),
-    ("cohort", {"journeys": "30"}), ("window", {"from": "2026-02-30"}), ("refreeze_reason", "سببٌ حرّ"),
+    # فوجٌ متّسقُ الأعداد لكنه ليس ثلاثين: عددُ خطّ الأساس وحده يرفضه
+    lambda cohort: cohort.update(journeys=29, by_outcome={**cohort["by_outcome"], "truncated": 8},
+                                 by_date={"2026-10-01": 15, "2026-10-02": 14}, completion_rate=round(21 / 29, 4)),
+    ("window", {"from": "2026-02-30"}), ("refreeze_reason", "سببٌ حرّ"),
     # أعدادٌ صحيحةُ النوع متناقضةٌ فيما بينها (الفوج: ٢١ منجزة و٩ مبتورة، ١٥ في كلٍّ من يومين، ٠٫٧)
     lambda cohort: cohort.update(by_outcome={**cohort["by_outcome"], "completed": 0, "truncated": 30},
                                  completion_rate=1.0),
@@ -820,7 +823,7 @@ def test_a_published_baseline_is_frozen_and_later_runs_compare_against_it(m2_sto
     lambda cohort: cohort.update(by_outcome={**cohort["by_outcome"], "truncated": 0}),
     lambda cohort: cohort.update(by_date={"2026-10-01": 15, "2026-10-02": 10}),
     lambda cohort: cohort.update(distinct_dates=3),
-], ids=["empty-entry", "numeric-digest", "not-a-list", "short-digest", "short-members-digest", "count-as-text",
+], ids=["empty-entry", "numeric-digest", "not-a-list", "short-digest", "short-members-digest", "count-not-thirty",
         "impossible-day", "free-text-reason", "zero-completed-full-rate", "rate-mismatch", "outcomes-not-summing",
         "dates-not-summing", "distinct-dates-mismatch"])
 def test_a_damaged_frozen_baseline_is_refused_by_name_and_a_refreeze_repairs_it(damage, m2_store, probe, tmp_path,
