@@ -271,7 +271,10 @@ def review_file(path: Path, bank_dir: Path, model: str, family: str, transport: 
 
 
 def review_bank(bank_dir: Path, reviewers: list[str], transport: Transport, *,
-                brief_path: Path) -> dict:
+                brief_path: Path, stamp: dict | None = None,
+                reusable: Callable[[dict], bool] | None = None) -> dict:
+    """`stamp` حقولٌ تُضاف إلى كل سجلٍّ يُكتب (مثل الواجهة)، و`reusable` شرطٌ إضافيّ لإعادة استعمال سجلٍّ سابق — فسجلُّ واجهةٍ
+    أخرى بمعرّف النموذج نفسِه لا يُعاد استعمالُه (ملاحظة Codex على #174). وبلاهما السلوكُ كما كان."""
     families = check_reviewers(reviewers)
     brief = brief_text(brief_path)
     brief_sha = _sha(brief.encode("utf-8"))
@@ -284,11 +287,14 @@ def review_bank(bank_dir: Path, reviewers: list[str], transport: Transport, *,
                 prior = json.loads(out.read_text(encoding="utf-8"))
                 if (prior.get("error") is None
                         and prior.get("file_sha256") == _sha(path.read_bytes())
-                        and prior.get("brief_sha256") == brief_sha):
+                        and prior.get("brief_sha256") == brief_sha
+                        and (reusable is None or reusable(prior))):
                     skipped += 1
                     continue
             record = review_file(path, bank_dir, model, families[model], transport,
                                  brief=brief, brief_sha=brief_sha)
+            if stamp:
+                record.update(stamp)
             _write(out, record)
             if record["error"]:
                 failed += 1

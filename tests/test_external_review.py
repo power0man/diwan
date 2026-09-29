@@ -1123,3 +1123,56 @@ def test_a_multipart_reply_with_a_non_text_part_is_a_named_error_retried_once(tm
     assert record["error"] == "response_part_invalid" and len(record["attempts"]) == 2
     good = json.loads((bank / "reviews" / MI.replace("/", "_") / "tier_a" / "kimi_t_a_001.json").read_text(encoding="utf-8"))
     assert good["error"] is None, "الأجزاءُ النصيّةُ الصالحة تُجمع"
+
+
+def test_a_rerun_recreates_the_superseded_history_instead_of_mixing_stale_records(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174: تاريخُ استبدالٍ سابق (لملفٍّ حُذف منذئذٍ) لا يُعدّ في استبدال هذا التشغيل."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "rerun")
+    first, second = bank / "open" / "a" / "kimi_x.json", bank / "open" / "a" / "kimi_y.json"
+    second.write_bytes(first.read_bytes())
+    args = [str(bank), "--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--fallback", LL,
+            "--brief", str(BRIEF)]
+    _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids), 429], MI: [_ok(ids)], LL: [_ok(ids)]}))
+    assert cli.main(args) == 0
+    assert json.loads(capsys.readouterr().out)["superseded_completed"] == {DS: 1}
+    second.rename(bank / "open" / "a" / "kimi_z.json")          # الملفُّ الثاني أُعيدت تسميتُه
+    _free(monkeypatch, FreeOpener(replies={DS: [429], MI: [_ok(ids)], LL: [_ok(ids)]}))
+    assert cli.main(args) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert sorted(entry["file"] for entry in result["superseded"]) == ["a/kimi_x.json", "a/kimi_z.json"]
+    assert result["superseded_completed"] == {}, "ما أتمّه في التشغيل السابق ليس من هذا الاستبدال"
+
+
+def test_a_record_from_another_backend_is_not_reused_under_this_backend(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174: معرّفُ النموذج نفسُه على واجهةٍ أخرى مراجعةٌ أخرى؛ والسجلُّ يحمل واجهتَه."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "backends")
+    common = [str(bank), "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF)]
+    _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    assert cli.main([*common, "--backend", "github-models"]) == 0
+    capsys.readouterr()
+    record_path = bank / "reviews" / DS.replace("/", "_") / "a" / "kimi_x.json"
+    assert json.loads(record_path.read_text(encoding="utf-8"))["backend"] == "github-models"
+    opener = _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    assert cli.main([*common, "--backend", "hf-router"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert opener.chat_models() == [DS, MI], "سجلُّ github-models لا يُعاد استعمالُه تحت hf-router"
+    assert {k: result[k] for k in ("reviewed", "skipped")} == {"reviewed": 2, "skipped": 0}
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    assert (record["backend"], record["endpoint_host"]) == ("hf-router", "router.huggingface.co")
+
+
+def test_empty_and_truncated_replies_leave_their_shape_in_the_failures(tmp_path):
+    """ملاحظة Codex على #174: الردُّ الفارغ والمبتور يتركان شكلَهما وطلبَهما كسائر الإخفاقات."""
+    chat = cli.OpenAICompatChat("github-models", KEY)
+    chat.opener = FreeOpener(replies={DS: [("  ", "stop")], MI: [(json.dumps(_ok(["c1"])), "length")]})
+    for model, code in ((DS, "reply_empty"), (MI, "reply_incomplete")):
+        with pytest.raises(AutomaticReviewError) as failed:
+            chat(model, "s", "u", {})
+        assert failed.value.code == code
+        shape = chat.failures[model]
+        assert (shape["status"], shape["content_type"], shape["top"]) == (200, "application/json", "dict")
+        assert shape["request"] == {"method": "POST", "sent": GH_CHAT, "final": GH_CHAT}

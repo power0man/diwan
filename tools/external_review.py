@@ -421,8 +421,10 @@ class OpenAICompatChat:
                 raise AutomaticReviewError("response_part_invalid", model)
             content = "".join(part.get("text", "") for part in content)
         if not isinstance(content, str) or not content.strip():
+            self.failures[model] = {**shape, "request": self.last_request[model]}
             raise AutomaticReviewError("reply_empty", model)
         if choice.get("finish_reason") == "length":
+            self.failures[model] = {**shape, "request": self.last_request[model]}
             raise AutomaticReviewError("reply_incomplete", model)
         return content
 
@@ -713,6 +715,8 @@ def supersede_records(bank: Path, model: str, replacement: list[str]) -> Path:
     """
     source = bank / "reviews" / _slug(model)
     destination = bank / "reviews" / SUPERSEDED_DIR / _slug(model)
+    if destination.is_dir():                  # تاريخُ استبدالٍ سابق لا يُخلط بهذا (ملاحظة Codex على #174): يُنشأ من جديد
+        shutil.rmtree(destination)
     for path in sorted(source.rglob("*.json")) if source.is_dir() else []:
         target = destination / path.relative_to(source)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -800,7 +804,10 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
 
     def run(chosen: list[dict]) -> set[str]:
         models = [c["model"] for c in chosen]
-        counts = review_bank(args.bank, models, transport, brief_path=args.brief)
+        # كلُّ سجلٍّ يحمل واجهتَه، ولا يُعاد استعمالُ سجلِّ واجهةٍ أخرى بمعرّف النموذج نفسِه (ملاحظة Codex على #174)
+        counts = review_bank(args.bank, models, transport, brief_path=args.brief,
+                             stamp={"backend": transport.backend, "endpoint_host": transport.endpoint_host},
+                             reusable=lambda prior: prior.get("backend") == transport.backend)
         for key in attempts:
             attempts[key] += counts[key]
         return _quota_models(args.bank, models)
