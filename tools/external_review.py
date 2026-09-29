@@ -55,7 +55,7 @@ sys.path.insert(0, str(ROOT))
 
 from evaluation.external_review import (AUTHOR_FAMILY, DEFAULT_REVIEWERS,  # noqa: E402
                                         DEVELOPER_FAMILIES, ENGINE_FAMILY, SUPERSEDED_DIR,
-                                        _slug, review_bank, smoke, summarize)
+                                        _slug, open_files, review_bank, smoke, summarize)
 from evaluation.multi_system_review import AutomaticReviewError, model_family  # noqa: E402
 
 MAX_RESPONSE_BYTES = 8_000_000
@@ -520,11 +520,14 @@ def assess_catalog(entries: list[dict], backend: str) -> dict:
             "refused": dict(sorted(refused.items()))}
 
 
-def _quota_models(bank: Path, models: list[str]) -> set[str]:
-    """النماذجُ التي سُجّل لها في هذا البنك ملفٌّ خطؤه نفادُ الحصّة."""
+def _quota_models(bank: Path, models: list[str], current: set[str]) -> set[str]:
+    """النماذجُ التي سُجّل لها في هذا البنك، لملفٍّ من ملفّات open/ الحالية، سجلٌّ خطؤه نفادُ الحصّة."""
     spent = set()
     for model in models:
-        for path in (bank / "reviews" / _slug(model)).rglob("*.json"):
+        root = bank / "reviews" / _slug(model)
+        for path in root.rglob("*.json"):
+            if path.relative_to(root).as_posix() not in current:      # سجلُّ ملفٍّ لم يعد في open/ تاريخٌ لا يُحكم به
+                continue
             if json.loads(path.read_text(encoding="utf-8")).get("error") == "quota_exhausted":
                 spent.add(model)
                 break
@@ -730,7 +733,8 @@ def supersede_records(bank: Path, model: str, replacement: list[str]) -> Path:
     return destination
 
 
-def superseded_history(bank: Path, replaced_by: dict[str, list[str] | None]) -> tuple[list[dict], dict[str, int]]:
+def superseded_history(bank: Path, replaced_by: dict[str, list[str] | None],
+                       current: set[str]) -> tuple[list[dict], dict[str, int]]:
     """(أخطاءُ المستبدَلين، عددُ ما أتمّه كلٌّ منهم) من `reviews/superseded/`: تاريخٌ يُروى ولا يُحكم به."""
     errors: list[dict] = []
     completed: dict[str, int] = {}
@@ -740,6 +744,8 @@ def superseded_history(bank: Path, replaced_by: dict[str, list[str] | None]) -> 
             if path.name == "SUPERSEDED.json":
                 continue
             record = json.loads(path.read_text(encoding="utf-8"))
+            if record.get("file") not in current:
+                continue
             if record.get("error"):
                 errors.append({"model": record["model"], "file": record["file"], "error": record["error"]})
             else:
@@ -747,7 +753,7 @@ def superseded_history(bank: Path, replaced_by: dict[str, list[str] | None]) -> 
     return errors, completed
 
 
-def other_reviewer_errors(bank: Path, final_models: set[str]) -> int:
+def other_reviewer_errors(bank: Path, final_models: set[str], current: set[str]) -> int:
     """أخطاءُ سجلّاتٍ في `reviews/` لمراجعين خارج المجموعة الأخيرة ولا المستبدَلين (تشغيلاتٌ سابقة): تُروى عددًا ولا تُسقط."""
     root = bank / "reviews"
     count = 0
@@ -755,7 +761,7 @@ def other_reviewer_errors(bank: Path, final_models: set[str]) -> int:
         if path.name == "SUMMARY.json" or path.relative_to(root).parts[0] == SUPERSEDED_DIR:
             continue
         record = json.loads(path.read_text(encoding="utf-8"))
-        if record.get("error") and record.get("model") not in final_models:
+        if record.get("error") and record.get("model") not in final_models and record.get("file") in current:
             count += 1
     return count
 
@@ -777,13 +783,15 @@ def _successful_records(bank: Path) -> dict[str, str]:
     return found
 
 
-def final_set_counts(bank: Path, final_models: set[str], pre_existing: dict[str, str]) -> dict:
+def final_set_counts(bank: Path, final_models: set[str], pre_existing: dict[str, str], current: set[str]) -> dict:
     """أعدادُ المجموعة الأخيرة وحدها (ملاحظة Codex على #174): ناجحٌ أُنتج في هذا الاستدعاء reviewed، وناجحٌ سبقه skipped،
     وفاشلٌ failed. ومجاميعُ المحاولات كلِّها (ومنها المستبدَلون) في حقلٍ مسمًّى منفصل."""
     counts = {"reviewed": 0, "skipped": 0, "failed": 0}
     for model in sorted(final_models):
         root = bank / "reviews" / _slug(model)
         for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
+            if path.relative_to(root).as_posix() not in current:
+                continue
             relative = path.relative_to(bank / "reviews").as_posix()
             if json.loads(path.read_text(encoding="utf-8")).get("error"):
                 counts["failed"] += 1
@@ -797,6 +805,9 @@ def final_set_counts(bank: Path, final_models: set[str], pre_existing: dict[str,
 def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     check_public_bank(args.bank)
     inspect_open_split(args.bank)              # لا رابطَ ولا محجوبَ بالبصمة قبل أوّل نداء
+    # ملفّاتُ open/ الحالية: كلُّ قراءةٍ لسجلّات المراجعة بعدها تُقارن بها، فسجلُّ ملفٍّ حُذف أو أُعيدت تسميتُه منذ تشغيلٍ سابق
+    # لا يدخل النفادَ ولا الاتفاقَ ولا قائمةَ المالك ولا الأعداد ولا التاريخ (ملاحظة Codex على #174)
+    current = {path.relative_to(args.bank / "open").as_posix() for path in open_files(args.bank)}
     candidates, source = _free_candidates(args, transport)
     want = max(2, len(args.reviewers or []))
     attempts = {"reviewed": 0, "skipped": 0, "failed": 0}
@@ -810,7 +821,7 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
                              reusable=lambda prior: prior.get("backend") == transport.backend)
         for key in attempts:
             attempts[key] += counts[key]
-        return _quota_models(args.bank, models)
+        return _quota_models(args.bank, models, current)
 
     def replaced(identity: dict, replacement: list[str]) -> None:
         supersede_records(args.bank, identity["model"], replacement)
@@ -820,11 +831,11 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     # reviews/superseded/ وراجع بديلُه البنكَ كلَّه؛ ونفادُ حصّته تاريخٌ مسمًّى (superseded ومعه البديل) لا خطأٌ يُسقط التشغيل،
     # فإن أخفق البديلُ أيضًا عُدّ الخطآن كلاهما. وأخطاءُ مراجعين خارج هذا التشغيل لا تُحسب عليه، وتُروى عددًا.
     final_models = {c["model"] for c in chosen}
-    summary = summarize(args.bank, reviewers=final_models)
+    summary = summarize(args.bank, reviewers=final_models, files=current)
     replaced_by = {model: entry["replacement"] for entry in fallbacks for model in entry["exhausted"]
                    if entry["replacement"] is not None}
     final_errors = summary["errors"]
-    history_errors, completed = superseded_history(args.bank, replaced_by)
+    history_errors, completed = superseded_history(args.bank, replaced_by, current)
     quota_errors = [e for e in history_errors if e["error"] == "quota_exhausted"]
     if failure or final_errors:
         counted, superseded = final_errors + quota_errors, []
@@ -836,7 +847,7 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     _persist_limits(args.bank, limits)
     if args.run_id:          # كلُّ سجلٍّ وخلاصةٍ في مجلّد هذا التشغيل يحمل معرّفَه، فيُرفض عند الرفع ما لا يحمله
         stamp_run(args.bank / "reviews", args.run_id)
-    final_counts = final_set_counts(args.bank, final_models, pre_existing)
+    final_counts = final_set_counts(args.bank, final_models, pre_existing, current)
     result = {"status": status, **({"code": failure} if failure else {}), **final_counts,
               "attempts": attempts, **({"run_id": args.run_id} if args.run_id else {}),
               "measurement_limits": limits,
@@ -845,7 +856,7 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
               "pairs": summary["pairs"], "errors": len(counted),
               "error_codes": sorted({e["error"] for e in counted}), "superseded": superseded,
               "superseded_completed": completed,
-              "errors_of_other_reviewers": other_reviewer_errors(args.bank, final_models),
+              "errors_of_other_reviewers": other_reviewer_errors(args.bank, final_models, current),
               **({"artifact": args.artifact_name} if args.artifact_name else {}),
               "owner_queue": len(summary["owner_queue"]), "last_failure_shapes": transport.failures,
               "summary": str(args.bank / "reviews" / "SUMMARY.json")}

@@ -1143,6 +1143,9 @@ def test_a_rerun_recreates_the_superseded_history_instead_of_mixing_stale_record
     result = json.loads(capsys.readouterr().out)
     assert sorted(entry["file"] for entry in result["superseded"]) == ["a/kimi_x.json", "a/kimi_z.json"]
     assert result["superseded_completed"] == {}, "ما أتمّه في التشغيل السابق ليس من هذا الاستبدال"
+    history = bank / "reviews" / "superseded" / DS.replace("/", "_")
+    assert sorted(p.relative_to(history).as_posix() for p in history.rglob("*.json")) == [
+        "SUPERSEDED.json", "a/kimi_x.json", "a/kimi_z.json"], "التاريخُ على القرص أُنشئ من جديد، بلا سجلّ الاستبدال السابق"
 
 
 def test_a_record_from_another_backend_is_not_reused_under_this_backend(tmp_path, monkeypatch, capsys):
@@ -1176,3 +1179,47 @@ def test_empty_and_truncated_replies_leave_their_shape_in_the_failures(tmp_path)
         shape = chat.failures[model]
         assert (shape["status"], shape["content_type"], shape["top"]) == (200, "application/json", "dict")
         assert shape["request"] == {"method": "POST", "sent": GH_CHAT, "final": GH_CHAT}
+
+
+def test_records_of_files_no_longer_in_the_open_split_are_ignored_everywhere(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #174: ملفٌّ أُعيدت تسميتُه أو حُذف بين تشغيلين لا يبقى سجلُّه في الاتفاق ولا قائمة المالك ولا الأعداد
+    ولا النفاد ولا التاريخ."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    dispute = {"judgments": [_judgment("c1", reference="incorrect"), _judgment("c2"), _judgment("c3")]}
+
+    def two_files(name: str) -> Path:
+        bank = _public_bank(tmp_path, name)
+        (bank / "open" / "a" / "kimi_y.json").write_bytes((bank / "open" / "a" / "kimi_x.json").read_bytes())
+        return bank
+
+    def run(bank: Path, replies: dict, *extra: str) -> tuple[int, dict]:
+        _free(monkeypatch, FreeOpener(replies=replies))
+        code = cli.main([str(bank), "--backend", "github-models", "--reviewer", DS, "--reviewer", MI, *extra,
+                         "--brief", str(BRIEF)])
+        return code, json.loads(capsys.readouterr().out)
+
+    # ١) الاتفاقُ وقائمةُ المالك والأعداد
+    bank = two_files("renamed")
+    assert run(bank, {DS: [_ok(ids), dispute], MI: [_ok(ids)]})[1]["owner_queue"] == 1
+    (bank / "open" / "a" / "kimi_y.json").rename(bank / "open" / "a" / "kimi_z.json")
+    code, result = run(bank, {DS: [_ok(ids)], MI: [_ok(ids)]})
+    assert code == 0 and result["pairs"][0]["items"] == 6 and result["owner_queue"] == 0, "خلافُ الملفّ القديم لا يُرفع"
+    assert {k: result[k] for k in ("reviewed", "skipped", "failed")} == {"reviewed": 2, "skipped": 2, "failed": 0}
+    # ٢) نفادُ حصّةٍ على ملفٍّ حُذف لا يستبدل المراجعَ في تشغيلٍ لاحق
+    bank = two_files("quota")
+    assert run(bank, {DS: [_ok(ids), 429], MI: [_ok(ids)]})[0] == 1
+    (bank / "open" / "a" / "kimi_y.json").unlink()
+    code, result = run(bank, {DS: [_ok(ids)], MI: [_ok(ids)]})
+    assert code == 0 and result["status"] == "reviewed" and result["fallbacks"] == []
+    # ٣) تاريخُ المستبدَل لا يحمل ملفًّا لم يعد في open/
+    bank = two_files("history")
+    assert run(bank, {DS: [_ok(ids)], MI: [_ok(ids)]})[0] == 0
+    (bank / "open" / "a" / "kimi_y.json").rename(bank / "open" / "a" / "kimi_z.json")
+    code, result = run(bank, {DS: [429], MI: [_ok(ids)], LL: [_ok(ids)]}, "--fallback", LL)
+    assert code == 0 and result["superseded_completed"] == {DS: 1}
+    assert [entry["file"] for entry in result["superseded"]] == ["a/kimi_z.json"]
+    # ٤) أخطاءُ مراجعين آخرين تُروى لملفّات open/ الحالية وحدها
+    _record(bank, "old-reviewer", "a/kimi_x.json", error="transport_error")
+    _record(bank, "old-reviewer", "a/kimi_y.json", error="transport_error")
+    assert cli.other_reviewer_errors(bank, {MI, LL}, {"a/kimi_x.json", "a/kimi_z.json"}) == 1
