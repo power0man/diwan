@@ -31,9 +31,10 @@ import uuid
 
 from core.canonical import PayloadRejected
 from core.quoted import QUARANTINE_MARK, scan
-from evaluation.memory_bank import (EXPOSURE_QUESTION, active_refs, contains as _contains, mask_persisted, names_every_directive,
-                                    probe_collisions, envelope_collisions, message_envelope_collisions, question_collisions,
-                                    request_payload_collisions, request_provider, role_collisions, scalar_text, tool_collisions)
+from evaluation.memory_bank import (EXPOSURE_QUESTION, _rendered, active_refs, contains as _contains, mask_persisted,
+                                    names_every_directive, probe_collisions, envelope_collisions, message_envelope_collisions,
+                                    question_collisions, request_payload_collisions, request_provider, role_collisions, scalar_text,
+                                    tool_collisions)
 from memory.store import HEADER, MemoryRefused, MemoryStore, held_text, stored_text, unfenced
 
 
@@ -87,10 +88,13 @@ def _foreign(scenario: dict, index: int, needle: str, active: set) -> bool:
     """شاهدُ غيابٍ في خطوة `index` يقع في نصّ عنصرٍ أنشأته قبلها خطوةٌ في مشروعٍ آخر، ولا يقع في نصّ عنصرٍ من المشروع المفحوص
     **قائمٍ** فيه عند الفحص (`active`): التسرّبُ عبر المشاريع يُعدّ به وحده. فغيابُ عنصرٍ من المشروع نفسِه ما زال قائمًا (نسيانٌ
     أخفق) رسوبٌ يُسمّى ولا يُحسب تسرّبًا (الجولة الأربعون)؛ أمّا عنصرٌ محليٌّ منسيٌّ يحمل النصَّ نفسَه فلا يحجب تسرّبَ نظيره من
-    مشروعٍ آخر، وإلا بقي التسرّبُ صفرًا بتاريخٍ لا بحالةٍ (ملاحظة Codex على #129، الجولة الحادية والأربعون)."""
+    مشروعٍ آخر، وإلا بقي التسرّبُ صفرًا بتاريخٍ لا بحالةٍ (ملاحظة Codex على #129، الجولة الحادية والأربعون). والنصُّ بالصورة
+    التي تقرؤها الخطوة (`_rendered` في المدقّق نفسِه): محجورًا في السياق، فشاهدٌ هو علامةُ حجرِ عنصرٍ أجنبيٍّ آمرٍ يقبله المدقّقُ
+    ويُعدّ تسرّبًا إن ظهر؛ وكما يكتبه المخزن في الاسترجاع (ملاحظة Codex على #129، الجولة السابعة والأربعون)."""
     steps = scenario["steps"]
     project = steps[index]["project"]
-    made = [(s["project"], s["as"], stored_text(s["text"])) for s in steps[:index] if s.get("op") in ("remember", "propose")]
+    made = [(s["project"], s["as"], _rendered(steps[index], stored_text(s["text"])))
+            for s in steps[:index] if s.get("op") in ("remember", "propose")]
     return (any(_contains(text, needle) for owner, _, text in made if owner != project)
             and not any(_contains(text, needle) for owner, ref, text in made if owner == project and ref in active))
 
