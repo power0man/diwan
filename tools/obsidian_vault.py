@@ -28,6 +28,7 @@
 - لا يُكتب ولا يُقرأ ولا يُحذف عبر رابطٍ رمزيّ في `Diwan/` (`symlink_refused`)، ولا في غير ملفٍّ عاديّ (`not_a_regular_file`):
   يُفحص كلُّ مسارٍ ستمسّه الأداةُ قبل أيّ كتابة، فرابطٌ وضعه المالكُ (خطواتي مربوطةٌ بمجلّد ملاحظاتٍ آخر) يُرفض باسمه ولا يُكتب
   فوق ما يشير إليه ولو بـ`--force` (ملاحظة Codex الثانية عشرة على #161). و«اقرأني» إن كانت رابطًا تُترك كما هي.
+- «خطواتي» ملكُ المالك: لا تُسجَّل في البيان ولا تُحذف ولو غابت الخطة، ويبقى سجلُّها (ملاحظة Codex التاسعة عشرة على #161).
 - كلُّ كتابةٍ في الخزنة ذرّية (`_write_atomic`: ملفٌّ مؤقّت، ثم `fsync`، ثم `os.replace`)، فانقطاعُ البناء لا يترك «خطواتي» ولا غيرَها
   نصفَ مكتوبة؛ و«خطواتي» تُكتب قبل سجلّها (ملاحظة Codex الثامنة عشرة على #161).
 
@@ -448,7 +449,7 @@ def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
             existing = target.read_bytes().decode("utf-8") if target.exists() else ""
             merged, steps_state = migrate_seed(rel, existing, text, state if existing else None)
             data = merged.encode("utf-8")
-            new_manifest[rel] = sha(data)
+            # ولا تُسجَّل في البيان: البيانُ قائمةُ ما يُحذف آمنًا إن غاب من الخطة، وقائمةُ المالك ملكُه لا تُحذف أبدًا
             if target.exists() and data == target.read_bytes():
                 report["unchanged"].append(rel)
                 continue
@@ -471,7 +472,9 @@ def build(vault: Path, root: Path = ROOT, force: bool = False) -> dict:
         new_manifest[rel] = sha(data)
         report["written"].append(rel)
     for rel, recorded in old.items():
-        if rel in wanted:
+        # قائمةُ المالك لا تُحذف ولو غابت الخطة (تغيّر اسمُها مثلًا) وسجّلها بيانٌ قديم ببصمتها: كان البناءُ يجد البصمةَ مطابقة فيحذف
+        # «خطواتي» بعلامات المالك وملاحظاته (ملاحظة Codex التاسعة عشرة على #161)
+        if rel in wanted or rel in SEED_NOTES:
             continue
         target = out_dir / rel
         if target.is_file() and sha(target.read_bytes()) == recorded:
@@ -494,7 +497,7 @@ def check(vault: Path, root: Path = ROOT) -> list[str]:
     state = _load_steps_state(out_dir)
     for rel, recorded in manifest.items():                           # ما سيحذفه build ولم يُحذف بعد
         target = out_dir / rel
-        if rel not in wanted and target.is_file() and sha(target.read_bytes()) == recorded:
+        if rel not in wanted and rel not in SEED_NOTES and target.is_file() and sha(target.read_bytes()) == recorded:
             drift.append(f"obsolete {rel}")
     for rel, text in wanted.items():
         target = out_dir / rel

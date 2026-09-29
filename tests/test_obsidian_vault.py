@@ -482,6 +482,31 @@ def test_an_uncheck_after_a_completed_deferral_leaves_no_stale_completion_text_w
     assert ov.build(vault, root=repo)["migrated"] == [] and steps.read_text(encoding="utf-8") == text
 
 
+@pytest.mark.parametrize("manifest", ["current", "older_build"])
+def test_the_owner_checklist_survives_a_rebuild_without_the_plan(repo, vault, manifest):
+    """ملاحظةُ Codex على #161 (الجولة التاسعة عشرة): كان البيانُ يسجّل بصمةَ «خطواتي» بعد ترحيلها — بعلامات المالك وملاحظاته —
+    فإن غابت الخطة (تغيّر اسمُها مثلًا) لم تولَّد «خطواتي»، ووجدت حلقةُ الحذف البصمةَ مطابقة فحذفت قائمةَ المالك. خطواتُ Codex نفسُها:
+    ملاحظةٌ تحت «## ملاحظاتي»، ثم بناء، ثم تغيب الخطة، ثم بناء. صارت «خطواتي» لا تُسجَّل في البيان ولا تُحذف ولو سجّلها بيانٌ من بناءٍ
+    أقدم (`older_build`: كما كتبها إصدارُ main)، و`check` لا يعدّها متقادمة، ويبقى سجلُّها."""
+    ov.build(vault, root=repo)
+    out = vault / "Diwan"
+    steps, state = out / "خطواتي.md", out / ov.STEPS_STATE
+    steps.write_text(steps.read_text(encoding="utf-8").replace(f"- [ ] {ONE}", f"- [x] {ONE}") + "\n## ملاحظاتي\n\nسألتُ المحامي.\n",
+                     encoding="utf-8")
+    ov.build(vault, root=repo)
+    kept, state_kept = steps.read_bytes(), state.read_bytes()
+    listed = json.loads((out / ov.MANIFEST).read_text(encoding="utf-8"))["files"]
+    assert "خطواتي.md" not in listed, "قائمةُ المالك لا تُسجَّل فيما يُحذف آمنًا"
+    if manifest == "older_build":
+        listed["خطواتي.md"] = ov.sha(kept)
+        (out / ov.MANIFEST).write_text(json.dumps({"schema_version": 1, "files": listed}, ensure_ascii=False), encoding="utf-8")
+    (repo / ov.PLAN).unlink()
+    assert "obsolete خطواتي.md" not in ov.check(vault, root=repo)
+    report = ov.build(vault, root=repo)
+    assert "خطواتي.md" not in report["removed"] and steps.read_bytes() == kept and state.read_bytes() == state_kept
+    assert "المهام/ك١.md" in report["removed"], "وما كتبته الأداةُ ولم يُمسّ يُحذف كما كان"
+
+
 @pytest.mark.parametrize("fault", ["replace", "write"])
 def test_a_failed_write_leaves_the_owner_s_checklist_and_its_record_untouched(repo, vault, monkeypatch, fault):
     """ملاحظةُ Codex على #161 (الجولة الثامنة عشرة): كانت «خطواتي» تُكتب بـ`write_bytes` الذي يمسح الملفَّ قبل أن يكتبه، فانقطاعُ
