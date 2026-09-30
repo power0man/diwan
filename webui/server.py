@@ -1,7 +1,7 @@
 """HTTP محلي محدود؛ المتصفح لا يختار مسارًا في المضيف ولا ينفذ جوابًا."""
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 import base64
 import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import secrets
 import socket
+import stat
 import threading
 import time
 import unicodedata
@@ -50,6 +51,9 @@ from workspace_tools.backup import restore_pending
 STATIC = Path(__file__).parent / "static"
 IDENTIFIER = re.compile(r"[a-f0-9]{32}\Z")
 MAX_BODY = 512 * 1024
+MEMORY_FORGET_TRANSACTION = ".memory-forget.json"
+MAX_MEMORY_FORGET_PAYLOAD = 64 * 1024 * 1024
+MAX_MEMORY_FORGET_TRANSACTION = 96 * 1024 * 1024
 
 
 class UIError(ValueError):
@@ -88,6 +92,41 @@ def decode(raw):
         return value
     except (ValueError, UnicodeError, TypeError, RecursionError):
         raise UIError("json_invalid") from None
+
+
+def _replace_private(path, payload):
+    """Atomically replace one private regular file and durably publish its directory entry."""
+    path = Path(path)
+    if path.exists() or path.is_symlink():
+        info = os.lstat(path)
+        need(stat.S_ISREG(info.st_mode) and info.st_uid == os.getuid()
+             and not info.st_mode & 0o077 and info.st_nlink == 1, "memory_forget_transaction_corrupt")
+    temporary = path.with_name(f".{path.name}.{secrets.token_hex(4)}.tmp")
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    try:
+        with os.fdopen(fd, "wb", closefd=False) as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(fd)
+        os.replace(temporary, path)
+        directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        os.close(fd)
+        if temporary.exists():
+            temporary.unlink()
+
+
+def _forget_state_path(relative):
+    parts = Path(relative).parts if isinstance(relative, str) else ()
+    if (len(parts) == 5 and parts[0] == "sessions" and IDENTIFIER.fullmatch(parts[1] or "")
+            and parts[2:] == ("chat", parts[1], "state.json")):
+        return True
+    return (len(parts) == 3 and parts[0] == "agent-control"
+            and IDENTIFIER.fullmatch(parts[1] or "") and parts[2] == "state.json")
 
 
 # جلسةُ البحث المعمّق (ك٥٣) جلسةٌ وكيلة بتعليماتٍ وأداةٍ واحدة: web_search؛
@@ -140,6 +179,7 @@ class LocalApp:
                                  0o600, dir_fd=self.fd)
             _private(os.fstat(self.lease))
             filelock.lock(self.lease, blocking=False)
+            self._recover_memory_transactions()
         except BaseException:
             if hasattr(self, "lease"):
                 os.close(self.lease)
@@ -158,6 +198,85 @@ class LocalApp:
             need((info.st_dev, info.st_ino) == self.identity, "store_changed")
         finally:
             os.close(fd)
+
+    @staticmethod
+    def _memory_transaction(project, value):
+        need(type(value) is dict and set(value) == {"schema_version", "item_id", "states", "receipt"}
+             and value["schema_version"] == 1
+             and isinstance(value["item_id"], str)
+             and re.fullmatch(r"[0-9a-f]{16}", value["item_id"])
+             and type(value["states"]) is list and len(value["states"]) <= 64
+             and isinstance(value["receipt"], str), "memory_forget_transaction_corrupt")
+        states, seen, total = [], set(), 0
+        for entry in value["states"]:
+            need(type(entry) is dict and set(entry) == {"path", "data"}
+                 and _forget_state_path(entry["path"]) and entry["path"] not in seen
+                 and isinstance(entry["data"], str), "memory_forget_transaction_corrupt")
+            try:
+                raw = base64.b64decode(entry["data"], validate=True)
+                envelope = json.loads(raw.decode("utf-8"))
+            except (ValueError, UnicodeError, json.JSONDecodeError):
+                raise UIError("memory_forget_transaction_corrupt") from None
+            need(canonical_bytes(envelope) == raw and type(envelope) is dict
+                 and set(envelope) == {"state", "sha256"}
+                 and envelope["sha256"] == digest(envelope["state"]),
+                 "memory_forget_transaction_corrupt")
+            total += len(raw)
+            need(total <= MAX_MEMORY_FORGET_PAYLOAD, "memory_forget_transaction_corrupt")
+            seen.add(entry["path"])
+            states.append((project / entry["path"], raw))
+        try:
+            receipt = base64.b64decode(value["receipt"], validate=True)
+            _, receipts = MemoryStore.check_snapshot({"receipts.jsonl": receipt})
+        except (ValueError, MemoryRefused):
+            raise UIError("memory_forget_transaction_corrupt") from None
+        need(any(item["item_id"] == value["item_id"] for item in receipts)
+             and len(receipt) + total <= MAX_MEMORY_FORGET_PAYLOAD,
+             "memory_forget_transaction_corrupt")
+        return states, receipt
+
+    def _apply_memory_transaction(self, project, value, *, store=None, store_locked=False):
+        states, receipt = self._memory_transaction(project, value)
+        for path, payload in states:
+            _replace_private(path, payload)
+        store = store or MemoryStore(project)
+        if store is None:
+            raise UIError("memory_forget_transaction_corrupt")
+        if store_locked:
+            store._apply_forget(value["item_id"], receipt)
+        else:
+            with store._lock():
+                store._apply_forget(value["item_id"], receipt)
+        journal = project / MEMORY_FORGET_TRANSACTION
+        os.unlink(journal)
+        directory = os.open(project, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+
+    def _recover_memory_transactions(self):
+        projects = self.root / "projects"
+        if not projects.exists():
+            return
+        for entry in sorted(projects.iterdir()):
+            journal = entry / MEMORY_FORGET_TRANSACTION
+            if not journal.exists() and not journal.is_symlink():
+                continue
+            try:
+                info = os.lstat(journal)
+                need(stat.S_ISREG(info.st_mode) and info.st_uid == os.getuid()
+                     and not info.st_mode & 0o077 and info.st_nlink == 1
+                     and info.st_size <= MAX_MEMORY_FORGET_TRANSACTION,
+                     "memory_forget_transaction_corrupt")
+                raw = journal.read_bytes()
+                value = json.loads(raw.decode("utf-8"))
+                need(canonical_bytes(value) == raw, "memory_forget_transaction_corrupt")
+                self._apply_memory_transaction(entry, value)
+            except UIError:
+                raise
+            except (OSError, ValueError, UnicodeError, MemoryRefused):
+                raise UIError("memory_forget_incomplete") from None
 
     @contextmanager
     def directory(self, path, *, create=False):
@@ -425,28 +544,62 @@ class LocalApp:
             # الإيصالُ يعدّ الجولاتِ التي رأى النموذجُ فيها العنصر؛ والجلسةُ لا تُقرأ وهي تعمل
             need(self.generation.acquire(blocking=False), "generation_busy")
             try:
-                references = self.memory_references(project, item["sha256"])
+                receipt = self._forget_memory_atomically(project, store, item)
             finally:
                 self.generation.release()
-            return {"status": "forgotten", "receipt": store.forget(item["item_id"], references=references),
-                    "replayed": False}
+            return {"status": "forgotten", "receipt": receipt, "replayed": False}
         except MemoryRefused as exc:
             raise UIError(exc.code) from None
 
-    def memory_references(self, project, sha256):
-        references = []
-        for meta in self.collection(project / "sessions"):
-            mode = meta.get("mode", "text")
-            if mode == "media":
-                continue            # جلساتُ الوسائط لا تحمل ذاكرة
-            try:
-                session = (self.agent_session(project, meta["id"]) if mode in AGENT_MODES
-                           else self.session(project, meta["id"]))
-                references.extend(session.memory_references(sha256))
-            except (ConversationError, UIError, OSError, ValueError):
-                # جلسةٌ لا تُقرأ لا تحجب النسيان؛ والإيصالُ يسمّيها فلا يدّعي أنها خلت منه
-                references.append(f"{mode}:{meta['id']}/unreadable")
-        return sorted(references)
+    def _forget_memory_atomically(self, project, store, item):
+        """Preflight every session, then durably roll the whole forget forward as one intent."""
+        try:
+            sessions = []
+            for meta in self.collection(project / "sessions"):
+                mode = meta.get("mode", "text")
+                if mode != "media":
+                    sessions.append((mode, meta["id"], self.agent_session(project, meta["id"])
+                                     if mode in AGENT_MODES else self.session(project, meta["id"])))
+            with ExitStack() as held:
+                for _, _, session in sessions:
+                    held.enter_context(session._lock())
+                references, scrubbed, states = [], {}, []
+                for mode, session_id, session in sessions:
+                    found, count, path, payload = session._memory_forget_plan(item["sha256"], item["text"])
+                    references.extend(found)
+                    if count:
+                        scrubbed[f"{mode}:{session_id}"] = count
+                        states.append({"path": str(path.relative_to(project)),
+                                       "data": base64.b64encode(payload).decode("ascii")})
+                held.enter_context(store._lock())
+                receipt, receipt_payload = store._forget_plan(
+                    item["item_id"], references=sorted(references), scrubbed=scrubbed)
+                transaction = {"schema_version": 1, "item_id": item["item_id"],
+                               "states": states,
+                               "receipt": base64.b64encode(receipt_payload).decode("ascii")}
+                journal = project / MEMORY_FORGET_TRANSACTION
+                need(not journal.exists() and not journal.is_symlink(), "memory_forget_incomplete")
+                raw_transaction = canonical_bytes(transaction)
+                need(len(raw_transaction) <= MAX_MEMORY_FORGET_TRANSACTION,
+                     "memory_forget_transaction_limit")
+                self._memory_transaction(project, transaction)
+                _replace_private(journal, raw_transaction)
+                try:
+                    self._apply_memory_transaction(project, transaction, store=store, store_locked=True)
+                except (OSError, ValueError, MemoryRefused, UIError):
+                    # A prepared intent contains only redacted states and the text-free receipt.
+                    # Retry once now; if storage still fails, startup/next dispatch must finish it.
+                    try:
+                        self._apply_memory_transaction(project, transaction, store=store, store_locked=True)
+                    except (OSError, ValueError, MemoryRefused, UIError):
+                        raise UIError("memory_forget_incomplete") from None
+                return receipt
+        except ConversationError as exc:
+            raise UIError(f"memory_scrub_{exc.code}") from None
+        except UIError:
+            raise
+        except (OSError, ValueError):
+            raise UIError("memory_scrub_unreadable") from None
 
     def agent_dispatch(self, request, project):
         action = request["action"]
@@ -595,6 +748,14 @@ class LocalApp:
     def dispatch(self, request):
         need(type(request) is dict and isinstance(request.get("action"), str))
         self.check_root()
+        with self.lock:
+            if any((path / MEMORY_FORGET_TRANSACTION).exists()
+                   for path in (self.root / "projects").glob("*") if path.is_dir()):
+                need(self.generation.acquire(blocking=False), "memory_forget_incomplete")
+                try:
+                    self._recover_memory_transactions()
+                finally:
+                    self.generation.release()
         action = request["action"]
         schemas = {
             "projects": set(), "create_project": {"name"},
