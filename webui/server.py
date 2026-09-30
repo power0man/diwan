@@ -30,6 +30,7 @@ from agent.web_search import web_search_tool
 from analysis.backend import configure_analysis_backend
 from analysis.tool import ANALYZE_DATA
 from core import filelock
+from core.locality import is_local_provider
 from core.execution import configure_execution_backend
 from core.canonical import canonical_bytes, digest
 from core.contracts import Message as ContractMessage, Request as ContractRequest
@@ -572,7 +573,7 @@ class LocalApp:
                 text = agent_workspace.encode_input(message, docs, preferences)
                 session.validate_turn(request["turn"], text, request.get("thinking", False))
                 provider = self.agent_provider_factory()
-                need(getattr(provider, "is_local", None) is True, "policy_requires_local")
+                need(is_local_provider(provider), "policy_requires_local")
                 agent_workspace.materialize_selected(workspace, blobs)
                 session.start_turn(request["turn"], text, provider, thinking=request.get("thinking", False))
             else:
