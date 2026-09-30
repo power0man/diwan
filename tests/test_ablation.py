@@ -15,7 +15,7 @@ import pytest
 
 from agent.builtin_tools import DEFAULT_TOOLS
 from conversation.agent_session import _user_message
-from core.contracts import Response, Usage
+from core.contracts import Response, ToolCall, Usage
 from evaluation import ablation
 from evaluation.ablation import (BASELINE, AblationError, arm, auto_checked, case_messages, compare, decide,
                                  judge, min_items, run_case)
@@ -112,6 +112,39 @@ def test_a_broken_provider_or_an_absent_sandbox_is_an_error_not_a_failure():
     assert sandboxed["status"] == "error" and sandboxed["code"].startswith("sandbox_")
 
 
+class Scripted(Replay):
+    """يجيب بالردّ نفسِه في كل خطوة: نداءُ أداةٍ (برقمٍ جديد) أو إيقافٌ بسببٍ مسمًّى."""
+    def __init__(self, stop="complete", call=None):
+        super().__init__(None)
+        self.stop, self.call = stop, call
+
+    def complete(self, request):
+        self.requests.append(request)
+        calls = (ToolCall(f"c{len(self.requests)}", *self.call),) if self.call else ()
+        return Response("x", Usage(1, 1), self.stop, 0, provider="replay", model_version="v1", tool_calls=calls)
+
+
+def test_an_unfinished_turn_is_an_error_not_a_measured_answer():
+    """جولةٌ توقّفت لموافقة المالك، أو بُتر جوابها، أو استنفدت خطواتها: جوابُها الوسيط لا يُقاس (#185)."""
+    case = _case("u", "x", [{"kind": "contains", "value": "x"}])          # الجوابُ الوسيط «x» كان يمرّ الفحص
+    rows = {"awaiting_owner": _run(case, Scripted(call=("write_file", {"path": "a", "content": "y"}))),
+            "truncated": _run(case, Scripted(stop="max_output")),
+            "step_limit": _run(case, Scripted(call=("list_files", {})))}
+    for loop_status, row in rows.items():
+        assert (row["status"], row["loop_status"]) == ("error", loop_status) and "passed" not in row
+    assert rows["awaiting_owner"]["code"] == "consent_required"
+    # وعطبُ كلِّ ذراعٍ برموزه في الحكم، فإن غيّر المكوّنُ ما يكتمل ظهر ولو اتّفقت النسبتان
+    on = [{**row, "id": f"c{i}"} for i, row in enumerate([{"category": "general", "status": "measured", "passed": True},
+                                                           rows["awaiting_owner"], rows["truncated"]])]
+    off = [{**row, "id": f"c{i}"} for i, row in enumerate([{"category": "general", "status": "measured", "passed": True},
+                                                            {"category": "general", "status": "measured", "passed": True},
+                                                            rows["truncated"]])]
+    verdict = judge("tool_announcement", on, off)
+    assert verdict["overall"]["pairs"] == 1 and verdict["overall"]["errors"] == 2
+    assert verdict["errors_by_arm"] == {"on": {"consent_required": 1, "response_max_output": 1},
+                                        "off": {"response_max_output": 1}}
+
+
 def _rows(outcomes, category="general"):
     return [{"id": f"c{i}", "category": category, "status": "measured" if o is not None else "error",
              **({"passed": o} if o is not None else {})} for i, o in enumerate(outcomes)]
@@ -181,6 +214,45 @@ def test_the_protocol_is_registered_and_names_six_components():
             assert spec["blocked_by"], name
         elif spec["runner"] == "agent_path":
             assert arm(spec["arms"]["on"]) != arm(spec["arms"]["off"]), name
+
+
+LEDGER = ROOT / "evaluation" / "protocols" / "ablation_v1.runs.json"
+
+
+def test_every_ablation_report_is_recorded_in_the_run_ledger():
+    """البروتوكولُ مبصومٌ فلا تتغيّر حالتُه داخله؛ فكلُّ تقريرِ استئصالٍ في docs/probe صفٌّ في دفتر التشغيل بقراره
+    وبصمةِ البروتوكول التي قيس بها، وحالةُ الدفتر تتبع ما شُغّل من المكوّنات (الخطة §٥٨٦ البند ٥)."""
+    ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
+    assert ledger["protocol_sha256"] == hashlib.sha256(PROTOCOL.read_bytes()).hexdigest()
+    reports = {}
+    for path in sorted((ROOT / "docs" / "probe").glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and data.get("kind") == "ablation_report":
+            reports[path.relative_to(ROOT).as_posix()] = data["judgment"]
+    recorded = {run["evidence"]: run for run in ledger["runs"]}
+    assert set(recorded) == set(reports), "كلُّ تقرير استئصالٍ في docs/probe له صفٌّ في " + LEDGER.name
+    for evidence, judgment in reports.items():
+        run = recorded[evidence]
+        assert (run["component"], run["decision"]) == (judgment["component"], judgment["decision"]), evidence
+        report = json.loads((ROOT / evidence).read_text(encoding="utf-8"))
+        assert run["runner_version"] == report["config"]["runner_version"], evidence
+        assert judgment["protocol_sha256"] == ledger["protocol_sha256"], evidence
+    ran = {run["component"] for run in ledger["runs"]}
+    assert ran <= set(DATA["components"])
+    expected = "registered_not_run" if not ran else "run" if ran == set(DATA["components"]) else "partially_run"
+    assert ledger["status"] == expected
+
+
+def test_the_sample_is_drawn_from_eligible_cases_so_it_reaches_its_target():
+    """السحبُ بعد التصفية: بلا حاويةٍ تبلغ العيّنةُ هدفَها من الحالات المؤهَّلة، وكلُّها ذاتُ فحصٍ آليّ بلا حاوية (#185)."""
+    from tools.evaluate_ablation import bank_cases
+    bank = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
+    if not bank.is_dir():
+        pytest.skip("bank_open_split_absent")
+    cases, _ = bank_cases(bank, sample_target=600, salt="k46", sandbox=False)
+    assert len(cases) >= 600
+    assert ablation.RUNNER_VERSION >= 2          # الخوارزميةُ المصحَّحة بنسخةٍ غيرِ نسخة الأدلّة القائمة
+    assert all(auto_checked(case, sandbox=False) for case in cases)
 
 
 def test_blocked_components_refuse_by_name():
