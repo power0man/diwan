@@ -53,7 +53,7 @@ def main(argv=None, *, default_root=None):
     parser.add_argument("--root", type=Path, default=default_root or ROOT / "var/daily-ui")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--listen", choices=("127.0.0.1", "0.0.0.0"), default="127.0.0.1",
-                        help="0.0.0.0 للحاوية فقط مع نشر المنفذ على 127.0.0.1؛ الأصل المقبول يبقى محليًا")
+                        help="0.0.0.0 للحاوية فقط مع نشر المنفذ على 127.0.0.1؛ يطبع رابط بدء سريًا أحادي الاستخدام")
     parser.add_argument("--provider", choices=("local", "mlx"), default=os.environ.get("DIWAN_PROVIDER", "local"))
     parser.add_argument("--runtime-receipt", type=Path,
                         help="إيصال bootstrap صريح لتفعيل أدوات الحاوية؛ لا تشغيل Docker عند فتح الواجهة")
@@ -104,7 +104,10 @@ def main(argv=None, *, default_root=None):
                        analysis_receipt=args.analysis_receipt,
                        docker_executable=shutil.which("docker") or "/usr/local/bin/docker")
         server = Server(app, args.port, listen=args.listen)
-        print(f"ديوان المحلي: {server.origin}", flush=True)
+        bootstrap_url = getattr(server, "bootstrap_url", None)
+        print(f"ديوان المحلي: {bootstrap_url or server.origin}", flush=True)
+        if bootstrap_url:
+            print("هذا رابط بدءٍ سري أحادي الاستخدام؛ لا تشاركه ولا تنشر منفذ الحاوية خارج loopback.", flush=True)
         print("Ctrl+C للإغلاق؛ تُحفظ الجولات التي انتهت. انتظار النداء الجاري محدود بمهلته.", flush=True)
         server.serve_forever()
     except KeyboardInterrupt:

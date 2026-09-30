@@ -4,18 +4,21 @@
   "agent": "openai/codex",
   "date": "2026-09-27",
   "base_commit": "34d4a643f026aeff1836866938c1de74b7352a1d",
+  "review_fix_date": "2026-09-30",
+  "review_fix_base_commit": "5aae1d31b767b472159be3d4908cae7bf45aa933",
   "source_sha256": {
-    "pyproject.toml": "8e81daf1e2408af76fc21fbed1bbc02375be3c3eceeead8bc20396ec7ff6733f",
+    "pyproject.toml": "ade657a86667163fd8a8d53d48ea94f07079db42eac4e521aa96a173923b558f",
     "uv.lock": "a41de1cf46d2639ae3519fc4f024450e0465f90c4e65309c2e7a1674bf4ec4e6",
     "Dockerfile": "cdf1539a378bf3beac045fb78085b65072d5d9c2bce437415c9eaaac7492ac8c",
     ".dockerignore": "a9965bba8b1203d43927371095fd848f1ebdf89bc12fa62d10932907982b18f3",
     ".github/workflows/container-smoke.yml": "54b7db73369c124e95cf1da5b6ef9270724d3c9a8cc2448a96bbac3454486c18",
     "diwan/cli.py": "e66a68d779996f96590de361e7458a73424518254c21be944e28d2efe58a0596",
-    "tools/serve_ui.py": "028e383630aa9335f17d5b3c116da93a021e0f66de23b8abb74a036ec3f31f02",
-    "webui/server.py": "d441e157e976bace6a94b6b3b252d5e7d57d20d5ed24a01cb234904902a52a54",
-    "tests/test_installed_app.py": "3e6edd1ad31be37f9057c0d28029e1729ee9fa94e29b2f09fb35d117e75c646f",
+    "tools/serve_ui.py": "3d13b0011e320e25d5151b1f5c6728958eee5c6c1b59b51d92633a727bf67cff",
+    "webui/server.py": "d49f04975e00892e1c0426bd38ad1086251bb87ae6726e16eb10950518f88085",
+    "tests/test_installed_app.py": "0f6a228ac11a69a3f17fc7f99559659473bdf45a27be63baca0277ade460fd3c",
     "tests/test_container_image.py": "7b2730ec02be05452aebe1c90c6a368978ab5a53bdfb0f35c4abc71de2a0c1a1",
-    "ci/container_state.py": "37719ff9544d674029b11060058cc29d95215208053dd7bbbc3580f1250840e6"
+    "ci/container_state.py": "7198f5ef8fcc89292e687ca283803a54839b20c578ba1b24f22baf58af16cc8e",
+    "docs/INSTALL.md": "19ef37acb3333d82e34852ccf4c167bdf10ffc7fb6a7791dae5457eaaba54041"
   },
   "scope": "Installable public application and container smoke; no model-quality claim.",
   "container": {
@@ -161,28 +164,62 @@
     "passed": 99,
     "remaining": "Live model acceptance thresholds; neither issue is closed by this implementation."
   },
-  "limits": [
+  "measurement_limits": [
     "Container smoke exit 3 names unavailable Ollama and private policy corpus; it is not full readiness.",
     "Conversation persistence uses a synthetic provider.",
     "Live model quality, PDF with LibreOffice, Docker Desktop model performance and WSL2 were not measured.",
     "Docker execution receipts and the separate runtime backend are outside J6; #23 belongs to Claude.",
     "Native uv tool dependency resolution is not the frozen uv sync environment.",
-    "Hosted CI evidence is attached to the pull request after pushing."
+    "The 4504/61 hosted count below is from source commit 5aae1d31 and is not a result for the review-fix head.",
+    "Docker is not installed in the 2026-09-30 Codex cloud executor; the review-fix container build and volume path remain for hosted Actions."
   ],
   "http": {
     "installed_command": true,
     "loopback_published_port": 28765,
     "get_status": 200,
     "foreign_host_status": 403,
-    "model_calls": 0
+    "model_calls": 0,
+    "review_fix": "A synthetic non-browser TCP peer cannot obtain CSRF or dispatch with forged Host/Origin; a one-use printed bootstrap capability sets an HttpOnly SameSite=Strict browser cookie."
+  },
+  "review_fix_validation": {
+    "agent": "openai/codex",
+    "date": "2026-09-30",
+    "git_commit": "e48ee778e33505ef13af1c176dcc5dfcd2818ae4",
+    "python": "3.12.14",
+    "focused_tests": {
+      "command": "python3 -m pytest -o addopts='' tests/test_webui_http.py tests/test_adversarial_m9_m13.py tests/test_agent_webui.py tests/test_agent_stop_http.py tests/test_webui_sovereign_tools.py tests/test_webui_media.py tests/test_installed_app.py tests/test_container_image.py --disable-warnings",
+      "passed": 151,
+      "skipped": 1,
+      "failed": 0,
+      "seconds": 53.60
+    },
+    "full_tests": {
+      "command": "python3 -m pytest -o addopts='' --disable-warnings",
+      "passed": 4510,
+      "skipped": 58,
+      "failed": 0,
+      "seconds": 199.40,
+      "tested_commit": "a2060c9ae74151918f20cae5cac9b19d52099a8a"
+    },
+    "mutations": {
+      "tool": "tools/mutation_check.py from main d60e7b3, applied to the stacked branch manifest",
+      "manifest": "tests/mutations/test_installed_app.jsonl",
+      "killed": 8,
+      "survived": 0,
+      "other": 0,
+      "status": "passed"
+    },
+    "docker": "not_run_docker_command_not_installed"
   },
   "validation": {
     "container_pytest": {
       "command": "python -m pytest -p no:cacheprovider",
-      "passed": 4494,
+      "passed": 4504,
       "skipped": 61,
       "failed": 0,
-      "seconds": 176.22
+      "seconds": 328.13,
+      "source_commit": "5aae1d31b767b472159be3d4908cae7bf45aa933",
+      "run": "https://github.com/power0man/diwan/actions/runs/36286897426/job/108529246089"
     },
     "shared_checks": {
       "docs": "passed",

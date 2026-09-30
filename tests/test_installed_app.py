@@ -1,12 +1,15 @@
 """Exercise the distribution, not imports accidentally satisfied by the checkout."""
 from __future__ import annotations
 
+import http.client
 import json
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tarfile
+import threading
+from urllib.parse import quote
 import zipfile
 
 import pytest
@@ -17,12 +20,26 @@ ROOT = Path(__file__).resolve().parents[1]
 @pytest.fixture(scope="module")
 def distribution(tmp_path_factory):
     source = tmp_path_factory.mktemp("package-source")
-    # Build from an owner-shaped tree without reading any real owner stores.
-    shutil.copytree(ROOT, source, dirs_exist_ok=True,
-                    ignore=shutil.ignore_patterns(".git", ".venv", "__pycache__", ".pytest_cache", "var", "dist"))
-    for path in ("var/private.txt", "corpus/maritime/private.txt", "keys/private.pem",
-                 "evaluation/banks/sealed/secret.json", "webui/static/private.txt",
-                 "tools/seed_acquisitions.py", "tools/build_benchmark_suite.py"):
+    # Read only paths tracked in the public repository.  In particular, never walk
+    # an owner's corpus/glossary/source/projection/key stores to prepare this test.
+    tracked = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z"], check=True,
+                             capture_output=True).stdout.split(b"\0")
+    for raw in tracked:
+        if not raw:
+            continue
+        relative = raw.decode("utf-8")
+        if relative == ".gitignore":
+            continue  # The packaging assertion must not inherit VCS exclusions.
+        original, target = ROOT / relative, source / relative
+        assert original.is_file() and not original.is_symlink(), relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(original, target)
+    # Synthetic sentinels exercise the owner's excluded shapes without reading them.
+    for path in ("var/private.txt", "corpus/maritime/private.txt", "glossaries/private.json",
+                 "sources/private.md", "publish/private.json", "projections/private.json",
+                 "keys/private.pem", "evaluation/banks/sealed/secret.json",
+                 "webui/static/private.txt", "tools/seed_acquisitions.py",
+                 "tools/build_benchmark_suite.py"):
         target = source / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("synthetic-owner-sentinel", encoding="utf-8")
@@ -100,10 +117,129 @@ def test_installed_ui_keeps_state_outside_the_installation(tmp_path, monkeypatch
     assert cli.data_root() == (tmp_path / "xdg" / "diwan").resolve()
 
 
-def test_container_binding_keeps_local_host_and_origin_checks():
+def test_non_browser_peer_cannot_steal_csrf_with_forged_routing_headers():
+    from webui.server import Server
+
+    class RemotePeerServer(Server):
+        """Keep a real TCP exchange while presenting the Docker-side peer address."""
+
+        def get_request(self):
+            request, _ = super().get_request()
+            return request, ("192.0.2.2", 40000)
+
+    class RecordingApp:
+        def __init__(self):
+            self.calls = []
+
+        def dispatch(self, request):
+            self.calls.append(request)
+            return {"projects": []}
+
+    app = RecordingApp()
+    with RemotePeerServer(app, 0, listen="0.0.0.0") as server:
+        bootstrap = server.bootstrap_secret
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        port = server.server_port
+        address = "127.0.0.1"
+
+        def request(method, path, *, headers=None, body=None):
+            connection = http.client.HTTPConnection(address, port, timeout=5)
+            try:
+                connection.request(method, path, body=body, headers=headers or {})
+                response = connection.getresponse()
+                return response.status, response.read(), dict(response.getheaders())
+            finally:
+                connection.close()
+
+        forged = {"Host": f"127.0.0.1:{port}"}
+        status, body, _ = request("GET", "/", headers=forged)
+        assert status == 403 and server.token.encode() not in body and bootstrap.encode() not in body
+
+        payload = json.dumps({"action": "projects"}).encode("utf-8")
+        forged_post = {**forged, "Origin": server.origin, "X-Diwan-CSRF": server.token,
+                       "Content-Type": "application/json", "Content-Length": str(len(payload))}
+        assert request("POST", "/api", headers=forged_post, body=payload)[0] == 403
+        assert app.calls == []
+
+        status, body, response_headers = request(
+            "GET", f"/?bootstrap={quote(bootstrap, safe='')}", headers=forged)
+        assert status == 200 and server.token.encode() in body
+        cookie = response_headers["Set-Cookie"].split(";", 1)[0]
+        assert "HttpOnly" in response_headers["Set-Cookie"] and "SameSite=Strict" in response_headers["Set-Cookie"]
+        # The printed bootstrap capability is one-use; a second peer cannot replay it.
+        assert request("GET", f"/?bootstrap={quote(bootstrap, safe='')}", headers=forged)[0] == 403
+        authorised = {**forged_post, "Cookie": cookie}
+        assert request("POST", "/api", headers=authorised, body=payload)[0] == 200
+        assert app.calls == [{"action": "projects"}]
+
+        server.shutdown()
+        thread.join(timeout=3)
+        assert not thread.is_alive()
+
+
+def test_container_binding_uses_a_one_time_bootstrap_capability():
     from webui.server import Server
     with Server(None, 0, listen="0.0.0.0") as server:
         assert server.server_address[0] == "0.0.0.0"
         assert server.origin == f"http://127.0.0.1:{server.server_port}"
+        assert server.bootstrap_url.startswith(server.origin + "/?bootstrap=")
     with pytest.raises(ValueError, match="invalid_listen_address"):
         Server(None, 0, listen="192.0.2.1")
+
+
+def test_nonloopback_cli_prints_the_secret_bootstrap_url(monkeypatch, capsys, tmp_path):
+    import tools.serve_ui as cli
+
+    monkeypatch.setenv("DIWAN_CHAT_MODEL", "synthetic")
+    monkeypatch.setenv("DIWAN_CHAT_DIGEST", "a" * 64)
+    monkeypatch.setattr(cli, "LocalChatProvider", lambda *args: object())
+    monkeypatch.setattr(cli, "LocalToolProvider", lambda *args: object())
+
+    class App:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def close(self):
+            pass
+
+    class FakeServer:
+        origin = "http://127.0.0.1:8765"
+        bootstrap_url = origin + "/?bootstrap=synthetic-secret"
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def serve_forever(self):
+            raise KeyboardInterrupt
+
+        def server_close(self):
+            pass
+
+    monkeypatch.setattr(cli, "LocalApp", App)
+    monkeypatch.setattr(cli, "Server", FakeServer)
+    assert cli.main(["--root", str(tmp_path), "--listen", "0.0.0.0"]) == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0] == "ديوان المحلي: http://127.0.0.1:8765/?bootstrap=synthetic-secret"
+    assert "أحادي الاستخدام" in lines[1]
+
+
+def test_container_state_uses_the_installed_runtime_and_data_root(distribution, tmp_path):
+    installed = tmp_path / "installed"
+    with zipfile.ZipFile(next(distribution.glob("*.whl"))) as archive:
+        archive.extractall(installed)
+    script = tmp_path / "container_state.py"
+    shutil.copy2(ROOT / "ci" / "container_state.py", script)
+    data = tmp_path / "state"
+    runner = (
+        "import runpy,sys; "
+        "sys.path.insert(0, sys.argv[1]); "
+        "sys.argv=[sys.argv[2],sys.argv[3]]; "
+        "runpy.run_path(sys.argv[0],run_name='__main__')"
+    )
+    env = {"DIWAN_DATA_HOME": str(data)}
+    for mode in ("write", "read"):
+        result = subprocess.run([sys.executable, "-I", "-c", runner, str(installed), str(script), mode],
+                                cwd=tmp_path, env=env, capture_output=True, text=True, timeout=60)
+        assert result.returncode == 0, result.stderr + result.stdout
+    assert (data / "smoke-context.json").is_file()

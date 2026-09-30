@@ -6,7 +6,9 @@ import os
 from pathlib import Path
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from diwan.cli import data_root, runtime_root
+
+sys.path.insert(0, str(runtime_root()))
 
 from core.contracts import Response, Usage
 from webui.server import LocalApp
@@ -25,7 +27,7 @@ class SyntheticProvider:
 
 
 def main(mode: str) -> None:
-    state = Path(os.environ["DIWAN_DATA_HOME"]).resolve()
+    state = data_root()
     app = LocalApp(state / "daily-ui", model="synthetic", model_version="synthetic-v1",
                    provider_factory=SyntheticProvider)
     try:

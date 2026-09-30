@@ -44,6 +44,7 @@ diwan = "diwan.cli:main"
 # never enter either distribution, even when building from an owner's checkout.
 [tool.hatch.build]
 dev-mode-dirs = ["."]
+ignore-vcs = true
 include = [
     "/diwan/*.py", "/agent/**/*.py", "/analysis/**/*.py",
     "/conversation/**/*.py", "/core/**/*.py", "/documents/**/*.py",
