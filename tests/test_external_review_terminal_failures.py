@@ -7,7 +7,7 @@ import urllib.error
 
 import pytest
 
-from evaluation.external_review import review_file, smoke_bank
+from evaluation.external_review import review_bank, review_file, smoke_bank
 from evaluation.multi_system_review import AutomaticReviewError
 from tools.external_review import OllamaChat, OpenAICompatChat
 
@@ -88,3 +88,57 @@ def test_real_transport_http_refusal_reaches_retry_guard_without_body_leak(
     assert record["error"] == expected and record["judgments"] is None
     assert "private-body-marker" not in json.dumps(record)
     assert "synthetic-key" not in json.dumps(record)
+
+
+def _two_files(tmp_path):
+    bank = smoke_bank(tmp_path)
+    (bank / "open" / "second.json").write_bytes((bank / "open" / "smoke.json").read_bytes())
+    brief = tmp_path / "brief.md"
+    brief.write_text("## من أنت\nSynthetic reviewer.\n", encoding="utf-8")
+    return bank, brief
+
+
+def test_terminal_model_is_not_dispatched_to_later_files_but_can_retry_in_a_new_run(tmp_path):
+    bank, brief = _two_files(tmp_path)
+    reviewers = ["deepseek-v4-flash:cloud", "mistral-large-3:675b-cloud"]
+    calls = []
+
+    def transport(model, *args):
+        calls.append(model)
+        if model == reviewers[0]:
+            raise AutomaticReviewError("http_410")
+        return _valid_reply()
+
+    result = review_bank(bank, reviewers, transport, brief_path=brief)
+    assert result == {"reviewed": 2, "skipped": 0, "failed": 2}
+    assert calls == [reviewers[0], reviewers[1], reviewers[1]]
+    blocked = json.loads((bank / "reviews" / "deepseek-v4-flash_cloud" / "smoke.json").read_text())
+    assert blocked["attempts"] == [] and blocked["error"] == "http_410"
+    assert blocked["not_attempted_reason"] == "earlier_terminal_failure"
+    recovered = []
+
+    def repaired(model, *args):
+        recovered.append(model)
+        return _valid_reply()
+
+    assert review_bank(bank, reviewers, repaired, brief_path=brief) == {
+        "reviewed": 2, "skipped": 2, "failed": 0}
+    assert recovered == [reviewers[0], reviewers[0]]
+
+
+def test_budget_failure_stops_other_models_and_files_without_fabricating_attempts(tmp_path):
+    bank, brief = _two_files(tmp_path)
+    reviewers = ["deepseek-v4-flash:cloud", "mistral-large-3:675b-cloud"]
+    calls = []
+
+    def transport(model, *args):
+        calls.append(model)
+        raise AutomaticReviewError("zero_spend_breach")
+
+    assert review_bank(bank, reviewers, transport, brief_path=brief) == {
+        "reviewed": 0, "skipped": 0, "failed": 4}
+    assert calls == [reviewers[0]]
+    records = [json.loads(p.read_text()) for p in (bank / "reviews").rglob("*.json")]
+    assert sum(len(r["attempts"]) for r in records) == 1
+    assert sum(r.get("not_attempted_reason") == "earlier_terminal_failure" for r in records) == 3
+    assert all(r["error"] == "zero_spend_breach" and r["judgments"] is None for r in records)

@@ -69,6 +69,10 @@ TERMINAL_TRANSPORT_ERRORS = frozenset({
     "http_400", "http_401", "http_402", "http_403", "http_404", "http_405",
     "http_410", "http_413", "http_415", "http_422", "http_429",
 })
+BUDGET_TERMINAL_ERRORS = frozenset({
+    "free_model_required", "free_price_unverified", "free_tier_unverified",
+    "zero_spend_breach", "usage_unavailable", "usage_cost_unavailable", "usage_cost_invalid",
+})
 
 
 def reviewer_family(model: str) -> str:
@@ -245,7 +249,7 @@ def open_files(bank_dir: Path) -> list[Path]:
 
 
 def review_file(path: Path, bank_dir: Path, model: str, family: str, transport: Transport,
-                *, brief: str, brief_sha: str) -> dict:
+                *, brief: str, brief_sha: str, blocked_error: str | None = None) -> dict:
     """نداءٌ لملفٍّ واحدٍ ومراجعٍ واحد. يُعيد السجلّ المحفوظ."""
     if "sealed" in path.resolve().relative_to(bank_dir.resolve()).parts:
         raise AutomaticReviewError("sealed_never_reviewed_externally", str(path))
@@ -257,6 +261,10 @@ def review_file(path: Path, bank_dir: Path, model: str, family: str, transport: 
     record = {"model": model, "family": family, "file": relative,
               "file_sha256": _sha(raw_file), "brief_sha256": brief_sha,
               "started_at": _now(), "attempts": [], "judgments": None, "error": None}
+    if blocked_error is not None:
+        record.update(error=blocked_error, elapsed_ms=0,
+                      not_attempted_reason="earlier_terminal_failure")
+        return record
     start = time.monotonic()
     for attempt in (1, 2):
         try:
@@ -293,6 +301,8 @@ def review_bank(bank_dir: Path, reviewers: list[str], transport: Transport, *,
     brief = brief_text(brief_path)
     brief_sha = _sha(brief.encode("utf-8"))
     done = skipped = failed = 0
+    terminal_models: dict[str, str] = {}
+    budget_error: str | None = None
     for path in open_files(bank_dir):
         for model in reviewers:
             relative = path.relative_to(bank_dir / "open").as_posix()
@@ -306,7 +316,12 @@ def review_bank(bank_dir: Path, reviewers: list[str], transport: Transport, *,
                     skipped += 1
                     continue
             record = review_file(path, bank_dir, model, families[model], transport,
-                                 brief=brief, brief_sha=brief_sha)
+                                 brief=brief, brief_sha=brief_sha,
+                                 blocked_error=budget_error or terminal_models.get(model))
+            if record["error"] in TERMINAL_TRANSPORT_ERRORS:
+                terminal_models[model] = record["error"]
+            if record["error"] in BUDGET_TERMINAL_ERRORS:
+                budget_error = record["error"]
             if stamp:
                 record.update(stamp)
             _write(out, record)

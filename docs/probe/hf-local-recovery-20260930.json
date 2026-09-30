@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-30T16:33:32.824279+00:00",
+  "task": "hf-local-credential-recovery",
+  "model_requested": "meta-llama/Llama-3.1-8B-Instruct:novita",
+  "max_tokens": 32,
+  "credentials_source": "existing_local_hf_store",
+  "inference_permission_verified": true,
+  "attempts": 1,
+  "input_kind": "synthetic_connectivity_canary",
+  "measurement_limits": [
+    "one_small_request_not_model_quality_or_worker_acceptance",
+    "actual_invoice_and_remaining_credit_not_returned",
+    "no_billing_configuration_changed",
+    "no_private_or_sealed_data_sent"
+  ],
+  "http_status": 200,
+  "status": "complete",
+  "model_returned": "meta-llama/llama-3.1-8b-instruct",
+  "usage": {
+    "prompt_tokens": 39,
+    "completion_tokens": 3,
+    "total_tokens": 42
+  },
+  "answer_matches": false,
+  "estimated_inference_usd": 9.3e-07,
+  "actual_billed_usd": null,
+  "elapsed_seconds": 0.632,
+  "prices_usd_per_million_tokens": {
+    "input": 0.02,
+    "output": 0.05
+  },
+  "price_source": "https://router.huggingface.co/v1/models",
+  "credential_comparison": {
+    "mcp_oauth_inference_scope": false,
+    "existing_local_credential_scoped_inference_permission": true,
+    "historical_http_403_body_not_recorded": true
+  }
+}
