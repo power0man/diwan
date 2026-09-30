@@ -4,6 +4,7 @@ from __future__ import annotations
 import io
 import json
 import urllib.error
+from types import SimpleNamespace
 
 import pytest
 
@@ -227,3 +228,31 @@ def test_fallback_does_not_hide_unrelated_program_errors():
     with pytest.raises(AutomaticReviewError) as raised:
         cli.with_fallback(candidates, 2, run)
     assert raised.value.code == "synthetic_unexpected_error"
+
+
+def test_unattempted_reviewer_is_not_reported_reachable(tmp_path):
+    models = ["deepseek-ai/DeepSeek-V3.1", "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+              "meta-llama/Llama-3.3-70B-Instruct"]
+    calls = []
+
+    class SyntheticChat:
+        backend = "hf-router"
+        provider_usage = []
+        failures = {}
+
+        def describe(self):
+            return {"name": self.backend, "endpoint_host": "router.huggingface.co"}
+
+        def __call__(self, model, *args):
+            calls.append(model)
+            raise AutomaticReviewError("zero_spend_breach")
+
+    _, brief = _two_files(tmp_path)
+    args = SimpleNamespace(reviewers=models[:2], fallbacks=models[2:], every_family=True,
+                           backend="hf-router", brief=brief)
+    report, exit_code = cli._free_smoke(args, SyntheticChat())
+    assert exit_code == 1 and report["status"] == "failed"
+    assert calls == models[:1]
+    blocked = report["models"][models[1]]
+    assert blocked["attempts"] == 0 and blocked["caught_planted_error"] is None
+    assert blocked["reachable"] is False

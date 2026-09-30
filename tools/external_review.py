@@ -807,8 +807,8 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
         for run in runs:
             for model, result in run["reviewers"].items():
                 models.setdefault(model, {**result, "lineage": identities[model]["lineage"],
-                                          "reachable": result["error"] not in {"transport_error",
-                                                                               "transport_timeout"}})
+                                          "reachable": result["attempts"] > 0 and result["error"] not in {
+                                              "transport_error", "transport_timeout"}})
         report = {"schema_version": 1, "probe": "external_review_smoke_every_family",
                   "status": "passed" if all(r["status"] == "passed" for r in runs) else "failed",
                   "backend": transport.describe(), **source, "models": models,
