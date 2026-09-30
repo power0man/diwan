@@ -33,6 +33,66 @@ SYSTEM = (
     "هذه محادثة نصية فقط: لا تتوفر لك أدوات أو ملفات أو ذاكرة خارج هذه الجلسة. "
     "لا تدّع تنفيذ فعل خارجي أو حفظ تفضيل دائم."
 )
+FORGOTTEN = "‹نُسي›"
+
+
+def _redaction_token(text):
+    """Return a marker that cannot itself contain the forgotten value."""
+    if text not in FORGOTTEN:
+        return FORGOTTEN
+    # Memory text is bounded to 2,000 characters.  The BMP private-use range has
+    # 6,400 single-code-point candidates, so at least one is absent from it.
+    for codepoint in range(0xE000, 0xF900):
+        marker = chr(codepoint)
+        if marker not in text:
+            return marker
+    _fail("text_invalid", "تعذر اختيار علامة كشط غير متصادمة")
+
+
+def _scrub_text(value, text, marker):
+    """Scrub literal and JSON-escaped representations from one model-visible string."""
+    variants = {text, json.dumps(text, ensure_ascii=False)[1:-1]}
+    count = 0
+    for variant in sorted(variants, key=len, reverse=True):
+        found = value.count(variant)
+        if found:
+            value = value.replace(variant, marker)
+            count += found
+    return value, count
+
+
+def _scrub_value(value, text, marker):
+    """Scrub arbitrary model-visible payload values, plus their occurrence count."""
+    if isinstance(value, str):
+        return _scrub_text(value, text, marker)
+    if isinstance(value, list):
+        output, count = [], 0
+        for item in value:
+            scrubbed, found = _scrub_value(item, text, marker)
+            output.append(scrubbed)
+            count += found
+        return output, count
+    if isinstance(value, dict):
+        output, count = {}, 0
+        for key, item in value.items():
+            scrubbed, found = _scrub_value(item, text, marker)
+            output[key] = scrubbed
+            count += found
+        return output, count
+    return value, 0
+
+
+def _scrub_text_turns(turns, text):
+    """Scrub only text that can be rebuilt into later chat-model messages."""
+    marker = _redaction_token(text)
+    output, count = copy.deepcopy(turns), 0
+    for turn in output:
+        for holder, key in ((turn, "text"), (turn.get("memory", {}), "block"),
+                            (turn.get("result") or {}, "content")):
+            if isinstance(holder.get(key), str):
+                holder[key], found = _scrub_text(holder[key], text, marker)
+                count += found
+    return output, count
 
 
 class ConversationError(ValueError):
@@ -296,10 +356,12 @@ class ChatSession:
         if not isinstance(envelope, dict) or set(envelope) != {"state", "sha256"}:
             _fail("state_corrupt", "غلاف حالة غير صالح")
         state = envelope["state"]
-        if (not isinstance(state, dict) or set(state) != {"config_sha256", "head", "count", "turns"}
+        if (not isinstance(state, dict) or set(state) - {"scrubbed_through"} != {"config_sha256", "head", "count", "turns"}
                 or digest(state) != envelope["sha256"] or state["config_sha256"] != digest(self.config)
                 or type(state["count"]) is not int or state["count"] < 0
-                or not isinstance(state["turns"], list) or len(state["turns"]) > 1000):
+                or not isinstance(state["turns"], list) or len(state["turns"]) > 1000
+                or type(state.get("scrubbed_through", 0)) is not int
+                or not 0 <= state.get("scrubbed_through", 0) <= len(state["turns"])):
             _fail("state_corrupt", "حالة غير صالحة أو لا تطابق البصمة")
         ledger, entries = self._ledger()
         checkpoint = state["count"]
@@ -315,6 +377,16 @@ class ChatSession:
                     or not _id(turn["turn_id"]) or turn["turn_id"] in ids or not _text(turn["text"])):
                 _fail("state_corrupt", "هوية جولة أو نص أو ترتيب غير صالح")
             ids.add(turn["turn_id"])
+            if i < state.get("scrubbed_through", 0):
+                # The immutable ledger remains authoritative, but the reusable state is
+                # deliberately redacted.  Its envelope still detects accidental damage.
+                if turn["result"] is None or not isinstance(turn["result"], dict):
+                    _fail("state_corrupt", "جولة مكشوطة غير مكتملة")
+                if turn["result"].get("ledger_sha256") is not None:
+                    if index >= checkpoint or entries[index]["digest"] != turn["result"]["ledger_sha256"]:
+                        _fail("state_corrupt", "جولة مكشوطة لا تطابق قيدها")
+                    index += 1
+                continue
             req, context = self._request(turns[:i], turn["turn_id"], turn["text"],
                                          turn.get("memory", {}).get("block", ""))
             if (turn["request_sha256"] != digest(req.fingerprint_payload())
@@ -376,6 +448,32 @@ class ChatSession:
             state, _, _ = self._load()
             return [f"text:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
                     if sha256 in turn.get("memory", {}).get("items", ())]
+
+    def _memory_forget_plan(self, sha256, text):
+        """Build a scrubbed state envelope while the caller holds ``_lock``; do not write."""
+        if not _text(text):
+            _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
+        state, _, _ = self._load()
+        references = [f"text:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
+                      if sha256 in turn.get("memory", {}).get("items", ())]
+        turns, count = _scrub_text_turns(state["turns"], text)
+        if count and any(turn["result"] is None for turn in state["turns"]):
+            _fail("turn_unresolved", "لا يُكشط تاريخ جولة غير محسومة")
+        if count:
+            state["turns"] = turns
+            state["scrubbed_through"] = len(turns)
+        envelope = {"state": state, "sha256": digest(state)}
+        return references, count, self.directory / "state.json", canonical_bytes(envelope)
+
+    def scrub_memory_text(self, text):
+        """Scrub exact occurrences from reusable state, atomically under this session's lock."""
+        if not _text(text):
+            _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
+        with self._lock():
+            _, count, _, payload = self._memory_forget_plan("", text)
+            if count:
+                _write(self.directory / "state.json", _decode(payload.decode("utf-8")))
+            return count
 
     def turn(self, turn_id: str, text: str, provider, *, max_turns=None,
              max_saved_input_bytes=None, request_validator=None, memory=None, question=None):

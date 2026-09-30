@@ -7,6 +7,7 @@ from agent.actions import ActionStore
 from agent.journal import Journal
 from agent.loop import SYSTEM, run_agent
 from agent.registry import Tool, ToolContext, ToolRegistry
+from conversation.agent_session import AgentSession
 from core.budget import Budget
 from core.canonical import digest
 from core.contracts import Message, Request, Response, ToolCall, ToolSpec, Usage
@@ -273,6 +274,33 @@ def test_invalid_replayed_response_is_rejected_before_any_effect(env):
     with pytest.raises(RouteRefused, match="replay_response_invalid"):
         execute(request, Scripted(), Budget(0, 0), env["ledger"])
     assert env["invoked"] == []
+
+
+@pytest.mark.parametrize("optional_input", ["memory", "thinking"])
+def test_stop_accepts_turns_with_every_optional_digested_input(tmp_path, optional_input):
+    from memory.store import MemoryStore
+    from tests.test_agent_session import Provider, call, registry, response
+
+    workspace = tmp_path / "workspace"
+    project = tmp_path / "project"
+    workspace.mkdir()
+    project.mkdir()
+    memory = None
+    options = {}
+    if optional_input == "memory":
+        memory = MemoryStore(project)
+        memory.remember("رقم لوحة السيارة ٤٢", consent="owner")
+    else:
+        options["thinking"] = True
+    session = AgentSession(
+        tmp_path / "control", "session", workspace_root=workspace, project_id="project",
+        registry=registry([], owner=True), model="test", model_version="v1", memory=memory)
+    pending = session.start_turn("turn", "ما الرقم؟", Provider(response(calls=(call(),))), **options)
+    assert pending["status"] == "awaiting_owner"
+
+    assert session.request_stop("turn") == {
+        "turn_id": "turn", "status": "cancelled", "error_code": "stop_requested"
+    }
 
 
 def test_missing_action_receipt_blocks_later_effects_in_a_saved_batch(env):
