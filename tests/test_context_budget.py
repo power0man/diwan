@@ -503,9 +503,13 @@ def test_snapshot_extraction_checks_members_itself_and_works_without_the_filter_
             for name, kind in entries:
                 info = tarfile.TarInfo(name)
                 if kind == "file":
+                    info.mode = 0o644
                     info.size = 3
                     tar.addfile(info, io.BytesIO(b"abc"))
                 elif kind == "dir":
+                    # TarInfo defaults to 0644 even for a directory; without Python's newer data filter that
+                    # produces a directory with no search bit and makes its otherwise-readable child inaccessible.
+                    info.mode = 0o755
                     info.type = tarfile.DIRTYPE
                     tar.addfile(info)
                 else:
