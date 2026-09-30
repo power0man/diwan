@@ -22,6 +22,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event.repository.private == false
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.14']
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -30,14 +34,15 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
-      # uv مثبَّتٌ بإصداره، وبايثون 3.14 كما في بيئة CI المعزولة، والاعتمادياتُ من uv.lock
-      # المجمَّد وحده؛ لا حلَّ جديدًا على المشغّل.
-      - name: Install the locked runtime
+      # uv مثبَّتٌ بإصداره، وكلُّ مفسّرٍ معلَن الدعم يُثبَّت من المصفوفة نفسها؛
+      # والاعتمادياتُ من uv.lock المجمَّد وحده، بلا حلٍّ جديد على المشغّل.
+      - name: Install the locked Python ${{ matrix.python-version }} runtime
         run: |
           set -eu
           python3 -m pip install --user 'uv==0.8.17'
-          "$HOME/.local/bin/uv" python install 3.14
-          "$HOME/.local/bin/uv" sync --frozen --python 3.14 --extra dev
+          "$HOME/.local/bin/uv" python install "${{ matrix.python-version }}"
+          "$HOME/.local/bin/uv" sync --frozen --python "${{ matrix.python-version }}" --extra dev
+          .venv/bin/python -VV
       - name: Every commit names its producing agent
         env:
           EVENT_NAME: ${{ github.event_name }}

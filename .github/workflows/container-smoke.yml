@@ -23,6 +23,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: One-command install
         run: docker build -t diwan:ci .
       - name: Smoke check inside the container, offline
@@ -45,3 +46,22 @@ jobs:
           assert not bad, f"steps differ: {bad}"
           print("container smoke: exit 3 with every step as declared")
           PY
+      - name: Python 3.12 tests in the image
+        run: |
+          docker build --tag diwan:ci-test --file - . <<'DOCKERFILE'
+          FROM diwan:ci
+          USER root
+          RUN apt-get update \
+              && apt-get install -y --no-install-recommends git \
+              && rm -rf /var/lib/apt/lists/* \
+              && git config --system --add safe.directory /app
+          RUN uv export --frozen --extra dev --no-emit-project --output-file /tmp/dev-requirements.txt >/dev/null \
+              && uv pip install --python /opt/diwan-venv/bin/python --require-hashes \
+                   --requirements /tmp/dev-requirements.txt \
+              && rm /tmp/dev-requirements.txt
+          USER diwan
+          DOCKERFILE
+          docker run --rm --network none --mount "type=bind,src=$PWD/.git,dst=/app/.git,readonly" \
+            diwan:ci-test python -VV
+          docker run --rm --network none --mount "type=bind,src=$PWD/.git,dst=/app/.git,readonly" \
+            diwan:ci-test python -m pytest -p no:cacheprovider
