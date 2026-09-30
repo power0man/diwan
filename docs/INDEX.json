@@ -164,7 +164,7 @@
    "tokens_estimate": 2483
   },
   {
-   "bytes": 160545,
+   "bytes": 166492,
    "headings": [
     {
      "level": 2,
@@ -390,15 +390,20 @@
      "level": 2,
      "line": 1211,
      "title": "ق٧٠ — تشغيلُ الواجهات المجانية للنماذج، وتوزيعُ المهام على كل ذكاءٍ متاح (٢٨ سبتمبر ٢٠٢٦)"
+    },
+    {
+     "level": 2,
+     "line": 1252,
+     "title": "ق٧١ — اعتمادُ Groq وOpenRouter مجانًا فقط، بسقف إنفاقٍ صفر (٣٠ سبتمبر ٢٠٢٦)"
     }
    ],
-   "lines": 1250,
+   "lines": 1290,
    "path": "docs/DECISIONS.md",
    "purpose": "القراراتُ المعتمدة بمصدرها وسببها وحدِّها المعلَن؛ يُقرأ بالعناوين لا بالترتيب",
    "read_when": "القرارَ الذي تسمّيه مهمّتُك فقط، من عنوانه",
    "role": "سجلُّ القرارات الحاكم",
-   "sha256_12": "f34564adbd96",
-   "tokens_estimate": 40034
+   "sha256_12": "51bb4d0084ff",
+   "tokens_estimate": 41503
   },
   {
    "bytes": 218457,
@@ -1347,7 +1352,7 @@
    "tokens_estimate": 451
   },
   {
-   "bytes": 57851,
+   "bytes": 57977,
    "headings": [
     {
      "level": 2,
@@ -1486,56 +1491,56 @@
     },
     {
      "level": 2,
-     "line": 525,
+     "line": 526,
      "title": "٧ — المراحل السبع: ما أثبتته كلٌّ منها"
     },
     {
      "level": 2,
-     "line": 544,
+     "line": 545,
      "title": "٨ — طقس العمل (سنّة المشروع — اتبعه حرفيًّا في كل مرحلة)"
     },
     {
      "level": 2,
-     "line": 566,
+     "line": 567,
      "title": "٩ — حدودك الستة (نصًّا، ولا اجتهاد فيها)"
     },
     {
      "level": 2,
-     "line": 588,
+     "line": 589,
      "title": "١٠ — البيئة التشغيلية"
     },
     {
      "level": 2,
-     "line": 612,
+     "line": 613,
      "title": "١١ — ألغام معروفة (كلُّها كلّفت وقتًا مرة على الأقل)"
     },
     {
      "level": 2,
-     "line": 649,
+     "line": 650,
      "title": "١٢ — ما بقي: الخارطة العامة والقرارات المستقلة"
     },
     {
      "level": 2,
-     "line": 682,
+     "line": 683,
      "title": "١٣ — كيف تتعامل مع المالك"
     },
     {
      "level": 2,
-     "line": 696,
+     "line": 697,
      "title": "١٤ — خلاصة في سطر"
     }
    ],
-   "lines": 700,
+   "lines": 701,
    "path": "docs/HANDOFF-PROMPT.md",
    "purpose": "برومبتُ تسليمٍ متنُه حتى ق٣٨ ورأسُه ق٤٩",
    "read_when": "لا يُقرأ؛ الحالةُ في docs/STATUS.md",
    "role": "تاريخ",
-   "sha256_12": "287282631466",
-   "tokens_estimate": 14970
+   "sha256_12": "de04a315218c",
+   "tokens_estimate": 15003
   }
  ],
  "generator": "tools/context_index.py",
- "latest_decision": 70,
+ "latest_decision": 71,
  "measurement_limits": [
   "tokens_estimate_is_characters_divided_by_2_4_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count",
   "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
