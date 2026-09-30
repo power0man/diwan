@@ -1223,3 +1223,121 @@ def test_records_of_files_no_longer_in_the_open_split_are_ignored_everywhere(tmp
     _record(bank, "old-reviewer", "a/kimi_x.json", error="transport_error")
     _record(bank, "old-reviewer", "a/kimi_y.json", error="transport_error")
     assert cli.other_reviewer_errors(bank, {MI, LL}, {"a/kimi_x.json", "a/kimi_z.json"}) == 1
+
+
+# ————— Groq وOpenRouter: سقفُ إنفاق صفر بلا شبكة —————
+
+OR_DS = "deepseek/deepseek-r1:free"
+OR_MI = "mistralai/mistral-small-3.1-24b-instruct:free"
+
+
+def _priced(model, **pricing):
+    return {"id": model, "architecture": {"output_modalities": ["text"]},
+            "pricing": pricing or {"prompt": "0", "completion": "0", "request": "0"}}
+
+
+class UsageOpener:
+    """فهرسٌ وردود OpenAI كاملة، كي لا تُستعمل شبكة أو مفتاح حقيقي في حراس الإنفاق."""
+
+    def __init__(self, catalog=None, replies=None):
+        self.catalog = catalog or []
+        self.replies = {model: list(values) for model, values in (replies or {}).items()}
+        self.requests = []
+
+    def open(self, request, timeout=None):
+        self.requests.append(request)
+        if request.data is None:
+            body = {"data": self.catalog}
+        else:
+            model = json.loads(request.data)["model"]
+            values = self.replies[model]
+            body = values.pop(0) if len(values) > 1 else values[0]
+        return _Reply(json.dumps(body, ensure_ascii=False).encode(), "application/json", request.full_url)
+
+
+def _completion(content, *, usage=True, cost="0"):
+    body = {"choices": [{"message": {"role": "assistant", "content": content}, "finish_reason": "stop"}]}
+    if usage:
+        body["usage"] = {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18}
+        if cost is not None:
+            body["usage"]["cost"] = cost
+    return body
+
+
+def test_groq_refuses_before_network_without_an_explicit_free_tier_confirmation(monkeypatch):
+    opener = UsageOpener()
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: opener)
+    with pytest.raises(AutomaticReviewError) as refused:
+        cli.build_free_transport("groq", environ={"GROQ_API_KEY": KEY})
+    assert refused.value.code == "free_tier_unverified" and opener.requests == []
+    chat = cli.build_free_transport(
+        "groq", environ={"GROQ_API_KEY": KEY, "DIWAN_GROQ_FREE_TIER_CONFIRMED": "confirmed"})
+    assert chat.endpoint_host == "api.groq.com"
+    assert cli.resolve_reviewer("mistral-saba-24b", "groq")["family"] == "mistral"
+    assert "confirmed" not in repr(chat) and "confirmed" not in json.dumps(chat.describe())
+
+
+def test_openrouter_requires_a_free_suffix_and_all_catalog_prices_to_be_zero_before_chat():
+    chat = cli.OpenAICompatChat("openrouter", KEY)
+    for entry, code in [
+        (_priced("deepseek/deepseek-r1", prompt="0", completion="0"), "free_model_required"),
+        (_priced(OR_DS, prompt="0", completion="0.000001"), "free_price_unverified"),
+        ({"id": OR_DS, "pricing": {}}, "free_price_unverified"),
+    ]:
+        with pytest.raises(AutomaticReviewError) as refused:
+            chat.approve_zero_spend([entry], [entry["id"]])
+        assert refused.value.code == code
+    with pytest.raises(AutomaticReviewError) as refused:
+        chat(OR_DS, "s", "u", {})
+    assert refused.value.code == "free_price_unverified" and chat.provider_usage[-1]["request_sent"] is False
+
+
+def test_openrouter_mock_sends_no_paid_fallback_and_persists_zero_cost_usage(tmp_path, monkeypatch):
+    catalog = [_priced(OR_DS), _priced(OR_MI)]
+    opener = UsageOpener(catalog, {OR_DS: [_completion(json.dumps(CATCH, ensure_ascii=False))],
+                                           OR_MI: [_completion(json.dumps(CATCH, ensure_ascii=False))]})
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: opener)
+    monkeypatch.setenv("OPENROUTER_API_KEY", KEY)
+    out = tmp_path / "openrouter.json"
+    assert cli.main(["--backend", "openrouter", "--smoke", str(out),
+                     "--reviewer", OR_DS, "--reviewer", OR_MI]) == 0
+    sent = [json.loads(request.data) for request in opener.requests if request.data is not None]
+    assert all(payload["provider"] == {"allow_fallbacks": False} for payload in sent)
+    assert all(payload["usage"] == {"include": True} and "models" not in payload for payload in sent)
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert len(report["provider_usage"]) == 2
+    assert all(row["status"] == "succeeded" and row["cost_usd"] == "0" for row in report["provider_usage"])
+    assert all(row["zero_spend_proof"] == "catalog_free_suffix_and_all_pricing_zero"
+               for row in report["provider_usage"])
+    assert "zero_spend_guard_is_provider_specific_and_not_a_general_price_attestation" in report["measurement_limits"]
+    assert KEY not in out.read_text(encoding="utf-8")
+
+
+def test_openrouter_missing_or_nonzero_reported_cost_is_a_named_failure():
+    chat = cli.OpenAICompatChat("openrouter", KEY)
+    chat.approve_zero_spend([_priced(OR_DS)], [OR_DS])
+    chat.opener = UsageOpener(replies={OR_DS: [_completion("{}", cost=None), _completion("{}", cost="0.01")]})
+    with pytest.raises(AutomaticReviewError) as missing:
+        chat(OR_DS, "s", "u", {})
+    with pytest.raises(AutomaticReviewError) as breached:
+        chat(OR_DS, "s", "u", {})
+    assert missing.value.code == "usage_cost_unavailable"
+    assert breached.value.code == "zero_spend_breach"
+    assert [row["status"] for row in chat.provider_usage] == ["error", "error"]
+    assert chat.provider_usage[0]["cost_usd"] is None
+    assert chat.provider_usage[1]["cost_usd"] == "0.01"
+
+
+def test_groq_mock_logs_tokens_but_never_invents_an_unreported_zero_cost():
+    model = "mistral-saba-24b"
+    chat = cli.OpenAICompatChat("groq", KEY, free_tier_confirmation="confirmed")
+    chat.opener = UsageOpener(replies={model: [_completion("{}", cost=None)]})
+    assert chat(model, "s", "u", {}) == "{}"
+    assert chat.provider_usage == [{
+        "provider": "groq", "model": model, "family": "mistral",
+        "at": chat.provider_usage[0]["at"], "elapsed_ms": chat.provider_usage[0]["elapsed_ms"],
+        "status": "succeeded", "error": None, "request_sent": True,
+        "usage": {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18},
+        "cost_usd": None, "cost_status": "not_reported",
+        "zero_spend_proof": "operator_confirmed_account_free_tier",
+    }]

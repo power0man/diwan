@@ -8,15 +8,21 @@
     GITHUB_TOKEN=… python3 tools/external_review.py --backend github-models --list-catalog catalog.json
     GITHUB_TOKEN=… python3 tools/external_review.py --backend github-models --smoke out.json
     HF_TOKEN=… python3 tools/external_review.py --backend hf-router --smoke out.json --every-family
+    GROQ_API_KEY=… DIWAN_GROQ_FREE_TIER_CONFIRMED=confirmed python3 tools/external_review.py --backend groq --smoke out.json
+    OPENROUTER_API_KEY=… python3 tools/external_review.py --backend openrouter --smoke out.json
 
 **Ollama** (`--backend ollama`، الافتراضيّ): نقطتان لا ثالثَ لهما: خادمُ Ollama المحليّ (127.0.0.1، بلا وكيلٍ ولا
 تحويل) يمرّر النداء إلى النماذج السحابية كما على الماك؛ أو واجهةُ `https://ollama.com` مباشرةً بمفتاحٍ يُقرأ من
 البيئة `OLLAMA_API_KEY` وحدها — وهي طريقُ الجلسات السحابية التي لا خادمَ فيها.
 
-**الواجهاتُ المجانية** (قرار المالك في ٢٨ سبتمبر ٢٠٢٦ (#168)، يمدّ ق٦٠ إلى نقطتين أخريين):
+**الواجهاتُ المجانية** (قرار المالك في ٢٨ سبتمبر ٢٠٢٦ (#168)، وموافقةُ Groq/OpenRouter المجانية في PR #197):
 `--backend github-models` (`models.github.ai` برمز `GITHUB_TOKEN`؛ في Actions رمزُ المهمّة نفسُه بصلاحية
 `models: read`، بلا سرٍّ جديد) و`--backend hf-router` (`router.huggingface.co` برمز `HF_TOKEN`). والمفتاحُ من
 البيئة وحدها: لا خيارَ له في سطر الأوامر، ولا يُطبع، ولا يُكتب، ولا يُرسل عند التحويل (التحويلُ مرفوض).
+- `--backend groq` يرفض **قبل الشبكة** ما لم تكن `DIWAN_GROQ_FREE_TIER_CONFIRMED=confirmed` بعد تحقق المشغّل من
+  طبقة الحساب المجانية. لا يدّعي النقلُ كلفة صفر إن لم يبلّغها الرد.
+- `--backend openrouter` لا يرسل إلا معرّفًا ينتهي بـ`:free` موجودًا في فهرس اللحظة وكلُّ بنود `pricing` فيه صفر؛
+  ويطلب إبلاغ الاستخدام والكلفة ويمنع fallback المزوّد. غياب الكلفة أو ظهور غير الصفر إخفاقٌ مسمّى.
 - **قائمةُ نقاطٍ صريحة** (`ALLOWED_HOSTS`): ما سواها `endpoint_not_allowed`.
 - **العائلةُ من الناشر بجدولٍ صريح** (`PUBLISHER_FAMILIES`) وتطابقُ ما يقوله الاسم؛ والناشرُ المجهول
   `publisher_unknown`. المفضَّلون DeepSeek وMistral وMeta Llama وCohere وAI21 وMicrosoft Phi؛ ولا Qwen (المحرّك)
@@ -44,9 +50,11 @@ import shutil
 import stat
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Callable
 
@@ -121,10 +129,11 @@ def build_transport(base_url: str, environ=os.environ) -> OllamaChat:
     return OllamaChat(base_url, api_key=environ.get(CLOUD_KEY_ENV) or None)
 
 
-# ————— الواجهاتُ المجانية المتوافقة مع OpenAI (قرار المالك في ٢٨ سبتمبر ٢٠٢٦ (#168)) —————
+# ————— الواجهاتُ المجانية المتوافقة مع OpenAI (#168، وموافقة Groq/OpenRouter الموثقة في #197) —————
 
-# قائمةُ النقاط الصريحة: ollama.com (ق٦٠) والنقطتان اللتان يمدّها إليهما قرارُ المالك. https وحدها، بلا منفذٍ ولا هوية.
-ALLOWED_HOSTS = ("ollama.com", "models.github.ai", "router.huggingface.co")
+# قائمةُ النقاط الصريحة: https وحدها، بلا منفذٍ ولا هوية. الإضافة لا تعني التفعيل: المفاتيح والحراس شروطٌ مستقلة.
+ALLOWED_HOSTS = ("ollama.com", "models.github.ai", "router.huggingface.co",
+                 "api.groq.com", "openrouter.ai")
 
 BACKENDS: dict[str, dict] = {
     "github-models": {
@@ -151,6 +160,28 @@ BACKENDS: dict[str, dict] = {
                       "cohere": ("CohereLabs/c4ai-command-a-03-2025",),
                       "ai21": (),
                       "microsoft": ("microsoft/phi-4",)},
+    },
+    "groq": {
+        "chat_url": "https://api.groq.com/openai/v1/chat/completions",
+        "catalog_url": "https://api.groq.com/openai/v1/models",
+        "key_env": "GROQ_API_KEY",
+        "headers": {},
+        # لا يمكن استنتاج طبقة الحساب من فهرس النماذج؛ لذلك يرفض النقل قبل الشبكة ما لم يؤكد المشغّل الطبقة المجانية.
+        "free_tier_env": "DIWAN_GROQ_FREE_TIER_CONFIRMED",
+        "preferred": {"deepseek": (), "mistral": ("mistral-saba-24b",),
+                      "meta": ("llama-3.3-70b-versatile",), "cohere": (), "ai21": (), "microsoft": ()},
+    },
+    "openrouter": {
+        "chat_url": "https://openrouter.ai/api/v1/chat/completions",
+        "catalog_url": "https://openrouter.ai/api/v1/models",
+        "key_env": "OPENROUTER_API_KEY",
+        "headers": {},
+        # لا تكفي اللاحقة وحدها: يثبت الفهرسُ أن كل بنود pricing صفر قبل أول نداء نموذج.
+        "catalog_zero_spend": True,
+        "preferred": {"deepseek": ("deepseek/deepseek-r1:free",),
+                      "mistral": ("mistralai/mistral-small-3.1-24b-instruct:free",),
+                      "meta": ("meta-llama/llama-3.3-70b-instruct:free",),
+                      "cohere": (), "ai21": (), "microsoft": ()},
     },
 }
 
@@ -179,10 +210,16 @@ FREE_LIMITS = (
     "free_tier_rate_limits_and_input_caps_apply",
 )
 
+ZERO_SPEND_LIMITS = (
+    "zero_spend_guard_is_provider_specific_and_not_a_general_price_attestation",
+    "provider_usage_is_reported_when_available_and_missing_cost_is_never_assumed_zero",
+)
 
-def free_limits(base) -> list[str]:
+
+def free_limits(base, backend: str | None = None) -> list[str]:
     """حدودُ القياس على الواجهات المجانية من موضعٍ واحد، للتجربة وللبنك وللخلاصة المحفوظة (ملاحظة Codex على #174)."""
-    return sorted(set(base) | set(FREE_LIMITS))
+    extra = ZERO_SPEND_LIMITS if backend in {"groq", "openrouter"} else ()
+    return sorted(set(base) | set(FREE_LIMITS) | set(extra))
 
 
 def _forbidden() -> dict[str, str]:
@@ -210,7 +247,7 @@ def _lineage_tokens(name: str) -> set[str]:
             if token and (family := model_family(token)) is not None}
 
 
-def resolve_reviewer(model: str) -> dict:
+def resolve_reviewer(model: str, backend: str | None = None) -> dict:
     """{model, publisher, family, lineage} لمراجعٍ على واجهةٍ مجانية، أو رفضٌ مسمًّى.
 
     العائلةُ من جدول الناشرين، والاسمُ يجب أن يقول العائلةَ نفسها (الجدولُ الواحد في `multi_system_review`)،
@@ -218,6 +255,11 @@ def resolve_reviewer(model: str) -> dict:
     """
     publisher, sep, name = model.partition("/")
     family = PUBLISHER_FAMILIES.get(publisher.lower()) if sep and name else None
+    if family is None and backend == "groq" and not sep:
+        # فهرسُ Groq يسمّي بعض النماذج بلا ناشر (مثل llama-* وmistral-*). تُقبل فقط إن اشتقّ الجدولُ الحاكم
+        # عائلةً معروفة من الاسم نفسه؛ لا نخمن ناشرًا مجهولًا ولا نعمّم هذا الاستثناء على واجهة أخرى.
+        family = model_family(model)
+        publisher, name = family or "", model
     if family is None:
         raise AutomaticReviewError("publisher_unknown", model)
     forbidden = _forbidden()
@@ -321,6 +363,49 @@ def response_shape(status: int | None, raw: bytes, content_type: str | None) -> 
     return body, shape
 
 
+def _decimal(value) -> Decimal | None:
+    """عددٌ عشري محدود وغير سالب، أو None لما لا يصلح دليلَ كلفة."""
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return None
+    try:
+        number = Decimal(str(value))
+    except InvalidOperation:
+        return None
+    return number if number.is_finite() and number >= 0 else None
+
+
+def openrouter_zero_spend(entry: dict) -> str:
+    """دليلُ أن معرّف OpenRouter مجانيّ وكلَّ بنود سعره المنشورة صفر، أو رفضٌ قبل نداء النموذج."""
+    model = entry.get("id")
+    if not isinstance(model, str) or not model.endswith(":free"):
+        raise AutomaticReviewError("free_model_required", str(model))
+    pricing = entry.get("pricing")
+    if not isinstance(pricing, dict) or not pricing:
+        raise AutomaticReviewError("free_price_unverified", model)
+    values = [_decimal(value) for value in pricing.values()]
+    if any(value is None for value in values) or any(value != 0 for value in values):
+        raise AutomaticReviewError("free_price_unverified", model)
+    return "catalog_free_suffix_and_all_pricing_zero"
+
+
+def safe_usage(body: object) -> tuple[dict | None, Decimal | None, bool]:
+    """(الاستهلاك المأمون، الكلفة، وهل أبلغ المزوّد الكلفة) بلا نصوصٍ حرّة من الرد."""
+    if not isinstance(body, dict) or not isinstance(body.get("usage"), dict):
+        return None, None, False
+    raw = body["usage"]
+    usage = {}
+    for field in ("prompt_tokens", "completion_tokens", "total_tokens"):
+        value = raw.get(field)
+        if type(value) is int and value >= 0:
+            usage[field] = value
+    if "cost" not in raw:
+        return usage, None, False
+    cost = _decimal(raw.get("cost"))
+    if cost is None:
+        raise AutomaticReviewError("usage_cost_invalid")
+    return usage, cost, True
+
+
 class OpenAICompatChat:
     """نداءُ chat/completions المتوافق مع OpenAI على نقطةٍ مسموحة، بمفتاحٍ من البيئة لا يُكتب ولا يُطبع.
 
@@ -328,7 +413,8 @@ class OpenAICompatChat:
     """
 
     def __init__(self, backend: str, api_key: str | None, *, chat_url: str | None = None,
-                 catalog_url: str | None = None, timeout: int = 300, max_tokens: int = 4000):
+                 catalog_url: str | None = None, timeout: int = 300, max_tokens: int = 4000,
+                 free_tier_confirmation: str | None = None):
         if backend not in BACKENDS:
             raise AutomaticReviewError("backend_unknown", backend)
         spec = BACKENDS[backend]
@@ -338,6 +424,9 @@ class OpenAICompatChat:
         self.key_env = spec["key_env"]
         if not api_key:
             raise AutomaticReviewError("key_missing", f"{self.key_env} غيرُ مضبوطٍ في البيئة")
+        if spec.get("free_tier_env") and free_tier_confirmation != "confirmed":
+            # فهرس Groq لا يثبت طبقة الحساب. الرفض هنا قبل بناء opener أو أي اتصال؛ والقيمة نفسها لا تُطبع ولا تُحفظ.
+            raise AutomaticReviewError("free_tier_unverified", spec["free_tier_env"])
         self.__key = api_key
         self._headers = {"Content-Type": "application/json", "User-Agent": "diwan-external-review",
                          **spec["headers"]}
@@ -345,6 +434,10 @@ class OpenAICompatChat:
         self.catalog_shape: dict | None = None
         self.failures: dict[str, dict] = {}     # آخرُ شكلٍ فاشل لكل نموذجٍ (وللفهرس): لا نصَّ فيه
         self.last_request: dict[str, dict] = {}  # الطريقةُ والرابطُ المرسَل والنهائيّ (bare_url) لكل نموذجٍ وللفهرس
+        self.provider_usage: list[dict] = []     # سجلٌّ مأمون لكل محاولة نموذج: لا رسالةَ ولا مفتاح ولا نصَّ رد
+        self.zero_spend_proofs: dict[str, str] = {}
+        if backend == "groq":
+            self.zero_spend_proofs["*"] = "operator_confirmed_account_free_tier"
         self.opener = urllib.request.build_opener(_RefuseRedirect())
 
     def __repr__(self) -> str:
@@ -356,6 +449,40 @@ class OpenAICompatChat:
 
     def describe(self) -> dict:
         return {"name": self.backend, "endpoint_host": self.endpoint_host, "key_env": self.key_env}
+
+    def approve_zero_spend(self, entries: list[dict], models: list[str]) -> None:
+        """يُثبت نماذج OpenRouter من فهرس اللحظة؛ وما لم يثبت لا يصل إلى chat/completions."""
+        if self.backend != "openrouter":
+            return
+        by_id = {entry.get("id"): entry for entry in entries if isinstance(entry, dict)}
+        for model in models:
+            if model not in by_id:
+                raise AutomaticReviewError("free_price_unverified", model)
+            self.zero_spend_proofs[model] = openrouter_zero_spend(by_id[model])
+
+    def _guard_zero_spend(self, model: str) -> str | None:
+        if self.backend == "groq":
+            return self.zero_spend_proofs.get("*")
+        if self.backend == "openrouter":
+            proof = self.zero_spend_proofs.get(model)
+            if proof is None:
+                raise AutomaticReviewError("free_price_unverified", model)
+            return proof
+        return None
+
+    def _record_provider_usage(self, model: str, started: float, status: str, *,
+                               usage: dict | None = None, cost: Decimal | None = None,
+                               cost_reported: bool = False, error: str | None = None,
+                               proof: str | None = None) -> None:
+        family = model_family(model)
+        self.provider_usage.append({
+            "provider": self.backend, "model": model, "family": family,
+            "at": _utc_now(), "elapsed_ms": round((time.monotonic() - started) * 1000),
+            "status": status, "error": error, "request_sent": model in self.last_request,
+            "usage": usage, "cost_usd": str(cost) if cost_reported and cost is not None else None,
+            "cost_status": "reported" if cost_reported else "not_reported",
+            "zero_spend_proof": proof,
+        })
 
     def _send(self, url: str, payload: dict | None, label: str) -> tuple[bytes, str | None, int | None]:
         """(البايتات، نوعُ المحتوى، حالةُ HTTP). والخطأُ يحمل رمزَ حالته المسمّى وشكلَ جسمه (`shape`) لا نصَّه."""
@@ -400,32 +527,56 @@ class OpenAICompatChat:
         return raw, content_type, status
 
     def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
-        # المخطّطُ موصوفٌ في التكليف نفسِه («JSON فقط»)، ولا يُرسل حقلَ response_format لأن نماذجَ في الفهرس تردّه 400
-        payload = {"model": model, "stream": False, "temperature": 0, "max_tokens": self.max_tokens,
-                   "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
-        raw, content_type, status = self._send(self.chat_url, payload, model)
-        body, shape = response_shape(status, raw, content_type)
-        if shape["top"] == "not_json":
-            self.failures[model] = {**shape, "request": self.last_request[model]}
-            raise AutomaticReviewError("response_not_json", model)
+        started, proof = time.monotonic(), None
+        usage, cost, cost_reported = None, None, False
         try:
-            choice = body["choices"][0]
-            content = choice["message"].get("content")
-        except (KeyError, IndexError, TypeError, AttributeError):
-            self.failures[model] = {**shape, "request": self.last_request[model]}
-            raise AutomaticReviewError("openai_response_malformed", model) from None
-        if isinstance(content, list):          # أجزاءُ نصٍّ عند بعض المزوّدين
-            # جزءٌ ليس قاموسًا أو نصُّه ليس نصًّا رمزُه response_part_invalid فيُعاد مرّةً ويُسجَّل (ملاحظة Codex على #174)
-            if not all(isinstance(part, dict) and isinstance(part.get("text", ""), str) for part in content):
+            proof = self._guard_zero_spend(model)
+            # المخطّطُ موصوفٌ في التكليف نفسِه («JSON فقط»)، ولا يُرسل response_format لأن نماذجَ في الفهرس تردّه 400.
+            payload = {"model": model, "stream": False, "temperature": 0, "max_tokens": self.max_tokens,
+                       "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
+            if self.backend == "openrouter":
+                # لا نماذجَ بديلة ولا انتقالَ مدفوعًا، واطلب الكلفة الفعلية في الردّ حتى لا تُخمَّن صفرًا.
+                payload.update(provider={"allow_fallbacks": False}, usage={"include": True})
+            raw, content_type, status = self._send(self.chat_url, payload, model)
+            body, shape = response_shape(status, raw, content_type)
+            if shape["top"] == "not_json":
                 self.failures[model] = {**shape, "request": self.last_request[model]}
-                raise AutomaticReviewError("response_part_invalid", model)
-            content = "".join(part.get("text", "") for part in content)
-        if not isinstance(content, str) or not content.strip():
-            self.failures[model] = {**shape, "request": self.last_request[model]}
-            raise AutomaticReviewError("reply_empty", model)
-        if choice.get("finish_reason") == "length":
-            self.failures[model] = {**shape, "request": self.last_request[model]}
-            raise AutomaticReviewError("reply_incomplete", model)
+                raise AutomaticReviewError("response_not_json", model)
+            usage, cost, cost_reported = safe_usage(body)
+            if self.backend in {"groq", "openrouter"} and usage is None:
+                self.failures[model] = {**shape, "request": self.last_request[model]}
+                raise AutomaticReviewError("usage_unavailable", model)
+            if self.backend == "openrouter":
+                if not cost_reported:
+                    self.failures[model] = {**shape, "request": self.last_request[model]}
+                    raise AutomaticReviewError("usage_cost_unavailable", model)
+                if cost != 0:
+                    self.failures[model] = {**shape, "request": self.last_request[model]}
+                    raise AutomaticReviewError("zero_spend_breach", model)
+            try:
+                choice = body["choices"][0]
+                content = choice["message"].get("content")
+            except (KeyError, IndexError, TypeError, AttributeError):
+                self.failures[model] = {**shape, "request": self.last_request[model]}
+                raise AutomaticReviewError("openai_response_malformed", model) from None
+            if isinstance(content, list):          # أجزاءُ نصٍّ عند بعض المزوّدين
+                # جزءٌ ليس قاموسًا أو نصُّه ليس نصًّا رمزُه response_part_invalid فيُعاد مرّةً ويُسجَّل (ملاحظة Codex على #174)
+                if not all(isinstance(part, dict) and isinstance(part.get("text", ""), str) for part in content):
+                    self.failures[model] = {**shape, "request": self.last_request[model]}
+                    raise AutomaticReviewError("response_part_invalid", model)
+                content = "".join(part.get("text", "") for part in content)
+            if not isinstance(content, str) or not content.strip():
+                self.failures[model] = {**shape, "request": self.last_request[model]}
+                raise AutomaticReviewError("reply_empty", model)
+            if choice.get("finish_reason") == "length":
+                self.failures[model] = {**shape, "request": self.last_request[model]}
+                raise AutomaticReviewError("reply_incomplete", model)
+        except AutomaticReviewError as exc:
+            self._record_provider_usage(model, started, "error", usage=usage, cost=cost,
+                                        cost_reported=cost_reported, error=exc.code, proof=proof)
+            raise
+        self._record_provider_usage(model, started, "succeeded", usage=usage, cost=cost,
+                                    cost_reported=cost_reported, proof=proof)
         return content
 
     def catalog(self) -> list[dict]:
@@ -470,14 +621,17 @@ def _catalog_entry(entry: dict) -> dict:
             isinstance(p, dict) and p.get("status") == "live" for p in entry["providers"]):
         reason = "no_live_provider"
     return {"id": entry["id"], "chat": reason is None, "reason": reason,
-            "tier": entry.get("rate_limit_tier")}
+            "tier": entry.get("rate_limit_tier"), "pricing": entry.get("pricing")}
 
 
 def build_free_transport(backend: str, environ=os.environ, **kw) -> OpenAICompatChat:
     """النقلُ المجانيّ؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر)."""
     if backend not in BACKENDS:
         raise AutomaticReviewError("backend_unknown", backend)
-    return OpenAICompatChat(backend, environ.get(BACKENDS[backend]["key_env"]) or None, **kw)
+    spec = BACKENDS[backend]
+    confirmation = environ.get(spec.get("free_tier_env", "")) if spec.get("free_tier_env") else None
+    return OpenAICompatChat(backend, environ.get(spec["key_env"]) or None,
+                            free_tier_confirmation=confirmation, **kw)
 
 
 def assess_catalog(entries: list[dict], backend: str) -> dict:
@@ -488,8 +642,10 @@ def assess_catalog(entries: list[dict], backend: str) -> dict:
                "eligible": False, "code": entry.get("reason")}
         if entry.get("chat", True):
             try:
-                identity = resolve_reviewer(entry["id"])
-                row.update(family=identity["family"], lineage=identity["lineage"], eligible=True)
+                identity = resolve_reviewer(entry["id"], backend)
+                zero_spend = openrouter_zero_spend(entry) if backend == "openrouter" else None
+                row.update(family=identity["family"], lineage=identity["lineage"], eligible=True,
+                           zero_spend_proof=zero_spend)
             except AutomaticReviewError as exc:
                 row["code"] = exc.code
         row["order"] = index
@@ -571,18 +727,28 @@ def _free_candidates(args, transport: OpenAICompatChat) -> tuple[list[dict], dic
     والفهرسُ الذي لا يُقرأ لا يُسقط التجربة صامتًا ولا يوقفها: المرشّحون من قائمة الواجهة المفضَّلة، ورمزُ الفهرس وشكلُه في التقرير.
     """
     if args.reviewers:
-        explicit = [resolve_reviewer(m) for m in args.reviewers]
+        explicit = [resolve_reviewer(m, args.backend) for m in args.reviewers]
         check_distinct(explicit)
-        return explicit + [resolve_reviewer(m) for m in (args.fallbacks or [])], {"candidates_from": "explicit"}
+        candidates = explicit + [resolve_reviewer(m, args.backend) for m in (args.fallbacks or [])]
+        if args.backend == "openrouter":
+            # المعرّف الصريح لا يتجاوز فحص السعر: يُقرأ الفهرس قبل أول نداء chat، وكل غياب/سعر مجهول رفضٌ.
+            entries = transport.catalog()
+            transport.approve_zero_spend(entries, [candidate["model"] for candidate in candidates])
+        return candidates, {"candidates_from": "explicit"}
     if args.fallbacks:
         raise AutomaticReviewError("fallback_without_reviewers")
     try:
-        candidates = assess_catalog(transport.catalog(), args.backend)["candidates"]
+        entries = transport.catalog()
+        candidates = assess_catalog(entries, args.backend)["candidates"]
     except AutomaticReviewError as exc:          # الفهرسُ غيرُ مقروء: القائمةُ المفضَّلة، والسببُ مسمًّى
-        preferred = [resolve_reviewer(model) for family in PREFERRED_FAMILIES
+        if args.backend == "openrouter":
+            # لا قائمةَ مفضلة تتجاوز دليل السعر الصفري؛ غياب الفهرس يعني أن مجانية الطلب لم تُثبت.
+            raise AutomaticReviewError("free_price_unverified", "catalog") from exc
+        preferred = [resolve_reviewer(model, args.backend) for family in PREFERRED_FAMILIES
                      for model in BACKENDS[args.backend]["preferred"][family]]
         return preferred, {"candidates_from": "preferred_list", "catalog_error": exc.code,
                            "catalog_shape": getattr(exc, "shape", None)}
+    transport.approve_zero_spend(entries, [candidate["model"] for candidate in candidates])
     return candidates, {"candidates_from": "catalog", "catalog_shape": transport.catalog_shape}
 
 
@@ -631,7 +797,8 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
                   "status": "passed" if all(r["status"] == "passed" for r in runs) else "failed",
                   "backend": transport.describe(), **source, "models": models,
                   "pairs": [[p["model"] for p in pair] for pair in pairs],
-                  "runs": runs, "measurement_limits": free_limits(runs[0]["measurement_limits"]),
+                  "runs": runs, "measurement_limits": free_limits(runs[0]["measurement_limits"], args.backend),
+                  "provider_usage": transport.provider_usage,
                   "last_failure_shapes": transport.failures}
         _mark_unavailable(report, [m["error"] for m in models.values()])
         return report, EXIT_CODES.get(report["status"], 1)
@@ -653,7 +820,8 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     report["backend"] = transport.describe()
     report.update(source)
     report["fallbacks"] = fallbacks
-    report["measurement_limits"] = free_limits(report["measurement_limits"])
+    report["measurement_limits"] = free_limits(report["measurement_limits"], args.backend)
+    report["provider_usage"] = transport.provider_usage
     report["last_failure_shapes"] = transport.failures
     if failure:
         report["status"], report["code"] = "failed", failure
@@ -843,14 +1011,16 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
         counted = []  # المستبدَلُ ناجحًا تاريخٌ لا خطأ
         superseded = [{**e, "superseded_by": replaced_by[e["model"]]} for e in quota_errors]
     status = "failed" if failure or counted else "reviewed"
-    limits = free_limits(summary["measurement_limits"])
+    limits = free_limits(summary["measurement_limits"], args.backend)
     _persist_limits(args.bank, limits)
+    _persist_provider_usage(args.bank, transport.provider_usage)
     if args.run_id:          # كلُّ سجلٍّ وخلاصةٍ في مجلّد هذا التشغيل يحمل معرّفَه، فيُرفض عند الرفع ما لا يحمله
         stamp_run(args.bank / "reviews", args.run_id)
     final_counts = final_set_counts(args.bank, final_models, pre_existing, current)
     result = {"status": status, **({"code": failure} if failure else {}), **final_counts,
               "attempts": attempts, **({"run_id": args.run_id} if args.run_id else {}),
               "measurement_limits": limits,
+              "provider_usage": transport.provider_usage,
               "backend": transport.describe(), **source,
               "reviewers": {c["model"]: c["family"] for c in chosen}, "fallbacks": fallbacks,
               "pairs": summary["pairs"], "errors": len(counted),
@@ -915,6 +1085,15 @@ def _persist_limits(bank: Path, limits: list[str]) -> None:
     if path.is_file():
         summary = json.loads(path.read_text(encoding="utf-8"))
         summary["measurement_limits"] = limits
+        _write_json(path, summary)
+
+
+def _persist_provider_usage(bank: Path, usage: list[dict]) -> None:
+    """سجلُّ النداءات في خلاصة التشغيل نفسها؛ لا يُكتب صفرٌ لكلفة لم يبلغها المزوّد."""
+    path = bank / "reviews" / "SUMMARY.json"
+    if path.is_file():
+        summary = json.loads(path.read_text(encoding="utf-8"))
+        summary["provider_usage"] = usage
         _write_json(path, summary)
 
 
@@ -1001,7 +1180,7 @@ def _free_main(args, parser) -> int:
         if args.list_catalog:
             assessed = assess_catalog(transport.catalog(), args.backend)
             # حدودُ الجرد من الموضع الواحد (ملاحظة Codex على #174): الهويةُ معرّفُ الفهرس، والعائلةُ مستنتجة، والفهرسُ لحظةٌ واحدة
-            limits = free_limits(CATALOG_LIMITS)
+            limits = free_limits(CATALOG_LIMITS, args.backend)
             _write_json(args.list_catalog, {"schema_version": 1, "backend": transport.describe(), **assessed,
                                             "measurement_limits": limits})
             eligible: dict[str, list[str]] = {}
@@ -1054,7 +1233,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="نموذجُ مراجعٍ (يتكرّر)؛ وعلى الواجهات المجانية معرّفُه في الفهرس «ناشر/اسم»")
     parser.add_argument("--brief", type=Path, default=ROOT / "docs" / "REVIEWER-BRIEF.md")
     parser.add_argument("--backend", choices=("ollama", *BACKENDS), default="ollama",
-                        help="ollama (الافتراضي)، أو github-models بـGITHUB_TOKEN، أو hf-router بـHF_TOKEN من البيئة")
+                        help="ollama (الافتراضي)، أو إحدى الواجهات المسماة في BACKENDS بمفتاحها من البيئة")
     parser.add_argument("--base-url", default=None,
                         help=f"لـOllama وحده: الخادمُ المحلي، أو {CLOUD_ENDPOINT} بمفتاح {CLOUD_KEY_ENV} من البيئة")
     parser.add_argument("--fallback", action="append", dest="fallbacks",
