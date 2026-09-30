@@ -432,6 +432,17 @@ def test_a_missing_root_an_unsafe_root_and_an_existing_output_are_refused_by_nam
     assert run(world.root, out / "report.json", capsys) == (2, {"status": "refused", "code": "output_unwritable"})
 
 
+def test_an_unlistable_projects_root_is_refused_as_root_unreadable(world, tmp_path, capsys, monkeypatch):
+    out = tmp_path / "report.json"
+
+    def deny_listing(_):
+        raise PermissionError("denied")
+
+    monkeypatch.setattr(journeys.os, "listdir", deny_listing)
+    assert run(world.root, out, capsys) == (2, {"status": "refused", "code": "root_unreadable"})
+    assert not out.exists()
+
+
 def test_the_date_is_the_session_day_only_when_the_session_stayed_within_one_utc_day(copy, tmp_path, capsys):
     files = {mode: (meta, state) for meta, state, mode in session_files(copy) if mode != "agent"}
     meta, state = files["text"]
