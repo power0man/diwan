@@ -27,7 +27,8 @@ from agent.journal import Journal, JournalRefused, _directory, _identity, _open_
 from agent.loop import SYSTEM, _result_message, run_agent
 from agent.registry import ToolContext, ToolRegistry
 from conversation.agent_stop import StopSignals
-from conversation.session import ConversationError, _decode, _fail, _id, _scrub_value, _text
+from conversation.session import (ConversationError, _decode, _fail, _id, _redaction_token,
+                                  _scrub_text, _scrub_value, _text)
 from core import filelock
 from core.budget import Budget
 from core.canonical import canonical_bytes, digest
@@ -122,6 +123,79 @@ def _task_message(turn):
     plain = _user_message(turn["text"])
     block = turn.get("memory", {}).get("block", "")
     return Message("user", f"{block}\n\n{plain.content}") if block else plain
+
+
+_TOOL_RESULT_CONTROL = frozenset({
+    "status", "code", "call_id", "name", "action_id", "call_digest", "revision",
+    "reverts_to", "journal_action_id", "journal_action_ids",
+})
+
+
+def _scrub_message_payload(message, text, marker):
+    """Scrub message content and tool arguments without changing their identities."""
+    count = 0
+    if isinstance(message.get("content"), str):
+        message["content"], found = _scrub_text(message["content"], text, marker)
+        count += found
+    for call in message.get("tool_calls", ()):
+        if isinstance(call, dict) and "arguments" in call:
+            call["arguments"], found = _scrub_value(call["arguments"], text, marker)
+            count += found
+    return count
+
+
+def _scrub_tool_result(result, text, marker):
+    """Scrub the data sent back to the model while preserving action/control metadata."""
+    count = 0
+    for key in list(result):
+        if (key in _TOOL_RESULT_CONTROL or key.endswith("_id") or key.endswith("_digest")
+                or key.endswith("_sha256")):
+            continue
+        result[key], found = _scrub_value(result[key], text, marker)
+        count += found
+    return count
+
+
+def _scrub_agent_turns(turns, text):
+    """Scrub model-visible agent history while leaving IDs, digests and statuses intact."""
+    marker = _redaction_token(text)
+    output, count = _copy(turns), 0
+    for turn in output:
+        turn["text"], found = _scrub_text(turn["text"], text, marker)
+        count += found
+        memory = turn.get("memory")
+        if isinstance(memory, dict):
+            memory["block"], found = _scrub_text(memory["block"], text, marker)
+            count += found
+        for key in ("initial_messages", "transcript"):
+            for message in turn[key]:
+                count += _scrub_message_payload(message, text, marker)
+        for intent in turn["calls"]:
+            request = intent.get("request", {})
+            for message in request.get("messages", ()):
+                count += _scrub_message_payload(message, text, marker)
+        result = turn.get("result")
+        if not isinstance(result, dict):
+            continue
+        result["content"], found = _scrub_text(result["content"], text, marker)
+        count += found
+        for step in result["steps"]:
+            step["content"], found = _scrub_text(step["content"], text, marker)
+            count += found
+            if isinstance(step.get("thinking"), str):
+                step["thinking"], found = _scrub_text(step["thinking"], text, marker)
+                count += found
+            for call in step["tool_calls"]:
+                if "arguments" in call:
+                    call["arguments"], found = _scrub_value(call["arguments"], text, marker)
+                    count += found
+            for tool_result in step["tool_results"]:
+                count += _scrub_tool_result(tool_result, text, marker)
+        for pending in result["pending"]:
+            if isinstance(pending, dict) and "arguments" in pending:
+                pending["arguments"], found = _scrub_value(pending["arguments"], text, marker)
+                count += found
+    return output, count
 
 
 class _SessionLedger(Ledger):
@@ -614,15 +688,31 @@ class AgentSession:
             return [f"agent:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
                     if sha256 in turn.get("memory", {}).get("items", ())]
 
+    def _memory_forget_plan(self, sha256, text):
+        """Build a scrubbed state envelope while the caller holds ``_lock``; do not write."""
+        if not _text(text):
+            _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
+        state = self._load()
+        references = [f"agent:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
+                      if sha256 in turn.get("memory", {}).get("items", ())]
+        turns, count = _scrub_agent_turns(state["turns"], text)
+        if count and any(turn["result"] is None or turn["result"]["status"] not in TERMINAL
+                         for turn in state["turns"]):
+            _fail("turn_unresolved", "احسم جولة الوكيل قبل نسيان ما في تاريخها")
+        if count:
+            state["turns"] = turns
+            state["scrubbed_through"] = len(turns)
+        envelope = {"state": state, "sha256": digest(state)}
+        return references, count, self.root / "state.json", canonical_bytes(envelope)
+
     def scrub_memory_text(self, text):
         """Scrub exact occurrences from reusable state; the sealed call ledger is untouched."""
         if not _text(text):
             _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
         with self._lock():
-            state = self._load()
-            state["turns"], count = _scrub_value(state["turns"], text)
-            state["scrubbed_through"] = len(state["turns"])
-            self._save(state)
+            _, count, _, payload = self._memory_forget_plan("", text)
+            if count:
+                self._write("state.json", _decode(payload.decode("utf-8")))
             return count
 
     def _stopped_steps(self, turn):

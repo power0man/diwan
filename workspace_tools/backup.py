@@ -534,12 +534,14 @@ def _open_agent(root, project, sid, config):
     بسجلّ أدواتٍ مجمَّدٍ من عقدها لا ينفّذ شيئًا."""
     try:
         registry = ToolRegistry(*(Tool(ToolSpec(**spec), _refuse_tool) for spec in config["tools"]))
-        AgentSession(root / project / "agent-control", sid, workspace_root=root / project / "agent-workspace",
-                     project_id=project.split("/")[-1], registry=registry, model=config["model"],
-                     model_version=config["model_version"], max_steps=config["max_steps"],
-                     max_output=config["max_output"], deadline_s=float(config["deadline_s"]),
-                     max_context_chars=config["max_context_chars"], max_turns=config["max_turns"],
-                     system=config["system"])
+        return AgentSession(root / project / "agent-control", sid,
+                            workspace_root=root / project / "agent-workspace",
+                            project_id=project.split("/")[-1], registry=registry,
+                            model=config["model"], model_version=config["model_version"],
+                            max_steps=config["max_steps"], max_output=config["max_output"],
+                            deadline_s=float(config["deadline_s"]),
+                            max_context_chars=config["max_context_chars"], max_turns=config["max_turns"],
+                            system=config["system"])
     except (ConversationError, ActionRefused):
         _fail("backup_agent_session_invalid", "جلسةٌ وكيلة في النسخة لا تطابق حالتها أو إيصالاتها")
 
@@ -752,6 +754,56 @@ def _restore_memory(destination, data, memories, live_root):
     return report
 
 
+def _forgotten_archive_texts(data, memories, live_root, reusable_projects):
+    """Texts present in the archive whose digests have a live forget receipt, grouped by project."""
+    if live_root is None:
+        return {}
+    result = {}
+    for memory in memories:
+        live = _live_receipts(live_root, memory)
+        if live is None:
+            continue
+        items, archived_receipts = MemoryStore.check_snapshot(_memory_snapshot(data, memory))
+        project = str(Path(memory).parent)
+        if project in reusable_projects and any("scrubbed" not in receipt for receipt in archived_receipts):
+            _fail("backup_memory_history_unverifiable",
+                  "نسخةٌ قديمة لا تثبت كشط تاريخ جلساتها بعد النسيان")
+        _, receipts = MemoryStore.check_snapshot({"receipts.jsonl": live})
+        tombstones = {receipt["sha256"] for receipt in receipts}
+        texts = sorted({item["text"] for item, _ in items.values() if item["sha256"] in tombstones})
+        if texts:
+            result[project] = texts
+    return result
+
+
+def _scrub_restored_sessions(destination, data, shape, forgotten, legacy):
+    """Scrub restorable chat/agent state before the incomplete restore marker is removed."""
+    sessions, _, _, _, (agents, _) = shape
+    total = 0
+    for chat, sid, mode in sessions:
+        project = chat.split("/sessions/", 1)[0]
+        texts = forgotten.get(project, ())
+        if not texts or mode == "media":
+            continue
+        config = _json(data[chat + "/manifest.json"])
+        session = ChatSession(destination / Path(chat).parent, sid,
+            model=config["model"], model_version=config["model_version"],
+            max_output=config["max_output"], deadline_s=float(config["deadline_s"]),
+            max_context_chars=config["max_context_chars"], system=SYSTEM)
+        for text in texts:
+            total += session.scrub_memory_text(text)
+    legacy = set(legacy)
+    for project, sid in agents:
+        texts = forgotten.get(project, ())
+        if not texts or (project, sid) in legacy:
+            continue
+        prefix = f"{project}/agent-control/{sid}"
+        session = _open_agent(destination, project, sid, _json(data[prefix + "/manifest.json"]))
+        for text in texts:
+            total += session.scrub_memory_text(text)
+    return total
+
+
 def _archive_moves(dirs, data, legacy):
     """جلساتُ ما قبل ج١٢ تنتقل إلى agent-archive: بيانُها ودليلُ تحكّمها كما هما، ولا تُفتح جلسةً حيّة."""
     moves = {}
@@ -826,6 +878,11 @@ def restore_workspace(archive, destination, expected_sha256, *, tombstones_from=
             _materialize(destination, live_dirs,
                          {moves.get(k, k): v for k, v in data.items() if k not in memory_paths})
             migrations = _validate_tree(destination, bundle, dirs, data, identities, shape)
+            reusable_projects = {chat.split("/sessions/", 1)[0] for chat, _, mode in shape[0]
+                                 if mode != "media"}
+            reusable_projects.update(project for project, sid in agents if (project, sid) not in legacy)
+            forgotten = _forgotten_archive_texts(data, memories, live_root, reusable_projects)
+            _scrub_restored_sessions(destination, data, shape, forgotten, legacy)
             memory_report = _restore_memory(destination, data, memories, live_root)
             agent_report = {"sessions": len(agents) - len(legacy),
                             "archived": [f"{project}/agent-archive/{sid}" for project, sid in legacy]}

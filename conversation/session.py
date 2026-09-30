@@ -36,25 +36,63 @@ SYSTEM = (
 FORGOTTEN = "‹نُسي›"
 
 
-def _scrub_value(value, text):
-    """Return a deep copy with exact textual occurrences replaced, plus their count."""
+def _redaction_token(text):
+    """Return a marker that cannot itself contain the forgotten value."""
+    if text not in FORGOTTEN:
+        return FORGOTTEN
+    # Memory text is bounded to 2,000 characters.  The BMP private-use range has
+    # 6,400 single-code-point candidates, so at least one is absent from it.
+    for codepoint in range(0xE000, 0xF900):
+        marker = chr(codepoint)
+        if marker not in text:
+            return marker
+    _fail("text_invalid", "تعذر اختيار علامة كشط غير متصادمة")
+
+
+def _scrub_text(value, text, marker):
+    """Scrub literal and JSON-escaped representations from one model-visible string."""
+    variants = {text, json.dumps(text, ensure_ascii=False)[1:-1]}
+    count = 0
+    for variant in sorted(variants, key=len, reverse=True):
+        found = value.count(variant)
+        if found:
+            value = value.replace(variant, marker)
+            count += found
+    return value, count
+
+
+def _scrub_value(value, text, marker):
+    """Scrub arbitrary model-visible payload values, plus their occurrence count."""
     if isinstance(value, str):
-        return value.replace(text, FORGOTTEN), value.count(text)
+        return _scrub_text(value, text, marker)
     if isinstance(value, list):
         output, count = [], 0
         for item in value:
-            scrubbed, found = _scrub_value(item, text)
+            scrubbed, found = _scrub_value(item, text, marker)
             output.append(scrubbed)
             count += found
         return output, count
     if isinstance(value, dict):
         output, count = {}, 0
         for key, item in value.items():
-            scrubbed, found = _scrub_value(item, text)
+            scrubbed, found = _scrub_value(item, text, marker)
             output[key] = scrubbed
             count += found
         return output, count
     return value, 0
+
+
+def _scrub_text_turns(turns, text):
+    """Scrub only text that can be rebuilt into later chat-model messages."""
+    marker = _redaction_token(text)
+    output, count = copy.deepcopy(turns), 0
+    for turn in output:
+        for holder, key in ((turn, "text"), (turn.get("memory", {}), "block"),
+                            (turn.get("result") or {}, "content")):
+            if isinstance(holder.get(key), str):
+                holder[key], found = _scrub_text(holder[key], text, marker)
+                count += found
+    return output, count
 
 
 class ConversationError(ValueError):
@@ -411,15 +449,30 @@ class ChatSession:
             return [f"text:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
                     if sha256 in turn.get("memory", {}).get("items", ())]
 
+    def _memory_forget_plan(self, sha256, text):
+        """Build a scrubbed state envelope while the caller holds ``_lock``; do not write."""
+        if not _text(text):
+            _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
+        state, _, _ = self._load()
+        references = [f"text:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
+                      if sha256 in turn.get("memory", {}).get("items", ())]
+        turns, count = _scrub_text_turns(state["turns"], text)
+        if count and any(turn["result"] is None for turn in state["turns"]):
+            _fail("turn_unresolved", "لا يُكشط تاريخ جولة غير محسومة")
+        if count:
+            state["turns"] = turns
+            state["scrubbed_through"] = len(turns)
+        envelope = {"state": state, "sha256": digest(state)}
+        return references, count, self.directory / "state.json", canonical_bytes(envelope)
+
     def scrub_memory_text(self, text):
         """Scrub exact occurrences from reusable state, atomically under this session's lock."""
         if not _text(text):
             _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
         with self._lock():
-            state, _, _ = self._load()
-            state["turns"], count = _scrub_value(state["turns"], text)
-            state["scrubbed_through"] = len(state["turns"])
-            self._save(state)
+            _, count, _, payload = self._memory_forget_plan("", text)
+            if count:
+                _write(self.directory / "state.json", _decode(payload.decode("utf-8")))
             return count
 
     def turn(self, turn_id: str, text: str, provider, *, max_turns=None,
