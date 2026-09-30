@@ -58,6 +58,18 @@ MEASUREMENT_LIMITS = (
 
 Transport = Callable[[str, str, str, dict], str]
 
+# These failures need a permission, endpoint, model, or budget change. Repeating
+# the same request cannot repair them and can repeat an unverified charge.
+# Keep transport codes verbatim in receipts; never infer a model-quality score.
+TERMINAL_TRANSPORT_ERRORS = frozenset({
+    "unauthorized", "forbidden", "not_found", "request_too_large", "redirected",
+    "quota_exhausted", "key_missing", "cloud_key_missing", "endpoint_not_allowed",
+    "free_model_required", "free_price_unverified", "free_tier_unverified",
+    "zero_spend_breach", "usage_unavailable", "usage_cost_unavailable", "usage_cost_invalid",
+    "http_400", "http_401", "http_402", "http_403", "http_404", "http_405",
+    "http_410", "http_413", "http_415", "http_422", "http_429",
+})
+
 
 def reviewer_family(model: str) -> str:
     # الجدولُ الواحد في `evaluation/multi_system_review.py::FAMILY_PREFIXES` (ق٤٩ وق٥٠ بصرامةٍ واحدة)
@@ -252,6 +264,8 @@ def review_file(path: Path, bank_dir: Path, model: str, family: str, transport: 
         except AutomaticReviewError as exc:
             record["attempts"].append({"attempt": attempt, "raw_output": None,
                                        "error": exc.code})
+            if exc.code in TERMINAL_TRANSPORT_ERRORS:
+                break
             continue
         try:
             record["judgments"] = validate_response(raw, expected)

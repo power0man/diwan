@@ -473,7 +473,7 @@ def test_quota_exhaustion_falls_back_to_a_reviewer_of_another_family(tmp_path, m
     report = json.loads(out.read_text(encoding="utf-8"))
     assert report["status"] == "passed" and set(report["reviewers"]) == {MI, LL}
     assert report["fallbacks"] == [{"exhausted": [DS], "code": "quota_exhausted", "replacement": [LL]}]
-    assert opener.chat_models() == [DS, DS, MI, LL], "النافدُ يُعاد مرّةً، والباقي لا يُعاد نداؤه"
+    assert opener.chat_models() == [DS, MI, LL], "النافدُ لا يعاد فورًا؛ يُستعمل البديل المسموح"
     assert _printed(capsys)["fallbacks"] == report["fallbacks"]
 
 
