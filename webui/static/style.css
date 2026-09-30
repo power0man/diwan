@@ -10,3 +10,4 @@
 #message{min-height:4.5em;max-height:30dvh}
 .thinking-option{align-items:flex-start;gap:8px}
 .thinking-option input[type="checkbox"]{width:auto;flex:0 0 auto;margin:5px 0 0}
+.markdown-answer{white-space:normal}.markdown-answer p{margin:.5em 0}.message .markdown-answer strong{display:inline;font-size:inherit;color:inherit;margin:0}.markdown-answer code{font-family:monospace;unicode-bidi:plaintext}.markdown-answer>pre{margin:.75em 0}

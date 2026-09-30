@@ -99,9 +99,24 @@ def test_unified_page_keeps_setup_in_details_and_automates_the_general_chat():
     assert 'api("default_workspace")' in script
     assert 'option.value === defaults.project.id' in script
     assert 'item.dataset.session === defaults.session.id' in script
-    assert 'button(`مراجعة فعل ${action.name}`, () => reviewAgentAction' in script
+    assert 'button(`مراجعة: ${toolName(action.name)}`, () => reviewAgentAction' in script
     assert 'button("موافقة", () => decideAgentAction' not in script
     result = subprocess.run(['node', 'tests/webui_frontend.cjs', 'webui/static/app.js'], cwd=Path(__file__).parents[1], capture_output=True, text=True, timeout=60); assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_disabled_research_and_media_modes_explain_operator_enablement():
+    root = Path(__file__).parents[1]
+    index = (root / "webui/static/index.html").read_text()
+    assert '<select id="session-mode" aria-describedby="session-mode-hints">' in index
+    assert 'id="research-option" value="research" aria-describedby="research-mode-hint" disabled' in index
+    assert 'id="media-option" value="media" aria-describedby="media-mode-hint" disabled' in index
+    assert "البحث المعمّق غير مهيّأ" in index and "--web-search-url" in index and "SearXNG" in index
+    assert "الوسائط غير مهيّأة" in index and "DIWAN_MEDIA_MODEL" in index and "DIWAN_MEDIA_DIGEST" in index
+    result = subprocess.run(
+        ["node", "tests/webui_frontend.cjs", "webui/static/app.js",
+         "disabled_research_and_media_explain_and_track_operator_enablement"],
+        cwd=root, capture_output=True, text=True, timeout=60)
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_default_workspace_uses_stable_ids_not_duplicate_display_names(live):

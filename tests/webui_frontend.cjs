@@ -275,6 +275,18 @@ const cases = {
       assert.equal(h.get('session-mode').value,'text');assert.equal(h.get('agent-option').disabled,false);
     }
   },
+  async disabled_research_and_media_explain_and_track_operator_enablement() {
+    for(const [researchEnabled,mediaEnabled] of [[false,false],[true,false],[false,true],[true,true]]) {
+      const h=await harness({projects:()=>({projects:[{id:A,name:'A'}],agent_enabled:true,
+        research_enabled:researchEnabled,media_enabled:mediaEnabled,default_session_mode:'text'})});
+      for(const [mode,enabled] of [['research',researchEnabled],['media',mediaEnabled]]) {
+        const option=h.get(`${mode}-option`),hint=h.get(`${mode}-mode-hint`);
+        assert.equal(option.disabled,!enabled,`${mode} disabled state`);
+        assert.equal(hint.hidden,enabled,`${mode} hint visibility`);
+        assert.equal(option.attributes['aria-describedby'],enabled?'':`${mode}-mode-hint`,`${mode} description`);
+      }
+    }
+  },
   async explicit_text_and_media_choices_survive_project_list_refresh() {
     for(const mode of ['text','media']) {
       const h=await harness({projects:()=>({projects:[{id:A,name:'A'}],agent_enabled:true,media_enabled:true,default_session_mode:'agent'}),
@@ -361,7 +373,7 @@ const cases = {
     const awaiting={...turn,status:'awaiting_owner',pending:[action],steps:[]};
     h.run(`state.turns=[${JSON.stringify(awaiting)}];render()`);
     assert.equal(h.calls.some(x=>x.action==='agent_decide'||x.action==='agent_resume'),false);
-    const review=descendants(h.get('messages')).find(x=>x.textContent==='مراجعة فعل run_command');
+    const review=descendants(h.get('messages')).find(x=>x.textContent==='مراجعة: تشغيل أمر');
     assert.ok(review,textOf(h.get('messages')));
     await review.onclick();await tick();
     const preview=textOf(h.get('dialog-body'));
@@ -383,7 +395,7 @@ const cases = {
     h.run("setMode('agent')");
     const action={state:'prepared',action_id:'action-1',call_digest:'f'.repeat(64),revision:3,name:'propose_memory',arguments:{text:'موجز'}};
     h.run(`state.turns=[${JSON.stringify({...turn,status:'awaiting_owner',pending:[action],steps:[]})}];render()`);
-    const review=descendants(h.get('messages')).find(x=>x.textContent==='مراجعة فعل propose_memory');
+    const review=descendants(h.get('messages')).find(x=>x.textContent==='مراجعة: اقتراح حفظ في الذاكرة');
     review.focus();await review.onclick();await tick();
     assert.equal(h.active(),h.get('dialog-body').children[0]);
     const yes=descendants(h.get('dialog-body')).find(x=>x.textContent==='أوافق وأتابع');
@@ -420,7 +432,7 @@ const cases = {
     assert.equal(h.get('send').disabled,true);
     await h.get('composer').onsubmit(event);
     assert.equal(h.calls.some(x=>['agent_resume','agent_ask','ask','replay'].includes(x.action)),false);
-    assert.ok(textOf(h.get('messages')).includes('مراجعة فعل run_command'));
+    assert.ok(textOf(h.get('messages')).includes('مراجعة: تشغيل أمر'));
   },
   async agent_send_uses_selected_files_and_agent_route() {
     const h=await harness({agent_ask:()=>turn});h.run("setMode('agent');state.selected.add('chosen.txt')");
@@ -672,11 +684,75 @@ const cases = {
     await h.run(`chooseProject('${B}')`);
     assert.deepEqual(h.revokedURLs,['blob:fixture-0','blob:fixture-1']);
   },
-  async answer_markup_is_plain_text() {
+  async assistant_answers_render_bounded_safe_markdown() {
     const h=await harness();
-    h.run(`state.turns=[{turn_id:'${T}',user_request:'<script>attack()</script>',content:'<img onerror=attack()>',status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
-    assert.equal(descendants(h.get('messages')).some(x=>x.tagName==='IMG'||x.tagName==='SCRIPT'),false);
-    assert.ok(textOf(h.get('messages')).includes('<img onerror=attack()>'));
+    const content='فقرة **قوية** و*مؤكدة* و`code`\nبسطر ثان\n\n- أول\n- ثان\n\n1. واحد\n2. اثنان\n\n```js\nconst safe = true;\n```\n[آمن](https://example.test/path?q=1)';
+    h.run(`state.turns=[{turn_id:'${T}',user_request:'طلب',content:${JSON.stringify(content)},status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
+    const nodes=descendants(h.get('messages')), tags=nodes.map(x=>x.tagName);
+    for(const tag of ['P','STRONG','EM','CODE','BR','UL','OL','LI','PRE','A']) assert.ok(tags.includes(tag),`missing ${tag}`);
+    const link=nodes.find(x=>x.tagName==='A');
+    assert.equal(link.href,'https://example.test/path?q=1');assert.equal(link.target,'_blank');assert.equal(link.rel,'noopener noreferrer');
+    assert.ok(nodes.filter(x=>['P','LI'].includes(x.tagName)).every(x=>x.attributes.dir==='auto'));
+    assert.ok(textOf(h.get('messages')).includes('const safe = true;'));
+  },
+  async markdown_never_interprets_html_or_unsafe_links() {
+    const h=await harness(),attack='<img src=x onerror=attack()> <script>attack()</script> [js](javascript:attack()) [data](data:text/html,attack) [file](file:///tmp/a)';
+    h.run(`state.turns=[{turn_id:'${T}',user_request:'**مدخل** <b>خام</b>',content:${JSON.stringify(attack)},status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
+    const nodes=descendants(h.get('messages'));
+    assert.equal(nodes.some(x=>['IMG','SCRIPT','B','A'].includes(x.tagName)),false);
+    assert.ok(textOf(h.get('messages')).includes('<script>attack()</script>'));
+    assert.ok(textOf(h.get('messages')).includes('[js](javascript:attack())'));
+    assert.ok(textOf(h.get('messages')).includes('**مدخل** <b>خام</b>'));
+  },
+  async markdown_is_confined_to_answer_content() {
+    const h=await harness();
+    const action={action_id:'act',call_digest:'f'.repeat(64),revision:1,name:'write_file',arguments:{path:'**raw**.txt',content:'[literal](https://example.test)'},state:'prepared'};
+    h.run(`state.mode='agent';state.turns=[{turn_id:'${T}',user_request:'طلب',content:'**answer**',status:'awaiting_owner',usage:{input_tokens:1,output_tokens:1},steps:[{index:0,thinking:'*thought*',tool_results:[{name:'read_file',status:'ok',content:'**tool** [literal](https://example.test)'}]}],pending:[${JSON.stringify(action)}]}];render()`);
+    const message=h.get('messages'), nodes=descendants(message);
+    assert.equal(nodes.filter(x=>x.tagName==='STRONG'&&textOf(x)==='answer').length,1);
+    const literalPre=nodes.filter(x=>x.tagName==='PRE').map(textOf);
+    assert.ok(literalPre.includes('**tool** [literal](https://example.test)'));
+    assert.ok(literalPre.includes('*thought*'));
+    assert.equal(nodes.filter(x=>x.tagName==='A').length,0);
+    h.run(`reviewAgentAction({project:'${A}',session:'${SA}'},'${T}',${JSON.stringify(action)})`);
+    const dialogNodes=descendants(h.get('dialog-body'));
+    assert.ok(dialogNodes.filter(x=>x.tagName==='PRE').some(x=>textOf(x).includes('**raw**.txt')));
+    assert.equal(dialogNodes.some(x=>['A','EM'].includes(x.tagName)),false);
+  },
+  async tool_activity_uses_arabic_names_statuses_and_field_labels() {
+    const h=await harness();
+    const attack='<b>خام</b> [رابط](javascript:attack())';
+    h.run(`state.mode='agent';state.turns=[{turn_id:'${T}',user_request:'طلب',content:'جواب',status:'complete',usage:{input_tokens:1,output_tokens:1},steps:[{index:0,tool_results:[{name:'write_file',status:'refused',code:'unsafe_path',content:${JSON.stringify(attack)}}]}]}];render()`);
+    const messages=h.get('messages'),text=textOf(messages),nodes=descendants(messages);
+    assert.ok(text.includes('كتابة ملف · رُفض'));
+    assert.equal(text.includes('write_file'),false);assert.equal(text.includes('unsafe_path'),false);
+    assert.ok(nodes.filter(x=>x.tagName==='PRE').some(x=>textOf(x)===attack));
+    assert.equal(nodes.some(x=>['B','A'].includes(x.tagName)),false);
+  },
+  async approval_dialog_explains_exact_action_without_raw_json() {
+    const h=await harness();
+    const action={action_id:'action-1',call_digest:'f'.repeat(64),revision:3,name:'run_command',arguments:{argv:['python','main.py','<raw>'],future_flag:true},input_snapshot_sha256:'d'.repeat(64),input_files:[{path:'main.py',sha256:'e'.repeat(64),size_bytes:12}]};
+    h.run(`reviewAgentAction({project:'${A}',session:'${SA}'},'${T}',${JSON.stringify(action)})`);
+    const dialog=h.get('dialog-body'),text=textOf(dialog),nodes=descendants(dialog);
+    assert.ok(text.includes('تشغيل أمر'));assert.ok(text.includes('الأمر ووسائطه'));
+    assert.ok(text.includes('python'));assert.ok(text.includes('main.py'));assert.ok(text.includes('<raw>'));
+    assert.ok(text.includes('المعامل «future_flag»'));assert.ok(text.includes('نعم'));
+    assert.ok(text.includes('الحجم: 12 بايت'));assert.ok(text.includes('e'.repeat(64)));
+    assert.equal(text.includes('"argv"'),false);assert.equal(text.includes('run_command'),false);
+    assert.equal(text.includes('[\n  "python"'),false);
+    assert.equal(nodes.some(x=>['SCRIPT','B','A'].includes(x.tagName)),false);
+    assert.equal(nodes.filter(x=>x.tagName==='OL').length,1);
+    const labels=nodes.filter(x=>x.tagName==='STRONG').map(textOf);
+    assert.ok(labels.includes('الأمر ووسائطه'));assert.ok(labels.includes('main.py'));
+  },
+  async markdown_dom_growth_has_a_fixed_limit() {
+    for(const content of [Array.from({length:5000},(_,i)=>`- item ${i}`).join('\n'),Array.from({length:5000},(_,i)=>`line ${i}`).join('\n')]) {
+      const h=await harness();
+      h.run(`state.turns=[{turn_id:'${T}',user_request:'طلب',content:${JSON.stringify(content)},status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
+      const markdown=descendants(h.get('messages')).find(x=>x.className==='content markdown-answer');
+      assert.ok(markdown);assert.ok(descendants(markdown).length<=2050);
+      assert.ok(textOf(markdown).includes(content.includes('- item')?'item 4999':'line 4999'));
+    }
   },
 };
 

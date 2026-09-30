@@ -155,6 +155,83 @@ function hashLine(label, digest) {
   return line;
 }
 function button(text, action) {const el = element("button", text); el.type = "button"; el.onclick = () => Promise.resolve().then(action).catch(showError); return el;}
+const MARKDOWN_NODE_LIMIT = 2048;
+function safeMarkdownLink(value) {
+  return /^https?:\/\/[^\s\u0000-\u001f\u007f<>"'`]+$/i.test(value) ? value : null;
+}
+function appendMarkdownText(parent, text, budget) {
+  if(!text) return;
+  parent.append(document.createTextNode(text)); budget.nodes += 1;
+}
+// محلّلٌ محدود لا يحقن HTML: مسحٌ واحد، بلا تداخل أو اعتماد خارجي، وبحدّ ثابت لعقد DOM.
+function appendMarkdownInline(parent, text, budget) {
+  let at = 0, plain = 0;
+  const flush = end => {appendMarkdownText(parent, text.slice(plain, end), budget);};
+  while(at < text.length && budget.nodes < MARKDOWN_NODE_LIMIT) {
+    let end = -1, node = null, next = at + 1;
+    if(text[at] === "\\" && "\\`*_[]()".includes(text[at + 1] || "")) {
+      flush(at); appendMarkdownText(parent, text[at + 1], budget); at += 2; plain = at; continue;
+    }
+    if(text[at] === "`") {
+      end = text.indexOf("`", at + 1);
+      if(end > at + 1) {node = element("code", text.slice(at + 1, end)); next = end + 1;}
+    } else if(text.startsWith("**", at) || text.startsWith("__", at)) {
+      const marker = text.slice(at, at + 2); end = text.indexOf(marker, at + 2);
+      if(end > at + 2) {node = element("strong", text.slice(at + 2, end)); next = end + 2;}
+    } else if(text[at] === "*" || text[at] === "_") {
+      end = text.indexOf(text[at], at + 1);
+      if(end > at + 1) {node = element("em", text.slice(at + 1, end)); next = end + 1;}
+    } else if(text[at] === "[") {
+      const labelEnd = text.indexOf("](", at + 1);
+      end = labelEnd < 0 ? -1 : text.indexOf(")", labelEnd + 2);
+      if(labelEnd > at + 1 && end > labelEnd + 2) {
+        const href = safeMarkdownLink(text.slice(labelEnd + 2, end));
+        if(href) {
+          node = element("a", text.slice(at + 1, labelEnd)); node.href = href;
+          node.target = "_blank"; node.rel = "noopener noreferrer"; next = end + 1;
+        }
+      }
+    }
+    if(node) {flush(at); parent.append(node); budget.nodes += 1; at = next; plain = at;}
+    else at += 1;
+  }
+  flush(text.length);
+}
+function markdownBlock(tag, className) {
+  const block = element(tag, undefined, className); block.setAttribute("dir", "auto"); return block;
+}
+function renderMarkdownAnswer(text) {
+  const root = element("div", undefined, "content markdown-answer"), lines = String(text).replace(/\r\n?/g, "\n").split("\n");
+  const budget = {nodes: 1}; let at = 0;
+  while(at < lines.length) {
+    if(budget.nodes >= MARKDOWN_NODE_LIMIT) {appendMarkdownText(root, lines.slice(at).join("\n"), budget); break;}
+    if(/^ {0,3}```/.test(lines[at])) {
+      const code = [], pre = markdownBlock("pre", "markdown-code"), body = element("code"); at += 1;
+      while(at < lines.length && !/^ {0,3}```\s*$/.test(lines[at])) {code.push(lines[at]); at += 1;}
+      if(at < lines.length) at += 1;
+      body.textContent = code.join("\n"); pre.append(body); root.append(pre); budget.nodes += 2; continue;
+    }
+    if(!lines[at].trim()) {at += 1; continue;}
+    const unordered = lines[at].match(/^ {0,3}[-+*]\s+(.+)$/), ordered = lines[at].match(/^ {0,3}\d+[.)]\s+(.+)$/);
+    if(unordered || ordered) {
+      const list = markdownBlock(ordered ? "ol" : "ul");
+      while(at < lines.length && budget.nodes < MARKDOWN_NODE_LIMIT) {
+        const item = lines[at].match(ordered ? /^ {0,3}\d+[.)]\s+(.+)$/ : /^ {0,3}[-+*]\s+(.+)$/);
+        if(!item) break;
+        const li = markdownBlock("li"); appendMarkdownInline(li, item[1], budget); list.append(li); budget.nodes += 1; at += 1;
+      }
+      root.append(list); budget.nodes += 1; continue;
+    }
+    const paragraph = markdownBlock("p"); let hasLine = false;
+    while(at < lines.length && budget.nodes < MARKDOWN_NODE_LIMIT && lines[at].trim() && !/^ {0,3}```/.test(lines[at]) &&
+      !/^ {0,3}(?:[-+*]\s+|\d+[.)]\s+)/.test(lines[at])) {
+      if(hasLine) {paragraph.append(element("br")); budget.nodes += 1;}
+      appendMarkdownInline(paragraph, lines[at], budget); at += 1; hasLine = true;
+    }
+    root.append(paragraph); budget.nodes += 1;
+  }
+  return root;
+}
 function turnContent(turn) {
   if(turn.content) return turn.content;
   if(turn.status === "awaiting_owner") return "طلب ديوان تنفيذ الفعل المبين أدناه.";
@@ -167,7 +244,8 @@ function render() {
   if (!state.turns.length) {box.append(element("p", "اكتب رسالتك لبدء المحادثة.", "empty")); return;}
   for (const turn of state.turns) {
     const user = element("article", undefined, "message user"); user.append(element("strong", "أنت"), element("div", turn.user_request, "content"));
-    const answer = element("article", undefined, "message"); answer.append(element("strong", "ديوان · جواب غير متحقق"), element("div", turnContent(turn), "content"));
+    const answerText = turnContent(turn), answerContent = turn.content ? renderMarkdownAnswer(answerText) : element("div", answerText, "content");
+    const answer = element("article", undefined, "message"); answer.append(element("strong", "ديوان · جواب غير متحقق"), answerContent);
     const statusLabel = {complete:"مكتمل",truncated:"جواب مبتور — لم يكتمل",awaiting_owner:"ينتظر قرارك في فعل محدد",outcome_unknown:"نتيجة الأثر غير مؤكدة",step_limit:"بلغ حد الخطوات",timed_out:"انتهت المهلة",cancelled:"توقفت المتابعة — تبقى آثار الخطوات المكتملة"}[turn.status] || "تعذر التنفيذ";
     answer.append(element("div", `${statusLabel}${turn.usage ? ` · ${turn.usage.input_tokens + turn.usage.output_tokens} وحدة نصية` : ""}`, "meta"));
     const ctx = context(), actions = element("div", undefined, "tools");
@@ -204,6 +282,68 @@ function renderTranslationCheck(answer, report) {
     ? `الفحص الآليّ للترجمة ${direction}${glossary}: يمرّ — الأرقامُ والرموزُ محفوظة، والحرفُ حرفُ اللغة الهدف.`
     : `الفحص الآليّ للترجمة ${direction}${glossary}: لا يمرّ — ${report.findings.map(f => `${f.code}: ${f.detail}`).join("، ")}`, "meta"));
 }
+const toolNames = Object.freeze({
+  read_file: "قراءة ملف", search_files: "البحث في الملفات", list_files: "عرض الملفات",
+  run_tests: "تشغيل الاختبارات", write_file: "كتابة ملف", edit_file: "تعديل ملف",
+  export_document: "تصدير مستند", run_command: "تشغيل أمر", propose_memory: "اقتراح حفظ في الذاكرة",
+  web_search: "بحث في الويب", analyze_data: "تحليل بيانات", check_translation: "فحص ترجمة",
+});
+const toolStatuses = Object.freeze({ok:"نجح", refused:"رُفض", error:"فشل", awaiting_owner:"ينتظر قرارك"});
+const argumentNames = Object.freeze({
+  path:"المسار", content:"المحتوى", old_text:"النص الموجود", new_text:"النص البديل",
+  argv:"الأمر ووسائطه", paths:"الاختبارات المطلوبة", pattern:"نمط البحث", suffix:"لاحقة الملفات",
+  prefix:"بادئة المسار", query:"عبارة البحث", max_results:"الحد الأقصى للنتائج",
+  text:"النص المقترح للذاكرة", code:"شيفرة التحليل", inputs:"ملفات الإدخال", outputs:"ملفات الإخراج",
+  timeout_s:"المهلة بالثواني", source:"النص المصدر", translation:"الترجمة", glossary:"المسرد",
+  document:"المستند",
+});
+function toolName(name) {return toolNames[name] || `أداة «${name || "غير معروفة"}»`;}
+function argumentName(name) {return argumentNames[name] || `المعامل «${name}»`;}
+function exactValue(value) {
+  if(typeof value === "string") return value;
+  if(value === null) return "قيمة فارغة";
+  if(value === true) return "نعم";
+  if(value === false) return "لا";
+  return String(value);
+}
+function renderArgumentValue(value) {
+  if(Array.isArray(value)) {
+    const list = element("ol");
+    for(const item of value) {const row = element("li"); row.append(renderArgumentValue(item)); list.append(row);}
+    return list;
+  }
+  if(value && typeof value === "object") {
+    const fields = element("div", undefined, "tool-argument-object");
+    for(const [name, nested] of Object.entries(value)) {
+      const field = element("div", undefined, "tool-argument");
+      field.append(element("strong", argumentName(name)), renderArgumentValue(nested)); fields.append(field);
+    }
+    return fields;
+  }
+  return element("pre", exactValue(value));
+}
+function renderArguments(values) {
+  const fields = element("div", undefined, "tool-arguments"), entries = Object.entries(values || {});
+  if(!entries.length) {fields.append(element("p", "لا مدخلات لهذا الفعل.")); return fields;}
+  for(const [name, value] of entries) {
+    const field = element("div", undefined, "tool-argument");
+    field.append(element("strong", argumentName(name)), renderArgumentValue(value));
+    fields.append(field);
+  }
+  return fields;
+}
+function renderInputFiles(files) {
+  const section = element("div", undefined, "tool-input-files");
+  section.append(element("h3", "ملفات نسخة المدخلات"));
+  for(const file of files || []) {
+    const item = element("div", undefined, "tool-input-file");
+    item.append(element("strong", file.path || "ملف بلا اسم"));
+    if(Number.isFinite(file.size_bytes)) item.append(element("p", `الحجم: ${file.size_bytes} بايت`));
+    if(file.sha256) item.append(element("p", `البصمة: ${file.sha256}`, "hash"));
+    section.append(item);
+  }
+  return section;
+}
 function renderAgentActions(answer, actions, ctx, turn) {
   if(turn.inputs) {
     const inputs = element("details"); inputs.append(element("summary", "سياق الطلب المحفوظ"));
@@ -221,7 +361,8 @@ function renderAgentActions(answer, actions, ctx, turn) {
       thought.append(element("pre", step.thinking)); details.append(thought);
     }
     for(const result of step.tool_results || []) {
-      details.append(element("p", `${result.name} · ${result.status}${result.code ? ` · ${result.code}` : ""}`));
+      const status = toolStatuses[result.status] || "حالة غير معروفة";
+      details.append(element("p", `${toolName(result.name)} · ${status}${result.code ? ` — ${errorMessage(result.code)}` : ""}`));
       if(result.content) details.append(element("pre", result.content));
       // فعلٌ كتب ملفًّا (journal_action_id) أو ملفّاتٍ عدّة تُرجع معًا (journal_action_ids، ج٨)
       if(result.status === "ok" && result.action_id && (result.journal_action_id || (result.journal_action_ids || []).length)) {
@@ -240,8 +381,8 @@ function renderAgentActions(answer, actions, ctx, turn) {
   for(const action of turn.status === "awaiting_owner" ? pending : []) {
     if(action.state === "prepared" || action.status === "awaiting_owner") {
       const approval = element("div", undefined, "approval");
-      approval.append(element("span", `${action.name} — يحتاج قرارك`));
-      approval.append(button(`مراجعة فعل ${action.name}`, () => reviewAgentAction(ctx, turn.turn_id, action)));
+      approval.append(element("span", `${toolName(action.name)} — يحتاج قرارك`));
+      approval.append(button(`مراجعة: ${toolName(action.name)}`, () => reviewAgentAction(ctx, turn.turn_id, action)));
       answer.append(approval);
     }
   }
@@ -277,10 +418,10 @@ async function resumeAgent(ctx, turn, focusReturn = null) {
 function reviewAgentAction(ctx, turn, action) {
   if(ctx.project !== state.project || ctx.session !== state.session) return;
   const epoch = state.epoch, ticket = ++state.dialogEpoch, body = dialog("قرار لفعل محدد");
-  body.append(element("p", action.name), element("pre", JSON.stringify(action.arguments || {}, null, 2)));
+  body.append(element("h3", toolName(action.name)), renderArguments(action.arguments));
   body.append(element("p", "الموافقة تخص هذا الفعل ومدخلاته المثبتة وحدها. لا تمنح إذنًا لأفعال لاحقة."));
   if(action.input_snapshot_sha256) body.append(hashLine("بصمة نسخة المدخلات:", action.input_snapshot_sha256));
-  if(action.input_files?.length) body.append(element("pre", JSON.stringify(action.input_files, null, 2)));
+  if(action.input_files?.length) body.append(renderInputFiles(action.input_files));
   if(action.input_files_truncated) body.append(element("p", `تضم النسخة ${action.input_files_count} ملفًا؛ المعروض أول 64 ملفًا فقط.`));
   const buttons = [];
   for(const [approve, title] of [[true,"أوافق وأتابع"],[false,"أرفض وأتابع"]]) {
@@ -393,13 +534,18 @@ async function showAgentFile(project, path) {
   const url = URL.createObjectURL(new Blob([data.content],{type:"text/plain;charset=utf-8"})); state.urls.push(url);
   const download = element("a","تنزيل هذه النسخة"); download.href = url; download.download = path.split("/").pop(); body.append(download);
 }
+function syncModeHint(optionId, hintId, enabled) {
+  const option = $(optionId), hint = $(hintId);
+  option.disabled = !enabled; hint.hidden = enabled;
+  option.setAttribute("aria-describedby", enabled ? "" : hintId);
+}
 async function projects() {
   const data = await api("projects"); const select = $("projects"); select.replaceChildren(new Option("اختر مشروعًا", ""));
   for (const project of data.projects) select.add(new Option(project.name, project.id));
   select.value = state.project;
-  state.mediaEnabled = data.media_enabled === true; $("media-option").disabled = !state.mediaEnabled;
+  state.mediaEnabled = data.media_enabled === true; syncModeHint("media-option", "media-mode-hint", state.mediaEnabled);
   const agentEnabled = data.agent_enabled === true; $("agent-option").disabled = !agentEnabled; $("coder-option").disabled = !agentEnabled; $("translate-option").disabled = !agentEnabled;
-  state.researchEnabled = data.research_enabled === true; $("research-option").disabled = !state.researchEnabled;
+  state.researchEnabled = data.research_enabled === true; syncModeHint("research-option", "research-mode-hint", state.researchEnabled);
   state.defaultSessionMode = agentEnabled && data.default_session_mode === "agent" ? "agent" : "text";
   const mode = $("session-mode"), available = mode.value === "text" || (["agent", "coder", "translate"].includes(mode.value) && agentEnabled) || (mode.value === "media" && state.mediaEnabled) || (mode.value === "research" && state.researchEnabled);
   if(!state.sessionModeChosen || !available) {mode.value = state.defaultSessionMode; state.sessionModeChosen = false;}
