@@ -18,6 +18,7 @@ concurrency:
 
 jobs:
   verify:
+    name: verify-runtime (${{ matrix.python-version || '3.14' }})
     if: github.event_name == 'workflow_dispatch' || github.event.repository.private == false
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -60,7 +61,7 @@ jobs:
       - name: Shared checks and strict public signature verification
         run: .venv/bin/python tools/run_verification.py --node "$(command -v node)"
       # ق٦٧-٦ وقرارُ المالك في ٢٨ سبتمبر ٢٠٢٦ («نفّذ: جعلُ mutation-check مطلوبًا»): فاحصُ الطفرات خطوةٌ في الفحص الإلزاميّ
-      # نفسِه (verify، الذي تشترطه حمايةُ main اليوم — docs/guides/G1.md) فصار مطلوبًا بالبناء لا بإعدادٍ في الواجهة، وسقط
+      # نفسه؛ وتربطه بوابتا verify-hosted ثم verify المطلوب في حماية main بالنجاح الحقيقي (docs/guides/G1.md)، وسقط
       # تشغيلُه المستقلّ على الطلبات (mutation-check.yml يبقى للأسبوعيّ واليدويّ بالبيانات كلِّها). المدى مدى الإسناد نفسُه:
       # على طلب الدمج base..github.sha (إيداعُ الدمج المرتقَب لا رأسُ الفرع — ملاحظة Codex على #149)، وعلى الدفع before..sha،
       # وبلا مدًى (تشغيلٌ يدويّ أو فرعٌ بلا أساس) البياناتُ كلُّها.
@@ -74,3 +75,31 @@ jobs:
             *..*) .venv/bin/python tools/mutation_check.py --range "$RANGE" --head "$HEAD" --report "$report" --timeout-s 1200 ;;
             *)    .venv/bin/python tools/mutation_check.py --all --head "$HEAD" --report "$report" --timeout-s 1200 ;;
           esac
+
+  verify-hosted:
+    name: verify-hosted
+    needs: verify
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every hosted runtime to succeed
+        env:
+          UPSTREAM_RESULT: ${{ needs.verify.result }}
+        run: |
+          test "$UPSTREAM_RESULT" = success
+
+  verify-compat:
+    # Keep the current required context until the owner migrates protection.
+    # always() prevents a failed/skipped dependency from making this gate skip.
+    name: verify
+    needs: verify-hosted
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Preserve the current required check
+        env:
+          UPSTREAM_RESULT: ${{ needs['verify-hosted'].result }}
+        run: |
+          test "$UPSTREAM_RESULT" = success
