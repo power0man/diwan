@@ -5,6 +5,105 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const source = fs.readFileSync(process.argv[2], 'utf8');
 const staticIDs = [...fs.readFileSync(path.join(path.dirname(process.argv[2]),'index.html'),'utf8').matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]);
+const repoRoot = path.resolve(path.dirname(process.argv[2]), '../..');
+
+const pythonErrorSources = [
+  'webui/server.py',
+  'conversation/session.py',
+  'conversation/agent_session.py',
+  'conversation/agent_stop.py',
+  'memory/store.py',
+  'memory/scope.py',
+  'workspace_tools/files.py',
+  'workspace_tools/preferences.py',
+  'workspace_tools/backup.py',
+  'workspace_tools/recovery.py',
+  'services/agent_workspace.py',
+  'services/assistant_workspace.py',
+  'services/project_archive.py',
+  'core/router_sovereign.py',
+];
+
+function pythonTokens(text) {
+  const tokens=[];
+  const pattern=/(?:[rRuUbBfF]{0,2})(?:"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*')|#[^\r\n]*|[A-Za-z_][A-Za-z0-9_]*|[()[\]{},:=]/gy;
+  let at=0;
+  while(at<text.length) {
+    pattern.lastIndex=at;const match=pattern.exec(text);
+    if(!match) {at+=1;continue;}
+    const raw=match[0];at=pattern.lastIndex;
+    if(raw.startsWith('#')) continue;
+    if(/^[A-Za-z_][A-Za-z0-9_]*$/.test(raw)) tokens.push({type:'name',value:raw});
+    else if('()[]{},:='.includes(raw)) tokens.push({type:'punct',value:raw});
+    else {
+      const quoteAt=raw.search(/["']/),quote=raw[quoteAt],triple=raw.slice(quoteAt,quoteAt+3)===quote.repeat(3);
+      const value=raw.slice(quoteAt+(triple?3:1),raw.length-(triple?3:1));
+      tokens.push({type:'string',value});
+    }
+  }
+  return tokens;
+}
+
+function splitCallArguments(tokens, openAt) {
+  const args=[];let current=[],depth=0;
+  for(let i=openAt+1;i<tokens.length;i+=1) {
+    const value=tokens[i].value;
+    if(['(','[','{'].includes(value)) {depth+=1;current.push(tokens[i]);continue;}
+    if([')',']','}'].includes(value)) {
+      if(value===')' && depth===0) {args.push(current);return {args,end:i};}
+      depth-=1;current.push(tokens[i]);continue;
+    }
+    if(value===',' && depth===0) {args.push(current);current=[];continue;}
+    current.push(tokens[i]);
+  }
+  return {args:[],end:openAt};
+}
+
+function literalArgument(args, position, keyword) {
+  const named=args.find(arg=>arg[0]?.value===keyword && arg[1]?.value==='=');
+  const chosen=named ? named.slice(2) : args[position];
+  return chosen?.length===1 && chosen[0].type==='string' ? chosen[0].value : null;
+}
+
+function pythonErrorCodes(file) {
+  const tokens=pythonTokens(fs.readFileSync(path.join(repoRoot,file),'utf8')),codes=new Set(),nonErrors=new Set(['code','complete','truncated']);
+  const calls=new Map([
+    ['need',{position:1,keyword:'code',fallback:'request_invalid'}],
+    ['_need',{position:1,keyword:'code'}],
+    ['_fail',{position:0,keyword:'code'}],
+    ['UIError',{position:0,keyword:'code'}],
+    ['MemoryRefused',{position:0,keyword:'code'}],
+    ['WorkspaceError',{position:0,keyword:'code'}],
+    ['SovereignRoutingError',{position:0,keyword:'code'}],
+  ]);
+  for(let i=0;i<tokens.length;i+=1) {
+    const spec=calls.get(tokens[i].value);
+    if(spec && tokens[i+1]?.value==='(') {
+      const parsed=splitCallArguments(tokens,i+1),literal=literalArgument(parsed.args,spec.position,spec.keyword);
+      if(literal) codes.add(literal); else if(spec.fallback) codes.add(spec.fallback);
+      i=parsed.end;
+      continue;
+    }
+    if(tokens[i].type==='name' && tokens[i].value.endsWith('error_code') && [':','='].includes(tokens[i+1]?.value)) {
+      let depth=0;
+      for(let j=i+2;j<tokens.length;j+=1) {
+        const token=tokens[j],value=token.value;
+        if(['(','[','{'].includes(value)) depth+=1;
+        else if([')',']','}'].includes(value)) {if(depth===0) break;depth-=1;}
+        if(value===',' && depth===0) break;
+        if(token.type==='string' && !nonErrors.has(token.value) && /^[a-z][a-z0-9_]*$/.test(token.value)) codes.add(token.value);
+      }
+    }
+  }
+  return codes;
+}
+
+function frontendErrorCodes() {
+  return new Set([...source.matchAll(/(?:error_code|\bcode)\s*:\s*["']([a-z][a-z0-9_]*)["']/g)].map(match=>match[1]));
+}
+
+const emittedErrorCodes=new Set(frontendErrorCodes());
+for(const file of pythonErrorSources) for(const code of pythonErrorCodes(file)) emittedErrorCodes.add(code);
 
 class Element {
   constructor(tag = 'div') {
@@ -71,6 +170,42 @@ async function harness(routes = {}, options = {}) {
 }
 
 const cases = {
+  async every_server_external_and_frontend_code_has_an_arabic_message() {
+    const h=await harness(),required=[
+      'request_invalid','request_failed','unsafe_path','memory_path_unsafe','backup_invalid',
+      'preference_revision_conflict','policy_violation_local_only','turn_unknown','agent_input_invalid','network_error',
+    ];
+    for(const code of required) assert.ok(emittedErrorCodes.has(code),`error-code extraction missed ${code}`);
+    const missing=[],nonArabic=[],leaked=[];
+    for(const code of [...emittedErrorCodes].sort()) {
+      const message=h.run(`knownErrorMessage(${JSON.stringify(code)})`);
+      if(!message) missing.push(code);
+      else {
+        if(!/[\u0600-\u06ff]/.test(message)) nonArabic.push(code);
+        if(message.includes(code)) leaked.push(code);
+      }
+    }
+    assert.deepEqual(missing,[],'unmapped emitted error codes');
+    assert.deepEqual(nonArabic,[],'emitted error codes without Arabic guidance');
+    assert.deepEqual(leaked,[],'raw emitted error codes included in user guidance');
+  },
+  async raw_codes_stay_in_technical_details_not_notice_dialog_or_answer() {
+    const h=await harness();
+    h.run("showError({code:'name_invalid'})");
+    assert.match(h.get('notice').textContent,/[\u0600-\u06ff]/);
+    assert.equal(h.get('notice').textContent.includes('name_invalid'),false);
+    assert.equal(h.get('technical-errors').textContent,'آخر خطأ: name_invalid');
+
+    h.get('dialog').showModal();h.run("showError({code:'future_failure'})");
+    assert.match(h.get('dialog-feedback').textContent,/[\u0600-\u06ff]/);
+    assert.equal(h.get('dialog-feedback').textContent.includes('future_failure'),false);
+    assert.equal(h.get('technical-errors').textContent,'آخر خطأ: future_failure');
+
+    h.run(`state.turns=[{turn_id:'${T}',user_request:'طلب',content:'',status:'error',error_code:'unsafe_path'}];render()`);
+    const answer=textOf(h.get('messages'));
+    assert.match(answer,/[\u0600-\u06ff]/);assert.equal(answer.includes('unsafe_path'),false);
+    assert.equal(h.get('technical-errors').textContent,'آخر خطأ: unsafe_path');
+  },
   async new_general_session_defaults_to_agent_and_sends_on_agent_route() {
     const h=await harness({projects:()=>({projects:[{id:A,name:'A'}],agent_enabled:true,default_session_mode:'agent'}),
       create_session:request=>({id:SB,name:request.name,mode:request.mode}),agent_capabilities:()=>({execution_enabled:false}),agent_ask:()=>turn});
@@ -470,7 +605,7 @@ const cases = {
 };
 
 (async()=>{
-  const output={scope:'node_fake_dom_behavior_only',browser_rendering:'not_tested',checks:[]};
+  const output={scope:'node_fake_dom_behavior_only',browser_rendering:'not_tested',error_codes_scanned:emittedErrorCodes.size,checks:[]};
   for(const [name,test] of Object.entries(cases)) {
     try {await test();output.checks.push({name,passed:true});}
     catch(error) {output.checks.push({name,passed:false,reason:error.message});}

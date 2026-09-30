@@ -51,12 +51,78 @@ const errors = {
   text_invalid_memory: "اكتب نصًّا غير فارغ ليُحفظ.",
   item_unknown: "هذا العنصر ليس في ذاكرة المشروع. استرجع القائمة.",
   memory_item_corrupt: "عنصرٌ في ذاكرة المشروع لا يطابق بصمته. لم يُستعمل شيء منها.",
+  agent_tool_contract_changed: "تغيّرت أدوات الجلسة منذ إنشائها. ابدأ محادثة جديدة قبل متابعة العمل بالأدوات.",
+  answer_empty: "عاد المزوّد بلا جواب قابل للعرض. أعد المحاولة، وإن تكرر ذلك فابدأ محادثة جديدة.",
+  attachments_invalid: "تعذر التحقق من المرفقات المختارة. أعد فتح الملفات واخترها من جديد.",
+  body_incomplete: "لم يصل الطلب كاملًا. تحقق من الاتصال، ثم استرجع الحالة قبل إعادة المحاولة.",
+  body_limit: "الطلب أكبر من الحد المسموح. قلّل النص أو المرفقات ثم أعد الإرسال.",
+  coder_unavailable: "وضع البرمجة غير مهيأ في هذا التشغيل. استخدم محادثة نصية أو فعّل أدوات البرمجة أولًا.",
+  collection_limit: "بلغت مساحة العمل الحد الأقصى للعناصر. استخدم مشروعًا أو محادثة قائمة قبل إضافة أخرى.",
+  complete_answer_required: "لا يمكن تنفيذ هذا الإجراء قبل اكتمال الجواب. انتظر اكتماله ثم أعد المحاولة.",
+  decision_invalid: "القرار المرسل غير صالح. افتح مراجعة الفعل مجددًا واختر الموافقة أو الرفض.",
+  glossary_too_large: "المسرد أكبر من الحد المدعوم. اختصره ثم ارفع نسخة أصغر.",
+  id_conflict: "معرّف الطلب مرتبط بعملية مختلفة. استرجع الحالة قبل إنشاء طلب جديد.",
+  id_invalid: "تعذر التحقق من معرّف العنصر. استرجع الصفحة وحاول من الواجهة مجددًا.",
+  json_invalid: "صيغة الطلب غير صالحة. أعد تحميل الصفحة ثم أعد المحاولة.",
+  limit_invalid: "الحد المطلوب غير صالح. استخدم قيمة موجبة ضمن المجال المتاح.",
+  media_count: "اختر ملف وسائط واحدًا فقط لكل طلب.",
+  media_encoding: "تعذر قراءة ترميز ملف الوسائط. اختر الملف الأصلي من جديد.",
+  media_invalid: "ملف الوسائط غير صالح أو لا يطابق النوع المعلن. اختر ملفًا مدعومًا.",
+  media_size: "ملف الوسائط أكبر من الحد المسموح. اختر ملفًا أصغر.",
+  memory_source_invalid: "تعذر ربط المعلومة بمصدرها في المحادثة. استرجع المحادثة ثم أعد الحفظ.",
+  memory_text_invalid: "اكتب معلومة غير فارغة وصالحة قبل حفظها في الذاكرة.",
+  metadata_invalid: "بيانات مساحة العمل غير صالحة. لا تكتب شيئًا جديدًا قبل استعادة نسخة سليمة.",
+  name_invalid: "اكتب اسمًا ظاهرًا من حرف واحد إلى ثمانين حرفًا، بلا محارف تحكم.",
+  not_found: "العنصر المطلوب غير موجود. استرجع الحالة واختر عنصرًا ظاهرًا في القائمة.",
+  pages_invalid: "قائمة الصفحات غير صالحة. راجع أرقام الصفحات وأعد الإرسال.",
+  policy_requires_local: "هذا الطلب محصور محليًا. اختر مزودًا محليًا أو غيّر الطلب بما يوافق سياسة البيانات.",
+  query_empty: "اكتب عبارة بحث غير فارغة قبل بدء البحث.",
+  receive_timeout: "انتهت مهلة استقبال الطلب. تحقق من الاتصال ثم استرجع الحالة قبل إعادة الإرسال.",
+  request_failed: "تعذر إكمال العملية. استرجع الحالة، ثم أعد المحاولة من الواجهة.",
+  request_invalid: "الطلب ناقص أو غير صالح. راجع المدخلات ثم أعد الإرسال.",
+  research_unavailable: "البحث المعمق غير مهيأ في هذا التشغيل. استخدم محادثة عادية أو فعّل خدمة البحث أولًا.",
+  restore_incomplete: "لم تكتمل الاستعادة، ولم يُعتمد ناتج جزئي. راجع النسخة ثم أعد المحاولة.",
+  session_mode_invalid: "نوع المحادثة غير معروف. اختر نوعًا متاحًا من القائمة.",
+  session_mode_mismatch: "نوع المحادثة المحفوظ لا يطابق الطلب. افتح المحادثة بالنوع الصحيح أو ابدأ أخرى.",
+  staging_limit: "هناك عمليات إعداد كثيرة معلقة. أكملها أو ألغها قبل بدء عملية جديدة.",
+  store_changed: "تغير المخزن أثناء العملية. استرجع الحالة وراجع النسخة الأحدث قبل المتابعة.",
+  thinking_invalid: "خيار التفكير غير صالح. فعّله أو عطّله من المربع ثم أعد الإرسال.",
+  tier_unavailable: "مستوى التشغيل المطلوب غير متاح. اختر المستوى المحلي المتاح أو أعد تهيئة المزود.",
+  translate_unavailable: "وضع الترجمة غير مهيأ في هذا التشغيل. استخدم محادثة عادية أو فعّل أدوات الترجمة أولًا.",
+  turn_unknown: "الجولة المطلوبة غير موجودة. استرجع المحادثة قبل بدء طلب جديد.",
+  word_invalid: "القيمة النصية غير صالحة. استخدم كلمة واحدة ضمن الحد المطلوب.",
+  workspace_turn_missing: "لم يسجل الخادم هذه الجولة. تحقق من الحالة قبل بدء طلب جديد.",
+  media_turn_missing: "لم يسجل الخادم جولة الوسائط. تحقق من الحالة قبل بدء طلب جديد.",
+  default_project_unavailable: "تعذر فتح مساحة العمل العامة. أعد تحميل الصفحة، ولا تنشئ بديلًا يدويًا.",
+  step_limit: "بلغت الجولة حد الخطوات قبل اكتمالها. راجع ما نُفذ ثم ابدأ طلبًا أصغر.",
+  timed_out: "انتهت مهلة الجولة قبل اكتمالها. استرجع الحالة قبل إعادة المحاولة.",
+  output_truncated: "توقف الجواب عند حد الإخراج. اطلب المتابعة في رسالة جديدة.",
 };
+const errorFamilies = [
+  [/^backup_/, "تعذر إنشاء النسخة الاحتياطية بأمان. راجع المصدر والوجهة ثم أعد المحاولة."],
+  [/^(recovery_|restore_)/, "تعذرت الاستعادة بأمان. استخدم نسخة سليمة وتحقق من الوجهة قبل المحاولة مجددًا."],
+  [/^preference_/, "تعذر تحديث التفضيلات. افتحها من جديد وراجع النسخة الحالية قبل الحفظ."],
+  [/^(memory_|item_|project_label_|project_store_|consent_|snapshot_)/, "تعذرت قراءة ذاكرة المشروع أو تحديثها بأمان. استرجع حالتها قبل المتابعة."],
+  [/^project_/, "تعذر التحقق من المشروع أو أرشيفه. استرجع قائمة المشاريع واختر مشروعًا ظاهرًا قبل المتابعة."],
+  [/^(agent_file_|agent_input_)/, "تعذر التحقق من مدخلات مساحة العمل. أعد اختيار الملفات ثم حاول مجددًا."],
+  [/^(action_|changed_since_|approval_|turn_|stop_|recover_)/, "تغيرت حالة الجولة أو الفعل. استرجع المحادثة وراجع الإيصال قبل اتخاذ قرار جديد."],
+  [/^(session_|state_|ledger_|manifest_|configuration_|config_|workspace_|control_root_)/, "تعذر التحقق من حالة المحادثة المحفوظة. أوقف الكتابة واستعد نسخة سليمة أو ابدأ محادثة جديدة."],
+  [/^(unsafe_|path_|file_|root_|read_root_|filesystem_)/, "رُفض مسار أو ملف غير آمن. اختر ملفًا داخل مساحة المشروع ولا تتجاوز حدودها."],
+  [/^(proposal_|request_id_)/, "تعذر التحقق من الطلب المحفوظ. افتح المسودة أو العملية مجددًا قبل المتابعة."],
+  [/^user_request_/, "نص الطلب غير صالح. اكتب طلبًا نصيًا غير فارغ ضمن الحد ثم أعد الإرسال."],
+  [/^(admission_|limits_|deadline_|model_|system_|purpose_)/, "إعداد المحادثة غير صالح أو تغير. ابدأ محادثة جديدة بإعداد متاح."],
+  [/^(policy_|tier_|unknown_policy)/, "سياسة البيانات لا تسمح بهذا المسار. استخدم التشغيل المحلي أو راجع تصنيف الطلب."],
+  [/^(analysis_|execution_|provider_|local_)/, "مكوّن التشغيل المطلوب غير جاهز. تحقق من تهيئته ثم أعد المحاولة."],
+];
+function normalizeErrorCode(code) {return typeof code === "string" && /^[a-z][a-z0-9_]*$/.test(code) ? code : "request_failed";}
+function knownErrorMessage(code) {code = normalizeErrorCode(code); return errors[code] || errorFamilies.find(([pattern]) => pattern.test(code))?.[1] || null;}
+function errorMessage(code) {return knownErrorMessage(code) || errors.request_failed;}
+function recordTechnicalError(code) {$("technical-errors").textContent = `آخر خطأ: ${normalizeErrorCode(code)}`;}
 function notice(text, error = false) {$("notice").textContent = text; $("notice").className = error ? "error" : "";}
 function showError(error) {
-  const code = error.code || "request_failed";
-  const text = errors[code] || "تعذر إكمال العملية. استرجع الحالة وراجع المدخلات من رابط التفاصيل.";
-  $("technical-errors").textContent = `آخر خطأ: ${code}`;
+  const code = normalizeErrorCode(error?.code);
+  const text = errorMessage(code);
+  recordTechnicalError(code);
   notice(text, true);
   if($("dialog").open) {let feedback = $("dialog-feedback"); if(!feedback) {feedback = element("p"); feedback.id = "dialog-feedback"; feedback.setAttribute("role", "alert"); $("dialog-body").append(feedback);} feedback.textContent = text;}
 }
@@ -83,12 +149,19 @@ function syncPending() {
 }
 function element(tag, text, className) {const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if(className) el.className = className; return el;}
 function button(text, action) {const el = element("button", text); el.type = "button"; el.onclick = () => Promise.resolve().then(action).catch(showError); return el;}
+function turnContent(turn) {
+  if(turn.content) return turn.content;
+  if(turn.status === "awaiting_owner") return "طلب ديوان تنفيذ الفعل المبين أدناه.";
+  const code = turn.error_code || (turn.status === "complete" ? "answer_empty" : turn.status) || "request_failed";
+  recordTechnicalError(code);
+  return errorMessage(code);
+}
 function render() {
   const box = $("messages"); box.replaceChildren();
   if (!state.turns.length) {box.append(element("p", "اكتب رسالتك لبدء المحادثة.", "empty")); return;}
   for (const turn of state.turns) {
     const user = element("article", undefined, "message user"); user.append(element("strong", "أنت"), element("div", turn.user_request, "content"));
-    const answer = element("article", undefined, "message"); answer.append(element("strong", "ديوان · جواب غير متحقق"), element("div", turn.content || (turn.status === "awaiting_owner" ? "طلب ديوان تنفيذ الفعل المبين أدناه." : errors[turn.error_code] || `تعذر توليد الجواب (${turn.error_code || turn.status})`), "content"));
+    const answer = element("article", undefined, "message"); answer.append(element("strong", "ديوان · جواب غير متحقق"), element("div", turnContent(turn), "content"));
     const statusLabel = {complete:"مكتمل",truncated:"جواب مبتور — لم يكتمل",awaiting_owner:"ينتظر قرارك في فعل محدد",outcome_unknown:"نتيجة الأثر غير مؤكدة",step_limit:"بلغ حد الخطوات",timed_out:"انتهت المهلة",cancelled:"توقفت المتابعة — تبقى آثار الخطوات المكتملة"}[turn.status] || "تعذر التنفيذ";
     answer.append(element("div", `${statusLabel}${turn.usage ? ` · ${turn.usage.input_tokens + turn.usage.output_tokens} وحدة نصية` : ""}`, "meta"));
     const ctx = context(), actions = element("div", undefined, "tools");

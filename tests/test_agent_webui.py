@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import hashlib
 import json
 from pathlib import Path
-import threading
+import subprocess, threading
 import uuid
 
 import pytest
@@ -101,7 +101,7 @@ def test_unified_page_keeps_setup_in_details_and_automates_the_general_chat():
     assert 'item.dataset.session === defaults.session.id' in script
     assert 'button(`مراجعة فعل ${action.name}`, () => reviewAgentAction' in script
     assert 'button("موافقة", () => decideAgentAction' not in script
-    assert 'آخر خطأ: ${code}' in script
+    result = subprocess.run(['node', 'tests/webui_frontend.cjs', 'webui/static/app.js'], cwd=Path(__file__).parents[1], capture_output=True, text=True, timeout=60); assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_default_workspace_uses_stable_ids_not_duplicate_display_names(live):
