@@ -14,6 +14,14 @@ from core.canonical import canonical_bytes, digest
 LIMIT = 32 * 1024 * 1024
 
 
+def input_digest(config, turn):
+    """Bind every model-facing input saved with an agent turn."""
+    return digest({"config": digest(config), "turn_id": turn["turn_id"],
+                   "text": turn["text"], "initial_messages": turn["initial_messages"],
+                   **({"thinking": True} if turn.get("thinking") else {}),
+                   **({"memory": turn["memory"]} if "memory" in turn else {})})
+
+
 class StopSignals:
     def __init__(self, root, workspace, root_identity, workspace_identity, config):
         self.root, self.workspace = root, workspace
@@ -105,8 +113,7 @@ class StopSignals:
                 turn = next((t for t in state["turns"] if t["turn_id"] == turn_id), None)
                 if turn is None:
                     _fail("turn_unknown", "الجولة غير موجودة")
-                expected = digest({"config": digest(self.config), "turn_id": turn_id,
-                                   "text": turn["text"], "initial_messages": turn["initial_messages"]})
+                expected = input_digest(self.config, turn)
                 if turn["input_digest"] != expected:
                     _fail("state_corrupt", "مدخل الجولة لا يطابق بصمته")
                 result = turn["result"]
