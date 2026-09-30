@@ -604,8 +604,12 @@ class LocalApp:
             need(self.generation.acquire(blocking=False), "generation_busy")
             self.active, self.active_payload = (*key, operation), fingerprint
         try:
+            # A new turn freezes the all-project scope in ``turn["memory"]``.
+            # Resume reuses that saved block; rebuilding it here can only make
+            # an unrelated project's later storage failure block the pending
+            # turn before its approved/denied action is settled.
             memory = (self.all_projects_memory()
-                      if action in {"agent_ask", "agent_resume"} and self.is_unified_session(project, key[1])
+                      if action == "agent_ask" and self.is_unified_session(project, key[1])
                       else None)
             session = self.agent_session(project, key[1], memory=memory)
             with self.lock:

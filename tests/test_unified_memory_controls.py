@@ -100,6 +100,37 @@ def test_unrelated_unsafe_memory_cannot_block_action_control(app, action):
     assert not (root / "missing-memory").exists()
 
 
+@pytest.mark.parametrize("kind", ["agent"])
+def test_agent_resume_reuses_frozen_memory_when_an_unrelated_store_breaks(app, kind):
+    ctx = context(app)
+    source = api(app, "create_project", name="مصدر")['id']
+    api(app, "memory_remember", project=source, text="مرجع مصطنع ٧٧")
+    call = ToolCall("remember1", "propose_memory", {"text": "اقتراح مصطنع"})
+
+    def finish(request):
+        assert any("مرجع مصطنع ٧٧" in message.content for message in request.messages)
+        return response("تم")
+
+    app.test_provider.responses = [response("اقتراح", call), finish]
+    turn = uuid.uuid4().hex
+    pending = api(app, "agent_ask", **ctx, turn=turn, message="ما المرجع المصطنع ٧٧؟", files=[])
+    assert pending["status"] == "awaiting_owner"
+    assert any("مرجع مصطنع ٧٧" in message.content
+               for message in app.test_provider.requests[0].messages)
+    view = pending["pending"][0]
+    api(app, "agent_decide", **ctx, action_id=view["action_id"], call_digest=view["call_digest"],
+        expected_revision=view["revision"], approve=False)
+
+    other = api(app, "create_project", name="غير معني")['id']
+    root = app.project(other)
+    (root / "memory").symlink_to(root / "missing-memory")
+
+    resumed = api(app, "agent_resume", **ctx, turn=turn)
+    assert resumed["status"] == "complete"
+    assert len(app.test_provider.requests) == 2
+    assert not (root / "missing-memory").exists()
+
+
 @pytest.mark.parametrize("kind", ["agent", "text"])
 def test_generation_preserves_project_isolation_forget_and_local_only(app, kind):
     action = "agent_ask" if kind == "agent" else "ask"
