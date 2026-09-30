@@ -652,11 +652,49 @@ const cases = {
     await h.run(`chooseProject('${B}')`);
     assert.deepEqual(h.revokedURLs,['blob:fixture-0','blob:fixture-1']);
   },
-  async answer_markup_is_plain_text() {
+  async assistant_answers_render_bounded_safe_markdown() {
     const h=await harness();
-    h.run(`state.turns=[{turn_id:'${T}',user_request:'<script>attack()</script>',content:'<img onerror=attack()>',status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
-    assert.equal(descendants(h.get('messages')).some(x=>x.tagName==='IMG'||x.tagName==='SCRIPT'),false);
-    assert.ok(textOf(h.get('messages')).includes('<img onerror=attack()>'));
+    const content='فقرة **قوية** و*مؤكدة* و`code`\nبسطر ثان\n\n- أول\n- ثان\n\n1. واحد\n2. اثنان\n\n```js\nconst safe = true;\n```\n[آمن](https://example.test/path?q=1)';
+    h.run(`state.turns=[{turn_id:'${T}',user_request:'طلب',content:${JSON.stringify(content)},status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
+    const nodes=descendants(h.get('messages')), tags=nodes.map(x=>x.tagName);
+    for(const tag of ['P','STRONG','EM','CODE','BR','UL','OL','LI','PRE','A']) assert.ok(tags.includes(tag),`missing ${tag}`);
+    const link=nodes.find(x=>x.tagName==='A');
+    assert.equal(link.href,'https://example.test/path?q=1');assert.equal(link.target,'_blank');assert.equal(link.rel,'noopener noreferrer');
+    assert.ok(nodes.filter(x=>['P','LI'].includes(x.tagName)).every(x=>x.attributes.dir==='auto'));
+    assert.ok(textOf(h.get('messages')).includes('const safe = true;'));
+  },
+  async markdown_never_interprets_html_or_unsafe_links() {
+    const h=await harness(),attack='<img src=x onerror=attack()> <script>attack()</script> [js](javascript:attack()) [data](data:text/html,attack) [file](file:///tmp/a)';
+    h.run(`state.turns=[{turn_id:'${T}',user_request:'**مدخل** <b>خام</b>',content:${JSON.stringify(attack)},status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
+    const nodes=descendants(h.get('messages'));
+    assert.equal(nodes.some(x=>['IMG','SCRIPT','B','A'].includes(x.tagName)),false);
+    assert.ok(textOf(h.get('messages')).includes('<script>attack()</script>'));
+    assert.ok(textOf(h.get('messages')).includes('[js](javascript:attack())'));
+    assert.ok(textOf(h.get('messages')).includes('**مدخل** <b>خام</b>'));
+  },
+  async markdown_is_confined_to_answer_content() {
+    const h=await harness();
+    const action={action_id:'act',call_digest:'f'.repeat(64),revision:1,name:'write_file',arguments:{path:'**raw**.txt',content:'[literal](https://example.test)'},state:'prepared'};
+    h.run(`state.mode='agent';state.turns=[{turn_id:'${T}',user_request:'طلب',content:'**answer**',status:'awaiting_owner',usage:{input_tokens:1,output_tokens:1},steps:[{index:0,thinking:'*thought*',tool_results:[{name:'read_file',status:'ok',content:'**tool** [literal](https://example.test)'}]}],pending:[${JSON.stringify(action)}]}];render()`);
+    const message=h.get('messages'), nodes=descendants(message);
+    assert.equal(nodes.filter(x=>x.tagName==='STRONG'&&textOf(x)==='answer').length,1);
+    const literalPre=nodes.filter(x=>x.tagName==='PRE').map(textOf);
+    assert.ok(literalPre.includes('**tool** [literal](https://example.test)'));
+    assert.ok(literalPre.includes('*thought*'));
+    assert.equal(nodes.filter(x=>x.tagName==='A').length,0);
+    h.run(`reviewAgentAction({project:'${A}',session:'${SA}'},'${T}',${JSON.stringify(action)})`);
+    const dialogNodes=descendants(h.get('dialog-body'));
+    assert.ok(dialogNodes.filter(x=>x.tagName==='PRE').some(x=>textOf(x).includes('**raw**.txt')));
+    assert.equal(dialogNodes.some(x=>['A','EM','STRONG'].includes(x.tagName)),false);
+  },
+  async markdown_dom_growth_has_a_fixed_limit() {
+    for(const content of [Array.from({length:5000},(_,i)=>`- item ${i}`).join('\n'),Array.from({length:5000},(_,i)=>`line ${i}`).join('\n')]) {
+      const h=await harness();
+      h.run(`state.turns=[{turn_id:'${T}',user_request:'طلب',content:${JSON.stringify(content)},status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
+      const markdown=descendants(h.get('messages')).find(x=>x.className==='content markdown-answer');
+      assert.ok(markdown);assert.ok(descendants(markdown).length<=2050);
+      assert.ok(textOf(markdown).includes(content.includes('- item')?'item 4999':'line 4999'));
+    }
   },
 };
 

@@ -149,6 +149,83 @@ function syncPending() {
 }
 function element(tag, text, className) {const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if(className) el.className = className; return el;}
 function button(text, action) {const el = element("button", text); el.type = "button"; el.onclick = () => Promise.resolve().then(action).catch(showError); return el;}
+const MARKDOWN_NODE_LIMIT = 2048;
+function safeMarkdownLink(value) {
+  return /^https?:\/\/[^\s\u0000-\u001f\u007f<>"'`]+$/i.test(value) ? value : null;
+}
+function appendMarkdownText(parent, text, budget) {
+  if(!text) return;
+  parent.append(document.createTextNode(text)); budget.nodes += 1;
+}
+// محلّلٌ محدود لا يحقن HTML: مسحٌ واحد، بلا تداخل أو اعتماد خارجي، وبحدّ ثابت لعقد DOM.
+function appendMarkdownInline(parent, text, budget) {
+  let at = 0, plain = 0;
+  const flush = end => {appendMarkdownText(parent, text.slice(plain, end), budget);};
+  while(at < text.length && budget.nodes < MARKDOWN_NODE_LIMIT) {
+    let end = -1, node = null, next = at + 1;
+    if(text[at] === "\\" && "\\`*_[]()".includes(text[at + 1] || "")) {
+      flush(at); appendMarkdownText(parent, text[at + 1], budget); at += 2; plain = at; continue;
+    }
+    if(text[at] === "`") {
+      end = text.indexOf("`", at + 1);
+      if(end > at + 1) {node = element("code", text.slice(at + 1, end)); next = end + 1;}
+    } else if(text.startsWith("**", at) || text.startsWith("__", at)) {
+      const marker = text.slice(at, at + 2); end = text.indexOf(marker, at + 2);
+      if(end > at + 2) {node = element("strong", text.slice(at + 2, end)); next = end + 2;}
+    } else if(text[at] === "*" || text[at] === "_") {
+      end = text.indexOf(text[at], at + 1);
+      if(end > at + 1) {node = element("em", text.slice(at + 1, end)); next = end + 1;}
+    } else if(text[at] === "[") {
+      const labelEnd = text.indexOf("](", at + 1);
+      end = labelEnd < 0 ? -1 : text.indexOf(")", labelEnd + 2);
+      if(labelEnd > at + 1 && end > labelEnd + 2) {
+        const href = safeMarkdownLink(text.slice(labelEnd + 2, end));
+        if(href) {
+          node = element("a", text.slice(at + 1, labelEnd)); node.href = href;
+          node.target = "_blank"; node.rel = "noopener noreferrer"; next = end + 1;
+        }
+      }
+    }
+    if(node) {flush(at); parent.append(node); budget.nodes += 1; at = next; plain = at;}
+    else at += 1;
+  }
+  flush(text.length);
+}
+function markdownBlock(tag, className) {
+  const block = element(tag, undefined, className); block.setAttribute("dir", "auto"); return block;
+}
+function renderMarkdownAnswer(text) {
+  const root = element("div", undefined, "content markdown-answer"), lines = String(text).replace(/\r\n?/g, "\n").split("\n");
+  const budget = {nodes: 1}; let at = 0;
+  while(at < lines.length) {
+    if(budget.nodes >= MARKDOWN_NODE_LIMIT) {appendMarkdownText(root, lines.slice(at).join("\n"), budget); break;}
+    if(/^ {0,3}```/.test(lines[at])) {
+      const code = [], pre = markdownBlock("pre", "markdown-code"), body = element("code"); at += 1;
+      while(at < lines.length && !/^ {0,3}```\s*$/.test(lines[at])) {code.push(lines[at]); at += 1;}
+      if(at < lines.length) at += 1;
+      body.textContent = code.join("\n"); pre.append(body); root.append(pre); budget.nodes += 2; continue;
+    }
+    if(!lines[at].trim()) {at += 1; continue;}
+    const unordered = lines[at].match(/^ {0,3}[-+*]\s+(.+)$/), ordered = lines[at].match(/^ {0,3}\d+[.)]\s+(.+)$/);
+    if(unordered || ordered) {
+      const list = markdownBlock(ordered ? "ol" : "ul");
+      while(at < lines.length && budget.nodes < MARKDOWN_NODE_LIMIT) {
+        const item = lines[at].match(ordered ? /^ {0,3}\d+[.)]\s+(.+)$/ : /^ {0,3}[-+*]\s+(.+)$/);
+        if(!item) break;
+        const li = markdownBlock("li"); appendMarkdownInline(li, item[1], budget); list.append(li); budget.nodes += 1; at += 1;
+      }
+      root.append(list); budget.nodes += 1; continue;
+    }
+    const paragraph = markdownBlock("p"); let hasLine = false;
+    while(at < lines.length && budget.nodes < MARKDOWN_NODE_LIMIT && lines[at].trim() && !/^ {0,3}```/.test(lines[at]) &&
+      !/^ {0,3}(?:[-+*]\s+|\d+[.)]\s+)/.test(lines[at])) {
+      if(hasLine) {paragraph.append(element("br")); budget.nodes += 1;}
+      appendMarkdownInline(paragraph, lines[at], budget); at += 1; hasLine = true;
+    }
+    root.append(paragraph); budget.nodes += 1;
+  }
+  return root;
+}
 function turnContent(turn) {
   if(turn.content) return turn.content;
   if(turn.status === "awaiting_owner") return "طلب ديوان تنفيذ الفعل المبين أدناه.";
@@ -161,7 +238,8 @@ function render() {
   if (!state.turns.length) {box.append(element("p", "اكتب رسالتك لبدء المحادثة.", "empty")); return;}
   for (const turn of state.turns) {
     const user = element("article", undefined, "message user"); user.append(element("strong", "أنت"), element("div", turn.user_request, "content"));
-    const answer = element("article", undefined, "message"); answer.append(element("strong", "ديوان · جواب غير متحقق"), element("div", turnContent(turn), "content"));
+    const answerText = turnContent(turn), answerContent = turn.content ? renderMarkdownAnswer(answerText) : element("div", answerText, "content");
+    const answer = element("article", undefined, "message"); answer.append(element("strong", "ديوان · جواب غير متحقق"), answerContent);
     const statusLabel = {complete:"مكتمل",truncated:"جواب مبتور — لم يكتمل",awaiting_owner:"ينتظر قرارك في فعل محدد",outcome_unknown:"نتيجة الأثر غير مؤكدة",step_limit:"بلغ حد الخطوات",timed_out:"انتهت المهلة",cancelled:"توقفت المتابعة — تبقى آثار الخطوات المكتملة"}[turn.status] || "تعذر التنفيذ";
     answer.append(element("div", `${statusLabel}${turn.usage ? ` · ${turn.usage.input_tokens + turn.usage.output_tokens} وحدة نصية` : ""}`, "meta"));
     const ctx = context(), actions = element("div", undefined, "tools");
