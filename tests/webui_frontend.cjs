@@ -236,7 +236,7 @@ const cases = {
 
     await h.get('memory').onclick();body=h.get('dialog-body');
     const forget=descendants(body).find(x=>x.tagName==='BUTTON'&&x.textContent==='انسَ');forget.focus();await forget.onclick();await tick();
-    const receipt=descendants(body).find(x=>x.textContent.startsWith('نُسي. الإيصال:'));
+    const receipt=descendants(body).find(x=>x.tagName==='P'&&textOf(x).startsWith('نُسي. الإيصال:'));
     assert.ok(receipt);assert.equal(receipt.tabIndex,-1);assert.equal(h.active(),receipt);assert.notEqual(h.active(),h.run('document.body'));
   },
   async closing_a_dialog_restores_its_connected_opener_for_button_and_escape() {
@@ -390,6 +390,14 @@ const cases = {
     await yes.onclick();await tick();
     assert.equal(review.isConnected,false);assert.equal(h.active(),h.get('message'));
   },
+  async approval_hash_with_numeric_prefix_is_isolated_from_its_arabic_label() {
+    const digest='8eee12b'+'a'.repeat(57),h=await harness();h.run("setMode('agent')");
+    h.run(`reviewAgentAction(context(),'${T}',{action_id:'a',call_digest:'f',revision:1,name:'run_command',arguments:{},input_snapshot_sha256:'${digest}'})`);
+    const hash=descendants(h.get('dialog-body')).find(x=>x.className==='hash');
+    assert.equal(hash.tagName,'BDI');assert.equal(hash.attributes.dir,'ltr');assert.equal(hash.textContent,digest);
+    assert.equal(hash.textContent[0],'8');assert.equal(hash.parent.attributes.dir,'rtl');
+    assert.ok(textOf(hash.parent).includes('بصمة نسخة المدخلات:'));assert.equal(hash.parent.className,'hash-line');
+  },
   async stale_agent_approval_cannot_apply_to_another_project() {
     const h=await harness();h.run("setMode('agent')");
     h.run(`reviewAgentAction(context(),'${T}',{action_id:'a',call_digest:'f',revision:1,name:'write_file',arguments:{}})`);
@@ -436,6 +444,18 @@ const cases = {
     await descendants(h.get('dialog-body')).find(x=>x.tagName==='BUTTON').onclick();
     assert.ok(textOf(h.get('dialog-body')).includes('إيصال الرجوع محفوظ'));
     assert.ok(textOf(h.get('dialog-body')).includes('قد يحمل الملف تعديلات لاحقة'));
+  },
+  async forgotten_memory_receipt_with_numeric_prefix_is_isolated_from_its_arabic_label() {
+    const digest='185db3edd'+'b'.repeat(55),h=await harness({
+      memory:()=>({items:[{item_id:'memory-1',text:'مصطنع',approved_at:'2026-09-30T00:00:00Z'}],receipts:[]}),
+      memory_forget:()=>({receipt:{sha256:digest,references:[]}}),
+    });
+    await h.get('memory').onclick();
+    await descendants(h.get('dialog-body')).find(x=>x.tagName==='BUTTON'&&x.textContent==='انسَ').onclick();
+    const hash=descendants(h.get('dialog-body')).find(x=>x.className==='hash');
+    assert.equal(hash.tagName,'BDI');assert.equal(hash.attributes.dir,'ltr');assert.equal(hash.textContent,digest);
+    assert.equal(hash.textContent[0],'1');assert.equal(hash.parent.attributes.dir,'rtl');
+    assert.ok(textOf(hash.parent).includes('نُسي. الإيصال:'));assert.equal(hash.parent.className,'hash-line');
   },
   async agent_file_markup_is_plain_text_and_blob_is_revoked() {
     const content='<script>steal()</script>',h=await harness({agent_read:()=>({path:'out.txt',content})});
@@ -662,7 +682,9 @@ const cases = {
 
 (async()=>{
   const output={scope:'node_fake_dom_behavior_only',browser_rendering:'not_tested',error_codes_scanned:emittedErrorCodes.size,checks:[]};
-  for(const [name,test] of Object.entries(cases)) {
+  const selected = process.argv[3] ? Object.entries(cases).filter(([name])=>name===process.argv[3]) : Object.entries(cases);
+  if(process.argv[3] && !selected.length) {process.stderr.write(`unknown check: ${process.argv[3]}\n`);process.exitCode=2;return;}
+  for(const [name,test] of selected) {
     try {await test();output.checks.push({name,passed:true});}
     catch(error) {output.checks.push({name,passed:false,reason:error.message});}
   }

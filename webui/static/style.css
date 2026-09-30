@@ -3,3 +3,4 @@
 @media(max-width:780px){main{padding:18px 14px}.top{align-items:flex-start}h1{font-size:21px}#details-panel>aside{position:fixed;top:64px;left:10px;right:10px;width:auto;max-height:calc(100dvh - 80px)}#composer{position:sticky}.empty{padding:30px 0}.message{padding:16px}.message.user{margin-left:0}}
 
 #files input[type="checkbox"]{width:auto}#dialog-feedback{color:var(--danger)}
+.hash-line{direction:rtl}.hash{unicode-bidi:isolate}

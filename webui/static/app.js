@@ -148,6 +148,12 @@ function syncPending() {
   $("agent-stop").hidden = !stoppableTurn(); $("agent-stop").disabled = state.stopBusy;
 }
 function element(tag, text, className) {const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if(className) el.className = className; return el;}
+function hashLine(label, digest) {
+  const line = element("p", undefined, "hash-line"), hash = element("bdi", digest, "hash");
+  line.setAttribute("dir", "rtl"); hash.setAttribute("dir", "ltr");
+  line.append(element("span", label), document.createTextNode(" "), hash);
+  return line;
+}
 function button(text, action) {const el = element("button", text); el.type = "button"; el.onclick = () => Promise.resolve().then(action).catch(showError); return el;}
 function turnContent(turn) {
   if(turn.content) return turn.content;
@@ -273,7 +279,7 @@ function reviewAgentAction(ctx, turn, action) {
   const epoch = state.epoch, ticket = ++state.dialogEpoch, body = dialog("قرار لفعل محدد");
   body.append(element("p", action.name), element("pre", JSON.stringify(action.arguments || {}, null, 2)));
   body.append(element("p", "الموافقة تخص هذا الفعل ومدخلاته المثبتة وحدها. لا تمنح إذنًا لأفعال لاحقة."));
-  if(action.input_snapshot_sha256) body.append(element("p", `بصمة نسخة المدخلات: ${action.input_snapshot_sha256}`, "hash"));
+  if(action.input_snapshot_sha256) body.append(hashLine("بصمة نسخة المدخلات:", action.input_snapshot_sha256));
   if(action.input_files?.length) body.append(element("pre", JSON.stringify(action.input_files, null, 2)));
   if(action.input_files_truncated) body.append(element("p", `تضم النسخة ${action.input_files_count} ملفًا؛ المعروض أول 64 ملفًا فقط.`));
   const buttons = [];
@@ -606,7 +612,7 @@ $("memory").onclick = async () => {
       row.append(button("انسَ", async () => {
         const out = await api("memory_forget", {project, item_id: item.item_id}); if(!currentDialog(epoch, ticket)) return;
         const refs = out.receipt.references || [];
-        const forgotten = element("p", `نُسي. الإيصال: ${out.receipt.sha256}`, "hash"); forgotten.tabIndex = -1;
+        const forgotten = hashLine("نُسي. الإيصال:", out.receipt.sha256); forgotten.tabIndex = -1;
         row.replaceChildren(forgotten,
           element("p", refs.length ? `رآه النموذج في ${refs.length} جولة. ما قاله فيها يبقى في تاريخها المختوم، وحذف تلك المحادثات بيدك.` : "لم يدخل سياق أيّ جولة."));
         if(refs.length) row.append(element("pre", refs.join("\n")));
