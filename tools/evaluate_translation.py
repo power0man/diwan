@@ -18,26 +18,21 @@ from pathlib import Path
 import platform
 import shlex
 import sys
-import urllib.request
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from evaluation.translation_runner import run_bank  # noqa: E402
+from tools.model_digest import (ModelDigestError, pin_model_digest, resolve_model_digest,
+                                verify_model_digest)  # noqa: E402
 
 REGISTRY = ROOT / "registry" / "agents.json"
 
 
-def _digest(model: str, base: str = "http://127.0.0.1:11434") -> str | None:
-    """بصمةُ النموذج المثبَّت كما يعرضها Ollama، فالوسمُ وحده يتغيّر بسحبٍ جديد."""
-    try:
-        with urllib.request.urlopen(base + "/api/tags", timeout=10) as response:
-            models = json.loads(response.read().decode("utf-8"))["models"]
-    except (OSError, ValueError, KeyError):
-        return None
-    wanted = model if ":" in model else model + ":latest"
-    return next((m.get("digest") for m in models if m.get("name") == wanted), None)
+def _digest(model: str) -> str | None:
+    """غلافُ توافقٍ لاختبارات المُشغِّل؛ الحلُّ الواحد في ``tools.model_digest``."""
+    return resolve_model_digest(model)
 
 
 def _interpreter() -> str:
@@ -79,15 +74,17 @@ def main(argv=None) -> int:
         return 1
     from providers.ollama import SAMPLING_SEED, OllamaProvider
     # البصمةُ من Ollama قبل أيّ نداءٍ وبعد آخره، ولا تقريرَ بدونها أو إن تغيّرت (على نسق evaluate_memory)
-    model_version = _digest(args.model)
-    if not model_version or (args.model_version and args.model_version != model_version):
-        code = "model_digest_unresolved" if not model_version else "model_version_mismatch"
-        print(json.dumps({"status": "refused", "code": code}, ensure_ascii=False))
+    try:
+        model_version = pin_model_digest(args.model, args.model_version, resolver=_digest)
+    except ModelDigestError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 1
     report = run_bank(OllamaProvider(args.model), model=args.model, model_version=model_version,
                       max_steps=args.max_steps, deadline_s=args.deadline_s)
-    if _digest(args.model) != model_version:
-        print(json.dumps({"status": "refused", "code": "model_digest_drifted"}, ensure_ascii=False))
+    try:
+        verify_model_digest(args.model, model_version, resolver=_digest)
+    except ModelDigestError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 1
     report.update(agent=args.agent, date=datetime.date.today().isoformat(),
                   engine={"provider": "ollama", "model": args.model, "model_version": model_version,

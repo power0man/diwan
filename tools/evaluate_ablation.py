@@ -25,6 +25,7 @@ if str(ROOT) not in sys.path:
 
 from evaluation.ablation import (RUNNER_VERSION, AblationError, _sha, aggregate_seed_rows, arm,  # noqa: E402
                                  auto_checked, judge, protocol, run_seeded_arm, seed_values)
+from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest  # noqa: E402
 from tools.sample_bank import load_capability_suites, stratified  # noqa: E402
 
 
@@ -85,7 +86,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--component", required=True, choices=sorted(protocol()["components"]))
     parser.add_argument("--model", required=True)
-    parser.add_argument("--model-version", default="unspecified")
+    parser.add_argument("--model-version", help="بصمةُ النموذج المتوقَّعة؛ تُقارَن بما يعرضه Ollama")
     parser.add_argument("--bank-open", type=Path, default=ROOT / "evaluation/banks/kimi_v1/open")
     parser.add_argument("--sample-target", type=int)
     parser.add_argument("--seeds", type=int, default=3,
@@ -103,13 +104,23 @@ def main(argv=None) -> int:
         return 2
     from providers.ollama import OllamaProvider
     try:
+        model_version = pin_model_digest(args.model, args.model_version)
+    except ModelDigestError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        return 1
+    try:
         report = run_component(args.component, OllamaProvider(args.model), model=args.model,
-                               model_version=args.model_version, bank_open=args.bank_open,
+                               model_version=model_version, bank_open=args.bank_open,
                                sample_target=args.sample_target, salt=args.salt, sandbox=not args.no_sandbox,
                                seeds=seeds)
     except AblationError as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2
+    try:
+        verify_model_digest(args.model, model_version)
+    except ModelDigestError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        return 1
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     verdict = report["judgment"]
