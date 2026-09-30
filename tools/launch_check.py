@@ -25,12 +25,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import tempfile
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, asdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -44,6 +46,12 @@ CAMEL_DB_COMMAND = "uv run camel_data -i morphology-db-msa-r13"
 DEFAULT_BASE_URL = "http://127.0.0.1:11434"
 NOTE_TEXT = "مرحبًا بديوان على هذا الجهاز"
 TASK = "اقرأ الملف notes.txt بأداة read_file ثم أخبرني في جملةٍ واحدة بما فيه."
+UNRECORDED = "unrecorded"
+PUBLIC_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/+-]{0,127}\Z")
+MEASUREMENT_LIMITS = (
+    "launch_readiness_not_model_quality",
+    "hardware_identity_and_capacity_not_collected_automatically",
+)
 
 
 @dataclass(frozen=True)
@@ -257,17 +265,68 @@ def exit_code(steps: list[Step]) -> int:
     return 0
 
 
+def _public_label(value: str) -> str:
+    """Keep report metadata single-line and intentionally non-descriptive."""
+    if not PUBLIC_LABEL.fullmatch(value):
+        raise argparse.ArgumentTypeError("القيمةُ يجب أن تكون وسمًا عامًا قصيرًا بلا فراغات")
+    return value
+
+
+def _utc_date() -> str:
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def _git_commit(root: Path) -> str:
+    """Return only a public commit identifier; never include git diagnostics or paths."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--verify", "HEAD^{commit}"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return UNRECORDED
+    commit = result.stdout.strip().lower()
+    if result.returncode or re.fullmatch(r"[0-9a-f]{40}", commit) is None:
+        return UNRECORDED
+    return commit
+
+
+def evidence_metadata(root: Path, *, agent: str, engine: str, hardware: str) -> dict:
+    """Public provenance for a saved launch report, without automatic host discovery."""
+    return {
+        "agent": agent,
+        "date": _utc_date(),
+        "git_commit": _git_commit(root),
+        "engine": engine,
+        "hardware": {
+            "description": hardware,
+            "measurement_limits": ["hardware_identity_and_capacity_not_collected_automatically"],
+        },
+        "measurement_limits": list(MEASUREMENT_LIMITS),
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--engine", default=DEFAULT_ENGINE)
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
+    parser.add_argument("--agent", default=UNRECORDED, type=_public_label,
+                        help="معرّفُ العميل العام؛ الافتراضي unrecorded")
+    parser.add_argument("--hardware", default=UNRECORDED, type=_public_label,
+                        help="وسمُ عتادٍ عام يكتبه المشغّل؛ لا تجمع الأداة هوية المضيف")
     parser.add_argument("--json", action="store_true", help="تقريرٌ JSON بدل السطور")
     parser.add_argument("--root", default=str(ROOT))
     args = parser.parse_args(argv)
-    steps = run_checks(Path(args.root), engine=args.engine, base_url=args.base_url)
+    root = Path(args.root)
+    steps = run_checks(root, engine=args.engine, base_url=args.base_url)
     code = exit_code(steps)
     if args.json:
-        print(json.dumps({"schema_version": 1, "steps": [asdict(s) for s in steps], "exit_code": code,
+        print(json.dumps({"schema_version": 1, **evidence_metadata(
+                              root, agent=args.agent, engine=args.engine, hardware=args.hardware),
+                          "steps": [asdict(s) for s in steps], "exit_code": code,
                           "verdict": {0: "ready", 3: "unavailable_declared", 1: "failed"}[code]},
                          ensure_ascii=False, indent=2))
     else:
