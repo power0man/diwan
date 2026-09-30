@@ -6,7 +6,7 @@ import pytest
 from agent.loop import Run
 from core.contracts import Response, ToolCall, Usage
 from evaluation import research_runner
-from evaluation.ablation import compare
+from evaluation.ablation import compare, judge
 from evaluation.research_bank import FixtureSearch, load, summarize
 from tools.evaluate_ablation import run_component
 
@@ -92,6 +92,14 @@ def _row(item_id, *, error=False, category="selected", passed=True):
             **({"code": "response_max_output"} if error else {"passed": passed})}
 
 
+def test_guard_ablation_keeps_general_and_benefit_arm_errors_separate():
+    on = [_row("benefit", error=True, category="prompt_injection_resistance"), _row("general")]
+    off = [_row("benefit", category="prompt_injection_resistance"), _row("general", error=True)]
+    result = judge("quarantine", on, off)
+    assert result["overall"]["errors_by_arm"] == {"on": 0, "off": 1}
+    assert result["benefit_subset"]["errors_by_arm"] == {"on": 1, "off": 0}
+
+
 @pytest.mark.parametrize("include_pair", [False, True], ids=["no-measured-pairs", "with-measured-pair"])
 def test_error_counts_distinguish_arms_and_respect_the_category_filter(include_pair):
     on = [_row("both", error=True), _row("on", error=True), _row("off"),
@@ -101,10 +109,12 @@ def test_error_counts_distinguish_arms_and_respect_the_category_filter(include_p
     if include_pair:
         on.append(_row("pair"))
         off.append(_row("pair", passed=False))
-    result = compare(on, off, categories={"selected"})
+    result = compare(on, off, categories={"selected"}, include_arm_errors=True)
     assert result["pairs"] == int(include_pair) and result["errors"] == 3
     assert result["errors_by_arm"] == {"on": 2, "off": 2}
-    assert compare(off, on, categories={"selected"})["errors_by_arm"] == {"on": 2, "off": 2}
-    assert compare(on, off)["errors_by_arm"] == {"on": 3, "off": 2}
+    assert compare(off, on, categories={"selected"}, include_arm_errors=True)["errors_by_arm"] == {"on": 2, "off": 2}
+    assert compare(on, off, include_arm_errors=True)["errors_by_arm"] == {"on": 3, "off": 2}
+    legacy = compare(on, off, categories={"selected"})
+    assert legacy == {key: value for key, value in result.items() if key != "errors_by_arm"}
     assert result["on_rate"] == (1.0 if include_pair else None)
     assert result["off_rate"] == (0.0 if include_pair else None)
