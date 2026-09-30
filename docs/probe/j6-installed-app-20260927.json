@@ -171,7 +171,8 @@
     "Docker execution receipts and the separate runtime backend are outside J6; #23 belongs to Claude.",
     "Native uv tool dependency resolution is not the frozen uv sync environment.",
     "The 4504/61 hosted count below is from source commit 5aae1d31 and is not a result for the review-fix head.",
-    "Docker is not installed in the 2026-09-30 Codex cloud executor; the review-fix container build and volume path remain for hosted Actions."
+    "Docker is not installed in the 2026-09-30 Codex cloud executor; the review-fix container evidence comes from hosted Actions.",
+    "The hosted review-fix run is tied to ad54f43; the following evidence-only commit changes no application, packaging or test source."
   ],
   "http": {
     "installed_command": true,
@@ -210,7 +211,23 @@
       "other": 0,
       "status": "passed"
     },
-    "docker": "not_run_docker_command_not_installed"
+    "docker": {
+      "local": "not_run_docker_command_not_installed",
+      "hosted_status": "passed",
+      "source_commit": "ad54f43b26a1e204d5e5f02c7e6ccb0ffeb2a064",
+      "run": "https://github.com/power0man/diwan/actions/runs/36706605760/job/109858209715",
+      "python": "3.12",
+      "pytest": {
+        "passed": 4507,
+        "skipped": 61,
+        "failed": 0,
+        "seconds": 323.51
+      },
+      "image_build": "passed",
+      "offline_smoke": "passed_with_declared_exit_3",
+      "volume_replacement": "write_and_read_passed_with_synthetic_provider",
+      "fresh_tool_install_outside_checkout": "passed_67_packages"
+    }
   },
   "validation": {
     "container_pytest": {
