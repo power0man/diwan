@@ -1,0 +1,27 @@
+{
+  "agent": "openai/codex",
+  "date": "2026-09-30",
+  "claims": [
+    {
+      "decision": "ق٦٨",
+      "claim": "Nitro غير متاح للمراحل الحالية ولا ينبغي لهذه الجلسة السحابية أن تعتمد عليه",
+      "how_i_tried": "شغلت command -v nvidia-smi ثم nvidia-smi -L في بيئة Codex السحابية",
+      "result": "could_not_test",
+      "evidence": "Q68_ATTEMPT=nvidia-smi-unavailable-in-cloud؛ هذا يثبت حد هذه البيئة فقط ولا يثبت حالة جهاز Nitro"
+    },
+    {
+      "decision": "ق٦٩",
+      "claim": "الواجهة الافتراضية صفحة محادثة واحدة ولا تعرض اختيار المشروع قبل السؤال الأول",
+      "how_i_tried": "حللت index.html وapp.js مباشرة ببرنامج Python مستقل وعددت composer وmessage وتحققت من موضع اختيار المشروع ومسار التهيئة",
+      "result": "held",
+      "evidence": "Q69_ATTEMPT {'composer': 1, 'message': 1, 'project_select_inside_details': True, 'auto_project': True}"
+    },
+    {
+      "decision": "ق٧٠",
+      "claim": "الواجهات المجانية لا تُختبر حيًا دون مفاتيح البيئة ولا يُفترض تفعيل مزود منها",
+      "how_i_tried": "فحصت وجود مفاتيح OLLAMA_API_KEY وHF_TOKEN وGITHUB_TOKEN كقيم منطقية فقط دون طباعة أي قيمة",
+      "result": "could_not_test",
+      "evidence": "Q70_ATTEMPT={'OLLAMA_API_KEY': False, 'HF_TOKEN': False, 'GITHUB_TOKEN': False}؛ لم يُنفذ نداء خارجي"
+    }
+  ]
+}
