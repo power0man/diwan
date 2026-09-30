@@ -4,7 +4,8 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const source = fs.readFileSync(process.argv[2], 'utf8');
-const staticIDs = [...fs.readFileSync(path.join(path.dirname(process.argv[2]),'index.html'),'utf8').matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]);
+const indexSource = fs.readFileSync(path.join(path.dirname(process.argv[2]),'index.html'),'utf8');
+const staticElements = [...indexSource.matchAll(/<([a-z0-9-]+)\b([^>]*\bid="([^"]+)"[^>]*)>/gi)].map(match=>({tag:match[1],attributes:match[2],id:match[3]}));
 const repoRoot = path.resolve(path.dirname(process.argv[2]), '../..');
 
 const pythonErrorSources = [
@@ -109,16 +110,17 @@ class Element {
   constructor(tag = 'div') {
     this.tagName = tag.toUpperCase(); this.children = []; this.style = {}; this.dataset = {};
     this.attributes = {}; this.textContent = ''; this.value = ''; this.disabled = false;
-    this.hidden = false; this.open = false; this.files = []; this.parent = null;
-    this.listeners = {};
+    this.hidden = false; this.open = false; this.files = []; this.parent = null; this.isConnected = true;
+    this.listeners = {}; this.ownerDocument = null;
   }
   append(...nodes) {for(const node of nodes) {node.parent = this; this.children.push(node);}}
-  replaceChildren(...nodes) {this.children = []; this.append(...nodes);}
+  replaceChildren(...nodes) {if(this.ownerDocument && [this,...descendants(this)].includes(this.ownerDocument.activeElement)) this.ownerDocument.activeElement=this.ownerDocument.body; this.children = []; this.append(...nodes);}
   add(node) {this.append(node);}
   setAttribute(key, value) {this.attributes[key] = value;}
-  remove() {if(this.parent) this.parent.children = this.parent.children.filter(x => x !== this);}
+  remove() {if(this.parent) this.parent.children = this.parent.children.filter(x => x !== this);this.isConnected=false;}
   showModal() {this.open = true;}
   close() {this.open = false;}
+  focus() {if(this.ownerDocument) this.ownerDocument.activeElement=this;}
   addEventListener(type, handler) {(this.listeners[type] ||= []).push(handler);}
   set value(value) {this._value=value;if(value===''&&['media-file','upload'].includes(this.id)) this.files=[];}
   get value() {return this._value;}
@@ -137,11 +139,14 @@ const turn = {turn_id:T,user_request:'old request',content:'old answer',status:'
 
 async function harness(routes = {}, options = {}) {
   const nodes = new Map(), calls = [], storage = new Map(Object.entries(options.storage||{})), timers=[], createdURLs=[], revokedURLs=[];
-  for(const id of staticIDs) {const el=new Element(id==='projects'?'select':'div');el.id=id;nodes.set(id,el);}
+  const bodyElement=new Element('body');
+  const document = {activeElement:bodyElement,body:bodyElement,getElementById:id=>nodes.get(id) || [...nodes.values()].flatMap(descendants).find(el=>el.id===id) || null,querySelector:()=>({content:'fixture-csrf'}),
+    createElement:tag=>{const el=new Element(tag);el.ownerDocument=document;return el;},createTextNode:text=>{const el=new Element('#text');el.ownerDocument=document;el.textContent=text;return el;}};
+  bodyElement.ownerDocument=document;
+  for(const spec of staticElements) {const el=new Element(spec.tag);el.id=spec.id;el.ownerDocument=document;for(const match of spec.attributes.matchAll(/([a-z][a-z0-9-]*)="([^"]*)"/gi)) el.setAttribute(match[1],match[2]);nodes.set(spec.id,el);}
   const get = id => nodes.get(id) || [...nodes.values()].flatMap(descendants).find(el=>el.id===id) || null;
   let uuid = 0;
-  const document = {getElementById:get,querySelector:()=>({content:'fixture-csrf'}),
-    createElement:tag=>new Element(tag),createTextNode:text=>{const el=new Element('#text');el.textContent=text;return el;}};
+  document.getElementById=get;
   const sandbox = {document, window:{addEventListener(){}},
     Option:function(text,value) {const el=new Element('option');el.textContent=text;el.value=value;return el;},
     crypto:{randomUUID:()=>String(++uuid).padStart(32,'0')},
@@ -166,7 +171,7 @@ async function harness(routes = {}, options = {}) {
   const context=vm.createContext(sandbox);vm.runInContext(source,context);await tick();
   const run=code=>vm.runInContext(code,context);
   if(options.preset!==false) {run(`state.project='${A}';state.session='${SA}';state.epoch=1;`);get('projects').value=A;}
-  return {get,calls,storage,timers,run,createdURLs,revokedURLs};
+  return {get,calls,storage,timers,run,createdURLs,revokedURLs,active:()=>document.activeElement};
 }
 
 const cases = {
@@ -205,6 +210,43 @@ const cases = {
     const answer=textOf(h.get('messages'));
     assert.match(answer,/[\u0600-\u06ff]/);assert.equal(answer.includes('unsafe_path'),false);
     assert.equal(h.get('technical-errors').textContent,'آخر خطأ: unsafe_path');
+  },
+  async answers_are_exposed_through_a_polite_log() {
+    const h=await harness(),messages=h.get('messages');
+    assert.equal(messages.attributes.role,'log');assert.equal(messages.attributes['aria-live'],'polite');
+    assert.equal(messages.attributes['aria-relevant'],'additions text');
+    h.run(`state.turns=[{turn_id:'${T}',user_request:'سؤال',content:'جواب جديد',status:'complete'}];render()`);
+    assert.ok(textOf(messages).includes('جواب جديد'));
+  },
+  async every_memory_textarea_has_an_accessible_label() {
+    const h=await harness();h.run(`rememberDialog(context(),{turn_id:'${T}',content:'نص محفوظ'})`);
+    const all=descendants(h.get('dialog-body')),field=all.find(x=>x.tagName==='TEXTAREA');
+    const label=all.find(x=>x.tagName==='LABEL'&&x.htmlFor===field?.id);
+    assert.ok(field);assert.ok(field.id);assert.ok(label);assert.match(label.textContent,/[\u0600-\u06ff]/);
+  },
+  async replaced_dialog_content_and_forgotten_memory_keep_logical_focus() {
+    const h=await harness({propose:()=>({proposal_id:'proposal-1'}),review:()=>({path:'draft.txt',sha256:'f'.repeat(64),content:'مسودة'}),
+      memory:()=>({items:[{item_id:'item-1',text:'ذاكرة',approved_at:'2026-09-30'}],receipts:[]}),
+      memory_forget:()=>({receipt:{sha256:'e'.repeat(64),references:[]}})});
+    h.run(`propose(context(),'${T}')`);
+    let body=h.get('dialog-body'),heading=body.children[0],form=descendants(body).find(x=>x.tagName==='FORM');
+    assert.equal(h.active(),heading);assert.equal(heading.tabIndex,-1);
+    const submit=descendants(form).find(x=>x.tagName==='BUTTON');submit.focus();await form.onsubmit(event);
+    heading=body.children[0];assert.equal(heading.textContent,'مراجعة المسودة قبل إنشاء الملف');assert.equal(h.active(),heading);
+
+    await h.get('memory').onclick();body=h.get('dialog-body');
+    const forget=descendants(body).find(x=>x.tagName==='BUTTON'&&x.textContent==='انسَ');forget.focus();await forget.onclick();await tick();
+    const receipt=descendants(body).find(x=>x.textContent.startsWith('نُسي. الإيصال:'));
+    assert.ok(receipt);assert.equal(receipt.tabIndex,-1);assert.equal(h.active(),receipt);assert.notEqual(h.active(),h.run('document.body'));
+  },
+  async closing_a_dialog_restores_its_connected_opener_for_button_and_escape() {
+    const h=await harness({memory:()=>({items:[],receipts:[]})}),opener=h.get('memory');
+    for(const close of ['button','escape']) {
+      opener.focus();await opener.onclick();assert.equal(h.get('dialog').open,true);assert.notEqual(h.active(),opener);
+      if(close==='button') h.get('close-dialog').onclick();
+      else for(const handler of h.get('dialog').listeners.cancel) handler({preventDefault(){}});
+      assert.equal(h.get('dialog').open,false);assert.equal(h.active(),opener);
+    }
   },
   async new_general_session_defaults_to_agent_and_sends_on_agent_route() {
     const h=await harness({projects:()=>({projects:[{id:A,name:'A'}],agent_enabled:true,default_session_mode:'agent'}),

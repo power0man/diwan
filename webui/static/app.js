@@ -1,6 +1,6 @@
 "use strict";
 const $ = id => document.getElementById(id);
-const state = {project: "", session: "", mode: "text", defaultSessionMode: "text", sessionModeChosen: false, mediaEnabled: false, urls: [], busy: false, stopBusy: false, runningTurn: null, epoch: 0, turns: [], selected: new Set(), before: 0, pending: null, poll: 0, dialogEpoch: 0};
+const state = {project: "", session: "", mode: "text", defaultSessionMode: "text", sessionModeChosen: false, mediaEnabled: false, urls: [], busy: false, stopBusy: false, runningTurn: null, epoch: 0, turns: [], selected: new Set(), before: 0, pending: null, poll: 0, dialogEpoch: 0, dialogReturnFocus: null};
 const token = document.querySelector('meta[name="diwan-token"]').content;
 const uuid = () => crypto.randomUUID().replaceAll("-", "");
 const errors = {
@@ -500,11 +500,12 @@ $("message").addEventListener("keydown", event => {
 $("release-pending").onclick = () => {sessionStorage.removeItem(pendingKey()); syncPending(); notice("يمكنك مراجعة الرسالة وإرسال طلب جديد.");};
 $("older").onclick = async () => {try {const epoch = state.epoch, data = await api("history", {...context(), before: state.before}); if(epoch !== state.epoch || data.status === "running") return; state.turns = [...data.turns, ...state.turns]; state.before = data.before; $("older").hidden = !data.before; render();} catch(e) {showError(e);}};
 function clearPreviewURLs() {for(const url of state.urls) URL.revokeObjectURL(url); state.urls = [];}
-function dialog(title) {clearPreviewURLs(); const body = $("dialog-body"); body.replaceChildren(element("h2", title)); if(!$("dialog").open) $("dialog").showModal(); return body;}
-function dismissDialog() {clearPreviewURLs(); ++state.dialogEpoch; $("dialog").close();}
+function dialog(title) {clearPreviewURLs(); const body = $("dialog-body"), heading = element("h2", title); heading.tabIndex = -1; body.replaceChildren(heading); if(!$("dialog").open) {state.dialogReturnFocus = document.activeElement; $("dialog").showModal();} heading.focus(); return body;}
+function restoreDialogFocus() {const target = state.dialogReturnFocus; state.dialogReturnFocus = null; if(target?.isConnected && !target.disabled) target.focus();}
+function dismissDialog() {clearPreviewURLs(); ++state.dialogEpoch; $("dialog").close(); restoreDialogFocus();}
 function currentDialog(epoch, ticket) {return state.epoch === epoch && state.dialogEpoch === ticket;}
 $("close-dialog").onclick = dismissDialog;
-$("dialog").addEventListener("cancel", () => {clearPreviewURLs(); ++state.dialogEpoch;});
+$("dialog").addEventListener("cancel", event => {event.preventDefault?.(); dismissDialog();});
 async function loadFiles(project = state.project, epoch = state.epoch) {
   const data = await api("files", {project}); if(epoch !== state.epoch) return;
   $("files").replaceChildren();
@@ -578,7 +579,7 @@ $("preferences").onclick = async () => {
 function rememberDialog(ctx, turn) {
   const epoch = state.epoch, ticket = ++state.dialogEpoch, body = dialog("تذكّر هذا في ذاكرة المشروع");
   body.append(element("p", "يُحفظ بموافقتك في ذاكرة هذا المشروع وحده، ويدخل سياق الطلبات الجديدة فيه محجورًا بياناتٍ لا تعليمات. عدّل النص ليبقى ما يفيد لاحقًا."));
-  const field = element("textarea"); field.rows = 6; field.maxLength = 2000; field.value = (turn.content || "").slice(0, 2000);
+  const field = element("textarea"), labelEl = element("label", "النص الذي سيُحفظ في ذاكرة المشروع"); field.id = "memory-text"; labelEl.htmlFor = field.id; field.rows = 6; field.maxLength = 2000; field.value = (turn.content || "").slice(0, 2000);
   const save = button("احفظ في الذاكرة", async () => {
     if(!currentDialog(epoch, ticket)) return;
     if(!field.value.trim()) {showError({code: "text_invalid_memory"}); return;}
@@ -588,7 +589,7 @@ function rememberDialog(ctx, turn) {
       if(currentDialog(epoch, ticket)) {dismissDialog(); notice("حُفظ في ذاكرة المشروع. يدخل الطلبات الجديدة وحدها، وتستطيع نسيانه من «ذاكرة هذا المشروع».");}
     } finally {save.disabled = false;}
   });
-  body.append(field, save);
+  body.append(labelEl, field, save);
 }
 $("memory").onclick = async () => {
   if(!state.project) {notice("اختر مشروعًا أولًا.", true); return;}
@@ -603,9 +604,11 @@ $("memory").onclick = async () => {
       row.append(button("انسَ", async () => {
         const out = await api("memory_forget", {project, item_id: item.item_id}); if(!currentDialog(epoch, ticket)) return;
         const refs = out.receipt.references || [];
-        row.replaceChildren(element("p", `نُسي. الإيصال: ${out.receipt.sha256}`, "hash"),
+        const forgotten = element("p", `نُسي. الإيصال: ${out.receipt.sha256}`, "hash"); forgotten.tabIndex = -1;
+        row.replaceChildren(forgotten,
           element("p", refs.length ? `رآه النموذج في ${refs.length} جولة. ما قاله فيها يبقى في تاريخها المختوم، وحذف تلك المحادثات بيدك.` : "لم يدخل سياق أيّ جولة."));
         if(refs.length) row.append(element("pre", refs.join("\n")));
+        forgotten.focus();
       }));
       body.append(row);
     }
