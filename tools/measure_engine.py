@@ -32,13 +32,66 @@ from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
 from providers.ollama import OllamaProvider
 
 
+_TRAILING_PUNCTUATION = ".,،؛;:!?؟…"
+
+
+def _trim_terminal_punctuation(value: str) -> str:
+    """قراءةٌ تفسيرية فقط؛ لا تغيّر حكم `exact` الصارم (ق٥٧)."""
+    return value.rstrip().rstrip(_TRAILING_PUNCTUATION).rstrip()
+
+
+def _lenient_exact_recovery(result: dict) -> bool:
+    """هل كان الرسوب الصارم سببه الوحيد ترقيمًا ختاميًّا في فحص exact؟"""
+    if result.get("status") != "complete" or result.get("automatic_pass") is not False:
+        return False
+    checks = result.get("checks")
+    answer = result.get("answer")
+    if not isinstance(checks, list) or not checks or not isinstance(answer, str):
+        return False
+    recovered = False
+    for check in checks:
+        if check.get("passed") is True:
+            continue
+        if check.get("kind") != "exact" or not isinstance(check.get("value"), str):
+            return False
+        if _trim_terminal_punctuation(answer) != _trim_terminal_punctuation(check["value"]):
+            return False
+        recovered = True
+    return recovered
+
+
+def _summary_counts(summary: dict, offered: int) -> tuple[int, int, int]:
+    """يرفض تقريرًا يجعل خطأَ التنفيذ نجاحًا أو يغيّر مقام العيّنة."""
+    names = ("cases", "automatic_passes", "automatic_failures",
+             "without_checks", "execution_errors")
+    if any(type(summary.get(name)) is not int or summary[name] < 0 for name in names):
+        raise CapabilityError("report.summary", "measurement_counts_invalid",
+                              "عدادات التقرير أعداد صحيحة غير سالبة مطلوبة")
+    passes = summary["automatic_passes"]
+    failures = summary["automatic_failures"]
+    without_checks = summary["without_checks"]
+    errors = summary["execution_errors"]
+    judged = passes + failures
+    if (summary["cases"] != offered
+            or passes + failures + without_checks + errors != offered
+            or passes > judged or judged > offered):
+        raise CapabilityError("report.summary", "measurement_counts_invalid",
+                              "الحالات والأخطاء والأحكام لا تطابق المقام المعروض")
+    return passes, failures, judged
+
+
+def _rate(numerator: int, denominator: int) -> float | None:
+    return round(numerator / denominator, 4) if denominator else None
+
+
 def _tier_of(suite_id: str) -> str:
     body = suite_id[len("sample_"):] if suite_id.startswith("sample_") else suite_id
     return body.split("__")[0] if "__" in body else "غير_مصنّف"
 
 
 def measure(suites, model: str, out_dir: Path, *,
-            max_output: int, deadline_s: int, model_version: str) -> dict:
+            max_output: int, deadline_s: int, model_version: str,
+            provider=None) -> dict:
     """يقيس ويُبلغ بمقامٍ **ثابت**: عددُ الحالات المعروضة، لا ما تصادف أن قِيس.
 
     العلّةُ التي يعالجها هذا: `judged` كان خاصيّةً للمحرّك لا للبنك. فالحالةُ
@@ -54,7 +107,7 @@ def measure(suites, model: str, out_dir: Path, *,
       - `pass_rate_judged = passes / judged` — ما كان يُنشر، ويبقى للتشخيص وحده.
     والفرقُ بينهما هو `coverage`، ويُنشر معهما.
     """
-    provider = OllamaProvider(model)
+    provider = provider or OllamaProvider(model)
     if "cloud" in model or "oss" in model:
         setattr(provider, "allow_thinking", True)
     per_tier = defaultdict(lambda: defaultdict(int))
@@ -69,24 +122,28 @@ def measure(suites, model: str, out_dir: Path, *,
         try:
             report = evaluate_suite(suite, provider, out_dir, max_output=max_output,
                                     deadline_s=deadline_s, model_version=model_version)
+            s = report["summary"]
+            passes, _, judged = _summary_counts(s, offered)
         except CapabilityError as exc:
-            failures.append({"suite": suite["suite_id"], "tier": tier,
+            failures.append({"suite_id": suite["suite_id"], "tier": tier,
                              "offered": offered, "code": exc.code})
             per_tier[tier]["lost_to_failed_suite"] += offered
             print(f"[{index}/{len(suites)}] ✗ {suite['suite_id']}: {exc.code} "
                   f"({offered} حالةً تبقى في المقام ولا تُحسب نجاحًا)", flush=True)
             continue
-        s = report["summary"]
-        judged = s["automatic_passes"] + s["automatic_failures"]
+        lenient_recoveries = sum(_lenient_exact_recovery(r)
+                                 for r in report.get("results", []))
         for key in ("cases", "automatic_passes", "automatic_failures",
                     "without_checks", "execution_errors"):
             per_tier[tier][key] += s[key]
         per_tier[tier]["judged"] += judged
+        per_tier[tier]["lenient_exact_recoveries"] += lenient_recoveries
         per_suite.append({"suite_id": suite["suite_id"], "tier": tier,
-                          "offered": offered, "judged": judged, **s})
-        rate = f"{100 * s['automatic_passes'] / offered:.0f}٪" if offered else "—"
+                          "offered": offered, "judged": judged,
+                          "lenient_exact_recoveries": lenient_recoveries, **s})
+        rate = f"{100 * passes / offered:.0f}٪" if offered else "—"
         print(f"[{index}/{len(suites)}] {suite['suite_id']}: {rate} "
-              f"({s['automatic_passes']}/{offered} معروضة، قِيس {judged})", flush=True)
+              f"({passes}/{offered} معروضة، قِيس {judged})", flush=True)
 
     tiers = {}
     for tier, c in per_tier.items():
@@ -99,24 +156,36 @@ def measure(suites, model: str, out_dir: Path, *,
             "without_checks": c["without_checks"],
             "execution_errors": c["execution_errors"],
             "lost_to_failed_suite": c["lost_to_failed_suite"],
-            "pass_rate_offered": round(c["automatic_passes"] / offered, 4) if offered else None,
-            "pass_rate_judged": round(c["automatic_passes"] / judged, 4) if judged else None,
-            "coverage": round(judged / offered, 4) if offered else None,
+            "lenient_exact_recoveries": c["lenient_exact_recoveries"],
+            "pass_rate_offered": _rate(c["automatic_passes"], offered),
+            "pass_rate_judged": _rate(c["automatic_passes"], judged),
+            "coverage": _rate(judged, offered),
         }
     offered = sum(t["offered"] for t in tiers.values())
     judged = sum(t["judged"] for t in tiers.values())
     passes = sum(t["automatic_passes"] for t in tiers.values())
+    lenient_recoveries = sum(t["lenient_exact_recoveries"] for t in tiers.values())
+    lenient_passes = passes + lenient_recoveries
     return {
         "schema_version": 2, "model": model, "model_version": model_version,
         "suites": len(per_suite), "suites_failed": len(failures), "failures": failures,
         "overall": {
             "offered": offered, "judged": judged, "passes": passes,
-            "pass_rate_offered": round(passes / offered, 4) if offered else None,
-            "pass_rate_judged": round(passes / judged, 4) if judged else None,
-            "coverage": round(judged / offered, 4) if offered else None,
+            "pass_rate_offered": _rate(passes, offered),
+            "pass_rate_judged": _rate(passes, judged),
+            "coverage": _rate(judged, offered),
             "without_checks": sum(t["without_checks"] for t in tiers.values()),
             "execution_errors": sum(t["execution_errors"] for t in tiers.values()),
             "lost_to_failed_suite": sum(t["lost_to_failed_suite"] for t in tiers.values()),
+        },
+        "exact_readings": {
+            "strict": {"passes": passes,
+                       "pass_rate_offered": _rate(passes, offered),
+                       "pass_rate_judged": _rate(passes, judged)},
+            "lenient": {"passes": lenient_passes,
+                        "pass_rate_offered": _rate(lenient_passes, offered),
+                        "pass_rate_judged": _rate(lenient_passes, judged)},
+            "lost_to_trailing_punctuation": lenient_recoveries,
         },
         "by_tier": tiers, "by_suite": per_suite,
         "elapsed_s": round(time.monotonic() - started, 1),
@@ -167,10 +236,16 @@ def main(argv=None) -> int:
         # مقامين مختلفين، فتُقارن درجتان على بنكين.
         want = {s["suite_id"]: s.get("offered", s.get("cases")) for s in prior["by_suite"]}
         for entry in prior.get("failures", []):
-            want.setdefault(entry.get("suite_id"), entry.get("offered"))
+            suite_id = entry.get("suite_id", entry.get("suite"))
+            if suite_id:
+                want.setdefault(suite_id, entry.get("offered"))
         have = {}
         for p in suites:
             suite = load_suite(p)
+            if suite["suite_id"] in have:
+                print(json.dumps({"error": "suite_id_duplicate",
+                                  "suite": suite["suite_id"]}, ensure_ascii=False))
+                return 2
             have[suite["suite_id"]] = len(suite["cases"])
         if set(want) != set(have):
             print(json.dumps({"error": "suite_set_differs",

@@ -1,9 +1,16 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "probe": "k2_engine_comparison",
   "task": "ك٢",
   "date": "2026-09-25",
   "agent": "anthropic/claude-opus-5",
+  "tool": "tools/compare_engines.py",
+  "command": "python tools/compare_engines.py --probe-dir docs/probe --write",
+  "source_samples": [
+    "k2-qwen3-14b-sample.json",
+    "k2-qwen35-9b-sample.json",
+    "k2-gemma4-sample.json"
+  ],
   "bank": "kimi_v1 v1.1 — عيّنةٌ طبقيّة من الشطر المفتوح",
   "sample": {
     "offered": 376,
@@ -25,6 +32,12 @@
         "tier_a": 0.4695,
         "tier_b": 0.449,
         "tier_c": 0.5538
+      },
+      "exact_readings": {
+        "strict": 0.519,
+        "lenient": 0.559,
+        "lost_to_punctuation": 14,
+        "source": "ك١٦/ق٥٧: عددٌ منشورٌ سابقًا في k12-arabic-specialist-20260925.json؛ أُضيف هنا كي تعاد المقارنة من ملفات العينات العامة بلا نموذج"
       }
     },
     "qwen3.5:9b": {
@@ -38,6 +51,12 @@
         "tier_a": 0.5496,
         "tier_b": 0.4286,
         "tier_c": 0.6
+      },
+      "exact_readings": {
+        "strict": 0.588,
+        "lenient": 0.588,
+        "lost_to_punctuation": 0,
+        "source": "ك١٦/ق٥٧: عددٌ منشورٌ سابقًا في k12-arabic-specialist-20260925.json؛ أُضيف هنا كي تعاد المقارنة من ملفات العينات العامة بلا نموذج"
       }
     },
     "gemma4:latest": {
@@ -51,6 +70,12 @@
         "tier_a": 0.4733,
         "tier_b": 0.3265,
         "tier_c": 0.4615
+      },
+      "exact_readings": {
+        "strict": 0.504,
+        "lenient": 0.534,
+        "lost_to_punctuation": 10,
+        "source": "ك١٦/ق٥٧: عددٌ منشورٌ سابقًا في k12-arabic-specialist-20260925.json؛ أُضيف هنا كي تعاد المقارنة من ملفات العينات العامة بلا نموذج"
       }
     }
   },
@@ -77,7 +102,8 @@
     "الفروقُ دون ٣ نقاطٍ لا تُقرأ ترتيبًا بهذا الحجم.",
     "**البنك نفسُه فيه سبعُ عثراتٍ مؤكَّدة** فُرزت في ك١١ وأُرسلت لإصلاحها (ك١٥)، وإحداها لم تُصلَح بعد. فالقياسُ جرى على نسخةٍ فيها هذه العثرات، وأثرُها واحدٌ على المحرّكات الثلاثة.",
     "هويةُ النماذج أسماءُ خدمةٍ في Ollama لا بصماتِ أوزان.",
-    "وأخطاءُ التنفيذ تفاوتت (٤ و٩ و٢٣)، فـcoverage تفاوتت — ولهذا يُقارن بـpass_rate_offered وحده."
+    "وأخطاءُ التنفيذ تفاوتت (٤ و٩ و٢٣)، فـcoverage تفاوتت — ولهذا يُقارن بـpass_rate_offered وحده.",
+    "قراءةُ exact الصارمة هي الحكم بق٥٧؛ والمشذبة تشخيصٌ لفارق الترقيم، وأعدادها من تدقيق ك١٦ المنشور لا من إعادة تشغيل نموذج."
   ],
   "owner_decision_required": "اعتمادُ المحرّك §٦. وتبعةٌ لا تظهر في الرقم: اعتمادُ Gemma يُخرج عائلةَ Google من التحكيم بموجب §٤ القاعدة ٢، ومنها Gemini أحدُ المطوّرين الثلاثة. ولا يقع هذا على qwen3.5 لأنه عائلةُ المحرّك الحالي."
 }
