@@ -1,0 +1,63 @@
+"""حلُّ بصمة نموذج Ollama وتثبيتُها طوال تشغيلٍ مقيس.
+
+وسمُ النموذج قابلٌ لإعادة التوجيه إلى أوزانٍ أخرى. لذلك يحلُّ مشغّلُ القياس
+البصمةَ من ``/api/tags`` قبل التشغيل، ويرفض البصمةَ المتوقعة المخالفة، ثم
+يعيد الحلَّ بعد التشغيل قبل أن يكتب دليلًا.
+"""
+from __future__ import annotations
+
+import json
+from typing import Callable
+import urllib.request
+
+BASE_URL = "http://127.0.0.1:11434"
+_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+
+class ModelDigestError(RuntimeError):
+    """رفضٌ مسمّى لهويّة نموذجٍ لا تصلح لإسناد دليل قياس."""
+
+    def __init__(self, code: str):
+        super().__init__(code)
+        self.code = code
+
+
+def resolve_model_digest(model: str, *, base_url: str | None = None, timeout: float = 10.0) -> str | None:
+    """أعد بصمة ``model`` كما يعرضها Ollama، أو ``None`` إن لم تُحلّ.
+
+    لا يقرأ النداءُ إعدادات الوكيل من البيئة؛ فالمضيف المحلي المعلن هو حدُّه
+    الافتراضي، ويُمرَّر عنوانٌ آخر صراحةً للاختبار فقط.
+    """
+    request = urllib.request.Request((base_url or BASE_URL).rstrip("/") + "/api/tags")
+    try:
+        with _OPENER.open(request, timeout=timeout) as response:
+            models = json.loads(response.read().decode("utf-8"))["models"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    wanted = model if ":" in model else model + ":latest"
+    for item in models if isinstance(models, list) else ():
+        if isinstance(item, dict) and item.get("name") == wanted:
+            digest = item.get("digest")
+            return digest if isinstance(digest, str) and digest else None
+    return None
+
+
+def pin_model_digest(model: str, expected: str | None = None, *,
+                     resolver: Callable[[str], str | None] | None = None) -> str:
+    """حلُّ البصمة قبل القياس، وارفض الغيابَ أو مخالفةَ المتوقع باسمٍ ثابت."""
+    resolved = (resolver or resolve_model_digest)(model)
+    if resolved is None:
+        raise ModelDigestError("model_digest_unresolved")
+    if expected is not None and expected != resolved:
+        raise ModelDigestError("model_version_mismatch")
+    return resolved
+
+
+def verify_model_digest(model: str, pinned: str, *,
+                        resolver: Callable[[str], str | None] | None = None) -> None:
+    """أعد الحلَّ بعد القياس، ولا تسمح بكتابة دليلٍ إن غابت البصمة أو تغيّرت."""
+    resolved = (resolver or resolve_model_digest)(model)
+    if resolved is None:
+        raise ModelDigestError("model_digest_unresolved")
+    if resolved != pinned:
+        raise ModelDigestError("model_digest_drifted")
