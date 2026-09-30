@@ -61,7 +61,7 @@ from typing import Callable
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from evaluation.external_review import (AUTHOR_FAMILY, DEFAULT_REVIEWERS,  # noqa: E402
+from evaluation.external_review import (AUTHOR_FAMILY, BUDGET_TERMINAL_ERRORS, DEFAULT_REVIEWERS,  # noqa: E402
                                         DEVELOPER_FAMILIES, ENGINE_FAMILY, SUPERSEDED_DIR,
                                         _slug, open_files, review_bank, smoke, summarize)
 from evaluation.multi_system_review import AutomaticReviewError, model_family  # noqa: E402
@@ -684,9 +684,11 @@ def _quota_models(bank: Path, models: list[str], current: set[str]) -> set[str]:
         for path in root.rglob("*.json"):
             if path.relative_to(root).as_posix() not in current:      # سجلُّ ملفٍّ لم يعد في open/ تاريخٌ لا يُحكم به
                 continue
-            if json.loads(path.read_text(encoding="utf-8")).get("error") == "quota_exhausted":
+            error = json.loads(path.read_text(encoding="utf-8")).get("error")
+            if error in BUDGET_TERMINAL_ERRORS:
+                raise AutomaticReviewError(error)
+            if error == "quota_exhausted":
                 spent.add(model)
-                break
     return spent
 
 
@@ -701,7 +703,12 @@ def with_fallback(candidates: list[dict], want: int, run: Callable[[list[dict]],
     fallbacks: list[dict] = []
     chosen = choose_reviewers(candidates, want)
     while True:
-        spent = run(chosen)
+        try:
+            spent = run(chosen)
+        except AutomaticReviewError as exc:
+            if exc.code not in BUDGET_TERMINAL_ERRORS:
+                raise
+            return chosen, fallbacks, exc.code
         if not spent:
             return chosen, fallbacks, None
         for identity in chosen:
@@ -757,6 +764,11 @@ def _smoke_digest(report: dict) -> dict:
             for model, r in report["reviewers"].items()}
 
 
+def _smoke_budget_error(report: dict) -> str | None:
+    return next((r["error"] for r in report["reviewers"].values()
+                 if r["error"] in BUDGET_TERMINAL_ERRORS), None)
+
+
 EXIT_CODES = {"passed": 0, "reviewed": 0, "unavailable": 3}     # وما سواها 1؛ و3 «الواجهةُ غيرُ متاحة» لا «المراجعُ أخطأ»
 
 
@@ -783,10 +795,14 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
         if len(best) % 2:
             pairs.append([best[-1], best[0]])
         runs = []
+        budget_error = None
         with tempfile.TemporaryDirectory() as tmp:
             for index, pair in enumerate(pairs):
                 runs.append(smoke(Path(tmp) / f"pair_{index}", [p["model"] for p in pair], transport,
                                   brief_path=args.brief))
+                budget_error = _smoke_budget_error(runs[-1])
+                if budget_error:
+                    break
         models = {}
         for run in runs:
             for model, result in run["reviewers"].items():
@@ -796,10 +812,13 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
         report = {"schema_version": 1, "probe": "external_review_smoke_every_family",
                   "status": "passed" if all(r["status"] == "passed" for r in runs) else "failed",
                   "backend": transport.describe(), **source, "models": models,
-                  "pairs": [[p["model"] for p in pair] for pair in pairs],
+                  "pairs": [[p["model"] for p in pair] for pair in pairs[:len(runs)]],
+                  "not_attempted_pairs": [[p["model"] for p in pair] for pair in pairs[len(runs):]],
                   "runs": runs, "measurement_limits": free_limits(runs[0]["measurement_limits"], args.backend),
                   "provider_usage": transport.provider_usage,
                   "last_failure_shapes": transport.failures}
+        if budget_error:
+            report["code"] = budget_error
         _mark_unavailable(report, [m["error"] for m in models.values()])
         return report, EXIT_CODES.get(report["status"], 1)
     tmp = tempfile.TemporaryDirectory()
@@ -809,6 +828,9 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
         def run(chosen: list[dict]) -> set[str]:
             report = smoke(Path(tmp.name), [c["model"] for c in chosen], transport, brief_path=args.brief)
             reports.append(report)
+            budget_error = _smoke_budget_error(report)
+            if budget_error:
+                raise AutomaticReviewError(budget_error)
             return {m for m, r in report["reviewers"].items() if r["error"] == "quota_exhausted"}
 
         chosen, fallbacks, failure = with_fallback(candidates, want, run)

@@ -10,6 +10,7 @@ import pytest
 from evaluation.external_review import review_bank, review_file, smoke_bank
 from evaluation.multi_system_review import AutomaticReviewError
 from tools.external_review import OllamaChat, OpenAICompatChat
+from tools import external_review as cli
 
 
 def _review(tmp_path, transport):
@@ -142,3 +143,87 @@ def test_budget_failure_stops_other_models_and_files_without_fabricating_attempt
     assert sum(len(r["attempts"]) for r in records) == 1
     assert sum(r.get("not_attempted_reason") == "earlier_terminal_failure" for r in records) == 3
     assert all(r["error"] == "zero_spend_breach" and r["judgments"] is None for r in records)
+
+
+@pytest.mark.parametrize("code", ["request_too_large", "http_400", "http_413", "http_415", "http_422"])
+def test_request_specific_refusal_keeps_other_files_reviewable(tmp_path, code):
+    bank, brief = _two_files(tmp_path)
+    reviewers = ["deepseek-v4-flash:cloud", "mistral-large-3:675b-cloud"]
+    calls = []
+
+    def transport(model, *args):
+        calls.append(model)
+        if len(calls) == 1:
+            raise AutomaticReviewError(code)
+        return _valid_reply()
+
+    assert review_bank(bank, reviewers, transport, brief_path=brief) == {
+        "reviewed": 3, "skipped": 0, "failed": 1}
+    assert calls == reviewers + reviewers
+    recovered = json.loads((bank / "reviews" / "deepseek-v4-flash_cloud" / "smoke.json").read_text())
+    assert recovered["error"] is None and len(recovered["attempts"]) == 1
+
+
+@pytest.mark.parametrize("mode", ["bank", "smoke", "every-family"])
+@pytest.mark.parametrize("budget_code", [
+    "free_model_required", "free_price_unverified", "free_tier_unverified",
+    "zero_spend_breach", "usage_unavailable", "usage_cost_unavailable", "usage_cost_invalid",
+])
+def test_cli_never_resumes_after_budget_failure_through_fallback_or_another_pair(
+        tmp_path, monkeypatch, capsys, mode, budget_code):
+    models = ["deepseek-ai/DeepSeek-V3.1", "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+              "meta-llama/Llama-3.3-70B-Instruct"]
+    calls = []
+
+    class SyntheticChat:
+        backend = "hf-router"
+        endpoint_host = "router.huggingface.co"
+        provider_usage = []
+        failures = {}
+
+        def describe(self):
+            return {"name": self.backend, "endpoint_host": self.endpoint_host}
+
+        def __call__(self, model, *args):
+            calls.append(model)
+            if len(calls) == 1:
+                raise AutomaticReviewError("quota_exhausted")
+            if len(calls) == 2:
+                raise AutomaticReviewError(budget_code)
+            return _valid_reply()
+
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    monkeypatch.setattr(cli, "build_free_transport", lambda *a, **k: SyntheticChat())
+    bank, brief = _two_files(tmp_path / "evaluation" / "banks")
+    args = ["--backend", "hf-router", "--reviewer", models[0], "--reviewer", models[1],
+            "--fallback", models[2], "--brief", str(brief)]
+    out = tmp_path / "result.json"
+    if mode == "bank":
+        args.insert(0, str(bank))
+    else:
+        args.extend(["--smoke", str(out)])
+        if mode == "every-family":
+            args.append("--every-family")
+    assert cli.main(args) == 1
+    printed = json.loads(capsys.readouterr().out)
+    report = printed if mode == "bank" else json.loads(out.read_text())
+    assert report["status"] == "failed" and report["code"] == budget_code
+    assert calls == models[:2], "No later reviewer request may hide a budget failure"
+    if mode == "every-family":
+        assert report["pairs"] == [models[:2]]
+        assert report["not_attempted_pairs"] == [[models[2], models[0]]]
+        assert len(report["runs"]) == 1
+    else:
+        assert report["fallbacks"] == []
+
+
+def test_fallback_does_not_hide_unrelated_program_errors():
+    candidates = [cli.resolve_reviewer("deepseek-ai/DeepSeek-V3.1"),
+                  cli.resolve_reviewer("meta-llama/Llama-3.3-70B-Instruct")]
+
+    def run(chosen):
+        raise AutomaticReviewError("synthetic_unexpected_error")
+
+    with pytest.raises(AutomaticReviewError) as raised:
+        cli.with_fallback(candidates, 2, run)
+    assert raised.value.code == "synthetic_unexpected_error"

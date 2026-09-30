@@ -73,6 +73,11 @@ BUDGET_TERMINAL_ERRORS = frozenset({
     "free_model_required", "free_price_unverified", "free_tier_unverified",
     "zero_spend_breach", "usage_unavailable", "usage_cost_unavailable", "usage_cost_invalid",
 })
+# A malformed or oversized file cannot improve by repeating that request, but
+# it says nothing about whether this reviewer can handle the next file.
+TERMINAL_MODEL_ERRORS = TERMINAL_TRANSPORT_ERRORS - {
+    "request_too_large", "http_400", "http_413", "http_415", "http_422",
+}
 
 
 def reviewer_family(model: str) -> str:
@@ -318,7 +323,7 @@ def review_bank(bank_dir: Path, reviewers: list[str], transport: Transport, *,
             record = review_file(path, bank_dir, model, families[model], transport,
                                  brief=brief, brief_sha=brief_sha,
                                  blocked_error=budget_error or terminal_models.get(model))
-            if record["error"] in TERMINAL_TRANSPORT_ERRORS:
+            if record["error"] in TERMINAL_MODEL_ERRORS:
                 terminal_models[model] = record["error"]
             if record["error"] in BUDGET_TERMINAL_ERRORS:
                 budget_error = record["error"]
