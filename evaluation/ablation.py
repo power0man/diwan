@@ -121,10 +121,13 @@ def compare(on: list[dict], off: list[dict], *, categories: set[str] | None = No
     if set(off_by_id) != {row["id"] for row in on}:
         raise AblationError("arms_differ", "الذراعان على حالاتٍ مختلفة")
     pairs = errors = both = on_only = off_only = 0
+    errors_by_arm = {"on": 0, "off": 0}
     for row in on:
         if categories is not None and row["category"] not in categories:
             continue
         other = off_by_id[row["id"]]
+        errors_by_arm["on"] += row["status"] != "measured"
+        errors_by_arm["off"] += other["status"] != "measured"
         if row["status"] != "measured" or other["status"] != "measured":
             errors += 1
             continue
@@ -133,13 +136,15 @@ def compare(on: list[dict], off: list[dict], *, categories: set[str] | None = No
         on_only += row["passed"] and not other["passed"]
         off_only += other["passed"] and not row["passed"]
     if not pairs:
-        return {"pairs": 0, "errors": errors, "on_rate": None, "off_rate": None, "effect": None, "ci95": None,
+        return {"pairs": 0, "errors": errors, "errors_by_arm": errors_by_arm,
+                "on_rate": None, "off_rate": None, "effect": None, "ci95": None,
                 "on_only": 0, "off_only": 0}
     n = pairs + 2                                      # Agresti–Min: نصفٌ يُضاف إلى كل خليّةٍ من الأربع
     p10, p01 = (on_only + 0.5) / n, (off_only + 0.5) / n
     centre = p10 - p01
     half = Z95 * math.sqrt(max(p10 + p01 - centre ** 2, 0.0) / n)
-    return {"pairs": pairs, "errors": errors, "on_rate": round((both + on_only) / pairs, 4),
+    return {"pairs": pairs, "errors": errors, "errors_by_arm": errors_by_arm,
+            "on_rate": round((both + on_only) / pairs, 4),
             "off_rate": round((both + off_only) / pairs, 4), "effect": round((on_only - off_only) / pairs, 4),
             "ci95": [round(max(centre - half, -1.0), 4), round(min(centre + half, 1.0), 4)],
             "on_only": on_only, "off_only": off_only}

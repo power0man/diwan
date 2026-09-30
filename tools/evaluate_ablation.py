@@ -49,7 +49,8 @@ def run_component(component: str, provider, *, model: str, model_version: str, b
     config = {"runner_version": RUNNER_VERSION, "component": component, "model": model,
               "model_version": model_version, "arms": spec["arms"], "options": dict(options)}
     if spec["runner"] == "research":
-        from evaluation.research_runner import run_bank
+        from evaluation.research_runner import RUNNER_VERSION as RESEARCH_RUNNER_VERSION, run_bank
+        config["research_runner_version"] = RESEARCH_RUNNER_VERSION
         rows = {side: run_bank(provider, model=model, model_version=model_version, **options,
                                **spec["arms"][side])["results"] for side in ("on", "off")}
         config["bank"] = "evaluation/suites/research_v1.json"
