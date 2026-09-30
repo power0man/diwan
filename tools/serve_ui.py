@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""تشغيل واجهة ديوان على 127.0.0.1؛ لا خدمة دائمة ولا تنزيل نموذج."""
+"""تشغيل واجهة ديوان؛ محلية افتراضيًا ولا تثق بوكيل إلا بأصل عام صريح."""
 import argparse
 import os
 from pathlib import Path
@@ -53,6 +53,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT / "var/daily-ui")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--bind", default="127.0.0.1",
+                        help="عنوان IPv4 للربط؛ الافتراضي loopback، والربط العام يتطلب --public-origin")
+    parser.add_argument("--public-origin",
+                        help="أصل HTTPS عام كامل مثل https://diwan.example؛ لا تُقرأ ترويسات الوكيل للثقة")
     parser.add_argument("--provider", choices=("local", "mlx"), default=os.environ.get("DIWAN_PROVIDER", "local"))
     parser.add_argument("--runtime-receipt", type=Path,
                         help="إيصال bootstrap صريح لتفعيل أدوات الحاوية؛ لا تشغيل Docker عند فتح الواجهة")
@@ -104,8 +108,9 @@ def main():
                        web_search=(SearxngBackend(args.web_search_url) if args.web_search_url else None),
                        analysis_receipt=args.analysis_receipt,
                        docker_executable=shutil.which("docker") or "/usr/local/bin/docker")
-        server = Server(app, args.port)
-        print(f"ديوان المحلي: {server.origin}", flush=True)
+        server = Server(app, args.port, args.bind, args.public_origin)
+        label = "ديوان العرض" if getattr(server, "public_origin", None) else "ديوان المحلي"
+        print(f"{label}: {server.origin}", flush=True)
         print("Ctrl+C للإغلاق؛ تُحفظ الجولات التي انتهت. انتظار النداء الجاري محدود بمهلته.", flush=True)
         server.serve_forever()
     except KeyboardInterrupt:

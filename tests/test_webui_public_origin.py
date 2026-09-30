@@ -1,0 +1,152 @@
+"""عقدُ الأصل العام الصريح؛ مزوّد مصطنع وجذر مؤقت بلا شبكة خارجية."""
+import http.client
+import json
+import sys
+import threading
+
+import pytest
+
+from acceptance_m9 import SyntheticProvider, SYNTHETIC_MODEL, SYNTHETIC_VERSION, _answer
+from webui.server import LocalApp, Server, UIError
+
+
+class PublicServer:
+    def __init__(self, root, *, public_origin=None, bind="127.0.0.1"):
+        self.app = LocalApp(root, model=SYNTHETIC_MODEL, model_version=SYNTHETIC_VERSION,
+                            provider_factory=lambda: SyntheticProvider([_answer("مصطنع")]))
+        self.server = Server(self.app, 0, bind, public_origin)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(3)
+        self.app.close()
+
+    def request(self, method, *, host, origin=None, forwarded_host=None):
+        connection = http.client.HTTPConnection("127.0.0.1", self.server.server_port, timeout=5)
+        try:
+            headers = {"Host": host}
+            body = b""
+            path = "/"
+            if forwarded_host is not None:
+                headers["X-Forwarded-Host"] = forwarded_host
+                headers["X-Forwarded-Proto"] = "https"
+            if method == "POST":
+                body = json.dumps({"action": "projects"}).encode()
+                path = "/api"
+                headers.update({"Origin": origin, "X-Diwan-CSRF": self.server.token,
+                                "Content-Type": "application/json"})
+            connection.request(method, path, body=body, headers=headers)
+            response = connection.getresponse()
+            payload = response.read()
+            return response.status, payload
+        finally:
+            connection.close()
+
+
+def test_declared_public_origin_accepts_matching_get_and_post_and_announces_status(tmp_path):
+    live = PublicServer(tmp_path / "public", public_origin="https://demo.example")
+    try:
+        assert live.request("GET", host="demo.example")[0] == 200
+        status, raw = live.request("POST", host="demo.example", origin="https://demo.example")
+        assert status == 200
+        assert json.loads(raw)["public_origin"] == "https://demo.example"
+    finally:
+        live.close()
+
+
+def test_declared_origin_rejects_other_host_even_when_proxy_headers_claim_it(tmp_path):
+    live = PublicServer(tmp_path / "public", public_origin="https://demo.example")
+    try:
+        status, raw = live.request("GET", host="attacker.invalid",
+                                   forwarded_host="demo.example")
+        assert status == 403 and json.loads(raw)["error_code"] == "http_refused"
+    finally:
+        live.close()
+
+
+def test_declared_origin_rejects_other_post_origin_before_dispatch(tmp_path):
+    live = PublicServer(tmp_path / "public", public_origin="https://demo.example")
+    try:
+        status, raw = live.request("POST", host="demo.example", origin="https://other.invalid")
+        assert status == 403 and json.loads(raw)["error_code"] == "http_refused"
+        assert live.app.dispatch({"action": "projects"})["projects"] == []
+    finally:
+        live.close()
+
+
+def test_default_server_stays_loopback_only_and_rejects_public_host(tmp_path):
+    live = PublicServer(tmp_path / "local")
+    try:
+        status, raw = live.request("GET", host="demo.example")
+        assert status == 403 and json.loads(raw)["error_code"] == "http_refused"
+        assert live.app.dispatch({"action": "projects"})["public_origin"] is None
+    finally:
+        live.close()
+
+
+@pytest.mark.parametrize("origin", [
+    "http://demo.example", "https://demo.example/", "https://user@demo.example",
+    "https://demo.example/path", "https://demo.example?x=1", "https://demo_example",
+])
+def test_public_origin_is_one_bare_https_origin(tmp_path, origin):
+    app = LocalApp(tmp_path / origin.replace("/", "_").replace(":", "_"),
+                   model=SYNTHETIC_MODEL, model_version=SYNTHETIC_VERSION,
+                   provider_factory=lambda: SyntheticProvider([_answer("مصطنع")]))
+    try:
+        with pytest.raises(UIError, match="public_origin_invalid"):
+            Server(app, 0, "127.0.0.1", origin)
+    finally:
+        app.close()
+
+
+def test_non_loopback_bind_requires_declared_public_origin(tmp_path):
+    app = LocalApp(tmp_path / "unsafe-bind", model=SYNTHETIC_MODEL,
+                   model_version=SYNTHETIC_VERSION,
+                   provider_factory=lambda: SyntheticProvider([_answer("مصطنع")]))
+    try:
+        with pytest.raises(UIError, match="public_origin_required"):
+            Server(app, 0, "0.0.0.0")
+    finally:
+        app.close()
+
+
+def test_serve_ui_passes_explicit_bind_and_public_origin(monkeypatch, tmp_path):
+    import tools.serve_ui as cli
+
+    captured = {}
+    monkeypatch.setenv("DIWAN_CHAT_MODEL", "fixture")
+    monkeypatch.setenv("DIWAN_CHAT_DIGEST", "a" * 64)
+    monkeypatch.delenv("DIWAN_MEDIA_MODEL", raising=False)
+    monkeypatch.delenv("DIWAN_MEDIA_DIGEST", raising=False)
+    monkeypatch.setattr(sys, "argv", ["serve_ui", "--root", str(tmp_path / "ui"), "--port", "0",
+                                      "--bind", "0.0.0.0", "--public-origin", "https://demo.example"])
+    monkeypatch.setattr(cli, "LocalChatProvider", lambda *args: object())
+    monkeypatch.setattr(cli, "LocalToolProvider", lambda *args: object())
+
+    class App:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def close(self):
+            pass
+
+    class FakeServer:
+        origin = "https://demo.example"
+        public_origin = origin
+
+        def __init__(self, app, port, bind, public_origin):
+            captured.update(port=port, bind=bind, public_origin=public_origin)
+
+        def serve_forever(self):
+            raise KeyboardInterrupt()
+
+        def server_close(self):
+            pass
+
+    monkeypatch.setattr(cli, "LocalApp", App)
+    monkeypatch.setattr(cli, "Server", FakeServer)
+    assert cli.main() == 0
+    assert captured == {"port": 0, "bind": "0.0.0.0", "public_origin": "https://demo.example"}
