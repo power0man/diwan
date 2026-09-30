@@ -57,5 +57,43 @@
     "PR203 is unchanged and must preserve both aggregate gates when its runtime matrix is merged.",
     "This hosted gate is for the public repository; converting to private requires reviewing runner policy."
   ],
-  "reference": "https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks"
+  "reference": "https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks",
+  "observed_pr203_check_runs": [
+    {
+      "name": "verify",
+      "conclusion": "skipped",
+      "app_id": 15368,
+      "url": "https://github.com/power0man/diwan/actions/runs/36704239579/job/109850588273"
+    },
+    {
+      "name": "verify (3.11)",
+      "conclusion": "success",
+      "app_id": 15368,
+      "url": "https://github.com/power0man/diwan/actions/runs/36704239575/job/109850586561"
+    },
+    {
+      "name": "verify (3.12)",
+      "conclusion": "success",
+      "app_id": 15368,
+      "url": "https://github.com/power0man/diwan/actions/runs/36704239575/job/109850586533"
+    },
+    {
+      "name": "verify (3.14)",
+      "conclusion": "success",
+      "app_id": 15368,
+      "url": "https://github.com/power0man/diwan/actions/runs/36704239575/job/109850586330"
+    },
+    {
+      "name": "family-review",
+      "conclusion": "failure",
+      "app_id": 15368,
+      "url": "https://github.com/power0man/diwan/actions/runs/36704239595/job/109850585737"
+    },
+    {
+      "name": "container-smoke",
+      "conclusion": "success",
+      "app_id": 15368,
+      "url": "https://github.com/power0man/diwan/actions/runs/36704239617/job/109850585676"
+    }
+  ]
 }
