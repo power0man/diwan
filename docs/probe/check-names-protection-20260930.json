@@ -1,0 +1,61 @@
+{
+  "agent": "openai/codex",
+  "date": "2026-09-30",
+  "git_commit": "d60e7b3d7e7414590aeb4505f9679b9f4cf45612",
+  "issue": "https://github.com/power0man/diwan/issues/217",
+  "method": "Authenticated read-only GitHub REST: main protection, repository rules, rulesets, repository settings; compared with checked-in workflows and PR203 workflow at 64f756a3f402276fe42f4616d54851a226939786.",
+  "classic_protection": {
+    "strict": true,
+    "required_checks": [
+      {
+        "context": "verify",
+        "app_id": 15368
+      },
+      {
+        "context": "family-review",
+        "app_id": 15368
+      }
+    ],
+    "enforce_admins": false,
+    "allow_force_pushes": false,
+    "allow_deletions": false
+  },
+  "effective_rules": [],
+  "rulesets": [],
+  "merge_settings": {
+    "allow_merge_commit": true,
+    "allow_squash_merge": false,
+    "allow_rebase_merge": false,
+    "allow_auto_merge": true
+  },
+  "before": {
+    "hosted_check": "verify",
+    "isolated_check": "verify (skipped on public repository)",
+    "pr203_hosted_checks": [
+      "verify (3.11)",
+      "verify (3.12)",
+      "verify (3.14)"
+    ]
+  },
+  "required_contract": {
+    "runtime": "verify-runtime (Python version)",
+    "aggregate": "verify-hosted",
+    "compatibility": "verify",
+    "isolated": "verify-isolated",
+    "accepted_dependency_result": "success",
+    "dependency_chain": [
+      "jobs.verify (all matrix entries)",
+      "verify-hosted",
+      "verify-compat"
+    ]
+  },
+  "live_protection_mutated": false,
+  "measurement_limits": [
+    "This is a public configuration snapshot, not a security certification or proof that a PR merged.",
+    "No required check, approval count or live protection setting was changed.",
+    "Actual new check runs require the candidate PR workflow to execute; local shell tests alone do not prove the GitHub run.",
+    "PR203 is unchanged and must preserve both aggregate gates when its runtime matrix is merged.",
+    "This hosted gate is for the public repository; converting to private requires reviewing runner policy."
+  ],
+  "reference": "https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks"
+}
