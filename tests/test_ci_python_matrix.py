@@ -34,3 +34,16 @@ def test_container_smoke_runs_pytest_inside_the_python_312_image():
     assert "name: Python 3.12 tests in the image" in CONTAINER
     assert "diwan:ci-test python -m pytest -p no:cacheprovider" in CONTAINER
     assert "continue-on-error" not in CONTAINER
+
+
+def test_container_checkout_exposes_full_history_read_only():
+    checkout = re.search(
+        r"- uses: actions/checkout@([0-9a-f]{40}) # v4\n"
+        r"\s+with:\n"
+        r"\s+persist-credentials: false\n"
+        r"\s+fetch-depth: 0",
+        CONTAINER,
+    )
+    assert checkout, "history-dependent tests require a complete read-only checkout"
+    assert "permissions:\n  contents: read\n" in CONTAINER
+    assert ": write" not in CONTAINER and "secrets." not in CONTAINER
