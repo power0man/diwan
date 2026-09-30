@@ -113,8 +113,8 @@ class Element {
     this.hidden = false; this.open = false; this.files = []; this.parent = null; this.isConnected = true;
     this.listeners = {}; this.ownerDocument = null;
   }
-  append(...nodes) {for(const node of nodes) {node.parent = this; this.children.push(node);}}
-  replaceChildren(...nodes) {if(this.ownerDocument && [this,...descendants(this)].includes(this.ownerDocument.activeElement)) this.ownerDocument.activeElement=this.ownerDocument.body; this.children = []; this.append(...nodes);}
+  append(...nodes) {for(const node of nodes) {node.parent = this; node.isConnected = true; this.children.push(node);}}
+  replaceChildren(...nodes) {if(this.ownerDocument && [this,...descendants(this)].includes(this.ownerDocument.activeElement)) this.ownerDocument.activeElement=this.ownerDocument.body; for(const node of this.children.flatMap(x=>[x,...descendants(x)])) node.isConnected=false; this.children = []; this.append(...nodes);}
   add(node) {this.append(node);}
   setAttribute(key, value) {this.attributes[key] = value;}
   remove() {if(this.parent) this.parent.children = this.parent.children.filter(x => x !== this);this.isConnected=false;}
@@ -375,6 +375,20 @@ const cases = {
     assert.deepEqual(decisions,[{action:'agent_decide',project:A,session:SA,action_id:'action-1',call_digest:action.call_digest,expected_revision:3,approve:true}]);
     assert.equal(h.calls.filter(x=>x.action==='agent_resume').length,1);
     await yes.onclick();assert.equal(h.calls.filter(x=>x.action==='agent_resume').length,1);
+  },
+  async approved_round_moves_focus_to_composer_when_review_trigger_is_replaced() {
+    const complete={...turn,user_request:'احفظ',content:'اكتملت الجولة بعد الموافقة.',status:'complete',pending:[],steps:[]};
+    const h=await harness({agent_decide:()=>({state:'approved'}),agent_resume:()=>complete,
+      history:()=>({status:'idle',turns:[complete],before:0,total:1})});
+    h.run("setMode('agent')");
+    const action={state:'prepared',action_id:'action-1',call_digest:'f'.repeat(64),revision:3,name:'propose_memory',arguments:{text:'موجز'}};
+    h.run(`state.turns=[${JSON.stringify({...turn,status:'awaiting_owner',pending:[action],steps:[]})}];render()`);
+    const review=descendants(h.get('messages')).find(x=>x.textContent==='مراجعة فعل propose_memory');
+    review.focus();await review.onclick();await tick();
+    assert.equal(h.active(),h.get('dialog-body').children[0]);
+    const yes=descendants(h.get('dialog-body')).find(x=>x.textContent==='أوافق وأتابع');
+    await yes.onclick();await tick();
+    assert.equal(review.isConnected,false);assert.equal(h.active(),h.get('message'));
   },
   async stale_agent_approval_cannot_apply_to_another_project() {
     const h=await harness();h.run("setMode('agent')");

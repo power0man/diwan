@@ -259,13 +259,13 @@ $("agent-stop").onclick = async () => {
   } catch(error) {if(epoch === state.epoch) showError(error);}
   finally {state.stopBusy = false; syncPending();}
 };
-async function resumeAgent(ctx, turn) {
+async function resumeAgent(ctx, turn, focusReturn = null) {
   if(state.busy || ctx.project !== state.project || ctx.session !== state.session) return;
   const epoch = state.epoch; state.busy = true;
   try {
     sessionStorage.setItem(pendingKey(ctx), turn); syncPending(); notice("تُستأنف الجولة من الإيصالات المحفوظة.");
     await api("agent_resume", {...ctx, turn});
-    if(epoch === state.epoch) await refresh();
+    if(epoch === state.epoch) await refresh(focusReturn);
   } finally {state.busy = false; syncPending();}
 }
 function reviewAgentAction(ctx, turn, action) {
@@ -285,7 +285,7 @@ function reviewAgentAction(ctx, turn, action) {
         await api("agent_decide", {...ctx, action_id:action.action_id, call_digest:action.call_digest,
           expected_revision:action.revision, approve});
         if(!currentDialog(epoch,ticket)) return;
-        dismissDialog(); state.busy = false; await resumeAgent(ctx, turn);
+        const focusReturn = dismissDialog(); state.busy = false; await resumeAgent(ctx, turn, focusReturn);
       } catch(error) {if(epoch === state.epoch) throw error;}
       finally {state.busy = false; syncPending(); if(currentDialog(epoch,ticket)) buttons.forEach(b => b.disabled = false);}
     }); buttons.push(choice); body.append(choice);
@@ -431,16 +431,18 @@ async function chooseSession(id, name, mode = "text") {
   if(mode === "agent") {const epoch = state.epoch; const caps = await api("agent_capabilities", {project:state.project}); if(epoch === state.epoch) $("agent-capabilities").textContent = caps.execution_enabled ? "أدوات الملفات وتنفيذ الأوامر المضبوطة متاحة؛ يُعرض الإذن المطلوب لكل فعل." : "أدوات ملفات المشروع متاحة. تنفيذ الأوامر غير مهيأ.";}
   if(mode === "coder") {const epoch = state.epoch; const caps = await api("agent_capabilities", {project:state.project}); if(epoch === state.epoch) $("agent-capabilities").textContent = "مبرمج: يقرأ شيفرةَ المشروع ويعدّلها بتعديلاتٍ تُعرض فروقُها ويُرجع عنها، فعلًا فعلًا أو الجولةَ كلَّها. " + (caps.execution_enabled ? "وتشغيلُ الاختبارات متاحٌ في الحاوية." : "وتشغيلُ الاختبارات غير مهيأ في هذا التشغيل.");}
 }
-async function refresh() {
+async function refresh(focusReturn = null) {
   if (!state.session) {notice("اختر محادثة أولًا."); return;}
   const epoch = state.epoch, ctx = context(), data = await api("history", {...ctx, before: null}); if (epoch !== state.epoch) return;
   if (data.status === "running") {
     state.runningTurn = data.turn || null; syncPending();
     notice("ديوان يكتب الآن. تُسترجع الحالة دون إعادة إرسال الطلب.");
-    if (++state.poll < 90) setTimeout(() => {if(epoch === state.epoch) refresh().catch(showError);}, 2000);
+    if (++state.poll < 90) setTimeout(() => {if(epoch === state.epoch) refresh(focusReturn).catch(showError);}, 2000);
     return;
   }
+  const advanceFocus = focusReturn?.isConnected && document.activeElement === focusReturn;
   state.runningTurn = null; state.poll = 0; state.turns = data.turns; state.before = data.before; $("older").hidden = !data.before; render();
+  if(advanceFocus && !focusReturn.isConnected && document.activeElement === document.body) $("message").focus();
   syncPending();
   if (state.pending) {
     try {
@@ -501,8 +503,8 @@ $("release-pending").onclick = () => {sessionStorage.removeItem(pendingKey()); s
 $("older").onclick = async () => {try {const epoch = state.epoch, data = await api("history", {...context(), before: state.before}); if(epoch !== state.epoch || data.status === "running") return; state.turns = [...data.turns, ...state.turns]; state.before = data.before; $("older").hidden = !data.before; render();} catch(e) {showError(e);}};
 function clearPreviewURLs() {for(const url of state.urls) URL.revokeObjectURL(url); state.urls = [];}
 function dialog(title) {clearPreviewURLs(); const body = $("dialog-body"), heading = element("h2", title); heading.tabIndex = -1; body.replaceChildren(heading); if(!$("dialog").open) {state.dialogReturnFocus = document.activeElement; $("dialog").showModal();} heading.focus(); return body;}
-function restoreDialogFocus() {const target = state.dialogReturnFocus; state.dialogReturnFocus = null; if(target?.isConnected && !target.disabled) target.focus();}
-function dismissDialog() {clearPreviewURLs(); ++state.dialogEpoch; $("dialog").close(); restoreDialogFocus();}
+function restoreDialogFocus() {const target = state.dialogReturnFocus; state.dialogReturnFocus = null; if(target?.isConnected && !target.disabled) {target.focus(); return target;} return null;}
+function dismissDialog() {clearPreviewURLs(); ++state.dialogEpoch; $("dialog").close(); return restoreDialogFocus();}
 function currentDialog(epoch, ticket) {return state.epoch === epoch && state.dialogEpoch === ticket;}
 $("close-dialog").onclick = dismissDialog;
 $("dialog").addEventListener("cancel", event => {event.preventDefault?.(); dismissDialog();});
