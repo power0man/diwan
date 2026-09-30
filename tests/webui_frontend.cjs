@@ -726,6 +726,13 @@ const cases = {
     const messages=h.get('messages'),text=textOf(messages),nodes=descendants(messages);
     assert.ok(text.includes('كتابة ملف · رُفض'));
     assert.equal(text.includes('write_file'),false);assert.equal(text.includes('unsafe_path'),false);
+    assert.equal(h.run("toolName('search_regulations')"),'البحث في الأنظمة');
+    assert.equal(h.run("toolName('analyze_arabic_morphology')"),'تحليل الصرف العربي');
+    assert.equal(h.run("toolName('evaluate_governance')"),'تقييم الحوكمة');
+    assert.equal(h.run("toolName('check_mlx_hardware')"),'فحص عتاد MLX');
+    assert.equal(h.run("toolName('write_workspace_document')"),'كتابة مستند في مساحة العمل');
+    assert.equal(h.run("toolName('execute_isolated_command')"),'تنفيذ أمر معزول');
+    assert.equal(h.run("argumentName('command')"),'الأمر');
     assert.ok(nodes.filter(x=>x.tagName==='PRE').some(x=>textOf(x)===attack));
     assert.equal(nodes.some(x=>['B','A'].includes(x.tagName)),false);
   },

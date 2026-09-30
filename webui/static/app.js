@@ -287,6 +287,9 @@ const toolNames = Object.freeze({
   run_tests: "تشغيل الاختبارات", write_file: "كتابة ملف", edit_file: "تعديل ملف",
   export_document: "تصدير مستند", run_command: "تشغيل أمر", propose_memory: "اقتراح حفظ في الذاكرة",
   web_search: "بحث في الويب", analyze_data: "تحليل بيانات", check_translation: "فحص ترجمة",
+  search_regulations: "البحث في الأنظمة", analyze_arabic_morphology: "تحليل الصرف العربي",
+  evaluate_governance: "تقييم الحوكمة", check_mlx_hardware: "فحص عتاد MLX",
+  write_workspace_document: "كتابة مستند في مساحة العمل", execute_isolated_command: "تنفيذ أمر معزول",
 });
 const toolStatuses = Object.freeze({ok:"نجح", refused:"رُفض", error:"فشل", awaiting_owner:"ينتظر قرارك"});
 const argumentNames = Object.freeze({
@@ -295,7 +298,7 @@ const argumentNames = Object.freeze({
   prefix:"بادئة المسار", query:"عبارة البحث", max_results:"الحد الأقصى للنتائج",
   text:"النص المقترح للذاكرة", code:"شيفرة التحليل", inputs:"ملفات الإدخال", outputs:"ملفات الإخراج",
   timeout_s:"المهلة بالثواني", source:"النص المصدر", translation:"الترجمة", glossary:"المسرد",
-  document:"المستند",
+  document:"المستند", limit:"حد النتائج", word:"الكلمة", answer:"الجواب", pages:"الصفحات", command:"الأمر",
 });
 function toolName(name) {return toolNames[name] || `أداة «${name || "غير معروفة"}»`;}
 function argumentName(name) {return argumentNames[name] || `المعامل «${name}»`;}
