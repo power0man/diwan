@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
 
 import launch_check as lc  # noqa: E402
+import probe_evidence as pe  # noqa: E402
 
 
 def _tags_with(*names):
@@ -186,3 +187,4 @@ def test_json_report_has_public_provenance_and_no_automatic_host_identity(monkey
         "hardware_identity_and_capacity_not_collected_automatically",
     ]
     assert "hostname" not in report and "machine" not in report and "os" not in report
+    assert pe.validate_payload(report) == []

@@ -43,6 +43,38 @@ def test_historical_evidence_requires_a_safe_existing_successor():
     assert "invalid_superseded_by" in pe.validate_payload(payload)
 
 
+def test_explicit_file_set_checks_successors_and_index_without_inventory(tmp_path):
+    old = tmp_path / "old.json"
+    new = tmp_path / "new.json"
+    old.write_text(
+        json.dumps({"historical": True, "superseded_by": "new.json"}),
+        encoding="utf-8",
+    )
+    new.write_text(json.dumps(_valid()), encoding="utf-8")
+    index = tmp_path / "INDEX.md"
+    index.write_text(
+        "# فهرس مصطنع\n\n"
+        "| الدليل | الحكم |\n|---|---|\n"
+        "| [`old.json`](old.json) | تاريخي |\n",
+        encoding="utf-8",
+    )
+
+    checked, errors = pe.validate_files([old], index_path=index)
+    assert checked == 1
+    assert errors == {"superseded_by_missing": 1}
+
+    checked, errors = pe.validate_files([old, new], index_path=index)
+    assert checked == 2
+    assert errors == {"index_missing_rows": 1}
+
+    index.write_text(
+        index.read_text(encoding="utf-8")
+        + "| [`new.json`](new.json) | لم يُراجَع |\n",
+        encoding="utf-8",
+    )
+    assert pe.validate_files([old, new], index_path=index) == (2, {})
+
+
 def test_private_access_metadata_is_rejected_without_echoing_its_value():
     payload = {**_valid(), "api_key": "synthetic-placeholder"}
     errors = pe.validate_payload(payload)
@@ -85,12 +117,18 @@ def test_named_redaction_marker_is_accepted():
 
 def test_cli_report_contains_no_input_name_path_or_value(tmp_path):
     evidence = tmp_path / "synthetic-private-name.json"
+    index = tmp_path / "synthetic-private-index.md"
     evidence.write_text(
         json.dumps({**_valid(), "api_key": "synthetic-private-value"}),
         encoding="utf-8",
     )
+    index.write_text(
+        "| [`synthetic-private-name.json`](synthetic-private-name.json) | مصطنع |\n",
+        encoding="utf-8",
+    )
     completed = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "probe_evidence.py"), str(evidence)],
+        [sys.executable, str(ROOT / "tools" / "probe_evidence.py"),
+         "--index", str(index), str(evidence)],
         check=False,
         capture_output=True,
         text=True,
@@ -98,5 +136,6 @@ def test_cli_report_contains_no_input_name_path_or_value(tmp_path):
     assert completed.returncode == 1
     assert "private_access_metadata" in completed.stdout
     assert "synthetic-private-name" not in completed.stdout
+    assert "synthetic-private-index" not in completed.stdout
     assert "synthetic-private-value" not in completed.stdout
     assert str(tmp_path) not in completed.stdout

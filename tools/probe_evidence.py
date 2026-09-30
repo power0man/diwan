@@ -13,6 +13,10 @@ from urllib.parse import parse_qsl, urlparse
 REDACTION_MARKER = "redacted_existing_public_sensitive_metadata"
 PUBLIC_REPOSITORY = "power0man/diwan"
 SAFE_SUCCESSOR = re.compile(r"^[A-Za-z0-9._-]+\.json$")
+INDEX_ROW = re.compile(
+    r"^\| \[`(?P<name>[A-Za-z0-9._-]+\.json)`\]"
+    r"\((?P<link>[A-Za-z0-9._-]+\.json)\) \| (?P<judgment>[^|\r\n]+) \|$"
+)
 LOCAL_OPERATION_TEXT = re.compile(
     r"(?i)(?:localhost|127\.0\.0\.1|host\.docker\.internal|local[-_ ]host)"
 )
@@ -178,23 +182,65 @@ def validate_payload(
     return errors
 
 
-def validate_files(paths: list[Path]) -> tuple[int, Counter[str]]:
+def validate_index(path: Path, *, available_names: set[str]) -> Counter[str]:
+    """Validate an explicit Markdown index without returning any recorded name."""
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
+        return Counter({"index_unreadable": 1})
+
     errors: Counter[str] = Counter()
+    rows: set[str] = set()
+    for line in lines:
+        if not line.startswith("| ["):
+            continue
+        match = INDEX_ROW.fullmatch(line)
+        if match is None:
+            errors["malformed_index_row"] += 1
+            continue
+        name, link, judgment = match.group("name", "link", "judgment")
+        if name != link:
+            errors["index_link_mismatch"] += 1
+        if name in rows:
+            errors["duplicate_index_row"] += 1
+        rows.add(name)
+        if not judgment.strip():
+            errors["missing_index_judgment"] += 1
+    errors["index_missing_rows"] += len(available_names - rows)
+    errors["index_extra_rows"] += len(rows - available_names)
+    return +errors
+
+
+def validate_files(
+    paths: list[Path], *, index_path: Path | None = None
+) -> tuple[int, Counter[str]]:
+    errors: Counter[str] = Counter()
+    available_names = {path.name for path in paths}
+    errors["duplicate_evidence_name"] += len(paths) - len(available_names)
     for path in paths:
+        if SAFE_SUCCESSOR.fullmatch(path.name) is None:
+            errors["unsafe_evidence_name"] += 1
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError):
             errors["unreadable_or_invalid_json"] += 1
             continue
-        errors.update(validate_payload(payload))
-    return len(paths), errors
+        errors.update(validate_payload(payload, available_names=available_names))
+    if index_path is not None:
+        errors.update(validate_index(index_path, available_names=available_names))
+    return len(paths), +errors
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("files", nargs="+", type=Path)
+    parser.add_argument(
+        "--index",
+        type=Path,
+        help="فهرس Markdown صريح للملفات الممرّرة فقط؛ لا اكتشاف للمستودع",
+    )
     args = parser.parse_args(argv)
-    checked, errors = validate_files(args.files)
+    checked, errors = validate_files(args.files, index_path=args.index)
     report = {
         "schema_version": 1,
         "status": "failed" if errors else "passed",
@@ -202,6 +248,7 @@ def main(argv: list[str] | None = None) -> int:
         "error_counts": dict(sorted(errors.items())),
         "measurement_limits": [
             "explicit_files_only_no_repository_discovery_or_inventory",
+            "explicit_index_only_no_repository_discovery_or_inventory",
             "aggregate_error_codes_only_no_paths_names_or_values",
         ],
     }
