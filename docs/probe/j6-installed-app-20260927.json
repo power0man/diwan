@@ -184,7 +184,7 @@
   "review_fix_validation": {
     "agent": "openai/codex",
     "date": "2026-09-30",
-    "git_commit": "e48ee778e33505ef13af1c176dcc5dfcd2818ae4",
+    "git_commit": "d1fddcfe67e9f864bb8ce25af8d65a707c09453c",
     "python": "3.12.14",
     "focused_tests": {
       "command": "python3 -m pytest -o addopts='' tests/test_webui_http.py tests/test_adversarial_m9_m13.py tests/test_agent_webui.py tests/test_agent_stop_http.py tests/test_webui_sovereign_tools.py tests/test_webui_media.py tests/test_installed_app.py tests/test_container_image.py --disable-warnings",
@@ -199,7 +199,8 @@
       "skipped": 58,
       "failed": 0,
       "seconds": 199.40,
-      "tested_commit": "a2060c9ae74151918f20cae5cac9b19d52099a8a"
+      "tested_commit": "d1fddcfe67e9f864bb8ce25af8d65a707c09453c",
+      "upload_note": "The remote source tree matches the tested code; the following commit changes only these provenance strings."
     },
     "mutations": {
       "tool": "tools/mutation_check.py from main d60e7b3, applied to the stacked branch manifest",
