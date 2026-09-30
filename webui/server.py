@@ -36,6 +36,7 @@ from core.contracts import Message as ContractMessage, Request as ContractReques
 from core.router_sovereign import PIISanitizer, SovereignRouter, SovereignRoutingError
 from core.tools_registry import default_tools_registry
 from memory.store import MemoryRefused, MemoryStore
+from memory.scope import AllProjects, MAX_LABEL_CHARS, _marker as memory_project_marker
 from memory.tool import propose_memory_tool
 from multimodal.codec import (MEDIA_PREFIX, MEDIA_SYSTEM, MEDIA_CONTEXT_CHARS,
                               pack_media, decode_request)
@@ -96,6 +97,9 @@ AGENT_MODES = ("agent", "research", "coder", "translate")
 MODE_SYSTEMS = {"research": RESEARCH_SYSTEM, "coder": CODER_SYSTEM, "translate": TRANSLATE_SYSTEM}
 GLOSSARY_FILE = "glossary.csv"
 SESSION_MODES = ("text", "media", *AGENT_MODES)
+DEFAULT_PROJECT_ID = digest({"kind": "diwan-default-project", "schema_version": 1})[:32]
+DEFAULT_SESSION_ID = digest({"kind": "diwan-default-session", "schema_version": 1})[:32]
+UNIFIED_SESSION_ROLE = "unified_all_projects"
 
 
 class LocalApp:
@@ -172,8 +176,14 @@ class LocalApp:
     def metadata(self, path):
         with self.directory(path) as fd:
             value = _read_json(fd, "meta.json")
-        need(type(value) is dict and set(value) in ({"id", "name"}, {"id", "name", "mode"}), "metadata_invalid")
+        need(type(value) is dict and set(value) in (
+            {"id", "name"}, {"id", "name", "mode"},
+            {"id", "name", "mode", "system_role"}), "metadata_invalid")
         need(value.get("mode", "text") in SESSION_MODES, "metadata_invalid")
+        if "system_role" in value:
+            need(value["system_role"] == UNIFIED_SESSION_ROLE
+                 and path.name == DEFAULT_SESSION_ID
+                 and path.parent.parent.name == DEFAULT_PROJECT_ID, "metadata_invalid")
         need(identifier(value["id"]) == path.name, "metadata_invalid")
         label(value["name"])
         return value
@@ -185,11 +195,12 @@ class LocalApp:
         return sorted([self.metadata(root / identifier(name)) for name in names],
                       key=lambda item: (item["name"], item["id"]))
 
-    def create(self, root, name, *, chat=False, mode="text"):
+    def create(self, root, name, *, chat=False, mode="text", item_id=None, system_role=None):
         name = label(name)
         with self.lock:
             need(len(self.collection(root)) < 64, "collection_limit")
-            value = {"id": uuid.uuid4().hex, "name": name}
+            value = {"id": identifier(item_id) if item_id is not None else uuid.uuid4().hex,
+                     "name": name}
             if chat:
                 need(mode in SESSION_MODES, "session_mode_invalid")
                 need(mode != "media" or self.media_enabled, "media_unavailable")
@@ -198,6 +209,11 @@ class LocalApp:
                 need(mode != "coder" or self.agent_enabled, "coder_unavailable")
                 need(mode != "translate" or self.agent_enabled, "translate_unavailable")
                 value["mode"] = mode
+            if system_role is not None:
+                need(chat and system_role == UNIFIED_SESSION_ROLE
+                     and value["id"] == DEFAULT_SESSION_ID
+                     and root.parent.name == DEFAULT_PROJECT_ID, "metadata_invalid")
+                value["system_role"] = system_role
             staging = self.root / "staging"
             with self.directory(staging, create=True) as fd:
                 need(len(os.listdir(fd)) < 64, "staging_limit")
@@ -221,6 +237,29 @@ class LocalApp:
                 os.fsync(target)
                 os.fsync(source)
             return value
+
+    def default_workspace(self):
+        """Create or recover the system-owned general project by stable identities."""
+        with self.lock:
+            projects_root = self.root / "projects"
+            projects = {item["id"]: item for item in self.collection(projects_root)}
+            project = projects.get(DEFAULT_PROJECT_ID)
+            if project is None:
+                project = self.create(projects_root, "عام", item_id=DEFAULT_PROJECT_ID)
+            project_root = self.project(project["id"])
+            sessions_root = project_root / "sessions"
+            sessions = {item["id"]: item for item in self.collection(sessions_root)}
+            session = sessions.get(DEFAULT_SESSION_ID)
+            if session is None:
+                session = self.create(sessions_root, "محادثة عامة", chat=True,
+                                      mode=self.default_session_mode, item_id=DEFAULT_SESSION_ID,
+                                      system_role=UNIFIED_SESSION_ROLE)
+            elif session.get("system_role") != UNIFIED_SESSION_ROLE:
+                # ترقيةُ بيانات #177 القديمة آمنةٌ لأن الهويّتين نظاميتان ولا يختارهما طلبُ المستخدم.
+                session = {**session, "system_role": UNIFIED_SESSION_ROLE}
+                with self.directory(sessions_root / DEFAULT_SESSION_ID) as fd:
+                    _write_json(fd, "meta.json", session)
+            return {"project": project, "session": session}
 
     def project(self, value):
         path = self.root / "projects" / identifier(value)
@@ -302,6 +341,37 @@ class LocalApp:
         except MemoryRefused as exc:
             raise UIError(exc.code) from None
 
+    def all_projects_memory(self):
+        """نطاق القراءة للصفحة الموحّدة، بلا إنشاء مخزنٍ لأي مشروع.
+
+        يعتمد #166 على ``memory.scope.AllProjects`` الحقيقيّ: لا بديلَ صامتًا
+        يعيد عزل مشروع واحد، ولا إنشاءَ لمجلّد ذاكرةٍ لم يُحفظ فيه شيء.
+        """
+        projects = self.collection(self.root / "projects")
+        stores = []
+        for meta in projects:
+            project = self.project(meta["id"])
+            # Uniqueness belongs to the final marker, not the raw display name.
+            # The full ID survives normalization and shared UUID prefixes.
+            project_label = memory_project_marker(meta["name"])
+            suffix = f" — {meta['id']}"
+            project_label = f"{project_label[:MAX_LABEL_CHARS - len(suffix)]}{suffix}"
+            if memory_project_marker(project_label) != project_label:
+                # Truncation can create a directive that was not in the full name.
+                project_label = meta["id"]
+            stores.append((project_label, self.memory_store(project)))
+        try:
+            return AllProjects(stores)
+        except MemoryRefused as exc:
+            raise UIError(exc.code) from None
+
+    def is_unified_session(self, project, session_id):
+        """تمييز جلسة #166 بعلامةٍ لا يستطيع طلبُ المستخدم كتابتها، لا باسم عرض."""
+        session_id = identifier(session_id)
+        if project.name != DEFAULT_PROJECT_ID or session_id != DEFAULT_SESSION_ID:
+            return False
+        return self.metadata(project / "sessions" / session_id).get("system_role") == UNIFIED_SESSION_ROLE
+
     @property
     def research_enabled(self):
         return self.agent_enabled and self.web_search is not None
@@ -343,7 +413,7 @@ class LocalApp:
         need(len(pairs) <= 200, "glossary_too_large")
         return pairs
 
-    def agent_session(self, project, session_id, *, create=False, mode="agent"):
+    def agent_session(self, project, session_id, *, create=False, mode="agent", memory=None):
         workspace = self.agent_workspace(project)
         root = project / "agent-control"
         if create:
@@ -368,8 +438,10 @@ class LocalApp:
             config = {key: saved[key] for key in ("model", "model_version", "max_steps", "max_output",
                 "deadline_s", "max_context_chars", "max_turns", "system")}
             config["deadline_s"] = float(saved["deadline_s"])
+        if memory is None:
+            memory = self.memory_store(project)
         return AgentSession(root, session_id, workspace_root=workspace, project_id=project.name,
-                            registry=registry, memory=self.memory_store(project), **config)
+                            registry=registry, memory=memory, **config)
 
     @staticmethod
     def present_agent(turn, session=None, mode="agent"):
@@ -435,13 +507,25 @@ class LocalApp:
 
     def memory_references(self, project, sha256):
         references = []
-        for meta in self.collection(project / "sessions"):
+        sessions = [(project, meta) for meta in self.collection(project / "sessions")]
+        # خارج المشروع المطلوب لا نقرأ إلا الجلسةَ النظامية الوحيدة التي ترى كل
+        # المشاريع. لذلك لا يستطيع meta.json معطوب في مشروع بعيد إسقاط النسيان.
+        unified_project = self.root / "projects" / DEFAULT_PROJECT_ID
+        unified_path = unified_project / "sessions" / DEFAULT_SESSION_ID
+        if project != unified_project and (unified_path.exists() or unified_path.is_symlink()):
+            try:
+                unified_meta = self.metadata(unified_path)
+                if self.is_unified_session(unified_project, DEFAULT_SESSION_ID):
+                    sessions.append((unified_project, unified_meta))
+            except (ConversationError, UIError, OSError, ValueError):
+                references.append(f"unified:{DEFAULT_SESSION_ID}/unreadable")
+        for session_project, meta in sessions:
             mode = meta.get("mode", "text")
             if mode == "media":
                 continue            # جلساتُ الوسائط لا تحمل ذاكرة
             try:
-                session = (self.agent_session(project, meta["id"]) if mode in AGENT_MODES
-                           else self.session(project, meta["id"]))
+                session = (self.agent_session(session_project, meta["id"])
+                           if mode in AGENT_MODES else self.session(session_project, meta["id"]))
                 references.extend(session.memory_references(sha256))
             except (ConversationError, UIError, OSError, ValueError):
                 # جلسةٌ لا تُقرأ لا تحجب النسيان؛ والإيصالُ يسمّيها فلا يدّعي أنها خلت منه
@@ -520,7 +604,14 @@ class LocalApp:
             need(self.generation.acquire(blocking=False), "generation_busy")
             self.active, self.active_payload = (*key, operation), fingerprint
         try:
-            session = self.agent_session(project, key[1])
+            # A new turn freezes the all-project scope in ``turn["memory"]``.
+            # Resume reuses that saved block; rebuilding it here can only make
+            # an unrelated project's later storage failure block the pending
+            # turn before its approved/denied action is settled.
+            memory = (self.all_projects_memory()
+                      if action == "agent_ask" and self.is_unified_session(project, key[1])
+                      else None)
+            session = self.agent_session(project, key[1], memory=memory)
             with self.lock:
                 self.active_agent_session = session
             if action == "agent_decide":
@@ -597,7 +688,7 @@ class LocalApp:
         self.check_root()
         action = request["action"]
         schemas = {
-            "projects": set(), "create_project": {"name"},
+            "projects": set(), "create_project": {"name"}, "default_workspace": set(),
             "sessions": {"project"}, "create_session": {"project", "name"},
             "history": {"project", "session", "before"},
             "ask": {"project", "session", "turn", "message", "files"},
@@ -654,6 +745,8 @@ class LocalApp:
                         "default_session_mode": self.default_session_mode}
         if action == "create_project":
             return self.create(self.root / "projects", request["name"])
+        if action == "default_workspace":
+            return self.default_workspace()
         if action in ("memory", "memory_remember", "memory_forget"):
             return self.memory_dispatch(request, self.project(request["project"]))
         if action == "mlx_status":
@@ -861,9 +954,11 @@ class LocalApp:
                 if request["files"]:
                     available = self.dispatch({"action": "files", "project": request["project"]})
                     need(set(request["files"]) <= {doc["path"] for doc in available["files"]}, "attachment_unavailable")
+                memory = (self.all_projects_memory() if self.is_unified_session(project, key[1])
+                          else self.memory_store(project))
                 assistant = AssistantWorkspace(session, self.provider_factory(),
                                                self.workspace(project), Preferences(project / "preferences"),
-                                               memory=self.memory_store(project))
+                                               memory=memory)
                 result = assistant.ask(request["turn"], message_to_send, files=tuple(request["files"]))
 
             if token_map and result.get("content"):
