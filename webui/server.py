@@ -36,7 +36,7 @@ from core.contracts import Message as ContractMessage, Request as ContractReques
 from core.router_sovereign import PIISanitizer, SovereignRouter, SovereignRoutingError
 from core.tools_registry import default_tools_registry
 from memory.store import MemoryRefused, MemoryStore
-from memory.scope import AllProjects, MAX_LABEL_CHARS
+from memory.scope import AllProjects, MAX_LABEL_CHARS, _marker as memory_project_marker
 from memory.tool import propose_memory_tool
 from multimodal.codec import (MEDIA_PREFIX, MEDIA_SYSTEM, MEDIA_CONTEXT_CHARS,
                               pack_media, decode_request)
@@ -348,16 +348,17 @@ class LocalApp:
         يعيد عزل مشروع واحد، ولا إنشاءَ لمجلّد ذاكرةٍ لم يُحفظ فيه شيء.
         """
         projects = self.collection(self.root / "projects")
-        counts = {}
-        for meta in projects:
-            counts[meta["name"]] = counts.get(meta["name"], 0) + 1
         stores = []
         for meta in projects:
             project = self.project(meta["id"])
-            project_label = meta["name"]
-            if counts[project_label] > 1:
-                suffix = f" — {meta['id'][:8]}"
-                project_label = f"{project_label[:MAX_LABEL_CHARS - len(suffix)]}{suffix}"
+            # Uniqueness belongs to the final marker, not the raw display name.
+            # The full ID survives normalization and shared UUID prefixes.
+            project_label = memory_project_marker(meta["name"])
+            suffix = f" — {meta['id']}"
+            project_label = f"{project_label[:MAX_LABEL_CHARS - len(suffix)]}{suffix}"
+            if memory_project_marker(project_label) != project_label:
+                # Truncation can create a directive that was not in the full name.
+                project_label = meta["id"]
             stores.append((project_label, self.memory_store(project)))
         try:
             return AllProjects(stores)
@@ -603,7 +604,9 @@ class LocalApp:
             need(self.generation.acquire(blocking=False), "generation_busy")
             self.active, self.active_payload = (*key, operation), fingerprint
         try:
-            memory = self.all_projects_memory() if self.is_unified_session(project, key[1]) else None
+            memory = (self.all_projects_memory()
+                      if action in {"agent_ask", "agent_resume"} and self.is_unified_session(project, key[1])
+                      else None)
             session = self.agent_session(project, key[1], memory=memory)
             with self.lock:
                 self.active_agent_session = session

@@ -267,7 +267,7 @@ def test_http_capabilities_are_explicit_and_text_mode_remains_available(live):
 
     scope = live.app.all_projects_memory()
     assert isinstance(scope, AllProjects)
-    expected = {f"{long_name[:69]} — {first[:8]}", f"{long_name[:69]} — {second[:8]}"}
+    expected = {f"{long_name[:45]} — {first}", f"{long_name[:45]} — {second}"}
     assert set(scope.labels) == expected
     assert all(len(project_label) == 80 for project_label in scope.labels)
     found = scope.retrieve("حقيقة", limit=5)
