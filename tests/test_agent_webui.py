@@ -12,7 +12,7 @@ from core.contracts import Response, ToolCall, Usage
 from core import execution
 from services.agent_workspace import decode_input
 from tests.test_webui_http import Running
-from webui.server import LocalApp, Server
+from webui.server import DEFAULT_PROJECT_ID, DEFAULT_SESSION_ID, LocalApp, Server
 
 
 def response(content="done", *calls):
@@ -93,11 +93,25 @@ def test_unified_page_keeps_setup_in_details_and_automates_the_general_chat():
     assert '<details id="details-panel"><summary>التفاصيل</summary><aside>' in index
     assert 'placeholder="اسأل ديوان…"' in index
     assert 'event.key === "Enter" && !event.shiftKey && !event.isComposing' in script
-    assert 'api("create_project", {name:"عام"})' in script
-    assert 'name:"محادثة عامة", mode:state.defaultSessionMode' in script
-    assert 'button("موافقة", () => decideAgentAction' in script
-    assert 'button("رفض", () => decideAgentAction' in script
+    assert 'api("default_workspace")' in script
+    assert 'option.value === defaults.project.id' in script
+    assert 'item.dataset.session === defaults.session.id' in script
+    assert 'button(`مراجعة فعل ${action.name}`, () => reviewAgentAction' in script
+    assert 'button("موافقة", () => decideAgentAction' not in script
     assert 'آخر خطأ: ${code}' in script
+
+
+def test_default_workspace_uses_stable_ids_not_duplicate_display_names(live):
+    user_project = live.api("create_project", name="عام")
+    first = live.api("default_workspace")
+    assert first["project"] == {"id": DEFAULT_PROJECT_ID, "name": "عام"}
+    assert first["project"]["id"] != user_project["id"]
+    assert first["session"]["id"] == DEFAULT_SESSION_ID
+    duplicate = live.api("create_session", project=DEFAULT_PROJECT_ID,
+                         name="محادثة عامة", mode=first["session"]["mode"])
+    second = live.api("default_workspace")
+    assert second == first
+    assert second["session"]["id"] != duplicate["id"]
 
 
 def test_http_reads_only_selected_upload_writes_real_file_and_replays_without_provider(live):

@@ -168,8 +168,7 @@ function renderAgentActions(answer, actions, ctx, turn) {
     if(action.state === "prepared" || action.status === "awaiting_owner") {
       const approval = element("div", undefined, "approval");
       approval.append(element("span", `${action.name} — يحتاج قرارك`));
-      approval.append(button("موافقة", () => decideAgentAction(ctx, turn.turn_id, action, true)));
-      approval.append(button("رفض", () => decideAgentAction(ctx, turn.turn_id, action, false)));
+      approval.append(button(`مراجعة فعل ${action.name}`, () => reviewAgentAction(ctx, turn.turn_id, action)));
       answer.append(approval);
     }
   }
@@ -177,16 +176,6 @@ function renderAgentActions(answer, actions, ctx, turn) {
     actions.append(button("متابعة الجولة بالقرار المحفوظ", () => resumeAgent(ctx, turn.turn_id)));
   }
   if(turn.status === "outcome_unknown") answer.append(element("p", errors.outcome_unknown, "pending"));
-}
-async function decideAgentAction(ctx, turn, action, approve) {
-  if(ctx.project !== state.project || ctx.session !== state.session || state.busy) return;
-  state.busy = true; syncPending();
-  try {
-    await api("agent_decide", {...ctx, action_id:action.action_id, call_digest:action.call_digest,
-      expected_revision:action.revision, approve});
-    state.busy = false;
-    await resumeAgent(ctx, turn);
-  } finally {state.busy = false; syncPending();}
 }
 $("agent-stop").onclick = async () => {
   const turn = stoppableTurn(), ctx = context(), epoch = state.epoch;
@@ -565,20 +554,12 @@ async function boot() {
     if(saved) await chooseSession(last.session, saved.textContent, saved.dataset.mode);
     if(saved) return;
   }
-  let general = [...$("projects").options].find(option => option.textContent === "عام");
-  if(!general) {
-    const created = await api("create_project", {name:"عام"});
-    await projects();
-    general = [...$("projects").options].find(option => option.value === created.id);
-  }
+  const defaults = await api("default_workspace");
+  await projects();
+  const general = [...$("projects").options].find(option => option.value === defaults.project.id);
   if(!general) throw {code:"default_project_unavailable"};
   $("projects").value = general.value; await chooseProject(general.value);
-  let session = [...$("sessions").children].find(item => item.textContent === "محادثة عامة");
-  if(!session) {
-    const created = await api("create_session", {project:general.value, name:"محادثة عامة", mode:state.defaultSessionMode});
-    await chooseProject(general.value);
-    session = [...$("sessions").children].find(item => item.dataset.session === created.id);
-  }
+  const session = [...$("sessions").children].find(item => item.dataset.session === defaults.session.id);
   if(session) await chooseSession(session.dataset.session, session.textContent, session.dataset.mode);
 }
 boot().catch(showError);

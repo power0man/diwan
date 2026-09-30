@@ -76,6 +76,12 @@ class Proposal:
     text: str
 
 
+def hold(text: str) -> str:
+    """نصٌّ كما يدخل كتلةَ الذاكرة: علامةُ السياج فيه حدُّ جملة، وأمرُه الموجَّه محجور. موضعٌ واحد تحجر به كتلةُ
+    المشروع (`MemoryStore.context`) وكتلةُ كل المشاريع (`memory/scope.py`)، فلا يختلف حجرُهما."""
+    return quarantine(_FENCE_MARK.sub(". ", text)).text
+
+
 def _digest(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -204,7 +210,7 @@ class MemoryStore:
         items.sort(key=lambda it: (-len(wanted & set(content_tokens(it["text"]))), it["approved_at"]))
         lines, seen, used = [], [], 0
         for item in items[:MAX_CONTEXT_ITEMS]:
-            held = quarantine(_FENCE_MARK.sub(". ", item["text"])).text
+            held = hold(item["text"])
             if used + len(held) > MAX_CONTEXT_CHARS:
                 break
             lines.append(f"- {held}")

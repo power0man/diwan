@@ -180,11 +180,19 @@ const cases = {
   async agent_approval_is_explicit_bound_and_then_resumes_once() {
     const h=await harness({agent_decide:()=>({state:'approved'}),agent_resume:()=>({status:'complete'})});
     h.run("setMode('agent')");
-    const action={action_id:'action-1',call_digest:'f'.repeat(64),revision:3,name:'run_command',arguments:{argv:['python','main.py']},input_files:[{path:'main.py',sha256:'e'.repeat(64),size_bytes:12}]};
-    h.run(`reviewAgentAction(context(),'${T}',${JSON.stringify(action)})`);
+    const action={state:'prepared',action_id:'action-1',call_digest:'f'.repeat(64),revision:3,name:'run_command',arguments:{argv:['python','main.py']},input_snapshot_sha256:'d'.repeat(64),input_files:[{path:'main.py',sha256:'e'.repeat(64),size_bytes:12}]};
+    const awaiting={...turn,status:'awaiting_owner',pending:[action],steps:[]};
+    h.run(`state.turns=[${JSON.stringify(awaiting)}];render()`);
     assert.equal(h.calls.some(x=>x.action==='agent_decide'||x.action==='agent_resume'),false);
-    assert.ok(textOf(h.get('dialog-body')).includes('main.py'));
+    const review=descendants(h.get('messages')).find(x=>x.textContent==='مراجعة فعل run_command');
+    assert.ok(review,textOf(h.get('messages')));
+    await review.onclick();await tick();
+    const preview=textOf(h.get('dialog-body'));
+    assert.ok(preview.includes('python'));assert.ok(preview.includes('main.py'));
+    assert.ok(preview.includes(action.input_snapshot_sha256));
+    assert.equal(h.calls.some(x=>x.action==='agent_decide'||x.action==='agent_resume'),false);
     const yes=descendants(h.get('dialog-body')).find(x=>x.textContent==='أوافق وأتابع');
+    assert.ok(yes,preview);
     await yes.onclick();await tick();
     const decisions=h.calls.filter(x=>x.action==='agent_decide');
     assert.deepEqual(decisions,[{action:'agent_decide',project:A,session:SA,action_id:'action-1',call_digest:action.call_digest,expected_revision:3,approve:true}]);
@@ -432,6 +440,16 @@ const cases = {
     assert.equal(h.get('message').maxLength,4000);
     assert.equal(h.get('text-inputs').hidden,true);assert.equal(h.get('media-inputs').hidden,false);
     assert.equal(h.get('media-option').disabled,false);
+  },
+  async boot_uses_server_owned_default_ids_despite_duplicate_names() {
+    const h=await harness({
+      projects:()=>({projects:[{id:A,name:'عام'},{id:B,name:'عام'}],default_session_mode:'text'}),
+      default_workspace:()=>({project:{id:B,name:'عام'},session:{id:SB,name:'محادثة عامة',mode:'text'}}),
+      sessions:request=>({sessions:request.project===B ? [{id:SA,name:'محادثة عامة',mode:'text'},{id:SB,name:'محادثة عامة',mode:'text'}] : []}),
+    },{preset:false});
+    await tick();await tick();await tick();
+    assert.equal(h.run('state.project'),B);assert.equal(h.run('state.session'),SB);
+    assert.equal(h.calls.filter(x=>x.action==='default_workspace').length,1);
   },
   async frozen_media_preview_is_bounded_to_blobs_and_revoked_on_close() {
     const media=[{name:'image.png',kind:'image',mime:'image/png',size_bytes:3,sha256:'f'.repeat(64),data_base64:'AID/'},
