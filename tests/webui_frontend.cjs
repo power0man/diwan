@@ -356,11 +356,17 @@ const cases = {
   },
   async cancelled_turn_exposes_saved_inputs_and_revert_but_not_old_approval() {
     const h=await harness();const cancelled={...turn,status:'cancelled',pending:[{state:'prepared',name:'run_command'}],
-      inputs:{preferences:{revision:3,values:{address_name:'<img onerror=attack()>'},sha256:'f'.repeat(64)},attachments:[]},
+      inputs:{preferences:{revision:3,values:{response_language:'ar',address_name:'<img onerror=attack()>'},sha256:'f'.repeat(64)},
+        attachments:[{relative_path:'مدخل.txt',size_bytes:12,sha256:'e'.repeat(64)}]},
       steps:[{index:0,tool_results:[{status:'ok',name:'write_file',content:'saved',action_id:'a',journal_action_id:'act-a'}]}]};
     h.run(`setMode('agent');state.turns=[${JSON.stringify(cancelled)}];render();syncPending()`);
-    const text=textOf(h.get('messages'));
+    const messages=h.get('messages'),text=textOf(messages),nodes=descendants(messages);
     assert.ok(text.includes('سياق الطلب المحفوظ'));assert.ok(text.includes('نسخة التفضيلات: 3'));
+    assert.ok(text.includes('لغة الجواب'));assert.ok(text.includes('العربية'));assert.equal(text.includes('response_language'),false);
+    assert.ok(text.includes('مدخل.txt'));assert.ok(text.includes('الحجم: 12 بايت'));assert.equal(text.includes('relative_path'),false);
+    assert.equal(nodes.filter(x=>x.tagName==='PRE').some(x=>/^[\[{]/.test(textOf(x).trim())),false);
+    const hashes=nodes.filter(x=>x.className==='hash');assert.deepEqual(hashes.map(textOf),['f'.repeat(64),'e'.repeat(64)]);
+    assert.ok(hashes.every(x=>x.parent.className==='hash-line'));
     assert.ok(text.includes('الرجوع عن هذا التعديل'));assert.equal(text.includes('مراجعة فعل'),false);
     assert.equal(h.get('send').disabled,false);assert.equal(h.get('agent-stop').hidden,true);
     assert.equal(descendants(h.get('messages')).some(x=>x.tagName==='IMG'),false);
@@ -403,12 +409,16 @@ const cases = {
     assert.equal(review.isConnected,false);assert.equal(h.active(),h.get('message'));
   },
   async approval_hash_with_numeric_prefix_is_isolated_from_its_arabic_label() {
-    const digest='8eee12b'+'a'.repeat(57),h=await harness();h.run("setMode('agent')");
-    h.run(`reviewAgentAction(context(),'${T}',{action_id:'a',call_digest:'f',revision:1,name:'run_command',arguments:{},input_snapshot_sha256:'${digest}'})`);
-    const hash=descendants(h.get('dialog-body')).find(x=>x.className==='hash');
-    assert.equal(hash.tagName,'BDI');assert.equal(hash.attributes.dir,'ltr');assert.equal(hash.textContent,digest);
-    assert.equal(hash.textContent[0],'8');assert.equal(hash.parent.attributes.dir,'rtl');
-    assert.ok(textOf(hash.parent).includes('بصمة نسخة المدخلات:'));assert.equal(hash.parent.className,'hash-line');
+    const digest='8eee12b'+'a'.repeat(57),fileDigest='1abc234'+'b'.repeat(57),h=await harness();h.run("setMode('agent')");
+    h.run(`reviewAgentAction(context(),'${T}',{action_id:'a',call_digest:'f',revision:1,name:'run_command',arguments:{},input_snapshot_sha256:'${digest}',input_files:[{path:'a.txt',sha256:'${fileDigest}',size_bytes:1}]})`);
+    const hashes=descendants(h.get('dialog-body')).filter(x=>x.className==='hash');
+    assert.deepEqual(hashes.map(textOf),[digest,fileDigest]);
+    for(const hash of hashes) {
+      assert.equal(hash.tagName,'BDI');assert.equal(hash.attributes.dir,'ltr');assert.ok(/[18]/.test(hash.textContent[0]));
+      assert.equal(hash.parent.attributes.dir,'rtl');assert.equal(hash.parent.className,'hash-line');
+    }
+    assert.ok(textOf(hashes[0].parent).includes('بصمة نسخة المدخلات:'));
+    assert.ok(textOf(hashes[1].parent).includes('البصمة:'));
   },
   async stale_agent_approval_cannot_apply_to_another_project() {
     const h=await harness();h.run("setMode('agent')");
@@ -657,7 +667,7 @@ const cases = {
   async frozen_media_preview_is_bounded_to_blobs_and_revoked_on_close() {
     const media=[{name:'image.png',kind:'image',mime:'image/png',size_bytes:3,sha256:'f'.repeat(64),data_base64:'AID/'},
       {name:'audio.wav',kind:'audio',mime:'audio/wav',size_bytes:1,sha256:'e'.repeat(64),data_base64:'AQ=='}];
-    const h=await harness({inspect:()=>({media,preferences:null})});
+    const h=await harness({inspect:()=>({media,preferences:{values:{verbosity:'detailed',address_name:'مالك'}}})});
     await h.run(`inspect({project:'${A}',session:'${SA}'},'${T}')`);
     assert.equal(h.createdURLs.length,2);
     const all=descendants(h.get('dialog-body')),img=all.find(x=>x.tagName==='IMG'),audio=all.find(x=>x.tagName==='AUDIO');
@@ -665,6 +675,9 @@ const cases = {
     assert.equal(audio.src,'blob:fixture-1');assert.equal(audio.controls,true);assert.equal(audio.preload,'none');
     assert.equal(audio.autoplay,undefined);
     assert.equal(h.createdURLs[0].blob.type,'image/png');assert.equal(h.createdURLs[0].blob.size,3);
+    const dialog=h.get('dialog-body'),text=textOf(dialog),pres=descendants(dialog).filter(x=>x.tagName==='PRE');
+    assert.ok(text.includes('طول الجواب'));assert.ok(text.includes('مفصل'));assert.ok(text.includes('الاسم المفضل للمخاطبة'));
+    assert.equal(text.includes('verbosity'),false);assert.equal(pres.some(x=>/^[\[{]/.test(textOf(x).trim())),false);
     h.get('close-dialog').onclick();
     assert.deepEqual(h.revokedURLs,['blob:fixture-0','blob:fixture-1']);assert.equal(h.run('state.urls.length'),0);
   },
@@ -751,6 +764,9 @@ const cases = {
     assert.equal(nodes.filter(x=>x.tagName==='OL').length,1);
     const labels=nodes.filter(x=>x.tagName==='STRONG').map(textOf);
     assert.ok(labels.includes('الأمر ووسائطه'));assert.ok(labels.includes('main.py'));
+    const hashes=nodes.filter(x=>x.className==='hash');
+    assert.deepEqual(hashes.map(textOf),['d'.repeat(64),'e'.repeat(64)]);
+    assert.ok(hashes.every(x=>x.parent.className==='hash-line'));
   },
   async markdown_dom_growth_has_a_fixed_limit() {
     for(const content of [Array.from({length:5000},(_,i)=>`- item ${i}`).join('\n'),Array.from({length:5000},(_,i)=>`line ${i}`).join('\n')]) {

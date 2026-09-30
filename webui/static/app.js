@@ -299,7 +299,9 @@ const argumentNames = Object.freeze({
   text:"النص المقترح للذاكرة", code:"شيفرة التحليل", inputs:"ملفات الإدخال", outputs:"ملفات الإخراج",
   timeout_s:"المهلة بالثواني", source:"النص المصدر", translation:"الترجمة", glossary:"المسرد",
   document:"المستند", limit:"حد النتائج", word:"الكلمة", answer:"الجواب", pages:"الصفحات", command:"الأمر",
+  response_language:"لغة الجواب", verbosity:"طول الجواب", address_name:"الاسم المفضل للمخاطبة",
 });
+const preferenceValues = Object.freeze({ar:"العربية", en:"الإنجليزية", concise:"موجز", balanced:"متوازن", detailed:"مفصل"});
 function toolName(name) {return toolNames[name] || `أداة «${name || "غير معروفة"}»`;}
 function argumentName(name) {return argumentNames[name] || `المعامل «${name}»`;}
 function exactValue(value) {
@@ -335,14 +337,24 @@ function renderArguments(values) {
   }
   return fields;
 }
+function renderPreferences(values) {
+  const fields = element("div", undefined, "request-preferences"), entries = Object.entries(values || {});
+  if(!entries.length) {fields.append(element("p", "لا توجد تفضيلات صريحة في هذه النسخة.")); return fields;}
+  for(const [name, value] of entries) {
+    const field = element("div", undefined, "tool-argument");
+    field.append(element("strong", argumentName(name)), renderArgumentValue(preferenceValues[value] || value));
+    fields.append(field);
+  }
+  return fields;
+}
 function renderInputFiles(files) {
   const section = element("div", undefined, "tool-input-files");
   section.append(element("h3", "ملفات نسخة المدخلات"));
   for(const file of files || []) {
     const item = element("div", undefined, "tool-input-file");
-    item.append(element("strong", file.path || "ملف بلا اسم"));
+    item.append(element("strong", file.path || file.relative_path || "ملف بلا اسم"));
     if(Number.isFinite(file.size_bytes)) item.append(element("p", `الحجم: ${file.size_bytes} بايت`));
-    if(file.sha256) item.append(element("p", `البصمة: ${file.sha256}`, "hash"));
+    if(file.sha256) item.append(hashLine("البصمة:", file.sha256));
     section.append(item);
   }
   return section;
@@ -353,8 +365,8 @@ function renderAgentActions(answer, actions, ctx, turn) {
     inputs.append(element("p", "هذه نسخة المدخلات وقت إرسال الطلب؛ تعديل التفضيلات لاحقًا لا يغيرها."));
     const snapshot = turn.inputs.preferences;
     inputs.append(element("p", snapshot ? `نسخة التفضيلات: ${snapshot.revision}` : "لم تُرفق تفضيلات بهذا الطلب."));
-    if(snapshot) {inputs.append(element("pre", JSON.stringify(snapshot.values, null, 2)), element("p", snapshot.sha256, "hash"));}
-    if(turn.inputs.attachments?.length) inputs.append(element("pre", JSON.stringify(turn.inputs.attachments, null, 2)));
+    if(snapshot) inputs.append(renderPreferences(snapshot.values), hashLine("بصمة نسخة التفضيلات:", snapshot.sha256));
+    if(turn.inputs.attachments?.length) inputs.append(renderInputFiles(turn.inputs.attachments));
     answer.append(inputs);
   }
   for(const step of turn.steps || []) {
@@ -700,7 +712,7 @@ async function inspect(ctx, turn) {
     details.append(preview); body.append(details);
   }
   if(!(data.attachments?.length || data.media?.length)) body.append(element("p", "لم يُرفق ملف بهذه الجولة."));
-  body.append(element("h3", "التفضيلات وقت الطلب"), element("pre", JSON.stringify(data.preferences?.values || {}, null, 2)));
+  body.append(element("h3", "التفضيلات وقت الطلب"), renderPreferences(data.preferences?.values));
 }
 async function propose(ctx, turn) {
   const epoch = state.epoch, ticket = ++state.dialogEpoch;
