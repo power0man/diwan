@@ -96,6 +96,8 @@ AGENT_MODES = ("agent", "research", "coder", "translate")
 MODE_SYSTEMS = {"research": RESEARCH_SYSTEM, "coder": CODER_SYSTEM, "translate": TRANSLATE_SYSTEM}
 GLOSSARY_FILE = "glossary.csv"
 SESSION_MODES = ("text", "media", *AGENT_MODES)
+DEFAULT_PROJECT_ID = digest({"kind": "diwan-default-project", "schema_version": 1})[:32]
+DEFAULT_SESSION_ID = digest({"kind": "diwan-default-session", "schema_version": 1})[:32]
 
 
 class LocalApp:
@@ -185,11 +187,12 @@ class LocalApp:
         return sorted([self.metadata(root / identifier(name)) for name in names],
                       key=lambda item: (item["name"], item["id"]))
 
-    def create(self, root, name, *, chat=False, mode="text"):
+    def create(self, root, name, *, chat=False, mode="text", item_id=None):
         name = label(name)
         with self.lock:
             need(len(self.collection(root)) < 64, "collection_limit")
-            value = {"id": uuid.uuid4().hex, "name": name}
+            value = {"id": identifier(item_id) if item_id is not None else uuid.uuid4().hex,
+                     "name": name}
             if chat:
                 need(mode in SESSION_MODES, "session_mode_invalid")
                 need(mode != "media" or self.media_enabled, "media_unavailable")
@@ -221,6 +224,23 @@ class LocalApp:
                 os.fsync(target)
                 os.fsync(source)
             return value
+
+    def default_workspace(self):
+        """Create or recover the system-owned general project by stable identities."""
+        with self.lock:
+            projects_root = self.root / "projects"
+            projects = {item["id"]: item for item in self.collection(projects_root)}
+            project = projects.get(DEFAULT_PROJECT_ID)
+            if project is None:
+                project = self.create(projects_root, "عام", item_id=DEFAULT_PROJECT_ID)
+            project_root = self.project(project["id"])
+            sessions_root = project_root / "sessions"
+            sessions = {item["id"]: item for item in self.collection(sessions_root)}
+            session = sessions.get(DEFAULT_SESSION_ID)
+            if session is None:
+                session = self.create(sessions_root, "محادثة عامة", chat=True,
+                                      mode=self.default_session_mode, item_id=DEFAULT_SESSION_ID)
+            return {"project": project, "session": session}
 
     def project(self, value):
         path = self.root / "projects" / identifier(value)
@@ -597,7 +617,7 @@ class LocalApp:
         self.check_root()
         action = request["action"]
         schemas = {
-            "projects": set(), "create_project": {"name"},
+            "projects": set(), "create_project": {"name"}, "default_workspace": set(),
             "sessions": {"project"}, "create_session": {"project", "name"},
             "history": {"project", "session", "before"},
             "ask": {"project", "session", "turn", "message", "files"},
@@ -654,6 +674,8 @@ class LocalApp:
                         "default_session_mode": self.default_session_mode}
         if action == "create_project":
             return self.create(self.root / "projects", request["name"])
+        if action == "default_workspace":
+            return self.default_workspace()
         if action in ("memory", "memory_remember", "memory_forget"):
             return self.memory_dispatch(request, self.project(request["project"]))
         if action == "mlx_status":

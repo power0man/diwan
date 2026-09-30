@@ -1,0 +1,27 @@
+{
+  "agent": "openai/codex",
+  "date": "2026-09-28",
+  "claims": [
+    {
+      "decision": "ق٦٧",
+      "claim": "فهرس السياق مولد وحديث ويصف الوثائق الحاكمة دون إعادة قراءتها كلها",
+      "how_i_tried": "شغلت python tools/context_index.py --check على رأس العمل المتاح",
+      "result": "held",
+      "evidence": "{\"status\": \"verified\", \"written\": [], \"archived\": [], \"agents_md_bytes\": 30265}"
+    },
+    {
+      "decision": "ق٦٦",
+      "claim": "مسارات conversation وagent/actions.py وcore/execution.py وcore/sandbox.py وwebui مسجلة لعائلة openai",
+      "how_i_tried": "قرأت registry/lanes.json ببرنامج Python مستقل وطبعت قائمة lanes.openai",
+      "result": "held",
+      "evidence": "القائمة المطبوعة ضمت conversation/ وagent/actions.py وcore/execution.py وcore/sandbox.py وwebui/"
+    },
+    {
+      "decision": "ق٦٥",
+      "claim": "Gemini غير مدرج مراجعًا وCodex وClaude هما المراجعان المسجلان للعائلتين الملائمتين",
+      "how_i_tried": "قرأت registry/reviewers.json ببرنامج Python مستقل وبحثت في خريطة reviewers الفعلية",
+      "result": "held",
+      "evidence": "reviewers={\"chatgpt-codex-connector[bot]\": \"openai\", \"claude[bot]\": \"anthropic\"} ولم يظهر Gemini"
+    }
+  ]
+}
