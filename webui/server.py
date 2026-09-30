@@ -42,8 +42,8 @@ from multimodal.codec import (MEDIA_PREFIX, MEDIA_SYSTEM, MEDIA_CONTEXT_CHARS,
 from services.media_assistant import MediaAssistant, present as present_media
 from services.assistant_workspace import AssistantWorkspace, _present, _decode_context
 from services import agent_workspace, project_archive
-from workspace_tools.files import (TextWorkspace, WorkspaceError, _open_directory, _private,
-                                   _read_json, _write_json, _relative)
+from workspace_tools.files import (TextWorkspace, WorkspaceError, _canonical_root,
+                                   _open_directory, _private, _read_json, _write_json, _relative)
 from workspace_tools.preferences import Preferences
 from workspace_tools.backup import restore_pending
 
@@ -108,7 +108,7 @@ class LocalApp:
                  media_model=None, media_model_version=None, media_provider_factory=None,
                  agent_provider_factory=None, runtime_receipt=None, web_search=None,
                  analysis_receipt=None, docker_executable="/usr/local/bin/docker"):
-        self.root = Path(root).absolute()
+        self.root = _canonical_root(root)
         self.model, self.model_version = model, model_version
         self.provider_factory = provider_factory
         self.agent_provider_factory = agent_provider_factory

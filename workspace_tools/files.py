@@ -94,8 +94,32 @@ def _io_error(exc):
     _fail("filesystem_error", "تعذر الوصول الآمن إلى الملف")
 
 
-def _root_path(value):
+def _canonical_root(value):
+    """Resolve existing ancestors once, but leave the selected root un-followed.
+
+    System aliases such as macOS ``/tmp -> /private/tmp`` are outside the
+    application's trust boundary.  Missing suffixes are preserved so the
+    descriptor walker can create them, while a dangling symlink remains in the
+    preserved suffix and is still rejected by ``O_NOFOLLOW``.
+    """
     path = Path(value).absolute()
+    if path == Path(path.anchor):
+        return path.resolve(strict=True)
+    ancestor, missing = path.parent, []
+    while True:
+        try:
+            resolved = ancestor.resolve(strict=True)
+            break
+        except FileNotFoundError:
+            if ancestor == Path(ancestor.anchor):
+                raise
+            missing.append(ancestor.name)
+            ancestor = ancestor.parent
+    return resolved.joinpath(*reversed(missing), path.name)
+
+
+def _root_path(value):
+    path = _canonical_root(value)
     if ".." in path.parts:
         _fail("path_invalid", "عبور في جذر مساحة الملفات")
     return path
