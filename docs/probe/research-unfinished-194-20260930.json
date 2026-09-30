@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "task": "194",
+  "agent": "openai/codex",
+  "date": "2026-09-30",
+  "commit": "4a64e9e4f5de49c2e19852d5978974deeab9b6d1",
+  "runtime": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "python": "3.12.9"
+  },
+  "targeted_command": "python -m pytest tests/test_research_unfinished_turns.py tests/test_research_bank.py tests/test_ablation.py tests/test_retrieval_general.py",
+  "targeted": {
+    "tests": 194,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "passed": 194,
+    "elapsed_seconds": 6.61,
+    "timestamp": "2026-09-30T11:13:58.217532+03:00",
+    "status": "passed"
+  },
+  "full_suite_command": "python -m pytest",
+  "full_suite": {
+    "tests": 4845,
+    "errors": 0,
+    "failures": 2,
+    "skipped": 36,
+    "passed": 4807,
+    "elapsed_seconds": 417.482,
+    "timestamp": "2026-09-30T11:04:41.876537+03:00",
+    "status": "failed",
+    "commit": "f9fedcdf60272cef9c0ef5c14088a1b78eeb5151",
+    "failures_followup": [
+      {
+        "test": "tests/test_retrieval_general.py::test_the_published_numbers_are_recomputed_from_the_recorded_rows",
+        "cause": "errors_by_arm_changed_the_legacy_comparison_schema",
+        "resolution": "fixed_in_4a64e9e4f5de49c2e19852d5978974deeab9b6d1",
+        "verification": "passes_in_targeted_final_run"
+      },
+      {
+        "test": "tests/test_context_budget.py::test_snapshot_extraction_checks_members_itself_and_works_without_the_filter_argument",
+        "cause": "PermissionError_reading_the_mode_000_archive_fixture_under_python_3_12_9_on_macos",
+        "baseline_commit": "d60e7b3d7e7414590aeb4505f9679b9f4cf45612",
+        "baseline_test_run": {
+          "tests": 1,
+          "errors": 0,
+          "failures": 1,
+          "skipped": 0,
+          "passed": 0,
+          "elapsed_seconds": 0.095,
+          "timestamp": "2026-09-30T11:13:25.709217+03:00",
+          "status": "failed"
+        },
+        "resolution": "pre_existing_failure_not_changed_by_this_patch"
+      }
+    ]
+  },
+  "mutation_command": "python tools/mutation_check.py --range origin/main..HEAD",
+  "mutations": {
+    "status": "passed",
+    "totals": {
+      "killed": 9,
+      "partially_killed": 0,
+      "survived": 0,
+      "test_missing": 0,
+      "failing_before_mutation": 0,
+      "stale": 0,
+      "invalid": 0,
+      "timeout": 0
+    },
+    "unproved_touched_tests": [],
+    "results": [
+      {
+        "id": "restore-old-research-stop-filter",
+        "code": "killed",
+        "failed_tests": [
+          "tests/test_research_unfinished_turns.py::test_provider_stops_are_named_errors_without_scoring[max_output-truncated]",
+          "tests/test_research_unfinished_turns.py::test_provider_stops_are_named_errors_without_scoring[deadline-timed_out]",
+          "tests/test_research_unfinished_turns.py::test_exhausting_search_steps_never_scores_the_intermediate_answer",
+          "tests/test_research_unfinished_turns.py::test_a_new_unfinished_status_falls_back_to_its_name_without_scoring"
+        ],
+        "named_but_passed": [],
+        "pytest_exit": 1
+      },
+      {
+        "id": "lose-research-stop-status",
+        "code": "killed",
+        "failed_tests": [
+          "tests/test_research_unfinished_turns.py::test_provider_stops_are_named_errors_without_scoring[max_output-truncated]",
+          "tests/test_research_unfinished_turns.py::test_provider_stops_are_named_errors_without_scoring[deadline-timed_out]",
+          "tests/test_research_unfinished_turns.py::test_provider_stops_are_named_errors_without_scoring[refused-refused]",
+          "tests/test_research_unfinished_turns.py::test_provider_stops_are_named_errors_without_scoring[error-failed]"
+        ],
+        "named_but_passed": [],
+        "pytest_exit": 1
+      },
+      {
+        "id": "lose-research-code-fallback",
+        "code": "killed",
+        "failed_tests": [
+          "tests/test_research_unfinished_turns.py::test_a_new_unfinished_status_falls_back_to_its_name_without_scoring"
+        ],
+        "named_but_passed": [],
+        "pytest_exit": 1
+      },
+      {
+        "id": "mislabel-new-research-report-as-v1",
+        "code": "killed",
+        "failed_tests": [
+          "tests/test_research_unfinished_turns.py::test_complete_reports_and_search_ablation_identify_research_runner_v2"
+        ],
+        "named_but_passed": [],
+        "pytest_exit": 1
+      },
+      {
+        "id": "omit-search-ablation-runner-version",
+        "code": "killed",
+        "failed_tests": [
+          "tests/test_research_unfinished_turns.py::test_complete_reports_and_search_ablation_identify_research_runner_v2"
+        ],
+        "named_but_passed": [],
+        "pytest_exit": 1
+      },
+      {
+        "id": "drop-on-arm-errors",
+        "code": "killed",
+        "failed_tests": [
+          "tests/test_research_unfinished_turns.py::test_error_counts_distinguish_arms_and_respect_the_category_filter[no-measured-pairs]",
+          "tests/test_research_unfinished_turns.py::test_error_counts_distinguish_arms_and_respect_the_category_filter[with-measured-pair]"
+        ],
+        "named_but_passed": [],
+        "pytest_exit": 1
+      },
+      {
+        "id": "count-off-errors-from-the-wrong-arm",
+        "code": "killed",
+        "failed_tests": [
+          "tests/test_research_unfinished_turns.py::test_error_counts_distinguish_arms_and_respect_the_category_filter[no-measured-pairs]",
+          "tests/test_research_unfinished_turns.py::test_error_counts_distinguish_arms_and_respect_the_category_filter[with-measured-pair]"
+        ],
+        "named_but_passed": [],
+        "pytest_exit": 1
+      },
+      {
+        "id": "change-legacy-comparison-schema",
+        "code": "killed",
+        "failed_tests": [
+          "tests/test_research_unfinished_turns.py::test_error_counts_distinguish_arms_and_respect_the_category_filter[no-measured-pairs]",
+          "tests/test_research_unfinished_turns.py::test_error_counts_distinguish_arms_and_respect_the_category_filter[with-measured-pair]"
+        ],
+        "named_but_passed": [],
+        "pytest_exit": 1
+      },
+      {
+        "id": "drop-arm-errors-from-ablation-judgments",
+        "code": "killed",
+        "failed_tests": [
+          "tests/test_research_unfinished_turns.py::test_guard_ablation_keeps_general_and_benefit_arm_errors_separate",
+          "tests/test_research_unfinished_turns.py::test_complete_reports_and_search_ablation_identify_research_runner_v2"
+        ],
+        "named_but_passed": [],
+        "pytest_exit": 1
+      }
+    ]
+  },
+  "source_sha256": {
+    "evaluation/research_runner.py": "a9591515b8949010be0e881866becc0399eaed37cb06d78b906a06add7d2bae5",
+    "evaluation/ablation.py": "45b4297a1bd1f8de31f19de1053b423727b25aa05f172521a35795f3e223a33e",
+    "tools/evaluate_ablation.py": "735d52b7ceee5e17d1f5d48bbfc39f007a3ab18cdf1b2ad72ba6c10fe78418a3",
+    "tests/test_research_unfinished_turns.py": "683bdfb55d2dfa7cc72e37092ec5d8676890cce52decc1b8cbedd292be4b3b0d",
+    "tests/mutations/test_research_unfinished_turns.jsonl": "247d2096018526a23d7f586d10825972c0637364503493e32307cd8bb04fbded"
+  },
+  "other_checks": {
+    "check_docs": "passed",
+    "context_index": "passed",
+    "sign_anchors": "passed_two_public_anchors",
+    "agent_attribution": "passed",
+    "lane_handoff": "passed"
+  },
+  "published_v1_reports": {
+    "k53-research-20260926.json": {
+      "research": [
+        {
+          "status": "measured",
+          "loop_status": "complete",
+          "code": null,
+          "count": 29
+        },
+        {
+          "status": "error",
+          "loop_status": null,
+          "code": "http_500",
+          "count": 1
+        }
+      ]
+    },
+    "k46-search-20260926.json": {
+      "on": [
+        {
+          "status": "measured",
+          "loop_status": "complete",
+          "code": null,
+          "count": 29
+        },
+        {
+          "status": "error",
+          "loop_status": null,
+          "code": "http_500",
+          "count": 1
+        }
+      ],
+      "off": [
+        {
+          "status": "measured",
+          "loop_status": "complete",
+          "code": null,
+          "count": 30
+        }
+      ]
+    }
+  },
+  "measurement_limits": [
+    "mock_provider_regressions_not_a_live_model_quality_measurement",
+    "macos_python_3_12_9_reused_existing_public_checkout_dependency_environment",
+    "first_sandboxed_full_suite_attempt_interrupted_after_localhost_bind_PermissionError_then_repeated_without_that_restriction",
+    "skipped_tests_are_not_passes_and_missing_private_corpus_is_not_examined",
+    "no_published_benchmark_scores_changed",
+    "independent_family_review_and_merge_not_performed",
+    "full_macos_suite_was_not_rerun_after_the_compatibility_fix_affected_modules_were_rerun_194_passed"
+  ],
+  "result": "targeted_and_mutations_passed_full_suite_not_green"
+}
