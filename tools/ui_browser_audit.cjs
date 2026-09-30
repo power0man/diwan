@@ -75,6 +75,7 @@ async function open(browser, name, viewportName) {
   const context = await browser.newContext({viewport, deviceScaleFactor: 1, locale: "ar",
     isMobile: viewportName === "mobile", hasTouch: viewportName === "mobile"});
   const page = await context.newPage();
+  page.setDefaultTimeout(WAIT_MS);
   const seen = watch(page);
   seen.blocked_external = 0;
   const allowedOrigin = new URL(config.urls[name]).origin;
@@ -281,7 +282,8 @@ async function waitDefaultWorkspace(page) {
 
 async function openDetails(page) {
   const panel = page.locator("#details-panel");
-  if (!await panel.evaluate(el => el.open)) await panel.locator("summary").click();
+  // قد تحتوي التفاصيل على <details> تقنية متداخلة؛ الملخّص المباشر وحده يفتح اللوحة الخارجية.
+  if (!await panel.evaluate(el => el.open)) await panel.locator(":scope > summary").click();
   await page.waitForFunction(() => document.getElementById("details-panel").open, null, {timeout: 5000});
 }
 
@@ -473,7 +475,8 @@ async function currentDesktop(browser, journey, shots, axe) {
       await clickButton(page, "احفظ في الذاكرة");
       await page.waitForFunction(() => !document.getElementById("dialog").open, null, {timeout: WAIT_MS});
       checks.memory_saved_notice = short(await page.locator("#notice").innerText());
-      await page.locator("#memory").click();
+      const memoryTrigger = page.locator("#memory");
+      await memoryTrigger.click();
       await waitText(page, config.texts.memory_text);
       checks.dialog_focus.memory_panel = await focusInDialog(page);
       const listed = await latinIn(page, "#dialog");
@@ -489,7 +492,7 @@ async function currentDesktop(browser, journey, shots, axe) {
       checks.hashes.push(...await hashRendering(page, "forget-receipt", "#dialog"));
       await shot(page, "09-memory-desktop.png", shots, "memory_dialog");
       await page.locator("#close-dialog").click();
-      const focus = await focusReturn(page, trigger);
+      const focus = await focusReturn(page, memoryTrigger);
       checks.focus_return.forget = focus.returned;
       checks.focus_return_targets.forget = focus.target;
     });
@@ -667,12 +670,40 @@ async function singlePage(browser, journey, viewportName, axe) {
   }
 }
 
+// الخطُّ الذي استعمله Chromium فعلًا لحروف العيّنة، لا افتراضٌ مبنيٌّ على نظام تشغيل المضيف.
+async function browserFonts(browser) {
+  const context = await browser.newContext({locale: "ar"});
+  const page = await context.newPage();
+  page.setDefaultTimeout(WAIT_MS);
+  try {
+    await page.setContent('<p id="font-probe" lang="ar">العربية 0123456789</p>');
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("DOM.enable");
+    await cdp.send("CSS.enable");
+    const {root} = await cdp.send("DOM.getDocument");
+    const {nodeId} = await cdp.send("DOM.querySelector", {nodeId: root.nodeId, selector: "#font-probe"});
+    const {fonts} = await cdp.send("CSS.getPlatformFontsForNode", {nodeId});
+    const pageFacts = await page.locator("#font-probe").evaluate(el => ({
+      platform: navigator.platform,
+      computed_family: getComputedStyle(el).fontFamily,
+    }));
+    return {status: "measured", ...pageFacts, arabic_probe: fonts.map(font => ({
+      family: font.familyName, custom: font.isCustomFont, glyphs: font.glyphCount,
+    }))};
+  } catch (error) {
+    return {status: "unavailable", code: "platform_font_probe_failed", detail: firstLine(error)};
+  } finally {
+    await context.close();
+  }
+}
+
 (async () => {
   let browser;
   try {browser = await playwright.chromium.launch({headless: true, args: ["--no-proxy-server"]});}
   catch (error) {write({code: "chromium_missing", detail: short(error.message)}); process.exit(3);}
   const raw = {browser: {name: "chromium", headless: true, version: browser.version(),
-                         playwright: require("playwright/package.json").version},
+                         playwright: require("playwright/package.json").version,
+                         fonts: await browserFonts(browser)},
                viewports: Object.entries(VIEWPORTS).map(([name, size]) => ({name, ...size, device_scale_factor: 1})),
                journeys: {}, screenshots: [],
                axe: config.axe_path ? {status: "run", version: null, states: [], violations: [], incomplete: [], errors: []}

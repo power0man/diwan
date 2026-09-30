@@ -10,6 +10,7 @@ import http.client
 import json
 import re
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -175,7 +176,10 @@ def test_the_evidence_guard_refuses_any_absolute_path_and_passes_urls_and_repo_p
 
 
 def test_the_evidence_names_its_limits_and_counts_each_journey():
-    raw = {"journeys": {"current": {"steps": [{"id": "open", "ok": True}, {"id": "ask", "ok": False}],
+    fonts = {"status": "measured", "platform": "MacIntel", "computed_family": "system-ui",
+             "arabic_probe": [{"family": "Geeza Pro", "custom": False, "glyphs": 7}]}
+    raw = {"browser": {"name": "chromium", "fonts": fonts},
+           "journeys": {"current": {"steps": [{"id": "open", "ok": True}, {"id": "ask", "ok": False}],
                                     "checks": {}, "timings_ms": {"ask_to_answer": 5}},
                         "single-page": {"steps": [{"id": "sp_open", "ok": True}], "checks": {}}}}
     evidence = audit.build_evidence(raw, commit="abc", date="2026-09-28", coverage={}, sources={"x": "y"})
@@ -184,9 +188,11 @@ def test_the_evidence_names_its_limits_and_counts_each_journey():
     assert evidence["timings_ms"]["model_time"] == "zero_by_scripted_provider"
     assert evidence["timings_ms"]["current"] == {"ask_to_answer": 5}
     assert evidence["provider"]["model_time"] == "zero"
+    assert evidence["browser"]["fonts"] == fonts
     limits = " ".join(evidence["measurement_limits"])
     for words in ("fake_provider", "headless_chromium_only", "not_a_user_study", "not_owner_acceptance"):
         assert words in limits
+    assert "getPlatformFontsForNode" in limits and "linux_fonts" not in limits
 
 
 # — المزوّدُ المكتوب والخادمُ الحقيقيّ —
@@ -424,9 +430,24 @@ def test_driver_uses_the_default_workspace_and_blocks_external_network():
     assert 'route.abort("blockedbyclient")' in driver
     assert 'hashRendering(page, "approval-dialog", "#dialog")' in desktop
     assert 'hashRendering(page, "forget-receipt", "#dialog")' in desktop
+    assert 'const memoryTrigger = page.locator("#memory");' in desktop
+    assert "focusReturn(page, memoryTrigger)" in desktop
+    assert "focusReturn(page, trigger)" in desktop  # المسودة والموافقة لهما فاتحاهما الخاصّان
     for state in ("draft", "forget", "approval"):
         assert f"checks.focus_return.{state}" in desktop
         assert f"checks.focus_return_targets.{state}" in desktop
+
+
+def test_driver_scopes_the_outer_details_summary_and_sets_a_default_deadline():
+    """وجود summary تقني متداخل كان يجعل محدد Playwright العام يطابق عنصرين فيسقط strict mode."""
+    nested = ET.fromstring("<details><summary>خارجي</summary><details><summary>تقني</summary></details></details>")
+    assert len(nested.findall(".//summary")) == 2 and len(nested.findall("summary")) == 1
+    driver = (ROOT / "tools" / "ui_browser_audit.cjs").read_text(encoding="utf-8")
+    assert 'panel.locator(":scope > summary")' in driver
+    assert 'panel.locator("summary")' not in driver
+    assert driver.count("page.setDefaultTimeout(WAIT_MS);") == 2
+    assert 'CSS.getPlatformFontsForNode' in driver
+    assert 'fonts: await browserFonts(browser)' in driver
 
 
 def test_content_digests_and_the_committed_check(tmp_path):
