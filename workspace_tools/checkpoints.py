@@ -102,7 +102,7 @@ def _content(data, shape):
 
 
 def _admit(bundle, approval):
-    _, data, _, _, shape = backup._validate_bundle(bundle)
+    _, data, _, _, shape = backup._guard(backup._validate_bundle)(bundle)
     tombstones = _content(data, shape)
     raw = canonical_bytes(bundle)
     _need(type(approval) is dict and set(approval) == {"archive_sha256", "files"}
@@ -150,8 +150,8 @@ def _archive(store, receipt, temporary, name):
     path = temporary / name
     path.write_bytes(raw)
     path.chmod(0o600)
-    bundle = backup._read_archive(path, receipt["archive_sha256"])
-    _, data, _, _, shape = backup._validate_bundle(bundle)
+    bundle = backup._guard(backup._read_archive)(path, receipt["archive_sha256"])
+    _, data, _, _, shape = backup._guard(backup._validate_bundle)(bundle)
     tombstones = _content(data, shape)
     _need(digest(sorted(tombstones)) == receipt["tombstones_sha256"],
           "checkpoint_tombstones_corrupt")
@@ -165,7 +165,7 @@ def commit_checkpoint(archive, expected_sha256, approval, store: CheckpointStore
     refused. Approval binds every file AND all archive metadata to exact bytes;
     it is a trusted caller decision, not an automatic data classifier.
     """
-    bundle = backup._read_archive(archive, expected_sha256)
+    bundle = backup._guard(backup._read_archive)(archive, expected_sha256)
     raw, tombstones = _admit(bundle, approval)
     state = {}
     with _storage(state), store.exclusive(), tempfile.TemporaryDirectory(prefix="diwan-checkpoint-") as tmp:

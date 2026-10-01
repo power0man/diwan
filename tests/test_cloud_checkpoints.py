@@ -8,6 +8,7 @@ import threading
 import pytest
 
 from evaluation.memory_runner import _Wired
+from core.canonical import canonical_bytes
 from memory.store import MemoryStore
 from workspace_tools import backup, checkpoints as cp
 
@@ -145,6 +146,25 @@ def test_losing_the_head_cannot_silently_reinitialize_old_memory(sample):
     with pytest.raises(cp.CheckpointError, match="checkpoint_head_missing"):
         cp.commit_checkpoint(*old, store)
     assert store.state["head"] is None
+
+
+@pytest.mark.parametrize("fault", ["missing-file", "missing-metadata"])
+def test_invalid_archive_fails_by_code_without_leaking_source_paths(sample, fault):
+    archive, sha, approval = exported(sample)
+    if fault == "missing-file":
+        archive.unlink()
+    else:
+        bundle = json.loads(archive.read_bytes())
+        bundle["files"] = [f for f in bundle["files"] if not f["path"].endswith("/meta.json")]
+        raw = canonical_bytes(bundle)
+        archive.write_bytes(raw)
+        sha = hashlib.sha256(raw).hexdigest()
+    store = TestStore()
+    with pytest.raises(backup.BackupError) as error:
+        cp.commit_checkpoint(archive, sha, approval, store)
+    assert error.value.code == "backup_invalid"
+    assert str(sample["base"]) not in str(error.value)
+    assert store.calls == []
 
 
 @pytest.mark.parametrize("mode", ["text", "agent"])
