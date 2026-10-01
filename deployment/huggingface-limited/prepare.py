@@ -37,11 +37,11 @@ assert s.count("<main>") == 1
 notice = ('<p role="note" style="padding:12px;border:1px solid #a66;border-radius:8px">'
           'ديوان السحابي المحدود — يعمل مستقلاً عن الماك بمحرك qwen3.5:9b. '
           'المحادثة وملفات المشروع النصية متاحة؛ التنفيذ المعزول والتحليل والبحث والوسائط غير مفعلة. '
-          'التخزين مؤقت وقد يُفقد عند إعادة التشغيل؛ انسخ ما تحتاجه. هذه ليست الخدمة الكاملة.</p>')
+          'الاستجابة على المعالج المجاني بطيئة وقد تبلغ خمس دقائق. التخزين مؤقت وقد يُفقد عند إعادة التشغيل؛ انسخ ما تحتاجه. هذه ليست الخدمة الكاملة.</p>')
 s = s.replace("<main>", "<main>" + notice).replace("على جهازك", "سحابي محدود")
 index.write_text(s)
 deploy = ROOT / "deployment/huggingface-limited"
-for source, target in (("Dockerfile","Dockerfile"),("launch.py","launch.py"),("README.space.md","README.md")):
+for source, target in (("Dockerfile","Dockerfile"),("launch.py","launch.py"),("cloud_app.py","cloud_app.py"),("README.space.md","README.md")):
     shutil.copyfile(deploy/source, out/target)
 manifest = {"source_commit":REF, "deployment_mode":"private_hf_cpu_ephemeral_limited",
             "model":"qwen3.5:9b", "source_files":selected,
