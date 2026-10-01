@@ -240,11 +240,16 @@ def test_container_state_uses_the_installed_runtime_and_data_root(distribution, 
     script = tmp_path / "container_state.py"
     shutil.copy2(ROOT / "ci" / "container_state.py", script)
     data = tmp_path / "state"
+    # -I still processes site .pth files, including an editable checkout in CI.
+    # A successful turn alone therefore does not prove that the wheel supplied it.
     runner = (
-        "import runpy,sys; "
-        "sys.path.insert(0, sys.argv[1]); "
+        "import pathlib,runpy,sys; "
+        "installed=pathlib.Path(sys.argv[1]).resolve(); "
+        "sys.path.insert(0, str(installed)); "
         "sys.argv=[sys.argv[2],sys.argv[3]]; "
-        "runpy.run_path(sys.argv[0],run_name='__main__')"
+        "runpy.run_path(sys.argv[0],run_name='__main__'); "
+        "assert all(pathlib.Path(sys.modules[name].__file__).resolve().is_relative_to(installed) "
+        "for name in ('diwan.cli','core.contracts','webui.server')), 'imports escaped installed wheel'"
     )
     env = {"DIWAN_DATA_HOME": str(data)}
     for mode in ("write", "read"):
