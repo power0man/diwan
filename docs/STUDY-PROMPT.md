@@ -153,10 +153,10 @@ sources/         المصادر
 <!-- generated:study-numbers:begin -->
 | المقياس | القيمة | كيف تتحقق بنفسك |
 |---|---|---|
-| اختبارات مجموعة | **5522** | `.venv/bin/python -m pytest` (هذا عدد جمع؛ النجاح له دليله المنفصل) |
+| اختبارات مجموعة | **5543** | `.venv/bin/python -m pytest` (هذا عدد جمع؛ النجاح له دليله المنفصل) |
 | قرارات | **71** بلا فجوة | `grep -oE 'ق[٠-٩]+' docs/DECISIONS.md \| sort -u \| wc -l` |
 | وثائق قبول | **19** | `ls docs/M*-ACCEPTANCE.md` |
-| ملفات بايثون | **477** / **107775** سطرًا | `git ls-files '*.py' \| xargs wc -l` |
+| ملفات بايثون | **478** / **108102** سطرًا | `git ls-files '*.py' \| xargs wc -l` |
 | المخزن البحري النافذ | **117** وثيقة / **1279** صفحة | `docs/probe/project-status.json` |
 | أحدث نطاق موثق | **م١٦** | `docs/M16-ACCEPTANCE.md` |
 <!-- generated:study-numbers:end -->
