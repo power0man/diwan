@@ -15,9 +15,11 @@ import urllib.parse
 import urllib.request
 
 from core.canonical import canonical_bytes
+from workspace_tools.storage_scope import decode_scope
 
 MAX_OBJECT = 1024 * 1024  # Deliberately smaller than the archive format's limit.
 MAX_METADATA = 1024 * 1024
+SCOPE_FILE = ".diwan-checkpoint-scope.json"
 
 
 class StoreError(ValueError):
@@ -119,20 +121,79 @@ class HubCheckpointStore:
         self.prefix = "checkpoints/" + namespace + "/"
         self.control = self.prefix + "control.json"
         self._revision = self._state = self._owner = None
+        self._verified_scope = None
 
     def _decode(self, raw):
         try:
             state = json.loads(raw)
-            _need(type(state) is dict and set(state) == {"schema", "namespace", "epoch", "owner", "head"}
+            fields = {"schema", "namespace", "epoch", "owner", "head"}
+            _need(type(state) is dict and set(state) in (fields, fields | {"scope_sha256"})
                   and type(state["schema"]) is int and state["schema"] == 1 and state["namespace"] == self.namespace
                   and type(state["epoch"]) is int and 1 <= state["epoch"] <= 2**53
                   and (state["owner"] is None or type(state["owner"]) is str
                        and re.fullmatch(r"[a-f0-9]{32}", state["owner"]))
                   and (state["head"] is None or type(state["head"]) is str and len(state["head"]) <= 4096)
+                  and ("scope_sha256" not in state or type(state["scope_sha256"]) is str
+                       and re.fullmatch(r"[a-f0-9]{64}", state["scope_sha256"]))
                   and canonical_bytes(state) == raw, "hf_control_invalid")
             return state
         except (TypeError, ValueError, RecursionError):
             raise StoreError("hf_control_invalid") from None
+
+    def _scope_identity(self, raw):
+        try:
+            value = decode_scope(raw)
+        except ValueError:
+            raise StoreError("hf_scope_invalid") from None
+        plan = value["record"]["plan"]
+        target = {"provider": "hf_hub", "repo_type": getattr(self.remote, "repo_type", None),
+                  "repo_id": getattr(self.remote, "repo_id", None),
+                  "branch": getattr(self.remote, "branch", None), "namespace": self.namespace}
+        _need(plan["target"] == target, "hf_scope_target_mismatch")
+        return {"workspace_id": plan["workspace_id"], "contract_sha256": value["sha256"],
+                "target": plan["target"]}
+
+    def _scope_link(self, revision, paths, state):
+        # The control hash also detects a missing branch binding. Never downgrade
+        # a bound control to the legacy public-data protocol after local loss.
+        _need((SCOPE_FILE in paths) == ("scope_sha256" in state), "hf_scope_binding_missing")
+        if SCOPE_FILE in paths:
+            raw = self.remote.read(revision, SCOPE_FILE)
+            self._scope_identity(raw)
+            _need(hashlib.sha256(raw).hexdigest() == state["scope_sha256"], "hf_scope_binding_corrupt")
+
+    def _data_held(self):
+        paths = self._held()
+        _need("scope_sha256" not in self._state
+              or self._verified_scope == self._state["scope_sha256"], "hf_scope_verification_required")
+        return paths
+
+    def bind_scope(self, scope_raw):
+        """Bind one fresh branch under its lease, or verify the same binding.
+
+        No adoption of old namespaces/claims, expiry, lock stealing or migration.
+        Success is provisional until the surrounding lease exits successfully.
+        """
+        identity = self._scope_identity(scope_raw)
+        paths = self._held()
+        if SCOPE_FILE in paths:
+            return self.verify_scope(scope_raw)
+        _need(self._state["epoch"] == 1 and self._state["head"] is None
+              and not any(p.startswith("checkpoints/") and p != self.control for p in paths),
+              "hf_branch_not_pristine")
+        sha = hashlib.sha256(scope_raw).hexdigest()
+        self._publish({SCOPE_FILE: scope_raw}, {**self._state, "scope_sha256": sha})
+        self._verified_scope = sha
+        return identity
+
+    def verify_scope(self, scope_raw):
+        """Check an existing remote binding; never create or replace one."""
+        identity = self._scope_identity(scope_raw)
+        paths = self._held()
+        _need(SCOPE_FILE in paths, "hf_scope_unbound")
+        _need(self.remote.read(self._revision, SCOPE_FILE) == scope_raw, "hf_scope_mismatch")
+        self._verified_scope = hashlib.sha256(scope_raw).hexdigest()
+        return identity
 
     def _held(self):
         _need(self._owner is not None, "hf_lease_required")
@@ -140,6 +201,7 @@ class HubCheckpointStore:
         _need(revision == self._revision, "hf_lease_fenced")
         state = self._decode(self.remote.read(revision, self.control))
         _need(state == self._state and state["owner"] == self._owner, "hf_lease_fenced")
+        self._scope_link(revision, paths, state)
         return paths
 
     def _publish(self, files, state=None):
@@ -150,11 +212,16 @@ class HubCheckpointStore:
         self._held()
 
     @contextmanager
-    def exclusive(self):
+    def exclusive(self, *, require_bound=False):
         _need(self._owner is None, "hf_lease_already_held")
         revision, paths = self.remote.snapshot()
+        _need(not require_bound or SCOPE_FILE in paths, "hf_scope_unbound")
+        if SCOPE_FILE in paths:
+            self._scope_identity(self.remote.read(revision, SCOPE_FILE))
+            _need(self.control in paths, "hf_scope_binding_missing")
         if self.control in paths:
             state = self._decode(self.remote.read(revision, self.control))
+            self._scope_link(revision, paths, state)
             _need(state["owner"] is None, "hf_namespace_busy")
         else:
             _need(not any(p.startswith(self.prefix) for p in paths), "hf_namespace_not_pristine")
@@ -177,14 +244,15 @@ class HubCheckpointStore:
                       "hf_release_unverified")
             finally:
                 self._revision = self._state = self._owner = None
+                self._verified_scope = None
 
     def read_head(self):
-        self._held()
+        self._data_held()
         head = self._state["head"]
         return None if head is None else head.encode("utf-8")
 
     def is_pristine(self):
-        paths = self._held()
+        paths = self._data_held()
         return self._state["head"] is None and not any(
             p.startswith(self.prefix) and p != self.control for p in paths)
 
@@ -193,14 +261,14 @@ class HubCheckpointStore:
         return self.prefix + key + ".json"
 
     def get(self, key):
-        self._held()
+        self._data_held()
         return self.remote.read(self._revision, self._path(key))
 
     def put_immutable(self, key, value):
         path = self._path(key)
         _need(type(value) is bytes and len(value) <= MAX_OBJECT
               and hashlib.sha256(value).hexdigest() == key.split("/")[1], "hf_object_invalid")
-        if path in self._held():
+        if path in self._data_held():
             _need(self.remote.read(self._revision, path) == value, "hf_immutable_conflict")
         else:
             self._publish({path: value})
