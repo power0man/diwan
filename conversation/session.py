@@ -21,6 +21,7 @@ from core.budget import Budget
 from core.canonical import canonical_bytes, digest
 from core.contracts import Message, Request, Response, Usage
 from core.ledger import GENESIS, Ledger, LedgerCorrupt
+from core.locality import is_local_provider
 from core.quoted import quarantine_quoted
 from memory.store import MemoryRefused, turn_memory, valid_turn_memory
 from core.run import _check_response, execute
@@ -514,7 +515,7 @@ class ChatSession:
                 # The guard sees the exact fresh context under the append lock,
                 # before the provider sees it and before recording a pending turn.
                 request_validator(req)
-            if getattr(provider, "is_local", None) is not True:
+            if not is_local_provider(provider):
                 _fail("policy_requires_local", "المحادثة تتطلب مزودًا محليًا")
             turn = {"turn_id": turn_id, "text": text, "request_sha256": digest(req.fingerprint_payload()),
                     "context_sha256": context, "result": None, **({"memory": held} if held else {})}

@@ -34,6 +34,7 @@ from core.budget import Budget
 from core.canonical import canonical_bytes, digest
 from core.contracts import Message, Request, ToolCall, ToolSpec, _message_payload
 from core.ledger import GENESIS, Ledger, LedgerCorrupt
+from core.locality import is_local_provider
 from core.run import RouteRefused
 from core.validate import validated
 from memory.store import MemoryRefused, turn_memory, valid_turn_memory
@@ -237,7 +238,7 @@ class _ProviderGuard:
     def __init__(self, session, state, turn, provider):
         self.session, self.state, self.turn, self.provider = session, state, turn, provider
         self.name = getattr(provider, "name", "local")
-        self.is_local = getattr(provider, "is_local", None) is True
+        self.is_local = is_local_provider(provider)
 
     def estimate_micros(self, request):
         # core.execute replays recorded calls before reaching this method. A fresh
@@ -843,7 +844,7 @@ class AgentSession:
             existing, initial = self._admit_turn(state, turn_id, text, thinking)
             if existing is not None:
                 return self._public(existing)
-            if getattr(provider, "is_local", None) is not True:
+            if not is_local_provider(provider):
                 _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
             memory = self._memory_for(text)
             turn = {"turn_id": turn_id, "text": text, "initial_messages": _copy(initial),
@@ -872,7 +873,7 @@ class AgentSession:
                 turn["result"] = self._uncertain(turn)
                 self._save(state)
                 return self._public(turn)
-            if getattr(provider, "is_local", None) is not True:
+            if not is_local_provider(provider):
                 _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
             return self._run(state, turn, provider)
 
