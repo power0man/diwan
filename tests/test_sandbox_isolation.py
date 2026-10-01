@@ -90,15 +90,31 @@ def test_historical_escape_payloads_are_refused_before_execution(monkeypatch, tm
 def test_trusted_bootstrap_uses_empty_snapshot_and_explicit_configuration(monkeypatch, tmp_path):
     captured = []
     backend = RecordingBackend()
-    def constructor(receipt, root, files):
-        captured.append((receipt, root, files))
+    def constructor(receipt, root, files, **kwargs):
+        captured.append((receipt, root, files, kwargs))
         return backend
     monkeypatch.setattr(sandbox, "DockerExecutionBackend", constructor)
     receipt, root = tmp_path / "receipt.json", tmp_path / "workspace"
     assert sandbox.configure_sandbox_backend(receipt, root) is backend
-    assert captured == [(receipt, root, ())]
+    assert captured == [(receipt, root, (), {})]
     assert sandbox.sandbox_configuration() == {"backend": "docker", **backend.receipt, "snapshot_files": []}
     assert sandbox.declared_host() == "docker:" + IMAGE
+
+
+def test_trusted_bootstrap_passes_an_explicit_docker_executable(monkeypatch, tmp_path):
+    captured = []
+    backend = RecordingBackend()
+
+    def constructor(receipt, root, files, **kwargs):
+        captured.append((receipt, root, files, kwargs))
+        return backend
+
+    monkeypatch.setattr(sandbox, "DockerExecutionBackend", constructor)
+    receipt, root = tmp_path / "receipt.json", tmp_path / "workspace"
+    assert sandbox.configure_sandbox_backend(
+        receipt, root, docker_executable="/usr/bin/docker"
+    ) is backend
+    assert captured == [(receipt, root, (), {"docker_executable": "/usr/bin/docker"})]
 
 
 def test_code_and_harness_are_only_data_sent_to_configured_backend(monkeypatch, tmp_path):

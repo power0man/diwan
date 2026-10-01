@@ -58,10 +58,16 @@ NOT_A_BOUNDARY = "environment_declaration_is_not_a_security_boundary"
 REFUSAL_NO_HOST = "execution_backend_unavailable"
 
 
-def configure_sandbox_backend(receipt_path: Path, workspace_root: Path) -> DockerExecutionBackend:
-    """Trusted bootstrap only. No environment fallback or model-tool exposure."""
+def configure_sandbox_backend(receipt_path: Path, workspace_root: Path, *,
+                              docker_executable: str | None = None) -> DockerExecutionBackend:
+    """Trusted bootstrap only. No environment fallback or model-tool exposure.
+
+    The backend owns the default Docker path.  A trusted caller may override it
+    explicitly without this adapter duplicating or changing that default.
+    """
     global _SANDBOX_BACKEND
-    backend = DockerExecutionBackend(receipt_path, workspace_root, ())
+    docker = {} if docker_executable is None else {"docker_executable": docker_executable}
+    backend = DockerExecutionBackend(receipt_path, workspace_root, (), **docker)
     _SANDBOX_BACKEND = backend
     return backend
 
