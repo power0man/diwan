@@ -44,7 +44,8 @@ def run_actual_workflow(history, event, base, head):
     command = shlex.join([sys.executable, str(ROOT / "tools/agent_attribution.py")])
     script = script.replace("/opt/venv/bin/python tools/agent_attribution.py", command)
     return subprocess.run(["/bin/sh", "-c", script], cwd=path,
-        env={**os.environ, "EVENT_NAME": event, "RANGE_BASE": base, "RANGE_HEAD": head},
+        env={**os.environ, "EVENT_NAME": event, "RANGE_BASE": base, "RANGE_HEAD": head,
+             "GITHUB_ENV": str(path / "workflow.env")},
         capture_output=True, text=True)
 
 
