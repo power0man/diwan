@@ -43,12 +43,19 @@ _LOCAL_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 class OllamaProvider:
     def __init__(self, model: str = DEFAULT_MODEL, base_url: str = BASE_URL,
-                 allow_thinking: bool = False):
+                 allow_thinking: bool = False, seed: int = SAMPLING_SEED):
         self.model = model
         self.base_url = base_url
         self.name = f"ollama:{model}"
         self.is_local = True
         self.allow_thinking = allow_thinking
+        if type(seed) is not int:
+            raise TypeError("seed must be an integer")
+        self.seed = seed
+
+    def with_seed(self, seed: int) -> "OllamaProvider":
+        """نسخةٌ من المزوّد ببذرة قياسٍ معلنة، مع حفظ بقية إعداد الاتصال."""
+        return type(self)(self.model, self.base_url, self.allow_thinking, seed)
 
     def estimate_micros(self, request: Request) -> int:
         return 0  # محليّ: لا فاتورة مالية — انظر توثيق الوحدة
@@ -106,7 +113,7 @@ class OllamaProvider:
             # قابلٍ لإعادة الإنتاج — وهو ما وثّقه tools/model_probe.py قبلًا.
             # وseed مع temperature=0 يزيل تقلّبًا رُصد في ag06 بين تشغيلين.
             "options": {"num_predict": request.max_output, "temperature": 0,
-                        "num_ctx": CONTEXT_TOKENS, "seed": SAMPLING_SEED},
+                        "num_ctx": CONTEXT_TOKENS, "seed": self.seed},
         }
         if request.tools:
             payload["tools"] = [self._tool_payload(tool) for tool in request.tools]
