@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "date": "2026-10-01T07:39:05.142403+00:00",
+  "date": "2026-10-01",
   "agent": "openai/codex",
   "status": "experimental_not_deployed",
   "worker_sha256": "cc1d84b0304b452e3342d55299e5a6312b2cefe15170867fcf8541f332e013cb",
