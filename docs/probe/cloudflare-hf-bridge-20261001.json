@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-01T07:39:05.142403+00:00",
+  "agent": "openai/codex",
+  "status": "experimental_not_deployed",
+  "worker_sha256": "cc1d84b0304b452e3342d55299e5a6312b2cefe15170867fcf8541f332e013cb",
+  "wrangler_version": "4.145.0",
+  "runtime": "workerd via Miniflare 5.20260930.0-alpha",
+  "live_private_upstream_probe": {
+    "kind": "local_workerd_to_actual_private_HF_readonly",
+    "get": 200,
+    "assets": [
+      {
+        "path": "/app.js",
+        "status": 200,
+        "bytes": 62502
+      },
+      {
+        "path": "/style.css",
+        "status": 200,
+        "bytes": 5544
+      }
+    ],
+    "product_csrf_accepted": 200,
+    "product_csrf_refused": 403,
+    "hostile_origin_refused": 403,
+    "hf_token_in_html": false,
+    "access_context": "synthetic_local",
+    "actual_cloudflare_access_tested": false,
+    "inference": false,
+    "production_changed": false
+  },
+  "synthetic_handler_cases": 21,
+  "mutation_guards_killed": 18,
+  "review": "local OpenAI technical review; not a counted other-family review",
+  "production_route_changed": false,
+  "production_space_changed": false,
+  "new_paid_resources": false,
+  "measurement_limits": [
+    "Access context was synthetic in a local workerd process; no live Cloudflare edge authentication acceptance.",
+    "HF app reads only: no model inference, message creation, owner-data migration, or container restart.",
+    "This bridge does not implement durable storage or multi-user session isolation.",
+    "No DNS route, Worker deployment, or service credential provisioning occurred.",
+    "Node handler tests and workerd smoke complement each other; the first workerd probe exposed an incompatible no-store plus cacheTtl override and this was removed."
+  ]
+}
