@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-10-01",
+  "task": "#188",
+  "scope": "named_public_dalub_status_and_metadata_only",
+  "base_commit": "30515a37e87106bacdbdc03f21c4e21515c1ad47",
+  "artifact": "docs/probe/dalub-benchmark-results.json",
+  "status_before": "certified",
+  "status_after": "withdrawn",
+  "original_fields_preserved_except_status": true,
+  "original_numeric_values_preserved": 146,
+  "preserved_payload_sha256": "e94d01b992f8246b9e1701c8fe3d70e58492252b4b6a871151350737b259725b",
+  "measurement_rerun": false,
+  "metadata_regressions_before": {
+    "failed": 2,
+    "passed": 1
+  },
+  "focused_after": {
+    "passed": 19,
+    "failed": 0
+  },
+  "full_probe_index_created": false,
+  "issue_remains_open": true,
+  "measurement_limits": [
+    "one_explicitly_named_already_public_report_only_no_repository_probe_inventory",
+    "no_private_or_sealed_files_read_or_exported",
+    "public_importer_is_not_proven_measurement_author",
+    "no_measurement_values_recomputed_or_changed",
+    "public_index_and_other_historical_metadata_are_not_completed_by_this_patch",
+    "local_openai_review_is_not_independent_family_approval"
+  ]
+}
