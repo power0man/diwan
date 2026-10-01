@@ -15,11 +15,13 @@ import pytest
 from agent.action_revert import revert_prepared
 from agent.actions import ActionStore
 from agent.journal import Journal
+from agent.loop import quarantined_result
 from agent.registry import ToolContext, ToolRegistry
 from analysis import backend as analysis
 from analysis.backend import AnalysisResult
 from analysis.tool import ANALYZE_DATA
-from core.contracts import ToolCall
+from core.contracts import Message, Request, ToolCall
+from providers.ollama import OllamaProvider
 
 POSITION = dict(session_id="session", turn_id="turn-1", step_index=0)
 REQUEST = "a" * 64
@@ -65,6 +67,76 @@ def _call(store, context, arguments, index=0):
 
 
 ARGS = {"code": "print(1)", "inputs": ["sales.csv"], "outputs": ["answer.json", "chart.png"]}
+
+
+@pytest.mark.parametrize("count", [0, 1, 8, 9])
+def test_the_model_sees_output_cardinality_that_matches_execution(setup, count):
+    """حدود الطلب المرسل تتيح تصحيح النداء قبل أن يرفضه التنفيذ."""
+    _, fake, store, context = setup
+    request = Request(messages=(Message("user", "حلّل الملف"),), model="fixture", model_version="v",
+                      max_output=64, deadline_s=1, data_policy="public", idempotency_key=None,
+                      tools=(ANALYZE_DATA.spec,))
+    wire = OllamaProvider("fixture").payload(request)
+    schema = wire["tools"][0]["function"]["parameters"]["properties"]["outputs"]
+    assert schema["type"] == "array" and schema["items"]["type"] == "string"
+    assert (schema["minItems"], schema["maxItems"]) == (1, 8)
+    names = [f"out-{index}.json" for index in range(count)]
+    fake.result = _result(outputs={name: b"{}" for name in names})
+    result = _call(store, context, {**ARGS, "outputs": names})
+    if schema["minItems"] <= count <= schema["maxItems"]:
+        assert result["status"] == "ok" and len(fake.calls) == 1
+    else:
+        assert result["code"] == "argument_invalid" and fake.calls == []
+
+
+@pytest.mark.parametrize("count", [0, 1, 32, 33])
+def test_the_model_sees_optional_inputs_with_the_execution_file_limit(setup, count):
+    """يمكن توليد بيانات بلا مدخلات، لكن لا تقبل الأداة أكثر من 32 ملفًا."""
+    work, fake, store, context = setup
+    request = Request(messages=(Message("user", "حلّل الملف"),), model="fixture", model_version="v",
+                      max_output=64, deadline_s=1, data_policy="public", idempotency_key=None,
+                      tools=(ANALYZE_DATA.spec,))
+    wire = OllamaProvider("fixture").payload(request)
+    parameters = wire["tools"][0]["function"]["parameters"]
+    schema = parameters["properties"]["inputs"]
+    assert "inputs" not in parameters["required"]
+    assert schema["type"] == "array" and schema["items"]["type"] == "string"
+    assert schema.get("minItems", 0) == 0 and schema["maxItems"] == 32
+    names = [f"input-{index}.csv" for index in range(count)]
+    for name in names:
+        (work / name).write_text("value\n1\n", encoding="utf-8")
+    result = _call(store, context, {**ARGS, "inputs": names})
+    if count <= schema["maxItems"]:
+        assert result["status"] == "ok" and fake.calls[0][1] == tuple(names)
+    else:
+        assert result["code"] == "argument_invalid" and fake.calls == []
+
+
+@pytest.mark.parametrize("inputs", [[], ["sales.csv"]])
+def test_script_failure_explains_only_the_requested_input_files(setup, inputs):
+    work, fake, store, context = setup
+    (work / "unrequested-private-marker.csv").write_text("not requested", encoding="utf-8")
+    fake.result = _result(exit_code=1, stderr="FileNotFoundError: missing-input", outputs={})
+    result = _call(store, context, {**ARGS, "inputs": inputs})
+    assert result["code"] == "analysis_script_failed" and len(fake.calls) == 1
+    payload, held = quarantined_result(result)
+    assert payload["content"] == result["content"] and held == ()
+    assert "ملفات inputs المطلوبة: " + json.dumps(inputs, ensure_ascii=False) in result["content"]
+    assert "read_file لا تنسخه" in result["content"] and "في inputs" in result["content"]
+    assert "FileNotFoundError: missing-input" in result["content"] and "لم يُكتب شيء" in result["content"]
+    assert str(work) not in result["content"] and "unrequested-private-marker" not in result["content"]
+    assert (work / "answer.json").read_text(encoding="utf-8") == "قديم"
+
+
+def test_the_model_sees_that_reading_a_file_does_not_supply_it_to_analysis():
+    request = Request(messages=(Message("user", "حلّل الملف"),), model="fixture", model_version="v",
+                      max_output=64, deadline_s=1, data_policy="public", idempotency_key=None,
+                      tools=(ANALYZE_DATA.spec,))
+    schema = OllamaProvider("fixture").payload(request)["tools"][0]["function"]["parameters"]
+    description = schema["properties"]["inputs"]["description"]
+    assert "كل ملف من مساحة العمل سيقرأه الكود" in description
+    assert "read_file لا تنسخه" in description
+    assert "يجوز تركها فارغة" in description and "inputs" not in schema["required"]
 
 
 def test_declared_outputs_are_written_with_one_revert_for_the_whole_call(setup):
