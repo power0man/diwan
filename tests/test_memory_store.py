@@ -24,7 +24,7 @@ def test_the_store_meets_every_pre_registered_threshold():
     failed = {r["id"]: r["failures"] for r in report["results"] if not r["passed"]}
     assert failed == {}
     assert report["metrics"] == {"forget_rate": 1.0, "leakage": 0, "consent_violations": 0,
-                                 "injection_unquarantined": 0}
+                                 "injection_unquarantined": 0, "history_echoes": 0}
     assert report["meets_thresholds"] is True and report["passed"] == report["total"] == 30
 
 

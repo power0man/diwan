@@ -65,7 +65,7 @@ def test_the_frozen_bank_passes_through_the_wired_path():
     assert failed == {}
     assert report["driver"] == "wired" and report["passed"] == report["total"] == 30
     assert report["metrics"] == {"forget_rate": 1.0, "leakage": 0, "consent_violations": 0,
-                                 "injection_unquarantined": 0}
+                                 "injection_unquarantined": 0, "history_echoes": 0}
     assert report["meets_thresholds"] is True
 
 
@@ -2117,8 +2117,9 @@ def test_a_recount_validates_the_suite_against_the_model_the_report_was_measured
     raw_json = json.dumps(scenario, ensure_ascii=False).replace("٠١١٤٥٦٧٨٩٠", default)
     suite = tmp_path / "suite.json"
     suite.write_text(json.dumps({**BANK, "scenarios": [json.loads(raw_json)]}, ensure_ascii=False), encoding="utf-8")
-    report = {"suite_sha256": hashlib.sha256(suite.read_bytes()).hexdigest(), "metrics": {"leakage": 0},
-              "results": [{"id": "forget_001", "category": "forget", "passed": True, "failures": [], "leaks": 0}]}
+    report = {"suite_sha256": hashlib.sha256(suite.read_bytes()).hexdigest(),
+              "metrics": {"forget_rate": 1.0, "leakage": 0, "consent_violations": 0, "injection_unquarantined": 0},
+              "meets_thresholds": True, "results": [{"id": "forget_001", "category": "forget", "passed": True, "failures": [], "leaks": 0}]}
     measured = tmp_path / "measured.json"
     for engine, status, code in (({"model": "alt-model-7788"}, 0, None), ({"model": default}, 2, "witness_collides_with_request_payload"),
                                  (None, 2, "witness_collides_with_request_payload")):
