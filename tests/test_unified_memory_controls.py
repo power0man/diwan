@@ -245,7 +245,8 @@ def test_unified_forget_recovers_after_interrupted_shared_state_write(app, kind,
     assert value not in "".join(message.content for message in app.test_provider.requests[-1].messages)
 
 
-def test_unified_transaction_path_is_limited_to_canonical_session(app):
+@pytest.mark.parametrize("kind", ["agent"])
+def test_unified_transaction_path_is_limited_to_canonical_session(app, kind):
     import base64
     from core.canonical import canonical_bytes, digest
     from webui.server import DEFAULT_SESSION_ID

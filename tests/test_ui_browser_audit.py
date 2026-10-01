@@ -428,6 +428,7 @@ def test_driver_uses_the_default_workspace_and_blocks_external_network():
     assert 'locator("#project-name")' not in mobile and 'locator("#session-name")' not in mobile
     assert 'context.route("**/*"' in driver and "requestUrl.origin === allowedOrigin" in driver
     assert 'route.abort("blockedbyclient")' in driver
+    assert 'name: "مراجعة: اقتراح حفظ في الذاكرة", exact: true' in desktop
     assert 'hashRendering(page, "approval-dialog", "#dialog")' in desktop
     assert 'hashRendering(page, "forget-receipt", "#dialog")' in desktop
     assert 'const memoryTrigger = page.locator("#memory");' in desktop

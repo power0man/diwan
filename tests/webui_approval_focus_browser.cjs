@@ -33,7 +33,7 @@ if (!origin) throw new Error("origin_required");
     await page.locator("#session-title").filter({hasText: "محادثة عامة"}).waitFor();
     await page.locator("#message").fill("احفظ تفضيلي بعد موافقتي.");
     await page.locator("#message").press("Enter");
-    const review = page.getByRole("button", {name: /مراجعة فعل propose_memory/});
+    const review = page.getByRole("button", {name: "مراجعة: اقتراح حفظ في الذاكرة", exact: true});
     await review.waitFor();
     await review.click();
     assert.equal(await page.evaluate(() => document.querySelector("#dialog").contains(document.activeElement)), true,

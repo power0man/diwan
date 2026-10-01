@@ -532,7 +532,7 @@ async function currentDesktop(browser, journey, shots, axe) {
       const started = Date.now();
       await page.locator("#message").fill(config.texts.memory_request);
       await page.locator("#send").click();
-      const review = page.getByRole("button", {name: /^مراجعة فعل/});
+      const review = page.getByRole("button", {name: "مراجعة: اقتراح حفظ في الذاكرة", exact: true});
       await review.last().waitFor({timeout: WAIT_MS});
       t.agent_request_to_approval = Date.now() - started;
       checks.approval_button_label = short(await review.last().innerText(), 60);
