@@ -189,7 +189,7 @@ def test_pr179_agent_scrub_preserves_control_metadata_and_scrubs_tool_payloads()
     assert scrubbed["turn_id"] == scrubbed["input_digest"] == value
     assert scrubbed["result"]["status"] == scrubbed["result"]["error_code"] == value
     call = scrubbed["initial_messages"][0]["tool_calls"][0]
-    assert call["call_id"] == call["name"] == value
+    assert value not in call["call_id"] and call["name"] == value
     assert call["arguments"]["secret"] != value
     result = scrubbed["result"]["steps"][0]["tool_results"][0]
     assert result["call_id"] == result["name"] == result["status"] == result["call_digest"] == value
@@ -1366,10 +1366,13 @@ class _CallIdEchoingDelegate(_BankEchoingDelegate):
         return Response("حسنًا.", Usage(1, 1), "complete", 0, provider=self.name, model_version="0" * 64)
 
 
-def test_a_forgotten_value_echoed_as_a_tool_call_id_in_the_reused_session_fails_the_scenario(tmp_path):
+def test_a_forgotten_value_echoed_as_a_tool_call_id_in_the_reused_session_fails_the_scenario(tmp_path, monkeypatch):
     """ملاحظةُ Codex على #129 (الجولة الحادية والعشرون): شاهدٌ صالحٌ معرّفَ نداءٍ (`passport-secret-445566`) يردّده النموذجُ
     `call_id` فيبقى في نداءه وفي `tool_call_id` ردِّ الأداة ويُرسلان إليه بعد النسيان؛ صار `_payload` يقرأ المعرّفين."""
     from evaluation.memory_runner import run_wired_scenario
+    # Context IDs now receive safe aliases; bypass that guard to keep this a
+    # negative test of the evaluator's ability to detect the real wire leak.
+    monkeypatch.setattr("conversation.agent_session._context_call_aliases", lambda turns, text: {})
     value = "passport-secret-445566"
     scenario = {"id": "forget_call_id_echo", "category": "forget", "steps": [
         {"op": "remember", "project": "A", "text": value, "consent": "owner", "as": "m1"},

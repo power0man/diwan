@@ -894,7 +894,8 @@ def restore_workspace(archive, destination, expected_sha256, *, tombstones_from=
                                  if mode != "media"}
             reusable_projects.update(project for project, sid in agents if (project, sid) not in legacy)
             if any(_json(raw).get("system_role") == "unified_all_projects"
-                   for path, raw in data.items() if path.endswith("/meta.json")):
+                   for path, raw in data.items()
+                   if re.fullmatch(r"projects/[a-f0-9]{32}/sessions/[a-f0-9]{32}/meta\.json", path)):
                 reusable_projects.update(str(Path(memory).parent) for memory in memories)
             forgotten = _forgotten_archive_texts(data, memories, live_root, reusable_projects)
             _scrub_restored_sessions(destination, data, shape, forgotten, legacy)

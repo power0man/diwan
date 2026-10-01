@@ -132,13 +132,56 @@ _TOOL_RESULT_CONTROL = frozenset({
 })
 
 
-def _scrub_message_payload(message, text, marker):
-    """Scrub message content and tool arguments without changing their identities."""
+def _context_messages(turn):
+    for key in ("initial_messages", "transcript"):
+        yield from turn[key]
+    for intent in turn["calls"]:
+        yield from intent.get("request", {}).get("messages", ())
+
+
+def _context_call_aliases(turns, text):
+    """Rekey affected model-context IDs; audit/action identities are not inputs or outputs.
+
+    The digest is domain-separated and contains the original ID and collision
+    counter only, never the forgotten text. Reject a digest which accidentally
+    repeats that text (including a one-character memory) or an existing ID.
+    """
+    identifiers = set()
+    for turn in turns:
+        for message in _context_messages(turn):
+            identifiers.update(call["call_id"] for call in message.get("tool_calls", ())
+                               if isinstance(call.get("call_id"), str))
+            if isinstance(message.get("tool_call_id"), str):
+                identifiers.add(message["tool_call_id"])
+    occupied, aliases = set(identifiers), {}
+    for original in sorted(identifiers):
+        if text not in original:
+            continue
+        for counter in range(4096):
+            alias = digest({"namespace": "diwan-forgotten-context-call-v1",
+                            "original_call_id": original, "counter": counter})
+            if alias not in occupied and text not in alias:
+                break
+        else:
+            _fail("state_corrupt", "تعذر اختيار معرّف سياق خال من النص المنسي")
+        aliases[original] = alias
+        occupied.add(alias)
+    return aliases
+
+
+def _scrub_message_payload(message, text, marker, aliases):
+    """Scrub reusable model data, rekeying only IDs that contain the forgotten text."""
     count = 0
+    if message.get("tool_call_id") in aliases:
+        message["tool_call_id"] = aliases[message["tool_call_id"]]
+        count += 1
     if isinstance(message.get("content"), str):
         message["content"], found = _scrub_text(message["content"], text, marker)
         count += found
     for call in message.get("tool_calls", ()):
+        if call.get("call_id") in aliases:
+            call["call_id"] = aliases[call["call_id"]]
+            count += 1
         if isinstance(call, dict) and "arguments" in call:
             call["arguments"], found = _scrub_value(call["arguments"], text, marker)
             count += found
@@ -158,9 +201,10 @@ def _scrub_tool_result(result, text, marker):
 
 
 def _scrub_agent_turns(turns, text):
-    """Scrub model-visible agent history while leaving IDs, digests and statuses intact."""
+    """Scrub reusable context; retain original IDs in audit results and action receipts."""
     marker = _redaction_token(text)
     output, count = _copy(turns), 0
+    aliases = _context_call_aliases(output, text)
     for turn in output:
         turn["text"], found = _scrub_text(turn["text"], text, marker)
         count += found
@@ -170,11 +214,11 @@ def _scrub_agent_turns(turns, text):
             count += found
         for key in ("initial_messages", "transcript"):
             for message in turn[key]:
-                count += _scrub_message_payload(message, text, marker)
+                count += _scrub_message_payload(message, text, marker, aliases)
         for intent in turn["calls"]:
             request = intent.get("request", {})
             for message in request.get("messages", ()):
-                count += _scrub_message_payload(message, text, marker)
+                count += _scrub_message_payload(message, text, marker, aliases)
         result = turn.get("result")
         if not isinstance(result, dict):
             continue
