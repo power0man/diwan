@@ -624,6 +624,7 @@ class LocalApp:
             # الإيصالُ يعدّ الجولاتِ التي رأى النموذجُ فيها العنصر؛ والجلسةُ لا تُقرأ وهي تعمل
             need(self.generation.acquire(blocking=False), "generation_busy")
             try:
+                self._recover_memory_transactions()
                 receipt = self._forget_memory_atomically(project, store, item)
             finally:
                 self.generation.release()
@@ -766,6 +767,7 @@ class LocalApp:
             need(self.generation.acquire(blocking=False), "generation_busy")
             self.active, self.active_payload = (*key, operation), fingerprint
         try:
+            self._recover_memory_transactions()
             # A new turn freezes the all-project scope in ``turn["memory"]``.
             # Resume reuses that saved block; rebuilding it here can only make
             # an unrelated project's later storage failure block the pending
@@ -1077,6 +1079,7 @@ class LocalApp:
             self.active = (*key, request["turn"])
             self.active_payload = fingerprint
         try:
+            self._recover_memory_transactions()
             session = self.session(project, key[1])
             for old in session.history():
                 if old["turn_id"] == request["turn"]:
