@@ -59,6 +59,36 @@ def test_declared_public_origin_accepts_matching_get_and_post_and_announces_stat
         live.close()
 
 
+@pytest.mark.parametrize("port", [443, 8443])
+def test_public_origin_uses_browser_default_https_port_serialization(tmp_path, port):
+    authority = "demo.example" if port == 443 else f"demo.example:{port}"
+    live = PublicServer(tmp_path / "https-port", public_origin=f"https://demo.example:{port}")
+    try:
+        assert live.server.origin == f"https://{authority}"
+        assert live.request("GET", host=authority)[0] == 200
+        assert live.request("POST", host=authority, origin=f"https://{authority}")[0] == 200
+        other = "demo.example:443" if port == 443 else "demo.example"
+        assert live.request("GET", host=other)[0] == 403
+    finally:
+        live.close()
+
+
+@pytest.mark.parametrize("port", [80, 443, 8080])
+def test_local_origin_omits_only_the_default_http_port(monkeypatch, port):
+    real_bind = Server.server_bind
+
+    def bound_port(server):
+        real_bind(server)
+        # Bind an ephemeral socket; test the advertised port without privileged ports.
+        server.server_port = port
+
+    monkeypatch.setattr(Server, "server_bind", bound_port)
+    with Server(None, 0) as server:
+        authority = "127.0.0.1" if port == 80 else f"127.0.0.1:{port}"
+        assert server.origin == f"http://{authority}"
+        assert server.origin_host == authority
+
+
 def test_declared_origin_rejects_other_host_even_when_proxy_headers_claim_it(tmp_path):
     live = PublicServer(tmp_path / "public", public_origin="https://demo.example")
     try:

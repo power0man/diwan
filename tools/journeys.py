@@ -424,6 +424,7 @@ def scan(root: Path) -> dict:
                 counts["unreadable_projects"] += 1
                 unreadable[exc.code] += 1
                 continue
+            sessions_fd = None
             try:
                 try:
                     meta, _ = _read_json("meta.json", project_fd, missing="metadata_missing")
@@ -441,20 +442,18 @@ def scan(root: Path) -> dict:
                     unreadable[exc.code] += 1
                     continue
                 counts["projects"] += 1
-                try:
-                    for name in names:
-                        counts["sessions"] += 1
-                        try:
-                            if not IDENTIFIER.fullmatch(name):
-                                raise Unreadable("entry_invalid")
-                            journeys.extend(_session(project_fd, sessions_fd, name))
-                        except Unreadable as exc:
-                            counts["unreadable_sessions"] += 1
-                            unreadable[exc.code] += 1
-                finally:
-                    if sessions_fd is not None:
-                        os.close(sessions_fd)
+                for name in names:
+                    counts["sessions"] += 1
+                    try:
+                        if not IDENTIFIER.fullmatch(name):
+                            raise Unreadable("entry_invalid")
+                        journeys.extend(_session(project_fd, sessions_fd, name))
+                    except Unreadable as exc:
+                        counts["unreadable_sessions"] += 1
+                        unreadable[exc.code] += 1
             finally:
+                if sessions_fd is not None:
+                    os.close(sessions_fd)
                 os.close(project_fd)
         if projects_fd is not None:
             os.close(projects_fd)
