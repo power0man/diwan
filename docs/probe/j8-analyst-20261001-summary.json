@@ -226,5 +226,13 @@
     "Historical measured denominator excluded seven execution failures; its percentage is not directly comparable to the complete denominator",
     "Raw report and tool trace remain outside this repository; only counts, fingerprints, source and limits are published",
     "The three deficient categories and overall rate prevent closing issue44"
-  ]
+  ],
+  "tool_choice_observation": {
+    "awaiting_owner_cases": 7,
+    "preceded_by_empty_inputs_and_file_not_found": 6,
+    "empty_input_calls_in_each_of_those_cases": 2,
+    "inspection_after_successful_analysis": 1,
+    "contract": "Workspace reads and listings do not copy files into the analysis container; only declared inputs are copied. run_command already advertises owner consent.",
+    "interpretation_limit": "Observed sequence, not proof that a guidance change improves outcomes; the generic follow-up is separate from this baseline."
+  }
 }
