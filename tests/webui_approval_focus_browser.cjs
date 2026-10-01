@@ -31,6 +31,7 @@ if (!origin) throw new Error("origin_required");
     page.setDefaultTimeout(20000);
     await page.goto(origin, {waitUntil: "domcontentloaded"});
     await page.locator("#session-title").filter({hasText: "محادثة عامة"}).waitFor();
+    await page.waitForFunction(() => !document.querySelector("#send").disabled);
     await page.locator("#message").fill("احفظ تفضيلي بعد موافقتي.");
     await page.locator("#message").press("Enter");
     const review = page.getByRole("button", {name: "مراجعة: اقتراح حفظ في الذاكرة", exact: true});

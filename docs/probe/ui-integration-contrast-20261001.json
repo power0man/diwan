@@ -1,0 +1,64 @@
+{
+  "scope": "targeted_color_contrast_recheck_after_scrolling_into_view",
+  "targets": [
+    {
+      "selector": ".local",
+      "color": "rgb(37, 59, 53)",
+      "background": "rgb(240, 242, 235)",
+      "violations": [],
+      "incomplete": [],
+      "passes": [
+        "color-contrast"
+      ]
+    },
+    {
+      "selector": "label[for=\"projects\"]",
+      "color": "rgb(37, 59, 53)",
+      "background": "rgb(240, 242, 235)",
+      "violations": [],
+      "incomplete": [],
+      "passes": [
+        "color-contrast"
+      ]
+    }
+  ],
+  "blocked_external": 0,
+  "commit": "2bb811da09f7",
+  "content_sha256_12": {
+    "tools/ui_browser_audit.py": "b2bc427f0839",
+    "tools/ui_browser_audit.cjs": "12c069177097",
+    "webui/static/index.html": "6c6b6f951674",
+    "webui/static/app.js": "54e9804467a2",
+    "webui/static/style.css": "d5cb668838e8",
+    "webui/server.py": "5b54f3f6fce7"
+  },
+  "browser": {
+    "name": "chromium",
+    "headless": true,
+    "version": "151.0.7922.34",
+    "playwright": "1.62.1",
+    "fonts": {
+      "status": "measured",
+      "platform": "MacIntel",
+      "computed_family": "Times",
+      "arabic_probe": [
+        {
+          "family": "Times",
+          "custom": false,
+          "glyphs": 11
+        },
+        {
+          "family": "Geeza Pro",
+          "custom": false,
+          "glyphs": 7
+        }
+      ]
+    }
+  },
+  "procedure": "Fresh synthetic LocalApp at loopback; open #details-panel > summary; evaluate local axe-core 4.13.0; for each named target, scrollIntoViewIfNeeded and run only color-contrast on that element.",
+  "measurement_limits": [
+    "targeted_recheck_does_not_rewrite_the_original_full_page_incomplete_record",
+    "same_ui_sources_as_the_full_journey",
+    "synthetic_workspace_no_owner_data"
+  ]
+}
