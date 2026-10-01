@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   verify:
+    name: verify-isolated
     # المشغّلُ الذاتي المعزول مسجَّلٌ على المستودع الخاص وحده (ق٥٢)؛ في العام يعمل verify-hosted.
     if: github.event.repository.private
     runs-on: [self-hosted, Linux, ARM64, diwan-isolated]

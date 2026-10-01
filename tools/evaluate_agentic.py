@@ -34,6 +34,7 @@ from agent.registry import ToolRegistry
 from core.canonical import PayloadRejected
 from evaluation.agentic_bank import attach as attach_thresholds
 from evaluation.agentic_runner import run_agentic_suite
+from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest
 
 
 def select_tools(mode: str, *, execution: bool, analysis: bool) -> tuple:
@@ -55,7 +56,7 @@ def main(argv=None) -> int:
     parser.add_argument("--suite", type=Path,
                         default=ROOT / "evaluation/suites/agentic_v1.json")
     parser.add_argument("--model", required=True, help="اسمُ النموذج كما يعرفه المزوّد")
-    parser.add_argument("--model-version", default="unspecified")
+    parser.add_argument("--model-version", help="بصمةُ النموذج المتوقَّعة؛ تُقارَن بما يعرضه Ollama")
     parser.add_argument("--out", type=Path, help="مسارُ التقرير؛ لا يُستبدل ملفٌّ قائم")
     parser.add_argument("--max-output", type=int, default=1024)
     parser.add_argument("--deadline-s", type=float, default=120.0)
@@ -69,6 +70,11 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     from providers.ollama import OllamaProvider
+    try:
+        model_version = pin_model_digest(args.model, args.model_version)
+    except ModelDigestError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        return 1
     provider = OllamaProvider(args.model)
     suite = json.loads(args.suite.read_text(encoding="utf-8"))
     try:
@@ -79,7 +85,7 @@ def main(argv=None) -> int:
         tools = select_tools(args.mode, execution=args.execution_receipt is not None,
                              analysis=args.analysis_receipt is not None)
         report = run_agentic_suite(suite, provider, ToolRegistry(*tools),
-                                   model=args.model, model_version=args.model_version,
+                                   model=args.model, model_version=model_version,
                                    max_output=args.max_output,
                                    deadline_s=args.deadline_s,
                                    execution_receipt=args.execution_receipt,
@@ -88,6 +94,11 @@ def main(argv=None) -> int:
     except PayloadRejected as exc:
         print(json.dumps({"status": "refused", "code": exc.code,
                           "reason": getattr(exc, "reason", "")}, ensure_ascii=False))
+        return 1
+    try:
+        verify_model_digest(args.model, model_version)
+    except ModelDigestError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 1
     # عتباتُ البنك من ملفّه الجانبي إن كانت (ك٥١): تُحكم على التقرير ولا تُختار بعده
     report = attach_thresholds(report, suite, args.suite)
