@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-01",
+  "kind": "public_summary_of_private_synthetic_space_restart",
+  "source_commit": "f885a63d02d36fc7c4a7843f46310a51d597c5ee",
+  "binding_product_commit": "b77a3f938e57ea86b2b754cf48c37c0bf18532da",
+  "synthetic_admission_commit": "5a6ba26bc5cec6802cdad1ca540974b45f237a28",
+  "deployment_commit": "c3991e5b1121e2237db217f19d4723aa6d2a4654",
+  "contract_sha256": "c0343a8960f211639b720e810d997ba634c11c864c154cf26a98f16e0b05cc70",
+  "sequence": [
+    "save_two_checkpoints",
+    "confirm_lease_released",
+    "remove_entire_synthetic_source",
+    "restart_private_space",
+    "confirm_new_boot_same_source",
+    "explicitly_restore_ancestor",
+    "confirm_lease_released",
+    "pause_test_space"
+  ],
+  "saved": {
+    "snapshots": 2,
+    "lease_released": true,
+    "local_source_removed": true,
+    "memory_observed_before_forget": {
+      "text": true,
+      "agent": true
+    },
+    "memory_echoed_before_forget": {
+      "text": true,
+      "agent": true
+    }
+  },
+  "restored": {
+    "boot_changed": true,
+    "same_source": true,
+    "selected_ancestor": true,
+    "latest_forget_authority": true,
+    "lease_released": true,
+    "forgotten_absent": true,
+    "unrelated_kept": true,
+    "agent_session_continues": true,
+    "text_session_continues": true,
+    "no_forgotten_request_echo": true,
+    "requests_remain_internal": true
+  },
+  "independent_readback": {
+    "private_snapshot_verified": true,
+    "same_scope_bytes": true,
+    "scope_sha256_matches_control": true,
+    "lease_released": true,
+    "epoch": 3,
+    "head_is_latest_receipt": true
+  },
+  "private_test_space": true,
+  "anonymous_health_status": 404,
+  "final_state": "PAUSED",
+  "production_changed": false,
+  "owner_data_used": false,
+  "paid_resource_created": false,
+  "live_inference": false,
+  "content_scope": "synthetic_only",
+  "inference_policy": "local_only",
+  "data_policy": "internal",
+  "artifacts_sha256": {
+    "receiver.py": "9b453ae7d3f1dae4d0bdb2efb96a0dcd936624562f70407e769f5086c915a57e",
+    "controller.py": "835e5b56692d53b1b5e90e1feb4d1c98cd928ec09f569fb4224b01b8d6a5d6a1",
+    "Dockerfile": "828562b106071b3e6c49190e3034592983b323590d77e0031052fd5abd41600c",
+    "test_fixture.py": "c4c7b03bb5597360ac2124a79f680a44ad25a6a459dd040279d853d16db15728",
+    "local-fixture-report.json": "88e7f0e513acd6c03b0b93b89a18064cdacb7149f71360540969af670e2aed6a",
+    "live-save.json": "e910766dbc3260bff4a01f98e671dd899d709332ddfa90a17c626ee952838bbb",
+    "live-restore.json": "d54ce45fae3ee250d4bd09773210655af9b9941d270eca2674a5f1fe3ce86c9a",
+    "live-health-before.json": "c362b7672be83e74ff33ebe04223a96c0db0fb8a459f8143acf0faa0b86707ac",
+    "live-health-after.json": "09de56d6f3b44e1d6a7d3232d21818a8d0c76a3c720cc591d98298099817ff77",
+    "live-readback.json": "2a39c155f8edb594823b1ccb05116a29610021f984eed4a97f499eb5edc7ffab",
+    "lifecycle-restart.json": "537d09006ca02327e432cf8305b9eb91139d74a38b5d2ea4d8fbdb4e2526bfc8",
+    "lifecycle-pause.json": "95f738be36218ab035199aae01e61545ed380134cec4ec6fe2c7764002ae1132"
+  },
+  "agent": "openai/codex",
+  "measurement_limits": [
+    "One clean restart and explicit operator-driven restore; not automatic boot recovery.",
+    "A killed or uncertain lease holder remains busy; no forced unlock or lease expiry was implemented.",
+    "Temporary request authorization only; no permanent production credential arrangement.",
+    "Synthetic provider and content only; no quality, availability, throughput or continuous-message-save claim.",
+    "This public summary omits private resource identifiers and boot identifiers; original reports remain unchanged in the handoff."
+  ]
+}
