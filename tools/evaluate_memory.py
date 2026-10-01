@@ -2,7 +2,7 @@
 """يشغّل بنكَ الذاكرة المحكومة (ك٤٨) على الطريق الموصول بمحرّكٍ حيّ في Ollama المحلي (جديد-memory-probe).
 
     python3 tools/evaluate_memory.py --model qwen3.5:9b --agent <معرّفك> --out docs/probe/memory-live-<التاريخ>.json
-    python3 tools/evaluate_memory.py --recount docs/probe/memory-live-<التاريخ>.json   # إعادةُ عدّ التسرّب من الرسوبات المسجَّلة
+    python3 tools/evaluate_memory.py --recount docs/probe/memory-live-<التاريخ>.json   # إعادةُ عدّ التسرّب والصدى والنسيان بلا قياس
 
 - كلُّ جولةٍ تذهب إلى النموذج الحقيقيّ عبر `webui.server.LocalApp`، والاقتراحُ وحده مكتوبٌ سلفًا
   (البنكُ يقيس الموافقةَ عليه، لا أن النموذج يقترح).
@@ -25,7 +25,7 @@ if str(ROOT) not in sys.path:
 from core.attribution import normalize  # noqa: E402
 from core.canonical import PayloadRejected  # noqa: E402
 from evaluation.memory_bank import validate_memory_bank  # noqa: E402
-from evaluation.memory_runner import LEAKAGE_LIMIT, recount_leakage, run_memory_bank  # noqa: E402
+from evaluation.memory_runner import HISTORY_LIMIT, LEAKAGE_LIMIT, recount_history, recount_leakage, run_memory_bank  # noqa: E402
 from providers.ollama import OllamaProvider  # noqa: E402
 
 REGISTRY = ROOT / "registry" / "agents.json"
@@ -80,16 +80,17 @@ LIMITS = [
     "probes_reuse_one_session_per_project_a_turn_still_awaiting_the_owner_after_three_denials_resets_it_and_is_counted",
     "every_persisted_item_is_shown_in_its_project_context_turns_before_it_is_forgotten_and_before_a_backup_so_the_same_session_history_held_it_and_the_snapshot_holds_that_session",
     "a_probe_turn_the_model_leaves_awaiting_the_owner_is_stopped_by_agent_stop_before_its_session_is_abandoned_and_a_stop_that_fails_is_named_in_stuck_probe_turns",
-    "exposure_probes_ask_a_neutral_question_that_carries_nothing_of_the_item_so_neither_a_directive_nor_a_value_enters_the_probe_session_history_as_the_owner_s_own_words_and_every_item_within_the_context_capacity_is_exposed_by_the_block_itself_and_a_scenario_whose_absent_witness_or_saved_text_overlaps_the_probe_question_is_refused_before_measurement_as_is_a_context_step_whose_own_question_or_an_earlier_context_question_of_its_project_repeats_an_absent_witness_or_whose_absent_witness_falls_inside_a_message_role_name_or_the_fixed_wire_message_fields_or_a_tool_schema_of_the_evaluator_s_own_registry_as_the_provider_serializes_it_not_every_default_tool_or_the_fixed_agent_request_envelope_or_a_fixed_field_of_the_ollama_request_body_as_the_live_provider_builds_it_including_the_live_model_name_or_inside_the_question_as_sent_after_quoted_directives_are_quarantined_and_the_wired_absence_check_reads_the_whole_request_body_as_the_provider_builds_it_with_its_fixed_outer_fields_roles_field_names_tool_call_ids_and_arguments_the_tool_schemas_as_serialized_and_the_whole_current_agent_envelope_as_sent_including_the_model_s_own_earlier_replies_so_a_model_that_echoes_a_value_before_it_is_forgotten_fails_the_scenario_because_the_memory_system_does_not_redact_the_model_s_past_words_and_every_rendered_context_block_is_scanned_for_a_raw_directive_in_any_category_and_any_explicit_probe_counted_once_per_step",
+    "exposure_probes_ask_a_neutral_question_that_carries_nothing_of_the_item_so_neither_a_directive_nor_a_value_enters_the_probe_session_history_as_the_owner_s_own_words_and_every_item_within_the_context_capacity_is_exposed_by_the_block_itself_and_a_scenario_whose_absent_witness_or_saved_text_overlaps_the_probe_question_is_refused_before_measurement_as_is_a_context_step_whose_own_question_or_an_earlier_context_question_of_its_project_repeats_an_absent_witness_or_whose_absent_witness_falls_inside_a_message_role_name_or_the_fixed_wire_message_fields_or_a_tool_schema_of_the_evaluator_s_own_registry_as_the_provider_serializes_it_not_every_default_tool_or_the_fixed_agent_request_envelope_or_a_fixed_field_of_the_ollama_request_body_as_the_live_provider_builds_it_including_the_live_model_name_or_inside_the_question_as_sent_after_quoted_directives_are_quarantined_and_the_wired_absence_check_reads_the_whole_request_body_as_the_provider_builds_it_with_its_fixed_outer_fields_roles_field_names_tool_call_ids_and_arguments_the_tool_schemas_as_serialized_and_the_whole_current_agent_envelope_as_sent_including_the_model_s_own_earlier_replies_so_a_model_that_echoes_a_value_before_it_is_forgotten_fails_the_scenario_even_when_forget_rate_excludes_that_recorded_history_echo_and_every_rendered_context_block_is_scanned_for_a_raw_directive_in_any_category_and_any_explicit_probe_counted_once_per_step",
     "the_store_driver_snapshots_and_restores_every_store_together_as_the_workspace_backup_does_a_store_created_after_the_snapshot_is_restored_empty",
     "the_residue_scan_masks_the_store_s_generated_item_id_sha256_approved_at_and_forgotten_at_values_and_the_receipt_s_generated_references_by_their_json_values_so_forgotten_text_identical_to_one_of_them_is_not_seen_on_disk_while_forget_rate_still_reports_it_forgotten",
     LEAKAGE_LIMIT,
+    HISTORY_LIMIT,
 ]
 
 
 def recount(path: Path, suite: Path, parser) -> int:
-    """يعيد عدَّ `leakage` في تقريرٍ منشور من رسوباته المسجَّلة بالقاعدة الحالية (`recount_leakage`)، على البنك الذي قيس به
-    وحده (بصمتُه في التقرير)، ويكتب التقريرَ في موضعه مع `recount.leakage` القديمِ والجديد وتاريخِ الإعادة؛ الرسوباتُ
+    """يعيد عدَّ التسرّب والصدى ومعدل النسيان من الرسوبات المسجَّلة، على البنك الذي قيس به
+    وحده (بصمتُه في التقرير)، ويكتب التقريرَ في موضعه مع `recount` القديمِ والجديد وتاريخِ الإعادة؛ الرسوباتُ
     والحدودُ كما قيست لا تُمسّ (ملاحظة Codex على #129، الجولة الأربعون)."""
     raw = suite.read_bytes()
     report = json.loads(path.read_text(encoding="utf-8"))
@@ -102,11 +103,14 @@ def recount(path: Path, suite: Path, parser) -> int:
         bank = validate_memory_bank(json.loads(raw.decode("utf-8")), model=(report.get("engine") or {}).get("model"))
         # وتقريرٌ لا تُعرف فيه هويّةُ شاهدٍ إلا بنصّه المبتور الملتبس يُردّ باسمه (`witness_prefix_ambiguous`) لا بتخمين
         recounted = recount_leakage(report, bank, {"date": datetime.date.today().isoformat()})
+        recounted = recount_history(recounted, bank, {"date": datetime.date.today().isoformat()})
     except (PayloadRejected, ValueError, KeyError, TypeError) as exc:
         print(json.dumps({"status": "refused", "code": getattr(exc, "code", "bank_invalid")}, ensure_ascii=False))
         return 2
     path.write_text(json.dumps(recounted, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"status": "recounted", "leakage": recounted["recount"]["leakage"], "out": str(path)}, ensure_ascii=False))
+    print(json.dumps({"status": "recounted", "leakage": recounted["recount"]["leakage"],
+                      "history_echoes": recounted["recount"]["history_echoes"],
+                      "forget_rate": recounted["recount"]["forget_rate"], "out": str(path)}, ensure_ascii=False))
     return 0
 
 
@@ -116,7 +120,7 @@ def main(argv=None) -> int:
     parser.add_argument("--suite", type=Path, default=DEFAULT_SUITE)
     parser.add_argument("--agent", help="معرّفُ من يشغّل القياس، مسجَّلًا في registry/agents.json")
     parser.add_argument("--out", type=Path, help="مسارُ التقرير؛ لا يُستبدل ملفٌّ قائم")
-    parser.add_argument("--recount", type=Path, help="تقريرٌ منشور يُعاد فيه عدُّ التسرّب من رسوباته المسجَّلة بلا قياس")
+    parser.add_argument("--recount", type=Path, help="تقريرٌ منشور يُعاد فيه عدُّ التسرّب والصدى والنسيان من رسوباته بلا قياس")
     args = parser.parse_args(argv)
     if args.recount is not None:
         return recount(args.recount, args.suite, parser)

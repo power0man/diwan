@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-10-01",
+  "task": "#265",
+  "scope": "source_preserving_six_pr_integration_and_synthetic_disclosure_boundary",
+  "base_commit": "b88121f882ab996d51d25e90231963d96f9c52fe",
+  "integration_commit_before_new_tests": "b87fbb03efe67561465d85c846bf0aa5c2ee9ab3",
+  "source_heads": [
+    {
+      "pr": 255,
+      "head": "98bad5fa810be9c159b7581d5176c5d34db8b63c",
+      "ancestor": true,
+      "product_equal": true
+    },
+    {
+      "pr": 256,
+      "head": "1aa21ace25dbe095eea127badce7c457659ecb9b",
+      "ancestor": true,
+      "product_equal": true
+    },
+    {
+      "pr": 259,
+      "head": "65812b0594eaaee6febcb26c7c123ba75e776df1",
+      "ancestor": true,
+      "product_equal": true
+    },
+    {
+      "pr": 260,
+      "head": "b2837c0d65719ec6a6d08f52b5dabbae7c839fa1",
+      "ancestor": true,
+      "product_equal": true
+    },
+    {
+      "pr": 261,
+      "head": "092364f8529303529ee28cb899a348dd31c7b760",
+      "ancestor": true,
+      "product_equal": true
+    },
+    {
+      "pr": 262,
+      "head": "bee500c2c655e7c9a5989c62ab169dc75e5c14a2",
+      "ancestor": true,
+      "product_equal": true
+    }
+  ],
+  "compared_product_config_artifact_paths": 14,
+  "focused_tests": {
+    "passed": 109,
+    "failed": 0,
+    "new_integration_cases": 6
+  },
+  "integration_behavior": "internal synthetic cloud workspaces, with or without text/agent sessions and after local backup restore, are refused before any Hub adapter call even when their files receive public grants",
+  "measurement_limits": [
+    "synthetic_local_tests_only_no_inference_or_cloud_network",
+    "no_owner_or_sealed_data_read_or_exported",
+    "no_new_live_measurement_or_recomputed_scores",
+    "internal_contract_is_not_a_public_upload_grant",
+    "public_checkpoint_prototype_still_rejects_all_sessions",
+    "no_cloud_deployment_dns_change_or_new_paid_resource",
+    "openai_local_technical_review_is_not_independent_family_approval",
+    "issue_188_remains_open_for_unfinished_public_index_scope"
+  ]
+}
