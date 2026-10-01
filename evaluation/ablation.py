@@ -8,12 +8,13 @@
 - **المقارنةُ مزدوجة:** كلُّ حالةٍ تُقارن بنفسِها في الذراع الأخرى.
   - ومجالُ الثقة ٩٥٪ للفرق بين نسبتين مزدوجتين بطريقة Agresti–Min، حتميٌّ بلا بذرة.
   - والعطبُ في أيّ ذراعٍ يُخرج الحالةَ من الأزواج، ويُعدّ.
-- **القرارُ من البروتوكول** (`evaluation/protocols/ablation_v1.json`):
+- **القرارُ من البروتوكول** (`evaluation/protocols/ablation_v2.json`):
   - «إن ≥ س فـ أ وإلا ب»، وأصغرُ عيّنةٍ تقلب الجواب.
   - وما دونها «ناقصُ القوة» لا قرار (`docs/PROJECT-PLAN-20260925.md` §٦).
 """
 from __future__ import annotations
 
+from collections import Counter
 import hashlib
 import json
 import math
@@ -34,8 +35,11 @@ from evaluation.capabilities import _checks
 from services.agent_workspace import encode_input, model_facing_input
 
 ROOT = Path(__file__).resolve().parents[1]
-PROTOCOL = ROOT / "evaluation" / "protocols" / "ablation_v1.json"
-RUNNER_VERSION = 1
+PROTOCOL = ROOT / "evaluation" / "protocols" / "ablation_v2.json"
+# النسخة ٢ في #185 تصلح ترتيب السحب وتصنيف الجولات؛ هذه النسخة التالية تضيف
+# البذور الثلاث وتجميعها. هذا الفرع مكدّس على رأس #185.
+RUNNER_VERSION = 3
+DEFAULT_SEED_COUNT = 3
 MAX_ANSWER_CHARS = 6000
 Z95 = 1.959963984540054
 # ذراعُ الأساس: ما في المنتج اليوم (الأدواتُ معلنة، والتفكيرُ غير مطلوب، ورسالةُ المستخدم محجورةُ المقتبَس)
@@ -97,8 +101,8 @@ def run_case(case: dict, provider, arm_config: dict, *, model: str, model_versio
                             turn_id=case["case_id"], initial_messages=initial, thinking=arm_config["thinking"])
         except Exception as exc:                       # عطبُ بنيةٍ لا فشلُ قدرة
             return {**base, "status": "error", "code": "loop_raised", "detail": f"{type(exc).__name__}"}
-        if run.status in ("refused", "failed"):
-            return {**base, "status": "error", "code": run.code or run.status}
+        if run.status != "complete":                   # موافقةٌ معلَّقة، أو بتر، أو حدُّ الخطوات: جوابٌ لم يكتمل فلا يُقاس (#185)
+            return {**base, "status": "error", "code": run.code or run.status, "loop_status": run.status}
         answer = run.answer[:MAX_ANSWER_CHARS]
         try:
             checks = _checks(answer, case["checks"])
@@ -113,6 +117,63 @@ def run_case(case: dict, provider, arm_config: dict, *, model: str, model_versio
 
 def run_arm(cases: list[dict], provider, arm_config: dict, **options) -> list[dict]:
     return [run_case(case, provider, arm_config, **options) for case in cases]
+
+
+def seed_values(count: int = DEFAULT_SEED_COUNT) -> tuple[int, ...]:
+    """بذورٌ متتابعة مسجَّلة؛ العددُ فرديٌّ و≥٣ كي تكون الأغلبية حاسمة."""
+    if type(count) is not int or count < 3 or count % 2 == 0:
+        raise AblationError("seeds_invalid", "يلزم عددٌ فردي من البذور لا يقل عن 3")
+    return tuple(range(count))
+
+
+def aggregate_seed_rows(runs: list[tuple[int, list[dict]]]) -> list[dict]:
+    """أغلبيةٌ صارمة لكل حالة، مع إخراج الحالة إن عَطبت أيُّ بذرة."""
+    if not runs:
+        raise AblationError("seeds_invalid", "لا بذور")
+    seeds = [seed for seed, _ in runs]
+    if tuple(seeds) != seed_values(len(seeds)):
+        raise AblationError("seeds_invalid", "يلزم تسلسل 0..N-1")
+    first = runs[0][1]
+    order = [row["id"] for row in first]
+    if len(order) != len(set(order)):
+        raise AblationError("seed_rows_invalid", "معرّف حالة مكرر")
+    first_by_id = {row["id"]: row for row in first}
+    indexed = []
+    for seed, rows in runs:
+        by_id = {row["id"]: row for row in rows}
+        if len(by_id) != len(rows) or set(by_id) != set(order):
+            raise AblationError("seed_rows_differ", str(seed))
+        indexed.append((seed, by_id))
+
+    threshold = len(seeds) // 2 + 1
+    aggregated = []
+    for case_id in order:
+        source = first_by_id[case_id]
+        attempts = [{**rows[case_id], "seed": seed} for seed, rows in indexed]
+        if any(row.get("category") != source.get("category") for row in attempts):
+            raise AblationError("seed_rows_differ", case_id)
+        base = {"id": case_id, "category": source["category"], "seed_results": attempts,
+                "seed_count": len(seeds), "majority_threshold": threshold}
+        errors = [row for row in attempts if row.get("status") != "measured"]
+        if errors:
+            aggregated.append({**base, "status": "error", "code": "seed_run_error",
+                               "error_seeds": [row["seed"] for row in errors]})
+            continue
+        passed = sum(row["passed"] is True for row in attempts)
+        aggregated.append({**base, "status": "measured", "passed": passed >= threshold,
+                           "passed_seeds": passed})
+    return aggregated
+
+
+def run_seeded_arm(cases: list[dict], provider, arm_config: dict, seeds: tuple[int, ...], **options) -> list[dict]:
+    """يشغّل كل بذرة بمزوّد يثبتها فعلًا، ثم يطبّق تجميع البروتوكول."""
+    runs = []
+    for seed in seeds:
+        if not hasattr(provider, "with_seed"):
+            raise AblationError("provider_seed_unsupported", getattr(provider, "name", type(provider).__name__))
+        seeded = provider.with_seed(seed)
+        runs.append((seed, run_arm(cases, seeded, arm_config, **options)))
+    return aggregate_seed_rows(runs)
 
 
 def compare(on: list[dict], off: list[dict], *, categories: set[str] | None = None) -> dict:
@@ -194,6 +255,10 @@ def judge(component: str, on: list[dict], off: list[dict]) -> dict:
         subset = compare(on, off, categories=set(rule["benefit_categories"]))
         rest = {row["category"] for row in on} - set(rule["benefit_categories"])
         overall = compare(on, off, categories=rest)
-    return {"component": component, "overall": overall, "benefit_subset": subset,
+    # عطبُ كلِّ ذراعٍ برموزه: إن غيّر المكوّنُ ما يكتمل (موافقةٌ معلَّقة، بتر) ظهر هنا لا في النسبة (#185)
+    errors_by_arm = {side: dict(sorted(Counter(row.get("code") or "unnamed" for row in rows
+                                               if row["status"] != "measured").items()))
+                     for side, rows in (("on", on), ("off", off))}
+    return {"component": component, "overall": overall, "benefit_subset": subset, "errors_by_arm": errors_by_arm,
             **decide(rule, overall, subset, discordance=data["assumed_discordance"]),
             "meaning": spec["decisions"], "protocol_sha256": _sha(PROTOCOL.read_bytes())}

@@ -502,6 +502,10 @@ def test_snapshot_extraction_checks_members_itself_and_works_without_the_filter_
         with tarfile.open(fileobj=buf, mode="w") as tar:
             for name, kind in entries:
                 info = tarfile.TarInfo(name)
+                # TarInfo defaults to mode 000.  The fallback path intentionally
+                # exercises pre-3.11.4 extractall semantics, so give the synthetic
+                # members the readable/searchable modes that a real git archive has.
+                info.mode = 0o755 if kind == "dir" else 0o644
                 if kind == "file":
                     info.mode = 0o644
                     info.size = 3

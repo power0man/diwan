@@ -18,12 +18,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from evaluation.research_runner import run_bank  # noqa: E402
+from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest  # noqa: E402
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--model", required=True, help="اسمُ النموذج كما يعرفه Ollama")
-    parser.add_argument("--model-version", default="unspecified")
+    parser.add_argument("--model-version", help="بصمةُ النموذج المتوقَّعة؛ تُقارَن بما يعرضه Ollama")
     parser.add_argument("--out", type=Path, help="مسارُ التقرير؛ لا يُستبدل ملفٌّ قائم")
     parser.add_argument("--max-steps", type=int, default=8)
     parser.add_argument("--deadline-s", type=float, default=180.0)
@@ -32,8 +33,18 @@ def main(argv=None) -> int:
         print(json.dumps({"status": "refused", "code": "output_exists"}, ensure_ascii=False))
         return 1
     from providers.ollama import OllamaProvider
-    report = run_bank(OllamaProvider(args.model), model=args.model, model_version=args.model_version,
+    try:
+        model_version = pin_model_digest(args.model, args.model_version)
+    except ModelDigestError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        return 1
+    report = run_bank(OllamaProvider(args.model), model=args.model, model_version=model_version,
                       max_steps=args.max_steps, deadline_s=args.deadline_s)
+    try:
+        verify_model_digest(args.model, model_version)
+    except ModelDigestError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        return 1
     if args.out is not None:
         args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     summary = report["summary"]

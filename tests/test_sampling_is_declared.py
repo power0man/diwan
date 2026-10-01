@@ -55,3 +55,9 @@ def test_ollama_payload_carries_the_declared_options(monkeypatch):
     assert options.get("temperature") == 0
     assert options.get("num_ctx") == ollama.CONTEXT_TOKENS
     assert options.get("seed") == ollama.SAMPLING_SEED
+
+
+def test_ollama_payload_carries_an_ablation_seed(monkeypatch):
+    provider = ollama.OllamaProvider("m").with_seed(2)
+    options = _captured_options(monkeypatch, provider, "_post")
+    assert provider.seed == 2 and options.get("seed") == 2

@@ -156,11 +156,14 @@ def test_reference_solutions_through_the_agent_loop_meet_the_thresholds(tmp_path
     path.with_suffix(".meta.json").write_text(json.dumps(META, ensure_ascii=False), encoding="utf-8")
     monkeypatch.setenv("DIWAN_DISPOSABLE_HOST", "pytest-host")
     monkeypatch.setattr(providers.ollama, "OllamaProvider", lambda model: ReferencePlayer(suite, META))
+    monkeypatch.setattr(evaluate_agentic, "pin_model_digest", lambda model, expected: "sha256:reference")
+    monkeypatch.setattr(evaluate_agentic, "verify_model_digest", lambda model, pinned: None)
     out = tmp_path / "report.json"
     assert evaluate_agentic.main(["--suite", str(path), "--model", "reference", "--out", str(out)]) == 0
     report = json.loads(out.read_text(encoding="utf-8"))
     failed = {r["task_id"]: r.get("code") for r in report["results"] if not r["passed"]}
     assert failed == {}
+    assert report["config"]["model_version"] == "sha256:reference"
     assert report["thresholds"]["meets_thresholds"] is True and report["thresholds"]["unmet"] == []
     assert "العتبات: مستوفاة" in capsys.readouterr().out
 
