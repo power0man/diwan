@@ -8,7 +8,7 @@ import re
 from collections import Counter
 from datetime import date
 from pathlib import Path
-from urllib.parse import parse_qsl, urlparse
+from urllib.parse import parse_qsl, unquote, urlparse
 
 REDACTION_MARKER = "redacted_existing_public_sensitive_metadata"
 PUBLIC_REPOSITORY = "power0man/diwan"
@@ -95,14 +95,14 @@ def _unsafe_string(value: str) -> bool:
     if any(pattern.search(value) for pattern in ACCESS_VALUE_PATTERNS):
         return True
     try:
-        if value.lower().startswith(("github.com/", "www.github.com/", "api.github.com/")):
+        if re.match(r"(?i)^(?:github\.com|www\.github\.com|api\.github\.com)\.?/", value):
             value = "//" + value
         parsed = urlparse(value)
-        hostname = (parsed.hostname or "").lower()
+        hostname = (parsed.hostname or "").lower().rstrip(".")
     except ValueError:
         # Malformed URLs are untrusted evidence, not a reason to emit a traceback.
         return True
-    parts = [part for part in parsed.path.split("/") if part]
+    parts = [part for part in unquote(parsed.path).split("/") if part]
     if parsed.username or parsed.password:
         return True
     if any(name.lower() in ACCESS_QUERY_NAMES for name, _ in parse_qsl(parsed.query)):

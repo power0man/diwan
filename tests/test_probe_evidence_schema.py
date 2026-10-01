@@ -177,3 +177,17 @@ def test_public_repository_api_secrets_are_not_public_evidence():
                 "api.github.com/repos/power0man/diwan/actions/secrets"):
         assert pe.validate_payload({**_valid(), "note": url}) == ["private_access_metadata"]
     assert pe.validate_payload({**_valid(), "note": "https://api.github.com/repos/power0man/diwan/pulls/245"}) == []
+
+
+def test_encoded_github_access_paths_are_rejected():
+    for url in ("https://github.com/synthetic/private/%61ctions/runs/1",
+                "https://api.github.com/repos/power0man/diwan/actions/%73ecrets"):
+        assert pe.validate_payload({**_valid(), "note": url}) == ["private_access_metadata"]
+
+
+def test_github_fully_qualified_host_does_not_bypass_access_guard():
+    for url in ("https://github.com./synthetic/private/secrets",
+                "github.com./synthetic/private/secrets",
+                "api.github.com./repos/power0man/diwan/actions/secrets"):
+        assert pe.validate_payload({**_valid(), "note": url}) == ["private_access_metadata"]
+    assert pe.validate_payload({**_valid(), "note": "https://github.com./power0man/diwan/pull/245"}) == []
