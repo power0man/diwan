@@ -14,6 +14,7 @@ import re
 import secrets
 import socket
 import stat
+import subprocess
 import threading
 import time
 import unicodedata
@@ -432,7 +433,10 @@ class LocalApp:
                     configured.update(execution_enabled=True, execution_status="configured")
                 except Exception as exc:
                     configured.update(execution_enabled=False, execution_status="unavailable",
-                                      error_code=getattr(exc, "code", "execution_configuration_invalid"))
+                                      error_code=getattr(exc, "code", "execution_backend_unavailable"
+                                          if isinstance(exc, (OSError, subprocess.SubprocessError))
+                                          else "execution_configuration_error"),
+                                      detail=type(exc).__name__)
             configured.update(analysis_enabled=False, analysis_status="not_configured")
             if self.agent_enabled and self.analysis_receipt is not None:
                 try:
@@ -441,7 +445,10 @@ class LocalApp:
                     configured.update(analysis_enabled=True, analysis_status="configured")
                 except Exception as exc:
                     configured.update(analysis_status="unavailable",
-                                      analysis_error_code=getattr(exc, "code", "analysis_configuration_invalid"))
+                                      analysis_error_code=getattr(exc, "code", "analysis_backend_unavailable"
+                                          if isinstance(exc, (OSError, subprocess.SubprocessError))
+                                          else "analysis_configuration_error"),
+                                      analysis_detail=type(exc).__name__)
             self.agent_backends[project.name] = configured
         return path
 

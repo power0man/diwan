@@ -307,6 +307,12 @@ class DockerExecutionBackend:
     def _docker(self, *args: str, data=b"", timeout=20, limit=MAX_OUTPUT_BYTES):
         return _bounded_process([self.docker, *args], data=data, timeout=timeout, limit=limit)
 
+    def _inspect(self, *args: str) -> bytes:
+        code, raw, stderr = self._docker(*args)
+        if code != 0:
+            _refuse("execution_inspect_failed", stderr[-2048:].decode("utf-8", "replace"))
+        return raw
+
     def _selected_files(self):
         return _snapshot_files(self.files if self.snapshot_selector is None
                                else self.snapshot_selector(self.root))
@@ -332,9 +338,9 @@ class DockerExecutionBackend:
         return files
 
     def _verify_image(self):
-        code, raw, _ = self._docker("image", "inspect", self.receipt["image_id"])
+        raw = self._inspect("image", "inspect", self.receipt["image_id"])
         try:
-            image = json.loads(raw)[0] if code == 0 else {}
+            image = json.loads(raw)[0]
             config = image.get("Config") or {}
             if (image.get("Id") != self.receipt["image_id"] or image.get("Os") != "linux"
                     or (config.get("Labels") or {}).get("diwan.lock-sha256") != self.receipt["lock_sha256"]
@@ -354,9 +360,9 @@ class DockerExecutionBackend:
         return [*args, self.receipt["image_id"], "-I", "-c", driver]
 
     def _verify_container(self, container_id: str, name: str, driver: str):
-        code, raw, _ = self._docker("inspect", container_id)
+        raw = self._inspect("inspect", container_id)
         try:
-            info = json.loads(raw)[0] if code == 0 else {}
+            info = json.loads(raw)[0]
             host, config = info.get("HostConfig") or {}, info.get("Config") or {}
             safe = (info.get("Id") == container_id and info.get("Name") == "/" + name
                 and info.get("Image") == self.receipt["image_id"] and not (info.get("State") or {}).get("Running")
@@ -392,9 +398,9 @@ class DockerExecutionBackend:
             return False
 
     def _exit_code(self, container_id: str, name: str) -> int:
-        code, raw, _ = self._docker("inspect", container_id)
+        raw = self._inspect("inspect", container_id)
         try:
-            info = json.loads(raw)[0] if code == 0 else {}
+            info = json.loads(raw)[0]
             state = info.get("State") or {}
             exit_code = state.get("ExitCode")
             if (info.get("Id") != container_id or info.get("Name") != "/" + name
