@@ -79,7 +79,9 @@ def _approved(plan, approval):
     _need(type(approval) is dict and set(approval) == {"owner_approved", "plan_sha256"}
           and approval["owner_approved"] is True
           and approval["plan_sha256"] == digest(plan), "cloud_approval_required")
-    return {"plan": plan, "approval": approval}
+    record = {"plan": plan, "approval": approval}
+    _need(len(canonical_bytes({"record": record, "sha256": digest(record)})) <= MAX_MANIFEST_BYTES)
+    return record
 
 
 def decode_scope(raw):
@@ -172,8 +174,8 @@ def create_cloud_workspace(destination, plan, *, approval, claims_root):
         os.fsync(fd)
         pending = os.open(_pending_name(destination), os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
                           0o600, dir_fd=fd)
-        os.fsync(pending)
-        os.close(pending)
+        with os.fdopen(pending, "wb") as stream:
+            os.fsync(stream.fileno())
         os.fsync(fd)
         try:
             os.mkdir(destination.name, 0o700, dir_fd=fd)

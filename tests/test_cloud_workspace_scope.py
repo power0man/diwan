@@ -83,6 +83,11 @@ def test_approval_and_target_are_exact_before_any_creation(tmp_path):
     changed["target"]["branch"] = "diwan-checkpoint-different"
     with pytest.raises(storage.StorageScopeError, match="cloud_approval_required"):
         storage.create_cloud_workspace(tmp_path / "cloud", changed, approval=good, claims_root=tmp_path)
+    oversized = copy.deepcopy(plan)
+    oversized["target"]["repo_id"] = "synthetic/" + "x" * storage.MAX_MANIFEST_BYTES
+    with pytest.raises(storage.StorageScopeError, match="cloud_scope_invalid"):
+        storage.create_cloud_workspace(tmp_path / "cloud", oversized,
+            approval={"owner_approved": True, "plan_sha256": digest(oversized)}, claims_root=tmp_path)
     assert list(tmp_path.iterdir()) == []
 
 
