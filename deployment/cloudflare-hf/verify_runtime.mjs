@@ -25,7 +25,11 @@ const outboundService = async (request) => {
     assert.equal(request.headers.get("Content-Length"), "2");
     assert.equal(await request.text(), "{}");
   }
-  return new Response("synthetic workerd response");
+  // The simulated outbound service encodes this body from the response header,
+  // just like a Worker returning an identity body with automatic encoding.
+  return new Response("synthetic workerd response", {
+    headers: { "Content-Encoding": "gzip", "Content-Type": "text/plain" },
+  });
 };
 for (const authenticated of [false, true]) {
   const mf = new Miniflare(convertV4MiniflareOptions({

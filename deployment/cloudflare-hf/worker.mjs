@@ -108,6 +108,14 @@ export default {
       if (upstream.headers.has("Content-Type")) {
         responseHeaders.set("Content-Type", upstream.headers.get("Content-Type"));
       }
+      const encoding = upstream.headers.get("Content-Encoding");
+      if (encoding !== null && !["gzip", "br", "identity"].includes(encoding)) {
+        await upstream.body?.cancel();
+        return refused("upstream_encoding_refused", 502);
+      }
+      // Preserve the stream's representation: removing this header can expose
+      // compressed bytes as HTML/JSON. workerd verifies gzip in verify_runtime.
+      if (encoding !== null) responseHeaders.set("Content-Encoding", encoding);
       // No Set-Cookie, Location, Access identity, or upstream auth headers escape.
       // Responses are streamed; no unbounded body buffering or cache writes.
       return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });

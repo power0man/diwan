@@ -94,6 +94,18 @@ const cases = {
     assert.equal(response.status, 502);
     assert.deepEqual(await response.json(), { error_code: "bridge_unavailable" });
   },
+  compression: async () => {
+    reply = () => new Response("synthetic representation", { headers: { "Content-Encoding": "gzip" } });
+    const response = await bridge.fetch(request(), env, ctx);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("Content-Encoding"), "gzip");
+  },
+  unknown_compression: async () => {
+    reply = () => new Response("synthetic representation", { headers: { "Content-Encoding": "unknown" } });
+    const response = await bridge.fetch(request(), env, ctx);
+    assert.equal(response.status, 502);
+    assert.deepEqual(await response.json(), { error_code: "upstream_encoding_refused" });
+  },
   streaming: async () => {
     let output;
     reply = () => new Response(new ReadableStream({ start(c) { output = c; } }));

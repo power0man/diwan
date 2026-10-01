@@ -13,7 +13,7 @@ import pytest
     "unconfigured", "no_access", "wrong_audience", "wrong_target", "query", "route",
     "cross_site", "bad_origin", "bad_csrf", "body_headers", "body_limit",
     "body_short", "body_long", "private_request", "redirect", "private_response",
-    "unavailable", "streaming", "navigation",
+    "unavailable", "streaming", "navigation", "compression", "unknown_compression",
 ])
 def test_bridge_boundary(case):
     result = subprocess.run(

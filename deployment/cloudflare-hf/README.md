@@ -23,8 +23,8 @@ token's format is checked here; the app checks its actual value.
 The service's `HF_TOKEN` belongs in a Worker secret with read access only to this
 Space where the provider supports that scope. Incoming cookies, Authorization,
 Access assertions, forwarded hosts and addresses are discarded. Redirects are
-not followed. The response streams without buffering; only content type crosses
-from its headers. Cookies, redirects and authentication headers do not reach the
+not followed. The response streams without buffering; only content type and
+supported content encoding cross from its headers. Cookies, redirects and authentication headers do not reach the
 browser. Cache use and request logs are disabled because these are private
 conversations. An upstream/application response body is still trusted app output;
 this bridge does not sanitize arbitrary application HTML or JSON.
@@ -48,7 +48,7 @@ credentials and participate in normal pytest/CI. Mutation tests exercise the
 actual JS handler. Local synthetic `ctx.access` does **not** prove that a live
 Cloudflare deployment authenticated a request. A synthetic workerd smoke test is
 also required by the hosted Python 3.14 CI job; it verifies the runtime's Access
-context, outbound body and cache options. A live Access smoke test remains required
+context, outbound body, cache options and compressed responses. A live Access smoke test remains required
 before switching the domain.
 
 ## Deployment and rollback gates
