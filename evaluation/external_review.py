@@ -58,6 +58,27 @@ MEASUREMENT_LIMITS = (
 
 Transport = Callable[[str, str, str, dict], str]
 
+# These failures need a permission, endpoint, model, or budget change. Repeating
+# the same request cannot repair them and can repeat an unverified charge.
+# Keep transport codes verbatim in receipts; never infer a model-quality score.
+TERMINAL_TRANSPORT_ERRORS = frozenset({
+    "unauthorized", "forbidden", "not_found", "request_too_large", "redirected",
+    "quota_exhausted", "key_missing", "cloud_key_missing", "endpoint_not_allowed",
+    "free_model_required", "free_price_unverified", "free_tier_unverified",
+    "zero_spend_breach", "usage_unavailable", "usage_cost_unavailable", "usage_cost_invalid",
+    "http_400", "http_401", "http_402", "http_403", "http_404", "http_405",
+    "http_410", "http_413", "http_415", "http_422", "http_429",
+})
+BUDGET_TERMINAL_ERRORS = frozenset({
+    "free_model_required", "free_price_unverified", "free_tier_unverified",
+    "zero_spend_breach", "usage_unavailable", "usage_cost_unavailable", "usage_cost_invalid",
+})
+# A malformed or oversized file cannot improve by repeating that request, but
+# it says nothing about whether this reviewer can handle the next file.
+TERMINAL_MODEL_ERRORS = TERMINAL_TRANSPORT_ERRORS - {
+    "request_too_large", "http_400", "http_413", "http_415", "http_422",
+}
+
 
 def reviewer_family(model: str) -> str:
     # الجدولُ الواحد في `evaluation/multi_system_review.py::FAMILY_PREFIXES` (ق٤٩ وق٥٠ بصرامةٍ واحدة)
@@ -233,7 +254,7 @@ def open_files(bank_dir: Path) -> list[Path]:
 
 
 def review_file(path: Path, bank_dir: Path, model: str, family: str, transport: Transport,
-                *, brief: str, brief_sha: str) -> dict:
+                *, brief: str, brief_sha: str, blocked_error: str | None = None) -> dict:
     """نداءٌ لملفٍّ واحدٍ ومراجعٍ واحد. يُعيد السجلّ المحفوظ."""
     if "sealed" in path.resolve().relative_to(bank_dir.resolve()).parts:
         raise AutomaticReviewError("sealed_never_reviewed_externally", str(path))
@@ -245,6 +266,10 @@ def review_file(path: Path, bank_dir: Path, model: str, family: str, transport: 
     record = {"model": model, "family": family, "file": relative,
               "file_sha256": _sha(raw_file), "brief_sha256": brief_sha,
               "started_at": _now(), "attempts": [], "judgments": None, "error": None}
+    if blocked_error is not None:
+        record.update(error=blocked_error, elapsed_ms=0,
+                      not_attempted_reason="earlier_terminal_failure")
+        return record
     start = time.monotonic()
     for attempt in (1, 2):
         try:
@@ -252,6 +277,8 @@ def review_file(path: Path, bank_dir: Path, model: str, family: str, transport: 
         except AutomaticReviewError as exc:
             record["attempts"].append({"attempt": attempt, "raw_output": None,
                                        "error": exc.code})
+            if exc.code in TERMINAL_TRANSPORT_ERRORS:
+                break
             continue
         try:
             record["judgments"] = validate_response(raw, expected)
@@ -271,11 +298,16 @@ def review_file(path: Path, bank_dir: Path, model: str, family: str, transport: 
 
 
 def review_bank(bank_dir: Path, reviewers: list[str], transport: Transport, *,
-                brief_path: Path) -> dict:
+                brief_path: Path, stamp: dict | None = None,
+                reusable: Callable[[dict], bool] | None = None) -> dict:
+    """`stamp` حقولٌ تُضاف إلى كل سجلٍّ يُكتب (مثل الواجهة)، و`reusable` شرطٌ إضافيّ لإعادة استعمال سجلٍّ سابق — فسجلُّ واجهةٍ
+    أخرى بمعرّف النموذج نفسِه لا يُعاد استعمالُه (ملاحظة Codex على #174). وبلاهما السلوكُ كما كان."""
     families = check_reviewers(reviewers)
     brief = brief_text(brief_path)
     brief_sha = _sha(brief.encode("utf-8"))
     done = skipped = failed = 0
+    terminal_models: dict[str, str] = {}
+    budget_error: str | None = None
     for path in open_files(bank_dir):
         for model in reviewers:
             relative = path.relative_to(bank_dir / "open").as_posix()
@@ -284,11 +316,19 @@ def review_bank(bank_dir: Path, reviewers: list[str], transport: Transport, *,
                 prior = json.loads(out.read_text(encoding="utf-8"))
                 if (prior.get("error") is None
                         and prior.get("file_sha256") == _sha(path.read_bytes())
-                        and prior.get("brief_sha256") == brief_sha):
+                        and prior.get("brief_sha256") == brief_sha
+                        and (reusable is None or reusable(prior))):
                     skipped += 1
                     continue
             record = review_file(path, bank_dir, model, families[model], transport,
-                                 brief=brief, brief_sha=brief_sha)
+                                 brief=brief, brief_sha=brief_sha,
+                                 blocked_error=budget_error or terminal_models.get(model))
+            if record["error"] in TERMINAL_MODEL_ERRORS:
+                terminal_models[model] = record["error"]
+            if record["error"] in BUDGET_TERMINAL_ERRORS:
+                budget_error = record["error"]
+            if stamp:
+                record.update(stamp)
             _write(out, record)
             if record["error"]:
                 failed += 1
@@ -314,15 +354,28 @@ def _flagged(judgment: dict) -> bool:
     return judgment["reference"] != "correct" or judgment["rubric"] != "sufficient"
 
 
-def summarize(bank_dir: Path) -> dict:
-    """يجمع أحكام كل المراجعين: الاتفاق وκ لكل زوج، وقائمة ما يعرض على المالك."""
+SUPERSEDED_DIR = "superseded"   # reviews/superseded/<النموذج>/…: سجلّاتُ مراجعٍ استُبدل به، تاريخٌ لا يدخل الاتفاق ولا قائمة المالك
+
+
+def summarize(bank_dir: Path, reviewers: list[str] | set[str] | None = None,
+              files: set[str] | None = None) -> dict:
+    """يجمع أحكام المراجعين: الاتفاق وκ لكل زوج، وقائمة ما يعرض على المالك.
+
+    سجلّاتُ `reviews/superseded/` لا تُقرأ أبدًا؛ و`reviewers` إن أُعطيت فهي المجموعةُ الأخيرة وحدها: سجلُّ مراجعٍ خارجها
+    لا يدخل زوجًا ولا κ ولا قائمةَ المالك ولا الأخطاء (ملاحظة Codex على #174). و`files` إن أُعطيت فهي ملفّاتُ `open/` الحالية:
+    سجلُّ ملفٍّ حُذف أو أُعيدت تسميتُه منذ تشغيلٍ سابق لا يُقرأ.
+    """
     reviews_root = bank_dir / "reviews"
     by_model: dict[str, dict[tuple[str, str], dict]] = {}
     errors = []
     for path in sorted(reviews_root.rglob("*.json")):
-        if path.name == "SUMMARY.json":
+        if path.name == "SUMMARY.json" or path.relative_to(reviews_root).parts[0] == SUPERSEDED_DIR:
             continue
         record = json.loads(path.read_text(encoding="utf-8"))
+        if reviewers is not None and record.get("model") not in reviewers:
+            continue
+        if files is not None and record.get("file") not in files:
+            continue
         if record.get("error"):
             errors.append({"model": record["model"], "file": record["file"],
                            "error": record["error"]})

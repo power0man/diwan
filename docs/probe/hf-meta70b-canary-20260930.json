@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "probe": "single_reviewer_synthetic_canary",
+  "generated_at": "2026-09-30T16:51:03.724935+00:00",
+  "status": "passed",
+  "model": "meta-llama/Llama-3.3-70B-Instruct:novita",
+  "family": "meta",
+  "backend": "hf-router",
+  "brief_sha256": "66fa20c79f268a4648aa671c673b75d7f4b1b896d70dea60553e7b5a8792d26d",
+  "file_sha256": "5d27648da429cc9166e105d006e84dc019c15d4c6b538898e0abc8f03b78dcfe",
+  "error": null,
+  "attempts": 1,
+  "elapsed_ms": 6857,
+  "caught_planted_error": true,
+  "false_flags": [],
+  "verdicts": {
+    "smoke_1": "correct",
+    "smoke_2": "incorrect",
+    "smoke_3": "correct"
+  },
+  "provider_usage": [
+    {
+      "provider": "hf-router",
+      "model": "meta-llama/Llama-3.3-70B-Instruct:novita",
+      "family": "meta",
+      "at": "2026-09-30T16:51:03Z",
+      "elapsed_ms": 6857,
+      "status": "succeeded",
+      "error": null,
+      "request_sent": true,
+      "usage": {
+        "prompt_tokens": 1553,
+        "completion_tokens": 234,
+        "total_tokens": 1787
+      },
+      "cost_usd": null,
+      "cost_status": "not_reported",
+      "zero_spend_proof": null
+    }
+  ],
+  "cost": {
+    "hard_dispatch_budget_usd": 0.005,
+    "reserved_usd": 0.00131889,
+    "estimated_tokens_usd": 0.000303255,
+    "actual_billed_usd": null,
+    "prices_usd_per_million_tokens": {
+      "input": 0.135,
+      "output": 0.4
+    },
+    "price_source": "https://router.huggingface.co/v1/models"
+  },
+  "measurement_limits": [
+    "three_synthetic_cases_not_reviewer_quality",
+    "not_a_bank_run_or_repository_code_review",
+    "single_model_canary_not_paired_review",
+    "prepaid_hf_only_no_recharge_or_subscription_change",
+    "existing_local_credential_injected_in_memory_only",
+    "catalog_prices_are_an_estimate_not_an_invoice",
+    "no_private_or_sealed_data_sent"
+  ]
+}

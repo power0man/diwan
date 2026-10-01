@@ -1,0 +1,125 @@
+name: free-llm-review
+# المراجعةُ الخارجية على GitHub Models برمز المهمّة نفسِه — قرار المالك في ٢٨ سبتمبر ٢٠٢٦ (#168): لا سرَّ جديد،
+# وصلاحيتا قراءة المحتوى والنماذج وحدهما. على طلبات الدمج التي تمسّ أداةَ المراجعة: جردُ الفهرس، وتجربةُ الخطأ
+# المزروع (نمط ك٧) بمراجعَين من عائلتين مسموحتين، ثم على كل عائلةٍ مسموحة في الفهرس. ويدويًّا: smoke أو bank
+# (الشطرُ المفتوح من evaluation/banks/kimi_v1 وحده؛ المحجوبُ لا يُرسل). الخلاصةُ JSON مضغوط في السجلّ وفي ملخّص
+# الخطوة، بلا محتوى حالاتٍ ولا مفتاح. والرمزُ في بيئة خطوات الأداة وحدها، لا في خطوة التثبيت.
+on:
+  pull_request:
+    paths:
+      - tools/external_review.py
+      - evaluation/external_review.py
+      - .github/workflows/free-llm-review.yml
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "smoke: تجربةُ الخطأ المزروع؛ bank: مراجعةُ الشطر المفتوح من evaluation/banks/kimi_v1"
+        type: choice
+        options: [smoke, bank]
+        default: smoke
+
+permissions:
+  contents: read
+  models: read
+
+concurrency:
+  group: free-llm-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  free-llm-review:
+    # طلبُ دمجٍ من تفرّعٍ لا يستهلك حصّةَ نماذج المستودع
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MODE: ${{ inputs.mode || 'smoke' }}
+      # مجلّدُ هذا التشغيل: evaluation/banks/kimi_v1/runs/<RUN_KEY>/ — يُكتب فيه نظيفًا ويُرفع وحده، لا الخلاصةُ المتتبَّعة
+      RUN_KEY: ${{ github.run_id }}-${{ github.run_attempt }}
+      ARTIFACT_NAME: free-llm-review-kimi_v1-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      # uv مثبَّتٌ بإصداره، وبايثون 3.14، والاعتمادياتُ من uv.lock المجمَّد وحده (كما في verify-hosted)
+      - name: Install the locked runtime
+        run: |
+          set -eu
+          python3 -m pip install --user 'uv==0.8.17'
+          "$HOME/.local/bin/uv" python install 3.14
+          "$HOME/.local/bin/uv" sync --frozen --python 3.14
+      # الفهرسُ جردٌ لا بوّابة: إن لم يُقرأ سُمّي رمزُه وشكلُه (لا نصُّه)، واختارت التجربةُ من القائمة المفضَّلة وقالت ذلك في تقريرها
+      - name: List the GitHub Models catalog
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -u
+          status=0
+          .venv/bin/python tools/external_review.py --backend github-models \
+            --list-catalog "$RUNNER_TEMP/catalog.json" > "$RUNNER_TEMP/catalog-line.json" || status=$?
+          cat "$RUNNER_TEMP/catalog-line.json"
+          { echo '### catalog'; echo '```json'; cat "$RUNNER_TEMP/catalog-line.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+      - name: Planted-error smoke with two reviewers of different allowed families
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -u
+          status=0
+          .venv/bin/python tools/external_review.py --backend github-models \
+            --smoke "$RUNNER_TEMP/smoke.json" > "$RUNNER_TEMP/smoke-line.json" || status=$?
+          cat "$RUNNER_TEMP/smoke-line.json"
+          if [ -f "$RUNNER_TEMP/smoke.json" ]; then cat "$RUNNER_TEMP/smoke.json"; fi
+          { echo '### smoke'; echo '```json'; cat "$RUNNER_TEMP/smoke-line.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # 3 = الواجهةُ غيرُ متاحة (رفضُ خدمةٍ مسمًّى، لا خطأُ مراجع): تنبيهٌ لا يُسقط الطلب، والرمزُ في السطر أعلاه
+          if [ "$status" -eq 3 ]; then echo "::warning title=free-llm-review::service_unavailable (see unavailable_codes above)"; status=0; fi
+          exit "$status"
+      - name: Planted-error smoke on every allowed family (inventory)
+        if: env.MODE == 'smoke'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -u
+          status=0
+          .venv/bin/python tools/external_review.py --backend github-models --every-family \
+            --smoke "$RUNNER_TEMP/every-family.json" > "$RUNNER_TEMP/every-family-line.json" || status=$?
+          cat "$RUNNER_TEMP/every-family-line.json"
+          { echo '### every family'; echo '```json'; cat "$RUNNER_TEMP/every-family-line.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+      - name: Review the open part of kimi_v1
+        if: env.MODE == 'bank'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -u
+          status=0
+          .venv/bin/python tools/external_review.py evaluation/banks/kimi_v1 --backend github-models \
+            --run-id "$RUN_KEY" --artifact-name "$ARTIFACT_NAME" > "$RUNNER_TEMP/bank-line.json" || status=$?
+          cat "$RUNNER_TEMP/bank-line.json"
+          { echo '### bank'; echo '```json'; cat "$RUNNER_TEMP/bank-line.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # 3 = الواجهةُ غيرُ متاحة (رفضُ خدمةٍ مسمًّى، لا خطأُ مراجع): تنبيهٌ لا يُسقط الطلب، والرمزُ في السطر أعلاه
+          if [ "$status" -eq 3 ]; then echo "::warning title=free-llm-review::service_unavailable (bank)"; status=0; fi
+          exit "$status"
+      # الأحكامُ وSUMMARY.json (وفيه owner_queue) تُحفظ أثرًا يحكم فيه المالك (ملاحظة Codex على #174)، ولو أخفقت المراجعة؛ وقبل الرفع
+      # فحصٌ أنها سجلّاتُ شطرٍ مفتوح وحدها، وكلُّها من هذا التشغيل (run_id): لا مسارَ محجوب ولا نمطَ رمز ولا قيمةَ الرمز ولا
+      # خلاصةٌ تاريخية؛ فإن خرجت المراجعةُ قبل الخلاصة رُفع RUN.json برمز رفضها وحده
+      - name: Check the bank review records before upload
+        id: artifact_check
+        if: always() && env.MODE == 'bank'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          .venv/bin/python tools/external_review.py --check-artifact "evaluation/banks/kimi_v1/runs/$RUN_KEY/reviews" \
+            --run-id "$RUN_KEY" --artifact-name "$ARTIFACT_NAME" | tee "$RUNNER_TEMP/artifact-line.json"
+          { echo '### artifact'; echo '```json'; cat "$RUNNER_TEMP/artifact-line.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the bank review records for the owner
+        if: always() && env.MODE == 'bank' && steps.artifact_check.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: evaluation/banks/kimi_v1/runs/${{ env.RUN_KEY }}/reviews/
+          if-no-files-found: error
+          retention-days: 30

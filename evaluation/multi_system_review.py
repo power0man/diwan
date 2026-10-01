@@ -192,6 +192,10 @@ FAMILY_PREFIXES = (
     ("llama", "meta"), ("phi", "microsoft"), ("granite", "ibm"),
     ("glm", "zhipu"), ("minimax", "minimax"), ("jais", "inception"),
     ("falcon", "tii"), ("nemotron", "nvidia"),
+    # أسماءُ الفهارس المجانية (#168): GitHub Models وموجّه HF يسمّيان هذه العائلاتِ بأسماءٍ لا تبدأ بما سبق
+    ("meta-llama", "meta"), ("mixtral", "mistral"), ("pixtral", "mistral"),
+    ("cohere", "cohere"), ("c4ai", "cohere"), ("command", "cohere"), ("aya", "cohere"),
+    ("ai21", "ai21"), ("jamba", "ai21"),
 )
 
 
