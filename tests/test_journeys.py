@@ -443,6 +443,46 @@ def test_an_unlistable_projects_root_is_refused_as_root_unreadable(world, tmp_pa
     assert not out.exists()
 
 
+def test_an_open_sessions_directory_is_closed_when_listing_fails(tmp_path, monkeypatch):
+    root = tmp_path / "synthetic-root"
+    project = root / "projects" / ("a" * 32)
+    (project / "sessions").mkdir(parents=True)
+    (project / "meta.json").write_text(json.dumps({"id": project.name}), encoding="utf-8")
+    real_open, real_listdir, real_close = os.open, os.listdir, os.close
+    opened, closed = [], []
+
+    def track_open(path, *args, **kwargs):
+        fd = real_open(path, *args, **kwargs)
+        if path == "sessions":
+            opened.append(fd)
+        return fd
+
+    def deny_sessions_listing(fd):
+        if fd in opened:
+            raise PermissionError("synthetic listing failure after a successful open")
+        return real_listdir(fd)
+
+    def track_close(fd):
+        if fd in opened:
+            closed.append(fd)
+        return real_close(fd)
+
+    monkeypatch.setattr(journeys.os, "open", track_open)
+    monkeypatch.setattr(journeys.os, "listdir", deny_sessions_listing)
+    monkeypatch.setattr(journeys.os, "close", track_close)
+    try:
+        result = journeys.scan(root)
+        assert result["counts"]["unreadable_projects"] == 1
+        assert result["unreadable"] == {"unsafe_path": 1}
+        assert len(opened) == 1 and closed == opened
+        with pytest.raises(OSError):
+            os.fstat(opened[0])
+    finally:
+        for fd in opened:
+            if fd not in closed:
+                real_close(fd)
+
+
 def test_the_date_is_the_session_day_only_when_the_session_stayed_within_one_utc_day(copy, tmp_path, capsys):
     files = {mode: (meta, state) for meta, state, mode in session_files(copy) if mode != "agent"}
     meta, state = files["text"]
