@@ -58,6 +58,7 @@ http {
     location / {
       proxy_pass http://127.0.0.1:8765;
       proxy_set_header Host $host;
+      proxy_set_header Authorization "";
       proxy_http_version 1.1;
       proxy_read_timeout 330s;
       proxy_send_timeout 330s;

@@ -9,7 +9,7 @@ import tarfile
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
-REF = "e7945ef6c76f06c2d59d559ffd3f24c89adf98c7"
+REF = "9e62b7561e9e8931d16a02cfba65459c25a8501a"
 out = Path(sys.argv[1]).resolve()
 out.mkdir(exist_ok=False)
 app = out / "app"
