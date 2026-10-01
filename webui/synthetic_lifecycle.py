@@ -13,7 +13,7 @@ import tempfile
 import threading
 
 from webui.server import LocalApp
-from workspace_tools import backup, storage_scope as ss, synthetic_checkpoints as sc
+from workspace_tools import backup, checkpoints as cp, storage_scope as ss, synthetic_checkpoints as sc
 from workspace_tools.files import _canonical_root
 
 
@@ -144,7 +144,33 @@ class SyntheticLifecycle:
             except Exception:
                 pass
 
-    def _persist(self):
+    @contextmanager
+    def _remote_fence(self):
+        """No cached workspace may read or generate beyond its known head.
+
+        The real storage lease stays held through the complete local operation,
+        so another coordinator cannot acknowledge a forget during this reuse.
+        """
+        state = {}
+        try:
+            with self._store.exclusive():
+                _need(self._store.bind_scope(self._scope) == ss.checkpoint_scope(self._scope),
+                      "cloud_scope_changed")
+                head = self._store.read_head()
+                current = None if head is None else cp._sha(head)
+                _need(current == self._last_receipt, "cloud_checkpoint_stale")
+                if current is None:
+                    _need(self._store.is_pristine(), "cloud_checkpoint_stale")
+                yield state
+        except BaseException as exc:
+            self._block()
+            if not isinstance(exc, Exception):
+                raise
+            if isinstance(exc, LifecycleError):
+                raise
+            raise LifecycleError("cloud_storage_unconfirmed") from None
+
+    def _persist_held(self, state):
         with self._idle() as app:
             self._state = "saving"
             self._app = None
@@ -153,18 +179,26 @@ class SyntheticLifecycle:
                 with tempfile.TemporaryDirectory(prefix="diwan-synthetic-save-") as temporary:
                     archive = Path(temporary).resolve() / "checkpoint.json"
                     exported = backup.export_workspace(self._root, archive)
-                    committed = sc.commit_synthetic_checkpoint(
-                        archive, exported["sha256"], self._scope, self._store)
+                    prepared = sc._prepare_checkpoint(archive, exported["sha256"], self._scope)
+                    committed = sc._commit_prepared(prepared, self._store, state)
                 _need(committed.get("status") == "committed", "cloud_checkpoint_unconfirmed")
                 self._last_receipt = committed["receipt_sha256"]
-                self._open()
-                self._state = "ready"
                 return {"status": "saved", "receipt_sha256": self._last_receipt}
             except BaseException as exc:
                 self._block()
                 if not isinstance(exc, Exception):
                     raise
                 raise LifecycleError("cloud_checkpoint_unconfirmed") from None
+
+    def _reopen_confirmed(self):
+        try:
+            self._open()
+            self._state = "ready"
+        except BaseException as exc:
+            self._block()
+            if not isinstance(exc, Exception):
+                raise
+            raise LifecycleError("cloud_checkpoint_unconfirmed") from None
 
     def dispatch(self, request):
         """Serialize app calls; a forget result cannot escape before durability."""
@@ -176,11 +210,15 @@ class SyntheticLifecycle:
             with self._idle():
                 pass
             if request["action"] != "memory_forget":
-                return self._app.dispatch(request)
+                with self._remote_fence():
+                    result = self._app.dispatch(request)
+                return result
             try:
-                result = self._app.dispatch(request)
-                _need(result.get("status") == "forgotten", "cloud_forget_unconfirmed")
-                durable = self._persist()
+                with self._remote_fence() as state:
+                    result = self._app.dispatch(request)
+                    _need(result.get("status") == "forgotten", "cloud_forget_unconfirmed")
+                    durable = self._persist_held(state)
+                self._reopen_confirmed()
                 return {**result, "durability": durable}
             except BaseException as exc:
                 self._block()
@@ -190,7 +228,12 @@ class SyntheticLifecycle:
 
     def save(self):
         with self._request():
-            return self._persist()
+            with self._idle():
+                pass
+            with self._remote_fence() as state:
+                result = self._persist_held(state)
+            self._reopen_confirmed()
+            return result
 
     def close(self):
         _need(self._gate.acquire(blocking=False), "cloud_lifecycle_busy")

@@ -134,9 +134,8 @@ def _archive(store, receipt, expected_scope, temporary, name):
     return path, tombstones
 
 
-def commit_synthetic_checkpoint(archive, expected_sha256, expected_scope: bytes,
-                                store: SyntheticCheckpointStore):
-    """Commit only bytes already admitted under the same durable private grant."""
+def _prepare_checkpoint(archive, expected_sha256, expected_scope):
+    """Admission has no store IO, including the largest-receipt bound."""
     scope = _scope(expected_scope)
     bundle = backup._guard(backup._read_archive)(archive, expected_sha256)
     raw, tombstones = _admit(bundle, expected_scope)
@@ -144,8 +143,15 @@ def commit_synthetic_checkpoint(archive, expected_sha256, expected_scope: bytes,
     # The Hub control head accepts at most 4096 bytes. Bound the largest future
     # receipt before even acquiring/binding the store; a missing head is shorter.
     _encode_receipt(scope, cp.MAX_CHECKPOINTS, "0" * 64, expected_sha256, tombstones_sha)
-    state = {}
-    with cp._storage(state), store.exclusive(), tempfile.TemporaryDirectory(prefix="diwan-synthetic-") as tmp:
+    return expected_sha256, expected_scope, scope, raw, tombstones, tombstones_sha
+
+
+def _commit_prepared(prepared, store, state):
+    """Internal only: caller owns the physical lease and withholds this result
+    until that lease exits. Used by the lifecycle fence without a nested lease.
+    """
+    expected_sha256, expected_scope, scope, raw, tombstones, tombstones_sha = prepared
+    with tempfile.TemporaryDirectory(prefix="diwan-synthetic-") as tmp:
         cp._need(store.bind_scope(expected_scope) == scope, "checkpoint_scope_mismatch")
         previous = store.read_head()
         if previous is None:
@@ -169,6 +175,16 @@ def commit_synthetic_checkpoint(archive, expected_sha256, expected_scope: bytes,
         except Exception:
             raise cp.CheckpointError("checkpoint_commit_uncertain", head_may_have_advanced=True) from None
         result = {"status": "committed", "receipt_sha256": cp._sha(receipt), **json.loads(receipt)}
+    return result
+
+
+def commit_synthetic_checkpoint(archive, expected_sha256, expected_scope: bytes,
+                                store: SyntheticCheckpointStore):
+    """Commit only bytes already admitted under the same durable private grant."""
+    prepared = _prepare_checkpoint(archive, expected_sha256, expected_scope)
+    state = {}
+    with cp._storage(state), store.exclusive():
+        result = _commit_prepared(prepared, store, state)
     # Context exit may fail after CAS: no successful return before release.
     return result
 

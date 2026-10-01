@@ -134,6 +134,7 @@ def test_forget_failure_never_acknowledges_reopens_or_retries(cloud, fault):
 @pytest.mark.parametrize("kind", ["active", "active-agent", "generation"])
 def test_generation_busy_refuses_save_and_forget_before_mutation(cloud, kind):
     owner, app = cloud["owner"], cloud["owner"]._app
+    before = list(cloud["store"].calls)
     if kind == "active":
         app.active = (cloud["project"], "synthetic", "turn")
     elif kind == "active-agent":
@@ -146,7 +147,7 @@ def test_generation_busy_refuses_save_and_forget_before_mutation(cloud, kind):
             with pytest.raises(life.LifecycleError, match="cloud_generation_busy"):
                 operation()
         assert owner.state == "ready" and owner._app is app
-        assert cloud["store"].calls == []
+        assert cloud["store"].calls == before
     finally:
         app.active = app.active_agent_session = None
         if kind == "generation":
@@ -170,10 +171,11 @@ def test_real_generation_holds_gate_until_provider_finishes(cloud):
     thread.start()
     try:
         assert entered.wait(10)
+        before = list(cloud["store"].calls)
         for operation in (cloud["owner"].save, lambda: forget(cloud)):
             with pytest.raises(life.LifecycleError, match="cloud_lifecycle_busy"):
                 operation()
-        assert cloud["store"].calls == []
+        assert cloud["store"].calls == before
     finally:
         release.set()
         thread.join(10)
@@ -181,6 +183,7 @@ def test_real_generation_holds_gate_until_provider_finishes(cloud):
 
 
 def test_mutated_contract_blocks_before_any_dispatch_or_remote_call(cloud):
+    before = list(cloud["store"].calls)
     raw = json.loads(ss.read_storage_scope(cloud["root"]).raw)
     raw["record"]["plan"]["workspace_id"] = "f" * 32
     raw["record"]["approval"]["plan_sha256"] = digest(raw["record"]["plan"])
@@ -189,7 +192,7 @@ def test_mutated_contract_blocks_before_any_dispatch_or_remote_call(cloud):
     with pytest.raises(life.LifecycleError, match="cloud_scope_changed"):
         call(cloud["owner"], "create_project", name="لا ينشأ")
     assert cloud["owner"].state == "blocked" and cloud["owner"]._app is None
-    assert cloud["store"].calls == []
+    assert cloud["store"].calls == before
 
 
 @pytest.mark.parametrize("extra", ["root", "synthetic_cloud", "store", "committer", "app"])
@@ -268,8 +271,8 @@ def test_unconfirmed_result_never_becomes_success(cloud, tmp_path, monkeypatch, 
         operation = lambda: forget(cloud)
         code = "cloud_forget_unconfirmed"
     elif phase == "commit":
-        commit = life.sc.commit_synthetic_checkpoint
-        monkeypatch.setattr(life.sc, "commit_synthetic_checkpoint",
+        commit = life.sc._commit_prepared
+        monkeypatch.setattr(life.sc, "_commit_prepared",
                             lambda *args: {**commit(*args), "status": "uncertain"})
         operation, code = owner.save, "cloud_checkpoint_unconfirmed"
     else:
@@ -289,6 +292,63 @@ def test_unconfirmed_result_never_becomes_success(cloud, tmp_path, monkeypatch, 
 
 @pytest.mark.parametrize("payload", [None, {}, {"action": None}])
 def test_invalid_request_cannot_enter_app_or_checkpoint(cloud, payload):
+    before = list(cloud["store"].calls)
     with pytest.raises(life.LifecycleError, match="cloud_request_invalid"):
         cloud["owner"].dispatch(payload)
-    assert cloud["owner"].state == "ready" and cloud["store"].calls == []
+    assert cloud["owner"].state == "ready" and cloud["store"].calls == before
+
+
+def test_restored_peer_refuses_reuse_after_another_coordinator_confirms_forget(cloud, tmp_path):
+    first = cloud["owner"].save()
+    scope = ss.read_storage_scope(cloud["root"]).raw
+    peer = life.SyntheticLifecycle.restore(tmp_path.resolve() / "peer", scope,
+        store=BoundStore(cloud["store"].state), app_options=options(), receipt_sha256=first["receipt_sha256"])
+    try:
+        assert forget(cloud)["durability"]["status"] == "saved"
+        with pytest.raises(life.LifecycleError, match="cloud_checkpoint_stale"):
+            call(peer, "memory", project=cloud["project"])
+        assert peer.state == "blocked"
+    finally:
+        peer.close()
+
+
+def test_remote_lease_covers_actual_model_reuse(cloud):
+    provider, store = cloud["provider"], cloud["store"]
+    complete, observed = provider.complete, []
+    def held(request):
+        observed.append(store.locked and store.state["lock"]._is_owned())
+        return complete(request)
+    provider.complete = held
+    result = call(cloud["owner"], "ask", project=cloud["project"], session=cloud["sessions"]["text"],
+                  turn=uuid.uuid4().hex, message="إعادة استخدام مصطنعة", files=[])
+    assert result["status"] == "complete" and observed == [True]
+    assert not store.locked
+
+
+@pytest.mark.parametrize("action", ["memory", "ask", "agent_ask"])
+@pytest.mark.parametrize("fault", ["lease-exit", "scope", "head-missing"])
+def test_remote_authority_failure_blocks_before_reuse_or_ack(cloud, fault, action):
+    cloud["owner"].save()
+    if fault == "lease-exit":
+        cloud["store"].fail = fault
+        code = "cloud_storage_unconfirmed"
+    elif fault == "scope":
+        cloud["store"].bad_identity = True
+        code = "cloud_scope_changed"
+    else:
+        cloud["store"].state["head"] = None
+        code = "cloud_checkpoint_stale"
+    args = {"project": cloud["project"]}
+    if action != "memory":
+        args.update(session=cloud["sessions"]["text" if action == "ask" else "agent"],
+                    turn=uuid.uuid4().hex, message="لا إقرار بلا تحرير", files=[])
+    with pytest.raises(life.LifecycleError, match=code):
+        call(cloud["owner"], action, **args)
+    assert cloud["owner"].state == "blocked" and cloud["owner"]._app is None
+
+
+def test_headless_objects_cannot_be_adopted_as_a_new_workspace(cloud):
+    cloud["store"].state["objects"]["archives/orphan"] = b"synthetic orphan"
+    with pytest.raises(life.LifecycleError, match="cloud_checkpoint_stale"):
+        call(cloud["owner"], "memory", project=cloud["project"])
+    assert cloud["owner"].state == "blocked" and cloud["owner"]._app is None
