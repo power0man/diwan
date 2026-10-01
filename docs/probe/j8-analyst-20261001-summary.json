@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-10-01",
+  "kind": "analyst_acceptance_summary",
+  "source_commit": "f150268dd5a10dffb80c9f6d15b97c5b0719e75d",
+  "equivalent_source_commit": "b6811df202982ee15a55fd47edda2fc0ec21c0c9",
+  "source_tree": "f91a03d55c59ee6d065729b7275657afc36c69b1",
+  "model": {
+    "name": "qwen3.5:9b",
+    "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7"
+  },
+  "bank": {
+    "path": "evaluation/suites/analyst_v1.json",
+    "file_sha256": "d46adee9b98a0d0f14175c3f77bc8815a24a7e27cc07f983fa363954435231f8",
+    "canonical_sha256": "7de39f44febbace07554febca55676b9c62e72e703cbeb2bc43922104c99a38b",
+    "thresholds_path": "evaluation/suites/analyst_v1.meta.json"
+  },
+  "execution_images": {
+    "runtime": {
+      "image_id": "sha256:3dd092e52cdc7267dda816809f32be0f1d42765935906fed46eabef17193f0e0",
+      "lock_sha256": "b5af0840d9ff3421030f25466ee4d95619c5894d64e8d2bb6e8ac44a20563318",
+      "python_version": "3.14.7"
+    },
+    "analysis": {
+      "image_id": "sha256:c51dd3197ebf1542485d72f95432ab2a04cc0c4829c2634e161f845a3e4704d1",
+      "lock_sha256": "9c07c5bdcacd1b8e43801022cbc2d24182bf7ec4636b454c1cc1192c9c258b2c",
+      "python_version": "3.12.14"
+    }
+  },
+  "evaluator": {
+    "path": "tools/evaluate_agentic.py",
+    "mode": "agent",
+    "max_output": 1024,
+    "deadline_s": 120,
+    "seed": 0,
+    "context": 32768,
+    "thinking": false,
+    "runner_version": 8
+  },
+  "summary": {
+    "attempted": 40,
+    "measured": 40,
+    "errors": 0,
+    "passed": 22,
+    "pass_rate_of_measured": 0.55,
+    "forbidden_violations": 0
+  },
+  "by_capability": {
+    "analyst_aggregation": {
+      "measured": 5,
+      "passed": 5,
+      "errors": 0
+    },
+    "analyst_groupby": {
+      "measured": 5,
+      "passed": 3,
+      "errors": 0
+    },
+    "analyst_filtering": {
+      "measured": 4,
+      "passed": 2,
+      "errors": 0
+    },
+    "analyst_topk": {
+      "measured": 4,
+      "passed": 3,
+      "errors": 0
+    },
+    "analyst_dates": {
+      "measured": 5,
+      "passed": 2,
+      "errors": 0
+    },
+    "analyst_joins": {
+      "measured": 4,
+      "passed": 1,
+      "errors": 0
+    },
+    "analyst_cleaning": {
+      "measured": 5,
+      "passed": 2,
+      "errors": 0
+    },
+    "analyst_xlsx": {
+      "measured": 4,
+      "passed": 2,
+      "errors": 0
+    },
+    "analyst_charts": {
+      "measured": 4,
+      "passed": 2,
+      "errors": 0
+    }
+  },
+  "thresholds": {
+    "categories": {
+      "analyst_aggregation": {
+        "errors": 0,
+        "measured": 5,
+        "met": true,
+        "passed": 5,
+        "rate": 1.0,
+        "threshold": 0.5
+      },
+      "analyst_charts": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 2,
+        "rate": 0.5,
+        "threshold": 0.5
+      },
+      "analyst_cleaning": {
+        "errors": 0,
+        "measured": 5,
+        "met": false,
+        "passed": 2,
+        "rate": 0.4,
+        "threshold": 0.5
+      },
+      "analyst_dates": {
+        "errors": 0,
+        "measured": 5,
+        "met": false,
+        "passed": 2,
+        "rate": 0.4,
+        "threshold": 0.5
+      },
+      "analyst_filtering": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 2,
+        "rate": 0.5,
+        "threshold": 0.5
+      },
+      "analyst_groupby": {
+        "errors": 0,
+        "measured": 5,
+        "met": true,
+        "passed": 3,
+        "rate": 0.6,
+        "threshold": 0.5
+      },
+      "analyst_joins": {
+        "errors": 0,
+        "measured": 4,
+        "met": false,
+        "passed": 1,
+        "rate": 0.25,
+        "threshold": 0.5
+      },
+      "analyst_topk": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 3,
+        "rate": 0.75,
+        "threshold": 0.5
+      },
+      "analyst_xlsx": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 2,
+        "rate": 0.5,
+        "threshold": 0.5
+      }
+    },
+    "errors": 0,
+    "forbidden_violations": 0,
+    "harness_tampered": 0,
+    "meets_thresholds": false,
+    "pass_rate": 0.55,
+    "pass_rate_threshold": 0.7,
+    "thresholds_from": "tools/make_analyst_bank.py",
+    "unmet": [
+      "category:analyst_cleaning",
+      "category:analyst_dates",
+      "category:analyst_joins",
+      "pass_rate"
+    ]
+  },
+  "failed_task_loop_status_counts": {
+    "complete": 9,
+    "awaiting_owner": 7,
+    "step_limit": 2
+  },
+  "execution_backend_errors": 0,
+  "historical_comparison": {
+    "report": "docs/probe/j8-analyst-20260926.json",
+    "passed": 22,
+    "measured": 33,
+    "excluded_execution_errors": 7,
+    "rate": 0.6667,
+    "excluded_cases_now": {
+      "an15": "passed",
+      "an21": "failed",
+      "an24": "failed",
+      "an26": "failed",
+      "an28": "failed",
+      "an30": "failed",
+      "an31": "passed"
+    }
+  },
+  "recomputation": "summary, categories, frozen thresholds, bank hash, configuration hash and model digest matched saved rows exactly",
+  "raw_report_sha256": "e07f8214ccfd1a4b81495b3459edadc4e1f98a8b51ac2fe61bf14f5ab07f9f9c",
+  "raw_trace_sha256": "b05451e5444e3c2b9e07cadf4924c91f7852b7b1976272c64101942629ecdc17",
+  "raw_artifacts_published": false,
+  "measurement_limits": [
+    "measures_loop_and_model_together_not_model_alone",
+    "accuracy_bounded_by_the_authored_success_criterion",
+    "forbidden_paths_enforced_only_for_journalled_writes",
+    "forbidden_rules_must_prefix_a_declared_workspace_path",
+    "harness_files_and_command_targets_compared_by_digest_after_the_run",
+    "runner_absence_is_an_error_only_for_the_runner_the_command_names",
+    "single_attempt_per_task_no_variance_estimate",
+    "success_command_runs_inside_the_docker_backend_on_a_snapshot_of_the_post_run_workspace",
+    "docker_backend_is_a_container_boundary_not_a_separate_host",
+    "workspace_files_refused_by_the_snapshot_policy_make_the_task_unjudgeable",
+    "Public synthetic bank only; no private or sealed data",
+    "One complete baseline run; no selective retry of failing cases",
+    "Canary subset excluded from acceptance; an15 failed canary and passed baseline on identical source, so run variation remains",
+    "Schema and input-guidance follow-ups are absent from this baseline; no causal quality claim for them",
+    "Historical measured denominator excluded seven execution failures; its percentage is not directly comparable to the complete denominator",
+    "Raw report and tool trace remain outside this repository; only counts, fingerprints, source and limits are published",
+    "The three deficient categories and overall rate prevent closing issue44"
+  ],
+  "tool_choice_observation": {
+    "awaiting_owner_cases": 7,
+    "preceded_by_empty_inputs_and_file_not_found": 6,
+    "empty_input_calls_in_each_of_those_cases": 2,
+    "inspection_after_successful_analysis": 1,
+    "contract": "Workspace reads and listings do not copy files into the analysis container; only declared inputs are copied. run_command already advertises owner consent.",
+    "interpretation_limit": "Observed sequence, not proof that a guidance change improves outcomes; the generic follow-up is separate from this baseline."
+  }
+}
