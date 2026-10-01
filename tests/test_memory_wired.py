@@ -140,7 +140,10 @@ def test_pr179_owner_remembered_source_turn_is_scrubbed_without_a_memory_hash(wi
 
 
 @pytest.mark.parametrize("kind", ["agent", "text"])
-def test_pr179_json_escaped_echoes_are_removed(wired, kind):
+def test_pr179_json_escaped_echoes_are_removed(wired, kind, monkeypatch):
+    # Isolate literal JSON scrubbing from the independently guarded provenance layer.
+    monkeypatch.setattr("conversation.session._withhold_text_context", lambda *args: None)
+    monkeypatch.setattr("conversation.agent_session._withhold_agent_context", lambda *args: None)
     value = 'رمز "زيتون"\nسطر'
     escaped = json.dumps(value, ensure_ascii=False)[1:-1]
     wired.provider = _ScrubEchoingDelegate(value, escaped)
