@@ -360,8 +360,8 @@ def test_serve_ui_bootstrap_tools_only_for_local_with_same_identity(monkeypatch,
     monkeypatch.setenv('DIWAN_CHAT_MODEL', 'fixture')
     monkeypatch.setenv('DIWAN_CHAT_DIGEST', 'a' * 64)
     monkeypatch.setattr(sys, 'argv', ['serve_ui', '--provider', provider, '--port', '0'])
-    monkeypatch.setattr(cli, 'LocalChatProvider', lambda m, d: constructions.append(('text', m, d)))
-    monkeypatch.setattr(cli, 'LocalToolProvider', lambda m, d: constructions.append(('tools', m, d)))
+    monkeypatch.setattr(cli, 'LocalChatProvider', lambda m, d, **kw: constructions.append(('text', m, d, kw['base_url'])))
+    monkeypatch.setattr(cli, 'LocalToolProvider', lambda m, d, **kw: constructions.append(('tools', m, d, kw['base_url'])))
     monkeypatch.setitem(sys.modules, 'providers.mlx_provider', SimpleNamespace(MLXProvider=lambda **kw: None))
     class App:
         def __init__(self, root, **kwargs):
@@ -380,7 +380,8 @@ def test_serve_ui_bootstrap_tools_only_for_local_with_same_identity(monkeypatch,
     monkeypatch.setattr(cli, 'Server', FakeServer)
     assert cli.main() == 0
     if provider == 'local':
-        assert constructions == [('text', 'fixture', 'a' * 64), ('tools', 'fixture', 'a' * 64)]
+        assert constructions == [('text', 'fixture', 'a' * 64, 'http://127.0.0.1:11434'),
+                                 ('tools', 'fixture', 'a' * 64, 'http://127.0.0.1:11434')]
         assert captured['agent_provider_factory'] is not None
     else:
         assert captured['agent_provider_factory'] is None

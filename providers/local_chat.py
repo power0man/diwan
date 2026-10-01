@@ -9,12 +9,14 @@
 from __future__ import annotations
 
 import http.client
+import ipaddress
 import json
 import math
 import re
 import socket
 import threading
 import time
+from urllib.parse import urlsplit
 
 from core.contracts import Request, Response, Usage
 from core.canonical import SAFE_INT
@@ -32,6 +34,24 @@ MAX_DEADLINE_S = 300
 METADATA_DEADLINE_S = 10
 _MODEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:/-]{0,255}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+
+
+def local_ollama_endpoint(base_url: str) -> tuple[str, int]:
+    """Return a loopback-only HTTP endpoint, or fail with a stable code."""
+    try:
+        parsed = urlsplit(base_url)
+        host = parsed.hostname
+        port = parsed.port
+        loopback = host is not None and ipaddress.ip_address(host).is_loopback
+    except (TypeError, ValueError):
+        loopback = False
+        parsed = None
+        port = None
+    if (parsed is None or parsed.scheme != "http" or not loopback or port is None
+            or parsed.username is not None or parsed.password is not None
+            or parsed.path not in ("", "/") or parsed.query or parsed.fragment):
+        _fail("local_chat_endpoint_invalid", "عنوان Ollama يجب أن يكون HTTP على loopback مع منفذ صريح")
+    return host, port
 
 
 def _fail(code: str, reason: str) -> None:
@@ -105,10 +125,11 @@ class LocalChatProvider:
     لا يعني عد المحاولة ثبوت استلام الخادم لها عند انقطاع النقل.
     """
 
-    __slots__ = ("_model", "_model_version", "_chat_calls", "_metadata_calls")
+    __slots__ = ("_model", "_model_version", "_chat_calls", "_metadata_calls", "_host", "_port")
     request_byte_limit = MAX_REQUEST_BYTES
 
-    def __init__(self, model: str, model_version: str):
+    def __init__(self, model: str, model_version: str,
+                 *, base_url: str = "http://127.0.0.1:11434"):
         if (not isinstance(model, str) or not _MODEL.fullmatch(model)
                 or "//" in model or model.endswith("/")
                 or any(part in (".", "..") for part in model.split("/"))):
@@ -119,6 +140,7 @@ class LocalChatProvider:
             _fail("local_chat_artifact_invalid", "بصمة artifact كاملة مطلوبة")
         self._model = model
         self._model_version = model_version
+        self._host, self._port = local_ollama_endpoint(base_url)
         self._chat_calls = 0
         self._metadata_calls = 0
 
@@ -164,7 +186,7 @@ class LocalChatProvider:
         if body is not None and len(body) > self.request_byte_limit:
             _fail("local_chat_request_large", "الطلب أكبر من حد النقل")
         # HTTPConnection لا يقرأ proxy من البيئة ولا يتبع Location.
-        conn = http.client.HTTPConnection("127.0.0.1", 11434, timeout=timeout)
+        conn = http.client.HTTPConnection(self._host, self._port, timeout=timeout)
         expired = threading.Event()
         sockets = []
 
