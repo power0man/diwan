@@ -64,8 +64,20 @@
     "One synthetic product request, not a quality benchmark or uptime guarantee.",
     "Docker execution, analysis, web search and media disabled.",
     "Product storage is ephemeral; separate bucket sentinel survival is not product restore acceptance.",
-    "Raw report contains a stale browser-login note; a separate native Chrome check opened the private application with an authenticated session and displayed the limited-mode notice.",
+    "Raw report contains a stale browser-login note; a separate native Chrome check opened the private application with an authenticated session and displayed the limited-mode notice, stored question, answer 56 and completed status.",
     "Wrong Host rejection may occur at HF ingress before the application.",
     "Account identifiers and URLs omitted from this display."
-  ]
+  ],
+  "subsequent_browser_acceptance": {
+    "method": "native Chrome accessibility inspection",
+    "authenticated_private_app_opened": true,
+    "limited_mode_notice_visible": true,
+    "stored_round_count": 1,
+    "question": "ما حاصل 7 ضرب 8؟ أجب بالعدد فقط.",
+    "visible_answer": "56",
+    "visible_status": "مكتمل",
+    "send_enabled": true,
+    "fresh_tab_required_after_previous_tab_became_blank": true,
+    "no_service_restart_for_browser_check": true
+  }
 }
