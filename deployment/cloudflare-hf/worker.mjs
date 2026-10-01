@@ -94,7 +94,6 @@ export default {
         method: request.method, headers, body, redirect: "manual",
         signal: AbortSignal.any([request.signal, AbortSignal.timeout(330_000)]),
         cache: "no-store",
-        cf: { cacheTtl: 0, cacheEverything: false },
       });
       // Redirects never carry the service token to another destination.
       if (upstream.status >= 300 && upstream.status < 400) {

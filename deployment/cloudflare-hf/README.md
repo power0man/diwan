@@ -38,6 +38,7 @@ python -m pytest tests/test_cloudflare_hf_bridge.py
 python tools/mutation_check.py --manifest tests/mutations/test_cloudflare_hf_bridge.jsonl
 cd deployment/cloudflare-hf
 npm ci
+node verify_runtime.mjs
 npx wrangler types
 npx wrangler deploy --dry-run --outdir dist
 ```
@@ -45,8 +46,10 @@ npx wrangler deploy --dry-run --outdir dist
 The synthetic handler tests run without npm dependencies, external services, or
 credentials and participate in normal pytest/CI. Mutation tests exercise the
 actual JS handler. Local synthetic `ctx.access` does **not** prove that a live
-Cloudflare deployment authenticated a request. A real runtime smoke test remains
-required before switching the domain.
+Cloudflare deployment authenticated a request. A synthetic workerd smoke test is
+also required by the hosted Python 3.14 CI job; it verifies the runtime's Access
+context, outbound body and cache options. A live Access smoke test remains required
+before switching the domain.
 
 ## Deployment and rollback gates
 
