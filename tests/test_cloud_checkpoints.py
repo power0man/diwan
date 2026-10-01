@@ -8,7 +8,7 @@ import threading
 import pytest
 
 from evaluation.memory_runner import _Wired
-from core.canonical import canonical_bytes
+from core.canonical import canonical_bytes, digest
 from memory.store import MemoryStore
 from workspace_tools import backup, checkpoints as cp
 
@@ -146,6 +146,48 @@ def test_losing_the_head_cannot_silently_reinitialize_old_memory(sample):
     with pytest.raises(cp.CheckpointError, match="checkpoint_head_missing"):
         cp.commit_checkpoint(*old, store)
     assert store.state["head"] is None
+
+
+@pytest.mark.parametrize("phase", ["commit", "restore"])
+def test_conflicting_receipts_cannot_drop_a_forgotten_digest(sample, phase):
+    text = "synthetic public blue triangle"
+    # The same text under another old ID exposes the loss of the digest
+    # tombstone when MemoryStore.restore collapses receipts by item_id.
+    memory(sample).remember(text, consent="owner")
+    store = TestStore()
+    first = cp.commit_checkpoint(*exported(sample), store)
+    original = memory(sample).forget(sample["item"])
+    latest = cp.commit_checkpoint(*exported(sample), store)
+    normal = sample["base"] / "normal"
+    cp.restore_checkpoint(store, normal, receipt_sha256=first["receipt_sha256"])
+    assert not any(item["text"] == text for item in memory(sample, normal).items())
+    # Ordinary forget does not produce this contradictory input. Keep the
+    # original receipt, then inject a second digest for its identical ID.
+    conflict = {**original, "sha256": hashlib.sha256(b"different synthetic text").hexdigest()}
+    with memory(sample)._receipts.open("a") as stream:
+        stream.write(json.dumps(conflict) + "\n")
+    candidate = exported(sample)
+    if phase == "commit":
+        calls, head = list(store.calls), store.state["head"]
+        with pytest.raises(cp.CheckpointError, match="checkpoint_conflicting_tombstones"):
+            cp.commit_checkpoint(*candidate, store)
+        assert store.calls == calls and store.state["head"] == head
+    else:
+        # Reproduce an immutable checkpoint accepted by the older prototype;
+        # every object hash is correct, so transport integrity cannot catch it.
+        archive, sha, _ = candidate
+        body = {k: v for k, v in latest.items() if k not in {"status", "receipt_sha256"}}
+        prefix = "projects/" + sample["project"] + "/memory:"
+        body.update(sequence=3, previous=latest["receipt_sha256"], archive_sha256=sha,
+                    tombstones_sha256=digest(sorted({prefix + digest(r) for r in memory(sample).receipts()})))
+        raw = canonical_bytes(body)
+        store.state["objects"]["archives/" + sha] = archive.read_bytes()
+        store.state["objects"]["receipts/" + hashlib.sha256(raw).hexdigest()] = raw
+        store.state["head"] = raw
+        destination = sample["base"] / "must-not-resurrect"
+        with pytest.raises(cp.CheckpointError, match="checkpoint_conflicting_tombstones"):
+            cp.restore_checkpoint(store, destination, receipt_sha256=first["receipt_sha256"])
+        assert not destination.exists()
 
 
 @pytest.mark.parametrize("fault", ["missing-file", "missing-metadata"])

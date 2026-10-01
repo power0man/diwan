@@ -97,6 +97,11 @@ def _content(data, shape):
     tombstones = []
     for memory in shape[3]:
         _, receipts = MemoryStore.check_snapshot(backup._memory_snapshot(data, memory))
+        identities = {}
+        for receipt in receipts:
+            _need(receipt["item_id"] not in identities or identities[receipt["item_id"]] == receipt["sha256"],
+                  "checkpoint_conflicting_tombstones")
+            identities[receipt["item_id"]] = receipt["sha256"]
         tombstones.extend(memory + ":" + digest(receipt) for receipt in receipts)
     return set(tombstones)
 
