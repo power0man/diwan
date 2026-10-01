@@ -59,7 +59,8 @@ def run_component(component: str, provider, *, model: str, model_version: str, b
               "model_version": model_version, "arms": spec["arms"], "options": dict(options),
               "seeds": list(seeds), "seed_aggregation": protocol()["seed_aggregation"]}
     if spec["runner"] == "research":
-        from evaluation.research_runner import run_bank
+        from evaluation.research_runner import RUNNER_VERSION as RESEARCH_RUNNER_VERSION, run_bank
+        config["research_runner_version"] = RESEARCH_RUNNER_VERSION
         rows = {}
         for side in ("on", "off"):
             runs = []

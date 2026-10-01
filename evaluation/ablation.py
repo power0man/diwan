@@ -176,16 +176,20 @@ def run_seeded_arm(cases: list[dict], provider, arm_config: dict, seeds: tuple[i
     return aggregate_seed_rows(runs)
 
 
-def compare(on: list[dict], off: list[dict], *, categories: set[str] | None = None) -> dict:
+def compare(on: list[dict], off: list[dict], *, categories: set[str] | None = None,
+            include_arm_errors: bool = False) -> dict:
     """الفرقُ «مع المكوّن − بدونه» على الأزواج المقيسة في الذراعين، ومجالُه ٩٥٪ (Agresti–Min)."""
     off_by_id = {row["id"]: row for row in off}
     if set(off_by_id) != {row["id"] for row in on}:
         raise AblationError("arms_differ", "الذراعان على حالاتٍ مختلفة")
     pairs = errors = both = on_only = off_only = 0
+    errors_by_arm = {"on": 0, "off": 0}
     for row in on:
         if categories is not None and row["category"] not in categories:
             continue
         other = off_by_id[row["id"]]
+        errors_by_arm["on"] += row["status"] != "measured"
+        errors_by_arm["off"] += other["status"] != "measured"
         if row["status"] != "measured" or other["status"] != "measured":
             errors += 1
             continue
@@ -193,14 +197,18 @@ def compare(on: list[dict], off: list[dict], *, categories: set[str] | None = No
         both += row["passed"] and other["passed"]
         on_only += row["passed"] and not other["passed"]
         off_only += other["passed"] and not row["passed"]
+    # Legacy consumers reproduce frozen reports with the original comparison schema.
+    error_details = {"errors_by_arm": errors_by_arm} if include_arm_errors else {}
     if not pairs:
-        return {"pairs": 0, "errors": errors, "on_rate": None, "off_rate": None, "effect": None, "ci95": None,
+        return {"pairs": 0, "errors": errors, **error_details,
+                "on_rate": None, "off_rate": None, "effect": None, "ci95": None,
                 "on_only": 0, "off_only": 0}
     n = pairs + 2                                      # Agresti–Min: نصفٌ يُضاف إلى كل خليّةٍ من الأربع
     p10, p01 = (on_only + 0.5) / n, (off_only + 0.5) / n
     centre = p10 - p01
     half = Z95 * math.sqrt(max(p10 + p01 - centre ** 2, 0.0) / n)
-    return {"pairs": pairs, "errors": errors, "on_rate": round((both + on_only) / pairs, 4),
+    return {"pairs": pairs, "errors": errors, **error_details,
+            "on_rate": round((both + on_only) / pairs, 4),
             "off_rate": round((both + off_only) / pairs, 4), "effect": round((on_only - off_only) / pairs, 4),
             "ci95": [round(max(centre - half, -1.0), 4), round(min(centre + half, 1.0), 4)],
             "on_only": on_only, "off_only": off_only}
@@ -249,12 +257,12 @@ def judge(component: str, on: list[dict], off: list[dict]) -> dict:
     if spec["status"] != "ready":
         raise AblationError("component_blocked", component)
     rule = spec["rule"]
-    overall = compare(on, off)
+    overall = compare(on, off, include_arm_errors=True)
     subset = None
     if rule["kind"] == "guard":
-        subset = compare(on, off, categories=set(rule["benefit_categories"]))
+        subset = compare(on, off, categories=set(rule["benefit_categories"]), include_arm_errors=True)
         rest = {row["category"] for row in on} - set(rule["benefit_categories"])
-        overall = compare(on, off, categories=rest)
+        overall = compare(on, off, categories=rest, include_arm_errors=True)
     # عطبُ كلِّ ذراعٍ برموزه: إن غيّر المكوّنُ ما يكتمل (موافقةٌ معلَّقة، بتر) ظهر هنا لا في النسبة (#185)
     errors_by_arm = {side: dict(sorted(Counter(row.get("code") or "unnamed" for row in rows
                                                if row["status"] != "measured").items()))
