@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-01",
+  "author": "openai/codex",
+  "head_tested": "d096287cd204c42802cec1d4be5b98d7f0a2b8ae",
+  "base": "436c9ad788e4c06d6597b09a4137c47c88bdd739",
+  "included_evaluator_head": "09578405a48b34797cb23104a96b2f5d75ac0933",
+  "product_commits": [
+    "f87200a",
+    "6d61eac819fd54c02a79409a6fafbc40c1b38a71"
+  ],
+  "findings": [
+    {
+      "issue": "Forgotten memory value in model-selected tool call ID reached real Ollama serialized messages",
+      "before": "2 real codec/transport-substitution cases failed the no-forgotten-value assertion (reopen and old-backup restore)",
+      "after": "Context-only deterministic collision-checked aliases keep call/result pairs valid; ledger/action bytes and historical audit identities remain unchanged"
+    },
+    {
+      "issue": "A request admitted before concurrent forget failure could generate with stale history",
+      "before": "2 deterministically ordered agent/text cases made an additional provider call",
+      "after": "Recover under generation before agent/text execution or a later forget; refuse on failure and retain journal"
+    },
+    {
+      "issue": "Ordinary agent-workspace/meta.json changed unified restore scope or broke JSON parsing",
+      "before": "3 valid backup cases failed restore",
+      "after": "Only already-validated canonical session metadata determines unified scope"
+    }
+  ],
+  "focused_tests": [
+    {
+      "modules": [
+        "tests/test_forget_call_identifiers.py",
+        "tests/test_memory_wired.py",
+        "tests/test_unified_memory_controls.py",
+        "tests/test_backup_memory.py"
+      ],
+      "passed": 136,
+      "seconds": 90.85,
+      "note": "call-ID product checks before subsequent race/metadata additions"
+    },
+    {
+      "modules": [
+        "tests/test_backup_unified_metadata_scope.py",
+        "tests/test_memory_recovery_generation.py",
+        "tests/test_forget_call_identifiers.py",
+        "tests/test_unified_memory_controls.py",
+        "tests/test_backup_memory.py"
+      ],
+      "passed": 48,
+      "seconds": 5.62
+    },
+    {
+      "modules": [
+        "tests/test_agent_webui.py",
+        "tests/test_webui_http.py",
+        "tests/test_webui_workflow.py",
+        "tests/test_webui_recovery.py"
+      ],
+      "passed": 114,
+      "seconds": 43.81
+    }
+  ],
+  "mutation_checks": [
+    {
+      "head": "f87200a",
+      "range": "436c9ad..f87200a",
+      "killed": 110,
+      "survived": 1,
+      "new_call_identifier_mutations_killed": 9,
+      "unproved_touched_tests": [],
+      "dropped_proofs": [],
+      "survivor": "exposure-probe-carries-the-item-text: existing evaluator proof repaired by included evaluator commit 2a7cf51"
+    },
+    {
+      "head": "d096287cd204c42802cec1d4be5b98d7f0a2b8ae",
+      "selection": "three generation recovery guards, one canonical metadata role guard, previously surviving exposure probe guard",
+      "killed": 5,
+      "survived": 0,
+      "baseline_missing": [],
+      "baseline_failed": []
+    }
+  ],
+  "limits": [
+    "Synthetic data and actual Ollama payload serialization with only HTTP transport replaced; no new live model quality measurement",
+    "Forgetting removes literal values from future reusable model context; original audit identities and append-only/action evidence remain, and physical erasure is not claimed",
+    "No new full suite here; parent integration runs combined checks and independent model-family review"
+  ]
+}
