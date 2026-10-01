@@ -549,7 +549,9 @@ class ChatSession:
                 # The guard sees the exact fresh context under the append lock,
                 # before the provider sees it and before recording a pending turn.
                 request_validator(req)
-            if not is_local_provider(provider) or is_cloud_model(self.config["model"]):
+            if is_cloud_model(self.config["model"]):
+                _fail("policy_requires_local", "المحادثة تتطلب مزودًا محليًا")
+            if not is_local_provider(provider):
                 _fail("policy_requires_local", "المحادثة تتطلب مزودًا محليًا")
             turn = {"turn_id": turn_id, "text": text, "request_sha256": digest(req.fingerprint_payload()),
                     "context_sha256": context, "result": None, **({"memory": held} if held else {})}

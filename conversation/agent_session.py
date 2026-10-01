@@ -928,7 +928,9 @@ class AgentSession:
             existing, initial = self._admit_turn(state, turn_id, text, thinking)
             if existing is not None:
                 return self._public(existing)
-            if not is_local_provider(provider) or is_cloud_model(self.config["model"]):
+            if is_cloud_model(self.config["model"]):
+                _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
+            if not is_local_provider(provider):
                 _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
             memory = self._memory_for(text)
             turn = {"turn_id": turn_id, "text": text, "initial_messages": _copy(initial),
@@ -957,7 +959,9 @@ class AgentSession:
                 turn["result"] = self._uncertain(turn)
                 self._save(state)
                 return self._public(turn)
-            if not is_local_provider(provider) or is_cloud_model(self.config["model"]):
+            if is_cloud_model(self.config["model"]):
+                _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
+            if not is_local_provider(provider):
                 _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
             return self._run(state, turn, provider)
 
