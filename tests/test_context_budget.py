@@ -542,10 +542,14 @@ def test_snapshot_extraction_checks_members_itself_and_works_without_the_filter_
 
 
 def test_the_audit_runs_under_an_isolated_interpreter_without_the_root_on_sys_path():
-    """الطفلُ يعمل بـ`-I -P` ولا يضع الأبُ الجذرَ على `sys.path`، فكلُّ استيرادٍ لوحدة منتج في طريق القياس يمرّ بـ`_product_path()`
+    """الطفلُ يعمل بـ`-I -P -S` ولا يضع الأبُ الجذرَ على `sys.path`، فكلُّ استيرادٍ لوحدة منتج في طريق القياس يمرّ بـ`_product_path()`
     أولًا؛ أولُ تشغيلٍ حيّ للجولة الثامنة سقط بـ`ModuleNotFoundError: providers` في `context_window()` لأن الاختبارات وحدها
     كانت تملك الجذرَ على المسار (conftest). كلُّ نداءٍ في عمليةٍ جديدة معزولة بلا الجذر."""
     import subprocess
+    # -I still processes the interpreter's site .pth files. An editable install
+    # (uv sync in CI) adds this checkout there, defeating the test's precondition.
+    # These injected counters need only the standard library: -S keeps the real
+    # no-product-path condition, including when the package is installed editable.
     head = ("import sys; sys.path.insert(0, 'tools'); import context_budget as cb; "
             "assert str(cb.ROOT) not in sys.path, 'الجذرُ يجب ألا يكون على المسار قبل النداء'; ")
     calls = {"window": "print(cb.context_window())",
@@ -553,7 +557,7 @@ def test_the_audit_runs_under_an_isolated_interpreter_without_the_root_on_sys_pa
              "audit": "r = cb.audit(cb.ROOT, {'ws': lambda t: len(t.split())}, snapshot_digest='d' * 64); "
                       "print(r['commit'], r['tree_state'], r['context_window_tokens'], r['measured_in']['interpreter_isolated'])"}
     for name, call in calls.items():
-        run = subprocess.run([sys.executable, "-I", "-P", "-c", head + call], cwd=ROOT, capture_output=True, text=True)
+        run = subprocess.run([sys.executable, "-I", "-P", "-S", "-c", head + call], cwd=ROOT, capture_output=True, text=True)
         assert run.returncode == 0, (name, run.stderr[-600:])
     assert run.stdout.split() == ["None", "None", str(cb.context_window()), "True"]
 
