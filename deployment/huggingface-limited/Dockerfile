@@ -15,6 +15,7 @@ RUN uv sync --frozen --no-install-project --extra dev --python /usr/local/bin/py
     && mkdir -p "$CAMELTOOLS_DATA" && camel_data -i morphology-db-msa-r13
 COPY --chown=diwan:diwan app/ /app/
 COPY --chown=diwan:diwan launch.py /app/cloud_launch.py
+COPY --chown=diwan:diwan cloud_app.py /app/cloud_app.py
 USER diwan
 EXPOSE 7860
 CMD ["python", "-u", "/app/cloud_launch.py"]

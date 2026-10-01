@@ -69,7 +69,7 @@ http {
 ''')
     env = os.environ.copy()
     env.update(DIWAN_CHAT_MODEL=MODEL, DIWAN_CHAT_DIGEST=DIGEST)
-    app = subprocess.Popen([sys.executable, "/home/diwan/cloud_app.py", "--root", str(root),
+    app = subprocess.Popen([sys.executable, "/app/cloud_app.py", "--root", str(root),
                             "--port", "8765", "--public-origin", "https://" + host], env=env)
     children.append(app)
     spawn(["nginx", "-c", str(config), "-g", "daemon off;"])

@@ -1,6 +1,6 @@
 """Deployment-only session defaults for the slower free CPU host."""
 import sys
-sys.path.insert(0, "/home/diwan/app")
+sys.path.insert(0, "/app")
 from functools import partial
 import webui.server as server
 from tools.serve_ui import main
