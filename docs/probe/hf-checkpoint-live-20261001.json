@@ -3,18 +3,10 @@
   "date": "2026-10-01",
   "agent": "openai/codex",
   "evidence_kind": "public_summary_not_raw",
-  "raw_sha256": "8350bd14dcda374d5bb9a936a447731df8b55aa6c5629e8f9469935bcaf2988b",
-  "source_base": "1aa21ace25dbe095eea127badce7c457659ecb9b",
+  "raw_sha256": "23b9889c8a3d34ecb9f1048304562cad93a515532bd560fd9a096a66a3f16687",
+  "source_base": "66e0122713cdb7aa2ce399fab631ef52185a7ff7",
+  "adapter_sha256": "61ea0b7ed2d3e02afc6dbba37642b99db9d0132a0593c01fa7c68ac9bbd3aa86",
   "passed": true,
-  "measurement_limits": [
-    "Separate interpreter processes restarted, not the Space container",
-    "Only synthetic public memory with no sessions; no cloud chat persistence claim",
-    "Killed non-expiring holder remains busy: no force unlock or automatic recovery",
-    "Prototype source uncommitted at measurement; bound by exact file SHA256",
-    "No inference, paid resource, production mutation, or owner data",
-    "Private resource identifiers and exact timestamps omitted; unchanged raw remains in private handoff"
-  ],
-  "adapter_sha256": "d97f5332df58651db1d232d30d279ceffc211149b3052f230d04dd0365aef22e",
   "checks": {
     "restored_old_receipt": true,
     "used_latest_forget_authority": true,
@@ -28,5 +20,13 @@
     "private": true,
     "main_unchanged": true,
     "space_remained_paused": true
-  }
+  },
+  "measurement_limits": [
+    "Separate interpreter processes restarted, not the Space container",
+    "Only synthetic public memory with no sessions; no cloud chat persistence claim",
+    "Killed non-expiring holder remains busy: no force unlock or automatic recovery",
+    "Prototype source uncommitted at measurement; bound by exact file SHA256",
+    "No inference, paid resource, production mutation, or owner data",
+    "Private resource identifiers and exact timestamps omitted; unchanged raw remains in private handoff"
+  ]
 }

@@ -1,5 +1,6 @@
 """Synthetic protocol regressions; live Hub evidence is separate from these tests."""
 from concurrent.futures import ThreadPoolExecutor
+import base64
 import hashlib
 import json
 import threading
@@ -234,3 +235,65 @@ def test_local_only_rejected_before_real_adapter_transport(sample):
     with pytest.raises(cp.CheckpointError, match="checkpoint_policy_refused"):
         cp.commit_checkpoint(path, sha, approval, store(remote))
     assert remote.commits == 0
+
+
+def test_private_visibility_is_rechecked_inside_an_acquired_lease(monkeypatch):
+    memory_remote = Remote()
+    remote = hf.HubRemote("space", "synthetic/probe", "diwan-checkpoint-test", "synthetic-token")
+    visibility = {"private": True}
+
+    def request(url, *, body=None, **kwargs):
+        if "/revision/" in url:
+            revision, paths = memory_remote.snapshot()
+            return canonical_bytes({"private": visibility["private"], "sha": revision,
+                                    "siblings": [{"rfilename": p} for p in paths]})
+        if body is not None:
+            parts = [json.loads(line) for line in body.splitlines()]
+            files = {p["value"]["path"]: base64.b64decode(p["value"]["content"]) for p in parts[1:]}
+            sha = memory_remote.commit(parts[0]["value"]["parentCommit"], files)
+            return canonical_bytes({"commitOid": sha})
+        revision, path = url.split("/raw/")[1].split("/", 1)
+        return memory_remote.read(revision, path)
+
+    monkeypatch.setattr(remote, "_request", request)
+    held = hf.HubCheckpointStore(remote, NS)
+    with pytest.raises(hf.StoreError, match="hf_private_required"):
+        with held.exclusive():
+            before = memory_remote.commits
+            visibility["private"] = False
+            with pytest.raises(hf.StoreError, match="hf_private_required"):
+                held.compare_and_swap_head(None, b"must not leave client")
+    assert memory_remote.commits == before
+
+
+def test_malformed_metadata_fails_without_reading_any_file(monkeypatch):
+    remote = hf.HubRemote("space", "synthetic/probe", "diwan-checkpoint-test", "synthetic-token")
+    for value in ([], {"private": True, "sha": "not-a-commit", "siblings": []},
+                  {"private": True, "sha": "0" * 40, "siblings": [{"rfilename": "a"}, {"rfilename": "a"}]},
+                  {"private": True, "sha": "0" * 40}):
+        monkeypatch.setattr(remote, "_request", lambda *args, **kwargs: canonical_bytes(value))
+        with pytest.raises(hf.StoreError, match="hf_metadata_invalid"):
+            remote.snapshot()
+
+
+def test_response_read_is_bounded_before_decoding():
+    remote = hf.HubRemote("space", "synthetic/probe", "diwan-checkpoint-test", "synthetic-token")
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self, count):
+            assert count == 8
+            return b"x" * 8
+
+    class Opener:
+        def open(self, request, *, timeout):
+            return Response()
+
+    remote._opener = Opener()
+    with pytest.raises(hf.StoreError, match="hf_response_limit"):
+        remote._request("https://huggingface.co/synthetic", limit=7)

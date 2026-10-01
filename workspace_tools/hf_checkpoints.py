@@ -71,6 +71,7 @@ class HubRemote:
     def snapshot(self):
         try:
             value = json.loads(self._request(self._api + "/revision/" + self.branch))
+            _need(type(value) is dict, "hf_metadata_invalid")
             _need(value.get("private") is True, "hf_private_required")
             sha = value["sha"]
             _need(type(sha) is str and re.fullmatch(r"[a-f0-9]{40}", sha), "hf_metadata_invalid")
