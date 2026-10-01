@@ -235,7 +235,7 @@ class MemoryStore:
             seen.append(item["sha256"])
             used += len(held)
         fenced, _ = wrap("\n".join(lines))
-        return f"{HEADER}\n{fenced}", sorted(seen)
+        return f"{HEADER}\n{fenced}", sorted(set(seen))
 
     def context_block(self, question: str) -> str:
         return self.context(question)[0]
@@ -265,7 +265,7 @@ class MemoryStore:
             self._apply_forget(item_id, payload)
             return receipt
 
-    def _forget_plan(self, item_id: str, *, references=None, scrubbed=None):
+    def _forget_plan(self, item_id: str, *, references=None, scrubbed=None, context_withheld_turns=None):
         """Prepare an exact receipt while the caller holds the store lock; do not mutate."""
         prior = self.receipts(item_id)
         if prior:
@@ -280,6 +280,8 @@ class MemoryStore:
                    "references": sorted(references or [])}
         if scrubbed is not None:
             receipt["scrubbed"] = dict(sorted(scrubbed.items()))
+        if context_withheld_turns is not None:
+            receipt["context_withheld_turns"] = sorted(context_withheld_turns)
         lines = self._read_receipts() + [receipt]
         payload = "".join(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n"
                           for r in lines).encode("utf-8")

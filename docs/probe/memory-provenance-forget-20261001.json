@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "scope": "Synthetic regression checks for memory provenance withholding; no live model",
+  "base": "b6811df202982ee15a55fd47edda2fc0ec21c0c9",
+  "product_commit": "88b006e1ed66cd4d5f3cb992c203db74f924754c",
+  "final_test_commit": "cface70adc3f7f1871b473b63b72ca479cc54bd9",
+  "focused_tests": {
+    "passed": 148,
+    "exit_code": 0
+  },
+  "session_backup_tests": {
+    "passed": 206,
+    "exit_code": 0,
+    "overlap_note": "Three recovery cases also appear in the focused batch; counts are per batch."
+  },
+  "mutations": {
+    "range": {
+      "commit": "88b006e1ed66cd4d5f3cb992c203db74f924754c",
+      "totals": {
+        "killed": 115,
+        "partially_killed": 0,
+        "survived": 1,
+        "test_missing": 0,
+        "failing_before_mutation": 0,
+        "stale": 0,
+        "invalid": 0,
+        "timeout": 0
+      },
+      "report_sha256": "a36a0ac32bc816a96561b4b66860f6920cc89148f64d75601e7513376e2f8c9f"
+    },
+    "new_guards": {
+      "commit": "88b006e1ed66cd4d5f3cb992c203db74f924754c",
+      "totals": {
+        "killed": 5,
+        "partially_killed": 0,
+        "survived": 0,
+        "test_missing": 0,
+        "failing_before_mutation": 0,
+        "stale": 0,
+        "invalid": 0,
+        "timeout": 0
+      },
+      "report_sha256": "84105bd20096c8e01143a3f47f57659d19eee6927179f9d5b21b4c7e44f3be0f"
+    },
+    "json_guard_recheck": {
+      "commit": "cface70adc3f7f1871b473b63b72ca479cc54bd9",
+      "totals": {
+        "killed": 1,
+        "partially_killed": 0,
+        "survived": 0,
+        "test_missing": 0,
+        "failing_before_mutation": 0,
+        "stale": 0,
+        "invalid": 0,
+        "timeout": 0
+      },
+      "report_sha256": "04ff154c62a36783b0d613dc23bce0113f70dce0c75909420daa3993ffcdc612"
+    }
+  },
+  "mutation_interpretation": "The 116-entry range killed 115 and exposed one masked literal-JSON test. Only that test fault injection changed; its one original mutation was then killed. This is not a claim that the whole range was rerun at the final test commit.",
+  "live_baseline": {
+    "source": "f150268dd5a10dffb80c9f6d15b97c5b0719e75d",
+    "passed": 25,
+    "total": 30,
+    "forget_rate": 0.5833,
+    "leakage": 0,
+    "after_fix_live_rerun": false
+  },
+  "date": "2026-10-01",
+  "measurement_limits": [
+    "The scorer, bank and historical results are unchanged.",
+    "Immutable call ledgers, action receipts and workspace files are not erased.",
+    "The broader removal of model/tool output from affected contextual descendants is listed in the forget receipt and described in the UI.",
+    "Public synthetic inputs only; no owner runtime or sealed bank read."
+  ]
+}

@@ -47,7 +47,7 @@ def developer_families(registry_path: Path = _REGISTRY) -> tuple[str, ...]:
 
 DEVELOPER_FAMILIES = developer_families()
 
-DEFAULT_REVIEWERS = ("deepseek-v4-flash:cloud", "mistral-large-3:675b-cloud")
+DEFAULT_REVIEWERS = ("deepseek-v4.1-flash:cloud", "mistral-large-3:675b-cloud")
 
 MEASUREMENT_LIMITS = (
     "cloud_model_identity_is_the_service_name_not_a_verified_weight_digest",

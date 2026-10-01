@@ -140,7 +140,10 @@ def test_pr179_owner_remembered_source_turn_is_scrubbed_without_a_memory_hash(wi
 
 
 @pytest.mark.parametrize("kind", ["agent", "text"])
-def test_pr179_json_escaped_echoes_are_removed(wired, kind):
+def test_pr179_json_escaped_echoes_are_removed(wired, kind, monkeypatch):
+    # Isolate literal JSON scrubbing from the independently guarded provenance layer.
+    monkeypatch.setattr("conversation.session._withhold_text_context", lambda *args: None)
+    monkeypatch.setattr("conversation.agent_session._withhold_agent_context", lambda *args: None)
     value = 'رمز "زيتون"\nسطر'
     escaped = json.dumps(value, ensure_ascii=False)[1:-1]
     wired.provider = _ScrubEchoingDelegate(value, escaped)
@@ -1372,6 +1375,8 @@ def test_a_forgotten_value_echoed_as_a_tool_call_id_in_the_reused_session_fails_
     from evaluation.memory_runner import run_wired_scenario
     # Context IDs now receive safe aliases; bypass that guard to keep this a
     # negative test of the evaluator's ability to detect the real wire leak.
+    # Also bypass provenance withholding: this is a fault-injected detector test.
+    monkeypatch.setattr("conversation.agent_session._withhold_agent_context", lambda *args: None)
     monkeypatch.setattr("conversation.agent_session._context_call_aliases", lambda turns, text: {})
     value = "passport-secret-445566"
     scenario = {"id": "forget_call_id_echo", "category": "forget", "steps": [
@@ -1390,6 +1395,8 @@ def test_a_forgotten_value_echoed_inside_a_tool_call_argument_in_the_reused_sess
     from evaluation.memory_runner import run_wired_scenario
     # The product now scrubs this history; fault injection keeps the evaluator
     # guard independently testable without requiring a product regression.
+    # Also bypass provenance withholding: this is a fault-injected detector test.
+    monkeypatch.setattr("conversation.agent_session._withhold_agent_context", lambda *args: None)
     monkeypatch.setattr("conversation.agent_session._scrub_agent_turns",
                         lambda turns, text: (turns, 0))
     value = "رقم جواز السفر ب ٤٤٥٥٦٦"
@@ -1410,6 +1417,8 @@ def test_the_memory_bank_fails_a_scenario_whose_model_echoes_a_forgotten_value_i
     from evaluation.memory_runner import run_wired_scenario
     # The product now scrubs this history; fault injection keeps the evaluator
     # guard independently testable without requiring a product regression.
+    # Also bypass provenance withholding: this is a fault-injected detector test.
+    monkeypatch.setattr("conversation.agent_session._withhold_agent_context", lambda *args: None)
     monkeypatch.setattr("conversation.agent_session._scrub_agent_turns",
                         lambda turns, text: (turns, 0))
     value = "رقم جواز السفر ب ٤٤٥٥٦٦"
@@ -1930,6 +1939,8 @@ def test_a_same_project_absence_failure_in_an_isolation_scenario_is_not_counted_
     مسمًّى والعدُّ صفر، في المُشغِّل الموصول والمخزن معًا."""
     from evaluation.memory_runner import _foreign, run_scenario, run_wired_scenario
     # Inject missing history scrubbing so this remains a detector test.
+    # Also bypass provenance withholding: this is a fault-injected detector test.
+    monkeypatch.setattr("conversation.agent_session._withhold_agent_context", lambda *args: None)
     monkeypatch.setattr("conversation.agent_session._scrub_agent_turns",
                         lambda turns, text: (turns, 0))
     value = "اجتماع الفريق كل صباح أحد في القاعة الكبرى"
@@ -2073,6 +2084,8 @@ def test_a_failed_local_forget_or_the_model_s_echo_is_not_a_leak_though_another_
     from evaluation.memory_runner import recount_leakage, run_scenario, run_wired_scenario
     from memory.store import MemoryStore
     # Inject missing history scrubbing so this remains a detector test.
+    # Also bypass provenance withholding: this is a fault-injected detector test.
+    monkeypatch.setattr("conversation.agent_session._withhold_agent_context", lambda *args: None)
     monkeypatch.setattr("conversation.agent_session._scrub_agent_turns",
                         lambda turns, text: (turns, 0))
     value, scenario = _TWIN, _twin(_IN_B, _FORGET_A, check={"expect": "context", "question": "متى الاجتماع؟"})

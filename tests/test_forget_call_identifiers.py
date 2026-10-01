@@ -31,7 +31,9 @@ class WireEcho(OllamaProvider):
 
 
 @pytest.mark.parametrize("restored", [False, True], ids=["reopen", "restore"])
-def test_forget_rekeys_real_wire_ids_but_preserves_audit_and_replay(tmp_path, restored):
+def test_forget_rekeys_real_wire_ids_but_preserves_audit_and_replay(tmp_path, restored, monkeypatch):
+    # Isolate the literal-ID guard; exposure withholding has its own wire tests.
+    monkeypatch.setattr(agent_session, "_withhold_agent_context", lambda *args: None)
     value = "passport-secret-445566"
     delegate = WireEcho(value)
     wired = _Wired(tmp_path.resolve() / "ui", delegate=delegate)

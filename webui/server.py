@@ -704,10 +704,11 @@ class LocalApp:
             with ExitStack() as held:
                 for _, _, session in sessions:
                     held.enter_context(session._lock())
-                references, scrubbed, states = [], {}, []
+                references, scrubbed, states, context_withheld = [], {}, [], []
                 for mode, session_id, session in sessions:
-                    found, count, path, payload = session._memory_forget_plan(item["sha256"], item["text"])
+                    found, count, path, payload, withheld = session._memory_forget_plan(item["sha256"], item["text"])
                     references.extend(found)
+                    context_withheld.extend(f"{mode}:{session_id}/{turn}" for turn in withheld)
                     if count:
                         scrubbed[f"{mode}:{session_id}"] = count
                         relative = (str(path.relative_to(project)) if path.is_relative_to(project)
@@ -716,7 +717,8 @@ class LocalApp:
                                        "data": base64.b64encode(payload).decode("ascii")})
                 held.enter_context(store._lock())
                 receipt, receipt_payload = store._forget_plan(
-                    item["item_id"], references=sorted(references), scrubbed=scrubbed)
+                    item["item_id"], references=sorted(references), scrubbed=scrubbed,
+                    context_withheld_turns=sorted(context_withheld))
                 transaction = {"schema_version": 1, "item_id": item["item_id"],
                                "states": states,
                                "receipt": base64.b64encode(receipt_payload).decode("ascii")}
