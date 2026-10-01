@@ -40,7 +40,7 @@ def test_discovery_reaches_the_explicit_ephemeral_ollama_endpoint():
 
 
 @pytest.mark.parametrize("url", [
-    "http://example.com:11434", "https://127.0.0.1:11434",
+    "http://example.com:11434", "http://203.0.113.7:11434", "https://127.0.0.1:11434",
     "http://127.0.0.1", "http://127.0.0.1:11434/api", "not a url",
 ])
 def test_non_loopback_or_ambiguous_ollama_endpoint_is_named(url):

@@ -174,7 +174,7 @@ def test_complete_lowercase_artifact_digest_required(version):
 
 def test_endpoint_accepts_only_explicit_loopback_http():
     with pytest.raises(ProviderError, match="local_chat_endpoint_invalid"):
-        LocalChatProvider(MODEL, VERSION, base_url="http://example.invalid")
+        LocalChatProvider(MODEL, VERSION, base_url="http://203.0.113.7:11434")
     provider = LocalChatProvider(MODEL, VERSION, base_url="http://127.0.0.1:49152")
     for key, value in [("model", "different"),
                        ("model_version", "b" * 64), ("is_local", False)]:

@@ -360,4 +360,4 @@ def test_proxy_and_endpoint_environment_cannot_redirect_media(monkeypatch):
     LocalMediaProvider(MODEL,VERSION).complete(request())
     assert len(transport.calls)==4
     with pytest.raises(ProviderError,match='local_chat_endpoint_invalid'):
-        LocalMediaProvider(MODEL,VERSION,base_url='http://example.invalid')
+        LocalMediaProvider(MODEL,VERSION,base_url="http://203.0.113.7:11434")

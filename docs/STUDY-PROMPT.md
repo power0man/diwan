@@ -153,7 +153,7 @@ sources/         المصادر
 <!-- generated:study-numbers:begin -->
 | المقياس | القيمة | كيف تتحقق بنفسك |
 |---|---|---|
-| اختبارات مجموعة | **4927** | `.venv/bin/python -m pytest` (هذا عدد جمع؛ النجاح له دليله المنفصل) |
+| اختبارات مجموعة | **4928** | `.venv/bin/python -m pytest` (هذا عدد جمع؛ النجاح له دليله المنفصل) |
 | قرارات | **71** بلا فجوة | `grep -oE 'ق[٠-٩]+' docs/DECISIONS.md \| sort -u \| wc -l` |
 | وثائق قبول | **19** | `ls docs/M*-ACCEPTANCE.md` |
 | ملفات بايثون | **445** / **93922** سطرًا | `git ls-files '*.py' \| xargs wc -l` |
