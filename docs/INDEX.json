@@ -3,7 +3,7 @@
  "codex_project_doc_max_bytes": 32768,
  "documents": [
   {
-   "bytes": 30265,
+   "bytes": 30772,
    "headings": [
     {
      "level": 2,
@@ -52,22 +52,22 @@
     },
     {
      "level": 2,
-     "line": 255,
+     "line": 256,
      "title": "٨ — خريطة المستودع"
     },
     {
      "level": 2,
-     "line": 276,
+     "line": 277,
      "title": "٩ — حدود هذا الملف"
     }
    ],
-   "lines": 286,
+   "lines": 287,
    "path": "AGENTS.md",
    "purpose": "الأدوار والقواعد وبروتوكول البدء، وما بقي مفتوحًا من جدول §٣",
    "read_when": "كل جلسة، كاملًا",
    "role": "حاكمة",
-   "sha256_12": "8b5c854de41c",
-   "tokens_estimate": 8040
+   "sha256_12": "8d4dd7127fd1",
+   "tokens_estimate": 8192
   },
   {
    "bytes": 24051,
