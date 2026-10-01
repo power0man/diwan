@@ -92,11 +92,14 @@
   },
   "before_report_sha256": "2f435176dd48c1b2edd34c4f0e466ed40e6538e6ea828b31292fd9252f1ad451",
   "after_report_sha256": "6d3ef3cc30b40d6a02d197922db9343b760a6c624f7ff88784bd269ca6681dad",
-  "limits": [
+  "date": "2026-10-01",
+  "agent": "openai/codex",
+  "measurement_limits": [
     "Single local-engine run per revision; not a statistical estimate or cross-model certification.",
     "The scorer and bank are unchanged. Only synthetic public fixtures were used; no owner runtime was read.",
     "Leakage measures cross-project memory leakage, separately from forgotten history echoes.",
     "Immutable call ledgers/action receipts and workspace files remain outside context-forgetting scope.",
-    "Production service was not changed by this measurement."
+    "Production service was not changed by this measurement.",
+    "Raw measurement_limits preserve frozen evaluator prose, including an obsolete statement about not redacting model past words; current provenance withholding is documented separately and the scorer/bank were not changed."
   ]
 }

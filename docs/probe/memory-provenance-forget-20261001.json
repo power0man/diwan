@@ -67,7 +67,8 @@
     "leakage": 0,
     "after_fix_live_rerun": false
   },
-  "limits": [
+  "date": "2026-10-01",
+  "measurement_limits": [
     "The scorer, bank and historical results are unchanged.",
     "Immutable call ledgers, action receipts and workspace files are not erased.",
     "The broader removal of model/tool output from affected contextual descendants is listed in the forget receipt and described in the UI.",
