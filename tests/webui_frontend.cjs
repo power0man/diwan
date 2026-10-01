@@ -4,22 +4,123 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const source = fs.readFileSync(process.argv[2], 'utf8');
-const staticIDs = [...fs.readFileSync(path.join(path.dirname(process.argv[2]),'index.html'),'utf8').matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]);
+const indexSource = fs.readFileSync(path.join(path.dirname(process.argv[2]),'index.html'),'utf8');
+const staticElements = [...indexSource.matchAll(/<([a-z0-9-]+)\b([^>]*\bid="([^"]+)"[^>]*)>/gi)].map(match=>({tag:match[1],attributes:match[2],id:match[3]}));
+const repoRoot = path.resolve(path.dirname(process.argv[2]), '../..');
+
+const pythonErrorSources = [
+  'webui/server.py',
+  'conversation/session.py',
+  'conversation/agent_session.py',
+  'conversation/agent_stop.py',
+  'memory/store.py',
+  'memory/scope.py',
+  'workspace_tools/files.py',
+  'workspace_tools/preferences.py',
+  'workspace_tools/backup.py',
+  'workspace_tools/recovery.py',
+  'services/agent_workspace.py',
+  'services/assistant_workspace.py',
+  'services/project_archive.py',
+  'core/router_sovereign.py',
+];
+
+function pythonTokens(text) {
+  const tokens=[];
+  const pattern=/(?:[rRuUbBfF]{0,2})(?:"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*')|#[^\r\n]*|[A-Za-z_][A-Za-z0-9_]*|[()[\]{},:=]/gy;
+  let at=0;
+  while(at<text.length) {
+    pattern.lastIndex=at;const match=pattern.exec(text);
+    if(!match) {at+=1;continue;}
+    const raw=match[0];at=pattern.lastIndex;
+    if(raw.startsWith('#')) continue;
+    if(/^[A-Za-z_][A-Za-z0-9_]*$/.test(raw)) tokens.push({type:'name',value:raw});
+    else if('()[]{},:='.includes(raw)) tokens.push({type:'punct',value:raw});
+    else {
+      const quoteAt=raw.search(/["']/),quote=raw[quoteAt],triple=raw.slice(quoteAt,quoteAt+3)===quote.repeat(3);
+      const value=raw.slice(quoteAt+(triple?3:1),raw.length-(triple?3:1));
+      tokens.push({type:'string',value});
+    }
+  }
+  return tokens;
+}
+
+function splitCallArguments(tokens, openAt) {
+  const args=[];let current=[],depth=0;
+  for(let i=openAt+1;i<tokens.length;i+=1) {
+    const value=tokens[i].value;
+    if(['(','[','{'].includes(value)) {depth+=1;current.push(tokens[i]);continue;}
+    if([')',']','}'].includes(value)) {
+      if(value===')' && depth===0) {args.push(current);return {args,end:i};}
+      depth-=1;current.push(tokens[i]);continue;
+    }
+    if(value===',' && depth===0) {args.push(current);current=[];continue;}
+    current.push(tokens[i]);
+  }
+  return {args:[],end:openAt};
+}
+
+function literalArgument(args, position, keyword) {
+  const named=args.find(arg=>arg[0]?.value===keyword && arg[1]?.value==='=');
+  const chosen=named ? named.slice(2) : args[position];
+  return chosen?.length===1 && chosen[0].type==='string' ? chosen[0].value : null;
+}
+
+function pythonErrorCodes(file) {
+  const tokens=pythonTokens(fs.readFileSync(path.join(repoRoot,file),'utf8')),codes=new Set(),nonErrors=new Set(['code','complete','truncated']);
+  const calls=new Map([
+    ['need',{position:1,keyword:'code',fallback:'request_invalid'}],
+    ['_need',{position:1,keyword:'code'}],
+    ['_fail',{position:0,keyword:'code'}],
+    ['UIError',{position:0,keyword:'code'}],
+    ['MemoryRefused',{position:0,keyword:'code'}],
+    ['WorkspaceError',{position:0,keyword:'code'}],
+    ['SovereignRoutingError',{position:0,keyword:'code'}],
+  ]);
+  for(let i=0;i<tokens.length;i+=1) {
+    const spec=calls.get(tokens[i].value);
+    if(spec && tokens[i+1]?.value==='(') {
+      const parsed=splitCallArguments(tokens,i+1),literal=literalArgument(parsed.args,spec.position,spec.keyword);
+      if(literal) codes.add(literal); else if(spec.fallback) codes.add(spec.fallback);
+      i=parsed.end;
+      continue;
+    }
+    if(tokens[i].type==='name' && tokens[i].value.endsWith('error_code') && [':','='].includes(tokens[i+1]?.value)) {
+      let depth=0;
+      for(let j=i+2;j<tokens.length;j+=1) {
+        const token=tokens[j],value=token.value;
+        if(['(','[','{'].includes(value)) depth+=1;
+        else if([')',']','}'].includes(value)) {if(depth===0) break;depth-=1;}
+        if(value===',' && depth===0) break;
+        if(token.type==='string' && !nonErrors.has(token.value) && /^[a-z][a-z0-9_]*$/.test(token.value)) codes.add(token.value);
+      }
+    }
+  }
+  return codes;
+}
+
+function frontendErrorCodes() {
+  return new Set([...source.matchAll(/(?:error_code|\bcode)\s*:\s*["']([a-z][a-z0-9_]*)["']/g)].map(match=>match[1]));
+}
+
+const emittedErrorCodes=new Set(frontendErrorCodes());
+for(const file of pythonErrorSources) for(const code of pythonErrorCodes(file)) emittedErrorCodes.add(code);
 
 class Element {
   constructor(tag = 'div') {
     this.tagName = tag.toUpperCase(); this.children = []; this.style = {}; this.dataset = {};
     this.attributes = {}; this.textContent = ''; this.value = ''; this.disabled = false;
-    this.hidden = false; this.open = false; this.files = []; this.parent = null;
-    this.listeners = {};
+    this.hidden = false; this.open = false; this.files = []; this.parent = null; this.isConnected = true;
+    this.listeners = {}; this.ownerDocument = null;
   }
-  append(...nodes) {for(const node of nodes) {node.parent = this; this.children.push(node);}}
-  replaceChildren(...nodes) {this.children = []; this.append(...nodes);}
+  append(...nodes) {for(const node of nodes) {node.parent = this; node.isConnected = true; this.children.push(node);}}
+  replaceChildren(...nodes) {if(this.ownerDocument && [this,...descendants(this)].includes(this.ownerDocument.activeElement)) this.ownerDocument.activeElement=this.ownerDocument.body; for(const node of this.children.flatMap(x=>[x,...descendants(x)])) node.isConnected=false; this.children = []; this.append(...nodes);}
   add(node) {this.append(node);}
   setAttribute(key, value) {this.attributes[key] = value;}
-  remove() {if(this.parent) this.parent.children = this.parent.children.filter(x => x !== this);}
+  remove() {if(this.parent) this.parent.children = this.parent.children.filter(x => x !== this);this.isConnected=false;}
   showModal() {this.open = true;}
   close() {this.open = false;}
+  focus() {if(this.ownerDocument) this.ownerDocument.activeElement=this;}
   addEventListener(type, handler) {(this.listeners[type] ||= []).push(handler);}
   set value(value) {this._value=value;if(value===''&&['media-file','upload'].includes(this.id)) this.files=[];}
   get value() {return this._value;}
@@ -38,11 +139,14 @@ const turn = {turn_id:T,user_request:'old request',content:'old answer',status:'
 
 async function harness(routes = {}, options = {}) {
   const nodes = new Map(), calls = [], storage = new Map(Object.entries(options.storage||{})), timers=[], createdURLs=[], revokedURLs=[];
-  for(const id of staticIDs) {const el=new Element(id==='projects'?'select':'div');el.id=id;nodes.set(id,el);}
+  const bodyElement=new Element('body');
+  const document = {activeElement:bodyElement,body:bodyElement,getElementById:id=>nodes.get(id) || [...nodes.values()].flatMap(descendants).find(el=>el.id===id) || null,querySelector:()=>({content:'fixture-csrf'}),
+    createElement:tag=>{const el=new Element(tag);el.ownerDocument=document;return el;},createTextNode:text=>{const el=new Element('#text');el.ownerDocument=document;el.textContent=text;return el;}};
+  bodyElement.ownerDocument=document;
+  for(const spec of staticElements) {const el=new Element(spec.tag);el.id=spec.id;el.ownerDocument=document;for(const match of spec.attributes.matchAll(/([a-z][a-z0-9-]*)="([^"]*)"/gi)) el.setAttribute(match[1],match[2]);nodes.set(spec.id,el);}
   const get = id => nodes.get(id) || [...nodes.values()].flatMap(descendants).find(el=>el.id===id) || null;
   let uuid = 0;
-  const document = {getElementById:get,querySelector:()=>({content:'fixture-csrf'}),
-    createElement:tag=>new Element(tag),createTextNode:text=>{const el=new Element('#text');el.textContent=text;return el;}};
+  document.getElementById=get;
   const sandbox = {document, window:{addEventListener(){}},
     Option:function(text,value) {const el=new Element('option');el.textContent=text;el.value=value;return el;},
     crypto:{randomUUID:()=>String(++uuid).padStart(32,'0')},
@@ -67,10 +171,83 @@ async function harness(routes = {}, options = {}) {
   const context=vm.createContext(sandbox);vm.runInContext(source,context);await tick();
   const run=code=>vm.runInContext(code,context);
   if(options.preset!==false) {run(`state.project='${A}';state.session='${SA}';state.epoch=1;`);get('projects').value=A;}
-  return {get,calls,storage,timers,run,createdURLs,revokedURLs};
+  return {get,calls,storage,timers,run,createdURLs,revokedURLs,active:()=>document.activeElement};
 }
 
 const cases = {
+  async every_server_external_and_frontend_code_has_an_arabic_message() {
+    const h=await harness(),required=[
+      'request_invalid','request_failed','unsafe_path','memory_path_unsafe','backup_invalid',
+      'preference_revision_conflict','policy_violation_local_only','turn_unknown','agent_input_invalid','network_error',
+    ];
+    for(const code of required) assert.ok(emittedErrorCodes.has(code),`error-code extraction missed ${code}`);
+    const missing=[],nonArabic=[],leaked=[];
+    for(const code of [...emittedErrorCodes].sort()) {
+      const message=h.run(`knownErrorMessage(${JSON.stringify(code)})`);
+      if(!message) missing.push(code);
+      else {
+        if(!/[\u0600-\u06ff]/.test(message)) nonArabic.push(code);
+        if(message.includes(code)) leaked.push(code);
+      }
+    }
+    assert.deepEqual(missing,[],'unmapped emitted error codes');
+    assert.deepEqual(nonArabic,[],'emitted error codes without Arabic guidance');
+    assert.deepEqual(leaked,[],'raw emitted error codes included in user guidance');
+  },
+  async raw_codes_stay_in_technical_details_not_notice_dialog_or_answer() {
+    const h=await harness();
+    h.run("showError({code:'name_invalid'})");
+    assert.match(h.get('notice').textContent,/[\u0600-\u06ff]/);
+    assert.equal(h.get('notice').textContent.includes('name_invalid'),false);
+    assert.equal(h.get('technical-errors').textContent,'آخر خطأ: name_invalid');
+
+    h.get('dialog').showModal();h.run("showError({code:'future_failure'})");
+    assert.match(h.get('dialog-feedback').textContent,/[\u0600-\u06ff]/);
+    assert.equal(h.get('dialog-feedback').textContent.includes('future_failure'),false);
+    assert.equal(h.get('technical-errors').textContent,'آخر خطأ: future_failure');
+
+    h.run(`state.turns=[{turn_id:'${T}',user_request:'طلب',content:'',status:'error',error_code:'unsafe_path'}];render()`);
+    const answer=textOf(h.get('messages'));
+    assert.match(answer,/[\u0600-\u06ff]/);assert.equal(answer.includes('unsafe_path'),false);
+    assert.equal(h.get('technical-errors').textContent,'آخر خطأ: unsafe_path');
+  },
+  async answers_are_exposed_through_a_polite_log() {
+    const h=await harness(),messages=h.get('messages');
+    assert.equal(messages.attributes.role,'log');assert.equal(messages.attributes['aria-live'],'polite');
+    assert.equal(messages.attributes['aria-relevant'],'additions text');
+    h.run(`state.turns=[{turn_id:'${T}',user_request:'سؤال',content:'جواب جديد',status:'complete'}];render()`);
+    assert.ok(textOf(messages).includes('جواب جديد'));
+  },
+  async every_memory_textarea_has_an_accessible_label() {
+    const h=await harness();h.run(`rememberDialog(context(),{turn_id:'${T}',content:'نص محفوظ'})`);
+    const all=descendants(h.get('dialog-body')),field=all.find(x=>x.tagName==='TEXTAREA');
+    const label=all.find(x=>x.tagName==='LABEL'&&x.htmlFor===field?.id);
+    assert.ok(field);assert.ok(field.id);assert.ok(label);assert.match(label.textContent,/[\u0600-\u06ff]/);
+  },
+  async replaced_dialog_content_and_forgotten_memory_keep_logical_focus() {
+    const h=await harness({propose:()=>({proposal_id:'proposal-1'}),review:()=>({path:'draft.txt',sha256:'f'.repeat(64),content:'مسودة'}),
+      memory:()=>({items:[{item_id:'item-1',text:'ذاكرة',approved_at:'2026-09-30'}],receipts:[]}),
+      memory_forget:()=>({receipt:{sha256:'e'.repeat(64),references:[]}})});
+    h.run(`propose(context(),'${T}')`);
+    let body=h.get('dialog-body'),heading=body.children[0],form=descendants(body).find(x=>x.tagName==='FORM');
+    assert.equal(h.active(),heading);assert.equal(heading.tabIndex,-1);
+    const submit=descendants(form).find(x=>x.tagName==='BUTTON');submit.focus();await form.onsubmit(event);
+    heading=body.children[0];assert.equal(heading.textContent,'مراجعة المسودة قبل إنشاء الملف');assert.equal(h.active(),heading);
+
+    await h.get('memory').onclick();body=h.get('dialog-body');
+    const forget=descendants(body).find(x=>x.tagName==='BUTTON'&&x.textContent==='انسَ');forget.focus();await forget.onclick();await tick();
+    const receipt=descendants(body).find(x=>x.tagName==='P'&&textOf(x).startsWith('نُسي. الإيصال:'));
+    assert.ok(receipt);assert.equal(receipt.tabIndex,-1);assert.equal(h.active(),receipt);assert.notEqual(h.active(),h.run('document.body'));
+  },
+  async closing_a_dialog_restores_its_connected_opener_for_button_and_escape() {
+    const h=await harness({memory:()=>({items:[],receipts:[]})}),opener=h.get('memory');
+    for(const close of ['button','escape']) {
+      opener.focus();await opener.onclick();assert.equal(h.get('dialog').open,true);assert.notEqual(h.active(),opener);
+      if(close==='button') h.get('close-dialog').onclick();
+      else for(const handler of h.get('dialog').listeners.cancel) handler({preventDefault(){}});
+      assert.equal(h.get('dialog').open,false);assert.equal(h.active(),opener);
+    }
+  },
   async new_general_session_defaults_to_agent_and_sends_on_agent_route() {
     const h=await harness({projects:()=>({projects:[{id:A,name:'A'}],agent_enabled:true,default_session_mode:'agent'}),
       create_session:request=>({id:SB,name:request.name,mode:request.mode}),agent_capabilities:()=>({execution_enabled:false}),agent_ask:()=>turn});
@@ -96,6 +273,18 @@ const cases = {
     for(const default_session_mode of ['text',undefined,'media']) {
       const h=await harness({projects:()=>({projects:[{id:A,name:'A'}],agent_enabled:true,media_enabled:true,default_session_mode})});
       assert.equal(h.get('session-mode').value,'text');assert.equal(h.get('agent-option').disabled,false);
+    }
+  },
+  async disabled_research_and_media_explain_and_track_operator_enablement() {
+    for(const [researchEnabled,mediaEnabled] of [[false,false],[true,false],[false,true],[true,true]]) {
+      const h=await harness({projects:()=>({projects:[{id:A,name:'A'}],agent_enabled:true,
+        research_enabled:researchEnabled,media_enabled:mediaEnabled,default_session_mode:'text'})});
+      for(const [mode,enabled] of [['research',researchEnabled],['media',mediaEnabled]]) {
+        const option=h.get(`${mode}-option`),hint=h.get(`${mode}-mode-hint`);
+        assert.equal(option.disabled,!enabled,`${mode} disabled state`);
+        assert.equal(hint.hidden,enabled,`${mode} hint visibility`);
+        assert.equal(option.attributes['aria-describedby'],enabled?'':`${mode}-mode-hint`,`${mode} description`);
+      }
     }
   },
   async explicit_text_and_media_choices_survive_project_list_refresh() {
@@ -128,6 +317,8 @@ const cases = {
         sessions:()=>({sessions:[{id:SA,name:'نص محفوظ',mode}]}),ask:()=>turn},
         {preset:false,storage:{'diwan.last':JSON.stringify({project:A,session:SA,mode:'agent'})}});
       await tick();assert.equal(h.get('session-mode').value,'agent');assert.equal(h.run('state.mode'),'text');
+      for(let i=0;i<10 && h.run('state.refreshing')>0;i++) await tick();
+      assert.equal(h.run('state.refreshing'),0);
       h.get('message').value='تابع';await h.get('composer').onsubmit(event);
       assert.equal(h.calls.filter(x=>x.action==='ask').length,1);assert.equal(h.calls.some(x=>x.action==='agent_ask'),false);
     }
@@ -167,11 +358,17 @@ const cases = {
   },
   async cancelled_turn_exposes_saved_inputs_and_revert_but_not_old_approval() {
     const h=await harness();const cancelled={...turn,status:'cancelled',pending:[{state:'prepared',name:'run_command'}],
-      inputs:{preferences:{revision:3,values:{address_name:'<img onerror=attack()>'},sha256:'f'.repeat(64)},attachments:[]},
+      inputs:{preferences:{revision:3,values:{response_language:'ar',address_name:'<img onerror=attack()>'},sha256:'f'.repeat(64)},
+        attachments:[{relative_path:'مدخل.txt',size_bytes:12,sha256:'e'.repeat(64)}]},
       steps:[{index:0,tool_results:[{status:'ok',name:'write_file',content:'saved',action_id:'a',journal_action_id:'act-a'}]}]};
     h.run(`setMode('agent');state.turns=[${JSON.stringify(cancelled)}];render();syncPending()`);
-    const text=textOf(h.get('messages'));
+    const messages=h.get('messages'),text=textOf(messages),nodes=descendants(messages);
     assert.ok(text.includes('سياق الطلب المحفوظ'));assert.ok(text.includes('نسخة التفضيلات: 3'));
+    assert.ok(text.includes('لغة الجواب'));assert.ok(text.includes('العربية'));assert.equal(text.includes('response_language'),false);
+    assert.ok(text.includes('مدخل.txt'));assert.ok(text.includes('الحجم: 12 بايت'));assert.equal(text.includes('relative_path'),false);
+    assert.equal(nodes.filter(x=>x.tagName==='PRE').some(x=>/^[\[{]/.test(textOf(x).trim())),false);
+    const hashes=nodes.filter(x=>x.className==='hash');assert.deepEqual(hashes.map(textOf),['f'.repeat(64),'e'.repeat(64)]);
+    assert.ok(hashes.every(x=>x.parent.className==='hash-line'));
     assert.ok(text.includes('الرجوع عن هذا التعديل'));assert.equal(text.includes('مراجعة فعل'),false);
     assert.equal(h.get('send').disabled,false);assert.equal(h.get('agent-stop').hidden,true);
     assert.equal(descendants(h.get('messages')).some(x=>x.tagName==='IMG'),false);
@@ -180,16 +377,50 @@ const cases = {
   async agent_approval_is_explicit_bound_and_then_resumes_once() {
     const h=await harness({agent_decide:()=>({state:'approved'}),agent_resume:()=>({status:'complete'})});
     h.run("setMode('agent')");
-    const action={action_id:'action-1',call_digest:'f'.repeat(64),revision:3,name:'run_command',arguments:{argv:['python','main.py']},input_files:[{path:'main.py',sha256:'e'.repeat(64),size_bytes:12}]};
-    h.run(`reviewAgentAction(context(),'${T}',${JSON.stringify(action)})`);
+    const action={state:'prepared',action_id:'action-1',call_digest:'f'.repeat(64),revision:3,name:'run_command',arguments:{argv:['python','main.py']},input_snapshot_sha256:'d'.repeat(64),input_files:[{path:'main.py',sha256:'e'.repeat(64),size_bytes:12}]};
+    const awaiting={...turn,status:'awaiting_owner',pending:[action],steps:[]};
+    h.run(`state.turns=[${JSON.stringify(awaiting)}];render()`);
     assert.equal(h.calls.some(x=>x.action==='agent_decide'||x.action==='agent_resume'),false);
-    assert.ok(textOf(h.get('dialog-body')).includes('main.py'));
+    const review=descendants(h.get('messages')).find(x=>x.textContent==='مراجعة: تشغيل أمر');
+    assert.ok(review,textOf(h.get('messages')));
+    await review.onclick();await tick();
+    const preview=textOf(h.get('dialog-body'));
+    assert.ok(preview.includes('python'));assert.ok(preview.includes('main.py'));
+    assert.ok(preview.includes(action.input_snapshot_sha256));
+    assert.equal(h.calls.some(x=>x.action==='agent_decide'||x.action==='agent_resume'),false);
     const yes=descendants(h.get('dialog-body')).find(x=>x.textContent==='أوافق وأتابع');
+    assert.ok(yes,preview);
     await yes.onclick();await tick();
     const decisions=h.calls.filter(x=>x.action==='agent_decide');
     assert.deepEqual(decisions,[{action:'agent_decide',project:A,session:SA,action_id:'action-1',call_digest:action.call_digest,expected_revision:3,approve:true}]);
     assert.equal(h.calls.filter(x=>x.action==='agent_resume').length,1);
     await yes.onclick();assert.equal(h.calls.filter(x=>x.action==='agent_resume').length,1);
+  },
+  async approved_round_moves_focus_to_composer_when_review_trigger_is_replaced() {
+    const complete={...turn,user_request:'احفظ',content:'اكتملت الجولة بعد الموافقة.',status:'complete',pending:[],steps:[]};
+    const h=await harness({agent_decide:()=>({state:'approved'}),agent_resume:()=>complete,
+      history:()=>({status:'idle',turns:[complete],before:0,total:1})});
+    h.run("setMode('agent')");
+    const action={state:'prepared',action_id:'action-1',call_digest:'f'.repeat(64),revision:3,name:'propose_memory',arguments:{text:'موجز'}};
+    h.run(`state.turns=[${JSON.stringify({...turn,status:'awaiting_owner',pending:[action],steps:[]})}];render()`);
+    const review=descendants(h.get('messages')).find(x=>x.textContent==='مراجعة: اقتراح حفظ في الذاكرة');
+    review.focus();await review.onclick();await tick();
+    assert.equal(h.active(),h.get('dialog-body').children[0]);
+    const yes=descendants(h.get('dialog-body')).find(x=>x.textContent==='أوافق وأتابع');
+    await yes.onclick();await tick();
+    assert.equal(review.isConnected,false);assert.equal(h.active(),h.get('message'));
+  },
+  async approval_hash_with_numeric_prefix_is_isolated_from_its_arabic_label() {
+    const digest='8eee12b'+'a'.repeat(57),fileDigest='1abc234'+'b'.repeat(57),h=await harness();h.run("setMode('agent')");
+    h.run(`reviewAgentAction(context(),'${T}',{action_id:'a',call_digest:'f',revision:1,name:'run_command',arguments:{},input_snapshot_sha256:'${digest}',input_files:[{path:'a.txt',sha256:'${fileDigest}',size_bytes:1}]})`);
+    const hashes=descendants(h.get('dialog-body')).filter(x=>x.className==='hash');
+    assert.deepEqual(hashes.map(textOf),[digest,fileDigest]);
+    for(const hash of hashes) {
+      assert.equal(hash.tagName,'BDI');assert.equal(hash.attributes.dir,'ltr');assert.ok(/[18]/.test(hash.textContent[0]));
+      assert.equal(hash.parent.attributes.dir,'rtl');assert.equal(hash.parent.className,'hash-line');
+    }
+    assert.ok(textOf(hashes[0].parent).includes('بصمة نسخة المدخلات:'));
+    assert.ok(textOf(hashes[1].parent).includes('البصمة:'));
   },
   async stale_agent_approval_cannot_apply_to_another_project() {
     const h=await harness();h.run("setMode('agent')");
@@ -213,7 +444,7 @@ const cases = {
     assert.equal(h.get('send').disabled,true);
     await h.get('composer').onsubmit(event);
     assert.equal(h.calls.some(x=>['agent_resume','agent_ask','ask','replay'].includes(x.action)),false);
-    assert.ok(textOf(h.get('messages')).includes('مراجعة فعل run_command'));
+    assert.ok(textOf(h.get('messages')).includes('مراجعة: تشغيل أمر'));
   },
   async agent_send_uses_selected_files_and_agent_route() {
     const h=await harness({agent_ask:()=>turn});h.run("setMode('agent');state.selected.add('chosen.txt')");
@@ -237,6 +468,18 @@ const cases = {
     await descendants(h.get('dialog-body')).find(x=>x.tagName==='BUTTON').onclick();
     assert.ok(textOf(h.get('dialog-body')).includes('إيصال الرجوع محفوظ'));
     assert.ok(textOf(h.get('dialog-body')).includes('قد يحمل الملف تعديلات لاحقة'));
+  },
+  async forgotten_memory_receipt_with_numeric_prefix_is_isolated_from_its_arabic_label() {
+    const digest='185db3edd'+'b'.repeat(55),h=await harness({
+      memory:()=>({items:[{item_id:'memory-1',text:'مصطنع',approved_at:'2026-09-30T00:00:00Z'}],receipts:[]}),
+      memory_forget:()=>({receipt:{sha256:digest,references:[]}}),
+    });
+    await h.get('memory').onclick();
+    await descendants(h.get('dialog-body')).find(x=>x.tagName==='BUTTON'&&x.textContent==='انسَ').onclick();
+    const hash=descendants(h.get('dialog-body')).find(x=>x.className==='hash');
+    assert.equal(hash.tagName,'BDI');assert.equal(hash.attributes.dir,'ltr');assert.equal(hash.textContent,digest);
+    assert.equal(hash.textContent[0],'1');assert.equal(hash.parent.attributes.dir,'rtl');
+    assert.ok(textOf(hash.parent).includes('نُسي. الإيصال:'));assert.equal(hash.parent.className,'hash-line');
   },
   async agent_file_markup_is_plain_text_and_blob_is_revoked() {
     const content='<script>steal()</script>',h=await harness({agent_read:()=>({path:'out.txt',content})});
@@ -332,6 +575,17 @@ const cases = {
     pending.resolve({status:'idle',turns:[turn],before:0,total:1});await loading;
     assert.equal(h.run('state.turns.length'),0);
   },
+  async pending_history_blocks_button_and_keyboard_submission_until_ready() {
+    const pending=deferred(),h=await harness({history:()=>pending.promise});
+    const refreshing=h.run('refresh()');await tick();
+    assert.equal(h.get('send').disabled,true);
+    h.get('message').value='request during history';await h.get('composer').onsubmit(event);
+    assert.equal(h.calls.some(x=>x.action==='ask'||x.action==='agent_ask'),false);
+    assert.equal(h.storage.has(`diwan.pending.${A}.${SA}`),false);
+    pending.resolve({status:'idle',turns:[],before:0,total:0});await refreshing;
+    assert.equal(h.get('send').disabled,false);
+    assert.equal(h.run('state.refreshing'),0);
+  },
   async double_submit_calls_provider_route_once() {
     const pending=deferred(),h=await harness({ask:()=>pending.promise});
     h.get('message').value='request';const one=h.get('composer').onsubmit(event);await tick();
@@ -413,10 +667,20 @@ const cases = {
     assert.equal(h.get('text-inputs').hidden,true);assert.equal(h.get('media-inputs').hidden,false);
     assert.equal(h.get('media-option').disabled,false);
   },
+  async boot_uses_server_owned_default_ids_despite_duplicate_names() {
+    const h=await harness({
+      projects:()=>({projects:[{id:A,name:'عام'},{id:B,name:'عام'}],default_session_mode:'text'}),
+      default_workspace:()=>({project:{id:B,name:'عام'},session:{id:SB,name:'محادثة عامة',mode:'text'}}),
+      sessions:request=>({sessions:request.project===B ? [{id:SA,name:'محادثة عامة',mode:'text'},{id:SB,name:'محادثة عامة',mode:'text'}] : []}),
+    },{preset:false});
+    await tick();await tick();await tick();
+    assert.equal(h.run('state.project'),B);assert.equal(h.run('state.session'),SB);
+    assert.equal(h.calls.filter(x=>x.action==='default_workspace').length,1);
+  },
   async frozen_media_preview_is_bounded_to_blobs_and_revoked_on_close() {
     const media=[{name:'image.png',kind:'image',mime:'image/png',size_bytes:3,sha256:'f'.repeat(64),data_base64:'AID/'},
       {name:'audio.wav',kind:'audio',mime:'audio/wav',size_bytes:1,sha256:'e'.repeat(64),data_base64:'AQ=='}];
-    const h=await harness({inspect:()=>({media,preferences:null})});
+    const h=await harness({inspect:()=>({media,preferences:{values:{verbosity:'detailed',address_name:'مالك'}}})});
     await h.run(`inspect({project:'${A}',session:'${SA}'},'${T}')`);
     assert.equal(h.createdURLs.length,2);
     const all=descendants(h.get('dialog-body')),img=all.find(x=>x.tagName==='IMG'),audio=all.find(x=>x.tagName==='AUDIO');
@@ -424,6 +688,9 @@ const cases = {
     assert.equal(audio.src,'blob:fixture-1');assert.equal(audio.controls,true);assert.equal(audio.preload,'none');
     assert.equal(audio.autoplay,undefined);
     assert.equal(h.createdURLs[0].blob.type,'image/png');assert.equal(h.createdURLs[0].blob.size,3);
+    const dialog=h.get('dialog-body'),text=textOf(dialog),pres=descendants(dialog).filter(x=>x.tagName==='PRE');
+    assert.ok(text.includes('طول الجواب'));assert.ok(text.includes('مفصل'));assert.ok(text.includes('الاسم المفضل للمخاطبة'));
+    assert.equal(text.includes('verbosity'),false);assert.equal(pres.some(x=>/^[\[{]/.test(textOf(x).trim())),false);
     h.get('close-dialog').onclick();
     assert.deepEqual(h.revokedURLs,['blob:fixture-0','blob:fixture-1']);assert.equal(h.run('state.urls.length'),0);
   },
@@ -443,17 +710,93 @@ const cases = {
     await h.run(`chooseProject('${B}')`);
     assert.deepEqual(h.revokedURLs,['blob:fixture-0','blob:fixture-1']);
   },
-  async answer_markup_is_plain_text() {
+  async assistant_answers_render_bounded_safe_markdown() {
     const h=await harness();
-    h.run(`state.turns=[{turn_id:'${T}',user_request:'<script>attack()</script>',content:'<img onerror=attack()>',status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
-    assert.equal(descendants(h.get('messages')).some(x=>x.tagName==='IMG'||x.tagName==='SCRIPT'),false);
-    assert.ok(textOf(h.get('messages')).includes('<img onerror=attack()>'));
+    const content='فقرة **قوية** و*مؤكدة* و`code`\nبسطر ثان\n\n- أول\n- ثان\n\n1. واحد\n2. اثنان\n\n```js\nconst safe = true;\n```\n[آمن](https://example.test/path?q=1)';
+    h.run(`state.turns=[{turn_id:'${T}',user_request:'طلب',content:${JSON.stringify(content)},status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
+    const nodes=descendants(h.get('messages')), tags=nodes.map(x=>x.tagName);
+    for(const tag of ['P','STRONG','EM','CODE','BR','UL','OL','LI','PRE','A']) assert.ok(tags.includes(tag),`missing ${tag}`);
+    const link=nodes.find(x=>x.tagName==='A');
+    assert.equal(link.href,'https://example.test/path?q=1');assert.equal(link.target,'_blank');assert.equal(link.rel,'noopener noreferrer');
+    assert.ok(nodes.filter(x=>['P','LI'].includes(x.tagName)).every(x=>x.attributes.dir==='auto'));
+    assert.ok(textOf(h.get('messages')).includes('const safe = true;'));
+  },
+  async markdown_never_interprets_html_or_unsafe_links() {
+    const h=await harness(),attack='<img src=x onerror=attack()> <script>attack()</script> [js](javascript:attack()) [data](data:text/html,attack) [file](file:///tmp/a)';
+    h.run(`state.turns=[{turn_id:'${T}',user_request:'**مدخل** <b>خام</b>',content:${JSON.stringify(attack)},status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
+    const nodes=descendants(h.get('messages'));
+    assert.equal(nodes.some(x=>['IMG','SCRIPT','B','A'].includes(x.tagName)),false);
+    assert.ok(textOf(h.get('messages')).includes('<script>attack()</script>'));
+    assert.ok(textOf(h.get('messages')).includes('[js](javascript:attack())'));
+    assert.ok(textOf(h.get('messages')).includes('**مدخل** <b>خام</b>'));
+  },
+  async markdown_is_confined_to_answer_content() {
+    const h=await harness();
+    const action={action_id:'act',call_digest:'f'.repeat(64),revision:1,name:'write_file',arguments:{path:'**raw**.txt',content:'[literal](https://example.test)'},state:'prepared'};
+    h.run(`state.mode='agent';state.turns=[{turn_id:'${T}',user_request:'طلب',content:'**answer**',status:'awaiting_owner',usage:{input_tokens:1,output_tokens:1},steps:[{index:0,thinking:'*thought*',tool_results:[{name:'read_file',status:'ok',content:'**tool** [literal](https://example.test)'}]}],pending:[${JSON.stringify(action)}]}];render()`);
+    const message=h.get('messages'), nodes=descendants(message);
+    assert.equal(nodes.filter(x=>x.tagName==='STRONG'&&textOf(x)==='answer').length,1);
+    const literalPre=nodes.filter(x=>x.tagName==='PRE').map(textOf);
+    assert.ok(literalPre.includes('**tool** [literal](https://example.test)'));
+    assert.ok(literalPre.includes('*thought*'));
+    assert.equal(nodes.filter(x=>x.tagName==='A').length,0);
+    h.run(`reviewAgentAction({project:'${A}',session:'${SA}'},'${T}',${JSON.stringify(action)})`);
+    const dialogNodes=descendants(h.get('dialog-body'));
+    assert.ok(dialogNodes.filter(x=>x.tagName==='PRE').some(x=>textOf(x).includes('**raw**.txt')));
+    assert.equal(dialogNodes.some(x=>['A','EM'].includes(x.tagName)),false);
+  },
+  async tool_activity_uses_arabic_names_statuses_and_field_labels() {
+    const h=await harness();
+    const attack='<b>خام</b> [رابط](javascript:attack())';
+    h.run(`state.mode='agent';state.turns=[{turn_id:'${T}',user_request:'طلب',content:'جواب',status:'complete',usage:{input_tokens:1,output_tokens:1},steps:[{index:0,tool_results:[{name:'write_file',status:'refused',code:'unsafe_path',content:${JSON.stringify(attack)}}]}]}];render()`);
+    const messages=h.get('messages'),text=textOf(messages),nodes=descendants(messages);
+    assert.ok(text.includes('كتابة ملف · رُفض'));
+    assert.equal(text.includes('write_file'),false);assert.equal(text.includes('unsafe_path'),false);
+    assert.equal(h.run("toolName('search_regulations')"),'البحث في الأنظمة');
+    assert.equal(h.run("toolName('analyze_arabic_morphology')"),'تحليل الصرف العربي');
+    assert.equal(h.run("toolName('evaluate_governance')"),'تقييم الحوكمة');
+    assert.equal(h.run("toolName('check_mlx_hardware')"),'فحص عتاد MLX');
+    assert.equal(h.run("toolName('write_workspace_document')"),'كتابة مستند في مساحة العمل');
+    assert.equal(h.run("toolName('execute_isolated_command')"),'تنفيذ أمر معزول');
+    assert.equal(h.run("argumentName('command')"),'الأمر');
+    assert.ok(nodes.filter(x=>x.tagName==='PRE').some(x=>textOf(x)===attack));
+    assert.equal(nodes.some(x=>['B','A'].includes(x.tagName)),false);
+  },
+  async approval_dialog_explains_exact_action_without_raw_json() {
+    const h=await harness();
+    const action={action_id:'action-1',call_digest:'f'.repeat(64),revision:3,name:'run_command',arguments:{argv:['python','main.py','<raw>'],future_flag:true},input_snapshot_sha256:'d'.repeat(64),input_files:[{path:'main.py',sha256:'e'.repeat(64),size_bytes:12}]};
+    h.run(`reviewAgentAction({project:'${A}',session:'${SA}'},'${T}',${JSON.stringify(action)})`);
+    const dialog=h.get('dialog-body'),text=textOf(dialog),nodes=descendants(dialog);
+    assert.ok(text.includes('تشغيل أمر'));assert.ok(text.includes('الأمر ووسائطه'));
+    assert.ok(text.includes('python'));assert.ok(text.includes('main.py'));assert.ok(text.includes('<raw>'));
+    assert.ok(text.includes('المعامل «future_flag»'));assert.ok(text.includes('نعم'));
+    assert.ok(text.includes('الحجم: 12 بايت'));assert.ok(text.includes('e'.repeat(64)));
+    assert.equal(text.includes('"argv"'),false);assert.equal(text.includes('run_command'),false);
+    assert.equal(text.includes('[\n  "python"'),false);
+    assert.equal(nodes.some(x=>['SCRIPT','B','A'].includes(x.tagName)),false);
+    assert.equal(nodes.filter(x=>x.tagName==='OL').length,1);
+    const labels=nodes.filter(x=>x.tagName==='STRONG').map(textOf);
+    assert.ok(labels.includes('الأمر ووسائطه'));assert.ok(labels.includes('main.py'));
+    const hashes=nodes.filter(x=>x.className==='hash');
+    assert.deepEqual(hashes.map(textOf),['d'.repeat(64),'e'.repeat(64)]);
+    assert.ok(hashes.every(x=>x.parent.className==='hash-line'));
+  },
+  async markdown_dom_growth_has_a_fixed_limit() {
+    for(const content of [Array.from({length:5000},(_,i)=>`- item ${i}`).join('\n'),Array.from({length:5000},(_,i)=>`line ${i}`).join('\n')]) {
+      const h=await harness();
+      h.run(`state.turns=[{turn_id:'${T}',user_request:'طلب',content:${JSON.stringify(content)},status:'complete',usage:{input_tokens:1,output_tokens:1}}];render()`);
+      const markdown=descendants(h.get('messages')).find(x=>x.className==='content markdown-answer');
+      assert.ok(markdown);assert.ok(descendants(markdown).length<=2050);
+      assert.ok(textOf(markdown).includes(content.includes('- item')?'item 4999':'line 4999'));
+    }
   },
 };
 
 (async()=>{
-  const output={scope:'node_fake_dom_behavior_only',browser_rendering:'not_tested',checks:[]};
-  for(const [name,test] of Object.entries(cases)) {
+  const output={scope:'node_fake_dom_behavior_only',browser_rendering:'not_tested',error_codes_scanned:emittedErrorCodes.size,checks:[]};
+  const selected = process.argv[3] ? Object.entries(cases).filter(([name])=>name===process.argv[3]) : Object.entries(cases);
+  if(process.argv[3] && !selected.length) {process.stderr.write(`unknown check: ${process.argv[3]}\n`);process.exitCode=2;return;}
+  for(const [name,test] of selected) {
     try {await test();output.checks.push({name,passed:true});}
     catch(error) {output.checks.push({name,passed:false,reason:error.message});}
   }

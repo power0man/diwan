@@ -1,0 +1,463 @@
+{
+  "schema_version": 1,
+  "issue": 224,
+  "base_commit": "930682c59db4cb2c7dce31daf2f5d4fd1a5cc96f",
+  "agent": "openai/codex",
+  "scope": "composer_and_thinking_checkbox_css_layout_only",
+  "before": {
+    "scope": "synthetic_provider_chromium",
+    "browser": "153.0.8010.12",
+    "rows": [
+      {
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "initial": {
+          "composer_height": 270.890625,
+          "share": 0.35272216796875,
+          "send_bottom": 748
+        },
+        "normal": {
+          "composer_height": 270.890625,
+          "share": 0.35272216796875,
+          "position": "sticky",
+          "last_answer_rect": {
+            "top": 725.25,
+            "bottom": 744.25,
+            "left": 905.625,
+            "right": 1001.984375
+          },
+          "last_answer_visible": false,
+          "overlap": 19,
+          "checkbox": {
+            "width": 771,
+            "gap": 0,
+            "height": 13
+          },
+          "overflow": 0,
+          "textarea_height": 108.390625
+        },
+        "grown": {
+          "composer_height": 762.5,
+          "share": 0.9928385416666666,
+          "position": "sticky",
+          "last_answer_rect": {
+            "top": 725.25,
+            "bottom": 744.25,
+            "left": 905.625,
+            "right": 1001.984375
+          },
+          "last_answer_visible": false,
+          "overlap": 19,
+          "checkbox": {
+            "width": 771,
+            "gap": 0,
+            "height": 13
+          },
+          "overflow": 0,
+          "textarea_height": 600
+        },
+        "errors": [],
+        "external": []
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "initial": {
+          "composer_height": 270.890625,
+          "share": 0.32096045616113744,
+          "send_bottom": 806
+        },
+        "normal": {
+          "composer_height": 270.890625,
+          "share": 0.32096045616113744,
+          "position": "sticky",
+          "last_answer_rect": {
+            "top": 801,
+            "bottom": 820,
+            "left": 217.625,
+            "right": 313.984375
+          },
+          "last_answer_visible": false,
+          "overlap": 19,
+          "checkbox": {
+            "width": 355,
+            "gap": 0,
+            "height": 13
+          },
+          "overflow": 0,
+          "textarea_height": 108.390625
+        },
+        "grown": {
+          "composer_height": 762.5,
+          "share": 0.9034360189573459,
+          "position": "sticky",
+          "last_answer_rect": {
+            "top": 801,
+            "bottom": 820,
+            "left": 217.625,
+            "right": 313.984375
+          },
+          "last_answer_visible": false,
+          "overlap": 19,
+          "checkbox": {
+            "width": 355,
+            "gap": 0,
+            "height": 13
+          },
+          "overflow": 0,
+          "textarea_height": 600
+        },
+        "errors": [],
+        "external": []
+      }
+    ]
+  },
+  "after": {
+    "scope": "synthetic_provider_chromium_geometry_and_native_checkbox_only",
+    "sources": {
+      "webui/static/index.html": "ddcf346edde6281a6c24b6fd1ff9fa01719d6da68d8c73e4b6941581fb72ab29",
+      "webui/static/app.js": "9a94fa675621de0082688a98a8e33dcf15315c4b9b22d4eb0a1f0c8c100129d3",
+      "webui/static/style.css": "fc0125b8a58e6f4c16fa5fe60d8c73e6d012a365d64bb8d53852c60caaeabb47",
+      "webui/server.py": "51f8d9787ef8dd2fdee22ba75b16421f011e3674ad2329911de6da81bccd57f9",
+      "tools/ui_responsive_controls_audit.py": "f092cc1ac3fca6c70f77753ece9c0f19fb66afba24a83471ea6be2dcc8b6c74f",
+      "tests/webui_responsive_controls_browser.cjs": "b73c247dead95db3132ac7f7912406fa18e33fcf4e5b9e348cbb5cc686d0da0b"
+    },
+    "limits": [
+      "headless_chromium_only",
+      "no_model_quality_or_owner_acceptance",
+      "last_answer_line_is_scrolled_to_viewport_bottom_before_hit_testing",
+      "keyboard_checkbox_test_is_not_a_screen_reader_test",
+      "axe_and_focus_dialogs_are_checked_separately_by_ui_browser_audit"
+    ],
+    "passed": true,
+    "viewports": [
+      {
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "browser": "153.0.8010.12",
+        "initial": {
+          "composer_height_px": 202.09375,
+          "composer_viewport_share": 0.2631429036458333,
+          "send_bottom_px": 736
+        },
+        "normal": {
+          "composer_height_px": 202.09375,
+          "composer_viewport_share": 0.2631429036458333,
+          "position": "static",
+          "last_answer_line": {
+            "top": 725.25,
+            "bottom": 744.25,
+            "left": 905.625,
+            "right": 1001.984375
+          },
+          "last_answer_visible": true,
+          "answer_composer_overlap_px": 0,
+          "checkbox_width_px": 13,
+          "checkbox_text_gap_px": 8,
+          "horizontal_overflow_px": 0,
+          "textarea_height_px": 79.59375
+        },
+        "grown": {
+          "composer_height_px": 352.890625,
+          "composer_viewport_share": 0.4594930013020833,
+          "position": "static",
+          "last_answer_line": {
+            "top": 725.25,
+            "bottom": 744.25,
+            "left": 905.625,
+            "right": 1001.984375
+          },
+          "last_answer_visible": true,
+          "answer_composer_overlap_px": 0,
+          "checkbox_width_px": 13,
+          "checkbox_text_gap_px": 8,
+          "horizontal_overflow_px": 0,
+          "textarea_height_px": 230.390625
+        },
+        "checks": {
+          "initial_send_visible": true,
+          "initial_composer_under_30_percent": true,
+          "normal_answer_visible": true,
+          "grown_answer_visible": true,
+          "draft_height_capped": true,
+          "checkbox_native_width": true,
+          "checkbox_beside_text": true,
+          "checkbox_keyboard_and_label": true,
+          "no_horizontal_overflow": true,
+          "no_console_errors": true,
+          "no_external_requests": true
+        },
+        "errors": [],
+        "external": [],
+        "passed": true
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "browser": "153.0.8010.12",
+        "initial": {
+          "composer_height_px": 202.09375,
+          "composer_viewport_share": 0.23944757109004738,
+          "send_bottom_px": 826
+        },
+        "normal": {
+          "composer_height_px": 202.09375,
+          "composer_viewport_share": 0.23944757109004738,
+          "position": "static",
+          "last_answer_line": {
+            "top": 801,
+            "bottom": 820,
+            "left": 217.625,
+            "right": 313.984375
+          },
+          "last_answer_visible": true,
+          "answer_composer_overlap_px": 0,
+          "checkbox_width_px": 13,
+          "checkbox_text_gap_px": 8,
+          "horizontal_overflow_px": 0,
+          "textarea_height_px": 79.59375
+        },
+        "grown": {
+          "composer_height_px": 375.6875,
+          "composer_viewport_share": 0.44512736966824645,
+          "position": "static",
+          "last_answer_line": {
+            "top": 801,
+            "bottom": 820,
+            "left": 217.625,
+            "right": 313.984375
+          },
+          "last_answer_visible": true,
+          "answer_composer_overlap_px": 0,
+          "checkbox_width_px": 13,
+          "checkbox_text_gap_px": 8,
+          "horizontal_overflow_px": 0,
+          "textarea_height_px": 253.1875
+        },
+        "checks": {
+          "initial_send_visible": true,
+          "initial_composer_under_30_percent": true,
+          "normal_answer_visible": true,
+          "grown_answer_visible": true,
+          "draft_height_capped": true,
+          "checkbox_native_width": true,
+          "checkbox_beside_text": true,
+          "checkbox_keyboard_and_label": true,
+          "no_horizontal_overflow": true,
+          "no_console_errors": true,
+          "no_external_requests": true
+        },
+        "errors": [],
+        "external": [],
+        "passed": true
+      }
+    ]
+  },
+  "regression_checks": {
+    "browser": {
+      "name": "chromium",
+      "headless": true,
+      "version": "153.0.8010.12",
+      "playwright": "1.63.0",
+      "fonts": {
+        "status": "measured",
+        "platform": "MacIntel",
+        "computed_family": "Times",
+        "arabic_probe": [
+          {
+            "family": "Times",
+            "custom": false,
+            "glyphs": 11
+          },
+          {
+            "family": "Geeza Pro",
+            "custom": false,
+            "glyphs": 7
+          }
+        ]
+      }
+    },
+    "summary": {
+      "current": {
+        "steps": 17,
+        "passed": 17,
+        "failed": 0,
+        "first_failed": null
+      },
+      "single-page": {
+        "steps": 6,
+        "passed": 6,
+        "failed": 0,
+        "first_failed": null
+      }
+    },
+    "frontend": {
+      "passed": 55,
+      "total": 55,
+      "scope": "node_fake_dom_behavior_only"
+    },
+    "focus_return": {
+      "draft": true,
+      "forget": true,
+      "approval": true
+    },
+    "hashes": [
+      {
+        "state": "draft-review",
+        "direction": "ltr",
+        "arabic_label": false,
+        "starts_with_digit": true,
+        "contiguous": true
+      },
+      {
+        "state": "forget-receipt",
+        "direction": "ltr",
+        "arabic_label": false,
+        "starts_with_digit": true,
+        "contiguous": true
+      },
+      {
+        "state": "agent-steps",
+        "direction": "ltr",
+        "arabic_label": false,
+        "starts_with_digit": true,
+        "contiguous": true
+      },
+      {
+        "state": "approval-dialog",
+        "direction": "ltr",
+        "arabic_label": false,
+        "starts_with_digit": true,
+        "contiguous": true
+      }
+    ],
+    "console_errors": [],
+    "axe": {
+      "status": "run",
+      "version": "4.13.0",
+      "states": [
+        {
+          "journey": "current",
+          "state": "empty-desktop",
+          "violations": 0,
+          "passes": 32,
+          "incomplete": 0,
+          "verdict": "clean"
+        },
+        {
+          "journey": "current",
+          "state": "text-answer-desktop",
+          "violations": 0,
+          "passes": 35,
+          "incomplete": 0,
+          "verdict": "clean"
+        },
+        {
+          "journey": "current",
+          "state": "remember-dialog-desktop",
+          "violations": 0,
+          "passes": 15,
+          "incomplete": 0,
+          "verdict": "clean"
+        },
+        {
+          "journey": "current",
+          "state": "approval-dialog-desktop",
+          "violations": 0,
+          "passes": 12,
+          "incomplete": 1,
+          "verdict": "needs_review"
+        },
+        {
+          "journey": "current",
+          "state": "empty-mobile",
+          "violations": 0,
+          "passes": 32,
+          "incomplete": 0,
+          "verdict": "clean"
+        },
+        {
+          "journey": "single-page",
+          "state": "sp-empty-desktop",
+          "violations": 0,
+          "passes": 31,
+          "incomplete": 0,
+          "verdict": "clean"
+        },
+        {
+          "journey": "single-page",
+          "state": "sp-answer-desktop",
+          "violations": 0,
+          "passes": 31,
+          "incomplete": 0,
+          "verdict": "clean"
+        },
+        {
+          "journey": "single-page",
+          "state": "sp-empty-mobile",
+          "violations": 0,
+          "passes": 31,
+          "incomplete": 0,
+          "verdict": "clean"
+        },
+        {
+          "journey": "single-page",
+          "state": "sp-answer-mobile",
+          "violations": 0,
+          "passes": 31,
+          "incomplete": 0,
+          "verdict": "clean"
+        }
+      ],
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 2,
+          "help_url": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "targets": [
+            "#dialog-body > pre:nth-child(3)",
+            "pre:nth-child(6)"
+          ],
+          "reasons": [
+            "Element's background color could not be determined because it partially overlaps other elements"
+          ],
+          "reasons_total": 1,
+          "journey": "current",
+          "state": "approval-dialog-desktop"
+        }
+      ],
+      "errors": [],
+      "records_cap": 20,
+      "omitted": []
+    },
+    "remaining_findings": [
+      "disabled-modes-unexplained",
+      "answers-plain-text",
+      "technical-details-in-stream",
+      "a11y-review-color-contrast"
+    ]
+  },
+  "limits": [
+    "Real headless Chromium geometry on two viewports with scripted provider, not owner acceptance.",
+    "CSS and HTML source contract tests run in normal pytest; they do not render CSS.",
+    "Axe color-contrast remains incomplete in the approval dialog; no new manual contrast verdict is claimed.",
+    "Markdown, tool text and disabled-mode explanations remain separately owned work.",
+    "No app.js/server.py changes, no model calls, no paid requests."
+  ],
+  "artifacts_sha256": {
+    "before-isolated.json": "c73c8dca2ce6bd1a301d22df785d9c8ee78545675a8e73d0268f9ad66ddc4ce9",
+    "layout-audit.json": "85e95d4c60325d2c2f7014b3b122d147875df15072b718aab4858866204daf1e",
+    "browser-audit.json": "f9c7794cda6679e37a7fa547021ecd626fdfd19e60764e1a19ac3ce1a42b71b5",
+    "frontend.json": "ea9607fecef4b0559238493e6aa9581e4cb9ab10604f31254ef5720a37a3ba30"
+  }
+}

@@ -1,0 +1,824 @@
+{
+  "schema_version": 1,
+  "tool": "tools/ui_browser_audit.py",
+  "agent": "openai/codex",
+  "date": "2026-10-01",
+  "commit": "2bb811da09f7",
+  "commit_contains_inputs": true,
+  "content_sha256_12": {
+    "tools/ui_browser_audit.py": "b2bc427f0839",
+    "tools/ui_browser_audit.cjs": "12c069177097",
+    "webui/static/index.html": "6c6b6f951674",
+    "webui/static/app.js": "54e9804467a2",
+    "webui/static/style.css": "d5cb668838e8",
+    "webui/server.py": "5b54f3f6fce7"
+  },
+  "browser": {
+    "name": "chromium",
+    "headless": true,
+    "version": "151.0.7922.34",
+    "playwright": "1.62.1",
+    "fonts": {
+      "status": "measured",
+      "platform": "MacIntel",
+      "computed_family": "Times",
+      "arabic_probe": [
+        {
+          "family": "Times",
+          "custom": false,
+          "glyphs": 11
+        },
+        {
+          "family": "Geeza Pro",
+          "custom": false,
+          "glyphs": 7
+        }
+      ]
+    }
+  },
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1366,
+      "height": 768,
+      "device_scale_factor": 1
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "device_scale_factor": 1
+    }
+  ],
+  "provider": {
+    "kind": "scripted_fake",
+    "model_time": "zero",
+    "quality": "not_measured"
+  },
+  "summary": {
+    "current": {
+      "steps": 17,
+      "passed": 17,
+      "failed": 0,
+      "first_failed": null
+    },
+    "single-page": {
+      "steps": 6,
+      "passed": 6,
+      "failed": 0,
+      "first_failed": null
+    }
+  },
+  "journeys": {
+    "current": {
+      "steps": [
+        {
+          "id": "open",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 780,
+          "note": "lang=ar dir=rtl"
+        },
+        {
+          "id": "empty_state",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 147,
+          "note": "2 disabled of 6"
+        },
+        {
+          "id": "tab_order",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 28,
+          "note": "6 stops"
+        },
+        {
+          "id": "send_before_session",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 341,
+          "note": "default=true"
+        },
+        {
+          "id": "open_optional_details",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 68
+        },
+        {
+          "id": "create_text_session",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 38
+        },
+        {
+          "id": "keyboard_send",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 1224,
+          "note": "ctrl+enter=true enter=null"
+        },
+        {
+          "id": "ask_text",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 90,
+          "note": "answer in 1 ms"
+        },
+        {
+          "id": "draft_review_apply",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 123
+        },
+        {
+          "id": "memory_dialog",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 268
+        },
+        {
+          "id": "create_agent_session",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 100
+        },
+        {
+          "id": "agent_write",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 926,
+          "note": "answer in 887 ms"
+        },
+        {
+          "id": "agent_approval",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 1828
+        },
+        {
+          "id": "error_path",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 64,
+          "note": "no raw code"
+        },
+        {
+          "id": "mobile_open",
+          "viewport": "mobile",
+          "ok": true,
+          "ms": 711
+        },
+        {
+          "id": "mobile_empty",
+          "viewport": "mobile",
+          "ok": true,
+          "ms": 111,
+          "note": "composer at 683px of 844"
+        },
+        {
+          "id": "mobile_ask_text",
+          "viewport": "mobile",
+          "ok": true,
+          "ms": 510
+        }
+      ],
+      "checks": {
+        "lang": "ar",
+        "dir": "rtl",
+        "body_direction": "rtl",
+        "title": "ديوان — مساحة العمل",
+        "live_regions": [
+          {
+            "id": "session-mode-hints",
+            "role": null,
+            "aria_live": "polite",
+            "contains_messages": false
+          },
+          {
+            "id": "notice",
+            "role": "status",
+            "aria_live": "polite",
+            "contains_messages": false
+          },
+          {
+            "id": "messages",
+            "role": "log",
+            "aria_live": "polite",
+            "contains_messages": true
+          }
+        ],
+        "horizontal_scroll_1366": false,
+        "default_workspace_ready": {
+          "project_selected": true,
+          "project_name": "عام",
+          "session_name": "محادثة عامة"
+        },
+        "default_workspace_action": true,
+        "empty_state_heading": "محادثة عامة",
+        "empty_state_notice": "تم استرجاع المحادثة من جهازك. 0 جولة محفوظة.",
+        "details_initially_open": false,
+        "session_modes": [
+          {
+            "value": "text",
+            "label": "نص وملفات نصية",
+            "disabled": false
+          },
+          {
+            "value": "agent",
+            "label": "عمل بالأدوات داخل المشروع",
+            "disabled": false
+          },
+          {
+            "value": "coder",
+            "label": "مبرمج: تعديلُ شيفرة المشروع واختبارُها",
+            "disabled": false
+          },
+          {
+            "value": "translate",
+            "label": "ترجمة: عربي ↔ إنجليزي بفحصٍ آليّ",
+            "disabled": false
+          },
+          {
+            "value": "research",
+            "label": "بحثٌ معمّق في الويب بمصادر",
+            "disabled": true
+          },
+          {
+            "value": "media",
+            "label": "صورة أو صوت قصير — تجريبي",
+            "disabled": true
+          }
+        ],
+        "disabled_session_modes": [
+          "research",
+          "media"
+        ],
+        "default_session_mode": "agent",
+        "disabled_modes_explained": true,
+        "unnamed_controls": [],
+        "tab_order": [
+          {
+            "index": 1,
+            "role": "DisclosureTriangle",
+            "name": "التفاصيل",
+            "tag": "summary",
+            "id": null,
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 2,
+            "role": "button",
+            "name": "ملفات العمل في هذا المشروع",
+            "tag": "button",
+            "id": "agent-files",
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 3,
+            "role": "checkbox",
+            "name": "اطلب تفكير النموذج واعرضه (يُحجر ويُسجَّل ولا يُعاد إليه)",
+            "tag": "input",
+            "id": "agent-thinking",
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 4,
+            "role": "DisclosureTriangle",
+            "name": "إرفاق ملف (0)",
+            "tag": "summary",
+            "id": null,
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 5,
+            "role": "textbox",
+            "name": "سؤالك إلى ديوان",
+            "tag": "textarea",
+            "id": "message",
+            "focus_visible": true,
+            "in_viewport": true
+          },
+          {
+            "index": 6,
+            "role": "button",
+            "name": "إرسال",
+            "tag": "button",
+            "id": "send",
+            "focus_visible": true,
+            "in_viewport": true
+          }
+        ],
+        "tab_order_complete": true,
+        "tab_order_cap": 15,
+        "send_before_session_notice": "تم استرجاع المحادثة من جهازك. 1 جولة محفوظة.",
+        "send_before_session_refused": false,
+        "first_question_used_default_workspace": true,
+        "details_opened_for_optional_setup": true,
+        "ctrl_enter_sends": true,
+        "enter_sends": null,
+        "answer_direction": "rtl",
+        "answer_unicode_bidi": "plaintext",
+        "answer_label": "ديوان · جواب غير متحقق",
+        "answer_meta": "مكتمل · 42 وحدة نصية",
+        "answer_markdown_literal": false,
+        "messages_live": true,
+        "notice_when_answer_rendered": "تم استرجاع المحادثة من جهازك. 1 جولة محفوظة.",
+        "notice_after_answer": "تم استرجاع المحادثة من جهازك. 1 جولة محفوظة.",
+        "answer_announced": true,
+        "composer_height_px": 202,
+        "composer_position": "static",
+        "composer_viewport_share": 0.26,
+        "text_answer_latin_outside_answer": [],
+        "text_answer_latin_total": 2,
+        "dialog_focus": {
+          "propose": true,
+          "review": true,
+          "remember": true,
+          "memory_panel": true,
+          "forget": true,
+          "approval": true
+        },
+        "focus_return": {
+          "draft": true,
+          "forget": true,
+          "approval": true
+        },
+        "focus_return_targets": {
+          "draft": {
+            "id": null,
+            "tag": "button",
+            "text": "مراجعة وحفظ مسودة",
+            "body": false,
+            "in_dialog": false
+          },
+          "forget": {
+            "id": "memory",
+            "tag": "button",
+            "text": "ذاكرة هذا المشروع",
+            "body": false,
+            "in_dialog": false
+          },
+          "approval": {
+            "id": "message",
+            "tag": "textarea",
+            "text": "",
+            "body": false,
+            "in_dialog": false
+          }
+        },
+        "hashes": [
+          {
+            "state": "draft-review",
+            "direction": "ltr",
+            "arabic_label": false,
+            "starts_with_digit": true,
+            "contiguous": true
+          },
+          {
+            "state": "forget-receipt",
+            "direction": "ltr",
+            "arabic_label": false,
+            "starts_with_digit": true,
+            "contiguous": true
+          },
+          {
+            "state": "agent-steps",
+            "direction": "ltr",
+            "arabic_label": false,
+            "starts_with_digit": true,
+            "contiguous": true
+          },
+          {
+            "state": "approval-dialog",
+            "direction": "ltr",
+            "arabic_label": false,
+            "starts_with_digit": true,
+            "contiguous": true
+          },
+          {
+            "state": "approval-dialog",
+            "direction": "ltr",
+            "arabic_label": false,
+            "starts_with_digit": true,
+            "contiguous": true
+          }
+        ],
+        "draft_hash_direction": "ltr",
+        "draft_hash_shown": true,
+        "memory_empty_error": "اكتب نصًّا غير فارغ ليُحفظ.",
+        "memory_empty_error_role": "alert",
+        "memory_saved_notice": "حُفظ في ذاكرة المشروع. يدخل الطلبات الجديدة وحدها، وتستطيع نسيانه من «ذاكرة هذا المشروع».",
+        "memory_panel_latin": [
+          "T02:54:35Z"
+        ],
+        "memory_panel_latin_total": 1,
+        "memory_panel_iso_timestamp": true,
+        "agent_capabilities_text": "أدوات ملفات المشروع متاحة. تنفيذ الأوامر غير مهيأ.",
+        "thinking_checkbox_width_px": 13,
+        "agent_stream_latin": [
+          "txt",
+          "act-e04358b6b4a040c7"
+        ],
+        "agent_stream_latin_total": 2,
+        "agent_stream_hashes": 1,
+        "agent_stream_json_blocks": 0,
+        "agent_turn_buttons": [
+          "الرجوع عن هذا التعديل",
+          "فرقُ الجولة",
+          "التراجع عن الجولة كلِّها",
+          "تذكّر هذا"
+        ],
+        "approval_button_label": "مراجعة: اقتراح حفظ في الذاكرة",
+        "approval_dialog_latin": [
+          "txt"
+        ],
+        "approval_dialog_latin_total": 1,
+        "approval_dialog_json_blocks": 0,
+        "approval_dialog_hashes": 2,
+        "error_notice": "اكتب اسمًا ظاهرًا من حرف واحد إلى ثمانين حرفًا، بلا محارف تحكم.",
+        "raw_error_codes_visible": [],
+        "api_actions": [
+          "projects",
+          "default_workspace",
+          "sessions",
+          "files",
+          "history",
+          "agent_capabilities",
+          "agent_ask",
+          "create_session",
+          "ask",
+          "replay",
+          "propose",
+          "review",
+          "apply",
+          "memory_remember",
+          "memory",
+          "memory_forget",
+          "agent_decide",
+          "agent_resume",
+          "create_project"
+        ],
+        "external_network_attempts": 0,
+        "console_errors": [],
+        "network_error_logs": 1,
+        "horizontal_overflow_390_px": 0,
+        "horizontal_scroll_390": false,
+        "mobile_composer_top_px": 683,
+        "mobile_sidebar_bottom_px": 887,
+        "mobile_page_height_px": 844,
+        "composer_in_first_screen_mobile": true,
+        "mobile_details_initially_open": false,
+        "mobile_default_workspace_action": true,
+        "mobile_unnamed_controls": [],
+        "horizontal_overflow_390_after_answer_px": 0,
+        "mobile_console_errors": [],
+        "mobile_external_network_attempts": 0
+      },
+      "timings_ms": {
+        "open_to_idle": 777,
+        "dom_content_loaded": 62,
+        "first_api_response": 66,
+        "create_session": 38,
+        "ask_to_answer": 1,
+        "create_agent_session": 95,
+        "agent_write_to_answer": 887,
+        "agent_request_to_approval": 802,
+        "approval_to_answer": 942,
+        "mobile_open_to_idle": 711,
+        "mobile_ask_to_answer": 480
+      }
+    },
+    "single-page": {
+      "steps": [
+        {
+          "id": "sp_open",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 787
+        },
+        {
+          "id": "sp_question_field",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 11
+        },
+        {
+          "id": "sp_enter_answers",
+          "viewport": "desktop",
+          "ok": true,
+          "ms": 436
+        },
+        {
+          "id": "sp_open",
+          "viewport": "mobile",
+          "ok": true,
+          "ms": 698
+        },
+        {
+          "id": "sp_question_field",
+          "viewport": "mobile",
+          "ok": true,
+          "ms": 12
+        },
+        {
+          "id": "sp_enter_answers",
+          "viewport": "mobile",
+          "ok": true,
+          "ms": 504
+        }
+      ],
+      "checks": {
+        "desktop": {
+          "question_field_in_first_screen": true,
+          "question_field_name": "سؤالك إلى ديوان",
+          "notice_after_enter": "",
+          "api_actions": [
+            "projects",
+            "default_workspace",
+            "sessions",
+            "files",
+            "history",
+            "agent_capabilities",
+            "agent_ask"
+          ],
+          "external_network_attempts": 0,
+          "console_errors": []
+        },
+        "mobile": {
+          "question_field_in_first_screen": true,
+          "question_field_name": "سؤالك إلى ديوان",
+          "notice_after_enter": "",
+          "api_actions": [
+            "projects",
+            "default_workspace",
+            "sessions",
+            "files",
+            "history",
+            "agent_capabilities",
+            "agent_ask"
+          ],
+          "external_network_attempts": 0,
+          "console_errors": []
+        }
+      },
+      "timings_ms": {
+        "sp_open_desktop": 787,
+        "sp_enter_to_answer_desktop": 392,
+        "sp_open_mobile": 698,
+        "sp_enter_to_answer_mobile": 459
+      }
+    }
+  },
+  "timings_ms": {
+    "model_time": "zero_by_scripted_provider",
+    "current": {
+      "open_to_idle": 777,
+      "dom_content_loaded": 62,
+      "first_api_response": 66,
+      "create_session": 38,
+      "ask_to_answer": 1,
+      "create_agent_session": 95,
+      "agent_write_to_answer": 887,
+      "agent_request_to_approval": 802,
+      "approval_to_answer": 942,
+      "mobile_open_to_idle": 711,
+      "mobile_ask_to_answer": 480
+    },
+    "single-page": {
+      "sp_open_desktop": 787,
+      "sp_enter_to_answer_desktop": 392,
+      "sp_open_mobile": 698,
+      "sp_enter_to_answer_mobile": 459
+    }
+  },
+  "error_code_coverage": {
+    "server_codes": 56,
+    "with_arabic_message": 56,
+    "handled_by_a_branch": [],
+    "raw_codes": [],
+    "raw_code_lines": {},
+    "dynamic_code_lines": [
+      469,
+      493,
+      539,
+      632,
+      689,
+      1002,
+      1107,
+      1291
+    ],
+    "scope": "need_UIError_error_code_literals_and_the_handler_code_fallback_in_webui_server_py_parsed_with_ast"
+  },
+  "axe": {
+    "status": "run",
+    "version": "4.13.0",
+    "states": [
+      {
+        "journey": "current",
+        "state": "empty-desktop",
+        "violations": 0,
+        "passes": 32,
+        "incomplete": 0,
+        "verdict": "clean"
+      },
+      {
+        "journey": "current",
+        "state": "text-answer-desktop",
+        "violations": 0,
+        "passes": 37,
+        "incomplete": 1,
+        "verdict": "needs_review"
+      },
+      {
+        "journey": "current",
+        "state": "remember-dialog-desktop",
+        "violations": 0,
+        "passes": 15,
+        "incomplete": 0,
+        "verdict": "clean"
+      },
+      {
+        "journey": "current",
+        "state": "approval-dialog-desktop",
+        "violations": 0,
+        "passes": 12,
+        "incomplete": 0,
+        "verdict": "clean"
+      },
+      {
+        "journey": "current",
+        "state": "empty-mobile",
+        "violations": 0,
+        "passes": 32,
+        "incomplete": 0,
+        "verdict": "clean"
+      },
+      {
+        "journey": "single-page",
+        "state": "sp-empty-desktop",
+        "violations": 0,
+        "passes": 31,
+        "incomplete": 0,
+        "verdict": "clean"
+      },
+      {
+        "journey": "single-page",
+        "state": "sp-answer-desktop",
+        "violations": 0,
+        "passes": 33,
+        "incomplete": 0,
+        "verdict": "clean"
+      },
+      {
+        "journey": "single-page",
+        "state": "sp-empty-mobile",
+        "violations": 0,
+        "passes": 31,
+        "incomplete": 0,
+        "verdict": "clean"
+      },
+      {
+        "journey": "single-page",
+        "state": "sp-answer-mobile",
+        "violations": 0,
+        "passes": 33,
+        "incomplete": 0,
+        "verdict": "clean"
+      }
+    ],
+    "violations": [],
+    "incomplete": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 2,
+        "help_url": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+        "targets": [
+          ".local",
+          "label[for=\"projects\"]"
+        ],
+        "reasons": [
+          "Element's background color could not be determined because it's partially obscured by another element"
+        ],
+        "reasons_total": 1,
+        "journey": "current",
+        "state": "text-answer-desktop"
+      }
+    ],
+    "errors": [],
+    "records_cap": 20,
+    "omitted": []
+  },
+  "findings": [
+    {
+      "id": "technical-details-in-stream",
+      "kind": "defect",
+      "severity": "medium",
+      "summary": "تفاصيلُ تقنية أمام المستخدم: أسماءُ أدواتٍ وحالاتٌ بالإنجليزية في المجرى وزرّ الموافقة، ومدخلاتُ JSON وبصمات",
+      "step": "agent_write",
+      "screenshot": "04-agent-steps-desktop.png",
+      "points_to": null,
+      "survives_single_page": "yes",
+      "tracked_in": null
+    },
+    {
+      "id": "a11y-review-color-contrast",
+      "kind": "needs_review",
+      "severity": "needs_review",
+      "state": "text-answer-desktop",
+      "summary": "axe لم يحسم color-contrast (serious) على 2 عنصرًا: يحتاج مراجعةً يدوية",
+      "step": "axe",
+      "screenshot": null,
+      "points_to": null,
+      "survives_single_page": "recheck",
+      "targets": [
+        ".local",
+        "label[for=\"projects\"]"
+      ],
+      "reasons": [
+        "Element's background color could not be determined because it's partially obscured by another element"
+      ],
+      "help_url": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+      "tracked_in": null
+    }
+  ],
+  "screenshots_dir": "ui-integration-browser-20261001",
+  "screenshots": [
+    {
+      "file": "01-empty-desktop.png",
+      "step": "empty_state",
+      "viewport": "1366x768",
+      "bytes": 37876
+    },
+    {
+      "file": "02-text-answer-desktop.png",
+      "step": "ask_text",
+      "viewport": "1366x768",
+      "bytes": 95323
+    },
+    {
+      "file": "03-draft-review-desktop.png",
+      "step": "draft_review_apply",
+      "viewport": "1366x768",
+      "bytes": 70142
+    },
+    {
+      "file": "09-memory-desktop.png",
+      "step": "memory_dialog",
+      "viewport": "1366x768",
+      "bytes": 79818
+    },
+    {
+      "file": "04-agent-steps-desktop.png",
+      "step": "agent_write",
+      "viewport": "1366x768",
+      "bytes": 55092
+    },
+    {
+      "file": "05-approval-desktop.png",
+      "step": "agent_approval",
+      "viewport": "1366x768",
+      "bytes": 65626
+    },
+    {
+      "file": "06-raw-error-desktop.png",
+      "step": "error_path",
+      "viewport": "1366x768",
+      "bytes": 98449
+    },
+    {
+      "file": "07-mobile-empty.png",
+      "step": "mobile_empty",
+      "viewport": "390x844",
+      "bytes": 32752
+    },
+    {
+      "file": "08-mobile-answer.png",
+      "step": "mobile_ask_text",
+      "viewport": "390x844",
+      "bytes": 49632
+    }
+  ],
+  "measurement_limits": [
+    "scripted_fake_provider_so_model_latency_is_zero_and_answer_quality_is_not_measured",
+    "headless_chromium_only_no_safari_no_firefox_no_real_screen_reader",
+    "one_scripted_journey_by_the_tool_not_a_user_study_and_not_owner_acceptance",
+    "browser_network_is_limited_to_each_ephemeral_loopback_server_and_external_requests_are_blocked",
+    "host_font_evidence_comes_from_chromium_CSS_getPlatformFontsForNode_for_one_arabic_probe_and_may_not_match_other_text_or_browsers",
+    "axe_core_catches_a_subset_of_wcag_failures_and_a_clean_rule_is_not_an_accessible_page",
+    "error_code_coverage_parses_webui_server_py_only_codes_raised_by_other_modules_are_listed_as_dynamic_lines_not_counted",
+    "first_run_configuration_only_research_media_and_command_execution_are_disabled_as_serve_ui_starts_without_searxng_vision_or_docker",
+    "timings_are_loopback_with_a_fake_provider_they_bound_the_ui_and_http_path_not_a_real_answer",
+    "axe_records_are_one_per_rule_and_state_at_most_20_per_kind_the_rest_are_named_in_omitted_and_as_a_finding",
+    "each_axe_record_keeps_its_first_three_targets_and_reasons_nodes_and_reasons_total_count_them_all",
+    "latin_token_lists_keep_the_first_40_their_total_is_recorded_beside_them",
+    "the_tab_order_stops_at_15_stops_tab_order_complete_says_whether_the_cycle_closed_before_the_cap",
+    "page_texts_are_trimmed_to_a_few_hundred_characters_and_a_trimmed_text_ends_with_an_ellipsis"
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-10-01",
+  "tested_commit": "2bb811da09f78c635dd2b10ae2be1379fac5555a",
+  "covered_pull_requests": [
+    244,
+    241,
+    205,
+    200,
+    231,
+    237,
+    213,
+    233,
+    235,
+    236,
+    227,
+    223,
+    216,
+    215,
+    204,
+    230,
+    179,
+    222
+  ],
+  "product_fixes": [
+    "shared_conversation_enlisted_in_atomic_forget_preflight_and_recovery",
+    "backup_preserves_only_canonical_shared_role",
+    "restore_scrubs_shared_history_using_all_source_project_tombstones",
+    "send_button_and_keyboard_wait_for_pending_history_reads",
+    "arabic_errors_for_atomic_forget"
+  ],
+  "browser": {
+    "report": "ui-integration-browser-20261001.json",
+    "journey_steps_passed": 23,
+    "journey_steps_total": 23,
+    "axe_states": 9,
+    "axe_violations": 0,
+    "external_requests": 0
+  },
+  "reviewed_findings": [
+    {
+      "id": "technical-details-in-stream",
+      "disposition": "explicitly_opened_technical_details",
+      "observed": [
+        "file_extension_txt",
+        "journal_revert_id",
+        "preference_snapshot_digest"
+      ],
+      "evidence": "ui-integration-browser-20261001/04-agent-steps-desktop.png",
+      "limits": "The audit opens every details element and counts path extensions and immutable receipt identifiers. Exact values remain visible for inspection. No raw JSON blocks or English tool names remain in the measured stream or approval button."
+    },
+    {
+      "id": "a11y-review-color-contrast",
+      "disposition": "targeted_recheck_passed",
+      "evidence": "ui-integration-contrast-20261001.json",
+      "limits": "The original full-page audit retains its incomplete record for partially clipped menu contents. Both named targets pass color-contrast when individually scrolled into view in the same UI; this is not a screen-reader assessment."
+    }
+  ],
+  "validation_limits": [
+    "synthetic_provider_and_workspace_only",
+    "no_live_model_quality_or_production_acceptance",
+    "same_family_execution_is_not_independent_review",
+    "full_suite_started_on_737183a_then_final_frontend_delta_rechecked_by_70_focused_tests"
+  ],
+  "validation": {
+    "focused_pytest": {
+      "passed": 70,
+      "failed": 0
+    },
+    "frontend_dom": {
+      "passed": 62,
+      "total": 62
+    },
+    "mutation": {
+      "commit": "2bb811da09f78c635dd2b10ae2be1379fac5555a",
+      "totals": {
+        "killed": 200,
+        "partially_killed": 0,
+        "survived": 0,
+        "test_missing": 0,
+        "failing_before_mutation": 0,
+        "stale": 0,
+        "invalid": 0,
+        "timeout": 0
+      },
+      "status": "passed",
+      "unproved_touched_tests": [],
+      "dropped_proofs": []
+    },
+    "approval_focus_chromium": {
+      "active_element": {
+        "id": "message",
+        "tag": "textarea"
+      },
+      "blocked_external": 0
+    },
+    "full_pytest": {
+      "passed": 4908,
+      "skipped": 36,
+      "warnings": 22,
+      "failed": 0,
+      "duration_s": 657.7,
+      "limits": "Collection began on 737183a; the final frontend-only delta was separately validated by 70 focused tests, 62 DOM cases, full Chromium journey, responsive layouts and approval focus."
+    }
+  }
+}

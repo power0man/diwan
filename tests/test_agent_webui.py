@@ -2,16 +2,20 @@
 from contextlib import contextmanager
 import hashlib
 import json
-import threading
+from pathlib import Path
+import subprocess, threading
 import uuid
 
 import pytest
 
 from core.contracts import Response, ToolCall, Usage
 from core import execution
+from core.canonical import canonical_bytes
+from memory.scope import HEADER_ALL, AllProjects
 from services.agent_workspace import decode_input
 from tests.test_webui_http import Running
-from webui.server import LocalApp, Server
+from webui.server import (DEFAULT_PROJECT_ID, DEFAULT_SESSION_ID, UNIFIED_SESSION_ROLE,
+                          LocalApp, Server)
 
 
 def response(content="done", *calls):
@@ -84,6 +88,67 @@ def ask(live, ctx, *, message="اقرأ واكتب", files=(), turn=None):
 def write_script(live, *, path="output.txt", content="أثر حقيقي"):
     live.provider.responses = [response("أكتب", ToolCall("write1", "write_file", {"path": path, "content": content})),
                                response("تمت الكتابة")]
+
+
+def test_unified_page_keeps_setup_in_details_and_automates_the_general_chat():
+    index = (Path(__file__).parents[1] / "webui/static/index.html").read_text()
+    script = (Path(__file__).parents[1] / "webui/static/app.js").read_text()
+    assert '<details id="details-panel"><summary>التفاصيل</summary><aside>' in index
+    assert 'placeholder="اسأل ديوان…"' in index
+    assert 'event.key === "Enter" && !event.shiftKey && !event.isComposing' in script
+    assert 'api("default_workspace")' in script
+    assert 'option.value === defaults.project.id' in script
+    assert 'item.dataset.session === defaults.session.id' in script
+    assert 'button(`مراجعة: ${toolName(action.name)}`, () => reviewAgentAction' in script
+    assert 'button("موافقة", () => decideAgentAction' not in script
+    result = subprocess.run(['node', 'tests/webui_frontend.cjs', 'webui/static/app.js'], cwd=Path(__file__).parents[1], capture_output=True, text=True, timeout=60); assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_disabled_research_and_media_modes_explain_operator_enablement():
+    root = Path(__file__).parents[1]
+    index = (root / "webui/static/index.html").read_text()
+    assert '<select id="session-mode" aria-describedby="session-mode-hints">' in index
+    assert 'id="research-option" value="research" aria-describedby="research-mode-hint" disabled' in index
+    assert 'id="media-option" value="media" aria-describedby="media-mode-hint" disabled' in index
+    assert "البحث المعمّق غير مهيّأ" in index and "--web-search-url" in index and "SearXNG" in index
+    assert "الوسائط غير مهيّأة" in index and "DIWAN_MEDIA_MODEL" in index and "DIWAN_MEDIA_DIGEST" in index
+    result = subprocess.run(
+        ["node", "tests/webui_frontend.cjs", "webui/static/app.js",
+         "disabled_research_and_media_explain_and_track_operator_enablement"],
+        cwd=root, capture_output=True, text=True, timeout=60)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_default_workspace_uses_stable_ids_not_duplicate_display_names(live):
+    user_project = live.api("create_project", name="عام")
+    user_session = live.api("create_session", project=user_project["id"],
+                            name="محادثة عامة", mode="agent")["id"]
+    first = live.api("default_workspace")
+    assert first["project"] == {"id": DEFAULT_PROJECT_ID, "name": "عام"}
+    assert first["project"]["id"] != user_project["id"]
+    assert first["session"]["id"] == DEFAULT_SESSION_ID
+    duplicate = live.api("create_session", project=DEFAULT_PROJECT_ID,
+                         name="محادثة عامة", mode=first["session"]["mode"])
+    second = live.api("default_workspace")
+    assert second == first
+    assert second["session"]["id"] != duplicate["id"]
+    default_project = live.app.project(DEFAULT_PROJECT_ID)
+    metadata = live.app.metadata(default_project / "sessions" / DEFAULT_SESSION_ID)
+    assert metadata["system_role"] == UNIFIED_SESSION_ROLE
+    assert live.app.is_unified_session(default_project, first["session"]["id"])
+    assert not live.app.is_unified_session(live.app.project(user_project["id"]), user_session)
+    assert "#166" in live.app.all_projects_memory.__doc__
+    assert "#166" in live.app.is_unified_session.__doc__
+    path = default_project / "sessions" / DEFAULT_SESSION_ID / "meta.json"
+    path.write_bytes(canonical_bytes({key: value for key, value in metadata.items()
+                                      if key != "system_role"}))
+    recovered = live.api("default_workspace")
+    assert recovered["session"]["system_role"] == UNIFIED_SESSION_ROLE
+    assert live.app.is_unified_session(default_project, DEFAULT_SESSION_ID)
+    status, error, _ = live.request({"action": "create_session", "project": user_project,
+                                     "name": "مزورة", "mode": "agent",
+                                     "system_role": UNIFIED_SESSION_ROLE})
+    assert status == 409 and error["error_code"] == "request_invalid"
 
 
 def test_http_reads_only_selected_upload_writes_real_file_and_replays_without_provider(live):
@@ -208,6 +273,52 @@ def test_http_capabilities_are_explicit_and_text_mode_remains_available(live):
     assert status == 409
     assert [tier['id'] for tier in live.api('sovereign_status')['available_tiers']] == ['local_edge']
 
+    long_name = "م" * 80
+    first = live.api("create_project", name=long_name)["id"]
+    second = live.api("create_project", name=long_name)["id"]
+    empty = live.api("create_project", name="بلا ذاكرة")["id"]
+    one = live.api("memory_remember", project=first, text="حقيقة أولى")["item_id"]
+    two = live.api("memory_remember", project=second, text="حقيقة ثانية")["item_id"]
+
+    scope = live.app.all_projects_memory()
+    assert isinstance(scope, AllProjects)
+    expected = {f"{long_name[:45]} — {first}", f"{long_name[:45]} — {second}"}
+    assert set(scope.labels) == expected
+    assert all(len(project_label) == 80 for project_label in scope.labels)
+    found = scope.retrieve("حقيقة", limit=5)
+    assert {item["item_id"] for item in found} == {one, two}
+    assert {item["project"] for item in found} == expected
+    assert not (live.app.project(empty) / "memory").exists()
+
+    source = live.api("create_project", name="المصدر")['id']
+    item_id = live.api("memory_remember", project=source, text="الموعد الخميس")['item_id']
+    defaults = live.api("default_workspace")
+    live.provider.responses = [response("الخميس")]
+    turn = uuid.uuid4().hex
+    live.api("agent_ask", project=defaults["project"]["id"],
+             session=defaults["session"]["id"], turn=turn, message="متى الموعد؟", files=[])
+    assert live.provider.requests[-1].messages[-1].content.startswith(HEADER_ALL)
+    assert "الموعد الخميس" in live.provider.requests[-1].messages[-1].content
+    forgotten = live.api("memory_forget", project=source, item_id=item_id)
+    assert forgotten["receipt"]["references"] == [f"agent:{DEFAULT_SESSION_ID}/{turn}"]
+
+    unrelated = live.api("create_project", name="ذاكرة معطوبة")["id"]
+    unrelated_root = live.app.project(unrelated)
+    (unrelated_root / "memory").symlink_to(unrelated_root / "missing-memory")
+    history = live.api("history", project=DEFAULT_PROJECT_ID,
+                       session=DEFAULT_SESSION_ID, before=None)
+    assert history["status"] == "idle" and history["total"] == 1
+    assert history["turns"][0]["turn_id"] == turn
+    status, error, _ = live.request({"action": "agent_stop", "project": DEFAULT_PROJECT_ID,
+                                     "session": DEFAULT_SESSION_ID, "turn": uuid.uuid4().hex})
+    assert status == 409 and error["error_code"] == "turn_unknown"
+
+    unseen = live.api("memory_remember", project=source, text="معلومة مؤقتة")["item_id"]
+    malformed = live.api("create_project", name="بعيد")["id"]
+    (live.app.root / "projects" / malformed / "meta.json").write_text("{")
+    forgotten = live.api("memory_forget", project=source, item_id=unseen)
+    assert forgotten["receipt"]["references"] == []
+
 
 @pytest.mark.parametrize('path', ['../uploads/x', '/etc/passwd', '.diwan-journal/journal.jsonl', 'alias.txt'])
 def test_agent_read_refuses_paths_links_and_hidden_state(live, path):
@@ -238,6 +349,18 @@ def test_missing_agent_provider_cannot_create_agent_session(tmp_path):
         assert server.api('projects')['agent_enabled'] is False
         status, error, _ = server.request({'action': 'create_session', 'project': project, 'name': 'أدوات', 'mode': 'agent'})
         assert status == 409 and error['error_code'] == 'agent_unavailable'
+        item_id = server.api("memory_remember", project=project, text="رمز الملف ٧٣")["item_id"]
+        defaults = server.api("default_workspace")
+        assert defaults["session"]["mode"] == "text"
+        server.provider.responses = [response("٧٣")]
+        turn = uuid.uuid4().hex
+        server.api("ask", project=defaults["project"]["id"], session=DEFAULT_SESSION_ID,
+                   turn=turn, message="ما رمز الملف؟", files=[])
+        request = server.provider.requests[-1]
+        assert request.messages[-1].content.startswith(HEADER_ALL)
+        assert "رمز الملف ٧٣" in request.messages[-1].content
+        forgotten = server.api("memory_forget", project=project, item_id=item_id)
+        assert forgotten["receipt"]["references"] == [f"text:{DEFAULT_SESSION_ID}/{turn}"]
     finally:
         server.close()
 
