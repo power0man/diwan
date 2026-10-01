@@ -102,7 +102,7 @@ ANALYZE_DATA = Tool(ToolSpec(
     {"type": "object", "properties": {
         "code": {"type": "string"},
         "inputs": {"type": "array", "items": {"type": "string"}},
-        "outputs": {"type": "array", "items": {"type": "string"}},
+        "outputs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": MAX_OUTPUTS},
         "timeout_s": {"type": "integer"}},
      "required": ["code", "outputs"]},
     consent="logged", reversible=True), _analyze_data)

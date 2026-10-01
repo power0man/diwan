@@ -19,7 +19,8 @@ from agent.registry import ToolContext, ToolRegistry
 from analysis import backend as analysis
 from analysis.backend import AnalysisResult
 from analysis.tool import ANALYZE_DATA
-from core.contracts import ToolCall
+from core.contracts import Message, Request, ToolCall
+from providers.ollama import OllamaProvider
 
 POSITION = dict(session_id="session", turn_id="turn-1", step_index=0)
 REQUEST = "a" * 64
@@ -65,6 +66,26 @@ def _call(store, context, arguments, index=0):
 
 
 ARGS = {"code": "print(1)", "inputs": ["sales.csv"], "outputs": ["answer.json", "chart.png"]}
+
+
+@pytest.mark.parametrize("count", [0, 1, 8, 9])
+def test_the_model_sees_output_cardinality_that_matches_execution(setup, count):
+    """حدود الطلب المرسل تتيح تصحيح النداء قبل أن يرفضه التنفيذ."""
+    _, fake, store, context = setup
+    request = Request(messages=(Message("user", "حلّل الملف"),), model="fixture", model_version="v",
+                      max_output=64, deadline_s=1, data_policy="public", idempotency_key=None,
+                      tools=(ANALYZE_DATA.spec,))
+    wire = OllamaProvider("fixture").payload(request)
+    schema = wire["tools"][0]["function"]["parameters"]["properties"]["outputs"]
+    assert schema["type"] == "array" and schema["items"]["type"] == "string"
+    assert (schema["minItems"], schema["maxItems"]) == (1, 8)
+    names = [f"out-{index}.json" for index in range(count)]
+    fake.result = _result(outputs={name: b"{}" for name in names})
+    result = _call(store, context, {**ARGS, "outputs": names})
+    if schema["minItems"] <= count <= schema["maxItems"]:
+        assert result["status"] == "ok" and len(fake.calls) == 1
+    else:
+        assert result["code"] == "argument_invalid" and fake.calls == []
 
 
 def test_declared_outputs_are_written_with_one_revert_for_the_whole_call(setup):
