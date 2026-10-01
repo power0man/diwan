@@ -1,0 +1,505 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "task": "Kimi open-only v1.2 intake after authored fixes",
+  "passed": false,
+  "source_head_at_start": "3b34d9a34f765214ab84a57d4b382597e8d0a94e",
+  "source_head_at_end": "b606857ceba52ae47a0ebb57fbac67e82eadc547",
+  "source_code_files": {
+    "tools/kimi_intake.py": "9cf45c76a36f17283bd003dea016c1fcae33e03376955f683beda7705b7ae0f7",
+    "evaluation/agentic_runner.py": "0dac4274ddddd5814a23a6148c1c997542962ffda5a62c1649706170fbd246fa",
+    "core/execution.py": "0fb49e6852fa34aaedb6210c7b0ac84f26dd7b94b1684da431e9d4c178ade392",
+    "core/sandbox.py": "d67d9c9ab45892ee7ef92ba5a9715570c9d3962e9e23f86b09221743df1587e6"
+  },
+  "intake_report_sha256": "488f383af3ad3800045e21a887fd6557a55b74537672819078f6bd9fa9b97e84",
+  "open_input_hashes": {
+    "open/tier_a/kimi_arabic_a_001.json": "ddfdc3d7869ac86838febd2a764b582d2176614aa74097578ffe17d33760445a",
+    "open/tier_a/kimi_arabic_a_001.meta.json": "a60723645e40f83de9f4f6208f9c44aea7683d48259d28d97eeb1c995538be15",
+    "open/tier_a/kimi_arabic_a_002.json": "cef77a7a5346fecf1dcfea2a2122d015639cb94ee7c93e2af304f1be6171629b",
+    "open/tier_a/kimi_arabic_a_002.meta.json": "d8e87b1ae14f8b794cdfc2393387c629cc4afa7f6a5d59f41e5e057cf1c1b9b4",
+    "open/tier_a/kimi_arabic_a_003.json": "688794fb722b687750bac065f7b6e4849508655b6fe21dcc558ca4207f511c08",
+    "open/tier_a/kimi_arabic_a_003.meta.json": "95615d84d4bf7147eaf513ec0a0d907b2a8e65debf0102b9e1a4393777e51272",
+    "open/tier_a/kimi_arabic_a_004.json": "6558c703097a8bfd712b15145ed4fc3536d20d8fa398fabf2b700cfab4246dcf",
+    "open/tier_a/kimi_arabic_a_004.meta.json": "652594ebcc072465362d5e1bc4a566634d51ff3b54ba37a110d66634a9c23d6e",
+    "open/tier_a/kimi_assist_a_001.json": "7d743145f212bddf36e0c816d451c31f45da645f8d40f7864cba1c50b1717cd4",
+    "open/tier_a/kimi_assist_a_001.meta.json": "38e6b9c391e8a346623065e9775eac95eda2fc4dbf0c129b041eeada2ded05f5",
+    "open/tier_a/kimi_assist_a_002.json": "9bba3687d6c3ef590bbd78eddfd90e1e853ce4216c59493096ec5def2ed0e277",
+    "open/tier_a/kimi_assist_a_002.meta.json": "62418b7f6fc0eab3e8b5cac19050b717061000b6cf3abf54d346b3d155ac23d2",
+    "open/tier_a/kimi_assist_a_003.json": "c3ea5fea57c7aa25d00cdeb0478f52d5027f78382757bd42f28a79ea5fbbe259",
+    "open/tier_a/kimi_assist_a_003.meta.json": "1b0d6744b75bcd30ff6a0a5b266ca97487d0a5e46fb0931ba293b47f547522a3",
+    "open/tier_a/kimi_assist_a_004.json": "369567dbe9e95abb001cfd43474f3a6455e8bb07047c9dda01377b6fab970d06",
+    "open/tier_a/kimi_assist_a_004.meta.json": "0e0d93d31f35d67502864631ce62f32e8633bbf65264aef4c5d5ee21bb0c246e",
+    "open/tier_a/kimi_logic_a_001.json": "343106952584281f793e63016b2d934fc9d442027b708a11d7c8a6eac1ce43e0",
+    "open/tier_a/kimi_logic_a_001.meta.json": "7688c1f576b67bbae744b60ae1e2178c10407373e1cb86b65ba3288ed49ed34f",
+    "open/tier_a/kimi_logic_a_002.json": "f47bf44f6c362a6ee93571b1df08f76a4a123601da8d7927d03b8e90ebbd6845",
+    "open/tier_a/kimi_logic_a_002.meta.json": "109b5e114031ee0b717348d27b7e1c688d01907d3a8c0da10db83604e06a1400",
+    "open/tier_a/kimi_logic_a_003.json": "5cc279d88d977008d23df7a698f45b14eb5a538f72e7f2fa4e06b666f6219e18",
+    "open/tier_a/kimi_logic_a_003.meta.json": "ec2602586d8ab81654cef3ad59c70b83627e71ff80535b287534593401936ce0",
+    "open/tier_a/kimi_logic_a_004.json": "52fb96fde1120ad297cb7496ca6468c6248e794a00566883ba5e5bec7c0e9488",
+    "open/tier_a/kimi_logic_a_004.meta.json": "877b379d6bee6aa67c743fdb7c8fc53fd44515aec1e03331526cb35a5c007dda",
+    "open/tier_a/kimi_logic_a_005.json": "539c9a7b0e2676a04f92cb0203710ad619c7a537a829459f51243c0bce022755",
+    "open/tier_a/kimi_logic_a_005.meta.json": "bf4f06b107e70447e572a28ac8220b1f74db66a18eaeac315ca6e12493a25d5b",
+    "open/tier_a/kimi_prog_a_001.json": "d9209f0a02941f7eb17e4524485adbaf43268f44b0e4972a71d5b9d676804d17",
+    "open/tier_a/kimi_prog_a_001.meta.json": "d888bb89387496266bcc89d1f3cd8ca5290cb7d8a8677453b427b005bee7d10c",
+    "open/tier_a/kimi_prog_a_002.json": "37dce3ed63ed8cca770e63f75bc952573ad7ca164b03e429076cb3657dad2db3",
+    "open/tier_a/kimi_prog_a_002.meta.json": "144a51bbb2785eade1734419a42f4af73b6b407ec0fc19f5d19e97b841426d0a",
+    "open/tier_a/kimi_prog_a_003.json": "93206cc866eaaedff53623f3dc1726d4f892994ca53c62cea6b4510f62ab2448",
+    "open/tier_a/kimi_prog_a_003.meta.json": "bcc1090592709ab5286afa0f7f8e9637e3fdf03d8d72d20718688622afbfc850",
+    "open/tier_a/kimi_prog_a_004.json": "e2004c2d9fdf9229d48a37594419c748e25023120a91d8531670efc278584ac5",
+    "open/tier_a/kimi_prog_a_004.meta.json": "b432ae85440891a55e113ca3fcf7f094ee66a37e7a87854d6967ac05c7e5cf8f",
+    "open/tier_a/kimi_prog_a_005.json": "68bea327ac82fa9fe6d4d7faf714c0ecbbd44ae28268c06d14fc6fdd972e8fec",
+    "open/tier_a/kimi_prog_a_005.meta.json": "ac378e22fd82563560b2199c97869d497c802543a786aac819dee94634fc4b3a",
+    "open/tier_a/kimi_sci_a_001.json": "3a6601accdafc54d44341545f265236fbd2ee65069a5d16b141500b3d6ed9406",
+    "open/tier_a/kimi_sci_a_001.meta.json": "17cf3d6512772a4197ac19fda0f5e5d740b626874a584fdf5bbd25c9e8a6c48c",
+    "open/tier_a/kimi_sci_a_002.json": "189f64226614c96697749bc3dce32651c455893225a55ec60a21b994573b0776",
+    "open/tier_a/kimi_sci_a_002.meta.json": "acfdcd2773c7384c69502171d02cd56e786285d8d8f6044020c83a5a338fd80a",
+    "open/tier_a/kimi_sci_a_003.json": "9599949ff9550805e445d939649d33c5e1e945fa4d531840484b35721549a06d",
+    "open/tier_a/kimi_sci_a_003.meta.json": "0dd826da04a4c97eb8b966e4e906ade70c96da03d30b95966503863474ddfecd",
+    "open/tier_a/kimi_sci_a_004.json": "84b0e082e7611f322c88a2f921814fbd0bf7f409d976e6b671c90b6e91bf8b76",
+    "open/tier_a/kimi_sci_a_004.meta.json": "e3730b6336656322ae00c19f3bc8ab22725c27fd4b1854008dc6bf3225f2a6b0",
+    "open/tier_b/kimi_arabic_b_001.json": "c5104ad76fc004af518539ea5c506f8296c64f92222917d6593f774166905c71",
+    "open/tier_b/kimi_arabic_b_001.meta.json": "4dd30225879a5daf17863563e463044a94e629457beea18adae0a8ba72fb6037",
+    "open/tier_b/kimi_assist_b_001.json": "5f8cce923d260a5bb794b4cba350e430e3dccc7bdabfade1e28d49c7a2c3eded",
+    "open/tier_b/kimi_assist_b_001.meta.json": "8596e5c915cabac1388b9d33932a5bf35c7bb4232daf9a195af36422230a0870",
+    "open/tier_b/kimi_assist_b_002.json": "c0aaecd6127dd7ddf1df4c4028ffe0382ba728e380c418d866a62110400d2e25",
+    "open/tier_b/kimi_assist_b_002.meta.json": "a5182f79602e8fa515b74aa70dde027e66fbf3a9680e712a211c91044a126e6e",
+    "open/tier_b/kimi_assist_b_003.json": "e3c8f695cfe0e27e8dffeb12e61477b45267c9ed322ca8304fb780ef3f08a76d",
+    "open/tier_b/kimi_assist_b_003.meta.json": "86af4241b1df69fc55223b5d56f656f1b24b9daaae23c0fb3c15d594b12f2c54",
+    "open/tier_b/kimi_assist_b_004.json": "c98f3f8db3c603bd6564952d5726e98ad3ee8db56197eff6eda656c20a268841",
+    "open/tier_b/kimi_assist_b_004.meta.json": "88f9a9de14ce046a56c827be888b6829f3a1e3df07a887bd37b14f6389300f25",
+    "open/tier_c/kimi_honesty_c_001.json": "26aa7c493024af79d985c99cf7ea2b20bebe3a54ed67a47fcb2d870bbbc0f416",
+    "open/tier_c/kimi_honesty_c_001.meta.json": "6ca282d82dd9b731f9bf5050bdf27af5299e25f9e8ac88889e82ca7d32dedce0",
+    "open/tier_c/kimi_honesty_c_002.json": "9a9fcb229e18a8ba28b1321524397a9fcba2586addc27dee7d19a350a9ba1ac1",
+    "open/tier_c/kimi_honesty_c_002.meta.json": "6c70996386878bf84520661ecf2ee799dcb2fbb5c2398ca8d3755278effad22d",
+    "open/tier_c/kimi_honesty_c_003.json": "e721b3b280159648ab1c780a6c0905e9d60bb52b67742216c833b96c791d774d",
+    "open/tier_c/kimi_honesty_c_003.meta.json": "41952c007fccf321497eae20bedd3006f9fc2d68589528100d32a41dc2a07b15",
+    "open/tier_c/kimi_honesty_c_004.json": "e01b1cee56840dc6a2396af877db74113add51e3a3edd8b3a905703e50aef176",
+    "open/tier_c/kimi_honesty_c_004.meta.json": "2e1b97770c649fe58588b15c0d8636b10b73bbd25a29ae6970cb21c79f37499f",
+    "open/tier_d/kimi_agentic_001.json": "23d40995de87f9f15f152442182f81f2e36bac2abd6f35dd1e107f70f7708c6c",
+    "open/tier_d/kimi_agentic_001.meta.json": "1fa50dd5ee50d54286713a20e06ec1acdba36aa6ea0ac46574012686e5c48e77",
+    "open/tier_d/kimi_agentic_002.json": "38578afc60d5f6d0ab4f5715c3b20754b96a92e8a076bdc1974e25ebf5edb372",
+    "open/tier_d/kimi_agentic_002.meta.json": "0f882ab521d758881511261c3edb3ecb3a25ec612ed42673d661c433d186f241",
+    "open/tier_d/kimi_agentic_003.json": "22a57d126b6398b216a6497b37edb7ce95c28376816af963b2b0bbc622382943",
+    "open/tier_d/kimi_agentic_003.meta.json": "c515963afc6d501ade031e6a280eeb86c8f0e46dc89e6fac00b33e477ebfe7d4",
+    "open/tier_d/kimi_agentic_004.json": "2abd24ec425aeadf16db4166f408fc6638d0c01b169f1bd88641d343ec910d0e",
+    "open/tier_d/kimi_agentic_004.meta.json": "ed03fdef503fbddf08137103b6987d0d3f13db29f713605934a88de32e65d76a",
+    "agentic_v3.json": "320657d9d2929865142cfacac201e5766dd111fad05705b957d41ccedd92dd95",
+    "agentic_v3.meta.json": "d332cf56508b57061e34a22f2518090ea1449a2ca392c76537fbae2e9a2703d9",
+    "arabic_general_v3_1.json": "475a938edd51dcbfc845698e04412637a17dde927914b4dd2196903eb4afac91",
+    "arabic_general_v3_2.json": "bf5031a9a70905f4a374e5a5cf5b58b771885a9a69abd005ad8ec51f003de2f2",
+    "REPORT.md": "e3d2176037e0699414e4968004f3032af2d5a242cb6f61b745eb177c3944c6ad",
+    "disputed.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  "counts": {
+    "open_cases": 1902,
+    "open_cases_without_checks": 150,
+    "open_tasks": 140,
+    "open_fail_before_fix": 140,
+    "open_reference_passes": 140,
+    "dev_tasks": 30,
+    "dev_fail_before_fix": 30,
+    "dev_reference_passes": 28,
+    "dev_reference_fails": 2,
+    "tasks": 170,
+    "fail_before_fix": 170,
+    "pass_before_fix": 0,
+    "unjudged": 0,
+    "reference_passes": 168,
+    "reference_fails": 2,
+    "reference_not_a_file_map": 0,
+    "decoy_passes": 0
+  },
+  "failure_codes": {
+    "cases_without_checks": 1,
+    "task_id_not_unique_across_bank": 1,
+    "forbidden_rule_unmatchable": 1,
+    "reference_solution_fails": 2
+  },
+  "static_details": [
+    {
+      "file": "open/tier_d/kimi_agentic_001.json",
+      "tasks": 35,
+      "reference_file_maps": 35,
+      "reference_strings": 0,
+      "empty_forbidden": 2,
+      "tasks_with_uncovered_protected_paths": 3,
+      "unmatchable_forbidden_rules": 0,
+      "task_schema_failure_codes": {}
+    },
+    {
+      "file": "open/tier_d/kimi_agentic_002.json",
+      "tasks": 35,
+      "reference_file_maps": 35,
+      "reference_strings": 0,
+      "empty_forbidden": 0,
+      "tasks_with_uncovered_protected_paths": 0,
+      "unmatchable_forbidden_rules": 0,
+      "task_schema_failure_codes": {}
+    },
+    {
+      "file": "open/tier_d/kimi_agentic_003.json",
+      "tasks": 35,
+      "reference_file_maps": 35,
+      "reference_strings": 0,
+      "empty_forbidden": 0,
+      "tasks_with_uncovered_protected_paths": 0,
+      "unmatchable_forbidden_rules": 0,
+      "task_schema_failure_codes": {}
+    },
+    {
+      "file": "open/tier_d/kimi_agentic_004.json",
+      "tasks": 35,
+      "reference_file_maps": 35,
+      "reference_strings": 0,
+      "empty_forbidden": 0,
+      "tasks_with_uncovered_protected_paths": 18,
+      "unmatchable_forbidden_rules": 0,
+      "task_schema_failure_codes": {}
+    },
+    {
+      "file": "agentic_v3.json",
+      "tasks": 30,
+      "reference_file_maps": 30,
+      "reference_strings": 0,
+      "empty_forbidden": 0,
+      "tasks_with_uncovered_protected_paths": 0,
+      "unmatchable_forbidden_rules": 10,
+      "task_schema_failure_codes": {
+        "forbidden_rule_unmatchable": 10
+      }
+    }
+  ],
+  "duplicate_task_id_occurrences": 26,
+  "docker": {
+    "image_id": "sha256:87f337c2fb195e937ea38458cc91f17949a553698d0e4b2ba587fe3c0f6218af",
+    "python": "3.12.14",
+    "pytest": "9.1.1",
+    "configured_network": "none",
+    "configured_readonly_rootfs": true,
+    "configured_nonroot": true,
+    "configured_cap_drop": [
+      "ALL"
+    ],
+    "configured_security_opt": [
+      "no-new-privileges"
+    ],
+    "configured_pids_limit": 256,
+    "configured_memory_bytes": 2147483648,
+    "configured_cpus": 2,
+    "source_mount": "read_only",
+    "code_mount": "read_only",
+    "output_mount": "new_synthetic_evidence_directory_only",
+    "disposed": true
+  },
+  "limits": [
+    "No Kimi stdout/stderr/log was opened. Reports here are generated by the trusted intake tool.",
+    "Open-only; no sealed content accessed, no place action, and no bank or solution edited.",
+    "The source checkout gained unrelated launch-check/CI/test/evidence edits while the run was active; intake and evaluator source files did not change.",
+    "All 140 open references passed, including the file groups containing the six historical failures. This does not independently establish semantic benchmark quality.",
+    "Docker constraints are recorded from the invoked command; the completed --rm container was gone before daemon inspection.",
+    "Author model provenance must be supplied from the initiating task; not inferred by opening logs."
+  ],
+  "dev_reference_diagnostic": {
+    "file": "agentic_v3.json",
+    "reference_checks": 30,
+    "failures": [
+      {
+        "task_id": "ag3v3_rf_01",
+        "code": "command_nonzero",
+        "exit_code": 1,
+        "harness_tampered_count": 0
+      },
+      {
+        "task_id": "ag3v3_rf_02",
+        "code": "command_nonzero",
+        "exit_code": 1,
+        "harness_tampered_count": 0
+      }
+    ],
+    "limits": [
+      "Open development tasks only. Counts and machine codes; no reference content or command stdout/stderr."
+    ]
+  },
+  "repair_inventory": {
+    "unchecked_case_ids_by_file": {
+      "open/tier_b/kimi_arabic_b_001.json": [
+        "fsem_b_0007",
+        "fsem_b_0032",
+        "fsem_b_0033",
+        "rhet_b_0035",
+        "rhet_b_0031",
+        "rhet_b_0034",
+        "rhet_b_0033",
+        "rhet_b_0036",
+        "rhet_b_0042",
+        "rhet_b_0027",
+        "rhet_b_0032",
+        "rhet_b_0038"
+      ],
+      "open/tier_b/kimi_assist_b_001.json": [
+        "edit_b_0038",
+        "edit_b_0028",
+        "edit_b_0018",
+        "edit_b_0020",
+        "edit_b_0043",
+        "edit_b_0035",
+        "edit_b_0016",
+        "edit_b_0010",
+        "edit_b_0015",
+        "edit_b_0021",
+        "edit_b_0036",
+        "edit_b_0025",
+        "edit_b_0040",
+        "offw_b_0008",
+        "offw_b_0018",
+        "offw_b_0035",
+        "offw_b_0015",
+        "offw_b_0019",
+        "offw_b_0036",
+        "offw_b_0004",
+        "offw_b_0039",
+        "offw_b_0023",
+        "offw_b_0040",
+        "offw_b_0032",
+        "offw_b_0003"
+      ],
+      "open/tier_b/kimi_assist_b_002.json": [
+        "anal_b_0005",
+        "anal_b_0009",
+        "anal_b_0013",
+        "anal_b_0003",
+        "anal_b_0025",
+        "anal_b_0014",
+        "anal_b_0037",
+        "anal_b_0030",
+        "anal_b_0041",
+        "anal_b_0021",
+        "anal_b_0004",
+        "anal_b_0011",
+        "anal_b_0015",
+        "anal_b_0033",
+        "anal_b_0010",
+        "anal_b_0029",
+        "anal_b_0032",
+        "anal_b_0012",
+        "anal_b_0002",
+        "anal_b_0006",
+        "anal_b_0036",
+        "anal_b_0018",
+        "anal_b_0001",
+        "anal_b_0039",
+        "anal_b_0019",
+        "anal_b_0034",
+        "anal_b_0024",
+        "anal_b_0031",
+        "summ_b_0027",
+        "summ_b_0007",
+        "summ_b_0022",
+        "summ_b_0028",
+        "summ_b_0036",
+        "summ_b_0010",
+        "summ_b_0017",
+        "summ_b_0025"
+      ],
+      "open/tier_b/kimi_assist_b_003.json": [
+        "rewr_b_0034",
+        "rewr_b_0030",
+        "rewr_b_0029",
+        "rewr_b_0040",
+        "rewr_b_0031",
+        "rewr_b_0032",
+        "rewr_b_0036",
+        "rewr_b_0039",
+        "rewr_b_0042",
+        "rewr_b_0028",
+        "rewr_b_0038",
+        "rewr_b_0007",
+        "rewr_b_0021",
+        "rewr_b_0022",
+        "rewr_b_0002",
+        "rewr_b_0033",
+        "rewr_b_0024",
+        "rewr_b_0016",
+        "techw_b_0028",
+        "techw_b_0011"
+      ],
+      "open/tier_b/kimi_assist_b_004.json": [
+        "argu_b_0004",
+        "argu_b_0023",
+        "argu_b_0013",
+        "argu_b_0027",
+        "argu_b_0009",
+        "argu_b_0039",
+        "argu_b_0019",
+        "argu_b_0010",
+        "argu_b_0041",
+        "argu_b_0020",
+        "argu_b_0015",
+        "argu_b_0011",
+        "argu_b_0007",
+        "argu_b_0032",
+        "argu_b_0008",
+        "argu_b_0005",
+        "argu_b_0021",
+        "argu_b_0018",
+        "argu_b_0024",
+        "argu_b_0033",
+        "argu_b_0030",
+        "argu_b_0035",
+        "argu_b_0016",
+        "argu_b_0012",
+        "argu_b_0031",
+        "argu_b_0002",
+        "argu_b_0003",
+        "argu_b_0014",
+        "argu_b_0026",
+        "argu_b_0028",
+        "regs_b_0039",
+        "regs_b_0012",
+        "regs_b_0003",
+        "regs_b_0035",
+        "regs_b_0041",
+        "regs_b_0027",
+        "regs_b_0013",
+        "regs_b_0042",
+        "regs_b_0014",
+        "regs_b_0037",
+        "regs_b_0009",
+        "regs_b_0006",
+        "regs_b_0015",
+        "regs_b_0038",
+        "regs_b_0017",
+        "regs_b_0024",
+        "regs_b_0036",
+        "regs_b_0023",
+        "regs_b_0026",
+        "regs_b_0022",
+        "regs_b_0025",
+        "regs_b_0008",
+        "regs_b_0034",
+        "regs_b_0020",
+        "regs_b_0016",
+        "regs_b_0010",
+        "regs_b_0002"
+      ]
+    },
+    "duplicate_task_ids": {
+      "agentic_0002": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0005": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0006": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0010": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0011": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0012": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0013": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0014": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0016": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0019": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0022": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0023": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0024": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0031": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0032": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0033": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0035": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0036": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0037": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0038": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0041": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0042": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0044": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0045": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0046": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ],
+      "agentic_0050": [
+        "open/tier_d/kimi_agentic_001.json",
+        "open/tier_d/kimi_agentic_002.json"
+      ]
+    },
+    "unmatchable_forbidden_task_ids": [
+      "ag3v3_dt_01",
+      "ag3v3_dt_02",
+      "ag3v3_dt_03",
+      "ag3v3_dt_04",
+      "ag3v3_dt_05",
+      "ag3v3_ex_01",
+      "ag3v3_ex_02",
+      "ag3v3_ex_03",
+      "ag3v3_ex_04",
+      "ag3v3_ex_05"
+    ]
+  }
+}
