@@ -791,10 +791,12 @@ $("memory").onclick = async () => {
       row.append(button("انسَ", async () => {
         const out = await api("memory_forget", {project, item_id: item.item_id}); if(!currentDialog(epoch, ticket)) return;
         const refs = out.receipt.references || [];
+        const withheld = out.receipt.context_withheld_turns || [];
         const forgotten = hashLine("نُسي. الإيصال:", out.receipt.sha256); forgotten.tabIndex = -1;
         row.replaceChildren(forgotten,
           element("p", refs.length ? `رآه النموذج في ${refs.length} جولة. ما قاله فيها يبقى في تاريخها المختوم، وحذف تلك المحادثات بيدك.` : "لم يدخل سياق أيّ جولة."));
         if(refs.length) row.append(element("pre", refs.join("\n")));
+        if(withheld.length) row.append(element("p", `حُجب من السياق محتوى إجابات النموذج والأدوات في ${withheld.length} جولة تعرضت للعنصر أو تلقت إجاباتها السابقة. بقيت مدخلاتك غير المطابقة وسجلات التنفيذ المختومة.`));
         forgotten.focus();
       }));
       body.append(row);

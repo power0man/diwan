@@ -83,6 +83,32 @@ def _scrub_value(value, text, marker):
     return value, 0
 
 
+def _memory_context_dependents(turns, sha256):
+    """Trace exposure through completed history, never through matching words.
+
+    Both session types pass every prior completed turn to later calls. A response
+    already withheld by an earlier forget no longer conveys its memory exposure.
+    Failed turns do not enter subsequent context. Owner messages are retained.
+    """
+    inherited, affected = False, set()
+    for turn in turns:
+        exposed = (sha256 in turn.get("memory", {}).get("items", ())
+                   and not turn.get("context_withheld", False))
+        if (exposed or inherited) and not turn.get("context_withheld", False):
+            affected.add(turn["turn_id"])
+        if exposed and (turn.get("result") or {}).get("status") == "complete":
+            inherited = True
+    return affected
+
+
+def _withhold_text_context(turns, affected, marker):
+    for turn in turns:
+        if turn["turn_id"] in affected:
+            turn["context_withheld"] = True
+            if isinstance(turn.get("result"), dict):
+                turn["result"]["content"] = marker
+
+
 def _scrub_text_turns(turns, text):
     """Scrub only text that can be rebuilt into later chat-model messages."""
     marker = _redaction_token(text)
@@ -372,9 +398,10 @@ class ChatSession:
         ids, index = set(), 0
         turns = state["turns"]
         for i, turn in enumerate(turns):
-            if (not isinstance(turn, dict) or set(turn) - {"memory"} !=
+            if (not isinstance(turn, dict) or set(turn) - {"memory", "context_withheld"} !=
                     {"turn_id", "text", "request_sha256", "context_sha256", "result"}
                     or ("memory" in turn and not valid_turn_memory(turn["memory"]))
+                    or ("context_withheld" in turn and turn["context_withheld"] is not True)
                     or not _id(turn["turn_id"]) or turn["turn_id"] in ids or not _text(turn["text"])):
                 _fail("state_corrupt", "هوية جولة أو نص أو ترتيب غير صالح")
             ids.add(turn["turn_id"])
@@ -458,20 +485,23 @@ class ChatSession:
         references = [f"text:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
                       if sha256 in turn.get("memory", {}).get("items", ())]
         turns, count = _scrub_text_turns(state["turns"], text)
+        affected = _memory_context_dependents(state["turns"], sha256)
+        _withhold_text_context(turns, affected, _redaction_token(text))
+        count += len(affected)
         if count and any(turn["result"] is None for turn in state["turns"]):
             _fail("turn_unresolved", "لا يُكشط تاريخ جولة غير محسومة")
         if count:
             state["turns"] = turns
             state["scrubbed_through"] = len(turns)
         envelope = {"state": state, "sha256": digest(state)}
-        return references, count, self.directory / "state.json", canonical_bytes(envelope)
+        return references, count, self.directory / "state.json", canonical_bytes(envelope), sorted(affected)
 
-    def scrub_memory_text(self, text):
+    def scrub_memory_text(self, text, *, sha256=""):
         """Scrub exact occurrences from reusable state, atomically under this session's lock."""
         if not _text(text):
             _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
         with self._lock():
-            _, count, _, payload = self._memory_forget_plan("", text)
+            _, count, _, payload, _ = self._memory_forget_plan(sha256, text)
             if count:
                 _write(self.directory / "state.json", _decode(payload.decode("utf-8")))
             return count
