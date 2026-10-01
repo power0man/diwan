@@ -1,6 +1,6 @@
 "use strict";
 const $ = id => document.getElementById(id);
-const state = {project: "", session: "", mode: "text", defaultSessionMode: "text", sessionModeChosen: false, mediaEnabled: false, urls: [], busy: false, stopBusy: false, runningTurn: null, epoch: 0, turns: [], selected: new Set(), before: 0, pending: null, poll: 0, dialogEpoch: 0, dialogReturnFocus: null};
+const state = {project: "", session: "", mode: "text", defaultSessionMode: "text", sessionModeChosen: false, mediaEnabled: false, urls: [], busy: false, refreshing: 0, stopBusy: false, runningTurn: null, epoch: 0, turns: [], selected: new Set(), before: 0, pending: null, poll: 0, dialogEpoch: 0, dialogReturnFocus: null};
 const token = document.querySelector('meta[name="diwan-token"]').content;
 const uuid = () => crypto.randomUUID().replaceAll("-", "");
 const errors = {
@@ -50,6 +50,10 @@ const errors = {
   text_too_long: "النص أطول من ألفي حرف. اختصر ما تريد أن يُتذكّر.",
   text_invalid_memory: "اكتب نصًّا غير فارغ ليُحفظ.",
   item_unknown: "هذا العنصر ليس في ذاكرة المشروع. استرجع القائمة.",
+  memory_forget_incomplete: "انقطع إكمال النسيان. استرجع الحالة لاستكماله قبل متابعة المحادثة.",
+  memory_forget_transaction_corrupt: "سجل عملية النسيان غير صالح. تعذر المتابعة حتى إصلاح سجل الذاكرة.",
+  memory_forget_transaction_limit: "تجاوز تاريخ الذاكرة حد النسيان في عملية واحدة. لم يبدأ تغيير أي جلسة.",
+  memory_scrub_unreadable: "تعذرت قراءة تاريخ مرتبط بالذاكرة. لم يبدأ النسيان؛ عالج الملف أو القفل ثم أعد المحاولة.",
   memory_item_corrupt: "عنصرٌ في ذاكرة المشروع لا يطابق بصمته. لم يُستعمل شيء منها.",
   agent_tool_contract_changed: "تغيّرت أدوات الجلسة منذ إنشائها. ابدأ محادثة جديدة قبل متابعة العمل بالأدوات.",
   answer_empty: "عاد المزوّد بلا جواب قابل للعرض. أعد المحاولة، وإن تكرر ذلك فابدأ محادثة جديدة.",
@@ -141,9 +145,12 @@ function pendingKey(ctx = context()) {return `diwan.pending.${ctx.project}.${ctx
 function stoppableTurn() {
   return agentLike(state.mode) ? state.runningTurn || state.pending || state.turns.find(t => t.status === "awaiting_owner")?.turn_id : null;
 }
+function syncSubmit() {
+  $("send").disabled = state.busy || state.refreshing > 0 || !!state.pending || !!state.runningTurn || (agentLike(state.mode) && state.turns.some(t => ["awaiting_owner","outcome_unknown"].includes(t.status)));
+}
 function syncPending() {
   state.pending = sessionStorage.getItem(pendingKey());
-  $("recovery").hidden = !state.pending; $("send").disabled = state.busy || !!state.pending || !!state.runningTurn || (agentLike(state.mode) && state.turns.some(t => ["awaiting_owner","outcome_unknown"].includes(t.status)));
+  $("recovery").hidden = !state.pending; syncSubmit();
   $("release-pending").hidden = true;
   $("agent-stop").hidden = !stoppableTurn(); $("agent-stop").disabled = state.stopBusy;
 }
@@ -600,6 +607,8 @@ async function chooseSession(id, name, mode = "text") {
 }
 async function refresh(focusReturn = null) {
   if (!state.session) {notice("اختر محادثة أولًا."); return;}
+  state.refreshing += 1; syncPending();
+  try {
   const epoch = state.epoch, ctx = context(), data = await api("history", {...ctx, before: null}); if (epoch !== state.epoch) return;
   if (data.status === "running") {
     state.runningTurn = data.turn || null; syncPending();
@@ -619,6 +628,7 @@ async function refresh(focusReturn = null) {
     catch(e) {if(epoch !== state.epoch) return; if(["workspace_turn_missing", "media_turn_missing"].includes(e.code)) {$("release-pending").hidden = false; notice("لم يسجل الخادم هذه الجولة. يمكنك بدء طلب جديد صراحة.", true); return;} throw e;}
   }
   notice(`تم استرجاع المحادثة من جهازك. ${data.total} جولة محفوظة.`);
+  } finally {state.refreshing -= 1; syncSubmit();}
 }
 $("projects").onchange = () => chooseProject($("projects").value).catch(showError);
 $("session-mode").onchange = () => {state.sessionModeChosen = true;};
@@ -633,7 +643,7 @@ $("new-session").onsubmit = async event => {
   try {const s = await api("create_session", {project, name, mode:$("session-mode").value || state.defaultSessionMode}); if(epoch !== state.epoch) return; await chooseProject(project); if(state.epoch !== epoch + 1) return; await chooseSession(s.id, s.name, s.mode || "text"); if($("session-name").value === name) $("session-name").value = "";} catch(e) {if(state.project === project) showError(e);}
 };
 $("composer").onsubmit = async event => {
-  event.preventDefault(); if (state.busy || state.pending || state.runningTurn || !state.session) {notice("اختر محادثة واسترجع حالة أي إرسال سابق أولًا.", true); return;}
+  event.preventDefault(); if (state.busy || state.refreshing > 0 || state.pending || state.runningTurn || !state.session) {notice("اختر محادثة واسترجع حالة أي إرسال سابق أولًا.", true); return;}
   if(agentLike(state.mode) && state.turns.some(t => ["awaiting_owner","outcome_unknown"].includes(t.status))) {showError({code:"turn_unresolved"}); return;}
   const epoch = state.epoch, ctx = context(), message = $("message").value, turn = uuid();
   const files = [...state.selected], mode = state.mode, selectedFile = $("media-file").files[0];

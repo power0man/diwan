@@ -317,6 +317,8 @@ const cases = {
         sessions:()=>({sessions:[{id:SA,name:'نص محفوظ',mode}]}),ask:()=>turn},
         {preset:false,storage:{'diwan.last':JSON.stringify({project:A,session:SA,mode:'agent'})}});
       await tick();assert.equal(h.get('session-mode').value,'agent');assert.equal(h.run('state.mode'),'text');
+      for(let i=0;i<10 && h.run('state.refreshing')>0;i++) await tick();
+      assert.equal(h.run('state.refreshing'),0);
       h.get('message').value='تابع';await h.get('composer').onsubmit(event);
       assert.equal(h.calls.filter(x=>x.action==='ask').length,1);assert.equal(h.calls.some(x=>x.action==='agent_ask'),false);
     }
@@ -572,6 +574,17 @@ const cases = {
     const loading=h.run('refresh()');await tick();await h.run(`chooseProject('${B}')`);
     pending.resolve({status:'idle',turns:[turn],before:0,total:1});await loading;
     assert.equal(h.run('state.turns.length'),0);
+  },
+  async pending_history_blocks_button_and_keyboard_submission_until_ready() {
+    const pending=deferred(),h=await harness({history:()=>pending.promise});
+    const refreshing=h.run('refresh()');await tick();
+    assert.equal(h.get('send').disabled,true);
+    h.get('message').value='request during history';await h.get('composer').onsubmit(event);
+    assert.equal(h.calls.some(x=>x.action==='ask'||x.action==='agent_ask'),false);
+    assert.equal(h.storage.has(`diwan.pending.${A}.${SA}`),false);
+    pending.resolve({status:'idle',turns:[],before:0,total:0});await refreshing;
+    assert.equal(h.get('send').disabled,false);
+    assert.equal(h.run('state.refreshing'),0);
   },
   async double_submit_calls_provider_route_once() {
     const pending=deferred(),h=await harness({ask:()=>pending.promise});
