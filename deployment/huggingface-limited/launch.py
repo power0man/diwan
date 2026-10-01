@@ -49,6 +49,9 @@ http {
   access_log off;
   client_body_temp_path /home/diwan/nginx-body;
   proxy_temp_path /home/diwan/nginx-proxy;
+  fastcgi_temp_path /home/diwan/nginx-fastcgi;
+  uwsgi_temp_path /home/diwan/nginx-uwsgi;
+  scgi_temp_path /home/diwan/nginx-scgi;
   server {
     listen 7860;
     client_max_body_size 2m;
