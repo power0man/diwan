@@ -7,13 +7,15 @@
 1. **runtime** — بايثون ≥ 3.11، والوحداتُ تُستورد، وuv.lock حاضر، ونوعُ النسخة (عامة/خاصة).
 2. **morphology** — CAMeL Tools وقاعدتُه الصرفية حاضران (ق٥٥: لازمان للإطلاق، والقالبيُّ
    احتياطيٌّ مسمًّى لا بديل)؛ وإلا `camel_missing` أو `camel_db_missing` مع أمر التركيب.
-3. **engine** — خادمُ Ollama يجيب على `/api/tags` والمحرّكُ المطلوب مسحوب.
+3. **engine** — خادمُ Ollama يجيب على `/api/tags` والمحرّكُ المطلوب مسحوب ببصمة sha256 صالحة.
 4. **agent_turn** — جولةٌ وكيلة محكومة كاملة في مساحةٍ مؤقّتة: النموذجُ يقرأ ملفًّا بأداة
    `read_file` ويجيب، والسجلُّ يقيّد. بالمحرّك الحيّ إن وُجد؛ وإلا بمزوّدٍ آليّ مكتوبٍ سلفًا
    يُثبت الحلقةَ والأدواتِ والحَجرَ دون النموذج (`mechanism_only`).
 5. **policies** — عقدةُ السياسات: المتنُ موضوعٌ محليًّا وإسقاطُه مبنيٌّ واستعلامٌ واحد يعيد شاهدًا؛
    وإلا `corpus_missing` أو `index_missing` (النسخةُ العامة بلا متون، ك٢٩).
-6. **ui** — `tools/serve_ui.py --help` يعمل (الواجهةُ تُستورد وتُهيّأ).
+6. **ui** — يشغّل `tools/serve_ui.py` على منفذ زائل وجذر مؤقت؛ يفحص الصفحة العربية ورمز الجلسة ونداء `projects`
+   ثم يوقف الخادم. يمرر عنوان Ollama الصريح نفسه إلى الخادم ومزوّدي النص والأدوات، ويطلب جوابًا قصيرًا منهما قبل
+   `ui_ready`. بلا محرك يكون `ui_ready_without_engine`: عملت الصفحة فقط، ولم يُثبت جواب النموذج.
 
     python tools/launch_check.py [--engine qwen3.5:9b] [--base-url http://127.0.0.1:11434] [--json]
 
@@ -25,6 +27,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import queue
+import signal
+import threading
+import time
 import re
 import subprocess
 import sys
@@ -54,6 +61,19 @@ MEASUREMENT_LIMITS = (
 )
 
 
+def _clip(text, limit: int = 200) -> str:
+    """نصُّ التفصيل مقصوصًا بعلامة: ما قُصّ ينتهي بـ«…» فلا يُقرأ تفصيلٌ ناقص كاملًا."""
+    text = str(text)
+    return text if len(text) <= limit else text[:limit - 1] + "…"
+
+
+def _listing(names, shown: int = 6) -> str:
+    """أولُ `shown` أسماءٍ مرتّبة، ومعها عددُ ما لم يُعرض إن وُجد."""
+    names = sorted(str(name) for name in names)
+    rest = len(names) - shown
+    return f"{names[:shown]}" + (f" و{rest} غيرها" if rest > 0 else "")
+
+
 @dataclass(frozen=True)
 class Step:
     step: str
@@ -71,7 +91,7 @@ def check_runtime(root: Path) -> Step:
         import agent.loop  # noqa: F401
         import providers.ollama  # noqa: F401
     except Exception as exc:  # noqa: BLE001 — أيُّ عطب استيرادٍ يُسمّى
-        return Step("runtime", "failed", "import_failed", f"{type(exc).__name__}: {exc}"[:200])
+        return Step("runtime", "failed", "import_failed", _clip(f"{type(exc).__name__}: {exc}"))
     if not (root / "uv.lock").is_file():
         return Step("runtime", "failed", "lock_missing", "uv.lock غائب: التثبيتُ غيرُ مقفول")
     from core.public_export import read_marker
@@ -111,17 +131,40 @@ def probe_engine(base_url: str, timeout: float = 3.0) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
-def check_engine(engine: str, base_url: str, *, probe=probe_engine) -> Step:
+def _shape(value) -> str:
+    """وصفُ قيمةٍ لا يرمي أيًّا كان نوعُها: النصُّ بطوله، وغيرُه بنوعه (رقمٌ أو منطقيّ أو قائمة من /api/tags)."""
+    return f"نصٌّ من {len(value)} محرفًا" if isinstance(value, str) else f"قيمةٌ من نوع {type(value).__name__}"
+
+
+def locate_engine(engine: str, base_url: str, *, probe=probe_engine) -> tuple[Step, str | None]:
+    """خطوةُ المحرّك وبصمتُه كما يقرؤها `serve_ui.py` من `/api/tags` (`digest`)، أو لا بصمة إن لم يُوجد."""
     try:
         tags = probe(base_url)
     except (OSError, urllib.error.URLError, ValueError) as exc:
         return Step("engine", "unavailable", "engine_unreachable",
-                    f"لا يجيب Ollama على {base_url}: {type(exc).__name__} — شغّل `ollama serve`")
-    names = {m.get("name") for m in tags.get("models", []) if isinstance(m, dict)}
-    if engine not in names:
+                    f"لا يجيب Ollama على {base_url}: {type(exc).__name__} — شغّل `ollama serve`"), None
+    # ردٌّ على غير شكله (ليس قاموسًا، أو models ليست قائمة) عطبٌ مسمًّى لا تعقّب؛ والاسمُ غيرُ النصّيّ لا يُعدّ محرّكًا
+    entries = tags.get("models") if isinstance(tags, dict) else None
+    if not isinstance(entries, list):
+        return Step("engine", "failed", "engine_metadata_invalid",
+                    f"ردُّ /api/tags على {base_url} بلا قائمة models ({_shape(entries)})"), None
+    models = {m["name"]: m.get("digest") for m in entries if isinstance(m, dict) and isinstance(m.get("name"), str)}
+    if engine not in models:
         return Step("engine", "unavailable", "model_missing",
-                    f"المحرّك {engine} غيرُ مسحوب — `ollama pull {engine}`؛ الموجود: {sorted(n for n in names if n)[:6]}")
-    return Step("engine", "ok", "engine_ready", f"{engine} على {base_url}")
+                    f"المحرّك {engine} غيرُ مسحوب — `ollama pull {engine}`؛ الموجود: {_listing(n for n in models if n)}"), None
+    digest = models[engine]
+    # بصمةُ المحرّك بقاعدة الفحص المسبق في المزوّد المحليّ نفسِه (providers/local_chat._SHA256: ٦٤ محرفًا ست عشريًّا صغيرًا):
+    # بصمةٌ غائبة أو مشوّهة يرفضها أولُ جوابٍ في الواجهة، فهي عطبٌ مسمًّى لا محرّكٌ غائب ولا جاهز
+    from providers.local_chat import _SHA256 as ARTIFACT_DIGEST
+    if not isinstance(digest, str) or not ARTIFACT_DIGEST.fullmatch(digest):
+        return Step("engine", "failed", "engine_metadata_invalid",
+                    f"Ollama يسرد {engine} ببصمةٍ غيرِ صالحة ({_shape(digest)})؛ "
+                    f"المزوّدُ المحليّ يطلب sha256 كاملة — أعد `ollama pull {engine}`"), None
+    return Step("engine", "ok", "engine_ready", f"{engine} على {base_url}"), digest
+
+
+def check_engine(engine: str, base_url: str, *, probe=probe_engine) -> Step:
+    return locate_engine(engine, base_url, probe=probe)[0]
 
 
 class _Mechanism:
@@ -174,16 +217,16 @@ def check_agent_turn(engine: str, base_url: str, *, live: bool) -> Step:
                             session_id="launch-check", turn_id="turn-1",
                             model=model, model_version=version, max_steps=4, deadline_s=120.0)
         except Exception as exc:  # noqa: BLE001 — يُسمّى ولا يُبتلع
-            return Step("agent_turn", "failed", "agent_turn_raised", f"{type(exc).__name__}: {exc}"[:200])
+            return Step("agent_turn", "failed", "agent_turn_raised", _clip(f"{type(exc).__name__}: {exc}"))
         read_calls = [call for step in run.steps for call in step.tool_calls if getattr(call, "name", "") == "read_file"]
         if run.status != "complete":
-            return Step("agent_turn", "failed", f"agent_turn_{run.status}", f"{run.code}: {run.answer[:120]}")
+            return Step("agent_turn", "failed", f"agent_turn_{run.status}", f"{run.code}: {_clip(run.answer, 120)}")
         if not read_calls:
             return Step("agent_turn", "failed", "tool_not_used", "أجاب النموذجُ بلا قراءة الملف بأداة read_file")
         if not run.answer.strip():
             return Step("agent_turn", "failed", "empty_answer", "جولةٌ تمّت بلا جواب")
         code = "agent_turn_live" if live else "mechanism_only"
-        return Step("agent_turn", "ok", code, f"{len(run.steps)} خطوات، والجواب: {run.answer[:80]}")
+        return Step("agent_turn", "ok", code, f"{len(run.steps)} خطوات، والجواب: {_clip(run.answer, 80)}")
 
 
 def check_policies(root: Path) -> Step:
@@ -195,41 +238,214 @@ def check_policies(root: Path) -> Step:
         import rebuild_index
         from core.canonical import PayloadRejected
     except Exception as exc:  # noqa: BLE001
-        return Step("policies", "failed", "import_failed", f"{type(exc).__name__}: {exc}"[:200])
+        return Step("policies", "failed", "import_failed", _clip(f"{type(exc).__name__}: {exc}"))
     try:
         hits = rebuild_index.search("سفينة", limit=1, match_any=True)
     except PayloadRejected as exc:
         if getattr(exc, "code", "") == "index_missing":
             return Step("policies", "unavailable", "index_missing", "الإسقاطُ غيرُ مبني — `python tools/rebuild_index.py rebuild`")
-        return Step("policies", "failed", getattr(exc, "code", "search_refused"), str(exc)[:200])
+        return Step("policies", "failed", getattr(exc, "code", "search_refused"), _clip(exc))
     except Exception as exc:  # noqa: BLE001
-        return Step("policies", "failed", "search_raised", f"{type(exc).__name__}: {exc}"[:200])
+        return Step("policies", "failed", "search_raised", _clip(f"{type(exc).__name__}: {exc}"))
     if not hits:
         return Step("policies", "failed", "no_evidence", "استعلامٌ بسيط بلا شاهد رغم وجود المتن والإسقاط")
     return Step("policies", "ok", "policies_ready", f"شاهدٌ من {hits[0].get('doc_id', '?')}")
 
 
-def check_ui(root: Path) -> Step:
-    result = subprocess.run([sys.executable, str(root / "tools" / "serve_ui.py"), "--help"],
-                            cwd=root, capture_output=True, text=True, timeout=60)
-    if result.returncode != 0:
-        return Step("ui", "failed", "ui_help_failed", (result.stderr or result.stdout)[-200:])
-    return Step("ui", "ok", "ui_ready", "tools/serve_ui.py يُهيَّأ")
+UI_START_TIMEOUT_S = 60.0     # من تشغيل serve_ui.py إلى سطر عنوانه (الاستيرادُ وتهيئةُ المزوّد والجذر)
+UI_HTTP_TIMEOUT_S = 10.0      # لكل نداء HTTP
+UI_STOP_TIMEOUT_S = 10.0      # بعد إشارة الإيقاف، ثم يُقتل
+PLACEHOLDER_DIGEST = "0" * 64  # بلا محرّك: serve_ui.py يطلب بصمة، والصفحةُ ونداءُ القراءة لا ينادون النموذج
+UI_ORIGIN = re.compile(r"(http://127\.0\.0\.1:[0-9]{1,5})\s*$")
+UI_TOKEN = re.compile(r'<meta name="diwan-token" content="([0-9a-f]{64})">')
+UI_RTL = re.compile(r'<html\b[^>]*\bdir="rtl"')
+
+
+def _drain(stream, lines: "queue.Queue[str | None]") -> None:
+    try:
+        for line in stream:
+            lines.put(line)
+    finally:
+        lines.put(None)
+
+
+def _stop(process: subprocess.Popen, readers: tuple[threading.Thread, ...] = ()) -> None:
+    """إيقافٌ كما يوقفه المستخدم (Ctrl+C فيُغلق الخادمُ جذرَه)، ثم قتلٌ بعد المهلة؛ ولا يبقى الخادمُ بعد الخطوة.
+    وقارئا المخرجات ينتهيان بنهاية الأنبوب قبل أن يُغلق."""
+    if process.poll() is None:
+        try:
+            if os.name == "posix":
+                process.send_signal(signal.SIGINT)
+            else:
+                process.terminate()
+            process.wait(UI_STOP_TIMEOUT_S)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(UI_STOP_TIMEOUT_S)
+    for reader in readers:
+        reader.join(UI_STOP_TIMEOUT_S)
+    for stream in (process.stdout, process.stderr):
+        if stream is not None:
+            stream.close()
+
+
+def probe_ui(origin: str, timeout_s: float = UI_HTTP_TIMEOUT_S) -> Step | int:
+    """`GET /` ثم `projects`؛ يُعيد عددَ المشروعات إن صحّ كلُّه، وإلا خطوةً ساقطة برمزها."""
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))   # 127.0.0.1 لا يمرّ بوكيل البيئة
+    try:
+        with opener.open(f"{origin}/", timeout=timeout_s) as response:  # noqa: S310 — عنوانٌ محلي أعلنه الخادم
+            status, page = response.status, response.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as exc:
+        return Step("ui", "failed", "ui_http_failed", f"GET / ← {exc.code}")
+    except (OSError, urllib.error.URLError) as exc:
+        return Step("ui", "failed", "ui_http_failed", f"GET / ← {type(exc).__name__}")
+    if status != 200:
+        return Step("ui", "failed", "ui_http_failed", f"GET / ← {status}")
+    token = UI_TOKEN.search(page)
+    if not UI_RTL.search(page) or token is None:
+        missing = "dir=\"rtl\"" if not UI_RTL.search(page) else "رمزُ الجلسة"
+        return Step("ui", "failed", "ui_page_unexpected", f"GET / ← 200 بلا {missing}")
+    request = urllib.request.Request(f"{origin}/api", data=b'{"action":"projects"}', method="POST", headers={
+        "Origin": origin, "X-Diwan-CSRF": token.group(1), "Content-Type": "application/json"})
+    try:
+        with opener.open(request, timeout=timeout_s) as response:  # noqa: S310
+            status, raw = response.status, response.read()
+    except urllib.error.HTTPError as exc:
+        return Step("ui", "failed", "ui_http_failed", f"POST /api projects ← {exc.code}")
+    except (OSError, urllib.error.URLError) as exc:
+        return Step("ui", "failed", "ui_http_failed", f"POST /api projects ← {type(exc).__name__}")
+    if status != 200:
+        return Step("ui", "failed", "ui_http_failed", f"POST /api projects ← {status}")
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except (ValueError, UnicodeError):
+        data = None
+    if not isinstance(data, dict) or not isinstance(data.get("projects"), list):
+        return Step("ui", "failed", "ui_page_unexpected", "POST /api projects ← 200 بلا قائمة مشروعات")
+    return len(data["projects"])
+
+
+UI_ENGINE_DEADLINE_S = 120.0   # فحصُ المزوّدَين قبل «جاهز»: البيانات، ثم جوابٌ قصير (قد يُحمَّل النموذجُ أولَ مرّة)
+
+
+def has_answer(response) -> bool:
+    """قاعدةُ الواجهة في أن للجولة جوابًا: نصٌّ غيرُ فارغٍ بعد القصّ. فـwebui/static/app.js يعرض `turn.content ||` بديلَ
+    الإخفاق حين يفرغ، ولا يعرض «مراجعة وحفظ مسودة» ولا «تذكّر هذا» إلا لنصٍّ يبقى بعد `trim()`."""
+    return isinstance(response.content, str) and bool(response.content.strip())
+
+
+def has_agent_step(response) -> bool:
+    """خطوةٌ وكيلة صالحة: نداءُ أداةٍ تتابع به الحلقة، أو جوابٌ بقاعدة `has_answer` (فبه تنتهي الجولة في agent/loop.py)."""
+    return bool(response.tool_calls) or has_answer(response)
+
+
+def check_ui_engine(model: str, digest: str, base_url: str) -> Step | None:
+    """المحرّكُ كما تستعمله الواجهة، بمزوّدَيها لا بمزوّد الجولة الحيّة (OllamaProvider أرخى)، بجوابين قصيرين عبر
+    `complete()` نفسِه: أولُهما عبر مزوّد الأدوات بطلبٍ يحمل أداةً واحدةً فارغة (جلساتُ الواجهة وكيلةٌ افتراضيًّا)، ففيه فحصُه
+    المسبق بقدرة tools وتسلسلُ الأدوات ونداءُ /api/chat ومحلّلُ الجواب؛ ثم عبر مزوّد النصّ، وفيه فحصُه المسبق (الحجم والصيغة
+    والبُعد وقدراتُ /api/show وسعةُ السياق). None إن مرّا، وإلا عطبٌ مسمًّى `ui_engine_refused` برمز المزوّد: فلا يُقال «جاهز»
+    وأولُ جوابٍ في الواجهة يُرفض. والأداةُ لا تُنفَّذ: نداؤها إن جاء جوابٌ فحسب."""
+    from core.contracts import Message, Request, ToolSpec
+    from providers.base import ProviderError
+    from providers.local_chat import LocalChatProvider
+    from providers.local_tools import LocalToolProvider
+    ask = dict(messages=(Message("user", "أجب بكلمةٍ واحدة: نعم."),), model=model, model_version=digest, max_output=16,
+               deadline_s=UI_ENGINE_DEADLINE_S, data_policy="local_only", idempotency_key=None)
+    ping = ToolSpec("launch_check_ping", "أداةٌ فارغة لفحص حمل الأدوات؛ لا تُنفَّذ", {"type": "object", "properties": {}})
+    try:
+        tool_reply = LocalToolProvider(model, digest, base_url=base_url).complete(Request(**ask, tools=(ping,)))
+        if not has_agent_step(tool_reply):
+            return Step("ui", "failed", "ui_engine_refused",
+                        f"ui_engine_empty_answer: مزوّدُ الأدوات أعاد لـ{model} جوابًا فارغًا بلا نداء أداة")
+        chat_reply = LocalChatProvider(model, digest, base_url=base_url).complete(Request(**ask))
+        if not has_answer(chat_reply):
+            return Step("ui", "failed", "ui_engine_refused",
+                        f"ui_engine_empty_answer: مزوّدُ النصّ أعاد لـ{model} جوابًا فارغًا فتعرض الواجهةُ بديلَ الإخفاق")
+    except ProviderError as exc:
+        return Step("ui", "failed", "ui_engine_refused", _clip(f"مزوّدُ الواجهة يرفض {model}: {exc.code} — {exc.reason}"))
+    except Exception as exc:  # noqa: BLE001 — أيُّ عطبٍ في المزوّد يُسمّى ولا يقطع التقرير
+        return Step("ui", "failed", "ui_engine_refused", _clip(f"مزوّدُ الواجهة تعطّل مع {model}: {type(exc).__name__}: {exc}"))
+    return None
+
+
+def check_ui(root: Path, *, model: str = DEFAULT_ENGINE, digest: str | None = None,
+             base_url: str = DEFAULT_BASE_URL, timeout_s: float = UI_START_TIMEOUT_S,
+             script: Path | None = None) -> Step:
+    """يشغّل `serve_ui.py` بالمزوّد المحليّ على منفذٍ زائل وجذرٍ مؤقّت، ويفحص الصفحةَ ونداءَ قراءة، ثم يوقفه.
+
+    `digest=None` (لا محرّك) يعني بصمةً بديلة معلنة فيُسمّى النجاحُ `ui_ready_without_engine`."""
+    from providers.base import ProviderError
+    from providers.local_chat import local_ollama_endpoint
+    try:
+        local_ollama_endpoint(base_url)
+    except ProviderError as exc:
+        return Step("ui", "unavailable", "ui_engine_endpoint_unpassed", exc.code)
+    script = script or root / "tools" / "serve_ui.py"
+    env = {**os.environ, "DIWAN_CHAT_MODEL": model, "DIWAN_CHAT_DIGEST": digest or PLACEHOLDER_DIGEST,
+           "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"}
+    with tempfile.TemporaryDirectory(prefix="diwan-launch-ui-") as directory:
+        ui_root = Path(directory).resolve() / "ui"
+        argv = [sys.executable, str(script), "--provider", "local", "--port", "0", "--root", str(ui_root),
+                "--ollama-url", base_url]
+        try:
+            process = subprocess.Popen(argv, cwd=root, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
+        except OSError as exc:
+            return Step("ui", "failed", "ui_start_failed", _clip(f"{type(exc).__name__}: {exc}"))
+        lines: "queue.Queue[str | None]" = queue.Queue()
+        errors: list[str] = []
+        readers = (threading.Thread(target=_drain, args=(process.stdout, lines), daemon=True),
+                   threading.Thread(target=lambda: errors.extend(process.stderr), daemon=True))
+        for reader in readers:
+            reader.start()
+        try:
+            origin, deadline = None, time.monotonic() + timeout_s
+            while origin is None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    return Step("ui", "failed", "ui_start_failed", f"لم يعلن serve_ui.py عنوانَه في {timeout_s:g} ث")
+                try:
+                    line = lines.get(timeout=min(remaining, 0.5))
+                except queue.Empty:
+                    continue
+                if line is None:
+                    process.wait(UI_STOP_TIMEOUT_S)
+                    tail = "".join(errors).strip().splitlines()[-1:] or [""]
+                    return Step("ui", "failed", "ui_start_failed",
+                                _clip(f"خرج serve_ui.py برمز {process.returncode} قبل أن يعلن عنوانه؛ آخرُ سطرٍ من خطئه: {tail[0]}"))
+                found = UI_ORIGIN.search(line)
+                origin = found.group(1) if found else None
+            probed = probe_ui(origin)
+        finally:
+            _stop(process, readers)
+    if isinstance(probed, Step):
+        return probed
+    if digest:
+        refused = check_ui_engine(model, digest, base_url)
+        if refused is not None:
+            return refused
+    code = "ui_ready" if digest else "ui_ready_without_engine"
+    engine = (f"بالمحرّك {model} (فحصُ مزوّدَي الواجهة المسبق وجوابٌ قصير مرّا)" if digest
+              else f"ببصمةٍ بديلة لـ{model} (لا محرّك؛ الجوابُ يحتاجه)")
+    return Step("ui", "ok", code, f"serve_ui.py {engine} على منفذٍ زائل: GET / ← 200 وdir=rtl، "
+                                  f"وprojects ← 200 ({probed} مشروع)، ثم أُوقف")
 
 
 def run_checks(root: Path, *, engine: str, base_url: str, probe=probe_engine,
-               with_agent: bool = True, with_ui: bool = True) -> list[Step]:
+               with_agent: bool = True, with_ui: bool = True, ui_check=check_ui) -> list[Step]:
     steps = [check_runtime(root)]
     if steps[0].status == "failed":
         return steps
     steps.append(check_morphology())
-    engine_step = check_engine(engine, base_url, probe=probe)
+    engine_step, digest = locate_engine(engine, base_url, probe=probe)
     steps.append(engine_step)
     if with_agent:
         steps.append(check_agent_turn(engine, base_url, live=engine_step.status == "ok"))
     steps.append(check_policies(root))
     if with_ui:
-        steps.append(check_ui(root))
+        # الواجهةُ بالمحرّك الذي وجدته خطوةُ المحرّك وبصمتِه، كما يشغّلها المستخدم
+        steps.append(ui_check(root, model=engine, digest=digest if engine_step.status == "ok" else None,
+                              base_url=base_url))
     return steps
 
 
