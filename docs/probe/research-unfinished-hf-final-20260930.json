@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-30",
+  "task": "194",
+  "code_commit": "4a64e9e4f5de49c2e19852d5978974deeab9b6d1",
+  "job": {
+    "id": "6abcc51e031314b6963440e4",
+    "url": "https://huggingface.co/jobs/Hussain091/6abcc51e031314b6963440e4",
+    "flavor": "cpu-upgrade",
+    "status": {
+      "stage": "COMPLETED",
+      "message": null
+    },
+    "created_at": "2026-09-30T08:15:26.326Z",
+    "finished_at": "2026-09-30T08:22:18.495Z",
+    "timeout_seconds": 900
+  },
+  "checks": [
+    {
+      "step": "install_uv",
+      "exit_code": 0,
+      "elapsed_seconds": 1.99,
+      "output_tail": "WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.\n\n[notice] A new release of pip is available: 25.0.1 -> 26.2.1\n[notice] To update, run: pip install --upgrade pip\n"
+    },
+    {
+      "step": "clone",
+      "exit_code": 0,
+      "elapsed_seconds": 0.87,
+      "output_tail": ""
+    },
+    {
+      "step": "checkout",
+      "exit_code": 0,
+      "elapsed_seconds": 0.1,
+      "output_tail": "HEAD is now at 4a64e9e fix(ablation): preserve historical comparison schemas\n"
+    },
+    {
+      "step": "sync",
+      "exit_code": 0,
+      "elapsed_seconds": 8.34,
+      "output_tail": "Downloading cpython-3.14.0rc2-linux-x86_64-gnu (download) (31.8MiB)\n Downloading cpython-3.14.0rc2-linux-x86_64-gnu (download)\nUsing CPython 3.14.0rc2\nCreating virtual environment at: .venv\nDownloading pandas (10.3MiB)\nDownloading pygments (1.2MiB)\nDownloading hf-xet (4.3MiB)\nDownloading cryptography (4.5MiB)\nDownloading numpy (15.9MiB)\nDownloading tokenizers (3.2MiB)\nDownloading transformers (11.7MiB)\nDownloading networkx (2.0MiB)\nDownloading sympy (6.0MiB)\nDownloading scikit-learn (8.7MiB)\nDownloading camel-kenlm (3.2MiB)\nDownloading scipy (33.7MiB)\nDownloading torch (187.2MiB)\n   Building editdistance==0.8.1\n   Building docopt==0.6.2\n Downloading pygments\n Downloading camel-kenlm\n Downloading tokenizers\n Downloading hf-xet\n Downloading networkx\n Downloading cryptography\n Downloading scikit-learn\n Downloading sympy\n      Built docopt==0.6.2\n Downloading numpy\n Downloading scipy\n Downloading pandas\n Downloading transformers\n Downloading torch\n      Built editdistance==0.8.1\nPrepared 63 packages in 6.53s\nInstalled 63 packages in 396ms\n + annotated-doc==0.0.5\n + anyio==4.15.1\n + cachetools==7.2.0\n + camel-kenlm==2026.2.7\n + camel-tools==1.6.0\n + certifi==2026.7.22\n + cffi==2.1.1\n + charset-normalizer==3.5.1\n + click==8.5.0\n + cloudpickle==3.1.2\n + cryptography==50.0.1\n + dill==0.4.1\n + docopt==0.6.2\n + editdistance==0.8.1\n + emoji==2.16.0\n + filelock==4.0.1\n + fsspec==2026.9.0\n + future==1.0.0\n + h11==0.16.0\n + hf-xet==1.6.0\n + httpcore==1.0.9\n + httpx==0.28.1\n + huggingface-hub==1.32.0\n + idna==3.20\n + iniconfig==2.3.0\n + jinja2==3.1.6\n + joblib==1.6.0\n + markdown-it-py==4.2.0\n + markupsafe==3.0.3\n + mdurl==0.1.2\n + mpmath==1.3.0\n + muddler==0.1.3\n + narwhals==2.26.0\n + networkx==3.7\n + numpy==2.5.3\n + packaging==26.3\n + pandas==3.0.6\n + pluggy==1.6.0\n + pycparser==3.0\n + pygments==2.21.0\n + pyrsistent==0.20.0\n + pytest==9.1.1\n + python-dateutil==2.9.0.post0\n + pyyaml==6.0.3\n + regex==2026.9.10\n + requests==2.34.2\n + rich==15.0.0\n + safetensors==0.8.0\n + scikit-learn==1.9.1\n + scipy==1.18.1\n + setuptools==84.0.0\n + shellingham==1.5.4\n + six==1.17.0\n + sympy==1.14.0\n + tabulate==0.10.0\n + threadpoolctl==3.7.0\n + tokenizers==0.23.2\n + torch==2.14.0+cpu\n + tqdm==4.70.1\n + transformers==5.17.0\n + typer==0.27.2\n + typing-extensions==4.16.0\n + urllib3==2.8.0\n"
+    },
+    {
+      "step": "python_version",
+      "exit_code": 0,
+      "elapsed_seconds": 0.07,
+      "output_tail": "Python 3.14.0rc2\n"
+    },
+    {
+      "step": "targeted_tests",
+      "exit_code": 0,
+      "elapsed_seconds": 8.63,
+      "output_tail": "........................................................................ [ 37%]\n........................................................................ [ 74%]\n..................................................                       [100%]\n194 passed in 7.86s\n"
+    },
+    {
+      "step": "full_suite",
+      "exit_code": 0,
+      "elapsed_seconds": 388.2,
+      "output_tail": "...................................................... [ 28%]\n........................................................ssss............ [ 29%]\n........................................................................ [ 31%]\n........................................................................ [ 32%]\n........................................................................ [ 34%]\n............s....s...................................................... [ 35%]\n...........................................................s............ [ 37%]\n........................................................................ [ 38%]\n........................................................................ [ 40%]\n.......ss............................................................... [ 41%]\n.....................................................................ss. [ 43%]\n........................................................................ [ 44%]\n........................................................................ [ 46%]\n........ss.............................................................. [ 47%]\n........................................................................ [ 49%]\n........................................................................ [ 50%]\n..................................ss.................................... [ 52%]\n........................................................................ [ 53%]\n................................ssss..ssss.ss........................... [ 54%]\n........................................................................ [ 56%]\n..................................................................s.ss.. [ 57%]\n...........................................s............................ [ 59%]\n........................................................................ [ 60%]\n........................................................................ [ 62%]\n........................................................................ [ 63%]\n........................................................................ [ 65%]\n........................................................................ [ 66%]\n........................................................................ [ 68%]\n..............................................................s......... [ 69%]\n........................................................................ [ 71%]\n........................................................................ [ 72%]\n........................................................................ [ 74%]\n........................................................................ [ 75%]\n........................................................................ [ 77%]\n........................................................................ [ 78%]\n........................................................................ [ 80%]\n........................................................................ [ 81%]\n.........................ss............................................. [ 83%]\n........................................................................ [ 84%]\n........................................................................ [ 86%]\n......................................ssssssssssssss.................... [ 87%]\n........................................................................ [ 89%]\n........................................................................ [ 90%]\n........................................................................ [ 92%]\n..........................................s............................. [ 93%]\n........................................................................ [ 95%]\n........................................................................ [ 96%]\n....................s................................................... [ 98%]\n........................................................................ [ 99%]\n.....................                                                    [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.14/site-packages/docopt.py:165\n  /tmp/diwan-m785okx7/.venv/lib/python3.14/site-packages/docopt.py:165: SyntaxWarning: \"\\S\" is an invalid escape sequence. Such sequences will not work in the future. Did you mean \"\\\\S\"? A raw string is also an option.\n    name = re.findall('(<\\S*?>)', source)[0]\n\n.venv/lib/python3.14/site-packages/docopt.py:166\n  /tmp/diwan-m785okx7/.venv/lib/python3.14/site-packages/docopt.py:166: SyntaxWarning: \"\\[\" is an invalid escape sequence. Such sequences will not work in the future. Did you mean \"\\\\[\"? A raw string is also an option.\n    value = re.findall('\\[default: (.*)\\]', source, flags=re.I)\n\n.venv/lib/python3.14/site-packages/docopt.py:207\n  /tmp/diwan-m785okx7/.venv/lib/python3.14/site-packages/docopt.py:207: SyntaxWarning: \"\\[\" is an invalid escape sequence. Such sequences will not work in the future. Did you mean \"\\\\[\"? A raw string is also an option.\n    matched = re.findall('\\[default: (.*)\\]', description, flags=re.I)\n\n.venv/lib/python3.14/site-packages/docopt.py:456\n  /tmp/diwan-m785okx7/.venv/lib/python3.14/site-packages/docopt.py:456: SyntaxWarning: \"\\S\" is an invalid escape sequence. Such sequences will not work in the future. Did you mean \"\\\\S\"? A raw string is also an option.\n    split = re.split('\\n *(<\\S+?>|-\\S+?)', doc)[1:]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n4784 passed, 62 skipped, 4 warnings in 387.32s (0:06:27)\n"
+    }
+  ],
+  "result": {
+    "targeted": {
+      "passed": 194,
+      "failed": 0
+    },
+    "full_suite": {
+      "passed": 4784,
+      "skipped": 62,
+      "failed": 0,
+      "warnings": 4
+    }
+  },
+  "cost": {
+    "hourly_usd": 0.03,
+    "timeout_based_estimate_usd": 0.0075,
+    "actual_billed_usd": null,
+    "source": "https://huggingface.co/docs/hub/jobs-pricing"
+  },
+  "measurement_limits": [
+    "CPython_3_14_0rc2_selected_by_uv_0_8_17_not_stable_3_14",
+    "62_skipped_tests_not_counted_as_passed",
+    "full_suite_pass_is_not_live_device_or_model_quality_acceptance",
+    "actual_billing_and_remaining_account_balance_not_queried",
+    "tests_run_on_code_commit_not_later_evidence_only_commits"
+  ]
+}

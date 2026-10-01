@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-30",
+  "task": "takeover-dispatch-readiness",
+  "head": "d60e7b3d7e7414590aeb4505f9679b9f4cf45612",
+  "job": {
+    "id": "6abcc213031314b69634402d",
+    "url": "https://huggingface.co/jobs/Hussain091/6abcc213031314b69634402d",
+    "flavor": "cpu-basic",
+    "status": {
+      "stage": "CANCELED",
+      "message": null
+    },
+    "created_at": "2026-09-30T08:02:27.669Z",
+    "finished_at": "2026-09-30T08:04:01.153Z",
+    "timeout_seconds": 180
+  },
+  "calls": [
+    {
+      "model_requested": "meta-llama/Llama-3.1-8B-Instruct:novita",
+      "input_usd_per_million": 0.02,
+      "output_usd_per_million": 0.05,
+      "max_tokens": 512,
+      "status": "error",
+      "error_code": "http_403",
+      "usage": null,
+      "estimated_inference_usd": null,
+      "elapsed_seconds": 0.099
+    },
+    {
+      "model_requested": "Qwen/Qwen3-4B-Instruct-2507:nscale",
+      "input_usd_per_million": 0.01,
+      "output_usd_per_million": 0.03,
+      "max_tokens": 512,
+      "status": "error",
+      "error_code": "http_403",
+      "usage": null,
+      "estimated_inference_usd": null,
+      "elapsed_seconds": 0.097
+    },
+    {
+      "model_requested": "deepseek-ai/DeepSeek-V3.2:deepinfra",
+      "input_usd_per_million": 0.26,
+      "output_usd_per_million": 0.38,
+      "max_tokens": 512,
+      "status": "error",
+      "error_code": "http_403",
+      "usage": null,
+      "estimated_inference_usd": null,
+      "elapsed_seconds": 0.102
+    }
+  ],
+  "cost": {
+    "cpu_hourly_usd": 0.01,
+    "compute_upper_bound_estimate_usd": 0.0005,
+    "actual_billed_usd": null,
+    "source": "https://huggingface.co/docs/hub/jobs-pricing",
+    "note": "Upper bound estimate uses configured 3 minute timeout; no invoice or account remaining balance verified. All inference attempts rejected; token usage and inference charge were not returned."
+  },
+  "measurement_limits": [
+    "readiness_probe_not_model_quality_evaluation",
+    "all_three_router_calls_http_403_no_generated_output",
+    "oauth_scopes_do_not_include_inference_but_http_body_not_recorded_so_cause_not_confirmed",
+    "no_private_or_sealed_data_sent",
+    "hf_job_canceled_after_results_received"
+  ]
+}

@@ -64,3 +64,6 @@ docs/probe/policy-library-index.md
 docs/probe/drive-library-index.md
 tools/build_benchmark_suite.py
 tools/seed_acquisitions.py
+
+# فهرسُ إضافات OpenCode المحلّيّ (docs/OPENCODE-WORKER.md §٥)
+.opencode/

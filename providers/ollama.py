@@ -1,7 +1,8 @@
 """مزوّد Ollama المحلي — أول مزوّد نموذجٍ حيّ عبر بروتوكول م٠ (م٤، ق٢٠).
 
-`is_local=True` بالهوية: بوابة الخصوصية تقبل له حمولات `local_only`
-و`regulated`. والكلفة المالية صفرٌ معلَن (كهرباء الجهاز لا تُحاسَب):
+`is_local` مشتقٌّ من اسم النموذج والمضيف (`core/locality.py`)، لا معلَنٌ لكل
+نموذج: خادمُ Ollama المحليّ يمرّر `…:cloud` إلى ollama.com، فكان الإعلانُ الثابت
+يُدخل حمولات `local_only` و`regulated` إليه. وما سوى ذلك محليٌّ بالهوية. والكلفة المالية صفرٌ معلَن (كهرباء الجهاز لا تُحاسَب):
 الحجز والتسوية يعملان بصفرين، والاستهلاك الحقيقي (توكنات) يُقيَّد في
 السجل من عدّادات Ollama نفسها.
 
@@ -24,6 +25,7 @@ import urllib.error
 import urllib.request
 
 from core.contracts import Request, Response
+from core.locality import is_cloud_model, is_loopback_url
 from core.validate import validated
 from providers.base import ProviderError
 from providers.ollama_codec import parse_response, serialize_messages, tool_payload
@@ -47,7 +49,7 @@ class OllamaProvider:
         self.model = model
         self.base_url = base_url
         self.name = f"ollama:{model}"
-        self.is_local = True
+        self.is_local = not is_cloud_model(model) and is_loopback_url(base_url)
         self.allow_thinking = allow_thinking
         if type(seed) is not int:
             raise TypeError("seed must be an integer")
@@ -100,8 +102,9 @@ class OllamaProvider:
                                 f"جسد الجواب ليس JSON: {raw[:120]!r}",
                                 retryable=False) from e
 
-    def complete(self, request: Request) -> Response:
-        request = validated(request)
+    def payload(self, request: Request) -> dict:
+        """جسدُ طلب /api/chat كما يُرسل، يُبنى هنا وحده: يقرؤه `complete` ليرسله، ويقرؤه القياسُ (بنكُ الذاكرة) ليفحص كلَّ حقلٍ
+        ثابت فيه — `model` و`stream` و`think` و`options` — لا الرسائلَ والأدواتِ وحدها (ملاحظة Codex على #129)."""
         payload = {
             "model": self.model,
             "messages": self._messages(request),
@@ -116,6 +119,11 @@ class OllamaProvider:
         }
         if request.tools:
             payload["tools"] = [self._tool_payload(tool) for tool in request.tools]
+        return payload
+
+    def complete(self, request: Request) -> Response:
+        request = validated(request)
+        payload = self.payload(request)
         try:
             out = self._post(payload, request.deadline_s)
         except ProviderError as e:

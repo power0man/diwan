@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-10-01",
+  "base": "03786a4f6af485c8e1a0b970c0f16be035adf7b6",
+  "source_pull_request": 175,
+  "source_head": "d1a5978d9564b56576a8de084c1820841669a691",
+  "product_commit": "074ffa3d0b9615df91cae8709473743f42db7d3e",
+  "gap": "The integrated launch check still ran serve_ui.py --help and labelled this ui_ready; only the Chromium portion of PR175 was already incorporated by PR244.",
+  "preserved_features": [
+    "Actual temporary UI process and bounded startup/shutdown",
+    "HTTP page RTL/CSRF and projects-response checks",
+    "Named startup, HTTP, shape and provider failures",
+    "Model metadata and complete sha256 validation",
+    "Actual local text/tool provider replies, including tool-bearing chat and nonempty-answer guards",
+    "Explicit clipping markers instead of silent truncation",
+    "Container offline readiness explicitly names absence of engine"
+  ],
+  "integration_adjustments": [
+    "Pass the #189 configured local Ollama URL to the UI argv and both local providers instead of inferring a fixed endpoint from source code",
+    "Use the existing local_ollama_endpoint validator; reject invalid scheme/path/query/fragment/userinfo/nonloopback before starting subprocess or provider IO",
+    "Keep #245 public report provenance and the full #206 container workflow",
+    "Do not copy historical Chromium measurements, screenshots or previous frontend code"
+  ],
+  "tests": [
+    {
+      "modules": [
+        "tests/test_launch_check.py",
+        "tests/test_container_image.py"
+      ],
+      "passed": 48,
+      "seconds": 7.25
+    },
+    {
+      "modules": [
+        "tests/test_default_engine_is_one_value.py",
+        "tests/test_verify_gate.py"
+      ],
+      "passed": 40,
+      "seconds": 5.13
+    },
+    {
+      "modules": [
+        "tests/test_launch_check.py"
+      ],
+      "passed": 40,
+      "seconds": 7.25,
+      "note": "Rechecked after preserving the seven existing PR175 detail-clipping calls; no success/failure conditions changed"
+    }
+  ],
+  "mutation": {
+    "commit": "074ffa3d0b9615df91cae8709473743f42db7d3e",
+    "range": "03786a4..HEAD",
+    "status": "passed",
+    "totals": {
+      "killed": 47,
+      "partially_killed": 0,
+      "survived": 0,
+      "test_missing": 0,
+      "failing_before_mutation": 0,
+      "stale": 0,
+      "invalid": 0,
+      "timeout": 0
+    },
+    "unproved_touched_tests": [],
+    "dropped_proofs": []
+  },
+  "attribution_and_handoff": "passed",
+  "limits": [
+    "Synthetic Ollama fixtures with real UI subprocess and HTTP; not a new live-model-quality measurement",
+    "Full integrated CI and independent family review are coordinated by the release integration task",
+    "Historical audit evidence remains historical; no prior number is relabelled as measured on this commit"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-09-30",
+  "git_commit": "d60e7b3d7e7414590aeb4505f9679b9f4cf45612",
+  "environment": {
+    "surface": "ChatGPT Codex cloud",
+    "os": "Linux",
+    "private_or_sealed_data_used": false
+  },
+  "claims": [
+    {
+      "decision": "ق٦٨",
+      "claim": "المهام المسندة إلى claude-nitro مؤجلة، ولا تعرضها لوحة العمل مهام نشطة.",
+      "how_i_tried": "حمّلت docs/PLAN-20260926.json مباشرة وشغّلت tools.obsidian_vault.task_deferral على كل مهمة مسندة إلى claude-nitro، دون قراءة اختبارات المشروع.",
+      "result": "held",
+      "evidence": "{\"all_deferred\": true, \"rows\": [{\"id\": \"ع٣\", \"deferred\": true}, {\"id\": \"جديد-lm-eval-calibration\", \"deferred\": true}, {\"id\": \"غ١١\", \"deferred\": true}]}",
+      "limits": "لم تُفحص جلسة Nitro نفسها لأنها غير متاحة، ولم يُختبر أي مجدول خارجي خارج المستودع؛ القياس يثبت تمثيل التأجيل في الخطة ومولّد اللوحة فقط."
+    },
+    {
+      "decision": "ق٦٩",
+      "claim": "الصفحة الافتراضية صفحة سؤال واحدة لا تتطلب اختيار مشروع أو إنشاء جلسة قبل السؤال، وتقرأ ذاكرة كل المشاريع مع وسم المصدر ويبلغها النسيان فورًا.",
+      "how_i_tried": "حللت webui/static/index.html بــ html.parser مستقل، ثم أنشأت مشروعين مؤقتين وذاكرتين ببيانات مصطنعة عبر MemoryStore وAllProjects، واسترجعت العنصرين ثم نسيت عنصر المشروع الأول وأعدت الاسترجاع، دون قراءة اختبارات المشروع.",
+      "result": "refuted",
+      "evidence": "واجهة main الحالية: {'aside_count': 1, 'has_project_selector': True, 'has_new_project_form': True, 'has_new_session_form': True, 'requires_setup_notice': True}. نطاق الذاكرة صمد: {'before': [('ألف', 'موعد المشروع ألف يوم الأحد'), ('باء', 'ميزانية المشروع باء عشرة ريالات')], 'after': [('باء', 'ميزانية المشروع باء عشرة ريالات')], 'forgotten_absent': True}.",
+      "limits": "النقض خاص بادعاء الصفحة الافتراضية على main؛ طبقة القراءة عبر المشاريع والنسيان الفوري صمدت في تجربة مباشرة مصطنعة، ولم تُشغّل واجهة بمتصفح في هذا الدحض."
+    },
+    {
+      "decision": "ق٧٠",
+      "claim": "أداة المراجعة الخارجية في main تعرض قائمة مزودين تشمل GitHub Models وHugging Face Router إلى جانب Ollama.",
+      "how_i_tried": "شغّلت python3 tools/external_review.py --help على main الحالي، دون مفاتيح أو شبكة أو بيانات خاصة.",
+      "result": "refuted",
+      "evidence": "المساعدة تعرض فقط --base-url وتصف الأداة بأنها تشغيل عبر Ollama محليًا أو ollama.com؛ لا يظهر --backend ولا github-models ولا hf-router. تنفيذ المزودين موجود في طلب سحب مسودة مفتوح #174 وليس في main المختبَر.",
+      "limits": "لم تُجرّب واجهة حية ولا مفتاح؛ النتيجة تنقض توفر القائمة في main فقط، ولا تحكم على شيفرة طلب السحب #174 أو جاهزية أي مزود حي."
+    }
+  ]
+}

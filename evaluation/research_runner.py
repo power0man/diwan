@@ -24,7 +24,7 @@ from core.budget import Budget
 from core.ledger import Ledger
 from evaluation.research_bank import CORPUS, SUITE, FixtureSearch, load, score_item, summarize
 
-RUNNER_VERSION = 1
+RUNNER_VERSION = 2
 MAX_ANSWER_CHARS = 6000
 LIMITS = [
     "measures_search_and_citation_discipline_on_a_fixed_fictional_corpus_not_web_search_quality",
@@ -61,8 +61,8 @@ def run_item(item: dict, provider, search, *, model: str, model_version: str, ma
         except Exception as exc:                       # عطبُ بنيةٍ لا فشلُ قدرة
             return {**base, "status": "error", "code": "loop_raised",
                     "detail": f"{type(exc).__name__}: {str(exc)[:300]}"}
-        if run.status in ("refused", "failed"):
-            return {**base, "status": "error", "code": run.code or run.status}
+        if run.status != "complete":
+            return {**base, "status": "error", "code": run.code or run.status, "loop_status": run.status}
         urls = returned_urls(run.steps)
         queries = [call.arguments.get("query") for step in run.steps for call in step.tool_calls
                    if call.name == "web_search"]

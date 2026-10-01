@@ -26,13 +26,15 @@ from agent.actions import ActionRefused, ActionStore
 from agent.journal import Journal, JournalRefused, _directory, _identity, _open_directory, _read, _regular
 from agent.loop import SYSTEM, _result_message, run_agent
 from agent.registry import ToolContext, ToolRegistry
-from conversation.agent_stop import StopSignals
-from conversation.session import ConversationError, _decode, _fail, _id, _text
+from conversation.agent_stop import StopSignals, input_digest
+from conversation.session import (ConversationError, _decode, _fail, _id, _redaction_token,
+                                  _scrub_text, _scrub_value, _text)
 from core import filelock
 from core.budget import Budget
 from core.canonical import canonical_bytes, digest
 from core.contracts import Message, Request, ToolCall, ToolSpec, _message_payload
 from core.ledger import GENESIS, Ledger, LedgerCorrupt
+from core.locality import is_local_provider
 from core.run import RouteRefused
 from core.validate import validated
 from memory.store import MemoryRefused, turn_memory, valid_turn_memory
@@ -124,6 +126,123 @@ def _task_message(turn):
     return Message("user", f"{block}\n\n{plain.content}") if block else plain
 
 
+_TOOL_RESULT_CONTROL = frozenset({
+    "status", "code", "call_id", "name", "action_id", "call_digest", "revision",
+    "reverts_to", "journal_action_id", "journal_action_ids",
+})
+
+
+def _context_messages(turn):
+    for key in ("initial_messages", "transcript"):
+        yield from turn[key]
+    for intent in turn["calls"]:
+        yield from intent.get("request", {}).get("messages", ())
+
+
+def _context_call_aliases(turns, text):
+    """Rekey affected model-context IDs; audit/action identities are not inputs or outputs.
+
+    The digest is domain-separated and contains the original ID and collision
+    counter only, never the forgotten text. Reject a digest which accidentally
+    repeats that text (including a one-character memory) or an existing ID.
+    """
+    identifiers = set()
+    for turn in turns:
+        for message in _context_messages(turn):
+            identifiers.update(call["call_id"] for call in message.get("tool_calls", ())
+                               if isinstance(call.get("call_id"), str))
+            if isinstance(message.get("tool_call_id"), str):
+                identifiers.add(message["tool_call_id"])
+    occupied, aliases = set(identifiers), {}
+    for original in sorted(identifiers):
+        if text not in original:
+            continue
+        for counter in range(4096):
+            alias = digest({"namespace": "diwan-forgotten-context-call-v1",
+                            "original_call_id": original, "counter": counter})
+            if alias not in occupied and text not in alias:
+                break
+        else:
+            _fail("state_corrupt", "تعذر اختيار معرّف سياق خال من النص المنسي")
+        aliases[original] = alias
+        occupied.add(alias)
+    return aliases
+
+
+def _scrub_message_payload(message, text, marker, aliases):
+    """Scrub reusable model data, rekeying only IDs that contain the forgotten text."""
+    count = 0
+    if message.get("tool_call_id") in aliases:
+        message["tool_call_id"] = aliases[message["tool_call_id"]]
+        count += 1
+    if isinstance(message.get("content"), str):
+        message["content"], found = _scrub_text(message["content"], text, marker)
+        count += found
+    for call in message.get("tool_calls", ()):
+        if call.get("call_id") in aliases:
+            call["call_id"] = aliases[call["call_id"]]
+            count += 1
+        if isinstance(call, dict) and "arguments" in call:
+            call["arguments"], found = _scrub_value(call["arguments"], text, marker)
+            count += found
+    return count
+
+
+def _scrub_tool_result(result, text, marker):
+    """Scrub the data sent back to the model while preserving action/control metadata."""
+    count = 0
+    for key in list(result):
+        if (key in _TOOL_RESULT_CONTROL or key.endswith("_id") or key.endswith("_digest")
+                or key.endswith("_sha256")):
+            continue
+        result[key], found = _scrub_value(result[key], text, marker)
+        count += found
+    return count
+
+
+def _scrub_agent_turns(turns, text):
+    """Scrub reusable context; retain original IDs in audit results and action receipts."""
+    marker = _redaction_token(text)
+    output, count = _copy(turns), 0
+    aliases = _context_call_aliases(output, text)
+    for turn in output:
+        turn["text"], found = _scrub_text(turn["text"], text, marker)
+        count += found
+        memory = turn.get("memory")
+        if isinstance(memory, dict):
+            memory["block"], found = _scrub_text(memory["block"], text, marker)
+            count += found
+        for key in ("initial_messages", "transcript"):
+            for message in turn[key]:
+                count += _scrub_message_payload(message, text, marker, aliases)
+        for intent in turn["calls"]:
+            request = intent.get("request", {})
+            for message in request.get("messages", ()):
+                count += _scrub_message_payload(message, text, marker, aliases)
+        result = turn.get("result")
+        if not isinstance(result, dict):
+            continue
+        result["content"], found = _scrub_text(result["content"], text, marker)
+        count += found
+        for step in result["steps"]:
+            step["content"], found = _scrub_text(step["content"], text, marker)
+            count += found
+            if isinstance(step.get("thinking"), str):
+                step["thinking"], found = _scrub_text(step["thinking"], text, marker)
+                count += found
+            for call in step["tool_calls"]:
+                if "arguments" in call:
+                    call["arguments"], found = _scrub_value(call["arguments"], text, marker)
+                    count += found
+            for tool_result in step["tool_results"]:
+                count += _scrub_tool_result(tool_result, text, marker)
+        for pending in result["pending"]:
+            if isinstance(pending, dict) and "arguments" in pending:
+                pending["arguments"], found = _scrub_value(pending["arguments"], text, marker)
+                count += found
+    return output, count
+
+
 class _SessionLedger(Ledger):
     """Ledger contract with descriptor-based IO under the owning session lock."""
     def __init__(self, session):
@@ -163,7 +282,7 @@ class _ProviderGuard:
     def __init__(self, session, state, turn, provider):
         self.session, self.state, self.turn, self.provider = session, state, turn, provider
         self.name = getattr(provider, "name", "local")
-        self.is_local = getattr(provider, "is_local", None) is True
+        self.is_local = is_local_provider(provider)
 
     def estimate_micros(self, request):
         # core.execute replays recorded calls before reaching this method. A fresh
@@ -392,9 +511,11 @@ class AgentSession:
             state = envelope["state"]
             if set(envelope) != {"state", "sha256"} or digest(state) != envelope["sha256"]:
                 _fail("state_corrupt", "بصمة حالة الجلسة لا تطابق")
-            if (set(state) != {"schema_version", "config_digest", "turns", "ledger"}
+            if (set(state) - {"scrubbed_through"} != {"schema_version", "config_digest", "turns", "ledger"}
                     or state["schema_version"] != 2 or state["config_digest"] != digest(self.config)
                     or not isinstance(state["turns"], list) or len(state["turns"]) > self.config["max_turns"]
+                    or type(state.get("scrubbed_through", 0)) is not int
+                    or not 0 <= state.get("scrubbed_through", 0) <= len(state["turns"])
 ):
                 _fail("state_corrupt", "بنية حالة الجلسة غير صالحة")
             self.ledger.verify_chain()
@@ -407,17 +528,33 @@ class AgentSession:
             seen, intents = set(), {}
             previous = [_message_payload(Message("system", self.config["system"]))]
             unresolved = False
-            for turn in state["turns"]:
+            scrubbed_through = state.get("scrubbed_through", 0)
+            old_intents = set()
+            for turn_index, turn in enumerate(state["turns"]):
                 # طلبُ التفكير مفتاحٌ اختياريّ قيمتُه True وحدها (ك٤٧)، فحالاتُ ما قبله صالحة كما هي
                 thinking = turn.get("thinking", False)
                 if (set(turn) - _OPTIONAL_TURN_KEYS != _TURN_KEYS or ("thinking" in turn and thinking is not True)
                         or ("memory" in turn and not valid_turn_memory(turn["memory"]))
                         or not _id(turn["turn_id"]) or turn["turn_id"] in seen or not _text(turn["text"])
-                        or unresolved or turn["initial_messages"] != previous
-                        or turn["input_digest"] != self._input_digest(turn)
+                        or unresolved
+                        or (turn_index >= scrubbed_through and turn["initial_messages"] != previous)
+                        or (turn_index >= scrubbed_through and turn["input_digest"] != self._input_digest(turn))
                         or not isinstance(turn["calls"], list) or len(turn["calls"]) > self.config["max_steps"]):
                     _fail("state_corrupt", "مدخلات الجولة أو ترتيبها غير صالح")
                 seen.add(turn["turn_id"])
+                if turn_index < scrubbed_through:
+                    for intent in turn["calls"]:
+                        if not isinstance(intent, dict) or not isinstance(intent.get("idempotency_key"), str):
+                            _fail("state_corrupt", "نداء مكشوط غير صالح")
+                        intents[intent["idempotency_key"]] = intent
+                        old_intents.add(intent["idempotency_key"])
+                    result = turn["result"]
+                    if not isinstance(result, dict) or result.get("status") not in TERMINAL:
+                        _fail("state_corrupt", "جولة مكشوطة غير مكتملة")
+                    if result["status"] == "complete":
+                        previous = turn["transcript"]
+                    unresolved = False
+                    continue
                 self._request(_messages(turn["initial_messages"]) + (_task_message(turn),), thinking)
                 for intent in turn["calls"]:
                     payload = intent["request"]
@@ -443,7 +580,8 @@ class AgentSession:
             for entry in entries:
                 record = entry["record"]
                 intent = intents.get(record.get("idempotency_key"))
-                if intent is None or record.get("request_digest") != intent["request_digest"]:
+                if intent is None or (record.get("idempotency_key") not in old_intents
+                                      and record.get("request_digest") != intent["request_digest"]):
                     _fail("ledger_binding_invalid", "قيد نداء لا ينتمي إلى مدخلات محفوظة")
             return state
         except (KeyError, TypeError, ValueError, AttributeError, LedgerCorrupt) as exc:
@@ -452,10 +590,7 @@ class AgentSession:
             _fail("state_corrupt", "فشل التحقق من حالة الجلسة أو سجلها")
 
     def _input_digest(self, turn):
-        return digest({"config": digest(self.config), "turn_id": turn["turn_id"],
-                       "text": turn["text"], "initial_messages": turn["initial_messages"],
-                       **({"thinking": True} if turn.get("thinking") else {}),
-                       **({"memory": turn["memory"]} if "memory" in turn else {})})
+        return input_digest(self.config, turn)
 
     def _verify_result(self, turn, entries):
         result = turn["result"]
@@ -595,6 +730,33 @@ class AgentSession:
             return [f"agent:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
                     if sha256 in turn.get("memory", {}).get("items", ())]
 
+    def _memory_forget_plan(self, sha256, text):
+        """Build a scrubbed state envelope while the caller holds ``_lock``; do not write."""
+        if not _text(text):
+            _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
+        state = self._load()
+        references = [f"agent:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
+                      if sha256 in turn.get("memory", {}).get("items", ())]
+        turns, count = _scrub_agent_turns(state["turns"], text)
+        if count and any(turn["result"] is None or turn["result"]["status"] not in TERMINAL
+                         for turn in state["turns"]):
+            _fail("turn_unresolved", "احسم جولة الوكيل قبل نسيان ما في تاريخها")
+        if count:
+            state["turns"] = turns
+            state["scrubbed_through"] = len(turns)
+        envelope = {"state": state, "sha256": digest(state)}
+        return references, count, self.root / "state.json", canonical_bytes(envelope)
+
+    def scrub_memory_text(self, text):
+        """Scrub exact occurrences from reusable state; the sealed call ledger is untouched."""
+        if not _text(text):
+            _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
+        with self._lock():
+            _, count, _, payload = self._memory_forget_plan("", text)
+            if count:
+                self._write("state.json", _decode(payload.decode("utf-8")))
+            return count
+
     def _stopped_steps(self, turn):
         """Restore evidence only: no provider, registry invocation or new receipt.
 
@@ -726,7 +888,7 @@ class AgentSession:
             existing, initial = self._admit_turn(state, turn_id, text, thinking)
             if existing is not None:
                 return self._public(existing)
-            if getattr(provider, "is_local", None) is not True:
+            if not is_local_provider(provider):
                 _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
             memory = self._memory_for(text)
             turn = {"turn_id": turn_id, "text": text, "initial_messages": _copy(initial),
@@ -755,7 +917,7 @@ class AgentSession:
                 turn["result"] = self._uncertain(turn)
                 self._save(state)
                 return self._public(turn)
-            if getattr(provider, "is_local", None) is not True:
+            if not is_local_provider(provider):
                 _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
             return self._run(state, turn, provider)
 

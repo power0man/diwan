@@ -1,0 +1,456 @@
+{
+  "schema_version": 1,
+  "probe": "free_api_inventory",
+  "task": "#168 — قرار المالك في ٢٨ سبتمبر ٢٠٢٦ (#168): «سبق أن طلبتك تشغل free llm شغلله ووزع مهام قدر المستطاع على كل المتاح»",
+  "date": "2026-09-28",
+  "agent": "anthropic/claude-opus-5-5",
+  "pull_request": 174,
+  "tool": "tools/external_review.py --smoke (الخطأ المزروع ٧×٨=٥٤ في ثلاث حالاتٍ مصطنعة، نمط ك٧) و--every-family و--list-catalog",
+  "pass_rule": "تنجح التجربةُ إن التقط كلُّ مراجعٍ الحالةَ smoke_2 (incorrect) ولم يعلّم حالةً صحيحة",
+  "providers": [
+    {
+      "provider": "github-models",
+      "endpoint_host": "models.github.ai",
+      "where": "GitHub Actions (ubuntu-latest)، رمزُ المهمّة نفسُه بصلاحيتَي contents: read وmodels: read، بلا سرٍّ جديد (.github/workflows/free-llm-review.yml)",
+      "runs": [
+        {
+          "run_id": 36467858015,
+          "job_id": 109082350301,
+          "head": "fe14bf6",
+          "result": "catalog_malformed بلا شكل (لم يكن الشكلُ يُسجَّل بعد)؛ خطوةُ الفهرس كانت بوّابةً فتوقّفت المهمّة"
+        },
+        {
+          "run_id": 36474847097,
+          "job_ids": [
+            109105842852,
+            109111916985
+          ],
+          "head": "1fc06e6",
+          "result": "الفهرس: text/plain و٤ بايتات وليس JSON؛ ونداءا المراجعَين openai_response_malformed في ٤١٩ و٤٣١ ms بعد محاولتين. وأعاد المنسّقُ التشغيلَ بعد أن قال المالك إن كلَّ شيءٍ مفعَّل (ومنه GitHub Models) فجاء مثلَه"
+        },
+        {
+          "run_id": 36478440684,
+          "job_id": 109117884370,
+          "head": "511579f",
+          "result": "unavailable (service_unavailable، unavailable_codes=[response_not_json]): الفهرسُ ونداءاتُ النماذج الستّة كلُّها HTTP 200 وtext/plain و٤ بايتات؛ والفحصُ أخضر لأن الواجهةَ غيرَ المتاحة تنبيهٌ لا سقوط"
+        },
+        {
+          "run_id": 36480357245,
+          "head": "ddab178",
+          "result": "unavailable كسابقه (دمجُ main)"
+        },
+        {
+          "run_id": 36482650241,
+          "job_id": 109131793253,
+          "head": "2e7eb89",
+          "result": "unavailable؛ والطريقةُ والرابطُ المرسَلُ والنهائيُّ مسجَّلةٌ لكل نداء: GET https://models.github.ai/catalog/models وPOST https://models.github.ai/inference/chat/completions، والنهائيُّ هو المرسَلُ نفسُه، والردُّ 200 وtext/plain و٤ بايتات في نحو ٤٠٠ ms لكل نموذج (محاولتان)"
+        },
+        {
+          "run_id": 36488780341,
+          "job_id": 109152067164,
+          "head": "4d20045",
+          "result": "تشخيصٌ مؤقّت بـcurl على المشغّل نفسِه قبل الأداة (أُزيل بعده): الطلباتُ الثلاثة كلُّها HTTP/2 200 وtext/plain و«OK\\r\\n»؛ والأداةُ بعدها unavailable كما كانت"
+        }
+      ],
+      "catalog": {
+        "reachable": true,
+        "shape": {
+          "status": 200,
+          "content_type": "text/plain",
+          "bytes": 4,
+          "top": "not_json"
+        },
+        "models_listed": null,
+        "code": "catalog_malformed",
+        "candidates_from": "preferred_list"
+      },
+      "models": [
+        {
+          "model": "deepseek/DeepSeek-V3-0324",
+          "family": "deepseek",
+          "reachable": true,
+          "answered": false,
+          "latency_ms": {
+            "smoke": 142,
+            "every_family": 162
+          },
+          "attempts": 2,
+          "caught_planted_error": null,
+          "false_alarms": null,
+          "error": "response_not_json",
+          "quota_code": null,
+          "last_failure_shape": {
+            "status": 200,
+            "content_type": "text/plain",
+            "bytes": 4,
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
+          }
+        },
+        {
+          "model": "mistral-ai/mistral-medium-2505",
+          "family": "mistral",
+          "reachable": true,
+          "answered": false,
+          "latency_ms": {
+            "smoke": 153,
+            "every_family": 127
+          },
+          "attempts": 2,
+          "caught_planted_error": null,
+          "false_alarms": null,
+          "error": "response_not_json",
+          "quota_code": null,
+          "last_failure_shape": {
+            "status": 200,
+            "content_type": "text/plain",
+            "bytes": 4,
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
+          }
+        },
+        {
+          "model": "meta/Llama-4-Maverick-17B-128E-Instruct-FP8",
+          "family": "meta",
+          "reachable": true,
+          "answered": false,
+          "latency_ms": {
+            "every_family": 127
+          },
+          "attempts": 2,
+          "caught_planted_error": null,
+          "false_alarms": null,
+          "error": "response_not_json",
+          "quota_code": null,
+          "last_failure_shape": {
+            "status": 200,
+            "content_type": "text/plain",
+            "bytes": 4,
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
+          }
+        },
+        {
+          "model": "cohere/cohere-command-a",
+          "family": "cohere",
+          "reachable": true,
+          "answered": false,
+          "latency_ms": {
+            "every_family": 162
+          },
+          "attempts": 2,
+          "caught_planted_error": null,
+          "false_alarms": null,
+          "error": "response_not_json",
+          "quota_code": null,
+          "last_failure_shape": {
+            "status": 200,
+            "content_type": "text/plain",
+            "bytes": 4,
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
+          }
+        },
+        {
+          "model": "ai21-labs/AI21-Jamba-1.5-Large",
+          "family": "ai21",
+          "reachable": true,
+          "answered": false,
+          "latency_ms": {
+            "every_family": 143
+          },
+          "attempts": 2,
+          "caught_planted_error": null,
+          "false_alarms": null,
+          "error": "response_not_json",
+          "quota_code": null,
+          "last_failure_shape": {
+            "status": 200,
+            "content_type": "text/plain",
+            "bytes": 4,
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
+          }
+        },
+        {
+          "model": "microsoft/Phi-4",
+          "family": "microsoft",
+          "reachable": true,
+          "answered": false,
+          "latency_ms": {
+            "every_family": 165
+          },
+          "attempts": 2,
+          "caught_planted_error": null,
+          "false_alarms": null,
+          "error": "response_not_json",
+          "quota_code": null,
+          "last_failure_shape": {
+            "status": 200,
+            "content_type": "text/plain",
+            "bytes": 4,
+            "top": "not_json",
+            "request": {
+              "method": "POST",
+              "sent": "https://models.github.ai/inference/chat/completions",
+              "final": "https://models.github.ai/inference/chat/completions"
+            }
+          }
+        }
+      ],
+      "diagnosis": {
+        "http": "HTTP 200، Content-Type text/plain، الجسم «OK\\r\\n» (٤ بايتات) للفهرس (GET) ولنداءات chat/completions (POST) على السواء، في أقلّ من ٢٠٠ ms",
+        "not_a_redirect": "النقلُ يرفض التحويل (_RefuseRedirect)، فأيُّ 3xx كان سيُسمّى http_3xx ثم redirected ومعه وجهتُه؛ والمسجَّلُ 200. ومن صندوق HF بلا تفويض: HTTP/2 200 بلا Location لكل مسارٍ وطريقة ووكيل مستخدم (curl -sI وurllib)",
+        "dns": "models.github.ai يُحلّ إلى موازن GitHub العام (glb-*.github.com)",
+        "same_without_token": "الردُّ نفسُه بلا ترويسة تفويض (من صندوق HF)، فالرمزُ لم يغيّر شيئًا مقيسًا",
+        "request_checked": "POST https://models.github.ai/inference/chat/completions بـAuthorization: Bearer وContent-Type: application/json؛ وGET https://models.github.ai/catalog/models بـAccept: application/vnd.github+json وX-GitHub-Api-Version: 2022-11-28؛ وpermissions: models: read في المهمّة",
+        "owner_step": "لا يُصلَح من الشيفرة: النقطةُ الموثّقة تردّ صفحةَ «OK» ثابتة. يلزم التحقّقُ من أن GitHub Models ما زال يخدم على models.github.ai لهذا الحساب، أو من نقطته الحالية؛ وإضافةُ نقطةٍ جديدة إلى ALLOWED_HOSTS قرارٌ للمالك",
+        "recorded_requests": {
+          "catalog": {
+            "method": "GET",
+            "sent": "https://models.github.ai/catalog/models",
+            "final": "https://models.github.ai/catalog/models"
+          },
+          "chat": {
+            "method": "POST",
+            "sent": "https://models.github.ai/inference/chat/completions",
+            "final": "https://models.github.ai/inference/chat/completions"
+          },
+          "source": "last_failure_shapes في تشغيل 36482650241 (2e7eb89)"
+        },
+        "path_not_lost_in_client": "المسارُ والطريقةُ كما وُثّقا مرسَلًا ونهائيًّا (tests/test_external_review.py::test_the_exact_url_and_method_go_out_and_are_recorded_for_chat_and_catalog يثبته بلا شبكة، والتشغيلُ الحيّ سجّله)؛ وcurl من شبكةٍ أخرى (صندوق HF) إلى الرابطين نفسيهما ردّ «OK» نفسَه",
+        "curl_on_the_runner": {
+          "run_id": 36488780341,
+          "job_id": 109152067164,
+          "token_length": 377,
+          "a_catalog_no_auth": {
+            "request": "GET https://models.github.ai/catalog/models",
+            "status": "HTTP/2 200",
+            "content_type": "text/plain",
+            "body_bytes": 4,
+            "head16_hex": "4f4b0d0a"
+          },
+          "b_catalog_with_bearer_accept_and_api_version": {
+            "request": "GET https://models.github.ai/catalog/models",
+            "status": "HTTP/2 200",
+            "content_type": "text/plain",
+            "body_bytes": 4,
+            "head16_hex": "4f4b0d0a"
+          },
+          "c_chat_post_with_bearer": {
+            "request": "POST https://models.github.ai/inference/chat/completions (deepseek/DeepSeek-V3-0324، max_tokens 5)",
+            "status": "HTTP/2 200",
+            "content_type": "text/plain",
+            "body_bytes": 4,
+            "head16_hex": "4f4b0d0a"
+          },
+          "absent_headers": "لا server ولا x-github-request-id ولا location في أيٍّ من الثلاثة، وواجهاتُ GitHub تحمل x-github-request-id عادةً",
+          "verdict": "curl يلقى ما تلقاه الأداةُ بالضبط، بالرمز وبدونه: فالعلّةُ في الخدمة أو في طريق المشغّل إليها لا في العميل؛ وتبقى الحالةُ unavailable غيرَ مُسقِطة"
+        },
+        "not_the_client": "المسارُ والطريقةُ والرمزُ (طولُه ٣٧٧ على المشغّل) كلُّها على السلك، وcurl بالترويسات الموثّقة يلقى «OK» نفسَه؛ فلا إصلاحَ في العميل"
+      }
+    },
+    {
+      "provider": "hf-router",
+      "endpoint_host": "router.huggingface.co",
+      "where": "صندوق Hugging Face (python:3.12، cpu-basic) برمز المالك (--forward-hf-token)، الفرعُ مستنسَخًا على 1fc06e6",
+      "catalog": {
+        "reachable": true,
+        "shape": {
+          "content_type": "application/json; charset=utf-8",
+          "bytes": 91413,
+          "top": "dict",
+          "keys": [
+            "data",
+            "object"
+          ],
+          "count": 132,
+          "item_keys": [
+            "architecture",
+            "created",
+            "id",
+            "object",
+            "owned_by",
+            "providers"
+          ]
+        },
+        "eligible_by_family": {
+          "deepseek": 14,
+          "meta": 5,
+          "cohere": 7,
+          "microsoft": 1,
+          "mistral": 0,
+          "ai21": 0
+        },
+        "refused": {
+          "publisher_unknown": 55,
+          "reviewer_family_unknown": 4,
+          "reviewer_is_author_family": 6,
+          "reviewer_is_developer_family": 8,
+          "reviewer_is_engine_family": 32
+        },
+        "candidates_best_per_family": [
+          "deepseek-ai/DeepSeek-V3-0324",
+          "meta-llama/Llama-3.3-70B-Instruct",
+          "CohereLabs/c4ai-command-a-03-2025",
+          "microsoft/phi-4"
+        ]
+      },
+      "smoke": {
+        "status": "passed",
+        "reviewers": [
+          "deepseek-ai/DeepSeek-V3-0324",
+          "meta-llama/Llama-3.3-70B-Instruct"
+        ],
+        "reference": {
+          "observed_agreement": 1.0,
+          "kappa": 1.0
+        },
+        "rubric": {
+          "observed_agreement": 0.6667,
+          "kappa": 0.0
+        },
+        "fallbacks": []
+      },
+      "every_family": {
+        "status": "passed",
+        "pairs": [
+          [
+            "deepseek-ai/DeepSeek-V3-0324",
+            "meta-llama/Llama-3.3-70B-Instruct"
+          ],
+          [
+            "CohereLabs/c4ai-command-a-03-2025",
+            "microsoft/phi-4"
+          ]
+        ]
+      },
+      "models": [
+        {
+          "model": "deepseek-ai/DeepSeek-V3-0324",
+          "family": "deepseek",
+          "reachable": true,
+          "answered": true,
+          "latency_ms": {
+            "smoke": 10117,
+            "every_family": 41537
+          },
+          "attempts": 1,
+          "caught_planted_error": true,
+          "false_alarms": [],
+          "error": null,
+          "quota_code": null
+        },
+        {
+          "model": "meta-llama/Llama-3.3-70B-Instruct",
+          "family": "meta",
+          "reachable": true,
+          "answered": true,
+          "latency_ms": {
+            "smoke": 2834,
+            "every_family": 2995
+          },
+          "attempts": 1,
+          "caught_planted_error": true,
+          "false_alarms": [],
+          "error": null,
+          "quota_code": null
+        },
+        {
+          "model": "CohereLabs/c4ai-command-a-03-2025",
+          "family": "cohere",
+          "reachable": true,
+          "answered": true,
+          "latency_ms": {
+            "every_family": 3810
+          },
+          "attempts": 1,
+          "caught_planted_error": true,
+          "false_alarms": [],
+          "error": null,
+          "quota_code": null
+        },
+        {
+          "model": "microsoft/phi-4",
+          "family": "microsoft",
+          "reachable": true,
+          "answered": true,
+          "latency_ms": {
+            "every_family": 4501
+          },
+          "attempts": 1,
+          "caught_planted_error": true,
+          "false_alarms": [],
+          "error": null,
+          "quota_code": null
+        }
+      ]
+    }
+  ],
+  "summary": "موجّهُ HF يعمل: أربعُ عائلاتٍ مسموحة (DeepSeek وMeta Llama وCohere وMicrosoft Phi) التقطت الخطأَ المزروع كلُّها بلا إنذارٍ كاذب ومن محاولةٍ واحدة، فمراجعٌ ثالث ورابع من عائلتين أخريين متاحان لحساب κ. أمّا GitHub Models فغيرُ متاح: models.github.ai يردّ 200 و«OK» نصًّا عاديًّا على كل طلب، والمهمّةُ تسمّيه unavailable ولا تُسقط الطلب",
+  "run": {
+    "spend": {
+      "hf_sandbox_minutes": 44.2,
+      "sandboxes": [
+        {
+          "job_id": "6abab6c552d0dbd7f1da4221",
+          "flavor": "cpu-basic",
+          "created_at": "2026-09-28T18:49:41Z",
+          "finished_at": "2026-09-28T19:26:03Z",
+          "minutes": 36.4,
+          "what": "قياسُ شكل ردّ models.github.ai بلا تفويض (curl وurllib)، ثم تشغيلُ run.sh على fe14bf6؛ انتهى الصندوقُ بمهلته قبل أن يُقرأ سجلُّه فضاعت نتائجُ هذا التشغيل ولم تُنشر"
+        },
+        {
+          "job_id": "6abac4c252d0dbd7f1da4dc0",
+          "flavor": "cpu-basic",
+          "created_at": "2026-09-28T19:49:22Z",
+          "terminated_at": "2026-09-28T19:57:10Z",
+          "minutes": 7.8,
+          "what": "--list-catalog و--smoke و--every-family على 1fc06e6 (المنشورُ هنا)، ثم terminate"
+        }
+      ],
+      "compute_list_price_usd": 0.0074,
+      "compute_rate": "cpu-basic ‎$0.01 للساعة (صفحة أسعار HF Jobs)",
+      "inference_calls": {
+        "published_run": 6,
+        "lost_run_upper_bound": 6
+      },
+      "inference_estimate_usd_upper_bound": 0.11,
+      "inference_estimate_basis": "حتى ١٢ نداءً بنحو ٥ آلاف رمز مدخلًا وألفٍ مخرجًا، بسعرٍ أعلى ‎$1.25 للمليون مدخلًا و‎$2.5 مخرجًا",
+      "github_actions": "مستودعٌ عام على مشغّلٍ مستضاف: بلا كلفة",
+      "cap": "HFD2 (‎$20)",
+      "note": "HF invoice is decisive — الأرقامُ من أسعار القائمة وأزمنة الصناديق لا من صفحة الفوترة، ورصيدُ PRO الشهريّ قد يغطّيها"
+    }
+  },
+  "measurement_limits": [
+    "three_synthetic_cases_prove_the_path_not_reviewer_quality",
+    "one_run_per_model_no_variance_estimate",
+    "model_identity_is_the_provider_catalog_id_not_a_verified_weight_digest",
+    "family_is_derived_from_publisher_and_name_not_attested_by_the_provider",
+    "hf_router_ran_at_1fc06e6_before_http_status_was_recorded_in_shapes",
+    "hf_router_latency_includes_provider_queueing_and_varies_between_runs",
+    "github_models_answered_a_static_ok_page_so_no_github_model_was_measured",
+    "the_first_hf_sandbox_run_results_were_lost_and_are_not_reported",
+    "costs_are_list_price_estimates_not_the_billing_page"
+  ]
+}

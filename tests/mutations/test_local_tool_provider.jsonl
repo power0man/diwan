@@ -1,0 +1,1 @@
+{"id": "remote-ollama-endpoint-accepted", "file": "providers/local_chat.py", "old": "        loopback = host is not None and ipaddress.ip_address(host).is_loopback", "new": "        loopback = True", "tests": ["tests/test_local_tool_provider.py::test_endpoint_and_proxy_behavior_are_inherited_without_override"], "why": "عنوان بعيد يُقبل كمزوّد محلي"}

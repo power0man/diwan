@@ -28,7 +28,7 @@ def test_the_image_runs_as_a_non_root_user_with_the_morphology_data_inside():
 
 
 def test_the_smoke_runs_offline_and_expects_the_declared_exit():
-    assert "docker run --rm --network none diwan:ci python tools/launch_check.py --json" in WORKFLOW
+    assert "docker run --rm --network none diwan:ci diwan check --json" in WORKFLOW
     assert "int(sys.argv[1]) == 3 == report[\"exit_code\"]" in WORKFLOW
     assert "permissions:\n  contents: read\n" in WORKFLOW
 
@@ -40,3 +40,33 @@ def test_the_expected_steps_are_the_ones_launch_check_emits():
         assert f'Step("{step}"' in LAUNCH, step
         if code:
             assert f'"{code}"' in LAUNCH, code
+
+
+def test_container_state_is_a_volume_and_desktop_does_not_require_host_networking():
+    assert re.search(r'^VOLUME \["/app/var"\]$', DOCKERFILE, re.M)
+    assert "DIWAN_DATA_HOME=/app/var" in DOCKERFILE
+    assert "--network host" not in DOCKERFILE
+    assert 'CMD ["diwan", "check"]' in DOCKERFILE
+
+
+def test_ci_always_runs_python_tests_and_checks_replacement_and_tool_install():
+    assert "paths:" not in WORKFLOW  # a required check cannot be path-filtered
+    assert "python -m pytest" in WORKFLOW
+    assert "fetch-depth: 0" in WORKFLOW
+    assert "ci/container_state.py write" in WORKFLOW
+    assert "ci/container_state.py read" in WORKFLOW
+    assert "uv tool install" in WORKFLOW
+
+
+def test_restored_private_stores_are_excluded_from_the_build_context():
+    from tools.export_public import EXCLUDED_PATHS
+    ignored = set((ROOT / ".dockerignore").read_text().splitlines())
+    assert set(EXCLUDED_PATHS) <= ignored
+    assert {"keys/*", "!keys/anchor-ed25519.pub", "!keys/anchor-policy.json", "var/", ".env"} <= ignored
+
+
+def test_the_offline_smoke_expects_the_ui_step_without_an_engine():
+    """خطوةُ الواجهة تشغّل serve_ui.py فعلًا ببصمة المحرّك (#175)، والحاويةُ تُشغَّل بلا شبكة فلا محرّك: الخطوةُ تُسمّي بصمتَها
+    البديلة `ui_ready_without_engine`. فانتظارُ `ui_ready` هنا يُسقط الفحصَ على عطبٍ لا وجود له، وانتظارُ غيرِ «ok» يُخفي عطبًا."""
+    assert '"engine": ("unavailable", "engine_unreachable")' in WORKFLOW
+    assert '"ui": ("ok", "ui_ready_without_engine")' in WORKFLOW

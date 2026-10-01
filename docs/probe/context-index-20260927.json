@@ -35,9 +35,9 @@
   },
   "after": {
     "AGENTS.md": {
-      "bytes": 30265,
-      "lines": 286,
-      "tokens_estimate": 8040,
+      "bytes": 30772,
+      "lines": 287,
+      "tokens_estimate": 8192,
       "codex_cut_line": null,
       "task_rows": 4,
       "task_rows_visible_to_codex": 4,
@@ -46,8 +46,8 @@
     },
     "reading_set_in_section_0": {
       "AGENTS.md": {
-        "bytes": 30265,
-        "tokens_estimate": 8040
+        "bytes": 30772,
+        "tokens_estimate": 8192
       },
       "docs/INDEX.md": {
         "bytes": 18458,
@@ -59,8 +59,8 @@
       }
     },
     "reading_set_total": {
-      "bytes": 59120,
-      "tokens_estimate": 15400
+      "bytes": 59627,
+      "tokens_estimate": 15552
     },
     "archived_rows": 41,
     "open_rows_in_agents_md": 4,
@@ -69,24 +69,24 @@
   },
   "every_indexed_document_after": {
     "AGENTS.md": {
-      "bytes": 30265,
-      "tokens_estimate": 8040
+      "bytes": 30772,
+      "tokens_estimate": 8192
     },
     "docs/STATUS.md": {
-      "bytes": 23708,
-      "tokens_estimate": 6205
+      "bytes": 26008,
+      "tokens_estimate": 6810
     },
     "docs/VISION.md": {
       "bytes": 10397,
       "tokens_estimate": 2483
     },
     "docs/DECISIONS.md": {
-      "bytes": 160545,
-      "tokens_estimate": 40034
+      "bytes": 166492,
+      "tokens_estimate": 41503
     },
     "docs/PLAN-20260926.md": {
-      "bytes": 218457,
-      "tokens_estimate": 59659
+      "bytes": 218447,
+      "tokens_estimate": 59655
     },
     "docs/TASKS.jsonl": {
       "bytes": 3470,
@@ -121,8 +121,8 @@
       "tokens_estimate": 451
     },
     "docs/HANDOFF-PROMPT.md": {
-      "bytes": 57851,
-      "tokens_estimate": 14970
+      "bytes": 57977,
+      "tokens_estimate": 15003
     }
   },
   "measurement_limits": [

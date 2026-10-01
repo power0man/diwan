@@ -1,6 +1,6 @@
 "use strict";
 const $ = id => document.getElementById(id);
-const state = {project: "", session: "", mode: "text", defaultSessionMode: "text", sessionModeChosen: false, mediaEnabled: false, urls: [], busy: false, stopBusy: false, runningTurn: null, epoch: 0, turns: [], selected: new Set(), before: 0, pending: null, poll: 0, dialogEpoch: 0};
+const state = {project: "", session: "", mode: "text", defaultSessionMode: "text", sessionModeChosen: false, mediaEnabled: false, urls: [], busy: false, refreshing: 0, stopBusy: false, runningTurn: null, epoch: 0, turns: [], selected: new Set(), before: 0, pending: null, poll: 0, dialogEpoch: 0, dialogReturnFocus: null};
 const token = document.querySelector('meta[name="diwan-token"]').content;
 const uuid = () => crypto.randomUUID().replaceAll("-", "");
 const errors = {
@@ -22,7 +22,11 @@ const errors = {
   stop_not_ready: "لم تُحفظ الجولة بعد. انتظر قليلًا ثم اطلب الإيقاف مجددًا؛ لم يُسجّل طلب الإيقاف.",
   stop_requested: "طُلب إيقاف المتابعة. قد تكتمل الخطوة الجارية؛ لا يُلغى أثرها تلقائيًا.",
   turn_cancelled: "أُوقفت متابعة هذه الجولة. تبقى آثار الخطوات المكتملة محفوظة.",
-  execution_backend_unavailable: "تنفيذ الأوامر غير مهيأ. أدوات الملفات المتاحة تبقى ضمن المشروع.",
+  execution_backend_unavailable: "تنفيذ الأوامر غير متاح. تحقق من إعداد البيئة واتصال Docker؛ أدوات الملفات تبقى متاحة.",
+  execution_configuration_error: "تعذر إعداد تنفيذ الأوامر بسبب عطل داخلي. راجع سجل التشغيل وأعد تشغيل ديوان.",
+  analysis_backend_unavailable: "تعذر الاتصال ببيئة التحليل. تحقق من تشغيل Docker ثم أعد تشغيل ديوان.",
+  analysis_configuration_error: "تعذر إعداد تحليل البيانات بسبب عطل داخلي. راجع سجل التشغيل وأعد تشغيل ديوان.",
+  execution_inspect_failed: "تعذر التحقق من حالة Docker. لم تُعتمد نتيجة التنفيذ؛ تحقق من الاتصال قبل المحاولة مجددًا.",
   media_unavailable: "مورد الصور والصوت غير مهيأ في هذا التشغيل.",
   media_too_large: "اختر ملفًا لا يتجاوز 256 كيلوبايت.",
   png_invalid: "الصورة خارج الصيغة المدعومة. استخدم PNG ملونًا غير متداخل، حتى مليون بكسل وضلع 1024.",
@@ -38,6 +42,10 @@ const errors = {
   outcome_uncertain: "انقطع تنفيذ الجولة ونتيجتها غير مؤكدة. لم تُعَد تلقائيًا.",
   turn_conflict: "معرف الجولة مرتبط بطلب آخر. استرجع الحالة قبل إنشاء جولة جديدة.",
   http_refused: "انتهت جلسة اتصال الواجهة أو رُفض مصدر الطلب. أعد تحميل الصفحة.",
+  bind_invalid: "عنوان تشغيل الصفحة غير صالح.",
+  listen_bind_conflict: "اختير عنوانان مختلفان لتشغيل الصفحة. اختر عنوانًا واحدًا.",
+  public_origin_invalid: "الرابط العام للصفحة غير صالح. يلزم رابط HTTPS كامل.",
+  public_origin_required: "يلزم تحديد رابط عام آمن قبل إتاحة الصفحة خارج هذا الجهاز.",
   network_error: "انقطع الاتصال. استرجع الحالة قبل إرسال طلب آخر؛ قد يكون الجواب محفوظًا.",
   model_changed_new_session: "تغير إعداد المزود. تستطيع قراءة هذه المحادثة؛ ابدأ محادثة جديدة للمتابعة.",
   file_too_large: "حجم الملف أكبر من 64 كيلوبايت. اختر مقتطفًا أصغر.",
@@ -50,11 +58,83 @@ const errors = {
   text_too_long: "النص أطول من ألفي حرف. اختصر ما تريد أن يُتذكّر.",
   text_invalid_memory: "اكتب نصًّا غير فارغ ليُحفظ.",
   item_unknown: "هذا العنصر ليس في ذاكرة المشروع. استرجع القائمة.",
+  memory_forget_incomplete: "انقطع إكمال النسيان. استرجع الحالة لاستكماله قبل متابعة المحادثة.",
+  memory_forget_transaction_corrupt: "سجل عملية النسيان غير صالح. تعذر المتابعة حتى إصلاح سجل الذاكرة.",
+  memory_forget_transaction_limit: "تجاوز تاريخ الذاكرة حد النسيان في عملية واحدة. لم يبدأ تغيير أي جلسة.",
+  memory_scrub_unreadable: "تعذرت قراءة تاريخ مرتبط بالذاكرة. لم يبدأ النسيان؛ عالج الملف أو القفل ثم أعد المحاولة.",
   memory_item_corrupt: "عنصرٌ في ذاكرة المشروع لا يطابق بصمته. لم يُستعمل شيء منها.",
+  agent_tool_contract_changed: "تغيّرت أدوات الجلسة منذ إنشائها. ابدأ محادثة جديدة قبل متابعة العمل بالأدوات.",
+  answer_empty: "عاد المزوّد بلا جواب قابل للعرض. أعد المحاولة، وإن تكرر ذلك فابدأ محادثة جديدة.",
+  attachments_invalid: "تعذر التحقق من المرفقات المختارة. أعد فتح الملفات واخترها من جديد.",
+  body_incomplete: "لم يصل الطلب كاملًا. تحقق من الاتصال، ثم استرجع الحالة قبل إعادة المحاولة.",
+  body_limit: "الطلب أكبر من الحد المسموح. قلّل النص أو المرفقات ثم أعد الإرسال.",
+  coder_unavailable: "وضع البرمجة غير مهيأ في هذا التشغيل. استخدم محادثة نصية أو فعّل أدوات البرمجة أولًا.",
+  collection_limit: "بلغت مساحة العمل الحد الأقصى للعناصر. استخدم مشروعًا أو محادثة قائمة قبل إضافة أخرى.",
+  complete_answer_required: "لا يمكن تنفيذ هذا الإجراء قبل اكتمال الجواب. انتظر اكتماله ثم أعد المحاولة.",
+  decision_invalid: "القرار المرسل غير صالح. افتح مراجعة الفعل مجددًا واختر الموافقة أو الرفض.",
+  glossary_too_large: "المسرد أكبر من الحد المدعوم. اختصره ثم ارفع نسخة أصغر.",
+  id_conflict: "معرّف الطلب مرتبط بعملية مختلفة. استرجع الحالة قبل إنشاء طلب جديد.",
+  id_invalid: "تعذر التحقق من معرّف العنصر. استرجع الصفحة وحاول من الواجهة مجددًا.",
+  json_invalid: "صيغة الطلب غير صالحة. أعد تحميل الصفحة ثم أعد المحاولة.",
+  limit_invalid: "الحد المطلوب غير صالح. استخدم قيمة موجبة ضمن المجال المتاح.",
+  media_count: "اختر ملف وسائط واحدًا فقط لكل طلب.",
+  media_encoding: "تعذر قراءة ترميز ملف الوسائط. اختر الملف الأصلي من جديد.",
+  media_invalid: "ملف الوسائط غير صالح أو لا يطابق النوع المعلن. اختر ملفًا مدعومًا.",
+  media_size: "ملف الوسائط أكبر من الحد المسموح. اختر ملفًا أصغر.",
+  memory_source_invalid: "تعذر ربط المعلومة بمصدرها في المحادثة. استرجع المحادثة ثم أعد الحفظ.",
+  memory_text_invalid: "اكتب معلومة غير فارغة وصالحة قبل حفظها في الذاكرة.",
+  metadata_invalid: "بيانات مساحة العمل غير صالحة. لا تكتب شيئًا جديدًا قبل استعادة نسخة سليمة.",
+  name_invalid: "اكتب اسمًا ظاهرًا من حرف واحد إلى ثمانين حرفًا، بلا محارف تحكم.",
+  not_found: "العنصر المطلوب غير موجود. استرجع الحالة واختر عنصرًا ظاهرًا في القائمة.",
+  pages_invalid: "قائمة الصفحات غير صالحة. راجع أرقام الصفحات وأعد الإرسال.",
+  policy_requires_local: "هذا الطلب محصور محليًا. اختر مزودًا محليًا أو غيّر الطلب بما يوافق سياسة البيانات.",
+  query_empty: "اكتب عبارة بحث غير فارغة قبل بدء البحث.",
+  receive_timeout: "انتهت مهلة استقبال الطلب. تحقق من الاتصال ثم استرجع الحالة قبل إعادة الإرسال.",
+  request_failed: "تعذر إكمال العملية. استرجع الحالة، ثم أعد المحاولة من الواجهة.",
+  request_invalid: "الطلب ناقص أو غير صالح. راجع المدخلات ثم أعد الإرسال.",
+  research_unavailable: "البحث المعمق غير مهيأ في هذا التشغيل. استخدم محادثة عادية أو فعّل خدمة البحث أولًا.",
+  restore_incomplete: "لم تكتمل الاستعادة، ولم يُعتمد ناتج جزئي. راجع النسخة ثم أعد المحاولة.",
+  session_mode_invalid: "نوع المحادثة غير معروف. اختر نوعًا متاحًا من القائمة.",
+  session_mode_mismatch: "نوع المحادثة المحفوظ لا يطابق الطلب. افتح المحادثة بالنوع الصحيح أو ابدأ أخرى.",
+  staging_limit: "هناك عمليات إعداد كثيرة معلقة. أكملها أو ألغها قبل بدء عملية جديدة.",
+  store_changed: "تغير المخزن أثناء العملية. استرجع الحالة وراجع النسخة الأحدث قبل المتابعة.",
+  thinking_invalid: "خيار التفكير غير صالح. فعّله أو عطّله من المربع ثم أعد الإرسال.",
+  tier_unavailable: "مستوى التشغيل المطلوب غير متاح. اختر المستوى المحلي المتاح أو أعد تهيئة المزود.",
+  translate_unavailable: "وضع الترجمة غير مهيأ في هذا التشغيل. استخدم محادثة عادية أو فعّل أدوات الترجمة أولًا.",
+  turn_unknown: "الجولة المطلوبة غير موجودة. استرجع المحادثة قبل بدء طلب جديد.",
+  word_invalid: "القيمة النصية غير صالحة. استخدم كلمة واحدة ضمن الحد المطلوب.",
+  workspace_turn_missing: "لم يسجل الخادم هذه الجولة. تحقق من الحالة قبل بدء طلب جديد.",
+  media_turn_missing: "لم يسجل الخادم جولة الوسائط. تحقق من الحالة قبل بدء طلب جديد.",
+  default_project_unavailable: "تعذر فتح مساحة العمل العامة. أعد تحميل الصفحة، ولا تنشئ بديلًا يدويًا.",
+  step_limit: "بلغت الجولة حد الخطوات قبل اكتمالها. راجع ما نُفذ ثم ابدأ طلبًا أصغر.",
+  timed_out: "انتهت مهلة الجولة قبل اكتمالها. استرجع الحالة قبل إعادة المحاولة.",
+  output_truncated: "توقف الجواب عند حد الإخراج. اطلب المتابعة في رسالة جديدة.",
 };
+const errorFamilies = [
+  [/^backup_/, "تعذر إنشاء النسخة الاحتياطية بأمان. راجع المصدر والوجهة ثم أعد المحاولة."],
+  [/^(recovery_|restore_)/, "تعذرت الاستعادة بأمان. استخدم نسخة سليمة وتحقق من الوجهة قبل المحاولة مجددًا."],
+  [/^preference_/, "تعذر تحديث التفضيلات. افتحها من جديد وراجع النسخة الحالية قبل الحفظ."],
+  [/^(memory_|item_|project_label_|project_store_|consent_|snapshot_)/, "تعذرت قراءة ذاكرة المشروع أو تحديثها بأمان. استرجع حالتها قبل المتابعة."],
+  [/^project_/, "تعذر التحقق من المشروع أو أرشيفه. استرجع قائمة المشاريع واختر مشروعًا ظاهرًا قبل المتابعة."],
+  [/^(agent_file_|agent_input_)/, "تعذر التحقق من مدخلات مساحة العمل. أعد اختيار الملفات ثم حاول مجددًا."],
+  [/^(action_|changed_since_|approval_|turn_|stop_|recover_)/, "تغيرت حالة الجولة أو الفعل. استرجع المحادثة وراجع الإيصال قبل اتخاذ قرار جديد."],
+  [/^(session_|state_|ledger_|manifest_|configuration_|config_|workspace_|control_root_)/, "تعذر التحقق من حالة المحادثة المحفوظة. أوقف الكتابة واستعد نسخة سليمة أو ابدأ محادثة جديدة."],
+  [/^(unsafe_|path_|file_|root_|read_root_|filesystem_)/, "رُفض مسار أو ملف غير آمن. اختر ملفًا داخل مساحة المشروع ولا تتجاوز حدودها."],
+  [/^(proposal_|request_id_)/, "تعذر التحقق من الطلب المحفوظ. افتح المسودة أو العملية مجددًا قبل المتابعة."],
+  [/^user_request_/, "نص الطلب غير صالح. اكتب طلبًا نصيًا غير فارغ ضمن الحد ثم أعد الإرسال."],
+  [/^(admission_|limits_|deadline_|model_|system_|purpose_)/, "إعداد المحادثة غير صالح أو تغير. ابدأ محادثة جديدة بإعداد متاح."],
+  [/^(policy_|tier_|unknown_policy)/, "سياسة البيانات لا تسمح بهذا المسار. استخدم التشغيل المحلي أو راجع تصنيف الطلب."],
+  [/^(analysis_|execution_|provider_|local_)/, "مكوّن التشغيل المطلوب غير جاهز. تحقق من تهيئته ثم أعد المحاولة."],
+];
+function normalizeErrorCode(code) {return typeof code === "string" && /^[a-z][a-z0-9_]*$/.test(code) ? code : "request_failed";}
+function knownErrorMessage(code) {code = normalizeErrorCode(code); return errors[code] || errorFamilies.find(([pattern]) => pattern.test(code))?.[1] || null;}
+function errorMessage(code) {return knownErrorMessage(code) || errors.request_failed;}
+function recordTechnicalError(code) {$("technical-errors").textContent = `آخر خطأ: ${normalizeErrorCode(code)}`;}
 function notice(text, error = false) {$("notice").textContent = text; $("notice").className = error ? "error" : "";}
 function showError(error) {
-  const text = errors[error.code] || `تعذر إكمال العملية (${error.code || "request_failed"}). استرجع الحالة وراجع المدخلات.`;
+  const code = normalizeErrorCode(error?.code);
+  const text = errorMessage(code);
+  recordTechnicalError(code);
   notice(text, true);
   if($("dialog").open) {let feedback = $("dialog-feedback"); if(!feedback) {feedback = element("p"); feedback.id = "dialog-feedback"; feedback.setAttribute("role", "alert"); $("dialog-body").append(feedback);} feedback.textContent = text;}
 }
@@ -73,20 +153,114 @@ function pendingKey(ctx = context()) {return `diwan.pending.${ctx.project}.${ctx
 function stoppableTurn() {
   return agentLike(state.mode) ? state.runningTurn || state.pending || state.turns.find(t => t.status === "awaiting_owner")?.turn_id : null;
 }
+function syncSubmit() {
+  $("send").disabled = state.busy || state.refreshing > 0 || !!state.pending || !!state.runningTurn || (agentLike(state.mode) && state.turns.some(t => ["awaiting_owner","outcome_unknown"].includes(t.status)));
+}
 function syncPending() {
   state.pending = sessionStorage.getItem(pendingKey());
-  $("recovery").hidden = !state.pending; $("send").disabled = state.busy || !!state.pending || !!state.runningTurn || (agentLike(state.mode) && state.turns.some(t => ["awaiting_owner","outcome_unknown"].includes(t.status)));
+  $("recovery").hidden = !state.pending; syncSubmit();
   $("release-pending").hidden = true;
   $("agent-stop").hidden = !stoppableTurn(); $("agent-stop").disabled = state.stopBusy;
 }
 function element(tag, text, className) {const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if(className) el.className = className; return el;}
+function hashLine(label, digest) {
+  const line = element("p", undefined, "hash-line"), hash = element("bdi", digest, "hash");
+  line.setAttribute("dir", "rtl"); hash.setAttribute("dir", "ltr");
+  line.append(element("span", label), document.createTextNode(" "), hash);
+  return line;
+}
 function button(text, action) {const el = element("button", text); el.type = "button"; el.onclick = () => Promise.resolve().then(action).catch(showError); return el;}
+const MARKDOWN_NODE_LIMIT = 2048;
+function safeMarkdownLink(value) {
+  return /^https?:\/\/[^\s\u0000-\u001f\u007f<>"'`]+$/i.test(value) ? value : null;
+}
+function appendMarkdownText(parent, text, budget) {
+  if(!text) return;
+  parent.append(document.createTextNode(text)); budget.nodes += 1;
+}
+// محلّلٌ محدود لا يحقن HTML: مسحٌ واحد، بلا تداخل أو اعتماد خارجي، وبحدّ ثابت لعقد DOM.
+function appendMarkdownInline(parent, text, budget) {
+  let at = 0, plain = 0;
+  const flush = end => {appendMarkdownText(parent, text.slice(plain, end), budget);};
+  while(at < text.length && budget.nodes < MARKDOWN_NODE_LIMIT) {
+    let end = -1, node = null, next = at + 1;
+    if(text[at] === "\\" && "\\`*_[]()".includes(text[at + 1] || "")) {
+      flush(at); appendMarkdownText(parent, text[at + 1], budget); at += 2; plain = at; continue;
+    }
+    if(text[at] === "`") {
+      end = text.indexOf("`", at + 1);
+      if(end > at + 1) {node = element("code", text.slice(at + 1, end)); next = end + 1;}
+    } else if(text.startsWith("**", at) || text.startsWith("__", at)) {
+      const marker = text.slice(at, at + 2); end = text.indexOf(marker, at + 2);
+      if(end > at + 2) {node = element("strong", text.slice(at + 2, end)); next = end + 2;}
+    } else if(text[at] === "*" || text[at] === "_") {
+      end = text.indexOf(text[at], at + 1);
+      if(end > at + 1) {node = element("em", text.slice(at + 1, end)); next = end + 1;}
+    } else if(text[at] === "[") {
+      const labelEnd = text.indexOf("](", at + 1);
+      end = labelEnd < 0 ? -1 : text.indexOf(")", labelEnd + 2);
+      if(labelEnd > at + 1 && end > labelEnd + 2) {
+        const href = safeMarkdownLink(text.slice(labelEnd + 2, end));
+        if(href) {
+          node = element("a", text.slice(at + 1, labelEnd)); node.href = href;
+          node.target = "_blank"; node.rel = "noopener noreferrer"; next = end + 1;
+        }
+      }
+    }
+    if(node) {flush(at); parent.append(node); budget.nodes += 1; at = next; plain = at;}
+    else at += 1;
+  }
+  flush(text.length);
+}
+function markdownBlock(tag, className) {
+  const block = element(tag, undefined, className); block.setAttribute("dir", "auto"); return block;
+}
+function renderMarkdownAnswer(text) {
+  const root = element("div", undefined, "content markdown-answer"), lines = String(text).replace(/\r\n?/g, "\n").split("\n");
+  const budget = {nodes: 1}; let at = 0;
+  while(at < lines.length) {
+    if(budget.nodes >= MARKDOWN_NODE_LIMIT) {appendMarkdownText(root, lines.slice(at).join("\n"), budget); break;}
+    if(/^ {0,3}```/.test(lines[at])) {
+      const code = [], pre = markdownBlock("pre", "markdown-code"), body = element("code"); at += 1;
+      while(at < lines.length && !/^ {0,3}```\s*$/.test(lines[at])) {code.push(lines[at]); at += 1;}
+      if(at < lines.length) at += 1;
+      body.textContent = code.join("\n"); pre.append(body); root.append(pre); budget.nodes += 2; continue;
+    }
+    if(!lines[at].trim()) {at += 1; continue;}
+    const unordered = lines[at].match(/^ {0,3}[-+*]\s+(.+)$/), ordered = lines[at].match(/^ {0,3}\d+[.)]\s+(.+)$/);
+    if(unordered || ordered) {
+      const list = markdownBlock(ordered ? "ol" : "ul");
+      while(at < lines.length && budget.nodes < MARKDOWN_NODE_LIMIT) {
+        const item = lines[at].match(ordered ? /^ {0,3}\d+[.)]\s+(.+)$/ : /^ {0,3}[-+*]\s+(.+)$/);
+        if(!item) break;
+        const li = markdownBlock("li"); appendMarkdownInline(li, item[1], budget); list.append(li); budget.nodes += 1; at += 1;
+      }
+      root.append(list); budget.nodes += 1; continue;
+    }
+    const paragraph = markdownBlock("p"); let hasLine = false;
+    while(at < lines.length && budget.nodes < MARKDOWN_NODE_LIMIT && lines[at].trim() && !/^ {0,3}```/.test(lines[at]) &&
+      !/^ {0,3}(?:[-+*]\s+|\d+[.)]\s+)/.test(lines[at])) {
+      if(hasLine) {paragraph.append(element("br")); budget.nodes += 1;}
+      appendMarkdownInline(paragraph, lines[at], budget); at += 1; hasLine = true;
+    }
+    root.append(paragraph); budget.nodes += 1;
+  }
+  return root;
+}
+function turnContent(turn) {
+  if(turn.content) return turn.content;
+  if(turn.status === "awaiting_owner") return "طلب ديوان تنفيذ الفعل المبين أدناه.";
+  const code = turn.error_code || (turn.status === "complete" ? "answer_empty" : turn.status) || "request_failed";
+  recordTechnicalError(code);
+  return errorMessage(code);
+}
 function render() {
   const box = $("messages"); box.replaceChildren();
   if (!state.turns.length) {box.append(element("p", "اكتب رسالتك لبدء المحادثة.", "empty")); return;}
   for (const turn of state.turns) {
     const user = element("article", undefined, "message user"); user.append(element("strong", "أنت"), element("div", turn.user_request, "content"));
-    const answer = element("article", undefined, "message"); answer.append(element("strong", "ديوان · جواب غير متحقق"), element("div", turn.content || (turn.status === "awaiting_owner" ? "طلب ديوان تنفيذ الفعل المبين أدناه." : errors[turn.error_code] || `تعذر توليد الجواب (${turn.error_code || turn.status})`), "content"));
+    const answerText = turnContent(turn), answerContent = turn.content ? renderMarkdownAnswer(answerText) : element("div", answerText, "content");
+    const answer = element("article", undefined, "message"); answer.append(element("strong", "ديوان · جواب غير متحقق"), answerContent);
     const statusLabel = {complete:"مكتمل",truncated:"جواب مبتور — لم يكتمل",awaiting_owner:"ينتظر قرارك في فعل محدد",outcome_unknown:"نتيجة الأثر غير مؤكدة",step_limit:"بلغ حد الخطوات",timed_out:"انتهت المهلة",cancelled:"توقفت المتابعة — تبقى آثار الخطوات المكتملة"}[turn.status] || "تعذر التنفيذ";
     answer.append(element("div", `${statusLabel}${turn.usage ? ` · ${turn.usage.input_tokens + turn.usage.output_tokens} وحدة نصية` : ""}`, "meta"));
     const ctx = context(), actions = element("div", undefined, "tools");
@@ -123,14 +297,91 @@ function renderTranslationCheck(answer, report) {
     ? `الفحص الآليّ للترجمة ${direction}${glossary}: يمرّ — الأرقامُ والرموزُ محفوظة، والحرفُ حرفُ اللغة الهدف.`
     : `الفحص الآليّ للترجمة ${direction}${glossary}: لا يمرّ — ${report.findings.map(f => `${f.code}: ${f.detail}`).join("، ")}`, "meta"));
 }
+const toolNames = Object.freeze({
+  read_file: "قراءة ملف", search_files: "البحث في الملفات", list_files: "عرض الملفات",
+  run_tests: "تشغيل الاختبارات", write_file: "كتابة ملف", edit_file: "تعديل ملف",
+  export_document: "تصدير مستند", run_command: "تشغيل أمر", propose_memory: "اقتراح حفظ في الذاكرة",
+  web_search: "بحث في الويب", analyze_data: "تحليل بيانات", check_translation: "فحص ترجمة",
+  search_regulations: "البحث في الأنظمة", analyze_arabic_morphology: "تحليل الصرف العربي",
+  evaluate_governance: "تقييم الحوكمة", check_mlx_hardware: "فحص عتاد MLX",
+  write_workspace_document: "كتابة مستند في مساحة العمل", execute_isolated_command: "تنفيذ أمر معزول",
+});
+const toolStatuses = Object.freeze({ok:"نجح", refused:"رُفض", error:"فشل", awaiting_owner:"ينتظر قرارك"});
+const argumentNames = Object.freeze({
+  path:"المسار", content:"المحتوى", old_text:"النص الموجود", new_text:"النص البديل",
+  argv:"الأمر ووسائطه", paths:"الاختبارات المطلوبة", pattern:"نمط البحث", suffix:"لاحقة الملفات",
+  prefix:"بادئة المسار", query:"عبارة البحث", max_results:"الحد الأقصى للنتائج",
+  text:"النص المقترح للذاكرة", code:"شيفرة التحليل", inputs:"ملفات الإدخال", outputs:"ملفات الإخراج",
+  timeout_s:"المهلة بالثواني", source:"النص المصدر", translation:"الترجمة", glossary:"المسرد",
+  document:"المستند", limit:"حد النتائج", word:"الكلمة", answer:"الجواب", pages:"الصفحات", command:"الأمر",
+  response_language:"لغة الجواب", verbosity:"طول الجواب", address_name:"الاسم المفضل للمخاطبة",
+});
+const preferenceValues = Object.freeze({ar:"العربية", en:"الإنجليزية", concise:"موجز", balanced:"متوازن", detailed:"مفصل"});
+function toolName(name) {return toolNames[name] || `أداة «${name || "غير معروفة"}»`;}
+function argumentName(name) {return argumentNames[name] || `المعامل «${name}»`;}
+function exactValue(value) {
+  if(typeof value === "string") return value;
+  if(value === null) return "قيمة فارغة";
+  if(value === true) return "نعم";
+  if(value === false) return "لا";
+  return String(value);
+}
+function renderArgumentValue(value) {
+  if(Array.isArray(value)) {
+    const list = element("ol");
+    for(const item of value) {const row = element("li"); row.append(renderArgumentValue(item)); list.append(row);}
+    return list;
+  }
+  if(value && typeof value === "object") {
+    const fields = element("div", undefined, "tool-argument-object");
+    for(const [name, nested] of Object.entries(value)) {
+      const field = element("div", undefined, "tool-argument");
+      field.append(element("strong", argumentName(name)), renderArgumentValue(nested)); fields.append(field);
+    }
+    return fields;
+  }
+  return element("pre", exactValue(value));
+}
+function renderArguments(values) {
+  const fields = element("div", undefined, "tool-arguments"), entries = Object.entries(values || {});
+  if(!entries.length) {fields.append(element("p", "لا مدخلات لهذا الفعل.")); return fields;}
+  for(const [name, value] of entries) {
+    const field = element("div", undefined, "tool-argument");
+    field.append(element("strong", argumentName(name)), renderArgumentValue(value));
+    fields.append(field);
+  }
+  return fields;
+}
+function renderPreferences(values) {
+  const fields = element("div", undefined, "request-preferences"), entries = Object.entries(values || {});
+  if(!entries.length) {fields.append(element("p", "لا توجد تفضيلات صريحة في هذه النسخة.")); return fields;}
+  for(const [name, value] of entries) {
+    const field = element("div", undefined, "tool-argument");
+    field.append(element("strong", argumentName(name)), renderArgumentValue(preferenceValues[value] || value));
+    fields.append(field);
+  }
+  return fields;
+}
+function renderInputFiles(files) {
+  const section = element("div", undefined, "tool-input-files");
+  section.append(element("h3", "ملفات نسخة المدخلات"));
+  for(const file of files || []) {
+    const item = element("div", undefined, "tool-input-file");
+    item.append(element("strong", file.path || file.relative_path || "ملف بلا اسم"));
+    if(Number.isFinite(file.size_bytes)) item.append(element("p", `الحجم: ${file.size_bytes} بايت`));
+    if(file.sha256) item.append(hashLine("البصمة:", file.sha256));
+    section.append(item);
+  }
+  return section;
+}
 function renderAgentActions(answer, actions, ctx, turn) {
   if(turn.inputs) {
     const inputs = element("details"); inputs.append(element("summary", "سياق الطلب المحفوظ"));
     inputs.append(element("p", "هذه نسخة المدخلات وقت إرسال الطلب؛ تعديل التفضيلات لاحقًا لا يغيرها."));
     const snapshot = turn.inputs.preferences;
     inputs.append(element("p", snapshot ? `نسخة التفضيلات: ${snapshot.revision}` : "لم تُرفق تفضيلات بهذا الطلب."));
-    if(snapshot) {inputs.append(element("pre", JSON.stringify(snapshot.values, null, 2)), element("p", snapshot.sha256, "hash"));}
-    if(turn.inputs.attachments?.length) inputs.append(element("pre", JSON.stringify(turn.inputs.attachments, null, 2)));
+    if(snapshot) inputs.append(renderPreferences(snapshot.values), hashLine("بصمة نسخة التفضيلات:", snapshot.sha256));
+    if(turn.inputs.attachments?.length) inputs.append(renderInputFiles(turn.inputs.attachments));
     answer.append(inputs);
   }
   for(const step of turn.steps || []) {
@@ -140,7 +391,8 @@ function renderAgentActions(answer, actions, ctx, turn) {
       thought.append(element("pre", step.thinking)); details.append(thought);
     }
     for(const result of step.tool_results || []) {
-      details.append(element("p", `${result.name} · ${result.status}${result.code ? ` · ${result.code}` : ""}`));
+      const status = toolStatuses[result.status] || "حالة غير معروفة";
+      details.append(element("p", `${toolName(result.name)} · ${status}${result.code ? ` — ${errorMessage(result.code)}` : ""}`));
       if(result.content) details.append(element("pre", result.content));
       // فعلٌ كتب ملفًّا (journal_action_id) أو ملفّاتٍ عدّة تُرجع معًا (journal_action_ids، ج٨)
       if(result.status === "ok" && result.action_id && (result.journal_action_id || (result.journal_action_ids || []).length)) {
@@ -157,7 +409,12 @@ function renderAgentActions(answer, actions, ctx, turn) {
   }
   const pending = turn.pending || [];
   for(const action of turn.status === "awaiting_owner" ? pending : []) {
-    if(action.state === "prepared" || action.status === "awaiting_owner") actions.append(button(`مراجعة فعل ${action.name}`, () => reviewAgentAction(ctx, turn.turn_id, action)));
+    if(action.state === "prepared" || action.status === "awaiting_owner") {
+      const approval = element("div", undefined, "approval");
+      approval.append(element("span", `${toolName(action.name)} — يحتاج قرارك`));
+      approval.append(button(`مراجعة: ${toolName(action.name)}`, () => reviewAgentAction(ctx, turn.turn_id, action)));
+      answer.append(approval);
+    }
   }
   if(turn.status === "awaiting_owner" && !pending.some(a => a.state === "prepared" || a.status === "awaiting_owner")) {
     actions.append(button("متابعة الجولة بالقرار المحفوظ", () => resumeAgent(ctx, turn.turn_id)));
@@ -179,22 +436,22 @@ $("agent-stop").onclick = async () => {
   } catch(error) {if(epoch === state.epoch) showError(error);}
   finally {state.stopBusy = false; syncPending();}
 };
-async function resumeAgent(ctx, turn) {
+async function resumeAgent(ctx, turn, focusReturn = null) {
   if(state.busy || ctx.project !== state.project || ctx.session !== state.session) return;
   const epoch = state.epoch; state.busy = true;
   try {
     sessionStorage.setItem(pendingKey(ctx), turn); syncPending(); notice("تُستأنف الجولة من الإيصالات المحفوظة.");
     await api("agent_resume", {...ctx, turn});
-    if(epoch === state.epoch) await refresh();
+    if(epoch === state.epoch) await refresh(focusReturn);
   } finally {state.busy = false; syncPending();}
 }
 function reviewAgentAction(ctx, turn, action) {
   if(ctx.project !== state.project || ctx.session !== state.session) return;
   const epoch = state.epoch, ticket = ++state.dialogEpoch, body = dialog("قرار لفعل محدد");
-  body.append(element("p", action.name), element("pre", JSON.stringify(action.arguments || {}, null, 2)));
+  body.append(element("h3", toolName(action.name)), renderArguments(action.arguments));
   body.append(element("p", "الموافقة تخص هذا الفعل ومدخلاته المثبتة وحدها. لا تمنح إذنًا لأفعال لاحقة."));
-  if(action.input_snapshot_sha256) body.append(element("p", `بصمة نسخة المدخلات: ${action.input_snapshot_sha256}`, "hash"));
-  if(action.input_files?.length) body.append(element("pre", JSON.stringify(action.input_files, null, 2)));
+  if(action.input_snapshot_sha256) body.append(hashLine("بصمة نسخة المدخلات:", action.input_snapshot_sha256));
+  if(action.input_files?.length) body.append(renderInputFiles(action.input_files));
   if(action.input_files_truncated) body.append(element("p", `تضم النسخة ${action.input_files_count} ملفًا؛ المعروض أول 64 ملفًا فقط.`));
   const buttons = [];
   for(const [approve, title] of [[true,"أوافق وأتابع"],[false,"أرفض وأتابع"]]) {
@@ -205,7 +462,7 @@ function reviewAgentAction(ctx, turn, action) {
         await api("agent_decide", {...ctx, action_id:action.action_id, call_digest:action.call_digest,
           expected_revision:action.revision, approve});
         if(!currentDialog(epoch,ticket)) return;
-        dismissDialog(); state.busy = false; await resumeAgent(ctx, turn);
+        const focusReturn = dismissDialog(); state.busy = false; await resumeAgent(ctx, turn, focusReturn);
       } catch(error) {if(epoch === state.epoch) throw error;}
       finally {state.busy = false; syncPending(); if(currentDialog(epoch,ticket)) buttons.forEach(b => b.disabled = false);}
     }); buttons.push(choice); body.append(choice);
@@ -307,13 +564,18 @@ async function showAgentFile(project, path) {
   const url = URL.createObjectURL(new Blob([data.content],{type:"text/plain;charset=utf-8"})); state.urls.push(url);
   const download = element("a","تنزيل هذه النسخة"); download.href = url; download.download = path.split("/").pop(); body.append(download);
 }
+function syncModeHint(optionId, hintId, enabled) {
+  const option = $(optionId), hint = $(hintId);
+  option.disabled = !enabled; hint.hidden = enabled;
+  option.setAttribute("aria-describedby", enabled ? "" : hintId);
+}
 async function projects() {
   const data = await api("projects"); const select = $("projects"); select.replaceChildren(new Option("اختر مشروعًا", ""));
   for (const project of data.projects) select.add(new Option(project.name, project.id));
   select.value = state.project;
-  state.mediaEnabled = data.media_enabled === true; $("media-option").disabled = !state.mediaEnabled;
+  state.mediaEnabled = data.media_enabled === true; syncModeHint("media-option", "media-mode-hint", state.mediaEnabled);
   const agentEnabled = data.agent_enabled === true; $("agent-option").disabled = !agentEnabled; $("coder-option").disabled = !agentEnabled; $("translate-option").disabled = !agentEnabled;
-  state.researchEnabled = data.research_enabled === true; $("research-option").disabled = !state.researchEnabled;
+  state.researchEnabled = data.research_enabled === true; syncModeHint("research-option", "research-mode-hint", state.researchEnabled);
   state.defaultSessionMode = agentEnabled && data.default_session_mode === "agent" ? "agent" : "text";
   const mode = $("session-mode"), available = mode.value === "text" || (["agent", "coder", "translate"].includes(mode.value) && agentEnabled) || (mode.value === "media" && state.mediaEnabled) || (mode.value === "research" && state.researchEnabled);
   if(!state.sessionModeChosen || !available) {mode.value = state.defaultSessionMode; state.sessionModeChosen = false;}
@@ -351,16 +613,20 @@ async function chooseSession(id, name, mode = "text") {
   if(mode === "agent") {const epoch = state.epoch; const caps = await api("agent_capabilities", {project:state.project}); if(epoch === state.epoch) $("agent-capabilities").textContent = caps.execution_enabled ? "أدوات الملفات وتنفيذ الأوامر المضبوطة متاحة؛ يُعرض الإذن المطلوب لكل فعل." : "أدوات ملفات المشروع متاحة. تنفيذ الأوامر غير مهيأ.";}
   if(mode === "coder") {const epoch = state.epoch; const caps = await api("agent_capabilities", {project:state.project}); if(epoch === state.epoch) $("agent-capabilities").textContent = "مبرمج: يقرأ شيفرةَ المشروع ويعدّلها بتعديلاتٍ تُعرض فروقُها ويُرجع عنها، فعلًا فعلًا أو الجولةَ كلَّها. " + (caps.execution_enabled ? "وتشغيلُ الاختبارات متاحٌ في الحاوية." : "وتشغيلُ الاختبارات غير مهيأ في هذا التشغيل.");}
 }
-async function refresh() {
+async function refresh(focusReturn = null) {
   if (!state.session) {notice("اختر محادثة أولًا."); return;}
+  state.refreshing += 1; syncPending();
+  try {
   const epoch = state.epoch, ctx = context(), data = await api("history", {...ctx, before: null}); if (epoch !== state.epoch) return;
   if (data.status === "running") {
     state.runningTurn = data.turn || null; syncPending();
     notice("ديوان يكتب الآن. تُسترجع الحالة دون إعادة إرسال الطلب.");
-    if (++state.poll < 90) setTimeout(() => {if(epoch === state.epoch) refresh().catch(showError);}, 2000);
+    if (++state.poll < 90) setTimeout(() => {if(epoch === state.epoch) refresh(focusReturn).catch(showError);}, 2000);
     return;
   }
+  const advanceFocus = focusReturn?.isConnected && document.activeElement === focusReturn;
   state.runningTurn = null; state.poll = 0; state.turns = data.turns; state.before = data.before; $("older").hidden = !data.before; render();
+  if(advanceFocus && !focusReturn.isConnected && document.activeElement === document.body) $("message").focus();
   syncPending();
   if (state.pending) {
     try {
@@ -370,6 +636,7 @@ async function refresh() {
     catch(e) {if(epoch !== state.epoch) return; if(["workspace_turn_missing", "media_turn_missing"].includes(e.code)) {$("release-pending").hidden = false; notice("لم يسجل الخادم هذه الجولة. يمكنك بدء طلب جديد صراحة.", true); return;} throw e;}
   }
   notice(`تم استرجاع المحادثة من جهازك. ${data.total} جولة محفوظة.`);
+  } finally {state.refreshing -= 1; syncSubmit();}
 }
 $("projects").onchange = () => chooseProject($("projects").value).catch(showError);
 $("session-mode").onchange = () => {state.sessionModeChosen = true;};
@@ -384,7 +651,7 @@ $("new-session").onsubmit = async event => {
   try {const s = await api("create_session", {project, name, mode:$("session-mode").value || state.defaultSessionMode}); if(epoch !== state.epoch) return; await chooseProject(project); if(state.epoch !== epoch + 1) return; await chooseSession(s.id, s.name, s.mode || "text"); if($("session-name").value === name) $("session-name").value = "";} catch(e) {if(state.project === project) showError(e);}
 };
 $("composer").onsubmit = async event => {
-  event.preventDefault(); if (state.busy || state.pending || state.runningTurn || !state.session) {notice("اختر محادثة واسترجع حالة أي إرسال سابق أولًا.", true); return;}
+  event.preventDefault(); if (state.busy || state.refreshing > 0 || state.pending || state.runningTurn || !state.session) {notice("اختر محادثة واسترجع حالة أي إرسال سابق أولًا.", true); return;}
   if(agentLike(state.mode) && state.turns.some(t => ["awaiting_owner","outcome_unknown"].includes(t.status))) {showError({code:"turn_unresolved"}); return;}
   const epoch = state.epoch, ctx = context(), message = $("message").value, turn = uuid();
   const files = [...state.selected], mode = state.mode, selectedFile = $("media-file").files[0];
@@ -411,14 +678,21 @@ $("composer").onsubmit = async event => {
   } catch(e) {if(epoch === state.epoch) showError(e);}
   finally {state.busy = false; syncPending();}
 };
+$("message").addEventListener("keydown", event => {
+  if(event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+    event.preventDefault();
+    $("composer").requestSubmit();
+  }
+});
 $("release-pending").onclick = () => {sessionStorage.removeItem(pendingKey()); syncPending(); notice("يمكنك مراجعة الرسالة وإرسال طلب جديد.");};
 $("older").onclick = async () => {try {const epoch = state.epoch, data = await api("history", {...context(), before: state.before}); if(epoch !== state.epoch || data.status === "running") return; state.turns = [...data.turns, ...state.turns]; state.before = data.before; $("older").hidden = !data.before; render();} catch(e) {showError(e);}};
 function clearPreviewURLs() {for(const url of state.urls) URL.revokeObjectURL(url); state.urls = [];}
-function dialog(title) {clearPreviewURLs(); const body = $("dialog-body"); body.replaceChildren(element("h2", title)); if(!$("dialog").open) $("dialog").showModal(); return body;}
-function dismissDialog() {clearPreviewURLs(); ++state.dialogEpoch; $("dialog").close();}
+function dialog(title) {clearPreviewURLs(); const body = $("dialog-body"), heading = element("h2", title); heading.tabIndex = -1; body.replaceChildren(heading); if(!$("dialog").open) {state.dialogReturnFocus = document.activeElement; $("dialog").showModal();} heading.focus(); return body;}
+function restoreDialogFocus() {const target = state.dialogReturnFocus; state.dialogReturnFocus = null; if(target?.isConnected && !target.disabled) {target.focus(); return target;} return null;}
+function dismissDialog() {clearPreviewURLs(); ++state.dialogEpoch; $("dialog").close(); return restoreDialogFocus();}
 function currentDialog(epoch, ticket) {return state.epoch === epoch && state.dialogEpoch === ticket;}
 $("close-dialog").onclick = dismissDialog;
-$("dialog").addEventListener("cancel", () => {clearPreviewURLs(); ++state.dialogEpoch;});
+$("dialog").addEventListener("cancel", event => {event.preventDefault?.(); dismissDialog();});
 async function loadFiles(project = state.project, epoch = state.epoch) {
   const data = await api("files", {project}); if(epoch !== state.epoch) return;
   $("files").replaceChildren();
@@ -456,7 +730,7 @@ async function inspect(ctx, turn) {
     details.append(preview); body.append(details);
   }
   if(!(data.attachments?.length || data.media?.length)) body.append(element("p", "لم يُرفق ملف بهذه الجولة."));
-  body.append(element("h3", "التفضيلات وقت الطلب"), element("pre", JSON.stringify(data.preferences?.values || {}, null, 2)));
+  body.append(element("h3", "التفضيلات وقت الطلب"), renderPreferences(data.preferences?.values));
 }
 async function propose(ctx, turn) {
   const epoch = state.epoch, ticket = ++state.dialogEpoch;
@@ -492,7 +766,7 @@ $("preferences").onclick = async () => {
 function rememberDialog(ctx, turn) {
   const epoch = state.epoch, ticket = ++state.dialogEpoch, body = dialog("تذكّر هذا في ذاكرة المشروع");
   body.append(element("p", "يُحفظ بموافقتك في ذاكرة هذا المشروع وحده، ويدخل سياق الطلبات الجديدة فيه محجورًا بياناتٍ لا تعليمات. عدّل النص ليبقى ما يفيد لاحقًا."));
-  const field = element("textarea"); field.rows = 6; field.maxLength = 2000; field.value = (turn.content || "").slice(0, 2000);
+  const field = element("textarea"), labelEl = element("label", "النص الذي سيُحفظ في ذاكرة المشروع"); field.id = "memory-text"; labelEl.htmlFor = field.id; field.rows = 6; field.maxLength = 2000; field.value = (turn.content || "").slice(0, 2000);
   const save = button("احفظ في الذاكرة", async () => {
     if(!currentDialog(epoch, ticket)) return;
     if(!field.value.trim()) {showError({code: "text_invalid_memory"}); return;}
@@ -502,7 +776,7 @@ function rememberDialog(ctx, turn) {
       if(currentDialog(epoch, ticket)) {dismissDialog(); notice("حُفظ في ذاكرة المشروع. يدخل الطلبات الجديدة وحدها، وتستطيع نسيانه من «ذاكرة هذا المشروع».");}
     } finally {save.disabled = false;}
   });
-  body.append(field, save);
+  body.append(labelEl, field, save);
 }
 $("memory").onclick = async () => {
   if(!state.project) {notice("اختر مشروعًا أولًا.", true); return;}
@@ -517,9 +791,11 @@ $("memory").onclick = async () => {
       row.append(button("انسَ", async () => {
         const out = await api("memory_forget", {project, item_id: item.item_id}); if(!currentDialog(epoch, ticket)) return;
         const refs = out.receipt.references || [];
-        row.replaceChildren(element("p", `نُسي. الإيصال: ${out.receipt.sha256}`, "hash"),
+        const forgotten = hashLine("نُسي. الإيصال:", out.receipt.sha256); forgotten.tabIndex = -1;
+        row.replaceChildren(forgotten,
           element("p", refs.length ? `رآه النموذج في ${refs.length} جولة. ما قاله فيها يبقى في تاريخها المختوم، وحذف تلك المحادثات بيدك.` : "لم يدخل سياق أيّ جولة."));
         if(refs.length) row.append(element("pre", refs.join("\n")));
+        forgotten.focus();
       }));
       body.append(row);
     }
@@ -533,7 +809,15 @@ async function boot() {
     $("projects").value = last.project; await chooseProject(last.project);
     const saved = [...$("sessions").children].find(el => el.dataset.session === last.session);
     if(saved) await chooseSession(last.session, saved.textContent, saved.dataset.mode);
+    if(saved) return;
   }
+  const defaults = await api("default_workspace");
+  await projects();
+  const general = [...$("projects").options].find(option => option.value === defaults.project.id);
+  if(!general) throw {code:"default_project_unavailable"};
+  $("projects").value = general.value; await chooseProject(general.value);
+  const session = [...$("sessions").children].find(item => item.dataset.session === defaults.session.id);
+  if(session) await chooseSession(session.dataset.session, session.textContent, session.dataset.mode);
 }
 boot().catch(showError);
 // سطح قراءة فقط للوكيل؛ لا نمنحه إرسال طلب أو تطبيق ملف من نص النموذج.

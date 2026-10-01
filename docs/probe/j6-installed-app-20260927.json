@@ -1,0 +1,259 @@
+{
+  "schema_version": 1,
+  "task": "J6 / #36",
+  "agent": "openai/codex",
+  "date": "2026-09-27",
+  "base_commit": "34d4a643f026aeff1836866938c1de74b7352a1d",
+  "review_fix_date": "2026-09-30",
+  "review_fix_base_commit": "5aae1d31b767b472159be3d4908cae7bf45aa933",
+  "source_sha256": {
+    "pyproject.toml": "ade657a86667163fd8a8d53d48ea94f07079db42eac4e521aa96a173923b558f",
+    "uv.lock": "a41de1cf46d2639ae3519fc4f024450e0465f90c4e65309c2e7a1674bf4ec4e6",
+    "Dockerfile": "cdf1539a378bf3beac045fb78085b65072d5d9c2bce437415c9eaaac7492ac8c",
+    ".dockerignore": "a9965bba8b1203d43927371095fd848f1ebdf89bc12fa62d10932907982b18f3",
+    ".github/workflows/container-smoke.yml": "54b7db73369c124e95cf1da5b6ef9270724d3c9a8cc2448a96bbac3454486c18",
+    "diwan/cli.py": "e66a68d779996f96590de361e7458a73424518254c21be944e28d2efe58a0596",
+    "tools/serve_ui.py": "3d13b0011e320e25d5151b1f5c6728958eee5c6c1b59b51d92633a727bf67cff",
+    "webui/server.py": "d49f04975e00892e1c0426bd38ad1086251bb87ae6726e16eb10950518f88085",
+    "tests/test_installed_app.py": "0f6a228ac11a69a3f17fc7f99559659473bdf45a27be63baca0277ade460fd3c",
+    "tests/test_container_image.py": "7b2730ec02be05452aebe1c90c6a368978ab5a53bdfb0f35c4abc71de2a0c1a1",
+    "ci/container_state.py": "7198f5ef8fcc89292e687ca283803a54839b20c578ba1b24f22baf58af16cc8e",
+    "docs/INSTALL.md": "19ef37acb3333d82e34852ccf4c167bdf10ffc7fb6a7791dae5457eaaba54041"
+  },
+  "scope": "Installable public application and container smoke; no model-quality claim.",
+  "container": {
+    "platform": "linux/arm64",
+    "python": "3.12.14",
+    "image_id": "sha256:c20481751ac79c9a2a89387cd06b1e4aa479d0014c9bde9ae0c9240e427f8145",
+    "user": "diwan",
+    "state_volume": "/app/var"
+  },
+  "smoke": {
+    "schema_version": 1,
+    "steps": [
+      {
+        "step": "runtime",
+        "status": "ok",
+        "code": "runtime_ready_public",
+        "detail": "بايثون 3.12.14، نسخةٌ public"
+      },
+      {
+        "step": "morphology",
+        "status": "ok",
+        "code": "camel_ready",
+        "detail": "CAMeL Tools 1.6.0 بقاعدة calima-msa-r13"
+      },
+      {
+        "step": "engine",
+        "status": "unavailable",
+        "code": "engine_unreachable",
+        "detail": "لا يجيب Ollama على http://127.0.0.1:11434: URLError — شغّل `ollama serve`"
+      },
+      {
+        "step": "agent_turn",
+        "status": "ok",
+        "code": "mechanism_only",
+        "detail": "2 خطوات، والجواب: الملفُ يقول: مرحبًا بديوان على هذا الجهاز"
+      },
+      {
+        "step": "policies",
+        "status": "unavailable",
+        "code": "corpus_missing",
+        "detail": "المتنُ غيرُ موضوع محليًّا — `python tools/place_private_stores.py --from ~/diwan-private`"
+      },
+      {
+        "step": "ui",
+        "status": "ok",
+        "code": "ui_ready",
+        "detail": "tools/serve_ui.py يُهيَّأ"
+      }
+    ],
+    "exit_code": 3,
+    "verdict": "unavailable_declared"
+  },
+  "installed_tool": {
+    "macos": "Fresh isolated uv tool install from source; serve --help and check from outside checkout succeeded; smoke exit 3.",
+    "linux": "Fresh isolated uv tool install from wheel; locked requirements and separately the documented CPU torch command succeeded; smoke exit 3.",
+    "linux_packages": 67,
+    "model_calls": 0
+  },
+  "persistence": {
+    "provider": "synthetic",
+    "write_container": "passed",
+    "read_after_container_replacement": "passed",
+    "turns_recovered": 1
+  },
+  "mutations": [
+    {
+      "mutation": "entrypoint_removed",
+      "test": "tests/test_installed_app.py::test_wheel_and_sdist_exclude_owner_stores_and_private_keys",
+      "exit_code": 1,
+      "killed": true
+    },
+    {
+      "mutation": "static_html_missing",
+      "test": "tests/test_installed_app.py::test_wheel_and_sdist_exclude_owner_stores_and_private_keys",
+      "exit_code": 1,
+      "killed": true
+    },
+    {
+      "mutation": "private_script_bundled",
+      "test": "tests/test_installed_app.py::test_wheel_and_sdist_exclude_owner_stores_and_private_keys",
+      "exit_code": 1,
+      "killed": true
+    },
+    {
+      "mutation": "state_in_installation",
+      "test": "tests/test_installed_app.py::test_installed_ui_keeps_state_outside_the_installation",
+      "exit_code": 1,
+      "killed": true
+    },
+    {
+      "mutation": "volume_removed",
+      "test": "tests/test_container_image.py::test_container_state_is_a_volume_and_desktop_does_not_require_host_networking",
+      "exit_code": 1,
+      "killed": true
+    },
+    {
+      "mutation": "host_network_required",
+      "test": "tests/test_container_image.py::test_container_state_is_a_volume_and_desktop_does_not_require_host_networking",
+      "exit_code": 1,
+      "killed": true
+    },
+    {
+      "mutation": "binding_ignored",
+      "test": "tests/test_installed_app.py::test_container_binding_keeps_local_host_and_origin_checks",
+      "exit_code": 1,
+      "killed": true
+    },
+    {
+      "mutation": "private_context_included",
+      "test": "tests/test_container_image.py::test_restored_private_stores_are_excluded_from_the_build_context",
+      "exit_code": 1,
+      "killed": true
+    },
+    {
+      "mutation": "required_check_filtered",
+      "test": "tests/test_container_image.py::test_ci_always_runs_python_tests_and_checks_replacement_and_tool_install",
+      "exit_code": 1,
+      "killed": true
+    },
+    {
+      "mutation": "listen_guard_removed",
+      "test": "tests/test_installed_app.py::test_container_binding_keeps_local_host_and_origin_checks",
+      "exit_code": 1,
+      "killed": true
+    }
+  ],
+  "followup_scope": {
+    "issues": [
+      44,
+      45
+    ],
+    "code_already_merged": [
+      "4f483dc",
+      "c53cd81",
+      "cd384f8"
+    ],
+    "verified_tests": [
+      "tests/test_analysis_backend.py",
+      "tests/test_analyze_data_tool.py",
+      "tests/test_coder_mode.py",
+      "tests/test_project_archive.py"
+    ],
+    "passed": 99,
+    "remaining": "Live model acceptance thresholds; neither issue is closed by this implementation."
+  },
+  "measurement_limits": [
+    "Container smoke exit 3 names unavailable Ollama and private policy corpus; it is not full readiness.",
+    "Conversation persistence uses a synthetic provider.",
+    "Live model quality, PDF with LibreOffice, Docker Desktop model performance and WSL2 were not measured.",
+    "Docker execution receipts and the separate runtime backend are outside J6; #23 belongs to Claude.",
+    "Native uv tool dependency resolution is not the frozen uv sync environment.",
+    "The 4504/61 hosted count below is from source commit 5aae1d31 and is not a result for the review-fix head.",
+    "Docker is not installed in the 2026-09-30 Codex cloud executor; the review-fix container evidence comes from hosted Actions.",
+    "The hosted review-fix run is tied to ad54f43; the following evidence-only commit changes no application, packaging or test source."
+  ],
+  "http": {
+    "installed_command": true,
+    "loopback_published_port": 28765,
+    "get_status": 200,
+    "foreign_host_status": 403,
+    "model_calls": 0,
+    "review_fix": "A synthetic non-browser TCP peer cannot obtain CSRF or dispatch with forged Host/Origin; a one-use printed bootstrap capability sets an HttpOnly SameSite=Strict browser cookie."
+  },
+  "review_fix_validation": {
+    "agent": "openai/codex",
+    "date": "2026-09-30",
+    "git_commit": "d1fddcfe67e9f864bb8ce25af8d65a707c09453c",
+    "python": "3.12.14",
+    "focused_tests": {
+      "command": "python3 -m pytest -o addopts='' tests/test_webui_http.py tests/test_adversarial_m9_m13.py tests/test_agent_webui.py tests/test_agent_stop_http.py tests/test_webui_sovereign_tools.py tests/test_webui_media.py tests/test_installed_app.py tests/test_container_image.py --disable-warnings",
+      "passed": 151,
+      "skipped": 1,
+      "failed": 0,
+      "seconds": 53.60
+    },
+    "full_tests": {
+      "command": "python3 -m pytest -o addopts='' --disable-warnings",
+      "passed": 4510,
+      "skipped": 58,
+      "failed": 0,
+      "seconds": 199.40,
+      "tested_commit": "d1fddcfe67e9f864bb8ce25af8d65a707c09453c",
+      "upload_note": "The remote source tree matches the tested code; the following commit changes only these provenance strings."
+    },
+    "mutations": {
+      "tool": "tools/mutation_check.py from main d60e7b3, applied to the stacked branch manifest",
+      "manifest": "tests/mutations/test_installed_app.jsonl",
+      "killed": 8,
+      "survived": 0,
+      "other": 0,
+      "status": "passed"
+    },
+    "docker": {
+      "local": "not_run_docker_command_not_installed",
+      "hosted_status": "passed",
+      "source_commit": "ad54f43b26a1e204d5e5f02c7e6ccb0ffeb2a064",
+      "run": "https://github.com/power0man/diwan/actions/runs/36706605760/job/109858209715",
+      "python": "3.12",
+      "pytest": {
+        "passed": 4507,
+        "skipped": 61,
+        "failed": 0,
+        "seconds": 323.51
+      },
+      "image_build": "passed",
+      "offline_smoke": "passed_with_declared_exit_3",
+      "volume_replacement": "write_and_read_passed_with_synthetic_provider",
+      "fresh_tool_install_outside_checkout": "passed_67_packages"
+    }
+  },
+  "validation": {
+    "container_pytest": {
+      "command": "python -m pytest -p no:cacheprovider",
+      "passed": 4504,
+      "skipped": 61,
+      "failed": 0,
+      "seconds": 328.13,
+      "source_commit": "5aae1d31b767b472159be3d4908cae7bf45aa933",
+      "run": "https://github.com/power0man/diwan/actions/runs/36286897426/job/108529246089"
+    },
+    "shared_checks": {
+      "docs": "passed",
+      "acceptance_0_8b_9_10_11_12_13": "passed",
+      "frontend_syntax": "passed",
+      "frontend_behavior": "45/45",
+      "acceptance_7": "sources_missing (exit 3, public checkout)",
+      "signed_anchors_verified": 2,
+      "signed_anchors_absent": 13
+    },
+    "macos_pytest": {
+      "command": "python -m pytest",
+      "passed": 4516,
+      "skipped": 39,
+      "failed": 0,
+      "seconds": 222.03
+    }
+  }
+}

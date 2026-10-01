@@ -127,6 +127,95 @@ def test_the_open_only_chain_judges_agentic_tasks_in_a_container_before_placing(
     assert judge < chain.index("UPDATE=1 OPEN_ONLY=1 tools/kimi_drive.sh place")
 
 
+
+def test_the_memory_assignment_is_bundled_with_its_own_header(tmp_path):
+    """ملاحظاتُ Codex على #129: الحزمةُ كانت تحمل KIMI-NEXT.md دائمًا، فلا طريقَ موثّقًا لإرسال تكليف الذاكرة؛ ثم حملت
+    أولَ فقرةٍ من رأس v1.2 وفيها «سلّم في kimi-benchmark/»، فيتعارض الأمران ويُكتب تقريرُ الذاكرة فوق تقرير v1.2."""
+    env = dict(os.environ, KIMI_WORK=str(tmp_path), DIWAN=str(ROOT), KIMI_TASK="memory")
+    done = subprocess.run(["bash", str(DRIVER), "bundle"], capture_output=True, text=True, env=env)
+    assert done.returncode == 0, done.stderr
+    produced = Path(done.stdout.strip()).read_text(encoding="utf-8")
+    brief = (ROOT / "docs" / "KIMI-BENCHMARK-BRIEF.md").read_text(encoding="utf-8")
+    independence = brief[brief.index("## ٠ — "):brief.index("## ٢ — ")]
+    expected = (_after_first_rule(ROOT / "docs" / "external" / "KIMI-MEMORY-HEADER.md") + "\n"
+                + independence + "\n"
+                + _after_first_rule(ROOT / "docs" / "external" / "KIMI-MEMORY-BANK.md"))
+    assert produced == expected
+    assert "current/open" not in produced and "KIMI-NEXT" not in produced
+    # موضعُ التسليم واحد: kimi-memory/، ولا أمرَ بالتسليم في kimi-benchmark/، ولا عقدُ تسليم بنك v1.2 من التكليف العامّ
+    # (open/ وsealed/ وMANIFEST)؛ وقواعدُ الاستقلال حاضرة (ملاحظتا Codex على #129)
+    assert "سلّم في `kimi-memory/`" in produced and "سلّم في `kimi-benchmark/`" not in produced
+    assert "## ١ — قواعدُ الاستقلال" in produced
+    for contract in ("## ١١ — ما تُسلِّمه", "sealed/MANIFEST.json", "├── open/", "## ٨ — الشطرُ المحجوب"):
+        assert contract not in produced
+    bad = subprocess.run(["bash", str(DRIVER), "bundle"], capture_output=True, text=True,
+                         env={**env, "KIMI_TASK": "other"})
+    assert bad.returncode != 0
+
+
+def test_a_brief_whose_sections_moved_is_refused_not_cut_by_guess(tmp_path):
+    """إن لم يوجد §٢ في التكليف العامّ لاقتطع awk منه حتى آخره، ومعه عقدُ تسليم بنك v1.2؛ فالأداةُ ترفض بدل أن تخمّن."""
+    diwan = tmp_path / "diwan"
+    for rel in ("docs/external/KIMI-MEMORY-HEADER.md", "docs/external/KIMI-MEMORY-BANK.md"):
+        (diwan / rel).parent.mkdir(parents=True, exist_ok=True)
+        (diwan / rel).write_text((ROOT / rel).read_text(encoding="utf-8"), encoding="utf-8")
+    brief = (ROOT / "docs" / "KIMI-BENCHMARK-BRIEF.md").read_text(encoding="utf-8")
+    (diwan / "docs" / "KIMI-BENCHMARK-BRIEF.md").write_text(brief.replace("## ٢ — ", "## 2 — "), encoding="utf-8")
+    env = dict(os.environ, KIMI_WORK=str(tmp_path / "work"), DIWAN=str(diwan), KIMI_TASK="memory")
+    done = subprocess.run(["bash", str(DRIVER), "bundle"], capture_output=True, text=True, env=env)
+    assert done.returncode != 0 and "§٠ و§٢" in done.stderr
+    assert not list((tmp_path / "work").rglob("prompt-*.txt"))
+
+
+def test_the_memory_brief_documents_exactly_the_fields_the_validator_accepts():
+    """ملاحظةُ Codex على #129: جدولُ الشكل أسقط `quarantined`، فبنكٌ يتبع التكليفَ حرفيًّا يرفضه المدقّقُ في كلِّ سيناريو حقن."""
+    import re
+    from evaluation.memory_bank import EXPECTS, OPS
+    brief = (ROOT / "docs" / "external" / "KIMI-MEMORY-BANK.md").read_text(encoding="utf-8")
+    documented = {}
+    for shape in re.findall(r'`(\{"(?:op|expect)": "\w+"[^`]*\})`', brief):
+        kind = re.match(r'\{"(op|expect)": "(\w+)"', shape).groups()
+        documented.setdefault(kind, set()).update(re.findall(r'(?:\{|,\s*)"(\w+)"', shape))
+    accepted = {**{("op", k): v for k, v in OPS.items()},
+                **{("expect", k): v | ({"quarantined"} if k == "context" else set()) for k, v in EXPECTS.items()}}
+    assert documented == accepted
+    assert '"quarantined": true' in brief.split("### ما يُرفض به البنكُ كلُّه", 1)[1]
+
+
+def test_a_memory_run_points_to_the_memory_tool_not_the_bank_intake(tmp_path):
+    """ملاحظةُ Codex على #129: بعد تشغيل الذاكرة كانت الأداةُ توجّه إلى inspect/intake/place، وهي لشجرة open/sealed."""
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    fake = bin_dir / "kimi"
+    fake.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    fake.chmod(0o755)
+    work = tmp_path / "work"
+    (work / "logs").mkdir(parents=True)
+    env = dict(os.environ, KIMI_WORK=str(work), DIWAN=str(ROOT), KIMI_TASK="memory",
+               PATH=f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
+    done = subprocess.run(["bash", str(DRIVER), "run"], capture_output=True, text=True, env=env)
+    assert done.returncode == 0, done.stderr
+    assert "tools/evaluate_memory.py --suite" in done.stdout and "intake'" not in done.stdout
+    # التسليمُ في kimi-memory/ لا في kimi-benchmark/ حيث تسليمُ v1.2، ولا يُكتب فوق تسليمٍ قائم (ملاحظة Codex على #129)
+    assert f"{work}/kimi-memory/memory_kimi_v1.json" in done.stdout and "kimi-benchmark/memory" not in done.stdout
+    (work / "kimi-benchmark").mkdir()
+    (work / "kimi-benchmark" / "REPORT.md").write_text("تسليم v1.2", encoding="utf-8")
+    again = subprocess.run(["bash", str(DRIVER), "run"], capture_output=True, text=True, env=env)
+    assert again.returncode == 0, again.stderr
+    for delivered in ("REPORT.md", "memory_kimi_v1.json"):
+        (work / "kimi-memory" / delivered).write_text("{}", encoding="utf-8")
+        refused = subprocess.run(["bash", str(DRIVER), "run"], capture_output=True, text=True, env=env)
+        assert refused.returncode != 0 and "تسليمُ ذاكرةٍ قائم" in refused.stderr
+        (work / "kimi-memory" / delivered).unlink()
+    assert (work / "kimi-benchmark" / "REPORT.md").read_text(encoding="utf-8") == "تسليم v1.2"
+    for cmd in ("inspect", "intake", "place"):
+        refused = subprocess.run(["bash", str(DRIVER), cmd], capture_output=True, text=True, env=env)
+        assert refused.returncode != 0 and "evaluate_memory" in refused.stderr
+    plain = subprocess.run(["bash", str(DRIVER), "run"], capture_output=True, text=True,
+                           env={**env, "KIMI_TASK": "next"})
+    assert plain.returncode == 0 and "intake'" in plain.stdout
+
+
 FAKE_KIMI = """#!/bin/sh
 python3 - <<'PY'
 import json, os
