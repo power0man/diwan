@@ -108,10 +108,12 @@ def test_m16_preserves_six_checks_but_emits_current_counts_and_bounded_meaning(m
     assert "ليس اعتمادًا حاليًا" in output and "جاهزية المنتج غير مقاسة" in output
 
 
-def test_bank_and_historical_score_report_remain_byte_identical():
+def test_bank_is_unchanged_and_historical_report_has_frozen_withdrawal_metadata():
     assert hashlib.sha256(SUITE.read_bytes()).hexdigest() == "1a91f6627fd76e7b5538432df3574f416a44f591b3bceaf1d66943cce1098b29"
+    # #188 changes only the certification metadata; keep the complete corrected
+    # artifact pinned here. test_named_probe_status separately pins original values.
     historical = ROOT / "docs/probe/dalub-benchmark-results.json"
-    assert hashlib.sha256(historical.read_bytes()).hexdigest() == "df4ab1910ac15d00eca41a6fab3bf46162b491eb6c949fb551dd8c0decc4c71e"
+    assert hashlib.sha256(historical.read_bytes()).hexdigest() == "1d83d15d11a5f671ae4036ca9b543f867211e74faa54b7d571287d08f85d834b"
 
 
 @pytest.mark.parametrize("split,total,receipt", [

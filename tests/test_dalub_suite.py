@@ -115,10 +115,10 @@ def test_dalub_simulation_splits_have_distinct_content_receipts():
 
 
 def test_dalub_historical_mislabeled_report_is_preserved_as_evidence():
-    """وسم certified القديم شاهد خطأ محفوظ؛ لا اعتماد حالي أو بوابة جودة."""
+    """سُحبت صفة الاعتماد؛ تبقى الأرقام التاريخية وبصمة الإيصال كما نُشرت."""
     probe_path = ROOT / "docs" / "probe" / "dalub-benchmark-results.json"
     raw = probe_path.read_bytes()
-    assert hashlib.sha256(raw).hexdigest() == "df4ab1910ac15d00eca41a6fab3bf46162b491eb6c949fb551dd8c0decc4c71e"
+    assert hashlib.sha256(raw).hexdigest() == "1d83d15d11a5f671ae4036ca9b543f867211e74faa54b7d571287d08f85d834b"
     data = json.loads(raw)
-    assert data["status"] == "certified"  # التاريخ كما وقع، بما فيه الوسم المضلل.
+    assert data["status"] == "withdrawn"  # #188: وصف الحكم مصحح، والأرقام لم تُعد.
     assert data["total_cases"] == 400
