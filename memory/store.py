@@ -235,7 +235,7 @@ class MemoryStore:
             seen.append(item["sha256"])
             used += len(held)
         fenced, _ = wrap("\n".join(lines))
-        return f"{HEADER}\n{fenced}", sorted(seen)
+        return f"{HEADER}\n{fenced}", sorted(set(seen))
 
     def context_block(self, question: str) -> str:
         return self.context(question)[0]
