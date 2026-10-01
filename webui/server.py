@@ -73,6 +73,45 @@ def need(condition, code="request_invalid"):
         raise UIError(code)
 
 
+def _public_http_origin(value):
+    """Return one canonical, operator-declared HTTPS origin.
+
+    Proxy headers deliberately do not participate: the declared origin is the
+    only public trust root for Host and Origin checks.
+    """
+    need(isinstance(value, str) and value == value.strip() and value, "public_origin_invalid")
+    try:
+        parsed = urlsplit(value)
+        port = parsed.port
+    except ValueError:
+        raise UIError("public_origin_invalid") from None
+    need(parsed.scheme == "https" and parsed.hostname is not None, "public_origin_invalid")
+    need(parsed.username is None and parsed.password is None, "public_origin_invalid")
+    need(parsed.path == "" and parsed.query == "" and parsed.fragment == "", "public_origin_invalid")
+    need(parsed.hostname.isascii(), "public_origin_invalid")
+    host = parsed.hostname.lower()
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        need(re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?", host)
+             and all(part and len(part) <= 63 and not part.startswith("-") and not part.endswith("-")
+                     for part in host.split(".")), "public_origin_invalid")
+        authority = host
+    else:
+        authority = f"[{address.compressed}]" if address.version == 6 else address.compressed
+    if port is not None:
+        authority += f":{port}"
+    return f"https://{authority}"
+
+
+def _bind_address(value):
+    need(isinstance(value, str) and value == value.strip(), "bind_invalid")
+    try:
+        return ipaddress.IPv4Address(value)
+    except ipaddress.AddressValueError:
+        raise UIError("bind_invalid") from None
+
+
 def identifier(value):
     need(isinstance(value, str) and IDENTIFIER.fullmatch(value), "id_invalid")
     return value
@@ -157,6 +196,7 @@ class LocalApp:
                  agent_provider_factory=None, runtime_receipt=None, web_search=None,
                  analysis_receipt=None, docker_executable="/usr/local/bin/docker"):
         self.root = _canonical_root(root)
+        self.public_origin = None
         self.model, self.model_version = model, model_version
         self.provider_factory = provider_factory
         self.agent_provider_factory = agent_provider_factory
@@ -922,7 +962,8 @@ class LocalApp:
             with self.lock:
                 return {"projects": self.collection(self.root / "projects"), "media_enabled": self.media_enabled,
                         "agent_enabled": self.agent_enabled, "research_enabled": self.research_enabled,
-                        "default_session_mode": self.default_session_mode}
+                        "default_session_mode": self.default_session_mode,
+                        "public_origin": self.public_origin}
         if action == "create_project":
             return self.create(self.root / "projects", request["name"])
         if action == "default_workspace":
@@ -1161,18 +1202,30 @@ class Server(ThreadingHTTPServer):
     block_on_close = True
     allow_reuse_address = False
 
-    def __init__(self, app, port=0, *, listen="127.0.0.1"):
-        if listen not in {"127.0.0.1", "0.0.0.0"}:
-            raise ValueError("invalid_listen_address")
+    def __init__(self, app, port=0, bind="127.0.0.1", public_origin=None, *, listen=None):
+        if listen is not None:
+            if listen not in {"127.0.0.1", "0.0.0.0"}:
+                raise ValueError("invalid_listen_address")
+            need(bind == "127.0.0.1", "listen_bind_conflict")
+            bind = listen
+        bind_address = _bind_address(bind)
+        declared_origin = None if public_origin is None else _public_http_origin(public_origin)
+        need(bind_address.is_loopback or declared_origin is not None or listen == "0.0.0.0",
+             "public_origin_required")
         self.app = app
         self.token = secrets.token_hex(32)
-        self.requires_bootstrap = listen == "0.0.0.0"
+        self.requires_bootstrap = not bind_address.is_loopback
         self.bootstrap_secret = secrets.token_urlsafe(32) if self.requires_bootstrap else None
         self.browser_secret = secrets.token_urlsafe(32) if self.requires_bootstrap else None
         self.bootstrap_lock = threading.Lock()
         self.slots = threading.BoundedSemaphore(8)
-        super().__init__((listen, port), Handler)
-        self.origin = f"http://127.0.0.1:{self.server_port}"
+        super().__init__((str(bind_address), port), Handler)
+        local_host = str(bind_address) if bind_address.is_loopback else "127.0.0.1"
+        self.origin = declared_origin or f"http://{local_host}:{self.server_port}"
+        self.public_origin = declared_origin
+        self.origin_host = urlsplit(self.origin).netloc
+        if self.app is not None:
+            self.app.public_origin = declared_origin
 
     @property
     def bootstrap_url(self):
@@ -1281,8 +1334,19 @@ class Handler(BaseHTTPRequestHandler):
         return values[0]
 
     def boundary(self):
-        need(self.header("Host") == self.server.origin.removeprefix("http://"), "http_refused")
-        need(self.headers.get("Sec-Fetch-Site") not in ("cross-site", "same-site"), "http_refused")
+        need(self.header("Host").lower() == self.server.origin_host, "http_refused")
+        # Public links and identity-provider redirects enter as document
+        # navigations. Only the inert root page may cross that site boundary;
+        # API calls, subresources and embedded frames retain the strict guard.
+        public_navigation = (
+            self.server.public_origin is not None
+            and self.command == "GET"
+            and self.path == "/"
+            and self.headers.get_all("Sec-Fetch-Mode", []) == ["navigate"]
+            and self.headers.get_all("Sec-Fetch-Dest", []) == ["document"]
+        )
+        need(public_navigation or self.headers.get("Sec-Fetch-Site") not in ("cross-site", "same-site"),
+             "http_refused")
 
     def peer_is_loopback(self):
         try:

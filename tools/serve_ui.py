@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""تشغيل واجهة ديوان على 127.0.0.1؛ لا خدمة دائمة ولا تنزيل نموذج."""
+"""تشغيل واجهة ديوان؛ محلية افتراضيًا ولا تثق بوكيل إلا بأصل عام صريح."""
 import argparse
 import os
 from pathlib import Path
@@ -57,8 +57,13 @@ def main(argv=None, *, default_root=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=default_root or ROOT / "var/daily-ui")
     parser.add_argument("--port", type=int, default=8765)
-    parser.add_argument("--listen", choices=("127.0.0.1", "0.0.0.0"), default="127.0.0.1",
+    binding = parser.add_mutually_exclusive_group()
+    binding.add_argument("--bind", default="127.0.0.1",
+                        help="عنوان IPv4 للربط؛ الافتراضي loopback، والربط العام يتطلب --public-origin")
+    binding.add_argument("--listen", choices=("127.0.0.1", "0.0.0.0"),
                         help="0.0.0.0 للحاوية فقط مع نشر المنفذ على 127.0.0.1؛ يطبع رابط بدء سريًا أحادي الاستخدام")
+    parser.add_argument("--public-origin",
+                        help="أصل HTTPS عام كامل مثل https://diwan.example؛ لا تُقرأ ترويسات الوكيل للثقة")
     parser.add_argument("--provider", choices=("local", "mlx"), default=os.environ.get("DIWAN_PROVIDER", "local"))
     parser.add_argument("--ollama-url", default=os.environ.get("DIWAN_OLLAMA_URL", "http://127.0.0.1:11434"),
                         help="عنوان Ollama محلي على loopback (أو DIWAN_OLLAMA_URL)")
@@ -117,9 +122,10 @@ def main(argv=None, *, default_root=None):
                        web_search=(SearxngBackend(args.web_search_url) if args.web_search_url else None),
                        analysis_receipt=args.analysis_receipt,
                        docker_executable=shutil.which("docker") or "/usr/local/bin/docker")
-        server = Server(app, args.port, listen=args.listen)
+        server = Server(app, args.port, args.bind, args.public_origin, listen=args.listen)
         bootstrap_url = getattr(server, "bootstrap_url", None)
-        print(f"ديوان المحلي: {bootstrap_url or server.origin}", flush=True)
+        label = "ديوان العرض" if getattr(server, "public_origin", None) else "ديوان المحلي"
+        print(f"{label}: {bootstrap_url or server.origin}", flush=True)
         if bootstrap_url:
             print("هذا رابط بدءٍ سري أحادي الاستخدام؛ لا تشاركه ولا تنشر منفذ الحاوية خارج loopback.", flush=True)
         print("Ctrl+C للإغلاق؛ تُحفظ الجولات التي انتهت. انتظار النداء الجاري محدود بمهلته.", flush=True)

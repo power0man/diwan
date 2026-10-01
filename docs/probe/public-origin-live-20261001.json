@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "measured_at": "2026-10-01T02:50:46.508864+00:00",
+  "source_commit": "e6810dc933d837233f982169f460dc3ef1752989",
+  "public_url": "https://diwan.260911765.xyz",
+  "deployment": {
+    "edge": "Cloudflare Tunnel",
+    "inference": "local Ollama on owner Mac",
+    "model": "qwen3.5:9b",
+    "bind": "127.0.0.1:8765",
+    "persistence": "user LaunchAgent org.diwan.public-ui",
+    "owner_stores_imported": false,
+    "initial_projects": 0,
+    "access_policy": "registered owner identity only; cloudflared also validates Access JWT",
+    "hugging_face_spend_usd": 0
+  },
+  "local_http": {
+    "get": 200,
+    "projects_post": 200,
+    "public_origin": "https://diwan.260911765.xyz",
+    "wrong_host_with_forwarded_headers": 403,
+    "wrong_origin": 403,
+    "wrong_csrf": 403,
+    "cross_site": 403
+  },
+  "external_unauthenticated": [
+    {
+      "path": "/",
+      "method": "GET",
+      "status": 302,
+      "redirect_host": "old-sound-0f7a.cloudflareaccess.com"
+    },
+    {
+      "path": "/api",
+      "method": "POST",
+      "status": 302,
+      "redirect_host": "old-sound-0f7a.cloudflareaccess.com"
+    }
+  ],
+  "live_turns": [
+    {
+      "prompt": "أجب بالعربية فقط بجملة قصيرة: كم يساوي ٧ ضرب ٨؟",
+      "status": "complete",
+      "content": "٦٤",
+      "elapsed_s": 11.52,
+      "arithmetic_correct": false
+    },
+    {
+      "prompt": "احسب 7 × 8 واشرح الناتج في جملة عربية قصيرة.",
+      "status": "complete",
+      "content": "7 × 8 = 56. الناتج هو خمسون وستة.",
+      "elapsed_s": 1.95,
+      "arithmetic_correct": true
+    }
+  ],
+  "measurement_limits": [
+    "Cloudflare provides authenticated Internet access; inference runs on the Mac and stops if the Mac is asleep or offline.",
+    "The UI uses one owner workspace and is not a multi-tenant anonymous public service.",
+    "Only fresh synthetic launch conversations were created; no owner stores or sealed banks were read or imported.",
+    "An unauthenticated external curl client was verified to reach the Access login gate; a full authenticated external browser conversation was not performed.",
+    "Two live prompts prove the runtime path, not model quality; the Arabic-digit arithmetic answer was wrong and is preserved.",
+    "No Hugging Face Space or paid hardware was created."
+  ]
+}
