@@ -202,8 +202,8 @@ def test_nonloopback_cli_prints_the_secret_bootstrap_url(monkeypatch, capsys, tm
 
     monkeypatch.setenv("DIWAN_CHAT_MODEL", "synthetic")
     monkeypatch.setenv("DIWAN_CHAT_DIGEST", "a" * 64)
-    monkeypatch.setattr(cli, "LocalChatProvider", lambda *args: object())
-    monkeypatch.setattr(cli, "LocalToolProvider", lambda *args: object())
+    monkeypatch.setattr(cli, "LocalChatProvider", lambda *args, **kwargs: object())
+    monkeypatch.setattr(cli, "LocalToolProvider", lambda *args, **kwargs: object())
 
     class App:
         def __init__(self, *args, **kwargs):
