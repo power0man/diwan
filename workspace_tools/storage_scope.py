@@ -199,3 +199,11 @@ def session_storage(scope, path):
         return {}
     _need(type(scope) is StorageScope, "cloud_scope_invalid")
     return {"data_policy": "internal", "storage": scope.binding(path)}
+
+
+def checkpoint_scope(raw):
+    """Portable identity of the exact approved contract, without a local path."""
+    value = decode_scope(raw)
+    plan = value["record"]["plan"]
+    return {"workspace_id": plan["workspace_id"], "contract_sha256": value["sha256"],
+            "target": plan["target"]}
