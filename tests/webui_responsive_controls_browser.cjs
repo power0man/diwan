@@ -68,6 +68,7 @@ async function measure(page) {
     const toggledByKeyboard = await checkbox.isChecked();
     await checkbox.locator('..').click();
     const toggledByLabel = !(await checkbox.isChecked());
+    await page.waitForFunction(() => !document.querySelector('#send').disabled);
     await page.locator('#message').fill('سؤال مصطنع');
     await page.locator('#message').press('Enter');
     await page.waitForFunction(() => document.querySelector('.message:not(.user) .content')?.textContent.includes('نهاية الجواب'));

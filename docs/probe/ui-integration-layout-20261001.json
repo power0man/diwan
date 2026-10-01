@@ -1,0 +1,145 @@
+{
+  "scope": "synthetic_provider_chromium_geometry_and_native_checkbox_only",
+  "sources": {
+    "webui/static/index.html": "6c6b6f95167428c17812ba85a681356c9144f73629ec4f792a0775781eeab87a",
+    "webui/static/app.js": "54e9804467a247cc6ab5ae1d6b7a21685042ff140c3c08f71f22b5c86ab599b2",
+    "webui/static/style.css": "d5cb668838e8fcf5ee623a9a47f60fda7d3652f0a14c91f902b260dfd22fc454",
+    "webui/server.py": "5b54f3f6fce76bf65cc5440e830856e0a4ffb020152a04e0bb63f4a09f46e3f7",
+    "tools/ui_responsive_controls_audit.py": "f092cc1ac3fca6c70f77753ece9c0f19fb66afba24a83471ea6be2dcc8b6c74f",
+    "tests/webui_responsive_controls_browser.cjs": "0e83043b27c6701b8a03ada7c583635f88d6e1245a58da249d93a106fb46397d"
+  },
+  "limits": [
+    "headless_chromium_only",
+    "no_model_quality_or_owner_acceptance",
+    "last_answer_line_is_scrolled_to_viewport_bottom_before_hit_testing",
+    "keyboard_checkbox_test_is_not_a_screen_reader_test",
+    "axe_and_focus_dialogs_are_checked_separately_by_ui_browser_audit"
+  ],
+  "passed": true,
+  "viewports": [
+    {
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "browser": "151.0.7922.34",
+      "initial": {
+        "composer_height_px": 202.09375,
+        "composer_viewport_share": 0.2631429036458333,
+        "send_bottom_px": 736
+      },
+      "normal": {
+        "composer_height_px": 202.09375,
+        "composer_viewport_share": 0.2631429036458333,
+        "position": "static",
+        "last_answer_line": {
+          "top": 725.25,
+          "bottom": 744.25,
+          "left": 905.625,
+          "right": 1001.984375
+        },
+        "last_answer_visible": true,
+        "answer_composer_overlap_px": 0,
+        "checkbox_width_px": 13,
+        "checkbox_text_gap_px": 8,
+        "horizontal_overflow_px": 0,
+        "textarea_height_px": 79.59375
+      },
+      "grown": {
+        "composer_height_px": 352.890625,
+        "composer_viewport_share": 0.4594930013020833,
+        "position": "static",
+        "last_answer_line": {
+          "top": 725.25,
+          "bottom": 744.25,
+          "left": 905.625,
+          "right": 1001.984375
+        },
+        "last_answer_visible": true,
+        "answer_composer_overlap_px": 0,
+        "checkbox_width_px": 13,
+        "checkbox_text_gap_px": 8,
+        "horizontal_overflow_px": 0,
+        "textarea_height_px": 230.390625
+      },
+      "checks": {
+        "initial_send_visible": true,
+        "initial_composer_under_30_percent": true,
+        "normal_answer_visible": true,
+        "grown_answer_visible": true,
+        "draft_height_capped": true,
+        "checkbox_native_width": true,
+        "checkbox_beside_text": true,
+        "checkbox_keyboard_and_label": true,
+        "no_horizontal_overflow": true,
+        "no_console_errors": true,
+        "no_external_requests": true
+      },
+      "errors": [],
+      "external": [],
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "151.0.7922.34",
+      "initial": {
+        "composer_height_px": 202.09375,
+        "composer_viewport_share": 0.23944757109004738,
+        "send_bottom_px": 826
+      },
+      "normal": {
+        "composer_height_px": 202.09375,
+        "composer_viewport_share": 0.23944757109004738,
+        "position": "static",
+        "last_answer_line": {
+          "top": 801,
+          "bottom": 820,
+          "left": 217.625,
+          "right": 313.984375
+        },
+        "last_answer_visible": true,
+        "answer_composer_overlap_px": 0,
+        "checkbox_width_px": 13,
+        "checkbox_text_gap_px": 8,
+        "horizontal_overflow_px": 0,
+        "textarea_height_px": 79.59375
+      },
+      "grown": {
+        "composer_height_px": 375.6875,
+        "composer_viewport_share": 0.44512736966824645,
+        "position": "static",
+        "last_answer_line": {
+          "top": 801,
+          "bottom": 820,
+          "left": 217.625,
+          "right": 313.984375
+        },
+        "last_answer_visible": true,
+        "answer_composer_overlap_px": 0,
+        "checkbox_width_px": 13,
+        "checkbox_text_gap_px": 8,
+        "horizontal_overflow_px": 0,
+        "textarea_height_px": 253.1875
+      },
+      "checks": {
+        "initial_send_visible": true,
+        "initial_composer_under_30_percent": true,
+        "normal_answer_visible": true,
+        "grown_answer_visible": true,
+        "draft_height_capped": true,
+        "checkbox_native_width": true,
+        "checkbox_beside_text": true,
+        "checkbox_keyboard_and_label": true,
+        "no_horizontal_overflow": true,
+        "no_console_errors": true,
+        "no_external_requests": true
+      },
+      "errors": [],
+      "external": [],
+      "passed": true
+    }
+  ]
+}
