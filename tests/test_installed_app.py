@@ -162,6 +162,13 @@ def test_non_browser_peer_cannot_steal_csrf_with_forged_routing_headers():
         assert request("POST", "/api", headers=forged_post, body=payload)[0] == 403
         assert app.calls == []
 
+        # Invalid Unicode capabilities must be a named HTTP refusal, not a dropped
+        # connection, and must leave the real one-use capability available.
+        assert request("GET", "/?bootstrap=%D8%B3", headers=forged)[0] == 403
+        bad_cookie = {**forged, "Cookie": 'Diwan-Bootstrap="\\351"'}
+        assert request("GET", "/", headers=bad_cookie)[0] == 403
+        assert server.bootstrap_secret == bootstrap
+
         status, body, response_headers = request(
             "GET", f"/?bootstrap={quote(bootstrap, safe='')}", headers=forged)
         assert status == 200 and server.token.encode() in body
@@ -170,6 +177,8 @@ def test_non_browser_peer_cannot_steal_csrf_with_forged_routing_headers():
         # The printed bootstrap capability is one-use; a second peer cannot replay it.
         assert request("GET", f"/?bootstrap={quote(bootstrap, safe='')}", headers=forged)[0] == 403
         authorised = {**forged_post, "Cookie": cookie}
+        assert request("POST", "/api", headers={**authorised, "X-Diwan-CSRF": "\u00e9"}, body=payload)[0] == 403
+        assert app.calls == []
         assert request("POST", "/api", headers=authorised, body=payload)[0] == 200
         assert app.calls == [{"action": "projects"}]
 

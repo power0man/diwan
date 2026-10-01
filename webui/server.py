@@ -913,7 +913,7 @@ class Server(ThreadingHTTPServer):
         """Exchange the one-use startup capability for the browser cookie."""
         with self.bootstrap_lock:
             expected = self.bootstrap_secret
-            if expected is None or not hmac.compare_digest(candidate, expected):
+            if expected is None or not candidate.isascii() or not hmac.compare_digest(candidate, expected):
                 return False
             self.bootstrap_secret = None
             return True
@@ -1027,7 +1027,7 @@ class Handler(BaseHTTPRequestHandler):
         except CookieError:
             return False
         morsel = cookies.get("Diwan-Bootstrap")
-        return bool(morsel and self.server.browser_secret
+        return bool(morsel and morsel.value.isascii() and self.server.browser_secret
                     and hmac.compare_digest(morsel.value, self.server.browser_secret))
 
     def transport_boundary(self, *, allow_bootstrap=False):
@@ -1081,7 +1081,8 @@ class Handler(BaseHTTPRequestHandler):
             self.boundary()
             need(path == "/api", "http_refused")
             need(self.header("Origin") == self.server.origin, "http_refused")
-            need(hmac.compare_digest(self.header("X-Diwan-CSRF"), self.server.token), "http_refused")
+            csrf = self.header("X-Diwan-CSRF")
+            need(csrf.isascii() and hmac.compare_digest(csrf, self.server.token), "http_refused")
             need(self.header("Content-Type") in ("application/json", "application/json; charset=utf-8"), "http_refused")
             need(not self.headers.get_all("Transfer-Encoding"), "http_refused")
             need(not self.headers.get_all("Content-Encoding"), "http_refused")
