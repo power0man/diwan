@@ -155,3 +155,124 @@ def test_generation_preserves_project_isolation_forget_and_local_only(app, kind)
         api(app, action, **ctx, turn=uuid.uuid4().hex, message="ممنوع", files=[])
     assert refused.value.code == "policy_requires_local"
     assert len(app.test_provider.requests) == 3
+
+
+@pytest.mark.parametrize("kind", ["agent", "text"])
+def test_cross_project_forget_scrubs_unified_echo_and_backup(app, kind, tmp_path):
+    from workspace_tools.backup import export_workspace, restore_workspace
+
+    value = "رمز النسخة الموحدة ٨٧٦٥"
+    source = api(app, "create_project", name="مصدر النسيان")["id"]
+    item = api(app, "memory_remember", project=source, text=value)["item_id"]
+    ctx = context(app)
+    action = "agent_ask" if kind == "agent" else "ask"
+    app.test_provider.responses = [response(value)]
+    api(app, action, **ctx, turn=uuid.uuid4().hex, message="اذكر الرمز", files=[])
+    assert value in app.test_provider.requests[-1].messages[-1].content
+    # The product backup requires its exclusive process lease.
+    from core import filelock
+    filelock.unlock(app.lease)
+    archive = tmp_path.resolve() / "before-forget.json"
+    try:
+        receipt = export_workspace(app.root, archive)
+    finally:
+        filelock.lock(app.lease, blocking=False)
+    result = api(app, "memory_forget", project=source, item_id=item)
+    assert result["receipt"]["scrubbed"][f"{kind}:{ctx['session']}"] > 0
+    app.test_provider.responses = [response("نسيته")]
+    api(app, action, **ctx, turn=uuid.uuid4().hex, message="ماذا تتذكر؟", files=[])
+    assert value not in "".join(message.content for message in app.test_provider.requests[-1].messages)
+    destination = tmp_path.resolve() / "restored"
+    restore_workspace(archive, destination, receipt["sha256"], tombstones_from=app.root)
+    restored = LocalApp(destination, model=app.model, model_version=app.model_version,
+                        provider_factory=app.provider_factory, agent_provider_factory=app.agent_provider_factory)
+    try:
+        app.test_provider.responses = [response("لا شيء")]
+        api(restored, action, **ctx, turn=uuid.uuid4().hex, message="ماذا تتذكر؟", files=[])
+        assert value not in "".join(message.content for message in app.test_provider.requests[-1].messages)
+        assert api(restored, "memory", project=source)["items"] == []
+    finally:
+        restored.close()
+
+
+@pytest.mark.parametrize("kind", ["agent", "text"])
+def test_unified_forget_busy_history_has_no_partial_commit(app, kind):
+    value = "معلومة مصطنعة ٤٧١"
+    source = api(app, "create_project", name="المصدر")["id"]
+    item = api(app, "memory_remember", project=source, text=value)["item_id"]
+    ctx = context(app)
+    app.test_provider.responses = [response(value)]
+    api(app, "agent_ask" if kind == "agent" else "ask", **ctx, turn=uuid.uuid4().hex,
+        message="ما المعلومة؟", files=[])
+    project = app.project(ctx["project"])
+    session = (app.agent_session if kind == "agent" else app.session)(project, ctx["session"])
+    with session._lock():
+        with pytest.raises(UIError) as exc:
+            api(app, "memory_forget", project=source, item_id=item)
+        assert exc.value.code == "memory_scrub_session_busy"
+    assert len(api(app, "memory", project=source)["items"]) == 1
+    assert api(app, "memory_forget", project=source, item_id=item)["status"] == "forgotten"
+
+
+@pytest.mark.parametrize("kind", ["agent", "text"])
+def test_unified_forget_recovers_after_interrupted_shared_state_write(app, kind, monkeypatch):
+    import webui.server as server
+
+    value = "رمز الانقطاع الموحد ٨١٣"
+    source = api(app, "create_project", name="المصدر")["id"]
+    item = api(app, "memory_remember", project=source, text=value)["item_id"]
+    ctx = context(app)
+    action = "agent_ask" if kind == "agent" else "ask"
+    app.test_provider.responses = [response(value)]
+    api(app, action, **ctx, turn=uuid.uuid4().hex, message="ما الرمز؟", files=[])
+    original, remaining = server._replace_private, [2]
+
+    def interrupted(path, payload):
+        if path.name == "state.json" and ctx["project"] in path.parts and remaining[0]:
+            remaining[0] -= 1
+            raise OSError("synthetic shared-state interruption")
+        return original(path, payload)
+
+    monkeypatch.setattr(server, "_replace_private", interrupted)
+    with pytest.raises(UIError) as exc:
+        api(app, "memory_forget", project=source, item_id=item)
+    assert exc.value.code == "memory_forget_incomplete"
+    assert (app.project(source) / server.MEMORY_FORGET_TRANSACTION).is_file()
+    assert api(app, "memory", project=source)["items"] == []
+    assert not (app.project(source) / server.MEMORY_FORGET_TRANSACTION).exists()
+    app.test_provider.responses = [response("نسيته")]
+    api(app, action, **ctx, turn=uuid.uuid4().hex, message="ماذا تتذكر؟", files=[])
+    assert value not in "".join(message.content for message in app.test_provider.requests[-1].messages)
+
+
+def test_unified_transaction_path_is_limited_to_canonical_session(app):
+    import base64
+    from core.canonical import canonical_bytes, digest
+    from webui.server import DEFAULT_SESSION_ID
+
+    source = api(app, "create_project", name="المصدر")["id"]
+    item = api(app, "memory_remember", project=source, text="مصطنع")["item_id"]
+    project = app.project(source)
+    _, receipt = app.memory_store(project)._forget_plan(item, references=[], scrubbed={})
+    payload = base64.b64encode(canonical_bytes({"state": {}, "sha256": digest({})})).decode()
+    transaction = {"schema_version": 1, "item_id": item, "states": [],
+                   "receipt": base64.b64encode(receipt).decode()}
+    for relative in ("unified/agent-control/" + "0" * 32 + "/state.json",
+                     "unified/../agent-control/" + DEFAULT_SESSION_ID + "/state.json"):
+        transaction["states"] = [{"path": relative, "data": payload}]
+        with pytest.raises(UIError) as exc:
+            app._memory_transaction(project, transaction)
+        assert exc.value.code == "memory_forget_transaction_corrupt"
+
+
+def test_backup_unified_role_requires_canonical_project_and_session():
+    from core.canonical import canonical_bytes
+    from webui.server import DEFAULT_PROJECT_ID, DEFAULT_SESSION_ID
+    from workspace_tools.backup import BackupError, _metadata
+
+    for project, session, role in (("0" * 32, DEFAULT_SESSION_ID, "unified_all_projects"),
+                                   (DEFAULT_PROJECT_ID, "0" * 32, "unified_all_projects"),
+                                   (DEFAULT_PROJECT_ID, DEFAULT_SESSION_ID, "unknown")):
+        raw = canonical_bytes({"id": session, "name": "مصطنع", "mode": "agent", "system_role": role})
+        with pytest.raises(BackupError):
+            _metadata(raw, session, session=True, project=project)
