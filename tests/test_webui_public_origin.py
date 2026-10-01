@@ -24,12 +24,14 @@ class PublicServer:
         self.thread.join(3)
         self.app.close()
 
-    def request(self, method, *, host, origin=None, forwarded_host=None):
+    def request(self, method, *, host, origin=None, forwarded_host=None,
+                path=None, metadata=None):
         connection = http.client.HTTPConnection("127.0.0.1", self.server.server_port, timeout=5)
         try:
             headers = {"Host": host}
+            headers.update(metadata or {})
             body = b""
-            path = "/"
+            path = path or "/"
             if forwarded_host is not None:
                 headers["X-Forwarded-Host"] = forwarded_host
                 headers["X-Forwarded-Proto"] = "https"
@@ -83,6 +85,47 @@ def test_default_server_stays_loopback_only_and_rejects_public_host(tmp_path):
         status, raw = live.request("GET", host="demo.example")
         assert status == 403 and json.loads(raw)["error_code"] == "http_refused"
         assert live.app.dispatch({"action": "projects"})["public_origin"] is None
+    finally:
+        live.close()
+
+
+def test_public_document_navigation_accepts_cross_site_entry(tmp_path):
+    live = PublicServer(tmp_path / "navigation", public_origin="https://demo.example")
+    try:
+        for site in ("cross-site", "same-site"):
+            status, body = live.request("GET", host="demo.example", metadata={
+                "Sec-Fetch-Site": site, "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Dest": "document"})
+            assert status == 200 and b"<!doctype html>" in body.lower()
+    finally:
+        live.close()
+
+
+def test_navigation_exception_is_limited_to_public_root_get(tmp_path):
+    live = PublicServer(tmp_path / "navigation-bounds", public_origin="https://demo.example")
+    local = PublicServer(tmp_path / "local-navigation")
+    navigation = {"Sec-Fetch-Site": "cross-site", "Sec-Fetch-Mode": "navigate",
+                  "Sec-Fetch-Dest": "document"}
+    try:
+        assert live.request("POST", host="demo.example", origin="https://demo.example",
+                            metadata=navigation)[0] == 403
+        assert live.request("GET", host="demo.example", path="/app.js", metadata=navigation)[0] == 403
+        assert live.request("GET", host="demo.example", metadata={
+            **navigation, "Sec-Fetch-Mode": "cors"})[0] == 403
+        assert live.request("GET", host="demo.example", metadata={
+            **navigation, "Sec-Fetch-Dest": "iframe"})[0] == 403
+        assert local.request("GET", host=local.server.origin_host, metadata=navigation)[0] == 403
+    finally:
+        live.close()
+        local.close()
+
+
+def test_public_navigation_keeps_declared_host_boundary(tmp_path):
+    live = PublicServer(tmp_path / "navigation-host", public_origin="https://demo.example")
+    try:
+        assert live.request("GET", host="attacker.invalid", forwarded_host="demo.example",
+                            metadata={"Sec-Fetch-Site": "cross-site", "Sec-Fetch-Mode": "navigate",
+                                      "Sec-Fetch-Dest": "document"})[0] == 403
     finally:
         live.close()
 

@@ -1032,7 +1032,18 @@ class Handler(BaseHTTPRequestHandler):
 
     def boundary(self):
         need(self.header("Host").lower() == self.server.origin_host, "http_refused")
-        need(self.headers.get("Sec-Fetch-Site") not in ("cross-site", "same-site"), "http_refused")
+        # Public links and identity-provider redirects enter as document
+        # navigations. Only the inert root page may cross that site boundary;
+        # API calls, subresources and embedded frames retain the strict guard.
+        public_navigation = (
+            self.server.public_origin is not None
+            and self.command == "GET"
+            and self.path == "/"
+            and self.headers.get_all("Sec-Fetch-Mode", []) == ["navigate"]
+            and self.headers.get_all("Sec-Fetch-Dest", []) == ["document"]
+        )
+        need(public_navigation or self.headers.get("Sec-Fetch-Site") not in ("cross-site", "same-site"),
+             "http_refused")
 
     def do_GET(self):
         try:
