@@ -1,0 +1,40 @@
+name: mutation-check
+# فاحصُ الطفرات (ق٦٧-٦) بالبيانات كلِّها (tests/mutations/*.jsonl) أسبوعيًّا وعند التشغيل اليدويّ، بلا خيارِ مدًى لا أساسَ له
+# (ملاحظة Codex على #149). أمّا على طلبات الدمج فالفاحصُ خطوةٌ في الفحص الإلزاميّ verify نفسِه (verify-hosted.yml) على مدى
+# الطلب وإيداعِ الدمج المرتقَب — قرارُ المالك في ٢٨ سبتمبر ٢٠٢٦ أن يكون مطلوبًا، فصار مطلوبًا بالبناء ولا يعمل هنا مرّتين.
+# بلا أسرار وبصلاحية قراءةٍ وحدها، على المشغّل المستضاف نفسِه الذي يشغّل verify-hosted.
+on:
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mutation-check:
+    runs-on: ubuntu-latest
+    # المدى الكامل لطلبٍ كبير (باقةُ الفاحص نفسِه نحو سبعين طفرة تشغّل git وpytest) استغرق محليًّا نحو عشر دقائق، وعلى المشغّل
+    # المستضاف أبطأُ؛ والتشغيلُ الأساسيّ وحده تجاوز ٣٠٠ ثانية فيه (تشغيلةُ #149 على d80c46e)، فمهلةُ كلِّ تشغيلٍ ١٢٠٠ ثانية
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install the locked runtime
+        run: |
+          set -eu
+          python3 -m pip install --user 'uv==0.8.17'
+          "$HOME/.local/bin/uv" python install 3.14
+          "$HOME/.local/bin/uv" sync --frozen --python 3.14 --extra dev
+      - name: Apply every mutation manifest
+        env:
+          HEAD: ${{ github.sha }}
+        run: |
+          set -eu
+          .venv/bin/python tools/mutation_check.py --all --head "$HEAD" --report "$RUNNER_TEMP/mutation-check.json" --timeout-s 1200

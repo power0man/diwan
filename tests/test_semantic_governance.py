@@ -109,3 +109,17 @@ def test_evaluate_semantic_governance_catches_unsupported_numbers():
     assert result.all_passed is False
     assert result.refusal_required is True
     assert any(b.diagnostic_code == "citation_number_unsupported" for b in result.bindings)
+
+
+def test_a_broken_morphology_analyzer_is_not_swallowed_into_a_fake_root(monkeypatch):
+    """صيّادُ الإخفاقات الصامتة (ق٦٧): `_get_root` كان يعيد الكلمةَ نفسَها جذرًا عند أيّ خطأ، فيتغيّر الاستلزامُ الدلاليّ
+    صامتًا. تعذُّرُ الجذر حالةٌ مسمّاة يعيدها `analyze` بلا خطأ؛ أما عطبُ المحلّل فيصعد."""
+    import core.semantic_governance as sg
+    # الحالةُ المسمّاة (لا جذر: كلمةٌ غيرُ عربية) تبقى كلمةً بلا جذر لا خطأً
+    assert sg._get_root("ab") == "ab"
+
+    def broken(word):
+        raise RuntimeError("morphology analyzer broken")
+    monkeypatch.setattr(sg, "analyze", broken)
+    with pytest.raises(RuntimeError):
+        semantic_match_basis_points(["سفينة"], "السفينة الوطنية")

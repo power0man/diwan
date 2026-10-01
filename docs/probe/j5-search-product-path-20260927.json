@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "probe": "j5-search-product-path",
+  "task": "ج٥ (#23)",
+  "date": "2026-09-27",
+  "agent": "anthropic/claude-opus-5-5",
+  "question": "هل يعمل البحث في الويب عبر طريق المنتج نفسه على Nitro: الواجهة بـ--web-search-url، والجولةُ الوكيلة تنادي web_search على SearXNG محلّي، والجوابُ يحمل مصادره؟",
+  "answer": "نعم في جولةٍ من جولتين. الواجهةُ أعلنت أداة البحث وأظهرت نوع المحادثة «بحثٌ معمّق في الويب بمصادر»، والنموذجُ نادى web_search في الجولتين (web_search · ok). الجولةُ الأولى باستعلامٍ عربيّ عادت بلا نتائج، فاستنتج النموذجُ أن الإصدار «قد يكون غير موجود بعد» — استنتاجٌ من الغياب وُسم «جواب غير متحقق». والثانيةُ باستعلامٍ إنجليزيّ لخّصت بالعربية مع خمسة روابط من النتائج نفسِها.",
+  "compared_with": {
+    "j5-live-evidence-20260926.json": "هناك نُوديت web_search مباشرةً من بايثون لا من نموذجٍ في الحلقة؛ وهنا يمرّ النداءُ بالواجهة والحلقة الوكيلة والمحرّك الحيّ"
+  },
+  "environment": {
+    "machine": "Acer Nitro AN515-58، RTX 4060 Laptop 8 GB",
+    "commit": "49446b2",
+    "ui": "uv run python tools/serve_ui.py --web-search-url http://127.0.0.1:8888 في WSL2 (Ubuntu 26.04، بايثون 3.12.14)، ومفتوحةٌ من متصفّح ويندوز على http://127.0.0.1:8765",
+    "engine": "qwen3.5:9b (6488c96fa5fa) عبر Ollama 0.34.4 على ويندوز، اكتُشف تلقائيًّا",
+    "searxng": "searxng/searxng@sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6 على 127.0.0.1:8888 وحده، بـ--restart unless-stopped؛ الضبطُ في مجلّد Docker باسم searxng-config (json مفعَّل، limiter معطَّل، secret_key يُولَّد داخل المجلّد ولا يغادره)، ومالكُه 977 بلا تحذير ملكية"
+  },
+  "ui_announcement": {
+    "conversation_types": ["text", "agent", "coder", "translate", "research", "media"],
+    "research_type_present": true,
+    "status_line": "أدوات ملفات المشروع متاحة. تنفيذ الأوامر غير مهيأ."
+  },
+  "turns": [
+    {
+      "mode": "agent",
+      "request": "ابحث في الويب عن ملاحظات إصدار Python 3.14 ولخّصها بمصادرها",
+      "tool_steps": ["web_search · ok (الاستعلام: ملاحظات إصدار Python 3.14)"],
+      "results_returned": "صفرٌ بحسب ردّ النموذج وبحسب ما عرضته الواجهة من نصّ الأداة (الترويسة والاستعلام وحدهما)؛ ولم يُقرأ سجلُّ الجولة المحفوظ",
+      "answer_label": "جواب غير متحقق",
+      "answer": "لم أستطع العثور على نتائج… قد يكون هذا الإصدار غير موجود بعد أو لا توجد معلومات عنه متاحة حالياً.",
+      "urls_cited": [],
+      "finding": "استنتاجٌ من غياب النتائج: غيابُ النتائج صار عند النموذج قرينةً على غياب الإصدار."
+    },
+    {
+      "mode": "agent",
+      "request": "ابحث في الويب بالاستعلام الإنجليزي \"Python 3.14 release notes\" ثم لخّص أهمّ ما جدّ فيه بالعربية مع المصادر",
+      "tool_steps": ["web_search · ok (الاستعلام: Python 3.14 release notes)"],
+      "answer_label": "جواب غير متحقق",
+      "answer_chars": 1284,
+      "urls_cited": [
+        "https://docs.python.org/3/whatsnew/3.14.html",
+        "https://www.python.org/downloads/release/python-3140/",
+        "https://docs.python.org/3/whatsnew/changelog.html",
+        "https://www.python.org/downloads/release/python-3147/",
+        "https://realpython.com/python-news-november-2025/"
+      ]
+    }
+  ],
+  "searxng_direct_check": {
+    "note": "الاستعلاماتُ نفسُها على SearXNG مباشرةً بعد الجولة الأولى بدقائق",
+    "ملاحظات إصدار Python 3.14": {"results": 1, "unresponsive_engines": ["brave", "duckduckgo", "google cse"]},
+    "Python 3.14 release notes": {"results": 26, "unresponsive_engines": ["duckduckgo", "google cse"]},
+    "ملاحظات إصدار بايثون 3.14": {"results": 26, "unresponsive_engines": ["duckduckgo", "google cse"]}
+  },
+  "not_measured": [
+    "تنفيذ Docker عبر core/execution.py: يحتاج إيصال صورة التشغيل (G5 ١٦–٢٠)، وبناؤه رفضه مصنِّف الأمان في جلسة Claude المحلية، فهو بيد المالك. والواجهةُ هنا بلا --runtime-receipt، فأعلنت «تنفيذ الأوامر غير مهيأ».",
+    "نوع المحادثة «بحث» نفسُه (research) ومدقّقُ الإسناد في العرض: ظهر في القائمة ولم يُجرَّب.",
+    "صحّةُ الملخّص سطرًا سطرًا: لم تُراجَع، والواجهةُ نفسُها تَسِمه «غير متحقق»."
+  ],
+  "measurement_limits": [
+    "جولتان بنموذجٍ واحد ونداءٍ واحد لكلٍّ، فلا معدّلَ ولا تباين.",
+    "نتائجُ SearXNG تتبع محرّكاتِه الخارجية وتوافرَها لحظةَ السؤال: ثلاثةٌ منها لم تستجب، والاستعلامُ العربيّ عاد صفرًا ثم نتيجةً واحدة بعد دقائق. فالجولةُ الأولى تقيس ضعفَ الاستعلام العربيّ على هذه المحرّكات لا ضعفَ الأداة.",
+    "الاستعلامُ الإنجليزيّ في الجولة الثانية أملاه الطلبُ صراحةً، فهو لا يشهد أن النموذج يختار صياغةً أنجح وحده.",
+    "القياسُ على Nitro بالمحرّك المعتمَد qwen3.5:9b، ولا يُعمَّم على الماك ولا على محرّكٍ آخر."
+  ]
+}

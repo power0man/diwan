@@ -16,8 +16,9 @@ from agent.web_search import SearxngBackend
 from webui.server import LocalApp, Server
 
 
-def _discover_ollama() -> tuple[str | None, str | None, str | None, str | None]:
-    """اكتشاف تلقائي للنماذج المحلية النشطة على Ollama (127.0.0.1:11434)."""
+def _discover_ollama() -> tuple[str | None, str | None, str | None, str | None, str | None]:
+    """اكتشاف تلقائي للنماذج المحلية النشطة على Ollama (127.0.0.1:11434): (نموذجُ الحوار، بصمتُه، نموذجُ الوسائط،
+    بصمتُه، سببُ التعذّر باسمه حين لا يُوجد نموذجُ حوار — انقطاعٌ بنوعه أو غيابُ نموذجٍ صالح)."""
     import json
     import urllib.request
     try:
@@ -43,9 +44,9 @@ def _discover_ollama() -> tuple[str | None, str | None, str | None, str | None]:
                 if pref in models:
                     media_m, media_v = pref, models[pref]
                     break
-            return chat_m, chat_v, media_m, media_v
-    except Exception:
-        return None, None, None, None
+            return chat_m, chat_v, media_m, media_v, (None if chat_m else "no_local_chat_model")
+    except Exception as exc:
+        return None, None, None, None, f"ollama_unreachable:{type(exc).__name__}"
 
 
 def main(argv=None, *, default_root=None):
@@ -72,8 +73,9 @@ def main(argv=None, *, default_root=None):
         factory()
     else:
         model, version = os.environ.get("DIWAN_CHAT_MODEL"), os.environ.get("DIWAN_CHAT_DIGEST")
+        why = None
         if not model or not version:
-            auto_cm, auto_cv, auto_mm, auto_mv = _discover_ollama()
+            auto_cm, auto_cv, auto_mm, auto_mv, why = _discover_ollama()
             if not model and auto_cm:
                 model, version = auto_cm, auto_cv
                 print(f"تم اكتشاف نموذج الحوار المحلي تلقائيًا: {model} ({version[:12]}...)", flush=True)
@@ -81,7 +83,8 @@ def main(argv=None, *, default_root=None):
                 media_model, media_version = auto_mm, auto_mv
                 print(f"تم تفعيل وسائط م١٢ بنموذج الرؤية المحلي: {media_model}", flush=True)
         if not model or not version:
-            parser.error("يلزم متغيرا DIWAN_CHAT_MODEL وDIWAN_CHAT_DIGEST المحليان أو تشغيل خادم Ollama محليًا")
+            parser.error("يلزم متغيرا DIWAN_CHAT_MODEL وDIWAN_CHAT_DIGEST المحليان أو تشغيل خادم Ollama محليًا"
+                         + (f" — سببُ تعذّر الاكتشاف: {why}" if why else ""))
         factory = lambda: LocalChatProvider(model, version)
         factory()  # تحقق إعداد المزود دون شبكة قبل فتح المنفذ.
         agent_factory = lambda: LocalToolProvider(model, version)

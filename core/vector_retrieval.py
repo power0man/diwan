@@ -165,23 +165,31 @@ def corpus_passages(corpus: str = "maritime", root: Path = ROOT) -> list[Passage
 
 
 def file_passages(root: Path, *, chunk_chars: int = CHUNK_CHARS) -> list[Passage]:
-    """ملفّاتُ المالك النصّية تحت جذرٍ، فقراتٍ بسقفٍ معلَن؛ المخفيُّ والروابطُ وغيرُ النصّ يُتركون."""
+    return file_passages_report(root, chunk_chars=chunk_chars)[0]
+
+
+def file_passages_report(root: Path, *, chunk_chars: int = CHUNK_CHARS) -> tuple[list[Passage], dict]:
+    """(المقاطع، تقريرُ ما تُرك): ملفّاتُ المالك النصّية تحت جذرٍ، فقراتٍ بسقفٍ معلَن؛ المخفيُّ والروابطُ وغيرُ النصّ يُتركون،
+    والملفُّ غيرُ المقروء بـUTF-8 يُعدّ ويُسمّى لا يُتخطّى صامتًا (مسحُ الإخفاقات الصامتة، ٢٧ سبتمبر ٢٠٢٦)."""
     root = Path(root)
-    passages = []
+    passages, skipped_undecodable, indexed = [], [], 0
     for base, dirs, names in os.walk(root):
         dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS and not d.startswith("."))
         for name in sorted(names):
             path = Path(base) / name
             if name.startswith(".") or path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_FILE_BYTES:
                 continue
+            relative = path.relative_to(root).as_posix()
             try:
                 text = path.read_bytes().decode("utf-8")
             except UnicodeDecodeError:
+                skipped_undecodable.append(relative)
                 continue
-            relative = path.relative_to(root).as_posix()
+            indexed += 1
             for index, chunk in enumerate(_chunks(text, chunk_chars)):
                 passages.append(passage(f"{relative}#{index}", relative, f"chunk-{index}", "file", chunk))
-    return passages
+    return passages, {"files_indexed": indexed, "skipped_undecodable": len(skipped_undecodable),
+                      "skipped_undecodable_paths": skipped_undecodable[:50]}
 
 
 def _chunks(text: str, limit: int) -> list[str]:
@@ -221,7 +229,10 @@ class VectorIndex:
             _refuse("index", "vector_index_missing", f"لا فهرسَ متّجهات: {self.path.name}")
 
     @classmethod
-    def build(cls, path: Path, passages: list[Passage], embedder, *, replace: bool = False) -> dict:
+    def build(cls, path: Path, passages: list[Passage], embedder, *, replace: bool = False,
+              notes: dict | None = None) -> dict:
+        """يبني الفهرسَ ويحفظ فيه هويّةَ المُضمِّن وبصمةَ المقاطع، و`notes` ما أعلنه الجامعُ عمّا تُرك (كعدد الملفّات غير
+        المقروءة) فتُقارَن الفهارسُ على مجموعةٍ معلومة."""
         path = Path(path)
         if path.exists() and not replace:
             _refuse("index", "vector_index_exists", "فهرسٌ قائم؛ اطلب الاستبدال صراحةً")
@@ -256,14 +267,15 @@ class VectorIndex:
                                  item.text[:200], unit.tobytes()))
             provenance = hashlib.sha256("\n".join(sorted(p.digest for p in passages)).encode()).hexdigest()
             for key, value in (("schema_version", SCHEMA_VERSION), ("identity", identity),
-                               ("dim", dim), ("count", len(passages)), ("passages_digest", provenance)):
+                               ("dim", dim), ("count", len(passages)), ("passages_digest", provenance),
+                               ("notes", notes or {})):
                 con.execute("INSERT INTO meta VALUES (?, ?)", (key, json.dumps(value, ensure_ascii=False, sort_keys=True)))
             con.commit()
         finally:
             con.close()
         os.replace(temp, path)
         return {"path": str(path), "count": len(passages), "dim": dim, "identity": identity,
-                "passages_digest": provenance}
+                "passages_digest": provenance, "notes": notes or {}}
 
     def _meta(self) -> dict:
         con = sqlite3.connect(self.path)
@@ -283,6 +295,10 @@ class VectorIndex:
 
     def count(self) -> int:
         return self._meta()["count"]
+
+    def notes(self) -> dict:
+        """ما أعلنه الجامعُ عند البناء عمّا تُرك؛ فارغٌ في فهرسٍ بُني بلا تقرير."""
+        return self._meta().get("notes", {})
 
     def search(self, query: str, embedder, *, limit: int = 10) -> list[dict]:
         meta = self._meta()

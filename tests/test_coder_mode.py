@@ -306,9 +306,12 @@ def test_the_bank_measures_coder_mode_with_its_instructions_and_tools(tmp_path, 
 
     monkeypatch.setenv("DIWAN_DISPOSABLE_HOST", "pytest-host")
     monkeypatch.setattr(providers.ollama, "OllamaProvider", lambda model: Player())
+    monkeypatch.setattr(evaluate_agentic, "pin_model_digest", lambda model, expected: "sha256:player")
+    monkeypatch.setattr(evaluate_agentic, "verify_model_digest", lambda model, pinned: None)
     out = tmp_path / "report.json"
     assert evaluate_agentic.main(["--suite", str(path), "--model", "player", "--mode", "coder", "--out", str(out)]) == 0
     report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["config"]["model_version"] == "sha256:player"
     assert report["config"]["system_sha256"] == hashlib.sha256(CODER_SYSTEM.encode("utf-8")).hexdigest()
     assert sorted(report["config"]["tools"]) == ["edit_file", "list_files", "read_file", "search_files", "write_file"]
     assert seen_systems == {CODER_SYSTEM}

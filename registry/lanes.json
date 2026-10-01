@@ -4,6 +4,8 @@
   "enforced_from": "2026-09-25T14:35:00Z",
   "lanes": {
     "anthropic": [
+      "tools/mutation_check.py",
+      "tools/context_index.py",
       "core/run.py",
       "core/contracts.py",
       "core/validate.py",
@@ -40,7 +42,8 @@
       "tools/agent_attribution.py",
       "tools/family_review.py",
       "tools/issue_ledger.py",
-      "tools/lane_handoff.py"
+      "tools/lane_handoff.py",
+      "tools/context_budget.py"
     ],
     "openai": [
       "conversation/",

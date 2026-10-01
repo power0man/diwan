@@ -18,9 +18,14 @@ concurrency:
 
 jobs:
   verify:
+    name: verify-runtime (${{ matrix.python-version || '3.14' }})
     if: github.event_name == 'workflow_dispatch' || github.event.repository.private == false
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.14']
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -29,14 +34,15 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
-      # uv مثبَّتٌ بإصداره، وبايثون 3.14 كما في بيئة CI المعزولة، والاعتمادياتُ من uv.lock
-      # المجمَّد وحده؛ لا حلَّ جديدًا على المشغّل.
-      - name: Install the locked runtime
+      # uv مثبَّتٌ بإصداره، وكلُّ مفسّرٍ معلَن الدعم يُثبَّت من المصفوفة نفسها؛
+      # والاعتمادياتُ من uv.lock المجمَّد وحده، بلا حلٍّ جديد على المشغّل.
+      - name: Install the locked Python ${{ matrix.python-version }} runtime
         run: |
           set -eu
           python3 -m pip install --user 'uv==0.8.17'
-          "$HOME/.local/bin/uv" python install 3.14
-          "$HOME/.local/bin/uv" sync --frozen --python 3.14 --extra dev
+          "$HOME/.local/bin/uv" python install "${{ matrix.python-version }}"
+          "$HOME/.local/bin/uv" sync --frozen --python "${{ matrix.python-version }}" --extra dev
+          .venv/bin/python -VV
       - name: Every commit names its producing agent
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -59,3 +65,46 @@ jobs:
         run: .venv/bin/python tools/lane_handoff.py --range "$RANGE"
       - name: Shared checks and strict public signature verification
         run: .venv/bin/python tools/run_verification.py --node "$(command -v node)"
+      # ق٦٧-٦ وقرارُ المالك في ٢٨ سبتمبر ٢٠٢٦ («نفّذ: جعلُ mutation-check مطلوبًا»): فاحصُ الطفرات خطوةٌ في الفحص الإلزاميّ
+      # نفسه؛ وتربطه بوابتا verify-hosted ثم verify المطلوب في حماية main بالنجاح الحقيقي (docs/guides/G1.md)، وسقط
+      # تشغيلُه المستقلّ على الطلبات (mutation-check.yml يبقى للأسبوعيّ واليدويّ بالبيانات كلِّها). المدى مدى الإسناد نفسُه:
+      # على طلب الدمج base..github.sha (إيداعُ الدمج المرتقَب لا رأسُ الفرع — ملاحظة Codex على #149)، وعلى الدفع before..sha،
+      # وبلا مدًى (تشغيلٌ يدويّ أو فرعٌ بلا أساس) البياناتُ كلُّها.
+      - name: mutation-check — every mutation in range is killed and every touched test is manifested
+        env:
+          HEAD: ${{ github.sha }}
+        run: |
+          set -eu
+          report="$RUNNER_TEMP/mutation-check.json"
+          case "$RANGE" in
+            *..*) .venv/bin/python tools/mutation_check.py --range "$RANGE" --head "$HEAD" --report "$report" --timeout-s 1200 ;;
+            *)    .venv/bin/python tools/mutation_check.py --all --head "$HEAD" --report "$report" --timeout-s 1200 ;;
+          esac
+
+  verify-hosted:
+    name: verify-hosted
+    needs: verify
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every hosted runtime to succeed
+        env:
+          UPSTREAM_RESULT: ${{ needs.verify.result }}
+        run: |
+          test "$UPSTREAM_RESULT" = success
+
+  verify-compat:
+    # Keep the current required context until the owner migrates protection.
+    # always() prevents a failed/skipped dependency from making this gate skip.
+    name: verify
+    needs: verify-hosted
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Preserve the current required check
+        env:
+          UPSTREAM_RESULT: ${{ needs['verify-hosted'].result }}
+        run: |
+          test "$UPSTREAM_RESULT" = success

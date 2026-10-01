@@ -15,10 +15,10 @@ import pytest
 
 from agent.builtin_tools import DEFAULT_TOOLS
 from conversation.agent_session import _user_message
-from core.contracts import Response, Usage
+from core.contracts import Response, ToolCall, Usage
 from evaluation import ablation
-from evaluation.ablation import (BASELINE, AblationError, arm, auto_checked, case_messages, compare, decide,
-                                 judge, min_items, run_case)
+from evaluation.ablation import (BASELINE, RUNNER_VERSION, AblationError, aggregate_seed_rows, arm, auto_checked,
+                                 case_messages, compare, decide, judge, min_items, run_case, seed_values)
 from services.agent_workspace import decode_input, encode_input
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,8 +34,11 @@ class Replay:
     """يجيب بجوابٍ لكل حالة، ويسجّل ما بلغه: الأدوات، والتفكير، والرسالة."""
     name, is_local, model = "replay", True, "replay"
 
-    def __init__(self, answer):
-        self.answer, self.requests = answer, []
+    def __init__(self, answer, *, seed=0, requests=None):
+        self.answer, self.seed, self.requests = answer, seed, [] if requests is None else requests
+
+    def with_seed(self, seed):
+        return type(self)(self.answer, seed=seed, requests=self.requests)
 
     def estimate_micros(self, request):
         return 0
@@ -112,6 +115,39 @@ def test_a_broken_provider_or_an_absent_sandbox_is_an_error_not_a_failure():
     assert sandboxed["status"] == "error" and sandboxed["code"].startswith("sandbox_")
 
 
+class Scripted(Replay):
+    """يجيب بالردّ نفسِه في كل خطوة: نداءُ أداةٍ (برقمٍ جديد) أو إيقافٌ بسببٍ مسمًّى."""
+    def __init__(self, stop="complete", call=None):
+        super().__init__(None)
+        self.stop, self.call = stop, call
+
+    def complete(self, request):
+        self.requests.append(request)
+        calls = (ToolCall(f"c{len(self.requests)}", *self.call),) if self.call else ()
+        return Response("x", Usage(1, 1), self.stop, 0, provider="replay", model_version="v1", tool_calls=calls)
+
+
+def test_an_unfinished_turn_is_an_error_not_a_measured_answer():
+    """جولةٌ توقّفت لموافقة المالك، أو بُتر جوابها، أو استنفدت خطواتها: جوابُها الوسيط لا يُقاس (#185)."""
+    case = _case("u", "x", [{"kind": "contains", "value": "x"}])          # الجوابُ الوسيط «x» كان يمرّ الفحص
+    rows = {"awaiting_owner": _run(case, Scripted(call=("write_file", {"path": "a", "content": "y"}))),
+            "truncated": _run(case, Scripted(stop="max_output")),
+            "step_limit": _run(case, Scripted(call=("list_files", {})))}
+    for loop_status, row in rows.items():
+        assert (row["status"], row["loop_status"]) == ("error", loop_status) and "passed" not in row
+    assert rows["awaiting_owner"]["code"] == "consent_required"
+    # وعطبُ كلِّ ذراعٍ برموزه في الحكم، فإن غيّر المكوّنُ ما يكتمل ظهر ولو اتّفقت النسبتان
+    on = [{**row, "id": f"c{i}"} for i, row in enumerate([{"category": "general", "status": "measured", "passed": True},
+                                                           rows["awaiting_owner"], rows["truncated"]])]
+    off = [{**row, "id": f"c{i}"} for i, row in enumerate([{"category": "general", "status": "measured", "passed": True},
+                                                            {"category": "general", "status": "measured", "passed": True},
+                                                            rows["truncated"]])]
+    verdict = judge("tool_announcement", on, off)
+    assert verdict["overall"]["pairs"] == 1 and verdict["overall"]["errors"] == 2
+    assert verdict["errors_by_arm"] == {"on": {"consent_required": 1, "response_max_output": 1},
+                                        "off": {"response_max_output": 1}}
+
+
 def _rows(outcomes, category="general"):
     return [{"id": f"c{i}", "category": category, "status": "measured" if o is not None else "error",
              **({"passed": o} if o is not None else {})} for i, o in enumerate(outcomes)]
@@ -165,13 +201,27 @@ def test_a_guard_is_never_removed_by_a_quality_number():
     assert decide(GUARD, compare(*_pair(12, 10, 60, 18)), none, discordance=0.3)["decision"] == "keep"
 
 
-PROTOCOL = ROOT / "evaluation" / "protocols" / "ablation_v1.json"
+PROTOCOL = ROOT / "evaluation" / "protocols" / "ablation_v2.json"
 DATA = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+HISTORICAL_PROTOCOL = ROOT / "evaluation" / "protocols" / "ablation_v1.json"
+HISTORICAL_DATA = json.loads(HISTORICAL_PROTOCOL.read_text(encoding="utf-8"))
 
 
 def test_the_protocol_is_registered_and_names_six_components():
     assert hashlib.sha256(PROTOCOL.read_bytes()).hexdigest() == \
-        "4df31babe1b15899fe3e9c7eb3359cf3a213530d44e86b823e21540fb3328105"
+        "e3e770f1605bb8078d1eba9d6d9080d1270514004c57f8599a523b0147c7ae4e"
+    assert ablation.PROTOCOL == PROTOCOL and ablation.protocol() == DATA
+    assert DATA["protocol_id"] == "ablation_v2" and DATA["supersedes"] == "ablation_v1"
+    assert DATA["runner_version"] == RUNNER_VERSION == 3
+    assert DATA["seed_aggregation"] == {
+        "default_count": 3,
+        "allowed_count": "odd_integer_at_least_3",
+        "values": "consecutive_integers_from_0_to_count_minus_1",
+        "unit": "case_within_each_arm",
+        "method": "strict_majority_of_seed_passes",
+        "majority_threshold": "floor(seed_count / 2) + 1",
+        "incomplete_policy": "any_seed_error_marks_the_aggregated_case_error_and_excludes_its_arm_pair",
+    }
     assert set(DATA["components"]) == {"quarantine", "tool_announcement", "thinking", "search", "vectors",
                                        "camel_expansion"}
     for name, spec in DATA["components"].items():
@@ -181,6 +231,46 @@ def test_the_protocol_is_registered_and_names_six_components():
             assert spec["blocked_by"], name
         elif spec["runner"] == "agent_path":
             assert arm(spec["arms"]["on"]) != arm(spec["arms"]["off"]), name
+
+
+LEDGER = ROOT / "evaluation" / "protocols" / "ablation_v1.runs.json"
+
+
+def test_every_ablation_report_is_recorded_in_the_run_ledger():
+    """البروتوكولُ مبصومٌ فلا تتغيّر حالتُه داخله؛ فكلُّ تقريرِ استئصالٍ في docs/probe صفٌّ في دفتر التشغيل بقراره
+    وبصمةِ البروتوكول التي قيس بها، وحالةُ الدفتر تتبع ما شُغّل من المكوّنات (الخطة §٥٨٦ البند ٥)."""
+    ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
+    assert ledger["protocol_sha256"] == hashlib.sha256(HISTORICAL_PROTOCOL.read_bytes()).hexdigest()
+    reports = {}
+    for path in sorted((ROOT / "docs" / "probe").glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and data.get("kind") == "ablation_report":
+            reports[path.relative_to(ROOT).as_posix()] = data["judgment"]
+    recorded = {run["evidence"]: run for run in ledger["runs"]}
+    assert set(recorded) == set(reports), "كلُّ تقرير استئصالٍ في docs/probe له صفٌّ في " + LEDGER.name
+    for evidence, judgment in reports.items():
+        run = recorded[evidence]
+        assert (run["component"], run["decision"]) == (judgment["component"], judgment["decision"]), evidence
+        report = json.loads((ROOT / evidence).read_text(encoding="utf-8"))
+        assert run["runner_version"] == report["config"]["runner_version"], evidence
+        assert judgment["protocol_sha256"] == ledger["protocol_sha256"], evidence
+    ran = {run["component"] for run in ledger["runs"]}
+    assert ran <= set(HISTORICAL_DATA["components"])
+    expected = ("registered_not_run" if not ran else "run"
+                if ran == set(HISTORICAL_DATA["components"]) else "partially_run")
+    assert ledger["status"] == expected
+
+
+def test_the_sample_is_drawn_from_eligible_cases_so_it_reaches_its_target():
+    """السحبُ بعد التصفية: بلا حاويةٍ تبلغ العيّنةُ هدفَها من الحالات المؤهَّلة، وكلُّها ذاتُ فحصٍ آليّ بلا حاوية (#185)."""
+    from tools.evaluate_ablation import bank_cases
+    bank = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
+    if not bank.is_dir():
+        pytest.skip("bank_open_split_absent")
+    cases, _ = bank_cases(bank, sample_target=600, salt="k46", sandbox=False)
+    assert len(cases) >= 600
+    assert ablation.RUNNER_VERSION >= 2          # الخوارزميةُ المصحَّحة بنسخةٍ غيرِ نسخة الأدلّة القائمة
+    assert all(auto_checked(case, sandbox=False) for case in cases)
 
 
 def test_blocked_components_refuse_by_name():
@@ -240,3 +330,46 @@ def test_the_cli_runs_both_arms_and_refuses_a_blocked_component(tmp_path):
     assert report["judgment"]["decision"] == "underpowered"
     with pytest.raises(AblationError, match="component_blocked"):
         run_component("vectors", provider, model="replay", model_version="v1", bank_open=tmp_path / "open")
+
+
+def test_three_seeds_reach_the_provider_and_each_case_uses_strict_majority(tmp_path):
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from tools.evaluate_ablation import run_component
+
+    bank = tmp_path / "open" / "tier_a"
+    bank.mkdir(parents=True)
+    case = _case("c", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])
+    (bank / "s.json").write_text(json.dumps({"schema_version": 1, "suite_id": "s", "split": "development",
+                                             "description": "d", "cases": [case]}, ensure_ascii=False))
+
+    class SeedReplay(Replay):
+        def complete(self, request):
+            self.requests.append((self.seed, bool(request.tools)))
+            passed = self.seed in ((0, 2) if request.tools else (0,))
+            return Response("الرباط" if passed else "فاس", Usage(1, 1), "complete", 0,
+                            provider="replay", model_version="v1")
+
+    seen = []
+    report = run_component("tool_announcement", SeedReplay(None, requests=seen), model="replay",
+                           model_version="v1", bank_open=tmp_path / "open")
+    assert report["config"]["seeds"] == [0, 1, 2]
+    assert seen == [(0, True), (1, True), (2, True), (0, False), (1, False), (2, False)]
+    on, off = report["arms"]["on"][0], report["arms"]["off"][0]
+    assert [row["seed"] for row in on["seed_results"]] == [0, 1, 2]
+    assert on["passed"] is True and on["passed_seeds"] == 2 and on["majority_threshold"] == 2
+    assert off["passed"] is False and off["passed_seeds"] == 1 and off["majority_threshold"] == 2
+
+
+def test_seed_count_cannot_collapse_to_one_or_tie():
+    assert seed_values() == (0, 1, 2)
+    for count in (0, 1, 2, 4):
+        with pytest.raises(AblationError, match="seeds_invalid"):
+            seed_values(count)
+
+
+def test_a_seed_error_excludes_the_aggregated_case_instead_of_becoming_a_vote():
+    measured = {"id": "c", "category": "general", "status": "measured", "passed": True}
+    failed = {"id": "c", "category": "general", "status": "error", "code": "timeout"}
+    row = aggregate_seed_rows([(0, [measured]), (1, [failed]), (2, [measured])])[0]
+    assert row["status"] == "error" and "passed" not in row and row["error_seeds"] == [1]

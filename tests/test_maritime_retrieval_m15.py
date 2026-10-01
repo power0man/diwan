@@ -249,9 +249,7 @@ def test_search_failure_on_the_compatibility_fallback_also_raises():
     """دالّةُ بحثٍ لا تعرف match_any ثم تنكسر: لا تُبتلع هي أيضًا."""
     calls = []
 
-    def legacy_then_broken(q, limit=10, **kw):
-        if kw:
-            raise TypeError("unexpected keyword 'match_any'")
+    def legacy_then_broken(q, limit=10):        # توقيعٌ بلا match_any: يُقرأ قبل النداء فلا يُجسّ بـTypeError
         calls.append(q)
         raise _IndexBroken("no such table: pages")
     with pytest.raises(RetrievalFailed):

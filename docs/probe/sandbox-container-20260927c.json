@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-27",
+  "agent": "anthropic/claude-opus-5-5",
+  "task": "ج٥",
+  "issue": "power0man/diwan#23",
+  "host": {
+    "machine": "MacBook Pro (Apple silicon)",
+    "os": "Darwin 25.6.0"
+  },
+  "runtime_image_id": "sha256:3dd092e52cdc7267dda816809f32be0f1d42765935906fed46eabef17193f0e0",
+  "runtime_lock_sha256": "b5af0840d9ff3421030f25466ee4d95619c5894d64e8d2bb6e8ac44a20563318",
+  "probe_sha256": "3985466d7058063bec8e55f47c1a8a2c0e62ef455180ba99d66e98123df813db",
+  "runtime_receipt_sha256": "02a46f763dc07422cf3c7bc8b4b72a5018f4ad7b8823dc9bcba85267f8493634",
+  "source_sha256": "e5583347898c78bfb2b57cf35c6e75baaf8f2062bf0ca21d9efb8d4679c08826",
+  "source": "core/sandbox.py",
+  "execution_sha256": "c7fe33bc1c65ef1d615cb56873662a7bff2289d8c3f9bea3ec34f4c2eaf47e0e",
+  "via": "core.sandbox.run_in_sandbox",
+  "correct_program": {
+    "passed": true,
+    "exit_code": 0,
+    "error_code": null
+  },
+  "incorrect_program": {
+    "passed": false,
+    "exit_code": 1,
+    "error_code": "exit_1"
+  },
+  "exit_zero_before_the_harness": {
+    "passed": false,
+    "exit_code": 0,
+    "error_code": "verdict_missing"
+  },
+  "boundary": "reviewed_disposable_docker",
+  "acceptance": {
+    "passed": true,
+    "failed": []
+  },
+  "limits": [
+    "A harness in the same interpreter as arbitrary candidate code is not a tamper-proof grader.",
+    "No product certification."
+  ],
+  "measurement_limits": [
+    "three_fixed_programs_not_a_grading_benchmark",
+    "probe_changed_after_this_run_host_now_read_from_os_uname_so_probe_sha256_is_of_the_previous_probe_rerun_pending",
+    "superseded_by_sandbox-container-20260927d"
+  ]
+}

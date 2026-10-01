@@ -230,6 +230,31 @@ def test_native_filename_aliases_are_refused(tmp_path, canonical, alternate):
     assert target.read_text() == "original"
 
 
+def test_an_entry_created_between_the_listing_and_the_stat_is_not_an_alias(tmp_path, monkeypatch):
+    """سباقُ `_exact`: القائمةُ تُقرأ ثم يُسأل الـstat، فمدخلٌ ينشئه خيطٌ آخر بينهما كان يُحكم عليه `path_alias` (سقط به
+    `test_two_stop_threads_do_not_reset_running_session_descriptor` تحت الحِمل). تُعاد القراءةُ مرّةً، والتهجئةُ البديلة الحقّ
+    — الغائبةُ عن القائمة مرّتين — تبقى مرفوضة."""
+    from agent import journal as j
+    real, fd = os.listdir, os.open(tmp_path, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        first = []
+        def racing(parent):
+            names = real(parent)
+            if parent == fd and not first:                   # القراءةُ الأولى تسبق الإنشاء: غائبٌ عن القائمة حاضرٌ للـstat
+                first.append(parent)
+                (tmp_path / "late").mkdir()
+                return [n for n in names if n != "late"]
+            return names
+        monkeypatch.setattr(j.os, "listdir", racing)
+        assert j._exact(fd, "late") is True and len(first) == 1
+        (tmp_path / "ghost").mkdir()
+        monkeypatch.setattr(j.os, "listdir", lambda parent: [n for n in real(parent) if n != "ghost"] if parent == fd else real(parent))
+        with pytest.raises(JournalRefused, match="path_alias"):
+            j._exact(fd, "ghost")
+    finally:
+        os.close(fd)
+
+
 def test_hash_name_is_verified_when_reusing_an_existing_blob(tmp_path):
     target = tmp_path / "note.txt"
     target.write_text("original")
