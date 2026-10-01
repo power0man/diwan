@@ -99,7 +99,7 @@ def _public_http_origin(value):
         authority = host
     else:
         authority = f"[{address.compressed}]" if address.version == 6 else address.compressed
-    if port is not None:
+    if port is not None and port != 443:
         authority += f":{port}"
     return f"https://{authority}"
 
@@ -1221,7 +1221,8 @@ class Server(ThreadingHTTPServer):
         self.slots = threading.BoundedSemaphore(8)
         super().__init__((str(bind_address), port), Handler)
         local_host = str(bind_address) if bind_address.is_loopback else "127.0.0.1"
-        self.origin = declared_origin or f"http://{local_host}:{self.server_port}"
+        local_authority = local_host if self.server_port == 80 else f"{local_host}:{self.server_port}"
+        self.origin = declared_origin or f"http://{local_authority}"
         self.public_origin = declared_origin
         self.origin_host = urlsplit(self.origin).netloc
         if self.app is not None:
