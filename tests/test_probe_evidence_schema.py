@@ -139,3 +139,26 @@ def test_cli_report_contains_no_input_name_path_or_value(tmp_path):
     assert "synthetic-private-index" not in completed.stdout
     assert "synthetic-private-value" not in completed.stdout
     assert str(tmp_path) not in completed.stdout
+
+
+def test_malformed_url_is_rejected_without_cli_traceback_or_values(tmp_path):
+    evidence = tmp_path / "synthetic-malformed-url.json"
+    evidence.write_text(json.dumps({**_valid(), "note": "http://["}), encoding="utf-8")
+    completed = subprocess.run(
+        [sys.executable, str(ROOT / "tools" / "probe_evidence.py"), str(evidence)],
+        capture_output=True, text=True, check=False,
+    )
+    assert completed.returncode == 1
+    assert completed.stderr == ""
+    report = json.loads(completed.stdout)
+    assert report["error_counts"] == {"private_access_metadata": 1}
+    assert "http://[" not in completed.stdout
+    assert str(evidence) not in completed.stdout
+
+
+def test_historical_file_cannot_name_itself_as_successor(tmp_path):
+    evidence = tmp_path / "self.json"
+    evidence.write_text(
+        json.dumps({"historical": True, "superseded_by": "self.json"}), encoding="utf-8"
+    )
+    assert pe.validate_files([evidence]) == (1, {"superseded_by_self": 1})

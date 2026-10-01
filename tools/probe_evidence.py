@@ -94,8 +94,12 @@ def _contains_operation_scope(value: object) -> bool:
 def _unsafe_string(value: str) -> bool:
     if any(pattern.search(value) for pattern in ACCESS_VALUE_PATTERNS):
         return True
-    parsed = urlparse(value)
-    hostname = (parsed.hostname or "").lower()
+    try:
+        parsed = urlparse(value)
+        hostname = (parsed.hostname or "").lower()
+    except ValueError:
+        # Malformed URLs are untrusted evidence, not a reason to emit a traceback.
+        return True
     parts = [part for part in parsed.path.split("/") if part]
     if parsed.username or parsed.password:
         return True
@@ -156,7 +160,8 @@ def privacy_findings(payload: object) -> set[str]:
 
 
 def validate_payload(
-    payload: object, *, available_names: set[str] | None = None
+    payload: object, *, available_names: set[str] | None = None,
+    current_name: str | None = None
 ) -> list[str]:
     """Return stable error codes without echoing evidence metadata."""
     if not isinstance(payload, dict):
@@ -166,6 +171,8 @@ def validate_payload(
         successor = payload.get("superseded_by")
         if not isinstance(successor, str) or SAFE_SUCCESSOR.fullmatch(successor) is None:
             errors.append("invalid_superseded_by")
+        elif successor == current_name:
+            errors.append("superseded_by_self")
         elif available_names is not None and successor not in available_names:
             errors.append("superseded_by_missing")
     else:
@@ -225,7 +232,9 @@ def validate_files(
         except (OSError, UnicodeError, json.JSONDecodeError):
             errors["unreadable_or_invalid_json"] += 1
             continue
-        errors.update(validate_payload(payload, available_names=available_names))
+        errors.update(validate_payload(
+            payload, available_names=available_names, current_name=path.name
+        ))
     if index_path is not None:
         errors.update(validate_index(index_path, available_names=available_names))
     return len(paths), +errors
