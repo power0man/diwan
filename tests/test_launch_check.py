@@ -22,7 +22,7 @@ import probe_evidence as pe  # noqa: E402
 
 
 def _tags_with(*names):
-    return lambda base_url: {"models": [{"name": n, "digest": "d" * 12} for n in names]}
+    return lambda base_url: {"models": [{"name": n, "digest": "d" * 64} for n in names]}
 
 
 def _down(base_url):
@@ -126,8 +126,339 @@ def test_run_checks_without_an_engine_is_a_declared_unavailability_not_a_failure
     assert lc.exit_code(steps) == 3
 
 
-def test_the_ui_entry_point_initialises():
-    assert lc.check_ui(ROOT).status == "ok"
+# Ollama مزيّف على منفذ زائل؛ يُحوّل العنوان الافتراضي في الحالات القديمة، ويسجّل العنوان الأصلي لاختبار الضبط الصريح.
+MODEL, DIGEST = "qwen3.5:9b", "a" * 64
+
+
+def _ollama(**change):
+    entry = {"name": MODEL, "model": MODEL, "digest": DIGEST, "size": 6_600_000_000, "details": {"format": "gguf"}}
+    show = {"details": {"format": "gguf"}, "capabilities": ["completion", "tools"],
+            "model_info": {"general.architecture": "qwen35", "qwen35.context_length": 262144}}
+    chat = {"model": MODEL, "done": True, "done_reason": "stop", "message": {"role": "assistant", "content": "نعم"},
+            "prompt_eval_count": 9, "eval_count": 1}
+    entry.update(change.get("entry", {}))
+    show.update(change.get("show", {}))
+    chat.update(change.get("chat", {}))
+    return {"/api/tags": {"models": [entry]}, "/api/show": show, "/api/chat": chat}
+
+
+@pytest.fixture
+def fake_ollama(monkeypatch):
+    import http.client
+    import http.server
+    import json as _json
+    import threading
+    served = {"routes": _ollama(), "connections": []}
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+        def answer(self):
+            route = self.path
+            if self.command == "POST":
+                sent = _json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+                if route == "/api/chat" and "tools" in sent and "/api/chat+tools" in served["routes"]:
+                    route = "/api/chat+tools"      # ردٌّ آخر للطلب الذي يحمل أدوات وحده
+            body = _json.dumps(served["routes"].get(route, {}), ensure_ascii=False).encode("utf-8")
+            self.send_response(served["routes"].get("status", {}).get(route, 200) if route in served["routes"] else 404)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        do_GET = do_POST = answer
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    class Redirected(http.client.HTTPConnection):     # صنفٌ فرعيّ: يبقى ما يستعمله urllib من الصنف كما هو
+        def __init__(self, host, port=None, **kwargs):
+            served["connections"].append((host, port))
+            if (host, port) == ("127.0.0.1", 11434):
+                port = server.server_port
+            super().__init__(host, port, **kwargs)
+    served["base_url"] = f"http://127.0.0.1:{server.server_port}"
+    monkeypatch.setattr(http.client, "HTTPConnection", Redirected)
+    yield served
+    server.shutdown()
+    server.server_close()
+
+
+def test_the_ui_entry_point_initialises(fake_ollama):
+    """خطوةُ الواجهة تشغّل `serve_ui.py` الحقيقيّ على منفذٍ زائل وتقرأ الصفحةَ ونداءَ projects ثم توقفه.
+    بلا محرّكٍ تُسمّي بصمتَها البديلة؛ وبمحرّكٍ وبصمته `ui_ready` بعد أن يمرّ فحصُ مزوّدَي الواجهة."""
+    placeholder = lc.check_ui(ROOT)
+    assert placeholder.status == "ok" and placeholder.code == "ui_ready_without_engine", placeholder
+    ready = lc.check_ui(ROOT, model="qwen3.5:9b", digest="a" * 64)
+    assert ready.status == "ok" and ready.code == "ui_ready", ready
+    assert "qwen3.5:9b" in ready.detail and "dir=rtl" in ready.detail
+
+
+def test_a_digest_serve_ui_refuses_is_a_named_start_failure():
+    """البصمةُ تصل إلى serve_ui.py كما هي: بصمةٌ يرفضها المزوّدُ المحليّ تُسقط التشغيلَ باسمه، لا تُستبدل بالبديلة."""
+    step = lc.check_ui(ROOT, model="qwen3.5:9b", digest="not-a-digest")
+    assert step.status == "failed" and step.code == "ui_start_failed", step
+    assert "local_chat_artifact_invalid" in step.detail
+
+
+# بديلٌ عن serve_ui.py يسلك سلوكًا واحدًا يختاره FAKE_UI_MODE، ويُنهي نفسَه بعد مهلة فلا يبقى إن نجت طفرةُ الإيقاف
+FAKE_UI = r'''
+import http.server, json, os, sys, threading, time
+guard = threading.Timer(30, lambda: os._exit(9))
+guard.daemon = True
+guard.start()
+mode = os.environ["FAKE_UI_MODE"]
+if os.environ.get("FAKE_UI_PID"):
+    with open(os.environ["FAKE_UI_PID"], "w") as handle:
+        handle.write(str(os.getpid()))
+if mode == "exit":
+    print("startup_failed", file=sys.stderr, flush=True)
+    sys.exit(2)
+if mode == "silent":
+    time.sleep(60)
+TOKEN = "" if mode == "notoken" else '<meta name="diwan-token" content="' + "a" * 64 + '">'
+PAGE = '<!doctype html><html lang="ar" dir="' + ("ltr" if mode == "ltr" else "rtl") + '"><head>' + TOKEN + "</head></html>"
+class Handler(http.server.BaseHTTPRequestHandler):
+    def log_message(self, *args):
+        pass
+    def answer(self, status, body, kind):
+        data = body.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", kind)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+    def do_GET(self):
+        self.answer(500 if mode == "get500" else 200, PAGE, "text/html; charset=utf-8")
+    def do_POST(self):
+        self.rfile.read(int(self.headers["Content-Length"]))
+        body = {"items": []} if mode == "apishape" else {"projects": []}
+        self.answer(403 if mode == "api403" else 200, json.dumps(body), "application/json")
+server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+print("ديوان المحلي: http://127.0.0.1:%d" % server.server_port, flush=True)
+try:
+    server.serve_forever()
+except KeyboardInterrupt:
+    pass
+'''
+
+
+def _fake_ui(tmp_path, monkeypatch, mode, **kwargs):
+    script = tmp_path / "fake_serve_ui.py"
+    script.write_text(FAKE_UI, encoding="utf-8")
+    pid = tmp_path / "fake.pid"
+    monkeypatch.setenv("FAKE_UI_MODE", mode)
+    monkeypatch.setenv("FAKE_UI_PID", str(pid))
+    step = lc.check_ui(ROOT, model="qwen3.5:9b", digest="a" * 64, script=script, **kwargs)
+    return step, pid
+
+
+def _alive(pid_file) -> bool:
+    import os
+    pid = int(pid_file.read_text())
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    try:   # عمليةٌ انتهت ولم تُحصد بعد (zombie) ليست خادمًا حيًّا
+        return Path(f"/proc/{pid}/status").read_text().find("State:\tZ") < 0
+    except OSError:
+        return True
+
+
+def test_a_server_that_exits_before_announcing_itself_is_a_start_failure(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "exit", timeout_s=20)
+    assert step.status == "failed" and step.code == "ui_start_failed", step
+    assert "برمز 2" in step.detail and "startup_failed" in step.detail
+
+
+def test_a_server_that_never_announces_itself_times_out_and_is_stopped(tmp_path, monkeypatch):
+    step, pid = _fake_ui(tmp_path, monkeypatch, "silent", timeout_s=1.5)
+    assert step.status == "failed" and step.code == "ui_start_failed", step
+    assert "1.5" in step.detail
+    assert not _alive(pid), "بقي الخادمُ بعد انتهاء المهلة"
+
+
+def test_a_page_error_is_ui_http_failed(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "get500")
+    assert step.status == "failed" and step.code == "ui_http_failed" and "500" in step.detail, step
+
+
+def test_a_page_that_is_not_right_to_left_is_unexpected(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "ltr")
+    assert step.status == "failed" and step.code == "ui_page_unexpected" and "rtl" in step.detail, step
+
+
+def test_a_page_without_its_session_token_is_unexpected(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "notoken")
+    assert step.status == "failed" and step.code == "ui_page_unexpected", step
+
+
+def test_a_refused_read_call_is_ui_http_failed(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "api403")
+    assert step.status == "failed" and step.code == "ui_http_failed" and "403" in step.detail, step
+
+
+def test_a_read_call_without_a_project_list_is_unexpected(tmp_path, monkeypatch):
+    step, _ = _fake_ui(tmp_path, monkeypatch, "apishape")
+    assert step.status == "failed" and step.code == "ui_page_unexpected" and "projects" in step.detail, step
+
+
+def test_the_ui_step_stops_the_server_it_started(tmp_path, monkeypatch, fake_ollama):
+    step, pid = _fake_ui(tmp_path, monkeypatch, "ok")
+    assert step.status == "ok" and step.code == "ui_ready", step
+    assert not _alive(pid), "بقي خادمُ الواجهة يعمل بعد الخطوة"
+
+
+def test_a_model_the_ui_providers_refuse_is_not_ui_ready(tmp_path, monkeypatch, fake_ollama):
+    """ملاحظة Codex الثامنة على #175: /api/tags يسرد الاسمَ ببصمةٍ صالحة لكن مزوّدَ الواجهة يرفض النموذج (حجمٌ غيرُ صالح،
+    نموذجٌ بعيد، /api/show بلا قدرة tools أو بسياقٍ أصغر، جوابُ محادثةٍ مشوّه)، والجولةُ الحيّة بمزوّدٍ أرخى؛ فكان «جاهز»
+    وأولُ جوابٍ في الواجهة يُرفض. صارت الخطوةُ تمرّ بفحص مزوّدَي الواجهة المسبق وجوابٍ قصير قبل «جاهز»."""
+    cases = {
+        "local_chat_artifact_invalid": _ollama(entry={"size": 0}),
+        "local_chat_remote_model": _ollama(entry={"remote_host": "https://ollama.com"}),
+        "local_tools_capability_missing": _ollama(show={"capabilities": ["completion"]}),
+        "local_chat_context_unsupported": _ollama(show={"model_info": {"general.architecture": "qwen35",
+                                                                       "qwen35.context_length": 2048}}),
+        "local_tools_malformed": _ollama(chat={"done": False}),
+        # المحادثةُ بالأدوات سليمة والنصّيةُ وحدها مشوّهة: يلزم الجوابُ عبر مزوّد النصّ أيضًا
+        "local_chat_malformed": {**_ollama(chat={"done": False}), "/api/chat+tools": _ollama()["/api/chat"]},
+    }
+    for provider_code, routes in cases.items():
+        fake_ollama["routes"] = routes
+        step, _ = _fake_ui(tmp_path, monkeypatch, "ok")
+        assert (step.status, step.code) == ("failed", "ui_engine_refused"), (provider_code, step)
+        assert provider_code in step.detail, (provider_code, step.detail)
+    fake_ollama["routes"] = _ollama()
+    step, _ = _fake_ui(tmp_path, monkeypatch, "ok")
+    assert (step.status, step.code) == ("ok", "ui_ready"), step
+
+
+def test_an_empty_answer_is_not_ui_ready(tmp_path, monkeypatch, fake_ollama):
+    """ملاحظة Codex الثانية عشرة على #175: ردٌّ سليمُ البنية (done_reason: stop) بنصٍّ فارغ يقبله المزوّدان، والواجهةُ تعرض معه
+    بديلَ الإخفاق لا جوابًا. صار «جاهز» يطلب قاعدةَ الواجهة نفسَها: نصًّا غيرَ فارغٍ بعد القصّ، أو نداءَ أداةٍ في الطلب الوكيل."""
+    valid = _ollama()["/api/chat"]
+    empty = {**valid, "message": {"role": "assistant", "content": ""}}
+    blank = {**valid, "message": {"role": "assistant", "content": "  \n "}}
+    call = {**valid, "message": {"role": "assistant", "content": "",
+                                 "tool_calls": [{"function": {"name": "launch_check_ping", "arguments": {}}}]}}
+    for name, text_reply, tool_reply in (("text_empty", empty, valid), ("text_blank", blank, valid),
+                                         ("tool_empty", valid, empty), ("tool_blank", valid, blank)):
+        fake_ollama["routes"] = {**_ollama(), "/api/chat": text_reply, "/api/chat+tools": tool_reply}
+        step, _ = _fake_ui(tmp_path, monkeypatch, "ok")
+        assert (step.status, step.code) == ("failed", "ui_engine_refused"), (name, step)
+        assert step.detail.startswith("ui_engine_empty_answer"), (name, step.detail)
+    # نداءُ أداةٍ بلا نصّ خطوةٌ وكيلة صالحة (تتابع بها الحلقة)
+    fake_ollama["routes"] = {**_ollama(), "/api/chat+tools": call}
+    step, _ = _fake_ui(tmp_path, monkeypatch, "ok")
+    assert (step.status, step.code) == ("ok", "ui_ready"), step
+
+
+def test_a_server_that_refuses_tool_bearing_chat_is_not_ui_ready(tmp_path, monkeypatch, fake_ollama):
+    """ملاحظة Codex التاسعة على #175: خادمٌ يعلن tools ويقبل المحادثةَ النصّية ويرفض /api/chat حين يحمل الطلبُ أدوات: الفحصُ
+    المسبق والجوابُ النصّيّ يمرّان، وأولُ جولةٍ وكيلة (الافتراضُ في الواجهة) ترفض. صار جوابٌ قصير عبر LocalToolProvider.complete()
+    بأداةٍ فارغة قبل «جاهز»."""
+    for name, change in (("http_error", {"status": {"/api/chat+tools": 400}}),
+                         ("malformed", {})):
+        routes = _ollama()
+        routes["/api/chat+tools"] = {"error": "tools unsupported"} if name == "http_error" else {"model": MODEL, "done": False}
+        routes.update(change)
+        fake_ollama["routes"] = routes
+        step, _ = _fake_ui(tmp_path, monkeypatch, "ok")
+        assert (step.status, step.code) == ("failed", "ui_engine_refused"), (name, step)
+        assert "local_" in step.detail, (name, step.detail)
+
+
+def test_run_checks_hands_the_engine_and_its_digest_to_the_ui_step():
+    """الواجهةُ تُشغَّل بالمحرّك الذي وجدته خطوةُ المحرّك وبصمتِه كما في /api/tags؛ وبلا محرّكٍ بلا بصمة."""
+    seen = []
+
+    def ui_check(root, *, model, digest, base_url):
+        seen.append((model, digest, base_url))
+        return lc.Step("ui", "ok", "ui_ready")
+
+    tags = lambda base_url: {"models": [{"name": "qwen3.5:9b", "digest": "b" * 64}]}
+    lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x:1", probe=tags, with_agent=False, ui_check=ui_check)
+    lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x:2", probe=_down, with_agent=False, ui_check=ui_check)
+    assert seen == [("qwen3.5:9b", "b" * 64, "http://x:1"), ("qwen3.5:9b", None, "http://x:2")]
+
+
+def test_configured_endpoint_reaches_the_server_and_both_ui_providers(monkeypatch, fake_ollama):
+    """#189 makes the endpoint configurable: probe the same URL in every actual path."""
+    commands = []
+    actual = lc.subprocess.Popen
+
+    def capture(argv, **kwargs):
+        commands.append(argv)
+        return actual(argv, **kwargs)
+
+    monkeypatch.setattr(lc.subprocess, "Popen", capture)
+    endpoint = fake_ollama["base_url"]
+    step = lc.check_ui(ROOT, model=MODEL, digest=DIGEST, base_url=endpoint)
+    assert (step.status, step.code) == ("ok", "ui_ready"), step
+    assert commands[0][commands[0].index("--ollama-url") + 1] == endpoint
+    expected = ("127.0.0.1", int(endpoint.rsplit(":", 1)[1]))
+    # urllib's UI reads combine host:port; local model providers pass them separately.
+    model_connections = [(host, port) for host, port in fake_ollama["connections"] if port is not None]
+    assert len(model_connections) >= 6
+    assert set(model_connections) == {expected}
+
+
+@pytest.mark.parametrize("endpoint", [
+    "http://192.168.1.5:11434", "https://127.0.0.1:11434", "http://127.0.0.1",
+    "http://127.0.0.1:11434/ollama", "http://127.0.0.1:11434/?x=1",
+    "http://127.0.0.1:11434#f", "http://u:p@127.0.0.1:11434", "http://u@127.0.0.1:11434",
+])
+def test_invalid_ui_endpoint_refuses_before_server_or_model_io(monkeypatch, endpoint):
+    def forbidden(*args, **kwargs):
+        raise AssertionError("endpoint validation must precede subprocess and network work")
+
+    monkeypatch.setattr(lc.subprocess, "Popen", forbidden)
+    monkeypatch.setattr(lc, "check_ui_engine", forbidden)
+    step = lc.check_ui(ROOT, model=MODEL, digest=DIGEST, base_url=endpoint)
+    assert (step.status, step.code) == ("unavailable", "ui_engine_endpoint_unpassed")
+    assert step.detail == "local_chat_endpoint_invalid"
+
+
+def test_a_model_without_a_valid_artifact_digest_is_a_named_failure():
+    """ملاحظة Codex الخامسة على #175: محرّكٌ مسرودٌ بلا بصمة كان «جاهزًا» فتُشغَّل الواجهةُ ببصمةٍ بديلة ويخرج الفحصُ 0، وأولُ
+    جوابٍ يرفضه الفحصُ المسبق في المزوّد. البصمةُ بقاعدة المزوّد نفسِه وإلا engine_metadata_invalid وخروجٌ غيرُ صفر."""
+    def tags(**entry):
+        return lambda base_url: {"models": [{"name": "qwen3.5:9b", **entry}]}
+    for entry in ({}, {"digest": None}, {"digest": ""}, {"digest": "a" * 63}, {"digest": "g" * 64}, {"digest": "A" * 64},
+                  {"digest": "sha256:" + "a" * 64}, {"digest": 5}, {"digest": True}, {"digest": []}):
+        step, digest = lc.locate_engine("qwen3.5:9b", "http://x", probe=tags(**entry))
+        assert (step.status, step.code, digest) == ("failed", "engine_metadata_invalid", None), entry
+    step, digest = lc.locate_engine("qwen3.5:9b", "http://x", probe=tags(digest="a" * 64))
+    assert (step.status, step.code, digest) == ("ok", "engine_ready", "a" * 64)
+    ui = lambda root, **kwargs: lc.Step("ui", "ok", "ui_ready_without_engine")
+    steps = lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x", probe=tags(digest=""), with_agent=False,
+                          ui_check=ui)
+    assert lc.exit_code(steps) == 1, "بصمةٌ غائبة لا تنتهي بخروجٍ صفر"
+
+
+def test_malformed_engine_metadata_is_named_with_a_complete_report():
+    """ملاحظة Codex السابعة على #175: بصمةٌ رقمية أو منطقية أو قائمة كانت ترمي TypeError في فرع التفصيل (len)، فيخرج الفحصُ بلا
+    تقريره. وكذلك ردٌّ ليس قاموسًا أو models فيه ليست قائمة أو اسمٌ غيرُ نصّيّ. كلُّها engine_metadata_invalid وتقريرٌ كامل."""
+    ui = lambda root, **kwargs: lc.Step("ui", "ok", "ui_ready_without_engine")
+    for tags in ({"models": [{"name": "qwen3.5:9b", "digest": 5}]}, {"models": [{"name": "qwen3.5:9b", "digest": True}]},
+                 {"models": [{"name": "qwen3.5:9b", "digest": []}]}, [], {"models": "qwen3.5:9b"}, {"models": None}):
+        steps = lc.run_checks(ROOT, engine="qwen3.5:9b", base_url="http://x", probe=lambda base_url, t=tags: t,
+                              with_agent=False, ui_check=ui)
+        assert [s.step for s in steps] == ["runtime", "morphology", "engine", "policies", "ui"], tags
+        engine = steps[2]
+        assert (engine.status, engine.code) == ("failed", "engine_metadata_invalid"), tags
+        assert lc.exit_code(steps) == 1
+    odd_names = {"models": [{"name": ["qwen3.5:9b"]}, {"name": 7}, {"name": "qwen3.5:9b", "digest": "a" * 64}]}
+    assert lc.locate_engine("qwen3.5:9b", "http://x", probe=lambda base_url: odd_names)[0].code == "engine_ready"
+
+
+def test_trimmed_details_say_that_they_are_trimmed():
+    """لا قصَّ صامت في تفاصيل الفحص: النصُّ المقصوص ينتهي بـ«…»، وقائمةُ النماذج تذكر عددَ ما لم يُعرض."""
+    assert lc._clip("ا" * 300).endswith("…") and len(lc._clip("ا" * 300)) == 200
+    assert lc._clip("قصير") == "قصير"
+    many = {"models": [{"name": f"m{i}", "digest": "a" * 64} for i in range(10)]}
+    step = lc.check_engine("absent", "http://x", probe=lambda base_url: many)
+    assert step.code == "model_missing" and "و4 غيرها" in step.detail
 
 
 def test_a_journal_that_refuses_its_root_is_a_named_failure_not_a_traceback(monkeypatch):

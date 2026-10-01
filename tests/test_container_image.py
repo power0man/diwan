@@ -63,3 +63,10 @@ def test_restored_private_stores_are_excluded_from_the_build_context():
     ignored = set((ROOT / ".dockerignore").read_text().splitlines())
     assert set(EXCLUDED_PATHS) <= ignored
     assert {"keys/*", "!keys/anchor-ed25519.pub", "!keys/anchor-policy.json", "var/", ".env"} <= ignored
+
+
+def test_the_offline_smoke_expects_the_ui_step_without_an_engine():
+    """خطوةُ الواجهة تشغّل serve_ui.py فعلًا ببصمة المحرّك (#175)، والحاويةُ تُشغَّل بلا شبكة فلا محرّك: الخطوةُ تُسمّي بصمتَها
+    البديلة `ui_ready_without_engine`. فانتظارُ `ui_ready` هنا يُسقط الفحصَ على عطبٍ لا وجود له، وانتظارُ غيرِ «ok» يُخفي عطبًا."""
+    assert '"engine": ("unavailable", "engine_unreachable")' in WORKFLOW
+    assert '"ui": ("ok", "ui_ready_without_engine")' in WORKFLOW
