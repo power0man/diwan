@@ -21,11 +21,12 @@ from core.budget import Budget
 from core.canonical import canonical_bytes, digest
 from core.contracts import Message, Request, Response, Usage
 from core.ledger import GENESIS, Ledger, LedgerCorrupt
-from core.locality import is_local_provider
+from core.locality import is_cloud_model, is_local_provider
 from core.quoted import quarantine_quoted
 from memory.store import MemoryRefused, turn_memory, valid_turn_memory
 from core.run import _check_response, execute
 from core.validate import validated
+from workspace_tools.storage_scope import session_storage
 
 ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}\Z")
 SYSTEM = (
@@ -217,7 +218,7 @@ class ChatSession:
     def __init__(self, root: Path, session_id: str, *, model: str,
                  model_version: str, max_output: int = 800,
                  deadline_s: float = 120, max_context_chars: int = 24000,
-                 system: str = SYSTEM, purpose: str | None = None):
+                 system: str = SYSTEM, purpose: str | None = None, storage_scope=None):
         if not _id(session_id):
             _fail("session_id_invalid", "هوية الجلسة غير صالحة")
         if not _text(model) or not _text(model_version):
@@ -235,6 +236,7 @@ class ChatSession:
         self.root = Path(root).absolute()
         self.session_id = session_id
         self.directory = self.root / session_id
+        self.storage_scope = storage_scope
         self.deadline_s = deadline_s
         self.system = system
         self.config = {
@@ -242,6 +244,7 @@ class ChatSession:
             "model_version": model_version, "max_output": max_output,
             "deadline_s": str(float(deadline_s)), "max_context_chars": max_context_chars,
             "data_policy": "local_only", "system_sha256": digest(system),
+            **session_storage(storage_scope, self.directory),
         }
         # Omission preserves every legacy manifest and request without migration.
         if purpose is not None:
@@ -264,6 +267,7 @@ class ChatSession:
 
     @contextmanager
     def _lock(self):
+        session_storage(self.storage_scope, self.directory)
         _path(self.root, directory=True)
         _path(self.directory, directory=True)
         path = self.directory / "session.lock"
@@ -307,7 +311,7 @@ class ChatSession:
     def _request(self, turns, turn_id, text, memory=""):
         messages = self._messages(turns, text, memory)
         req = Request(messages, self.config["model"], self.config["model_version"],
-                      self.config["max_output"], self.deadline_s, "local_only",
+                      self.config["max_output"], self.deadline_s, self.config["data_policy"],
                       self._turn_key(turn_id))
         validated(req)
         return req, digest([{"role": m.role, "content": m.content} for m in messages])
@@ -347,7 +351,7 @@ class ChatSession:
             return result
         rec = entry["record"]
         expected = {"request_digest": turn["request_sha256"], "model": self.config["model"],
-                    "model_version": self.config["model_version"], "data_policy": "local_only",
+                    "model_version": self.config["model_version"], "data_policy": self.config["data_policy"],
                     "idempotency_key": self._turn_key(turn["turn_id"])}
         if not isinstance(rec, dict) or any(rec.get(k) != v for k, v in expected.items()):
             _fail("ledger_corrupt", "قيد لا يطابق الجولة المعلقة")
@@ -545,7 +549,7 @@ class ChatSession:
                 # The guard sees the exact fresh context under the append lock,
                 # before the provider sees it and before recording a pending turn.
                 request_validator(req)
-            if not is_local_provider(provider):
+            if not is_local_provider(provider) or is_cloud_model(self.config["model"]):
                 _fail("policy_requires_local", "المحادثة تتطلب مزودًا محليًا")
             turn = {"turn_id": turn_id, "text": text, "request_sha256": digest(req.fingerprint_payload()),
                     "context_sha256": context, "result": None, **({"memory": held} if held else {})}

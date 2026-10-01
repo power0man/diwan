@@ -53,6 +53,7 @@ from workspace_tools.files import (TextWorkspace, WorkspaceError, _canonical_roo
                                    _open_directory, _private, _read_json, _write_json, _relative)
 from workspace_tools.preferences import Preferences
 from workspace_tools.backup import restore_pending
+from workspace_tools.storage_scope import read_storage_scope
 
 STATIC = Path(__file__).parent / "static"
 IDENTIFIER = re.compile(r"[a-f0-9]{32}\Z")
@@ -194,7 +195,8 @@ class LocalApp:
     def __init__(self, root, *, model, model_version, provider_factory,
                  media_model=None, media_model_version=None, media_provider_factory=None,
                  agent_provider_factory=None, runtime_receipt=None, web_search=None,
-                 analysis_receipt=None, docker_executable="/usr/local/bin/docker"):
+                 analysis_receipt=None, docker_executable="/usr/local/bin/docker",
+                 synthetic_cloud=False):
         self.root = _canonical_root(root)
         self.public_origin = None
         self.model, self.model_version = model, model_version
@@ -221,6 +223,9 @@ class LocalApp:
         self.fd = _open_directory(self.root, create=True)
         try:
             _private(os.fstat(self.fd), directory=True)
+            self.storage_scope = read_storage_scope(self.root)
+            need(self.storage_scope is None or synthetic_cloud is True,
+                 "cloud_scope_requires_test_bootstrap")
             need(not restore_pending(self.root) and ".restore-incomplete" not in os.listdir(self.fd),
                  "restore_incomplete")
             self.identity = (os.fstat(self.fd).st_dev, os.fstat(self.fd).st_ino)
@@ -245,6 +250,9 @@ class LocalApp:
             info = os.fstat(fd)
             _private(info, directory=True)
             need((info.st_dev, info.st_ino) == self.identity, "store_changed")
+            current = read_storage_scope(self.root)
+            need((None if current is None else current.raw) ==
+                 (None if self.storage_scope is None else self.storage_scope.raw), "cloud_scope_changed")
         finally:
             os.close(fd)
 
@@ -375,6 +383,7 @@ class LocalApp:
                      "name": name}
             if chat:
                 need(mode in SESSION_MODES, "session_mode_invalid")
+                need(self.storage_scope is None or mode != "media", "cloud_media_not_supported")
                 need(mode != "media" or self.media_enabled, "media_unavailable")
                 need(mode != "agent" or self.agent_enabled, "agent_unavailable")
                 need(mode != "research" or self.research_enabled, "research_unavailable")
@@ -402,7 +411,7 @@ class LocalApp:
                         model_version=self.media_model_version, provider=None)
                 else:
                     ChatSession(staged / "chat", value["id"], model=self.model,
-                                model_version=self.model_version)
+                                model_version=self.model_version, storage_scope=self.storage_scope)
             with self.directory(staging) as source, self.directory(root) as target:
                 need(value["id"] not in os.listdir(target), "id_conflict")
                 os.rename(value["id"], value["id"], src_dir_fd=source, dst_dir_fd=target)
@@ -450,7 +459,7 @@ class LocalApp:
         config["deadline_s"] = float(saved["deadline_s"])
         if metadata.get("mode") == "media":
             config["system"] = MEDIA_SYSTEM
-        return ChatSession(path / "chat", value, **config)
+        return ChatSession(path / "chat", value, storage_scope=self.storage_scope, **config)
 
     def workspace(self, project):
         with self.directory(project / "uploads", create=True):
@@ -619,7 +628,7 @@ class LocalApp:
         if memory is None:
             memory = self.memory_store(project)
         return AgentSession(root, session_id, workspace_root=workspace, project_id=project.name,
-                            registry=registry, memory=memory, **config)
+                            registry=registry, memory=memory, storage_scope=self.storage_scope, **config)
 
     @staticmethod
     def present_agent(turn, session=None, mode="agent"):
@@ -912,6 +921,10 @@ class LocalApp:
                 finally:
                     self.generation.release()
         action = request["action"]
+        need(self.storage_scope is None or action not in ("upload", "agent_import", "ask_media"),
+             "cloud_file_ingress_disabled")
+        need(self.storage_scope is None or request.get("data_policy", "internal") == "internal",
+             "cloud_input_policy_refused")
         schemas = {
             "projects": set(), "create_project": {"name"}, "default_workspace": set(),
             "sessions": {"project"}, "create_session": {"project", "name"},
@@ -1148,7 +1161,7 @@ class LocalApp:
                     return old
             tier = request.get("tier", "local_edge")
             need(tier == "local_edge", "tier_unavailable")
-            data_policy = request.get("data_policy", "local_only")
+            data_policy = request.get("data_policy", session.config["data_policy"])
             router = SovereignRouter()
             probe_req = ContractRequest(
                 messages=(ContractMessage("user", request["message"]),),
@@ -1192,7 +1205,7 @@ class LocalApp:
                 result["content"] = PIISanitizer.desanitize(result["content"], token_map)
             if "tier" in request or "data_policy" in request:
                 result["sovereign_tier"] = tier
-                result["data_policy"] = "local_only"
+                result["data_policy"] = "internal" if self.storage_scope is not None else "local_only"
                 result["requested_data_policy"] = data_policy
                 result["sanitized_count"] = len(token_map)
             return {k: v for k, v in result.items() if k != "text"}

@@ -34,7 +34,8 @@ from core.budget import Budget
 from core.canonical import canonical_bytes, digest
 from core.contracts import Message, Request, ToolCall, ToolSpec, _message_payload
 from core.ledger import GENESIS, Ledger, LedgerCorrupt
-from core.locality import is_local_provider
+from core.locality import is_cloud_model, is_local_provider
+from workspace_tools.storage_scope import session_storage
 from core.run import RouteRefused
 from core.validate import validated
 from memory.store import MemoryRefused, turn_memory, valid_turn_memory
@@ -338,7 +339,7 @@ class AgentSession:
                  project_id: str, registry: ToolRegistry, model: str, model_version: str,
                  max_steps: int = 8, max_output: int = 1024, deadline_s: float = 120,
                  max_context_chars: int = 24000, max_turns: int = 128,
-                 system: str = SYSTEM, memory=None):
+                 system: str = SYSTEM, memory=None, storage_scope=None):
         if not _id(session_id) or not _id(project_id):
             _fail("session_identity_invalid", "هوية مشروع وجلسة صريحتان مطلوبتان")
         if not isinstance(registry, ToolRegistry) or not _text(model) or not _text(model_version):
@@ -354,6 +355,10 @@ class AgentSession:
             _fail("configuration_invalid", "مهلة محدودة موجبة مطلوبة")
         self.root = Path(control_root).absolute() / session_id
         self.workspace = Path(workspace_root).absolute()
+        self.storage_scope = storage_scope
+        storage_config = session_storage(storage_scope, self.root)
+        if storage_scope is not None:
+            storage_scope.binding(self.workspace)
         if ".." in self.root.parts or ".." in self.workspace.parts:
             _fail("unsafe_path", "مسارات دون عبور مطلوبة")
         if self.root == self.workspace or self.workspace in self.root.parents:
@@ -397,6 +402,7 @@ class AgentSession:
                        "max_steps": max_steps, "max_output": max_output,
                        "deadline_s": str(float(deadline_s)), "max_context_chars": max_context_chars,
                        "max_turns": max_turns, "system": system,
+                       **storage_config,
                        "tools": _copy([spec.declared() for spec in registry.specs()])}
         self._stop_signals = StopSignals(self.root, self.workspace, self._root_identity,
                                          self._workspace_identity, self.config)
@@ -439,6 +445,7 @@ class AgentSession:
             _fail("unsafe_permissions", "دليل التحكم خاص بمالكه")
 
     def _check(self):
+        session_storage(self.storage_scope, self.root)
         if self._fd is None:
             _fail("session_lock_required", "قفل الجلسة مطلوب")
         for path, expected in ((self.root, self._root_identity),
@@ -523,7 +530,7 @@ class AgentSession:
 
     def _request(self, messages, thinking=False):
         return validated(Request(messages, self.config["model"], self.config["model_version"],
-                                 self.config["max_output"], float(self.config["deadline_s"]), "local_only", None,
+                                 self.config["max_output"], float(self.config["deadline_s"]), self.config.get("data_policy", "local_only"), None,
                                  tuple(ToolSpec(**spec) for spec in self.config["tools"]), thinking=thinking))
 
     def _load(self):
@@ -921,7 +928,7 @@ class AgentSession:
             existing, initial = self._admit_turn(state, turn_id, text, thinking)
             if existing is not None:
                 return self._public(existing)
-            if not is_local_provider(provider):
+            if not is_local_provider(provider) or is_cloud_model(self.config["model"]):
                 _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
             memory = self._memory_for(text)
             turn = {"turn_id": turn_id, "text": text, "initial_messages": _copy(initial),
@@ -950,7 +957,7 @@ class AgentSession:
                 turn["result"] = self._uncertain(turn)
                 self._save(state)
                 return self._public(turn)
-            if not is_local_provider(provider):
+            if not is_local_provider(provider) or is_cloud_model(self.config["model"]):
                 _fail("policy_requires_local", "الجلسة تتطلب مزودًا محليًا")
             return self._run(state, turn, provider)
 
@@ -965,6 +972,7 @@ class AgentSession:
                             initial_messages=_messages(turn["initial_messages"]),
                             stop_check=lambda: self._stop_signals.requested(turn),
                             thinking=turn.get("thinking", False),
+                            data_policy=self.config.get("data_policy", "local_only"),
                             memory=turn.get("memory", {}).get("block", ""))
             turn["result"] = {"turn_id": turn["turn_id"], "content": run.answer, "status": run.status,
                               "error_code": run.code, "steps": [{"index": step.index, "content": step.content,
