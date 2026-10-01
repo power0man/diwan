@@ -111,6 +111,31 @@ def test_the_model_sees_optional_inputs_with_the_execution_file_limit(setup, cou
         assert result["code"] == "argument_invalid" and fake.calls == []
 
 
+@pytest.mark.parametrize("inputs", [[], ["sales.csv"]])
+def test_script_failure_explains_only_the_requested_input_files(setup, inputs):
+    work, fake, store, context = setup
+    (work / "unrequested-private-marker.csv").write_text("not requested", encoding="utf-8")
+    fake.result = _result(exit_code=1, stderr="FileNotFoundError: missing-input", outputs={})
+    result = _call(store, context, {**ARGS, "inputs": inputs})
+    assert result["code"] == "analysis_script_failed" and len(fake.calls) == 1
+    assert "ملفات inputs المطلوبة: " + json.dumps(inputs, ensure_ascii=False) in result["content"]
+    assert "read_file لا تنسخه" in result["content"] and "في inputs" in result["content"]
+    assert "FileNotFoundError: missing-input" in result["content"] and "لم يُكتب شيء" in result["content"]
+    assert str(work) not in result["content"] and "unrequested-private-marker" not in result["content"]
+    assert (work / "answer.json").read_text(encoding="utf-8") == "قديم"
+
+
+def test_the_model_sees_that_reading_a_file_does_not_supply_it_to_analysis():
+    request = Request(messages=(Message("user", "حلّل الملف"),), model="fixture", model_version="v",
+                      max_output=64, deadline_s=1, data_policy="public", idempotency_key=None,
+                      tools=(ANALYZE_DATA.spec,))
+    schema = OllamaProvider("fixture").payload(request)["tools"][0]["function"]["parameters"]
+    description = schema["properties"]["inputs"]["description"]
+    assert "كل ملف من مساحة العمل سيقرأه الكود" in description
+    assert "read_file لا تنسخه" in description
+    assert "يجوز تركها فارغة" in description and "inputs" not in schema["required"]
+
+
 def test_declared_outputs_are_written_with_one_revert_for_the_whole_call(setup):
     work, fake, store, context = setup
     result = _call(store, context, ARGS)

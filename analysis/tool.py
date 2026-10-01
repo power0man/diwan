@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import PurePosixPath
 
 from agent.builtin_tools import _inside
@@ -59,7 +60,11 @@ def _analyze_data(arguments, context):
     if result.timed_out:
         raise _failure("analysis_timed_out", f"تجاوز الكودُ مهلته ({timeout_s} ثانية).", result)
     if result.exit_code != 0:
-        raise _failure("analysis_script_failed", f"خرج الكودُ برمز {result.exit_code}.", result)
+        reason = (f"خرج الكودُ برمز {result.exit_code}.\n"
+                  "ملفات inputs المطلوبة: " + json.dumps(inputs, ensure_ascii=False) + "\n"
+                  "حاوية التحليل لا ترى إلا ملفات المساحة المدرجة في inputs؛ قراءة ملف بأداة read_file لا تنسخه إليها. "
+                  "إذا تعذرت قراءة ملف من مساحة العمل، أدرجه في inputs ثم أعد analyze_data.")
+        raise _failure("analysis_script_failed", reason, result)
     if result.missing:
         raise _failure("analysis_outputs_missing", "لم يُنتج الكودُ: " + "، ".join(result.missing) + ".", result)
     if result.oversized:
@@ -101,7 +106,9 @@ ANALYZE_DATA = Tool(ToolSpec(
     "المخرجات: csv وtsv وjson وtxt وmd وxlsx وpng. وللعربية في الرسوم: from diwan_ar import ar ثم ar(\"نص\").",
     {"type": "object", "properties": {
         "code": {"type": "string"},
-        "inputs": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_INPUTS},
+        "inputs": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_INPUTS,
+                   "description": "أدرج كل ملف من مساحة العمل سيقرأه الكود؛ قراءة ملف بأداة read_file لا تنسخه إلى حاوية التحليل. "
+                                  "يجوز تركها فارغة إذا لم يقرأ الكود ملفات من المساحة."},
         "outputs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": MAX_OUTPUTS},
         "timeout_s": {"type": "integer"}},
      "required": ["code", "outputs"]},
