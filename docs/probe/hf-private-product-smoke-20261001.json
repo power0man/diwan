@@ -1,0 +1,71 @@
+{
+  "source_head": "9e62b7561e9e8931d16a02cfba65459c25a8501a",
+  "hf_commit": "e62c5ecc6dbef21f8477a611faa26ff135d6da6c",
+  "private": true,
+  "inference_location": "HF CPU Basic, independent of Mac",
+  "checks": [
+    {
+      "name": "root_document_navigation",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "name": "cross_site_asset",
+      "status": 403,
+      "passed": true
+    },
+    {
+      "name": "wrong_host",
+      "status": 404,
+      "passed": true
+    },
+    {
+      "name": "wrong_origin",
+      "status": 403,
+      "passed": true
+    },
+    {
+      "name": "wrong_csrf",
+      "status": 403,
+      "passed": true
+    },
+    {
+      "name": "cross_site_post",
+      "status": 403,
+      "passed": true
+    }
+  ],
+  "root_status": 200,
+  "limited_mode_notice_visible": true,
+  "anonymous_status": 404,
+  "tools_declared": [
+    "edit_file",
+    "export_document",
+    "list_files",
+    "propose_memory",
+    "read_file",
+    "search_files",
+    "write_file"
+  ],
+  "unavailable_tools_not_declared": true,
+  "synthetic_product_turn": {
+    "http_status": 200,
+    "status": "complete",
+    "content": "56",
+    "error_code": null,
+    "seconds": 182.83
+  },
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-10-01",
+  "evidence_kind": "sanitized display; raw original retained unchanged",
+  "raw_sha256": "6e6a2d9d08dd9ab86713cb27389ee454fbc92f7f965a5dedf139b87173081490",
+  "measurement_limits": [
+    "One synthetic product request, not a quality benchmark or uptime guarantee.",
+    "Docker execution, analysis, web search and media disabled.",
+    "Product storage is ephemeral; separate bucket sentinel survival is not product restore acceptance.",
+    "Raw report contains a stale browser-login note; a separate native Chrome check opened the private application with an authenticated session and displayed the limited-mode notice.",
+    "Wrong Host rejection may occur at HF ingress before the application.",
+    "Account identifiers and URLs omitted from this display."
+  ]
+}

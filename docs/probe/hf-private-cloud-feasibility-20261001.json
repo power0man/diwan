@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-10-01",
+  "evidence_kind": "sanitized display of synthetic cloud feasibility results; raw originals retained separately",
+  "product_source_commit": "9e62b7561e9e8931d16a02cfba65459c25a8501a",
+  "deployment_commit": "a76992b313910ef69adad8833d5eb5766d8e9e6d",
+  "hf_image_commit": "e62c5ecc6dbef21f8477a611faa26ff135d6da6c",
+  "package_manifest_sha256": "174d6a8383ea02d228aed4adacb025adf37e0b8d6dd36c1861e109be5635f71c",
+  "raw_sha256": {
+    "diwan-hf-private-environment-probe-20261001.json": "6c4eb21156e7a41b291d22d6cd08fc83a0145c3da432b683ed43b2ec6bb54684",
+    "diwan-hf-private-ollama-probe-20261001.json": "6fd7117aa05f84d9d25cea8c3cc966b0aba96d39ccc3d88e473be6d0d63b74f2",
+    "diwan-hf-cloud-smoke-initial-timeout-20261001.json": "882a416e8634ab620a7b02c542aab7dbebdf9b041108f1cc26585ed265a871bf"
+  },
+  "compute": {
+    "platform": "private Hugging Face Space",
+    "hardware_class": "CPU Basic",
+    "vcpu": 2,
+    "memory_bytes": 16000000000,
+    "uid": 1000,
+    "effective_capabilities": "0000000000000000",
+    "seccomp": 2,
+    "docker_cli": false,
+    "docker_socket": false,
+    "rootless_user_namespace": "EPERM",
+    "network_namespace": "EPERM"
+  },
+  "isolated_engine_probe": {
+    "model": "qwen3.5:9b",
+    "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+    "question": "7 × 8",
+    "answer": "56",
+    "inference_seconds": 26.69,
+    "completed": true
+  },
+  "storage": {
+    "product_ephemeral": true,
+    "separate_bucket_synthetic_sentinel_survived_restart": true,
+    "product_restore_acceptance": false
+  },
+  "initial_product_smoke": {
+    "source_commit": "e7945ef6c76f06c2d59d559ffd3f24c89adf98c7",
+    "error_code": "local_chat_timeout",
+    "seconds": 120.92,
+    "authenticated": 200,
+    "anonymous": 404,
+    "http_security_checks_passed": 6
+  },
+  "deadline_configuration_repro": {
+    "constructor_defaults_only": true,
+    "new_agent_manifest_deadline_s": 300,
+    "saved_session_reopened": true,
+    "provider_cap_unchanged": true,
+    "product_source_unchanged": true
+  },
+  "measurement_limits": [
+    "Synthetic inputs only; no owner data or sealed material used.",
+    "This is limited private cloud deployment, not full product equivalence.",
+    "Docker execution, analysis, web search and media remain disabled.",
+    "One arithmetic engine probe is not a quality benchmark or production SLA.",
+    "Product storage is ephemeral; bucket sentinel is not full recovery acceptance.",
+    "This display omits account identifiers, URLs and local paths; raw digests preserve attribution."
+  ]
+}
