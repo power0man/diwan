@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-01",
+  "agent": "openai/codex",
+  "evidence_kind": "public_summary_not_raw",
+  "raw_sha256": "353f0af9fbcb68a8b34e671cd970f6b28b7c8ddd3195dba3feea71cb6e6adc56",
+  "source_base": "1aa21ace25dbe095eea127badce7c457659ecb9b",
+  "passed": true,
+  "measurement_limits": [
+    "No application checkpoint adapter yet",
+    "No Space restart needed or performed: only a cold client process",
+    "No inference or owner data",
+    "Private resource identifiers and exact timestamps omitted; unchanged raw remains in private handoff"
+  ],
+  "checks": {
+    "concurrent_writers": 2,
+    "committed": 1,
+    "refused": 1,
+    "refusal_http_status": 412,
+    "cold_client_read_matches": true,
+    "private": true,
+    "main_unchanged": true,
+    "space_remained_paused": true
+  }
+}
