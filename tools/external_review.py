@@ -3,7 +3,7 @@
 
     python3 tools/external_review.py evaluation/banks/kimi_v1
     python3 tools/external_review.py evaluation/banks/kimi_v1 \\
-        --reviewer deepseek-v4-flash:cloud --reviewer mistral-large-3:675b-cloud
+        --reviewer deepseek-v4.1-flash:cloud --reviewer mistral-large-3:675b-cloud
     OLLAMA_API_KEY=… python3 tools/external_review.py --base-url https://ollama.com --smoke out.json
     GITHUB_TOKEN=… python3 tools/external_review.py --backend github-models --list-catalog catalog.json
     GITHUB_TOKEN=… python3 tools/external_review.py --backend github-models --smoke out.json
