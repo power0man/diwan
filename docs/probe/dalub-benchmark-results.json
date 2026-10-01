@@ -8,7 +8,23 @@
   "total_cases": 400,
   "duration_seconds": "0.0107",
   "receipt_hash": "b7c14e3a0049bf6e90646717e93563e956a9e3fccdc83ccde768c41b6745060a",
-  "status": "certified",
+  "status": "withdrawn",
+  "agent": "unrecorded",
+  "provenance": {
+    "first_public_commit": "23e5e5aca94a8b85a5af791ae4263424a7b0c050",
+    "first_public_date": "2026-09-25",
+    "first_public_agent": "anthropic/claude-fable-5-1",
+    "scope": "public_import_not_measurement_authorship"
+  },
+  "measurement_limits": [
+    "certification_withdrawn_per_issue_188_and_PLAN_20260926",
+    "historical_numbers_preserved_without_recomputation_or_new_measurement",
+    "original_measurement_author_unrecorded_in_the_public_history",
+    "first_public_commit_identifies_the_snapshot_importer_not_the_measurement_author",
+    "date_is_the_original_report_date_not_the_public_import_date",
+    "not_a_current_general_diwan_quality_or_release_certification",
+    "receipt_hash_is_preserved_historical_metadata_not_a_new_signed_verdict"
+  ],
   "summary": {
     "model_alone": {
       "total_cases": 400,
