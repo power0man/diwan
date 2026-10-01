@@ -2136,7 +2136,7 @@ def test_a_recounted_report_publishes_the_leakage_rule_and_the_recount_limit_wit
     from evaluation.memory_runner import LEAKAGE_LIMIT, RECOUNT_LIMIT, recount_leakage
     assert LEAKAGE_LIMIT in cli.LIMITS and RECOUNT_LIMIT not in cli.LIMITS, "القياسُ الحيّ يقرأ قاعدةَ التسرّب من الموضع نفسِه"
     evidence = json.loads((ROOT / "docs" / "probe" / "memory-live-20260928.json").read_text(encoding="utf-8"))
-    assert evidence["measurement_limits"][-2:] == [LEAKAGE_LIMIT, RECOUNT_LIMIT]
+    assert evidence["measurement_limits"].count(LEAKAGE_LIMIT) == evidence["measurement_limits"].count(RECOUNT_LIMIT) == 1
     once = recount_leakage({"metrics": {"leakage": 0}, "results": [], "measurement_limits": ["as_measured"]}, {"scenarios": []})
     assert once["measurement_limits"] == ["as_measured", LEAKAGE_LIMIT, RECOUNT_LIMIT]
     assert recount_leakage(once, {"scenarios": []})["measurement_limits"] == once["measurement_limits"]
