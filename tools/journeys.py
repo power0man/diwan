@@ -409,7 +409,12 @@ def scan(root: Path) -> dict:
             if exc.code != "missing":
                 raise Refused("root_unsafe") from None
             projects_fd = None
-        project_names = [] if projects_fd is None else _entries(projects_fd)
+        try:
+            project_names = [] if projects_fd is None else _entries(projects_fd)
+        except Unreadable:
+            if projects_fd is not None:
+                os.close(projects_fd)
+            raise Refused("root_unreadable") from None
         for project in project_names:
             try:
                 if not IDENTIFIER.fullmatch(project):
