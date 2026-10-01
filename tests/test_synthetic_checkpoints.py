@@ -13,7 +13,7 @@ import pytest
 from core.canonical import canonical_bytes, digest
 from memory.store import MemoryStore
 from tests.test_cloud_checkpoints import TestStore
-from tests.test_cloud_workspace_scope import _app, _call, _create, Provider
+from tests.test_cloud_workspace_scope import _app, _call, _create, Provider, TARGET
 from workspace_tools import backup, checkpoints as cp, storage_scope as ss
 from workspace_tools import synthetic_checkpoints as sc
 
@@ -278,6 +278,19 @@ def test_portable_identity_still_requires_the_real_approval(cloud):
     value["sha256"] = digest(value["record"])
     with pytest.raises(ss.StorageScopeError, match="cloud_approval_required"):
         ss.checkpoint_scope(canonical_bytes(value))
+
+
+def test_hub_receipt_size_is_bounded_before_binding_a_branch(tmp_path):
+    plan = ss.plan_cloud_workspace({**TARGET, "repo_id": "synthetic/" + "a" * 5000})
+    scope = _create(tmp_path, plan=plan)
+    app = _app(scope.root, synthetic_cloud=True)
+    app.close()
+    archive = tmp_path / "large-receipt.json"
+    sha = backup.export_workspace(scope.root, archive)["sha256"]
+    store = BoundStore()
+    with pytest.raises(cp.CheckpointError, match="checkpoint_receipt_limit"):
+        sc.commit_synthetic_checkpoint(archive, sha, scope.raw, store)
+    assert store.calls == []
 
 
 @pytest.mark.parametrize("field,value", [("kind", "diwan_public_checkpoint"), ("sequence", True),

@@ -16,7 +16,7 @@ from memory.store import MemoryStore
 from workspace_tools import backup, checkpoints as cp
 from workspace_tools.storage_scope import MANIFEST, StorageScopeError, checkpoint_scope
 
-MAX_RECEIPT_BYTES = 16384
+MAX_RECEIPT_BYTES = 4096
 
 
 class SyntheticCheckpointStore(cp.CheckpointStore):
@@ -114,6 +114,14 @@ def _object(store, kind, sha):
     return raw
 
 
+def _encode_receipt(scope, sequence, previous, archive_sha256, tombstones_sha256):
+    raw = canonical_bytes({"schema_version": 1, "kind": "diwan_synthetic_checkpoint",
+        "scope": scope, "sequence": sequence, "previous": previous,
+        "archive_sha256": archive_sha256, "tombstones_sha256": tombstones_sha256})
+    cp._need(len(raw) <= MAX_RECEIPT_BYTES, "checkpoint_receipt_limit")
+    return raw
+
+
 def _archive(store, receipt, expected_scope, temporary, name):
     raw = _object(store, "archives", receipt["archive_sha256"])
     path = temporary / name
@@ -132,6 +140,10 @@ def commit_synthetic_checkpoint(archive, expected_sha256, expected_scope: bytes,
     scope = _scope(expected_scope)
     bundle = backup._guard(backup._read_archive)(archive, expected_sha256)
     raw, tombstones = _admit(bundle, expected_scope)
+    tombstones_sha = digest(sorted(tombstones))
+    # The Hub control head accepts at most 4096 bytes. Bound the largest future
+    # receipt before even acquiring/binding the store; a missing head is shorter.
+    _encode_receipt(scope, cp.MAX_CHECKPOINTS, "0" * 64, expected_sha256, tombstones_sha)
     state = {}
     with cp._storage(state), store.exclusive(), tempfile.TemporaryDirectory(prefix="diwan-synthetic-") as tmp:
         cp._need(store.bind_scope(expected_scope) == scope, "checkpoint_scope_mismatch")
@@ -144,9 +156,8 @@ def commit_synthetic_checkpoint(archive, expected_sha256, expected_scope: bytes,
             cp._need(prior <= tombstones, "checkpoint_forget_regression")
         sequence = 1 if head is None else head["sequence"] + 1
         cp._need(sequence <= cp.MAX_CHECKPOINTS, "checkpoint_history_limit")
-        receipt = canonical_bytes({"schema_version": 1, "kind": "diwan_synthetic_checkpoint",
-            "scope": scope, "sequence": sequence, "previous": None if previous is None else cp._sha(previous),
-            "archive_sha256": expected_sha256, "tombstones_sha256": digest(sorted(tombstones))})
+        receipt = _encode_receipt(scope, sequence, None if previous is None else cp._sha(previous),
+                                  expected_sha256, tombstones_sha)
         for kind, payload in (("archives", raw), ("receipts", receipt)):
             sha = cp._sha(payload)
             store.put_immutable(kind + "/" + sha, payload)
