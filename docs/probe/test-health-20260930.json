@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "task": "#187",
+  "agent": "openai/codex",
+  "date": "2026-09-30",
+  "git_commit": "529b2c563afa4d323a112acf20441b71278272aa",
+  "environment": {
+    "python": "3.12.14",
+    "python_build": "Clang 22.1.3",
+    "os": "Ubuntu 24.04.3 LTS",
+    "kernel": "Linux 6.18.44",
+    "architecture": "x86_64"
+  },
+  "runs": {
+    "full_pytest": {
+      "command": "python3 -m pytest -ra",
+      "git_commit": "ba63431faec5515ae4b89ffb8b2bf741b5fc0bbf",
+      "status": "passed",
+      "passed": 4781,
+      "failed": 0,
+      "skipped": 58,
+      "duration_seconds": 280.29,
+      "skip_groups": [
+        {
+          "reason": "analysis_image_receipt_or_docker_unavailable",
+          "count": 1,
+          "scope": [
+            "tests/test_analysis_live.py"
+          ]
+        },
+        {
+          "reason": "public_snapshot_omits_private_or_local_only_test_data",
+          "count": 32,
+          "scope": [
+            "arabic_linguistic_core_corpus (1)",
+            "benchmark_lexicon_translation (2)",
+            "benchmark_m14_private_suite (8)",
+            "export_public_corpus (2)",
+            "hybrid_retrieval_corpus (2)",
+            "linguistics_query_lexicons (2)",
+            "m14_acceptance_suite (1)",
+            "m15_acceptance_corpus (1)",
+            "maritime_retrieval_corpus (10)",
+            "operational_tools_corpus (1)",
+            "verdict_signature_file (1)",
+            "webui_sovereign_tools_corpus (1)"
+          ]
+        },
+        {
+          "reason": "case_sensitive_filesystem_does_not_alias_requested_spellings",
+          "count": 21,
+          "scope": [
+            "backup_edges (2)",
+            "gate_evidence (1)",
+            "journal_boundaries (2)",
+            "runner_supervisor (2)",
+            "signing_filesystem_aliases (14)"
+          ]
+        },
+        {
+          "reason": "mlx_runtime_unavailable_on_linux",
+          "count": 3,
+          "scope": [
+            "mlx_provider (1)",
+            "mlx_runtime (2)"
+          ]
+        },
+        {
+          "reason": "camel_tools_or_its_data_unavailable",
+          "count": 1,
+          "scope": [
+            "morphology_root_floor (1)"
+          ]
+        }
+      ],
+      "notes": [
+        "This full run measured the product and test-data fix at ba63431; the later 529b2c5 commit changed only the hosted container workflow and its focused guard.",
+        "No skip was added to convert a failure into success."
+      ]
+    },
+    "baseline_failure_before_fixture_fix": {
+      "command": "python3 -m pytest -ra",
+      "git_commit": "a19f537726f5882c895f167f31b883420bf6e8d0",
+      "status": "failed",
+      "passed": 4780,
+      "failed": 1,
+      "skipped": 58,
+      "duration_seconds": 278.09,
+      "failure": "tests/test_context_budget.py::test_snapshot_extraction_checks_members_itself_and_works_without_the_filter_argument",
+      "cause": "The synthetic tar member had mode 000, so the compatibility extraction path created an unreadable snap/tools/a.py and raised PermissionError.",
+      "resolution": "The synthetic fixture now assigns 0755 to directories and 0644 to files; commit ba63431faec5515ae4b89ffb8b2bf741b5fc0bbf."
+    },
+    "focused_workflow_guards": {
+      "command": "python3 -m pytest -q tests/test_ci_python_matrix.py tests/test_container_image.py",
+      "git_commit": "529b2c563afa4d323a112acf20441b71278272aa",
+      "status": "passed",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "mutation_check": {
+      "command": "python3 tools/mutation_check.py --range origin/main..HEAD --report /tmp/issue187-mutations.json --timeout-s 300",
+      "git_commit": "ba63431faec5515ae4b89ffb8b2bf741b5fc0bbf",
+      "status": "passed",
+      "killed": 48,
+      "partially_killed": 0,
+      "survived": 0,
+      "test_missing": 0,
+      "failing_before_mutation": 0,
+      "stale": 0,
+      "invalid": 0,
+      "timeout": 0,
+      "required_mutation": {
+        "id": "hosted-matrix-drops-python-311",
+        "status": "killed"
+      }
+    },
+    "hosted_python_matrix": {
+      "versions": [
+        "3.11",
+        "3.12",
+        "3.14"
+      ],
+      "status": "pending",
+      "reason": "The pull request and its GitHub-hosted Actions runs had not been created when this evidence was recorded."
+    },
+    "container_smoke": {
+      "python": "3.12",
+      "status": "not_run_locally",
+      "reason": "The Docker executable is unavailable in this environment; acceptance waits for the GitHub-hosted Actions job."
+    }
+  },
+  "measurement_limits": [
+    "The successful full local run covers CPython 3.12.14 on Ubuntu 24.04.3 x86_64 only.",
+    "Python 3.11 and 3.14 are workflow configuration until their GitHub-hosted Actions jobs complete; this file makes no pass claim for them.",
+    "The local environment has no Docker executable, so the container-smoke result is pending and no container pass is claimed.",
+    "The environment lacks the private/local-only corpora, MLX runtime, and CAMeL Tools data named in skip_groups; each skip is counted above.",
+    "No private, sealed, or local_only data was read or uploaded.",
+    "The mutation report proves the named tests fail under the named mutations; it does not prove the guards are complete."
+  ]
+}

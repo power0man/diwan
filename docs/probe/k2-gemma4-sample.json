@@ -2,6 +2,11 @@
   "schema_version": 2,
   "model": "gemma4:latest",
   "model_version": "unspecified",
+  "comparison_metadata": {
+    "model_size": "9.6 GB",
+    "exact_trailing_punctuation_recoveries": 10,
+    "source": "ك١٦/ق٥٧: عددٌ منشورٌ سابقًا في k12-arabic-specialist-20260925.json؛ أُضيف هنا كي تعاد المقارنة من ملفات العينات العامة بلا نموذج"
+  },
   "suites": 41,
   "suites_failed": 0,
   "failures": [],
