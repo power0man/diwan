@@ -1301,16 +1301,18 @@ def test_a_forgotten_value_does_not_linger_in_the_probe_session_history_through_
     النموذجَ بعد النسيان في طلبه التالي وهو كلامُ المالك لا كتلةُ ذاكرة، ولا يراه فحصُ الغياب. بعد النسيان لا رسالةَ
     مستخدمٍ في الطلب تحمل القيمة."""
     from evaluation.memory_runner import run_wired_scenario
+    from evaluation.memory_bank import EXPOSURE_QUESTION
     value = "رقم جواز السفر ب ٤٤٥٥٦٦"
     scenario = {"id": "forget_history", "category": "forget", "steps": [
         {"op": "remember", "project": "A", "text": value, "consent": "owner", "as": "m1"},
         {"op": "forget", "project": "A", "ref": "m1"},
         {"expect": "context", "project": "A", "question": "ما رقم الجواز؟", "absent": [value], "present": []},
     ]}
-    histories = []
+    histories, questions = [], []
     original = _Wired.contexts
 
     def spy(self, name, question):
+        questions.append(question)
         seen = original(self, name, question)
         histories.append([m.content for m in self.provider.requests[-1].messages if m.role == "user"])
         return seen
@@ -1318,6 +1320,8 @@ def test_a_forgotten_value_does_not_linger_in_the_probe_session_history_through_
     monkeypatch.setattr(_Wired, "contexts", spy)
     report = run_wired_scenario(scenario, tmp_path / "w")
     assert report["passed"] and report["context_exposures"] == 1, report
+    # Product scrubbing must not hide an evaluator that inserts the answer into its own probe.
+    assert questions[0] == EXPOSURE_QUESTION and value not in questions[0]
     exposure, after_forget = histories
     assert any(value in m for m in exposure), "العرضُ لم يُظهر العنصر"
     assert len(after_forget) >= 2 and not any(value in m for m in after_forget), after_forget
