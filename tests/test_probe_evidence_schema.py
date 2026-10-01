@@ -191,3 +191,10 @@ def test_github_fully_qualified_host_does_not_bypass_access_guard():
                 "api.github.com./repos/power0man/diwan/actions/secrets"):
         assert pe.validate_payload({**_valid(), "note": url}) == ["private_access_metadata"]
     assert pe.validate_payload({**_valid(), "note": "https://github.com./power0man/diwan/pull/245"}) == []
+
+
+def test_case_varied_github_access_paths_are_rejected():
+    for url in ("https://github.com/synthetic/private/ACTIONS/runs/1",
+                "https://api.github.com/repos/POWER0MAN/DIWAN/actions/SECRETS"):
+        assert pe.validate_payload({**_valid(), "note": url}) == ["private_access_metadata"]
+    assert pe.validate_payload({**_valid(), "note": "https://github.com/POWER0MAN/DIWAN/actions/runs/1"}) == []

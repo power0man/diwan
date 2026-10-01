@@ -102,7 +102,7 @@ def _unsafe_string(value: str) -> bool:
     except ValueError:
         # Malformed URLs are untrusted evidence, not a reason to emit a traceback.
         return True
-    parts = [part for part in unquote(parsed.path).split("/") if part]
+    parts = [part.lower() for part in unquote(parsed.path).split("/") if part]
     if parsed.username or parsed.password:
         return True
     if any(name.lower() in ACCESS_QUERY_NAMES for name, _ in parse_qsl(parsed.query)):
