@@ -75,7 +75,7 @@ def test_serve_ui_passes_environment_endpoint_to_every_local_provider(monkeypatc
     class Server:
         origin = "http://127.0.0.1:0"
 
-        def __init__(self, app, port, **kwargs):
+        def __init__(self, app, port, *args, **kwargs):
             self.app = app
 
         def serve_forever(self):

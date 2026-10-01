@@ -166,8 +166,8 @@ def test_serve_ui_passes_explicit_bind_and_public_origin(monkeypatch, tmp_path):
     monkeypatch.delenv("DIWAN_MEDIA_DIGEST", raising=False)
     monkeypatch.setattr(sys, "argv", ["serve_ui", "--root", str(tmp_path / "ui"), "--port", "0",
                                       "--bind", "0.0.0.0", "--public-origin", "https://demo.example"])
-    monkeypatch.setattr(cli, "LocalChatProvider", lambda *args: object())
-    monkeypatch.setattr(cli, "LocalToolProvider", lambda *args: object())
+    monkeypatch.setattr(cli, "LocalChatProvider", lambda *args, **kwargs: object())
+    monkeypatch.setattr(cli, "LocalToolProvider", lambda *args, **kwargs: object())
 
     class App:
         def __init__(self, *args, **kwargs):
