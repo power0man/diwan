@@ -91,7 +91,7 @@ def check_runtime(root: Path) -> Step:
         import agent.loop  # noqa: F401
         import providers.ollama  # noqa: F401
     except Exception as exc:  # noqa: BLE001 — أيُّ عطب استيرادٍ يُسمّى
-        return Step("runtime", "failed", "import_failed", f"{type(exc).__name__}: {exc}"[:200])
+        return Step("runtime", "failed", "import_failed", _clip(f"{type(exc).__name__}: {exc}"))
     if not (root / "uv.lock").is_file():
         return Step("runtime", "failed", "lock_missing", "uv.lock غائب: التثبيتُ غيرُ مقفول")
     from core.public_export import read_marker
@@ -217,16 +217,16 @@ def check_agent_turn(engine: str, base_url: str, *, live: bool) -> Step:
                             session_id="launch-check", turn_id="turn-1",
                             model=model, model_version=version, max_steps=4, deadline_s=120.0)
         except Exception as exc:  # noqa: BLE001 — يُسمّى ولا يُبتلع
-            return Step("agent_turn", "failed", "agent_turn_raised", f"{type(exc).__name__}: {exc}"[:200])
+            return Step("agent_turn", "failed", "agent_turn_raised", _clip(f"{type(exc).__name__}: {exc}"))
         read_calls = [call for step in run.steps for call in step.tool_calls if getattr(call, "name", "") == "read_file"]
         if run.status != "complete":
-            return Step("agent_turn", "failed", f"agent_turn_{run.status}", f"{run.code}: {run.answer[:120]}")
+            return Step("agent_turn", "failed", f"agent_turn_{run.status}", f"{run.code}: {_clip(run.answer, 120)}")
         if not read_calls:
             return Step("agent_turn", "failed", "tool_not_used", "أجاب النموذجُ بلا قراءة الملف بأداة read_file")
         if not run.answer.strip():
             return Step("agent_turn", "failed", "empty_answer", "جولةٌ تمّت بلا جواب")
         code = "agent_turn_live" if live else "mechanism_only"
-        return Step("agent_turn", "ok", code, f"{len(run.steps)} خطوات، والجواب: {run.answer[:80]}")
+        return Step("agent_turn", "ok", code, f"{len(run.steps)} خطوات، والجواب: {_clip(run.answer, 80)}")
 
 
 def check_policies(root: Path) -> Step:
@@ -238,15 +238,15 @@ def check_policies(root: Path) -> Step:
         import rebuild_index
         from core.canonical import PayloadRejected
     except Exception as exc:  # noqa: BLE001
-        return Step("policies", "failed", "import_failed", f"{type(exc).__name__}: {exc}"[:200])
+        return Step("policies", "failed", "import_failed", _clip(f"{type(exc).__name__}: {exc}"))
     try:
         hits = rebuild_index.search("سفينة", limit=1, match_any=True)
     except PayloadRejected as exc:
         if getattr(exc, "code", "") == "index_missing":
             return Step("policies", "unavailable", "index_missing", "الإسقاطُ غيرُ مبني — `python tools/rebuild_index.py rebuild`")
-        return Step("policies", "failed", getattr(exc, "code", "search_refused"), str(exc)[:200])
+        return Step("policies", "failed", getattr(exc, "code", "search_refused"), _clip(exc))
     except Exception as exc:  # noqa: BLE001
-        return Step("policies", "failed", "search_raised", f"{type(exc).__name__}: {exc}"[:200])
+        return Step("policies", "failed", "search_raised", _clip(f"{type(exc).__name__}: {exc}"))
     if not hits:
         return Step("policies", "failed", "no_evidence", "استعلامٌ بسيط بلا شاهد رغم وجود المتن والإسقاط")
     return Step("policies", "ok", "policies_ready", f"شاهدٌ من {hits[0].get('doc_id', '?')}")
