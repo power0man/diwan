@@ -95,6 +95,8 @@ def _unsafe_string(value: str) -> bool:
     if any(pattern.search(value) for pattern in ACCESS_VALUE_PATTERNS):
         return True
     try:
+        if value.lower().startswith(("github.com/", "www.github.com/", "api.github.com/")):
+            value = "//" + value
         parsed = urlparse(value)
         hostname = (parsed.hostname or "").lower()
     except ValueError:
@@ -112,7 +114,8 @@ def _unsafe_string(value: str) -> bool:
         if "settings" in parts or "secrets" in parts:
             return True
     if hostname == "api.github.com" and len(parts) >= 3 and parts[0] == "repos":
-        return "/".join(parts[1:3]) != PUBLIC_REPOSITORY
+        return ("/".join(parts[1:3]) != PUBLIC_REPOSITORY
+                or "settings" in parts or "secrets" in parts)
     return False
 
 

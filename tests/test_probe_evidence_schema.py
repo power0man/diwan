@@ -162,3 +162,18 @@ def test_historical_file_cannot_name_itself_as_successor(tmp_path):
         json.dumps({"historical": True, "superseded_by": "self.json"}), encoding="utf-8"
     )
     assert pe.validate_files([evidence]) == (1, {"superseded_by_self": 1})
+
+
+def test_schemeless_github_access_urls_are_rejected():
+    for url in ("github.com/power0man/diwan/secrets",
+                "www.github.com/synthetic/private/actions/runs/1",
+                "api.github.com/repos/synthetic/private/actions/runs/1"):
+        assert pe.validate_payload({**_valid(), "note": url}) == ["private_access_metadata"]
+    assert pe.validate_payload({**_valid(), "note": "github.com/power0man/diwan/pull/245"}) == []
+
+
+def test_public_repository_api_secrets_are_not_public_evidence():
+    for url in ("https://api.github.com/repos/power0man/diwan/actions/secrets",
+                "api.github.com/repos/power0man/diwan/actions/secrets"):
+        assert pe.validate_payload({**_valid(), "note": url}) == ["private_access_metadata"]
+    assert pe.validate_payload({**_valid(), "note": "https://api.github.com/repos/power0man/diwan/pulls/245"}) == []
