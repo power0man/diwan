@@ -12,7 +12,9 @@ from core.canonical import canonical_bytes, digest
 from tests.test_cloud_workspace_scope import Provider, TARGET
 from tests.test_synthetic_checkpoints import BoundStore
 from webui import synthetic_lifecycle as life
+from webui.server import UIError
 from workspace_tools import backup, checkpoints as cp, storage_scope as ss
+from workspace_tools.files import WorkspaceError
 
 
 def options(provider=None):
@@ -352,3 +354,51 @@ def test_headless_objects_cannot_be_adopted_as_a_new_workspace(cloud):
     with pytest.raises(life.LifecycleError, match="cloud_checkpoint_stale"):
         call(cloud["owner"], "memory", project=cloud["project"])
     assert cloud["owner"].state == "blocked" and cloud["owner"]._app is None
+
+
+@pytest.mark.parametrize("payload,error,code", [
+    ({"action": "memory", "project": "0" * 32}, WorkspaceError, "file_missing"),
+    ({"action": "unknown"}, UIError, "request_invalid"),
+])
+def test_ordinary_request_error_preserves_ready_after_confirmed_release(cloud, payload, error, code):
+    owner, app, store = cloud["owner"], cloud["owner"]._app, cloud["store"]
+    with pytest.raises(error, match=code):
+        owner.dispatch(payload)
+    assert owner.state == "ready" and owner._app is app and not store.locked
+    assert cloud["item"] in {item["item_id"] for item in call(owner, "memory", project=cloud["project"])["items"]}
+
+
+def test_release_failure_overrides_ordinary_request_error_and_blocks(cloud):
+    owner, store = cloud["owner"], cloud["store"]
+    store.fail = "lease-exit"
+    with pytest.raises(life.LifecycleError, match="^cloud_storage_unconfirmed$"):
+        call(owner, "memory", project="0" * 32)
+    assert owner.state == "blocked" and owner._app is None and not store.locked
+
+
+def test_bootstrap_failure_preserves_claim_and_refuses_automatic_recreation(tmp_path, monkeypatch):
+    root, store = tmp_path.resolve(), BoundStore()
+    plan = ss.plan_cloud_workspace(TARGET)
+    approval = {"owner_approved": True, "plan_sha256": digest(plan)}
+    def fail(*args, **kwargs):
+        raise OSError("synthetic transient open failure")
+    with monkeypatch.context() as patch:
+        patch.setattr(life, "LocalApp", fail)
+        with pytest.raises(OSError, match="synthetic transient open failure"):
+            life.SyntheticLifecycle.create(root / "cloud", plan, approval=approval,
+                claims_root=root, store=store, app_options=options())
+    claims = list(root.glob(".cloud-claim-*"))
+    assert len(claims) == 1 and store.calls == []
+    claim = claims[0].read_bytes()
+    assert json.loads(claim) == {"plan_sha256": digest(plan), "destination": "cloud"}
+    assert ss.read_storage_scope(root / "cloud") is not None
+    with pytest.raises(ss.StorageScopeError, match="cloud_destination_exists"):
+        life.SyntheticLifecycle.create(root / "cloud", plan, approval=approval,
+            claims_root=root, store=store, app_options=options())
+    fresh = ss.plan_cloud_workspace(TARGET)
+    with pytest.raises(ss.StorageScopeError, match="cloud_namespace_used"):
+        life.SyntheticLifecycle.create(root / "another", fresh,
+            approval={"owner_approved": True, "plan_sha256": digest(fresh)},
+            claims_root=root, store=store, app_options=options())
+    assert claims[0].read_bytes() == claim and not (root / "another").exists()
+    assert store.calls == []

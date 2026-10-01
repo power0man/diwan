@@ -152,6 +152,7 @@ class SyntheticLifecycle:
         so another coordinator cannot acknowledge a forget during this reuse.
         """
         state = {}
+        operation_error = None
         try:
             with self._store.exclusive():
                 _need(self._store.bind_scope(self._scope) == ss.checkpoint_scope(self._scope),
@@ -161,7 +162,12 @@ class SyntheticLifecycle:
                 _need(current == self._last_receipt, "cloud_checkpoint_stale")
                 if current is None:
                     _need(self._store.is_pristine(), "cloud_checkpoint_stale")
-                yield state
+                try:
+                    yield state
+                except Exception as exc:
+                    # Keep request rejection separate from authority/lease
+                    # failures. Release must succeed before it may escape.
+                    operation_error = exc
         except BaseException as exc:
             self._block()
             if not isinstance(exc, Exception):
@@ -169,6 +175,8 @@ class SyntheticLifecycle:
             if isinstance(exc, LifecycleError):
                 raise
             raise LifecycleError("cloud_storage_unconfirmed") from None
+        if operation_error is not None:
+            raise operation_error
 
     def _persist_held(self, state):
         with self._idle() as app:
