@@ -678,7 +678,8 @@ class LocalApp:
                 try:
                     self._apply_memory_transaction(project, transaction, store=store, store_locked=True)
                 except (OSError, ValueError, MemoryRefused, UIError):
-                    # A prepared intent contains only redacted states and the text-free receipt.
+                    # The intent holds scrubbed reusable context, original audit metadata
+                    # and the text-free receipt; audit IDs are not model-facing context.
                     # Retry once now; if storage still fails, startup/next dispatch must finish it.
                     try:
                         self._apply_memory_transaction(project, transaction, store=store, store_locked=True)
