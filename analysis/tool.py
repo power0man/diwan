@@ -101,7 +101,7 @@ ANALYZE_DATA = Tool(ToolSpec(
     "المخرجات: csv وtsv وjson وtxt وmd وxlsx وpng. وللعربية في الرسوم: from diwan_ar import ar ثم ar(\"نص\").",
     {"type": "object", "properties": {
         "code": {"type": "string"},
-        "inputs": {"type": "array", "items": {"type": "string"}},
+        "inputs": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_INPUTS},
         "outputs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": MAX_OUTPUTS},
         "timeout_s": {"type": "integer"}},
      "required": ["code", "outputs"]},

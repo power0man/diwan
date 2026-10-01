@@ -88,6 +88,29 @@ def test_the_model_sees_output_cardinality_that_matches_execution(setup, count):
         assert result["code"] == "argument_invalid" and fake.calls == []
 
 
+@pytest.mark.parametrize("count", [0, 1, 32, 33])
+def test_the_model_sees_optional_inputs_with_the_execution_file_limit(setup, count):
+    """يمكن توليد بيانات بلا مدخلات، لكن لا تقبل الأداة أكثر من 32 ملفًا."""
+    work, fake, store, context = setup
+    request = Request(messages=(Message("user", "حلّل الملف"),), model="fixture", model_version="v",
+                      max_output=64, deadline_s=1, data_policy="public", idempotency_key=None,
+                      tools=(ANALYZE_DATA.spec,))
+    wire = OllamaProvider("fixture").payload(request)
+    parameters = wire["tools"][0]["function"]["parameters"]
+    schema = parameters["properties"]["inputs"]
+    assert "inputs" not in parameters["required"]
+    assert schema["type"] == "array" and schema["items"]["type"] == "string"
+    assert schema.get("minItems", 0) == 0 and schema["maxItems"] == 32
+    names = [f"input-{index}.csv" for index in range(count)]
+    for name in names:
+        (work / name).write_text("value\n1\n", encoding="utf-8")
+    result = _call(store, context, {**ARGS, "inputs": names})
+    if count <= schema["maxItems"]:
+        assert result["status"] == "ok" and fake.calls[0][1] == tuple(names)
+    else:
+        assert result["code"] == "argument_invalid" and fake.calls == []
+
+
 def test_declared_outputs_are_written_with_one_revert_for_the_whole_call(setup):
     work, fake, store, context = setup
     result = _call(store, context, ARGS)
