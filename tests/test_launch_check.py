@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+import json
 import sys
 import urllib.error
 from pathlib import Path
@@ -17,6 +18,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
 
 import launch_check as lc  # noqa: E402
+import probe_evidence as pe  # noqa: E402
 
 
 def _tags_with(*names):
@@ -160,3 +162,29 @@ def test_a_windows_arabic_console_prints_the_report_instead_of_crashing(monkeypa
 def test_a_utf8_console_keeps_the_symbols():
     assert lc.marks_for("utf-8") == lc.MARKS and lc.marks_for("cp1256") == lc.ASCII_MARKS
     assert lc.marks_for("no-such-codec") == lc.ASCII_MARKS
+
+
+def test_json_report_has_public_provenance_and_no_automatic_host_identity(monkeypatch, capsys):
+    commit = "a" * 40
+    monkeypatch.setattr(lc, "run_checks", lambda *a, **k: [lc.Step("runtime", "ok", "ready")])
+    monkeypatch.setattr(lc, "_utc_date", lambda: "2026-09-30")
+    monkeypatch.setattr(lc, "_git_commit", lambda root: commit)
+
+    assert lc.main(["--json", "--agent", "openai/codex", "--engine", "synthetic:1",
+                    "--hardware", "synthetic-cpu", "--root", str(ROOT)]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["agent"] == "openai/codex"
+    assert report["date"] == "2026-09-30"
+    assert report["git_commit"] == commit
+    assert report["engine"] == "synthetic:1"
+    assert report["hardware"] == {
+        "description": "synthetic-cpu",
+        "measurement_limits": ["hardware_identity_and_capacity_not_collected_automatically"],
+    }
+    assert report["measurement_limits"] == [
+        "launch_readiness_not_model_quality",
+        "hardware_identity_and_capacity_not_collected_automatically",
+    ]
+    assert "hostname" not in report and "machine" not in report and "os" not in report
+    assert pe.validate_payload(report) == []
