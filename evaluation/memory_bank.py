@@ -242,6 +242,7 @@ def mask_persisted(payload: bytes) -> bytes:
     جولةٍ لا يُرى بقايا."""
     text = payload.decode("utf-8", "replace")
     values: set[str] = set()
+    scrubbed_keys: set[str] = set()
     for candidate in [text, *text.splitlines()]:                # ملفُّ العنصر سطرٌ واحد، والإيصالاتُ سطرٌ لكلِّ إيصال
         try:
             record = json.loads(candidate)
@@ -251,6 +252,13 @@ def mask_persisted(payload: bytes) -> bytes:
             values.update(v for k, v in record.items() if k in PERSISTED_DYNAMIC and isinstance(v, str) and v)
             for key in PERSISTED_DYNAMIC_LISTS:
                 values.update(v for v in record.get(key, []) if isinstance(v, str) and v)
+            scrubbed = record.get("scrubbed", {})
+            if isinstance(scrubbed, dict):
+                scrubbed_keys.update(k for k, v in scrubbed.items() if isinstance(k, str) and type(v) is int)
+    # Session identities in the scrub receipt are generated keys, not text.
+    # Match the JSON key token so masking it cannot hide a reference value.
+    for key in scrubbed_keys:
+        payload = payload.replace((json.dumps(key, ensure_ascii=False) + ":").encode("utf-8"), b'" ":')
     for value in sorted(values, key=len, reverse=True):
         payload = payload.replace(value.encode("utf-8"), b" ")
     return payload
@@ -272,7 +280,8 @@ def declared_persisted_schema_text() -> str:
         files = lambda: [mask_persisted(f.read_bytes()).decode("utf-8", "replace") for f in sorted(Path(tmp).rglob("*")) if f.is_file()]
         written = files()
         # بمراجعِ جولاتٍ كما يكتبها النسيانُ الموصول (`agent:<جلسة>/<جولة>` و`text:…`)، فتُقنَّع هنا كما تُقنَّع في المسح
-        store.forget(item_id, references=["agent:sample-session/sample-turn", "text:sample-session/sample-turn"])
+        store.forget(item_id, references=["agent:sample-session/sample-turn", "text:sample-session/sample-turn"],
+                     scrubbed={"agent:sample-session": 1, "text:sample-session": 1})
         written += files()
     return "\n".join(written).replace(PERSISTED_SAMPLE, " ")     # القيمُ المتغيّرة قُنّعت بـmask_persisted نفسِه الذي يمسح البقايا
 
