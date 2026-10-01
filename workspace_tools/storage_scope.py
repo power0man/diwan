@@ -20,7 +20,8 @@ from workspace_tools.files import (_canonical_root, _open_directory, _private,
 MANIFEST = ".cloud-workspace.json"
 MAX_MANIFEST_BYTES = 8192
 _ID = re.compile(r"[a-f0-9]{32}\Z")
-_PART = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}\Z")
+_REPOSITORY = re.compile(r"[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+\Z")
+_BRANCH = re.compile(r"diwan-checkpoint-[a-z0-9-]{1,80}\Z")
 
 
 class StorageScopeError(ValueError):
@@ -45,10 +46,9 @@ def _exists(fd, name):
 def _target(value, *, namespace):
     fields = {"provider", "repo_type", "repo_id", "branch"}
     _need(type(value) is dict and set(value) == fields | ({"namespace"} if namespace else set()))
-    _need(value["provider"] == "huggingface_hub" and value["repo_type"] in ("dataset", "model", "space"))
-    _need(type(value["repo_id"]) is str and len(value["repo_id"].split("/")) == 2
-          and all(_PART.fullmatch(p) for p in value["repo_id"].split("/")))
-    _need(type(value["branch"]) is str and _PART.fullmatch(value["branch"]))
+    _need(value["provider"] == "hf_hub" and value["repo_type"] in ("dataset", "space"))
+    _need(type(value["repo_id"]) is str and _REPOSITORY.fullmatch(value["repo_id"]))
+    _need(type(value["branch"]) is str and _BRANCH.fullmatch(value["branch"]))
     if namespace:
         _need(type(value["namespace"]) is str and _ID.fullmatch(value["namespace"]))
 
@@ -156,8 +156,10 @@ def create_cloud_workspace(destination, plan, *, approval, claims_root):
     try:
         _private(os.fstat(fd), directory=True)
         _need(not _exists(fd, destination.name), "cloud_destination_exists")
-        # A durable, exclusive namespace claim precedes all workspace creation.
-        name = ".cloud-claim-" + digest(plan["target"]) + ".json"
+        # Hub CAS fences the whole branch: a second namespace on the same branch
+        # is not a second independent workspace. Reserve the branch as well.
+        branch_target = {key: value for key, value in plan["target"].items() if key != "namespace"}
+        name = ".cloud-claim-" + digest(branch_target) + ".json"
         try:
             claim_fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
                                0o600, dir_fd=fd)

@@ -14,8 +14,8 @@ from webui.server import LocalApp, UIError
 from workspace_tools import backup, storage_scope as storage
 
 
-TARGET = {"provider": "huggingface_hub", "repo_type": "dataset",
-          "repo_id": "synthetic/private-test", "branch": "synthetic"}
+TARGET = {"provider": "hf_hub", "repo_type": "dataset",
+          "repo_id": "synthetic/private-test", "branch": "diwan-checkpoint-synthetic"}
 
 
 class Provider:
@@ -36,7 +36,7 @@ class Provider:
 
 def _create(tmp_path, name="cloud", plan=None):
     authority = tmp_path.resolve()
-    plan = plan or storage.plan_cloud_workspace(TARGET)
+    plan = plan or storage.plan_cloud_workspace({**TARGET, "branch": "diwan-checkpoint-" + name})
     scope = storage.create_cloud_workspace(authority / name, plan,
         approval={"owner_approved": True, "plan_sha256": digest(plan)}, claims_root=authority)
     return scope
@@ -74,12 +74,13 @@ def test_approval_and_target_are_exact_before_any_creation(tmp_path):
         with pytest.raises(storage.StorageScopeError, match="cloud_approval_required"):
             storage.create_cloud_workspace(tmp_path / "cloud", plan, approval=approval, claims_root=tmp_path)
         assert list(tmp_path.iterdir()) == []
-    for field, value in (("provider", "unknown"), ("repo_type", "public"),
-                         ("repo_id", "../owner"), ("branch", "../main")):
+    for field, value in (("provider", "unknown"), ("provider", "huggingface_hub"),
+                         ("repo_type", "public"), ("repo_type", "model"),
+                         ("repo_id", "../owner"), ("branch", "../main"), ("branch", "main")):
         with pytest.raises(storage.StorageScopeError, match="cloud_scope_invalid"):
             storage.plan_cloud_workspace({**TARGET, field: value})
     changed = copy.deepcopy(plan)
-    changed["target"]["branch"] = "different"
+    changed["target"]["branch"] = "diwan-checkpoint-different"
     with pytest.raises(storage.StorageScopeError, match="cloud_approval_required"):
         storage.create_cloud_workspace(tmp_path / "cloud", changed, approval=good, claims_root=tmp_path)
     assert list(tmp_path.iterdir()) == []
@@ -106,6 +107,11 @@ def test_existing_destinations_and_namespace_reuse_are_refused(tmp_path):
     with pytest.raises(storage.StorageScopeError, match="cloud_namespace_used"):
         _create(tmp_path, "two", plan)
     assert not (tmp_path / "two").exists()
+    another_namespace = storage.plan_cloud_workspace(TARGET)
+    assert another_namespace["target"]["namespace"] != plan["target"]["namespace"]
+    with pytest.raises(storage.StorageScopeError, match="cloud_namespace_used"):
+        _create(tmp_path, "samebranch", another_namespace)
+    assert not (tmp_path / "samebranch").exists()
 
 
 def test_partial_creation_cannot_reopen_as_local(tmp_path, monkeypatch):

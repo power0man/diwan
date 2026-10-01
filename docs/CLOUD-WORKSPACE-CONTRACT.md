@@ -14,15 +14,17 @@
 1. `plan_cloud_workspace(target)` بلا وصول لملفات أو شبكة: يولد `workspace_id`
    و`namespace` عشوائيين، ويثبت `content_scope=synthetic_only` و
    `inference_policy=local_only`. الهدف المغلق هو
-   `provider=huggingface_hub` و`repo_type/repo_id/branch`، ثم namespace المولد.
+   `provider=hf_hub` و`repo_type` أحد `space/dataset` و`repo_id`، ثم namespace
+   المولد. الفرع `diwan-checkpoint-[a-z0-9-]{1,80}` مخصص لمساحة واحدة، ولا `main`.
 2. بعد عرض الخطة، `create_cloud_workspace(destination, plan,
    approval={"owner_approved": True, "plan_sha256": digest(plan)}, claims_root=authority)`.
    الموافقة bool صريح وبصمة الخطة كاملة، لا truthiness ولا موافقة لهدف آخر.
    `authority` دليل خاص موجود يملكه المشغل، والوجهة ابن مباشر جديد له.
    الموجود — حتى الفارغ والرابط الرمزي — مرفوض قبل الحجز.
-3. حجز دائم بـ O_EXCL وfsync لكل target+namespace يسبق إنشاء الجذر؛ لا يُحذف عند
+3. حجز دائم بـ O_EXCL وfsync لكل هدف وفرع يسبق إنشاء الجذر؛ لا يُحذف عند
    الفشل أو حذف المساحة. علامة إنشاء خارجية تمنع فتح نتيجة مبتورة مساحةً محلية.
-   لا تعاد المحاولة على namespace مستخدم ولا تنظيف تلقائي للحجوزات.
+   لا تعاد المحاولة على namespace مستخدم أو فرع محجوز حتى بـnamespace جديد، ولا
+   تنظيف تلقائي للحجوزات؛ CAS في الموصل اللاحق يحجز الفرع كله.
 4. `.cloud-workspace.json` يحفظ الخطة والموافقة وبصمتهما؛ قراءة العقد لا تعدله.
    كل جلسة جديدة تربط هويتها ببصمة العقد. إعادة الفتح أو نسخ جلسة بين مساحتين
    لا يعيدان تصنيفها؛ الاختلاف أو فقد العقد يرفض. النسخ الاحتياطي والتحقق
