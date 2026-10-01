@@ -1,0 +1,28 @@
+{
+  "source_head": "f8f13fcdb9c355a686bd66f02e41be788d948366",
+  "tree": "b14184647f7f49268c027d465d5733357650c1be",
+  "model": "qwen3.5:9b",
+  "model_digest_before": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+  "suite_sha256": "325950f0596a1bfc62f0c21ec3fe0f7d1d30abb5d6c31de5e3a0ea6a883f106b",
+  "python": "3.12.9",
+  "production_changed": false,
+  "synthetic_public_bank_only": true,
+  "completed": true,
+  "exit_code": 0,
+  "model_digest_after": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+  "raw_report_sha256": "6d3ef3cc30b40d6a02d197922db9343b760a6c624f7ff88784bd269ca6681dad",
+  "date": "2026-10-01",
+  "agent": "openai/codex",
+  "measurement_limits": [
+    "This is a sanitized public provenance summary, not the raw provenance record. The unchanged local original is bound by raw_provenance_sha256.",
+    "Raw model-evaluation reports are separately preserved byte-for-byte and contain only public synthetic evaluation cases.",
+    "Single local-model run per revision; no statistical variance estimate or general certification.",
+    "Production service was not changed by this measurement."
+  ],
+  "artifact_kind": "public_provenance_summary",
+  "raw_provenance_sha256": "3b97da873d2b1045db9dda6d38281926a5a7985e3a6737af3021b9d15005c154",
+  "omitted_metadata": [
+    "local_output_path",
+    "execution_timestamps"
+  ]
+}

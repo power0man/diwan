@@ -28,7 +28,7 @@ from agent.loop import SYSTEM, _result_message, run_agent
 from agent.registry import ToolContext, ToolRegistry
 from conversation.agent_stop import StopSignals, input_digest
 from conversation.session import (ConversationError, _decode, _fail, _id, _redaction_token,
-                                  _scrub_text, _scrub_value, _text)
+                                  _scrub_text, _scrub_value, _text, _memory_context_dependents)
 from core import filelock
 from core.budget import Budget
 from core.canonical import canonical_bytes, digest
@@ -44,7 +44,7 @@ MAX_STATE_BYTES = 32 * 1024 * 1024
 MAX_LEDGER_BYTES = 32 * 1024 * 1024
 TERMINAL = frozenset({"complete", "truncated", "timed_out", "failed", "refused", "step_limit", "cancelled"})
 _TURN_KEYS = frozenset({"turn_id", "text", "initial_messages", "input_digest", "calls", "result", "transcript"})
-_OPTIONAL_TURN_KEYS = frozenset({"thinking", "memory"})
+_OPTIONAL_TURN_KEYS = frozenset({"thinking", "memory", "context_withheld"})
 WORKSPACE_ID_DIR = ".diwan-workspace"
 WORKSPACE_ID_FILE = "identity.json"
 _WORKSPACE_ID = re.compile(r"[a-f0-9]{32}\Z")
@@ -241,6 +241,35 @@ def _scrub_agent_turns(turns, text):
                 pending["arguments"], found = _scrub_value(pending["arguments"], text, marker)
                 count += found
     return output, count
+
+
+def _withhold_agent_context(turns, affected, marker):
+    """Replace complete assistant/tool spans in all reusable copies.
+
+    Positions come from verified initial_messages/transcript boundaries. Keeping
+    one plain assistant marker per removed message preserves those boundaries;
+    dropping both tool-call and tool-result envelopes leaves no orphan tool IDs.
+    The original calls ledger and action receipts are never rewritten.
+    """
+    inherited_positions = set()
+    for turn in turns:
+        positions = set(inherited_positions)
+        if turn["turn_id"] in affected:
+            start = len(turn["initial_messages"]) + 1
+            last = max([len(turn["transcript"]), *(len(call.get("request", {}).get("messages", ()))
+                        for call in turn["calls"])])
+            positions.update(range(start, last))
+            turn["context_withheld"] = True
+            if isinstance(turn.get("result"), dict):
+                turn["result"]["content"] = marker
+        groups = [turn["initial_messages"], turn["transcript"],
+                  *(call.get("request", {}).get("messages", []) for call in turn["calls"])]
+        for messages in groups:
+            for i in sorted(positions):
+                if i < len(messages) and messages[i].get("role") in {"assistant", "tool"}:
+                    messages[i] = _message_payload(Message("assistant", marker))
+        if (turn.get("result") or {}).get("status") == "complete":
+            inherited_positions = {i for i in positions if i < len(turn["transcript"])}
 
 
 class _SessionLedger(Ledger):
@@ -535,6 +564,7 @@ class AgentSession:
                 thinking = turn.get("thinking", False)
                 if (set(turn) - _OPTIONAL_TURN_KEYS != _TURN_KEYS or ("thinking" in turn and thinking is not True)
                         or ("memory" in turn and not valid_turn_memory(turn["memory"]))
+                        or ("context_withheld" in turn and turn["context_withheld"] is not True)
                         or not _id(turn["turn_id"]) or turn["turn_id"] in seen or not _text(turn["text"])
                         or unresolved
                         or (turn_index >= scrubbed_through and turn["initial_messages"] != previous)
@@ -738,6 +768,9 @@ class AgentSession:
         references = [f"agent:{self.session_id}/{turn['turn_id']}" for turn in state["turns"]
                       if sha256 in turn.get("memory", {}).get("items", ())]
         turns, count = _scrub_agent_turns(state["turns"], text)
+        affected = _memory_context_dependents(state["turns"], sha256)
+        _withhold_agent_context(turns, affected, _redaction_token(text))
+        count += len(affected)
         if count and any(turn["result"] is None or turn["result"]["status"] not in TERMINAL
                          for turn in state["turns"]):
             _fail("turn_unresolved", "احسم جولة الوكيل قبل نسيان ما في تاريخها")
@@ -745,14 +778,14 @@ class AgentSession:
             state["turns"] = turns
             state["scrubbed_through"] = len(turns)
         envelope = {"state": state, "sha256": digest(state)}
-        return references, count, self.root / "state.json", canonical_bytes(envelope)
+        return references, count, self.root / "state.json", canonical_bytes(envelope), sorted(affected)
 
-    def scrub_memory_text(self, text):
+    def scrub_memory_text(self, text, *, sha256=""):
         """Scrub exact occurrences from reusable state; the sealed call ledger is untouched."""
         if not _text(text):
             _fail("text_invalid", "نص UTF-8 غير فارغ مطلوب للكشط")
         with self._lock():
-            _, count, _, payload = self._memory_forget_plan("", text)
+            _, count, _, payload, _ = self._memory_forget_plan(sha256, text)
             if count:
                 self._write("state.json", _decode(payload.decode("utf-8")))
             return count

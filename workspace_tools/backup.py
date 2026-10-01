@@ -803,7 +803,7 @@ def _scrub_restored_sessions(destination, data, shape, forgotten, legacy):
             max_output=config["max_output"], deadline_s=float(config["deadline_s"]),
             max_context_chars=config["max_context_chars"], system=SYSTEM)
         for text in texts:
-            total += session.scrub_memory_text(text)
+            total += session.scrub_memory_text(text, sha256=hashlib.sha256(text.encode("utf-8")).hexdigest())
     legacy = set(legacy)
     for project, sid in agents:
         texts = _restore_forget_texts(data, project, sid, forgotten)
@@ -812,7 +812,7 @@ def _scrub_restored_sessions(destination, data, shape, forgotten, legacy):
         prefix = f"{project}/agent-control/{sid}"
         session = _open_agent(destination, project, sid, _json(data[prefix + "/manifest.json"]))
         for text in texts:
-            total += session.scrub_memory_text(text)
+            total += session.scrub_memory_text(text, sha256=hashlib.sha256(text.encode("utf-8")).hexdigest())
     return total
 
 
