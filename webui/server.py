@@ -4,6 +4,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 import base64
 import hmac
+from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import ipaddress
 import json
@@ -15,8 +16,8 @@ import socket
 import threading
 import time
 import unicodedata
+from urllib.parse import parse_qsl, quote, urlsplit
 import uuid
-from urllib.parse import urlsplit
 
 from conversation import ChatSession
 from conversation.agent_session import AgentSession
@@ -929,18 +930,46 @@ class Server(ThreadingHTTPServer):
     block_on_close = True
     allow_reuse_address = False
 
-    def __init__(self, app, port=0, bind="127.0.0.1", public_origin=None):
-        self.app = app
-        self.token = secrets.token_hex(32)
-        self.slots = threading.BoundedSemaphore(8)
+    def __init__(self, app, port=0, bind="127.0.0.1", public_origin=None, *, listen=None):
+        if listen is not None:
+            if listen not in {"127.0.0.1", "0.0.0.0"}:
+                raise ValueError("invalid_listen_address")
+            need(bind == "127.0.0.1", "listen_bind_conflict")
+            bind = listen
         bind_address = _bind_address(bind)
         declared_origin = None if public_origin is None else _public_http_origin(public_origin)
-        need(bind_address.is_loopback or declared_origin is not None, "public_origin_required")
+        need(bind_address.is_loopback or declared_origin is not None or listen == "0.0.0.0",
+             "public_origin_required")
+        self.app = app
+        self.token = secrets.token_hex(32)
+        self.requires_bootstrap = not bind_address.is_loopback
+        self.bootstrap_secret = secrets.token_urlsafe(32) if self.requires_bootstrap else None
+        self.browser_secret = secrets.token_urlsafe(32) if self.requires_bootstrap else None
+        self.bootstrap_lock = threading.Lock()
+        self.slots = threading.BoundedSemaphore(8)
         super().__init__((str(bind_address), port), Handler)
-        self.origin = declared_origin or f"http://{bind_address}:{self.server_port}"
+        local_host = str(bind_address) if bind_address.is_loopback else "127.0.0.1"
+        self.origin = declared_origin or f"http://{local_host}:{self.server_port}"
         self.public_origin = declared_origin
         self.origin_host = urlsplit(self.origin).netloc
-        self.app.public_origin = declared_origin
+        if self.app is not None:
+            self.app.public_origin = declared_origin
+
+    @property
+    def bootstrap_url(self):
+        """A capability printed locally; it is never returned to an unauthorised peer."""
+        if self.bootstrap_secret is None:
+            return None
+        return f"{self.origin}/?bootstrap={quote(self.bootstrap_secret, safe='')}"
+
+    def consume_bootstrap(self, candidate):
+        """Exchange the one-use startup capability for the browser cookie."""
+        with self.bootstrap_lock:
+            expected = self.bootstrap_secret
+            if expected is None or not candidate.isascii() or not hmac.compare_digest(candidate, expected):
+                return False
+            self.bootstrap_secret = None
+            return True
 
     def process_request(self, request, client_address):
         if not self.slots.acquire(blocking=False):
@@ -1001,13 +1030,13 @@ class Handler(BaseHTTPRequestHandler):
     def send_error(self, code, message=None, explain=None):
         self.reply(code, {"error_code": "http_refused"})
 
-    def reply(self, status, value, content_type="application/json; charset=utf-8"):
+    def reply(self, status, value, content_type="application/json; charset=utf-8", *, headers=None):
         try:
-            self._reply(status, value, content_type)
+            self._reply(status, value, content_type, headers=headers)
         except (BrokenPipeError, ConnectionResetError, TimeoutError):
             pass  # انتهاء مهلة الاستقبال قد يغلق الاتصال قبل إرسال الرؤوس.
 
-    def _reply(self, status, value, content_type):
+    def _reply(self, status, value, content_type, *, headers=None):
         body = canonical_bytes(value) if not isinstance(value, bytes) else value
         self.send_response(status)
         for key, val in {
@@ -1017,6 +1046,8 @@ class Handler(BaseHTTPRequestHandler):
             "Content-Security-Policy": "default-src 'none'; img-src blob:; media-src blob:; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
             "Connection": "close",
         }.items():
+            self.send_header(key, val)
+        for key, val in (headers or {}).items():
             self.send_header(key, val)
         self.end_headers()
         self.close_connection = True
@@ -1045,28 +1076,77 @@ class Handler(BaseHTTPRequestHandler):
         need(public_navigation or self.headers.get("Sec-Fetch-Site") not in ("cross-site", "same-site"),
              "http_refused")
 
+    def peer_is_loopback(self):
+        try:
+            return ipaddress.ip_address(self.client_address[0]).is_loopback
+        except ValueError:
+            return False
+
+    def has_browser_cookie(self):
+        values = self.headers.get_all("Cookie", [])
+        if len(values) != 1:
+            return False
+        try:
+            cookies = SimpleCookie(values[0])
+        except CookieError:
+            return False
+        morsel = cookies.get("Diwan-Bootstrap")
+        return bool(morsel and morsel.value.isascii() and self.server.browser_secret
+                    and hmac.compare_digest(morsel.value, self.server.browser_secret))
+
+    def transport_boundary(self, *, allow_bootstrap=False):
+        """Authorize the socket peer without trusting forgeable HTTP routing headers.
+
+        Loopback bindings retain their old local-only flow.  A non-loopback peer must
+        present either the browser cookie or the one-use capability printed by the
+        process; the latter is accepted only for the initial ``GET /``.
+        """
+        target = urlsplit(self.path)
+        need(not target.fragment, "http_refused")
+        if not self.server.requires_bootstrap or self.peer_is_loopback():
+            need(not target.query, "http_refused")
+            return target.path, False
+        if self.has_browser_cookie():
+            allowed_query = (not target.query or
+                             (target.path == "/" and len(parse_qsl(target.query, keep_blank_values=True)) == 1
+                              and parse_qsl(target.query, keep_blank_values=True)[0][0] == "bootstrap"))
+            need(allowed_query, "http_refused")
+            return target.path, False
+        pairs = parse_qsl(target.query, keep_blank_values=True, strict_parsing=True)
+        need(allow_bootstrap and target.path == "/" and len(pairs) == 1 and pairs[0][0] == "bootstrap",
+             "http_refused")
+        need(self.server.consume_bootstrap(pairs[0][1]), "http_refused")
+        return target.path, True
+
     def do_GET(self):
         try:
+            path, grant_cookie = self.transport_boundary(allow_bootstrap=True)
             self.boundary()
             self.stop_receive()
             routes = {"/": ("index.html", "text/html; charset=utf-8"),
                       "/app.js": ("app.js", "text/javascript; charset=utf-8"),
                       "/style.css": ("style.css", "text/css; charset=utf-8")}
-            need(self.path in routes, "not_found")
-            filename, mime = routes[self.path]
+            need(path in routes, "not_found")
+            filename, mime = routes[path]
             body = (STATIC / filename).read_bytes()
             if filename == "index.html":
                 body = body.replace(b"__DIWAN_TOKEN__", self.server.token.encode("ascii"))
-            self.reply(200, body, mime)
-        except UIError:
+            cookie = None
+            if grant_cookie:
+                cookie = {"Set-Cookie": (f"Diwan-Bootstrap={self.server.browser_secret}; "
+                                         "HttpOnly; SameSite=Strict; Path=/")}
+            self.reply(200, body, mime, headers=cookie)
+        except (UIError, ValueError):
             self.reply(403, {"error_code": "http_refused"})
 
     def do_POST(self):
         try:
+            path, _ = self.transport_boundary()
             self.boundary()
-            need(self.path == "/api", "http_refused")
+            need(path == "/api", "http_refused")
             need(self.header("Origin") == self.server.origin, "http_refused")
-            need(hmac.compare_digest(self.header("X-Diwan-CSRF"), self.server.token), "http_refused")
+            csrf = self.header("X-Diwan-CSRF")
+            need(csrf.isascii() and hmac.compare_digest(csrf, self.server.token), "http_refused")
             need(self.header("Content-Type") in ("application/json", "application/json; charset=utf-8"), "http_refused")
             need(not self.headers.get_all("Transfer-Encoding"), "http_refused")
             need(not self.headers.get_all("Content-Encoding"), "http_refused")

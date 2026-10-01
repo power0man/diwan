@@ -11,10 +11,10 @@ from webui.server import LocalApp, Server, UIError
 
 
 class PublicServer:
-    def __init__(self, root, *, public_origin=None, bind="127.0.0.1"):
+    def __init__(self, root, *, public_origin=None, bind="127.0.0.1", server_type=Server):
         self.app = LocalApp(root, model=SYNTHETIC_MODEL, model_version=SYNTHETIC_VERSION,
                             provider_factory=lambda: SyntheticProvider([_answer("مصطنع")]))
-        self.server = Server(self.app, 0, bind, public_origin)
+        self.server = server_type(self.app, 0, bind, public_origin)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
 
@@ -180,7 +180,7 @@ def test_serve_ui_passes_explicit_bind_and_public_origin(monkeypatch, tmp_path):
         origin = "https://demo.example"
         public_origin = origin
 
-        def __init__(self, app, port, bind, public_origin):
+        def __init__(self, app, port, bind, public_origin, *, listen=None):
             captured.update(port=port, bind=bind, public_origin=public_origin)
 
         def serve_forever(self):
@@ -193,3 +193,25 @@ def test_serve_ui_passes_explicit_bind_and_public_origin(monkeypatch, tmp_path):
     monkeypatch.setattr(cli, "Server", FakeServer)
     assert cli.main() == 0
     assert captured == {"port": 0, "bind": "0.0.0.0", "public_origin": "https://demo.example"}
+
+
+def test_public_origin_keeps_bootstrap_for_non_loopback_peers(tmp_path):
+    class RemotePeerServer(Server):
+        def finish_request(self, request, client_address):
+            super().finish_request(request, ("198.51.100.3", client_address[1]))
+
+    live = PublicServer(tmp_path / "public-bootstrap", bind="0.0.0.0",
+                        public_origin="https://demo.example", server_type=RemotePeerServer)
+    try:
+        assert live.server.requires_bootstrap
+        assert live.server.bootstrap_url.startswith("https://demo.example/?bootstrap=")
+        assert live.request("GET", host="demo.example")[0] == 403
+        assert live.request("GET", host="demo.example", path="/?bootstrap=" + live.server.bootstrap_secret)[0] == 200
+    finally:
+        live.close()
+
+
+def test_conflicting_server_binding_options_are_refused():
+    with pytest.raises(UIError, match="listen_bind_conflict"):
+        with Server(None, 0, "127.0.0.2", "https://demo.example", listen="0.0.0.0"):
+            pass

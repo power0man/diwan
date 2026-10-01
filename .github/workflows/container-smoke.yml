@@ -4,12 +4,8 @@ name: container-smoke
 # المتوقَّع: الخروج 3 (تعذّرٌ معلن) وكلُّ خطوةٍ بحالها المسمّاة، ولا خطوةَ «failed».
 on:
   pull_request:
-    paths: [Dockerfile, .dockerignore, pyproject.toml, uv.lock, tools/launch_check.py,
-            .github/workflows/container-smoke.yml]
   push:
     branches: [main]
-    paths: [Dockerfile, .dockerignore, pyproject.toml, uv.lock, tools/launch_check.py,
-            .github/workflows/container-smoke.yml]
   workflow_dispatch:
 
 permissions:
@@ -29,7 +25,7 @@ jobs:
       - name: Smoke check inside the container, offline
         run: |
           set +e
-          docker run --rm --network none diwan:ci python tools/launch_check.py --json > smoke.json
+          docker run --rm --network none diwan:ci diwan check --json > smoke.json
           code=$?
           set -e
           cat smoke.json
@@ -65,3 +61,27 @@ jobs:
             diwan:ci-test python -VV
           docker run --rm --network none --mount "type=bind,src=$PWD/.git,dst=/app/.git,readonly" \
             diwan:ci-test python -m pytest -p no:cacheprovider
+      - name: Conversation survives container replacement
+        run: |
+          set -eu
+          volume="diwan-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker volume create "$volume"
+          trap 'docker volume rm "$volume"' EXIT
+          docker run --rm --network none --mount "type=volume,src=$volume,dst=/app/var" diwan:ci python ci/container_state.py write
+          docker run --rm --network none --mount "type=volume,src=$volume,dst=/app/var" diwan:ci python ci/container_state.py read
+      - name: Install a tool in a fresh isolated environment, outside the checkout
+        run: |
+          docker run --rm diwan:ci sh -eu -c '
+            uv export --frozen --extra dev --no-emit-project -o /tmp/locked.txt >/dev/null
+            UV_TOOL_DIR=/tmp/tools UV_TOOL_BIN_DIR=/tmp/bin uv tool install \
+              --with-requirements /tmp/locked.txt --find-links https://download.pytorch.org/whl/cpu/torch/ \
+              --python /usr/local/bin/python3 /opt/diwan-wheel/*.whl
+            cd /tmp
+            /tmp/bin/diwan serve --help
+            set +e
+            /tmp/bin/diwan check --json > /tmp/installed-smoke.json
+            code=$?
+            set -e
+            cat /tmp/installed-smoke.json
+            test "$code" -eq 3
+          '

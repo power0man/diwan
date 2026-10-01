@@ -49,12 +49,15 @@ def _discover_ollama() -> tuple[str | None, str | None, str | None, str | None, 
         return None, None, None, None, f"ollama_unreachable:{type(exc).__name__}"
 
 
-def main():
+def main(argv=None, *, default_root=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=ROOT / "var/daily-ui")
+    parser.add_argument("--root", type=Path, default=default_root or ROOT / "var/daily-ui")
     parser.add_argument("--port", type=int, default=8765)
-    parser.add_argument("--bind", default="127.0.0.1",
+    binding = parser.add_mutually_exclusive_group()
+    binding.add_argument("--bind", default="127.0.0.1",
                         help="عنوان IPv4 للربط؛ الافتراضي loopback، والربط العام يتطلب --public-origin")
+    binding.add_argument("--listen", choices=("127.0.0.1", "0.0.0.0"),
+                        help="0.0.0.0 للحاوية فقط مع نشر المنفذ على 127.0.0.1؛ يطبع رابط بدء سريًا أحادي الاستخدام")
     parser.add_argument("--public-origin",
                         help="أصل HTTPS عام كامل مثل https://diwan.example؛ لا تُقرأ ترويسات الوكيل للثقة")
     parser.add_argument("--provider", choices=("local", "mlx"), default=os.environ.get("DIWAN_PROVIDER", "local"))
@@ -64,7 +67,7 @@ def main():
                         help="عنوانُ SearXNG (مثل http://127.0.0.1:8080) لتفعيل أداة البحث في الويب (ج٢)؛ بدونه لا تُعلَن")
     parser.add_argument("--analysis-receipt", type=Path,
                         help="إيصالُ صورة المحلّل من analysis/prepare.py لتفعيل analyze_data (ج٨)؛ بدونه لا تُعلَن")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     media_model, media_version = os.environ.get("DIWAN_MEDIA_MODEL"), os.environ.get("DIWAN_MEDIA_DIGEST")
     if args.provider == "mlx":
         agent_factory = None
@@ -108,9 +111,12 @@ def main():
                        web_search=(SearxngBackend(args.web_search_url) if args.web_search_url else None),
                        analysis_receipt=args.analysis_receipt,
                        docker_executable=shutil.which("docker") or "/usr/local/bin/docker")
-        server = Server(app, args.port, args.bind, args.public_origin)
+        server = Server(app, args.port, args.bind, args.public_origin, listen=args.listen)
+        bootstrap_url = getattr(server, "bootstrap_url", None)
         label = "ديوان العرض" if getattr(server, "public_origin", None) else "ديوان المحلي"
-        print(f"{label}: {server.origin}", flush=True)
+        print(f"{label}: {bootstrap_url or server.origin}", flush=True)
+        if bootstrap_url:
+            print("هذا رابط بدءٍ سري أحادي الاستخدام؛ لا تشاركه ولا تنشر منفذ الحاوية خارج loopback.", flush=True)
         print("Ctrl+C للإغلاق؛ تُحفظ الجولات التي انتهت. انتظار النداء الجاري محدود بمهلته.", flush=True)
         server.serve_forever()
     except KeyboardInterrupt:

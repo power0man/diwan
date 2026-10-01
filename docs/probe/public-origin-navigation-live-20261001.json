@@ -1,0 +1,44 @@
+{
+  "source_head": "901946fa588667179670be7da77588ee5da10088",
+  "url": "https://diwan.260911765.xyz",
+  "service": "org.diwan.public-ui",
+  "checks": [
+    {
+      "case": "root_document",
+      "status": 200,
+      "expected": 200,
+      "ok": true,
+      "html": true
+    },
+    {
+      "case": "root_iframe",
+      "status": 403,
+      "expected": 403,
+      "ok": true,
+      "html": null
+    },
+    {
+      "case": "script_cross_site",
+      "status": 403,
+      "expected": 403,
+      "ok": true,
+      "html": null
+    },
+    {
+      "case": "wrong_host",
+      "status": 403,
+      "expected": 403,
+      "ok": true,
+      "html": null
+    },
+    {
+      "case": "post_cross_site",
+      "status": 403,
+      "expected": 403,
+      "ok": true,
+      "html": null
+    }
+  ],
+  "external_unauthenticated_status": "302",
+  "access_authenticated_browser_unverified": true
+}
