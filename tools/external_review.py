@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import http.client
 import json
 import os
 import re
@@ -504,7 +505,7 @@ class OpenAICompatChat:
         except urllib.error.HTTPError as exc:
             try:
                 body = exc.read(65536)
-            except OSError:
+            except (OSError, http.client.HTTPException):
                 body = b""
             where["final"] = bare_url(exc.geturl()) if exc.geturl() else None
             _, shape = response_shape(
@@ -520,7 +521,10 @@ class OpenAICompatChat:
             raise error from None
         except TimeoutError:
             raise AutomaticReviewError("transport_timeout", label) from None
-        except (urllib.error.URLError, OSError):
+        except urllib.error.URLError as exc:
+            code = "transport_timeout" if isinstance(exc.reason, TimeoutError) else "transport_error"
+            raise AutomaticReviewError(code, label) from None
+        except (OSError, http.client.HTTPException):
             raise AutomaticReviewError("transport_error", label) from None
         if len(raw) > MAX_RESPONSE_BYTES:
             raise AutomaticReviewError("response_too_large", label)
