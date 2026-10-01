@@ -41,6 +41,8 @@ from services.assistant_workspace import _decode_context
 from services.media_assistant import MediaAssistant
 from workspace_tools.files import TextWorkspace, WorkspaceError, _relative
 from workspace_tools.preferences import Preferences
+from workspace_tools.storage_scope import (MANIFEST as CLOUD_MANIFEST, decode_scope,
+                                           read_storage_scope)
 
 MAX_RAW_BYTES = 32 * 1024 * 1024
 MAX_ARCHIVE_BYTES = 64 * 1024 * 1024
@@ -364,7 +366,8 @@ def _control(prefix, dirs, data, allowed_dirs, allowed_files):
 
 def _shape(dirs, data):
     allowed_dirs = {"", "projects", "staging"}
-    allowed_files = {"app.lock", PROVENANCE}
+    allowed_files = {"app.lock", PROVENANCE, CLOUD_MANIFEST}
+    cloud = decode_scope(data[CLOUD_MANIFEST]) if CLOUD_MANIFEST in data else None
     _need(INCOMPLETE not in data, "backup_incomplete")
     _need(not any(p.startswith("staging/") for p in set(dirs) | set(data)),
           "backup_staging_not_empty")
@@ -461,6 +464,17 @@ def _shape(dirs, data):
                 _relative(p[len(artifact) + 1:], writing=True)
                 (allowed_dirs if p in dirs else allowed_files).add(p)
     _need(set(dirs) <= allowed_dirs and set(data) <= allowed_files, "backup_tree_invalid")
+    if cloud is not None:
+        _need(not archived and all(mode != "media" for _, _, mode in sessions),
+              "backup_cloud_session_invalid")
+        binding = {"workspace_id": cloud["record"]["plan"]["workspace_id"],
+                   "contract_sha256": cloud["sha256"]}
+        manifests = [chat + "/manifest.json" for chat, _, _ in sessions]
+        manifests += [f"{project}/agent-control/{sid}/manifest.json" for project, sid in agents]
+        for path in manifests:
+            config = _json(data[path])
+            _need(config.get("data_policy") == "internal" and config.get("storage") == binding,
+                  "backup_cloud_session_invalid")
     if PROVENANCE in data:
         previous = _json(data[PROVENANCE])
         _need(type(previous) is dict and previous.get("schema_version") == 1
@@ -546,7 +560,7 @@ def _open_agent(root, project, sid, config):
                             max_steps=config["max_steps"], max_output=config["max_output"],
                             deadline_s=float(config["deadline_s"]),
                             max_context_chars=config["max_context_chars"], max_turns=config["max_turns"],
-                            system=config["system"])
+                            system=config["system"], storage_scope=read_storage_scope(root))
     except (ConversationError, ActionRefused):
         _fail("backup_agent_session_invalid", "جلسةٌ وكيلة في النسخة لا تطابق حالتها أو إيصالاتها")
 
@@ -621,7 +635,8 @@ def _validate_tree(root, bundle, dirs, data, identities, shape):
             session = ChatSession(root / Path(chat).parent, sid,
                 model=config["model"], model_version=config["model_version"],
                 max_output=config["max_output"], deadline_s=float(config["deadline_s"]),
-                max_context_chars=config["max_context_chars"], system=MEDIA_SYSTEM if mode == "media" else SYSTEM)
+                max_context_chars=config["max_context_chars"], system=MEDIA_SYSTEM if mode == "media" else SYSTEM,
+                storage_scope=read_storage_scope(root))
             if mode == "media":
                 MediaAssistant(session, None)  # Enforce the fixed media execution profile.
             # Constructor checks manifests, request fingerprints, state and ledger.
@@ -801,7 +816,8 @@ def _scrub_restored_sessions(destination, data, shape, forgotten, legacy):
         session = ChatSession(destination / Path(chat).parent, sid,
             model=config["model"], model_version=config["model_version"],
             max_output=config["max_output"], deadline_s=float(config["deadline_s"]),
-            max_context_chars=config["max_context_chars"], system=SYSTEM)
+            max_context_chars=config["max_context_chars"], system=SYSTEM,
+            storage_scope=read_storage_scope(destination))
         for text in texts:
             total += session.scrub_memory_text(text, sha256=hashlib.sha256(text.encode("utf-8")).hexdigest())
     legacy = set(legacy)

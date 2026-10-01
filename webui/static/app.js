@@ -4,6 +4,11 @@ const state = {project: "", session: "", mode: "text", defaultSessionMode: "text
 const token = document.querySelector('meta[name="diwan-token"]').content;
 const uuid = () => crypto.randomUUID().replaceAll("-", "");
 const errors = {
+  cloud_scope_requires_test_bootstrap: "هذه المساحة مخصصة لتجربة حفظ سحابي مصطنعة، وتحتاج تشغيلًا اختباريًا صريحًا.",
+  cloud_scope_changed: "تغيرت موافقة حفظ هذه المساحة أو فُقدت؛ توقفت المتابعة لحماية تصنيفها.",
+  cloud_file_ingress_disabled: "استقبال الملفات والوسائط مغلق في تجربة الحفظ السحابي المصطنعة.",
+  cloud_input_policy_refused: "تصنيف هذا الطلب لا يطابق عقد المساحة التجريبية؛ لم تُنقل بياناته أو يُغيَّر تصنيفها.",
+  cloud_media_not_supported: "جلسات الوسائط غير متاحة في تجربة الحفظ السحابي المصطنعة.",
   agent_unavailable: "مسار الأدوات غير مهيأ في هذا التشغيل.",
   changed_since_turn: "تغيّر ملفٌّ بعد الجولة؛ لا يُرجع عنها كلِّها حتى لا يُمحى تعديلٌ أحدث. ارجع عن أفعالها واحدًا واحدًا.",
   turn_partially_reverted: "رُدّ بعضُ الجولة وحده من قبل؛ ارجع عن الباقي فعلًا فعلًا.",
