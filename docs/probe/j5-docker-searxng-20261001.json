@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-01",
+  "agent": "openai/codex",
+  "task": "ج٥",
+  "issue": "power0man/diwan#23",
+  "judgment": "passed_live_synthetic_execution_and_search_paths_not_general_quality_acceptance",
+  "source_commit": "a1bac4eef0e6defea7b2248db95047efda45ad3f",
+  "deployed_source_commit": "3ebd96eac0c50f1501e8a2bbc2888b639a5ae217",
+  "source_equivalence": {
+    "tracked_python_static_and_selected_locks_checked": 492,
+    "different_files": 0
+  },
+  "loaded_source_sha256": {
+    "core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "core/canonical.py": "f7bbeac7731580603c2981d9b5c4dc82a8eb56d7e890c9b8e70a6171aa8a2167",
+    "core/execution.py": "0fb49e6852fa34aaedb6210c7b0ac84f26dd7b94b1684da431e9d4c178ade392",
+    "core/sandbox.py": "d67d9c9ab45892ee7ef92ba5a9715570c9d3962e9e23f86b09221743df1587e6",
+    "tools/probe_execution_boundary.py": "e97f06843810c5e58f4bfc10a24906aa8c6bb609d2fc722ea1d2fb0bafa3d395"
+  },
+  "execution_boundary": {
+    "cases": [
+      {
+        "case": "boundary_probe",
+        "exit_code": 0,
+        "boundary": "docker:<64hex>"
+      },
+      {
+        "case": "forged_stdout",
+        "exit_code": 7,
+        "boundary": "docker:<64hex>"
+      },
+      {
+        "case": "timeout_with_child",
+        "code": "execution_timeout"
+      },
+      {
+        "case": "missing_executable",
+        "code": "execution_outcome_unverified"
+      },
+      {
+        "case": "ambiguous_exit_125",
+        "code": "execution_outcome_unverified"
+      },
+      {
+        "case": "mismatched_runtime_preflight",
+        "code": "execution_runtime_mismatch"
+      }
+    ],
+    "isolated_controls": {
+      "no_owner_mounts": true,
+      "no_docker_socket": true,
+      "rootfs_readonly": true,
+      "ollama_unreachable": true,
+      "network_unreachable": true
+    },
+    "non_root": true,
+    "cleanup_verified": true,
+    "containers_left_by_run": 0,
+    "acceptance": {
+      "passed": true,
+      "failed": []
+    }
+  },
+  "sandbox": {
+    "correct_program": {
+      "passed": true,
+      "exit_code": 0,
+      "error_code": null
+    },
+    "incorrect_program": {
+      "passed": false,
+      "exit_code": 1,
+      "error_code": "exit_1"
+    },
+    "exit_zero_before_the_harness": {
+      "passed": false,
+      "exit_code": 0,
+      "error_code": "verdict_missing"
+    },
+    "acceptance": {
+      "passed": true,
+      "failed": []
+    },
+    "boundary": "reviewed_disposable_docker"
+  },
+  "authenticated_browser": {
+    "synthetic_only": true,
+    "completed_turns": 4,
+    "math_answer": "56",
+    "analysis": {
+      "tool": "analyze_data",
+      "status": "ok",
+      "boundary_shape": "docker:<64hex>",
+      "output_bytes": 9,
+      "output_sha256": "40b985864ea9edd4112678f54fbe37215b1e85325a8d43ef8b83054c8edec82c",
+      "csv_content": "result\n5\n"
+    },
+    "execution": {
+      "approval_visible": true,
+      "approval_actor": "authorized_codex_operator",
+      "approved_argv": [
+        "python3",
+        "-c",
+        "print(6*7)"
+      ],
+      "tool_status": "ok",
+      "exit_code": 0,
+      "output": "42",
+      "boundary_shape": "docker:<64hex>"
+    },
+    "search": {
+      "tool": "web_search",
+      "status": "ok",
+      "sourced_result_count": 5,
+      "official_documentation_in_tool_results": true
+    }
+  },
+  "health_observation": {
+    "checks": 9,
+    "all_observed_checks_passed": true,
+    "local_http": 200,
+    "anonymous_https": 302,
+    "redirect_kind": "cloudflare_access",
+    "covers_first_15_minutes": false,
+    "last_check_15_minutes_after_deployment": true,
+    "note": "Recorded periodic samples cover approximately minutes9 through15; authenticated browser acceptance is separate."
+  },
+  "deployment": {
+    "code_updated": true,
+    "owner_data_migrated": false,
+    "code_rollback_keeps_current_memory": true,
+    "initial_startup_attempt_rolled_back": true,
+    "second_startup_attempt_succeeded": true,
+    "cloud_independent": false
+  },
+  "historical_evidence": {
+    "merged_pr": 144,
+    "merge_commit": "5b5158da415deb07fd697e839d69878ce05af0d8",
+    "files": [
+      "j5-docker-searxng-20260927l.json",
+      "execution-boundary-20260927e.json",
+      "sandbox-container-20260927e.json",
+      "j5-search-product-path-20260927.json"
+    ]
+  },
+  "artifacts_sha256": {
+    "execution-boundary-raw.json": "10e76c1d60dff10ee14e945c761c0d187e1a0ec1928b2b0837fd12c7140a59e8",
+    "sandbox-container-raw.json": "d0df3c0d9a5147a4b46094543882745b826ae68fe617dd2cb9aea1e0612f7eae",
+    "source-equivalence.json": "ac00549b1ac4c7712a1ce081144a512988d635d64013fd27f77ab6b679f1f430",
+    "ACCEPTANCE.json": "50a715b2c899cca6bf3b0aab28315bb75bd7eb476e2ab21a98429198575f9d21",
+    "synthetic-browser-history.json": "6b3d871cf96c337c8f5cf6d0425e2518516c3d90047dbfce44cfc02c3066b693",
+    "postdeploy-observation.json": "d9596cbadbb71f33a1ef4701031870ce7ee4a0e627dd6f5379c09d4aa13a447f"
+  },
+  "measurement_limits": [
+    "Fixed synthetic examples on one configured engine; no benchmark pass rate, variance estimate or general model quality acceptance.",
+    "The browser operator explicitly requested the tools and approved only the recorded command using existing owner authorization; this is not an independent human usability trial.",
+    "Search evidence verifies an actual tool result containing an official documentation URL; it does not certify deep-research citation quality or semantic correctness.",
+    "The boundary and sandbox were rerun on the named main revision; the browser evidence belongs to the deployed revision with matching checked source bytes.",
+    "The public proof omits access identifiers, credentials, endpoints, project/session identifiers, full browser history and container identifiers; private raw evidence remains unchanged.",
+    "The unmodified boundary probe has a legacy hard-coded agent label; openai/codex is the actual operator of this run.",
+    "The local deployment still depends on the Mac and its tunnel; no owner data was transferred to a cloud workspace.",
+    "An uncertain cloud lease and production memory recovery were not exercised by this probe.",
+    "Docker Desktop is the execution boundary, not a separate machine or proof against kernel/VM escape.",
+    "The three sandbox programs do not establish a tamper-proof grader against arbitrary code in the same interpreter.",
+    "Health samples are periodic and cover approximately minutes9 through15, not continuous monitoring or an uptime guarantee.",
+    "Historical September27 artifacts are retained as historical evidence and are not relabeled as fresh runs."
+  ]
+}
