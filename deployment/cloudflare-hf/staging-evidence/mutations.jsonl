@@ -1,0 +1,34 @@
+{"id": "selected-head", "old": "if not typed_equal(manifest[\"binding\"], expected):", "new": "if False:", "test": "test_selected_head_mismatch"}
+{"id": "destination-binding", "old": "if not typed_equal(manifest[\"binding\"], expected):", "new": "if False:", "test": "test_destination_mismatch"}
+{"id": "actual-source", "old": "if source[\"source_commit\"] != sha:", "new": "if False:", "test": "test_actual_source_commit_old_even_when_digest_rebound"}
+{"id": "fixed-upstream", "old": "destination[\"upstream\"] != UPSTREAM", "new": "False", "test": "test_fixed_upstream_cannot_be_rebound"}
+{"id": "source-bytes", "old": "if digest(source_path) != policy[\"source_sha256\"]:", "new": "if False:", "test": "test_source_bytes_tamper"}
+{"id": "bundle-inventory", "old": "if not files or files != source[\"files_sha256\"]:", "new": "if False:", "test": "test_bundle_tamper_and_extra_file"}
+{"id": "worker-bytes", "old": "if digest(local(root, \"worker.mjs\")) != policy[\"worker_sha256\"]:", "new": "if False:", "test": "test_worker_and_model_tamper"}
+{"id": "live-kind", "old": "evidence[\"kind\"] != \"live\"", "new": "False", "test": "test_synthetic_auth_never_live"}
+{"id": "freshness", "old": "if not start <= stamp(evidence[\"collected_at\"]) <= end:", "new": "if False:", "test": "test_history_and_future_never_new_acceptance"}
+{"id": "run-binding", "old": "if not typed_equal(evidence[\"binding\"], expected) or evidence[\"gate\"] != name:", "new": "if False:", "test": "test_old_run_id_on_same_product"}
+{"id": "missing-gates", "old": "gates.get(name, {\"status\": \"not_run\"})", "new": "gates.get(name, {\"status\": \"blocked\"})", "test": "test_missing_required_gates_preserves_not_run"}
+{"id": "status-preservation", "old": "report[\"gates\"][name] = {\"status\": status, \"reason\": gate.get(\"reason\", \"no_passing_evidence\")}", "new": "report[\"gates\"][name] = {\"status\": \"failed\", \"reason\": gate.get(\"reason\", \"no_passing_evidence\")}", "test": "test_statuses_preserved"}
+{"id": "observations", "old": "observations.get(k) is not True", "new": "False", "test": "test_observation_true_only"}
+{"id": "artifact-required", "old": "if not isinstance(logs, dict) or not logs:", "new": "if False:", "test": "test_missing_and_tampered_artifact"}
+{"id": "evidence-bytes", "old": "if digest(evidence_path) != gate[\"evidence_sha256\"]:", "new": "if False:", "test": "test_evidence_digest_tamper"}
+{"id": "symlink", "old": "\n        if path.is_symlink():\n", "new": "\n        if False:\n", "test": "test_path_escape_and_symlink"}
+{"id": "status-enum", "old": "gate[\"status\"] not in STATES", "new": "False", "test": "test_unknown_or_invalid_gate_fails"}
+{"id": "json-ambiguity", "old": "if key in out:", "new": "if False:", "test": "test_duplicate_json_keys_rejected"}
+{"id": "ephemeral", "old": "\n            if ephemeral:\n", "new": "\n            if False:\n", "test": "test_current_ephemeral_mode_cannot_claim_durability"}
+{"id": "no-certification", "old": "\"live_certified\": False,\n              \"gates\"", "new": "\"live_certified\": True,\n              \"gates\"", "test": "test_complete_packet_consistent_but_never_live_certified"}
+{"id": "model-bytes", "old": "if digest(local(root, manifest[\"model_file\"])) != model[\"sha256\"]:", "new": "if False:", "test": "test_worker_and_model_tamper"}
+{"id": "preserve-ephemeral-failure", "old": "if status != \"passed\":", "new": "if status not in (\"passed\", \"failed\"):", "test": "test_ephemeral_preserves_observed_states_and_reasons"}
+{"id": "timestamp-type", "old": "if not text(value):", "new": "if False:", "test": "test_invalid_timestamp_is_named_and_other_gates_continue"}
+{"id": "pass-after-validation", "old": "report[\"gates\"][name] = {\"status\": \"passed\"}", "new": "pass", "test": "test_invalid_timestamp_is_named_and_other_gates_continue"}
+{"id": "policy-version-type", "old": "type(policy.get(\"schema_version\")) is not int", "new": "False", "test": "test_schema_version_requires_exact_integer"}
+{"id": "manifest-version-type", "old": "type(manifest.get(\"schema_version\")) is not int", "new": "False", "test": "test_schema_version_requires_exact_integer"}
+{"id": "binding-types", "old": "if type(left) is not type(right):", "new": "if False:", "test": "test_typed_binding_matches_manifest_and_evidence"}
+{"id": "audience-type", "old": "any(not text(destination.get(k)) for k in destination)", "new": "False", "test": "test_policy_identity_and_origin_schema"}
+{"id": "origin-host", "old": "bool(parsed.hostname)", "new": "True", "test": "test_policy_identity_and_origin_schema"}
+{"id": "model-id-type", "old": "not text(model[\"id\"])", "new": "False", "test": "test_policy_identity_and_origin_schema"}
+{"id": "deployment-mode-type", "old": "not text(limits.get(\"deployment_mode\"))", "new": "False", "test": "test_policy_identity_and_origin_schema"}
+{"id": "storage-type", "old": "not text(limits.get(\"storage\"))", "new": "False", "test": "test_policy_identity_and_origin_schema"}
+{"id": "capability-enabled-type", "old": "key.endswith(\"_enabled\") and type(value) is not bool", "new": "False", "test": "test_policy_capability_boolean_and_invalid_hash"}
+{"id": "incomplete-schema-fails-closed", "old": "        report[\"status\"] = \"failed\"\n        report[\"errors\"].append(str(error))", "new": "        report[\"status\"] = \"passed\"\n        report[\"errors\"].append(str(error))", "test": "test_incomplete_schema_fails_closed"}
