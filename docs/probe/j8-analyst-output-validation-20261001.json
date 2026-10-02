@@ -1,0 +1,1212 @@
+{
+  "schema_version": 1,
+  "agent": "openai/codex",
+  "date": "2026-10-01",
+  "kind": "analyst_output_validation_guidance_summary",
+  "source_commit": "47073f6dffbceed9e541b6314302795f134120dc",
+  "baseline_source_commit": "faa60897c4e56d58a86886efdaf2e5e1d635de2c",
+  "certified": false,
+  "model": {
+    "name": "qwen3.5:9b",
+    "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7"
+  },
+  "bank": {
+    "path": "evaluation/suites/analyst_v1.json",
+    "file_sha256": "d46adee9b98a0d0f14175c3f77bc8815a24a7e27cc07f983fa363954435231f8",
+    "canonical_sha256": "7de39f44febbace07554febca55676b9c62e72e703cbeb2bc43922104c99a38b",
+    "thresholds_path": "evaluation/suites/analyst_v1.meta.json",
+    "thresholds_file_sha256": "e52b398d3fcc1a7d5e6290e82a56cb32f3af1b45a591f22366e57081cc250b9e"
+  },
+  "execution_images": {
+    "runtime": {
+      "image_id": "sha256:3dd092e52cdc7267dda816809f32be0f1d42765935906fed46eabef17193f0e0",
+      "lock_sha256": "b5af0840d9ff3421030f25466ee4d95619c5894d64e8d2bb6e8ac44a20563318",
+      "python_version": "3.14.7"
+    },
+    "analysis": {
+      "image_id": "sha256:c51dd3197ebf1542485d72f95432ab2a04cc0c4829c2634e161f845a3e4704d1",
+      "lock_sha256": "9c07c5bdcacd1b8e43801022cbc2d24182bf7ec4636b454c1cc1192c9c258b2c",
+      "python_version": "3.12.14"
+    }
+  },
+  "evaluator": {
+    "path": "tools/evaluate_agentic.py",
+    "runner_version": 8,
+    "config": {
+      "agent_execution": "docker",
+      "analysis": {
+        "image_id": "sha256:c51dd3197ebf1542485d72f95432ab2a04cc0c4829c2634e161f845a3e4704d1"
+      },
+      "attested_host": null,
+      "execution_receipt": {
+        "image_id": "sha256:3dd092e52cdc7267dda816809f32be0f1d42765935906fed46eabef17193f0e0",
+        "lock_sha256": "b5af0840d9ff3421030f25466ee4d95619c5894d64e8d2bb6e8ac44a20563318",
+        "python_version": "3.14.7"
+      },
+      "execution_tools_without_backend": [],
+      "model": "qwen3.5:9b",
+      "model_version": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+      "runner_version": 8,
+      "sandbox_backend": null,
+      "success_executor": "docker",
+      "suite_id": "analyst_v1",
+      "suite_sha256": "7de39f44febbace07554febca55676b9c62e72e703cbeb2bc43922104c99a38b",
+      "system_sha256": "b7c02639a8b55dfc9b18818f9bce8b080c42aecbed233d3efc9d9c2367225959",
+      "tools": [
+        "analyze_data",
+        "edit_file",
+        "export_document",
+        "list_files",
+        "read_file",
+        "run_command",
+        "run_tests",
+        "search_files",
+        "write_file"
+      ]
+    },
+    "config_sha256": "a5d40baa30957406dde19cc0d763451309575b6589d305eb9868a3c34411f446",
+    "max_output": 1024,
+    "deadline_s": 120.0,
+    "host_python": "3.12.9"
+  },
+  "tool_guidance": {
+    "baseline_file_sha256": "fa769ef982da3a8f3396678c9de3d1064b6bc95fe62b0a1c96d6ffa5c530675b",
+    "candidate_file_sha256": "064a3ce0082766fdfd25c6976180e19ff0251fa1f9ffcdba6ec55100d8d1a13f",
+    "baseline_spec_sha256": "79c7652b4f4bc899e8d4f7207a549f6dc60377e788d49c9241e94f930a29f7c8",
+    "candidate_spec_sha256": "7afca587d190149c2a8c5651d57937125270a3f06f6ab5776910ee0e383d9d82",
+    "change": "Six generic description lines: inspect inputs, distinguish counts, assert requested structure/calculation, reopen saved outputs and report checks. No bank answers or runtime guard added."
+  },
+  "baseline_summary": {
+    "attempted": 40,
+    "errors": 0,
+    "forbidden_violations": 0,
+    "measured": 40,
+    "pass_rate_of_measured": 0.6,
+    "passed": 24
+  },
+  "summary": {
+    "attempted": 40,
+    "errors": 0,
+    "forbidden_violations": 0,
+    "measured": 40,
+    "pass_rate_of_measured": 0.675,
+    "passed": 27
+  },
+  "baseline_by_capability": {
+    "analyst_aggregation": {
+      "errors": 0,
+      "measured": 5,
+      "passed": 5
+    },
+    "analyst_charts": {
+      "errors": 0,
+      "measured": 4,
+      "passed": 2
+    },
+    "analyst_cleaning": {
+      "errors": 0,
+      "measured": 5,
+      "passed": 1
+    },
+    "analyst_dates": {
+      "errors": 0,
+      "measured": 5,
+      "passed": 3
+    },
+    "analyst_filtering": {
+      "errors": 0,
+      "measured": 4,
+      "passed": 3
+    },
+    "analyst_groupby": {
+      "errors": 0,
+      "measured": 5,
+      "passed": 3
+    },
+    "analyst_joins": {
+      "errors": 0,
+      "measured": 4,
+      "passed": 2
+    },
+    "analyst_topk": {
+      "errors": 0,
+      "measured": 4,
+      "passed": 4
+    },
+    "analyst_xlsx": {
+      "errors": 0,
+      "measured": 4,
+      "passed": 1
+    }
+  },
+  "by_capability": {
+    "analyst_aggregation": {
+      "errors": 0,
+      "measured": 5,
+      "passed": 5
+    },
+    "analyst_charts": {
+      "errors": 0,
+      "measured": 4,
+      "passed": 3
+    },
+    "analyst_cleaning": {
+      "errors": 0,
+      "measured": 5,
+      "passed": 2
+    },
+    "analyst_dates": {
+      "errors": 0,
+      "measured": 5,
+      "passed": 3
+    },
+    "analyst_filtering": {
+      "errors": 0,
+      "measured": 4,
+      "passed": 3
+    },
+    "analyst_groupby": {
+      "errors": 0,
+      "measured": 5,
+      "passed": 4
+    },
+    "analyst_joins": {
+      "errors": 0,
+      "measured": 4,
+      "passed": 2
+    },
+    "analyst_topk": {
+      "errors": 0,
+      "measured": 4,
+      "passed": 3
+    },
+    "analyst_xlsx": {
+      "errors": 0,
+      "measured": 4,
+      "passed": 2
+    }
+  },
+  "baseline_thresholds": {
+    "categories": {
+      "analyst_aggregation": {
+        "errors": 0,
+        "measured": 5,
+        "met": true,
+        "passed": 5,
+        "rate": 1.0,
+        "threshold": 0.5
+      },
+      "analyst_charts": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 2,
+        "rate": 0.5,
+        "threshold": 0.5
+      },
+      "analyst_cleaning": {
+        "errors": 0,
+        "measured": 5,
+        "met": false,
+        "passed": 1,
+        "rate": 0.2,
+        "threshold": 0.5
+      },
+      "analyst_dates": {
+        "errors": 0,
+        "measured": 5,
+        "met": true,
+        "passed": 3,
+        "rate": 0.6,
+        "threshold": 0.5
+      },
+      "analyst_filtering": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 3,
+        "rate": 0.75,
+        "threshold": 0.5
+      },
+      "analyst_groupby": {
+        "errors": 0,
+        "measured": 5,
+        "met": true,
+        "passed": 3,
+        "rate": 0.6,
+        "threshold": 0.5
+      },
+      "analyst_joins": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 2,
+        "rate": 0.5,
+        "threshold": 0.5
+      },
+      "analyst_topk": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 4,
+        "rate": 1.0,
+        "threshold": 0.5
+      },
+      "analyst_xlsx": {
+        "errors": 0,
+        "measured": 4,
+        "met": false,
+        "passed": 1,
+        "rate": 0.25,
+        "threshold": 0.5
+      }
+    },
+    "errors": 0,
+    "forbidden_violations": 0,
+    "harness_tampered": 0,
+    "meets_thresholds": false,
+    "pass_rate": 0.6,
+    "pass_rate_threshold": 0.7,
+    "thresholds_from": "tools/make_analyst_bank.py",
+    "unmet": [
+      "category:analyst_cleaning",
+      "category:analyst_xlsx",
+      "pass_rate"
+    ]
+  },
+  "thresholds": {
+    "categories": {
+      "analyst_aggregation": {
+        "errors": 0,
+        "measured": 5,
+        "met": true,
+        "passed": 5,
+        "rate": 1.0,
+        "threshold": 0.5
+      },
+      "analyst_charts": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 3,
+        "rate": 0.75,
+        "threshold": 0.5
+      },
+      "analyst_cleaning": {
+        "errors": 0,
+        "measured": 5,
+        "met": false,
+        "passed": 2,
+        "rate": 0.4,
+        "threshold": 0.5
+      },
+      "analyst_dates": {
+        "errors": 0,
+        "measured": 5,
+        "met": true,
+        "passed": 3,
+        "rate": 0.6,
+        "threshold": 0.5
+      },
+      "analyst_filtering": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 3,
+        "rate": 0.75,
+        "threshold": 0.5
+      },
+      "analyst_groupby": {
+        "errors": 0,
+        "measured": 5,
+        "met": true,
+        "passed": 4,
+        "rate": 0.8,
+        "threshold": 0.5
+      },
+      "analyst_joins": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 2,
+        "rate": 0.5,
+        "threshold": 0.5
+      },
+      "analyst_topk": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 3,
+        "rate": 0.75,
+        "threshold": 0.5
+      },
+      "analyst_xlsx": {
+        "errors": 0,
+        "measured": 4,
+        "met": true,
+        "passed": 2,
+        "rate": 0.5,
+        "threshold": 0.5
+      }
+    },
+    "errors": 0,
+    "forbidden_violations": 0,
+    "harness_tampered": 0,
+    "meets_thresholds": false,
+    "pass_rate": 0.675,
+    "pass_rate_threshold": 0.7,
+    "thresholds_from": "tools/make_analyst_bank.py",
+    "unmet": [
+      "category:analyst_cleaning",
+      "pass_rate"
+    ]
+  },
+  "comparison": {
+    "gained": [
+      "an10",
+      "an13",
+      "an31",
+      "an33",
+      "an40"
+    ],
+    "regressed": [
+      "an14",
+      "an17"
+    ],
+    "net_passed_difference": 3,
+    "observed_percentage_point_difference": 7.5,
+    "pair_counts": {
+      "passed_to_passed": 22,
+      "failed_to_failed": 11,
+      "failed_to_passed": 5,
+      "passed_to_failed": 2
+    },
+    "cases": [
+      {
+        "task_id": "an01",
+        "capability": "analyst_aggregation",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an02",
+        "capability": "analyst_aggregation",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an03",
+        "capability": "analyst_aggregation",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an04",
+        "capability": "analyst_aggregation",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an05",
+        "capability": "analyst_aggregation",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an06",
+        "capability": "analyst_groupby",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an07",
+        "capability": "analyst_groupby",
+        "baseline_passed": false,
+        "candidate_passed": false,
+        "baseline_status": "failed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an08",
+        "capability": "analyst_groupby",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an09",
+        "capability": "analyst_groupby",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an10",
+        "capability": "analyst_groupby",
+        "baseline_passed": false,
+        "candidate_passed": true,
+        "baseline_status": "failed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "step_limit",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an11",
+        "capability": "analyst_filtering",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an12",
+        "capability": "analyst_filtering",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an13",
+        "capability": "analyst_filtering",
+        "baseline_passed": false,
+        "candidate_passed": true,
+        "baseline_status": "failed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an14",
+        "capability": "analyst_filtering",
+        "baseline_passed": true,
+        "candidate_passed": false,
+        "baseline_status": "passed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an15",
+        "capability": "analyst_topk",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an16",
+        "capability": "analyst_topk",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an17",
+        "capability": "analyst_topk",
+        "baseline_passed": true,
+        "candidate_passed": false,
+        "baseline_status": "passed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "step_limit"
+      },
+      {
+        "task_id": "an18",
+        "capability": "analyst_topk",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an19",
+        "capability": "analyst_dates",
+        "baseline_passed": false,
+        "candidate_passed": false,
+        "baseline_status": "failed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an20",
+        "capability": "analyst_dates",
+        "baseline_passed": false,
+        "candidate_passed": false,
+        "baseline_status": "failed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an21",
+        "capability": "analyst_dates",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an22",
+        "capability": "analyst_dates",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an23",
+        "capability": "analyst_dates",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an24",
+        "capability": "analyst_joins",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an25",
+        "capability": "analyst_joins",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an26",
+        "capability": "analyst_joins",
+        "baseline_passed": false,
+        "candidate_passed": false,
+        "baseline_status": "failed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an27",
+        "capability": "analyst_joins",
+        "baseline_passed": false,
+        "candidate_passed": false,
+        "baseline_status": "failed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an28",
+        "capability": "analyst_cleaning",
+        "baseline_passed": false,
+        "candidate_passed": false,
+        "baseline_status": "failed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "step_limit",
+        "candidate_loop_status": "step_limit"
+      },
+      {
+        "task_id": "an29",
+        "capability": "analyst_cleaning",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an30",
+        "capability": "analyst_cleaning",
+        "baseline_passed": false,
+        "candidate_passed": false,
+        "baseline_status": "failed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "step_limit",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an31",
+        "capability": "analyst_cleaning",
+        "baseline_passed": false,
+        "candidate_passed": true,
+        "baseline_status": "failed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an32",
+        "capability": "analyst_cleaning",
+        "baseline_passed": false,
+        "candidate_passed": false,
+        "baseline_status": "failed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "awaiting_owner"
+      },
+      {
+        "task_id": "an33",
+        "capability": "analyst_xlsx",
+        "baseline_passed": false,
+        "candidate_passed": true,
+        "baseline_status": "failed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an34",
+        "capability": "analyst_xlsx",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an35",
+        "capability": "analyst_xlsx",
+        "baseline_passed": false,
+        "candidate_passed": false,
+        "baseline_status": "failed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an36",
+        "capability": "analyst_xlsx",
+        "baseline_passed": false,
+        "candidate_passed": false,
+        "baseline_status": "failed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an37",
+        "capability": "analyst_charts",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an38",
+        "capability": "analyst_charts",
+        "baseline_passed": true,
+        "candidate_passed": true,
+        "baseline_status": "passed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an39",
+        "capability": "analyst_charts",
+        "baseline_passed": false,
+        "candidate_passed": false,
+        "baseline_status": "failed",
+        "candidate_status": "failed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      },
+      {
+        "task_id": "an40",
+        "capability": "analyst_charts",
+        "baseline_passed": false,
+        "candidate_passed": true,
+        "baseline_status": "failed",
+        "candidate_status": "passed",
+        "baseline_loop_status": "complete",
+        "candidate_loop_status": "complete"
+      }
+    ]
+  },
+  "resumption": {
+    "original_trace_sha256": "eeadc76d4fbff845378419b34b60bbc88885990b6a3cd2d982a894ed2cdefa86",
+    "reused_completed": [
+      "an01",
+      "an02",
+      "an03",
+      "an04",
+      "an05",
+      "an06",
+      "an07",
+      "an08",
+      "an09",
+      "an10",
+      "an11",
+      "an12",
+      "an13",
+      "an14",
+      "an15",
+      "an16",
+      "an17",
+      "an18",
+      "an19",
+      "an20",
+      "an21",
+      "an22",
+      "an23",
+      "an24",
+      "an25",
+      "an26",
+      "an27"
+    ],
+    "incomplete_attempt_restarted": [
+      "an28"
+    ],
+    "first_attempts": [
+      "an29",
+      "an30",
+      "an31",
+      "an32",
+      "an33",
+      "an34",
+      "an35",
+      "an36",
+      "an37",
+      "an38",
+      "an39",
+      "an40"
+    ]
+  },
+  "retained_result_verification": "All fields of an01-an27 match their original completed results; only evaluator-generated qualified_id was added.",
+  "resumed_segment": {
+    "started_utc": "2026-10-01T18:16:40.888875+00:00",
+    "finished_utc": "2026-10-01T18:31:16.529039+00:00",
+    "elapsed_seconds": 875.64,
+    "exit_code": 0
+  },
+  "raw_report_sha256": "8b607d4abd2618db3b0805ed8747f72114bde05de19d154667b12a457348b041",
+  "baseline_raw_report_sha256": "1d079d3b74665d7e45b340f8a26d98f310f0cec8cb94be72d37bb0354f8adb29",
+  "original_trace_sha256": "eeadc76d4fbff845378419b34b60bbc88885990b6a3cd2d982a894ed2cdefa86",
+  "resumed_trace_sha256": "5531e6fb6fb4be26bcaa6b1ce7c683170c2dc0e2cf35cdd20a3623bed963972f",
+  "provenance_sha256": "dba69f2306ba8db4c5b80b7a2401fddd2ed19cc184d0df842d626dd445c7ef2f",
+  "comparison_sha256": "9a1ff7b848236eccb685240c800bcfda41dc2dd524a7572d651cd536d63c5026",
+  "raw_artifacts_published": false,
+  "source_equivalence": {
+    "measured_commit": "47073f6dffbceed9e541b6314302795f134120dc",
+    "integration_commit": "558adcb76f18c2248e6b805bf3d28675f3cedd60",
+    "integrated_main": "a1bac4eef0e6defea7b2248db95047efda45ad3f",
+    "method": "AST local import closure (including function-local imports) from evaluator/provider/analysis, plus explicit bank and runtime resources; byte hashes compared using Git blobs.",
+    "baseline_to_measured_path_changes": [
+      "analysis/tool.py"
+    ],
+    "measured_to_integration_path_changes": [],
+    "whole_tree_equal": false,
+    "changes_outside_measurement_path": [
+      ".github/workflows/verify-hosted.yml",
+      "AGENTS.md",
+      "README.md",
+      "conversation/agent_session.py",
+      "conversation/session.py",
+      "deployment/cloudflare-hf/.gitignore",
+      "deployment/cloudflare-hf/README.md",
+      "deployment/cloudflare-hf/package-lock.json",
+      "deployment/cloudflare-hf/package.json",
+      "deployment/cloudflare-hf/verify_runtime.mjs",
+      "deployment/cloudflare-hf/worker.mjs",
+      "deployment/cloudflare-hf/wrangler.jsonc",
+      "docs/CLOUD-CHECKPOINT-PROTOTYPE.md",
+      "docs/CLOUD-WORKSPACE-CONTRACT.md",
+      "docs/HF-CHECKPOINT-ADAPTER.md",
+      "docs/INDEX.json",
+      "docs/INDEX.md",
+      "docs/MEMORY-DESIGN.md",
+      "docs/PROBE-EVIDENCE-SCOPE-20261001.md",
+      "docs/STATUS.md",
+      "docs/STUDY-PROMPT.md",
+      "docs/SYNTHETIC-CHECKPOINTS.md",
+      "docs/probe/cloud-contracts-integration-20261001.json",
+      "docs/probe/cloudflare-hf-bridge-20261001.json",
+      "docs/probe/context-index-20260927.json",
+      "docs/probe/dalub-benchmark-results.json",
+      "docs/probe/hf-checkpoint-cas-20261001.json",
+      "docs/probe/hf-checkpoint-live-20261001.json",
+      "docs/probe/hf-synthetic-session-restart-20261001.json",
+      "docs/probe/issue-188-dalub-metadata-20261001.json",
+      "docs/probe/memory-live-20260928.json",
+      "docs/probe/project-status.json",
+      "evaluation/memory_runner.py",
+      "tests/cloudflare_hf_bridge.mjs",
+      "tests/mutations/test_cloud_checkpoints.jsonl",
+      "tests/mutations/test_cloud_scope_checkpoint_integration.jsonl",
+      "tests/mutations/test_cloud_workspace_scope.jsonl",
+      "tests/mutations/test_cloudflare_hf_bridge.jsonl",
+      "tests/mutations/test_dalub_reference_scopes.jsonl",
+      "tests/mutations/test_dalub_suite.jsonl",
+      "tests/mutations/test_hf_checkpoint_scope.jsonl",
+      "tests/mutations/test_hf_checkpoints.jsonl",
+      "tests/mutations/test_memory_history_metrics.jsonl",
+      "tests/mutations/test_memory_store.jsonl",
+      "tests/mutations/test_memory_wired.jsonl",
+      "tests/mutations/test_named_probe_status.jsonl",
+      "tests/mutations/test_synthetic_checkpoints.jsonl",
+      "tests/test_cloud_checkpoints.py",
+      "tests/test_cloud_scope_checkpoint_integration.py",
+      "tests/test_cloud_workspace_scope.py",
+      "tests/test_cloudflare_hf_bridge.py",
+      "tests/test_dalub_reference_scopes.py",
+      "tests/test_dalub_suite.py",
+      "tests/test_hf_checkpoint_scope.py",
+      "tests/test_hf_checkpoints.py",
+      "tests/test_memory_history_metrics.py",
+      "tests/test_memory_store.py",
+      "tests/test_memory_wired.py",
+      "tests/test_named_probe_status.py",
+      "tests/test_synthetic_checkpoints.py",
+      "tools/evaluate_memory.py",
+      "webui/server.py",
+      "webui/static/app.js",
+      "workspace_tools/backup.py",
+      "workspace_tools/checkpoints.py",
+      "workspace_tools/hf_checkpoints.py",
+      "workspace_tools/storage_scope.py",
+      "workspace_tools/synthetic_checkpoints.py"
+    ],
+    "file_hash_encoding": "The measured_and_integrated_sha256 binds both later commits; baseline has the same hash unless baseline_sha256 is present.",
+    "main_to_integration_all_file_changes": [
+      "analysis/tool.py"
+    ],
+    "memory_runner_in_import_closure": false,
+    "files": [
+      {
+        "path": "agent/__init__.py",
+        "measured_and_integrated_sha256": "388311cef1f3875a830988b414c0e12d277ec646b91d1318bd7b4b6d31f393c5"
+      },
+      {
+        "path": "agent/action_revert.py",
+        "measured_and_integrated_sha256": "e929cdba5d9f4d3f5254399dc0d5de1d2076ced6aafe657c2da85ce8f57a6a24"
+      },
+      {
+        "path": "agent/actions.py",
+        "measured_and_integrated_sha256": "192608645a459d232c9f7dcee2416a89221ba38ded0ccd996f98ccf8c3fdca02"
+      },
+      {
+        "path": "agent/builtin_tools.py",
+        "measured_and_integrated_sha256": "67fd48dcf5dbbb2b7d6cd77afb231cf8dd2975aa9fc46a675dc6228bcb5b13fd"
+      },
+      {
+        "path": "agent/coder.py",
+        "measured_and_integrated_sha256": "556c2358db4616ba47f170497fcb451c82f5bfaa067a10244245e2fe44a604d9"
+      },
+      {
+        "path": "agent/journal.py",
+        "measured_and_integrated_sha256": "4952ee08c25b51c35f964aa8706c4ab93791c8c110665d32bdb2536fc1d34c06"
+      },
+      {
+        "path": "agent/loop.py",
+        "measured_and_integrated_sha256": "a2424f43c0be6b40ac4433c682b50bba517689ffd3c2b20c2118325a58fcb76b"
+      },
+      {
+        "path": "agent/registry.py",
+        "measured_and_integrated_sha256": "c32d1cde345d1aa2a69454914713bd704f2af97eee543d515add43d10618180b"
+      },
+      {
+        "path": "analysis/Dockerfile",
+        "measured_and_integrated_sha256": "ff2e678b2ee594b0262065aaa73a65663e5838e199388a2c6f23f723bae3aa35"
+      },
+      {
+        "path": "analysis/__init__.py",
+        "measured_and_integrated_sha256": "47cfd82ec9e8448cf99c564046cd6310acabc336af26b5c3fd8a52cd7dab18e4"
+      },
+      {
+        "path": "analysis/backend.py",
+        "measured_and_integrated_sha256": "bad27fb91e68b943eb75fa3d70191337e3b08d1624afdcb315bf0c78ad56119a"
+      },
+      {
+        "path": "analysis/diwan_ar.py",
+        "measured_and_integrated_sha256": "2fe0bb874481e4b597023d9c3eb91eb3c1cc0872e47aa6a519475d9068a74677"
+      },
+      {
+        "path": "analysis/requirements.lock",
+        "measured_and_integrated_sha256": "9c07c5bdcacd1b8e43801022cbc2d24182bf7ec4636b454c1cc1192c9c258b2c"
+      },
+      {
+        "path": "analysis/tool.py",
+        "measured_and_integrated_sha256": "064a3ce0082766fdfd25c6976180e19ff0251fa1f9ffcdba6ec55100d8d1a13f",
+        "baseline_sha256": "fa769ef982da3a8f3396678c9de3d1064b6bc95fe62b0a1c96d6ffa5c530675b"
+      },
+      {
+        "path": "core/__init__.py",
+        "measured_and_integrated_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "core/acquisitions.py",
+        "measured_and_integrated_sha256": "53f9cbcd8164e46484a3f4a08507308dd002b5ae63600018481e3decaca159fb"
+      },
+      {
+        "path": "core/action_loop.py",
+        "measured_and_integrated_sha256": "4ab145d1bfc013f6b8cfd0b418deaf879ae53395552dc103209439a423411049"
+      },
+      {
+        "path": "core/attribution.py",
+        "measured_and_integrated_sha256": "df8a3b9eec2b06099967a97c6155c86e518b4c84d468906c5944ca407dc70603"
+      },
+      {
+        "path": "core/budget.py",
+        "measured_and_integrated_sha256": "924bdc44818ef8766f44e4cf58f73efea20bb88500e7292442a1cbe394b25511"
+      },
+      {
+        "path": "core/canonical.py",
+        "measured_and_integrated_sha256": "f7bbeac7731580603c2981d9b5c4dc82a8eb56d7e890c9b8e70a6171aa8a2167"
+      },
+      {
+        "path": "core/chunking.py",
+        "measured_and_integrated_sha256": "1f5d6027fd83ebc903b2fa5d8d139f027407e33c034e3d983a777d47d88848cb"
+      },
+      {
+        "path": "core/contracts.py",
+        "measured_and_integrated_sha256": "7c35811101207680912642878c7f67c370bb916f7ab22287ce104cf8c47a61ec"
+      },
+      {
+        "path": "core/corpus.py",
+        "measured_and_integrated_sha256": "ee5b679381c750a95ef69fe1d602a0c7eec6a6b9cb3e9028c635ab4ebb24b530"
+      },
+      {
+        "path": "core/execution.py",
+        "measured_and_integrated_sha256": "0fb49e6852fa34aaedb6210c7b0ac84f26dd7b94b1684da431e9d4c178ade392"
+      },
+      {
+        "path": "core/filelock.py",
+        "measured_and_integrated_sha256": "7f882b9cc36006f7d93a097cb99295540a97a490b75f26bb176a9b5e9a65c520"
+      },
+      {
+        "path": "core/hybrid_retrieval.py",
+        "measured_and_integrated_sha256": "4ab78cd52cb2b338a607f99b65050d22d9dbd9f388b1d911c15225532e4de26d"
+      },
+      {
+        "path": "core/knowledge.py",
+        "measured_and_integrated_sha256": "b7d541e9063281327698b4010bbc6ac2ca9f4d837aa2537ecea4ace1a9c2285e"
+      },
+      {
+        "path": "core/ledger.py",
+        "measured_and_integrated_sha256": "646660c00e3590f12778dde8c6b28a986e61bf5c76f928644565b1ff9a62d455"
+      },
+      {
+        "path": "core/linguistics/__init__.py",
+        "measured_and_integrated_sha256": "463da871630135b45fb2b043cdfe2927836919aa4e0b0c5777d09ceafbeddc8d"
+      },
+      {
+        "path": "core/linguistics/morphology.py",
+        "measured_and_integrated_sha256": "dfde64f4db322d105aa82e5e58e3f3da2b2d2c8bd9042fa802d1992465e9f8c6"
+      },
+      {
+        "path": "core/linguistics/roots.py",
+        "measured_and_integrated_sha256": "8ee30839c711cf32ca89565ca21f4970ae4c45b01319a02d7e24c11089a26e7d"
+      },
+      {
+        "path": "core/linguistics/syntax_guard.py",
+        "measured_and_integrated_sha256": "45289db34b636e27c105bd871df1c7328368ed86706364a10cf8bce14cbe5328"
+      },
+      {
+        "path": "core/linguistics/tashkeel.py",
+        "measured_and_integrated_sha256": "18ab27c3d2cb1a43024b0e6b17c3b1938d44a4074fced0e0545dd5221ad200b7"
+      },
+      {
+        "path": "core/locality.py",
+        "measured_and_integrated_sha256": "81bb042bc91e686d123e802797d89cb99bef4f7e3c7b9a781250a3794223a608"
+      },
+      {
+        "path": "core/quoted.py",
+        "measured_and_integrated_sha256": "722d2c9fbb433fbcbf0dd2ec375b72d24fd0dbf8e664b645c5e9d94ada6d36f0"
+      },
+      {
+        "path": "core/run.py",
+        "measured_and_integrated_sha256": "b7523eb2b8f05326212974492750f68cf903ed79e025d72c8a2a68d8b2afc48c"
+      },
+      {
+        "path": "core/sandbox.py",
+        "measured_and_integrated_sha256": "d67d9c9ab45892ee7ef92ba5a9715570c9d3962e9e23f86b09221743df1587e6"
+      },
+      {
+        "path": "core/seal.py",
+        "measured_and_integrated_sha256": "c3d58b9f14e65199a23b87da48db5c3b334c1a984a9f817ea1f4b269b91e00d2"
+      },
+      {
+        "path": "core/semantic_governance.py",
+        "measured_and_integrated_sha256": "8ae7506ae9206711d60c965db898f24f8d4e8e547e7e392eda6a00755e7fce4b"
+      },
+      {
+        "path": "core/signing.py",
+        "measured_and_integrated_sha256": "b16dcb0849ac53e361af9b1197ec557a8b7e64c66ae8cbe12a475f78d59d044a"
+      },
+      {
+        "path": "core/tools_registry.py",
+        "measured_and_integrated_sha256": "74003eb9fa4e729b7f53e5e7f1751bcade0eb201b0092acf7dc82b54da176943"
+      },
+      {
+        "path": "core/validate.py",
+        "measured_and_integrated_sha256": "0f372bf20def1e87c81f7f2d98659758293b16c6335314c83947951109ff45e0"
+      },
+      {
+        "path": "documents/__init__.py",
+        "measured_and_integrated_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "documents/export.py",
+        "measured_and_integrated_sha256": "0c08b5c54d7f4ee2328d123c5512b5e50121e07e74173fde9856b47484081341"
+      },
+      {
+        "path": "evaluation/__init__.py",
+        "measured_and_integrated_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "evaluation/agentic_bank.py",
+        "measured_and_integrated_sha256": "429fe60099c60ec6dde9c4e3faababcd967778572fa9b629034d8e23d90d5c5c"
+      },
+      {
+        "path": "evaluation/agentic_runner.py",
+        "measured_and_integrated_sha256": "0dac4274ddddd5814a23a6148c1c997542962ffda5a62c1649706170fbd246fa"
+      },
+      {
+        "path": "evaluation/suites/analyst_v1.json",
+        "measured_and_integrated_sha256": "d46adee9b98a0d0f14175c3f77bc8815a24a7e27cc07f983fa363954435231f8"
+      },
+      {
+        "path": "evaluation/suites/analyst_v1.meta.json",
+        "measured_and_integrated_sha256": "e52b398d3fcc1a7d5e6290e82a56cb32f3af1b45a591f22366e57081cc250b9e"
+      },
+      {
+        "path": "projections/morphology.py",
+        "measured_and_integrated_sha256": "a974c5636df7eecd3918509734b8bd993c97fd96787b3f62ca4a79cfe7f317f4"
+      },
+      {
+        "path": "providers/__init__.py",
+        "measured_and_integrated_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "providers/base.py",
+        "measured_and_integrated_sha256": "238f1ca2e4275b9f70637cf20a2523ba4f9dda41033043002602c1d6f5b10b09"
+      },
+      {
+        "path": "providers/mlx_provider.py",
+        "measured_and_integrated_sha256": "e3073625ccdc218966d7e289a4f0af27a81a9988412e4e292307554361795c48"
+      },
+      {
+        "path": "providers/ollama.py",
+        "measured_and_integrated_sha256": "5d2266f30da70cbb274563d01bd86fcae2e5defcbab8e8bd9ca06592f2c93b11"
+      },
+      {
+        "path": "providers/ollama_codec.py",
+        "measured_and_integrated_sha256": "af1617e6e17d289143fc494a30994a222e2e09ab7405dc25c3a180eb3adb79b7"
+      },
+      {
+        "path": "requirements-ci.lock",
+        "measured_and_integrated_sha256": "b5af0840d9ff3421030f25466ee4d95619c5894d64e8d2bb6e8ac44a20563318"
+      },
+      {
+        "path": "tools/evaluate_agentic.py",
+        "measured_and_integrated_sha256": "86e90353ce5217ec8251a6b5e6f053849bb823ffef88cccb78b37ab240d9b0bf"
+      },
+      {
+        "path": "tools/model_digest.py",
+        "measured_and_integrated_sha256": "cf51b914306cdbdf6d72bb1d4c1a01c32b89ebfdaa82271eef9fcc2af9655bdc"
+      },
+      {
+        "path": "tools/rebuild_index.py",
+        "measured_and_integrated_sha256": "2905b5a3e1ce1a1a03e045997f9621a3f45aa2571a48ab932d37403c00cbe50e"
+      },
+      {
+        "path": "workspace_tools/__init__.py",
+        "measured_and_integrated_sha256": "911f11f3ada12618fd1484b7234fc2ed32c19e458c5ebe8d9d3d1b0625475636"
+      },
+      {
+        "path": "workspace_tools/files.py",
+        "measured_and_integrated_sha256": "8b3fbf1f7f1692756de5093c744f8a2ae0d57a74adf734a37784d7e33350c71b"
+      }
+    ]
+  },
+  "recomputation": "Both report hashes, all 40 case identities, summaries, capability counts, frozen thresholds and config hashes recomputed; 27 retained results verified field for field.",
+  "decision": "thresholds_not_met; issue44 remains open; publish generic guidance and its limited observation only",
+  "measurement_limits": [
+    "measures_loop_and_model_together_not_model_alone",
+    "accuracy_bounded_by_the_authored_success_criterion",
+    "forbidden_paths_enforced_only_for_journalled_writes",
+    "forbidden_rules_must_prefix_a_declared_workspace_path",
+    "harness_files_and_command_targets_compared_by_digest_after_the_run",
+    "runner_absence_is_an_error_only_for_the_runner_the_command_names",
+    "success_command_runs_inside_the_docker_backend_on_a_snapshot_of_the_post_run_workspace",
+    "docker_backend_is_a_container_boundary_not_a_separate_host",
+    "workspace_files_refused_by_the_snapshot_policy_make_the_task_unjudgeable",
+    "All 40 original public synthetic tasks retained; 27 completed results reused verbatim without rerunning.",
+    "The original run was interrupted during an28. Its incomplete attempt is preserved; only an28 is restarted, and an29-an40 are first attempts.",
+    "This is an interrupted and resumed run, not a single uninterrupted attempt or a production acceptance certificate.",
+    "no_variance_estimate; infrastructure-interrupted attempt retained separately",
+    "Original evaluator and scoring; wrappers observe outcomes only.",
+    "No bank, threshold, execution boundary or model change.",
+    "Single run; no variance estimate or causal claim.",
+    "Generated code and success commands execute in Docker, never on the host.",
+    "Observed difference is 3 tasks (7.5 percentage points), with 5 gains and 2 regressions; no causal improvement claim or variance estimate.",
+    "Public development bank and guidance informed by observed failures; no independent or sealed acceptance test.",
+    "The tool description is model guidance, not a new enforced validator; self-authored assertions can be incomplete or incorrect.",
+    "Report config hashes do not bind the tool description; separate tool-file and declared-spec hashes identify the guidance.",
+    "The measured commit stays 47073f6; integration is source equivalence of the listed measurement path, not a rerun or whole-tree identity.",
+    "Static local import closure and explicit bank/runtime resources bound source-equivalence evidence; live UI/cloud routes and unrelated memory evaluation are outside this measurement.",
+    "Raw answers, generated code, traces, owner paths and credentials are not published; original artifacts remain local and unchanged.",
+    "The overall 0.675 is below 0.70 and analyst_cleaning 2/5 is below 0.50; issue44 remains open."
+  ]
+}

@@ -1,0 +1,259 @@
+"""Operator-only lifecycle proof for synthetic cloud workspaces.
+
+This is not wired to Server or browser input. The coordinator exclusively owns
+its LocalApp; callers supply trusted provider configuration, never an existing
+app or a custom committer. Private attributes are not a security boundary against
+code running as the operator. No owner-content consent or credential is added.
+"""
+from __future__ import annotations
+
+from contextlib import contextmanager
+from pathlib import Path
+import tempfile
+import threading
+
+from webui.server import LocalApp
+from workspace_tools import backup, checkpoints as cp, storage_scope as ss, synthetic_checkpoints as sc
+from workspace_tools.files import _canonical_root
+
+
+class LifecycleError(ValueError):
+    def __init__(self, code):
+        self.code = code
+        super().__init__(code)
+
+
+def _need(condition, code):
+    if not condition:
+        raise LifecycleError(code)
+
+
+def _options(value):
+    required = {"model", "model_version", "provider_factory"}
+    allowed = required | {"agent_provider_factory"}
+    _need(type(value) is dict and required <= set(value) <= allowed,
+          "cloud_bootstrap_invalid")
+    _need(all(isinstance(value[key], str) and value[key] for key in ("model", "model_version"))
+          and callable(value["provider_factory"]) and
+          ("agent_provider_factory" not in value or callable(value["agent_provider_factory"])),
+          "cloud_bootstrap_invalid")
+    return dict(value)
+
+
+class SyntheticLifecycle:
+    """READY -> SAVING -> READY; any persistence failure -> BLOCKED.
+
+    CLOSED and BLOCKED never dispatch or reopen themselves. Only explicit restore
+    creates a new coordinator, at a previously absent destination. All mutations
+    must enter through dispatch; do not retain or publish the privately owned app.
+    Factory configuration and storage target belong to the trusted operator.
+    """
+    def __init__(self):
+        raise TypeError("use create or restore")
+
+    @classmethod
+    def _bootstrap(cls, root, expected_scope, store, options, last_receipt=None):
+        self = object.__new__(cls)
+        self._root = _canonical_root(root)
+        self._scope = expected_scope
+        self._store = store
+        self._options = options
+        self._gate = threading.Lock()
+        self._state = "closed"
+        self._app = None
+        self._last_receipt = last_receipt
+        self._open()
+        self._state = "ready"
+        return self
+
+    @classmethod
+    def create(cls, destination, plan, *, approval, claims_root, store, app_options):
+        """Create a new approved synthetic workspace; never adopt an old root."""
+        options = _options(app_options)
+        scope = ss.create_cloud_workspace(destination, plan, approval=approval, claims_root=claims_root)
+        return cls._bootstrap(scope.root, scope.raw, store, options)
+
+    @classmethod
+    def restore(cls, destination, expected_scope, *, store, app_options, receipt_sha256=None):
+        """Explicit cold restore; the store supplies the latest forget authority."""
+        options = _options(app_options)
+        ss.checkpoint_scope(expected_scope)
+        result = sc.restore_synthetic_checkpoint(store, destination, expected_scope,
+                                                 receipt_sha256=receipt_sha256)
+        _need(result.get("status") == "restored", "cloud_restore_unconfirmed")
+        return cls._bootstrap(destination, expected_scope, store, options,
+                              result["forget_authority_sha256"])
+
+    @property
+    def state(self):
+        return self._state
+
+    def _scope_matches(self):
+        current = ss.read_storage_scope(self._root)
+        _need(current is not None and current.raw == self._scope, "cloud_scope_changed")
+        ss.checkpoint_scope(self._scope)
+
+    def _open(self):
+        self._scope_matches()
+        app = LocalApp(self._root, synthetic_cloud=True, **self._options)
+        try:
+            _need(app.root == self._root and app.storage_scope is not None
+                  and app.storage_scope.raw == self._scope, "cloud_bootstrap_invalid")
+            app.check_root()
+        except BaseException:
+            app.close()
+            raise
+        self._app = app
+
+    @contextmanager
+    def _request(self):
+        _need(self._gate.acquire(blocking=False), "cloud_lifecycle_busy")
+        try:
+            _need(self._state == "ready" and self._app is not None, "cloud_lifecycle_closed")
+            try:
+                self._scope_matches()
+                self._app.check_root()
+            except Exception:
+                self._block()
+                raise LifecycleError("cloud_scope_changed") from None
+            yield
+        finally:
+            self._gate.release()
+
+    @contextmanager
+    def _idle(self):
+        app = self._app
+        with app.lock:
+            _need(app.active is None and app.active_agent_session is None,
+                  "cloud_generation_busy")
+            _need(app.generation.acquire(blocking=False), "cloud_generation_busy")
+        try:
+            yield app
+        finally:
+            app.generation.release()
+
+    def _block(self):
+        self._state = "blocked"
+        # A future asynchronous provider must not have its files closed below a
+        # live generation. Keep the app private and refuse every further call.
+        if self._app is not None:
+            try:
+                with self._idle() as app:
+                    self._app = None
+                    app.close()
+            except Exception:
+                pass
+
+    @contextmanager
+    def _remote_fence(self):
+        """No cached workspace may read or generate beyond its known head.
+
+        The real storage lease stays held through the complete local operation,
+        so another coordinator cannot acknowledge a forget during this reuse.
+        """
+        state = {}
+        operation_error = None
+        try:
+            with self._store.exclusive():
+                _need(self._store.bind_scope(self._scope) == ss.checkpoint_scope(self._scope),
+                      "cloud_scope_changed")
+                head = self._store.read_head()
+                current = None if head is None else cp._sha(head)
+                _need(current == self._last_receipt, "cloud_checkpoint_stale")
+                if current is None:
+                    _need(self._store.is_pristine(), "cloud_checkpoint_stale")
+                try:
+                    yield state
+                except Exception as exc:
+                    # Keep request rejection separate from authority/lease
+                    # failures. Release must succeed before it may escape.
+                    operation_error = exc
+        except BaseException as exc:
+            self._block()
+            if not isinstance(exc, Exception):
+                raise
+            if isinstance(exc, LifecycleError):
+                raise
+            raise LifecycleError("cloud_storage_unconfirmed") from None
+        if operation_error is not None:
+            raise operation_error
+
+    def _persist_held(self, state):
+        with self._idle() as app:
+            self._state = "saving"
+            self._app = None
+            try:
+                app.close()
+                with tempfile.TemporaryDirectory(prefix="diwan-synthetic-save-") as temporary:
+                    archive = Path(temporary).resolve() / "checkpoint.json"
+                    exported = backup.export_workspace(self._root, archive)
+                    prepared = sc._prepare_checkpoint(archive, exported["sha256"], self._scope)
+                    committed = sc._commit_prepared(prepared, self._store, state)
+                _need(committed.get("status") == "committed", "cloud_checkpoint_unconfirmed")
+                self._last_receipt = committed["receipt_sha256"]
+                return {"status": "saved", "receipt_sha256": self._last_receipt}
+            except BaseException as exc:
+                self._block()
+                if not isinstance(exc, Exception):
+                    raise
+                raise LifecycleError("cloud_checkpoint_unconfirmed") from None
+
+    def _reopen_confirmed(self):
+        try:
+            self._open()
+            self._state = "ready"
+        except BaseException as exc:
+            self._block()
+            if not isinstance(exc, Exception):
+                raise
+            raise LifecycleError("cloud_checkpoint_unconfirmed") from None
+
+    def dispatch(self, request):
+        """Serialize app calls; a forget result cannot escape before durability."""
+        with self._request():
+            _need(type(request) is dict and isinstance(request.get("action"), str),
+                  "cloud_request_invalid")
+            # Do not enter the app when a generation is still using its files,
+            # including one whose dispatch returned before background work ended.
+            with self._idle():
+                pass
+            if request["action"] != "memory_forget":
+                with self._remote_fence():
+                    result = self._app.dispatch(request)
+                return result
+            try:
+                with self._remote_fence() as state:
+                    result = self._app.dispatch(request)
+                    _need(result.get("status") == "forgotten", "cloud_forget_unconfirmed")
+                    durable = self._persist_held(state)
+                self._reopen_confirmed()
+                return {**result, "durability": durable}
+            except BaseException as exc:
+                self._block()
+                if not isinstance(exc, Exception):
+                    raise
+                raise LifecycleError("cloud_forget_unconfirmed") from None
+
+    def save(self):
+        with self._request():
+            with self._idle():
+                pass
+            with self._remote_fence() as state:
+                result = self._persist_held(state)
+            self._reopen_confirmed()
+            return result
+
+    def close(self):
+        _need(self._gate.acquire(blocking=False), "cloud_lifecycle_busy")
+        try:
+            if self._state != "blocked":
+                self._state = "closed"
+            if self._app is not None:
+                with self._idle() as app:
+                    self._app = None
+                    app.close()
+        except BaseException:
+            self._state = "blocked"
+            raise
+        finally:
+            self._gate.release()
