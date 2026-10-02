@@ -12,6 +12,7 @@ GATES = ("live_access", "csrf", "anonymous_denied", "no_secret_leak",
          "no_cache_reuse", "mac_off_turn", "durability", "forgetting",
          "effect_idempotency", "capability_acceptance")
 STATES = ("passed", "failed", "blocked", "not_run")
+STORAGE_CLASSES = ("durable", "ephemeral")
 UPSTREAM = "https://hussain091-diwan-cloud-limited.hf.space"
 
 
@@ -130,6 +131,8 @@ def policy_schema(policy, manifest):
     if (type(limits) is not dict or not text(limits.get("deployment_mode"))
             or not text(limits.get("storage"))):
         raise ValueError("capability_limits_required")
+    if limits["storage"] not in STORAGE_CLASSES:
+        raise ValueError("storage_classification_required")
     for key, value in limits.items():
         if key.endswith("_enabled") and type(value) is not bool:
             raise ValueError("capability_enabled_boolean_required")
@@ -187,6 +190,11 @@ def validate(root, policy, manifest):
             raise ValueError("source_model_mismatch")
         if source["deployment_mode"] != policy["capability_limits"]["deployment_mode"]:
             raise ValueError("source_mode_mismatch")
+        storage_blocker = None
+        if source["deployment_mode"] == "private_hf_cpu_ephemeral_limited":
+            storage_blocker = "source_declares_ephemeral_storage"
+        elif policy["capability_limits"]["storage"] == "ephemeral":
+            storage_blocker = "policy_declares_ephemeral_storage"
         files = {}
         for path in (root / "bundle").rglob("*"):
             if path.is_symlink():
@@ -210,14 +218,14 @@ def validate(root, policy, manifest):
                 report["gates"][name] = {"status": "failed", "reason": "invalid_gate_status"}
                 continue
             status = gate["status"]
-            ephemeral = name == "durability" and source["deployment_mode"] == "private_hf_cpu_ephemeral_limited"
+            ephemeral = name == "durability" and storage_blocker is not None
             if status != "passed":
                 report["gates"][name] = {"status": status, "reason": gate.get("reason", "no_passing_evidence")}
                 if ephemeral:
-                    report["gates"][name]["blocker"] = "source_declares_ephemeral_storage"
+                    report["gates"][name]["blocker"] = storage_blocker
                 continue
             if ephemeral:
-                report["gates"][name] = {"status": "blocked", "reason": "source_declares_ephemeral_storage",
+                report["gates"][name] = {"status": "blocked", "reason": storage_blocker,
                                          "declared_status": status}
                 continue
             try:

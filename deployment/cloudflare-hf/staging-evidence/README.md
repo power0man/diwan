@@ -10,8 +10,10 @@ acceptance, merge approval, or permission to stop the Mac.
 At integration base `fbea5fa52d01a82756faf2ae91308b89614f9a7a`, `prepare.py`
 exports product SHA `9e62b7561e9e8931d16a02cfba65459c25a8501a`. A deployment
 pin may differ from the current `main`; inspect the actual prepared source.
-The actual `SOURCE.json` must match the selected full product SHA. The current
-`private_hf_cpu_ephemeral_limited` mode blocks a claimed durability pass. Explicit
+The actual `SOURCE.json` must match the selected full product SHA. A policy
+declaring `storage: "ephemeral"` blocks a claimed durability pass in every
+deployment mode. The known `private_hf_cpu_ephemeral_limited` source mode also
+blocks that claim even if the policy incorrectly declares durable storage. Explicit
 `failed`, `blocked`, and `not_run` observations retain their status and reason;
 the storage limitation is recorded separately as `blocker`. A missing durability
 record remains `not_run`, also with that blocker. This task does not repair storage.
@@ -54,7 +56,7 @@ Required policy keys:
 | `worker_sha256` | Hash of actual `worker.mjs` deployment candidate bytes |
 | `destination` | Object with `space`, `upstream`, `public_origin`, `access_aud` |
 | `model` | Object with explicit `id` and SHA-256 of supplied model weight artifact |
-| `capability_limits` | Object with nonempty string `deployment_mode` and `storage`, plus actual capability boundaries |
+| `capability_limits` | Object with nonempty string `deployment_mode` and exact `storage` class `durable` or `ephemeral`, plus actual capability boundaries |
 | `run_id` | Fresh reviewer-selected attempt identifier |
 | `not_before`, `not_after` | ISO-8601 times with timezone, bounding this attempt |
 
@@ -73,6 +75,19 @@ Optional capability fields ending in `_enabled` require JSON Booleans; optional
 finite JSON data, and matching bindings preserve exact types recursively:
 `false`, `0`, and `0.0` are different. These fields declare boundaries; they do
 not measure or prove that the service enforces them.
+
+`storage` is a closed, case-sensitive classification: only `durable` and
+`ephemeral` are accepted. Unknown values, aliases such as `persistent` or
+`temporary`, and labels such as `synthetic` fail closed with
+`storage_classification_required`; malformed/empty values remain schema errors.
+The class describes the claimed storage boundary, not the provenance of the
+test data. A synthetic test packet can declare durable storage to exercise the
+positive consistency path, but that declaration never proves persistence.
+`durable` permits a durability gate to be checked; it cannot by itself pass the
+gate or override a source mode known to be ephemeral. An ephemeral policy adds
+`policy_declares_ephemeral_storage`; the known ephemeral source takes precedence
+with `source_declares_ephemeral_storage`. Explicit non-passing states and reasons
+are preserved, with the storage constraint recorded separately as `blocker`.
 
 Canonical inventory hashing is SHA-256 of UTF-8 JSON with sorted keys,
 `separators=(",", ":")`, and `ensure_ascii=False` (see `canonical`). File hashes
@@ -133,12 +148,12 @@ copies only the checker and tests to disposable temporary directories, verifies
 the baseline, applies one syntactically valid guard mutation, and requires the
 named test to fail. It never modifies the real checkout under test.
 
-`tests/test_staging_evidence.py` collects the same 27 test methods in the
+`tests/test_staging_evidence.py` collects the same 32 test methods in the
 repository's standard pytest suite without retaining a generic `check` import.
 Its pytest adapter fails a method on the first failed subcase so the existing
 mutation runner can attribute a normal `FAILED` node; standalone unittest runs
 retain their subtest diagnostics. All subcases still run when they pass.
-`tests/mutations/test_staging_evidence.jsonl` maps the 34 standalone mutations
+`tests/mutations/test_staging_evidence.jsonl` maps the 40 standalone mutations
 to canonical pytest node IDs, including a fail-closed mutation for missing
 schema fields. The required verification pipeline discovers these through its
 existing pytest and mutation-check steps; workflow and review requirements are

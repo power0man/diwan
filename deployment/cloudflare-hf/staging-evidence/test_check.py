@@ -34,7 +34,7 @@ class PacketTests(unittest.TestCase):
                                        "public_origin": "https://diwan.260911765.xyz",
                                        "access_aud": "synthetic-audience"},
                        "model": {"id": "qwen3.5:9b", "sha256": check.digest(self.root / "model.bin")},
-                       "capability_limits": {"deployment_mode": "test_only", "storage": "synthetic"}}
+                       "capability_limits": {"deployment_mode": "test_only", "storage": "durable"}}
         binding = {k: v for k, v in self.policy.items() if k not in
                    ("schema_version", "not_before", "not_after")}
         self.manifest = {"schema_version": 1, "binding": binding, "model_file": "model.bin", "gates": {}}
@@ -138,6 +138,63 @@ class PacketTests(unittest.TestCase):
                 self.assertEqual(gate["reason"], expected)
                 for name in check.GATES[1:]:
                     self.assertEqual(result["gates"][name]["status"], "passed")
+
+    def test_ephemeral_storage_blocks_durability_in_every_deployment_mode(self):
+        self.policy["capability_limits"]["storage"] = "ephemeral"
+        for mode in ("test_only", "future_cloud_mode", "private_hf_cpu_ephemeral_limited"):
+            with self.subTest(mode=mode):
+                self.source["deployment_mode"] = mode
+                self.policy["capability_limits"]["deployment_mode"] = mode
+                self.write_json("bundle/SOURCE.json", self.source)
+                self.policy["source_sha256"] = check.digest(self.root / "bundle/SOURCE.json")
+                self.bind_all()
+                result = self.assert_rejected()
+                self.assertEqual(result["status"], "blocked")
+                expected = ("source_declares_ephemeral_storage" if mode == "private_hf_cpu_ephemeral_limited"
+                            else "policy_declares_ephemeral_storage")
+                self.assertEqual(result["gates"]["durability"], {
+                    "status": "blocked", "reason": expected, "declared_status": "passed"})
+                self.assertFalse(result["live_certified"])
+                self.assertEqual(result["gates"]["live_access"]["status"], "passed")
+
+    def test_ephemeral_storage_preserves_observed_states_and_reasons(self):
+        self.policy["capability_limits"]["storage"] = "ephemeral"
+        self.bind_all()
+        for status in ("failed", "blocked", "not_run"):
+            with self.subTest(status=status):
+                self.manifest["gates"]["durability"] = {"status": status, "reason": "observed_restart_loss"}
+                result = self.assert_rejected()
+                self.assertEqual(result["status"], status)
+                self.assertEqual(result["gates"]["durability"], {
+                    "status": status, "reason": "observed_restart_loss",
+                    "blocker": "policy_declares_ephemeral_storage"})
+        self.manifest["gates"].pop("durability")
+        self.assertEqual(self.assert_rejected()["gates"]["durability"], {
+            "status": "not_run", "reason": "no_passing_evidence",
+            "blocker": "policy_declares_ephemeral_storage"})
+
+    def test_unknown_storage_classification_fails_closed(self):
+        for storage in ("unknown", "temporary", "persistent", "synthetic", "durable-ish",
+                        "DURABLE", "EPHEMERAL", " durable", "ephemeral "):
+            with self.subTest(storage=storage):
+                self.policy["capability_limits"]["storage"] = storage
+                self.bind_all()
+                result = self.assert_rejected()
+                self.assertEqual(result["errors"], ["storage_classification_required"])
+                self.assertEqual(result["gates"]["durability"]["status"], "not_run")
+
+    def test_storage_classification_stays_bound_to_manifest(self):
+        self.manifest["binding"] = copy.deepcopy(self.manifest["binding"])
+        self.manifest["binding"]["capability_limits"]["storage"] = "ephemeral"
+        self.assertIn("binding_mismatch", self.assert_rejected()["errors"])
+
+    def test_storage_classification_stays_bound_to_evidence(self):
+        binding = copy.deepcopy(self.manifest["binding"])
+        binding["capability_limits"]["storage"] = "ephemeral"
+        self.alter("durability", "binding", binding)
+        result = self.assert_rejected()
+        self.assertEqual(result["gates"]["durability"]["reason"], "evidence_binding_mismatch")
+        self.assertEqual(result["gates"]["live_access"]["status"], "passed")
 
     def test_schema_version_requires_exact_integer(self):
         for target in (self.policy, self.manifest):

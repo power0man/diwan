@@ -32,3 +32,9 @@
 {"id": "storage-type", "old": "not text(limits.get(\"storage\"))", "new": "False", "test": "test_policy_identity_and_origin_schema"}
 {"id": "capability-enabled-type", "old": "key.endswith(\"_enabled\") and type(value) is not bool", "new": "False", "test": "test_policy_capability_boolean_and_invalid_hash"}
 {"id": "incomplete-schema-fails-closed", "old": "        report[\"status\"] = \"failed\"\n        report[\"errors\"].append(str(error))", "new": "        report[\"status\"] = \"passed\"\n        report[\"errors\"].append(str(error))", "test": "test_incomplete_schema_fails_closed"}
+{"id": "storage-classification", "old": "if limits[\"storage\"] not in STORAGE_CLASSES:", "new": "if False:", "test": "test_unknown_storage_classification_fails_closed"}
+{"id": "policy-ephemeral-durability", "old": "elif policy[\"capability_limits\"][\"storage\"] == \"ephemeral\":", "new": "elif False:", "test": "test_ephemeral_storage_blocks_durability_in_every_deployment_mode"}
+{"id": "policy-ephemeral-preservation", "old": "elif policy[\"capability_limits\"][\"storage\"] == \"ephemeral\":", "new": "elif False:", "test": "test_ephemeral_storage_preserves_observed_states_and_reasons"}
+{"id": "storage-manifest-binding", "old": "if not typed_equal(manifest[\"binding\"], expected):", "new": "if False:", "test": "test_storage_classification_stays_bound_to_manifest"}
+{"id": "storage-evidence-binding", "old": "if not typed_equal(evidence[\"binding\"], expected) or evidence[\"gate\"] != name:", "new": "if False:", "test": "test_storage_classification_stays_bound_to_evidence"}
+{"id": "source-storage-constraint", "old": "if source[\"deployment_mode\"] == \"private_hf_cpu_ephemeral_limited\":", "new": "if False:", "test": "test_current_ephemeral_mode_cannot_claim_durability"}
