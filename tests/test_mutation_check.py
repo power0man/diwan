@@ -89,16 +89,16 @@ def test_every_verdict_code_comes_from_its_own_mutation(repo, capsys, git):
               {**KILL, "id": "missing", "tests": ["tests/test_guard.py::test_no_such_test"]},
               {**KILL, "id": "stale", "old": "return x < 0"},
               {**KILL, "id": "count", "count": 2},
-              {**KILL, "id": "invalid", "new": "return x > 0 ("},
-              {**KILL, "id": "failing-before", "tests": ["tests/test_guard.py::test_already_failing"]})
+              {**KILL, "id": "invalid", "new": "return x > 0 ("})
     git("add", "-A")
     git("commit", "-qm", "manifest")
     report = _run(repo, "--all", capsys=capsys)
     by_id = {r["id"]: r["code"] for r in report["results"]}
     assert by_id == {"kill": "killed", "survive": "survived", "missing": "test_missing", "stale": "stale",
-                     "count": "stale", "invalid": "invalid", "failing-before": "failing_before_mutation"}
+                     "count": "stale", "invalid": "invalid"}
     assert report["status"] == "failed" and report["exit_code"] == 1
-    assert report["baseline"]["failing_before_mutation"] == ["tests/test_guard.py::test_already_failing"]
+    assert report["baseline"]["failing_before_mutation"] == []
+    assert report["baseline"]["status"] == "passed" and report["baseline"]["pytest_exit"] == 0
     assert report["baseline"]["missing"] == ["tests/test_guard.py::test_no_such_test"]
     killed = next(r for r in report["results"] if r["id"] == "kill")
     assert killed["failed_tests"] == KILL["tests"] and killed["verdict"] == mc.VERDICTS["killed"]
@@ -112,7 +112,104 @@ def test_a_clean_manifest_passes_and_the_worktree_is_removed_even_when_kept_is_o
     git("commit", "-qm", "manifest")
     report = _run(repo, "--all", capsys=capsys)
     assert report["status"] == "passed" and report["totals"]["killed"] == 1 and report["exit_code"] == 0
+    assert report["baseline"]["status"] == "passed" and report["baseline"]["pytest_exit"] == 0
     assert report["worktree_kept"] is None
+    _clean(repo, git)
+
+
+@pytest.mark.parametrize("returncode", [1, 2, 3, 4, 5, -15],
+                         ids=["unparsed_failure", "interrupted", "internal_error", "usage_error", "no_tests", "signal"])
+@pytest.mark.parametrize("named_failure", [False, True], ids=["no_failed_line", "with_failed_line"])
+def test_an_unsuccessful_baseline_cannot_produce_a_mutation_proof(repo, git, capsys, monkeypatch, returncode, named_failure):
+    """الجمعُ والطفرة حقيقيّان؛ نتيجةُ التشغيل الأساسيّ وحدها محقونة، ولا تصلح أساسًا للقتل."""
+    _manifest(repo, "test_guard", KILL)
+    git("add", "-A")
+    git("commit", "-qm", "baseline guard")
+    runner_temp = repo / "runner-temp"
+    runner_temp.mkdir()
+    monkeypatch.setenv("RUNNER_TEMP", str(runner_temp))
+    real_pytest, executions = mc._pytest, []
+
+    def pytest_with_failed_baseline(python, cwd, argv, timeout, env_extra=None):
+        if "--collect-only" not in argv:
+            executions.append((cwd / "pkg/guard.py").read_text())
+            if len(executions) == 1:
+                output = ("FAILED " + KILL["tests"][0] + " - PRIVATE_SENTINEL\n" if named_failure
+                          else "unparsed diagnostic: PRIVATE_SENTINEL")
+                return subprocess.CompletedProcess(argv, returncode, output, "PRIVATE_STDERR")
+        return real_pytest(python, cwd, argv, timeout, env_extra)
+
+    monkeypatch.setattr(mc, "_pytest", pytest_with_failed_baseline)
+    report = _run(repo, "--all", capsys=capsys)
+    assert (report["status"], report["code"], report["exit_code"]) == ("refused", "baseline_failed", 2)
+    assert report["baseline"]["status"] == "failed" and report["baseline"]["pytest_exit"] == returncode
+    assert report["baseline"]["failing_before_mutation"] == (KILL["tests"] if named_failure else [])
+    assert "results" not in report and "PRIVATE_" not in json.dumps(report)
+    assert executions == [GUARD], "لا تُطبَّق طفرةٌ بعد خط أساس غير ناجح"
+    assert list(runner_temp.iterdir()) == []
+    _clean(repo, git)
+
+
+def test_a_timed_out_baseline_is_named_and_cleaned_up_without_mutation(repo, git, capsys, monkeypatch):
+    _manifest(repo, "test_guard", KILL)
+    git("add", "-A")
+    git("commit", "-qm", "timeout guard")
+    runner_temp = repo / "runner-temp"
+    runner_temp.mkdir()
+    monkeypatch.setenv("RUNNER_TEMP", str(runner_temp))
+    real_pytest, executions = mc._pytest, []
+
+    def pytest_with_timed_out_baseline(python, cwd, argv, timeout, env_extra=None):
+        if "--collect-only" not in argv:
+            executions.append((cwd / "pkg/guard.py").read_text())
+            if len(executions) == 1:
+                return None
+        return real_pytest(python, cwd, argv, timeout, env_extra)
+
+    monkeypatch.setattr(mc, "_pytest", pytest_with_timed_out_baseline)
+    report = _run(repo, "--all", capsys=capsys)
+    assert (report["status"], report["code"], report["exit_code"]) == ("refused", "timeout", 2)
+    assert report["baseline"]["status"] == "timeout" and report["baseline"]["pytest_exit"] is None
+    assert "results" not in report and executions == [GUARD]
+    assert list(runner_temp.iterdir()) == []
+    _clean(repo, git)
+
+
+def test_a_real_pytest_internal_error_in_the_baseline_never_proves_a_kill(repo, git, capsys, monkeypatch):
+    _manifest(repo, "test_guard", KILL)
+    (repo / "broken_baseline.py").write_text(
+        'def pytest_configure(config):\n    raise RuntimeError("synthetic baseline INTERNALERROR")\n')
+    git("add", "-A")
+    git("commit", "-qm", "real pytest internal error")
+    real_pytest, exits = mc._pytest, []
+
+    def pytest_with_internal_error(python, cwd, argv, timeout, env_extra=None):
+        if "--collect-only" not in argv and not exits:
+            result = real_pytest(python, cwd, ["-p", "broken_baseline", *argv], timeout, env_extra)
+            assert result is not None and "INTERNALERROR" in result.stderr + result.stdout
+            exits.append(result.returncode)
+            return result
+        return real_pytest(python, cwd, argv, timeout, env_extra)
+
+    monkeypatch.setattr(mc, "_pytest", pytest_with_internal_error)
+    report = _run(repo, "--all", capsys=capsys)
+    assert exits == [3]
+    assert (report["status"], report["code"], report["exit_code"]) == ("refused", "baseline_failed", 2)
+    assert report["baseline"]["pytest_exit"] == 3 and "results" not in report
+    assert "INTERNALERROR" not in json.dumps(report), "لا تُنسخ مخرجاتُ الاختبار الخاصة إلى التشخيص"
+    _clean(repo, git)
+
+
+def test_an_already_failing_baseline_names_the_test_and_blocks_otherwise_valid_kills(repo, git, capsys):
+    failing = "tests/test_guard.py::test_already_failing"
+    _manifest(repo, "test_guard", KILL, {**KILL, "tests": [failing]})
+    git("add", "-A")
+    git("commit", "-qm", "already failing selected test")
+    report = _run(repo, "--all", capsys=capsys)
+    assert (report["status"], report["code"], report["exit_code"]) == ("refused", "baseline_failed", 2)
+    assert report["baseline"]["failing_before_mutation"] == [failing]
+    assert report["baseline"]["status"] == "failed" and report["baseline"]["pytest_exit"] == 1
+    assert "results" not in report
     _clean(repo, git)
 
 

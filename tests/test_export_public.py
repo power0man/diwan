@@ -347,7 +347,7 @@ def test_maritime_counts_read_the_real_catalog_when_present():
     assert (documents, pages) == (published["maritime_current_documents"], published["maritime_current_pages"])
 
 
-# — مشغّلُ التحقّق المشترك: الخروجُ 3 «تعذّر بحدٍّ معلن» تحت العلامة وحدها —
+# — مشغّلُ التحقّق المشترك: العلامةُ وحدها لا تجعل الخروجَ 3 تعذّرًا معلنًا —
 
 import run_verification as rv  # noqa: E402
 from verification_checks import Check  # noqa: E402
@@ -357,11 +357,11 @@ def _only(returncode):
     return lambda python, node: (Check("fake", (python, "-c", f"raise SystemExit({returncode})")),)
 
 
-def test_exit_three_passes_only_under_the_public_export_marker(monkeypatch):
+def test_undeclared_exit_three_fails_even_under_the_public_export_marker(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["run_verification.py"])
     monkeypatch.setattr(rv, "commands", _only(3))
     monkeypatch.setattr(rv, "read_marker", lambda root: {"kind": "public_export"})
-    assert rv.main() == 0
+    assert rv.main() == 1, "العلامةُ لا تعفي فحصًا لم يعلن عقدَ التعذّر"
     monkeypatch.setattr(rv, "read_marker", lambda root: None)
     assert rv.main() == 1, "في المستودع الخاص الخروجُ 3 فشلٌ كما كان"
 

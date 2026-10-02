@@ -175,6 +175,48 @@ async function harness(routes = {}, options = {}) {
 }
 
 const cases = {
+  async unified_continuation_is_explicit_idempotent_and_navigation_safe() {
+    for(const interrupted of ['cancel','close','navigate','error','repeat','success']) {
+      const pending=deferred();let attempts=0;
+      const h=await harness({
+        continue_unified:()=>{attempts+=1;return interrupted==='error' && attempts===1
+          ? {__httpStatus:409,body:{error_code:'generation_busy'}} : pending.promise;},
+        sessions:()=>({sessions:[{id:SA,name:'سابقة',mode:'text'},{id:SB,name:'متابعة',mode:'text'}]}),
+        history:()=>({status:'idle',turns:[],before:0,total:0,unified:true}),
+      });
+      await h.run('refresh()');
+      assert.equal(h.get('continue-unified').hidden,false);
+      h.get('message').value='طلب غير مرسل';
+      h.get('continue-unified').onclick();
+      const yes=descendants(h.get('dialog-body')).find(x=>x.textContent==='ابدأ المتابعة الموحدة');
+      assert.ok(yes);assert.equal(h.calls.some(x=>x.action==='continue_unified'),false);
+      assert.ok(textOf(h.get('dialog-body')).includes('لن يُنقل أو يُعاد إرسال'));
+      if(interrupted==='cancel') {
+        await descendants(h.get('dialog-body')).find(x=>x.textContent==='إلغاء').onclick();
+        await yes.onclick();assert.equal(attempts,0);assert.equal(h.run('state.session'),SA);
+        assert.equal(h.get('message').value,'طلب غير مرسل');continue;
+      }
+      if(interrupted==='error') {
+        await yes.onclick();assert.equal(h.run('state.session'),SA);assert.equal(yes.disabled,false);
+        assert.equal(h.get('notice').className,'error');
+      }
+      const working=yes.onclick();await tick();
+      if(interrupted==='repeat') {await yes.onclick();assert.equal(attempts,1);}
+      if(interrupted==='close') h.get('close-dialog').onclick();
+      if(interrupted==='navigate') await h.run(`chooseProject('${B}')`);
+      pending.resolve({id:SB,name:'متابعة',mode:'text'});await working;
+      assert.equal(h.calls.some(x=>['agent_ask','ask','agent_resume','agent_decide'].includes(x.action)),false);
+      assert.deepEqual(h.calls.filter(x=>x.action==='continue_unified').map(x=>[x.project,x.session]),
+        Array.from({length:interrupted==='error'?2:1},()=>[A,SA]));
+      if(interrupted==='close') assert.equal(h.run('state.session'),SA);
+      else if(interrupted==='navigate') {assert.equal(h.run('state.project'),B);assert.equal(h.run('state.session'),'');}
+      else {assert.equal(h.run('state.session'),SB);await yes.onclick();assert.equal(attempts,interrupted==='error'?2:1);}
+      assert.equal(h.run('state.continuationBusy'),false);
+    }
+    const h=await harness();await h.run('refresh()');
+    assert.equal(h.get('continue-unified').hidden,true);h.get('continue-unified').onclick();
+    assert.equal(h.calls.some(x=>x.action==='continue_unified'),false);
+  },
   async every_server_external_and_frontend_code_has_an_arabic_message() {
     const h=await harness(),required=[
       'request_invalid','request_failed','unsafe_path','memory_path_unsafe','backup_invalid',

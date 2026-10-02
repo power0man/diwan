@@ -14,6 +14,8 @@ class Check:
     name: str
     argv: tuple[str, ...]
     timeout_s: int = 300
+    # Opt-in only: an arbitrary nonzero exit must never become a public skip.
+    public_unavailable_exit_code: int | None = None
 
 
 def commands(python: str, node: str) -> tuple[Check, ...]:
@@ -26,6 +28,7 @@ def commands(python: str, node: str) -> tuple[Check, ...]:
           for milestone in ("8b", "9", "10", "11", "12", "13")),
         Check("frontend-syntax", (node, "--check", "webui/static/app.js")),
         Check("frontend-behavior", (node, "tests/webui_frontend.cjs", "webui/static/app.js")),
-        Check("acceptance-7", (python, "acceptance_m7.py")),
+        # acceptance_m7 explicitly returns 3 when excluded owner sources are absent.
+        Check("acceptance-7", (python, "acceptance_m7.py"), public_unavailable_exit_code=3),
         Check("public-signatures", (python, "tools/sign_anchors.py", "verify", "--public-only")),
     )

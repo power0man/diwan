@@ -27,6 +27,7 @@ import unicodedata
 
 from agent.actions import ActionRefused
 from agent.registry import Tool, ToolRegistry
+from conversation.unified import valid_role, valid_lineage, UNIFIED_SESSION_ROLE
 from conversation import ChatSession
 from conversation.agent_session import AgentSession
 from conversation.session import SYSTEM, ConversationError
@@ -330,12 +331,10 @@ def _metadata(raw, expected, *, session=False, project=None):
     value = _json(raw)
     fields = {"id", "name"}
     _need(type(value) is dict and set(value) in
-          ((fields, fields | {"mode"}, fields | {"mode", "system_role"}) if session else (fields,)))
+          ((fields, fields | {"mode"}, fields | {"mode", "system_role"},
+            fields | {"mode", "system_role", "continuation_of"}) if session else (fields,)))
     if "system_role" in value:
-        _need(value["system_role"] == "unified_all_projects"
-              and project == digest({"kind": "diwan-default-project", "schema_version": 1})[:32]
-              and expected == digest({"kind": "diwan-default-session", "schema_version": 1})[:32]
-              and value["mode"] in {"text", "agent"})
+        _need(valid_role(value, project))
     name = value["name"]
     _need(value["id"] == expected and type(name) is str and 1 <= len(name.strip()) <= 80
           and not any(unicodedata.category(c).startswith("C") for c in name))
@@ -401,6 +400,11 @@ def _shape(dirs, data):
             memories.append(memory)
         current = sorted(p for p in dirs if p.startswith(project + "/sessions/") and p.count("/") == 3)
         _need(len(current) <= 64, "backup_limit")
+        records = {entry.split("/")[-1]: _json(data[entry + "/meta.json"]) for entry in current}
+        for record in records.values():
+            _need(type(record) is dict)
+            if record.get("system_role") == UNIFIED_SESSION_ROLE:
+                _need(valid_lineage(record, records))
         for session in current:
             sid = session.split("/")[-1]
             _need(_ID.fullmatch(sid), "backup_invalid")

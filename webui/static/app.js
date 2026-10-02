@@ -1,6 +1,6 @@
 "use strict";
 const $ = id => document.getElementById(id);
-const state = {project: "", session: "", mode: "text", defaultSessionMode: "text", sessionModeChosen: false, mediaEnabled: false, urls: [], busy: false, refreshing: 0, stopBusy: false, runningTurn: null, epoch: 0, turns: [], selected: new Set(), before: 0, pending: null, poll: 0, dialogEpoch: 0, dialogReturnFocus: null};
+const state = {project: "", session: "", mode: "text", defaultSessionMode: "text", unified: false, continuationBusy: false, sessionModeChosen: false, mediaEnabled: false, urls: [], busy: false, refreshing: 0, stopBusy: false, runningTurn: null, epoch: 0, turns: [], selected: new Set(), before: 0, pending: null, poll: 0, dialogEpoch: 0, dialogReturnFocus: null};
 const token = document.querySelector('meta[name="diwan-token"]').content;
 const uuid = () => crypto.randomUUID().replaceAll("-", "");
 const errors = {
@@ -9,6 +9,7 @@ const errors = {
   cloud_file_ingress_disabled: "استقبال الملفات والوسائط مغلق في تجربة الحفظ السحابي المصطنعة.",
   cloud_input_policy_refused: "تصنيف هذا الطلب لا يطابق عقد المساحة التجريبية؛ لم تُنقل بياناته أو يُغيَّر تصنيفها.",
   cloud_media_not_supported: "جلسات الوسائط غير متاحة في تجربة الحفظ السحابي المصطنعة.",
+  unified_session_required: "المتابعة الموحدة متاحة للمحادثة العامة فقط؛ تبقى جلسة المشروع محصورة فيه.",
   agent_unavailable: "مسار الأدوات غير مهيأ في هذا التشغيل.",
   changed_since_turn: "تغيّر ملفٌّ بعد الجولة؛ لا يُرجع عنها كلِّها حتى لا يُمحى تعديلٌ أحدث. ارجع عن أفعالها واحدًا واحدًا.",
   turn_partially_reverted: "رُدّ بعضُ الجولة وحده من قبل؛ ارجع عن الباقي فعلًا فعلًا.",
@@ -159,6 +160,8 @@ function stoppableTurn() {
   return agentLike(state.mode) ? state.runningTurn || state.pending || state.turns.find(t => t.status === "awaiting_owner")?.turn_id : null;
 }
 function syncSubmit() {
+  $("continue-unified").hidden = !state.unified;
+  $("continue-unified").disabled = state.busy || state.refreshing > 0 || state.continuationBusy || !!state.runningTurn;
   $("send").disabled = state.busy || state.refreshing > 0 || !!state.pending || !!state.runningTurn || (agentLike(state.mode) && state.turns.some(t => ["awaiting_owner","outcome_unknown"].includes(t.status)));
 }
 function syncPending() {
@@ -587,7 +590,7 @@ async function projects() {
 }
 async function chooseProject(id) {
   dismissDialog();
-  const epoch = ++state.epoch; state.project = id; state.session = ""; state.runningTurn = null; setMode("text"); state.turns = []; render(); $("sessions").replaceChildren();
+  const epoch = ++state.epoch; state.project = id; state.session = ""; state.unified = false; state.runningTurn = null; setMode("text"); state.turns = []; render(); $("sessions").replaceChildren();
   state.selected.clear(); $("files").replaceChildren(); $("file-count").textContent = "(0)"; $("message").value = ""; syncPending(); $("older").hidden = true;
   $("project-title").textContent = $("projects").selectedOptions[0]?.textContent || "مساحتك الخاصة";
   $("session-title").textContent = "اختر محادثة أو أنشئ واحدة";
@@ -606,7 +609,7 @@ function setMode(mode) {
 $("clear-media").onclick = () => {$("media-file").value = "";};
 async function chooseSession(id, name, mode = "text") {
   dismissDialog();
-  ++state.epoch; state.session = id; state.runningTurn = null; setMode(mode); state.turns = []; $("session-title").textContent = name;
+  ++state.epoch; state.session = id; state.unified = false; state.runningTurn = null; setMode(mode); state.turns = []; $("session-title").textContent = name;
   state.selected.clear(); $("message").value = ""; syncPending();
   for (const el of $("files").querySelectorAll("input")) el.checked = false;
   $("file-count").textContent = "(0)";
@@ -630,6 +633,7 @@ async function refresh(focusReturn = null) {
     return;
   }
   const advanceFocus = focusReturn?.isConnected && document.activeElement === focusReturn;
+  state.unified = data.unified === true;
   state.runningTurn = null; state.poll = 0; state.turns = data.turns; state.before = data.before; $("older").hidden = !data.before; render();
   if(advanceFocus && !focusReturn.isConnected && document.activeElement === document.body) $("message").focus();
   syncPending();
@@ -646,6 +650,25 @@ async function refresh(focusReturn = null) {
 $("projects").onchange = () => chooseProject($("projects").value).catch(showError);
 $("session-mode").onchange = () => {state.sessionModeChosen = true;};
 $("refresh").onclick = () => refresh().catch(showError);
+$("continue-unified").onclick = () => {
+  if(!state.unified || state.busy || state.refreshing > 0 || state.continuationBusy || state.runningTurn) return;
+  const epoch = state.epoch, ticket = ++state.dialogEpoch, ctx = context();
+  const body = dialog("متابعة المحادثة الموحدة");
+  body.append(element("p", "تبدأ محادثة فارغة بإعداد النموذج والأدوات الحالي، وتبقى متصلة بذاكرة المشاريع. تاريخ المحادثة السابقة محفوظ في التفاصيل. لن يُنقل أو يُعاد إرسال أي طلب أو فعل سابق."));
+  const confirm = button("ابدأ المتابعة الموحدة", async () => {
+    if(!currentDialog(epoch, ticket) || state.continuationBusy) return;
+    state.continuationBusy = true; confirm.disabled = true; syncSubmit();
+    try {
+      const next = await api("continue_unified", ctx);
+      if(!currentDialog(epoch, ticket)) return;
+      await chooseProject(ctx.project);
+      if(state.epoch !== epoch + 1) return;
+      await chooseSession(next.id, next.name, next.mode);
+    } catch(error) {if(currentDialog(epoch, ticket)) showError(error);}
+    finally {state.continuationBusy = false; confirm.disabled = false; syncSubmit();}
+  });
+  body.append(confirm, button("إلغاء", dismissDialog));
+};
 $("new-project").onsubmit = async event => {
   event.preventDefault(); const epoch = state.epoch, name = $("project-name").value;
   try {const p = await api("create_project", {name}); if(epoch !== state.epoch) return; state.project = p.id; await projects(); if(epoch !== state.epoch) return; await chooseProject(p.id); if($("project-name").value === name) $("project-name").value = "";} catch(e) {if(epoch === state.epoch) showError(e);}
