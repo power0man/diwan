@@ -24,12 +24,14 @@ import uuid
 from conversation import ChatSession
 from conversation.agent_session import AgentSession
 from conversation.session import ConversationError
+from conversation.unified import (DEFAULT_PROJECT_ID, DEFAULT_SESSION_ID, UNIFIED_SESSION_ROLE,
+                                  successor_id, valid_role, valid_lineage)
 from agent.builtin_tools import DEFAULT_TOOLS
 from agent.citations import check as check_citations
 from agent.coder import CODER_SYSTEM, coder_tools
 from agent.translation import (CHECK_TRANSLATION, TRANSLATE_SYSTEM, check as check_translation,
                                load_glossary, split_request, translation_request)
-from agent.registry import ToolRegistry
+from agent.registry import Tool, ToolRegistry
 from agent.research import RESEARCH_SYSTEM, returned_urls
 from agent.web_search import web_search_tool
 from analysis.backend import configure_analysis_backend
@@ -38,7 +40,7 @@ from core import filelock
 from core.locality import is_local_provider
 from core.execution import configure_execution_backend
 from core.canonical import canonical_bytes, digest
-from core.contracts import Message as ContractMessage, Request as ContractRequest
+from core.contracts import Message as ContractMessage, Request as ContractRequest, ToolSpec
 from core.router_sovereign import PIISanitizer, SovereignRouter, SovereignRoutingError
 from core.tools_registry import default_tools_registry
 from memory.store import MemoryRefused, MemoryStore
@@ -181,9 +183,6 @@ AGENT_MODES = ("agent", "research", "coder", "translate")
 MODE_SYSTEMS = {"research": RESEARCH_SYSTEM, "coder": CODER_SYSTEM, "translate": TRANSLATE_SYSTEM}
 GLOSSARY_FILE = "glossary.csv"
 SESSION_MODES = ("text", "media", *AGENT_MODES)
-DEFAULT_PROJECT_ID = digest({"kind": "diwan-default-project", "schema_version": 1})[:32]
-DEFAULT_SESSION_ID = digest({"kind": "diwan-default-session", "schema_version": 1})[:32]
-UNIFIED_SESSION_ROLE = "unified_all_projects"
 
 
 class LocalApp:
@@ -256,13 +255,12 @@ class LocalApp:
         finally:
             os.close(fd)
 
-    @staticmethod
-    def _memory_transaction(project, value):
+    def _memory_transaction(self, project, value):
         need(type(value) is dict and set(value) == {"schema_version", "item_id", "states", "receipt"}
              and value["schema_version"] == 1
              and isinstance(value["item_id"], str)
              and re.fullmatch(r"[0-9a-f]{16}", value["item_id"])
-             and type(value["states"]) is list and len(value["states"]) <= 65
+             and type(value["states"]) is list and len(value["states"]) <= 128
              and isinstance(value["receipt"], str), "memory_forget_transaction_corrupt")
         states, seen, total = [], set(), 0
         for entry in value["states"]:
@@ -271,10 +269,11 @@ class LocalApp:
             relative, target = entry["path"], project
             if relative.startswith("unified/"):
                 relative = relative.removeprefix("unified/")
-                need(relative in (f"agent-control/{DEFAULT_SESSION_ID}/state.json",
-                                  f"sessions/{DEFAULT_SESSION_ID}/chat/{DEFAULT_SESSION_ID}/state.json"),
-                     "memory_forget_transaction_corrupt")
                 target = project.parent / DEFAULT_PROJECT_ID
+                parts = Path(relative).parts
+                need(_forget_state_path(relative)
+                     and self.is_unified_session(target, parts[1]),
+                     "memory_forget_transaction_corrupt")
             need(_forget_state_path(relative) and entry["path"] not in seen
                  and isinstance(entry["data"], str), "memory_forget_transaction_corrupt")
             try:
@@ -358,12 +357,21 @@ class LocalApp:
             value = _read_json(fd, "meta.json")
         need(type(value) is dict and set(value) in (
             {"id", "name"}, {"id", "name", "mode"},
-            {"id", "name", "mode", "system_role"}), "metadata_invalid")
+            {"id", "name", "mode", "system_role"},
+            {"id", "name", "mode", "system_role", "continuation_of"}), "metadata_invalid")
         need(value.get("mode", "text") in SESSION_MODES, "metadata_invalid")
-        if "system_role" in value:
-            need(value["system_role"] == UNIFIED_SESSION_ROLE
-                 and path.name == DEFAULT_SESSION_ID
-                 and path.parent.parent.name == DEFAULT_PROJECT_ID, "metadata_invalid")
+        need(valid_role(value, path.parent.parent.name), "metadata_invalid")
+        if "continuation_of" in value:
+            records, current = {value["id"]: value}, value
+            for _ in range(64):
+                previous = current.get("continuation_of")
+                if previous is None or previous in records:
+                    break
+                with self.directory(path.parent / identifier(previous)) as fd:
+                    current = _read_json(fd, "meta.json")
+                need(type(current) is dict and current.get("id") == previous, "metadata_invalid")
+                records[previous] = current
+            need(valid_lineage(value, records), "metadata_invalid")
         need(identifier(value["id"]) == path.name, "metadata_invalid")
         label(value["name"])
         return value
@@ -375,7 +383,8 @@ class LocalApp:
         return sorted([self.metadata(root / identifier(name)) for name in names],
                       key=lambda item: (item["name"], item["id"]))
 
-    def create(self, root, name, *, chat=False, mode="text", item_id=None, system_role=None):
+    def create(self, root, name, *, chat=False, mode="text", item_id=None, system_role=None,
+               continuation_of=None):
         name = label(name)
         with self.lock:
             need(len(self.collection(root)) < 64, "collection_limit")
@@ -385,33 +394,57 @@ class LocalApp:
                 need(mode in SESSION_MODES, "session_mode_invalid")
                 need(self.storage_scope is None or mode != "media", "cloud_media_not_supported")
                 need(mode != "media" or self.media_enabled, "media_unavailable")
-                need(mode != "agent" or self.agent_enabled, "agent_unavailable")
                 need(mode != "research" or self.research_enabled, "research_unavailable")
                 need(mode != "coder" or self.agent_enabled, "coder_unavailable")
                 need(mode != "translate" or self.agent_enabled, "translate_unavailable")
                 value["mode"] = mode
+            if continuation_of is not None:
+                value["continuation_of"] = identifier(continuation_of)
             if system_role is not None:
-                need(chat and system_role == UNIFIED_SESSION_ROLE
-                     and value["id"] == DEFAULT_SESSION_ID
-                     and root.parent.name == DEFAULT_PROJECT_ID, "metadata_invalid")
                 value["system_role"] = system_role
+                need(chat and valid_role(value, root.parent.name), "metadata_invalid")
+            need(continuation_of is None or system_role == UNIFIED_SESSION_ROLE, "metadata_invalid")
             staging = self.root / "staging"
             with self.directory(staging, create=True) as fd:
                 need(len(os.listdir(fd)) < 64, "staging_limit")
-                os.mkdir(value["id"], 0o700, dir_fd=fd)
-                os.fsync(fd)
+                recovering = value["id"] in os.listdir(fd)
+                need(not recovering or continuation_of is not None, "id_conflict")
+                # An interrupted unified successor can be completed as inert
+                # history even after its agent provider has been removed.
+                need(mode != "agent" or self.agent_enabled or recovering, "agent_unavailable")
+                if not recovering:
+                    os.mkdir(value["id"], 0o700, dir_fd=fd)
+                    os.fsync(fd)
             staged = staging / value["id"]
             with self.directory(staged) as fd:
-                _write_json(fd, "meta.json", value)
+                if recovering:
+                    need(_read_json(fd, "meta.json") == value, "metadata_invalid")
+                else:
+                    _write_json(fd, "meta.json", value)
             if chat:
                 if mode in AGENT_MODES:
-                    self.agent_session(root.parent, value["id"], create=True, mode=mode)
+                    saved = root.parent / "agent-control" / value["id"] / "manifest.json"
+                    if recovering and saved.exists():
+                        recovered = self.agent_session(root.parent, value["id"], historical=True)
+                        need(not recovered.history()["turns"], "metadata_invalid")
+                    else:
+                        self.agent_session(root.parent, value["id"], create=True, mode=mode)
                 elif mode == "media":
                     MediaAssistant.open(staged / "chat", value["id"], model=self.media_model,
                         model_version=self.media_model_version, provider=None)
                 else:
-                    ChatSession(staged / "chat", value["id"], model=self.model,
-                                model_version=self.model_version, storage_scope=self.storage_scope)
+                    config = {"model": self.model, "model_version": self.model_version}
+                    manifest_root = staged / "chat" / value["id"]
+                    if recovering and (manifest_root / "manifest.json").exists():
+                        with self.directory(manifest_root) as fd:
+                            saved = _read_json(fd, "manifest.json")
+                        config = {key: saved[key] for key in (
+                            "model", "model_version", "max_output", "max_context_chars")}
+                        config["deadline_s"] = float(saved["deadline_s"])
+                    recovered = ChatSession(staged / "chat", value["id"],
+                                            storage_scope=self.storage_scope, **config)
+                    if recovering:
+                        need(not recovered.history(recover=False), "metadata_invalid")
             with self.directory(staging) as source, self.directory(root) as target:
                 need(value["id"] not in os.listdir(target), "id_conflict")
                 os.rename(value["id"], value["id"], src_dir_fd=source, dst_dir_fd=target)
@@ -440,7 +473,70 @@ class LocalApp:
                 session = {**session, "system_role": UNIFIED_SESSION_ROLE}
                 with self.directory(sessions_root / DEFAULT_SESSION_ID) as fd:
                     _write_json(fd, "meta.json", session)
+            # The leaf is derivable from immutable records; there is no mutable
+            # pointer whose crash/backup ordering could lose a successor.
+            while successor_id(session["id"]) in sessions:
+                following = sessions[successor_id(session["id"])]
+                need(following.get("continuation_of") == session["id"]
+                     and following.get("system_role") == UNIFIED_SESSION_ROLE, "metadata_invalid")
+                session = following
             return {"project": project, "session": session}
+
+    def continue_unified(self, project, session_id):
+        """Explicit fresh context, preserving scope/history without replaying a turn."""
+        with self.lock:
+            need(self.is_unified_session(project, session_id), "unified_session_required")
+            need(self.generation.acquire(blocking=False), "generation_busy")
+            try:
+                # A lost acknowledgement or staged publication can straddle an
+                # operator upgrade. Keep that immutable successor, then follow
+                # the same single-child chain until current settings are met.
+                for _ in range(64):
+                    previous = self.metadata(project / "sessions" / session_id)
+                    mode = previous["mode"]
+                    old = (self.agent_session(project, session_id, historical=True)
+                           if mode == "agent" else self.session(project, session_id))
+                    history = old.history()
+                    turns = history["turns"] if mode == "agent" else history
+                    need(all((turn["result"]["status"] if mode == "agent" else turn["status"])
+                             not in {"awaiting_owner", "outcome_unknown", "running", "pending"}
+                             for turn in turns), "turn_unresolved")
+                    sid = successor_id(session_id)
+                    target = project / "sessions" / sid
+                    if target.exists() or target.is_symlink():
+                        value = self.metadata(target)
+                        need(value.get("continuation_of") == session_id
+                             and value.get("system_role") == UNIFIED_SESSION_ROLE, "metadata_invalid")
+                    else:
+                        next_mode = (self.default_session_mode
+                                     if mode == "agent" and not self.agent_enabled else mode)
+                        staged = self.root / "staging" / sid
+                        if staged.exists() or staged.is_symlink():
+                            # Preserve a staged mode just like a published one;
+                            # create validates its complete expected metadata.
+                            with self.directory(staged) as fd:
+                                pending = _read_json(fd, "meta.json")
+                            need(type(pending) is dict, "metadata_invalid")
+                            next_mode = pending.get("mode")
+                        value = self.create(project / "sessions", "محادثة عامة", chat=True,
+                                            mode=next_mode, item_id=sid, system_role=UNIFIED_SESSION_ROLE,
+                                            continuation_of=session_id)
+                    mode = value["mode"]
+                    following = (self.agent_session(project, sid, historical=True)
+                                 if mode == "agent" else self.session(project, sid))
+                    current = (following.config["model"] == self.model
+                               and following.config["model_version"] == self.model_version)
+                    current = current and (mode != "agent" or self.agent_enabled)
+                    if mode == "agent":
+                        current = current and following.config["tools"] == [
+                            spec.declared() for spec in self.mode_registry(project, mode).specs()]
+                    descendant = project / "sessions" / successor_id(sid)
+                    if current and not (descendant.exists() or descendant.is_symlink()):
+                        return value
+                    session_id = sid
+                raise UIError("collection_limit")
+            finally:
+                self.generation.release()
 
     def project(self, value):
         path = self.root / "projects" / identifier(value)
@@ -555,9 +651,12 @@ class LocalApp:
     def is_unified_session(self, project, session_id):
         """تمييز جلسة #166 بعلامةٍ لا يستطيع طلبُ المستخدم كتابتها، لا باسم عرض."""
         session_id = identifier(session_id)
-        if project.name != DEFAULT_PROJECT_ID or session_id != DEFAULT_SESSION_ID:
+        if project.name != DEFAULT_PROJECT_ID:
             return False
-        return self.metadata(project / "sessions" / session_id).get("system_role") == UNIFIED_SESSION_ROLE
+        path = project / "sessions" / session_id
+        if not path.exists() and not path.is_symlink():
+            return False
+        return self.metadata(path).get("system_role") == UNIFIED_SESSION_ROLE
 
     @property
     def research_enabled(self):
@@ -600,7 +699,7 @@ class LocalApp:
         need(len(pairs) <= 200, "glossary_too_large")
         return pairs
 
-    def agent_session(self, project, session_id, *, create=False, mode="agent", memory=None):
+    def agent_session(self, project, session_id, *, create=False, mode="agent", memory=None, historical=False):
         workspace = self.agent_workspace(project)
         root = project / "agent-control"
         if create:
@@ -618,14 +717,22 @@ class LocalApp:
             # كلُّ أداةٍ قد تُعلنها جلسةٌ محفوظة: الافتراضيةُ، والبحثُ والمحلّلُ (يرفضان بالاسم إن لم يُضبطا)، والذاكرة، ومدقّقُ الترجمة
             available = {tool.spec.name: tool for tool in (*DEFAULT_TOOLS, web_search_tool(self.web_search),
                                                            ANALYZE_DATA, self.memory_tool(project), CHECK_TRANSLATION)}
-            need(type(saved.get("tools")) is list and all(type(spec) is dict and
-                spec.get("name") in available and spec == available[spec["name"]].spec.declared()
-                for spec in saved["tools"]), "agent_tool_contract_changed")
-            registry = ToolRegistry(*(available[spec["name"]] for spec in saved["tools"]))
+            if historical:
+                # Historical declarations validate saved requests; they never
+                # install an executable handler from an obsolete contract.
+                def refuse_historical_tool(*args, **kwargs):
+                    raise UIError("agent_tool_contract_changed")
+                registry = ToolRegistry(*(Tool(ToolSpec(**spec), refuse_historical_tool)
+                                          for spec in saved["tools"]))
+            else:
+                need(type(saved.get("tools")) is list and all(type(spec) is dict and
+                    spec.get("name") in available and spec == available[spec["name"]].spec.declared()
+                    for spec in saved["tools"]), "agent_tool_contract_changed")
+                registry = ToolRegistry(*(available[spec["name"]] for spec in saved["tools"]))
             config = {key: saved[key] for key in ("model", "model_version", "max_steps", "max_output",
                 "deadline_s", "max_context_chars", "max_turns", "system")}
             config["deadline_s"] = float(saved["deadline_s"])
-        if memory is None:
+        if memory is None and not historical:
             memory = self.memory_store(project)
         return AgentSession(root, session_id, workspace_root=workspace, project_id=project.name,
                             registry=registry, memory=memory, storage_scope=self.storage_scope, **config)
@@ -697,18 +804,17 @@ class LocalApp:
         try:
             sessions = []
             candidates = [(project, meta) for meta in self.collection(project / "sessions")]
-            # Only the canonical shared conversation can reuse another project's memory.
-            # Its state participates in the same locks, preflight and recovery journal.
+            # All server-issued predecessors/successors participate, not just
+            # the current default leaf. Ordinary project sessions stay isolated.
             unified_project = self.root / "projects" / DEFAULT_PROJECT_ID
-            unified_path = unified_project / "sessions" / DEFAULT_SESSION_ID
-            if project != unified_project and (unified_path.exists() or unified_path.is_symlink()):
-                unified_meta = self.metadata(unified_path)
-                if self.is_unified_session(unified_project, DEFAULT_SESSION_ID):
-                    candidates.append((unified_project, unified_meta))
+            if project != unified_project and unified_project.exists():
+                for unified_meta in self.collection(unified_project / "sessions"):
+                    if self.is_unified_session(unified_project, unified_meta["id"]):
+                        candidates.append((unified_project, unified_meta))
             for session_project, meta in candidates:
                 mode = meta.get("mode", "text")
                 if mode != "media":
-                    sessions.append((mode, meta["id"], self.agent_session(session_project, meta["id"])
+                    sessions.append((mode, meta["id"], self.agent_session(session_project, meta["id"], historical=True)
                                      if mode in AGENT_MODES else self.session(session_project, meta["id"])))
             with ExitStack() as held:
                 for _, _, session in sessions:
@@ -928,6 +1034,7 @@ class LocalApp:
         schemas = {
             "projects": set(), "create_project": {"name"}, "default_workspace": set(),
             "sessions": {"project"}, "create_session": {"project", "name"},
+            "continue_unified": {"project", "session"},
             "history": {"project", "session", "before"},
             "ask": {"project", "session", "turn", "message", "files"},
             "ask_media": {"project", "session", "turn", "message", "media"},
@@ -1047,6 +1154,8 @@ class LocalApp:
         if action == "sessions":
             with self.lock:
                 return {"sessions": self.collection(project / "sessions")}
+        if action == "continue_unified":
+            return self.continue_unified(project, identifier(request["session"]))
         if action == "create_session":
             return self.create(project / "sessions", request["name"], chat=True,
                                mode=request.get("mode", self.default_session_mode))
@@ -1084,7 +1193,7 @@ class LocalApp:
             with self.lock:
                 if self.active and self.active[:2] == key:
                     return {"status": "running", "turn": self.active[2]}
-            agent = self.agent_session(project, key[1]) if mode in AGENT_MODES else None
+            agent = self.agent_session(project, key[1], historical=True) if mode in AGENT_MODES else None
             history = agent.history()["turns"] if agent else self.session(project, key[1]).history()
             before = request["before"]
             need(before is None or (type(before) is int and 0 <= before <= len(history)))
@@ -1093,7 +1202,8 @@ class LocalApp:
             present = ((lambda turn: self.present_agent(turn, agent, mode=mode)) if agent
                        else self.present)
             return {"status": "idle", "turns": [present(r) for r in history[start:end]],
-                    "before": start, "total": len(history)}
+                    "before": start, "total": len(history),
+                    "unified": self.is_unified_session(project, key[1])}
         need(mode not in AGENT_MODES, "session_mode_mismatch")
         identifier(request["turn"])
         if action in ("inspect", "replay", "propose"):

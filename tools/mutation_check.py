@@ -10,6 +10,7 @@
     survived                 لم يسقط اختبارٌ مسمًّى: الحارسُ لا يحرس
     test_missing             اختبارٌ مسمًّى لا يُجمع
     failing_before_mutation  اختبارٌ مسمًّى ساقطٌ قبل الطفرة، فسقوطُه بعدها لا يثبت شيئًا
+    baseline_failed          التشغيلُ الأساسيّ لم يخرج بصفر؛ تُحفظ أسماءُ الساقط ولا تُطبّق أيُّ طفرة
     stale                    النصُّ القديم ليس في الملف بعدد مرّاته المعلَن
     invalid                  الطفرةُ كسرت الجمعَ نفسَه (خطأُ صياغة): ليست قتلًا
     timeout                  تجاوزت الاختباراتُ مهلتَها
@@ -93,6 +94,7 @@ LIMITS = [
     "only_manifests_under_tests_mutations_are_applied_guards_older_than_the_manifests_have_no_proof_until_one_is_written",
     "tests_run_with_the_given_python_in_a_detached_worktree_of_the_head_commit_uncommitted_changes_are_not_measured",
     "a_kill_is_judged_by_the_named_tests_failing_another_test_that_fails_is_not_counted",
+    "the_selected_baseline_must_exit_zero_before_any_mutation_is_applied_nonzero_exits_and_timeouts_never_prove_a_kill",
     "what_is_collected_is_decided_by_pytest_over_the_whole_tests_tree_at_the_head_and_at_the_merge_base_compared_by_full_node_ids_with_their_parameters_a_case_new_at_the_head_touches_its_test_wherever_it_appears_and_a_vanished_node_re_applies_its_manifests",
     "an_existing_collected_test_is_touched_when_an_added_line_of_the_range_falls_inside_the_span_of_the_callable_that_defines_it_as_pytest_resolves_it_through___wrapped___file_and_decorator_inclusive_span_from_inspect_wherever_that_callable_lives_a_helper_conftest_or_package_imported_by_its_own_name_or_an_alias_or_inherited_from_another_file_or_inside_the_syntactic_definition_its_node_id_names_in_its_own_module_so_a_wrapper_decorator_without_functools_wraps_hides_nothing_and_a_removed_line_inside_either_span_re_applies_its_manifests",
     "changes_to_fixtures_or_helpers_outside_any_test_callable_s_span_are_not_re_proven_and_a_collected_node_whose_callable_has_no_readable_source_such_as_one_built_by_exec_is_touched_only_when_its_node_id_is_new_and_is_named_with_its_error_in_the_collection_output",
@@ -105,11 +107,12 @@ LIMITS = [
 
 
 class Refused(Exception):
-    """رفضٌ قبل أيّ شجرة عمل: بيانٌ غيرُ صالح أو هدفٌ مرفوض."""
+    """رفضٌ مسمّى قبل القياس أو عند تعذُّر خطِّ أساسٍ صالح؛ تشخيصُه لا يثبت طفرة."""
 
-    def __init__(self, code: str, detail: str):
+    def __init__(self, code: str, detail: str, *, baseline: dict | None = None):
         super().__init__(f"{code}: {detail}")
         self.code, self.detail = code, detail
+        self.baseline = baseline
 
 
 def _git(root: Path, *argv: str) -> str:
@@ -515,7 +518,8 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
         if not keep:
             shutil.rmtree(tmp, ignore_errors=True)   # الحاضنُ المؤقّت نفسُه لا الشجرةُ وحدها: كان يبقى فارغًا بعد كلِّ تشغيلٍ فتتراكم آلافُه
     atexit.register(cleanup)
-    results, baseline, cases, probed = [], {"collected": 0, "missing": [], "failing_before_mutation": []}, {}, {}
+    results, baseline, cases, probed = [], {"collected": 0, "missing": [], "failing_before_mutation": [],
+                                          "status": "not_run", "pytest_exit": None}, {}, {}
     try:
         _git(root, "worktree", "add", "--detach", str(worktree), head_sha)
         for entry in entries:
@@ -536,8 +540,15 @@ def run(root: Path, entries: list[dict], head: str, python: str, timeout: int, k
         if runnable:
             before = _pytest(python, worktree, runnable, timeout)
             if before is None:
-                raise Refused("timeout", "التشغيلُ الأساسيّ تجاوز مهلتَه")
+                baseline["status"] = "timeout"
+                raise Refused("timeout", "التشغيلُ الأساسيّ تجاوز مهلتَه", baseline=baseline)
+            baseline["pytest_exit"] = before.returncode
             baseline["failing_before_mutation"] = _failed(before)
+            baseline["status"] = "passed" if before.returncode == 0 else "failed"
+            # أسماءُ الساقط تشخيصٌ فقط؛ غيابُ FAILED لا يعني النجاح (INTERNALERROR مثلًا).
+            # لا ننشر stdout/stderr: قد يحملان محتوى الاختبارات أو تفاصيلَ خاصة.
+            if before.returncode != 0:
+                raise Refused("baseline_failed", f"التشغيلُ الأساسيّ لم ينجح (pytest exit: {before.returncode})", baseline=baseline)
         for entry in entries:
             results.append(_apply(entry, worktree, baseline, python, timeout, selectors))
     finally:
@@ -626,7 +637,8 @@ def main(argv=None) -> int:
                               sorted({t.split("[", 1)[0] for t in scope["dropped_candidates"]})))
         else:
             report.update({"commit": _git(root, "rev-parse", "--verify", f"{args.head}^{{commit}}"),
-                           "baseline": {"collected": 0, "missing": [], "failing_before_mutation": []},
+                           "baseline": {"collected": 0, "missing": [], "failing_before_mutation": [],
+                                        "status": "not_run", "pytest_exit": None},
                            "results": [], "totals": {code: 0 for code in VERDICTS}})
         # الاختبارُ الممسوس يجب أن يسقط هو نفسُه تحت طفرةٍ ما في المدى؛ فذكرُه بجانب اختبارٍ قاتل لا يثبته، وحالاتُ الدالّة
         # المعلَّمة تُثبَت حالةً حالة بمعرّفها (ملاحظتا Codex على #149)
@@ -649,6 +661,8 @@ def main(argv=None) -> int:
         report["exit_code"] = 1 if report["status"] == "failed" else 0
     except Refused as exc:
         report.update({"status": "refused", "code": exc.code, "detail": exc.detail, "exit_code": 2})
+        if exc.baseline is not None:
+            report["baseline"] = exc.baseline
     except subprocess.CalledProcessError as exc:
         report.update({"status": "refused", "code": "git_failed", "detail": (exc.stderr or "")[-500:], "exit_code": 2})
     text = json.dumps(report, ensure_ascii=False, indent=1)
