@@ -658,13 +658,19 @@ $("continue-unified").onclick = () => {
   const confirm = button("ابدأ المتابعة الموحدة", async () => {
     if(!currentDialog(epoch, ticket) || state.continuationBusy) return;
     state.continuationBusy = true; confirm.disabled = true; syncSubmit();
+    let ownerEpoch = epoch, ownerTicket = ticket;
     try {
       const next = await api("continue_unified", ctx);
       if(!currentDialog(epoch, ticket)) return;
-      await chooseProject(ctx.project);
-      if(state.epoch !== epoch + 1) return;
-      await chooseSession(next.id, next.name, next.mode);
-    } catch(error) {if(currentDialog(epoch, ticket)) showError(error);}
+      // Navigation dismisses the dialog synchronously; its reads now own errors.
+      const projectNavigation = chooseProject(ctx.project);
+      ownerEpoch = state.epoch; ownerTicket = state.dialogEpoch;
+      await projectNavigation;
+      if(!currentDialog(ownerEpoch, ownerTicket)) return;
+      const sessionNavigation = chooseSession(next.id, next.name, next.mode);
+      ownerEpoch = state.epoch; ownerTicket = state.dialogEpoch;
+      await sessionNavigation;
+    } catch(error) {if(currentDialog(ownerEpoch, ownerTicket)) showError(error);}
     finally {state.continuationBusy = false; confirm.disabled = false; syncSubmit();}
   });
   body.append(confirm, button("إلغاء", dismissDialog));

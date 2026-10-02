@@ -174,7 +174,126 @@ async function harness(routes = {}, options = {}) {
   return {get,calls,storage,timers,run,createdURLs,revokedURLs,active:()=>document.activeElement};
 }
 
+// Hold one read after the continuation is accepted; recovery reads stay available.
+async function continuationRead(action) {
+  const pending=deferred(), next={id:SB,name:'متابعة',mode:'agent'};
+  let continued=false, held=true, reached=false;
+  const replies={
+    sessions:()=>({sessions:[{id:SA,name:'سابقة',mode:'text'},next]}),
+    files:()=>({files:[]}),
+    history:request=>({status:'idle',turns:request.session===SA?[turn]:[],before:0,total:request.session===SA?1:0,unified:true}),
+    agent_capabilities:()=>({execution_enabled:false}),
+  };
+  const routes={continue_unified:()=>{continued=true;return next;},preferences:()=>({values:{},revision:1})};
+  for(const [name,reply] of Object.entries(replies)) routes[name]=async request=>{
+    if(continued && held && name===action) {
+      reached=true;const result=await pending.promise;
+      if(result instanceof Error) throw result;
+      return result;
+    }
+    return reply(request);
+  };
+  const h=await harness(routes);await h.run('refresh()');h.get('continue-unified').onclick();
+  const yes=descendants(h.get('dialog-body')).find(x=>x.textContent==='ابدأ المتابعة الموحدة');
+  const working=yes.onclick();
+  for(let i=0;i<10 && !reached;i+=1) await tick();
+  assert.equal(reached,true,`continuation did not reach ${action}`);
+  assert.equal(h.get('dialog').open,false,'continuation closes its own dialog before navigation reads');
+  return {h,yes,working,release(result){held=false;pending.resolve(result);},success:replies[action]({session:SB})};
+}
+
 const cases = {
+  async unified_continuation_recovers_agent_unavailable_in_returned_text_mode() {
+    const h=await harness({
+      agent_capabilities:()=>({__httpStatus:409,body:{error_code:'agent_unavailable'}}),
+      continue_unified:()=>({id:SB,name:'متابعة نصية',mode:'text'}),
+      sessions:()=>({sessions:[{id:SA,name:'سابقة',mode:'agent'},{id:SB,name:'متابعة نصية',mode:'text'}]}),
+      history:request=>({status:'idle',turns:request.session===SA?[turn]:[],before:0,total:request.session===SA?1:0,unified:true}),
+    });
+    await h.run(`chooseSession('${SA}','سابقة','agent').catch(showError)`);
+    assert.equal(h.get('notice').textContent,h.run('errors.agent_unavailable'));
+    assert.equal(h.get('continue-unified').hidden,false);assert.equal(h.get('continue-unified').disabled,false);
+    h.get('continue-unified').onclick();
+    await descendants(h.get('dialog-body')).find(x=>x.textContent==='ابدأ المتابعة الموحدة').onclick();
+    assert.equal(h.run('state.session'),SB);assert.equal(h.run('state.mode'),'text');
+    assert.equal(h.run('state.unified'),true);assert.equal(h.get('agent-controls').hidden,true);
+    assert.equal(h.get('notice').className,'');assert.equal(h.calls.filter(x=>x.action==='agent_capabilities').length,1);
+    assert.deepEqual(h.calls.find(x=>x.action==='continue_unified'),{action:'continue_unified',project:A,session:SA});
+    assert.equal(h.calls.some(x=>['ask','agent_ask','agent_resume','agent_decide'].includes(x.action)),false);
+  },
+  async unified_continuation_reports_project_navigation_errors() {
+    for(const action of ['sessions','files']) for(const failure of ['network','http']) {
+      const {h,yes,working,release}=await continuationRead(action);
+      release(failure==='network' ? new Error('offline') : {__httpStatus:503,body:{error_code:'session_busy'}});
+      await working;
+      assert.equal(h.get('notice').className,'error',`${action}/${failure} must remain visible after dialog dismissal`);
+      assert.equal(h.get('notice').textContent,h.run(`errors.${failure==='network'?'network_error':'session_busy'}`));
+      assert.equal(h.run('state.continuationBusy'),false);assert.equal(yes.disabled,false);
+      assert.equal(h.run('state.session'),'');
+      await yes.onclick();
+      await h.run(`chooseProject('${A}');`);await h.run(`chooseSession('${SB}','متابعة','agent')`);
+      assert.equal(h.run('state.session'),SB);assert.equal(h.run('state.unified'),true);
+      assert.equal(h.calls.filter(x=>x.action==='continue_unified').length,1,'read recovery must not repeat the mutation');
+      assert.equal(h.calls.some(x=>['ask','agent_ask','agent_resume','agent_decide'].includes(x.action)),false);
+    }
+  },
+  async unified_continuation_reports_session_navigation_errors() {
+    for(const action of ['history','agent_capabilities']) for(const failure of ['network','http']) {
+      const {h,yes,working,release}=await continuationRead(action);
+      release(failure==='network' ? new Error('offline') : {__httpStatus:503,body:{error_code:'session_busy'}});
+      await working;
+      assert.equal(h.get('notice').className,'error',`${action}/${failure} must remain visible after dialog dismissal`);
+      assert.equal(h.get('notice').textContent,h.run(`errors.${failure==='network'?'network_error':'session_busy'}`));
+      assert.equal(h.run('state.session'),SB);assert.equal(JSON.parse(h.storage.get('diwan.last')).session,SB);
+      assert.equal(h.run('state.continuationBusy'),false);assert.equal(yes.disabled,false);
+      await yes.onclick();await h.run(`chooseSession('${SB}','متابعة','agent')`);
+      assert.equal(h.run('state.unified'),true);
+      assert.equal(h.calls.filter(x=>x.action==='continue_unified').length,1);
+      assert.equal(h.calls.some(x=>['ask','agent_ask','agent_resume','agent_decide'].includes(x.action)),false);
+    }
+  },
+  async unified_continuation_ignores_superseded_navigation_errors() {
+    for(const action of ['sessions','files','history','agent_capabilities']) {
+      for(const interrupt of ['project','same-project','session','same-session','dialog','cancel','close']) {
+        const {h,working,release}=await continuationRead(action);
+        // Start navigation without waiting for the held endpoint; its own error
+        // handler is unrelated to the continuation callback under test.
+        let newer;
+        if(interrupt==='project' || interrupt==='same-project') newer=h.run(`chooseProject('${interrupt==='project'?B:A}')`);
+        if(interrupt==='session' || interrupt==='same-session') newer=h.run(`chooseSession('${interrupt==='session'?SA:SB}','سابقة','text')`);
+        if(['dialog','cancel','close'].includes(interrupt)) {
+          await h.get('preferences').onclick();
+          if(interrupt==='cancel') for(const handler of h.get('dialog').listeners.cancel) handler(event);
+          if(interrupt==='close') h.get('close-dialog').onclick();
+        }
+        for(let i=0;i<10;i+=1) await tick();
+        const noticeBefore=h.get('notice').textContent, dialogBefore=textOf(h.get('dialog-body'));
+        release({__httpStatus:503,body:{error_code:'session_busy'}});await working;
+        if(newer) await newer.catch(()=>{});
+        assert.equal(h.get('notice').textContent,noticeBefore,`${action}/${interrupt} must not receive a stale error`);
+        assert.equal(textOf(h.get('dialog-body')),dialogBefore);assert.equal(h.get('dialog-feedback'),null);
+        assert.equal(h.run('state.continuationBusy'),false);
+        assert.equal(h.calls.filter(x=>x.action==='continue_unified').length,1);
+        if(interrupt==='project') assert.equal(h.run('state.project'),B);
+        if(interrupt==='session' || interrupt==='same-session') assert.equal(h.run('state.session'),interrupt==='session'?SA:SB);
+      }
+    }
+  },
+  async unified_continuation_preserves_newer_dialog_after_project_read() {
+    for(const action of ['sessions','files']) for(const interrupt of ['dialog','cancel','close']) {
+      const {h,working,release,success}=await continuationRead(action);
+      await h.get('preferences').onclick();
+      if(interrupt==='cancel') for(const handler of h.get('dialog').listeners.cancel) handler(event);
+      if(interrupt==='close') h.get('close-dialog').onclick();
+      const dialogBefore=textOf(h.get('dialog-body'));
+      release(success);await working;
+      assert.equal(h.run('state.session'),'','a newer dialog or its cancellation owns navigation');
+      assert.equal(h.get('dialog').open,interrupt==='dialog');assert.equal(textOf(h.get('dialog-body')),dialogBefore);
+      assert.equal(h.calls.filter(x=>x.action==='history' && x.session===SB).length,0);
+      assert.equal(h.calls.filter(x=>x.action==='continue_unified').length,1);
+      assert.equal(h.run('state.continuationBusy'),false);
+    }
+  },
   async unified_continuation_is_explicit_idempotent_and_navigation_safe() {
     for(const interrupted of ['cancel','close','navigate','error','repeat','success']) {
       const pending=deferred();let attempts=0;

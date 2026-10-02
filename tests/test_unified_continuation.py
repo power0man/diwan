@@ -560,3 +560,119 @@ def test_retry_from_older_ancestor_reaches_current_leaf_after_settings_are_rever
         assert provider.requests==[]
         assert ask(app,provider,returned)['status']=='complete'
     finally:app.close()
+
+
+@pytest.mark.parametrize("phase", ["no-interruption", "before-init", "before-publish", "after-publish"])
+def test_removed_agent_provider_continues_in_text_with_frozen_history(tmp_path, monkeypatch, phase):
+    import webui.server as server
+
+    provider = Provider()
+    root = tmp_path.resolve() / "ui"
+    app = open_app(root, provider)
+    old = ctx(app)
+    source = api(app, "create_project", name="مصدر")['id']
+    secret = "رمز انتقال الوضع ٦٤٢١"
+    item = api(app, "memory_remember", project=source, text=secret)['item_id']
+    assert ask(app, provider, old, answer=secret)["status"] == "complete"
+    history = api(app, "history", **old, before=None)
+    sid = successor_id(old["session"])
+    initialize, rename = app.agent_session, server.os.rename
+
+    def interrupt_init(project, session_id, **kwargs):
+        if phase == "before-init" and session_id == sid and kwargs.get("create"):
+            raise OSError("synthetic interrupted initialization")
+        return initialize(project, session_id, **kwargs)
+
+    def interrupt_publish(src, dst, **kwargs):
+        if src == sid and phase == "before-publish":
+            raise OSError("synthetic interrupted publication")
+        result = rename(src, dst, **kwargs)
+        if src == sid and phase == "after-publish":
+            raise OSError("synthetic lost acknowledgement")
+        return result
+
+    if phase != "no-interruption":
+        with monkeypatch.context() as patch:
+            patch.setattr(app, "agent_session", interrupt_init)
+            patch.setattr(server.os, "rename", interrupt_publish)
+            with pytest.raises(OSError):
+                continuation(app, old)
+    manifests = {p: p.read_bytes() for p in root.rglob("manifest.json")}
+    app.close()
+    app = open_app(root, provider, "text")
+    try:
+        assert api(app, "projects")["default_session_mode"] == "text"
+        calls = len(provider.requests)
+        new = continuation(app, old)
+        expected = sid if phase == "no-interruption" else successor_id(sid)
+        assert new["session"] == expected
+        assert continuation(app, old) == new == ctx(app)
+        assert api(app, "default_workspace")["session"]["mode"] == "text"
+        assert len(provider.requests) == calls
+        assert all(p.read_bytes() == raw for p, raw in manifests.items())
+        assert api(app, "history", **old, before=None) == history
+        assert api(app, "history", **new, before=None)["turns"] == []
+        if phase != "no-interruption":
+            staged_context = {**old, "session": sid}
+            assert app.metadata(app.project(old["project"]) / "sessions" / sid)["mode"] == "agent"
+            assert api(app, "history", **staged_context, before=None)["turns"] == []
+        assert list((root / "staging").iterdir()) == []
+        assert ask(app, provider, new, mode="text", answer=secret)["status"] == "complete"
+        assert secret in str(provider.requests[-1].messages)
+        isolated = api(app, "create_session", project=old["project"], name="محصور", mode="text")
+        assert ask(app, provider, {**old, "session": isolated["id"]}, mode="text")["status"] == "complete"
+        assert secret not in str(provider.requests[-1].messages)
+        forgotten = api(app, "memory_forget", project=source, item_id=item)["receipt"]
+        assert set(forgotten["scrubbed"]) == {f"agent:{old['session']}", f"text:{new['session']}"}
+        for context in (old, new):
+            assert secret not in str(api(app, "history", **context, before=None))
+    finally:
+        app.close()
+    # Re-enabling tools does not silently change a usable text successor's mode.
+    app = open_app(root, provider)
+    try:
+        assert continuation(app, old) == new == ctx(app)
+        assert ask(app, provider, new, mode="text")["status"] == "complete"
+        assert secret not in str(provider.requests[-1].messages)
+    finally:
+        app.close()
+
+
+@pytest.mark.parametrize("position", ["predecessor", "successor"])
+def test_removed_agent_provider_does_not_abandon_pending_action(tmp_path, position):
+    provider = Provider()
+    root = tmp_path.resolve() / "ui"
+    app = open_app(root, provider)
+    old = ctx(app)
+    pending_context = continuation(app, old) if position == "successor" else old
+    provider.responses = [response("اقتراح", ToolCall("remember", "propose_memory", {"text": "مصطنع"}))]
+    assert api(app, "agent_ask", **pending_context, turn=uuid.uuid4().hex,
+               message="تذكر", files=[])["status"] == "awaiting_owner"
+    before = {p: p.read_bytes() for p in root.rglob("*.json")}
+    app.close()
+    app = open_app(root, provider, "text")
+    try:
+        with pytest.raises(UIError) as exc:
+            continuation(app, old)
+        assert exc.value.code == "turn_unresolved"
+        assert ctx(app) == pending_context
+        assert len(provider.requests) == 1
+        assert all(p.read_bytes() == raw for p, raw in before.items())
+    finally:
+        app.close()
+
+
+def test_removed_agent_provider_still_rejects_new_agent_sessions_without_staging(tmp_path):
+    provider = Provider()
+    app = open_app(tmp_path.resolve() / "ui", provider, "text")
+    try:
+        old = ctx(app)
+        before = api(app, "sessions", project=old["project"])
+        with pytest.raises(UIError) as exc:
+            api(app, "create_session", project=old["project"], name="غير متاح", mode="agent")
+        assert exc.value.code == "agent_unavailable"
+        assert api(app, "sessions", project=old["project"]) == before
+        assert list((app.root / "staging").iterdir()) == []
+        assert provider.requests == []
+    finally:
+        app.close()

@@ -394,7 +394,6 @@ class LocalApp:
                 need(mode in SESSION_MODES, "session_mode_invalid")
                 need(self.storage_scope is None or mode != "media", "cloud_media_not_supported")
                 need(mode != "media" or self.media_enabled, "media_unavailable")
-                need(mode != "agent" or self.agent_enabled, "agent_unavailable")
                 need(mode != "research" or self.research_enabled, "research_unavailable")
                 need(mode != "coder" or self.agent_enabled, "coder_unavailable")
                 need(mode != "translate" or self.agent_enabled, "translate_unavailable")
@@ -410,6 +409,9 @@ class LocalApp:
                 need(len(os.listdir(fd)) < 64, "staging_limit")
                 recovering = value["id"] in os.listdir(fd)
                 need(not recovering or continuation_of is not None, "id_conflict")
+                # An interrupted unified successor can be completed as inert
+                # history even after its agent provider has been removed.
+                need(mode != "agent" or self.agent_enabled or recovering, "agent_unavailable")
                 if not recovering:
                     os.mkdir(value["id"], 0o700, dir_fd=fd)
                     os.fsync(fd)
@@ -492,7 +494,6 @@ class LocalApp:
                 for _ in range(64):
                     previous = self.metadata(project / "sessions" / session_id)
                     mode = previous["mode"]
-                    need(mode != "agent" or self.agent_enabled, "agent_unavailable")
                     old = (self.agent_session(project, session_id, historical=True)
                            if mode == "agent" else self.session(project, session_id))
                     history = old.history()
@@ -507,13 +508,25 @@ class LocalApp:
                         need(value.get("continuation_of") == session_id
                              and value.get("system_role") == UNIFIED_SESSION_ROLE, "metadata_invalid")
                     else:
+                        next_mode = (self.default_session_mode
+                                     if mode == "agent" and not self.agent_enabled else mode)
+                        staged = self.root / "staging" / sid
+                        if staged.exists() or staged.is_symlink():
+                            # Preserve a staged mode just like a published one;
+                            # create validates its complete expected metadata.
+                            with self.directory(staged) as fd:
+                                pending = _read_json(fd, "meta.json")
+                            need(type(pending) is dict, "metadata_invalid")
+                            next_mode = pending.get("mode")
                         value = self.create(project / "sessions", "محادثة عامة", chat=True,
-                                            mode=mode, item_id=sid, system_role=UNIFIED_SESSION_ROLE,
+                                            mode=next_mode, item_id=sid, system_role=UNIFIED_SESSION_ROLE,
                                             continuation_of=session_id)
+                    mode = value["mode"]
                     following = (self.agent_session(project, sid, historical=True)
                                  if mode == "agent" else self.session(project, sid))
                     current = (following.config["model"] == self.model
                                and following.config["model_version"] == self.model_version)
+                    current = current and (mode != "agent" or self.agent_enabled)
                     if mode == "agent":
                         current = current and following.config["tools"] == [
                             spec.declared() for spec in self.mode_registry(project, mode).specs()]
