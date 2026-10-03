@@ -1,0 +1,339 @@
+{
+  "schema_version": 1,
+  "issue": 281,
+  "base_commit": "cda7fd74ec8ddac9fbdbf84e0513cf78059b2c26",
+  "platform": "macOS 27.0.1 arm64",
+  "sample_origin": "self-authored text; macOS Majed, rate 160; no owner recordings",
+  "baseline": {
+    "schema_version": 1,
+    "source": "self_authored_text_macos_Majed_synthetic_speech",
+    "model": "whisper.cpp small multilingual",
+    "model_revision": "5359861c739e955e79d9a303bcbc70fb988958b1",
+    "build": {
+      "version": "1.9.4",
+      "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+      "source_sha256": "57e280cee375ab02425b806ad5146b99f6eb9357e3c2b31357c8a6af2e2e44ae",
+      "cpu_only": true,
+      "build_threads": 2,
+      "elapsed_seconds": 26.903511916999378
+    },
+    "cases": [
+      {
+        "id": "synthetic-01",
+        "reference": "أغلق النافذة ثم افتح الكتاب",
+        "audio_sha256": "b9fea53de76fe21dd8076c8bb18bbe6510ff4defdfcc8ab6fd5e8f89ade29909",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 55890
+        },
+        "elapsed_seconds": 3.05318087500018,
+        "status": "ok",
+        "text": "اغلق نافذة ثم افتح الكتاب",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-02",
+        "reference": "يبدأ الاجتماع غدا في الساعة التاسعة",
+        "audio_sha256": "9e189184e67ca718b8a1bee80be52580665ffe0ff98abe07771b2877bd83f2f1",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 66525
+        },
+        "elapsed_seconds": 1.4808649579999837,
+        "status": "ok",
+        "text": "يبدأ الاجتماعي غدا في الساعة التاسعة",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-03",
+        "reference": "أرسل رسالة قصيرة إلى الفريق",
+        "audio_sha256": "5b5f79d3854b95eb4b5f2b9b6c10177d9cbc77fe1d960f1b3bd9b9e1d31d9382",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 58109
+        },
+        "elapsed_seconds": 1.4188086250005654,
+        "status": "ok",
+        "text": "أرسل رسالة قصيرة إلى الفريق",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-04",
+        "reference": "الذكاء الاصطناعي يساعد في تحليل النصوص",
+        "audio_sha256": "14cdf3e4e941b73735696d9c012272a732ea2638c90a20ec1b1f542c2c956530",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 71107
+        },
+        "elapsed_seconds": 1.53417595800056,
+        "status": "ok",
+        "text": "الذكاء السبناعي يساعد في تحليل النصوص",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-05",
+        "reference": "هذا ملف جديد يحتوي على أربع صفحات",
+        "audio_sha256": "80b2f74dc211109c77a88ba4c30f3b6d5bf347ab48d256071be842509da8ff74",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 70564
+        },
+        "elapsed_seconds": 1.4770189159999063,
+        "status": "ok",
+        "text": "هذا ملف جديد يحتوي على أربع صفحات",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-06",
+        "reference": "لا تحذف البيانات القديمة",
+        "audio_sha256": "6f05bae274f62ce9a7fca2d1ddd7ddc0c4a67a448cbbb3a6dff6a6b677c406d0",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 42122
+        },
+        "elapsed_seconds": 1.3701629580000372,
+        "status": "ok",
+        "text": "لا تحذف البيانات القديمة",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-07",
+        "reference": "",
+        "audio_sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 32000
+        },
+        "elapsed_seconds": 3.5402700409995305,
+        "status": "ok",
+        "text": "اشتركوا و اشتركوا و اشتركوا.",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      }
+    ],
+    "summary": {
+      "attempted": 7,
+      "completed": 7,
+      "errors": 0,
+      "wer": 0.12121212121212122,
+      "cer": 0.03804347826086957,
+      "silence_hallucinations": 1,
+      "synthetic_only": true,
+      "release_ready": false
+    },
+    "limits": [
+      "synthetic_not_real_speech",
+      "single_voice_not_dialects",
+      "not_the_frozen_Common_Voice_bank",
+      "no_TTS_acceptance",
+      "no_production_activation",
+      "punctuation_hamza_taa_not_conflated"
+    ],
+    "measured_source_sha256": {
+      "multimodal/local_asr.py": "6777ab506b2bf50f16e762c83927d2c48d33b669dde48f29877ec991ff680b19",
+      "tools/transcribe_audio.py": "d9c7032e87f871fe610207c2f06c8a87c2603b3c848e21f228b2794f074a097e",
+      "evaluation/speech_pilot.py": "19850a602d0dcbc1d58b382bf9cf8445747a2da6234f3089e1bf16bbd52a7985"
+    }
+  },
+  "after_digital_silence_guard": {
+    "schema_version": 1,
+    "source": "self_authored_text_macos_Majed_synthetic_speech",
+    "model": "whisper.cpp small multilingual",
+    "model_revision": "5359861c739e955e79d9a303bcbc70fb988958b1",
+    "build": {
+      "version": "1.9.4",
+      "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+      "source_sha256": "57e280cee375ab02425b806ad5146b99f6eb9357e3c2b31357c8a6af2e2e44ae",
+      "cpu_only": true,
+      "build_threads": 2,
+      "elapsed_seconds": 26.903511916999378
+    },
+    "cases": [
+      {
+        "id": "synthetic-01",
+        "reference": "أغلق النافذة ثم افتح الكتاب",
+        "audio_sha256": "b9fea53de76fe21dd8076c8bb18bbe6510ff4defdfcc8ab6fd5e8f89ade29909",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 55890
+        },
+        "elapsed_seconds": 1.4851266659998146,
+        "status": "ok",
+        "text": "اغلق نافذة ثم افتح الكتاب",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-02",
+        "reference": "يبدأ الاجتماع غدا في الساعة التاسعة",
+        "audio_sha256": "9e189184e67ca718b8a1bee80be52580665ffe0ff98abe07771b2877bd83f2f1",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 66525
+        },
+        "elapsed_seconds": 1.5246388750001643,
+        "status": "ok",
+        "text": "يبدأ الاجتماعي غدا في الساعة التاسعة",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-03",
+        "reference": "أرسل رسالة قصيرة إلى الفريق",
+        "audio_sha256": "5b5f79d3854b95eb4b5f2b9b6c10177d9cbc77fe1d960f1b3bd9b9e1d31d9382",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 58109
+        },
+        "elapsed_seconds": 1.4721296249999796,
+        "status": "ok",
+        "text": "أرسل رسالة قصيرة إلى الفريق",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-04",
+        "reference": "الذكاء الاصطناعي يساعد في تحليل النصوص",
+        "audio_sha256": "14cdf3e4e941b73735696d9c012272a732ea2638c90a20ec1b1f542c2c956530",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 71107
+        },
+        "elapsed_seconds": 1.5360562500000015,
+        "status": "ok",
+        "text": "الذكاء السبناعي يساعد في تحليل النصوص",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-05",
+        "reference": "هذا ملف جديد يحتوي على أربع صفحات",
+        "audio_sha256": "80b2f74dc211109c77a88ba4c30f3b6d5bf347ab48d256071be842509da8ff74",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 70564
+        },
+        "elapsed_seconds": 1.4824060419996385,
+        "status": "ok",
+        "text": "هذا ملف جديد يحتوي على أربع صفحات",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-06",
+        "reference": "لا تحذف البيانات القديمة",
+        "audio_sha256": "6f05bae274f62ce9a7fca2d1ddd7ddc0c4a67a448cbbb3a6dff6a6b677c406d0",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 42122
+        },
+        "elapsed_seconds": 1.3644277910007077,
+        "status": "ok",
+        "text": "لا تحذف البيانات القديمة",
+        "language": "ar",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      },
+      {
+        "id": "synthetic-07",
+        "reference": "",
+        "audio_sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa",
+        "metadata": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "sample_width": 2,
+          "frames": 32000
+        },
+        "elapsed_seconds": 0.20311649999985093,
+        "status": "no_speech",
+        "text": "",
+        "language": "ar",
+        "detector": "digital_silence_only",
+        "binary_sha256": "0e74fa204390b3a5e79f8cb2df1352f3d7418885aca5464ba30f6ef7e2bca7fe",
+        "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "release_ready": false
+      }
+    ],
+    "summary": {
+      "attempted": 7,
+      "completed": 7,
+      "errors": 0,
+      "wer": 0.12121212121212122,
+      "cer": 0.03804347826086957,
+      "silence_hallucinations": 0,
+      "synthetic_only": true,
+      "release_ready": false
+    },
+    "measured_source_sha256": {
+      "multimodal/local_asr.py": "c5c085ed323b87f84752d8549c6913c335b80d78b21e1ac74875ecbe5d6a5ab0",
+      "tools/transcribe_audio.py": "d9c7032e87f871fe610207c2f06c8a87c2603b3c848e21f228b2794f074a097e",
+      "evaluation/speech_pilot.py": "f343db7b39d9cd5b76541e702fff4af92faebd73a066392284c3d7d6a50ce56e"
+    },
+    "limits": [
+      "synthetic_not_real_speech",
+      "single_voice_not_dialects",
+      "not_the_frozen_Common_Voice_bank",
+      "no_TTS_acceptance",
+      "no_production_activation",
+      "punctuation_hamza_taa_not_conflated"
+    ]
+  },
+  "release_ready": false
+}
