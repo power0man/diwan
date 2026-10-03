@@ -339,7 +339,7 @@ class AgentSession:
                  project_id: str, registry: ToolRegistry, model: str, model_version: str,
                  max_steps: int = 8, max_output: int = 1024, deadline_s: float = 120,
                  max_context_chars: int = 24000, max_turns: int = 128,
-                 system: str = SYSTEM, memory=None, storage_scope=None):
+                 system: str = SYSTEM, memory=None, storage_scope=None, observer=None):
         if not _id(session_id) or not _id(project_id):
             _fail("session_identity_invalid", "هوية مشروع وجلسة صريحتان مطلوبتان")
         if not isinstance(registry, ToolRegistry) or not _text(model) or not _text(model_version):
@@ -356,6 +356,7 @@ class AgentSession:
         self.root = Path(control_root).absolute() / session_id
         self.workspace = Path(workspace_root).absolute()
         self.storage_scope = storage_scope
+        self.observer = observer
         storage_config = session_storage(storage_scope, self.root)
         if storage_scope is not None:
             storage_scope.binding(self.workspace)
@@ -967,7 +968,9 @@ class AgentSession:
 
     def _run(self, state, turn, provider):
         try:
-            run = run_agent(_user_message(turn["text"]).content, _ProviderGuard(self, state, turn, provider),
+            from conversation.observability import observed
+            run = run_agent(_user_message(turn["text"]).content,
+                            _ProviderGuard(self, state, turn, observed(provider, self.observer)),
                             self.registry, self.context,
                             ledger=self.ledger, budget=Budget(0, 0), model=self.config["model"],
                             model_version=self.config["model_version"], max_steps=self.config["max_steps"],
