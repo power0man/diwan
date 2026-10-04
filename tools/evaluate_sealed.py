@@ -33,6 +33,7 @@ sys.path.insert(0, str(ROOT))
 
 from core import signing
 from core.contracts import Message, Request
+from core.execution import ExecutionRefused
 from core.locality import is_local_provider
 from core.sandbox import configure_sandbox_backend, sandbox_configuration
 from evaluation import capabilities
@@ -155,11 +156,18 @@ def preflight(provider, judge, engine: str) -> None:
         raise SealedRefused("sealed_requires_local_provider", "محكِّمُ المحجوب محليٌّ وحده")
 
 
-def read_evidence(path: Path, sealed_root: Path) -> dict:
-    """دليلُ المعايرة يُقرأ بعد الفحص المسبق، ولا يُقرأ من داخل المحجوب، وعطبُه رفضٌ مسمًّى."""
+def _outside_sealed(path: Path, sealed_root: Path, code: str) -> Path:
+    """كلُّ مسارٍ يسمّيه المستدعي غيرَ المحجوب نفسِه (دليلُ المعايرة، وإيصالُ الحاوية ومساحتُها، ومجلّدُ التشغيل) خارجَ
+    المحجوب: فلا يُفتح منه ملفٌّ قبل أن يُوثَّق بالبيان، ولا يُكتب فيه (ملاحظات Codex على #289)."""
     resolved, sealed = Path(path).expanduser().resolve(), Path(sealed_root).expanduser().resolve()
     if resolved == sealed or sealed in resolved.parents:
-        raise SealedRefused("judge_evidence_in_sealed_root", "دليلُ المعايرة من المفتوح، لا من المحجوب")
+        raise SealedRefused(code, "ما يسمّيه المستدعي يُقرأ ويُكتب خارج المحجوب")
+    return resolved
+
+
+def read_evidence(path: Path, sealed_root: Path) -> dict:
+    """دليلُ المعايرة يُقرأ بعد الفحص المسبق، ولا يُقرأ من داخل المحجوب، وعطبُه رفضٌ مسمًّى."""
+    resolved = _outside_sealed(path, sealed_root, "judge_evidence_in_sealed_root")
     try:
         return json.loads(resolved.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError):
@@ -244,7 +252,8 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         judge_rules.accept_sealed_judge(judge_evidence, judge.model, protocol, protocol_sha256, truth,
                                         judge_digest=judge_digest)
     sealed_root = _outside_repository(sealed_root, "sealed_root_in_repository")
-    run_root = _outside_repository(run_root, "sealed_run_root_in_repository")
+    run_root = _outside_sealed(_outside_repository(run_root, "sealed_run_root_in_repository"), sealed_root,
+                               "sealed_run_root_in_sealed_root")
     # مجلّدُ التشغيل معزولٌ ببصمة المُشغِّل: فشيفرةٌ تغيّرت لا تعيد أجوبةَ دفتر شيفرةٍ سابقة وتُنسب إليها (ملاحظة Codex على #289)
     runner = runner_sha256()
     sandbox = sandbox_configuration()
@@ -359,12 +368,15 @@ def main(argv=None) -> int:
         preflight(provider, judge, engine)
         evidence = read_evidence(args.judge_evidence, args.sealed_root) if args.judge_evidence else None
         if args.sandbox_receipt:
-            workspace = _outside_repository(args.sandbox_workspace, "sealed_run_root_in_repository")
+            receipt = _outside_sealed(args.sandbox_receipt, args.sealed_root, "sandbox_receipt_in_sealed_root")
+            workspace = _outside_sealed(_outside_repository(args.sandbox_workspace, "sealed_run_root_in_repository"),
+                                        args.sealed_root, "sandbox_workspace_in_sealed_root")
             workspace.mkdir(parents=True, exist_ok=True)
-            configure_sandbox_backend(args.sandbox_receipt.resolve(), workspace)
+            configure_sandbox_backend(receipt, workspace)
         report = run_sealed(args.sealed_root, provider, run_root=args.run_root,
                             judge=judge, judge_evidence=evidence)
-    except (SealedRefused, judge_rules.JudgeRefused) as exc:
+    # إيصالٌ غائبٌ أو معطوبٌ أو غيرُ خاصّ يُردّ من إقلاع الحاوية بـExecutionRefused ورمزِه، فيخرج رفضًا مسمًّى لا أثرًا خامًا
+    except (SealedRefused, judge_rules.JudgeRefused, ExecutionRefused) as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2
     if not args.sandbox_receipt:

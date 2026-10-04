@@ -420,6 +420,40 @@ def test_a_corrupted_protocol_is_refused_by_name_not_at_import(tmp_path, monkeyp
     assert json.loads(capsys.readouterr().out)["code"] == "judge_protocol_changed"
 
 
+def test_sandbox_paths_and_the_run_root_stay_outside_the_sealed_root(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #289: إيصالُ الحاوية كان يُفتح من داخل المحجوب قبل أن يوثّقه البيان، بلا حارسِ دليل المعايرة؛
+    والآن كلُّ مسارٍ يسمّيه المستدعي (الإيصالُ ومساحتُه ومجلّدُ التشغيل) يُردّ إن وقع داخله، قبل أن يُقلع شيء."""
+    sealed_root = tmp_path / "diwan-sealed" / "kimi_v1"
+    sealed_root.mkdir(parents=True)
+    monkeypatch.setattr(sealed, "configure_sandbox_backend", lambda *a: pytest.fail("أُقلعت الخلفيّة بمسارٍ في المحجوب"))
+    common = ["--sealed-root", str(sealed_root), "--run-root", str(tmp_path / "runs")]
+    outside = ["--sandbox-workspace", str(tmp_path / "sandbox")]
+    assert sealed.main(common + outside + ["--sandbox-receipt", str(sealed_root / "receipt.json")]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "sandbox_receipt_in_sealed_root"
+    assert sealed.main(common + ["--sandbox-receipt", str(tmp_path / "receipt.json"),
+                                 "--sandbox-workspace", str(sealed_root / "sandbox")]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "sandbox_workspace_in_sealed_root"
+    bank_root, manifest = _bank(tmp_path / "b")
+    with pytest.raises(SealedRefused) as refused:
+        sealed.run_sealed(bank_root, Provider(), run_root=bank_root / "runs", manifest_path=manifest,
+                          manifest_sha256=_sha(manifest))
+    assert refused.value.code == "sealed_run_root_in_sealed_root" and not (bank_root / "runs").exists()
+
+
+def test_a_refused_sandbox_receipt_is_a_named_refusal_not_a_traceback(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #289: إيصالٌ غائبٌ أو معطوبٌ أو غيرُ خاصّ يرفع ExecutionRefused من إقلاع الحاوية، وكان يخرج أثرًا
+    خامًا؛ والآن رفضٌ مسمًّى برمزه كسائر الرفض."""
+    from core.execution import ExecutionRefused
+
+    def refuse(*_):
+        raise ExecutionRefused("execution_receipt_untrusted", "synthetic")
+    monkeypatch.setattr(sealed, "configure_sandbox_backend", refuse)
+    assert sealed.main(["--sealed-root", str(tmp_path / "diwan-sealed" / "kimi_v1"), "--run-root", str(tmp_path / "runs"),
+                        "--sandbox-receipt", str(tmp_path / "receipt.json"),
+                        "--sandbox-workspace", str(tmp_path / "sandbox")]) == 2
+    assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "execution_receipt_untrusted"}
+
+
 def test_judge_evidence_is_never_read_from_the_sealed_root_and_a_bad_one_is_named(tmp_path, capsys):
     sealed_root = tmp_path / "diwan-sealed" / "kimi_v1"
     inside = sealed_root / "calibration.json"
