@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PROTOCOL = ROOT / "evaluation" / "protocols" / "judge_v1.json"
 K11_EVIDENCE = ROOT / "docs" / "probe" / "k11-owner-queue-triage-20260925.json"
 OPEN_BANK = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
-PROTOCOL_SHA256 = "f2ecbb23f78674270bac9845fcb465608a306940a2bcd6243c0c592f1e914f78"
+PROTOCOL_SHA256 = "5d252d4ad72df75e698d100243c191bf7301afacead2476908689b659965a4e5"
 VERDICTS = ("correct", "incorrect")
 OUTCOMES = ("pass", "fail", "without_checks", "error")
 # نصٌّ أقصرُ من هذا لا يُبحث عنه في التقرير: كلمةٌ قصيرة كـ«نعم» تقع في أيّ تقرير ولا تدلّ على حالة.
@@ -173,6 +173,10 @@ def calibration_sample(protocol: dict, protocol_sha256: str, *, open_bank: Path 
     sources = {source["name"]: source for source in protocol["calibration"]["sources"]}
     triage = json.loads(Path(k11_evidence).read_text(encoding="utf-8"))
     owner = sorted(row["id"] for row in triage["real"] + triage["false_positives"])
+    # حالاتُ ك١١ مثبَّتةٌ ببصمة قائمتها: فملفُّ فرزٍ عُدّل ليسمّي ٢٣ حالةً أخرى لا يبني عيّنةً غيرَ المسجَّلة تحت
+    # بصمة judge_v1 نفسِها (ملاحظة Codex على #289)
+    if hashlib.sha256(_json_bytes(owner)).hexdigest() != sources["k11_owner_ruled"]["case_ids_sha256"]:
+        raise JudgeRefused("calibration_k11_changed", "حالاتُ ك١١ غيرُ المسجَّلة في judge_v1؛ يُسجَّل judge_v2")
     kinds = set(sources["automatic_checked"]["check_kinds"])
     pool: dict[str, list[str]] = {}
     for tier, suite in _open_suites(open_bank, protocol["calibration"]["open_bank_sha256"]):

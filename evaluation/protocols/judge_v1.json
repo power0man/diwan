@@ -64,6 +64,8 @@
         "name": "k11_owner_ruled",
         "evidence": "docs/probe/k11-owner-queue-triage-20260925.json",
         "cases": 23,
+        "case_ids_sha256": "58a30c44a3fb795cf90358718d88ee70c86181245fdf31145c3ef76b0b449c96",
+        "case_ids_rule": "sha256_of_the_canonical_json_of_the_sorted_ids_of_real_and_false_positives_in_the_evidence_file",
         "candidate": "the_bank_v1_1_reference_as_reviewed_in_k11_and_each_row_must_carry_it_unchanged",
         "label": "owner_ruling_attested_by_the_owner_signature_over_the_evidence",
         "label_status": "awaiting_owner_ruling"
@@ -156,6 +158,7 @@
     "the_owner_mac_is_attested_by_the_owner_key_not_the_hardware_so_a_machine_holding_a_copy_of_that_key_passes",
     "the_runtime_pins_the_runner_and_provider_inputs_listed_here_not_the_ollama_server_build_or_its_quantization_beyond_the_model_digest",
     "the_runner_digest_covers_every_python_file_of_each_repository_package_the_runner_imported_and_is_published_and_isolates_the_run_root_but_is_not_pinned_here_because_the_runner_pins_this_protocol_digest",
-    "a_package_first_imported_after_the_run_starts_is_not_in_the_runner_digest"
+    "a_package_first_imported_after_the_run_starts_is_not_in_the_runner_digest",
+    "the_k11_case_ids_are_pinned_by_digest_so_an_edited_triage_file_that_names_other_cases_is_refused_and_needs_judge_v2"
   ]
 }

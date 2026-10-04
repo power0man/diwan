@@ -14,7 +14,7 @@ from core.signing import SigningRefused
 from evaluation import judge
 from evaluation.judge import JudgeRefused
 
-REGISTERED = "f2ecbb23f78674270bac9845fcb465608a306940a2bcd6243c0c592f1e914f78"
+REGISTERED = "5d252d4ad72df75e698d100243c191bf7301afacead2476908689b659965a4e5"
 DATA = json.loads(judge.PROTOCOL.read_text(encoding="utf-8"))
 # مفتاحُ مالكٍ مصطنعٌ للاختبار وحده؛ ومفتاحُ المالك الحقيقيّ في سلسلة مفاتيح الماك لا في المستودع.
 OWNER_SEED = hashlib.sha256(b"diwan-test-owner-calibration").digest()
@@ -225,7 +225,7 @@ def test_the_calibration_sample_is_frozen_by_the_protocol():
     assert sample["k11_owner_ruled"] == sorted(r["id"] for r in triage["real"] + triage["false_positives"])
     assert len(sample["k11_owner_ruled"]) == 23 and len(set(sample["automatic_checked"])) == 100
     assert hashlib.sha256(json.dumps(sample, sort_keys=True).encode()).hexdigest() == \
-        "3daebc2aef5b9f3aa04b70ebcefd4d1349aa6a0c9c44d14412cde30794876f2b"
+        "de7e5173b5144cfa3a38fe4979cfa35e1fbb945fa6d1260970a47486eac2d84a"
     kinds = {check["kind"] for checks in _truth()["automatic_checked"].values() for check in checks}
     assert kinds <= {"exact", "json_equals"} and all(isinstance(r, str) for r in _truth()["k11_owner_ruled"].values())
 
@@ -242,6 +242,24 @@ def test_a_changed_open_bank_is_refused_by_name(tmp_path):
         with pytest.raises(JudgeRefused) as refused:
             build()
         assert refused.value.code == "calibration_bank_changed"
+
+
+def test_an_edited_k11_triage_naming_other_cases_is_refused_by_name(tmp_path):
+    """ملاحظة Codex على #289: البروتوكول كان يسجّل مسارَ ملفّ الفرز وعددَه وحدهما، فملفٌّ عُدّل ليسمّي ٢٣ حالةً صحيحةً أخرى
+    يبني عيّنةً أخرى تحت بصمة judge_v1 نفسِها. والآن قائمتُها مثبَّتةٌ ببصمتها؛ وإعادةُ ترتيب الملفّ بلا تغيير حالاته تمرّ."""
+    triage = json.loads(judge.K11_EVIDENCE.read_text(encoding="utf-8"))
+    reordered = tmp_path / "reordered.json"
+    reordered.write_text(json.dumps({**triage, "real": triage["real"][::-1]}, indent=1), encoding="utf-8")
+    assert judge.calibration_sample(DATA, REGISTERED, k11_evidence=reordered) == _sample()
+    owner = {row["id"] for row in triage["real"] + triage["false_positives"]}
+    other = next(case["case_id"] for _, suite in judge._open_suites(judge.OPEN_BANK, DATA["calibration"]["open_bank_sha256"])
+                 for case in suite["cases"] if case["case_id"] not in owner)
+    edited = tmp_path / "edited.json"
+    edited.write_text(json.dumps({**triage, "real": [{**triage["real"][0], "id": other}] + triage["real"][1:]}),
+                      encoding="utf-8")
+    with pytest.raises(JudgeRefused) as refused:
+        judge.calibration_sample(DATA, REGISTERED, k11_evidence=edited)
+    assert refused.value.code == "calibration_k11_changed"
 
 
 def test_the_owner_signs_a_domain_separated_message_without_its_signature():
