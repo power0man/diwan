@@ -218,6 +218,15 @@ def _runner_lock(run_root: Path):
             filelock.unlock(stream)
 
 
+def _quarantine(run_root: Path, since: float) -> list[str]:
+    """حَجرُ تشغيلات المجلّد برفضٍ مسمًّى: مجلّدُ حَجرٍ هو رابطٌ رمزيّ أو ليس مجلّدًا يُردّ قبل أن يُنقل إليه شيء
+    (ملاحظة Codex على #289)."""
+    try:
+        return quarantine_runs_since(run_root, since)
+    except ModelDigestError as exc:
+        raise SealedRefused(exc.code, "مجلّدُ الحَجر رابطٌ رمزيّ أو ليس مجلّدًا") from None
+
+
 POST_CHECK_PENDING = "post-check-pending.json"
 
 
@@ -233,7 +242,7 @@ def _open_post_check(run_root: Path) -> float:
             since = float(json.loads(pending.read_text(encoding="utf-8"))["started"])
         except (OSError, ValueError, KeyError, TypeError):
             since = 0.0
-        quarantine_runs_since(run_root, since)
+        _quarantine(run_root, since)
     started = time.time() - 1
     # مؤقّتٌ باقٍ قد يكون رابطًا صلبًا إلى ملفٍّ مختوم، فتُزال مدخلتُه ويُنشأ جديدًا، ولا يُقطع ما يشاركه (ملاحظة Codex على #289)
     temporary.unlink(missing_ok=True)
@@ -484,7 +493,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         except ModelDigestError as exc:
             # الرفضُ وحده لا يكفي: أجوبةُ ما بعد الانحراف في دفترٍ مفتاحُه البصمةُ المثبَّتة، فوسمٌ أُعيد يعيد عرضَها في
             # التشغيل التالي ويمرّ تحقّقُه؛ فتُنقل تشغيلاتُ هذا الاستدعاء إلى drift-quarantine كما في #290 (ملاحظة Codex على #289)
-            moved = quarantine_runs_since(run_root, started)
+            moved = _quarantine(run_root, started)
             (run_root / POST_CHECK_PENDING).unlink(missing_ok=True)
             raise SealedRefused(exc.code, f"تغيّرت بصمةُ نموذجٍ أثناء التشغيل؛ نُقلت {len(moved)} تشغيلة") from None
         # والطلبُ المُعاد بلا think (_SealedOllama يعدّه) ليس الإعدادَ المسجَّل: تُنشر أعدادُه ويُسمّى تبديلًا. وأجوبتُه في
@@ -493,7 +502,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         fallbacks = {"engine": getattr(provider, "think_fallbacks", 0),
                      "judge": None if judge is None else getattr(judge, "think_fallbacks", 0)}
         if any(fallbacks.values()):
-            quarantine_runs_since(run_root, started)
+            _quarantine(run_root, started)
             overrides.append("think_fallback")
         (run_root / POST_CHECK_PENDING).unlink()
     out = {"schema_version": 1, "probe": "k45-sealed", "status": None, "overrides": None,

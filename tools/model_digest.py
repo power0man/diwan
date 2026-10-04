@@ -80,6 +80,10 @@ def quarantine_runs_since(run_root: Path, started: float) -> list[str]:
     if not root.is_dir() or root.is_symlink():
         return []
     target = root / QUARANTINE_DIR
+    # ومجلّدُ الحَجر مجلّدٌ حقيقيّ: رابطٌ رمزيّ مُسبَقٌ باسمه كان يُنقل إليه الدفاترُ (وفيها الأسئلةُ والأجوبة) إلى حيث يشير،
+    # ولو إلى المستودع (ملاحظة Codex على #289)
+    if target.is_symlink() or (target.exists() and not target.is_dir()):
+        raise ModelDigestError("quarantine_dir_unsafe")
     moved = []
     for run_dir in sorted(p for p in root.iterdir() if p.name != QUARANTINE_DIR and p.is_dir() and not p.is_symlink()):
         files = [f for f in run_dir.rglob("*") if f.is_file() and not f.is_symlink()]

@@ -374,6 +374,28 @@ def test_a_symlinked_runner_directory_or_file_is_refused_before_anything_is_writ
     assert not {sealed.RUNNER_LOCK, sealed.POST_CHECK_PENDING} & {p.name for p in sealed_root.rglob("*")}
 
 
+@pytest.mark.parametrize("kind", ["symlink", "file"])
+def test_a_quarantine_that_is_a_link_or_not_a_directory_is_refused_before_runs_are_moved(tmp_path, kind):
+    """ملاحظة Codex على #289: علامةُ استدعاءٍ مقطوع تبلغ الحَجر، وكان رابطٌ رمزيّ مُسبَقٌ باسم drift-quarantine (إلى المستودع
+    مثلًا) ينقل إليه الدفاترَ وفيها أسئلةُ المحجوب وأجوبتُه. فيُردّ برمزٍ مسمًّى قبل أن يُنقل شيءٌ أو يُسأل نموذج."""
+    runner = tmp_path / "runs" / f"runner-{sealed.runner_sha256()[:24]}"
+    run = runner / "run-interrupted"
+    run.mkdir(parents=True)
+    (run / "ledger.jsonl").write_text("{}\n", encoding="utf-8")
+    (runner / sealed.POST_CHECK_PENDING).write_text(json.dumps({"started": 0}), encoding="utf-8")
+    elsewhere = tmp_path / "checkout"
+    elsewhere.mkdir()
+    if kind == "symlink":
+        (runner / model_digest.QUARANTINE_DIR).symlink_to(elsewhere, target_is_directory=True)
+    else:
+        (runner / model_digest.QUARANTINE_DIR).write_text("", encoding="utf-8")
+    engine = Provider()
+    with pytest.raises(SealedRefused) as refused:
+        _run(tmp_path, engine)
+    assert refused.value.code == "quarantine_dir_unsafe" and engine.calls == 0
+    assert (run / "ledger.jsonl").exists() and not any(elsewhere.iterdir())
+
+
 @pytest.mark.parametrize("entry", [sealed.RUNNER_LOCK, sealed.POST_CHECK_PENDING])
 def test_a_hard_linked_lock_or_marker_is_refused_before_it_is_opened(tmp_path, entry):
     """ملاحظة Codex على #289: العلامةُ رابطٌ صلبٌ إلى ملفٍّ مختوم تمرّ بـ_plain، وكانت تُقرأ منه قبل تحقيق أيِّ محجوب؛

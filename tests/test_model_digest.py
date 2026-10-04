@@ -292,3 +292,23 @@ def test_a_measurement_that_fails_after_writing_is_still_rechecked_and_quarantin
         with pytest.raises(RuntimeError, match="boom"):
             _invoke("engine", tmp_path, "partial-clean")
     assert (isolated_run_root / "run-partial").is_dir()
+
+
+@pytest.mark.parametrize("kind", ["symlink", "file"])
+def test_a_quarantine_that_is_a_link_or_not_a_directory_is_refused_and_nothing_moves(tmp_path, kind):
+    """ملاحظة Codex على #289: رابطٌ رمزيّ مُسبَقٌ باسم drift-quarantine كان يُنقل إليه الدفاترُ إلى حيث يشير (ولو المستودع)،
+    فيُردّ برمزٍ مسمًّى قبل أن يُنقل شيء؛ وما ليس مجلّدًا كذلك."""
+    from tools.model_digest import QUARANTINE_DIR, ModelDigestError, quarantine_runs_since
+    run = tmp_path / "run-drifted"
+    run.mkdir()
+    (run / "ledger.jsonl").write_text("{}\n", encoding="utf-8")
+    elsewhere = tmp_path.parent / f"{tmp_path.name}-checkout"
+    elsewhere.mkdir()
+    if kind == "symlink":
+        (tmp_path / QUARANTINE_DIR).symlink_to(elsewhere, target_is_directory=True)
+    else:
+        (tmp_path / QUARANTINE_DIR).write_text("", encoding="utf-8")
+    with pytest.raises(ModelDigestError) as refused:
+        quarantine_runs_since(tmp_path, 0)
+    assert refused.value.code == "quarantine_dir_unsafe"
+    assert (run / "ledger.jsonl").exists() and not any(elsewhere.iterdir())
