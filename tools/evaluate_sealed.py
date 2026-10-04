@@ -245,9 +245,18 @@ def _outside_sealed(path: Path, sealed_root: Path, code: str) -> Path:
     return resolved
 
 
+def _outside_sealed_file(path: Path, sealed_root: Path, code: str) -> Path:
+    """وملفٌّ يُقرأ مما يسمّيه المستدعي ليس رابطًا صلبًا ثانيًا: فالمسارُ المحلول لا يكشف رابطًا صلبًا إلى ملفٍّ في المحجوب،
+    فيُفتح المختومُ قبل أن يُوثَّق بالبيان (ملاحظة Codex على #289). والحدُّ محافظ: يُردّ ولو كان الرابطُ الآخرُ خارجَه."""
+    resolved = _outside_sealed(path, sealed_root, code)
+    if resolved.is_file() and resolved.stat().st_nlink != 1:
+        raise SealedRefused(code, "ملفٌّ برابطٍ صلبٍ ثانٍ قد يكون في المحجوب")
+    return resolved
+
+
 def read_evidence(path: Path, sealed_root: Path) -> dict:
     """دليلُ المعايرة يُقرأ بعد الفحص المسبق، ولا يُقرأ من داخل المحجوب، وعطبُه رفضٌ مسمًّى."""
-    resolved = _outside_sealed(path, sealed_root, "judge_evidence_in_sealed_root")
+    resolved = _outside_sealed_file(path, sealed_root, "judge_evidence_in_sealed_root")
     try:
         return json.loads(resolved.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError):
@@ -518,7 +527,7 @@ def main(argv=None) -> int:
         # والتقريرُ يُكتب بعد التقويم، فمسارُه يُفحص قبل التشغيل: إلى المحجوب (ولو عبر رابطٍ رمزيّ) يكتب فوق ملفٍّ مختوم
         out = _outside_sealed(args.out, args.sealed_root, "sealed_out_in_sealed_root") if args.out else None
         if args.sandbox_receipt:
-            receipt = _outside_sealed(args.sandbox_receipt, args.sealed_root, "sandbox_receipt_in_sealed_root")
+            receipt = _outside_sealed_file(args.sandbox_receipt, args.sealed_root, "sandbox_receipt_in_sealed_root")
             workspace = _outside_sealed(_outside_repository(args.sandbox_workspace, "sealed_run_root_in_repository"),
                                         args.sealed_root, "sandbox_workspace_in_sealed_root")
             workspace.mkdir(parents=True, exist_ok=True)

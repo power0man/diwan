@@ -595,6 +595,27 @@ def test_a_hard_linked_report_destination_is_replaced_not_written_through(tmp_pa
     assert json.loads(out.read_text(encoding="utf-8")) == {"status": "measured"}
 
 
+@pytest.mark.parametrize("flag,code", [("--judge-evidence", "judge_evidence_in_sealed_root"),
+                                       ("--sandbox-receipt", "sandbox_receipt_in_sealed_root")])
+def test_a_named_input_hard_linked_into_the_sealed_root_is_refused_before_it_is_read(tmp_path, monkeypatch, capsys,
+                                                                                      flag, code):
+    """ملاحظة Codex على #289 (الرابطُ الصلب): دليلُ المعايرة وإيصالُ الحاوية رابطٌ صلبٌ إلى ملفٍّ مختوم يمرّ بفحص المسار
+    المحلول، فيُفتح المختومُ قبل البيان؛ والآن يُردّ برمز موضعه قبل أن يُقرأ."""
+    sealed_root = tmp_path / "diwan-sealed" / "kimi_v1"
+    target = sealed_root / "tier_a" / "suite.json"
+    target.parent.mkdir(parents=True)
+    target.write_text("{}", encoding="utf-8")
+    linked = tmp_path / "named.json"
+    os.link(target, linked)
+    monkeypatch.setattr(sealed, "configure_sandbox_backend", lambda *a: pytest.fail("قُرئ الإيصالُ المربوط"))
+    argv = ["--sealed-root", str(sealed_root), "--run-root", str(tmp_path / "runs"), "--judge", "granite4", flag, str(linked)]
+    if flag == "--sandbox-receipt":
+        argv += ["--sandbox-workspace", str(tmp_path / "sandbox"), "--judge-evidence", str(tmp_path / "evidence.json")]
+        (tmp_path / "evidence.json").write_text(json.dumps(_evidence()), encoding="utf-8")
+    assert sealed.main(argv) == 2
+    assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": code}
+
+
 def test_a_refused_sandbox_receipt_is_a_named_refusal_not_a_traceback(tmp_path, monkeypatch, capsys):
     """ملاحظة Codex على #289: إيصالٌ غائبٌ أو معطوبٌ أو غيرُ خاصّ يرفع ExecutionRefused من إقلاع الحاوية، وكان يخرج أثرًا
     خامًا؛ والآن رفضٌ مسمًّى برمزه كسائر الرفض."""
