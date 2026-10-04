@@ -19,6 +19,7 @@ from evaluation.judge import JudgeRefused
 from core import filelock, signing
 from evaluation import capabilities
 from providers import ollama as ollama_provider
+from providers.base import ProviderError
 from providers.ollama import OllamaProvider
 from tests.test_judge_protocol_frozen import (DATA, ENGINE_DIGEST, JUDGE_DIGEST, OTHER_SEED, OWNER_PUBLIC, OWNER_SEED,
                                               _evidence, _truth)
@@ -247,6 +248,48 @@ def test_any_override_is_named_and_never_called_a_judge_v1_measurement(tmp_path,
     assert report["status"] == "measured" and report["overrides"] == [] and report["manifest_sha256"] == _sha(manifest)
     assert report["agent"] == "anthropic/claude-fable-5-1"
     assert OVERRIDDEN not in report["measurement_limits"]
+
+
+def test_a_request_resent_without_think_is_counted_and_named_not_called_a_measurement(tmp_path, monkeypatch):
+    """ملاحظة Codex على #289: OllamaProvider.complete يعيد الطلبَ بلا حقل think إن ردّه الخادمُ بـ«does not support
+    thinking»، وcheck_runtime يقرأ الصفةَ والخيارات لا ما أُرسل؛ فكان القياسُ يُنشر «measured» بإعدادٍ غيرِ المسجَّل. والآن
+    يُعدّ كلُّ نداءٍ خرج بلا الحقل، ويُنشر عددُه، ويُسمّى تبديلًا."""
+    refusing, sent = set(), []
+
+    def post(self, payload, timeout):
+        sent.append((self.model, "think" in payload))
+        if self.model in refusing and "think" in payload:
+            raise ProviderError("http_400", f'خطأ خادم Ollama: {{"error":"\\"{self.model}\\" does not support thinking"}}',
+                                retryable=False)
+        return {"model": payload["model"], "message": {"role": "assistant", "content": "نعم"}, "done": True,
+                "done_reason": "stop", "prompt_eval_count": 3, "eval_count": 1}
+    monkeypatch.setattr(OllamaProvider, "_post", post)
+    data = json.loads(judge_rules.PROTOCOL.read_text(encoding="utf-8"))
+    sealed_root, manifest = _bank(tmp_path / "b")
+    data["sealed"]["manifest_sha256"] = _sha(manifest)
+    registered = tmp_path / "judge_v1.json"
+    registered.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(judge_rules, "PROTOCOL", registered)
+    monkeypatch.setattr(judge_rules, "PROTOCOL_SHA256", _sha(registered))
+
+    def measure(run, **judge):
+        return sealed.measure_sealed(sealed_root, FROZEN_ENGINE, agent="anthropic/claude-fable-5-1",
+                                     run_root=tmp_path / run, manifest_path=manifest, **judge)
+    clean = measure("clean")
+    assert clean["status"] == "measured" and clean["overrides"] == []
+    assert clean["think_fallbacks"] == {"engine": 0, "judge": None} and all(think for _, think in sent)
+    refusing.add(FROZEN_ENGINE)
+    resent = measure("resent")
+    # ستُّ حالاتٍ بفحصٍ آليّ وأربعٌ بلا فحص: كلُّها تُسأل، فعشرُ إعاداتٍ بلا think
+    assert resent["think_fallbacks"] == {"engine": 10, "judge": None}
+    assert resent["status"] == "not_measured_overridden" and resent["overrides"] == ["think_fallback"]
+    assert OVERRIDDEN in resent["measurement_limits"]
+    # والمحكِّمُ كذلك: الحالاتُ الأربع بلا فحصٍ تُحكَّم، فأربعُ إعاداتٍ منه وحده
+    refusing.clear()
+    refusing.add("granite4")
+    judged = measure("judged", judge_model="granite4", judge_evidence=_evidence(protocol_sha256=_sha(registered)))
+    assert judged["think_fallbacks"] == {"engine": 0, "judge": 4} and judged["overrides"] == ["think_fallback"]
+    assert judged["status"] == "not_measured_overridden"
 
 
 def test_the_runner_digest_covers_whole_imported_packages_not_a_hand_list():

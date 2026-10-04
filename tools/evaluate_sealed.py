@@ -131,6 +131,21 @@ def _options(model, runtime: dict) -> dict | None:
         return None
 
 
+class _SealedOllama(OllamaProvider):
+    """مزوّدُ القياس: OllamaProvider.complete يعيد الطلبَ بلا حقل think إن ردّه الخادمُ بـ«does not support thinking»، فيُرسَل
+    غيرُ المسجَّل في judge_v1 ويمرّ check_runtime لأنه يقرأ الصفةَ والخيارات لا ما أُرسل. فيُعدّ هنا كلُّ نداءٍ خرج بلا الحقل،
+    ويُسمّى تبديلًا في التقرير (ملاحظة Codex على #289)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.think_fallbacks = 0
+
+    def _post(self, payload: dict, timeout: float) -> dict:
+        if "think" not in payload:
+            self.think_fallbacks += 1
+        return super()._post(payload, timeout)
+
+
 def check_runtime(protocol: dict, provider, judge) -> dict:
     """إعدادُ التشغيل هو المسجَّلُ في judge_v1 (ملاحظات Codex على #289): نقطةُ Ollama الواحدة، وخياراتُ كلِّ مزوّدٍ كما
     يرسلها (السقف والحرارة والسياق والبذرة)، والتفكير، وبصمةُ تعليمات النظام والمحكِّم ونمطِ الحكم، وحَجرُ المقتبس. فتشغيلٌ
@@ -323,12 +338,17 @@ def measure_sealed(sealed_root: Path, engine_model: str, *, agent: str, run_root
     يكتب الأجوبةَ أو الأحكامَ بنفسه، ولا مُحلِّلًا ولا بروتوكولًا ولا بصمةَ بيان (ملاحظة Codex على #289). وهو ما يناديه
     السطر؛ وrun_sealed بمزوّدٍ ممرَّر للبنوك الاصطناعية تبديلٌ مسمًّى لا يُسمّى قياسًا."""
     agent = registered_agent(agent)
-    report = run_sealed(sealed_root, OllamaProvider(engine_model), run_root=run_root, manifest_path=manifest_path,
-                        judge=None if judge_model is None else OllamaProvider(judge_model), judge_evidence=judge_evidence,
-                        reviewed_bank=reviewed_bank, agent=agent)
+    engine = _SealedOllama(engine_model)
+    judge = None if judge_model is None else _SealedOllama(judge_model)
+    report = run_sealed(sealed_root, engine, run_root=run_root, manifest_path=manifest_path, judge=judge,
+                        judge_evidence=judge_evidence, reviewed_bank=reviewed_bank, agent=agent)
+    # والطلبُ المُعاد بلا think ليس الإعدادَ المسجَّل: تُنشر أعدادُه، وأيٌّ منه تبديلٌ مسمًّى (ملاحظة Codex على #289)
+    fallbacks = {"engine": engine.think_fallbacks, "judge": None if judge is None else judge.think_fallbacks}
+    report["think_fallbacks"] = fallbacks
     # المزوّدان بُنيا هنا من اسميهما فليسا تبديلًا؛ والوسمُ يُعاد هنا لا بعَلَمٍ يمرّ في واجهة run_sealed فيُزوَّر من
     # مستدعيها (ملاحظة Codex على #289). وما سواهما مما قد يسمّيه run_sealed يبقى.
-    return _label(report, [name for name in report["overrides"] if name not in ("provider", "judge_provider")])
+    return _label(report, [name for name in report["overrides"] if name not in ("provider", "judge_provider")]
+                  + (["think_fallback"] if any(fallbacks.values()) else []))
 
 
 OVERRIDDEN = "the_inputs_named_in_overrides_are_not_the_registered_ones_so_this_report_is_not_a_judge_v1_measurement"
