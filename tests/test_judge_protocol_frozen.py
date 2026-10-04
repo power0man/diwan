@@ -17,7 +17,7 @@ from core.signing import SigningRefused
 from evaluation import judge
 from evaluation.judge import JudgeRefused
 
-REGISTERED = "d9e0487c7abfceb2cbb10565a6510fa62ab1d4626728ba03e1feefdbd117202d"
+REGISTERED = "8ebee2a807ca59f988ee30112e68f2b5357ca938ed77df28f022a7a36b6300c3"
 DATA = json.loads(judge.PROTOCOL.read_text(encoding="utf-8"))
 # مفتاحُ مالكٍ مصطنعٌ للاختبار وحده؛ ومفتاحُ المالك الحقيقيّ في سلسلة مفاتيح الماك لا في المستودع.
 OWNER_SEED = hashlib.sha256(b"diwan-test-owner-calibration").digest()
@@ -214,8 +214,12 @@ def _rows(flip: int = 0, at: int = 0, **change):
         for i, case in enumerate(cases):
             label = ("correct", "incorrect")[i % 2]
             ground = _truth()[source][case]
-            candidate = ground if source == "k11_owner_ruled" else _candidate(ground, label == "correct")
-            rows.append({"source": source, "case": case, "split": "open", "candidate": candidate, "label": label})
+            if source == "k11_owner_ruled":
+                rows.append({"source": source, "case": case, "split": "open", "candidate": ground["candidate"],
+                             "context_sha256": ground["context_sha256"], "label": label})
+            else:
+                rows.append({"source": source, "case": case, "split": "open",
+                             "candidate": _candidate(ground, label == "correct"), "label": label})
     for i, row in enumerate(rows):
         row["verdict"] = row["label"] if i >= flip else ("incorrect" if row["label"] == "correct" else "correct")
     rows[at] = {**rows[at], **change}
@@ -254,9 +258,10 @@ def test_the_calibration_sample_is_frozen_by_the_protocol():
     assert sample["k11_owner_ruled"] == sorted(r["id"] for r in triage["real"] + triage["false_positives"])
     assert len(sample["k11_owner_ruled"]) == 23 and len(set(sample["automatic_checked"])) == 100
     assert hashlib.sha256(json.dumps(sample, sort_keys=True).encode()).hexdigest() == \
-        "51b704f9ce676a3d4fccac9e86a6208d3910484336737c994ad6ced992bbafe0"
+        "0e6cbf9b735743d37b726fcd23b21de5e69992ff85fae5360263b5262cddab45"
     kinds = {check["kind"] for checks in _truth()["automatic_checked"].values() for check in checks}
-    assert kinds <= {"exact", "json_equals"} and all(isinstance(r, str) for r in _truth()["k11_owner_ruled"].values())
+    assert kinds <= {"exact", "json_equals"} and all(isinstance(r["candidate"], str) and len(r["context_sha256"]) == 64
+                                               for r in _truth()["k11_owner_ruled"].values())
 
 
 def test_a_changed_open_bank_is_refused_by_name(tmp_path):
@@ -308,14 +313,19 @@ def test_the_seven_real_defects_carry_their_reviewed_pre_fix_candidates(tmp_path
     """ملاحظة Codex على #289: أصلح ك١٥ العيوبَ السبعة في البنك المفتوح، فكان مرشَّحُها (مرجعُها الحاليّ) صحيحًا وصارت
     حالاتُ ك١١ الثلاث والعشرون إيجاباتٍ سهلة. والآن مرشَّحُ كلِّ عيبٍ مرجعُه في ملفّه المراجَع ببصمته المسجَّلة، والإيجاباتُ
     الكاذبة الستّ عشرة مرجعُها الحاليّ؛ ولا يقوم البنكُ المُصلَح مقام الملفّات المراجَعة، وبلاها يُردّ برمزه."""
-    current = {case["case_id"]: case["reference"]
+    current = {case["case_id"]: case
                for _, suite in judge._open_suites(judge.OPEN_BANK, DATA["calibration"]["open_bank_sha256"])
                for case in suite["cases"]}
     truth = _truth()["k11_owner_ruled"]
     assert len(truth) == 23 and len(K11["real_defects"]) == 7
-    for case_id, reference in truth.items():
-        expected = PRE_FIX + current[case_id] if case_id in K11["real_defects"] else current[case_id]
-        assert reference == expected
+    for case_id, ground in truth.items():
+        reference = current[case_id]["reference"]
+        assert ground["candidate"] == (PRE_FIX + reference if case_id in K11["real_defects"] else reference)
+        # والسياقُ المعروضُ على المحكِّم الحالةُ الحاليّة، لا صياغةُ ما قبل ك١٥ (ملاحظة Codex على #289)
+        assert ground["context_sha256"] == hashlib.sha256(json.dumps(
+            {"messages": current[case_id]["messages"], "reference": reference,
+             "rubric": current[case_id].get("rubric")}, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":")).encode("utf-8")).hexdigest()
     root, protocol = _reviewed()
     tampered = tmp_path / "tampered"
     shutil.copytree(root, tampered)
@@ -362,6 +372,8 @@ UNCALIBRATED = {
                                                               verdict="incorrect")),
     "automatic_candidate_missing": lambda: _evidence(_rows(at=FIRST_AUTOMATIC + 1, candidate=None)),
     "k11_candidate_not_its_reference": lambda: _evidence(_rows(candidate="مرجعٌ آخر")),
+    # ملاحظة Codex على #289: صفُّ ك١١ يُحكم على الحالة الحاليّة ببصمتها، فدليلٌ عرض سياقًا آخر لا يُقبل
+    "k11_context_not_the_current_case": lambda: _evidence(_rows(context_sha256="0" * 64)),
 }
 
 

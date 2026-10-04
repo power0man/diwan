@@ -83,7 +83,8 @@
           "tier_a/kimi_logic_a_003.json": "5c7cdb802dadd9c3c3c73d5bdd679de7beb78192230af92e7a654b9ca0599272"
         },
         "reviewed_files_source": "the_file_sha256_both_external_reviewers_recorded_under_evaluation_banks_kimi_v1_reviews_and_the_files_are_supplied_from_diwan_private_before_k15_on_the_owner_mac",
-        "label": "owner_ruling_attested_by_the_owner_signature_over_the_evidence",
+        "context": "each_row_carries_context_sha256_of_the_current_bank_v1_1_case_messages_reference_and_rubric_that_the_judge_is_shown",
+        "label": "the_owner_ruling_on_the_candidate_against_that_current_case_attested_by_the_owner_signature_not_the_k11_triage_which_ruled_on_the_pre_k15_prompt",
         "label_status": "awaiting_owner_ruling"
       },
       {
@@ -177,6 +178,7 @@
     "a_package_first_imported_after_the_run_starts_is_not_in_the_runner_digest",
     "the_k11_case_ids_are_pinned_by_digest_so_an_edited_triage_file_that_names_other_cases_is_refused_and_needs_judge_v2",
     "k15_corrected_the_7_real_defects_in_the_open_bank_so_their_candidates_come_from_the_reviewed_pre_k15_files_pinned_by_digest_and_a_sealed_judge_cannot_be_accepted_without_them",
-    "measured_is_published_only_by_the_path_that_builds_its_own_ollama_providers_from_their_names_and_attests_the_runner_code_by_runner_sha256_not_against_an_in_process_caller_that_patches_the_runner_or_its_modules"
+    "measured_is_published_only_by_the_path_that_builds_its_own_ollama_providers_from_their_names_and_attests_the_runner_code_by_runner_sha256_not_against_an_in_process_caller_that_patches_the_runner_or_its_modules",
+    "k15_also_reworded_some_k11_prompts_so_a_pre_k15_candidate_may_be_correct_for_the_current_case_and_its_label_is_the_owners_ruling_on_that_case_not_the_k11_triage"
   ]
 }

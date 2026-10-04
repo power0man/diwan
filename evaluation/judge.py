@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PROTOCOL = ROOT / "evaluation" / "protocols" / "judge_v1.json"
 K11_EVIDENCE = ROOT / "docs" / "probe" / "k11-owner-queue-triage-20260925.json"
 OPEN_BANK = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
-PROTOCOL_SHA256 = "d9e0487c7abfceb2cbb10565a6510fa62ab1d4626728ba03e1feefdbd117202d"
+PROTOCOL_SHA256 = "8ebee2a807ca59f988ee30112e68f2b5357ca938ed77df28f022a7a36b6300c3"
 VERDICTS = ("correct", "incorrect")
 OUTCOMES = ("pass", "fail", "without_checks", "error")
 # نصٌّ أقصرُ من هذا لا يُبحث عنه في التقرير: كلمةٌ قصيرة كـ«نعم» تقع في أيّ تقرير ولا تدلّ على حالة.
@@ -191,6 +191,13 @@ def calibration_sample(protocol: dict, protocol_sha256: str, *, open_bank: Path 
     return {"k11_owner_ruled": owner, "automatic_checked": automatic}
 
 
+def _case_context(case: dict) -> str:
+    """بصمةُ ما يُعرض على المحكِّم من الحالة: رسائلُها ومرجعُها ومعاييرُها كما في البنك المفتوح الحاليّ. فصفُّ ك١١ يُحكم
+    على هذا السياق نفسِه، لا على صياغةٍ غيّرها ك١٥ (ملاحظة Codex على #289)."""
+    return hashlib.sha256(_json_bytes({"messages": case["messages"], "reference": case["reference"],
+                                       "rubric": case.get("rubric")})).hexdigest()
+
+
 def _reviewed_references(reviewed_bank: Path | None, k11: dict) -> dict[str, str]:
     """مراجعُ العيوب السبعة كما رُوجعت في ك١١، من الملفّات قبل إصلاح ك١٥ ببصماتها المسجَّلة؛ فالبنكُ المفتوحُ الحاليّ
     مُصلَحٌ ولا يقوم مقامها (ملاحظة Codex على #289)."""
@@ -222,11 +229,14 @@ def calibration_truth(protocol: dict, sample: dict[str, list[str]], *, open_bank
         for case in suite["cases"]:
             qid = f"{suite['suite_id']}/{case['case_id']}"
             if case["case_id"] in owner:
-                truth["k11_owner_ruled"][case["case_id"]] = case["reference"]
+                truth["k11_owner_ruled"][case["case_id"]] = {"candidate": case["reference"],
+                                                             "context_sha256": _case_context(case)}
             if qid in automatic:
                 truth["automatic_checked"][qid] = case["checks"]
-    # والعيوبُ السبعة تحلّ مراجعُها المراجَعة محلَّ مراجعها المُصلَحة في البنك الحاليّ
-    truth["k11_owner_ruled"].update(_reviewed_references(reviewed_bank, k11))
+    # والعيوبُ السبعة مرشَّحُها مرجعُها كما رُوجع قبل ك١٥، وسياقُها الحالةُ الحاليّة التي يُعرض عليها (ملاحظتا Codex على #289)
+    for case_id, reference in _reviewed_references(reviewed_bank, k11).items():
+        if case_id in truth["k11_owner_ruled"]:
+            truth["k11_owner_ruled"][case_id]["candidate"] = reference
     if set(truth["k11_owner_ruled"]) != owner or set(truth["automatic_checked"]) != automatic:
         raise JudgeRefused("calibration_sample_unavailable", "حالةٌ من العيّنة ليست في البنك المفتوح")
     return truth
@@ -262,14 +272,15 @@ def _owner_signed(evidence: dict, public_key: bytes | None) -> bool:
 
 
 def _row_bound(row: dict, truth: dict[str, dict]) -> bool:
-    """الحالةُ الآليّة: تسميتُها هي ما تقوله فحوصُها في جوابها. وحالةُ ك١١: جوابُها مرجعُها، وتسميتُها حكمُ المالك."""
+    """الحالةُ الآليّة: تسميتُها هي ما تقوله فحوصُها في جوابها. وحالةُ ك١١: جوابُها مرجعُها كما رُوجع، وسياقُها الحالةُ
+    الحاليّة ببصمتها، وتسميتُها حكمُ المالك على ذلك السياق."""
     candidate, ground = row.get("candidate"), truth[row["source"]][row["case"]]
     if not isinstance(candidate, str):
         return False
     if row["source"] == "automatic_checked":
         passed = all(result["passed"] for result in _checks(candidate, ground))
         return row.get("label") == ("correct" if passed else "incorrect")
-    return candidate == ground
+    return candidate == ground["candidate"] and row.get("context_sha256") == ground["context_sha256"]
 
 
 def accept_sealed_judge(evidence: dict | None, model: str, protocol: dict, protocol_sha256: str,
