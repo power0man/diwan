@@ -119,7 +119,7 @@ def _interpreter(python: str) -> str:
     """المفسّرُ مسارًا مطلقًا قبل أيّ شجرة عمل: الاختباراتُ تجري في شجرةٍ مؤقّتة، فالمسارُ النسبيّ يُقرأ من مجلّد الاستدعاء
     لا منها، والاسمُ المجرّد من PATH؛ ولا يُحلّ الرابطُ الرمزيّ (مفسّرُ venv رابطٌ تضيع بيئتُه إن حُلّ). وما لا يوجد أو لا
     يُنفَّذ رفضٌ مسمًّى لا تتبّعٌ خام."""
-    found = shutil.which(python) if os.sep not in python and "/" not in python else os.path.abspath(python)
+    found = shutil.which(python) if os.sep not in python and "/" not in python else python
     if not found or not os.path.isfile(found) or not os.access(found, os.X_OK):
         raise Refused("python_unavailable", "المفسّرُ المسمّى بـ--python لا يوجد أو لا يُنفَّذ")
     return os.path.abspath(found)
