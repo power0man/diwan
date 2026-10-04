@@ -378,6 +378,8 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     overrides.append("provider")
     if judge is not None:
         overrides.append("judge_provider")
+    # والبروتوكولُ يُقرأ قبل أن تُطابَق بصمتُه، فلا يكون في المحجوب ولا رابطًا إليه (ملاحظة Codex على #289)
+    protocol_path = _outside_sealed_file(protocol_path, sealed_root, "judge_protocol_in_sealed_root")
     protocol = judge_rules.load_protocol(protocol_path, protocol_sha256)
     preflight(provider, judge, protocol["sealed"]["engine_model"])
     runtime = check_runtime(protocol, provider, judge)

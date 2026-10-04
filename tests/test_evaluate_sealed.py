@@ -423,6 +423,26 @@ def test_a_manifest_in_or_linked_into_the_sealed_root_is_refused_before_it_is_re
     assert refused.value.code == "sealed_manifest_in_sealed_root" and engine.calls == 0
 
 
+@pytest.mark.parametrize("where", ["inside", "symlink", "hardlink"])
+def test_a_protocol_in_or_linked_into_the_sealed_root_is_refused_before_it_is_read(tmp_path, monkeypatch, where):
+    """ملاحظة Codex على #289: run_sealed يقرأ protocol_path الممرَّرَ قبل مطابقة بصمته وقبل الفحص المسبق؛ فبروتوكولٌ في
+    المحجوب أو رابطٌ إليه يُردّ قبل أن يُفتح، ولو رُدّ التشغيلُ بعده."""
+    sealed_root, manifest = _bank(tmp_path)
+    inside = sealed_root / "judge_v1.json"
+    shutil.copyfile(judge_rules.PROTOCOL, inside)
+    named = {"inside": inside, "symlink": tmp_path / "linked.json", "hardlink": tmp_path / "hard.json"}[where]
+    if where == "symlink":
+        named.symlink_to(inside)
+    elif where == "hardlink":
+        os.link(inside, named)
+    monkeypatch.setattr(judge_rules, "load_protocol", lambda *a, **k: pytest.fail("قُرئ بروتوكولٌ من المحجوب"))
+    engine = Provider()
+    with pytest.raises(SealedRefused) as refused:
+        sealed.run_sealed(sealed_root, engine, run_root=tmp_path / "runs", manifest_path=manifest,
+                          protocol_path=named, protocol_sha256=_sha(inside))
+    assert refused.value.code == "judge_protocol_in_sealed_root" and engine.calls == 0
+
+
 def test_a_reviewed_bank_that_contains_the_sealed_root_is_refused(tmp_path):
     """ملاحظة Codex على #289: ملفّاتُ ك١١ السبعة بمساراتٍ ثابتةٍ تحت مجلّدها؛ فمجلّدٌ يحوي المحجوبَ يجعل أحدَها مختومًا."""
     with pytest.raises(SealedRefused) as refused:
