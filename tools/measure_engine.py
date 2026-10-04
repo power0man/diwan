@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from core.sandbox import configure_sandbox_backend
-from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest
+from tools.model_digest import ModelDigestError, pin_model_digest, quarantine_runs_since, verify_model_digest
 from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
 from providers.ollama import OllamaProvider
 
@@ -272,13 +272,18 @@ def main(argv=None) -> int:
     except ModelDigestError as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 1
-    result = measure(suites, args.model, ROOT / "var/capabilities",
+    run_root = ROOT / "var/capabilities"
+    started = time.time() - 1
+    result = measure(suites, args.model, run_root,
                      max_output=args.max_output, deadline_s=args.deadline_s,
                      model_version=model_version)
     try:
         verify_model_digest(args.model, model_version)
     except ModelDigestError as exc:
-        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        # تشغيلاتُ الحزم التي كُتبت أثناء الانحراف تُحجر فلا يُعاد عرضُها (ملاحظة Codex على #290)
+        quarantined = quarantine_runs_since(run_root, started)
+        print(json.dumps({"status": "refused", "code": exc.code, "runs_quarantined": len(quarantined)},
+                         ensure_ascii=False))
         return 1
     args.out.parent.mkdir(parents=True, exist_ok=True)
     result["sandbox"] = sandbox

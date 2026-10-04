@@ -46,6 +46,16 @@ def fake_ollama(monkeypatch):
         server.server_close()
 
 
+@pytest.fixture(autouse=True)
+def isolated_run_root(tmp_path, monkeypatch):
+    """مجلّدُ التشغيلات في مجلّدٍ مؤقّت: حجرُ الانحراف (ملاحظة Codex على #290) لا يلمس var/capabilities في النسخة."""
+    root = tmp_path / "root"
+    (root / "var" / "capabilities").mkdir(parents=True)
+    monkeypatch.setattr(evaluate_capabilities, "ROOT", root)
+    monkeypatch.setattr(measure_engine, "ROOT", root)
+    return root / "var" / "capabilities"
+
+
 def _translation_report() -> dict:
     return {"summary": {"attempted": 1, "measured": 1, "errors": 0, "passed": 1,
                         "pass_rate": 1.0, "check_pass_rate": 1.0, "meets_thresholds": True,
@@ -201,3 +211,39 @@ def test_capabilities_pins_refuses_and_rechecks_the_digest(monkeypatch, fake_oll
     assert evaluate_capabilities.main(["--model", "fixture"]) == 2 and seen == ["sha256:real"]
     output = capsys.readouterr().out
     assert json.loads(output)["error_code"] == "model_digest_drifted" and "run-fixture" not in output
+
+
+@pytest.mark.parametrize("tool", ["capabilities", "engine"])
+def test_a_run_rejected_for_drift_is_quarantined_so_a_returning_digest_cannot_replay_it(
+        tmp_path, monkeypatch, fake_ollama, isolated_run_root, capsys, tool):
+    """ملاحظةُ Codex على #290: معرّفُ التشغيلة من إعدادها وفيه البصمة، فوسمٌ انحرف ثم عاد كان يعيد في الاستدعاء التالي عرضَ
+    دفترٍ كُتب بعد الانحراف ويمرّ التحقّقُ اللاحق. فالتشغيلةُ المرفوضة تُنقل إلى الحجر، وما سبق القياسَ يبقى."""
+    import os
+    earlier = isolated_run_root / "run-earlier"
+    earlier.mkdir()
+    (earlier / "ledger.jsonl").write_text("{}\n", encoding="utf-8")
+    past = 1_000_000_000
+    os.utime(earlier / "ledger.jsonl", (past, past))
+    os.utime(earlier, (past, past))
+    fake_ollama.models = [{"name": "fixture:latest", "digest": "sha256:before"}]
+
+    def drift():
+        written = isolated_run_root / "run-drifted"
+        written.mkdir()
+        (written / "ledger.jsonl").write_text("{}\n", encoding="utf-8")
+        fake_ollama.models = [{"name": "fixture:latest", "digest": "sha256:after"}]
+
+    seen: list[str] = []
+    if tool == "capabilities":
+        _capabilities(monkeypatch, drift, seen)
+        code = evaluate_capabilities.main(["--model", "fixture"])
+        payload = json.loads(capsys.readouterr().out)
+        assert code == 2 and payload["error_code"] == "model_digest_drifted"
+    else:
+        _configure(monkeypatch, "engine", drift, seen)
+        code, out = _invoke("engine", tmp_path, "quarantine")
+        payload = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+        assert code == 1 and payload["code"] == "model_digest_drifted" and not out.exists()
+    assert payload["runs_quarantined"] == 1
+    assert sorted(p.name for p in isolated_run_root.iterdir()) == ["drift-quarantine", "run-earlier"]
+    assert [p.name.rsplit("-", 1)[0] for p in (isolated_run_root / "drift-quarantine").iterdir()] == ["run-drifted"]

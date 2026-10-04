@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -12,7 +13,7 @@ sys.path.insert(0, str(ROOT))
 
 from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
 from providers.ollama import OllamaProvider
-from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest
+from tools.model_digest import ModelDigestError, pin_model_digest, quarantine_runs_since, verify_model_digest
 
 
 def main(argv=None) -> int:
@@ -33,8 +34,10 @@ def main(argv=None) -> int:
     parser.add_argument("--quarantine-quoted", action="store_true",
                         help="حَجرُ الأوامر داخل المادة المقتبسة قبل النداء (ذراع محكومة)")
     args = parser.parse_args(argv)
-    # البصمةُ تُحلّ قبل القياس فتدخل هويّةَ التشغيلة، وتُعاد بعده (#285). وتشغيلةٌ تغيّرت أوزانُها أثناءها
-    # تبقى في var/capabilities ببصمة أوّلها، لكن الأداة ترفضها برمزها ولا تطبع لها رقمًا.
+    # البصمةُ تُحلّ قبل القياس فتدخل هويّةَ التشغيلة، وتُعاد بعده (#285). وتشغيلةٌ تغيّرت أوزانُها أثناءها تُرفض برمزها
+    # وتُنقل إلى الحجر فلا يعيد استدعاءٌ تالٍ عرضَها ببصمةٍ عادت كما كانت (ملاحظة Codex على #290).
+    run_root = ROOT / "var/capabilities"
+    started = time.time() - 1
     try:
         model_version = pin_model_digest(args.model, args.model_version)
     except ModelDigestError as exc:
@@ -45,7 +48,7 @@ def main(argv=None) -> int:
         if getattr(args, "allow_thinking", False) or "cloud" in args.model or "oss" in args.model:
             setattr(provider, "allow_thinking", True)
         report = evaluate_suite(load_suite(args.suite), provider,
-                                ROOT / "var/capabilities", run_id=args.run_id,
+                                run_root, run_id=args.run_id,
                                 max_output=args.max_output, deadline_s=args.deadline_s,
                                 model_version=model_version,
                                 quarantine_quoted_material=args.quarantine_quoted)
@@ -58,7 +61,8 @@ def main(argv=None) -> int:
     try:
         verify_model_digest(args.model, model_version)
     except ModelDigestError as exc:
-        print(json.dumps({"error_code": exc.code, "release_ready": False}))
+        quarantined = quarantine_runs_since(run_root, started)
+        print(json.dumps({"error_code": exc.code, "release_ready": False, "runs_quarantined": len(quarantined)}))
         return 2
     print(json.dumps({"suite_id": report["suite_id"], "run_id": report["run_id"],
                       **report["summary"]}, ensure_ascii=False))
