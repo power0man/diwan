@@ -34,6 +34,7 @@ def _valid_reply():
     "quota_exhausted", "key_missing", "cloud_key_missing", "endpoint_not_allowed",
     "free_model_required", "free_price_unverified", "free_tier_unverified",
     "zero_spend_breach", "usage_unavailable", "usage_cost_unavailable", "usage_cost_invalid",
+    "payment_required",
     "http_400", "http_401", "http_402", "http_403", "http_404", "http_405",
     "http_410", "http_413", "http_415", "http_422", "http_429",
 ])
@@ -169,6 +170,7 @@ def test_request_specific_refusal_keeps_other_files_reviewable(tmp_path, code):
 @pytest.mark.parametrize("budget_code", [
     "free_model_required", "free_price_unverified", "free_tier_unverified",
     "zero_spend_breach", "usage_unavailable", "usage_cost_unavailable", "usage_cost_invalid",
+    "payment_required",
 ])
 def test_cli_never_resumes_after_budget_failure_through_fallback_or_another_pair(
         tmp_path, monkeypatch, capsys, mode, budget_code):

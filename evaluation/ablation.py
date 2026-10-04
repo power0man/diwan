@@ -39,6 +39,9 @@ PROTOCOL = ROOT / "evaluation" / "protocols" / "ablation_v2.json"
 # النسخة ٢ في #185 تصلح ترتيب السحب وتصنيف الجولات؛ هذه النسخة التالية تضيف
 # البذور الثلاث وتجميعها. هذا الفرع مكدّس على رأس #185.
 RUNNER_VERSION = 3
+# البذورُ تغيّر بذرةَ المحرّك وحدها والمزوّدُ الافتراضيّ يفكّ بحرارة 0 (`providers/ollama.py`)، فلا تقيس تباينَ أخذ العيّنات؛
+# يُنشر مع كل تقرير لا في البروتوكول المسجَّل سلفًا، فبصمتُه لا تتغيّر بعد التسجيل (تدقيقٌ لاحقٌ لـc55d0ab)
+GREEDY_SEED_LIMIT = "seeds_change_only_the_engine_seed_while_the_default_ollama_provider_decodes_at_temperature_0_so_greedy_decoding_may_repeat_one_output_across_seeds_and_the_majority_reflects_run_to_run_nondeterminism_not_sampling_variance"
 DEFAULT_SEED_COUNT = 3
 MAX_ANSWER_CHARS = 6000
 Z95 = 1.959963984540054
