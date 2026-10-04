@@ -65,6 +65,15 @@ def test_restored_private_stores_are_excluded_from_the_build_context():
     assert {"keys/*", "!keys/anchor-ed25519.pub", "!keys/anchor-policy.json", "var/", ".env"} <= ignored
 
 
+def test_local_worker_secrets_and_build_artifacts_are_excluded_from_the_build_context():
+    """`.dev.vars` ملفُّ أسرار wrangler المحليّ (مثل HF_TOKEN)، والـgitignore لا يُخرجه من سياق البناء، و`COPY . .` ينسخ
+    السياقَ كلَّه إلى طبقةٍ في الصورة (تدقيقٌ لاحقٌ لـ9441c44)."""
+    ignored = set((ROOT / ".dockerignore").read_text().splitlines())
+    local = set((ROOT / "deployment/cloudflare-hf/.gitignore").read_text().splitlines())
+    assert {".dev.vars", ".wrangler/", "node_modules/"} <= local
+    assert {"**/.dev.vars", "**/.dev.vars.*", "**/.wrangler/", "**/node_modules/"} <= ignored
+
+
 def test_the_offline_smoke_expects_the_ui_step_without_an_engine():
     """خطوةُ الواجهة تشغّل serve_ui.py فعلًا ببصمة المحرّك (#175)، والحاويةُ تُشغَّل بلا شبكة فلا محرّك: الخطوةُ تُسمّي بصمتَها
     البديلة `ui_ready_without_engine`. فانتظارُ `ui_ready` هنا يُسقط الفحصَ على عطبٍ لا وجود له، وانتظارُ غيرِ «ok» يُخفي عطبًا."""

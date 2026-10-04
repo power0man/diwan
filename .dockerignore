@@ -11,6 +11,12 @@ var/
 dist/
 .env
 **/*.env
+# أسرارُ wrangler المحلية وآثارُه (deployment/cloudflare-hf/.gitignore): الـgitignore وحده لا يُخرجها من سياق البناء،
+# و`COPY . .` ينسخ السياقَ كلَّه إلى طبقةٍ في الصورة (تدقيقٌ لاحقٌ لـ9441c44)
+**/.dev.vars
+**/.dev.vars.*
+**/.wrangler/
+**/node_modules/
 streams/
 ledger/
 projections/*

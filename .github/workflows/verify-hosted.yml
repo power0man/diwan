@@ -51,8 +51,15 @@ jobs:
         run: |
           set -eu
           zero=0000000000000000000000000000000000000000
+          # التشغيلُ اليدويّ يفحص الفرعَ كلَّه من أصل دمجه مع main لا رأسَه وحده: وإلا أخضرَّ verify بتشغيلٍ يدويٍّ على
+          # الرأس نفسِه بعد أن سقط على الطلب لإيداعٍ أقدم (تدقيقٌ لاحقٌ لـ85f2317). وعلى main نفسِه (لا فرعَ له) الرأسُ وحده.
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            range="$RANGE_HEAD^!"
+            base="$(git merge-base origin/main "$RANGE_HEAD" 2>/dev/null || true)"
+            if [ -n "$base" ] && [ "$base" != "$(git rev-parse "$RANGE_HEAD^{commit}")" ]; then
+              range="$base..$RANGE_HEAD"
+            else
+              range="$RANGE_HEAD^!"
+            fi
           elif [ -z "${RANGE_BASE:-}" ] || [ "$RANGE_BASE" = "$zero" ] \
              || ! git cat-file -e "$RANGE_BASE^{commit}" 2>/dev/null; then
             range="$RANGE_HEAD"

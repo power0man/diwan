@@ -61,13 +61,15 @@ GITHUB_TOKEN=… python3 tools/external_review.py evaluation/banks/kimi_v1 --bac
 - **سقف Groq صفر:** غيابُ إفادة الطبقة المجانية `free_tier_unverified` قبل أي اتصال؛ والاستهلاك المبلّغ يُحفظ، لكن
   غيابَ كلفةٍ من رد Groq يبقى `null` ولا يتحول إلى صفر.
 - **سقف OpenRouter صفر:** المعرّف بلا `:free` هو `free_model_required`، والسعر الغائب أو غير الصفري
-  `free_price_unverified` قبل نداء النموذج. جسم الطلب يمنع fallback ويطلب usage؛ الكلفة الغائبة
+  `free_price_unverified` قبل نداء النموذج؛ وبندا `prompt` و`completion` لازمان، فلا يشهد بالمجانية ما حضر صفرًا من غيرهما. جسم الطلب يمنع fallback ويطلب usage؛ الكلفة الغائبة
   `usage_cost_unavailable` وغير الصفر `zero_spend_breach`، فلا يُقبل الرد نجاحًا.
 - **العائلةُ من الناشر بجدولٍ صريح** ويجب أن يقولها الاسمُ أيضًا (وإلا `family_mismatch` أو `reviewer_family_unknown`)،
   والناشرُ المجهول `publisher_unknown`. ولا يراجع Qwen (المحرّك) ولا Moonshot/Kimi (المؤلّف) ولا OpenAI وGoogle
   وAnthropic (المطوّرون) — ولا المقطَّرُ منها، فكلُّ مقطعٍ في الاسم يدخل السلالة. ولا مراجعان تتقاطع سلالتاهما.
-- **نفادُ الحصّة** (HTTP 429 أو 402) رمزُه `quota_exhausted`، فيُستبدل بالمراجع مرشّحٌ من عائلةٍ أخرى مسموحة، وإلا
+- **نفادُ الحصّة** (HTTP 429) رمزُه `quota_exhausted`، فيُستبدل بالمراجع مرشّحٌ من عائلةٍ أخرى مسموحة، وإلا
   `quota_exhausted_no_fallback`. وحدُّ المدخل (413) `request_too_large`.
+- **طلبُ الدفع** (HTTP 402) رمزُه `payment_required`: حالةُ فوترةٍ في الحساب (في OpenRouter رصيدٌ سالب) لا حدُّ طلبات،
+  فيُوقف التشغيلَ كلَّه باسمه بلا بديلٍ ولا إعادة، كإخفاقات الإنفاق الأخرى (ق٧١-٢ وق٧١-٥).
 - **الردُّ الفارغ أو المبتور** (`reply_empty`، `reply_incomplete`) يُعاد مرّةً ثم يُسجَّل برمزه.
 - **حالةُ HTTP مسمّاة** (`unauthorized` 401، `forbidden` 403، `not_found` 404)، والردُّ الذي ليس JSON `response_not_json`؛
   ويُسجَّل لكل نموذجٍ (وللفهرس) آخرُ شكلٍ فاشل (`last_failure_shapes`): الحالةُ ونوعُ المحتوى والحجمُ وأسماءُ المفاتيح، ومن

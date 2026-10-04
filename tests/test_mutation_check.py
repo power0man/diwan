@@ -236,6 +236,33 @@ def test_an_invalid_manifest_line_is_refused_before_any_worktree_exists(repo, en
     assert not (repo / ".git/worktrees").exists()
 
 
+def test_a_relative_python_is_read_from_the_caller_s_directory_not_from_the_temporary_worktree(
+        repo, capsys, git, monkeypatch):
+    """`--python .venv/bin/python` من جذر المستودع كان يُقرأ داخل الشجرة المؤقّتة فيسقط بتتبّعٍ خام."""
+    caller = repo.parent / "caller"
+    (caller / "bin").mkdir(parents=True)
+    wrapper = caller / "bin" / "py"
+    wrapper.write_text(f'#!/bin/sh\nexec "{sys.executable}" "$@"\n', encoding="utf-8")
+    wrapper.chmod(0o755)
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    git("add", "-A")
+    git("commit", "-qm", "manifest")
+    monkeypatch.chdir(caller)
+    report = _run(repo, "--all", "--python", "bin/py", capsys=capsys)
+    assert report["status"] == "passed" and report["totals"]["killed"] == 1
+    _clean(repo, git)
+
+
+@pytest.mark.parametrize("python", ["no/such/python", "no-such-python-interpreter-xyz"], ids=["path", "bare_name"])
+def test_a_missing_python_is_refused_by_name_before_any_worktree_exists(repo, capsys, git, python):
+    _manifest(repo, "test_guard", {**KILL, "id": "kill"})
+    git("add", "-A")
+    git("commit", "-qm", "manifest")
+    report = _run(repo, "--all", "--python", python, capsys=capsys)
+    assert (report["status"], report["code"], report["exit_code"]) == ("refused", "python_unavailable", 2)
+    assert not (repo / ".git/worktrees").exists() or not any((repo / ".git/worktrees").iterdir())
+
+
 def test_a_line_that_is_not_json_is_refused_by_name(repo, capsys, git):
     (repo / "tests/mutations/test_guard.jsonl").write_text('{"file": ', encoding="utf-8")
     report = _run(repo, "--all", capsys=capsys)
