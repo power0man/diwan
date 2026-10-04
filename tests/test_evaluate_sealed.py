@@ -322,6 +322,22 @@ def test_a_symlinked_runner_directory_or_file_is_refused_before_anything_is_writ
     assert not {sealed.RUNNER_LOCK, sealed.POST_CHECK_PENDING} & {p.name for p in sealed_root.rglob("*")}
 
 
+@pytest.mark.parametrize("entry", [sealed.RUNNER_LOCK, sealed.POST_CHECK_PENDING])
+def test_a_hard_linked_lock_or_marker_is_refused_before_it_is_opened(tmp_path, entry):
+    """ملاحظة Codex على #289: العلامةُ رابطٌ صلبٌ إلى ملفٍّ مختوم تمرّ بـ_plain، وكانت تُقرأ منه قبل تحقيق أيِّ محجوب؛
+    فالقفلُ والعلامةُ القائمان يُرفضان إن لم يكونا ملفّين عاديّين برابطٍ واحد."""
+    sealed_root, _ = _bank(tmp_path)
+    target = sealed_root / "tier_a" / "synthetic_tier_a_sealed.json"
+    before = _sha(target)
+    runner = tmp_path / "runs" / f"runner-{sealed.runner_sha256()[:24]}"
+    runner.mkdir(parents=True)
+    os.link(target, runner / entry)
+    engine = Provider()
+    with pytest.raises(SealedRefused) as refused:
+        _run(tmp_path, engine)
+    assert refused.value.code == "sealed_run_file_is_linked" and engine.calls == 0 and _sha(target) == before
+
+
 def test_a_hard_linked_marker_temporary_is_replaced_not_truncated(tmp_path):
     """مؤقّتُ العلامة الباقي رابطٌ صلبٌ إلى ملفٍّ مختوم: فتحُه بـO_TRUNC كان يقطع المختوم؛ والآن تُزال مدخلتُه ويُنشأ جديدًا."""
     sealed_root, _ = _bank(tmp_path)

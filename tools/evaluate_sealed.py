@@ -29,6 +29,7 @@ import json
 import os
 import platform
 import re
+import stat
 import sys
 import time
 from datetime import date
@@ -171,6 +172,16 @@ def _plain(path: Path) -> Path:
     return path
 
 
+def _alone(path: Path) -> Path:
+    """والقفلُ والعلامةُ القائمان ملفّان عاديّان برابطٍ واحد: فرابطٌ صلبٌ إلى ملفٍّ مختوم لا يكشفه `_plain`، وكانت العلامةُ
+    تُقرأ منه قبل أن يُحقَّق أيُّ محجوب (ملاحظة Codex على #289). فيُرفض قبل أن يُفتح."""
+    if os.path.lexists(path):
+        info = path.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise SealedRefused("sealed_run_file_is_linked", "ملفُّ القفل أو العلامة ليس ملفًّا عاديًّا برابطٍ واحد")
+    return path
+
+
 RUNNER_LOCK = "sealed.lock"
 
 
@@ -180,7 +191,7 @@ def _runner_lock(run_root: Path):
     الأولُ بنجاحه علامةَ الثاني، ثم يُقتل الثاني بعد أجوبةٍ من أوزانٍ أخرى فلا يبقى ما يعزلها (ملاحظة Codex على #289).
     والثاني يُرفض برمزٍ مسمًّى قبل أن يلمس شيئًا، ولا ينتظر."""
     run_root.mkdir(parents=True, exist_ok=True)
-    fd = os.open(_plain(run_root / RUNNER_LOCK), os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    fd = os.open(_alone(_plain(run_root / RUNNER_LOCK)), os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "r+") as stream:
         try:
             filelock.lock(stream, blocking=False)
@@ -200,7 +211,8 @@ def _open_post_check(run_root: Path) -> float:
     (قتلٌ أو انقطاعُ كهرباء بعد إعادة توجيه الوسم)، فتُعزل تشغيلاتُه قبل أن يعيدها وسمٌ أُعيد ويمرّ تحقّقُه (ملاحظة Codex على
     #289). وتُقرأ وتُكتب تحت قفل المجلّد وحده (`_runner_lock`)، فلا يمحو استدعاءٌ علامةَ استدعاءٍ آخرَ لم يُفحص بعد."""
     run_root.mkdir(parents=True, exist_ok=True)
-    pending, temporary = _plain(run_root / POST_CHECK_PENDING), _plain(run_root / f"{POST_CHECK_PENDING}.tmp")
+    pending = _alone(_plain(run_root / POST_CHECK_PENDING))
+    temporary = _plain(run_root / f"{POST_CHECK_PENDING}.tmp")
     if pending.exists():
         try:
             since = float(json.loads(pending.read_text(encoding="utf-8"))["started"])
