@@ -1430,11 +1430,15 @@ def test_a_free_rerun_on_a_reviewed_bank_keeps_the_bank_ledger(tmp_path, monkeyp
     summary_path = bank / "reviews" / "SUMMARY.json"
     first = json.loads(summary_path.read_text(encoding="utf-8"))
     assert sorted(first["token_totals"]) == sorted([DS, MI])
-    # ما سجّله تشغيلٌ سابقٌ على OpenRouter: دليلُ مجانيته ونداءٌ لم تثبت كلفتُه، يبقيان في خلاصة البنك
+    # ما سجّله تشغيلٌ سابقٌ على OpenRouter: دليلُ مجانيته في الخلاصة، ونداءٌ لم تثبت كلفتُه في السجلّ الدائم؛ يبقيان للبنك
+    ledger_path = bank / "reviews" / cli.LEDGER_FILE
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    assert ledger["provider_usage"] == first["provider_usage"], "السجلُّ الدائم والخلاصةُ سجلٌّ واحد"
     first["zero_spend_evidence"] = {"earlier/model:free": {"proof": "catalog_free_suffix_and_all_pricing_zero"}}
     first["provider_usage"].append({"provider": "openrouter", "model": "earlier/model:free", "request_sent": True,
                                     "usage": None, "cost_status": "not_reported"})
     summary_path.write_text(json.dumps(first), encoding="utf-8")
+    ledger_path.write_text(json.dumps({**ledger, "provider_usage": first["provider_usage"]}), encoding="utf-8")
     again = _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
     assert cli.main([str(bank), *args]) == 0
     printed = json.loads(capsys.readouterr().out)
@@ -1446,3 +1450,22 @@ def test_a_free_rerun_on_a_reviewed_bank_keeps_the_bank_ledger(tmp_path, monkeyp
         "calls": 1, "calls_with_incomplete_usage": 1, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}}
     assert second["zero_spend_evidence"] == first["zero_spend_evidence"]
     assert second["cost_unconfirmed_attempts"] == 1 and printed["cost_unconfirmed_attempts"] == 0
+
+
+def test_a_free_refusal_after_sending_keeps_its_calls_in_the_bank_ledger(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: رفضٌ بعد الإرسال يطبع نداءاتِه ولا يكتب خلاصة؛ فهي في السجلّ الدائم، والتشغيلُ التالي يُلحق بها."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    args = ["--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF)]
+    bank = _public_bank(tmp_path, "refused")
+    # رفضٌ بعد نداء الفهرس: عائلةٌ صالحةٌ واحدة فلا زوج (كما في اختبار مجلّد التشغيل)، ونداءُ الفهرس خرج
+    _free(monkeypatch, FreeOpener(catalog=[_gh(DS)]))
+    assert cli.main([str(bank), "--backend", "github-models", "--brief", str(BRIEF)]) == 2
+    refused = _printed(capsys)
+    assert refused["code"] == "reviewers_unavailable" and [r["kind"] for r in refused["provider_usage"]] == ["catalog"]
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert ledger["provider_usage"] == refused["provider_usage"]
+    _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    assert cli.main([str(bank), *args]) == 0
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert summary["provider_usage"][:len(refused["provider_usage"])] == refused["provider_usage"]

@@ -65,7 +65,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from evaluation.external_review import (AUTHOR_FAMILY, BUDGET_TERMINAL_ERRORS, DEFAULT_REVIEWERS,  # noqa: E402
-                                        DEVELOPER_FAMILIES, ENGINE_FAMILY, SUPERSEDED_DIR,
+                                        DEVELOPER_FAMILIES, ENGINE_FAMILY, LEDGER_FILE, SUPERSEDED_DIR,
                                         _slug, open_files, review_bank, smoke, summarize)
 from evaluation.multi_system_review import AutomaticReviewError, model_family  # noqa: E402
 from core.canonical import SAFE_INT  # noqa: E402
@@ -114,6 +114,13 @@ def token_totals(rows: list[dict]) -> dict:
             entry["calls_with_incomplete_usage"] += 1
         for field in USAGE_FIELDS:
             entry[field] += usage.get(field, 0)
+    # مجموعٌ فوق SAFE_INT يُقرَّب في قارئ JSON ولو كان كلُّ نداءٍ في الحدّ: فلا يُكتب رقمًا بل يُعلَن اسمُه (ملاحظة Codex على #298)
+    for entry in totals.values():
+        beyond = [field for field in USAGE_FIELDS if entry[field] > SAFE_INT]
+        for field in beyond:
+            entry[field] = None
+        if beyond:
+            entry["fields_beyond_safe_integer"] = beyond
     return dict(sorted(totals.items()))
 
 
@@ -121,9 +128,19 @@ def prior_provider_usage(bank: Path) -> list[dict]:
     """سجلُّ النداءات الذي كتبته تشغيلاتٌ سابقة في خلاصة البنك، ليُضاف إليه لا ليُستبدل (ملاحظة Codex على #298).
 
     إعادةُ التشغيل على بنكٍ مراجَع تتخطّى سجلّاته فلا يُرسل نداءٌ؛ وكتابةُ سجلّ هذا التشغيل وحده كانت تمحو أدلّةَ الإنفاق
-    للمراجعات التي ما زالت الخلاصةُ تمثّلها. وخلاصةٌ مفقودةٌ أو بلا سجلٍّ قائمةٌ فارغة، لا خطأ."""
-    rows = _prior_summary(bank).get("provider_usage")
+    للمراجعات التي ما زالت الخلاصةُ تمثّلها. وخلاصةٌ مفقودةٌ أو بلا سجلٍّ قائمةٌ فارغة، لا خطأ.
+
+    والمصدرُ الأول `reviews/PROVIDER_USAGE.json` الذي يُكتب عند كلِّ خروجٍ ومنه الرفض؛ فتشغيلٌ رُفض بعد أن أرسل لا تضيع
+    نداءاتُه حين تتخطّى الإعادةُ سجلّاتِه (ملاحظة Codex على #298). والخلاصةُ مصدرٌ ثانٍ لبنكٍ لم يُكتب له الملفّ."""
+    ledger = _read_json_object(bank / "reviews" / LEDGER_FILE)
+    rows = ledger.get("provider_usage") if "provider_usage" in ledger else _prior_summary(bank).get("provider_usage")
     return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+
+
+def write_ledger(bank: Path, rows: list[dict]) -> None:
+    """السجلُّ الدائم كاملًا (السابقُ وما أُلحق به). ولا يُكتب في تشغيلٍ بمعرّف: مجلّدُه جديدٌ لا يُعاد، وخلاصتُه وRUN.json
+    يحملان نداءاتِه، وما يُرفع منه عقدُه ثابت (`check_artifact`)."""
+    _write_json(bank / "reviews" / LEDGER_FILE, {"schema_version": 1, "provider_usage": rows})
 
 
 def prior_zero_spend_evidence(bank: Path) -> dict:
@@ -135,11 +152,15 @@ def prior_zero_spend_evidence(bank: Path) -> dict:
 
 
 def _prior_summary(bank: Path) -> dict:
+    return _read_json_object(bank / "reviews" / "SUMMARY.json")
+
+
+def _read_json_object(path: Path) -> dict:
     try:
-        summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+        value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
-    return summary if isinstance(summary, dict) else {}
+    return value if isinstance(value, dict) else {}
 
 
 def cost_unconfirmed_attempts(rows: list[dict]) -> int:
@@ -194,6 +215,8 @@ class OllamaChat:
             except TimeoutError as exc:
                 raise AutomaticReviewError("transport_timeout", model) from exc
             except (urllib.error.URLError, OSError) as exc:
+                raise AutomaticReviewError("transport_error", model) from exc
+            except http.client.HTTPException as exc:      # ردٌّ مبتور (IncompleteRead) لا يرث OSError (ملاحظة Codex على #298)
                 raise AutomaticReviewError("transport_error", model) from exc
             if len(raw) > MAX_RESPONSE_BYTES:
                 raise AutomaticReviewError("response_too_large", model)
@@ -1093,7 +1116,7 @@ def other_reviewer_errors(bank: Path, final_models: set[str], current: set[str])
     root = bank / "reviews"
     count = 0
     for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
-        if path.name == "SUMMARY.json" or path.relative_to(root).parts[0] == SUPERSEDED_DIR:
+        if path.name in ("SUMMARY.json", LEDGER_FILE) or path.relative_to(root).parts[0] == SUPERSEDED_DIR:
             continue
         record = json.loads(path.read_text(encoding="utf-8"))
         if record.get("error") and record.get("model") not in final_models and record.get("file") in current:
@@ -1110,7 +1133,7 @@ def _successful_records(bank: Path) -> dict[str, str]:
     found: dict[str, str] = {}
     for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
         relative = path.relative_to(root)
-        if path.name in ("SUMMARY.json", RUN_FILE) or relative.parts[0] == SUPERSEDED_DIR:
+        if path.name in ("SUMMARY.json", RUN_FILE, LEDGER_FILE) or relative.parts[0] == SUPERSEDED_DIR:
             continue
         raw = path.read_bytes()
         if json.loads(raw).get("error") is None:
@@ -1185,6 +1208,8 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     # الخلاصةُ للبنك كلِّه: السجلُّ والمجموعُ وعدُّ ما لم تثبت كلفتُه من السجلّ المُلحَق، ودليلُ المجانية الجديدُ فوق السابق.
     # أمّا المطبوعُ أدناه فتقريرُ هذا التشغيل وحده.
     ledger = prior + transport.provider_usage
+    if not args.run_id:
+        write_ledger(args.bank, ledger)
     _persist_provider_usage(args.bank, ledger, {
         "zero_spend_evidence": dict(sorted({**prior_evidence, **getattr(transport, "zero_spend_evidence", {})}.items())),
         "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger), "token_totals": token_totals(ledger)})
@@ -1355,6 +1380,7 @@ def _write_json(path: Path, value: dict) -> None:
 
 def _free_main(args, parser) -> int:
     run = transport = None
+    prior: list[dict] | None = None
     try:
         if args.run_id and args.bank is not None and not (args.smoke or args.list_catalog):
             check_public_bank(args.bank)
@@ -1394,10 +1420,15 @@ def _free_main(args, parser) -> int:
             return code
         if args.bank is None:
             parser.error("مجلّد البنك مطلوب، أو --smoke، أو --list-catalog")
+        prior = prior_provider_usage(args.bank)
         result, code = _free_bank(args, transport)
     except AutomaticReviewError as exc:
         # ما خرج من نداءاتٍ قبل الرفض (ومنه نداءُ الفهرس الفاشل) يبقى في المطبوع وفي RUN.json (ملاحظة Codex على #290)
         usage = getattr(transport, "provider_usage", None) or []
+        # وفي السجلّ الدائم للبنك، فلا تمحوه إعادةٌ تتخطّى ما رُوجع (ملاحظة Codex على #298). أمّا تشغيلٌ بمعرّفٍ فـRUN.json
+        # يحمل نداءاتِه، ولا يُرفع منه غيرُ سجلّ الرفض المسمّى
+        if prior is not None and usage and run is None:
+            write_ledger(args.bank, prior + usage)
         if run is not None:          # خرج قبل الخلاصة: يُرفع سجلُّ الرفض المسمّى وحده، لا ملفّاتٌ تاريخية
             finish_run(run, "refused", exc.code, usage)
         shape = getattr(exc, "shape", None)
@@ -1485,11 +1516,14 @@ def main(argv: list[str] | None = None) -> int:
         summary = summarize(args.bank)
     except AutomaticReviewError as exc:
         usage = getattr(transport, "provider_usage", None) or []
+        if usage:      # ما أُرسل قبل الرفض يبقى في السجلّ الدائم للبنك (ملاحظة Codex على #298)
+            write_ledger(args.bank, prior + list(usage))
         print(json.dumps({"status": "refused", "code": exc.code, "detail": str(exc),
                           **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
         return 2
     # السجلُّ يُلحَق بما كتبته التشغيلاتُ السابقة ولا يستبدله، والمجموعُ من السجلّ كلِّه (ملاحظة Codex على #298)
     ledger = prior + list(getattr(transport, "provider_usage", []))
+    write_ledger(args.bank, ledger)
     _persist_provider_usage(args.bank, ledger, {"token_totals": token_totals(ledger)})
     print(json.dumps({
         "status": "failed" if counts["failed"] else "reviewed",

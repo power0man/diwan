@@ -161,6 +161,8 @@ def test_a_rerun_on_a_reviewed_bank_keeps_the_earlier_ledger(tmp_path, monkeypat
     second = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
     assert again.requests == [], "البنكُ مراجَعٌ فلا نداء"
     assert second["provider_usage"] == first["provider_usage"] and second["token_totals"] == first["token_totals"]
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert ledger["provider_usage"] == first["provider_usage"], "السجلُّ الدائم والخلاصةُ سجلٌّ واحد"
 
 
 def test_the_prior_ledger_is_empty_without_a_summary_or_with_a_malformed_one(tmp_path):
@@ -199,3 +201,61 @@ def test_the_prior_zero_spend_evidence_keeps_only_named_entries(tmp_path):
                           ('{"zero_spend_evidence": {"m": {"proof": "p"}, "n": "bad"}}', {"m": {"proof": "p"}})):
         (tmp_path / "reviews" / "SUMMARY.json").write_text(raw, encoding="utf-8")
         assert cli.prior_zero_spend_evidence(tmp_path) == expected
+
+
+def test_calls_sent_before_a_refusal_survive_a_rerun_that_skips_them(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: نجح ملفٌّ ثم رُفض الثاني، فخرج التشغيلُ ٢ بلا خلاصة؛ والإعادةُ بعد إزالة الثاني تتخطّى
+    المراجعتين فلا ترسل شيئًا. فنداءاتُ التشغيل المرفوض في السجلّ الدائم، والإعادةُ تقرؤها."""
+    bank = smoke_bank(tmp_path)
+    (bank / "open" / "z.json").write_text("{}", encoding="utf-8")
+    first = _Opener(_reply(prompt_eval_count=40, eval_count=4))
+    _wire(monkeypatch, first)
+    assert cli.main([str(bank)]) == 2
+    refused = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert len(refused["provider_usage"]) == len(first.requests) == len(DEFAULT_REVIEWERS)
+    assert not (bank / "reviews" / "SUMMARY.json").exists()
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert ledger["provider_usage"] == refused["provider_usage"]
+    (bank / "open" / "z.json").unlink()
+    again = _Opener(_reply(prompt_eval_count=999, eval_count=999))
+    _wire(monkeypatch, again)
+    assert cli.main([str(bank)]) == 0
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert again.requests == [] and summary["provider_usage"] == refused["provider_usage"]
+    assert all(t["total_tokens"] == 44 for t in summary["token_totals"].values())
+
+
+def test_a_total_beyond_the_safe_integer_is_named_not_written():
+    """ملاحظة Codex على #298: كلُّ نداءٍ في الحدّ، ومجموعُهما فوقه؛ فلا يُكتب رقمًا يُقرَّب بل يُعلَن اسمُه."""
+    rows = [{"model": "m", "request_sent": True, "usage": {"prompt_tokens": 2**53 - 1, "completion_tokens": 0,
+                                                           "total_tokens": 2**53 - 1}},
+            {"model": "m", "request_sent": True, "usage": {"prompt_tokens": 2, "completion_tokens": 0, "total_tokens": 2}}]
+    assert cli.token_totals(rows) == {"m": {"calls": 2, "calls_with_incomplete_usage": 0, "prompt_tokens": None,
+                                            "completion_tokens": 0, "total_tokens": None,
+                                            "fields_beyond_safe_integer": ["prompt_tokens", "total_tokens"]}}
+
+
+def test_a_truncated_reply_is_a_recorded_transport_error():
+    """ملاحظة Codex على #298: IncompleteRead لا يرث OSError، فكان يفلت بلا رمزٍ ولا صفّ."""
+    import http.client
+
+    class Truncated:
+        def open(self, request, timeout=None):
+            return self
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self, *args):
+            raise http.client.IncompleteRead(b"partial")
+
+    chat = cli.OllamaChat()
+    chat.opener = Truncated()
+    with pytest.raises(AutomaticReviewError) as failed:
+        chat("deepseek-v4.1-flash:cloud", "s", "u", {})
+    assert failed.value.code == "transport_error"
+    [row] = chat.provider_usage
+    assert row["error"] == "transport_error" and row["request_sent"] is True and row["usage"] is None
