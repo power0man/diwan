@@ -1174,11 +1174,13 @@ def _persist_provider_usage(bank: Path, usage: list[dict], spend: dict | None = 
         _write_json(path, summary)
 
 
-def finish_run(run: Path, status: str, code: str | None = None) -> None:
-    """حالةُ التشغيل في RUN.json: reviewed أو failed أو unavailable أو refused برمزه — فإن خرج قبل الخلاصة بقي هذا وحده."""
+def finish_run(run: Path, status: str, code: str | None = None, usage: list[dict] | None = None) -> None:
+    """حالةُ التشغيل في RUN.json: reviewed أو failed أو unavailable أو refused برمزه — فإن خرج قبل الخلاصة بقي هذا وحده،
+    ومعه سجلُّ ما خرج من نداءاتٍ قبل الرفض إن أُعطي (ملاحظة Codex على #290)."""
     path = run / "reviews" / RUN_FILE
     record = json.loads(path.read_text(encoding="utf-8"))
-    record.update(status=status, finished_at=_utc_now(), **({"code": code} if code else {}))
+    record.update(status=status, finished_at=_utc_now(), **({"code": code} if code else {}),
+                  **({"provider_usage": usage} if usage else {}))
     _write_json(path, record)
 
 
@@ -1248,7 +1250,7 @@ def _write_json(path: Path, value: dict) -> None:
 
 
 def _free_main(args, parser) -> int:
-    run = None
+    run = transport = None
     try:
         if args.run_id and args.bank is not None and not (args.smoke or args.list_catalog):
             check_public_bank(args.bank)
@@ -1259,7 +1261,7 @@ def _free_main(args, parser) -> int:
             # حدودُ الجرد من الموضع الواحد (ملاحظة Codex على #174): الهويةُ معرّفُ الفهرس، والعائلةُ مستنتجة، والفهرسُ لحظةٌ واحدة
             limits = free_limits(CATALOG_LIMITS, args.backend)
             _write_json(args.list_catalog, {"schema_version": 1, "backend": transport.describe(), **assessed,
-                                            "measurement_limits": limits})
+                                            "provider_usage": transport.provider_usage, "measurement_limits": limits})
             eligible: dict[str, list[str]] = {}
             for row in assessed["rows"]:
                 if row["eligible"]:
@@ -1268,7 +1270,7 @@ def _free_main(args, parser) -> int:
                               "models": assessed["models"],
                               "eligible": eligible, "refused": assessed["refused"],
                               "candidates": [c["model"] for c in assessed["candidates"][:len(PREFERRED_FAMILIES)]],
-                              "measurement_limits": limits},
+                              "provider_usage": transport.provider_usage, "measurement_limits": limits},
                              ensure_ascii=False))
             return 0
         if args.smoke:
@@ -1290,11 +1292,13 @@ def _free_main(args, parser) -> int:
             parser.error("مجلّد البنك مطلوب، أو --smoke، أو --list-catalog")
         result, code = _free_bank(args, transport)
     except AutomaticReviewError as exc:
+        # ما خرج من نداءاتٍ قبل الرفض (ومنه نداءُ الفهرس الفاشل) يبقى في المطبوع وفي RUN.json (ملاحظة Codex على #290)
+        usage = getattr(transport, "provider_usage", None) or []
         if run is not None:          # خرج قبل الخلاصة: يُرفع سجلُّ الرفض المسمّى وحده، لا ملفّاتٌ تاريخية
-            finish_run(run, "refused", exc.code)
+            finish_run(run, "refused", exc.code, usage)
         shape = getattr(exc, "shape", None)
-        print(json.dumps({"status": "refused", "code": exc.code, **({"shape": shape} if shape else {})},
-                         ensure_ascii=False))
+        print(json.dumps({"status": "refused", "code": exc.code, **({"shape": shape} if shape else {}),
+                          **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
         return 2
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return code

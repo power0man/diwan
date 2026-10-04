@@ -689,8 +689,11 @@ def test_a_catalog_that_is_not_json_is_named_by_shape_and_the_smoke_uses_the_pre
         None, {"status": 200, "content_type": "application/json", "bytes": len(wrapped), "top": "dict", "keys": ["models"]})
     _free(monkeypatch, FreeOpener(catalog=ok, replies={DS: [CATCH], MI: [CATCH]}))
     assert cli.main(["--backend", "github-models", "--list-catalog", str(tmp_path / "c.json")]) == 2
-    assert _printed(capsys) == {"status": "refused", "code": "catalog_malformed",
-                                "shape": {"status": 200, "content_type": "text/plain", "bytes": 4, "top": "not_json"}}
+    refused = _printed(capsys)
+    usage = refused.pop("provider_usage")          # نداءُ الفهرس الفاشل في المطبوع لا في الذاكرة وحدها (ملاحظة Codex على #290)
+    assert refused == {"status": "refused", "code": "catalog_malformed",
+                       "shape": {"status": 200, "content_type": "text/plain", "bytes": 4, "top": "not_json"}}
+    assert [(row["kind"], row["status"], row["error"]) for row in usage] == [("catalog", "error", "catalog_malformed")]
     out = tmp_path / "smoke.json"
     assert cli.main(["--backend", "github-models", "--smoke", str(out)]) == 0
     report = json.loads(out.read_text(encoding="utf-8"))
@@ -1081,6 +1084,25 @@ def test_the_catalog_listing_and_its_saved_file_carry_the_free_backend_limits(tm
     assert set(cli.FREE_LIMITS) <= set(expected) and set(cli.CATALOG_LIMITS) <= set(expected)
     assert _printed(capsys)["measurement_limits"] == expected
     assert json.loads(out.read_text(encoding="utf-8"))["measurement_limits"] == expected
+
+
+def test_the_catalog_call_is_persisted_in_the_listing_and_in_a_refused_run(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #290: صفُّ نداء الفهرس كان في الذاكرة وحدها؛ فالجردُ الناجح لا يحمله، والتشغيلُ المرفوض قبل الخلاصة
+    لا يحفظ إلا حالتَه. صار في ملفّ الجرد ومطبوعه، وفي RUN.json للتشغيل المرفوض."""
+    _free(monkeypatch, FreeOpener(catalog=[_gh_full(DS), _gh_full(MI)]))
+    out = tmp_path / "catalog.json"
+    assert cli.main(["--backend", "github-models", "--list-catalog", str(out)]) == 0
+    printed, saved = _printed(capsys), json.loads(out.read_text(encoding="utf-8"))
+    for report in (printed, saved):
+        assert [(row["kind"], row["status"]) for row in report["provider_usage"]] == [("catalog", "succeeded")]
+
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    bank = _public_bank(tmp_path, "usage")
+    _free(monkeypatch, FreeOpener(catalog=[_gh(DS)]))           # عائلةٌ صالحةٌ واحدة فلا زوج: رفضٌ قبل الخلاصة
+    assert cli.main([str(bank), "--backend", "github-models", "--run-id", "U1", "--brief", str(BRIEF)]) == 2
+    assert [row["kind"] for row in _printed(capsys)["provider_usage"]] == ["catalog"]
+    state = json.loads((bank / "runs" / "U1" / "reviews" / "RUN.json").read_text(encoding="utf-8"))
+    assert state["status"] == "refused" and [row["kind"] for row in state["provider_usage"]] == ["catalog"]
 
 
 def test_a_quota_history_keeps_a_service_refusal_failed_not_unavailable(tmp_path, monkeypatch, capsys):
