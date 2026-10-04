@@ -30,6 +30,9 @@ from tools.rebuild_index import normalize  # noqa: E402
 
 REPORT = ROOT / "docs" / "probe" / "g3-hybrid-vs-bm25-20260928.json"
 LIMIT = 5  # حدُّ النتائج في `hybrid_search` الافتراضيّ، وhit@5 عليه
+# بصمةُ قناتَي تقرير غ٣ المسجَّلتين (json مرتَّبُ المفاتيح): قناةُ المتّجهات لا تُعاد بلا مُضمِّن، والصفوفُ المسجَّلة تصف رتبةَ
+# الذهبيّ وحده؛ فإبدالُ ما سواه يغيّر أرقامَ التشخيص ولا يكشفه غيرُ البصمة (ملاحظة Codex على #293). وتقريرُ غ٣ جديدٌ يُثبَّت هنا.
+CHANNELS_SHA256 = "a05fc5c0387a164b2f0767d53838011c886c9907b07236ced92476e1701a1b97"
 
 LIMITS = [
     "replays_the_recorded_channels_of_the_g3_report_no_embedder_was_run_the_vector_rankings_are_that_report_s",
@@ -131,6 +134,8 @@ def load_report(path: Path, bank: dict) -> dict:
     replayed = rg.arm_rows_from_channels(channels, bank)
     if any((row["rank"], row["hit_at_5"]) != recorded[arm].get(row["id"]) for arm in rg.ARMS for row in replayed[arm]):
         raise DiagnosisRefused("g3_report_channels_do_not_reproduce_its_arms")
+    if hashlib.sha256(json.dumps(channels, sort_keys=True, ensure_ascii=False).encode()).hexdigest() != CHANNELS_SHA256:
+        raise DiagnosisRefused("g3_report_channels_not_the_recorded_ones", "قناتا التقرير غيرُ المسجَّلتين ببصمتهما")
     return report
 
 

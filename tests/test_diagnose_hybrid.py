@@ -121,6 +121,24 @@ def test_channels_that_are_not_rankings_of_the_frozen_bank_are_refused(tmp_path,
     assert refused.value.code == "g3_report_channels_not_bank_rankings"
 
 
+def test_vector_rankings_permuted_below_the_gold_are_refused_by_the_recorded_digest(tmp_path, report, bank):
+    """ملاحظة Codex على #293: قناةُ المتّجهات لا تُعاد بلا مُضمِّن، والصفوفُ تصف رتبةَ الذهبيّ وحده؛ فإبدالُ مقطعين تحت الذهبيّ
+    في متّجهات rg_q004 يحفظ رتبَ الأذرع الثلاث ويمرّ فحوصَ البنك، ويُردّ ببصمة القناتين المسجَّلة."""
+    permuted = copy.deepcopy(report)
+    entry = permuted["channels"]["rg_q004"]
+    vectors, lexical = entry["vectors"].split(), set(entry["bm25"].split())
+    tail = [i for i in range(len(vectors) - 1, 0, -1) if vectors[i] not in lexical][:2]
+    vectors[tail[0]], vectors[tail[1]] = vectors[tail[1]], vectors[tail[0]]
+    entry["vectors"] = " ".join(vectors)
+    replayed = rg.arm_rows_from_channels(permuted["channels"], bank)
+    recorded = {arm: {row["id"]: (row["rank"], row["hit_at_5"]) for row in report["rows"][arm]} for arm in rg.ARMS}
+    assert all((row["rank"], row["hit_at_5"]) == recorded[arm][row["id"]] for arm in rg.ARMS for row in replayed[arm])
+    (tmp_path / "permuted.json").write_text(json.dumps(permuted, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(dh.DiagnosisRefused) as refused:
+        dh.load_report(tmp_path / "permuted.json", bank)
+    assert refused.value.code == "g3_report_channels_not_the_recorded_ones"
+
+
 @pytest.mark.parametrize("entry", [{"bm25": "rg_d001"}, {"bm25": "rg_d001", "vectors": ["rg_d001"]}, "rg_d001"],
                          ids=["missing", "not_text", "not_object"])
 def test_a_malformed_channel_is_a_named_refusal_not_a_traceback(tmp_path, report, bank, capsys, entry):
