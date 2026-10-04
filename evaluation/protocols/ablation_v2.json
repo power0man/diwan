@@ -103,6 +103,7 @@
   "limits": [
     "kimi_open_bank_v1_1_carries_the_k17_gameable_checks_so_a_rerun_on_v1_2_supersedes",
     "each_case_is_attempted_once_per_registered_seed_per_arm_and_aggregated_by_strict_majority",
+    "seeds_change_only_the_engine_seed_while_decoding_stays_at_temperature_0_so_greedy_decoding_may_repeat_one_output_across_seeds_and_the_majority_reflects_run_to_run_nondeterminism_not_sampling_variance",
     "a_seed_error_excludes_the_aggregated_case_instead_of_becoming_a_failure_or_success",
     "the_engine_is_the_frozen_default_of_m1_q54_other_engines_may_differ",
     "cases_without_automatic_checks_are_excluded_no_judge_is_used",

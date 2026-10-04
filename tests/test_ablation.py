@@ -373,3 +373,16 @@ def test_a_seed_error_excludes_the_aggregated_case_instead_of_becoming_a_vote():
     failed = {"id": "c", "category": "general", "status": "error", "code": "timeout"}
     row = aggregate_seed_rows([(0, [measured]), (1, [failed]), (2, [measured])])[0]
     assert row["status"] == "error" and "passed" not in row and row["error_seeds"] == [1]
+
+
+def test_seeds_at_temperature_zero_are_published_as_not_measuring_sampling_variance():
+    """تدقيقٌ لاحقٌ لـc55d0ab: البذورُ الثلاث تغيّر بذرةَ المحرّك وحدها والفكُّ بحرارة 0، فلا تقيس تباينَ أخذ العيّنات؛ وما
+    دام المزوّدُ يفكّ بحرارة 0 يُنشر ذلك حدًّا مع كل تقرير استئصال."""
+    from core.contracts import Message, Request
+    from providers.ollama import OllamaProvider
+    request = Request((Message("user", "?"),), "m", "0" * 64, 8, 5.0, "local_only", None)
+    options = OllamaProvider("m").payload(request)["options"]
+    limit = ("seeds_change_only_the_engine_seed_while_decoding_stays_at_temperature_0_so_greedy_decoding_may_repeat_one_"
+             "output_across_seeds_and_the_majority_reflects_run_to_run_nondeterminism_not_sampling_variance")
+    if options["temperature"] == 0:
+        assert limit in json.loads(ablation.PROTOCOL.read_text(encoding="utf-8"))["limits"]
