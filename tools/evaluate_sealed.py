@@ -134,7 +134,8 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     protocol = judge_rules.load_protocol(protocol_path, protocol_sha256)
     preflight(provider, judge)
     if judge is not None:
-        judge_rules.accept_sealed_judge(judge_evidence, judge.model, protocol, protocol_sha256)
+        judge_rules.accept_sealed_judge(judge_evidence, judge.model, protocol, protocol_sha256,
+                                        judge_rules.calibration_sample(protocol, protocol_sha256))
     sealed_root = _outside_repository(sealed_root, "sealed_root_in_repository")
     run_root = _outside_repository(run_root, "sealed_run_root_in_repository")
     entries = [e for e in verify_manifest(sealed_root, manifest_path) if e["kind"] == "suite"]

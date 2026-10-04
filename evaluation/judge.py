@@ -20,12 +20,15 @@ import re
 from collections.abc import Iterable
 from pathlib import Path
 
+from evaluation.capabilities import CapabilityError, load_suite
 from evaluation.multi_system_review import model_family
 from evaluation.retrieval_general import wilson
 
 ROOT = Path(__file__).resolve().parent.parent
 PROTOCOL = ROOT / "evaluation" / "protocols" / "judge_v1.json"
-PROTOCOL_SHA256 = "d94f7e15e9ae0c8fc1e420140b1bec6f21a6817cfdcc76d82c2ab197d431a786"
+K11_EVIDENCE = ROOT / "docs" / "probe" / "k11-owner-queue-triage-20260925.json"
+OPEN_BANK = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
+PROTOCOL_SHA256 = "c2425d24938971aadac78f8a33e6be686c88dcda03824bd9cd6056c936441feb"
 VERDICTS = ("correct", "incorrect")
 OUTCOMES = ("pass", "fail", "without_checks", "error")
 # نصٌّ أقصرُ من هذا لا يُبحث عنه في التقرير: كلمةٌ قصيرة كـ«نعم» تقع في أيّ تقرير ولا تدلّ على حالة.
@@ -107,23 +110,50 @@ def calibration_result(items: list[dict], protocol: dict) -> dict:
             "by_source": {s: _scores([i for i in items if i["source"] == s]) for s in sources}}
 
 
-def _bounded(value, low: float, high: float) -> bool:
-    """عددٌ في مداه الرياضيّ: Infinity خارجه وNaN لا يقارَن، فكلاهما يُردّ قبل العتبة (ملاحظة Codex على #289)."""
-    return type(value) in (int, float) and low <= value <= high
+def calibration_sample(protocol: dict, protocol_sha256: str, *, open_bank: Path = OPEN_BANK,
+                       k11_evidence: Path = K11_EVIDENCE) -> dict[str, list[str]]:
+    """عيّنةُ المعايرة المجمَّدة بالبروتوكول: حالاتُ ك١١ بمعرّفاتها، ومئةُ حالةٍ مفتوحةٍ ذاتِ فحصٍ حتميّ تُختار طبقيًّا
+    ببذرة البصمة. فدليلُ المعايرة يُقابَل بها صفًّا صفًّا، ولا يُقبل دليلٌ اختار حالاتِه بنفسه (ملاحظة Codex على #289).
+    وملفّاتُ المهامّ الوكيلة ليست حزمَ حالاتٍ بفحوص، فلا تدخل المجمع."""
+    sources = {source["name"]: source for source in protocol["calibration"]["sources"]}
+    triage = json.loads(Path(k11_evidence).read_text(encoding="utf-8"))
+    owner = sorted(row["id"] for row in triage["real"] + triage["false_positives"])
+    kinds = set(sources["automatic_checked"]["check_kinds"])
+    pool: dict[str, list[str]] = {}
+    for path in sorted(Path(open_bank).glob("*/*.json")):
+        if path.name.endswith(".meta.json"):
+            continue
+        try:
+            suite = load_suite(path)
+        except CapabilityError:
+            continue
+        pool.setdefault(path.parent.name, []).extend(
+            f"{suite['suite_id']}/{case['case_id']}" for case in suite["cases"]
+            if case["checks"] and all(check["kind"] in kinds for check in case["checks"]))
+    wanted = sources["automatic_checked"]["cases"]
+    picked = select(pool, allocate({t: len(ids) for t, ids in pool.items()}, wanted), f"{protocol_sha256}:calibration")
+    automatic = sorted(case for ids in picked.values() for case in ids)
+    if len(owner) != sources["k11_owner_ruled"]["cases"] or len(set(automatic)) != wanted:
+        raise JudgeRefused("calibration_sample_unavailable", "العيّنةُ المسجَّلة لا تُبنى من البنك المفتوح كما هو")
+    return {"k11_owner_ruled": owner, "automatic_checked": automatic}
 
 
-def accept_sealed_judge(evidence: dict | None, model: str, protocol: dict, protocol_sha256: str) -> str:
-    """المحكِّمُ على المحجوب: دليلُ معايرةٍ ناجح لنموذجه نفسِه وعلى البروتوكول نفسِه، والأرقامُ تُعاد."""
+def accept_sealed_judge(evidence: dict | None, model: str, protocol: dict, protocol_sha256: str,
+                        sample: dict[str, list[str]]) -> str:
+    """المحكِّمُ على المحجوب هو المسجَّلُ في البروتوكول وحده، بدليل معايرةٍ على نموذجه وبروتوكوله، صفوفُه هي العيّنةُ
+    المجمَّدة حالةً حالة، وκ والدقّةُ تُعادان منها؛ فلا يُصدَّق عَلَمٌ ولا رقمٌ مكتوبٌ في الدليل (ملاحظتا Codex على #289)."""
+    if model != protocol["sealed"]["judge"]["model"]:
+        raise JudgeRefused("judge_not_registered", "محكِّمُ المحجوب هو المسجَّلُ في judge_v1 وحده")
     family = judge_family(model, protocol)
-    thresholds = protocol["thresholds"]
+    expected = sorted((source, case) for source, cases in sample.items() for case in cases)
     try:
-        kappa, accuracy = evidence["kappa"], evidence["accuracy"]
-        same = (evidence["protocol_sha256"] == protocol_sha256 and evidence["judge"]["model"] == model)
-        meets = (_bounded(kappa, -1, 1) and kappa >= thresholds["kappa_min"]
-                 and _bounded(accuracy, 0, 1) and accuracy >= thresholds["accuracy_min"])
-    except (KeyError, TypeError):
-        same = meets = False
-    if not (same and meets and evidence.get("passed") is True):
+        same = evidence["protocol_sha256"] == protocol_sha256 and evidence["judge"]["model"] == model
+        rows = evidence["rows"]
+        bound = sorted((row["source"], row["case"]) for row in rows) == expected
+        result = calibration_result(rows, protocol) if same and bound else None
+    except (KeyError, TypeError, AttributeError, JudgeRefused):
+        result = None
+    if not (result and result["passed"]):
         raise JudgeRefused("judge_uncalibrated", "لا يحكم على المحجوب محكِّمٌ بلا دليل معايرة ناجح (OD3)")
     return family
 

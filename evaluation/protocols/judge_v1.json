@@ -73,6 +73,8 @@
     "for_the_16_k11_false_positives_the_candidate_equals_the_reference_so_that_source_is_easy_and_is_reported_separately",
     "automatic_check_labels_inherit_the_flaws_of_the_checks_and_contains_checks_are_excluded_because_they_are_blind_to_polarity_k17",
     "120_attempts_give_wide_per_tier_intervals_and_the_wilson_interval_is_published_beside_every_rate",
-    "the_sealed_score_measures_the_frozen_engine_on_bank_v1_1_not_diwan_as_a_whole"
+    "the_sealed_score_measures_the_frozen_engine_on_bank_v1_1_not_diwan_as_a_whole",
+    "the_calibration_sample_is_computed_from_the_open_bank_v1_1_as_committed_so_a_changed_bank_changes_it_and_needs_judge_v2",
+    "calibration_evidence_is_its_rows_on_the_frozen_sample_and_its_metrics_are_recomputed_never_read"
   ]
 }

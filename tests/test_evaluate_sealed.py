@@ -64,8 +64,11 @@ def _run(tmp_path, provider, **kwargs):
 
 
 def _evidence(model="granite4"):
-    return {"protocol_sha256": judge_rules.PROTOCOL_SHA256, "judge": {"model": model},
-            "kappa": 0.7, "accuracy": 0.9, "passed": True}
+    """دليلُ معايرةٍ ناجح: صفوفٌ على العيّنة المجمَّدة حالةً حالة، والمحكِّمُ يوافق التسمياتِ كلَّها."""
+    sample = judge_rules.calibration_sample(judge_rules.load_protocol(), judge_rules.PROTOCOL_SHA256)
+    rows = [{"source": source, "case": case, "split": "open", "label": ("correct", "incorrect")[i % 2],
+             "verdict": ("correct", "incorrect")[i % 2]} for source, cases in sample.items() for i, case in enumerate(cases)]
+    return {"protocol_sha256": judge_rules.PROTOCOL_SHA256, "judge": {"model": model}, "rows": rows}
 
 
 def test_rates_and_wilson_per_tier_without_identifiers_or_text(tmp_path):
