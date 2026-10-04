@@ -1186,7 +1186,7 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     # أمّا المطبوعُ أدناه فتقريرُ هذا التشغيل وحده.
     ledger = prior + transport.provider_usage
     _persist_provider_usage(args.bank, ledger, {
-        "zero_spend_evidence": dict(sorted({**prior_evidence, **transport.zero_spend_evidence}.items())),
+        "zero_spend_evidence": dict(sorted({**prior_evidence, **getattr(transport, "zero_spend_evidence", {})}.items())),
         "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger), "token_totals": token_totals(ledger)})
     if args.run_id:          # كلُّ سجلٍّ وخلاصةٍ في مجلّد هذا التشغيل يحمل معرّفَه، فيُرفض عند الرفع ما لا يحمله
         stamp_run(args.bank / "reviews", args.run_id)
