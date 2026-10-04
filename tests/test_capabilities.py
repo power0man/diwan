@@ -381,6 +381,9 @@ def test_cli_only_emits_aggregates_and_exit_means_collection(
     provider = FakeProvider([response])
     monkeypatch.setattr(cli, "ROOT", tmp_path)
     monkeypatch.setattr(cli, "OllamaProvider", lambda model: provider)
+    # بصمةُ الأوزان تُحلّ من Ollama (#285)، وهنا من مُحلٍّ مصطنع؛ وحارسُها في test_model_digest
+    monkeypatch.setattr(cli, "pin_model_digest", lambda model, expected=None: "sha256:fixture")
+    monkeypatch.setattr(cli, "verify_model_digest", lambda model, pinned: None)
     assert cli.main(["--suite", str(path), "--model", provider.model]) == expected_exit
     output = capsys.readouterr().out
     assert provider.model not in output and "REFERENCE_DO_NOT_SEND" not in output

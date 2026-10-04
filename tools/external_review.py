@@ -438,10 +438,13 @@ class OpenAICompatChat:
                          **spec["headers"]}
         self.timeout, self.max_tokens = timeout, max_tokens
         self.catalog_shape: dict | None = None
+        self.catalog_read_at: str | None = None   # وقتُ آخر قراءةٍ للفهرس: لحظةُ دليل السعر
         self.failures: dict[str, dict] = {}     # آخرُ شكلٍ فاشل لكل نموذجٍ (وللفهرس): لا نصَّ فيه
         self.last_request: dict[str, dict] = {}  # الطريقةُ والرابطُ المرسَل والنهائيّ (bare_url) لكل نموذجٍ وللفهرس
         self.provider_usage: list[dict] = []     # سجلٌّ مأمون لكل محاولة نموذج: لا رسالةَ ولا مفتاح ولا نصَّ رد
         self.zero_spend_proofs: dict[str, str] = {}
+        # دليلُ المجانية نفسُه لا عبارتُه (ق٧١-٦، #285): بنودُ السعر كما قُرئت من الفهرس ووقتُ قراءتها، لكل نموذجٍ أُثبت
+        self.zero_spend_evidence: dict[str, dict] = {}
         if backend == "groq":
             self.zero_spend_proofs["*"] = "operator_confirmed_account_free_tier"
         self.opener = urllib.request.build_opener(_RefuseRedirect())
@@ -461,10 +464,17 @@ class OpenAICompatChat:
         if self.backend != "openrouter":
             return
         by_id = {entry.get("id"): entry for entry in entries if isinstance(entry, dict)}
+        observed_at = self.catalog_read_at or _utc_now()
         for model in models:
             if model not in by_id:
                 raise AutomaticReviewError("free_price_unverified", model)
             self.zero_spend_proofs[model] = openrouter_zero_spend(by_id[model])
+            # البنودُ بأسمائها الآمنة وقيمِها العشرية المطبَّعة وحدها، لا نصٌّ حرٌّ من الفهرس
+            self.zero_spend_evidence[model] = {
+                "proof": self.zero_spend_proofs[model], "catalog": bare_url(self.catalog_url),
+                "observed_at": observed_at,
+                "pricing": {key: str(_decimal(value)) for key, value in sorted(by_id[model]["pricing"].items())
+                            if isinstance(key, str) and _SAFE_TOKEN.fullmatch(key)}}
 
     def _guard_zero_spend(self, model: str) -> str | None:
         if self.backend == "groq":
@@ -475,6 +485,17 @@ class OpenAICompatChat:
                 raise AutomaticReviewError("free_price_unverified", model)
             return proof
         return None
+
+    def spend_report(self) -> dict:
+        """ما يُضاف إلى كلّ تقريرٍ وخلاصة: دليلُ المجانية المحفوظ، وعددُ ما أُرسل ولم تثبت كلفتُه.
+
+        نداءٌ أُرسل إلى OpenRouter ثم انقطع أو عاد بلا JSON يُعاد ولا يوقف التشغيل، وكلفتُه مجهولة؛ فلا يُبلَّغ التشغيلُ نظيفًا
+        وهو فيه (#285): يُعدّ هنا باسمه، والمالكُ يقرأ العددَ بجانب `provider_usage`."""
+        unconfirmed = sum(1 for row in self.provider_usage
+                          if row.get("kind") != "catalog" and row["provider"] == "openrouter"
+                          and row["request_sent"] and row["cost_status"] != "reported")
+        return {"zero_spend_evidence": dict(sorted(self.zero_spend_evidence.items())),
+                "cost_unconfirmed_attempts": unconfirmed}
 
     def _record_provider_usage(self, model: str, started: float, status: str, *,
                                usage: dict | None = None, cost: Decimal | None = None,
@@ -489,6 +510,14 @@ class OpenAICompatChat:
             "cost_status": "reported" if cost_reported else "not_reported",
             "zero_spend_proof": proof,
         })
+
+    def _record_catalog_call(self, started: float, status: str, error: str | None) -> None:
+        """نداءُ الفهرس في سجلّ النداءات أيضًا (#285): صفٌّ `kind: catalog` بلا نموذجٍ ولا استهلاك، فيُرى كلُّ ما خرج."""
+        self.provider_usage.append({
+            "kind": "catalog", "provider": self.backend, "model": None, "family": None,
+            "at": _utc_now(), "elapsed_ms": round((time.monotonic() - started) * 1000),
+            "status": status, "error": error, "request_sent": True, "usage": None, "cost_usd": None,
+            "cost_status": "not_billed_listing", "zero_spend_proof": None})
 
     def _send(self, url: str, payload: dict | None, label: str) -> tuple[bytes, str | None, int | None]:
         """(البايتات، نوعُ المحتوى، حالةُ HTTP). والخطأُ يحمل رمزَ حالته المسمّى وشكلَ جسمه (`shape`) لا نصَّه."""
@@ -594,7 +623,14 @@ class OpenAICompatChat:
         وما سواهما `catalog_malformed` ومعه شكلُه وحده (`catalog_shape`) لا نصُّه: قيس في ٢٨ سبتمبر ٢٠٢٦ أنّ
         models.github.ai يردّ `OK` نصًّا عاديًّا بأربعة بايتات لأيّ مسارٍ بلا تفويض، فكان الرمزُ وحده لا يفرّق بينه وبين غلافٍ مجهول.
         """
-        raw, content_type, status = self._send(self.catalog_url, None, "catalog")
+        started = time.monotonic()
+        try:
+            raw, content_type, status = self._send(self.catalog_url, None, "catalog")
+        except AutomaticReviewError as exc:
+            self._record_catalog_call(started, "error", exc.code)
+            raise
+        self.catalog_read_at = _utc_now()
+        self._record_catalog_call(started, "succeeded", None)
         entries, self.catalog_shape = catalog_shape(raw, content_type, status)
         if entries is None:
             self.failures["catalog"] = {**self.catalog_shape, "request": self.last_request["catalog"]}
@@ -824,7 +860,7 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
                   "pairs": [[p["model"] for p in pair] for pair in pairs[:len(runs)]],
                   "not_attempted_pairs": [[p["model"] for p in pair] for pair in pairs[len(runs):]],
                   "runs": runs, "measurement_limits": free_limits(runs[0]["measurement_limits"], args.backend),
-                  "provider_usage": transport.provider_usage,
+                  "provider_usage": transport.provider_usage, **_spend_report(transport),
                   "last_failure_shapes": transport.failures}
         if budget_error:
             report["code"] = budget_error
@@ -853,6 +889,7 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     report["fallbacks"] = fallbacks
     report["measurement_limits"] = free_limits(report["measurement_limits"], args.backend)
     report["provider_usage"] = transport.provider_usage
+    report.update(_spend_report(transport))
     report["last_failure_shapes"] = transport.failures
     if failure:
         report["status"], report["code"] = "failed", failure
@@ -1044,14 +1081,14 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     status = "failed" if failure or counted else "reviewed"
     limits = free_limits(summary["measurement_limits"], args.backend)
     _persist_limits(args.bank, limits)
-    _persist_provider_usage(args.bank, transport.provider_usage)
+    _persist_provider_usage(args.bank, transport.provider_usage, _spend_report(transport))
     if args.run_id:          # كلُّ سجلٍّ وخلاصةٍ في مجلّد هذا التشغيل يحمل معرّفَه، فيُرفض عند الرفع ما لا يحمله
         stamp_run(args.bank / "reviews", args.run_id)
     final_counts = final_set_counts(args.bank, final_models, pre_existing, current)
     result = {"status": status, **({"code": failure} if failure else {}), **final_counts,
               "attempts": attempts, **({"run_id": args.run_id} if args.run_id else {}),
               "measurement_limits": limits,
-              "provider_usage": transport.provider_usage,
+              "provider_usage": transport.provider_usage, **_spend_report(transport),
               "backend": transport.describe(), **source,
               "reviewers": {c["model"]: c["family"] for c in chosen}, "fallbacks": fallbacks,
               "pairs": summary["pairs"], "errors": len(counted),
@@ -1119,12 +1156,19 @@ def _persist_limits(bank: Path, limits: list[str]) -> None:
         _write_json(path, summary)
 
 
-def _persist_provider_usage(bank: Path, usage: list[dict]) -> None:
-    """سجلُّ النداءات في خلاصة التشغيل نفسها؛ لا يُكتب صفرٌ لكلفة لم يبلغها المزوّد."""
+def _spend_report(transport) -> dict:
+    """دليلُ المجانية وعدُّ ما لم تثبت كلفتُه، من نقلٍ يعرفهما؛ والنقلُ الذي لا يعرفهما (Ollama) لا يُنسب إليه شيء."""
+    report = getattr(transport, "spend_report", None)
+    return report() if callable(report) else {}
+
+
+def _persist_provider_usage(bank: Path, usage: list[dict], spend: dict | None = None) -> None:
+    """سجلُّ النداءات في خلاصة التشغيل نفسها؛ لا يُكتب صفرٌ لكلفة لم يبلغها المزوّد. ومعه دليلُ المجانية (#285)."""
     path = bank / "reviews" / "SUMMARY.json"
     if path.is_file():
         summary = json.loads(path.read_text(encoding="utf-8"))
         summary["provider_usage"] = usage
+        summary.update(spend or {})
         _write_json(path, summary)
 
 

@@ -1,4 +1,7 @@
-"""بصمةُ النموذج مشتركةٌ بين مُشغِّلات القياس، بخادم Ollama مصطنع محلي."""
+"""بصمةُ النموذج مشتركةٌ بين مُشغِّلات القياس، بخادم Ollama مصطنع محلي.
+
+المُشغِّلاتُ الأربعة من #190، ثم `measure_engine` و`evaluate_capabilities` (#285).
+"""
 from __future__ import annotations
 
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -8,7 +11,8 @@ import threading
 
 import pytest
 
-from tools import evaluate_ablation, evaluate_agentic, evaluate_research, evaluate_translation, model_digest
+from tools import (evaluate_ablation, evaluate_agentic, evaluate_capabilities, evaluate_research,
+                   evaluate_translation, measure_engine, model_digest)
 
 
 class _TagsHandler(BaseHTTPRequestHandler):
@@ -66,6 +70,10 @@ def _ablation_report() -> dict:
             "config": {}, "arms": {}, "measurement_limits": []}
 
 
+def _engine_report() -> dict:
+    return {"model": "fixture", "overall": {}, "suites_failed": 0, "elapsed_s": 0, "measurement_limits": []}
+
+
 def _configure(monkeypatch, name: str, after_run, seen: list[str]) -> None:
     import providers.ollama as ollama
     monkeypatch.setattr(ollama, "OllamaProvider", lambda model: object())
@@ -85,6 +93,8 @@ def _configure(monkeypatch, name: str, after_run, seen: list[str]) -> None:
         monkeypatch.setattr(evaluate_agentic, "select_tools", lambda *args, **kwargs: ())
     elif name == "research":
         monkeypatch.setattr(evaluate_research, "run_bank", measured(_research_report))
+    elif name == "engine":
+        monkeypatch.setattr(measure_engine, "measure", measured(_engine_report))
     else:
         monkeypatch.setattr(evaluate_ablation, "run_component", measured(_ablation_report))
 
@@ -103,11 +113,16 @@ def _invoke(name: str, tmp_path: Path, suffix: str, *, expected: str | None = No
         return evaluate_agentic.main(argv), out
     if name == "research":
         return evaluate_research.main(["--model", "fixture", *version, "--out", str(out)]), out
+    if name == "engine":
+        suites = tmp_path / "suites"
+        suites.mkdir(exist_ok=True)
+        (suites / "fixture.json").write_text("{}\n", encoding="utf-8")
+        return measure_engine.main([str(suites), "--model", "fixture", *version, "--out", str(out)]), out
     argv = ["--component", "search", "--model", "fixture", *version, "--out", str(out)]
     return evaluate_ablation.main(argv), out
 
 
-RUNNERS = ("translation", "agentic", "research", "ablation")
+RUNNERS = ("translation", "agentic", "research", "ablation", "engine")
 
 
 def test_all_four_runners_pin_the_digest_resolved_by_the_fake_ollama(tmp_path, monkeypatch, fake_ollama):
@@ -149,3 +164,40 @@ def test_all_four_runners_recheck_after_measurement_and_write_no_drifted_report(
         assert code != 0 and not out.exists(), name
         assert seen == ["sha256:before"], name
         assert "model_digest_drifted" in capsys.readouterr().out
+
+
+def _capabilities(monkeypatch, after_run, seen: list[str]) -> None:
+    """`evaluate_capabilities` لا يكتب `--out`: دليلُه ما يطبعه، وتشغيلتُه في var/capabilities."""
+    monkeypatch.setattr(evaluate_capabilities, "OllamaProvider", lambda model: object())
+    monkeypatch.setattr(evaluate_capabilities, "load_suite", lambda path: {})
+
+    def run(*args, **kwargs):
+        seen.append(kwargs["model_version"])
+        after_run()
+        return {"suite_id": "fixture", "run_id": "run-fixture",
+                "summary": {"collection_complete": True, "release_ready": False}}
+    monkeypatch.setattr(evaluate_capabilities, "evaluate_suite", run)
+
+
+def test_capabilities_pins_refuses_and_rechecks_the_digest(monkeypatch, fake_ollama, capsys):
+    seen: list[str] = []
+    _capabilities(monkeypatch, lambda: None, seen)
+    fake_ollama.models = [{"name": "fixture:latest", "digest": "sha256:weights"}]
+    assert evaluate_capabilities.main(["--model", "fixture"]) == 0
+    assert seen == ["sha256:weights"] and json.loads(capsys.readouterr().out)["run_id"] == "run-fixture"
+
+    seen.clear()
+    fake_ollama.models = []
+    assert evaluate_capabilities.main(["--model", "fixture"]) == 2 and seen == []
+    assert json.loads(capsys.readouterr().out)["error_code"] == "model_digest_unresolved"
+
+    fake_ollama.models = [{"name": "fixture:latest", "digest": "sha256:real"}]
+    assert evaluate_capabilities.main(["--model", "fixture", "--model-version", "sha256:other"]) == 2
+    assert seen == [] and json.loads(capsys.readouterr().out)["error_code"] == "model_version_mismatch"
+
+    def drift():
+        fake_ollama.models = [{"name": "fixture:latest", "digest": "sha256:after"}]
+    _capabilities(monkeypatch, drift, seen)
+    assert evaluate_capabilities.main(["--model", "fixture"]) == 2 and seen == ["sha256:real"]
+    output = capsys.readouterr().out
+    assert json.loads(output)["error_code"] == "model_digest_drifted" and "run-fixture" not in output

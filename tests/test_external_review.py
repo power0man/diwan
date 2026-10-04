@@ -1322,10 +1322,17 @@ def test_openrouter_mock_sends_no_paid_fallback_and_persists_zero_cost_usage(tmp
     assert all(payload["provider"] == {"allow_fallbacks": False} for payload in sent)
     assert all(payload["usage"] == {"include": True} and "models" not in payload for payload in sent)
     report = json.loads(out.read_text(encoding="utf-8"))
-    assert len(report["provider_usage"]) == 2
-    assert all(row["status"] == "succeeded" and row["cost_usd"] == "0" for row in report["provider_usage"])
-    assert all(row["zero_spend_proof"] == "catalog_free_suffix_and_all_pricing_zero"
-               for row in report["provider_usage"])
+    # نداءُ الفهرس صفٌّ في سجلّ النداءات أيضًا، ودليلُ المجانية بنودُ السعر ولحظتُها لا عبارتُه وحدها (#285)
+    catalog_rows = [row for row in report["provider_usage"] if row.get("kind") == "catalog"]
+    chat_rows = [row for row in report["provider_usage"] if row.get("kind") != "catalog"]
+    assert len(catalog_rows) == 1 and catalog_rows[0]["status"] == "succeeded" and catalog_rows[0]["model"] is None
+    assert len(chat_rows) == 2
+    assert all(row["status"] == "succeeded" and row["cost_usd"] == "0" for row in chat_rows)
+    assert all(row["zero_spend_proof"] == "catalog_free_suffix_and_all_pricing_zero" for row in chat_rows)
+    evidence = report["zero_spend_evidence"]
+    assert sorted(evidence) == sorted([OR_DS, OR_MI]) and report["cost_unconfirmed_attempts"] == 0
+    assert all(e["pricing"] and set(e["pricing"].values()) == {"0"} and e["observed_at"] == catalog_rows[0]["at"]
+               and e["catalog"] == "https://openrouter.ai/api/v1/models" for e in evidence.values())
     assert "zero_spend_guard_is_provider_specific_and_not_a_general_price_attestation" in report["measurement_limits"]
     assert KEY not in out.read_text(encoding="utf-8")
 
@@ -1343,6 +1350,23 @@ def test_openrouter_missing_or_nonzero_reported_cost_is_a_named_failure():
     assert [row["status"] for row in chat.provider_usage] == ["error", "error"]
     assert chat.provider_usage[0]["cost_usd"] is None
     assert chat.provider_usage[1]["cost_usd"] == "0.01"
+
+
+def test_an_openrouter_attempt_sent_without_a_confirmed_cost_is_counted_not_reported_clean():
+    """تدقيقٌ لاحق (#285): انقطاعٌ أو ردٌّ ليس JSON بعد إرسال الطلب يُعاد ولا يوقف التشغيل، وكلفتُه مجهولة؛ فيُعدّ باسمه."""
+    chat = cli.OpenAICompatChat("openrouter", KEY)
+    chat.approve_zero_spend([_priced(OR_DS)], [OR_DS])
+    assert chat.zero_spend_evidence[OR_DS]["pricing"] and chat.spend_report()["cost_unconfirmed_attempts"] == 0
+
+    def fail(*args, **kwargs):
+        chat.last_request[OR_DS] = {"method": "POST", "sent": "https://openrouter.ai/api/v1/chat/completions",
+                                    "final": None}
+        raise AutomaticReviewError("transport_timeout", OR_DS)
+    chat._send = fail
+    with pytest.raises(AutomaticReviewError):
+        chat(OR_DS, "s", "u", {})
+    assert chat.provider_usage[-1]["request_sent"] is True
+    assert chat.spend_report()["cost_unconfirmed_attempts"] == 1
 
 
 def test_groq_mock_logs_tokens_but_never_invents_an_unreported_zero_cost():

@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from core.sandbox import configure_sandbox_backend
+from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest
 from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
 from providers.ollama import OllamaProvider
 
@@ -199,7 +200,7 @@ def measure(suites, model: str, out_dir: Path, *,
             "المقام المعروض وغيرُ قابلةٍ للنجاح فيه، فهي خصمٌ ثابتٌ على كل المحرّكات.",
             "الرقمُ الكلّي يخفي فروق الطبقات، ووزنُ كل طبقةٍ فيه حجمُها لا أهمّيتها. "
             "والطبقة (ج) تقيس الامتناع لا المعرفة.",
-            "هويةُ النموذج اسمُ خدمةٍ في Ollama ما لم يُمرَّر model_version ببصمة أوزان.",
+            "هويةُ النموذج بصمةُ أوزانه كما عرضها Ollama قبل القياس وبعده؛ والبصمةُ لا تثبت ما يجري خلفها في نموذجٍ سحابي.",
             "نداءٌ واحد لكل حالة، بلا تقدير تباينٍ ولا إعادة.",
         ],
     }
@@ -209,7 +210,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("suites_dir", type=Path)
     ap.add_argument("--model", required=True)
-    ap.add_argument("--model-version", default="unspecified")
+    ap.add_argument("--model-version", help="بصمةُ النموذج المتوقَّعة؛ تُقارَن بما يعرضه Ollama")
     ap.add_argument("--max-output", type=int, default=800)
     ap.add_argument("--deadline-s", type=int, default=240)
     ap.add_argument("--out", type=Path, required=True, help="ملفّ النتيجة JSON")
@@ -265,9 +266,20 @@ def main(argv=None) -> int:
                                   args.sandbox_workspace.resolve())
         sandbox = str(args.sandbox_receipt)
 
+    # البصمةُ تُحلّ قبل القياس وتُعاد بعده، ولا يُكتب دليلٌ بلا بصمةٍ أو ببصمةٍ تغيّرت أثناءه (#285)
+    try:
+        model_version = pin_model_digest(args.model, args.model_version)
+    except ModelDigestError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        return 1
     result = measure(suites, args.model, ROOT / "var/capabilities",
                      max_output=args.max_output, deadline_s=args.deadline_s,
-                     model_version=args.model_version)
+                     model_version=model_version)
+    try:
+        verify_model_digest(args.model, model_version)
+    except ModelDigestError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        return 1
     args.out.parent.mkdir(parents=True, exist_ok=True)
     result["sandbox"] = sandbox
     if sandbox is None:
