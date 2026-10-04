@@ -12,18 +12,19 @@ import pytest
 from core.contracts import Response, Usage
 from evaluation import judge as judge_rules
 from evaluation.judge import JudgeRefused
-from tests.test_judge_protocol_frozen import ENGINE_DIGEST, JUDGE_DIGEST, OWNER_PUBLIC, _evidence
+from tests.test_judge_protocol_frozen import DATA, ENGINE_DIGEST, JUDGE_DIGEST, OWNER_PUBLIC, _evidence
 from tools import evaluate_sealed as sealed
 from tools import model_digest
 from tools.evaluate_sealed import SealedRefused
 
 CANARY_TEXT = "سؤالٌ محجوبٌ مصطنع لا يخرج"
+FROZEN_ENGINE = DATA["sealed"]["engine_model"]
 # ما يحلّه Ollama على الماك: المحرّكُ ببصمته المسجَّلة، والمحكِّمُ ببصمته الموقَّعة في الدليل المصطنع.
-DIGESTS = {sealed.FROZEN_ENGINE: ENGINE_DIGEST, "granite4": JUDGE_DIGEST}
+DIGESTS = {FROZEN_ENGINE: ENGINE_DIGEST, "granite4": JUDGE_DIGEST}
 
 
 class Provider:
-    def __init__(self, model=sealed.FROZEN_ENGINE, answer="نعم", *, local=True):
+    def __init__(self, model=FROZEN_ENGINE, answer="نعم", *, local=True):
         self.model, self.answer, self.is_local, self.calls = model, answer, local, 0
 
     def estimate_micros(self, request):
@@ -124,7 +125,7 @@ def test_an_engine_tag_off_its_registered_digest_is_refused_before_reading(tmp_p
     """ملاحظة Codex على #289: وسمُ qwen3.5:9b يُعاد توجيهُه قبل التشغيل؛ فالمحرّكُ ببصمته المسجَّلة في البروتوكول."""
     provider = Provider()
     with pytest.raises(SealedRefused) as refused:
-        _run(tmp_path, provider, digest_resolver={**DIGESTS, sealed.FROZEN_ENGINE: resolved}.get)
+        _run(tmp_path, provider, digest_resolver={**DIGESTS, FROZEN_ENGINE: resolved}.get)
     assert refused.value.code == code and provider.calls == 0
 
 
@@ -149,7 +150,7 @@ def test_a_reused_run_root_never_replays_verdicts_of_earlier_judge_weights(tmp_p
     assert report["judge"]["digest"] == recalibrated
 
 
-@pytest.mark.parametrize("model", [sealed.FROZEN_ENGINE, "granite4"], ids=["engine", "judge"])
+@pytest.mark.parametrize("model", [FROZEN_ENGINE, "granite4"], ids=["engine", "judge"])
 def test_a_digest_that_changes_during_the_run_refuses_the_report(tmp_path, model):
     """البصمتان تُعادان بعد التشغيل؛ ونموذجٌ تبدّلت أوزانُه أثناءه لا يُكتب له تقرير."""
     seen = []
@@ -204,7 +205,6 @@ def test_a_manifest_other_than_the_registered_one_is_refused_before_reading(tmp_
 def test_the_frozen_engine_is_named_by_the_protocol_not_the_product_default(tmp_path):
     """ملاحظة Codex على #289: اسمُ المحرّك من judge_v1 نفسِه؛ فبروتوكولٌ يسمّي غيرَه يردّ qwen3.5:9b ولو بقي هو الافتراضيّ."""
     data = json.loads(judge_rules.PROTOCOL.read_text(encoding="utf-8"))
-    assert sealed.FROZEN_ENGINE == data["sealed"]["engine_model"]
     data["sealed"]["engine_model"] = "llama-frozen:1b"
     other = tmp_path / "judge_other.json"
     other.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
@@ -251,6 +251,21 @@ def test_the_cli_checks_locality_before_reading_any_judge_evidence(tmp_path, cap
     """ملاحظة Codex على #289: الدليلُ كان يُقرأ قبل فحص المحليّة، فدليلٌ غائبٌ يرمي استثناءً خامًا."""
     assert sealed.main(["--judge", "glm-4.6:cloud", "--judge-evidence", str(tmp_path / "missing.json")]) == 2
     assert json.loads(capsys.readouterr().out)["code"] == "sealed_requires_local_provider"
+
+
+def test_a_corrupted_protocol_is_refused_by_name_not_at_import(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #289: كان المُشغِّل يقرأ البروتوكول عند استيراده بلا فحص بصمته، فعطبُه يخرج استثناءً خامًا قبل
+    main؛ والآن لا يُقرأ إلا بعد فحصها، فيُردّ برمزه."""
+    import importlib.util
+    corrupted = tmp_path / "judge_v1.json"
+    corrupted.write_text("{ ليس JSON", encoding="utf-8")
+    monkeypatch.setattr(judge_rules, "PROTOCOL", corrupted)
+    spec = importlib.util.spec_from_file_location("evaluate_sealed_fresh", sealed.__file__)
+    fresh = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fresh)
+    monkeypatch.setattr(fresh, "_on_owner_mac", lambda: True)
+    assert fresh.main(["--sealed-root", str(tmp_path / "sealed")]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "judge_protocol_changed"
 
 
 def test_judge_evidence_is_never_read_from_the_sealed_root_and_a_bad_one_is_named(tmp_path, capsys):

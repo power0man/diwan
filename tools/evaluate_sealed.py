@@ -38,9 +38,6 @@ from providers.ollama import OllamaProvider
 from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest
 
 MANIFEST = ROOT / "evaluation" / "banks" / "kimi_v1" / "sealed" / "MANIFEST.json"
-# المحرّكُ المجمَّد باسمه في البروتوكول نفسِه لا في الافتراضيّ الذي قد يتغيّر بق٥٩ (ملاحظة Codex على #289). يُقرأ هنا
-# اسمًا افتراضيًّا لسطر الأوامر؛ والتشغيلُ يقرؤه من البروتوكول المفحوص ببصمته.
-FROZEN_ENGINE = json.loads(judge_rules.PROTOCOL.read_text(encoding="utf-8"))["sealed"]["engine_model"]
 SEALED_ROOT = Path.home() / "diwan-sealed" / "kimi_v1"
 _VERDICT = re.compile(r"(?:الحكم|VERDICT)\s*[:：]\s*(correct|incorrect)\s*", re.IGNORECASE)
 _TIER = re.compile(r"sealed/(tier_[a-z0-9]+)/")
@@ -234,7 +231,9 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--sealed-root", type=Path, default=SEALED_ROOT)
     parser.add_argument("--run-root", type=Path, default=SEALED_ROOT.parent / ".runs" / "judge_v1")
-    parser.add_argument("--model", default=FROZEN_ENGINE)
+    # المحرّكُ المجمَّد باسمه في البروتوكول لا في الافتراضيّ الذي قد يتغيّر بق٥٩؛ ولا يُقرأ البروتوكولُ عند الاستيراد، بل
+    # بعد فحص بصمته هنا، فعطبُه رفضٌ مسمًّى (judge_protocol_changed) لا استثناءٌ خام (ملاحظتا Codex على #289).
+    parser.add_argument("--model", help="افتراضُه المحرّكُ المجمَّد في judge_v1")
     parser.add_argument("--judge")
     parser.add_argument("--judge-evidence", type=Path)
     parser.add_argument("--out", type=Path)
@@ -244,9 +243,11 @@ def main(argv=None) -> int:
     parser.add_argument("--sandbox-workspace", type=Path, default=SEALED_ROOT.parent / ".runs" / "sandbox")
     args = parser.parse_args(argv)
     try:
-        provider, judge = OllamaProvider(args.model), OllamaProvider(args.judge) if args.judge else None
+        engine = judge_rules.load_protocol(judge_rules.PROTOCOL)["sealed"]["engine_model"]
+        provider = OllamaProvider(args.model or engine)
+        judge = OllamaProvider(args.judge) if args.judge else None
         # يسبق قراءةَ أيِّ ملفٍّ يسمّيه المستدعي، ودليلُ المعايرة منها (ملاحظة Codex على #289)
-        preflight(provider, judge, judge_rules.load_protocol()["sealed"]["engine_model"])
+        preflight(provider, judge, engine)
         evidence = read_evidence(args.judge_evidence, args.sealed_root) if args.judge_evidence else None
         if args.sandbox_receipt:
             workspace = _outside_repository(args.sandbox_workspace, "sealed_run_root_in_repository")
