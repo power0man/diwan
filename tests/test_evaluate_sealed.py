@@ -103,10 +103,23 @@ def test_a_calibrated_local_judge_scores_only_cases_without_checks(tmp_path):
     assert report["judge"]["model"] == "granite4"
 
 
-def test_an_unparsed_verdict_is_an_error_not_a_pass(tmp_path):
-    report = _run(tmp_path, Provider(), judge=Provider(model="granite4", answer="لا أدري"),
-                  judge_evidence=_evidence())
+@pytest.mark.parametrize("answer", ["لا أدري", "الحكم: correct\nلكنّ الجوابَ يقلب المعنى، فلا أحكم"],
+                         ids=["no_verdict", "verdict_not_on_the_last_line"])
+def test_an_unparsed_verdict_is_an_error_not_a_pass(tmp_path, answer):
+    report = _run(tmp_path, Provider(), judge=Provider(model="granite4", answer=answer), judge_evidence=_evidence())
     assert report["by_tier"]["tier_b"]["errors"] == 4 and report["by_tier"]["tier_b"]["passes"] == 0
+
+
+def test_a_failing_judge_run_counts_its_cases_as_errors_without_crashing(tmp_path, monkeypatch):
+    real = sealed.evaluate_suite
+
+    def judge_fails(suite, provider, *args, **kwargs):
+        if provider.model == "granite4":
+            raise sealed.CapabilityError("judge", "synthetic_judge_failure", "عطلٌ مصطنع في المحكِّم")
+        return real(suite, provider, *args, **kwargs)
+    monkeypatch.setattr(sealed, "evaluate_suite", judge_fails)
+    report = _run(tmp_path, Provider(), judge=Provider(model="granite4"), judge_evidence=_evidence())
+    assert report["by_tier"]["tier_b"]["errors"] == 4 and report["by_tier"]["tier_a"]["passes"] == 6
 
 
 def test_a_file_that_does_not_match_the_manifest_is_refused_without_its_name(tmp_path):
