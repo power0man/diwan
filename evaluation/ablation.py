@@ -160,7 +160,8 @@ def aggregate_seed_rows(runs: list[tuple[int, list[dict]]]) -> list[dict]:
         errors = [row for row in attempts if row.get("status") != "measured"]
         if errors:
             aggregated.append({**base, "status": "error", "code": "seed_run_error",
-                               "error_seeds": [row["seed"] for row in errors]})
+                               "error_seeds": [row["seed"] for row in errors],
+                               "seed_error_codes": sorted({row.get("code") or "unnamed" for row in errors})})
             continue
         passed = sum(row["passed"] is True for row in attempts)
         aggregated.append({**base, "status": "measured", "passed": passed >= threshold,
@@ -253,6 +254,11 @@ def _sha(value) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def _error_key(row: dict) -> str:
+    codes = row.get("seed_error_codes")
+    return "+".join(codes) if codes else row.get("code") or "unnamed"
+
+
 def judge(component: str, on: list[dict], off: list[dict]) -> dict:
     """المقارنةُ والقرارُ لمكوّنٍ من البروتوكول، من صفوف الذراعين وحدها."""
     data = protocol()
@@ -266,8 +272,10 @@ def judge(component: str, on: list[dict], off: list[dict]) -> dict:
         subset = compare(on, off, categories=set(rule["benefit_categories"]), include_arm_errors=True)
         rest = {row["category"] for row in on} - set(rule["benefit_categories"])
         overall = compare(on, off, categories=rest, include_arm_errors=True)
-    # عطبُ كلِّ ذراعٍ برموزه: إن غيّر المكوّنُ ما يكتمل (موافقةٌ معلَّقة، بتر) ظهر هنا لا في النسبة (#185)
-    errors_by_arm = {side: dict(sorted(Counter(row.get("code") or "unnamed" for row in rows
+    # عطبُ كلِّ ذراعٍ برموزه: إن غيّر المكوّنُ ما يكتمل (موافقةٌ معلَّقة، بتر) ظهر هنا لا في النسبة (#185).
+    # والحالةُ المجمَّعة من البذور تُعدّ برموز بذورها العاطبة لا بـseed_run_error الجامع (#285)، مرّةً لكل حالة:
+    # رموزُها المختلفة تُضمّ بـ«+» فيبقى مجموعُ الذراع عددَ حالاتها العاطبة.
+    errors_by_arm = {side: dict(sorted(Counter(_error_key(row) for row in rows
                                                if row["status"] != "measured").items()))
                      for side, rows in (("on", on), ("off", off))}
     return {"component": component, "overall": overall, "benefit_subset": subset, "errors_by_arm": errors_by_arm,
