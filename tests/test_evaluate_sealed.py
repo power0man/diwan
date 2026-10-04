@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import re
 
@@ -230,6 +231,11 @@ def test_any_override_is_named_and_never_called_a_judge_v1_measurement(tmp_path,
     mutated.complete = lambda request: Response("نعم", Usage(3, 1), "complete", 0, provider="x", model_version="x")
     injected = sealed.run_sealed(sealed_root, mutated, run_root=tmp_path / "b" / "runs", manifest_path=manifest)
     assert injected["status"] == "not_measured_overridden" and injected["overrides"] == ["provider"]
+    # ولا عَلَمَ ثقةٍ في واجهة run_sealed يُزوَّر به المزوّدُ الممرَّر «مبنيًّا هنا» (ملاحظة Codex على #289)
+    assert list(inspect.signature(sealed.run_sealed).parameters)[-1] == "reviewed_bank"
+    with pytest.raises(TypeError):
+        sealed.run_sealed(sealed_root, mutated, run_root=tmp_path / "b" / "runs", manifest_path=manifest,
+                          _constructed_here=True)
     # والقياسُ وحده بمزوّدَين يبنيهما measure_sealed من اسميهما
     report = sealed.measure_sealed(sealed_root, FROZEN_ENGINE, run_root=tmp_path / "b" / "runs", manifest_path=manifest)
     assert report["status"] == "measured" and report["overrides"] == [] and report["manifest_sha256"] == _sha(manifest)
@@ -504,7 +510,7 @@ def test_the_k11_reviewed_bank_reaches_calibration_outside_the_sealed_root(tmp_p
                         "--run-root", str(tmp_path / "runs")]) == 2
     assert json.loads(capsys.readouterr().out)["code"] == "calibration_reviewed_bank_missing"
     captured = {}
-    monkeypatch.setattr(sealed, "run_sealed", lambda *a, **k: captured.update(k) or {"measurement_limits": []})
+    monkeypatch.setattr(sealed, "run_sealed", lambda *a, **k: captured.update(k) or {"measurement_limits": [], "overrides": []})
     assert sealed.main(["--judge", "granite4", "--judge-evidence", str(evidence), "--sealed-root", str(sealed_root),
                         "--run-root", str(tmp_path / "runs"), "--k11-reviewed-bank", str(reviewed)]) == 0
     assert captured["reviewed_bank"] == reviewed

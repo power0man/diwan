@@ -223,15 +223,30 @@ def measure_sealed(sealed_root: Path, engine_model: str, *, run_root: Path, mani
     """طريقُ القياس وحده: المزوّدان يُبنيان هنا من اسميهما، فلا يمرّر المستدعي كائنًا (ولو OllamaProvider بدالّةٍ مُبدَلة)
     يكتب الأجوبةَ أو الأحكامَ بنفسه، ولا مُحلِّلًا ولا بروتوكولًا ولا بصمةَ بيان (ملاحظة Codex على #289). وهو ما يناديه
     السطر؛ وrun_sealed بمزوّدٍ ممرَّر للبنوك الاصطناعية تبديلٌ مسمًّى لا يُسمّى قياسًا."""
-    return run_sealed(sealed_root, OllamaProvider(engine_model), run_root=run_root, manifest_path=manifest_path,
-                      judge=None if judge_model is None else OllamaProvider(judge_model), judge_evidence=judge_evidence,
-                      reviewed_bank=reviewed_bank, _constructed_here=True)
+    report = run_sealed(sealed_root, OllamaProvider(engine_model), run_root=run_root, manifest_path=manifest_path,
+                        judge=None if judge_model is None else OllamaProvider(judge_model), judge_evidence=judge_evidence,
+                        reviewed_bank=reviewed_bank)
+    # المزوّدان بُنيا هنا من اسميهما فليسا تبديلًا؛ والوسمُ يُعاد هنا لا بعَلَمٍ يمرّ في واجهة run_sealed فيُزوَّر من
+    # مستدعيها (ملاحظة Codex على #289). وما سواهما مما قد يسمّيه run_sealed يبقى.
+    return _label(report, [name for name in report["overrides"] if name not in ("provider", "judge_provider")])
+
+
+OVERRIDDEN = "the_inputs_named_in_overrides_are_not_the_registered_ones_so_this_report_is_not_a_judge_v1_measurement"
+
+
+def _label(report: dict, overrides: list[str]) -> dict:
+    """الحالةُ والحدُّ يتبعان التبديلاتِ المسمّاة وحدها: «measured» إن خلت، وإلا لا قياسَ ومعه حدٌّ معلَن."""
+    report["overrides"] = overrides
+    report["status"] = "not_measured_overridden" if overrides else "measured"
+    report["measurement_limits"] = ([limit for limit in report["measurement_limits"] if limit != OVERRIDDEN]
+                                    + ([OVERRIDDEN] if overrides else []))
+    return report
 
 
 def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Path = MANIFEST,
                judge=None, judge_evidence: dict | None = None, protocol_path: Path | None = None,
                protocol_sha256: str | None = None, manifest_sha256: str | None = None,
-               digest_resolver=None, reviewed_bank: Path | None = None, _constructed_here: bool = False) -> dict:
+               digest_resolver=None, reviewed_bank: Path | None = None) -> dict:
     # «measured» لا يُنشر إلا على المسجَّل كلِّه: البروتوكولُ ببصمته المثبَّتة في الشيفرة، والبيانُ ببصمته فيه، وبصماتُ
     # النماذج من نقطة Ollama المسجَّلة لا من مُحلِّلٍ يمرّره المستدعي. وكلُّ تبديلٍ من هذه (للبنوك والبروتوكولات
     # الاصطناعية في الاختبارات) يُسمّى في التقرير فلا يُسمّى قياسًا لـjudge_v1 (ملاحظات Codex على #289).
@@ -243,10 +258,9 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     if digest_resolver is not None:
         overrides.append("digest_resolver")
     # ومزوّدٌ ممرَّر يمرّ بالفحص المسبق وفحص الإعداد ثم يكتب الأجوبةَ بنفسه، ولو كان OllamaProvider بدالّةٍ مُبدَلة في
-    # نسخته؛ فلا قياسَ إلا بمزوّدَين بناهما measure_sealed من اسميهما (ملاحظتا Codex على #289)
-    if not _constructed_here:
-        overrides.append("provider")
-    if judge is not None and not _constructed_here:
+    # نسخته؛ فهو تبديلٌ هنا دائمًا، ولا قياسَ إلا بمزوّدَين بناهما measure_sealed من اسميهما (ملاحظات Codex على #289)
+    overrides.append("provider")
+    if judge is not None:
         overrides.append("judge_provider")
     protocol = judge_rules.load_protocol(protocol_path, protocol_sha256)
     preflight(provider, judge, protocol["sealed"]["engine_model"])
@@ -344,8 +358,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
             verify_model_digest(judge.model, judge_digest, resolver=digest_resolver)
     except ModelDigestError as exc:
         raise SealedRefused(exc.code, "تغيّرت بصمةُ نموذجٍ أثناء التشغيل") from None
-    out = {"schema_version": 1, "probe": "k45-sealed", "status": "not_measured_overridden" if overrides else "measured",
-           "overrides": overrides,
+    out = {"schema_version": 1, "probe": "k45-sealed", "status": None, "overrides": None,
            "protocol": protocol["protocol_id"], "protocol_sha256": protocol_sha256, "manifest_sha256": manifest_digest,
            "date": date.today().isoformat(), "agent": "anthropic/claude-opus-5-5",
            "engine": {"model": provider.model, "digest": engine_digest}, "runtime": runtime,
@@ -359,11 +372,9 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
            **judge_rules.tier_report(rows),
            "measurement_limits": protocol["limits"] + (
                ["cases_without_automatic_checks_stay_in_the_denominator_as_not_passed_because_no_calibrated_judge"]
-               if judge is None else []) + (
-               ["the_inputs_named_in_overrides_are_not_the_registered_ones_so_this_report_is_not_a_judge_v1_measurement"]
-               if overrides else [])}
+               if judge is None else [])}
     judge_rules.assert_clean(out, identifiers, texts)
-    return out
+    return _label(out, overrides)
 
 
 def main(argv=None) -> int:
