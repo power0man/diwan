@@ -186,3 +186,71 @@ def test_cli_failure_never_reports_success(monkeypatch, artifacts, tmp_path, cap
     assert cli.main(arguments) == 2
     result = json.loads(capsys.readouterr().out)
     assert result["error_code"] == "asr_process_failed" and result["release_ready"] is False
+
+
+@pytest.mark.parametrize("entry", ["binary", "model"])
+def test_artifact_directory_is_refused_before_execution(monkeypatch, artifacts, tmp_path, entry):
+    calls = fake_run(monkeypatch)
+    directory = tmp_path / "directory"
+    directory.mkdir()
+    artifacts[entry] = directory
+    with pytest.raises(asr.ASRError, match="asr_artifact_invalid"):
+        asr.transcribe(wav(), **artifacts)
+    assert not calls
+
+
+def test_artifact_size_limit_includes_boundary_and_rejects_excess(tmp_path):
+    artifact = tmp_path / "artifact"
+    artifact.write_bytes(b"1234")
+    digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    assert asr._identity(artifact, digest, 4) == artifact
+    with pytest.raises(asr.ASRError, match="asr_artifact_invalid"):
+        asr._identity(artifact, digest, 3)
+
+
+def test_cli_refuses_valid_png_before_artifact_access(monkeypatch, artifacts, tmp_path, capsys):
+    from tests.test_multimodal_codec import png
+    selected = tmp_path / "selected.png"
+    selected.write_bytes(png())
+    calls = fake_run(monkeypatch)
+    def unexpected_identity(*args):
+        pytest.fail("non-audio must be rejected before artifact access")
+    monkeypatch.setattr(asr, "_identity", unexpected_identity)
+    arguments = ["--file", str(selected)]
+    for key, value in artifacts.items():
+        arguments += ["--" + key.replace("_", "-"), str(value)]
+    assert cli.main(arguments) == 2
+    result = json.loads(capsys.readouterr().out)
+    assert result == {"status": "error", "error_code": "asr_audio_required", "release_ready": False}
+    assert not calls
+
+
+def test_result_symlink_is_refused(monkeypatch, artifacts, tmp_path):
+    target = tmp_path / "external.json"
+    target.write_text(json.dumps({"result": {"language": "ar"}, "transcription": [{"text": "مرحبا"}]}))
+    def run(command, **options):
+        Path(command[command.index("-of") + 1]).with_suffix(".json").symlink_to(target)
+        return SimpleNamespace(returncode=0)
+    monkeypatch.setattr(asr.subprocess, "run", run)
+    with pytest.raises(asr.ASRError, match="asr_result_invalid"):
+        asr.transcribe(wav(), **artifacts)
+
+
+@pytest.mark.parametrize("text_bytes", [b"\xed\xa0\x80", b"\\ud800", b"\\udfff"],
+                         ids=["invalid-utf8", "escaped-high", "escaped-low"])
+def test_cli_refuses_lone_surrogates(monkeypatch, artifacts, tmp_path, capsys, text_bytes):
+    fake_run(monkeypatch, b'{"result":{"language":"ar"},"transcription":[{"text":"' + text_bytes + b'"}]}')
+    selected = tmp_path / "selected.wav"
+    selected.write_bytes(wav())
+    arguments = ["--file", str(selected)]
+    for key, value in artifacts.items():
+        arguments += ["--" + key.replace("_", "-"), str(value)]
+    assert cli.main(arguments) == 2
+    assert json.loads(capsys.readouterr().out) == {
+        "status": "error", "error_code": "asr_result_invalid", "release_ready": False}
+
+
+def test_pilot_evidence_conforms_to_public_schema():
+    from tools.probe_evidence import validate_payload
+    path = Path(__file__).resolve().parents[1] / "docs/probe/arabic-whisper-pilot-20261003.json"
+    assert validate_payload(json.loads(path.read_text())) == []

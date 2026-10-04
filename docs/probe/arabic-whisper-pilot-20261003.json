@@ -155,19 +155,19 @@
       "synthetic_only": true,
       "release_ready": false
     },
-    "limits": [
+    "measured_source_sha256": {
+      "multimodal/local_asr.py": "6777ab506b2bf50f16e762c83927d2c48d33b669dde48f29877ec991ff680b19",
+      "tools/transcribe_audio.py": "d9c7032e87f871fe610207c2f06c8a87c2603b3c848e21f228b2794f074a097e",
+      "evaluation/speech_pilot.py": "19850a602d0dcbc1d58b382bf9cf8445747a2da6234f3089e1bf16bbd52a7985"
+    },
+    "measurement_limits": [
       "synthetic_not_real_speech",
       "single_voice_not_dialects",
       "not_the_frozen_Common_Voice_bank",
       "no_TTS_acceptance",
       "no_production_activation",
       "punctuation_hamza_taa_not_conflated"
-    ],
-    "measured_source_sha256": {
-      "multimodal/local_asr.py": "6777ab506b2bf50f16e762c83927d2c48d33b669dde48f29877ec991ff680b19",
-      "tools/transcribe_audio.py": "d9c7032e87f871fe610207c2f06c8a87c2603b3c848e21f228b2794f074a097e",
-      "evaluation/speech_pilot.py": "19850a602d0dcbc1d58b382bf9cf8445747a2da6234f3089e1bf16bbd52a7985"
-    }
+    ]
   },
   "after_digital_silence_guard": {
     "schema_version": 1,
@@ -326,7 +326,7 @@
       "tools/transcribe_audio.py": "d9c7032e87f871fe610207c2f06c8a87c2603b3c848e21f228b2794f074a097e",
       "evaluation/speech_pilot.py": "f343db7b39d9cd5b76541e702fff4af92faebd73a066392284c3d7d6a50ce56e"
     },
-    "limits": [
+    "measurement_limits": [
       "synthetic_not_real_speech",
       "single_voice_not_dialects",
       "not_the_frozen_Common_Voice_bank",
@@ -335,5 +335,16 @@
       "punctuation_hamza_taa_not_conflated"
     ]
   },
-  "release_ready": false
+  "release_ready": false,
+  "agent": "openai/codex",
+  "date": "2026-10-03",
+  "measurement_limits": [
+    "synthetic_not_real_speech",
+    "single_voice_not_dialects",
+    "not_the_frozen_Common_Voice_bank",
+    "no_TTS_acceptance",
+    "no_production_activation",
+    "punctuation_hamza_taa_not_conflated",
+    "historical_measurements_not_rerun_for_review_fixes"
+  ]
 }

@@ -89,13 +89,14 @@ def transcribe(audio: bytes, *, binary: Path, binary_sha256: str,
                 raw = source.read(MAX_RESULT_BYTES + 1)
             if len(raw) > MAX_RESULT_BYTES:
                 raise ASRError("asr_result_too_large")
-            result = json.loads(raw)
+            result = json.loads(raw.decode("utf-8"))
             if type(result) is not dict or result.get("result", {}).get("language") != "ar":
                 raise ASRError("asr_result_invalid")
             segments = result["transcription"]
             if type(segments) is not list or any(type(s) is not dict or type(s.get("text")) is not str for s in segments):
                 raise ASRError("asr_result_invalid")
             text = "".join(s["text"] for s in segments).strip()
+            text.encode("utf-8")  # Reject escaped lone surrogates as well as invalid UTF-8 bytes.
             if len(text) > MAX_TEXT_CHARS:
                 raise ASRError("asr_text_too_large")
         except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError) as exc:
