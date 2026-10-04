@@ -20,7 +20,9 @@ class Check:
 
 def commands(python: str, node: str) -> tuple[Check, ...]:
     return (
-        Check("pytest", (python, "-m", "pytest", "tests/", "-q"), 900),
+        # حدُّ الشجرة كلِّها: بلغت المجموعةُ ٩٠٠ ث على مشغّل 3.14 المستضاف مرّتين (#289)، فرُفع بقرار المالك؛
+        # ومهلةُ وظيفة verify-runtime ستّون دقيقة فيتّسع له.
+        Check("pytest", (python, "-m", "pytest", "tests/", "-q"), 1500),
         Check("docs", (python, "tools/check_docs.py", "--check")),
         Check("context-index", (python, "tools/context_index.py", "--check")),
         Check("acceptance-0", (python, "acceptance.py")),
