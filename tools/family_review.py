@@ -81,12 +81,21 @@ def load_reviewers(raw: str | bytes) -> dict:
 
 
 def author_families(commits: list[dict], registry: dict) -> set[str]:
-    """عائلاتُ الإيداعات من ذيل النسبة (ما قبل «/»)؛ الإيداعُ بلا ذيلٍ شأنُ أداة النسبة."""
+    """عائلاتُ الإيداعات من ذيل النسبة (ما قبل «/»)؛ الإيداعُ بلا ذيلٍ شأنُ أداة النسبة.
+
+    والفشلُ مغلق (ملاحظة Codex على #297): ذيلٌ يسمّي هويّةً لا يعرفها السجلُّ الموثوق، أو أكثرُ من هويّة، رفضٌ مسمًّى لا
+    إيداعٌ يُسقَط؛ ومدًى بلا هويّةٍ معروفةٍ واحدة رفضٌ كذلك. فالعائلاتُ الفارغة كانت تجعل كلَّ بوتٍ مدرَجٍ «عائلةً أخرى»، ومنه
+    بوتُ عائلة المؤلّف الذي سجّل نفسَه في الطلب باسمٍ جديد."""
     families = set()
     for commit in commits:
         values = parse_trailers(commit["message"]).get(registry["trailer"], [])
-        if len(values) == 1 and values[0] in registry["agents"]:
-            families.add(values[0].split("/", 1)[0])
+        if not values:
+            continue
+        if len(values) != 1 or values[0] not in registry["agents"]:
+            raise ReviewError("author_not_in_trusted_registry", ", ".join(values)[:120])
+        families.add(values[0].split("/", 1)[0])
+    if not families:
+        raise ReviewError("no_attributed_author")
     return families
 
 

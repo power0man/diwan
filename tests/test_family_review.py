@@ -78,8 +78,25 @@ def test_a_pull_request_from_two_families_needs_a_third():
 
 
 def test_author_families_come_from_the_trailer_not_the_account():
-    commits = [commit("anthropic/claude-opus-5-5"), commit("openai/codex"), commit("nobody/unregistered")]
+    commits = [commit("anthropic/claude-opus-5-5"), commit("openai/codex")]
     assert fr.author_families(commits, REGISTRY) == {"anthropic", "openai"}
+
+
+def test_an_identity_unknown_to_the_trusted_registry_is_refused_not_dropped():
+    """ملاحظة Codex على #297: إسقاطُ الهويّة المجهولة يفرّغ العائلات فيُحتسب بوتُ عائلة المؤلّف نفسِه."""
+    for odd in (commit("nobody/unregistered"),
+                {**commit("x"), "message": "عمل\n\nDiwan-Agent: anthropic/claude-opus-5-5\nDiwan-Agent: openai/codex\n"}):
+        with pytest.raises(fr.ReviewError) as refused:
+            fr.author_families([commit("anthropic/claude-opus-5-5"), odd], REGISTRY)
+        assert refused.value.code == "author_not_in_trusted_registry"
+
+
+def test_a_range_with_no_attributed_commit_is_refused_and_an_untagged_commit_is_skipped():
+    untagged = {"sha": "d" * 40, "committed_at": 1_800_000_000, "message": "Merge branch 'main'\n"}
+    with pytest.raises(fr.ReviewError) as refused:
+        fr.author_families([untagged], REGISTRY)
+    assert refused.value.code == "no_attributed_author"
+    assert fr.author_families([untagged, commit("openai/codex")], REGISTRY) == {"openai"}
 
 
 # — الخريطة لا توسّع الثقة —
@@ -293,8 +310,8 @@ def test_the_codex_review_instruction_excludes_openai_authored_pull_requests():
 
 # — الثقةُ من نسخة الأداة لا من الطلب (جديد-actions-hardening ٢) —
 
-def _pr_repo(tmp_path, *, agents=None, reviewers=None):
-    """نسخةُ طلبٍ بإيداعٍ واحدٍ من Claude، وسجلّاها كما يشاء الطلب."""
+def _pr_repo(tmp_path, *, agents=None, reviewers=None, author="anthropic/claude-opus-5-5"):
+    """نسخةُ طلبٍ بإيداعٍ واحدٍ من `author`، وسجلّاها كما يشاء الطلب."""
     repo = tmp_path / "pr"
     (repo / "registry").mkdir(parents=True)
     for name, override in (("agents.json", agents), ("reviewers.json", reviewers)):
@@ -305,7 +322,7 @@ def _pr_repo(tmp_path, *, agents=None, reviewers=None):
     _git(repo, "init", "-q", "-b", "main"); _git(repo, "add", "-A"); _git(repo, "commit", "-q", "-m", "base", env=env)
     base = _git(repo, "rev-parse", "HEAD")
     (repo / "x.txt").write_text("x"); _git(repo, "add", "-A")
-    _git(repo, "commit", "-q", "-m", "عمل\n\nDiwan-Agent: anthropic/claude-opus-5-5", env=env)
+    _git(repo, "commit", "-q", "-m", f"عمل\n\nDiwan-Agent: {author}", env=env)
     return repo, base, _git(repo, "rev-parse", "HEAD")
 
 
@@ -336,6 +353,16 @@ def test_a_pull_request_that_unregisters_its_author_cannot_be_passed_by_its_own_
     code, report = _judge(tmp_path, repo, base, head, [review("claude[bot]", "APPROVED", head)])
     assert code == 1 and report["author_families"] == ["anthropic"]
     assert report["code"] == "reviewed_only_by_the_author_family"
+
+
+def test_an_author_the_pull_request_registers_for_itself_fails_closed(tmp_path):
+    """سيناريو Codex على #297: الطلبُ يسجّل `anthropic/new-agent` في سجلّه ويودِع به، و`claude[bot]` يوافق."""
+    def register(data):
+        data["agents"]["anthropic/new-agent"] = dict(data["agents"]["anthropic/claude-opus-5-5"])
+        return data
+    repo, base, head = _pr_repo(tmp_path, agents=register, author="anthropic/new-agent")
+    code, report = _judge(tmp_path, repo, base, head, [review("claude[bot]", "APPROVED", head)])
+    assert code == 2 and report["status"] == "error" and report["code"] == "author_not_in_trusted_registry"
 
 
 def test_the_workflow_runs_the_tool_and_its_registries_from_the_default_branch():
