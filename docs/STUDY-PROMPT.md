@@ -156,7 +156,7 @@ sources/         المصادر
 | اختبارات مجموعة | **5903** | `.venv/bin/python -m pytest` (هذا عدد جمع؛ النجاح له دليله المنفصل) |
 | قرارات | **71** بلا فجوة | `grep -oE 'ق[٠-٩]+' docs/DECISIONS.md \| sort -u \| wc -l` |
 | وثائق قبول | **19** | `ls docs/M*-ACCEPTANCE.md` |
-| ملفات بايثون | **502** / **113625** سطرًا | `git ls-files '*.py' \| xargs wc -l` |
+| ملفات بايثون | **502** / **113637** سطرًا | `git ls-files '*.py' \| xargs wc -l` |
 | المخزن البحري النافذ | **117** وثيقة / **1279** صفحة | `docs/probe/project-status.json` |
 | أحدث نطاق موثق | **م١٦** | `docs/M16-ACCEPTANCE.md` |
 <!-- generated:study-numbers:end -->
