@@ -3,7 +3,7 @@
  "codex_project_doc_max_bytes": 32768,
  "documents": [
   {
-   "bytes": 30774,
+   "bytes": 30211,
    "headings": [
     {
      "level": 2,
@@ -32,42 +32,42 @@
     },
     {
      "level": 2,
-     "line": 153,
+     "line": 152,
      "title": "٤ — قواعد المراجعة والقياس"
     },
     {
      "level": 2,
-     "line": 170,
+     "line": 169,
      "title": "٥ — قواعد العمل وبروتوكول الإنهاء"
     },
     {
      "level": 2,
-     "line": 206,
+     "line": 205,
      "title": "٦ — متى تتوقف وتسأل المالك"
     },
     {
      "level": 2,
-     "line": 220,
+     "line": 219,
      "title": "٧ — الذكاءات الخارجية: كيف تعمل دون أن ترى المستودع"
     },
     {
      "level": 2,
-     "line": 256,
+     "line": 255,
      "title": "٨ — خريطة المستودع"
     },
     {
      "level": 2,
-     "line": 277,
+     "line": 276,
      "title": "٩ — حدود هذا الملف"
     }
    ],
-   "lines": 287,
+   "lines": 286,
    "path": "AGENTS.md",
    "purpose": "الأدوار والقواعد وبروتوكول البدء، وما بقي مفتوحًا من جدول §٣",
    "read_when": "كل جلسة، كاملًا",
    "role": "حاكمة",
-   "sha256_12": "60b284f8ad9f",
-   "tokens_estimate": 8193
+   "sha256_12": "fe00b4f19dc0",
+   "tokens_estimate": 8042
   },
   {
    "bytes": 27245,
@@ -959,7 +959,7 @@
    "tokens_estimate": 1425
   },
   {
-   "bytes": 32499,
+   "bytes": 33036,
    "headings": [
     {
      "level": 2,
@@ -967,13 +967,13 @@
      "title": "٣ — المهام (أرشيفُ الصفوف المنجزة؛ العنوانُ نفسُه ليقرأه حارسُ الجدول)"
     }
    ],
-   "lines": 55,
+   "lines": 56,
    "path": "docs/TASKS-ARCHIVE.md",
    "purpose": "صفوفُ §٣ المنجزة بنصّها كما كانت عند أرشفتها (ق٦٧-٥)",
    "read_when": "بإحالةٍ فقط",
    "role": "أرشيف",
-   "sha256_12": "3fa08177473d",
-   "tokens_estimate": 8775
+   "sha256_12": "dd971879b3be",
+   "tokens_estimate": 8920
   },
   {
    "bytes": 42526,
@@ -1563,11 +1563,6 @@
    "id": "ك١٧",
    "owner": "Claude",
    "status": "مفتوحة — حُجزت في 06f6c89 ثم أُرجئت إلى ما بعد الإطلاق الأول بتوجيه المالك في ٢٥ سبتمبر (`docs/LAUNCH-PLAN-20260925.md` §١.٢)"
-  },
-  {
-   "id": "ك٣٧",
-   "owner": "Claude",
-   "status": "مفتوحة"
   }
  ],
  "schema_version": 1

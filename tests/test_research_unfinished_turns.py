@@ -59,6 +59,7 @@ def test_provider_stops_are_named_errors_without_scoring(monkeypatch, stop_reaso
                    "code": "response_" + stop_reason, "loop_status": status}
     summary = summarize([row], META["thresholds"])
     assert summary["measured"] == 0 and summary["errors"] == 1 and not summary["meets"]
+    assert summary["errors_by_code"] == {"response_" + stop_reason: 1}           # الرمزُ في الملخّص لا العددُ وحده (#285)
 
 
 def test_exhausting_search_steps_never_scores_the_intermediate_answer(monkeypatch):

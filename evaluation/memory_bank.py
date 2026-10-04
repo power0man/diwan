@@ -228,7 +228,9 @@ def system_prompt_collisions(scenario: dict, prompts_text: str | None = None) ->
 
 PERSISTED_SAMPLE = "عيّنةُ مخزنٍ لفحص بنك الذاكرة"     # نصُّ عنصرٍ بديل يُقنَّع بعد الكتابة فلا يبقى إلا ما يكتبه المخزنُ ثابتًا
 PERSISTED_DYNAMIC = ("item_id", "sha256", "approved_at", "forgotten_at")   # ما يكتبه المخزنُ متغيّرًا في كلِّ كتابة، بلا نصّ العنصر
-PERSISTED_DYNAMIC_LISTS = ("references",)   # وقوائمُ يكتبها المنتجُ في الإيصال بقيمٍ مولَّدة: `agent:<جلسة>/<جولة>` وأمثالُها
+# وقوائمُ يكتبها المنتجُ في الإيصال بقيمٍ مولَّدة: `agent:<جلسة>/<جولة>` وأمثالُها؛ ومنها جولاتُ السياق المحجوب التي يكتبها
+# نسيانُ الواجهة الموحَّد (88b006e) بالشكل نفسِه (#285)
+PERSISTED_DYNAMIC_LISTS = ("references", "context_withheld_turns")
 
 
 def mask_persisted(payload: bytes) -> bytes:
@@ -279,9 +281,15 @@ def declared_persisted_schema_text() -> str:
         item_id = store.remember(PERSISTED_SAMPLE, consent="owner")
         files = lambda: [mask_persisted(f.read_bytes()).decode("utf-8", "replace") for f in sorted(Path(tmp).rglob("*")) if f.is_file()]
         written = files()
-        # بمراجعِ جولاتٍ كما يكتبها النسيانُ الموصول (`agent:<جلسة>/<جولة>` و`text:…`)، فتُقنَّع هنا كما تُقنَّع في المسح
-        store.forget(item_id, references=["agent:sample-session/sample-turn", "text:sample-session/sample-turn"],
-                     scrubbed={"agent:sample-session": 1, "text:sample-session": 1})
+        # بمراجعِ جولاتٍ كما يكتبها النسيانُ الموصول (`agent:<جلسة>/<جولة>` و`text:…`)، فتُقنَّع هنا كما تُقنَّع في المسح؛
+        # وبإيصالِ نسيان الواجهة الموحَّد كاملًا (`webui/server.py`): مفتاحُ `context_withheld_turns` يكتبه على القرص كلُّ نسيانٍ
+        # منها، فغيابُه عن العيّنة يُسقط شاهدًا يقع فيه بالمنتج الصحيح (#285). والتخطيطُ ثم التطبيقُ تحت قفل المخزن كما هناك.
+        with store._lock():
+            _, receipt_payload = store._forget_plan(
+                item_id, references=["agent:sample-session/sample-turn", "text:sample-session/sample-turn"],
+                scrubbed={"agent:sample-session": 1, "text:sample-session": 1},
+                context_withheld_turns=["agent:sample-session/sample-turn"])
+            store._apply_forget(item_id, receipt_payload)
         written += files()
     return "\n".join(written).replace(PERSISTED_SAMPLE, " ")     # القيمُ المتغيّرة قُنّعت بـmask_persisted نفسِه الذي يمسح البقايا
 
