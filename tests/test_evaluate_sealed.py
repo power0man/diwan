@@ -380,6 +380,24 @@ def test_a_reviewed_bank_that_contains_the_sealed_root_is_refused(tmp_path):
     assert refused.value.code == "k11_reviewed_bank_in_sealed_root"
 
 
+def test_the_suites_measured_are_the_bytes_the_manifest_authenticated(tmp_path, monkeypatch):
+    """ملاحظة Codex على #289: ملفٌّ مختومٌ يُستبدل بعد مطابقة بصمته وقبل تحميله كان يُقاس محتواه غيرُ الموثَّق وينشر التقريرُ
+    بصمةَ البيان؛ والآن تُحلَّل البايتاتُ التي طابقت البصمةَ نفسُها، فلا أثرَ للاستبدال."""
+    real = sealed.verify_manifest
+
+    def then_swapped(*args):
+        entries = real(*args)
+        for entry in entries:
+            suite = json.loads(entry["local"].read_text(encoding="utf-8"))
+            for case in suite["cases"]:
+                case["checks"] = [{"kind": "exact", "value": "لا"}] if case["checks"] else []
+            entry["local"].write_text(json.dumps(suite, ensure_ascii=False), encoding="utf-8")
+        return entries
+    monkeypatch.setattr(sealed, "verify_manifest", then_swapped)
+    report = _run(tmp_path, Provider())
+    assert report["by_tier"]["tier_a"]["passes"] == 6 and report["by_tier"]["tier_a"]["failures"] == 0
+
+
 def test_a_second_measurement_in_the_same_runner_directory_is_refused_before_it_writes(tmp_path):
     """ملاحظة Codex على #289: استدعاءان متداخلان يتشاركان علامةَ الفحص المعلَّق، فيزيل الأولُ علامةَ الثاني؛ فالقياسُ
     مسلسَلٌ بقفل مجلّد المُشغِّل، والثاني يُرفض قبل أن يكتب علامةً أو يسأل نموذجًا، ثم يمرّ بعد فكّ القفل."""

@@ -45,7 +45,7 @@ from core.locality import is_local_provider
 from core.sandbox import configure_sandbox_backend, sandbox_configuration
 from evaluation import capabilities
 from evaluation import judge as judge_rules
-from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
+from evaluation.capabilities import CapabilityError, evaluate_suite
 from providers import ollama as ollama_provider
 from providers.ollama import OllamaProvider
 from tools import model_digest
@@ -274,11 +274,12 @@ def verify_manifest(sealed_root: Path, manifest_path: Path, expected_sha256: str
     for entry in manifest["files"]:
         path = sealed_root / entry["path"].removeprefix("sealed/")
         tier = _TIER.match(entry["path"])
-        if not tier or not path.is_file() or path.is_symlink() \
-                or hashlib.sha256(path.read_bytes()).hexdigest() != entry["sha256"]:
+        raw = path.read_bytes() if tier and path.is_file() and not path.is_symlink() else None
+        if raw is None or hashlib.sha256(raw).hexdigest() != entry["sha256"]:
             bad += 1
             continue
-        entries.append({**entry, "tier": tier.group(1), "local": path})
+        # البايتاتُ التي طابقت البصمةَ هي التي تُقاس، فملفٌّ يُستبدل بعد المطابقة لا يُعاد فتحُه (ملاحظة Codex على #289)
+        entries.append({**entry, "tier": tier.group(1), "local": path, "raw": raw})
     if bad:
         raise SealedRefused("sealed_manifest_mismatch", f"{bad} ملفًّا لا يطابق البيان")
     return entries
@@ -408,7 +409,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
 
         suites, by_tier = {}, {}
         for entry in entries:
-            suite = load_suite(entry["local"])
+            suite = capabilities.validate_suite(capabilities._parse_json(entry["raw"].decode("utf-8")))
             suites[suite["suite_id"]] = (entry["tier"], suite)
             by_tier.setdefault(entry["tier"], []).extend(f"{suite['suite_id']}\x1f{c['case_id']}"
                                                          for c in suite["cases"])
