@@ -664,6 +664,17 @@ def test_the_github_catalog_array_is_parsed_and_its_shape_named(tmp_path, monkey
     assert written["backend"]["endpoint_host"] == "models.github.ai" and written["models"] == 3
 
 
+def test_a_malformed_catalog_is_recorded_as_a_failed_call_not_a_success():
+    """ملاحظةُ Codex على #290: ردُّ 200 بغلافٍ لا يُقرأ كان يُسجَّل في provider_usage ناجحًا ثم يُرفض بـcatalog_malformed."""
+    chat = cli.OpenAICompatChat("github-models", KEY)
+    chat.opener = FreeOpener(catalog=b"OK\r\n")
+    with pytest.raises(AutomaticReviewError):
+        chat.catalog()
+    assert [(row["kind"], row["status"], row["error"]) for row in chat.provider_usage] == [
+        ("catalog", "error", "catalog_malformed")]
+    assert chat.catalog_read_at is None
+
+
 def test_a_catalog_that_is_not_json_is_named_by_shape_and_the_smoke_uses_the_preferred_list(tmp_path, monkeypatch, capsys):
     """قيس في ٢٨ سبتمبر ٢٠٢٦: models.github.ai يردّ «OK» نصًّا عاديًّا (٤ بايتات) لأيّ مسارٍ بلا تفويض."""
     ok = b"OK\r\n"

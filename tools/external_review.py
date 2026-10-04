@@ -629,14 +629,16 @@ class OpenAICompatChat:
         except AutomaticReviewError as exc:
             self._record_catalog_call(started, "error", exc.code)
             raise
-        self.catalog_read_at = _utc_now()
-        self._record_catalog_call(started, "succeeded", None)
         entries, self.catalog_shape = catalog_shape(raw, content_type, status)
         if entries is None:
+            # ردُّ 200 بغلافٍ لا يُقرأ نداءٌ فاشل في السجلّ أيضًا، لا ناجحٌ ثم رفض (ملاحظة Codex على #290)
+            self._record_catalog_call(started, "error", "catalog_malformed")
             self.failures["catalog"] = {**self.catalog_shape, "request": self.last_request["catalog"]}
             error = AutomaticReviewError("catalog_malformed", self.backend)
             error.shape = self.catalog_shape
             raise error
+        self.catalog_read_at = _utc_now()
+        self._record_catalog_call(started, "succeeded", None)
         return [_catalog_entry(entry) for entry in entries
                 if isinstance(entry, dict) and isinstance(entry.get("id"), str)]
 
