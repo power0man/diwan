@@ -66,6 +66,10 @@ class PublicMCPBridge:
             raw = os.read(fd, MAX_BYTES + 1)
             if len(raw) > MAX_BYTES or hashlib.sha256(raw).hexdigest() != self.files[name]:
                 raise ValueError("public_snapshot_changed")
+            try:
+                raw.decode("utf-8")
+            except UnicodeDecodeError:
+                raise ValueError("public_snapshot_encoding_invalid") from None
             return raw
         finally:
             os.close(fd)

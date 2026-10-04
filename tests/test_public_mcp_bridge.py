@@ -105,6 +105,17 @@ def test_oversized_snapshot_rejected(tmp_path):
         PublicMCPBridge(root, tmp_path / "receipts", manifest)
 
 
+def test_invalid_utf8_in_any_manifest_file_is_refused_before_snapshot(tmp_path):
+    root, manifest = make(tmp_path)
+    (root / "b.txt").write_bytes(b"\xff")
+    manifest["files"]["b.txt"] = hashlib.sha256(b"\xff").hexdigest()
+    receipts = tmp_path / "receipts"
+    with pytest.raises(ValueError, match="public_snapshot_encoding_invalid"):
+        PublicMCPBridge(root, receipts, manifest)
+    assert not receipts.exists()
+    assert not (root / ".diwan-journal").exists()
+
+
 def test_nonpublic_or_sealed_manifest_rejected(tmp_path):
     root, manifest = make(tmp_path)
     manifest["data_policy"] = "local_only"
