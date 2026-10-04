@@ -1,6 +1,7 @@
 """#288: بروتوكولُ المحكِّم مسجَّلٌ قبل أيّ تشغيل، فلا تتبع العتبةُ النتيجة (ق٦٤، OD3)."""
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 
@@ -100,13 +101,16 @@ def test_calibration_is_open_only_and_never_guesses_a_missing_owner_ruling(chang
     assert refused.value.code == code
 
 
-SAMPLE = judge.calibration_sample(DATA, REGISTERED)
+@functools.cache
+def _sample():
+    """العيّنةُ تُبنى عند الاختبار لا عند الجمع: فطفرةٌ تكسر بناءَها تُسقط اختباراتها ولا تُسقط الجمعَ كلَّه."""
+    return judge.calibration_sample(DATA, REGISTERED)
 
 
 def _rows(flip: int = 0, **change):
     """صفوفٌ مصطنعةٌ على العيّنة المجمَّدة حالةً حالة؛ والمحكِّمُ يخالف التسمية في أول `flip` منها."""
     rows = [{"source": source, "case": case, "split": "open", "label": ("correct", "incorrect")[i % 2]}
-            for source, cases in SAMPLE.items() for i, case in enumerate(cases)]
+            for source, cases in _sample().items() for i, case in enumerate(cases)]
     for i, row in enumerate(rows):
         row["verdict"] = row["label"] if i >= flip else ("incorrect" if row["label"] == "correct" else "correct")
     rows[0] = {**rows[0], **change}
@@ -119,45 +123,48 @@ def _evidence(rows=None, **overrides):
 
 
 def test_the_calibration_sample_is_frozen_by_the_protocol():
-    assert SAMPLE["k11_owner_ruled"] == sorted(
-        r["id"] for r in json.loads(judge.K11_EVIDENCE.read_text(encoding="utf-8"))["real"]
-        + json.loads(judge.K11_EVIDENCE.read_text(encoding="utf-8"))["false_positives"])
-    assert len(SAMPLE["k11_owner_ruled"]) == 23 and len(set(SAMPLE["automatic_checked"])) == 100
-    assert hashlib.sha256(json.dumps(SAMPLE, sort_keys=True).encode()).hexdigest() == \
+    triage = json.loads(judge.K11_EVIDENCE.read_text(encoding="utf-8"))
+    sample = _sample()
+    assert sample["k11_owner_ruled"] == sorted(r["id"] for r in triage["real"] + triage["false_positives"])
+    assert len(sample["k11_owner_ruled"]) == 23 and len(set(sample["automatic_checked"])) == 100
+    assert hashlib.sha256(json.dumps(sample, sort_keys=True).encode()).hexdigest() == \
         "f69d3c4ef59942e08cddb19d104538a3da820f10266df9d48a627bea262f0bab"
 
 
-@pytest.mark.parametrize("evidence", [
-    None,
-    {"protocol_sha256": REGISTERED, "judge": {"model": "granite4"}, "kappa": 0.9, "accuracy": 0.95, "passed": True},
-    _evidence(kappa=float("inf"), accuracy=float("inf"), passed=True, rows=[]),
-    _evidence(_rows(flip=30), kappa=0.9, accuracy=0.95, passed=True),
-    _evidence(_rows()[1:]),
-    _evidence(_rows(case="tier_x__invented/case_0001")),
-    _evidence(_rows(case=SAMPLE["automatic_checked"][1], source="automatic_checked")),
-    _evidence(_rows(split="sealed")),
-    _evidence(_rows(label=None)),
-    _evidence(judge={"model": "granite3"}),
-    _evidence(protocol_sha256="0" * 64),
-], ids=["missing", "scalars_without_rows", "infinite_scalars_without_rows", "rows_below_threshold_scalars_claim_pass",
-        "one_case_missing", "case_not_in_the_sample", "duplicate_case", "sealed_row", "owner_ruling_pending",
-        "another_model", "another_protocol"])
-def test_a_sealed_judge_needs_its_calibration_rows_on_the_frozen_sample(evidence):
+UNCALIBRATED = {
+    "missing": lambda: None,
+    "scalars_without_rows": lambda: {"protocol_sha256": REGISTERED, "judge": {"model": "granite4"},
+                                     "kappa": 0.9, "accuracy": 0.95, "passed": True},
+    "infinite_scalars_without_rows": lambda: _evidence([], kappa=float("inf"), accuracy=float("inf"), passed=True),
+    "rows_below_threshold_scalars_claim_pass": lambda: _evidence(_rows(flip=30), kappa=0.9, accuracy=0.95,
+                                                                 passed=True),
+    "one_case_missing": lambda: _evidence(_rows()[1:]),
+    "case_not_in_the_sample": lambda: _evidence(_rows(case="tier_x__invented/case_0001")),
+    "duplicate_case": lambda: _evidence(_rows(case=_sample()["automatic_checked"][1], source="automatic_checked")),
+    "sealed_row": lambda: _evidence(_rows(split="sealed")),
+    "owner_ruling_pending": lambda: _evidence(_rows(label=None)),
+    "another_model": lambda: _evidence(judge={"model": "granite3"}),
+    "another_protocol": lambda: _evidence(protocol_sha256="0" * 64),
+}
+
+
+@pytest.mark.parametrize("case", list(UNCALIBRATED))
+def test_a_sealed_judge_needs_its_calibration_rows_on_the_frozen_sample(case):
     """ملاحظتا Codex على #289: دليلٌ بأرقامٍ مكتوبة أو بعيّنةٍ غير المسجَّلة كان يُقبل؛ والأرقامُ تُعاد من الصفوف."""
     with pytest.raises(JudgeRefused) as refused:
-        judge.accept_sealed_judge(evidence, "granite4", DATA, REGISTERED, SAMPLE)
+        judge.accept_sealed_judge(UNCALIBRATED[case](), "granite4", DATA, REGISTERED, _sample())
     assert refused.value.code == "judge_uncalibrated"
 
 
 def test_a_calibrated_sealed_judge_is_accepted_from_its_rows_alone():
-    assert judge.accept_sealed_judge(_evidence(), "granite4", DATA, REGISTERED, SAMPLE) == "ibm"
-    assert judge.accept_sealed_judge(_evidence(_rows(flip=10)), "granite4", DATA, REGISTERED, SAMPLE) == "ibm"
+    assert judge.accept_sealed_judge(_evidence(), "granite4", DATA, REGISTERED, _sample()) == "ibm"
+    assert judge.accept_sealed_judge(_evidence(_rows(flip=10)), "granite4", DATA, REGISTERED, _sample()) == "ibm"
 
 
 @pytest.mark.parametrize("model", ["glm-4.6", "granite4:3b"])
 def test_only_the_registered_sealed_judge_may_judge(model):
     with pytest.raises(JudgeRefused) as refused:
-        judge.accept_sealed_judge(_evidence(judge={"model": model}), model, DATA, REGISTERED, SAMPLE)
+        judge.accept_sealed_judge(_evidence(judge={"model": model}), model, DATA, REGISTERED, _sample())
     assert refused.value.code == "judge_not_registered"
 
 
