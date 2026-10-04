@@ -68,6 +68,7 @@ from evaluation.external_review import (AUTHOR_FAMILY, BUDGET_TERMINAL_ERRORS, D
                                         DEVELOPER_FAMILIES, ENGINE_FAMILY, SUPERSEDED_DIR,
                                         _slug, open_files, review_bank, smoke, summarize)
 from evaluation.multi_system_review import AutomaticReviewError, model_family  # noqa: E402
+from core.canonical import SAFE_INT  # noqa: E402
 from core.locality import is_cloud_model  # noqa: E402
 
 MAX_RESPONSE_BYTES = 8_000_000
@@ -80,38 +81,52 @@ USAGE_FIELDS = ("prompt_tokens", "completion_tokens", "total_tokens")
 def ollama_usage(body: object) -> dict | None:
     """عدّادا Ollama (`prompt_eval_count` و`eval_count`) بأسماء سجلّ النداءات المشترك، أو None إن لم يُبلغ أيًّا منهما.
 
-    عددٌ صحيحٌ غيرُ سالب وحده يُقبل (لا منطقيّ ولا نصّ)، والمجموعُ لا يُكتب إلا من العدّادين كليهما (جديد-spend-ledger)."""
+    عددٌ صحيحٌ غيرُ سالب لا يتجاوز `SAFE_INT` وحده يُقبل (لا منطقيّ ولا نصّ ولا ما يُقرَّب في قارئ JSON)، كحدّ مفكّك Ollama
+    في المزوّد (`providers/ollama_codec.py`)؛ والمجموعُ لا يُكتب إلا من العدّادين كليهما وفي الحدّ نفسِه (جديد-spend-ledger)."""
     if not isinstance(body, dict):
         return None
     usage = {}
     for source, field in (("prompt_eval_count", "prompt_tokens"), ("eval_count", "completion_tokens")):
         value = body.get(source)
-        if type(value) is int and value >= 0:
+        if type(value) is int and 0 <= value <= SAFE_INT:
             usage[field] = value
     if not usage:
         return None
-    if len(usage) == 2:
+    if len(usage) == 2 and usage["prompt_tokens"] + usage["completion_tokens"] <= SAFE_INT:
         usage["total_tokens"] = usage["prompt_tokens"] + usage["completion_tokens"]
     return usage
 
 
 def token_totals(rows: list[dict]) -> dict:
-    """مجموعُ التوكنات لكل نموذج من سجلّ النداءات، ومعه عددُ ما أُرسل بلا استهلاكٍ مُبلَغ فلا يُقرأ المجموعُ كاملًا وهو ناقص.
+    """مجموعُ التوكنات لكل نموذج من سجلّ النداءات، ومعه عددُ ما أُرسل باستهلاكٍ ناقص فلا يُقرأ المجموعُ كاملًا وهو ناقص.
 
+    والناقصُ ما غاب عنه أيُّ حقلٍ من الثلاثة، ومنه ما لم يُبلَغ استهلاكُه أصلًا وما أُبلغ عدّادٌ واحدٌ منه (ملاحظة Codex على #298).
     صفوفُ الفهرس لا نموذجَ لها ولا استهلاك فلا تدخل، وما لم يُرسل لا يُعدّ (جديد-spend-ledger)."""
     totals: dict[str, dict] = {}
     for row in rows:
         if row.get("kind") == "catalog" or not row.get("request_sent"):
             continue
-        entry = totals.setdefault(row["model"], {"calls": 0, "calls_without_usage": 0,
+        entry = totals.setdefault(row["model"], {"calls": 0, "calls_with_incomplete_usage": 0,
                                                  **{field: 0 for field in USAGE_FIELDS}})
         entry["calls"] += 1
         usage = row.get("usage") or {}
-        if not usage:
-            entry["calls_without_usage"] += 1
+        if any(field not in usage for field in USAGE_FIELDS):
+            entry["calls_with_incomplete_usage"] += 1
         for field in USAGE_FIELDS:
             entry[field] += usage.get(field, 0)
     return dict(sorted(totals.items()))
+
+
+def prior_provider_usage(bank: Path) -> list[dict]:
+    """سجلُّ النداءات الذي كتبته تشغيلاتٌ سابقة في خلاصة البنك، ليُضاف إليه لا ليُستبدل (ملاحظة Codex على #298).
+
+    إعادةُ التشغيل على بنكٍ مراجَع تتخطّى سجلّاته فلا يُرسل نداءٌ؛ وكتابةُ سجلّ هذا التشغيل وحده كانت تمحو أدلّةَ الإنفاق
+    للمراجعات التي ما زالت الخلاصةُ تمثّلها. وخلاصةٌ مفقودةٌ أو بلا سجلٍّ قائمةٌ فارغة، لا خطأ."""
+    try:
+        rows = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8")).get("provider_usage")
+    except (OSError, ValueError, AttributeError):
+        return []
+    return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
 
 
 class OllamaChat:
@@ -1439,6 +1454,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if report["status"] == "passed" else 1
     if args.bank is None:
         parser.error("مجلّد البنك مطلوب، أو --smoke")
+    prior = prior_provider_usage(args.bank)
     try:
         transport = build_transport(base_url)
         counts = review_bank(args.bank, reviewers, transport, brief_path=args.brief)
@@ -1448,7 +1464,9 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"status": "refused", "code": exc.code, "detail": str(exc),
                           **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
         return 2
-    _persist_provider_usage(args.bank, getattr(transport, "provider_usage", []), _spend_report(transport))
+    # السجلُّ يُلحَق بما كتبته التشغيلاتُ السابقة ولا يستبدله، والمجموعُ من السجلّ كلِّه (ملاحظة Codex على #298)
+    ledger = prior + list(getattr(transport, "provider_usage", []))
+    _persist_provider_usage(args.bank, ledger, {"token_totals": token_totals(ledger)})
     print(json.dumps({
         "status": "failed" if counts["failed"] else "reviewed",
         **counts,

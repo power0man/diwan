@@ -48,7 +48,10 @@ class _Opener:
     ({"prompt_eval_count": -1, "eval_count": 2.0}, None),
     ({}, None),
     (["not", "a", "dict"], None),
-], ids=["both", "prompt-only", "zero-completion", "bool-and-text", "negative-and-float", "none", "not-a-dict"])
+    ({"prompt_eval_count": 2**53, "eval_count": 3}, {"completion_tokens": 3}),
+    ({"prompt_eval_count": 2**53 - 1, "eval_count": 1}, {"prompt_tokens": 2**53 - 1, "completion_tokens": 1}),
+], ids=["both", "prompt-only", "zero-completion", "bool-and-text", "negative-and-float", "none", "not-a-dict",
+        "beyond-safe-integer", "total-beyond-safe-integer"])
 def test_ollama_counters_map_to_the_shared_usage_names_and_only_whole_counts_pass(body, expected):
     assert cli.ollama_usage(body) == expected
 
@@ -88,7 +91,7 @@ def test_a_failed_call_is_a_row_with_its_code_and_a_malformed_reply_keeps_its_co
     assert malformed["usage"] == {"prompt_tokens": 9, "completion_tokens": 1, "total_tokens": 10}
 
 
-def test_token_totals_sum_each_model_and_count_calls_without_usage():
+def test_token_totals_sum_each_model_and_count_calls_with_incomplete_usage():
     rows = [
         {"model": "a:cloud", "request_sent": True, "usage": {"prompt_tokens": 10, "completion_tokens": 2,
                                                              "total_tokens": 12}},
@@ -100,9 +103,10 @@ def test_token_totals_sum_each_model_and_count_calls_without_usage():
         {"kind": "catalog", "model": None, "request_sent": True, "usage": None},
     ]
     assert cli.token_totals(rows) == {
-        "a:cloud": {"calls": 3, "calls_without_usage": 1, "prompt_tokens": 15, "completion_tokens": 3,
+        "a:cloud": {"calls": 3, "calls_with_incomplete_usage": 1, "prompt_tokens": 15, "completion_tokens": 3,
                     "total_tokens": 18},
-        "b:cloud": {"calls": 1, "calls_without_usage": 0, "prompt_tokens": 0, "completion_tokens": 4,
+        # عدّادٌ واحد استهلاكٌ ناقص لا كامل، فلا يُقرأ مجموعُه صفرًا صادقًا (ملاحظة Codex على #298)
+        "b:cloud": {"calls": 1, "calls_with_incomplete_usage": 1, "prompt_tokens": 0, "completion_tokens": 4,
                     "total_tokens": 0},
     }
 
@@ -112,7 +116,7 @@ def test_both_transports_report_token_totals():
     chat.opener = _Opener(_reply(prompt_eval_count=3, eval_count=4))
     chat("deepseek-v4.1-flash:cloud", "s", "u", {})
     assert chat.spend_report() == {"token_totals": {"deepseek-v4.1-flash:cloud": {
-        "calls": 1, "calls_without_usage": 0, "prompt_tokens": 3, "completion_tokens": 4, "total_tokens": 7}}}
+        "calls": 1, "calls_with_incomplete_usage": 0, "prompt_tokens": 3, "completion_tokens": 4, "total_tokens": 7}}}
     free = cli.OpenAICompatChat("hf-router", "synthetic-key")
     free.provider_usage.append({"provider": "hf-router", "model": "m", "request_sent": True,
                                 "usage": {"prompt_tokens": 2, "completion_tokens": 1, "total_tokens": 3},
@@ -141,8 +145,30 @@ def test_the_ollama_bank_summary_carries_every_call_and_the_totals(tmp_path, mon
     assert cli.main([str(bank)]) == 0
     summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
     assert len(summary["provider_usage"]) == len(DEFAULT_REVIEWERS)
-    assert all(t == {"calls": 1, "calls_without_usage": 0, "prompt_tokens": 50, "completion_tokens": 10,
+    assert all(t == {"calls": 1, "calls_with_incomplete_usage": 0, "prompt_tokens": 50, "completion_tokens": 10,
                      "total_tokens": 60} for t in summary["token_totals"].values())
+
+
+def test_a_rerun_on_a_reviewed_bank_keeps_the_earlier_ledger(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: إعادةُ التشغيل تتخطّى السجلّات فلا ترسل نداءً، ولا تمحو أدلّةَ إنفاق المراجعات القائمة."""
+    bank = smoke_bank(tmp_path)
+    _wire(monkeypatch, _Opener(_reply(prompt_eval_count=50, eval_count=10)))
+    assert cli.main([str(bank)]) == 0
+    first = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    again = _Opener(_reply(prompt_eval_count=999, eval_count=999))
+    _wire(monkeypatch, again)
+    assert cli.main([str(bank)]) == 0
+    second = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert again.requests == [], "البنكُ مراجَعٌ فلا نداء"
+    assert second["provider_usage"] == first["provider_usage"] and second["token_totals"] == first["token_totals"]
+
+
+def test_the_prior_ledger_is_empty_without_a_summary_or_with_a_malformed_one(tmp_path):
+    assert cli.prior_provider_usage(tmp_path) == []
+    (tmp_path / "reviews").mkdir()
+    for raw in ("{", "[]", '{"provider_usage": "x"}', '{"provider_usage": [1, {"model": "m"}]}'):
+        (tmp_path / "reviews" / "SUMMARY.json").write_text(raw, encoding="utf-8")
+        assert cli.prior_provider_usage(tmp_path) == ([{"model": "m"}] if "model" in raw else [])
 
 
 def test_a_refused_ollama_run_still_prints_the_calls_that_went_out(tmp_path, monkeypatch, capsys):
