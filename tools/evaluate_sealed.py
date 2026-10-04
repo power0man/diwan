@@ -32,12 +32,15 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from core import signing
+from core.contracts import Message, Request
 from core.locality import is_local_provider
 from core.sandbox import configure_sandbox_backend
+from evaluation import capabilities
 from evaluation import judge as judge_rules
 from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
 from providers import ollama as ollama_provider
 from providers.ollama import OllamaProvider
+from tools import model_digest
 from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest
 
 MANIFEST = ROOT / "evaluation" / "banks" / "kimi_v1" / "sealed" / "MANIFEST.json"
@@ -80,17 +83,48 @@ def _on_owner_mac() -> bool:
     return hmac.compare_digest(derived, public)
 
 
+# ما يحدّد الاستدلالَ من الشيفرة: بصمتُه تُنشر مع التقرير فلا يُنشر تشغيلٌ بشيفرةٍ أخرى بالبيانات نفسها. ولا تُثبَّت في
+# البروتوكول لأن judge.py يثبّت بصمةَ البروتوكول، فالتثبيتُ في الاتجاهين دائرة.
+RUNNER_SOURCES = ("core/contracts.py", "core/quoted.py", "evaluation/capabilities.py", "evaluation/judge.py",
+                  "providers/ollama.py", "tools/evaluate_sealed.py", "tools/model_digest.py")
+
+
+def _sha(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def runner_sha256() -> str:
+    """بصمةُ مصادر المُشغِّل: كلُّ ملفٍّ بمساره وبصمته، مسلسلةً بترتيبٍ ثابت."""
+    files = {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in RUNNER_SOURCES}
+    return _sha(json.dumps(files, sort_keys=True))
+
+
+def _options(model, runtime: dict) -> dict | None:
+    """خياراتُ الاستدلال كما يرسلها المزوّدُ فعلًا (`payload`)، لا كما يُظنّ أنها."""
+    probe = Request(messages=(Message("user", "probe"),), model=model.model, model_version="probe",
+                    max_output=runtime["max_output"], deadline_s=runtime["deadline_s"], data_policy="local_only",
+                    idempotency_key=None)
+    try:
+        return model.payload(probe)["options"]
+    except (AttributeError, KeyError, TypeError):
+        return None
+
+
 def check_runtime(protocol: dict, provider, judge) -> dict:
-    """إعدادُ التشغيل هو المسجَّلُ في judge_v1: البذرةُ والتفكيرُ لكل مزوّد، وسياقُ Ollama، وبصمةُ تعليمات المحكِّم. فتشغيلٌ
-    بإعدادٍ آخر لا يُنشر قياسًا بالاسم نفسِه (ملاحظة Codex على #289)."""
+    """إعدادُ التشغيل هو المسجَّلُ في judge_v1 (ملاحظات Codex على #289): نقطةُ Ollama الواحدة، وخياراتُ كلِّ مزوّدٍ كما
+    يرسلها (السقف والحرارة والسياق والبذرة)، والتفكير، وبصمةُ تعليمات النظام والمحكِّم ونمطِ الحكم، وحَجرُ المقتبس. فتشغيلٌ
+    بإعدادٍ آخر لا يُنشر قياسًا بالاسم نفسِه."""
     runtime = protocol["sealed"]["runtime"]
     models = [provider] + ([judge] if judge is not None else [])
-    seeded = all(getattr(m, "seed", None) == runtime["seed"] for m in models)
+    expected = {"num_predict": runtime["max_output"], "temperature": runtime["temperature"],
+                "num_ctx": runtime["context_tokens"], "seed": runtime["seed"]}
+    endpoint = all(getattr(m, "base_url", None) == runtime["ollama_base_url"] for m in models)
+    options = all(_options(m, runtime) == expected for m in models)
     unthinking = all(getattr(m, "allow_thinking", None) is runtime["allow_thinking"] for m in models)
-    context = ollama_provider.CONTEXT_TOKENS == runtime["context_tokens"]
-    prompt = hashlib.sha256(JUDGE_PROMPT.encode("utf-8")).hexdigest() == runtime["judge_prompt_sha256"]
-    same = seeded and unthinking and context and prompt
-    if not same:
+    prompts = (_sha(capabilities.SYSTEM) == runtime["system_sha256"]
+               and _sha(JUDGE_PROMPT) == runtime["judge_prompt_sha256"]
+               and _sha(f"{_VERDICT.pattern}\x00{_VERDICT.flags}") == runtime["verdict_pattern_sha256"])
+    if not (endpoint and options and unthinking and prompts):
         raise SealedRefused("sealed_runtime_changed", "إعدادُ التشغيل غيرُ المسجَّل في judge_v1")
     return runtime
 
@@ -170,8 +204,13 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     preflight(provider, judge, protocol["sealed"]["engine_model"])
     runtime = check_runtime(protocol, provider, judge)
     max_output, deadline_s = runtime["max_output"], runtime["deadline_s"]
+    quarantine = runtime["quarantine_quoted_material"]
     # الوسمُ يُعاد توجيهُه إلى أوزانٍ أخرى؛ فالمحرّكُ ببصمته المسجَّلة، والمحكِّمُ ببصمته الموقَّعة في دليل معايرته،
-    # وتُعاد البصمتان بعد التشغيل (ملاحظة Codex على #289).
+    # وتُعاد البصمتان بعد التشغيل. وتُحلّان من نقطة Ollama المسجَّلة نفسِها التي يُجاب منها، لا من نقطةٍ ثابتةٍ أخرى
+    # (ملاحظتا Codex على #289).
+    if digest_resolver is None:
+        def digest_resolver(model: str) -> str | None:
+            return model_digest.resolve_model_digest(model, base_url=runtime["ollama_base_url"])
     try:
         engine_digest = pin_model_digest(provider.model, protocol["sealed"]["engine_digest"], resolver=digest_resolver)
         judge_digest = None if judge is None else pin_model_digest(judge.model, resolver=digest_resolver)
@@ -207,7 +246,8 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         texts.update(t for c in picked for t in (c["reference"], *(m["content"] for m in c["messages"])))
         try:
             report = evaluate_suite({**suite, "cases": picked}, provider, run_root,
-                                    max_output=max_output, deadline_s=deadline_s, model_version=engine_digest)
+                                    max_output=max_output, deadline_s=deadline_s, model_version=engine_digest,
+                                    quarantine_quoted_material=quarantine)
         except CapabilityError:
             rows.extend({"tier": tier, "outcome": "error"} for _ in picked)
             continue
@@ -230,7 +270,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
                 # البصمةُ في هويّة التشغيل: فمجلّدُ تشغيلٍ أُعيد استعمالُه لا يعيد أحكامَ أوزانٍ سابقة (ملاحظة Codex على #289)
                 verdicts = evaluate_suite(_judge_suite([(c, a) for _, c, a in batch], start // 100), judge,
                                           run_root, max_output=max_output, deadline_s=deadline_s,
-                                          model_version=judge_digest)["results"]
+                                          model_version=judge_digest, quarantine_quoted_material=quarantine)["results"]
             except CapabilityError:
                 verdicts = [{"status": "error", "answer": None}] * len(batch)
             for (tier, _, _), result in zip(batch, verdicts):
@@ -247,6 +287,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     out = {"schema_version": 1, "probe": "k45-sealed", "status": "measured", "protocol": protocol["protocol_id"],
            "protocol_sha256": protocol_sha256, "date": date.today().isoformat(), "agent": "anthropic/claude-opus-5-5",
            "engine": {"model": provider.model, "digest": engine_digest}, "runtime": runtime,
+           "runner_sha256": runner_sha256(),
            "judge": None if judge is None else {"model": judge.model, "digest": judge_digest,
                                                 "calibration_sha256": hashlib.sha256(json.dumps(
                                                     judge_evidence, sort_keys=True).encode()).hexdigest()},

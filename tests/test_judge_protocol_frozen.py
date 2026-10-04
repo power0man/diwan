@@ -14,7 +14,7 @@ from core.signing import SigningRefused
 from evaluation import judge
 from evaluation.judge import JudgeRefused
 
-REGISTERED = "da06bdbc9b77a583a9847855076feda184f2b780dbf4e9eebea38a8ffba4f83b"
+REGISTERED = "280f85822abcb8306094c730a10333e0f26edf076f9559d14f49fbca3f9ae69c"
 DATA = json.loads(judge.PROTOCOL.read_text(encoding="utf-8"))
 # مفتاحُ مالكٍ مصطنعٌ للاختبار وحده؛ ومفتاحُ المالك الحقيقيّ في سلسلة مفاتيح الماك لا في المستودع.
 OWNER_SEED = hashlib.sha256(b"diwan-test-owner-calibration").digest()
@@ -40,7 +40,10 @@ def test_the_protocol_is_registered_before_any_run_and_cannot_change():
     assert DATA["sealed"]["engine_digest"] == "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7"
     assert DATA["sealed"]["engine_model"] == "qwen3.5:9b"
     assert DATA["sealed"]["runtime"] == {
-        "max_output": 800, "deadline_s": 240, "seed": 0, "allow_thinking": False, "context_tokens": 32768,
+        "max_output": 800, "deadline_s": 240, "seed": 0, "temperature": 0, "allow_thinking": False,
+        "context_tokens": 32768, "ollama_base_url": "http://127.0.0.1:11434", "quarantine_quoted_material": False,
+        "system_sha256": "e7eee5f5d1b7f1e9917b1067af75b5f66cda4f26e86462eacdf31657d499fbff",
+        "verdict_pattern_sha256": "cc6dd82c3aeb72ea3d92f5d10b8d95dd535c523f4bf852600030195bd5e5a3ea",
         "judge_prompt_sha256": "791f50552e41b6adf17cadf2b95e64a05732c15b16c145eeac11a102abfb7421"}
     manifest = judge.ROOT / DATA["sealed"]["manifest"]
     assert hashlib.sha256(manifest.read_bytes()).hexdigest() == DATA["sealed"]["manifest_sha256"]
@@ -200,7 +203,7 @@ def test_the_calibration_sample_is_frozen_by_the_protocol():
     assert sample["k11_owner_ruled"] == sorted(r["id"] for r in triage["real"] + triage["false_positives"])
     assert len(sample["k11_owner_ruled"]) == 23 and len(set(sample["automatic_checked"])) == 100
     assert hashlib.sha256(json.dumps(sample, sort_keys=True).encode()).hexdigest() == \
-        "15508ab3b00edd08c190e19bfc206382a9c24d347685f4ff65adb6c9c71ecefb"
+        "6eeeda1d8b84fcaab98d9b86efcf0c439260614e8140d92500f1e9592070f29c"
     kinds = {check["kind"] for checks in _truth()["automatic_checked"].values() for check in checks}
     assert kinds <= {"exact", "json_equals"} and all(isinstance(r, str) for r in _truth()["k11_owner_ruled"].values())
 

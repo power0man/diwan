@@ -96,8 +96,13 @@
       "max_output": 800,
       "deadline_s": 240,
       "seed": 0,
+      "temperature": 0,
       "allow_thinking": false,
       "context_tokens": 32768,
+      "ollama_base_url": "http://127.0.0.1:11434",
+      "quarantine_quoted_material": false,
+      "system_sha256": "e7eee5f5d1b7f1e9917b1067af75b5f66cda4f26e86462eacdf31657d499fbff",
+      "verdict_pattern_sha256": "cc6dd82c3aeb72ea3d92f5d10b8d95dd535c523f4bf852600030195bd5e5a3ea",
       "judge_prompt_sha256": "791f50552e41b6adf17cadf2b95e64a05732c15b16c145eeac11a102abfb7421"
     },
     "judge": {
@@ -138,6 +143,7 @@
     "the_engine_digest_is_the_owner_mac_qwen3_5_9b_digest_recorded_in_docs_probe_from_27_september_to_1_october_so_a_repulled_tag_is_refused_and_needs_judge_v2",
     "both_digests_are_resolved_before_the_run_and_rechecked_after_it_so_a_tag_repointed_and_restored_within_the_run_is_not_detected",
     "the_owner_mac_is_attested_by_the_owner_key_not_the_hardware_so_a_machine_holding_a_copy_of_that_key_passes",
-    "the_runtime_pins_the_runner_and_provider_inputs_listed_here_not_the_ollama_server_build_or_its_quantization_beyond_the_model_digest"
+    "the_runtime_pins_the_runner_and_provider_inputs_listed_here_not_the_ollama_server_build_or_its_quantization_beyond_the_model_digest",
+    "the_runner_source_digest_is_published_with_every_report_not_pinned_here_because_the_runner_pins_this_protocol_digest_so_pinning_both_ways_is_circular"
   ]
 }

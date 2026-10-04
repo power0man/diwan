@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 
 import pytest
 
@@ -13,7 +14,9 @@ from core.contracts import Response, Usage
 from evaluation import judge as judge_rules
 from evaluation.judge import JudgeRefused
 from core import signing
+from evaluation import capabilities
 from providers import ollama as ollama_provider
+from providers.ollama import OllamaProvider
 from tests.test_judge_protocol_frozen import (DATA, ENGINE_DIGEST, JUDGE_DIGEST, OTHER_SEED, OWNER_PUBLIC, OWNER_SEED,
                                               _evidence)
 from tools import evaluate_sealed as sealed
@@ -26,10 +29,19 @@ FROZEN_ENGINE = DATA["sealed"]["engine_model"]
 DIGESTS = {FROZEN_ENGINE: ENGINE_DIGEST, "granite4": JUDGE_DIGEST}
 
 
+ENDPOINT = DATA["sealed"]["runtime"]["ollama_base_url"]
+
+
 class Provider:
-    def __init__(self, model=FROZEN_ENGINE, answer="نعم", *, local=True, seed=0, allow_thinking=False):
+    def __init__(self, model=FROZEN_ENGINE, answer="نعم", *, local=True, seed=0, allow_thinking=False,
+                 temperature=0, base_url=ENDPOINT):
         self.model, self.answer, self.is_local, self.calls = model, answer, local, 0
-        self.seed, self.allow_thinking = seed, allow_thinking
+        self.seed, self.allow_thinking, self.temperature, self.base_url = seed, allow_thinking, temperature, base_url
+
+    def payload(self, request):
+        """كما يبني OllamaProvider خياراته؛ فالفحصُ يقرأ ما يُرسل لا ما يُظنّ."""
+        return {"options": {"num_predict": request.max_output, "temperature": self.temperature,
+                            "num_ctx": ollama_provider.CONTEXT_TOKENS, "seed": self.seed}}
 
     def estimate_micros(self, request):
         return 0
@@ -48,7 +60,7 @@ def _owner_mac(monkeypatch):
     المُثبَّت، فدليلُ المعايرة الموقَّع به في الاختبار يمرّ، ولا يمرّ به دليلٌ حقيقيّ."""
     monkeypatch.setattr(sealed, "_on_owner_mac", lambda: True)
     monkeypatch.setattr(judge_rules, "load_trusted_public_key", lambda: OWNER_PUBLIC)
-    monkeypatch.setattr(model_digest, "resolve_model_digest", DIGESTS.get)
+    monkeypatch.setattr(model_digest, "resolve_model_digest", lambda model, base_url=None: DIGESTS.get(model))
 
 
 def _bank(root, tiers=(("tier_a", 6, True), ("tier_b", 4, False))):
@@ -125,6 +137,7 @@ def test_a_calibrated_local_judge_scores_only_cases_without_checks(tmp_path):
     assert report["judge"]["model"] == "granite4"
     assert report["engine"]["digest"] == ENGINE_DIGEST and report["judge"]["digest"] == JUDGE_DIGEST
     assert report["runtime"] == DATA["sealed"]["runtime"]
+    assert report["runner_sha256"] == sealed.runner_sha256() and len(report["runner_sha256"]) == 64
 
 
 @pytest.mark.parametrize("resolved,code", [("0" * 64, "model_version_mismatch"), (None, "model_digest_unresolved")],
@@ -254,7 +267,8 @@ def test_the_owner_mac_is_attested_by_the_owner_key_not_the_os_name(monkeypatch,
     assert REAL_ON_OWNER_MAC() is expected
 
 
-@pytest.mark.parametrize("change", ["engine_seed", "judge_seed", "thinking", "context", "judge_prompt"])
+@pytest.mark.parametrize("change", ["engine_seed", "judge_seed", "thinking", "context", "judge_prompt", "temperature",
+                                    "endpoint", "system_prompt", "verdict_pattern"])
 def test_a_runtime_other_than_the_registered_one_is_refused_before_reading(tmp_path, monkeypatch, change):
     """ملاحظة Codex على #289: إعدادُ التشغيل (البذرة، والتفكير، والسياق، وتعليماتُ المحكِّم، والسقفان) مسجَّلٌ في judge_v1؛
     فتشغيلٌ بغيره لا يُنشر قياسًا بالاسم نفسِه."""
@@ -267,11 +281,44 @@ def test_a_runtime_other_than_the_registered_one_is_refused_before_reading(tmp_p
         engine = Provider(allow_thinking=True)
     elif change == "context":
         monkeypatch.setattr(ollama_provider, "CONTEXT_TOKENS", 8192)
+    elif change == "temperature":
+        engine = Provider(temperature=0.7)
+    elif change == "endpoint":
+        judge = Provider(model="granite4", base_url="http://127.0.0.1:11500")
+    elif change == "system_prompt":
+        monkeypatch.setattr(capabilities, "SYSTEM", capabilities.SYSTEM + " ")
+    elif change == "verdict_pattern":
+        monkeypatch.setattr(sealed, "_VERDICT", re.compile(r"(correct|incorrect)", re.IGNORECASE))
     else:
         monkeypatch.setattr(sealed, "JUDGE_PROMPT", sealed.JUDGE_PROMPT + " ")
     with pytest.raises(SealedRefused) as refused:
         _run(tmp_path, engine, judge=judge, judge_evidence=_evidence())
     assert refused.value.code == "sealed_runtime_changed" and engine.calls == 0 and judge.calls == 0
+
+
+def test_the_registered_runtime_matches_the_real_ollama_provider():
+    """الإعدادُ المسجَّل هو ما يرسله OllamaProvider فعلًا للمحرّك والمحكِّم، فلا يُردّ التشغيلُ الحقيقيّ ولا يُقبل غيرُه."""
+    engine, judge = OllamaProvider(FROZEN_ENGINE), OllamaProvider("granite4")
+    assert sealed.check_runtime(DATA, engine, judge) == DATA["sealed"]["runtime"]
+    with pytest.raises(SealedRefused):
+        sealed.check_runtime(DATA, OllamaProvider(FROZEN_ENGINE, seed=3), judge)
+
+
+def test_digests_resolve_from_the_registered_endpoint_and_quoted_material_follows_the_protocol(tmp_path, monkeypatch):
+    """ملاحظة Codex على #289: البصمتان تُحلّان من نقطة Ollama المسجَّلة التي يُجاب منها، لا من نقطةٍ ثابتةٍ أخرى؛ وحَجرُ
+    المقتبس يُمرَّر من البروتوكول لا من افتراضٍ قد يتغيّر."""
+    endpoints, quarantine = [], []
+    monkeypatch.setattr(model_digest, "resolve_model_digest",
+                        lambda model, base_url=None: endpoints.append(base_url) or DIGESTS.get(model))
+    real = sealed.evaluate_suite
+
+    def recording(*args, **kwargs):
+        quarantine.append(kwargs.get("quarantine_quoted_material", "absent"))
+        return real(*args, **kwargs)
+    monkeypatch.setattr(sealed, "evaluate_suite", recording)
+    _run(tmp_path, Provider(), judge=Provider(model="granite4", answer="الحكم: correct"), judge_evidence=_evidence())
+    assert endpoints and set(endpoints) == {ENDPOINT}
+    assert quarantine and set(quarantine) == {DATA["sealed"]["runtime"]["quarantine_quoted_material"]}
 
 
 def test_a_sealed_run_off_the_owner_mac_is_refused_before_reading(tmp_path, monkeypatch):
