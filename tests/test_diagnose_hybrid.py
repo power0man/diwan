@@ -79,7 +79,35 @@ def test_a_report_on_another_bank_or_whose_channels_do_not_reproduce_it_is_refus
     (tmp_path / "tampered.json").write_text(json.dumps(tampered, ensure_ascii=False), encoding="utf-8")
     with pytest.raises(dh.DiagnosisRefused) as refused:
         dh.load_report(tmp_path / "tampered.json", bank)
-    assert refused.value.code == "g3_report_channels_do_not_reproduce_its_hybrid_arm"
+    assert refused.value.code == "g3_report_channels_do_not_reproduce_its_arms"
+
+
+def test_channels_that_keep_the_hybrid_hits_but_change_another_arm_are_refused(tmp_path, report, bank):
+    """ملاحظة Codex على #293: نقلُ rg_d001 من رأس المتّجهات إلى ذيلها يحفظ إصاباتِ الهجين ويغيّر رتبةَ ذراع المتّجهات وأرقامَ
+    التشخيص؛ فالأذرعُ الثلاث برتبها تُطابَق."""
+    moved = copy.deepcopy(report)
+    vectors = moved["channels"]["rg_q001"]["vectors"].split()
+    vectors.remove("rg_d001")
+    moved["channels"]["rg_q001"]["vectors"] = " ".join(vectors + ["rg_d001"])
+    replayed = rg.arm_rows_from_channels(moved["channels"], bank)["hybrid"]
+    recorded = {row["id"]: row["hit_at_5"] for row in report["rows"]["hybrid"]}
+    assert all(row["hit_at_5"] == recorded[row["id"]] for row in replayed)
+    (tmp_path / "moved.json").write_text(json.dumps(moved, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(dh.DiagnosisRefused) as refused:
+        dh.load_report(tmp_path / "moved.json", bank)
+    assert refused.value.code == "g3_report_channels_do_not_reproduce_its_arms"
+
+
+@pytest.mark.parametrize("entry", [{"bm25": "rg_d001"}, {"bm25": "rg_d001", "vectors": ["rg_d001"]}, "rg_d001"],
+                         ids=["missing", "not_text", "not_object"])
+def test_a_malformed_channel_is_a_named_refusal_not_a_traceback(tmp_path, report, bank, capsys, entry):
+    """ملاحظة Codex على #293: قناةٌ غائبة أو ليست نصًّا كانت تُخرج KeyError أو AttributeError خامًا من السطر."""
+    broken = copy.deepcopy(report)
+    broken["channels"]["rg_q001"] = entry
+    path = tmp_path / "broken.json"
+    path.write_text(json.dumps(broken, ensure_ascii=False), encoding="utf-8")
+    assert dh.main(["--agent", "anthropic/claude-opus-5-5", "--report", str(path)]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "g3_report_channels_malformed"
 
 
 def test_the_cli_writes_evidence_the_probe_guard_accepts(tmp_path, capsys):
@@ -88,5 +116,9 @@ def test_the_cli_writes_evidence_the_probe_guard_accepts(tmp_path, capsys):
     payload = json.loads(out.read_text(encoding="utf-8"))
     assert payload["agent"] == "anthropic/claude-opus-5-5" and payload["measurement_limits"] == dh.LIMITS
     assert not probe_evidence.validate_payload(payload, available_names={out.name}, current_name=out.name)
-    assert dh.main(["--agent", "x", "--report", str(tmp_path / "missing.json")]) == 2
+    assert dh.main(["--agent", "anthropic/claude-opus-5-5", "--report", str(tmp_path / "missing.json")]) == 2
     assert json.loads(capsys.readouterr().out.strip().splitlines()[-1])["code"] == "g3_report_unreadable"
+    # ملاحظة Codex على #293: معرّفٌ غيرُ مسجَّل يُردّ ولا يُكتب دليلٌ يُنسب إليه
+    refused = tmp_path / "g3-hybrid-diagnosis-unregistered.json"
+    assert dh.main(["--agent", "x", "--out", str(refused)]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "agent_unregistered" and not refused.exists()

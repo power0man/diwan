@@ -103,21 +103,35 @@ def hit_rates(rankings: dict[str, list[str]], queries: list[dict]) -> dict:
 
 
 def load_report(path: Path, bank: dict) -> dict:
-    """تقريرُ غ٣ على البنك المجمَّد، وقناتاه تعيدان ذراعَه الهجين المسجَّل؛ وإلا فلا يُبنى عليه تشخيص."""
+    """تقريرُ غ٣ على البنك المجمَّد، وقناتاه تعيدان أذرعَه الثلاثة المسجَّلة برتبها؛ وإلا فلا يُبنى عليه تشخيص."""
     try:
         report = json.loads(Path(path).read_text(encoding="utf-8"))
         bank_sha, channels = report["config"]["bank_sha256"], report["channels"]
-        recorded = {row["id"]: row["hit_at_5"] for row in report["rows"]["hybrid"]}
+        recorded = {arm: {row["id"]: (row["rank"], row["hit_at_5"]) for row in report["rows"][arm]} for arm in rg.ARMS}
     except (OSError, UnicodeError, ValueError, KeyError, TypeError):
         raise DiagnosisRefused("g3_report_unreadable") from None
     if bank_sha != rg.BANK_SHA256:
         raise DiagnosisRefused("g3_report_bank_not_frozen", "التقرير على بنكٍ غير المجمَّد")
-    if set(channels) != {q["id"] for q in bank["queries"]}:
+    if not isinstance(channels, dict) or set(channels) != {q["id"] for q in bank["queries"]}:
         raise DiagnosisRefused("g3_report_channels_incomplete", "قناتا التقرير لا تغطّيان البنك")
-    replayed = rg.arm_rows_from_channels(channels, bank)["hybrid"]
-    if any(row["hit_at_5"] != recorded.get(row["id"]) for row in replayed):
-        raise DiagnosisRefused("g3_report_channels_do_not_reproduce_its_hybrid_arm")
+    # قناةٌ غائبةٌ أو غيرُ نصٍّ رفضٌ مسمًّى لا أثرٌ خام (ملاحظة Codex على #293)
+    if any(not isinstance(entry, dict) or not all(isinstance(entry.get(name), str) for name in ("bm25", "vectors"))
+           for entry in channels.values()):
+        raise DiagnosisRefused("g3_report_channels_malformed", "قناةٌ غائبة أو ليست نصًّا")
+    # الأذرعُ الثلاث برتبها لا الهجينُ بإصاباته وحدها: فقناةٌ مُبدَلة تحفظ إصاباتِ الهجين تغيّر رتبَ غيره (ملاحظة Codex على #293)
+    replayed = rg.arm_rows_from_channels(channels, bank)
+    if any((row["rank"], row["hit_at_5"]) != recorded[arm].get(row["id"]) for arm in rg.ARMS for row in replayed[arm]):
+        raise DiagnosisRefused("g3_report_channels_do_not_reproduce_its_arms")
     return report
+
+
+def registered_agent(agent: str) -> str:
+    """من يشغّل التشخيصَ يُسمّى بمعرّفه المسجَّل في registry/agents.json، فلا يُنسب الدليلُ إلى معرّفٍ لا يُتحقَّق منه
+    (ملاحظة Codex على #293)."""
+    agents = json.loads((ROOT / "registry" / "agents.json").read_text(encoding="utf-8"))["agents"]
+    if not isinstance(agent, str) or agent not in agents:
+        raise DiagnosisRefused("agent_unregistered", "مُشغِّلُ التشخيص غيرُ مسجَّل")
+    return agent
 
 
 def diagnose(report: dict, bank: dict) -> dict:
@@ -179,13 +193,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
+        agent = registered_agent(args.agent)
         bank = rg.load_bank()
         report = load_report(args.report, bank)
     except (DiagnosisRefused, rg.RetrievalBankError) as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2
     out = {"schema_version": 1, "kind": "g3-hybrid-diagnosis", "task": "تشخيص الهجين (#287)",
-           "date": datetime.date.today().isoformat(), "agent": args.agent,
+           "date": datetime.date.today().isoformat(), "agent": agent,
            "source_report": Path(args.report).name,
            "source_report_sha256": hashlib.sha256(Path(args.report).read_bytes()).hexdigest(),
            "bank_sha256": rg.BANK_SHA256, "limit": LIMIT, "rrf_k": rg.RRF_K,
