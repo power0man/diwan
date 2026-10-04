@@ -471,18 +471,19 @@ def _memory_view(request, delegate=None) -> tuple[str, str, str, str, str, str]:
     outer = _flat({k: v for k, v in request_provider(delegate).payload(request).items() if k not in ("messages", "tools")})
     history = [_flat(m) for m in wire[:-1]]
     sent = _flat({**wire[-1], "content": question}) if last else (_flat(wire[-1]) if wire else "")
-    others = [_flat(m) for m in wire[:-1] if m.get("role") != "assistant"]
-    return (current, "\n".join([*history, sent, tools, outer]),
-            "\n".join(_flat(m) for m in wire[:-1] if m.get("role") == "assistant"), question, tools,
-            "\n".join([*others, sent, tools, outer]))
+    # معرّفُ النداء واسمُ الأداة في رسالة الأداة ينسخان ما اختاره النموذجُ في ندائه، فليسا مكانًا آخر للشاهد؛ ومحتواها مكانٌ آخر
+    others = [_flat({k: v for k, v in m.items() if m.get("role") != "tool" or k not in ("tool_call_id", "tool_name")})
+              for m in wire[:-1] if m.get("role") != "assistant"]
+    parts = (current, "\n".join([*history, sent, tools, outer]),
+            "\n".join(_flat(m) for m in wire[:-1] if m.get("role") == "assistant"), question, tools)
+    return (*parts, "\n".join([*others, sent, tools, outer]))
 
 
-def _absent_location(needle: str, served: bool, echoed: str, others: str, question: str, tools: str) -> str:
+def _absent_location(needle: str, echoed: str, others: str, question: str, tools: str) -> str:
     """مكانُ شاهد الغياب في الطلب كما يُسجَّل. الصدى صدًى حين يقع الشاهدُ في ردود النموذج السابقة **وحدها**: إن بقي معه في جزءٍ
     آخر من الطلب (كلامِ المالك السابق، أو نتيجةِ أداة، أو كتلةٍ قديمة) فهو رسوبُ نسيانٍ يُسمّى بذلك الجزء، ولا يعفيه صدى النموذج
-    من مقام `forget_rate` (#165: «وأيُّ مكانٍ آخر يُسقطه»؛ تدقيقٌ لاحقٌ لـe8dcd74: كان المكانُ الأولُ المطابِق يُسجَّل وحده)."""
-    if served:
-        return ""
+    من مقام `forget_rate` (#165: «وأيُّ مكانٍ آخر يُسقطه»؛ تدقيقٌ لاحقٌ لـe8dcd74: كان المكانُ الأولُ المطابِق يُسجَّل وحده).
+    وما خدمته الذاكرةُ نفسُها لا مكانَ له، ويُقرَّر عند الاستدعاء."""
     if _contains(echoed, needle) and not _contains(others, needle):
         return " in the model's own earlier reply"
     if _contains(question, needle):
@@ -733,7 +734,8 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                             # المشروع نفسِه قبل نسيانه، وكلاهما يُسمّى مكانُه فتقرؤه إعادةُ العدّ كما يعدّه المُشغِّل (ملاحظتا
                             # Codex على #129، الجولتان الأربعون والحادية والأربعون)
                             served = _contains(current, needle) or expect == "retrieve"
-                            where = _absent_location(needle, served, echoed, others, question, tools)
+                            where = ("" if served
+                                     else _absent_location(needle, echoed, others, question, tools))
                             failures.append(f"{index}: {expect} holds absent «{needle[:30]}»{where}")
                             found.append({"step": index, "witness": witness, "served": served})
                             if (scenario["category"] == "isolation" and served

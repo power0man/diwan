@@ -66,12 +66,21 @@ def test_wired_echo_and_current_block_remain_distinct(monkeypatch, kind, rate, e
     ((("user", "حسنًا"), ("assistant", f"أتذكّر {NEEDLE}")), 1, 1.0, " in the model's own earlier reply"),
     ((("user", f"تذكّر أن {NEEDLE}"), ("assistant", "حسنًا")), 0, 0.0, " elsewhere in the request as sent to the model"),
     ((("user", f"تذكّر أن {NEEDLE}"), ("assistant", f"أتذكّر {NEEDLE}")), 0, 0.0, " elsewhere in the request as sent to the model"),
-], ids=["echo_only", "owner_words_only", "owner_words_and_echo"])
+    ((("user", "حسنًا"), ("assistant", "", NEEDLE), ("tool", "تم", NEEDLE)), 1, 1.0, " in the model's own earlier reply"),
+    ((("user", "حسنًا"), ("assistant", "", "c1"), ("tool", f"نتيجة {NEEDLE}", "c1")), 0, 0.0,
+     " elsewhere in the request as sent to the model"),
+], ids=["echo_only", "owner_words_only", "owner_words_and_echo", "echoed_call_id_carried_by_its_tool_message",
+        "tool_result_content"])
 def test_an_echo_exempts_only_a_witness_found_in_the_models_replies_and_nowhere_else(monkeypatch, history, echoes, rate, where):
     """تدقيقٌ لاحقٌ لـe8dcd74: المكانُ الأولُ المطابق كان يُسجَّل وحده، فشاهدٌ بقي في كلام المالك السابق ورددّه النموذجُ أيضًا
     سُمّي صدًى وخرج من مقام `forget_rate`. الصدى الآن ما وقع في ردود النموذج وحدها، كما يقول #165."""
-    from core.contracts import Message, Request
-    request = Request((*(Message(role, text) for role, text in history), Message("user", "ماذا تتذكر؟")),
+    from core.contracts import Message, Request, ToolCall
+
+    def message(role, text, call=None):
+        if role == "assistant" and call:
+            return Message(role, text, tool_calls=(ToolCall(call, "remember", {}),))
+        return Message(role, text, tool_call_id=call) if role == "tool" else Message(role, text)
+    request = Request((*(message(*m) for m in history), Message("user", "ماذا تتذكر؟")),
                       "m", "0" * 64, 32, 5.0, "local_only", None)
     report = _views(monkeypatch, [runner._memory_view(request)])
     result = report["results"][0]

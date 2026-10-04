@@ -375,14 +375,23 @@ def test_a_seed_error_excludes_the_aggregated_case_instead_of_becoming_a_vote():
     assert row["status"] == "error" and "passed" not in row and row["error_seeds"] == [1]
 
 
-def test_seeds_at_temperature_zero_are_published_as_not_measuring_sampling_variance():
-    """تدقيقٌ لاحقٌ لـc55d0ab: البذورُ الثلاث تغيّر بذرةَ المحرّك وحدها والفكُّ بحرارة 0، فلا تقيس تباينَ أخذ العيّنات؛ وما
-    دام المزوّدُ يفكّ بحرارة 0 يُنشر ذلك حدًّا مع كل تقرير استئصال."""
+
+def test_seeds_at_temperature_zero_are_published_as_not_measuring_sampling_variance(tmp_path):
+    """تدقيقٌ لاحقٌ لـc55d0ab: البذورُ الثلاث تغيّر بذرةَ المحرّك وحدها والمزوّدُ الافتراضيّ يفكّ بحرارة 0، فلا تقيس تباينَ
+    أخذ العيّنات؛ وما دام كذلك يُنشر ذلك حدًّا مع كل تقرير استئصال (لا في البروتوكول المسجَّل سلفًا فبصمتُه ثابتة)."""
+    import sys
+    sys.path.insert(0, str(ROOT))
     from core.contracts import Message, Request
     from providers.ollama import OllamaProvider
+    from tools.evaluate_ablation import run_component
     request = Request((Message("user", "?"),), "m", "0" * 64, 8, 5.0, "local_only", None)
-    options = OllamaProvider("m").payload(request)["options"]
-    limit = ("seeds_change_only_the_engine_seed_while_decoding_stays_at_temperature_0_so_greedy_decoding_may_repeat_one_"
-             "output_across_seeds_and_the_majority_reflects_run_to_run_nondeterminism_not_sampling_variance")
-    if options["temperature"] == 0:
-        assert limit in json.loads(ablation.PROTOCOL.read_text(encoding="utf-8"))["limits"]
+    assert OllamaProvider("m").payload(request)["options"]["temperature"] == 0
+    bank = tmp_path / "open" / "tier_a"
+    bank.mkdir(parents=True)
+    case = _case("c", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])
+    (bank / "s.json").write_text(json.dumps({"schema_version": 1, "suite_id": "s", "split": "development",
+                                             "description": "d", "cases": [case]}, ensure_ascii=False))
+    report = run_component("tool_announcement", Replay(lambda user, request: "الرباط"), model="replay",
+                           model_version="v1", bank_open=tmp_path / "open")
+    assert ablation.GREEDY_SEED_LIMIT in report["measurement_limits"]
+    assert ablation.GREEDY_SEED_LIMIT not in DATA["limits"], "البروتوكولُ المسجَّل لا يُعدَّل بعد تسجيله"
