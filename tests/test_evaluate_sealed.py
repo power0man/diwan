@@ -9,6 +9,7 @@ import inspect
 import json
 import os
 import re
+import shutil
 
 import pytest
 
@@ -349,6 +350,34 @@ def test_a_hard_linked_marker_temporary_is_replaced_not_truncated(tmp_path):
     engine = Provider()
     _run(tmp_path, engine)
     assert engine.calls == 10 and _sha(target) == before
+
+
+@pytest.mark.parametrize("where", ["inside", "symlink", "hardlink"])
+def test_a_manifest_in_or_linked_into_the_sealed_root_is_refused_before_it_is_read(tmp_path, monkeypatch, where):
+    """ملاحظة Codex على #289: measure_sealed يمرّر manifest_path كما سمّاه المستدعي، وverify_manifest يقرؤه قبل مطابقة
+    بصمته؛ فبيانٌ في المحجوب أو رابطٌ إليه يُردّ قبل أن يُفتح."""
+    sealed_root, manifest = _bank(tmp_path)
+    inside = sealed_root / "MANIFEST.json"
+    shutil.copyfile(manifest, inside)
+    named = {"inside": inside, "symlink": tmp_path / "linked.json", "hardlink": tmp_path / "hard.json"}[where]
+    if where == "symlink":
+        named.symlink_to(inside)
+    elif where == "hardlink":
+        os.link(inside, named)
+    monkeypatch.setattr(sealed, "verify_manifest", lambda *a, **k: pytest.fail("قُرئ بيانٌ من المحجوب"))
+    engine = Provider()
+    with pytest.raises(SealedRefused) as refused:
+        sealed.run_sealed(sealed_root, engine, run_root=tmp_path / "runs", manifest_path=named,
+                          manifest_sha256=_sha(inside))
+    assert refused.value.code == "sealed_manifest_in_sealed_root" and engine.calls == 0
+
+
+def test_a_reviewed_bank_that_contains_the_sealed_root_is_refused(tmp_path):
+    """ملاحظة Codex على #289: ملفّاتُ ك١١ السبعة بمساراتٍ ثابتةٍ تحت مجلّدها؛ فمجلّدٌ يحوي المحجوبَ يجعل أحدَها مختومًا."""
+    with pytest.raises(SealedRefused) as refused:
+        _run(tmp_path, Provider(), judge=Provider(model="granite4"), judge_evidence=_evidence(),
+             reviewed_bank=tmp_path / "diwan-sealed")
+    assert refused.value.code == "k11_reviewed_bank_in_sealed_root"
 
 
 def test_a_second_measurement_in_the_same_runner_directory_is_refused_before_it_writes(tmp_path):

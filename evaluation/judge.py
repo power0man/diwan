@@ -203,10 +203,15 @@ def _reviewed_references(reviewed_bank: Path | None, k11: dict) -> dict[str, str
     مُصلَحٌ ولا يقوم مقامها (ملاحظة Codex على #289)."""
     if reviewed_bank is None:
         raise JudgeRefused("calibration_reviewed_bank_missing", "مراجعُ عيوب ك١١ السبعة من ملفّاتها قبل إصلاح ك١٥")
-    references = {}
+    references, root = {}, Path(reviewed_bank).resolve()
     for case_id, rel in k11["real_defects"].items():
+        path = Path(reviewed_bank) / rel
+        # ملفٌّ رابطٌ (رمزيٌّ أو صلب، أو تحت مجلّدٍ رابط) قد يكون مختومًا فيُفتح قبل مطابقة بصمته (ملاحظة Codex على #289)
+        if path.exists() and (path.is_symlink() or root not in path.resolve().parents or not path.is_file()
+                              or path.stat().st_nlink != 1):
+            raise JudgeRefused("calibration_reviewed_file_unsafe", "ملفُّ ك١١ المراجَعُ رابطٌ أو غيرُ عاديّ")
         try:
-            raw = (Path(reviewed_bank) / rel).read_bytes()
+            raw = path.read_bytes()
         except OSError:
             raw = b""
         if hashlib.sha256(raw).hexdigest() != k11["reviewed_files"][rel]:

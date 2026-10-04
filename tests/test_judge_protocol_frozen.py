@@ -5,6 +5,7 @@ import copy
 import functools
 import hashlib
 import json
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -307,6 +308,28 @@ def test_the_reviewed_file_digests_are_the_ones_both_external_reviewers_recorded
     triage = json.loads(judge.K11_EVIDENCE.read_text(encoding="utf-8"))
     assert sorted(K11["real_defects"]) == sorted(row["id"] for row in triage["real"])
     assert set(K11["real_defects"].values()) == set(K11["reviewed_files"])
+
+
+@pytest.mark.parametrize("link", ["symlink", "directory", "hardlink"])
+def test_a_reviewed_file_linked_to_another_file_is_refused_before_it_is_read(tmp_path, link):
+    """ملاحظة Codex على #289: مجلّدُ مراجع ك١١ خارجَ المحجوب، لكنّ أحدَ ملفّاته السبعة (أو مجلّدَه) رابطٌ إلى ملفٍّ مختوم،
+    فكان يُفتح قبل مطابقة بصمته؛ والآن يُردّ برمزٍ مسمًّى."""
+    source, protocol = _reviewed()
+    k11 = next(s for s in protocol["calibration"]["sources"] if s["name"] == "k11_owner_ruled")
+    sealed = tmp_path / "diwan-sealed" / "kimi_v1"
+    shutil.copytree(source, sealed)
+    bank = tmp_path / "pre-k15"
+    shutil.copytree(source, bank)
+    rel = sorted(set(k11["real_defects"].values()))[0]
+    if link == "directory":
+        shutil.rmtree(bank / Path(rel).parent)
+        (bank / Path(rel).parent).symlink_to(sealed / Path(rel).parent, target_is_directory=True)
+    else:
+        (bank / rel).unlink()
+        (os.link if link == "hardlink" else os.symlink)(sealed / rel, bank / rel)
+    with pytest.raises(JudgeRefused) as refused:
+        judge.calibration_truth(protocol, _sample(), reviewed_bank=bank)
+    assert refused.value.code == "calibration_reviewed_file_unsafe"
 
 
 def test_the_seven_real_defects_carry_their_reviewed_pre_fix_candidates(tmp_path):

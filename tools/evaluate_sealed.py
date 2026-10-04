@@ -381,11 +381,16 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         # مراجعُ عيوب ك١١ السبعة من ملفّاتها قبل إصلاح ك١٥، خارجَ المحجوب وببصماتها المسجَّلة (ملاحظة Codex على #289)
         reviewed = None if reviewed_bank is None else _outside_sealed(reviewed_bank, sealed_root,
                                                                       "k11_reviewed_bank_in_sealed_root")
+        # ولا يحوي المحجوبَ: فملفّاتُه السبعة بمساراتٍ ثابتةٍ تحته، ومحجوبٌ تحته يجعل أحدَها مختومًا (ملاحظة Codex على #289)
+        if reviewed is not None and reviewed in Path(sealed_root).expanduser().resolve().parents:
+            raise SealedRefused("k11_reviewed_bank_in_sealed_root", "مجلّدُ مراجع ك١١ يحوي المحجوب")
         truth = judge_rules.calibration_truth(protocol, judge_rules.calibration_sample(protocol, protocol_sha256),
                                               reviewed_bank=reviewed)
         judge_rules.accept_sealed_judge(judge_evidence, judge.model, protocol, protocol_sha256, truth,
                                         judge_digest=judge_digest)
     sealed_root = _outside_repository(sealed_root, "sealed_root_in_repository")
+    # والبيانُ يُقرأ قبل أن تُطابَق بصمتُه، فلا يكون في المحجوب ولا رابطًا إليه (ملاحظة Codex على #289)
+    manifest_path = _outside_sealed_file(manifest_path, sealed_root, "sealed_manifest_in_sealed_root")
     run_root = _outside_sealed(_outside_repository(run_root, "sealed_run_root_in_repository"), sealed_root,
                                "sealed_run_root_in_sealed_root")
     # مجلّدُ التشغيل معزولٌ ببصمة المُشغِّل: فشيفرةٌ تغيّرت لا تعيد أجوبةَ دفتر شيفرةٍ سابقة وتُنسب إليها (ملاحظة Codex على #289)
