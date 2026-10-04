@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import json
 import platform
 import re
@@ -30,10 +31,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from core import signing
 from core.locality import is_local_provider
 from core.sandbox import configure_sandbox_backend
 from evaluation import judge as judge_rules
 from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
+from providers import ollama as ollama_provider
 from providers.ollama import OllamaProvider
 from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest
 
@@ -61,8 +64,35 @@ def _outside_repository(path: Path, code: str) -> Path:
 
 
 def _on_owner_mac() -> bool:
-    """judge_v1 يقول owner_mac_only. ونظامُ Darwin شرطٌ لازمٌ يُفحص لا كافٍ: لا يثبت أن الجهاز ماكُ المالك."""
-    return platform.system() == "Darwin"
+    """judge_v1 يقول owner_mac_only: نظامُ Darwin، ومعه مفتاحُ المالك الخاصّ في سلسلة مفاتيح هذا الجهاز يطابق المفتاحَ
+    العامّ المُثبَّت في المستودع (`keys/anchor-ed25519.pub`). فماكٌ آخر نُسخ إليه المحجوبُ بلا مفتاح المالك يُردّ (ملاحظة
+    Codex على #289). والحدُّ: جهازٌ نُسخ إليه مفتاحُ المالك نفسُه يمرّ؛ فالفحصُ يشهد بالمفتاح لا بالعتاد."""
+    if platform.system() != "Darwin":
+        return False
+    try:
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+        seed = signing.load_ed25519_private_key()
+        public = signing.load_trusted_public_key()
+        derived = Ed25519PrivateKey.from_private_bytes(seed).public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+    except (signing.SigningRefused, ValueError, ImportError):
+        return False
+    return hmac.compare_digest(derived, public)
+
+
+def check_runtime(protocol: dict, provider, judge) -> dict:
+    """إعدادُ التشغيل هو المسجَّلُ في judge_v1: البذرةُ والتفكيرُ لكل مزوّد، وسياقُ Ollama، وبصمةُ تعليمات المحكِّم. فتشغيلٌ
+    بإعدادٍ آخر لا يُنشر قياسًا بالاسم نفسِه (ملاحظة Codex على #289)."""
+    runtime = protocol["sealed"]["runtime"]
+    models = [provider] + ([judge] if judge is not None else [])
+    seeded = all(getattr(m, "seed", None) == runtime["seed"] for m in models)
+    unthinking = all(getattr(m, "allow_thinking", None) is runtime["allow_thinking"] for m in models)
+    context = ollama_provider.CONTEXT_TOKENS == runtime["context_tokens"]
+    prompt = hashlib.sha256(JUDGE_PROMPT.encode("utf-8")).hexdigest() == runtime["judge_prompt_sha256"]
+    same = seeded and unthinking and context and prompt
+    if not same:
+        raise SealedRefused("sealed_runtime_changed", "إعدادُ التشغيل غيرُ المسجَّل في judge_v1")
+    return runtime
 
 
 def preflight(provider, judge, engine: str) -> None:
@@ -135,9 +165,11 @@ def _verdict(answer) -> str | None:
 def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Path = MANIFEST,
                judge=None, judge_evidence: dict | None = None, protocol_path: Path = judge_rules.PROTOCOL,
                protocol_sha256: str = judge_rules.PROTOCOL_SHA256, manifest_sha256: str | None = None,
-               digest_resolver=None, max_output: int = 800, deadline_s: int = 240) -> dict:
+               digest_resolver=None) -> dict:
     protocol = judge_rules.load_protocol(protocol_path, protocol_sha256)
     preflight(provider, judge, protocol["sealed"]["engine_model"])
+    runtime = check_runtime(protocol, provider, judge)
+    max_output, deadline_s = runtime["max_output"], runtime["deadline_s"]
     # الوسمُ يُعاد توجيهُه إلى أوزانٍ أخرى؛ فالمحرّكُ ببصمته المسجَّلة، والمحكِّمُ ببصمته الموقَّعة في دليل معايرته،
     # وتُعاد البصمتان بعد التشغيل (ملاحظة Codex على #289).
     try:
@@ -214,7 +246,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         raise SealedRefused(exc.code, "تغيّرت بصمةُ نموذجٍ أثناء التشغيل") from None
     out = {"schema_version": 1, "probe": "k45-sealed", "status": "measured", "protocol": protocol["protocol_id"],
            "protocol_sha256": protocol_sha256, "date": date.today().isoformat(), "agent": "anthropic/claude-opus-5-5",
-           "engine": {"model": provider.model, "digest": engine_digest},
+           "engine": {"model": provider.model, "digest": engine_digest}, "runtime": runtime,
            "judge": None if judge is None else {"model": judge.model, "digest": judge_digest,
                                                 "calibration_sha256": hashlib.sha256(json.dumps(
                                                     judge_evidence, sort_keys=True).encode()).hexdigest()},

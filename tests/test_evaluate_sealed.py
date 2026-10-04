@@ -12,7 +12,10 @@ import pytest
 from core.contracts import Response, Usage
 from evaluation import judge as judge_rules
 from evaluation.judge import JudgeRefused
-from tests.test_judge_protocol_frozen import DATA, ENGINE_DIGEST, JUDGE_DIGEST, OWNER_PUBLIC, _evidence
+from core import signing
+from providers import ollama as ollama_provider
+from tests.test_judge_protocol_frozen import (DATA, ENGINE_DIGEST, JUDGE_DIGEST, OTHER_SEED, OWNER_PUBLIC, OWNER_SEED,
+                                              _evidence)
 from tools import evaluate_sealed as sealed
 from tools import model_digest
 from tools.evaluate_sealed import SealedRefused
@@ -24,8 +27,9 @@ DIGESTS = {FROZEN_ENGINE: ENGINE_DIGEST, "granite4": JUDGE_DIGEST}
 
 
 class Provider:
-    def __init__(self, model=FROZEN_ENGINE, answer="نعم", *, local=True):
+    def __init__(self, model=FROZEN_ENGINE, answer="نعم", *, local=True, seed=0, allow_thinking=False):
         self.model, self.answer, self.is_local, self.calls = model, answer, local, 0
+        self.seed, self.allow_thinking = seed, allow_thinking
 
     def estimate_micros(self, request):
         return 0
@@ -33,6 +37,9 @@ class Provider:
     def complete(self, request):
         self.calls += 1
         return Response(self.answer, Usage(3, 1), "complete", 0, provider="synthetic", model_version="fixture")
+
+
+REAL_ON_OWNER_MAC = sealed._on_owner_mac
 
 
 @pytest.fixture(autouse=True)
@@ -117,6 +124,7 @@ def test_a_calibrated_local_judge_scores_only_cases_without_checks(tmp_path):
     assert report["by_tier"]["tier_a"]["judged"] == 0 and report["overall"]["rate"] == 1.0
     assert report["judge"]["model"] == "granite4"
     assert report["engine"]["digest"] == ENGINE_DIGEST and report["judge"]["digest"] == JUDGE_DIGEST
+    assert report["runtime"] == DATA["sealed"]["runtime"]
 
 
 @pytest.mark.parametrize("resolved,code", [("0" * 64, "model_version_mismatch"), (None, "model_digest_unresolved")],
@@ -227,6 +235,43 @@ def test_the_cli_refuses_a_cloud_engine_by_name_before_any_sandbox_or_sealed_acc
     monkeypatch.setattr(sealed, "verify_manifest", lambda *a, **k: pytest.fail("المحجوب قُرئ قبل الرفض"))
     assert sealed.main(["--model", "glm-4.6:cloud", "--sandbox-receipt", "receipt.json"]) == 2
     assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "sealed_requires_local_provider"}
+
+
+def _refuse_key():
+    raise signing.SigningRefused("signing_keychain_item_missing", "synthetic")
+
+
+@pytest.mark.parametrize("system,seed,expected", [
+    ("Darwin", lambda: OWNER_SEED, True), ("Darwin", lambda: OTHER_SEED, False),
+    ("Darwin", _refuse_key, False), ("Linux", lambda: OWNER_SEED, False),
+], ids=["owner_key", "another_key", "no_owner_key", "linux_with_owner_key"])
+def test_the_owner_mac_is_attested_by_the_owner_key_not_the_os_name(monkeypatch, system, seed, expected):
+    """ملاحظة Codex على #289: Darwin وحده كان يُقبل، فماكٌ آخر نُسخ إليه المحجوبُ يقرؤه؛ والآن يلزم مفتاحُ المالك في سلسلة
+    مفاتيح الجهاز يطابق المفتاحَ العامّ المُثبَّت."""
+    monkeypatch.setattr(sealed.platform, "system", lambda: system)
+    monkeypatch.setattr(signing, "load_ed25519_private_key", seed)
+    monkeypatch.setattr(signing, "load_trusted_public_key", lambda: OWNER_PUBLIC)
+    assert REAL_ON_OWNER_MAC() is expected
+
+
+@pytest.mark.parametrize("change", ["engine_seed", "judge_seed", "thinking", "context", "judge_prompt"])
+def test_a_runtime_other_than_the_registered_one_is_refused_before_reading(tmp_path, monkeypatch, change):
+    """ملاحظة Codex على #289: إعدادُ التشغيل (البذرة، والتفكير، والسياق، وتعليماتُ المحكِّم، والسقفان) مسجَّلٌ في judge_v1؛
+    فتشغيلٌ بغيره لا يُنشر قياسًا بالاسم نفسِه."""
+    engine, judge = Provider(), Provider(model="granite4")
+    if change == "engine_seed":
+        engine = Provider(seed=7)
+    elif change == "judge_seed":
+        judge = Provider(model="granite4", seed=1)
+    elif change == "thinking":
+        engine = Provider(allow_thinking=True)
+    elif change == "context":
+        monkeypatch.setattr(ollama_provider, "CONTEXT_TOKENS", 8192)
+    else:
+        monkeypatch.setattr(sealed, "JUDGE_PROMPT", sealed.JUDGE_PROMPT + " ")
+    with pytest.raises(SealedRefused) as refused:
+        _run(tmp_path, engine, judge=judge, judge_evidence=_evidence())
+    assert refused.value.code == "sealed_runtime_changed" and engine.calls == 0 and judge.calls == 0
 
 
 def test_a_sealed_run_off_the_owner_mac_is_refused_before_reading(tmp_path, monkeypatch):

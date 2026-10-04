@@ -87,10 +87,19 @@
     "manifest": "evaluation/banks/kimi_v1/sealed/MANIFEST.json",
     "manifest_sha256": "4d480a58e192700ceaf91e2d6871a4add93b1961932ed56bb9296b1162386b30",
     "machine": "owner_mac_only",
+    "machine_attestation": "darwin_and_the_owner_ed25519_private_key_in_the_local_keychain_derives_the_pinned_keys_anchor_ed25519_pub",
     "engine": "frozen_default_engine_q54",
     "engine_model": "qwen3.5:9b",
     "engine_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
     "provider": "local_only",
+    "runtime": {
+      "max_output": 800,
+      "deadline_s": 240,
+      "seed": 0,
+      "allow_thinking": false,
+      "context_tokens": 32768,
+      "judge_prompt_sha256": "791f50552e41b6adf17cadf2b95e64a05732c15b16c145eeac11a102abfb7421"
+    },
     "judge": {
       "model": "granite4",
       "family": "ibm",
@@ -127,6 +136,8 @@
     "automatic_labels_are_recomputed_from_each_candidate_and_k11_candidates_must_equal_their_bank_reference_but_engine_provenance_judge_verdicts_and_owner_rulings_are_attested_by_the_owner_signature_not_recomputed",
     "python_sandbox_checks_are_excluded_from_calibration_so_acceptance_needs_no_container",
     "the_engine_digest_is_the_owner_mac_qwen3_5_9b_digest_recorded_in_docs_probe_from_27_september_to_1_october_so_a_repulled_tag_is_refused_and_needs_judge_v2",
-    "both_digests_are_resolved_before_the_run_and_rechecked_after_it_so_a_tag_repointed_and_restored_within_the_run_is_not_detected"
+    "both_digests_are_resolved_before_the_run_and_rechecked_after_it_so_a_tag_repointed_and_restored_within_the_run_is_not_detected",
+    "the_owner_mac_is_attested_by_the_owner_key_not_the_hardware_so_a_machine_holding_a_copy_of_that_key_passes",
+    "the_runtime_pins_the_runner_and_provider_inputs_listed_here_not_the_ollama_server_build_or_its_quantization_beyond_the_model_digest"
   ]
 }
