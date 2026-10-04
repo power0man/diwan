@@ -46,6 +46,13 @@
     "open_judges": {
       "required": 2,
       "distinct_families": true,
+      "families": [
+        "zhipu",
+        "meta",
+        "deepseek",
+        "swiss-ai"
+      ],
+      "families_source": "docs/PLAN-20260926.md k45 step 1: two judges among GLM, Llama, DeepSeek and Apertus; Granite is calibrated separately as the sealed judge",
       "scope": "the_open_split_measurement_in_30_judged_over_the_transports_below_not_the_sealed_acceptance_which_needs_only_the_registered_sealed_judge_and_its_own_signed_calibration"
     },
     "transports": [

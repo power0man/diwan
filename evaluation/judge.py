@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PROTOCOL = ROOT / "evaluation" / "protocols" / "judge_v1.json"
 K11_EVIDENCE = ROOT / "docs" / "probe" / "k11-owner-queue-triage-20260925.json"
 OPEN_BANK = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
-PROTOCOL_SHA256 = "4d39cb38dffa68547445b627d0b4a550400eb0a0748ec2d0295051aa1f937c7a"
+PROTOCOL_SHA256 = "d7aac3d06ce3352fc642256018836555cb43b66c579ad57af1e22b4086d65371"
 VERDICTS = ("correct", "incorrect")
 OUTCOMES = ("pass", "fail", "without_checks", "error")
 # نصٌّ أقصرُ من هذا لا يُبحث عنه في التقرير: كلمةٌ قصيرة كـ«نعم» تقع في أيّ تقرير ولا تدلّ على حالة.
@@ -95,6 +95,11 @@ def open_judge_panel(judges: list[tuple[str, str]], protocol: dict) -> list[dict
     محكِّم المحجوب، فذاك المسجَّلُ وحده بمعايرته الموقَّعة (ملاحظة Codex على #289)."""
     panel = [open_judge(transport, model, protocol) for transport, model in judges]
     rule = protocol["calibration"]["open_judges"]
+    # عائلاتُ المفتوح أضيقُ من المسموحة كلِّها: Granite (ibm) محكِّمُ المحجوب يُعايَر وحده، فلا يكون أحدَ محكِّمَي المفتوح
+    # المستقلَّين (الخطة، ك٤٥ الخطوة ١؛ ملاحظة Codex على #289).
+    outside = sorted({judge["family"] for judge in panel} - set(rule["families"]))
+    if outside:
+        raise JudgeRefused("open_judge_family_not_listed", ",".join(outside))
     if len(panel) != rule["required"]:
         raise JudgeRefused("open_judge_panel_size", f"{len(panel)} ≠ {rule['required']}")
     if rule["distinct_families"] and len({judge["family"] for judge in panel}) != len(panel):

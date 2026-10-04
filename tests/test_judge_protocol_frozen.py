@@ -14,7 +14,7 @@ from core.signing import SigningRefused
 from evaluation import judge
 from evaluation.judge import JudgeRefused
 
-REGISTERED = "4d39cb38dffa68547445b627d0b4a550400eb0a0748ec2d0295051aa1f937c7a"
+REGISTERED = "d7aac3d06ce3352fc642256018836555cb43b66c579ad57af1e22b4086d65371"
 DATA = json.loads(judge.PROTOCOL.read_text(encoding="utf-8"))
 # مفتاحُ مالكٍ مصطنعٌ للاختبار وحده؛ ومفتاحُ المالك الحقيقيّ في سلسلة مفاتيح الماك لا في المستودع.
 OWNER_SEED = hashlib.sha256(b"diwan-test-owner-calibration").digest()
@@ -34,6 +34,7 @@ def test_the_protocol_is_registered_before_any_run_and_cannot_change():
     assert set(DATA["families"]["excluded"]) == {"qwen", "anthropic", "openai", "google", "kimi"}
     assert DATA["calibration"]["split"] == "open_only"
     assert DATA["calibration"]["open_judges"]["required"] == 2 and DATA["calibration"]["open_judges"]["distinct_families"]
+    assert DATA["calibration"]["open_judges"]["families"] == ["zhipu", "meta", "deepseek", "swiss-ai"]
     assert DATA["sealed"]["attempts"] == 120 and DATA["sealed"]["provider"] == "local_only"
     assert DATA["sealed"]["judge"] == {"model": "granite4", "family": "ibm", "local_only": True,
                                        "requires_passing_calibration_evidence": True,
@@ -102,7 +103,8 @@ OLLAMA_GLM = ("ollama_com", "glm-4.6:cloud")
     ([OLLAMA_GLM], "open_judge_panel_size"),
     ([HF_META, OLLAMA_GLM, ("ollama_com", "deepseek-v4.1-flash:cloud")], "open_judge_panel_size"),
     ([HF_META, ("ollama_com", "qwen3.5:9b")], "judge_family_excluded"),
-], ids=["same_family", "one_judge", "three_judges", "excluded_family"])
+    ([("ollama_com", "granite4"), OLLAMA_GLM], "open_judge_family_not_listed"),
+], ids=["same_family", "one_judge", "three_judges", "excluded_family", "sealed_judge_as_open_judge"])
 def test_the_open_judges_are_the_registered_number_of_distinct_allowed_families(panel, code):
     """ملاحظة Codex على #289: محكِّما المفتوح (#30) اثنان من عائلتين مسموحتين مختلفتين، كما سجّلهما judge_v1؛ ولا يخصّان
     قبولَ محكِّم المحجوب."""
@@ -223,7 +225,7 @@ def test_the_calibration_sample_is_frozen_by_the_protocol():
     assert sample["k11_owner_ruled"] == sorted(r["id"] for r in triage["real"] + triage["false_positives"])
     assert len(sample["k11_owner_ruled"]) == 23 and len(set(sample["automatic_checked"])) == 100
     assert hashlib.sha256(json.dumps(sample, sort_keys=True).encode()).hexdigest() == \
-        "d8de5e7bdb780fe5f264284296ad0ea8a65d6f37c350ed39a1f57d88a853938b"
+        "1ae79b2a6dcbffbdd13dd771ef8c1375f794ef535238c5e665af58f6cb4a179a"
     kinds = {check["kind"] for checks in _truth()["automatic_checked"].values() for check in checks}
     assert kinds <= {"exact", "json_equals"} and all(isinstance(r, str) for r in _truth()["k11_owner_ruled"].values())
 
