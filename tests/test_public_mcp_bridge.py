@@ -242,3 +242,117 @@ def test_concurrent_store_busy_is_temporary_and_retry_replays(tmp_path, monkeypa
         server.function("r1", "b.txt")
     assert permanent.value.code == -32602
     assert str(permanent.value) == "public_read_refused"
+
+
+@pytest.fixture
+def public_sdk(monkeypatch):
+    class Server:
+        def __init__(self, name):
+            pass
+        def tool(self, **options):
+            def register(function):
+                self.function = function
+                return function
+            return register
+    class Error(Exception):
+        def __init__(self, code, message):
+            self.code = code
+            super().__init__(message)
+    server_module = types.ModuleType("mcp.server")
+    server_module.MCPServer = Server
+    error_module = types.ModuleType("mcp.shared.exceptions")
+    error_module.MCPError = Error
+    monkeypatch.setitem(sys.modules, "mcp.server", server_module)
+    monkeypatch.setitem(sys.modules, "mcp.shared.exceptions", error_module)
+    return Error
+
+
+def fail_in_read_handler(b, monkeypatch, phase, sentinel):
+    import conversation.mcp_public as public
+    calls = []
+    tool = b.registry._tools["read_file"]
+    def counted(args, context):
+        calls.append(args["path"])
+        return tool.run(args, context)
+    b.registry._tools["read_file"] = Tool(tool.spec, counted)
+    owner, attribute = {
+        "open": (public, "_open_directory"),
+        "bytes": (b, "_bytes"),
+        "quarantine": (public, "quarantine"),
+    }[phase]
+    original = getattr(owner, attribute)
+    def fail_once(*args, **kwargs):
+        # Fault only after the registry has entered the actual _read handler.
+        # Validation before invocation/replay still uses the real filesystem.
+        if calls and len(calls) == 1 and not failures:
+            failures.append(phase)
+            raise OSError(sentinel)
+        return original(*args, **kwargs)
+    failures = []
+    monkeypatch.setattr(owner, attribute, fail_once)
+    return calls
+
+
+@pytest.mark.parametrize("phase", ["open", "bytes", "quarantine"])
+@pytest.mark.parametrize("name", ["a.txt", "b.txt"])
+def test_failed_read_is_redacted_before_receipt_and_replay(tmp_path, monkeypatch, phase, name):
+    b = bridge(tmp_path)
+    sentinel = "/synthetic/private/host-path SYNTHETIC_SECRET_NEVER_REAL"
+    calls = fail_in_read_handler(b, monkeypatch, phase, sentinel)
+    first = b.read("failed-read", name)
+    assert first["status"] == "failed" and first["code"] == "public_read_failed"
+    assert first["content"] == "public_read_failed"
+    assert set(first) == {"call_id", "name", "status", "code", "content",
+                          "action_id", "call_digest", "revision"}
+    assert first["call_id"] == "public-read" and first["name"] == "read_file"
+    assert first["action_id"].startswith("action-") and first["revision"] == 3
+    assert b.store.get(first["action_id"])["state"] == "completed"
+    assert b.store.completed_result(first["action_id"]) == first
+    assert b.read("failed-read", name) == first and calls == [name]
+    assert sentinel not in json.dumps(first)
+    for path in b.store.directory.glob("*.json"):
+        assert sentinel not in path.read_text()
+
+
+def test_failed_read_metadata_is_not_persisted(tmp_path):
+    b = bridge(tmp_path)
+    sentinel = "/synthetic/private/host-path SYNTHETIC_SECRET_NEVER_REAL"
+    tool = b.registry._tools["read_file"]
+    b.registry._tools["read_file"] = Tool(tool.spec, lambda args, context: {
+        "status": "failed", "code": sentinel, "content": sentinel,
+        "trace": {"details": sentinel}, "action_id": sentinel})
+    result = b.read("failed-metadata", "a.txt")
+    assert result["status"] == "failed" and result["code"] == "public_read_failed"
+    assert result["content"] == "public_read_failed"
+    assert set(result) == {"call_id", "name", "status", "code", "content",
+                           "action_id", "call_digest", "revision"}
+    assert b.store.completed_result(result["action_id"]) == result
+    assert b.read("failed-metadata", "a.txt") == result
+    for path in b.store.directory.glob("*.json"):
+        assert sentinel not in path.read_text()
+
+
+def test_sdk_failed_read_is_internal_error_with_safe_receipt_and_replay(tmp_path, monkeypatch, public_sdk):
+    b = bridge(tmp_path)
+    sentinel = "/synthetic/private/host-path SYNTHETIC_SECRET_NEVER_REAL"
+    calls = fail_in_read_handler(b, monkeypatch, "bytes", sentinel)
+    server = mcp_server(b)
+    for _ in range(2):
+        with pytest.raises(public_sdk) as caught:
+            server.function("failed-sdk", "a.txt")
+        assert caught.value.code == -32603
+        assert str(caught.value) == "public_read_failed"
+        assert sentinel not in str(caught.value)
+    assert calls == ["a.txt"]
+    receipts = list(b.store.directory.glob("action-*.json"))
+    assert len(receipts) == 1
+    saved = json.loads(receipts[0].read_text())["record"]
+    assert saved["state"] == "completed" and saved["result"]["status"] == "failed"
+    assert saved["result"]["code"] == "public_read_failed"
+    assert b.read("failed-sdk", "a.txt") == saved["result"]
+    for path in b.store.directory.glob("*.json"):
+        assert sentinel not in path.read_text()
+    with pytest.raises(public_sdk) as refused:
+        server.function("invalid-sdk", "../owner.txt")
+    assert refused.value.code == -32602
+    assert str(refused.value) == "public_read_refused"
