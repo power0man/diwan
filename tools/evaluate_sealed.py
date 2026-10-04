@@ -217,15 +217,25 @@ def _verdict(answer) -> str | None:
     return found.group(1).lower() if found else None
 
 
-def measure_sealed(sealed_root: Path, engine_model: str, *, run_root: Path, manifest_path: Path = MANIFEST,
+def registered_agent(agent: str) -> str:
+    """من يشغّل القياس يُسمّى بمعرّفه المسجَّل في registry/agents.json، لا بمعرّفٍ مثبَّتٍ في الشيفرة يُنسب إليه كلُّ تقرير
+    ولو شغّله المالكُ أو غيرُه (ملاحظة Codex على #289)."""
+    agents = json.loads((ROOT / "registry" / "agents.json").read_text(encoding="utf-8"))["agents"]
+    if not isinstance(agent, str) or agent not in agents:
+        raise SealedRefused("agent_unregistered", "مُشغِّلُ القياس غيرُ مسجَّل")
+    return agent
+
+
+def measure_sealed(sealed_root: Path, engine_model: str, *, agent: str, run_root: Path, manifest_path: Path = MANIFEST,
                    judge_model: str | None = None, judge_evidence: dict | None = None,
                    reviewed_bank: Path | None = None) -> dict:
     """طريقُ القياس وحده: المزوّدان يُبنيان هنا من اسميهما، فلا يمرّر المستدعي كائنًا (ولو OllamaProvider بدالّةٍ مُبدَلة)
     يكتب الأجوبةَ أو الأحكامَ بنفسه، ولا مُحلِّلًا ولا بروتوكولًا ولا بصمةَ بيان (ملاحظة Codex على #289). وهو ما يناديه
     السطر؛ وrun_sealed بمزوّدٍ ممرَّر للبنوك الاصطناعية تبديلٌ مسمًّى لا يُسمّى قياسًا."""
+    agent = registered_agent(agent)
     report = run_sealed(sealed_root, OllamaProvider(engine_model), run_root=run_root, manifest_path=manifest_path,
                         judge=None if judge_model is None else OllamaProvider(judge_model), judge_evidence=judge_evidence,
-                        reviewed_bank=reviewed_bank)
+                        reviewed_bank=reviewed_bank, agent=agent)
     # المزوّدان بُنيا هنا من اسميهما فليسا تبديلًا؛ والوسمُ يُعاد هنا لا بعَلَمٍ يمرّ في واجهة run_sealed فيُزوَّر من
     # مستدعيها (ملاحظة Codex على #289). وما سواهما مما قد يسمّيه run_sealed يبقى.
     return _label(report, [name for name in report["overrides"] if name not in ("provider", "judge_provider")])
@@ -246,7 +256,7 @@ def _label(report: dict, overrides: list[str]) -> dict:
 def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Path = MANIFEST,
                judge=None, judge_evidence: dict | None = None, protocol_path: Path | None = None,
                protocol_sha256: str | None = None, manifest_sha256: str | None = None,
-               digest_resolver=None, reviewed_bank: Path | None = None) -> dict:
+               digest_resolver=None, reviewed_bank: Path | None = None, agent: str | None = None) -> dict:
     # «measured» لا يُنشر إلا على المسجَّل كلِّه: البروتوكولُ ببصمته المثبَّتة في الشيفرة، والبيانُ ببصمته فيه، وبصماتُ
     # النماذج من نقطة Ollama المسجَّلة لا من مُحلِّلٍ يمرّره المستدعي. وكلُّ تبديلٍ من هذه (للبنوك والبروتوكولات
     # الاصطناعية في الاختبارات) يُسمّى في التقرير فلا يُسمّى قياسًا لـjudge_v1 (ملاحظات Codex على #289).
@@ -360,7 +370,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         raise SealedRefused(exc.code, "تغيّرت بصمةُ نموذجٍ أثناء التشغيل") from None
     out = {"schema_version": 1, "probe": "k45-sealed", "status": None, "overrides": None,
            "protocol": protocol["protocol_id"], "protocol_sha256": protocol_sha256, "manifest_sha256": manifest_digest,
-           "date": date.today().isoformat(), "agent": "anthropic/claude-opus-5-5",
+           "date": date.today().isoformat(), "agent": agent,
            "engine": {"model": provider.model, "digest": engine_digest}, "runtime": runtime,
            "runner_sha256": runner,
            # هويّةُ إيصال الحاوية كما تحكم فحوصَ python_sandbox (وهي في هويّة التشغيل أصلًا)، لا «configured» (ملاحظة Codex على #289)
@@ -392,6 +402,8 @@ def main(argv=None) -> int:
     # ملفّاتُ البنك المفتوح قبل إصلاح ك١٥ (من diwan-private على الماك) لمراجع عيوب ك١١ السبعة؛ تلزم مع --judge وحده
     parser.add_argument("--k11-reviewed-bank", type=Path)
     parser.add_argument("--out", type=Path)
+    # من يشغّل القياس بمعرّفه المسجَّل؛ وغيابُه أو معرّفٌ غيرُ مسجَّل رفضٌ مسمًّى قبل القياس (ملاحظة Codex على #289)
+    parser.add_argument("--agent", help="معرّفُ من يشغّل القياس، مسجَّلًا في registry/agents.json")
     # فحوصُ python_sandbox تحتاج خُلفيّةً معزولةً بإيصالٍ موثوق كما في tools/measure_engine.py؛ وبلا إقلاعها
     # تُعدّ حالاتُها أخطاءً في المقام لا نجاحًا ولا رسوبًا.
     parser.add_argument("--sandbox-receipt", type=Path)
@@ -415,7 +427,7 @@ def main(argv=None) -> int:
         # المزوّدان أعلاه للفحص المسبق وحده؛ والقياسُ يبني مزوّدَيه من اسميهما
         report = measure_sealed(args.sealed_root, provider.model, run_root=args.run_root,
                                 judge_model=None if judge is None else judge.model, judge_evidence=evidence,
-                                reviewed_bank=args.k11_reviewed_bank)
+                                reviewed_bank=args.k11_reviewed_bank, agent=args.agent)
     # إيصالٌ غائبٌ أو معطوبٌ أو غيرُ خاصّ يُردّ من إقلاع الحاوية بـExecutionRefused ورمزِه، فيخرج رفضًا مسمًّى لا أثرًا خامًا
     except (SealedRefused, judge_rules.JudgeRefused, ExecutionRefused) as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))

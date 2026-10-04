@@ -235,13 +235,15 @@ def test_any_override_is_named_and_never_called_a_judge_v1_measurement(tmp_path,
     injected = sealed.run_sealed(sealed_root, mutated, run_root=tmp_path / "b" / "runs", manifest_path=manifest)
     assert injected["status"] == "not_measured_overridden" and injected["overrides"] == ["provider"]
     # ولا عَلَمَ ثقةٍ في واجهة run_sealed يُزوَّر به المزوّدُ الممرَّر «مبنيًّا هنا» (ملاحظة Codex على #289)
-    assert list(inspect.signature(sealed.run_sealed).parameters)[-1] == "reviewed_bank"
+    assert "_constructed_here" not in inspect.signature(sealed.run_sealed).parameters
     with pytest.raises(TypeError):
         sealed.run_sealed(sealed_root, mutated, run_root=tmp_path / "b" / "runs", manifest_path=manifest,
                           _constructed_here=True)
     # والقياسُ وحده بمزوّدَين يبنيهما measure_sealed من اسميهما
-    report = sealed.measure_sealed(sealed_root, FROZEN_ENGINE, run_root=tmp_path / "b" / "runs", manifest_path=manifest)
+    report = sealed.measure_sealed(sealed_root, FROZEN_ENGINE, agent="anthropic/claude-fable-5-1",
+                                   run_root=tmp_path / "b" / "runs", manifest_path=manifest)
     assert report["status"] == "measured" and report["overrides"] == [] and report["manifest_sha256"] == _sha(manifest)
+    assert report["agent"] == "anthropic/claude-fable-5-1"
     assert OVERRIDDEN not in report["measurement_limits"]
 
 
@@ -509,14 +511,18 @@ def test_the_k11_reviewed_bank_reaches_calibration_outside_the_sealed_root(tmp_p
     monkeypatch.setattr(judge_rules, "calibration_truth", REAL_TRUTH)
     evidence = tmp_path / "calibration.json"
     evidence.write_text(json.dumps(_evidence()), encoding="utf-8")
-    assert sealed.main(["--judge", "granite4", "--judge-evidence", str(evidence), "--sealed-root", str(sealed_root),
-                        "--run-root", str(tmp_path / "runs")]) == 2
+    common = ["--judge", "granite4", "--judge-evidence", str(evidence), "--sealed-root", str(sealed_root),
+              "--run-root", str(tmp_path / "runs")]
+    # ملاحظة Codex على #289: مُشغِّلُ القياس يُسمّى بمعرّفه المسجَّل، وبلا معرّفٍ أو بمعرّفٍ غيرِ مسجَّل يُردّ قبل القياس
+    for agent in ([], ["--agent", "someone/unregistered"]):
+        assert sealed.main(common + agent) == 2
+        assert json.loads(capsys.readouterr().out)["code"] == "agent_unregistered"
+    assert sealed.main(common + ["--agent", "human/hussain-alrabighi"]) == 2
     assert json.loads(capsys.readouterr().out)["code"] == "calibration_reviewed_bank_missing"
     captured = {}
     monkeypatch.setattr(sealed, "run_sealed", lambda *a, **k: captured.update(k) or {"measurement_limits": [], "overrides": []})
-    assert sealed.main(["--judge", "granite4", "--judge-evidence", str(evidence), "--sealed-root", str(sealed_root),
-                        "--run-root", str(tmp_path / "runs"), "--k11-reviewed-bank", str(reviewed)]) == 0
-    assert captured["reviewed_bank"] == reviewed
+    assert sealed.main(common + ["--agent", "human/hussain-alrabighi", "--k11-reviewed-bank", str(reviewed)]) == 0
+    assert captured["reviewed_bank"] == reviewed and captured["agent"] == "human/hussain-alrabighi"
 
 
 def test_judge_evidence_is_never_read_from_the_sealed_root_and_a_bad_one_is_named(tmp_path, capsys):
