@@ -37,6 +37,8 @@ OUTCOMES = ("pass", "fail", "without_checks", "error")
 # نصٌّ أقصرُ من هذا لا يُبحث عنه في التقرير: كلمةٌ قصيرة كـ«نعم» تقع في أيّ تقرير ولا تدلّ على حالة.
 LEAK_MIN_CHARS = 8
 _PINNED = re.compile(r"[^\s:]+:[^\s:]+")
+# سياساتُ توجيه HF لا مزوّدات: تختار المزوّدَ عند كلّ نداء (`:fastest` الافتراضيّ، و`:cheapest`، و`:preferred`)
+ROUTING_POLICIES = frozenset({"fastest", "cheapest", "preferred", "auto"})
 CALIBRATION_DOMAIN = b"diwan-judge-calibration-v1\x00"
 SIGNATURE_FIELD = "owner_signature"
 
@@ -73,6 +75,9 @@ def open_judge(transport: str, model: str, protocol: dict) -> dict:
     if transport == "hf_inference_providers":
         if not isinstance(model, str) or not _PINNED.fullmatch(model):
             raise JudgeRefused("judge_provider_unpinned", "HF يُسمّى <model>:<provider>")
+        # فلاحقةُ سياسةٍ تمرّ بالصيغة والمعايرةُ المكرَّرة تبلغ مزوّداتٍ مختلفة ودليلُها يدّعي المثبَّت (ملاحظة Codex على #289)
+        if model.rsplit(":", 1)[1].lower() in ROUTING_POLICIES:
+            raise JudgeRefused("judge_provider_is_a_routing_policy", model)
     elif transport != "ollama_com":
         raise JudgeRefused("judge_transport_unsupported", str(transport))
     return {"transport": transport, "model": model, "family": judge_family(model, protocol)}

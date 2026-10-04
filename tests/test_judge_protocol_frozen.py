@@ -96,6 +96,11 @@ def test_the_open_judge_names_a_pinned_hf_provider_or_ollama_com():
         with pytest.raises(JudgeRefused) as refused:
             judge.open_judge(transport, model, DATA)
         assert refused.value.code == code
+    # ملاحظة Codex على #289: لاحقةُ سياسة توجيهٍ تمرّ بالصيغة <model>:<provider> وتختار المزوّدَ عند كلّ نداء، فلا تثبّته
+    for policy in ("fastest", "cheapest", "preferred", "Fastest"):
+        with pytest.raises(JudgeRefused) as refused:
+            judge.open_judge("hf_inference_providers", f"meta-llama/Llama-3.3-70B-Instruct:{policy}", DATA)
+        assert refused.value.code == "judge_provider_is_a_routing_policy"
 
 
 HF_META = ("hf_inference_providers", "meta-llama/Llama-3.3-70B-Instruct:groq")
