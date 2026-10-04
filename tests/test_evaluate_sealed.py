@@ -197,26 +197,32 @@ OVERRIDDEN = "the_inputs_named_in_overrides_are_not_the_registered_ones_so_this_
 
 
 def test_any_override_is_named_and_never_called_a_judge_v1_measurement(tmp_path, monkeypatch):
-    """ملاحظات Codex على #289: بيانٌ أو بروتوكولٌ أو مُحلِّلُ بصماتٍ يمرّره المستدعي كان يُقبل والتقريرُ «measured» لـjudge_v1،
+    """ملاحظات Codex على #289: بيانٌ أو بروتوكولٌ أو مُحلِّلُ بصماتٍ أو مزوّدٌ يمرّره المستدعي كان يُقبل والتقريرُ «measured» لـjudge_v1،
     فيُنسب إلى المسجَّل ما لم يُقَس عليه. والآن يُسمّى كلُّ تبديلٍ في التقرير ولا يُسمّى قياسًا؛ والمسجَّلُ كلُّه وحده قياس."""
     overridden = _run(tmp_path / "a", Provider())
-    assert overridden["status"] == "not_measured_overridden" and overridden["overrides"] == ["manifest"]
+    assert overridden["status"] == "not_measured_overridden" and overridden["overrides"] == ["provider", "manifest"]
     assert overridden["manifest_sha256"] == _sha(tmp_path / "a" / "MANIFEST.json")
     assert OVERRIDDEN in overridden["measurement_limits"]
     resolved = _run(tmp_path / "c", Provider(), digest_resolver=DIGESTS.get)
-    assert resolved["status"] == "not_measured_overridden" and resolved["overrides"] == ["digest_resolver", "manifest"]
+    assert resolved["overrides"] == ["digest_resolver", "provider", "manifest"]
+    judged = _run(tmp_path / "d", Provider(), judge=Provider(model="granite4"), judge_evidence=_evidence())
+    assert judged["overrides"] == ["provider", "judge_provider", "manifest"]
+    # المزوّدُ الموثوق عينُه (OllamaProvider) بجوابٍ مصطنعٍ يُعاد من صنفه في الاختبار وحده، فلا يُطلب Ollama حيّ
+    monkeypatch.setattr(OllamaProvider, "complete", lambda self, request: Response(
+        "نعم", Usage(3, 1), "complete", 0, provider="ollama", model_version="fixture"))
     # بروتوكولٌ يسجّل البيانَ الاصطناعيَّ: مُمرَّرًا ببصمته تبديلٌ، ومثبَّتًا في الشيفرة (المسجَّلُ كلُّه) قياس
     data = json.loads(judge_rules.PROTOCOL.read_text(encoding="utf-8"))
     sealed_root, manifest = _bank(tmp_path / "b")
     data["sealed"]["manifest_sha256"] = _sha(manifest)
     registered = tmp_path / "judge_v1.json"
     registered.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-    passed = sealed.run_sealed(sealed_root, Provider(), run_root=tmp_path / "b" / "runs", manifest_path=manifest,
-                               protocol_path=registered, protocol_sha256=_sha(registered))
+    passed = sealed.run_sealed(sealed_root, OllamaProvider(FROZEN_ENGINE), run_root=tmp_path / "b" / "runs",
+                               manifest_path=manifest, protocol_path=registered, protocol_sha256=_sha(registered))
     assert passed["status"] == "not_measured_overridden" and passed["overrides"] == ["protocol"]
     monkeypatch.setattr(judge_rules, "PROTOCOL", registered)
     monkeypatch.setattr(judge_rules, "PROTOCOL_SHA256", _sha(registered))
-    report = sealed.run_sealed(sealed_root, Provider(), run_root=tmp_path / "b" / "runs", manifest_path=manifest)
+    report = sealed.run_sealed(sealed_root, OllamaProvider(FROZEN_ENGINE), run_root=tmp_path / "b" / "runs",
+                               manifest_path=manifest)
     assert report["status"] == "measured" and report["overrides"] == [] and report["manifest_sha256"] == _sha(manifest)
     assert OVERRIDDEN not in report["measurement_limits"]
 

@@ -231,6 +231,12 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         overrides.append("protocol")
     if digest_resolver is not None:
         overrides.append("digest_resolver")
+    # ومزوّدٌ يُحقن بشكل OllamaProvider (اسمُه ونقطتُه وخياراتُه) يمرّ بالفحص المسبق وفحص الإعداد ثم يكتب الأجوبةَ بنفسه،
+    # فلا قياسَ إلا بالصنف الموثوق عينِه للمحرّك والمحكِّم (ملاحظة Codex على #289)
+    if type(provider) is not OllamaProvider:
+        overrides.append("provider")
+    if judge is not None and type(judge) is not OllamaProvider:
+        overrides.append("judge_provider")
     protocol = judge_rules.load_protocol(protocol_path, protocol_sha256)
     preflight(provider, judge, protocol["sealed"]["engine_model"])
     runtime = check_runtime(protocol, provider, judge)
