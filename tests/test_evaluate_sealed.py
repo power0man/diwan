@@ -19,7 +19,7 @@ CANARY_TEXT = "سؤالٌ محجوبٌ مصطنع لا يخرج"
 
 
 class Provider:
-    def __init__(self, model="synthetic-local-engine", answer="نعم", *, local=True):
+    def __init__(self, model=sealed.FROZEN_ENGINE, answer="نعم", *, local=True):
         self.model, self.answer, self.is_local, self.calls = model, answer, local, 0
 
     def estimate_micros(self, request):
@@ -28,6 +28,12 @@ class Provider:
     def complete(self, request):
         self.calls += 1
         return Response(self.answer, Usage(3, 1), "complete", 0, provider="synthetic", model_version="fixture")
+
+
+@pytest.fixture(autouse=True)
+def _owner_mac(monkeypatch):
+    """الاختباراتُ على لينكس؛ وفحصُ الجهاز نفسُه يُختبر بإبطال هذا في موضعه."""
+    monkeypatch.setattr(sealed, "_on_owner_mac", lambda: True)
 
 
 def _bank(root, tiers=(("tier_a", 6, True), ("tier_b", 4, False))):
@@ -144,3 +150,39 @@ def test_the_cli_refuses_a_cloud_engine_by_name_before_any_sandbox_or_sealed_acc
     monkeypatch.setattr(sealed, "verify_manifest", lambda *a, **k: pytest.fail("المحجوب قُرئ قبل الرفض"))
     assert sealed.main(["--model", "glm-4.6:cloud", "--sandbox-receipt", "receipt.json"]) == 2
     assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "sealed_requires_local_provider"}
+
+
+def test_a_sealed_run_off_the_owner_mac_is_refused_before_reading(tmp_path, monkeypatch):
+    monkeypatch.setattr(sealed, "_on_owner_mac", lambda: False)
+    monkeypatch.setattr(sealed, "verify_manifest", lambda *a, **k: pytest.fail("المحجوب قُرئ قبل الرفض"))
+    with pytest.raises(SealedRefused) as refused:
+        _run(tmp_path, Provider())
+    assert refused.value.code == "sealed_requires_owner_mac"
+
+
+@pytest.mark.parametrize("judge", [None, "granite4"], ids=["engine_alone", "engine_and_judge_of_one_family"])
+def test_an_engine_other_than_the_frozen_one_is_refused(tmp_path, monkeypatch, judge):
+    """ملاحظة Codex على #289: `--model granite4 --judge granite4` كان يُقبل تشغيلًا لـjudge_v1."""
+    monkeypatch.setattr(sealed, "verify_manifest", lambda *a, **k: pytest.fail("المحجوب قُرئ قبل الرفض"))
+    with pytest.raises(SealedRefused) as refused:
+        _run(tmp_path, Provider(model="granite4"), judge=judge and Provider(model=judge),
+             judge_evidence=_evidence() if judge else None)
+    assert refused.value.code == "sealed_engine_not_frozen"
+
+
+def test_the_cli_checks_locality_before_reading_any_judge_evidence(tmp_path, capsys):
+    """ملاحظة Codex على #289: الدليلُ كان يُقرأ قبل فحص المحليّة، فدليلٌ غائبٌ يرمي استثناءً خامًا."""
+    assert sealed.main(["--judge", "glm-4.6:cloud", "--judge-evidence", str(tmp_path / "missing.json")]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "sealed_requires_local_provider"
+
+
+def test_judge_evidence_is_never_read_from_the_sealed_root_and_a_bad_one_is_named(tmp_path, capsys):
+    sealed_root = tmp_path / "diwan-sealed" / "kimi_v1"
+    inside = sealed_root / "calibration.json"
+    inside.parent.mkdir(parents=True)
+    inside.write_text(json.dumps(_evidence()), encoding="utf-8")
+    common = ["--judge", "granite4", "--sealed-root", str(sealed_root), "--run-root", str(tmp_path / "runs")]
+    assert sealed.main(common + ["--judge-evidence", str(inside)]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "judge_evidence_in_sealed_root"
+    assert sealed.main(common + ["--judge-evidence", str(tmp_path / "missing.json")]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "judge_evidence_unreadable"

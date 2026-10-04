@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import platform
 import re
 import sys
 from datetime import date
@@ -32,8 +33,11 @@ from core.locality import is_local_provider
 from core.sandbox import configure_sandbox_backend
 from evaluation import judge as judge_rules
 from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
+from providers.ollama import DEFAULT_MODEL, OllamaProvider
 
 MANIFEST = ROOT / "evaluation" / "banks" / "kimi_v1" / "sealed" / "MANIFEST.json"
+# المحرّكُ المجمَّد في البروتوكول (frozen_default_engine_q54): الافتراضيُّ بق٥٤، في موضعه الواحد
+FROZEN_ENGINE = DEFAULT_MODEL
 SEALED_ROOT = Path.home() / "diwan-sealed" / "kimi_v1"
 _VERDICT = re.compile(r"(?:الحكم|VERDICT)\s*[:：]\s*(correct|incorrect)\s*", re.IGNORECASE)
 _TIER = re.compile(r"sealed/(tier_[a-z0-9]+)/")
@@ -54,6 +58,34 @@ def _outside_repository(path: Path, code: str) -> Path:
     if resolved == ROOT or ROOT in resolved.parents:
         raise SealedRefused(code, "المحجوبُ وتشغيلُه خارج المستودع")
     return resolved
+
+
+def _on_owner_mac() -> bool:
+    """judge_v1 يقول owner_mac_only. ونظامُ Darwin شرطٌ لازمٌ يُفحص لا كافٍ: لا يثبت أن الجهاز ماكُ المالك."""
+    return platform.system() == "Darwin"
+
+
+def preflight(provider, judge=None) -> None:
+    """ما يُردّ قبل أن يُقرأ أيُّ ملفٍّ يسمّيه المستدعي: الجهاز، ومحليّةُ المحرّك وهويّتُه المجمَّدة، ومحليّةُ المحكِّم."""
+    if not _on_owner_mac():
+        raise SealedRefused("sealed_requires_owner_mac", "المحجوبُ يُشغَّل على ماك المالك وحده")
+    if not is_local_provider(provider):
+        raise SealedRefused("sealed_requires_local_provider", "المحجوبُ لا يبلغ مزوّدًا غيرَ محليّ")
+    if provider.model != FROZEN_ENGINE:
+        raise SealedRefused("sealed_engine_not_frozen", "المحرّكُ المجمَّد في البروتوكول وحده (ق٥٤)")
+    if judge is not None and not is_local_provider(judge):
+        raise SealedRefused("sealed_requires_local_provider", "محكِّمُ المحجوب محليٌّ وحده")
+
+
+def read_evidence(path: Path, sealed_root: Path) -> dict:
+    """دليلُ المعايرة يُقرأ بعد الفحص المسبق، ولا يُقرأ من داخل المحجوب، وعطبُه رفضٌ مسمًّى."""
+    resolved, sealed = Path(path).expanduser().resolve(), Path(sealed_root).expanduser().resolve()
+    if resolved == sealed or sealed in resolved.parents:
+        raise SealedRefused("judge_evidence_in_sealed_root", "دليلُ المعايرة من المفتوح، لا من المحجوب")
+    try:
+        return json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError):
+        raise SealedRefused("judge_evidence_unreadable", "دليلُ المعايرة غائبٌ أو معطوب") from None
 
 
 def verify_manifest(sealed_root: Path, manifest_path: Path = MANIFEST) -> list[dict]:
@@ -100,11 +132,8 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
                protocol_sha256: str = judge_rules.PROTOCOL_SHA256, model_version: str = "unspecified",
                max_output: int = 800, deadline_s: int = 240) -> dict:
     protocol = judge_rules.load_protocol(protocol_path, protocol_sha256)
-    if not is_local_provider(provider):
-        raise SealedRefused("sealed_requires_local_provider", "المحجوبُ لا يبلغ مزوّدًا غيرَ محليّ")
+    preflight(provider, judge)
     if judge is not None:
-        if not is_local_provider(judge):
-            raise SealedRefused("sealed_requires_local_provider", "محكِّمُ المحجوب محليٌّ وحده")
         judge_rules.accept_sealed_judge(judge_evidence, judge.model, protocol, protocol_sha256)
     sealed_root = _outside_repository(sealed_root, "sealed_root_in_repository")
     run_root = _outside_repository(run_root, "sealed_run_root_in_repository")
@@ -175,8 +204,6 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
 
 
 def main(argv=None) -> int:
-    from providers.ollama import DEFAULT_MODEL, OllamaProvider
-
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--sealed-root", type=Path, default=SEALED_ROOT)
     parser.add_argument("--run-root", type=Path, default=SEALED_ROOT.parent / ".runs" / "judge_v1")
@@ -190,12 +217,11 @@ def main(argv=None) -> int:
     parser.add_argument("--sandbox-receipt", type=Path)
     parser.add_argument("--sandbox-workspace", type=Path, default=SEALED_ROOT.parent / ".runs" / "sandbox")
     args = parser.parse_args(argv)
-    judge = OllamaProvider(args.judge) if args.judge else None
-    evidence = json.loads(args.judge_evidence.read_text(encoding="utf-8")) if args.judge_evidence else None
     try:
-        provider = OllamaProvider(args.model)
-        if not is_local_provider(provider):
-            raise SealedRefused("sealed_requires_local_provider", "المحجوبُ لا يبلغ مزوّدًا غيرَ محليّ")
+        provider, judge = OllamaProvider(args.model), OllamaProvider(args.judge) if args.judge else None
+        # يسبق قراءةَ أيِّ ملفٍّ يسمّيه المستدعي، ودليلُ المعايرة منها (ملاحظة Codex على #289)
+        preflight(provider, judge)
+        evidence = read_evidence(args.judge_evidence, args.sealed_root) if args.judge_evidence else None
         if args.sandbox_receipt:
             workspace = _outside_repository(args.sandbox_workspace, "sealed_run_root_in_repository")
             workspace.mkdir(parents=True, exist_ok=True)

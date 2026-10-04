@@ -107,6 +107,11 @@ def calibration_result(items: list[dict], protocol: dict) -> dict:
             "by_source": {s: _scores([i for i in items if i["source"] == s]) for s in sources}}
 
 
+def _bounded(value, low: float, high: float) -> bool:
+    """عددٌ في مداه الرياضيّ: Infinity خارجه وNaN لا يقارَن، فكلاهما يُردّ قبل العتبة (ملاحظة Codex على #289)."""
+    return type(value) in (int, float) and low <= value <= high
+
+
 def accept_sealed_judge(evidence: dict | None, model: str, protocol: dict, protocol_sha256: str) -> str:
     """المحكِّمُ على المحجوب: دليلُ معايرةٍ ناجح لنموذجه نفسِه وعلى البروتوكول نفسِه، والأرقامُ تُعاد."""
     family = judge_family(model, protocol)
@@ -114,8 +119,8 @@ def accept_sealed_judge(evidence: dict | None, model: str, protocol: dict, proto
     try:
         kappa, accuracy = evidence["kappa"], evidence["accuracy"]
         same = (evidence["protocol_sha256"] == protocol_sha256 and evidence["judge"]["model"] == model)
-        meets = (type(kappa) in (int, float) and kappa >= thresholds["kappa_min"]
-                 and type(accuracy) in (int, float) and accuracy >= thresholds["accuracy_min"])
+        meets = (_bounded(kappa, -1, 1) and kappa >= thresholds["kappa_min"]
+                 and _bounded(accuracy, 0, 1) and accuracy >= thresholds["accuracy_min"])
     except (KeyError, TypeError):
         same = meets = False
     if not (same and meets and evidence.get("passed") is True):

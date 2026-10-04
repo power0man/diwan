@@ -109,8 +109,11 @@ def _evidence(**overrides):
 @pytest.mark.parametrize("evidence", [
     None, _evidence(passed=False), _evidence(kappa=0.5), _evidence(accuracy=0.8),
     _evidence(judge={"model": "granite3"}), _evidence(protocol_sha256="0" * 64), _evidence(kappa="0.9"),
+    _evidence(kappa=float("inf"), accuracy=float("inf")), _evidence(kappa=float("nan")),
+    _evidence(kappa=1.5), _evidence(accuracy=1.2),
 ], ids=["missing", "failed", "low_kappa_flag_true", "low_accuracy_flag_true", "another_model",
-        "another_protocol", "kappa_not_a_number"])
+        "another_protocol", "kappa_not_a_number", "infinite_metrics", "nan_kappa", "kappa_above_one",
+        "accuracy_above_one"])
 def test_a_sealed_judge_needs_passing_evidence_for_itself_on_this_protocol(evidence):
     with pytest.raises(JudgeRefused) as refused:
         judge.accept_sealed_judge(evidence, "granite4", DATA, REGISTERED)
