@@ -1,0 +1,78 @@
+{
+  "protocol_id": "judge_v1",
+  "status": "registered_not_run",
+  "registered": "2026-10-04",
+  "issue": "https://github.com/power0man/diwan/issues/288",
+  "consumer": "https://github.com/power0man/diwan/issues/30",
+  "decision": "ق٦٤ (OD3 في docs/PLAN-20260926.md §٧)",
+  "thresholds": {
+    "kappa_min": 0.6,
+    "accuracy_min": 0.85
+  },
+  "families": {
+    "allowed": ["zhipu", "meta", "deepseek", "swiss-ai", "ibm"],
+    "excluded": ["qwen", "anthropic", "openai", "google", "kimi"],
+    "why_excluded": "qwen عائلةُ المحرّك (ق٥٤)، وanthropic وopenai وgoogle عائلاتُ المطوّرين، وkimi عائلةُ مؤلّف البنك (ق٥٠، AGENTS.md §٤)"
+  },
+  "task": {
+    "kind": "answer_correctness_reference_guided",
+    "inputs": ["question", "reference", "rubric", "candidate"],
+    "verdicts": ["correct", "incorrect"]
+  },
+  "calibration": {
+    "split": "open_only",
+    "judges_required": 2,
+    "distinct_families_required": true,
+    "transports": ["hf_inference_providers_pinned_model_colon_provider", "ollama_com"],
+    "sources": [
+      {
+        "name": "k11_owner_ruled",
+        "evidence": "docs/probe/k11-owner-queue-triage-20260925.json",
+        "cases": 23,
+        "candidate": "the_bank_v1_1_reference_as_reviewed_in_k11",
+        "label": "owner_ruling",
+        "label_status": "awaiting_owner_ruling"
+      },
+      {
+        "name": "automatic_checked",
+        "bank": "evaluation/banks/kimi_v1/open",
+        "cases": 100,
+        "candidate": "the_frozen_engine_answer_generated_in_k45_and_recorded_with_its_digest_before_any_judging",
+        "label": "automatic_check_verdict",
+        "check_kinds": ["exact", "json_equals", "python_sandbox"],
+        "selection": "open_cases_whose_checks_are_all_of_these_kinds_stratified_by_tier_proportional_seeded_by_protocol_sha256"
+      }
+    ],
+    "pass_rule": "kappa_and_accuracy_at_or_above_thresholds_on_the_union_and_each_source_reported_separately",
+    "failure_rule": "declared_failure_and_automatic_checks_only"
+  },
+  "sealed": {
+    "attempts": 120,
+    "meaning_of_120": "١٢٠ محاولةً معدودة على المحجوب القائم (OD3): عيّنةٌ طبقيةٌ بنسبة حجم كل طبقة في البيان المختوم، وبذرتُها بصمةُ هذا البروتوكول",
+    "location": "~/diwan-sealed/kimi_v1",
+    "manifest": "evaluation/banks/kimi_v1/sealed/MANIFEST.json",
+    "machine": "owner_mac_only",
+    "engine": "frozen_default_engine_q54",
+    "provider": "local_only",
+    "judge": {
+      "model": "granite4",
+      "family": "ibm",
+      "local_only": true,
+      "requires_passing_calibration_evidence": true
+    },
+    "without_judge": "automatic_checks_only_and_cases_without_checks_stay_in_the_denominator_as_not_passed",
+    "output": {
+      "per_tier": ["attempted", "passes", "failures", "without_checks", "judged", "errors", "rate", "wilson95"],
+      "identifiers": "none",
+      "text": "none"
+    }
+  },
+  "limits": [
+    "registered_before_any_run_so_thresholds_and_sources_cannot_follow_the_result",
+    "k11_labels_await_the_owner_ruling_so_calibration_cannot_pass_before_it",
+    "for_the_16_k11_false_positives_the_candidate_equals_the_reference_so_that_source_is_easy_and_is_reported_separately",
+    "automatic_check_labels_inherit_the_flaws_of_the_checks_and_contains_checks_are_excluded_because_they_are_blind_to_polarity_k17",
+    "120_attempts_give_wide_per_tier_intervals_and_the_wilson_interval_is_published_beside_every_rate",
+    "the_sealed_score_measures_the_frozen_engine_on_bank_v1_1_not_diwan_as_a_whole"
+  ]
+}
