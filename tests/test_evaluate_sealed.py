@@ -549,6 +549,23 @@ def test_the_report_is_never_written_into_the_sealed_root(tmp_path, monkeypatch,
         assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "sealed_out_in_sealed_root"}
 
 
+def test_a_hard_linked_report_destination_is_replaced_not_written_through(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #289: --out رابطٌ صلبٌ إلى ملفٍّ مختوم يمرّ بفحص المسار (resolve لا يكشفه)، والكتابةُ فيه كانت تقطع
+    الملفَّ المختوم؛ والآن يُكتب التقريرُ ملفًّا جديدًا يحلّ محلَّ المدخلة، فيبقى المختومُ كما هو."""
+    sealed_root = tmp_path / "diwan-sealed" / "kimi_v1"
+    sealed_file = sealed_root / "tier_a" / "suite.json"
+    sealed_file.parent.mkdir(parents=True)
+    sealed_file.write_text("مختوم", encoding="utf-8")
+    out = tmp_path / "report.json"
+    os.link(sealed_file, out)
+    monkeypatch.setattr(sealed, "measure_sealed", lambda *a, **k: {"status": "measured"})
+    assert sealed.main(["--sealed-root", str(sealed_root), "--run-root", str(tmp_path / "runs"),
+                        "--agent", "human/hussain-alrabighi", "--out", str(out)]) == 0
+    capsys.readouterr()
+    assert sealed_file.read_text(encoding="utf-8") == "مختوم" and not out.samefile(sealed_file)
+    assert json.loads(out.read_text(encoding="utf-8")) == {"status": "measured"}
+
+
 def test_a_refused_sandbox_receipt_is_a_named_refusal_not_a_traceback(tmp_path, monkeypatch, capsys):
     """ملاحظة Codex على #289: إيصالٌ غائبٌ أو معطوبٌ أو غيرُ خاصّ يرفع ExecutionRefused من إقلاع الحاوية، وكان يخرج أثرًا
     خامًا؛ والآن رفضٌ مسمًّى برمزه كسائر الرفض."""

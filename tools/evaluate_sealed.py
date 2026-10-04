@@ -463,6 +463,18 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     return _label(out, overrides)
 
 
+def _write_report(out: Path, text: str) -> None:
+    """يُكتب التقريرُ ملفًّا جديدًا ثم يحلّ محلَّ مدخلة المسار: فمسارٌ هو رابطٌ صلبٌ إلى ملفٍّ مختوم لا يكشفه `resolve`،
+    والكتابةُ فيه كانت تقطع الملفَّ المشترك؛ والاستبدالُ يغيّر المدخلةَ وحدها (ملاحظة Codex على #289)."""
+    temporary = out.with_name(f".{out.name}.{os.getpid()}.tmp")
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644)
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+        stream.write(text)
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(temporary, out)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--sealed-root", type=Path, default=SEALED_ROOT)
@@ -507,7 +519,7 @@ def main(argv=None) -> int:
         return 2
     text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if out is not None:
-        out.write_text(text, encoding="utf-8")
+        _write_report(out, text)
     print(text, end="")
     return 0
 
