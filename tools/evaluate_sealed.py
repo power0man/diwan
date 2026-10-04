@@ -373,6 +373,8 @@ def main(argv=None) -> int:
         # يسبق قراءةَ أيِّ ملفٍّ يسمّيه المستدعي، ودليلُ المعايرة منها (ملاحظة Codex على #289)
         preflight(provider, judge, engine)
         evidence = read_evidence(args.judge_evidence, args.sealed_root) if args.judge_evidence else None
+        # والتقريرُ يُكتب بعد التقويم، فمسارُه يُفحص قبل التشغيل: إلى المحجوب (ولو عبر رابطٍ رمزيّ) يكتب فوق ملفٍّ مختوم
+        out = _outside_sealed(args.out, args.sealed_root, "sealed_out_in_sealed_root") if args.out else None
         if args.sandbox_receipt:
             receipt = _outside_sealed(args.sandbox_receipt, args.sealed_root, "sandbox_receipt_in_sealed_root")
             workspace = _outside_sealed(_outside_repository(args.sandbox_workspace, "sealed_run_root_in_repository"),
@@ -388,8 +390,8 @@ def main(argv=None) -> int:
     if not args.sandbox_receipt:
         report["measurement_limits"].append("python_sandbox_cases_count_as_errors_because_no_sandbox_receipt_was_given")
     text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
-    if args.out:
-        args.out.write_text(text, encoding="utf-8")
+    if out is not None:
+        out.write_text(text, encoding="utf-8")
     print(text, end="")
     return 0
 

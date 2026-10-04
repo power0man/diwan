@@ -446,6 +446,19 @@ def test_sandbox_paths_and_the_run_root_stay_outside_the_sealed_root(tmp_path, m
     assert refused.value.code == "sealed_run_root_in_sealed_root" and not (bank_root / "runs").exists()
 
 
+def test_the_report_is_never_written_into_the_sealed_root(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #289: --out داخل المحجوب (مباشرةً أو عبر رابطٍ رمزيّ) كان يكتب التقريرَ فوق ملفٍّ مختومٍ بعد
+    التقويم؛ والآن يُردّ برمزه قبل أن يبدأ التشغيل."""
+    sealed_root = tmp_path / "diwan-sealed" / "kimi_v1"
+    sealed_root.mkdir(parents=True)
+    (tmp_path / "link").symlink_to(sealed_root)
+    monkeypatch.setattr(sealed, "run_sealed", lambda *a, **k: pytest.fail("بدأ التشغيلُ وتقريرُه إلى المحجوب"))
+    common = ["--sealed-root", str(sealed_root), "--run-root", str(tmp_path / "runs")]
+    for out in (sealed_root / "tier_a" / "suite.json", tmp_path / "link" / "report.json"):
+        assert sealed.main(common + ["--out", str(out)]) == 2
+        assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "sealed_out_in_sealed_root"}
+
+
 def test_a_refused_sandbox_receipt_is_a_named_refusal_not_a_traceback(tmp_path, monkeypatch, capsys):
     """ملاحظة Codex على #289: إيصالٌ غائبٌ أو معطوبٌ أو غيرُ خاصّ يرفع ExecutionRefused من إقلاع الحاوية، وكان يخرج أثرًا
     خامًا؛ والآن رفضٌ مسمًّى برمزه كسائر الرفض."""
