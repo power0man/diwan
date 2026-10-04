@@ -193,6 +193,26 @@ def test_the_sandbox_receipt_identity_is_published_not_collapsed(tmp_path, monke
     assert report["sandbox_sha256"] == hashlib.sha256(json.dumps(receipt, sort_keys=True).encode()).hexdigest()
 
 
+def test_an_overridden_manifest_is_published_and_never_called_a_judge_v1_measurement(tmp_path):
+    """ملاحظة Codex على #289: بيانٌ غيرُ المسجَّل يُمرَّر ببصمته فيُقبل، لكنّ تقريرَه كان يُسمّى «measured» لـjudge_v1 ولا
+    يذكر البيانَ الفعليّ. والآن تُنشر بصمتُه، ولا يُسمّى قياسًا إلا إن طابقت المسجَّلةَ في البروتوكول."""
+    overridden = _run(tmp_path / "a", Provider())
+    synthetic = _sha(tmp_path / "a" / "MANIFEST.json")
+    assert overridden["status"] == "not_measured_manifest_overridden" and overridden["manifest_sha256"] == synthetic
+    assert "the_manifest_is_not_the_one_registered_in_judge_v1_so_this_report_is_not_a_judge_v1_measurement" in \
+        overridden["measurement_limits"]
+    # بروتوكولٌ يسجّل البيانَ الاصطناعيَّ نفسَه: فالبيانُ المسجَّل وحده يُسمّى قياسًا، وبلا تمرير بصمة
+    data = json.loads(judge_rules.PROTOCOL.read_text(encoding="utf-8"))
+    sealed_root, manifest = _bank(tmp_path / "b")
+    data["sealed"]["manifest_sha256"] = _sha(manifest)
+    registered = tmp_path / "judge_v1.json"
+    registered.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    report = sealed.run_sealed(sealed_root, Provider(), run_root=tmp_path / "b" / "runs", manifest_path=manifest,
+                               protocol_path=registered, protocol_sha256=_sha(registered))
+    assert report["status"] == "measured" and report["manifest_sha256"] == _sha(manifest)
+    assert not any("not_a_judge_v1_measurement" in limit for limit in report["measurement_limits"])
+
+
 def test_the_runner_digest_covers_whole_imported_packages_not_a_hand_list():
     """ملاحظة Codex على #289: القائمةُ اليدوية أغفلت ollama_codec وcore/run وretrieval_general؛ والآن الحزمُ المستورَدة
     كلُّها، فيدخل ما يُستورد كسولًا داخلها."""

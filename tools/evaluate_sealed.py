@@ -239,9 +239,11 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     runner = runner_sha256()
     sandbox = sandbox_configuration()
     run_root = run_root / f"runner-{runner[:24]}"
-    entries = [e for e in verify_manifest(sealed_root, manifest_path,
-                                          manifest_sha256 or protocol["sealed"]["manifest_sha256"])
-               if e["kind"] == "suite"]
+    # بيانٌ غيرُ المسجَّل (البنوكُ الاصطناعية في الاختبارات) يُقبل ببصمته، لكنّ تقريرَه ينشرها ولا يُسمّى قياسًا لـjudge_v1،
+    # فلا تُنشر نتائجُ بنكٍ بديلٍ بنسبةٍ توحي ببيان v1.1 المثبَّت (ملاحظة Codex على #289)
+    registered_manifest = protocol["sealed"]["manifest_sha256"]
+    manifest_digest = manifest_sha256 or registered_manifest
+    entries = [e for e in verify_manifest(sealed_root, manifest_path, manifest_digest) if e["kind"] == "suite"]
 
     suites, by_tier = {}, {}
     for entry in entries:
@@ -301,8 +303,10 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
             verify_model_digest(judge.model, judge_digest, resolver=digest_resolver)
     except ModelDigestError as exc:
         raise SealedRefused(exc.code, "تغيّرت بصمةُ نموذجٍ أثناء التشغيل") from None
-    out = {"schema_version": 1, "probe": "k45-sealed", "status": "measured", "protocol": protocol["protocol_id"],
-           "protocol_sha256": protocol_sha256, "date": date.today().isoformat(), "agent": "anthropic/claude-opus-5-5",
+    measured = hmac.compare_digest(manifest_digest, registered_manifest)
+    out = {"schema_version": 1, "probe": "k45-sealed", "status": "measured" if measured else "not_measured_manifest_overridden",
+           "protocol": protocol["protocol_id"], "protocol_sha256": protocol_sha256, "manifest_sha256": manifest_digest,
+           "date": date.today().isoformat(), "agent": "anthropic/claude-opus-5-5",
            "engine": {"model": provider.model, "digest": engine_digest}, "runtime": runtime,
            "runner_sha256": runner,
            # هويّةُ إيصال الحاوية كما تحكم فحوصَ python_sandbox (وهي في هويّة التشغيل أصلًا)، لا «configured» (ملاحظة Codex على #289)
@@ -314,7 +318,8 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
            **judge_rules.tier_report(rows),
            "measurement_limits": protocol["limits"] + (
                ["cases_without_automatic_checks_stay_in_the_denominator_as_not_passed_because_no_calibrated_judge"]
-               if judge is None else [])}
+               if judge is None else []) + (
+               [] if measured else ["the_manifest_is_not_the_one_registered_in_judge_v1_so_this_report_is_not_a_judge_v1_measurement"])}
     judge_rules.assert_clean(out, identifiers, texts)
     return out
 
