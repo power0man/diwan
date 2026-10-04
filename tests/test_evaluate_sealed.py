@@ -65,9 +65,15 @@ def _bank(root, tiers=(("tier_a", 6, True), ("tier_b", 4, False))):
     return sealed_root, manifest
 
 
+def _sha(path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def _run(tmp_path, provider, **kwargs):
+    """البيانُ المصطنع يُمرَّر ببصمته بدل المسجَّلة في judge_v1؛ ورفضُ غيرِ المسجَّل يُختبر بلا هذا التمرير."""
     sealed_root, manifest = _bank(tmp_path)
-    return sealed.run_sealed(sealed_root, provider, run_root=tmp_path / "runs", manifest_path=manifest, **kwargs)
+    return sealed.run_sealed(sealed_root, provider, run_root=tmp_path / "runs", manifest_path=manifest,
+                             manifest_sha256=_sha(manifest), **kwargs)
 
 
 def test_rates_and_wilson_per_tier_without_identifiers_or_text(tmp_path):
@@ -181,15 +187,38 @@ def test_a_file_that_does_not_match_the_manifest_is_refused_without_its_name(tmp
     target = next(sealed_root.rglob("*_sealed.json"))
     target.write_text(target.read_text(encoding="utf-8") + " ", encoding="utf-8")
     with pytest.raises(SealedRefused) as refused:
-        sealed.run_sealed(sealed_root, Provider(), run_root=tmp_path / "runs", manifest_path=manifest)
+        sealed.run_sealed(sealed_root, Provider(), run_root=tmp_path / "runs", manifest_path=manifest,
+                          manifest_sha256=_sha(manifest))
     assert refused.value.code == "sealed_manifest_mismatch" and target.name not in str(refused.value)
+
+
+def test_a_manifest_other_than_the_registered_one_is_refused_before_reading(tmp_path):
+    """ملاحظة Codex على #289: بيانُ بنكٍ آخر (v1.2) لا يُقاس باسم judge_v1؛ والمسجَّلُ بصمةُ بيان v1.1."""
+    sealed_root, manifest = _bank(tmp_path)
+    provider = Provider()
+    with pytest.raises(SealedRefused) as refused:
+        sealed.run_sealed(sealed_root, provider, run_root=tmp_path / "runs", manifest_path=manifest)
+    assert refused.value.code == "sealed_manifest_changed" and provider.calls == 0
+
+
+def test_the_frozen_engine_is_named_by_the_protocol_not_the_product_default(tmp_path):
+    """ملاحظة Codex على #289: اسمُ المحرّك من judge_v1 نفسِه؛ فبروتوكولٌ يسمّي غيرَه يردّ qwen3.5:9b ولو بقي هو الافتراضيّ."""
+    data = json.loads(judge_rules.PROTOCOL.read_text(encoding="utf-8"))
+    assert sealed.FROZEN_ENGINE == data["sealed"]["engine_model"]
+    data["sealed"]["engine_model"] = "llama-frozen:1b"
+    other = tmp_path / "judge_other.json"
+    other.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(SealedRefused) as refused:
+        _run(tmp_path, Provider(), protocol_path=other, protocol_sha256=_sha(other))
+    assert refused.value.code == "sealed_engine_not_frozen"
 
 
 def test_the_sealed_run_never_writes_inside_the_repository(tmp_path):
     sealed_root, manifest = _bank(tmp_path)
     inside = sealed.ROOT / "var" / "sealed-run-must-not-exist"
     with pytest.raises(SealedRefused) as refused:
-        sealed.run_sealed(sealed_root, Provider(), run_root=inside, manifest_path=manifest)
+        sealed.run_sealed(sealed_root, Provider(), run_root=inside, manifest_path=manifest,
+                          manifest_sha256=_sha(manifest))
     assert refused.value.code == "sealed_run_root_in_repository" and not inside.exists()
 
 

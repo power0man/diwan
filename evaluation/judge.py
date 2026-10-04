@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PROTOCOL = ROOT / "evaluation" / "protocols" / "judge_v1.json"
 K11_EVIDENCE = ROOT / "docs" / "probe" / "k11-owner-queue-triage-20260925.json"
 OPEN_BANK = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
-PROTOCOL_SHA256 = "40bd8376159f0db5cf4b19350e47ba46afed7249385b97ce6aea11ef1c435a9f"
+PROTOCOL_SHA256 = "70610581fbf677a1d25c585b36cf115a12dbc189894f0e2e948d9bb03bd59bd4"
 VERDICTS = ("correct", "incorrect")
 OUTCOMES = ("pass", "fail", "without_checks", "error")
 # نصٌّ أقصرُ من هذا لا يُبحث عنه في التقرير: كلمةٌ قصيرة كـ«نعم» تقع في أيّ تقرير ولا تدلّ على حالة.
@@ -126,8 +126,19 @@ def calibration_result(items: list[dict], protocol: dict) -> dict:
             "by_source": {s: _published(_raw_scores([i for i in items if i["source"] == s])) for s in sources}}
 
 
-def _open_suites(open_bank: Path):
-    """حزمُ الشطر المفتوح بطبقاتها؛ وملفّاتُ المهامّ الوكيلة ليست حزمَ حالاتٍ بفحوص فلا تُعدّ."""
+def open_bank_digest(open_bank: Path = OPEN_BANK) -> str:
+    """بصمةُ الشطر المفتوح كلِّه: كلُّ ملفٍّ فيه بمساره النسبيّ وبصمتِه، مسلسلةً بترتيبٍ ثابت."""
+    root = Path(open_bank)
+    files = {path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+             for path in sorted(root.rglob("*")) if path.is_file()}
+    return hashlib.sha256(_json_bytes(files)).hexdigest()
+
+
+def _open_suites(open_bank: Path, expected_sha256: str):
+    """حزمُ الشطر المفتوح بطبقاتها، بعد أن يطابق الشطرُ بصمتَه المسجَّلة: فبنكٌ استُبدل (v1.2) يُردّ ولا يُقاس باسم
+    judge_v1 (ملاحظة Codex على #289). وملفّاتُ المهامّ الوكيلة ليست حزمَ حالاتٍ بفحوص فلا تُعدّ."""
+    if open_bank_digest(open_bank) != expected_sha256:
+        raise JudgeRefused("calibration_bank_changed", "الشطرُ المفتوح غيرُ المسجَّل في judge_v1؛ يُسجَّل judge_v2")
     for path in sorted(Path(open_bank).glob("*/*.json")):
         if path.name.endswith(".meta.json"):
             continue
@@ -147,7 +158,7 @@ def calibration_sample(protocol: dict, protocol_sha256: str, *, open_bank: Path 
     owner = sorted(row["id"] for row in triage["real"] + triage["false_positives"])
     kinds = set(sources["automatic_checked"]["check_kinds"])
     pool: dict[str, list[str]] = {}
-    for tier, suite in _open_suites(open_bank):
+    for tier, suite in _open_suites(open_bank, protocol["calibration"]["open_bank_sha256"]):
         pool.setdefault(tier, []).extend(
             f"{suite['suite_id']}/{case['case_id']}" for case in suite["cases"]
             if case["checks"] and all(check["kind"] in kinds for check in case["checks"]))
@@ -159,12 +170,12 @@ def calibration_sample(protocol: dict, protocol_sha256: str, *, open_bank: Path 
     return {"k11_owner_ruled": owner, "automatic_checked": automatic}
 
 
-def calibration_truth(sample: dict[str, list[str]], *, open_bank: Path = OPEN_BANK) -> dict[str, dict]:
+def calibration_truth(protocol: dict, sample: dict[str, list[str]], *, open_bank: Path = OPEN_BANK) -> dict[str, dict]:
     """ما يُقابَل به كلُّ صفّ: لحالة ك١١ مرجعُها في البنك (جوابُها المراجَع)، وللحالة الآليّة فحوصُها الحتميّة
     التي تُعاد بها تسميتُها من جوابها. فلا يُصدَّق ما كتبه الدليلُ عن حقيقة حالة (ملاحظة Codex على #289)."""
     owner, automatic = set(sample["k11_owner_ruled"]), set(sample["automatic_checked"])
     truth: dict[str, dict] = {"k11_owner_ruled": {}, "automatic_checked": {}}
-    for _, suite in _open_suites(open_bank):
+    for _, suite in _open_suites(open_bank, protocol["calibration"]["open_bank_sha256"]):
         for case in suite["cases"]:
             qid = f"{suite['suite_id']}/{case['case_id']}"
             if case["case_id"] in owner:

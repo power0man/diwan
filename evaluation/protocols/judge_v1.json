@@ -41,6 +41,8 @@
   },
   "calibration": {
     "split": "open_only",
+    "open_bank_sha256": "bf3045e08b130836069b3f1a5af71fa89e3a2f848fc53db8c663c31cc726acfe",
+    "open_bank_digest_rule": "sha256_of_the_canonical_json_mapping_each_file_relative_path_under_open_to_its_sha256",
     "judges_required": 2,
     "distinct_families_required": true,
     "transports": [
@@ -83,8 +85,10 @@
     "meaning_of_120": "١٢٠ محاولةً معدودة على المحجوب القائم (OD3): عيّنةٌ طبقيةٌ بنسبة حجم كل طبقة في البيان المختوم، وبذرتُها بصمةُ هذا البروتوكول",
     "location": "~/diwan-sealed/kimi_v1",
     "manifest": "evaluation/banks/kimi_v1/sealed/MANIFEST.json",
+    "manifest_sha256": "4d480a58e192700ceaf91e2d6871a4add93b1961932ed56bb9296b1162386b30",
     "machine": "owner_mac_only",
     "engine": "frozen_default_engine_q54",
+    "engine_model": "qwen3.5:9b",
     "engine_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
     "provider": "local_only",
     "judge": {
@@ -117,7 +121,8 @@
     "automatic_check_labels_inherit_the_flaws_of_the_checks_and_contains_checks_are_excluded_because_they_are_blind_to_polarity_k17",
     "120_attempts_give_wide_per_tier_intervals_and_the_wilson_interval_is_published_beside_every_rate",
     "the_sealed_score_measures_the_frozen_engine_on_bank_v1_1_not_diwan_as_a_whole",
-    "the_calibration_sample_is_computed_from_the_open_bank_v1_1_as_committed_so_a_changed_bank_changes_it_and_needs_judge_v2",
+    "the_open_bank_v1_1_and_the_sealed_manifest_v1_1_are_pinned_by_digest_so_a_changed_bank_is_refused_and_needs_judge_v2",
+    "the_engine_name_is_pinned_here_not_read_from_the_product_default_so_a_later_default_change_under_q59_does_not_change_judge_v1",
     "calibration_evidence_is_its_rows_on_the_frozen_sample_and_its_metrics_are_recomputed_never_read",
     "automatic_labels_are_recomputed_from_each_candidate_and_k11_candidates_must_equal_their_bank_reference_but_engine_provenance_judge_verdicts_and_owner_rulings_are_attested_by_the_owner_signature_not_recomputed",
     "python_sandbox_checks_are_excluded_from_calibration_so_acceptance_needs_no_container",

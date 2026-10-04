@@ -34,12 +34,13 @@ from core.locality import is_local_provider
 from core.sandbox import configure_sandbox_backend
 from evaluation import judge as judge_rules
 from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
-from providers.ollama import DEFAULT_MODEL, OllamaProvider
+from providers.ollama import OllamaProvider
 from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest
 
 MANIFEST = ROOT / "evaluation" / "banks" / "kimi_v1" / "sealed" / "MANIFEST.json"
-# المحرّكُ المجمَّد في البروتوكول (frozen_default_engine_q54): الافتراضيُّ بق٥٤، في موضعه الواحد
-FROZEN_ENGINE = DEFAULT_MODEL
+# المحرّكُ المجمَّد باسمه في البروتوكول نفسِه لا في الافتراضيّ الذي قد يتغيّر بق٥٩ (ملاحظة Codex على #289). يُقرأ هنا
+# اسمًا افتراضيًّا لسطر الأوامر؛ والتشغيلُ يقرؤه من البروتوكول المفحوص ببصمته.
+FROZEN_ENGINE = json.loads(judge_rules.PROTOCOL.read_text(encoding="utf-8"))["sealed"]["engine_model"]
 SEALED_ROOT = Path.home() / "diwan-sealed" / "kimi_v1"
 _VERDICT = re.compile(r"(?:الحكم|VERDICT)\s*[:：]\s*(correct|incorrect)\s*", re.IGNORECASE)
 _TIER = re.compile(r"sealed/(tier_[a-z0-9]+)/")
@@ -67,13 +68,14 @@ def _on_owner_mac() -> bool:
     return platform.system() == "Darwin"
 
 
-def preflight(provider, judge=None) -> None:
-    """ما يُردّ قبل أن يُقرأ أيُّ ملفٍّ يسمّيه المستدعي: الجهاز، ومحليّةُ المحرّك وهويّتُه المجمَّدة، ومحليّةُ المحكِّم."""
+def preflight(provider, judge, engine: str) -> None:
+    """ما يُردّ قبل أن يُقرأ أيُّ ملفٍّ يسمّيه المستدعي: الجهاز، ومحليّةُ المحرّك واسمُه المجمَّد في البروتوكول (`engine`)،
+    ومحليّةُ المحكِّم."""
     if not _on_owner_mac():
         raise SealedRefused("sealed_requires_owner_mac", "المحجوبُ يُشغَّل على ماك المالك وحده")
     if not is_local_provider(provider):
         raise SealedRefused("sealed_requires_local_provider", "المحجوبُ لا يبلغ مزوّدًا غيرَ محليّ")
-    if provider.model != FROZEN_ENGINE:
+    if provider.model != engine:
         raise SealedRefused("sealed_engine_not_frozen", "المحرّكُ المجمَّد في البروتوكول وحده (ق٥٤)")
     if judge is not None and not is_local_provider(judge):
         raise SealedRefused("sealed_requires_local_provider", "محكِّمُ المحجوب محليٌّ وحده")
@@ -90,9 +92,13 @@ def read_evidence(path: Path, sealed_root: Path) -> dict:
         raise SealedRefused("judge_evidence_unreadable", "دليلُ المعايرة غائبٌ أو معطوب") from None
 
 
-def verify_manifest(sealed_root: Path, manifest_path: Path = MANIFEST) -> list[dict]:
-    """كلُّ ملفٍّ في البيان موجودٌ ببصمته؛ ويُعدّ ما خالف ولا يُسمّى، فاسمُ الملف لا يخرج."""
-    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+def verify_manifest(sealed_root: Path, manifest_path: Path, expected_sha256: str) -> list[dict]:
+    """البيانُ نفسُه هو المسجَّلُ في البروتوكول ببصمته (v1.1)، وكلُّ ملفٍّ فيه موجودٌ ببصمته؛ ويُعدّ ما خالف ولا يُسمّى،
+    فاسمُ الملف لا يخرج. وبيانُ بنكٍ آخر (v1.2) يُردّ فلا يُقاس باسم judge_v1 (ملاحظة Codex على #289)."""
+    raw = Path(manifest_path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected_sha256:
+        raise SealedRefused("sealed_manifest_changed", "البيانُ المختوم غيرُ المسجَّل في judge_v1؛ يُسجَّل judge_v2")
+    manifest = json.loads(raw.decode("utf-8"))
     entries, bad = [], 0
     for entry in manifest["files"]:
         path = sealed_root / entry["path"].removeprefix("sealed/")
@@ -131,10 +137,10 @@ def _verdict(answer) -> str | None:
 
 def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Path = MANIFEST,
                judge=None, judge_evidence: dict | None = None, protocol_path: Path = judge_rules.PROTOCOL,
-               protocol_sha256: str = judge_rules.PROTOCOL_SHA256, digest_resolver=None,
-               max_output: int = 800, deadline_s: int = 240) -> dict:
+               protocol_sha256: str = judge_rules.PROTOCOL_SHA256, manifest_sha256: str | None = None,
+               digest_resolver=None, max_output: int = 800, deadline_s: int = 240) -> dict:
     protocol = judge_rules.load_protocol(protocol_path, protocol_sha256)
-    preflight(provider, judge)
+    preflight(provider, judge, protocol["sealed"]["engine_model"])
     # الوسمُ يُعاد توجيهُه إلى أوزانٍ أخرى؛ فالمحرّكُ ببصمته المسجَّلة، والمحكِّمُ ببصمته الموقَّعة في دليل معايرته،
     # وتُعاد البصمتان بعد التشغيل (ملاحظة Codex على #289).
     try:
@@ -143,12 +149,14 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     except ModelDigestError as exc:
         raise SealedRefused(exc.code, "بصمةُ النموذج لا تُحلّ أو تخالف المسجَّلة") from None
     if judge is not None:
-        truth = judge_rules.calibration_truth(judge_rules.calibration_sample(protocol, protocol_sha256))
+        truth = judge_rules.calibration_truth(protocol, judge_rules.calibration_sample(protocol, protocol_sha256))
         judge_rules.accept_sealed_judge(judge_evidence, judge.model, protocol, protocol_sha256, truth,
                                         judge_digest=judge_digest)
     sealed_root = _outside_repository(sealed_root, "sealed_root_in_repository")
     run_root = _outside_repository(run_root, "sealed_run_root_in_repository")
-    entries = [e for e in verify_manifest(sealed_root, manifest_path) if e["kind"] == "suite"]
+    entries = [e for e in verify_manifest(sealed_root, manifest_path,
+                                          manifest_sha256 or protocol["sealed"]["manifest_sha256"])
+               if e["kind"] == "suite"]
 
     suites, by_tier = {}, {}
     for entry in entries:
@@ -226,7 +234,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--sealed-root", type=Path, default=SEALED_ROOT)
     parser.add_argument("--run-root", type=Path, default=SEALED_ROOT.parent / ".runs" / "judge_v1")
-    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument("--model", default=FROZEN_ENGINE)
     parser.add_argument("--judge")
     parser.add_argument("--judge-evidence", type=Path)
     parser.add_argument("--out", type=Path)
@@ -238,7 +246,7 @@ def main(argv=None) -> int:
     try:
         provider, judge = OllamaProvider(args.model), OllamaProvider(args.judge) if args.judge else None
         # يسبق قراءةَ أيِّ ملفٍّ يسمّيه المستدعي، ودليلُ المعايرة منها (ملاحظة Codex على #289)
-        preflight(provider, judge)
+        preflight(provider, judge, judge_rules.load_protocol()["sealed"]["engine_model"])
         evidence = read_evidence(args.judge_evidence, args.sealed_root) if args.judge_evidence else None
         if args.sandbox_receipt:
             workspace = _outside_repository(args.sandbox_workspace, "sealed_run_root_in_repository")

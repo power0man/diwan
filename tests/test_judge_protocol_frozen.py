@@ -14,7 +14,7 @@ from core.signing import SigningRefused
 from evaluation import judge
 from evaluation.judge import JudgeRefused
 
-REGISTERED = "40bd8376159f0db5cf4b19350e47ba46afed7249385b97ce6aea11ef1c435a9f"
+REGISTERED = "70610581fbf677a1d25c585b36cf115a12dbc189894f0e2e948d9bb03bd59bd4"
 DATA = json.loads(judge.PROTOCOL.read_text(encoding="utf-8"))
 # مفتاحُ مالكٍ مصطنعٌ للاختبار وحده؛ ومفتاحُ المالك الحقيقيّ في سلسلة مفاتيح الماك لا في المستودع.
 OWNER_SEED = hashlib.sha256(b"diwan-test-owner-calibration").digest()
@@ -38,6 +38,10 @@ def test_the_protocol_is_registered_before_any_run_and_cannot_change():
                                        "requires_passing_calibration_evidence": True,
                                        "digest": "the_one_signed_in_the_calibration_evidence"}
     assert DATA["sealed"]["engine_digest"] == "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7"
+    assert DATA["sealed"]["engine_model"] == "qwen3.5:9b"
+    manifest = judge.ROOT / DATA["sealed"]["manifest"]
+    assert hashlib.sha256(manifest.read_bytes()).hexdigest() == DATA["sealed"]["manifest_sha256"]
+    assert judge.open_bank_digest() == DATA["calibration"]["open_bank_sha256"]
     assert judge.load_protocol() == DATA
 
 
@@ -134,7 +138,7 @@ def _sample():
 
 @functools.cache
 def _truth():
-    return judge.calibration_truth(_sample())
+    return judge.calibration_truth(DATA, _sample())
 
 
 def _candidate(checks: list[dict], correct: bool) -> str:
@@ -193,9 +197,23 @@ def test_the_calibration_sample_is_frozen_by_the_protocol():
     assert sample["k11_owner_ruled"] == sorted(r["id"] for r in triage["real"] + triage["false_positives"])
     assert len(sample["k11_owner_ruled"]) == 23 and len(set(sample["automatic_checked"])) == 100
     assert hashlib.sha256(json.dumps(sample, sort_keys=True).encode()).hexdigest() == \
-        "215dfeedc1b4b1fc22b4c2d459f211eab5a779557ce9de64c525a3bdb29c5155"
+        "594c148fc257730edb1fd8464b9b68994d2fced7303aba8fcb889e529f6368a5"
     kinds = {check["kind"] for checks in _truth()["automatic_checked"].values() for check in checks}
     assert kinds <= {"exact", "json_equals"} and all(isinstance(r, str) for r in _truth()["k11_owner_ruled"].values())
+
+
+def test_a_changed_open_bank_is_refused_by_name(tmp_path):
+    """ملاحظة Codex على #289: بنكٌ استُبدل (v1.2) لا يُعايَر عليه باسم judge_v1؛ وبايتٌ واحدٌ يكفي ليُردّ."""
+    import shutil
+    bank = tmp_path / "open"
+    shutil.copytree(judge.OPEN_BANK, bank)
+    target = sorted(bank.glob("*/*.json"))[0]
+    target.write_bytes(target.read_bytes() + b" ")
+    for build in (lambda: judge.calibration_sample(DATA, REGISTERED, open_bank=bank),
+                  lambda: judge.calibration_truth(DATA, _sample(), open_bank=bank)):
+        with pytest.raises(JudgeRefused) as refused:
+            build()
+        assert refused.value.code == "calibration_bank_changed"
 
 
 def test_the_owner_signs_a_domain_separated_message_without_its_signature():
