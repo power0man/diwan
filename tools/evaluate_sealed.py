@@ -217,10 +217,21 @@ def _verdict(answer) -> str | None:
     return found.group(1).lower() if found else None
 
 
+def measure_sealed(sealed_root: Path, engine_model: str, *, run_root: Path, manifest_path: Path = MANIFEST,
+                   judge_model: str | None = None, judge_evidence: dict | None = None,
+                   reviewed_bank: Path | None = None) -> dict:
+    """طريقُ القياس وحده: المزوّدان يُبنيان هنا من اسميهما، فلا يمرّر المستدعي كائنًا (ولو OllamaProvider بدالّةٍ مُبدَلة)
+    يكتب الأجوبةَ أو الأحكامَ بنفسه، ولا مُحلِّلًا ولا بروتوكولًا ولا بصمةَ بيان (ملاحظة Codex على #289). وهو ما يناديه
+    السطر؛ وrun_sealed بمزوّدٍ ممرَّر للبنوك الاصطناعية تبديلٌ مسمًّى لا يُسمّى قياسًا."""
+    return run_sealed(sealed_root, OllamaProvider(engine_model), run_root=run_root, manifest_path=manifest_path,
+                      judge=None if judge_model is None else OllamaProvider(judge_model), judge_evidence=judge_evidence,
+                      reviewed_bank=reviewed_bank, _constructed_here=True)
+
+
 def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Path = MANIFEST,
                judge=None, judge_evidence: dict | None = None, protocol_path: Path | None = None,
                protocol_sha256: str | None = None, manifest_sha256: str | None = None,
-               digest_resolver=None, reviewed_bank: Path | None = None) -> dict:
+               digest_resolver=None, reviewed_bank: Path | None = None, _constructed_here: bool = False) -> dict:
     # «measured» لا يُنشر إلا على المسجَّل كلِّه: البروتوكولُ ببصمته المثبَّتة في الشيفرة، والبيانُ ببصمته فيه، وبصماتُ
     # النماذج من نقطة Ollama المسجَّلة لا من مُحلِّلٍ يمرّره المستدعي. وكلُّ تبديلٍ من هذه (للبنوك والبروتوكولات
     # الاصطناعية في الاختبارات) يُسمّى في التقرير فلا يُسمّى قياسًا لـjudge_v1 (ملاحظات Codex على #289).
@@ -231,11 +242,11 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         overrides.append("protocol")
     if digest_resolver is not None:
         overrides.append("digest_resolver")
-    # ومزوّدٌ يُحقن بشكل OllamaProvider (اسمُه ونقطتُه وخياراتُه) يمرّ بالفحص المسبق وفحص الإعداد ثم يكتب الأجوبةَ بنفسه،
-    # فلا قياسَ إلا بالصنف الموثوق عينِه للمحرّك والمحكِّم (ملاحظة Codex على #289)
-    if type(provider) is not OllamaProvider:
+    # ومزوّدٌ ممرَّر يمرّ بالفحص المسبق وفحص الإعداد ثم يكتب الأجوبةَ بنفسه، ولو كان OllamaProvider بدالّةٍ مُبدَلة في
+    # نسخته؛ فلا قياسَ إلا بمزوّدَين بناهما measure_sealed من اسميهما (ملاحظتا Codex على #289)
+    if not _constructed_here:
         overrides.append("provider")
-    if judge is not None and type(judge) is not OllamaProvider:
+    if judge is not None and not _constructed_here:
         overrides.append("judge_provider")
     protocol = judge_rules.load_protocol(protocol_path, protocol_sha256)
     preflight(provider, judge, protocol["sealed"]["engine_model"])
@@ -387,8 +398,10 @@ def main(argv=None) -> int:
                                         args.sealed_root, "sandbox_workspace_in_sealed_root")
             workspace.mkdir(parents=True, exist_ok=True)
             configure_sandbox_backend(receipt, workspace)
-        report = run_sealed(args.sealed_root, provider, run_root=args.run_root,
-                            judge=judge, judge_evidence=evidence, reviewed_bank=args.k11_reviewed_bank)
+        # المزوّدان أعلاه للفحص المسبق وحده؛ والقياسُ يبني مزوّدَيه من اسميهما
+        report = measure_sealed(args.sealed_root, provider.model, run_root=args.run_root,
+                                judge_model=None if judge is None else judge.model, judge_evidence=evidence,
+                                reviewed_bank=args.k11_reviewed_bank)
     # إيصالٌ غائبٌ أو معطوبٌ أو غيرُ خاصّ يُردّ من إقلاع الحاوية بـExecutionRefused ورمزِه، فيخرج رفضًا مسمًّى لا أثرًا خامًا
     except (SealedRefused, judge_rules.JudgeRefused, ExecutionRefused) as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))

@@ -222,11 +222,16 @@ def test_any_override_is_named_and_never_called_a_judge_v1_measurement(tmp_path,
     registered.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     passed = sealed.run_sealed(sealed_root, OllamaProvider(FROZEN_ENGINE), run_root=tmp_path / "b" / "runs",
                                manifest_path=manifest, protocol_path=registered, protocol_sha256=_sha(registered))
-    assert passed["status"] == "not_measured_overridden" and passed["overrides"] == ["protocol"]
+    assert passed["status"] == "not_measured_overridden" and passed["overrides"] == ["protocol", "provider"]
     monkeypatch.setattr(judge_rules, "PROTOCOL", registered)
     monkeypatch.setattr(judge_rules, "PROTOCOL_SHA256", _sha(registered))
-    report = sealed.run_sealed(sealed_root, OllamaProvider(FROZEN_ENGINE), run_root=tmp_path / "b" / "runs",
-                               manifest_path=manifest)
+    # ملاحظة Codex على #289: OllamaProvider عينُه ممرَّرًا بدالّةٍ مُبدَلة في نسخته يكتب الجوابَ بنفسه، فهو تبديلٌ مسمًّى
+    mutated = OllamaProvider(FROZEN_ENGINE)
+    mutated.complete = lambda request: Response("نعم", Usage(3, 1), "complete", 0, provider="x", model_version="x")
+    injected = sealed.run_sealed(sealed_root, mutated, run_root=tmp_path / "b" / "runs", manifest_path=manifest)
+    assert injected["status"] == "not_measured_overridden" and injected["overrides"] == ["provider"]
+    # والقياسُ وحده بمزوّدَين يبنيهما measure_sealed من اسميهما
+    report = sealed.measure_sealed(sealed_root, FROZEN_ENGINE, run_root=tmp_path / "b" / "runs", manifest_path=manifest)
     assert report["status"] == "measured" and report["overrides"] == [] and report["manifest_sha256"] == _sha(manifest)
     assert OVERRIDDEN not in report["measurement_limits"]
 

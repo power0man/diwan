@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PROTOCOL = ROOT / "evaluation" / "protocols" / "judge_v1.json"
 K11_EVIDENCE = ROOT / "docs" / "probe" / "k11-owner-queue-triage-20260925.json"
 OPEN_BANK = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
-PROTOCOL_SHA256 = "61a94ae7ee9061856a13737576a092afadc140338ffdf0aeca7adce8517cf7a8"
+PROTOCOL_SHA256 = "d9e0487c7abfceb2cbb10565a6510fa62ab1d4626728ba03e1feefdbd117202d"
 VERDICTS = ("correct", "incorrect")
 OUTCOMES = ("pass", "fail", "without_checks", "error")
 # نصٌّ أقصرُ من هذا لا يُبحث عنه في التقرير: كلمةٌ قصيرة كـ«نعم» تقع في أيّ تقرير ولا تدلّ على حالة.

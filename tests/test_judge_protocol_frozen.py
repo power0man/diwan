@@ -17,7 +17,7 @@ from core.signing import SigningRefused
 from evaluation import judge
 from evaluation.judge import JudgeRefused
 
-REGISTERED = "61a94ae7ee9061856a13737576a092afadc140338ffdf0aeca7adce8517cf7a8"
+REGISTERED = "d9e0487c7abfceb2cbb10565a6510fa62ab1d4626728ba03e1feefdbd117202d"
 DATA = json.loads(judge.PROTOCOL.read_text(encoding="utf-8"))
 # مفتاحُ مالكٍ مصطنعٌ للاختبار وحده؛ ومفتاحُ المالك الحقيقيّ في سلسلة مفاتيح الماك لا في المستودع.
 OWNER_SEED = hashlib.sha256(b"diwan-test-owner-calibration").digest()
@@ -254,7 +254,7 @@ def test_the_calibration_sample_is_frozen_by_the_protocol():
     assert sample["k11_owner_ruled"] == sorted(r["id"] for r in triage["real"] + triage["false_positives"])
     assert len(sample["k11_owner_ruled"]) == 23 and len(set(sample["automatic_checked"])) == 100
     assert hashlib.sha256(json.dumps(sample, sort_keys=True).encode()).hexdigest() == \
-        "285b83f4bbf3fdd0483c94844786cc5b9fc05dda35b32e926b521b4d69907ca8"
+        "51b704f9ce676a3d4fccac9e86a6208d3910484336737c994ad6ced992bbafe0"
     kinds = {check["kind"] for checks in _truth()["automatic_checked"].values() for check in checks}
     assert kinds <= {"exact", "json_equals"} and all(isinstance(r, str) for r in _truth()["k11_owner_ruled"].values())
 
