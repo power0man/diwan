@@ -218,7 +218,8 @@ class ChatSession:
     def __init__(self, root: Path, session_id: str, *, model: str,
                  model_version: str, max_output: int = 800,
                  deadline_s: float = 120, max_context_chars: int = 24000,
-                 system: str = SYSTEM, purpose: str | None = None, storage_scope=None):
+                 system: str = SYSTEM, purpose: str | None = None, storage_scope=None,
+                 observer=None):
         if not _id(session_id):
             _fail("session_id_invalid", "هوية الجلسة غير صالحة")
         if not _text(model) or not _text(model_version):
@@ -237,6 +238,7 @@ class ChatSession:
         self.session_id = session_id
         self.directory = self.root / session_id
         self.storage_scope = storage_scope
+        self.observer = observer
         self.deadline_s = deadline_s
         self.system = system
         self.config = {
@@ -559,7 +561,8 @@ class ChatSession:
             self._save(state)  # A crash after here must never cause another provider call.
             interrupted = None
             try:
-                execute(req, provider, Budget(0, 0), ledger)
+                from conversation.observability import observed
+                execute(req, observed(provider, self.observer), Budget(0, 0), ledger)
             except (KeyboardInterrupt, SystemExit) as exc:
                 interrupted = exc
             except Exception:
