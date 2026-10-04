@@ -23,6 +23,15 @@ def test_the_image_installs_from_the_frozen_lock_with_a_pinned_uv():
     assert "UV_PYTHON_DOWNLOADS=never" in DOCKERFILE
 
 
+def test_the_runtime_image_drops_the_dev_extra_after_building_the_wheel():
+    """#285: الإضافةُ dev (hatchling وpytest) تلزم بناءَ العجلة وحده؛ فآخرُ مزامنةٍ بعد البناء بلا dev فتخرج من صورة التشغيل،
+    واختباراتُ CI تثبّتها فوقها من القفل."""
+    syncs = re.findall(r"uv sync [^\n]*", DOCKERFILE)
+    assert syncs and "--extra dev" not in syncs[-1]
+    assert DOCKERFILE.rindex("uv sync") > DOCKERFILE.index("python -m hatchling build")
+    assert "uv export --frozen --extra dev" in WORKFLOW
+
+
 def test_the_image_runs_as_a_non_root_user_with_the_morphology_data_inside():
     assert re.search(r"^USER diwan$", DOCKERFILE, re.M)
     assert "camel_data -i morphology-db-msa-r13" in DOCKERFILE

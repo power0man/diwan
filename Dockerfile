@@ -41,7 +41,10 @@ RUN mkdir -p "$CAMELTOOLS_DATA" \
     && chown -R diwan /opt/uv-cache
 
 COPY --chown=diwan . .
+# الإضافةُ dev (hatchling وpytest) تبني العجلةَ وحدها، ثم تُعاد مزامنةُ البيئة بلا dev فتخرج من صورة التشغيل؛
+# واختباراتُ CI تثبّتها فوقها من القفل ببصماتها (container-smoke.yml) (#285)
 RUN python -m hatchling build -t wheel -d /opt/diwan-wheel \
+    && uv sync --frozen --no-install-project --python /usr/local/bin/python3 \
     && uv pip install --no-cache --python /opt/diwan-venv/bin/python --no-deps /opt/diwan-wheel/*.whl
 
 USER diwan
