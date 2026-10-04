@@ -372,7 +372,10 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
            **judge_rules.tier_report(rows),
            "measurement_limits": protocol["limits"] + (
                ["cases_without_automatic_checks_stay_in_the_denominator_as_not_passed_because_no_calibrated_judge"]
-               if judge is None else [])}
+               if judge is None else []) + (
+               # بلا إيصال حاوية تُعدّ حالاتُ python_sandbox أخطاءً في المقام؛ فالحدُّ في التقرير نفسِه لا في السطر وحده،
+               # فيحمله measure_sealed مُنادًى من غير السطر كذلك (ملاحظة Codex على #289)
+               ["python_sandbox_cases_count_as_errors_because_no_sandbox_receipt_was_given"] if sandbox is None else [])}
     judge_rules.assert_clean(out, identifiers, texts)
     return _label(out, overrides)
 
@@ -417,8 +420,6 @@ def main(argv=None) -> int:
     except (SealedRefused, judge_rules.JudgeRefused, ExecutionRefused) as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2
-    if not args.sandbox_receipt:
-        report["measurement_limits"].append("python_sandbox_cases_count_as_errors_because_no_sandbox_receipt_was_given")
     text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if out is not None:
         out.write_text(text, encoding="utf-8")

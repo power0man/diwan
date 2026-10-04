@@ -190,11 +190,14 @@ def test_a_reused_run_root_never_replays_answers_of_earlier_runner_code(tmp_path
 def test_the_sandbox_receipt_identity_is_published_not_collapsed(tmp_path, monkeypatch):
     """ملاحظة Codex على #289: هويّةُ إيصال الحاوية (الصورة والحدود) تحكم فحوصَ python_sandbox، فتُنشر هي وبصمتُها لا
     «configured»؛ وبلا إيصالٍ تبقى None."""
-    assert _run(tmp_path, Provider())["sandbox"] is None
+    # وبلا إيصالٍ يحمل التقريرُ نفسُه حدَّ حالات python_sandbox، لا السطرُ وحده (ملاحظة Codex على #289)
+    limit = "python_sandbox_cases_count_as_errors_because_no_sandbox_receipt_was_given"
+    bare = _run(tmp_path, Provider())
+    assert bare["sandbox"] is None and limit in bare["measurement_limits"]
     receipt = {"backend": "docker", "image_id": "sha256:" + "c" * 64, "lock_sha256": "d" * 64, "snapshot_files": []}
     monkeypatch.setattr(sealed, "sandbox_configuration", lambda: receipt)
     report = _run(tmp_path, Provider())
-    assert report["sandbox"] == receipt
+    assert report["sandbox"] == receipt and limit not in report["measurement_limits"]
     assert report["sandbox_sha256"] == hashlib.sha256(json.dumps(receipt, sort_keys=True).encode()).hexdigest()
 
 
