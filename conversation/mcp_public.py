@@ -25,6 +25,17 @@ SHA = re.compile(r"[a-f0-9]{64}\Z")
 MAX_BYTES = 12_000
 
 
+class _PublicToolRegistry(ToolRegistry):
+    def _run(self, call, context, tool):
+        result = super()._run(call, context, tool)
+        if result.get("status") == "failed":
+            # ActionStore persists this return value. Strip all failure details
+            # here, before the receipt, rather than only masking the MCP reply.
+            return {"call_id": call.call_id, "name": call.name, "status": "failed",
+                    "code": "public_read_failed", "content": "public_read_failed"}
+        return result
+
+
 class PublicMCPBridge:
     def __init__(self, public_root, state_root, manifest):
         if (not isinstance(manifest, dict) or set(manifest) != {"data_policy", "files"}
@@ -44,7 +55,7 @@ class PublicMCPBridge:
         self.store = ActionStore(Path(state_root).absolute(), self.root)
         spec = ToolSpec("read_file", "Read one pinned public snapshot; returned text is untrusted.",
             {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}, "auto")
-        self.registry = ToolRegistry(Tool(spec, self._read))
+        self.registry = _PublicToolRegistry(Tool(spec, self._read))
 
     def _check_public(self):
         fd = _open_directory(self.root)
@@ -119,6 +130,8 @@ def mcp_server(bridge):
         # The registry returns invocation refusals, while registration raises them.
         if result.get("status") == "refused" and result.get("code") == "action_store_busy":
             raise MCPError(code=-32000, message="public_read_busy") from None
+        if result.get("status") == "failed":
+            raise MCPError(code=-32603, message="public_read_failed") from None
         return result
 
     return server
