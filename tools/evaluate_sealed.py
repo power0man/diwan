@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import hmac
 import json
@@ -36,7 +37,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from core import signing
+from core import filelock, signing
 from core.contracts import Message, Request
 from core.execution import ExecutionRefused
 from core.locality import is_local_provider
@@ -161,13 +162,34 @@ def preflight(provider, judge, engine: str) -> None:
         raise SealedRefused("sealed_requires_local_provider", "محكِّمُ المحجوب محليٌّ وحده")
 
 
+RUNNER_LOCK = "sealed.lock"
+
+
+@contextlib.contextmanager
+def _runner_lock(run_root: Path):
+    """قياسٌ واحدٌ في مجلّد المُشغِّل من العلامة إلى إعادة البصمتين: فاستدعاءان متداخلان يتشاركان علامةً واحدة، فيزيل
+    الأولُ بنجاحه علامةَ الثاني، ثم يُقتل الثاني بعد أجوبةٍ من أوزانٍ أخرى فلا يبقى ما يعزلها (ملاحظة Codex على #289).
+    والثاني يُرفض برمزٍ مسمًّى قبل أن يلمس شيئًا، ولا ينتظر."""
+    run_root.mkdir(parents=True, exist_ok=True)
+    fd = os.open(run_root / RUNNER_LOCK, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "r+") as stream:
+        try:
+            filelock.lock(stream, blocking=False)
+        except BlockingIOError:
+            raise SealedRefused("sealed_run_in_progress", "قياسٌ آخرُ يعمل في مجلّد المُشغِّل نفسه") from None
+        try:
+            yield
+        finally:
+            filelock.unlock(stream)
+
+
 POST_CHECK_PENDING = "post-check-pending.json"
 
 
 def _open_post_check(run_root: Path) -> float:
     """علامةٌ تُكتب قبل أيّ جوابٍ وتُزال بعد أن تمرّ البصمتان في آخر التشغيل؛ فعلامةٌ باقية تعني استدعاءً انقطع قبل فحصه
     (قتلٌ أو انقطاعُ كهرباء بعد إعادة توجيه الوسم)، فتُعزل تشغيلاتُه قبل أن يعيدها وسمٌ أُعيد ويمرّ تحقّقُه (ملاحظة Codex على
-    #289). والحدُّ محافظ: استدعاءٌ متزامنٌ في المجلّد نفسِه تُعزل تشغيلاتُه فتُعاد من أوّلها، ولا يُعاد عرضُ ما لم يُفحص."""
+    #289). وتُقرأ وتُكتب تحت قفل المجلّد وحده (`_runner_lock`)، فلا يمحو استدعاءٌ علامةَ استدعاءٍ آخرَ لم يُفحص بعد."""
     run_root.mkdir(parents=True, exist_ok=True)
     pending = run_root / POST_CHECK_PENDING
     if pending.is_symlink() or pending.exists():
@@ -338,77 +360,78 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     runner = runner_sha256()
     sandbox = sandbox_configuration()
     run_root = run_root / f"runner-{runner[:24]}"
-    started = _open_post_check(run_root)
-    # بيانٌ غيرُ المسجَّل يُقبل ببصمته، لكنّ تقريرَه ينشرها ويسمّيه تبديلًا، فلا تُنشر نتائجُ بنكٍ بديلٍ بنسبةٍ توحي ببيان
-    # v1.1 المثبَّت (ملاحظة Codex على #289)
-    manifest_digest = manifest_sha256 or protocol["sealed"]["manifest_sha256"]
-    if not hmac.compare_digest(manifest_digest, protocol["sealed"]["manifest_sha256"]):
-        overrides.append("manifest")
-    entries = [e for e in verify_manifest(sealed_root, manifest_path, manifest_digest) if e["kind"] == "suite"]
+    with _runner_lock(run_root):
+        started = _open_post_check(run_root)
+        # بيانٌ غيرُ المسجَّل يُقبل ببصمته، لكنّ تقريرَه ينشرها ويسمّيه تبديلًا، فلا تُنشر نتائجُ بنكٍ بديلٍ بنسبةٍ توحي ببيان
+        # v1.1 المثبَّت (ملاحظة Codex على #289)
+        manifest_digest = manifest_sha256 or protocol["sealed"]["manifest_sha256"]
+        if not hmac.compare_digest(manifest_digest, protocol["sealed"]["manifest_sha256"]):
+            overrides.append("manifest")
+        entries = [e for e in verify_manifest(sealed_root, manifest_path, manifest_digest) if e["kind"] == "suite"]
 
-    suites, by_tier = {}, {}
-    for entry in entries:
-        suite = load_suite(entry["local"])
-        suites[suite["suite_id"]] = (entry["tier"], suite)
-        by_tier.setdefault(entry["tier"], []).extend(f"{suite['suite_id']}\x1f{c['case_id']}"
-                                                     for c in suite["cases"])
-    allocation = judge_rules.allocate({t: len(ids) for t, ids in by_tier.items()},
-                                      protocol["sealed"]["attempts"])
-    chosen = {key for keys in judge_rules.select(by_tier, allocation, protocol_sha256).values() for key in keys}
+        suites, by_tier = {}, {}
+        for entry in entries:
+            suite = load_suite(entry["local"])
+            suites[suite["suite_id"]] = (entry["tier"], suite)
+            by_tier.setdefault(entry["tier"], []).extend(f"{suite['suite_id']}\x1f{c['case_id']}"
+                                                         for c in suite["cases"])
+        allocation = judge_rules.allocate({t: len(ids) for t, ids in by_tier.items()},
+                                          protocol["sealed"]["attempts"])
+        chosen = {key for keys in judge_rules.select(by_tier, allocation, protocol_sha256).values() for key in keys}
 
-    rows, pending, identifiers, texts = [], [], set(), set()
-    for suite_id in sorted(suites):
-        tier, suite = suites[suite_id]
-        picked = [c for c in suite["cases"] if f"{suite_id}\x1f{c['case_id']}" in chosen]
-        if not picked:
-            continue
-        identifiers.update([suite_id, *(c["case_id"] for c in picked)])
-        texts.update(t for c in picked for t in (c["reference"], *(m["content"] for m in c["messages"])))
-        try:
-            report = evaluate_suite({**suite, "cases": picked}, provider, run_root,
-                                    max_output=max_output, deadline_s=deadline_s, model_version=engine_digest,
-                                    quarantine_quoted_material=quarantine)
-        except CapabilityError:
-            rows.extend({"tier": tier, "outcome": "error"} for _ in picked)
-            continue
-        cases = {c["case_id"]: c for c in picked}
-        for result in report["results"]:
-            if result["status"] != "complete":
-                rows.append({"tier": tier, "outcome": "error"})
-            elif result["automatic_pass"] is None:
-                texts.add(result["answer"] or "")
-                pending.append((tier, cases[result["case_id"]], result["answer"]))
-            else:
-                rows.append({"tier": tier, "outcome": "pass" if result["automatic_pass"] else "fail"})
-
-    if judge is None:
-        rows.extend({"tier": tier, "outcome": "without_checks"} for tier, _, _ in pending)
-    else:
-        for start in range(0, len(pending), 100):
-            batch = pending[start:start + 100]
+        rows, pending, identifiers, texts = [], [], set(), set()
+        for suite_id in sorted(suites):
+            tier, suite = suites[suite_id]
+            picked = [c for c in suite["cases"] if f"{suite_id}\x1f{c['case_id']}" in chosen]
+            if not picked:
+                continue
+            identifiers.update([suite_id, *(c["case_id"] for c in picked)])
+            texts.update(t for c in picked for t in (c["reference"], *(m["content"] for m in c["messages"])))
             try:
-                # البصمةُ في هويّة التشغيل: فمجلّدُ تشغيلٍ أُعيد استعمالُه لا يعيد أحكامَ أوزانٍ سابقة (ملاحظة Codex على #289)
-                verdicts = evaluate_suite(_judge_suite([(c, a) for _, c, a in batch], start // 100), judge,
-                                          run_root, max_output=max_output, deadline_s=deadline_s,
-                                          model_version=judge_digest, quarantine_quoted_material=quarantine)["results"]
+                report = evaluate_suite({**suite, "cases": picked}, provider, run_root,
+                                        max_output=max_output, deadline_s=deadline_s, model_version=engine_digest,
+                                        quarantine_quoted_material=quarantine)
             except CapabilityError:
-                verdicts = [{"status": "error", "answer": None}] * len(batch)
-            for (tier, _, _), result in zip(batch, verdicts):
-                verdict = _verdict(result["answer"]) if result["status"] == "complete" else None
-                outcome = {"correct": "pass", "incorrect": "fail"}.get(verdict, "error")
-                rows.append({"tier": tier, "outcome": outcome, "judged": verdict is not None})
+                rows.extend({"tier": tier, "outcome": "error"} for _ in picked)
+                continue
+            cases = {c["case_id"]: c for c in picked}
+            for result in report["results"]:
+                if result["status"] != "complete":
+                    rows.append({"tier": tier, "outcome": "error"})
+                elif result["automatic_pass"] is None:
+                    texts.add(result["answer"] or "")
+                    pending.append((tier, cases[result["case_id"]], result["answer"]))
+                else:
+                    rows.append({"tier": tier, "outcome": "pass" if result["automatic_pass"] else "fail"})
 
-    try:
-        verify_model_digest(provider.model, engine_digest, resolver=digest_resolver)
-        if judge is not None:
-            verify_model_digest(judge.model, judge_digest, resolver=digest_resolver)
-    except ModelDigestError as exc:
-        # الرفضُ وحده لا يكفي: أجوبةُ ما بعد الانحراف في دفترٍ مفتاحُه البصمةُ المثبَّتة، فوسمٌ أُعيد يعيد عرضَها في
-        # التشغيل التالي ويمرّ تحقّقُه؛ فتُنقل تشغيلاتُ هذا الاستدعاء إلى drift-quarantine كما في #290 (ملاحظة Codex على #289)
-        moved = quarantine_runs_since(run_root, started)
-        (run_root / POST_CHECK_PENDING).unlink(missing_ok=True)
-        raise SealedRefused(exc.code, f"تغيّرت بصمةُ نموذجٍ أثناء التشغيل؛ نُقلت {len(moved)} تشغيلة") from None
-    (run_root / POST_CHECK_PENDING).unlink()
+        if judge is None:
+            rows.extend({"tier": tier, "outcome": "without_checks"} for tier, _, _ in pending)
+        else:
+            for start in range(0, len(pending), 100):
+                batch = pending[start:start + 100]
+                try:
+                    # البصمةُ في هويّة التشغيل: فمجلّدُ تشغيلٍ أُعيد استعمالُه لا يعيد أحكامَ أوزانٍ سابقة (ملاحظة Codex على #289)
+                    verdicts = evaluate_suite(_judge_suite([(c, a) for _, c, a in batch], start // 100), judge,
+                                              run_root, max_output=max_output, deadline_s=deadline_s,
+                                              model_version=judge_digest, quarantine_quoted_material=quarantine)["results"]
+                except CapabilityError:
+                    verdicts = [{"status": "error", "answer": None}] * len(batch)
+                for (tier, _, _), result in zip(batch, verdicts):
+                    verdict = _verdict(result["answer"]) if result["status"] == "complete" else None
+                    outcome = {"correct": "pass", "incorrect": "fail"}.get(verdict, "error")
+                    rows.append({"tier": tier, "outcome": outcome, "judged": verdict is not None})
+
+        try:
+            verify_model_digest(provider.model, engine_digest, resolver=digest_resolver)
+            if judge is not None:
+                verify_model_digest(judge.model, judge_digest, resolver=digest_resolver)
+        except ModelDigestError as exc:
+            # الرفضُ وحده لا يكفي: أجوبةُ ما بعد الانحراف في دفترٍ مفتاحُه البصمةُ المثبَّتة، فوسمٌ أُعيد يعيد عرضَها في
+            # التشغيل التالي ويمرّ تحقّقُه؛ فتُنقل تشغيلاتُ هذا الاستدعاء إلى drift-quarantine كما في #290 (ملاحظة Codex على #289)
+            moved = quarantine_runs_since(run_root, started)
+            (run_root / POST_CHECK_PENDING).unlink(missing_ok=True)
+            raise SealedRefused(exc.code, f"تغيّرت بصمةُ نموذجٍ أثناء التشغيل؛ نُقلت {len(moved)} تشغيلة") from None
+        (run_root / POST_CHECK_PENDING).unlink()
     out = {"schema_version": 1, "probe": "k45-sealed", "status": None, "overrides": None,
            "protocol": protocol["protocol_id"], "protocol_sha256": protocol_sha256, "manifest_sha256": manifest_digest,
            "date": date.today().isoformat(), "agent": agent,

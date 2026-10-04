@@ -7,6 +7,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import json
+import os
 import re
 
 import pytest
@@ -14,7 +15,7 @@ import pytest
 from core.contracts import Response, Usage
 from evaluation import judge as judge_rules
 from evaluation.judge import JudgeRefused
-from core import signing
+from core import filelock, signing
 from evaluation import capabilities
 from providers import ollama as ollama_provider
 from providers.ollama import OllamaProvider
@@ -271,7 +272,7 @@ def test_a_digest_that_changes_during_the_run_refuses_the_report(tmp_path, model
     assert refused.value.code == "model_digest_drifted"
     # ملاحظة Codex على #289: أجوبةُ ما بعد الانحراف تُنقل إلى drift-quarantine، فوسمٌ أُعيد لا يعيد عرضَها، ويُسأل النموذجان من جديد
     runner = tmp_path / "runs" / f"runner-{sealed.runner_sha256()[:24]}"
-    assert [p.name for p in runner.iterdir()] == [model_digest.QUARANTINE_DIR]
+    assert {p.name for p in runner.iterdir()} == {model_digest.QUARANTINE_DIR, sealed.RUNNER_LOCK}
     engine, judge = Provider(), Provider(model="granite4", answer="التعليل مصطنع.\nالحكم: correct")
     _run(tmp_path, engine, judge=judge, judge_evidence=_evidence(), digest_resolver=DIGESTS.get)
     assert engine.calls == 10 and judge.calls == 4
@@ -296,6 +297,25 @@ def test_runs_of_an_invocation_killed_before_its_post_check_are_quarantined_not_
     replayed = Provider()
     _run(tmp_path, replayed)
     assert replayed.calls == 0
+
+
+def test_a_second_measurement_in_the_same_runner_directory_is_refused_before_it_writes(tmp_path):
+    """ملاحظة Codex على #289: استدعاءان متداخلان يتشاركان علامةَ الفحص المعلَّق، فيزيل الأولُ علامةَ الثاني؛ فالقياسُ
+    مسلسَلٌ بقفل مجلّد المُشغِّل، والثاني يُرفض قبل أن يكتب علامةً أو يسأل نموذجًا، ثم يمرّ بعد فكّ القفل."""
+    runner = tmp_path / "runs" / f"runner-{sealed.runner_sha256()[:24]}"
+    runner.mkdir(parents=True)
+    with open(runner / sealed.RUNNER_LOCK, "a+") as held:
+        filelock.lock(held)
+        second = Provider()
+        with pytest.raises(SealedRefused) as refused:
+            _run(tmp_path, second)
+        assert refused.value.code == "sealed_run_in_progress" and second.calls == 0
+        assert not (runner / sealed.POST_CHECK_PENDING).exists()
+        filelock.unlock(held)
+    assert os.path.isfile(runner / sealed.RUNNER_LOCK)
+    after = Provider()
+    _run(tmp_path, after)
+    assert after.calls == 10
 
 
 @pytest.mark.parametrize("answer", ["لا أدري", "الحكم: correct\nلكنّ الجوابَ يقلب المعنى، فلا أحكم"],
