@@ -284,6 +284,14 @@ def test_a_request_resent_without_think_is_counted_and_named_not_called_a_measur
     assert resent["think_fallbacks"] == {"engine": 10, "judge": None}
     assert resent["status"] == "not_measured_overridden" and resent["overrides"] == ["think_fallback"]
     assert OVERRIDDEN in resent["measurement_limits"]
+    # ولا تبقى أجوبتُها في الدفتر (ملاحظة Codex على #289): استدعاءٌ تالٍ على المجلّد نفسِه يسأل النموذجَ من جديد، نداءين
+    # لكلّ حالة، فلا يعيد عرضَها بعدّادين صفرين ويسمّيها «measured»
+    before = len(sent)
+    again = measure("resent")
+    assert len(sent) - before == 20 and again["think_fallbacks"] == {"engine": 10, "judge": None}
+    assert again["status"] == "not_measured_overridden" and again["overrides"] == ["think_fallback"]
+    runner = tmp_path / "resent" / f"runner-{sealed.runner_sha256()[:24]}"
+    assert {p.name for p in runner.iterdir()} == {model_digest.QUARANTINE_DIR, sealed.RUNNER_LOCK}
     # والمحكِّمُ كذلك: الحالاتُ الأربع بلا فحصٍ تُحكَّم، فأربعُ إعاداتٍ منه وحده
     refusing.clear()
     refusing.add("granite4")

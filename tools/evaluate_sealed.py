@@ -338,17 +338,13 @@ def measure_sealed(sealed_root: Path, engine_model: str, *, agent: str, run_root
     يكتب الأجوبةَ أو الأحكامَ بنفسه، ولا مُحلِّلًا ولا بروتوكولًا ولا بصمةَ بيان (ملاحظة Codex على #289). وهو ما يناديه
     السطر؛ وrun_sealed بمزوّدٍ ممرَّر للبنوك الاصطناعية تبديلٌ مسمًّى لا يُسمّى قياسًا."""
     agent = registered_agent(agent)
-    engine = _SealedOllama(engine_model)
-    judge = None if judge_model is None else _SealedOllama(judge_model)
-    report = run_sealed(sealed_root, engine, run_root=run_root, manifest_path=manifest_path, judge=judge,
+    # مزوّدان يعدّان الطلبَ المُعاد بلا think، فيحجر run_sealed أجوبتَه ويسمّيه تبديلًا (ملاحظة Codex على #289)
+    report = run_sealed(sealed_root, _SealedOllama(engine_model), run_root=run_root, manifest_path=manifest_path,
+                        judge=None if judge_model is None else _SealedOllama(judge_model),
                         judge_evidence=judge_evidence, reviewed_bank=reviewed_bank, agent=agent)
-    # والطلبُ المُعاد بلا think ليس الإعدادَ المسجَّل: تُنشر أعدادُه، وأيٌّ منه تبديلٌ مسمًّى (ملاحظة Codex على #289)
-    fallbacks = {"engine": engine.think_fallbacks, "judge": None if judge is None else judge.think_fallbacks}
-    report["think_fallbacks"] = fallbacks
     # المزوّدان بُنيا هنا من اسميهما فليسا تبديلًا؛ والوسمُ يُعاد هنا لا بعَلَمٍ يمرّ في واجهة run_sealed فيُزوَّر من
     # مستدعيها (ملاحظة Codex على #289). وما سواهما مما قد يسمّيه run_sealed يبقى.
-    return _label(report, [name for name in report["overrides"] if name not in ("provider", "judge_provider")]
-                  + (["think_fallback"] if any(fallbacks.values()) else []))
+    return _label(report, [name for name in report["overrides"] if name not in ("provider", "judge_provider")])
 
 
 OVERRIDDEN = "the_inputs_named_in_overrides_are_not_the_registered_ones_so_this_report_is_not_a_judge_v1_measurement"
@@ -489,11 +485,20 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
             moved = quarantine_runs_since(run_root, started)
             (run_root / POST_CHECK_PENDING).unlink(missing_ok=True)
             raise SealedRefused(exc.code, f"تغيّرت بصمةُ نموذجٍ أثناء التشغيل؛ نُقلت {len(moved)} تشغيلة") from None
+        # والطلبُ المُعاد بلا think (_SealedOllama يعدّه) ليس الإعدادَ المسجَّل: تُنشر أعدادُه ويُسمّى تبديلًا. وأجوبتُه في
+        # دفترٍ مفتاحُه البصمة، فاستدعاءٌ تالٍ يعيد عرضَها بلا نداءٍ فيصفر العدّادان ويُسمّى قياسًا؛ فتُنقل تشغيلاتُ هذا
+        # الاستدعاء إلى drift-quarantine كما عند الانحراف (ملاحظتا Codex على #289)
+        fallbacks = {"engine": getattr(provider, "think_fallbacks", 0),
+                     "judge": None if judge is None else getattr(judge, "think_fallbacks", 0)}
+        if any(fallbacks.values()):
+            quarantine_runs_since(run_root, started)
+            overrides.append("think_fallback")
         (run_root / POST_CHECK_PENDING).unlink()
     out = {"schema_version": 1, "probe": "k45-sealed", "status": None, "overrides": None,
            "protocol": protocol["protocol_id"], "protocol_sha256": protocol_sha256, "manifest_sha256": manifest_digest,
            "date": date.today().isoformat(), "agent": agent,
            "engine": {"model": provider.model, "digest": engine_digest}, "runtime": runtime,
+           "think_fallbacks": fallbacks,
            "runner_sha256": runner,
            # هويّةُ إيصال الحاوية كما تحكم فحوصَ python_sandbox (وهي في هويّة التشغيل أصلًا)، لا «configured» (ملاحظة Codex على #289)
            "sandbox": sandbox, "sandbox_sha256": None if sandbox is None else _sha(json.dumps(sandbox, sort_keys=True)),
