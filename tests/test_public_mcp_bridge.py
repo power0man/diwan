@@ -73,6 +73,15 @@ def test_unlisted_file_rejects_whole_snapshot_before_read(tmp_path):
         b.read("r1", "a.txt")
 
 
+def test_unlisted_journal_is_rejected_before_receipts(tmp_path):
+    root, manifest = make(tmp_path)
+    (root / ".diwan-journal").write_text("SYNTHETIC_OWNER_CANARY")
+    receipts = tmp_path / "receipts"
+    with pytest.raises(ValueError, match="public_snapshot_inventory_changed"):
+        PublicMCPBridge(root, receipts, manifest)
+    assert not receipts.exists()
+
+
 def test_modified_bytes_are_not_read_or_replayed(tmp_path):
     b = bridge(tmp_path)
     first = b.read("r1", "a.txt")
@@ -173,3 +182,63 @@ def test_sdk_export_is_structured_and_masks_host_errors(tmp_path, monkeypatch):
     with pytest.raises(Error) as exc:
         server.function("r2", "a.txt")
     assert str(exc.value) == "public_read_refused" and exc.value.code == -32602
+
+
+@pytest.mark.parametrize("phase", ["registration", "invocation"])
+def test_concurrent_store_busy_is_temporary_and_retry_replays(tmp_path, monkeypatch, phase):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    class Server:
+        def __init__(self, name):
+            pass
+        def tool(self, **options):
+            def register(function):
+                self.function = function
+                return function
+            return register
+    class Error(Exception):
+        def __init__(self, code, message):
+            self.code = code
+            super().__init__(message)
+    server_module = types.ModuleType("mcp.server")
+    server_module.MCPServer = Server
+    error_module = types.ModuleType("mcp.shared.exceptions")
+    error_module.MCPError = Error
+    monkeypatch.setitem(sys.modules, "mcp.server", server_module)
+    monkeypatch.setitem(sys.modules, "mcp.shared.exceptions", error_module)
+
+    b = bridge(tmp_path)
+    server = mcp_server(b)
+    registered, proceed = Event(), Event()
+    register = b.store.register_step
+    if phase == "invocation":
+        def pause_after_registration(**kwargs):
+            register(**kwargs)
+            registered.set()
+            assert proceed.wait(5), "registration was not released"
+        monkeypatch.setattr(b.store, "register_step", pause_after_registration)
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        try:
+            if phase == "invocation":
+                future = pool.submit(server.function, "r1", "a.txt")
+                assert registered.wait(5), "registration did not complete"
+            with b.store._operation():
+                if phase == "registration":
+                    future = pool.submit(server.function, "r1", "a.txt")
+                proceed.set()
+                with pytest.raises(Error) as caught:
+                    future.result(timeout=5)
+                assert caught.value.code == -32000
+                assert str(caught.value) == "public_read_busy"
+        finally:
+            proceed.set()
+    result = server.function("r1", "a.txt")
+    assert result["status"] == "ok"
+    assert server.function("r1", "a.txt") == result
+    assert b.store.pending() == []
+    assert b.store.get(result["action_id"])["state"] == "completed"
+    with pytest.raises(Error) as permanent:
+        server.function("r1", "b.txt")
+    assert permanent.value.code == -32602
+    assert str(permanent.value) == "public_read_refused"

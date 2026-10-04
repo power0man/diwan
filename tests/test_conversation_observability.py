@@ -78,6 +78,44 @@ def test_provider_error_identity_and_named_code_preserved():
     assert CANARY not in json.dumps(events)
 
 
+@pytest.mark.parametrize("source,expected", [
+    ("timeout", "provider_timeout"),
+    ("local_chat_timeout", "provider_timeout"),
+    ("unreachable", "engine_unavailable"),
+    ("local_chat_transport", "transport_error"),
+    ("malformed", "response_error"),
+    ("local_chat_malformed", "response_error"),
+    ("local_tools_malformed", "response_error"),
+    (CANARY, "operation_error"),
+])
+def test_actual_provider_error_codes_are_classified_without_payload(source, expected):
+    events, original = [], ProviderError(source, CANARY, False)
+    with pytest.raises(ProviderError) as caught:
+        observed(Provider(original), events.append).complete(request())
+    assert caught.value is original
+    assert len(events) == 1 and events[0]["error_code"] == expected
+    assert CANARY not in json.dumps(events)
+
+
+def test_unnamed_provider_stays_unknown():
+    class Unnamed:
+        is_local = True
+    assert observed(Unnamed(), lambda event: None).name == "?"
+
+
+def test_ollama_transport_timeout_reaches_observer_without_network(monkeypatch):
+    from providers.ollama import OllamaProvider, _LOCAL_OPENER
+    def timeout(*args, **kwargs):
+        raise TimeoutError(CANARY)
+    monkeypatch.setattr(_LOCAL_OPENER, "open", timeout)
+    events = []
+    with pytest.raises(ProviderError) as caught:
+        observed(OllamaProvider(), events.append).complete(request())
+    assert caught.value.code == "timeout"
+    assert len(events) == 1 and events[0]["error_code"] == "provider_timeout"
+    assert CANARY not in json.dumps(events)
+
+
 def test_observer_failure_keeps_success_result():
     p = Provider()
     assert observed(p, broken).complete(request()) is p.result

@@ -18,6 +18,15 @@ FIELDS = ("duration_ms", "model", "error_code", "input_tokens", "output_tokens")
 MODELS = frozenset({"qwen3.5:9b", "qwen3:14b", "gemma4", "synthetic"})
 ERRORS = frozenset({"none", "provider_timeout", "engine_unavailable", "transport_error",
                     "response_error", "operation_error", "other_error"})
+PROVIDER_ERRORS = {
+    "timeout": "provider_timeout",
+    "local_chat_timeout": "provider_timeout",
+    "unreachable": "engine_unavailable",
+    "local_chat_transport": "transport_error",
+    "malformed": "response_error",
+    "local_chat_malformed": "response_error",
+    "local_tools_malformed": "response_error",
+}
 
 
 def _number(value, maximum, *, integer=False):
@@ -45,7 +54,7 @@ class ObservedProvider:
 
     @property
     def name(self):
-        return getattr(self.provider, "name", "local")
+        return getattr(self.provider, "name", "?")
 
     @property
     def is_local(self):
@@ -72,6 +81,8 @@ class ObservedProvider:
             try:
                 if provider_error is not None:
                     code = getattr(provider_error, "code", "operation_error")
+                    if type(code) is str:
+                        code = PROVIDER_ERRORS.get(code, code)
                     if type(code) is not str or code not in ERRORS - {"none"}:
                         code = "operation_error"
                 elif isinstance(response, Response) and response.retryable_error:

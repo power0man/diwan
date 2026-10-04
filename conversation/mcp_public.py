@@ -12,7 +12,7 @@ from pathlib import Path
 import re
 import stat
 
-from agent.actions import ActionStore
+from agent.actions import ActionRefused, ActionStore
 from agent.journal import Journal, _open_directory
 from agent.registry import Tool, ToolContext, ToolRegistry
 from core.canonical import digest
@@ -49,7 +49,7 @@ class PublicMCPBridge:
     def _check_public(self):
         fd = _open_directory(self.root)
         try:
-            names = set(os.listdir(fd)) - {".diwan-journal"}
+            names = set(os.listdir(fd))
             if names != set(self.files):
                 raise ValueError("public_snapshot_inventory_changed")
             for name in self.files:
@@ -110,9 +110,15 @@ def mcp_server(bridge):
     def read_public_file(request_id: str, name: str) -> dict[str, object]:
         """Read a pinned public file with a durable receipt; same ID replays it."""
         try:
-            return bridge.read(request_id, name)
-        except Exception:
+            result = bridge.read(request_id, name)
+        except Exception as exc:
+            if isinstance(exc, ActionRefused) and exc.code == "action_store_busy":
+                raise MCPError(code=-32000, message="public_read_busy") from None
             # Never send host paths, private exception text or a traceback.
             raise MCPError(code=-32602, message="public_read_refused") from None
+        # The registry returns invocation refusals, while registration raises them.
+        if result.get("status") == "refused" and result.get("code") == "action_store_busy":
+            raise MCPError(code=-32000, message="public_read_busy") from None
+        return result
 
     return server
