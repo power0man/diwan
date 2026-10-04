@@ -42,9 +42,12 @@ diwan = "diwan.cli:main"
 # Keep the existing relative resource paths together inside the installed app.
 # This allowlist applies to wheels AND sdists; owner stores, keys and local state
 # never enter either distribution, even when building from an owner's checkout.
+# Hatch honours .gitignore here (no `ignore-vcs`): a git-ignored file inside a source
+# directory never enters, so owner stores placed in ignored paths stay out (#285).
+# An untracked file git does not ignore still matches the allowlist, so releases are
+# built from a clean checkout.
 [tool.hatch.build]
 dev-mode-dirs = ["."]
-ignore-vcs = true
 include = [
     "/diwan/*.py", "/agent/**/*.py", "/analysis/**/*.py",
     "/conversation/**/*.py", "/core/**/*.py", "/documents/**/*.py",
