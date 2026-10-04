@@ -182,6 +182,17 @@ def test_a_reused_run_root_never_replays_answers_of_earlier_runner_code(tmp_path
     assert engine.calls > 0 and report["by_tier"]["tier_a"]["passes"] == 0 and report["runner_sha256"] == "b" * 64
 
 
+def test_the_sandbox_receipt_identity_is_published_not_collapsed(tmp_path, monkeypatch):
+    """ملاحظة Codex على #289: هويّةُ إيصال الحاوية (الصورة والحدود) تحكم فحوصَ python_sandbox، فتُنشر هي وبصمتُها لا
+    «configured»؛ وبلا إيصالٍ تبقى None."""
+    assert _run(tmp_path, Provider())["sandbox"] is None
+    receipt = {"backend": "docker", "image_id": "sha256:" + "c" * 64, "lock_sha256": "d" * 64, "snapshot_files": []}
+    monkeypatch.setattr(sealed, "sandbox_configuration", lambda: receipt)
+    report = _run(tmp_path, Provider())
+    assert report["sandbox"] == receipt
+    assert report["sandbox_sha256"] == hashlib.sha256(json.dumps(receipt, sort_keys=True).encode()).hexdigest()
+
+
 def test_the_runner_digest_covers_whole_imported_packages_not_a_hand_list():
     """ملاحظة Codex على #289: القائمةُ اليدوية أغفلت ollama_codec وcore/run وretrieval_general؛ والآن الحزمُ المستورَدة
     كلُّها، فيدخل ما يُستورد كسولًا داخلها."""

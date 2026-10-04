@@ -123,6 +123,7 @@
       "digest": "the_one_signed_in_the_calibration_evidence"
     },
     "without_judge": "automatic_checks_only_and_cases_without_checks_stay_in_the_denominator_as_not_passed",
+    "sandbox": "the_docker_receipt_identity_and_its_sha256_are_published_with_every_report_and_enter_the_run_identity_so_python_sandbox_results_compare_only_across_reports_with_the_same_sandbox_sha256",
     "output": {
       "per_tier": [
         "attempted",

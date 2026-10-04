@@ -34,7 +34,7 @@ sys.path.insert(0, str(ROOT))
 from core import signing
 from core.contracts import Message, Request
 from core.locality import is_local_provider
-from core.sandbox import configure_sandbox_backend
+from core.sandbox import configure_sandbox_backend, sandbox_configuration
 from evaluation import capabilities
 from evaluation import judge as judge_rules
 from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
@@ -237,6 +237,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     run_root = _outside_repository(run_root, "sealed_run_root_in_repository")
     # مجلّدُ التشغيل معزولٌ ببصمة المُشغِّل: فشيفرةٌ تغيّرت لا تعيد أجوبةَ دفتر شيفرةٍ سابقة وتُنسب إليها (ملاحظة Codex على #289)
     runner = runner_sha256()
+    sandbox = sandbox_configuration()
     run_root = run_root / f"runner-{runner[:24]}"
     entries = [e for e in verify_manifest(sealed_root, manifest_path,
                                           manifest_sha256 or protocol["sealed"]["manifest_sha256"])
@@ -304,6 +305,8 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
            "protocol_sha256": protocol_sha256, "date": date.today().isoformat(), "agent": "anthropic/claude-opus-5-5",
            "engine": {"model": provider.model, "digest": engine_digest}, "runtime": runtime,
            "runner_sha256": runner,
+           # هويّةُ إيصال الحاوية كما تحكم فحوصَ python_sandbox (وهي في هويّة التشغيل أصلًا)، لا «configured» (ملاحظة Codex على #289)
+           "sandbox": sandbox, "sandbox_sha256": None if sandbox is None else _sha(json.dumps(sandbox, sort_keys=True)),
            "judge": None if judge is None else {"model": judge.model, "digest": judge_digest,
                                                 "calibration_sha256": hashlib.sha256(json.dumps(
                                                     judge_evidence, sort_keys=True).encode()).hexdigest()},
@@ -347,7 +350,6 @@ def main(argv=None) -> int:
     except (SealedRefused, judge_rules.JudgeRefused) as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2
-    report["sandbox"] = "configured" if args.sandbox_receipt else None
     if not args.sandbox_receipt:
         report["measurement_limits"].append("python_sandbox_cases_count_as_errors_because_no_sandbox_receipt_was_given")
     text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
