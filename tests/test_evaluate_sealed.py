@@ -130,6 +130,19 @@ def test_a_judge_tag_repointed_after_calibration_is_refused_before_reading(tmp_p
     assert refused.value.code == "judge_uncalibrated" and provider.calls == 0
 
 
+def test_a_reused_run_root_never_replays_verdicts_of_earlier_judge_weights(tmp_path):
+    """ملاحظة Codex على #289: بصمةُ المحكِّم في هويّة تشغيله، فأوزانٌ أُعيدت معايرتُها في مجلّد التشغيل نفسِه تحكم من جديد."""
+    first = Provider(model="granite4", answer="الحكم: correct")
+    assert _run(tmp_path, Provider(), judge=first, judge_evidence=_evidence())["by_tier"]["tier_b"]["passes"] == 4
+    recalibrated = "e" * 64
+    second = Provider(model="granite4", answer="الحكم: incorrect")
+    report = _run(tmp_path, Provider(), judge=second,
+                  judge_evidence=_evidence(judge={"model": "granite4", "digest": recalibrated}),
+                  digest_resolver={**DIGESTS, "granite4": recalibrated}.get)
+    assert second.calls == 4 and report["by_tier"]["tier_b"]["failures"] == 4
+    assert report["judge"]["digest"] == recalibrated
+
+
 @pytest.mark.parametrize("model", [sealed.FROZEN_ENGINE, "granite4"], ids=["engine", "judge"])
 def test_a_digest_that_changes_during_the_run_refuses_the_report(tmp_path, model):
     """البصمتان تُعادان بعد التشغيل؛ ونموذجٌ تبدّلت أوزانُه أثناءه لا يُكتب له تقرير."""

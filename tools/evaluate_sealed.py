@@ -190,8 +190,10 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         for start in range(0, len(pending), 100):
             batch = pending[start:start + 100]
             try:
+                # البصمةُ في هويّة التشغيل: فمجلّدُ تشغيلٍ أُعيد استعمالُه لا يعيد أحكامَ أوزانٍ سابقة (ملاحظة Codex على #289)
                 verdicts = evaluate_suite(_judge_suite([(c, a) for _, c, a in batch], start // 100), judge,
-                                          run_root, max_output=max_output, deadline_s=deadline_s)["results"]
+                                          run_root, max_output=max_output, deadline_s=deadline_s,
+                                          model_version=judge_digest)["results"]
             except CapabilityError:
                 verdicts = [{"status": "error", "answer": None}] * len(batch)
             for (tier, _, _), result in zip(batch, verdicts):
