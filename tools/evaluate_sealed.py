@@ -208,7 +208,9 @@ def _open_post_check(run_root: Path) -> float:
             since = 0.0
         quarantine_runs_since(run_root, since)
     started = time.time() - 1
-    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+    # مؤقّتٌ باقٍ قد يكون رابطًا صلبًا إلى ملفٍّ مختوم، فتُزال مدخلتُه ويُنشأ جديدًا، ولا يُقطع ما يشاركه (ملاحظة Codex على #289)
+    temporary.unlink(missing_ok=True)
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "wb") as stream:
         stream.write(json.dumps({"started": started}).encode() + b"\n")
         stream.flush()

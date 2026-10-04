@@ -322,6 +322,19 @@ def test_a_symlinked_runner_directory_or_file_is_refused_before_anything_is_writ
     assert not {sealed.RUNNER_LOCK, sealed.POST_CHECK_PENDING} & {p.name for p in sealed_root.rglob("*")}
 
 
+def test_a_hard_linked_marker_temporary_is_replaced_not_truncated(tmp_path):
+    """مؤقّتُ العلامة الباقي رابطٌ صلبٌ إلى ملفٍّ مختوم: فتحُه بـO_TRUNC كان يقطع المختوم؛ والآن تُزال مدخلتُه ويُنشأ جديدًا."""
+    sealed_root, _ = _bank(tmp_path)
+    target = sealed_root / "tier_a" / "synthetic_tier_a_sealed.json"
+    before = _sha(target)
+    runner = tmp_path / "runs" / f"runner-{sealed.runner_sha256()[:24]}"
+    runner.mkdir(parents=True)
+    os.link(target, runner / f"{sealed.POST_CHECK_PENDING}.tmp")
+    engine = Provider()
+    _run(tmp_path, engine)
+    assert engine.calls == 10 and _sha(target) == before
+
+
 def test_a_second_measurement_in_the_same_runner_directory_is_refused_before_it_writes(tmp_path):
     """ملاحظة Codex على #289: استدعاءان متداخلان يتشاركان علامةَ الفحص المعلَّق، فيزيل الأولُ علامةَ الثاني؛ فالقياسُ
     مسلسَلٌ بقفل مجلّد المُشغِّل، والثاني يُرفض قبل أن يكتب علامةً أو يسأل نموذجًا، ثم يمرّ بعد فكّ القفل."""
