@@ -68,17 +68,58 @@ from evaluation.external_review import (AUTHOR_FAMILY, BUDGET_TERMINAL_ERRORS, D
                                         DEVELOPER_FAMILIES, ENGINE_FAMILY, SUPERSEDED_DIR,
                                         _slug, open_files, review_bank, smoke, summarize)
 from evaluation.multi_system_review import AutomaticReviewError, model_family  # noqa: E402
+from core.locality import is_cloud_model  # noqa: E402
 
 MAX_RESPONSE_BYTES = 8_000_000
 LOCAL_PREFIXES = ("http://127.0.0.1:", "http://localhost:", "http://[::1]:")
 CLOUD_ENDPOINT = "https://ollama.com"          # النقطةُ السحابية الوحيدة المسموحة (ق٦٠)
 CLOUD_KEY_ENV = "OLLAMA_API_KEY"               # يُقرأ من البيئة وحدها، ولا يُطبع ولا يُودَع
+USAGE_FIELDS = ("prompt_tokens", "completion_tokens", "total_tokens")
+
+
+def ollama_usage(body: object) -> dict | None:
+    """عدّادا Ollama (`prompt_eval_count` و`eval_count`) بأسماء سجلّ النداءات المشترك، أو None إن لم يُبلغ أيًّا منهما.
+
+    عددٌ صحيحٌ غيرُ سالب وحده يُقبل (لا منطقيّ ولا نصّ)، والمجموعُ لا يُكتب إلا من العدّادين كليهما (جديد-spend-ledger)."""
+    if not isinstance(body, dict):
+        return None
+    usage = {}
+    for source, field in (("prompt_eval_count", "prompt_tokens"), ("eval_count", "completion_tokens")):
+        value = body.get(source)
+        if type(value) is int and value >= 0:
+            usage[field] = value
+    if not usage:
+        return None
+    if len(usage) == 2:
+        usage["total_tokens"] = usage["prompt_tokens"] + usage["completion_tokens"]
+    return usage
+
+
+def token_totals(rows: list[dict]) -> dict:
+    """مجموعُ التوكنات لكل نموذج من سجلّ النداءات، ومعه عددُ ما أُرسل بلا استهلاكٍ مُبلَغ فلا يُقرأ المجموعُ كاملًا وهو ناقص.
+
+    صفوفُ الفهرس لا نموذجَ لها ولا استهلاك فلا تدخل، وما لم يُرسل لا يُعدّ (جديد-spend-ledger)."""
+    totals: dict[str, dict] = {}
+    for row in rows:
+        if row.get("kind") == "catalog" or not row.get("request_sent"):
+            continue
+        entry = totals.setdefault(row["model"], {"calls": 0, "calls_without_usage": 0,
+                                                 **{field: 0 for field in USAGE_FIELDS}})
+        entry["calls"] += 1
+        usage = row.get("usage") or {}
+        if not usage:
+            entry["calls_without_usage"] += 1
+        for field in USAGE_FIELDS:
+            entry[field] += usage.get(field, 0)
+    return dict(sorted(totals.items()))
 
 
 class OllamaChat:
     """نداءُ /api/chat على خادمٍ محليّ (بلا وكيلٍ ولا تحويل)، أو على ollama.com بمفتاحٍ من البيئة.
 
     المفتاحُ لا يُحفظ إلا في ترويسة الطلب، ولا يظهر في أي خطأٍ أو تقرير: الأخطاءُ رموزٌ باسم النموذج.
+    وكلُّ محاولةٍ صفٌّ في `provider_usage` بشكل سجلّ الواجهات المجانية نفسِه، فيه توكناتُ الردّ (جديد-spend-ledger).
+    وOllama لا يُبلغ كلفةً في ردّه، والنموذجُ السحابيُّ يُحاسَب باشتراك الحساب؛ فالكلفةُ `not_reported` لا صفرٌ مفترض.
     """
 
     def __init__(self, base_url: str = "http://127.0.0.1:11434", timeout: int = 900,
@@ -98,33 +139,57 @@ class OllamaChat:
             raise AutomaticReviewError("local_endpoint_required", base_url)
         self.url = base + "/api/chat"
         self.timeout = timeout
+        self.provider_usage: list[dict] = []     # صفٌّ لكل محاولة: لا رسالةَ ولا مفتاحَ ولا نصَّ ردّ
 
     def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
-        payload = {"model": model, "stream": False, "format": schema,
-                   "messages": [{"role": "system", "content": system},
-                                {"role": "user", "content": user}],
-                   "options": {"temperature": 0, "seed": 0, "num_ctx": 65536}}
-        request = urllib.request.Request(
-            self.url, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            headers=dict(self._headers))
+        started, sent, usage = time.monotonic(), False, None
         try:
-            with self.opener.open(request, timeout=self.timeout) as response:
-                raw = response.read(MAX_RESPONSE_BYTES + 1)
-        except urllib.error.HTTPError as exc:
-            raise AutomaticReviewError(f"http_{exc.code}", model) from exc
-        except TimeoutError as exc:
-            raise AutomaticReviewError("transport_timeout", model) from exc
-        except (urllib.error.URLError, OSError) as exc:
-            raise AutomaticReviewError("transport_error", model) from exc
-        if len(raw) > MAX_RESPONSE_BYTES:
-            raise AutomaticReviewError("response_too_large", model)
-        try:
-            content = json.loads(raw)["message"]["content"]
-        except (ValueError, KeyError, TypeError) as exc:
-            raise AutomaticReviewError("ollama_response_malformed", model) from exc
-        if not isinstance(content, str):
-            raise AutomaticReviewError("ollama_response_malformed", model)
+            payload = {"model": model, "stream": False, "format": schema,
+                       "messages": [{"role": "system", "content": system},
+                                    {"role": "user", "content": user}],
+                       "options": {"temperature": 0, "seed": 0, "num_ctx": 65536}}
+            request = urllib.request.Request(
+                self.url, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                headers=dict(self._headers))
+            sent = True
+            try:
+                with self.opener.open(request, timeout=self.timeout) as response:
+                    raw = response.read(MAX_RESPONSE_BYTES + 1)
+            except urllib.error.HTTPError as exc:
+                raise AutomaticReviewError(f"http_{exc.code}", model) from exc
+            except TimeoutError as exc:
+                raise AutomaticReviewError("transport_timeout", model) from exc
+            except (urllib.error.URLError, OSError) as exc:
+                raise AutomaticReviewError("transport_error", model) from exc
+            if len(raw) > MAX_RESPONSE_BYTES:
+                raise AutomaticReviewError("response_too_large", model)
+            try:
+                body = json.loads(raw)
+                usage = ollama_usage(body)
+                content = body["message"]["content"]
+            except (ValueError, KeyError, TypeError) as exc:
+                raise AutomaticReviewError("ollama_response_malformed", model) from exc
+            if not isinstance(content, str):
+                raise AutomaticReviewError("ollama_response_malformed", model)
+        except AutomaticReviewError as exc:
+            self._record(model, started, "error", sent, usage, exc.code)
+            raise
+        self._record(model, started, "succeeded", sent, usage, None)
         return content
+
+    def _record(self, model: str, started: float, status: str, sent: bool, usage: dict | None,
+                error: str | None) -> None:
+        self.provider_usage.append({
+            "provider": "ollama", "model": model, "family": model_family(model),
+            "cloud": self.cloud or is_cloud_model(model),
+            "at": _utc_now(), "elapsed_ms": round((time.monotonic() - started) * 1000),
+            "status": status, "error": error, "request_sent": sent,
+            "usage": usage, "cost_usd": None, "cost_status": "not_reported", "zero_spend_proof": None,
+        })
+
+    def spend_report(self) -> dict:
+        """مجموعُ التوكنات لكل نموذج؛ ولا دليلَ مجانيةٍ هنا، فالاشتراكُ لا يُقرأ من الردّ."""
+        return {"token_totals": token_totals(self.provider_usage)}
 
 
 def build_transport(base_url: str, environ=os.environ) -> OllamaChat:
@@ -495,7 +560,7 @@ class OpenAICompatChat:
                           if row.get("kind") != "catalog" and row["provider"] == "openrouter"
                           and row["request_sent"] and row["cost_status"] != "reported")
         return {"zero_spend_evidence": dict(sorted(self.zero_spend_evidence.items())),
-                "cost_unconfirmed_attempts": unconfirmed}
+                "cost_unconfirmed_attempts": unconfirmed, "token_totals": token_totals(self.provider_usage)}
 
     def _record_provider_usage(self, model: str, started: float, status: str, *,
                                usage: dict | None = None, cost: Decimal | None = None,
@@ -1159,7 +1224,7 @@ def _persist_limits(bank: Path, limits: list[str]) -> None:
 
 
 def _spend_report(transport) -> dict:
-    """دليلُ المجانية وعدُّ ما لم تثبت كلفتُه، من نقلٍ يعرفهما؛ والنقلُ الذي لا يعرفهما (Ollama) لا يُنسب إليه شيء."""
+    """مجموعُ التوكنات لكل نموذج، ودليلُ المجانية وعدُّ ما لم تثبت كلفتُه من نقلٍ يعرفهما؛ والنقلُ المزيَّف بلا تقريرٍ لا يُنسب إليه شيء."""
     report = getattr(transport, "spend_report", None)
     return report() if callable(report) else {}
 
@@ -1353,14 +1418,19 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     base_url = args.base_url or "http://127.0.0.1:11434"
     reviewers = args.reviewers or list(DEFAULT_REVIEWERS)
+    transport = None
     if args.smoke:
         try:
+            transport = build_transport(base_url)
             with tempfile.TemporaryDirectory() as tmp:
-                report = smoke(Path(tmp), reviewers, build_transport(base_url),
-                               brief_path=args.brief)
+                report = smoke(Path(tmp), reviewers, transport, brief_path=args.brief)
         except AutomaticReviewError as exc:
-            print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+            usage = getattr(transport, "provider_usage", None) or []
+            print(json.dumps({"status": "refused", "code": exc.code,
+                              **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
             return 2
+        # سجلُّ النداءات وتوكناتُها في دليل الدخان كما في الواجهات المجانية (جديد-spend-ledger)
+        report.update(provider_usage=getattr(transport, "provider_usage", []), **_spend_report(transport))
         args.smoke.parent.mkdir(parents=True, exist_ok=True)
         args.smoke.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",
                               encoding="utf-8")
@@ -1370,13 +1440,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.bank is None:
         parser.error("مجلّد البنك مطلوب، أو --smoke")
     try:
-        counts = review_bank(args.bank, reviewers, build_transport(base_url),
-                             brief_path=args.brief)
+        transport = build_transport(base_url)
+        counts = review_bank(args.bank, reviewers, transport, brief_path=args.brief)
         summary = summarize(args.bank)
     except AutomaticReviewError as exc:
-        print(json.dumps({"status": "refused", "code": exc.code, "detail": str(exc)},
-                         ensure_ascii=False))
+        usage = getattr(transport, "provider_usage", None) or []
+        print(json.dumps({"status": "refused", "code": exc.code, "detail": str(exc),
+                          **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
         return 2
+    _persist_provider_usage(args.bank, getattr(transport, "provider_usage", []), _spend_report(transport))
     print(json.dumps({
         "status": "failed" if counts["failed"] else "reviewed",
         **counts,
