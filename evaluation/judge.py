@@ -7,7 +7,8 @@
 - المحكِّمُ من العائلات المسموحة وحدها؛ والمستبعَدةُ والمجهولةُ تُردّ باسمها.
 - المعايرةُ على الشطر المفتوح وحده، والتسميةُ الغائبة (حكمُ المالك المنتظَر) رفضٌ لا تخمين.
 - κ كوهين والدقّة على الاتحاد، ولكل مصدرٍ على حدة.
-- المحكِّمُ على المحجوب يُقبل بدليل معايرةٍ ناجحٍ لنموذجه نفسِه على البروتوكول نفسِه، وتُعاد الأرقامُ لا يُصدَّق العَلَم.
+- المحكِّمُ على المحجوب يُقبل بدليل معايرةٍ ناجحٍ لنموذجه نفسِه على البروتوكول نفسِه، وتُعاد الأرقامُ لا يُصدَّق العَلَم:
+  التسميةُ الآليّة تُعاد من جوابها بفحوص حالتها، وجوابُ حالة ك١١ هو مرجعُها في البنك، والدليلُ كلُّه بتوقيع المالك.
 - المحاولاتُ المعدودة تُوزَّع على الطبقات بنسبة حجمها، وتُختار ببذرةٍ هي بصمةُ البروتوكول.
 - تقريرُ المحجوب نسبةٌ وWilson 95٪ لكل طبقة، ويُفحص قبل الكتابة فلا يحمل معرّفًا ولا نصًّا.
 """
@@ -20,7 +21,9 @@ import re
 from collections.abc import Iterable
 from pathlib import Path
 
-from evaluation.capabilities import CapabilityError, load_suite
+from core.ledger import LedgerCorrupt
+from core.signing import ED25519, SigningRefused, load_trusted_public_key, verify_signature_bytes
+from evaluation.capabilities import CapabilityError, _checks, _json_bytes, load_suite
 from evaluation.multi_system_review import model_family
 from evaluation.retrieval_general import wilson
 
@@ -28,12 +31,14 @@ ROOT = Path(__file__).resolve().parent.parent
 PROTOCOL = ROOT / "evaluation" / "protocols" / "judge_v1.json"
 K11_EVIDENCE = ROOT / "docs" / "probe" / "k11-owner-queue-triage-20260925.json"
 OPEN_BANK = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
-PROTOCOL_SHA256 = "c2425d24938971aadac78f8a33e6be686c88dcda03824bd9cd6056c936441feb"
+PROTOCOL_SHA256 = "ac72dadc3df7544c010d06319cba08c6b838af504d28bf0017826934a0fe4a04"
 VERDICTS = ("correct", "incorrect")
 OUTCOMES = ("pass", "fail", "without_checks", "error")
 # نصٌّ أقصرُ من هذا لا يُبحث عنه في التقرير: كلمةٌ قصيرة كـ«نعم» تقع في أيّ تقرير ولا تدلّ على حالة.
 LEAK_MIN_CHARS = 8
 _PINNED = re.compile(r"[^\s:]+:[^\s:]+")
+CALIBRATION_DOMAIN = b"diwan-judge-calibration-v1\x00"
+SIGNATURE_FIELD = "owner_signature"
 
 
 class JudgeRefused(ValueError):
@@ -110,6 +115,17 @@ def calibration_result(items: list[dict], protocol: dict) -> dict:
             "by_source": {s: _scores([i for i in items if i["source"] == s]) for s in sources}}
 
 
+def _open_suites(open_bank: Path):
+    """حزمُ الشطر المفتوح بطبقاتها؛ وملفّاتُ المهامّ الوكيلة ليست حزمَ حالاتٍ بفحوص فلا تُعدّ."""
+    for path in sorted(Path(open_bank).glob("*/*.json")):
+        if path.name.endswith(".meta.json"):
+            continue
+        try:
+            yield path.parent.name, load_suite(path)
+        except CapabilityError:
+            continue
+
+
 def calibration_sample(protocol: dict, protocol_sha256: str, *, open_bank: Path = OPEN_BANK,
                        k11_evidence: Path = K11_EVIDENCE) -> dict[str, list[str]]:
     """عيّنةُ المعايرة المجمَّدة بالبروتوكول: حالاتُ ك١١ بمعرّفاتها، ومئةُ حالةٍ مفتوحةٍ ذاتِ فحصٍ حتميّ تُختار طبقيًّا
@@ -120,14 +136,8 @@ def calibration_sample(protocol: dict, protocol_sha256: str, *, open_bank: Path 
     owner = sorted(row["id"] for row in triage["real"] + triage["false_positives"])
     kinds = set(sources["automatic_checked"]["check_kinds"])
     pool: dict[str, list[str]] = {}
-    for path in sorted(Path(open_bank).glob("*/*.json")):
-        if path.name.endswith(".meta.json"):
-            continue
-        try:
-            suite = load_suite(path)
-        except CapabilityError:
-            continue
-        pool.setdefault(path.parent.name, []).extend(
+    for tier, suite in _open_suites(open_bank):
+        pool.setdefault(tier, []).extend(
             f"{suite['suite_id']}/{case['case_id']}" for case in suite["cases"]
             if case["checks"] and all(check["kind"] in kinds for check in case["checks"]))
     wanted = sources["automatic_checked"]["cases"]
@@ -138,23 +148,87 @@ def calibration_sample(protocol: dict, protocol_sha256: str, *, open_bank: Path 
     return {"k11_owner_ruled": owner, "automatic_checked": automatic}
 
 
+def calibration_truth(sample: dict[str, list[str]], *, open_bank: Path = OPEN_BANK) -> dict[str, dict]:
+    """ما يُقابَل به كلُّ صفّ: لحالة ك١١ مرجعُها في البنك (جوابُها المراجَع)، وللحالة الآليّة فحوصُها الحتميّة
+    التي تُعاد بها تسميتُها من جوابها. فلا يُصدَّق ما كتبه الدليلُ عن حقيقة حالة (ملاحظة Codex على #289)."""
+    owner, automatic = set(sample["k11_owner_ruled"]), set(sample["automatic_checked"])
+    truth: dict[str, dict] = {"k11_owner_ruled": {}, "automatic_checked": {}}
+    for _, suite in _open_suites(open_bank):
+        for case in suite["cases"]:
+            qid = f"{suite['suite_id']}/{case['case_id']}"
+            if case["case_id"] in owner:
+                truth["k11_owner_ruled"][case["case_id"]] = case["reference"]
+            if qid in automatic:
+                truth["automatic_checked"][qid] = case["checks"]
+    if set(truth["k11_owner_ruled"]) != owner or set(truth["automatic_checked"]) != automatic:
+        raise JudgeRefused("calibration_sample_unavailable", "حالةٌ من العيّنة ليست في البنك المفتوح")
+    return truth
+
+
+def calibration_message(evidence: dict) -> bytes:
+    """ما يوقّعه المالك: الدليلُ كلُّه بلا حقل التوقيع، بمجالٍ مخصوص فلا يُنقل إليه توقيعُ مرساةٍ أو حكم."""
+    return CALIBRATION_DOMAIN + _json_bytes({k: v for k, v in evidence.items() if k != SIGNATURE_FIELD})
+
+
+def sign_calibration(evidence: dict, *, private_seed: bytes) -> dict:
+    """يوقّع المالكُ الدليلَ ببذرته (من سلسلة مفاتيح الماك، لا من ملف): أن الأجوبةَ أجوبةُ المحرّك المجمَّد،
+    والأحكامَ أحكامُ المحكِّم، وتسمياتِ ك١١ أحكامُه هو."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    key = Ed25519PrivateKey.from_private_bytes(private_seed)
+    return {**evidence, SIGNATURE_FIELD: ED25519 + ":" + key.sign(calibration_message(evidence)).hex()}
+
+
+def _owner_signed(evidence: dict, public_key: bytes | None) -> bool:
+    """توقيعُ المالك على الدليل؛ وتعذُّرُ التحقّق (مفتاحٌ أو مكتبةٌ غائبة) رفضٌ مسمًّى غيرُ «لم يُوقَّع» (ق٣٩)."""
+    raw = evidence.get(SIGNATURE_FIELD)
+    if not isinstance(raw, str):
+        return False
+    try:
+        key = load_trusted_public_key() if public_key is None else public_key
+        return verify_signature_bytes((raw + "\n").encode("ascii"), calibration_message(evidence), public_key=key)
+    except SigningRefused as exc:
+        if exc.code != "signature_mismatch":
+            raise JudgeRefused("calibration_signature_unverifiable", exc.code) from None
+        return False
+    except (LedgerCorrupt, UnicodeError, ValueError):
+        return False
+
+
+def _row_bound(row: dict, truth: dict[str, dict]) -> bool:
+    """الحالةُ الآليّة: تسميتُها هي ما تقوله فحوصُها في جوابها. وحالةُ ك١١: جوابُها مرجعُها، وتسميتُها حكمُ المالك."""
+    candidate, ground = row.get("candidate"), truth[row["source"]][row["case"]]
+    if not isinstance(candidate, str):
+        return False
+    if row["source"] == "automatic_checked":
+        passed = all(result["passed"] for result in _checks(candidate, ground))
+        return row.get("label") == ("correct" if passed else "incorrect")
+    return candidate == ground
+
+
 def accept_sealed_judge(evidence: dict | None, model: str, protocol: dict, protocol_sha256: str,
-                        sample: dict[str, list[str]]) -> str:
-    """المحكِّمُ على المحجوب هو المسجَّلُ في البروتوكول وحده، بدليل معايرةٍ على نموذجه وبروتوكوله، صفوفُه هي العيّنةُ
-    المجمَّدة حالةً حالة، وκ والدقّةُ تُعادان منها؛ فلا يُصدَّق عَلَمٌ ولا رقمٌ مكتوبٌ في الدليل (ملاحظتا Codex على #289)."""
+                        truth: dict[str, dict], *, public_key: bytes | None = None) -> str:
+    """المحكِّمُ على المحجوب هو المسجَّلُ في البروتوكول وحده، بدليل معايرةٍ موقَّعٍ من المالك على نموذجه وبروتوكوله،
+    صفوفُه هي العيّنةُ المجمَّدة حالةً حالة، وكلُّ صفٍّ مربوطٌ بحقيقة حالته، وκ والدقّةُ تُعادان منها؛ فلا يُصدَّق
+    عَلَمٌ ولا رقمٌ ولا تسميةٌ مكتوبةٌ في الدليل (ملاحظات Codex على #289)."""
     if model != protocol["sealed"]["judge"]["model"]:
         raise JudgeRefused("judge_not_registered", "محكِّمُ المحجوب هو المسجَّلُ في judge_v1 وحده")
     family = judge_family(model, protocol)
-    expected = sorted((source, case) for source, cases in sample.items() for case in cases)
+    expected = sorted((source, case) for source, cases in truth.items() for case in cases)
     try:
         same = evidence["protocol_sha256"] == protocol_sha256 and evidence["judge"]["model"] == model
         rows = evidence["rows"]
-        bound = sorted((row["source"], row["case"]) for row in rows) == expected
-        result = calibration_result(rows, protocol) if same and bound else None
-    except (KeyError, TypeError, AttributeError, JudgeRefused):
+        bound = (sorted((row["source"], row["case"]) for row in rows) == expected
+                 and all(_row_bound(row, truth) for row in rows))
+        signed = same and bound and _owner_signed(evidence, public_key)
+        result = calibration_result(rows, protocol) if signed else None
+    except (KeyError, TypeError, AttributeError):
+        result = None
+    except JudgeRefused as exc:
+        if exc.code == "calibration_signature_unverifiable":
+            raise
         result = None
     if not (result and result["passed"]):
-        raise JudgeRefused("judge_uncalibrated", "لا يحكم على المحجوب محكِّمٌ بلا دليل معايرة ناجح (OD3)")
+        raise JudgeRefused("judge_uncalibrated", "لا يحكم على المحجوب محكِّمٌ بلا دليل معايرة موقَّعٍ ناجح (OD3)")
     return family
 
 

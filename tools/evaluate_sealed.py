@@ -8,7 +8,7 @@
 **ما يضمنه قبل أن يقرأ حرفًا من المحجوب:**
 - البروتوكولُ ببصمته المسجَّلة، ولا يُعدَّل (`judge_protocol_changed`).
 - المحرّكُ محليٌّ بمصدر المحليّة الواحد (`core.locality`)؛ وغيرُه `sealed_requires_local_provider`.
-- المحكِّمُ، إن طُلب، محليٌّ وله دليلُ معايرةٍ ناجح لنموذجه نفسِه (`judge_uncalibrated`). وبلا محكِّمٍ تبقى الحالاتُ
+- المحكِّمُ، إن طُلب، محليٌّ وله دليلُ معايرةٍ ناجحٌ موقَّعٌ من المالك لنموذجه نفسِه (`judge_uncalibrated`). وبلا محكِّمٍ تبقى الحالاتُ
   التي لا فحصَ آليًّا لها في المقام غيرَ ناجحة (OD3 في ق٦٤).
 - المحجوبُ ومجلّدُ التشغيل خارج المستودع، وكلُّ ملفٍّ يطابق بصمتَه في البيان المختوم.
 
@@ -134,8 +134,8 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     protocol = judge_rules.load_protocol(protocol_path, protocol_sha256)
     preflight(provider, judge)
     if judge is not None:
-        judge_rules.accept_sealed_judge(judge_evidence, judge.model, protocol, protocol_sha256,
-                                        judge_rules.calibration_sample(protocol, protocol_sha256))
+        truth = judge_rules.calibration_truth(judge_rules.calibration_sample(protocol, protocol_sha256))
+        judge_rules.accept_sealed_judge(judge_evidence, judge.model, protocol, protocol_sha256, truth)
     sealed_root = _outside_repository(sealed_root, "sealed_root_in_repository")
     run_root = _outside_repository(run_root, "sealed_run_root_in_repository")
     entries = [e for e in verify_manifest(sealed_root, manifest_path) if e["kind"] == "suite"]

@@ -1,17 +1,26 @@
 """#288: بروتوكولُ المحكِّم مسجَّلٌ قبل أيّ تشغيل، فلا تتبع العتبةُ النتيجة (ق٦٤، OD3)."""
 from __future__ import annotations
 
+import copy
 import functools
 import hashlib
 import json
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
+from core.signing import SigningRefused
 from evaluation import judge
 from evaluation.judge import JudgeRefused
 
-REGISTERED = "c2425d24938971aadac78f8a33e6be686c88dcda03824bd9cd6056c936441feb"
+REGISTERED = "ac72dadc3df7544c010d06319cba08c6b838af504d28bf0017826934a0fe4a04"
 DATA = json.loads(judge.PROTOCOL.read_text(encoding="utf-8"))
+# مفتاحُ مالكٍ مصطنعٌ للاختبار وحده؛ ومفتاحُ المالك الحقيقيّ في سلسلة مفاتيح الماك لا في المستودع.
+OWNER_SEED = hashlib.sha256(b"diwan-test-owner-calibration").digest()
+OTHER_SEED = hashlib.sha256(b"diwan-test-not-the-owner").digest()
+OWNER_PUBLIC = Ed25519PrivateKey.from_private_bytes(OWNER_SEED).public_key().public_bytes(Encoding.Raw,
+                                                                                          PublicFormat.Raw)
 
 
 def test_the_protocol_is_registered_before_any_run_and_cannot_change():
@@ -107,19 +116,58 @@ def _sample():
     return judge.calibration_sample(DATA, REGISTERED)
 
 
-def _rows(flip: int = 0, **change):
-    """صفوفٌ مصطنعةٌ على العيّنة المجمَّدة حالةً حالة؛ والمحكِّمُ يخالف التسمية في أول `flip` منها."""
-    rows = [{"source": source, "case": case, "split": "open", "label": ("correct", "incorrect")[i % 2]}
-            for source, cases in _sample().items() for i, case in enumerate(cases)]
+@functools.cache
+def _truth():
+    return judge.calibration_truth(_sample())
+
+
+def _candidate(checks: list[dict], correct: bool) -> str:
+    """جوابٌ تنجح فيه فحوصُ الحالة أو ترسب؛ فالتسميةُ الآليّة تُعاد منه لا تُكتب."""
+    if not correct:
+        return "—"
+    check = checks[0]
+    return check["value"] if check["kind"] == "exact" else json.dumps(check["value"], ensure_ascii=False)
+
+
+def _rows(flip: int = 0, at: int = 0, **change):
+    """صفوفٌ مصطنعةٌ على العيّنة المجمَّدة حالةً حالة: جوابُ ك١١ مرجعُه، وجوابُ الآليّة يُطابق تسميتَه بفحوصه؛
+    والمحكِّمُ يخالف التسمية في أول `flip` منها، و`change` يُطبَّق على الصفّ `at`."""
+    rows = []
+    for source, cases in _sample().items():
+        for i, case in enumerate(cases):
+            label = ("correct", "incorrect")[i % 2]
+            ground = _truth()[source][case]
+            candidate = ground if source == "k11_owner_ruled" else _candidate(ground, label == "correct")
+            rows.append({"source": source, "case": case, "split": "open", "candidate": candidate, "label": label})
     for i, row in enumerate(rows):
         row["verdict"] = row["label"] if i >= flip else ("incorrect" if row["label"] == "correct" else "correct")
-    rows[0] = {**rows[0], **change}
+    rows[at] = {**rows[at], **change}
     return rows
 
 
-def _evidence(rows=None, **overrides):
-    return {"protocol_sha256": REGISTERED, "judge": {"model": "granite4"},
-            "rows": _rows() if rows is None else rows, **overrides}
+# صفوفُ ك١١ أولًا بترتيب العيّنة، ثم الآليّة.
+FIRST_AUTOMATIC = next(s["cases"] for s in DATA["calibration"]["sources"] if s["name"] == "k11_owner_ruled")
+
+
+def _evidence(rows=None, *, seed=OWNER_SEED, **overrides):
+    """دليلُ معايرةٍ موقَّعٌ بمفتاح المالك المصطنع؛ و`seed=None` يتركه بلا توقيع."""
+    evidence = {"protocol_sha256": REGISTERED, "judge": {"model": "granite4"},
+                "rows": _rows() if rows is None else rows, **overrides}
+    return evidence if seed is None else judge.sign_calibration(evidence, private_seed=seed)
+
+
+def _tampered():
+    evidence = copy.deepcopy(_evidence())
+    evidence["rows"][0]["verdict"] = "incorrect" if evidence["rows"][0]["verdict"] == "correct" else "correct"
+    return evidence
+
+
+def _hand_labelled():
+    """سيناريو Codex: صفوفٌ تعدّد العيّنةَ وتُناوب التسمياتِ يدويًّا وتنسخها إلى الحكم، وأجوبتُها كلُّها صحيحة."""
+    rows = _rows()
+    for row in rows[FIRST_AUTOMATIC:]:
+        row["candidate"] = _candidate(_truth()["automatic_checked"][row["case"]], True)
+    return _evidence(rows)
 
 
 def test_the_calibration_sample_is_frozen_by_the_protocol():
@@ -128,14 +176,23 @@ def test_the_calibration_sample_is_frozen_by_the_protocol():
     assert sample["k11_owner_ruled"] == sorted(r["id"] for r in triage["real"] + triage["false_positives"])
     assert len(sample["k11_owner_ruled"]) == 23 and len(set(sample["automatic_checked"])) == 100
     assert hashlib.sha256(json.dumps(sample, sort_keys=True).encode()).hexdigest() == \
-        "f69d3c4ef59942e08cddb19d104538a3da820f10266df9d48a627bea262f0bab"
+        "5b1aad640351c123c51eae62ec71553a3b2373633600b536de9e506bb9366f11"
+    kinds = {check["kind"] for checks in _truth()["automatic_checked"].values() for check in checks}
+    assert kinds <= {"exact", "json_equals"} and all(isinstance(r, str) for r in _truth()["k11_owner_ruled"].values())
+
+
+def test_the_owner_signs_a_domain_separated_message_without_its_signature():
+    evidence = _evidence()
+    assert judge.calibration_message(evidence) == b"diwan-judge-calibration-v1\x00" + json.dumps(
+        {k: v for k, v in evidence.items() if k != "owner_signature"}, ensure_ascii=False, sort_keys=True,
+        separators=(",", ":")).encode("utf-8")
 
 
 UNCALIBRATED = {
     "missing": lambda: None,
-    "scalars_without_rows": lambda: {"protocol_sha256": REGISTERED, "judge": {"model": "granite4"},
-                                     "kappa": 0.9, "accuracy": 0.95, "passed": True},
-    "infinite_scalars_without_rows": lambda: _evidence([], kappa=float("inf"), accuracy=float("inf"), passed=True),
+    "scalars_without_rows": lambda: _evidence([], kappa=0.9, accuracy=0.95, passed=True),
+    "infinite_scalars_without_rows": lambda: _evidence([], seed=None, kappa=float("inf"), accuracy=float("inf"),
+                                                       passed=True),
     "rows_below_threshold_scalars_claim_pass": lambda: _evidence(_rows(flip=30), kappa=0.9, accuracy=0.95,
                                                                  passed=True),
     "one_case_missing": lambda: _evidence(_rows()[1:]),
@@ -145,26 +202,55 @@ UNCALIBRATED = {
     "owner_ruling_pending": lambda: _evidence(_rows(label=None)),
     "another_model": lambda: _evidence(judge={"model": "granite3"}),
     "another_protocol": lambda: _evidence(protocol_sha256="0" * 64),
+    "unsigned": lambda: _evidence(seed=None),
+    "signed_by_another_key": lambda: _evidence(seed=OTHER_SEED),
+    "changed_after_signing": _tampered,
+    "hand_labelled_codex_scenario": _hand_labelled,
+    "automatic_label_not_its_checks": lambda: _evidence(_rows(at=FIRST_AUTOMATIC, label="incorrect",
+                                                              verdict="incorrect")),
+    "automatic_candidate_missing": lambda: _evidence(_rows(at=FIRST_AUTOMATIC + 1, candidate=None)),
+    "k11_candidate_not_its_reference": lambda: _evidence(_rows(candidate="مرجعٌ آخر")),
 }
 
 
 @pytest.mark.parametrize("case", list(UNCALIBRATED))
 def test_a_sealed_judge_needs_its_calibration_rows_on_the_frozen_sample(case):
-    """ملاحظتا Codex على #289: دليلٌ بأرقامٍ مكتوبة أو بعيّنةٍ غير المسجَّلة كان يُقبل؛ والأرقامُ تُعاد من الصفوف."""
+    """ملاحظاتُ Codex على #289: دليلٌ بأرقامٍ مكتوبة، أو بعيّنةٍ غير المسجَّلة، أو بتسمياتٍ مكتوبةٍ لا تُعاد من حقيقة
+    حالاتها، أو بلا توقيع المالك، كان يُقبل؛ والأرقامُ تُعاد من صفوفٍ مربوطةٍ موقَّعة."""
     with pytest.raises(JudgeRefused) as refused:
-        judge.accept_sealed_judge(UNCALIBRATED[case](), "granite4", DATA, REGISTERED, _sample())
+        judge.accept_sealed_judge(UNCALIBRATED[case](), "granite4", DATA, REGISTERED, _truth(),
+                                  public_key=OWNER_PUBLIC)
     assert refused.value.code == "judge_uncalibrated"
 
 
 def test_a_calibrated_sealed_judge_is_accepted_from_its_rows_alone():
-    assert judge.accept_sealed_judge(_evidence(), "granite4", DATA, REGISTERED, _sample()) == "ibm"
-    assert judge.accept_sealed_judge(_evidence(_rows(flip=10)), "granite4", DATA, REGISTERED, _sample()) == "ibm"
+    for evidence in (_evidence(), _evidence(_rows(flip=10))):
+        assert judge.accept_sealed_judge(evidence, "granite4", DATA, REGISTERED, _truth(),
+                                         public_key=OWNER_PUBLIC) == "ibm"
+    assert _rows()[FIRST_AUTOMATIC]["source"] == "automatic_checked" == _rows()[FIRST_AUTOMATIC + 1]["source"]
+    assert _rows()[FIRST_AUTOMATIC + 1]["label"] == "incorrect"
+
+
+def test_the_trusted_owner_key_is_the_default_and_an_unverifiable_one_is_named(monkeypatch):
+    """بلا مفتاحٍ مُمرَّر يُتحقَّق بالمفتاح المُثبَّت في المستودع، فتوقيعُ مفتاحٍ مصطنع لا يمرّ؛ وتعذُّرُ قراءة المفتاح
+    «تعذّر» مسمًّى لا «لم يُوقَّع» (ق٣٩)."""
+    with pytest.raises(JudgeRefused) as refused:
+        judge.accept_sealed_judge(_evidence(), "granite4", DATA, REGISTERED, _truth())
+    assert refused.value.code == "judge_uncalibrated"
+
+    def no_policy():
+        raise SigningRefused("signing_policy_missing", "synthetic")
+    monkeypatch.setattr(judge, "load_trusted_public_key", no_policy)
+    with pytest.raises(JudgeRefused) as refused:
+        judge.accept_sealed_judge(_evidence(), "granite4", DATA, REGISTERED, _truth())
+    assert refused.value.code == "calibration_signature_unverifiable"
 
 
 @pytest.mark.parametrize("model", ["glm-4.6", "granite4:3b"])
 def test_only_the_registered_sealed_judge_may_judge(model):
     with pytest.raises(JudgeRefused) as refused:
-        judge.accept_sealed_judge(_evidence(judge={"model": model}), model, DATA, REGISTERED, _sample())
+        judge.accept_sealed_judge(_evidence(judge={"model": model}), model, DATA, REGISTERED, _truth(),
+                                  public_key=OWNER_PUBLIC)
     assert refused.value.code == "judge_not_registered"
 
 

@@ -12,6 +12,7 @@ import pytest
 from core.contracts import Response, Usage
 from evaluation import judge as judge_rules
 from evaluation.judge import JudgeRefused
+from tests.test_judge_protocol_frozen import OWNER_PUBLIC, _evidence
 from tools import evaluate_sealed as sealed
 from tools.evaluate_sealed import SealedRefused
 
@@ -32,8 +33,10 @@ class Provider:
 
 @pytest.fixture(autouse=True)
 def _owner_mac(monkeypatch):
-    """الاختباراتُ على لينكس؛ وفحصُ الجهاز نفسُه يُختبر بإبطال هذا في موضعه."""
+    """الاختباراتُ على لينكس؛ وفحصُ الجهاز نفسُه يُختبر بإبطال هذا في موضعه. ومفتاحُ المالك المصطنع يحلّ محلّ
+    المُثبَّت، فدليلُ المعايرة الموقَّع به في الاختبار يمرّ، ولا يمرّ به دليلٌ حقيقيّ."""
     monkeypatch.setattr(sealed, "_on_owner_mac", lambda: True)
+    monkeypatch.setattr(judge_rules, "load_trusted_public_key", lambda: OWNER_PUBLIC)
 
 
 def _bank(root, tiers=(("tier_a", 6, True), ("tier_b", 4, False))):
@@ -61,14 +64,6 @@ def _bank(root, tiers=(("tier_a", 6, True), ("tier_b", 4, False))):
 def _run(tmp_path, provider, **kwargs):
     sealed_root, manifest = _bank(tmp_path)
     return sealed.run_sealed(sealed_root, provider, run_root=tmp_path / "runs", manifest_path=manifest, **kwargs)
-
-
-def _evidence(model="granite4"):
-    """دليلُ معايرةٍ ناجح: صفوفٌ على العيّنة المجمَّدة حالةً حالة، والمحكِّمُ يوافق التسمياتِ كلَّها."""
-    sample = judge_rules.calibration_sample(judge_rules.load_protocol(), judge_rules.PROTOCOL_SHA256)
-    rows = [{"source": source, "case": case, "split": "open", "label": ("correct", "incorrect")[i % 2],
-             "verdict": ("correct", "incorrect")[i % 2]} for source, cases in sample.items() for i, case in enumerate(cases)]
-    return {"protocol_sha256": judge_rules.PROTOCOL_SHA256, "judge": {"model": model}, "rows": rows}
 
 
 def test_rates_and_wilson_per_tier_without_identifiers_or_text(tmp_path):

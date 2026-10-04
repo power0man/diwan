@@ -10,41 +10,72 @@
     "accuracy_min": 0.85
   },
   "families": {
-    "allowed": ["zhipu", "meta", "deepseek", "swiss-ai", "ibm"],
-    "excluded": ["qwen", "anthropic", "openai", "google", "kimi"],
+    "allowed": [
+      "zhipu",
+      "meta",
+      "deepseek",
+      "swiss-ai",
+      "ibm"
+    ],
+    "excluded": [
+      "qwen",
+      "anthropic",
+      "openai",
+      "google",
+      "kimi"
+    ],
     "why_excluded": "qwen عائلةُ المحرّك (ق٥٤)، وanthropic وopenai وgoogle عائلاتُ المطوّرين، وkimi عائلةُ مؤلّف البنك (ق٥٠، AGENTS.md §٤)"
   },
   "task": {
     "kind": "answer_correctness_reference_guided",
-    "inputs": ["question", "reference", "rubric", "candidate"],
-    "verdicts": ["correct", "incorrect"]
+    "inputs": [
+      "question",
+      "reference",
+      "rubric",
+      "candidate"
+    ],
+    "verdicts": [
+      "correct",
+      "incorrect"
+    ]
   },
   "calibration": {
     "split": "open_only",
     "judges_required": 2,
     "distinct_families_required": true,
-    "transports": ["hf_inference_providers_pinned_model_colon_provider", "ollama_com"],
+    "transports": [
+      "hf_inference_providers_pinned_model_colon_provider",
+      "ollama_com"
+    ],
     "sources": [
       {
         "name": "k11_owner_ruled",
         "evidence": "docs/probe/k11-owner-queue-triage-20260925.json",
         "cases": 23,
-        "candidate": "the_bank_v1_1_reference_as_reviewed_in_k11",
-        "label": "owner_ruling",
+        "candidate": "the_bank_v1_1_reference_as_reviewed_in_k11_and_each_row_must_carry_it_unchanged",
+        "label": "owner_ruling_attested_by_the_owner_signature_over_the_evidence",
         "label_status": "awaiting_owner_ruling"
       },
       {
         "name": "automatic_checked",
         "bank": "evaluation/banks/kimi_v1/open",
         "cases": 100,
-        "candidate": "the_frozen_engine_answer_generated_in_k45_and_recorded_with_its_digest_before_any_judging",
-        "label": "automatic_check_verdict",
-        "check_kinds": ["exact", "json_equals", "python_sandbox"],
+        "candidate": "the_frozen_engine_answer_text_carried_in_each_row",
+        "label": "recomputed_from_the_candidate_by_the_cases_own_deterministic_checks",
+        "check_kinds": [
+          "exact",
+          "json_equals"
+        ],
         "selection": "open_cases_whose_checks_are_all_of_these_kinds_stratified_by_tier_proportional_seeded_by_protocol_sha256"
       }
     ],
     "pass_rule": "kappa_and_accuracy_at_or_above_thresholds_on_the_union_and_each_source_reported_separately",
-    "failure_rule": "declared_failure_and_automatic_checks_only"
+    "failure_rule": "declared_failure_and_automatic_checks_only",
+    "evidence": {
+      "rows": "one_per_frozen_sample_case_with_source_case_split_candidate_label_and_verdict",
+      "signature": "owner_ed25519_under_keys_anchor_policy_json_over_domain_diwan_judge_calibration_v1_and_the_canonical_evidence_without_its_signature_field",
+      "signature_field": "owner_signature"
+    }
   },
   "sealed": {
     "attempts": 120,
@@ -62,7 +93,16 @@
     },
     "without_judge": "automatic_checks_only_and_cases_without_checks_stay_in_the_denominator_as_not_passed",
     "output": {
-      "per_tier": ["attempted", "passes", "failures", "without_checks", "judged", "errors", "rate", "wilson95"],
+      "per_tier": [
+        "attempted",
+        "passes",
+        "failures",
+        "without_checks",
+        "judged",
+        "errors",
+        "rate",
+        "wilson95"
+      ],
       "identifiers": "none",
       "text": "none"
     }
@@ -75,6 +115,8 @@
     "120_attempts_give_wide_per_tier_intervals_and_the_wilson_interval_is_published_beside_every_rate",
     "the_sealed_score_measures_the_frozen_engine_on_bank_v1_1_not_diwan_as_a_whole",
     "the_calibration_sample_is_computed_from_the_open_bank_v1_1_as_committed_so_a_changed_bank_changes_it_and_needs_judge_v2",
-    "calibration_evidence_is_its_rows_on_the_frozen_sample_and_its_metrics_are_recomputed_never_read"
+    "calibration_evidence_is_its_rows_on_the_frozen_sample_and_its_metrics_are_recomputed_never_read",
+    "automatic_labels_are_recomputed_from_each_candidate_and_k11_candidates_must_equal_their_bank_reference_but_engine_provenance_judge_verdicts_and_owner_rulings_are_attested_by_the_owner_signature_not_recomputed",
+    "python_sandbox_checks_are_excluded_from_calibration_so_acceptance_needs_no_container"
   ]
 }
