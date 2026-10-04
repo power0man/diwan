@@ -220,7 +220,7 @@ def _verdict(answer) -> str | None:
 def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Path = MANIFEST,
                judge=None, judge_evidence: dict | None = None, protocol_path: Path | None = None,
                protocol_sha256: str | None = None, manifest_sha256: str | None = None,
-               digest_resolver=None) -> dict:
+               digest_resolver=None, reviewed_bank: Path | None = None) -> dict:
     # «measured» لا يُنشر إلا على المسجَّل كلِّه: البروتوكولُ ببصمته المثبَّتة في الشيفرة، والبيانُ ببصمته فيه، وبصماتُ
     # النماذج من نقطة Ollama المسجَّلة لا من مُحلِّلٍ يمرّره المستدعي. وكلُّ تبديلٍ من هذه (للبنوك والبروتوكولات
     # الاصطناعية في الاختبارات) يُسمّى في التقرير فلا يُسمّى قياسًا لـjudge_v1 (ملاحظات Codex على #289).
@@ -254,7 +254,11 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     except ModelDigestError as exc:
         raise SealedRefused(exc.code, "بصمةُ النموذج لا تُحلّ أو تخالف المسجَّلة") from None
     if judge is not None:
-        truth = judge_rules.calibration_truth(protocol, judge_rules.calibration_sample(protocol, protocol_sha256))
+        # مراجعُ عيوب ك١١ السبعة من ملفّاتها قبل إصلاح ك١٥، خارجَ المحجوب وببصماتها المسجَّلة (ملاحظة Codex على #289)
+        reviewed = None if reviewed_bank is None else _outside_sealed(reviewed_bank, sealed_root,
+                                                                      "k11_reviewed_bank_in_sealed_root")
+        truth = judge_rules.calibration_truth(protocol, judge_rules.calibration_sample(protocol, protocol_sha256),
+                                              reviewed_bank=reviewed)
         judge_rules.accept_sealed_judge(judge_evidence, judge.model, protocol, protocol_sha256, truth,
                                         judge_digest=judge_digest)
     sealed_root = _outside_repository(sealed_root, "sealed_root_in_repository")
@@ -360,6 +364,8 @@ def main(argv=None) -> int:
     parser.add_argument("--model", help="افتراضُه المحرّكُ المجمَّد في judge_v1")
     parser.add_argument("--judge")
     parser.add_argument("--judge-evidence", type=Path)
+    # ملفّاتُ البنك المفتوح قبل إصلاح ك١٥ (من diwan-private على الماك) لمراجع عيوب ك١١ السبعة؛ تلزم مع --judge وحده
+    parser.add_argument("--k11-reviewed-bank", type=Path)
     parser.add_argument("--out", type=Path)
     # فحوصُ python_sandbox تحتاج خُلفيّةً معزولةً بإيصالٍ موثوق كما في tools/measure_engine.py؛ وبلا إقلاعها
     # تُعدّ حالاتُها أخطاءً في المقام لا نجاحًا ولا رسوبًا.
@@ -382,7 +388,7 @@ def main(argv=None) -> int:
             workspace.mkdir(parents=True, exist_ok=True)
             configure_sandbox_backend(receipt, workspace)
         report = run_sealed(args.sealed_root, provider, run_root=args.run_root,
-                            judge=judge, judge_evidence=evidence)
+                            judge=judge, judge_evidence=evidence, reviewed_bank=args.k11_reviewed_bank)
     # إيصالٌ غائبٌ أو معطوبٌ أو غيرُ خاصّ يُردّ من إقلاع الحاوية بـExecutionRefused ورمزِه، فيخرج رفضًا مسمًّى لا أثرًا خامًا
     except (SealedRefused, judge_rules.JudgeRefused, ExecutionRefused) as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))

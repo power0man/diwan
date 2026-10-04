@@ -18,7 +18,7 @@ from evaluation import capabilities
 from providers import ollama as ollama_provider
 from providers.ollama import OllamaProvider
 from tests.test_judge_protocol_frozen import (DATA, ENGINE_DIGEST, JUDGE_DIGEST, OTHER_SEED, OWNER_PUBLIC, OWNER_SEED,
-                                              _evidence)
+                                              _evidence, _truth)
 from tools import evaluate_sealed as sealed
 from tools import model_digest
 from tools.evaluate_sealed import SealedRefused
@@ -52,6 +52,7 @@ class Provider:
 
 
 REAL_ON_OWNER_MAC = sealed._on_owner_mac
+REAL_TRUTH = judge_rules.calibration_truth
 
 
 @pytest.fixture(autouse=True)
@@ -61,6 +62,9 @@ def _owner_mac(monkeypatch):
     monkeypatch.setattr(sealed, "_on_owner_mac", lambda: True)
     monkeypatch.setattr(judge_rules, "load_trusted_public_key", lambda: OWNER_PUBLIC)
     monkeypatch.setattr(model_digest, "resolve_model_digest", lambda model, base_url=None: DIGESTS.get(model))
+    # مراجعُ عيوب ك١١ السبعة من ملفّاتها المراجَعة المصطنعة (تُحسب قبل الإبدال)؛ والأصلُ قبل إصلاح ك١٥ في diwan-private
+    truth = _truth()
+    monkeypatch.setattr(judge_rules, "calibration_truth", lambda protocol, sample, **_: truth)
 
 
 def _bank(root, tiers=(("tier_a", 6, True), ("tier_b", 4, False))):
@@ -471,6 +475,34 @@ def test_a_refused_sandbox_receipt_is_a_named_refusal_not_a_traceback(tmp_path, 
                         "--sandbox-receipt", str(tmp_path / "receipt.json"),
                         "--sandbox-workspace", str(tmp_path / "sandbox")]) == 2
     assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "execution_receipt_untrusted"}
+
+
+def test_the_k11_reviewed_bank_reaches_calibration_outside_the_sealed_root(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #289: مراجعُ عيوب ك١١ السبعة تُقرأ من ملفّاتها المراجَعة قبل إصلاح ك١٥، ويُمرَّر مسارُها من السطر
+    إلى المعايرة خارجَ المحجوب؛ وبلاه يُردّ المحكِّمُ برمزٍ مسمًّى لا بقبولٍ على مراجعَ مُصلَحة."""
+    seen = []
+    monkeypatch.setattr(judge_rules, "calibration_truth",
+                        lambda protocol, sample, *, reviewed_bank=None, **_: seen.append(reviewed_bank) or _truth())
+    reviewed = tmp_path / "pre-k15"
+    _run(tmp_path / "a", Provider(), judge=Provider(model="granite4"), judge_evidence=_evidence(), reviewed_bank=reviewed)
+    assert seen == [reviewed.resolve()]
+    sealed_root, manifest = _bank(tmp_path / "b")
+    with pytest.raises(SealedRefused) as refused:
+        sealed.run_sealed(sealed_root, Provider(), run_root=tmp_path / "b" / "runs", manifest_path=manifest,
+                          manifest_sha256=_sha(manifest), judge=Provider(model="granite4"), judge_evidence=_evidence(),
+                          reviewed_bank=sealed_root / "pre-k15")
+    assert refused.value.code == "k11_reviewed_bank_in_sealed_root" and len(seen) == 1
+    monkeypatch.setattr(judge_rules, "calibration_truth", REAL_TRUTH)
+    evidence = tmp_path / "calibration.json"
+    evidence.write_text(json.dumps(_evidence()), encoding="utf-8")
+    assert sealed.main(["--judge", "granite4", "--judge-evidence", str(evidence), "--sealed-root", str(sealed_root),
+                        "--run-root", str(tmp_path / "runs")]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "calibration_reviewed_bank_missing"
+    captured = {}
+    monkeypatch.setattr(sealed, "run_sealed", lambda *a, **k: captured.update(k) or {"measurement_limits": []})
+    assert sealed.main(["--judge", "granite4", "--judge-evidence", str(evidence), "--sealed-root", str(sealed_root),
+                        "--run-root", str(tmp_path / "runs"), "--k11-reviewed-bank", str(reviewed)]) == 0
+    assert captured["reviewed_bank"] == reviewed
 
 
 def test_judge_evidence_is_never_read_from_the_sealed_root_and_a_bad_one_is_named(tmp_path, capsys):

@@ -5,6 +5,9 @@ import copy
 import functools
 import hashlib
 import json
+import shutil
+import tempfile
+from pathlib import Path
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -14,7 +17,7 @@ from core.signing import SigningRefused
 from evaluation import judge
 from evaluation.judge import JudgeRefused
 
-REGISTERED = "5d252d4ad72df75e698d100243c191bf7301afacead2476908689b659965a4e5"
+REGISTERED = "61a94ae7ee9061856a13737576a092afadc140338ffdf0aeca7adce8517cf7a8"
 DATA = json.loads(judge.PROTOCOL.read_text(encoding="utf-8"))
 # مفتاحُ مالكٍ مصطنعٌ للاختبار وحده؛ ومفتاحُ المالك الحقيقيّ في سلسلة مفاتيح الماك لا في المستودع.
 OWNER_SEED = hashlib.sha256(b"diwan-test-owner-calibration").digest()
@@ -164,9 +167,35 @@ def _sample():
     return judge.calibration_sample(DATA, REGISTERED)
 
 
+# ما يُلحق بمرجع كلِّ عيبٍ من السبعة في الملفّات المراجَعة المصطنعة؛ والأصلُ قبل إصلاح ك١٥ في diwan-private على الماك.
+PRE_FIX = "المرجعُ كما رُوجع قبل إصلاح ك١٥: "
+K11 = next(s for s in DATA["calibration"]["sources"] if s["name"] == "k11_owner_ruled")
+
+
+@functools.cache
+def _reviewed():
+    """ملفّاتُ ك١١ المراجَعة مصطنعةً: نسخةٌ من الملفّات الحاليّة بمرجعٍ آخر لكلِّ عيبٍ من السبعة، وبروتوكولٌ يسجّل
+    بصماتها بدل بصمات الأصل."""
+    root = Path(tempfile.mkdtemp(prefix="k11-reviewed-"))
+    pins = {}
+    for rel in sorted(set(K11["real_defects"].values())):
+        suite = json.loads((judge.OPEN_BANK / rel).read_text(encoding="utf-8"))
+        for case in suite["cases"]:
+            if case["case_id"] in K11["real_defects"]:
+                case["reference"] = PRE_FIX + case["reference"]
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(suite, ensure_ascii=False), encoding="utf-8")
+        pins[rel] = hashlib.sha256(path.read_bytes()).hexdigest()
+    protocol = copy.deepcopy(DATA)
+    next(s for s in protocol["calibration"]["sources"] if s["name"] == "k11_owner_ruled")["reviewed_files"] = pins
+    return root, protocol
+
+
 @functools.cache
 def _truth():
-    return judge.calibration_truth(DATA, _sample())
+    root, protocol = _reviewed()
+    return judge.calibration_truth(protocol, _sample(), reviewed_bank=root)
 
 
 def _candidate(checks: list[dict], correct: bool) -> str:
@@ -225,7 +254,7 @@ def test_the_calibration_sample_is_frozen_by_the_protocol():
     assert sample["k11_owner_ruled"] == sorted(r["id"] for r in triage["real"] + triage["false_positives"])
     assert len(sample["k11_owner_ruled"]) == 23 and len(set(sample["automatic_checked"])) == 100
     assert hashlib.sha256(json.dumps(sample, sort_keys=True).encode()).hexdigest() == \
-        "de7e5173b5144cfa3a38fe4979cfa35e1fbb945fa6d1260970a47486eac2d84a"
+        "285b83f4bbf3fdd0483c94844786cc5b9fc05dda35b32e926b521b4d69907ca8"
     kinds = {check["kind"] for checks in _truth()["automatic_checked"].values() for check in checks}
     assert kinds <= {"exact", "json_equals"} and all(isinstance(r, str) for r in _truth()["k11_owner_ruled"].values())
 
@@ -260,6 +289,46 @@ def test_an_edited_k11_triage_naming_other_cases_is_refused_by_name(tmp_path):
     with pytest.raises(JudgeRefused) as refused:
         judge.calibration_sample(DATA, REGISTERED, k11_evidence=edited)
     assert refused.value.code == "calibration_k11_changed"
+
+
+def test_the_reviewed_file_digests_are_the_ones_both_external_reviewers_recorded():
+    """البصماتُ المسجَّلة لملفّات ك١١ المراجَعة هي ما سجّله المراجعان الخارجيّان حين راجعا، والبنكُ الحاليّ أُصلح بعدها؛
+    والعيوبُ السبعة هي «الحقيقيّة» في فرز ك١١."""
+    reviews = judge.ROOT / "evaluation" / "banks" / "kimi_v1" / "reviews"
+    for model in ("deepseek-v4-flash_cloud", "mistral-large-3_675b-cloud"):
+        for rel, digest in K11["reviewed_files"].items():
+            assert json.loads((reviews / model / rel).read_text(encoding="utf-8"))["file_sha256"] == digest
+            assert hashlib.sha256((judge.OPEN_BANK / rel).read_bytes()).hexdigest() != digest
+    triage = json.loads(judge.K11_EVIDENCE.read_text(encoding="utf-8"))
+    assert sorted(K11["real_defects"]) == sorted(row["id"] for row in triage["real"])
+    assert set(K11["real_defects"].values()) == set(K11["reviewed_files"])
+
+
+def test_the_seven_real_defects_carry_their_reviewed_pre_fix_candidates(tmp_path):
+    """ملاحظة Codex على #289: أصلح ك١٥ العيوبَ السبعة في البنك المفتوح، فكان مرشَّحُها (مرجعُها الحاليّ) صحيحًا وصارت
+    حالاتُ ك١١ الثلاث والعشرون إيجاباتٍ سهلة. والآن مرشَّحُ كلِّ عيبٍ مرجعُه في ملفّه المراجَع ببصمته المسجَّلة، والإيجاباتُ
+    الكاذبة الستّ عشرة مرجعُها الحاليّ؛ ولا يقوم البنكُ المُصلَح مقام الملفّات المراجَعة، وبلاها يُردّ برمزه."""
+    current = {case["case_id"]: case["reference"]
+               for _, suite in judge._open_suites(judge.OPEN_BANK, DATA["calibration"]["open_bank_sha256"])
+               for case in suite["cases"]}
+    truth = _truth()["k11_owner_ruled"]
+    assert len(truth) == 23 and len(K11["real_defects"]) == 7
+    for case_id, reference in truth.items():
+        expected = PRE_FIX + current[case_id] if case_id in K11["real_defects"] else current[case_id]
+        assert reference == expected
+    root, protocol = _reviewed()
+    tampered = tmp_path / "tampered"
+    shutil.copytree(root, tampered)
+    target = tampered / sorted(K11["reviewed_files"])[0]
+    target.write_bytes(target.read_bytes() + b" ")
+    for build, code in ((lambda: judge.calibration_truth(protocol, _sample()), "calibration_reviewed_bank_missing"),
+                        (lambda: judge.calibration_truth(DATA, _sample(), reviewed_bank=judge.OPEN_BANK),
+                         "calibration_reviewed_bank_changed"),
+                        (lambda: judge.calibration_truth(protocol, _sample(), reviewed_bank=tampered),
+                         "calibration_reviewed_bank_changed")):
+        with pytest.raises(JudgeRefused) as refused:
+            build()
+        assert refused.value.code == code
 
 
 def test_the_owner_signs_a_domain_separated_message_without_its_signature():

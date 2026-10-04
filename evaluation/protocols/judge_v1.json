@@ -66,7 +66,23 @@
         "cases": 23,
         "case_ids_sha256": "58a30c44a3fb795cf90358718d88ee70c86181245fdf31145c3ef76b0b449c96",
         "case_ids_rule": "sha256_of_the_canonical_json_of_the_sorted_ids_of_real_and_false_positives_in_the_evidence_file",
-        "candidate": "the_bank_v1_1_reference_as_reviewed_in_k11_and_each_row_must_carry_it_unchanged",
+        "candidate": "the_reference_as_reviewed_in_k11_so_the_current_bank_v1_1_reference_for_the_16_false_positives_and_for_the_7_real_defects_the_pre_k15_reference_in_the_reviewed_file_named_below_and_each_row_must_carry_it_unchanged",
+        "real_defects": {
+          "arab_a_0005": "tier_a/kimi_arabic_a_004.json",
+          "arab_a_0006": "tier_a/kimi_arabic_a_004.json",
+          "arab_a_0007": "tier_a/kimi_arabic_a_004.json",
+          "arab_a_0012": "tier_a/kimi_arabic_a_004.json",
+          "constprob_a_0056": "tier_a/kimi_logic_a_003.json",
+          "gram_a_0026": "tier_a/kimi_arabic_a_002.json",
+          "morph_a_0015": "tier_a/kimi_arabic_a_001.json"
+        },
+        "reviewed_files": {
+          "tier_a/kimi_arabic_a_001.json": "5677a1996e64f809e4dbd35de4eba7a5623146bdbde55229b0ff6ccc6268c98e",
+          "tier_a/kimi_arabic_a_002.json": "9a219731516ca9314f9ce97a5d1c5836b7ceee3297804165cc5de3e67d4aa934",
+          "tier_a/kimi_arabic_a_004.json": "f7d4248bd7174664238bffe6fa4daa3a4f02ef947237cad242850f3d2a406f42",
+          "tier_a/kimi_logic_a_003.json": "5c7cdb802dadd9c3c3c73d5bdd679de7beb78192230af92e7a654b9ca0599272"
+        },
+        "reviewed_files_source": "the_file_sha256_both_external_reviewers_recorded_under_evaluation_banks_kimi_v1_reviews_and_the_files_are_supplied_from_diwan_private_before_k15_on_the_owner_mac",
         "label": "owner_ruling_attested_by_the_owner_signature_over_the_evidence",
         "label_status": "awaiting_owner_ruling"
       },
@@ -159,6 +175,7 @@
     "the_runtime_pins_the_runner_and_provider_inputs_listed_here_not_the_ollama_server_build_or_its_quantization_beyond_the_model_digest",
     "the_runner_digest_covers_every_python_file_of_each_repository_package_the_runner_imported_and_is_published_and_isolates_the_run_root_but_is_not_pinned_here_because_the_runner_pins_this_protocol_digest",
     "a_package_first_imported_after_the_run_starts_is_not_in_the_runner_digest",
-    "the_k11_case_ids_are_pinned_by_digest_so_an_edited_triage_file_that_names_other_cases_is_refused_and_needs_judge_v2"
+    "the_k11_case_ids_are_pinned_by_digest_so_an_edited_triage_file_that_names_other_cases_is_refused_and_needs_judge_v2",
+    "k15_corrected_the_7_real_defects_in_the_open_bank_so_their_candidates_come_from_the_reviewed_pre_k15_files_pinned_by_digest_and_a_sealed_judge_cannot_be_accepted_without_them"
   ]
 }

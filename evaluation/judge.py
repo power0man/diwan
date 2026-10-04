@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PROTOCOL = ROOT / "evaluation" / "protocols" / "judge_v1.json"
 K11_EVIDENCE = ROOT / "docs" / "probe" / "k11-owner-queue-triage-20260925.json"
 OPEN_BANK = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
-PROTOCOL_SHA256 = "5d252d4ad72df75e698d100243c191bf7301afacead2476908689b659965a4e5"
+PROTOCOL_SHA256 = "61a94ae7ee9061856a13737576a092afadc140338ffdf0aeca7adce8517cf7a8"
 VERDICTS = ("correct", "incorrect")
 OUTCOMES = ("pass", "fail", "without_checks", "error")
 # نصٌّ أقصرُ من هذا لا يُبحث عنه في التقرير: كلمةٌ قصيرة كـ«نعم» تقع في أيّ تقرير ولا تدلّ على حالة.
@@ -191,10 +191,32 @@ def calibration_sample(protocol: dict, protocol_sha256: str, *, open_bank: Path 
     return {"k11_owner_ruled": owner, "automatic_checked": automatic}
 
 
-def calibration_truth(protocol: dict, sample: dict[str, list[str]], *, open_bank: Path = OPEN_BANK) -> dict[str, dict]:
-    """ما يُقابَل به كلُّ صفّ: لحالة ك١١ مرجعُها في البنك (جوابُها المراجَع)، وللحالة الآليّة فحوصُها الحتميّة
-    التي تُعاد بها تسميتُها من جوابها. فلا يُصدَّق ما كتبه الدليلُ عن حقيقة حالة (ملاحظة Codex على #289)."""
+def _reviewed_references(reviewed_bank: Path | None, k11: dict) -> dict[str, str]:
+    """مراجعُ العيوب السبعة كما رُوجعت في ك١١، من الملفّات قبل إصلاح ك١٥ ببصماتها المسجَّلة؛ فالبنكُ المفتوحُ الحاليّ
+    مُصلَحٌ ولا يقوم مقامها (ملاحظة Codex على #289)."""
+    if reviewed_bank is None:
+        raise JudgeRefused("calibration_reviewed_bank_missing", "مراجعُ عيوب ك١١ السبعة من ملفّاتها قبل إصلاح ك١٥")
+    references = {}
+    for case_id, rel in k11["real_defects"].items():
+        try:
+            raw = (Path(reviewed_bank) / rel).read_bytes()
+        except OSError:
+            raw = b""
+        if hashlib.sha256(raw).hexdigest() != k11["reviewed_files"][rel]:
+            raise JudgeRefused("calibration_reviewed_bank_changed", "ملفُّ ك١١ المراجَعُ غيرُ المسجَّل ببصمته")
+        cases = {case["case_id"]: case for case in json.loads(raw.decode("utf-8"))["cases"]}
+        if case_id in cases:
+            references[case_id] = cases[case_id]["reference"]
+    return references
+
+
+def calibration_truth(protocol: dict, sample: dict[str, list[str]], *, open_bank: Path = OPEN_BANK,
+                      reviewed_bank: Path | None = None) -> dict[str, dict]:
+    """ما يُقابَل به كلُّ صفّ: لحالة ك١١ مرجعُها كما رُوجع فيها (من البنك لإيجاباتها الكاذبة الستّ عشرة، ومن ملفّاتها
+    قبل إصلاح ك١٥ لعيوبها السبعة)، وللحالة الآليّة فحوصُها الحتميّة التي تُعاد بها تسميتُها من جوابها. فلا يُصدَّق ما
+    كتبه الدليلُ عن حقيقة حالة (ملاحظتا Codex على #289)."""
     owner, automatic = set(sample["k11_owner_ruled"]), set(sample["automatic_checked"])
+    k11 = next(source for source in protocol["calibration"]["sources"] if source["name"] == "k11_owner_ruled")
     truth: dict[str, dict] = {"k11_owner_ruled": {}, "automatic_checked": {}}
     for _, suite in _open_suites(open_bank, protocol["calibration"]["open_bank_sha256"]):
         for case in suite["cases"]:
@@ -203,6 +225,8 @@ def calibration_truth(protocol: dict, sample: dict[str, list[str]], *, open_bank
                 truth["k11_owner_ruled"][case["case_id"]] = case["reference"]
             if qid in automatic:
                 truth["automatic_checked"][qid] = case["checks"]
+    # والعيوبُ السبعة تحلّ مراجعُها المراجَعة محلَّ مراجعها المُصلَحة في البنك الحاليّ
+    truth["k11_owner_ruled"].update(_reviewed_references(reviewed_bank, k11))
     if set(truth["k11_owner_ruled"]) != owner or set(truth["automatic_checked"]) != automatic:
         raise JudgeRefused("calibration_sample_unavailable", "حالةٌ من العيّنة ليست في البنك المفتوح")
     return truth
