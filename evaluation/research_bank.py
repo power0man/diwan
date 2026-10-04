@@ -13,6 +13,7 @@
 """
 from __future__ import annotations
 
+from collections import Counter
 import hashlib
 import json
 import math
@@ -152,7 +153,10 @@ def summarize(results: list[dict], thresholds: dict) -> dict:
              and citation_rate >= thresholds["citation_valid_rate"]
              and fabricated <= thresholds["fabricated_sources"]
              and len(measured) == len(results))
+    # العطبُ برمزه لا بعدده وحده (#285): بترٌ وموافقةٌ معلَّقة واستنفادُ خطواتٍ علّاتٌ مختلفة يُفرَّق بينها هنا
+    errors_by_code = dict(sorted(Counter(r.get("code") or "unnamed" for r in results
+                                         if r.get("status") == "error").items()))
     return {"attempted": len(results), "measured": len(measured), "errors": len(results) - len(measured),
-            "passed": passed, "pass_rate": rate, "citation_valid_rate": citation_rate,
+            "errors_by_code": errors_by_code, "passed": passed, "pass_rate": rate, "citation_valid_rate": citation_rate,
             "fabricated_sources": fabricated, "by_category": by_category, "thresholds": thresholds,
             "meets": meets}

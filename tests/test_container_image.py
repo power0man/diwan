@@ -16,7 +16,9 @@ LAUNCH = (ROOT / "tools" / "launch_check.py").read_text(encoding="utf-8")
 
 
 def test_the_image_installs_from_the_frozen_lock_with_a_pinned_uv():
-    assert re.search(r"pip install --no-cache-dir 'uv==\d+\.\d+\.\d+'", DOCKERFILE)
+    # uv بإصدارٍ محدّد وببصمات عجلاته من ملفّ متطلّباتٍ يُفحص بـ--require-hashes (#285)
+    assert re.search(r"'uv==\d+\.\d+\.\d+ \\", DOCKERFILE)
+    assert "pip install --no-cache-dir --require-hashes -r /tmp/uv-requirements.txt" in DOCKERFILE
     assert "uv sync --frozen" in DOCKERFILE
     assert "UV_PYTHON_DOWNLOADS=never" in DOCKERFILE
 
@@ -63,6 +65,15 @@ def test_restored_private_stores_are_excluded_from_the_build_context():
     ignored = set((ROOT / ".dockerignore").read_text().splitlines())
     assert set(EXCLUDED_PATHS) <= ignored
     assert {"keys/*", "!keys/anchor-ed25519.pub", "!keys/anchor-policy.json", "var/", ".env"} <= ignored
+
+
+def test_local_worker_secrets_and_build_artifacts_are_excluded_from_the_build_context():
+    """`.dev.vars` ملفُّ أسرار wrangler المحليّ (مثل HF_TOKEN)، والـgitignore لا يُخرجه من سياق البناء، و`COPY . .` ينسخ
+    السياقَ كلَّه إلى طبقةٍ في الصورة (تدقيقٌ لاحقٌ لـ9441c44)."""
+    ignored = set((ROOT / ".dockerignore").read_text().splitlines())
+    local = set((ROOT / "deployment/cloudflare-hf/.gitignore").read_text().splitlines())
+    assert {".dev.vars", ".wrangler/", "node_modules/"} <= local
+    assert {"**/.dev.vars", "**/.dev.vars.*", "**/.wrangler/", "**/node_modules/"} <= ignored
 
 
 def test_the_offline_smoke_expects_the_ui_step_without_an_engine():

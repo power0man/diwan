@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from evaluation.ablation import (RUNNER_VERSION, AblationError, _sha, aggregate_seed_rows, arm,  # noqa: E402
+from evaluation.ablation import (GREEDY_SEED_LIMIT, RUNNER_VERSION, AblationError, _sha, aggregate_seed_rows, arm,  # noqa: E402
                                  auto_checked, judge, protocol, run_seeded_arm, seed_values)
 from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest  # noqa: E402
 from tools.sample_bank import load_capability_suites, stratified  # noqa: E402
@@ -80,7 +80,7 @@ def run_component(component: str, provider, *, model: str, model_version: str, b
                                      model_version=model_version, **options) for side in ("on", "off")}
     return {"schema_version": 2, "kind": "ablation_report", "config": config, "arms": rows,
             "judgment": judge(component, rows["on"], rows["off"]),
-            "measurement_limits": protocol()["limits"] + spec["limits"]}
+            "measurement_limits": protocol()["limits"] + [GREEDY_SEED_LIMIT] + spec["limits"]}
 
 
 def main(argv=None) -> int:

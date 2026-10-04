@@ -35,23 +35,23 @@
   },
   "after": {
     "AGENTS.md": {
-      "bytes": 30774,
-      "lines": 287,
-      "tokens_estimate": 8193,
+      "bytes": 30211,
+      "lines": 286,
+      "tokens_estimate": 8042,
       "codex_cut_line": null,
-      "task_rows": 4,
-      "task_rows_visible_to_codex": 4,
+      "task_rows": 3,
+      "task_rows_visible_to_codex": 3,
       "sections": 10,
       "sections_visible_to_codex": 10
     },
     "reading_set_in_section_0": {
       "AGENTS.md": {
-        "bytes": 30774,
-        "tokens_estimate": 8193
+        "bytes": 30211,
+        "tokens_estimate": 8042
       },
       "docs/INDEX.md": {
-        "bytes": 18458,
-        "tokens_estimate": 4877
+        "bytes": 18423,
+        "tokens_estimate": 4866
       },
       "docs/VISION.md": {
         "bytes": 10397,
@@ -59,18 +59,18 @@
       }
     },
     "reading_set_total": {
-      "bytes": 59629,
-      "tokens_estimate": 15553
+      "bytes": 59031,
+      "tokens_estimate": 15391
     },
-    "archived_rows": 41,
-    "open_rows_in_agents_md": 4,
+    "archived_rows": 42,
+    "open_rows_in_agents_md": 3,
     "note": "§٠ يقرأ AGENTS.md ثم docs/INDEX.md، وdocs/VISION.md في أول جلسةٍ فقط؛ وما سواها بالبصمة والإحالة",
     "regenerated_by": "tools/context_index.py --write"
   },
   "every_indexed_document_after": {
     "AGENTS.md": {
-      "bytes": 30774,
-      "tokens_estimate": 8193
+      "bytes": 30211,
+      "tokens_estimate": 8042
     },
     "docs/STATUS.md": {
       "bytes": 27245,
@@ -93,8 +93,8 @@
       "tokens_estimate": 1425
     },
     "docs/TASKS-ARCHIVE.md": {
-      "bytes": 32499,
-      "tokens_estimate": 8775
+      "bytes": 33036,
+      "tokens_estimate": 8920
     },
     "docs/PROJECT-PLAN-20260925.md": {
       "bytes": 42526,

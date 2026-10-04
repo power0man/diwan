@@ -402,6 +402,7 @@ def scan(root: Path) -> dict:
         raise Refused("root_unreadable") from None
     journeys, unreadable = [], Counter()
     counts = {"projects": 0, "sessions": 0, "unreadable_projects": 0, "unreadable_sessions": 0}
+    projects_fd = None
     try:
         try:
             projects_fd = _open_dir("projects", root_fd)
@@ -412,8 +413,6 @@ def scan(root: Path) -> dict:
         try:
             project_names = [] if projects_fd is None else _entries(projects_fd)
         except Unreadable:
-            if projects_fd is not None:
-                os.close(projects_fd)
             raise Refused("root_unreadable") from None
         for project in project_names:
             try:
@@ -455,9 +454,10 @@ def scan(root: Path) -> dict:
                 if sessions_fd is not None:
                     os.close(sessions_fd)
                 os.close(project_fd)
+    finally:
+        # يُغلق على كلِّ خروج، لا على الخروج العاديّ وحده (#285)
         if projects_fd is not None:
             os.close(projects_fd)
-    finally:
         os.close(root_fd)
     return {"journeys": journeys, "counts": counts, "unreadable": dict(sorted(unreadable.items()))}
 

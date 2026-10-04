@@ -25,7 +25,8 @@ if str(ROOT) not in sys.path:
 from core.attribution import normalize  # noqa: E402
 from core.canonical import PayloadRejected  # noqa: E402
 from evaluation.memory_bank import validate_memory_bank  # noqa: E402
-from evaluation.memory_runner import HISTORY_LIMIT, LEAKAGE_LIMIT, recount_history, recount_leakage, run_memory_bank  # noqa: E402
+from evaluation.memory_runner import (HISTORY_LIMIT, HISTORY_LOCATION_LIMIT, LEAKAGE_LIMIT,  # noqa: E402
+                                       recount_history, recount_leakage, run_memory_bank)
 from providers.ollama import OllamaProvider  # noqa: E402
 
 REGISTRY = ROOT / "registry" / "agents.json"
@@ -85,6 +86,7 @@ LIMITS = [
     "the_residue_scan_masks_the_store_s_generated_item_id_sha256_approved_at_and_forgotten_at_values_and_the_receipt_s_generated_references_by_their_json_values_so_forgotten_text_identical_to_one_of_them_is_not_seen_on_disk_while_forget_rate_still_reports_it_forgotten",
     LEAKAGE_LIMIT,
     HISTORY_LIMIT,
+    HISTORY_LOCATION_LIMIT,
 ]
 
 

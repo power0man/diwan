@@ -115,6 +115,16 @@ class Refused(Exception):
         self.baseline = baseline
 
 
+def _interpreter(python: str) -> str:
+    """المفسّرُ مسارًا مطلقًا قبل أيّ شجرة عمل: الاختباراتُ تجري في شجرةٍ مؤقّتة، فالمسارُ النسبيّ يُقرأ من مجلّد الاستدعاء
+    لا منها، والاسمُ المجرّد من PATH؛ ولا يُحلّ الرابطُ الرمزيّ (مفسّرُ venv رابطٌ تضيع بيئتُه إن حُلّ). وما لا يوجد أو لا
+    يُنفَّذ رفضٌ مسمًّى لا تتبّعٌ خام."""
+    found = shutil.which(python) if os.sep not in python and "/" not in python else python
+    if not found or not os.path.isfile(found) or not os.access(found, os.X_OK):
+        raise Refused("python_unavailable", "المفسّرُ المسمّى بـ--python لا يوجد أو لا يُنفَّذ")
+    return os.path.abspath(found)
+
+
 def _git(root: Path, *argv: str) -> str:
     return subprocess.run(["git", "-C", str(root), *argv], check=True, capture_output=True, text=True).stdout.strip()
 
@@ -618,6 +628,7 @@ def main(argv=None) -> int:
     report = {"schema_version": 1, "tool": "tools/mutation_check.py", "python": sys.version.split()[0],
               "scope": "range" if args.range else "all" if args.all else "manifest", "measurement_limits": LIMITS}
     try:
+        args.python = _interpreter(args.python)
         scope = {"touched": [], "revalidated_tests": [], "manifest_missing": [], "unmanifested_changed_tests": [],
                  "unmanifested_new_tests": [], "orphaned_manifests": [], "dropped_candidates": [], "named_at_head": []}
         if args.range:

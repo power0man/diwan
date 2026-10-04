@@ -39,6 +39,9 @@ PROTOCOL = ROOT / "evaluation" / "protocols" / "ablation_v2.json"
 # النسخة ٢ في #185 تصلح ترتيب السحب وتصنيف الجولات؛ هذه النسخة التالية تضيف
 # البذور الثلاث وتجميعها. هذا الفرع مكدّس على رأس #185.
 RUNNER_VERSION = 3
+# البذورُ تغيّر بذرةَ المحرّك وحدها والمزوّدُ الافتراضيّ يفكّ بحرارة 0 (`providers/ollama.py`)، فلا تقيس تباينَ أخذ العيّنات؛
+# يُنشر مع كل تقرير لا في البروتوكول المسجَّل سلفًا، فبصمتُه لا تتغيّر بعد التسجيل (تدقيقٌ لاحقٌ لـc55d0ab)
+GREEDY_SEED_LIMIT = "seeds_change_only_the_engine_seed_while_the_default_ollama_provider_decodes_at_temperature_0_so_greedy_decoding_may_repeat_one_output_across_seeds_and_the_majority_reflects_run_to_run_nondeterminism_not_sampling_variance"
 DEFAULT_SEED_COUNT = 3
 MAX_ANSWER_CHARS = 6000
 Z95 = 1.959963984540054
@@ -157,7 +160,8 @@ def aggregate_seed_rows(runs: list[tuple[int, list[dict]]]) -> list[dict]:
         errors = [row for row in attempts if row.get("status") != "measured"]
         if errors:
             aggregated.append({**base, "status": "error", "code": "seed_run_error",
-                               "error_seeds": [row["seed"] for row in errors]})
+                               "error_seeds": [row["seed"] for row in errors],
+                               "seed_error_codes": sorted({row.get("code") or "unnamed" for row in errors})})
             continue
         passed = sum(row["passed"] is True for row in attempts)
         aggregated.append({**base, "status": "measured", "passed": passed >= threshold,
@@ -250,6 +254,11 @@ def _sha(value) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def _error_key(row: dict) -> str:
+    codes = row.get("seed_error_codes")
+    return "+".join(codes) if codes else row.get("code") or "unnamed"
+
+
 def judge(component: str, on: list[dict], off: list[dict]) -> dict:
     """المقارنةُ والقرارُ لمكوّنٍ من البروتوكول، من صفوف الذراعين وحدها."""
     data = protocol()
@@ -263,8 +272,10 @@ def judge(component: str, on: list[dict], off: list[dict]) -> dict:
         subset = compare(on, off, categories=set(rule["benefit_categories"]), include_arm_errors=True)
         rest = {row["category"] for row in on} - set(rule["benefit_categories"])
         overall = compare(on, off, categories=rest, include_arm_errors=True)
-    # عطبُ كلِّ ذراعٍ برموزه: إن غيّر المكوّنُ ما يكتمل (موافقةٌ معلَّقة، بتر) ظهر هنا لا في النسبة (#185)
-    errors_by_arm = {side: dict(sorted(Counter(row.get("code") or "unnamed" for row in rows
+    # عطبُ كلِّ ذراعٍ برموزه: إن غيّر المكوّنُ ما يكتمل (موافقةٌ معلَّقة، بتر) ظهر هنا لا في النسبة (#185).
+    # والحالةُ المجمَّعة من البذور تُعدّ برموز بذورها العاطبة لا بـseed_run_error الجامع (#285)، مرّةً لكل حالة:
+    # رموزُها المختلفة تُضمّ بـ«+» فيبقى مجموعُ الذراع عددَ حالاتها العاطبة.
+    errors_by_arm = {side: dict(sorted(Counter(_error_key(row) for row in rows
                                                if row["status"] != "measured").items()))
                      for side, rows in (("on", on), ("off", off))}
     return {"component": component, "overall": overall, "benefit_subset": subset, "errors_by_arm": errors_by_arm,
