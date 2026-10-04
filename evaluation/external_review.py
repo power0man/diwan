@@ -259,8 +259,12 @@ def open_files(bank_dir: Path) -> list[Path]:
 
 
 def review_file(path: Path, bank_dir: Path, model: str, family: str, transport: Transport,
-                *, brief: str, brief_sha: str, blocked_error: str | None = None) -> dict:
-    """نداءٌ لملفٍّ واحدٍ ومراجعٍ واحد. يُعيد السجلّ المحفوظ."""
+                *, brief: str, brief_sha: str, blocked_error: str | None = None,
+                blocked_by: dict | None = None) -> dict:
+    """نداءٌ لملفٍّ واحدٍ ومراجعٍ واحد. يُعيد السجلّ المحفوظ.
+
+    `blocked_error` إخفاقٌ نهائيٌّ سابق للمراجع نفسِه يرثه سجلُّه. و`blocked_by` إخفاقُ ميزانيةٍ لمراجعٍ **آخر** أوقف التشغيل:
+    سجلُّ هذا المراجع `not_attempted` ويسمّي من أوقفه، فلا يُنسب إليه خرقٌ لم يُرسل فيه شيئًا (#285)."""
     if "sealed" in path.resolve().relative_to(bank_dir.resolve()).parts:
         raise AutomaticReviewError("sealed_never_reviewed_externally", str(path))
     raw_file = path.read_bytes()
@@ -271,6 +275,10 @@ def review_file(path: Path, bank_dir: Path, model: str, family: str, transport: 
     record = {"model": model, "family": family, "file": relative,
               "file_sha256": _sha(raw_file), "brief_sha256": brief_sha,
               "started_at": _now(), "attempts": [], "judgments": None, "error": None}
+    if blocked_by is not None:
+        record.update(error="not_attempted", elapsed_ms=0,
+                      not_attempted_reason="other_reviewer_budget_failure", blocked_by=dict(blocked_by))
+        return record
     if blocked_error is not None:
         record.update(error=blocked_error, elapsed_ms=0,
                       not_attempted_reason="earlier_terminal_failure")
@@ -313,6 +321,7 @@ def review_bank(bank_dir: Path, reviewers: list[str], transport: Transport, *,
     done = skipped = failed = 0
     terminal_models: dict[str, str] = {}
     budget_error: str | None = None
+    budget_source: dict | None = None          # من أوقف التشغيلَ بإخفاق ميزانية: النموذجُ والملفُّ والرمز
     for path in open_files(bank_dir):
         for model in reviewers:
             relative = path.relative_to(bank_dir / "open").as_posix()
@@ -325,13 +334,16 @@ def review_bank(bank_dir: Path, reviewers: list[str], transport: Transport, *,
                         and (reusable is None or reusable(prior))):
                     skipped += 1
                     continue
+            other = budget_source is not None and budget_source["model"] != model
             record = review_file(path, bank_dir, model, families[model], transport,
                                  brief=brief, brief_sha=brief_sha,
-                                 blocked_error=budget_error or terminal_models.get(model))
+                                 blocked_error=budget_error or terminal_models.get(model),
+                                 blocked_by=budget_source if other else None)
             if record["error"] in TERMINAL_MODEL_ERRORS:
                 terminal_models[model] = record["error"]
-            if record["error"] in BUDGET_TERMINAL_ERRORS:
+            if record["error"] in BUDGET_TERMINAL_ERRORS and budget_source is None:
                 budget_error = record["error"]
+                budget_source = {"model": model, "file": relative, "error": record["error"]}
             if stamp:
                 record.update(stamp)
             _write(out, record)
@@ -382,8 +394,9 @@ def summarize(bank_dir: Path, reviewers: list[str] | set[str] | None = None,
         if files is not None and record.get("file") not in files:
             continue
         if record.get("error"):
-            errors.append({"model": record["model"], "file": record["file"],
-                           "error": record["error"]})
+            # ما لم يُحاوَل يحمل سببَه ومن أوقفه في الخلاصة أيضًا، لا رمزَه وحده (#285)
+            errors.append({"model": record["model"], "file": record["file"], "error": record["error"],
+                           **{key: record[key] for key in ("not_attempted_reason", "blocked_by") if key in record}})
             continue
         table = by_model.setdefault(record["model"], {})
         for judgment in record["judgments"]:

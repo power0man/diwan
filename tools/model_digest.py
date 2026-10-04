@@ -7,6 +7,9 @@
 from __future__ import annotations
 
 import json
+import os
+from pathlib import Path
+import time
 from typing import Callable
 import urllib.request
 
@@ -61,3 +64,27 @@ def verify_model_digest(model: str, pinned: str, *,
         raise ModelDigestError("model_digest_unresolved")
     if resolved != pinned:
         raise ModelDigestError("model_digest_drifted")
+
+
+QUARANTINE_DIR = "drift-quarantine"
+
+
+def quarantine_runs_since(run_root: Path, started: float) -> list[str]:
+    """انقل كلَّ مجلّد تشغيلٍ كُتب فيه شيءٌ منذ `started` إلى `<run_root>/drift-quarantine/` (ملاحظة Codex على #290).
+
+    معرّفُ التشغيلة مشتقٌّ من إعدادها وفيه البصمة، فوسمٌ تغيّر أثناء القياس ثم عاد إلى البصمة المثبّتة يُعيد في الاستدعاء
+    التالي عرضَ دفترٍ فيه أجوبةٌ بعد الانحراف، ويمرّ التحقّقُ اللاحق. فالرفضُ لا يكفي: تُنقل التشغيلةُ فلا تُعاد. والحدُّ
+    محافظ: كلُّ تشغيلةٍ لمس ملفًّا فيها أحدٌ منذ البدء تُنقل، ولو كانت إعادةَ عرضٍ أو من عمليةٍ أخرى، فتُعاد من أوّلها.
+    """
+    root = Path(run_root)
+    if not root.is_dir() or root.is_symlink():
+        return []
+    target = root / QUARANTINE_DIR
+    moved = []
+    for run_dir in sorted(p for p in root.iterdir() if p.name != QUARANTINE_DIR and p.is_dir() and not p.is_symlink()):
+        files = [f for f in run_dir.rglob("*") if f.is_file() and not f.is_symlink()]
+        if run_dir.stat().st_mtime >= started or any(f.stat().st_mtime >= started for f in files):
+            target.mkdir(exist_ok=True)
+            os.replace(run_dir, target / f"{run_dir.name}-{time.time_ns()}")
+            moved.append(run_dir.name)
+    return moved

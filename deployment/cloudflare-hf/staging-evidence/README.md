@@ -153,7 +153,7 @@ repository's standard pytest suite without retaining a generic `check` import.
 Its pytest adapter fails a method on the first failed subcase so the existing
 mutation runner can attribute a normal `FAILED` node; standalone unittest runs
 retain their subtest diagnostics. All subcases still run when they pass.
-`tests/mutations/test_staging_evidence.jsonl` maps the 40 standalone mutations
+`tests/mutations/test_staging_evidence.jsonl` maps the 42 standalone mutations
 to canonical pytest node IDs, including a fail-closed mutation for missing
 schema fields. The required verification pipeline discovers these through its
 existing pytest and mutation-check steps; workflow and review requirements are

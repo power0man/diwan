@@ -15,7 +15,7 @@ def test_verify_hosted_covers_every_supported_python_version():
     matrix = re.search(r"python-version:\s*\[([^]]+)]", HOSTED)
     assert matrix, "verify-hosted must declare an explicit Python matrix"
     versions = re.findall(r"['\"](\d+\.\d+)['\"]", matrix.group(1))
-    assert versions == ["3.11", "3.12", "3.14"]
+    assert versions == ["3.11", "3.12", "3.13", "3.14"]          # كلُّ إصدارٍ يعلنه requires-python (#285)
     assert "fail-fast: false" in HOSTED
     assert HOSTED.count('"${{ matrix.python-version }}"') >= 2
 
@@ -47,3 +47,12 @@ def test_container_checkout_exposes_full_history_read_only():
     assert checkout, "history-dependent tests require a complete read-only checkout"
     assert "permissions:\n  contents: read\n" in CONTAINER
     assert ": write" not in CONTAINER and "secrets." not in CONTAINER
+
+
+def test_the_image_bases_and_uv_are_pinned_by_digest_not_by_moving_tag():
+    """Post-merge audit (#285): base images and uv were installed by tag alone."""
+    bases = re.findall(r"^(?:FROM|COPY --from=)\s*(\S+)", DOCKERFILE, re.MULTILINE)
+    assert bases and all(re.fullmatch(r"[^@\s]+@sha256:[0-9a-f]{64}", base) for base in bases), bases
+    assert "--require-hashes" in DOCKERFILE and "uv==0.8.17" in DOCKERFILE
+    assert len(re.findall(r"--hash=sha256:[0-9a-f]{64}", DOCKERFILE)) >= 2
+    assert "pip install --no-cache-dir 'uv" not in DOCKERFILE

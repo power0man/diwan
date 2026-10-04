@@ -375,6 +375,24 @@ def test_a_seed_error_excludes_the_aggregated_case_instead_of_becoming_a_vote():
     assert row["status"] == "error" and "passed" not in row and row["error_seeds"] == [1]
 
 
+def test_the_verdict_counts_seeded_errors_by_their_own_codes_not_the_aggregate_one():
+    """تدقيقٌ لاحق (#285): كان errors_by_arm في الحكم دائمًا {"seed_run_error": n} والرموزُ في seed_results وحدها."""
+    def seeded(case_id, *codes):
+        runs = [(seed, [{"id": case_id, "category": "general", "status": "error", "code": code} if code else
+                        {"id": case_id, "category": "general", "status": "measured", "passed": True}])
+                for seed, code in enumerate(codes)]
+        return aggregate_seed_rows(runs)[0]
+    measured = seeded("c0", None, None, None)
+    on = [measured, seeded("c1", "consent_required", None, None),
+          seeded("c2", "response_max_output", "consent_required", None)]
+    off = [measured, seeded("c1", None, None, None), seeded("c2", "response_max_output", None, None)]
+    assert on[2]["code"] == "seed_run_error" and on[2]["seed_error_codes"] == ["consent_required",
+                                                                              "response_max_output"]
+    verdict = judge("tool_announcement", on, off)
+    assert verdict["errors_by_arm"] == {"on": {"consent_required": 1, "consent_required+response_max_output": 1},
+                                        "off": {"response_max_output": 1}}
+
+
 
 def test_seeds_at_temperature_zero_are_published_as_not_measuring_sampling_variance(tmp_path):
     """تدقيقٌ لاحقٌ لـc55d0ab: البذورُ الثلاث تغيّر بذرةَ المحرّك وحدها والمزوّدُ الافتراضيّ يفكّ بحرارة 0، فلا تقيس تباينَ

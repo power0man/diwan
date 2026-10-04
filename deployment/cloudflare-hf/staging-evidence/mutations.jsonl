@@ -38,3 +38,5 @@
 {"id": "storage-manifest-binding", "old": "if not typed_equal(manifest[\"binding\"], expected):", "new": "if False:", "test": "test_storage_classification_stays_bound_to_manifest"}
 {"id": "storage-evidence-binding", "old": "if not typed_equal(evidence[\"binding\"], expected) or evidence[\"gate\"] != name:", "new": "if False:", "test": "test_storage_classification_stays_bound_to_evidence"}
 {"id": "source-storage-constraint", "old": "if source[\"deployment_mode\"] == \"private_hf_cpu_ephemeral_limited\":", "new": "if False:", "test": "test_current_ephemeral_mode_cannot_claim_durability"}
+{"id": "storage-blocker-consumer-disabled", "old": "storage_blocker is not None", "new": "False", "test": "test_ephemeral_storage_blocks_durability_in_every_deployment_mode"}
+{"id": "storage-blocker-consumer-unconditional", "old": "storage_blocker is not None", "new": "True", "test": "test_complete_packet_consistent_but_never_live_certified"}

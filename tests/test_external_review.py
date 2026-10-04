@@ -664,6 +664,17 @@ def test_the_github_catalog_array_is_parsed_and_its_shape_named(tmp_path, monkey
     assert written["backend"]["endpoint_host"] == "models.github.ai" and written["models"] == 3
 
 
+def test_a_malformed_catalog_is_recorded_as_a_failed_call_not_a_success():
+    """ملاحظةُ Codex على #290: ردُّ 200 بغلافٍ لا يُقرأ كان يُسجَّل في provider_usage ناجحًا ثم يُرفض بـcatalog_malformed."""
+    chat = cli.OpenAICompatChat("github-models", KEY)
+    chat.opener = FreeOpener(catalog=b"OK\r\n")
+    with pytest.raises(AutomaticReviewError):
+        chat.catalog()
+    assert [(row["kind"], row["status"], row["error"]) for row in chat.provider_usage] == [
+        ("catalog", "error", "catalog_malformed")]
+    assert chat.catalog_read_at is None
+
+
 def test_a_catalog_that_is_not_json_is_named_by_shape_and_the_smoke_uses_the_preferred_list(tmp_path, monkeypatch, capsys):
     """قيس في ٢٨ سبتمبر ٢٠٢٦: models.github.ai يردّ «OK» نصًّا عاديًّا (٤ بايتات) لأيّ مسارٍ بلا تفويض."""
     ok = b"OK\r\n"
@@ -678,8 +689,11 @@ def test_a_catalog_that_is_not_json_is_named_by_shape_and_the_smoke_uses_the_pre
         None, {"status": 200, "content_type": "application/json", "bytes": len(wrapped), "top": "dict", "keys": ["models"]})
     _free(monkeypatch, FreeOpener(catalog=ok, replies={DS: [CATCH], MI: [CATCH]}))
     assert cli.main(["--backend", "github-models", "--list-catalog", str(tmp_path / "c.json")]) == 2
-    assert _printed(capsys) == {"status": "refused", "code": "catalog_malformed",
-                                "shape": {"status": 200, "content_type": "text/plain", "bytes": 4, "top": "not_json"}}
+    refused = _printed(capsys)
+    usage = refused.pop("provider_usage")          # نداءُ الفهرس الفاشل في المطبوع لا في الذاكرة وحدها (ملاحظة Codex على #290)
+    assert refused == {"status": "refused", "code": "catalog_malformed",
+                       "shape": {"status": 200, "content_type": "text/plain", "bytes": 4, "top": "not_json"}}
+    assert [(row["kind"], row["status"], row["error"]) for row in usage] == [("catalog", "error", "catalog_malformed")]
     out = tmp_path / "smoke.json"
     assert cli.main(["--backend", "github-models", "--smoke", str(out)]) == 0
     report = json.loads(out.read_text(encoding="utf-8"))
@@ -1072,6 +1086,25 @@ def test_the_catalog_listing_and_its_saved_file_carry_the_free_backend_limits(tm
     assert json.loads(out.read_text(encoding="utf-8"))["measurement_limits"] == expected
 
 
+def test_the_catalog_call_is_persisted_in_the_listing_and_in_a_refused_run(tmp_path, monkeypatch, capsys):
+    """ملاحظةُ Codex على #290: صفُّ نداء الفهرس كان في الذاكرة وحدها؛ فالجردُ الناجح لا يحمله، والتشغيلُ المرفوض قبل الخلاصة
+    لا يحفظ إلا حالتَه. صار في ملفّ الجرد ومطبوعه، وفي RUN.json للتشغيل المرفوض."""
+    _free(monkeypatch, FreeOpener(catalog=[_gh_full(DS), _gh_full(MI)]))
+    out = tmp_path / "catalog.json"
+    assert cli.main(["--backend", "github-models", "--list-catalog", str(out)]) == 0
+    printed, saved = _printed(capsys), json.loads(out.read_text(encoding="utf-8"))
+    for report in (printed, saved):
+        assert [(row["kind"], row["status"]) for row in report["provider_usage"]] == [("catalog", "succeeded")]
+
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    bank = _public_bank(tmp_path, "usage")
+    _free(monkeypatch, FreeOpener(catalog=[_gh(DS)]))           # عائلةٌ صالحةٌ واحدة فلا زوج: رفضٌ قبل الخلاصة
+    assert cli.main([str(bank), "--backend", "github-models", "--run-id", "U1", "--brief", str(BRIEF)]) == 2
+    assert [row["kind"] for row in _printed(capsys)["provider_usage"]] == ["catalog"]
+    state = json.loads((bank / "runs" / "U1" / "reviews" / "RUN.json").read_text(encoding="utf-8"))
+    assert state["status"] == "refused" and [row["kind"] for row in state["provider_usage"]] == ["catalog"]
+
+
 def test_a_quota_history_keeps_a_service_refusal_failed_not_unavailable(tmp_path, monkeypatch, capsys):
     """ملاحظة Codex على #174: مراجعٌ نفدت حصّتُه فاستُبدل، ثم رفضت الخدمةُ المجموعةَ الأخيرة كلَّها — إخفاقٌ مختلط يبقى failed."""
     ok = b"OK\r\n"
@@ -1322,10 +1355,17 @@ def test_openrouter_mock_sends_no_paid_fallback_and_persists_zero_cost_usage(tmp
     assert all(payload["provider"] == {"allow_fallbacks": False} for payload in sent)
     assert all(payload["usage"] == {"include": True} and "models" not in payload for payload in sent)
     report = json.loads(out.read_text(encoding="utf-8"))
-    assert len(report["provider_usage"]) == 2
-    assert all(row["status"] == "succeeded" and row["cost_usd"] == "0" for row in report["provider_usage"])
-    assert all(row["zero_spend_proof"] == "catalog_free_suffix_and_all_pricing_zero"
-               for row in report["provider_usage"])
+    # نداءُ الفهرس صفٌّ في سجلّ النداءات أيضًا، ودليلُ المجانية بنودُ السعر ولحظتُها لا عبارتُه وحدها (#285)
+    catalog_rows = [row for row in report["provider_usage"] if row.get("kind") == "catalog"]
+    chat_rows = [row for row in report["provider_usage"] if row.get("kind") != "catalog"]
+    assert len(catalog_rows) == 1 and catalog_rows[0]["status"] == "succeeded" and catalog_rows[0]["model"] is None
+    assert len(chat_rows) == 2
+    assert all(row["status"] == "succeeded" and row["cost_usd"] == "0" for row in chat_rows)
+    assert all(row["zero_spend_proof"] == "catalog_free_suffix_and_all_pricing_zero" for row in chat_rows)
+    evidence = report["zero_spend_evidence"]
+    assert sorted(evidence) == sorted([OR_DS, OR_MI]) and report["cost_unconfirmed_attempts"] == 0
+    assert all(e["pricing"] and set(e["pricing"].values()) == {"0"} and e["observed_at"] == catalog_rows[0]["at"]
+               and e["catalog"] == "https://openrouter.ai/api/v1/models" for e in evidence.values())
     assert "zero_spend_guard_is_provider_specific_and_not_a_general_price_attestation" in report["measurement_limits"]
     assert KEY not in out.read_text(encoding="utf-8")
 
@@ -1343,6 +1383,23 @@ def test_openrouter_missing_or_nonzero_reported_cost_is_a_named_failure():
     assert [row["status"] for row in chat.provider_usage] == ["error", "error"]
     assert chat.provider_usage[0]["cost_usd"] is None
     assert chat.provider_usage[1]["cost_usd"] == "0.01"
+
+
+def test_an_openrouter_attempt_sent_without_a_confirmed_cost_is_counted_not_reported_clean():
+    """تدقيقٌ لاحق (#285): انقطاعٌ أو ردٌّ ليس JSON بعد إرسال الطلب يُعاد ولا يوقف التشغيل، وكلفتُه مجهولة؛ فيُعدّ باسمه."""
+    chat = cli.OpenAICompatChat("openrouter", KEY)
+    chat.approve_zero_spend([_priced(OR_DS)], [OR_DS])
+    assert chat.zero_spend_evidence[OR_DS]["pricing"] and chat.spend_report()["cost_unconfirmed_attempts"] == 0
+
+    def fail(*args, **kwargs):
+        chat.last_request[OR_DS] = {"method": "POST", "sent": "https://openrouter.ai/api/v1/chat/completions",
+                                    "final": None}
+        raise AutomaticReviewError("transport_timeout", OR_DS)
+    chat._send = fail
+    with pytest.raises(AutomaticReviewError):
+        chat(OR_DS, "s", "u", {})
+    assert chat.provider_usage[-1]["request_sent"] is True
+    assert chat.spend_report()["cost_unconfirmed_attempts"] == 1
 
 
 def test_groq_mock_logs_tokens_but_never_invents_an_unreported_zero_cost():

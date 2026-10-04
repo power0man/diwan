@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from evaluation.external_review import review_bank, review_file, smoke_bank
+from evaluation.external_review import review_bank, review_file, smoke_bank, summarize
 from evaluation.multi_system_review import AutomaticReviewError
 from tools.external_review import OllamaChat, OpenAICompatChat
 from tools import external_review as cli
@@ -143,8 +143,20 @@ def test_budget_failure_stops_other_models_and_files_without_fabricating_attempt
     assert calls == [reviewers[0]]
     records = [json.loads(p.read_text()) for p in (bank / "reviews").rglob("*.json")]
     assert sum(len(r["attempts"]) for r in records) == 1
-    assert sum(r.get("not_attempted_reason") == "earlier_terminal_failure" for r in records) == 3
-    assert all(r["error"] == "zero_spend_breach" and r["judgments"] is None for r in records)
+    assert all(r["judgments"] is None for r in records)
+    # المراجعُ الذي أخفق يرث سجلُّه الثاني رمزَه، والآخرُ لم يُرسل شيئًا فلا يُنسب إليه الخرق بل يسمّي من أوقفه (#285)
+    own = [r for r in records if r["model"] == reviewers[0]]
+    other = [r for r in records if r["model"] == reviewers[1]]
+    assert sorted(r.get("not_attempted_reason") or "" for r in own) == ["", "earlier_terminal_failure"]
+    assert all(r["error"] == "zero_spend_breach" for r in own)
+    assert len(other) == 2 and all(r["error"] == "not_attempted" and r["attempts"] == [] for r in other)
+    assert all(r["not_attempted_reason"] == "other_reviewer_budget_failure" for r in other)
+    assert all(r["blocked_by"] == {"model": reviewers[0], "file": "second.json", "error": "zero_spend_breach"}
+               for r in other)
+    summary = summarize(bank)
+    assert sorted((e["model"], e["error"], e.get("blocked_by", {}).get("model")) for e in summary["errors"]) == [
+        (reviewers[0], "zero_spend_breach", None), (reviewers[0], "zero_spend_breach", None),
+        (reviewers[1], "not_attempted", reviewers[0]), (reviewers[1], "not_attempted", reviewers[0])]
 
 
 @pytest.mark.parametrize("code", ["request_too_large", "http_400", "http_413", "http_415", "http_422"])

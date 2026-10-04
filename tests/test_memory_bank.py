@@ -536,6 +536,22 @@ def test_generated_receipt_references_are_masked_by_their_values_like_the_scalar
     assert "agent:" not in schema and "sample-session" not in schema and "references" in schema
 
 
+def test_the_unified_forget_receipt_key_and_its_generated_turns_are_in_the_schema_sample():
+    """تدقيقٌ لاحق (#285): نسيانُ الواجهة الموحَّد (88b006e) يكتب `context_withheld_turns` في الإيصال على القرص، وعيّنةُ المخطّط
+    كانت تنسى بلاه؛ فشاهدُ بقايا يقع في المفتاح يمرّ المدقّقَ ويسقط بالمنتج الصحيح، وقيمُه المولَّدة (`agent:<جلسة>/<جولة>`)
+    لم تكن تُقنَّع. صار المفتاحُ في العيّنة، وقيمُه تُقنَّع كـ`references`."""
+    from evaluation.memory_bank import declared_persisted_schema_text, mask_persisted, persisted_schema_collisions
+    schema = declared_persisted_schema_text()
+    assert "context_withheld_turns" in schema and "sample-session" not in schema
+    line = json.dumps({"schema_version": 1, "item_id": "a1" * 8, "sha256": "b" * 64, "forgotten_at": "2026-10-04T00:00:00Z",
+                       "references": [], "context_withheld_turns": ["agent:s9/t7"]}, ensure_ascii=False).encode("utf-8")
+    masked = mask_persisted(line).decode("utf-8")
+    assert "s9/t7" not in masked and "agent:" not in masked and "context_withheld_turns" in masked
+    _, scenario = _scenario("forget_001")
+    next(s for s in scenario["steps"] if s.get("expect") == "residue")["absent"] = ["context_withheld_turns"]
+    assert persisted_schema_collisions(scenario) == ["context_withheld_turns"]
+
+
 def test_a_saved_text_longer_than_the_store_accepts_is_refused_before_any_model_call(tmp_path):
     """ملاحظةُ Codex على #129 (الجولة الحادية والأربعون): كان المدقّقُ يطلب نصًّا غيرَ فارغ وحده، فعنصرٌ أطولُ من
     `MAX_ITEM_CHARS` يمرّ البنكَ المكلَّف ثم يُردّ في الحفظ الأول بـ`text_too_long` فيُحسب انحدارًا على المنتج. صار المدقّقُ

@@ -125,9 +125,14 @@ def check_morphology(*, installed=_camel_installed, analyzer=...) -> Step:
     return Step("morphology", "ok", "camel_ready", f"CAMeL Tools {camel_version} بقاعدة {CAMEL_DB}")
 
 
+# المحرّكُ على المضيف المحلي المعلن، فلا يمرّ نداؤه بوكيلٍ من البيئة كما لا تمرّ نداءاتُ المزوّدين (#285)؛ وإلا قال
+# الفحصُ «غيرُ متاح» عن محرّكٍ يعمل لأن HTTP_PROXY مضبوطٌ لغيره
+_ENGINE_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+
 def probe_engine(base_url: str, timeout: float = 3.0) -> dict:
     """يقرأ قائمة النماذج من Ollama؛ يرمي OSError/URLError إن لم يُبلَغ."""
-    with urllib.request.urlopen(f"{base_url}/api/tags", timeout=timeout) as response:  # noqa: S310 — عنوانٌ محلي معلن
+    with _ENGINE_OPENER.open(f"{base_url}/api/tags", timeout=timeout) as response:  # عنوانٌ محلي معلن
         return json.loads(response.read().decode("utf-8"))
 
 
@@ -492,22 +497,36 @@ def _utc_date() -> str:
     return datetime.now(timezone.utc).date().isoformat()
 
 
-def _git_commit(root: Path) -> str:
-    """Return only a public commit identifier; never include git diagnostics or paths."""
+def _git(root: Path, *argv: str) -> str | None:
+    """مخرجُ أمر git على `root` أو None؛ بلا تشخيصاتِ git ولا مسارات."""
     try:
-        result = subprocess.run(
-            ["git", "-C", str(root), "rev-parse", "--verify", "HEAD^{commit}"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False,
-        )
+        result = subprocess.run(["git", "-C", str(root), *argv], capture_output=True, text=True,
+                                timeout=10, check=False)
     except (OSError, subprocess.TimeoutExpired):
+        return None
+    return None if result.returncode else result.stdout
+
+
+def _git_commit(root: Path) -> str:
+    """Return only a public commit identifier; never include git diagnostics or paths.
+
+    `git -C` يصعد إلى أيّ مستودعٍ يحتوي `root`: فتثبيتٌ غيرُ قابلٍ للتحرير داخل نسخةٍ أخرى كان يسمّي إيداعَها، و`git pull`
+    بعده يسمّي إيداعًا أحدث مما ثُبّت (#285). فالإيداعُ يُسجَّل حين يكون `root` جذرَ المستودع نفسَه وحده، والشجرةُ التي عُدّل
+    فيها ملفٌّ متتبَّع تُوسم `-dirty` فلا يُنسب تقريرُها إلى إيداعٍ لم يُقِس ما قِيس.
+    """
+    top = _git(root, "rev-parse", "--show-toplevel")
+    try:
+        if top is None or Path(top.strip()).resolve() != root.resolve():
+            return UNRECORDED
+    except OSError:
         return UNRECORDED
-    commit = result.stdout.strip().lower()
-    if result.returncode or re.fullmatch(r"[0-9a-f]{40}", commit) is None:
+    commit = (_git(root, "rev-parse", "--verify", "HEAD^{commit}") or "").strip().lower()
+    if re.fullmatch(r"[0-9a-f]{40}", commit) is None:
         return UNRECORDED
-    return commit
+    changes = _git(root, "status", "--porcelain", "--untracked-files=no")
+    if changes is None:
+        return UNRECORDED
+    return commit + ("-dirty" if changes.strip() else "")
 
 
 def evidence_metadata(root: Path, *, agent: str, engine: str, hardware: str) -> dict:
