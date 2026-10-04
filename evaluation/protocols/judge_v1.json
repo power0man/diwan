@@ -1,0 +1,184 @@
+{
+  "protocol_id": "judge_v1",
+  "status": "registered_not_run",
+  "registered": "2026-10-04",
+  "issue": "https://github.com/power0man/diwan/issues/288",
+  "consumer": "https://github.com/power0man/diwan/issues/30",
+  "decision": "ق٦٤ (OD3 في docs/PLAN-20260926.md §٧)",
+  "thresholds": {
+    "kappa_min": 0.6,
+    "accuracy_min": 0.85
+  },
+  "families": {
+    "allowed": [
+      "zhipu",
+      "meta",
+      "deepseek",
+      "swiss-ai",
+      "ibm"
+    ],
+    "excluded": [
+      "qwen",
+      "anthropic",
+      "openai",
+      "google",
+      "kimi"
+    ],
+    "why_excluded": "qwen عائلةُ المحرّك (ق٥٤)، وanthropic وopenai وgoogle عائلاتُ المطوّرين، وkimi عائلةُ مؤلّف البنك (ق٥٠، AGENTS.md §٤)"
+  },
+  "task": {
+    "kind": "answer_correctness_reference_guided",
+    "inputs": [
+      "question",
+      "reference",
+      "rubric",
+      "candidate"
+    ],
+    "verdicts": [
+      "correct",
+      "incorrect"
+    ]
+  },
+  "calibration": {
+    "split": "open_only",
+    "open_bank_sha256": "bf3045e08b130836069b3f1a5af71fa89e3a2f848fc53db8c663c31cc726acfe",
+    "open_bank_digest_rule": "sha256_of_the_canonical_json_mapping_each_file_relative_path_under_open_to_its_sha256",
+    "open_judges": {
+      "required": 2,
+      "distinct_families": true,
+      "families": [
+        "zhipu",
+        "meta",
+        "deepseek",
+        "swiss-ai"
+      ],
+      "families_source": "docs/PLAN-20260926.md k45 step 1: two judges among GLM, Llama, DeepSeek and Apertus; Granite is calibrated separately as the sealed judge",
+      "scope": "the_open_split_measurement_in_30_judged_over_the_transports_below_not_the_sealed_acceptance_which_needs_only_the_registered_sealed_judge_and_its_own_signed_calibration"
+    },
+    "transports": [
+      "hf_inference_providers_pinned_model_colon_provider",
+      "ollama_com"
+    ],
+    "sources": [
+      {
+        "name": "k11_owner_ruled",
+        "evidence": "docs/probe/k11-owner-queue-triage-20260925.json",
+        "cases": 23,
+        "case_ids_sha256": "58a30c44a3fb795cf90358718d88ee70c86181245fdf31145c3ef76b0b449c96",
+        "case_ids_rule": "sha256_of_the_canonical_json_of_the_sorted_ids_of_real_and_false_positives_in_the_evidence_file",
+        "candidate": "the_reference_as_reviewed_in_k11_so_the_current_bank_v1_1_reference_for_the_16_false_positives_and_for_the_7_real_defects_the_pre_k15_reference_in_the_reviewed_file_named_below_and_each_row_must_carry_it_unchanged",
+        "real_defects": {
+          "arab_a_0005": "tier_a/kimi_arabic_a_004.json",
+          "arab_a_0006": "tier_a/kimi_arabic_a_004.json",
+          "arab_a_0007": "tier_a/kimi_arabic_a_004.json",
+          "arab_a_0012": "tier_a/kimi_arabic_a_004.json",
+          "constprob_a_0056": "tier_a/kimi_logic_a_003.json",
+          "gram_a_0026": "tier_a/kimi_arabic_a_002.json",
+          "morph_a_0015": "tier_a/kimi_arabic_a_001.json"
+        },
+        "reviewed_files": {
+          "tier_a/kimi_arabic_a_001.json": "5677a1996e64f809e4dbd35de4eba7a5623146bdbde55229b0ff6ccc6268c98e",
+          "tier_a/kimi_arabic_a_002.json": "9a219731516ca9314f9ce97a5d1c5836b7ceee3297804165cc5de3e67d4aa934",
+          "tier_a/kimi_arabic_a_004.json": "f7d4248bd7174664238bffe6fa4daa3a4f02ef947237cad242850f3d2a406f42",
+          "tier_a/kimi_logic_a_003.json": "5c7cdb802dadd9c3c3c73d5bdd679de7beb78192230af92e7a654b9ca0599272"
+        },
+        "reviewed_files_source": "the_file_sha256_both_external_reviewers_recorded_under_evaluation_banks_kimi_v1_reviews_and_the_files_are_supplied_from_diwan_private_before_k15_on_the_owner_mac",
+        "context": "each_row_carries_context_sha256_of_the_current_bank_v1_1_case_messages_reference_and_rubric_that_the_judge_is_shown",
+        "label": "the_owner_ruling_on_the_candidate_against_that_current_case_attested_by_the_owner_signature_not_the_k11_triage_which_ruled_on_the_pre_k15_prompt",
+        "label_status": "awaiting_owner_ruling"
+      },
+      {
+        "name": "automatic_checked",
+        "bank": "evaluation/banks/kimi_v1/open",
+        "cases": 100,
+        "candidate": "the_frozen_engine_answer_text_carried_in_each_row",
+        "label": "recomputed_from_the_candidate_by_the_cases_own_deterministic_checks",
+        "check_kinds": [
+          "exact",
+          "json_equals"
+        ],
+        "selection": "open_cases_whose_checks_are_all_of_these_kinds_stratified_by_tier_proportional_seeded_by_protocol_sha256"
+      }
+    ],
+    "pass_rule": "kappa_and_accuracy_at_or_above_thresholds_on_the_union_and_each_source_reported_separately",
+    "failure_rule": "declared_failure_and_automatic_checks_only",
+    "evidence": {
+      "rows": "one_per_frozen_sample_case_with_source_case_split_candidate_label_and_verdict",
+      "signature": "owner_ed25519_under_keys_anchor_policy_json_over_domain_diwan_judge_calibration_v1_and_the_canonical_evidence_without_its_signature_field",
+      "signature_field": "owner_signature",
+      "models": "engine_and_judge_ollama_digests_and_the_engine_digest_equals_sealed_engine_digest"
+    }
+  },
+  "sealed": {
+    "attempts": 120,
+    "meaning_of_120": "١٢٠ محاولةً معدودة على المحجوب القائم (OD3): عيّنةٌ طبقيةٌ بنسبة حجم كل طبقة في البيان المختوم، وبذرتُها بصمةُ هذا البروتوكول",
+    "location": "~/diwan-sealed/kimi_v1",
+    "manifest": "evaluation/banks/kimi_v1/sealed/MANIFEST.json",
+    "manifest_sha256": "4d480a58e192700ceaf91e2d6871a4add93b1961932ed56bb9296b1162386b30",
+    "machine": "owner_mac_only",
+    "machine_attestation": "darwin_and_the_owner_ed25519_private_key_in_the_local_keychain_derives_the_pinned_keys_anchor_ed25519_pub",
+    "engine": "frozen_default_engine_q54",
+    "engine_model": "qwen3.5:9b",
+    "engine_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+    "provider": "local_only",
+    "runtime": {
+      "max_output": 800,
+      "deadline_s": 240,
+      "seed": 0,
+      "temperature": 0,
+      "allow_thinking": false,
+      "context_tokens": 32768,
+      "ollama_base_url": "http://127.0.0.1:11434",
+      "quarantine_quoted_material": false,
+      "system_sha256": "e7eee5f5d1b7f1e9917b1067af75b5f66cda4f26e86462eacdf31657d499fbff",
+      "verdict_pattern_sha256": "cc6dd82c3aeb72ea3d92f5d10b8d95dd535c523f4bf852600030195bd5e5a3ea",
+      "judge_prompt_sha256": "791f50552e41b6adf17cadf2b95e64a05732c15b16c145eeac11a102abfb7421"
+    },
+    "judge": {
+      "model": "granite4",
+      "family": "ibm",
+      "local_only": true,
+      "requires_passing_calibration_evidence": true,
+      "digest": "the_one_signed_in_the_calibration_evidence"
+    },
+    "without_judge": "automatic_checks_only_and_cases_without_checks_stay_in_the_denominator_as_not_passed",
+    "sandbox": "the_docker_receipt_identity_and_its_sha256_are_published_with_every_report_and_enter_the_run_identity_so_python_sandbox_results_compare_only_across_reports_with_the_same_sandbox_sha256",
+    "output": {
+      "per_tier": [
+        "attempted",
+        "passes",
+        "failures",
+        "without_checks",
+        "judged",
+        "errors",
+        "rate",
+        "wilson95"
+      ],
+      "identifiers": "none",
+      "text": "none"
+    }
+  },
+  "limits": [
+    "registered_before_any_run_so_thresholds_and_sources_cannot_follow_the_result",
+    "k11_labels_await_the_owner_ruling_so_calibration_cannot_pass_before_it",
+    "for_the_16_k11_false_positives_the_candidate_equals_the_reference_so_that_source_is_easy_and_is_reported_separately",
+    "automatic_check_labels_inherit_the_flaws_of_the_checks_and_contains_checks_are_excluded_because_they_are_blind_to_polarity_k17",
+    "120_attempts_give_wide_per_tier_intervals_and_the_wilson_interval_is_published_beside_every_rate",
+    "the_sealed_score_measures_the_frozen_engine_on_bank_v1_1_not_diwan_as_a_whole",
+    "the_open_bank_v1_1_and_the_sealed_manifest_v1_1_are_pinned_by_digest_so_a_changed_bank_is_refused_and_needs_judge_v2",
+    "the_engine_name_is_pinned_here_not_read_from_the_product_default_so_a_later_default_change_under_q59_does_not_change_judge_v1",
+    "calibration_evidence_is_its_rows_on_the_frozen_sample_and_its_metrics_are_recomputed_never_read",
+    "automatic_labels_are_recomputed_from_each_candidate_and_k11_candidates_must_equal_the_current_bank_reference_for_the_16_false_positives_and_the_reviewed_pre_k15_reference_for_the_7_real_defects_with_the_current_case_as_context_but_engine_provenance_judge_verdicts_and_owner_rulings_are_attested_by_the_owner_signature_not_recomputed",
+    "python_sandbox_checks_are_excluded_from_calibration_so_acceptance_needs_no_container",
+    "the_engine_digest_is_the_owner_mac_qwen3_5_9b_digest_recorded_in_docs_probe_from_27_september_to_1_october_so_a_repulled_tag_is_refused_and_needs_judge_v2",
+    "both_digests_are_resolved_before_the_run_and_rechecked_after_it_so_a_tag_repointed_and_restored_within_the_run_is_not_detected",
+    "the_owner_mac_is_attested_by_the_owner_key_not_the_hardware_so_a_machine_holding_a_copy_of_that_key_passes",
+    "the_runtime_pins_the_runner_and_provider_inputs_listed_here_not_the_ollama_server_build_or_its_quantization_beyond_the_model_digest",
+    "the_runner_digest_covers_every_python_file_of_each_repository_package_the_runner_imported_and_is_published_and_isolates_the_run_root_but_is_not_pinned_here_because_the_runner_pins_this_protocol_digest",
+    "a_package_first_imported_after_the_run_starts_is_not_in_the_runner_digest",
+    "the_k11_case_ids_are_pinned_by_digest_so_an_edited_triage_file_that_names_other_cases_is_refused_and_needs_judge_v2",
+    "k15_corrected_the_7_real_defects_in_the_open_bank_so_their_candidates_come_from_the_reviewed_pre_k15_files_pinned_by_digest_and_a_sealed_judge_cannot_be_accepted_without_them",
+    "measured_is_published_only_by_the_path_that_builds_its_own_ollama_providers_from_their_names_and_attests_the_runner_code_by_runner_sha256_not_against_an_in_process_caller_that_patches_the_runner_or_its_modules",
+    "k15_also_reworded_some_k11_prompts_so_a_pre_k15_candidate_may_be_correct_for_the_current_case_and_its_label_is_the_owners_ruling_on_that_case_not_the_k11_triage"
+  ]
+}

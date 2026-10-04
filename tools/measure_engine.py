@@ -285,7 +285,13 @@ def main(argv=None) -> int:
         verify_model_digest(args.model, model_version)
     except ModelDigestError as exc:
         # تشغيلاتُ الحزم التي كُتبت أثناء الانحراف تُحجر فلا يُعاد عرضُها (ملاحظة Codex على #290)
-        quarantined = quarantine_runs_since(run_root, started)
+        try:
+            quarantined = quarantine_runs_since(run_root, started)
+        except ModelDigestError as unsafe:
+            # ومجلّدُ حَجرٍ مربوطٌ أو غيرُ مجلّدٍ يُردّ رفضًا مسمًّى لا أثرًا خامًا، ولا يُنقل إليه شيء (ملاحظة Codex على #289)
+            print(json.dumps({"status": "refused", "code": unsafe.code, "drift_code": exc.code, "runs_quarantined": 0},
+                             ensure_ascii=False))
+            return 1
         print(json.dumps({"status": "refused", "code": exc.code, "runs_quarantined": len(quarantined)},
                          ensure_ascii=False))
         return 1
