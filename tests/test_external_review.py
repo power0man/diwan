@@ -477,8 +477,21 @@ def test_quota_exhaustion_falls_back_to_a_reviewer_of_another_family(tmp_path, m
     assert _printed(capsys)["fallbacks"] == report["fallbacks"]
 
 
+def test_payment_required_is_named_on_its_own_and_stops_the_run_without_a_fallback(tmp_path, monkeypatch, capsys):
+    """HTTP 402 حالةُ فوترةٍ لا حدُّ طلبات: لا يُسمّى `quota_exhausted` ولا يُستبدل فيه المراجعُ ببديل (ق٧١-٢ وق٧١-٥)."""
+    opener = _free(monkeypatch, FreeOpener(catalog=[_gh(DS), _gh(MI), _gh(LL)],
+                                           replies={DS: [402], MI: [CATCH], LL: [CATCH]}))
+    out = tmp_path / "smoke.json"
+    assert cli.main(["--backend", "github-models", "--smoke", str(out)]) == 1
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["status"] == "failed" and report["code"] == "payment_required"
+    assert report["fallbacks"] == [], "طلبُ الدفع لا يُعالَج باستبدال المراجع"
+    assert LL not in opener.chat_models(), "لا نداءَ لبديلٍ بعد طلب الدفع"
+    assert opener.chat_models().count(DS) == 1, "طلبُ الدفع لا يُعاد"
+
+
 def test_quota_with_no_other_family_left_is_a_named_failure(tmp_path, monkeypatch, capsys):
-    assert cli.http_code(429) == cli.http_code(402) == "quota_exhausted"
+    assert cli.http_code(429) == "quota_exhausted" and cli.http_code(402) == "payment_required"
     assert cli.http_code(413) == "request_too_large" and cli.http_code(500) == "http_500"
     other_deepseek = "deepseek/DeepSeek-R1-0528"
     _free(monkeypatch, FreeOpener(catalog=[_gh(DS), _gh(other_deepseek), _gh(MI)],
@@ -677,7 +690,7 @@ def test_a_catalog_that_is_not_json_is_named_by_shape_and_the_smoke_uses_the_pre
 
 def test_http_statuses_are_named_and_only_a_safe_shape_of_the_body_is_recorded():
     assert [cli.http_code(c) for c in (401, 402, 403, 404, 413, 429, 500)] == [
-        "unauthorized", "quota_exhausted", "forbidden", "not_found", "request_too_large", "quota_exhausted", "http_500"]
+        "unauthorized", "payment_required", "forbidden", "not_found", "request_too_large", "quota_exhausted", "http_500"]
     secret_text = "PRIVATE-MESSAGE-TEXT"
     body = json.dumps({"error": {"code": "no_access", "type": "invalid_request_error", "message": secret_text}}).encode()
     chat = cli.OpenAICompatChat("github-models", KEY)
@@ -1283,6 +1296,10 @@ def test_openrouter_requires_a_free_suffix_and_all_catalog_prices_to_be_zero_bef
         (_priced("deepseek/deepseek-r1", prompt="0", completion="0"), "free_model_required"),
         (_priced(OR_DS, prompt="0", completion="0.000001"), "free_price_unverified"),
         ({"id": OR_DS, "pricing": {}}, "free_price_unverified"),
+        # بندٌ غائب غيرُ مُثبَت: ما حضر صفرًا لا يشهد لسعر المدخل أو المخرج
+        ({"id": OR_DS, "pricing": {"request": "0"}}, "free_price_unverified"),
+        ({"id": OR_DS, "pricing": {"prompt": "0", "request": "0"}}, "free_price_unverified"),
+        ({"id": OR_DS, "pricing": {"completion": "0"}}, "free_price_unverified"),
     ]:
         with pytest.raises(AutomaticReviewError) as refused:
             chat.approve_zero_spend([entry], [entry["id"]])

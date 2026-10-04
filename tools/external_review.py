@@ -27,8 +27,10 @@
 - **العائلةُ من الناشر بجدولٍ صريح** (`PUBLISHER_FAMILIES`) وتطابقُ ما يقوله الاسم؛ والناشرُ المجهول
   `publisher_unknown`. المفضَّلون DeepSeek وMistral وMeta Llama وCohere وAI21 وMicrosoft Phi؛ ولا Qwen (المحرّك)
   ولا Moonshot/Kimi (المؤلّف) ولا OpenAI وGoogle وAnthropic (المطوّرون)؛ ولا مراجعان تتقاطع سلالتاهما.
-- **نفادُ الحصّة** (`quota_exhausted`، HTTP 429 أو 402) يُستبدل فيه بالمراجع مرشّحٌ من عائلةٍ أخرى مسموحة، وإلا
+- **نفادُ الحصّة** (`quota_exhausted`، HTTP 429) يُستبدل فيه بالمراجع مرشّحٌ من عائلةٍ أخرى مسموحة، وإلا
   فالإخفاقُ المسمّى `quota_exhausted_no_fallback`.
+- **طلبُ الدفع** (`payment_required`، HTTP 402) حالةُ فوترةٍ في الحساب لا حدُّ طلبات: يُوقف التشغيلَ كلَّه باسمه
+  بلا بديل، كإخفاقات الإنفاق الأخرى (ق٧١-٢ وق٧١-٥).
 - **الردُّ الفارغ أو المبتور** (`reply_empty`، `reply_incomplete`) يُعاد مرّةً ثم يُسجَّل برمزه (ق٥٠).
 - المحجوبُ لا يُرسل، والبنكُ على هذه الواجهات من `evaluation/banks/` وحدها (لا ملفّاتُ المالك).
 
@@ -323,8 +325,10 @@ class _RefuseRedirect(urllib.request.HTTPRedirectHandler):
 
 def http_code(status: int) -> str:
     """رمزُ حالة HTTP على الواجهات المجانية: الشائعُ مسمًّى، وما سواه http_<الرمز>."""
-    if status in (402, 429):
-        return "quota_exhausted"          # 429 حدُّ الطلبات، و402 نفادُ رصيد الموجّه
+    if status == 429:
+        return "quota_exhausted"          # حدُّ الطلبات: يُستبدل المراجعُ بمرشّحٍ من عائلةٍ أخرى
+    if status == 402:
+        return "payment_required"         # حالةُ فوترةٍ في الحساب لا حدُّ طلبات: تُوقف التشغيلَ كلَّه باسمها (ق٧١-٢ وق٧١-٥)
     if 300 <= status < 400:
         return "redirected"               # التحويلُ مرفوضٌ ولا يُتبع؛ ووجهتُه (مضيفٌ ومسار) في الشكل
     return {401: "unauthorized", 403: "forbidden", 404: "not_found",
@@ -381,7 +385,8 @@ def openrouter_zero_spend(entry: dict) -> str:
     if not isinstance(model, str) or not model.endswith(":free"):
         raise AutomaticReviewError("free_model_required", str(model))
     pricing = entry.get("pricing")
-    if not isinstance(pricing, dict) or not pricing:
+    # بندا المدخل والمخرج لازمان: سعرٌ غائبٌ غيرُ مُثبَت، فلا يُعدّ صفرًا لأن ما حضر من البنود صفر
+    if not isinstance(pricing, dict) or not {"prompt", "completion"} <= pricing.keys():
         raise AutomaticReviewError("free_price_unverified", model)
     values = [_decimal(value) for value in pricing.values()]
     if any(value is None for value in values) or any(value != 0 for value in values):
