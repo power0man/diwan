@@ -104,6 +104,17 @@ def test_calibration_passes_only_at_the_registered_thresholds():
     assert set(passed["by_source"]) == {"automatic_checked"}
 
 
+def test_the_threshold_is_compared_before_rounding():
+    """ملاحظة Codex على #289: على ١٢٣ صفًّا، TP=18 وFN=1 وFP=16 وTN=88 تعطي κ = 0.59996 ودقّةً 0.8618؛ والتقريبُ إلى
+    0.6 قبل العتبة كان يُنجح محكِّمًا دونها. والمنشورُ يبقى مقرَّبًا."""
+    pairs = ([("correct", "correct")] * 18 + [("correct", "incorrect")] * 1
+             + [("incorrect", "correct")] * 16 + [("incorrect", "incorrect")] * 88)
+    items = [{"source": "automatic_checked", "split": "open", "label": label, "verdict": verdict}
+             for label, verdict in pairs]
+    result = judge.calibration_result(items, DATA)
+    assert result["kappa"] == 0.6 and result["accuracy"] == 0.8618 and result["passed"] is False
+
+
 @pytest.mark.parametrize("change,code", [({"split": "sealed"}, "judge_open_only"),
                                          ({"label": None}, "calibration_label_missing"),
                                          ({"verdict": "maybe"}, "calibration_verdict_invalid")])

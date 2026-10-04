@@ -78,8 +78,8 @@ def open_judge(transport: str, model: str, protocol: dict) -> dict:
     return {"transport": transport, "model": model, "family": judge_family(model, protocol)}
 
 
-def cohen_kappa(truth: list[str], predicted: list[str]) -> float | None:
-    """κ كوهين لحكمين ثنائيين؛ وإن اتّفقا صدفةً تمامًا (pe = 1) فلا κ، لا واحد."""
+def _kappa(truth: list[str], predicted: list[str]) -> float | None:
+    """κ كوهين لحكمين ثنائيين بلا تقريب؛ وإن اتّفقا صدفةً تمامًا (pe = 1) فلا κ، لا واحد."""
     n = len(truth)
     if n == 0 or n != len(predicted):
         return None
@@ -87,14 +87,24 @@ def cohen_kappa(truth: list[str], predicted: list[str]) -> float | None:
     expected = sum((truth.count(v) / n) * (predicted.count(v) / n) for v in VERDICTS)
     if expected >= 1:
         return None
-    return round((observed - expected) / (1 - expected), 4)
+    return (observed - expected) / (1 - expected)
 
 
-def _scores(items: list[dict]) -> dict:
+def cohen_kappa(truth: list[str], predicted: list[str]) -> float | None:
+    """κ المنشورةُ بأربع منازل؛ والعتبةُ تُقارَن بغير المقرَّبة (`_raw_scores`)."""
+    kappa = _kappa(truth, predicted)
+    return None if kappa is None else round(kappa, 4)
+
+
+def _raw_scores(items: list[dict]) -> dict:
     truth = [i["label"] for i in items]
     predicted = [i["verdict"] for i in items]
-    accuracy = round(sum(a == b for a, b in zip(truth, predicted)) / len(items), 4) if items else None
-    return {"n": len(items), "kappa": cohen_kappa(truth, predicted), "accuracy": accuracy}
+    accuracy = sum(a == b for a, b in zip(truth, predicted)) / len(items) if items else None
+    return {"n": len(items), "kappa": _kappa(truth, predicted), "accuracy": accuracy}
+
+
+def _published(scores: dict) -> dict:
+    return {key: round(value, 4) if isinstance(value, float) else value for key, value in scores.items()}
 
 
 def calibration_result(items: list[dict], protocol: dict) -> dict:
@@ -106,13 +116,14 @@ def calibration_result(items: list[dict], protocol: dict) -> dict:
             raise JudgeRefused("calibration_label_missing", str(item.get("source")))
         if item.get("verdict") not in VERDICTS:
             raise JudgeRefused("calibration_verdict_invalid", str(item.get("source")))
-    union = _scores(items)
+    # العتبةُ تُقارَن بالقيمة غير المقرَّبة، والتقريبُ للنشر وحده: κ = 0.59996 لا تصير 0.6 فتنجح (ملاحظة Codex على #289)
+    union = _raw_scores(items)
     sources = sorted({i["source"] for i in items})
     thresholds = protocol["thresholds"]
     passed = (union["kappa"] is not None and union["kappa"] >= thresholds["kappa_min"]
               and union["accuracy"] is not None and union["accuracy"] >= thresholds["accuracy_min"])
-    return {**union, "passed": passed,
-            "by_source": {s: _scores([i for i in items if i["source"] == s]) for s in sources}}
+    return {**_published(union), "passed": passed,
+            "by_source": {s: _published(_raw_scores([i for i in items if i["source"] == s])) for s in sources}}
 
 
 def _open_suites(open_bank: Path):
