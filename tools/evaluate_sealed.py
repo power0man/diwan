@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """تشغيلُ المحجوب على الماك وحده، ببروتوكول `judge_v1` المبصوم (#288، ك٤٥ #30).
 
-    python3 tools/evaluate_sealed.py                       # محرّكٌ محليّ، وفحوصٌ آليّة وحدها
-    python3 tools/evaluate_sealed.py --judge granite4 \\
-        --judge-evidence docs/probe/k45-judge-calibration-<date>.json
+    python3 tools/evaluate_sealed.py --agent human/hussain-alrabighi        # محرّكٌ محليّ، وفحوصٌ آليّة وحدها
+    python3 tools/evaluate_sealed.py --agent human/hussain-alrabighi --judge granite4 \\
+        --judge-evidence docs/probe/k45-judge-calibration-<date>.json \\
+        --k11-reviewed-bank <diwan-private قبل ك١٥>/evaluation/banks/kimi_v1/open
+
+`--agent` معرّفُ من يشغّل القياس، مسجَّلًا في registry/agents.json؛ و`--k11-reviewed-bank` يلزم مع `--judge` وحده.
 
 **ما يضمنه قبل أن يقرأ حرفًا من المحجوب:**
 - البروتوكولُ ببصمته المسجَّلة، ولا يُعدَّل (`judge_protocol_changed`).
