@@ -42,28 +42,43 @@ def safe_metadata(event):
 class ObservedProvider:
     def __init__(self, provider, observer):
         self.provider, self.observer = provider, observer
-        self.name = getattr(provider, "name", "local")
-        self.is_local = is_local_provider(provider)
+
+    @property
+    def name(self):
+        return getattr(self.provider, "name", "local")
+
+    @property
+    def is_local(self):
+        return is_local_provider(self.provider)
 
     def estimate_micros(self, request):
         return self.provider.estimate_micros(request)
 
     def complete(self, request):
-        started = time.monotonic()
+        try:
+            started = time.monotonic()
+        except Exception:
+            started = None
         response, code = None, "operation_error"
+        provider_error = None
         try:
             response = self.provider.complete(request)
-            code = "response_error" if isinstance(response, Response) and response.retryable_error else "none"
+            code = "none"
             return response
         except Exception as exc:
-            code = getattr(exc, "code", "operation_error")
-            if type(code) is not str or code not in ERRORS - {"none"}:
-                code = "operation_error"
+            provider_error = exc
             raise
         finally:
             try:
+                if provider_error is not None:
+                    code = getattr(provider_error, "code", "operation_error")
+                    if type(code) is not str or code not in ERRORS - {"none"}:
+                        code = "operation_error"
+                elif isinstance(response, Response) and response.retryable_error:
+                    code = "response_error"
                 usage = response.usage if isinstance(response, Response) else None
-                event = safe_metadata({"duration_ms": (time.monotonic() - started) * 1000,
+                duration = None if started is None else (time.monotonic() - started) * 1000
+                event = safe_metadata({"duration_ms": duration,
                                        "model": request.model, "error_code": code,
                                        "input_tokens": getattr(usage, "input_tokens", None),
                                        "output_tokens": getattr(usage, "output_tokens", None)})

@@ -169,3 +169,57 @@ def test_exception_cannot_label_itself_success():
     with pytest.raises(ProviderError):
         observed(Provider(ProviderError("none", CANARY, False)), events.append).complete(request())
     assert events[0]["error_code"] == "operation_error"
+
+
+def test_error_metadata_getter_cannot_replace_original_exception():
+    class OriginalError(Exception):
+        @property
+        def code(self):
+            raise RuntimeError(CANARY)
+    events, original = [], OriginalError("synthetic original")
+    with pytest.raises(OriginalError) as caught:
+        observed(Provider(original), events.append).complete(request())
+    assert caught.value is original and events == []
+
+
+def test_response_metadata_getter_cannot_replace_original_result():
+    class FlagResponse(Response):
+        def __getattribute__(self, name):
+            if name == "retryable_error":
+                raise RuntimeError(CANARY)
+            return super().__getattribute__(name)
+    events, provider = [], Provider()
+    provider.result = FlagResponse(CANARY, Usage(7, 3), "complete", 0)
+    assert observed(provider, events.append).complete(request()) is provider.result
+    assert provider.calls == 1 and events == []
+
+
+def test_clock_preparation_failure_keeps_provider_result_with_unknown_duration(monkeypatch):
+    from types import SimpleNamespace
+    import conversation.observability as module
+    def fail():
+        raise OSError(CANARY)
+    monkeypatch.setattr(module, "time", SimpleNamespace(monotonic=fail))
+    events, provider = [], Provider()
+    assert observed(provider, events.append).complete(request()) is provider.result
+    assert provider.calls == 1 and len(events) == 1
+    assert events[0]["duration_ms"] is None
+    assert CANARY not in json.dumps(events)
+
+
+def test_wrapper_does_not_eagerly_read_provider_name():
+    class LazyNameProvider(Provider):
+        @property
+        def name(self):
+            raise RuntimeError(CANARY)
+    provider, events = LazyNameProvider(), []
+    assert observed(provider, events.append).complete(request()) is provider.result
+    assert provider.calls == 1 and CANARY not in json.dumps(events)
+
+
+def test_wrapper_checks_current_provider_locality_instead_of_cached_local_flag():
+    provider = Provider()
+    wrapper = observed(provider, lambda event: None)
+    assert wrapper.is_local is True
+    provider.is_local = False
+    assert wrapper.is_local is False
