@@ -14,7 +14,7 @@ from core.signing import SigningRefused
 from evaluation import judge
 from evaluation.judge import JudgeRefused
 
-REGISTERED = "280f85822abcb8306094c730a10333e0f26edf076f9559d14f49fbca3f9ae69c"
+REGISTERED = "4d39cb38dffa68547445b627d0b4a550400eb0a0748ec2d0295051aa1f937c7a"
 DATA = json.loads(judge.PROTOCOL.read_text(encoding="utf-8"))
 # مفتاحُ مالكٍ مصطنعٌ للاختبار وحده؛ ومفتاحُ المالك الحقيقيّ في سلسلة مفاتيح الماك لا في المستودع.
 OWNER_SEED = hashlib.sha256(b"diwan-test-owner-calibration").digest()
@@ -33,6 +33,7 @@ def test_the_protocol_is_registered_before_any_run_and_cannot_change():
     assert set(DATA["families"]["allowed"]) == {"zhipu", "meta", "deepseek", "swiss-ai", "ibm"}
     assert set(DATA["families"]["excluded"]) == {"qwen", "anthropic", "openai", "google", "kimi"}
     assert DATA["calibration"]["split"] == "open_only"
+    assert DATA["calibration"]["open_judges"]["required"] == 2 and DATA["calibration"]["open_judges"]["distinct_families"]
     assert DATA["sealed"]["attempts"] == 120 and DATA["sealed"]["provider"] == "local_only"
     assert DATA["sealed"]["judge"] == {"model": "granite4", "family": "ibm", "local_only": True,
                                        "requires_passing_calibration_evidence": True,
@@ -90,6 +91,25 @@ def test_the_open_judge_names_a_pinned_hf_provider_or_ollama_com():
         with pytest.raises(JudgeRefused) as refused:
             judge.open_judge(transport, model, DATA)
         assert refused.value.code == code
+
+
+HF_META = ("hf_inference_providers", "meta-llama/Llama-3.3-70B-Instruct:groq")
+OLLAMA_GLM = ("ollama_com", "glm-4.6:cloud")
+
+
+@pytest.mark.parametrize("panel,code", [
+    ([HF_META, ("ollama_com", "llama3.3:70b-cloud")], "open_judge_panel_same_family"),
+    ([OLLAMA_GLM], "open_judge_panel_size"),
+    ([HF_META, OLLAMA_GLM, ("ollama_com", "deepseek-v4.1-flash:cloud")], "open_judge_panel_size"),
+    ([HF_META, ("ollama_com", "qwen3.5:9b")], "judge_family_excluded"),
+], ids=["same_family", "one_judge", "three_judges", "excluded_family"])
+def test_the_open_judges_are_the_registered_number_of_distinct_allowed_families(panel, code):
+    """ملاحظة Codex على #289: محكِّما المفتوح (#30) اثنان من عائلتين مسموحتين مختلفتين، كما سجّلهما judge_v1؛ ولا يخصّان
+    قبولَ محكِّم المحجوب."""
+    assert [j["family"] for j in judge.open_judge_panel([HF_META, OLLAMA_GLM], DATA)] == ["meta", "zhipu"]
+    with pytest.raises(JudgeRefused) as refused:
+        judge.open_judge_panel(panel, DATA)
+    assert refused.value.code == code
 
 
 def test_cohen_kappa_on_known_cases():
@@ -203,7 +223,7 @@ def test_the_calibration_sample_is_frozen_by_the_protocol():
     assert sample["k11_owner_ruled"] == sorted(r["id"] for r in triage["real"] + triage["false_positives"])
     assert len(sample["k11_owner_ruled"]) == 23 and len(set(sample["automatic_checked"])) == 100
     assert hashlib.sha256(json.dumps(sample, sort_keys=True).encode()).hexdigest() == \
-        "6eeeda1d8b84fcaab98d9b86efcf0c439260614e8140d92500f1e9592070f29c"
+        "d8de5e7bdb780fe5f264284296ad0ea8a65d6f37c350ed39a1f57d88a853938b"
     kinds = {check["kind"] for checks in _truth()["automatic_checked"].values() for check in checks}
     assert kinds <= {"exact", "json_equals"} and all(isinstance(r, str) for r in _truth()["k11_owner_ruled"].values())
 

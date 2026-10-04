@@ -43,8 +43,11 @@
     "split": "open_only",
     "open_bank_sha256": "bf3045e08b130836069b3f1a5af71fa89e3a2f848fc53db8c663c31cc726acfe",
     "open_bank_digest_rule": "sha256_of_the_canonical_json_mapping_each_file_relative_path_under_open_to_its_sha256",
-    "judges_required": 2,
-    "distinct_families_required": true,
+    "open_judges": {
+      "required": 2,
+      "distinct_families": true,
+      "scope": "the_open_split_measurement_in_30_judged_over_the_transports_below_not_the_sealed_acceptance_which_needs_only_the_registered_sealed_judge_and_its_own_signed_calibration"
+    },
     "transports": [
       "hf_inference_providers_pinned_model_colon_provider",
       "ollama_com"
@@ -144,6 +147,7 @@
     "both_digests_are_resolved_before_the_run_and_rechecked_after_it_so_a_tag_repointed_and_restored_within_the_run_is_not_detected",
     "the_owner_mac_is_attested_by_the_owner_key_not_the_hardware_so_a_machine_holding_a_copy_of_that_key_passes",
     "the_runtime_pins_the_runner_and_provider_inputs_listed_here_not_the_ollama_server_build_or_its_quantization_beyond_the_model_digest",
-    "the_runner_source_digest_is_published_with_every_report_not_pinned_here_because_the_runner_pins_this_protocol_digest_so_pinning_both_ways_is_circular"
+    "the_runner_digest_covers_every_python_file_of_each_repository_package_the_runner_imported_and_is_published_and_isolates_the_run_root_but_is_not_pinned_here_because_the_runner_pins_this_protocol_digest",
+    "a_package_first_imported_after_the_run_starts_is_not_in_the_runner_digest"
   ]
 }

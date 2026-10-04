@@ -171,6 +171,27 @@ def test_a_reused_run_root_never_replays_verdicts_of_earlier_judge_weights(tmp_p
     assert report["judge"]["digest"] == recalibrated
 
 
+def test_a_reused_run_root_never_replays_answers_of_earlier_runner_code(tmp_path, monkeypatch):
+    """ملاحظة Codex على #289: مجلّدُ التشغيل معزولٌ ببصمة المُشغِّل، فشيفرةٌ تغيّرت تسأل المحرّكَ من جديد ولا تعيد أجوبةَ
+    دفتر الشيفرة السابقة وتنسبها إلى بصمتها."""
+    monkeypatch.setattr(sealed, "runner_sha256", lambda: "a" * 64)
+    assert _run(tmp_path, Provider(answer="نعم"))["by_tier"]["tier_a"]["passes"] == 6
+    monkeypatch.setattr(sealed, "runner_sha256", lambda: "b" * 64)
+    engine = Provider(answer="لا")
+    report = _run(tmp_path, engine)
+    assert engine.calls > 0 and report["by_tier"]["tier_a"]["passes"] == 0 and report["runner_sha256"] == "b" * 64
+
+
+def test_the_runner_digest_covers_whole_imported_packages_not_a_hand_list():
+    """ملاحظة Codex على #289: القائمةُ اليدوية أغفلت ollama_codec وcore/run وretrieval_general؛ والآن الحزمُ المستورَدة
+    كلُّها، فيدخل ما يُستورد كسولًا داخلها."""
+    files = {path.as_posix() for path in sealed.runner_files()}
+    assert {"providers/ollama_codec.py", "core/run.py", "evaluation/retrieval_general.py",
+            "tools/evaluate_sealed.py", "tools/model_digest.py"} <= files
+    package = {p.relative_to(sealed.ROOT).as_posix() for p in (sealed.ROOT / "evaluation").rglob("*.py")}
+    assert package <= files and not any(path.startswith("tests/") for path in files)
+
+
 @pytest.mark.parametrize("model", [FROZEN_ENGINE, "granite4"], ids=["engine", "judge"])
 def test_a_digest_that_changes_during_the_run_refuses_the_report(tmp_path, model):
     """البصمتان تُعادان بعد التشغيل؛ ونموذجٌ تبدّلت أوزانُه أثناءه لا يُكتب له تقرير."""

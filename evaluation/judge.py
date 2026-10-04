@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PROTOCOL = ROOT / "evaluation" / "protocols" / "judge_v1.json"
 K11_EVIDENCE = ROOT / "docs" / "probe" / "k11-owner-queue-triage-20260925.json"
 OPEN_BANK = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
-PROTOCOL_SHA256 = "280f85822abcb8306094c730a10333e0f26edf076f9559d14f49fbca3f9ae69c"
+PROTOCOL_SHA256 = "4d39cb38dffa68547445b627d0b4a550400eb0a0748ec2d0295051aa1f937c7a"
 VERDICTS = ("correct", "incorrect")
 OUTCOMES = ("pass", "fail", "without_checks", "error")
 # نصٌّ أقصرُ من هذا لا يُبحث عنه في التقرير: كلمةٌ قصيرة كـ«نعم» تقع في أيّ تقرير ولا تدلّ على حالة.
@@ -88,6 +88,18 @@ def _kappa(truth: list[str], predicted: list[str]) -> float | None:
     if expected >= 1:
         return None
     return (observed - expected) / (1 - expected)
+
+
+def open_judge_panel(judges: list[tuple[str, str]], protocol: dict) -> list[dict]:
+    """محكِّما المفتوح (#30): العددُ المسجَّل بالضبط، كلٌّ بنقلٍ مثبَّت من عائلةٍ مسموحة، والعائلاتُ مختلفة. ولا يخصّ قبولَ
+    محكِّم المحجوب، فذاك المسجَّلُ وحده بمعايرته الموقَّعة (ملاحظة Codex على #289)."""
+    panel = [open_judge(transport, model, protocol) for transport, model in judges]
+    rule = protocol["calibration"]["open_judges"]
+    if len(panel) != rule["required"]:
+        raise JudgeRefused("open_judge_panel_size", f"{len(panel)} ≠ {rule['required']}")
+    if rule["distinct_families"] and len({judge["family"] for judge in panel}) != len(panel):
+        raise JudgeRefused("open_judge_panel_same_family", "محكِّما المفتوح من عائلتين مختلفتين")
+    return panel
 
 
 def cohen_kappa(truth: list[str], predicted: list[str]) -> float | None:

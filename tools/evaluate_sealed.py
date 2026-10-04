@@ -83,20 +83,33 @@ def _on_owner_mac() -> bool:
     return hmac.compare_digest(derived, public)
 
 
-# ما يحدّد الاستدلالَ من الشيفرة: بصمتُه تُنشر مع التقرير فلا يُنشر تشغيلٌ بشيفرةٍ أخرى بالبيانات نفسها. ولا تُثبَّت في
-# البروتوكول لأن judge.py يثبّت بصمةَ البروتوكول، فالتثبيتُ في الاتجاهين دائرة.
-RUNNER_SOURCES = ("core/contracts.py", "core/quoted.py", "evaluation/capabilities.py", "evaluation/judge.py",
-                  "providers/ollama.py", "tools/evaluate_sealed.py", "tools/model_digest.py")
-
-
 def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def runner_files() -> set[Path]:
+    """ملفّاتُ المُشغِّل: كلُّ ملفّات بايثون في حزم المستودع التي استُوردت (core وagent وevaluation وproviders…)، ووحداتُ
+    tools المستورَدة نفسُها. فالمجموعةُ يحدّدها ما استُورد فعلًا لا قائمةٌ باليد، والحزمةُ كلُّها لا وحدتُها وحدها، فتشمل ما
+    يُستورد كسولًا داخلها (ملاحظتا Codex على #289)."""
+    loaded = set()
+    for module in list(sys.modules.values()):
+        origin = getattr(module, "__file__", None)
+        if not origin:
+            continue
+        path = Path(origin).resolve()
+        if path.suffix == ".py" and path.is_relative_to(ROOT) and not {".venv", "tests"} & set(path.relative_to(ROOT).parts):
+            loaded.add(path.relative_to(ROOT))
+    packages = {path.parts[0] for path in loaded if len(path.parts) > 1 and path.parts[0] != "tools"}
+    files = {path for package in packages for path in (p.relative_to(ROOT) for p in (ROOT / package).rglob("*.py"))}
+    files |= {path for path in loaded if len(path.parts) == 1 or path.parts[0] == "tools"}
+    return files
+
+
 def runner_sha256() -> str:
-    """بصمةُ مصادر المُشغِّل: كلُّ ملفٍّ بمساره وبصمته، مسلسلةً بترتيبٍ ثابت."""
-    files = {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in RUNNER_SOURCES}
-    return _sha(json.dumps(files, sort_keys=True))
+    """بصمةُ ملفّات المُشغِّل كلٌّ بمساره وبصمته. ولا تُثبَّت في البروتوكول لأن judge.py يثبّت بصمتَه، فالتثبيتُ في
+    الاتجاهين دائرة؛ بل تُنشر مع التقرير وتعزل مجلّدَ التشغيل."""
+    digests = {path.as_posix(): hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in sorted(runner_files())}
+    return _sha(json.dumps(digests, sort_keys=True))
 
 
 def _options(model, runtime: dict) -> dict | None:
@@ -222,6 +235,9 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
                                         judge_digest=judge_digest)
     sealed_root = _outside_repository(sealed_root, "sealed_root_in_repository")
     run_root = _outside_repository(run_root, "sealed_run_root_in_repository")
+    # مجلّدُ التشغيل معزولٌ ببصمة المُشغِّل: فشيفرةٌ تغيّرت لا تعيد أجوبةَ دفتر شيفرةٍ سابقة وتُنسب إليها (ملاحظة Codex على #289)
+    runner = runner_sha256()
+    run_root = run_root / f"runner-{runner[:24]}"
     entries = [e for e in verify_manifest(sealed_root, manifest_path,
                                           manifest_sha256 or protocol["sealed"]["manifest_sha256"])
                if e["kind"] == "suite"]
@@ -287,7 +303,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     out = {"schema_version": 1, "probe": "k45-sealed", "status": "measured", "protocol": protocol["protocol_id"],
            "protocol_sha256": protocol_sha256, "date": date.today().isoformat(), "agent": "anthropic/claude-opus-5-5",
            "engine": {"model": provider.model, "digest": engine_digest}, "runtime": runtime,
-           "runner_sha256": runner_sha256(),
+           "runner_sha256": runner,
            "judge": None if judge is None else {"model": judge.model, "digest": judge_digest,
                                                 "calibration_sha256": hashlib.sha256(json.dumps(
                                                     judge_evidence, sort_keys=True).encode()).hexdigest()},
