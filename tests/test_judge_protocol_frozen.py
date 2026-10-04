@@ -14,11 +14,14 @@ from core.signing import SigningRefused
 from evaluation import judge
 from evaluation.judge import JudgeRefused
 
-REGISTERED = "ac72dadc3df7544c010d06319cba08c6b838af504d28bf0017826934a0fe4a04"
+REGISTERED = "40bd8376159f0db5cf4b19350e47ba46afed7249385b97ce6aea11ef1c435a9f"
 DATA = json.loads(judge.PROTOCOL.read_text(encoding="utf-8"))
 # مفتاحُ مالكٍ مصطنعٌ للاختبار وحده؛ ومفتاحُ المالك الحقيقيّ في سلسلة مفاتيح الماك لا في المستودع.
 OWNER_SEED = hashlib.sha256(b"diwan-test-owner-calibration").digest()
 OTHER_SEED = hashlib.sha256(b"diwan-test-not-the-owner").digest()
+# بصمةُ المحرّك المسجَّلة، وبصمةُ محكِّمٍ مصطنعة كما يحلّها Ollama على الماك.
+ENGINE_DIGEST = DATA["sealed"]["engine_digest"]
+JUDGE_DIGEST = hashlib.sha256(b"synthetic-granite4-weights").hexdigest()
 OWNER_PUBLIC = Ed25519PrivateKey.from_private_bytes(OWNER_SEED).public_key().public_bytes(Encoding.Raw,
                                                                                           PublicFormat.Raw)
 
@@ -32,7 +35,9 @@ def test_the_protocol_is_registered_before_any_run_and_cannot_change():
     assert DATA["calibration"]["split"] == "open_only"
     assert DATA["sealed"]["attempts"] == 120 and DATA["sealed"]["provider"] == "local_only"
     assert DATA["sealed"]["judge"] == {"model": "granite4", "family": "ibm", "local_only": True,
-                                       "requires_passing_calibration_evidence": True}
+                                       "requires_passing_calibration_evidence": True,
+                                       "digest": "the_one_signed_in_the_calibration_evidence"}
+    assert DATA["sealed"]["engine_digest"] == "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7"
     assert judge.load_protocol() == DATA
 
 
@@ -151,7 +156,8 @@ FIRST_AUTOMATIC = next(s["cases"] for s in DATA["calibration"]["sources"] if s["
 
 def _evidence(rows=None, *, seed=OWNER_SEED, **overrides):
     """دليلُ معايرةٍ موقَّعٌ بمفتاح المالك المصطنع؛ و`seed=None` يتركه بلا توقيع."""
-    evidence = {"protocol_sha256": REGISTERED, "judge": {"model": "granite4"},
+    evidence = {"protocol_sha256": REGISTERED, "judge": {"model": "granite4", "digest": JUDGE_DIGEST},
+                "engine": {"model": "qwen3.5:9b", "digest": ENGINE_DIGEST},
                 "rows": _rows() if rows is None else rows, **overrides}
     return evidence if seed is None else judge.sign_calibration(evidence, private_seed=seed)
 
@@ -176,7 +182,7 @@ def test_the_calibration_sample_is_frozen_by_the_protocol():
     assert sample["k11_owner_ruled"] == sorted(r["id"] for r in triage["real"] + triage["false_positives"])
     assert len(sample["k11_owner_ruled"]) == 23 and len(set(sample["automatic_checked"])) == 100
     assert hashlib.sha256(json.dumps(sample, sort_keys=True).encode()).hexdigest() == \
-        "5b1aad640351c123c51eae62ec71553a3b2373633600b536de9e506bb9366f11"
+        "215dfeedc1b4b1fc22b4c2d459f211eab5a779557ce9de64c525a3bdb29c5155"
     kinds = {check["kind"] for checks in _truth()["automatic_checked"].values() for check in checks}
     assert kinds <= {"exact", "json_equals"} and all(isinstance(r, str) for r in _truth()["k11_owner_ruled"].values())
 
@@ -202,6 +208,8 @@ UNCALIBRATED = {
     "owner_ruling_pending": lambda: _evidence(_rows(label=None)),
     "another_model": lambda: _evidence(judge={"model": "granite3"}),
     "another_protocol": lambda: _evidence(protocol_sha256="0" * 64),
+    "judge_tag_repointed_after_calibration": lambda: _evidence(judge={"model": "granite4", "digest": "0" * 64}),
+    "calibrated_on_another_engine": lambda: _evidence(engine={"model": "qwen3.5:9b", "digest": "0" * 64}),
     "unsigned": lambda: _evidence(seed=None),
     "signed_by_another_key": lambda: _evidence(seed=OTHER_SEED),
     "changed_after_signing": _tampered,
@@ -219,14 +227,14 @@ def test_a_sealed_judge_needs_its_calibration_rows_on_the_frozen_sample(case):
     حالاتها، أو بلا توقيع المالك، كان يُقبل؛ والأرقامُ تُعاد من صفوفٍ مربوطةٍ موقَّعة."""
     with pytest.raises(JudgeRefused) as refused:
         judge.accept_sealed_judge(UNCALIBRATED[case](), "granite4", DATA, REGISTERED, _truth(),
-                                  public_key=OWNER_PUBLIC)
+                                  judge_digest=JUDGE_DIGEST, public_key=OWNER_PUBLIC)
     assert refused.value.code == "judge_uncalibrated"
 
 
 def test_a_calibrated_sealed_judge_is_accepted_from_its_rows_alone():
     for evidence in (_evidence(), _evidence(_rows(flip=10))):
         assert judge.accept_sealed_judge(evidence, "granite4", DATA, REGISTERED, _truth(),
-                                         public_key=OWNER_PUBLIC) == "ibm"
+                                         judge_digest=JUDGE_DIGEST, public_key=OWNER_PUBLIC) == "ibm"
     assert _rows()[FIRST_AUTOMATIC]["source"] == "automatic_checked" == _rows()[FIRST_AUTOMATIC + 1]["source"]
     assert _rows()[FIRST_AUTOMATIC + 1]["label"] == "incorrect"
 
@@ -235,21 +243,31 @@ def test_the_trusted_owner_key_is_the_default_and_an_unverifiable_one_is_named(m
     """بلا مفتاحٍ مُمرَّر يُتحقَّق بالمفتاح المُثبَّت في المستودع، فتوقيعُ مفتاحٍ مصطنع لا يمرّ؛ وتعذُّرُ قراءة المفتاح
     «تعذّر» مسمًّى لا «لم يُوقَّع» (ق٣٩)."""
     with pytest.raises(JudgeRefused) as refused:
-        judge.accept_sealed_judge(_evidence(), "granite4", DATA, REGISTERED, _truth())
+        judge.accept_sealed_judge(_evidence(), "granite4", DATA, REGISTERED, _truth(), judge_digest=JUDGE_DIGEST)
     assert refused.value.code == "judge_uncalibrated"
 
     def no_policy():
         raise SigningRefused("signing_policy_missing", "synthetic")
     monkeypatch.setattr(judge, "load_trusted_public_key", no_policy)
     with pytest.raises(JudgeRefused) as refused:
-        judge.accept_sealed_judge(_evidence(), "granite4", DATA, REGISTERED, _truth())
+        judge.accept_sealed_judge(_evidence(), "granite4", DATA, REGISTERED, _truth(), judge_digest=JUDGE_DIGEST)
     assert refused.value.code == "calibration_signature_unverifiable"
+
+
+def test_an_unresolved_judge_digest_never_matches_an_evidence_without_one():
+    """بصمةٌ لم تُحلّ (None) لا تطابق دليلًا وُقِّع بلا بصمة: فالدليلُ يسمّي أوزانًا بعينها أو لا يُقبل."""
+    evidence = _evidence(judge={"model": "granite4", "digest": None})
+    with pytest.raises(JudgeRefused) as refused:
+        judge.accept_sealed_judge(evidence, "granite4", DATA, REGISTERED, _truth(), judge_digest=None,
+                                  public_key=OWNER_PUBLIC)
+    assert refused.value.code == "judge_uncalibrated"
 
 
 @pytest.mark.parametrize("model", ["glm-4.6", "granite4:3b"])
 def test_only_the_registered_sealed_judge_may_judge(model):
     with pytest.raises(JudgeRefused) as refused:
         judge.accept_sealed_judge(_evidence(judge={"model": model}), model, DATA, REGISTERED, _truth(),
+                                  judge_digest=JUDGE_DIGEST,
                                   public_key=OWNER_PUBLIC)
     assert refused.value.code == "judge_not_registered"
 

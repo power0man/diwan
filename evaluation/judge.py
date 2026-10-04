@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PROTOCOL = ROOT / "evaluation" / "protocols" / "judge_v1.json"
 K11_EVIDENCE = ROOT / "docs" / "probe" / "k11-owner-queue-triage-20260925.json"
 OPEN_BANK = ROOT / "evaluation" / "banks" / "kimi_v1" / "open"
-PROTOCOL_SHA256 = "ac72dadc3df7544c010d06319cba08c6b838af504d28bf0017826934a0fe4a04"
+PROTOCOL_SHA256 = "40bd8376159f0db5cf4b19350e47ba46afed7249385b97ce6aea11ef1c435a9f"
 VERDICTS = ("correct", "incorrect")
 OUTCOMES = ("pass", "fail", "without_checks", "error")
 # نصٌّ أقصرُ من هذا لا يُبحث عنه في التقرير: كلمةٌ قصيرة كـ«نعم» تقع في أيّ تقرير ولا تدلّ على حالة.
@@ -206,16 +206,20 @@ def _row_bound(row: dict, truth: dict[str, dict]) -> bool:
 
 
 def accept_sealed_judge(evidence: dict | None, model: str, protocol: dict, protocol_sha256: str,
-                        truth: dict[str, dict], *, public_key: bytes | None = None) -> str:
+                        truth: dict[str, dict], *, judge_digest: str | None,
+                        public_key: bytes | None = None) -> str:
     """المحكِّمُ على المحجوب هو المسجَّلُ في البروتوكول وحده، بدليل معايرةٍ موقَّعٍ من المالك على نموذجه وبروتوكوله،
     صفوفُه هي العيّنةُ المجمَّدة حالةً حالة، وكلُّ صفٍّ مربوطٌ بحقيقة حالته، وκ والدقّةُ تُعادان منها؛ فلا يُصدَّق
-    عَلَمٌ ولا رقمٌ ولا تسميةٌ مكتوبةٌ في الدليل (ملاحظات Codex على #289)."""
+    عَلَمٌ ولا رقمٌ ولا تسميةٌ مكتوبةٌ في الدليل (ملاحظات Codex على #289). والدليلُ يسمّي بصمتَي المحرّك والمحكِّم:
+    المحرّكُ بصمتُه المسجَّلة في البروتوكول، والمحكِّمُ بصمتُه المحلولة الآن؛ فوسمٌ أُعيد توجيهُه بعد المعايرة يُردّ."""
     if model != protocol["sealed"]["judge"]["model"]:
         raise JudgeRefused("judge_not_registered", "محكِّمُ المحجوب هو المسجَّلُ في judge_v1 وحده")
     family = judge_family(model, protocol)
     expected = sorted((source, case) for source, cases in truth.items() for case in cases)
     try:
-        same = evidence["protocol_sha256"] == protocol_sha256 and evidence["judge"]["model"] == model
+        same = (bool(judge_digest) and evidence["protocol_sha256"] == protocol_sha256
+                and evidence["judge"] == {"model": model, "digest": judge_digest}
+                and evidence["engine"]["digest"] == protocol["sealed"]["engine_digest"])
         rows = evidence["rows"]
         bound = (sorted((row["source"], row["case"]) for row in rows) == expected
                  and all(_row_bound(row, truth) for row in rows))

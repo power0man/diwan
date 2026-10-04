@@ -7,7 +7,8 @@
 
 **ما يضمنه قبل أن يقرأ حرفًا من المحجوب:**
 - البروتوكولُ ببصمته المسجَّلة، ولا يُعدَّل (`judge_protocol_changed`).
-- المحرّكُ محليٌّ بمصدر المحليّة الواحد (`core.locality`)؛ وغيرُه `sealed_requires_local_provider`.
+- المحرّكُ محليٌّ بمصدر المحليّة الواحد (`core.locality`)؛ وغيرُه `sealed_requires_local_provider`. وهو المجمَّدُ ببصمته
+  المسجَّلة في البروتوكول، والمحكِّمُ ببصمته الموقَّعة في دليل معايرته، وتُعادان بعد التشغيل (`tools/model_digest.py`).
 - المحكِّمُ، إن طُلب، محليٌّ وله دليلُ معايرةٍ ناجحٌ موقَّعٌ من المالك لنموذجه نفسِه (`judge_uncalibrated`). وبلا محكِّمٍ تبقى الحالاتُ
   التي لا فحصَ آليًّا لها في المقام غيرَ ناجحة (OD3 في ق٦٤).
 - المحجوبُ ومجلّدُ التشغيل خارج المستودع، وكلُّ ملفٍّ يطابق بصمتَه في البيان المختوم.
@@ -34,6 +35,7 @@ from core.sandbox import configure_sandbox_backend
 from evaluation import judge as judge_rules
 from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
 from providers.ollama import DEFAULT_MODEL, OllamaProvider
+from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest
 
 MANIFEST = ROOT / "evaluation" / "banks" / "kimi_v1" / "sealed" / "MANIFEST.json"
 # المحرّكُ المجمَّد في البروتوكول (frozen_default_engine_q54): الافتراضيُّ بق٥٤، في موضعه الواحد
@@ -129,13 +131,21 @@ def _verdict(answer) -> str | None:
 
 def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Path = MANIFEST,
                judge=None, judge_evidence: dict | None = None, protocol_path: Path = judge_rules.PROTOCOL,
-               protocol_sha256: str = judge_rules.PROTOCOL_SHA256, model_version: str = "unspecified",
+               protocol_sha256: str = judge_rules.PROTOCOL_SHA256, digest_resolver=None,
                max_output: int = 800, deadline_s: int = 240) -> dict:
     protocol = judge_rules.load_protocol(protocol_path, protocol_sha256)
     preflight(provider, judge)
+    # الوسمُ يُعاد توجيهُه إلى أوزانٍ أخرى؛ فالمحرّكُ ببصمته المسجَّلة، والمحكِّمُ ببصمته الموقَّعة في دليل معايرته،
+    # وتُعاد البصمتان بعد التشغيل (ملاحظة Codex على #289).
+    try:
+        engine_digest = pin_model_digest(provider.model, protocol["sealed"]["engine_digest"], resolver=digest_resolver)
+        judge_digest = None if judge is None else pin_model_digest(judge.model, resolver=digest_resolver)
+    except ModelDigestError as exc:
+        raise SealedRefused(exc.code, "بصمةُ النموذج لا تُحلّ أو تخالف المسجَّلة") from None
     if judge is not None:
         truth = judge_rules.calibration_truth(judge_rules.calibration_sample(protocol, protocol_sha256))
-        judge_rules.accept_sealed_judge(judge_evidence, judge.model, protocol, protocol_sha256, truth)
+        judge_rules.accept_sealed_judge(judge_evidence, judge.model, protocol, protocol_sha256, truth,
+                                        judge_digest=judge_digest)
     sealed_root = _outside_repository(sealed_root, "sealed_root_in_repository")
     run_root = _outside_repository(run_root, "sealed_run_root_in_repository")
     entries = [e for e in verify_manifest(sealed_root, manifest_path) if e["kind"] == "suite"]
@@ -160,7 +170,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         texts.update(t for c in picked for t in (c["reference"], *(m["content"] for m in c["messages"])))
         try:
             report = evaluate_suite({**suite, "cases": picked}, provider, run_root,
-                                    max_output=max_output, deadline_s=deadline_s, model_version=model_version)
+                                    max_output=max_output, deadline_s=deadline_s, model_version=engine_digest)
         except CapabilityError:
             rows.extend({"tier": tier, "outcome": "error"} for _ in picked)
             continue
@@ -189,10 +199,16 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
                 outcome = {"correct": "pass", "incorrect": "fail"}.get(verdict, "error")
                 rows.append({"tier": tier, "outcome": outcome, "judged": verdict is not None})
 
+    try:
+        verify_model_digest(provider.model, engine_digest, resolver=digest_resolver)
+        if judge is not None:
+            verify_model_digest(judge.model, judge_digest, resolver=digest_resolver)
+    except ModelDigestError as exc:
+        raise SealedRefused(exc.code, "تغيّرت بصمةُ نموذجٍ أثناء التشغيل") from None
     out = {"schema_version": 1, "probe": "k45-sealed", "status": "measured", "protocol": protocol["protocol_id"],
            "protocol_sha256": protocol_sha256, "date": date.today().isoformat(), "agent": "anthropic/claude-opus-5-5",
-           "engine": {"model": provider.model, "model_version": model_version},
-           "judge": None if judge is None else {"model": judge.model,
+           "engine": {"model": provider.model, "digest": engine_digest},
+           "judge": None if judge is None else {"model": judge.model, "digest": judge_digest,
                                                 "calibration_sha256": hashlib.sha256(json.dumps(
                                                     judge_evidence, sort_keys=True).encode()).hexdigest()},
            "attempts": sum(allocation.values()), "allocation": allocation,
@@ -209,7 +225,6 @@ def main(argv=None) -> int:
     parser.add_argument("--sealed-root", type=Path, default=SEALED_ROOT)
     parser.add_argument("--run-root", type=Path, default=SEALED_ROOT.parent / ".runs" / "judge_v1")
     parser.add_argument("--model", default=DEFAULT_MODEL)
-    parser.add_argument("--model-version", default="unspecified")
     parser.add_argument("--judge")
     parser.add_argument("--judge-evidence", type=Path)
     parser.add_argument("--out", type=Path)
@@ -228,7 +243,7 @@ def main(argv=None) -> int:
             workspace.mkdir(parents=True, exist_ok=True)
             configure_sandbox_backend(args.sandbox_receipt.resolve(), workspace)
         report = run_sealed(args.sealed_root, provider, run_root=args.run_root,
-                            judge=judge, judge_evidence=evidence, model_version=args.model_version)
+                            judge=judge, judge_evidence=evidence)
     except (SealedRefused, judge_rules.JudgeRefused) as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2

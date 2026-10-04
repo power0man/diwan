@@ -12,11 +12,14 @@ import pytest
 from core.contracts import Response, Usage
 from evaluation import judge as judge_rules
 from evaluation.judge import JudgeRefused
-from tests.test_judge_protocol_frozen import OWNER_PUBLIC, _evidence
+from tests.test_judge_protocol_frozen import ENGINE_DIGEST, JUDGE_DIGEST, OWNER_PUBLIC, _evidence
 from tools import evaluate_sealed as sealed
+from tools import model_digest
 from tools.evaluate_sealed import SealedRefused
 
 CANARY_TEXT = "سؤالٌ محجوبٌ مصطنع لا يخرج"
+# ما يحلّه Ollama على الماك: المحرّكُ ببصمته المسجَّلة، والمحكِّمُ ببصمته الموقَّعة في الدليل المصطنع.
+DIGESTS = {sealed.FROZEN_ENGINE: ENGINE_DIGEST, "granite4": JUDGE_DIGEST}
 
 
 class Provider:
@@ -37,6 +40,7 @@ def _owner_mac(monkeypatch):
     المُثبَّت، فدليلُ المعايرة الموقَّع به في الاختبار يمرّ، ولا يمرّ به دليلٌ حقيقيّ."""
     monkeypatch.setattr(sealed, "_on_owner_mac", lambda: True)
     monkeypatch.setattr(judge_rules, "load_trusted_public_key", lambda: OWNER_PUBLIC)
+    monkeypatch.setattr(model_digest, "resolve_model_digest", DIGESTS.get)
 
 
 def _bank(root, tiers=(("tier_a", 6, True), ("tier_b", 4, False))):
@@ -105,6 +109,39 @@ def test_a_calibrated_local_judge_scores_only_cases_without_checks(tmp_path):
     assert report["by_tier"]["tier_b"]["passes"] == 4 and report["by_tier"]["tier_b"]["judged"] == 4
     assert report["by_tier"]["tier_a"]["judged"] == 0 and report["overall"]["rate"] == 1.0
     assert report["judge"]["model"] == "granite4"
+    assert report["engine"]["digest"] == ENGINE_DIGEST and report["judge"]["digest"] == JUDGE_DIGEST
+
+
+@pytest.mark.parametrize("resolved,code", [("0" * 64, "model_version_mismatch"), (None, "model_digest_unresolved")],
+                         ids=["repointed", "unresolved"])
+def test_an_engine_tag_off_its_registered_digest_is_refused_before_reading(tmp_path, resolved, code):
+    """ملاحظة Codex على #289: وسمُ qwen3.5:9b يُعاد توجيهُه قبل التشغيل؛ فالمحرّكُ ببصمته المسجَّلة في البروتوكول."""
+    provider = Provider()
+    with pytest.raises(SealedRefused) as refused:
+        _run(tmp_path, provider, digest_resolver={**DIGESTS, sealed.FROZEN_ENGINE: resolved}.get)
+    assert refused.value.code == code and provider.calls == 0
+
+
+def test_a_judge_tag_repointed_after_calibration_is_refused_before_reading(tmp_path):
+    provider = Provider()
+    with pytest.raises(JudgeRefused) as refused:
+        _run(tmp_path, provider, judge=Provider(model="granite4"), judge_evidence=_evidence(),
+             digest_resolver={**DIGESTS, "granite4": "0" * 64}.get)
+    assert refused.value.code == "judge_uncalibrated" and provider.calls == 0
+
+
+@pytest.mark.parametrize("model", [sealed.FROZEN_ENGINE, "granite4"], ids=["engine", "judge"])
+def test_a_digest_that_changes_during_the_run_refuses_the_report(tmp_path, model):
+    """البصمتان تُعادان بعد التشغيل؛ ونموذجٌ تبدّلت أوزانُه أثناءه لا يُكتب له تقرير."""
+    seen = []
+
+    def resolver(name):
+        seen.append(name)
+        return "f" * 64 if name == model and seen.count(name) > 1 else DIGESTS.get(name)
+    with pytest.raises(SealedRefused) as refused:
+        _run(tmp_path, Provider(), judge=Provider(model="granite4"), judge_evidence=_evidence(),
+             digest_resolver=resolver)
+    assert refused.value.code == "model_digest_drifted"
 
 
 @pytest.mark.parametrize("answer", ["لا أدري", "الحكم: correct\nلكنّ الجوابَ يقلب المعنى، فلا أحكم"],
