@@ -190,3 +190,12 @@ def test_a_refused_ollama_run_still_prints_the_calls_that_went_out(tmp_path, mon
     assert cli.main([str(bank)]) == 2
     printed = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert printed["code"] == "brief_missing" and len(printed["provider_usage"]) == 1
+
+
+def test_the_prior_zero_spend_evidence_keeps_only_named_entries(tmp_path):
+    assert cli.prior_zero_spend_evidence(tmp_path) == {}
+    (tmp_path / "reviews").mkdir()
+    for raw, expected in (("[]", {}), ('{"zero_spend_evidence": "x"}', {}),
+                          ('{"zero_spend_evidence": {"m": {"proof": "p"}, "n": "bad"}}', {"m": {"proof": "p"}})):
+        (tmp_path / "reviews" / "SUMMARY.json").write_text(raw, encoding="utf-8")
+        assert cli.prior_zero_spend_evidence(tmp_path) == expected

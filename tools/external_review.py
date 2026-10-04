@@ -122,11 +122,30 @@ def prior_provider_usage(bank: Path) -> list[dict]:
 
     إعادةُ التشغيل على بنكٍ مراجَع تتخطّى سجلّاته فلا يُرسل نداءٌ؛ وكتابةُ سجلّ هذا التشغيل وحده كانت تمحو أدلّةَ الإنفاق
     للمراجعات التي ما زالت الخلاصةُ تمثّلها. وخلاصةٌ مفقودةٌ أو بلا سجلٍّ قائمةٌ فارغة، لا خطأ."""
-    try:
-        rows = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8")).get("provider_usage")
-    except (OSError, ValueError, AttributeError):
-        return []
+    rows = _prior_summary(bank).get("provider_usage")
     return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+
+
+def prior_zero_spend_evidence(bank: Path) -> dict:
+    """دليلُ المجانية الذي حفظته تشغيلاتٌ سابقة لكل نموذج، فلا تمحوه إعادةٌ لم تقرأ الفهرسَ لذلك النموذج (ملاحظة Codex على #298)."""
+    evidence = _prior_summary(bank).get("zero_spend_evidence")
+    if not isinstance(evidence, dict):
+        return {}
+    return {model: entry for model, entry in evidence.items() if isinstance(model, str) and isinstance(entry, dict)}
+
+
+def _prior_summary(bank: Path) -> dict:
+    try:
+        summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return summary if isinstance(summary, dict) else {}
+
+
+def cost_unconfirmed_attempts(rows: list[dict]) -> int:
+    """نداءاتُ OpenRouter التي أُرسلت ولم تثبت كلفتُها (#285)؛ تُعدّ من السجلّ الذي تُعطاه، تشغيلًا كان أو البنكَ كلَّه."""
+    return sum(1 for row in rows if row.get("kind") != "catalog" and row.get("provider") == "openrouter"
+               and row.get("request_sent") and row.get("cost_status") != "reported")
 
 
 class OllamaChat:
@@ -571,11 +590,9 @@ class OpenAICompatChat:
 
         نداءٌ أُرسل إلى OpenRouter ثم انقطع أو عاد بلا JSON يُعاد ولا يوقف التشغيل، وكلفتُه مجهولة؛ فلا يُبلَّغ التشغيلُ نظيفًا
         وهو فيه (#285): يُعدّ هنا باسمه، والمالكُ يقرأ العددَ بجانب `provider_usage`."""
-        unconfirmed = sum(1 for row in self.provider_usage
-                          if row.get("kind") != "catalog" and row["provider"] == "openrouter"
-                          and row["request_sent"] and row["cost_status"] != "reported")
         return {"zero_spend_evidence": dict(sorted(self.zero_spend_evidence.items())),
-                "cost_unconfirmed_attempts": unconfirmed, "token_totals": token_totals(self.provider_usage)}
+                "cost_unconfirmed_attempts": cost_unconfirmed_attempts(self.provider_usage),
+                "token_totals": token_totals(self.provider_usage)}
 
     def _record_provider_usage(self, model: str, started: float, status: str, *,
                                usage: dict | None = None, cost: Decimal | None = None,
@@ -1123,6 +1140,8 @@ def final_set_counts(bank: Path, final_models: set[str], pre_existing: dict[str,
 def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     check_public_bank(args.bank)
     inspect_open_split(args.bank)              # لا رابطَ ولا محجوبَ بالبصمة قبل أوّل نداء
+    # سجلُّ الخلاصة ودليلُ مجانيتها قبل أن تُعاد كتابتُها، فيُلحَق بهما ولا يُستبدلان (ملاحظة Codex على #298)
+    prior, prior_evidence = prior_provider_usage(args.bank), prior_zero_spend_evidence(args.bank)
     # ملفّاتُ open/ الحالية: كلُّ قراءةٍ لسجلّات المراجعة بعدها تُقارن بها، فسجلُّ ملفٍّ حُذف أو أُعيدت تسميتُه منذ تشغيلٍ سابق
     # لا يدخل النفادَ ولا الاتفاقَ ولا قائمةَ المالك ولا الأعداد ولا التاريخ (ملاحظة Codex على #174)
     current = {path.relative_to(args.bank / "open").as_posix() for path in open_files(args.bank)}
@@ -1163,7 +1182,12 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     status = "failed" if failure or counted else "reviewed"
     limits = free_limits(summary["measurement_limits"], args.backend)
     _persist_limits(args.bank, limits)
-    _persist_provider_usage(args.bank, transport.provider_usage, _spend_report(transport))
+    # الخلاصةُ للبنك كلِّه: السجلُّ والمجموعُ وعدُّ ما لم تثبت كلفتُه من السجلّ المُلحَق، ودليلُ المجانية الجديدُ فوق السابق.
+    # أمّا المطبوعُ أدناه فتقريرُ هذا التشغيل وحده.
+    ledger = prior + transport.provider_usage
+    _persist_provider_usage(args.bank, ledger, {
+        "zero_spend_evidence": dict(sorted({**prior_evidence, **transport.zero_spend_evidence}.items())),
+        "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger), "token_totals": token_totals(ledger)})
     if args.run_id:          # كلُّ سجلٍّ وخلاصةٍ في مجلّد هذا التشغيل يحمل معرّفَه، فيُرفض عند الرفع ما لا يحمله
         stamp_run(args.bank / "reviews", args.run_id)
     final_counts = final_set_counts(args.bank, final_models, pre_existing, current)

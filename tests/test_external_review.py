@@ -1415,3 +1415,34 @@ def test_groq_mock_logs_tokens_but_never_invents_an_unreported_zero_cost():
         "cost_usd": None, "cost_status": "not_reported",
         "zero_spend_proof": "operator_confirmed_account_free_tier",
     }]
+
+
+def test_a_free_rerun_on_a_reviewed_bank_keeps_the_bank_ledger(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: إعادةُ واجهةٍ مجانية على بنكٍ مراجَع تتخطّى سجلّاته فلا تُرسل نداءً، وكانت تستبدل سجلَّ
+    الخلاصة ومجموعَها بسجلّها الفارغ. والآن يُلحَق بهما؛ والمطبوعُ تقريرُ هذا التشغيل وحده."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    args = ["--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF)]
+    bank = _public_bank(tmp_path, "rerun")
+    _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    assert cli.main([str(bank), *args]) == 0
+    capsys.readouterr()
+    summary_path = bank / "reviews" / "SUMMARY.json"
+    first = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert sorted(first["token_totals"]) == sorted([DS, MI])
+    # ما سجّله تشغيلٌ سابقٌ على OpenRouter: دليلُ مجانيته ونداءٌ لم تثبت كلفتُه، يبقيان في خلاصة البنك
+    first["zero_spend_evidence"] = {"earlier/model:free": {"proof": "catalog_free_suffix_and_all_pricing_zero"}}
+    first["provider_usage"].append({"provider": "openrouter", "model": "earlier/model:free", "request_sent": True,
+                                    "usage": None, "cost_status": "not_reported"})
+    summary_path.write_text(json.dumps(first), encoding="utf-8")
+    again = _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    assert cli.main([str(bank), *args]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    second = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert again.chat_models() == [], "البنكُ مراجَعٌ فلا نداء"
+    assert printed["token_totals"] == {}, "المطبوعُ لهذا التشغيل وحده"
+    assert second["provider_usage"][:len(first["provider_usage"])] == first["provider_usage"]
+    assert second["token_totals"] == {**first["token_totals"], "earlier/model:free": {
+        "calls": 1, "calls_with_incomplete_usage": 1, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}}
+    assert second["zero_spend_evidence"] == first["zero_spend_evidence"]
+    assert second["cost_unconfirmed_attempts"] == 1 and printed["cost_unconfirmed_attempts"] == 0
