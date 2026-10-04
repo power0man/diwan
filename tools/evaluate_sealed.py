@@ -25,6 +25,7 @@ import argparse
 import hashlib
 import hmac
 import json
+import os
 import platform
 import re
 import sys
@@ -158,6 +159,36 @@ def preflight(provider, judge, engine: str) -> None:
         raise SealedRefused("sealed_engine_not_frozen", "المحرّكُ المجمَّد في البروتوكول وحده (ق٥٤)")
     if judge is not None and not is_local_provider(judge):
         raise SealedRefused("sealed_requires_local_provider", "محكِّمُ المحجوب محليٌّ وحده")
+
+
+POST_CHECK_PENDING = "post-check-pending.json"
+
+
+def _open_post_check(run_root: Path) -> float:
+    """علامةٌ تُكتب قبل أيّ جوابٍ وتُزال بعد أن تمرّ البصمتان في آخر التشغيل؛ فعلامةٌ باقية تعني استدعاءً انقطع قبل فحصه
+    (قتلٌ أو انقطاعُ كهرباء بعد إعادة توجيه الوسم)، فتُعزل تشغيلاتُه قبل أن يعيدها وسمٌ أُعيد ويمرّ تحقّقُه (ملاحظة Codex على
+    #289). والحدُّ محافظ: استدعاءٌ متزامنٌ في المجلّد نفسِه تُعزل تشغيلاتُه فتُعاد من أوّلها، ولا يُعاد عرضُ ما لم يُفحص."""
+    run_root.mkdir(parents=True, exist_ok=True)
+    pending = run_root / POST_CHECK_PENDING
+    if pending.is_symlink() or pending.exists():
+        try:
+            since = float(json.loads(pending.read_text(encoding="utf-8"))["started"])
+        except (OSError, ValueError, KeyError, TypeError):
+            since = 0.0
+        quarantine_runs_since(run_root, since)
+    started = time.time() - 1
+    temporary = run_root / f"{POST_CHECK_PENDING}.{os.getpid()}.tmp"
+    with open(temporary, "wb") as stream:
+        stream.write(json.dumps({"started": started}).encode() + b"\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(temporary, pending)
+    directory = os.open(run_root, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+    return started
 
 
 def _outside_sealed(path: Path, sealed_root: Path, code: str) -> Path:
@@ -307,7 +338,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     runner = runner_sha256()
     sandbox = sandbox_configuration()
     run_root = run_root / f"runner-{runner[:24]}"
-    started = time.time() - 1
+    started = _open_post_check(run_root)
     # بيانٌ غيرُ المسجَّل يُقبل ببصمته، لكنّ تقريرَه ينشرها ويسمّيه تبديلًا، فلا تُنشر نتائجُ بنكٍ بديلٍ بنسبةٍ توحي ببيان
     # v1.1 المثبَّت (ملاحظة Codex على #289)
     manifest_digest = manifest_sha256 or protocol["sealed"]["manifest_sha256"]
@@ -375,7 +406,9 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         # الرفضُ وحده لا يكفي: أجوبةُ ما بعد الانحراف في دفترٍ مفتاحُه البصمةُ المثبَّتة، فوسمٌ أُعيد يعيد عرضَها في
         # التشغيل التالي ويمرّ تحقّقُه؛ فتُنقل تشغيلاتُ هذا الاستدعاء إلى drift-quarantine كما في #290 (ملاحظة Codex على #289)
         moved = quarantine_runs_since(run_root, started)
+        (run_root / POST_CHECK_PENDING).unlink(missing_ok=True)
         raise SealedRefused(exc.code, f"تغيّرت بصمةُ نموذجٍ أثناء التشغيل؛ نُقلت {len(moved)} تشغيلة") from None
+    (run_root / POST_CHECK_PENDING).unlink()
     out = {"schema_version": 1, "probe": "k45-sealed", "status": None, "overrides": None,
            "protocol": protocol["protocol_id"], "protocol_sha256": protocol_sha256, "manifest_sha256": manifest_digest,
            "date": date.today().isoformat(), "agent": agent,

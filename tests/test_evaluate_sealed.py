@@ -277,6 +277,27 @@ def test_a_digest_that_changes_during_the_run_refuses_the_report(tmp_path, model
     assert engine.calls == 10 and judge.calls == 4
 
 
+def test_runs_of_an_invocation_killed_before_its_post_check_are_quarantined_not_replayed(tmp_path, monkeypatch):
+    """ملاحظة Codex على #289: عمليةٌ قُتلت بعد كتابة أجوبتها وقبل إعادة البصمتين تترك علامتَها، فلا يعيد التشغيلُ التالي
+    أجوبتَها ولو أُعيد الوسم؛ وتشغيلٌ مرّ فحصُه يزيل علامتَه فيُعاد عرضُه بلا سؤالٍ جديد."""
+    runner = tmp_path / "runs" / f"runner-{sealed.runner_sha256()[:24]}"
+
+    def killed(*args, **kwargs):
+        raise KeyboardInterrupt
+    with monkeypatch.context() as patch:
+        patch.setattr(sealed, "verify_model_digest", killed)
+        with pytest.raises(KeyboardInterrupt):
+            _run(tmp_path, Provider())
+    assert (runner / sealed.POST_CHECK_PENDING).is_file()
+    engine = Provider()
+    _run(tmp_path, engine)
+    assert engine.calls == 10 and (runner / model_digest.QUARANTINE_DIR).is_dir()
+    assert not (runner / sealed.POST_CHECK_PENDING).exists()
+    replayed = Provider()
+    _run(tmp_path, replayed)
+    assert replayed.calls == 0
+
+
 @pytest.mark.parametrize("answer", ["لا أدري", "الحكم: correct\nلكنّ الجوابَ يقلب المعنى، فلا أحكم"],
                          ids=["no_verdict", "verdict_not_on_the_last_line"])
 def test_an_unparsed_verdict_is_an_error_not_a_pass(tmp_path, answer):
