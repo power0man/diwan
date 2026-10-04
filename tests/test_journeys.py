@@ -483,6 +483,55 @@ def test_an_open_sessions_directory_is_closed_when_listing_fails(tmp_path, monke
                 real_close(fd)
 
 
+@pytest.mark.parametrize("failure", ["session_raises", "projects_unlistable"])
+def test_the_projects_directory_is_closed_on_every_exit(tmp_path, monkeypatch, failure):
+    """تدقيقٌ لاحق (#285): كان `projects_fd` يُغلق على الخروج العاديّ وحده، فخطأٌ غيرُ متوقَّع في جلسةٍ يتركه مفتوحًا."""
+    root = tmp_path / "synthetic-root"
+    project = root / "projects" / ("a" * 32)
+    (project / "sessions" / ("b" * 32)).mkdir(parents=True)
+    (project / "meta.json").write_text(json.dumps({"id": project.name}), encoding="utf-8")
+    real_open, real_listdir, real_close = os.open, os.listdir, os.close
+    opened, closed = [], []
+
+    def track_open(path, *args, **kwargs):
+        fd = real_open(path, *args, **kwargs)
+        if path == "projects":
+            opened.append(fd)
+        return fd
+
+    def track_close(fd):
+        if fd in opened:
+            closed.append(fd)
+        return real_close(fd)
+
+    def deny_projects_listing(fd):
+        if fd in opened:
+            raise PermissionError("synthetic listing failure after a successful open")
+        return real_listdir(fd)
+
+    def broken_session(*args):
+        raise RuntimeError("synthetic unexpected failure")
+
+    monkeypatch.setattr(journeys.os, "open", track_open)
+    monkeypatch.setattr(journeys.os, "close", track_close)
+    if failure == "session_raises":
+        monkeypatch.setattr(journeys, "_session", broken_session)
+        expected = RuntimeError
+    else:
+        monkeypatch.setattr(journeys.os, "listdir", deny_projects_listing)
+        expected = journeys.Refused
+    try:
+        with pytest.raises(expected):
+            journeys.scan(root)
+        assert len(opened) == 1 and closed == opened
+        with pytest.raises(OSError):
+            os.fstat(opened[0])
+    finally:
+        for fd in opened:
+            if fd not in closed:
+                real_close(fd)
+
+
 def test_the_date_is_the_session_day_only_when_the_session_stayed_within_one_utc_day(copy, tmp_path, capsys):
     files = {mode: (meta, state) for meta, state, mode in session_files(copy) if mode != "agent"}
     meta, state = files["text"]

@@ -2,7 +2,8 @@
 # الاعتمادياتُ من uv.lock المجمَّد وحده (لا حلَّ جديدًا)، وبايثون 3.12 لأن عجلاتِ editdistance
 # (عبر camel-tools) موجودةٌ لها فلا يلزم مترجم (قيس على Nitro في #72). والمحرّكُ خارج الحاوية
 # (Ollama على المضيف)، والمتونُ لا تدخلها (ق٥٨)؛ ففحصُ الدخان فيها يخرج 3 بحدٍّ معلن.
-FROM python:3.12-slim-bookworm
+# الصورتان ببصمة فهرسهما لا بوسمٍ يتحرّك (#285)؛ البصمتان قُرئتا من Docker Hub في ٤ أكتوبر ٢٠٢٦ للوسمين نفسيهما.
+FROM python:3.12-slim-bookworm@sha256:54c85f3c47607a77f32adec749d3c81d1348bf25833671f512b26a9b6d778cb3
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -14,11 +15,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     CAMELTOOLS_DATA=/opt/camel_tools \
     PATH=/opt/diwan-venv/bin:$PATH
 
-RUN pip install --no-cache-dir 'uv==0.8.17'
+# uv بإصداره وبصمات عجلاته من PyPI (لينكس glibc على x86_64 وaarch64)، فلا يُثبَّت ما لم يُقرأ (#285)
+RUN printf '%s\n' 'uv==0.8.17 \
+      --hash=sha256:b6d30d02fb65193309fc12a20f9e1a9fab67f469d3e487a254ca1145fd06788f \
+      --hash=sha256:84d56ae50ca71aec032577adf9737974554a82a94e52cee57722745656c1d383 \
+      --hash=sha256:3941cecd9a6a46d3d4505753912c9cf3e8ae5eea30b9d0813f3656210f8c5d01' > /tmp/uv-requirements.txt \
+    && pip install --no-cache-dir --require-hashes -r /tmp/uv-requirements.txt \
+    && rm /tmp/uv-requirements.txt
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/* \
     && git config --system --add safe.directory /app
-COPY --from=node:24-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:24-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6 /usr/local/bin/node /usr/local/bin/node
 
 WORKDIR /app
 # الاعتمادياتُ قبل الشيفرة: طبقةٌ تُخزَّن ما لم يتغيّر القفل

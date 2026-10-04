@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import sys
 import urllib.error
+import urllib.request
 from pathlib import Path
 
 import pytest
@@ -519,3 +520,60 @@ def test_json_report_has_public_provenance_and_no_automatic_host_identity(monkey
     ]
     assert "hostname" not in report and "machine" not in report and "os" not in report
     assert pe.validate_payload(report) == []
+
+
+def test_the_recorded_commit_is_the_root_s_own_and_a_modified_tree_is_marked(tmp_path):
+    """تدقيقٌ لاحق (#285): `git -C` يصعد إلى مستودعٍ يحتوي الجذر، فكان تثبيتٌ داخل نسخةٍ أخرى يسمّي إيداعَها؛ والشجرةُ المعدَّلة
+    كانت تُنسب إلى إيداعها نظيفةً."""
+    import subprocess
+    repo = tmp_path / "checkout"
+    (repo / "installed").mkdir(parents=True)
+    git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@example.invalid"]
+    subprocess.run([*git, "init", "-q"], check=True)
+    (repo / "tracked.txt").write_text("a\n", encoding="utf-8")
+    subprocess.run([*git, "add", "tracked.txt"], check=True)
+    subprocess.run([*git, "commit", "-q", "-m", "fixture"], check=True)
+    head = subprocess.run([*git, "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
+
+    assert lc._git_commit(repo) == head
+    assert lc._git_commit(repo / "installed") == lc.UNRECORDED          # مجلّدٌ داخل نسخةٍ ليس جذرَها
+    assert lc._git_commit(tmp_path / "absent") == lc.UNRECORDED
+    (repo / "untracked.txt").write_text("u\n", encoding="utf-8")         # غيرُ المتتبَّع لا يغيّر ما قِيس
+    assert lc._git_commit(repo) == head
+    (repo / "tracked.txt").write_text("b\n", encoding="utf-8")
+    assert lc._git_commit(repo) == head + "-dirty"
+
+
+def test_the_engine_probe_ignores_proxy_settings_like_the_providers(monkeypatch):
+    """تدقيقٌ لاحق (#285): `probe_engine` كان يحترم HTTP_PROXY خلافَ المزوّدين، فيقول «غيرُ متاح» عن محرّكٍ محليٍّ يعمل."""
+    import http.server
+    import threading
+
+    class Tags(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802 — اسمُ واجهة http.server
+            payload = json.dumps({"models": [{"name": "synthetic:1"}]}).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def log_message(self, *args):
+            return
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Tags)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    for name in ("NO_PROXY", "no_proxy"):
+        monkeypatch.delenv(name, raising=False)
+    for name in ("HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"):
+        monkeypatch.setenv(name, "http://127.0.0.1:9")                # وكيلٌ لا يُجيب
+    # urlopen يبني مفتوحَه العامّ مرّةً بوكلاء البيئة لحظتَها؛ فيُصفَّر ليرى البيئةَ أعلاه كما يراها أوّلُ نداءٍ في التشغيل
+    monkeypatch.setattr(urllib.request, "_opener", None)
+    try:
+        tags = lc.probe_engine(f"http://127.0.0.1:{server.server_port}")
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+    assert tags == {"models": [{"name": "synthetic:1"}]}

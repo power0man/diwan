@@ -16,7 +16,9 @@ LAUNCH = (ROOT / "tools" / "launch_check.py").read_text(encoding="utf-8")
 
 
 def test_the_image_installs_from_the_frozen_lock_with_a_pinned_uv():
-    assert re.search(r"pip install --no-cache-dir 'uv==\d+\.\d+\.\d+'", DOCKERFILE)
+    # uv بإصدارٍ محدّد وببصمات عجلاته من ملفّ متطلّباتٍ يُفحص بـ--require-hashes (#285)
+    assert re.search(r"'uv==\d+\.\d+\.\d+ \\", DOCKERFILE)
+    assert "pip install --no-cache-dir --require-hashes -r /tmp/uv-requirements.txt" in DOCKERFILE
     assert "uv sync --frozen" in DOCKERFILE
     assert "UV_PYTHON_DOWNLOADS=never" in DOCKERFILE
 
