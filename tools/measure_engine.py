@@ -274,9 +274,13 @@ def main(argv=None) -> int:
         return 1
     run_root = ROOT / "var/capabilities"
     started = time.time() - 1
-    result = measure(suites, args.model, run_root,
-                     max_output=args.max_output, deadline_s=args.deadline_s,
-                     model_version=model_version)
+    failure: BaseException | None = None
+    try:
+        result = measure(suites, args.model, run_root,
+                         max_output=args.max_output, deadline_s=args.deadline_s,
+                         model_version=model_version)
+    except BaseException as exc:          # يُعاد التحقّقُ والحجرُ على كلِّ خروجٍ بعد بدء القياس (ملاحظة Codex على #290)
+        failure = exc
     try:
         verify_model_digest(args.model, model_version)
     except ModelDigestError as exc:
@@ -285,6 +289,8 @@ def main(argv=None) -> int:
         print(json.dumps({"status": "refused", "code": exc.code, "runs_quarantined": len(quarantined)},
                          ensure_ascii=False))
         return 1
+    if failure is not None:
+        raise failure
     args.out.parent.mkdir(parents=True, exist_ok=True)
     result["sandbox"] = sandbox
     if sandbox is None:

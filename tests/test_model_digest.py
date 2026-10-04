@@ -247,3 +247,48 @@ def test_a_run_rejected_for_drift_is_quarantined_so_a_returning_digest_cannot_re
     assert payload["runs_quarantined"] == 1
     assert sorted(p.name for p in isolated_run_root.iterdir()) == ["drift-quarantine", "run-earlier"]
     assert [p.name.rsplit("-", 1)[0] for p in (isolated_run_root / "drift-quarantine").iterdir()] == ["run-drifted"]
+
+
+@pytest.mark.parametrize("tool", ["capabilities", "engine"])
+def test_a_measurement_that_fails_after_writing_is_still_rechecked_and_quarantined(
+        tmp_path, monkeypatch, fake_ollama, isolated_run_root, capsys, tool):
+    """ملاحظةُ Codex على #290: قياسٌ كتب جوابًا ثم رمى استثناءً كان يخرج قبل التحقّق اللاحق والحجر، فتبقى تشغيلتُه
+    قابلةً لإعادة العرض. صار التحقّقُ والحجرُ على كلِّ خروجٍ بعد بدء القياس، والخطأُ الأصليّ يُرفع إن لم تنحرف البصمة."""
+    fake_ollama.models = [{"name": "fixture:latest", "digest": "sha256:before"}]
+
+    def write_then_fail(drifts: bool, error: BaseException):
+        def run(*args, **kwargs):
+            written = isolated_run_root / "run-partial"
+            written.mkdir(exist_ok=True)
+            (written / "ledger.jsonl").write_text("{}\n", encoding="utf-8")
+            if drifts:
+                fake_ollama.models = [{"name": "fixture:latest", "digest": "sha256:after"}]
+            raise error
+        return run
+
+    if tool == "capabilities":
+        monkeypatch.setattr(evaluate_capabilities, "OllamaProvider", lambda model: object())
+        monkeypatch.setattr(evaluate_capabilities, "load_suite", lambda path: {})
+        monkeypatch.setattr(evaluate_capabilities, "evaluate_suite", write_then_fail(True, OSError("disk")))
+        assert evaluate_capabilities.main(["--model", "fixture"]) == 2
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["error_code"] == "model_digest_drifted" and payload["runs_quarantined"] == 1
+    else:
+        monkeypatch.setattr(measure_engine, "measure", write_then_fail(True, RuntimeError("boom")))
+        code, out = _invoke("engine", tmp_path, "partial")
+        payload = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+        assert code == 1 and payload["code"] == "model_digest_drifted" and payload["runs_quarantined"] == 1
+        assert not out.exists()
+    assert sorted(p.name for p in isolated_run_root.iterdir()) == ["drift-quarantine"]
+
+    # بلا انحراف: الخطأُ الأصليّ يبقى كما كان، والتشغيلةُ لا تُحجر
+    fake_ollama.models = [{"name": "fixture:latest", "digest": "sha256:before"}]
+    if tool == "capabilities":
+        monkeypatch.setattr(evaluate_capabilities, "evaluate_suite", write_then_fail(False, OSError("disk")))
+        assert evaluate_capabilities.main(["--model", "fixture"]) == 2
+        assert json.loads(capsys.readouterr().out)["error_code"] == "filesystem_error"
+    else:
+        monkeypatch.setattr(measure_engine, "measure", write_then_fail(False, RuntimeError("boom")))
+        with pytest.raises(RuntimeError, match="boom"):
+            _invoke("engine", tmp_path, "partial-clean")
+    assert (isolated_run_root / "run-partial").is_dir()

@@ -43,6 +43,7 @@ def main(argv=None) -> int:
     except ModelDigestError as exc:
         print(json.dumps({"error_code": exc.code, "release_ready": False}))
         return 2
+    failure: BaseException | None = None
     try:
         provider = OllamaProvider(args.model)
         if getattr(args, "allow_thinking", False) or "cloud" in args.model or "oss" in args.model:
@@ -52,18 +53,22 @@ def main(argv=None) -> int:
                                 max_output=args.max_output, deadline_s=args.deadline_s,
                                 model_version=model_version,
                                 quarantine_quoted_material=args.quarantine_quoted)
-    except CapabilityError as exc:
-        print(json.dumps({"error_code": exc.code, "release_ready": False}))
-        return 2
-    except OSError:
-        print(json.dumps({"error_code": "filesystem_error", "release_ready": False}))
-        return 2
+    except BaseException as exc:          # يُعاد التحقّقُ والحجرُ على كلِّ خروجٍ بعد بدء القياس (ملاحظة Codex على #290)
+        failure = exc
     try:
         verify_model_digest(args.model, model_version)
     except ModelDigestError as exc:
         quarantined = quarantine_runs_since(run_root, started)
         print(json.dumps({"error_code": exc.code, "release_ready": False, "runs_quarantined": len(quarantined)}))
         return 2
+    if isinstance(failure, CapabilityError):
+        print(json.dumps({"error_code": failure.code, "release_ready": False}))
+        return 2
+    if isinstance(failure, OSError):
+        print(json.dumps({"error_code": "filesystem_error", "release_ready": False}))
+        return 2
+    if failure is not None:
+        raise failure
     print(json.dumps({"suite_id": report["suite_id"], "run_id": report["run_id"],
                       **report["summary"]}, ensure_ascii=False))
     return 0 if report["summary"]["collection_complete"] else 1
