@@ -294,6 +294,37 @@ def test_a_measurement_that_fails_after_writing_is_still_rechecked_and_quarantin
     assert (isolated_run_root / "run-partial").is_dir()
 
 
+@pytest.mark.parametrize("tool", ["capabilities", "engine"])
+def test_a_linked_quarantine_after_drift_is_a_named_refusal_not_a_traceback(
+        tmp_path, monkeypatch, fake_ollama, isolated_run_root, capsys, tool):
+    """ملاحظة Codex على #289: رفضُ الحَجر المربوط كان يفلت من المُشغِّلَين أثرًا خامًا لا ردَّهما المهيكل، فيكسر الأتمتة حين
+    يلزم الحَجر. والآن يُردّ برمزه ومعه رمزُ الانحراف، ولا يُنقل شيء."""
+    elsewhere = tmp_path / "checkout"
+    elsewhere.mkdir()
+    (isolated_run_root / "drift-quarantine").symlink_to(elsewhere, target_is_directory=True)
+    fake_ollama.models = [{"name": "fixture:latest", "digest": "sha256:before"}]
+
+    def drift():
+        written = isolated_run_root / "run-drifted"
+        written.mkdir()
+        (written / "ledger.jsonl").write_text("{}\n", encoding="utf-8")
+        fake_ollama.models = [{"name": "fixture:latest", "digest": "sha256:after"}]
+
+    seen: list[str] = []
+    if tool == "capabilities":
+        _capabilities(monkeypatch, drift, seen)
+        code = evaluate_capabilities.main(["--model", "fixture"])
+        payload = json.loads(capsys.readouterr().out)
+        assert code == 2 and payload["error_code"] == "quarantine_dir_unsafe"
+    else:
+        _configure(monkeypatch, "engine", drift, seen)
+        code, out = _invoke("engine", tmp_path, "linked")
+        payload = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+        assert code == 1 and payload["code"] == "quarantine_dir_unsafe" and not out.exists()
+    assert payload["drift_code"] == "model_digest_drifted" and payload["runs_quarantined"] == 0
+    assert (isolated_run_root / "run-drifted" / "ledger.jsonl").exists() and not any(elsewhere.iterdir())
+
+
 @pytest.mark.parametrize("kind", ["symlink", "file"])
 def test_a_quarantine_that_is_a_link_or_not_a_directory_is_refused_and_nothing_moves(tmp_path, kind):
     """ملاحظة Codex على #289: رابطٌ رمزيّ مُسبَقٌ باسم drift-quarantine كان يُنقل إليه الدفاترُ إلى حيث يشير (ولو المستودع)،

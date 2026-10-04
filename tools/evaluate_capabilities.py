@@ -58,7 +58,13 @@ def main(argv=None) -> int:
     try:
         verify_model_digest(args.model, model_version)
     except ModelDigestError as exc:
-        quarantined = quarantine_runs_since(run_root, started)
+        try:
+            quarantined = quarantine_runs_since(run_root, started)
+        except ModelDigestError as unsafe:
+            # ومجلّدُ حَجرٍ مربوطٌ أو غيرُ مجلّدٍ يُردّ رفضًا مسمًّى لا أثرًا خامًا، ولا يُنقل إليه شيء (ملاحظة Codex على #289)
+            print(json.dumps({"error_code": unsafe.code, "drift_code": exc.code, "release_ready": False,
+                              "runs_quarantined": 0}))
+            return 2
         print(json.dumps({"error_code": exc.code, "release_ready": False, "runs_quarantined": len(quarantined)}))
         return 2
     if isinstance(failure, CapabilityError):
