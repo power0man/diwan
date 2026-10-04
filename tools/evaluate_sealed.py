@@ -498,8 +498,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
            "protocol": protocol["protocol_id"], "protocol_sha256": protocol_sha256, "manifest_sha256": manifest_digest,
            "date": date.today().isoformat(), "agent": agent,
            "engine": {"model": provider.model, "digest": engine_digest}, "runtime": runtime,
-           "think_fallbacks": fallbacks,
-           "runner_sha256": runner,
+           "runner_sha256": runner, "think_fallbacks": fallbacks,
            # هويّةُ إيصال الحاوية كما تحكم فحوصَ python_sandbox (وهي في هويّة التشغيل أصلًا)، لا «configured» (ملاحظة Codex على #289)
            "sandbox": sandbox, "sandbox_sha256": None if sandbox is None else _sha(json.dumps(sandbox, sort_keys=True)),
            "judge": None if judge is None else {"model": judge.model, "digest": judge_digest,
