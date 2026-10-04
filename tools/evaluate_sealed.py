@@ -210,9 +210,19 @@ def _verdict(answer) -> str | None:
 
 
 def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Path = MANIFEST,
-               judge=None, judge_evidence: dict | None = None, protocol_path: Path = judge_rules.PROTOCOL,
-               protocol_sha256: str = judge_rules.PROTOCOL_SHA256, manifest_sha256: str | None = None,
+               judge=None, judge_evidence: dict | None = None, protocol_path: Path | None = None,
+               protocol_sha256: str | None = None, manifest_sha256: str | None = None,
                digest_resolver=None) -> dict:
+    # «measured» لا يُنشر إلا على المسجَّل كلِّه: البروتوكولُ ببصمته المثبَّتة في الشيفرة، والبيانُ ببصمته فيه، وبصماتُ
+    # النماذج من نقطة Ollama المسجَّلة لا من مُحلِّلٍ يمرّره المستدعي. وكلُّ تبديلٍ من هذه (للبنوك والبروتوكولات
+    # الاصطناعية في الاختبارات) يُسمّى في التقرير فلا يُسمّى قياسًا لـjudge_v1 (ملاحظات Codex على #289).
+    protocol_path = judge_rules.PROTOCOL if protocol_path is None else protocol_path
+    protocol_sha256 = judge_rules.PROTOCOL_SHA256 if protocol_sha256 is None else protocol_sha256
+    overrides = []
+    if not hmac.compare_digest(protocol_sha256, judge_rules.PROTOCOL_SHA256):
+        overrides.append("protocol")
+    if digest_resolver is not None:
+        overrides.append("digest_resolver")
     protocol = judge_rules.load_protocol(protocol_path, protocol_sha256)
     preflight(provider, judge, protocol["sealed"]["engine_model"])
     runtime = check_runtime(protocol, provider, judge)
@@ -239,10 +249,11 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     runner = runner_sha256()
     sandbox = sandbox_configuration()
     run_root = run_root / f"runner-{runner[:24]}"
-    # بيانٌ غيرُ المسجَّل (البنوكُ الاصطناعية في الاختبارات) يُقبل ببصمته، لكنّ تقريرَه ينشرها ولا يُسمّى قياسًا لـjudge_v1،
-    # فلا تُنشر نتائجُ بنكٍ بديلٍ بنسبةٍ توحي ببيان v1.1 المثبَّت (ملاحظة Codex على #289)
-    registered_manifest = protocol["sealed"]["manifest_sha256"]
-    manifest_digest = manifest_sha256 or registered_manifest
+    # بيانٌ غيرُ المسجَّل يُقبل ببصمته، لكنّ تقريرَه ينشرها ويسمّيه تبديلًا، فلا تُنشر نتائجُ بنكٍ بديلٍ بنسبةٍ توحي ببيان
+    # v1.1 المثبَّت (ملاحظة Codex على #289)
+    manifest_digest = manifest_sha256 or protocol["sealed"]["manifest_sha256"]
+    if not hmac.compare_digest(manifest_digest, protocol["sealed"]["manifest_sha256"]):
+        overrides.append("manifest")
     entries = [e for e in verify_manifest(sealed_root, manifest_path, manifest_digest) if e["kind"] == "suite"]
 
     suites, by_tier = {}, {}
@@ -303,8 +314,8 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
             verify_model_digest(judge.model, judge_digest, resolver=digest_resolver)
     except ModelDigestError as exc:
         raise SealedRefused(exc.code, "تغيّرت بصمةُ نموذجٍ أثناء التشغيل") from None
-    measured = hmac.compare_digest(manifest_digest, registered_manifest)
-    out = {"schema_version": 1, "probe": "k45-sealed", "status": "measured" if measured else "not_measured_manifest_overridden",
+    out = {"schema_version": 1, "probe": "k45-sealed", "status": "not_measured_overridden" if overrides else "measured",
+           "overrides": overrides,
            "protocol": protocol["protocol_id"], "protocol_sha256": protocol_sha256, "manifest_sha256": manifest_digest,
            "date": date.today().isoformat(), "agent": "anthropic/claude-opus-5-5",
            "engine": {"model": provider.model, "digest": engine_digest}, "runtime": runtime,
@@ -319,7 +330,8 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
            "measurement_limits": protocol["limits"] + (
                ["cases_without_automatic_checks_stay_in_the_denominator_as_not_passed_because_no_calibrated_judge"]
                if judge is None else []) + (
-               [] if measured else ["the_manifest_is_not_the_one_registered_in_judge_v1_so_this_report_is_not_a_judge_v1_measurement"])}
+               ["the_inputs_named_in_overrides_are_not_the_registered_ones_so_this_report_is_not_a_judge_v1_measurement"]
+               if overrides else [])}
     judge_rules.assert_clean(out, identifiers, texts)
     return out
 
