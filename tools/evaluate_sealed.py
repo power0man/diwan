@@ -28,6 +28,7 @@ import json
 import platform
 import re
 import sys
+import time
 from datetime import date
 from pathlib import Path
 
@@ -45,7 +46,7 @@ from evaluation.capabilities import CapabilityError, evaluate_suite, load_suite
 from providers import ollama as ollama_provider
 from providers.ollama import OllamaProvider
 from tools import model_digest
-from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest
+from tools.model_digest import ModelDigestError, pin_model_digest, quarantine_runs_since, verify_model_digest
 
 MANIFEST = ROOT / "evaluation" / "banks" / "kimi_v1" / "sealed" / "MANIFEST.json"
 SEALED_ROOT = Path.home() / "diwan-sealed" / "kimi_v1"
@@ -306,6 +307,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     runner = runner_sha256()
     sandbox = sandbox_configuration()
     run_root = run_root / f"runner-{runner[:24]}"
+    started = time.time() - 1
     # بيانٌ غيرُ المسجَّل يُقبل ببصمته، لكنّ تقريرَه ينشرها ويسمّيه تبديلًا، فلا تُنشر نتائجُ بنكٍ بديلٍ بنسبةٍ توحي ببيان
     # v1.1 المثبَّت (ملاحظة Codex على #289)
     manifest_digest = manifest_sha256 or protocol["sealed"]["manifest_sha256"]
@@ -370,7 +372,10 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
         if judge is not None:
             verify_model_digest(judge.model, judge_digest, resolver=digest_resolver)
     except ModelDigestError as exc:
-        raise SealedRefused(exc.code, "تغيّرت بصمةُ نموذجٍ أثناء التشغيل") from None
+        # الرفضُ وحده لا يكفي: أجوبةُ ما بعد الانحراف في دفترٍ مفتاحُه البصمةُ المثبَّتة، فوسمٌ أُعيد يعيد عرضَها في
+        # التشغيل التالي ويمرّ تحقّقُه؛ فتُنقل تشغيلاتُ هذا الاستدعاء إلى drift-quarantine كما في #290 (ملاحظة Codex على #289)
+        moved = quarantine_runs_since(run_root, started)
+        raise SealedRefused(exc.code, f"تغيّرت بصمةُ نموذجٍ أثناء التشغيل؛ نُقلت {len(moved)} تشغيلة") from None
     out = {"schema_version": 1, "probe": "k45-sealed", "status": None, "overrides": None,
            "protocol": protocol["protocol_id"], "protocol_sha256": protocol_sha256, "manifest_sha256": manifest_digest,
            "date": date.today().isoformat(), "agent": agent,

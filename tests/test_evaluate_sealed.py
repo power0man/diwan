@@ -269,6 +269,12 @@ def test_a_digest_that_changes_during_the_run_refuses_the_report(tmp_path, model
         _run(tmp_path, Provider(), judge=Provider(model="granite4"), judge_evidence=_evidence(),
              digest_resolver=resolver)
     assert refused.value.code == "model_digest_drifted"
+    # ملاحظة Codex على #289: أجوبةُ ما بعد الانحراف تُنقل إلى drift-quarantine، فوسمٌ أُعيد لا يعيد عرضَها، ويُسأل النموذجان من جديد
+    runner = tmp_path / "runs" / f"runner-{sealed.runner_sha256()[:24]}"
+    assert [p.name for p in runner.iterdir()] == [model_digest.QUARANTINE_DIR]
+    engine, judge = Provider(), Provider(model="granite4", answer="التعليل مصطنع.\nالحكم: correct")
+    _run(tmp_path, engine, judge=judge, judge_evidence=_evidence(), digest_resolver=DIGESTS.get)
+    assert engine.calls == 10 and judge.calls == 4
 
 
 @pytest.mark.parametrize("answer", ["لا أدري", "الحكم: correct\nلكنّ الجوابَ يقلب المعنى، فلا أحكم"],
