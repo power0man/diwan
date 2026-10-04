@@ -289,3 +289,59 @@ def test_the_codex_review_instruction_excludes_openai_authored_pull_requests():
     start = agents.index("`@codex review` (ق٦٥)")
     rule = agents[agents.rindex("\n", 0, start):agents.index("\n3. ", start)]
     assert "ليس من عائلة openai" in rule and "`@claude`" in rule
+
+
+# — الثقةُ من نسخة الأداة لا من الطلب (جديد-actions-hardening ٢) —
+
+def _pr_repo(tmp_path, *, agents=None, reviewers=None):
+    """نسخةُ طلبٍ بإيداعٍ واحدٍ من Claude، وسجلّاها كما يشاء الطلب."""
+    repo = tmp_path / "pr"
+    (repo / "registry").mkdir(parents=True)
+    for name, override in (("agents.json", agents), ("reviewers.json", reviewers)):
+        data = json.loads((ROOT / "registry" / name).read_text(encoding="utf-8"))
+        (repo / "registry" / name).write_text(json.dumps(override(data) if override else data), encoding="utf-8")
+    env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.org",
+               GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.org")
+    _git(repo, "init", "-q", "-b", "main"); _git(repo, "add", "-A"); _git(repo, "commit", "-q", "-m", "base", env=env)
+    base = _git(repo, "rev-parse", "HEAD")
+    (repo / "x.txt").write_text("x"); _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "عمل\n\nDiwan-Agent: anthropic/claude-opus-5-5", env=env)
+    return repo, base, _git(repo, "rev-parse", "HEAD")
+
+
+def _judge(tmp_path, repo, base, head, reviews):
+    data = tmp_path / "reviews.json"
+    data.write_text(json.dumps(reviews), encoding="utf-8")
+    out = subprocess.run([sys.executable, str(ROOT / "tools" / "family_review.py"), "--repo", str(repo),
+                          "--range", f"{base}..{head}", "--head", head, "--reviews-json", str(data)],
+                         capture_output=True, text=True)
+    return out.returncode, json.loads(out.stdout)
+
+
+def test_a_bot_the_pull_request_lists_as_a_reviewer_does_not_count(tmp_path):
+    def add_bot(data):
+        data["reviewers"]["planted-reviewer[bot]"] = "openai"
+        return data
+    repo, base, head = _pr_repo(tmp_path, reviewers=add_bot)
+    code, report = _judge(tmp_path, repo, base, head, [review("planted-reviewer[bot]", "APPROVED", head)])
+    assert code == 1 and report["code"] == "no_review_from_another_family"
+    assert report["ignored"] == [{"login": "planted-reviewer[bot]", "reason": "not_a_listed_bot"}]
+
+
+def test_a_pull_request_that_unregisters_its_author_cannot_be_passed_by_its_own_family(tmp_path):
+    def drop_author(data):
+        del data["agents"]["anthropic/claude-opus-5-5"]
+        return data
+    repo, base, head = _pr_repo(tmp_path, agents=drop_author)
+    code, report = _judge(tmp_path, repo, base, head, [review("claude[bot]", "APPROVED", head)])
+    assert code == 1 and report["author_families"] == ["anthropic"]
+    assert report["code"] == "reviewed_only_by_the_author_family"
+
+
+def test_the_workflow_runs_the_tool_and_its_registries_from_the_default_branch():
+    workflow = (ROOT / ".github" / "workflows" / "family-review.yml").read_text(encoding="utf-8")
+    trusted = re.search(r"- uses: actions/checkout@\S+ # v4\n        with:\n((?:          .+\n)+)", workflow)
+    assert trusted and "ref: ${{ github.event.repository.default_branch }}" in trusted.group(1)
+    assert "path: trusted" in trusted.group(1) and "persist-credentials: false" in trusted.group(1)
+    assert "run: python3 trusted/tools/family_review.py --repo pr " in workflow
+    assert workflow.count("run: ") == 1 and "path: pr\n" in workflow

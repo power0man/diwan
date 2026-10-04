@@ -17,7 +17,13 @@
 ومعه `Reviewed commit:` ببصمةٍ مختصرة. فيُقرأ تعليقٌ كهذا من بوتٍ مدرَجٍ في `CLEAN_REVIEW_COMMENTS` مراجعةً بحالة COMMENTED على
 الإيداع الذي يسمّيه، ولا تُحتسب إلا إن كان ذلك الإيداعُ الرأسَ الحاليّ. و`--wait-seconds` ينتظر المراجِعَ الذي يأتي بعد الدفع بدقائق.
 
+**الثقةُ من نسخة الأداة لا من الطلب (جديد-actions-hardening ٢):** سجلُّ العملاء وخريطةُ المراجِعين يُقرآن من النسخة التي
+فيها هذه الأداة (`ROOT`)، و`--repo` يُقرأ منه تاريخُ git وحده. والمهمّةُ تشغّل الأداةَ من نسخة `main` وتعطيها نسخةَ الطلب
+`--repo`؛ فطلبٌ يُدرج بوتًا في `reviewers.json` أو يُخرج عميلَه من `agents.json` لا يغيّر حكمَه على نفسه.
+
 **الحدُّ المعلَن:** يشهد الفحصُ أن عائلةً أخرى راجعت، لا أن ملاحظاتِها عولجت؛ ومعالجتُها واجبُ من يقود الطلب (الخطة §٦).
+وملفُّ المهمّة نفسُه يأتي من الطلب (حدثُ `pull_request`)، فطلبٌ يعدّل `.github/workflows/family-review.yml` يعدّل ما يشغّله؛
+وسدُّ ذلك قاعدةٌ في حماية الفرع على `.github/` أو مراجعةُ المالك، لا هذه الأداة.
 """
 from __future__ import annotations
 
@@ -173,12 +179,13 @@ def main(argv: list[str] | None = None) -> int:
     source.add_argument("--pr", type=int, help="رقمُ الطلب (يقرأ المراجعات من GitHub)")
     source.add_argument("--reviews-json", type=Path, help="ملفُّ مراجعاتٍ بصيغة GitHub (بلا شبكة)")
     parser.add_argument("--repo-slug", default=os.environ.get("GITHUB_REPOSITORY", ""))
-    parser.add_argument("--repo", type=Path, default=ROOT)
+    parser.add_argument("--repo", type=Path, default=ROOT, help="نسخةُ الطلب: يُقرأ منها تاريخُ git وحده")
     parser.add_argument("--wait-seconds", type=int, default=0, help="مع --pr: انتظر مراجِعًا محتسبًا حتى هذه المدّة")
     args = parser.parse_args(argv)
     try:
-        registry = load_registry((args.repo / REGISTRY_PATH).read_bytes())
-        reviewers = load_reviewers((args.repo / REVIEWERS_PATH).read_bytes())
+        # السجلّان من نسخة الأداة الموثوقة لا من الطلب، فلا يوسّع طلبٌ الثقةَ في حكمه على نفسه
+        registry = load_registry((ROOT / REGISTRY_PATH).read_bytes())
+        reviewers = load_reviewers((ROOT / REVIEWERS_PATH).read_bytes())
         families = author_families(read_commits(args.repo, args.range), registry)
         if args.reviews_json is not None:
             raw = json.loads(args.reviews_json.read_text(encoding="utf-8"))
