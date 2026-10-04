@@ -110,6 +110,9 @@ _ABSENT_FAILURE = re.compile(r"^(\d+): (?:retrieve|context) holds absent «(.*?)
 _HISTORY_ECHO = re.compile(r"\d+: context holds absent «.*» in the model's own earlier reply", re.DOTALL)
 HISTORY_RULE = "only_absence_failures_located_in_the_models_own_earlier_reply_are_history_echoes"
 HISTORY_LIMIT = "history_echoes_counts_recorded_absence_failure_entries_not_scenarios_or_unique_values_in_the_models_own_earlier_reply_only_the_same_witness_seen_in_agent_and_text_requests_counts_twice_failures_and_scenario_passed_are_unchanged_and_any_failure_still_prevents_acceptance"
+# المكانُ صدًى حين يقع الشاهدُ في ردود النموذج وحدها (`_absent_location`). والتقاريرُ التي سبقت هذه القاعدة سجّلت أولَ مكانٍ مطابق،
+# فإعادةُ عدِّها لا ترى مكانًا آخر وقع فيه الشاهدُ مع صدى النموذج (تدقيقٌ لاحقٌ لـe8dcd74)
+HISTORY_LOCATION_LIMIT = "a_failure_is_a_history_echo_only_when_the_witness_is_in_the_models_own_earlier_replies_and_in_no_other_part_of_the_request_reports_recorded_before_this_rule_labelled_the_first_matching_location_so_a_recount_of_them_cannot_see_a_non_assistant_location_that_held_the_witness_together_with_the_echo"
 HISTORY_RECOUNT_LIMIT = "history_echoes_and_forget_rate_were_recounted_without_remeasurement_from_recorded_failure_locations_only_unlocated_or_other_request_locations_remain_forget_failures_original_values_are_preserved_in_recount_from_and_no_missing_echo_location_is_inferred"
 
 
@@ -158,7 +161,7 @@ def recount_history(report: dict, bank: dict, stamp: dict | None = None) -> dict
         recount[key] = {"from": old.get(key, {}).get("from", previous), "to": value,
                         "rule": HISTORY_RULE, **(stamp or {})}
     limits = list(report.get("measurement_limits", []))
-    limits += [limit for limit in (HISTORY_LIMIT, HISTORY_RECOUNT_LIMIT) if limit not in limits]
+    limits += [limit for limit in (HISTORY_LIMIT, HISTORY_RECOUNT_LIMIT, HISTORY_LOCATION_LIMIT) if limit not in limits]
     return {**report, "results": results, "metrics": metrics, **acceptance,
             "recount": recount, "measurement_limits": limits}
 
@@ -450,6 +453,12 @@ def _memory_parts(request, delegate=None) -> tuple[str, str, str, str, str]:
     على فحص العرض في الجلسة المعادة نصًّا أو وسيطَ نداءِ أداة، أو علامةِ حَجرٍ في السؤال الحاليّ كما حُوِّل، أو اسمِ أداةٍ أو حقلٍ في
     مواصفاتها ورسائلها المرسَلة مع كلِّ طلب — ليس منسيًّا، فلا يُقرأ فحصُ الغياب كتلَ الذاكرة وحدها (ملاحظات Codex على #129:
     الخامسة عشرة والتاسعة عشرة والعشرون والثالثة والعشرون والخامسة والعشرون)."""
+    return _memory_view(request, delegate)[:5]
+
+
+def _memory_view(request, delegate=None) -> tuple[str, str, str, str, str, str]:
+    """أجزاءُ `_memory_parts` الخمسة، وسادسُها كلُّ ما يبلغ النموذج سوى الكتلة ورسائلِ النموذج السابقة: به يُعرف أن الشاهد في
+    ردود النموذج **وحدها** (`_absent_location`)."""
     from providers.ollama_codec import serialize_messages, serialize_tools
     messages = list(request.messages)
     last = messages[-1] if messages and messages[-1].role == "user" else None
@@ -462,8 +471,25 @@ def _memory_parts(request, delegate=None) -> tuple[str, str, str, str, str]:
     outer = _flat({k: v for k, v in request_provider(delegate).payload(request).items() if k not in ("messages", "tools")})
     history = [_flat(m) for m in wire[:-1]]
     sent = _flat({**wire[-1], "content": question}) if last else (_flat(wire[-1]) if wire else "")
+    others = [_flat(m) for m in wire[:-1] if m.get("role") != "assistant"]
     return (current, "\n".join([*history, sent, tools, outer]),
-            "\n".join(_flat(m) for m in wire[:-1] if m.get("role") == "assistant"), question, tools)
+            "\n".join(_flat(m) for m in wire[:-1] if m.get("role") == "assistant"), question, tools,
+            "\n".join([*others, sent, tools, outer]))
+
+
+def _absent_location(needle: str, served: bool, echoed: str, others: str, question: str, tools: str) -> str:
+    """مكانُ شاهد الغياب في الطلب كما يُسجَّل. الصدى صدًى حين يقع الشاهدُ في ردود النموذج السابقة **وحدها**: إن بقي معه في جزءٍ
+    آخر من الطلب (كلامِ المالك السابق، أو نتيجةِ أداة، أو كتلةٍ قديمة) فهو رسوبُ نسيانٍ يُسمّى بذلك الجزء، ولا يعفيه صدى النموذج
+    من مقام `forget_rate` (#165: «وأيُّ مكانٍ آخر يُسقطه»؛ تدقيقٌ لاحقٌ لـe8dcd74: كان المكانُ الأولُ المطابِق يُسجَّل وحده)."""
+    if served:
+        return ""
+    if _contains(echoed, needle) and not _contains(others, needle):
+        return " in the model's own earlier reply"
+    if _contains(question, needle):
+        return " in the current question as sent to the model"
+    if _contains(tools, needle):
+        return " in the declared tool schemas"
+    return " elsewhere in the request as sent to the model"
 
 
 class _ConsentBypassed(RuntimeError):
@@ -626,7 +652,7 @@ class _Wired:
             new = self.provider.requests[before:]
             # النموذجُ الحيّ قد يستدعي أداةً فتطول الجولة؛ والذاكرةُ في أول طلبٍ منها
             (request,) = new if self.provider.delegate is None else new[:1]
-            seen.append(_memory_parts(request, self.provider.delegate))
+            seen.append(_memory_view(request, self.provider.delegate))
         return seen
 
     def receipts(self, name, item_id):
@@ -696,10 +722,10 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                 # أشدّ في مشروعها، ونتيجةُ السؤال وحدها تُظهر عنصرًا تسرّب من مشروعٍ آخر (ملاحظتا Codex على #129)
                 # وفي السياق يُقرأ الطلبُ كلُّه لا كتلُ الذاكرة وحدها: صدى النموذج لقيمةٍ في جوابه على فحص العرض يبقى في الجلسة
                 # المعادة ويبلغه بعد النسيان، فيُسمّى (ملاحظة Codex على #129، الجولة التاسعة عشرة)
-                views = ([(wired.retrieved_text(name, step["query"]), wired.items_text(name), "", "", "")] if expect == "retrieve"
+                views = ([(wired.retrieved_text(name, step["query"]), wired.items_text(name), "", "", "", "")] if expect == "retrieve"
                          else wired.contexts(name, step["question"]))
                 counted_before = unquarantined
-                for current, every, echoed, question, tools in views:
+                for current, every, echoed, question, tools, others in views:
                     for witness, needle in enumerate(step["absent"]):
                         if _contains(every, needle) or _contains(current, needle):
                             # ما خدمته الذاكرةُ نفسُها الآن (الاسترجاعُ وقائمةُ المالك، أو كتلةُ السياق الحاليّة) بلا مكان، وهو
@@ -707,11 +733,7 @@ def run_wired_scenario(scenario: dict, root: Path, delegate=None) -> dict:
                             # المشروع نفسِه قبل نسيانه، وكلاهما يُسمّى مكانُه فتقرؤه إعادةُ العدّ كما يعدّه المُشغِّل (ملاحظتا
                             # Codex على #129، الجولتان الأربعون والحادية والأربعون)
                             served = _contains(current, needle) or expect == "retrieve"
-                            where = ("" if served
-                                     else " in the model's own earlier reply" if _contains(echoed, needle)
-                                     else " in the current question as sent to the model" if _contains(question, needle)
-                                     else " in the declared tool schemas" if _contains(tools, needle)
-                                     else " elsewhere in the request as sent to the model")
+                            where = _absent_location(needle, served, echoed, others, question, tools)
                             failures.append(f"{index}: {expect} holds absent «{needle[:30]}»{where}")
                             found.append({"step": index, "witness": witness, "served": served})
                             if (scenario["category"] == "isolation" and served

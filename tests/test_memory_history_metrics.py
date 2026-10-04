@@ -46,8 +46,8 @@ def _views(monkeypatch, views):
 
 @pytest.mark.parametrize("kind,rate,echoes", [("echo", 1.0, 2), ("block", 0.0, 0), ("both", 0.0, 1)], ids=["echo", "block", "both"])
 def test_wired_echo_and_current_block_remain_distinct(monkeypatch, kind, rate, echoes):
-    echo = ("", NEEDLE, NEEDLE, "", "")
-    block = (NEEDLE, NEEDLE, "", "", "")
+    echo = ("", NEEDLE, NEEDLE, "", "", "")
+    block = (NEEDLE, NEEDLE, "", "", "", NEEDLE)
     views = {"echo": [echo, echo], "block": [block], "both": [echo, block]}[kind]
     report = _views(monkeypatch, views)
     result = report["results"][0]
@@ -60,6 +60,33 @@ def test_wired_echo_and_current_block_remain_distinct(monkeypatch, kind, rate, e
     assert report["threshold_results"]["forget_rate"] is (rate == 1.0)
     assert report["threshold_results"]["all_scenarios_passed"] is False
     assert sum(f.endswith("in the model's own earlier reply") for f in result["failures"]) == echoes
+
+
+@pytest.mark.parametrize("history,echoes,rate,where", [
+    ((("user", "حسنًا"), ("assistant", f"أتذكّر {NEEDLE}")), 1, 1.0, " in the model's own earlier reply"),
+    ((("user", f"تذكّر أن {NEEDLE}"), ("assistant", "حسنًا")), 0, 0.0, " elsewhere in the request as sent to the model"),
+    ((("user", f"تذكّر أن {NEEDLE}"), ("assistant", f"أتذكّر {NEEDLE}")), 0, 0.0, " elsewhere in the request as sent to the model"),
+], ids=["echo_only", "owner_words_only", "owner_words_and_echo"])
+def test_an_echo_exempts_only_a_witness_found_in_the_models_replies_and_nowhere_else(monkeypatch, history, echoes, rate, where):
+    """تدقيقٌ لاحقٌ لـe8dcd74: المكانُ الأولُ المطابق كان يُسجَّل وحده، فشاهدٌ بقي في كلام المالك السابق ورددّه النموذجُ أيضًا
+    سُمّي صدًى وخرج من مقام `forget_rate`. الصدى الآن ما وقع في ردود النموذج وحدها، كما يقول #165."""
+    from core.contracts import Message, Request
+    request = Request((*(Message(role, text) for role, text in history), Message("user", "ماذا تتذكر؟")),
+                      "m", "0" * 64, 32, 5.0, "local_only", None)
+    report = _views(monkeypatch, [runner._memory_view(request)])
+    result = report["results"][0]
+    assert result["failures"] == [f"0: context holds absent «{NEEDLE}»{where}"]
+    assert result["history_echoes"] == report["metrics"]["history_echoes"] == echoes
+    assert report["metrics"]["forget_rate"] == rate and result["passed"] is False
+
+
+def test_the_echo_rule_is_published_with_every_live_report_and_recount():
+    assert runner.HISTORY_LOCATION_LIMIT in cli.LIMITS
+    report = {"results": [_result([ECHO]) | {"id": s["id"], "category": s["category"]} for s in BANK["scenarios"]],
+              "metrics": {"forget_rate": 0.0, "history_echoes": None, "leakage": 0, "consent_violations": 0,
+                          "injection_unquarantined": 0},
+              "meets_thresholds": False, "measurement_limits": []}
+    assert runner.HISTORY_LOCATION_LIMIT in runner.recount_history(report, BANK)["measurement_limits"]
 
 
 @pytest.mark.parametrize("location", [" in the current question as sent to the model", " in the declared tool schemas",
