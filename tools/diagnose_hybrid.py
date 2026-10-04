@@ -118,6 +118,15 @@ def load_report(path: Path, bank: dict) -> dict:
     if any(not isinstance(entry, dict) or not all(isinstance(entry.get(name), str) for name in ("bm25", "vectors"))
            for entry in channels.values()):
         raise DiagnosisRefused("g3_report_channels_malformed", "قناةٌ غائبة أو ليست نصًّا")
+    # والقناتان من البنك المجمَّد نفسِه: BM25 تُعاد عليه حرفًا بحرف، والمتّجهاتُ معرّفاتٌ منه بلا تكرارٍ وبعمق القياس؛ فمعرّفاتٌ
+    # مخترعة في ذيل قناةٍ لا تغيّر رتبةَ الذهبيّ وتغيّر عمقَها المنشور في الآلية (ملاحظة Codex على #293)
+    known = {d["id"] for d in bank["documents"]}
+    depth, lexical = min(rg.DEPTH, len(known)), rg._Bm25(bank["documents"])
+    for q in bank["queries"]:
+        vectors = channels[q["id"]]["vectors"].split()
+        if (channels[q["id"]]["bm25"].split() != lexical.rank(q["text"], rg.DEPTH)
+                or len(vectors) != depth or len(set(vectors)) != depth or not set(vectors) <= known):
+            raise DiagnosisRefused("g3_report_channels_not_bank_rankings", "قناةٌ ليست ترتيبًا من البنك المجمَّد")
     # الأذرعُ الثلاث برتبها لا الهجينُ بإصاباته وحدها: فقناةٌ مُبدَلة تحفظ إصاباتِ الهجين تغيّر رتبَ غيره (ملاحظة Codex على #293)
     replayed = rg.arm_rows_from_channels(channels, bank)
     if any((row["rank"], row["hit_at_5"]) != recorded[arm].get(row["id"]) for arm in rg.ARMS for row in replayed[arm]):

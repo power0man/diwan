@@ -70,12 +70,14 @@ def test_a_report_on_another_bank_or_whose_channels_do_not_reproduce_it_is_refus
     with pytest.raises(dh.DiagnosisRefused) as refused:
         dh.load_report(tmp_path / "other.json", bank)
     assert refused.value.code == "g3_report_bank_not_frozen"
-    # قناةُ متّجهاتٍ مُبدَلة لاستعلامٍ أصابه الهجين تُخرج الذهبيَّ فلا تعيد الذراعَ المسجَّل
+    # قناةُ متّجهاتٍ مُبدَلة (ترتيبٌ صالحٌ من البنك بعمق القياس) لاستعلامٍ أصابه الهجينُ وذهبيُّه غائبٌ عن BM25 تُخرج الذهبيَّ،
+    # فلا تعيد الذراعَ المسجَّل
     tampered = copy.deepcopy(report)
-    hit = next(row["id"] for row in report["rows"]["hybrid"] if row["hit_at_5"])
-    gold = next(q["relevant"][0] for q in bank["queries"] if q["id"] == hit)
-    others = [d["id"] for d in bank["documents"] if d["id"] != gold]
-    tampered["channels"][hit] = {"bm25": "", "vectors": " ".join(others)}
+    gold_of = {q["id"]: q["relevant"][0] for q in bank["queries"]}
+    hit = next(row["id"] for row in report["rows"]["hybrid"]
+               if row["hit_at_5"] and gold_of[row["id"]] not in report["channels"][row["id"]]["bm25"].split())
+    others = [d["id"] for d in bank["documents"] if d["id"] != gold_of[hit]]
+    tampered["channels"][hit]["vectors"] = " ".join(others[:50])
     (tmp_path / "tampered.json").write_text(json.dumps(tampered, ensure_ascii=False), encoding="utf-8")
     with pytest.raises(dh.DiagnosisRefused) as refused:
         dh.load_report(tmp_path / "tampered.json", bank)
@@ -96,6 +98,27 @@ def test_channels_that_keep_the_hybrid_hits_but_change_another_arm_are_refused(t
     with pytest.raises(dh.DiagnosisRefused) as refused:
         dh.load_report(tmp_path / "moved.json", bank)
     assert refused.value.code == "g3_report_channels_do_not_reproduce_its_arms"
+
+
+@pytest.mark.parametrize("change", ["invented_tail", "duplicate", "bm25_reordered"])
+def test_channels_that_are_not_rankings_of_the_frozen_bank_are_refused(tmp_path, report, bank, change):
+    """ملاحظة Codex على #293: واحدٌ وخمسون معرّفًا مخترعًا في ذيل متّجهات rg_q001 لا تغيّر رتبةَ ذهبيّه، وكانت تُقبل فيصير
+    عمقُ القناة المنشور 101. فالمتّجهاتُ معرّفاتٌ من البنك بلا تكرارٍ وبعمق القياس، وBM25 تُعاد على البنك حرفًا بحرف."""
+    altered = copy.deepcopy(report)
+    entry = altered["channels"]["rg_q001"]
+    if change == "invented_tail":
+        entry["vectors"] += "".join(f" rg_x{i:03d}" for i in range(51))
+    elif change == "duplicate":
+        vectors = entry["vectors"].split()
+        entry["vectors"] = " ".join(vectors[:-1] + [vectors[-2]])
+    else:
+        lexical = next(e for e in altered["channels"].values() if len(e["bm25"].split()) > 6)
+        words = lexical["bm25"].split()
+        lexical["bm25"] = " ".join(words[:-2] + words[-1:] + words[-2:-1])
+    (tmp_path / "altered.json").write_text(json.dumps(altered, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(dh.DiagnosisRefused) as refused:
+        dh.load_report(tmp_path / "altered.json", bank)
+    assert refused.value.code == "g3_report_channels_not_bank_rankings"
 
 
 @pytest.mark.parametrize("entry", [{"bm25": "rg_d001"}, {"bm25": "rg_d001", "vectors": ["rg_d001"]}, "rg_d001"],
