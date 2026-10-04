@@ -299,6 +299,29 @@ def test_runs_of_an_invocation_killed_before_its_post_check_are_quarantined_not_
     assert replayed.calls == 0
 
 
+@pytest.mark.parametrize("entry", ["runner", sealed.RUNNER_LOCK, sealed.POST_CHECK_PENDING,
+                                   f"{sealed.POST_CHECK_PENDING}.tmp"])
+def test_a_symlinked_runner_directory_or_file_is_refused_before_anything_is_written(tmp_path, entry):
+    """ملاحظة Codex على #289: الفحصُ يحكم على أب مجلّد المُشغِّل؛ ورابطٌ قائمٌ باسم runner-<بصمة> أو بأحد ملفّاته إلى
+    المحجوب يكتب القفلَ والعلامةَ في هدفه. فيُرفض برمزٍ مسمًّى قبل أيّ كتابةٍ أو نداء."""
+    sealed_root, _ = _bank(tmp_path)
+    target = sealed_root / "tier_a" / "synthetic_tier_a_sealed.json"
+    before = _sha(target)
+    runner = tmp_path / "runs" / f"runner-{sealed.runner_sha256()[:24]}"
+    if entry == "runner":
+        runner.parent.mkdir(parents=True)
+        runner.symlink_to(sealed_root, target_is_directory=True)
+    else:
+        runner.mkdir(parents=True)
+        (runner / entry).symlink_to(target)
+    engine = Provider()
+    with pytest.raises(SealedRefused) as refused:
+        _run(tmp_path, engine)
+    assert refused.value.code == "sealed_run_path_is_a_symlink" and engine.calls == 0
+    assert _sha(target) == before
+    assert not {sealed.RUNNER_LOCK, sealed.POST_CHECK_PENDING} & {p.name for p in sealed_root.rglob("*")}
+
+
 def test_a_second_measurement_in_the_same_runner_directory_is_refused_before_it_writes(tmp_path):
     """ملاحظة Codex على #289: استدعاءان متداخلان يتشاركان علامةَ الفحص المعلَّق، فيزيل الأولُ علامةَ الثاني؛ فالقياسُ
     مسلسَلٌ بقفل مجلّد المُشغِّل، والثاني يُرفض قبل أن يكتب علامةً أو يسأل نموذجًا، ثم يمرّ بعد فكّ القفل."""

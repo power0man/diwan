@@ -162,6 +162,15 @@ def preflight(provider, judge, engine: str) -> None:
         raise SealedRefused("sealed_requires_local_provider", "محكِّمُ المحجوب محليٌّ وحده")
 
 
+def _plain(path: Path) -> Path:
+    """مجلّدُ المُشغِّل وملفّاتُه الثلاثة (القفل، والعلامة، ومؤقّتُها) لا تكون روابطَ رمزية: فالفحصُ يحكم على الأب قبل أن
+    يُلحق به `runner-<بصمة>`، ورابطٌ قائمٌ بهذا الاسم إلى المحجوب أو المستودع يكتب القفلَ والعلامةَ في هدفه، ثم يُعدّ رفضُ
+    `evaluate_suite` له أخطاءَ حالاتٍ فيُنشر التقريرُ «قياسًا» (ملاحظة Codex على #289). فيُرفض برمزٍ مسمًّى قبل أيّ كتابة."""
+    if path.is_symlink():
+        raise SealedRefused("sealed_run_path_is_a_symlink", "مجلّدُ المُشغِّل أو أحدُ ملفّاته رابطٌ رمزيّ")
+    return path
+
+
 RUNNER_LOCK = "sealed.lock"
 
 
@@ -171,7 +180,7 @@ def _runner_lock(run_root: Path):
     الأولُ بنجاحه علامةَ الثاني، ثم يُقتل الثاني بعد أجوبةٍ من أوزانٍ أخرى فلا يبقى ما يعزلها (ملاحظة Codex على #289).
     والثاني يُرفض برمزٍ مسمًّى قبل أن يلمس شيئًا، ولا ينتظر."""
     run_root.mkdir(parents=True, exist_ok=True)
-    fd = os.open(run_root / RUNNER_LOCK, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    fd = os.open(_plain(run_root / RUNNER_LOCK), os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "r+") as stream:
         try:
             filelock.lock(stream, blocking=False)
@@ -191,16 +200,16 @@ def _open_post_check(run_root: Path) -> float:
     (قتلٌ أو انقطاعُ كهرباء بعد إعادة توجيه الوسم)، فتُعزل تشغيلاتُه قبل أن يعيدها وسمٌ أُعيد ويمرّ تحقّقُه (ملاحظة Codex على
     #289). وتُقرأ وتُكتب تحت قفل المجلّد وحده (`_runner_lock`)، فلا يمحو استدعاءٌ علامةَ استدعاءٍ آخرَ لم يُفحص بعد."""
     run_root.mkdir(parents=True, exist_ok=True)
-    pending = run_root / POST_CHECK_PENDING
-    if pending.is_symlink() or pending.exists():
+    pending, temporary = _plain(run_root / POST_CHECK_PENDING), _plain(run_root / f"{POST_CHECK_PENDING}.tmp")
+    if pending.exists():
         try:
             since = float(json.loads(pending.read_text(encoding="utf-8"))["started"])
         except (OSError, ValueError, KeyError, TypeError):
             since = 0.0
         quarantine_runs_since(run_root, since)
     started = time.time() - 1
-    temporary = run_root / f"{POST_CHECK_PENDING}.{os.getpid()}.tmp"
-    with open(temporary, "wb") as stream:
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "wb") as stream:
         stream.write(json.dumps({"started": started}).encode() + b"\n")
         stream.flush()
         os.fsync(stream.fileno())
@@ -359,7 +368,7 @@ def run_sealed(sealed_root: Path, provider, *, run_root: Path, manifest_path: Pa
     # مجلّدُ التشغيل معزولٌ ببصمة المُشغِّل: فشيفرةٌ تغيّرت لا تعيد أجوبةَ دفتر شيفرةٍ سابقة وتُنسب إليها (ملاحظة Codex على #289)
     runner = runner_sha256()
     sandbox = sandbox_configuration()
-    run_root = run_root / f"runner-{runner[:24]}"
+    run_root = _plain(run_root / f"runner-{runner[:24]}")
     with _runner_lock(run_root):
         started = _open_post_check(run_root)
         # بيانٌ غيرُ المسجَّل يُقبل ببصمته، لكنّ تقريرَه ينشرها ويسمّيه تبديلًا، فلا تُنشر نتائجُ بنكٍ بديلٍ بنسبةٍ توحي ببيان
