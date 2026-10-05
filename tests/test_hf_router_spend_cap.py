@@ -22,8 +22,9 @@ OTHER = "meta-llama/Llama-3.3-70B-Instruct"
 SYSTEM, USER = "s" * 100, "u" * 100          # مئتا بايت: التقديرُ يعدّ كلَّ بايتٍ توكنًا، ومعها ٥١٢ توكنًا للتأطير
 
 
-def _offer(name, input_price, output_price, status="live"):
-    return {"provider": name, "status": status, "pricing": {"input": input_price, "output": output_price}}
+def _offer(name, input_price, output_price, status="live", context=None):
+    return {"provider": name, "status": status, "pricing": {"input": input_price, "output": output_price},
+            **({"context_length": context} if context is not None else {})}
 
 
 def _catalog(*entries):
@@ -41,6 +42,8 @@ class Opener:
     def open(self, request, timeout=None):
         self.requests.append(request)
         if request.data is None:
+            if isinstance(self.catalog, int):
+                raise urllib.error.HTTPError(request.full_url, self.catalog, "refused", {}, io.BytesIO(b"{}"))
             return _Reply(self.catalog)
         reply = self.replies[json.loads(request.data)["model"]].pop(0)
         if isinstance(reply, int):
@@ -113,6 +116,35 @@ def test_the_provider_is_chosen_by_the_requests_weighted_bound_not_the_sum_of_it
     long = _chat(catalog, {f"{MODEL}:output_dear": [{"prompt_tokens": 10, "completion_tokens": 5}]}, max_tokens=4000)
     long(MODEL, SYSTEM, "u" * 99_900, {})
     assert long.opener.posted() == [f"{MODEL}:output_dear"]
+
+
+@pytest.mark.parametrize("offers, pinned", [
+    pytest.param([_offer("small", 1, 2, context=600), _offer("wide", 2, 4, context=100_000)], "wide",
+                 id="cheapest_window_too_small"),
+    pytest.param([_offer("small", 1, 2, context=600), _offer("unstated", 2, 4)], "unstated",
+                 id="unstated_window_not_excluded"),
+    pytest.param([_offer("small", 1, 2, context=812), _offer("wide", 2, 4, context=100_000)], "small",
+                 id="window_exactly_the_bound"),
+    pytest.param([_offer("small", 1, 2, context=600), _offer("smaller", 2, 4, context=500)], "small",
+                 id="none_fits_so_the_cheapest"),
+])
+def test_a_provider_whose_context_window_cannot_hold_the_request_is_not_pinned(offers, pinned):
+    """ملاحظة Codex على #308: الحدُّ ٧١٢ توكنًا مدخلًا و١٠٠ مخرجًا = ٨١٢؛ فالأرخصُ بنافذة ٦٠٠ لا يُختار ما دام غيرُه
+    يتّسع، والنافذةُ غيرُ المعلنة لا تُستبعد، وإن لم يتّسع أحدٌ فالأرخصُ ويحكم المزوّد."""
+    chat = _chat(_catalog((MODEL, offers)), {f"{MODEL}:{pinned}": [{"prompt_tokens": 10, "completion_tokens": 5}]})
+    chat(MODEL, SYSTEM, USER, {})
+    assert chat.opener.posted() == [f"{MODEL}:{pinned}"]
+
+
+@pytest.mark.parametrize("status, code", [pytest.param(401, "unauthorized", id="unauthorized"),
+                                          pytest.param(403, "forbidden", id="forbidden")])
+def test_a_catalog_transport_error_keeps_its_code_and_sends_no_model_request(status, code):
+    """ملاحظة Codex على #308: رفضُ الفهرس بالتفويض يبقى برمزه (عدمُ إتاحةٍ يُعالَج في موضعه) لا `price_unknown`، ولا نداء."""
+    chat = _chat(status)
+    with pytest.raises(AutomaticReviewError) as refused:
+        chat(MODEL, SYSTEM, USER, {})
+    assert refused.value.code == code
+    assert chat.opener.posted() == [] and not chat.budget.reservations
 
 
 @pytest.mark.parametrize("catalog", [

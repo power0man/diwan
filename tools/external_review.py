@@ -844,7 +844,10 @@ def router_prices(entry: dict) -> dict[str, dict]:
             continue
         values = {side: _decimal(pricing.get(side)) for side in ("input", "output")}
         if all(value is not None for value in values.values()):
-            prices.setdefault(name, values)
+            # نافذةُ السياق التي يعلنها المزوّد (`context_length`)، ليُستبعد ما لا يتّسع للطلب (ملاحظة Codex على #308)
+            context = provider.get("context_length")
+            prices.setdefault(name, {**values, **({"context_length": context}
+                                                  if type(context) is int and context > 0 else {})})
     return prices
 
 
@@ -904,10 +907,18 @@ class PricedRouterChat(OpenAICompatChat):
             try:
                 self.catalog()
             except AutomaticReviewError as exc:
-                raise AutomaticReviewError("price_unknown", model) from exc
+                # فهرسٌ لا يُقرأ سعرٌ مجهول؛ أمّا خطأ النقل (401 و403 والمهلة…) فيبقى برمزه، ولا نداءَ للنموذج في الحالين
+                # (ملاحظة Codex على #308)
+                if exc.code == "catalog_malformed":
+                    raise AutomaticReviewError("price_unknown", model) from exc
+                raise
         offers = (self.router_price_table or {}).get(model) or {}
         if not offers:
             raise AutomaticReviewError("price_unknown", model)
+        # مزوّدٌ أعلن نافذةً دون حدّ الطلب لا يُختار ما دام غيرُه يتّسع، والنافذةُ غيرُ المعلنة لا تُستبعد. وإن لم يتّسع
+        # أحدٌ بالحدّ (والحدُّ بالبايتات يفوق التوكنات) فالأرخصُ، ويحكم المزوّدُ بـ400/413 (ملاحظة Codex على #308)
+        need = input_tokens + self.max_tokens
+        offers = {name: offer for name, offer in offers.items() if offer.get("context_length", need) >= need} or offers
         # أرخصُ مزوّدٍ لحدّ الطلب الموزون: المدخلُ بسعره و`max_tokens` بسعر المخرج، لا مجموعُ السعرين (ملاحظة Codex على #308)
         provider = min(offers, key=lambda name: (input_tokens * offers[name]["input"]
                                                  + self.max_tokens * offers[name]["output"], name))
