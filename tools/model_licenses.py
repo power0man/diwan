@@ -67,10 +67,7 @@ NON_ARTIFACT_KINDS = frozenset({
 })
 # أنواعُ الأوزان التي تُقبل بصمتُها بحقل `<نوع>_sha256` بلا اسم ملفّ
 WEIGHT_KINDS = frozenset({"pth", "pt", "bin", "safetensors", "gguf", "onnx", "ckpt", "h5", "hdf5", "keras", "pb", "tflite",
-                          "mlmodel", "traineddata", "model"})
-# `model_sha256` لا يسمّي نوعَ ملفّه: يكتبه مسارُ ASR لملفّ الوزن، ويكتبه `evaluation/capabilities.py` لاسم النموذج. فيُطالَب
-# بقيدٍ ببصمته ما لم يكن بصمةَ الاسم، ويربط وزنَ النموذج الوحيد (ملاحظة Codex على #307)
-MODEL_KIND = "model"
+                          "mlmodel", "traineddata"})
 # ما يُعرف أنه بياناتٌ لا أوزان (صورُ البنك، ونصوصُه، وسجلّاتُه)؛ وكلُّ لاحقةٍ سواه وزنٌ يُطالَب بقيده في الدليل الجديد، فلا
 # يمرّ نوعٌ لم يُسمَّ (`.keras` و`.pb` و`.model`…) بايتاتٍ بلا رخصة (ملاحظات Codex على #307)
 DATA_KINDS = frozenset({"jpg", "jpeg", "png", "gif", "webp", "bmp", "tif", "tiff", "svg", "pdf", "json", "jsonl", "txt",
@@ -334,8 +331,9 @@ def _bound_digests(weights: list, file: str, by_file: dict, by_kind: dict) -> se
 
 
 def _untyped_artifact(kind: str) -> bool:
-    """بصمةٌ لا يسمّي نوعُها ملفًّا: `model` أو نوعٌ ليس وزنًا معروفًا ولا بياناتٍ معروفة."""
-    return kind == MODEL_KIND or (kind not in WEIGHT_KINDS and kind not in NON_ARTIFACT_KINDS)
+    """بصمةٌ لا يسمّي نوعُها ملفًّا: نوعٌ ليس وزنًا معروفًا ولا بياناتٍ معروفة. ومنها `model_sha256`، يكتبه مسارُ ASR لملفّ
+    الوزن ويكتبه `evaluation/capabilities.py` لاسم النموذج، فتُقبل بصمتُه بصمةَ وزنٍ مقيَّدٍ أو بصمةَ الاسم (ملاحظتا Codex على #307)."""
+    return kind not in WEIGHT_KINDS and kind not in NON_ARTIFACT_KINDS
 
 
 def unmeasured_weights(file: str, payload: object, models: dict, measured: dict) -> list[str]:
