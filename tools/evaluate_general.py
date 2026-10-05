@@ -141,6 +141,11 @@ def _require_intake(intake: dict | None, digest: str) -> None:
     bank = intake.get("bank") if isinstance(intake.get("bank"), dict) else {}
     if intake.get("passed") is not True:
         raise AblationError("intake_not_passed", "تقريرُ الاستلام لم ينجح")
+    # دورةُ v1.2 للمفتوح وحده، ونجاحُها يشمل فحصَ الاستبدال (كلُّ ملفٍّ وحالةٍ من v1.1 باقٍ أو مستبدَل)؛ والاستلامُ الكامل
+    # ينجح بلا ذلك الفحص، فيمرّ به بنكٌ من حالتين (ملاحظة Codex على #312)
+    replacement = intake.get("replacement")
+    if intake.get("open_only") is not True or not isinstance(replacement, dict) or replacement.get("failures") != []:
+        raise AblationError("intake_not_v12_replacement", "يلزم استلامُ v1.2 للمفتوح بفحص الاستبدال ناجحًا")
     if (bank.get("without_checks") or {}).get("open") != 0:
         raise AblationError("intake_not_passed", "الاستلامُ يعدّ حالاتٍ بلا فحص")
     if bank.get("open_digest") != digest:
@@ -185,6 +190,9 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
     # حالةٌ بلا فحصٍ آليّ غيرُ حالةٍ فحصُها في حاويةٍ غائبة: تُعدّان منفصلتين (ملاحظة Codex على #312)
     unchecked = sum(not auto_checked(case, sandbox=True) for case in every)
     # بنكٌ فيه حالةٌ بلا فحصٍ آليّ ليس v1.2 المستلَم: يُرفض قبل أيّ نداء، لا يُنقَص مقامُه صامتًا (ملاحظة Codex على #312)
+    # بلا حاويةٍ تخرج حالاتُ python_sandbox (٣٧٩ في v1.1)، فلا يكون الرقمُ رقمَ البنك كلِّه (ملاحظة Codex على #312)
+    if not sandbox and not diagnostic:
+        raise AblationError("sandbox_required", "الرقمُ العام يحتاج حاويةَ الفحص؛ أو --diagnostic")
     if unchecked and not diagnostic:
         raise AblationError("bank_has_unchecked_cases", f"{unchecked} حالةً بلا فحصٍ آليّ؛ يلزم v1.2 أو --diagnostic")
     digest = open_bank_digest(bank_open)

@@ -23,7 +23,8 @@ RUN = {"model": "replay", "model_version": "v1", "engine_license": "Apache-2.0",
 def _intake(bank, **changes):
     """تقريرُ استلامٍ ناجح لهذا البنك بعينه، كما يكتبه tools/kimi_intake.py."""
     from evaluation.judge import open_bank_digest
-    report = {"passed": True, "bank": {"without_checks": {"open": 0, "sealed": 0}, "open_digest": open_bank_digest(bank)}}
+    report = {"passed": True, "open_only": True, "replacement": {"failures": []},
+              "bank": {"without_checks": {"open": 0, "sealed": 0}, "open_digest": open_bank_digest(bank)}}
     return {**report, **changes}
 
 
@@ -188,9 +189,18 @@ def test_the_run_is_bound_to_a_passed_intake_of_this_very_bank(tmp_path):
     seen = []
     replay = SeedReplay(lambda u, s: "الرباط", seen=seen)
     for intake, code in ((None, "intake_missing"), (_intake(bank, passed=False), "intake_not_passed"),
+                         (_intake(bank, open_only=False), "intake_not_v12_replacement"),
+                         (_intake(bank, replacement={"failures": [{"code": "case_missing"}]}), "intake_not_v12_replacement"),
                          (_intake(other), "intake_digest_mismatch")):
         with pytest.raises(AblationError, match=code):
             run_general(replay, bank_open=bank, intake=intake, **RUN)
     assert seen == []
     report = run_general(replay, bank_open=bank, intake=_intake(bank), **RUN)
     assert report["kind"] == "general_number" and report["config"]["open_bank_digest"] == _intake(bank)["bank"]["open_digest"]
+
+
+def test_a_run_without_the_check_container_is_only_diagnostic(tmp_path):
+    """بلا حاويةٍ تخرج حالاتُ python_sandbox، فلا يُسمّى الرقمُ رقمَ البنك (ملاحظة Codex على #312)."""
+    bank = _bank(tmp_path / "open", {"tier_a": [_case("a", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])]})
+    with pytest.raises(AblationError, match="sandbox_required"):
+        run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, sandbox=False, intake=_intake(bank), **RUN)
