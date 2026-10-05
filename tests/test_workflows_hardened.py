@@ -5,8 +5,8 @@
 وكلُّ صلاحيةٍ فيه، في أعلاه أو في مهمّة، في جدول `LEAST` بنطاقها ومستواها، فلا يمرّ `write-all` ولا نطاقٌ أوسع (ملاحظة Codex
 على #297). الفحصُ نصّيٌّ على الملفات المودَعة، لا قراءةٌ لـYAML عامّة؛ فهو مغلقٌ عند الشكّ: كلُّ سطرٍ يرد فيه `permissions` أو `uses`
 مفتاحًا بأيّ صورة (عاريًا، أو بين علامتين، أو في خريطةٍ مضمَّنة) يُقرأ بصورته المعتمدة وحدها، وما سواها مخالفةٌ لا تجاوز
-(ملاحظتا Codex على #297). وكي لا يُلتفّ على القراءة بصورةٍ أخرى للمفتاح (`"permiss\\u0069ons"`، أو وسم، أو مرساة)، فكلُّ مفاتيح
-السير عاريةٌ خارج محتوى الكتل النصّية (`run: |`)، وما سواها مخالفة (ملاحظة Codex الثالثة على #297). وكلُّ اختبارٍ يجمع المخالفاتِ
+(ملاحظتا Codex على #297). وكي لا يُلتفّ على القراءة بصورةٍ أخرى للمفتاح، فأسطرُ البنية كلُّها في نحوٍ
+محدودٍ مثبَت (مفاتيحُ عارية وقيمٌ مفردة)، وما خرج عنه مخالفة (مراجعاتُ Codex على #297). وكلُّ اختبارٍ يجمع المخالفاتِ
 في الملفات كلِّها فيسمّيها معًا.
 """
 from __future__ import annotations
@@ -40,35 +40,93 @@ CANONICAL_PERMISSIONS = re.compile(r"^( *)permissions:[ \t]*(\{\})?[ \t]*(?:#.*)
 GRANT = re.compile(r"^ +([a-z-]+):[ \t]+(read|write|none)[ \t]*(?:#.*)?$")
 
 
-# مؤشّرُ الكتلة النصّية قيمةُ مفتاحٍ عارٍ (أو عنصرٍ `- `) وحدها، لا نصٌّ في تعليقٍ ولا في سلسلة: `jobs: # : |` ليس كتلة، ولو عُدّ
-# كتلةً لخفيت شجرةُ jobs كلُّها عن الحرّاس (ملاحظة Codex على c507294). و`lead` إلى موضع المفتاح، فالكتلةُ ما زاد عليه وحده.
-BLOCK_SCALAR = re.compile(r"^(?P<lead>[ \t]*(?:-[ \t]+)?)(?:[A-Za-z0-9_.-]+:[ \t]+)?[|>][+-]?[0-9]?[ \t]*(?:#.*)?$")
-# كلُّ صورةٍ لمفتاحٍ غيرِ عارٍ، أو لقيمةٍ تُخفي مفاتيحَ عن قراءة السطر؛ فما يقرؤه الحارسان هو ما يقرؤه GitHub
-NOT_PLAIN = {
-    "quoted_key": re.compile(r"""^[ \t]*(?:-[ \t]+)?(["']).*?(?<!\\)\1[ \t]*:(?:[ \t]|$)"""),
-    # خريطةٌ مضمَّنة في أوّل السطر، أو بعد `- ` أو `: ` أو فاصلةٍ في مجموعةٍ ممتدّة على أسطر، أو داخل `[...]`
-    "flow_mapping": re.compile(r"(?:^[ \t]*(?:-[ \t]+)?|:[ \t]+|,[ \t]*)\{(?!\}[ \t]*(?:#.*)?$)|\[[^\]]*\{"),
-    "explicit_key": re.compile(r"^[ \t]*(?:-[ \t]+)?\?(?:[ \t]|$)"),
-    "tag_anchor_alias": re.compile(r"(?:^[ \t]*(?:-[ \t]+)?|:[ \t]+)[!&*]"),
-    "merge_key": re.compile(r"(?:^|[ \t])<<[ \t]*:"),
-}
+# نحوٌ محدودٌ لأسطر البنية، وما خرج عنه مخالفة (مراجعاتُ Codex على #297): ملاحقةُ صور YAML واحدةً واحدة لا تنتهي — مفتاحٌ
+# بين علامتين، ومهروب، وصريح، ووسمٌ ومرساة، وخريطةٌ مضمَّنة بأقواس، وزوجٌ مضغوطٌ بلا أقواس داخل `[...]`. فكلُّ سطرٍ بنيويّ إمّا
+# `مفتاحٌ_عارٍ: قيمة` أو عنصرٌ `- قيمة`، والقيمةُ: فارغة، أو `{}`، أو مؤشّرُ كتلة (`|`، `>-`…)، أو مفردةٌ مقتبسةٌ تامّة، أو
+# مفردةٌ عاديّةٌ لا تبدأ بمؤشّرٍ ولا فيها `: `، أو `[…]` عناصرُها مفرداتٌ كذلك. والمجموعةُ الممتدّة على أسطر سطرٌ منطقيٌّ واحد.
+KEY = re.compile(r"([A-Za-z0-9_.-]+):(?=[ \t]|$)")
+QUOTED = re.compile(r"""("(?:[^"\\]|\\.)*"|'(?:[^']|'')*')""")
+BLOCK = re.compile(r"[|>][+-]?[0-9]?")
+INDICATORS = set("[]{}#&*!|>'\"%@`,?:-")
 
 
-def _structure(text: str) -> list[tuple[int, str]]:
-    """أسطرُ البنية وحدها: بلا تعليقٍ ولا محتوى كتلةٍ نصّية (`run: |`)، فما في الشيفرة من أقواسٍ وعلاماتٍ نصٌّ لا مفاتيح."""
-    found, block = [], None
-    for number, line in enumerate(text.splitlines(), 1):
-        stripped, indent = line.strip(), len(line) - len(line.lstrip())
+def _scalar_problem(text: str) -> str | None:
+    if not text:
+        return "empty_scalar"
+    if QUOTED.fullmatch(text):
+        return None
+    if text[0] in INDICATORS and not (text[0] in "-?:" and len(text) > 1 and not text[1].isspace()):
+        return "indicator_scalar"
+    if ": " in text or text.endswith(":") or "\t" in text:
+        return "mapping_in_scalar"
+    return None
+
+
+def _value(value: str) -> tuple[str, str | None]:
+    """القيمةُ بلا تعليقها، ومشكلتُها إن كان بعد المقتبس التامّ غيرُ تعليق. و`مفتاح: # تعليق` قيمتُه فارغة."""
+    if value.startswith("#"):
+        return "", None
+    quoted = QUOTED.match(value)
+    if quoted:
+        rest = value[quoted.end():]
+        return quoted[0], ("text_after_quoted" if rest.strip() and not re.match(r"[ \t]+#", rest) else None)
+    return re.split(r"[ \t]#", value, maxsplit=1)[0].rstrip(), None
+
+
+def _value_problem(raw: str) -> str | None:
+    value, problem = _value(raw)
+    if problem or value in ("", "{}") or BLOCK.fullmatch(value):
+        return problem
+    if value.startswith("["):
+        if not value.endswith("]"):
+            return "open_flow"
+        inner = value[1:-1].strip()
+        return next((p for p in map(_scalar_problem, [i.strip() for i in inner.split(",")] if inner else []) if p), None)
+    return _scalar_problem(value)
+
+
+def _parse(line: str) -> tuple[str | None, int, str]:
+    """(المشكلة، موضعُ المفتاح أو العنصر، القيمةُ الخام) لسطرٍ بنيويّ."""
+    lead = len(line) - len(line.lstrip(" "))
+    if "\t" in line[:lead + 1]:
+        return "tab_indent", lead, ""
+    rest, item = line[lead:], False
+    while rest.startswith("- ") or rest == "-":
+        rest, item = (rest[2:].lstrip(" ") if rest != "-" else ""), True
+    column = len(line) - len(rest)
+    key = KEY.match(rest)
+    if key:
+        raw = rest[key.end():].strip()
+        return _value_problem(raw), column, raw
+    if item:
+        return (_value_problem(rest) if rest else None), column, rest
+    return "not_a_key_or_item", column, rest
+
+
+def _structure(text: str) -> list[tuple[int, str, str | None]]:
+    """أسطرُ البنية منطقيًّا ومشكلةُ كلٍّ منها: بلا تعليقٍ ولا محتوى كتلةٍ نصّية (ما زاد على موضع مفتاحها)، والمجموعةُ `[...]`
+    الممتدّة على أسطر سطرٌ واحد."""
+    lines, found, block, index = text.splitlines(), [], None, 0
+    while index < len(lines):
+        number, line = index + 1, lines[index]
+        index += 1
+        stripped, indent = line.strip(), len(line) - len(line.lstrip(" "))
         if block is not None:
             if not stripped or indent > block:
                 continue
             block = None
         if not stripped or stripped.startswith("#"):
             continue
-        found.append((number, line))
-        scalar = BLOCK_SCALAR.match(line)
-        if scalar:
-            block = len(scalar["lead"])
+        problem, column, raw = _parse(line)
+        while problem == "open_flow" and index < len(lines):
+            more = lines[index].strip()
+            index += 1
+            if more and not more.startswith("#"):
+                line = line.rstrip() + " " + re.split(r"[ \t]#", more, maxsplit=1)[0].strip()
+                problem, column, raw = _parse(line)
+        found.append((number, line, problem))
+        if problem is None and BLOCK.fullmatch(_value(raw)[0]):
+            block = column
     return found
 
 
@@ -113,11 +171,11 @@ def test_every_workflow_declares_its_permissions_at_the_top():
 
 
 def test_every_workflow_key_is_plain_so_the_guards_read_what_github_reads():
-    """ملاحظة Codex الثالثة على #297: `"permiss\\u0069ons": write-all` أو `"us\\u0065s": …` يفكّه قارئُ YAML إلى المفتاح، ولا يراه
-    حارسٌ يقرأ النصّ. فبدل ملاحقة كلِّ صورة، المفاتيحُ في أسطر البنية عاريةٌ كلُّها: لا علامتي تنصيص، ولا خريطةٌ مضمَّنة غيرُ `{}`،
-    ولا مفتاحٌ صريحٌ (`? `)، ولا وسمٌ أو مرساةٌ أو اسمٌ مستعار، ولا مفتاحُ دمج (`<<`)."""
-    found = [(name, number, rule) for name, text in _texts().items() for number, line in _structure(text)
-             for rule, pattern in NOT_PLAIN.items() if pattern.search(line)]
+    """مراجعاتُ Codex على #297: ما يفكّه قارئُ YAML ولا يراه حارسٌ يقرأ النصّ — `"permiss\\u0069ons": write-all`، و`? uses`،
+    و`steps: ["us\\u0065s": …]`، ووسمٌ أو مرساة — يمرّر صلاحيةً أو فعلًا. فأسطرُ البنية كلُّها في النحو المحدود أعلاه، وما خرج
+    عنه مخالفةٌ باسم سطرها؛ فما يقرؤه الحارسان (الصلاحياتُ والأفعال) هو ما يقرؤه GitHub."""
+    found = [(name, number, problem) for name, text in _texts().items()
+             for number, _line, problem in _structure(text) if problem]
     assert found == []
 
 
