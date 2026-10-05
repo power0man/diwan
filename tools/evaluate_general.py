@@ -18,8 +18,9 @@
   `local_no_charge` لا تصدق إلا عليه.
   ويُرفض بنكٌ فيه حالةٌ بلا فحصٍ آليّ (شرطُ v1.2: صفرُ حالةٍ بلا فحص)، فلا يُنشر رقمُ م١ على v1.1 ومقامٍ مُنقَص؛ إلا بـ
   `--diagnostic`، فيُوسم التقريرُ `general_number_diagnostic` ولا يُعدّ دليلَ البوابة.
-  ويلزم تقريرُ استلامٍ ناجح من `tools/kimi_intake.py` (`--intake`) بصمةُ شطره المفتوح هي بصمةُ البنك المقيس، فلا يُقاس
-  بنكٌ جزئيّ أو غريبٌ باسم v1.2.
+  ويلزم تقريرُ استلامٍ ناجح من `tools/kimi_intake.py` (`--intake`) بصمةُ شطره المفتوح هي بصمةُ البنك المقيس، وفحصُ
+  استبداله جرى على المفتوح v1.1 المسجَّل (`V11_OPEN_DIGEST`)، فلا يُقاس بنكٌ جزئيّ أو غريبٌ باسم v1.2.
+  ورقمُ البوابة على `DEFAULT_MODEL` المجمَّد؛ وغيرُه تشخيصٌ موسوم.
 
 الحدود: فحصُ `exact` صارمٌ بق٥٧ فلا قراءةَ مشذَّبة؛ والبذورُ بحرارة صفر لا تقيس تباينَ العيّنة (`GREEDY_SEED_LIMIT`)؛
 والتقريرُ لا يُكتب فوق ملفٍّ قائم.
@@ -44,6 +45,7 @@ from core.locality import is_cloud_model, is_local_provider  # noqa: E402
 from evaluation.capabilities import _checks  # noqa: E402
 from evaluation.judge import open_bank_digest  # noqa: E402
 from evaluation.retrieval_general import wilson  # noqa: E402
+from providers.ollama import DEFAULT_MODEL  # noqa: E402
 from tools.evaluate_ablation import bank_cases  # noqa: E402
 from evaluation.ablation import auto_checked  # noqa: E402
 from tools import model_licenses as ml  # noqa: E402
@@ -51,6 +53,9 @@ from tools.measure_engine import _trim_terminal_punctuation  # noqa: E402
 from tools.sample_bank import load_capability_suites  # noqa: E402
 
 TOOL = "tools/evaluate_general.py"
+# المفتوحُ v1.1 الذي يستبدله v1.2، ببصمته المسجَّلة في بروتوكول المحكِّم الأوّل
+V11_OPEN_DIGEST = json.loads((ROOT / "evaluation" / "protocols" / "judge_v1.json").read_text(encoding="utf-8"))[
+    "calibration"]["open_bank_sha256"]
 GENERAL_VERSION = 1
 LIMITS = [
     "the_number_is_the_open_split_through_the_registered_baseline_arm_not_the_sealed_split",
@@ -146,6 +151,9 @@ def _require_intake(intake: dict | None, digest: str) -> None:
     replacement = intake.get("replacement")
     if intake.get("open_only") is not True or not isinstance(replacement, dict) or replacement.get("failures") != []:
         raise AblationError("intake_not_v12_replacement", "يلزم استلامُ v1.2 للمفتوح بفحص الاستبدال ناجحًا")
+    # والاستبدالُ لـv1.1 بعينه: `--current` يقبل بنكًا من حالةٍ واحدة فينجح الفحصُ عليه (ملاحظة Codex على #312)
+    if replacement.get("baseline_digest") != V11_OPEN_DIGEST:
+        raise AblationError("intake_baseline_not_v11", "فحصُ الاستبدال لم يجرِ على المفتوح v1.1 المسجَّل")
     if (bank.get("without_checks") or {}).get("open") != 0:
         raise AblationError("intake_not_passed", "الاستلامُ يعدّ حالاتٍ بلا فحص")
     if bank.get("open_digest") != digest:
@@ -182,6 +190,9 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
     # (ملاحظة Codex على #312). والرقمُ العام على المحرّك المحليّ وحده (ق٥٤، ق٧٠).
     if is_cloud_model(model) or not is_local_provider(provider):
         raise AblationError("provider_not_local", model)
+    # رقمُ البوابة على المحرّك المجمَّد (ق٥٤)؛ وغيرُه تشخيصٌ موسوم لا يُعدّ دليلَها (ملاحظة Codex على #312)
+    if model != DEFAULT_MODEL and not diagnostic:
+        raise AblationError("engine_not_frozen_default", f"{model} ليس {DEFAULT_MODEL}؛ أو --diagnostic")
     cases, files = bank_cases(bank_open, sample_target=None, salt="general", sandbox=sandbox)
     if not cases:
         raise AblationError("bank_empty", str(bank_open))
@@ -223,7 +234,7 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
         "by_tier": {tier: summarize(tier_rows) for tier, tier_rows in sorted(by_tier.items())},
         "rows": rows,
         "measurement_limits": LIMITS + ([] if sandbox else ["python_sandbox_cases_excluded_no_check_container"])
-                              + (["diagnostic_run_on_a_bank_with_unchecked_cases_not_m1_gate_evidence"] if diagnostic else []),
+                              + (["diagnostic_run_not_m1_gate_evidence"] if diagnostic else []),
     }
 
 

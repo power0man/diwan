@@ -149,11 +149,15 @@ def check_open_replacement(src: Path, current: Path) -> dict:
     - **المعرّفُ يبقى:** إلا المكرّرَ بين ملفّين. تكليفُ v1.2 يطلب إعادةَ تسميته، فغيابُه يغطّيه معرّفٌ جديدٌ في الملف نفسِه.
     - **الملفُّ الجانبيّ:** كلُّ مدخلٍ يُبقي كلَّ حقلٍ كان فيه غيرَ فارغ. والمدخلُ المُعادُ تسميتُه يحمل ما تشترك فيه المدخلاتُ التي حلّ محلَّها.
     """
+    from evaluation.judge import open_bank_digest
     failures: list = []
     expected = _open_inventory(current) if current.is_dir() else {}
     if not expected:
         _failure(failures, "open", "current_open_bank_missing")
-        return {"files": 0, "failures": failures}
+        return {"files": 0, "baseline_digest": None, "failures": failures}
+    # بصمةُ ما استُبدل: فحصٌ على بنكٍ قائمٍ من حالةٍ واحدة (`--current`) ينجح بلا إخفاق، فلا يشهد باستبدال v1.1 إلا بها
+    # (ملاحظة Codex على #312)
+    baseline = open_bank_digest(current)
     seen: dict = {}
     for relative, before in expected.items():
         if before is not None and "entries" not in before:
@@ -186,7 +190,7 @@ def check_open_replacement(src: Path, current: Path) -> dict:
         added_short = replaced and any(not _filled(after["entries"][i]) >= shared for i in added)
         if kept_short or added_short:
             _failure(failures, where, "sidecar_entry_incomplete")
-    return {"files": len(expected), "failures": failures}
+    return {"files": len(expected), "baseline_digest": baseline, "failures": failures}
 
 
 def _bank_files(src: Path) -> list[tuple[str, Path]]:

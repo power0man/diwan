@@ -14,16 +14,18 @@ from services.agent_workspace import decode_input
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from tools.evaluate_general import LicenseRefused, registered_license, run_general, summarize  # noqa: E402
+from providers.ollama import DEFAULT_MODEL  # noqa: E402
+from tools.evaluate_general import (V11_OPEN_DIGEST, LicenseRefused, registered_license, run_general,  # noqa: E402
+                                    summarize)
 from tools import probe_spend  # noqa: E402
 
-RUN = {"model": "replay", "model_version": "v1", "engine_license": "Apache-2.0", "date": "2026-10-05"}
+RUN = {"model": DEFAULT_MODEL, "model_version": "v1", "engine_license": "Apache-2.0", "date": "2026-10-05"}
 
 
 def _intake(bank, **changes):
     """تقريرُ استلامٍ ناجح لهذا البنك بعينه، كما يكتبه tools/kimi_intake.py."""
     from evaluation.judge import open_bank_digest
-    report = {"passed": True, "open_only": True, "replacement": {"failures": []},
+    report = {"passed": True, "open_only": True, "replacement": {"failures": [], "baseline_digest": V11_OPEN_DIGEST},
               "bank": {"without_checks": {"open": 0, "sealed": 0}, "open_digest": open_bank_digest(bank)}}
     return {**report, **changes}
 
@@ -92,7 +94,7 @@ def test_the_general_number_runs_every_checked_case_through_the_seeded_agentic_b
     assert any("temperature_0" in limit for limit in report["measurement_limits"])
     # رخصةٌ وإنفاقٌ بشكلَي حارسَيهما، فلا يردّ CI دليلَ ليلة القياس (ملاحظة Codex على #312)
     calls = len(seen)
-    assert report["licenses"] == {"replay": "Apache-2.0"} and report["config"]["engine_calls"] == calls
+    assert report["licenses"] == {DEFAULT_MODEL: "Apache-2.0"} and report["config"]["engine_calls"] == calls
     assert report["spend"] == {"cloud_calls": 0, "prompt_tokens": 3 * calls, "completion_tokens": 2 * calls,
                                "cost_usd": 0, "cost_basis": "local_no_charge"}
     assert probe_spend.spend_findings("k2c.json", report["spend"]) == []
@@ -178,7 +180,7 @@ def test_a_bank_with_unchecked_cases_is_refused_unless_the_run_is_declared_diagn
     assert seen == []
     report = run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, diagnostic=True, **RUN)
     assert report["kind"] == "general_number_diagnostic"
-    assert "diagnostic_run_on_a_bank_with_unchecked_cases_not_m1_gate_evidence" in report["measurement_limits"]
+    assert "diagnostic_run_not_m1_gate_evidence" in report["measurement_limits"]
 
 
 def test_the_run_is_bound_to_a_passed_intake_of_this_very_bank(tmp_path):
@@ -191,6 +193,10 @@ def test_the_run_is_bound_to_a_passed_intake_of_this_very_bank(tmp_path):
     for intake, code in ((None, "intake_missing"), (_intake(bank, passed=False), "intake_not_passed"),
                          (_intake(bank, open_only=False), "intake_not_v12_replacement"),
                          (_intake(bank, replacement={"failures": [{"code": "case_missing"}]}), "intake_not_v12_replacement"),
+                         # فحصُ استبدالٍ ناجح على بنكٍ قائمٍ غيرِ v1.1 (`--current` من حالةٍ واحدة) لا يشهد (ملاحظة Codex)
+                         (_intake(bank, replacement={"failures": [], "baseline_digest": "0" * 64}),
+                          "intake_baseline_not_v11"),
+                         (_intake(bank, replacement={"failures": []}), "intake_baseline_not_v11"),
                          (_intake(other), "intake_digest_mismatch")):
         with pytest.raises(AblationError, match=code):
             run_general(replay, bank_open=bank, intake=intake, **RUN)
@@ -204,3 +210,18 @@ def test_a_run_without_the_check_container_is_only_diagnostic(tmp_path):
     bank = _bank(tmp_path / "open", {"tier_a": [_case("a", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])]})
     with pytest.raises(AblationError, match="sandbox_required"):
         run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, sandbox=False, intake=_intake(bank), **RUN)
+
+
+def test_the_gate_number_is_on_the_frozen_default_engine_and_any_other_model_is_diagnostic(tmp_path):
+    """رقمُ البوابة على المحرّك المجمَّد (ق٥٤)؛ ومحرّكٌ آخر محليٌّ يُقاس تشخيصًا موسومًا لا دليلًا (ملاحظة Codex على #312)."""
+    bank = _bank(tmp_path / "open", {"tier_a": [_case("a", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])]})
+    seen = []
+    other = {**RUN, "model": "gemma4:e4b"}
+    with pytest.raises(AblationError, match="engine_not_frozen_default"):
+        run_general(SeedReplay(lambda u, s: "الرباط", seen=seen), bank_open=bank, intake=_intake(bank), **other)
+    assert seen == []
+    report = run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, diagnostic=True, **other)
+    assert report["kind"] == "general_number_diagnostic"
+    assert "diagnostic_run_not_m1_gate_evidence" in report["measurement_limits"]
+    assert run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, intake=_intake(bank), **RUN)["kind"] == \
+        "general_number"

@@ -218,6 +218,19 @@ def test_an_open_only_delivery_must_carry_every_current_file_and_case(tmp_path):
         "current_open_bank_missing"}
 
 
+def test_the_replacement_check_records_the_digest_of_the_bank_it_replaced(tmp_path):
+    """فحصٌ على بنكٍ قائمٍ من حالةٍ واحدة ينجح، فيُسجَّل ما استُبدل ببصمته ليرفضه مُشغِّلُ الرقم العام (ملاحظة Codex على #312)."""
+    import shutil
+    from evaluation.judge import open_bank_digest
+    src = delivery(tmp_path)
+    shutil.rmtree(src / "sealed")
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    report = intake(src, open_only=True, current=current)
+    assert report["passed"] and report["replacement"]["baseline_digest"] == open_bank_digest(current)
+    assert intake(src, open_only=True, current=tmp_path / "absent")["replacement"]["baseline_digest"] is None
+
+
 def test_an_open_only_delivery_must_keep_every_sidecar_and_its_tasks(tmp_path):
     """ملاحظةُ Codex على #128: الملفُّ الجانبيّ كان خارج الحصر، فيمحو التوزيعُ حلولَه المرجعية بصمت."""
     import shutil
