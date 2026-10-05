@@ -174,6 +174,15 @@ def test_every_mit_notice_in_the_text_is_the_attribution():
     assert wp.measure(one, "2026-10-05", served.__getitem__)[1] == ["attribution_not_in_text:ocr:w.pth"]
 
 
+def test_a_body_line_that_begins_with_copyright_is_not_a_notice():
+    """الإشعارُ سطرُ حقوق نشرٍ قبل جسم الرخصة وحده: نصُّ MIT ملفوفٌ يبدأ فيه سطرٌ من جسمها بـ`copyright notice` لا يُطالَب
+    الإسنادُ به، وإلّا رُفض الإسنادُ الصحيح (ملاحظة Codex على #307)."""
+    wrapped = LICENSE_BYTES.replace(b"The above copyright notice", b"The above\ncopyright notice")
+    served = {**SERVED, WEIGHT["license_source"]: wrapped}
+    evidence, problems = wp.measure(_models(license_text_sha256=_sha(wrapped)), "2026-10-05", served.__getitem__)
+    assert problems == [] and evidence["models"]["ocr"]["weight_provenance"][0]["attribution"] == WEIGHT["attribution"]
+
+
 @pytest.mark.parametrize("served, change, found", [
     pytest.param({"https://example.org/w.zip": OTHER_BYTES}, {"origin_sha256": _sha(OTHER_BYTES)},
                  "weight_digest_differs_at_origin", id="other_bytes_at_origin"),
