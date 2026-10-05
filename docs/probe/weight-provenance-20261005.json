@@ -4,6 +4,10 @@
   "tool": "tools/weight_provenance.py",
   "models": {
     "easyocr": {
+      "license_provenance": {
+        "source": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE",
+        "license_text_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+      },
       "models_sha256": {
         "arabic.pth": "2a9afd42c374deb98aed0b53c9b77d75e1d00d4e0501f3b0276c54190c89b1a8",
         "craft_mlt_25k.pth": "4a5efbfb48b4081100544e75e1e2b57f8de3d84f213004b14b85fd4b3748db17"
@@ -28,6 +32,10 @@
       ]
     },
     "tesseract": {
+      "license_provenance": {
+        "source": "https://github.com/tesseract-ocr/tesseract/blob/5.3.4/LICENSE",
+        "license_text_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
       "models_sha256": {
         "ara.traineddata": "e3206d3dc87fd50c24a0fb9f01838615911d25168f4e64415244b67d2bb3e729"
       },

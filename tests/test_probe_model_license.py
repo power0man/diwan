@@ -363,6 +363,55 @@ def test_a_model_artifact_digest_is_a_registered_weight_or_the_models_name_hash(
     assert [f for f in ml.weight_findings(models, evidence) if "new.json" in f] == [], "الدليلُ التاريخيّ لا يُطالَب"
 
 
+LICENSE_TEXT, OTHER_TEXT = "9" * 64, "8" * 64
+
+
+@pytest.mark.parametrize("registered, recorded, found", [
+    pytest.param(LICENSE_TEXT, LICENSE_TEXT, [], id="recorded_text_passes"),
+    pytest.param(None, LICENSE_TEXT, [], id="weight_without_a_text_digest"),
+    pytest.param(OTHER_TEXT, LICENSE_TEXT, ["weight_provenance_not_in_evidence:ocr:w.pth"], id="registered_text_changed"),
+    pytest.param(LICENSE_TEXT, None, ["weight_provenance_not_in_evidence:ocr:w.pth"], id="record_without_its_text"),
+])
+def test_a_weights_license_text_digest_is_the_one_its_provenance_read(registered, recorded, found):
+    """ملاحظة Codex على #307: بصمةُ نصّ رخصة الوزن المقيَّدة كانت تُكتب ولا تُقارن، فيدّعي السجلُّ نصًّا غيرَ الذي قُرئ."""
+    weight = {**WEIGHT, **({} if registered is None else {"license_text_sha256": registered})}
+    record = {**PROVENANCE, **({} if recorded is None else {"license_text_sha256": recorded})}
+    assert ml.provenance_findings(_weights(weight), {"p.json": {"model": "ocr", "weight_provenance": [record]}}) == found
+
+
+@pytest.mark.parametrize("evidence, found", [
+    pytest.param({"p.json": {"model": "ocr", "license_provenance": {"source": READ["source"], "license_text_sha256": LICENSE_TEXT}}},
+                 [], id="recorded_text_passes"),
+    pytest.param({"p.json": {"model": "ocr", "license_provenance": {"source": READ["source"], "license_text_sha256": OTHER_TEXT}}},
+                 ["license_text_not_in_evidence:ocr"], id="other_text_recorded"),
+    pytest.param({"p.json": {"model": "ocr", "license_provenance": {"source": "https://example.org/other", "license_text_sha256": LICENSE_TEXT}}},
+                 ["license_text_not_in_evidence:ocr"], id="text_of_another_source"),
+    pytest.param({"p.json": {"model": "a/model", "license_provenance": {"source": READ["source"], "license_text_sha256": LICENSE_TEXT}}},
+                 ["license_text_not_in_evidence:ocr"], id="text_of_another_model"),
+    pytest.param({}, ["license_text_not_in_evidence:ocr"], id="no_evidence"),
+])
+def test_a_models_license_text_digest_is_one_read_from_its_source(evidence, found):
+    """ملاحظة Codex على #307: بصمةُ نصّ رخصة النموذج 64 محرفًا تُكتب؛ فهي تُطابَق بنصٍّ قيس من مصدره المقيَّد في شجرة نموذجه."""
+    models = {"ocr": {**READ, "license_text_sha256": LICENSE_TEXT}, "a/model": READ}
+    assert ml.provenance_findings(models, evidence) == found
+
+
+@pytest.mark.parametrize("kind, digest, weights, found", [
+    pytest.param("checkpoint", DIGEST, [], ["weight_not_registered:new.json:asr:checkpoint"], id="checkpoint_unregistered"),
+    pytest.param("model_artifact", DIGEST, [], ["weight_not_registered:new.json:asr:model_artifact"],
+                 id="model_artifact_unregistered"),
+    pytest.param("checkpoint", DIGEST, [{**WEIGHT, "file": "ggml.bin"}], [], id="checkpoint_of_a_registered_weight"),
+    pytest.param("suite", DIGEST, [], [], id="known_data_kind"),
+    pytest.param("model_version", DIGEST, [], [], id="model_version_is_data"),
+])
+def test_an_artifact_digest_of_an_unrecognized_kind_needs_its_registered_weight(kind, digest, weights, found):
+    """ملاحظة Codex على #307: `checkpoint_sha256` و`model_artifact_sha256` كانا يُجمعان ثم يُتجاهلان لأنهما خارج قائمة الأوزان.
+    فكلُّ نوعٍ ليس بياناتٍ معروفةً يُطالَب بقيدٍ ببصمته."""
+    models = {"asr": {**READ, "weights": weights}}
+    evidence = {"new.json": {"model": "asr", f"{kind}_sha256": digest}}
+    assert [f for f in ml.weight_findings(models, evidence, frozenset({"new.json"})) if "new.json" in f] == found
+
+
 @pytest.mark.parametrize("weights", [pytest.param("w.pth", id="text"), pytest.param(["w.pth"], id="list_of_text"),
                                      pytest.param(5, id="number")])
 def test_a_malformed_weights_list_is_named(weights):

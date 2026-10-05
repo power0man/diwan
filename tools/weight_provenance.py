@@ -63,6 +63,13 @@ def measure(models: dict, day: str, read: Callable[[str], bytes] = fetch) -> tup
     out: dict[str, dict] = {}
     problems = []
     for name, entry in sorted(models.items()):
+        # نصُّ رخصة النموذج من مصدره المقيَّد، إن قيّد السجلُّ بصمتَه (ملاحظة Codex على #307)
+        if isinstance(entry, dict) and "license_text_sha256" in entry:
+            text = _sha(read(entry["source"]))
+            if text != entry["license_text_sha256"]:
+                problems.append(f"license_text_differs_at_source:{name}")
+            else:
+                out.setdefault(name, {})["license_provenance"] = {"source": entry["source"], "license_text_sha256": text}
         weights = entry.get("weights") if isinstance(entry, dict) else None
         for weight in weights if isinstance(weights, list) else []:
             label = f"{name}:{weight['file']}"
@@ -78,9 +85,9 @@ def measure(models: dict, day: str, read: Callable[[str], bytes] = fetch) -> tup
             if weight.get("license_text_sha256") not in (None, license_text):
                 problems.append(f"license_text_differs_at_source:{label}")
                 continue
-            model = out.setdefault(name, {"models_sha256": {}, "weight_provenance": []})
-            model["models_sha256"][weight["file"]] = weight["sha256"]
-            model["weight_provenance"].append({
+            model = out.setdefault(name, {})
+            model.setdefault("models_sha256", {})[weight["file"]] = weight["sha256"]
+            model.setdefault("weight_provenance", []).append({
                 "file": weight["file"], "sha256": weight["sha256"], "origin": weight["origin"],
                 "origin_sha256": _sha(origin), "license_source": weight["license_source"],
                 "license_text_sha256": license_text})
@@ -107,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     out = ml.PROBE / f"weight-provenance-{args.day.replace('-', '')}.json"
     out.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": "written", "file": str(out.relative_to(ROOT)),
-                      "weights": sum(len(m["weight_provenance"]) for m in evidence["models"].values())},
+                      "weights": sum(len(m.get("weight_provenance", [])) for m in evidence["models"].values())},
                      ensure_ascii=False))
     return 0
 

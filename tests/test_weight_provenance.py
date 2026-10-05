@@ -75,6 +75,25 @@ def test_what_differs_at_the_origin_is_named_and_not_recorded(served, change, fo
     assert evidence["models"] == {}
 
 
+MODEL_LICENSE = "https://github.com/up/r/blob/v1/LICENSE"
+
+
+@pytest.mark.parametrize("served, found", [
+    pytest.param(LICENSE_BYTES, [], id="text_read_from_its_source"),
+    pytest.param(b"Other License", ["license_text_differs_at_source:ocr"], id="text_changed_at_source"),
+])
+def test_the_models_license_text_is_read_from_its_source_and_recorded(served, found):
+    """ملاحظة Codex على #307: بصمةُ نصّ رخصة النموذج تُقاس من مصدره المقيَّد وتُسجَّل، وما خالفها يُسمّى ولا يُسجَّل."""
+    models = {"ocr": {**_models()["ocr"], "source": MODEL_LICENSE, "license_text_sha256": _sha(LICENSE_BYTES)}}
+    evidence, problems = wp.measure(models, "2026-10-05", {**SERVED, MODEL_LICENSE: served}.__getitem__)
+    assert problems == found
+    assert evidence["models"]["ocr"].get("license_provenance") == (
+        None if found else {"source": MODEL_LICENSE, "license_text_sha256": _sha(LICENSE_BYTES)})
+    if not found:
+        registry = {"enforced_from": "2026-10-05", "historical_evidence": [], "models": models}
+        assert ml.findings(registry, {"p.json": evidence}, None) == []
+
+
 def test_a_github_blob_is_read_from_its_raw_copy():
     assert wp.raw_url("https://github.com/up/r/blob/c0ffee/dir/LICENSE") == (
         "https://raw.githubusercontent.com/up/r/c0ffee/dir/LICENSE")
