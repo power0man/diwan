@@ -3,7 +3,7 @@
 # (عبر camel-tools) موجودةٌ لها فلا يلزم مترجم (قيس على Nitro في #72). والمحرّكُ خارج الحاوية
 # (Ollama على المضيف)، والمتونُ لا تدخلها (ق٥٨)؛ ففحصُ الدخان فيها يخرج 3 بحدٍّ معلن.
 # الصورتان ببصمة فهرسهما لا بوسمٍ يتحرّك (#285)؛ البصمتان قُرئتا من Docker Hub في ٤ أكتوبر ٢٠٢٦ للوسمين نفسيهما.
-FROM python:3.12-slim-bookworm@sha256:54c85f3c47607a77f32adec749d3c81d1348bf25833671f512b26a9b6d778cb3
+FROM python:3.12-slim-bookworm@sha256:54c85f3c47607a77f32adec749d3c81d1348bf25833671f512b26a9b6d778cb3 AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -28,9 +28,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends git \
 COPY --from=node:24-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6 /usr/local/bin/node /usr/local/bin/node
 
 WORKDIR /app
-# الاعتمادياتُ قبل الشيفرة: طبقةٌ تُخزَّن ما لم يتغيّر القفل
 COPY pyproject.toml uv.lock ./
+
+# مرحلةُ العجلة: الإضافةُ dev (hatchling وpytest) تلزم بناءَ العجلة وحده، فتُثبَّت هنا ولا تدخل طبقاتِ صورة التشغيل.
+# فحذفُها في طبقةٍ لاحقة يُخفيها ولا يُخرج بايتاتِها من الطبقة السابقة (ملاحظة Codex على #294، #285).
+FROM base AS wheel
 RUN uv sync --frozen --no-install-project --extra dev --python /usr/local/bin/python3
+COPY . .
+RUN python -m hatchling build -t wheel -d /opt/diwan-wheel
+
+# صورةُ التشغيل: الاعتمادياتُ قبل الشيفرة (طبقةٌ تُخزَّن ما لم يتغيّر القفل)، بلا dev؛ واختباراتُ CI تثبّتها فوقها من
+# القفل ببصماتها (container-smoke.yml)
+FROM base
+RUN uv sync --frozen --no-install-project --python /usr/local/bin/python3
 
 # قاعدةُ الصرف (CAMeL) داخل الصورة، في مسارٍ يقرؤه المستخدمُ غيرُ الجذر
 RUN mkdir -p "$CAMELTOOLS_DATA" \
@@ -41,8 +51,8 @@ RUN mkdir -p "$CAMELTOOLS_DATA" \
     && chown -R diwan /opt/uv-cache
 
 COPY --chown=diwan . .
-RUN python -m hatchling build -t wheel -d /opt/diwan-wheel \
-    && uv pip install --no-cache --python /opt/diwan-venv/bin/python --no-deps /opt/diwan-wheel/*.whl
+COPY --from=wheel /opt/diwan-wheel /opt/diwan-wheel
+RUN uv pip install --no-cache --python /opt/diwan-venv/bin/python --no-deps /opt/diwan-wheel/*.whl
 
 USER diwan
 VOLUME ["/app/var"]
