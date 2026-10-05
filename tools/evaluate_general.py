@@ -16,6 +16,8 @@
 - **قبل التشغيل:** يُرفض نموذجٌ ليس في `registry/model_licenses.json` أو رخصتُه منتظرة، فلا تنتهي ليلةُ قياسٍ بدليلٍ يردّه CI.
   ويُرفض مزوّدٌ غيرُ محليّ (`core.locality`)، فالرقمُ العام على المحرّك المحليّ المعتمد (ق٥٤، ق٧٠)، وكتلةُ الإنفاق
   `local_no_charge` لا تصدق إلا عليه.
+  ويُرفض بنكٌ فيه حالةٌ بلا فحصٍ آليّ (شرطُ v1.2: صفرُ حالةٍ بلا فحص)، فلا يُنشر رقمُ م١ على v1.1 ومقامٍ مُنقَص؛ إلا بـ
+  `--diagnostic`، فيُوسم التقريرُ `general_number_diagnostic` ولا يُعدّ دليلَ البوابة.
 
 الحدود: فحصُ `exact` صارمٌ بق٥٧ فلا قراءةَ مشذَّبة؛ والبذورُ بحرارة صفر لا تقيس تباينَ العيّنة (`GREEDY_SEED_LIMIT`)؛
 والتقريرُ لا يُكتب فوق ملفٍّ قائم.
@@ -150,7 +152,8 @@ def summarize(rows: list[dict]) -> dict:
 
 
 def run_general(provider, *, model: str, model_version: str, bank_open: Path, engine_license: str, date: str,
-                sandbox: bool = True, seeds: tuple[int, ...] | None = None, command: str = "", **options) -> dict:
+                sandbox: bool = True, seeds: tuple[int, ...] | None = None, command: str = "",
+                diagnostic: bool = False, **options) -> dict:
     seeds = seed_values() if seeds is None else tuple(seeds)
     if seeds != seed_values(len(seeds)):
         raise AblationError("seeds_invalid", "يلزم تسلسل 0..N-1 بعدد فردي لا يقل عن 3")
@@ -165,6 +168,9 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
     every = [case for _, suite in load_capability_suites(bank_open) for case in suite.get("cases", [])]
     # حالةٌ بلا فحصٍ آليّ غيرُ حالةٍ فحصُها في حاويةٍ غائبة: تُعدّان منفصلتين (ملاحظة Codex على #312)
     unchecked = sum(not auto_checked(case, sandbox=True) for case in every)
+    # بنكٌ فيه حالةٌ بلا فحصٍ آليّ ليس v1.2 المستلَم: يُرفض قبل أيّ نداء، لا يُنقَص مقامُه صامتًا (ملاحظة Codex على #312)
+    if unchecked and not diagnostic:
+        raise AblationError("bank_has_unchecked_cases", f"{unchecked} حالةً بلا فحصٍ آليّ؛ يلزم v1.2 أو --diagnostic")
     tally = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
     rows = run_seeded_arm(cases, _Counted(provider, tally), arm(), seeds, model=model, model_version=model_version,
                           **options)
@@ -172,7 +178,7 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
     for row in rows:
         by_tier[tiers.get(row["id"], "unknown")].append(row)
     return {
-        "schema_version": 1, "kind": "general_number", "date": date,
+        "schema_version": 1, "kind": "general_number_diagnostic" if diagnostic else "general_number", "date": date,
         "tool": TOOL, "command": command, "licenses": {ml.canonical(model): engine_license},
         "spend": {"cloud_calls": 0, "prompt_tokens": tally["prompt_tokens"],
                   "completion_tokens": tally["completion_tokens"], "cost_usd": 0, "cost_basis": "local_no_charge"},
@@ -189,7 +195,8 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
         "exact_readings": exact_readings(rows, cases),
         "by_tier": {tier: summarize(tier_rows) for tier, tier_rows in sorted(by_tier.items())},
         "rows": rows,
-        "measurement_limits": LIMITS + ([] if sandbox else ["python_sandbox_cases_excluded_no_check_container"]),
+        "measurement_limits": LIMITS + ([] if sandbox else ["python_sandbox_cases_excluded_no_check_container"])
+                              + (["diagnostic_run_on_a_bank_with_unchecked_cases_not_m1_gate_evidence"] if diagnostic else []),
     }
 
 
@@ -200,6 +207,8 @@ def main(argv=None) -> int:
     parser.add_argument("--bank-open", type=Path, default=ROOT / "evaluation/banks/kimi_v1/open")
     parser.add_argument("--seeds", type=int, default=3, help="عددٌ فردي من البذور (الافتراضي 3؛ تُستخدم 0..N-1)")
     parser.add_argument("--no-sandbox", action="store_true", help="تُستبعد حالاتُ python_sandbox حيث لا حاويةَ فحص")
+    parser.add_argument("--diagnostic", action="store_true",
+                        help="يُقبل بنكٌ فيه حالاتٌ بلا فحص، ويُوسم التقريرُ تشخيصيًّا لا دليلَ بوابة م١")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.out.exists():
@@ -227,7 +236,7 @@ def main(argv=None) -> int:
         report = run_general(OllamaProvider(args.model), model=args.model, model_version=model_version,
                              bank_open=args.bank_open, engine_license=engine_license,
                              date=datetime.now(timezone.utc).date().isoformat(), sandbox=not args.no_sandbox,
-                             seeds=seeds, command=command)
+                             seeds=seeds, command=command, diagnostic=args.diagnostic)
     except AblationError as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2

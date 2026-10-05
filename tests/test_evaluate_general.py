@@ -68,7 +68,7 @@ def test_the_general_number_runs_every_checked_case_through_the_seeded_agentic_b
         return "الرباط"
 
     seen = []
-    report = run_general(SeedReplay(answer, seen=seen), bank_open=bank,
+    report = run_general(SeedReplay(answer, seen=seen), bank_open=bank, diagnostic=True,
                          command="python3 tools/evaluate_general.py --model replay", **RUN)
     assert report["tool"] == "tools/evaluate_general.py" and report["command"].startswith("python3 tools/")
     assert report["config"]["seeds"] == [0, 1, 2] and report["config"]["arm"] == arm()
@@ -104,7 +104,7 @@ def test_errored_cases_leave_the_denominator_and_are_counted_not_failed():
 def test_an_empty_bank_and_even_seeds_are_refused_by_name(tmp_path):
     empty = _bank(tmp_path / "open", {"tier_a": [_case("none", "بلا فحص", [])]})
     with pytest.raises(AblationError, match="bank_empty"):
-        run_general(SeedReplay(lambda u, s: ""), bank_open=empty, **RUN)
+        run_general(SeedReplay(lambda u, s: ""), bank_open=empty, diagnostic=True, **RUN)
     with pytest.raises(AblationError, match="seeds_invalid"):
         run_general(SeedReplay(lambda u, s: ""), bank_open=empty, seeds=(0, 1), **RUN)
 
@@ -114,7 +114,7 @@ def test_sandbox_checked_cases_are_not_counted_as_unchecked(tmp_path):
     sandboxed = {**_case("py", "اكتب دالة", []), "checks": [{"kind": "python_sandbox", "code": "assert True"}]}
     bank = _bank(tmp_path / "open", {"tier_a": [_case("a", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}]),
                                                 _case("none", "بلا فحص", []), sandboxed]})
-    report = run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, sandbox=False, **RUN)
+    report = run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, sandbox=False, diagnostic=True, **RUN)
     counts = report["config"]["bank"]
     assert (counts["cases_measured"], counts["cases_without_automatic_check"], counts["sandbox_cases_excluded"]) == (1, 1, 1)
 
@@ -157,3 +157,16 @@ def test_strict_and_trimmed_exact_readings_are_published_together(tmp_path):
     assert readings["strict"]["passes"] == report["overall"]["passes"] == 1
     assert readings["lenient"]["passes"] == 2 and readings["lost_to_trailing_punctuation"] == 1
     assert readings["lenient"]["wilson95"] is not None
+
+
+def test_a_bank_with_unchecked_cases_is_refused_unless_the_run_is_declared_diagnostic(tmp_path):
+    """رقمُ م١ على v1.2 بصفر حالةٍ بلا فحص؛ وv1.1 فيه ١٥٠، فلا يُقاس باسمه إلا تشخيصًا موسومًا (ملاحظة Codex على #312)."""
+    rabat = [{"kind": "contains", "value": "الرباط"}]
+    bank = _bank(tmp_path / "open", {"tier_a": [_case("a", "ما عاصمة المغرب؟", rabat), _case("none", "بلا فحص", [])]})
+    seen = []
+    with pytest.raises(AblationError, match="bank_has_unchecked_cases"):
+        run_general(SeedReplay(lambda u, s: "الرباط", seen=seen), bank_open=bank, **RUN)
+    assert seen == []
+    report = run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, diagnostic=True, **RUN)
+    assert report["kind"] == "general_number_diagnostic"
+    assert "diagnostic_run_on_a_bank_with_unchecked_cases_not_m1_gate_evidence" in report["measurement_limits"]
