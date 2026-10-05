@@ -247,6 +247,22 @@ def test_new_evidence_names_every_weight_it_records_in_the_registry():
         "license_not_stated_in_new_evidence:new.json:ocr", *sorted(expected)]
 
 
+@pytest.mark.parametrize("file, weight", [
+    pytest.param("checkpoint.pth.tar", True, id="weight_in_an_archive"),
+    pytest.param("w.safetensors.gz", True, id="compressed_weight"),
+    pytest.param("spm.model", True, id="sentencepiece_model"),
+    pytest.param("o01.jpg", False, id="bank_image"),
+    pytest.param("bundle.tar", False, id="bare_archive"),
+    pytest.param("data.model.json", False, id="json_named_model"),
+])
+def test_a_weight_file_is_known_by_its_suffix_under_its_wrappers(file, weight):
+    """ملاحظة Codex على #307: `checkpoint.pth.tar` و`.model` كانا يُعدّان بياناتٍ لا أوزانًا، فتمرّ بايتاتٌ بلا قيدٍ ولا رخصة."""
+    assert ml.is_weight_file(file) is weight
+    new = {"new.json": {"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST, file: SIBLING}}}}}
+    assert ml.weight_findings(_weights(WEIGHT), new, frozenset({"new.json"})) == (
+        [f"weight_not_registered:new.json:ocr:{file}"] if weight else [])
+
+
 @pytest.mark.parametrize("payload, found", [
     pytest.param({"engine": {"name": "ocr"}}, ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth"],
                  id="no_digest"),

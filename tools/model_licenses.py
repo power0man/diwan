@@ -47,6 +47,10 @@ SHA256 = re.compile(r"^[0-9a-f]{64}$")
 WEIGHT_FIELDS = ("file", "sha256", "origin", "license", "license_source", "read_on")
 # امتداداتُ ملفّات الأوزان؛ وما سواها (صورُ البنك، وبياناتُه) بصماتٌ ليست أوزانًا
 WEIGHT_KINDS = frozenset({"pth", "pt", "bin", "safetensors", "gguf", "onnx", "ckpt", "h5", "tflite", "traineddata"})
+# ولاسمِ الملفّ وحده `.model` (نماذجُ SentencePiece)؛ ولا يدخل أنواعَ البصمات لأن `model_sha256` حقلٌ عامّ في الأدلّة
+WEIGHT_FILE_KINDS = WEIGHT_KINDS | {"model"}
+# أغلفةٌ تُنزع قبل قراءة النوع: `checkpoint.pth.tar` وزنُ `pth` في أرشيف (ملاحظة Codex على #307)
+WRAPPERS = frozenset({"tar", "gz", "tgz", "zip", "bz2", "xz", "zst"})
 HF_PREFIX = re.compile(r"^(?:https://)?(?:huggingface\.co|hf\.co)/")
 DEFAULT_MODEL = re.compile(r'^DEFAULT_MODEL\s*=\s*"([^"]+)"\s*$', re.MULTILINE)
 
@@ -234,6 +238,15 @@ def measured_weights(payload: object) -> dict[str, tuple[dict[str, set[str]], di
     return out
 
 
+def is_weight_file(name: str) -> bool:
+    """ملفُّ وزنٍ إن كانت لاحقتُه بعد نزع الأغلفة نوعَ وزن: فـ`checkpoint.pth.tar` و`spm.model` وزنان، و`o01.jpg` و`bundle.tar`
+    و`data.model.json` ليست أوزانًا (ملاحظة Codex على #307)."""
+    parts = [part.lower() for part in name.split(".")[1:]]
+    while parts and parts[-1] in WRAPPERS:
+        parts.pop()
+    return bool(parts) and parts[-1] in WEIGHT_FILE_KINDS
+
+
 def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_kind: dict) -> list[str]:
     """دليلٌ جديد يسجّل لنموذجٍ في السجلّ وزنًا (ملفًّا بامتداد وزنٍ أو بصمةً بنوعه) ليس في قيوده ببصمته، فرخصةُ النموذج لا
     تُلحق به بلا قيدٍ له (ملاحظة Codex على #307)."""
@@ -241,7 +254,7 @@ def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_ki
     registered = {(w.get("file"), w.get("sha256")) for w in weights}
     by_extension = {(str(w.get("file")).rpartition(".")[2], w.get("sha256")) for w in weights}
     problems = [f"weight_not_registered:{file}:{name}:{weight}" for weight, digests in sorted(by_file.items())
-                if weight.rpartition(".")[2] in WEIGHT_KINDS and any((weight, d) not in registered for d in digests)]
+                if is_weight_file(weight) and any((weight, d) not in registered for d in digests)]
     problems += [f"weight_not_registered:{file}:{name}:{kind}" for kind, digests in sorted(by_kind.items())
                  if kind in WEIGHT_KINDS and any((kind, d) not in by_extension for d in digests)]
     return problems
