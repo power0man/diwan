@@ -222,6 +222,10 @@ def test_two_weights_of_one_kind_are_bound_only_by_their_file_names():
     pytest.param({"m.json": {"model": "ocr2", "details": {"w.pth": DIGEST}}}, DIGEST, [], id="inherited_owner"),
     pytest.param({"m.json": {"w.pth": DIGEST, "note": {"model": "ocr2"}}}, DIGEST,
                  ["weight_digest_not_in_evidence:ocr2:w.pth"], id="no_owner_on_the_path"),
+    pytest.param({"m.json": {"models": [{"name": "ocr", "w.pth": DIGEST}, {"name": "ocr2", "w.pth": SIBLING}]}}, DIGEST,
+                 ["weight_digest_not_in_evidence:ocr2:w.pth"], id="model_list"),
+    pytest.param({"m.json": {"models": [{"name": "ocr", "w.pth": DIGEST}, {"name": "ocr2", "w.pth": SIBLING}]}}, SIBLING,
+                 [], id="model_list_owns_its_item"),
 ])
 def test_a_digest_belongs_only_to_the_model_whose_subtree_records_it(evidence, registered, found):
     """ملاحظة Codex على #307: دليلٌ يسمّي نموذجين لا تُنسب بصمةُ أحدهما إلى الآخر."""
@@ -257,6 +261,7 @@ def test_new_evidence_names_every_weight_it_records_in_the_registry():
     pytest.param({"engine": {"name": "ocr", "settings": {"pth_sha256": DIGEST}}}, [], id="digest_by_kind"),
     pytest.param({"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST}}}}, [], id="digest_by_file"),
     pytest.param({"model": "a/model"}, [], id="model_without_registered_weights"),
+    pytest.param({"models": [{"name": "ocr", "models_sha256": {"w.pth": DIGEST}}]}, [], id="digest_under_a_models_list"),
 ])
 def test_new_evidence_naming_a_model_with_registered_weights_records_their_digests(payload, found):
     """ملاحظة Codex على #307: دليلٌ جديد يسمّي نموذجًا مقيَّدَ الأوزان بلا بصماتها يُسمّى، فلا تمرّ بايتاتٌ مستبدَلةٌ اتّكالًا

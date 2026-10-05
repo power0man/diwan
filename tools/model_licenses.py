@@ -220,6 +220,11 @@ def measured_weights(payload: object) -> dict[str, tuple[dict[str, set[str]], di
             elif key in MODEL_MAPS and isinstance(child, dict) and not any(k in child for k in ("repo", "model", "name")):
                 for name, sub in child.items():
                     visit(sub, (canonical(name),) if isinstance(name, str) else owners)
+            elif key in MODEL_KEYS and isinstance(child, list):
+                # قائمةُ نماذج: كلُّ عنصرٍ يملكه ما يسمّيه (`name` أو `model` أو `repo`) كما يقرؤه `all_named_models`
+                # (ملاحظة Codex على #307)
+                for item in child:
+                    visit(item, tuple(canonical(name) for name in _named(item)) or owners)
             elif key in MODEL_KEYS and isinstance(child, dict):
                 visit(child, tuple(canonical(name) for name in _named(child)) or owners)
             else:
