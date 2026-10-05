@@ -106,12 +106,18 @@ def _writer_scalars(row: dict) -> bool:
             and (isinstance(row.get("model"), str) or row.get("kind") == "catalog"))
 
 
-def _excluded_without_spend(row: dict) -> bool:
-    """صفٌّ يُسقط من العدّ لا يحمل إنفاقًا كما يكتبه الكاتب: ما لم يُرسل لا كلفةَ له ولا استهلاك، ونداءُ Ollama المحلّيّ لا
-    كلفةَ له؛ فلا يمحو صفٌّ مبتورٌ أو معدَّلٌ إنفاقًا مسجَّلًا (ملاحظة Codex على #310)."""
-    if not row["request_sent"]:
-        return row.get("cost_usd") is None and row.get("usage") is None
-    return row.get("provider") != "ollama" or row["cloud"] or row.get("cost_usd") is None
+def _unsent_without_spend(row: dict) -> bool:
+    """ما لم يُرسل لا كلفةَ له ولا استهلاك كما يكتبه الكاتب، فلا يمحو صفٌّ مبتورٌ أو معدَّلٌ إنفاقًا مسجَّلًا بإسقاطه من العدّ
+    (ملاحظة Codex على #310)."""
+    return row["request_sent"] or (row.get("cost_usd") is None and row.get("usage") is None)
+
+
+def _ollama_writer_shape(row: dict) -> bool:
+    """صفُّ Ollama كما يكتبه `OllamaChat._record` وحده: `cloud` منطقيٌّ لا يناقض اسمَ النموذج، والكلفةُ `not_reported` بلا مبلغ.
+    فلا يصير مبلغٌ مكتوب، ولا حالةٌ مُبلَّغةٌ بلا مبلغها، اشتراكًا بصفر، محلّيًّا كان النداءُ أو سحابيًّا (ملاحظات Codex على #310)."""
+    return (_cloud_flag_consistent(row)
+            and row.get("cost_status") == "not_reported"
+            and row.get("cost_usd") is None)
 
 
 def _catalog_shape(row: dict) -> bool:
@@ -128,9 +134,9 @@ def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, 
     # مدفوعًا (ملاحظة Codex على #310)
     if not isinstance(rows, list) or not all(isinstance(row, dict) and type(row.get("request_sent")) is bool
                                              and _writer_scalars(row)
-                                             and (row.get("provider") != "ollama" or _cloud_flag_consistent(row))
+                                             and (row.get("provider") != "ollama" or _ollama_writer_shape(row))
                                              and (row.get("kind") != "catalog" or _catalog_shape(row))
-                                             and _excluded_without_spend(row)
+                                             and _unsent_without_spend(row)
                                              for row in rows):
         return None, ["spend_ledger_malformed"]
     sent = [row for row in rows if row.get("kind") != "catalog" and row.get("request_sent")]
@@ -157,9 +163,7 @@ def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, 
     elif len(providers) != 1:
         return None, ["spend_mixed_providers"]
     elif providers == {"ollama"}:
-        # اشتراكٌ بلا كلفةٍ لكل نداء؛ فكلفةٌ مكتوبةٌ لنداء Ollama تناقضه، فتُسمّى ولا تُمحى صفرًا (ملاحظة Codex على #310)
-        if any(value not in (None, 0) for value in costs):
-            return None, ["spend_subscription_with_cost"]
+        # اشتراكٌ بلا كلفةٍ لكل نداء؛ وصفُّ Ollama بمبلغٍ أو بحالةٍ مُبلَّغة رُدّ قبل هنا بشكل الكاتب (ملاحظات Codex على #310)
         basis, cost = "subscription_flat", 0
     elif all(free_call_proven(row, evidence) for row in cloud) and all(value in (None, 0) for value in costs):
         # المجانيةُ بدليلها لكل نداء، لا بغياب الكلفة ولا بعبارةٍ بلا دليل (ملاحظتا Codex على #310)
