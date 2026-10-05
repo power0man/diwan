@@ -16,8 +16,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      # الأداةُ وسجلّاها من الفرع الافتراضي، لا من الطلب: طلبٌ يعدّل family_review.py أو reviewers.json أو agents.json لا
+      # يغيّر حكمَها عليه (جديد-actions-hardening ٢). ونسخةُ الطلب يُقرأ منها تاريخُ git وحده.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: trusted
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: pr
           persist-credentials: false
           fetch-depth: 0
       - name: Another family reviewed the current head
@@ -27,4 +35,4 @@ jobs:
           HEAD: ${{ github.event.pull_request.head.sha }}
           PR: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
-        run: python3 tools/family_review.py --range "$BASE..$HEAD" --head "$HEAD" --pr "$PR" --repo-slug "$REPO" --wait-seconds 900
+        run: python3 trusted/tools/family_review.py --repo pr --range "$BASE..$HEAD" --head "$HEAD" --pr "$PR" --repo-slug "$REPO" --wait-seconds 900
