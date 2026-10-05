@@ -5,6 +5,7 @@ import hashlib
 import io
 import json
 import zipfile
+from pathlib import Path
 
 import pytest
 
@@ -12,7 +13,28 @@ from tools import model_licenses as ml
 from tools import probe_spend
 from tools import weight_provenance as wp
 
-WEIGHT_BYTES, LICENSE_BYTES = b"weights", b"MIT License"
+MIT_BODY = (
+    'Permission is hereby granted, free of charge, to any person obtaining a copy\n'
+    'of this software and associated documentation files (the "Software"), to deal\n'
+    'in the Software without restriction, including without limitation the rights\n'
+    'to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n'
+    'copies of the Software, and to permit persons to whom the Software is\n'
+    'furnished to do so, subject to the following conditions:\n'
+    '\n'
+    'The above copyright notice and this permission notice shall be included in\n'
+    'all copies or substantial portions of the Software.\n'
+    '\n'
+    'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n'
+    'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n'
+    'FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE\n'
+    'AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n'
+    'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n'
+    'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n'
+    'THE SOFTWARE.\n'
+)
+WEIGHT_BYTES = b"weights"
+LICENSE_BYTES = ("Copyright (c) 2019 Example\n\n" + MIT_BODY).encode()
+APACHE = (Path(__file__).resolve().parents[1] / "LICENSE").read_bytes()
 
 
 def _sha(data: bytes) -> str:
@@ -69,6 +91,7 @@ def test_a_weight_served_raw_is_hashed_as_it_is():
     pytest.param({"https://example.org/w.zip": _zip(("a/w.pth", WEIGHT_BYTES), ("b/w.pth", WEIGHT_BYTES))}, {},
                  "weight_not_in_origin", id="member_ambiguous"),
     pytest.param({}, {"license_text_sha256": "0" * 64}, "license_text_differs_at_source", id="license_text_changed"),
+    pytest.param({}, {"license": "proprietary"}, "license_not_the_text", id="license_relabelled"),
 ])
 def test_what_differs_at_the_origin_is_named_and_not_recorded(served, change, found):
     evidence, problems = wp.measure(_models(**change), "2026-10-05", {**SERVED, **served}.__getitem__)
@@ -79,20 +102,44 @@ def test_what_differs_at_the_origin_is_named_and_not_recorded(served, change, fo
 MODEL_LICENSE = "https://github.com/up/r/blob/v1/LICENSE"
 
 
-@pytest.mark.parametrize("served, found", [
-    pytest.param(LICENSE_BYTES, [], id="text_read_from_its_source"),
-    pytest.param(b"Other License", ["license_text_differs_at_source:ocr"], id="text_changed_at_source"),
+@pytest.mark.parametrize("served, license, found", [
+    pytest.param(APACHE, "apache-2.0", [], id="text_read_from_its_source"),
+    pytest.param(b"Other License", "apache-2.0", ["license_text_differs_at_source:ocr"], id="text_changed_at_source"),
+    pytest.param(APACHE, "mit", ["license_not_the_text:ocr"], id="text_of_another_license"),
 ])
-def test_the_models_license_text_is_read_from_its_source_and_recorded(served, found):
-    """ملاحظة Codex على #307: بصمةُ نصّ رخصة النموذج تُقاس من مصدره المقيَّد وتُسجَّل، وما خالفها يُسمّى ولا يُسجَّل."""
-    models = {"ocr": {**_models()["ocr"], "source": MODEL_LICENSE, "license_text_sha256": _sha(LICENSE_BYTES)}}
+def test_the_models_license_text_is_read_from_its_source_and_recorded(served, license, found):
+    """ملاحظتا Codex على #307: بصمةُ نصّ رخصة النموذج تُقاس من مصدره المقيَّد وتُسجَّل، والرخصةُ المعلنة تُسمّى من النصّ لا تُنسخ
+    من السجلّ؛ وما خالف أحدَهما يُسمّى ولا يُسجَّل."""
+    models = {"ocr": {**_models()["ocr"], "license": license, "source": MODEL_LICENSE, "license_text_sha256": _sha(APACHE)}}
     evidence, problems = wp.measure(models, "2026-10-05", {**SERVED, MODEL_LICENSE: served}.__getitem__)
     assert problems == found
     assert evidence["models"]["ocr"].get("license_provenance") == (
-        None if found else {"source": MODEL_LICENSE, "license_text_sha256": _sha(LICENSE_BYTES), "license": "apache-2.0"})
+        None if found else {"source": MODEL_LICENSE, "license_text_sha256": _sha(APACHE), "license": "apache-2.0"})
     if not found:
         registry = {"enforced_from": "2026-10-05", "historical_evidence": [], "models": models}
         assert ml.findings(registry, {"p.json": evidence}, None) == []
+
+
+END = b"END OF TERMS AND CONDITIONS"
+
+
+@pytest.mark.parametrize("data, found", [
+    pytest.param(LICENSE_BYTES, "mit", id="mit_with_its_copyright"),
+    pytest.param(b"MIT License\n\n" + LICENSE_BYTES, "mit", id="mit_with_its_title"),
+    pytest.param(APACHE, "apache-2.0", id="apache_with_its_appendix"),
+    pytest.param(APACHE[:APACHE.index(END) + len(END)] + b"\n", "apache-2.0", id="apache_without_its_appendix"),
+    pytest.param(LICENSE_BYTES + b"\nThe Software may not be used commercially.\n", None, id="mit_with_a_clause_after"),
+    pytest.param(b"Non-commercial use only.\n" + LICENSE_BYTES, None, id="mit_with_a_clause_before"),
+    pytest.param(LICENSE_BYTES.replace(b"sell", b"rent"), None, id="mit_body_changed"),
+    pytest.param(APACHE + b"\nAdditional restriction.\n", None, id="apache_with_a_clause_after"),
+    pytest.param(b"Note.\n" + APACHE, None, id="apache_with_a_clause_before"),
+    pytest.param(b"\xff\xfe", None, id="not_text"),
+    pytest.param(b"MIT License", None, id="a_title_alone"),
+])
+def test_a_license_is_named_by_its_text(data, found):
+    """ملاحظة Codex على #307: الرخصةُ المعلنة كانت تُنسخ من السجلّ إلى الدليل، فإعادةُ التوليد بعد تغيير الوسم تبارك الانحراف.
+    فتُسمّى من النصّ المقيس: جسمُ SPDX ببصمته، ولا بندَ زائدًا قبله أو بعده."""
+    assert wp.identify_license(data) == found
 
 
 def test_a_github_blob_is_read_from_its_raw_copy():

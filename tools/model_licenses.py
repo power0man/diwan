@@ -223,19 +223,19 @@ def evidence_findings(file: str, payload: dict, models: dict, enforced_from: str
 
 def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]] | None = None,
                      licenses: dict[str, set[tuple[str, ...]]] | None = None,
-                     malformed: dict[str, set[str]] | None = None,
+                     malformed: dict[str, set[tuple[str, str]]] | None = None,
                      ) -> dict[str, tuple[dict[str, set[str]], dict[str, set[str]]]]:
     """البصماتُ كما سجّلها الدليل، لكل نموذجٍ من شجرته وحدها (ملاحظتا Codex على #307). فالقاموسُ الذي يسمّي نموذجًا
     (`{"model": …}` أو `"engine": {"name": …}`) يملك ما تحته، فلا تُنسب بصمةُ نموذجٍ في الدليل نفسِه إلى غيره. والبصمةُ
     مربوطةٌ بملفّها: مفتاحٌ اسمُه اسمُ ملفّ (`arabic.pth`) قيمتُه بصمة، أو مفتاحٌ `<نوع>_sha256` (`traineddata_sha256`)
     لوزنٍ وحيدٍ من نوعه. وما لا مالكَ له على طريقه لا يُنسب إلى أحد. وسجلّاتُ المصدر (`weight_provenance`) تُجمع في
-    `provenance`، ونصوصُ الرخص المقيسة (`license_provenance`) في `licenses`، وبصماتُ الآثار التي ليست 64 محرفًا ستّ عشريًّا
-    صغيرًا في `malformed`، بالملكيّة نفسِها."""
+    `provenance`، ونصوصُ الرخص المقيسة (`license_provenance`) في `licenses`، وما شُوِّه في `malformed` برمزه: بصمةُ أثرٍ ليست
+    64 محرفًا ستّ عشريًّا صغيرًا، أو سجلُّ مصدرٍ ناقص؛ بالملكيّة نفسِها."""
     out: dict[str, tuple[dict[str, set[str]], dict[str, set[str]]]] = {}
 
-    def flag(owners: tuple[str, ...], key: str) -> None:
+    def flag(owners: tuple[str, ...], code: str, key: str) -> None:
         for owner in owners:
-            (malformed if malformed is not None else {}).setdefault(owner, set()).add(key)
+            (malformed if malformed is not None else {}).setdefault(owner, set()).add((code, key))
 
     def record(owners: tuple[str, ...], key: str, digest: str) -> None:
         for owner in owners:
@@ -263,7 +263,7 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
             elif isinstance(key, str) and key.endswith("_sha256") and isinstance(child, str):
                 # بصمةُ أثرٍ مشوَّهة تُسمّى ولا تُسقط صامتةً، فلا يمرّ أثرٌ بلا قيدٍ بكتابة بصمته على غير صيغتها (ملاحظة Codex على #307)
                 if key.removesuffix("_sha256") not in NON_ARTIFACT_KINDS:
-                    flag(owners, key.removesuffix("_sha256"))
+                    flag(owners, "weight_digest_malformed", key.removesuffix("_sha256"))
             elif isinstance(key, str) and key.endswith("_sha256") and isinstance(child, dict):
                 # خريطةُ بصماتٍ بأسماء الملفّات (`models_sha256`): كلُّ مفتاحٍ فيها اسمُ ملفّ ولو بلا لاحقة (`checkpoint`)،
                 # ويحكم عليه `is_weight_file` (ملاحظة Codex على #307)
@@ -272,10 +272,10 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
                         for owner in owners:
                             out.setdefault(owner, ({}, {}))[0].setdefault(name, set()).add(digest)
                     elif isinstance(name, str) and isinstance(digest, str) and is_weight_file(name):
-                        flag(owners, name)
+                        flag(owners, "weight_digest_malformed", name)
                 visit(child, owners)
             elif key == PROVENANCE_KEY and isinstance(child, list):
-                for item in child:
+                for index, item in enumerate(child):
                     if isinstance(item, dict) and all(isinstance(item.get(f), str) for f in PROVENANCE_FIELDS):
                         for owner in owners:
                             (provenance if provenance is not None else {}).setdefault(owner, set()).add(
@@ -283,6 +283,14 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
                             if SHA256.match(item["sha256"]):
                                 # سجلُّ المصدر قياسٌ لملفّه، فيُطالَب بقيده كما تُطالَب خريطةُ البصمات (ملاحظة Codex على #307)
                                 out.setdefault(owner, ({}, {}))[0].setdefault(item["file"], set()).add(item["sha256"])
+                        if not SHA256.match(item["sha256"]):
+                            flag(owners, "weight_digest_malformed", item["file"])
+                    else:
+                        # سجلُّ مصدرٍ ناقصٌ يُسمّى ولا يُسقط صامتًا، فلا يمرّ أثرٌ يعلنه الدليلُ بلا أصلٍ أو رخصة (ملاحظة Codex على #307)
+                        named = item.get("file") if isinstance(item, dict) else None
+                        flag(owners, "weight_provenance_malformed", named if isinstance(named, str) else f"#{index}")
+            elif key == PROVENANCE_KEY:
+                flag(owners, "weight_provenance_malformed", PROVENANCE_KEY)
             elif key == LICENSE_PROVENANCE_KEY and isinstance(child, dict):
                 if all(isinstance(child.get(f), str) for f in LICENSE_PROVENANCE_FIELDS):
                     for owner in owners:
@@ -388,7 +396,7 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
     kinds: dict[str, dict[str, set[str]]] = {}
     problems = []
     for file, payload in sorted(evidence.items()):
-        malformed: dict[str, set[str]] = {}
+        malformed: dict[str, set[tuple[str, str]]] = {}
         measured = measured_weights(payload, malformed=malformed)
         for name, (by_file, by_kind) in measured.items():
             for target, found in ((files, by_file), (kinds, by_kind)):
@@ -399,8 +407,8 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
                 problems += unregistered_weights(file, name, models[name], by_file, by_kind, aliases)
         if file in new_files:
             problems += unmeasured_weights(file, payload, models, measured)
-            problems += [f"weight_digest_malformed:{file}:{name}:{key}" for name, keys in sorted(malformed.items())
-                         if isinstance(models.get(name), dict) for key in sorted(keys)]
+            problems += [f"{code}:{file}:{name}:{key}" for name, keys in sorted(malformed.items())
+                         if isinstance(models.get(name), dict) for code, key in sorted(keys)]
     for name, entry in sorted(models.items()):
         weights = entry.get("weights", []) if isinstance(entry, dict) else []
         if not isinstance(weights, list) or not all(isinstance(weight, dict) for weight in weights):

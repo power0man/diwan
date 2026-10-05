@@ -456,6 +456,28 @@ def test_a_malformed_artifact_digest_is_named(payload, found):
     assert ml.weight_findings(models, {"new.json": payload}) == []
 
 
+SECRET = {**PROVENANCE, "file": "secret.pth"}
+
+
+@pytest.mark.parametrize("records, found", [
+    pytest.param([{k: v for k, v in SECRET.items() if k != "license"}], ["weight_provenance_malformed:new.json:asr:secret.pth"],
+                 id="record_without_its_license"),
+    pytest.param([{**SECRET, "origin": None}], ["weight_provenance_malformed:new.json:asr:secret.pth"],
+                 id="record_with_a_null_origin"),
+    pytest.param(["secret.pth"], ["weight_provenance_malformed:new.json:asr:#0"], id="record_not_an_object"),
+    pytest.param([{**SECRET, "sha256": "abc"}], ["weight_digest_malformed:new.json:asr:secret.pth"],
+                 id="record_with_a_malformed_digest"),
+    pytest.param(SECRET, ["weight_provenance_malformed:new.json:asr:weight_provenance"], id="records_not_a_list"),
+])
+def test_a_malformed_provenance_record_is_named(records, found):
+    """ملاحظة Codex على #307: سجلُّ `weight_provenance` الناقص (بلا رخصةٍ أو أصل) كان يُسقط صامتًا، فيمرّ `secret.pth` يعلنه
+    الدليلُ بلا قيدٍ ولا فحصِ أصلٍ أو رخصة. فالسجلُّ المشوَّه يُسمّى في الدليل الجديد، والتاريخيُّ لا يُطالَب."""
+    models = {"asr": {**READ, "weights": []}}
+    payload = {"model": "asr", "weight_provenance": records}
+    assert ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) == found
+    assert ml.weight_findings(models, {"new.json": payload}) == []
+
+
 ASR_CHECKPOINT = "weight_not_registered:new.json:asr:checkpoint"
 
 
