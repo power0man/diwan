@@ -12,7 +12,10 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import struct
+import subprocess
+import tempfile
 from types import MappingProxyType
 import unicodedata
 import zlib
@@ -24,6 +27,12 @@ from workspace_tools.preferences import validate_snapshot
 MAX_MEDIA_BYTES = 262144
 MAX_IMAGE_DIMENSION = 1024
 MAX_IMAGE_PIXELS = 1_000_000
+MAX_JPEG_DIMENSION = 1600
+MAX_JPEG_PIXELS = 1_500_000
+MAX_PDF_BYTES = 4 * 1024 * 1024
+MAX_PDF_PAGES = 100
+PDF_DPI = 150
+PDF_TIMEOUT_S = 30
 MAX_AUDIO_FRAMES = 128000
 MAX_MEDIA_PER_REQUEST = 4
 MAX_REQUEST_MEDIA_BYTES = 524288
@@ -169,6 +178,97 @@ def _wav(raw):
     return {"sample_rate": sample_rate, "channels": channels, "sample_width": 2, "frames": frames}
 
 
+def _jpeg(raw: bytes) -> dict:
+    def need(condition):
+        _need(condition, "jpeg_invalid", "JPEG خارج العقد المحدود أو تالف")
+
+    need(raw.startswith(b"\xff\xd8\xff"))
+    need(0 < len(raw) <= MAX_MEDIA_BYTES)
+    offset = 2
+    header = None
+    seen_eoi = False
+    while offset < len(raw):
+        need(raw[offset] == 0xff)
+        while offset < len(raw) and raw[offset] == 0xff:
+            offset += 1
+        need(offset < len(raw))
+        marker = raw[offset]
+        offset += 1
+        if marker == 0xd9:  # EOI
+            seen_eoi = True
+            break
+        if marker in (0xd8, 0x01) or (0xd0 <= marker <= 0xd7):
+            continue
+        need(offset + 2 <= len(raw))
+        length = struct.unpack_from(">H", raw, offset)[0]
+        need(length >= 2 and offset + length <= len(raw))
+        payload = raw[offset + 2:offset + length]
+        if marker in (0xc0, 0xc1, 0xc2):
+            need(header is None)
+            need(len(payload) >= 6)
+            precision, height, width, components = struct.unpack_from(">BHHB", payload, 0)
+            need(precision == 8)
+            need(0 < width <= MAX_JPEG_DIMENSION and 0 < height <= MAX_JPEG_DIMENSION
+                 and width * height <= MAX_JPEG_PIXELS)
+            need(components in (1, 3))
+            header = (width, height, components)
+        elif marker == 0xda:  # SOS
+            need(header is not None)
+            scan_offset = offset + length
+            while scan_offset < len(raw) - 1:
+                if raw[scan_offset] == 0xff:
+                    next_byte = raw[scan_offset + 1]
+                    if next_byte == 0x00 or (0xd0 <= next_byte <= 0xd7):
+                        scan_offset += 2
+                        continue
+                    elif next_byte == 0xd9:
+                        seen_eoi = True
+                        break
+                    elif next_byte != 0xff:
+                        break
+                scan_offset += 1
+            break
+        offset += length
+    need(header is not None)
+    return {"width": header[0], "height": header[1]}
+
+
+def find_pdf_renderer() -> str | None:
+    return shutil.which("pdftoppm")
+
+
+def clip_pdf_page(raw: bytes, page: int = 1, *, renderer: str | None = None,
+                  timeout_s: float = PDF_TIMEOUT_S) -> bytes:
+    """يقصّ صفحةً من مستند PDF ويحوّلها إلى بايتات PNG بحدود معلنة."""
+    _need(isinstance(raw, bytes), "media_invalid", "بايتات PDF صريحة مطلوبة")
+    _need(raw.startswith(b"%PDF-"), "pdf_invalid", "الملف ليس مستند PDF صالحًا")
+    _need(0 < len(raw) <= MAX_PDF_BYTES, "media_too_large", "حجم مستند PDF يتجاوز الحد المسموح")
+    _need(isinstance(page, int) and 1 <= page <= MAX_PDF_PAGES, "pdf_page_invalid",
+          f"رقم الصفحة يجب أن يكون عددًا صحيحًا بين 1 و{MAX_PDF_PAGES}")
+    renderer = renderer or find_pdf_renderer()
+    if not renderer:
+        raise MediaError("pdf_tool_unavailable", "pdftoppm غائب؛ يلزم تثبيت poppler-utils لقص صفحات PDF")
+    with tempfile.TemporaryDirectory(prefix="diwan-pdf-page-") as tmp:
+        workdir = Path(tmp).resolve()
+        input_pdf = workdir / "document.pdf"
+        input_pdf.write_bytes(raw)
+        out_prefix = workdir / "page"
+        cmd = [renderer, "-png", "-r", str(PDF_DPI), "-f", str(page), "-l", str(page),
+               str(input_pdf), str(out_prefix)]
+        try:
+            done = subprocess.run(cmd, capture_output=True, timeout=timeout_s, check=False)
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise MediaError("pdf_render_failed", f"تعذّر تشغيل محوّل PDF: {type(exc).__name__}") from None
+        if done.returncode != 0:
+            raise MediaError("pdf_render_failed", f"فشل تحويل صفحة PDF (رمز الخروج {done.returncode})")
+        rendered = sorted(workdir.glob("page-*.png"))
+        if not rendered:
+            raise MediaError("pdf_page_not_found", f"الصفحة {page} غير موجودة في مستند PDF")
+        png_bytes = rendered[0].read_bytes()
+        _need(0 < len(png_bytes) <= MAX_MEDIA_BYTES, "media_too_large", "حجم صورة الصفحة الناتجة يتجاوز الحد المسموح")
+        return png_bytes
+
+
 def pack_media(raw: bytes, filename: str) -> dict:
     """يتحقق من كامل البايتات ويعيد وصفًا جديدًا بلا تحويل أو تصحيح."""
     name = _name(filename)
@@ -176,10 +276,12 @@ def pack_media(raw: bytes, filename: str) -> dict:
     _need(0 < len(raw) <= MAX_MEDIA_BYTES, "media_too_large", "حجم الوسيط خارج الحد المسموح")
     if raw.startswith(_PNG_SIGNATURE):
         kind, mime, metadata = "image", "image/png", _png(raw)
+    elif raw.startswith(b"\xff\xd8\xff"):
+        kind, mime, metadata = "image", "image/jpeg", _jpeg(raw)
     elif raw.startswith(b"RIFF"):
         kind, mime, metadata = "audio", "audio/wav", _wav(raw)
     else:
-        raise MediaError("media_type_unsupported", "المسموح PNG المحدود أو PCM WAV المحدود فقط")
+        raise MediaError("media_type_unsupported", "المسموح PNG المحدود أو JPEG المحدود أو PCM WAV المحدود فقط")
     return {"name": name, "kind": kind, "mime": mime,
             "sha256": hashlib.sha256(raw).hexdigest(), "size_bytes": len(raw),
             "metadata": metadata, "data_base64": base64.b64encode(raw).decode("ascii")}
@@ -207,18 +309,23 @@ def validate_media(value: dict) -> dict:
     return expected
 
 
-def read_selected(path: Path) -> dict:
+def read_selected(path: Path, page: int = 1) -> dict:
     """يفتح ملفًا اختاره المستدعي؛ لا يتبع رابطًا ولا ينشئ مصدرًا."""
     _need(isinstance(path, Path), "media_path_invalid", "مسار ملف صريح مطلوب")
     try:
         absolute = path.absolute()
         _relative(str(absolute.relative_to(absolute.anchor)))
         name = _name(absolute.name)
+        is_pdf = absolute.suffix.lower() == ".pdf"
+        limit = MAX_PDF_BYTES if is_pdf else MAX_MEDIA_BYTES
         fd = _open_directory(absolute.parent)
         try:
-            raw, _ = _read_file(fd, name, MAX_MEDIA_BYTES)
+            raw, _ = _read_file(fd, name, limit)
         finally:
             os.close(fd)
+        if is_pdf or raw.startswith(b"%PDF-"):
+            clipped = clip_pdf_page(raw, page=page)
+            return pack_media(clipped, f"{name}.p{page}.png")
     except WorkspaceError as exc:
         code = "media_too_large" if exc.code == "file_too_large" else exc.code
         raise MediaError(code, exc.reason) from None
