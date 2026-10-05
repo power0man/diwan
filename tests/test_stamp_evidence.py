@@ -91,6 +91,23 @@ def test_a_given_or_written_spend_is_checked_not_trusted():
     assert problems == ["spend_local_with_cloud"]
 
 
+@pytest.mark.parametrize("payload, code", [
+    pytest.param({"model": "qwen3.5:9b", "spend": "corrupt"}, "spend_missing", id="written_spend_not_an_object"),
+    pytest.param({"model": "qwen3.5:9b", "spend": None}, "spend_missing", id="written_spend_null"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud", "provider_usage": [None]}, "spend_ledger_malformed",
+                 id="ledger_row_not_an_object"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud", "provider_usage": [_row("ollama", "deepseek-v4.1-flash:cloud"), 5]},
+                 "spend_ledger_malformed", id="one_ledger_row_not_an_object"),
+    pytest.param({"model": "qwen3.5:9b", "provider_usage": "corrupt"}, "spend_ledger_malformed",
+                 id="ledger_not_a_list"),
+])
+def test_a_malformed_spend_or_ledger_is_named_not_replaced(payload, code):
+    """ملاحظتا Codex على #310: كتلةٌ أو سجلٌّ فاسدٌ لا يُصفّى إلى كتلةٍ صفريّةٍ صالحة، بل يُسمّى ولا يُختم."""
+    stamped, problems = se.stamp(payload, MODELS)
+    assert problems == [code]
+    assert stamped.get("spend") == payload.get("spend"), "لا تُكتب كتلةٌ بدل الفاسدة"
+
+
 @pytest.mark.parametrize("rows, spend", [
     pytest.param([_row("ollama", "deepseek-v4.1-flash:cloud"), _row("ollama", "qwen3.5:9b", cloud=False),
                   _row("ollama", "deepseek-v4.1-flash:cloud", sent=False)],

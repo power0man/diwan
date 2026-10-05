@@ -91,7 +91,10 @@ COST_STATUSES = frozenset({"reported", "estimated_from_prices", "reserved_upper_
 
 def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, list[str]]:
     """كتلةُ الإنفاق من سجلّ النداءات: ما أُرسل إلى السحابة وحده. وأساسُ الكلفة من الواجهة لا من التخمين."""
-    sent = [row for row in rows if isinstance(row, dict) and row.get("kind") != "catalog" and row.get("request_sent")]
+    # سجلٌّ ليس قائمةَ صفوفٍ كلُّها كائنات مبتورٌ أو فاسد: يُسمّى ولا يُصفّى إلى إنفاقٍ صفريّ (ملاحظة Codex على #310)
+    if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+        return None, ["spend_ledger_malformed"]
+    sent = [row for row in rows if row.get("kind") != "catalog" and row.get("request_sent")]
     cloud = [row for row in sent if row.get("provider") != "ollama" or row.get("cloud")]
     # عدّادٌ غائبٌ أو سالبٌ في نداءٍ أُرسل مجهولٌ لا صفر: لا تُكتب كتلةٌ تعدّه صفرًا، ولا يُخفي موجبٌ سالبًا في المجموع
     # (ملاحظتا Codex على #310)
@@ -134,10 +137,11 @@ def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, 
 
 
 def stamp_spend(payload: dict, given: dict | None) -> tuple[dict | None, list[str]]:
-    if isinstance(payload.get("spend"), dict) or given is not None:
-        spend = payload["spend"] if isinstance(payload.get("spend"), dict) else given
+    # كتلةٌ مكتوبةٌ تُفحص بأيّ شكلٍ كانت، ولا يُستبدل بالفاسدة منها غيرُها؛ وكذلك سجلُّ النداءات (ملاحظتا Codex على #310)
+    if "spend" in payload or given is not None:
+        spend = payload["spend"] if "spend" in payload else given
         return spend, [problem.replace(":given", "") for problem in probe_spend.spend_findings("given", spend)]
-    if isinstance(payload.get("provider_usage"), list):
+    if "provider_usage" in payload:
         return spend_from_usage(payload["provider_usage"], payload.get("zero_spend_evidence"))
     names = ml.all_named_models(payload)
     if names and all(is_local_name(name) for name in names):
