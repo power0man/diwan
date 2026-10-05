@@ -292,6 +292,8 @@ def test_a_weight_file_is_any_file_not_known_to_be_data(file, weight):
     pytest.param({"engine": {"name": "ocr"}}, ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth"],
                  id="no_digest"),
     pytest.param({"engine": {"name": "ocr"}, "w.pth": DIGEST}, [], id="digest_beside_its_engine"),
+    pytest.param({"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST}}}, "model": "a/model"}, [],
+                 id="engine_tree_owned_by_its_engine_alone"),
     pytest.param({"runs": [{"model": "ocr"}, {"model": "a/model", "w.pth": DIGEST}]},
                  ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth",
                   "weight_not_registered:new.json:a/model:w.pth"], id="digest_for_another_model"),
