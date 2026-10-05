@@ -556,6 +556,18 @@ def test_a_provenance_record_is_a_measured_artifact(payload, found):
     pytest.param({"model": "asr", "models_sha256": {"w.pth": None}}, ["weight_digest_malformed:new.json:asr:w.pth"],
                  id="null_in_a_map"),
     pytest.param({"model": "asr", "suite_sha256": None}, [], id="null_data_kind"),
+    # واسمُ ملفّ وزنٍ قيمتُه ليست بصمةً يُسمّى، واسمُ نموذجٍ مفتاحًا ليس ملفًّا (ملاحظة Codex على #307)
+    pytest.param({"model": "asr", "secret.pth": None}, ["weight_digest_malformed:new.json:asr:secret.pth"],
+                 id="null_beside_a_weight_name"),
+    pytest.param({"model": "asr", "secret.pth": "bad"}, ["weight_digest_malformed:new.json:asr:secret.pth"],
+                 id="text_beside_a_weight_name"),
+    pytest.param({"model": "asr", "secret.pth": 7}, ["weight_digest_malformed:new.json:asr:secret.pth"],
+                 id="number_beside_a_weight_name"),
+    pytest.param({"model": "asr", "secret.pth": [DIGEST]}, ["weight_digest_malformed:new.json:asr:secret.pth"],
+                 id="list_beside_a_weight_name"),
+    pytest.param({"model": "asr", "secret.pth": {"size": 7}}, ["weight_digest_malformed:new.json:asr:secret.pth"],
+                 id="object_without_a_digest_beside_a_weight_name"),
+    pytest.param({"model": "asr", "qwen3.5-9b": 2.52}, [], id="model_name_key_is_not_a_weight"),
 ])
 def test_a_malformed_artifact_digest_is_named(payload, found):
     """ملاحظة Codex على #307: `checkpoint_sha256` بقيمةٍ ليست 64 محرفًا ستّ عشريًّا صغيرًا كان يُسقط صامتًا، فيمرّ أثرٌ بلا قيد.
@@ -565,7 +577,60 @@ def test_a_malformed_artifact_digest_is_named(payload, found):
     assert ml.weight_findings(models, {"new.json": payload}) == []
 
 
+def test_a_weight_name_with_its_digest_in_an_object_is_measured():
+    """ملاحظة Codex على #307: `{"secret.pth": {"sha256": …}}` قياسٌ للوزن كـ`{"secret.pth": …}`، فيُطالَب بقيده."""
+    models = {"asr": {**READ, "weights": []}}
+    payload = {"model": "asr", "secret.pth": {"sha256": DIGEST, "size": 7}}
+    assert ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) == [
+        "weight_not_registered:new.json:asr:secret.pth"]
+
+
 SECRET = {**PROVENANCE, "file": "secret.pth"}
+
+
+@pytest.mark.parametrize("field, value", [
+    pytest.param("origin", "https://example.org/other.zip", id="origin"),
+    pytest.param("origin_sha256", SIBLING, id="origin_sha256"),
+    pytest.param("license_source", "https://example.org/OTHER", id="license_source"),
+    pytest.param("license", "apache-2.0", id="license"),
+    pytest.param("license_text_sha256", SIBLING, id="license_text_sha256"),
+    pytest.param("attribution", "Copyright (c) Someone", id="attribution"),
+])
+def test_a_new_provenance_record_conflicting_with_the_registry_is_named(field, value):
+    """ملاحظة Codex على #307: سجلُّ المصدر كان يكفيه سجلٌّ مطابقٌ واحد في الأدلّة كلّها، فيُنشر دليلٌ جديد يعلن لـ`w.pth` ببصمته
+    المقيَّدة أصلًا أو رخصةً أخرى بجانب السجلّ الصحيح. فكلُّ سجلٍّ جديدٍ لوزنٍ مقيَّد يُقارن بقيده، مملوكًا أو بلا مالك؛ والتاريخيُّ
+    لا يُطالَب."""
+    models = {"ocr": {**READ, "weights": [WEIGHT]}}
+    for payload in ({"model": "ocr", "weight_provenance": [PROVENANCE, {**PROVENANCE, field: value}]},
+                    {"config": {"model": "ocr"}, "weight_provenance": [{**PROVENANCE, field: value}]}):
+        assert "weight_provenance_conflicts:new.json:ocr:w.pth" in ml.weight_findings(
+            models, {"new.json": payload}, frozenset({"new.json"}))
+        assert not [f for f in ml.weight_findings(models, {"new.json": payload}) if "conflicts" in f]
+
+
+@pytest.mark.parametrize("payload", [
+    pytest.param({"model": "ocr", "weight_provenance": [PROVENANCE, {**PROVENANCE, "read_on": "2026-11-01"}]},
+                 id="a_later_reading"),
+    pytest.param({"model": "ocr", "weight_provenance": [{**PROVENANCE, "file": "v.pth"}]}, id="another_file"),
+])
+def test_a_provenance_record_agreeing_with_the_registry_is_not_a_conflict(payload):
+    """قراءةٌ مؤرَّخةٌ أخرى للبايتات نفسِها، وسجلٌّ لملفٍّ آخر، ليسا تعارضًا مع قيد `w.pth` (ملاحظة Codex على #307)."""
+    models = {"ocr": {**READ, "weights": [WEIGHT]}}
+    assert not [f for f in ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) if "conflicts" in f]
+
+
+@pytest.mark.parametrize("field, value, found", [
+    pytest.param("license_text_sha256", SIBLING, ["license_provenance_conflicts:new.json:ocr"], id="other_text"),
+    pytest.param("source", "https://example.org/OTHER", ["license_provenance_conflicts:new.json:ocr"], id="other_source"),
+    pytest.param("license", "mit", ["license_provenance_conflicts:new.json:ocr"], id="other_license"),
+    pytest.param("read_on", "2026-11-01", [], id="a_later_reading"),
+])
+def test_a_new_license_text_record_conflicting_with_the_registry_is_named(field, value, found):
+    """ملاحظة Codex على #307: ونصُّ رخصة النموذج كسجلّ المصدر: دليلٌ جديد يعلن له نصًّا أو مصدرًا أو رخصةً تخالف قيده يُسمّى ولو
+    كان في الأدلّة سجلٌّ مطابق؛ وقراءةٌ مؤرَّخةٌ أخرى ليست تعارضًا."""
+    models = {"ocr": {**READ, **MODEL_TEXT, "weights": []}}
+    payload = {"model": "ocr", "license_provenance": {**MODEL_TEXT, field: value}}
+    assert [f for f in ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) if "conflicts" in f] == found
 
 
 @pytest.mark.parametrize("records, found", [

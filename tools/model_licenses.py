@@ -306,6 +306,16 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
                 continue
             if isinstance(key, str) and isinstance(child, str) and SHA256.match(child):
                 record(owners, key, child)
+            elif isinstance(key, str) and "." in key and weight_kind(key) in WEIGHT_KINDS:
+                # اسمُ ملفّ وزنٍ قيمتُه بصمتُه، أو قاموسٌ فيه `sha256`؛ وما سواهما (null أو نصٌّ أو رقمٌ أو قائمة أو قاموسٌ بلا
+                # بصمة) يُسمّى ولا يُسقط صامتًا. ويُقصر على أنواع الأوزان المعروفة، فاسمُ نموذجٍ مفتاحًا (`qwen3.5-9b`) ليس ملفًّا
+                # (ملاحظة Codex على #307)
+                digest = child.get("sha256") if isinstance(child, dict) else child
+                if isinstance(digest, str) and SHA256.match(digest):
+                    record(owners, key, digest)
+                else:
+                    flag(owners, "weight_digest_malformed", key)
+                visit(child, owners)
             elif isinstance(key, str) and key.endswith("_sha256") and not isinstance(child, dict):
                 # بصمةُ أثرٍ مشوَّهة (نصٌّ على غير صيغتها، أو null أو رقمٌ أو قائمة) تُسمّى ولا تُسقط صامتةً، فلا يمرّ أثرٌ بلا قيد
                 # (ملاحظتا Codex على #307)
@@ -489,7 +499,9 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
     for file, payload in sorted(evidence.items()):
         malformed: dict[str, set[tuple[str, str]]] = {}
         declared: dict[str, set[str]] = {}
-        measured = measured_weights(payload, malformed=malformed, declared=declared)
+        records: dict[str, set[tuple[str, ...]]] = {}
+        texts: dict[str, set[tuple[str, ...]]] = {}
+        measured = measured_weights(payload, records, texts, malformed=malformed, declared=declared)
         unowned, unowned_flags = measured.pop(UNOWNED[0], ({}, {})), malformed.pop(UNOWNED[0], set())
         unowned_declared = declared.pop(UNOWNED[0], set())
         if file in new_files:
@@ -503,6 +515,7 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
                 problems += unregistered_weights(file, name, models[name], by_file, by_kind, aliases, declared.get(name, set()))
         if file in new_files:
             problems += unmeasured_weights(file, payload, models, measured)
+            problems += conflicting_records(file, models, records, texts)
             problems += [f"{code}:{file}:{name}:{key}" for name, keys in sorted(malformed.items())
                          if isinstance(models.get(name), dict) for code, key in sorted(keys)]
     for name, entry in sorted(models.items()):
@@ -557,7 +570,42 @@ def provenance_findings(models: dict, evidence: dict[str, object]) -> list[str]:
 def _provenance_recorded(weight: dict, records: set[tuple[str, ...]]) -> bool:
     """سجلٌّ بملفّ الوزن وبصمته وأصله ومصدر رخصته ورخصته المعلنة وتاريخ قراءتها وبصمة نصّ رخصته وإسناده معًا. فالإسنادُ
     المنشور في THIRD-PARTY.md سطرٌ قيس في نصّ الرخصة، لا نصٌّ يُكتب (ملاحظة Codex على #307)."""
-    return (*(weight[f] for f in PROVENANCE_FIELDS), weight.get("license_text_sha256"), weight.get("attribution")) in records
+    return _record_of(weight) in records
+
+
+def _record_of(weight: dict) -> tuple:
+    """قيدُ الوزن بصورة سجلّ المصدر كما يجمعه `measured_weights`."""
+    return (*(weight[f] for f in PROVENANCE_FIELDS), weight.get("license_text_sha256"), weight.get("attribution"))
+
+
+def _undated(record: tuple, read_on: int) -> tuple:
+    return record[:read_on] + record[read_on + 1:]
+
+
+def conflicting_records(file: str, models: dict, records: dict[str, set[tuple]], texts: dict[str, set[tuple]]) -> list[str]:
+    """دليلٌ جديد يعلن لوزنٍ مقيَّد (بملفّه وبصمته) سجلَّ مصدرٍ يخالف قيدَه، أو لنموذجٍ مقيَّدٍ نصُّ رخصته سجلَّ نصٍّ يخالفه، يُسمّى؛
+    فلا يُنشر بجانب السجلّ الصحيح أصلٌ أو مصدرُ رخصةٍ أو رخصةٌ أو نصٌّ أو إسنادٌ كاذبٌ على البايتات نفسها (ملاحظة Codex على
+    #307). وتاريخُ القراءة لا يُقارن، فقراءتان مؤرَّختان لشيءٍ واحد قياسان صحيحان. وسجلُّ المصدر الذي لا مالكَ له على طريقه
+    يُقارن بكلّ وزنٍ مقيَّدٍ بملفّه وبصمته."""
+    problems = set()
+    for owner, found in records.items():
+        for name in [owner] if owner else list(models):
+            entry = models.get(name)
+            weights = entry.get("weights") if isinstance(entry, dict) else None
+            for weight in weights if isinstance(weights, list) else []:
+                if not isinstance(weight, dict) or not all(isinstance(weight.get(f), str) for f in PROVENANCE_FIELDS):
+                    continue
+                expected = _undated(_record_of(weight), PROVENANCE_FIELDS.index("read_on"))
+                if any(record[:2] == expected[:2] and _undated(record, PROVENANCE_FIELDS.index("read_on")) != expected
+                       for record in found):
+                    problems.add(f"weight_provenance_conflicts:{file}:{name}:{weight['file']}")
+    for name, found in texts.items():
+        entry = models.get(name)
+        if isinstance(entry, dict) and "license_text_sha256" in entry:
+            expected = _undated(tuple(entry.get(f) for f in LICENSE_PROVENANCE_FIELDS), LICENSE_PROVENANCE_FIELDS.index("read_on"))
+            if any(_undated(record, LICENSE_PROVENANCE_FIELDS.index("read_on")) != expected for record in found):
+                problems.add(f"license_provenance_conflicts:{file}:{name}")
+    return sorted(problems)
 
 
 def default_engine(source: Path = DEFAULT_ENGINE_SOURCE) -> str | None:

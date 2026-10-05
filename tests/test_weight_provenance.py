@@ -126,7 +126,8 @@ def test_an_attribution_read_in_the_license_text_is_recorded_and_bound():
     registry = {"enforced_from": "2026-10-05", "historical_evidence": {}, "models": models}
     assert ml.findings(registry, {"p.json": evidence}, None) == []
     moved = {**registry, "models": _measured(attribution="Copyright (c) Other")}
-    assert ml.findings(moved, {"p.json": evidence}, None) == ["weight_provenance_not_in_evidence:ocr:w.pth"]
+    assert ml.findings(moved, {"p.json": evidence}, None) == [
+        "weight_provenance_conflicts:p.json:ocr:w.pth", "weight_provenance_not_in_evidence:ocr:w.pth"]
 
 
 def test_a_weight_served_raw_is_hashed_as_it_is():
