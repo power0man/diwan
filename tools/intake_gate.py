@@ -18,11 +18,18 @@ LABELS_LINE = re.compile(r"^labels:[ \t]*\[(?P<items>[^\]\n]*)\][ \t]*(?:#.*)?$"
 NON_WORKING = frozenset({"family:owner"})
 
 
+# مفتاحُ `labels` في أيّ موضعٍ من السطر: بإزاحةٍ، أو داخل خريطةٍ مضمَّنة `{..., labels: [...]}` (ملاحظة Codex على #304)
+LABELS_KEY = re.compile(r"""(?:^|[\s{,])['"]?labels['"]?[ \t]*:""")
+
+
 def template_labels(text: str) -> list[str] | None:
-    """وسومُ القالب من سطرها المضمَّن؛ وكلُّ سطرٍ آخر يذكر `labels` في المستوى الأعلى يعيد None (صورةٌ لا تُقرأ)."""
+    """وسومُ القالب من سطرها المضمَّن في العمود الأول؛ وكلُّ ذكرٍ آخر لمفتاح `labels` (مُزاحًا أو في خريطةٍ مضمَّنة)، وكلُّ
+    خريطةٍ مضمَّنة أو مفتاحٍ مركّب (`?`)، يعيد None: صورةٌ لا تُقرأ، فيُغلق عند الشكّ."""
     found = None
     for line in text.splitlines():
-        if not re.match(r"^['\"]?labels['\"]?[ \t]*:", line):
+        if line.lstrip().startswith(("{", "?")):
+            return None
+        if not LABELS_KEY.search(line):
             continue
         match = LABELS_LINE.match(line)
         if match is None or found is not None:
