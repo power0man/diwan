@@ -237,7 +237,10 @@ def check_bank(src: Path) -> dict:
         _failure(failures, "agentic", "task_id_not_unique_across_bank")
     if any(n > 1 for n in case_ids.values()):
         _failure(failures, "bank", "case_id_not_unique_across_bank")
-    return {"counts": counts, "without_checks": without_checks, "failures": failures}
+    # بصمةُ الشطر المفتوح كلِّه كما يقرؤها المحكِّم ومُشغِّلُ الرقم العام، فيُربط القياسُ بهذا الاستلام بعينه (ملاحظة Codex على #312)
+    from evaluation.judge import open_bank_digest
+    open_digest = open_bank_digest(src / "open") if (src / "open").is_dir() else None
+    return {"counts": counts, "without_checks": without_checks, "open_digest": open_digest, "failures": failures}
 
 
 def check_dev(src: Path) -> dict:

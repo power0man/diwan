@@ -18,6 +18,8 @@
   `local_no_charge` لا تصدق إلا عليه.
   ويُرفض بنكٌ فيه حالةٌ بلا فحصٍ آليّ (شرطُ v1.2: صفرُ حالةٍ بلا فحص)، فلا يُنشر رقمُ م١ على v1.1 ومقامٍ مُنقَص؛ إلا بـ
   `--diagnostic`، فيُوسم التقريرُ `general_number_diagnostic` ولا يُعدّ دليلَ البوابة.
+  ويلزم تقريرُ استلامٍ ناجح من `tools/kimi_intake.py` (`--intake`) بصمةُ شطره المفتوح هي بصمةُ البنك المقيس، فلا يُقاس
+  بنكٌ جزئيّ أو غريبٌ باسم v1.2.
 
 الحدود: فحصُ `exact` صارمٌ بق٥٧ فلا قراءةَ مشذَّبة؛ والبذورُ بحرارة صفر لا تقيس تباينَ العيّنة (`GREEDY_SEED_LIMIT`)؛
 والتقريرُ لا يُكتب فوق ملفٍّ قائم.
@@ -40,6 +42,7 @@ from evaluation.ablation import (GREEDY_SEED_LIMIT, RUNNER_VERSION, AblationErro
                                  run_seeded_arm, seed_values)
 from core.locality import is_cloud_model, is_local_provider  # noqa: E402
 from evaluation.capabilities import _checks  # noqa: E402
+from evaluation.judge import open_bank_digest  # noqa: E402
 from evaluation.retrieval_general import wilson  # noqa: E402
 from tools.evaluate_ablation import bank_cases  # noqa: E402
 from evaluation.ablation import auto_checked  # noqa: E402
@@ -131,6 +134,19 @@ def exact_readings(rows: list[dict], cases: list[dict]) -> dict:
     return {"strict": reading(strict), "lenient": reading(lenient), "lost_to_trailing_punctuation": recovered}
 
 
+def _require_intake(intake: dict | None, digest: str) -> None:
+    """البنكُ المقيس هو الذي نجح استلامُه: تقريرُ kimi_intake ناجح، وبلا حالةٍ بلا فحص، وبصمةُ مفتوحه بصمةُ هذا البنك."""
+    if not isinstance(intake, dict):
+        raise AblationError("intake_missing", "يلزم --intake بتقرير kimi_intake ناجح، أو --diagnostic")
+    bank = intake.get("bank") if isinstance(intake.get("bank"), dict) else {}
+    if intake.get("passed") is not True:
+        raise AblationError("intake_not_passed", "تقريرُ الاستلام لم ينجح")
+    if (bank.get("without_checks") or {}).get("open") != 0:
+        raise AblationError("intake_not_passed", "الاستلامُ يعدّ حالاتٍ بلا فحص")
+    if bank.get("open_digest") != digest:
+        raise AblationError("intake_digest_mismatch", "بصمةُ الشطر المفتوح غيرُ بصمة الاستلام")
+
+
 def _tiers(bank_open: Path) -> dict[str, str]:
     """طبقةُ كل حالة من مجلّد ملفّها (tier_a…tier_c)."""
     tiers = {}
@@ -153,7 +169,7 @@ def summarize(rows: list[dict]) -> dict:
 
 def run_general(provider, *, model: str, model_version: str, bank_open: Path, engine_license: str, date: str,
                 sandbox: bool = True, seeds: tuple[int, ...] | None = None, command: str = "",
-                diagnostic: bool = False, **options) -> dict:
+                diagnostic: bool = False, intake: dict | None = None, **options) -> dict:
     seeds = seed_values() if seeds is None else tuple(seeds)
     if seeds != seed_values(len(seeds)):
         raise AblationError("seeds_invalid", "يلزم تسلسل 0..N-1 بعدد فردي لا يقل عن 3")
@@ -171,6 +187,9 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
     # بنكٌ فيه حالةٌ بلا فحصٍ آليّ ليس v1.2 المستلَم: يُرفض قبل أيّ نداء، لا يُنقَص مقامُه صامتًا (ملاحظة Codex على #312)
     if unchecked and not diagnostic:
         raise AblationError("bank_has_unchecked_cases", f"{unchecked} حالةً بلا فحصٍ آليّ؛ يلزم v1.2 أو --diagnostic")
+    digest = open_bank_digest(bank_open)
+    if not diagnostic:
+        _require_intake(intake, digest)
     tally = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
     rows = run_seeded_arm(cases, _Counted(provider, tally), arm(), seeds, model=model, model_version=model_version,
                           **options)
@@ -186,7 +205,7 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
                    "model": model, "model_version": model_version, "arm": arm(),
                    "protocol_id": protocol()["protocol_id"], "seeds": list(seeds),
                    "seed_aggregation": protocol()["seed_aggregation"], "options": dict(options),
-                   "engine_calls": tally["calls"],
+                   "engine_calls": tally["calls"], "open_bank_digest": digest,
                    "bank": {"files": files, "cases_measured": len(cases),
                             "cases_without_automatic_check": unchecked,
                             "sandbox_cases_excluded": len(every) - unchecked - len(cases),
@@ -207,6 +226,7 @@ def main(argv=None) -> int:
     parser.add_argument("--bank-open", type=Path, default=ROOT / "evaluation/banks/kimi_v1/open")
     parser.add_argument("--seeds", type=int, default=3, help="عددٌ فردي من البذور (الافتراضي 3؛ تُستخدم 0..N-1)")
     parser.add_argument("--no-sandbox", action="store_true", help="تُستبعد حالاتُ python_sandbox حيث لا حاويةَ فحص")
+    parser.add_argument("--intake", type=Path, help="تقريرُ tools/kimi_intake.py الناجح لهذا البنك (يلزم إلا مع --diagnostic)")
     parser.add_argument("--diagnostic", action="store_true",
                         help="يُقبل بنكٌ فيه حالاتٌ بلا فحص، ويُوسم التقريرُ تشخيصيًّا لا دليلَ بوابة م١")
     parser.add_argument("--out", type=Path, required=True)
@@ -236,7 +256,8 @@ def main(argv=None) -> int:
         report = run_general(OllamaProvider(args.model), model=args.model, model_version=model_version,
                              bank_open=args.bank_open, engine_license=engine_license,
                              date=datetime.now(timezone.utc).date().isoformat(), sandbox=not args.no_sandbox,
-                             seeds=seeds, command=command, diagnostic=args.diagnostic)
+                             seeds=seeds, command=command, diagnostic=args.diagnostic,
+                             intake=json.loads(args.intake.read_text(encoding="utf-8")) if args.intake else None)
     except AblationError as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2

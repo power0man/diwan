@@ -20,6 +20,13 @@ from tools import probe_spend  # noqa: E402
 RUN = {"model": "replay", "model_version": "v1", "engine_license": "Apache-2.0", "date": "2026-10-05"}
 
 
+def _intake(bank, **changes):
+    """تقريرُ استلامٍ ناجح لهذا البنك بعينه، كما يكتبه tools/kimi_intake.py."""
+    from evaluation.judge import open_bank_digest
+    report = {"passed": True, "bank": {"without_checks": {"open": 0, "sealed": 0}, "open_digest": open_bank_digest(bank)}}
+    return {**report, **changes}
+
+
 def _case(case_id, text, checks):
     return {"case_id": case_id, "capability": "general", "critical": False, "reference": "", "rubric": "",
             "messages": [{"role": "user", "content": text}], "checks": checks}
@@ -152,7 +159,8 @@ def test_strict_and_trimmed_exact_readings_are_published_together(tmp_path):
         _case("dot", "صف الأسلوب", [{"kind": "exact", "value": "بليغ"}]),
         _case("wrong", "صف الأسلوب", [{"kind": "exact", "value": "ركيك"}]),
         _case("ok", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])]})
-    report = run_general(SeedReplay(lambda u, s: "الرباط" if "المغرب" in u else "بليغ."), bank_open=bank, **RUN)
+    report = run_general(SeedReplay(lambda u, s: "الرباط" if "المغرب" in u else "بليغ."), bank_open=bank,
+                         intake=_intake(bank), **RUN)
     readings = report["exact_readings"]
     assert readings["strict"]["passes"] == report["overall"]["passes"] == 1
     assert readings["lenient"]["passes"] == 2 and readings["lost_to_trailing_punctuation"] == 1
@@ -170,3 +178,19 @@ def test_a_bank_with_unchecked_cases_is_refused_unless_the_run_is_declared_diagn
     report = run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, diagnostic=True, **RUN)
     assert report["kind"] == "general_number_diagnostic"
     assert "diagnostic_run_on_a_bank_with_unchecked_cases_not_m1_gate_evidence" in report["measurement_limits"]
+
+
+def test_the_run_is_bound_to_a_passed_intake_of_this_very_bank(tmp_path):
+    """بنكٌ بلا حالةٍ بلا فحص لا يكفي: يلزم استلامٌ ناجحٌ بصمتُه بصمةُ البنك، فلا يُقاس بنكٌ جزئيّ أو غريب باسم v1.2."""
+    rabat = [{"kind": "contains", "value": "الرباط"}]
+    bank = _bank(tmp_path / "open", {"tier_a": [_case("a", "ما عاصمة المغرب؟", rabat)]})
+    other = _bank(tmp_path / "other", {"tier_a": [_case("b", "عاصمة المغرب؟", rabat)]})
+    seen = []
+    replay = SeedReplay(lambda u, s: "الرباط", seen=seen)
+    for intake, code in ((None, "intake_missing"), (_intake(bank, passed=False), "intake_not_passed"),
+                         (_intake(other), "intake_digest_mismatch")):
+        with pytest.raises(AblationError, match=code):
+            run_general(replay, bank_open=bank, intake=intake, **RUN)
+    assert seen == []
+    report = run_general(replay, bank_open=bank, intake=_intake(bank), **RUN)
+    assert report["kind"] == "general_number" and report["config"]["open_bank_digest"] == _intake(bank)["bank"]["open_digest"]

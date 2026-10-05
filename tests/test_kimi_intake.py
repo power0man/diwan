@@ -359,3 +359,13 @@ def test_a_binary_file_map_is_judged_not_named_prose(tmp_path):
     assert "reference_solution_not_a_file_map" not in codes and report["counts"]["reference_passes"] == AGENTIC_MIN_TASKS
     assert codes == ["decoy_solution_not_a_file_map"]
 
+
+
+def test_the_intake_records_the_open_digest_that_binds_the_general_number(tmp_path):
+    """بصمةُ الشطر المفتوح في التقرير هي بصمةُ المحكِّم ومُشغِّل الرقم العام، فيُربط القياسُ بهذا الاستلام (ق٧٣ 1.7أ)."""
+    from evaluation.judge import open_bank_digest
+    src = delivery(tmp_path)
+    report = intake(src)
+    assert report["bank"]["open_digest"] == open_bank_digest(src / "open")
+    (src / "open" / "tier_a" / "kimi_a_001.json").write_text("{}", encoding="utf-8")
+    assert open_bank_digest(src / "open") != report["bank"]["open_digest"]
