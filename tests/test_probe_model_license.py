@@ -416,6 +416,21 @@ def test_an_artifact_digest_of_an_unrecognized_kind_needs_its_registered_weight(
     assert [f for f in ml.weight_findings(models, evidence, frozenset({"new.json"})) if "new.json" in f] == found
 
 
+@pytest.mark.parametrize("payload, found", [
+    pytest.param({"model": "asr", "weight_provenance": [{**PROVENANCE, "file": "secret.pth"}]},
+                 ["weight_not_registered:new.json:asr:secret.pth"], id="provenance_of_an_unregistered_file"),
+    pytest.param({"model": "ocr", "weight_provenance": [{**PROVENANCE, "sha256": SIBLING}]},
+                 ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth", "weight_not_registered:new.json:ocr:w.pth"],
+                 id="provenance_of_other_bytes"),
+    pytest.param({"model": "ocr", "weight_provenance": [PROVENANCE]}, [], id="provenance_of_the_registered_weight"),
+])
+def test_a_provenance_record_is_a_measured_artifact(payload, found):
+    """ملاحظة Codex على #307: سجلُّ `weight_provenance` كان يُحفظ للمطابقة وحدها، فدليلٌ يعلن فيه `secret.pth` لنموذجٍ بلا قيدٍ له يمرّ
+    ما دام لا خريطةَ بصماتٍ بجانبه. فكلُّ سجلٍّ قياسٌ لملفّه ببصمته، يُطالَب بقيده ويشهد بقياسه."""
+    models = {"asr": {**READ, "weights": []}, "ocr": {**READ, "weights": [WEIGHT]}}
+    assert sorted(f for f in ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) if "new.json" in f) == found
+
+
 ASR_CHECKPOINT = "weight_not_registered:new.json:asr:checkpoint"
 
 

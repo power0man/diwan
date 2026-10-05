@@ -266,6 +266,9 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
                         for owner in owners:
                             (provenance if provenance is not None else {}).setdefault(owner, set()).add(
                                 (*(item[f] for f in PROVENANCE_FIELDS), item.get("license_text_sha256")))
+                            if SHA256.match(item["sha256"]):
+                                # سجلُّ المصدر قياسٌ لملفّه، فيُطالَب بقيده كما تُطالَب خريطةُ البصمات (ملاحظة Codex على #307)
+                                out.setdefault(owner, ({}, {}))[0].setdefault(item["file"], set()).add(item["sha256"])
             elif key == LICENSE_PROVENANCE_KEY and isinstance(child, dict):
                 if isinstance(child.get("source"), str) and isinstance(child.get("license_text_sha256"), str):
                     for owner in owners:
