@@ -34,7 +34,25 @@
       "source": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE",
       "read_on": "2026-10-05",
       "read_via": "upstream_license_file_at_the_release_tag_the_probes_name",
-      "license_text_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+      "license_text_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "weights": [
+        {
+          "file": "arabic.pth",
+          "sha256": "2a9afd42c374deb98aed0b53c9b77d75e1d00d4e0501f3b0276c54190c89b1a8",
+          "origin": "https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/arabic.zip",
+          "license": "apache-2.0",
+          "license_source": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE",
+          "read_on": "2026-10-05"
+        },
+        {
+          "file": "craft_mlt_25k.pth",
+          "sha256": "4a5efbfb48b4081100544e75e1e2b57f8de3d84f213004b14b85fd4b3748db17",
+          "origin": "https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/craft_mlt_25k.zip",
+          "license": "apache-2.0",
+          "license_source": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE",
+          "read_on": "2026-10-05"
+        }
+      ]
     },
     "gemma3:12b": {
       "pending": "read_with_ollama_show_license_on_the_mac"
@@ -92,7 +110,17 @@
       "source": "https://github.com/tesseract-ocr/tesseract/blob/5.3.4/LICENSE",
       "read_on": "2026-10-05",
       "read_via": "upstream_license_file_at_the_release_tag_the_probes_name",
-      "license_text_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      "license_text_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "weights": [
+        {
+          "file": "ara.traineddata",
+          "sha256": "e3206d3dc87fd50c24a0fb9f01838615911d25168f4e64415244b67d2bb3e729",
+          "origin": "https://github.com/tesseract-ocr/tessdata_fast/blob/main/ara.traineddata",
+          "license": "apache-2.0",
+          "license_source": "https://github.com/tesseract-ocr/tessdata_fast/blob/main/LICENSE",
+          "read_on": "2026-10-05"
+        }
+      ]
     }
   },
   "historical_evidence": [
@@ -264,6 +292,8 @@
     "the_class_osi_non_commercial_or_custom_terms_is_mechanical_from_the_license_name_and_custom_terms_are_the_owners_to_interpret",
     "historical_evidence_lists_the_probe_files_present_on_2026_10_05_their_top_level_model_fields_are_read_and_nested_ones_are_not",
     "new_evidence_reads_every_model_field_at_any_depth_and_free_text_under_such_a_field_is_refused_unless_it_is_a_registered_name",
-    "ocr_entries_were_read_from_the_upstream_license_file_at_the_release_tag_named_in_the_g8_probes_not_from_the_installed_package_and_tessdata_traineddata_is_not_covered"
+    "ocr_entries_were_read_from_the_upstream_license_file_at_the_release_tag_named_in_the_g8_probes_not_from_the_installed_package",
+    "ocr_weights_are_matched_by_sha256_from_the_g8_probes_to_the_official_artifact_and_take_the_license_of_the_repository_that_publishes_it",
+    "easyocr_release_assets_carry_no_license_file_of_their_own_so_their_license_is_the_publishing_repository_license"
   ]
 }
