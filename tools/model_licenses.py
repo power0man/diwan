@@ -250,6 +250,7 @@ def evidence_findings(file: str, payload: dict, models: dict, enforced_from: str
 def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]] | None = None,
                      licenses: dict[str, set[tuple[str, ...]]] | None = None,
                      malformed: dict[str, set[tuple[str, str]]] | None = None,
+                     declared: dict[str, set[str]] | None = None,
                      ) -> dict[str, tuple[dict[str, set[str]], dict[str, set[str]]]]:
     """البصماتُ كما سجّلها الدليل، لكل نموذجٍ من شجرته وحدها (ملاحظتا Codex على #307). فالقاموسُ الذي يسمّي نموذجًا
     (`{"model": …}` أو `"engine": {"name": …}`) يملك ما تحته، فلا تُنسب بصمةُ نموذجٍ في الدليل نفسِه إلى غيره. والبصمةُ
@@ -285,11 +286,8 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
         # المالك (ملاحظتا Codex على #307)
         here = tuple(dict.fromkeys(canonical(name) for k, v in value.items() if k in MODEL_KEYS for name in _names_under(k, v)))
         owners = here or owners
-        # بصمةٌ بجانب مسارٍ يسمّي ملفَّ بيانات (`bank: {path: …json, file_sha256: …}`) بصمةُ ذلك الملفّ لا وزن: تُصنَّف بمسارها لا
-        # بنوعها وحده (ملاحظة Codex على #307)
-        beside_data = isinstance(value.get("path"), str) and not is_weight_file(value["path"].rsplit("/", 1)[-1])
         for key, child in value.items():
-            if beside_data and isinstance(key, str) and key.endswith("_sha256") and not isinstance(child, dict):
+            if isinstance(key, str) and key.endswith("_sha256") and not isinstance(child, dict) and _data_path_digest(value, key):
                 continue
             if isinstance(key, str) and isinstance(child, str) and SHA256.match(child):
                 record(owners, key, child)
@@ -318,6 +316,8 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
                             if SHA256.match(item["sha256"]):
                                 # سجلُّ المصدر قياسٌ لملفّه، فيُطالَب بقيده كما تُطالَب خريطةُ البصمات (ملاحظة Codex على #307)
                                 out.setdefault(owner, ({}, {}))[0].setdefault(item["file"], set()).add(item["sha256"])
+                                # وملفُّه وزنٌ بإعلان السجلّ نفسه، فيُطالَب بقيده أيًّا كانت لاحقتُه (ملاحظة Codex على #307)
+                                (declared if declared is not None else {}).setdefault(owner, set()).add(item["file"])
                         if not SHA256.match(item["sha256"]):
                             flag(owners, "weight_digest_malformed", item["file"])
                         if not SHA256.match(item["origin_sha256"]):
@@ -375,8 +375,16 @@ def _name_hashes(names: list[str]) -> set[str]:
             for name in names for text in (name, json.dumps(name, ensure_ascii=False))}
 
 
+def _data_path_digest(value: dict, key: str) -> bool:
+    """بصمةُ `<نوع>_sha256` لملفّ المسار المقابل لها، `<نوع>_path` أو `path` لبصمة `file_sha256`، إن كان ملفَّ بيانات
+    (`bank: {path: …json, file_sha256: …}`): بصمةُ ذلك الملفّ لا وزن. ولا تُعفى بصمةٌ أخرى بجانب المسار (ملاحظتا Codex على #307)."""
+    kind = key.removesuffix("_sha256")
+    path = value.get(f"{kind}_path", value.get("path") if kind == "file" else None)
+    return isinstance(path, str) and not is_weight_file(path.rsplit("/", 1)[-1])
+
+
 def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_kind: dict,
-                         aliases: list[str] | None = None) -> list[str]:
+                         aliases: list[str] | None = None, declared: set[str] = frozenset()) -> list[str]:
     """دليلٌ جديد يسجّل لنموذجٍ في السجلّ وزنًا (ملفًّا بامتداد وزنٍ أو بصمةً بنوعه) ليس في قيوده ببصمته، فرخصةُ النموذج لا
     تُلحق به بلا قيدٍ له (ملاحظة Codex على #307). و`model_sha256` يُقبل ببصمة أيِّ وزنٍ مقيَّدٍ للنموذج، أو ببصمة اسمه."""
     weights = [w for w in entry.get("weights", []) if isinstance(w, dict)] if isinstance(entry.get("weights"), list) else []
@@ -384,7 +392,7 @@ def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_ki
     by_extension = {(weight_kind(str(w.get("file"))), w.get("sha256")) for w in weights}
     by_model = {w.get("sha256") for w in weights} | _name_hashes([name, *(aliases or [])])
     problems = [f"weight_not_registered:{file}:{name}:{weight}" for weight, digests in sorted(by_file.items())
-                if is_weight_file(weight) and any((weight, d) not in registered for d in digests)]
+                if (is_weight_file(weight) or weight in declared) and any((weight, d) not in registered for d in digests)]
     problems += [f"weight_not_registered:{file}:{name}:{kind}" for kind, digests in sorted(by_kind.items())
                  if kind not in NON_ARTIFACT_KINDS
                  and any(d not in by_model if _untyped_artifact(kind) else (kind, d) not in by_extension for d in digests)]
@@ -432,11 +440,11 @@ def unmeasured_weights(file: str, payload: object, models: dict, measured: dict)
 
 
 def _bind_unowned(file: str, payload: object, measured: dict, malformed: dict, unowned: tuple[dict, dict],
-                  flags: set[tuple[str, str]]) -> list[str]:
+                  flags: set[tuple[str, str]], declared: dict[str, set[str]], unowned_declared: set[str]) -> list[str]:
     """بصماتُ الآثار التي لا مالكَ لها على طريقها (`{"config": {"model": …}, "checkpoint_sha256": …}`) تُنسب إلى النموذج الوحيد
     الذي يسمّيه الدليلُ كلُّه، فيُطالَب بقيدها؛ وإن سمّى غيرَ نموذجٍ واحد سُمّيت بلا مالك (ملاحظة Codex على #307)."""
     by_file, by_kind = unowned
-    keys = sorted({name for name in by_file if is_weight_file(name)}
+    keys = sorted({name for name in by_file if is_weight_file(name) or name in unowned_declared}
                   | {kind for kind in by_kind if kind not in NON_ARTIFACT_KINDS} | {key for _, key in flags})
     if not keys:
         return []
@@ -448,6 +456,7 @@ def _bind_unowned(file: str, payload: object, measured: dict, malformed: dict, u
         for key, digests in found.items():
             target.setdefault(key, set()).update(digests)
     malformed.setdefault(names[0], set()).update(flags)
+    declared.setdefault(names[0], set()).update(unowned_declared)
     return []
 
 
@@ -459,17 +468,19 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
     problems = []
     for file, payload in sorted(evidence.items()):
         malformed: dict[str, set[tuple[str, str]]] = {}
-        measured = measured_weights(payload, malformed=malformed)
+        declared: dict[str, set[str]] = {}
+        measured = measured_weights(payload, malformed=malformed, declared=declared)
         unowned, unowned_flags = measured.pop(UNOWNED[0], ({}, {})), malformed.pop(UNOWNED[0], set())
+        unowned_declared = declared.pop(UNOWNED[0], set())
         if file in new_files:
-            problems += _bind_unowned(file, payload, measured, malformed, unowned, unowned_flags)
+            problems += _bind_unowned(file, payload, measured, malformed, unowned, unowned_flags, declared, unowned_declared)
         for name, (by_file, by_kind) in measured.items():
             for target, found in ((files, by_file), (kinds, by_kind)):
                 for key, digests in found.items():
                     target.setdefault(name, {}).setdefault(key, set()).update(digests)
             if file in new_files and isinstance(models.get(name), dict):
                 aliases = [raw for raw in all_named_models(payload) if canonical(raw) == name]
-                problems += unregistered_weights(file, name, models[name], by_file, by_kind, aliases)
+                problems += unregistered_weights(file, name, models[name], by_file, by_kind, aliases, declared.get(name, set()))
         if file in new_files:
             problems += unmeasured_weights(file, payload, models, measured)
             problems += [f"{code}:{file}:{name}:{key}" for name, keys in sorted(malformed.items())

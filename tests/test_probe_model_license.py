@@ -366,6 +366,12 @@ def test_a_weight_file_is_any_file_not_known_to_be_data(file, weight):
     pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST},
                   "artifact": {"path": "models/extra.pth", "file_sha256": OTHER_DIGEST}},
                  ["weight_not_registered:new.json:ocr:file"], id="digest_beside_a_weight_path"),
+    # ولا تُعفى إلا بصمةُ ملفّ المسار نفسِه: `checkpoint_sha256` بجانب `path` لملفّ بيانات وزنٌ، و`thresholds_sha256` بجانب
+    # `thresholds_path` لملفّ بيانات ليس وزنًا (ملاحظة Codex على #307)
+    pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST}, "path": "bank.json", "checkpoint_sha256": OTHER_DIGEST},
+                 ["weight_not_registered:new.json:ocr:checkpoint"], id="checkpoint_beside_a_data_path"),
+    pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST}, "thresholds_path": "x/thresholds.json",
+                  "thresholds_sha256": OTHER_DIGEST}, [], id="digest_beside_its_named_data_path"),
 ])
 def test_new_evidence_naming_a_model_with_registered_weights_records_their_digests(payload, found):
     """ملاحظة Codex على #307: دليلٌ جديد يسمّي نموذجًا مقيَّدَ الأوزان بلا بصماتها يُسمّى، فلا تمرّ بايتاتٌ مستبدَلةٌ اتّكالًا
@@ -564,6 +570,19 @@ def test_a_malformed_provenance_record_is_named(records, found):
     models = {"asr": {**READ, "weights": []}}
     payload = {"model": "asr", "weight_provenance": records}
     assert ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) == found
+    assert ml.weight_findings(models, {"new.json": payload}) == []
+
+
+@pytest.mark.parametrize("payload", [
+    pytest.param({"model": "asr", "weight_provenance": [{**SECRET, "file": "secret.json"}]}, id="owned_record"),
+    pytest.param({"config": {"model": "asr"}, "weight_provenance": [{**SECRET, "file": "secret.json"}]}, id="unowned_record"),
+])
+def test_a_weight_its_provenance_record_declares_is_registered_whatever_its_suffix(payload):
+    """ملاحظة Codex على #307: سجلُّ مصدرٍ يعلن وزنًا بلاحقة بيانات (`secret.json`) كان يمرّ لأن `is_weight_file` يردّه، فتُعفى
+    بايتاتٌ من قيدها بتغيير اسمها. فما يعلنه سجلُّ المصدر وزنٌ يُطالَب بقيده أيًّا كانت لاحقتُه."""
+    models = {"asr": {**READ, "weights": []}}
+    assert ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) == [
+        "weight_not_registered:new.json:asr:secret.json"]
     assert ml.weight_findings(models, {"new.json": payload}) == []
 
 
