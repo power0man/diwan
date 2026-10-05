@@ -1452,6 +1452,25 @@ def test_a_free_rerun_on_a_reviewed_bank_keeps_the_bank_ledger(tmp_path, monkeyp
     assert second["cost_unconfirmed_attempts"] == 1 and printed["cost_unconfirmed_attempts"] == 0
 
 
+def test_free_calls_reach_the_bank_ledger_when_an_unnamed_failure_follows_them(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: خطأٌ غيرُ مسمًّى بعد الإرسال (سجلٌّ لم يعد يُقرأ) كان يُسقط التشغيلَ قبل كتابة السجلّ الدائم،
+    والمعالجُ يلتقط الرفضَ المسمّى وحده. والآن يُكتب على أيّ خروج."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    args = ["--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF)]
+    bank = _public_bank(tmp_path, "unnamed")
+    _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+
+    def unreadable(*args, **kwargs):
+        raise json.JSONDecodeError("truncated record", "{", 1)
+
+    monkeypatch.setattr(cli, "_quota_models", unreadable)
+    with pytest.raises(json.JSONDecodeError):
+        cli.main([str(bank), *args])
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert sorted(row["model"] for row in ledger["provider_usage"] if row.get("kind") != "catalog") == sorted([DS, MI])
+
+
 def test_a_free_refusal_after_sending_keeps_its_calls_in_the_bank_ledger(tmp_path, monkeypatch, capsys):
     """ملاحظة Codex على #298: رفضٌ بعد الإرسال يطبع نداءاتِه ولا يكتب خلاصة؛ فهي في السجلّ الدائم، والتشغيلُ التالي يُلحق بها."""
     monkeypatch.setattr(cli, "ROOT", tmp_path)

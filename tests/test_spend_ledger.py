@@ -13,7 +13,7 @@ import urllib.request
 
 import pytest
 
-from evaluation.external_review import DEFAULT_REVIEWERS, smoke_bank
+from evaluation.external_review import DEFAULT_REVIEWERS, _slug, smoke_bank
 from evaluation.multi_system_review import AutomaticReviewError
 from tools import external_review as cli
 
@@ -223,6 +223,24 @@ def test_calls_sent_before_a_refusal_survive_a_rerun_that_skips_them(tmp_path, m
     summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
     assert again.requests == [] and summary["provider_usage"] == refused["provider_usage"]
     assert all(t["total_tokens"] == 44 for t in summary["token_totals"].values())
+
+
+def test_calls_sent_before_a_corrupt_review_record_stops_the_run_are_in_the_ledger(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: سجلُّ مراجعةٍ مبتورٌ في البنك يُسقط التشغيلَ بخطأٍ غير مسمًّى بعد أن خرجت نداءاتُ الملفّ قبله؛
+    فالسجلُّ الدائم يُكتب على أيّ خروج، وإلا تخطّت الإعادةُ المراجعاتِ الناجحة ولم يُعرف ما أُنفق عليها."""
+    bank = smoke_bank(tmp_path)
+    (bank / "open" / "smoke2.json").write_bytes((bank / "open" / "smoke.json").read_bytes())
+    corrupt = bank / "reviews" / _slug(DEFAULT_REVIEWERS[0]) / "smoke2.json"
+    corrupt.parent.mkdir(parents=True)
+    corrupt.write_text('{"model": "truncat', encoding="utf-8")
+    opener = _Opener(_reply(prompt_eval_count=30, eval_count=3))
+    _wire(monkeypatch, opener)
+    with pytest.raises(json.JSONDecodeError):
+        cli.main([str(bank)])
+    assert len(opener.requests) == len(DEFAULT_REVIEWERS), "الملفُّ الأول رُوجع كاملًا ثم سقط التشغيل"
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert [row["usage"]["total_tokens"] for row in ledger["provider_usage"]] == [33] * len(DEFAULT_REVIEWERS)
+    assert not (bank / "reviews" / "SUMMARY.json").exists()
 
 
 def test_a_total_beyond_the_safe_integer_is_named_not_written():

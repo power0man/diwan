@@ -1168,25 +1168,31 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     # ملفّاتُ open/ الحالية: كلُّ قراءةٍ لسجلّات المراجعة بعدها تُقارن بها، فسجلُّ ملفٍّ حُذف أو أُعيدت تسميتُه منذ تشغيلٍ سابق
     # لا يدخل النفادَ ولا الاتفاقَ ولا قائمةَ المالك ولا الأعداد ولا التاريخ (ملاحظة Codex على #174)
     current = {path.relative_to(args.bank / "open").as_posix() for path in open_files(args.bank)}
-    candidates, source = _free_candidates(args, transport)
-    want = max(2, len(args.reviewers or []))
-    attempts = {"reviewed": 0, "skipped": 0, "failed": 0}
-    pre_existing = _successful_records(args.bank)
+    try:
+        candidates, source = _free_candidates(args, transport)
+        want = max(2, len(args.reviewers or []))
+        attempts = {"reviewed": 0, "skipped": 0, "failed": 0}
+        pre_existing = _successful_records(args.bank)
 
-    def run(chosen: list[dict]) -> set[str]:
-        models = [c["model"] for c in chosen]
-        # كلُّ سجلٍّ يحمل واجهتَه، ولا يُعاد استعمالُ سجلِّ واجهةٍ أخرى بمعرّف النموذج نفسِه (ملاحظة Codex على #174)
-        counts = review_bank(args.bank, models, transport, brief_path=args.brief,
-                             stamp={"backend": transport.backend, "endpoint_host": transport.endpoint_host},
-                             reusable=lambda prior: prior.get("backend") == transport.backend)
-        for key in attempts:
-            attempts[key] += counts[key]
-        return _quota_models(args.bank, models, current)
+        def run(chosen: list[dict]) -> set[str]:
+            models = [c["model"] for c in chosen]
+            # كلُّ سجلٍّ يحمل واجهتَه، ولا يُعاد استعمالُ سجلِّ واجهةٍ أخرى بمعرّف النموذج نفسِه (ملاحظة Codex على #174)
+            counts = review_bank(args.bank, models, transport, brief_path=args.brief,
+                                 stamp={"backend": transport.backend, "endpoint_host": transport.endpoint_host},
+                                 reusable=lambda prior: prior.get("backend") == transport.backend)
+            for key in attempts:
+                attempts[key] += counts[key]
+            return _quota_models(args.bank, models, current)
 
-    def replaced(identity: dict, replacement: list[str]) -> None:
-        supersede_records(args.bank, identity["model"], replacement)
+        def replaced(identity: dict, replacement: list[str]) -> None:
+            supersede_records(args.bank, identity["model"], replacement)
 
-    chosen, fallbacks, failure = with_fallback(candidates, want, run, on_replaced=replaced)
+        chosen, fallbacks, failure = with_fallback(candidates, want, run, on_replaced=replaced)
+    finally:
+        # ما أُرسل (ومنه نداءُ الفهرس) يبقى في السجلّ الدائم على أيّ خروج، قبل أن تُقرأ سجلّاتُ المراجعة في الخلاصة
+        # (ملاحظتا Codex على #298). أمّا تشغيلٌ بمعرّفٍ فـRUN.json وخلاصتُه يحملان نداءاتِه، ومجلّدُه جديد
+        if not args.run_id and transport.provider_usage:
+            write_ledger(args.bank, prior + transport.provider_usage)
     # النجاحُ والاتفاقُ وقائمةُ المالك من المجموعة الأخيرة وحدها (ملاحظتا Codex على #174): المستبدَلُ نُقلت سجلّاتُه إلى
     # reviews/superseded/ وراجع بديلُه البنكَ كلَّه؛ ونفادُ حصّته تاريخٌ مسمًّى (superseded ومعه البديل) لا خطأٌ يُسقط التشغيل،
     # فإن أخفق البديلُ أيضًا عُدّ الخطآن كلاهما. وأخطاءُ مراجعين خارج هذا التشغيل لا تُحسب عليه، وتُروى عددًا.
@@ -1208,8 +1214,6 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     # الخلاصةُ للبنك كلِّه: السجلُّ والمجموعُ وعدُّ ما لم تثبت كلفتُه من السجلّ المُلحَق، ودليلُ المجانية الجديدُ فوق السابق.
     # أمّا المطبوعُ أدناه فتقريرُ هذا التشغيل وحده.
     ledger = prior + transport.provider_usage
-    if not args.run_id:
-        write_ledger(args.bank, ledger)
     _persist_provider_usage(args.bank, ledger, {
         "zero_spend_evidence": dict(sorted({**prior_evidence, **getattr(transport, "zero_spend_evidence", {})}.items())),
         "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger), "token_totals": token_totals(ledger)})
@@ -1380,7 +1384,6 @@ def _write_json(path: Path, value: dict) -> None:
 
 def _free_main(args, parser) -> int:
     run = transport = None
-    prior: list[dict] | None = None
     try:
         if args.run_id and args.bank is not None and not (args.smoke or args.list_catalog):
             check_public_bank(args.bank)
@@ -1420,15 +1423,11 @@ def _free_main(args, parser) -> int:
             return code
         if args.bank is None:
             parser.error("مجلّد البنك مطلوب، أو --smoke، أو --list-catalog")
-        prior = prior_provider_usage(args.bank)
         result, code = _free_bank(args, transport)
     except AutomaticReviewError as exc:
         # ما خرج من نداءاتٍ قبل الرفض (ومنه نداءُ الفهرس الفاشل) يبقى في المطبوع وفي RUN.json (ملاحظة Codex على #290)
         usage = getattr(transport, "provider_usage", None) or []
-        # وفي السجلّ الدائم للبنك، فلا تمحوه إعادةٌ تتخطّى ما رُوجع (ملاحظة Codex على #298). أمّا تشغيلٌ بمعرّفٍ فـRUN.json
-        # يحمل نداءاتِه، ولا يُرفع منه غيرُ سجلّ الرفض المسمّى
-        if prior is not None and usage and run is None:
-            write_ledger(args.bank, prior + usage)
+        # وفي السجلّ الدائم للبنك يكتبه `_free_bank` على أيّ خروجٍ بعد الإرسال (ملاحظتا Codex على #298)
         if run is not None:          # خرج قبل الخلاصة: يُرفع سجلُّ الرفض المسمّى وحده، لا ملفّاتٌ تاريخية
             finish_run(run, "refused", exc.code, usage)
         shape = getattr(exc, "shape", None)
@@ -1512,18 +1511,22 @@ def main(argv: list[str] | None = None) -> int:
     prior = prior_provider_usage(args.bank)
     try:
         transport = build_transport(base_url)
-        counts = review_bank(args.bank, reviewers, transport, brief_path=args.brief)
+        try:
+            counts = review_bank(args.bank, reviewers, transport, brief_path=args.brief)
+        finally:
+            # ما أُرسل يبقى في السجلّ الدائم للبنك على أيّ خروج: نجاحٍ، أو رفضٍ، أو سجلِّ مراجعةٍ تالفٍ يُسقط قراءتَه.
+            # فيُكتب قبل أن تُقرأ سجلّاتُ المراجعة في الخلاصة (ملاحظتا Codex على #298)
+            usage = list(getattr(transport, "provider_usage", []))
+            if usage:
+                write_ledger(args.bank, prior + usage)
         summary = summarize(args.bank)
     except AutomaticReviewError as exc:
         usage = getattr(transport, "provider_usage", None) or []
-        if usage:      # ما أُرسل قبل الرفض يبقى في السجلّ الدائم للبنك (ملاحظة Codex على #298)
-            write_ledger(args.bank, prior + list(usage))
         print(json.dumps({"status": "refused", "code": exc.code, "detail": str(exc),
                           **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
         return 2
     # السجلُّ يُلحَق بما كتبته التشغيلاتُ السابقة ولا يستبدله، والمجموعُ من السجلّ كلِّه (ملاحظة Codex على #298)
     ledger = prior + list(getattr(transport, "provider_usage", []))
-    write_ledger(args.bank, ledger)
     _persist_provider_usage(args.bank, ledger, {"token_totals": token_totals(ledger)})
     print(json.dumps({
         "status": "failed" if counts["failed"] else "reviewed",
