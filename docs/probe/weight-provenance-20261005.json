@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-05",
+  "tool": "tools/weight_provenance.py",
+  "models": {
+    "easyocr": {
+      "license_provenance": {
+        "source": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE",
+        "license_text_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+        "license": "apache-2.0",
+        "read_on": "2026-10-05"
+      },
+      "models_sha256": {
+        "arabic.pth": "2a9afd42c374deb98aed0b53c9b77d75e1d00d4e0501f3b0276c54190c89b1a8",
+        "craft_mlt_25k.pth": "4a5efbfb48b4081100544e75e1e2b57f8de3d84f213004b14b85fd4b3748db17"
+      },
+      "weight_provenance": [
+        {
+          "file": "arabic.pth",
+          "sha256": "2a9afd42c374deb98aed0b53c9b77d75e1d00d4e0501f3b0276c54190c89b1a8",
+          "origin": "https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/arabic.zip",
+          "origin_sha256": "90b08b8e456d435bcdd96141221db5f116ef03ab3efc2d3239cfb24520ad7756",
+          "license_source": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE",
+          "license": "apache-2.0",
+          "read_on": "2026-10-05",
+          "license_text_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        },
+        {
+          "file": "craft_mlt_25k.pth",
+          "sha256": "4a5efbfb48b4081100544e75e1e2b57f8de3d84f213004b14b85fd4b3748db17",
+          "origin": "https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/craft_mlt_25k.zip",
+          "origin_sha256": "8dc6a1c703a89ed56308ef742d26ebd45c656248cbbbda6e7fe60e569f873e65",
+          "license_source": "https://github.com/clovaai/CRAFT-pytorch/blob/e332dd8b718e291f51b66ff8f9ef2c98ee4474c8/LICENSE",
+          "license": "mit",
+          "read_on": "2026-10-05",
+          "license_text_sha256": "bfecc97e4888896b7acf08534372baf25796b98c087ba5a424b46ee25adec871",
+          "attribution": "Copyright (c) 2019-present NAVER Corp."
+        }
+      ]
+    },
+    "tesseract": {
+      "license_provenance": {
+        "source": "https://github.com/tesseract-ocr/tesseract/blob/5.3.4/LICENSE",
+        "license_text_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "license": "apache-2.0",
+        "read_on": "2026-10-05"
+      },
+      "models_sha256": {
+        "ara.traineddata": "e3206d3dc87fd50c24a0fb9f01838615911d25168f4e64415244b67d2bb3e729"
+      },
+      "weight_provenance": [
+        {
+          "file": "ara.traineddata",
+          "sha256": "e3206d3dc87fd50c24a0fb9f01838615911d25168f4e64415244b67d2bb3e729",
+          "origin": "https://github.com/tesseract-ocr/tessdata_fast/blob/main/ara.traineddata",
+          "origin_sha256": "e3206d3dc87fd50c24a0fb9f01838615911d25168f4e64415244b67d2bb3e729",
+          "license_source": "https://github.com/tesseract-ocr/tessdata_fast/blob/main/LICENSE",
+          "license": "apache-2.0",
+          "read_on": "2026-10-05",
+          "license_text_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    }
+  },
+  "licenses": {
+    "easyocr": "apache-2.0",
+    "tesseract": "apache-2.0"
+  },
+  "spend": {
+    "cloud_calls": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost_usd": 0,
+    "cost_basis": "local_no_charge"
+  },
+  "measurement_limits": [
+    "the_bytes_were_downloaded_from_the_registered_origin_on_the_recorded_day_and_a_later_change_at_that_url_is_not_seen",
+    "an_archive_origin_is_bound_by_its_registered_digest_and_by_the_member_whose_name_is_the_weight_file",
+    "the_license_text_is_hashed_as_served_and_its_identifier_is_named_from_that_text_not_copied_from_the_registry",
+    "only_apache_2_0_and_mit_are_named_by_their_spdx_body_digest_and_any_other_license_text_cannot_be_measured_until_added",
+    "an_mit_preamble_may_hold_its_title_and_copyright_lines_whose_holder_text_is_not_read",
+    "an_attribution_is_every_copyright_line_above_the_license_body_one_per_line_and_is_required_only_for_mit_whose_text_carries_one",
+    "zip_and_tar_wrappers_and_gzip_bzip2_xz_streams_are_opened_and_a_zstandard_wrapper_is_named_not_measured"
+  ]
+}

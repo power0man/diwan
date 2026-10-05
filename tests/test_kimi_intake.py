@@ -17,7 +17,13 @@ from tools.kimi_intake import (AGENTIC_MIN_TASKS, GENERAL_CAPABILITIES, GENERAL_
 def _case(case_id, capability="a", checks=True, text="q"):
     return {"case_id": case_id, "capability": capability, "messages": [{"role": "user", "content": text}],
             "reference": "r", "rubric": ["r"], "critical": False,
-            "checks": [{"kind": "contains", "value": "r"}] if checks else []}
+            "checks": [{"kind": "contains", "value": "r"}, *NEGATION_EXCLUDED("r")] if checks else []}
+
+
+def NEGATION_EXCLUDED(value):
+    """صيغُ النفي المستبعدة التي يكلّف بها KIMI-NEXT §١ البند ٣، فلا يمرّ الفحصَ نفيُ قيمته (#314)."""
+    return [{"kind": "excludes", "value": "لا يوجد"}, {"kind": "excludes", "value": "ليس فيه"},
+            {"kind": "excludes", "value": f"لا {value}"}]
 
 
 def _suite(suite_id, cases, split="development"):
@@ -395,9 +401,24 @@ def test_fixed_answers_that_know_nothing_expose_gameable_checks():
     polarity = case("هل في الجملة الآتية زللٌ نحوي؟", [{"kind": "contains", "value": "خطأ"}])
     assert gameable_probe(polarity) == "polarity_spray"
     assert gameable_probe(case("أعد الصياغة", [{"kind": "excludes", "value": "عامية"}])) == "empty"
-    verdict = case("هل في الجملة خطأ؟", [{"kind": "contains", "value": "يوجد خطأ"}, {"kind": "excludes", "value": "لا يوجد"}])
+    verdict = case("هل في الجملة خطأ؟", [{"kind": "contains", "value": "يوجد خطأ"}, *NEGATION_EXCLUDED("يوجد خطأ")])
     assert gameable_probe(verdict) is None, "الحكمُ مع نفيه المستبعد لا يمرّره السرد"
     assert gameable_probe(case("ما عاصمة المغرب؟", [{"kind": "exact", "value": "الرباط"}])) is None
+    # نفيُ قيمة الفحص نفسِها: «خلل» ليست في POLARITY_SPRAY، و«لا يوجد خلل» تمرّ contains (ملاحظة Codex، #314)
+    assert gameable_probe(case("هل الحكم سليم؟", [{"kind": "contains", "value": "خلل"}])) == "negated_value_1"
+    # استبعادُ صيغةٍ واحدة لا يكفي: كلُّ صيغةٍ جوابٌ مستقلّ (ملاحظة Codex على #315)
+    partial = case("هل الحكم سليم؟", [{"kind": "contains", "value": "خلل"}, {"kind": "excludes", "value": "لا يوجد"}])
+    assert gameable_probe(partial) == "negated_value_2"
+    # قيمةٌ محميّةٌ بصيغ النفي كلِّها لا تحمي جارتها: «ألف. لا يوجد باء.» يمرّ (ملاحظة Codex على #315، #316)
+    two = case("اذكر الحرفين", [{"kind": "contains", "value": "ألف"}, {"kind": "contains", "value": "باء"},
+                               *NEGATION_EXCLUDED("ألف")[2:], {"kind": "excludes", "value": "لا يوجد ألف"},
+                               {"kind": "excludes", "value": "ليس فيه ألف"}])
+    assert gameable_probe(two) == "negated_value_1"
+    negation_excluded = case("هل الحكم سليم؟", [{"kind": "contains", "value": "خلل"},
+                                                 {"kind": "excludes", "value": "لا يوجد"},
+                                                 {"kind": "excludes", "value": "ليس فيه"},
+                                                 {"kind": "excludes", "value": "لا خلل"}])
+    assert gameable_probe(negation_excluded) is None, "الصيغةُ المكلَّفة: contains مع excludes لصيغ النفي"
     # حالةُ الحاوية وحدها لا يُحكم فيها بلا حاوية: needs_sandbox لا «سليمة»
     assert gameable_probe(case("مكنية", [{"kind": "python_sandbox", "value": "assert False"}])) == "needs_sandbox"
 
@@ -428,7 +449,8 @@ def test_a_mixed_sandbox_case_is_probed_on_its_other_checks_then_in_the_containe
 
     def case(text, harness, value="مكنية"):
         return {"case_id": "c", "messages": [{"role": "user", "content": text}],
-                "checks": [{"kind": "contains", "value": value}, {"kind": "python_sandbox", "value": harness}]}
+                "checks": [{"kind": "contains", "value": value}, *NEGATION_EXCLUDED(value),
+                           {"kind": "python_sandbox", "value": harness}]}
     options = "سمِّ الصورة من بين: تشبيه، استعارة مكنية، كناية."
     assert gameable_probe(case(options, "always")) == "needs_sandbox"
     assert gameable_probe(case(options, "always"), sandbox=True) == "echo"
@@ -444,3 +466,16 @@ def test_a_sandbox_probed_intake_records_the_backend_that_judged(tmp_path, monke
     src = delivery(tmp_path)
     assert intake(src, sandbox_probes=True)["bank"]["gameable"]["sandbox_backend"] == backend
     assert intake(src)["bank"]["gameable"]["sandbox_backend"] is None
+
+
+def test_the_gameable_listing_names_each_case_with_the_answer_that_passed_it(tmp_path, capsys):
+    """القائمةُ لـKimi (current/GAMEABLE.json): ملفٌّ ومعرّفٌ وقدرةٌ والجوابُ الثابت، ولا نصَّ حالة."""
+    from tools.kimi_intake import gameable_cases, main
+    src = delivery(tmp_path)
+    assert gameable_cases(src / "open") == []
+    _write(src / "open" / "tier_a" / "kimi_a_001.json", _suite("kimi_a_001", [_case("o1"), _case("o2", text="r أو s؟")]))
+    assert gameable_cases(src / "open") == [{"file": "tier_a/kimi_a_001.json", "case_id": "o2", "capability": "a",
+                                              "probe": "echo"}]
+    assert main([str(src / "open"), "--list-gameable", "--out", "-"]) == 0
+    listing = json.loads(capsys.readouterr().out)
+    assert (listing["gameable"], listing["needs_sandbox"]) == (1, 0) and "negated_value_3" in listing["probes"]

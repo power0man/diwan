@@ -67,3 +67,6 @@ tools/seed_acquisitions.py
 
 # فهرسُ إضافات OpenCode المحلّيّ (docs/OPENCODE-WORKER.md §٥)
 .opencode/
+
+# مجلّدُ استلام Kimi لا يكون داخل نسخة العمل (AGENTS §٧)؛ فإن وُضع فيها خطأً لا يُودَع تسليمُه ولا سكربتاتُه
+.kimi-inbox/

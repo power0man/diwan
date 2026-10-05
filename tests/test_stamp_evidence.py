@@ -39,7 +39,7 @@ def test_a_local_run_is_stamped_with_its_license_and_no_cloud_spend_and_then_pas
     assert problems == []
     assert stamped["licenses"] == {"qwen3.5:9b": "apache-2.0"} and stamped["spend"] == LOCAL
     assert ml.evidence_findings("new.json", stamped, MODELS, "2026-10-06", set()) == []
-    assert probe_spend.findings({"historical_evidence": [], "enforced_from": "2026-10-06"},
+    assert probe_spend.findings({"historical_evidence": {}, "enforced_from": "2026-10-06"},
                                 {"new.json": stamped}) == []
 
 
@@ -353,16 +353,23 @@ def test_one_given_spend_block_is_refused_for_several_files(tmp_path):
 def test_historical_evidence_is_neither_stamped_nor_checked(tmp_path, capsys):
     """ملاحظة Codex على #310: الدليلُ التاريخيّ بمقياس الحارسين نفسِه (القائمةُ وتاريخُ الإنفاذ) لا يُختم ولا يُفحص."""
     registry = tmp_path / "registry.json"
-    registry.write_text(json.dumps({"models": MODELS, "historical_evidence": ["old.json", "dated.json"],
+    frozen = {"model": "gemma3:12b"}
+    later = {"date": "2026-10-07", "model": "gemma3:12b"}
+    # التاريخيُّ مجمَّدٌ ببصمة محتواه، فما عُدِّل بعدها جديدٌ يُفحص (ملاحظة Codex على #307)
+    historical = {"old.json": ml.evidence_digest(frozen), "dated.json": ml.evidence_digest(later),
+                  "edited.json": ml.evidence_digest(frozen)}
+    registry.write_text(json.dumps({"models": MODELS, "historical_evidence": historical,
                                     "enforced_from": "2026-10-06"}), encoding="utf-8")
-    old, dated, new = tmp_path / "old.json", tmp_path / "dated.json", tmp_path / "new.json"
-    old.write_text(json.dumps({"model": "gemma3:12b"}), encoding="utf-8")
-    dated.write_text(json.dumps({"date": "2026-10-07", "model": "gemma3:12b"}), encoding="utf-8")
+    old, dated, new, edited = (tmp_path / name for name in ("old.json", "dated.json", "new.json", "edited.json"))
+    old.write_text(json.dumps(frozen), encoding="utf-8")
+    dated.write_text(json.dumps(later), encoding="utf-8")
     new.write_text(json.dumps({"model": "qwen3.5:9b"}), encoding="utf-8")
-    assert se.main(["--registry", str(registry), str(old), str(dated), str(new)]) == 1
+    edited.write_text(json.dumps({**frozen, "note": "عُدِّل"}), encoding="utf-8")
+    assert se.main(["--registry", str(registry), str(old), str(dated), str(new), str(edited)]) == 1
     report = json.loads(capsys.readouterr().out)
     assert report["historical"] == [str(old)]
-    assert report["findings"] == {str(dated): ["license_pending:gemma3:12b"], str(new): []}
+    assert report["findings"] == {str(dated): ["license_pending:gemma3:12b"], str(new): [],
+                                  str(edited): ["license_pending:gemma3:12b"]}
     assert json.loads(old.read_text(encoding="utf-8")) == {"model": "gemma3:12b"}, "التاريخيُّ لا يُعاد ختمُه"
     assert json.loads(new.read_text(encoding="utf-8"))["spend"] == LOCAL
 

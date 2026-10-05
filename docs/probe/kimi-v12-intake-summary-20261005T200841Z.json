@@ -1,0 +1,817 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-05",
+  "agent": "openai/codex",
+  "run_id": "q73-intake-20261005T200841Z",
+  "spend": {
+    "cloud_calls": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost_usd": 0,
+    "cost_basis": "local_no_charge"
+  },
+  "measurement_limits": [
+    "kimi_v12_independence_unverified_workspace_inside_repo",
+    "intake_evidence_not_a_general_model_score",
+    "no_delivery_placement_no_project_bank_or_sealed_store_changes"
+  ],
+  "kind": "kimi_v12_intake_failure_evidence",
+  "status": "failed_not_ready_for_placement",
+  "verification_source_commit": "468246502434bba08a062f8bdd7bc61f98e37bb7",
+  "owner_decision": {
+    "date": "2026-10-05",
+    "text": "قبولٌ بحدٍّ معلَن إن نجح الاستلام؛ والثلاثون الجديدة خارج الرقم العام",
+    "new_agentic_tasks_excluded_from_general_number": true,
+    "conditional_acceptance_applied": false
+  },
+  "session_found": false,
+  "session_search_scope": "normal_cli_cwd_filtered_lists_only_delivery_workspace_inbox_project_and_known_kimi_work_including_archived_no_general_personal_log_search",
+  "session_search_limits": "no_matching_authoring_session_found_the_existing_known_workspace_sessions_were_older_no_unrelated_session_contents_read",
+  "original_delivery_files": 76,
+  "delivery_tree_sha256_original": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+  "delivery_tree_sha256_copy": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+  "tree_identity_checks": {
+    "original-before": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+    "original-after-copy": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+    "copy-before-checks": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+    "original-after-open": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+    "copy-after-open": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+    "original-after-agentic": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+    "copy-after-agentic": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+    "original-after-checks": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+    "copy-after-checks": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+    "original-before-publish": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a",
+    "copy-before-publish": "d02c9b1d588a3a8316977d971d1dcac1381e2fefdc518caefc828e4626d2449a"
+  },
+  "tree_manifest_method": "entries_of_relative_path_bytes_sha256_sorted_by_relative_path_utf8_json_ensure_ascii_false_sort_keys_true_compact_separators_plus_newline_then_sha256",
+  "tree_manifest_script": "import argparse\nimport hashlib\nimport json\nfrom pathlib import Path\n\nparser = argparse.ArgumentParser()\nparser.add_argument(\"root\", type=Path)\nparser.add_argument(\"out\", type=Path)\nargs = parser.parse_args()\nroot = args.root\nentries = []\nfor path in sorted(root.rglob(\"*\")):\n    relative = path.relative_to(root)\n    if \"sealed\" in relative.parts or path.is_symlink():\n        raise SystemExit(\"blocked_path_or_symlink\")\n    if not path.is_file():\n        continue\n    raw = path.read_bytes()\n    entries.append({\"path\": relative.as_posix(), \"bytes\": len(raw),\n                    \"sha256\": hashlib.sha256(raw).hexdigest()})\ncanonical = (json.dumps(entries, ensure_ascii=False, sort_keys=True,\n                        separators=(\",\", \":\")) + \"\\n\").encode(\"utf-8\")\npayload = {\"method\": \"sha256_utf8_canonical_relative_file_manifest_v1\",\n           \"files\": len(entries), \"delivery_tree_sha256\": hashlib.sha256(canonical).hexdigest(),\n           \"entries\": entries}\nwith args.out.open(\"x\", encoding=\"utf-8\") as stream:\n    json.dump(payload, stream, ensure_ascii=False, indent=2)\n    stream.write(\"\\n\")\nprint(json.dumps({key: payload[key] for key in (\"files\", \"delivery_tree_sha256\")}))\n",
+  "tree_identity_limits": "relative_file_paths_and_file_bytes_only_not_directory_metadata_or_empty_directory_identity",
+  "previous_delivery_archive_name": "kimi-benchmark.prev-20261005",
+  "v11_open_digest": "bf3045e08b130836069b3f1a5af71fa89e3a2f848fc53db8c663c31cc726acfe",
+  "docker_versions": {
+    "client": "29.7.2",
+    "server": "29.7.2"
+  },
+  "receipt_identity": {
+    "schema_version": 1,
+    "image_id": "sha256:213757d61bfbf6dababa7a010436c1f8f4b453f75b1b3da4abdaf49ffee53a49",
+    "lock_sha256": "139d58461c61f4b3eacf90cd08f7ed4247e4ae0cf54a287f5b90965451ebce14",
+    "python_version": "3.14.7",
+    "receipt_sha256": "83402b41263b2ea2fbbe94579c9d25d39e3af997dff9d32eca582035d2eef72a"
+  },
+  "agentic_container_boundary": {
+    "image_id": "sha256:213757d61bfbf6dababa7a010436c1f8f4b453f75b1b3da4abdaf49ffee53a49",
+    "network_mode": "none",
+    "readonly_rootfs": true,
+    "privileged": false,
+    "cap_drop": [
+      "ALL"
+    ],
+    "security_opt": [
+      "no-new-privileges"
+    ],
+    "pids_limit": 256,
+    "memory_bytes": 1073741824,
+    "nano_cpus": 2000000000,
+    "user": "1000:1000",
+    "bind_mounts": [
+      {
+        "destination": "/src",
+        "read_only": true
+      },
+      {
+        "destination": "/workspace",
+        "read_only": true
+      },
+      {
+        "destination": "/observer.py",
+        "read_only": true
+      }
+    ]
+  },
+  "official_reports": {
+    "open": "kimi-v12-intake-open-20261005T200841Z.json",
+    "agentic": "kimi-v12-intake-agentic-20261005T200841Z.json"
+  },
+  "conditions": {
+    "without_checks_zero": true,
+    "gameable_open_zero": false,
+    "needs_sandbox_zero": true,
+    "replacement_failures_empty": true,
+    "bank_failures_empty": false,
+    "development_failures_empty": false,
+    "agentic_failures_empty": false,
+    "baseline_digest_matches_v11": true,
+    "open_agentic_task_ids_unique_140": true,
+    "new_agentic_30_fail_before": true,
+    "new_agentic_30_pass_reference_without_tampering": false,
+    "harness_tampered_zero": false,
+    "success_command_unavailable_zero": true,
+    "diagnostic_failed_ids_match_official_count": true,
+    "original_and_copy_unchanged": true
+  },
+  "failed_open_cases": [
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0001",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0002",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0003",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0006",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0007",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0008",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0010",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0011",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0012",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0013",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0015",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0016",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0017",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0019",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0020",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0021",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0022",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0023",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0025",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0026",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0027",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0028",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0030",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0031",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0034",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0035",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0037",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0038",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0039",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0042",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0043",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0044",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0047",
+      "probe": "polarity_spray"
+    },
+    {
+      "file": "open/tier_c/kimi_honesty_c_002.json",
+      "case_id": "prem_c_0048",
+      "probe": "polarity_spray"
+    }
+  ],
+  "failed_open_case_count": 34,
+  "failed_agentic_reference_results": [
+    {
+      "task_id": "agentic_0039",
+      "new_agentic_task": false,
+      "phase": "overlay",
+      "passed": false,
+      "code": "command_nonzero",
+      "harness_tampered": [],
+      "failure_code": "reference_solution_fails"
+    },
+    {
+      "task_id": "pipe_0025",
+      "new_agentic_task": false,
+      "phase": "overlay",
+      "passed": false,
+      "code": null,
+      "harness_tampered": [],
+      "failure_code": "reference_solution_fails"
+    },
+    {
+      "task_id": "pipe_0022",
+      "new_agentic_task": false,
+      "phase": "overlay",
+      "passed": false,
+      "code": null,
+      "harness_tampered": [],
+      "failure_code": "reference_solution_fails"
+    },
+    {
+      "task_id": "pipe_0013",
+      "new_agentic_task": false,
+      "phase": "overlay",
+      "passed": false,
+      "code": null,
+      "harness_tampered": [],
+      "failure_code": "reference_solution_fails"
+    },
+    {
+      "task_id": "pipe_0017",
+      "new_agentic_task": false,
+      "phase": "overlay",
+      "passed": false,
+      "code": null,
+      "harness_tampered": [],
+      "failure_code": "reference_solution_fails"
+    },
+    {
+      "task_id": "pipe_0005",
+      "new_agentic_task": false,
+      "phase": "overlay",
+      "passed": false,
+      "code": null,
+      "harness_tampered": [],
+      "failure_code": "reference_solution_fails"
+    },
+    {
+      "task_id": "agv3_fet_02",
+      "new_agentic_task": true,
+      "phase": "reference",
+      "passed": true,
+      "code": null,
+      "harness_tampered": [
+        "main.py"
+      ],
+      "failure_code": "reference_solution_fails"
+    }
+  ],
+  "forbidden_missing_task_ids": [
+    "agv3_fet_02"
+  ],
+  "new_agentic_task_ids": [
+    "agv3_dbg_01",
+    "agv3_dbg_02",
+    "agv3_dbg_03",
+    "agv3_dbg_04",
+    "agv3_dbg_05",
+    "agv3_fet_01",
+    "agv3_fet_02",
+    "agv3_fet_03",
+    "agv3_fet_04",
+    "agv3_fet_05",
+    "agv3_ref_01",
+    "agv3_ref_02",
+    "agv3_ref_03",
+    "agv3_ref_04",
+    "agv3_ref_05",
+    "agv3_sam_01",
+    "agv3_sam_02",
+    "agv3_sam_03",
+    "agv3_sam_04",
+    "agv3_sam_05",
+    "agv3_dat_01",
+    "agv3_dat_02",
+    "agv3_dat_03",
+    "agv3_dat_04",
+    "agv3_dat_05",
+    "agv3_exp_01",
+    "agv3_exp_02",
+    "agv3_exp_03",
+    "agv3_exp_04",
+    "agv3_exp_05"
+  ],
+  "new_agentic_task_results": [
+    {
+      "task_id": "agv3_dbg_01",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_dbg_02",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_dbg_03",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_dbg_04",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_dbg_05",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_fet_01",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_fet_02",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": false,
+      "harness_tampered": [
+        "main.py"
+      ]
+    },
+    {
+      "task_id": "agv3_fet_03",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_fet_04",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_fet_05",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_ref_01",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_ref_02",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_ref_03",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_ref_04",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_ref_05",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_sam_01",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_sam_02",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_sam_03",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_sam_04",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_sam_05",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_dat_01",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_dat_02",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_dat_03",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_dat_04",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_dat_05",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_exp_01",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_exp_02",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_exp_03",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_exp_04",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    },
+    {
+      "task_id": "agv3_exp_05",
+      "fails_before": true,
+      "reference_verdict_passed": true,
+      "reference_passed_without_tampering": true,
+      "harness_tampered": []
+    }
+  ],
+  "observer_method": "pass_through_to_the_unchanged_official_judge_with_the_original_result_returned_unchanged",
+  "observer_path": "agentic_observer.py",
+  "observer_sha256": "24c7d9942a3996eff134e5c1e017193f0965411ba3269608785c8f5de56a52e3",
+  "agentic_raw_report_repeat_identical": true,
+  "repeat_reason": "first_observer_was_attached_to_an_unused_default_original_report_preserved_rerun_only_to_record_task_ids",
+  "failed_case_identifier_method": "official_checks_on_the_single_probe_already_reported_failing",
+  "failed_case_identifier_sandbox_candidates": 344,
+  "commands_redacted": {
+    "preserve_previous": "mv -n \"$COPY_DELIVERY\" \"$SAVED_PREVIOUS_DELIVERY\"",
+    "copy": "cp -a \"$ORIGINAL_DELIVERY\" \"$COPY_DELIVERY\"",
+    "tree_manifest": "python3 tree_manifest.py \"$TREE_ROOT\" \"$MANIFEST_OUTPUT\"",
+    "open_intake": "DIWAN=\"$VERIFY_SOURCE\" KIMI_WORK=\"$KIMI_WORK\" PYTHON=\"$VERIFICATION_PYTHON\" OPEN_ONLY=1 SANDBOX_RECEIPT=\"$APPROVED_RECEIPT\" SANDBOX_WORKSPACE=\"$SANDBOX_WORKSPACE\" bash \"$VERIFY_SOURCE/tools/kimi_drive.sh\" intake",
+    "agentic_intake": "/usr/local/bin/docker run --rm --pull=never --name \"$OWN_CONTAINER_NAME\" --network=none --read-only --user=1000:1000 --cap-drop=ALL --security-opt=no-new-privileges --pids-limit=256 --memory=1g --memory-swap=1g --cpus=2 --ipc=private --log-driver=none --tmpfs /tmp:rw,nosuid,nodev,size=512m,mode=1777 --env DIWAN_DISPOSABLE_HOST=intake --env PYTHONDONTWRITEBYTECODE=1 --mount type=bind,src=\"$COPY_DELIVERY\",dst=/src,readonly --mount type=bind,src=\"$VERIFY_SOURCE\",dst=/workspace,readonly --mount type=bind,src=\"$OBSERVER\",dst=/observer.py,readonly --workdir /workspace --entrypoint /opt/venv/bin/python \"$APPROVED_IMAGE_ID\" /observer.py",
+    "agentic_official_arguments_inside_observer": "tools.kimi_intake.main([\"/src\", \"--open-only\", \"--agentic\", \"--out\", \"-\"])",
+    "failed_case_identifiers": "\"$VERIFICATION_PYTHON\" identify_failed_cases.py"
+  },
+  "command_redaction_limits": "device_specific_paths_and_container_name_replaced_with_logical_aliases_exact_commands_retained_in_the_private_run_record",
+  "no_model_calls": true,
+  "no_probe_sim_execution": true,
+  "no_delivery_changes": true,
+  "agentic_observation_counts": {
+    "observed_calls": 340,
+    "harness_tampered": 1,
+    "success_command_unavailable": 0,
+    "new_before_failed": 30,
+    "new_reference_verdict_passed": 30,
+    "new_reference_passed_without_tampering": 29
+  },
+  "failed_case_baseline_comparison": [
+    {
+      "case_id": "prem_c_0001",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0002",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0003",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0006",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0007",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0008",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": true
+    },
+    {
+      "case_id": "prem_c_0010",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0011",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0012",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0013",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0015",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0016",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0017",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0019",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0020",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0021",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0022",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0023",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0025",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0026",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0027",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0028",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0030",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0031",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0034",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0035",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0037",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0038",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0039",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0042",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0043",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": true
+    },
+    {
+      "case_id": "prem_c_0044",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0047",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    },
+    {
+      "case_id": "prem_c_0048",
+      "baseline_probe": "needs_sandbox",
+      "checks_changed": false
+    }
+  ],
+  "pre_push_pytest": {
+    "status": "setup_errors",
+    "passed": 6553,
+    "skipped": 37,
+    "errors": 3,
+    "error_test_ids": [
+      "tests/test_installed_app.py::test_wheel_and_sdist_exclude_owner_stores_and_private_keys",
+      "tests/test_installed_app.py::test_wheel_runs_outside_the_checkout_with_real_resources",
+      "tests/test_installed_app.py::test_container_state_uses_the_installed_runtime_and_data_root"
+    ],
+    "shared_setup_command": "verification_python -m hatchling build -t wheel -t sdist",
+    "private_test_logs_not_published": true,
+    "no_test_rerun_after_result": true,
+    "cause": "hatchling_module_missing_in_the_existing_local_verification_environment"
+  }
+}

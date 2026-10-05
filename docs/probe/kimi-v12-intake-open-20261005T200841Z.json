@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-05",
+  "agent": "openai/codex",
+  "run_id": "q73-intake-20261005T200841Z",
+  "spend": {
+    "cloud_calls": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost_usd": 0,
+    "cost_basis": "local_no_charge"
+  },
+  "measurement_limits": [
+    "kimi_v12_independence_unverified_workspace_inside_repo",
+    "intake_evidence_not_a_general_model_score",
+    "no_delivery_placement_no_project_bank_or_sealed_store_changes"
+  ],
+  "kind": "kimi_v12_official_open_intake",
+  "exit_code": 1,
+  "raw_report_sha256": "625b784a25254ab0c8d7d9faea2981e3ed3bf89d90e4023cce148fec0e5c8eea",
+  "official_report": {
+    "schema_version": 1,
+    "kind": "kimi_intake",
+    "source": "kimi-benchmark",
+    "structure": {
+      "missing": [],
+      "dev_files": [
+        "agentic_v3.json",
+        "agentic_v3.meta.json",
+        "arabic_general_v3_1.json",
+        "arabic_general_v3_2.json"
+      ]
+    },
+    "open_only": true,
+    "manifest": {
+      "files": 0,
+      "failures": [],
+      "skipped": "open_only"
+    },
+    "replacement": {
+      "files": 70,
+      "baseline_digest": "bf3045e08b130836069b3f1a5af71fa89e3a2f848fc53db8c663c31cc726acfe",
+      "failures": []
+    },
+    "bank": {
+      "counts": {
+        "open": {
+          "files": 35,
+          "cases": 1902,
+          "tasks": 140
+        },
+        "sealed": {
+          "files": 0,
+          "cases": 0,
+          "tasks": 0
+        }
+      },
+      "without_checks": {
+        "open": 0,
+        "sealed": 0
+      },
+      "gameable": {
+        "open": 34,
+        "by_probe": {
+          "polarity_spray": 34
+        },
+        "needs_sandbox": 0,
+        "sandbox_probed": true,
+        "sandbox_backend": {
+          "backend": "docker",
+          "image_id": "sha256:213757d61bfbf6dababa7a010436c1f8f4b453f75b1b3da4abdaf49ffee53a49",
+          "lock_sha256": "139d58461c61f4b3eacf90cd08f7ed4247e4ae0cf54a287f5b90965451ebce14",
+          "python_version": "3.14.7",
+          "snapshot_files": []
+        }
+      },
+      "open_digest": "544bf929a4be1a3fd829ff4ce4ab4a2d50810e23d55350cfab57d3c282c0f924",
+      "failures": [
+        {
+          "file": "open",
+          "code": "gameable_checks"
+        }
+      ]
+    },
+    "dev": {
+      "general": {
+        "files": 2,
+        "cases": 150,
+        "without_checks": 0,
+        "capabilities_missing": []
+      },
+      "agentic": {
+        "tasks": 30,
+        "without_reference": 0,
+        "without_forbidden": 1
+      },
+      "failures": [
+        {
+          "file": "agentic_v3.json",
+          "code": "forbidden_missing"
+        }
+      ]
+    },
+    "passed": false,
+    "measurement_limits": [
+      "validators_check_schema_and_the_v1_2_conditions_not_whether_a_reference_answer_is_correct",
+      "gameable_checks_are_found_by_five_fixed_answers_empty_echo_polarity_spray_both_and_each_contains_value_negated_so_a_subtler_gameable_check_passes",
+      "without_sandbox_probes_a_case_whose_other_checks_a_fixed_answer_passes_is_counted_needs_sandbox_not_judged",
+      "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged"
+    ]
+  }
+}

@@ -33,9 +33,10 @@ def test_a_locked_package_missing_from_the_file_or_at_another_version_is_named()
     text = _text(packages=[("numpy", "1.9.0", "BSD-3-Clause")])
     assert tp.check(text, LOCK, MODELS) == [
         "package_not_listed:numpy==2.0.0", "package_not_listed:torch==2.4.0+cpu", "package_not_locked:numpy==1.9.0"]
-    # خانةُ رخصةٍ فارغة لا يقرؤها نمطُ الصفّ، فتُعدّ الحزمةُ غيرَ مدرجة: يُغلق عند الشكّ
+    # خانةُ رخصةٍ فارغة لا يقرؤها نمطُ الصفّ، فتُعدّ الحزمةُ غيرَ مدرجة ويُسمّى صفُّها: يُغلق عند الشكّ
     blank = _text(packages=[("numpy", "2.0.0", " "), ("torch", "2.4.0+cpu", "BSD")])
-    assert tp.check(blank, LOCK, MODELS) == ["package_not_listed:numpy==2.0.0"]
+    row = next(n for n, line in enumerate(blank.splitlines(), 1) if line.startswith("| `numpy` |"))
+    assert tp.check(blank, LOCK, MODELS) == ["package_not_listed:numpy==2.0.0", f"package_row_unparsed:{row}"]
 
 
 def test_a_model_missing_or_with_another_license_is_named():
@@ -61,6 +62,70 @@ def test_a_model_source_or_read_date_that_changed_in_the_registry_is_named():
 def test_a_package_source_edited_by_hand_is_named():
     edited = _text().replace("https://pypi.org/project/numpy/2.0.0/", "https://example.org/numpy/")
     assert tp.check(edited, LOCK, MODELS) == ["package_source_differs:numpy==2.0.0"]
+
+
+def test_a_weight_carries_its_own_license_and_attribution_and_a_change_is_named():
+    """ملاحظة Codex على #307: كاشفُ CRAFT يحمل رخصةَ MIT من مستودعه وإسنادَه، لا رخصةَ EasyOCR الذي وزّعه."""
+    weight = {"file": "w.pth", "license": "mit", "license_source": "https://github.com/up/r/blob/c/LICENSE",
+              "read_on": "2026-10-05", "attribution": "Copyright (c) Up"}
+
+    def weighted(**change):
+        return {**MODELS, "a/model": {**MODELS["a/model"], "weights": [{**weight, **change}]}}
+
+    text = _text(models=weighted())
+    assert tp.check(text, LOCK, weighted()) == []
+    assert "| `a/model` | `w.pth` | mit؛ Copyright (c) Up | https://github.com/up/r/blob/c/LICENSE (2026-10-05) |" in text
+    assert tp.weight_license({**weight, "attribution": None}) == "mit"
+    # إشعاراتُ MIT المتعدّدة أسطرٌ في السجلّ، وتُنشر في خليّةٍ واحدة لا تكسر الجدول (ملاحظة Codex على #307)
+    assert tp.weight_license({**weight, "attribution": "Copyright (c) A\nCopyright (c) B"}) == "mit؛ Copyright (c) A؛ Copyright (c) B"
+    assert tp.check(_text(), LOCK, weighted()) == ["weight_not_listed:a/model/w.pth"]
+    assert tp.check(text, LOCK, MODELS) == ["weight_not_in_registry:a/model/w.pth"]
+    assert tp.check(text, LOCK, weighted(license="apache-2.0")) == ["weight_license_differs:a/model/w.pth"]
+    assert tp.check(text, LOCK, weighted(attribution="Copyright (c) Other")) == ["weight_license_differs:a/model/w.pth"]
+    assert tp.check(text, LOCK, weighted(license_source="https://github.com/o/r/blob/c/LICENSE")) == [
+        "weight_source_differs:a/model/w.pth"]
+    assert tp.check(text, LOCK, weighted(read_on="2026-11-01")) == ["weight_source_differs:a/model/w.pth"]
+
+
+def test_a_model_or_weight_listed_twice_is_named():
+    """ملاحظة Codex على #307: صفٌّ مناقضٌ قبل الصحيح كان يُطوى في القاموس فيمرّ الفحص."""
+    weight = {"file": "w.pth", "license": "mit", "license_source": "https://github.com/up/r/blob/c/LICENSE",
+              "read_on": "2026-10-05", "attribution": "Copyright (c) Up"}
+    models = {**MODELS, "a/model": {**MODELS["a/model"], "weights": [weight]}}
+    text = _text(models=models)
+    weight_row = next(line for line in text.splitlines() if line.startswith("| `a/model` | `w.pth` |"))
+    model_row = next(line for line in text.splitlines() if line.startswith("| `a/model` |") and line != weight_row)
+    forged_weight = weight_row.replace("mit؛", "apache-2.0؛")
+    forged_model = model_row.replace("| mit |", "| apache-2.0 |")
+    assert forged_weight != weight_row and forged_model != model_row
+    assert tp.check(text.replace(weight_row, f"{forged_weight}\n{weight_row}"), LOCK, models) == [
+        "weight_listed_twice:a/model/w.pth"]
+    assert tp.check(text.replace(model_row, f"{forged_model}\n{model_row}"), LOCK, models) == [
+        "model_listed_twice:a/model"]
+
+
+WEIGHTED = {**MODELS, "a/model": {**MODELS["a/model"], "weights": [
+    {"file": "w.pth", "license": "mit", "license_source": "https://github.com/up/r/blob/c/LICENSE", "read_on": "2026-10-05"}]}}
+
+
+@pytest.mark.parametrize("prefix, broken, code", [
+    pytest.param("| `numpy` |", lambda row: row.replace("`numpy`", "numpy"), "package_row_unparsed",
+                 id="package_row_without_backticks"),
+    pytest.param("| `tag:1b` |", lambda row: row + " extra |", "model_row_unparsed", id="model_row_with_an_extra_cell"),
+    pytest.param("| `a/model` | `w.pth` |", lambda row: row.replace("`w.pth`", "w.pth").replace("mit", "apache-2.0"),
+                 "weight_row_unparsed", id="contradictory_weight_row_without_backticks"),
+    pytest.param("| `a/model` | `w.pth` |", lambda row: "  " + row.replace("mit", "apache-2.0"),
+                 "weight_row_unparsed", id="indented_weight_row"),
+    pytest.param("| النموذج | الرخصة |", lambda row: row.replace("الرخصة", "الرخصة | أخرى"), "model_row_unparsed",
+                 id="edited_header"),
+])
+def test_an_unparseable_table_row_is_named_not_dropped(prefix, broken, code):
+    """ملاحظة Codex على #307: صفٌّ لا يطابق نمطَ قسمه كان يُسقط صامتًا، فيمرّ صفٌّ مناقضٌ مشوَّه بجانب الصحيح."""
+    lines = _text(models=WEIGHTED).splitlines()
+    at = next(i for i, line in enumerate(lines) if line.startswith(prefix))
+    lines.insert(at, broken(lines[at]))
+    assert lines[at] != lines[at + 1]
+    assert tp.check("\n".join(lines) + "\n", LOCK, WEIGHTED) == [f"{code}:{at + 1}"]
 
 
 def test_rows_outside_their_section_do_not_count():

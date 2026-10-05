@@ -250,11 +250,12 @@ def main(argv: list[str] | None = None) -> int:
     registry = json.loads(args.registry.read_text(encoding="utf-8"))
     models = registry.get("models", {})
     # الدليلُ التاريخيّ بمقياس الحارسين نفسِه لا يُختم ولا يُفحص (ملاحظة Codex على #310). وسجلٌّ بلا الحقلين يعدّ كلَّ دليلٍ جديدًا.
-    historical = set(registry.get("historical_evidence") or []) if ml._valid_day(registry.get("enforced_from")) else set()
+    historical = registry.get("historical_evidence") if ml._valid_day(registry.get("enforced_from")) else {}
     report, skipped, failed = {}, [], False
     for path in args.files:
         payload = json.loads(path.read_text(encoding="utf-8"))
-        if isinstance(payload, dict) and not probe_spend.is_new(path.name, payload, historical,
+        frozen = ml.frozen_evidence(historical, {path.name: payload})
+        if isinstance(payload, dict) and not probe_spend.is_new(path.name, payload, frozen,
                                                                 registry.get("enforced_from") or ""):
             skipped.append(str(path))
             continue

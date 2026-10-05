@@ -59,7 +59,7 @@ GENERAL_MIN_CASES = 150
 AGENTIC_MIN_TASKS = 30
 LIMITS = [
     "validators_check_schema_and_the_v1_2_conditions_not_whether_a_reference_answer_is_correct",
-    "gameable_checks_are_found_by_four_fixed_answers_empty_echo_of_the_question_polarity_spray_and_both_so_a_subtler_gameable_check_passes",
+    "gameable_checks_are_found_by_five_fixed_answers_empty_echo_polarity_spray_both_and_each_contains_value_negated_so_a_subtler_gameable_check_passes",
     "without_sandbox_probes_a_case_whose_other_checks_a_fixed_answer_passes_is_counted_needs_sandbox_not_judged",
     "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged",
 ]
@@ -204,15 +204,26 @@ def _bank_files(src: Path) -> list[tuple[str, Path]]:
 
 
 # أجوبةٌ ثابتة لا تعرف الجواب (شروطُ v1.2 في docs/external/KIMI-NEXT.md §١): فارغ، ونسخُ السؤال (فيه خياراتُه كلُّها
-# ونصُّه الأصل)، وسردُ الحكمين معًا، والاثنان معًا. فحصٌ يمرّره أحدُها لا يميّز الجوابَ الصحيح من لا جواب.
+# ونصُّه الأصل)، وسردُ الحكمين معًا، والاثنان معًا، ونفيُ قيمة كلِّ contains. فحصٌ يمرّره أحدُها لا يميّز الجوابَ الصحيح من لا جواب.
 POLARITY_SPRAY = "يوجد خطأ ولا يوجد خطأ. صحيح وخاطئ وغير صحيح. نعم ولا. يجوز ولا يجوز. يصح ولا يصح."
+# صيغُ النفي في docs/external/KIMI-NEXT.md §١ البند ٣، وكلٌّ منها جوابٌ ثابت لكل قيمة contains
+NEGATION_FORMS = ("لا يوجد {}.", "ليس فيه {}.", "لا {}.")
 
 
 def _probe_answers(case: dict) -> tuple[tuple[str, str], ...]:
     question = "\n".join(m.get("content", "") for m in case.get("messages", [])
                          if isinstance(m, dict) and m.get("role") == "user" and isinstance(m.get("content"), str))
+    # نفيُ قيمة الفحص نفسِها بصيغ النفي في KIMI-NEXT §١ البند ٣: «لا يوجد خلل» يمرّ `contains: خلل` وإن لم تكن
+    # الكلمةُ في POLARITY_SPRAY (ملاحظة Codex على #312، #314)
+    values = [check["value"] for check in case.get("checks") or []
+              if check.get("kind") == "contains" and isinstance(check.get("value"), str)]
+    # كلُّ صيغةٍ جوابٌ مستقلّ: فحصٌ يستبعد «لا يوجد» وحدها يمرّه «ليس فيه X» (ملاحظة Codex على #315)؛ وكلُّ قيمةٍ تُنفى
+    # وحدها والباقي مُثبَت: «ألف. لا يوجد باء.» يمرّ وإن حُمي نفيُ «ألف» (#316)
+    negated = tuple((f"negated_value_{index}",
+                     "\n".join([*(f"{other}." for other in values if other != value), form.format(value)]))
+                    for index, form in enumerate(NEGATION_FORMS, 1) for value in dict.fromkeys(values))
     return (("empty", ""), ("echo", question), ("polarity_spray", POLARITY_SPRAY),
-            ("echo_and_spray", question + "\n" + POLARITY_SPRAY))
+            ("echo_and_spray", question + "\n" + POLARITY_SPRAY)) + negated
 
 
 def gameable_probe(case: dict, *, sandbox: bool = False) -> str | None:
@@ -237,6 +248,31 @@ def gameable_probe(case: dict, *, sandbox: bool = False) -> str | None:
         if all(result["passed"] for result in _checks(answer, checks)):
             return name
     return None
+
+
+def gameable_cases(open_dir: Path) -> list[dict]:
+    """كلُّ حالةٍ في شطرٍ مفتوح يمرّرها جوابٌ ثابت، أو لا يحكم فيها إلا الحاوية؛ بملفّها والجواب الذي مرّرها.
+
+    قائمةٌ لـKimi في `current/GAMEABLE.json` (`tools/kimi_drive.sh gameable`): يعرف بها ما يردّه الاستلام قبل أن يسلّم،
+    ولا يرى شيفرة المسبار. والحاويةُ لا تُشغَّل هنا، فحالاتُها `needs_sandbox`.
+    """
+    rows = []
+    for path, suite in _capability_files(open_dir):
+        for case in suite.get("cases") or []:
+            probe = gameable_probe(case) if isinstance(case, dict) else None
+            if probe:
+                rows.append({"file": path.relative_to(open_dir).as_posix(), "case_id": case.get("case_id"),
+                             "capability": case.get("capability"), "probe": probe})
+    return rows
+
+
+def _capability_files(open_dir: Path):
+    for path in sorted(open_dir.rglob("*.json")):
+        if path.name.endswith(".meta.json") or path.name == "MANIFEST.json":
+            continue
+        suite = _json(path)
+        if isinstance(suite, dict) and suite.get("kind") != "agentic_tasks":
+            yield path, suite
 
 
 def check_bank(src: Path, *, sandbox_probes: bool = False) -> dict:
@@ -460,8 +496,23 @@ def main(argv=None) -> int:
                         help="تُجرَّب الأجوبةُ الثابتة على حالات python_sandbox في الحاوية (يلزم --sandbox-receipt)")
     parser.add_argument("--sandbox-receipt", type=Path, help="إيصالُ تشغيلٍ موثوق خارج المستودع (core/sandbox.py)")
     parser.add_argument("--sandbox-workspace", type=Path, default=ROOT / "var/sandbox")
+    parser.add_argument("--list-gameable", action="store_true",
+                        help="source شطرٌ مفتوح: تُكتب قائمةُ حالاته التي يمرّرها جوابٌ ثابت (current/GAMEABLE.json)")
     parser.add_argument("--out", required=True, help="مسارُ التقرير، أو - للطباعة")
     args = parser.parse_args(argv)
+    if args.list_gameable:
+        rows = gameable_cases(args.source.resolve())
+        probes = ["empty", "echo", "polarity_spray", "echo_and_spray",
+                  *(f"negated_value_{index}" for index in range(1, len(NEGATION_FORMS) + 1)), "needs_sandbox"]
+        boxed = sum(row["probe"] == "needs_sandbox" for row in rows)
+        listing = {"schema_version": 1, "kind": "gameable_cases", "probes": probes, "gameable": len(rows) - boxed,
+                   "needs_sandbox": boxed, "cases": rows}
+        text = json.dumps(listing, ensure_ascii=False, indent=2) + "\n"
+        if args.out == "-":
+            sys.stdout.write(text)
+        else:
+            Path(args.out).write_text(text, encoding="utf-8")
+        return 0
     if args.sandbox_probes:
         if not args.sandbox_receipt:
             parser.error("--sandbox-probes يلزمه --sandbox-receipt")

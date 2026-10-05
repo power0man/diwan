@@ -4,7 +4,7 @@
 - `--write` يقرأ رخصةَ كلِّ حزمةٍ بنسختها المقفلة من بيانات PyPI المنشورة (`/pypi/<name>/<version>/json`)، ولا يخمّنها.
   وما قُرئ من قبلُ للحزمة بنسختها نفسِها يُبقى، فتغييرُ سجلّ النماذج وحده لا يحتاج شبكة؛ و`--refresh` يقرأ الكلَّ من جديد.
   ورخصُ النماذج من سجلّها كما هي، والمنتظِرُ منها يُكتب منتظِرًا بسببه.
-- `--check` بلا شبكة: الجدولُ يطابق القفلَ حزمةً حزمةً بنسختها، ويطابق السجلَّ نموذجًا نموذجًا برخصته.
+- `--check` بلا شبكة: الجدولُ يطابق القفلَ حزمةً حزمةً بنسختها، ويطابق السجلَّ نموذجًا نموذجًا برخصته، ووزنًا وزنًا برخصته وإسناده.
   فحزمةٌ تُضاف إلى القفل أو نموذجٌ إلى السجلّ بلا إعادة توليدٍ يسقط في CI.
 
 ترتيبُ الرخصة: `license_expression` (PEP 639)، ثم حقلُ `license` إن كان سطرًا قصيرًا، ثم مصنِّفاتُ `License ::`،
@@ -28,8 +28,14 @@ PROJECT = "diwan"
 UNSTATED = "unstated_in_package_metadata"
 PACKAGE_ROW = re.compile(r"^\| `(?P<name>[^`]+)` \| `(?P<version>[^`]+)` \| (?P<license>[^|]+) \| (?P<source>[^|]+) \|$")
 MODEL_ROW = re.compile(r"^\| `(?P<name>[^`]+)` \| (?P<license>[^|]+) \| (?P<source>[^|]+) \|$")
+WEIGHT_ROW = re.compile(r"^\| `(?P<model>[^`]+)` \| `(?P<file>[^`]+)` \| (?P<license>[^|]+) \| (?P<source>[^|]+) \|$")
 MODELS_HEADING = "## النماذج"
+WEIGHTS_HEADING = "## أوزانُ النماذج"
 PACKAGES_HEADING = "## الحزم"
+HEADERS = {PACKAGES_HEADING: "| الحزمة | النسخة | الرخصة كما أعلنتها | المصدر |",
+           MODELS_HEADING: "| النموذج | الرخصة | المصدر |",
+           WEIGHTS_HEADING: "| النموذج | الوزن | الرخصة والإسناد | مصدر الرخصة |"}
+SEPARATOR = re.compile(r"^\|(?:---\|)+$")
 
 
 def locked_packages(lock: Path = LOCK) -> list[tuple[str, str]]:
@@ -63,6 +69,24 @@ def model_source(entry: dict) -> str:
     return "—" if "pending" in entry else f"{entry['source']} ({entry['read_on']})"
 
 
+def model_weights(models: dict) -> list[tuple[str, dict]]:
+    """أوزانُ كلِّ نموذجٍ في السجلّ (حقلُ `weights`)، مرتّبةً بالنموذج ثم بالملفّ."""
+    return [(name, weight) for name, entry in sorted(models.items())
+            for weight in sorted(entry.get("weights", []), key=lambda w: w["file"])]
+
+
+def weight_license(weight: dict) -> str:
+    """رخصةُ الوزن من ناشره الأصليّ، ومعها إسنادُه إن قيّده السجلّ (كاشفُ CRAFT بـMIT لا برخصة EasyOCR: Codex على #307)."""
+    attribution = weight.get("attribution")
+    # إشعاراتُ MIT المتعدّدة أسطرٌ في السجلّ، وتُنشر في خليّةٍ واحدة (ملاحظة Codex على #307)
+    notices = "؛ ".join(attribution.splitlines()) if attribution else ""
+    return _cell(weight["license"] + (f"؛ {notices}" if notices else ""))
+
+
+def weight_source(weight: dict) -> str:
+    return f"{weight['license_source']} ({weight['read_on']})"
+
+
 def fetch(name: str, version: str) -> dict:
     public = version.split("+", 1)[0]
     with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/{public}/json", timeout=30) as response:
@@ -81,15 +105,20 @@ def render(packages: list[tuple[str, str, str]], models: dict) -> str:
         "",
         PACKAGES_HEADING,
         "",
-        "| الحزمة | النسخة | الرخصة كما أعلنتها | المصدر |",
+        HEADERS[PACKAGES_HEADING],
         "|---|---|---|---|",
     ]
     for name, version, license_name in packages:
         lines.append(f"| `{name}` | `{version}` | {_cell(license_name)} | {package_source(name, version)} |")
-    lines += ["", MODELS_HEADING, "", "| النموذج | الرخصة | المصدر |", "|---|---|---|"]
+    lines += ["", MODELS_HEADING, "", HEADERS[MODELS_HEADING], "|---|---|---|"]
     for name, entry in sorted(models.items()):
         license_cell = f"تنتظر القراءة: `{entry['pending']}`" if "pending" in entry else _cell(entry["license"])
         lines.append(f"| `{name}` | {license_cell} | {model_source(entry)} |")
+    lines += ["", WEIGHTS_HEADING, "",
+              "الوزنُ ملفٌّ يحمّله المحرّك، ورخصتُه رخصةُ ناشره الأصليّ وإن وزّعه غيرُه، ومعها إسنادُه إن طلبته.", "",
+              HEADERS[WEIGHTS_HEADING], "|---|---|---|---|"]
+    for name, weight in model_weights(models):
+        lines.append(f"| `{name}` | `{weight['file']}` | {weight_license(weight)} | {weight_source(weight)} |")
     return "\n".join(lines) + "\n"
 
 
@@ -105,6 +134,22 @@ def _section(text: str, heading: str, row: re.Pattern) -> list[dict]:
     return rows
 
 
+def _unparsed(text: str, heading: str, row: re.Pattern) -> list[int]:
+    """أسطرُ الجدول في القسم التي لا يقرؤها نمطُ صفّه ولا هي رأسُه أو فاصلُه.
+
+    كانت تُسقط صامتةً، فيمرّ صفٌّ مناقضٌ مشوَّهُ الشكل في `--check` (ملاحظة Codex على #307).
+    """
+    found, inside = [], False
+    for number, line in enumerate(text.splitlines(), 1):
+        if line.startswith("## "):
+            inside = line.strip() == heading
+            continue
+        if (inside and line.lstrip().startswith("|") and line != HEADERS[heading]
+                and not SEPARATOR.match(line) and not row.match(line)):
+            found.append(number)
+    return found
+
+
 def listed_licenses(text: str) -> dict[tuple[str, str], str]:
     """رخصُ الحزم المكتوبة من قبلُ بنسخها، لتُبقى ولا يُعاد طلبُها."""
     return {(r["name"], r["version"]): r["license"].strip() for r in _section(text, PACKAGES_HEADING, PACKAGE_ROW)}
@@ -113,6 +158,10 @@ def listed_licenses(text: str) -> dict[tuple[str, str], str]:
 def check(text: str, lock: list[tuple[str, str]], models: dict) -> list[str]:
     """ما يخالف فيه الجدولُ القفلَ والسجلّ، مرتّبًا باسمه."""
     problems = []
+    for code, heading, row in (("package_row_unparsed", PACKAGES_HEADING, PACKAGE_ROW),
+                               ("model_row_unparsed", MODELS_HEADING, MODEL_ROW),
+                               ("weight_row_unparsed", WEIGHTS_HEADING, WEIGHT_ROW)):
+        problems += [f"{code}:{number}" for number in _unparsed(text, heading, row)]
     listed = _section(text, PACKAGES_HEADING, PACKAGE_ROW)
     pairs = {(r["name"], r["version"]) for r in listed}
     problems += [f"package_not_listed:{n}=={v}" for n, v in lock if (n, v) not in pairs]
@@ -120,7 +169,10 @@ def check(text: str, lock: list[tuple[str, str]], models: dict) -> list[str]:
     # المصدرُ مشتقٌّ من الاسم والنسخة، فخانتُه المحرَّرة يدويًّا تخالفه (ملاحظة Codex على #302)
     problems += [f"package_source_differs:{r['name']}=={r['version']}" for r in listed
                  if r["source"].strip() != package_source(r["name"], r["version"])]
-    rows = {r["name"]: r for r in _section(text, MODELS_HEADING, MODEL_ROW)}
+    model_rows = _section(text, MODELS_HEADING, MODEL_ROW)
+    # صفٌّ مكرَّر يُخفي ما قبله في القاموس، فيمرّ صفٌّ مناقضٌ قبل الصحيح (ملاحظة Codex على #307)
+    problems += _twice("model_listed_twice", [r["name"] for r in model_rows])
+    rows = {r["name"]: r for r in model_rows}
     for name, entry in sorted(models.items()):
         row = rows.get(name)
         if row is None:
@@ -134,7 +186,26 @@ def check(text: str, lock: list[tuple[str, str]], models: dict) -> list[str]:
         if row is not None and row["source"].strip() != model_source(entry):
             problems.append(f"model_source_differs:{name}")
     problems += [f"model_not_in_registry:{name}" for name in sorted(rows) if name not in models]
+    weight_rows = _section(text, WEIGHTS_HEADING, WEIGHT_ROW)
+    problems += _twice("weight_listed_twice", [f"{r['model']}/{r['file']}" for r in weight_rows])
+    listed_weights = {(r["model"], r["file"]): r for r in weight_rows}
+    expected = model_weights(models)
+    for name, weight in expected:
+        key, row = f"{name}/{weight['file']}", listed_weights.get((name, weight["file"]))
+        if row is None:
+            problems.append(f"weight_not_listed:{key}")
+            continue
+        if row["license"].strip() != weight_license(weight):
+            problems.append(f"weight_license_differs:{key}")
+        if row["source"].strip() != weight_source(weight):
+            problems.append(f"weight_source_differs:{key}")
+    known = {(name, weight["file"]) for name, weight in expected}
+    problems += [f"weight_not_in_registry:{m}/{f}" for m, f in sorted(listed_weights) if (m, f) not in known]
     return sorted(problems)
+
+
+def _twice(code: str, keys: list[str]) -> list[str]:
+    return [f"{code}:{key}" for key in sorted(set(keys)) if keys.count(key) > 1]
 
 
 def main(argv: list[str] | None = None) -> int:
