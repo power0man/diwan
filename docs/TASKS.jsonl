@@ -17,3 +17,14 @@
 {"schema_version":1,"task":"ك٤٤","issue":29,"pull":101,"merge":"4565b65c02a9e76e90f63c620bf6561ed1695961","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-26T05:59:56Z"}
 {"schema_version":1,"task":"ك٥١","issue":41,"pull":101,"merge":"4565b65c02a9e76e90f63c620bf6561ed1695961","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-26T05:59:57Z"}
 {"schema_version":1,"task":"غ٥","issue":35,"pull":106,"merge":"abc8852a4522e31056ca122cfb5dd3a1a63845d9","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-26T07:19:58Z"}
+{"schema_version":1,"task":"ك٥٧","issue":154,"pull":155,"merge":"312e4c44b14b432c412067bb16a62324d0de4347","agents":["anthropic/claude-fable-5-1"],"closed_at":"2026-09-28T05:39:56Z"}
+{"schema_version":1,"task":"ك٥٨","issue":156,"pull":157,"merge":"818e31d6afcfa34b24b6268da5b9acab48208682","agents":["anthropic/claude-fable-5-1","anthropic/claude-opus-5-5"],"closed_at":"2026-09-28T18:55:11Z"}
+{"schema_version":1,"task":"غ٣","issue":24,"pull":181,"merge":"0eb24abb9994d82ddc91bd34899059493ab45e3c","agents":["anthropic/claude-opus-5-5"],"closed_at":"2026-09-28T23:00:02Z"}
+{"schema_version":1,"task":"جديد-test-health","issue":187,"pull":203,"merge":"a5eb58a990f66860dd160c17b09ef5001086449d","agents":["openai/codex"],"closed_at":"2026-09-30T20:51:28Z"}
+{"schema_version":1,"task":"ج٦","issue":36,"pull":247,"merge":"42758712df0cd6123e34a1322bd07f74a66a6e00","agents":["anthropic/claude-fable-5-1","anthropic/claude-opus-5-5","openai/codex"],"closed_at":"2026-10-01T05:13:42Z"}
+{"schema_version":1,"task":"ك٥٦","issue":138,"pull":247,"merge":"42758712df0cd6123e34a1322bd07f74a66a6e00","agents":["anthropic/claude-fable-5-1","anthropic/claude-opus-5-5","openai/codex"],"closed_at":"2026-10-01T05:13:43Z"}
+{"schema_version":1,"task":"ج١٣","issue":145,"pull":247,"merge":"42758712df0cd6123e34a1322bd07f74a66a6e00","agents":["anthropic/claude-fable-5-1","anthropic/claude-opus-5-5","openai/codex"],"closed_at":"2026-10-01T05:13:43Z"}
+{"schema_version":1,"task":"جديد-hash-bidi","issue":172,"pull":247,"merge":"42758712df0cd6123e34a1322bd07f74a66a6e00","agents":["anthropic/claude-fable-5-1","anthropic/claude-opus-5-5","openai/codex"],"closed_at":"2026-10-01T05:13:46Z"}
+{"schema_version":1,"task":"ب٩","issue":263,"pull":268,"merge":"384d943761828fb46cf4ef1da70ffae0380a3d6c","agents":["openai/codex"],"closed_at":"2026-10-01T17:38:41Z"}
+{"schema_version":1,"task":"ج-حفظ-مصطنع","issue":264,"pull":266,"merge":"a1bac4eef0e6defea7b2248db95047efda45ad3f","agents":["openai/codex"],"closed_at":"2026-10-01T18:40:21Z"}
+{"schema_version":1,"task":"ج٥","issue":23,"pull":273,"merge":"ceb203a9e61611d8a517bb98078690b89a40c43e","agents":["openai/codex"],"closed_at":"2026-10-02T05:03:10Z"}

@@ -35,23 +35,23 @@
   },
   "after": {
     "AGENTS.md": {
-      "bytes": 30530,
-      "lines": 288,
-      "tokens_estimate": 8134,
+      "bytes": 30226,
+      "lines": 287,
+      "tokens_estimate": 8050,
       "codex_cut_line": null,
-      "task_rows": 3,
-      "task_rows_visible_to_codex": 3,
+      "task_rows": 2,
+      "task_rows_visible_to_codex": 2,
       "sections": 10,
       "sections_visible_to_codex": 10
     },
     "reading_set_in_section_0": {
       "AGENTS.md": {
-        "bytes": 30530,
-        "tokens_estimate": 8134
+        "bytes": 30226,
+        "tokens_estimate": 8050
       },
       "docs/INDEX.md": {
-        "bytes": 19498,
-        "tokens_estimate": 5146
+        "bytes": 19441,
+        "tokens_estimate": 5130
       },
       "docs/VISION.md": {
         "bytes": 10397,
@@ -59,26 +59,26 @@
       }
     },
     "reading_set_total": {
-      "bytes": 60425,
-      "tokens_estimate": 15763
+      "bytes": 60064,
+      "tokens_estimate": 15663
     },
-    "archived_rows": 42,
-    "open_rows_in_agents_md": 3,
+    "archived_rows": 43,
+    "open_rows_in_agents_md": 2,
     "note": "§٠ يقرأ AGENTS.md ثم docs/INDEX.md، وdocs/VISION.md في أول جلسةٍ فقط؛ وما سواها بالبصمة والإحالة",
     "regenerated_by": "tools/context_index.py --write"
   },
   "every_indexed_document_after": {
     "AGENTS.md": {
-      "bytes": 30530,
-      "tokens_estimate": 8134
+      "bytes": 30226,
+      "tokens_estimate": 8050
     },
     "docs/STATUS.md": {
-      "bytes": 34723,
-      "tokens_estimate": 9190
+      "bytes": 35029,
+      "tokens_estimate": 9263
     },
     "docs/REVIEW-20261005.md": {
-      "bytes": 24499,
-      "tokens_estimate": 6540
+      "bytes": 24791,
+      "tokens_estimate": 6608
     },
     "docs/VISION.md": {
       "bytes": 10397,
@@ -93,12 +93,12 @@
       "tokens_estimate": 59655
     },
     "docs/TASKS.jsonl": {
-      "bytes": 3470,
-      "tokens_estimate": 1425
+      "bytes": 5688,
+      "tokens_estimate": 2333
     },
     "docs/TASKS-ARCHIVE.md": {
-      "bytes": 33036,
-      "tokens_estimate": 8920
+      "bytes": 33407,
+      "tokens_estimate": 9034
     },
     "docs/PROJECT-PLAN-20260925.md": {
       "bytes": 42526,
