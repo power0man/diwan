@@ -2,7 +2,8 @@
 """لا يضع قالبُ مسألةٍ وسمَ عائلةٍ عاملة تلقائيًّا (البندان ٤ و٦ من #296؛ docs/AGENT-INTAKE.md).
 
 وسمُ `family:<عائلة>` إذنُ البدء. ومن لا صلاحيةَ له في مستودعٍ عام لا يضع وسمًا إلا ما تضعه القوالبُ تلقائيًّا، فالقوالبُ
-حدُّ الاستلام. والوسومُ تُقرأ بصورتها المضمَّنة وحدها (`labels: [...]`)؛ وصورةٌ غيرُها تُرفض باسمها: يُغلق عند الشكّ.
+حدُّ الاستلام. والوسومُ تُقرأ بصورتها المضمَّنة وحدها (`labels: [...]`)، في نموذج YAML أو في رأس قالب Markdown؛ وصورةٌ
+غيرُها تُرفض باسمها: يُغلق عند الشكّ.
 """
 from __future__ import annotations
 
@@ -32,10 +33,24 @@ def template_labels(text: str) -> list[str] | None:
     return found or []
 
 
+def front_matter(text: str) -> str | None:
+    """رأسُ قالب Markdown بين سطرَي `---` في أوّله، ومنه وحده تضع GitHub الوسوم؛ وبلا رأسٍ فلا وسوم. ورأسٌ لا يُغلق
+    None (صورةٌ لا تُقرأ)."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return ""
+    for index, line in enumerate(lines[1:], 1):
+        if line.strip() == "---":
+            return "\n".join(lines[1:index])
+    return None
+
+
 def intake_findings(templates: dict[str, str], config: str) -> list[str]:
     problems = []
     for name, text in sorted(templates.items()):
-        labels = template_labels(text)
+        if name.endswith(".md"):
+            text = front_matter(text)
+        labels = None if text is None else template_labels(text)
         if labels is None:
             problems.append(f"labels_unreadable:{name}")
             continue
@@ -47,8 +62,10 @@ def intake_findings(templates: dict[str, str], config: str) -> list[str]:
 
 
 def published() -> tuple[dict[str, str], str]:
-    templates = {p.name: p.read_text(encoding="utf-8") for p in sorted(TEMPLATES.glob("*.yml"))
-                 if p.name != "config.yml"}
+    """كلُّ ملفٍّ في مجلّد القوالب سوى إعداده: نماذجُ YAML (`.yml` و`.yaml`) وقوالبُ Markdown (`.md`) كلّها تضع وسومًا، فلا
+    يُفلت امتدادٌ من الفحص (ملاحظة Codex على #304)."""
+    templates = {p.name: p.read_text(encoding="utf-8") for p in sorted(TEMPLATES.iterdir())
+                 if p.is_file() and p.name not in {"config.yml", "config.yaml"}}
     return templates, (TEMPLATES / "config.yml").read_text(encoding="utf-8")
 
 

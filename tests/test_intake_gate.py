@@ -33,3 +33,24 @@ def test_the_owner_decision_label_is_not_a_working_family():
 def test_blank_issues_must_stay_disabled():
     templates, _ = ig.published()
     assert ig.intake_findings(templates, "blank_issues_enabled: true\n") == ["blank_issues_enabled"]
+
+
+@pytest.mark.parametrize("text, found", [
+    pytest.param('---\nname: t\nlabels: ["family:openai"]\n---\nبلاغ\n', ["working_family_label:t.md:family:openai"],
+                 id="front_matter_grants"),
+    pytest.param("---\nname: t\nlabels: family:openai\n---\n", ["labels_unreadable:t.md"], id="front_matter_bare"),
+    pytest.param('---\nname: t\nlabels: ["family:openai"]\n', ["labels_unreadable:t.md"], id="front_matter_unclosed"),
+    pytest.param("---\nname: t\n---\nlabels: anything in the body\n", [], id="body_is_not_front_matter"),
+    pytest.param("# بلا رأس\nlabels: anything\n", [], id="no_front_matter"),
+])
+def test_markdown_templates_are_read_from_their_front_matter(text, found):
+    assert ig.intake_findings({"t.md": text}, "blank_issues_enabled: false\n") == found
+
+
+def test_every_template_extension_is_published_to_the_gate(tmp_path, monkeypatch):
+    (tmp_path / "config.yml").write_text("blank_issues_enabled: false\n", encoding="utf-8")
+    (tmp_path / "a.yaml").write_text('labels: ["family:google"]\n', encoding="utf-8")
+    (tmp_path / "b.md").write_text('---\nlabels: ["family:openai"]\n---\n', encoding="utf-8")
+    monkeypatch.setattr(ig, "TEMPLATES", tmp_path)
+    assert ig.intake_findings(*ig.published()) == ["working_family_label:a.yaml:family:google",
+                                                   "working_family_label:b.md:family:openai"]
