@@ -56,6 +56,25 @@ def test_the_owner_decision_label_is_not_a_working_family(owner):
     assert ig.intake_findings({"t.yml": text}, "blank_issues_enabled: false\n") == []
 
 
+@pytest.mark.parametrize("config", [
+    pytest.param('contact_links:\n  - about: "x\nblank_issues_enabled: false\n    y"\nblank_issues_enabled: true\n',
+                 id="false_inside_a_scalar_true_outside"),
+    pytest.param('contact_links:\n  - about: "x\nblank_issues_enabled: false\n    y"\n"blank_issues_enabled": true\n',
+                 id="false_inside_a_scalar_quoted_key_outside"),
+    pytest.param('blank_issues_enabled: false\n"blank_issue\\u0073_enabled": true\n', id="escaped_key_beside"),
+    pytest.param('x: &k blank_issues_enabled\nblank_issues_enabled: false\n', id="anchor"),
+    pytest.param('  blank_issues_enabled: false\n', id="indented"),
+    pytest.param('blank_issues_enabled: no\n', id="not_the_word_false"),
+])
+def test_only_one_unambiguous_top_level_false_disables_blank_issues(config):
+    """ملاحظة Codex على #304: سطرُ false داخل نصٍّ مقتبسٍ متعدّد الأسطر لا يغلب المفتاحَ الفعليّ."""
+    assert not ig.blank_issues_disabled(config)
+
+
+def test_a_single_top_level_false_with_a_byte_order_mark_disables_blank_issues():
+    assert ig.blank_issues_disabled("\ufeffblank_issues_enabled: false\ncontact_links: []\n")
+
+
 def test_blank_issues_must_stay_disabled():
     templates, _ = ig.published()
     assert ig.intake_findings(templates, "blank_issues_enabled: true\n") == ["blank_issues_enabled"]

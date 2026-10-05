@@ -26,6 +26,13 @@ UNREADABLE_STARTS = ("{", "?")
 # (`*k :`) مفتاحًا لا يُرى؛ فكلاهما صورةٌ لا تُقرأ (ملاحظة Codex على #304).
 ESCAPED_KEY = re.compile(r'"(?:[^"\\\n]|\\.)*\\.(?:[^"\\\n]|\\.)*"[ \t]*:')
 ANCHOR = re.compile(r"(?:^|[\s\[{,])&[^\s,\[\]{}]")
+BLANK_KEY = re.compile(r"""(?:^|[\s{,])['"]?blank_issues_enabled['"]?[ \t]*:""")
+BLANK_DISABLED = re.compile(r"^blank_issues_enabled:[ \t]*false[ \t]*$")
+
+
+def unreadable_line(line: str) -> bool:
+    """سطرٌ لا يُقرأ سطرًا سطرًا: خريطةٌ مضمَّنة أو مفتاحٌ مركّب، أو مقتبسٌ بتهريبٍ يليه «:»، أو مرساة."""
+    return line.lstrip().startswith(UNREADABLE_STARTS) or bool(ESCAPED_KEY.search(line)) or bool(ANCHOR.search(line))
 
 
 def template_labels(text: str) -> list[str] | None:
@@ -33,7 +40,7 @@ def template_labels(text: str) -> list[str] | None:
     خريطةٍ مضمَّنة أو مفتاحٍ مركّب (`?`)، يعيد None: صورةٌ لا تُقرأ، فيُغلق عند الشكّ."""
     found = None
     for line in text.splitlines():
-        if line.lstrip().startswith(UNREADABLE_STARTS) or ESCAPED_KEY.search(line) or ANCHOR.search(line):
+        if unreadable_line(line):
             return None
         if not LABELS_KEY.search(line):
             continue
@@ -44,6 +51,18 @@ def template_labels(text: str) -> list[str] | None:
         if len(found) != len([part for part in match["items"].split(",") if part.strip()]):
             return None
     return found or []
+
+
+def blank_issues_disabled(config: str) -> bool:
+    """المسائلُ الفارغة معطّلةٌ بسطرٍ واحدٍ في العمود الأول هو كلُّ ذكرٍ لمفتاحها، وقيمتُه `false`. فسطرٌ داخل نصٍّ مقتبسٍ
+    متعدّد الأسطر لا يغلب المفتاحَ الفعليّ، ولا تُقبل صورةٌ لا تُقرأ سطرًا سطرًا (ملاحظة Codex على #304)."""
+    found = []
+    for line in config.removeprefix("\ufeff").splitlines():
+        if unreadable_line(line):
+            return False
+        if BLANK_KEY.search(line):
+            found.append(line)
+    return len(found) == 1 and bool(BLANK_DISABLED.match(found[0]))
 
 
 def front_matter(text: str) -> str | None:
@@ -72,7 +91,7 @@ def intake_findings(templates: dict[str, str], config: str) -> list[str]:
         problems += [f"working_family_label:{name}:{label}" for label in labels
                      if label.strip().casefold().startswith(("family:", "ready:"))
                      and label.strip().casefold() not in NON_WORKING]
-    if not re.search(r"^blank_issues_enabled:[ \t]*false[ \t]*$", config, re.MULTILINE):
+    if not blank_issues_disabled(config):
         problems.append("blank_issues_enabled")
     return problems
 
