@@ -228,6 +228,20 @@ def test_an_ollama_rerun_keeps_the_zero_spend_evidence_a_free_run_left_on_the_ba
     assert len(ledger["provider_usage"]) == 1 + len(DEFAULT_REVIEWERS)
 
 
+def test_an_ollama_rerun_recounts_the_unconfirmed_cost_of_free_calls_on_the_bank(tmp_path, monkeypatch, capsys):
+    """متابعةُ Codex على #298 (#295): الخلاصةُ للبنك كلِّه في المسارين، فتشغيلُ Ollama يعيد عدَّ نداءات OpenRouter التي لم
+    تثبت كلفتُها من السجلّ كلِّه، ولا يُسقط عددًا كتبته الواجهاتُ المجانية قبله."""
+    bank = smoke_bank(tmp_path)
+    cli.write_ledger(bank, [{"provider": "openrouter", "model": "m:free", "request_sent": True},
+                            {"provider": "openrouter", "model": "m:free", "request_sent": True,
+                             "cost_status": "reported"}], {})
+    _wire(monkeypatch, _Opener(_reply(prompt_eval_count=5, eval_count=1)))
+    assert cli.main([str(bank)]) == 0
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert summary["cost_unconfirmed_attempts"] == 1
+    assert len(summary["provider_usage"]) == 2 + len(DEFAULT_REVIEWERS)
+
+
 def test_calls_sent_before_a_refusal_survive_a_rerun_that_skips_them(tmp_path, monkeypatch, capsys):
     """ملاحظة Codex على #298: نجح ملفٌّ ثم رُفض الثاني، فخرج التشغيلُ ٢ بلا خلاصة؛ والإعادةُ بعد إزالة الثاني تتخطّى
     المراجعتين فلا ترسل شيئًا. فنداءاتُ التشغيل المرفوض في السجلّ الدائم، والإعادةُ تقرؤها."""
