@@ -129,6 +129,10 @@ def test_a_malformed_license_block_is_named_not_replaced(licenses):
     pytest.param({"model": "deepseek-v4.1-flash:cloud",
                   "provider_usage": [{**_row("ollama", "deepseek-v4.1-flash:cloud"), "cloud": None}]},
                  "spend_ledger_malformed", id="ollama_cloud_not_a_boolean"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud",
+                  "provider_usage": [{**_row("ollama", "deepseek-v4.1-flash:cloud", cost="4.25", status="reported"),
+                                      "kind": "catalog"}]},
+                 "spend_ledger_malformed", id="paid_call_labelled_catalog"),
 ])
 def test_a_malformed_spend_or_ledger_is_named_not_replaced(payload, code):
     """ملاحظتا Codex على #310: كتلةٌ أو سجلٌّ فاسدٌ لا يُصفّى إلى كتلةٍ صفريّةٍ صالحة، بل يُسمّى ولا يُختم."""
@@ -161,7 +165,8 @@ def test_spend_is_derived_from_the_call_ledger(rows, spend):
 
 
 def test_a_free_call_is_stamped_free_on_its_saved_catalog_evidence():
-    rows = [_row("openrouter", "m:free", cost="0", status="reported", proof=FREE), _row("openrouter", None, kind="catalog")]
+    rows = [_row("openrouter", "m:free", cost="0", status="reported", proof=FREE),
+            _row("openrouter", None, kind="catalog", usage=None, status="not_billed_listing")]
     derived, problems = se.spend_from_usage(rows, EVIDENCE)
     assert problems == [] and derived == {"cloud_calls": 1, "prompt_tokens": 10, "completion_tokens": 5, "cost_usd": 0,
                                           "cost_basis": "free_tier"}
