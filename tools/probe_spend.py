@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -49,12 +50,14 @@ def spend_findings(file: str, spend: object) -> list[str]:
         return [f"spend_keys:{file}"]
     problems = [f"spend_count:{file}:{key}" for key in COUNTS if not _count(spend[key])]
     basis, cost = spend["cost_basis"], spend["cost_usd"]
-    if basis not in BASES:
+    # أساسٌ ليس نصًّا يُسمّى ولا يُسقط الفحصَ بخطأ نوعٍ في منتصف ختم ملفّاتٍ عدّة (ملاحظة Codex على #310)
+    if not isinstance(basis, str) or basis not in BASES:
         problems.append(f"spend_basis_unknown:{file}")
     elif basis == "unpriced":
         if cost is not None:
             problems.append(f"spend_unpriced_with_cost:{file}")
-    elif type(cost) not in (int, float) or cost < 0:
+    # Infinity وNaN ليسا كلفة، ولا يُكتبان في JSON صارم. والعددُ الصحيح منتهٍ دائمًا، فلا يُحوَّل إلى عائمٍ يفيض (ملاحظتا Codex على #310)
+    elif type(cost) not in (int, float) or (type(cost) is float and not math.isfinite(cost)) or cost < 0:
         problems.append(f"spend_cost:{file}")
     if not problems:
         if basis == "local_no_charge" and (spend["cloud_calls"] or cost):
@@ -66,6 +69,12 @@ def spend_findings(file: str, spend: object) -> list[str]:
     return problems
 
 
+def is_new(file: str, payload: dict, historical: set[str], enforced_from: str) -> bool:
+    """دليلٌ جديد: ليس في القائمة التاريخيّة، أو مؤرَّخٌ من تاريخ الإنفاذ. والتاريخيُّ لا يُطالَب بالكتلة ولا يُعاد ختمُه."""
+    day = payload.get("date")
+    return file not in historical or (isinstance(day, str) and day[:10] >= enforced_from)
+
+
 def findings(registry: dict, evidence: dict[str, object]) -> list[str]:
     historical, enforced_from = registry.get("historical_evidence"), registry.get("enforced_from")
     if not isinstance(historical, list) or not ml._valid_day(enforced_from):
@@ -74,9 +83,7 @@ def findings(registry: dict, evidence: dict[str, object]) -> list[str]:
     for file, payload in sorted(evidence.items()):
         if not isinstance(payload, dict):
             continue
-        day = payload.get("date")
-        new = file not in set(historical) or (isinstance(day, str) and day[:10] >= enforced_from)
-        if new and ml.all_named_models(payload):
+        if is_new(file, payload, set(historical), enforced_from) and ml.all_named_models(payload):
             problems += spend_findings(file, payload.get("spend"))
     return sorted(problems)
 
