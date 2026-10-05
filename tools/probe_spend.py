@@ -68,6 +68,12 @@ def spend_findings(file: str, spend: object) -> list[str]:
     return problems
 
 
+def is_new(file: str, payload: dict, historical: set[str], enforced_from: str) -> bool:
+    """دليلٌ جديد: ليس في القائمة التاريخيّة، أو مؤرَّخٌ من تاريخ الإنفاذ. والتاريخيُّ لا يُطالَب بالكتلة ولا يُعاد ختمُه."""
+    day = payload.get("date")
+    return file not in historical or (isinstance(day, str) and day[:10] >= enforced_from)
+
+
 def findings(registry: dict, evidence: dict[str, object]) -> list[str]:
     historical, enforced_from = registry.get("historical_evidence"), registry.get("enforced_from")
     if not isinstance(historical, list) or not ml._valid_day(enforced_from):
@@ -76,9 +82,7 @@ def findings(registry: dict, evidence: dict[str, object]) -> list[str]:
     for file, payload in sorted(evidence.items()):
         if not isinstance(payload, dict):
             continue
-        day = payload.get("date")
-        new = file not in set(historical) or (isinstance(day, str) and day[:10] >= enforced_from)
-        if new and ml.all_named_models(payload):
+        if is_new(file, payload, set(historical), enforced_from) and ml.all_named_models(payload):
             problems += spend_findings(file, payload.get("spend"))
     return sorted(problems)
 

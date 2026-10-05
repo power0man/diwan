@@ -230,6 +230,29 @@ def test_one_given_spend_block_is_refused_for_several_files(tmp_path):
     assert json.loads(first.read_text(encoding="utf-8"))["spend"]["cloud_calls"] == 1
 
 
+def test_historical_evidence_is_neither_stamped_nor_checked(tmp_path, capsys):
+    """ملاحظة Codex على #310: الدليلُ التاريخيّ بمقياس الحارسين نفسِه (القائمةُ وتاريخُ الإنفاذ) لا يُختم ولا يُفحص."""
+    registry = tmp_path / "registry.json"
+    registry.write_text(json.dumps({"models": MODELS, "historical_evidence": ["old.json", "dated.json"],
+                                    "enforced_from": "2026-10-06"}), encoding="utf-8")
+    old, dated, new = tmp_path / "old.json", tmp_path / "dated.json", tmp_path / "new.json"
+    old.write_text(json.dumps({"model": "gemma3:12b"}), encoding="utf-8")
+    dated.write_text(json.dumps({"date": "2026-10-07", "model": "gemma3:12b"}), encoding="utf-8")
+    new.write_text(json.dumps({"model": "qwen3.5:9b"}), encoding="utf-8")
+    assert se.main(["--registry", str(registry), str(old), str(dated), str(new)]) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["historical"] == [str(old)]
+    assert report["findings"] == {str(dated): ["license_pending:gemma3:12b"], str(new): []}
+    assert json.loads(old.read_text(encoding="utf-8")) == {"model": "gemma3:12b"}, "التاريخيُّ لا يُعاد ختمُه"
+    assert json.loads(new.read_text(encoding="utf-8"))["spend"] == LOCAL
+
+
+def test_the_documented_check_passes_on_the_published_evidence(capsys):
+    """الأمرُ الموثَّق `--check docs/probe/*.json` يمرّ على الأدلّة المنشورة، ولا يكتب شيئًا."""
+    files = sorted(str(path) for path in ml.PROBE.glob("*.json"))
+    assert se.main(["--check", *files]) == 0, json.loads(capsys.readouterr().out)["findings"]
+
+
 def test_check_mode_fails_a_file_that_still_needs_its_stamp(tmp_path, capsys):
     registry = tmp_path / "registry.json"
     registry.write_text(json.dumps({"models": MODELS}), encoding="utf-8")

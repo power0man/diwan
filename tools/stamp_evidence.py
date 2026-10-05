@@ -171,10 +171,17 @@ def main(argv: list[str] | None = None) -> int:
     if args.spend is not None and len(args.files) != 1:
         # لكل دليلٍ إنفاقُه، فكتلةٌ واحدة لا تُكتب في ملفّين (ملاحظة Codex على #310)
         parser.error("--spend يُعطى لدليلٍ واحد")
-    models = json.loads(args.registry.read_text(encoding="utf-8")).get("models", {})
-    report, failed = {}, False
+    registry = json.loads(args.registry.read_text(encoding="utf-8"))
+    models = registry.get("models", {})
+    # الدليلُ التاريخيّ بمقياس الحارسين نفسِه لا يُختم ولا يُفحص (ملاحظة Codex على #310). وسجلٌّ بلا الحقلين يعدّ كلَّ دليلٍ جديدًا.
+    historical = set(registry.get("historical_evidence") or []) if ml._valid_day(registry.get("enforced_from")) else set()
+    report, skipped, failed = {}, [], False
     for path in args.files:
         payload = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict) and not probe_spend.is_new(path.name, payload, historical,
+                                                                registry.get("enforced_from") or ""):
+            skipped.append(str(path))
+            continue
         stamped, problems = stamp(payload, models, args.spend) if isinstance(payload, dict) else (payload, [])
         if args.check and stamped != payload:
             problems = sorted(problems + ["stamp_required"])     # ملفٌّ ينقصه ختمٌ لا يمرّ الفحص (ملاحظة Codex على #310)
@@ -182,8 +189,8 @@ def main(argv: list[str] | None = None) -> int:
             _write_atomic(path, stamped)
         report[str(path)] = problems
         failed = failed or bool(problems)
-    print(json.dumps({"schema_version": 1, "status": "failed" if failed else "passed", "findings": report},
-                     ensure_ascii=False, indent=2))
+    print(json.dumps({"schema_version": 1, "status": "failed" if failed else "passed", "findings": report,
+                      "historical": skipped}, ensure_ascii=False, indent=2))
     return 1 if failed else 0
 
 
