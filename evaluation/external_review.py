@@ -65,8 +65,9 @@ TERMINAL_TRANSPORT_ERRORS = frozenset({
     "unauthorized", "forbidden", "not_found", "request_too_large", "redirected",
     "quota_exhausted", "key_missing", "cloud_key_missing", "endpoint_not_allowed",
     "free_model_required", "free_price_unverified", "free_tier_unverified",
+    "price_unknown", "spend_cap_reached",
     "zero_spend_breach", "usage_unavailable", "usage_cost_unavailable", "usage_cost_invalid",
-    "payment_required", "price_unknown", "spend_cap_reached",
+    "payment_required",
     "http_400", "http_401", "http_402", "http_403", "http_404", "http_405",
     "http_410", "http_413", "http_415", "http_422", "http_429",
 })
