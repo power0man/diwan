@@ -160,10 +160,14 @@ def test_the_license_class_is_read_from_its_name_alone(name, kind):
 DIGEST, OTHER_DIGEST, SIBLING, TRAINED, PTH_KIND = "a" * 64, "b" * 64, "d" * 64, "e" * 64, "f" * 64
 LICENSE_TEXT, OTHER_TEXT = "9" * 64, "8" * 64
 WEIGHT = {"file": "w.pth", "sha256": DIGEST, "origin": "https://example.org/w.zip", "license": "mit",
-          "license_source": "https://example.org/LICENSE", "read_on": "2026-10-05", "license_text_sha256": LICENSE_TEXT}
-PROVENANCE = {**{field: WEIGHT[field] for field in ml.PROVENANCE_FIELDS}, "license_text_sha256": LICENSE_TEXT}
+          "license_source": "https://example.org/LICENSE", "read_on": "2026-10-05", "license_text_sha256": LICENSE_TEXT,
+          "attribution": "Copyright (c) Up"}
+PROVENANCE = {**{field: WEIGHT[field] for field in ml.PROVENANCE_FIELDS}, "license_text_sha256": LICENSE_TEXT,
+              "attribution": WEIGHT["attribution"]}
+MODEL_TEXT = {"source": READ["source"], "license_text_sha256": LICENSE_TEXT, "license": READ["license"],
+              "read_on": READ["read_on"]}
 OCR_EVIDENCE = {"ocr.json": {"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST, "v.pth": SIBLING}},
-                                        "weight_provenance": [PROVENANCE]}},
+                                        "weight_provenance": [PROVENANCE], "license_provenance": MODEL_TEXT}},
                 "other.json": {"model": "a/model", "artifact_sha256": OTHER_DIGEST},
                 "tess.json": {"engine": {"name": "ocr", "settings": {"traineddata_sha256": TRAINED, "pth_sha256": PTH_KIND}}}}
 
@@ -172,10 +176,43 @@ def _weights(*weights) -> dict:
     return {"ocr": {**READ, "weights": list(weights)}, "a/model": READ}
 
 
+def _measured(models: dict) -> dict:
+    """نموذجٌ قُيّدت له أوزانٌ يُقيَّد نصُّ رخصته (ملاحظة Codex على #307)، و`OCR_EVIDENCE` يقيسه."""
+    return {name: {**entry, "license_text_sha256": LICENSE_TEXT} if entry.get("weights") else entry
+            for name, entry in models.items()}
+
+
+@pytest.mark.parametrize("entry, found", [
+    pytest.param({**READ, "read_via": ml.LICENSE_FILE_READ, "license_text_sha256": LICENSE_TEXT}, [], id="file_read_and_measured"),
+    pytest.param({**READ, "read_via": ml.LICENSE_FILE_READ}, ["license_text_unmeasured:ocr"], id="file_read_without_its_text"),
+    pytest.param({**READ, "weights": [WEIGHT]}, ["license_text_unmeasured:ocr"], id="weights_without_the_models_text"),
+    pytest.param({**READ, "read_via": ml.LICENSE_FILE_READ, "license_text_sha256": "x"}, ["license_text_unmeasured:ocr"],
+                 id="malformed_text_digest"),
+    pytest.param(READ, [], id="hub_metadata_entry"),
+])
+def test_a_model_read_from_its_license_file_carries_its_measured_text(entry, found):
+    """ملاحظة Codex على #307: حذفُ `license_text_sha256` كان يعطّل فحصَ نصّ الرخصة كلَّه، فيُنشر مصدرٌ لا دليلَ عليه. فالنموذجُ
+    الذي قُرئت رخصتُه من ملفّها أو قُيّدت له أوزانٌ يُقيَّد نصُّ رخصته؛ وقيدُ Hugging Face قُرئ من بيانات النموذج لا من نصّ."""
+    assert ml.entry_findings("ocr", entry) == found
+
+
+@pytest.mark.parametrize("change, found", [
+    pytest.param({}, [], id="mit_weight_with_its_notice"),
+    pytest.param({"attribution": None}, ["attribution_missing:ocr:w.pth"], id="mit_weight_without_its_notice"),
+    pytest.param({"attribution": " "}, ["attribution_missing:ocr:w.pth"], id="mit_weight_with_a_blank_notice"),
+    pytest.param({"attribution": None, "license": "apache-2.0"}, [], id="apache_weight_needs_no_notice"),
+])
+def test_a_weight_under_a_notice_license_carries_its_notice(change, found):
+    """ملاحظة Codex على #307: الإسنادُ كان اختياريًّا، فحذفُه من السجلّ ومن الدليل معًا لا يُسمّى ويسقط إشعارُ NAVER من
+    THIRD-PARTY.md. فوزنٌ برخصةٍ تشترط نشرَ إشعارها (MIT) يحمل إسنادَه."""
+    weight = {k: v for k, v in {**WEIGHT, **change}.items() if v is not None}
+    assert [f for f in ml.weight_findings(_weights(weight), OCR_EVIDENCE) if f.startswith("attribution_")] == found
+
+
 def test_a_weight_whose_digest_its_model_evidence_recorded_passes():
     assert ml.weight_findings(_weights(WEIGHT), OCR_EVIDENCE) == []
-    assert ml.findings(_registry(["ocr.json", "other.json", "tess.json"], **_weights(WEIGHT)), OCR_EVIDENCE, None) == []
-    changed = _weights({**WEIGHT, "sha256": "c" * 64})
+    assert ml.findings(_registry(["ocr.json", "other.json", "tess.json"], **_measured(_weights(WEIGHT))), OCR_EVIDENCE, None) == []
+    changed = _measured(_weights({**WEIGHT, "sha256": "c" * 64}))
     assert ml.findings(_registry(["ocr.json", "other.json", "tess.json"], **changed), OCR_EVIDENCE, None) == [
         "weight_digest_not_in_evidence:ocr:w.pth", "weight_provenance_not_in_evidence:ocr:w.pth"]
 
@@ -262,7 +299,7 @@ def test_new_evidence_names_every_weight_it_records_in_the_registry():
     assert ml.weight_findings(_weights(WEIGHT), new) == [], "الدليلُ التاريخيّ لا يُطالَب"
     trained = {**WEIGHT, "file": "ara.traineddata", "sha256": TRAINED}
     assert ml.weight_findings(_weights(WEIGHT, trained), new, frozenset({"new.json"})) == expected[:1]
-    registry = _registry(["ocr.json", "other.json", "tess.json"], **_weights(WEIGHT))
+    registry = _registry(["ocr.json", "other.json", "tess.json"], **_measured(_weights(WEIGHT)))
     assert ml.findings(registry, {**OCR_EVIDENCE, **new}, None) == [
         "license_not_stated_in_new_evidence:new.json:ocr", *sorted(expected)]
 
@@ -390,10 +427,6 @@ def test_a_weights_license_text_digest_is_the_one_its_provenance_read(registered
     record = {k: v for k, v in PROVENANCE.items() if k != "license_text_sha256"}
     record.update({} if recorded is None else {"license_text_sha256": recorded})
     assert ml.provenance_findings(_weights(weight), {"p.json": {"model": "ocr", "weight_provenance": [record]}}) == found
-
-
-MODEL_TEXT = {"source": READ["source"], "license_text_sha256": LICENSE_TEXT, "license": READ["license"],
-              "read_on": READ["read_on"]}
 
 
 @pytest.mark.parametrize("evidence, found", [

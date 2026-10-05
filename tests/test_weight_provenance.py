@@ -51,24 +51,33 @@ def _zip(*members: tuple[str, bytes]) -> bytes:
 
 WEIGHT = {"file": "w.pth", "sha256": _sha(WEIGHT_BYTES), "origin": "https://example.org/w.zip", "license": "mit",
           "license_source": "https://github.com/up/r/blob/c0ffee/LICENSE", "read_on": "2026-10-05",
-          "license_text_sha256": _sha(LICENSE_BYTES)}
+          "license_text_sha256": _sha(LICENSE_BYTES), "attribution": "Copyright (c) 2019 Example"}
 SERVED = {"https://example.org/w.zip": _zip(("w.pth", WEIGHT_BYTES), ("readme.txt", b"x")),
           "https://github.com/up/r/blob/c0ffee/LICENSE": LICENSE_BYTES}
 
 
 def _models(**change) -> dict:
     return {"ocr": {"license": "apache-2.0", "source": "https://example.org", "read_on": "2026-10-05",
-                    "weights": [{**WEIGHT, **change}]}}
+                    "weights": [{k: v for k, v in {**WEIGHT, **change}.items() if v is not None}]}}
+
+
+MODEL_LICENSE = "https://github.com/up/r/blob/v1/LICENSE"
+
+
+def _measured(**change) -> dict:
+    """نموذجٌ قُيّدت له أوزانٌ يُقيَّد نصُّ رخصته ويُقاس من مصدره (ملاحظة Codex على #307)."""
+    return {"ocr": {**_models(**change)["ocr"], "source": MODEL_LICENSE, "license_text_sha256": _sha(APACHE)}}
 
 
 def test_a_weight_measured_at_its_origin_is_recorded_and_the_evidence_passes_both_guards():
-    models = _models(license_text_sha256=_sha(LICENSE_BYTES))
-    evidence, problems = wp.measure(models, "2026-10-05", SERVED.__getitem__)
+    models = _measured(license_text_sha256=_sha(LICENSE_BYTES))
+    evidence, problems = wp.measure(models, "2026-10-05", {**SERVED, MODEL_LICENSE: APACHE}.__getitem__)
     assert problems == []
     record = evidence["models"]["ocr"]["weight_provenance"][0]
     assert record == {"file": "w.pth", "sha256": WEIGHT["sha256"], "origin": WEIGHT["origin"],
                       "origin_sha256": _sha(SERVED[WEIGHT["origin"]]), "license_source": WEIGHT["license_source"],
-                      "license": WEIGHT["license"], "read_on": "2026-10-05", "license_text_sha256": _sha(LICENSE_BYTES)}
+                      "license": WEIGHT["license"], "read_on": "2026-10-05", "license_text_sha256": _sha(LICENSE_BYTES),
+                      "attribution": WEIGHT["attribution"]}
     assert evidence["models"]["ocr"]["models_sha256"] == {"w.pth": WEIGHT["sha256"]}
     registry = {"enforced_from": "2026-10-05", "historical_evidence": [], "models": models}
     assert ml.findings(registry, {"p.json": evidence}, None) == []
@@ -80,12 +89,12 @@ def test_a_weight_measured_at_its_origin_is_recorded_and_the_evidence_passes_bot
 def test_an_attribution_read_in_the_license_text_is_recorded_and_bound():
     """ملاحظة Codex على #307: الإسنادُ المنشور في THIRD-PARTY.md كان يُنسخ من السجلّ. فهو سطرٌ في نصّ الرخصة المقيس يُسجَّل في
     سجلّ المصدر، وتغييرُه في السجلّ بعد القياس يُسمّى."""
-    models = _models(attribution="Copyright (c) 2019 Example")
-    evidence, problems = wp.measure(models, "2026-10-05", SERVED.__getitem__)
+    models = _measured(attribution="Copyright (c) 2019 Example")
+    evidence, problems = wp.measure(models, "2026-10-05", {**SERVED, MODEL_LICENSE: APACHE}.__getitem__)
     assert problems == [] and evidence["models"]["ocr"]["weight_provenance"][0]["attribution"] == "Copyright (c) 2019 Example"
     registry = {"enforced_from": "2026-10-05", "historical_evidence": [], "models": models}
     assert ml.findings(registry, {"p.json": evidence}, None) == []
-    moved = {**registry, "models": _models(attribution="Copyright (c) Other")}
+    moved = {**registry, "models": _measured(attribution="Copyright (c) Other")}
     assert ml.findings(moved, {"p.json": evidence}, None) == ["weight_provenance_not_in_evidence:ocr:w.pth"]
 
 
@@ -107,14 +116,16 @@ def test_a_weight_served_raw_is_hashed_as_it_is():
     pytest.param({}, {"read_on": "2026-10-04"}, "read_on_not_the_measurement_day", id="read_on_not_the_day"),
     pytest.param({}, {"attribution": "Copyright (c) Other"}, "attribution_not_in_text", id="attribution_not_in_text"),
     pytest.param({}, {"attribution": "MIT"}, "attribution_not_in_text", id="attribution_a_fragment"),
+    pytest.param({}, {"attribution": None}, "attribution_missing", id="attribution_missing"),
+    pytest.param({"https://github.com/up/r/blob/c0ffee/LICENSE": APACHE},
+                 {"license": "apache-2.0", "license_text_sha256": _sha(APACHE),
+                  "attribution": "Copyright [yyyy] [name of copyright owner]"}, "attribution_not_in_text",
+                 id="attribution_from_the_apache_appendix"),
 ])
 def test_what_differs_at_the_origin_is_named_and_not_recorded(served, change, found):
     evidence, problems = wp.measure(_models(**change), "2026-10-05", {**SERVED, **served}.__getitem__)
     assert problems == [f"{found}:ocr:w.pth"]
     assert evidence["models"] == {}
-
-
-MODEL_LICENSE = "https://github.com/up/r/blob/v1/LICENSE"
 
 
 @pytest.mark.parametrize("served, license, read_on, found", [

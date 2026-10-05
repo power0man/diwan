@@ -78,6 +78,7 @@
     "an_archive_origin_is_bound_by_the_member_whose_name_is_the_weight_file_not_by_the_archive_bytes_alone",
     "the_license_text_is_hashed_as_served_and_its_identifier_is_named_from_that_text_not_copied_from_the_registry",
     "only_apache_2_0_and_mit_are_named_by_their_spdx_body_digest_and_any_other_license_text_cannot_be_measured_until_added",
-    "an_mit_preamble_may_hold_its_title_and_copyright_lines_whose_holder_text_is_not_read"
+    "an_mit_preamble_may_hold_its_title_and_copyright_lines_whose_holder_text_is_not_read",
+    "an_attribution_is_a_copyright_line_above_the_license_body_and_is_required_only_for_mit_whose_text_carries_one"
   ]
 }

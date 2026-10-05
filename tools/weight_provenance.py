@@ -36,6 +36,7 @@ LIMITS = [
     "the_license_text_is_hashed_as_served_and_its_identifier_is_named_from_that_text_not_copied_from_the_registry",
     "only_apache_2_0_and_mit_are_named_by_their_spdx_body_digest_and_any_other_license_text_cannot_be_measured_until_added",
     "an_mit_preamble_may_hold_its_title_and_copyright_lines_whose_holder_text_is_not_read",
+    "an_attribution_is_a_copyright_line_above_the_license_body_and_is_required_only_for_mit_whose_text_carries_one",
 ]
 
 # جسمُ كلّ رخصةٍ معروفة بعد التطبيع بين علامتين ثابتتين، وبصمتُه من نصّ SPDX الرسميّ (spdx/license-list-data، text/).
@@ -77,6 +78,21 @@ def _normalized(text: str) -> str:
     return " ".join(re.sub(r"https?://", "", text.lower()).split())
 
 
+def _start(text: str, phrase: str) -> re.Match | None:
+    return re.search(r"\s+".join(map(re.escape, phrase.split())), text, re.IGNORECASE)
+
+
+def license_notices(data: bytes) -> set[str]:
+    """أسطرُ حقوق النشر قبل جسم الرخصة بعد التطبيع: الإشعارُ الذي تشترط MIT نشرَه مع البرنامج (ملاحظة Codex على #307)."""
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        return set()
+    starts = [match.start() for start, *_ in KNOWN_LICENSES.values() if (match := _start(text, start))]
+    head = text[:min(starts)] if starts else ""
+    return {line for line in map(_normalized, head.splitlines()) if re.match(r"copyright\b", line)}
+
+
 def identify_license(data: bytes) -> str | None:
     """الرخصةُ التي هذا نصُّها: جسمُها بعد التطبيع بصمةُ نصّ SPDX، ولا شيء حوله إلا ما يجوز لها. وما سواها لا يُسمّى."""
     try:
@@ -92,7 +108,7 @@ def identify_license(data: bytes) -> str | None:
         tail = norm[j + len(end):].strip()
         if tail and _sha(tail.encode()) not in appendices:
             continue
-        head = re.search(r"\s+".join(map(re.escape, start.split())), text, re.IGNORECASE)
+        head = _start(text, start)
         lines = [line for line in map(_normalized, text[:head.start()].splitlines()) if line] if head else [""]
         if lines and (preamble is None or not all(preamble.fullmatch(line) for line in lines)):
             continue
@@ -141,10 +157,14 @@ def measure(models: dict, day: str, read: Callable[[str], bytes] = fetch) -> tup
             if identify_license(served) != weight["license"]:
                 problems.append(f"license_not_the_text:{label}")
                 continue
-            # الإسنادُ المنشور سطرٌ في نصّ الرخصة المقيس بعينه، لا نصٌّ يُنسخ من السجلّ (ملاحظة Codex على #307)
+            # الإسنادُ المنشور سطرُ حقوق نشرٍ قبل جسم الرخصة المقيسة بعينه، لا نصٌّ يُنسخ من السجلّ؛ ولازمٌ لرخصةٍ تشترط
+            # نشرَ إشعارها، فلا تبارك إعادةُ التوليد حذفَه (ملاحظتا Codex على #307)
             attribution = weight.get("attribution")
-            if attribution is not None and (not isinstance(attribution, str) or _normalized(attribution) not in {
-                    _normalized(line) for line in served.decode("utf-8", "replace").splitlines()}):
+            if attribution is None and weight["license"] in ml.NOTICE_LICENSES:
+                problems.append(f"attribution_missing:{label}")
+                continue
+            if attribution is not None and (not isinstance(attribution, str)
+                                            or _normalized(attribution) not in license_notices(served)):
                 problems.append(f"attribution_not_in_text:{label}")
                 continue
             model = out.setdefault(name, {})

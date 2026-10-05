@@ -55,6 +55,9 @@ PROVENANCE_FIELDS = ("file", "sha256", "origin", "license_source", "license", "r
 # ونصُّ رخصة النموذج كما قيس من مصدره، فلا تُقيَّد بصمةُ نصٍّ لم يُقرأ (ملاحظة Codex على #307)
 LICENSE_PROVENANCE_KEY = "license_provenance"
 LICENSE_PROVENANCE_FIELDS = ("source", "license_text_sha256", "license", "read_on")
+LICENSE_FILE_READ = "upstream_license_file_at_the_release_tag_the_probes_name"
+# رخصٌ يحمل نصُّها إشعارَ حقوق نشرٍ يُشترط نشرُه مع الوزن، فإسنادُه لازمٌ لا اختياريّ (ملاحظة Codex على #307)
+NOTICE_LICENSES = frozenset({"mit"})
 # أنواعُ البصمات التي يكتبها المستودع لبياناتٍ لا لبايتات نموذج (`<نوع>_sha256`). وما سواها في دليلٍ جديد أثرٌ يُطالَب بقيده،
 # فلا يمرّ `checkpoint_sha256` أو `model_artifact_sha256` بلا أصلٍ ولا رخصة (ملاحظة Codex على #307)
 NON_ARTIFACT_KINDS = frozenset({
@@ -195,6 +198,11 @@ def entry_findings(name: str, entry: object) -> list[str]:
         problems.append(f"source_missing:{name}")
     if not _valid_day(entry.get("read_on")):
         problems.append(f"read_on_missing:{name}")
+    # نموذجٌ قُرئت رخصتُه من ملفّها أو قُيّدت له أوزانٌ يُقيَّد نصُّ رخصته ببصمته، فيطالبه `provenance_findings` بدليلٍ قاسه؛
+    # ولا يُعطَّل ذلك بحذف البصمة (ملاحظة Codex على #307)
+    if (entry.get("read_via") == LICENSE_FILE_READ or entry.get("weights")) \
+            and not (isinstance(entry.get("license_text_sha256"), str) and SHA256.match(entry["license_text_sha256"])):
+        problems.append(f"license_text_unmeasured:{name}")
     return problems
 
 
@@ -421,6 +429,9 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
             label = f"{name}:{weight.get('file')}"
             missing = [field for field in WEIGHT_FIELDS if not isinstance(weight.get(field), str) or not weight[field]]
             problems += [f"weight_field_missing:{label}:{field}" for field in missing]
+            if weight.get("license") in NOTICE_LICENSES \
+                    and not (isinstance(weight.get("attribution"), str) and weight["attribution"].strip()):
+                problems.append(f"attribution_missing:{label}")
             if missing:
                 continue
             if weight["sha256"] not in _bound_digests(weights, weight["file"], files.get(name, {}), kinds.get(name, {})):
