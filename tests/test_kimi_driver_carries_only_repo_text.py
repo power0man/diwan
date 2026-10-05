@@ -271,3 +271,26 @@ def test_an_unknown_backend_is_refused_before_anything_runs(tmp_path):
 def test_hf_without_a_token_file_stops(tmp_path):
     done, seen = _run_backend(tmp_path, "hf", HF_TOKEN_PATH=str(tmp_path / "missing"))
     assert done.returncode != 0 and "لا توكن hf" in done.stderr and seen is None
+
+
+def test_the_intake_forwards_the_sandbox_receipt_so_its_report_can_witness_the_general_number(tmp_path):
+    """ملاحظةُ Codex على #312: الأمرُ الموثّق كان يستدعي kimi_intake بـ--open-only وحده، فيُردّ كلُّ استلامٍ
+    عند الرقم العام (needs_sandbox). فـSANDBOX_RECEIPT يمرّر خيارات الحاوية، وغيابُه يُنبَّه عليه."""
+    fake = tmp_path / "python"
+    fake.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$ARGS_OUT"\n', encoding="utf-8")
+    fake.chmod(0o755)
+    work = tmp_path / "work"
+    (work / "kimi-benchmark").mkdir(parents=True)
+    args_out = tmp_path / "args.txt"
+    env = dict(os.environ, KIMI_WORK=str(work), DIWAN=str(ROOT), PYTHON=str(fake), ARGS_OUT=str(args_out),
+               OPEN_ONLY="1", SANDBOX_RECEIPT="/r/receipt.json", SANDBOX_WORKSPACE="/w")
+    done = subprocess.run(["bash", str(DRIVER), "intake"], capture_output=True, text=True, env=env)
+    assert done.returncode == 0, done.stderr
+    args = args_out.read_text(encoding="utf-8").split("\n")
+    assert "--open-only" in args and "--sandbox-probes" in args
+    assert args[args.index("--sandbox-receipt") + 1] == "/r/receipt.json"
+    assert args[args.index("--sandbox-workspace") + 1] == "/w"
+    env.pop("SANDBOX_RECEIPT")
+    bare = subprocess.run(["bash", str(DRIVER), "intake"], capture_output=True, text=True, env=env)
+    assert bare.returncode == 0 and "--sandbox-probes" not in args_out.read_text(encoding="utf-8").split("\n")
+    assert "needs_sandbox" in bare.stderr

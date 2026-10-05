@@ -1,0 +1,1 @@
+{"id": "task-id-cap-back-to-16", "task": "ق٧٣-0.5", "file": "tools/issue_ledger.py", "old": "{1,64}", "new": "{1,16}", "tests": ["tests/test_issue_ledger.py::test_a_long_plan_task_id_is_judged_not_exempted_as_untitled"], "why": "المعرّفُ الأطول من ١٦ حرفًا يُقرأ «بلا معرّف» فتُعفى المسألةُ من الإثبات صامتةً"}
