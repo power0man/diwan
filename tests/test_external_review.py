@@ -1312,6 +1312,25 @@ def test_a_paid_smoke_whose_last_call_was_charged_above_its_reservation_fails_un
     assert (report["status"], report["code"]) == ("failed", "price_exceeded_reservation")
 
 
+def test_a_paid_run_refused_after_its_calls_keeps_its_cap_in_the_run_record(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #308: تشغيلٌ بمعرّفٍ أرسل نداءاتٍ مدفوعة ثم رُفض (ملفٌّ لاحقٌ لا يُقرأ) لا يُكتب له السجلُّ الدائم،
+    فيحمل RUN.json سقفَه وإنفاقَه، ولا يبقى دليلٌ مدفوعٌ بلا سقفه المعلن."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "early")
+    (bank / "open" / "a" / "zz.json").write_text("{", encoding="utf-8")
+    priced = {"data": [{"id": m, "providers": [{"provider": "p", "status": "live", "pricing": {"input": 1, "output": 2}}]}
+                       for m in (DS, MI)]}
+    _free(monkeypatch, FreeOpener(catalog=priced, replies={f"{DS}:p": [_ok(ids)], f"{MI}:p": [_ok(ids)]}))
+    assert cli.main([str(bank), "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF), "--backend", "hf-router",
+                     "--max-usd", "1", "--run-id", "E1"]) == 2
+    printed = _printed(capsys)
+    run = json.loads((bank / "runs" / "E1" / "reviews" / cli.RUN_FILE).read_text(encoding="utf-8"))
+    assert (run["status"], run["code"]) == ("refused", "invalid_json")
+    assert run["spend_cap"] == printed["spend_cap"] and run["spend_cap"]["cap_usd"] == "1"
+    assert run["spend_cap"]["spent_usd"] != "0", "ما أُنفق قبل الرفض محسوبٌ في السجلّ"
+
+
 def test_empty_and_truncated_replies_leave_their_shape_in_the_failures(tmp_path):
     """ملاحظة Codex على #174: الردُّ الفارغ والمبتور يتركان شكلَهما وطلبَهما كسائر الإخفاقات."""
     chat = cli.OpenAICompatChat("github-models", KEY)

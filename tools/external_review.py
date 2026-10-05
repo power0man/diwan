@@ -867,7 +867,7 @@ def _ceil_micros(value: Decimal) -> int:
 class PricedRouterChat(OpenAICompatChat):
     """موجّه HF مدفوعٌ بالتوكن، فلا يخرج نداءٌ إليه إلا بسعرٍ مقروءٍ وسقفٍ محجوز (جديد-spend-ledger، البندان ٢ و٣ من #295).
 
-    - **السعر:** من `providers[].pricing` في فهرس الموجّه نفسِه ساعةَ التشغيل، لكل نموذجٍ أرخصُ مزوّدٍ حيٍّ أعلن سعرَيه لحدّ أول طلبٍ
+    - **السعر:** من `providers[].pricing` في فهرس الموجّه نفسِه ساعةَ التشغيل، لكل نموذجٍ أرخصُ مزوّدٍ حيٍّ أعلن سعرَيه لحدّ كلِّ طلبٍ
       له موزونًا (المدخلُ بسعره و`max_tokens` بسعر المخرج)، ويُثبَّت
       المزوّدُ في الحمولة (`<model>:<provider>`) فلا يختار الموجّهُ غيرَه. والنموذجُ بلا سعرٍ مقروء `price_unknown` قبل الشبكة.
     - **السقف:** `core.budget.Budget` بسقف التشغيل (`--max-usd`، لازمٌ وموجبٌ ولا يتجاوز HFD2). يُحجز قبل كل نداءٍ تقديرٌ أعلى:
@@ -893,7 +893,9 @@ class PricedRouterChat(OpenAICompatChat):
         self.spent_micros = 0
         self.exceeded_micros = 0
         self.router_price_table: dict[str, dict] | None = None
-        self.price_pins: dict[str, dict] = {}
+        # كلُّ مزوّدٍ نُودي لكل نموذج بسعره، فالمزوّدُ يُختار لكل طلبٍ بحدّه (ملاحظة Codex على #308)
+        self.price_pins: dict[str, dict[str, dict]] = {}
+        self._request_pin: tuple[str, dict] | None = None
 
     def catalog(self) -> list[dict]:
         entries = super().catalog()
@@ -901,8 +903,6 @@ class PricedRouterChat(OpenAICompatChat):
         return entries
 
     def _pin(self, model: str, input_tokens: int = FRAMING_TOKENS) -> dict:
-        if model in self.price_pins:
-            return self.price_pins[model]
         if self.router_price_table is None:
             try:
                 self.catalog()
@@ -922,12 +922,16 @@ class PricedRouterChat(OpenAICompatChat):
         # أرخصُ مزوّدٍ لحدّ الطلب الموزون: المدخلُ بسعره و`max_tokens` بسعر المخرج، لا مجموعُ السعرين (ملاحظة Codex على #308)
         provider = min(offers, key=lambda name: (input_tokens * offers[name]["input"]
                                                  + self.max_tokens * offers[name]["output"], name))
-        self.price_pins[model] = {"provider": provider, "input": offers[provider]["input"],
-                                  "output": offers[provider]["output"], "read_at": self.catalog_read_at}
-        return self.price_pins[model]
+        pin = {"provider": provider, "input": offers[provider]["input"], "output": offers[provider]["output"],
+               "read_at": self.catalog_read_at}
+        self.price_pins.setdefault(model, {})[provider] = pin
+        return pin
 
     def _wire_model(self, model: str) -> str:
-        return f"{model}:{self._pin(model)['provider']}"
+        # المزوّدُ الذي حُجز له هذا الطلب نفسُه، لا اختيارٌ ثانٍ بحدٍّ آخر
+        request = self._request_pin
+        pin = request[1] if request is not None and request[0] == model else self._pin(model)
+        return f"{model}:{pin['provider']}"
 
     def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
         if self.exceeded_micros:
@@ -935,6 +939,7 @@ class PricedRouterChat(OpenAICompatChat):
             raise AutomaticReviewError("price_exceeded_reservation", model)
         bound = len((system + user).encode("utf-8")) + FRAMING_TOKENS
         pin = self._pin(model, bound)
+        self._request_pin = (model, pin)
         estimate = _ceil_micros(bound * pin["input"] + self.max_tokens * pin["output"])
         handle = f"{model}#{len(self.provider_usage)}"
         try:
@@ -977,10 +982,11 @@ class PricedRouterChat(OpenAICompatChat):
             "cap_usd": str(self.spend_cap_usd), "spent_usd": str(Decimal(self.spent_micros) / MICROS_PER_USD),
             **({"exceeded_reservation_usd": str(Decimal(self.exceeded_micros) / MICROS_PER_USD)}
                if self.exceeded_micros else {}),
-            "prices": {model: {"provider": pin["provider"], "input": str(pin["input"]), "output": str(pin["output"]),
-                               "unit": "usd_per_million_tokens", "read_at": pin["read_at"],
-                               "catalog": bare_url(self.catalog_url)}
-                       for model, pin in sorted(self.price_pins.items())}}}
+            "prices": {model: {provider: {"input": str(pin["input"]), "output": str(pin["output"]),
+                                          "unit": "usd_per_million_tokens", "read_at": pin["read_at"],
+                                          "catalog": bare_url(self.catalog_url)}
+                               for provider, pin in sorted(providers.items())}
+                       for model, providers in sorted(self.price_pins.items())}}}
 
 
 def build_free_transport(backend: str, environ=os.environ, *, spend_cap_usd: Decimal | None = None,
@@ -1523,13 +1529,15 @@ def _persist_provider_usage(bank: Path, usage: list[dict], spend: dict | None = 
         _write_json(path, summary)
 
 
-def finish_run(run: Path, status: str, code: str | None = None, usage: list[dict] | None = None) -> None:
+def finish_run(run: Path, status: str, code: str | None = None, usage: list[dict] | None = None,
+               spend_cap: dict | None = None) -> None:
     """حالةُ التشغيل في RUN.json: reviewed أو failed أو unavailable أو refused برمزه — فإن خرج قبل الخلاصة بقي هذا وحده،
-    ومعه سجلُّ ما خرج من نداءاتٍ قبل الرفض إن أُعطي (ملاحظة Codex على #290)."""
+    ومعه سجلُّ ما خرج من نداءاتٍ قبل الرفض إن أُعطي (ملاحظة Codex على #290)، وسقفُ التشغيل المدفوع وإنفاقُه، فلا يبقى دليلٌ
+    مدفوعٌ بلا سقفه المعلن (ملاحظة Codex على #308)."""
     path = run / "reviews" / RUN_FILE
     record = json.loads(path.read_text(encoding="utf-8"))
     record.update(status=status, finished_at=_utc_now(), **({"code": code} if code else {}),
-                  **({"provider_usage": usage} if usage else {}))
+                  **({"provider_usage": usage} if usage else {}), **({"spend_cap": spend_cap} if spend_cap else {}))
     _write_json(path, record)
 
 
@@ -1643,12 +1651,14 @@ def _free_main(args, parser) -> int:
     except AutomaticReviewError as exc:
         # ما خرج من نداءاتٍ قبل الرفض (ومنه نداءُ الفهرس الفاشل) يبقى في المطبوع وفي RUN.json (ملاحظة Codex على #290)
         usage = getattr(transport, "provider_usage", None) or []
+        cap = _spend_report(transport).get("spend_cap")
         # وفي السجلّ الدائم للبنك يكتبه `_free_bank` على أيّ خروجٍ بعد الإرسال (ملاحظتا Codex على #298)
         if run is not None:          # خرج قبل الخلاصة: يُرفع سجلُّ الرفض المسمّى وحده، لا ملفّاتٌ تاريخية
-            finish_run(run, "refused", exc.code, usage)
+            finish_run(run, "refused", exc.code, usage, cap if usage else None)
         shape = getattr(exc, "shape", None)
         print(json.dumps({"status": "refused", "code": exc.code, **({"shape": shape} if shape else {}),
-                          **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
+                          **({"provider_usage": usage} if usage else {}),
+                          **({"spend_cap": cap} if cap and usage else {})}, ensure_ascii=False))
         return 2
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return code

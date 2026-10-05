@@ -97,9 +97,10 @@ def test_the_cheapest_live_priced_provider_is_pinned_in_the_payload():
     chat = _chat(catalog, {f"{MODEL}:cheap": [{"prompt_tokens": 10, "completion_tokens": 5}]})
     assert chat(MODEL, SYSTEM, USER, {}) == "{}"
     assert chat.opener.posted() == [f"{MODEL}:cheap"], "المزوّدُ مثبَّتٌ في الحمولة فلا يختار الموجّهُ أغلى منه"
-    pin = chat.spend_report()["spend_cap"]["prices"][MODEL]
-    assert {k: pin[k] for k in ("provider", "input", "output", "unit")} == {
-        "provider": "cheap", "input": "1", "output": "2", "unit": "usd_per_million_tokens"}
+    prices = chat.spend_report()["spend_cap"]["prices"][MODEL]
+    assert list(prices) == ["cheap"], "المزوّدُ الذي نُودي وحده في التقرير"
+    pin = prices["cheap"]
+    assert {k: pin[k] for k in ("input", "output", "unit")} == {"input": "1", "output": "2", "unit": "usd_per_million_tokens"}
     assert pin["catalog"] == "https://router.huggingface.co/v1/models" and pin["read_at"]
 
 
@@ -111,7 +112,7 @@ def test_the_provider_is_chosen_by_the_requests_weighted_bound_not_the_sum_of_it
                  max_tokens=4000)
     assert chat(MODEL, SYSTEM, USER, {}) == "{}"
     assert chat.opener.posted() == [f"{MODEL}:output_cheap"]
-    assert chat.spend_report()["spend_cap"]["prices"][MODEL]["provider"] == "output_cheap"
+    assert list(chat.spend_report()["spend_cap"]["prices"][MODEL]) == ["output_cheap"]
     # وتكليفٌ طويل (١٠٠٠٠٠ بايت) يقلب الحدَّ: المدخلُ أغلبُه، فيُختار رخيصُ المدخل
     long = _chat(catalog, {f"{MODEL}:output_dear": [{"prompt_tokens": 10, "completion_tokens": 5}]}, max_tokens=4000)
     long(MODEL, SYSTEM, "u" * 99_900, {})
@@ -134,6 +135,18 @@ def test_a_provider_whose_context_window_cannot_hold_the_request_is_not_pinned(o
     chat = _chat(_catalog((MODEL, offers)), {f"{MODEL}:{pinned}": [{"prompt_tokens": 10, "completion_tokens": 5}]})
     chat(MODEL, SYSTEM, USER, {})
     assert chat.opener.posted() == [f"{MODEL}:{pinned}"]
+
+
+def test_every_request_chooses_its_provider_by_its_own_bound():
+    """ملاحظة Codex على #308: طلبٌ قصيرٌ أوّلًا لا يثبّت للنموذج مزوّدًا ضيّقًا يُرسل إليه طلبٌ أطولُ لا يتّسع له."""
+    usage = {"prompt_tokens": 10, "completion_tokens": 5}
+    catalog = _catalog((MODEL, [_offer("narrow", 1, 2, context=2_000), _offer("wide", 2, 4, context=200_000)]))
+    chat = _chat(catalog, {f"{MODEL}:narrow": [usage], f"{MODEL}:wide": [usage]})
+    chat(MODEL, SYSTEM, USER, {})                      # ٨١٢ يتّسع له الضيّق الأرخص
+    chat(MODEL, SYSTEM, "u" * 5_000, {})               # ٥٧١٢ لا يتّسع له إلا الواسع
+    assert chat.opener.posted() == [f"{MODEL}:narrow", f"{MODEL}:wide"]
+    assert [row["price"]["provider"] for row in chat.provider_usage if row.get("kind") != "catalog"] == ["narrow", "wide"]
+    assert list(chat.spend_report()["spend_cap"]["prices"][MODEL]) == ["narrow", "wide"]
 
 
 @pytest.mark.parametrize("status, code", [pytest.param(401, "unauthorized", id="unauthorized"),
