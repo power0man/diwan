@@ -2,7 +2,8 @@
 """الرقمُ العام لديوان (`جديد-general-number`، ق٧٣ الخطوة 1.7أ): كاملُ الشطر المفتوح عبر ذراع الأساس الوكيل، ببذورٍ وWilson.
 
     python3 tools/evaluate_general.py --model qwen3.5:9b --model-version <البصمة> \\
-        --bank-open evaluation/banks/kimi_v1/open --out docs/probe/k2c-general-v12-<التاريخ>.json
+        --bank-open evaluation/banks/kimi_v1/open --intake <تقرير الاستلام> --sandbox-receipt <الإيصال> \\
+        --agent openai/codex --out docs/probe/k2c-general-v12-<التاريخ>.json
 
 لماذا لا يكفي `tools/measure_engine.py`: لا بذورَ فيه، ويستدعي `evaluate_suite` لا الطريقَ الوكيل الذي يلقاه المستخدم
 منذ ج١، ولا يُخرج فاصلَ ثقة. وهذا المُشغِّل يركّب ما هو قائم ولا يعيد كتابته:
@@ -84,6 +85,18 @@ def registered_license(model: str, registry_path: Path = ml.REGISTRY) -> str:
     if "pending" in entry:
         raise LicenseRefused("license_not_read", model)
     return entry["license"]
+
+
+AGENTS_REGISTRY = ROOT / "registry" / "agents.json"
+
+
+def registered_agent(agent: str | None, registry_path: Path = AGENTS_REGISTRY) -> str:
+    """مُنتِجُ الدليل عميلٌ مسجَّل: حارسُ docs/probe يردّ تقريرًا بلا `agent` (tools/probe_evidence.py)، فيُتحقَّق قبل أيّ نداء
+    لا بعد ليلة القياس (ملاحظة Codex على #312، #314)."""
+    agents = json.loads(Path(registry_path).read_text(encoding="utf-8"))["agents"]
+    if not isinstance(agent, str) or agent not in agents:
+        raise AblationError("agent_not_registered", str(agent))
+    return agent
 
 
 class _Counted:
@@ -193,7 +206,8 @@ def summarize(rows: list[dict]) -> dict:
 
 def run_general(provider, *, model: str, model_version: str, bank_open: Path, engine_license: str, date: str,
                 sandbox: bool = True, seeds: tuple[int, ...] | None = None, command: str = "",
-                diagnostic: bool = False, intake: dict | None = None, **options) -> dict:
+                diagnostic: bool = False, intake: dict | None = None, agent: str | None = None, **options) -> dict:
+    agent = registered_agent(agent)
     seeds = seed_values() if seeds is None else tuple(seeds)
     if seeds != seed_values(len(seeds)):
         raise AblationError("seeds_invalid", "يلزم تسلسل 0..N-1 بعدد فردي لا يقل عن 3")
@@ -236,6 +250,7 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
         by_tier[tiers.get(row["id"], "unknown")].append(row)
     return {
         "schema_version": 1, "kind": "general_number_diagnostic" if diagnostic else "general_number", "date": date,
+        "agent": agent,
         "tool": TOOL, "command": command, "licenses": {ml.canonical(model): engine_license},
         "spend": {"cloud_calls": 0, "prompt_tokens": tally["prompt_tokens"],
                   "completion_tokens": tally["completion_tokens"], "cost_usd": 0, "cost_basis": "local_no_charge"},
@@ -271,6 +286,7 @@ def main(argv=None) -> int:
     parser.add_argument("--intake", type=Path, help="تقريرُ tools/kimi_intake.py الناجح لهذا البنك (يلزم إلا مع --diagnostic)")
     parser.add_argument("--diagnostic", action="store_true",
                         help="يُقبل بنكٌ فيه حالاتٌ بلا فحص، ويُوسم التقريرُ تشخيصيًّا لا دليلَ بوابة م١")
+    parser.add_argument("--agent", required=True, help="مُنتِجُ الدليل بمعرّفه في registry/agents.json")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.out.exists():
@@ -279,6 +295,11 @@ def main(argv=None) -> int:
     command = shlex.join([sys.executable, TOOL] + list(sys.argv[1:] if argv is None else argv))
     try:
         seeds = seed_values(args.seeds)
+    except AblationError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        return 2
+    try:
+        registered_agent(args.agent)
     except AblationError as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2
@@ -301,7 +322,7 @@ def main(argv=None) -> int:
         report = run_general(OllamaProvider(args.model), model=args.model, model_version=model_version,
                              bank_open=args.bank_open, engine_license=engine_license,
                              date=datetime.now(timezone.utc).date().isoformat(), sandbox=not args.no_sandbox,
-                             seeds=seeds, command=command, diagnostic=args.diagnostic,
+                             seeds=seeds, command=command, diagnostic=args.diagnostic, agent=args.agent,
                              intake=json.loads(args.intake.read_text(encoding="utf-8")) if args.intake else None)
     except AblationError as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))

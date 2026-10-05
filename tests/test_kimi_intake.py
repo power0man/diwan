@@ -17,7 +17,13 @@ from tools.kimi_intake import (AGENTIC_MIN_TASKS, GENERAL_CAPABILITIES, GENERAL_
 def _case(case_id, capability="a", checks=True, text="q"):
     return {"case_id": case_id, "capability": capability, "messages": [{"role": "user", "content": text}],
             "reference": "r", "rubric": ["r"], "critical": False,
-            "checks": [{"kind": "contains", "value": "r"}] if checks else []}
+            "checks": [{"kind": "contains", "value": "r"}, *NEGATION_EXCLUDED("r")] if checks else []}
+
+
+def NEGATION_EXCLUDED(value):
+    """صيغُ النفي المستبعدة التي يكلّف بها KIMI-NEXT §١ البند ٣، فلا يمرّ الفحصَ نفيُ قيمته (#314)."""
+    return [{"kind": "excludes", "value": "لا يوجد"}, {"kind": "excludes", "value": "ليس فيه"},
+            {"kind": "excludes", "value": f"لا {value}"}]
 
 
 def _suite(suite_id, cases, split="development"):
@@ -398,6 +404,13 @@ def test_fixed_answers_that_know_nothing_expose_gameable_checks():
     verdict = case("هل في الجملة خطأ؟", [{"kind": "contains", "value": "يوجد خطأ"}, {"kind": "excludes", "value": "لا يوجد"}])
     assert gameable_probe(verdict) is None, "الحكمُ مع نفيه المستبعد لا يمرّره السرد"
     assert gameable_probe(case("ما عاصمة المغرب؟", [{"kind": "exact", "value": "الرباط"}])) is None
+    # نفيُ قيمة الفحص نفسِها: «خلل» ليست في POLARITY_SPRAY، و«لا يوجد خلل» تمرّ contains (ملاحظة Codex، #314)
+    assert gameable_probe(case("هل الحكم سليم؟", [{"kind": "contains", "value": "خلل"}])) == "negated_value"
+    negation_excluded = case("هل الحكم سليم؟", [{"kind": "contains", "value": "خلل"},
+                                                 {"kind": "excludes", "value": "لا يوجد"},
+                                                 {"kind": "excludes", "value": "ليس فيه"},
+                                                 {"kind": "excludes", "value": "لا خلل"}])
+    assert gameable_probe(negation_excluded) is None, "الصيغةُ المكلَّفة: contains مع excludes لصيغ النفي"
     # حالةُ الحاوية وحدها لا يُحكم فيها بلا حاوية: needs_sandbox لا «سليمة»
     assert gameable_probe(case("مكنية", [{"kind": "python_sandbox", "value": "assert False"}])) == "needs_sandbox"
 
@@ -428,7 +441,8 @@ def test_a_mixed_sandbox_case_is_probed_on_its_other_checks_then_in_the_containe
 
     def case(text, harness, value="مكنية"):
         return {"case_id": "c", "messages": [{"role": "user", "content": text}],
-                "checks": [{"kind": "contains", "value": value}, {"kind": "python_sandbox", "value": harness}]}
+                "checks": [{"kind": "contains", "value": value}, *NEGATION_EXCLUDED(value),
+                           {"kind": "python_sandbox", "value": harness}]}
     options = "سمِّ الصورة من بين: تشبيه، استعارة مكنية، كناية."
     assert gameable_probe(case(options, "always")) == "needs_sandbox"
     assert gameable_probe(case(options, "always"), sandbox=True) == "echo"
