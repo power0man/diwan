@@ -401,11 +401,14 @@ def test_fixed_answers_that_know_nothing_expose_gameable_checks():
     polarity = case("هل في الجملة الآتية زللٌ نحوي؟", [{"kind": "contains", "value": "خطأ"}])
     assert gameable_probe(polarity) == "polarity_spray"
     assert gameable_probe(case("أعد الصياغة", [{"kind": "excludes", "value": "عامية"}])) == "empty"
-    verdict = case("هل في الجملة خطأ؟", [{"kind": "contains", "value": "يوجد خطأ"}, {"kind": "excludes", "value": "لا يوجد"}])
+    verdict = case("هل في الجملة خطأ؟", [{"kind": "contains", "value": "يوجد خطأ"}, *NEGATION_EXCLUDED("يوجد خطأ")])
     assert gameable_probe(verdict) is None, "الحكمُ مع نفيه المستبعد لا يمرّره السرد"
     assert gameable_probe(case("ما عاصمة المغرب؟", [{"kind": "exact", "value": "الرباط"}])) is None
     # نفيُ قيمة الفحص نفسِها: «خلل» ليست في POLARITY_SPRAY، و«لا يوجد خلل» تمرّ contains (ملاحظة Codex، #314)
-    assert gameable_probe(case("هل الحكم سليم؟", [{"kind": "contains", "value": "خلل"}])) == "negated_value"
+    assert gameable_probe(case("هل الحكم سليم؟", [{"kind": "contains", "value": "خلل"}])) == "negated_value_1"
+    # استبعادُ صيغةٍ واحدة لا يكفي: كلُّ صيغةٍ جوابٌ مستقلّ (ملاحظة Codex على #315)
+    partial = case("هل الحكم سليم؟", [{"kind": "contains", "value": "خلل"}, {"kind": "excludes", "value": "لا يوجد"}])
+    assert gameable_probe(partial) == "negated_value_2"
     negation_excluded = case("هل الحكم سليم؟", [{"kind": "contains", "value": "خلل"},
                                                  {"kind": "excludes", "value": "لا يوجد"},
                                                  {"kind": "excludes", "value": "ليس فيه"},

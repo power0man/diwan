@@ -208,7 +208,7 @@ def expected_files(root, state, titles, gate):
     readme = (f"أحدث نطاق تقني موثق: **{state['latest_technical_scope']}** "
               f"(`docs/{state['latest_technical_document']}`).\n"
               "عددُ الاختبارات المجموعة لا يُودَع لأنه يتغيّر مع كل اختبار؛ يُحسب بـ"
-              "`python3 -m pytest --collect-only -q`، ونجاحُ التشغيل له دليله المنفصل.\n"
+              "`uv run python -m pytest --collect-only -q`، ونجاحُ التشغيل له دليله المنفصل.\n"
               f"حصيلة عيوب تدقيق م١..م٧ التاريخية: **{state['historical_m1_m7_defect_total']}**، "
               "بجمع أعداد أدلة المراحل السبع، دون دمج عيوب الدفعات اللاحقة.\n"
               "قبول الجودة الآلي متعدد الأنظمة معلق؛ `release_ready=false`.")
@@ -224,7 +224,7 @@ def expected_files(root, state, titles, gate):
     study = '\n'.join([
         '| المقياس | القيمة | كيف تتحقق بنفسك |',
         '|---|---|---|',
-        "| اختبارات مجموعة | تُحسب عند الطلب | `python3 -m pytest --collect-only -q \\| tail -1` "
+        "| اختبارات مجموعة | تُحسب عند الطلب | `uv run python -m pytest --collect-only -q \\| tail -1` "
         "(لا تُودَع: تتغيّر مع كل اختبار؛ والنجاح له دليله المنفصل) |",
         f"| قرارات | **{state['latest_decision']}** بلا فجوة | "
         "`grep -oE 'ق[٠-٩]+' docs/DECISIONS.md \\| sort -u \\| wc -l` |",

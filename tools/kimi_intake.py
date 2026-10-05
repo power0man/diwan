@@ -206,6 +206,8 @@ def _bank_files(src: Path) -> list[tuple[str, Path]]:
 # أجوبةٌ ثابتة لا تعرف الجواب (شروطُ v1.2 في docs/external/KIMI-NEXT.md §١): فارغ، ونسخُ السؤال (فيه خياراتُه كلُّها
 # ونصُّه الأصل)، وسردُ الحكمين معًا، والاثنان معًا، ونفيُ قيمة كلِّ contains. فحصٌ يمرّره أحدُها لا يميّز الجوابَ الصحيح من لا جواب.
 POLARITY_SPRAY = "يوجد خطأ ولا يوجد خطأ. صحيح وخاطئ وغير صحيح. نعم ولا. يجوز ولا يجوز. يصح ولا يصح."
+# صيغُ النفي في docs/external/KIMI-NEXT.md §١ البند ٣، وكلٌّ منها جوابٌ ثابت لكل قيمة contains
+NEGATION_FORMS = ("لا يوجد {}.", "ليس فيه {}.", "لا {}.")
 
 
 def _probe_answers(case: dict) -> tuple[tuple[str, str], ...]:
@@ -215,9 +217,11 @@ def _probe_answers(case: dict) -> tuple[tuple[str, str], ...]:
     # الكلمةُ في POLARITY_SPRAY (ملاحظة Codex على #312، #314)
     values = [check["value"] for check in case.get("checks") or []
               if check.get("kind") == "contains" and isinstance(check.get("value"), str)]
-    negated = "\n".join(f"لا يوجد {value}. ليس فيه {value}. لا {value}." for value in values)
+    # كلُّ صيغةٍ جوابٌ مستقلّ: فحصٌ يستبعد «لا يوجد» وحدها يمرّه «ليس فيه X» (ملاحظة Codex على #315)
+    negated = tuple((f"negated_value_{index}", "\n".join(form.format(value) for value in values))
+                    for index, form in enumerate(NEGATION_FORMS, 1))
     return (("empty", ""), ("echo", question), ("polarity_spray", POLARITY_SPRAY),
-            ("echo_and_spray", question + "\n" + POLARITY_SPRAY), ("negated_value", negated))
+            ("echo_and_spray", question + "\n" + POLARITY_SPRAY)) + negated
 
 
 def gameable_probe(case: dict, *, sandbox: bool = False) -> str | None:
