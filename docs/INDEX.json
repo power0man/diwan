@@ -1357,7 +1357,7 @@
    "tokens_estimate": 451
   },
   {
-   "bytes": 57977,
+   "bytes": 58163,
    "headings": [
     {
      "level": 2,
@@ -1496,52 +1496,52 @@
     },
     {
      "level": 2,
-     "line": 526,
+     "line": 527,
      "title": "٧ — المراحل السبع: ما أثبتته كلٌّ منها"
     },
     {
      "level": 2,
-     "line": 545,
+     "line": 546,
      "title": "٨ — طقس العمل (سنّة المشروع — اتبعه حرفيًّا في كل مرحلة)"
     },
     {
      "level": 2,
-     "line": 567,
+     "line": 568,
      "title": "٩ — حدودك الستة (نصًّا، ولا اجتهاد فيها)"
     },
     {
      "level": 2,
-     "line": 589,
+     "line": 590,
      "title": "١٠ — البيئة التشغيلية"
     },
     {
      "level": 2,
-     "line": 613,
+     "line": 614,
      "title": "١١ — ألغام معروفة (كلُّها كلّفت وقتًا مرة على الأقل)"
     },
     {
      "level": 2,
-     "line": 650,
+     "line": 651,
      "title": "١٢ — ما بقي: الخارطة العامة والقرارات المستقلة"
     },
     {
      "level": 2,
-     "line": 683,
+     "line": 684,
      "title": "١٣ — كيف تتعامل مع المالك"
     },
     {
      "level": 2,
-     "line": 697,
+     "line": 698,
      "title": "١٤ — خلاصة في سطر"
     }
    ],
-   "lines": 701,
+   "lines": 702,
    "path": "docs/HANDOFF-PROMPT.md",
    "purpose": "برومبتُ تسليمٍ متنُه حتى ق٣٨ ورأسُه ق٤٩",
    "read_when": "لا يُقرأ؛ الحالةُ في docs/STATUS.md",
    "role": "تاريخ",
-   "sha256_12": "de04a315218c",
-   "tokens_estimate": 15003
+   "sha256_12": "6221ed2e7bcd",
+   "tokens_estimate": 15053
   }
  ],
  "generator": "tools/context_index.py",
