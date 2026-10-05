@@ -85,6 +85,12 @@ def test_only_a_positively_local_name_is_stamped_local(name):
     assert se.stamp_spend({"model": name}, None) == (LOCAL, [])
 
 
+def test_the_derived_block_is_checked_by_the_spend_guard_itself(monkeypatch):
+    """ملاحظة Codex على #310: الكتلةُ المشتقّة تمرّ مدقّقَ الحارس نفسَه، فما يردّه الحارسُ لا يُكتب ولو فات فحوصَ الاشتقاق."""
+    monkeypatch.setattr(se.probe_spend, "spend_findings", lambda file, spend: [f"spend_guard_refused:{file}"])
+    assert se.spend_from_usage([_row("ollama", "deepseek-v4.1-flash:cloud")]) == (None, ["spend_guard_refused"])
+
+
 def test_a_given_or_written_spend_is_checked_not_trusted():
     bad = {"cloud_calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "cost_usd": 1, "cost_basis": "local_no_charge"}
     stamped, problems = se.stamp({"model": "qwen3.5:9b", "spend": bad}, MODELS)
@@ -242,7 +248,14 @@ def test_a_review_with_its_call_ledger_is_stamped_from_the_ledger():
     pytest.param([_row("hf-router", "a/b", cost="-1", status="reported")], "spend_cost_invalid", id="negative_cost"),
     pytest.param([_row("hf-router", "a/b", cost="abc", status="reported")], "spend_cost_invalid", id="unreadable_cost"),
     pytest.param([_row("hf-router", "a/b", cost="NaN", status="reported")], "spend_cost_invalid", id="nan_cost"),
-    pytest.param([_row("hf-router", "a/b", cost="1e10000", status="reported")], "spend_cost", id="cost_overflows_a_float"),
+    pytest.param([_row("hf-router", "a/b", cost="1e10000", status="reported")], "spend_cost_invalid",
+                 id="cost_overflows_a_float"),
+    pytest.param([_row("hf-router", "a/b", cost="0.1234567890123456789", status="reported")], "spend_cost_invalid",
+                 id="cost_rounded_by_a_float"),
+    pytest.param([_row("hf-router", "a/b", cost="9007199254740993", status="reported")], "spend_cost_invalid",
+                 id="integer_cost_rounded_by_a_float"),
+    pytest.param([_row("ollama", "deepseek-v4.1-flash:cloud", cost="3.75", status="reported")],
+                 "spend_subscription_with_cost", id="ollama_row_with_a_cost"),
     pytest.param([_row("hf-router", "a/b", cost="1e-10000", status="reported")], "spend_cost_invalid",
                  id="cost_underflows_to_zero"),
     pytest.param([_row("hf-router", "a/b", cost="0.25")], "spend_cost_status_invalid", id="cost_without_a_reported_status"),

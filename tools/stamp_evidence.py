@@ -24,6 +24,7 @@ import os
 import re
 import sys
 import tempfile
+from decimal import Decimal
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -125,6 +126,9 @@ def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, 
     elif len(providers) != 1:
         return None, ["spend_mixed_providers"]
     elif providers == {"ollama"}:
+        # اشتراكٌ بلا كلفةٍ لكل نداء؛ فكلفةٌ مكتوبةٌ لنداء Ollama تناقضه، فتُسمّى ولا تُمحى صفرًا (ملاحظة Codex على #310)
+        if any(value not in (None, 0) for value in costs):
+            return None, ["spend_subscription_with_cost"]
         basis, cost = "subscription_flat", 0
     elif all(free_call_proven(row, evidence) for row in cloud) and all(value in (None, 0) for value in costs):
         # المجانيةُ بدليلها لكل نداء، لا بغياب الكلفة ولا بعبارةٍ بلا دليل (ملاحظتا Codex على #310)
@@ -133,9 +137,11 @@ def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, 
         basis, cost = "unpriced", None
     else:
         reported = all(row.get("cost_status") == "reported" for row in cloud)
-        basis, cost = ("reported_by_provider" if reported else "estimated_from_prices"), float(sum(costs))
-        if sum(costs) and not cost:
-            # كلفةٌ موجبةٌ تنزل تحت مدى العدد العائم فتُكتب صفرًا: يُسمّى ولا يُزوَّر الإنفاقُ (ملاحظة Codex على #310)
+        total = sum(costs)
+        basis, cost = ("reported_by_provider" if reported else "estimated_from_prices"), float(total)
+        if Decimal(repr(cost)) != total:
+            # كلفةٌ لا يحملها العددُ العائم كما هي (تنزل إلى الصفر، أو تُقرَّب، أو تفيض) لا تُكتب بغير قيمتها: تُسمّى ولا
+            # يُزوَّر الإنفاقُ (ملاحظتا Codex على #310)
             return None, ["spend_cost_invalid"]
     block = {"cloud_calls": len(cloud), **totals, "cost_usd": cost, "cost_basis": basis}
     # الكتلةُ المشتقّة تمرّ مدقّقَ الكتلة المعطاة نفسَه: كلفةٌ عشريّةٌ منتهية قد تفيض عددًا عائمًا لا نهائيًّا (ملاحظة Codex على #310)
