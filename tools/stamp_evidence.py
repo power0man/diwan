@@ -99,6 +99,21 @@ def _cloud_flag_consistent(row: dict) -> bool:
     return type(row.get("cloud")) is bool and (row["cloud"] or not is_cloud_model(str(row.get("model") or "")))
 
 
+def _writer_scalars(row: dict) -> bool:
+    """حقولُ الكاتب النصّيّة نصوص، فلا يُسقط صفٌّ بقائمةٍ أو كائنٍ الأداةَ في منتصف الختم قبل أن يُسمّى (ملاحظة Codex على #310).
+    والحالةُ الغائبة تبقى لفحصها المسمّى `spend_cost_status_invalid`."""
+    return (isinstance(row.get("provider"), str) and isinstance(row.get("cost_status"), (str, type(None)))
+            and (isinstance(row.get("model"), str) or row.get("kind") == "catalog"))
+
+
+def _excluded_without_spend(row: dict) -> bool:
+    """صفٌّ يُسقط من العدّ لا يحمل إنفاقًا كما يكتبه الكاتب: ما لم يُرسل لا كلفةَ له ولا استهلاك، ونداءُ Ollama المحلّيّ لا
+    كلفةَ له؛ فلا يمحو صفٌّ مبتورٌ أو معدَّلٌ إنفاقًا مسجَّلًا (ملاحظة Codex على #310)."""
+    if not row["request_sent"]:
+        return row.get("cost_usd") is None and row.get("usage") is None
+    return row.get("provider") != "ollama" or row["cloud"] or row.get("cost_usd") is None
+
+
 def _catalog_shape(row: dict) -> bool:
     return (row.get("model") is None and row.get("usage") is None and row.get("cost_usd") is None
             and row.get("cost_status") == "not_billed_listing")
@@ -112,8 +127,10 @@ def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, 
     # وصفُّ الفهرس لا يُستثنى من العدّ إلا بشكله الذي يكتبه الكاتب (بلا نموذجٍ ولا استهلاكٍ ولا كلفة)، فلا يُخفي `kind` نداءً
     # مدفوعًا (ملاحظة Codex على #310)
     if not isinstance(rows, list) or not all(isinstance(row, dict) and type(row.get("request_sent")) is bool
+                                             and _writer_scalars(row)
                                              and (row.get("provider") != "ollama" or _cloud_flag_consistent(row))
                                              and (row.get("kind") != "catalog" or _catalog_shape(row))
+                                             and _excluded_without_spend(row)
                                              for row in rows):
         return None, ["spend_ledger_malformed"]
     sent = [row for row in rows if row.get("kind") != "catalog" and row.get("request_sent")]

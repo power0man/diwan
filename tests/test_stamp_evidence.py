@@ -136,6 +136,24 @@ def test_a_malformed_license_block_is_named_not_replaced(licenses):
                   "provider_usage": [{**_row("ollama", "deepseek-v4.1-flash:cloud", cost="4.25", status="reported"),
                                       "kind": "catalog"}]},
                  "spend_ledger_malformed", id="paid_call_labelled_catalog"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud",
+                  "provider_usage": [_row("openrouter", "deepseek-ai/DeepSeek-V3-0324", sent=False, cost="4.25",
+                                          status="reported", usage=None)]},
+                 "spend_ledger_malformed", id="unsent_row_with_a_cost"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud",
+                  "provider_usage": [_row("openrouter", "deepseek-ai/DeepSeek-V3-0324", sent=False)]},
+                 "spend_ledger_malformed", id="unsent_row_with_usage"),
+    pytest.param({"model": "qwen3.5:9b", "provider_usage": [_row("ollama", "qwen3.5:9b", cloud=False, cost="1.5")]},
+                 "spend_ledger_malformed", id="local_ollama_row_with_a_cost"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud",
+                  "provider_usage": [_row("hf-router", "deepseek-ai/DeepSeek-V3-0324", status=[])]},
+                 "spend_ledger_malformed", id="cost_status_not_text"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud",
+                  "provider_usage": [_row({}, "deepseek-ai/DeepSeek-V3-0324")]},
+                 "spend_ledger_malformed", id="provider_not_text"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud",
+                  "provider_usage": [_row("hf-router", ["deepseek-ai/DeepSeek-V3-0324"])]},
+                 "spend_ledger_malformed", id="model_not_text"),
 ])
 def test_a_malformed_spend_or_ledger_is_named_not_replaced(payload, code):
     """ملاحظتا Codex على #310: كتلةٌ أو سجلٌّ فاسدٌ لا يُصفّى إلى كتلةٍ صفريّةٍ صالحة، بل يُسمّى ولا يُختم."""
@@ -146,7 +164,7 @@ def test_a_malformed_spend_or_ledger_is_named_not_replaced(payload, code):
 
 @pytest.mark.parametrize("rows, spend", [
     pytest.param([_row("ollama", "deepseek-v4.1-flash:cloud"), _row("ollama", "qwen3.5:9b", cloud=False),
-                  _row("ollama", "deepseek-v4.1-flash:cloud", sent=False)],
+                  _row("ollama", "deepseek-v4.1-flash:cloud", sent=False, usage=None)],
                  {"cloud_calls": 1, "prompt_tokens": 10, "completion_tokens": 5, "cost_usd": 0,
                   "cost_basis": "subscription_flat"}, id="ollama_subscription"),
     pytest.param([_row("hf-router", "a/b", cost="0.0002", status="estimated_from_prices"),
