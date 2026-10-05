@@ -78,7 +78,9 @@ def model_weights(models: dict) -> list[tuple[str, dict]]:
 def weight_license(weight: dict) -> str:
     """رخصةُ الوزن من ناشره الأصليّ، ومعها إسنادُه إن قيّده السجلّ (كاشفُ CRAFT بـMIT لا برخصة EasyOCR: Codex على #307)."""
     attribution = weight.get("attribution")
-    return _cell(weight["license"] + (f"؛ {attribution}" if attribution else ""))
+    # إشعاراتُ MIT المتعدّدة أسطرٌ في السجلّ، وتُنشر في خليّةٍ واحدة (ملاحظة Codex على #307)
+    notices = "؛ ".join(attribution.splitlines()) if attribution else ""
+    return _cell(weight["license"] + (f"؛ {notices}" if notices else ""))
 
 
 def weight_source(weight: dict) -> str:

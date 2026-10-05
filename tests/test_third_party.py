@@ -76,6 +76,8 @@ def test_a_weight_carries_its_own_license_and_attribution_and_a_change_is_named(
     assert tp.check(text, LOCK, weighted()) == []
     assert "| `a/model` | `w.pth` | mit؛ Copyright (c) Up | https://github.com/up/r/blob/c/LICENSE (2026-10-05) |" in text
     assert tp.weight_license({**weight, "attribution": None}) == "mit"
+    # إشعاراتُ MIT المتعدّدة أسطرٌ في السجلّ، وتُنشر في خليّةٍ واحدة لا تكسر الجدول (ملاحظة Codex على #307)
+    assert tp.weight_license({**weight, "attribution": "Copyright (c) A\nCopyright (c) B"}) == "mit؛ Copyright (c) A؛ Copyright (c) B"
     assert tp.check(_text(), LOCK, weighted()) == ["weight_not_listed:a/model/w.pth"]
     assert tp.check(text, LOCK, MODELS) == ["weight_not_in_registry:a/model/w.pth"]
     assert tp.check(text, LOCK, weighted(license="apache-2.0")) == ["weight_license_differs:a/model/w.pth"]

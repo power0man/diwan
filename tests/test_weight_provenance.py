@@ -1,9 +1,13 @@
 """دليلُ مصدر الأوزان يُنزّل الوزنَ من أصله المعلن ونصَّ رخصته من مصدره ويطابق البصمات (ملاحظة Codex على #307)."""
 from __future__ import annotations
 
+import bz2
+import gzip
 import hashlib
 import io
 import json
+import lzma
+import tarfile
 import zipfile
 from pathlib import Path
 
@@ -41,6 +45,21 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _tar(*members: tuple[str, bytes | None], mode: str = "w") -> bytes:
+    """أرشيفُ TAR بأعضائه؛ والعضوُ بلا بايتات دليلٌ (مجلّد)."""
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode=mode) as archive:
+        for name, data in members:
+            info = tarfile.TarInfo(name)
+            if data is None:
+                info.type = tarfile.DIRTYPE
+                archive.addfile(info)
+            else:
+                info.size = len(data)
+                archive.addfile(info, io.BytesIO(data))
+    return buffer.getvalue()
+
+
 def _zip(*members: tuple[str, bytes]) -> bytes:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as archive:
@@ -58,6 +77,11 @@ OTHER_BYTES, MEMBER_MISSING = _zip(("w.pth", b"other")), _zip(("v.pth", WEIGHT_B
 MEMBER_AMBIGUOUS = _zip(("a/w.pth", WEIGHT_BYTES), ("b/w.pth", WEIGHT_BYTES))
 # الوزنُ نفسُه في أرشيفٍ آخر: عضوُه مطابق، والأرشيفُ المقيَّد غيرُه (ملاحظة Codex على #307)
 REPACKED = _zip(("w.pth", WEIGHT_BYTES), ("readme.txt", b"changed"))
+TAR_MISSING, TAR_AMBIGUOUS = _tar(("v.pth", WEIGHT_BYTES)), _tar(("a/w.pth", WEIGHT_BYTES), ("b/w.pth", WEIGHT_BYTES))
+ZSTD_FRAME = b"\x28\xb5\x2f\xfd" + b"frame"
+RAW_OTHER = b"other weights"
+# رخصةُ MIT بإشعارَي حقوق نشر: كلاهما يُشترط نشرُه (ملاحظة Codex على #307)
+TWO_NOTICES = ("Copyright (c) 2019 First\nCopyright (c) 2020 Second\n\n" + MIT_BODY).encode()
 
 
 def _models(**change) -> dict:
@@ -122,6 +146,34 @@ def test_a_zip_format_weight_served_raw_is_not_opened():
     assert problems == [] and evidence["models"]["ocr"]["models_sha256"] == {"w.pth": _sha(checkpoint)}
 
 
+@pytest.mark.parametrize("wrapped", [
+    pytest.param(_tar(("model/w.pth", WEIGHT_BYTES)), id="tar"),
+    pytest.param(_tar(("model/w.pth", WEIGHT_BYTES), mode="w:gz"), id="tar_gz"),
+    pytest.param(_tar(("w.pth", None), ("model/w.pth", WEIGHT_BYTES)), id="tar_with_a_directory_named_like_the_weight"),
+    pytest.param(gzip.compress(WEIGHT_BYTES), id="gzip_stream"),
+    pytest.param(bz2.compress(WEIGHT_BYTES), id="bzip2_stream"),
+    pytest.param(lzma.compress(WEIGHT_BYTES), id="xz_stream"),
+])
+def test_a_weight_in_a_tar_or_a_compressed_stream_is_unwrapped(wrapped):
+    """ملاحظة Codex على #307: الوزنُ في غلافٍ غيرِ ZIP كان يُقاس الغلافُ نفسُه فيُرفض وهو صحيح. فأرشيفُ TAR بأيّ ضغطٍ تقرؤه
+    `tarfile` يُستخرج منه الملفُّ الوحيد الذي اسمُه اسمُ الوزن، وضغطُ الملفّ الواحد يُفكّ."""
+    served = {"https://example.org/w.bin": wrapped, **SERVED}
+    models = _models(origin="https://example.org/w.bin", origin_sha256=_sha(wrapped))
+    evidence, problems = wp.measure(models, "2026-10-05", served.__getitem__)
+    assert problems == [] and evidence["models"]["ocr"]["models_sha256"] == {"w.pth": WEIGHT["sha256"]}
+
+
+def test_every_mit_notice_in_the_text_is_the_attribution():
+    """ملاحظة Codex على #307: إسنادٌ بأحد إشعارَي الرخصة كان يُقبل، فيسقط الآخرُ من THIRD-PARTY.md. فالإسنادُ أسطرُ حقوق النشر
+    كلُّها، سطرًا لكلّ إشعار."""
+    served = {**SERVED, WEIGHT["license_source"]: TWO_NOTICES}
+    every = _models(license_text_sha256=_sha(TWO_NOTICES), attribution="Copyright (c) 2019 First\nCopyright (c) 2020 Second")
+    evidence, problems = wp.measure(every, "2026-10-05", served.__getitem__)
+    assert problems == [] and evidence["models"]["ocr"]["weight_provenance"][0]["attribution"] == every["ocr"]["weights"][0]["attribution"]
+    one = _models(license_text_sha256=_sha(TWO_NOTICES), attribution="Copyright (c) 2019 First")
+    assert wp.measure(one, "2026-10-05", served.__getitem__)[1] == ["attribution_not_in_text:ocr:w.pth"]
+
+
 @pytest.mark.parametrize("served, change, found", [
     pytest.param({"https://example.org/w.zip": OTHER_BYTES}, {"origin_sha256": _sha(OTHER_BYTES)},
                  "weight_digest_differs_at_origin", id="other_bytes_at_origin"),
@@ -130,6 +182,14 @@ def test_a_zip_format_weight_served_raw_is_not_opened():
     pytest.param({"https://example.org/w.zip": MEMBER_AMBIGUOUS}, {"origin_sha256": _sha(MEMBER_AMBIGUOUS)},
                  "weight_not_in_origin", id="member_ambiguous"),
     pytest.param({"https://example.org/w.zip": REPACKED}, {}, "origin_digest_differs_at_origin", id="archive_repacked"),
+    pytest.param({"https://example.org/w.zip": TAR_MISSING}, {"origin_sha256": _sha(TAR_MISSING)}, "weight_not_in_origin",
+                 id="tar_member_missing"),
+    pytest.param({"https://example.org/w.zip": TAR_AMBIGUOUS}, {"origin_sha256": _sha(TAR_AMBIGUOUS)}, "weight_not_in_origin",
+                 id="tar_member_ambiguous"),
+    pytest.param({"https://example.org/w.zip": ZSTD_FRAME}, {"origin_sha256": _sha(ZSTD_FRAME)}, "origin_wrapper_unsupported",
+                 id="zstandard_wrapper"),
+    pytest.param({"https://example.org/w.zip": RAW_OTHER}, {"origin_sha256": _sha(RAW_OTHER)}, "weight_digest_differs_at_origin",
+                 id="raw_other_bytes"),
     pytest.param({"https://example.org/w.zip": OTHER_BYTES}, {}, "origin_digest_differs_at_origin",
                  id="archive_of_other_bytes"),
     pytest.param({}, {"license_text_sha256": "0" * 64}, "license_text_differs_at_source", id="license_text_changed"),

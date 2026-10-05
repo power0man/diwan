@@ -14,12 +14,16 @@
 from __future__ import annotations
 
 import argparse
+import bz2
 import datetime as dt
+import gzip
 import hashlib
 import io
 import json
+import lzma
 import re
 import sys
+import tarfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -29,6 +33,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools import model_licenses as ml  # noqa: E402
 
+# أغلفةُ الضغط ذاتُ الملفّ الواحد (`w.pth.gz`) تُفكّ بالمكتبة القياسية؛ وZstandard لا تفكّه، فيُسمّى ولا يُقاس خامًّا فيُظنّ
+# غيرَ الوزن (ملاحظة Codex على #307)
+STREAMS = ((b"\x1f\x8b", gzip.decompress), (b"BZh", bz2.decompress), (b"\xfd7zXZ\x00", lzma.decompress))
+ZSTD = b"\x28\xb5\x2f\xfd"
 BLOB = re.compile(r"^https://github\.com/(?P<repo>[^/]+/[^/]+)/blob/(?P<path>.+)$")
 LIMITS = [
     "the_bytes_were_downloaded_from_the_registered_origin_on_the_recorded_day_and_a_later_change_at_that_url_is_not_seen",
@@ -36,7 +44,8 @@ LIMITS = [
     "the_license_text_is_hashed_as_served_and_its_identifier_is_named_from_that_text_not_copied_from_the_registry",
     "only_apache_2_0_and_mit_are_named_by_their_spdx_body_digest_and_any_other_license_text_cannot_be_measured_until_added",
     "an_mit_preamble_may_hold_its_title_and_copyright_lines_whose_holder_text_is_not_read",
-    "an_attribution_is_a_copyright_line_above_the_license_body_and_is_required_only_for_mit_whose_text_carries_one",
+    "an_attribution_is_every_copyright_line_above_the_license_body_one_per_line_and_is_required_only_for_mit_whose_text_carries_one",
+    "zip_and_tar_wrappers_and_gzip_bzip2_xz_streams_are_opened_and_a_zstandard_wrapper_is_named_not_measured",
 ]
 
 # جسمُ كلّ رخصةٍ معروفة بعد التطبيع بين علامتين ثابتتين، وبصمتُه من نصّ SPDX الرسميّ (spdx/license-list-data، text/).
@@ -62,13 +71,23 @@ def fetch(url: str) -> bytes:
 
 
 def weight_bytes(data: bytes, file: str, digest: str) -> bytes | None:
-    """البايتاتُ نفسُها، أو العضوُ الوحيد الذي اسمُه اسمُ الوزن إن كانت أرشيفًا يلفّه. والوزنُ الذي صيغتُه نفسُها ZIP (حفظُ
-    torch الحديث، و`.keras`) يُعرف ببصمته المقيَّدة فلا يُفتح أرشيفًا (ملاحظة Codex على #307)."""
-    if _sha(data) == digest or not zipfile.is_zipfile(io.BytesIO(data)):
+    """البايتاتُ نفسُها إن طابقت بصمةَ الوزن المقيَّدة، ولو كانت صيغتُها نفسُها ZIP (حفظُ torch الحديث، و`.keras`). وإلّا
+    فالعضوُ الوحيد الذي اسمُه اسمُ الوزن من أرشيفٍ يلفّه (ZIP، أو TAR بأيّ ضغطٍ تقرؤه `tarfile`)، أو البايتاتُ بعد فكّ ضغطٍ
+    ذي ملفٍّ واحد (gzip وbzip2 وxz)، أو البايتاتُ كما خُدمت (ملاحظات Codex على #307)."""
+    if _sha(data) == digest:
         return data
-    with zipfile.ZipFile(io.BytesIO(data)) as archive:
-        members = [name for name in archive.namelist() if name.rsplit("/", 1)[-1] == file]
-        return archive.read(members[0]) if len(members) == 1 else None
+    if zipfile.is_zipfile(io.BytesIO(data)):
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            members = [name for name in archive.namelist() if name.rsplit("/", 1)[-1] == file]
+            return archive.read(members[0]) if len(members) == 1 else None
+    if tarfile.is_tarfile(io.BytesIO(data)):
+        with tarfile.open(fileobj=io.BytesIO(data)) as archive:
+            entries = [entry for entry in archive.getmembers() if entry.isfile() and entry.name.rsplit("/", 1)[-1] == file]
+            return archive.extractfile(entries[0]).read() if len(entries) == 1 else None
+    for magic, decompress in STREAMS:
+        if data.startswith(magic):
+            return decompress(data)
+    return data
 
 
 def _sha(data: bytes) -> str:
@@ -147,6 +166,9 @@ def measure(models: dict, day: str, read: Callable[[str], bytes] = fetch) -> tup
             if weight.get("origin_sha256") not in (None, _sha(origin)):
                 problems.append(f"origin_digest_differs_at_origin:{label}")
                 continue
+            if origin.startswith(ZSTD) and _sha(origin) != weight["sha256"]:
+                problems.append(f"origin_wrapper_unsupported:{label}")
+                continue
             measured = weight_bytes(origin, weight["file"], weight["sha256"])
             if measured is None:
                 problems.append(f"weight_not_in_origin:{label}")
@@ -168,8 +190,10 @@ def measure(models: dict, day: str, read: Callable[[str], bytes] = fetch) -> tup
             if attribution is None and weight["license"] in ml.NOTICE_LICENSES:
                 problems.append(f"attribution_missing:{label}")
                 continue
+            # والإسنادُ أسطرُ حقوق النشر كلُّها، سطرًا لكلّ إشعار، لا بعضُها (ملاحظة Codex على #307)
             if attribution is not None and (not isinstance(attribution, str)
-                                            or _normalized(attribution) not in license_notices(served)):
+                                            or {_normalized(line) for line in attribution.splitlines() if line.strip()}
+                                            != license_notices(served)):
                 problems.append(f"attribution_not_in_text:{label}")
                 continue
             model = out.setdefault(name, {})
