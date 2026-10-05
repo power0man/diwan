@@ -231,7 +231,7 @@ def _jpeg(raw: bytes) -> dict:
                         break
                 scan_offset += 1
             else:
-                offset = scan_offset
+                offset = len(raw)
             if seen_eoi:
                 break
             continue
