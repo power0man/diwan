@@ -372,6 +372,9 @@ def _flagged(judgment: dict) -> bool:
 
 
 SUPERSEDED_DIR = "superseded"   # reviews/superseded/<النموذج>/…: سجلّاتُ مراجعٍ استُبدل به، تاريخٌ لا يدخل الاتفاق ولا قائمة المالك
+# reviews/PROVIDER_USAGE.json: سجلُّ نداءات المزوّدين الدائمُ للبنك، يُكتب عند كلِّ خروجٍ ومنه الرفض، فلا تمحوه إعادةٌ تتخطّى
+# سجلّاتِ تشغيلٍ رُفض بعد أن أرسل (جديد-spend-ledger، ملاحظة Codex على #298). ليس سجلَّ مراجعة فلا يدخل الخلاصة.
+LEDGER_FILE = "PROVIDER_USAGE.json"
 
 
 def summarize(bank_dir: Path, reviewers: list[str] | set[str] | None = None,
@@ -386,7 +389,9 @@ def summarize(bank_dir: Path, reviewers: list[str] | set[str] | None = None,
     by_model: dict[str, dict[tuple[str, str], dict]] = {}
     errors = []
     for path in sorted(reviews_root.rglob("*.json")):
-        if path.name == "SUMMARY.json" or path.relative_to(reviews_root).parts[0] == SUPERSEDED_DIR:
+        # السجلُّ الدائم بمساره في الجذر وحده: ملفٌّ مفتوحٌ بالاسم نفسِه سجلّاتُه مراجعاتٌ تُحسب (ملاحظة Codex على #298)
+        if path.name == "SUMMARY.json" or path == reviews_root / LEDGER_FILE \
+                or path.relative_to(reviews_root).parts[0] == SUPERSEDED_DIR:
             continue
         record = json.loads(path.read_text(encoding="utf-8"))
         if reviewers is not None and record.get("model") not in reviewers:
