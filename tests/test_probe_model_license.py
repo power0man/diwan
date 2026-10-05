@@ -197,6 +197,40 @@ def test_a_digest_recorded_by_kind_binds_the_weight_of_that_kind():
         "weight_digest_not_in_evidence:ocr:ara.bin"]
 
 
+@pytest.mark.parametrize("evidence, registered, found", [
+    pytest.param({"m.json": {"runs": [{"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST}}}},
+                                      {"engine": {"name": "ocr2", "settings": {"models_sha256": {"w.pth": SIBLING}}}}]}},
+                 DIGEST, ["weight_digest_not_in_evidence:ocr2:w.pth"], id="engine_subtrees"),
+    pytest.param({"m.json": {"runs": [{"model": "ocr", "w.pth": DIGEST}, {"model": "ocr2", "w.pth": SIBLING}]}},
+                 DIGEST, ["weight_digest_not_in_evidence:ocr2:w.pth"], id="model_fields"),
+    pytest.param({"m.json": {"models": {"ocr": {"w.pth": DIGEST}, "ocr2": {"w.pth": SIBLING}}}},
+                 DIGEST, ["weight_digest_not_in_evidence:ocr2:w.pth"], id="model_map"),
+    pytest.param({"m.json": {"models": {"ocr": {"w.pth": DIGEST}, "ocr2": {"w.pth": SIBLING}}}}, SIBLING, [],
+                 id="own_subtree_passes"),
+    pytest.param({"m.json": {"model": "ocr2", "details": {"w.pth": DIGEST}}}, DIGEST, [], id="inherited_owner"),
+    pytest.param({"m.json": {"w.pth": DIGEST, "note": {"model": "ocr2"}}}, DIGEST,
+                 ["weight_digest_not_in_evidence:ocr2:w.pth"], id="no_owner_on_the_path"),
+])
+def test_a_digest_belongs_only_to_the_model_whose_subtree_records_it(evidence, registered, found):
+    """ملاحظة Codex على #307: دليلٌ يسمّي نموذجين لا تُنسب بصمةُ أحدهما إلى الآخر."""
+    models = {"ocr2": {**READ, "weights": [{**WEIGHT, "sha256": registered}]}}
+    assert ml.weight_findings(models, evidence) == found
+
+
+def test_new_evidence_names_every_weight_it_records_in_the_registry():
+    """ملاحظة Codex على #307: دليلٌ جديد يسجّل لنموذجٍ مقيَّدٍ وزنًا (بملفّه أو بنوعه) ليس في قيوده يُسمّى، والتاريخيُّ لا."""
+    new = {"new.json": {"engine": {"name": "ocr", "settings": {
+        "models_sha256": {"w.pth": DIGEST, "x.pth": SIBLING, "o01.jpg": SIBLING}, "traineddata_sha256": TRAINED}}}}
+    expected = ["weight_not_registered:new.json:ocr:x.pth", "weight_not_registered:new.json:ocr:traineddata"]
+    assert ml.weight_findings(_weights(WEIGHT), new, frozenset({"new.json"})) == expected
+    assert ml.weight_findings(_weights(WEIGHT), new) == [], "الدليلُ التاريخيّ لا يُطالَب"
+    trained = {**WEIGHT, "file": "ara.traineddata", "sha256": TRAINED}
+    assert ml.weight_findings(_weights(WEIGHT, trained), new, frozenset({"new.json"})) == expected[:1]
+    registry = _registry(["ocr.json", "other.json", "tess.json"], **_weights(WEIGHT))
+    assert ml.findings(registry, {**OCR_EVIDENCE, **new}, None) == [
+        "license_not_stated_in_new_evidence:new.json:ocr", *sorted(expected)]
+
+
 @pytest.mark.parametrize("weights", [pytest.param("w.pth", id="text"), pytest.param(["w.pth"], id="list_of_text"),
                                      pytest.param(5, id="number")])
 def test_a_malformed_weights_list_is_named(weights):

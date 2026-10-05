@@ -45,6 +45,8 @@ PENDING_REASONS = frozenset({
 HTTPS_SOURCE = re.compile(r"^https://[^\s]+$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 WEIGHT_FIELDS = ("file", "sha256", "origin", "license", "license_source", "read_on")
+# امتداداتُ ملفّات الأوزان؛ وما سواها (صورُ البنك، وبياناتُه) بصماتٌ ليست أوزانًا
+WEIGHT_KINDS = frozenset({"pth", "pt", "bin", "safetensors", "gguf", "onnx", "ckpt", "h5", "tflite", "traineddata"})
 HF_PREFIX = re.compile(r"^(?:https://)?(?:huggingface\.co|hf\.co)/")
 DEFAULT_MODEL = re.compile(r'^DEFAULT_MODEL\s*=\s*"([^"]+)"\s*$', re.MULTILINE)
 
@@ -188,41 +190,71 @@ def evidence_findings(file: str, payload: dict, models: dict, enforced_from: str
     return problems
 
 
-def measured_weights(payload: object) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
-    """البصماتُ كما سجّلها الدليل مربوطةً بملفّاتها: مفتاحٌ اسمُه اسمُ ملفّ (`arabic.pth`) قيمتُه بصمة، أو مفتاحٌ
-    `<نوع>_sha256` (`traineddata_sha256`) لوزنٍ وحيدٍ من نوعه. فلا تُقبل بصمةُ ملفٍّ لملفٍّ آخر (ملاحظة Codex على #307)."""
-    by_file: dict[str, set[str]] = {}
-    by_kind: dict[str, set[str]] = {}
+def measured_weights(payload: object) -> dict[str, tuple[dict[str, set[str]], dict[str, set[str]]]]:
+    """البصماتُ كما سجّلها الدليل، لكل نموذجٍ من شجرته وحدها (ملاحظتا Codex على #307). فالقاموسُ الذي يسمّي نموذجًا
+    (`{"model": …}` أو `"engine": {"name": …}`) يملك ما تحته، فلا تُنسب بصمةُ نموذجٍ في الدليل نفسِه إلى غيره. والبصمةُ
+    مربوطةٌ بملفّها: مفتاحٌ اسمُه اسمُ ملفّ (`arabic.pth`) قيمتُه بصمة، أو مفتاحٌ `<نوع>_sha256` (`traineddata_sha256`)
+    لوزنٍ وحيدٍ من نوعه. وما لا مالكَ له على طريقه لا يُنسب إلى أحد."""
+    out: dict[str, tuple[dict[str, set[str]], dict[str, set[str]]]] = {}
 
-    def visit(value: object) -> None:
-        if isinstance(value, dict):
-            for key, child in value.items():
-                if isinstance(key, str) and isinstance(child, str) and SHA256.match(child):
-                    if "." in key:
-                        by_file.setdefault(key, set()).add(child)
-                    elif key.endswith("_sha256"):
-                        by_kind.setdefault(key.removesuffix("_sha256"), set()).add(child)
-                visit(child)
-        elif isinstance(value, list):
+    def record(owners: tuple[str, ...], key: str, digest: str) -> None:
+        for owner in owners:
+            by_file, by_kind = out.setdefault(owner, ({}, {}))
+            if "." in key:
+                by_file.setdefault(key, set()).add(digest)
+            elif key.endswith("_sha256"):
+                by_kind.setdefault(key.removesuffix("_sha256"), set()).add(digest)
+
+    def visit(value: object, owners: tuple[str, ...]) -> None:
+        if isinstance(value, list):
             for child in value:
-                visit(child)
+                visit(child, owners)
+            return
+        if not isinstance(value, dict):
+            return
+        here = tuple(dict.fromkeys(canonical(v) for k, v in value.items() if k in MODEL_KEYS and isinstance(v, str)))
+        owners = here or owners
+        for key, child in value.items():
+            if isinstance(key, str) and isinstance(child, str) and SHA256.match(child):
+                record(owners, key, child)
+            elif key in MODEL_MAPS and isinstance(child, dict) and not any(k in child for k in ("repo", "model", "name")):
+                for name, sub in child.items():
+                    visit(sub, (canonical(name),) if isinstance(name, str) else owners)
+            elif key in MODEL_KEYS and isinstance(child, dict):
+                visit(child, tuple(canonical(name) for name in _named(child)) or owners)
+            else:
+                visit(child, owners)
 
-    visit(payload)
-    return by_file, by_kind
+    visit(payload, ())
+    return out
 
 
-def weight_findings(models: dict, evidence: dict[str, object]) -> list[str]:
+def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_kind: dict) -> list[str]:
+    """دليلٌ جديد يسجّل لنموذجٍ في السجلّ وزنًا (ملفًّا بامتداد وزنٍ أو بصمةً بنوعه) ليس في قيوده ببصمته، فرخصةُ النموذج لا
+    تُلحق به بلا قيدٍ له (ملاحظة Codex على #307)."""
+    weights = [w for w in entry.get("weights", []) if isinstance(w, dict)] if isinstance(entry.get("weights"), list) else []
+    registered = {(w.get("file"), w.get("sha256")) for w in weights}
+    by_extension = {(str(w.get("file")).rpartition(".")[2], w.get("sha256")) for w in weights}
+    problems = [f"weight_not_registered:{file}:{name}:{weight}" for weight, digests in sorted(by_file.items())
+                if weight.rpartition(".")[2] in WEIGHT_KINDS and any((weight, d) not in registered for d in digests)]
+    problems += [f"weight_not_registered:{file}:{name}:{kind}" for kind, digests in sorted(by_kind.items())
+                 if kind in WEIGHT_KINDS and any((kind, d) not in by_extension for d in digests)]
+    return problems
+
+
+def weight_findings(models: dict, evidence: dict[str, object], new_files: frozenset[str] = frozenset()) -> list[str]:
     """كلُّ وزنٍ في السجلّ بهويّته كاملةً: ملفُّه وبصمتُه وأصلُه ورخصتُه بمصدرها وتاريخ قراءتها. وبصمتُه هي التي سجّلها لملفّه
     دليلٌ يسمّي نموذجَه، فلا تُلصق رخصةٌ ببايتاتٍ غيرِ التي قيست (ملاحظتا Codex على #307)."""
     files: dict[str, dict[str, set[str]]] = {}
     kinds: dict[str, dict[str, set[str]]] = {}
-    for payload in evidence.values():
-        by_file, by_kind = measured_weights(payload)
-        for name in all_named_models(payload):
+    problems = []
+    for file, payload in sorted(evidence.items()):
+        for name, (by_file, by_kind) in measured_weights(payload).items():
             for target, found in ((files, by_file), (kinds, by_kind)):
                 for key, digests in found.items():
-                    target.setdefault(canonical(name), {}).setdefault(key, set()).update(digests)
-    problems = []
+                    target.setdefault(name, {}).setdefault(key, set()).update(digests)
+            if file in new_files and isinstance(models.get(name), dict):
+                problems += unregistered_weights(file, name, models[name], by_file, by_kind)
     for name, entry in sorted(models.items()):
         weights = entry.get("weights", []) if isinstance(entry, dict) else []
         if not isinstance(weights, list) or not all(isinstance(weight, dict) for weight in weights):
@@ -265,7 +297,10 @@ def findings(registry: dict, evidence: dict[str, object], engine: str | None) ->
     for file, payload in sorted(evidence.items()):
         if isinstance(payload, dict):
             problems += evidence_findings(file, payload, models, enforced_from, set(historical))
-    problems += weight_findings(models, {file: payload for file, payload in evidence.items() if isinstance(payload, dict)})
+    dicts = {file: payload for file, payload in evidence.items() if isinstance(payload, dict)}
+    new_files = frozenset(file for file, payload in dicts.items() if file not in set(historical)
+                          or (isinstance(payload.get("date"), str) and payload["date"][:10] >= enforced_from))
+    problems += weight_findings(models, dicts, new_files)
     if engine is not None:
         entry = models.get(canonical(engine))
         if entry is None:
