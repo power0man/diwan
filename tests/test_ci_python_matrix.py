@@ -51,7 +51,10 @@ def test_container_checkout_exposes_full_history_read_only():
 
 def test_the_image_bases_and_uv_are_pinned_by_digest_not_by_moving_tag():
     """Post-merge audit (#285): base images and uv were installed by tag alone."""
-    bases = re.findall(r"^(?:FROM|COPY --from=)\s*(\S+)", DOCKERFILE, re.MULTILINE)
+    # مراحلُ الملفّ نفسِه بأسمائها (`FROM … AS base`) ليست صورًا تُسحب؛ وكلُّ ما سواها ببصمة (ملاحظة Codex على #294)
+    stages = set(re.findall(r"^FROM \S+ AS (\S+)$", DOCKERFILE, re.MULTILINE))
+    bases = [base for base in re.findall(r"^(?:FROM|COPY --from=)\s*(\S+)", DOCKERFILE, re.MULTILINE)
+             if base not in stages]
     assert bases and all(re.fullmatch(r"[^@\s]+@sha256:[0-9a-f]{64}", base) for base in bases), bases
     assert "--require-hashes" in DOCKERFILE and "uv==0.8.17" in DOCKERFILE
     assert len(re.findall(r"--hash=sha256:[0-9a-f]{64}", DOCKERFILE)) >= 2
