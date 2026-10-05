@@ -139,13 +139,19 @@ def test_no_workflow_runs_on_pull_request_target():
 
 
 def test_every_external_action_is_pinned_to_a_full_commit():
-    """وفعلٌ في خريطةٍ مضمَّنة (`- {uses: …@v4}`) أو بمفتاحٍ بين علامتين لا يُقرأ بالصورة المعتمدة، فهو مخالفةٌ لا تجاوز."""
+    """وفعلٌ في خريطةٍ مضمَّنة (`- {uses: …@v4}`) أو بمفتاحٍ بين علامتين لا يُقرأ بالصورة المعتمدة، فهو مخالفةٌ لا تجاوز.
+
+    والمرجعُ المحلّيّ (`./…`) مقبولٌ إلى سيرٍ قابلٍ لإعادة الاستعمال في `.github/workflows/` وحده، فهو ممّا تفحصه هذه الحرّاس.
+    أمّا الفعلُ المركّب المحلّيّ (`./.github/actions/x`) فملفُّ `action.yml` فيه قد يستدعي فعلًا بوسمٍ يتحرّك ولا يقرؤه الحارس
+    (ملاحظة Codex على #297)؛ ولا فعلَ مركّبًا في المستودع اليوم، فيُرفض حتى يُضاف معه فحصُ ملفّه."""
+    scanned = {f".github/workflows/{path.name}" for path in WORKFLOWS}
     unpinned, seen = [], 0
     for name, text in _texts().items():
         for number, line in _keys(text, "uses"):
             seen += 1
             use = CANONICAL_USES.match(line)
             action = use[1] if use else line.strip()
-            if not use or not (action.startswith("./") or PINNED.fullmatch(action)):
+            allowed = action[2:] in scanned if action.startswith("./") else PINNED.fullmatch(action)
+            if not use or not allowed:
                 unpinned.append((name, number, action))
     assert seen >= len(WORKFLOWS) and unpinned == []
