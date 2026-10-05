@@ -329,7 +329,7 @@ def test_a_weight_file_is_any_file_not_known_to_be_data(file, weight):
 @pytest.mark.parametrize("payload, found", [
     pytest.param({"engine": {"name": "ocr"}}, ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth"],
                  id="no_digest"),
-    pytest.param({"engine": {"name": "ocr"}, "w.pth": DIGEST}, [], id="digest_beside_its_engine"),
+    pytest.param({"engine": {"name": "ocr"}, "w.pth": DIGEST, "runs": [{"model": "a/model"}]}, [], id="digest_beside_its_engine"),
     pytest.param({"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST}}}, "model": "a/model"}, [],
                  id="engine_tree_owned_by_its_engine_alone"),
     pytest.param({"runs": [{"model": "ocr"}, {"model": "a/model", "w.pth": DIGEST}]},
@@ -341,7 +341,8 @@ def test_a_weight_file_is_any_file_not_known_to_be_data(file, weight):
     pytest.param({"engine": {"name": "ocr", "settings": {"pth_sha256": DIGEST}}}, [], id="digest_by_kind"),
     pytest.param({"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST}}}}, [], id="digest_by_file"),
     pytest.param({"model": "a/model"}, [], id="model_without_registered_weights"),
-    pytest.param({"models": [{"name": "ocr", "models_sha256": {"w.pth": DIGEST}}]}, [], id="digest_under_a_models_list"),
+    pytest.param({"models": [{"name": "ocr", "models_sha256": {"w.pth": DIGEST}}, {"name": "a/model"}]}, [],
+                 id="digest_under_a_models_list"),
 ])
 def test_new_evidence_naming_a_model_with_registered_weights_records_their_digests(payload, found):
     """ملاحظة Codex على #307: دليلٌ جديد يسمّي نموذجًا مقيَّدَ الأوزان بلا بصماتها يُسمّى، فلا تمرّ بايتاتٌ مستبدَلةٌ اتّكالًا
@@ -554,13 +555,16 @@ def test_an_unowned_artifact_digest_binds_the_one_named_model_or_is_named(payloa
 
 
 ASR_CHECKPOINT = "weight_not_registered:new.json:asr:checkpoint"
+# نموذجٌ آخر في شجرةٍ أخرى من الدليل، فلا تُغني نسبةُ البصمة بلا مالكٍ إلى النموذج الوحيد عن ملكيّة الجوار
+ELSEWHERE = {"runs": [{"model": "b/model"}]}
 
 
 @pytest.mark.parametrize("payload, found", [
-    pytest.param({"engine": {"name": "asr"}, "checkpoint_sha256": DIGEST}, [ASR_CHECKPOINT], id="engine_named_by_an_object"),
-    pytest.param({"model": {"repo": "asr", "revision": "main"}, "checkpoint_sha256": DIGEST}, [ASR_CHECKPOINT],
+    pytest.param({"engine": {"name": "asr"}, "checkpoint_sha256": DIGEST, **ELSEWHERE}, [ASR_CHECKPOINT],
+                 id="engine_named_by_an_object"),
+    pytest.param({"model": {"repo": "asr", "revision": "main"}, "checkpoint_sha256": DIGEST, **ELSEWHERE}, [ASR_CHECKPOINT],
                  id="model_named_by_an_object"),
-    pytest.param({"models": ["asr"], "checkpoint_sha256": DIGEST}, [ASR_CHECKPOINT], id="model_named_in_a_list"),
+    pytest.param({"models": ["asr"], "checkpoint_sha256": DIGEST, **ELSEWHERE}, [ASR_CHECKPOINT], id="model_named_in_a_list"),
     pytest.param({"models": ["asr", "b/model"], "checkpoint_sha256": DIGEST},
                  [ASR_CHECKPOINT, "weight_not_registered:new.json:b/model:checkpoint"], id="two_models_in_a_list"),
     pytest.param({"models": {"asr": {}, "b/model": {}}, "checkpoint_sha256": DIGEST},
