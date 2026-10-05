@@ -1,0 +1,1 @@
+{"id": "build-ignores-gitignore", "file": "pyproject.toml", "old": "dev-mode-dirs = [\".\"]\n", "new": "dev-mode-dirs = [\".\"]\nignore-vcs = true\n", "tests": ["tests/test_packaging_vcs.py::test_the_build_honours_gitignore"], "why": "ملفٌّ متجاهَلٌ في git يطابق قائمةَ السماح يدخل العجلة، فتُغلَّف مخازنُ المالك الموضوعة في مواضعَ متجاهَلة (#285)"}
