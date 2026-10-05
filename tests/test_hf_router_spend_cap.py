@@ -190,6 +190,15 @@ def test_a_charge_reported_above_its_reservation_is_named_and_no_call_follows_it
     with pytest.raises(AutomaticReviewError) as refused:
         chat(MODEL, SYSTEM, USER, {})
     assert refused.value.code == "price_exceeded_reservation" and len(chat.opener.posted()) == 1
+    # وتوكناتُ ردٍّ بلا كلفةٍ مبلَّغة تُحسب فوق المحجوز: ١٠٠٠ مدخلًا و١٠٠ مخرجًا = ١٢٠٠ أمام ٩١٢ (ملاحظة Codex على #308)
+    counted = _chat(_catalog((MODEL, [_offer("p", 1, 2)])),
+                    {f"{MODEL}:p": [{"prompt_tokens": 1000, "completion_tokens": 100}, usage]})
+    counted(MODEL, SYSTEM, USER, {})
+    assert counted.provider_usage[-1]["exceeded_reservation_usd"] == "0.000288"
+    assert counted.spend_report()["spend_cap"]["exceeded_reservation_usd"] == "0.000288"
+    with pytest.raises(AutomaticReviewError) as refused:
+        counted(MODEL, SYSTEM, USER, {})
+    assert refused.value.code == "price_exceeded_reservation"
     within = _chat(_catalog((MODEL, [_offer("p", 1, 2)])), {f"{MODEL}:p": [{**usage, "cost": 0.000912}]})
     within(MODEL, SYSTEM, USER, {})
     assert "exceeded_reservation_usd" not in within.provider_usage[-1], "ما يساوي محجوزَه لا يتجاوزه"

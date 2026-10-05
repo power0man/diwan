@@ -942,10 +942,6 @@ class PricedRouterChat(OpenAICompatChat):
         usage = (row or {}).get("usage") or {}
         if row is not None and row.get("cost_status") == "reported":
             spent = self.budget.settle(handle, _ceil_micros(Decimal(row["cost_usd"]) * MICROS_PER_USD))
-            if spent > reserved:
-                # المزوّدُ فوترها فلا تُمحى: تُسمّى في سطرها وفي التقرير، ويُوقف ما بعدها (ملاحظة Codex على #308)
-                self.exceeded_micros += spent - reserved
-                row["exceeded_reservation_usd"] = str(Decimal(spent - reserved) / MICROS_PER_USD)
         elif {"prompt_tokens", "completion_tokens"} <= usage.keys():
             spent = self.budget.settle(handle, _ceil_micros(usage["prompt_tokens"] * pin["input"]
                                                             + usage["completion_tokens"] * pin["output"]))
@@ -955,6 +951,12 @@ class PricedRouterChat(OpenAICompatChat):
             if row is not None:
                 row.update(cost_usd=str(Decimal(spent) / MICROS_PER_USD), cost_status="reserved_upper_bound")
         self.spent_micros += spent
+        if spent > reserved:
+            # كلفةٌ فوق محجوزها، مبلَّغةً أو محسوبةً من توكنات الردّ، وقعت فلا تُمحى: تُسمّى في سطرها وفي التقرير، ويُوقف ما
+            # بعدها (ملاحظتا Codex على #308)
+            self.exceeded_micros += spent - reserved
+            if row is not None:
+                row["exceeded_reservation_usd"] = str(Decimal(spent - reserved) / MICROS_PER_USD)
         if row is not None:
             row["price"] = {"provider": pin["provider"], "input": str(pin["input"]), "output": str(pin["output"]),
                             "unit": "usd_per_million_tokens", "read_at": pin["read_at"]}
