@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "kind": "g3-hybrid-diagnosis",
+  "task": "تشخيص الهجين (#287)",
+  "date": "2026-10-04",
+  "agent": "anthropic/claude-opus-5-5",
+  "source_report": "g3-hybrid-vs-bm25-20260928.json",
+  "source_report_sha256": "9394b74aee971cb95c553e483e2d01e220e06a4c262f4a59565ce03f768e150e",
+  "bank_sha256": "df7ca9456ae1f451d79b021b981d2ed23ef374a6025f546c373f525354a8da4f",
+  "limit": 5,
+  "rrf_k": 60,
+  "variants": {
+    "vectors_only": {
+      "hit_at_5": 0.9917,
+      "by_type": {
+        "lexical": 0.9833,
+        "paraphrase": 1.0
+      }
+    },
+    "bm25_only": {
+      "hit_at_5": 0.675,
+      "by_type": {
+        "lexical": 0.9333,
+        "paraphrase": 0.4167
+      }
+    },
+    "g3_harness_rrf": {
+      "hit_at_5": 0.8333,
+      "by_type": {
+        "lexical": 0.9667,
+        "paraphrase": 0.7
+      }
+    },
+    "g3_harness_vector_depth_5": {
+      "hit_at_5": 0.9667,
+      "by_type": {
+        "lexical": 0.9833,
+        "paraphrase": 0.95
+      }
+    },
+    "g3_harness_vector_depth_10": {
+      "hit_at_5": 0.925,
+      "by_type": {
+        "lexical": 0.9833,
+        "paraphrase": 0.8667
+      }
+    },
+    "g3_harness_vector_depth_20": {
+      "hit_at_5": 0.8583,
+      "by_type": {
+        "lexical": 0.9667,
+        "paraphrase": 0.75
+      }
+    },
+    "g3_harness_bm25_weight_0_5": {
+      "hit_at_5": 0.85,
+      "by_type": {
+        "lexical": 0.9667,
+        "paraphrase": 0.7333
+      }
+    },
+    "g3_harness_bm25_weight_0_25": {
+      "hit_at_5": 0.8833,
+      "by_type": {
+        "lexical": 0.9833,
+        "paraphrase": 0.7833
+      }
+    },
+    "g3_harness_bm25_weight_0_1": {
+      "hit_at_5": 0.9667,
+      "by_type": {
+        "lexical": 0.9833,
+        "paraphrase": 0.95
+      }
+    },
+    "product_like": {
+      "hit_at_5": 0.975,
+      "by_type": {
+        "lexical": 0.9833,
+        "paraphrase": 0.9667
+      }
+    },
+    "product_like_without_any_list": {
+      "hit_at_5": 0.9833,
+      "by_type": {
+        "lexical": 0.9833,
+        "paraphrase": 0.9833
+      }
+    }
+  },
+  "mechanism": {
+    "corpus_passages": 60,
+    "vector_list_depth": 50,
+    "bm25_or_list_median_length": 12.5,
+    "queries_lost_by_fusion": 19,
+    "queries_lost_by_type": {
+      "lexical": 1,
+      "paraphrase": 18
+    },
+    "lost_queries_with_the_gold_absent_from_bm25": 16,
+    "median_passages_above_the_gold_credited_by_both_channels": 14
+  },
+  "findings": [
+    "the_g3_hybrid_arm_is_not_the_product_fusion_so_its_hit_at_5_is_not_the_product_number",
+    "the_drop_is_double_credit_the_or_matched_bm25_list_and_a_vector_list_covering_most_of_the_corpus_give_wrong_passages_two_rrf_terms_while_a_paraphrased_gold_absent_from_bm25_gets_one"
+  ],
+  "measurement_limits": [
+    "replays_the_recorded_channels_of_the_g3_report_no_embedder_was_run_the_vector_rankings_are_that_report_s",
+    "variants_are_chosen_and_scored_on_the_same_120_query_bank_so_any_weight_here_is_in_sample_not_a_measurement",
+    "product_like_mirrors_hybrid_retriever_search_over_the_bank_bm25_not_the_product_page_index_or_chunking",
+    "sixty_short_passages_a_vector_list_of_50_covers_83_percent_of_the_corpus_which_amplifies_double_credit",
+    "bank_authored_by_a_developer_family_one_gold_passage_per_query_not_blind",
+    "a_diagnosis_not_a_protocol_decision_the_k46_vector_rule_still_needs_the_product_retriever_run_with_vectors_toggled"
+  ]
+}
