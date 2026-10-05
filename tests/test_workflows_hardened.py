@@ -5,7 +5,9 @@
 وكلُّ صلاحيةٍ فيه، في أعلاه أو في مهمّة، في جدول `LEAST` بنطاقها ومستواها، فلا يمرّ `write-all` ولا نطاقٌ أوسع (ملاحظة Codex
 على #297). الفحصُ نصّيٌّ على الملفات المودَعة، لا قراءةٌ لـYAML عامّة؛ فهو مغلقٌ عند الشكّ: كلُّ سطرٍ يرد فيه `permissions` أو `uses`
 مفتاحًا بأيّ صورة (عاريًا، أو بين علامتين، أو في خريطةٍ مضمَّنة) يُقرأ بصورته المعتمدة وحدها، وما سواها مخالفةٌ لا تجاوز
-(ملاحظتا Codex على #297). وكلُّ اختبارٍ يجمع المخالفاتِ في الملفات كلِّها فيسمّيها معًا.
+(ملاحظتا Codex على #297). وكي لا يُلتفّ على القراءة بصورةٍ أخرى للمفتاح (`"permiss\\u0069ons"`، أو وسم، أو مرساة)، فكلُّ مفاتيح
+السير عاريةٌ خارج محتوى الكتل النصّية (`run: |`)، وما سواها مخالفة (ملاحظة Codex الثالثة على #297). وكلُّ اختبارٍ يجمع المخالفاتِ
+في الملفات كلِّها فيسمّيها معًا.
 """
 from __future__ import annotations
 
@@ -36,6 +38,35 @@ LEAST = {
 LEVEL = {"none": 0, "read": 1, "write": 2}
 CANONICAL_PERMISSIONS = re.compile(r"^( *)permissions:[ \t]*(\{\})?[ \t]*(?:#.*)?$")
 GRANT = re.compile(r"^ +([a-z-]+):[ \t]+(read|write|none)[ \t]*(?:#.*)?$")
+
+
+BLOCK_SCALAR = re.compile(r":[ \t]*[|>][+-]?[0-9]?[ \t]*(?:#.*)?$")
+# كلُّ صورةٍ لمفتاحٍ غيرِ عارٍ، أو لقيمةٍ تُخفي مفاتيحَ عن قراءة السطر؛ فما يقرؤه الحارسان هو ما يقرؤه GitHub
+NOT_PLAIN = {
+    "quoted_key": re.compile(r"""^[ \t]*(?:-[ \t]+)?(["']).*?(?<!\\)\1[ \t]*:(?:[ \t]|$)"""),
+    # خريطةٌ مضمَّنة في أوّل السطر، أو بعد `- ` أو `: ` أو فاصلةٍ في مجموعةٍ ممتدّة على أسطر، أو داخل `[...]`
+    "flow_mapping": re.compile(r"(?:^[ \t]*(?:-[ \t]+)?|:[ \t]+|,[ \t]*)\{(?!\}[ \t]*(?:#.*)?$)|\[[^\]]*\{"),
+    "explicit_key": re.compile(r"^[ \t]*(?:-[ \t]+)?\?(?:[ \t]|$)"),
+    "tag_anchor_alias": re.compile(r"(?:^[ \t]*(?:-[ \t]+)?|:[ \t]+)[!&*]"),
+    "merge_key": re.compile(r"(?:^|[ \t])<<[ \t]*:"),
+}
+
+
+def _structure(text: str) -> list[tuple[int, str]]:
+    """أسطرُ البنية وحدها: بلا تعليقٍ ولا محتوى كتلةٍ نصّية (`run: |`)، فما في الشيفرة من أقواسٍ وعلاماتٍ نصٌّ لا مفاتيح."""
+    found, block = [], None
+    for number, line in enumerate(text.splitlines(), 1):
+        stripped, indent = line.strip(), len(line) - len(line.lstrip())
+        if block is not None:
+            if not stripped or indent > block:
+                continue
+            block = None
+        if not stripped or stripped.startswith("#"):
+            continue
+        found.append((number, line))
+        if BLOCK_SCALAR.search(line):
+            block = indent
+    return found
 
 
 def _keys(text: str, name: str) -> list[tuple[int, str]]:
@@ -76,6 +107,15 @@ def _texts():
 def test_every_workflow_declares_its_permissions_at_the_top():
     assert len(WORKFLOWS) >= 10, [p.name for p in WORKFLOWS]     # النمطُ يجد الملفاتِ فعلًا
     assert [name for name, text in _texts().items() if not re.search(r"^permissions:", text, re.M)] == []
+
+
+def test_every_workflow_key_is_plain_so_the_guards_read_what_github_reads():
+    """ملاحظة Codex الثالثة على #297: `"permiss\\u0069ons": write-all` أو `"us\\u0065s": …` يفكّه قارئُ YAML إلى المفتاح، ولا يراه
+    حارسٌ يقرأ النصّ. فبدل ملاحقة كلِّ صورة، المفاتيحُ في أسطر البنية عاريةٌ كلُّها: لا علامتي تنصيص، ولا خريطةٌ مضمَّنة غيرُ `{}`،
+    ولا مفتاحٌ صريحٌ (`? `)، ولا وسمٌ أو مرساةٌ أو اسمٌ مستعار، ولا مفتاحُ دمج (`<<`)."""
+    found = [(name, number, rule) for name, text in _texts().items() for number, line in _structure(text)
+             for rule, pattern in NOT_PLAIN.items() if pattern.search(line)]
+    assert found == []
 
 
 def test_every_permission_is_within_the_least_listed_for_its_workflow():
