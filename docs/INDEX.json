@@ -3,7 +3,7 @@
  "codex_project_doc_max_bytes": 32768,
  "documents": [
   {
-   "bytes": 30303,
+   "bytes": 30904,
    "headings": [
     {
      "level": 2,
@@ -27,47 +27,47 @@
     },
     {
      "level": 2,
-     "line": 119,
+     "line": 121,
      "title": "٣ — المهام (العملاء يحدّثون هذا الجدول بأنفسهم)"
     },
     {
      "level": 2,
-     "line": 151,
+     "line": 153,
      "title": "٤ — قواعد المراجعة والقياس"
     },
     {
      "level": 2,
-     "line": 170,
+     "line": 172,
      "title": "٥ — قواعد العمل وبروتوكول الإنهاء"
     },
     {
      "level": 2,
-     "line": 207,
+     "line": 209,
      "title": "٦ — متى تتوقف وتسأل المالك"
     },
     {
      "level": 2,
-     "line": 221,
+     "line": 223,
      "title": "٧ — الذكاءات الخارجية: كيف تعمل دون أن ترى المستودع"
     },
     {
      "level": 2,
-     "line": 257,
+     "line": 259,
      "title": "٨ — خريطة المستودع"
     },
     {
      "level": 2,
-     "line": 278,
+     "line": 280,
      "title": "٩ — حدود هذا الملف"
     }
    ],
-   "lines": 288,
+   "lines": 290,
    "path": "AGENTS.md",
    "purpose": "الأدوار والقواعد وبروتوكول البدء، وما بقي مفتوحًا من جدول §٣",
    "read_when": "كل جلسة، كاملًا",
    "role": "حاكمة",
-   "sha256_12": "1022ea6b1bb4",
-   "tokens_estimate": 8082
+   "sha256_12": "88db845eedaf",
+   "tokens_estimate": 8230
   },
   {
    "bytes": 39047,
@@ -261,7 +261,7 @@
    "tokens_estimate": 2483
   },
   {
-   "bytes": 178208,
+   "bytes": 183781,
    "headings": [
     {
      "level": 2,
@@ -502,15 +502,20 @@
      "level": 2,
      "line": 1344,
      "title": "ق٧٣ — اعتمادُ مراجعة ٥ أكتوبر وخطتها: القياسُ والقبولُ أولًا، وتجميدُ المزايا خارج م١، و٨ نوفمبر موعدُ مراجعةٍ لا وعد (٥ أكتوبر ٢٠٢٦)"
+    },
+    {
+     "level": 2,
+     "line": 1378,
+     "title": "ق٧٤ — تفويضُ Claude السحابي بتوجيه العمل على الماك وتوجيه Codex حتى بوابة م١ (٥ أكتوبر ٢٠٢٦)"
     }
    ],
-   "lines": 1376,
+   "lines": 1444,
    "path": "docs/DECISIONS.md",
    "purpose": "القراراتُ المعتمدة بمصدرها وسببها وحدِّها المعلَن؛ يُقرأ بالعناوين لا بالترتيب",
    "read_when": "القرارَ الذي تسمّيه مهمّتُك فقط، من عنوانه",
    "role": "سجلُّ القرارات الحاكم",
-   "sha256_12": "a82b616cc9ea",
-   "tokens_estimate": 44671
+   "sha256_12": "62dade2f6369",
+   "tokens_estimate": 46089
   },
   {
    "bytes": 218447,
@@ -1459,7 +1464,7 @@
    "tokens_estimate": 451
   },
   {
-   "bytes": 58408,
+   "bytes": 58567,
    "headings": [
     {
      "level": 2,
@@ -1598,56 +1603,56 @@
     },
     {
      "level": 2,
-     "line": 528,
+     "line": 529,
      "title": "٧ — المراحل السبع: ما أثبتته كلٌّ منها"
     },
     {
      "level": 2,
-     "line": 547,
+     "line": 548,
      "title": "٨ — طقس العمل (سنّة المشروع — اتبعه حرفيًّا في كل مرحلة)"
     },
     {
      "level": 2,
-     "line": 569,
+     "line": 570,
      "title": "٩ — حدودك الستة (نصًّا، ولا اجتهاد فيها)"
     },
     {
      "level": 2,
-     "line": 591,
+     "line": 592,
      "title": "١٠ — البيئة التشغيلية"
     },
     {
      "level": 2,
-     "line": 615,
+     "line": 616,
      "title": "١١ — ألغام معروفة (كلُّها كلّفت وقتًا مرة على الأقل)"
     },
     {
      "level": 2,
-     "line": 652,
+     "line": 653,
      "title": "١٢ — ما بقي: الخارطة العامة والقرارات المستقلة"
     },
     {
      "level": 2,
-     "line": 685,
+     "line": 686,
      "title": "١٣ — كيف تتعامل مع المالك"
     },
     {
      "level": 2,
-     "line": 699,
+     "line": 700,
      "title": "١٤ — خلاصة في سطر"
     }
    ],
-   "lines": 703,
+   "lines": 704,
    "path": "docs/HANDOFF-PROMPT.md",
    "purpose": "برومبتُ تسليمٍ متنُه حتى ق٣٨ ورأسُه ق٤٩",
    "read_when": "لا يُقرأ؛ الحالةُ في docs/STATUS.md",
    "role": "تاريخ",
-   "sha256_12": "d6fe643bf101",
-   "tokens_estimate": 15110
+   "sha256_12": "4c27dc59719d",
+   "tokens_estimate": 15151
   }
  ],
  "generator": "tools/context_index.py",
- "latest_decision": 73,
+ "latest_decision": 74,
  "measurement_limits": [
   "tokens_estimate_is_characters_divided_by_2_4_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count",
   "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
