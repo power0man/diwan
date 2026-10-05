@@ -43,6 +43,8 @@ PENDING_REASONS = frozenset({
     "read_from_the_upstream_license_file",
 })
 HTTPS_SOURCE = re.compile(r"^https://[^\s]+$")
+SHA256 = re.compile(r"^[0-9a-f]{64}$")
+WEIGHT_FIELDS = ("file", "sha256", "origin", "license", "license_source", "read_on")
 HF_PREFIX = re.compile(r"^(?:https://)?(?:huggingface\.co|hf\.co)/")
 DEFAULT_MODEL = re.compile(r'^DEFAULT_MODEL\s*=\s*"([^"]+)"\s*$', re.MULTILINE)
 
@@ -186,6 +188,42 @@ def evidence_findings(file: str, payload: dict, models: dict, enforced_from: str
     return problems
 
 
+def _strings(value: object) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    children = value.values() if isinstance(value, dict) else value if isinstance(value, list) else ()
+    return [text for child in children for text in _strings(child)]
+
+
+def weight_findings(models: dict, evidence: dict[str, object]) -> list[str]:
+    """كلُّ وزنٍ في السجلّ بهويّته كاملةً: ملفُّه وبصمتُه وأصلُه ورخصتُه بمصدرها وتاريخ قراءتها. وبصمتُه مكتوبةٌ في دليلٍ يسمّي
+    نموذجَه، فلا تُلصق رخصةٌ ببايتاتٍ غيرِ التي قيست (ملاحظة Codex على #307)."""
+    measured: dict[str, set[str]] = {}
+    for payload in evidence.values():
+        digests = {text for text in _strings(payload) if SHA256.match(text)}
+        for name in all_named_models(payload):
+            measured.setdefault(canonical(name), set()).update(digests)
+    problems = []
+    for name, entry in sorted(models.items()):
+        weights = entry.get("weights", []) if isinstance(entry, dict) else []
+        if not isinstance(weights, list) or not all(isinstance(weight, dict) for weight in weights):
+            problems.append(f"weights_malformed:{name}")
+            continue
+        for weight in weights:
+            label = f"{name}:{weight.get('file')}"
+            missing = [field for field in WEIGHT_FIELDS if not isinstance(weight.get(field), str) or not weight[field]]
+            problems += [f"weight_field_missing:{label}:{field}" for field in missing]
+            if missing:
+                continue
+            if weight["sha256"] not in measured.get(name, set()):
+                problems.append(f"weight_digest_not_in_evidence:{label}")
+            problems += [f"weight_source_not_https:{label}:{key}" for key in ("origin", "license_source")
+                         if not HTTPS_SOURCE.match(weight[key])]
+            if not _valid_day(weight["read_on"]):
+                problems.append(f"weight_read_on_invalid:{label}")
+    return problems
+
+
 def default_engine(source: Path = DEFAULT_ENGINE_SOURCE) -> str | None:
     match = DEFAULT_MODEL.search(source.read_text(encoding="utf-8"))
     return match.group(1) if match else None
@@ -205,6 +243,7 @@ def findings(registry: dict, evidence: dict[str, object], engine: str | None) ->
     for file, payload in sorted(evidence.items()):
         if isinstance(payload, dict):
             problems += evidence_findings(file, payload, models, enforced_from, set(historical))
+    problems += weight_findings(models, {file: payload for file, payload in evidence.items() if isinstance(payload, dict)})
     if engine is not None:
         entry = models.get(canonical(engine))
         if entry is None:

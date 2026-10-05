@@ -150,6 +150,47 @@ def test_the_license_class_is_read_from_its_name_alone(name, kind):
     assert ml.license_class(name) == kind
 
 
+DIGEST, OTHER_DIGEST = "a" * 64, "b" * 64
+WEIGHT = {"file": "w.pth", "sha256": DIGEST, "origin": "https://example.org/w.zip", "license": "mit",
+          "license_source": "https://example.org/LICENSE", "read_on": "2026-10-05"}
+OCR_EVIDENCE = {"ocr.json": {"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST}}}},
+                "other.json": {"model": "a/model", "artifact_sha256": OTHER_DIGEST}}
+
+
+def _weights(*weights) -> dict:
+    return {"ocr": {**READ, "weights": list(weights)}, "a/model": READ}
+
+
+def test_a_weight_whose_digest_its_model_evidence_recorded_passes():
+    assert ml.weight_findings(_weights(WEIGHT), OCR_EVIDENCE) == []
+    assert ml.findings(_registry(["ocr.json", "other.json"], **_weights(WEIGHT)), OCR_EVIDENCE, None) == []
+    changed = _weights({**WEIGHT, "sha256": "c" * 64})
+    assert ml.findings(_registry(["ocr.json", "other.json"], **changed), OCR_EVIDENCE, None) == [
+        "weight_digest_not_in_evidence:ocr:w.pth"]
+
+
+@pytest.mark.parametrize("change, code", [
+    pytest.param({"sha256": "c" * 64}, "weight_digest_not_in_evidence:ocr:w.pth", id="digest_changed"),
+    pytest.param({"sha256": OTHER_DIGEST}, "weight_digest_not_in_evidence:ocr:w.pth", id="another_models_digest"),
+    pytest.param({"sha256": DIGEST.upper()}, "weight_digest_not_in_evidence:ocr:w.pth", id="digest_malformed"),
+    pytest.param({"sha256": ""}, "weight_field_missing:ocr:w.pth:sha256", id="digest_omitted"),
+    pytest.param({"origin": None}, "weight_field_missing:ocr:w.pth:origin", id="origin_omitted"),
+    pytest.param({"origin": "http://example.org/w.zip"}, "weight_source_not_https:ocr:w.pth:origin", id="origin_http"),
+    pytest.param({"license_source": "ftp://x"}, "weight_source_not_https:ocr:w.pth:license_source",
+                 id="license_source_not_https"),
+    pytest.param({"read_on": "05/10/2026"}, "weight_read_on_invalid:ocr:w.pth", id="read_on_invalid"),
+])
+def test_a_weight_whose_identity_is_not_the_measured_bytes_is_named(change, code):
+    """ملاحظة Codex على #307: بصمةٌ مخطوءةٌ أو مغيَّرةٌ أو غائبة، أو أصلٌ غائب، تُلصق رخصةً ببايتاتٍ لم تُقس."""
+    assert ml.weight_findings(_weights({**WEIGHT, **change}), OCR_EVIDENCE) == [code]
+
+
+@pytest.mark.parametrize("weights", [pytest.param("w.pth", id="text"), pytest.param(["w.pth"], id="list_of_text"),
+                                     pytest.param(5, id="number")])
+def test_a_malformed_weights_list_is_named(weights):
+    assert ml.weight_findings({"ocr": {**READ, "weights": weights}}, OCR_EVIDENCE) == ["weights_malformed:ocr"]
+
+
 def test_a_malformed_registry_is_refused_by_name():
     assert ml.findings({"models": {}, "historical_evidence": []}, {}, None) == ["registry_malformed"]
     assert ml.findings({"enforced_from": "2026-10-06", "models": [], "historical_evidence": []}, {}, None) == [
