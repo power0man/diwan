@@ -85,6 +85,10 @@ def free_call_proven(row: dict, evidence: object) -> bool:
         return False
 
 
+# حالاتُ الكلفة التي يكتبها `tools/external_review.py`؛ وما سواها لا يُعرف مصدرُ مبلغه
+COST_STATUSES = frozenset({"reported", "estimated_from_prices", "reserved_upper_bound", "not_reported"})
+
+
 def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, list[str]]:
     """كتلةُ الإنفاق من سجلّ النداءات: ما أُرسل إلى السحابة وحده. وأساسُ الكلفة من الواجهة لا من التخمين."""
     sent = [row for row in rows if isinstance(row, dict) and row.get("kind") != "catalog" and row.get("request_sent")]
@@ -95,6 +99,10 @@ def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, 
            or not all(probe_spend._count(row["usage"].get(key)) for key in ("prompt_tokens", "completion_tokens"))
            for row in cloud):
         return None, ["spend_usage_incomplete"]
+    # حالةٌ خارج ما يكتبه الكاتب، أو مبلغٌ تحت `not_reported`، بلا مصدر: لا يصير تقديرًا بالأسعار (ملاحظة Codex على #310)
+    if any(row.get("cost_status") not in COST_STATUSES
+           or (row["cost_status"] == "not_reported" and row.get("cost_usd") is not None) for row in cloud):
+        return None, ["spend_cost_status_invalid"]
     totals = {key: sum(row["usage"][key] for row in cloud) for key in ("prompt_tokens", "completion_tokens")}
     providers = {row.get("provider") for row in cloud}
     raw = [row.get("cost_usd") for row in cloud]
