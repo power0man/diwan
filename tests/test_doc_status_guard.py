@@ -102,8 +102,10 @@ def test_study_prompt_numbers_are_generated_not_handwritten():
     gate = 'لن ننتقل لأي مرحلة إلا عندما نكون متأكدين من أن المرحلة الحالية بلا مشاكل'
     rendered = expected_files(ROOT, state, {19: 'x'}, gate)
     study = rendered[ROOT / 'docs/STUDY-PROMPT.md']
-    for value in ('**7**', '**9**', '**3**', '**11**', '**13**', '**5**', '**17**'):
+    for value in ('**7**', '**9**', '**3**', '**11**', '**5**', '**17**'):
         assert value in study
+    # عددُ الأسطر لا يُنشر ولو حمله الجرد (ق٧٣ الخطوة 0.6): كان وحده يجرّ إيداعَ «أعدادٍ مولَّدة» بعد كل إيداع
+    assert '**13**' not in study
     # The real counts must live only inside the block the checker owns.
     live = (ROOT / 'docs/STUDY-PROMPT.md').read_text()
     body = live.split('<!-- generated:study-numbers:begin -->')[0] + \

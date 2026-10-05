@@ -1,0 +1,1 @@
+{"id": "python-lines-published-again", "task": "ق٧٣-0.6", "file": "tools/check_docs.py", "old": "(والأسطرُ تُحسب عند الطلب)", "new": "/ **{state.get('python_lines')}** سطرًا", "tests": ["tests/test_doc_status_guard.py::test_study_prompt_numbers_are_generated_not_handwritten"], "why": "عددُ الأسطر يعود إلى جدول STUDY-PROMPT فيعود كلُّ إيداعٍ يجرّ إيداعَ أعدادٍ مولَّدة"}

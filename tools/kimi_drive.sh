@@ -180,6 +180,14 @@ cmd_intake() {
   mkdir -p "$KIMI_WORK/logs"
   local rc=0
   local mode=(); [ "${OPEN_ONLY:-0}" != 1 ] || mode=(--open-only)
+  # حالاتُ python_sandbox لا يحكم فيها إلا الحاوية، والرقمُ العام يرفض استلامًا بلاها (needs_sandbox)؛
+  # فإيصالُ الحاوية يُمرَّر من SANDBOX_RECEIPT (ومساحتُها من SANDBOX_WORKSPACE) لا بخيارٍ يُنسى
+  if [ -n "${SANDBOX_RECEIPT:-}" ]; then
+    mode+=(--sandbox-probes --sandbox-receipt "$SANDBOX_RECEIPT")
+    [ -z "${SANDBOX_WORKSPACE:-}" ] || mode+=(--sandbox-workspace "$SANDBOX_WORKSPACE")
+  else
+    echo "تنبيه: بلا SANDBOX_RECEIPT تُعدّ حالاتُ الحاوية needs_sandbox، فلا يشهد هذا الاستلامُ للرقم العام." >&2
+  fi
   "${PYTHON:-python3}" "$DIWAN/tools/kimi_intake.py" "$src" ${mode[@]+"${mode[@]}"} --out "$out" || rc=$?
   echo "تقريرُ الاستلام في $out — أعدادٌ ورموزٌ فقط، فيُقرأ."
   echo "والمهامُّ الوكيلة تُحكم في حاويةٍ زائلة: انظر رأسَ tools/kimi_intake.py."

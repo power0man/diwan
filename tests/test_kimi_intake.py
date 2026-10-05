@@ -218,6 +218,19 @@ def test_an_open_only_delivery_must_carry_every_current_file_and_case(tmp_path):
         "current_open_bank_missing"}
 
 
+def test_the_replacement_check_records_the_digest_of_the_bank_it_replaced(tmp_path):
+    """فحصٌ على بنكٍ قائمٍ من حالةٍ واحدة ينجح، فيُسجَّل ما استُبدل ببصمته ليرفضه مُشغِّلُ الرقم العام (ملاحظة Codex على #312)."""
+    import shutil
+    from evaluation.judge import open_bank_digest
+    src = delivery(tmp_path)
+    shutil.rmtree(src / "sealed")
+    current = tmp_path / "current_open"
+    shutil.copytree(src / "open", current)
+    report = intake(src, open_only=True, current=current)
+    assert report["passed"] and report["replacement"]["baseline_digest"] == open_bank_digest(current)
+    assert intake(src, open_only=True, current=tmp_path / "absent")["replacement"]["baseline_digest"] is None
+
+
 def test_an_open_only_delivery_must_keep_every_sidecar_and_its_tasks(tmp_path):
     """ملاحظةُ Codex على #128: الملفُّ الجانبيّ كان خارج الحصر، فيمحو التوزيعُ حلولَه المرجعية بصمت."""
     import shutil
@@ -359,3 +372,75 @@ def test_a_binary_file_map_is_judged_not_named_prose(tmp_path):
     assert "reference_solution_not_a_file_map" not in codes and report["counts"]["reference_passes"] == AGENTIC_MIN_TASKS
     assert codes == ["decoy_solution_not_a_file_map"]
 
+
+
+def test_the_intake_records_the_open_digest_that_binds_the_general_number(tmp_path):
+    """بصمةُ الشطر المفتوح في التقرير هي بصمةُ المحكِّم ومُشغِّل الرقم العام، فيُربط القياسُ بهذا الاستلام (ق٧٣ 1.7أ)."""
+    from evaluation.judge import open_bank_digest
+    src = delivery(tmp_path)
+    report = intake(src)
+    assert report["bank"]["open_digest"] == open_bank_digest(src / "open")
+    (src / "open" / "tier_a" / "kimi_a_001.json").write_text("{}", encoding="utf-8")
+    assert open_bank_digest(src / "open") != report["bank"]["open_digest"]
+
+
+def test_fixed_answers_that_know_nothing_expose_gameable_checks():
+    """ك١٧: نسخُ السؤال يسرد خياراته، وسردُ الحكمين يمرّ «contains خطأ»، والفارغُ يمرّ excludes وحده (ملاحظة Codex على #312)."""
+    from tools.kimi_intake import gameable_probe
+
+    def case(text, checks):
+        return {"case_id": "c", "messages": [{"role": "user", "content": text}], "checks": checks}
+    options = case("سمِّ الصورة من بين: تشبيه، استعارة مكنية، كناية.", [{"kind": "contains", "value": "مكنية"}])
+    assert gameable_probe(options) == "echo"
+    polarity = case("هل في الجملة الآتية زللٌ نحوي؟", [{"kind": "contains", "value": "خطأ"}])
+    assert gameable_probe(polarity) == "polarity_spray"
+    assert gameable_probe(case("أعد الصياغة", [{"kind": "excludes", "value": "عامية"}])) == "empty"
+    verdict = case("هل في الجملة خطأ؟", [{"kind": "contains", "value": "يوجد خطأ"}, {"kind": "excludes", "value": "لا يوجد"}])
+    assert gameable_probe(verdict) is None, "الحكمُ مع نفيه المستبعد لا يمرّره السرد"
+    assert gameable_probe(case("ما عاصمة المغرب؟", [{"kind": "exact", "value": "الرباط"}])) is None
+    # حالةُ الحاوية وحدها لا يُحكم فيها بلا حاوية: needs_sandbox لا «سليمة»
+    assert gameable_probe(case("مكنية", [{"kind": "python_sandbox", "value": "assert False"}])) == "needs_sandbox"
+
+
+def test_an_intake_with_a_gameable_open_check_fails_and_counts_it_by_probe(tmp_path):
+    src = delivery(tmp_path)
+    assert intake(src)["bank"]["gameable"] == {"open": 0, "by_probe": {}, "needs_sandbox": 0, "sandbox_probed": False,
+                                               "sandbox_backend": None}
+    _write(src / "open" / "tier_a" / "kimi_a_001.json", _suite("kimi_a_001", [_case("o1"), _case("o2", text="r أو s؟")]))
+    report = intake(src)
+    assert not report["passed"] and report["bank"]["gameable"] == {"open": 1, "by_probe": {"echo": 1},
+                                                                   "needs_sandbox": 0, "sandbox_probed": False,
+                                                                   "sandbox_backend": None}
+    assert "gameable_checks" in _codes(report, "bank")
+
+
+def test_a_mixed_sandbox_case_is_probed_on_its_other_checks_then_in_the_container(monkeypatch):
+    """contains يمرّره نسخُ السؤال مع فحص حاويةٍ يمرّ دائمًا كان يُعفى كلُّه (ملاحظة Codex على #312): يُجرَّب ما خارج الحاوية،
+    وما مرّ به لا يحكم فيه إلا الحاوية، فهو needs_sandbox بلاها، وبها يُشغَّل الفحصُ كاملًا."""
+    from types import SimpleNamespace
+    import evaluation.capabilities as capabilities
+    from tools.kimi_intake import gameable_probe
+
+    def fake_sandbox(answer, harness, **_):
+        return SimpleNamespace(passed=harness == "always", error_code=None, witness_digest="w", exit_code=0,
+                               elapsed_ms=1, boundary="docker")
+    monkeypatch.setattr(capabilities, "run_in_sandbox", fake_sandbox)
+
+    def case(text, harness, value="مكنية"):
+        return {"case_id": "c", "messages": [{"role": "user", "content": text}],
+                "checks": [{"kind": "contains", "value": value}, {"kind": "python_sandbox", "value": harness}]}
+    options = "سمِّ الصورة من بين: تشبيه، استعارة مكنية، كناية."
+    assert gameable_probe(case(options, "always")) == "needs_sandbox"
+    assert gameable_probe(case(options, "always"), sandbox=True) == "echo"
+    assert gameable_probe(case(options, "strict"), sandbox=True) is None
+    assert gameable_probe(case("سمِّ الصورة", "always", value="غائبة")) is None, "ما يُسقطه خارجَ الحاوية لا يُشغَّل له شيء"
+
+
+def test_a_sandbox_probed_intake_records_the_backend_that_judged(tmp_path, monkeypatch):
+    """الاستلامُ بالحاوية يسجّل إيصالَها، فيطابقه مُشغِّلُ الرقم العام (ملاحظة Codex على #312)."""
+    import core.sandbox as sandbox
+    backend = {"backend": "docker", "image_id": "sha256:a", "snapshot_files": []}
+    monkeypatch.setattr(sandbox, "sandbox_configuration", lambda: backend)
+    src = delivery(tmp_path)
+    assert intake(src, sandbox_probes=True)["bank"]["gameable"]["sandbox_backend"] == backend
+    assert intake(src)["bank"]["gameable"]["sandbox_backend"] is None

@@ -162,7 +162,7 @@ def maritime_counts(root):
 
 STATUS_LIMITS = [
     "tests_collected_is_a_pytest_collection_count_not_a_pass_count",
-    "python_files_and_lines_count_tracked_py_files_and_their_newlines_not_code_quality",
+    "python_files_counts_tracked_py_files_not_code_quality_and_lines_are_not_published_because_they_change_with_every_edit",
     "maritime_counts_come_from_the_owner_store_and_are_carried_as_published_where_the_store_is_excluded",
     "historical_defects_are_read_from_the_m1_to_m7_acceptance_documents_not_recounted",
 ]
@@ -188,7 +188,7 @@ def derive(root, test_count):
             stages.append((int(match[1]), match[2], path.name))
     stage, part, document = max(stages)
     label = 'م' + str(stage).translate(AR) + ({'A': '-أ', 'B': '-ب'}.get(part, part))
-    python_files, python_lines = source_inventory(root)
+    python_files, _python_lines = source_inventory(root)
     state = {'schema_version': 1, 'tests_collected': test_count,
              'latest_technical_document': document, 'latest_technical_scope': label,
              'latest_decision': max(titles), 'historical_m1_m7_defects': defects,
@@ -196,7 +196,6 @@ def derive(root, test_count):
              'maritime_current_documents': maritime_documents,
              'maritime_current_pages': maritime_pages,
              'acceptance_documents': len(stages), 'python_files': python_files,
-             'python_lines': python_lines,
              'quality_review': 'automated_multi_system_pending', 'active_gate': gate_ref, 'release_ready': False,
              # كلُّ رقمٍ في docs/probe بحدوده (دليلُ المراجعة §٢): هذه أعدادُ جردٍ لا قياسُ جودة
              'measurement_limits': STATUS_LIMITS}
@@ -228,7 +227,9 @@ def expected_files(root, state, titles, gate):
         f"| قرارات | **{state['latest_decision']}** بلا فجوة | "
         "`grep -oE 'ق[٠-٩]+' docs/DECISIONS.md \\| sort -u \\| wc -l` |",
         f"| وثائق قبول | **{state['acceptance_documents']}** | `ls docs/M*-ACCEPTANCE.md` |",
-        f"| ملفات بايثون | **{state['python_files']}** / **{state['python_lines']}** سطرًا | "
+        # عددُ الأسطر لا يُنشر: يتغيّر مع كل سطرٍ يُكتب، فكان يجرّ إيداعَ «أعدادٍ مولَّدة» بعد كل إيداعٍ
+        # (١٠٤ من ١٠٦ في ٢٨ سبتمبر–٥ أكتوبر)، وهو بنصّ حدّه ليس قياسَ جودة؛ يُحسب عند الطلب بالأمر.
+        f"| ملفات بايثون | **{state['python_files']}** (والأسطرُ تُحسب عند الطلب) | "
         "`git ls-files '*.py' \\| xargs wc -l` |",
         f"| المخزن البحري النافذ | **{state['maritime_current_documents']}** وثيقة / "
         f"**{state['maritime_current_pages']}** صفحة | `docs/probe/project-status.json` |",
