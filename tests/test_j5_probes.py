@@ -27,6 +27,13 @@ CACHED_ELSEWHERE = {j5: j5._cached_elsewhere, boundary: boundary._cached_elsewhe
 
 
 @pytest.fixture(autouse=True)
+def _private_home(tmp_path_factory, monkeypatch):
+    """مجسُّ الحدّ ينشئ نسخةَ الإيصال الخاصّة تحت HOME (`tools/probe_execution_boundary.py`)، فاختبارُه لا يكتب في HOME
+    الحقيقيّ بل في مجلّدٍ مؤقّت: HOME للقراءة وحدها في حاوية بوابة الدفع، فتسقط حالاتُه لا لعيبٍ فيما تقيسه (#287)."""
+    monkeypatch.setenv("HOME", str(tmp_path_factory.mktemp("home")))
+
+
+@pytest.fixture(autouse=True)
 def _compiled_from_source(monkeypatch):
     """المجسّان مستوردان هنا لا مشغَّلان، فلا مخبأَ بايتاتٍ جديدًا لهما؛ وفحصُه مختبَرٌ وحده أدناه."""
     for probe in CACHED_ELSEWHERE:
