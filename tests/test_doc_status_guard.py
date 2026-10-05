@@ -108,7 +108,7 @@ def test_study_prompt_numbers_are_generated_not_handwritten():
     # عددُ الاختبارات لا يُودَع (قرار المالك في ٥ أكتوبر): يُحسب عند الطلب، فلا يجرّ إيداعًا مع كل اختبار
     assert 'pytest --collect-only' in study and 'pytest --collect-only' in rendered[ROOT / 'README.md']
     from tools.check_docs import derive
-    assert 'tests_collected' not in derive(ROOT)[0], "المولِّدُ نفسُه لا يحمل العدد
+    assert 'tests_collected' not in derive(ROOT)[0], "المولِّدُ نفسُه لا يحمل العدد"
     # عددُ الأسطر لا يُنشر ولو حمله الجرد (ق٧٣ الخطوة 0.6): كان وحده يجرّ إيداعَ «أعدادٍ مولَّدة» بعد كل إيداع
     assert '**13**' not in study
     # The real counts must live only inside the block the checker owns.
