@@ -11,7 +11,7 @@ import shutil
 import pytest
 
 from evaluation.media_bank import (BANK, answer_line, cer, ocr_report, score_vision, validate_media_bank,
-                                   vision_report)
+                                   vision_report, wer)
 
 
 def _load(name):
@@ -165,3 +165,35 @@ def test_a_sample_smaller_than_the_rule_asks_is_refused(copy, tmp_path):
     with pytest.raises(FreezeRefused) as err:
         freeze(_corpus(tmp_path, count=20), "cv-corpus-test", bank=copy)
     assert err.value.code == "sample_too_small" and not (copy / "speech").exists()
+
+
+def test_wer_known_cases():
+    assert wer("", "") == 0.0
+    assert wer("", "كلمة") == 1.0
+    assert wer("كتب الطالب الدرس", "كتب الطالب الدرس") == 0.0
+    assert wer("كتب الطالب الدرس", "كتب الدرس") == pytest.approx(1 / 3)
+    assert wer("كتب الدرس", "كتب الطالب الدرس") == pytest.approx(1 / 2)
+    assert wer("كتب الطالب الدرس", "قرأ الطالب الدرس") == pytest.approx(1 / 3)
+    assert wer("كَتَبَ الطالبُ الدَّرسَ", "كتب الطالب الدرس") == 0.0
+    assert wer("كَتَبَ", "كتب", keep_diacritics=True) > 0.0
+
+
+def test_attribution_and_license_guard(copy):
+    (copy / "ATTRIBUTION.md").unlink()
+    assert "attribution_file_missing" in validate_media_bank(copy)
+    (copy / "ATTRIBUTION.md").write_text("# dummy", encoding="utf-8")
+    assert "attribution_missing: image_gen.json" in validate_media_bank(copy)
+    shutil.copy(BANK / "ATTRIBUTION.md", copy / "ATTRIBUTION.md")
+    (copy / "mystery.json").write_text("{}", encoding="utf-8")
+    assert "attribution_missing: mystery.json" in validate_media_bank(copy)
+
+
+def test_pending_fetch_expires_after_deadline(copy):
+    data = json.loads((copy / "speech.json").read_text(encoding="utf-8"))
+    del data["asr"]["deadline"]
+    (copy / "speech.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    assert "speech_asr_deadline_missing" in validate_media_bank(copy)
+    data["asr"]["deadline"] = "2020-01-01T00:00:00Z"
+    (copy / "speech.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    assert any(err.startswith("pending_fetch_expired") for err in validate_media_bank(copy))
+

@@ -2,8 +2,10 @@
   "schema_version": 1,
   "suite_id": "media_v1_speech",
   "description": "بروتوكولُ الصوت في بنك الوسائط (غ٧): عيّنةُ تفريغٍ عربيّ مرخَّصة تُجلب وتُجمَّد على الماك، وجُملُ نطقٍ عربيّ كُتبت لهذا البنك.",
+  "license": "Apache-2.0 (جملُ النطق؛ ومصدرُ التفريغ CC0-1.0)",
   "asr": {
     "status": "pending_fetch",
+    "deadline": "2026-10-28T00:00:00Z",
     "why_pending": "مصادرُ الكلام العربيّ المرخَّصة (Common Voice وOpenSLR وHugging Face) خارج شبكة الجلسة السحابية، فتُجلب العيّنةُ على الماك بـ tools/freeze_speech_sample.py قبل قياس أيّ نموذج.",
     "source": {
       "dataset": "Mozilla Common Voice — العربية",
