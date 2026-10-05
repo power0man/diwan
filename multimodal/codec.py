@@ -229,7 +229,7 @@ def _jpeg(raw: bytes) -> dict:
                 scan_offset += 1
             break
         offset += length
-    need(header is not None)
+    need(header is not None and seen_eoi)
     return {"width": header[0], "height": header[1]}
 
 
@@ -253,8 +253,8 @@ def clip_pdf_page(raw: bytes, page: int = 1, *, renderer: str | None = None,
         input_pdf = workdir / "document.pdf"
         input_pdf.write_bytes(raw)
         out_prefix = workdir / "page"
-        cmd = [renderer, "-png", "-r", str(PDF_DPI), "-f", str(page), "-l", str(page),
-               str(input_pdf), str(out_prefix)]
+        cmd = [renderer, "-png", "-r", str(PDF_DPI), "-scale-to", str(MAX_IMAGE_DIMENSION),
+               "-f", str(page), "-l", str(page), str(input_pdf), str(out_prefix)]
         try:
             done = subprocess.run(cmd, capture_output=True, timeout=timeout_s, check=False)
         except (OSError, subprocess.SubprocessError) as exc:

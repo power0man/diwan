@@ -152,3 +152,123 @@ def test_ocr_tool_reads_jpeg_and_invokes_easyocr_fallback(workspace, monkeypatch
     assert res["text"] == "نص مستخرج عبر المحاكي"
     assert len(called_easyocr) == 1
     assert called_easyocr[0] == dest.stat().st_size
+
+
+def test_ocr_tool_registered_in_default_tools_and_agent_registry(workspace):
+    from agent.builtin_tools import DEFAULT_TOOLS
+    from webui.server import LocalApp
+    assert OCR_IMAGE in DEFAULT_TOOLS
+    assert OCR_IMAGE.spec.name == "ocr_image"
+
+    ws, _ = workspace
+    app = LocalApp(ws / "app_root", model="m", model_version="v" * 64, provider_factory=lambda: None)
+    created = app.dispatch({"action": "create_project", "name": "مشروع اختبار"})
+    project = app.project(created["id"])
+    reg = app.agent_registry(project)
+    tool_names = [s.name for s in reg.specs()]
+    assert "ocr_image" in tool_names
+
+
+def test_truncated_jpeg_refused_due_to_missing_seen_eoi(workspace):
+    ws, ctx = workspace
+    repo_root = Path(__file__).resolve().parents[1]
+    bank_img = repo_root / "evaluation/media_v1/ocr/o01.jpg"
+    assert bank_img.exists()
+
+    raw_jpeg = bank_img.read_bytes()
+    assert raw_jpeg.endswith(b"\xff\xd9")
+    # Truncate removing EOI marker
+    truncated = raw_jpeg[:-2]
+    bad_jpg = ws / "truncated.jpg"
+    bad_jpg.write_bytes(truncated)
+
+    with pytest.raises(ToolRefused) as exc:
+        ocr_image_handler({"path": "truncated.jpg"}, ctx)
+    assert exc.value.code == "jpeg_invalid"
+
+
+def test_a4_pdf_scaled_and_read_selected_within_image_limits(workspace, monkeypatch):
+    import shutil
+    if not shutil.which("pdftoppm"):
+        pytest.skip("pdftoppm غير متوفر محليًا")
+    ws, ctx = workspace
+
+    # مستند PDF بصفحة قياس A4 (595.28 × 841.89 pt)
+    a4_pdf = (
+        b"%PDF-1.4\n"
+        b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+        b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
+        b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources <<>> >>\nendobj\n"
+        b"xref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n"
+        b"trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n206\n%%EOF\n"
+    )
+    pdf_file = ws / "doc_a4.pdf"
+    pdf_file.write_bytes(a4_pdf)
+
+    # التحقق من أن قراءة المستند وتقطيعه يقاس بحجم أقل من أو يساوي 1024 بكسل
+    doc = read_selected(pdf_file, page=1)
+    assert doc["metadata"]["height"] <= 1024
+    assert doc["metadata"]["width"] <= 1024
+
+    monkeypatch.setattr("multimodal.ocr.perform_ocr", lambda d, engine="auto": "نص صفحة A4")
+    res = ocr_image_handler({"path": "doc_a4.pdf", "page": 1}, ctx)
+    assert res["clean"]
+    assert res["text"] == "نص صفحة A4"
+
+
+def test_easyocr_missing_weights_refuses_without_network_download(workspace, monkeypatch):
+    import sys
+    from unittest.mock import MagicMock
+
+    ws, ctx = workspace
+    img_path = ws / "sample.png"
+    img_path.write_bytes(SAMPLE_PNG)
+
+    mock_easyocr = MagicMock()
+    class MockReader:
+        def __init__(self, *args, **kwargs):
+            if kwargs.get("download_enabled") is True:
+                # محاكاة التنزيل غير المصرح به من الشبكة فينجح النداء بدل الرفض
+                return
+            assert kwargs.get("download_enabled") is False
+            assert "model_storage_directory" in kwargs
+            raise RuntimeError("missing weights on disk")
+
+        def readtext(self, *args, **kwargs):
+            return ["نص مسرب بعد تنزيل الأوزان"]
+
+    mock_easyocr.Reader = MockReader
+    monkeypatch.setitem(sys.modules, "easyocr", mock_easyocr)
+
+    with pytest.raises(ToolRefused) as exc:
+        ocr_image_handler({"path": "sample.png", "engine": "easyocr"}, ctx)
+    assert exc.value.code == "ocr_engine_unavailable"
+    assert "أوزان easyocr غير متوفرة محليًا" in exc.value.reason
+
+
+def test_configured_local_media_provider_used_for_ocr(workspace, monkeypatch):
+    from providers.local_media import LocalMediaProvider
+    from tests.test_local_media_provider import Transport, MODEL, VERSION
+
+    ws, ctx = workspace
+    img_path = ws / "sample.png"
+    img_path.write_bytes(SAMPLE_PNG)
+
+    # التحقق من الرفض عند تعذر تهيئة أو العثور على مزود الوسائط
+    monkeypatch.setattr("multimodal.ocr._get_media_provider", lambda **kw: None)
+    with pytest.raises(ToolRefused) as exc:
+        ocr_image_handler({"path": "sample.png", "engine": "media_provider"}, ctx)
+    assert exc.value.code == "ocr_engine_unavailable"
+    assert "مزوّد الوسائط المحلي غير مهيّأ" in exc.value.reason
+
+    transport = Transport(monkeypatch)
+    provider = LocalMediaProvider(MODEL, VERSION)
+    monkeypatch.setattr("multimodal.ocr._get_media_provider", lambda **kw: provider)
+
+    res = ocr_image_handler({"path": "sample.png", "engine": "media_provider"}, ctx)
+    assert res["clean"]
+    assert res["text"] == "جواب مصطنع"
+    assert len(transport.calls) == 4
+    chat_body = json.loads(transport.calls[-1][2])
+    assert chat_body["model"] == MODEL
+

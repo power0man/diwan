@@ -63,42 +63,85 @@ def _extract_text_via_easyocr(image_bytes: bytes) -> str:
     except ImportError:
         raise ToolRefused("ocr_engine_unavailable", "easyocr غير متوفر في البيئة الحالية") from None
 
+    model_dir = Path.home() / ".EasyOCR" / "model"
     with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
         tmp.write(image_bytes)
         tmp.flush()
-        reader = easyocr.Reader(["ar"], gpu=False, verbose=False)
-        lines = reader.readtext(tmp.name, detail=0, paragraph=True)
-        return "\n".join(lines).strip()
+        try:
+            reader = easyocr.Reader(["ar"], gpu=False, verbose=False,
+                                    download_enabled=False,
+                                    model_storage_directory=str(model_dir))
+            lines = reader.readtext(tmp.name, detail=0, paragraph=True)
+            return "\n".join(lines).strip()
+        except ToolRefused:
+            raise
+        except Exception:
+            raise ToolRefused("ocr_engine_unavailable", "أوزان easyocr غير متوفرة محليًا") from None
 
 
-def _extract_text_via_ollama(image_dict: dict, model: str | None = None, base_url: str = "http://127.0.0.1:11434") -> str:
-    from evaluation.ollama_vision import OllamaVision, VisionRefused
-    target_model = model or "qwen2.5vl:7b"
+def _get_media_provider(model: str | None = None, version: str | None = None, base_url: str | None = None):
+    """استرجاع مزوّد الوسائط المحلي المضبوط في البيئة أو عبر الاكتشاف المحلي التلقائي."""
+    import os
+    from providers.local_media import LocalMediaProvider
+    from providers.base import ProviderError
+
+    target_model = model or os.environ.get("DIWAN_MEDIA_MODEL")
+    target_version = version or os.environ.get("DIWAN_MEDIA_DIGEST")
+    target_url = base_url or os.environ.get("DIWAN_OLLAMA_URL", "http://127.0.0.1:11434")
+
+    if not target_model or not target_version:
+        from tools.serve_ui import _discover_ollama
+        _, _, auto_m, auto_v, _ = _discover_ollama(target_url)
+        target_model = target_model or auto_m
+        target_version = target_version or auto_v
+
+    if not target_model or not target_version:
+        return None
     try:
-        import base64
-        import tempfile
-        client = OllamaVision(target_model, base_url=base_url)
-        raw_bytes = base64.b64decode(image_dict["data_base64"])
-        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            tmp.write(raw_bytes)
-            tmp.flush()
-            return client.ask(Path(tmp.name), OCR_PROMPT).strip()
-    except (VisionRefused, Exception) as exc:
-        raise ToolRefused("ocr_engine_unavailable", f"تعذر استخراج النص عبر Ollama: {exc}") from None
+        return LocalMediaProvider(target_model, target_version, base_url=target_url)
+    except ProviderError:
+        return None
 
 
-def perform_ocr(image_dict: dict, engine: str = "auto") -> str:
+def _extract_text_via_media_provider(image_dict: dict, provider=None, model: str | None = None, base_url: str | None = None) -> str:
+    from core.contracts import Message, Request
+    from core.validate import validated
+    from multimodal.codec import MEDIA_SYSTEM, encode_request
+    from providers.base import ProviderError
+    from providers.local_media import LocalMediaProvider
+
+    target_provider = provider
+    if target_provider is None:
+        target_provider = _get_media_provider(model=model, base_url=base_url)
+
+    if target_provider is None:
+        raise ToolRefused("ocr_engine_unavailable", "مزوّد الوسائط المحلي غير مهيّأ")
+
+    try:
+        user_text = encode_request(OCR_PROMPT, (image_dict,))
+        messages = (Message("system", MEDIA_SYSTEM), Message("user", user_text))
+        req = validated(Request(messages, target_provider.model, target_provider.model_version,
+                               800, 30, "local_only", "ocr_turn"))
+        response = target_provider.complete(req)
+        return response.content.strip()
+    except ProviderError as exc:
+        raise ToolRefused(exc.code, exc.reason) from None
+    except Exception:
+        raise ToolRefused("ocr_engine_unavailable", "تعذر استخراج النص عبر مزود الوسائط") from None
+
+
+def perform_ocr(image_dict: dict, engine: str = "auto", provider=None) -> str:
     """استخراج النص من الوسيط المجهز عبر المحرك المحدد أو التبديل التلقائي."""
     import base64
     raw_bytes = base64.b64decode(image_dict["data_base64"])
     if engine == "easyocr":
         return _extract_text_via_easyocr(raw_bytes)
-    elif engine == "ollama":
-        return _extract_text_via_ollama(image_dict)
+    elif engine in ("media_provider", "ollama"):
+        return _extract_text_via_media_provider(image_dict, provider=provider)
     else:
-        # auto: تجربة Ollama إن وُجد، وإلا التراجع إلى EasyOCR
+        # auto: تجربة مزوّد الوسائط إن وُجد، وإلا التراجع إلى EasyOCR
         try:
-            return _extract_text_via_ollama(image_dict)
+            return _extract_text_via_media_provider(image_dict, provider=provider)
         except Exception:
             return _extract_text_via_easyocr(raw_bytes)
 
