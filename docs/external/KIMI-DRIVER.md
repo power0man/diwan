@@ -183,13 +183,17 @@ tools/kimi_drive.sh run && tools/kimi_drive.sh inspect && tools/kimi_drive.sh in
 
 ```bash
 tools/kimi_drive.sh setup && tools/kimi_drive.sh run && tools/kimi_drive.sh inspect \
-  && OPEN_ONLY=1 tools/kimi_drive.sh intake \
+  && SANDBOX_RECEIPT=<إيصال الحاوية المعتمد> OPEN_ONLY=1 tools/kimi_drive.sh intake \
   && docker run --rm --network none -e DIWAN_DISPOSABLE_HOST=intake \
        -v ~/kimi-work/kimi-benchmark:/src:ro -v "$PWD":/workspace:ro -v ~/kimi-work/logs:/logs -w /workspace \
        diwan-intake python tools/kimi_intake.py /src --open-only --agentic \
        --out /logs/intake-agentic-open-$(date +%Y%m%d-%H%M%S).json \
   && UPDATE=1 OPEN_ONLY=1 tools/kimi_drive.sh place
 ```
+
+و`SANDBOX_RECEIPT` يمرّر `--sandbox-probes` و`--sandbox-receipt` إلى `tools/kimi_intake.py` (ومعه `SANDBOX_WORKSPACE` اختيارًا):
+فحالاتُ `python_sandbox` التي يمرّ ما خارج حاويتها بجوابٍ ثابت لا يحكم فيها إلا الحاوية، و`tools/evaluate_general.py`
+يرفض استلامًا بلاها (`intake_sandbox_cases_unprobed`).
 
 **وعطبٌ واحدٌ صادفناه يستحقّ الذكر:** توقّف التوزيع لأن Kimi كتب البيانَ المختوم
 قاموسًا مفتاحُه المسار، بينما v1 كان قائمةً فيها `path`. والتكليفُ اشترط **محتوى**
