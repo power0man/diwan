@@ -54,7 +54,9 @@ def _scalar_problem(text: str) -> str | None:
     if not text:
         return "empty_scalar"
     if QUOTED.fullmatch(text):
-        return None
+        # الهروبُ في المقتبس المزدوج (`\\u0065`) يجعل النصَّ الخامَ غيرَ ما يفكّه قارئُ YAML، فيعمى عنه فحصُ النصّ
+        # (`on: ["pull_requ\\u0065st_target"]`، مراجعة Codex على 2b92bce)؛ وبلا هروبٍ فالخامُ هو المفكوك
+        return "escape_in_quoted" if text.startswith('"') and "\\" in text else None
     if text[0] in INDICATORS and not (text[0] in "-?:" and len(text) > 1 and not text[1].isspace()):
         return "indicator_scalar"
     if ": " in text or text.endswith(":") or "\t" in text:
