@@ -188,21 +188,40 @@ def evidence_findings(file: str, payload: dict, models: dict, enforced_from: str
     return problems
 
 
-def _strings(value: object) -> list[str]:
-    if isinstance(value, str):
-        return [value]
-    children = value.values() if isinstance(value, dict) else value if isinstance(value, list) else ()
-    return [text for child in children for text in _strings(child)]
+def measured_weights(payload: object) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    """البصماتُ كما سجّلها الدليل مربوطةً بملفّاتها: مفتاحٌ اسمُه اسمُ ملفّ (`arabic.pth`) قيمتُه بصمة، أو مفتاحٌ
+    `<نوع>_sha256` (`traineddata_sha256`) لوزنٍ وحيدٍ من نوعه. فلا تُقبل بصمةُ ملفٍّ لملفٍّ آخر (ملاحظة Codex على #307)."""
+    by_file: dict[str, set[str]] = {}
+    by_kind: dict[str, set[str]] = {}
+
+    def visit(value: object) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if isinstance(key, str) and isinstance(child, str) and SHA256.match(child):
+                    if "." in key:
+                        by_file.setdefault(key, set()).add(child)
+                    elif key.endswith("_sha256"):
+                        by_kind.setdefault(key.removesuffix("_sha256"), set()).add(child)
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+
+    visit(payload)
+    return by_file, by_kind
 
 
 def weight_findings(models: dict, evidence: dict[str, object]) -> list[str]:
-    """كلُّ وزنٍ في السجلّ بهويّته كاملةً: ملفُّه وبصمتُه وأصلُه ورخصتُه بمصدرها وتاريخ قراءتها. وبصمتُه مكتوبةٌ في دليلٍ يسمّي
-    نموذجَه، فلا تُلصق رخصةٌ ببايتاتٍ غيرِ التي قيست (ملاحظة Codex على #307)."""
-    measured: dict[str, set[str]] = {}
+    """كلُّ وزنٍ في السجلّ بهويّته كاملةً: ملفُّه وبصمتُه وأصلُه ورخصتُه بمصدرها وتاريخ قراءتها. وبصمتُه هي التي سجّلها لملفّه
+    دليلٌ يسمّي نموذجَه، فلا تُلصق رخصةٌ ببايتاتٍ غيرِ التي قيست (ملاحظتا Codex على #307)."""
+    files: dict[str, dict[str, set[str]]] = {}
+    kinds: dict[str, dict[str, set[str]]] = {}
     for payload in evidence.values():
-        digests = {text for text in _strings(payload) if SHA256.match(text)}
+        by_file, by_kind = measured_weights(payload)
         for name in all_named_models(payload):
-            measured.setdefault(canonical(name), set()).update(digests)
+            for target, found in ((files, by_file), (kinds, by_kind)):
+                for key, digests in found.items():
+                    target.setdefault(canonical(name), {}).setdefault(key, set()).update(digests)
     problems = []
     for name, entry in sorted(models.items()):
         weights = entry.get("weights", []) if isinstance(entry, dict) else []
@@ -215,7 +234,10 @@ def weight_findings(models: dict, evidence: dict[str, object]) -> list[str]:
             problems += [f"weight_field_missing:{label}:{field}" for field in missing]
             if missing:
                 continue
-            if weight["sha256"] not in measured.get(name, set()):
+            recorded = files.get(name, {}).get(weight["file"])
+            if recorded is None:
+                recorded = kinds.get(name, {}).get(weight["file"].rpartition(".")[2], set())
+            if weight["sha256"] not in recorded:
                 problems.append(f"weight_digest_not_in_evidence:{label}")
             problems += [f"weight_source_not_https:{label}:{key}" for key in ("origin", "license_source")
                          if not HTTPS_SOURCE.match(weight[key])]

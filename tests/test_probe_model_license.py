@@ -150,11 +150,12 @@ def test_the_license_class_is_read_from_its_name_alone(name, kind):
     assert ml.license_class(name) == kind
 
 
-DIGEST, OTHER_DIGEST = "a" * 64, "b" * 64
+DIGEST, OTHER_DIGEST, SIBLING, TRAINED, PTH_KIND = "a" * 64, "b" * 64, "d" * 64, "e" * 64, "f" * 64
 WEIGHT = {"file": "w.pth", "sha256": DIGEST, "origin": "https://example.org/w.zip", "license": "mit",
           "license_source": "https://example.org/LICENSE", "read_on": "2026-10-05"}
-OCR_EVIDENCE = {"ocr.json": {"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST}}}},
-                "other.json": {"model": "a/model", "artifact_sha256": OTHER_DIGEST}}
+OCR_EVIDENCE = {"ocr.json": {"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST, "v.pth": SIBLING}}}},
+                "other.json": {"model": "a/model", "artifact_sha256": OTHER_DIGEST},
+                "tess.json": {"engine": {"name": "ocr", "settings": {"traineddata_sha256": TRAINED, "pth_sha256": PTH_KIND}}}}
 
 
 def _weights(*weights) -> dict:
@@ -163,15 +164,18 @@ def _weights(*weights) -> dict:
 
 def test_a_weight_whose_digest_its_model_evidence_recorded_passes():
     assert ml.weight_findings(_weights(WEIGHT), OCR_EVIDENCE) == []
-    assert ml.findings(_registry(["ocr.json", "other.json"], **_weights(WEIGHT)), OCR_EVIDENCE, None) == []
+    assert ml.findings(_registry(["ocr.json", "other.json", "tess.json"], **_weights(WEIGHT)), OCR_EVIDENCE, None) == []
     changed = _weights({**WEIGHT, "sha256": "c" * 64})
-    assert ml.findings(_registry(["ocr.json", "other.json"], **changed), OCR_EVIDENCE, None) == [
+    assert ml.findings(_registry(["ocr.json", "other.json", "tess.json"], **changed), OCR_EVIDENCE, None) == [
         "weight_digest_not_in_evidence:ocr:w.pth"]
 
 
 @pytest.mark.parametrize("change, code", [
     pytest.param({"sha256": "c" * 64}, "weight_digest_not_in_evidence:ocr:w.pth", id="digest_changed"),
     pytest.param({"sha256": OTHER_DIGEST}, "weight_digest_not_in_evidence:ocr:w.pth", id="another_models_digest"),
+    pytest.param({"sha256": SIBLING}, "weight_digest_not_in_evidence:ocr:w.pth", id="sibling_files_digest"),
+    pytest.param({"sha256": TRAINED}, "weight_digest_not_in_evidence:ocr:w.pth", id="another_kinds_digest"),
+    pytest.param({"sha256": PTH_KIND}, "weight_digest_not_in_evidence:ocr:w.pth", id="kind_digest_for_a_named_file"),
     pytest.param({"sha256": DIGEST.upper()}, "weight_digest_not_in_evidence:ocr:w.pth", id="digest_malformed"),
     pytest.param({"sha256": ""}, "weight_field_missing:ocr:w.pth:sha256", id="digest_omitted"),
     pytest.param({"origin": None}, "weight_field_missing:ocr:w.pth:origin", id="origin_omitted"),
@@ -183,6 +187,14 @@ def test_a_weight_whose_digest_its_model_evidence_recorded_passes():
 def test_a_weight_whose_identity_is_not_the_measured_bytes_is_named(change, code):
     """ملاحظة Codex على #307: بصمةٌ مخطوءةٌ أو مغيَّرةٌ أو غائبة، أو أصلٌ غائب، تُلصق رخصةً ببايتاتٍ لم تُقس."""
     assert ml.weight_findings(_weights({**WEIGHT, **change}), OCR_EVIDENCE) == [code]
+
+
+def test_a_digest_recorded_by_kind_binds_the_weight_of_that_kind():
+    """دليلُ Tesseract يسجّل `traineddata_sha256` بلا اسم ملفّ، فيُقبل لوزنٍ امتدادُه `.traineddata` وحده."""
+    trained = {**WEIGHT, "file": "ara.traineddata", "sha256": TRAINED}
+    assert ml.weight_findings(_weights(trained), OCR_EVIDENCE) == []
+    assert ml.weight_findings(_weights({**trained, "file": "ara.bin"}), OCR_EVIDENCE) == [
+        "weight_digest_not_in_evidence:ocr:ara.bin"]
 
 
 @pytest.mark.parametrize("weights", [pytest.param("w.pth", id="text"), pytest.param(["w.pth"], id="list_of_text"),
