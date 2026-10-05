@@ -231,6 +231,29 @@ def test_new_evidence_names_every_weight_it_records_in_the_registry():
         "license_not_stated_in_new_evidence:new.json:ocr", *sorted(expected)]
 
 
+@pytest.mark.parametrize("payload, found", [
+    pytest.param({"engine": {"name": "ocr"}}, ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth"],
+                 id="no_digest"),
+    pytest.param({"engine": {"name": "ocr"}, "w.pth": DIGEST},
+                 ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth"], id="digest_outside_its_model"),
+    pytest.param({"runs": [{"model": "ocr"}, {"model": "a/model", "w.pth": DIGEST}]},
+                 ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth",
+                  "weight_not_registered:new.json:a/model:w.pth"], id="digest_for_another_model"),
+    pytest.param({"engine": {"name": "ocr", "settings": {"models_sha256": {"v.pth": DIGEST}}}},
+                 ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth", "weight_not_registered:new.json:ocr:v.pth"],
+                 id="digest_for_another_file"),
+    pytest.param({"engine": {"name": "ocr", "settings": {"pth_sha256": DIGEST}}}, [], id="digest_by_kind"),
+    pytest.param({"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST}}}}, [], id="digest_by_file"),
+    pytest.param({"model": "a/model"}, [], id="model_without_registered_weights"),
+])
+def test_new_evidence_naming_a_model_with_registered_weights_records_their_digests(payload, found):
+    """ملاحظة Codex على #307: دليلٌ جديد يسمّي نموذجًا مقيَّدَ الأوزان بلا بصماتها يُسمّى، فلا تمرّ بايتاتٌ مستبدَلةٌ اتّكالًا
+    على دليلٍ أقدم سجّلها؛ والتاريخيُّ لا يُطالَب."""
+    evidence = {**OCR_EVIDENCE, "new.json": payload}
+    assert sorted(ml.weight_findings(_weights(WEIGHT), evidence, frozenset({"new.json"}))) == found
+    assert ml.weight_findings(_weights(WEIGHT), evidence) == []
+
+
 @pytest.mark.parametrize("weights", [pytest.param("w.pth", id="text"), pytest.param(["w.pth"], id="list_of_text"),
                                      pytest.param(5, id="number")])
 def test_a_malformed_weights_list_is_named(weights):

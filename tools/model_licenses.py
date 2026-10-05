@@ -242,6 +242,25 @@ def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_ki
     return problems
 
 
+def unmeasured_weights(file: str, payload: object, models: dict, measured: dict) -> list[str]:
+    """دليلٌ جديد يسمّي نموذجًا له أوزانٌ في السجلّ يسجّل بصمةَ كلِّ وزنٍ منها لملفّه أو نوعه في شجرة نموذجه، فلا تمرّ بايتاتٌ
+    مستبدَلةٌ بغياب البصمة اتّكالًا على دليلٍ أقدم (ملاحظة Codex على #307)."""
+    problems = []
+    for name in dict.fromkeys(canonical(raw) for raw in all_named_models(payload)):
+        entry = models.get(name)
+        weights = entry.get("weights") if isinstance(entry, dict) else None
+        by_file, by_kind = measured.get(name, ({}, {}))
+        for weight in weights if isinstance(weights, list) else []:
+            if not isinstance(weight, dict) or not isinstance(weight.get("file"), str):
+                continue
+            digests = by_file.get(weight["file"])
+            if digests is None:
+                digests = by_kind.get(weight["file"].rpartition(".")[2], set())
+            if weight.get("sha256") not in digests:
+                problems.append(f"weight_not_measured_in_new_evidence:{file}:{name}:{weight['file']}")
+    return problems
+
+
 def weight_findings(models: dict, evidence: dict[str, object], new_files: frozenset[str] = frozenset()) -> list[str]:
     """كلُّ وزنٍ في السجلّ بهويّته كاملةً: ملفُّه وبصمتُه وأصلُه ورخصتُه بمصدرها وتاريخ قراءتها. وبصمتُه هي التي سجّلها لملفّه
     دليلٌ يسمّي نموذجَه، فلا تُلصق رخصةٌ ببايتاتٍ غيرِ التي قيست (ملاحظتا Codex على #307)."""
@@ -249,12 +268,15 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
     kinds: dict[str, dict[str, set[str]]] = {}
     problems = []
     for file, payload in sorted(evidence.items()):
-        for name, (by_file, by_kind) in measured_weights(payload).items():
+        measured = measured_weights(payload)
+        for name, (by_file, by_kind) in measured.items():
             for target, found in ((files, by_file), (kinds, by_kind)):
                 for key, digests in found.items():
                     target.setdefault(name, {}).setdefault(key, set()).update(digests)
             if file in new_files and isinstance(models.get(name), dict):
                 problems += unregistered_weights(file, name, models[name], by_file, by_kind)
+        if file in new_files:
+            problems += unmeasured_weights(file, payload, models, measured)
     for name, entry in sorted(models.items()):
         weights = entry.get("weights", []) if isinstance(entry, dict) else []
         if not isinstance(weights, list) or not all(isinstance(weight, dict) for weight in weights):
