@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "tests_collected": 6270,
+  "tests_collected": 6359,
   "latest_technical_document": "M16-ACCEPTANCE.md",
   "latest_technical_scope": "م١٦",
   "latest_decision": 73,
@@ -17,7 +17,7 @@
   "maritime_current_documents": 117,
   "maritime_current_pages": 1279,
   "acceptance_documents": 19,
-  "python_files": 531,
+  "python_files": 533,
   "quality_review": "automated_multi_system_pending",
   "active_gate": "ق٤٩",
   "release_ready": false,

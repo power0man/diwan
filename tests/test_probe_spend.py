@@ -46,6 +46,11 @@ def test_a_well_formed_spend_block_passes(spend):
     assert ps.spend_findings("n.json", spend) == []
 
 
+def test_a_huge_integer_cost_is_a_cost_not_a_crash():
+    """ملاحظة Codex على #310: عددٌ صحيحٌ فوق مدى العائم لا يُحوَّل إليه، فلا يسقط الحارسُ بـOverflowError."""
+    assert ps.spend_findings("n.json", {**CLOUD, "cost_usd": 10 ** 400, "cost_basis": "reported_by_provider"}) == []
+
+
 @pytest.mark.parametrize("spend, code", [
     pytest.param({**LOCAL, "extra": 1}, "spend_keys:n.json", id="extra_key"),
     pytest.param({k: v for k, v in LOCAL.items() if k != "cost_basis"}, "spend_keys:n.json", id="missing_key"),
@@ -53,12 +58,19 @@ def test_a_well_formed_spend_block_passes(spend):
     pytest.param({**CLOUD, "cloud_calls": True}, "spend_count:n.json:cloud_calls", id="boolean_count"),
     pytest.param({**CLOUD, "completion_tokens": 4.0}, "spend_count:n.json:completion_tokens", id="float_count"),
     pytest.param({**CLOUD, "cost_basis": "cheap"}, "spend_basis_unknown:n.json", id="unknown_basis"),
+    pytest.param({**CLOUD, "cost_basis": ["reported_by_provider"]}, "spend_basis_unknown:n.json", id="basis_not_text"),
     pytest.param({**CLOUD, "cost_basis": "unpriced"}, "spend_unpriced_with_cost:n.json", id="unpriced_with_cost"),
     pytest.param({**CLOUD, "cost_usd": None}, "spend_cost:n.json", id="priced_without_cost"),
     pytest.param({**CLOUD, "cost_usd": -0.5, "cost_basis": "reported_by_provider"}, "spend_cost:n.json",
                  id="negative_cost"),
     pytest.param({**CLOUD, "cost_usd": True, "cost_basis": "reported_by_provider"}, "spend_cost:n.json",
                  id="boolean_cost"),
+    pytest.param({**CLOUD, "cost_usd": float("inf"), "cost_basis": "reported_by_provider"}, "spend_cost:n.json",
+                 id="infinite_cost"),
+    pytest.param({**CLOUD, "cost_usd": float("nan"), "cost_basis": "reported_by_provider"}, "spend_cost:n.json",
+                 id="nan_cost"),
+    pytest.param({**CLOUD, "cost_usd": -10 ** 400, "cost_basis": "reported_by_provider"}, "spend_cost:n.json",
+                 id="huge_negative_integer_cost"),
     pytest.param({**LOCAL, "cloud_calls": 2}, "spend_local_with_cloud:n.json", id="local_with_calls"),
     pytest.param({**LOCAL, "cost_usd": 0.01}, "spend_local_with_cloud:n.json", id="local_with_cost"),
     pytest.param({**CLOUD, "cloud_calls": 0}, "spend_cloud_basis_without_calls:n.json", id="cloud_basis_no_calls"),
