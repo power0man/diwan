@@ -1,0 +1,1 @@
+{"id": "project-status-limits-dropped", "task": "ق٧٣-0.6", "file": "tools/check_docs.py", "old": "             'measurement_limits': STATUS_LIMITS}", "new": "             'measurement_limits': []}", "tests": ["tests/test_project_status_limits.py::test_the_generated_status_carries_its_measurement_limits"], "why": "أرقامُ project-status.json تُنشر بلا حدودها"}

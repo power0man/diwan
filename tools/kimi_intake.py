@@ -59,7 +59,7 @@ GENERAL_MIN_CASES = 150
 AGENTIC_MIN_TASKS = 30
 LIMITS = [
     "validators_check_schema_and_the_v1_2_conditions_not_whether_a_reference_answer_is_correct",
-    "gameable_checks_are_found_by_four_fixed_answers_empty_echo_of_the_question_polarity_spray_and_both_so_a_subtler_gameable_check_passes",
+    "gameable_checks_are_found_by_five_fixed_answers_empty_echo_polarity_spray_both_and_each_contains_value_negated_so_a_subtler_gameable_check_passes",
     "without_sandbox_probes_a_case_whose_other_checks_a_fixed_answer_passes_is_counted_needs_sandbox_not_judged",
     "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged",
 ]
@@ -204,15 +204,24 @@ def _bank_files(src: Path) -> list[tuple[str, Path]]:
 
 
 # أجوبةٌ ثابتة لا تعرف الجواب (شروطُ v1.2 في docs/external/KIMI-NEXT.md §١): فارغ، ونسخُ السؤال (فيه خياراتُه كلُّها
-# ونصُّه الأصل)، وسردُ الحكمين معًا، والاثنان معًا. فحصٌ يمرّره أحدُها لا يميّز الجوابَ الصحيح من لا جواب.
+# ونصُّه الأصل)، وسردُ الحكمين معًا، والاثنان معًا، ونفيُ قيمة كلِّ contains. فحصٌ يمرّره أحدُها لا يميّز الجوابَ الصحيح من لا جواب.
 POLARITY_SPRAY = "يوجد خطأ ولا يوجد خطأ. صحيح وخاطئ وغير صحيح. نعم ولا. يجوز ولا يجوز. يصح ولا يصح."
+# صيغُ النفي في docs/external/KIMI-NEXT.md §١ البند ٣، وكلٌّ منها جوابٌ ثابت لكل قيمة contains
+NEGATION_FORMS = ("لا يوجد {}.", "ليس فيه {}.", "لا {}.")
 
 
 def _probe_answers(case: dict) -> tuple[tuple[str, str], ...]:
     question = "\n".join(m.get("content", "") for m in case.get("messages", [])
                          if isinstance(m, dict) and m.get("role") == "user" and isinstance(m.get("content"), str))
+    # نفيُ قيمة الفحص نفسِها بصيغ النفي في KIMI-NEXT §١ البند ٣: «لا يوجد خلل» يمرّ `contains: خلل` وإن لم تكن
+    # الكلمةُ في POLARITY_SPRAY (ملاحظة Codex على #312، #314)
+    values = [check["value"] for check in case.get("checks") or []
+              if check.get("kind") == "contains" and isinstance(check.get("value"), str)]
+    # كلُّ صيغةٍ جوابٌ مستقلّ: فحصٌ يستبعد «لا يوجد» وحدها يمرّه «ليس فيه X» (ملاحظة Codex على #315)
+    negated = tuple((f"negated_value_{index}", "\n".join(form.format(value) for value in values))
+                    for index, form in enumerate(NEGATION_FORMS, 1))
     return (("empty", ""), ("echo", question), ("polarity_spray", POLARITY_SPRAY),
-            ("echo_and_spray", question + "\n" + POLARITY_SPRAY))
+            ("echo_and_spray", question + "\n" + POLARITY_SPRAY)) + negated
 
 
 def gameable_probe(case: dict, *, sandbox: bool = False) -> str | None:

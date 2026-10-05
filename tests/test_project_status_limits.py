@@ -16,7 +16,7 @@ import check_docs  # noqa: E402
 
 
 def test_the_generated_status_carries_its_measurement_limits():
-    state, _, _ = check_docs.derive(ROOT, 0)
+    state, _, _ = check_docs.derive(ROOT)
     limits = state["measurement_limits"]
     assert limits and all(isinstance(item, str) and item for item in limits)
     published = json.loads((ROOT / "docs" / "probe" / "project-status.json").read_text(encoding="utf-8"))
