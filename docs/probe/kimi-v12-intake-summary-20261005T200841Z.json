@@ -600,6 +600,7 @@
     }
   ],
   "observer_method": "pass_through_to_the_unchanged_official_judge_with_the_original_result_returned_unchanged",
+  "observer_path": "agentic_observer.py",
   "observer_sha256": "24c7d9942a3996eff134e5c1e017193f0965411ba3269608785c8f5de56a52e3",
   "agentic_raw_report_repeat_identical": true,
   "repeat_reason": "first_observer_was_attached_to_an_unused_default_original_report_preserved_rerun_only_to_record_task_ids",
