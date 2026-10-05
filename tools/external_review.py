@@ -7,7 +7,7 @@
     OLLAMA_API_KEY=… python3 tools/external_review.py --base-url https://ollama.com --smoke out.json
     GITHUB_TOKEN=… python3 tools/external_review.py --backend github-models --list-catalog catalog.json
     GITHUB_TOKEN=… python3 tools/external_review.py --backend github-models --smoke out.json
-    HF_TOKEN=… python3 tools/external_review.py --backend hf-router --smoke out.json --every-family
+    HF_TOKEN=… python3 tools/external_review.py --backend hf-router --max-usd 0.50 --smoke out.json --every-family
     GROQ_API_KEY=… DIWAN_GROQ_FREE_TIER_CONFIRMED=confirmed python3 tools/external_review.py --backend groq --smoke out.json
     OPENROUTER_API_KEY=… python3 tools/external_review.py --backend openrouter --smoke out.json
 
@@ -57,7 +57,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_CEILING, Decimal, InvalidOperation
 from pathlib import Path
 from typing import Callable
 
@@ -68,6 +68,7 @@ from evaluation.external_review import (AUTHOR_FAMILY, BUDGET_TERMINAL_ERRORS, D
                                         DEVELOPER_FAMILIES, ENGINE_FAMILY, LEDGER_FILE, SUPERSEDED_DIR,
                                         _slug, open_files, review_bank, smoke, summarize)
 from evaluation.multi_system_review import AutomaticReviewError, model_family  # noqa: E402
+from core.budget import Budget, BudgetRefused  # noqa: E402
 from core.canonical import SAFE_INT  # noqa: E402
 from core.locality import is_cloud_model  # noqa: E402
 
@@ -603,6 +604,10 @@ class OpenAICompatChat:
                 "pricing": {key: str(_decimal(value)) for key, value in sorted(by_id[model]["pricing"].items())
                             if isinstance(key, str) and _SAFE_TOKEN.fullmatch(key)}}
 
+    def _wire_model(self, model: str) -> str:
+        """المعرّفُ كما يُرسل في الحمولة: هو نفسُه هنا، ومثبَّتٌ بمزوّده في موجّه HF (`PricedRouterChat`)."""
+        return model
+
     def _guard_zero_spend(self, model: str) -> str | None:
         if self.backend == "groq":
             return self.zero_spend_proofs.get("*")
@@ -695,7 +700,7 @@ class OpenAICompatChat:
         try:
             proof = self._guard_zero_spend(model)
             # المخطّطُ موصوفٌ في التكليف نفسِه («JSON فقط»)، ولا يُرسل response_format لأن نماذجَ في الفهرس تردّه 400.
-            payload = {"model": model, "stream": False, "temperature": 0, "max_tokens": self.max_tokens,
+            payload = {"model": self._wire_model(model), "stream": False, "temperature": 0, "max_tokens": self.max_tokens,
                        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
             if self.backend == "openrouter":
                 # لا نماذجَ بديلة ولا انتقالَ مدفوعًا، واطلب الكلفة الفعلية في الردّ حتى لا تُخمَّن صفرًا.
@@ -793,14 +798,140 @@ def _catalog_entry(entry: dict) -> dict:
             isinstance(p, dict) and p.get("status") == "live" for p in entry["providers"]):
         reason = "no_live_provider"
     return {"id": entry["id"], "chat": reason is None, "reason": reason,
-            "tier": entry.get("rate_limit_tier"), "pricing": entry.get("pricing")}
+            "tier": entry.get("rate_limit_tier"), "pricing": entry.get("pricing"),
+            "router_prices": router_prices(entry)}
 
 
-def build_free_transport(backend: str, environ=os.environ, **kw) -> OpenAICompatChat:
-    """النقلُ المجانيّ؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر)."""
+def router_prices(entry: dict) -> dict[str, dict]:
+    """أسعارُ موجّه HF لكل مزوّدٍ حيّ أعلن سعرَيه: {المزوّد: {input, output}} بالدولار لكل مليون توكن، أي ميكرو-دولار
+    لكل توكن (`providers[].pricing` في `/v1/models`، `hf://docs/inference-providers/hub-api.md`). وما غاب أحدُ سعرَيه أو
+    لم يكن حيًّا أو لم يكن اسمُه آمنًا لا يدخل: السعرُ الغائب لا يُعدّ صفرًا."""
+    prices: dict[str, dict] = {}
+    for provider in entry.get("providers") or ():
+        if not isinstance(provider, dict) or provider.get("status") != "live":
+            continue
+        name, pricing = provider.get("provider"), provider.get("pricing")
+        if not isinstance(name, str) or not _SAFE_TOKEN.fullmatch(name) or not isinstance(pricing, dict):
+            continue
+        values = {side: _decimal(pricing.get(side)) for side in ("input", "output")}
+        if all(value is not None for value in values.values()):
+            prices.setdefault(name, values)
+    return prices
+
+
+# سقفُ HFD2 (ق٦٤، `docs/PLAN-20260926.md` §٧): ‎$20 شحنًا مسبقًا بلا شحنٍ تلقائي. فلا يُعطى تشغيلٌ واحد سقفًا فوقه.
+HFD2_CAP_USD = Decimal("20")
+MICROS_PER_USD = 1_000_000
+
+
+def _ceil_micros(value: Decimal) -> int:
+    """ميكرو-دولار صحيح، مقرَّبٌ إلى أعلى: التقديرُ والتسويةُ لا يُنقصان كسرًا من الكلفة."""
+    return int(value.to_integral_value(rounding=ROUND_CEILING))
+
+
+class PricedRouterChat(OpenAICompatChat):
+    """موجّه HF مدفوعٌ بالتوكن، فلا يخرج نداءٌ إليه إلا بسعرٍ مقروءٍ وسقفٍ محجوز (جديد-spend-ledger، البندان ٢ و٣ من #295).
+
+    - **السعر:** من `providers[].pricing` في فهرس الموجّه نفسِه ساعةَ التشغيل، لكل نموذجٍ أرخصُ مزوّدٍ حيٍّ أعلن سعرَيه، ويُثبَّت
+      المزوّدُ في الحمولة (`<model>:<provider>`) فلا يختار الموجّهُ غيرَه. والنموذجُ بلا سعرٍ مقروء `price_unknown` قبل الشبكة.
+    - **السقف:** `core.budget.Budget` بسقف التشغيل (`--max-usd`، لازمٌ وموجبٌ ولا يتجاوز HFD2). يُحجز قبل كل نداءٍ تقديرٌ أعلى:
+      بايتاتُ التكليف (كلُّ توكنٍ بايتٌ على الأقل) بسعر المدخل، و`max_tokens` بسعر المخرج. وما لا يتّسع `spend_cap_reached`
+      قبل الشبكة.
+    - **التسوية:** بالكلفة التي أبلغها الموجّه إن أبلغها، وإلا بتوكنات الردّ بالسعر نفسِه (`estimated_from_prices`). وما أُرسل بلا
+      توكناتٍ يُسوّى بالمحجوز كلِّه (`reserved_upper_bound`)، لأن المزوّد قد يكون نفّذ.
+    """
+
+    def __init__(self, api_key: str | None, *, spend_cap_usd: Decimal | None, **kw):
+        super().__init__("hf-router", api_key, **kw)
+        if spend_cap_usd is None:
+            raise AutomaticReviewError("spend_cap_required", "--max-usd")
+        cap = _decimal(str(spend_cap_usd))
+        if cap is None or cap <= 0 or cap > HFD2_CAP_USD:
+            raise AutomaticReviewError("spend_cap_invalid", f"0 < --max-usd <= {HFD2_CAP_USD}")
+        self.spend_cap_usd = cap
+        cap_micros = _ceil_micros(cap * MICROS_PER_USD)
+        self.budget = Budget(day_remaining_micros=cap_micros, month_remaining_micros=cap_micros)
+        self.spent_micros = 0
+        self.router_price_table: dict[str, dict] | None = None
+        self.price_pins: dict[str, dict] = {}
+
+    def catalog(self) -> list[dict]:
+        entries = super().catalog()
+        self.router_price_table = {entry["id"]: entry["router_prices"] for entry in entries}
+        return entries
+
+    def _pin(self, model: str) -> dict:
+        if model in self.price_pins:
+            return self.price_pins[model]
+        if self.router_price_table is None:
+            try:
+                self.catalog()
+            except AutomaticReviewError as exc:
+                raise AutomaticReviewError("price_unknown", model) from exc
+        offers = (self.router_price_table or {}).get(model) or {}
+        if not offers:
+            raise AutomaticReviewError("price_unknown", model)
+        provider = min(offers, key=lambda name: (offers[name]["input"] + offers[name]["output"], name))
+        self.price_pins[model] = {"provider": provider, "input": offers[provider]["input"],
+                                  "output": offers[provider]["output"], "read_at": self.catalog_read_at}
+        return self.price_pins[model]
+
+    def _wire_model(self, model: str) -> str:
+        return f"{model}:{self._pin(model)['provider']}"
+
+    def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
+        pin = self._pin(model)
+        estimate = _ceil_micros(len((system + user).encode("utf-8")) * pin["input"]
+                                + self.max_tokens * pin["output"])
+        handle = f"{model}#{len(self.provider_usage)}"
+        try:
+            self.budget.reserve(handle, estimate)
+        except BudgetRefused as exc:
+            raise AutomaticReviewError("spend_cap_reached", model) from exc
+        rows = len(self.provider_usage)
+        try:
+            content = super().__call__(model, system, user, schema)
+        finally:
+            row = self.provider_usage[-1] if len(self.provider_usage) > rows else None
+            self._settle(handle, pin, row)
+        return content
+
+    def _settle(self, handle: str, pin: dict, row: dict | None) -> None:
+        usage = (row or {}).get("usage") or {}
+        if row is not None and row.get("cost_status") == "reported":
+            spent = self.budget.settle(handle, _ceil_micros(Decimal(row["cost_usd"]) * MICROS_PER_USD))
+        elif {"prompt_tokens", "completion_tokens"} <= usage.keys():
+            spent = self.budget.settle(handle, _ceil_micros(usage["prompt_tokens"] * pin["input"]
+                                                            + usage["completion_tokens"] * pin["output"]))
+            row.update(cost_usd=str(Decimal(spent) / MICROS_PER_USD), cost_status="estimated_from_prices")
+        else:
+            spent = self.budget.settle_unknown(handle)
+            if row is not None:
+                row.update(cost_usd=str(Decimal(spent) / MICROS_PER_USD), cost_status="reserved_upper_bound")
+        self.spent_micros += spent
+        if row is not None:
+            row["price"] = {"provider": pin["provider"], "input": str(pin["input"]), "output": str(pin["output"]),
+                            "unit": "usd_per_million_tokens", "read_at": pin["read_at"]}
+
+    def spend_report(self) -> dict:
+        return {**super().spend_report(), "spend_cap": {
+            "cap_usd": str(self.spend_cap_usd), "spent_usd": str(Decimal(self.spent_micros) / MICROS_PER_USD),
+            "prices": {model: {"provider": pin["provider"], "input": str(pin["input"]), "output": str(pin["output"]),
+                               "unit": "usd_per_million_tokens", "read_at": pin["read_at"],
+                               "catalog": bare_url(self.catalog_url)}
+                       for model, pin in sorted(self.price_pins.items())}}}
+
+
+def build_free_transport(backend: str, environ=os.environ, *, spend_cap_usd: Decimal | None = None,
+                         **kw) -> OpenAICompatChat:
+    """النقلُ المجانيّ؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر). وموجّهُ HF مدفوعٌ فنقلُه مسعَّرٌ بسقف."""
     if backend not in BACKENDS:
         raise AutomaticReviewError("backend_unknown", backend)
     spec = BACKENDS[backend]
+    if backend == "hf-router":
+        return PricedRouterChat(environ.get(spec["key_env"]) or None, spend_cap_usd=spend_cap_usd, **kw)
+    if spend_cap_usd is not None:
+        raise AutomaticReviewError("max_usd_is_hf_router_only", backend)
     confirmation = environ.get(spec.get("free_tier_env", "")) if spec.get("free_tier_env") else None
     return OpenAICompatChat(backend, environ.get(spec["key_env"]) or None,
                             free_tier_confirmation=confirmation, **kw)
@@ -1394,7 +1525,7 @@ def _free_main(args, parser) -> int:
         if args.run_id and args.bank is not None and not (args.smoke or args.list_catalog):
             check_public_bank(args.bank)
             run = args.bank = prepare_run(args.bank, args.run_id)
-        transport = build_free_transport(args.backend, max_tokens=args.max_tokens)
+        transport = build_free_transport(args.backend, max_tokens=args.max_tokens, spend_cap_usd=args.max_usd)
         if args.list_catalog:
             assessed = assess_catalog(transport.catalog(), args.backend)
             # حدودُ الجرد من الموضع الواحد (ملاحظة Codex على #174): الهويةُ معرّفُ الفهرس، والعائلةُ مستنتجة، والفهرسُ لحظةٌ واحدة
@@ -1463,6 +1594,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="يكتب فهرسَ الواجهة المجانية وحكمَ كل نموذجٍ فيه (صالحٌ بعائلته أو مرفوضٌ برمزه)")
     parser.add_argument("--every-family", action="store_true",
                         help="مع --smoke على واجهةٍ مجانية: يجرّب أفضلَ نموذجٍ من كل عائلةٍ مسموحة، أزواجًا")
+    parser.add_argument("--max-usd", type=Decimal, default=None, metavar="USD",
+                        help="سقفُ إنفاق التشغيل على موجّه HF المدفوع، لازمٌ معه ولا يتجاوز HFD2 (‎$20)؛ ولا يُقبل مع غيره")
     parser.add_argument("--max-tokens", type=int, default=4000,
                         help="حدُّ مخرج الردّ على الواجهات المجانية")
     parser.add_argument("--check-artifact", type=Path, metavar="REVIEWS_DIR",
@@ -1487,7 +1620,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"status": "refused", "code": "base_url_is_ollama_only"}, ensure_ascii=False))
             return 2
         return _free_main(args, parser)
-    if args.list_catalog or args.every_family or args.fallbacks or args.run_id:
+    if args.list_catalog or args.every_family or args.fallbacks or args.run_id or args.max_usd is not None:
         print(json.dumps({"status": "refused", "code": "free_backend_option_without_free_backend"},
                          ensure_ascii=False))
         return 2

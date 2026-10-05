@@ -13,7 +13,7 @@
 | الواجهة | النقطة | المفتاح (من البيئة وحدها) | أين تعمل | الكلفة |
 |---|---|---|---|---|
 | `--backend github-models` | `models.github.ai` | `GITHUB_TOKEN` | Actions: رمزُ المهمّة نفسُه بصلاحية `models: read`، بلا سرٍّ جديد | مجّانية ضمن حدود الطبقة المجانية (عددُ الطلبات وحجمُ المدخل لكل نموذج) |
-| `--backend hf-router` | `router.huggingface.co` | `HF_TOKEN` | صندوقُ HF برمز المالك (`--forward-hf-token`) | رصيدُ PRO الشهريّ ثم سقفُ HFD2 (‎$20)؛ وكلُّ إنفاقٍ يُسجَّل في `docs/probe/` |
+| `--backend hf-router` | `router.huggingface.co` | `HF_TOKEN` | صندوقُ HF برمز المالك (`--forward-hf-token`) | مدفوعٌ بالتوكن: `--max-usd` لازمٌ ولا يتجاوز HFD2 (‎$20)، ولا نداءَ بلا سعرٍ من فهرس الموجّه؛ وكلُّ إنفاقٍ يُسجَّل في `docs/probe/` |
 | `--backend groq` | `api.groq.com` | `GROQ_API_KEY` | حيث تسمح الشبكة، بعد تأكيد المشغّل طبقة الحساب المجانية | صفر فقط؛ يرفض قبل الشبكة بلا `DIWAN_GROQ_FREE_TIER_CONFIRMED=confirmed` |
 | `--backend openrouter` | `openrouter.ai` | `OPENROUTER_API_KEY` | حيث تسمح الشبكة | صفر فقط؛ `:free` مع كل بنود سعر الفهرس صفر، بلا fallback تلقائي |
 
@@ -41,7 +41,7 @@
 ```sh
 GITHUB_TOKEN=… python3 tools/external_review.py --backend github-models --list-catalog catalog.json
 GITHUB_TOKEN=… python3 tools/external_review.py --backend github-models --smoke smoke.json
-HF_TOKEN=…     python3 tools/external_review.py --backend hf-router --smoke smoke.json --every-family
+HF_TOKEN=…     python3 tools/external_review.py --backend hf-router --max-usd 0.50 --smoke smoke.json --every-family
 GROQ_API_KEY=… DIWAN_GROQ_FREE_TIER_CONFIRMED=confirmed \
   python3 tools/external_review.py --backend groq --smoke smoke.json
 OPENROUTER_API_KEY=… python3 tools/external_review.py --backend openrouter --smoke smoke.json \
@@ -63,6 +63,13 @@ GITHUB_TOKEN=… python3 tools/external_review.py evaluation/banks/kimi_v1 --bac
 - **سقف OpenRouter صفر:** المعرّف بلا `:free` هو `free_model_required`، والسعر الغائب أو غير الصفري
   `free_price_unverified` قبل نداء النموذج؛ وبندا `prompt` و`completion` لازمان، فلا يشهد بالمجانية ما حضر صفرًا من غيرهما. جسم الطلب يمنع fallback ويطلب usage؛ الكلفة الغائبة
   `usage_cost_unavailable` وغير الصفر `zero_spend_breach`، فلا يُقبل الرد نجاحًا.
+- **موجّهُ HF مدفوعٌ بسقف** (#295، البندان ٢ و٣): `--max-usd` لازمٌ معه (`spend_cap_required`)، موجبٌ ولا يتجاوز HFD2
+  (`spend_cap_invalid`)، ولا يُقبل مع واجهةٍ أخرى (`max_usd_is_hf_router_only`). السعرُ من `providers[].pricing` في فهرس
+  الموجّه ساعةَ التشغيل، ويُثبَّت أرخصُ مزوّدٍ حيٍّ أعلن سعرَيه في الحمولة (`<model>:<provider>`)؛ والنموذجُ بلا سعرٍ
+  `price_unknown`. ويُحجز على `core.budget.Budget` قبل كل نداءٍ تقديرٌ أعلى (بايتاتُ التكليف بسعر المدخل، و`max_tokens`
+  بسعر المخرج)، وما لا يتّسع `spend_cap_reached` قبل الشبكة. ويُسوّى بالكلفة المبلَّغة، أو بتوكنات الردّ بالسعر نفسِه
+  (`estimated_from_prices`)، أو بالمحجوز كلِّه إن أُرسل بلا توكنات (`reserved_upper_bound`). والرمزان الأوّلان يوقفان
+  التشغيلَ بلا إعادةٍ ولا بديل. **حدُّه:** السقفُ للتشغيل الواحد لا للشهر، فسقفُ الشهر شحنُ HFD2 المسبق بلا شحنٍ تلقائي.
 - **العائلةُ من الناشر بجدولٍ صريح** ويجب أن يقولها الاسمُ أيضًا (وإلا `family_mismatch` أو `reviewer_family_unknown`)،
   والناشرُ المجهول `publisher_unknown`. ولا يراجع Qwen (المحرّك) ولا Moonshot/Kimi (المؤلّف) ولا OpenAI وGoogle
   وAnthropic (المطوّرون) — ولا المقطَّرُ منها، فكلُّ مقطعٍ في الاسم يدخل السلالة. ولا مراجعان تتقاطع سلالتاهما.

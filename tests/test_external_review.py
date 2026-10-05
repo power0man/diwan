@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import inspect
 import json
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -382,7 +383,8 @@ def test_the_free_key_comes_from_the_environment_only(tmp_path, monkeypatch, cap
         with pytest.raises(AutomaticReviewError) as refused:
             cli.build_free_transport(backend, environ={})
         assert refused.value.code == "key_missing" and env in str(refused.value)
-        assert cli.build_free_transport(backend, environ={env: KEY}).key_env == env
+        cap = {"spend_cap_usd": Decimal("1")} if backend == "hf-router" else {}   # الموجّهُ مدفوعٌ فلا يُبنى بلا سقف
+        assert cli.build_free_transport(backend, environ={env: KEY}, **cap).key_env == env
     opener = FreeOpener()
     monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: opener)
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
@@ -1205,10 +1207,12 @@ def test_a_record_from_another_backend_is_not_reused_under_this_backend(tmp_path
     capsys.readouterr()
     record_path = bank / "reviews" / DS.replace("/", "_") / "a" / "kimi_x.json"
     assert json.loads(record_path.read_text(encoding="utf-8"))["backend"] == "github-models"
-    opener = _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
-    assert cli.main([*common, "--backend", "hf-router"]) == 0
+    priced = {"data": [{"id": m, "providers": [{"provider": "p", "status": "live", "pricing": {"input": 1, "output": 2}}]}
+                       for m in (DS, MI)]}
+    opener = _free(monkeypatch, FreeOpener(catalog=priced, replies={f"{DS}:p": [_ok(ids)], f"{MI}:p": [_ok(ids)]}))
+    assert cli.main([*common, "--backend", "hf-router", "--max-usd", "1"]) == 0
     result = json.loads(capsys.readouterr().out)
-    assert opener.chat_models() == [DS, MI], "سجلُّ github-models لا يُعاد استعمالُه تحت hf-router"
+    assert opener.chat_models() == [f"{DS}:p", f"{MI}:p"], "سجلُّ github-models لا يُعاد استعمالُه تحت hf-router"
     assert {k: result[k] for k in ("reviewed", "skipped")} == {"reviewed": 2, "skipped": 0}
     record = json.loads(record_path.read_text(encoding="utf-8"))
     assert (record["backend"], record["endpoint_host"]) == ("hf-router", "router.huggingface.co")
