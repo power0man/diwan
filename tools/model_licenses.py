@@ -45,10 +45,14 @@ PENDING_REASONS = frozenset({
 HTTPS_SOURCE = re.compile(r"^https://[^\s]+$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 WEIGHT_FIELDS = ("file", "sha256", "origin", "license", "license_source", "read_on")
-# امتداداتُ ملفّات الأوزان؛ وما سواها (صورُ البنك، وبياناتُه) بصماتٌ ليست أوزانًا
-WEIGHT_KINDS = frozenset({"pth", "pt", "bin", "safetensors", "gguf", "onnx", "ckpt", "h5", "tflite", "traineddata"})
-# ولاسمِ الملفّ وحده `.model` (نماذجُ SentencePiece)؛ ولا يدخل أنواعَ البصمات لأن `model_sha256` حقلٌ عامّ في الأدلّة
-WEIGHT_FILE_KINDS = WEIGHT_KINDS | {"model"}
+# أنواعُ الأوزان التي تُقبل بصمتُها بحقل `<نوع>_sha256` بلا اسم ملفّ
+WEIGHT_KINDS = frozenset({"pth", "pt", "bin", "safetensors", "gguf", "onnx", "ckpt", "h5", "hdf5", "keras", "pb", "tflite",
+                          "mlmodel", "traineddata"})
+# ما يُعرف أنه بياناتٌ لا أوزان (صورُ البنك، ونصوصُه، وسجلّاتُه)؛ وكلُّ لاحقةٍ سواه وزنٌ يُطالَب بقيده في الدليل الجديد، فلا
+# يمرّ نوعٌ لم يُسمَّ (`.keras` و`.pb` و`.model`…) بايتاتٍ بلا رخصة (ملاحظات Codex على #307)
+DATA_KINDS = frozenset({"jpg", "jpeg", "png", "gif", "webp", "bmp", "tif", "tiff", "svg", "pdf", "json", "jsonl", "txt",
+                        "md", "csv", "tsv", "html", "xml", "yaml", "yml", "toml", "ini", "cfg", "log", "lock", "py",
+                        "sh", "wav", "mp3", "flac", "ogg", "mp4"})
 # أغلفةٌ تُنزع قبل قراءة النوع: `checkpoint.pth.tar` وزنُ `pth` في أرشيف (ملاحظة Codex على #307)
 WRAPPERS = frozenset({"tar", "gz", "tgz", "zip", "bz2", "xz", "zst"})
 HF_PREFIX = re.compile(r"^(?:https://)?(?:huggingface\.co|hf\.co)/")
@@ -238,13 +242,18 @@ def measured_weights(payload: object) -> dict[str, tuple[dict[str, set[str]], di
     return out
 
 
-def is_weight_file(name: str) -> bool:
-    """ملفُّ وزنٍ إن كانت لاحقتُه بعد نزع الأغلفة نوعَ وزن: فـ`checkpoint.pth.tar` و`spm.model` وزنان، و`o01.jpg` و`bundle.tar`
-    و`data.model.json` ليست أوزانًا (ملاحظة Codex على #307)."""
+def weight_kind(name: str) -> str:
+    """نوعُ الملفّ من لاحقته بعد نزع الأغلفة: `checkpoint.pth.tar` نوعُه `pth` في التعرّف والربط معًا (ملاحظتا Codex على #307)."""
     parts = [part.lower() for part in name.split(".")[1:]]
     while parts and parts[-1] in WRAPPERS:
         parts.pop()
-    return bool(parts) and parts[-1] in WEIGHT_FILE_KINDS
+    return parts[-1] if parts else ""
+
+
+def is_weight_file(name: str) -> bool:
+    """كلُّ ملفٍّ ليس نوعُه بياناتٍ معروفة وزنٌ: `checkpoint.pth.tar` و`spm.model` و`model.keras` و`bundle.tar` أوزان، و`o01.jpg`
+    و`data.model.json` ليست أوزانًا. يُغلق عند الشكّ (ملاحظات Codex على #307)."""
+    return weight_kind(name) not in DATA_KINDS
 
 
 def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_kind: dict) -> list[str]:
@@ -252,7 +261,7 @@ def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_ki
     تُلحق به بلا قيدٍ له (ملاحظة Codex على #307)."""
     weights = [w for w in entry.get("weights", []) if isinstance(w, dict)] if isinstance(entry.get("weights"), list) else []
     registered = {(w.get("file"), w.get("sha256")) for w in weights}
-    by_extension = {(str(w.get("file")).rpartition(".")[2], w.get("sha256")) for w in weights}
+    by_extension = {(weight_kind(str(w.get("file"))), w.get("sha256")) for w in weights}
     problems = [f"weight_not_registered:{file}:{name}:{weight}" for weight, digests in sorted(by_file.items())
                 if is_weight_file(weight) and any((weight, d) not in registered for d in digests)]
     problems += [f"weight_not_registered:{file}:{name}:{kind}" for kind, digests in sorted(by_kind.items())
@@ -263,8 +272,8 @@ def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_ki
 def _sole_of_its_kind(weights: list, file: str) -> bool:
     """بصمةُ النوع بلا اسم ملفّ تربط وزنًا وحيدًا من نوعه. ووزنان من نوعٍ واحد يُطلب لكلٍّ منهما ملفُّه، فلا تتبادل رخصتاهما
     البايتات (ملاحظة Codex على #307)."""
-    kind = file.rpartition(".")[2]
-    return sum(1 for w in weights if isinstance(w, dict) and str(w.get("file")).rpartition(".")[2] == kind) == 1
+    kind = weight_kind(file)
+    return sum(1 for w in weights if isinstance(w, dict) and weight_kind(str(w.get("file"))) == kind) == 1
 
 
 def unmeasured_weights(file: str, payload: object, models: dict, measured: dict) -> list[str]:
@@ -280,7 +289,7 @@ def unmeasured_weights(file: str, payload: object, models: dict, measured: dict)
                 continue
             digests = by_file.get(weight["file"])
             if digests is None and _sole_of_its_kind(weights, weight["file"]):
-                digests = by_kind.get(weight["file"].rpartition(".")[2], set())
+                digests = by_kind.get(weight_kind(weight["file"]), set())
             if weight.get("sha256") not in (digests or set()):
                 problems.append(f"weight_not_measured_in_new_evidence:{file}:{name}:{weight['file']}")
     return problems
@@ -315,7 +324,7 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
                 continue
             recorded = files.get(name, {}).get(weight["file"])
             if recorded is None and _sole_of_its_kind(weights, weight["file"]):
-                recorded = kinds.get(name, {}).get(weight["file"].rpartition(".")[2], set())
+                recorded = kinds.get(name, {}).get(weight_kind(weight["file"]), set())
             if weight["sha256"] not in (recorded or set()):
                 problems.append(f"weight_digest_not_in_evidence:{label}")
             problems += [f"weight_source_not_https:{label}:{key}" for key in ("origin", "license_source")
@@ -352,8 +361,14 @@ def findings(registry: dict, evidence: dict[str, object], engine: str | None) ->
         entry = models.get(canonical(engine))
         if entry is None:
             problems.append(f"default_engine_not_in_registry:{engine}")
-        elif "license" in entry and license_class(entry["license"]) == "non_commercial":
-            problems.append(f"default_engine_non_commercial:{engine}")
+        elif isinstance(entry, dict):
+            if "license" in entry and license_class(entry["license"]) == "non_commercial":
+                problems.append(f"default_engine_non_commercial:{engine}")
+            # وزنٌ مسجَّلٌ للمحرّك برخصةٍ غير تجاريّة داخلُ المنتج أيضًا، ولو كانت رخصةُ غلافه مفتوحة (ملاحظة Codex على #307)
+            weights = entry.get("weights") if isinstance(entry.get("weights"), list) else []
+            problems += [f"default_engine_weight_non_commercial:{engine}:{w.get('file')}" for w in weights
+                         if isinstance(w, dict) and isinstance(w.get("license"), str)
+                         and license_class(w["license"]) == "non_commercial"]
     return sorted(set(problems))
 
 

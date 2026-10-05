@@ -91,6 +91,12 @@ def test_the_default_engine_is_listed_and_never_non_commercial():
     assert ml.findings(_registry(**{"qwen3.5:9b": nc}), {}, "qwen3.5:9b") == [
         "default_engine_non_commercial:qwen3.5:9b"]
     assert ml.findings(_registry(**{"qwen3.5:9b": PENDING}), {}, "qwen3.5:9b") == []
+    # وزنٌ مسجَّلٌ للمحرّك برخصةٍ غير تجاريّة تحت غلافٍ مفتوح (ملاحظة Codex على #307)
+    nc_weight = {**READ, "weights": [{**WEIGHT, "license": "cc-by-nc-4.0"}]}
+    found = ml.findings(_registry(**{"qwen3.5:9b": nc_weight}), {}, "qwen3.5:9b")
+    assert "default_engine_weight_non_commercial:qwen3.5:9b:w.pth" in found
+    assert not any(code.startswith("default_engine") for code in ml.findings(
+        _registry(**{"qwen3.5:9b": {**READ, "weights": [WEIGHT]}}), {}, "qwen3.5:9b")), "وزنٌ برخصةٍ مفتوحة لا يُسمّى"
 
 
 def test_the_default_engine_is_read_from_its_single_definition():
@@ -209,6 +215,14 @@ def test_two_weights_of_one_kind_are_bound_only_by_their_file_names():
         "weight_not_measured_in_new_evidence:k.json:ocr:v.pth", "weight_not_measured_in_new_evidence:k.json:ocr:w.pth"]
 
 
+def test_a_wrapped_weight_is_bound_by_its_unwrapped_kind():
+    """ملاحظة Codex على #307: `checkpoint.pth.tar` نوعُه `pth` في الربط أيضًا، فبصمةُ `pth_sha256` تربطه."""
+    wrapped = {**WEIGHT, "file": "checkpoint.pth.tar"}
+    by_kind = {"k.json": {"engine": {"name": "ocr", "settings": {"pth_sha256": DIGEST}}}}
+    assert ml.weight_findings(_weights(wrapped), by_kind) == []
+    assert ml.weight_findings(_weights(wrapped), by_kind, frozenset({"k.json"})) == []
+
+
 @pytest.mark.parametrize("evidence, registered, found", [
     pytest.param({"m.json": {"runs": [{"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST}}}},
                                       {"engine": {"name": "ocr2", "settings": {"models_sha256": {"w.pth": SIBLING}}}}]}},
@@ -251,12 +265,17 @@ def test_new_evidence_names_every_weight_it_records_in_the_registry():
     pytest.param("checkpoint.pth.tar", True, id="weight_in_an_archive"),
     pytest.param("w.safetensors.gz", True, id="compressed_weight"),
     pytest.param("spm.model", True, id="sentencepiece_model"),
+    pytest.param("model.keras", True, id="keras_model"),
+    pytest.param("graph.pb", True, id="tensorflow_graph"),
+    pytest.param("w.unheard_of", True, id="unknown_suffix"),
+    pytest.param("bundle.tar", True, id="bare_archive"),
     pytest.param("o01.jpg", False, id="bank_image"),
-    pytest.param("bundle.tar", False, id="bare_archive"),
     pytest.param("data.model.json", False, id="json_named_model"),
+    pytest.param("scores.CSV", False, id="data_in_capitals"),
 ])
-def test_a_weight_file_is_known_by_its_suffix_under_its_wrappers(file, weight):
-    """ملاحظة Codex على #307: `checkpoint.pth.tar` و`.model` كانا يُعدّان بياناتٍ لا أوزانًا، فتمرّ بايتاتٌ بلا قيدٍ ولا رخصة."""
+def test_a_weight_file_is_any_file_not_known_to_be_data(file, weight):
+    """ملاحظات Codex على #307: `checkpoint.pth.tar` و`.model` و`.keras` و`.pb` كانت تُعدّ بياناتٍ فتمرّ بايتاتٌ بلا قيدٍ ولا رخصة؛
+    فكلُّ ما ليس بياناتٍ معروفةً وزنٌ، ويُغلق عند الشكّ."""
     assert ml.is_weight_file(file) is weight
     new = {"new.json": {"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST, file: SIBLING}}}}}
     assert ml.weight_findings(_weights(WEIGHT), new, frozenset({"new.json"})) == (
