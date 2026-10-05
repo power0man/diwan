@@ -53,6 +53,13 @@ def test_ocr_spec_properties():
     assert "output_path" in OCR_IMAGE_SPEC.parameters["properties"]
 
 
+def test_ocr_prompt_preserves_every_script():
+    from multimodal.ocr import OCR_PROMPT
+    assert "حرفًا بحرف بخطّه الأصلي" in OCR_PROMPT
+    assert "الحروف والأرقام والأسماء والرموز" in OCR_PROMPT
+    assert "العربيّ وحده" not in OCR_PROMPT
+
+
 def test_ocr_tool_refuses_invalid_arguments(workspace):
     ws, ctx = workspace
     with pytest.raises(ToolRefused) as exc:
@@ -186,6 +193,31 @@ def test_truncated_jpeg_refused_due_to_missing_seen_eoi(workspace):
     with pytest.raises(ToolRefused) as exc:
         ocr_image_handler({"path": "truncated.jpg"}, ctx)
     assert exc.value.code == "jpeg_invalid"
+
+
+def test_progressive_jpeg_sof2_parsed_to_eoi(workspace, monkeypatch):
+    ws, ctx = workspace
+    # إنشاء صورة JPEG تدريجية متعددة المسوح (SOF2 + مسحان + EOI)
+    raw_progressive = (
+        b"\xff\xd8\xff"
+        b"\xc2\x00\x0b\x08\x00\x10\x00\x10\x01\x01\x11\x00"  # SOF2 progressive 16x16
+        b"\xff\xda\x00\x08\x01\x01\x00\x00\x00\x00"  # SOS 1
+        b"\x12\x34\x56"  # مسح 1
+        b"\xff\xda\x00\x08\x01\x01\x00\x00\x00\x00"  # SOS 2
+        b"\x78\x9a"  # مسح 2
+        b"\xff\xd9"  # EOI
+    )
+    prog_jpg = ws / "progressive.jpg"
+    prog_jpg.write_bytes(raw_progressive)
+
+    doc = read_selected(prog_jpg)
+    assert doc["metadata"]["width"] == 16
+    assert doc["metadata"]["height"] == 16
+
+    monkeypatch.setattr("multimodal.ocr.perform_ocr", lambda d, engine="auto", **kw: "نص صورة تدريجية")
+    res = ocr_image_handler({"path": "progressive.jpg"}, ctx)
+    assert res["clean"]
+    assert res["text"] == "نص صورة تدريجية"
 
 
 def test_a4_pdf_scaled_and_read_selected_within_image_limits(workspace, monkeypatch):

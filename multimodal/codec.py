@@ -223,11 +223,18 @@ def _jpeg(raw: bytes) -> dict:
                         continue
                     elif next_byte == 0xd9:
                         seen_eoi = True
+                        scan_offset += 2
+                        offset = scan_offset
                         break
                     elif next_byte != 0xff:
+                        offset = scan_offset
                         break
                 scan_offset += 1
-            break
+            else:
+                offset = scan_offset
+            if seen_eoi:
+                break
+            continue
         offset += length
     need(header is not None and seen_eoi)
     return {"width": header[0], "height": header[1]}
