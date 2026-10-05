@@ -253,20 +253,33 @@ def clip_pdf_page(raw: bytes, page: int = 1, *, renderer: str | None = None,
         input_pdf = workdir / "document.pdf"
         input_pdf.write_bytes(raw)
         out_prefix = workdir / "page"
-        cmd = [renderer, "-png", "-r", str(PDF_DPI), "-scale-to", str(MAX_IMAGE_DIMENSION),
-               "-f", str(page), "-l", str(page), str(input_pdf), str(out_prefix)]
-        try:
-            done = subprocess.run(cmd, capture_output=True, timeout=timeout_s, check=False)
-        except (OSError, subprocess.SubprocessError) as exc:
-            raise MediaError("pdf_render_failed", f"تعذّر تشغيل محوّل PDF: {type(exc).__name__}") from None
-        if done.returncode != 0:
-            raise MediaError("pdf_render_failed", f"فشل تحويل صفحة PDF (رمز الخروج {done.returncode})")
-        rendered = sorted(workdir.glob("page-*.png"))
-        if not rendered:
-            raise MediaError("pdf_page_not_found", f"الصفحة {page} غير موجودة في مستند PDF")
-        png_bytes = rendered[0].read_bytes()
-        _need(0 < len(png_bytes) <= MAX_MEDIA_BYTES, "media_too_large", "حجم صورة الصفحة الناتجة يتجاوز الحد المسموح")
-        return png_bytes
+
+        # تصغير تدريجي حتى تتسع صورة الصفحة للحد الأقصى المسموح للبايتات
+        candidate_dimensions = (MAX_IMAGE_DIMENSION, 768, 512)
+        last_png_bytes = None
+        for dim in candidate_dimensions:
+            for old_file in workdir.glob("page-*.png"):
+                try:
+                    old_file.unlink()
+                except OSError:
+                    pass
+            cmd = [renderer, "-png", "-r", str(PDF_DPI), "-scale-to", str(dim),
+                   "-f", str(page), "-l", str(page), str(input_pdf), str(out_prefix)]
+            try:
+                done = subprocess.run(cmd, capture_output=True, timeout=timeout_s, check=False)
+            except (OSError, subprocess.SubprocessError) as exc:
+                raise MediaError("pdf_render_failed", f"تعذّر تشغيل محوّل PDF: {type(exc).__name__}") from None
+            if done.returncode != 0:
+                raise MediaError("pdf_render_failed", f"فشل تحويل صفحة PDF (رمز الخروج {done.returncode})")
+            rendered = sorted(workdir.glob("page-*.png"))
+            if not rendered:
+                raise MediaError("pdf_page_not_found", f"الصفحة {page} غير موجودة في مستند PDF")
+            png_bytes = rendered[0].read_bytes()
+            last_png_bytes = png_bytes
+            if 0 < len(png_bytes) <= MAX_MEDIA_BYTES:
+                return png_bytes
+
+        raise MediaError("media_too_large", "حجم صورة الصفحة الناتجة يتجاوز الحد المسموح حتى بعد التصغير التدريجي")
 
 
 def pack_media(raw: bytes, filename: str) -> dict:

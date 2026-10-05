@@ -47,7 +47,7 @@ OCR_IMAGE_SPEC = ToolSpec(
         "required": ["path"],
     },
     consent="auto",
-    reversible=False,
+    reversible=True,
 )
 
 
@@ -80,7 +80,7 @@ def _extract_text_via_easyocr(image_bytes: bytes) -> str:
 
 
 def _get_media_provider(model: str | None = None, version: str | None = None, base_url: str | None = None):
-    """استرجاع مزوّد الوسائط المحلي المضبوط في البيئة أو عبر الاكتشاف المحلي التلقائي."""
+    """استرجاع مزوّد الوسائط المحلي المضبوط في البيئة."""
     import os
     from providers.local_media import LocalMediaProvider
     from providers.base import ProviderError
@@ -88,12 +88,6 @@ def _get_media_provider(model: str | None = None, version: str | None = None, ba
     target_model = model or os.environ.get("DIWAN_MEDIA_MODEL")
     target_version = version or os.environ.get("DIWAN_MEDIA_DIGEST")
     target_url = base_url or os.environ.get("DIWAN_OLLAMA_URL", "http://127.0.0.1:11434")
-
-    if not target_model or not target_version:
-        from tools.serve_ui import _discover_ollama
-        _, _, auto_m, auto_v, _ = _discover_ollama(target_url)
-        target_model = target_model or auto_m
-        target_version = target_version or auto_v
 
     if not target_model or not target_version:
         return None
@@ -171,7 +165,12 @@ def ocr_image_handler(arguments: dict, context: ToolContext) -> dict:
         raise ToolRefused(exc.code, exc.reason) from None
 
     engine_pref = arguments.get("engine", "auto")
-    extracted_raw = perform_ocr(media_doc, engine=engine_pref)
+    provider = None
+    factory = getattr(context, "media_provider_factory", None)
+    if callable(factory):
+        provider = factory()
+
+    extracted_raw = perform_ocr(media_doc, engine=engine_pref, provider=provider)
 
     # فرض الحجر الإلزامي على النص المستخرج لحماية حلقة الوكيل من التوجيه الخفي
     held = quarantine(extracted_raw)
