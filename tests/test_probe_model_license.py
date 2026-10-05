@@ -291,8 +291,7 @@ def test_a_weight_file_is_any_file_not_known_to_be_data(file, weight):
 @pytest.mark.parametrize("payload, found", [
     pytest.param({"engine": {"name": "ocr"}}, ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth"],
                  id="no_digest"),
-    pytest.param({"engine": {"name": "ocr"}, "w.pth": DIGEST},
-                 ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth"], id="digest_outside_its_model"),
+    pytest.param({"engine": {"name": "ocr"}, "w.pth": DIGEST}, [], id="digest_beside_its_engine"),
     pytest.param({"runs": [{"model": "ocr"}, {"model": "a/model", "w.pth": DIGEST}]},
                  ["weight_not_measured_in_new_evidence:new.json:ocr:w.pth",
                   "weight_not_registered:new.json:a/model:w.pth"], id="digest_for_another_model"),
@@ -413,6 +412,18 @@ def test_an_artifact_digest_of_an_unrecognized_kind_needs_its_registered_weight(
     models = {"asr": {**READ, "weights": weights}}
     evidence = {"new.json": {"model": "asr", f"{kind}_sha256": digest}}
     assert [f for f in ml.weight_findings(models, evidence, frozenset({"new.json"})) if "new.json" in f] == found
+
+
+@pytest.mark.parametrize("payload", [
+    pytest.param({"engine": {"name": "asr"}, "checkpoint_sha256": DIGEST}, id="engine_named_by_an_object"),
+    pytest.param({"model": {"repo": "asr", "revision": "main"}, "checkpoint_sha256": DIGEST}, id="model_named_by_an_object"),
+])
+def test_a_model_named_by_an_object_owns_the_digests_beside_it(payload):
+    """ملاحظة Codex على #307: `{"engine": {"name": …}, "checkpoint_sha256": …}` يسمّي نموذجًا يعرفه `all_named_models`، وكان
+    حسابُ المالك لا يقرأ إلا الاسمَ النصّيّ، فتُسجَّل البصمةُ بجانبه بلا مالكٍ وتُهمَل صامتةً."""
+    models = {"asr": {**READ, "weights": []}}
+    assert ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) == [
+        "weight_not_registered:new.json:asr:checkpoint"]
 
 
 @pytest.mark.parametrize("name, weights, found", [
