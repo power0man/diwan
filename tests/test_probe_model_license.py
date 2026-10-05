@@ -197,6 +197,18 @@ def test_a_digest_recorded_by_kind_binds_the_weight_of_that_kind():
         "weight_digest_not_in_evidence:ocr:ara.bin"]
 
 
+def test_two_weights_of_one_kind_are_bound_only_by_their_file_names():
+    """ملاحظة Codex على #307: لـEasyOCR وزنا `.pth` برخصتين؛ فبصمتان تحت نوعٍ بلا اسم ملفّ تُقبلان لأيٍّ من الملفّين فتتبادلان
+    الرخصة. فالنوعُ يربط الوزنَ الوحيد من نوعه، ووزنان من نوعٍ واحد يُطلب لكلٍّ منهما ملفُّه."""
+    pair = (WEIGHT, {**WEIGHT, "file": "v.pth", "sha256": SIBLING})
+    by_kind = {"k.json": {"engine": {"name": "ocr", "settings": {"pth_sha256": DIGEST, "sha256s": {"pth_sha256": SIBLING}}}}}
+    assert ml.weight_findings(_weights(*pair), by_kind) == [
+        "weight_digest_not_in_evidence:ocr:w.pth", "weight_digest_not_in_evidence:ocr:v.pth"]
+    assert ml.weight_findings(_weights(*pair), OCR_EVIDENCE) == [], "ملفّاهما مسمّيان في دليل OCR فيُقبلان"
+    assert sorted(ml.weight_findings(_weights(*pair), {**OCR_EVIDENCE, **by_kind}, frozenset({"k.json"}))) == [
+        "weight_not_measured_in_new_evidence:k.json:ocr:v.pth", "weight_not_measured_in_new_evidence:k.json:ocr:w.pth"]
+
+
 @pytest.mark.parametrize("evidence, registered, found", [
     pytest.param({"m.json": {"runs": [{"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST}}}},
                                       {"engine": {"name": "ocr2", "settings": {"models_sha256": {"w.pth": SIBLING}}}}]}},

@@ -242,6 +242,13 @@ def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_ki
     return problems
 
 
+def _sole_of_its_kind(weights: list, file: str) -> bool:
+    """بصمةُ النوع بلا اسم ملفّ تربط وزنًا وحيدًا من نوعه. ووزنان من نوعٍ واحد يُطلب لكلٍّ منهما ملفُّه، فلا تتبادل رخصتاهما
+    البايتات (ملاحظة Codex على #307)."""
+    kind = file.rpartition(".")[2]
+    return sum(1 for w in weights if isinstance(w, dict) and str(w.get("file")).rpartition(".")[2] == kind) == 1
+
+
 def unmeasured_weights(file: str, payload: object, models: dict, measured: dict) -> list[str]:
     """دليلٌ جديد يسمّي نموذجًا له أوزانٌ في السجلّ يسجّل بصمةَ كلِّ وزنٍ منها لملفّه أو نوعه في شجرة نموذجه، فلا تمرّ بايتاتٌ
     مستبدَلةٌ بغياب البصمة اتّكالًا على دليلٍ أقدم (ملاحظة Codex على #307)."""
@@ -254,9 +261,9 @@ def unmeasured_weights(file: str, payload: object, models: dict, measured: dict)
             if not isinstance(weight, dict) or not isinstance(weight.get("file"), str):
                 continue
             digests = by_file.get(weight["file"])
-            if digests is None:
+            if digests is None and _sole_of_its_kind(weights, weight["file"]):
                 digests = by_kind.get(weight["file"].rpartition(".")[2], set())
-            if weight.get("sha256") not in digests:
+            if weight.get("sha256") not in (digests or set()):
                 problems.append(f"weight_not_measured_in_new_evidence:{file}:{name}:{weight['file']}")
     return problems
 
@@ -289,9 +296,9 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
             if missing:
                 continue
             recorded = files.get(name, {}).get(weight["file"])
-            if recorded is None:
+            if recorded is None and _sole_of_its_kind(weights, weight["file"]):
                 recorded = kinds.get(name, {}).get(weight["file"].rpartition(".")[2], set())
-            if weight["sha256"] not in recorded:
+            if weight["sha256"] not in (recorded or set()):
                 problems.append(f"weight_digest_not_in_evidence:{label}")
             problems += [f"weight_source_not_https:{label}:{key}" for key in ("origin", "license_source")
                          if not HTTPS_SOURCE.match(weight[key])]
