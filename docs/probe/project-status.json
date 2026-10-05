@@ -3,7 +3,7 @@
   "tests_collected": 6249,
   "latest_technical_document": "M16-ACCEPTANCE.md",
   "latest_technical_scope": "م١٦",
-  "latest_decision": 72,
+  "latest_decision": 73,
   "historical_m1_m7_defects": {
     "1": 12,
     "2": 12,
@@ -18,7 +18,7 @@
   "maritime_current_pages": 1279,
   "acceptance_documents": 19,
   "python_files": 527,
-  "python_lines": 119694,
+  "python_lines": 119696,
   "quality_review": "automated_multi_system_pending",
   "active_gate": "ق٤٩",
   "release_ready": false,
