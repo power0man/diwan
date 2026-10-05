@@ -143,7 +143,10 @@ def check(text: str, lock: list[tuple[str, str]], models: dict) -> list[str]:
     # المصدرُ مشتقٌّ من الاسم والنسخة، فخانتُه المحرَّرة يدويًّا تخالفه (ملاحظة Codex على #302)
     problems += [f"package_source_differs:{r['name']}=={r['version']}" for r in listed
                  if r["source"].strip() != package_source(r["name"], r["version"])]
-    rows = {r["name"]: r for r in _section(text, MODELS_HEADING, MODEL_ROW)}
+    model_rows = _section(text, MODELS_HEADING, MODEL_ROW)
+    # صفٌّ مكرَّر يُخفي ما قبله في القاموس، فيمرّ صفٌّ مناقضٌ قبل الصحيح (ملاحظة Codex على #307)
+    problems += _twice("model_listed_twice", [r["name"] for r in model_rows])
+    rows = {r["name"]: r for r in model_rows}
     for name, entry in sorted(models.items()):
         row = rows.get(name)
         if row is None:
@@ -157,7 +160,9 @@ def check(text: str, lock: list[tuple[str, str]], models: dict) -> list[str]:
         if row is not None and row["source"].strip() != model_source(entry):
             problems.append(f"model_source_differs:{name}")
     problems += [f"model_not_in_registry:{name}" for name in sorted(rows) if name not in models]
-    listed_weights = {(r["model"], r["file"]): r for r in _section(text, WEIGHTS_HEADING, WEIGHT_ROW)}
+    weight_rows = _section(text, WEIGHTS_HEADING, WEIGHT_ROW)
+    problems += _twice("weight_listed_twice", [f"{r['model']}/{r['file']}" for r in weight_rows])
+    listed_weights = {(r["model"], r["file"]): r for r in weight_rows}
     expected = model_weights(models)
     for name, weight in expected:
         key, row = f"{name}/{weight['file']}", listed_weights.get((name, weight["file"]))
@@ -171,6 +176,10 @@ def check(text: str, lock: list[tuple[str, str]], models: dict) -> list[str]:
     known = {(name, weight["file"]) for name, weight in expected}
     problems += [f"weight_not_in_registry:{m}/{f}" for m, f in sorted(listed_weights) if (m, f) not in known]
     return sorted(problems)
+
+
+def _twice(code: str, keys: list[str]) -> list[str]:
+    return [f"{code}:{key}" for key in sorted(set(keys)) if keys.count(key) > 1]
 
 
 def main(argv: list[str] | None = None) -> int:

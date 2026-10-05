@@ -84,6 +84,23 @@ def test_a_weight_carries_its_own_license_and_attribution_and_a_change_is_named(
     assert tp.check(text, LOCK, weighted(read_on="2026-11-01")) == ["weight_source_differs:a/model/w.pth"]
 
 
+def test_a_model_or_weight_listed_twice_is_named():
+    """ملاحظة Codex على #307: صفٌّ مناقضٌ قبل الصحيح كان يُطوى في القاموس فيمرّ الفحص."""
+    weight = {"file": "w.pth", "license": "mit", "license_source": "https://github.com/up/r/blob/c/LICENSE",
+              "read_on": "2026-10-05", "attribution": "Copyright (c) Up"}
+    models = {**MODELS, "a/model": {**MODELS["a/model"], "weights": [weight]}}
+    text = _text(models=models)
+    weight_row = next(line for line in text.splitlines() if line.startswith("| `a/model` | `w.pth` |"))
+    model_row = next(line for line in text.splitlines() if line.startswith("| `a/model` |") and line != weight_row)
+    forged_weight = weight_row.replace("mit؛", "apache-2.0؛")
+    forged_model = model_row.replace("| mit |", "| apache-2.0 |")
+    assert forged_weight != weight_row and forged_model != model_row
+    assert tp.check(text.replace(weight_row, f"{forged_weight}\n{weight_row}"), LOCK, models) == [
+        "weight_listed_twice:a/model/w.pth"]
+    assert tp.check(text.replace(model_row, f"{forged_model}\n{model_row}"), LOCK, models) == [
+        "model_listed_twice:a/model"]
+
+
 def test_rows_outside_their_section_do_not_count():
     text = _text().replace("## الحزم", "## غيرها")
     assert "package_not_listed:numpy==2.0.0" in tp.check(text, LOCK, MODELS)
