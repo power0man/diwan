@@ -97,6 +97,28 @@ def test_a_given_or_written_spend_is_checked_not_trusted():
     assert problems == ["spend_local_with_cloud"]
 
 
+PAID = [_row("hf-router", "deepseek-ai/DeepSeek-V3-0324", cost="4.25", status="reported")]
+PAID_SPEND = {"cloud_calls": 1, "prompt_tokens": 10, "completion_tokens": 5, "cost_usd": 4.25,
+              "cost_basis": "reported_by_provider"}
+
+
+@pytest.mark.parametrize("rows, written, given, spend, problems", [
+    pytest.param(PAID, None, LOCAL, None, ["spend_differs_from_ledger"], id="given_zero_spend_beside_a_paid_ledger"),
+    pytest.param(PAID, LOCAL, None, None, ["spend_differs_from_ledger"], id="written_zero_spend_beside_a_paid_ledger"),
+    pytest.param(PAID, None, PAID_SPEND, PAID_SPEND, [], id="given_spend_matching_the_ledger"),
+    pytest.param(PAID, PAID_SPEND, None, PAID_SPEND, [], id="written_spend_matching_the_ledger"),
+    pytest.param([None], None, LOCAL, None, ["spend_ledger_malformed"], id="given_spend_beside_a_malformed_ledger"),
+])
+def test_a_stated_spend_beside_a_call_ledger_must_be_the_ledgers(rows, written, given, spend, problems):
+    """ملاحظة Codex على #310: `--spend` كان يُقبل قبل سجلّ النداءات، فيُختم نداءٌ مبلَّغةٌ كلفتُه `local_no_charge`. فالسجلُّ هو
+    المرجع، والكتلةُ المكتوبة أو المعطاة بجانبه تطابق ما يُشتقّ منه."""
+    payload = {"model": "deepseek-ai/DeepSeek-V3-0324", "provider_usage": rows,
+               **({} if written is None else {"spend": written})}
+    stamped, found = se.stamp(payload, MODELS, given)
+    assert found == problems
+    assert stamped.get("spend") == (spend if spend is not None else written)
+
+
 @pytest.mark.parametrize("licenses", [pytest.param(None, id="null"), pytest.param("apache-2.0", id="text"),
                                       pytest.param(["apache-2.0"], id="list")])
 def test_a_malformed_license_block_is_named_not_replaced(licenses):

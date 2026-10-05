@@ -186,11 +186,19 @@ def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, 
 
 def stamp_spend(payload: dict, given: dict | None) -> tuple[dict | None, list[str]]:
     # كتلةٌ مكتوبةٌ تُفحص بأيّ شكلٍ كانت، ولا يُستبدل بالفاسدة منها غيرُها؛ وكذلك سجلُّ النداءات (ملاحظتا Codex على #310)
-    if "spend" in payload or given is not None:
-        spend = payload["spend"] if "spend" in payload else given
-        return spend, [problem.replace(":given", "") for problem in probe_spend.spend_findings("given", spend)]
+    stated = "spend" in payload or given is not None
+    spend = payload.get("spend") if "spend" in payload else given
     if "provider_usage" in payload:
-        return spend_from_usage(payload["provider_usage"], payload.get("zero_spend_evidence"))
+        # السجلُّ هو المرجع: كتلةٌ مكتوبةٌ أو معطاةٌ بـ`--spend` بجانبه تطابق ما يُشتقّ منه ولا تحلّ محلّه، فلا يُمحى إنفاقٌ
+        # مسجَّل بكتلةٍ صفريّة (ملاحظة Codex على #310)
+        derived, problems = spend_from_usage(payload["provider_usage"], payload.get("zero_spend_evidence"))
+        if problems:
+            return None, problems
+        if stated and spend != derived:
+            return None, ["spend_differs_from_ledger"]
+        return derived, []
+    if stated:
+        return spend, [problem.replace(":given", "") for problem in probe_spend.spend_findings("given", spend)]
     names = ml.all_named_models(payload)
     if names and all(is_local_name(name) for name in names):
         return {"cloud_calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "cost_usd": 0,
