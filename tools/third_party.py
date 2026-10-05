@@ -55,6 +55,14 @@ def _cell(value: str) -> str:
     return value.replace("|", "/").strip()
 
 
+def package_source(name: str, version: str) -> str:
+    return f"https://pypi.org/project/{name}/{version.split('+', 1)[0]}/"
+
+
+def model_source(entry: dict) -> str:
+    return "—" if "pending" in entry else f"{entry['source']} ({entry['read_on']})"
+
+
 def fetch(name: str, version: str) -> dict:
     public = version.split("+", 1)[0]
     with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/{public}/json", timeout=30) as response:
@@ -77,13 +85,11 @@ def render(packages: list[tuple[str, str, str]], models: dict) -> str:
         "|---|---|---|---|",
     ]
     for name, version, license_name in packages:
-        lines.append(f"| `{name}` | `{version}` | {_cell(license_name)} | https://pypi.org/project/{name}/{version.split('+', 1)[0]}/ |")
+        lines.append(f"| `{name}` | `{version}` | {_cell(license_name)} | {package_source(name, version)} |")
     lines += ["", MODELS_HEADING, "", "| النموذج | الرخصة | المصدر |", "|---|---|---|"]
     for name, entry in sorted(models.items()):
-        if "pending" in entry:
-            lines.append(f"| `{name}` | تنتظر القراءة: `{entry['pending']}` | — |")
-        else:
-            lines.append(f"| `{name}` | {_cell(entry['license'])} | {entry['source']} ({entry['read_on']}) |")
+        license_cell = f"تنتظر القراءة: `{entry['pending']}`" if "pending" in entry else _cell(entry["license"])
+        lines.append(f"| `{name}` | {license_cell} | {model_source(entry)} |")
     return "\n".join(lines) + "\n"
 
 
@@ -111,6 +117,9 @@ def check(text: str, lock: list[tuple[str, str]], models: dict) -> list[str]:
     pairs = {(r["name"], r["version"]) for r in listed}
     problems += [f"package_not_listed:{n}=={v}" for n, v in lock if (n, v) not in pairs]
     problems += [f"package_not_locked:{n}=={v}" for n, v in sorted(pairs) if (n, v) not in set(lock)]
+    # المصدرُ مشتقٌّ من الاسم والنسخة، فخانتُه المحرَّرة يدويًّا تخالفه (ملاحظة Codex على #302)
+    problems += [f"package_source_differs:{r['name']}=={r['version']}" for r in listed
+                 if r["source"].strip() != package_source(r["name"], r["version"])]
     rows = {r["name"]: r for r in _section(text, MODELS_HEADING, MODEL_ROW)}
     for name, entry in sorted(models.items()):
         row = rows.get(name)
@@ -121,6 +130,9 @@ def check(text: str, lock: list[tuple[str, str]], models: dict) -> list[str]:
                 problems.append(f"model_license_differs:{name}")
         elif row["license"].strip() != _cell(entry["license"]):
             problems.append(f"model_license_differs:{name}")
+        # مصدرُ الرخصة وتاريخُ قراءتها جزءٌ من القيد: تصحيحُهما في السجلّ بلا إعادة توليدٍ يترك الجدولَ بمصدرٍ قديم (Codex على #302)
+        if row is not None and row["source"].strip() != model_source(entry):
+            problems.append(f"model_source_differs:{name}")
     problems += [f"model_not_in_registry:{name}" for name in sorted(rows) if name not in models]
     return sorted(problems)
 

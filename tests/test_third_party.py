@@ -43,9 +43,24 @@ def test_a_model_missing_or_with_another_license_is_named():
     other = {**MODELS, "a/model": {**MODELS["a/model"], "license": "apache-2.0"}}
     assert tp.check(_text(models=other), LOCK, MODELS) == ["model_license_differs:a/model"]
     resolved = {**MODELS, "tag:1b": {**MODELS["a/model"]}}
-    assert tp.check(_text(), LOCK, resolved) == ["model_license_differs:tag:1b"]
-    assert tp.check(_text(models=resolved), LOCK, MODELS) == ["model_license_differs:tag:1b"]
+    # ما انتقل بين الانتظار والقراءة تخالف رخصتُه ومصدرُه كلاهما
+    both = ["model_license_differs:tag:1b", "model_source_differs:tag:1b"]
+    assert tp.check(_text(), LOCK, resolved) == both
+    assert tp.check(_text(models=resolved), LOCK, MODELS) == both
     assert tp.check(_text(models={**MODELS, "x/y": MODELS["a/model"]}), LOCK, MODELS) == ["model_not_in_registry:x/y"]
+
+
+def test_a_model_source_or_read_date_that_changed_in_the_registry_is_named():
+    """ملاحظة Codex على #302: تصحيحُ مصدر الرخصة أو تاريخ قراءتها في السجلّ وحده كان لا يُرى."""
+    moved = {**MODELS, "a/model": {**MODELS["a/model"], "source": "https://huggingface.co/a/model-v2"}}
+    reread = {**MODELS, "a/model": {**MODELS["a/model"], "read_on": "2026-11-01"}}
+    assert tp.check(_text(), LOCK, moved) == ["model_source_differs:a/model"]
+    assert tp.check(_text(), LOCK, reread) == ["model_source_differs:a/model"]
+
+
+def test_a_package_source_edited_by_hand_is_named():
+    edited = _text().replace("https://pypi.org/project/numpy/2.0.0/", "https://example.org/numpy/")
+    assert tp.check(edited, LOCK, MODELS) == ["package_source_differs:numpy==2.0.0"]
 
 
 def test_rows_outside_their_section_do_not_count():
