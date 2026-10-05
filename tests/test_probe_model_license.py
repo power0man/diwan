@@ -1,6 +1,7 @@
 """رخصةُ كلِّ نموذجٍ في أدلّة docs/probe مقروءةٌ من مصدرها (جديد-license-tagging، #301؛ ق٦٢-٨)."""
 from __future__ import annotations
 
+import hashlib
 import json
 
 import pytest
@@ -330,6 +331,36 @@ def test_a_weight_whose_provenance_no_evidence_recorded_is_named(change, evidenc
     """ملاحظة Codex على #307: أصلٌ أو مصدرُ رخصةٍ صحيحُ الصيغة لا علاقة له بالبايتات المقيسة كان يمرّ. فالوزنُ يطابقه سجلُّ
     مصدرٍ في شجرة نموذجه بملفّه وبصمته وأصله ومصدر رخصته معًا."""
     assert ml.provenance_findings(_weights({**WEIGHT, **change}), evidence) == found
+
+
+def _sha_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+ASR_WEIGHT = {**WEIGHT, "file": "ggml.bin"}
+
+
+@pytest.mark.parametrize("named, weights, digest, found", [
+    pytest.param("asr", [], DIGEST, ["weight_not_registered:new.json:asr:model"], id="unregistered_model_artifact"),
+    pytest.param("asr", [], _sha_text(json.dumps("asr")), [], id="json_name_hash"),
+    pytest.param("asr", [], _sha_text("asr"), [], id="plain_name_hash"),
+    pytest.param("ollama:asr", [], _sha_text(json.dumps("ollama:asr")), [], id="alias_name_hash"),
+    pytest.param("asr", [ASR_WEIGHT], DIGEST, [], id="sole_registered_weight"),
+    pytest.param("asr", [ASR_WEIGHT], SIBLING,
+                 ["weight_digest_not_in_evidence:asr:ggml.bin", "weight_not_measured_in_new_evidence:new.json:asr:ggml.bin",
+                  "weight_not_registered:new.json:asr:model"], id="other_bytes"),
+    pytest.param("asr", [ASR_WEIGHT, {**WEIGHT, "file": "v.bin", "sha256": SIBLING}], DIGEST,
+                 ["weight_digest_not_in_evidence:asr:ggml.bin", "weight_digest_not_in_evidence:asr:v.bin",
+                  "weight_not_measured_in_new_evidence:new.json:asr:ggml.bin",
+                  "weight_not_measured_in_new_evidence:new.json:asr:v.bin"], id="two_weights_not_bound_by_model_kind"),
+])
+def test_a_model_artifact_digest_is_a_registered_weight_or_the_models_name_hash(named, weights, digest, found):
+    """ملاحظة Codex على #307: `model_sha256` يكتبه مسارُ ASR لملفّ الوزن، فكان يمرّ بلا قيدٍ لأن `model` ليس نوعَ وزن.
+    فهو يُطالَب بقيدٍ ببصمته ما لم يكن بصمةَ اسم النموذج (كما يكتبها `evaluation/capabilities.py`)، ويربط وزنَ النموذج الوحيد."""
+    models = {"asr": {**READ, "weights": weights}}
+    evidence = {"new.json": {"model": named, "model_sha256": digest}}
+    assert sorted(ml.weight_findings(models, evidence, frozenset({"new.json"}))) == found
+    assert [f for f in ml.weight_findings(models, evidence) if "new.json" in f] == [], "الدليلُ التاريخيّ لا يُطالَب"
 
 
 @pytest.mark.parametrize("weights", [pytest.param("w.pth", id="text"), pytest.param(["w.pth"], id="list_of_text"),

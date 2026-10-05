@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from datetime import date
@@ -50,7 +51,10 @@ PROVENANCE_KEY = "weight_provenance"
 PROVENANCE_FIELDS = ("file", "sha256", "origin", "license_source")
 # أنواعُ الأوزان التي تُقبل بصمتُها بحقل `<نوع>_sha256` بلا اسم ملفّ
 WEIGHT_KINDS = frozenset({"pth", "pt", "bin", "safetensors", "gguf", "onnx", "ckpt", "h5", "hdf5", "keras", "pb", "tflite",
-                          "mlmodel", "traineddata"})
+                          "mlmodel", "traineddata", "model"})
+# `model_sha256` لا يسمّي نوعَ ملفّه: يكتبه مسارُ ASR لملفّ الوزن، ويكتبه `evaluation/capabilities.py` لاسم النموذج. فيُطالَب
+# بقيدٍ ببصمته ما لم يكن بصمةَ الاسم، ويربط وزنَ النموذج الوحيد (ملاحظة Codex على #307)
+MODEL_KIND = "model"
 # ما يُعرف أنه بياناتٌ لا أوزان (صورُ البنك، ونصوصُه، وسجلّاتُه)؛ وكلُّ لاحقةٍ سواه وزنٌ يُطالَب بقيده في الدليل الجديد، فلا
 # يمرّ نوعٌ لم يُسمَّ (`.keras` و`.pb` و`.model`…) بايتاتٍ بلا رخصة (ملاحظات Codex على #307)
 DATA_KINDS = frozenset({"jpg", "jpeg", "png", "gif", "webp", "bmp", "tif", "tiff", "svg", "pdf", "json", "jsonl", "txt",
@@ -267,16 +271,25 @@ def is_weight_file(name: str) -> bool:
     return weight_kind(name) not in DATA_KINDS
 
 
-def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_kind: dict) -> list[str]:
+def _name_hashes(names: list[str]) -> set[str]:
+    """بصماتُ أسماء النموذج نصًّا ونصَّ JSON، كما يكتبها `evaluation/capabilities.py` في `model_sha256`: هويّةٌ لا بايتات."""
+    return {hashlib.sha256(text.encode("utf-8")).hexdigest()
+            for name in names for text in (name, json.dumps(name, ensure_ascii=False))}
+
+
+def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_kind: dict,
+                         aliases: list[str] | None = None) -> list[str]:
     """دليلٌ جديد يسجّل لنموذجٍ في السجلّ وزنًا (ملفًّا بامتداد وزنٍ أو بصمةً بنوعه) ليس في قيوده ببصمته، فرخصةُ النموذج لا
-    تُلحق به بلا قيدٍ له (ملاحظة Codex على #307)."""
+    تُلحق به بلا قيدٍ له (ملاحظة Codex على #307). و`model_sha256` يُقبل ببصمة أيِّ وزنٍ مقيَّدٍ للنموذج، أو ببصمة اسمه."""
     weights = [w for w in entry.get("weights", []) if isinstance(w, dict)] if isinstance(entry.get("weights"), list) else []
     registered = {(w.get("file"), w.get("sha256")) for w in weights}
     by_extension = {(weight_kind(str(w.get("file"))), w.get("sha256")) for w in weights}
+    by_model = {w.get("sha256") for w in weights} | _name_hashes([name, *(aliases or [])])
     problems = [f"weight_not_registered:{file}:{name}:{weight}" for weight, digests in sorted(by_file.items())
                 if is_weight_file(weight) and any((weight, d) not in registered for d in digests)]
     problems += [f"weight_not_registered:{file}:{name}:{kind}" for kind, digests in sorted(by_kind.items())
-                 if kind in WEIGHT_KINDS and any((kind, d) not in by_extension for d in digests)]
+                 if kind in WEIGHT_KINDS and any(d not in by_model if kind == MODEL_KIND else (kind, d) not in by_extension
+                                                 for d in digests)]
     return problems
 
 
@@ -285,6 +298,16 @@ def _sole_of_its_kind(weights: list, file: str) -> bool:
     البايتات (ملاحظة Codex على #307)."""
     kind = weight_kind(file)
     return sum(1 for w in weights if isinstance(w, dict) and weight_kind(str(w.get("file"))) == kind) == 1
+
+
+def _bound_digests(weights: list, file: str, by_file: dict, by_kind: dict) -> set[str]:
+    """بصماتُ الوزن في دليل: باسم ملفّه، وإلّا بنوعه إن كان وحيدَ نوعه، وبـ`model_sha256` إن كان وزنَ النموذج الوحيد."""
+    if file in by_file:
+        return by_file[file]
+    found = set(by_kind.get(weight_kind(file), set())) if _sole_of_its_kind(weights, file) else set()
+    if len(weights) == 1:
+        found |= by_kind.get(MODEL_KIND, set())
+    return found
 
 
 def unmeasured_weights(file: str, payload: object, models: dict, measured: dict) -> list[str]:
@@ -298,10 +321,7 @@ def unmeasured_weights(file: str, payload: object, models: dict, measured: dict)
         for weight in weights if isinstance(weights, list) else []:
             if not isinstance(weight, dict) or not isinstance(weight.get("file"), str):
                 continue
-            digests = by_file.get(weight["file"])
-            if digests is None and _sole_of_its_kind(weights, weight["file"]):
-                digests = by_kind.get(weight_kind(weight["file"]), set())
-            if weight.get("sha256") not in (digests or set()):
+            if weight.get("sha256") not in _bound_digests(weights, weight["file"], by_file, by_kind):
                 problems.append(f"weight_not_measured_in_new_evidence:{file}:{name}:{weight['file']}")
     return problems
 
@@ -319,7 +339,8 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
                 for key, digests in found.items():
                     target.setdefault(name, {}).setdefault(key, set()).update(digests)
             if file in new_files and isinstance(models.get(name), dict):
-                problems += unregistered_weights(file, name, models[name], by_file, by_kind)
+                aliases = [raw for raw in all_named_models(payload) if canonical(raw) == name]
+                problems += unregistered_weights(file, name, models[name], by_file, by_kind, aliases)
         if file in new_files:
             problems += unmeasured_weights(file, payload, models, measured)
     for name, entry in sorted(models.items()):
@@ -333,10 +354,7 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
             problems += [f"weight_field_missing:{label}:{field}" for field in missing]
             if missing:
                 continue
-            recorded = files.get(name, {}).get(weight["file"])
-            if recorded is None and _sole_of_its_kind(weights, weight["file"]):
-                recorded = kinds.get(name, {}).get(weight_kind(weight["file"]), set())
-            if weight["sha256"] not in (recorded or set()):
+            if weight["sha256"] not in _bound_digests(weights, weight["file"], files.get(name, {}), kinds.get(name, {})):
                 problems.append(f"weight_digest_not_in_evidence:{label}")
             problems += [f"weight_source_not_https:{label}:{key}" for key in ("origin", "license_source")
                          if not HTTPS_SOURCE.match(weight[key])]
