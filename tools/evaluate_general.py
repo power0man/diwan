@@ -14,6 +14,8 @@
 - **الإعلان:** الأداةُ والأمرُ بالمفسِّر الذي شغّله، والبذور، وبصماتُ ملفّات البنك، وبصمةُ النموذج قبل التشغيل وبعده،
   ورخصةُ المحرّك (`licenses`) وإنفاقُه (`spend`) بشكلَي `tools/model_licenses.py` و`tools/probe_spend.py`.
 - **قبل التشغيل:** يُرفض نموذجٌ ليس في `registry/model_licenses.json` أو رخصتُه منتظرة، فلا تنتهي ليلةُ قياسٍ بدليلٍ يردّه CI.
+  ويُرفض مزوّدٌ غيرُ محليّ (`core.locality`)، فالرقمُ العام على المحرّك المحليّ المعتمد (ق٥٤، ق٧٠)، وكتلةُ الإنفاق
+  `local_no_charge` لا تصدق إلا عليه.
 
 الحدود: فحصُ `exact` صارمٌ بق٥٧ فلا قراءةَ مشذَّبة؛ والبذورُ بحرارة صفر لا تقيس تباينَ العيّنة (`GREEDY_SEED_LIMIT`)؛
 والتقريرُ لا يُكتب فوق ملفٍّ قائم.
@@ -34,6 +36,7 @@ if str(ROOT) not in sys.path:
 
 from evaluation.ablation import (GREEDY_SEED_LIMIT, RUNNER_VERSION, AblationError, arm, protocol,  # noqa: E402
                                  run_seeded_arm, seed_values)
+from core.locality import is_cloud_model, is_local_provider  # noqa: E402
 from evaluation.retrieval_general import wilson  # noqa: E402
 from tools.evaluate_ablation import bank_cases  # noqa: E402
 from evaluation.ablation import auto_checked  # noqa: E402
@@ -114,6 +117,10 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
     seeds = seed_values() if seeds is None else tuple(seeds)
     if seeds != seed_values(len(seeds)):
         raise AblationError("seeds_invalid", "يلزم تسلسل 0..N-1 بعدد فردي لا يقل عن 3")
+    # نموذجٌ سحابيّ عبر Ollama المحليّ يُرسل كلَّ حالةٍ إلى السحابة، والكتلةُ تقول local_no_charge: يُرفض قبل أيّ نداء
+    # (ملاحظة Codex على #312). والرقمُ العام على المحرّك المحليّ وحده (ق٥٤، ق٧٠).
+    if is_cloud_model(model) or not is_local_provider(provider):
+        raise AblationError("provider_not_local", model)
     cases, files = bank_cases(bank_open, sample_target=None, salt="general", sandbox=sandbox)
     if not cases:
         raise AblationError("bank_empty", str(bank_open))

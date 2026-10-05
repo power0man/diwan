@@ -129,3 +129,18 @@ def test_a_model_whose_license_is_unread_is_refused_before_any_call(tmp_path):
     with pytest.raises(LicenseRefused, match="model_not_in_registry"):
         registered_license("unknown:1b", registry)
     assert registered_license("ollama:granite4", registry) == "Apache-2.0"
+
+
+def test_a_cloud_model_is_refused_before_any_call(tmp_path):
+    """نموذجٌ سحابيٌّ يمرّ عبر Ollama المحليّ إلى السحابة، فلا يُقاس باسم المحليّ ولا يُكتب إنفاقُه صفرًا (ملاحظة Codex على #312)."""
+    bank = _bank(tmp_path / "open", {"tier_a": [_case("a", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])]})
+    seen = []
+    with pytest.raises(AblationError, match="provider_not_local"):
+        run_general(SeedReplay(lambda u, s: "الرباط", seen=seen), bank_open=bank,
+                    **{**RUN, "model": "gpt-oss:120b-cloud"})
+
+    class Remote(SeedReplay):
+        is_local = False
+    with pytest.raises(AblationError, match="provider_not_local"):
+        run_general(Remote(lambda u, s: "الرباط", seen=seen), bank_open=bank, **RUN)
+    assert seen == []
