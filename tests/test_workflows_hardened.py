@@ -40,7 +40,9 @@ CANONICAL_PERMISSIONS = re.compile(r"^( *)permissions:[ \t]*(\{\})?[ \t]*(?:#.*)
 GRANT = re.compile(r"^ +([a-z-]+):[ \t]+(read|write|none)[ \t]*(?:#.*)?$")
 
 
-BLOCK_SCALAR = re.compile(r":[ \t]*[|>][+-]?[0-9]?[ \t]*(?:#.*)?$")
+# مؤشّرُ الكتلة النصّية قيمةُ مفتاحٍ عارٍ (أو عنصرٍ `- `) وحدها، لا نصٌّ في تعليقٍ ولا في سلسلة: `jobs: # : |` ليس كتلة، ولو عُدّ
+# كتلةً لخفيت شجرةُ jobs كلُّها عن الحرّاس (ملاحظة Codex على c507294). و`lead` إلى موضع المفتاح، فالكتلةُ ما زاد عليه وحده.
+BLOCK_SCALAR = re.compile(r"^(?P<lead>[ \t]*(?:-[ \t]+)?)(?:[A-Za-z0-9_.-]+:[ \t]+)?[|>][+-]?[0-9]?[ \t]*(?:#.*)?$")
 # كلُّ صورةٍ لمفتاحٍ غيرِ عارٍ، أو لقيمةٍ تُخفي مفاتيحَ عن قراءة السطر؛ فما يقرؤه الحارسان هو ما يقرؤه GitHub
 NOT_PLAIN = {
     "quoted_key": re.compile(r"""^[ \t]*(?:-[ \t]+)?(["']).*?(?<!\\)\1[ \t]*:(?:[ \t]|$)"""),
@@ -64,8 +66,9 @@ def _structure(text: str) -> list[tuple[int, str]]:
         if not stripped or stripped.startswith("#"):
             continue
         found.append((number, line))
-        if BLOCK_SCALAR.search(line):
-            block = indent
+        scalar = BLOCK_SCALAR.match(line)
+        if scalar:
+            block = len(scalar["lead"])
     return found
 
 
