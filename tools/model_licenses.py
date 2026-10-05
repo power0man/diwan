@@ -63,16 +63,19 @@ LICENSE_FILE_READ = "upstream_license_file_at_the_release_tag_the_probes_name"
 NOTICE_LICENSES = frozenset({"mit"})
 UNOWNED = ("",)
 # أنواعُ البصمات التي يكتبها المستودع لبياناتٍ لا لبايتات نموذج (`<نوع>_sha256`). وما سواها في دليلٍ جديد أثرٌ يُطالَب بقيده،
-# فلا يمرّ `checkpoint_sha256` أو `model_artifact_sha256` بلا أصلٍ ولا رخصة (ملاحظة Codex على #307)
+# فلا يمرّ `checkpoint_sha256` أو `model_artifact_sha256` بلا أصلٍ ولا رخصة (ملاحظة Codex على #307). ومنها ما تكتبه أدواتُ
+# المراجعة للمراجَع: `artifact` (`evaluation/multi_system_review.py`)، و`file` (`evaluation/external_review.py`)، و`review_artifact`،
+# وملفّا الأساس والمرشَّح (`baseline_file`، `candidate_file`)؛ وبصمةٌ منها بجانب مسار وزنٍ تُقيَّد باسم ملفّه (ملاحظة Codex على #307)
 NON_ARTIFACT_KINDS = frozenset({
-    "after_report", "anchor", "answer", "audio", "bank", "bank_manifest", "baseline", "baseline_raw_report", "baseline_spec",
-    "before_report", "binary", "brief", "bundle", "calibration", "candidate", "candidate_spec", "canonical", "case_ids",
-    "comparison", "config", "context", "contract", "corpus", "dialogue", "execution", "forget_authority", "gate_report",
+    "after_report", "anchor", "answer", "artifact", "audio", "bank", "bank_manifest", "baseline", "baseline_file",
+    "baseline_raw_report", "baseline_spec", "before_report", "binary", "brief", "bundle", "calibration", "candidate",
+    "candidate_file", "candidate_spec", "canonical", "case_ids", "comparison", "config", "context", "contract", "corpus",
+    "dialogue", "execution", "file", "forget_authority", "gate_report",
     "harness", "hook", "input_manifest", "input_snapshot", "judge_prompt", "ledger", "legacy", "license_text", "live_report",
     "loaded_source", "lock", "log", "manifest", "measured_and_integrated", "meta", "model_version", "observed", "open_bank",
     "origin", "original_trace", "output", "package_manifest", "plan", "policy", "preserved_payload", "previous", "probe",
     "prompt", "protocol", "provenance", "provider_evidence", "public_key", "raw", "raw_log", "raw_provenance", "raw_report",
-    "raw_response", "raw_summary", "raw_trace", "receipt", "reference_cases", "report", "request", "response",
+    "raw_response", "raw_summary", "raw_trace", "receipt", "reference_cases", "report", "request", "response", "review_artifact",
     "resumed_trace", "root", "rubric", "runner", "runtime_lock", "runtime_receipt", "sandbox", "signature", "source",
     "source_report", "state", "stdout", "suite", "system", "test_log", "thresholds_file", "trust", "verdict_pattern", "worker",
 })
@@ -287,7 +290,15 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
         here = tuple(dict.fromkeys(canonical(name) for k, v in value.items() if k in MODEL_KEYS for name in _names_under(k, v)))
         owners = here or owners
         for key, child in value.items():
-            if isinstance(key, str) and key.endswith("_sha256") and not isinstance(child, dict) and _data_path_digest(value, key):
+            path = _digest_path(value, key) if isinstance(key, str) and key.endswith("_sha256") and not isinstance(child, dict) else None
+            if path is not None:
+                # بصمةٌ بجانب مسارها بصمةُ ذلك الملفّ: تُقيَّد باسمه لا بنوعها، فملفُّ البيانات لا يُطالَب وملفُّ الوزن يُطالَب
+                # (ملاحظة Codex على #307)
+                if isinstance(child, str) and SHA256.match(child):
+                    for owner in owners or UNOWNED:
+                        out.setdefault(owner, ({}, {}))[0].setdefault(path, set()).add(child)
+                elif is_weight_file(path):
+                    flag(owners, "weight_digest_malformed", path)
                 continue
             if isinstance(key, str) and isinstance(child, str) and SHA256.match(child):
                 record(owners, key, child)
@@ -375,12 +386,13 @@ def _name_hashes(names: list[str]) -> set[str]:
             for name in names for text in (name, json.dumps(name, ensure_ascii=False))}
 
 
-def _data_path_digest(value: dict, key: str) -> bool:
-    """بصمةُ `<نوع>_sha256` لملفّ المسار المقابل لها، `<نوع>_path` أو `path` لبصمة `file_sha256`، إن كان ملفَّ بيانات
-    (`bank: {path: …json, file_sha256: …}`): بصمةُ ذلك الملفّ لا وزن. ولا تُعفى بصمةٌ أخرى بجانب المسار (ملاحظتا Codex على #307)."""
+def _digest_path(value: dict, key: str) -> str | None:
+    """اسمُ ملفّ المسار المقابل لبصمة `<نوع>_sha256`: `<نوع>_path`، أو `path` لبصمة `file_sha256`. فبصمتُه بصمةُ ذلك الملفّ:
+    ملفُّ بياناتٍ (`bank: {path: …json, file_sha256: …}`) ليس وزنًا، وملفُّ وزنٍ يُقيَّد باسمه. ولا يُصنَّف بالمسار غيرُ بصمته
+    (ملاحظات Codex على #307)."""
     kind = key.removesuffix("_sha256")
     path = value.get(f"{kind}_path", value.get("path") if kind == "file" else None)
-    return isinstance(path, str) and not is_weight_file(path.rsplit("/", 1)[-1])
+    return path.rsplit("/", 1)[-1] if isinstance(path, str) else None
 
 
 def unregistered_weights(file: str, name: str, entry: dict, by_file: dict, by_kind: dict,

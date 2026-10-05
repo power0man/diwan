@@ -365,13 +365,28 @@ def test_a_weight_file_is_any_file_not_known_to_be_data(file, weight):
                  id="data_file_digest_beside_its_path"),
     pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST},
                   "artifact": {"path": "models/extra.pth", "file_sha256": OTHER_DIGEST}},
-                 ["weight_not_registered:new.json:ocr:file"], id="digest_beside_a_weight_path"),
+                 ["weight_not_registered:new.json:ocr:extra.pth"], id="digest_beside_a_weight_path"),
     # ولا تُعفى إلا بصمةُ ملفّ المسار نفسِه: `checkpoint_sha256` بجانب `path` لملفّ بيانات وزنٌ، و`thresholds_sha256` بجانب
     # `thresholds_path` لملفّ بيانات ليس وزنًا (ملاحظة Codex على #307)
     pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST}, "path": "bank.json", "checkpoint_sha256": OTHER_DIGEST},
                  ["weight_not_registered:new.json:ocr:checkpoint"], id="checkpoint_beside_a_data_path"),
     pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST}, "thresholds_path": "x/thresholds.json",
                   "thresholds_sha256": OTHER_DIGEST}, [], id="digest_beside_its_named_data_path"),
+    # ما تكتبه أدواتُ المراجعة والمحلّل للمراجَع بياناتٌ لا أوزان (ملاحظة Codex على #307)
+    pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST},
+                  "review": {"binding": {"artifact_sha256": OTHER_DIGEST, "rubric_sha256": SIBLING}}}, [],
+                 id="multi_system_review_binding"),
+    pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST}, "brief_sha256": SIBLING, "file_sha256": OTHER_DIGEST}, [],
+                 id="external_review_of_a_file"),
+    pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST}, "review_artifact_sha256": OTHER_DIGEST,
+                  "tool_guidance": {"baseline_file_sha256": SIBLING, "candidate_file_sha256": TRAINED}}, [],
+                 id="review_and_guidance_files"),
+    pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST}, "artifact": {"path": "models/extra.pth", "file_sha256": "x"}},
+                 ["weight_digest_malformed:new.json:ocr:extra.pth"], id="malformed_digest_beside_a_weight_path"),
+    pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST}, "bank": {"path": "x/bank.json", "file_sha256": None}}, [],
+                 id="malformed_digest_beside_a_data_path"),
+    pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST}, "artifact": {"path": "models/checkpoint", "file_sha256": OTHER_DIGEST}},
+                 ["weight_not_registered:new.json:ocr:checkpoint"], id="digest_beside_an_extensionless_weight_path"),
 ])
 def test_new_evidence_naming_a_model_with_registered_weights_records_their_digests(payload, found):
     """ملاحظة Codex على #307: دليلٌ جديد يسمّي نموذجًا مقيَّدَ الأوزان بلا بصماتها يُسمّى، فلا تمرّ بايتاتٌ مستبدَلةٌ اتّكالًا
