@@ -133,7 +133,7 @@ def test_a_malformed_license_block_is_named_not_replaced(licenses):
                   "provider_usage": [_row("ollama", "deepseek-v4.1-flash:cloud", cloud=False)]},
                  "spend_ledger_malformed", id="cloud_model_marked_local"),
     pytest.param({"model": "deepseek-v4.1-flash:cloud",
-                  "provider_usage": [{**_row("ollama", "deepseek-v4.1-flash:cloud", cost="4.25", status="reported"),
+                  "provider_usage": [{**_row("openrouter", "deepseek-ai/DeepSeek-V3-0324", cost="4.25", status="reported"),
                                       "kind": "catalog"}]},
                  "spend_ledger_malformed", id="paid_call_labelled_catalog"),
     pytest.param({"model": "deepseek-v4.1-flash:cloud",
