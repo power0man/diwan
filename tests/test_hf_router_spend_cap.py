@@ -180,6 +180,7 @@ def test_a_sent_call_without_tokens_is_settled_at_its_full_reservation(reply):
     pytest.param(Decimal("0"), "spend_cap_invalid", id="zero"),
     pytest.param(Decimal("-1"), "spend_cap_invalid", id="negative"),
     pytest.param(Decimal("20.01"), "spend_cap_invalid", id="above_hfd2"),
+    pytest.param(Decimal("0.0000011"), "spend_cap_invalid", id="finer_than_a_micro_dollar"),
     pytest.param(Decimal("NaN"), "spend_cap_invalid", id="not_a_number"),
     pytest.param(True, "spend_cap_invalid", id="boolean"),
 ])

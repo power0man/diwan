@@ -872,8 +872,9 @@ class PricedRouterChat(OpenAICompatChat):
         if spend_cap_usd is None:
             raise AutomaticReviewError("spend_cap_required", "--max-usd")
         cap = _decimal(str(spend_cap_usd))
-        if cap is None or cap <= 0 or cap > HFD2_CAP_USD:
-            raise AutomaticReviewError("spend_cap_invalid", f"0 < --max-usd <= {HFD2_CAP_USD}")
+        # وما لا يُكتب ميكرو-دولاراتٍ صحيحة يُردّ ولا يُقرَّب، فلا يتّسع السقفُ فوق المعلَن (ملاحظة Codex على #308)
+        if cap is None or cap <= 0 or cap > HFD2_CAP_USD or (cap * MICROS_PER_USD) % 1:
+            raise AutomaticReviewError("spend_cap_invalid", f"0 < --max-usd <= {HFD2_CAP_USD}, in whole micro-dollars")
         self.spend_cap_usd = cap
         cap_micros = _ceil_micros(cap * MICROS_PER_USD)
         self.budget = Budget(day_remaining_micros=cap_micros, month_remaining_micros=cap_micros)
