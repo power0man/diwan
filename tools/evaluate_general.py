@@ -42,6 +42,7 @@ if str(ROOT) not in sys.path:
 from evaluation.ablation import (GREEDY_SEED_LIMIT, RUNNER_VERSION, AblationError, arm, protocol,  # noqa: E402
                                  run_seeded_arm, seed_values)
 from core.locality import is_cloud_model, is_local_provider  # noqa: E402
+from core.sandbox import configure_sandbox_backend, sandbox_configuration  # noqa: E402
 from evaluation.capabilities import _checks  # noqa: E402
 from evaluation.judge import open_bank_digest  # noqa: E402
 from evaluation.retrieval_general import wilson  # noqa: E402
@@ -159,6 +160,9 @@ def _require_intake(intake: dict | None, digest: str) -> None:
     # فحوصُ v1.1 التي يمرّرها سردُ الخيارات أو نسخُ السؤال أو الحكمان معًا (ك١٧)؛ والتقريرُ بلا عدِّها لا يشهد (ملاحظة Codex على #312)
     if (bank.get("gameable") or {}).get("open") != 0:
         raise AblationError("intake_gameable_checks", "الاستلامُ لا يُثبت صفرَ فحصٍ قابلٍ للتلاعب")
+    # حالةٌ تمرّ فحوصُها خارج الحاوية بجوابٍ ثابت لا يحكم فيها إلا الحاوية: الاستلامُ بـ--sandbox-probes (ملاحظة Codex)
+    if bank["gameable"].get("needs_sandbox") != 0:
+        raise AblationError("intake_sandbox_cases_unprobed", "يلزم استلامٌ بـ--sandbox-probes")
     if bank.get("open_digest") != digest:
         raise AblationError("intake_digest_mismatch", "بصمةُ الشطر المفتوح غيرُ بصمة الاستلام")
 
@@ -212,6 +216,10 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
         raise AblationError("sandbox_required", "الرقمُ العام يحتاج حاويةَ الفحص؛ أو --diagnostic")
     if unchecked and not diagnostic:
         raise AblationError("bank_has_unchecked_cases", f"{unchecked} حالةً بلا فحصٍ آليّ؛ يلزم v1.2 أو --diagnostic")
+    # حالاتُ الحاوية بلا خلفيّةٍ مضبوطة تُردّ كلُّها خطأً فتخرج من المقام صامتة: يُرفض قبل أيّ نداء
+    if sandbox and sandbox_configuration() is None and any(
+            check.get("kind") == "python_sandbox" for case in cases for check in case["checks"]):
+        raise AblationError("sandbox_backend_unconfigured", "يلزم --sandbox-receipt، أو --no-sandbox مع --diagnostic")
     digest = open_bank_digest(bank_open)
     if not diagnostic:
         _require_intake(intake, digest)
@@ -231,6 +239,7 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
                    "protocol_id": protocol()["protocol_id"], "seeds": list(seeds),
                    "seed_aggregation": protocol()["seed_aggregation"], "options": dict(options),
                    "engine_calls": tally["calls"], "open_bank_digest": digest,
+                   "sandbox_backend": sandbox_configuration(),
                    "bank": {"files": files, "cases_measured": len(cases),
                             "cases_without_automatic_check": unchecked,
                             "sandbox_cases_excluded": len(every) - unchecked - len(cases),
@@ -251,6 +260,9 @@ def main(argv=None) -> int:
     parser.add_argument("--bank-open", type=Path, default=ROOT / "evaluation/banks/kimi_v1/open")
     parser.add_argument("--seeds", type=int, default=3, help="عددٌ فردي من البذور (الافتراضي 3؛ تُستخدم 0..N-1)")
     parser.add_argument("--no-sandbox", action="store_true", help="تُستبعد حالاتُ python_sandbox حيث لا حاويةَ فحص")
+    parser.add_argument("--sandbox-receipt", type=Path,
+                        help="إيصالُ تشغيلٍ موثوق خارج المستودع (core/sandbox.py)؛ يلزم لحالات python_sandbox")
+    parser.add_argument("--sandbox-workspace", type=Path, default=ROOT / "var/sandbox")
     parser.add_argument("--intake", type=Path, help="تقريرُ tools/kimi_intake.py الناجح لهذا البنك (يلزم إلا مع --diagnostic)")
     parser.add_argument("--diagnostic", action="store_true",
                         help="يُقبل بنكٌ فيه حالاتٌ بلا فحص، ويُوسم التقريرُ تشخيصيًّا لا دليلَ بوابة م١")
@@ -270,6 +282,9 @@ def main(argv=None) -> int:
     except LicenseRefused as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2
+    if args.sandbox_receipt and not args.no_sandbox:
+        args.sandbox_workspace.mkdir(parents=True, exist_ok=True)
+        configure_sandbox_backend(args.sandbox_receipt.resolve(), args.sandbox_workspace.resolve())
     from providers.ollama import OllamaProvider
     from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest
     try:

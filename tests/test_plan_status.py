@@ -18,7 +18,9 @@ def _repo(tmp_path: Path) -> Path:
              {"id": "ح٥", "title": "ج", "assignee": "owner", "phase": "م١",
               "deferred": {"by": "ق٦٨", "until": "2026-10-19", "reason": "Nitro"}},
              {"id": "جديد-d", "title": "د", "assignee": "codex", "phase": "م١"},
-             {"id": "جديد-is-local-guard", "title": "هـ", "assignee": "claude-cloud", "phase": "م٠-أ"}]
+             {"id": "جديد-is-local-guard", "title": "هـ", "assignee": "claude-cloud", "phase": "م٠-أ"},
+             {"id": "ح١", "title": "و", "assignee": "owner", "phase": "م٠-أ"},
+             {"id": "ح٤", "title": "ز", "assignee": "owner", "phase": "م١"}]
     (tmp_path / ps.PLAN).write_text(json.dumps({"tasks": tasks}, ensure_ascii=False), encoding="utf-8")
     ledger = [{"task": "جديد-a", "issue": 7, "pull": 9, "merge": "abcdef0123"},
               {"task": "ك٥٦", "issue": 138, "pull": 247, "merge": "4275871200"}]
@@ -47,9 +49,13 @@ def test_status_comes_from_the_ledger_the_archive_and_the_plan_deferral(tmp_path
     assert rows["جديد-d"]["status"] == "مفتوحة"
     alias = rows["جديد-is-local-guard"]                       # سُلِّمت بمعرّفٍ آخر تسمّيه STATUS
     assert (alias["status"], alias["proof"]) == ("منجزة", "ك٥٦ #138 ← #247 (`4275871`)")
+    # مهامُّ المالك معفاةٌ من السجلّ: ح١ منجزةٌ بمصدرها، وح٤ «للمالك» لا «مفتوحة» (ملاحظة Codex على #312)
+    assert (rows["ح١"]["status"], rows["ح١"]["proof"]) == ("منجزة", ps.OWNER_EVIDENCE["ح١"])
+    assert rows["ح٤"]["status"] == "للمالك"
     text = ps.render(list(rows.values()))
-    assert "**3 منجزة**، منها 2 بطلبٍ مدموج" in text and "و1 ببصمة إيداعٍ في الأرشيف وحدها" in text
-    assert "| م١ | 1 | 1 | 1 |" in text
+    assert "**4 منجزة**، منها 2 بطلبٍ مدموج" in text and "و1 ببصمة إيداعٍ في الأرشيف وحدها و1 بإغلاق مسألة المالك" in text
+    assert "و1 للمالك خارج السجلّ، و1 مفتوحة" in text
+    assert "| م١ | 1 | 1 | 1 | 1 |" in text
 
 
 def test_check_fails_when_the_generated_file_is_stale_and_write_repairs_it(tmp_path, capsys):

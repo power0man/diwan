@@ -60,7 +60,7 @@ AGENTIC_MIN_TASKS = 30
 LIMITS = [
     "validators_check_schema_and_the_v1_2_conditions_not_whether_a_reference_answer_is_correct",
     "gameable_checks_are_found_by_four_fixed_answers_empty_echo_of_the_question_polarity_spray_and_both_so_a_subtler_gameable_check_passes",
-    "cases_with_a_python_sandbox_check_are_not_probed_for_gameable_checks",
+    "without_sandbox_probes_a_case_whose_other_checks_a_fixed_answer_passes_is_counted_needs_sandbox_not_judged",
     "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged",
 ]
 
@@ -215,24 +215,36 @@ def _probe_answers(case: dict) -> tuple[tuple[str, str], ...]:
             ("echo_and_spray", question + "\n" + POLARITY_SPRAY))
 
 
-def gameable_probe(case: dict) -> str | None:
-    """اسمُ أوّل جوابٍ ثابتٍ تمرّره فحوصُ الحالة، أو None. حالاتُ python_sandbox وما بلا فحصٍ لا تُجرَّب."""
+def gameable_probe(case: dict, *, sandbox: bool = False) -> str | None:
+    """اسمُ أوّل جوابٍ ثابتٍ تمرّره فحوصُ الحالة كلُّها، أو `needs_sandbox`، أو None.
+
+    الفحوصُ خارج الحاوية تُجرَّب أولًا؛ فجوابٌ تُسقطه لا يُشغَّل له شيء. وما مرّ بها في حالةٍ فيها `python_sandbox`
+    لا يحكم فيه إلا الحاوية: تُشغَّل بـ`sandbox=True`، وإلا فالحالةُ `needs_sandbox` لا «سليمة» (ملاحظة Codex على #312).
+    """
     from evaluation.capabilities import _checks
     checks = case.get("checks") or []
-    if not checks or any(check.get("kind") == "python_sandbox" for check in checks):
+    if not checks:
         return None
+    plain = [check for check in checks if check.get("kind") != "python_sandbox"]
+    boxed = len(plain) != len(checks)
     for name, answer in _probe_answers(case):
+        if not all(result["passed"] for result in _checks(answer, plain)):
+            continue
+        if not boxed:
+            return name
+        if not sandbox:
+            return "needs_sandbox"
         if all(result["passed"] for result in _checks(answer, checks)):
             return name
     return None
 
 
-def check_bank(src: Path) -> dict:
+def check_bank(src: Path, *, sandbox_probes: bool = False) -> dict:
     """المدقّقاتُ الحقيقية على الشطرين، وشروطُ v1.2. والمحجوبُ أعدادٌ ورموزٌ بلا معرّفات."""
     failures: list = []
     counts = {"open": {"files": 0, "cases": 0, "tasks": 0}, "sealed": {"files": 0, "cases": 0, "tasks": 0}}
     without_checks = {"open": 0, "sealed": 0}
-    gameable = {"open": 0, "by_probe": {}}
+    gameable = {"open": 0, "by_probe": {}, "needs_sandbox": 0, "sandbox_probed": sandbox_probes}
     agentic, case_ids = [], {}
     for part, path in _bank_files(src):
         relative = path.relative_to(src).as_posix()
@@ -254,8 +266,14 @@ def check_bank(src: Path) -> dict:
         without_checks[part] += sum(not case["checks"] for case in suite["cases"])
         for case in suite["cases"]:
             case_ids[case["case_id"]] = case_ids.get(case["case_id"], 0) + 1
-            probe = gameable_probe(case) if part == "open" else None
-            if probe:
+            try:
+                probe = gameable_probe(case, sandbox=sandbox_probes) if part == "open" else None
+            except PayloadRejected as exc:
+                _failure(failures, relative, f"gameable_probe_{exc.code}")
+                continue
+            if probe == "needs_sandbox":
+                gameable["needs_sandbox"] += 1
+            elif probe:
                 gameable["open"] += 1
                 gameable["by_probe"][probe] = gameable["by_probe"].get(probe, 0) + 1
     try:
@@ -407,7 +425,7 @@ def check_agentic(src: Path, *, judge=_judge) -> dict:
 
 
 def intake(src: Path, *, agentic: bool = False, open_only: bool = False, current: Path | None = None,
-           judge=_judge) -> dict:
+           judge=_judge, sandbox_probes: bool = False) -> dict:
     structure = check_structure(src, open_only=open_only)
     report = {"schema_version": 1, "kind": "kimi_intake", "source": src.name, "structure": structure,
               "open_only": open_only}
@@ -417,7 +435,7 @@ def intake(src: Path, *, agentic: bool = False, open_only: bool = False, current
     report["manifest"] = {"files": 0, "failures": [], "skipped": "open_only"} if open_only else check_manifest(src)
     if open_only:
         report["replacement"] = check_open_replacement(src, current or CURRENT_OPEN)
-    report["bank"] = check_bank(src)
+    report["bank"] = check_bank(src, sandbox_probes=sandbox_probes)
     report["dev"] = check_dev(src)
     if agentic:
         report["agentic"] = check_agentic(src, judge=judge)
@@ -435,9 +453,20 @@ def main(argv=None) -> int:
                         help="دورةُ الشطر المفتوح: لا بيانَ، ويُرفض تسليمٌ فيه sealed/")
     parser.add_argument("--current", type=Path, default=None,
                         help="المفتوحُ القائم الذي يستبدله التسليم (الافتراضيُّ بنكُ المستودع)")
+    parser.add_argument("--sandbox-probes", action="store_true",
+                        help="تُجرَّب الأجوبةُ الثابتة على حالات python_sandbox في الحاوية (يلزم --sandbox-receipt)")
+    parser.add_argument("--sandbox-receipt", type=Path, help="إيصالُ تشغيلٍ موثوق خارج المستودع (core/sandbox.py)")
+    parser.add_argument("--sandbox-workspace", type=Path, default=ROOT / "var/sandbox")
     parser.add_argument("--out", required=True, help="مسارُ التقرير، أو - للطباعة")
     args = parser.parse_args(argv)
-    report = intake(args.source.resolve(), agentic=args.agentic, open_only=args.open_only, current=args.current)
+    if args.sandbox_probes:
+        if not args.sandbox_receipt:
+            parser.error("--sandbox-probes يلزمه --sandbox-receipt")
+        from core.sandbox import configure_sandbox_backend
+        args.sandbox_workspace.mkdir(parents=True, exist_ok=True)
+        configure_sandbox_backend(args.sandbox_receipt.resolve(), args.sandbox_workspace.resolve())
+    report = intake(args.source.resolve(), agentic=args.agentic, open_only=args.open_only, current=args.current,
+                    sandbox_probes=args.sandbox_probes)
     text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.out == "-":
         sys.stdout.write(text)

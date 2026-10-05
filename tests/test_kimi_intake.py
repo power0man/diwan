@@ -398,13 +398,37 @@ def test_fixed_answers_that_know_nothing_expose_gameable_checks():
     verdict = case("هل في الجملة خطأ؟", [{"kind": "contains", "value": "يوجد خطأ"}, {"kind": "excludes", "value": "لا يوجد"}])
     assert gameable_probe(verdict) is None, "الحكمُ مع نفيه المستبعد لا يمرّره السرد"
     assert gameable_probe(case("ما عاصمة المغرب؟", [{"kind": "exact", "value": "الرباط"}])) is None
-    assert gameable_probe(case("مكنية", [{"kind": "python_sandbox", "value": "assert False"}])) is None
+    # حالةُ الحاوية وحدها لا يُحكم فيها بلا حاوية: needs_sandbox لا «سليمة»
+    assert gameable_probe(case("مكنية", [{"kind": "python_sandbox", "value": "assert False"}])) == "needs_sandbox"
 
 
 def test_an_intake_with_a_gameable_open_check_fails_and_counts_it_by_probe(tmp_path):
     src = delivery(tmp_path)
-    assert intake(src)["bank"]["gameable"] == {"open": 0, "by_probe": {}}
+    assert intake(src)["bank"]["gameable"] == {"open": 0, "by_probe": {}, "needs_sandbox": 0, "sandbox_probed": False}
     _write(src / "open" / "tier_a" / "kimi_a_001.json", _suite("kimi_a_001", [_case("o1"), _case("o2", text="r أو s؟")]))
     report = intake(src)
-    assert not report["passed"] and report["bank"]["gameable"] == {"open": 1, "by_probe": {"echo": 1}}
+    assert not report["passed"] and report["bank"]["gameable"] == {"open": 1, "by_probe": {"echo": 1},
+                                                                   "needs_sandbox": 0, "sandbox_probed": False}
     assert "gameable_checks" in _codes(report, "bank")
+
+
+def test_a_mixed_sandbox_case_is_probed_on_its_other_checks_then_in_the_container(monkeypatch):
+    """contains يمرّره نسخُ السؤال مع فحص حاويةٍ يمرّ دائمًا كان يُعفى كلُّه (ملاحظة Codex على #312): يُجرَّب ما خارج الحاوية،
+    وما مرّ به لا يحكم فيه إلا الحاوية، فهو needs_sandbox بلاها، وبها يُشغَّل الفحصُ كاملًا."""
+    from types import SimpleNamespace
+    import evaluation.capabilities as capabilities
+    from tools.kimi_intake import gameable_probe
+
+    def fake_sandbox(answer, harness, **_):
+        return SimpleNamespace(passed=harness == "always", error_code=None, witness_digest="w", exit_code=0,
+                               elapsed_ms=1, boundary="docker")
+    monkeypatch.setattr(capabilities, "run_in_sandbox", fake_sandbox)
+
+    def case(text, harness, value="مكنية"):
+        return {"case_id": "c", "messages": [{"role": "user", "content": text}],
+                "checks": [{"kind": "contains", "value": value}, {"kind": "python_sandbox", "value": harness}]}
+    options = "سمِّ الصورة من بين: تشبيه، استعارة مكنية، كناية."
+    assert gameable_probe(case(options, "always")) == "needs_sandbox"
+    assert gameable_probe(case(options, "always"), sandbox=True) == "echo"
+    assert gameable_probe(case(options, "strict"), sandbox=True) is None
+    assert gameable_probe(case("سمِّ الصورة", "always", value="غائبة")) is None, "ما يُسقطه خارجَ الحاوية لا يُشغَّل له شيء"
