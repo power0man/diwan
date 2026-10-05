@@ -95,6 +95,9 @@ def test_a_given_or_written_spend_is_checked_not_trusted():
     bad = {"cloud_calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "cost_usd": 1, "cost_basis": "local_no_charge"}
     stamped, problems = se.stamp({"model": "qwen3.5:9b", "spend": bad}, MODELS)
     assert problems == ["spend_local_with_cloud"]
+    # أساسٌ بشكل قائمةٍ في كتلةٍ معطاة يُسمّى ولا يُسقط الختم (ملاحظة Codex على #310)
+    stamped, problems = se.stamp({"model": "qwen3.5:9b"}, MODELS, {**bad, "cost_basis": ["local_no_charge"]})
+    assert problems == ["spend_basis_unknown"] and "spend" not in stamped
 
 
 PAID = [_row("hf-router", "deepseek-ai/DeepSeek-V3-0324", cost="4.25", status="reported")]

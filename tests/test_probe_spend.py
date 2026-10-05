@@ -58,6 +58,7 @@ def test_a_huge_integer_cost_is_a_cost_not_a_crash():
     pytest.param({**CLOUD, "cloud_calls": True}, "spend_count:n.json:cloud_calls", id="boolean_count"),
     pytest.param({**CLOUD, "completion_tokens": 4.0}, "spend_count:n.json:completion_tokens", id="float_count"),
     pytest.param({**CLOUD, "cost_basis": "cheap"}, "spend_basis_unknown:n.json", id="unknown_basis"),
+    pytest.param({**CLOUD, "cost_basis": ["reported_by_provider"]}, "spend_basis_unknown:n.json", id="basis_not_text"),
     pytest.param({**CLOUD, "cost_basis": "unpriced"}, "spend_unpriced_with_cost:n.json", id="unpriced_with_cost"),
     pytest.param({**CLOUD, "cost_usd": None}, "spend_cost:n.json", id="priced_without_cost"),
     pytest.param({**CLOUD, "cost_usd": -0.5, "cost_basis": "reported_by_provider"}, "spend_cost:n.json",

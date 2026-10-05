@@ -50,7 +50,8 @@ def spend_findings(file: str, spend: object) -> list[str]:
         return [f"spend_keys:{file}"]
     problems = [f"spend_count:{file}:{key}" for key in COUNTS if not _count(spend[key])]
     basis, cost = spend["cost_basis"], spend["cost_usd"]
-    if basis not in BASES:
+    # أساسٌ ليس نصًّا يُسمّى ولا يُسقط الفحصَ بخطأ نوعٍ في منتصف ختم ملفّاتٍ عدّة (ملاحظة Codex على #310)
+    if not isinstance(basis, str) or basis not in BASES:
         problems.append(f"spend_basis_unknown:{file}")
     elif basis == "unpriced":
         if cost is not None:
