@@ -409,6 +409,11 @@ def test_fixed_answers_that_know_nothing_expose_gameable_checks():
     # استبعادُ صيغةٍ واحدة لا يكفي: كلُّ صيغةٍ جوابٌ مستقلّ (ملاحظة Codex على #315)
     partial = case("هل الحكم سليم؟", [{"kind": "contains", "value": "خلل"}, {"kind": "excludes", "value": "لا يوجد"}])
     assert gameable_probe(partial) == "negated_value_2"
+    # قيمةٌ محميّةٌ بصيغ النفي كلِّها لا تحمي جارتها: «ألف. لا يوجد باء.» يمرّ (ملاحظة Codex على #315، #316)
+    two = case("اذكر الحرفين", [{"kind": "contains", "value": "ألف"}, {"kind": "contains", "value": "باء"},
+                               *NEGATION_EXCLUDED("ألف")[2:], {"kind": "excludes", "value": "لا يوجد ألف"},
+                               {"kind": "excludes", "value": "ليس فيه ألف"}])
+    assert gameable_probe(two) == "negated_value_1"
     negation_excluded = case("هل الحكم سليم؟", [{"kind": "contains", "value": "خلل"},
                                                  {"kind": "excludes", "value": "لا يوجد"},
                                                  {"kind": "excludes", "value": "ليس فيه"},
