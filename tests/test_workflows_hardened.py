@@ -3,7 +3,9 @@
 كلُّ ملفٍّ في `.github/workflows/` يُعلن صلاحياته في أعلاه، فلا يرث صلاحياتِ المستودع الافتراضيّة. ولا يُشغَّل بـ`pull_request_target`
 الذي يعطي شيفرةَ الطلب أسرارَ المستودع وصلاحيةَ الكتابة. وكلُّ فعلٍ خارجيٍّ (`uses:`) مثبَّتٌ ببصمة إيداعٍ كاملة، لا بوسمٍ يتحرّك.
 وكلُّ صلاحيةٍ فيه، في أعلاه أو في مهمّة، في جدول `LEAST` بنطاقها ومستواها، فلا يمرّ `write-all` ولا نطاقٌ أوسع (ملاحظة Codex
-على #297). الفحصُ نصّيٌّ على الملفات المودَعة، لا قراءةٌ لـYAML عامّة؛ وكلُّ اختبارٍ يجمع المخالفاتِ في الملفات كلِّها فيسمّيها معًا.
+على #297). الفحصُ نصّيٌّ على الملفات المودَعة، لا قراءةٌ لـYAML عامّة؛ فهو مغلقٌ عند الشكّ: كلُّ سطرٍ يرد فيه `permissions` أو `uses`
+مفتاحًا بأيّ صورة (عاريًا، أو بين علامتين، أو في خريطةٍ مضمَّنة) يُقرأ بصورته المعتمدة وحدها، وما سواها مخالفةٌ لا تجاوز
+(ملاحظتا Codex على #297). وكلُّ اختبارٍ يجمع المخالفاتِ في الملفات كلِّها فيسمّيها معًا.
 """
 from __future__ import annotations
 
@@ -12,7 +14,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = sorted((ROOT / ".github" / "workflows").glob("*.y*ml"))
-USES = re.compile(r"^\s*(?:-\s+)?uses:\s*(\S+)", re.M)
+CANONICAL_USES = re.compile(r"^[ \t]*(?:-[ \t]+)?uses:[ \t]*(\S+)[ \t]*(?:#.*)?$")
 PINNED = re.compile(r"[\w.-]+/[\w./-]+@[0-9a-f]{40}")
 
 
@@ -32,27 +34,38 @@ LEAST = {
     "verify.yml": {"contents": "read"},
 }
 LEVEL = {"none": 0, "read": 1, "write": 2}
-PERMISSIONS = re.compile(r"^( *)permissions:[ \t]*(.*)$", re.M)
-SCOPE = re.compile(r"^( *)([\w-]+):[ \t]*(\S+)[ \t]*(?:#.*)?$")
+CANONICAL_PERMISSIONS = re.compile(r"^( *)permissions:[ \t]*(\{\})?[ \t]*(?:#.*)?$")
+GRANT = re.compile(r"^ +([a-z-]+):[ \t]+(read|write|none)[ \t]*(?:#.*)?$")
+
+
+def _keys(text: str, name: str) -> list[tuple[int, str]]:
+    """كلُّ سطرٍ غيرِ تعليقٍ يرد فيه `name` مفتاحًا بأيّ صورة: عاريًا، أو بين علامتي تنصيص، أو داخل خريطةٍ مضمَّنة."""
+    key = re.compile(r"(?:^|[\s{,\[])([\"']?)" + name + r"\1[ \t]*:")
+    return [(number, line) for number, line in enumerate(text.splitlines(), 1)
+            if not line.lstrip().startswith("#") and key.search(line)]
 
 
 def _grants(text: str) -> list[dict | str]:
-    """كلُّ كتلة `permissions:` في الملف، في أعلاه أو في مهمّة: قاموسُ نطاقاتها، أو نصُّها إن لم تكن قائمةً ولا `{}`."""
+    """كلُّ كتلة صلاحياتٍ في الملف، في أعلاه أو في مهمّة: قاموسُ نطاقاتها، أو نصُّ السطر الذي لم يُقرأ بالصورة المعتمدة
+    (`write-all`، أو مفتاحٌ بين علامتين، أو خريطةٌ مضمَّنة، أو نطاقٌ بقيمةٍ غير read/write/none)."""
     lines, found = text.splitlines(), []
-    for match in PERMISSIONS.finditer(text):
-        indent, inline = len(match[1]), match[2].split("#")[0].strip()
-        if inline:
-            found.append({} if inline == "{}" else inline)
+    for number, line in _keys(text, "permissions"):
+        block = CANONICAL_PERMISSIONS.match(line)
+        if not block:
+            found.append(line.strip())
             continue
-        start, block = text[:match.start()].count("\n") + 1, {}
-        for line in lines[start:]:
-            if not line.strip() or line.lstrip().startswith("#"):
+        grants: dict | str = {}
+        for inner in [] if block[2] else lines[number:]:
+            if not inner.strip() or inner.lstrip().startswith("#"):
                 continue
-            scope = SCOPE.match(line)
-            if len(line) - len(line.lstrip()) <= indent or not scope:
+            if len(inner) - len(inner.lstrip()) <= len(block[1]):
                 break
-            block[scope[2]] = scope[3]
-        found.append(block)
+            grant = GRANT.match(inner)
+            if not grant:
+                grants = inner.strip()
+                break
+            grants[grant[1]] = grant[2]
+        found.append(grants)
     return found
 
 
@@ -86,6 +99,13 @@ def test_no_workflow_runs_on_pull_request_target():
 
 
 def test_every_external_action_is_pinned_to_a_full_commit():
-    unpinned = [(name, action) for name, text in _texts().items() for action in USES.findall(text)
-                if not action.startswith("./") and not PINNED.fullmatch(action)]
-    assert unpinned == []
+    """وفعلٌ في خريطةٍ مضمَّنة (`- {uses: …@v4}`) أو بمفتاحٍ بين علامتين لا يُقرأ بالصورة المعتمدة، فهو مخالفةٌ لا تجاوز."""
+    unpinned, seen = [], 0
+    for name, text in _texts().items():
+        for number, line in _keys(text, "uses"):
+            seen += 1
+            use = CANONICAL_USES.match(line)
+            action = use[1] if use else line.strip()
+            if not use or not (action.startswith("./") or PINNED.fullmatch(action)):
+                unpinned.append((name, number, action))
+    assert seen >= len(WORKFLOWS) and unpinned == []
