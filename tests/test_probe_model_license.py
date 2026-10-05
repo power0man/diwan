@@ -538,7 +538,8 @@ def test_a_provenance_record_is_a_measured_artifact(payload, found):
                  id="short_digest"),
     pytest.param({"model": "asr", "checkpoint_sha256": DIGEST.upper()}, ["weight_digest_malformed:new.json:asr:checkpoint"],
                  id="uppercase_digest"),
-    pytest.param({"model": "asr", "models_sha256": {"w.pth": "x"}}, ["weight_digest_malformed:new.json:asr:w.pth"],
+    # ملفٌّ بنوعٍ غير معروف (`w.model`) لا يحكم على بصمته في الخريطة إلّا فحصُ الخريطة نفسُه
+    pytest.param({"model": "asr", "models_sha256": {"w.model": "x"}}, ["weight_digest_malformed:new.json:asr:w.model"],
                  id="malformed_in_a_map"),
     pytest.param({"model": "asr", "suite_sha256": "x"}, [], id="data_kind_is_not_an_artifact"),
     pytest.param({"model": "asr", "artifacts_sha256": {"scores.csv": "x"}}, [], id="data_file_in_a_map"),
@@ -553,7 +554,7 @@ def test_a_provenance_record_is_a_measured_artifact(payload, found):
                  id="numeric_digest"),
     pytest.param({"model": "asr", "checkpoint_sha256": [DIGEST]}, ["weight_digest_malformed:new.json:asr:checkpoint"],
                  id="list_digest"),
-    pytest.param({"model": "asr", "models_sha256": {"w.pth": None}}, ["weight_digest_malformed:new.json:asr:w.pth"],
+    pytest.param({"model": "asr", "models_sha256": {"w.model": None}}, ["weight_digest_malformed:new.json:asr:w.model"],
                  id="null_in_a_map"),
     pytest.param({"model": "asr", "suite_sha256": None}, [], id="null_data_kind"),
     # واسمُ ملفّ وزنٍ قيمتُه ليست بصمةً يُسمّى، واسمُ نموذجٍ مفتاحًا ليس ملفًّا (ملاحظة Codex على #307)
