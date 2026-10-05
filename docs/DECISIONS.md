@@ -1288,3 +1288,55 @@ GPT يعمل فيه، إلا بقرارٍ جديد من المالك.
 
 **الحد المعلن:** هذا اعتمادٌ محدود للمزوّدَين، لا شهادةُ جاهزيةٍ ولا قياسُ جودةٍ أو وفرةٍ مجانية. ولا يجيز إنفاقًا أو إرسالَ
 مواد خاصة أو تجاوزَ قيود الحساب، ولا يغيّر سقوف الخدمات المعتمدة سابقًا.
+
+## ق٧٢ — إخراجُ evaluate_governance من أدوات auto، وأرشفةُ مشغّل الماك وبرومبته، ومنعُ الدفع من tools/ (٥ أكتوبر ٢٠٢٦)
+
+**المصدر:** المالك فوّض المنسّقَ (جلسة Claude السحابية، session_014PCBoGzwwXtMZsYo5TALiw) في ٥ أكتوبر ٢٠٢٦ بالقرار والدمج
+في مهامّ الخطة، بنصّه: «نفذ كل شي»؛ فأُخذ هذا القرار بذلك التفويض وبق٦٧-٧. وهو القرارُ المرقَّم الذي تطلبه مهمّةُ
+`جديد-legacy-archive` في `docs/PLAN-20260926.md`، وبندُ OD13 في §٧ منها (معتمدٌ بتوصيته في ق٦٤). **الحالة:** معتمد للشقّ
+الآمن وحده؛ والباقي معلَّقٌ بفحص الموت في البند ٤.
+
+**السبب:**
+- `core/semantic_governance.py` يمنح الادعاءَ المنفيَّ درجةَ الاستلزام كاملة. قِيس على شجرة هذا الإيداع: على شاهدٍ واحدٍ نصُّه
+  «يجب معاينة السفينة قبل الإبحار.»، أعطى الجوابان «يجب معاينة السفينة قبل الإبحار [ش1].» و«لا يجب معاينة السفينة قبل الإبحار
+  [ش1].» كلاهما `all_passed=True` و`average_semantic_bp=10000`. وكان مصدَّرًا أداةَ `auto` في `core/tools_registry.py`، فيبلغ
+  الوكيلَ عبر `agent/builtin_tools.py` بلا إذن، فيحكم به على جوابه ويُنجح نقيضَ شاهده.
+- `tools/mac_run.sh` يدفع إلى `main` مباشرةً، و`main` محميٌّ لا يُدفع إليه إلا بطلب دمج (`AGENTS.md` §٥)؛ ويسجّل مشغّلًا مقيمًا
+  على حساب المالك بلا `--ephemeral`، وهو ما رفضه ق٣٦. و`docs/MAC-AGENT-PROMPT.md` برومبتُه لجلسة الماك الأولى.
+
+**القرار:**
+١. **evaluate_governance ليس أداةَ auto:** حُذفت مواصفتُه من `default_tools_registry()`، فلا تبلغه حلقةُ الفعل ولا
+   `export_agent_tools` ولا حزمةُ الوكيل. صارت الأدواتُ السيادية ٥ بعد ٦، والحزمةُ الكاملة ١٣ بعد ١٤. ويبقى
+   `evaluate_semantic_governance` ومعالِجُه في الشيفرة. وبقي المعالِجُ في قاموس المعالجات بلا مواصفة لأن `webui/server.py`
+   (مسار openai، ق٦٦) يناديه مباشرةً، وإخراجُه من الواجهة مهمّةُ Codex في `جديد-legacy-archive-openai`. ويحرسه
+   `tests/test_operational_tools.py::test_evaluate_governance_is_not_an_auto_tool`، وطفرةٌ تعيد المواصفةَ تُقتل.
+٢. **الأرشفةُ نقلٌ لا حذف** (`git mv`، على نهج `archive/witnesses/`): `tools/mac_run.sh` إلى `archive/tools/mac_run.sh`،
+   و`docs/MAC-AGENT-PROMPT.md` إلى `archive/docs/MAC-AGENT-PROMPT.md`. في رأس كلٍّ منهما ملاحظةُ «تاريخيّ» بهذا القرار،
+   ونصُّهما محفوظٌ كما كان. والمراجعُ الحيّة إليهما صارت إلى موضعهما الجديد: `docs/LOCAL-SESSION-PROMPT.md`،
+   و`docs/SESSION-HANDOFF.md`، والأدلّةُ G4 وG6 وG8. أمّا ذكرُ المسار القديم في النصوص التاريخية فباقٍ بنصّه لأنه صحيحٌ في
+   زمنه: ق٥٢ هنا، و`docs/HANDOFF-PROMPT.md`، ونصُّ المهمّة في الخطة.
+٣. **لا دفعَ من tools/:** `tests/test_no_push_in_tools.py` يمنع نداءَ `git push` في كل ملفٍّ متتبَّعٍ تحت `tools/` بثلاث صور:
+   نصُّ الصدفة، وقائمةُ وسائط بايثون، ونداءُ مساعدٍ اسمُه git. ولكلّ صورةٍ طفرةٌ تُقتل.
+٤. **لم يُنقل، ومعلَّقٌ بفحص الموت.** الأدلّةُ أدناه grep على شجرة هذا الإيداع. نقلُ أيٍّ منها بقرارٍ لاحق بعد فحصٍ يثبت موته،
+   وما كان منها في مسار google يحمل سطر «تسليم:» قبل ٨ نوفمبر (ق٦٢ وق٦٤):
+   - `TieredSovereignRouter` (في `core/router.py`، مسار google): لا يستورده إلا `tests/test_tiered_router.py`، ولا تظهر قيمُ
+     طبقاته في غير ملفّه. لكن `core/router.py` نفسَه حيّ: `route_once` و`main_ledger` تستوردهما `acceptance_m5.py`
+     و`tests/test_m5.py` و`tests/test_m7.py` و`tests/test_philosophy_node.py`. فالمرشَّحُ للنقل الصنفُ لا الملف.
+   - `core/action_loop.py` (مسار anthropic): **حيّ**. يستورده `core/tools_registry.py` في رأسه، ويستورد هذا
+     `webui/server.py` و`agent/builtin_tools.py`، فنقلُه يكسر استيرادَهما. أمّا `create_default_action_loop` فلا يناديه إلا
+     `acceptance_m16.py` والاختبارات.
+   - `core/linguistics/tashkeel.py` (مسار google): يستورده `core/linguistics/syntax_guard.py`، ويستورده
+     `core/linguistics/__init__.py` استيرادًا مبكرًا فيُحمَّل مع كل استيرادٍ من `core.linguistics`، ومنه `core.linguistics.roots`
+     في `core/tools_registry.py`. ولا تُنادى دوالُّه إلا في `tests/test_arabic_linguistic_core.py`. و`strip_tashkeel` في
+     `tools/make_agentic_bank.py` نصُّ حالةٍ مصطنعة لا استيراد. نقلُه يلزمه تعديلُ `__init__.py`.
+   - `core/linguistics/syntax_guard.py` (مسار google): لا يستورده إلا `core/linguistics/__init__.py`، ولا يُنادى `check_syntax`
+     إلا في `tests/test_arabic_linguistic_core.py`.
+   - `services/hermes_gate.py` (مسار google): يستورده `acceptance_m6.py` (`review_finding`) و`tests/test_m6.py`، ويذكره
+     تعليقان في `core/quoted.py` ووصفُ مصدرٍ في `tools/seed_hermes_source.py`. ولا مستهلكَ له في مسار تشغيل: لا الواجهة ولا
+     المحادثة ولا الوكيل. فشرطُ الخطة «إن لم يُعطَ مستهلكًا» قائم، ولم يُحكم فيه بعد.
+٥. **تسجيلُ `mac-diwan`:** إن بقي فإلغاؤه للمالك (البند ٥ من المهمّة)، ولا يمسّه هذا القرار.
+
+**الحد المعلن:** إخراجُ الأداة يمنع الوكيلَ من الحكم بها على جوابه، ولا يصلح `core/semantic_governance.py` (مسار google) ولا
+يُخرجه من الواجهة: `evaluate_governance` في `webui/server.py` يُنجح المنفيَّ حتى تُنجز `جديد-legacy-archive-openai`. والحارسُ يقرأ
+نصَّ `tools/` ولا ينفّذه، فوسائطُ تُبنى في وقت التشغيل تفلت منه. وأدلّةُ البند ٤ grep على الشجرة: تثبت غيابَ المستورِد المكتوب،
+لا غيابَ الاستيراد الديناميكي، ولا تحكم بقيمة الشيفرة.

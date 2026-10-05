@@ -138,11 +138,11 @@ def test_export_agent_tools_with_tool_registry(tmp_path: Path):
     from core.tools_registry import export_agent_tools
 
     agent_tools = export_agent_tools()
-    assert len(agent_tools) == 6
+    assert len(agent_tools) == 5
     names = {t.spec.name for t in agent_tools}
     assert "search_regulations" in names
     assert "analyze_arabic_morphology" in names
-    assert "evaluate_governance" in names
+    assert "evaluate_governance" not in names       # ق٧٢: أُخرج من أدوات auto
     assert "check_mlx_hardware" in names
 
     ctx = ToolContext(root=tmp_path, journal=Journal(tmp_path), allowed_consents=frozenset({"auto", "logged"}))
@@ -152,6 +152,22 @@ def test_export_agent_tools_with_tool_registry(tmp_path: Path):
     assert res["status"] == "ok"
     assert "كشف" in res["content"]
     assert "مستفعل" in res["content"]
+
+
+def test_evaluate_governance_is_not_an_auto_tool():
+    """ق٧٢: الحوكمةُ الدلالية تُنجح الادعاءَ المنفيَّ بـ10000bp، فلا تُعرض أداةً يحكم بها الوكيلُ على جوابه.
+
+    يُفحص غيابُها من كل طريقٍ تبلغ به أداةٌ النموذج: المواصفات، وحزمةُ الوكيل كاملةً، وحلقةُ الفعل التي ترفضها أداةً مجهولة."""
+    from agent.builtin_tools import get_all_tools
+
+    specs, _ = default_tools_registry()
+    assert "evaluate_governance" not in specs
+    assert "evaluate_governance" not in {tool.spec.name for tool in get_all_tools()}
+    call = ToolCall(call_id="call-gov", name="evaluate_governance",
+                    arguments={"answer": "لا يجب معاينة السفينة قبل الإبحار [ش1].", "pages": {}})
+    res = create_default_action_loop().dispatch_call(call)
+    assert res.success is False
+    assert res.error.startswith("tool_unknown")
 
 
 def test_exported_write_preserves_journal_identity_in_durable_receipt_and_reverts(tmp_path):
