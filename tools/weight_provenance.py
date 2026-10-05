@@ -61,9 +61,10 @@ def fetch(url: str) -> bytes:
         return response.read()
 
 
-def weight_bytes(data: bytes, file: str) -> bytes | None:
-    """البايتاتُ نفسُها، أو العضوُ الوحيد الذي اسمُه اسمُ الوزن إن كانت أرشيفًا."""
-    if not zipfile.is_zipfile(io.BytesIO(data)):
+def weight_bytes(data: bytes, file: str, digest: str) -> bytes | None:
+    """البايتاتُ نفسُها، أو العضوُ الوحيد الذي اسمُه اسمُ الوزن إن كانت أرشيفًا يلفّه. والوزنُ الذي صيغتُه نفسُها ZIP (حفظُ
+    torch الحديث، و`.keras`) يُعرف ببصمته المقيَّدة فلا يُفتح أرشيفًا (ملاحظة Codex على #307)."""
+    if _sha(data) == digest or not zipfile.is_zipfile(io.BytesIO(data)):
         return data
     with zipfile.ZipFile(io.BytesIO(data)) as archive:
         members = [name for name in archive.namelist() if name.rsplit("/", 1)[-1] == file]
@@ -146,7 +147,7 @@ def measure(models: dict, day: str, read: Callable[[str], bytes] = fetch) -> tup
             if weight.get("origin_sha256") not in (None, _sha(origin)):
                 problems.append(f"origin_digest_differs_at_origin:{label}")
                 continue
-            measured = weight_bytes(origin, weight["file"])
+            measured = weight_bytes(origin, weight["file"], weight["sha256"])
             if measured is None:
                 problems.append(f"weight_not_in_origin:{label}")
                 continue

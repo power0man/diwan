@@ -112,6 +112,16 @@ def test_a_weight_served_raw_is_hashed_as_it_is():
     assert problems == [] and evidence["models"]["ocr"]["weight_provenance"][0]["origin_sha256"] == WEIGHT["sha256"]
 
 
+def test_a_zip_format_weight_served_raw_is_not_opened():
+    """ملاحظة Codex على #307: وزنٌ صيغتُه نفسُها ZIP (حفظُ torch الحديث) كان يُفتح أرشيفًا فيُبحث فيه عن عضوٍ باسمه، فيُسمّى
+    `weight_not_in_origin` وبايتاتُه مطابِقة. فما طابقت بصمتُه البصمةَ المقيَّدة يُقاس كما هو."""
+    checkpoint = _zip(("w/data.pkl", b"tensors"), ("w/version", b"3"))
+    served = {"https://example.org/w.pth": checkpoint, **SERVED}
+    models = _models(origin="https://example.org/w.pth", origin_sha256=_sha(checkpoint), sha256=_sha(checkpoint))
+    evidence, problems = wp.measure(models, "2026-10-05", served.__getitem__)
+    assert problems == [] and evidence["models"]["ocr"]["models_sha256"] == {"w.pth": _sha(checkpoint)}
+
+
 @pytest.mark.parametrize("served, change, found", [
     pytest.param({"https://example.org/w.zip": OTHER_BYTES}, {"origin_sha256": _sha(OTHER_BYTES)},
                  "weight_digest_differs_at_origin", id="other_bytes_at_origin"),
