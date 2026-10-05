@@ -166,7 +166,8 @@ def prior_spend_caps(bank: Path) -> list[dict]:
 
 def _run_spend_cap(transport) -> list[dict]:
     report = _spend_report(transport).get("spend_cap")
-    return [{key: report[key] for key in ("cap_usd", "spent_usd")}] if isinstance(report, dict) else []
+    return [{key: report[key] for key in ("cap_usd", "spent_usd", "exceeded_reservation_usd") if key in report}] \
+        if isinstance(report, dict) else []
 
 
 def prior_zero_spend_evidence(bank: Path) -> dict:
@@ -368,11 +369,16 @@ ZERO_SPEND_LIMITS = (
     "zero_spend_guard_is_provider_specific_and_not_a_general_price_attestation",
     "provider_usage_is_reported_when_available_and_missing_cost_is_never_assumed_zero",
 )
+# سقفُ الموجّه المدفوع حدٌّ على الحجز بسعر الفهرس، لا ضمانٌ لما يفوتره المزوّد (ملاحظة Codex على #308)
+HF_ROUTER_LIMITS = (
+    "the_cap_bounds_reservations_at_the_catalog_price_read_at_run_time_a_charge_reported_above_its_reservation"
+    "_is_already_billed_so_it_is_named_and_stops_the_run_and_the_hard_ceiling_is_the_prepaid_hfd2_credit",
+)
 
 
 def free_limits(base, backend: str | None = None) -> list[str]:
     """حدودُ القياس على الواجهات المجانية من موضعٍ واحد، للتجربة وللبنك وللخلاصة المحفوظة (ملاحظة Codex على #174)."""
-    extra = ZERO_SPEND_LIMITS if backend in {"groq", "openrouter"} else ()
+    extra = ZERO_SPEND_LIMITS if backend in {"groq", "openrouter"} else HF_ROUTER_LIMITS if backend == "hf-router" else ()
     return sorted(set(base) | set(FREE_LIMITS) | set(extra))
 
 
@@ -858,13 +864,16 @@ def _ceil_micros(value: Decimal) -> int:
 class PricedRouterChat(OpenAICompatChat):
     """موجّه HF مدفوعٌ بالتوكن، فلا يخرج نداءٌ إليه إلا بسعرٍ مقروءٍ وسقفٍ محجوز (جديد-spend-ledger، البندان ٢ و٣ من #295).
 
-    - **السعر:** من `providers[].pricing` في فهرس الموجّه نفسِه ساعةَ التشغيل، لكل نموذجٍ أرخصُ مزوّدٍ حيٍّ أعلن سعرَيه، ويُثبَّت
+    - **السعر:** من `providers[].pricing` في فهرس الموجّه نفسِه ساعةَ التشغيل، لكل نموذجٍ أرخصُ مزوّدٍ حيٍّ أعلن سعرَيه لحدّ أول طلبٍ
+      له موزونًا (المدخلُ بسعره و`max_tokens` بسعر المخرج)، ويُثبَّت
       المزوّدُ في الحمولة (`<model>:<provider>`) فلا يختار الموجّهُ غيرَه. والنموذجُ بلا سعرٍ مقروء `price_unknown` قبل الشبكة.
     - **السقف:** `core.budget.Budget` بسقف التشغيل (`--max-usd`، لازمٌ وموجبٌ ولا يتجاوز HFD2). يُحجز قبل كل نداءٍ تقديرٌ أعلى:
       بايتاتُ التكليف (كلُّ توكنٍ بايتٌ على الأقل) وحدُّ التأطير (`FRAMING_TOKENS`) بسعر المدخل، و`max_tokens` بسعر المخرج.
       وما لا يتّسع `spend_cap_reached` قبل الشبكة.
     - **التسوية:** بالكلفة التي أبلغها الموجّه إن أبلغها، وإلا بتوكنات الردّ بالسعر نفسِه (`estimated_from_prices`). وما أُرسل بلا
       توكناتٍ يُسوّى بالمحجوز كلِّه (`reserved_upper_bound`)، لأن المزوّد قد يكون نفّذ.
+    - **حدُّه:** كلفةٌ مبلَّغةٌ فوق محجوزها (إعادةُ تسعيرٍ أو رسمٌ إضافي) فوترها المزوّدُ فلا تُمحى: تُسمّى `exceeded_reservation_usd`
+      في سطرها وفي `spend_cap`، ويقف التشغيلُ بـ`price_exceeded_reservation`. فالسقفُ حدٌّ على الحجز بسعر الفهرس، والضامنُ رصيدُ HFD2.
     """
 
     def __init__(self, api_key: str | None, *, spend_cap_usd: Decimal | None, **kw):
@@ -879,6 +888,7 @@ class PricedRouterChat(OpenAICompatChat):
         cap_micros = _ceil_micros(cap * MICROS_PER_USD)
         self.budget = Budget(day_remaining_micros=cap_micros, month_remaining_micros=cap_micros)
         self.spent_micros = 0
+        self.exceeded_micros = 0
         self.router_price_table: dict[str, dict] | None = None
         self.price_pins: dict[str, dict] = {}
 
@@ -887,7 +897,7 @@ class PricedRouterChat(OpenAICompatChat):
         self.router_price_table = {entry["id"]: entry["router_prices"] for entry in entries}
         return entries
 
-    def _pin(self, model: str) -> dict:
+    def _pin(self, model: str, input_tokens: int = FRAMING_TOKENS) -> dict:
         if model in self.price_pins:
             return self.price_pins[model]
         if self.router_price_table is None:
@@ -898,7 +908,9 @@ class PricedRouterChat(OpenAICompatChat):
         offers = (self.router_price_table or {}).get(model) or {}
         if not offers:
             raise AutomaticReviewError("price_unknown", model)
-        provider = min(offers, key=lambda name: (offers[name]["input"] + offers[name]["output"], name))
+        # أرخصُ مزوّدٍ لحدّ الطلب الموزون: المدخلُ بسعره و`max_tokens` بسعر المخرج، لا مجموعُ السعرين (ملاحظة Codex على #308)
+        provider = min(offers, key=lambda name: (input_tokens * offers[name]["input"]
+                                                 + self.max_tokens * offers[name]["output"], name))
         self.price_pins[model] = {"provider": provider, "input": offers[provider]["input"],
                                   "output": offers[provider]["output"], "read_at": self.catalog_read_at}
         return self.price_pins[model]
@@ -907,9 +919,12 @@ class PricedRouterChat(OpenAICompatChat):
         return f"{model}:{self._pin(model)['provider']}"
 
     def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
-        pin = self._pin(model)
-        estimate = _ceil_micros((len((system + user).encode("utf-8")) + FRAMING_TOKENS) * pin["input"]
-                                + self.max_tokens * pin["output"])
+        if self.exceeded_micros:
+            # كلفةٌ مبلَّغةٌ فوق محجوزها تعني أن سعرَ الفهرس لم يعد حدًّا أعلى، فلا نداءَ بعدها (ملاحظة Codex على #308)
+            raise AutomaticReviewError("price_exceeded_reservation", model)
+        bound = len((system + user).encode("utf-8")) + FRAMING_TOKENS
+        pin = self._pin(model, bound)
+        estimate = _ceil_micros(bound * pin["input"] + self.max_tokens * pin["output"])
         handle = f"{model}#{len(self.provider_usage)}"
         try:
             self.budget.reserve(handle, estimate)
@@ -920,13 +935,17 @@ class PricedRouterChat(OpenAICompatChat):
             content = super().__call__(model, system, user, schema)
         finally:
             row = self.provider_usage[-1] if len(self.provider_usage) > rows else None
-            self._settle(handle, pin, row)
+            self._settle(handle, pin, row, estimate)
         return content
 
-    def _settle(self, handle: str, pin: dict, row: dict | None) -> None:
+    def _settle(self, handle: str, pin: dict, row: dict | None, reserved: int) -> None:
         usage = (row or {}).get("usage") or {}
         if row is not None and row.get("cost_status") == "reported":
             spent = self.budget.settle(handle, _ceil_micros(Decimal(row["cost_usd"]) * MICROS_PER_USD))
+            if spent > reserved:
+                # المزوّدُ فوترها فلا تُمحى: تُسمّى في سطرها وفي التقرير، ويُوقف ما بعدها (ملاحظة Codex على #308)
+                self.exceeded_micros += spent - reserved
+                row["exceeded_reservation_usd"] = str(Decimal(spent - reserved) / MICROS_PER_USD)
         elif {"prompt_tokens", "completion_tokens"} <= usage.keys():
             spent = self.budget.settle(handle, _ceil_micros(usage["prompt_tokens"] * pin["input"]
                                                             + usage["completion_tokens"] * pin["output"]))
@@ -943,6 +962,8 @@ class PricedRouterChat(OpenAICompatChat):
     def spend_report(self) -> dict:
         return {**super().spend_report(), "spend_cap": {
             "cap_usd": str(self.spend_cap_usd), "spent_usd": str(Decimal(self.spent_micros) / MICROS_PER_USD),
+            **({"exceeded_reservation_usd": str(Decimal(self.exceeded_micros) / MICROS_PER_USD)}
+               if self.exceeded_micros else {}),
             "prices": {model: {"provider": pin["provider"], "input": str(pin["input"]), "output": str(pin["output"]),
                                "unit": "usd_per_million_tokens", "read_at": pin["read_at"],
                                "catalog": bare_url(self.catalog_url)}
@@ -1150,6 +1171,9 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
                   "runs": runs, "measurement_limits": free_limits(runs[0]["measurement_limits"], args.backend),
                   "provider_usage": transport.provider_usage, **_spend_report(transport),
                   "last_failure_shapes": transport.failures}
+        exceeded = _cap_exceeded(transport)
+        if exceeded:
+            report["status"], budget_error = "failed", budget_error or exceeded
         if budget_error:
             report["code"] = budget_error
         _mark_unavailable(report, [m["error"] for m in models.values()])
@@ -1179,6 +1203,7 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     report["provider_usage"] = transport.provider_usage
     report.update(_spend_report(transport))
     report["last_failure_shapes"] = transport.failures
+    failure = failure or _cap_exceeded(transport)
     if failure:
         report["status"], report["code"] = "failed", failure
     # نفادُ حصّة مستبدَلٍ خطأٌ لا رفضُ خدمة: فالإخفاقُ المختلط يبقى failed ولا يصير unavailable (ملاحظة Codex على #174)
@@ -1369,6 +1394,7 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     replaced_by = {model: entry["replacement"] for entry in fallbacks for model in entry["exhausted"]
                    if entry["replacement"] is not None}
     final_errors = summary["errors"]
+    failure = failure or _cap_exceeded(transport)
     history_errors, completed = superseded_history(args.bank, replaced_by, current)
     quota_errors = [e for e in history_errors if e["error"] == "quota_exhausted"]
     if failure or final_errors:
@@ -1460,6 +1486,12 @@ def _persist_limits(bank: Path, limits: list[str]) -> None:
         summary = json.loads(path.read_text(encoding="utf-8"))
         summary["measurement_limits"] = limits
         _write_json(path, summary)
+
+
+def _cap_exceeded(transport) -> str | None:
+    """كلفةٌ أبلغها المزوّدُ فوق محجوزها تُفشل التشغيلَ باسمها ولو كانت آخرَ نداء (ملاحظة Codex على #308)."""
+    cap = _spend_report(transport).get("spend_cap")
+    return "price_exceeded_reservation" if isinstance(cap, dict) and "exceeded_reservation_usd" in cap else None
 
 
 def _spend_report(transport) -> dict:

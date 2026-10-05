@@ -100,6 +100,21 @@ def test_the_cheapest_live_priced_provider_is_pinned_in_the_payload():
     assert pin["catalog"] == "https://router.huggingface.co/v1/models" and pin["read_at"]
 
 
+def test_the_provider_is_chosen_by_the_requests_weighted_bound_not_the_sum_of_its_prices():
+    """ملاحظة Codex على #308: (١، ١٠) أرخصُ بمجموع السعرين، لكن حدَّ الطلب ٧١٢ توكنًا مدخلًا و٤٠٠٠ مخرجًا يحجز له ٤٠٧١٢
+    ولـ(٨، ٤) ٢١٦٩٦؛ فيُختار الثاني ويتّسع له السقفُ ٠٫٠٣ الذي لا يتّسع للأوّل."""
+    catalog = _catalog((MODEL, [_offer("output_dear", 1, 10), _offer("output_cheap", 8, 4)]))
+    chat = _chat(catalog, {f"{MODEL}:output_cheap": [{"prompt_tokens": 10, "completion_tokens": 5}]}, cap="0.03",
+                 max_tokens=4000)
+    assert chat(MODEL, SYSTEM, USER, {}) == "{}"
+    assert chat.opener.posted() == [f"{MODEL}:output_cheap"]
+    assert chat.spend_report()["spend_cap"]["prices"][MODEL]["provider"] == "output_cheap"
+    # وتكليفٌ طويل (١٠٠٠٠٠ بايت) يقلب الحدَّ: المدخلُ أغلبُه، فيُختار رخيصُ المدخل
+    long = _chat(catalog, {f"{MODEL}:output_dear": [{"prompt_tokens": 10, "completion_tokens": 5}]}, max_tokens=4000)
+    long(MODEL, SYSTEM, "u" * 99_900, {})
+    assert long.opener.posted() == [f"{MODEL}:output_dear"]
+
+
 @pytest.mark.parametrize("catalog", [
     pytest.param(_catalog((MODEL, [{"provider": "p", "status": "live"}])), id="no_price"),
     pytest.param(_catalog((OTHER, [_offer("p", 1, 1)])), id="model_absent"),
@@ -163,6 +178,24 @@ def test_a_cost_the_router_reports_is_settled_as_reported():
     assert chat.spend_report()["spend_cap"]["spent_usd"] == "0.00005"
 
 
+def test_a_charge_reported_above_its_reservation_is_named_and_no_call_follows_it():
+    """ملاحظة Codex على #308: حُجز ٩١٢ وأبلغ الموجّهُ ١٠٠٠ (إعادةُ تسعير): فوترها فلا تُمحى، بل تُسمّى في سطرها وتقريرها،
+    ولا يُرسل بعدها نداء، فسعرُ الفهرس لم يعد حدًّا أعلى."""
+    usage = {"prompt_tokens": 100, "completion_tokens": 50, "cost": 0.001}
+    chat = _chat(_catalog((MODEL, [_offer("p", 1, 2)])), {f"{MODEL}:p": [usage, usage]})
+    chat(MODEL, SYSTEM, USER, {})
+    assert chat.provider_usage[-1]["exceeded_reservation_usd"] == "0.000088"
+    cap = chat.spend_report()["spend_cap"]
+    assert (cap["spent_usd"], cap["exceeded_reservation_usd"]) == ("0.001", "0.000088")
+    with pytest.raises(AutomaticReviewError) as refused:
+        chat(MODEL, SYSTEM, USER, {})
+    assert refused.value.code == "price_exceeded_reservation" and len(chat.opener.posted()) == 1
+    within = _chat(_catalog((MODEL, [_offer("p", 1, 2)])), {f"{MODEL}:p": [{**usage, "cost": 0.000912}]})
+    within(MODEL, SYSTEM, USER, {})
+    assert "exceeded_reservation_usd" not in within.provider_usage[-1], "ما يساوي محجوزَه لا يتجاوزه"
+    assert "exceeded_reservation_usd" not in within.spend_report()["spend_cap"]
+
+
 @pytest.mark.parametrize("reply", [pytest.param(None, id="no_usage"), pytest.param(500, id="http_500")])
 def test_a_sent_call_without_tokens_is_settled_at_its_full_reservation(reply):
     chat = _chat(_catalog((MODEL, [_offer("p", 1, 2)])), {f"{MODEL}:p": [reply]})
@@ -208,7 +241,8 @@ def test_max_usd_is_refused_on_every_other_backend(monkeypatch, capsys):
 
 
 @pytest.mark.parametrize("code", [pytest.param("price_unknown", id="price_unknown"),
-                                  pytest.param("spend_cap_reached", id="spend_cap_reached")])
+                                  pytest.param("spend_cap_reached", id="spend_cap_reached"),
+                                  pytest.param("price_exceeded_reservation", id="price_exceeded_reservation")])
 def test_a_price_or_cap_refusal_stops_the_whole_run_under_its_name(tmp_path, code):
     assert code in BUDGET_TERMINAL_ERRORS
     bank = smoke_bank(tmp_path)

@@ -325,8 +325,9 @@ class FreeOpener:
         if isinstance(reply, bytes):
             return _Reply(reply, "text/plain", request.full_url)
         if request.data is not None:
-            content, finish = reply if isinstance(reply, tuple) else (json.dumps(reply, ensure_ascii=False), "stop")
-            reply = {"choices": [{"message": {"role": "assistant", "content": content}, "finish_reason": finish}]}
+            content, finish, *usage = reply if isinstance(reply, tuple) else (json.dumps(reply, ensure_ascii=False), "stop")
+            reply = {"choices": [{"message": {"role": "assistant", "content": content}, "finish_reason": finish}],
+                     **({"usage": usage[0]} if usage else {})}
         return _Reply(json.dumps(reply, ensure_ascii=False).encode("utf-8"), "application/json", request.full_url)
 
     def chat_models(self):
@@ -1270,6 +1271,45 @@ def test_a_paid_bank_run_keeps_its_cap_in_the_summary_and_the_ledger(tmp_path, m
     ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
     assert ledger["spend_caps"] == [{"cap_usd": "1", "spent_usd": printed["spent_usd"]},
                                     {"cap_usd": "1", "spent_usd": second}], "تشغيلٌ أرسل يُلحق سقفَه ولا يمحو السابق"
+
+
+OVERCHARGED = {"prompt_tokens": 10, "completion_tokens": 5, "cost": 0.5}   # فوق أيّ محجوزٍ لهذه الحمولات بسعر ١ و٢
+
+
+def test_a_paid_bank_run_whose_last_call_was_charged_above_its_reservation_fails_under_that_name(tmp_path, monkeypatch,
+                                                                                               capsys):
+    """ملاحظة Codex على #308: كلفةٌ مبلَّغةٌ فوق محجوزها في آخر نداء لا يتبعه نداءٌ يرفضه، فيُفشل التشغيلُ باسمها، ويبقى
+    مقدارُها في الخلاصة والسجلّ الدائم."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "overcharged")
+    priced = {"data": [{"id": m, "providers": [{"provider": "p", "status": "live", "pricing": {"input": 1, "output": 2}}]}
+                       for m in (DS, MI)]}
+    opener = _free(monkeypatch, FreeOpener(catalog=priced, replies={
+        f"{DS}:p": [_ok(ids)], f"{MI}:p": [(json.dumps(_ok(ids)), "stop", OVERCHARGED)]}))
+    assert cli.main([str(bank), "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF), "--backend", "hf-router",
+                     "--max-usd", "1"]) == 1
+    printed = json.loads(capsys.readouterr().out)
+    assert opener.chat_models() == [f"{DS}:p", f"{MI}:p"], "النداءُ الزائد آخرُ نداء، فلا نداءَ بعده يرفضه"
+    assert (printed["status"], printed["code"]) == ("failed", "price_exceeded_reservation")
+    assert "exceeded_reservation_usd" in printed["spend_cap"]
+    assert set(cli.HF_ROUTER_LIMITS) <= set(printed["measurement_limits"]), "حدُّ السقف معلَنٌ مع رقمه"
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert ledger["spend_caps"][-1]["exceeded_reservation_usd"] == printed["spend_cap"]["exceeded_reservation_usd"]
+
+
+@pytest.mark.parametrize("mode", [pytest.param([], id="pair"), pytest.param(["--every-family"], id="every_family")])
+def test_a_paid_smoke_whose_last_call_was_charged_above_its_reservation_fails_under_that_name(tmp_path, monkeypatch, mode):
+    priced = {"data": [{"id": m, "providers": [{"provider": "p", "status": "live", "pricing": {"input": 1, "output": 2}}]}
+                       for m in (DS, MI)]}
+    opener = _free(monkeypatch, FreeOpener(catalog=priced, replies={
+        f"{DS}:p": [CATCH], f"{MI}:p": [(json.dumps(CATCH), "stop", OVERCHARGED)]}))
+    out = tmp_path / "smoke.json"
+    assert cli.main(["--backend", "hf-router", "--max-usd", "1", "--reviewer", DS, "--reviewer", MI,
+                     "--smoke", str(out), *mode]) == 1
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert opener.chat_models() == [f"{DS}:p", f"{MI}:p"]
+    assert (report["status"], report["code"]) == ("failed", "price_exceeded_reservation")
 
 
 def test_empty_and_truncated_replies_leave_their_shape_in_the_failures(tmp_path):
