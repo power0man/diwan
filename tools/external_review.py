@@ -138,12 +138,35 @@ def prior_provider_usage(bank: Path) -> list[dict]:
     return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
 
 
-def write_ledger(bank: Path, rows: list[dict], evidence: dict) -> None:
+def write_ledger(bank: Path, rows: list[dict], evidence: dict, spend_caps: list[dict] | None = None) -> None:
     """السجلُّ الدائم كاملًا (السابقُ وما أُلحق به)، ومعه دليلُ المجانية الذي تقوم عليه نداءاتُه: فتشغيلٌ سقط بعد الإرسال
     وقبل الخلاصة لا تعود نداءاتُه في الإعادة بلا بنود السعر ولحظة قراءتها (ملاحظة Codex على #298). ولا يُكتب في تشغيلٍ
     بمعرّف: مجلّدُه جديدٌ لا يُعاد، وخلاصتُه وRUN.json يحملان نداءاتِه، وما يُرفع منه عقدُه ثابت (`check_artifact`)."""
     _write_json(bank / "reviews" / LEDGER_FILE, {"schema_version": 1, "provider_usage": rows,
-                                                 "zero_spend_evidence": dict(sorted(evidence.items()))})
+                                                 "zero_spend_evidence": dict(sorted(evidence.items())),
+                                                 **({"spend_caps": spend_caps} if spend_caps else {})})
+
+
+def merged_zero_spend_evidence(prior: dict, transport) -> dict:
+    """دليلُ المجانية المحفوظ، وفوقه قراءةُ هذا التشغيل لكل نموذجٍ أرسل إليه نداءً أو لا دليلَ سابقًا له. فإعادةٌ تتخطّى ما
+    رُوجع تقرأ الفهرسَ ولا ترسل، فلا تستبدل بقراءتها الجديدة الدليلَ الذي قامت عليه نداءاتٌ سابقة (اختبارٌ كان يسقط حين تعبر
+    القراءتان حدَّ ثانية)."""
+    sent = {row.get("model") for row in getattr(transport, "provider_usage", [])
+            if row.get("kind") != "catalog" and row.get("request_sent")}
+    fresh = {model: entry for model, entry in getattr(transport, "zero_spend_evidence", {}).items()
+             if model in sent or model not in prior}
+    return dict(sorted({**prior, **fresh}.items()))
+
+
+def prior_spend_caps(bank: Path) -> list[dict]:
+    """سقوفُ التشغيلات المدفوعة السابقة وإنفاقُ كلٍّ منها، من السجلّ الدائم (ملاحظة Codex على #308)."""
+    caps = _read_json_object(bank / "reviews" / LEDGER_FILE).get("spend_caps")
+    return [cap for cap in caps if isinstance(cap, dict)] if isinstance(caps, list) else []
+
+
+def _run_spend_cap(transport) -> list[dict]:
+    report = _spend_report(transport).get("spend_cap")
+    return [{key: report[key] for key in ("cap_usd", "spent_usd")}] if isinstance(report, dict) else []
 
 
 def prior_zero_spend_evidence(bank: Path) -> dict:
@@ -950,6 +973,9 @@ def assess_catalog(entries: list[dict], backend: str) -> dict:
             try:
                 identity = resolve_reviewer(entry["id"], backend)
                 zero_spend = openrouter_zero_spend(entry) if backend == "openrouter" else None
+                if backend == "hf-router" and not entry.get("router_prices"):
+                    # مرشّحٌ بلا سعرٍ مقروء يوقف التشغيلَ كلَّه بـprice_unknown عند أوّل نداء، فلا يُرشَّح (ملاحظة Codex على #308)
+                    raise AutomaticReviewError("price_unknown", entry["id"])
                 row.update(family=identity["family"], lineage=identity["lineage"], eligible=True,
                            zero_spend_proof=zero_spend)
             except AutomaticReviewError as exc:
@@ -1330,9 +1356,10 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     finally:
         # ما أُرسل (ومنه نداءُ الفهرس) يبقى في السجلّ الدائم على أيّ خروج، قبل أن تُقرأ سجلّاتُ المراجعة في الخلاصة
         # (ملاحظتا Codex على #298). أمّا تشغيلٌ بمعرّفٍ فـRUN.json وخلاصتُه يحملان نداءاتِه، ومجلّدُه جديد
-        evidence = dict(sorted({**prior_evidence, **getattr(transport, "zero_spend_evidence", {})}.items()))
+        evidence = merged_zero_spend_evidence(prior_evidence, transport)
         if not args.run_id and transport.provider_usage:
-            write_ledger(args.bank, prior + transport.provider_usage, evidence)
+            write_ledger(args.bank, prior + transport.provider_usage, evidence,
+                         prior_spend_caps(args.bank) + _run_spend_cap(transport))
     # النجاحُ والاتفاقُ وقائمةُ المالك من المجموعة الأخيرة وحدها (ملاحظتا Codex على #174): المستبدَلُ نُقلت سجلّاتُه إلى
     # reviews/superseded/ وراجع بديلُه البنكَ كلَّه؛ ونفادُ حصّته تاريخٌ مسمًّى (superseded ومعه البديل) لا خطأٌ يُسقط التشغيل،
     # فإن أخفق البديلُ أيضًا عُدّ الخطآن كلاهما. وأخطاءُ مراجعين خارج هذا التشغيل لا تُحسب عليه، وتُروى عددًا.
@@ -1354,9 +1381,12 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     # الخلاصةُ للبنك كلِّه: السجلُّ والمجموعُ وعدُّ ما لم تثبت كلفتُه من السجلّ المُلحَق، ودليلُ المجانية الجديدُ فوق السابق.
     # أمّا المطبوعُ أدناه فتقريرُ هذا التشغيل وحده.
     ledger = prior + transport.provider_usage
+    # سقفُ التشغيل المدفوع وإنفاقُه في الخلاصة أيضًا، فيُرى في مجلّد التشغيل المرفوع لا في المطبوع وحده (ملاحظة Codex على #308)
+    cap = _spend_report(transport).get("spend_cap")
     _persist_provider_usage(args.bank, ledger, {
         "zero_spend_evidence": evidence,
-        "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger), "token_totals": token_totals(ledger)})
+        "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger), "token_totals": token_totals(ledger),
+        **({"spend_cap": cap} if cap else {})})
     if args.run_id:          # كلُّ سجلٍّ وخلاصةٍ في مجلّد هذا التشغيل يحمل معرّفَه، فيُرفض عند الرفع ما لا يحمله
         stamp_run(args.bank / "reviews", args.run_id)
     final_counts = final_set_counts(args.bank, final_models, pre_existing, current)

@@ -1218,6 +1218,60 @@ def test_a_record_from_another_backend_is_not_reused_under_this_backend(tmp_path
     assert (record["backend"], record["endpoint_host"]) == ("hf-router", "router.huggingface.co")
 
 
+class _Sent:
+    def __init__(self, sent, evidence):
+        self.provider_usage = [{"kind": "catalog", "model": None, "request_sent": True}] + [
+            {"model": model, "request_sent": True} for model in sent]
+        self.zero_spend_evidence = evidence
+
+
+def test_a_rerun_replaces_free_evidence_only_for_the_models_it_called():
+    """إعادةٌ لا ترسل إلى نموذجٍ لا تستبدل دليلَه المحفوظ بقراءتها الجديدة للفهرس، ونموذجٌ أرسلت إليه يأخذ قراءتَها."""
+    prior = {DS: {"observed_at": "old"}, MI: {"observed_at": "old"}}
+    fresh = {DS: {"observed_at": "new"}, MI: {"observed_at": "new"}, LL: {"observed_at": "new"}}
+    assert cli.merged_zero_spend_evidence(prior, _Sent([MI], fresh)) == {
+        DS: {"observed_at": "old"}, LL: {"observed_at": "new"}, MI: {"observed_at": "new"}}
+
+
+def test_an_hf_model_without_a_router_price_is_not_a_candidate():
+    """ملاحظة Codex على #308: مرشّحٌ بلا سعرٍ يوقف التشغيلَ كلَّه بـprice_unknown عند أوّل نداء، فلا يُرشَّح."""
+    entries = [{"id": DS, "chat": True, "reason": None, "router_prices": {}},
+               {"id": MI, "chat": True, "reason": None, "router_prices": {"p": {"input": 1, "output": 2}}}]
+    assessed = cli.assess_catalog(entries, "hf-router")
+    assert [c["model"] for c in assessed["candidates"]] == [MI] and assessed["refused"] == {"price_unknown": 1}
+
+
+def test_a_paid_bank_run_keeps_its_cap_in_the_summary_and_the_ledger(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #308: سقفُ التشغيل المدفوع وإنفاقُه في الخلاصة والسجلّ الدائم، لا في المطبوع وحده."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "paid")
+    priced = {"data": [{"id": m, "providers": [{"provider": "p", "status": "live", "pricing": {"input": 1, "output": 2}}]}
+                       for m in (DS, MI)]}
+    _free(monkeypatch, FreeOpener(catalog=priced, replies={f"{DS}:p": [_ok(ids)], f"{MI}:p": [_ok(ids)]}))
+    args = [str(bank), "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF), "--backend", "hf-router",
+            "--max-usd", "1"]
+    assert cli.main(args) == 0
+    printed = json.loads(capsys.readouterr().out)["spend_cap"]
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert summary["spend_cap"] == printed and printed["cap_usd"] == "1"
+    assert ledger["spend_caps"] == [{"cap_usd": "1", "spent_usd": printed["spent_usd"]}]
+    _free(monkeypatch, FreeOpener(catalog=priced, replies={}))
+    assert cli.main(args) == 0
+    capsys.readouterr()
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert ledger["spend_caps"] == [{"cap_usd": "1", "spent_usd": printed["spent_usd"]}], \
+        "إعادةٌ لم ترسل شيئًا لا تكتب السجلَّ ولا تمحو سقفَ السابق"
+    (bank / "open" / "a" / "kimi_y.json").write_bytes((bank / "open" / "a" / "kimi_x.json").read_bytes())
+    _free(monkeypatch, FreeOpener(catalog=priced, replies={f"{DS}:p": [_ok(ids)], f"{MI}:p": [_ok(ids)]}))
+    assert cli.main(args) == 0
+    second = json.loads(capsys.readouterr().out)["spend_cap"]["spent_usd"]
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert ledger["spend_caps"] == [{"cap_usd": "1", "spent_usd": printed["spent_usd"]},
+                                    {"cap_usd": "1", "spent_usd": second}], "تشغيلٌ أرسل يُلحق سقفَه ولا يمحو السابق"
+
+
 def test_empty_and_truncated_replies_leave_their_shape_in_the_failures(tmp_path):
     """ملاحظة Codex على #174: الردُّ الفارغ والمبتور يتركان شكلَهما وطلبَهما كسائر الإخفاقات."""
     chat = cli.OpenAICompatChat("github-models", KEY)
@@ -1499,6 +1553,8 @@ def test_an_openrouter_run_that_fails_after_sending_keeps_its_zero_spend_evidenc
     catalog_at = [row["at"] for row in ledger["provider_usage"] if row.get("kind") == "catalog"]
     assert sorted(ledger["zero_spend_evidence"]) == sorted([OR_DS, OR_MI])
     monkeypatch.setattr(cli, "_quota_models", real)
+    # الإعادةُ تقرأ الفهرسَ في ثانيةٍ أخرى دائمًا، فلا يتوقّف الاختبارُ على عبور حدّ الثانية
+    monkeypatch.setattr(cli, "_utc_now", lambda: "2099-01-01T00:00:00Z")
     again = UsageOpener([_priced(OR_DS), _priced(OR_MI)], {OR_DS: [reply], OR_MI: [reply]})
     monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: again)
     assert cli.main([str(bank), *args]) == 0
