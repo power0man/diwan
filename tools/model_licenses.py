@@ -62,8 +62,6 @@ LICENSE_FILE_READ = "upstream_license_file_at_the_release_tag_the_probes_name"
 # رخصٌ يحمل نصُّها إشعارَ حقوق نشرٍ يُشترط نشرُه مع الوزن، فإسنادُه لازمٌ لا اختياريّ (ملاحظة Codex على #307)
 NOTICE_LICENSES = frozenset({"mit"})
 UNOWNED = ("",)
-# خريطةُ البصمات التي تعلن بايتاتِ نموذجٍ بأسماء ملفّاتها
-MODELS_MAP = "models_sha256"
 # أنواعُ البصمات التي يكتبها المستودع لبياناتٍ لا لبايتات نموذج (`<نوع>_sha256`). وما سواها في دليلٍ جديد أثرٌ يُطالَب بقيده،
 # فلا يمرّ `checkpoint_sha256` أو `model_artifact_sha256` بلا أصلٍ ولا رخصة (ملاحظة Codex على #307). ومنها ما تكتبه أدواتُ
 # المراجعة للمراجَع: `artifact` (`evaluation/multi_system_review.py`)، و`file` (`evaluation/external_review.py`)، و`review_artifact`،
@@ -81,6 +79,10 @@ NON_ARTIFACT_KINDS = frozenset({
     "resumed_trace", "root", "rubric", "runner", "runtime_lock", "runtime_receipt", "sandbox", "signature", "source",
     "source_report", "state", "stdout", "suite", "system", "test_log", "thresholds_file", "trust", "verdict_pattern", "worker",
 })
+# خرائطُ البصمات (`<نوع>_sha256: {اسم: بصمة}`) التي يكتبها المستودع لملفّات التشغيل ومصدرِه ومخرجاتِه، فيحكم على كلِّ ملفٍّ
+# فيها `is_weight_file`. وكلُّ خريطةٍ سواها خريطةُ أثرٍ (`models_sha256`، `checkpoint_sha256`) تعلن أنّ ملفّاتها بايتاتُ نموذج،
+# فتُطالَب بقيدها أيًّا كانت لاحقتُها، كما تُطالَب بصمةُ نوعها وحدها (ملاحظتا Codex على #307)
+DATA_MAPS = NON_ARTIFACT_KINDS | {"artifacts", "measured_source", "private_evidence"}
 # أنواعُ الأوزان التي تُقبل بصمتُها بحقل `<نوع>_sha256` بلا اسم ملفّ
 WEIGHT_KINDS = frozenset({"pth", "pt", "bin", "safetensors", "gguf", "onnx", "ckpt", "h5", "hdf5", "keras", "pb", "tflite",
                           "mlmodel", "traineddata"})
@@ -311,10 +313,10 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
                     flag(owners, "weight_digest_malformed", key.removesuffix("_sha256"))
                 visit(child, owners)
             elif isinstance(key, str) and key.endswith("_sha256") and isinstance(child, dict):
-                # خريطةُ بصماتٍ بأسماء الملفّات: كلُّ مفتاحٍ فيها اسمُ ملفّ ولو بلا لاحقة (`checkpoint`)، ويحكم عليه
-                # `is_weight_file`؛ إلّا `models_sha256` فإعلانُها نفسُه أنّ ملفّاتها بايتاتُ نموذج، فتُطالَب أيًّا كانت لاحقتُها
-                # (ملاحظتا Codex على #307)
-                declares = key == MODELS_MAP
+                # خريطةُ بصماتٍ بأسماء الملفّات: كلُّ مفتاحٍ فيها اسمُ ملفّ ولو بلا لاحقة (`checkpoint`). يحكم عليه
+                # `is_weight_file` في خرائط البيانات (`DATA_MAPS`)، وما سواها خريطةُ أثرٍ تعلن أنّ ملفّاتها بايتاتُ نموذج، فتُطالَب
+                # أيًّا كانت لاحقتُها (ملاحظات Codex على #307)
+                declares = key.removesuffix("_sha256") not in DATA_MAPS
                 for name, digest in child.items():
                     if isinstance(name, str) and isinstance(digest, str) and SHA256.match(digest):
                         for owner in owners or UNOWNED:

@@ -545,6 +545,8 @@ def test_a_provenance_record_is_a_measured_artifact(payload, found):
     # وخريطةُ `models_sha256` تعلن بايتاتِ نموذج، فمشوَّهُها يُسمّى أيًّا كانت لاحقتُه (ملاحظة Codex على #307)
     pytest.param({"model": "asr", "models_sha256": {"scores.csv": "x"}}, ["weight_digest_malformed:new.json:asr:scores.csv"],
                  id="data_named_entry_in_the_models_map"),
+    pytest.param({"model": "asr", "checkpoint_sha256": {"scores.csv": "x"}}, ["weight_digest_malformed:new.json:asr:scores.csv"],
+                 id="data_named_entry_in_a_typed_map"),
     pytest.param({"model": "asr", "checkpoint_sha256": None}, ["weight_digest_malformed:new.json:asr:checkpoint"],
                  id="null_digest"),
     pytest.param({"model": "asr", "checkpoint_sha256": 7}, ["weight_digest_malformed:new.json:asr:checkpoint"],
@@ -596,16 +598,34 @@ def test_a_malformed_provenance_record_is_named(records, found):
 @pytest.mark.parametrize("payload", [
     pytest.param({"model": "asr", "models_sha256": {"secret.json": DIGEST}}, id="models_map_entry"),
     pytest.param({"config": {"model": "asr"}, "models_sha256": {"secret.json": DIGEST}}, id="unowned_models_map_entry"),
+    pytest.param({"model": "asr", "checkpoint_sha256": {"secret.json": DIGEST}}, id="typed_map_entry"),
+    pytest.param({"config": {"model": "asr"}, "checkpoint_sha256": {"secret.json": DIGEST}}, id="unowned_typed_map_entry"),
     pytest.param({"model": "asr", "weight_provenance": [{**SECRET, "file": "secret.json"}]}, id="owned_record"),
     pytest.param({"config": {"model": "asr"}, "weight_provenance": [{**SECRET, "file": "secret.json"}]}, id="unowned_record"),
 ])
 def test_a_weight_its_provenance_record_declares_is_registered_whatever_its_suffix(payload):
-    """ملاحظتا Codex على #307: سجلُّ مصدرٍ أو خريطةُ `models_sha256` تعلن وزنًا بلاحقة بيانات (`secret.json`) كانت تمرّ لأن
-    `is_weight_file` يردّه، فتُعفى بايتاتٌ من قيدها بتغيير اسمها. فما يعلنانه وزنٌ يُطالَب بقيده أيًّا كانت لاحقتُه."""
+    """ملاحظات Codex على #307: سجلُّ مصدرٍ أو خريطةُ أثرٍ (`models_sha256`، `checkpoint_sha256`) تعلن وزنًا بلاحقة بيانات
+    (`secret.json`) كانت تمرّ لأن `is_weight_file` يردّه، فتُعفى بايتاتٌ من قيدها بتغيير اسمها. فما يعلنانه وزنٌ يُطالَب بقيده
+    أيًّا كانت لاحقتُه."""
     models = {"asr": {**READ, "weights": []}}
     assert ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) == [
         "weight_not_registered:new.json:asr:secret.json"]
     assert ml.weight_findings(models, {"new.json": payload}) == []
+
+
+@pytest.mark.parametrize("kind", [
+    pytest.param("artifacts", id="artifacts"),
+    pytest.param("measured_source", id="measured_source"),
+    pytest.param("private_evidence", id="private_evidence"),
+    pytest.param("source", id="source"),
+])
+def test_a_run_file_map_judges_each_file_by_its_name(kind):
+    """ملاحظة Codex على #307: خرائطُ ملفّات التشغيل التي يكتبها المستودع (مصدرُه ومخرجاتُه) ليست خرائطَ أثر، فيحكم على ملفّاتها
+    `is_weight_file`: `tools/run.py` بياناتٌ لا تُطالَب، و`w.pth` وزنٌ يُطالَب بقيده."""
+    models = {"asr": {**READ, "weights": []}}
+    payload = {"model": "asr", f"{kind}_sha256": {"tools/run.py": DIGEST, "w.pth": SIBLING}}
+    assert ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) == [
+        "weight_not_registered:new.json:asr:w.pth"]
 
 
 @pytest.mark.parametrize("payload, found", [
