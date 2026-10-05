@@ -5,12 +5,15 @@
 - **محلولة:** الرخصةُ ومصدرُها وتاريخُ قراءتها.
 - **منتظِرة:** سببٌ مسمًّى، كأن تُقرأ بـ`ollama show --license` على الماك.
 
-والأدلّةُ التاريخيّة لا تُعدَّل. فالحارسُ يقرن كلَّ دليلٍ بالسجلّ ويرفض:
-- نموذجًا بلا قيد.
-- وقيدًا محلولًا بلا مصدرٍ أو تاريخ.
-- ودليلًا من تاريخ الإنفاذ فما بعده يسمّي نموذجًا منتظِرًا.
-- ورخصةً في دليلٍ تخالف السجلّ.
-- ومحرّكًا افتراضيًّا برخصةٍ غير تجاريّة (ق٦٢-٨).
+والأدلّةُ التاريخيّة لا تُعدَّل، وأسماؤها مقيّدةٌ في السجلّ (`historical_evidence`). فالحارسُ يقرن كلَّ دليلٍ بالسجلّ ويرفض:
+- نموذجًا بلا قيد، وقيدًا محلولًا بلا مصدرٍ أو تاريخ.
+- رخصةً في دليلٍ تخالف السجلّ.
+- محرّكًا افتراضيًّا برخصةٍ غير تجاريّة (ق٦٢-٨).
+
+والدليلُ الجديد (ليس في القائمة التاريخيّة، أو مؤرَّخٌ من تاريخ الإنفاذ) أشدّ (ملاحظتا Codex على #302):
+- يُقرأ كلُّ حقلِ نموذجٍ فيه على أيّ عمق: `config.model`، و`providers[].models[].model`، وما أشبه.
+- ولا يسمّي نموذجًا لم تُقرأ رخصتُه.
+- ويعلن رخصةَ كلِّ نموذجٍ يسمّيه في حقلٍ أعلى `licenses` (معرّفٌ معياريّ ← رخصة) تطابق السجلّ.
 
 تصنيفُ الرخصة آليٌّ من اسمها لا تفسير:
 - `osi`: من قائمةٍ مغلقة.
@@ -33,6 +36,7 @@ DEFAULT_ENGINE_SOURCE = ROOT / "providers" / "ollama.py"
 # حقولُ الدليل التي تسمّي نموذجًا. وما يردّه المزوّدُ صدًى (model_returned) لا يُعدّ، لأن المطلوبَ هو المسمّى
 MODEL_FIELDS = ("engine", "model", "local_model")
 MODEL_MAPS = ("models", "reviewers")
+MODEL_KEYS = frozenset(MODEL_FIELDS + MODEL_MAPS + ("model_requested",))
 OSI = frozenset({"apache-2.0", "mit", "bsd-2-clause", "bsd-3-clause", "mpl-2.0"})
 PENDING_REASONS = frozenset({
     "read_with_ollama_show_license_on_the_mac",
@@ -85,6 +89,33 @@ def named_models(payload: dict) -> list[str]:
     return list(dict.fromkeys(found))
 
 
+def _names_under(key: str, value: object) -> list[str]:
+    if isinstance(value, list):
+        return [name for item in value for name in _named(item)]
+    if isinstance(value, dict) and key in MODEL_MAPS and not any(k in value for k in ("repo", "model", "name")):
+        return [name for name in value if isinstance(name, str)]
+    return _named(value)
+
+
+def all_named_models(payload: object) -> list[str]:
+    """كلُّ معرّفٍ تحت حقلٍ يسمّي نموذجًا، على أيّ عمق، بلا تكرار. وما كان نصًّا حرًّا تحت حقل نموذجٍ يُعدّ اسمًا، فلا يُقبل
+    إلا إن كان في السجلّ: يُغلق عند الشكّ."""
+    found: list[str] = []
+
+    def walk(value: object) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if key in MODEL_KEYS:
+                    found.extend(_names_under(key, child))
+                walk(child)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child)
+
+    walk(payload)
+    return list(dict.fromkeys(found))
+
+
 def recorded_license(payload: dict) -> str | None:
     """رخصةٌ سجّلها الدليلُ نفسُه لمحرّكه، إن سجّلها."""
     for key in ("engine", "model"):
@@ -131,19 +162,24 @@ def entry_findings(name: str, entry: object) -> list[str]:
     return problems
 
 
-def evidence_findings(file: str, payload: dict, models: dict, enforced_from: str) -> list[str]:
+def evidence_findings(file: str, payload: dict, models: dict, enforced_from: str, historical: set[str]) -> list[str]:
     problems = []
-    names = [canonical(raw) for raw in named_models(payload)]
     day = payload.get("date")
-    enforced = isinstance(day, str) and day[:10] >= enforced_from
+    enforced = file not in historical or (isinstance(day, str) and day[:10] >= enforced_from)
+    names = list(dict.fromkeys(canonical(raw) for raw in (all_named_models(payload) if enforced else named_models(payload))))
+    stated = payload.get("licenses") if isinstance(payload.get("licenses"), dict) else {}
     for name in names:
         entry = models.get(name)
         if entry is None:
             problems.append(f"model_not_in_registry:{file}:{name}")
         elif "pending" in entry and enforced:
             problems.append(f"license_not_read_before_new_evidence:{file}:{name}")
+        elif enforced and not isinstance(stated.get(name), str):
+            problems.append(f"license_not_stated_in_new_evidence:{file}:{name}")
+        elif enforced and stated[name].lower() != entry["license"].lower():
+            problems.append(f"recorded_license_disagrees:{file}:{name}")
     recorded = recorded_license(payload)
-    if recorded is not None and len(names) == 1:
+    if not enforced and recorded is not None and len(names) == 1:
         entry = models.get(names[0]) or {}
         if "license" in entry and entry["license"].lower() != recorded.lower():
             problems.append(f"recorded_license_disagrees:{file}:{names[0]}")
@@ -160,13 +196,15 @@ def findings(registry: dict, evidence: dict[str, object], engine: str | None) ->
     problems: list[str] = []
     models = registry.get("models")
     enforced_from = registry.get("enforced_from")
-    if not isinstance(models, dict) or not _valid_day(enforced_from):
+    historical = registry.get("historical_evidence")
+    if not isinstance(models, dict) or not _valid_day(enforced_from) or not isinstance(historical, list) \
+            or not all(isinstance(name, str) for name in historical):
         return ["registry_malformed"]
     for name, entry in models.items():
         problems += entry_findings(name, entry)
     for file, payload in sorted(evidence.items()):
         if isinstance(payload, dict):
-            problems += evidence_findings(file, payload, models, enforced_from)
+            problems += evidence_findings(file, payload, models, enforced_from, set(historical))
     if engine is not None:
         entry = models.get(canonical(engine))
         if entry is None:
