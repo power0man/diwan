@@ -45,6 +45,9 @@ PENDING_REASONS = frozenset({
 HTTPS_SOURCE = re.compile(r"^https://[^\s]+$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 WEIGHT_FIELDS = ("file", "sha256", "origin", "license", "license_source", "read_on")
+# سجلُّ المصدر في الدليل: ما نزّلته `tools/weight_provenance.py` من الأصل المعلن فطابقت بصمتُه (ملاحظة Codex على #307)
+PROVENANCE_KEY = "weight_provenance"
+PROVENANCE_FIELDS = ("file", "sha256", "origin", "license_source")
 # أنواعُ الأوزان التي تُقبل بصمتُها بحقل `<نوع>_sha256` بلا اسم ملفّ
 WEIGHT_KINDS = frozenset({"pth", "pt", "bin", "safetensors", "gguf", "onnx", "ckpt", "h5", "hdf5", "keras", "pb", "tflite",
                           "mlmodel", "traineddata"})
@@ -198,11 +201,13 @@ def evidence_findings(file: str, payload: dict, models: dict, enforced_from: str
     return problems
 
 
-def measured_weights(payload: object) -> dict[str, tuple[dict[str, set[str]], dict[str, set[str]]]]:
+def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]] | None = None,
+                     ) -> dict[str, tuple[dict[str, set[str]], dict[str, set[str]]]]:
     """البصماتُ كما سجّلها الدليل، لكل نموذجٍ من شجرته وحدها (ملاحظتا Codex على #307). فالقاموسُ الذي يسمّي نموذجًا
     (`{"model": …}` أو `"engine": {"name": …}`) يملك ما تحته، فلا تُنسب بصمةُ نموذجٍ في الدليل نفسِه إلى غيره. والبصمةُ
     مربوطةٌ بملفّها: مفتاحٌ اسمُه اسمُ ملفّ (`arabic.pth`) قيمتُه بصمة، أو مفتاحٌ `<نوع>_sha256` (`traineddata_sha256`)
-    لوزنٍ وحيدٍ من نوعه. وما لا مالكَ له على طريقه لا يُنسب إلى أحد."""
+    لوزنٍ وحيدٍ من نوعه. وما لا مالكَ له على طريقه لا يُنسب إلى أحد. وسجلّاتُ المصدر (`weight_provenance`) تُجمع في
+    `provenance` بالملكيّة نفسِها."""
     out: dict[str, tuple[dict[str, set[str]], dict[str, set[str]]]] = {}
 
     def record(owners: tuple[str, ...], key: str, digest: str) -> None:
@@ -225,6 +230,12 @@ def measured_weights(payload: object) -> dict[str, tuple[dict[str, set[str]], di
         for key, child in value.items():
             if isinstance(key, str) and isinstance(child, str) and SHA256.match(child):
                 record(owners, key, child)
+            elif key == PROVENANCE_KEY and isinstance(child, list):
+                for item in child:
+                    if isinstance(item, dict) and all(isinstance(item.get(f), str) for f in PROVENANCE_FIELDS):
+                        for owner in owners:
+                            (provenance if provenance is not None else {}).setdefault(owner, set()).add(
+                                tuple(item[f] for f in PROVENANCE_FIELDS))
             elif key in MODEL_MAPS and isinstance(child, dict) and not any(k in child for k in ("repo", "model", "name")):
                 for name, sub in child.items():
                     visit(sub, (canonical(name),) if isinstance(name, str) else owners)
@@ -334,6 +345,23 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
     return problems
 
 
+def provenance_findings(models: dict, evidence: dict[str, object]) -> list[str]:
+    """كلُّ وزنٍ مسجَّل يطابقه في دليلٍ سجلُّ مصدرٍ لنموذجه بملفّه وبصمته وأصله ومصدر رخصته معًا: ما نزّلته
+    `tools/weight_provenance.py` من الأصل المعلن فطابقت بصمتُه. فلا يمرّ أصلٌ أو مصدرُ رخصةٍ صحيحُ الصيغة لا علاقة له
+    بالبايتات المقيسة (ملاحظة Codex على #307)."""
+    provenance: dict[str, set[tuple[str, ...]]] = {}
+    for payload in evidence.values():
+        measured_weights(payload, provenance)
+    problems = []
+    for name, entry in sorted(models.items()):
+        weights = entry.get("weights") if isinstance(entry, dict) else None
+        for weight in weights if isinstance(weights, list) else []:
+            if isinstance(weight, dict) and all(isinstance(weight.get(f), str) for f in PROVENANCE_FIELDS) \
+                    and tuple(weight[f] for f in PROVENANCE_FIELDS) not in provenance.get(name, set()):
+                problems.append(f"weight_provenance_not_in_evidence:{name}:{weight['file']}")
+    return problems
+
+
 def default_engine(source: Path = DEFAULT_ENGINE_SOURCE) -> str | None:
     match = DEFAULT_MODEL.search(source.read_text(encoding="utf-8"))
     return match.group(1) if match else None
@@ -357,6 +385,7 @@ def findings(registry: dict, evidence: dict[str, object], engine: str | None) ->
     new_files = frozenset(file for file, payload in dicts.items() if file not in set(historical)
                           or (isinstance(payload.get("date"), str) and payload["date"][:10] >= enforced_from))
     problems += weight_findings(models, dicts, new_files)
+    problems += provenance_findings(models, dicts)
     if engine is not None:
         entry = models.get(canonical(engine))
         if entry is None:
