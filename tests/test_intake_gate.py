@@ -23,6 +23,7 @@ def test_no_published_template_grants_a_working_family_label():
     pytest.param('labels: ["task"]\nlabels: ["family:google"]', "labels_unreadable:t.yml", id="repeated_key"),
     pytest.param('  labels: ["family:openai"]', "labels_unreadable:t.yml", id="indented_key"),
     pytest.param('{name: t, labels: ["family:openai"], body: []}', "labels_unreadable:t.yml", id="flow_mapping"),
+    pytest.param('--- {labels: ["family:openai"]}', "labels_unreadable:t.yml", id="document_start_flow"),
     pytest.param('? labels\n: ["family:openai"]', "labels_unreadable:t.yml", id="complex_key"),
 ])
 def test_a_template_that_could_grant_an_agent_label_is_named(line, code):

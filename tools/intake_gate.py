@@ -18,8 +18,10 @@ LABELS_LINE = re.compile(r"^labels:[ \t]*\[(?P<items>[^\]\n]*)\][ \t]*(?:#.*)?$"
 NON_WORKING = frozenset({"family:owner"})
 
 
-# مفتاحُ `labels` في أيّ موضعٍ من السطر: بإزاحةٍ، أو داخل خريطةٍ مضمَّنة `{..., labels: [...]}` (ملاحظة Codex على #304)
+# مفتاحُ `labels` في أيّ موضعٍ من السطر: بإزاحةٍ، أو داخل خريطةٍ مضمَّنة `--- {labels: [...]}` (ملاحظة Codex على #304)؛
+# وسطرٌ يبدأ خريطةً مضمَّنة أو مفتاحًا مركّبًا (`? labels`) صورةٌ لا تُقرأ سطرًا سطرًا.
 LABELS_KEY = re.compile(r"""(?:^|[\s{,])['"]?labels['"]?[ \t]*:""")
+UNREADABLE_STARTS = ("{", "?")
 
 
 def template_labels(text: str) -> list[str] | None:
@@ -27,7 +29,7 @@ def template_labels(text: str) -> list[str] | None:
     خريطةٍ مضمَّنة أو مفتاحٍ مركّب (`?`)، يعيد None: صورةٌ لا تُقرأ، فيُغلق عند الشكّ."""
     found = None
     for line in text.splitlines():
-        if line.lstrip().startswith(("{", "?")):
+        if line.lstrip().startswith(UNREADABLE_STARTS):
             return None
         if not LABELS_KEY.search(line):
             continue
