@@ -14,7 +14,10 @@ from services.agent_workspace import decode_input
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from tools.evaluate_general import run_general, summarize  # noqa: E402
+from tools.evaluate_general import LicenseRefused, registered_license, run_general, summarize  # noqa: E402
+from tools import probe_spend  # noqa: E402
+
+RUN = {"model": "replay", "model_version": "v1", "engine_license": "Apache-2.0", "date": "2026-10-05"}
 
 
 def _case(case_id, text, checks):
@@ -46,7 +49,7 @@ class SeedReplay:
     def complete(self, request):
         user = decode_input(request.messages[-1].content)["user_request"]
         self.seen.append((self.seed, bool(request.tools)))
-        return Response(self.answer(user, self.seed), Usage(1, 1), "complete", 0, provider="replay",
+        return Response(self.answer(user, self.seed), Usage(3, 2), "complete", 0, provider="replay",
                         model_version="v1")
 
 
@@ -65,12 +68,13 @@ def test_the_general_number_runs_every_checked_case_through_the_seeded_agentic_b
         return "الرباط"
 
     seen = []
-    report = run_general(SeedReplay(answer, seen=seen), model="replay", model_version="v1", bank_open=bank,
-                         command="python3 tools/evaluate_general.py --model replay")
+    report = run_general(SeedReplay(answer, seen=seen), bank_open=bank,
+                         command="python3 tools/evaluate_general.py --model replay", **RUN)
     assert report["tool"] == "tools/evaluate_general.py" and report["command"].startswith("python3 tools/")
     assert report["config"]["seeds"] == [0, 1, 2] and report["config"]["arm"] == arm()
-    assert report["config"]["bank"]["cases_with_automatic_check"] == 6
+    assert report["config"]["bank"]["cases_measured"] == 6
     assert report["config"]["bank"]["cases_without_automatic_check"] == 1
+    assert report["config"]["bank"]["sandbox_cases_excluded"] == 0
     assert {seed for seed, _ in seen} == {0, 1, 2} and all(tools for _, tools in seen)   # الأدواتُ معلنة: الطريقُ الوكيل
     assert report["overall"] == {"offered": 6, "measured": 6, "passes": 5, "error_count": 0,
                                  "pass_rate": round(5 / 6, 4), "wilson95": report["overall"]["wilson95"]}
@@ -78,6 +82,12 @@ def test_the_general_number_runs_every_checked_case_through_the_seeded_agentic_b
     assert 0 < low < 5 / 6 < high <= 1
     assert report["by_tier"]["tier_a"]["passes"] == 4 and report["by_tier"]["tier_b"]["passes"] == 1
     assert any("temperature_0" in limit for limit in report["measurement_limits"])
+    # رخصةٌ وإنفاقٌ بشكلَي حارسَيهما، فلا يردّ CI دليلَ ليلة القياس (ملاحظة Codex على #312)
+    calls = len(seen)
+    assert report["licenses"] == {"replay": "Apache-2.0"} and report["config"]["engine_calls"] == calls
+    assert report["spend"] == {"cloud_calls": 0, "prompt_tokens": 3 * calls, "completion_tokens": 2 * calls,
+                               "cost_usd": 0, "cost_basis": "local_no_charge"}
+    assert probe_spend.spend_findings("k2c.json", report["spend"]) == []
 
 
 def test_errored_cases_leave_the_denominator_and_are_counted_not_failed():
@@ -86,11 +96,36 @@ def test_errored_cases_leave_the_denominator_and_are_counted_not_failed():
     summary = summarize(rows)
     assert (summary["offered"], summary["measured"], summary["passes"], summary["error_count"]) == (3, 2, 1, 1)
     assert summary["pass_rate"] == 0.5
+    # طبقةٌ عَطبت كلُّها لا رقمَ لها ولا فاصل، فلا يُنشر الانقطاعُ رسوبًا تامًّا
+    outage = summarize([{"status": "error", "code": "seed_run_error"}] * 2)
+    assert (outage["pass_rate"], outage["wilson95"], outage["error_count"]) == (None, None, 2)
 
 
 def test_an_empty_bank_and_even_seeds_are_refused_by_name(tmp_path):
     empty = _bank(tmp_path / "open", {"tier_a": [_case("none", "بلا فحص", [])]})
     with pytest.raises(AblationError, match="bank_empty"):
-        run_general(SeedReplay(lambda u, s: ""), model="replay", model_version="v1", bank_open=empty)
+        run_general(SeedReplay(lambda u, s: ""), bank_open=empty, **RUN)
     with pytest.raises(AblationError, match="seeds_invalid"):
-        run_general(SeedReplay(lambda u, s: ""), model="replay", model_version="v1", bank_open=empty, seeds=(0, 1))
+        run_general(SeedReplay(lambda u, s: ""), bank_open=empty, seeds=(0, 1), **RUN)
+
+
+def test_sandbox_checked_cases_are_not_counted_as_unchecked(tmp_path):
+    """بلا حاويةٍ تخرج حالاتُ python_sandbox، وتُعدّ منفصلةً عن الحالات التي لا فحصَ لها أصلًا (ملاحظة Codex على #312)."""
+    sandboxed = {**_case("py", "اكتب دالة", []), "checks": [{"kind": "python_sandbox", "code": "assert True"}]}
+    bank = _bank(tmp_path / "open", {"tier_a": [_case("a", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}]),
+                                                _case("none", "بلا فحص", []), sandboxed]})
+    report = run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, sandbox=False, **RUN)
+    counts = report["config"]["bank"]
+    assert (counts["cases_measured"], counts["cases_without_automatic_check"], counts["sandbox_cases_excluded"]) == (1, 1, 1)
+
+
+def test_a_model_whose_license_is_unread_is_refused_before_any_call(tmp_path):
+    registry = tmp_path / "licenses.json"
+    registry.write_text(json.dumps({"models": {"qwen3.5:9b": {"pending": "read_with_ollama_show_license_on_the_mac"},
+                                               "granite4": {"license": "Apache-2.0", "source": "https://x",
+                                                            "read_on": "2026-10-01"}}}), encoding="utf-8")
+    with pytest.raises(LicenseRefused, match="license_not_read"):
+        registered_license("qwen3.5:9b", registry)
+    with pytest.raises(LicenseRefused, match="model_not_in_registry"):
+        registered_license("unknown:1b", registry)
+    assert registered_license("ollama:granite4", registry) == "Apache-2.0"

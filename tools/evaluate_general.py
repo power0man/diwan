@@ -11,7 +11,9 @@
   وبلا تفكير؛ ويُشغَّل ببذورٍ متتابعة بأغلبيةٍ صارمة (`run_seeded_arm`).
 - **الرقم:** نسبةُ النجاح على المقيس، وWilson 95٪ لكل طبقة وللمجموع (`evaluation/retrieval_general.py::wilson`)،
   والأعطالُ تُعدّ خارج المقام (`error_count`، ك٢١) ولا تصير رسوبًا.
-- **الإعلان:** الأداةُ والأمر، والبذور، وبصماتُ ملفّات البنك، وبصمةُ النموذج قبل التشغيل وبعده.
+- **الإعلان:** الأداةُ والأمرُ بالمفسِّر الذي شغّله، والبذور، وبصماتُ ملفّات البنك، وبصمةُ النموذج قبل التشغيل وبعده،
+  ورخصةُ المحرّك (`licenses`) وإنفاقُه (`spend`) بشكلَي `tools/model_licenses.py` و`tools/probe_spend.py`.
+- **قبل التشغيل:** يُرفض نموذجٌ ليس في `registry/model_licenses.json` أو رخصتُه منتظرة، فلا تنتهي ليلةُ قياسٍ بدليلٍ يردّه CI.
 
 الحدود: فحصُ `exact` صارمٌ بق٥٧ فلا قراءةَ مشذَّبة؛ والبذورُ بحرارة صفر لا تقيس تباينَ العيّنة (`GREEDY_SEED_LIMIT`)؛
 والتقريرُ لا يُكتب فوق ملفٍّ قائم.
@@ -22,6 +24,7 @@ import argparse
 from collections import defaultdict
 import json
 from pathlib import Path
+from datetime import datetime, timezone
 import shlex
 import sys
 
@@ -33,6 +36,8 @@ from evaluation.ablation import (GREEDY_SEED_LIMIT, RUNNER_VERSION, AblationErro
                                  run_seeded_arm, seed_values)
 from evaluation.retrieval_general import wilson  # noqa: E402
 from tools.evaluate_ablation import bank_cases  # noqa: E402
+from evaluation.ablation import auto_checked  # noqa: E402
+from tools import model_licenses as ml  # noqa: E402
 from tools.sample_bank import load_capability_suites  # noqa: E402
 
 TOOL = "tools/evaluate_general.py"
@@ -45,6 +50,43 @@ LIMITS = [
     "wilson_intervals_treat_cases_as_independent_and_ignore_clustering_within_a_suite",
     GREEDY_SEED_LIMIT,
 ]
+
+
+class LicenseRefused(RuntimeError):
+    def __init__(self, code: str, model: str):
+        super().__init__(f"{code}: {model}")
+        self.code = code
+
+
+def registered_license(model: str, registry_path: Path = ml.REGISTRY) -> str:
+    """رخصةُ المحرّك كما قُرئت في السجلّ؛ وغيابُه أو انتظارُه رفضٌ مسمًّى قبل أيّ نداء."""
+    models = json.loads(Path(registry_path).read_text(encoding="utf-8"))["models"]
+    entry = models.get(ml.canonical(model))
+    if entry is None:
+        raise LicenseRefused("model_not_in_registry", model)
+    if "pending" in entry:
+        raise LicenseRefused("license_not_read", model)
+    return entry["license"]
+
+
+class _Counted:
+    """يمرّر كلَّ شيءٍ إلى المزوّد ويعدّ توكناتِ ردوده عبر البذور كلِّها، لكتلة `spend`."""
+
+    def __init__(self, inner, tally: dict):
+        self._inner, self._tally = inner, tally
+
+    def __getattr__(self, name):
+        return getattr(self._inner, name)
+
+    def with_seed(self, seed):
+        return _Counted(self._inner.with_seed(seed), self._tally)
+
+    def complete(self, request):
+        response = self._inner.complete(request)
+        self._tally["calls"] += 1
+        self._tally["prompt_tokens"] += response.usage.input_tokens
+        self._tally["completion_tokens"] += response.usage.output_tokens
+        return response
 
 
 def _tiers(bank_open: Path) -> dict[str, str]:
@@ -60,14 +102,15 @@ def summarize(rows: list[dict]) -> dict:
     """نسبةٌ على المقيس، وWilson، والأعطالُ خارج المقام."""
     measured = [row for row in rows if row["status"] == "measured"]
     passes = sum(row["passed"] is True for row in measured)
+    # بلا مقيسٍ لا رقمَ ولا فاصل: wilson(0, 0) صفرٌ عريضُه صفر فيُقرأ رسوبًا تامًّا لا انقطاعًا (ملاحظة Codex على #312)
     return {"offered": len(rows), "measured": len(measured), "passes": passes,
             "error_count": len(rows) - len(measured),
             "pass_rate": round(passes / len(measured), 4) if measured else None,
-            "wilson95": wilson(passes, len(measured))}
+            "wilson95": wilson(passes, len(measured)) if measured else None}
 
 
-def run_general(provider, *, model: str, model_version: str, bank_open: Path, sandbox: bool = True,
-                seeds: tuple[int, ...] | None = None, command: str = "", **options) -> dict:
+def run_general(provider, *, model: str, model_version: str, bank_open: Path, engine_license: str, date: str,
+                sandbox: bool = True, seeds: tuple[int, ...] | None = None, command: str = "", **options) -> dict:
     seeds = seed_values() if seeds is None else tuple(seeds)
     if seeds != seed_values(len(seeds)):
         raise AblationError("seeds_invalid", "يلزم تسلسل 0..N-1 بعدد فردي لا يقل عن 3")
@@ -75,20 +118,28 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, sa
     if not cases:
         raise AblationError("bank_empty", str(bank_open))
     tiers = _tiers(bank_open)
-    offered_total = sum(len(suite.get("cases", [])) for _, suite in load_capability_suites(bank_open))
-    rows = run_seeded_arm(cases, provider, arm(), seeds, model=model, model_version=model_version, **options)
+    every = [case for _, suite in load_capability_suites(bank_open) for case in suite.get("cases", [])]
+    # حالةٌ بلا فحصٍ آليّ غيرُ حالةٍ فحصُها في حاويةٍ غائبة: تُعدّان منفصلتين (ملاحظة Codex على #312)
+    unchecked = sum(not auto_checked(case, sandbox=True) for case in every)
+    tally = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
+    rows = run_seeded_arm(cases, _Counted(provider, tally), arm(), seeds, model=model, model_version=model_version,
+                          **options)
     by_tier: dict[str, list[dict]] = defaultdict(list)
     for row in rows:
         by_tier[tiers.get(row["id"], "unknown")].append(row)
     return {
-        "schema_version": 1, "kind": "general_number",
-        "tool": TOOL, "command": command,
+        "schema_version": 1, "kind": "general_number", "date": date,
+        "tool": TOOL, "command": command, "licenses": {ml.canonical(model): engine_license},
+        "spend": {"cloud_calls": 0, "prompt_tokens": tally["prompt_tokens"],
+                  "completion_tokens": tally["completion_tokens"], "cost_usd": 0, "cost_basis": "local_no_charge"},
         "config": {"general_version": GENERAL_VERSION, "ablation_runner_version": RUNNER_VERSION,
                    "model": model, "model_version": model_version, "arm": arm(),
                    "protocol_id": protocol()["protocol_id"], "seeds": list(seeds),
                    "seed_aggregation": protocol()["seed_aggregation"], "options": dict(options),
-                   "bank": {"files": files, "cases_with_automatic_check": len(cases),
-                            "cases_without_automatic_check": offered_total - len(cases),
+                   "engine_calls": tally["calls"],
+                   "bank": {"files": files, "cases_measured": len(cases),
+                            "cases_without_automatic_check": unchecked,
+                            "sandbox_cases_excluded": len(every) - unchecked - len(cases),
                             "sandbox_cases_included": sandbox}},
         "overall": summarize(rows),
         "by_tier": {tier: summarize(tier_rows) for tier, tier_rows in sorted(by_tier.items())},
@@ -108,10 +159,16 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if args.out.exists():
         parser.error(f"التقريرُ قائم: {args.out}")
-    command = shlex.join(["python3", TOOL] + list(sys.argv[1:] if argv is None else argv))
+    # المفسِّرُ الذي شغّل لا اسمٌ مثبَّت (AGENTS.md §٥، ملاحظة Codex على #312)
+    command = shlex.join([sys.executable, TOOL] + list(sys.argv[1:] if argv is None else argv))
     try:
         seeds = seed_values(args.seeds)
     except AblationError as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        return 2
+    try:
+        engine_license = registered_license(args.model)
+    except LicenseRefused as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2
     from providers.ollama import OllamaProvider
@@ -123,7 +180,9 @@ def main(argv=None) -> int:
         return 1
     try:
         report = run_general(OllamaProvider(args.model), model=args.model, model_version=model_version,
-                             bank_open=args.bank_open, sandbox=not args.no_sandbox, seeds=seeds, command=command)
+                             bank_open=args.bank_open, engine_license=engine_license,
+                             date=datetime.now(timezone.utc).date().isoformat(), sandbox=not args.no_sandbox,
+                             seeds=seeds, command=command)
     except AblationError as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2

@@ -36,7 +36,8 @@ def test_status_comes_from_the_ledger_the_archive_and_the_plan_deferral(tmp_path
     alias = rows["جديد-is-local-guard"]                       # سُلِّمت بمعرّفٍ آخر تسمّيه STATUS
     assert (alias["status"], alias["proof"]) == ("منجزة", "ك٥٦ #138 ← #247 (`4275871`)")
     text = ps.render(list(rows.values()))
-    assert "**3 منجزة**" in text and "| م١ | 1 | 1 | 1 |" in text
+    assert "**3 منجزة**، منها 2 بطلبٍ مدموج" in text and "و1 ببصمة إيداعٍ في الأرشيف وحدها" in text
+    assert "| م١ | 1 | 1 | 1 |" in text
 
 
 def test_check_fails_when_the_generated_file_is_stale_and_write_repairs_it(tmp_path, capsys):
