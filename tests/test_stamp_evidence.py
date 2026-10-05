@@ -111,6 +111,10 @@ PAID_SPEND = {"cloud_calls": 1, "prompt_tokens": 10, "completion_tokens": 5, "co
     pytest.param(PAID, None, PAID_SPEND, PAID_SPEND, [], id="given_spend_matching_the_ledger"),
     pytest.param(PAID, PAID_SPEND, None, PAID_SPEND, [], id="written_spend_matching_the_ledger"),
     pytest.param([None], None, LOCAL, None, ["spend_ledger_malformed"], id="given_spend_beside_a_malformed_ledger"),
+    pytest.param(PAID, None, {**PAID_SPEND, "cloud_calls": True}, None, ["spend_count:cloud_calls"],
+                 id="given_boolean_count_beside_a_ledger"),
+    pytest.param(PAID, {**PAID_SPEND, "cloud_calls": True}, None, None, ["spend_count:cloud_calls"],
+                 id="written_boolean_count_beside_a_ledger"),
 ])
 def test_a_stated_spend_beside_a_call_ledger_must_be_the_ledgers(rows, written, given, spend, problems):
     """ملاحظة Codex على #310: `--spend` كان يُقبل قبل سجلّ النداءات، فيُختم نداءٌ مبلَّغةٌ كلفتُه `local_no_charge`. فالسجلُّ هو

@@ -194,8 +194,13 @@ def stamp_spend(payload: dict, given: dict | None) -> tuple[dict | None, list[st
         derived, problems = spend_from_usage(payload["provider_usage"], payload.get("zero_spend_evidence"))
         if problems:
             return None, problems
-        if stated and spend != derived:
-            return None, ["spend_differs_from_ledger"]
+        if stated:
+            # الكتلةُ المعطاةُ تُفحص أولًا، فلا تطابق `cloud_calls: true` كتلةً بنداءٍ واحد لأن `True == 1` (ملاحظة Codex على #310)
+            stated_problems = [problem.replace(":given", "") for problem in probe_spend.spend_findings("given", spend)]
+            if stated_problems:
+                return None, stated_problems
+            if spend != derived:
+                return None, ["spend_differs_from_ledger"]
         return derived, []
     if stated:
         return spend, [problem.replace(":given", "") for problem in probe_spend.spend_findings("given", spend)]
