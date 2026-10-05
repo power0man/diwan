@@ -94,6 +94,21 @@ def _python_pushes(source: str, path: str) -> list[int]:
     return lines
 
 
+def _logical_lines(source: str):
+    """أسطرُ الصدفة المنطقية: السطرُ المنتهي بشرطةٍ مائلةٍ عكسية يُكمَل بما بعده (`git \\` ثم `push`، ملاحظة Codex على
+    #306)، ورقمُه رقمُ أوّلِ أسطره."""
+    start, buffer = None, ""
+    for number, line in enumerate(source.splitlines(), 1):
+        start = number if start is None else start
+        if line.endswith("\\"):
+            buffer += line[:-1] + " "
+            continue
+        yield start, buffer + line
+        start, buffer = None, ""
+    if start is not None:
+        yield start, buffer
+
+
 def test_no_tracked_tool_invokes_git_push():
     files = _tracked(PREFIX)
     python = [path for path in files if path.endswith(".py")]
@@ -101,7 +116,7 @@ def test_no_tracked_tool_invokes_git_push():
     found = []
     for path in files:
         source = (ROOT / path).read_bytes().decode("utf-8", errors="replace")
-        for number, line in enumerate(source.splitlines(), 1):
+        for number, line in _logical_lines(source):
             if SHELL_PUSH.search(line) or QUOTED_PUSH.search(line):
                 found.append(f"{path}:{number}: {line.strip()}")
         if path.endswith(".py"):
