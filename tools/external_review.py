@@ -1532,9 +1532,11 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"status": "refused", "code": exc.code, "detail": str(exc),
                           **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
         return 2
-    # السجلُّ يُلحَق بما كتبته التشغيلاتُ السابقة ولا يستبدله، والمجموعُ من السجلّ كلِّه (ملاحظة Codex على #298)
+    # السجلُّ يُلحَق بما كتبته التشغيلاتُ السابقة ولا يستبدله، والمجموعُ من السجلّ كلِّه (ملاحظة Codex على #298). وعدُّ نداءات
+    # OpenRouter التي لم تثبت كلفتُها من السجلّ كلِّه كذلك، فلا تُسقط خلاصةُ Ollama عددًا كتبته الواجهاتُ المجانية (#295)
     ledger = prior + list(getattr(transport, "provider_usage", []))
     _persist_provider_usage(args.bank, ledger, {"token_totals": token_totals(ledger),
+                                                "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger),
                                                 **({"zero_spend_evidence": prior_evidence} if prior_evidence else {})})
     print(json.dumps({
         "status": "failed" if counts["failed"] else "reviewed",
