@@ -19,7 +19,7 @@ from tools import external_review as cli
 KEY = "synthetic-key-not-a-secret"
 MODEL = "deepseek-ai/DeepSeek-V3-0324"
 OTHER = "meta-llama/Llama-3.3-70B-Instruct"
-SYSTEM, USER = "s" * 100, "u" * 100          # مئتا بايت: التقديرُ يعدّ كلَّ بايتٍ توكنًا
+SYSTEM, USER = "s" * 100, "u" * 100          # مئتا بايت: التقديرُ يعدّ كلَّ بايتٍ توكنًا، ومعها ٥١٢ توكنًا للتأطير
 
 
 def _offer(name, input_price, output_price, status="live"):
@@ -115,9 +115,9 @@ def test_a_model_without_a_router_price_is_refused_before_any_request(catalog):
 
 
 def test_a_call_whose_estimate_exceeds_the_cap_is_refused_before_the_network():
-    # التقدير: ٢٠٠ بايت × ١ + ١٠٠ توكن × ٢ = ٤٠٠ ميكرو-دولار، والسقف ٣٩٩
+    # التقدير: (٢٠٠ بايت + ٥١٢ للتأطير) × ١ + ١٠٠ توكن × ٢ = ٩١٢ ميكرو-دولار، والسقف ٩١١
     chat = _chat(_catalog((MODEL, [_offer("p", 1, 2)])), {f"{MODEL}:p": [{"prompt_tokens": 1, "completion_tokens": 1}]},
-                 cap="0.000399")
+                 cap="0.000911")
     with pytest.raises(AutomaticReviewError) as refused:
         chat(MODEL, SYSTEM, USER, {})
     assert refused.value.code == "spend_cap_reached"
@@ -126,20 +126,32 @@ def test_a_call_whose_estimate_exceeds_the_cap_is_refused_before_the_network():
 
 
 def test_settlement_is_the_reply_tokens_at_the_pinned_price_and_the_cap_holds_across_calls():
-    # كلُّ نداءٍ يُحجز له ٤٠٠ ويُسوّى بـ ١٠٠×١ + ٥٠×٢ = ٢٠٠؛ فالسقفُ ٦٠٠ يتّسع لاثنين ويردّ الثالث
+    # كلُّ نداءٍ يُحجز له ٩١٢ ويُسوّى بـ ١٠٠×١ + ٥٠×٢ = ٢٠٠؛ فالسقفُ ١٢٠٠ يتّسع لاثنين ويردّ الثالث (يبقى ٨٠٠)
     usage = {"prompt_tokens": 100, "completion_tokens": 50}
-    chat = _chat(_catalog((MODEL, [_offer("p", 1, 2)])), {f"{MODEL}:p": [usage, usage, usage]}, cap="0.0006")
+    chat = _chat(_catalog((MODEL, [_offer("p", 1, 2)])), {f"{MODEL}:p": [usage, usage, usage]}, cap="0.0012")
     chat(MODEL, SYSTEM, USER, {})
     row = chat.provider_usage[-1]
     assert (row["cost_usd"], row["cost_status"]) == ("0.0002", "estimated_from_prices")
     assert row["price"]["provider"] == "p" and row["price"]["unit"] == "usd_per_million_tokens"
     chat(MODEL, SYSTEM, USER, {})
-    assert chat.budget.day_remaining_micros == 200
+    assert chat.budget.day_remaining_micros == 800
     with pytest.raises(AutomaticReviewError) as refused:
         chat(MODEL, SYSTEM, USER, {})
     assert refused.value.code == "spend_cap_reached" and len(chat.opener.posted()) == 2
     assert chat.spend_report()["spend_cap"] | {"prices": None} == {
-        "cap_usd": "0.0006", "spent_usd": "0.0004", "prices": None}
+        "cap_usd": "0.0012", "spent_usd": "0.0004", "prices": None}
+
+
+def test_the_reservation_covers_the_chat_framing_the_provider_bills():
+    """ملاحظة Codex على #308: prompt_tokens تعدّ تأطيرَ المحادثة فوق بايتات التكليف، فيُحجز له قبل الإرسال ولا يُتجاوز السقف."""
+    framed = {"prompt_tokens": 200 + 300, "completion_tokens": 100}   # ٣٠٠ توكنٍ للتأطير فوق البايتات
+    tight = _chat(_catalog((MODEL, [_offer("p", 1, 2)])), {f"{MODEL}:p": [framed]}, cap="0.0009")
+    with pytest.raises(AutomaticReviewError) as refused:
+        tight(MODEL, SYSTEM, USER, {})
+    assert refused.value.code == "spend_cap_reached" and tight.opener.posted() == []
+    exact = _chat(_catalog((MODEL, [_offer("p", 1, 2)])), {f"{MODEL}:p": [framed]}, cap="0.000912")
+    exact(MODEL, SYSTEM, USER, {})
+    assert exact.provider_usage[-1]["cost_usd"] == "0.0007" and exact.budget.day_remaining_micros == 212
 
 
 def test_a_cost_the_router_reports_is_settled_as_reported():
@@ -159,8 +171,8 @@ def test_a_sent_call_without_tokens_is_settled_at_its_full_reservation(reply):
     except AutomaticReviewError:
         pass
     row = chat.provider_usage[-1]
-    assert (row["cost_usd"], row["cost_status"]) == ("0.0004", "reserved_upper_bound")
-    assert not chat.budget.reservations and chat.budget.day_remaining_micros == 1_000_000 - 400
+    assert (row["cost_usd"], row["cost_status"]) == ("0.000912", "reserved_upper_bound")
+    assert not chat.budget.reservations and chat.budget.day_remaining_micros == 1_000_000 - 912
 
 
 @pytest.mark.parametrize("cap,code", [

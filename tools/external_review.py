@@ -822,6 +822,9 @@ def router_prices(entry: dict) -> dict[str, dict]:
 # سقفُ HFD2 (ق٦٤، `docs/PLAN-20260926.md` §٧): ‎$20 شحنًا مسبقًا بلا شحنٍ تلقائي. فلا يُعطى تشغيلٌ واحد سقفًا فوقه.
 HFD2_CAP_USD = Decimal("20")
 MICROS_PER_USD = 1_000_000
+# تأطيرُ المحادثة (علاماتُ الأدوار وقالبُ النموذج) توكناتٌ يعدّها المزوّد في prompt_tokens ولا تقابلها بايتاتٌ في التكليف
+# (ملاحظة Codex على #308)؛ فيُحجز لها حدٌّ ثابتٌ يفوق قوالبَ المحادثة المعروفة لرسالتين أضعافًا.
+FRAMING_TOKENS = 512
 
 
 def _ceil_micros(value: Decimal) -> int:
@@ -835,8 +838,8 @@ class PricedRouterChat(OpenAICompatChat):
     - **السعر:** من `providers[].pricing` في فهرس الموجّه نفسِه ساعةَ التشغيل، لكل نموذجٍ أرخصُ مزوّدٍ حيٍّ أعلن سعرَيه، ويُثبَّت
       المزوّدُ في الحمولة (`<model>:<provider>`) فلا يختار الموجّهُ غيرَه. والنموذجُ بلا سعرٍ مقروء `price_unknown` قبل الشبكة.
     - **السقف:** `core.budget.Budget` بسقف التشغيل (`--max-usd`، لازمٌ وموجبٌ ولا يتجاوز HFD2). يُحجز قبل كل نداءٍ تقديرٌ أعلى:
-      بايتاتُ التكليف (كلُّ توكنٍ بايتٌ على الأقل) بسعر المدخل، و`max_tokens` بسعر المخرج. وما لا يتّسع `spend_cap_reached`
-      قبل الشبكة.
+      بايتاتُ التكليف (كلُّ توكنٍ بايتٌ على الأقل) وحدُّ التأطير (`FRAMING_TOKENS`) بسعر المدخل، و`max_tokens` بسعر المخرج.
+      وما لا يتّسع `spend_cap_reached` قبل الشبكة.
     - **التسوية:** بالكلفة التي أبلغها الموجّه إن أبلغها، وإلا بتوكنات الردّ بالسعر نفسِه (`estimated_from_prices`). وما أُرسل بلا
       توكناتٍ يُسوّى بالمحجوز كلِّه (`reserved_upper_bound`)، لأن المزوّد قد يكون نفّذ.
     """
@@ -881,7 +884,7 @@ class PricedRouterChat(OpenAICompatChat):
 
     def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
         pin = self._pin(model)
-        estimate = _ceil_micros(len((system + user).encode("utf-8")) * pin["input"]
+        estimate = _ceil_micros((len((system + user).encode("utf-8")) + FRAMING_TOKENS) * pin["input"]
                                 + self.max_tokens * pin["output"])
         handle = f"{model}#{len(self.provider_usage)}"
         try:
