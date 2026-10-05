@@ -27,8 +27,13 @@ def _answer(value):
     return f"أرى في الصورة ما يلي.\nالجواب: {value}"
 
 
+from datetime import datetime, timezone
+
+BANK_FREEZE_TIME = datetime(2026, 10, 6, 0, 0, 0, tzinfo=timezone.utc)
+
+
 def test_the_frozen_bank_validates():
-    assert validate_media_bank() == []
+    assert validate_media_bank(now=BANK_FREEZE_TIME) == []
 
 
 @pytest.fixture
@@ -188,6 +193,17 @@ def test_attribution_and_license_guard(copy):
     assert "attribution_missing: mystery.json" in validate_media_bank(copy)
 
 
+def test_attribution_row_with_target_having_element_keyword_and_missing_license(copy):
+    # P3: سطر فيه كلمة العنصر في اسم الملف ليس ترويسة ويُقرأ بشكل صحيح
+    # وفرع license_missing لعنصر منسوب بلا رخصة
+    attr_text = (BANK / "ATTRIBUTION.md").read_text(encoding="utf-8")
+    extra_row = "\n| `العنصر_الجديد.json` | مصدر اختبار | | anthropic/claude-opus-5-5 |\n"
+    (copy / "ATTRIBUTION.md").write_text(attr_text + extra_row, encoding="utf-8")
+    (copy / "العنصر_الجديد.json").write_text("{}", encoding="utf-8")
+    problems = validate_media_bank(copy, now=BANK_FREEZE_TIME)
+    assert "license_missing: العنصر_الجديد.json" in problems
+
+
 def test_pending_fetch_expires_after_deadline(copy):
     data = json.loads((copy / "speech.json").read_text(encoding="utf-8"))
     del data["asr"]["deadline"]
@@ -196,4 +212,32 @@ def test_pending_fetch_expires_after_deadline(copy):
     data["asr"]["deadline"] = "2020-01-01T00:00:00Z"
     (copy / "speech.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     assert any(err.startswith("pending_fetch_expired") for err in validate_media_bank(copy))
+
+
+def test_bank_validates_deterministically_with_now():
+    # بنكٌ انقضى أجلُه يمرّ اختبارَ البنك بـnow قبل الأجل، ويسقط بـnow بعده
+    before_deadline = datetime(2026, 10, 20, 0, 0, 0, tzinfo=timezone.utc)
+    after_deadline = datetime(2026, 11, 1, 0, 0, 0, tzinfo=timezone.utc)
+    assert validate_media_bank(now=before_deadline) == []
+    problems = validate_media_bank(now=after_deadline)
+    assert any(p.startswith("pending_fetch_expired") for p in problems)
+
+
+def test_vision_runner_is_not_blocked_when_speech_pending_fetch_expires(tmp_path):
+    from evaluation import vision_runner
+    root = tmp_path / "media_v1"
+    shutil.copytree(BANK, root)
+    speech = json.loads((root / "speech.json").read_text(encoding="utf-8"))
+    speech["asr"]["deadline"] = "2020-01-01T00:00:00Z"
+    (root / "speech.json").write_text(json.dumps(speech, ensure_ascii=False), encoding="utf-8")
+    # البنك يسقط في validate_media_bank العام بسبب انتهاء أجل الكلام
+    assert any(p.startswith("pending_fetch_expired") for p in validate_media_bank(root))
+    # لكن vision_runner لا يُمنع من العمل
+    bank = vision_runner._load(root)
+    assert bank["items"] == VISION["items"]
+    # ولا زال أي خلل حقيقي آخر يمنعه
+    (root / "vision.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(vision_runner.VisionBankRefused) as err:
+        vision_runner._load(root)
+    assert err.value.code == "bank_invalid"
 

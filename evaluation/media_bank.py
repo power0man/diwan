@@ -130,9 +130,13 @@ def _read_attribution(path: Path) -> dict[str, dict[str, str]]:
     entries: dict[str, dict[str, str]] = {}
     if not path.is_file():
         return entries
+    header_seen = False
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
-        if not line.startswith("|") or line.startswith("|---") or "العنصر" in line:
+        if not line.startswith("|") or line.startswith("|---"):
+            continue
+        if not header_seen:
+            header_seen = True
             continue
         parts = [p.strip().strip("`") for p in line.strip("|").split("|")]
         if len(parts) >= 4:
