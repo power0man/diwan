@@ -25,10 +25,29 @@ def test_no_published_template_grants_a_working_family_label():
     pytest.param('{name: t, labels: ["family:openai"], body: []}', "labels_unreadable:t.yml", id="flow_mapping"),
     pytest.param('--- {labels: ["family:openai"]}', "labels_unreadable:t.yml", id="document_start_flow"),
     pytest.param('? labels\n: ["family:openai"]', "labels_unreadable:t.yml", id="complex_key"),
+    pytest.param('"labe\\u006cs": ["family:openai"]', "labels_unreadable:t.yml", id="unicode_escaped_key"),
+    pytest.param('"\\x6cabels": ["family:openai"]', "labels_unreadable:t.yml", id="hex_escaped_key"),
+    pytest.param('x: &k labels\n*k : ["family:openai"]', "labels_unreadable:t.yml", id="anchor_alias_key"),
 ])
 def test_a_template_that_could_grant_an_agent_label_is_named(line, code):
     text = f"name: t\n{line}\nbody: []\n"
     assert ig.intake_findings({"t.yml": text}, "blank_issues_enabled: false\n") == [code]
+
+
+def test_escapes_and_ampersands_in_values_are_not_keys():
+    """القاعدتان لا تردّان قيمةً فيها تهريبٌ أو «&» داخل كلمة: التهريبُ مفتاحٌ إذا تلاه «:»، والمرساةُ بعد فاصل."""
+    text = 'name: t\nlabels: ["task"]\ndescription: "tab\\tx and C:\\\\dir"\nabout: "R&D, Q&A"\nbody: []\n'
+    assert ig.template_labels(text) == ["task"]
+
+
+@pytest.mark.parametrize("name, text", [
+    pytest.param("t.yml", '\ufefflabels: ["family:openai"]\n', id="yaml"),
+    pytest.param("t.md", '\ufeff---\nlabels: ["family:openai"]\n---\nbody\n', id="markdown"),
+])
+def test_a_byte_order_mark_does_not_hide_the_labels(name, text):
+    """ملاحظة Codex على #304: مفسّرُ YAML يُسقط علامةَ ترتيب البايتات، فلا يُخفي ما بعدها مفتاحًا ولا رأسًا."""
+    assert ig.intake_findings({name: text}, "blank_issues_enabled: false\n") == [
+        f"working_family_label:{name}:family:openai"]
 
 
 @pytest.mark.parametrize("owner", [pytest.param("family:owner", id="lower"), pytest.param("Family:Owner", id="mixed_case")])

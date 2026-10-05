@@ -22,6 +22,10 @@ NON_WORKING = frozenset({"family:owner"})
 # وسطرٌ يبدأ خريطةً مضمَّنة أو مفتاحًا مركّبًا (`? labels`) صورةٌ لا تُقرأ سطرًا سطرًا.
 LABELS_KEY = re.compile(r"""(?:^|[\s{,])['"]?labels['"]?[ \t]*:""")
 UNREADABLE_STARTS = ("{", "?")
+# مفتاحٌ مقتبسٌ بتهريبٍ (`"labe\u006cs":`) يُفكّ إلى labels ولا يُرى في نصّه، والمرساةُ (`&k`) تجعل اسمَها المستعار
+# (`*k :`) مفتاحًا لا يُرى؛ فكلاهما صورةٌ لا تُقرأ (ملاحظة Codex على #304).
+ESCAPED_KEY = re.compile(r'"(?:[^"\\\n]|\\.)*\\.(?:[^"\\\n]|\\.)*"[ \t]*:')
+ANCHOR = re.compile(r"(?:^|[\s\[{,])&[^\s,\[\]{}]")
 
 
 def template_labels(text: str) -> list[str] | None:
@@ -29,7 +33,7 @@ def template_labels(text: str) -> list[str] | None:
     خريطةٍ مضمَّنة أو مفتاحٍ مركّب (`?`)، يعيد None: صورةٌ لا تُقرأ، فيُغلق عند الشكّ."""
     found = None
     for line in text.splitlines():
-        if line.lstrip().startswith(UNREADABLE_STARTS):
+        if line.lstrip().startswith(UNREADABLE_STARTS) or ESCAPED_KEY.search(line) or ANCHOR.search(line):
             return None
         if not LABELS_KEY.search(line):
             continue
@@ -57,6 +61,7 @@ def front_matter(text: str) -> str | None:
 def intake_findings(templates: dict[str, str], config: str) -> list[str]:
     problems = []
     for name, text in sorted(templates.items()):
+        text = text.removeprefix("\ufeff")   # علامةُ ترتيب البايتات يُسقطها مفسّرُ YAML، فلا تُخفي ما بعدها
         if name.endswith(".md"):
             text = front_matter(text)
         labels = None if text is None else template_labels(text)
