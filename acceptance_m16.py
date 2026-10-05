@@ -129,7 +129,7 @@ def run_acceptance_m16(tmp_dir: Path) -> dict:
 
     # ٥. فحص تصدير الأدوات وتكاملها مع ToolRegistry
     agent_tools = export_agent_tools()
-    assert len(agent_tools) == 6
+    assert len(agent_tools) == 5                     # ق٧٢: evaluate_governance خرج من أدوات auto
     agent_ctx = ToolContext(root=ws, journal=Journal(ws), allowed_consents=frozenset({"auto", "logged"}))
     reg = ToolRegistry(*agent_tools)
     res_reg = reg.invoke(ToolCall("c-reg", "analyze_arabic_morphology", {"word": "المستكشفون"}), agent_ctx)
