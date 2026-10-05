@@ -35,23 +35,23 @@
   },
   "after": {
     "AGENTS.md": {
-      "bytes": 30530,
+      "bytes": 30303,
       "lines": 288,
-      "tokens_estimate": 8134,
+      "tokens_estimate": 8082,
       "codex_cut_line": null,
-      "task_rows": 3,
-      "task_rows_visible_to_codex": 3,
+      "task_rows": 2,
+      "task_rows_visible_to_codex": 2,
       "sections": 10,
       "sections_visible_to_codex": 10
     },
     "reading_set_in_section_0": {
       "AGENTS.md": {
-        "bytes": 30530,
-        "tokens_estimate": 8134
+        "bytes": 30303,
+        "tokens_estimate": 8082
       },
       "docs/INDEX.md": {
-        "bytes": 18423,
-        "tokens_estimate": 4866
+        "bytes": 19401,
+        "tokens_estimate": 5121
       },
       "docs/VISION.md": {
         "bytes": 10397,
@@ -59,42 +59,46 @@
       }
     },
     "reading_set_total": {
-      "bytes": 59350,
-      "tokens_estimate": 15483
+      "bytes": 60101,
+      "tokens_estimate": 15686
     },
-    "archived_rows": 42,
-    "open_rows_in_agents_md": 3,
+    "archived_rows": 43,
+    "open_rows_in_agents_md": 2,
     "note": "§٠ يقرأ AGENTS.md ثم docs/INDEX.md، وdocs/VISION.md في أول جلسةٍ فقط؛ وما سواها بالبصمة والإحالة",
     "regenerated_by": "tools/context_index.py --write"
   },
   "every_indexed_document_after": {
     "AGENTS.md": {
-      "bytes": 30530,
-      "tokens_estimate": 8134
+      "bytes": 30303,
+      "tokens_estimate": 8082
     },
     "docs/STATUS.md": {
-      "bytes": 27245,
-      "tokens_estimate": 7124
+      "bytes": 36000,
+      "tokens_estimate": 9520
+    },
+    "docs/REVIEW-20261005.md": {
+      "bytes": 29091,
+      "tokens_estimate": 7842
     },
     "docs/VISION.md": {
       "bytes": 10397,
       "tokens_estimate": 2483
     },
     "docs/DECISIONS.md": {
-      "bytes": 173648,
-      "tokens_estimate": 43546
+      "bytes": 178208,
+      "tokens_estimate": 44671
     },
     "docs/PLAN-20260926.md": {
       "bytes": 218447,
       "tokens_estimate": 59655
     },
     "docs/TASKS.jsonl": {
-      "bytes": 3470,
-      "tokens_estimate": 1425
+      "bytes": 11157,
+      "tokens_estimate": 4572
     },
     "docs/TASKS-ARCHIVE.md": {
-      "bytes": 33036,
-      "tokens_estimate": 8920
+      "bytes": 33407,
+      "tokens_estimate": 9034
     },
     "docs/PROJECT-PLAN-20260925.md": {
       "bytes": 42526,
@@ -121,8 +125,8 @@
       "tokens_estimate": 451
     },
     "docs/HANDOFF-PROMPT.md": {
-      "bytes": 58163,
-      "tokens_estimate": 15053
+      "bytes": 58408,
+      "tokens_estimate": 15110
     }
   },
   "measurement_limits": [

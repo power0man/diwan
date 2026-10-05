@@ -3,7 +3,7 @@
  "codex_project_doc_max_bytes": 32768,
  "documents": [
   {
-   "bytes": 30530,
+   "bytes": 30303,
    "headings": [
     {
      "level": 2,
@@ -32,12 +32,12 @@
     },
     {
      "level": 2,
-     "line": 152,
+     "line": 151,
      "title": "٤ — قواعد المراجعة والقياس"
     },
     {
      "level": 2,
-     "line": 171,
+     "line": 170,
      "title": "٥ — قواعد العمل وبروتوكول الإنهاء"
     },
     {
@@ -66,11 +66,11 @@
    "purpose": "الأدوار والقواعد وبروتوكول البدء، وما بقي مفتوحًا من جدول §٣",
    "read_when": "كل جلسة، كاملًا",
    "role": "حاكمة",
-   "sha256_12": "7b39b035326e",
-   "tokens_estimate": 8134
+   "sha256_12": "1022ea6b1bb4",
+   "tokens_estimate": 8082
   },
   {
-   "bytes": 27245,
+   "bytes": 36000,
    "headings": [
     {
      "level": 2,
@@ -79,32 +79,129 @@
     },
     {
      "level": 2,
-     "line": 83,
+     "line": 89,
      "title": "٢ — العملُ الحالي: روايةٌ واحدة"
     },
     {
      "level": 2,
-     "line": 113,
+     "line": 124,
      "title": "٣ — خريطةُ الوثائق: ما يحكم وما هو تاريخ"
     },
     {
      "level": 2,
-     "line": 133,
+     "line": 146,
      "title": "٤ — الأرقامُ التي يُعتدّ بها اليوم، وحدودُها"
     },
     {
      "level": 2,
-     "line": 146,
+     "line": 175,
      "title": "٥ — ما ينتظر المالك"
+    },
+    {
+     "level": 3,
+     "line": 179,
+     "title": "بوابةُ م٠ بندًا بندًا (٥ أكتوبر؛ تُراجَع في ١١ أكتوبر، ق٧٣)"
+    },
+    {
+     "level": 3,
+     "line": 202,
+     "title": "ما بيد المالك"
     }
    ],
-   "lines": 167,
+   "lines": 222,
    "path": "docs/STATUS.md",
    "purpose": "ما بُني، والعملُ الحالي بروايةٍ واحدة، وما يحكم وما هو تاريخ، وما ينتظر المالك",
    "read_when": "كل جلسة: §٢ و§٥؛ والبقيةُ عند الحاجة",
    "role": "حاكمة (الحالة)",
-   "sha256_12": "a4e19143010b",
-   "tokens_estimate": 7124
+   "sha256_12": "8cb32def699a",
+   "tokens_estimate": 9520
+  },
+  {
+   "bytes": 29091,
+   "headings": [
+    {
+     "level": 2,
+     "line": 12,
+     "title": "١ — السياق"
+    },
+    {
+     "level": 2,
+     "line": 18,
+     "title": "٢ — ما ثبت (اتفق عليه المراجعان)"
+    },
+    {
+     "level": 2,
+     "line": 30,
+     "title": "٣ — ما لم يتمّ (بوابات الخطة)، بتصنيف: مكتوب / مختبر / مقاس / مقبول / منشور"
+    },
+    {
+     "level": 2,
+     "line": 53,
+     "title": "٤ — أسباب التأخير (مصحَّحة)"
+    },
+    {
+     "level": 2,
+     "line": 65,
+     "title": "٥ — الوسائل المتاحة فعلًا"
+    },
+    {
+     "level": 2,
+     "line": 81,
+     "title": "٦ — خط النهاية (مصحَّح)"
+    },
+    {
+     "level": 2,
+     "line": 100,
+     "title": "٧ — الخطة (خطوات صغيرة، كلٌّ بناتج يُتحقَّق منه)"
+    },
+    {
+     "level": 3,
+     "line": 104,
+     "title": "المرحلة ٠ — الرواية والبوابة المحلية (٥ ← ١١ أكتوبر)"
+    },
+    {
+     "level": 3,
+     "line": 122,
+     "title": "المرحلة ١ — البنك والمحكِّم (١٢ ← ٢٥ أكتوبر)"
+    },
+    {
+     "level": 3,
+     "line": 138,
+     "title": "المرحلة ٢ — الاستئصالات والمحجوب والرقم (٢٦ أكتوبر ← ٨ نوفمبر)"
+    },
+    {
+     "level": 3,
+     "line": 150,
+     "title": "بالتوازي، بلا أثر على المسار الحرج"
+    },
+    {
+     "level": 2,
+     "line": 155,
+     "title": "٨ — الأدوات (موجودة)"
+    },
+    {
+     "level": 2,
+     "line": 158,
+     "title": "٩ — التحقّق"
+    },
+    {
+     "level": 2,
+     "line": 161,
+     "title": "١٠ — ما يحتاج قرار المالك"
+    },
+    {
+     "level": 2,
+     "line": 169,
+     "title": "١١ — حدود هذا التقرير"
+    }
+   ],
+   "lines": 170,
+   "path": "docs/REVIEW-20261005.md",
+   "purpose": "مراجعةُ ٥ أكتوبر: ما تمّ وما لم يتمّ بمراتبه، وأسبابُ التأخير، وترتيبُ الطريق إلى بوابة م١",
+   "read_when": "عند اختيار المهمّة التالية: §٦ و§٧",
+   "role": "حاكمةٌ للأولويات (ق٧٣)",
+   "sha256_12": "15d86eb6099e",
+   "tokens_estimate": 7842
   },
   {
    "bytes": 10397,
@@ -164,7 +261,7 @@
    "tokens_estimate": 2483
   },
   {
-   "bytes": 173648,
+   "bytes": 178208,
    "headings": [
     {
      "level": 2,
@@ -400,15 +497,20 @@
      "level": 2,
      "line": 1292,
      "title": "ق٧٢ — إخراجُ evaluate_governance من أدوات auto، وأرشفةُ مشغّل الماك وبرومبته، ومنعُ الدفع من tools/ (٥ أكتوبر ٢٠٢٦)"
+    },
+    {
+     "level": 2,
+     "line": 1344,
+     "title": "ق٧٣ — اعتمادُ مراجعة ٥ أكتوبر وخطتها: القياسُ والقبولُ أولًا، وتجميدُ المزايا خارج م١، و٨ نوفمبر موعدُ مراجعةٍ لا وعد (٥ أكتوبر ٢٠٢٦)"
     }
    ],
-   "lines": 1342,
+   "lines": 1376,
    "path": "docs/DECISIONS.md",
    "purpose": "القراراتُ المعتمدة بمصدرها وسببها وحدِّها المعلَن؛ يُقرأ بالعناوين لا بالترتيب",
    "read_when": "القرارَ الذي تسمّيه مهمّتُك فقط، من عنوانه",
    "role": "سجلُّ القرارات الحاكم",
-   "sha256_12": "9a6420ca7064",
-   "tokens_estimate": 43546
+   "sha256_12": "a82b616cc9ea",
+   "tokens_estimate": 44671
   },
   {
    "bytes": 218447,
@@ -953,18 +1055,18 @@
    "tokens_estimate": 59655
   },
   {
-   "bytes": 3470,
+   "bytes": 11157,
    "headings": [],
-   "lines": 19,
+   "lines": 54,
    "path": "docs/TASKS.jsonl",
    "purpose": "سطرٌ لكل مسألةٍ أُثبت إنجازُها بطلبٍ مدموج بذيولٍ مسجَّلة (ك٤١)",
    "read_when": "عند التحقّق من إنجازٍ",
    "role": "سجلُّ الإثبات",
-   "sha256_12": "83e486c89dc4",
-   "tokens_estimate": 1425
+   "sha256_12": "8f4b2feee012",
+   "tokens_estimate": 4572
   },
   {
-   "bytes": 33036,
+   "bytes": 33407,
    "headings": [
     {
      "level": 2,
@@ -972,13 +1074,13 @@
      "title": "٣ — المهام (أرشيفُ الصفوف المنجزة؛ العنوانُ نفسُه ليقرأه حارسُ الجدول)"
     }
    ],
-   "lines": 56,
+   "lines": 57,
    "path": "docs/TASKS-ARCHIVE.md",
    "purpose": "صفوفُ §٣ المنجزة بنصّها كما كانت عند أرشفتها (ق٦٧-٥)",
    "read_when": "بإحالةٍ فقط",
    "role": "أرشيف",
-   "sha256_12": "dd971879b3be",
-   "tokens_estimate": 8920
+   "sha256_12": "49945d11ba58",
+   "tokens_estimate": 9034
   },
   {
    "bytes": 42526,
@@ -1357,7 +1459,7 @@
    "tokens_estimate": 451
   },
   {
-   "bytes": 58163,
+   "bytes": 58408,
    "headings": [
     {
      "level": 2,
@@ -1496,56 +1598,56 @@
     },
     {
      "level": 2,
-     "line": 527,
+     "line": 528,
      "title": "٧ — المراحل السبع: ما أثبتته كلٌّ منها"
     },
     {
      "level": 2,
-     "line": 546,
+     "line": 547,
      "title": "٨ — طقس العمل (سنّة المشروع — اتبعه حرفيًّا في كل مرحلة)"
     },
     {
      "level": 2,
-     "line": 568,
+     "line": 569,
      "title": "٩ — حدودك الستة (نصًّا، ولا اجتهاد فيها)"
     },
     {
      "level": 2,
-     "line": 590,
+     "line": 591,
      "title": "١٠ — البيئة التشغيلية"
     },
     {
      "level": 2,
-     "line": 614,
+     "line": 615,
      "title": "١١ — ألغام معروفة (كلُّها كلّفت وقتًا مرة على الأقل)"
     },
     {
      "level": 2,
-     "line": 651,
+     "line": 652,
      "title": "١٢ — ما بقي: الخارطة العامة والقرارات المستقلة"
     },
     {
      "level": 2,
-     "line": 684,
+     "line": 685,
      "title": "١٣ — كيف تتعامل مع المالك"
     },
     {
      "level": 2,
-     "line": 698,
+     "line": 699,
      "title": "١٤ — خلاصة في سطر"
     }
    ],
-   "lines": 702,
+   "lines": 703,
    "path": "docs/HANDOFF-PROMPT.md",
    "purpose": "برومبتُ تسليمٍ متنُه حتى ق٣٨ ورأسُه ق٤٩",
    "read_when": "لا يُقرأ؛ الحالةُ في docs/STATUS.md",
    "role": "تاريخ",
-   "sha256_12": "6221ed2e7bcd",
-   "tokens_estimate": 15053
+   "sha256_12": "d6fe643bf101",
+   "tokens_estimate": 15110
   }
  ],
  "generator": "tools/context_index.py",
- "latest_decision": 72,
+ "latest_decision": 73,
  "measurement_limits": [
   "tokens_estimate_is_characters_divided_by_2_4_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count",
   "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
@@ -1558,11 +1660,6 @@
    "id": "ك٦",
    "owner": "Claude",
    "status": "مفتوحة (ج٣ أُنجزت في d8074f1 فزال التعطيل)"
-  },
-  {
-   "id": "ع٢",
-   "owner": "أيّ عميلٍ على Nitro",
-   "status": "مفتوحة"
   },
   {
    "id": "ك١٧",

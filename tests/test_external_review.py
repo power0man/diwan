@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import inspect
 import json
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -324,8 +325,9 @@ class FreeOpener:
         if isinstance(reply, bytes):
             return _Reply(reply, "text/plain", request.full_url)
         if request.data is not None:
-            content, finish = reply if isinstance(reply, tuple) else (json.dumps(reply, ensure_ascii=False), "stop")
-            reply = {"choices": [{"message": {"role": "assistant", "content": content}, "finish_reason": finish}]}
+            content, finish, *usage = reply if isinstance(reply, tuple) else (json.dumps(reply, ensure_ascii=False), "stop")
+            reply = {"choices": [{"message": {"role": "assistant", "content": content}, "finish_reason": finish}],
+                     **({"usage": usage[0]} if usage else {})}
         return _Reply(json.dumps(reply, ensure_ascii=False).encode("utf-8"), "application/json", request.full_url)
 
     def chat_models(self):
@@ -382,7 +384,8 @@ def test_the_free_key_comes_from_the_environment_only(tmp_path, monkeypatch, cap
         with pytest.raises(AutomaticReviewError) as refused:
             cli.build_free_transport(backend, environ={})
         assert refused.value.code == "key_missing" and env in str(refused.value)
-        assert cli.build_free_transport(backend, environ={env: KEY}).key_env == env
+        cap = {"spend_cap_usd": Decimal("1")} if backend == "hf-router" else {}   # الموجّهُ مدفوعٌ فلا يُبنى بلا سقف
+        assert cli.build_free_transport(backend, environ={env: KEY}, **cap).key_env == env
     opener = FreeOpener()
     monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: opener)
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
@@ -1205,13 +1208,127 @@ def test_a_record_from_another_backend_is_not_reused_under_this_backend(tmp_path
     capsys.readouterr()
     record_path = bank / "reviews" / DS.replace("/", "_") / "a" / "kimi_x.json"
     assert json.loads(record_path.read_text(encoding="utf-8"))["backend"] == "github-models"
-    opener = _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
-    assert cli.main([*common, "--backend", "hf-router"]) == 0
+    priced = {"data": [{"id": m, "providers": [{"provider": "p", "status": "live", "pricing": {"input": 1, "output": 2}}]}
+                       for m in (DS, MI)]}
+    opener = _free(monkeypatch, FreeOpener(catalog=priced, replies={f"{DS}:p": [_ok(ids)], f"{MI}:p": [_ok(ids)]}))
+    assert cli.main([*common, "--backend", "hf-router", "--max-usd", "1"]) == 0
     result = json.loads(capsys.readouterr().out)
-    assert opener.chat_models() == [DS, MI], "سجلُّ github-models لا يُعاد استعمالُه تحت hf-router"
+    assert opener.chat_models() == [f"{DS}:p", f"{MI}:p"], "سجلُّ github-models لا يُعاد استعمالُه تحت hf-router"
     assert {k: result[k] for k in ("reviewed", "skipped")} == {"reviewed": 2, "skipped": 0}
     record = json.loads(record_path.read_text(encoding="utf-8"))
     assert (record["backend"], record["endpoint_host"]) == ("hf-router", "router.huggingface.co")
+
+
+class _Sent:
+    def __init__(self, sent, evidence):
+        self.provider_usage = [{"kind": "catalog", "model": None, "request_sent": True}] + [
+            {"model": model, "request_sent": True} for model in sent]
+        self.zero_spend_evidence = evidence
+
+
+def test_a_rerun_replaces_free_evidence_only_for_the_models_it_called():
+    """إعادةٌ لا ترسل إلى نموذجٍ لا تستبدل دليلَه المحفوظ بقراءتها الجديدة للفهرس، ونموذجٌ أرسلت إليه يأخذ قراءتَها."""
+    prior = {DS: {"observed_at": "old"}, MI: {"observed_at": "old"}}
+    fresh = {DS: {"observed_at": "new"}, MI: {"observed_at": "new"}, LL: {"observed_at": "new"}}
+    assert cli.merged_zero_spend_evidence(prior, _Sent([MI], fresh)) == {
+        DS: {"observed_at": "old"}, LL: {"observed_at": "new"}, MI: {"observed_at": "new"}}
+
+
+def test_an_hf_model_without_a_router_price_is_not_a_candidate():
+    """ملاحظة Codex على #308: مرشّحٌ بلا سعرٍ يوقف التشغيلَ كلَّه بـprice_unknown عند أوّل نداء، فلا يُرشَّح."""
+    entries = [{"id": DS, "chat": True, "reason": None, "router_prices": {}},
+               {"id": MI, "chat": True, "reason": None, "router_prices": {"p": {"input": 1, "output": 2}}}]
+    assessed = cli.assess_catalog(entries, "hf-router")
+    assert [c["model"] for c in assessed["candidates"]] == [MI] and assessed["refused"] == {"price_unknown": 1}
+
+
+def test_a_paid_bank_run_keeps_its_cap_in_the_summary_and_the_ledger(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #308: سقفُ التشغيل المدفوع وإنفاقُه في الخلاصة والسجلّ الدائم، لا في المطبوع وحده."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "paid")
+    priced = {"data": [{"id": m, "providers": [{"provider": "p", "status": "live", "pricing": {"input": 1, "output": 2}}]}
+                       for m in (DS, MI)]}
+    _free(monkeypatch, FreeOpener(catalog=priced, replies={f"{DS}:p": [_ok(ids)], f"{MI}:p": [_ok(ids)]}))
+    args = [str(bank), "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF), "--backend", "hf-router",
+            "--max-usd", "1"]
+    assert cli.main(args) == 0
+    printed = json.loads(capsys.readouterr().out)["spend_cap"]
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert summary["spend_cap"] == printed and printed["cap_usd"] == "1"
+    assert ledger["spend_caps"] == [{"cap_usd": "1", "spent_usd": printed["spent_usd"]}]
+    _free(monkeypatch, FreeOpener(catalog=priced, replies={}))
+    assert cli.main(args) == 0
+    capsys.readouterr()
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert ledger["spend_caps"] == [{"cap_usd": "1", "spent_usd": printed["spent_usd"]}], \
+        "إعادةٌ لم ترسل شيئًا لا تكتب السجلَّ ولا تمحو سقفَ السابق"
+    (bank / "open" / "a" / "kimi_y.json").write_bytes((bank / "open" / "a" / "kimi_x.json").read_bytes())
+    _free(monkeypatch, FreeOpener(catalog=priced, replies={f"{DS}:p": [_ok(ids)], f"{MI}:p": [_ok(ids)]}))
+    assert cli.main(args) == 0
+    second = json.loads(capsys.readouterr().out)["spend_cap"]["spent_usd"]
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert ledger["spend_caps"] == [{"cap_usd": "1", "spent_usd": printed["spent_usd"]},
+                                    {"cap_usd": "1", "spent_usd": second}], "تشغيلٌ أرسل يُلحق سقفَه ولا يمحو السابق"
+
+
+OVERCHARGED = {"prompt_tokens": 10, "completion_tokens": 5, "cost": 0.5}   # فوق أيّ محجوزٍ لهذه الحمولات بسعر ١ و٢
+
+
+def test_a_paid_bank_run_whose_last_call_was_charged_above_its_reservation_fails_under_that_name(tmp_path, monkeypatch,
+                                                                                               capsys):
+    """ملاحظة Codex على #308: كلفةٌ مبلَّغةٌ فوق محجوزها في آخر نداء لا يتبعه نداءٌ يرفضه، فيُفشل التشغيلُ باسمها، ويبقى
+    مقدارُها في الخلاصة والسجلّ الدائم."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "overcharged")
+    priced = {"data": [{"id": m, "providers": [{"provider": "p", "status": "live", "pricing": {"input": 1, "output": 2}}]}
+                       for m in (DS, MI)]}
+    opener = _free(monkeypatch, FreeOpener(catalog=priced, replies={
+        f"{DS}:p": [_ok(ids)], f"{MI}:p": [(json.dumps(_ok(ids)), "stop", OVERCHARGED)]}))
+    assert cli.main([str(bank), "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF), "--backend", "hf-router",
+                     "--max-usd", "1"]) == 1
+    printed = json.loads(capsys.readouterr().out)
+    assert opener.chat_models() == [f"{DS}:p", f"{MI}:p"], "النداءُ الزائد آخرُ نداء، فلا نداءَ بعده يرفضه"
+    assert (printed["status"], printed["code"]) == ("failed", "price_exceeded_reservation")
+    assert "exceeded_reservation_usd" in printed["spend_cap"]
+    assert set(cli.HF_ROUTER_LIMITS) <= set(printed["measurement_limits"]), "حدُّ السقف معلَنٌ مع رقمه"
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert ledger["spend_caps"][-1]["exceeded_reservation_usd"] == printed["spend_cap"]["exceeded_reservation_usd"]
+
+
+@pytest.mark.parametrize("mode", [pytest.param([], id="pair"), pytest.param(["--every-family"], id="every_family")])
+def test_a_paid_smoke_whose_last_call_was_charged_above_its_reservation_fails_under_that_name(tmp_path, monkeypatch, mode):
+    priced = {"data": [{"id": m, "providers": [{"provider": "p", "status": "live", "pricing": {"input": 1, "output": 2}}]}
+                       for m in (DS, MI)]}
+    opener = _free(monkeypatch, FreeOpener(catalog=priced, replies={
+        f"{DS}:p": [CATCH], f"{MI}:p": [(json.dumps(CATCH), "stop", OVERCHARGED)]}))
+    out = tmp_path / "smoke.json"
+    assert cli.main(["--backend", "hf-router", "--max-usd", "1", "--reviewer", DS, "--reviewer", MI,
+                     "--smoke", str(out), *mode]) == 1
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert opener.chat_models() == [f"{DS}:p", f"{MI}:p"]
+    assert (report["status"], report["code"]) == ("failed", "price_exceeded_reservation")
+
+
+def test_a_paid_run_refused_after_its_calls_keeps_its_cap_in_the_run_record(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #308: تشغيلٌ بمعرّفٍ أرسل نداءاتٍ مدفوعة ثم رُفض (ملفٌّ لاحقٌ لا يُقرأ) لا يُكتب له السجلُّ الدائم،
+    فيحمل RUN.json سقفَه وإنفاقَه، ولا يبقى دليلٌ مدفوعٌ بلا سقفه المعلن."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    bank = _public_bank(tmp_path, "early")
+    (bank / "open" / "a" / "zz.json").write_text("{", encoding="utf-8")
+    priced = {"data": [{"id": m, "providers": [{"provider": "p", "status": "live", "pricing": {"input": 1, "output": 2}}]}
+                       for m in (DS, MI)]}
+    _free(monkeypatch, FreeOpener(catalog=priced, replies={f"{DS}:p": [_ok(ids)], f"{MI}:p": [_ok(ids)]}))
+    assert cli.main([str(bank), "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF), "--backend", "hf-router",
+                     "--max-usd", "1", "--run-id", "E1"]) == 2
+    printed = _printed(capsys)
+    run = json.loads((bank / "runs" / "E1" / "reviews" / cli.RUN_FILE).read_text(encoding="utf-8"))
+    assert (run["status"], run["code"]) == ("refused", "invalid_json")
+    assert run["spend_cap"] == printed["spend_cap"] and run["spend_cap"]["cap_usd"] == "1"
+    assert run["spend_cap"]["spent_usd"] != "0", "ما أُنفق قبل الرفض محسوبٌ في السجلّ"
 
 
 def test_empty_and_truncated_replies_leave_their_shape_in_the_failures(tmp_path):
@@ -1495,6 +1612,8 @@ def test_an_openrouter_run_that_fails_after_sending_keeps_its_zero_spend_evidenc
     catalog_at = [row["at"] for row in ledger["provider_usage"] if row.get("kind") == "catalog"]
     assert sorted(ledger["zero_spend_evidence"]) == sorted([OR_DS, OR_MI])
     monkeypatch.setattr(cli, "_quota_models", real)
+    # الإعادةُ تقرأ الفهرسَ في ثانيةٍ أخرى دائمًا، فلا يتوقّف الاختبارُ على عبور حدّ الثانية
+    monkeypatch.setattr(cli, "_utc_now", lambda: "2099-01-01T00:00:00Z")
     again = UsageOpener([_priced(OR_DS), _priced(OR_MI)], {OR_DS: [reply], OR_MI: [reply]})
     monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: again)
     assert cli.main([str(bank), *args]) == 0

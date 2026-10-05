@@ -83,6 +83,15 @@ def test_before_enforcement_an_unproven_close_is_grandfathered_not_reopened():
     assert (v["status"], v["code"]) == ("grandfathered", "no_merged_pull_request")
 
 
+def test_a_long_plan_task_id_is_judged_not_exempted_as_untitled():
+    """معرّفاتُ الخطة «جديد-…» تبلغ ٢٨ حرفًا ومعرّفاتُ المسائل ٣٤؛ وكان النمطُ يقف عند ١٦ فتُعفى ٢٨ مسألةً من ٦٦
+    «بلا معرّف» صامتةً، ومنها اثنتان بلا إثبات (قيس في ٥ أكتوبر، ق٧٣)."""
+    title = "[جديد-forget-scrubs-session-history] النسيانُ يمسح تاريخ الجلسة"
+    [v] = judge([issue(164, title)], [], FakeGit())
+    assert (v["status"], v["code"], v["task"]) == ("proof_missing", "no_merged_pull_request",
+                                                   "جديد-forget-scrubs-session-history")
+
+
 @pytest.mark.parametrize("title,labels", [("[ح٣] قرارات", ()), ("[ك٩٩] س", ("owner-action",)),
                                           ("بلا معرّف", ())])
 def test_owner_tasks_and_untitled_issues_are_exempt(title, labels):
