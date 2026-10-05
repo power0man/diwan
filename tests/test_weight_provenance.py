@@ -46,7 +46,7 @@ def test_a_weight_measured_at_its_origin_is_recorded_and_the_evidence_passes_bot
     record = evidence["models"]["ocr"]["weight_provenance"][0]
     assert record == {"file": "w.pth", "sha256": WEIGHT["sha256"], "origin": WEIGHT["origin"],
                       "origin_sha256": _sha(SERVED[WEIGHT["origin"]]), "license_source": WEIGHT["license_source"],
-                      "license_text_sha256": _sha(LICENSE_BYTES)}
+                      "license": WEIGHT["license"], "license_text_sha256": _sha(LICENSE_BYTES)}
     assert evidence["models"]["ocr"]["models_sha256"] == {"w.pth": WEIGHT["sha256"]}
     registry = {"enforced_from": "2026-10-05", "historical_evidence": [], "models": models}
     assert ml.findings(registry, {"p.json": evidence}, None) == []
@@ -89,7 +89,7 @@ def test_the_models_license_text_is_read_from_its_source_and_recorded(served, fo
     evidence, problems = wp.measure(models, "2026-10-05", {**SERVED, MODEL_LICENSE: served}.__getitem__)
     assert problems == found
     assert evidence["models"]["ocr"].get("license_provenance") == (
-        None if found else {"source": MODEL_LICENSE, "license_text_sha256": _sha(LICENSE_BYTES)})
+        None if found else {"source": MODEL_LICENSE, "license_text_sha256": _sha(LICENSE_BYTES), "license": "apache-2.0"})
     if not found:
         registry = {"enforced_from": "2026-10-05", "historical_evidence": [], "models": models}
         assert ml.findings(registry, {"p.json": evidence}, None) == []

@@ -69,7 +69,8 @@ def measure(models: dict, day: str, read: Callable[[str], bytes] = fetch) -> tup
             if text != entry["license_text_sha256"]:
                 problems.append(f"license_text_differs_at_source:{name}")
             else:
-                out.setdefault(name, {})["license_provenance"] = {"source": entry["source"], "license_text_sha256": text}
+                out.setdefault(name, {})["license_provenance"] = {"source": entry["source"], "license_text_sha256": text,
+                                                                  "license": entry["license"]}
         weights = entry.get("weights") if isinstance(entry, dict) else None
         for weight in weights if isinstance(weights, list) else []:
             label = f"{name}:{weight['file']}"
@@ -89,7 +90,7 @@ def measure(models: dict, day: str, read: Callable[[str], bytes] = fetch) -> tup
             model.setdefault("models_sha256", {})[weight["file"]] = weight["sha256"]
             model.setdefault("weight_provenance", []).append({
                 "file": weight["file"], "sha256": weight["sha256"], "origin": weight["origin"],
-                "origin_sha256": _sha(origin), "license_source": weight["license_source"],
+                "origin_sha256": _sha(origin), "license_source": weight["license_source"], "license": weight["license"],
                 "license_text_sha256": license_text})
     evidence = {
         "schema_version": 1, "date": day, "tool": "tools/weight_provenance.py", "models": out,

@@ -49,9 +49,11 @@ SHA256 = re.compile(r"^[0-9a-f]{64}$")
 WEIGHT_FIELDS = ("file", "sha256", "origin", "license", "license_source", "read_on", "license_text_sha256")
 # سجلُّ المصدر في الدليل: ما نزّلته `tools/weight_provenance.py` من الأصل المعلن فطابقت بصمتُه (ملاحظة Codex على #307)
 PROVENANCE_KEY = "weight_provenance"
-PROVENANCE_FIELDS = ("file", "sha256", "origin", "license_source")
+# والرخصةُ المعلنة جزءٌ من الربط، فلا يتغيّر وسمُها في السجلّ دون دليلٍ جديد يقيس نصَّها (ملاحظة Codex على #307)
+PROVENANCE_FIELDS = ("file", "sha256", "origin", "license_source", "license")
 # ونصُّ رخصة النموذج كما قيس من مصدره، فلا تُقيَّد بصمةُ نصٍّ لم يُقرأ (ملاحظة Codex على #307)
 LICENSE_PROVENANCE_KEY = "license_provenance"
+LICENSE_PROVENANCE_FIELDS = ("source", "license_text_sha256", "license")
 # أنواعُ البصمات التي يكتبها المستودع لبياناتٍ لا لبايتات نموذج (`<نوع>_sha256`). وما سواها في دليلٍ جديد أثرٌ يُطالَب بقيده،
 # فلا يمرّ `checkpoint_sha256` أو `model_artifact_sha256` بلا أصلٍ ولا رخصة (ملاحظة Codex على #307)
 NON_ARTIFACT_KINDS = frozenset({
@@ -220,14 +222,20 @@ def evidence_findings(file: str, payload: dict, models: dict, enforced_from: str
 
 
 def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]] | None = None,
-                     licenses: dict[str, set[tuple[str, str]]] | None = None,
+                     licenses: dict[str, set[tuple[str, ...]]] | None = None,
+                     malformed: dict[str, set[str]] | None = None,
                      ) -> dict[str, tuple[dict[str, set[str]], dict[str, set[str]]]]:
     """البصماتُ كما سجّلها الدليل، لكل نموذجٍ من شجرته وحدها (ملاحظتا Codex على #307). فالقاموسُ الذي يسمّي نموذجًا
     (`{"model": …}` أو `"engine": {"name": …}`) يملك ما تحته، فلا تُنسب بصمةُ نموذجٍ في الدليل نفسِه إلى غيره. والبصمةُ
     مربوطةٌ بملفّها: مفتاحٌ اسمُه اسمُ ملفّ (`arabic.pth`) قيمتُه بصمة، أو مفتاحٌ `<نوع>_sha256` (`traineddata_sha256`)
     لوزنٍ وحيدٍ من نوعه. وما لا مالكَ له على طريقه لا يُنسب إلى أحد. وسجلّاتُ المصدر (`weight_provenance`) تُجمع في
-    `provenance`، ونصوصُ الرخص المقيسة (`license_provenance`) في `licenses`، بالملكيّة نفسِها."""
+    `provenance`، ونصوصُ الرخص المقيسة (`license_provenance`) في `licenses`، وبصماتُ الآثار التي ليست 64 محرفًا ستّ عشريًّا
+    صغيرًا في `malformed`، بالملكيّة نفسِها."""
     out: dict[str, tuple[dict[str, set[str]], dict[str, set[str]]]] = {}
+
+    def flag(owners: tuple[str, ...], key: str) -> None:
+        for owner in owners:
+            (malformed if malformed is not None else {}).setdefault(owner, set()).add(key)
 
     def record(owners: tuple[str, ...], key: str, digest: str) -> None:
         for owner in owners:
@@ -252,6 +260,10 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
         for key, child in value.items():
             if isinstance(key, str) and isinstance(child, str) and SHA256.match(child):
                 record(owners, key, child)
+            elif isinstance(key, str) and key.endswith("_sha256") and isinstance(child, str):
+                # بصمةُ أثرٍ مشوَّهة تُسمّى ولا تُسقط صامتةً، فلا يمرّ أثرٌ بلا قيدٍ بكتابة بصمته على غير صيغتها (ملاحظة Codex على #307)
+                if key.removesuffix("_sha256") not in NON_ARTIFACT_KINDS:
+                    flag(owners, key.removesuffix("_sha256"))
             elif isinstance(key, str) and key.endswith("_sha256") and isinstance(child, dict):
                 # خريطةُ بصماتٍ بأسماء الملفّات (`models_sha256`): كلُّ مفتاحٍ فيها اسمُ ملفّ ولو بلا لاحقة (`checkpoint`)،
                 # ويحكم عليه `is_weight_file` (ملاحظة Codex على #307)
@@ -259,6 +271,8 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
                     if isinstance(name, str) and isinstance(digest, str) and SHA256.match(digest):
                         for owner in owners:
                             out.setdefault(owner, ({}, {}))[0].setdefault(name, set()).add(digest)
+                    elif isinstance(name, str) and isinstance(digest, str) and is_weight_file(name):
+                        flag(owners, name)
                 visit(child, owners)
             elif key == PROVENANCE_KEY and isinstance(child, list):
                 for item in child:
@@ -270,10 +284,10 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
                                 # سجلُّ المصدر قياسٌ لملفّه، فيُطالَب بقيده كما تُطالَب خريطةُ البصمات (ملاحظة Codex على #307)
                                 out.setdefault(owner, ({}, {}))[0].setdefault(item["file"], set()).add(item["sha256"])
             elif key == LICENSE_PROVENANCE_KEY and isinstance(child, dict):
-                if isinstance(child.get("source"), str) and isinstance(child.get("license_text_sha256"), str):
+                if all(isinstance(child.get(f), str) for f in LICENSE_PROVENANCE_FIELDS):
                     for owner in owners:
                         (licenses if licenses is not None else {}).setdefault(owner, set()).add(
-                            (child["source"], child["license_text_sha256"]))
+                            tuple(child[f] for f in LICENSE_PROVENANCE_FIELDS))
             elif key in MODEL_MAPS and isinstance(child, dict) and not any(k in child for k in ("repo", "model", "name")):
                 for name, sub in child.items():
                     visit(sub, (canonical(name),) if isinstance(name, str) else owners)
@@ -374,7 +388,8 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
     kinds: dict[str, dict[str, set[str]]] = {}
     problems = []
     for file, payload in sorted(evidence.items()):
-        measured = measured_weights(payload)
+        malformed: dict[str, set[str]] = {}
+        measured = measured_weights(payload, malformed=malformed)
         for name, (by_file, by_kind) in measured.items():
             for target, found in ((files, by_file), (kinds, by_kind)):
                 for key, digests in found.items():
@@ -384,6 +399,8 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
                 problems += unregistered_weights(file, name, models[name], by_file, by_kind, aliases)
         if file in new_files:
             problems += unmeasured_weights(file, payload, models, measured)
+            problems += [f"weight_digest_malformed:{file}:{name}:{key}" for name, keys in sorted(malformed.items())
+                         if isinstance(models.get(name), dict) for key in sorted(keys)]
     for name, entry in sorted(models.items()):
         weights = entry.get("weights", []) if isinstance(entry, dict) else []
         if not isinstance(weights, list) or not all(isinstance(weight, dict) for weight in weights):
@@ -409,14 +426,14 @@ def provenance_findings(models: dict, evidence: dict[str, object]) -> list[str]:
     `tools/weight_provenance.py` من الأصل المعلن فطابقت بصمتُه. فلا يمرّ أصلٌ أو مصدرُ رخصةٍ صحيحُ الصيغة لا علاقة له
     بالبايتات المقيسة (ملاحظة Codex على #307)."""
     provenance: dict[str, set[tuple[str, ...]]] = {}
-    licenses: dict[str, set[tuple[str, str]]] = {}
+    licenses: dict[str, set[tuple[str, ...]]] = {}
     for payload in evidence.values():
         measured_weights(payload, provenance, licenses)
     problems = []
     for name, entry in sorted(models.items()):
         # بصمةُ نصّ الرخصة المقيَّدة للنموذج نصٌّ قيس من مصدره المقيَّد، لا 64 محرفًا تُكتب (ملاحظة Codex على #307)
         if isinstance(entry, dict) and "license_text_sha256" in entry \
-                and (entry.get("source"), entry["license_text_sha256"]) not in licenses.get(name, set()):
+                and tuple(entry.get(f) for f in LICENSE_PROVENANCE_FIELDS) not in licenses.get(name, set()):
             problems.append(f"license_text_not_in_evidence:{name}")
         weights = entry.get("weights") if isinstance(entry, dict) else None
         for weight in weights if isinstance(weights, list) else []:
@@ -427,7 +444,7 @@ def provenance_findings(models: dict, evidence: dict[str, object]) -> list[str]:
 
 
 def _provenance_recorded(weight: dict, records: set[tuple[str, ...]]) -> bool:
-    """سجلٌّ بملفّ الوزن وبصمته وأصله ومصدر رخصته وبصمة نصّ رخصته معًا."""
+    """سجلٌّ بملفّ الوزن وبصمته وأصله ومصدر رخصته ورخصته المعلنة وبصمة نصّ رخصته معًا."""
     return (*(weight[f] for f in PROVENANCE_FIELDS), weight.get("license_text_sha256")) in records
 
 
