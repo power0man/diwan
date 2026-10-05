@@ -58,6 +58,7 @@ LICENSE_PROVENANCE_FIELDS = ("source", "license_text_sha256", "license", "read_o
 LICENSE_FILE_READ = "upstream_license_file_at_the_release_tag_the_probes_name"
 # رخصٌ يحمل نصُّها إشعارَ حقوق نشرٍ يُشترط نشرُه مع الوزن، فإسنادُه لازمٌ لا اختياريّ (ملاحظة Codex على #307)
 NOTICE_LICENSES = frozenset({"mit"})
+UNOWNED = ("",)
 # أنواعُ البصمات التي يكتبها المستودع لبياناتٍ لا لبايتات نموذج (`<نوع>_sha256`). وما سواها في دليلٍ جديد أثرٌ يُطالَب بقيده،
 # فلا يمرّ `checkpoint_sha256` أو `model_artifact_sha256` بلا أصلٍ ولا رخصة (ملاحظة Codex على #307)
 NON_ARTIFACT_KINDS = frozenset({
@@ -242,12 +243,14 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
     64 محرفًا ستّ عشريًّا صغيرًا، أو سجلُّ مصدرٍ ناقص؛ بالملكيّة نفسِها."""
     out: dict[str, tuple[dict[str, set[str]], dict[str, set[str]]]] = {}
 
+    # وما لا مالكَ له على طريقه يُجمع تحت المالك "" فيربطه `weight_findings` بالنموذج الوحيد الذي يسمّيه الدليلُ الجديد أو
+    # يسمّيه بلا مالك، ولا يُسقط صامتًا (ملاحظة Codex على #307)
     def flag(owners: tuple[str, ...], code: str, key: str) -> None:
-        for owner in owners:
+        for owner in owners or UNOWNED:
             (malformed if malformed is not None else {}).setdefault(owner, set()).add((code, key))
 
     def record(owners: tuple[str, ...], key: str, digest: str) -> None:
-        for owner in owners:
+        for owner in owners or UNOWNED:
             by_file, by_kind = out.setdefault(owner, ({}, {}))
             if "." in key:
                 by_file.setdefault(key, set()).add(digest)
@@ -280,7 +283,7 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
                 # ويحكم عليه `is_weight_file` (ملاحظة Codex على #307)
                 for name, digest in child.items():
                     if isinstance(name, str) and isinstance(digest, str) and SHA256.match(digest):
-                        for owner in owners:
+                        for owner in owners or UNOWNED:
                             out.setdefault(owner, ({}, {}))[0].setdefault(name, set()).add(digest)
                     elif isinstance(name, str) and is_weight_file(name):
                         flag(owners, "weight_digest_malformed", name)
@@ -288,13 +291,17 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
             elif key == PROVENANCE_KEY and isinstance(child, list):
                 for index, item in enumerate(child):
                     if isinstance(item, dict) and all(isinstance(item.get(f), str) for f in PROVENANCE_FIELDS):
-                        for owner in owners:
+                        for owner in owners or UNOWNED:
                             (provenance if provenance is not None else {}).setdefault(owner, set()).add(
                                 (*(item[f] for f in PROVENANCE_FIELDS), item.get("license_text_sha256"), item.get("attribution")))
                             if SHA256.match(item["sha256"]):
                                 # سجلُّ المصدر قياسٌ لملفّه، فيُطالَب بقيده كما تُطالَب خريطةُ البصمات (ملاحظة Codex على #307)
                                 out.setdefault(owner, ({}, {}))[0].setdefault(item["file"], set()).add(item["sha256"])
                         if not SHA256.match(item["sha256"]):
+                            flag(owners, "weight_digest_malformed", item["file"])
+                        text = item.get("license_text_sha256")
+                        if text is not None and not (isinstance(text, str) and SHA256.match(text)):
+                            # بصمةُ نصّ الرخصة في سجلّ المصدر بصمةٌ لا نصٌّ يُكتب (ملاحظة Codex على #307)
                             flag(owners, "weight_digest_malformed", item["file"])
                     else:
                         # سجلُّ مصدرٍ ناقصٌ يُسمّى ولا يُسقط صامتًا، فلا يمرّ أثرٌ يعلنه الدليلُ بلا أصلٍ أو رخصة (ملاحظة Codex على #307)
@@ -400,6 +407,26 @@ def unmeasured_weights(file: str, payload: object, models: dict, measured: dict)
     return problems
 
 
+def _bind_unowned(file: str, payload: object, measured: dict, malformed: dict, unowned: tuple[dict, dict],
+                  flags: set[tuple[str, str]]) -> list[str]:
+    """بصماتُ الآثار التي لا مالكَ لها على طريقها (`{"config": {"model": …}, "checkpoint_sha256": …}`) تُنسب إلى النموذج الوحيد
+    الذي يسمّيه الدليلُ كلُّه، فيُطالَب بقيدها؛ وإن سمّى غيرَ نموذجٍ واحد سُمّيت بلا مالك (ملاحظة Codex على #307)."""
+    by_file, by_kind = unowned
+    keys = sorted({name for name in by_file if is_weight_file(name)}
+                  | {kind for kind in by_kind if kind not in NON_ARTIFACT_KINDS} | {key for _, key in flags})
+    if not keys:
+        return []
+    names = list(dict.fromkeys(canonical(raw) for raw in all_named_models(payload)))
+    if len(names) != 1:
+        return [f"weight_owner_unknown:{file}:{key}" for key in keys]
+    owned_file, owned_kind = measured.setdefault(names[0], ({}, {}))
+    for target, found in ((owned_file, by_file), (owned_kind, by_kind)):
+        for key, digests in found.items():
+            target.setdefault(key, set()).update(digests)
+    malformed.setdefault(names[0], set()).update(flags)
+    return []
+
+
 def weight_findings(models: dict, evidence: dict[str, object], new_files: frozenset[str] = frozenset()) -> list[str]:
     """كلُّ وزنٍ في السجلّ بهويّته كاملةً: ملفُّه وبصمتُه وأصلُه ورخصتُه بمصدرها وتاريخ قراءتها. وبصمتُه هي التي سجّلها لملفّه
     دليلٌ يسمّي نموذجَه، فلا تُلصق رخصةٌ ببايتاتٍ غيرِ التي قيست (ملاحظتا Codex على #307)."""
@@ -409,6 +436,9 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
     for file, payload in sorted(evidence.items()):
         malformed: dict[str, set[tuple[str, str]]] = {}
         measured = measured_weights(payload, malformed=malformed)
+        unowned, unowned_flags = measured.pop(UNOWNED[0], ({}, {})), malformed.pop(UNOWNED[0], set())
+        if file in new_files:
+            problems += _bind_unowned(file, payload, measured, malformed, unowned, unowned_flags)
         for name, (by_file, by_kind) in measured.items():
             for target, found in ((files, by_file), (kinds, by_kind)):
                 for key, digests in found.items():
@@ -429,10 +459,14 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
             label = f"{name}:{weight.get('file')}"
             missing = [field for field in WEIGHT_FIELDS if not isinstance(weight.get(field), str) or not weight[field]]
             problems += [f"weight_field_missing:{label}:{field}" for field in missing]
+            # بصمةُ الوزن وبصمةُ نصّ رخصته بصمتان لا نصّان يُكتبان، فلا يطابق `"x"` في السجلّ `"x"` في الدليل (ملاحظة Codex على #307)
+            malformed_digests = [field for field in ("sha256", "license_text_sha256")
+                                 if field not in missing and not SHA256.match(weight[field])]
+            problems += [f"weight_field_malformed:{label}:{field}" for field in malformed_digests]
             if weight.get("license") in NOTICE_LICENSES \
                     and not (isinstance(weight.get("attribution"), str) and weight["attribution"].strip()):
                 problems.append(f"attribution_missing:{label}")
-            if missing:
+            if missing or malformed_digests:
                 continue
             if weight["sha256"] not in _bound_digests(weights, weight["file"], files.get(name, {}), kinds.get(name, {})):
                 problems.append(f"weight_digest_not_in_evidence:{label}")

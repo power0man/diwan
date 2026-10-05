@@ -223,7 +223,8 @@ def test_a_weight_whose_digest_its_model_evidence_recorded_passes():
     pytest.param({"sha256": SIBLING}, "weight_digest_not_in_evidence:ocr:w.pth", id="sibling_files_digest"),
     pytest.param({"sha256": TRAINED}, "weight_digest_not_in_evidence:ocr:w.pth", id="another_kinds_digest"),
     pytest.param({"sha256": PTH_KIND}, "weight_digest_not_in_evidence:ocr:w.pth", id="kind_digest_for_a_named_file"),
-    pytest.param({"sha256": DIGEST.upper()}, "weight_digest_not_in_evidence:ocr:w.pth", id="digest_malformed"),
+    pytest.param({"sha256": DIGEST.upper()}, "weight_field_malformed:ocr:w.pth:sha256", id="digest_malformed"),
+    pytest.param({"license_text_sha256": "x"}, "weight_field_malformed:ocr:w.pth:license_text_sha256", id="text_digest_malformed"),
     pytest.param({"sha256": ""}, "weight_field_missing:ocr:w.pth:sha256", id="digest_omitted"),
     pytest.param({"origin": None}, "weight_field_missing:ocr:w.pth:origin", id="origin_omitted"),
     pytest.param({"origin": "http://example.org/w.zip"}, "weight_source_not_https:ocr:w.pth:origin", id="origin_http"),
@@ -520,12 +521,34 @@ SECRET = {**PROVENANCE, "file": "secret.pth"}
     pytest.param([{**SECRET, "sha256": "abc"}], ["weight_digest_malformed:new.json:asr:secret.pth"],
                  id="record_with_a_malformed_digest"),
     pytest.param(SECRET, ["weight_provenance_malformed:new.json:asr:weight_provenance"], id="records_not_a_list"),
+    pytest.param([{**SECRET, "license_text_sha256": "x"}],
+                 ["weight_not_registered:new.json:asr:secret.pth", "weight_digest_malformed:new.json:asr:secret.pth"],
+                 id="record_with_a_malformed_text_digest"),
 ])
 def test_a_malformed_provenance_record_is_named(records, found):
     """ملاحظة Codex على #307: سجلُّ `weight_provenance` الناقص (بلا رخصةٍ أو أصل) كان يُسقط صامتًا، فيمرّ `secret.pth` يعلنه
     الدليلُ بلا قيدٍ ولا فحصِ أصلٍ أو رخصة. فالسجلُّ المشوَّه يُسمّى في الدليل الجديد، والتاريخيُّ لا يُطالَب."""
     models = {"asr": {**READ, "weights": []}}
     payload = {"model": "asr", "weight_provenance": records}
+    assert ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) == found
+    assert ml.weight_findings(models, {"new.json": payload}) == []
+
+
+@pytest.mark.parametrize("payload, found", [
+    pytest.param({"config": {"model": "asr"}, "checkpoint_sha256": DIGEST}, ["weight_not_registered:new.json:asr:checkpoint"],
+                 id="one_model_named_deeper"),
+    pytest.param({"config": {"model": "asr"}, "checkpoint_sha256": "x"}, ["weight_digest_malformed:new.json:asr:checkpoint"],
+                 id="one_model_and_a_malformed_digest"),
+    pytest.param({"config": {"model": "asr"}, "other": {"model": "b/model"}, "checkpoint_sha256": DIGEST},
+                 ["weight_owner_unknown:new.json:checkpoint"], id="two_models_named_deeper"),
+    pytest.param({"checkpoint_sha256": DIGEST}, ["weight_owner_unknown:new.json:checkpoint"], id="no_model_named"),
+    pytest.param({"suite_sha256": DIGEST}, [], id="unowned_data_digest"),
+])
+def test_an_unowned_artifact_digest_binds_the_one_named_model_or_is_named(payload, found):
+    """ملاحظة Codex على #307: `{"config": {"model": "foo"}, "checkpoint_sha256": …}` يسمّي نموذجًا يعرفه `all_named_models`، لكنّ
+    البصمةَ في الجذر لا مالكَ لها على طريقها فتُسقط صامتة. فتُنسب إلى النموذج الوحيد الذي يسمّيه الدليل، وإن سمّى غيرَ واحدٍ
+    سُمّيت بلا مالك؛ والتاريخيُّ لا يُطالَب."""
+    models = {"asr": {**READ, "weights": []}, "b/model": READ}
     assert ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) == found
     assert ml.weight_findings(models, {"new.json": payload}) == []
 
