@@ -144,3 +144,16 @@ def test_a_cloud_model_is_refused_before_any_call(tmp_path):
     with pytest.raises(AblationError, match="provider_not_local"):
         run_general(Remote(lambda u, s: "الرباط", seen=seen), bank_open=bank, **RUN)
     assert seen == []
+
+
+def test_strict_and_trimmed_exact_readings_are_published_together(tmp_path):
+    """ق٥٧: «بليغ.» يسقط في الصارم ويُعدّ في المشذَّب، والرقمُ الصارم هو الرقم؛ ولا يمسّ التشذيبُ غيرَ exact."""
+    bank = _bank(tmp_path / "open", {"tier_a": [
+        _case("dot", "صف الأسلوب", [{"kind": "exact", "value": "بليغ"}]),
+        _case("wrong", "صف الأسلوب", [{"kind": "exact", "value": "ركيك"}]),
+        _case("ok", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])]})
+    report = run_general(SeedReplay(lambda u, s: "الرباط" if "المغرب" in u else "بليغ."), bank_open=bank, **RUN)
+    readings = report["exact_readings"]
+    assert readings["strict"]["passes"] == report["overall"]["passes"] == 1
+    assert readings["lenient"]["passes"] == 2 and readings["lost_to_trailing_punctuation"] == 1
+    assert readings["lenient"]["wilson95"] is not None

@@ -37,10 +37,12 @@ if str(ROOT) not in sys.path:
 from evaluation.ablation import (GREEDY_SEED_LIMIT, RUNNER_VERSION, AblationError, arm, protocol,  # noqa: E402
                                  run_seeded_arm, seed_values)
 from core.locality import is_cloud_model, is_local_provider  # noqa: E402
+from evaluation.capabilities import _checks  # noqa: E402
 from evaluation.retrieval_general import wilson  # noqa: E402
 from tools.evaluate_ablation import bank_cases  # noqa: E402
 from evaluation.ablation import auto_checked  # noqa: E402
 from tools import model_licenses as ml  # noqa: E402
+from tools.measure_engine import _trim_terminal_punctuation  # noqa: E402
 from tools.sample_bank import load_capability_suites  # noqa: E402
 
 TOOL = "tools/evaluate_general.py"
@@ -48,7 +50,8 @@ GENERAL_VERSION = 1
 LIMITS = [
     "the_number_is_the_open_split_through_the_registered_baseline_arm_not_the_sealed_split",
     "cases_without_an_automatic_check_are_excluded_and_counted_in_config",
-    "exact_checks_are_strict_by_q57_so_no_trimmed_reading_is_reported",
+    "exact_is_strict_by_q57_and_the_trimmed_reading_is_reported_beside_it_never_instead",
+    "the_trimmed_reading_rechecks_saved_answers_and_keeps_the_strict_verdict_for_cases_with_a_python_sandbox_check",
     "errored_cases_are_outside_the_denominator_and_counted_in_error_count_not_failures",
     "wilson_intervals_treat_cases_as_independent_and_ignore_clustering_within_a_suite",
     GREEDY_SEED_LIMIT,
@@ -90,6 +93,40 @@ class _Counted:
         self._tally["prompt_tokens"] += response.usage.input_tokens
         self._tally["completion_tokens"] += response.usage.output_tokens
         return response
+
+
+def _lenient_seed(case: dict, attempt: dict) -> bool | None:
+    """قراءةُ exact المشذَّبة لبذرةٍ واحدة (ق٥٧): الفحوصُ نفسُها على الجواب المحفوظ، وexact بلا ترقيمٍ ختاميّ في الطرفين.
+    والحالةُ ذاتُ فحص python_sandbox تُبقي حكمَها الصارم، فلا يُعاد تشغيلُ الحاوية لقراءةٍ تفسيرية."""
+    if attempt.get("status") != "measured":
+        return None
+    if attempt["passed"] is True or any(c["kind"] == "python_sandbox" for c in case["checks"]):
+        return attempt["passed"] is True
+    answer = attempt["answer"]
+    for check in case["checks"]:
+        if check["kind"] == "exact":
+            if _trim_terminal_punctuation(answer) != _trim_terminal_punctuation(check["value"]):
+                return False
+        elif not _checks(answer, [check])[0]["passed"]:
+            return False
+    return True
+
+
+def exact_readings(rows: list[dict], cases: list[dict]) -> dict:
+    """الرقمان معًا (ق٥٧): الصارمُ هو الرقم، والمشذَّبُ بجانبه يفصل فارقَ الصيغة عن فارق المعرفة، بأغلبية البذور نفسِها."""
+    by_id = {case["case_id"]: case for case in cases}
+    strict = lenient = recovered = 0
+    measured = [row for row in rows if row["status"] == "measured"]
+    for row in measured:
+        votes = [_lenient_seed(by_id[row["id"]], attempt) for attempt in row["seed_results"]]
+        passed = sum(v is True for v in votes) >= row["majority_threshold"]
+        strict += row["passed"] is True
+        lenient += passed
+        recovered += passed and row["passed"] is not True
+    n = len(measured)
+    reading = lambda k: {"passes": k, "pass_rate": round(k / n, 4) if n else None,
+                         "wilson95": wilson(k, n) if n else None}
+    return {"strict": reading(strict), "lenient": reading(lenient), "lost_to_trailing_punctuation": recovered}
 
 
 def _tiers(bank_open: Path) -> dict[str, str]:
@@ -149,6 +186,7 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
                             "sandbox_cases_excluded": len(every) - unchecked - len(cases),
                             "sandbox_cases_included": sandbox}},
         "overall": summarize(rows),
+        "exact_readings": exact_readings(rows, cases),
         "by_tier": {tier: summarize(tier_rows) for tier, tier_rows in sorted(by_tier.items())},
         "rows": rows,
         "measurement_limits": LIMITS + ([] if sandbox else ["python_sandbox_cases_excluded_no_check_container"]),

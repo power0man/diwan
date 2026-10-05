@@ -24,7 +24,19 @@ def _repo(tmp_path: Path) -> Path:
               {"task": "ك٥٦", "issue": 138, "pull": 247, "merge": "4275871200"}]
     (tmp_path / ps.LEDGER).write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in ledger), encoding="utf-8")
     (tmp_path / ps.ARCHIVE).write_text("| ك٣٠ | التنسيق | أيّ عميل | — | منجزة: df52962 — حارس |\n", encoding="utf-8")
+    (tmp_path / ps.AGENTS).write_text(AGENTS_TABLE.format(status="منجزة: 1234567"), encoding="utf-8")
     return tmp_path
+
+
+AGENTS_TABLE = """## ٣ — المهام (العملاء يحدّثون هذا الجدول بأنفسهم)
+
+| رقم | المهمة | المسؤول | شرط البدء | الحالة |
+|---|---|---|---|---|
+| ك٦ | أتمتة | Claude | — | مفتوحة |
+| ك٥٦ | المحليّة | Claude | — | {status} |
+
+## ٤ — قواعد
+"""
 
 
 def test_status_comes_from_the_ledger_the_archive_and_the_plan_deferral(tmp_path):
@@ -50,3 +62,14 @@ def test_check_fails_when_the_generated_file_is_stale_and_write_repairs_it(tmp_p
 def test_the_committed_plan_status_is_current():
     """الملفُّ المودَع مطابقٌ لما تولّده الأداة، فلا يُلحق سجلُّ الإثبات سطرًا ويبقى الملفُّ قديمًا."""
     assert (ROOT / ps.OUT).read_text(encoding="utf-8") == ps.render(ps.derive(ROOT))
+
+
+def test_an_open_agents_row_that_the_ledger_proves_fails_the_check(tmp_path, capsys):
+    """كانت ع٢ مثبتةً في السجلّ ومفتوحةً في AGENTS.md أسبوعًا؛ فالفحصُ يحمرّ ما دام التعارض (ملاحظة Codex على #312)."""
+    root = _repo(tmp_path)
+    assert ps.conflicts(root) == []
+    (root / ps.AGENTS).write_text(AGENTS_TABLE.format(status="مفتوحة"), encoding="utf-8")
+    assert ps.conflicts(root) == ["ك٥٦"]
+    assert ps.main(["--write", "--root", str(root)]) == 0
+    assert "تعارضٌ مع `AGENTS.md` §٣" in (root / ps.OUT).read_text(encoding="utf-8")
+    assert ps.main(["--check", "--root", str(root)]) == 1

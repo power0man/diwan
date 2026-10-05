@@ -11,6 +11,9 @@
 - **مؤجَّلة:** حقلُ `deferred` في الخطة نفسها بقراره وموعده.
 - **مفتوحة:** ما سواهما.
 
+ويحرس `--check` تعارضًا بعينه: مهمّةٌ ما زالت مفتوحةً في جدول `AGENTS.md` §٣ والسجلُّ يُثبت إنجازَها (كما كانت ع٢
+حتى ٥ أكتوبر). فيُعلَن التعارضُ في الملفّ ويخرج الفحصُ 1 حتى يُكتب الصفُّ منجزًا ويُؤرشف.
+
 الحدّ: «منجزة» تعني إثباتَ الدمج لا القبولَ الحيّ؛ ومهمّةٌ أُنجزت بطلبٍ لم يُغلق مسألتَها بـ`Closes #N` تبقى «مفتوحة»
 حتى يُثبتها السجلّ؛ ومهمّةٌ سُلِّمت بمسألةٍ بمعرّفٍ آخر تبقى «مفتوحة» ما لم تُسمَّ في `ALIASES` بمصدرها؛ ولا يُقرأ
 تقدّمُ المسائل المفتوحة.
@@ -25,8 +28,11 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 PLAN = "docs/PLAN-20260926.json"
 LEDGER = "docs/TASKS.jsonl"
+AGENTS = "AGENTS.md"
 ARCHIVE = "docs/TASKS-ARCHIVE.md"
 OUT = "docs/PLAN-STATUS.md"
 PHASES = ("م٠-أ", "م٠-ب", "م١", "م٢", "م٣", "م٤", "v1.0")
@@ -64,7 +70,14 @@ def derive(root: Path = ROOT) -> list[dict]:
     return rows
 
 
-def render(rows: list[dict]) -> str:
+def conflicts(root: Path = ROOT) -> list[str]:
+    """معرّفاتُ صفوفٍ مفتوحةٍ في AGENTS.md §٣ يُثبت السجلُّ إنجازَها؛ فلا تُعلن وثيقتان حالتين (ملاحظة Codex على #312)."""
+    from tools.context_index import open_tasks
+    proven = {json.loads(line)["task"] for line in (root / LEDGER).read_text(encoding="utf-8").splitlines() if line.strip()}
+    return [row["id"] for row in open_tasks((root / AGENTS).read_text(encoding="utf-8")) if row["id"] in proven]
+
+
+def render(rows: list[dict], clashes: list[str] = ()) -> str:
     counts = Counter(r["status"] for r in rows)
     # الأرشيفُ بصمةُ إيداعٍ كتبها العميل، والسجلُّ طلبٌ مدموج بذيولٍ مسجَّلة: لا يُسمّى الأولُ إثباتَ دمج (ملاحظة Codex على #312)
     archived = sum(r["status"] == "منجزة" and r["proof"].startswith("الأرشيف") for r in rows)
@@ -84,6 +97,10 @@ def render(rows: list[dict]) -> str:
         c = Counter(r["status"] for r in rows if r["phase"] == phase)
         if sum(c.values()):
             lines.append(f"| {phase} | {c['منجزة']} | {c['مؤجَّلة']} | {c['مفتوحة']} |")
+    if clashes:
+        lines += ["", "## تعارضٌ مع `AGENTS.md` §٣", "",
+                  "مفتوحةٌ في الجدول ومثبتةٌ في السجلّ؛ تُكتب «منجزة» ببصمة دمجها ثم `context_index.py --write`: "
+                  + "، ".join(f"`{c}`" for c in clashes)]
     for phase in PHASES:
         phase_rows = [r for r in rows if r["phase"] == phase]
         if not phase_rows:
@@ -100,13 +117,17 @@ def main(argv=None) -> int:
     group.add_argument("--write", action="store_true")
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args(argv)
-    expected = render(derive(args.root))
+    clashes = conflicts(args.root)
+    expected = render(derive(args.root), clashes)
     path = args.root / OUT
     stale = not path.exists() or path.read_text(encoding="utf-8") != expected
     if args.write and stale:
         path.write_text(expected, encoding="utf-8")
     elif args.check and stale:
         print(json.dumps({"status": "stale", "file": OUT}, ensure_ascii=False))
+        return 1
+    if args.check and clashes:
+        print(json.dumps({"status": "conflict_with_agents_md", "tasks": clashes}, ensure_ascii=False))
         return 1
     print(json.dumps({"status": "updated" if args.write else "verified", "file": OUT}, ensure_ascii=False))
     return 0
