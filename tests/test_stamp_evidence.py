@@ -117,6 +117,12 @@ def test_a_malformed_license_block_is_named_not_replaced(licenses):
     pytest.param({"model": "deepseek-v4.1-flash:cloud",
                   "provider_usage": [{**_row("ollama", "deepseek-v4.1-flash:cloud"), "request_sent": "yes"}]},
                  "spend_ledger_malformed", id="request_sent_not_a_boolean"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud",
+                  "provider_usage": [{k: v for k, v in _row("ollama", "deepseek-v4.1-flash:cloud").items() if k != "cloud"}]},
+                 "spend_ledger_malformed", id="ollama_row_without_cloud"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud",
+                  "provider_usage": [{**_row("ollama", "deepseek-v4.1-flash:cloud"), "cloud": None}]},
+                 "spend_ledger_malformed", id="ollama_cloud_not_a_boolean"),
 ])
 def test_a_malformed_spend_or_ledger_is_named_not_replaced(payload, code):
     """ملاحظتا Codex على #310: كتلةٌ أو سجلٌّ فاسدٌ لا يُصفّى إلى كتلةٍ صفريّةٍ صالحة، بل يُسمّى ولا يُختم."""

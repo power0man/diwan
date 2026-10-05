@@ -95,8 +95,10 @@ COST_STATUSES = frozenset({"reported", "estimated_from_prices", "reserved_upper_
 def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, list[str]]:
     """كتلةُ الإنفاق من سجلّ النداءات: ما أُرسل إلى السحابة وحده. وأساسُ الكلفة من الواجهة لا من التخمين."""
     # سجلٌّ ليس قائمةَ صفوفٍ كلُّها كائنات مبتورٌ أو فاسد: يُسمّى ولا يُصفّى إلى إنفاقٍ صفريّ (ملاحظة Codex على #310)
-    # وصفٌّ بلا `request_sent` منطقيٍّ لا يُعرف أأُرسل أم لا، فلا يُسقط من العدّ (ملاحظة Codex على #310)
+    # وصفٌّ بلا `request_sent` منطقيٍّ لا يُعرف أأُرسل أم لا، وصفُّ Ollama بلا `cloud` منطقيٍّ لا يُعرف أسحابيٌّ أم محلّي،
+    # فلا يُسقطان من العدّ (ملاحظتا Codex على #310)
     if not isinstance(rows, list) or not all(isinstance(row, dict) and type(row.get("request_sent")) is bool
+                                             and (row.get("provider") != "ollama" or type(row.get("cloud")) is bool)
                                              for row in rows):
         return None, ["spend_ledger_malformed"]
     sent = [row for row in rows if row.get("kind") != "catalog" and row.get("request_sent")]
