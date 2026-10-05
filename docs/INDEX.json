@@ -164,7 +164,7 @@
    "tokens_estimate": 2483
   },
   {
-   "bytes": 166492,
+   "bytes": 173648,
    "headings": [
     {
      "level": 2,
@@ -395,15 +395,20 @@
      "level": 2,
      "line": 1252,
      "title": "ق٧١ — اعتمادُ Groq وOpenRouter مجانًا فقط، بسقف إنفاقٍ صفر (٣٠ سبتمبر ٢٠٢٦)"
+    },
+    {
+     "level": 2,
+     "line": 1292,
+     "title": "ق٧٢ — إخراجُ evaluate_governance من أدوات auto، وأرشفةُ مشغّل الماك وبرومبته، ومنعُ الدفع من tools/ (٥ أكتوبر ٢٠٢٦)"
     }
    ],
-   "lines": 1290,
+   "lines": 1342,
    "path": "docs/DECISIONS.md",
    "purpose": "القراراتُ المعتمدة بمصدرها وسببها وحدِّها المعلَن؛ يُقرأ بالعناوين لا بالترتيب",
    "read_when": "القرارَ الذي تسمّيه مهمّتُك فقط، من عنوانه",
    "role": "سجلُّ القرارات الحاكم",
-   "sha256_12": "51bb4d0084ff",
-   "tokens_estimate": 41503
+   "sha256_12": "9a6420ca7064",
+   "tokens_estimate": 43546
   },
   {
    "bytes": 218447,
@@ -1540,7 +1545,7 @@
   }
  ],
  "generator": "tools/context_index.py",
- "latest_decision": 71,
+ "latest_decision": 72,
  "measurement_limits": [
   "tokens_estimate_is_characters_divided_by_2_4_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count",
   "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
