@@ -30,10 +30,15 @@ ROOT = Path(__file__).resolve().parent.parent
 PREFIX = "tools"
 
 # (١) git ثم push كلمةً مستقلّة؛ قبل git لا حرفٌ ولا نقطةٌ ولا شرطة (فلا «legit» ولا «.git»)، وبعد push لا حرفٌ ولا شرطة.
-SHELL_PUSH = re.compile(r"(?<![\w.-])git(?:\s+(?:-[Cc]\s+\S+|--?[A-Za-z][\w-]*(?:=\S+)?))*\s+push(?![\w-])")
+# وبينهما خياراتُ git العامة: ما يأخذ قيمتَه في الكلمة التالية (`-C` و`-c` و`--git-dir` و`--work-tree`...، ملاحظة Codex على
+# #306) بقيمةٍ مقتبسةٍ أو مجرّدة، وما سواه بقيمته بعد `=` أو بلا قيمة.
+_VALUE = r"""(?:"[^"\n]*"|'[^'\n]*'|\S+)"""
+_SPACED = r"(?:-[Cc]|--(?:git-dir|work-tree|namespace|super-prefix|config-env|attr-source))"
+SHELL_PUSH = re.compile(rf"(?<![\w.-])git(?:\s+(?:{_SPACED}\s+{_VALUE}|--?[A-Za-z][\w-]*(?:={_VALUE})?))*\s+push(?![\w-])")
 QUOTED_PUSH = re.compile(r"""(["'])git\1\s*,\s*\[?\s*(["'])push\2""")
 # (٢) خياراتُ git العامة التي تأخذ قيمتها في العنصر التالي.
-OPTIONS_WITH_VALUE = frozenset({"-C", "-c", "--git-dir", "--work-tree", "--namespace"})
+OPTIONS_WITH_VALUE = frozenset({"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix", "--config-env",
+                                "--attr-source"})
 
 
 def _tracked(prefix: str) -> list[str]:
