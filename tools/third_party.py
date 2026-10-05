@@ -32,6 +32,10 @@ WEIGHT_ROW = re.compile(r"^\| `(?P<model>[^`]+)` \| `(?P<file>[^`]+)` \| (?P<lic
 MODELS_HEADING = "## النماذج"
 WEIGHTS_HEADING = "## أوزانُ النماذج"
 PACKAGES_HEADING = "## الحزم"
+HEADERS = {PACKAGES_HEADING: "| الحزمة | النسخة | الرخصة كما أعلنتها | المصدر |",
+           MODELS_HEADING: "| النموذج | الرخصة | المصدر |",
+           WEIGHTS_HEADING: "| النموذج | الوزن | الرخصة والإسناد | مصدر الرخصة |"}
+SEPARATOR = re.compile(r"^\|(?:---\|)+$")
 
 
 def locked_packages(lock: Path = LOCK) -> list[tuple[str, str]]:
@@ -99,18 +103,18 @@ def render(packages: list[tuple[str, str, str]], models: dict) -> str:
         "",
         PACKAGES_HEADING,
         "",
-        "| الحزمة | النسخة | الرخصة كما أعلنتها | المصدر |",
+        HEADERS[PACKAGES_HEADING],
         "|---|---|---|---|",
     ]
     for name, version, license_name in packages:
         lines.append(f"| `{name}` | `{version}` | {_cell(license_name)} | {package_source(name, version)} |")
-    lines += ["", MODELS_HEADING, "", "| النموذج | الرخصة | المصدر |", "|---|---|---|"]
+    lines += ["", MODELS_HEADING, "", HEADERS[MODELS_HEADING], "|---|---|---|"]
     for name, entry in sorted(models.items()):
         license_cell = f"تنتظر القراءة: `{entry['pending']}`" if "pending" in entry else _cell(entry["license"])
         lines.append(f"| `{name}` | {license_cell} | {model_source(entry)} |")
     lines += ["", WEIGHTS_HEADING, "",
               "الوزنُ ملفٌّ يحمّله المحرّك، ورخصتُه رخصةُ ناشره الأصليّ وإن وزّعه غيرُه، ومعها إسنادُه إن طلبته.", "",
-              "| النموذج | الوزن | الرخصة والإسناد | مصدر الرخصة |", "|---|---|---|---|"]
+              HEADERS[WEIGHTS_HEADING], "|---|---|---|---|"]
     for name, weight in model_weights(models):
         lines.append(f"| `{name}` | `{weight['file']}` | {weight_license(weight)} | {weight_source(weight)} |")
     return "\n".join(lines) + "\n"
@@ -128,6 +132,22 @@ def _section(text: str, heading: str, row: re.Pattern) -> list[dict]:
     return rows
 
 
+def _unparsed(text: str, heading: str, row: re.Pattern) -> list[int]:
+    """أسطرُ الجدول في القسم التي لا يقرؤها نمطُ صفّه ولا هي رأسُه أو فاصلُه.
+
+    كانت تُسقط صامتةً، فيمرّ صفٌّ مناقضٌ مشوَّهُ الشكل في `--check` (ملاحظة Codex على #307).
+    """
+    found, inside = [], False
+    for number, line in enumerate(text.splitlines(), 1):
+        if line.startswith("## "):
+            inside = line.strip() == heading
+            continue
+        if (inside and line.lstrip().startswith("|") and line != HEADERS[heading]
+                and not SEPARATOR.match(line) and not row.match(line)):
+            found.append(number)
+    return found
+
+
 def listed_licenses(text: str) -> dict[tuple[str, str], str]:
     """رخصُ الحزم المكتوبة من قبلُ بنسخها، لتُبقى ولا يُعاد طلبُها."""
     return {(r["name"], r["version"]): r["license"].strip() for r in _section(text, PACKAGES_HEADING, PACKAGE_ROW)}
@@ -136,6 +156,10 @@ def listed_licenses(text: str) -> dict[tuple[str, str], str]:
 def check(text: str, lock: list[tuple[str, str]], models: dict) -> list[str]:
     """ما يخالف فيه الجدولُ القفلَ والسجلّ، مرتّبًا باسمه."""
     problems = []
+    for code, heading, row in (("package_row_unparsed", PACKAGES_HEADING, PACKAGE_ROW),
+                               ("model_row_unparsed", MODELS_HEADING, MODEL_ROW),
+                               ("weight_row_unparsed", WEIGHTS_HEADING, WEIGHT_ROW)):
+        problems += [f"{code}:{number}" for number in _unparsed(text, heading, row)]
     listed = _section(text, PACKAGES_HEADING, PACKAGE_ROW)
     pairs = {(r["name"], r["version"]) for r in listed}
     problems += [f"package_not_listed:{n}=={v}" for n, v in lock if (n, v) not in pairs]

@@ -33,9 +33,10 @@ def test_a_locked_package_missing_from_the_file_or_at_another_version_is_named()
     text = _text(packages=[("numpy", "1.9.0", "BSD-3-Clause")])
     assert tp.check(text, LOCK, MODELS) == [
         "package_not_listed:numpy==2.0.0", "package_not_listed:torch==2.4.0+cpu", "package_not_locked:numpy==1.9.0"]
-    # خانةُ رخصةٍ فارغة لا يقرؤها نمطُ الصفّ، فتُعدّ الحزمةُ غيرَ مدرجة: يُغلق عند الشكّ
+    # خانةُ رخصةٍ فارغة لا يقرؤها نمطُ الصفّ، فتُعدّ الحزمةُ غيرَ مدرجة ويُسمّى صفُّها: يُغلق عند الشكّ
     blank = _text(packages=[("numpy", "2.0.0", " "), ("torch", "2.4.0+cpu", "BSD")])
-    assert tp.check(blank, LOCK, MODELS) == ["package_not_listed:numpy==2.0.0"]
+    row = next(n for n, line in enumerate(blank.splitlines(), 1) if line.startswith("| `numpy` |"))
+    assert tp.check(blank, LOCK, MODELS) == ["package_not_listed:numpy==2.0.0", f"package_row_unparsed:{row}"]
 
 
 def test_a_model_missing_or_with_another_license_is_named():
@@ -99,6 +100,30 @@ def test_a_model_or_weight_listed_twice_is_named():
         "weight_listed_twice:a/model/w.pth"]
     assert tp.check(text.replace(model_row, f"{forged_model}\n{model_row}"), LOCK, models) == [
         "model_listed_twice:a/model"]
+
+
+WEIGHTED = {**MODELS, "a/model": {**MODELS["a/model"], "weights": [
+    {"file": "w.pth", "license": "mit", "license_source": "https://github.com/up/r/blob/c/LICENSE", "read_on": "2026-10-05"}]}}
+
+
+@pytest.mark.parametrize("prefix, broken, code", [
+    pytest.param("| `numpy` |", lambda row: row.replace("`numpy`", "numpy"), "package_row_unparsed",
+                 id="package_row_without_backticks"),
+    pytest.param("| `tag:1b` |", lambda row: row + " extra |", "model_row_unparsed", id="model_row_with_an_extra_cell"),
+    pytest.param("| `a/model` | `w.pth` |", lambda row: row.replace("`w.pth`", "w.pth").replace("mit", "apache-2.0"),
+                 "weight_row_unparsed", id="contradictory_weight_row_without_backticks"),
+    pytest.param("| `a/model` | `w.pth` |", lambda row: "  " + row.replace("mit", "apache-2.0"),
+                 "weight_row_unparsed", id="indented_weight_row"),
+    pytest.param("| النموذج | الرخصة |", lambda row: row.replace("الرخصة", "الرخصة | أخرى"), "model_row_unparsed",
+                 id="edited_header"),
+])
+def test_an_unparseable_table_row_is_named_not_dropped(prefix, broken, code):
+    """ملاحظة Codex على #307: صفٌّ لا يطابق نمطَ قسمه كان يُسقط صامتًا، فيمرّ صفٌّ مناقضٌ مشوَّه بجانب الصحيح."""
+    lines = _text(models=WEIGHTED).splitlines()
+    at = next(i for i, line in enumerate(lines) if line.startswith(prefix))
+    lines.insert(at, broken(lines[at]))
+    assert lines[at] != lines[at + 1]
+    assert tp.check("\n".join(lines) + "\n", LOCK, WEIGHTED) == [f"{code}:{at + 1}"]
 
 
 def test_rows_outside_their_section_do_not_count():
