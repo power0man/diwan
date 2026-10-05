@@ -236,13 +236,8 @@ def default_tools_registry() -> tuple[dict[str, ToolSpec], dict[str, Callable]]:
             consent="auto",
             reversible=False,
         ),
-        "evaluate_governance": ToolSpec(
-            name="evaluate_governance",
-            description="فحص وتقييم الجواب بالحوكمة التوليدية المعززة بالاستلزام الدلالي والاشتقاق الحسابي",
-            parameters={"answer": "str", "pages": "dict"},
-            consent="auto",
-            reversible=False,
-        ),
+        # evaluate_governance ليس أداةً هنا (ق٧٢): core/semantic_governance.py يمنح الادعاءَ المنفيَّ 10000bp ويُنجحه، فلا يُعرض
+        # على الوكيل ولا على حلقة الفعل أداةَ auto تحكم بها على جوابها.
         "check_mlx_hardware": ToolSpec(
             name="check_mlx_hardware",
             description="فحص توفر محرك Apple MLX وتسريع عتاد Metal على Apple Silicon",
@@ -269,6 +264,8 @@ def default_tools_registry() -> tuple[dict[str, ToolSpec], dict[str, Callable]]:
     handlers = {
         "search_regulations": _search_regulations_handler,
         "analyze_arabic_morphology": _analyze_morphology_handler,
+        # معالِجٌ بلا مواصفة: لا تبلغه الحلقة ولا export_agent_tools (كلتاهما تمرّ بالمواصفات)، ويبقى لنداء الواجهة المباشر في
+        # webui/server.py (مسار openai، ق٦٦) حتى يُخرجه منها `جديد-legacy-archive-openai`.
         "evaluate_governance": _evaluate_governance_handler,
         "check_mlx_hardware": _check_mlx_hardware_handler,
         "write_workspace_document": _write_document_handler,
