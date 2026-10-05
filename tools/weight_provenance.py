@@ -113,12 +113,18 @@ def measure(models: dict, day: str, read: Callable[[str], bytes] = fetch) -> tup
                 problems.append(f"license_text_differs_at_source:{name}")
             elif identify_license(served) != entry["license"]:
                 problems.append(f"license_not_the_text:{name}")
+            elif entry.get("read_on") != day:
+                problems.append(f"read_on_not_the_measurement_day:{name}")
             else:
                 out.setdefault(name, {})["license_provenance"] = {"source": entry["source"], "license_text_sha256": text,
-                                                                  "license": entry["license"]}
+                                                                  "license": entry["license"], "read_on": day}
         weights = entry.get("weights") if isinstance(entry, dict) else None
         for weight in weights if isinstance(weights, list) else []:
             label = f"{name}:{weight['file']}"
+            # تاريخُ القراءة المنشور يومُ هذا القياس، فلا يُعلن السجلُّ يومًا لم يُقرأ فيه النصّ (ملاحظة Codex على #307)
+            if weight.get("read_on") != day:
+                problems.append(f"read_on_not_the_measurement_day:{label}")
+                continue
             origin = read(weight["origin"])
             measured = weight_bytes(origin, weight["file"])
             if measured is None:
@@ -135,12 +141,19 @@ def measure(models: dict, day: str, read: Callable[[str], bytes] = fetch) -> tup
             if identify_license(served) != weight["license"]:
                 problems.append(f"license_not_the_text:{label}")
                 continue
+            # الإسنادُ المنشور سطرٌ في نصّ الرخصة المقيس بعينه، لا نصٌّ يُنسخ من السجلّ (ملاحظة Codex على #307)
+            attribution = weight.get("attribution")
+            if attribution is not None and (not isinstance(attribution, str) or _normalized(attribution) not in {
+                    _normalized(line) for line in served.decode("utf-8", "replace").splitlines()}):
+                problems.append(f"attribution_not_in_text:{label}")
+                continue
             model = out.setdefault(name, {})
             model.setdefault("models_sha256", {})[weight["file"]] = weight["sha256"]
             model.setdefault("weight_provenance", []).append({
                 "file": weight["file"], "sha256": weight["sha256"], "origin": weight["origin"],
                 "origin_sha256": _sha(origin), "license_source": weight["license_source"], "license": weight["license"],
-                "license_text_sha256": license_text})
+                "read_on": day, "license_text_sha256": license_text,
+                **({"attribution": attribution} if attribution is not None else {})})
     evidence = {
         "schema_version": 1, "date": day, "tool": "tools/weight_provenance.py", "models": out,
         "licenses": {name: models[name]["license"] for name in out},

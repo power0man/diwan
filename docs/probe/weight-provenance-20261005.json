@@ -7,7 +7,8 @@
       "license_provenance": {
         "source": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE",
         "license_text_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
-        "license": "apache-2.0"
+        "license": "apache-2.0",
+        "read_on": "2026-10-05"
       },
       "models_sha256": {
         "arabic.pth": "2a9afd42c374deb98aed0b53c9b77d75e1d00d4e0501f3b0276c54190c89b1a8",
@@ -21,6 +22,7 @@
           "origin_sha256": "90b08b8e456d435bcdd96141221db5f116ef03ab3efc2d3239cfb24520ad7756",
           "license_source": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE",
           "license": "apache-2.0",
+          "read_on": "2026-10-05",
           "license_text_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
         },
         {
@@ -30,7 +32,9 @@
           "origin_sha256": "8dc6a1c703a89ed56308ef742d26ebd45c656248cbbbda6e7fe60e569f873e65",
           "license_source": "https://github.com/clovaai/CRAFT-pytorch/blob/e332dd8b718e291f51b66ff8f9ef2c98ee4474c8/LICENSE",
           "license": "mit",
-          "license_text_sha256": "bfecc97e4888896b7acf08534372baf25796b98c087ba5a424b46ee25adec871"
+          "read_on": "2026-10-05",
+          "license_text_sha256": "bfecc97e4888896b7acf08534372baf25796b98c087ba5a424b46ee25adec871",
+          "attribution": "Copyright (c) 2019-present NAVER Corp."
         }
       ]
     },
@@ -38,7 +42,8 @@
       "license_provenance": {
         "source": "https://github.com/tesseract-ocr/tesseract/blob/5.3.4/LICENSE",
         "license_text_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
-        "license": "apache-2.0"
+        "license": "apache-2.0",
+        "read_on": "2026-10-05"
       },
       "models_sha256": {
         "ara.traineddata": "e3206d3dc87fd50c24a0fb9f01838615911d25168f4e64415244b67d2bb3e729"
@@ -51,6 +56,7 @@
           "origin_sha256": "e3206d3dc87fd50c24a0fb9f01838615911d25168f4e64415244b67d2bb3e729",
           "license_source": "https://github.com/tesseract-ocr/tessdata_fast/blob/main/LICENSE",
           "license": "apache-2.0",
+          "read_on": "2026-10-05",
           "license_text_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
         }
       ]

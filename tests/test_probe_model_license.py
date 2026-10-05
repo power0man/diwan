@@ -321,6 +321,13 @@ def test_new_evidence_naming_a_model_with_registered_weights_records_their_diges
                  ["weight_provenance_not_in_evidence:ocr:w.pth"], id="license_source_replaced"),
     pytest.param({"license": "proprietary"}, OCR_EVIDENCE, ["weight_provenance_not_in_evidence:ocr:w.pth"],
                  id="license_relabelled"),
+    pytest.param({"read_on": "2099-01-01"}, OCR_EVIDENCE, ["weight_provenance_not_in_evidence:ocr:w.pth"],
+                 id="read_on_moved"),
+    pytest.param({"attribution": "Copyright (c) Other"}, OCR_EVIDENCE, ["weight_provenance_not_in_evidence:ocr:w.pth"],
+                 id="attribution_not_measured"),
+    pytest.param({"attribution": "Copyright (c) Up"},
+                 {"p.json": {"model": "ocr", "weight_provenance": [{**PROVENANCE, "attribution": "Copyright (c) Up"}]}}, [],
+                 id="attribution_measured"),
     pytest.param({}, {"p.json": {"model": "ocr", "weight_provenance": [{**PROVENANCE, "sha256": SIBLING}]}},
                  ["weight_provenance_not_in_evidence:ocr:w.pth"], id="record_of_other_bytes"),
     pytest.param({}, {"p.json": {"model": "ocr", "weight_provenance": [{**PROVENANCE, "file": "v.pth"}]}},
@@ -334,8 +341,8 @@ def test_new_evidence_naming_a_model_with_registered_weights_records_their_diges
                  ["weight_provenance_not_in_evidence:ocr:w.pth"], id="record_missing_a_field"),
 ])
 def test_a_weight_whose_provenance_no_evidence_recorded_is_named(change, evidence, found):
-    """ملاحظة Codex على #307: أصلٌ أو مصدرُ رخصةٍ صحيحُ الصيغة لا علاقة له بالبايتات المقيسة كان يمرّ. فالوزنُ يطابقه سجلُّ
-    مصدرٍ في شجرة نموذجه بملفّه وبصمته وأصله ومصدر رخصته معًا."""
+    """ملاحظات Codex على #307: أصلٌ أو مصدرُ رخصةٍ صحيحُ الصيغة لا علاقة له بالبايتات المقيسة كان يمرّ. فالوزنُ يطابقه سجلُّ
+    مصدرٍ في شجرة نموذجه بملفّه وبصمته وأصله ومصدر رخصته ورخصته وتاريخ قراءتها وإسناده معًا."""
     assert ml.provenance_findings(_weights({**WEIGHT, **change}), evidence) == found
 
 
@@ -385,7 +392,8 @@ def test_a_weights_license_text_digest_is_the_one_its_provenance_read(registered
     assert ml.provenance_findings(_weights(weight), {"p.json": {"model": "ocr", "weight_provenance": [record]}}) == found
 
 
-MODEL_TEXT = {"source": READ["source"], "license_text_sha256": LICENSE_TEXT, "license": READ["license"]}
+MODEL_TEXT = {"source": READ["source"], "license_text_sha256": LICENSE_TEXT, "license": READ["license"],
+              "read_on": READ["read_on"]}
 
 
 @pytest.mark.parametrize("evidence, found", [
@@ -398,6 +406,8 @@ MODEL_TEXT = {"source": READ["source"], "license_text_sha256": LICENSE_TEXT, "li
                  ["license_text_not_in_evidence:ocr"], id="text_of_another_model"),
     pytest.param({"p.json": {"model": "ocr", "license_provenance": {**MODEL_TEXT, "license": "mit"}}},
                  ["license_text_not_in_evidence:ocr"], id="text_measured_under_another_license"),
+    pytest.param({"p.json": {"model": "ocr", "license_provenance": {**MODEL_TEXT, "read_on": "2099-01-01"}}},
+                 ["license_text_not_in_evidence:ocr"], id="text_read_on_another_day"),
     pytest.param({}, ["license_text_not_in_evidence:ocr"], id="no_evidence"),
 ])
 def test_a_models_license_text_digest_is_one_read_from_its_source(evidence, found):
@@ -447,6 +457,15 @@ def test_a_provenance_record_is_a_measured_artifact(payload, found):
                  id="malformed_in_a_map"),
     pytest.param({"model": "asr", "suite_sha256": "x"}, [], id="data_kind_is_not_an_artifact"),
     pytest.param({"model": "asr", "models_sha256": {"scores.csv": "x"}}, [], id="data_file_in_a_map"),
+    pytest.param({"model": "asr", "checkpoint_sha256": None}, ["weight_digest_malformed:new.json:asr:checkpoint"],
+                 id="null_digest"),
+    pytest.param({"model": "asr", "checkpoint_sha256": 7}, ["weight_digest_malformed:new.json:asr:checkpoint"],
+                 id="numeric_digest"),
+    pytest.param({"model": "asr", "checkpoint_sha256": [DIGEST]}, ["weight_digest_malformed:new.json:asr:checkpoint"],
+                 id="list_digest"),
+    pytest.param({"model": "asr", "models_sha256": {"w.pth": None}}, ["weight_digest_malformed:new.json:asr:w.pth"],
+                 id="null_in_a_map"),
+    pytest.param({"model": "asr", "suite_sha256": None}, [], id="null_data_kind"),
 ])
 def test_a_malformed_artifact_digest_is_named(payload, found):
     """ملاحظة Codex على #307: `checkpoint_sha256` بقيمةٍ ليست 64 محرفًا ستّ عشريًّا صغيرًا كان يُسقط صامتًا، فيمرّ أثرٌ بلا قيد.
