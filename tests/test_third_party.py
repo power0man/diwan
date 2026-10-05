@@ -63,6 +63,27 @@ def test_a_package_source_edited_by_hand_is_named():
     assert tp.check(edited, LOCK, MODELS) == ["package_source_differs:numpy==2.0.0"]
 
 
+def test_a_weight_carries_its_own_license_and_attribution_and_a_change_is_named():
+    """ملاحظة Codex على #307: كاشفُ CRAFT يحمل رخصةَ MIT من مستودعه وإسنادَه، لا رخصةَ EasyOCR الذي وزّعه."""
+    weight = {"file": "w.pth", "license": "mit", "license_source": "https://github.com/up/r/blob/c/LICENSE",
+              "read_on": "2026-10-05", "attribution": "Copyright (c) Up"}
+
+    def weighted(**change):
+        return {**MODELS, "a/model": {**MODELS["a/model"], "weights": [{**weight, **change}]}}
+
+    text = _text(models=weighted())
+    assert tp.check(text, LOCK, weighted()) == []
+    assert "| `a/model` | `w.pth` | mit؛ Copyright (c) Up | https://github.com/up/r/blob/c/LICENSE (2026-10-05) |" in text
+    assert tp.weight_license({**weight, "attribution": None}) == "mit"
+    assert tp.check(_text(), LOCK, weighted()) == ["weight_not_listed:a/model/w.pth"]
+    assert tp.check(text, LOCK, MODELS) == ["weight_not_in_registry:a/model/w.pth"]
+    assert tp.check(text, LOCK, weighted(license="apache-2.0")) == ["weight_license_differs:a/model/w.pth"]
+    assert tp.check(text, LOCK, weighted(attribution="Copyright (c) Other")) == ["weight_license_differs:a/model/w.pth"]
+    assert tp.check(text, LOCK, weighted(license_source="https://github.com/o/r/blob/c/LICENSE")) == [
+        "weight_source_differs:a/model/w.pth"]
+    assert tp.check(text, LOCK, weighted(read_on="2026-11-01")) == ["weight_source_differs:a/model/w.pth"]
+
+
 def test_rows_outside_their_section_do_not_count():
     text = _text().replace("## الحزم", "## غيرها")
     assert "package_not_listed:numpy==2.0.0" in tp.check(text, LOCK, MODELS)

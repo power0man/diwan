@@ -4,7 +4,7 @@
 - `--write` يقرأ رخصةَ كلِّ حزمةٍ بنسختها المقفلة من بيانات PyPI المنشورة (`/pypi/<name>/<version>/json`)، ولا يخمّنها.
   وما قُرئ من قبلُ للحزمة بنسختها نفسِها يُبقى، فتغييرُ سجلّ النماذج وحده لا يحتاج شبكة؛ و`--refresh` يقرأ الكلَّ من جديد.
   ورخصُ النماذج من سجلّها كما هي، والمنتظِرُ منها يُكتب منتظِرًا بسببه.
-- `--check` بلا شبكة: الجدولُ يطابق القفلَ حزمةً حزمةً بنسختها، ويطابق السجلَّ نموذجًا نموذجًا برخصته.
+- `--check` بلا شبكة: الجدولُ يطابق القفلَ حزمةً حزمةً بنسختها، ويطابق السجلَّ نموذجًا نموذجًا برخصته، ووزنًا وزنًا برخصته وإسناده.
   فحزمةٌ تُضاف إلى القفل أو نموذجٌ إلى السجلّ بلا إعادة توليدٍ يسقط في CI.
 
 ترتيبُ الرخصة: `license_expression` (PEP 639)، ثم حقلُ `license` إن كان سطرًا قصيرًا، ثم مصنِّفاتُ `License ::`،
@@ -28,7 +28,9 @@ PROJECT = "diwan"
 UNSTATED = "unstated_in_package_metadata"
 PACKAGE_ROW = re.compile(r"^\| `(?P<name>[^`]+)` \| `(?P<version>[^`]+)` \| (?P<license>[^|]+) \| (?P<source>[^|]+) \|$")
 MODEL_ROW = re.compile(r"^\| `(?P<name>[^`]+)` \| (?P<license>[^|]+) \| (?P<source>[^|]+) \|$")
+WEIGHT_ROW = re.compile(r"^\| `(?P<model>[^`]+)` \| `(?P<file>[^`]+)` \| (?P<license>[^|]+) \| (?P<source>[^|]+) \|$")
 MODELS_HEADING = "## النماذج"
+WEIGHTS_HEADING = "## أوزانُ النماذج"
 PACKAGES_HEADING = "## الحزم"
 
 
@@ -63,6 +65,22 @@ def model_source(entry: dict) -> str:
     return "—" if "pending" in entry else f"{entry['source']} ({entry['read_on']})"
 
 
+def model_weights(models: dict) -> list[tuple[str, dict]]:
+    """أوزانُ كلِّ نموذجٍ في السجلّ (حقلُ `weights`)، مرتّبةً بالنموذج ثم بالملفّ."""
+    return [(name, weight) for name, entry in sorted(models.items())
+            for weight in sorted(entry.get("weights", []), key=lambda w: w["file"])]
+
+
+def weight_license(weight: dict) -> str:
+    """رخصةُ الوزن من ناشره الأصليّ، ومعها إسنادُه إن قيّده السجلّ (كاشفُ CRAFT بـMIT لا برخصة EasyOCR: Codex على #307)."""
+    attribution = weight.get("attribution")
+    return _cell(weight["license"] + (f"؛ {attribution}" if attribution else ""))
+
+
+def weight_source(weight: dict) -> str:
+    return f"{weight['license_source']} ({weight['read_on']})"
+
+
 def fetch(name: str, version: str) -> dict:
     public = version.split("+", 1)[0]
     with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/{public}/json", timeout=30) as response:
@@ -90,6 +108,11 @@ def render(packages: list[tuple[str, str, str]], models: dict) -> str:
     for name, entry in sorted(models.items()):
         license_cell = f"تنتظر القراءة: `{entry['pending']}`" if "pending" in entry else _cell(entry["license"])
         lines.append(f"| `{name}` | {license_cell} | {model_source(entry)} |")
+    lines += ["", WEIGHTS_HEADING, "",
+              "الوزنُ ملفٌّ يحمّله المحرّك، ورخصتُه رخصةُ ناشره الأصليّ وإن وزّعه غيرُه، ومعها إسنادُه إن طلبته.", "",
+              "| النموذج | الوزن | الرخصة والإسناد | مصدر الرخصة |", "|---|---|---|---|"]
+    for name, weight in model_weights(models):
+        lines.append(f"| `{name}` | `{weight['file']}` | {weight_license(weight)} | {weight_source(weight)} |")
     return "\n".join(lines) + "\n"
 
 
@@ -134,6 +157,19 @@ def check(text: str, lock: list[tuple[str, str]], models: dict) -> list[str]:
         if row is not None and row["source"].strip() != model_source(entry):
             problems.append(f"model_source_differs:{name}")
     problems += [f"model_not_in_registry:{name}" for name in sorted(rows) if name not in models]
+    listed_weights = {(r["model"], r["file"]): r for r in _section(text, WEIGHTS_HEADING, WEIGHT_ROW)}
+    expected = model_weights(models)
+    for name, weight in expected:
+        key, row = f"{name}/{weight['file']}", listed_weights.get((name, weight["file"]))
+        if row is None:
+            problems.append(f"weight_not_listed:{key}")
+            continue
+        if row["license"].strip() != weight_license(weight):
+            problems.append(f"weight_license_differs:{key}")
+        if row["source"].strip() != weight_source(weight):
+            problems.append(f"weight_source_differs:{key}")
+    known = {(name, weight["file"]) for name, weight in expected}
+    problems += [f"weight_not_in_registry:{m}/{f}" for m, f in sorted(listed_weights) if (m, f) not in known]
     return sorted(problems)
 
 

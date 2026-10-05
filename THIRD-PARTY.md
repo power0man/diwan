@@ -113,3 +113,13 @@
 | `qwen3.5:9b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
 | `qwen3:14b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
 | `tesseract` | apache-2.0 | https://github.com/tesseract-ocr/tesseract/blob/5.3.4/LICENSE (2026-10-05) |
+
+## أوزانُ النماذج
+
+الوزنُ ملفٌّ يحمّله المحرّك، ورخصتُه رخصةُ ناشره الأصليّ وإن وزّعه غيرُه، ومعها إسنادُه إن طلبته.
+
+| النموذج | الوزن | الرخصة والإسناد | مصدر الرخصة |
+|---|---|---|---|
+| `easyocr` | `arabic.pth` | apache-2.0 | https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE (2026-10-05) |
+| `easyocr` | `craft_mlt_25k.pth` | mit؛ Copyright (c) 2019-present NAVER Corp. | https://github.com/clovaai/CRAFT-pytorch/blob/e332dd8b718e291f51b66ff8f9ef2c98ee4474c8/LICENSE (2026-10-05) |
+| `tesseract` | `ara.traineddata` | apache-2.0 | https://github.com/tesseract-ocr/tessdata_fast/blob/main/LICENSE (2026-10-05) |

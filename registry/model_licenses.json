@@ -48,8 +48,12 @@
           "file": "craft_mlt_25k.pth",
           "sha256": "4a5efbfb48b4081100544e75e1e2b57f8de3d84f213004b14b85fd4b3748db17",
           "origin": "https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/craft_mlt_25k.zip",
-          "license": "apache-2.0",
-          "license_source": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE",
+          "upstream": "https://github.com/clovaai/CRAFT-pytorch",
+          "upstream_evidence": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/README.md#acknowledgement-and-references",
+          "license": "mit",
+          "license_source": "https://github.com/clovaai/CRAFT-pytorch/blob/e332dd8b718e291f51b66ff8f9ef2c98ee4474c8/LICENSE",
+          "license_text_sha256": "bfecc97e4888896b7acf08534372baf25796b98c087ba5a424b46ee25adec871",
+          "attribution": "Copyright (c) 2019-present NAVER Corp.",
           "read_on": "2026-10-05"
         }
       ]
@@ -294,6 +298,8 @@
     "new_evidence_reads_every_model_field_at_any_depth_and_free_text_under_such_a_field_is_refused_unless_it_is_a_registered_name",
     "ocr_entries_were_read_from_the_upstream_license_file_at_the_release_tag_named_in_the_g8_probes_not_from_the_installed_package",
     "ocr_weights_are_matched_by_sha256_from_the_g8_probes_to_the_official_artifact_and_take_the_license_of_the_repository_that_publishes_it",
-    "easyocr_release_assets_carry_no_license_file_of_their_own_so_their_license_is_the_publishing_repository_license"
+    "easyocr_release_assets_carry_no_license_file_of_their_own_so_their_license_is_the_publishing_repository_license",
+    "craft_mlt_25k_takes_the_craft_pytorch_mit_license_because_the_easyocr_v1_7_2_readme_says_it_uses_the_craft_pretrained_model_its_bytes_match_the_easyocr_release_and_were_not_matched_to_the_craft_drive_file",
+    "mit_was_named_by_comparing_the_craft_license_text_with_the_spdx_mit_text_after_dropping_the_title_and_copyright_lines"
   ]
 }
