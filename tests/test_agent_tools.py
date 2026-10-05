@@ -290,9 +290,9 @@ def test_run_tests_uses_the_pinned_container_interpreter():
 def test_sovereign_tools_integration_with_agent(space):
     from agent.builtin_tools import get_all_tools, get_sovereign_tools
     sov = get_sovereign_tools()
-    assert len(sov) == 6
+    assert len(sov) == 5                       # ق٧٢: evaluate_governance خرج من أدوات auto
     all_tools = get_all_tools()
-    assert len(all_tools) == 14
+    assert len(all_tools) == 13
 
     reg = ToolRegistry(*all_tools)
     ctx = ToolContext(root=space, journal=Journal(space), allowed_consents=frozenset({"auto", "logged"}))
