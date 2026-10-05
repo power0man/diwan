@@ -259,3 +259,16 @@ def test_a_truncated_reply_is_a_recorded_transport_error():
     assert failed.value.code == "transport_error"
     [row] = chat.provider_usage
     assert row["error"] == "transport_error" and row["request_sent"] is True and row["usage"] is None
+
+
+def test_an_open_file_named_like_the_ledger_is_still_reviewed_and_counted(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: الاستثناءُ بالاسم كان يُسقط سجلّاتِ مراجعةِ ملفٍّ مفتوحٍ اسمُه PROVIDER_USAGE.json من الأزواج
+    وقائمة المالك؛ فالمستثنى السجلُّ الدائم بمساره في الجذر وحده."""
+    import shutil
+
+    bank = smoke_bank(tmp_path)
+    shutil.copy(bank / "open" / "smoke.json", bank / "open" / cli.LEDGER_FILE)
+    _wire(monkeypatch, _Opener(_reply(prompt_eval_count=1, eval_count=1)))
+    assert cli.main([str(bank)]) == 0
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert [pair["items"] for pair in summary["pairs"]] == [6], "ثلاثُ حالاتٍ في كلٍّ من الملفّين"

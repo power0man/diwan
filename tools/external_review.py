@@ -1116,7 +1116,7 @@ def other_reviewer_errors(bank: Path, final_models: set[str], current: set[str])
     root = bank / "reviews"
     count = 0
     for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
-        if path.name in ("SUMMARY.json", LEDGER_FILE) or path.relative_to(root).parts[0] == SUPERSEDED_DIR:
+        if path.name == "SUMMARY.json" or path == root / LEDGER_FILE or path.relative_to(root).parts[0] == SUPERSEDED_DIR:
             continue
         record = json.loads(path.read_text(encoding="utf-8"))
         if record.get("error") and record.get("model") not in final_models and record.get("file") in current:
@@ -1133,7 +1133,7 @@ def _successful_records(bank: Path) -> dict[str, str]:
     found: dict[str, str] = {}
     for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
         relative = path.relative_to(root)
-        if path.name in ("SUMMARY.json", RUN_FILE, LEDGER_FILE) or relative.parts[0] == SUPERSEDED_DIR:
+        if path.name in ("SUMMARY.json", RUN_FILE) or relative == Path(LEDGER_FILE) or relative.parts[0] == SUPERSEDED_DIR:
             continue
         raw = path.read_bytes()
         if json.loads(raw).get("error") is None:
