@@ -41,7 +41,8 @@ ENFORCED_FROM = "2026-09-26T00:00:00Z"
 LABEL = "proof-missing"
 EXEMPT_LABELS = frozenset({"owner-action", "owner-decision"})
 OWNER_PREFIX = "ح"
-TASK_TITLE = re.compile(r"\A\s*\[([^\]\s]{1,16})\]")
+# معرّفاتُ الخطة «جديد-…» تبلغ ٢٨ حرفًا؛ وحدُّ ١٦ القديم كان يُعفي ٢٨ مسألةً من ٦٦ «بلا معرّف» صامتةً (ق٧٣).
+TASK_TITLE = re.compile(r"\A\s*\[([^\]\s]{1,64})\]")
 # كلماتُ الإغلاق كما يقرؤها GitHub؛ و«Refs #N» ليست منها عمدًا.
 CLOSING = re.compile(r"(?i)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+#(\d+)\b")
 ENTRY_KEYS = ("schema_version", "task", "issue", "pull", "merge", "agents", "closed_at")
