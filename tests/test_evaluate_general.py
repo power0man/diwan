@@ -258,3 +258,24 @@ def test_sandbox_cases_without_a_configured_backend_are_refused_before_any_call(
             run_general(SeedReplay(lambda u, s: "x", seen=seen), bank_open=bank, diagnostic=diagnostic,
                         intake=_intake(bank), **RUN)
     assert seen == []
+
+
+def test_the_intake_sandbox_verdict_must_come_from_the_measurement_receipt(tmp_path, monkeypatch):
+    """حكمُ الاستلام في حالات الحاوية بصورةٍ، والقياسُ بأخرى، لا يشهد (ملاحظة Codex على #312)."""
+    import tools.evaluate_general as general
+    sandboxed = {**_case("py", "اكتب دالة", []), "checks": [{"kind": "python_sandbox", "value": "assert True"}]}
+    bank = _bank(tmp_path / "open", {"tier_a": [sandboxed]})
+    measured = {"backend": "docker", "image_id": "sha256:a", "snapshot_files": []}
+    monkeypatch.setattr(general, "sandbox_configuration", lambda: measured)
+
+    def probed(backend):
+        return _intake(bank, bank={**_intake(bank)["bank"], "gameable": {
+            "open": 0, "by_probe": {}, "needs_sandbox": 0, "sandbox_probed": True, "sandbox_backend": backend}})
+    seen = []
+    for backend in ({**measured, "image_id": "sha256:b"}, None):
+        with pytest.raises(AblationError, match="intake_sandbox_backend_mismatch"):
+            run_general(SeedReplay(lambda u, s: "x", seen=seen), bank_open=bank, intake=probed(backend), **RUN)
+    assert seen == []
+    monkeypatch.setattr(general, "run_seeded_arm", lambda *a, **k: [])
+    assert run_general(SeedReplay(lambda u, s: "x"), bank_open=bank, intake=probed(measured), **RUN)["kind"] == \
+        "general_number"

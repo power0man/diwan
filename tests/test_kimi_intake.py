@@ -404,11 +404,13 @@ def test_fixed_answers_that_know_nothing_expose_gameable_checks():
 
 def test_an_intake_with_a_gameable_open_check_fails_and_counts_it_by_probe(tmp_path):
     src = delivery(tmp_path)
-    assert intake(src)["bank"]["gameable"] == {"open": 0, "by_probe": {}, "needs_sandbox": 0, "sandbox_probed": False}
+    assert intake(src)["bank"]["gameable"] == {"open": 0, "by_probe": {}, "needs_sandbox": 0, "sandbox_probed": False,
+                                               "sandbox_backend": None}
     _write(src / "open" / "tier_a" / "kimi_a_001.json", _suite("kimi_a_001", [_case("o1"), _case("o2", text="r أو s؟")]))
     report = intake(src)
     assert not report["passed"] and report["bank"]["gameable"] == {"open": 1, "by_probe": {"echo": 1},
-                                                                   "needs_sandbox": 0, "sandbox_probed": False}
+                                                                   "needs_sandbox": 0, "sandbox_probed": False,
+                                                                   "sandbox_backend": None}
     assert "gameable_checks" in _codes(report, "bank")
 
 
@@ -432,3 +434,13 @@ def test_a_mixed_sandbox_case_is_probed_on_its_other_checks_then_in_the_containe
     assert gameable_probe(case(options, "always"), sandbox=True) == "echo"
     assert gameable_probe(case(options, "strict"), sandbox=True) is None
     assert gameable_probe(case("سمِّ الصورة", "always", value="غائبة")) is None, "ما يُسقطه خارجَ الحاوية لا يُشغَّل له شيء"
+
+
+def test_a_sandbox_probed_intake_records_the_backend_that_judged(tmp_path, monkeypatch):
+    """الاستلامُ بالحاوية يسجّل إيصالَها، فيطابقه مُشغِّلُ الرقم العام (ملاحظة Codex على #312)."""
+    import core.sandbox as sandbox
+    backend = {"backend": "docker", "image_id": "sha256:a", "snapshot_files": []}
+    monkeypatch.setattr(sandbox, "sandbox_configuration", lambda: backend)
+    src = delivery(tmp_path)
+    assert intake(src, sandbox_probes=True)["bank"]["gameable"]["sandbox_backend"] == backend
+    assert intake(src)["bank"]["gameable"]["sandbox_backend"] is None

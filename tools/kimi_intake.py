@@ -244,7 +244,10 @@ def check_bank(src: Path, *, sandbox_probes: bool = False) -> dict:
     failures: list = []
     counts = {"open": {"files": 0, "cases": 0, "tasks": 0}, "sealed": {"files": 0, "cases": 0, "tasks": 0}}
     without_checks = {"open": 0, "sealed": 0}
-    gameable = {"open": 0, "by_probe": {}, "needs_sandbox": 0, "sandbox_probed": sandbox_probes}
+    # الخلفيّةُ التي حكمت في حالات الحاوية بإيصالها، فيُربط بها القياسُ اللاحق (ملاحظة Codex على #312)
+    from core.sandbox import sandbox_configuration
+    gameable = {"open": 0, "by_probe": {}, "needs_sandbox": 0, "sandbox_probed": sandbox_probes,
+                "sandbox_backend": sandbox_configuration() if sandbox_probes else None}
     agentic, case_ids = [], {}
     for part, path in _bank_files(src):
         relative = path.relative_to(src).as_posix()

@@ -140,7 +140,8 @@ def exact_readings(rows: list[dict], cases: list[dict]) -> dict:
     return {"strict": reading(strict), "lenient": reading(lenient), "lost_to_trailing_punctuation": recovered}
 
 
-def _require_intake(intake: dict | None, digest: str) -> None:
+def _require_intake(intake: dict | None, digest: str, *, sandbox_backend: dict | None = None,
+                    boxed: bool = False) -> None:
     """البنكُ المقيس هو الذي نجح استلامُه: تقريرُ kimi_intake ناجح، وبلا حالةٍ بلا فحص، وبصمةُ مفتوحه بصمةُ هذا البنك."""
     if not isinstance(intake, dict):
         raise AblationError("intake_missing", "يلزم --intake بتقرير kimi_intake ناجح، أو --diagnostic")
@@ -163,6 +164,9 @@ def _require_intake(intake: dict | None, digest: str) -> None:
     # حالةٌ تمرّ فحوصُها خارج الحاوية بجوابٍ ثابت لا يحكم فيها إلا الحاوية: الاستلامُ بـ--sandbox-probes (ملاحظة Codex)
     if bank["gameable"].get("needs_sandbox") != 0:
         raise AblationError("intake_sandbox_cases_unprobed", "يلزم استلامٌ بـ--sandbox-probes")
+    # فحصُ حاويةٍ يردّ الأجوبةَ الثابتة في صورةٍ ويقبلها في أخرى: الاستلامُ والقياسُ بإيصالٍ واحد (ملاحظة Codex على #312)
+    if boxed and bank["gameable"].get("sandbox_backend") != sandbox_backend:
+        raise AblationError("intake_sandbox_backend_mismatch", "إيصالُ حاوية الاستلام غيرُ إيصال القياس")
     if bank.get("open_digest") != digest:
         raise AblationError("intake_digest_mismatch", "بصمةُ الشطر المفتوح غيرُ بصمة الاستلام")
 
@@ -222,7 +226,8 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
         raise AblationError("sandbox_backend_unconfigured", "يلزم --sandbox-receipt، أو --no-sandbox مع --diagnostic")
     digest = open_bank_digest(bank_open)
     if not diagnostic:
-        _require_intake(intake, digest)
+        boxed = any(check.get("kind") == "python_sandbox" for case in cases for check in case["checks"])
+        _require_intake(intake, digest, sandbox_backend=sandbox_configuration(), boxed=boxed)
     tally = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
     rows = run_seeded_arm(cases, _Counted(provider, tally), arm(), seeds, model=model, model_version=model_version,
                           **options)
