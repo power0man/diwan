@@ -91,6 +91,16 @@ def test_a_given_or_written_spend_is_checked_not_trusted():
     assert problems == ["spend_local_with_cloud"]
 
 
+@pytest.mark.parametrize("licenses", [pytest.param(None, id="null"), pytest.param("apache-2.0", id="text"),
+                                      pytest.param(["apache-2.0"], id="list")])
+def test_a_malformed_license_block_is_named_not_replaced(licenses):
+    """ملاحظة Codex على #310: كتلةُ `licenses` بغير شكل كائنٍ لا تُستبدل بقيم السجلّ فيمرّ الدليلُ الفاسد."""
+    payload = {"model": "qwen3.5:9b", "spend": LOCAL, "licenses": licenses}
+    stamped, problems = se.stamp(payload, MODELS)
+    assert problems == ["licenses_malformed"]
+    assert stamped["licenses"] == licenses, "الكتلةُ الفاسدة باقيةٌ كما هي"
+
+
 @pytest.mark.parametrize("payload, code", [
     pytest.param({"model": "qwen3.5:9b", "spend": "corrupt"}, "spend_missing", id="written_spend_not_an_object"),
     pytest.param({"model": "qwen3.5:9b", "spend": None}, "spend_missing", id="written_spend_null"),
@@ -100,6 +110,13 @@ def test_a_given_or_written_spend_is_checked_not_trusted():
                  "spend_ledger_malformed", id="one_ledger_row_not_an_object"),
     pytest.param({"model": "qwen3.5:9b", "provider_usage": "corrupt"}, "spend_ledger_malformed",
                  id="ledger_not_a_list"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud",
+                  "provider_usage": [{k: v for k, v in _row("ollama", "deepseek-v4.1-flash:cloud").items()
+                                      if k != "request_sent"}]},
+                 "spend_ledger_malformed", id="row_without_request_sent"),
+    pytest.param({"model": "deepseek-v4.1-flash:cloud",
+                  "provider_usage": [{**_row("ollama", "deepseek-v4.1-flash:cloud"), "request_sent": "yes"}]},
+                 "spend_ledger_malformed", id="request_sent_not_a_boolean"),
 ])
 def test_a_malformed_spend_or_ledger_is_named_not_replaced(payload, code):
     """ملاحظتا Codex على #310: كتلةٌ أو سجلٌّ فاسدٌ لا يُصفّى إلى كتلةٍ صفريّةٍ صالحة، بل يُسمّى ولا يُختم."""

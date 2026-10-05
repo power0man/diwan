@@ -52,7 +52,10 @@ def is_local_name(name: str) -> bool:
 
 
 def stamp_licenses(payload: dict, models: dict) -> tuple[dict, list[str]]:
-    stated = payload.get("licenses") if isinstance(payload.get("licenses"), dict) else {}
+    # كتلةُ رخصٍ مكتوبةٌ بغير شكل كائنٍ فاسدة: تُسمّى ولا يُكتب بدلها شيء (ملاحظة Codex على #310)
+    if "licenses" in payload and not isinstance(payload["licenses"], dict):
+        return {}, ["licenses_malformed"]
+    stated = payload.get("licenses", {})
     licenses, problems = dict(stated), []
     for name in dict.fromkeys(ml.canonical(raw) for raw in ml.all_named_models(payload)):
         entry = models.get(name)
@@ -92,7 +95,9 @@ COST_STATUSES = frozenset({"reported", "estimated_from_prices", "reserved_upper_
 def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, list[str]]:
     """كتلةُ الإنفاق من سجلّ النداءات: ما أُرسل إلى السحابة وحده. وأساسُ الكلفة من الواجهة لا من التخمين."""
     # سجلٌّ ليس قائمةَ صفوفٍ كلُّها كائنات مبتورٌ أو فاسد: يُسمّى ولا يُصفّى إلى إنفاقٍ صفريّ (ملاحظة Codex على #310)
-    if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+    # وصفٌّ بلا `request_sent` منطقيٍّ لا يُعرف أأُرسل أم لا، فلا يُسقط من العدّ (ملاحظة Codex على #310)
+    if not isinstance(rows, list) or not all(isinstance(row, dict) and type(row.get("request_sent")) is bool
+                                             for row in rows):
         return None, ["spend_ledger_malformed"]
     sent = [row for row in rows if row.get("kind") != "catalog" and row.get("request_sent")]
     cloud = [row for row in sent if row.get("provider") != "ollama" or row.get("cloud")]
