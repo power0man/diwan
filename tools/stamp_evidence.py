@@ -93,6 +93,12 @@ def free_call_proven(row: dict, evidence: object) -> bool:
 COST_STATUSES = frozenset({"reported", "estimated_from_prices", "reserved_upper_bound", "not_reported"})
 
 
+def _cloud_flag_consistent(row: dict) -> bool:
+    """`cloud` منطقيٌّ كما يحسبه الكاتب (`self.cloud or is_cloud_model(model)`): فنموذجٌ سحابيُّ الاسم لا يكون `cloud: false`
+    (ملاحظة Codex على #310)."""
+    return type(row.get("cloud")) is bool and (row["cloud"] or not is_cloud_model(str(row.get("model") or "")))
+
+
 def _catalog_shape(row: dict) -> bool:
     return (row.get("model") is None and row.get("usage") is None and row.get("cost_usd") is None
             and row.get("cost_status") == "not_billed_listing")
@@ -106,7 +112,7 @@ def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, 
     # وصفُّ الفهرس لا يُستثنى من العدّ إلا بشكله الذي يكتبه الكاتب (بلا نموذجٍ ولا استهلاكٍ ولا كلفة)، فلا يُخفي `kind` نداءً
     # مدفوعًا (ملاحظة Codex على #310)
     if not isinstance(rows, list) or not all(isinstance(row, dict) and type(row.get("request_sent")) is bool
-                                             and (row.get("provider") != "ollama" or type(row.get("cloud")) is bool)
+                                             and (row.get("provider") != "ollama" or _cloud_flag_consistent(row))
                                              and (row.get("kind") != "catalog" or _catalog_shape(row))
                                              for row in rows):
         return None, ["spend_ledger_malformed"]
