@@ -310,7 +310,8 @@ def test_a_digest_belongs_only_to_the_model_whose_subtree_records_it(evidence, r
 def test_new_evidence_names_every_weight_it_records_in_the_registry():
     """ملاحظة Codex على #307: دليلٌ جديد يسجّل لنموذجٍ مقيَّدٍ وزنًا (بملفّه أو بنوعه) ليس في قيوده يُسمّى، والتاريخيُّ لا."""
     new = {"new.json": {"engine": {"name": "ocr", "settings": {
-        "models_sha256": {"w.pth": DIGEST, "x.pth": SIBLING, "o01.jpg": SIBLING}, "traineddata_sha256": TRAINED}}}}
+        "models_sha256": {"w.pth": DIGEST, "x.pth": SIBLING}, "artifacts_sha256": {"o01.jpg": SIBLING},
+        "traineddata_sha256": TRAINED}}}}
     expected = ["weight_not_registered:new.json:ocr:x.pth", "weight_not_registered:new.json:ocr:traineddata"]
     assert ml.weight_findings(_weights(WEIGHT), new, frozenset({"new.json"})) == expected
     assert ml.weight_findings(_weights(WEIGHT), new) == [], "الدليلُ التاريخيّ لا يُطالَب"
@@ -337,7 +338,8 @@ def test_a_weight_file_is_any_file_not_known_to_be_data(file, weight):
     """ملاحظات Codex على #307: `checkpoint.pth.tar` و`.model` و`.keras` و`.pb` كانت تُعدّ بياناتٍ فتمرّ بايتاتٌ بلا قيدٍ ولا رخصة؛
     فكلُّ ما ليس بياناتٍ معروفةً وزنٌ، ويُغلق عند الشكّ."""
     assert ml.is_weight_file(file) is weight
-    new = {"new.json": {"engine": {"name": "ocr", "settings": {"models_sha256": {"w.pth": DIGEST, file: SIBLING}}}}}
+    # خريطةٌ لا تعلن بنفسها بايتاتِ نموذج (`artifacts_sha256`)، فيحكم على ملفّاتها `is_weight_file`
+    new = {"new.json": {"engine": {"name": "ocr", "settings": {"artifacts_sha256": {"w.pth": DIGEST, file: SIBLING}}}}}
     assert ml.weight_findings(_weights(WEIGHT), new, frozenset({"new.json"})) == (
         [f"weight_not_registered:new.json:ocr:{file}"] if weight else [])
 
@@ -539,7 +541,10 @@ def test_a_provenance_record_is_a_measured_artifact(payload, found):
     pytest.param({"model": "asr", "models_sha256": {"w.pth": "x"}}, ["weight_digest_malformed:new.json:asr:w.pth"],
                  id="malformed_in_a_map"),
     pytest.param({"model": "asr", "suite_sha256": "x"}, [], id="data_kind_is_not_an_artifact"),
-    pytest.param({"model": "asr", "models_sha256": {"scores.csv": "x"}}, [], id="data_file_in_a_map"),
+    pytest.param({"model": "asr", "artifacts_sha256": {"scores.csv": "x"}}, [], id="data_file_in_a_map"),
+    # وخريطةُ `models_sha256` تعلن بايتاتِ نموذج، فمشوَّهُها يُسمّى أيًّا كانت لاحقتُه (ملاحظة Codex على #307)
+    pytest.param({"model": "asr", "models_sha256": {"scores.csv": "x"}}, ["weight_digest_malformed:new.json:asr:scores.csv"],
+                 id="data_named_entry_in_the_models_map"),
     pytest.param({"model": "asr", "checkpoint_sha256": None}, ["weight_digest_malformed:new.json:asr:checkpoint"],
                  id="null_digest"),
     pytest.param({"model": "asr", "checkpoint_sha256": 7}, ["weight_digest_malformed:new.json:asr:checkpoint"],
@@ -589,12 +594,14 @@ def test_a_malformed_provenance_record_is_named(records, found):
 
 
 @pytest.mark.parametrize("payload", [
+    pytest.param({"model": "asr", "models_sha256": {"secret.json": DIGEST}}, id="models_map_entry"),
+    pytest.param({"config": {"model": "asr"}, "models_sha256": {"secret.json": DIGEST}}, id="unowned_models_map_entry"),
     pytest.param({"model": "asr", "weight_provenance": [{**SECRET, "file": "secret.json"}]}, id="owned_record"),
     pytest.param({"config": {"model": "asr"}, "weight_provenance": [{**SECRET, "file": "secret.json"}]}, id="unowned_record"),
 ])
 def test_a_weight_its_provenance_record_declares_is_registered_whatever_its_suffix(payload):
-    """ملاحظة Codex على #307: سجلُّ مصدرٍ يعلن وزنًا بلاحقة بيانات (`secret.json`) كان يمرّ لأن `is_weight_file` يردّه، فتُعفى
-    بايتاتٌ من قيدها بتغيير اسمها. فما يعلنه سجلُّ المصدر وزنٌ يُطالَب بقيده أيًّا كانت لاحقتُه."""
+    """ملاحظتا Codex على #307: سجلُّ مصدرٍ أو خريطةُ `models_sha256` تعلن وزنًا بلاحقة بيانات (`secret.json`) كانت تمرّ لأن
+    `is_weight_file` يردّه، فتُعفى بايتاتٌ من قيدها بتغيير اسمها. فما يعلنانه وزنٌ يُطالَب بقيده أيًّا كانت لاحقتُه."""
     models = {"asr": {**READ, "weights": []}}
     assert ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) == [
         "weight_not_registered:new.json:asr:secret.json"]
@@ -651,10 +658,10 @@ def test_every_model_named_beside_a_digest_owns_it(payload, found):
     pytest.param("scores.csv", [], [], id="data_file"),
 ])
 def test_an_extensionless_name_in_a_digest_map_is_a_file(name, weights, found):
-    """ملاحظة Codex على #307: مفتاحٌ بلا لاحقة في خريطة بصماتٍ (`{"models_sha256": {"checkpoint": …}}`) كان يُسقط صامتًا، فيمرّ
+    """ملاحظة Codex على #307: مفتاحٌ بلا لاحقة في خريطة بصماتٍ (`{"artifacts_sha256": {"checkpoint": …}}`) كان يُسقط صامتًا، فيمرّ
     وزنٌ بلا قيد. فكلُّ مفتاحٍ في خريطة `*_sha256` اسمُ ملفّ، ويحكم عليه `is_weight_file`."""
     models = {"asr": {**READ, "weights": weights}}
-    evidence = {"new.json": {"model": "asr", "models_sha256": {name: DIGEST}}}
+    evidence = {"new.json": {"model": "asr", "artifacts_sha256": {name: DIGEST}}}
     assert [f for f in ml.weight_findings(models, evidence, frozenset({"new.json"})) if "new.json" in f] == found
 
 

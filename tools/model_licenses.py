@@ -62,6 +62,8 @@ LICENSE_FILE_READ = "upstream_license_file_at_the_release_tag_the_probes_name"
 # رخصٌ يحمل نصُّها إشعارَ حقوق نشرٍ يُشترط نشرُه مع الوزن، فإسنادُه لازمٌ لا اختياريّ (ملاحظة Codex على #307)
 NOTICE_LICENSES = frozenset({"mit"})
 UNOWNED = ("",)
+# خريطةُ البصمات التي تعلن بايتاتِ نموذجٍ بأسماء ملفّاتها
+MODELS_MAP = "models_sha256"
 # أنواعُ البصمات التي يكتبها المستودع لبياناتٍ لا لبايتات نموذج (`<نوع>_sha256`). وما سواها في دليلٍ جديد أثرٌ يُطالَب بقيده،
 # فلا يمرّ `checkpoint_sha256` أو `model_artifact_sha256` بلا أصلٍ ولا رخصة (ملاحظة Codex على #307). ومنها ما تكتبه أدواتُ
 # المراجعة للمراجَع: `artifact` (`evaluation/multi_system_review.py`)، و`file` (`evaluation/external_review.py`)، و`review_artifact`،
@@ -309,13 +311,17 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
                     flag(owners, "weight_digest_malformed", key.removesuffix("_sha256"))
                 visit(child, owners)
             elif isinstance(key, str) and key.endswith("_sha256") and isinstance(child, dict):
-                # خريطةُ بصماتٍ بأسماء الملفّات (`models_sha256`): كلُّ مفتاحٍ فيها اسمُ ملفّ ولو بلا لاحقة (`checkpoint`)،
-                # ويحكم عليه `is_weight_file` (ملاحظة Codex على #307)
+                # خريطةُ بصماتٍ بأسماء الملفّات: كلُّ مفتاحٍ فيها اسمُ ملفّ ولو بلا لاحقة (`checkpoint`)، ويحكم عليه
+                # `is_weight_file`؛ إلّا `models_sha256` فإعلانُها نفسُه أنّ ملفّاتها بايتاتُ نموذج، فتُطالَب أيًّا كانت لاحقتُها
+                # (ملاحظتا Codex على #307)
+                declares = key == MODELS_MAP
                 for name, digest in child.items():
                     if isinstance(name, str) and isinstance(digest, str) and SHA256.match(digest):
                         for owner in owners or UNOWNED:
                             out.setdefault(owner, ({}, {}))[0].setdefault(name, set()).add(digest)
-                    elif isinstance(name, str) and is_weight_file(name):
+                            if declares:
+                                (declared if declared is not None else {}).setdefault(owner, set()).add(name)
+                    elif isinstance(name, str) and (declares or is_weight_file(name)):
                         flag(owners, "weight_digest_malformed", name)
                 visit(child, owners)
             elif key == PROVENANCE_KEY and isinstance(child, list):
