@@ -5,12 +5,13 @@
 - **محلولة:** الرخصةُ ومصدرُها وتاريخُ قراءتها.
 - **منتظِرة:** سببٌ مسمًّى، كأن تُقرأ بـ`ollama show --license` على الماك.
 
-والأدلّةُ التاريخيّة لا تُعدَّل، وأسماؤها مقيّدةٌ في السجلّ (`historical_evidence`). فالحارسُ يقرن كلَّ دليلٍ بالسجلّ ويرفض:
+والأدلّةُ التاريخيّة لا تُعدَّل، وأسماؤها مقيّدةٌ في السجلّ (`historical_evidence`) ومع كلٍّ بصمةُ محتواه، فما عُدِّل منها بعد
+التجميد جديدٌ يُفحص كاملًا (ملاحظة Codex على #307). فالحارسُ يقرن كلَّ دليلٍ بالسجلّ ويرفض:
 - نموذجًا بلا قيد، وقيدًا محلولًا بلا مصدرٍ أو تاريخ.
 - رخصةً في دليلٍ تخالف السجلّ.
 - محرّكًا افتراضيًّا برخصةٍ غير تجاريّة (ق٦٢-٨).
 
-والدليلُ الجديد (ليس في القائمة التاريخيّة، أو مؤرَّخٌ من تاريخ الإنفاذ) أشدّ (ملاحظتا Codex على #302):
+والدليلُ الجديد (ليس تاريخيًّا مجمَّدًا، أو مؤرَّخٌ من تاريخ الإنفاذ) أشدّ (ملاحظتا Codex على #302):
 - يُقرأ كلُّ حقلِ نموذجٍ فيه على أيّ عمق: `config.model`، و`providers[].models[].model`، وما أشبه.
 - ولا يسمّي نموذجًا لم تُقرأ رخصتُه.
 - ويعلن رخصةَ كلِّ نموذجٍ يسمّيه في حقلٍ أعلى `licenses` (معرّفٌ معياريّ ← رخصة) تطابق السجلّ.
@@ -209,6 +210,19 @@ def entry_findings(name: str, entry: object) -> list[str]:
     return problems
 
 
+def evidence_digest(payload: object) -> str:
+    """بصمةُ الدليل المقروء بصيغةٍ قانونية: لا يغيّرها تنسيقُ الملفّ، ويغيّرها كلُّ تعديلٍ في محتواه."""
+    text = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def frozen_evidence(historical: object, evidence: dict[str, object]) -> set[str]:
+    """الأدلّةُ التاريخيّةُ كما جُمِّدت: اسمُها في السجلّ وبصمةُ محتواها هي المقيَّدةُ معه. فدليلٌ تاريخيٌّ عُدِّل بعد التجميد جديدٌ
+    يُفحص كاملًا، ولا يمرّ باسمه وتاريخه المعلَن (ملاحظة Codex على #307)."""
+    frozen = historical if isinstance(historical, dict) else {}
+    return {file for file, payload in evidence.items() if frozen.get(file) == evidence_digest(payload)}
+
+
 def evidence_findings(file: str, payload: dict, models: dict, enforced_from: str, historical: set[str]) -> list[str]:
     problems = []
     day = payload.get("date")
@@ -271,7 +285,12 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
         # المالك (ملاحظتا Codex على #307)
         here = tuple(dict.fromkeys(canonical(name) for k, v in value.items() if k in MODEL_KEYS for name in _names_under(k, v)))
         owners = here or owners
+        # بصمةٌ بجانب مسارٍ يسمّي ملفَّ بيانات (`bank: {path: …json, file_sha256: …}`) بصمةُ ذلك الملفّ لا وزن: تُصنَّف بمسارها لا
+        # بنوعها وحده (ملاحظة Codex على #307)
+        beside_data = isinstance(value.get("path"), str) and not is_weight_file(value["path"].rsplit("/", 1)[-1])
         for key, child in value.items():
+            if beside_data and isinstance(key, str) and key.endswith("_sha256") and not isinstance(child, dict):
+                continue
             if isinstance(key, str) and isinstance(child, str) and SHA256.match(child):
                 record(owners, key, child)
             elif isinstance(key, str) and key.endswith("_sha256") and not isinstance(child, dict):
@@ -521,16 +540,17 @@ def findings(registry: dict, evidence: dict[str, object], engine: str | None) ->
     models = registry.get("models")
     enforced_from = registry.get("enforced_from")
     historical = registry.get("historical_evidence")
-    if not isinstance(models, dict) or not _valid_day(enforced_from) or not isinstance(historical, list) \
-            or not all(isinstance(name, str) for name in historical):
+    if not isinstance(models, dict) or not _valid_day(enforced_from) or not isinstance(historical, dict) \
+            or not all(isinstance(digest, str) and SHA256.match(digest) for digest in historical.values()):
         return ["registry_malformed"]
+    frozen = frozen_evidence(historical, evidence)
     for name, entry in models.items():
         problems += entry_findings(name, entry)
     for file, payload in sorted(evidence.items()):
         if isinstance(payload, dict):
-            problems += evidence_findings(file, payload, models, enforced_from, set(historical))
+            problems += evidence_findings(file, payload, models, enforced_from, frozen)
     dicts = {file: payload for file, payload in evidence.items() if isinstance(payload, dict)}
-    new_files = frozenset(file for file, payload in dicts.items() if file not in set(historical)
+    new_files = frozenset(file for file, payload in dicts.items() if file not in frozen
                           or (isinstance(payload.get("date"), str) and payload["date"][:10] >= enforced_from))
     problems += weight_findings(models, dicts, new_files)
     problems += provenance_findings(models, dicts)

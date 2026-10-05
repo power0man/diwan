@@ -12,8 +12,10 @@ READ = {"license": "apache-2.0", "source": "https://huggingface.co/org/model", "
 PENDING = {"pending": "read_with_ollama_show_license_on_the_mac"}
 
 
-def _registry(historical=(), **models) -> dict:
-    return {"schema_version": 1, "enforced_from": "2026-10-06", "models": models, "historical_evidence": list(historical)}
+def _registry(historical=None, **models) -> dict:
+    """`historical` الأدلّةُ التاريخيّة بأسمائها ومحتواها، فتُجمَّد ببصمة المحتوى كما في السجلّ (ملاحظة Codex على #307)."""
+    frozen = {name: ml.evidence_digest(payload) for name, payload in (historical or {}).items()}
+    return {"schema_version": 1, "enforced_from": "2026-10-06", "models": models, "historical_evidence": frozen}
 
 
 def test_every_model_the_published_evidence_names_has_a_license_entry():
@@ -41,18 +43,30 @@ def test_a_pending_entry_names_its_reason_and_carries_nothing_else():
 
 
 def test_new_evidence_cannot_name_a_model_whose_license_was_not_read():
-    registry = _registry(["old.json", "new.json"], **{"qwen3.5:9b": PENDING})
     old = {"date": "2026-10-05", "engine": {"model": "qwen3.5:9b"}}
     new = {"date": "2026-10-06T08:00:00+00:00", "engine": {"model": "qwen3.5:9b"}}
+    registry = _registry({"old.json": old, "new.json": new}, **{"qwen3.5:9b": PENDING})
     assert ml.findings(registry, {"old.json": old}, None) == []
     assert ml.findings(registry, {"new.json": new}, None) == [
         "license_not_read_before_new_evidence:new.json:qwen3.5:9b"]
 
 
+def test_a_historical_file_edited_after_it_was_frozen_is_new_evidence():
+    """ملاحظة Codex على #307: دليلٌ تاريخيٌّ عُدِّل بعد التجميد كان يمرّ باسمه وتاريخه المعلَن، فيُدخل بصمةَ أثرٍ بلا قيد.
+    فالتاريخيُّ مجمَّدٌ ببصمة محتواه، وما عُدِّل منه جديدٌ يُفحص كاملًا."""
+    old = {"date": "2026-10-01", "model": "ocr"}
+    registry = _registry({**OCR_EVIDENCE, "old.json": old}, **_measured(_weights(WEIGHT)))
+    assert ml.findings(registry, {**OCR_EVIDENCE, "old.json": old}, None) == []
+    edited = {**old, "checkpoint_sha256": OTHER_DIGEST}
+    assert ml.findings(registry, {**OCR_EVIDENCE, "old.json": edited}, None) == [
+        "license_not_stated_in_new_evidence:old.json:ocr", "weight_not_measured_in_new_evidence:old.json:ocr:w.pth",
+        "weight_not_registered:old.json:ocr:checkpoint"]
+
+
 def test_a_file_outside_the_historical_list_is_new_even_without_a_date():
     """اثنا عشر دليلًا تاريخيًّا بلا تاريخ، فالجِدّةُ من القائمة المقيّدة لا من حقل التاريخ وحده."""
     payload = {"model": "qwen3.5:9b"}
-    assert ml.findings(_registry(["k.json"], **{"qwen3.5:9b": PENDING}), {"k.json": payload}, None) == []
+    assert ml.findings(_registry({"k.json": payload}, **{"qwen3.5:9b": PENDING}), {"k.json": payload}, None) == []
     assert ml.findings(_registry(**{"qwen3.5:9b": PENDING}), {"k.json": payload}, None) == [
         "license_not_read_before_new_evidence:k.json:qwen3.5:9b"]
 
@@ -70,17 +84,17 @@ def test_new_evidence_states_every_license_it_relies_on():
 
 def test_new_evidence_is_read_at_every_depth_and_historical_at_its_top_level():
     """ملاحظة Codex على #302: الأدلّةُ تسمّي نماذجها في config.model وbaseline.embedder.model وproviders[].models[].model."""
-    registry = _registry(["old.json"], **{"a/x": READ, "b/y": READ})
     nested = {"config": {"model": "a/x"}, "providers": [{"models": [{"model": "b/y"}]}],
               "baseline": {"embedder": {"model": "c/z"}}, "licenses": {"a/x": "apache-2.0", "b/y": "apache-2.0"}}
+    registry = _registry({"old.json": nested}, **{"a/x": READ, "b/y": READ})
     assert ml.findings(registry, {"new.json": nested}, None) == ["model_not_in_registry:new.json:c/z"]
     assert ml.findings(registry, {"old.json": nested}, None) == []
 
 
 def test_a_license_the_evidence_records_must_agree_with_the_registry():
-    registry = _registry(["a.json", "d.json"], **{"qwen3.5:9b": READ})
     agrees = {"engine": {"model": "qwen3.5:9b", "license": "Apache-2.0"}}
     disagrees = {"engine": {"model": "qwen3.5:9b", "license": "llama3.1"}}
+    registry = _registry({"a.json": agrees, "d.json": disagrees}, **{"qwen3.5:9b": READ})
     assert ml.findings(registry, {"a.json": agrees}, None) == []
     assert ml.findings(registry, {"d.json": disagrees}, None) == ["recorded_license_disagrees:d.json:qwen3.5:9b"]
 
@@ -211,9 +225,9 @@ def test_a_weight_under_a_notice_license_carries_its_notice(change, found):
 
 def test_a_weight_whose_digest_its_model_evidence_recorded_passes():
     assert ml.weight_findings(_weights(WEIGHT), OCR_EVIDENCE) == []
-    assert ml.findings(_registry(["ocr.json", "other.json", "tess.json"], **_measured(_weights(WEIGHT))), OCR_EVIDENCE, None) == []
+    assert ml.findings(_registry(OCR_EVIDENCE, **_measured(_weights(WEIGHT))), OCR_EVIDENCE, None) == []
     changed = _measured(_weights({**WEIGHT, "sha256": "c" * 64}))
-    assert ml.findings(_registry(["ocr.json", "other.json", "tess.json"], **changed), OCR_EVIDENCE, None) == [
+    assert ml.findings(_registry(OCR_EVIDENCE, **changed), OCR_EVIDENCE, None) == [
         "weight_digest_not_in_evidence:ocr:w.pth", "weight_provenance_not_in_evidence:ocr:w.pth"]
 
 
@@ -302,7 +316,7 @@ def test_new_evidence_names_every_weight_it_records_in_the_registry():
     assert ml.weight_findings(_weights(WEIGHT), new) == [], "الدليلُ التاريخيّ لا يُطالَب"
     trained = {**WEIGHT, "file": "ara.traineddata", "sha256": TRAINED}
     assert ml.weight_findings(_weights(WEIGHT, trained), new, frozenset({"new.json"})) == expected[:1]
-    registry = _registry(["ocr.json", "other.json", "tess.json"], **_measured(_weights(WEIGHT)))
+    registry = _registry(OCR_EVIDENCE, **_measured(_weights(WEIGHT)))
     assert ml.findings(registry, {**OCR_EVIDENCE, **new}, None) == [
         "license_not_stated_in_new_evidence:new.json:ocr", *sorted(expected)]
 
@@ -345,6 +359,13 @@ def test_a_weight_file_is_any_file_not_known_to_be_data(file, weight):
     pytest.param({"model": "a/model"}, [], id="model_without_registered_weights"),
     pytest.param({"models": [{"name": "ocr", "models_sha256": {"w.pth": DIGEST}}, {"name": "a/model"}]}, [],
                  id="digest_under_a_models_list"),
+    # بصمةُ ملفّ بياناتٍ بجانب مساره (`bank` في دليل المحلّل) ليست وزنًا، وبصمةٌ بجانب مسار وزنٍ وزن (ملاحظة Codex على #307)
+    pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST},
+                  "bank": {"path": "evaluation/suites/analyst_v1.json", "file_sha256": OTHER_DIGEST}}, [],
+                 id="data_file_digest_beside_its_path"),
+    pytest.param({"model": "ocr", "models_sha256": {"w.pth": DIGEST},
+                  "artifact": {"path": "models/extra.pth", "file_sha256": OTHER_DIGEST}},
+                 ["weight_not_registered:new.json:ocr:file"], id="digest_beside_a_weight_path"),
 ])
 def test_new_evidence_naming_a_model_with_registered_weights_records_their_digests(payload, found):
     """ملاحظة Codex على #307: دليلٌ جديد يسمّي نموذجًا مقيَّدَ الأوزان بلا بصماتها يُسمّى، فلا تمرّ بايتاتٌ مستبدَلةٌ اتّكالًا
@@ -610,17 +631,20 @@ def test_a_malformed_weights_list_is_named(weights):
 
 
 def test_a_malformed_registry_is_refused_by_name():
-    assert ml.findings({"models": {}, "historical_evidence": []}, {}, None) == ["registry_malformed"]
-    assert ml.findings({"enforced_from": "2026-10-06", "models": [], "historical_evidence": []}, {}, None) == [
+    assert ml.findings({"models": {}, "historical_evidence": {}}, {}, None) == ["registry_malformed"]
+    assert ml.findings({"enforced_from": "2026-10-06", "models": [], "historical_evidence": {}}, {}, None) == [
         "registry_malformed"]
     assert ml.findings({"enforced_from": "2026-10-06", "models": {}}, {}, None) == ["registry_malformed"]
-    assert ml.findings({"enforced_from": "2026-10-06", "models": {}, "historical_evidence": [1]}, {}, None) == [
+    # الأدلّةُ التاريخيّة أسماءٌ ببصمات محتواها، لا أسماءٌ وحدها (ملاحظة Codex على #307)
+    assert ml.findings({"enforced_from": "2026-10-06", "models": {}, "historical_evidence": ["old.json"]}, {}, None) == [
+        "registry_malformed"]
+    assert ml.findings({"enforced_from": "2026-10-06", "models": {}, "historical_evidence": {"old.json": "x"}}, {}, None) == [
         "registry_malformed"]
 
 
 def test_the_cli_fails_on_a_finding_and_names_it(tmp_path, capsys):
     registry = tmp_path / "r.json"
-    registry.write_text(json.dumps(_registry(["x.json"], **{"qwen3.5:9b": PENDING})), encoding="utf-8")
+    registry.write_text(json.dumps(_registry({"x.json": {"model": "qwen3.5:9b"}}, **{"qwen3.5:9b": PENDING})), encoding="utf-8")
     probe = tmp_path / "probe"
     probe.mkdir()
     (probe / "x.json").write_text(json.dumps({"model": "gemma4:latest"}), encoding="utf-8")

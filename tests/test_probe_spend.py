@@ -16,8 +16,10 @@ LOCAL = {"cloud_calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "cost_usd
 CLOUD = {"cloud_calls": 3, "prompt_tokens": 900, "completion_tokens": 40, "cost_usd": 0, "cost_basis": "subscription_flat"}
 
 
-def _registry(historical=()) -> dict:
-    return {"enforced_from": "2026-10-06", "historical_evidence": list(historical), "models": {}}
+def _registry(historical=None) -> dict:
+    """الأدلّةُ التاريخيّة بأسمائها ومحتواها، مجمَّدةً ببصمة المحتوى كما في السجلّ (ملاحظة Codex على #307)."""
+    frozen = {name: ml.evidence_digest(payload) for name, payload in (historical or {}).items()}
+    return {"enforced_from": "2026-10-06", "historical_evidence": frozen, "models": {}}
 
 
 def test_the_published_evidence_passes():
@@ -32,10 +34,12 @@ def test_new_model_evidence_without_a_spend_block_is_named():
 
 def test_historical_and_model_free_evidence_need_no_spend_block():
     old = {"date": "2026-09-30", "model": "qwen3.5:9b"}
-    assert ps.findings(_registry(["old.json"]), {"old.json": old}) == []
+    assert ps.findings(_registry({"old.json": old}), {"old.json": old}) == []
+    # وما عُدِّل منه بعد التجميد جديد (ملاحظة Codex على #307)
+    assert ps.findings(_registry({"old.json": old}), {"old.json": {**old, "note": "عُدِّل"}}) == ["spend_missing:old.json"]
     assert ps.findings(_registry(), {"n.json": {"date": "2026-10-06", "summary": "بلا نموذج"}}) == []
     dated = {"date": "2026-10-06", "model": "qwen3.5:9b"}
-    assert ps.findings(_registry(["old.json"]), {"old.json": dated}) == ["spend_missing:old.json"]
+    assert ps.findings(_registry({"old.json": dated}), {"old.json": dated}) == ["spend_missing:old.json"]
 
 
 @pytest.mark.parametrize("spend", [pytest.param(LOCAL, id="local"), pytest.param(CLOUD, id="subscription"),
@@ -91,7 +95,8 @@ def test_the_spend_block_is_not_private_operational_metadata():
 
 def test_a_malformed_registry_is_refused_by_name():
     assert ps.findings({"enforced_from": "2026-10-06"}, {}) == ["registry_malformed"]
-    assert ps.findings({"historical_evidence": []}, {}) == ["registry_malformed"]
+    assert ps.findings({"historical_evidence": {}}, {}) == ["registry_malformed"]
+    assert ps.findings({"enforced_from": "2026-10-06", "historical_evidence": ["old.json"]}, {}) == ["registry_malformed"]
 
 
 def test_the_cli_fails_on_a_finding(tmp_path, capsys):

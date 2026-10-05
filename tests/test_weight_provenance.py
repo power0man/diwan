@@ -107,7 +107,7 @@ def test_a_weight_measured_at_its_origin_is_recorded_and_the_evidence_passes_bot
                       "license": WEIGHT["license"], "read_on": "2026-10-05", "license_text_sha256": _sha(LICENSE_BYTES),
                       "attribution": WEIGHT["attribution"]}
     assert evidence["models"]["ocr"]["models_sha256"] == {"w.pth": WEIGHT["sha256"]}
-    registry = {"enforced_from": "2026-10-05", "historical_evidence": [], "models": models}
+    registry = {"enforced_from": "2026-10-05", "historical_evidence": {}, "models": models}
     assert ml.findings(registry, {"p.json": evidence}, None) == []
     assert probe_spend.spend_findings("p.json", evidence["spend"]) == []
     assert ml.provenance_findings(_models(origin="https://evil.invalid/w.zip"), {"p.json": evidence}) == [
@@ -123,7 +123,7 @@ def test_an_attribution_read_in_the_license_text_is_recorded_and_bound():
     models = _measured(attribution="Copyright (c) 2019 Example")
     evidence, problems = wp.measure(models, "2026-10-05", {**SERVED, MODEL_LICENSE: APACHE}.__getitem__)
     assert problems == [] and evidence["models"]["ocr"]["weight_provenance"][0]["attribution"] == "Copyright (c) 2019 Example"
-    registry = {"enforced_from": "2026-10-05", "historical_evidence": [], "models": models}
+    registry = {"enforced_from": "2026-10-05", "historical_evidence": {}, "models": models}
     assert ml.findings(registry, {"p.json": evidence}, None) == []
     moved = {**registry, "models": _measured(attribution="Copyright (c) Other")}
     assert ml.findings(moved, {"p.json": evidence}, None) == ["weight_provenance_not_in_evidence:ocr:w.pth"]
@@ -235,7 +235,7 @@ def test_the_models_license_text_is_read_from_its_source_and_recorded(served, li
         None if found else {"source": MODEL_LICENSE, "license_text_sha256": _sha(APACHE), "license": "apache-2.0",
                             "read_on": "2026-10-05"})
     if not found:
-        registry = {"enforced_from": "2026-10-05", "historical_evidence": [], "models": models}
+        registry = {"enforced_from": "2026-10-05", "historical_evidence": {}, "models": models}
         assert ml.findings(registry, {"p.json": evidence}, None) == []
 
 
