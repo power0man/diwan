@@ -18,9 +18,11 @@ MODELS = {
 LOCAL = {"cloud_calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "cost_usd": 0, "cost_basis": "local_no_charge"}
 
 
-def _row(provider, model, *, cloud=True, sent=True, usage=(10, 5), cost=None, status="not_reported", kind=None):
+def _row(provider, model, *, cloud=True, sent=True, usage=(10, 5), cost=None, status="not_reported", kind=None,
+         proof=None):
     row = {"provider": provider, "model": model, "request_sent": sent, "cost_usd": cost, "cost_status": status,
-           "usage": None if usage is None else {"prompt_tokens": usage[0], "completion_tokens": usage[1]}}
+           "usage": None if usage is None else {"prompt_tokens": usage[0], "completion_tokens": usage[1]},
+           "zero_spend_proof": proof}
     if provider == "ollama":
         row["cloud"] = cloud
     if kind:
@@ -78,7 +80,8 @@ def test_a_given_or_written_spend_is_checked_not_trusted():
                   _row("ollama", "deepseek-v4.1-flash:cloud", sent=False)],
                  {"cloud_calls": 1, "prompt_tokens": 10, "completion_tokens": 5, "cost_usd": 0,
                   "cost_basis": "subscription_flat"}, id="ollama_subscription"),
-    pytest.param([_row("openrouter", "m:free", cost="0", status="reported"), _row("openrouter", None, kind="catalog")],
+    pytest.param([_row("openrouter", "m:free", cost="0", status="reported", proof="catalog_free_suffix_and_all_pricing_zero"),
+                  _row("openrouter", None, kind="catalog")],
                  {"cloud_calls": 1, "prompt_tokens": 10, "completion_tokens": 5, "cost_usd": 0,
                   "cost_basis": "free_tier"}, id="free_backend"),
     pytest.param([_row("hf-router", "a/b", cost="0.0002", status="estimated_from_prices"),
@@ -115,7 +118,7 @@ def test_the_cli_stamps_in_place_and_check_writes_nothing(tmp_path, capsys):
     ok, held = tmp_path / "ok.json", tmp_path / "held.json"
     ok.write_text(json.dumps({"model": "qwen3.5:9b"}), encoding="utf-8")
     held.write_text(json.dumps({"model": "gemma3:12b"}), encoding="utf-8")
-    assert se.main(["--check", "--registry", str(registry), str(ok)]) == 0
+    assert se.main(["--check", "--registry", str(registry), str(ok)]) == 1
     assert json.loads(ok.read_text(encoding="utf-8")) == {"model": "qwen3.5:9b"}, "--check لا يكتب"
     capsys.readouterr()
     assert se.main(["--registry", str(registry), str(ok), str(held)]) == 1
@@ -123,6 +126,8 @@ def test_the_cli_stamps_in_place_and_check_writes_nothing(tmp_path, capsys):
     assert report["findings"] == {str(ok): [], str(held): ["license_pending:gemma3:12b"]}
     assert json.loads(ok.read_text(encoding="utf-8"))["spend"] == LOCAL
     assert list(tmp_path.glob(".*.tmp")) == []
+    capsys.readouterr()
+    assert se.main(["--check", "--registry", str(registry), str(ok)]) == 0, "الملفُّ المختوم يمرّ الفحص"
 
 
 def test_a_review_with_its_call_ledger_is_stamped_from_the_ledger():
@@ -133,3 +138,27 @@ def test_a_review_with_its_call_ledger_is_stamped_from_the_ledger():
     assert stamped["licenses"] == {"deepseek-v4.1-flash:cloud": "mit"}
     assert stamped["spend"] == {"cloud_calls": 1, "prompt_tokens": 120, "completion_tokens": 40, "cost_usd": 0,
                                 "cost_basis": "subscription_flat"}
+
+
+@pytest.mark.parametrize("rows, code", [
+    pytest.param([_row("ollama", "x:cloud", usage=None)], "spend_usage_incomplete", id="usage_missing"),
+    pytest.param([{**_row("hf-router", "a/b", cost="0.1", status="reported"), "usage": {"prompt_tokens": 3}}],
+                 "spend_usage_incomplete", id="one_counter_missing"),
+])
+def test_a_sent_call_without_its_token_counts_is_not_stamped_as_zero(rows, code):
+    assert se.spend_from_usage(rows) == (None, [code])
+
+
+def test_a_free_backend_without_a_zero_spend_proof_is_unpriced_not_free():
+    derived, problems = se.spend_from_usage([_row("openrouter", "m:free")])
+    assert problems == [] and derived["cost_basis"] == "unpriced" and derived["cost_usd"] is None
+
+
+def test_check_mode_fails_a_file_that_still_needs_its_stamp(tmp_path, capsys):
+    registry = tmp_path / "registry.json"
+    registry.write_text(json.dumps({"models": MODELS}), encoding="utf-8")
+    bare = tmp_path / "bare.json"
+    bare.write_text(json.dumps({"model": "qwen3.5:9b"}), encoding="utf-8")
+    assert se.main(["--check", "--registry", str(registry), str(bare)]) == 1
+    assert json.loads(capsys.readouterr().out)["findings"] == {str(bare): ["stamp_required"]}
+    assert json.loads(bare.read_text(encoding="utf-8")) == {"model": "qwen3.5:9b"}

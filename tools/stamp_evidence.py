@@ -69,8 +69,12 @@ def spend_from_usage(rows: list) -> tuple[dict | None, list[str]]:
     """كتلةُ الإنفاق من سجلّ النداءات: ما أُرسل إلى السحابة وحده. وأساسُ الكلفة من الواجهة لا من التخمين."""
     sent = [row for row in rows if isinstance(row, dict) and row.get("kind") != "catalog" and row.get("request_sent")]
     cloud = [row for row in sent if row.get("provider") != "ollama" or row.get("cloud")]
-    totals = {key: sum(int((row.get("usage") or {}).get(key) or 0) for row in cloud)
-              for key in ("prompt_tokens", "completion_tokens")}
+    # عدّادٌ غائبٌ في نداءٍ أُرسل مجهولٌ لا صفر: لا تُكتب كتلةٌ تعدّه صفرًا (ملاحظة Codex على #310)
+    if any(not isinstance(row.get("usage"), dict)
+           or any(type(row["usage"].get(key)) is not int for key in ("prompt_tokens", "completion_tokens"))
+           for row in cloud):
+        return None, ["spend_usage_incomplete"]
+    totals = {key: sum(row["usage"][key] for row in cloud) for key in ("prompt_tokens", "completion_tokens")}
     providers = {row.get("provider") for row in cloud}
     costs = [_cost(row) for row in cloud]
     if not cloud:
@@ -79,7 +83,9 @@ def spend_from_usage(rows: list) -> tuple[dict | None, list[str]]:
         return None, ["spend_mixed_providers"]
     elif providers == {"ollama"}:
         basis, cost = "subscription_flat", 0
-    elif providers <= FREE_BACKENDS and all(value in (None, 0) for value in costs):
+    elif providers <= FREE_BACKENDS and all(row.get("zero_spend_proof") for row in cloud) \
+            and all(value in (None, 0) for value in costs):
+        # المجانيةُ بدليلها لكل نداء (`zero_spend_proof` في سجلّ النداءات)، لا بغياب الكلفة (ملاحظة Codex على #310)
         basis, cost = "free_tier", 0
     elif any(value is None for value in costs):
         basis, cost = "unpriced", None
@@ -140,7 +146,9 @@ def main(argv: list[str] | None = None) -> int:
     for path in args.files:
         payload = json.loads(path.read_text(encoding="utf-8"))
         stamped, problems = stamp(payload, models, args.spend) if isinstance(payload, dict) else (payload, [])
-        if not args.check and stamped != payload:
+        if args.check and stamped != payload:
+            problems = sorted(problems + ["stamp_required"])     # ملفٌّ ينقصه ختمٌ لا يمرّ الفحص (ملاحظة Codex على #310)
+        elif stamped != payload:
             _write_atomic(path, stamped)
         report[str(path)] = problems
         failed = failed or bool(problems)
