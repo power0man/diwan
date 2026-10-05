@@ -158,8 +158,8 @@ def test_the_license_class_is_read_from_its_name_alone(name, kind):
 
 
 DIGEST, OTHER_DIGEST, SIBLING, TRAINED, PTH_KIND = "a" * 64, "b" * 64, "d" * 64, "e" * 64, "f" * 64
-LICENSE_TEXT, OTHER_TEXT = "9" * 64, "8" * 64
-WEIGHT = {"file": "w.pth", "sha256": DIGEST, "origin": "https://example.org/w.zip", "license": "mit",
+LICENSE_TEXT, OTHER_TEXT, ARCHIVE = "9" * 64, "8" * 64, "7" * 64
+WEIGHT = {"file": "w.pth", "sha256": DIGEST, "origin": "https://example.org/w.zip", "origin_sha256": ARCHIVE, "license": "mit",
           "license_source": "https://example.org/LICENSE", "read_on": "2026-10-05", "license_text_sha256": LICENSE_TEXT,
           "attribution": "Copyright (c) Up"}
 PROVENANCE = {**{field: WEIGHT[field] for field in ml.PROVENANCE_FIELDS}, "license_text_sha256": LICENSE_TEXT,
@@ -225,6 +225,8 @@ def test_a_weight_whose_digest_its_model_evidence_recorded_passes():
     pytest.param({"sha256": PTH_KIND}, "weight_digest_not_in_evidence:ocr:w.pth", id="kind_digest_for_a_named_file"),
     pytest.param({"sha256": DIGEST.upper()}, "weight_field_malformed:ocr:w.pth:sha256", id="digest_malformed"),
     pytest.param({"license_text_sha256": "x"}, "weight_field_malformed:ocr:w.pth:license_text_sha256", id="text_digest_malformed"),
+    pytest.param({"origin_sha256": "x"}, "weight_field_malformed:ocr:w.pth:origin_sha256", id="origin_digest_malformed"),
+    pytest.param({"origin_sha256": None}, "weight_field_missing:ocr:w.pth:origin_sha256", id="origin_digest_omitted"),
     pytest.param({"sha256": ""}, "weight_field_missing:ocr:w.pth:sha256", id="digest_omitted"),
     pytest.param({"origin": None}, "weight_field_missing:ocr:w.pth:origin", id="origin_omitted"),
     pytest.param({"origin": "http://example.org/w.zip"}, "weight_source_not_https:ocr:w.pth:origin", id="origin_http"),
@@ -356,6 +358,10 @@ def test_new_evidence_naming_a_model_with_registered_weights_records_their_diges
     pytest.param({}, OCR_EVIDENCE, [], id="recorded_passes"),
     pytest.param({"origin": "https://evil.invalid/unrelated.bin"}, OCR_EVIDENCE,
                  ["weight_provenance_not_in_evidence:ocr:w.pth"], id="origin_replaced"),
+    pytest.param({"origin_sha256": "0" * 64}, OCR_EVIDENCE, ["weight_provenance_not_in_evidence:ocr:w.pth"],
+                 id="origin_digest_replaced"),
+    pytest.param({}, {"p.json": {"model": "ocr", "weight_provenance": [{**PROVENANCE, "origin_sha256": "0" * 64}]}},
+                 ["weight_provenance_not_in_evidence:ocr:w.pth"], id="record_of_another_archive"),
     pytest.param({"license_source": "https://evil.invalid/LICENSE"}, OCR_EVIDENCE,
                  ["weight_provenance_not_in_evidence:ocr:w.pth"], id="license_source_replaced"),
     pytest.param({"license": "proprietary"}, OCR_EVIDENCE, ["weight_provenance_not_in_evidence:ocr:w.pth"],
@@ -518,6 +524,11 @@ SECRET = {**PROVENANCE, "file": "secret.pth"}
                  id="record_without_its_license"),
     pytest.param([{**SECRET, "origin": None}], ["weight_provenance_malformed:new.json:asr:secret.pth"],
                  id="record_with_a_null_origin"),
+    pytest.param([{**SECRET, "origin_sha256": None}], ["weight_provenance_malformed:new.json:asr:secret.pth"],
+                 id="record_with_a_null_origin_digest"),
+    pytest.param([{**SECRET, "origin_sha256": "0"}],
+                 ["weight_not_registered:new.json:asr:secret.pth", "weight_digest_malformed:new.json:asr:secret.pth"],
+                 id="record_with_a_malformed_origin_digest"),
     pytest.param(["secret.pth"], ["weight_provenance_malformed:new.json:asr:#0"], id="record_not_an_object"),
     pytest.param([{**SECRET, "sha256": "abc"}], ["weight_digest_malformed:new.json:asr:secret.pth"],
                  id="record_with_a_malformed_digest"),

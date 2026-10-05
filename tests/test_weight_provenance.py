@@ -49,11 +49,15 @@ def _zip(*members: tuple[str, bytes]) -> bytes:
     return buffer.getvalue()
 
 
-WEIGHT = {"file": "w.pth", "sha256": _sha(WEIGHT_BYTES), "origin": "https://example.org/w.zip", "license": "mit",
-          "license_source": "https://github.com/up/r/blob/c0ffee/LICENSE", "read_on": "2026-10-05",
+ARCHIVE = _zip(("w.pth", WEIGHT_BYTES), ("readme.txt", b"x"))
+WEIGHT = {"file": "w.pth", "sha256": _sha(WEIGHT_BYTES), "origin": "https://example.org/w.zip", "origin_sha256": _sha(ARCHIVE),
+          "license": "mit", "license_source": "https://github.com/up/r/blob/c0ffee/LICENSE", "read_on": "2026-10-05",
           "license_text_sha256": _sha(LICENSE_BYTES), "attribution": "Copyright (c) 2019 Example"}
-SERVED = {"https://example.org/w.zip": _zip(("w.pth", WEIGHT_BYTES), ("readme.txt", b"x")),
-          "https://github.com/up/r/blob/c0ffee/LICENSE": LICENSE_BYTES}
+SERVED = {"https://example.org/w.zip": ARCHIVE, "https://github.com/up/r/blob/c0ffee/LICENSE": LICENSE_BYTES}
+OTHER_BYTES, MEMBER_MISSING = _zip(("w.pth", b"other")), _zip(("v.pth", WEIGHT_BYTES))
+MEMBER_AMBIGUOUS = _zip(("a/w.pth", WEIGHT_BYTES), ("b/w.pth", WEIGHT_BYTES))
+# الوزنُ نفسُه في أرشيفٍ آخر: عضوُه مطابق، والأرشيفُ المقيَّد غيرُه (ملاحظة Codex على #307)
+REPACKED = _zip(("w.pth", WEIGHT_BYTES), ("readme.txt", b"changed"))
 
 
 def _models(**change) -> dict:
@@ -84,6 +88,9 @@ def test_a_weight_measured_at_its_origin_is_recorded_and_the_evidence_passes_bot
     assert probe_spend.spend_findings("p.json", evidence["spend"]) == []
     assert ml.provenance_findings(_models(origin="https://evil.invalid/w.zip"), {"p.json": evidence}) == [
         "weight_provenance_not_in_evidence:ocr:w.pth"]
+    # بصمةُ الأرشيف المعلنة في السجلّ مربوطةٌ بما قيس، فلا يمرّ أصفارٌ مكانها (ملاحظة Codex على #307)
+    assert ml.provenance_findings(_models(origin_sha256="0" * 64), {"p.json": evidence}) == [
+        "weight_provenance_not_in_evidence:ocr:w.pth"]
 
 
 def test_an_attribution_read_in_the_license_text_is_recorded_and_bound():
@@ -100,17 +107,21 @@ def test_an_attribution_read_in_the_license_text_is_recorded_and_bound():
 
 def test_a_weight_served_raw_is_hashed_as_it_is():
     served = {"https://example.org/w.pth": WEIGHT_BYTES, **SERVED}
-    evidence, problems = wp.measure(_models(origin="https://example.org/w.pth"), "2026-10-05", served.__getitem__)
+    evidence, problems = wp.measure(_models(origin="https://example.org/w.pth", origin_sha256=WEIGHT["sha256"]), "2026-10-05",
+                                    served.__getitem__)
     assert problems == [] and evidence["models"]["ocr"]["weight_provenance"][0]["origin_sha256"] == WEIGHT["sha256"]
 
 
 @pytest.mark.parametrize("served, change, found", [
-    pytest.param({"https://example.org/w.zip": _zip(("w.pth", b"other"))}, {}, "weight_digest_differs_at_origin",
-                 id="other_bytes_at_origin"),
-    pytest.param({"https://example.org/w.zip": _zip(("v.pth", WEIGHT_BYTES))}, {}, "weight_not_in_origin",
+    pytest.param({"https://example.org/w.zip": OTHER_BYTES}, {"origin_sha256": _sha(OTHER_BYTES)},
+                 "weight_digest_differs_at_origin", id="other_bytes_at_origin"),
+    pytest.param({"https://example.org/w.zip": MEMBER_MISSING}, {"origin_sha256": _sha(MEMBER_MISSING)}, "weight_not_in_origin",
                  id="member_missing"),
-    pytest.param({"https://example.org/w.zip": _zip(("a/w.pth", WEIGHT_BYTES), ("b/w.pth", WEIGHT_BYTES))}, {},
+    pytest.param({"https://example.org/w.zip": MEMBER_AMBIGUOUS}, {"origin_sha256": _sha(MEMBER_AMBIGUOUS)},
                  "weight_not_in_origin", id="member_ambiguous"),
+    pytest.param({"https://example.org/w.zip": REPACKED}, {}, "origin_digest_differs_at_origin", id="archive_repacked"),
+    pytest.param({"https://example.org/w.zip": OTHER_BYTES}, {}, "origin_digest_differs_at_origin",
+                 id="archive_of_other_bytes"),
     pytest.param({}, {"license_text_sha256": "0" * 64}, "license_text_differs_at_source", id="license_text_changed"),
     pytest.param({}, {"license": "proprietary"}, "license_not_the_text", id="license_relabelled"),
     pytest.param({}, {"read_on": "2026-10-04"}, "read_on_not_the_measurement_day", id="read_on_not_the_day"),
@@ -187,7 +198,7 @@ def test_the_cli_writes_nothing_when_the_origin_differs(tmp_path, monkeypatch, c
     monkeypatch.setattr(wp, "fetch", {**SERVED, "https://example.org/w.zip": _zip(("w.pth", b"x"))}.__getitem__)
     assert wp.main(["--write", "--day", "2026-10-05"]) == 1
     assert not (tmp_path / "weight-provenance-20261005.json").exists()
-    assert json.loads(capsys.readouterr().out)["findings"] == ["weight_digest_differs_at_origin:ocr:w.pth"]
+    assert json.loads(capsys.readouterr().out)["findings"] == ["origin_digest_differs_at_origin:ocr:w.pth"]
     monkeypatch.setattr(wp, "fetch", SERVED.__getitem__)
     assert wp.main(["--write", "--day", "2026-10-05"]) == 0
     assert json.loads((tmp_path / "weight-provenance-20261005.json").read_text(encoding="utf-8"))["date"] == "2026-10-05"

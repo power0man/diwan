@@ -32,7 +32,7 @@ from tools import model_licenses as ml  # noqa: E402
 BLOB = re.compile(r"^https://github\.com/(?P<repo>[^/]+/[^/]+)/blob/(?P<path>.+)$")
 LIMITS = [
     "the_bytes_were_downloaded_from_the_registered_origin_on_the_recorded_day_and_a_later_change_at_that_url_is_not_seen",
-    "an_archive_origin_is_bound_by_the_member_whose_name_is_the_weight_file_not_by_the_archive_bytes_alone",
+    "an_archive_origin_is_bound_by_its_registered_digest_and_by_the_member_whose_name_is_the_weight_file",
     "the_license_text_is_hashed_as_served_and_its_identifier_is_named_from_that_text_not_copied_from_the_registry",
     "only_apache_2_0_and_mit_are_named_by_their_spdx_body_digest_and_any_other_license_text_cannot_be_measured_until_added",
     "an_mit_preamble_may_hold_its_title_and_copyright_lines_whose_holder_text_is_not_read",
@@ -142,6 +142,10 @@ def measure(models: dict, day: str, read: Callable[[str], bytes] = fetch) -> tup
                 problems.append(f"read_on_not_the_measurement_day:{label}")
                 continue
             origin = read(weight["origin"])
+            # الأصلُ المنزَّل كلُّه هو المقيَّد في السجلّ، لا عضوُه وحده؛ فبصمتُه المنشورة مقيسةٌ مطابِقة (ملاحظة Codex على #307)
+            if weight.get("origin_sha256") not in (None, _sha(origin)):
+                problems.append(f"origin_digest_differs_at_origin:{label}")
+                continue
             measured = weight_bytes(origin, weight["file"])
             if measured is None:
                 problems.append(f"weight_not_in_origin:{label}")

@@ -46,12 +46,14 @@ PENDING_REASONS = frozenset({
 HTTPS_SOURCE = re.compile(r"^https://[^\s]+$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 # وبصمةُ نصّ رخصة الوزن لازمةٌ لكلّ وزن، فلا يُقبل نصٌّ آخر في مصدر رخصته بلا أن يُرى (ملاحظة Codex على #307)
-WEIGHT_FIELDS = ("file", "sha256", "origin", "license", "license_source", "read_on", "license_text_sha256")
+# وبصمةُ الأصل المنزَّل كلِّه (الأرشيف أو الملفّ) مقيَّدةٌ كذلك، فلا يعلن الدليلُ للأصل بصمةً لا يقابلها شيء (ملاحظة Codex على #307)
+WEIGHT_FIELDS = ("file", "sha256", "origin", "origin_sha256", "license", "license_source", "read_on", "license_text_sha256")
+WEIGHT_DIGESTS = ("sha256", "origin_sha256", "license_text_sha256")
 # سجلُّ المصدر في الدليل: ما نزّلته `tools/weight_provenance.py` من الأصل المعلن فطابقت بصمتُه (ملاحظة Codex على #307)
 PROVENANCE_KEY = "weight_provenance"
 # والرخصةُ المعلنة وتاريخُ قراءتها جزءٌ من الربط، فلا يتغيّر وسمُها ولا تاريخُها في السجلّ دون دليلٍ جديد يقيس نصَّها
 # في ذلك اليوم (ملاحظتا Codex على #307)
-PROVENANCE_FIELDS = ("file", "sha256", "origin", "license_source", "license", "read_on")
+PROVENANCE_FIELDS = ("file", "sha256", "origin", "origin_sha256", "license_source", "license", "read_on")
 # ونصُّ رخصة النموذج كما قيس من مصدره، فلا تُقيَّد بصمةُ نصٍّ لم يُقرأ (ملاحظة Codex على #307)
 LICENSE_PROVENANCE_KEY = "license_provenance"
 LICENSE_PROVENANCE_FIELDS = ("source", "license_text_sha256", "license", "read_on")
@@ -299,6 +301,9 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
                                 out.setdefault(owner, ({}, {}))[0].setdefault(item["file"], set()).add(item["sha256"])
                         if not SHA256.match(item["sha256"]):
                             flag(owners, "weight_digest_malformed", item["file"])
+                        if not SHA256.match(item["origin_sha256"]):
+                            # بصمةُ الأصل المنزَّل في سجلّ المصدر بصمةٌ لا نصٌّ يُكتب (ملاحظة Codex على #307)
+                            flag(owners, "weight_digest_malformed", item["file"])
                         text = item.get("license_text_sha256")
                         if text is not None and not (isinstance(text, str) and SHA256.match(text)):
                             # بصمةُ نصّ الرخصة في سجلّ المصدر بصمةٌ لا نصٌّ يُكتب (ملاحظة Codex على #307)
@@ -460,7 +465,7 @@ def weight_findings(models: dict, evidence: dict[str, object], new_files: frozen
             missing = [field for field in WEIGHT_FIELDS if not isinstance(weight.get(field), str) or not weight[field]]
             problems += [f"weight_field_missing:{label}:{field}" for field in missing]
             # بصمةُ الوزن وبصمةُ نصّ رخصته بصمتان لا نصّان يُكتبان، فلا يطابق `"x"` في السجلّ `"x"` في الدليل (ملاحظة Codex على #307)
-            malformed_digests = [field for field in ("sha256", "license_text_sha256")
+            malformed_digests = [field for field in WEIGHT_DIGESTS
                                  if field not in missing and not SHA256.match(weight[field])]
             problems += [f"weight_field_malformed:{label}:{field}" for field in malformed_digests]
             if weight.get("license") in NOTICE_LICENSES \
