@@ -15,6 +15,9 @@ MODELS = {
     "deepseek-ai/DeepSeek-V3-0324": {"license": "mit", "source": "https://huggingface.co/x", "read_on": "2026-10-05"},
     "gemma3:12b": {"pending": "read_with_ollama_show_license_on_the_mac"},
 }
+FREE = "catalog_free_suffix_and_all_pricing_zero"
+EVIDENCE = {"m:free": {"proof": FREE, "catalog": "https://openrouter.ai/api/v1/models",
+                       "observed_at": "2026-10-05T07:00:00Z", "pricing": {"completion": "0", "prompt": "0", "request": "0"}}}
 LOCAL = {"cloud_calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "cost_usd": 0, "cost_basis": "local_no_charge"}
 
 
@@ -80,10 +83,6 @@ def test_a_given_or_written_spend_is_checked_not_trusted():
                   _row("ollama", "deepseek-v4.1-flash:cloud", sent=False)],
                  {"cloud_calls": 1, "prompt_tokens": 10, "completion_tokens": 5, "cost_usd": 0,
                   "cost_basis": "subscription_flat"}, id="ollama_subscription"),
-    pytest.param([_row("openrouter", "m:free", cost="0", status="reported", proof="catalog_free_suffix_and_all_pricing_zero"),
-                  _row("openrouter", None, kind="catalog")],
-                 {"cloud_calls": 1, "prompt_tokens": 10, "completion_tokens": 5, "cost_usd": 0,
-                  "cost_basis": "free_tier"}, id="free_backend"),
     pytest.param([_row("hf-router", "a/b", cost="0.0002", status="estimated_from_prices"),
                   _row("hf-router", "a/b", cost="0.0004", status="reserved_upper_bound")],
                  {"cloud_calls": 2, "prompt_tokens": 20, "completion_tokens": 10, "cost_usd": 0.0006,
@@ -100,6 +99,46 @@ def test_spend_is_derived_from_the_call_ledger(rows, spend):
     derived, problems = se.spend_from_usage(rows)
     assert problems == [] and derived == spend
     assert probe_spend.spend_findings("f", derived) == []
+
+
+def test_a_free_call_is_stamped_free_on_its_saved_catalog_evidence():
+    rows = [_row("openrouter", "m:free", cost="0", status="reported", proof=FREE), _row("openrouter", None, kind="catalog")]
+    derived, problems = se.spend_from_usage(rows, EVIDENCE)
+    assert problems == [] and derived == {"cloud_calls": 1, "prompt_tokens": 10, "completion_tokens": 5, "cost_usd": 0,
+                                          "cost_basis": "free_tier"}
+    assert probe_spend.spend_findings("f", derived) == []
+    groq = [_row("groq", "llama", proof=se.GROQ_PROOF)]
+    assert se.spend_from_usage(groq)[0]["cost_basis"] == "free_tier"
+
+
+def _entry(**changes):
+    return {"m:free": {**EVIDENCE["m:free"], **changes}}
+
+
+@pytest.mark.parametrize("row, evidence", [
+    pytest.param(_row("openrouter", "m:free", proof=FREE), None, id="proof_without_evidence"),
+    pytest.param(_row("openrouter", "m:free", proof=FREE), {"n:free": EVIDENCE["m:free"]}, id="evidence_of_another_model"),
+    pytest.param(_row("openrouter", "m:free", proof=FREE), _entry(proof="x"), id="evidence_proof_differs"),
+    pytest.param(_row("openrouter", "m:free", proof=FREE), _entry(catalog=""), id="evidence_without_catalog"),
+    pytest.param(_row("openrouter", "m:free", proof=FREE), _entry(observed_at=None), id="evidence_without_observed_at"),
+    pytest.param(_row("openrouter", "m:free", proof=FREE), _entry(pricing={"prompt": "0.000001", "completion": "0"}),
+                 id="evidence_priced"),
+    pytest.param(_row("openrouter", "m:free", proof=FREE), _entry(pricing={"prompt": "0"}), id="evidence_one_price_missing"),
+    pytest.param(_row("openrouter", "m", proof=FREE), {"m": EVIDENCE["m:free"]}, id="not_a_free_model"),
+    pytest.param(_row("openrouter", "m:free", proof="made_up"), _entry(proof="made_up"), id="proof_not_the_validators"),
+    pytest.param(_row("github-models", "m:free", proof=FREE), EVIDENCE, id="another_provider"),
+    pytest.param(_row("groq", "llama", proof=FREE), None, id="groq_without_operator_confirmation"),
+])
+def test_a_free_claim_without_its_validated_evidence_is_unpriced(row, evidence):
+    derived, problems = se.spend_from_usage([row], evidence)
+    assert problems == [] and derived["cost_basis"] == "unpriced" and derived["cost_usd"] is None
+
+
+def test_the_stamp_reads_the_free_evidence_saved_beside_the_ledger():
+    payload = {"reviewers": ["deepseek-v4.1-flash:cloud"], "zero_spend_evidence": EVIDENCE,
+               "provider_usage": [_row("openrouter", "m:free", proof=FREE)]}
+    stamped, problems = se.stamp(payload, {**MODELS, "m:free": MODELS["deepseek-v4.1-flash:cloud"]})
+    assert problems == [] and stamped["spend"]["cost_basis"] == "free_tier"
 
 
 def test_a_ledger_of_two_providers_is_not_summed_into_one_basis():
@@ -144,8 +183,14 @@ def test_a_review_with_its_call_ledger_is_stamped_from_the_ledger():
     pytest.param([_row("ollama", "x:cloud", usage=None)], "spend_usage_incomplete", id="usage_missing"),
     pytest.param([{**_row("hf-router", "a/b", cost="0.1", status="reported"), "usage": {"prompt_tokens": 3}}],
                  "spend_usage_incomplete", id="one_counter_missing"),
+    pytest.param([_row("hf-router", "a/b", usage=(-5, 10)), _row("hf-router", "a/b", usage=(10, 1))],
+                 "spend_usage_incomplete", id="negative_counter_hidden_by_the_sum"),
+    pytest.param([_row("hf-router", "a/b", usage=(True, 1))], "spend_usage_incomplete", id="bool_counter"),
+    pytest.param([_row("hf-router", "a/b", cost="-1", status="reported")], "spend_cost_invalid", id="negative_cost"),
+    pytest.param([_row("hf-router", "a/b", cost="abc", status="reported")], "spend_cost_invalid", id="unreadable_cost"),
+    pytest.param([_row("hf-router", "a/b", cost="NaN", status="reported")], "spend_cost_invalid", id="nan_cost"),
 ])
-def test_a_sent_call_without_its_token_counts_is_not_stamped_as_zero(rows, code):
+def test_a_sent_call_without_valid_counts_or_cost_is_not_stamped(rows, code):
     assert se.spend_from_usage(rows) == (None, [code])
 
 

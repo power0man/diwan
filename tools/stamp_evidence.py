@@ -9,7 +9,7 @@
   ورخصةٌ مكتوبةٌ تخالف السجلّ تُسمّى ولا تُستبدل.
 - `spend`: كتلةٌ قائمة تُفحص ولا تُستبدل. وإلا تُشتقّ:
   - من سجلّ النداءات (`provider_usage`، كما يكتبه `tools/external_review.py`): النداءاتُ السحابيّة المرسَلة وحدها، بلا نداء
-    الفهرس ولا النداء المحليّ.
+    الفهرس ولا النداء المحليّ. والمجانيّةُ بدليلها في `zero_spend_evidence` من التقرير نفسه.
   - أو `local_no_charge` إن كانت النماذجُ كلُّها محليّة.
   - وما سواهما لا يُخمَّن: `spend_basis_required`، ويُعطى بـ`--spend`.
 
@@ -23,16 +23,17 @@ import json
 import os
 import sys
 import tempfile
-from decimal import Decimal
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core.locality import is_cloud_model  # noqa: E402
+from evaluation.multi_system_review import AutomaticReviewError  # noqa: E402
+from tools import external_review as er  # noqa: E402
 from tools import model_licenses as ml  # noqa: E402
 from tools import probe_spend  # noqa: E402
 
-FREE_BACKENDS = frozenset({"github-models", "groq", "openrouter"})
+GROQ_PROOF = "operator_confirmed_account_free_tier"
 # صيغُ معرّفٍ محليّ فيها «/»: أوزانُ Hugging Face عبر Ollama المحلي. وما سواها بشرطةٍ مائلة معرّفُ مزوّدٍ بعيد.
 LOCAL_SLASH_PREFIXES = ("hf.co/", "huggingface.co/", "ollama:")
 
@@ -60,32 +61,49 @@ def stamp_licenses(payload: dict, models: dict) -> tuple[dict, list[str]]:
     return dict(sorted(licenses.items())), problems
 
 
-def _cost(row: dict) -> Decimal | None:
-    value = row.get("cost_usd")
-    return Decimal(str(value)) if isinstance(value, (str, int, float)) and not isinstance(value, bool) else None
+def free_call_proven(row: dict, evidence: object) -> bool:
+    """مجانيّةُ النداء بدليلها المحفوظ لا بعبارته (ملاحظة Codex على #310). فلـGroq تأكيدُ المشغّل كما يكتبه
+    `tools/external_review.py`. ولـOpenRouter يلزم بندُ النموذج في `zero_spend_evidence`: بالعبارة نفسها، وبالفهرس ولحظة
+    قراءته، وببنود سعرٍ يقبلها المدقّقُ الذي أذن بالنداء نفسُه (`openrouter_zero_spend`)."""
+    proof = row.get("zero_spend_proof")
+    if row.get("provider") == "groq":
+        return proof == GROQ_PROOF
+    entry = evidence.get(row.get("model")) if isinstance(evidence, dict) else None
+    if row.get("provider") != "openrouter" or not isinstance(entry, dict) or entry.get("proof") != proof:
+        return False
+    if not all(isinstance(entry.get(key), str) and entry[key] for key in ("catalog", "observed_at")):
+        return False
+    try:
+        return er.openrouter_zero_spend({"id": row.get("model"), "pricing": entry.get("pricing")}) == proof
+    except AutomaticReviewError:
+        return False
 
 
-def spend_from_usage(rows: list) -> tuple[dict | None, list[str]]:
+def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, list[str]]:
     """كتلةُ الإنفاق من سجلّ النداءات: ما أُرسل إلى السحابة وحده. وأساسُ الكلفة من الواجهة لا من التخمين."""
     sent = [row for row in rows if isinstance(row, dict) and row.get("kind") != "catalog" and row.get("request_sent")]
     cloud = [row for row in sent if row.get("provider") != "ollama" or row.get("cloud")]
-    # عدّادٌ غائبٌ في نداءٍ أُرسل مجهولٌ لا صفر: لا تُكتب كتلةٌ تعدّه صفرًا (ملاحظة Codex على #310)
+    # عدّادٌ غائبٌ أو سالبٌ في نداءٍ أُرسل مجهولٌ لا صفر: لا تُكتب كتلةٌ تعدّه صفرًا، ولا يُخفي موجبٌ سالبًا في المجموع
+    # (ملاحظتا Codex على #310)
     if any(not isinstance(row.get("usage"), dict)
-           or any(type(row["usage"].get(key)) is not int for key in ("prompt_tokens", "completion_tokens"))
+           or not all(probe_spend._count(row["usage"].get(key)) for key in ("prompt_tokens", "completion_tokens"))
            for row in cloud):
         return None, ["spend_usage_incomplete"]
     totals = {key: sum(row["usage"][key] for row in cloud) for key in ("prompt_tokens", "completion_tokens")}
     providers = {row.get("provider") for row in cloud}
-    costs = [_cost(row) for row in cloud]
+    raw = [row.get("cost_usd") for row in cloud]
+    # كلفةٌ مكتوبةٌ لا تُقرأ عددًا عشريًّا منتهيًا غيرَ سالب تُسمّى ولا تُعدّ غائبة (ملاحظة Codex على #310)
+    costs = [None if value is None else er._decimal(value) for value in raw]
+    if any(value is not None and cost is None for value, cost in zip(raw, costs)):
+        return None, ["spend_cost_invalid"]
     if not cloud:
         basis, cost = "local_no_charge", 0
     elif len(providers) != 1:
         return None, ["spend_mixed_providers"]
     elif providers == {"ollama"}:
         basis, cost = "subscription_flat", 0
-    elif providers <= FREE_BACKENDS and all(row.get("zero_spend_proof") for row in cloud) \
-            and all(value in (None, 0) for value in costs):
-        # المجانيةُ بدليلها لكل نداء (`zero_spend_proof` في سجلّ النداءات)، لا بغياب الكلفة (ملاحظة Codex على #310)
+    elif all(free_call_proven(row, evidence) for row in cloud) and all(value in (None, 0) for value in costs):
+        # المجانيةُ بدليلها لكل نداء، لا بغياب الكلفة ولا بعبارةٍ بلا دليل (ملاحظتا Codex على #310)
         basis, cost = "free_tier", 0
     elif any(value is None for value in costs):
         basis, cost = "unpriced", None
@@ -100,7 +118,7 @@ def stamp_spend(payload: dict, given: dict | None) -> tuple[dict | None, list[st
         spend = payload["spend"] if isinstance(payload.get("spend"), dict) else given
         return spend, [problem.replace(":given", "") for problem in probe_spend.spend_findings("given", spend)]
     if isinstance(payload.get("provider_usage"), list):
-        return spend_from_usage(payload["provider_usage"])
+        return spend_from_usage(payload["provider_usage"], payload.get("zero_spend_evidence"))
     names = ml.all_named_models(payload)
     if names and all(is_local_name(name) for name in names):
         return {"cloud_calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "cost_usd": 0,
