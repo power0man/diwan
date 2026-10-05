@@ -168,6 +168,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="كتلةُ الإنفاق نصَّ JSON، لدليلٍ لا تُشتقّ كتلتُه (نماذج بعيدة بلا سجلّ نداءات)")
     parser.add_argument("--check", action="store_true", help="يفحص ولا يكتب")
     args = parser.parse_args(argv)
+    if args.spend is not None and len(args.files) != 1:
+        # لكل دليلٍ إنفاقُه، فكتلةٌ واحدة لا تُكتب في ملفّين (ملاحظة Codex على #310)
+        parser.error("--spend يُعطى لدليلٍ واحد")
     models = json.loads(args.registry.read_text(encoding="utf-8")).get("models", {})
     report, failed = {}, False
     for path in args.files:

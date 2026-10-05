@@ -213,6 +213,23 @@ def test_a_free_backend_without_a_zero_spend_proof_is_unpriced_not_free():
     assert problems == [] and derived["cost_basis"] == "unpriced" and derived["cost_usd"] is None
 
 
+def test_one_given_spend_block_is_refused_for_several_files(tmp_path):
+    """ملاحظة Codex على #310: لكل دليلٍ إنفاقُه، فلا تُكتب كتلةٌ واحدة في ملفّين."""
+    registry = tmp_path / "registry.json"
+    registry.write_text(json.dumps({"models": MODELS}), encoding="utf-8")
+    first, second = tmp_path / "a.json", tmp_path / "b.json"
+    for path in (first, second):
+        path.write_text(json.dumps({"model": "deepseek-v4.1-flash:cloud"}), encoding="utf-8")
+    given = json.dumps({"cloud_calls": 1, "prompt_tokens": 3, "completion_tokens": 1, "cost_usd": 0,
+                        "cost_basis": "subscription_flat"})
+    with pytest.raises(SystemExit) as refused:
+        se.main(["--registry", str(registry), "--spend", given, str(first), str(second)])
+    assert refused.value.code == 2
+    assert json.loads(first.read_text(encoding="utf-8")) == {"model": "deepseek-v4.1-flash:cloud"}
+    assert se.main(["--registry", str(registry), "--spend", given, str(first)]) == 0
+    assert json.loads(first.read_text(encoding="utf-8"))["spend"]["cloud_calls"] == 1
+
+
 def test_check_mode_fails_a_file_that_still_needs_its_stamp(tmp_path, capsys):
     registry = tmp_path / "registry.json"
     registry.write_text(json.dumps({"models": MODELS}), encoding="utf-8")
