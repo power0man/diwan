@@ -87,6 +87,10 @@ def test_blank_issues_must_stay_disabled():
     pytest.param('---\nname: t\nlabels: ["family:openai"]\n', ["labels_unreadable:t.md"], id="front_matter_unclosed"),
     pytest.param("---\nname: t\n---\nlabels: anything in the body\n", [], id="body_is_not_front_matter"),
     pytest.param("# بلا رأس\nlabels: anything\n", [], id="no_front_matter"),
+    pytest.param('---\nname: t\nabout: |\n  نصّ\n  ---\nlabels: ["family:openai"]\n---\nبلاغ\n',
+                 ["working_family_label:t.md:family:openai"], id="indented_dashes_inside_a_block_scalar"),
+    pytest.param('---\nname: t\nlabels: ["family:openai"]\n---  \nبلاغ\n', ["working_family_label:t.md:family:openai"],
+                 id="closing_dashes_with_trailing_space"),
 ])
 def test_markdown_templates_are_read_from_their_front_matter(text, found):
     assert ig.intake_findings({"t.md": text}, "blank_issues_enabled: false\n") == found

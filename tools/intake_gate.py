@@ -72,7 +72,8 @@ def front_matter(text: str) -> str | None:
     if not lines or lines[0].strip() != "---":
         return ""
     for index, line in enumerate(lines[1:], 1):
-        if line.strip() == "---":
+        # الفاصلُ الخاتم في العمود الأول وحده؛ و`---` مُزاحٌ نصٌّ داخل قيمةٍ كتليّة (ملاحظة Codex على #304)
+        if line.rstrip() == "---":
             return "\n".join(lines[1:index])
     return None
 
