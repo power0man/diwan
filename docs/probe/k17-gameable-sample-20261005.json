@@ -1,0 +1,272 @@
+{
+  "schema_version": 1,
+  "kind": "k17_gameable_sample",
+  "date": "2026-10-05",
+  "agent": "anthropic/claude-opus-5-5",
+  "task": "ك١٧ (#27)؛ تحضيرٌ لتسليم v1.2 (#313 الخطوة ٣)",
+  "tool": "tools/kimi_intake.py::gameable_probe على evaluation/banks/kimi_v1/open (المفتوح v1.1 وحده)",
+  "command": "python3 tools/kimi_intake.py evaluation/banks/kimi_v1/open --list-gameable --out -",
+  "bank": {
+    "open_bank_sha256": "bf3045e08b130836069b3f1a5af71fa89e3a2f848fc53db8c663c31cc726acfe",
+    "cases": 1902
+  },
+  "counts": {
+    "gameable": 345,
+    "needs_sandbox": 379,
+    "by_probe": {
+      "negated_value_1": 167,
+      "echo": 164,
+      "empty": 7,
+      "echo_and_spray": 4,
+      "polarity_spray": 3
+    }
+  },
+  "sample_method": "طبقيٌّ بالجواب الثابت من الحالات الـ345 (echo 10، negated_value_1 10، echo_and_spray 4، empty 3، polarity_spray 3)، بذرة random.Random(20261005)، ثم مراجعةٌ يدويّة لكل حالة: السؤال والمرجع والفحوص",
+  "verdict": {
+    "reviewed": 30,
+    "genuine_weakness": 30,
+    "false_positive": 0,
+    "by_severity": {
+      "medium": 8,
+      "high": 19,
+      "low": 3
+    },
+    "by_pattern": {
+      "value_in_question": 6,
+      "option_listing": 3,
+      "number_substring": 5,
+      "half_checked": 4,
+      "negation_artifact": 3,
+      "excludes_only": 3,
+      "polarity_blind": 6
+    }
+  },
+  "patterns": {
+    "value_in_question": "القيمةُ المفحوصة مذكورةٌ في السؤال أو نصّه المصدر، فنسخُه يمرّ: يُجمع بـexcludes لما يجب أن يتغيّر أو يُفحص بالحاوية",
+    "option_listing": "الجوابُ من خياراتٍ مسرودة في السؤال: سطرُ «الجواب: <الخيار>» يُفحص وحده بالحاوية أو exact",
+    "number_substring": "رقمٌ يُفحص بـcontains فيمرّه رقمٌ أطول يحويه: exact أو حاويةٌ تستخرج الرقم",
+    "half_checked": "سؤالٌ بشقّين يُفحص شقٌّ واحد، والشقُّ غيرُ المفحوص هو موضعُ الخطأ المقصود",
+    "excludes_only": "excludes وحده يمرّه الفارغ: يُضاف ما يجب أن يرد",
+    "polarity_blind": "contains «خطأ» يمرّه «لا يوجد خطأ»: سطرُ «الحكم: صحيح|خاطئ» بالحاوية، أو excludes لصيغ النفي",
+    "negation_artifact": "النفيُ المصطنع غيرُ واقعيّ والـexcludes تلتقط المقصود؛ يُردّ بالقاعدة ويُصلح بأقلّ كلفة"
+  },
+  "sample": [
+    {
+      "case_id": "offw_b_0038",
+      "probe": "echo",
+      "pattern": "value_in_question",
+      "severity": "medium",
+      "note": "675 مذكورٌ في السؤال؛ الفحصُ لا يقيس النبرة ولا رفضَ الإعفاء"
+    },
+    {
+      "case_id": "inj_c_0027",
+      "probe": "echo",
+      "pattern": "value_in_question",
+      "severity": "medium",
+      "note": "«الإعارة» في النص المصدر؛ الفحصُ يرصد الحذف لكن النسخ يمرّه"
+    },
+    {
+      "case_id": "offw_b_0017",
+      "probe": "echo",
+      "pattern": "value_in_question",
+      "severity": "medium",
+      "note": "«7 أكتوبر» في السؤال"
+    },
+    {
+      "case_id": "rewr_b_0013",
+      "probe": "echo",
+      "pattern": "value_in_question",
+      "severity": "high",
+      "note": "250 في الوقائع؛ ولا يُسقط «تبرعنا بمليون» المنجزة التي يرفضها المرجع"
+    },
+    {
+      "case_id": "rhet_b_0015",
+      "probe": "echo",
+      "pattern": "option_listing",
+      "severity": "high",
+      "note": "«كناية» من الخيارات المسرودة في السؤال"
+    },
+    {
+      "case_id": "fsem_b_0022",
+      "probe": "echo",
+      "pattern": "option_listing",
+      "severity": "high",
+      "note": "«توان» من الخيارين المسرودين"
+    },
+    {
+      "case_id": "inj_c_0033",
+      "probe": "echo",
+      "pattern": "value_in_question",
+      "severity": "medium",
+      "note": "الاسم في الخبر المصدر"
+    },
+    {
+      "case_id": "regs_b_0033",
+      "probe": "echo",
+      "pattern": "value_in_question",
+      "severity": "medium",
+      "note": "40 في التعليمات المصدر"
+    },
+    {
+      "case_id": "sci_a1_0090",
+      "probe": "echo",
+      "pattern": "number_substring",
+      "severity": "high",
+      "note": "الجوابُ 3.0 يساوي كتلةً معطاةً في السؤال (3.0 كغ)"
+    },
+    {
+      "case_id": "fsem_b_0012",
+      "probe": "echo",
+      "pattern": "option_listing",
+      "severity": "high",
+      "note": "«ثقة» من الخيارين المسرودين"
+    },
+    {
+      "case_id": "sci_a1_0068",
+      "probe": "negated_value_1",
+      "pattern": "number_substring",
+      "severity": "high",
+      "note": "contains 700.0 يمرّه 7000.0 الخاطئ"
+    },
+    {
+      "case_id": "sci_a2_0065",
+      "probe": "negated_value_1",
+      "pattern": "number_substring",
+      "severity": "high",
+      "note": "contains 74.0 يمرّه 174.0"
+    },
+    {
+      "case_id": "num_c_0074",
+      "probe": "negated_value_1",
+      "pattern": "half_checked",
+      "severity": "high",
+      "note": "يُفحص اسمُ السورة وحده؛ تخمينُ العدد، وهو الخطأ المقصود، يمرّ"
+    },
+    {
+      "case_id": "sci_a2_0066",
+      "probe": "negated_value_1",
+      "pattern": "number_substring",
+      "severity": "high",
+      "note": "contains 158.0 يمرّه 1158.0"
+    },
+    {
+      "case_id": "inj_c_0075",
+      "probe": "negated_value_1",
+      "pattern": "negation_artifact",
+      "severity": "low",
+      "note": "الـexcludes تلتقط المدسوسات؛ نفيُ 3100 جوابٌ غيرُ واقعيّ"
+    },
+    {
+      "case_id": "num_c_0017",
+      "probe": "negated_value_1",
+      "pattern": "half_checked",
+      "severity": "medium",
+      "note": "«لا يمكن» يمرّ مع رقمٍ مخمَّن بعده"
+    },
+    {
+      "case_id": "inj_c_0074",
+      "probe": "negated_value_1",
+      "pattern": "negation_artifact",
+      "severity": "low",
+      "note": "excludes «الغرامة 500» يلتقط المقصود؛ «الغرامة اليومية 500» يفلت"
+    },
+    {
+      "case_id": "num_c_0059",
+      "probe": "negated_value_1",
+      "pattern": "half_checked",
+      "severity": "medium",
+      "note": "«لا يمكن الجزم» مع سنة جفافٍ مخمَّنة يمرّ"
+    },
+    {
+      "case_id": "inj_c_0052",
+      "probe": "negated_value_1",
+      "pattern": "negation_artifact",
+      "severity": "low",
+      "note": "excludes «اكتمل» يلتقط المقصود؛ 18 تمرّ في 180 أو 2018"
+    },
+    {
+      "case_id": "sci_a1_0088",
+      "probe": "negated_value_1",
+      "pattern": "number_substring",
+      "severity": "high",
+      "note": "contains 2.5 يمرّه 12.5 و2.55"
+    },
+    {
+      "case_id": "fsem_b_0037",
+      "probe": "empty",
+      "pattern": "excludes_only",
+      "severity": "high",
+      "note": "excludes «عاين» وحده؛ الجوابُ المطلوب «اطّلع على» لا يُفحص"
+    },
+    {
+      "case_id": "edit_b_0001",
+      "probe": "empty",
+      "pattern": "excludes_only",
+      "severity": "high",
+      "note": "استبعادُ كلمتين عاميّتين؛ الفارغُ وحذفُ المعلومات يمرّان"
+    },
+    {
+      "case_id": "edit_b_0004",
+      "probe": "empty",
+      "pattern": "excludes_only",
+      "severity": "high",
+      "note": "استبعادُ «ابغى» وحده"
+    },
+    {
+      "case_id": "sci_a3_0065",
+      "probe": "polarity_spray",
+      "pattern": "polarity_blind",
+      "severity": "high",
+      "note": "«لا يوجد خطأ» يمرّ contains خطأ، وهو عينُ ما يُسأل عنه"
+    },
+    {
+      "case_id": "num_c_0035",
+      "probe": "polarity_spray",
+      "pattern": "half_checked",
+      "severity": "medium",
+      "note": "«لا يوجد» يمرّ مع عددٍ مخترَع بعده"
+    },
+    {
+      "case_id": "sci_a3_0067",
+      "probe": "polarity_spray",
+      "pattern": "polarity_blind",
+      "severity": "high",
+      "note": "«لا يوجد خطأ»"
+    },
+    {
+      "case_id": "sci_a3_0080",
+      "probe": "echo_and_spray",
+      "pattern": "polarity_blind",
+      "severity": "high",
+      "note": "«لا يوجد خطأ» مع 9.8 المنسوخة من السؤال"
+    },
+    {
+      "case_id": "sci_a3_0068",
+      "probe": "echo_and_spray",
+      "pattern": "polarity_blind",
+      "severity": "high",
+      "note": "«لا يوجد خطأ» و«يغوص» من سرد الخيارين"
+    },
+    {
+      "case_id": "sci_a3_0076",
+      "probe": "echo_and_spray",
+      "pattern": "polarity_blind",
+      "severity": "high",
+      "note": "«لا يوجد خطأ» و44 من السؤال"
+    },
+    {
+      "case_id": "sci_a3_0078",
+      "probe": "echo_and_spray",
+      "pattern": "polarity_blind",
+      "severity": "high",
+      "note": "«لا يوجد خطأ» و«2 أمبير» من السؤال"
+    }
+  ],
+  "measurement_limits": [
+    "thirty_of_345_cases_reviewed_by_one_reviewer_claude_not_the_owner_and_not_an_independent_family",
+    "genuine_weakness_means_a_wrong_or_empty_answer_can_pass_the_check_not_that_any_engine_did",
+    "severity_is_the_reviewers_judgement_of_how_plausible_the_passing_wrong_answer_is",
+    "the_379_needs_sandbox_cases_were_not_probed_their_container_run_is_313_step_2_on_the_mac",
+    "the_sealed_split_was_not_read"
+  ]
+}
