@@ -203,6 +203,8 @@ def test_a_review_with_its_call_ledger_is_stamped_from_the_ledger():
     pytest.param([_row("hf-router", "a/b", cost="abc", status="reported")], "spend_cost_invalid", id="unreadable_cost"),
     pytest.param([_row("hf-router", "a/b", cost="NaN", status="reported")], "spend_cost_invalid", id="nan_cost"),
     pytest.param([_row("hf-router", "a/b", cost="1e10000", status="reported")], "spend_cost", id="cost_overflows_a_float"),
+    pytest.param([_row("hf-router", "a/b", cost="1e-10000", status="reported")], "spend_cost_invalid",
+                 id="cost_underflows_to_zero"),
 ])
 def test_a_sent_call_without_valid_counts_or_cost_is_not_stamped(rows, code):
     assert se.spend_from_usage(rows) == (None, [code])

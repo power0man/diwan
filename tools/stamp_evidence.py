@@ -116,6 +116,9 @@ def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, 
     else:
         reported = all(row.get("cost_status") == "reported" for row in cloud)
         basis, cost = ("reported_by_provider" if reported else "estimated_from_prices"), float(sum(costs))
+        if sum(costs) and not cost:
+            # كلفةٌ موجبةٌ تنزل تحت مدى العدد العائم فتُكتب صفرًا: يُسمّى ولا يُزوَّر الإنفاقُ (ملاحظة Codex على #310)
+            return None, ["spend_cost_invalid"]
     block = {"cloud_calls": len(cloud), **totals, "cost_usd": cost, "cost_basis": basis}
     # الكتلةُ المشتقّة تمرّ مدقّقَ الكتلة المعطاة نفسَه: كلفةٌ عشريّةٌ منتهية قد تفيض عددًا عائمًا لا نهائيًّا (ملاحظة Codex على #310)
     problems = [problem.replace(":derived", "") for problem in probe_spend.spend_findings("derived", block)]

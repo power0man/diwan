@@ -55,8 +55,8 @@ def spend_findings(file: str, spend: object) -> list[str]:
     elif basis == "unpriced":
         if cost is not None:
             problems.append(f"spend_unpriced_with_cost:{file}")
-    # Infinity وNaN ليسا كلفة، ولا يُكتبان في JSON صارم (ملاحظة Codex على #310)
-    elif type(cost) not in (int, float) or not math.isfinite(cost) or cost < 0:
+    # Infinity وNaN ليسا كلفة، ولا يُكتبان في JSON صارم. والعددُ الصحيح منتهٍ دائمًا، فلا يُحوَّل إلى عائمٍ يفيض (ملاحظتا Codex على #310)
+    elif type(cost) not in (int, float) or (type(cost) is float and not math.isfinite(cost)) or cost < 0:
         problems.append(f"spend_cost:{file}")
     if not problems:
         if basis == "local_no_charge" and (spend["cloud_calls"] or cost):
