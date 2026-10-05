@@ -416,16 +416,26 @@ def test_an_artifact_digest_of_an_unrecognized_kind_needs_its_registered_weight(
     assert [f for f in ml.weight_findings(models, evidence, frozenset({"new.json"})) if "new.json" in f] == found
 
 
-@pytest.mark.parametrize("payload", [
-    pytest.param({"engine": {"name": "asr"}, "checkpoint_sha256": DIGEST}, id="engine_named_by_an_object"),
-    pytest.param({"model": {"repo": "asr", "revision": "main"}, "checkpoint_sha256": DIGEST}, id="model_named_by_an_object"),
+ASR_CHECKPOINT = "weight_not_registered:new.json:asr:checkpoint"
+
+
+@pytest.mark.parametrize("payload, found", [
+    pytest.param({"engine": {"name": "asr"}, "checkpoint_sha256": DIGEST}, [ASR_CHECKPOINT], id="engine_named_by_an_object"),
+    pytest.param({"model": {"repo": "asr", "revision": "main"}, "checkpoint_sha256": DIGEST}, [ASR_CHECKPOINT],
+                 id="model_named_by_an_object"),
+    pytest.param({"models": ["asr"], "checkpoint_sha256": DIGEST}, [ASR_CHECKPOINT], id="model_named_in_a_list"),
+    pytest.param({"models": ["asr", "b/model"], "checkpoint_sha256": DIGEST},
+                 [ASR_CHECKPOINT, "weight_not_registered:new.json:b/model:checkpoint"], id="two_models_in_a_list"),
+    pytest.param({"models": {"asr": {}, "b/model": {}}, "checkpoint_sha256": DIGEST},
+                 [ASR_CHECKPOINT, "weight_not_registered:new.json:b/model:checkpoint"], id="two_models_in_a_map"),
+    pytest.param({"models": ["asr", "ocr"], "checkpoint_sha256": DIGEST}, [ASR_CHECKPOINT], id="registered_for_one_of_two"),
 ])
-def test_a_model_named_by_an_object_owns_the_digests_beside_it(payload):
-    """ملاحظة Codex على #307: `{"engine": {"name": …}, "checkpoint_sha256": …}` يسمّي نموذجًا يعرفه `all_named_models`، وكان
-    حسابُ المالك لا يقرأ إلا الاسمَ النصّيّ، فتُسجَّل البصمةُ بجانبه بلا مالكٍ وتُهمَل صامتةً."""
-    models = {"asr": {**READ, "weights": []}}
-    assert ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) == [
-        "weight_not_registered:new.json:asr:checkpoint"]
+def test_every_model_named_beside_a_digest_owns_it(payload, found):
+    """ملاحظتا Codex على #307: `{"engine": {"name": …}}` و`{"models": ["asr"]}` يسمّيان نموذجًا يعرفه `all_named_models`، وكان
+    حسابُ المالك لا يقرأ إلا الاسمَ النصّيّ، فتُسجَّل البصمةُ بجانبهما بلا مالكٍ وتُهمَل صامتةً. وما سمّى أكثرَ من نموذجٍ
+    يُطالَب كلٌّ منهم بقيدها، فبصمةٌ مقيَّدةٌ لأحدهما لا تمرّ للآخر."""
+    models = {"asr": {**READ, "weights": []}, "b/model": READ, "ocr": {**READ, "weights": [{**WEIGHT, "sha256": DIGEST}]}}
+    assert [f for f in ml.weight_findings(models, {"new.json": payload}, frozenset({"new.json"})) if "new.json" in f] == found
 
 
 @pytest.mark.parametrize("name, weights, found", [

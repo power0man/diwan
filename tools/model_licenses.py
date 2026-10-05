@@ -244,9 +244,10 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
             return
         if not isinstance(value, dict):
             return
-        # الاسمُ نصًّا أو قاموسًا يسمّي نموذجًا (`"engine": {"name": …}`) يملك ما بجانبه، كما يقرؤه `all_named_models`؛
-        # وخريطةُ نماذج أو قائمتُها لا تسمّي واحدًا فلا تملكه (ملاحظة Codex على #307)
-        here = tuple(dict.fromkeys(canonical(name) for k, v in value.items() if k in MODEL_KEYS for name in _named(v)))
+        # كلُّ اسمٍ يقرؤه `all_named_models` هنا يملك ما بجانبه: نصًّا، أو قاموسًا (`"engine": {"name": …}`)، أو في قائمةٍ
+        # أو خريطة (`"models": ["asr"]`). فإن سمّى الدليلُ أكثرَ من نموذجٍ طولب كلٌّ منهم بقيد البصمة، فلا تمرّ بصمةٌ مبهمةُ
+        # المالك (ملاحظتا Codex على #307)
+        here = tuple(dict.fromkeys(canonical(name) for k, v in value.items() if k in MODEL_KEYS for name in _names_under(k, v)))
         owners = here or owners
         for key, child in value.items():
             if isinstance(key, str) and isinstance(child, str) and SHA256.match(child):
