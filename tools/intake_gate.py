@@ -54,8 +54,10 @@ def intake_findings(templates: dict[str, str], config: str) -> list[str]:
         if labels is None:
             problems.append(f"labels_unreadable:{name}")
             continue
+        # GitHub تطابق أسماءَ الوسوم بلا اعتبارٍ لحالة الأحرف، فـ`Family:OpenAI` يضع `family:openai` (ملاحظة Codex على #304)
         problems += [f"working_family_label:{name}:{label}" for label in labels
-                     if label.startswith(("family:", "ready:")) and label not in NON_WORKING]
+                     if label.strip().casefold().startswith(("family:", "ready:"))
+                     and label.strip().casefold() not in NON_WORKING]
     if not re.search(r"^blank_issues_enabled:[ \t]*false[ \t]*$", config, re.MULTILINE):
         problems.append("blank_issues_enabled")
     return problems

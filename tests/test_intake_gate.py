@@ -15,6 +15,8 @@ def test_no_published_template_grants_a_working_family_label():
     pytest.param('labels: ["task", "family:anthropic"]', "working_family_label:t.yml:family:anthropic", id="anthropic"),
     pytest.param('labels: ["family:openai"]', "working_family_label:t.yml:family:openai", id="openai"),
     pytest.param('labels: ["ready:google"]', "working_family_label:t.yml:ready:google", id="ready_label"),
+    pytest.param('labels: ["Family:OpenAI"]', "working_family_label:t.yml:Family:OpenAI", id="mixed_case_family"),
+    pytest.param('labels: [" READY:GOOGLE "]', "working_family_label:t.yml: READY:GOOGLE ", id="padded_upper_ready"),
     pytest.param('labels:\n  - "family:anthropic"', "labels_unreadable:t.yml", id="block_list"),
     pytest.param("labels: [task, family:anthropic]", "labels_unreadable:t.yml", id="unquoted_items"),
     pytest.param('"labels": ["family:anthropic"]', "labels_unreadable:t.yml", id="quoted_key"),
@@ -25,8 +27,9 @@ def test_a_template_that_could_grant_an_agent_label_is_named(line, code):
     assert ig.intake_findings({"t.yml": text}, "blank_issues_enabled: false\n") == [code]
 
 
-def test_the_owner_decision_label_is_not_a_working_family():
-    text = 'name: t\nlabels: ["owner-decision", "family:owner"]\n'
+@pytest.mark.parametrize("owner", [pytest.param("family:owner", id="lower"), pytest.param("Family:Owner", id="mixed_case")])
+def test_the_owner_decision_label_is_not_a_working_family(owner):
+    text = f'name: t\nlabels: ["owner-decision", "{owner}"]\n'
     assert ig.intake_findings({"t.yml": text}, "blank_issues_enabled: false\n") == []
 
 
