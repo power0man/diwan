@@ -28,7 +28,8 @@ def _zip(*members: tuple[str, bytes]) -> bytes:
 
 
 WEIGHT = {"file": "w.pth", "sha256": _sha(WEIGHT_BYTES), "origin": "https://example.org/w.zip", "license": "mit",
-          "license_source": "https://github.com/up/r/blob/c0ffee/LICENSE", "read_on": "2026-10-05"}
+          "license_source": "https://github.com/up/r/blob/c0ffee/LICENSE", "read_on": "2026-10-05",
+          "license_text_sha256": _sha(LICENSE_BYTES)}
 SERVED = {"https://example.org/w.zip": _zip(("w.pth", WEIGHT_BYTES), ("readme.txt", b"x")),
           "https://github.com/up/r/blob/c0ffee/LICENSE": LICENSE_BYTES}
 

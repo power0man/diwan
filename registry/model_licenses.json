@@ -42,7 +42,8 @@
           "origin": "https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/arabic.zip",
           "license": "apache-2.0",
           "license_source": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE",
-          "read_on": "2026-10-05"
+          "read_on": "2026-10-05",
+          "license_text_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
         },
         {
           "file": "craft_mlt_25k.pth",
@@ -122,7 +123,8 @@
           "origin": "https://github.com/tesseract-ocr/tessdata_fast/blob/main/ara.traineddata",
           "license": "apache-2.0",
           "license_source": "https://github.com/tesseract-ocr/tessdata_fast/blob/main/LICENSE",
-          "read_on": "2026-10-05"
+          "read_on": "2026-10-05",
+          "license_text_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
         }
       ]
     }

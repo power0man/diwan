@@ -45,7 +45,8 @@ PENDING_REASONS = frozenset({
 })
 HTTPS_SOURCE = re.compile(r"^https://[^\s]+$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
-WEIGHT_FIELDS = ("file", "sha256", "origin", "license", "license_source", "read_on")
+# وبصمةُ نصّ رخصة الوزن لازمةٌ لكلّ وزن، فلا يُقبل نصٌّ آخر في مصدر رخصته بلا أن يُرى (ملاحظة Codex على #307)
+WEIGHT_FIELDS = ("file", "sha256", "origin", "license", "license_source", "read_on", "license_text_sha256")
 # سجلُّ المصدر في الدليل: ما نزّلته `tools/weight_provenance.py` من الأصل المعلن فطابقت بصمتُه (ملاحظة Codex على #307)
 PROVENANCE_KEY = "weight_provenance"
 PROVENANCE_FIELDS = ("file", "sha256", "origin", "license_source")
@@ -248,6 +249,14 @@ def measured_weights(payload: object, provenance: dict[str, set[tuple[str, ...]]
         for key, child in value.items():
             if isinstance(key, str) and isinstance(child, str) and SHA256.match(child):
                 record(owners, key, child)
+            elif isinstance(key, str) and key.endswith("_sha256") and isinstance(child, dict):
+                # خريطةُ بصماتٍ بأسماء الملفّات (`models_sha256`): كلُّ مفتاحٍ فيها اسمُ ملفّ ولو بلا لاحقة (`checkpoint`)،
+                # ويحكم عليه `is_weight_file` (ملاحظة Codex على #307)
+                for name, digest in child.items():
+                    if isinstance(name, str) and isinstance(digest, str) and SHA256.match(digest):
+                        for owner in owners:
+                            out.setdefault(owner, ({}, {}))[0].setdefault(name, set()).add(digest)
+                visit(child, owners)
             elif key == PROVENANCE_KEY and isinstance(child, list):
                 for item in child:
                     if isinstance(item, dict) and all(isinstance(item.get(f), str) for f in PROVENANCE_FIELDS):
@@ -412,9 +421,8 @@ def provenance_findings(models: dict, evidence: dict[str, object]) -> list[str]:
 
 
 def _provenance_recorded(weight: dict, records: set[tuple[str, ...]]) -> bool:
-    """سجلٌّ بملفّ الوزن وبصمته وأصله ومصدر رخصته، وببصمة نصّ رخصته إن قيّدها السجلّ."""
-    identity, text = tuple(weight[f] for f in PROVENANCE_FIELDS), weight.get("license_text_sha256")
-    return any(record[:-1] == identity and (text is None or record[-1] == text) for record in records)
+    """سجلٌّ بملفّ الوزن وبصمته وأصله ومصدر رخصته وبصمة نصّ رخصته معًا."""
+    return (*(weight[f] for f in PROVENANCE_FIELDS), weight.get("license_text_sha256")) in records
 
 
 def default_engine(source: Path = DEFAULT_ENGINE_SOURCE) -> str | None:
