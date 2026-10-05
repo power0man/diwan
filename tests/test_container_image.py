@@ -23,12 +23,19 @@ def test_the_image_installs_from_the_frozen_lock_with_a_pinned_uv():
     assert "UV_PYTHON_DOWNLOADS=never" in DOCKERFILE
 
 
-def test_the_runtime_image_drops_the_dev_extra_after_building_the_wheel():
-    """#285: الإضافةُ dev (hatchling وpytest) تلزم بناءَ العجلة وحده؛ فآخرُ مزامنةٍ بعد البناء بلا dev فتخرج من صورة التشغيل،
-    واختباراتُ CI تثبّتها فوقها من القفل."""
-    syncs = re.findall(r"uv sync [^\n]*", DOCKERFILE)
-    assert syncs and "--extra dev" not in syncs[-1]
-    assert DOCKERFILE.rindex("uv sync") > DOCKERFILE.index("python -m hatchling build")
+def test_the_runtime_image_never_receives_the_dev_extra():
+    """#285 وملاحظة Codex على #294: الإضافةُ dev (hatchling وpytest) تلزم بناءَ العجلة وحده. وحذفُها في طبقةٍ لاحقة يُخفيها
+    ولا يُخرج بايتاتِها من الطبقة السابقة؛ فتُبنى العجلةُ في مرحلةٍ منفصلة، وصورةُ التشغيل (المرحلةُ الأخيرة) تبدأ من الأساس
+    لا من مرحلة العجلة، ولا تُثبّت dev ولا تبني، وتنسخ العجلةَ وحدها. واختباراتُ CI تثبّت dev فوقها من القفل."""
+    stages = re.split(r"^FROM ", DOCKERFILE, flags=re.M)[1:]
+    base, runtime = stages[0], stages[-1]
+    wheel = next(stage for stage in stages if re.match(r"\S+ AS wheel\n", stage))
+    assert "uv sync" not in base
+    assert "--extra dev" in wheel and "python -m hatchling build" in wheel
+    assert runtime.startswith("base\n")
+    assert "--extra dev" not in runtime and "hatchling" not in runtime and "pytest" not in runtime
+    assert re.search(r"^RUN uv sync --frozen --no-install-project --python ", runtime, re.M)
+    assert "COPY --from=wheel /opt/diwan-wheel /opt/diwan-wheel" in runtime
     assert "uv export --frozen --extra dev" in WORKFLOW
 
 
