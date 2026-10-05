@@ -466,3 +466,16 @@ def test_a_sandbox_probed_intake_records_the_backend_that_judged(tmp_path, monke
     src = delivery(tmp_path)
     assert intake(src, sandbox_probes=True)["bank"]["gameable"]["sandbox_backend"] == backend
     assert intake(src)["bank"]["gameable"]["sandbox_backend"] is None
+
+
+def test_the_gameable_listing_names_each_case_with_the_answer_that_passed_it(tmp_path, capsys):
+    """القائمةُ لـKimi (current/GAMEABLE.json): ملفٌّ ومعرّفٌ وقدرةٌ والجوابُ الثابت، ولا نصَّ حالة."""
+    from tools.kimi_intake import gameable_cases, main
+    src = delivery(tmp_path)
+    assert gameable_cases(src / "open") == []
+    _write(src / "open" / "tier_a" / "kimi_a_001.json", _suite("kimi_a_001", [_case("o1"), _case("o2", text="r أو s؟")]))
+    assert gameable_cases(src / "open") == [{"file": "tier_a/kimi_a_001.json", "case_id": "o2", "capability": "a",
+                                              "probe": "echo"}]
+    assert main([str(src / "open"), "--list-gameable", "--out", "-"]) == 0
+    listing = json.loads(capsys.readouterr().out)
+    assert (listing["gameable"], listing["needs_sandbox"]) == (1, 0) and "negated_value_3" in listing["probes"]

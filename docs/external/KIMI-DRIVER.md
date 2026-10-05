@@ -191,6 +191,9 @@ tools/kimi_drive.sh setup && tools/kimi_drive.sh run && tools/kimi_drive.sh insp
   && UPDATE=1 OPEN_ONLY=1 tools/kimi_drive.sh place
 ```
 
+و`setup` يكتب بجانب المفتوح `current/GAMEABLE.json`: كلُّ حالةٍ يردّها الاستلامُ اليوم بالجواب الثابت الذي مرّرها
+(ك١٧). وإن كان `current/` قائمًا من دورةٍ سابقة فـ`tools/kimi_drive.sh gameable` يكتبه وحده.
+
 و`SANDBOX_RECEIPT` يمرّر `--sandbox-probes` و`--sandbox-receipt` إلى `tools/kimi_intake.py` (ومعه `SANDBOX_WORKSPACE` اختيارًا):
 فحالاتُ `python_sandbox` التي يمرّ ما خارج حاويتها بجوابٍ ثابت لا يحكم فيها إلا الحاوية، و`tools/evaluate_general.py`
 يرفض استلامًا بلاها (`intake_sandbox_cases_unprobed`).

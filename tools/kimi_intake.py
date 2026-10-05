@@ -250,6 +250,31 @@ def gameable_probe(case: dict, *, sandbox: bool = False) -> str | None:
     return None
 
 
+def gameable_cases(open_dir: Path) -> list[dict]:
+    """كلُّ حالةٍ في شطرٍ مفتوح يمرّرها جوابٌ ثابت، أو لا يحكم فيها إلا الحاوية؛ بملفّها والجواب الذي مرّرها.
+
+    قائمةٌ لـKimi في `current/GAMEABLE.json` (`tools/kimi_drive.sh gameable`): يعرف بها ما يردّه الاستلام قبل أن يسلّم،
+    ولا يرى شيفرة المسبار. والحاويةُ لا تُشغَّل هنا، فحالاتُها `needs_sandbox`.
+    """
+    rows = []
+    for path, suite in _capability_files(open_dir):
+        for case in suite.get("cases") or []:
+            probe = gameable_probe(case) if isinstance(case, dict) else None
+            if probe:
+                rows.append({"file": path.relative_to(open_dir).as_posix(), "case_id": case.get("case_id"),
+                             "capability": case.get("capability"), "probe": probe})
+    return rows
+
+
+def _capability_files(open_dir: Path):
+    for path in sorted(open_dir.rglob("*.json")):
+        if path.name.endswith(".meta.json") or path.name == "MANIFEST.json":
+            continue
+        suite = _json(path)
+        if isinstance(suite, dict) and suite.get("kind") != "agentic_tasks":
+            yield path, suite
+
+
 def check_bank(src: Path, *, sandbox_probes: bool = False) -> dict:
     """المدقّقاتُ الحقيقية على الشطرين، وشروطُ v1.2. والمحجوبُ أعدادٌ ورموزٌ بلا معرّفات."""
     failures: list = []
@@ -471,8 +496,23 @@ def main(argv=None) -> int:
                         help="تُجرَّب الأجوبةُ الثابتة على حالات python_sandbox في الحاوية (يلزم --sandbox-receipt)")
     parser.add_argument("--sandbox-receipt", type=Path, help="إيصالُ تشغيلٍ موثوق خارج المستودع (core/sandbox.py)")
     parser.add_argument("--sandbox-workspace", type=Path, default=ROOT / "var/sandbox")
+    parser.add_argument("--list-gameable", action="store_true",
+                        help="source شطرٌ مفتوح: تُكتب قائمةُ حالاته التي يمرّرها جوابٌ ثابت (current/GAMEABLE.json)")
     parser.add_argument("--out", required=True, help="مسارُ التقرير، أو - للطباعة")
     args = parser.parse_args(argv)
+    if args.list_gameable:
+        rows = gameable_cases(args.source.resolve())
+        probes = ["empty", "echo", "polarity_spray", "echo_and_spray",
+                  *(f"negated_value_{index}" for index in range(1, len(NEGATION_FORMS) + 1)), "needs_sandbox"]
+        boxed = sum(row["probe"] == "needs_sandbox" for row in rows)
+        listing = {"schema_version": 1, "kind": "gameable_cases", "probes": probes, "gameable": len(rows) - boxed,
+                   "needs_sandbox": boxed, "cases": rows}
+        text = json.dumps(listing, ensure_ascii=False, indent=2) + "\n"
+        if args.out == "-":
+            sys.stdout.write(text)
+        else:
+            Path(args.out).write_text(text, encoding="utf-8")
+        return 0
     if args.sandbox_probes:
         if not args.sandbox_receipt:
             parser.error("--sandbox-probes يلزمه --sandbox-receipt")

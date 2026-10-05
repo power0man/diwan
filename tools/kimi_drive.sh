@@ -74,8 +74,18 @@ cmd_setup() {
   [ ! -e "$cur" ] || die "$cur موجود من قبل، ولم أغيّر شيئًا — انقله جانبًا بيدك إن أردت دورةً جديدة"
   mkdir -p "$cur"
   cp -R "$DIWAN/evaluation/banks/kimi_v1/open" "$cur/open"
+  cmd_gameable
   echo "مجلّد Kimi جاهز: $KIMI_WORK (examples/ و logs/ و prompts/ و current/)"
   echo "  current/open: $(find "$cur/open" -name '*.json' ! -name '*.meta.json' | wc -l | tr -d ' ') ملفًّا مفتوحًا، ولا محجوب"
+}
+
+# قائمةُ ما يردّه الاستلامُ في المفتوح القائم (ك١٧): كلُّ حالةٍ يمرّرها جوابٌ ثابت، بالجواب الذي مرّرها. تُكتب في
+# current/GAMEABLE.json فيقرؤها Kimi قبل أن يسلّم، ولا يرى شيفرةَ المسبار؛ وتُعاد كتابتُها ولو كان current/ قائمًا
+cmd_gameable() {
+  local cur="$KIMI_WORK/current"
+  [ -d "$cur/open" ] || die "لا $cur/open — شغّل setup أولًا"
+  "${PYTHON:-python3}" "$DIWAN/tools/kimi_intake.py" "$cur/open" --list-gameable --out "$cur/GAMEABLE.json"
+  echo "  current/GAMEABLE.json: $("${PYTHON:-python3}" -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["gameable"], "يمرّرها جوابٌ ثابت، و", d["needs_sandbox"], "لا يحكم فيها إلا الحاوية")' "$cur/GAMEABLE.json")"
 }
 
 # يجمع الرأسَ والتكليفَ والتحديث، كلٌّ من بعد أول خطٍّ فاصل فيه
@@ -211,5 +221,6 @@ case "${1:-}" in
   inspect) cmd_inspect ;;
   intake)  cmd_intake ;;
   place)   cmd_place ;;
-  *) echo "الاستعمال: $0 {setup|bundle|run [ملفّ]|inspect|intake|place}" >&2; exit 2 ;;
+  gameable) cmd_gameable ;;
+  *) echo "الاستعمال: $0 {setup|bundle|run [ملفّ]|inspect|intake|place|gameable}" >&2; exit 2 ;;
 esac

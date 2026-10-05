@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import json
 import subprocess
 from pathlib import Path
 
@@ -294,3 +295,17 @@ def test_the_intake_forwards_the_sandbox_receipt_so_its_report_can_witness_the_g
     bare = subprocess.run(["bash", str(DRIVER), "intake"], capture_output=True, text=True, env=env)
     assert bare.returncode == 0 and "--sandbox-probes" not in args_out.read_text(encoding="utf-8").split("\n")
     assert "needs_sandbox" in bare.stderr
+
+
+def test_setup_and_gameable_write_the_list_of_cases_the_intake_rejects_beside_the_open_bank(tmp_path):
+    """ك١٧: Kimi يعرف ما يردّه الاستلام قبل أن يسلّم، بلا شيفرة المسبار؛ والأمرُ يُعاد ولو كان current/ قائمًا."""
+    done = _run(["setup"], tmp_path)
+    assert done.returncode == 0, done.stderr
+    listing = json.loads((tmp_path / "current" / "GAMEABLE.json").read_text(encoding="utf-8"))
+    assert listing["kind"] == "gameable_cases" and listing["gameable"] > 0
+    assert listing["gameable"] + listing["needs_sandbox"] == len(listing["cases"])
+    assert all(set(row) == {"file", "case_id", "capability", "probe"} for row in listing["cases"])
+    (tmp_path / "current" / "GAMEABLE.json").unlink()
+    again = _run(["gameable"], tmp_path)
+    assert again.returncode == 0, again.stderr
+    assert json.loads((tmp_path / "current" / "GAMEABLE.json").read_text(encoding="utf-8")) == listing
