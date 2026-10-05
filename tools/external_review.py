@@ -7,7 +7,7 @@
     OLLAMA_API_KEY=… python3 tools/external_review.py --base-url https://ollama.com --smoke out.json
     GITHUB_TOKEN=… python3 tools/external_review.py --backend github-models --list-catalog catalog.json
     GITHUB_TOKEN=… python3 tools/external_review.py --backend github-models --smoke out.json
-    HF_TOKEN=… python3 tools/external_review.py --backend hf-router --smoke out.json --every-family
+    HF_TOKEN=… python3 tools/external_review.py --backend hf-router --max-usd 0.50 --smoke out.json --every-family
     GROQ_API_KEY=… DIWAN_GROQ_FREE_TIER_CONFIRMED=confirmed python3 tools/external_review.py --backend groq --smoke out.json
     OPENROUTER_API_KEY=… python3 tools/external_review.py --backend openrouter --smoke out.json
 
@@ -57,7 +57,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_CEILING, Decimal, InvalidOperation
 from pathlib import Path
 from typing import Callable
 
@@ -68,6 +68,7 @@ from evaluation.external_review import (AUTHOR_FAMILY, BUDGET_TERMINAL_ERRORS, D
                                         DEVELOPER_FAMILIES, ENGINE_FAMILY, LEDGER_FILE, SUPERSEDED_DIR,
                                         _slug, open_files, review_bank, smoke, summarize)
 from evaluation.multi_system_review import AutomaticReviewError, model_family  # noqa: E402
+from core.budget import Budget, BudgetRefused  # noqa: E402
 from core.canonical import SAFE_INT  # noqa: E402
 from core.locality import is_cloud_model  # noqa: E402
 
@@ -137,12 +138,36 @@ def prior_provider_usage(bank: Path) -> list[dict]:
     return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
 
 
-def write_ledger(bank: Path, rows: list[dict], evidence: dict) -> None:
+def write_ledger(bank: Path, rows: list[dict], evidence: dict, spend_caps: list[dict] | None = None) -> None:
     """السجلُّ الدائم كاملًا (السابقُ وما أُلحق به)، ومعه دليلُ المجانية الذي تقوم عليه نداءاتُه: فتشغيلٌ سقط بعد الإرسال
     وقبل الخلاصة لا تعود نداءاتُه في الإعادة بلا بنود السعر ولحظة قراءتها (ملاحظة Codex على #298). ولا يُكتب في تشغيلٍ
     بمعرّف: مجلّدُه جديدٌ لا يُعاد، وخلاصتُه وRUN.json يحملان نداءاتِه، وما يُرفع منه عقدُه ثابت (`check_artifact`)."""
     _write_json(bank / "reviews" / LEDGER_FILE, {"schema_version": 1, "provider_usage": rows,
-                                                 "zero_spend_evidence": dict(sorted(evidence.items()))})
+                                                 "zero_spend_evidence": dict(sorted(evidence.items())),
+                                                 **({"spend_caps": spend_caps} if spend_caps else {})})
+
+
+def merged_zero_spend_evidence(prior: dict, transport) -> dict:
+    """دليلُ المجانية المحفوظ، وفوقه قراءةُ هذا التشغيل لكل نموذجٍ أرسل إليه نداءً أو لا دليلَ سابقًا له. فإعادةٌ تتخطّى ما
+    رُوجع تقرأ الفهرسَ ولا ترسل، فلا تستبدل بقراءتها الجديدة الدليلَ الذي قامت عليه نداءاتٌ سابقة (اختبارٌ كان يسقط حين تعبر
+    القراءتان حدَّ ثانية)."""
+    sent = {row.get("model") for row in getattr(transport, "provider_usage", [])
+            if row.get("kind") != "catalog" and row.get("request_sent")}
+    fresh = {model: entry for model, entry in getattr(transport, "zero_spend_evidence", {}).items()
+             if model in sent or model not in prior}
+    return dict(sorted({**prior, **fresh}.items()))
+
+
+def prior_spend_caps(bank: Path) -> list[dict]:
+    """سقوفُ التشغيلات المدفوعة السابقة وإنفاقُ كلٍّ منها، من السجلّ الدائم (ملاحظة Codex على #308)."""
+    caps = _read_json_object(bank / "reviews" / LEDGER_FILE).get("spend_caps")
+    return [cap for cap in caps if isinstance(cap, dict)] if isinstance(caps, list) else []
+
+
+def _run_spend_cap(transport) -> list[dict]:
+    report = _spend_report(transport).get("spend_cap")
+    return [{key: report[key] for key in ("cap_usd", "spent_usd", "exceeded_reservation_usd") if key in report}] \
+        if isinstance(report, dict) else []
 
 
 def prior_zero_spend_evidence(bank: Path) -> dict:
@@ -344,11 +369,16 @@ ZERO_SPEND_LIMITS = (
     "zero_spend_guard_is_provider_specific_and_not_a_general_price_attestation",
     "provider_usage_is_reported_when_available_and_missing_cost_is_never_assumed_zero",
 )
+# سقفُ الموجّه المدفوع حدٌّ على الحجز بسعر الفهرس، لا ضمانٌ لما يفوتره المزوّد (ملاحظة Codex على #308)
+HF_ROUTER_LIMITS = (
+    "the_cap_bounds_reservations_at_the_catalog_price_read_at_run_time_a_charge_reported_above_its_reservation"
+    "_is_already_billed_so_it_is_named_and_stops_the_run_and_the_hard_ceiling_is_the_prepaid_hfd2_credit",
+)
 
 
 def free_limits(base, backend: str | None = None) -> list[str]:
     """حدودُ القياس على الواجهات المجانية من موضعٍ واحد، للتجربة وللبنك وللخلاصة المحفوظة (ملاحظة Codex على #174)."""
-    extra = ZERO_SPEND_LIMITS if backend in {"groq", "openrouter"} else ()
+    extra = ZERO_SPEND_LIMITS if backend in {"groq", "openrouter"} else HF_ROUTER_LIMITS if backend == "hf-router" else ()
     return sorted(set(base) | set(FREE_LIMITS) | set(extra))
 
 
@@ -603,6 +633,10 @@ class OpenAICompatChat:
                 "pricing": {key: str(_decimal(value)) for key, value in sorted(by_id[model]["pricing"].items())
                             if isinstance(key, str) and _SAFE_TOKEN.fullmatch(key)}}
 
+    def _wire_model(self, model: str) -> str:
+        """المعرّفُ كما يُرسل في الحمولة: هو نفسُه هنا، ومثبَّتٌ بمزوّده في موجّه HF (`PricedRouterChat`)."""
+        return model
+
     def _guard_zero_spend(self, model: str) -> str | None:
         if self.backend == "groq":
             return self.zero_spend_proofs.get("*")
@@ -695,7 +729,7 @@ class OpenAICompatChat:
         try:
             proof = self._guard_zero_spend(model)
             # المخطّطُ موصوفٌ في التكليف نفسِه («JSON فقط»)، ولا يُرسل response_format لأن نماذجَ في الفهرس تردّه 400.
-            payload = {"model": model, "stream": False, "temperature": 0, "max_tokens": self.max_tokens,
+            payload = {"model": self._wire_model(model), "stream": False, "temperature": 0, "max_tokens": self.max_tokens,
                        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
             if self.backend == "openrouter":
                 # لا نماذجَ بديلة ولا انتقالَ مدفوعًا، واطلب الكلفة الفعلية في الردّ حتى لا تُخمَّن صفرًا.
@@ -793,14 +827,178 @@ def _catalog_entry(entry: dict) -> dict:
             isinstance(p, dict) and p.get("status") == "live" for p in entry["providers"]):
         reason = "no_live_provider"
     return {"id": entry["id"], "chat": reason is None, "reason": reason,
-            "tier": entry.get("rate_limit_tier"), "pricing": entry.get("pricing")}
+            "tier": entry.get("rate_limit_tier"), "pricing": entry.get("pricing"),
+            "router_prices": router_prices(entry)}
 
 
-def build_free_transport(backend: str, environ=os.environ, **kw) -> OpenAICompatChat:
-    """النقلُ المجانيّ؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر)."""
+def router_prices(entry: dict) -> dict[str, dict]:
+    """أسعارُ موجّه HF لكل مزوّدٍ حيّ أعلن سعرَيه: {المزوّد: {input, output}} بالدولار لكل مليون توكن، أي ميكرو-دولار
+    لكل توكن (`providers[].pricing` في `/v1/models`، `hf://docs/inference-providers/hub-api.md`). وما غاب أحدُ سعرَيه أو
+    لم يكن حيًّا أو لم يكن اسمُه آمنًا لا يدخل: السعرُ الغائب لا يُعدّ صفرًا."""
+    prices: dict[str, dict] = {}
+    for provider in entry.get("providers") or ():
+        if not isinstance(provider, dict) or provider.get("status") != "live":
+            continue
+        name, pricing = provider.get("provider"), provider.get("pricing")
+        if not isinstance(name, str) or not _SAFE_TOKEN.fullmatch(name) or not isinstance(pricing, dict):
+            continue
+        values = {side: _decimal(pricing.get(side)) for side in ("input", "output")}
+        if all(value is not None for value in values.values()):
+            # نافذةُ السياق التي يعلنها المزوّد (`context_length`)، ليُستبعد ما لا يتّسع للطلب (ملاحظة Codex على #308)
+            context = provider.get("context_length")
+            prices.setdefault(name, {**values, **({"context_length": context}
+                                                  if type(context) is int and context > 0 else {})})
+    return prices
+
+
+# سقفُ HFD2 (ق٦٤، `docs/PLAN-20260926.md` §٧): ‎$20 شحنًا مسبقًا بلا شحنٍ تلقائي. فلا يُعطى تشغيلٌ واحد سقفًا فوقه.
+HFD2_CAP_USD = Decimal("20")
+MICROS_PER_USD = 1_000_000
+# تأطيرُ المحادثة (علاماتُ الأدوار وقالبُ النموذج) توكناتٌ يعدّها المزوّد في prompt_tokens ولا تقابلها بايتاتٌ في التكليف
+# (ملاحظة Codex على #308)؛ فيُحجز لها حدٌّ ثابتٌ يفوق قوالبَ المحادثة المعروفة لرسالتين أضعافًا.
+FRAMING_TOKENS = 512
+
+
+def _ceil_micros(value: Decimal) -> int:
+    """ميكرو-دولار صحيح، مقرَّبٌ إلى أعلى: التقديرُ والتسويةُ لا يُنقصان كسرًا من الكلفة."""
+    return int(value.to_integral_value(rounding=ROUND_CEILING))
+
+
+class PricedRouterChat(OpenAICompatChat):
+    """موجّه HF مدفوعٌ بالتوكن، فلا يخرج نداءٌ إليه إلا بسعرٍ مقروءٍ وسقفٍ محجوز (جديد-spend-ledger، البندان ٢ و٣ من #295).
+
+    - **السعر:** من `providers[].pricing` في فهرس الموجّه نفسِه ساعةَ التشغيل، لكل نموذجٍ أرخصُ مزوّدٍ حيٍّ أعلن سعرَيه لحدّ كلِّ طلبٍ
+      له موزونًا (المدخلُ بسعره و`max_tokens` بسعر المخرج)، ويُثبَّت
+      المزوّدُ في الحمولة (`<model>:<provider>`) فلا يختار الموجّهُ غيرَه. والنموذجُ بلا سعرٍ مقروء `price_unknown` قبل الشبكة.
+    - **السقف:** `core.budget.Budget` بسقف التشغيل (`--max-usd`، لازمٌ وموجبٌ ولا يتجاوز HFD2). يُحجز قبل كل نداءٍ تقديرٌ أعلى:
+      بايتاتُ التكليف (كلُّ توكنٍ بايتٌ على الأقل) وحدُّ التأطير (`FRAMING_TOKENS`) بسعر المدخل، و`max_tokens` بسعر المخرج.
+      وما لا يتّسع `spend_cap_reached` قبل الشبكة.
+    - **التسوية:** بالكلفة التي أبلغها الموجّه إن أبلغها، وإلا بتوكنات الردّ بالسعر نفسِه (`estimated_from_prices`). وما أُرسل بلا
+      توكناتٍ يُسوّى بالمحجوز كلِّه (`reserved_upper_bound`)، لأن المزوّد قد يكون نفّذ.
+    - **حدُّه:** كلفةٌ مبلَّغةٌ فوق محجوزها (إعادةُ تسعيرٍ أو رسمٌ إضافي) فوترها المزوّدُ فلا تُمحى: تُسمّى `exceeded_reservation_usd`
+      في سطرها وفي `spend_cap`، ويقف التشغيلُ بـ`price_exceeded_reservation`. فالسقفُ حدٌّ على الحجز بسعر الفهرس، والضامنُ رصيدُ HFD2.
+    """
+
+    def __init__(self, api_key: str | None, *, spend_cap_usd: Decimal | None, **kw):
+        super().__init__("hf-router", api_key, **kw)
+        if spend_cap_usd is None:
+            raise AutomaticReviewError("spend_cap_required", "--max-usd")
+        cap = _decimal(str(spend_cap_usd))
+        # وما لا يُكتب ميكرو-دولاراتٍ صحيحة يُردّ ولا يُقرَّب، فلا يتّسع السقفُ فوق المعلَن (ملاحظة Codex على #308)
+        if cap is None or cap <= 0 or cap > HFD2_CAP_USD or (cap * MICROS_PER_USD) % 1:
+            raise AutomaticReviewError("spend_cap_invalid", f"0 < --max-usd <= {HFD2_CAP_USD}, in whole micro-dollars")
+        self.spend_cap_usd = cap
+        cap_micros = _ceil_micros(cap * MICROS_PER_USD)
+        self.budget = Budget(day_remaining_micros=cap_micros, month_remaining_micros=cap_micros)
+        self.spent_micros = 0
+        self.exceeded_micros = 0
+        self.router_price_table: dict[str, dict] | None = None
+        # كلُّ مزوّدٍ نُودي لكل نموذج بسعره، فالمزوّدُ يُختار لكل طلبٍ بحدّه (ملاحظة Codex على #308)
+        self.price_pins: dict[str, dict[str, dict]] = {}
+        self._request_pin: tuple[str, dict] | None = None
+
+    def catalog(self) -> list[dict]:
+        entries = super().catalog()
+        self.router_price_table = {entry["id"]: entry["router_prices"] for entry in entries}
+        return entries
+
+    def _pin(self, model: str, input_tokens: int = FRAMING_TOKENS) -> dict:
+        if self.router_price_table is None:
+            try:
+                self.catalog()
+            except AutomaticReviewError as exc:
+                # فهرسٌ لا يُقرأ سعرٌ مجهول؛ أمّا خطأ النقل (401 و403 والمهلة…) فيبقى برمزه، ولا نداءَ للنموذج في الحالين
+                # (ملاحظة Codex على #308)
+                if exc.code == "catalog_malformed":
+                    raise AutomaticReviewError("price_unknown", model) from exc
+                raise
+        offers = (self.router_price_table or {}).get(model) or {}
+        if not offers:
+            raise AutomaticReviewError("price_unknown", model)
+        # مزوّدٌ أعلن نافذةً دون حدّ الطلب لا يُختار ما دام غيرُه يتّسع، والنافذةُ غيرُ المعلنة لا تُستبعد. وإن لم يتّسع
+        # أحدٌ بالحدّ (والحدُّ بالبايتات يفوق التوكنات) فالأرخصُ، ويحكم المزوّدُ بـ400/413 (ملاحظة Codex على #308)
+        need = input_tokens + self.max_tokens
+        offers = {name: offer for name, offer in offers.items() if offer.get("context_length", need) >= need} or offers
+        # أرخصُ مزوّدٍ لحدّ الطلب الموزون: المدخلُ بسعره و`max_tokens` بسعر المخرج، لا مجموعُ السعرين (ملاحظة Codex على #308)
+        provider = min(offers, key=lambda name: (input_tokens * offers[name]["input"]
+                                                 + self.max_tokens * offers[name]["output"], name))
+        pin = {"provider": provider, "input": offers[provider]["input"], "output": offers[provider]["output"],
+               "read_at": self.catalog_read_at}
+        self.price_pins.setdefault(model, {})[provider] = pin
+        return pin
+
+    def _wire_model(self, model: str) -> str:
+        # المزوّدُ الذي حُجز له هذا الطلب نفسُه، لا اختيارٌ ثانٍ بحدٍّ آخر
+        request = self._request_pin
+        pin = request[1] if request is not None and request[0] == model else self._pin(model)
+        return f"{model}:{pin['provider']}"
+
+    def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
+        if self.exceeded_micros:
+            # كلفةٌ مبلَّغةٌ فوق محجوزها تعني أن سعرَ الفهرس لم يعد حدًّا أعلى، فلا نداءَ بعدها (ملاحظة Codex على #308)
+            raise AutomaticReviewError("price_exceeded_reservation", model)
+        bound = len((system + user).encode("utf-8")) + FRAMING_TOKENS
+        pin = self._pin(model, bound)
+        self._request_pin = (model, pin)
+        estimate = _ceil_micros(bound * pin["input"] + self.max_tokens * pin["output"])
+        handle = f"{model}#{len(self.provider_usage)}"
+        try:
+            self.budget.reserve(handle, estimate)
+        except BudgetRefused as exc:
+            raise AutomaticReviewError("spend_cap_reached", model) from exc
+        rows = len(self.provider_usage)
+        try:
+            content = super().__call__(model, system, user, schema)
+        finally:
+            row = self.provider_usage[-1] if len(self.provider_usage) > rows else None
+            self._settle(handle, pin, row, estimate)
+        return content
+
+    def _settle(self, handle: str, pin: dict, row: dict | None, reserved: int) -> None:
+        usage = (row or {}).get("usage") or {}
+        if row is not None and row.get("cost_status") == "reported":
+            spent = self.budget.settle(handle, _ceil_micros(Decimal(row["cost_usd"]) * MICROS_PER_USD))
+        elif {"prompt_tokens", "completion_tokens"} <= usage.keys():
+            spent = self.budget.settle(handle, _ceil_micros(usage["prompt_tokens"] * pin["input"]
+                                                            + usage["completion_tokens"] * pin["output"]))
+            row.update(cost_usd=str(Decimal(spent) / MICROS_PER_USD), cost_status="estimated_from_prices")
+        else:
+            spent = self.budget.settle_unknown(handle)
+            if row is not None:
+                row.update(cost_usd=str(Decimal(spent) / MICROS_PER_USD), cost_status="reserved_upper_bound")
+        self.spent_micros += spent
+        if spent > reserved:
+            # كلفةٌ فوق محجوزها، مبلَّغةً أو محسوبةً من توكنات الردّ، وقعت فلا تُمحى: تُسمّى في سطرها وفي التقرير، ويُوقف ما
+            # بعدها (ملاحظتا Codex على #308)
+            self.exceeded_micros += spent - reserved
+            if row is not None:
+                row["exceeded_reservation_usd"] = str(Decimal(spent - reserved) / MICROS_PER_USD)
+        if row is not None:
+            row["price"] = {"provider": pin["provider"], "input": str(pin["input"]), "output": str(pin["output"]),
+                            "unit": "usd_per_million_tokens", "read_at": pin["read_at"]}
+
+    def spend_report(self) -> dict:
+        return {**super().spend_report(), "spend_cap": {
+            "cap_usd": str(self.spend_cap_usd), "spent_usd": str(Decimal(self.spent_micros) / MICROS_PER_USD),
+            **({"exceeded_reservation_usd": str(Decimal(self.exceeded_micros) / MICROS_PER_USD)}
+               if self.exceeded_micros else {}),
+            "prices": {model: {provider: {"input": str(pin["input"]), "output": str(pin["output"]),
+                                          "unit": "usd_per_million_tokens", "read_at": pin["read_at"],
+                                          "catalog": bare_url(self.catalog_url)}
+                               for provider, pin in sorted(providers.items())}
+                       for model, providers in sorted(self.price_pins.items())}}}
+
+
+def build_free_transport(backend: str, environ=os.environ, *, spend_cap_usd: Decimal | None = None,
+                         **kw) -> OpenAICompatChat:
+    """النقلُ المجانيّ؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر). وموجّهُ HF مدفوعٌ فنقلُه مسعَّرٌ بسقف."""
     if backend not in BACKENDS:
         raise AutomaticReviewError("backend_unknown", backend)
     spec = BACKENDS[backend]
+    if backend == "hf-router":
+        return PricedRouterChat(environ.get(spec["key_env"]) or None, spend_cap_usd=spend_cap_usd, **kw)
+    if spend_cap_usd is not None:
+        raise AutomaticReviewError("max_usd_is_hf_router_only", backend)
     confirmation = environ.get(spec.get("free_tier_env", "")) if spec.get("free_tier_env") else None
     return OpenAICompatChat(backend, environ.get(spec["key_env"]) or None,
                             free_tier_confirmation=confirmation, **kw)
@@ -816,6 +1014,9 @@ def assess_catalog(entries: list[dict], backend: str) -> dict:
             try:
                 identity = resolve_reviewer(entry["id"], backend)
                 zero_spend = openrouter_zero_spend(entry) if backend == "openrouter" else None
+                if backend == "hf-router" and not entry.get("router_prices"):
+                    # مرشّحٌ بلا سعرٍ مقروء يوقف التشغيلَ كلَّه بـprice_unknown عند أوّل نداء، فلا يُرشَّح (ملاحظة Codex على #308)
+                    raise AutomaticReviewError("price_unknown", entry["id"])
                 row.update(family=identity["family"], lineage=identity["lineage"], eligible=True,
                            zero_spend_proof=zero_spend)
             except AutomaticReviewError as exc:
@@ -989,6 +1190,9 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
                   "runs": runs, "measurement_limits": free_limits(runs[0]["measurement_limits"], args.backend),
                   "provider_usage": transport.provider_usage, **_spend_report(transport),
                   "last_failure_shapes": transport.failures}
+        exceeded = _cap_exceeded(transport)
+        if exceeded:
+            report["status"], budget_error = "failed", budget_error or exceeded
         if budget_error:
             report["code"] = budget_error
         _mark_unavailable(report, [m["error"] for m in models.values()])
@@ -1018,6 +1222,7 @@ def _free_smoke(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     report["provider_usage"] = transport.provider_usage
     report.update(_spend_report(transport))
     report["last_failure_shapes"] = transport.failures
+    failure = failure or _cap_exceeded(transport)
     if failure:
         report["status"], report["code"] = "failed", failure
     # نفادُ حصّة مستبدَلٍ خطأٌ لا رفضُ خدمة: فالإخفاقُ المختلط يبقى failed ولا يصير unavailable (ملاحظة Codex على #174)
@@ -1196,9 +1401,10 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     finally:
         # ما أُرسل (ومنه نداءُ الفهرس) يبقى في السجلّ الدائم على أيّ خروج، قبل أن تُقرأ سجلّاتُ المراجعة في الخلاصة
         # (ملاحظتا Codex على #298). أمّا تشغيلٌ بمعرّفٍ فـRUN.json وخلاصتُه يحملان نداءاتِه، ومجلّدُه جديد
-        evidence = dict(sorted({**prior_evidence, **getattr(transport, "zero_spend_evidence", {})}.items()))
+        evidence = merged_zero_spend_evidence(prior_evidence, transport)
         if not args.run_id and transport.provider_usage:
-            write_ledger(args.bank, prior + transport.provider_usage, evidence)
+            write_ledger(args.bank, prior + transport.provider_usage, evidence,
+                         prior_spend_caps(args.bank) + _run_spend_cap(transport))
     # النجاحُ والاتفاقُ وقائمةُ المالك من المجموعة الأخيرة وحدها (ملاحظتا Codex على #174): المستبدَلُ نُقلت سجلّاتُه إلى
     # reviews/superseded/ وراجع بديلُه البنكَ كلَّه؛ ونفادُ حصّته تاريخٌ مسمًّى (superseded ومعه البديل) لا خطأٌ يُسقط التشغيل،
     # فإن أخفق البديلُ أيضًا عُدّ الخطآن كلاهما. وأخطاءُ مراجعين خارج هذا التشغيل لا تُحسب عليه، وتُروى عددًا.
@@ -1207,6 +1413,7 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     replaced_by = {model: entry["replacement"] for entry in fallbacks for model in entry["exhausted"]
                    if entry["replacement"] is not None}
     final_errors = summary["errors"]
+    failure = failure or _cap_exceeded(transport)
     history_errors, completed = superseded_history(args.bank, replaced_by, current)
     quota_errors = [e for e in history_errors if e["error"] == "quota_exhausted"]
     if failure or final_errors:
@@ -1220,9 +1427,12 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     # الخلاصةُ للبنك كلِّه: السجلُّ والمجموعُ وعدُّ ما لم تثبت كلفتُه من السجلّ المُلحَق، ودليلُ المجانية الجديدُ فوق السابق.
     # أمّا المطبوعُ أدناه فتقريرُ هذا التشغيل وحده.
     ledger = prior + transport.provider_usage
+    # سقفُ التشغيل المدفوع وإنفاقُه في الخلاصة أيضًا، فيُرى في مجلّد التشغيل المرفوع لا في المطبوع وحده (ملاحظة Codex على #308)
+    cap = _spend_report(transport).get("spend_cap")
     _persist_provider_usage(args.bank, ledger, {
         "zero_spend_evidence": evidence,
-        "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger), "token_totals": token_totals(ledger)})
+        "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger), "token_totals": token_totals(ledger),
+        **({"spend_cap": cap} if cap else {})})
     if args.run_id:          # كلُّ سجلٍّ وخلاصةٍ في مجلّد هذا التشغيل يحمل معرّفَه، فيُرفض عند الرفع ما لا يحمله
         stamp_run(args.bank / "reviews", args.run_id)
     final_counts = final_set_counts(args.bank, final_models, pre_existing, current)
@@ -1297,6 +1507,12 @@ def _persist_limits(bank: Path, limits: list[str]) -> None:
         _write_json(path, summary)
 
 
+def _cap_exceeded(transport) -> str | None:
+    """كلفةٌ أبلغها المزوّدُ فوق محجوزها تُفشل التشغيلَ باسمها ولو كانت آخرَ نداء (ملاحظة Codex على #308)."""
+    cap = _spend_report(transport).get("spend_cap")
+    return "price_exceeded_reservation" if isinstance(cap, dict) and "exceeded_reservation_usd" in cap else None
+
+
 def _spend_report(transport) -> dict:
     """مجموعُ التوكنات لكل نموذج، ودليلُ المجانية وعدُّ ما لم تثبت كلفتُه من نقلٍ يعرفهما؛ والنقلُ المزيَّف بلا تقريرٍ لا يُنسب إليه شيء."""
     report = getattr(transport, "spend_report", None)
@@ -1313,13 +1529,15 @@ def _persist_provider_usage(bank: Path, usage: list[dict], spend: dict | None = 
         _write_json(path, summary)
 
 
-def finish_run(run: Path, status: str, code: str | None = None, usage: list[dict] | None = None) -> None:
+def finish_run(run: Path, status: str, code: str | None = None, usage: list[dict] | None = None,
+               spend_cap: dict | None = None) -> None:
     """حالةُ التشغيل في RUN.json: reviewed أو failed أو unavailable أو refused برمزه — فإن خرج قبل الخلاصة بقي هذا وحده،
-    ومعه سجلُّ ما خرج من نداءاتٍ قبل الرفض إن أُعطي (ملاحظة Codex على #290)."""
+    ومعه سجلُّ ما خرج من نداءاتٍ قبل الرفض إن أُعطي (ملاحظة Codex على #290)، وسقفُ التشغيل المدفوع وإنفاقُه، فلا يبقى دليلٌ
+    مدفوعٌ بلا سقفه المعلن (ملاحظة Codex على #308)."""
     path = run / "reviews" / RUN_FILE
     record = json.loads(path.read_text(encoding="utf-8"))
     record.update(status=status, finished_at=_utc_now(), **({"code": code} if code else {}),
-                  **({"provider_usage": usage} if usage else {}))
+                  **({"provider_usage": usage} if usage else {}), **({"spend_cap": spend_cap} if spend_cap else {}))
     _write_json(path, record)
 
 
@@ -1394,7 +1612,7 @@ def _free_main(args, parser) -> int:
         if args.run_id and args.bank is not None and not (args.smoke or args.list_catalog):
             check_public_bank(args.bank)
             run = args.bank = prepare_run(args.bank, args.run_id)
-        transport = build_free_transport(args.backend, max_tokens=args.max_tokens)
+        transport = build_free_transport(args.backend, max_tokens=args.max_tokens, spend_cap_usd=args.max_usd)
         if args.list_catalog:
             assessed = assess_catalog(transport.catalog(), args.backend)
             # حدودُ الجرد من الموضع الواحد (ملاحظة Codex على #174): الهويةُ معرّفُ الفهرس، والعائلةُ مستنتجة، والفهرسُ لحظةٌ واحدة
@@ -1433,12 +1651,14 @@ def _free_main(args, parser) -> int:
     except AutomaticReviewError as exc:
         # ما خرج من نداءاتٍ قبل الرفض (ومنه نداءُ الفهرس الفاشل) يبقى في المطبوع وفي RUN.json (ملاحظة Codex على #290)
         usage = getattr(transport, "provider_usage", None) or []
+        cap = _spend_report(transport).get("spend_cap")
         # وفي السجلّ الدائم للبنك يكتبه `_free_bank` على أيّ خروجٍ بعد الإرسال (ملاحظتا Codex على #298)
         if run is not None:          # خرج قبل الخلاصة: يُرفع سجلُّ الرفض المسمّى وحده، لا ملفّاتٌ تاريخية
-            finish_run(run, "refused", exc.code, usage)
+            finish_run(run, "refused", exc.code, usage, cap if usage else None)
         shape = getattr(exc, "shape", None)
         print(json.dumps({"status": "refused", "code": exc.code, **({"shape": shape} if shape else {}),
-                          **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
+                          **({"provider_usage": usage} if usage else {}),
+                          **({"spend_cap": cap} if cap and usage else {})}, ensure_ascii=False))
         return 2
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return code
@@ -1463,6 +1683,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="يكتب فهرسَ الواجهة المجانية وحكمَ كل نموذجٍ فيه (صالحٌ بعائلته أو مرفوضٌ برمزه)")
     parser.add_argument("--every-family", action="store_true",
                         help="مع --smoke على واجهةٍ مجانية: يجرّب أفضلَ نموذجٍ من كل عائلةٍ مسموحة، أزواجًا")
+    parser.add_argument("--max-usd", type=Decimal, default=None, metavar="USD",
+                        help="سقفُ إنفاق التشغيل على موجّه HF المدفوع، لازمٌ معه ولا يتجاوز HFD2 (‎$20)؛ ولا يُقبل مع غيره")
     parser.add_argument("--max-tokens", type=int, default=4000,
                         help="حدُّ مخرج الردّ على الواجهات المجانية")
     parser.add_argument("--check-artifact", type=Path, metavar="REVIEWS_DIR",
@@ -1487,7 +1709,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"status": "refused", "code": "base_url_is_ollama_only"}, ensure_ascii=False))
             return 2
         return _free_main(args, parser)
-    if args.list_catalog or args.every_family or args.fallbacks or args.run_id:
+    if args.list_catalog or args.every_family or args.fallbacks or args.run_id or args.max_usd is not None:
         print(json.dumps({"status": "refused", "code": "free_backend_option_without_free_backend"},
                          ensure_ascii=False))
         return 2

@@ -65,6 +65,7 @@ TERMINAL_TRANSPORT_ERRORS = frozenset({
     "unauthorized", "forbidden", "not_found", "request_too_large", "redirected",
     "quota_exhausted", "key_missing", "cloud_key_missing", "endpoint_not_allowed",
     "free_model_required", "free_price_unverified", "free_tier_unverified",
+    "price_unknown", "spend_cap_reached", "price_exceeded_reservation",
     "zero_spend_breach", "usage_unavailable", "usage_cost_unavailable", "usage_cost_invalid",
     "payment_required",
     "http_400", "http_401", "http_402", "http_403", "http_404", "http_405",
@@ -77,6 +78,12 @@ BUDGET_TERMINAL_ERRORS = frozenset({
     # rate limit: under a zero spending cap (ق٧١-٢) it stops the run under its own name (ق٧١-٥)
     # instead of moving to a fallback reviewer as `quota_exhausted` does.
     "payment_required",
+    # The paid HF router (#295): a model without a price read from the router's catalog, or a
+    # call whose upper-bound estimate no longer fits the run's --max-usd cap, stops the run under
+    # its own name before any request leaves; neither is a reason to try a fallback reviewer.
+    # A charge reported above its reservation means the catalog price no longer bounds the
+    # next call, so the run stops under that name too.
+    "price_unknown", "spend_cap_reached", "price_exceeded_reservation",
 })
 # A malformed or oversized file cannot improve by repeating that request, but
 # it says nothing about whether this reviewer can handle the next file.
