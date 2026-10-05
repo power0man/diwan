@@ -217,9 +217,11 @@ def _probe_answers(case: dict) -> tuple[tuple[str, str], ...]:
     # الكلمةُ في POLARITY_SPRAY (ملاحظة Codex على #312، #314)
     values = [check["value"] for check in case.get("checks") or []
               if check.get("kind") == "contains" and isinstance(check.get("value"), str)]
-    # كلُّ صيغةٍ جوابٌ مستقلّ: فحصٌ يستبعد «لا يوجد» وحدها يمرّه «ليس فيه X» (ملاحظة Codex على #315)
-    negated = tuple((f"negated_value_{index}", "\n".join(form.format(value) for value in values))
-                    for index, form in enumerate(NEGATION_FORMS, 1))
+    # كلُّ صيغةٍ جوابٌ مستقلّ: فحصٌ يستبعد «لا يوجد» وحدها يمرّه «ليس فيه X» (ملاحظة Codex على #315)؛ وكلُّ قيمةٍ تُنفى
+    # وحدها والباقي مُثبَت: «ألف. لا يوجد باء.» يمرّ وإن حُمي نفيُ «ألف» (#316)
+    negated = tuple((f"negated_value_{index}",
+                     "\n".join([*(f"{other}." for other in values if other != value), form.format(value)]))
+                    for index, form in enumerate(NEGATION_FORMS, 1) for value in dict.fromkeys(values))
     return (("empty", ""), ("echo", question), ("polarity_spray", POLARITY_SPRAY),
             ("echo_and_spray", question + "\n" + POLARITY_SPRAY)) + negated
 
