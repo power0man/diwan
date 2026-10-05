@@ -30,7 +30,11 @@
       "pending": "read_with_ollama_show_license_on_the_mac"
     },
     "easyocr": {
-      "pending": "read_from_the_upstream_license_file"
+      "license": "apache-2.0",
+      "source": "https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE",
+      "read_on": "2026-10-05",
+      "read_via": "upstream_license_file_at_the_release_tag_the_probes_name",
+      "license_text_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
     },
     "gemma3:12b": {
       "pending": "read_with_ollama_show_license_on_the_mac"
@@ -84,7 +88,11 @@
       "pending": "read_with_ollama_show_license_on_the_mac"
     },
     "tesseract": {
-      "pending": "read_from_the_upstream_license_file"
+      "license": "apache-2.0",
+      "source": "https://github.com/tesseract-ocr/tesseract/blob/5.3.4/LICENSE",
+      "read_on": "2026-10-05",
+      "read_via": "upstream_license_file_at_the_release_tag_the_probes_name",
+      "license_text_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
     }
   },
   "historical_evidence": [
@@ -255,6 +263,7 @@
     "evidence_dated_before_enforced_from_may_name_a_pending_model_it_is_historical_and_is_not_edited",
     "the_class_osi_non_commercial_or_custom_terms_is_mechanical_from_the_license_name_and_custom_terms_are_the_owners_to_interpret",
     "historical_evidence_lists_the_probe_files_present_on_2026_10_05_their_top_level_model_fields_are_read_and_nested_ones_are_not",
-    "new_evidence_reads_every_model_field_at_any_depth_and_free_text_under_such_a_field_is_refused_unless_it_is_a_registered_name"
+    "new_evidence_reads_every_model_field_at_any_depth_and_free_text_under_such_a_field_is_refused_unless_it_is_a_registered_name",
+    "ocr_entries_were_read_from_the_upstream_license_file_at_the_release_tag_named_in_the_g8_probes_not_from_the_installed_package_and_tessdata_traineddata_is_not_covered"
   ]
 }

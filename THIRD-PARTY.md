@@ -98,7 +98,7 @@
 | `deepseek-ai/DeepSeek-V4-Flash-0731` | mit | https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731 (2026-10-05) |
 | `deepseek-v4-flash:cloud` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
 | `deepseek-v4.1-flash:cloud` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
-| `easyocr` | تنتظر القراءة: `read_from_the_upstream_license_file` | — |
+| `easyocr` | apache-2.0 | https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE (2026-10-05) |
 | `gemma3:12b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
 | `gemma4:latest` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
 | `inception42/Jais-2-8B-Chat-GGUF` | apache-2.0 | https://huggingface.co/inception42/Jais-2-8B-Chat-GGUF (2026-10-05) |
@@ -112,4 +112,4 @@
 | `qwen3-embedding:0.6b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
 | `qwen3.5:9b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
 | `qwen3:14b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
-| `tesseract` | تنتظر القراءة: `read_from_the_upstream_license_file` | — |
+| `tesseract` | apache-2.0 | https://github.com/tesseract-ocr/tesseract/blob/5.3.4/LICENSE (2026-10-05) |
