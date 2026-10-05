@@ -19,7 +19,8 @@ from tools.evaluate_general import (V11_OPEN_DIGEST, LicenseRefused, registered_
                                     summarize)
 from tools import probe_spend  # noqa: E402
 
-RUN = {"model": DEFAULT_MODEL, "model_version": "v1", "engine_license": "Apache-2.0", "date": "2026-10-05"}
+RUN = {"model": DEFAULT_MODEL, "model_version": "v1", "engine_license": "Apache-2.0", "date": "2026-10-05",
+       "agent": "openai/codex"}
 
 
 def _intake(open_dir, **changes):
@@ -279,3 +280,18 @@ def test_the_intake_sandbox_verdict_must_come_from_the_measurement_receipt(tmp_p
     monkeypatch.setattr(general, "run_seeded_arm", lambda *a, **k: [])
     assert run_general(SeedReplay(lambda u, s: "x"), bank_open=bank, intake=probed(measured), **RUN)["kind"] == \
         "general_number"
+
+
+def test_the_report_names_a_registered_agent_and_passes_the_probe_evidence_guard(tmp_path):
+    """حارسُ docs/probe يردّ تقريرًا بلا `agent`؛ فالمُنتِجُ عميلٌ مسجَّلٌ يُتحقَّق منه قبل أيّ نداء (ملاحظة Codex، #314)."""
+    from tools.probe_evidence import validate_payload
+    bank = _bank(tmp_path / "open", {"tier_a": [_case("a", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])]})
+    seen = []
+    for agent in (None, "", "someone/unregistered"):
+        with pytest.raises(AblationError, match="agent_not_registered"):
+            run_general(SeedReplay(lambda u, s: "الرباط", seen=seen), bank_open=bank, intake=_intake(bank),
+                        **{**RUN, "agent": agent})
+    assert seen == []
+    report = run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, intake=_intake(bank), **RUN)
+    assert report["agent"] == "openai/codex"
+    assert validate_payload(json.loads(json.dumps(report, ensure_ascii=False))) == []

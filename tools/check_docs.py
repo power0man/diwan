@@ -161,14 +161,14 @@ def maritime_counts(root):
 
 
 STATUS_LIMITS = [
-    "tests_collected_is_a_pytest_collection_count_not_a_pass_count",
+    "tests_collected_is_not_published_because_it_changes_with_every_added_test_count_it_with_pytest_collect_only",
     "python_files_counts_tracked_py_files_not_code_quality_and_lines_are_not_published_because_they_change_with_every_edit",
     "maritime_counts_come_from_the_owner_store_and_are_carried_as_published_where_the_store_is_excluded",
     "historical_defects_are_read_from_the_m1_to_m7_acceptance_documents_not_recounted",
 ]
 
 
-def derive(root, test_count):
+def derive(root):
     decisions = (root / 'docs/DECISIONS.md').read_text()
     titles = decision_titles(decisions)
     gate_ref, gate = effective_gate(decisions)
@@ -189,7 +189,9 @@ def derive(root, test_count):
     stage, part, document = max(stages)
     label = 'م' + str(stage).translate(AR) + ({'A': '-أ', 'B': '-ب'}.get(part, part))
     python_files, _python_lines = source_inventory(root)
-    state = {'schema_version': 1, 'tests_collected': test_count,
+    # عددُ الاختبارات المجموعة لا يُودَع: يتغيّر مع كل اختبارٍ يُضاف، فكان وحده يجرّ ٧٩ من ١٠٦ إيداعاتٍ لا تمسّ إلا
+    # ملفّاتٍ مولَّدة، ويعيد تعارضَ الدمج على كل طلبٍ مفتوح (قرار المالك في ٥ أكتوبر ٢٠٢٦، ق٧٣ الخطوة 0.6)
+    state = {'schema_version': 1,
              'latest_technical_document': document, 'latest_technical_scope': label,
              'latest_decision': max(titles), 'historical_m1_m7_defects': defects,
              'historical_m1_m7_defect_total': sum(defects.values()),
@@ -205,8 +207,8 @@ def derive(root, test_count):
 def expected_files(root, state, titles, gate):
     readme = (f"أحدث نطاق تقني موثق: **{state['latest_technical_scope']}** "
               f"(`docs/{state['latest_technical_document']}`).\n"
-              f"الاختبارات المجمعة حاليًا: **{state['tests_collected']}**؛ "
-              "هذا عدد جمع، ونجاح التشغيل له دليله المنفصل.\n"
+              "عددُ الاختبارات المجموعة لا يُودَع لأنه يتغيّر مع كل اختبار؛ يُحسب بـ"
+              "`uv run python -m pytest --collect-only -q`، ونجاحُ التشغيل له دليله المنفصل.\n"
               f"حصيلة عيوب تدقيق م١..م٧ التاريخية: **{state['historical_m1_m7_defect_total']}**، "
               "بجمع أعداد أدلة المراحل السبع، دون دمج عيوب الدفعات اللاحقة.\n"
               "قبول الجودة الآلي متعدد الأنظمة معلق؛ `release_ready=false`.")
@@ -222,8 +224,8 @@ def expected_files(root, state, titles, gate):
     study = '\n'.join([
         '| المقياس | القيمة | كيف تتحقق بنفسك |',
         '|---|---|---|',
-        f"| اختبارات مجموعة | **{state['tests_collected']}** | `.venv/bin/python -m pytest` "
-        "(هذا عدد جمع؛ النجاح له دليله المنفصل) |",
+        "| اختبارات مجموعة | تُحسب عند الطلب | `uv run python -m pytest --collect-only -q \\| tail -1` "
+        "(لا تُودَع: تتغيّر مع كل اختبار؛ والنجاح له دليله المنفصل) |",
         f"| قرارات | **{state['latest_decision']}** بلا فجوة | "
         "`grep -oE 'ق[٠-٩]+' docs/DECISIONS.md \\| sort -u \\| wc -l` |",
         f"| وثائق قبول | **{state['acceptance_documents']}** | `ls docs/M*-ACCEPTANCE.md` |",
@@ -256,7 +258,7 @@ def main(argv=None):
     group.add_argument('--write', action='store_true')
     args = parser.parse_args(argv)
     try:
-        state, titles, gate = derive(ROOT, collect_count(ROOT))
+        state, titles, gate = derive(ROOT)
         expected = expected_files(ROOT, state, titles, gate)
         stale = [path for path, value in expected.items() if not path.exists() or path.read_text() != value]
         if args.write:

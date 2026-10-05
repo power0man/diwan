@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import re
 import subprocess
 
@@ -94,7 +95,7 @@ def test_study_prompt_numbers_are_generated_not_handwritten():
     a push that leaves them behind.
     """
     from tools.check_docs import ROOT, expected_files
-    state = {'tests_collected': 7, 'latest_decision': 9, 'acceptance_documents': 3,
+    state = {'latest_decision': 9, 'acceptance_documents': 3,
              'python_files': 11, 'python_lines': 13, 'maritime_current_documents': 5,
              'maritime_current_pages': 17, 'latest_technical_scope': 'م٩',
              'latest_technical_document': 'M9-ACCEPTANCE.md',
@@ -102,8 +103,12 @@ def test_study_prompt_numbers_are_generated_not_handwritten():
     gate = 'لن ننتقل لأي مرحلة إلا عندما نكون متأكدين من أن المرحلة الحالية بلا مشاكل'
     rendered = expected_files(ROOT, state, {19: 'x'}, gate)
     study = rendered[ROOT / 'docs/STUDY-PROMPT.md']
-    for value in ('**7**', '**9**', '**3**', '**11**', '**5**', '**17**'):
+    for value in ('**9**', '**3**', '**11**', '**5**', '**17**'):
         assert value in study
+    # عددُ الاختبارات لا يُودَع (قرار المالك في ٥ أكتوبر): يُحسب عند الطلب، فلا يجرّ إيداعًا مع كل اختبار
+    assert 'pytest --collect-only' in study and 'pytest --collect-only' in rendered[ROOT / 'README.md']
+    from tools.check_docs import derive
+    assert 'tests_collected' not in derive(ROOT)[0], "المولِّدُ نفسُه لا يحمل العدد"
     # عددُ الأسطر لا يُنشر ولو حمله الجرد (ق٧٣ الخطوة 0.6): كان وحده يجرّ إيداعَ «أعدادٍ مولَّدة» بعد كل إيداع
     assert '**13**' not in study
     # The real counts must live only inside the block the checker owns.
