@@ -40,7 +40,7 @@
 
 <!-- generated:context-index:begin -->
 > **فهرسُ السياق** (`docs/INDEX.md`، مولَّد بـ`tools/context_index.py`؛ لا يُحرَّر يدويًّا). المفتوحُ من §٣: ك٦ (Claude؛ مفتوحة)، ك١٧ (Claude؛ مفتوحة).
-> بصماتُ الوثائق الحاكمة: `docs/STATUS.md` `e1be77c44917` · `docs/VISION.md` `df9b1b18e0bb` · `docs/DECISIONS.md` `a82b616cc9ea` · `docs/PLAN-20260926.md` `43baaf940522`؛ وآخرُ قرار ق٧٣.
+> بصماتُ الوثائق الحاكمة: `docs/STATUS.md` `14c0fe7ac195` · `docs/VISION.md` `df9b1b18e0bb` · `docs/DECISIONS.md` `a82b616cc9ea` · `docs/PLAN-20260926.md` `43baaf940522`؛ وآخرُ قرار ق٧٣.
 > بصمةٌ تغيّرت عمّا رأيتَه في جلستك السابقة تعني أن الوثيقة تغيّرت فتُقرأ من الفهرس؛ وما لم يتغيّر لا يُعاد.
 <!-- generated:context-index:end -->
 
@@ -186,6 +186,7 @@ Gemini وClaude وChatGPT: يحادث، ويكتب، ويبرمج، ويبحث،
 python3 -m pytest
 python3 tools/check_docs.py --write && python3 tools/check_docs.py --check
 python3 tools/context_index.py --write && python3 tools/context_index.py --check
+python3 tools/plan_status.py --write && python3 tools/plan_status.py --check
 python3 tools/mutation_check.py --range origin/main..HEAD
 python3 tools/sign_anchors.py verify
 python3 tools/agent_attribution.py --range origin/main..HEAD
