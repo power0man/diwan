@@ -35,9 +35,9 @@
   },
   "after": {
     "AGENTS.md": {
-      "bytes": 30211,
-      "lines": 286,
-      "tokens_estimate": 8042,
+      "bytes": 30530,
+      "lines": 288,
+      "tokens_estimate": 8134,
       "codex_cut_line": null,
       "task_rows": 3,
       "task_rows_visible_to_codex": 3,
@@ -46,8 +46,8 @@
     },
     "reading_set_in_section_0": {
       "AGENTS.md": {
-        "bytes": 30211,
-        "tokens_estimate": 8042
+        "bytes": 30530,
+        "tokens_estimate": 8134
       },
       "docs/INDEX.md": {
         "bytes": 18423,
@@ -59,8 +59,8 @@
       }
     },
     "reading_set_total": {
-      "bytes": 59031,
-      "tokens_estimate": 15391
+      "bytes": 59350,
+      "tokens_estimate": 15483
     },
     "archived_rows": 42,
     "open_rows_in_agents_md": 3,
@@ -69,8 +69,8 @@
   },
   "every_indexed_document_after": {
     "AGENTS.md": {
-      "bytes": 30211,
-      "tokens_estimate": 8042
+      "bytes": 30530,
+      "tokens_estimate": 8134
     },
     "docs/STATUS.md": {
       "bytes": 27245,
