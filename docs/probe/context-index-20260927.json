@@ -50,8 +50,8 @@
         "tokens_estimate": 8082
       },
       "docs/INDEX.md": {
-        "bytes": 19401,
-        "tokens_estimate": 5121
+        "bytes": 19402,
+        "tokens_estimate": 5122
       },
       "docs/VISION.md": {
         "bytes": 10397,
@@ -59,8 +59,8 @@
       }
     },
     "reading_set_total": {
-      "bytes": 60101,
-      "tokens_estimate": 15686
+      "bytes": 60102,
+      "tokens_estimate": 15687
     },
     "archived_rows": 43,
     "open_rows_in_agents_md": 2,
@@ -73,8 +73,8 @@
       "tokens_estimate": 8082
     },
     "docs/STATUS.md": {
-      "bytes": 36000,
-      "tokens_estimate": 9520
+      "bytes": 37933,
+      "tokens_estimate": 10025
     },
     "docs/REVIEW-20261005.md": {
       "bytes": 29160,
