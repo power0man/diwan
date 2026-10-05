@@ -65,20 +65,121 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from evaluation.external_review import (AUTHOR_FAMILY, BUDGET_TERMINAL_ERRORS, DEFAULT_REVIEWERS,  # noqa: E402
-                                        DEVELOPER_FAMILIES, ENGINE_FAMILY, SUPERSEDED_DIR,
+                                        DEVELOPER_FAMILIES, ENGINE_FAMILY, LEDGER_FILE, SUPERSEDED_DIR,
                                         _slug, open_files, review_bank, smoke, summarize)
 from evaluation.multi_system_review import AutomaticReviewError, model_family  # noqa: E402
+from core.canonical import SAFE_INT  # noqa: E402
+from core.locality import is_cloud_model  # noqa: E402
 
 MAX_RESPONSE_BYTES = 8_000_000
 LOCAL_PREFIXES = ("http://127.0.0.1:", "http://localhost:", "http://[::1]:")
 CLOUD_ENDPOINT = "https://ollama.com"          # النقطةُ السحابية الوحيدة المسموحة (ق٦٠)
 CLOUD_KEY_ENV = "OLLAMA_API_KEY"               # يُقرأ من البيئة وحدها، ولا يُطبع ولا يُودَع
+USAGE_FIELDS = ("prompt_tokens", "completion_tokens", "total_tokens")
+
+
+def ollama_usage(body: object) -> dict | None:
+    """عدّادا Ollama (`prompt_eval_count` و`eval_count`) بأسماء سجلّ النداءات المشترك، أو None إن لم يُبلغ أيًّا منهما.
+
+    عددٌ صحيحٌ غيرُ سالب لا يتجاوز `SAFE_INT` وحده يُقبل (لا منطقيّ ولا نصّ ولا ما يُقرَّب في قارئ JSON)، كحدّ مفكّك Ollama
+    في المزوّد (`providers/ollama_codec.py`)؛ والمجموعُ لا يُكتب إلا من العدّادين كليهما وفي الحدّ نفسِه (جديد-spend-ledger)."""
+    if not isinstance(body, dict):
+        return None
+    usage = {}
+    for source, field in (("prompt_eval_count", "prompt_tokens"), ("eval_count", "completion_tokens")):
+        value = body.get(source)
+        if type(value) is int and 0 <= value <= SAFE_INT:
+            usage[field] = value
+    if not usage:
+        return None
+    if len(usage) == 2 and usage["prompt_tokens"] + usage["completion_tokens"] <= SAFE_INT:
+        usage["total_tokens"] = usage["prompt_tokens"] + usage["completion_tokens"]
+    return usage
+
+
+def token_totals(rows: list[dict]) -> dict:
+    """مجموعُ التوكنات لكل نموذج من سجلّ النداءات، ومعه عددُ ما أُرسل باستهلاكٍ ناقص فلا يُقرأ المجموعُ كاملًا وهو ناقص.
+
+    والناقصُ ما غاب عنه أيُّ حقلٍ من الثلاثة، ومنه ما لم يُبلَغ استهلاكُه أصلًا وما أُبلغ عدّادٌ واحدٌ منه (ملاحظة Codex على #298).
+    صفوفُ الفهرس لا نموذجَ لها ولا استهلاك فلا تدخل، وما لم يُرسل لا يُعدّ (جديد-spend-ledger)."""
+    totals: dict[str, dict] = {}
+    for row in rows:
+        if row.get("kind") == "catalog" or not row.get("request_sent"):
+            continue
+        entry = totals.setdefault(row["model"], {"calls": 0, "calls_with_incomplete_usage": 0,
+                                                 **{field: 0 for field in USAGE_FIELDS}})
+        entry["calls"] += 1
+        usage = row.get("usage") or {}
+        if any(field not in usage for field in USAGE_FIELDS):
+            entry["calls_with_incomplete_usage"] += 1
+        for field in USAGE_FIELDS:
+            entry[field] += usage.get(field, 0)
+    # مجموعٌ فوق SAFE_INT يُقرَّب في قارئ JSON ولو كان كلُّ نداءٍ في الحدّ: فلا يُكتب رقمًا بل يُعلَن اسمُه (ملاحظة Codex على #298)
+    for entry in totals.values():
+        beyond = [field for field in USAGE_FIELDS if entry[field] > SAFE_INT]
+        for field in beyond:
+            entry[field] = None
+        if beyond:
+            entry["fields_beyond_safe_integer"] = beyond
+    return dict(sorted(totals.items()))
+
+
+def prior_provider_usage(bank: Path) -> list[dict]:
+    """سجلُّ النداءات الذي كتبته تشغيلاتٌ سابقة في خلاصة البنك، ليُضاف إليه لا ليُستبدل (ملاحظة Codex على #298).
+
+    إعادةُ التشغيل على بنكٍ مراجَع تتخطّى سجلّاته فلا يُرسل نداءٌ؛ وكتابةُ سجلّ هذا التشغيل وحده كانت تمحو أدلّةَ الإنفاق
+    للمراجعات التي ما زالت الخلاصةُ تمثّلها. وخلاصةٌ مفقودةٌ أو بلا سجلٍّ قائمةٌ فارغة، لا خطأ.
+
+    والمصدرُ الأول `reviews/PROVIDER_USAGE.json` الذي يُكتب عند كلِّ خروجٍ ومنه الرفض؛ فتشغيلٌ رُفض بعد أن أرسل لا تضيع
+    نداءاتُه حين تتخطّى الإعادةُ سجلّاتِه (ملاحظة Codex على #298). والخلاصةُ مصدرٌ ثانٍ لبنكٍ لم يُكتب له الملفّ."""
+    ledger = _read_json_object(bank / "reviews" / LEDGER_FILE)
+    rows = ledger.get("provider_usage") if "provider_usage" in ledger else _prior_summary(bank).get("provider_usage")
+    return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+
+
+def write_ledger(bank: Path, rows: list[dict], evidence: dict) -> None:
+    """السجلُّ الدائم كاملًا (السابقُ وما أُلحق به)، ومعه دليلُ المجانية الذي تقوم عليه نداءاتُه: فتشغيلٌ سقط بعد الإرسال
+    وقبل الخلاصة لا تعود نداءاتُه في الإعادة بلا بنود السعر ولحظة قراءتها (ملاحظة Codex على #298). ولا يُكتب في تشغيلٍ
+    بمعرّف: مجلّدُه جديدٌ لا يُعاد، وخلاصتُه وRUN.json يحملان نداءاتِه، وما يُرفع منه عقدُه ثابت (`check_artifact`)."""
+    _write_json(bank / "reviews" / LEDGER_FILE, {"schema_version": 1, "provider_usage": rows,
+                                                 "zero_spend_evidence": dict(sorted(evidence.items()))})
+
+
+def prior_zero_spend_evidence(bank: Path) -> dict:
+    """دليلُ المجانية الذي حفظته تشغيلاتٌ سابقة لكل نموذج، فلا تمحوه إعادةٌ لم تقرأ الفهرسَ لذلك النموذج (ملاحظة Codex على #298).
+    من السجلّ الدائم أولًا كسجلّ النداءات، ثم من الخلاصة لبنكٍ لم يُكتب له السجلّ بهذا الحقل."""
+    ledger = _read_json_object(bank / "reviews" / LEDGER_FILE)
+    evidence = ledger["zero_spend_evidence"] if "zero_spend_evidence" in ledger \
+        else _prior_summary(bank).get("zero_spend_evidence")
+    if not isinstance(evidence, dict):
+        return {}
+    return {model: entry for model, entry in evidence.items() if isinstance(model, str) and isinstance(entry, dict)}
+
+
+def _prior_summary(bank: Path) -> dict:
+    return _read_json_object(bank / "reviews" / "SUMMARY.json")
+
+
+def _read_json_object(path: Path) -> dict:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def cost_unconfirmed_attempts(rows: list[dict]) -> int:
+    """نداءاتُ OpenRouter التي أُرسلت ولم تثبت كلفتُها (#285)؛ تُعدّ من السجلّ الذي تُعطاه، تشغيلًا كان أو البنكَ كلَّه."""
+    return sum(1 for row in rows if row.get("kind") != "catalog" and row.get("provider") == "openrouter"
+               and row.get("request_sent") and row.get("cost_status") != "reported")
 
 
 class OllamaChat:
     """نداءُ /api/chat على خادمٍ محليّ (بلا وكيلٍ ولا تحويل)، أو على ollama.com بمفتاحٍ من البيئة.
 
     المفتاحُ لا يُحفظ إلا في ترويسة الطلب، ولا يظهر في أي خطأٍ أو تقرير: الأخطاءُ رموزٌ باسم النموذج.
+    وكلُّ محاولةٍ صفٌّ في `provider_usage` بشكل سجلّ الواجهات المجانية نفسِه، فيه توكناتُ الردّ (جديد-spend-ledger).
+    وOllama لا يُبلغ كلفةً في ردّه، والنموذجُ السحابيُّ يُحاسَب باشتراك الحساب؛ فالكلفةُ `not_reported` لا صفرٌ مفترض.
     """
 
     def __init__(self, base_url: str = "http://127.0.0.1:11434", timeout: int = 900,
@@ -98,33 +199,59 @@ class OllamaChat:
             raise AutomaticReviewError("local_endpoint_required", base_url)
         self.url = base + "/api/chat"
         self.timeout = timeout
+        self.provider_usage: list[dict] = []     # صفٌّ لكل محاولة: لا رسالةَ ولا مفتاحَ ولا نصَّ ردّ
 
     def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
-        payload = {"model": model, "stream": False, "format": schema,
-                   "messages": [{"role": "system", "content": system},
-                                {"role": "user", "content": user}],
-                   "options": {"temperature": 0, "seed": 0, "num_ctx": 65536}}
-        request = urllib.request.Request(
-            self.url, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            headers=dict(self._headers))
+        started, sent, usage = time.monotonic(), False, None
         try:
-            with self.opener.open(request, timeout=self.timeout) as response:
-                raw = response.read(MAX_RESPONSE_BYTES + 1)
-        except urllib.error.HTTPError as exc:
-            raise AutomaticReviewError(f"http_{exc.code}", model) from exc
-        except TimeoutError as exc:
-            raise AutomaticReviewError("transport_timeout", model) from exc
-        except (urllib.error.URLError, OSError) as exc:
-            raise AutomaticReviewError("transport_error", model) from exc
-        if len(raw) > MAX_RESPONSE_BYTES:
-            raise AutomaticReviewError("response_too_large", model)
-        try:
-            content = json.loads(raw)["message"]["content"]
-        except (ValueError, KeyError, TypeError) as exc:
-            raise AutomaticReviewError("ollama_response_malformed", model) from exc
-        if not isinstance(content, str):
-            raise AutomaticReviewError("ollama_response_malformed", model)
+            payload = {"model": model, "stream": False, "format": schema,
+                       "messages": [{"role": "system", "content": system},
+                                    {"role": "user", "content": user}],
+                       "options": {"temperature": 0, "seed": 0, "num_ctx": 65536}}
+            request = urllib.request.Request(
+                self.url, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                headers=dict(self._headers))
+            sent = True
+            try:
+                with self.opener.open(request, timeout=self.timeout) as response:
+                    raw = response.read(MAX_RESPONSE_BYTES + 1)
+            except urllib.error.HTTPError as exc:
+                raise AutomaticReviewError(f"http_{exc.code}", model) from exc
+            except TimeoutError as exc:
+                raise AutomaticReviewError("transport_timeout", model) from exc
+            except (urllib.error.URLError, OSError) as exc:
+                raise AutomaticReviewError("transport_error", model) from exc
+            except http.client.HTTPException as exc:      # ردٌّ مبتور (IncompleteRead) لا يرث OSError (ملاحظة Codex على #298)
+                raise AutomaticReviewError("transport_error", model) from exc
+            if len(raw) > MAX_RESPONSE_BYTES:
+                raise AutomaticReviewError("response_too_large", model)
+            try:
+                body = json.loads(raw)
+                usage = ollama_usage(body)
+                content = body["message"]["content"]
+            except (ValueError, KeyError, TypeError) as exc:
+                raise AutomaticReviewError("ollama_response_malformed", model) from exc
+            if not isinstance(content, str):
+                raise AutomaticReviewError("ollama_response_malformed", model)
+        except AutomaticReviewError as exc:
+            self._record(model, started, "error", sent, usage, exc.code)
+            raise
+        self._record(model, started, "succeeded", sent, usage, None)
         return content
+
+    def _record(self, model: str, started: float, status: str, sent: bool, usage: dict | None,
+                error: str | None) -> None:
+        self.provider_usage.append({
+            "provider": "ollama", "model": model, "family": model_family(model),
+            "cloud": self.cloud or is_cloud_model(model),
+            "at": _utc_now(), "elapsed_ms": round((time.monotonic() - started) * 1000),
+            "status": status, "error": error, "request_sent": sent,
+            "usage": usage, "cost_usd": None, "cost_status": "not_reported", "zero_spend_proof": None,
+        })
+
+    def spend_report(self) -> dict:
+        """مجموعُ التوكنات لكل نموذج؛ ولا دليلَ مجانيةٍ هنا، فالاشتراكُ لا يُقرأ من الردّ."""
+        return {"token_totals": token_totals(self.provider_usage)}
 
 
 def build_transport(base_url: str, environ=os.environ) -> OllamaChat:
@@ -491,11 +618,9 @@ class OpenAICompatChat:
 
         نداءٌ أُرسل إلى OpenRouter ثم انقطع أو عاد بلا JSON يُعاد ولا يوقف التشغيل، وكلفتُه مجهولة؛ فلا يُبلَّغ التشغيلُ نظيفًا
         وهو فيه (#285): يُعدّ هنا باسمه، والمالكُ يقرأ العددَ بجانب `provider_usage`."""
-        unconfirmed = sum(1 for row in self.provider_usage
-                          if row.get("kind") != "catalog" and row["provider"] == "openrouter"
-                          and row["request_sent"] and row["cost_status"] != "reported")
         return {"zero_spend_evidence": dict(sorted(self.zero_spend_evidence.items())),
-                "cost_unconfirmed_attempts": unconfirmed}
+                "cost_unconfirmed_attempts": cost_unconfirmed_attempts(self.provider_usage),
+                "token_totals": token_totals(self.provider_usage)}
 
     def _record_provider_usage(self, model: str, started: float, status: str, *,
                                usage: dict | None = None, cost: Decimal | None = None,
@@ -996,7 +1121,7 @@ def other_reviewer_errors(bank: Path, final_models: set[str], current: set[str])
     root = bank / "reviews"
     count = 0
     for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
-        if path.name == "SUMMARY.json" or path.relative_to(root).parts[0] == SUPERSEDED_DIR:
+        if path.name == "SUMMARY.json" or path == root / LEDGER_FILE or path.relative_to(root).parts[0] == SUPERSEDED_DIR:
             continue
         record = json.loads(path.read_text(encoding="utf-8"))
         if record.get("error") and record.get("model") not in final_models and record.get("file") in current:
@@ -1013,7 +1138,7 @@ def _successful_records(bank: Path) -> dict[str, str]:
     found: dict[str, str] = {}
     for path in sorted(root.rglob("*.json")) if root.is_dir() else []:
         relative = path.relative_to(root)
-        if path.name in ("SUMMARY.json", RUN_FILE) or relative.parts[0] == SUPERSEDED_DIR:
+        if path.name in ("SUMMARY.json", RUN_FILE) or relative == Path(LEDGER_FILE) or relative.parts[0] == SUPERSEDED_DIR:
             continue
         raw = path.read_bytes()
         if json.loads(raw).get("error") is None:
@@ -1043,28 +1168,37 @@ def final_set_counts(bank: Path, final_models: set[str], pre_existing: dict[str,
 def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     check_public_bank(args.bank)
     inspect_open_split(args.bank)              # لا رابطَ ولا محجوبَ بالبصمة قبل أوّل نداء
+    # سجلُّ الخلاصة ودليلُ مجانيتها قبل أن تُعاد كتابتُها، فيُلحَق بهما ولا يُستبدلان (ملاحظة Codex على #298)
+    prior, prior_evidence = prior_provider_usage(args.bank), prior_zero_spend_evidence(args.bank)
     # ملفّاتُ open/ الحالية: كلُّ قراءةٍ لسجلّات المراجعة بعدها تُقارن بها، فسجلُّ ملفٍّ حُذف أو أُعيدت تسميتُه منذ تشغيلٍ سابق
     # لا يدخل النفادَ ولا الاتفاقَ ولا قائمةَ المالك ولا الأعداد ولا التاريخ (ملاحظة Codex على #174)
     current = {path.relative_to(args.bank / "open").as_posix() for path in open_files(args.bank)}
-    candidates, source = _free_candidates(args, transport)
-    want = max(2, len(args.reviewers or []))
-    attempts = {"reviewed": 0, "skipped": 0, "failed": 0}
-    pre_existing = _successful_records(args.bank)
+    try:
+        candidates, source = _free_candidates(args, transport)
+        want = max(2, len(args.reviewers or []))
+        attempts = {"reviewed": 0, "skipped": 0, "failed": 0}
+        pre_existing = _successful_records(args.bank)
 
-    def run(chosen: list[dict]) -> set[str]:
-        models = [c["model"] for c in chosen]
-        # كلُّ سجلٍّ يحمل واجهتَه، ولا يُعاد استعمالُ سجلِّ واجهةٍ أخرى بمعرّف النموذج نفسِه (ملاحظة Codex على #174)
-        counts = review_bank(args.bank, models, transport, brief_path=args.brief,
-                             stamp={"backend": transport.backend, "endpoint_host": transport.endpoint_host},
-                             reusable=lambda prior: prior.get("backend") == transport.backend)
-        for key in attempts:
-            attempts[key] += counts[key]
-        return _quota_models(args.bank, models, current)
+        def run(chosen: list[dict]) -> set[str]:
+            models = [c["model"] for c in chosen]
+            # كلُّ سجلٍّ يحمل واجهتَه، ولا يُعاد استعمالُ سجلِّ واجهةٍ أخرى بمعرّف النموذج نفسِه (ملاحظة Codex على #174)
+            counts = review_bank(args.bank, models, transport, brief_path=args.brief,
+                                 stamp={"backend": transport.backend, "endpoint_host": transport.endpoint_host},
+                                 reusable=lambda prior: prior.get("backend") == transport.backend)
+            for key in attempts:
+                attempts[key] += counts[key]
+            return _quota_models(args.bank, models, current)
 
-    def replaced(identity: dict, replacement: list[str]) -> None:
-        supersede_records(args.bank, identity["model"], replacement)
+        def replaced(identity: dict, replacement: list[str]) -> None:
+            supersede_records(args.bank, identity["model"], replacement)
 
-    chosen, fallbacks, failure = with_fallback(candidates, want, run, on_replaced=replaced)
+        chosen, fallbacks, failure = with_fallback(candidates, want, run, on_replaced=replaced)
+    finally:
+        # ما أُرسل (ومنه نداءُ الفهرس) يبقى في السجلّ الدائم على أيّ خروج، قبل أن تُقرأ سجلّاتُ المراجعة في الخلاصة
+        # (ملاحظتا Codex على #298). أمّا تشغيلٌ بمعرّفٍ فـRUN.json وخلاصتُه يحملان نداءاتِه، ومجلّدُه جديد
+        evidence = dict(sorted({**prior_evidence, **getattr(transport, "zero_spend_evidence", {})}.items()))
+        if not args.run_id and transport.provider_usage:
+            write_ledger(args.bank, prior + transport.provider_usage, evidence)
     # النجاحُ والاتفاقُ وقائمةُ المالك من المجموعة الأخيرة وحدها (ملاحظتا Codex على #174): المستبدَلُ نُقلت سجلّاتُه إلى
     # reviews/superseded/ وراجع بديلُه البنكَ كلَّه؛ ونفادُ حصّته تاريخٌ مسمًّى (superseded ومعه البديل) لا خطأٌ يُسقط التشغيل،
     # فإن أخفق البديلُ أيضًا عُدّ الخطآن كلاهما. وأخطاءُ مراجعين خارج هذا التشغيل لا تُحسب عليه، وتُروى عددًا.
@@ -1083,7 +1217,12 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     status = "failed" if failure or counted else "reviewed"
     limits = free_limits(summary["measurement_limits"], args.backend)
     _persist_limits(args.bank, limits)
-    _persist_provider_usage(args.bank, transport.provider_usage, _spend_report(transport))
+    # الخلاصةُ للبنك كلِّه: السجلُّ والمجموعُ وعدُّ ما لم تثبت كلفتُه من السجلّ المُلحَق، ودليلُ المجانية الجديدُ فوق السابق.
+    # أمّا المطبوعُ أدناه فتقريرُ هذا التشغيل وحده.
+    ledger = prior + transport.provider_usage
+    _persist_provider_usage(args.bank, ledger, {
+        "zero_spend_evidence": evidence,
+        "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger), "token_totals": token_totals(ledger)})
     if args.run_id:          # كلُّ سجلٍّ وخلاصةٍ في مجلّد هذا التشغيل يحمل معرّفَه، فيُرفض عند الرفع ما لا يحمله
         stamp_run(args.bank / "reviews", args.run_id)
     final_counts = final_set_counts(args.bank, final_models, pre_existing, current)
@@ -1159,7 +1298,7 @@ def _persist_limits(bank: Path, limits: list[str]) -> None:
 
 
 def _spend_report(transport) -> dict:
-    """دليلُ المجانية وعدُّ ما لم تثبت كلفتُه، من نقلٍ يعرفهما؛ والنقلُ الذي لا يعرفهما (Ollama) لا يُنسب إليه شيء."""
+    """مجموعُ التوكنات لكل نموذج، ودليلُ المجانية وعدُّ ما لم تثبت كلفتُه من نقلٍ يعرفهما؛ والنقلُ المزيَّف بلا تقريرٍ لا يُنسب إليه شيء."""
     report = getattr(transport, "spend_report", None)
     return report() if callable(report) else {}
 
@@ -1294,6 +1433,7 @@ def _free_main(args, parser) -> int:
     except AutomaticReviewError as exc:
         # ما خرج من نداءاتٍ قبل الرفض (ومنه نداءُ الفهرس الفاشل) يبقى في المطبوع وفي RUN.json (ملاحظة Codex على #290)
         usage = getattr(transport, "provider_usage", None) or []
+        # وفي السجلّ الدائم للبنك يكتبه `_free_bank` على أيّ خروجٍ بعد الإرسال (ملاحظتا Codex على #298)
         if run is not None:          # خرج قبل الخلاصة: يُرفع سجلُّ الرفض المسمّى وحده، لا ملفّاتٌ تاريخية
             finish_run(run, "refused", exc.code, usage)
         shape = getattr(exc, "shape", None)
@@ -1353,14 +1493,19 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     base_url = args.base_url or "http://127.0.0.1:11434"
     reviewers = args.reviewers or list(DEFAULT_REVIEWERS)
+    transport = None
     if args.smoke:
         try:
+            transport = build_transport(base_url)
             with tempfile.TemporaryDirectory() as tmp:
-                report = smoke(Path(tmp), reviewers, build_transport(base_url),
-                               brief_path=args.brief)
+                report = smoke(Path(tmp), reviewers, transport, brief_path=args.brief)
         except AutomaticReviewError as exc:
-            print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+            usage = getattr(transport, "provider_usage", None) or []
+            print(json.dumps({"status": "refused", "code": exc.code,
+                              **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
             return 2
+        # سجلُّ النداءات وتوكناتُها في دليل الدخان كما في الواجهات المجانية (جديد-spend-ledger)
+        report.update(provider_usage=getattr(transport, "provider_usage", []), **_spend_report(transport))
         args.smoke.parent.mkdir(parents=True, exist_ok=True)
         args.smoke.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",
                               encoding="utf-8")
@@ -1369,14 +1514,28 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if report["status"] == "passed" else 1
     if args.bank is None:
         parser.error("مجلّد البنك مطلوب، أو --smoke")
+    # ودليلُ مجانيةٍ حفظته الواجهاتُ المجانية على البنك نفسِه يبقى مع نداءاته في السجلّ والخلاصة (ملاحظة Codex على #298)
+    prior, prior_evidence = prior_provider_usage(args.bank), prior_zero_spend_evidence(args.bank)
     try:
-        counts = review_bank(args.bank, reviewers, build_transport(base_url),
-                             brief_path=args.brief)
+        transport = build_transport(base_url)
+        try:
+            counts = review_bank(args.bank, reviewers, transport, brief_path=args.brief)
+        finally:
+            # ما أُرسل يبقى في السجلّ الدائم للبنك على أيّ خروج: نجاحٍ، أو رفضٍ، أو سجلِّ مراجعةٍ تالفٍ يُسقط قراءتَه.
+            # فيُكتب قبل أن تُقرأ سجلّاتُ المراجعة في الخلاصة (ملاحظتا Codex على #298)
+            usage = list(getattr(transport, "provider_usage", []))
+            if usage:
+                write_ledger(args.bank, prior + usage, prior_evidence)
         summary = summarize(args.bank)
     except AutomaticReviewError as exc:
-        print(json.dumps({"status": "refused", "code": exc.code, "detail": str(exc)},
-                         ensure_ascii=False))
+        usage = getattr(transport, "provider_usage", None) or []
+        print(json.dumps({"status": "refused", "code": exc.code, "detail": str(exc),
+                          **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
         return 2
+    # السجلُّ يُلحَق بما كتبته التشغيلاتُ السابقة ولا يستبدله، والمجموعُ من السجلّ كلِّه (ملاحظة Codex على #298)
+    ledger = prior + list(getattr(transport, "provider_usage", []))
+    _persist_provider_usage(args.bank, ledger, {"token_totals": token_totals(ledger),
+                                                **({"zero_spend_evidence": prior_evidence} if prior_evidence else {})})
     print(json.dumps({
         "status": "failed" if counts["failed"] else "reviewed",
         **counts,

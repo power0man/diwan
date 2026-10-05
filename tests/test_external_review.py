@@ -1415,3 +1415,110 @@ def test_groq_mock_logs_tokens_but_never_invents_an_unreported_zero_cost():
         "cost_usd": None, "cost_status": "not_reported",
         "zero_spend_proof": "operator_confirmed_account_free_tier",
     }]
+
+
+def test_a_free_rerun_on_a_reviewed_bank_keeps_the_bank_ledger(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: إعادةُ واجهةٍ مجانية على بنكٍ مراجَع تتخطّى سجلّاته فلا تُرسل نداءً، وكانت تستبدل سجلَّ
+    الخلاصة ومجموعَها بسجلّها الفارغ. والآن يُلحَق بهما؛ والمطبوعُ تقريرُ هذا التشغيل وحده."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    args = ["--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF)]
+    bank = _public_bank(tmp_path, "rerun")
+    _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    assert cli.main([str(bank), *args]) == 0
+    capsys.readouterr()
+    summary_path = bank / "reviews" / "SUMMARY.json"
+    first = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert sorted(first["token_totals"]) == sorted([DS, MI])
+    # ما سجّله تشغيلٌ سابقٌ على OpenRouter: دليلُ مجانيته في الخلاصة، ونداءٌ لم تثبت كلفتُه في السجلّ الدائم؛ يبقيان للبنك
+    ledger_path = bank / "reviews" / cli.LEDGER_FILE
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    assert ledger["provider_usage"] == first["provider_usage"], "السجلُّ الدائم والخلاصةُ سجلٌّ واحد"
+    first["zero_spend_evidence"] = {"earlier/model:free": {"proof": "catalog_free_suffix_and_all_pricing_zero"}}
+    first["provider_usage"].append({"provider": "openrouter", "model": "earlier/model:free", "request_sent": True,
+                                    "usage": None, "cost_status": "not_reported"})
+    summary_path.write_text(json.dumps(first), encoding="utf-8")
+    ledger_path.write_text(json.dumps({**ledger, "provider_usage": first["provider_usage"],
+                                       "zero_spend_evidence": first["zero_spend_evidence"]}), encoding="utf-8")
+    again = _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    assert cli.main([str(bank), *args]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    second = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert again.chat_models() == [], "البنكُ مراجَعٌ فلا نداء"
+    assert printed["token_totals"] == {}, "المطبوعُ لهذا التشغيل وحده"
+    assert second["provider_usage"][:len(first["provider_usage"])] == first["provider_usage"]
+    assert second["token_totals"] == {**first["token_totals"], "earlier/model:free": {
+        "calls": 1, "calls_with_incomplete_usage": 1, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}}
+    assert second["zero_spend_evidence"] == first["zero_spend_evidence"]
+    assert second["cost_unconfirmed_attempts"] == 1 and printed["cost_unconfirmed_attempts"] == 0
+
+
+def test_free_calls_reach_the_bank_ledger_when_an_unnamed_failure_follows_them(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: خطأٌ غيرُ مسمًّى بعد الإرسال (سجلٌّ لم يعد يُقرأ) كان يُسقط التشغيلَ قبل كتابة السجلّ الدائم،
+    والمعالجُ يلتقط الرفضَ المسمّى وحده. والآن يُكتب على أيّ خروج."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    args = ["--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF)]
+    bank = _public_bank(tmp_path, "unnamed")
+    _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+
+    def unreadable(*args, **kwargs):
+        raise json.JSONDecodeError("truncated record", "{", 1)
+
+    monkeypatch.setattr(cli, "_quota_models", unreadable)
+    with pytest.raises(json.JSONDecodeError):
+        cli.main([str(bank), *args])
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert sorted(row["model"] for row in ledger["provider_usage"] if row.get("kind") != "catalog") == sorted([DS, MI])
+
+
+def test_an_openrouter_run_that_fails_after_sending_keeps_its_zero_spend_evidence_for_the_rerun(
+        tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: تشغيلُ OpenRouter أرسل ثم سقط قبل الخلاصة؛ فبنودُ السعر ولحظةُ قراءتها في السجلّ الدائم مع
+    نداءاته، والإعادةُ التي تتخطّى ما رُوجع تنشرها معها، لا عبارةَ zero_spend_proof وحدها."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    monkeypatch.setenv("OPENROUTER_API_KEY", KEY)
+    reply = _completion(json.dumps(_ok(["c1", "c2", "c3"]), ensure_ascii=False))
+    args = ["--backend", "openrouter", "--reviewer", OR_DS, "--reviewer", OR_MI, "--brief", str(BRIEF)]
+    bank = _public_bank(tmp_path, "evidence")
+    opener = UsageOpener([_priced(OR_DS), _priced(OR_MI)], {OR_DS: [reply], OR_MI: [reply]})
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: opener)
+    real = cli._quota_models
+
+    def unreadable(*args, **kwargs):
+        raise json.JSONDecodeError("truncated record", "{", 1)
+
+    monkeypatch.setattr(cli, "_quota_models", unreadable)
+    with pytest.raises(json.JSONDecodeError):
+        cli.main([str(bank), *args])
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    catalog_at = [row["at"] for row in ledger["provider_usage"] if row.get("kind") == "catalog"]
+    assert sorted(ledger["zero_spend_evidence"]) == sorted([OR_DS, OR_MI])
+    monkeypatch.setattr(cli, "_quota_models", real)
+    again = UsageOpener([_priced(OR_DS), _priced(OR_MI)], {OR_DS: [reply], OR_MI: [reply]})
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: again)
+    assert cli.main([str(bank), *args]) == 0
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert [r for r in again.requests if r.data is not None] == [], "البنكُ مراجَعٌ فلا نداءَ مراجعة"
+    assert summary["zero_spend_evidence"] == ledger["zero_spend_evidence"]
+    assert all(e["observed_at"] in catalog_at and set(e["pricing"].values()) == {"0"}
+               for e in summary["zero_spend_evidence"].values())
+
+
+def test_a_free_refusal_after_sending_keeps_its_calls_in_the_bank_ledger(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: رفضٌ بعد الإرسال يطبع نداءاتِه ولا يكتب خلاصة؛ فهي في السجلّ الدائم، والتشغيلُ التالي يُلحق بها."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    ids = ["c1", "c2", "c3"]
+    args = ["--backend", "github-models", "--reviewer", DS, "--reviewer", MI, "--brief", str(BRIEF)]
+    bank = _public_bank(tmp_path, "refused")
+    # رفضٌ بعد نداء الفهرس: عائلةٌ صالحةٌ واحدة فلا زوج (كما في اختبار مجلّد التشغيل)، ونداءُ الفهرس خرج
+    _free(monkeypatch, FreeOpener(catalog=[_gh(DS)]))
+    assert cli.main([str(bank), "--backend", "github-models", "--brief", str(BRIEF)]) == 2
+    refused = _printed(capsys)
+    assert refused["code"] == "reviewers_unavailable" and [r["kind"] for r in refused["provider_usage"]] == ["catalog"]
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    assert ledger["provider_usage"] == refused["provider_usage"]
+    _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
+    assert cli.main([str(bank), *args]) == 0
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert summary["provider_usage"][:len(refused["provider_usage"])] == refused["provider_usage"]
