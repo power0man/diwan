@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "enforced_from": "2026-10-06",
+  "models": {
+    "CohereLabs/c4ai-command-a-03-2025": {
+      "license": "cc-by-nc-4.0",
+      "source": "https://huggingface.co/CohereLabs/c4ai-command-a-03-2025",
+      "read_on": "2026-10-05",
+      "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"
+    },
+    "command-r7b-arabic:7b": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "deepseek-ai/DeepSeek-V3-0324": {
+      "license": "mit",
+      "source": "https://huggingface.co/deepseek-ai/DeepSeek-V3-0324",
+      "read_on": "2026-10-05",
+      "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"
+    },
+    "deepseek-ai/DeepSeek-V4-Flash-0731": {
+      "license": "mit",
+      "source": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731",
+      "read_on": "2026-10-05",
+      "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"
+    },
+    "deepseek-v4-flash:cloud": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "deepseek-v4.1-flash:cloud": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "easyocr": {
+      "pending": "read_from_the_upstream_license_file"
+    },
+    "gemma3:12b": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "gemma4:latest": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "inception42/Jais-2-8B-Chat-GGUF": {
+      "license": "apache-2.0",
+      "source": "https://huggingface.co/inception42/Jais-2-8B-Chat-GGUF",
+      "read_on": "2026-10-05",
+      "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"
+    },
+    "llama3.1:8b": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "meta-llama/Llama-3.1-8B-Instruct": {
+      "license": "llama3.1",
+      "source": "https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct",
+      "read_on": "2026-10-05",
+      "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"
+    },
+    "meta-llama/Llama-3.3-70B-Instruct": {
+      "license": "llama3.3",
+      "source": "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct",
+      "read_on": "2026-10-05",
+      "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"
+    },
+    "microsoft/phi-4": {
+      "license": "mit",
+      "source": "https://huggingface.co/microsoft/phi-4",
+      "read_on": "2026-10-05",
+      "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"
+    },
+    "minicpm-v:8b": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "mistral-large-3:675b-cloud": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "qwen2.5vl:7b": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "qwen3-embedding:0.6b": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "qwen3.5:9b": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "qwen3:14b": {
+      "pending": "read_with_ollama_show_license_on_the_mac"
+    },
+    "tesseract": {
+      "pending": "read_from_the_upstream_license_file"
+    }
+  },
+  "limits": [
+    "a_resolved_license_is_the_license_field_its_source_published_on_read_on_not_a_legal_reading_of_its_terms",
+    "hugging_face_entries_were_read_from_hub_metadata_through_the_session_connector_not_from_the_full_license_text",
+    "ollama_tags_are_not_mapped_to_an_upstream_repository_here_they_wait_for_ollama_show_license_on_the_mac",
+    "evidence_dated_before_enforced_from_may_name_a_pending_model_it_is_historical_and_is_not_edited",
+    "the_class_osi_non_commercial_or_custom_terms_is_mechanical_from_the_license_name_and_custom_terms_are_the_owners_to_interpret"
+  ]
+}
