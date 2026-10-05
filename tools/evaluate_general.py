@@ -20,7 +20,7 @@
   `--diagnostic`، فيُوسم التقريرُ `general_number_diagnostic` ولا يُعدّ دليلَ البوابة.
   ويلزم تقريرُ استلامٍ ناجح من `tools/kimi_intake.py` (`--intake`) بصمةُ شطره المفتوح هي بصمةُ البنك المقيس، وفحصُ
   استبداله جرى على المفتوح v1.1 المسجَّل (`V11_OPEN_DIGEST`)، فلا يُقاس بنكٌ جزئيّ أو غريبٌ باسم v1.2.
-  ورقمُ البوابة على `DEFAULT_MODEL` المجمَّد؛ وغيرُه تشخيصٌ موسوم.
+  ورقمُ البوابة على `DEFAULT_MODEL` المجمَّد وبثلاث بذور، وبصفرِ فحصٍ يمرّره جوابٌ ثابت في الاستلام؛ وغيرُ ذلك تشخيصٌ موسوم.
 
 الحدود: فحصُ `exact` صارمٌ بق٥٧ فلا قراءةَ مشذَّبة؛ والبذورُ بحرارة صفر لا تقيس تباينَ العيّنة (`GREEDY_SEED_LIMIT`)؛
 والتقريرُ لا يُكتب فوق ملفٍّ قائم.
@@ -156,6 +156,9 @@ def _require_intake(intake: dict | None, digest: str) -> None:
         raise AblationError("intake_baseline_not_v11", "فحصُ الاستبدال لم يجرِ على المفتوح v1.1 المسجَّل")
     if (bank.get("without_checks") or {}).get("open") != 0:
         raise AblationError("intake_not_passed", "الاستلامُ يعدّ حالاتٍ بلا فحص")
+    # فحوصُ v1.1 التي يمرّرها سردُ الخيارات أو نسخُ السؤال أو الحكمان معًا (ك١٧)؛ والتقريرُ بلا عدِّها لا يشهد (ملاحظة Codex على #312)
+    if (bank.get("gameable") or {}).get("open") != 0:
+        raise AblationError("intake_gameable_checks", "الاستلامُ لا يُثبت صفرَ فحصٍ قابلٍ للتلاعب")
     if bank.get("open_digest") != digest:
         raise AblationError("intake_digest_mismatch", "بصمةُ الشطر المفتوح غيرُ بصمة الاستلام")
 
@@ -186,6 +189,9 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
     seeds = seed_values() if seeds is None else tuple(seeds)
     if seeds != seed_values(len(seeds)):
         raise AblationError("seeds_invalid", "يلزم تسلسل 0..N-1 بعدد فردي لا يقل عن 3")
+    # بروتوكولُ البوابة ثلاثُ بذور؛ وعددٌ آخر يغيّر الأغلبية فهو تشخيص (ملاحظة Codex على #312)
+    if seeds != seed_values() and not diagnostic:
+        raise AblationError("seeds_not_gate_protocol", f"{len(seeds)} بذور؛ البوابةُ {len(seed_values())}، أو --diagnostic")
     # نموذجٌ سحابيّ عبر Ollama المحليّ يُرسل كلَّ حالةٍ إلى السحابة، والكتلةُ تقول local_no_charge: يُرفض قبل أيّ نداء
     # (ملاحظة Codex على #312). والرقمُ العام على المحرّك المحليّ وحده (ق٥٤، ق٧٠).
     if is_cloud_model(model) or not is_local_provider(provider):

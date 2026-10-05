@@ -382,3 +382,29 @@ def test_the_intake_records_the_open_digest_that_binds_the_general_number(tmp_pa
     assert report["bank"]["open_digest"] == open_bank_digest(src / "open")
     (src / "open" / "tier_a" / "kimi_a_001.json").write_text("{}", encoding="utf-8")
     assert open_bank_digest(src / "open") != report["bank"]["open_digest"]
+
+
+def test_fixed_answers_that_know_nothing_expose_gameable_checks():
+    """ك١٧: نسخُ السؤال يسرد خياراته، وسردُ الحكمين يمرّ «contains خطأ»، والفارغُ يمرّ excludes وحده (ملاحظة Codex على #312)."""
+    from tools.kimi_intake import gameable_probe
+
+    def case(text, checks):
+        return {"case_id": "c", "messages": [{"role": "user", "content": text}], "checks": checks}
+    options = case("سمِّ الصورة من بين: تشبيه، استعارة مكنية، كناية.", [{"kind": "contains", "value": "مكنية"}])
+    assert gameable_probe(options) == "echo"
+    polarity = case("هل في الجملة الآتية زللٌ نحوي؟", [{"kind": "contains", "value": "خطأ"}])
+    assert gameable_probe(polarity) == "polarity_spray"
+    assert gameable_probe(case("أعد الصياغة", [{"kind": "excludes", "value": "عامية"}])) == "empty"
+    verdict = case("هل في الجملة خطأ؟", [{"kind": "contains", "value": "يوجد خطأ"}, {"kind": "excludes", "value": "لا يوجد"}])
+    assert gameable_probe(verdict) is None, "الحكمُ مع نفيه المستبعد لا يمرّره السرد"
+    assert gameable_probe(case("ما عاصمة المغرب؟", [{"kind": "exact", "value": "الرباط"}])) is None
+    assert gameable_probe(case("مكنية", [{"kind": "python_sandbox", "value": "assert False"}])) is None
+
+
+def test_an_intake_with_a_gameable_open_check_fails_and_counts_it_by_probe(tmp_path):
+    src = delivery(tmp_path)
+    assert intake(src)["bank"]["gameable"] == {"open": 0, "by_probe": {}}
+    _write(src / "open" / "tier_a" / "kimi_a_001.json", _suite("kimi_a_001", [_case("o1"), _case("o2", text="r أو s؟")]))
+    report = intake(src)
+    assert not report["passed"] and report["bank"]["gameable"] == {"open": 1, "by_probe": {"echo": 1}}
+    assert "gameable_checks" in _codes(report, "bank")

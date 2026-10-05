@@ -22,11 +22,12 @@ from tools import probe_spend  # noqa: E402
 RUN = {"model": DEFAULT_MODEL, "model_version": "v1", "engine_license": "Apache-2.0", "date": "2026-10-05"}
 
 
-def _intake(bank, **changes):
+def _intake(open_dir, **changes):
     """تقريرُ استلامٍ ناجح لهذا البنك بعينه، كما يكتبه tools/kimi_intake.py."""
     from evaluation.judge import open_bank_digest
     report = {"passed": True, "open_only": True, "replacement": {"failures": [], "baseline_digest": V11_OPEN_DIGEST},
-              "bank": {"without_checks": {"open": 0, "sealed": 0}, "open_digest": open_bank_digest(bank)}}
+              "bank": {"without_checks": {"open": 0, "sealed": 0}, "gameable": {"open": 0, "by_probe": {}},
+                       "open_digest": open_bank_digest(open_dir)}}
     return {**report, **changes}
 
 
@@ -197,6 +198,10 @@ def test_the_run_is_bound_to_a_passed_intake_of_this_very_bank(tmp_path):
                          (_intake(bank, replacement={"failures": [], "baseline_digest": "0" * 64}),
                           "intake_baseline_not_v11"),
                          (_intake(bank, replacement={"failures": []}), "intake_baseline_not_v11"),
+                         (_intake(bank, bank={**_intake(bank)["bank"], "gameable": {"open": 3, "by_probe": {"echo": 3}}}),
+                          "intake_gameable_checks"),
+                         (_intake(bank, bank={k: v for k, v in _intake(bank)["bank"].items() if k != "gameable"}),
+                          "intake_gameable_checks"),
                          (_intake(other), "intake_digest_mismatch")):
         with pytest.raises(AblationError, match=code):
             run_general(replay, bank_open=bank, intake=intake, **RUN)
@@ -225,3 +230,15 @@ def test_the_gate_number_is_on_the_frozen_default_engine_and_any_other_model_is_
     assert "diagnostic_run_not_m1_gate_evidence" in report["measurement_limits"]
     assert run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, intake=_intake(bank), **RUN)["kind"] == \
         "general_number"
+
+
+def test_the_gate_number_takes_exactly_the_three_protocol_seeds(tmp_path):
+    """خمسُ بذورٍ تغيّر الأغلبية، فرقمُها تشخيصٌ لا رقمُ البوابة (ملاحظة Codex على #312)."""
+    bank = _bank(tmp_path / "open", {"tier_a": [_case("a", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])]})
+    seen = []
+    with pytest.raises(AblationError, match="seeds_not_gate_protocol"):
+        run_general(SeedReplay(lambda u, s: "الرباط", seen=seen), bank_open=bank, seeds=(0, 1, 2, 3, 4),
+                    intake=_intake(bank), **RUN)
+    assert seen == []
+    report = run_general(SeedReplay(lambda u, s: "الرباط"), bank_open=bank, seeds=(0, 1, 2, 3, 4), diagnostic=True, **RUN)
+    assert report["kind"] == "general_number_diagnostic" and report["config"]["seeds"] == [0, 1, 2, 3, 4]

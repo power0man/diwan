@@ -59,7 +59,8 @@ GENERAL_MIN_CASES = 150
 AGENTIC_MIN_TASKS = 30
 LIMITS = [
     "validators_check_schema_and_the_v1_2_conditions_not_whether_a_reference_answer_is_correct",
-    "gameable_check_patterns_of_k17_are_counted_only_as_cases_without_checks",
+    "gameable_checks_are_found_by_four_fixed_answers_empty_echo_of_the_question_polarity_spray_and_both_so_a_subtler_gameable_check_passes",
+    "cases_with_a_python_sandbox_check_are_not_probed_for_gameable_checks",
     "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged",
 ]
 
@@ -202,11 +203,36 @@ def _bank_files(src: Path) -> list[tuple[str, Path]]:
     return out
 
 
+# أجوبةٌ ثابتة لا تعرف الجواب (شروطُ v1.2 في docs/external/KIMI-NEXT.md §١): فارغ، ونسخُ السؤال (فيه خياراتُه كلُّها
+# ونصُّه الأصل)، وسردُ الحكمين معًا، والاثنان معًا. فحصٌ يمرّره أحدُها لا يميّز الجوابَ الصحيح من لا جواب.
+POLARITY_SPRAY = "يوجد خطأ ولا يوجد خطأ. صحيح وخاطئ وغير صحيح. نعم ولا. يجوز ولا يجوز. يصح ولا يصح."
+
+
+def _probe_answers(case: dict) -> tuple[tuple[str, str], ...]:
+    question = "\n".join(m.get("content", "") for m in case.get("messages", [])
+                         if isinstance(m, dict) and m.get("role") == "user" and isinstance(m.get("content"), str))
+    return (("empty", ""), ("echo", question), ("polarity_spray", POLARITY_SPRAY),
+            ("echo_and_spray", question + "\n" + POLARITY_SPRAY))
+
+
+def gameable_probe(case: dict) -> str | None:
+    """اسمُ أوّل جوابٍ ثابتٍ تمرّره فحوصُ الحالة، أو None. حالاتُ python_sandbox وما بلا فحصٍ لا تُجرَّب."""
+    from evaluation.capabilities import _checks
+    checks = case.get("checks") or []
+    if not checks or any(check.get("kind") == "python_sandbox" for check in checks):
+        return None
+    for name, answer in _probe_answers(case):
+        if all(result["passed"] for result in _checks(answer, checks)):
+            return name
+    return None
+
+
 def check_bank(src: Path) -> dict:
     """المدقّقاتُ الحقيقية على الشطرين، وشروطُ v1.2. والمحجوبُ أعدادٌ ورموزٌ بلا معرّفات."""
     failures: list = []
     counts = {"open": {"files": 0, "cases": 0, "tasks": 0}, "sealed": {"files": 0, "cases": 0, "tasks": 0}}
     without_checks = {"open": 0, "sealed": 0}
+    gameable = {"open": 0, "by_probe": {}}
     agentic, case_ids = [], {}
     for part, path in _bank_files(src):
         relative = path.relative_to(src).as_posix()
@@ -228,6 +254,10 @@ def check_bank(src: Path) -> dict:
         without_checks[part] += sum(not case["checks"] for case in suite["cases"])
         for case in suite["cases"]:
             case_ids[case["case_id"]] = case_ids.get(case["case_id"], 0) + 1
+            probe = gameable_probe(case) if part == "open" else None
+            if probe:
+                gameable["open"] += 1
+                gameable["by_probe"][probe] = gameable["by_probe"].get(probe, 0) + 1
     try:
         qualified = validate_agentic_bank([suite for _, _, suite in agentic])
     except PayloadRejected as exc:
@@ -237,6 +267,9 @@ def check_bank(src: Path) -> dict:
     for part in ("open", "sealed"):
         if without_checks[part]:
             _failure(failures, part, "cases_without_checks")
+    # فحصٌ يمرّره جوابٌ ثابت قابلٌ للتلاعب، والرقمُ العام لا يُبنى عليه (ملاحظة Codex على #312)
+    if gameable["open"]:
+        _failure(failures, "open", "gameable_checks")
     if len(set(task_ids)) != len(task_ids):
         _failure(failures, "agentic", "task_id_not_unique_across_bank")
     if any(n > 1 for n in case_ids.values()):
@@ -244,7 +277,8 @@ def check_bank(src: Path) -> dict:
     # بصمةُ الشطر المفتوح كلِّه كما يقرؤها المحكِّم ومُشغِّلُ الرقم العام، فيُربط القياسُ بهذا الاستلام بعينه (ملاحظة Codex على #312)
     from evaluation.judge import open_bank_digest
     open_digest = open_bank_digest(src / "open") if (src / "open").is_dir() else None
-    return {"counts": counts, "without_checks": without_checks, "open_digest": open_digest, "failures": failures}
+    return {"counts": counts, "without_checks": without_checks, "gameable": gameable, "open_digest": open_digest,
+            "failures": failures}
 
 
 def check_dev(src: Path) -> dict:
