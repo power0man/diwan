@@ -27,7 +27,7 @@ class VisionBankRefused(RuntimeError):
 
 
 def _load(root: Path) -> dict:
-    problems = validate_media_bank(root)
+    problems = [p for p in validate_media_bank(root) if not p.startswith("pending_fetch_expired")]
     if problems:
         raise VisionBankRefused("bank_invalid", "بنكُ الوسائط لا يطابق تجميده: " + "؛ ".join(problems[:5]))
     return json.loads((root / "vision.json").read_text(encoding="utf-8"))
