@@ -137,15 +137,20 @@ def prior_provider_usage(bank: Path) -> list[dict]:
     return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
 
 
-def write_ledger(bank: Path, rows: list[dict]) -> None:
-    """السجلُّ الدائم كاملًا (السابقُ وما أُلحق به). ولا يُكتب في تشغيلٍ بمعرّف: مجلّدُه جديدٌ لا يُعاد، وخلاصتُه وRUN.json
-    يحملان نداءاتِه، وما يُرفع منه عقدُه ثابت (`check_artifact`)."""
-    _write_json(bank / "reviews" / LEDGER_FILE, {"schema_version": 1, "provider_usage": rows})
+def write_ledger(bank: Path, rows: list[dict], evidence: dict) -> None:
+    """السجلُّ الدائم كاملًا (السابقُ وما أُلحق به)، ومعه دليلُ المجانية الذي تقوم عليه نداءاتُه: فتشغيلٌ سقط بعد الإرسال
+    وقبل الخلاصة لا تعود نداءاتُه في الإعادة بلا بنود السعر ولحظة قراءتها (ملاحظة Codex على #298). ولا يُكتب في تشغيلٍ
+    بمعرّف: مجلّدُه جديدٌ لا يُعاد، وخلاصتُه وRUN.json يحملان نداءاتِه، وما يُرفع منه عقدُه ثابت (`check_artifact`)."""
+    _write_json(bank / "reviews" / LEDGER_FILE, {"schema_version": 1, "provider_usage": rows,
+                                                 "zero_spend_evidence": dict(sorted(evidence.items()))})
 
 
 def prior_zero_spend_evidence(bank: Path) -> dict:
-    """دليلُ المجانية الذي حفظته تشغيلاتٌ سابقة لكل نموذج، فلا تمحوه إعادةٌ لم تقرأ الفهرسَ لذلك النموذج (ملاحظة Codex على #298)."""
-    evidence = _prior_summary(bank).get("zero_spend_evidence")
+    """دليلُ المجانية الذي حفظته تشغيلاتٌ سابقة لكل نموذج، فلا تمحوه إعادةٌ لم تقرأ الفهرسَ لذلك النموذج (ملاحظة Codex على #298).
+    من السجلّ الدائم أولًا كسجلّ النداءات، ثم من الخلاصة لبنكٍ لم يُكتب له السجلّ بهذا الحقل."""
+    ledger = _read_json_object(bank / "reviews" / LEDGER_FILE)
+    evidence = ledger["zero_spend_evidence"] if "zero_spend_evidence" in ledger \
+        else _prior_summary(bank).get("zero_spend_evidence")
     if not isinstance(evidence, dict):
         return {}
     return {model: entry for model, entry in evidence.items() if isinstance(model, str) and isinstance(entry, dict)}
@@ -1191,8 +1196,9 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     finally:
         # ما أُرسل (ومنه نداءُ الفهرس) يبقى في السجلّ الدائم على أيّ خروج، قبل أن تُقرأ سجلّاتُ المراجعة في الخلاصة
         # (ملاحظتا Codex على #298). أمّا تشغيلٌ بمعرّفٍ فـRUN.json وخلاصتُه يحملان نداءاتِه، ومجلّدُه جديد
+        evidence = dict(sorted({**prior_evidence, **getattr(transport, "zero_spend_evidence", {})}.items()))
         if not args.run_id and transport.provider_usage:
-            write_ledger(args.bank, prior + transport.provider_usage)
+            write_ledger(args.bank, prior + transport.provider_usage, evidence)
     # النجاحُ والاتفاقُ وقائمةُ المالك من المجموعة الأخيرة وحدها (ملاحظتا Codex على #174): المستبدَلُ نُقلت سجلّاتُه إلى
     # reviews/superseded/ وراجع بديلُه البنكَ كلَّه؛ ونفادُ حصّته تاريخٌ مسمًّى (superseded ومعه البديل) لا خطأٌ يُسقط التشغيل،
     # فإن أخفق البديلُ أيضًا عُدّ الخطآن كلاهما. وأخطاءُ مراجعين خارج هذا التشغيل لا تُحسب عليه، وتُروى عددًا.
@@ -1215,7 +1221,7 @@ def _free_bank(args, transport: OpenAICompatChat) -> tuple[dict, int]:
     # أمّا المطبوعُ أدناه فتقريرُ هذا التشغيل وحده.
     ledger = prior + transport.provider_usage
     _persist_provider_usage(args.bank, ledger, {
-        "zero_spend_evidence": dict(sorted({**prior_evidence, **getattr(transport, "zero_spend_evidence", {})}.items())),
+        "zero_spend_evidence": evidence,
         "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger), "token_totals": token_totals(ledger)})
     if args.run_id:          # كلُّ سجلٍّ وخلاصةٍ في مجلّد هذا التشغيل يحمل معرّفَه، فيُرفض عند الرفع ما لا يحمله
         stamp_run(args.bank / "reviews", args.run_id)
@@ -1508,7 +1514,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if report["status"] == "passed" else 1
     if args.bank is None:
         parser.error("مجلّد البنك مطلوب، أو --smoke")
-    prior = prior_provider_usage(args.bank)
+    # ودليلُ مجانيةٍ حفظته الواجهاتُ المجانية على البنك نفسِه يبقى مع نداءاته في السجلّ والخلاصة (ملاحظة Codex على #298)
+    prior, prior_evidence = prior_provider_usage(args.bank), prior_zero_spend_evidence(args.bank)
     try:
         transport = build_transport(base_url)
         try:
@@ -1518,7 +1525,7 @@ def main(argv: list[str] | None = None) -> int:
             # فيُكتب قبل أن تُقرأ سجلّاتُ المراجعة في الخلاصة (ملاحظتا Codex على #298)
             usage = list(getattr(transport, "provider_usage", []))
             if usage:
-                write_ledger(args.bank, prior + usage)
+                write_ledger(args.bank, prior + usage, prior_evidence)
         summary = summarize(args.bank)
     except AutomaticReviewError as exc:
         usage = getattr(transport, "provider_usage", None) or []
@@ -1527,7 +1534,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     # السجلُّ يُلحَق بما كتبته التشغيلاتُ السابقة ولا يستبدله، والمجموعُ من السجلّ كلِّه (ملاحظة Codex على #298)
     ledger = prior + list(getattr(transport, "provider_usage", []))
-    _persist_provider_usage(args.bank, ledger, {"token_totals": token_totals(ledger)})
+    _persist_provider_usage(args.bank, ledger, {"token_totals": token_totals(ledger),
+                                                **({"zero_spend_evidence": prior_evidence} if prior_evidence else {})})
     print(json.dumps({
         "status": "failed" if counts["failed"] else "reviewed",
         **counts,

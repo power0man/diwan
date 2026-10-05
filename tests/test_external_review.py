@@ -1438,7 +1438,8 @@ def test_a_free_rerun_on_a_reviewed_bank_keeps_the_bank_ledger(tmp_path, monkeyp
     first["provider_usage"].append({"provider": "openrouter", "model": "earlier/model:free", "request_sent": True,
                                     "usage": None, "cost_status": "not_reported"})
     summary_path.write_text(json.dumps(first), encoding="utf-8")
-    ledger_path.write_text(json.dumps({**ledger, "provider_usage": first["provider_usage"]}), encoding="utf-8")
+    ledger_path.write_text(json.dumps({**ledger, "provider_usage": first["provider_usage"],
+                                       "zero_spend_evidence": first["zero_spend_evidence"]}), encoding="utf-8")
     again = _free(monkeypatch, FreeOpener(replies={DS: [_ok(ids)], MI: [_ok(ids)]}))
     assert cli.main([str(bank), *args]) == 0
     printed = json.loads(capsys.readouterr().out)
@@ -1469,6 +1470,39 @@ def test_free_calls_reach_the_bank_ledger_when_an_unnamed_failure_follows_them(t
         cli.main([str(bank), *args])
     ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
     assert sorted(row["model"] for row in ledger["provider_usage"] if row.get("kind") != "catalog") == sorted([DS, MI])
+
+
+def test_an_openrouter_run_that_fails_after_sending_keeps_its_zero_spend_evidence_for_the_rerun(
+        tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: تشغيلُ OpenRouter أرسل ثم سقط قبل الخلاصة؛ فبنودُ السعر ولحظةُ قراءتها في السجلّ الدائم مع
+    نداءاته، والإعادةُ التي تتخطّى ما رُوجع تنشرها معها، لا عبارةَ zero_spend_proof وحدها."""
+    monkeypatch.setattr(cli, "ROOT", tmp_path)
+    monkeypatch.setenv("OPENROUTER_API_KEY", KEY)
+    reply = _completion(json.dumps(_ok(["c1", "c2", "c3"]), ensure_ascii=False))
+    args = ["--backend", "openrouter", "--reviewer", OR_DS, "--reviewer", OR_MI, "--brief", str(BRIEF)]
+    bank = _public_bank(tmp_path, "evidence")
+    opener = UsageOpener([_priced(OR_DS), _priced(OR_MI)], {OR_DS: [reply], OR_MI: [reply]})
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: opener)
+    real = cli._quota_models
+
+    def unreadable(*args, **kwargs):
+        raise json.JSONDecodeError("truncated record", "{", 1)
+
+    monkeypatch.setattr(cli, "_quota_models", unreadable)
+    with pytest.raises(json.JSONDecodeError):
+        cli.main([str(bank), *args])
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    catalog_at = [row["at"] for row in ledger["provider_usage"] if row.get("kind") == "catalog"]
+    assert sorted(ledger["zero_spend_evidence"]) == sorted([OR_DS, OR_MI])
+    monkeypatch.setattr(cli, "_quota_models", real)
+    again = UsageOpener([_priced(OR_DS), _priced(OR_MI)], {OR_DS: [reply], OR_MI: [reply]})
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: again)
+    assert cli.main([str(bank), *args]) == 0
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert [r for r in again.requests if r.data is not None] == [], "البنكُ مراجَعٌ فلا نداءَ مراجعة"
+    assert summary["zero_spend_evidence"] == ledger["zero_spend_evidence"]
+    assert all(e["observed_at"] in catalog_at and set(e["pricing"].values()) == {"0"}
+               for e in summary["zero_spend_evidence"].values())
 
 
 def test_a_free_refusal_after_sending_keeps_its_calls_in_the_bank_ledger(tmp_path, monkeypatch, capsys):

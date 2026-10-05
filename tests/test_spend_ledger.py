@@ -203,6 +203,31 @@ def test_the_prior_zero_spend_evidence_keeps_only_named_entries(tmp_path):
         assert cli.prior_zero_spend_evidence(tmp_path) == expected
 
 
+def test_the_prior_zero_spend_evidence_comes_from_the_ledger_first(tmp_path):
+    """ملاحظة Codex على #298: السجلُّ الدائم يحمل دليلَ المجانية مع نداءاته؛ والخلاصةُ مصدرٌ ثانٍ لبنكٍ لم يُكتب له بهذا الحقل."""
+    (tmp_path / "reviews").mkdir()
+    (tmp_path / "reviews" / "SUMMARY.json").write_text('{"zero_spend_evidence": {"old": {"proof": "s"}}}',
+                                                      encoding="utf-8")
+    (tmp_path / "reviews" / cli.LEDGER_FILE).write_text('{"provider_usage": []}', encoding="utf-8")
+    assert cli.prior_zero_spend_evidence(tmp_path) == {"old": {"proof": "s"}}
+    cli.write_ledger(tmp_path, [], {"m": {"proof": "p"}})
+    assert cli.prior_zero_spend_evidence(tmp_path) == {"m": {"proof": "p"}}
+
+
+def test_an_ollama_rerun_keeps_the_zero_spend_evidence_a_free_run_left_on_the_bank(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #298: سجلُّ البنك واحدٌ للمسارين؛ فتشغيلُ Ollama يُلحق نداءاتِه ولا يمحو دليلَ مجانيةٍ قبله."""
+    bank = smoke_bank(tmp_path)
+    cli.write_ledger(bank, [{"provider": "openrouter", "model": "m:free", "request_sent": True}],
+                     {"m:free": {"proof": "catalog_free_suffix_and_all_pricing_zero"}})
+    _wire(monkeypatch, _Opener(_reply(prompt_eval_count=5, eval_count=1)))
+    assert cli.main([str(bank)]) == 0
+    ledger = json.loads((bank / "reviews" / cli.LEDGER_FILE).read_text(encoding="utf-8"))
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    assert ledger["zero_spend_evidence"] == summary["zero_spend_evidence"] == {
+        "m:free": {"proof": "catalog_free_suffix_and_all_pricing_zero"}}
+    assert len(ledger["provider_usage"]) == 1 + len(DEFAULT_REVIEWERS)
+
+
 def test_calls_sent_before_a_refusal_survive_a_rerun_that_skips_them(tmp_path, monkeypatch, capsys):
     """ملاحظة Codex على #298: نجح ملفٌّ ثم رُفض الثاني، فخرج التشغيلُ ٢ بلا خلاصة؛ والإعادةُ بعد إزالة الثاني تتخطّى
     المراجعتين فلا ترسل شيئًا. فنداءاتُ التشغيل المرفوض في السجلّ الدائم، والإعادةُ تقرؤها."""
