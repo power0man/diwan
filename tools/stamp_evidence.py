@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -36,13 +37,18 @@ from tools import probe_spend  # noqa: E402
 GROQ_PROOF = "operator_confirmed_account_free_tier"
 # صيغُ معرّفٍ محليّ فيها «/»: أوزانُ Hugging Face عبر Ollama المحلي. وما سواها بشرطةٍ مائلة معرّفُ مزوّدٍ بعيد.
 LOCAL_SLASH_PREFIXES = ("hf.co/", "huggingface.co/", "ollama:")
+# وسمُ Ollama `اسم:وسم` بلا شرطةٍ مائلة، ومحرّكا OCR يعملان في العملية نفسها (أدلّةُ غ٨).
+OLLAMA_TAG = re.compile(r"[a-z0-9][a-z0-9._-]*:[a-z0-9][a-z0-9._-]*", re.IGNORECASE)
+LOCAL_ENGINES = frozenset({"easyocr", "tesseract"})
 
 
 def is_local_name(name: str) -> bool:
-    """اسمٌ محليّ: لا لاحقةَ سحابيّة، ولا معرّفَ مزوّدٍ بعيد (`ناشر/نموذج`) إلا أوزانًا تُسحب إلى Ollama المحلي."""
+    """اسمٌ محليٌّ بإيجابٍ لا بغياب علامة السحابة (ملاحظة Codex على #310): وسمُ Ollama، أو أوزانٌ تُسحب إلى Ollama المحلي،
+    أو محرّكٌ في العملية. والاسمُ العاري بلا وسم (`llama-3.3-70b-versatile` في Groq، `gpt-4o` في GitHub Models) مبهمٌ،
+    فلا يُختم `local_no_charge` ويُطلب إنفاقُه."""
     if is_cloud_model(name):
         return False
-    return "/" not in name or name.startswith(LOCAL_SLASH_PREFIXES)
+    return name in LOCAL_ENGINES or name.startswith(LOCAL_SLASH_PREFIXES) or bool(OLLAMA_TAG.fullmatch(name))
 
 
 def stamp_licenses(payload: dict, models: dict) -> tuple[dict, list[str]]:
@@ -110,7 +116,10 @@ def spend_from_usage(rows: list, evidence: object = None) -> tuple[dict | None, 
     else:
         reported = all(row.get("cost_status") == "reported" for row in cloud)
         basis, cost = ("reported_by_provider" if reported else "estimated_from_prices"), float(sum(costs))
-    return {"cloud_calls": len(cloud), **totals, "cost_usd": cost, "cost_basis": basis}, []
+    block = {"cloud_calls": len(cloud), **totals, "cost_usd": cost, "cost_basis": basis}
+    # الكتلةُ المشتقّة تمرّ مدقّقَ الكتلة المعطاة نفسَه: كلفةٌ عشريّةٌ منتهية قد تفيض عددًا عائمًا لا نهائيًّا (ملاحظة Codex على #310)
+    problems = [problem.replace(":derived", "") for problem in probe_spend.spend_findings("derived", block)]
+    return (None, problems) if problems else (block, [])
 
 
 def stamp_spend(payload: dict, given: dict | None) -> tuple[dict | None, list[str]]:

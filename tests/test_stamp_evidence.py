@@ -62,14 +62,27 @@ def test_a_written_license_that_disagrees_with_the_registry_is_named_not_replace
 @pytest.mark.parametrize("payload", [
     pytest.param({"model": "deepseek-v4.1-flash:cloud"}, id="ollama_cloud"),
     pytest.param({"model": "deepseek-ai/DeepSeek-V3-0324"}, id="remote_provider_id"),
+    pytest.param({"model": "llama-3.3-70b-versatile"}, id="bare_remote_id"),
+    pytest.param({"model": "meta-llama/llama-3.3-70b-instruct:free"}, id="remote_id_with_a_tag"),
 ])
 def test_a_cloud_model_without_a_call_ledger_needs_its_spend_given(payload):
-    stamped, problems = se.stamp(payload, MODELS)
+    registered = {**MODELS, ml.canonical(payload["model"]): MODELS["deepseek-ai/DeepSeek-V3-0324"]}
+    stamped, problems = se.stamp(payload, registered)
     assert problems == ["spend_basis_required"] and "spend" not in stamped
     given = {"cloud_calls": 3, "prompt_tokens": 30, "completion_tokens": 9, "cost_usd": 0,
              "cost_basis": "subscription_flat"}
-    stamped, problems = se.stamp(payload, MODELS, given)
+    stamped, problems = se.stamp(payload, registered, given)
     assert problems == [] and stamped["spend"] == given
+
+
+@pytest.mark.parametrize("name", [
+    pytest.param("qwen3.5:9b", id="ollama_tag"),
+    pytest.param("hf.co/org/model-GGUF:Q4_K_M", id="hf_weights_pulled_to_ollama"),
+    pytest.param("tesseract", id="in_process_engine"),
+])
+def test_only_a_positively_local_name_is_stamped_local(name):
+    """ملاحظة Codex على #310: الاسمُ العاري بلا وسمٍ مبهم (Groq وGitHub Models)، فالمحليُّ ما عُرف محليًّا."""
+    assert se.stamp_spend({"model": name}, None) == (LOCAL, [])
 
 
 def test_a_given_or_written_spend_is_checked_not_trusted():
@@ -189,6 +202,7 @@ def test_a_review_with_its_call_ledger_is_stamped_from_the_ledger():
     pytest.param([_row("hf-router", "a/b", cost="-1", status="reported")], "spend_cost_invalid", id="negative_cost"),
     pytest.param([_row("hf-router", "a/b", cost="abc", status="reported")], "spend_cost_invalid", id="unreadable_cost"),
     pytest.param([_row("hf-router", "a/b", cost="NaN", status="reported")], "spend_cost_invalid", id="nan_cost"),
+    pytest.param([_row("hf-router", "a/b", cost="1e10000", status="reported")], "spend_cost", id="cost_overflows_a_float"),
 ])
 def test_a_sent_call_without_valid_counts_or_cost_is_not_stamped(rows, code):
     assert se.spend_from_usage(rows) == (None, [code])
