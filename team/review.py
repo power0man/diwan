@@ -129,16 +129,24 @@ class Reviewer:
         return families, [name for name in policy.candidates if name in self.adapters and name not in policy.never]
 
     def merge_base(self, pull: PullRequest) -> str:
-        """نقطةُ تفرّع الطلب عن الفرع الرئيس **البعيد**؛ فـ`main` المحلي قد يتأخّر فيدخل في الفرق ما دُمج أصلًا (دخان ٦ أكتوبر)."""
+        """نقطةُ تفرّع الطلب عن الفرع الرئيس **البعيد**؛ فـ`main` المحلي قد يتأخّر فيدخل في الفرق ما دُمج أصلًا (دخان ٦ أكتوبر).
+        والطلبُ المدموج (مراجعةٌ بأثرٍ رجعي) يُقاس على أوّل أبوَي إيداع دمجه، وإلا كان الفرقُ مع الفرع الرئيس فارغًا: الجولةُ العاشرة
+        على #344 قرأت رأسًا دُمج قبل بدئها فحكمت «صامد» على لا شيء. ورأسٌ على الفرع الرئيس أصلًا `nothing_to_review` لا حكمَ عليه."""
         done = self.runner(["git", "-C", str(self.repo_root), "fetch", self.remote, pull.base_branch], capture_output=True, text=True)
         if done.returncode != 0:
             # مرجعٌ قديم للفرع الرئيس يُدخل في المراجعة ما دُمج أصلًا وهي تُقدَّم مقارنةً بالبعيد (ملاحظة Codex الثامنة على #344)
             raise Refusal("fetch_failed", f"{self.remote}/{pull.base_branch}: " + (done.stderr or "")[:200])
-        done = self.runner(["git", "-C", str(self.repo_root), "merge-base", f"{self.remote}/{pull.base_branch}", pull.head_sha],
-                           capture_output=True, text=True)
+        if pull.state == "merged" and pull.merge_sha:
+            against = f"{pull.merge_sha}^1"
+        else:
+            against = f"{self.remote}/{pull.base_branch}"
+        done = self.runner(["git", "-C", str(self.repo_root), "merge-base", against, pull.head_sha], capture_output=True, text=True)
         if done.returncode != 0 or not (done.stdout or "").strip():
             raise Refusal("merge_base_failed", (done.stderr or "")[:200])
-        return done.stdout.strip()
+        base = done.stdout.strip()
+        if base == pull.head_sha:
+            raise Refusal("nothing_to_review", f"رأسُ الطلب {pull.head_sha[:12]} على {against} أصلًا: الفرقُ فارغ")
+        return base
 
     def _fetch_branch(self, pull: PullRequest) -> None:
         """جلبُ فرع الطلب أولًا: رأسٌ تقدّم بعيدًا (تصحيحٌ دُفع من جهازٍ آخر أو «تحديثُ الفرع») ليس في المخزن المحلي بعد،

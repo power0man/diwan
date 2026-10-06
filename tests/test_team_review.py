@@ -232,3 +232,28 @@ def test_a_review_of_the_current_attempt_s_pull_while_claimed_is_awaiting_valida
     assert out["status"] == "reviewed_awaiting_validation"
     record = ledger.last(41)
     assert record["state"] == "reviewed_awaiting_validation" and record["attempt"] == 1 and record["head_sha"] == project.pulls[9].head_sha
+
+
+def test_a_merged_pull_is_reviewed_against_the_base_before_its_merge(tmp_path):
+    """مراجعةٌ بأثرٍ رجعي لطلبٍ مدموج: الأصلُ أوّلُ أبوَي إيداع الدمج، وإلا كان الفرقُ مع origin/main فارغًا (الجولة العاشرة على #344)."""
+    reviewer, project, adapters, _ledger = _setup(tmp_path, issue=None)
+    repo, pull = reviewer.repo_root, project.pulls[9]
+    base_before = git("rev-parse", "origin/main", cwd=repo)
+    git("merge", "-q", "--no-ff", "-m", "دمج", pull.branch, cwd=repo)
+    git("push", "-q", "origin", "main", cwd=repo)
+    merge_sha = git("rev-parse", "HEAD", cwd=repo)
+    project.pulls[9] = PullRequest(9, pull.head_sha, "main", pull.branch, None, commit_messages=pull.commit_messages,
+                                   state="merged", merge_sha=merge_sha, url=pull.url)
+    assert reviewer.merge_base(project.pulls[9]) == base_before
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "external_review" and base_before[:12] in adapters["codex"].seen[-1]["prompt"]
+
+
+def test_a_pull_whose_head_is_already_on_main_is_nothing_to_review(tmp_path):
+    reviewer, project, _adapters, ledger = _setup(tmp_path, issue=None)
+    repo, pull = reviewer.repo_root, project.pulls[9]
+    git("merge", "-q", "--ff-only", pull.branch, cwd=repo)                  # الرأسُ صار على main والطلبُ «مفتوح» في المشروع
+    git("push", "-q", "origin", "main", cwd=repo)
+    with pytest.raises(rv.Refusal) as exc:
+        reviewer.review(9, execute=True)
+    assert exc.value.code == "nothing_to_review" and project.comments == [] and ledger.records() == []
