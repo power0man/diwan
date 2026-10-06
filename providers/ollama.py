@@ -24,6 +24,7 @@ import json
 import urllib.error
 import urllib.request
 
+from core import prices
 from core.contracts import Request, Response
 from core.locality import is_cloud_model, is_loopback_url
 from core.validate import validated
@@ -60,7 +61,17 @@ class OllamaProvider:
         return type(self)(self.model, self.base_url, self.allow_thinking, seed)
 
     def estimate_micros(self, request: Request) -> int:
-        return 0  # محليّ: لا فاتورة مالية — انظر توثيق الوحدة
+        # محليّ: لا فاتورة مالية (انظر توثيق الوحدة). والسحابيُّ (`:cloud`، ولو عبر الخادم المحليّ الممرِّر) يُسعَّر من
+        # `registry/prices.json`: الاشتراكُ الثابت صفرٌ بأساسه، وما لا مدخلَ له `price_unknown` قبل الشبكة لا صفرٌ مفترض
+        # (جديد-spend-ledger، #295)
+        if not is_cloud_model(request.model) and not is_cloud_model(self.model):
+            return 0
+        try:
+            entry = prices.lookup(prices.load(), "ollama", request.model)
+            return prices.micros(entry, sum(len(m.content.encode("utf-8")) for m in request.messages),
+                                 request.max_output)
+        except (prices.PriceUnknown, prices.PricesMalformed) as e:
+            raise ProviderError("price_unknown", f"لا سعرَ مقروءًا للنموذج السحابيّ: {e}", retryable=False) from e
 
     _tool_payload = staticmethod(tool_payload)
 

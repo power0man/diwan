@@ -1,0 +1,152 @@
+"""النداءُ السحابيُّ عبر `core.run` بمزوّدٍ `is_local=False` مسعَّر، فتعمل `Budget` فعلًا (جديد-spend-ledger، البند ٣ من #295).
+
+كانت نقولُ المراجعة الخارجية (`OllamaChat` على ollama.com، وموجّهُ HF) تنادي الشبكةَ خارج `core.run`، فلا حجزَ قبل النداء ولا
+قيدَ في سجلٍّ مبصوم. هنا يُغلَّف أيُّ نقلٍ `transport(model, system, user, schema) -> str` بمزوّدٍ يمرّ بـ`core.run.execute`:
+- **التقديرُ قبل النداء** من `registry/prices.json` (`core/prices.py`): بايتاتُ الرسالتين وحدُّ التأطير بسعر المدخل، و`max_output`
+  بسعر المخرج؛ والاشتراكُ الثابت صفرٌ بأساسه؛ وفهرسٌ حيٌّ يلزمه سعرٌ مثبَّت من النقل نفسِه (`_pin`). وبلا سعرٍ `price_unknown`
+  قبل الشبكة.
+- **الحجزُ والتسوية** بـ`core.budget.Budget`: ما فوق السقف `spend_cap_reached` ولا نداء. والتسويةُ بالكلفة التي أبلغها المزوّد
+  إن أبلغها، وإلا بتوكنات الردّ بالسعر نفسِه. وردٌّ بلا توكناتٍ كاملة `usage_missing`: يُسوّى بالمحجوز كلِّه (المزوّدُ قد يكون
+  نفّذ) ويُقيَّد خطأً، فلا يُحسب نداءٌ سحابيٌّ بلا توكنات.
+- **القيدُ** في `core.ledger.Ledger` المبصوم: كلُّ نداءٍ قيدٌ فيه التقديرُ والمسوّى والتوكنات.
+
+صفوفُ `provider_usage` للنقل تبقى كما يكتبها كاتبُها (حارسُ الختم يقرؤها بشكلها)؛ وما يضيفه هذا الغلاف يُكتب في `core_run`
+من تقرير الإنفاق. والحدُّ: الطلبُ هنا رسالتان نصّيتان بلا أدواتٍ ولا تفكير، لأن المراجعةَ الخارجية هكذا تُرسَل.
+
+**حدودٌ معلَنة:** يُغلَّف اليوم نقلُ ollama.com وحده (`tools/external_review.py`). وموجّهُ HF يحجز ويسوّي بـ`Budget` بنفسه (#308)
+فلا يُغلَّف مرّتين على السقف نفسِه. وKimi يُنادى بأداة سطر أوامرٍ خارج هذه العملية (`tools/kimi_drive.sh`) فلا يمرّ بـ`core.run`،
+والمحكِّمُ مسجَّلٌ لم يُشغَّل بعد (`evaluation/judge.py`)؛ وكلاهما يُغلَّف بهذا الغلاف حين يصير نداؤه في هذه العملية.
+"""
+from __future__ import annotations
+
+from decimal import ROUND_CEILING, Decimal
+
+from core import prices as price_table
+from core.budget import Budget
+from core.contracts import Message, Request, Response, Usage
+from core.run import RouteRefused, execute
+from evaluation.multi_system_review import AutomaticReviewError
+from providers.base import ProviderError
+
+# تأطيرُ المحادثة توكناتٌ لا تقابلها بايتاتٌ في التكليف؛ الحدُّ نفسُه الذي يحجزه موجّهُ HF (ملاحظة Codex على #308)
+FRAMING_TOKENS = 512
+MICROS_PER_USD = 1_000_000
+_REFUSAL_CODES = {"day_cap": "spend_cap_reached", "month_cap": "spend_cap_reached"}
+
+
+def _ceil_micros(value: Decimal) -> int:
+    return int(value.to_integral_value(rounding=ROUND_CEILING))
+
+
+class MeteredProvider:
+    """مزوّدٌ غيرُ محليّ يغلّف نقلًا واحدًا لطلبٍ واحد؛ يُبنى لكل نداء ويُستهلك مرّة."""
+
+    is_local = False
+
+    def __init__(self, metered: "MeteredTransport", schema: dict):
+        self.metered = metered
+        self.schema = schema
+        self.name = f"metered:{metered.provider_key}"
+        self.entry: dict | None = None
+        self.pin: dict | None = None
+        self.estimate = 0
+
+    def _price(self, model: str, bound: int) -> tuple[dict, dict | None]:
+        try:
+            entry = price_table.lookup(self.metered.prices, self.metered.provider_key, model)
+        except price_table.PriceUnknown as exc:
+            raise ProviderError("price_unknown", str(exc), retryable=False) from exc
+        pin = None
+        if entry["basis"] == "live_catalog":
+            pin = self.metered.pin(model, bound)
+            if pin is None:
+                raise ProviderError("price_unknown", f"{entry['key']}:pin_required", retryable=False)
+        return entry, pin
+
+    def estimate_micros(self, request: Request) -> int:
+        bound = sum(len(message.content.encode("utf-8")) for message in request.messages) + FRAMING_TOKENS
+        self.entry, self.pin = self._price(request.model, bound)
+        try:
+            self.estimate = price_table.micros(self.entry, bound, request.max_output, pin=self.pin)
+        except price_table.PriceUnknown as exc:
+            raise ProviderError("price_unknown", str(exc), retryable=False) from exc
+        return self.estimate
+
+    def complete(self, request: Request) -> Response:
+        transport, model = self.metered.transport, request.model
+        system = "\n".join(m.content for m in request.messages if m.role == "system")
+        user = "\n".join(m.content for m in request.messages if m.role == "user")
+        rows = len(transport.provider_usage)
+        try:
+            content = transport(model, system, user, self.schema)
+        except AutomaticReviewError as exc:
+            raise ProviderError(exc.code, model, retryable=False) from exc
+        row = transport.provider_usage[-1] if len(transport.provider_usage) > rows else None
+        usage = (row or {}).get("usage") or {}
+        counts = {key: usage.get(key) for key in ("prompt_tokens", "completion_tokens")}
+        if any(type(value) is not int or value < 0 for value in counts.values()):
+            raise ProviderError("usage_missing", model, retryable=False)
+        if row is not None and row.get("cost_status") == "reported":
+            cost = _ceil_micros(Decimal(str(row["cost_usd"])) * MICROS_PER_USD)
+            basis = "reported_by_provider"
+        else:
+            cost = price_table.micros(self.entry, counts["prompt_tokens"], counts["completion_tokens"], pin=self.pin)
+            basis = "subscription_flat" if self.entry["basis"] == "subscription_flat" else "estimated_from_prices"
+        self.metered.calls.append({"model": model, "price_key": self.entry["key"], "cost_basis": basis,
+                                   "estimate_micros": self.estimate, "cost_micros": cost, **counts})
+        return Response(content=content, usage=Usage(counts["prompt_tokens"], counts["completion_tokens"]),
+                        stop_reason="complete", cost_micros=cost, provider=self.name, model_version=model)
+
+
+class MeteredTransport:
+    """نقلٌ بالتوقيع نفسِه `(model, system, user, schema) -> str`، كلُّ نداءٍ فيه يمرّ بـ`core.run.execute`."""
+
+    def __init__(self, transport, *, provider_key: str, budget: Budget, ledger, prices: dict | None = None,
+                 max_output: int = 4000, deadline_s: float = 900.0, data_policy: str = "public"):
+        self.transport, self.provider_key = transport, provider_key
+        self.budget, self.ledger = budget, ledger
+        self.prices = prices if prices is not None else price_table.load()
+        self.max_output, self.deadline_s, self.data_policy = max_output, deadline_s, data_policy
+        self.calls: list[dict] = []
+        self.refusals: list[dict] = []
+
+    def __getattr__(self, name):
+        # ما سوى النداء (الفهرسُ، والوصفُ، وسجلُّ المحاولات) للنقل المغلَّف نفسِه
+        return getattr(self.transport, name)
+
+    def pin(self, model: str, bound: int) -> dict | None:
+        """السعرُ المثبَّت من فهرس النقل الحيّ (موجّه HF)، بوحدة الجدول؛ وNone إن لم يثبّت النقلُ سعرًا."""
+        pinner = getattr(self.transport, "_pin", None)
+        if pinner is None:
+            return None
+        pin = pinner(model, bound)
+        return {side: price_table.usd_per_million_to_micros_per_1k(pin[side]) for side in ("input", "output")}
+
+    def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
+        provider = MeteredProvider(self, schema)
+        request = Request(messages=(Message(role="system", content=system), Message(role="user", content=user)),
+                          model=model, model_version=model, max_output=self.max_output, deadline_s=self.deadline_s,
+                          data_policy=self.data_policy, idempotency_key=None)
+        try:
+            outcome = execute(request, provider, self.budget, self.ledger)
+        except RouteRefused as exc:
+            code = _REFUSAL_CODES.get(exc.code, exc.code)
+            self.refusals.append({"model": model, "code": code, "estimate_micros": provider.estimate})
+            raise AutomaticReviewError(code, model) from exc
+        except ProviderError as exc:
+            self.refusals.append({"model": model, "code": exc.code, "estimate_micros": provider.estimate})
+            raise AutomaticReviewError(exc.code, model) from exc
+        if outcome.response is None:
+            # عطلٌ قيّده `core.run` وسوّاه بالمحجوز: يُسمّى هنا كما يُسمّى الرفض، ولا يُحسب نداءً
+            code = outcome.error_code or "provider_error"
+            self.refusals.append({"model": model, "code": code, "estimate_micros": provider.estimate})
+            raise AutomaticReviewError(code, model)
+        return outcome.response.content
+
+    def spend_report(self) -> dict:
+        inner = self.transport.spend_report() if hasattr(self.transport, "spend_report") else {}
+        spent = sum(call["cost_micros"] for call in self.calls)
+        return {**inner, "core_run": {
+            "ledger": str(getattr(self.ledger, "path", "")), "calls": self.calls, "refusals": self.refusals,
+            "settled_usd": str(Decimal(spent) / MICROS_PER_USD),
+            "outstanding_micros": self.budget.outstanding_micros}}

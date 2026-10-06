@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "unit": "micro_usd_per_1k_tokens",
+  "entries": {
+    "ollama/*:cloud": {
+      "basis": "subscription_flat",
+      "input": 0,
+      "output": 0,
+      "read_at": "2026-09-26",
+      "source": "docs/PLAN-20260926.md#١١",
+      "source_kind": "search_excerpt",
+      "note": "النماذجُ السحابية عبر ollama.com (أو الخادمِ المحليّ الممرِّر) تُحاسَب باشتراك الحساب (Free ثم Pro $20 شهريًّا) لا بالتوكن؛ فالكلفةُ الحدّيّة صفرٌ معلنٌ بأساسه، والاشتراكُ خارج هذا الجدول. المقتطفُ بتاريخ ٢٦ سبتمبر ٢٠٢٦ لا صفحةُ المزوّد، ويقرؤه المالك قبل الدفع."
+    },
+    "hf-router/*": {
+      "basis": "live_catalog",
+      "read_at": "2026-09-30",
+      "source": "https://router.huggingface.co/v1/models",
+      "source_kind": "provider_catalog",
+      "note": "سعرُ كلِّ نموذجٍ يُقرأ من `providers[].pricing` في فهرس الموجّه ساعةَ التشغيل ويُثبَّت في الحمولة (`PricedRouterChat`)؛ فلا سعرَ ثابتٌ هنا، والتقديرُ قبل النداء يلزمه سعرٌ مثبَّت من الفهرس وإلا رُفض `price_unknown`."
+    }
+  },
+  "limits": [
+    "no_per_token_price_has_been_read_from_a_provider_page_yet_the_hf_router_pins_its_price_from_the_live_catalog_at_call_time_and_each_run_report_carries_that_pin_with_read_at",
+    "the_ollama_entry_is_a_subscription_read_from_a_dated_search_excerpt_in_the_plan_not_from_the_provider_page_and_its_marginal_price_is_zero_by_basis_not_by_measurement",
+    "a_cloud_model_without_an_entry_is_refused_before_the_network_as_price_unknown_and_is_never_priced_at_zero",
+    "prices_are_micro_usd_per_one_thousand_tokens_as_integers_and_are_rounded_up_when_applied"
+  ]
+}

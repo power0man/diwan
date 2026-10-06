@@ -279,9 +279,30 @@ class OllamaChat:
         return {"token_totals": token_totals(self.provider_usage)}
 
 
-def build_transport(base_url: str, environ=os.environ) -> OllamaChat:
-    """النقلُ من النقطة المطلوبة؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر)."""
-    return OllamaChat(base_url, api_key=environ.get(CLOUD_KEY_ENV) or None)
+def build_transport(base_url: str, environ=os.environ, *, ledger_path: Path | None = None):
+    """النقلُ من النقطة المطلوبة؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر).
+
+    ونقلُ ollama.com يمرّ بـ`core.run` بمزوّدٍ غير محليّ مسعَّرٍ من `registry/prices.json` وسجلٍّ مبصوم في `ledger_path`
+    (البند ٣ من #295). حدُّه: الخادمُ المحليُّ الممرِّر لنموذجٍ `:cloud` لا يُغلَّف هنا، لأن النموذجَ لا يُعرف عند البناء."""
+    transport = OllamaChat(base_url, api_key=environ.get(CLOUD_KEY_ENV) or None)
+    if transport.cloud and ledger_path is not None:
+        return metered_transport(transport, "ollama", ledger_path, cap_micros=0)
+    return transport
+
+
+def metered_transport(transport, provider_key: str, ledger_path: Path, *, cap_micros: int, **kw):
+    """غلافُ `core.run` لنقلٍ سحابيّ: سقفُ الحجز `cap_micros` (صفرٌ للاشتراك الثابت الذي تقديرُه صفر)، والقيدُ في `ledger_path`."""
+    from core.ledger import Ledger
+    from evaluation.metered import MeteredTransport
+    budget = Budget(day_remaining_micros=cap_micros, month_remaining_micros=cap_micros)
+    return MeteredTransport(transport, provider_key=provider_key, budget=budget, ledger=Ledger(ledger_path), **kw)
+
+
+def _ledger_path(args) -> Path:
+    bank = getattr(args, "bank", None)
+    if bank is not None and not getattr(args, "smoke", None):
+        return Path(bank) / "reviews" / "core-run-ledger.jsonl"
+    return Path(tempfile.mkdtemp(prefix="diwan-core-run-")) / "ledger.jsonl"
 
 
 # ————— الواجهاتُ المجانية المتوافقة مع OpenAI (#168، وموافقة Groq/OpenRouter الموثقة في #197) —————
@@ -990,12 +1011,14 @@ class PricedRouterChat(OpenAICompatChat):
 
 
 def build_free_transport(backend: str, environ=os.environ, *, spend_cap_usd: Decimal | None = None,
-                         **kw) -> OpenAICompatChat:
+                         ledger_path: Path | None = None, **kw):
     """النقلُ المجانيّ؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر). وموجّهُ HF مدفوعٌ فنقلُه مسعَّرٌ بسقف."""
     if backend not in BACKENDS:
         raise AutomaticReviewError("backend_unknown", backend)
     spec = BACKENDS[backend]
     if backend == "hf-router":
+        # موجّهُ HF يحجز ويسوّي بـ`core.budget.Budget` بنفسه (#308)؛ وغلافُ `core.run` فوقه حجزٌ ثانٍ على السقف نفسِه يضيّقه
+        # إلى نصفه، فلا يُغلَّف هنا، و`ledger_path` له حدٌّ معلَن في `evaluation/metered.py`
         return PricedRouterChat(environ.get(spec["key_env"]) or None, spend_cap_usd=spend_cap_usd, **kw)
     if spend_cap_usd is not None:
         raise AutomaticReviewError("max_usd_is_hf_router_only", backend)
@@ -1612,7 +1635,8 @@ def _free_main(args, parser) -> int:
         if args.run_id and args.bank is not None and not (args.smoke or args.list_catalog):
             check_public_bank(args.bank)
             run = args.bank = prepare_run(args.bank, args.run_id)
-        transport = build_free_transport(args.backend, max_tokens=args.max_tokens, spend_cap_usd=args.max_usd)
+        transport = build_free_transport(args.backend, max_tokens=args.max_tokens, spend_cap_usd=args.max_usd,
+                                         ledger_path=_ledger_path(args))
         if args.list_catalog:
             assessed = assess_catalog(transport.catalog(), args.backend)
             # حدودُ الجرد من الموضع الواحد (ملاحظة Codex على #174): الهويةُ معرّفُ الفهرس، والعائلةُ مستنتجة، والفهرسُ لحظةٌ واحدة
@@ -1718,7 +1742,7 @@ def main(argv: list[str] | None = None) -> int:
     transport = None
     if args.smoke:
         try:
-            transport = build_transport(base_url)
+            transport = build_transport(base_url, ledger_path=_ledger_path(args))
             with tempfile.TemporaryDirectory() as tmp:
                 report = smoke(Path(tmp), reviewers, transport, brief_path=args.brief)
         except AutomaticReviewError as exc:
@@ -1739,7 +1763,7 @@ def main(argv: list[str] | None = None) -> int:
     # ودليلُ مجانيةٍ حفظته الواجهاتُ المجانية على البنك نفسِه يبقى مع نداءاته في السجلّ والخلاصة (ملاحظة Codex على #298)
     prior, prior_evidence = prior_provider_usage(args.bank), prior_zero_spend_evidence(args.bank)
     try:
-        transport = build_transport(base_url)
+        transport = build_transport(base_url, ledger_path=_ledger_path(args))
         try:
             counts = review_bank(args.bank, reviewers, transport, brief_path=args.brief)
         finally:
