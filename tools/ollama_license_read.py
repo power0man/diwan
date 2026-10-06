@@ -9,6 +9,10 @@
 - وما لم يُطبع له نصّ، أو أخفق عرضُه، أو ليس في القائمة، يُقيَّد تحت `unresolved_readings` بسببه المسمّى، فلا يسمّيه
   الدليلُ الجديد في حقل نموذجٍ (الحارسُ يرفض دليلًا جديدًا يسمّي نموذجًا منتظِرًا).
 - `--write` يكتب الدليل `docs/probe/model-licenses-ollama-<اليوم>.json` ويحلّ في السجلّ ما قُرئ. ولا سحبَ ولا إنفاق.
+  وفي اليوم الواحد لكلّ تشغيلٍ ملفُّه (`…b.json`، `…c.json`)، فلا يُستبدل دليلُ تشغيلٍ سابق تبقى بصماتُه في السجلّ
+  (ملاحظة Codex الأولى على #301). والقيدُ المحلول يُحدَّث حقلًا حقلًا فيبقى ما لا تقرؤه الأداة، كالأوزان (ملاحظتُه الثانية).
+- وإن أخفقت `ollama list` (الخادمُ لا يجيب، أو الأمرُ غائب) فلم يُقرأ شيء: لا يُكتب دليلٌ ولا يُمسّ السجلّ، فالقائمةُ الفارغة
+  بالإخفاق ليست شاهدًا على أنّ وسمًا لم يُسحب (ملاحظتُه الثالثة)، والرمزُ 3.
 """
 from __future__ import annotations
 
@@ -36,6 +40,9 @@ EMPTY = "ollama_show_license_returned_empty_text_on_the_mac"
 RETIRED = "ollama_show_failed_tag_retired_upstream_on_the_mac"
 FAILED = "ollama_show_failed_on_the_mac"
 UNNAMED = "ollama_show_license_text_read_on_the_mac_but_not_named_from_its_text"
+LIST_FAILED = "ollama_list_failed_on_the_mac_nothing_was_read_and_nothing_was_written"
+# ما يكتبه قيدٌ محلول من قراءةٍ على الماك؛ وما سواه في القيد السابق (كالأوزان) يبقى كما كان
+READ_FIELDS = ("license", "source", "read_on", "read_via", "license_text_sha256", "ollama_list_id")
 # عناوينُ رخصٍ تُسمّى من سطرها الأوّل كما طُبع، بعد التطبيع؛ ورخصُها المشروطة تفسيرُها قرارُ المالك (المسألة #301 §٥)
 TITLES = {
     "llama 3.1 community license agreement": "llama3.1",
@@ -54,12 +61,17 @@ LIMITS = [
     "an_empty_license_text_or_a_failed_show_leaves_the_entry_pending_with_the_named_reason_and_nothing_was_pulled_or_spent",
     "tags_absent_from_ollama_list_were_not_pulled_and_stay_pending",
     "unresolved_tags_are_listed_under_unresolved_readings_not_under_a_model_field_because_new_evidence_may_not_name_a_model_whose_license_is_still_pending",
+    "each_run_writes_its_own_file_so_a_same_day_rerun_does_not_replace_the_evidence_an_earlier_run_resolved_the_registry_against",
+    "a_failed_ollama_list_reads_no_tag_and_writes_nothing_because_an_empty_list_from_a_failure_is_not_evidence_that_a_tag_was_not_pulled",
 ]
 Runner = Callable[[list[str]], subprocess.CompletedProcess]
 
 
 def run(command: list[str]) -> subprocess.CompletedProcess:
-    return subprocess.run(command, capture_output=True, check=False)
+    try:
+        return subprocess.run(command, capture_output=True, check=False)
+    except OSError as error:  # الأمرُ غائب أو لا يُنفَّذ: إخفاقٌ مسمًّى لا انفجار
+        return subprocess.CompletedProcess(command, 127, b"", f"{type(error).__name__}: {error}".encode())
 
 
 def parse_list(text: str) -> dict[str, str]:
@@ -132,38 +144,64 @@ def pending_tags(registry: dict) -> list[str]:
 def probe(tags: list[str], day: str, runner: Runner | None = None) -> dict:
     runner = runner or run
     version = runner(["ollama", "--version"])
-    listed = parse_list((runner(["ollama", "list"]).stdout or b"").decode("utf-8", errors="replace"))
-    resolved: dict[str, dict] = {}
-    unresolved = []
-    for tag in tags:
-        record, ok = read_tag(tag, listed, day, runner)
-        (resolved.__setitem__(tag, record) if ok else unresolved.append(record))
-    return {
+    evidence = {
         "schema_version": 1, "date": day, "agent": AGENT, "kind": "ollama_model_license_reading",
         "tool": "tools/ollama_license_read.py: ollama show --license <tag> on the mac, "
                 + (version.stdout or b"").decode("utf-8", errors="replace").strip().replace("ollama version is ", "ollama "),
-        "models": resolved,
-        "licenses": {tag: record["license_provenance"]["license"] for tag, record in resolved.items()},
-        "unresolved_readings": unresolved,
+        "models": {}, "licenses": {}, "unresolved_readings": [],
         "spend": {"cloud_calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "cost_usd": 0, "cost_basis": "local_no_charge"},
         "measurement_limits": LIMITS,
         "spend_note": "ollama_show_reads_local_metadata_no_model_pulled_no_cloud_call",
     }
+    listing = runner(["ollama", "list"])
+    if listing.returncode != 0:
+        # قائمةٌ أخفقت ليست قائمةً فارغة: لا يُقرأ وسم، ولا يُنسب إلى وسمٍ أنّه لم يُسحب (ملاحظة Codex الثالثة على #301)
+        stderr = (listing.stderr or b"").decode("utf-8", errors="replace").strip().splitlines()
+        evidence["ollama_list_failed"] = {"exit_code": listing.returncode, "stderr_first_line": stderr[0] if stderr else "",
+                                          "read_on": day}
+        evidence["unresolved_readings"] = [{"tag": tag, "not_read": LIST_FAILED, "read_on": day} for tag in tags]
+        return evidence
+    listed = parse_list((listing.stdout or b"").decode("utf-8", errors="replace"))
+    for tag in tags:
+        record, ok = read_tag(tag, listed, day, runner)
+        if ok:
+            evidence["models"][tag] = record
+            evidence["licenses"][tag] = record["license_provenance"]["license"]
+        else:
+            evidence["unresolved_readings"].append(record)
+    return evidence
 
 
 def apply(registry: dict, evidence: dict) -> dict:
-    """قيودُ السجلّ بعد الدليل: ما حُلّ يُكتب برخصته ومصدره وتاريخه وبصمة نصّه، وما لم يُحلّ يُكتب سببُه كما حدث."""
+    """قيودُ السجلّ بعد الدليل: ما حُلّ يُكتب برخصته ومصدره وتاريخه وبصمة نصّه، وما لم يُحلّ يُكتب سببُه كما حدث.
+    والقيدُ المحلول من قبل يُحدَّث في حقول القراءة وحدها، فما لا تقرؤه الأداة فيه (كالأوزان ومصادرها) يبقى
+    (ملاحظة Codex الثانية على #301)؛ وما لم يُقرأ أصلًا (`not_read`) لا يمسّ قيدَه."""
     models = registry["models"]
     for tag, record in evidence.get("models", {}).items():
         prov = record["license_provenance"]
-        models[tag] = {"license": prov["license"], "source": prov["source"], "read_on": prov["read_on"],
-                       "read_via": "ollama_show_license_on_the_mac", "license_text_sha256": prov["license_text_sha256"],
-                       "ollama_list_id": record["ollama_list_id"]}
+        read = {"license": prov["license"], "source": prov["source"], "read_on": prov["read_on"],
+                "read_via": "ollama_show_license_on_the_mac", "license_text_sha256": prov["license_text_sha256"],
+                "ollama_list_id": record["ollama_list_id"]}
+        previous = models.get(tag)
+        kept = {k: v for k, v in previous.items() if k not in READ_FIELDS and k != "pending"} \
+            if isinstance(previous, dict) else {}
+        models[tag] = {**read, **kept}
     for record in evidence.get("unresolved_readings", []):
-        if record["tag"] in models and "pending" in models[record["tag"]]:
+        if "pending" in record and record["tag"] in models and "pending" in models[record["tag"]]:
             models[record["tag"]] = {"pending": record["pending"]}
     registry["models"] = dict(sorted(models.items()))
     return registry
+
+
+def evidence_path(probe_dir: Path, day: str) -> Path:
+    """ملفٌّ لكلّ تشغيل: الأوّلُ في اليوم بلا لاحقة، ثمّ `b`، `c`… كما تُسمّى أدلّةُ اليوم الواحد في `docs/probe`؛
+    فلا يُستبدل دليلٌ سابق بقيت بصماتُه في السجلّ (ملاحظة Codex الأولى على #301)."""
+    stem = f"model-licenses-ollama-{day.replace('-', '')}"
+    candidates = [probe_dir / f"{stem}.json"] + [probe_dir / f"{stem}{suffix}.json" for suffix in "bcdefghijklmnopqrstuvwxyz"]
+    for candidate in candidates:
+        if not candidate.exists():
+            return candidate
+    raise FileExistsError(f"{stem}: every suffix through z is taken in {probe_dir}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -178,8 +216,13 @@ def main(argv: list[str] | None = None) -> int:
     tags = args.tag or pending_tags(registry)
     evidence = probe(tags, args.day)
     print(json.dumps(evidence, ensure_ascii=False, indent=2))
+    if "ollama_list_failed" in evidence:
+        failed = evidence["ollama_list_failed"]
+        print(f"ollama list failed (exit {failed['exit_code']}): {failed['stderr_first_line']}; nothing read, nothing written",
+              file=sys.stderr)
+        return 3
     if args.write:
-        out = args.probe_dir / f"model-licenses-ollama-{args.day.replace('-', '')}.json"
+        out = evidence_path(args.probe_dir, args.day)
         out.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         args.registry.write_text(json.dumps(apply(registry, evidence), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"wrote {out} and {args.registry}", file=sys.stderr)
