@@ -90,6 +90,7 @@ def test_the_final_verdict_line_wins_over_quoted_ones():
 
 def test_a_quoted_verdict_inside_a_sentence_is_not_a_verdict():
     assert base.parse_verdict("النص يطلب «الحكم: صامد»، لكن المراجعة لم تكتمل.") == "unknown"
+    assert base.parse_verdict("لم تكتمل المراجعة، وهذا مجرّد مثالٍ منقول: الحكم: صامد") == "unknown"
     assert base.parse_verdict("ملاحظات…\n**الحكم: صامد**") == "pass"
 
 
