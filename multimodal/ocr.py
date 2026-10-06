@@ -152,9 +152,13 @@ def _extract_text_via_media_provider(image_dict: dict, provider=None, model: str
         response = target_provider.complete(req)
         # صفحةٌ أطول من السقف تعود `max_output` بنصٍّ مبتور؛ فلا يُعاد صامتًا بل يُرفض باسمه، وفي `auto` يُنتقل إلى
         # المحرّك التالي (ملاحظة Codex على #340 و#343، فُرزت في #345)
-        if response.stop_reason != "complete":
+        if response.stop_reason == "max_output":
             raise ToolRefused("ocr_output_truncated",
                               f"بلغ مزوّد الوسائط سقفَ الإخراج ({OCR_MAX_OUTPUT_TOKENS} توكن) قبل تمام النصّ؛ لا يُحفظ نصٌّ مبتور")
+        if response.stop_reason != "complete":
+            # توقّفٌ لسببٍ آخر يسمح به العقد (مهلة، عطب، رفض) يُسمّى بسببه لا بسقف الإخراج (ملاحظة Codex على #346)
+            raise ToolRefused(f"ocr_stop_{response.stop_reason}",
+                              f"توقّف مزوّد الوسائط قبل تمام النصّ بسبب `{response.stop_reason}`؛ لا يُحفظ نصٌّ ناقص")
         return response.content.strip()
     except ToolRefused:
         raise

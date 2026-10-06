@@ -261,6 +261,25 @@ def test_a_media_provider_answer_cut_at_the_output_cap_is_refused_by_name(worksp
     assert ocr_image_handler({"path": "sample.png"}, cut)["text"] == "نصٌّ كامل"
 
 
+def test_a_media_provider_stop_for_another_reason_is_named_by_that_reason(workspace):
+    """`deadline` أو `error` أو `refused` ليست بلوغَ السقف: تُرفض باسم سببها لا `ocr_output_truncated` (ملاحظة Codex على #346)."""
+    from core.contracts import Response, Usage
+    ws, ctx = workspace
+    (ws / "sample.png").write_bytes(SAMPLE_PNG)
+
+    class Deadline:
+        model = "custom-m"
+        model_version = "v" * 64
+
+        def complete(self, req):
+            return Response(content="", usage=Usage(10, 0), stop_reason="deadline", cost_micros=0)
+
+    late = ToolContext(root=ctx.root, journal=ctx.journal, media_provider_factory=lambda: Deadline())
+    with pytest.raises(ToolRefused) as exc:
+        ocr_image_handler({"path": "sample.png", "engine": "media_provider", "output_path": "out.txt"}, late)
+    assert exc.value.code == "ocr_stop_deadline" and not (ws / "out.txt").exists()
+
+
 def _fake_pdftoppm(cmd, **kw):
     """pdftoppm بسلوكه المعلن: الصفحةُ بالدقّة المطلوبة، و`-scale-to` يحدّ ضلعها الأطول. فلا يتوقّف الاختبار
     على وجود poppler في بيئة CI، ويسقط إن أُسقط خيارُ التحجيم."""
