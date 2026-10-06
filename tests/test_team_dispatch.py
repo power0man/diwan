@@ -530,3 +530,70 @@ def test_takeover_writes_its_marker_before_checking_absence_and_removes_it_when_
     assert not (raw / "taken_over").exists(), "الرفضُ يزيل العلامة"
     (raw / "wrapper_pid").write_text("4194297", encoding="utf-8")
     assert dispatcher.takeover(41, owner_authorization="نفّذ")["status"] == "takeover" and (raw / "taken_over").exists()
+
+
+def _rejected(dispatcher, project, ledger):
+    """دورةٌ كاملة حتى مراجعةٍ رافضة بنصٍّ فيه أمرٌ مدسوس."""
+    out = dispatcher.run(41, execute=True)
+    ref = project.comment(out["pr"], f"عيبٌ في السطر ٣. {INJECTION}\nالحكم: يحتاج تصحيحًا")
+    ledger.append(41, "review_rejected", head_sha=out["head_sha"], review_ref=ref, reviewer="codex", reviewer_family="openai", verdict="revise")
+    return out, ref
+
+
+def test_revise_sends_the_rejection_back_to_the_same_worker_in_the_same_worktree(tmp_path):
+    """#348: المراجعةُ الرافضة تعود إلى العامل نفسِه بتكليفٍ = الأصلُ + نصُّها محجورًا، في نسخة العمل نفسِها، فتُقيَّد الجولةُ ثم
+    `completed` برأسٍ جديد يُسقط ما قبله؛ والطلبُ نفسُه لا طلبٌ جديد."""
+    dispatcher, project, adapter, ledger, _repo = _setup(tmp_path)
+    out, ref = _rejected(dispatcher, project, ledger)
+    plan = dispatcher.revise(41)
+    assert plan["status"] == "dry_run" and plan["round"] == 1 and plan["reason_ref"] == ref and ledger.last(41)["state"] == "review_rejected"
+    done = dispatcher.revise(41, execute=True)
+    assert done["status"] == "completed" and done["superseded_head"] == out["head_sha"] and done["head_sha"] != out["head_sha"]
+    brief = adapter.seen[-1]["brief"]
+    assert "عيبٌ في السطر ٣" in brief and INJECTION not in brief and "مراجعةٌ رافضة" in brief and adapter.seen[-1]["cwd"] == out["worktree"]
+    started = ledger.last_of(41, "revision_started")
+    assert started["round"] == 1 and started["reason_ref"] == ref and started["brief_sha256"] == done["brief_sha256"]
+    completed = ledger.main_state(41)
+    assert completed["state"] == "completed" and completed["pr"] == out["pr"] and completed["revision_round"] == 1
+    assert len(project.pulls) == 1 and ledger.attempt_of(41) == 1
+
+
+def test_revise_refuses_without_a_rejection_and_after_the_round_limit(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    with pytest.raises(Refusal) as exc:
+        dispatcher.revise(41, execute=True)
+    assert exc.value.code == "nothing_to_revise"
+    for n in range(3):
+        ref = project.comment(out["pr"], f"عيب {n}\nالحكم: يحتاج تصحيحًا")
+        head = ledger.main_state(41)["head_sha"]
+        ledger.append(41, "review_rejected", head_sha=head, review_ref=ref, reviewer="codex", reviewer_family="openai", verdict="revise")
+        assert dispatcher.revise(41, execute=True)["round"] == n + 1
+    ref = project.comment(out["pr"], "عيبٌ رابع\nالحكم: يحتاج تصحيحًا")
+    ledger.append(41, "review_rejected", head_sha=ledger.main_state(41)["head_sha"], review_ref=ref, reviewer="codex", reviewer_family="openai", verdict="revise")
+    with pytest.raises(Refusal) as exc:
+        dispatcher.revise(41, execute=True)
+    assert exc.value.code == "revision_rounds_exhausted" and ledger.last(41)["code"] == "revision_rounds_exhausted"
+
+
+def test_takeover_sees_a_live_revision_worker(tmp_path):
+    """عاملُ جولةِ إعادة عملٍ حيّ (معرّفاتُه في مجلّد الجولة) يمنع الاستحواذ كما يمنعه عاملُ الجولة الأولى."""
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    dispatcher.revise(41, execute=True)
+    revision_raw = dispatcher.raw_dir(41, 1) / "revision-1"
+    (revision_raw / "child_pid").write_text(str(os.getpid()), encoding="utf-8")        # عاملُ الجولة حيّ
+    dispatcher.clock = lambda: "2026-10-09T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    with pytest.raises(Refusal) as exc:
+        dispatcher.takeover(41, owner_authorization="نفّذ")
+    assert exc.value.code == "absence_not_proven" and '"no_process": false' in exc.value.detail
+
+
+def test_a_revision_without_new_commits_is_a_named_failure(tmp_path):
+    dispatcher, project, adapter, ledger, _repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    adapter.behaviour = "nothing"
+    done = dispatcher.revise(41, execute=True)
+    assert done["status"] == "validation_failed" and done["reason"] == "revision_no_commits"
+    assert ledger.main_state(41)["head_sha"] == out["head_sha"] and ledger.last(41)["reason"] == "revision_no_commits"

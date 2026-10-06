@@ -77,6 +77,8 @@ def _runs(*items, status="completed"):
 def test_checks_are_mapped_to_success_failure_pending_or_none():
     assert _project(_runs(("verify-hosted", "success"), ("container-smoke", "skipped"))).checks("h") == "success"
     assert _project(_runs(("verify-hosted", "success"), ("x", "failure"))).checks("h") == "failure"
+    # فحصٌ ألغاه المالك (family-review) يسقط دائمًا ولا يُقرأ فشلًا للرأس (أول validate في المرحلة ٢ سقط عليه)
+    assert _project(_runs(("verify-hosted", "success"), ("family-review", "failure"))).checks("h") == "success"
     assert _project(_runs(("verify-hosted", None), status="in_progress")).checks("h") == "pending"
     assert _project(_runs()).checks("h") == "none"
 

@@ -36,6 +36,9 @@ ISSUE_REF = re.compile(r"(?:Closes|Refs|Fixes|Resolves)\s+#(\d+)", re.IGNORECASE
 BRANCH_ISSUE = re.compile(r"^team/(\d+)-")
 # الفحصُ المطلوب لاعتماد الرأس (حماية main)؛ نجاحُ فحصٍ غير متعلق أو تخطّي الكلّ لا يكفي (ملاحظة Codex على #344)
 REQUIRED_CHECKS: tuple[str, ...] = ("verify-hosted",)
+# فحوصٌ ألغاها المالك ولم تُحذف من المستودع بعد (family-review: ألغاه في ٦ أكتوبر ٢٠٢٦؛ لا يحتسب إلا بوتات GitHub ولن يخضرّ):
+# سقوطُها لا يُقرأ فشلًا للرأس، وتُذكر باسمها في السجلّ
+IGNORED_CHECKS: tuple[str, ...] = ("family-review",)
 FETCH_BEFORE_PROOF = True
 
 
@@ -182,9 +185,17 @@ class DiwanProject(ProjectAdapter):
         data = self._json("api", f"repos/{self.repo}/issues/{number}/comments", "-f", f"body={body}")
         return str((data or {}).get("html_url") or (data or {}).get("id") or "")
 
+    def review_text(self, ref: str) -> str:
+        match = re.search(r"issuecomment-(\d+)", ref or "")
+        comment_id = match.group(1) if match else str(ref or "").strip()
+        if not comment_id.isdigit():
+            raise GhError("review_ref_unparsed", str(ref)[:120])
+        data = self._json("api", f"repos/{self.repo}/issues/comments/{comment_id}") or {}
+        return str(data.get("body") or "")
+
     def checks(self, head_sha: str) -> str:
         data = self._json("api", f"repos/{self.repo}/commits/{head_sha}/check-runs") or {}
-        runs = data.get("check_runs") or []
+        runs = [run for run in (data.get("check_runs") or []) if str(run.get("name") or "") not in IGNORED_CHECKS]
         if not runs:
             return "none"
         conclusions = [run.get("conclusion") for run in runs]
