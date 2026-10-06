@@ -751,6 +751,14 @@ class Dispatcher:
                            session_id=result.session_id, cost_estimate_micros=cost_micros, cost_basis="estimate")
         return {**plan, "status": "completed", "head_sha": head, "superseded_head": old_head}
 
+    def _attempt_of_branch(self, issue_number: int, branch: str) -> int | None:
+        """رقمُ المحاولة التي أُرسلت على هذا الفرع (من قيد `dispatched`)؛ وإن لم يُوجد فآخرُ محاولةٍ للمسألة إن وُجدت."""
+        for record in reversed(self.ledger.records(issue_number)):
+            if record["state"] == "dispatched" and record.get("branch") == branch:
+                return int(record["attempt"])
+        state = self.ledger.main_state(issue_number)
+        return None if state is None else int(state["attempt"])
+
     def _revision_open(self, issue_number: int, attempt: int) -> bool:
         """هل يستعمل عاملُ جولةِ إعادة عملٍ نسخةَ العمل؟ المعيارُ الحياةُ لا القيد: معرّفٌ حيّ في مجلّد جولةٍ (مقيَّدةً كانت أو لا)،
         أو إطلاقٌ مجهول (علامةُ `launching` بلا `exit` ولا معرّفات). أمّا جولةٌ عاملُها ميّت فلا تحجز النسخة ولو لم تُختم في السجلّ
@@ -783,10 +791,10 @@ class Dispatcher:
             open_attempt = self.ledger.open_attempt(issue)
             if open_attempt is not None and open_attempt["state"] in ("dispatched", "claimed"):
                 blockers.append("attempt_open")
-            state = self.ledger.main_state(issue)
-            # الجولةُ الجارية تُفحص لآخر محاولةٍ ولو قُبلت أو استُحوذ عليها: عاملٌ تأخّر بعد المهلة ثم دُمج الرأسُ وقُيّد accepted ما زال
-            # يستعمل النسخة (ملاحظتا Codex التاسعة والحادية عشرة على #349)
-            if state is not None and self._revision_open(issue, state["attempt"]):
+            # الجولةُ الجارية تُفحص للمحاولة التي فرعُها هو فرعُ هذه النسخة (قيدُ `dispatched` الحامل اسمَ الفرع) لا لآخر محاولةٍ للمسألة؛
+            # ولو قُبلت المحاولة أو استُحوذ عليها: عاملٌ تأخّر بعد المهلة ما زال يستعمل نسختَه (ملاحظاتُ Codex ٩ و١١ و١٣ على #349)
+            attempt = self._attempt_of_branch(issue, branch)
+            if attempt is not None and self._revision_open(issue, attempt):
                 blockers.append("revision_open")
         done = self.runner(["git", "-C", str(path), "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored"],
                            capture_output=True, text=True)

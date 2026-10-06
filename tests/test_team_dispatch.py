@@ -1073,3 +1073,23 @@ def test_gc_removes_a_worktree_whose_revision_worker_has_exited_after_acceptance
     ledger.append(41, "accepted", head_sha=head, merge_sha="m" * 40)
     rows = dispatcher.gc(yes=True)
     assert rows[0]["skipped"] is None and rows[0]["removed"] is True and not worktree.exists()
+
+
+def test_gc_checks_the_revision_rounds_of_the_worktree_s_own_attempt(tmp_path):
+    """قُبلت المحاولةُ الأولى وعاملُ جولتها المتأخّرة حيّ، ثم اكتملت محاولةٌ ثانية: تنظيفُ نسخة الأولى يفحص جولاتِ الأولى لا الثانية."""
+    dispatcher, project, _adapter, ledger, repo = _setup(tmp_path)
+    worktree, out = _merged_for_real(dispatcher, project, repo)
+    head = out["head_sha"]
+    ledger.append(41, "revision_started", round=1, pid=os.getpid(), started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1", head_sha=head)
+    ledger.append(41, "outcome_unknown", reason="timeout_revision_still_running", pid=os.getpid(), round=1)
+    ledger.append(41, "validated", head_sha=head, checks_ref=f"checks:{head}")
+    ledger.append(41, "verified", head_sha=head, review_ref="c-2", reviewer="codex", reviewer_family="openai")
+    ledger.append(41, "accepted", head_sha=head, merge_sha="m" * 40)
+    ledger.append(41, "dispatched", brief_sha256="c" * 64, worker="claude", family="anthropic", branch="team/41-anthropic-a2",
+                  worktree=str(tmp_path / "wt" / "team-41-anthropic-a2"))
+    ledger.append(41, "claimed", pid=2, started_at="2026-10-07T12:00:00+00:00")
+    ledger.append(41, "completed", head_sha="2" * 40, branch="team/41-anthropic-a2", pr=77)
+    assert ledger.main_state(41)["attempt"] == 2
+    rows = dispatcher.gc(yes=True)
+    first = [r for r in rows if r["branch"] == "team/41-anthropic"][0]
+    assert first["removed"] is False and first["skipped"] == ["revision_open"] and worktree.exists()
