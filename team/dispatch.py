@@ -453,6 +453,12 @@ class Dispatcher:
         return self._finish(self.project.issue(issue_number), state["attempt"], rc, raw, wt, branch, plan, adapter)
 
     def takeover(self, issue_number: int, *, owner_authorization: str) -> dict:
+        with self._launch_lock(issue_number):
+            # كلُّ القراءات تحت القفل لا قبله: جولةُ تصحيحٍ تمسك القفل قد تودع رأسًا جديدًا وتجدّد النشاط، فلا يُجاز استحواذٌ
+            # بإثباتٍ قُرئ قبل انتظارها (ملاحظة Codex الخامسة على #349)
+            return self._takeover_locked(issue_number, owner_authorization)
+
+    def _takeover_locked(self, issue_number: int, owner_authorization: str) -> dict:
         state = self.ledger.main_state(issue_number)
         if state is None or state["state"] in ("accepted",):
             raise Refusal("nothing_to_take_over")
@@ -465,7 +471,7 @@ class Dispatcher:
             head_now = self._git("rev-parse", "HEAD", cwd=wt) if wt.exists() else last_head
         except GitError:
             head_now = None          # رأسٌ لا يُقرأ ليس إثباتًا لعدم وجود إيداعات جديدة
-        last_activity = state.get("started_at") or state.get("at")
+        last_activity = self._last_activity(issue_number, state)
         now = self.clock()
         if not lease_expired(last_activity, now, LEASE_SECONDS):
             raise Refusal("lease_active", f"آخر نشاط {last_activity}")
@@ -474,7 +480,7 @@ class Dispatcher:
         raw = self.raw_dir(issue_number, state["attempt"])
         raw.mkdir(parents=True, exist_ok=True)
         marker = raw / "taken_over"
-        with self._launch_lock(issue_number):
+        if True:
             # تحت قفل الإطلاق نفسِه الذي يأخذه `revise`: لا يُطلق عاملُ جولةٍ بين فحص الغياب وقيد الاستحواذ (ملاحظة Codex الرابعة على #349).
             # والعلامةُ **قبل** فحص الغياب لا بعده: غلافٌ يبلغ فحصَ العلامة بعد هذه اللحظة يراها فلا يأذن؛ ومن بلغه قبلها كان قد كتب
             # معرّفاته فيراها فحصُ الغياب أدناه ويُرفض الاستحواذ وتُزال العلامة (ملاحظة Codex الثانية على #347)
@@ -484,6 +490,12 @@ class Dispatcher:
             except Refusal:
                 marker.unlink(missing_ok=True)
                 raise
+
+    def _last_activity(self, issue_number: int, state: dict) -> str:
+        """آخرُ نشاطٍ معلوم للمحاولة: بدءُ الادّعاء أو قيدُ الحالة الرئيسة، أو بدءُ آخر جولةِ إعادة عملٍ إن كان أحدث."""
+        stamps = [str(state.get("started_at") or state.get("at") or "")]
+        stamps += [str(r.get("started_at") or r.get("at") or "") for r in self.revision_rounds(issue_number, state["attempt"])]
+        return max(stamps)
 
     def _takeover_checked(self, issue_number: int, state: dict, dispatched: dict, raw: Path, head_now, last_head, now: str,
                           owner_authorization: str) -> dict:
@@ -612,6 +624,7 @@ class Dispatcher:
             raise Refusal("doctor_refused", ", ".join(report.get("findings") or []))
         raw.mkdir(parents=True, exist_ok=True)
         write_atomic(raw / "head", head)                      # رأسُ البداية على القرص قبل الإطلاق: تقرؤه استعادةُ جولةٍ لم تُقيَّد
+        write_atomic(raw / "launching", self.clock())         # قبل بدء الغلاف: مجلّدٌ فيه هذه العلامة بلا معرّفاتٍ إطلاقٌ مجهول لا يُعاد
         kept = self.home / "briefs" / f"{issue_number}-a{attempt}-r{round_no}.md"
         kept.parent.mkdir(parents=True, exist_ok=True)
         kept.write_text(brief, encoding="utf-8")
@@ -636,6 +649,10 @@ class Dispatcher:
         raw = self.raw_dir(issue_number, attempt) / f"revision-{round_no}"
         pids = {name: int((raw / name).read_text(encoding="utf-8").strip() or 0) for name in ("pid", "child_pid", "wrapper_pid") if (raw / name).exists()}
         if not any(pids.values()):
+            if (raw / "launching").exists():
+                # المرسِلُ مات بين بدء الغلاف وحفظ معرّفه ولم يكتب الغلافُ معرّفَه بعد: لا يُثبت غيابُ المعرّفات غيابَ العامل،
+                # فلا تُعاد الجولةُ في المجلّد ونسخة العمل نفسِهما (ملاحظة Codex الخامسة على #349)؛ يحلّها الاستحواذُ بإثباته
+                raise Refusal("revision_launch_unconfirmed", f"الجولة {round_no} بدأ إطلاقُها بلا معرّفٍ محفوظ")
             return rounds
         kept = self.home / "briefs" / f"{issue_number}-a{attempt}-r{round_no}.md"
         brief_sha = sha256_text(kept.read_text(encoding="utf-8")) if kept.exists() else "unrecorded"

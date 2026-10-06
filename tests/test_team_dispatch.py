@@ -804,3 +804,53 @@ def test_an_unrecorded_round_is_recovered_with_its_starting_head(tmp_path):
     done = dispatcher.revise(41, execute=True)
     assert done["status"] == "completed" and done["superseded_head"] == out["head_sha"] and done["head_sha"] == new_head
     assert ledger.last_of(41, "revision_started")["head_sha"] == out["head_sha"]
+
+
+def test_a_revision_launch_without_a_saved_pid_is_not_relaunched(tmp_path):
+    """مات المرسِل بين بدء الغلاف وحفظ معرّفه ولم يكتب الغلافُ معرّفَه بعد: علامةُ `launching` بلا معرّفات تمنع إعادة الجولة في
+    المجلّد ونسخة العمل نفسِهما (ملاحظة Codex الخامسة على #349)."""
+    dispatcher, project, adapter, ledger, _repo = _setup(tmp_path)
+    _rejected(dispatcher, project, ledger)
+    raw = dispatcher.raw_dir(41, 1) / "revision-1"
+    raw.mkdir(parents=True)
+    (raw / "launching").write_text("2026-10-06T10:00:00+00:00", encoding="utf-8")
+    launched_before = len(adapter.seen)
+    with pytest.raises(Refusal) as exc:
+        dispatcher.revise(41, execute=True)
+    assert exc.value.code == "revision_launch_unconfirmed" and len(adapter.seen) == launched_before
+
+
+def test_takeover_reads_the_head_and_activity_after_acquiring_the_lock(tmp_path):
+    """جولةُ تصحيحٍ تمسك القفل ثم تودع رأسًا جديدًا: الاستحواذُ المنتظر يرى الرأسَ الجديد بعد القفل فيُرفض لا يُجاز بإثباتٍ قديم."""
+    import threading
+
+    from core.filelock import lock as file_lock, unlock as file_unlock
+
+    dispatcher, _project, _adapter, ledger, repo = _setup(tmp_path)
+    worktree, raw = _lost_launch(tmp_path, dispatcher, ledger, repo)
+    assert dispatcher.resume(41)["reason"] == "launch_unconfirmed"
+    dispatcher.clock = lambda: "2026-10-09T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    lock_path = dispatcher.home / "locks" / "launch-41.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    holder = lock_path.open("a", encoding="utf-8")
+    file_lock(holder)
+    outcome = {}
+    thread = threading.Thread(target=lambda: outcome.update(err=_catch(lambda: dispatcher.takeover(41, owner_authorization="نفّذ"))), daemon=True)
+    thread.start()
+    import time
+    time.sleep(0.3)
+    (worktree / "late.txt").write_text("إيداعٌ بينما ينتظر الاستحواذ\n", encoding="utf-8")     # نشاطٌ جديد وقت الانتظار
+    git("add", "late.txt", cwd=worktree)
+    git("commit", "-q", "-m", "عملٌ متأخّر", cwd=worktree)
+    file_unlock(holder)
+    holder.close()
+    thread.join(30)
+    assert isinstance(outcome.get("err"), Refusal) and outcome["err"].code == "absence_not_proven" and '"no_new_commits": false' in outcome["err"].detail
+
+
+def _catch(fn):
+    try:
+        return fn()
+    except Exception as exc:  # noqa: BLE001
+        return exc

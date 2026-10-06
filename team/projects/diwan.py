@@ -204,7 +204,9 @@ class DiwanProject(ProjectAdapter):
         by_name = {str(run.get("name") or ""): run for run in runs}
         required_ok = all(by_name.get(name, {}).get("status") == "completed" and by_name.get(name, {}).get("conclusion") == "success"
                           for name in REQUIRED_CHECKS)
-        if required_ok and all(run.get("status") == "completed" for run in runs):
+        # الفحوصُ المطلوبة وحدها تحكم: فحصٌ غيرُ مطلوب ما زال يعمل (أو علِق) لا يُبقي رأسًا دُمج أصلًا «معلَّقًا» في السجلّ إلى الأبد
+        # (container-smoke على baa2332 بقي in_progress ساعةً بعد الدمج)؛ وسقوطُ أيِّ فحصٍ غيرِ ملغًى فشلٌ كما كان
+        if required_ok:
             return "success"
         return "pending"
 

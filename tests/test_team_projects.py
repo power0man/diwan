@@ -71,7 +71,9 @@ def test_author_families_come_from_diwan_agent_trailers():
 
 
 def _runs(*items, status="completed"):
-    return {"gh api repos/power0man/diwan/commits/h/check-runs": {"check_runs": [{"name": n, "status": status, "conclusion": c} for n, c in items]}}
+    """(الاسم، الخلاصة[، الحالة]) لكل فحص؛ الحالةُ الافتراضية لكلٍّ هي `status`."""
+    return {"gh api repos/power0man/diwan/commits/h/check-runs": {"check_runs": [
+        {"name": t[0], "status": (t[2] if len(t) > 2 else status), "conclusion": t[1]} for t in items]}}
 
 
 def test_checks_are_mapped_to_success_failure_pending_or_none():
@@ -80,6 +82,8 @@ def test_checks_are_mapped_to_success_failure_pending_or_none():
     # فحصٌ ألغاه المالك (family-review) يسقط دائمًا ولا يُقرأ فشلًا للرأس (أول validate في المرحلة ٢ سقط عليه)
     assert _project(_runs(("verify-hosted", "success"), ("family-review", "failure"))).checks("h") == "success"
     assert _project(_runs(("verify-hosted", None), status="in_progress")).checks("h") == "pending"
+    # فحصٌ غيرُ مطلوب ما زال يعمل لا يُبقي الرأسَ معلَّقًا متى نجح المطلوب (رأسٌ دُمج وcontainer-smoke علِق ساعةً)
+    assert _project(_runs(("verify-hosted", "success"), ("container-smoke", None, "in_progress"))).checks("h") == "success"
     assert _project(_runs()).checks("h") == "none"
 
 
