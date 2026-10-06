@@ -4,15 +4,27 @@
 وسمُ `family:<عائلة>` توجيهٌ لا إذن، والإذنُ `ready:<عائلة>` يضعه المالك وحده (docs/PLAN-20260926.md). ومن لا صلاحيةَ له في
 مستودعٍ عام لا يضع وسمًا إلا ما تضعه القوالبُ تلقائيًّا، فالقوالبُ حدُّ الاستلام. والوسومُ تُقرأ بصورتها المضمَّنة وحدها (`labels: [...]`)، في نموذج YAML أو في رأس قالب Markdown؛ وصورةٌ
 غيرُها تُرفض باسمها: يُغلق عند الشكّ.
+
+وحارسُ الإطلاق (`launch`، البند ٤ من #296) يجري في `.github/workflows/intake-gate.yml` على أحداث المسائل: وسمٌ يُطلق وكيلًا
+آليًّا بذاته (`AGENT_TRIGGERS`؛ اليوم `jules`) لا يبقى على مسألةٍ إلا إن كان آخرُ حدثٍ على `ready:<عائلته>` وضعًا فاعلُه المالك،
+ونصُّ المسألة يمرّ بـ`quarantine_quoted` بلا موجود (وبـ`scan` كلِّه إن لم يكتبها المالك). وإلا يُنزع الوسمُ ويُعلَّق بالرموز.
 """
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import re
 import sys
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from core.quoted import quarantine_quoted, scan  # noqa: E402
 TEMPLATES = ROOT / ".github" / "ISSUE_TEMPLATE"
 LABELS_LINE = re.compile(r"^labels:[ \t]*\[(?P<items>[^\]\n]*)\][ \t]*(?:#.*)?$")
 NON_WORKING = frozenset({"family:owner"})
@@ -105,8 +117,123 @@ def published() -> tuple[dict[str, str], str]:
     return templates, (TEMPLATES / "config.yml").read_text(encoding="utf-8")
 
 
+# حارسُ الإطلاق ---------------------------------------------------------------------------------------------------
 
-def main() -> int:
+OWNER = "power0man"
+# وسومٌ يلتقطها وكيلٌ آليٌّ فيبدأ بها، وعائلةُ كلٍّ منها: Jules يبدأ من وسم jules على مسألةٍ موسومة ready:google
+# (docs/PLAN-20260926.md، قسم Jules). وCodex يُستدعى بذكره لا بوسم، فلا يحكمه هذا الجدول (docs/AGENT-INTAKE.md §الحدود).
+AGENT_TRIGGERS = {"jules": "google"}
+
+
+def _fold(name: object) -> str:
+    return str(name or "").strip().casefold()
+
+
+def ready_granted(events: list[dict], family: str, owner: str = OWNER) -> bool:
+    """آخرُ حدثٍ على وسم `ready:<family>` في خطّ المسألة الزمني وضعٌ فاعلُه المالك؛ فنزعُه بعد الوضع، أو وضعُه بيد غيره، لا يُحتسب."""
+    wanted = f"ready:{family}"
+    last = None
+    for event in events:
+        if event.get("event") in ("labeled", "unlabeled") and _fold((event.get("label") or {}).get("name")) == wanted:
+            last = event
+    return last is not None and last["event"] == "labeled" and (last.get("actor") or {}).get("login") == owner
+
+
+def text_findings(issue: dict, owner: str = OWNER) -> list[str]:
+    """رموزُ الحقن في عنوان المسألة ونصِّها. نصُّ المالك يُقرأ بـ`quarantine_quoted` (ما خارج الاقتباس كلامُه)، ونصُّ غيره
+    بياناتٌ كلُّه فيُفحص بـ`scan` كلِّه أيضًا."""
+    text = f"{issue.get('title') or ''}\n{issue.get('body') or ''}"
+    found = list(quarantine_quoted(text).findings)
+    if (issue.get("user") or {}).get("login") != owner:
+        found += scan(text)
+    return sorted({f.code for f in found})
+
+
+def launch_decision(issue: dict, events: list[dict], owner: str = OWNER) -> list[dict]:
+    """كلُّ وسمِ إطلاقٍ على المسألة لا يحقّ له البقاء، بأسباب رفضه؛ والقائمةُ الفارغة أنْ لا شيءَ يُنزع."""
+    present = {_fold(label.get("name")): label.get("name") for label in issue.get("labels") or []}
+    blocked = []
+    for trigger, family in sorted(AGENT_TRIGGERS.items()):
+        if trigger not in present:
+            continue
+        reasons = []
+        if f"ready:{family}" not in present or not ready_granted(events, family, owner):
+            reasons.append(f"ready_not_granted_by_owner:ready:{family}")
+        reasons += [f"injection_in_issue_text:{code}" for code in text_findings(issue, owner)]
+        if reasons:
+            blocked.append({"label": present[trigger], "family": family, "reasons": reasons})
+    return blocked
+
+
+def payload_event(payload: dict) -> list[dict]:
+    """حدثُ الوسم الذي أطلق هذا التشغيل من الحمولة نفسِها، فلا يفوت لتأخّر واجهة الأحداث عنه."""
+    if payload.get("action") in ("labeled", "unlabeled") and payload.get("label"):
+        return [{"event": payload["action"], "label": payload["label"], "actor": payload.get("sender") or {}}]
+    return []
+
+
+class GitHub:
+    """واجهةُ REST بالقدر اللازم: أحداثُ المسألة، ونزعُ وسم، وتعليق. والاختباراتُ تبدّلها بمزيَّف."""
+
+    def __init__(self, repo: str, token: str):
+        self.base = f"https://api.github.com/repos/{repo}/issues"
+        self.headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28"}
+
+    def _call(self, method: str, url: str, body: dict | None = None):
+        data = None if body is None else json.dumps(body).encode()
+        request = urllib.request.Request(url, data=data, method=method, headers=self.headers)
+        with urllib.request.urlopen(request, timeout=30) as response:
+            raw = response.read()
+        return json.loads(raw) if raw else None
+
+    def events(self, number: int) -> list[dict]:
+        found: list[dict] = []
+        for page in range(1, 11):
+            batch = self._call("GET", f"{self.base}/{number}/events?per_page=100&page={page}")
+            found += batch
+            if len(batch) < 100:
+                return found
+        raise RuntimeError("issue_timeline_too_long")   # لا يُحكم على خطٍّ زمنيٍّ لم يُقرأ كلُّه
+
+    def remove_label(self, number: int, name: str) -> None:
+        self._call("DELETE", f"{self.base}/{number}/labels/{urllib.parse.quote(name, safe='')}")
+
+    def comment(self, number: int, body: str) -> None:
+        self._call("POST", f"{self.base}/{number}/comments", {"body": body})
+
+
+def apply_launch_gate(payload: dict, client, owner: str = OWNER) -> int:
+    """يَنزع كلَّ وسمِ إطلاقٍ لا يحقّ له البقاء، ويعلّق بالرموز وحدها (لا يُعاد نصُّ المسألة)، ويُحمرّ التشغيل."""
+    issue = payload.get("issue") or {}
+    if "pull_request" in issue:
+        return 0
+    if not any(_fold(label.get("name")) in AGENT_TRIGGERS for label in issue.get("labels") or []):
+        print(json.dumps({"status": "passed", "blocked": []}))
+        return 0
+    number = int(issue["number"])
+    blocked = launch_decision(issue, client.events(number) + payload_event(payload), owner)
+    for item in blocked:
+        client.remove_label(number, item["label"])
+    if blocked:
+        lines = [f"- نُزع وسمُ `{item['label']}`: " + "، ".join(f"`{r}`" for r in item["reasons"]) for item in blocked]
+        client.comment(number, "**حارسُ الاستلام (`tools/intake_gate.py`، docs/AGENT-INTAKE.md):** لا يُطلَق وكيلٌ من هذه "
+                       "المسألة.\n\n" + "\n".join(lines) + "\n\nيُعاد الوسمُ بعد أن يضع المالك `ready:<العائلة>` "
+                       "ويخلو النصُّ مما حُجر.")
+    print(json.dumps({"status": "failed" if blocked else "passed", "blocked": blocked}, ensure_ascii=False))
+    return 1 if blocked else 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    sub = parser.add_subparsers(dest="command")
+    launch = sub.add_parser("launch", help="حارسُ الإطلاق على حدث مسألة (يجري في intake-gate.yml)")
+    launch.add_argument("--event", required=True, help="مسارُ حمولة الحدث (GITHUB_EVENT_PATH)")
+    launch.add_argument("--repo", required=True)
+    args = parser.parse_args(argv)
+    if args.command == "launch":
+        payload = json.loads(Path(args.event).read_text(encoding="utf-8"))
+        return apply_launch_gate(payload, GitHub(args.repo, os.environ["GH_TOKEN"]))
     problems = intake_findings(*published())
     print(json.dumps({"status": "failed" if problems else "passed", "findings": problems}, ensure_ascii=False))
     return 1 if problems else 0

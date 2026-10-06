@@ -1,0 +1,29 @@
+name: intake-gate
+# حارسُ الاستلام (البند ٤ من #296، docs/AGENT-INTAKE.md): وسمٌ يُطلق وكيلًا آليًّا (اليوم jules) لا يبقى على مسألةٍ إلا إن
+# كان آخرُ حدثٍ على ready:<عائلته> وضعًا فاعلُه المالك، ونصُّها يمرّ بـquarantine_quoted. وإلا يُنزع الوسمُ ويُعلَّق بالرموز.
+# أحداثُ المسائل تشغّل نسخةَ main من هذا الملف وأدواته، لا نسخةَ أيّ طلب؛ ونصُّ المسألة يُقرأ من ملفّ الحمولة لا من تعبيرٍ في الأمر.
+on:
+  issues:
+    types: [opened, edited, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: intake-gate-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  intake-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: An agent label launches nothing without the owner's ready label and a clean issue text
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: python3 tools/intake_gate.py launch --event "$GITHUB_EVENT_PATH" --repo "$REPO"

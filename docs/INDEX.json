@@ -70,7 +70,7 @@
    "tokens_estimate": 8230
   },
   {
-   "bytes": 39047,
+   "bytes": 42056,
    "headings": [
     {
      "level": 2,
@@ -84,40 +84,40 @@
     },
     {
      "level": 2,
-     "line": 136,
+     "line": 152,
      "title": "٣ — خريطةُ الوثائق: ما يحكم وما هو تاريخ"
     },
     {
      "level": 2,
-     "line": 158,
+     "line": 174,
      "title": "٤ — الأرقامُ التي يُعتدّ بها اليوم، وحدودُها"
     },
     {
      "level": 2,
-     "line": 189,
+     "line": 205,
      "title": "٥ — ما ينتظر المالك"
     },
     {
      "level": 3,
-     "line": 193,
+     "line": 209,
      "title": "بوابةُ م٠ بندًا بندًا (٥ أكتوبر؛ تُراجَع في ١١ أكتوبر، ق٧٣)"
     },
     {
      "level": 3,
-     "line": 216,
+     "line": 232,
      "title": "ما بيد المالك"
     }
    ],
-   "lines": 236,
+   "lines": 253,
    "path": "docs/STATUS.md",
    "purpose": "ما بُني، والعملُ الحالي بروايةٍ واحدة، وما يحكم وما هو تاريخ، وما ينتظر المالك",
    "read_when": "كل جلسة: §٢ و§٥؛ والبقيةُ عند الحاجة",
    "role": "حاكمة (الحالة)",
-   "sha256_12": "06072ae6da2a",
-   "tokens_estimate": 10320
+   "sha256_12": "24cf4fadfa21",
+   "tokens_estimate": 11124
   },
   {
-   "bytes": 29160,
+   "bytes": 29582,
    "headings": [
     {
      "level": 2,
@@ -200,8 +200,8 @@
    "purpose": "مراجعةُ ٥ أكتوبر: ما تمّ وما لم يتمّ بمراتبه، وأسبابُ التأخير، وترتيبُ الطريق إلى بوابة م١",
    "read_when": "عند اختيار المهمّة التالية: §٦ و§٧",
    "role": "حاكمةٌ للأولويات (ق٧٣)",
-   "sha256_12": "743afae69bb5",
-   "tokens_estimate": 7862
+   "sha256_12": "9a1e5dee988e",
+   "tokens_estimate": 7963
   },
   {
    "bytes": 10397,
@@ -261,7 +261,7 @@
    "tokens_estimate": 2483
   },
   {
-   "bytes": 183781,
+   "bytes": 188624,
    "headings": [
     {
      "level": 2,
@@ -507,15 +507,20 @@
      "level": 2,
      "line": 1378,
      "title": "ق٧٤ — تفويضُ Claude السحابي بتوجيه العمل على الماك وتوجيه Codex حتى بوابة م١ (٥ أكتوبر ٢٠٢٦)"
+    },
+    {
+     "level": 2,
+     "line": 1446,
+     "title": "ق٧٥ — البندُ التاسع من بوابة م١: مراجعةٌ محتسبة من عائلةٍ أخرى مسجَّلةٌ على الطلب، لا خضرةُ `family-review` وحدها (٦ أكتوبر ٢٠٢٦)"
     }
    ],
-   "lines": 1444,
+   "lines": 1488,
    "path": "docs/DECISIONS.md",
    "purpose": "القراراتُ المعتمدة بمصدرها وسببها وحدِّها المعلَن؛ يُقرأ بالعناوين لا بالترتيب",
    "read_when": "القرارَ الذي تسمّيه مهمّتُك فقط، من عنوانه",
    "role": "سجلُّ القرارات الحاكم",
-   "sha256_12": "62dade2f6369",
-   "tokens_estimate": 46089
+   "sha256_12": "c36f688b9f37",
+   "tokens_estimate": 47340
   },
   {
    "bytes": 218447,
@@ -1464,7 +1469,7 @@
    "tokens_estimate": 451
   },
   {
-   "bytes": 58567,
+   "bytes": 58790,
    "headings": [
     {
      "level": 2,
@@ -1603,56 +1608,56 @@
     },
     {
      "level": 2,
-     "line": 529,
+     "line": 530,
      "title": "٧ — المراحل السبع: ما أثبتته كلٌّ منها"
     },
     {
      "level": 2,
-     "line": 548,
+     "line": 549,
      "title": "٨ — طقس العمل (سنّة المشروع — اتبعه حرفيًّا في كل مرحلة)"
     },
     {
      "level": 2,
-     "line": 570,
+     "line": 571,
      "title": "٩ — حدودك الستة (نصًّا، ولا اجتهاد فيها)"
     },
     {
      "level": 2,
-     "line": 592,
+     "line": 593,
      "title": "١٠ — البيئة التشغيلية"
     },
     {
      "level": 2,
-     "line": 616,
+     "line": 617,
      "title": "١١ — ألغام معروفة (كلُّها كلّفت وقتًا مرة على الأقل)"
     },
     {
      "level": 2,
-     "line": 653,
+     "line": 654,
      "title": "١٢ — ما بقي: الخارطة العامة والقرارات المستقلة"
     },
     {
      "level": 2,
-     "line": 686,
+     "line": 687,
      "title": "١٣ — كيف تتعامل مع المالك"
     },
     {
      "level": 2,
-     "line": 700,
+     "line": 701,
      "title": "١٤ — خلاصة في سطر"
     }
    ],
-   "lines": 704,
+   "lines": 705,
    "path": "docs/HANDOFF-PROMPT.md",
    "purpose": "برومبتُ تسليمٍ متنُه حتى ق٣٨ ورأسُه ق٤٩",
    "read_when": "لا يُقرأ؛ الحالةُ في docs/STATUS.md",
    "role": "تاريخ",
-   "sha256_12": "4c27dc59719d",
-   "tokens_estimate": 15151
+   "sha256_12": "148ef66a1d94",
+   "tokens_estimate": 15207
   }
  ],
  "generator": "tools/context_index.py",
- "latest_decision": 74,
+ "latest_decision": 75,
  "measurement_limits": [
   "tokens_estimate_is_characters_divided_by_2_4_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count",
   "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",
