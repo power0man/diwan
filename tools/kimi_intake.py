@@ -224,11 +224,42 @@ TOOL_NEGATIONS = ("ليس صحيحًا أن", "لم يثبت أن", "يُشكّ 
 # الادعاءَ الكاذب نفسَه («خطأ شائع: أن…»)، فنفيُه جوابٌ صحيح: لا يُبنى منها شَرَكُ نفي (ملاحظة Codex على #342)
 _CORRECTION_LEAD = re.compile(r"^\s*المقدم[ةه][^:\n]{0,40}:\s*")
 _OTHER_LEAD = re.compile(r"^[^:\n]{0,40}:")
-_CLAUSE_SPLIT = re.compile(r"\s*[.؛;!?؟،,\n]+\s*")
 # جملةٌ تحكي الادعاءَ أو تقتبسه («يُقال إن…»، «…»)، أو فيها بادئةٌ أخرى، لا يقرّها المرجع: نفيُها قد يكون الجوابَ الصحيح
 # فلا تُنفى. أما النفيُ والإنكارُ فيها فمن الحقيقة المصحَّحة («الحركةُ لا اللون»)، ونفيُها ينقض المرجعَ فيبقى جوابًا خاطئًا
 _REPORTED = re.compile(r"(^|[\s(])و?(يُ?قال|قيل|يُ?عتقد|اُ?عتُ?قد|يُ?ظن|ظُ?ن|شاع|يُ?شاع|الشائع|يزعم|زعم|زُعم|مزعوم|المزعوم|يروى|يُروى)"
                        r"|[«»\"“”:]")
+_SENTENCE_ENDS, _CLAUSE_ENDS = ".؛;!?؟\n", "،,"
+
+
+def _split_outside_quotes(text: str, delimiters: str) -> list[str]:
+    """تقسيمٌ عند الفواصل خارج الاقتباس وحده: اقتباسٌ بادعاءاتٍ عدّة («أ، ب، ج») يبقى قطعةً واحدة بعلامتيه،
+    فلا يفقد جزؤه الأوسط علامةَ الاقتباس فيُنفى كأنه حقيقةٌ يقرّها المرجع (ملاحظة Codex على #342)."""
+    parts, buffer, depth, straight = [], [], 0, False
+    for char in text:
+        if char in "«“":
+            depth += 1
+        elif char in "»”":
+            depth = max(depth - 1, 0)
+        elif char == '"':
+            straight = not straight
+        if char in delimiters and not depth and not straight:
+            parts.append("".join(buffer))
+            buffer = []
+        else:
+            buffer.append(char)
+    parts.append("".join(buffer))
+    return [part.strip() for part in parts if part.strip()]
+
+
+def _affirmed_clauses(core: str) -> list[str]:
+    """جملُ المرجع التي يقرّها: جملةٌ تحكي ادعاءً أو تقتبسه تسقط كلُّها بفواصلها، لا جزؤها الذي فيه العلامة وحده."""
+    clauses = []
+    for sentence in _split_outside_quotes(core, _SENTENCE_ENDS):
+        if not _REPORTED.search(sentence):
+            clauses.extend(_split_outside_quotes(sentence, _CLAUSE_ENDS))
+    return clauses
+
+
 _STOPWORDS = {"لا", "ليس", "ليست", "لم", "لن", "غير", "ما", "في", "من", "على", "عن", "إلى", "الى", "أن", "إن", "أو",
               "ثم", "قد", "هو", "هي", "هذا", "هذه", "ذلك", "التي", "الذي", "بل", "لكن", "وليس", "ولا", "ولم"}
 
@@ -246,8 +277,7 @@ def _premise_probes(case: dict) -> tuple[tuple[str, str], ...]:
     text = reference.strip()
     lead = _CORRECTION_LEAD.match(text)
     core = text[lead.end():] if lead else text
-    clauses = [] if not lead and _OTHER_LEAD.match(text) else \
-        [c for c in _CLAUSE_SPLIT.split(core) if c and not _REPORTED.search(c)]
+    clauses = [] if not lead and _OTHER_LEAD.match(text) else _affirmed_clauses(core)
     probes = []
     if clauses:
         for index, negation in enumerate(TOOL_NEGATIONS, 1):

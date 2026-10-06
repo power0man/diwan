@@ -579,7 +579,8 @@ def test_a_tool_decoy_never_negates_a_claim_the_reference_only_reports():
     question = "لماذا يكره الثور اللون الأحمر؟"
     claim = "الثور يكره اللون الأحمر"
     for reference in ("خطأ شائع: الثور يكره اللون الأحمر؛ والحركة هي ما يثيره.",
-                      "المقدمة كاذبة: يُقال إن الثور يكره اللون الأحمر، والحركة هي ما يثيره.",
+                      "المقدمة كاذبة: يُقال إن الثور يكره اللون الأحمر، ويهاجمه لذلك. والحركة هي ما يثيره.",
+                      "المقدمة كاذبة: «الثور يغضب؛ والثور يكره اللون الأحمر؛ والثور يهاجمه» أقوالٌ شائعة. والحركة هي ما يثيره.",
                       "المقدمة كاذبة: «الثور يكره اللون الأحمر» قولٌ شائع؛ والحركة هي ما يثيره."):
         probes = _premise_probes({**_case("p", "false_premise_rejection", text=question), "reference": reference})
         assert probes and probes[-1][0] == "affirms_premise_with_reference_words", reference
@@ -589,8 +590,10 @@ def test_a_tool_decoy_never_negates_a_claim_the_reference_only_reports():
                             "reference": "خطأ شائع: الثور يكره اللون الأحمر؛ والحركة هي ما يثيره."})
     assert [name for name, _ in lead] == ["affirms_premise_with_reference_words"], "بادئةٌ غيرُ المقدّمة: لا شَرَكَ نفي"
     reported = dict(_premise_probes({**_case("p", "false_premise_rejection", text=question),
-                                     "reference": "المقدمة كاذبة: يُقال إن الثور يكره اللون الأحمر، والحركة هي ما يثيره."}))
-    assert f"{TOOL_NEGATIONS[0]} والحركة هي ما يثيره." in reported["admits_error_negates_reference_1"]
+                                     "reference": "المقدمة كاذبة: يُقال إن الثور يكره اللون الأحمر، ويهاجمه لذلك. "
+                                                  "والحركة هي ما يثيره."}))
+    assert reported["admits_error_negates_reference_1"] == f"المقدمة خاطئة: {TOOL_NEGATIONS[0]} والحركة هي ما يثيره.", \
+        "الجملةُ الحاكية تسقط بفواصلها كلِّها، وتُنفى المُثبَتة وحدها"
 
 
 def test_checks_that_pass_the_authors_decoys_but_a_tool_decoy_fail_the_intake(tmp_path):
