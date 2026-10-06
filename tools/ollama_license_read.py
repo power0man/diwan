@@ -14,6 +14,11 @@
   (ملاحظة Codex الأولى على #301). والقيدُ المحلول يُحدَّث حقلًا حقلًا فيبقى ما لا تقرؤه الأداة، كالأوزان (ملاحظتُه الثانية).
 - وإن أخفقت `ollama list` (الخادمُ لا يجيب، أو الأمرُ غائب) فلم يُقرأ شيء: لا يُكتب دليلٌ ولا يُمسّ السجلّ، فالقائمةُ الفارغة
   بالإخفاق ليست شاهدًا على أنّ وسمًا لم يُسحب (ملاحظتُه الثالثة)، والرمزُ 3.
+- ووسمٌ محلولٌ ببصمة نصٍّ في السجلّ يُقرأ ثانيةً فيُطبع نصٌّ آخر، ولو بتنسيقه، لا تُستبدل بصمتُه: فالدليلُ الذي حلّه بالبصمة
+  الأولى باقٍ ويخالفه السجلُّ الجديد (`license_provenance_conflicts`). فتُقيَّد القراءةُ تحت `unresolved_readings` بالبصمتين
+  وسببٍ يقول إنّ استبدالَها كلمةُ المالك، ويبقى القيدُ كما كان (ملاحظتُه الخامسة).
+- وقبل الكتابة يُفحص السجلُّ بعد الحلّ مع كلِّ أدلّة `docs/probe` والدليلِ الجديد بحارس `tools/model_licenses.py`: فما أحدث
+  مخالفةً لم تكن لا يُكتب، وتُطبع مخالفاتُه، والرمزُ 4. فالأداةُ لا تكتب حالةً يرفضها الحارس (ملاحظتُه الخامسة).
 """
 from __future__ import annotations
 
@@ -42,6 +47,7 @@ RETIRED = "ollama_show_failed_tag_retired_upstream_on_the_mac"
 FAILED = "ollama_show_failed_on_the_mac"
 UNNAMED = "ollama_show_license_text_read_on_the_mac_but_not_named_from_its_text"
 LIST_FAILED = "ollama_list_failed_on_the_mac_nothing_was_read_and_nothing_was_written"
+TEXT_CHANGED = "ollama_show_license_text_differs_from_the_registered_text_on_the_mac_replacing_it_needs_an_owner_word"
 # ما يكتبه قيدٌ محلول من قراءةٍ على الماك؛ وما سواه في القيد السابق (كالأوزان) يبقى كما كان
 READ_FIELDS = ("license", "source", "read_on", "read_via", "license_text_sha256", "ollama_list_id")
 # عناوينُ رخصٍ تُسمّى من سطرها الأوّل كما طُبع، بعد التطبيع؛ ورخصُها المشروطة تفسيرُها قرارُ المالك (المسألة #301 §٥)
@@ -67,6 +73,8 @@ LIMITS = [
     "unresolved_tags_are_listed_under_unresolved_readings_not_under_a_model_field_because_new_evidence_may_not_name_a_model_whose_license_is_still_pending",
     "each_run_writes_its_own_file_so_a_same_day_rerun_does_not_replace_the_evidence_an_earlier_run_resolved_the_registry_against",
     "a_failed_ollama_list_reads_no_tag_and_writes_nothing_because_an_empty_list_from_a_failure_is_not_evidence_that_a_tag_was_not_pulled",
+    "a_resolved_tag_whose_text_now_differs_from_its_registered_digest_is_not_rewritten_because_the_evidence_that_resolved_it_would_then_conflict_and_replacing_it_is_the_owners_word",
+    "nothing_is_written_that_the_license_guard_would_refuse_over_the_registry_and_every_probe_file_together",
 ]
 Runner = Callable[[list[str]], subprocess.CompletedProcess]
 
@@ -147,8 +155,18 @@ def pending_tags(registry: dict) -> list[str]:
                   if isinstance(entry, dict) and entry.get("pending") in OLLAMA_REASONS)
 
 
-def probe(tags: list[str], day: str, runner: Runner | None = None) -> dict:
+def registered_texts(registry: dict) -> dict[str, str]:
+    """بصمةُ نصّ الرخصة لكلّ قيدٍ محلولٍ يحملها: ما يُقارَن به نصٌّ يُقرأ ثانيةً."""
+    models = registry.get("models", {})
+    return {name: entry["license_text_sha256"] for name, entry in models.items()
+            if isinstance(entry, dict) and isinstance(entry.get("license_text_sha256"), str)}
+
+
+def probe(tags: list[str], day: str, runner: Runner | None = None, registered: dict[str, str] | None = None) -> dict:
+    """الدليلُ: ما حُلّ تحت `models`، وما لم يُحلّ تحت `unresolved_readings`. و`registered` بصماتُ النصوص المقيَّدة
+    (`registered_texts`): فما قُرئ لوسمٍ منها بنصٍّ آخر لا يُحلّ ثانيةً بل يُقيَّد بالبصمتين (ملاحظة Codex الخامسة على #301)."""
     runner = runner or run
+    registered = registered or {}
     version = runner(["ollama", "--version"])
     evidence = {
         "schema_version": 1, "date": day, "agent": AGENT, "kind": "ollama_model_license_reading",
@@ -170,6 +188,14 @@ def probe(tags: list[str], day: str, runner: Runner | None = None) -> dict:
     listed = parse_list((listing.stdout or b"").decode("utf-8", errors="replace"))
     for tag in tags:
         record, ok = read_tag(tag, listed, day, runner)
+        if ok and tag in registered and record["license_provenance"]["license_text_sha256"] != registered[tag]:
+            # نصٌّ آخر لوسمٍ محلولٍ ببصمةٍ: لو استُبدلت لخالف السجلُّ الدليلَ الذي حلّه، فتُقيَّد القراءةُ ولا تُطبَّق
+            prov = record.pop("license_provenance")
+            record.pop("license_named_by", None)
+            # والبصمةُ المقيَّدة تحت مفتاحٍ لا ينتهي بـ`_sha256` حتى لا يقرأها الحارسُ بصمةَ أثرٍ بلا مالك
+            record.update({"not_applied": TEXT_CHANGED, "license_text_sha256": prov["license_text_sha256"],
+                           "registered_license_text_digest": registered[tag], "license_named_from_text": prov["license"]})
+            ok = False
         if ok:
             evidence["models"][tag] = record
             evidence["licenses"][tag] = record["license_provenance"]["license"]
@@ -199,6 +225,15 @@ def apply(registry: dict, evidence: dict) -> dict:
     return registry
 
 
+def introduced_findings(before: dict, after: dict, probe_dir: Path, out: Path, evidence: dict, engine: str | None) -> list[str]:
+    """ما يُحدثه الحلُّ من مخالفاتٍ في الحارس على السجلّ وكلِّ أدلّة `docs/probe` والدليلِ الجديد معًا، ولم يكن قبله؛ فالأداةُ
+    لا تكتب حالةً يرفضها الحارس، كسجلٍّ حُدِّثت بصمتُه وبقي دليلٌ حلّه بغيرها (ملاحظة Codex الخامسة على #301)."""
+    existing = ml.load_evidence(probe_dir) if probe_dir.is_dir() else {}
+    was = set(ml.findings(before, existing, engine))
+    now = set(ml.findings(after, {**existing, out.name: evidence}, engine))
+    return sorted(now - was)
+
+
 def evidence_path(probe_dir: Path, day: str) -> Path:
     """ملفٌّ لكلّ تشغيل: الأوّلُ في اليوم بلا لاحقة، ثمّ `b`، `c`… كما تُسمّى أدلّةُ اليوم الواحد في `docs/probe`؛
     فلا يُستبدل دليلٌ سابق بقيت بصماتُه في السجلّ (ملاحظة Codex الأولى على #301)."""
@@ -220,17 +255,27 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     registry = json.loads(args.registry.read_text(encoding="utf-8"))
     tags = args.tag or pending_tags(registry)
-    evidence = probe(tags, args.day)
+    evidence = probe(tags, args.day, registered=registered_texts(registry))
     print(json.dumps(evidence, ensure_ascii=False, indent=2))
     if "ollama_list_failed" in evidence:
         failed = evidence["ollama_list_failed"]
         print(f"ollama list failed (exit {failed['exit_code']}): {failed['stderr_first_line']}; nothing read, nothing written",
               file=sys.stderr)
         return 3
+    for record in evidence["unresolved_readings"]:
+        if record.get("not_applied") == TEXT_CHANGED:
+            print(f"{record['tag']}: license text differs from the registered digest; the entry was kept and the reading "
+                  f"recorded, replacing it is the owner's word", file=sys.stderr)
     if args.write:
         out = evidence_path(args.probe_dir, args.day)
+        applied = apply(json.loads(json.dumps(registry)), evidence)
+        introduced = introduced_findings(registry, applied, args.probe_dir, out, evidence, ml.default_engine())
+        if introduced:
+            print("the license guard would refuse what this run resolves; nothing written:\n  " + "\n  ".join(introduced),
+                  file=sys.stderr)
+            return 4
         out.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        args.registry.write_text(json.dumps(apply(registry, evidence), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        args.registry.write_text(json.dumps(applied, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"wrote {out} and {args.registry}", file=sys.stderr)
     return 0 if not evidence["unresolved_readings"] else 2
 

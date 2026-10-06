@@ -153,6 +153,83 @@ def test_rereading_a_resolved_tag_updates_the_read_fields_and_keeps_the_rest_of_
     assert set(entry) == set(olr.READ_FIELDS) | {"weights", "attribution"}
 
 
+REFORMATTED = LLAMA.replace(b"\n", b"\n\n")
+
+
+def test_rereading_a_resolved_tag_with_another_text_keeps_its_entry_and_records_both_digests(tmp_path, monkeypatch, capsys):
+    # ملاحظة Codex الخامسة على #301: إعادةُ قراءة وسمٍ محلول بنصٍّ تغيّر، ولو بتنسيقه، كانت تستبدل بصمتَه في السجلّ ويبقى
+    # الدليلُ الذي حلّه بالبصمة الأولى، فيرفضه الحارس (`license_provenance_conflicts`) والأداةُ تعود بالنجاح
+    pending = {"llama3.1:8b": {"pending": "read_with_ollama_show_license_on_the_mac"}}
+    first = olr.probe(["llama3.1:8b"], "2026-10-06", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
+    registry = olr.apply(_registry(**pending), first)
+    digest, other = hashlib.sha256(LLAMA).hexdigest(), hashlib.sha256(REFORMATTED).hexdigest()
+    assert olr.registered_texts(registry) == {"llama3.1:8b": digest}
+    # بلا بصمات السجلّ تُحلّ القراءةُ ثانيةً فيتعارض السجلُّ مع الدليل الأوّل: هذا ما وصفه Codex
+    blind = olr.probe(["llama3.1:8b"], "2026-10-07", _runner({"llama3.1:8b": (0, REFORMATTED, b"")}))
+    assert ml.findings(olr.apply(json.loads(json.dumps(registry)), blind), {"a.json": first, "b.json": blind}, None) == [
+        "license_provenance_conflicts:a.json:llama3.1:8b"]
+    # وببصماته تُقيَّد القراءةُ بالبصمتين ولا تُطبَّق، فيبقى القيدُ والدليلُ الأوّل متّفقين
+    second = olr.probe(["llama3.1:8b"], "2026-10-07", _runner({"llama3.1:8b": (0, REFORMATTED, b"")}),
+                       registered=olr.registered_texts(registry))
+    assert second["models"] == {} and second["licenses"] == {}
+    [record] = second["unresolved_readings"]
+    assert record["not_applied"] == olr.TEXT_CHANGED and "pending" not in record and "license_provenance" not in record
+    assert (record["license_text_sha256"], record["registered_license_text_digest"], record["license_named_from_text"]) == (
+        other, digest, "llama3.1")
+    kept = olr.apply(json.loads(json.dumps(registry)), second)
+    assert kept == registry and kept["models"]["llama3.1:8b"]["license_text_sha256"] == digest
+    assert ml.findings(kept, {"a.json": first, "b.json": second}, None) == []
+    # والنصُّ نفسُه يُقرأ ثانيةً فيُحلّ ويُحدَّث تاريخُه
+    same = olr.probe(["llama3.1:8b"], "2026-10-07", _runner({"llama3.1:8b": (0, LLAMA, b"")}), registered=olr.registered_texts(registry))
+    assert same["licenses"] == {"llama3.1:8b": "llama3.1"} and same["unresolved_readings"] == []
+    # والأداةُ من سطر الأوامر تسلك الطريقَ نفسَه: التشغيلُ الثاني يكتب دليلَه ولا يمسّ البصمة، ويعود 2 لا 0
+    path = tmp_path / "registry.json"
+    probes = tmp_path / "probe"
+    probes.mkdir()
+    path.write_text(json.dumps(_registry(**pending)))
+    monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
+    assert olr.main(["--registry", str(path), "--probe-dir", str(probes), "--day", "2026-10-06", "--write"]) == 0
+    monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, REFORMATTED, b"")}))
+    assert olr.main(["--registry", str(path), "--probe-dir", str(probes), "--day", "2026-10-07", "--tag", "llama3.1:8b", "--write"]) == 2
+    assert "license text differs from the registered digest" in capsys.readouterr().err
+    written = json.loads((probes / "model-licenses-ollama-20261007.json").read_text())
+    assert written["unresolved_readings"][0]["not_applied"] == olr.TEXT_CHANGED
+    registry_now = json.loads(path.read_text())
+    assert registry_now["models"]["llama3.1:8b"]["license_text_sha256"] == digest
+    assert registry_now["models"]["llama3.1:8b"]["read_on"] == "2026-10-06"
+    assert ml.findings(registry_now, {p.name: json.loads(p.read_text()) for p in probes.glob("*.json")}, None) == []
+
+
+def test_the_cli_writes_nothing_the_license_guard_would_refuse(tmp_path, monkeypatch, capsys):
+    # ملاحظة Codex الخامسة على #301: الأداةُ كانت تكتب ما يرفضه الحارسُ على مجموع الأدلّة وتعود بالنجاح. فقيدٌ محلول من بيانات
+    # Hugging Face برخصة apache-2.0 أعلنها دليلٌ جديد، يُقرأ وسمُه على الماك فيُسمّى نصُّه llama3.1: لو حُلّ لخالف ذلك الدليلَ
+    # (`recorded_license_disagrees`)، فلا يُكتب شيء والرمزُ 4
+    path = tmp_path / "registry.json"
+    probes = tmp_path / "probe"
+    probes.mkdir()
+    hub = {"license": "apache-2.0", "source": "https://huggingface.co/meta-llama/x", "read_on": "2026-10-01",
+           "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"}
+    before = _registry(**{"llama3.1:8b": hub})
+    path.write_text(json.dumps(before))
+    earlier = {"date": "2026-10-06", "model": "llama3.1:8b", "licenses": {"llama3.1:8b": "apache-2.0"}}
+    (probes / "earlier.json").write_text(json.dumps(earlier))
+    assert ml.findings(before, {"earlier.json": earlier}, None) == []
+    monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
+    args = ["--registry", str(path), "--probe-dir", str(probes), "--day", "2026-10-07", "--tag", "llama3.1:8b"]
+    assert olr.main([*args, "--write"]) == 4
+    assert [p.name for p in probes.glob("*.json")] == ["earlier.json"] and json.loads(path.read_text()) == before
+    err = capsys.readouterr().err
+    assert "nothing written" in err and "recorded_license_disagrees:earlier.json:llama3.1:8b" in err
+    # وبلا `--write` لا فحصَ ولا كتابة، والرمزُ 0 لأنّ القراءةَ نفسَها تمّت
+    assert olr.main(args) == 0
+    # وما كان من مخالفاتٍ قبل التشغيل لا يُحسب عليه: المحرّكُ الافتراضيّ غائبٌ عن سجلّ الاختبار قبله وبعده
+    evidence = olr.probe(["llama3.1:8b"], "2026-10-07", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
+    applied = olr.apply(json.loads(json.dumps(before)), evidence)
+    (probes / "earlier.json").unlink()
+    assert olr.introduced_findings(before, applied, probes, probes / "new.json", evidence, "qwen3.5:9b") == []
+    assert "default_engine_not_in_registry:qwen3.5:9b" in ml.findings(applied, {"new.json": evidence}, "qwen3.5:9b")
+
+
 def test_a_failed_ollama_list_reads_no_tag_and_writes_nothing(tmp_path, monkeypatch, capsys):
     # ملاحظة Codex الثالثة على #301: رمزُ خروج `ollama list` لم يُفحص، فكان الإخفاقُ يُقرأ قائمةً فارغةً والوسومُ «لم تُسحب»
     down = (1, b"", b"Error: could not connect to ollama server, run 'ollama serve' to start it\n")
