@@ -28,7 +28,11 @@
 الشرط: `validated_head_sha == reviewed_head_sha == merge_candidate_head_sha`؛ وإيداعٌ جديد يُسقط ما قبله إلى `completed`.
 الجانبية: `outcome_unknown` (**لا يُعاد التشغيل**)، `validation_failed`، `expired`، `worker_unavailable:<code>`،
 `reviewer_unavailable:<code>`، `brief_stale`، `frozen_by_launch_plan`، `already_dispatched`، `review_uncalibrated`،
-`reviewed_awaiting_validation`، `review_rejected` (مراجعةٌ رافضة لا تصير `verified` أبدًا، والأحدثُ على الرأس يطغى)، `external_review`، `takeover`.
+`reviewed_awaiting_validation`، `review_rejected` (مراجعةٌ رافضة لا تصير `verified` أبدًا، والأحدثُ على الرأس يطغى)، `external_review`
+(طلبٌ لم يفتحه الفريق، أو طلبُ محاولةٍ سابقة بعد استحواذ: يُقيَّد على محاولته ولا يمسّ الجارية)، `takeover`.
+السجلُّ (`~/.diwan-team/dispatch.jsonl`) يُفتح ويُلحَق تحت قفلٍ حصريّ على `dispatch.jsonl.lock`؛ فأمران متزامنان لا يكسران السلسلة.
+و`resume` يستعيد إطلاقًا انقطع عنه المرسِل قبل قيد `claimed` إن شهد له ملفُّ معرّف العملية؛ وإلا قيّد `outcome_unknown` بسبب
+`launch_unconfirmed` ولم يُعِد التشغيل.
 
 ## التشغيل
 

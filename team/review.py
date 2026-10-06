@@ -146,16 +146,27 @@ class Reviewer:
             raise Refusal("worktree_failed", (done.stderr or "")[:200])
         return tmp
 
+    def attempt_of_pull(self, issue: int, pr_number: int) -> int:
+        """رقمُ المحاولة التي فتحت هذا الطلب (من قيد `completed` الحامل رقمَه)، أو صفرٌ إن لم يفتحه الفريق."""
+        for record in reversed(self.ledger.records(issue)):
+            if record["state"] == "completed" and record.get("pr") == pr_number:
+                return int(record.get("attempt") or 0)
+        return 0
+
     def _record(self, pull: PullRequest, adapter: Adapter, head: str, ref: str, verdict: str) -> str:
         issue = pull.issue
         family = adapter.spec.family
-        if issue is None or self.ledger.main_state(issue) is None:
+        state = None if issue is None else self.ledger.main_state(issue)
+        completed = None if state is None else self.ledger.last_of(issue, "completed", state["attempt"])
+        # الربطُ بالطلب لا برقم المسألة وحده: طلبُ محاولةٍ سابقة (بعد استحواذ) لا يمسّ المحاولةَ الجارية (ملاحظة Codex السابعة على #344)
+        current = completed is not None and completed.get("pr") == pull.number
+        if issue is None or state is None or not current:
+            stale_attempt = 0 if (issue is None or state is None) else self.attempt_of_pull(issue, pull.number)
             self.ledger.append(issue or 0, "external_review", pr=pull.number, head_sha=head, review_ref=ref,
-                               reviewer=adapter.spec.name, reviewer_family=family, verdict=verdict, attempt=0)
+                               reviewer=adapter.spec.name, reviewer_family=family, verdict=verdict, attempt=stale_attempt,
+                               stale_attempt=bool(stale_attempt), current_attempt=(state or {}).get("attempt"))
             return "external_review"
-        state = self.ledger.main_state(issue)
-        completed = self.ledger.last_of(issue, "completed", state["attempt"])
-        if state["state"] in ("completed", "validated", "verified") and completed and completed.get("head_sha") != head:
+        if state["state"] in ("completed", "validated", "verified") and completed.get("head_sha") != head:
             # رأسٌ مصحَّح دُفع بعد completed: يُقيَّد completed جديد فيسقط ما قبله (ملاحظة Codex على #344)
             self.ledger.append(issue, "completed", head_sha=head, branch=completed["branch"], pr=pull.number, pr_url=pull.url,
                                superseded_head=completed.get("head_sha"))

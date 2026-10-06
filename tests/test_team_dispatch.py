@@ -268,3 +268,39 @@ def test_takeover_needs_the_child_pid_not_just_the_wrapper(tmp_path):
     raw.mkdir(parents=True, exist_ok=True)
     (raw / "child_pid").write_text("4194298", encoding="utf-8")
     assert dispatcher.takeover(41, owner_authorization="نفّذ")["status"] == "takeover"
+
+
+def _lost_launch(tmp_path, dispatcher, ledger, repo):
+    """تكليفٌ مقيَّد `dispatched` ونسخةُ عملٍ حقيقية، والمرسِلُ انقطع قبل قيد `claimed`."""
+    worktree = tmp_path / "wt" / "team-41-anthropic"
+    worktree.parent.mkdir(parents=True)
+    git("worktree", "add", str(worktree), "-b", "team/41-anthropic", "origin/main", cwd=repo)
+    ledger.append(41, "dispatched", brief_sha256="b" * 64, worker="claude", family="anthropic", branch="team/41-anthropic",
+                  worktree=str(worktree), base_sha=git("rev-parse", "origin/main", cwd=repo))
+    raw = dispatcher.raw_dir(41, 1)
+    raw.mkdir(parents=True, exist_ok=True)
+    return worktree, raw
+
+
+def test_resume_recovers_a_launch_the_dispatcher_lost_before_claimed(tmp_path):
+    dispatcher, project, adapter, ledger, repo = _setup(tmp_path)
+    worktree, raw = _lost_launch(tmp_path, dispatcher, ledger, repo)
+    adapter.start(["fake-worker"], "", worktree, raw / "stdout.txt", raw / "stderr.txt", exit_path=raw / "exit")  # العاملُ عمل وأودع، والغلافُ حفظ معرّفه وخروجه
+    (raw / "pid").write_text("4194297", encoding="utf-8")
+    out = dispatcher.resume(41)
+    assert out["status"] == "completed" and out["new_commits"] == 1 and project.pulls
+    claimed = ledger.last_of(41, "claimed")
+    assert claimed["recovered_by"] == "resume" and claimed["pid"] == 4194297 and claimed["child_pid"] == 4194298
+    assert claimed["started_at"] == ledger.last_of(41, "dispatched")["at"]
+    assert ledger.main_state(41)["state"] == "completed"
+
+
+def test_resume_of_an_unconfirmed_launch_is_outcome_unknown_and_blocks_a_second_run(tmp_path):
+    dispatcher, _project, _adapter, ledger, repo = _setup(tmp_path)
+    _lost_launch(tmp_path, dispatcher, ledger, repo)                             # لا معرّفَ غلافٍ ولا معرّفَ وكيل
+    out = dispatcher.resume(41)
+    assert out == {"status": "outcome_unknown", "reason": "launch_unconfirmed"}
+    assert ledger.last(41)["reason"] == "launch_unconfirmed" and ledger.main_state(41)["state"] == "dispatched"
+    with pytest.raises(Refusal) as exc:
+        dispatcher.run(41, execute=True)
+    assert exc.value.code == "already_dispatched"

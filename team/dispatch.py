@@ -3,7 +3,7 @@
 الدورة: `run` يتحقق من الإذن (`ready:<عائلة>` بيد المالك أو أمرُه الصريح المسجَّل) ومن قواعد المشروع (التجميد)، ويولّد التكليفَ
 من القالب ونصِّ المسألة **محجورًا** ويحفظه ببصمته في موطن الفريق ويكتبه في نسخة العمل بلا إيداع (إيداعٌ بهويّة المرسِل يخلط العائلتين)، ثم يطلق العاملَ بوضعه غير التفاعلي والمدخلُ عبر stdin، ويقيّد
 `dispatched → claimed → completed` بالرأس وطلب الدمج. `validate` يقرأ فحوصَ الرأس، و`accept` يستنتج إيداعَ الدمج من git.
-`resume` يفحص عاملًا انقطع عنه المرسِل، و`takeover` يحتاج انتهاءَ الإيجار **و**إثباتَ غياب العامل **و**إذنَ المالك، و`gc` يعرض
+`resume` يفحص عاملًا انقطع عنه المرسِل (ولو قبل قيد `claimed`، بشاهد معرّفِ العملية)، و`takeover` يحتاج انتهاءَ الإيجار **و**إثباتَ غياب العامل **و**إذنَ المالك، و`gc` يعرض
 نسخَ العمل المدموجة ولا يحذف إلا بتأكيد.
 
 ما لا يفعله هذا الملف في أيّ حال: لا يدمج، ولا يوسم، ولا يُصدر، ولا يدفع قسرًا، ولا يضع `ready:`؛ وحارسٌ ثابت يفحص ذلك.
@@ -317,10 +317,35 @@ class Dispatcher:
         self.ledger.append(issue_number, "accepted", head_sha=state["head_sha"], merge_sha=merge)
         return {"status": "accepted", "merge_sha": merge}
 
+    def _recover_claim(self, issue_number: int, dispatched: dict) -> dict | None:
+        """المرسِل انقطع بين إطلاق العامل وقيد `claimed`: ملفُّ معرّف الغلاف (يكتبه المرسِل) أو معرّف الوكيل (يكتبه الغلاف نفسه)
+        يشهد أن الإطلاق وقع، فيُقيَّد `claimed` بأثرٍ رجعي ويُستكمل الاستئناف. وبلا شاهدٍ يبقى الإطلاق مجهولًا `launch_unconfirmed`
+        فلا تنفيذَ ثانيًا (ملاحظة Codex السابعة على #344)."""
+        raw = self.raw_dir(issue_number, dispatched["attempt"])
+        pids: dict[str, int] = {}
+        for name in ("pid", "child_pid"):
+            path = raw / name
+            if path.exists():
+                try:
+                    pids[name] = int(path.read_text(encoding="utf-8").strip() or 0)
+                except ValueError:
+                    pids[name] = 0
+        if not any(pids.values()):
+            self.ledger.append(issue_number, "outcome_unknown", reason="launch_unconfirmed")
+            return None
+        pid = pids.get("pid") or pids.get("child_pid")
+        self.ledger.append(issue_number, "claimed", pid=int(pid), started_at=dispatched["at"], started_at_basis="dispatched_at",
+                           child_pid=pids.get("child_pid"), recovered_by="resume")
+        return self.ledger.main_state(issue_number)
+
     def resume(self, issue_number: int) -> dict:
         state = self.ledger.main_state(issue_number)
         if state is None:
             raise Refusal("nothing_to_resume")
+        if state["state"] == "dispatched":
+            state = self._recover_claim(issue_number, state)
+            if state is None:
+                return {"status": "outcome_unknown", "reason": "launch_unconfirmed"}
         if state["state"] != "claimed":
             return {"status": state["state"], "attempt": state["attempt"]}
         pid = int(state.get("pid") or 0)

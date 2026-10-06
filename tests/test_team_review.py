@@ -165,3 +165,21 @@ def test_an_uncalibrated_rejection_is_still_recorded_as_a_rejection(tmp_path):
     _dispatched(ledger, project.pulls[9].head_sha)
     out = reviewer.review(9, execute=True)
     assert out["status"] == "review_rejected" and ledger.last(41)["state"] == "review_rejected"
+
+
+def test_a_review_of_a_previous_attempt_s_pull_does_not_touch_the_current_attempt(tmp_path):
+    """بعد استحواذٍ وطلبٍ جديد، مراجعةُ الطلب القديم تُقيَّد `external_review` على محاولته ولا تبدّل رأسَ المحاولة الجارية ولا رقمَ طلبها."""
+    reviewer, project, _adapters, ledger = _setup(tmp_path)
+    _dispatched(ledger, "0" * 40, validated=False)                               # المحاولة ١ فتحت الطلب 9
+    ledger.append(41, "expired", last_activity_at="2026-10-06T10:00:00+00:00")
+    ledger.append(41, "takeover", lease_expired_at="2026-10-07T11:00:00+00:00", owner_authorization="نفّذ",
+                  absence_proof={"no_process": True, "no_session": True, "no_new_commits": True})
+    ledger.append(41, "dispatched", brief_sha256="c" * 64, worker="claude", family="anthropic", branch="team/41-anthropic-a2")
+    ledger.append(41, "claimed", pid=2, started_at="2026-10-07T12:00:00+00:00")
+    ledger.append(41, "completed", head_sha="2" * 40, branch="team/41-anthropic-a2", pr=10)   # المحاولة ٢ فتحت الطلب 10
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "external_review"
+    current = ledger.main_state(41)
+    assert (current["attempt"], current["state"], current["head_sha"], current["pr"]) == (2, "completed", "2" * 40, 10)
+    stale = ledger.last_of(41, "external_review")
+    assert stale["pr"] == 9 and stale["attempt"] == 1 and stale["stale_attempt"] is True and stale["current_attempt"] == 2

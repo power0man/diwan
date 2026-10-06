@@ -1,6 +1,8 @@
 """سجلُّ تحوّلات التكليف (ق٧٦ البندان ٦ و٧): ترتيبٌ مفروض، ودليلٌ لازم، ورأسٌ واحد، ولا إرسالَ ثانيًا بلا استحواذٍ مُثبَت."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from core.ledger import LedgerCorrupt
@@ -95,3 +97,73 @@ def test_truncated_ledger_is_detected_on_open(tmp_path):
 def test_lease_expiry_is_twenty_four_hours():
     assert lease_expired("2026-10-05T09:00:00+00:00", "2026-10-06T10:00:00+00:00")
     assert not lease_expired("2026-10-06T09:00:00+00:00", "2026-10-06T10:00:00+00:00")
+
+
+def test_append_waits_for_the_ledger_lock(tmp_path):
+    """حاملٌ خارجيّ للقفل يوقف الإلحاق حتى يُفرج عنه؛ فالفحصُ والإلحاقُ والمرساةُ لا تتداخل بين أمرين (ملاحظة Codex السابعة على #344)."""
+    import fcntl
+    import threading
+
+    ledger = _ledger(tmp_path)
+    holder = ledger.lock_path.open("a", encoding="utf-8")
+    fcntl.flock(holder.fileno(), fcntl.LOCK_EX)
+    done = threading.Event()
+
+    def write():
+        ledger.append(7, "dispatched", brief_sha256="b" * 64, worker="claude", family="anthropic", branch="team/7-anthropic")
+        done.set()
+
+    thread = threading.Thread(target=write, daemon=True)
+    thread.start()
+    try:
+        assert not done.wait(0.4), "الإلحاقُ مضى والقفلُ محجوز"
+        assert ledger.records() == []
+    finally:
+        fcntl.flock(holder.fileno(), fcntl.LOCK_UN)
+        holder.close()
+    assert done.wait(5)
+    thread.join(5)
+    assert ledger.last(7)["state"] == "dispatched"
+
+
+def test_concurrent_appends_from_separate_processes_keep_one_chain(tmp_path):
+    """ستُّ عملياتٍ تلحق في السجلّ نفسِه معًا لمسائل مختلفة: السلسلةُ تصمد والأرقامُ التسلسلية لا تتكرّر."""
+    import subprocess
+    import sys
+
+    path = tmp_path / "dispatch.jsonl"
+    TeamLedger(path)
+    script = (
+        "import sys; from team.ledger import TeamLedger\n"
+        "issue = int(sys.argv[2]); ledger = TeamLedger(sys.argv[1])\n"
+        "for k in range(12):\n"
+        "    ledger.append(issue, 'refused', code=f'c{k}')\n"
+    )
+    procs = [subprocess.Popen([sys.executable, "-c", script, str(path), str(100 + i)], cwd=str(Path(__file__).resolve().parents[1]))
+             for i in range(6)]
+    assert [proc.wait(60) for proc in procs] == [0] * 6
+    reopened = TeamLedger(path)                                   # verify_chain(strict=True) عند الفتح
+    entries = reopened.ledger.entries()
+    assert len(entries) == 72 and [e["seq"] for e in entries] == list(range(72))
+
+
+def test_opening_waits_for_the_ledger_lock(tmp_path):
+    """فتحُ السجلّ (وفيه التحقق من السلسلة والمرساة) ينتظر القفلَ أيضًا؛ وإلا قرأ قيدًا كُتب قبل مرساته فحسبه عبثًا."""
+    import fcntl
+    import threading
+
+    path = tmp_path / "dispatch.jsonl"
+    first = TeamLedger(path)
+    first.append(7, "refused", code="x")
+    holder = first.lock_path.open("a", encoding="utf-8")
+    fcntl.flock(holder.fileno(), fcntl.LOCK_EX)
+    opened = threading.Event()
+    thread = threading.Thread(target=lambda: (TeamLedger(path), opened.set()), daemon=True)
+    thread.start()
+    try:
+        assert not opened.wait(0.4), "الفتحُ مضى والقفلُ محجوز"
+    finally:
+        fcntl.flock(holder.fileno(), fcntl.LOCK_UN)
+        holder.close()
+    assert opened.wait(5)
+    thread.join(5)

@@ -9,12 +9,16 @@
   وإيداعٌ جديد (`completed` برأسٍ آخر) يُسقط ما قبله ويعيد التحقق والمراجعة.
 - `outcome_unknown` لا يعني «أعد التشغيل»: إرسالٌ ثانٍ لمسألةٍ لها تكليفٌ غيرُ منتهٍ يُرفض `already_dispatched`،
   ولا يُسمح بتكليفٍ جديد إلا بعد قيد `takeover` يحمل الإثباتَ الثلاثي: انتهاءُ الإيجار، وغيابُ العامل، وإذنُ المالك.
+- القفل: الفحصُ والإلحاقُ والمرساةُ عمليةٌ واحدة تحت قفلٍ حصريّ على ملفٍّ جانبيّ (`<السجلّ>.lock`)؛ فأمران متزامنان
+  لمسألتين مستقلّتين لا يتنازعان البصمةَ السابقة ولا الرقمَ التسلسلي ولا ملفَ المرساة المؤقت.
 
 **الحدُّ المعلَن:** السجلُّ يشهد على ما قُيّد فيه بدليله المسمّى، لا على صحّة الدليل نفسِه؛ وبصماتُ الرؤوس تُقارَن نصًّا.
 """
 from __future__ import annotations
 
+import fcntl
 import os
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -72,10 +76,11 @@ class TeamLedger:
         self.path = Path(path)
         self.ledger = Ledger(self.path, create=True)
         self.clock = clock
-        if self.ledger.anchor_path.exists():
-            self.ledger.verify_chain(strict=True)      # يرمي LedgerCorrupt عند قصّ الذيل أو كسر السلسلة
-        elif self.ledger.count():
-            raise LedgerCorrupt("سجلٌّ بلا مرساة: قصُّ الذيل غير قابل للكشف")
+        with self._locked():                           # فتحٌ أثناء إلحاقِ عمليةٍ أخرى (قيدٌ كُتب والمرساةُ بعدُ) ليس عبثًا
+            if self.ledger.anchor_path.exists():
+                self.ledger.verify_chain(strict=True)      # يرمي LedgerCorrupt عند قصّ الذيل أو كسر السلسلة
+            elif self.ledger.count():
+                raise LedgerCorrupt("سجلٌّ بلا مرساة: قصُّ الذيل غير قابل للكشف")
 
     # — قراءة —
 
@@ -122,7 +127,27 @@ class TeamLedger:
 
     # — كتابة —
 
+    @property
+    def lock_path(self) -> Path:
+        return self.path.with_suffix(self.path.suffix + ".lock")
+
+    @contextmanager
+    def _locked(self):
+        """قفلٌ حصريّ يحيط بالفحص والإلحاق والمرساة معًا؛ بدونه كان أمران متزامنان يكتبان قيدين بالبصمة السابقة والرقم
+        التسلسلي نفسَيهما ويتنازعان ملفَ المرساة المؤقت (ملاحظة Codex السابعة على #344)."""
+        self.lock_path.parent.mkdir(parents=True, exist_ok=True)
+        with self.lock_path.open("a", encoding="utf-8") as handle:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
     def append(self, issue: int, state: str, **evidence) -> str:
+        with self._locked():
+            return self._append(issue, state, **evidence)
+
+    def _append(self, issue: int, state: str, **evidence) -> str:
         if state not in MAIN_STATES and state not in SIDE_STATES:
             raise TransitionError("unknown_state", state)
         missing = [key for key in EVIDENCE.get(state, ()) if evidence.get(key) in (None, "")]
