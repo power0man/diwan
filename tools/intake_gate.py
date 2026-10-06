@@ -182,7 +182,7 @@ def payload_event(payload: dict) -> list[dict]:
 
 def merge_payload_event(events: list[dict], payload: dict) -> tuple[list[dict], bool]:
     """يعيد (خطَّ الأحداث، هل لقطةُ الحمولة قديمة). حدثُ الحمولة يُلحق فقط إن تأخّر الخطُّ عنه: أي لا حدثَ على الوسم نفسِه أحدثَ
-    منه (`created_at` بعد `issue.updated_at`) ولا نسخةَ منه هو (الفعلُ والوسمُ نفسُهما في الثانية نفسِها، فالطوابعُ بدقّة الثانية
+    منه (`created_at` بعد `issue.updated_at`) ولا نسخةَ منه هو (الفعلُ والوسمُ والفاعلُ أنفسُهم في الثانية نفسِها، فالطوابعُ بدقّة الثانية
     وترتيبُ الخطّ هو الحكم). وإلا فاللقطةُ قديمة: الخطُّ يحمل الأحدث، ونصُّ المسألة ووسومُها يُقرآن من المصدر لا منها.
     وبلا طوابع يُلحق كما هو (الاتجاهُ الآمن: نزعٌ يُحتسب). (ملاحظتا Codex على #346)"""
     extra = payload_event(payload)
@@ -193,7 +193,9 @@ def merge_payload_event(events: list[dict], payload: dict) -> tuple[list[dict], 
     stamp = str((payload.get("issue") or {}).get("updated_at") or "")
     same_label = [e for e in events if e.get("event") in ("labeled", "unlabeled") and _fold((e.get("label") or {}).get("name")) == name]
     newer = [e for e in same_label if str(e.get("created_at") or "") > stamp]
-    own = [e for e in same_label if str(e.get("created_at") or "") == stamp and e.get("event") == action]
+    actor = str(((payload.get("sender") or {}).get("login")) or "")
+    own = [e for e in same_label if str(e.get("created_at") or "") == stamp and e.get("event") == action
+           and str((e.get("actor") or {}).get("login") or "") == actor]       # الفاعلُ أيضًا: حدثُ غيرِ المالك ليس حدثَ المالك
     if stamp and (newer or own):
         return events, True
     return events + extra, False

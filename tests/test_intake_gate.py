@@ -227,6 +227,13 @@ def test_a_stale_revocation_payload_is_outranked_by_a_newer_regrant_in_the_timel
     assert ig.apply_launch_gate(stale, github) == 0 and github.removed == []
     github = FakeGitHub(events, fresh_issue=_payload(PLANTED)["issue"])          # النصُّ الحالي حقنٌ وإن كانت اللقطةُ نظيفة
     assert ig.apply_launch_gate(stale, github) == 1 and github.removed == [(7, "jules")]
+    # إذنٌ من غير المالك في الثانية نفسِها وخطٌّ متأخّر عنه: ليس حدثَ المالك نفسَه، فيُلحق ويُنزع `jules` (ملاحظة Codex الثالثة)
+    foreign = _payload(CLEAN, action="labeled", label="ready:google", sender="stranger")
+    foreign["issue"]["updated_at"] = "2026-10-06T10:00:00Z"
+    merged, is_stale = ig.merge_payload_event(events, foreign)
+    assert is_stale is False and merged[-1]["actor"] == {"login": "stranger"}
+    github = FakeGitHub(events)
+    assert ig.apply_launch_gate(foreign, github) == 1 and github.removed == [(7, "jules")]
     undated = _payload(CLEAN, labels=("jules",), action="unlabeled", label="ready:google")
     merged, is_stale = ig.merge_payload_event(events, undated)
     assert merged[-1]["event"] == "unlabeled" and is_stale is False
