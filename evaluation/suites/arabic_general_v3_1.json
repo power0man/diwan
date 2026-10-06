@@ -1,0 +1,4170 @@
+{
+ "schema_version": 1,
+ "suite_id": "arabic_general_v3_1",
+ "split": "development",
+ "description": "بنك تطوير عام (١ من ٢): ٧٥ حالة في الحوار واتباع التعليمات، والنفي والشروط والاستثناء، والحساب والاستدلال، والتحرير العربي، والترجمة الأمينة. مستقل عن بنك القياس.",
+ "cases": [
+  {
+   "case_id": "dgi_0001",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "سجّل طلب توصيل: الوجهة جدة، الوزن 2 كجم، الدفع عند الاستلام."
+    },
+    {
+     "role": "assistant",
+     "content": "سُجّل الطلب: الوجهة جدة، الوزن 2 كجم، الدفع عند الاستلام."
+    },
+    {
+     "role": "user",
+     "content": "غيّر الوجهة إلى مكة المكرمة. الآن: ما الوزن؟ وما طريقة الدفع؟"
+    }
+   ],
+   "reference": "الوزن 2 كجم والدفع عند الاستلام؛ لأن التعديل مسّ الوجهة وحدها.",
+   "rubric": [
+    "يحفظ الوزن 2 كجم",
+    "يحفظ طريقة الدفع عند الاستلام",
+    "لا يخلط الوجهة القديمة بالجديدة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "2"
+    },
+    {
+     "kind": "contains",
+     "value": "الاستلام"
+    },
+    {
+     "kind": "excludes",
+     "value": "سجّل طلب توصيل: الوجهة جدة، ال"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد 2"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه 2"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا 2"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الاستلام"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الاستلام"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الاستلام"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0002",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "قائمة مشترياتي: حليب، خبز، بيض، تمر."
+    },
+    {
+     "role": "assistant",
+     "content": "حفظت القائمة: حليب، خبز، بيض، تمر."
+    },
+    {
+     "role": "user",
+     "content": "احذف الخبز وأضف العسل. اكتب القائمة النهائية فقط."
+    }
+   ],
+   "reference": "حليب، بيض، تمر، عسل — الخبز محذوف والعسل مضاف.",
+   "rubric": [
+    "يحذف الخبز",
+    "يضيف العسل",
+    "يبقي الحليب والبيض والتمر"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "حليب"
+    },
+    {
+     "kind": "contains",
+     "value": "بيض"
+    },
+    {
+     "kind": "contains",
+     "value": "تمر"
+    },
+    {
+     "kind": "contains",
+     "value": "عسل"
+    },
+    {
+     "kind": "excludes",
+     "value": "خبز"
+    },
+    {
+     "kind": "excludes",
+     "value": "قائمة مشترياتي: حليب، خبز، بيض"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد حليب"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه حليب"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا حليب"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد بيض"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه بيض"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا بيض"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد تمر"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه تمر"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا تمر"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد عسل"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه عسل"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا عسل"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0003",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اكتب جملة ترحيب بزائر موقعنا."
+    },
+    {
+     "role": "assistant",
+     "content": "أهلًا بك في موقعنا، نتمنى لك تجربة مفيدة."
+    },
+    {
+     "role": "user",
+     "content": "أعد كتابة الجملة في خمس كلمات كحد أقصى، وأدخل فيها كلمة «دليل»."
+    }
+   ],
+   "reference": "جملة ترحيب من خمس كلمات أو أقل تتضمن «دليل»، مثل: «دليلك إلى موقعنا، أهلًا بك».",
+   "rubric": [
+    "خمس كلمات أو أقل",
+    "تتضمن كلمة دليل",
+    "تبقى ترحيبًا"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "دليل"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "_a=__model_raw_answer__.strip()\n_w=_a.split()\nassert 2<=len(_w)<=6, \"عدد الكلمات خارج المطلوب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "اكتب جملة ترحيب بزائر موقعنا."
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد دليل"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه دليل"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا دليل"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0004",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اجتماع فريق المبيعات يوم الثلاثاء الساعة 10 صباحًا في قاعة 2."
+    },
+    {
+     "role": "assistant",
+     "content": "حفظت: الثلاثاء 10 صباحًا، قاعة 2."
+    },
+    {
+     "role": "user",
+     "content": "أُجّل الاجتماع إلى الخميس مع بقاء الوقت والقاعة. اكتب دعوة مختصرة بالموعد الجديد فقط."
+    }
+   ],
+   "reference": "دعوة بالموعد الجديد: الخميس 10 صباحًا قاعة 2، بلا ذكر للثلاثاء.",
+   "rubric": [
+    "الموعد الجديد الخميس",
+    "الوقت والقاعة محفوظان",
+    "لا يبقى اليوم القديم في الدعوة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "الخميس"
+    },
+    {
+     "kind": "contains",
+     "value": "قاعة"
+    },
+    {
+     "kind": "excludes",
+     "value": "الثلاثاء"
+    },
+    {
+     "kind": "excludes",
+     "value": "اجتماع فريق المبيعات يوم الثلا"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الخميس"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الخميس"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الخميس"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد قاعة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه قاعة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا قاعة"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0005",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اكتب رسالة شكر قصيرة لمعلم."
+    },
+    {
+     "role": "assistant",
+     "content": "أستاذي الفاضل، شكرًا على جهدك وإخلاصك في تعليمنا."
+    },
+    {
+     "role": "user",
+     "content": "المقصودة معلمة لا معلم. أعد الرسالة بتأنيث المخاطَبة وأدخل وصف «المعلمة الفاضلة»."
+    }
+   ],
+   "reference": "رسالة بصيغة التأنيث تتضمن «المعلمة الفاضلة» حرفيًّا.",
+   "rubric": [
+    "تأنيث المخاطبة",
+    "تتضمن «المعلمة الفاضلة» حرفيًّا",
+    "تبقى رسالة شكر"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "المعلمة الفاضلة"
+    },
+    {
+     "kind": "excludes",
+     "value": "أستاذي"
+    },
+    {
+     "kind": "excludes",
+     "value": "اكتب رسالة شكر قصيرة لمعلم."
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد المعلمة الفاضلة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه المعلمة الفاضلة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا المعلمة الفاضلة"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0006",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "بطاقة موظف: سالم القحطاني، محاسب، فرع الرياض."
+    },
+    {
+     "role": "assistant",
+     "content": "حفظت البطاقة: سالم القحطاني، محاسب، الرياض."
+    },
+    {
+     "role": "user",
+     "content": "رُقّي سالم إلى «محاسب أول». اكتب البطاقة الجديدة كاملة."
+    }
+   ],
+   "reference": "سالم القحطاني، محاسب أول، فرع الرياض — الاسم والفرع كما هما.",
+   "rubric": [
+    "المسمى الجديد محاسب أول",
+    "الاسم الكامل محفوظ",
+    "الفرع محفوظ"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "سالم القحطاني"
+    },
+    {
+     "kind": "contains",
+     "value": "محاسب أول"
+    },
+    {
+     "kind": "contains",
+     "value": "الرياض"
+    },
+    {
+     "kind": "excludes",
+     "value": "بطاقة موظف: سالم القحطاني، محا"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد سالم القحطاني"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه سالم القحطاني"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا سالم القحطاني"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد محاسب أول"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه محاسب أول"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا محاسب أول"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الرياض"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الرياض"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الرياض"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0007",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اقترح عشاءً لأربعة أشخاص: أرز ودجاج وسلطة."
+    },
+    {
+     "role": "assistant",
+     "content": "أرز لأربعة، دجاجتان، وطبق سلطة كبير."
+    },
+    {
+     "role": "user",
+     "content": "صار الضيوف ستة. عدّل المقادير واكتب قائمة العشاء الجديدة فقط."
+    }
+   ],
+   "reference": "القائمة نفسها (أرز، دجاج، سلطة) بمقادير لستة أشخاص.",
+   "rubric": [
+    "الأصناف الثلاثة باقية",
+    "المقادير محدثة لستة",
+    "لا أصناف جديدة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "أرز"
+    },
+    {
+     "kind": "contains",
+     "value": "دجاج"
+    },
+    {
+     "kind": "contains",
+     "value": "سلطة"
+    },
+    {
+     "kind": "excludes",
+     "value": "اقترح عشاءً لأربعة أشخاص: أرز "
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد أرز"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه أرز"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا أرز"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد دجاج"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه دجاج"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا دجاج"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد سلطة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه سلطة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا سلطة"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0008",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "احفظ: مرجع طلبي هو R-4471 واسم المستلم نورة."
+    },
+    {
+     "role": "assistant",
+     "content": "حفظت: المرجع R-4471، المستلم نورة."
+    },
+    {
+     "role": "user",
+     "content": "ما مرجع طلبي؟ وما اسم المستلم؟"
+    }
+   ],
+   "reference": "المرجع R-4471 والمستلم نورة، من الدور الأول حرفيًّا.",
+   "rubric": [
+    "يسترجع المرجع R-4471 حرفيًّا",
+    "يسترجع اسم المستلم نورة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "R-4471"
+    },
+    {
+     "kind": "contains",
+     "value": "نورة"
+    },
+    {
+     "kind": "excludes",
+     "value": "احفظ: مرجع طلبي هو R-4471 واسم"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد R-4471"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه R-4471"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا R-4471"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد نورة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه نورة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا نورة"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0009",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "خطة سفري: الرياض يومان، ثم أبها يوم، ثم جازان يومان."
+    },
+    {
+     "role": "assistant",
+     "content": "حفظت الخطة: الرياض 2، أبها 1، جازان 2."
+    },
+    {
+     "role": "user",
+     "content": "ألغيت أبها من الرحلة ووزعت يومها على جازان. اكتب الخطة الجديدة فقط دون شرح."
+    }
+   ],
+   "reference": "الرياض يومان وجازان ثلاثة أيام؛ لا ذكر لأبها في الخطة الجديدة.",
+   "rubric": [
+    "أبها محذوفة كليًّا",
+    "يوم أبها انتقل إلى جازان (ثلاثة أيام)",
+    "الرياض كما هي"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "الرياض"
+    },
+    {
+     "kind": "contains",
+     "value": "جازان"
+    },
+    {
+     "kind": "excludes",
+     "value": "أبها"
+    },
+    {
+     "kind": "excludes",
+     "value": "خطة سفري: الرياض يومان، ثم أبه"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الرياض"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الرياض"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الرياض"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد جازان"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه جازان"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا جازان"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0010",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اكتب إعلان توظيف لمعلم رياضيات."
+    },
+    {
+     "role": "assistant",
+     "content": "مطلوب معلم رياضيات للعمل بمدرسة أهلية، خبرة سنتين."
+    },
+    {
+     "role": "user",
+     "content": "أضف شرط إجادة الحاسب، وحدد الراتب 9000 ريال، وأعد كتابة الإعلان كاملًا."
+    }
+   ],
+   "reference": "الإعلان المحدث يتضمن: معلم رياضيات، إجادة الحاسب، راتب 9000 ريال.",
+   "rubric": [
+    "شرط إجادة الحاسب مضاف",
+    "الراتب 9000 مذكور",
+    "التخصص باقٍ"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "الحاسب"
+    },
+    {
+     "kind": "contains",
+     "value": "9000"
+    },
+    {
+     "kind": "contains",
+     "value": "رياضيات"
+    },
+    {
+     "kind": "excludes",
+     "value": "اكتب إعلان توظيف لمعلم رياضيات"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الحاسب"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الحاسب"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الحاسب"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد 9000"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه 9000"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا 9000"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد رياضيات"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه رياضيات"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا رياضيات"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0011",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "جدول مراجعتي: السبت نحو، الأحد صرف، الاثنين بلاغة."
+    },
+    {
+     "role": "assistant",
+     "content": "حفظت: السبت نحو، الأحد صرف، الاثنين بلاغة."
+    },
+    {
+     "role": "user",
+     "content": "بدّلتُ مادتي الأحد والاثنين. ما مادة يوم الأحد الآن؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "الأحد صارت بلاغة بعد التبديل.",
+   "rubric": [
+    "الأحد = بلاغة بعد التبديل",
+    "لا يبقى صرف على الأحد"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['بلاغة']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['صرف']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "جدول مراجعتي: السبت نحو، الأحد"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0012",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اكتب اعتذارًا عن حضور اجتماع."
+    },
+    {
+     "role": "assistant",
+     "content": "أعتذر عن حضور الاجتماع لظرف طارئ، وأرجو تفهمكم."
+    },
+    {
+     "role": "user",
+     "content": "اختصر الاعتذار في جملة واحدة، وأضف فيها تاريخ الاجتماع: 5 مارس."
+    }
+   ],
+   "reference": "جملة واحدة تتضمن الاعتذار والتاريخ 5 مارس.",
+   "rubric": [
+    "جملة واحدة",
+    "التاريخ 5 مارس حاضر",
+    "يبقى اعتذارًا"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "5 مارس"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_a=__model_raw_answer__.strip()\n_s=[x for x in _re.split(r\"[.!؟?\\n]+\",_a) if x.strip()]\nassert 1<=len(_s)<=2, \"عدد الجمل خارج المطلوب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "اكتب اعتذارًا عن حضور اجتماع."
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد 5 مارس"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه 5 مارس"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا 5 مارس"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0013",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "فاتورة كهربائي: رقم الحساب 55821، المبلغ 340 ريالًا."
+    },
+    {
+     "role": "assistant",
+     "content": "حفظت: حساب 55821، مبلغ 340 ريالًا."
+    },
+    {
+     "role": "user",
+     "content": "اتضح أن المبلغ خاطئ؛ الصحيح 430 ريالًا. اكتب الفاتورة المصححة كاملة."
+    }
+   ],
+   "reference": "رقم الحساب 55821 والمبلغ المصحح 430 ريالًا؛ لا يبقى 340.",
+   "rubric": [
+    "رقم الحساب محفوظ",
+    "المبلغ الجديد 430",
+    "القيمة القديمة لا تظهر"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "55821"
+    },
+    {
+     "kind": "contains",
+     "value": "430"
+    },
+    {
+     "kind": "excludes",
+     "value": "340"
+    },
+    {
+     "kind": "excludes",
+     "value": "فاتورة كهربائي: رقم الحساب 558"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد 55821"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه 55821"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا 55821"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد 430"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه 430"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا 430"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0014",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "فريق المشروع: قائده ماجد، ومعه سارة وفهد."
+    },
+    {
+     "role": "assistant",
+     "content": "حفظت الفريق: ماجد قائدًا، وسارة وفهد."
+    },
+    {
+     "role": "user",
+     "content": "اعتذر فهد وحلّ محله راكان. اكتب أسماء أعضاء الفريق الحاليين فقط."
+    }
+   ],
+   "reference": "ماجد وسارة وراكان؛ فهد خرج من القائمة.",
+   "rubric": [
+    "فهد خارج القائمة",
+    "راكان مضاف",
+    "ماجد وسارة باقيان"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "ماجد"
+    },
+    {
+     "kind": "contains",
+     "value": "سارة"
+    },
+    {
+     "kind": "contains",
+     "value": "راكان"
+    },
+    {
+     "kind": "excludes",
+     "value": "فهد"
+    },
+    {
+     "kind": "excludes",
+     "value": "فريق المشروع: قائده ماجد، ومعه"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد ماجد"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه ماجد"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا ماجد"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد سارة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه سارة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا سارة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد راكان"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه راكان"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا راكان"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0015",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اقترح عنوانًا لمقال عن ريادة الأعمال."
+    },
+    {
+     "role": "assistant",
+     "content": "ريادة الأعمال: من الفكرة إلى السوق."
+    },
+    {
+     "role": "user",
+     "content": "أعد صياغة العنوان سؤالًا يبدأ بكلمة «كيف» ولا يتجاوز سبع كلمات."
+    }
+   ],
+   "reference": "عنوان سؤال يبدأ بـ«كيف» في سبع كلمات أو أقل، مثل: «كيف تبدأ مشروعك الأول بنجاح؟».",
+   "rubric": [
+    "يبدأ بـ«كيف»",
+    "سبع كلمات أو أقل",
+    "يبقى في ريادة الأعمال"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "كيف"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "_a=__model_raw_answer__.strip()\n_w=_a.split()\nassert 2<=len(_w)<=8, \"عدد الكلمات خارج المطلوب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "اقترح عنوانًا لمقال عن ريادة ا"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد كيف"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه كيف"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا كيف"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0016",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "طريقة قهوتي: أسخّن الماء 5 دقائق، ثم أضيف البن، ثم أتركه على نار هادئة 3 دقائق."
+    },
+    {
+     "role": "assistant",
+     "content": "حفظت: تسخين الماء 5 دقائق، ثم البن، ثم 3 دقائق على نار هادئة."
+    },
+    {
+     "role": "user",
+     "content": "كم دقيقة أسخّن الماء؟ وكم أترك البن بعد إضافته؟"
+    }
+   ],
+   "reference": "تسخين الماء 5 دقائق، وترك البن 3 دقائق.",
+   "rubric": [
+    "5 دقائق للتسخين",
+    "3 دقائق للبن",
+    "لا خلط بين الرقمين"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "5"
+    },
+    {
+     "kind": "contains",
+     "value": "3"
+    },
+    {
+     "kind": "excludes",
+     "value": "طريقة قهوتي: أسخّن الماء 5 دقا"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد 5"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه 5"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا 5"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد 3"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه 3"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا 3"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "dgi_0017",
+   "capability": "dialogue_and_instructions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "مهام اليوم: الرد على البريد، اجتماع الساعة 12، تسليم التقرير."
+    },
+    {
+     "role": "assistant",
+     "content": "حفظت المهام الثلاث."
+    },
+    {
+     "role": "user",
+     "content": "أعد ترتيبها بوضع الاجتماع أولًا لأنه الأقرب موعدًا. اكتب القائمة مرتبة."
+    }
+   ],
+   "reference": "الاجتماع أول القائمة، ثم المهمتان الأخريان؛ لا حذف ولا إضافة.",
+   "rubric": [
+    "الاجتماع أولًا",
+    "المهام الثلاث باقية"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "اجتماع"
+    },
+    {
+     "kind": "contains",
+     "value": "البريد"
+    },
+    {
+     "kind": "contains",
+     "value": "التقرير"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_a=_re.sub(r\"[\\u0640\\u064B-\\u0652]\",\"\",__model_raw_answer__)\n_i=_a.find(\"اجتماع\")\nassert _i>=0 and _i<_a.find(\"البريد\") and _i<_a.find(\"التقرير\"), \"الاجتماع ليس أولًا\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "مهام اليوم: الرد على البريد، ا"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد اجتماع"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه اجتماع"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا اجتماع"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد البريد"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه البريد"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا البريد"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد التقرير"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه التقرير"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا التقرير"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0001",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "قاعة الاجتماعات لا يدخلها إلا من يحمل بطاقة حضور. وصل فواز وهو يحمل بطاقته. هل يُضمن دخوله بمجرد ذلك؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "لا يُضمن؛ «إلا» تجعل حمل البطاقة شرطًا ضروريًّا لا شرطًا كافيًا — قد توجد شروط أخرى كالتسجيل المسبق.",
+   "rubric": [
+    "يفهم أن «إلا» شرط ضروري لا كافٍ",
+    "لا يجزم بالدخول"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['لا']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['نعم']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "قاعة الاجتماعات لا يدخلها إلا "
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0002",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "لائحة المسابقة: تُقبل المشاركة ما لم يكن المخطوط منشورًا سابقًا. مخطوط سامية لم يُنشر قط. هل تُقبل مشاركتها في هذا الشرط؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "نعم تُقبل في هذا الشرط؛ «ما لم» تنفي القبول عند النشر السابق، والنشر منتفٍ هنا.",
+   "rubric": [
+    "يفهم «ما لم»",
+    "يقضي بالقبول لانتفاء المانع"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['نعم']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['لا']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "لائحة المسابقة: تُقبل المشاركة"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0003",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "لا يدخل الطالب الاختبار النهائي إلا إذا تجاوز 70 في اختبار المنتصف. حصلت ريم على 68. هل تدخل النهائي؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "لا؛ الشرط الضروري (تجاوز 70) لم يتحقق.",
+   "rubric": [
+    "يطبق الشرط الضروري",
+    "يقضي بعدم الدخول"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['لا']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['نعم']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يدخل الطالب الاختبار النهائ"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": true
+  },
+  {
+   "case_id": "nce_0004",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "يُعفى من رسوم الملتقى كلُّ متقدم مبكر إلا من لم يرفق بحثه. سجّل ناصر مبكرًا وأرفق بحثه. هل يُعفى من الرسوم؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "نعم؛ تحقق وصف المتقدم المبكر وانتفى الاستثناء (لم يرفق).",
+   "rubric": [
+    "يميز الاستثناء المنفي",
+    "يقضي بالإعفاء"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['نعم']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['لا']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "يُعفى من رسوم الملتقى كلُّ متق"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0005",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "يُعفى من رسوم الملتقى كلُّ متقدم مبكر إلا من لم يرفق بحثه. سجّلت هند مبكرًا لكنها لم ترفق بحثها. هل تُعفى؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "لا؛ الاستثناء منطبق عليها (لم ترفق البحث) فتخرج من العفو.",
+   "rubric": [
+    "يطبق الاستثناء",
+    "يقضي بعدم الإعفاء"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['لا']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['نعم']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "يُعفى من رسوم الملتقى كلُّ متق"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": true
+  },
+  {
+   "case_id": "nce_0006",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "تعليمات المبنى: يُمنع استعمال المصعد عند نشوب حريق. انقطع التيار الكهربائي اليوم ولا حريق في المبنى. هل يجوز استعمال المصعد نظامًا؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "نعم نظامًا؛ المنع معلل بالحريق وهو منتفٍ. (قد يكون المصعد متعطلًا بالانقطاع عمليًّا، لكن الحكم النظامي جواز).",
+   "rubric": [
+    "يربط المنع بعلته",
+    "يقضي بالجواز لانتفاء العلة"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['نعم', 'يجوز']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['لا يجوز']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "تعليمات المبنى: يُمنع استعمال "
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0007",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "حضر اجتماعَ المشروع كلُّ المهندسين الاثني عشر إلا اثنين. كم مهندسًا حضر الاجتماع؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "حضر عشرة؛ الاستثناء يخرج اثنين من الاثني عشر.",
+   "rubric": [
+    "يفهم الاستثناء العددي",
+    "الناتج 10"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(10))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "حضر اجتماعَ المشروع كلُّ المهن"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0008",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "شروط النشر: لن تُقبل الرواية إذا لم تُرفق بسيرة المؤلف. أرفقت سارة روايتها بالسيرة المطلوبة. هل يُضمن قبول روايتها؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "لا يُضمن؛ «إذا لم + نفي القبول» تجعل الإرفاق شرطًا ضروريًّا للقبول لا ضمانًا له.",
+   "rubric": [
+    "يميز الضرورة من الكفاية",
+    "لا يجزم بالقبول"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['لا']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['نعم']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "شروط النشر: لن تُقبل الرواية إ"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0009",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "نظام الجمعية: يجوز للعضو التصويت بنفسه أو بتوكيل غيره، ولا يجوز الجمع بين الطريقين. صوّت علي بنفسه في الانتخابات ثم وكّل أخاه ليصوّت عنه في الجلسة نفسها. هل تصرفه جائز؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "لا؛ جمع بين الطريقين والنظام ينهى عن الجمع صراحة.",
+   "rubric": [
+    "يلتقط نهي الجمع",
+    "يقضي بعدم الجواز"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['لا', 'غير جائز']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['جائز']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "نظام الجمعية: يجوز للعضو التصو"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": true
+  },
+  {
+   "case_id": "nce_0010",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "أعلنت المدرسة: نجح جميع طلاب الصف ما عدا من غاب عن الاختبار النهائي. غاب سامي عن النهائي. هل ينجح سامي؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "لا؛ المستثنى (الغائب عن النهائي) خارج من حكم النجاح العام.",
+   "rubric": [
+    "يطبق الاستثناء على سامي",
+    "يقضي بعدم النجاح"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['لا']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['نعم']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "أعلنت المدرسة: نجح جميع طلاب ا"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0011",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "سياسة المتجر: لا تُسترد رسوم الحجز إلا إذا أُلغي الحجز خلال 24 ساعة من إجرائه. ألغت لطيفة حجزها بعد يومين كاملين. هل تسترد الرسوم؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "لا؛ الإلغاء وقع خارج النافذة المشترطة للاستثناء.",
+   "rubric": [
+    "يتحقق من شرط المدة",
+    "يقضي بعدم الاسترداد"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['لا']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['نعم']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "سياسة المتجر: لا تُسترد رسوم ا"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0012",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "لافتة المختبر: الدخول للمرخَّص لهم فقط. سلمان ضمن المرخَّص لهم رسميًّا. هل يجوز له الدخول؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "نعم؛ «فقط» تحصر الإذن في المرخص لهم وسلمان منهم.",
+   "rubric": [
+    "يفهم الحصر بالإذن",
+    "يقضي بالجواز"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['نعم', 'يجوز']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['لا يجوز']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "لافتة المختبر: الدخول للمرخَّص"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0013",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "شروط الترشح للجائزة: لا يحق الترشح لمن تجاوز الأربعين عامًا إلا الحائزين على الدكتوراه. عمر سعاد 43 عامًا وهي حائزة على الدكتوراه. هل يحق لها الترشح؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "نعم؛ المنع العام للمتجاوزين يستثني الحائزين على الدكتوراه، وسعاد منهم.",
+   "rubric": [
+    "يطبق الاستثناء على المنع",
+    "يقضي بالجواز"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['نعم', 'يحق']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['لا يحق']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "شروط الترشح للجائزة: لا يحق ال"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0014",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "تنبيه في الحديقة العامة: تُغلق البوابات أيام الأحد ولا يدخلها إلا الموظفون. جاء زائر غير موظف يوم أحد. هل يدخل؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "لا؛ الدخول يوم الأحد محصور في الموظفين وهو ليس منهم.",
+   "rubric": [
+    "يفهم الحصر والاستثناء",
+    "يقضي بعدم الدخول"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['لا']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['نعم']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "تنبيه في الحديقة العامة: تُغلق"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0015",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "مطبعة الكتب: لا يُطبع الكتاب ما لم يُعتمد تصميم الغلاف. اعتُمد غلاف كتاب «ظلال النخيل» صباح اليوم. هل يُضمن بدء طبعه اليوم؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "لا يُضمن؛ اعتماد الغلاف شرط لازم للطبع لا كافٍ له — قد تبقى اعتمادات أخرى أو جدولة.",
+   "rubric": [
+    "يفهم «ما لم» شرطًا لازمًا لا كافيًا",
+    "لا يجزم بالطبع"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['لا']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['نعم']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "مطبعة الكتب: لا يُطبع الكتاب م"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0016",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "لائحة الاختبارات: يجوز تأجيل الاختبار لعذر طبي موثّق فقط. قدّم راكان تقريرًا طبيًّا موثّقًا من مستشفى حكومي. هل يجوز تأجيل اختباره؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "نعم؛ العذر المشترط (طبي موثق) متحقق وحصيلة «فقط» تنطبق.",
+   "rubric": [
+    "يطابق العذر مع الشرط",
+    "يقضي بالجواز"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['نعم', 'يجوز']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['لا يجوز']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "لائحة الاختبارات: يجوز تأجيل ا"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "nce_0017",
+   "capability": "negation_conditions_exceptions",
+   "messages": [
+    {
+     "role": "user",
+     "content": "في القاعة: كل المقاعد محجوزة إلا ثلاثة مقاعد في الصف الأخير. وصلت مجموعة من خمسة أشخاص معًا. هل يجد الخمسة مقاعد جميعًا؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <جوابك»."
+    }
+   ],
+   "reference": "لا؛ المتاح ثلاثة فقط والمطلوب خمسة.",
+   "rubric": [
+    "يقارن المتاح بالمطلوب",
+    "يقضي بعدم الكفاية"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['لا']), \"جواب خاطئ\"\nassert not any(_n(b) in _c for b in ['نعم']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "في القاعة: كل المقاعد محجوزة إ"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0001",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "صندوق فيه 4 كرات حمراء و6 كرات زرقاء. سُحبت كرة أولى دون إرجاع فكانت حمراء. ما احتمال أن تكون الكرة الثانية حمراء؟ (اكتبه كسرًا أو عددًا عشريًّا)\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "بعد سحب حمراء يبقى 3 حمر من 9 كرات؛ الاحتمال 3/9 أي ثلث.",
+   "rubric": [
+    "يحدّث العددين بعد السحب دون إرجاع",
+    "النتيجة 3/9 أو 1/3"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(0.3333333333333333))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "صندوق فيه 4 كرات حمراء و6 كرات"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0002",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "قطار يقطع 240 كم في 3 ساعات بسرعة ثابتة، ثم زادت سرعته 20 كم/ساعة. كم كيلومترًا يقطع في ساعتين بالسرعة الجديدة؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "السرعة الأولى 80 كم/س، الجديدة 100 كم/س، ففي ساعتين يقطع 200 كم.",
+   "rubric": [
+    "يحسب السرعة الأولى 80",
+    "يضيف 20",
+    "الناتج 200"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(200))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "قطار يقطع 240 كم في 3 ساعات بس"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0003",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "عمر أب ثلاثة أمثال عمر ابنه اليوم، وبعد 12 سنة يصير عمر الأب ضعف عمر الابن. كم عمر الابن الآن؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "3س+12 = 2(س+12) فينتج س=12؛ عمر الابن 12 سنة.",
+   "rubric": [
+    "يبني المعادلة صحيحًا",
+    "الناتج 12"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(12))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "عمر أب ثلاثة أمثال عمر ابنه ال"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0004",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "على سلعة سعرها 240 ريالًا تخفيض 25%، ثم تُضاف ضريبة 15% على السعر بعد التخفيض. كم السعر النهائي بالريال؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "بعد التخفيض 180، والضريبة على 180 تساوي 27، فالنهائي 207 ريالات.",
+   "rubric": [
+    "التخفيض أولًا: 180",
+    "الضريبة على السعر المخفض لا الأصلي",
+    "الناتج 207"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(207))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "على سلعة سعرها 240 ريالًا تخفي"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0005",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "في حظيرة دجاج وأرانب: 20 رأسًا و56 رجلًا في المجموع. كم عدد الأرانب؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "د+أ=20 و2د+4أ=56، فينتج أ=8 أرانب و12 دجاجة.",
+   "rubric": [
+    "يبني المعادلتين",
+    "الناتج 8"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(8))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "في حظيرة دجاج وأرانب: 20 رأسًا"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0006",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "متوسط درجات خمسة طلاب في اختبار 82. انضم إليهم طالب سادس درجته 100. كم المتوسط الجديد؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "مجموع الخمسة 410، مع السادس 510 على 6، فيساوي 85.",
+   "rubric": [
+    "يحسب المجموع لا متوسط المتوسطات",
+    "الناتج 85"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(85))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "متوسط درجات خمسة طلاب في اختبا"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0007",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "عامل يبني جدارًا في 12 يومًا، وعامل ثانٍ يبني الجدار نفسه في 6 أيام. كم يومًا يستغرقان إن عملا معًا بنفس المعدل؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "معدلاهما 1/12 و1/6، مجموعهما 1/4 جدارًا في اليوم، فيستغرقان 4 أيام.",
+   "rubric": [
+    "يجمع المعدلات لا الأيام",
+    "الناتج 4"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(4))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "عامل يبني جدارًا في 12 يومًا، "
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0008",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "عدد إذا ضُرب في 3 ثم أُضيف إليه 7 كان الناتج 43. ما العدد؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "3س+7=43 فينتج س=12.",
+   "rubric": [
+    "يعكس العمليات بالترتيب",
+    "الناتج 12"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(12))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "عدد إذا ضُرب في 3 ثم أُضيف إلي"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0009",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "قاعة انتظار فيها 6 صفوف، في كل صف 8 كراسي. أُضيف صفّان جديدان، ونُقص من كراسي كل صف كرسيٌ واحد. كم كرسيًا في القاعة الآن؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "الصفوف 8 والكراسي في الصف 7، فيكون المجموع 56.",
+   "rubric": [
+    "يحدّث العددين معًا",
+    "الناتج 56"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(56))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "قاعة انتظار فيها 6 صفوف، في كل"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0010",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "تفاحة ونصف التفاحة بريال ونصف. كم ريالًا ثمن تسع تفاحات؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "التفاحة الواحدة بريال، فالتسع بتسعة ريالات.",
+   "rubric": [
+    "يستخرج سعر الواحدة (ريال)",
+    "الناتج 9"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(9))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "تفاحة ونصف التفاحة بريال ونصف."
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0011",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "ثلاثة كتب متماثلة تزن معًا 2.4 كجم. كم كجم يزن سبعة كتب من النوع نفسه؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "الكتاب 0.8 كجم، فالسبعة 5.6 كجم.",
+   "rubric": [
+    "يحسب وزن الواحد",
+    "الناتج 5.6"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(5.6))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "ثلاثة كتب متماثلة تزن معًا 2.4"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0012",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "دفعت شركة 60% من ميزانيتها البالغة 450 ألف ريال رواتبَ، ثم دفعت ربعَ المبلغ المتبقي تسويقًا. كم ألفَ ريالٍ بلغ مبلغ التسويق؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "المتبقي بعد الرواتب 180 ألفًا، وربعه 45 ألفًا.",
+   "rubric": [
+    "يحسب المتبقي لا الأصل",
+    "الناتج 45 (ألف)"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(45))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "دفعت شركة 60% من ميزانيتها الب"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0013",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "في الساعة 3:40 تمامًا، كم درجةً تكون الزاوية الأصغر بين عقربي الساعة؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "عقرب الدقائق عند 240 درجة، والساعات عند 110 درجات (3×30 + 40×0.5)، فالفرق 130 درجة.",
+   "rubric": [
+    "يحرّك عقرب الساعات مع الدقائق",
+    "الناتج 130"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(130))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "في الساعة 3:40 تمامًا، كم درجة"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0014",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "فاز فريق كرة في 60% من مبارياته الخمس والعشرين هذا الموسم. كم مباراة لم يفز بها؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "فاز في 15 مباراة، فلم يفز في 10.",
+   "rubric": [
+    "يحسب الفائز ثم يطرح",
+    "الناتج 10"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(10))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "فاز فريق كرة في 60% من مباريات"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0015",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "ثلاثة إخوة أعمارهم أعداد صحيحة متتالية، ومجموع أعمارهم 51 سنة. كم سنة عمر الأكبر؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "الأعمار 16 و17 و18، فالأكبر 18.",
+   "rubric": [
+    "يقسم على 3 لإيجاد الأوسط",
+    "الناتج 18"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(18))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "ثلاثة إخوة أعمارهم أعداد صحيحة"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0016",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "خزان سعته 1200 لتر فارغ، يملؤه أنبوب بمعدل 45 لترًا في الدقيقة ويُفرغه صنبور مفتوح بمعدل 15 لترًا في الدقيقة. بعد كم دقيقة يمتلئ الخزان؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "الصافي 30 لترًا في الدقيقة، فيمتلئ بعد 40 دقيقة.",
+   "rubric": [
+    "يأخذ صافي المعدلين",
+    "الناتج 40"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(40))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "خزان سعته 1200 لتر فارغ، يملؤه"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "arn_0017",
+   "capability": "arithmetic_and_reasoning",
+   "messages": [
+    {
+     "role": "user",
+     "content": "السنة الكبيسة 366 يومًا. كم أسبوعًا كاملًا فيها؟\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الجواب: <العدد»."
+    }
+   ],
+   "reference": "366 = 52×7 + 2، فالأسابيع الكاملة 52.",
+   "rubric": [
+    "يقسم على 7 ويأخذ الصحيح",
+    "الناتج 52"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_m=_re.findall(r\"الجواب[:：]\\s*([^\\n»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_t=_m[-1].strip().replace(\",\",\"\").translate(str.maketrans(\"٠١٢٣٤٥٦٧٨٩\",\"0123456789\"))\ndef _val(x):\n    x=x.strip()\n    if \"/\" in x:\n        a,b=x.split(\"/\",1)\n        try: return float(a)/float(b)\n        except Exception: return None\n    m2=_re.search(r\"-?\\d+(\\.\\d+)?\",x)\n    return float(m2.group()) if m2 else None\n_v=_val(_t)\nassert _v is not None, \"لا عدد في سطر الجواب\"\nassert abs(_v-(52))<1e-9, \"قيمة خاطئة\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "السنة الكبيسة 366 يومًا. كم أس"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0001",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "صحّح الأخطاء الإملائية في هذه الجملة، واكتبها مصححةً فقط: «ذهب الولد إلي المدرسه في الصباح الباكر.»"
+    }
+   ],
+   "reference": "«ذهب الولد إلى المدرسة في الصباح الباكر» — إلى بألف مقصورة والمدرسة بتاء مربوطة.",
+   "rubric": [
+    "إلى بألف",
+    "المدرسة بتاء مربوطة",
+    "لا تغيير في المعنى"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "إلى"
+    },
+    {
+     "kind": "contains",
+     "value": "المدرسة"
+    },
+    {
+     "kind": "excludes",
+     "value": "إلي "
+    },
+    {
+     "kind": "excludes",
+     "value": "المدرسه"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحّح الأخطاء الإملائية في هذه "
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد إلى"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه إلى"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا إلى"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد المدرسة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه المدرسة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا المدرسة"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0002",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "أعد صياغة هذه الجملة بضمير الغائب المفرد دون تغيير معناها: «ذهبتُ إلى السوق واشتريتُ فاكهة.»"
+    }
+   ],
+   "reference": "«ذهب إلى السوق واشترى فاكهة» — بلا ضمير متكلم.",
+   "rubric": [
+    "ضمير الغائب",
+    "المعنى محفوظ",
+    "لا يبقى ضمير المتكلم"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "ذهب"
+    },
+    {
+     "kind": "contains",
+     "value": "اشترى"
+    },
+    {
+     "kind": "excludes",
+     "value": "ذهبتُ"
+    },
+    {
+     "kind": "excludes",
+     "value": "اشتريتُ"
+    },
+    {
+     "kind": "excludes",
+     "value": "أعد صياغة هذه الجملة بضمير الغ"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد ذهب"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه ذهب"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا ذهب"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد اشترى"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه اشترى"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا اشترى"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0003",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "لخّص الخبر التالي في جملة واحدة فقط: «افتتحت شركة النخبة للتقنية فرعها الجديد في مدينة الخبر يوم الأربعاء الماضي، وسيوفر الفرع مئة وظيفة للشباب في المنطقة الشرقية خلال عامين.»"
+    }
+   ],
+   "reference": "جملة واحدة تجمع الافتتاح والمكان والوظائف، مثل: «افتتحت شركة النخبة فرعها بالخبر الأربعاء الماضي ليوفر مئة وظيفة خلال عامين».",
+   "rubric": [
+    "جملة واحدة",
+    "الخبر والشركة حاضران",
+    "الوظائف مذكورة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "الخبر"
+    },
+    {
+     "kind": "contains",
+     "value": "وظيف"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_a=__model_raw_answer__.strip()\n_s=[x for x in _re.split(r\"[.!؟?\\n]+\",_a) if x.strip()]\nassert 1<=len(_s)<=2, \"عدد الجمل خارج المطلوب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "لخّص الخبر التالي في جملة واحد"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الخبر"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الخبر"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الخبر"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد وظيف"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه وظيف"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا وظيف"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0004",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اكتب جملة خبرية واحدة تامة الأركان تعلن فيها انطلاق معرض الكتاب في جدة مساء أمس."
+    }
+   ],
+   "reference": "جملة خبرية تتضمن المعرض والمدينة والزمان، مثل: «انطلق معرض الكتاب في جدة مساء أمس».",
+   "rubric": [
+    "معرض الكتاب حاضر",
+    "جدة حاضرة",
+    "مساء أمس حاضرة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "معرض الكتاب"
+    },
+    {
+     "kind": "contains",
+     "value": "جدة"
+    },
+    {
+     "kind": "contains",
+     "value": "أمس"
+    },
+    {
+     "kind": "excludes",
+     "value": "اكتب جملة خبرية واحدة تامة الأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد معرض الكتاب"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه معرض الكتاب"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا معرض الكتاب"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد جدة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه جدة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا جدة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد أمس"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه أمس"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا أمس"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0005",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "صحّح الخطأ النحوي في الجملة التالية، واكتبها مصححة فقط: «المعلمون المخلصون مجتهدين في عملهم.»"
+    }
+   ],
+   "reference": "«المعلمون المخلصون مجتهدون في عملهم» — الخبر يرفع بالواو لأنه جمع مذكر سالم.",
+   "rubric": [
+    "يرفع الخبر بالواو: مجتهدون",
+    "لا يغيّر بقية الجملة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "مجتهدون"
+    },
+    {
+     "kind": "excludes",
+     "value": "مجتهدين"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحّح الخطأ النحوي في الجملة ال"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد مجتهدون"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه مجتهدون"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا مجتهدون"
+    }
+   ],
+   "critical": true
+  },
+  {
+   "case_id": "aed_0006",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "حوّل الجملة الخبرية التالية إلى سؤال بأداة «هل» دون تغيير معناها: «الاختبار النهائي يشمل الوحدة الخامسة.»"
+    }
+   ],
+   "reference": "«هل يشمل الاختبار النهائي الوحدة الخامسة؟» — بأداة هل وعلامة استفهام.",
+   "rubric": [
+    "يبدأ بـ«هل»",
+    "علامة استفهام في النهاية",
+    "المعنى محفوظ"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "هل"
+    },
+    {
+     "kind": "contains",
+     "value": "؟"
+    },
+    {
+     "kind": "excludes",
+     "value": "حوّل الجملة الخبرية التالية إل"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد هل"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه هل"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا هل"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد ؟"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه ؟"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا ؟"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0007",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اكتب منشور تهنئة باليوم الوطني لا يتجاوز خمس عشرة كلمة، ويتضمن كلمة «وطن»."
+    }
+   ],
+   "reference": "منشور قصير من خمس عشرة كلمة أو أقل فيه «وطن»، مثل: «دام وطننا شامخًا عزيزًا، وكل عام ووطن الغالٍ بخير».",
+   "rubric": [
+    "خمس عشرة كلمة أو أقل",
+    "تتضمن «وطن»",
+    "نبرة تهنئة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "وطن"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "_a=__model_raw_answer__.strip()\n_w=_a.split()\nassert 3<=len(_w)<=16, \"عدد الكلمات خارج المطلوب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "اكتب منشور تهنئة باليوم الوطني"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد وطن"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه وطن"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا وطن"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0008",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "أضِف علامات الترقيم الناقصة إلى الجملة التالية واكتبها كاملة: «متى تسافر سألتُ أخي فقال غدًا إن شاء الله»"
+    }
+   ],
+   "reference": "«متى تسافر؟» سألتُ أخي، فقال: «غدًا إن شاء الله». — علامة استفهام بعد السؤال ونقطتان قبل الجواب.",
+   "rubric": [
+    "علامة استفهام بعد السؤال",
+    "فصل القول عن الجواب",
+    "لا تغيير في الكلمات"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "؟"
+    },
+    {
+     "kind": "contains",
+     "value": "غدًا"
+    },
+    {
+     "kind": "excludes",
+     "value": "أضِف علامات الترقيم الناقصة إل"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد ؟"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه ؟"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا ؟"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد غدًا"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه غدًا"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا غدًا"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0009",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "أعد ترتيب الجمل الثلاث لتصنع حدثًا مترابطًا زمنيًّا: (1) استيقظ نشيطًا باكرًا. (2) نام الطفل مبكرًا. (3) شعر بالنعاس بعد العشاء.\n\nاختم جوابك بسطرٍ أخيرٍ وحيد بصيغة: «الترتيب: <جوابك»."
+    }
+   ],
+   "reference": "الترتيب الزمني: (3) شعر بالنعاس، ثم (2) نام مبكرًا، ثم (1) استيقظ نشيطًا.",
+   "rubric": [
+    "الترتيب 3 ثم 2 ثم 1",
+    "تعليل زمني سليم"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_m=_re.findall(r\"الترتيب[:：]\\s*([^\\n.»]+)\",__model_raw_answer__)\nassert _m, \"لا سطر جواب بصيغة ثابتة\"\n_c=_n(_m[-1])\nassert any(_n(g) in _c for g in ['3', '٢']), \"جواب خاطئ\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "أعد ترتيب الجمل الثلاث لتصنع ح"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0010",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "احذف الحشو من الجملة التالية دون أن يتغير معناها، واكتبها بعد الحذف فقط: «في الحقيقة والواقع، فإن الماء — كما هو معروف للجميع — ضروري للحياة.»"
+    }
+   ],
+   "reference": "«الماء ضروري للحياة» — حُذفت «في الحقيقة والواقع» و«كما هو معروف للجميع».",
+   "rubric": [
+    "الجوهر محفوظ",
+    "عبارات الحشو محذوفة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "الماء"
+    },
+    {
+     "kind": "contains",
+     "value": "ضروري"
+    },
+    {
+     "kind": "contains",
+     "value": "الحياة"
+    },
+    {
+     "kind": "excludes",
+     "value": "الحقيقة والواقع"
+    },
+    {
+     "kind": "excludes",
+     "value": "معروف للجميع"
+    },
+    {
+     "kind": "excludes",
+     "value": "احذف الحشو من الجملة التالية د"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الماء"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الماء"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الماء"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد ضروري"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه ضروري"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا ضروري"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الحياة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الحياة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الحياة"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0011",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اكتب عنوانًا صحفيًّا موجزًا لهذا الخبر، لا يتجاوز عشر كلمات: «توّج فريق مدرسة الفتح الثانوية ببطولة منطقة تبوك لكرة القدم بعد فوزه على فريق مدرسة الأمل بثلاثة أهداف مقابل هدف في المباراة النهائية مساء أمس.»"
+    }
+   ],
+   "reference": "عنوان من عشر كلمات أو أقل يلتقط البطولة والفريق، مثل: «فريق مدرسة الفتح بطلًا لمنطقة تبوك لكرة القدم».",
+   "rubric": [
+    "عشر كلمات أو أقل",
+    "البطولة والفريق في العنوان"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "الفتح"
+    },
+    {
+     "kind": "contains",
+     "value": "بطول"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "_a=__model_raw_answer__.strip()\n_w=_a.split()\nassert 3<=len(_w)<=11, \"عدد الكلمات خارج المطلوب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "اكتب عنوانًا صحفيًّا موجزًا له"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الفتح"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الفتح"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الفتح"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد بطول"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه بطول"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا بطول"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0012",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "حوّل الجملة التالية إلى المبني للمجهول، واكتبها فقط: «كتب الطالبُ الدرسَ في دفتره.»"
+    }
+   ],
+   "reference": "«كُتب الدرسُ في الدفتر» — يُحذف الفاعل ويُنصب المفعول نائبَ فاعل مرفوعًا.",
+   "rubric": [
+    "يحذف الفاعل (الطالب)",
+    "نائب الفاعل الدرس",
+    "لا يبقى اسم الفاعل في الجملة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "كتب الدرس"
+    },
+    {
+     "kind": "excludes",
+     "value": "الطالب"
+    },
+    {
+     "kind": "excludes",
+     "value": "حوّل الجملة التالية إلى المبني"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد كتب الدرس"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه كتب الدرس"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا كتب الدرس"
+    }
+   ],
+   "critical": true
+  },
+  {
+   "case_id": "aed_0013",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "صحّح كتابة «أيضًا» في الجملة التالية واكتبها مصححة فقط: «الطلاب المجتهدون ينجحون في دراستهم وأيضا في نشاطاتهم.»"
+    }
+   ],
+   "reference": "«... وأيضًا في نشاطاتهم» — أيضًا ظرف منصوب بالألف والنون.",
+   "rubric": [
+    "أيضًا بألف ونون",
+    "لا تغيير آخر"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "أيضًا"
+    },
+    {
+     "kind": "excludes",
+     "value": "أيضا "
+    },
+    {
+     "kind": "excludes",
+     "value": "صحّح كتابة «أيضًا» في الجملة ا"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد أيضًا"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه أيضًا"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا أيضًا"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0014",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اكتب ثلاث جمل عن فضل القراءة، بحيث تبدأ كل جملة منها بفعل."
+    }
+   ],
+   "reference": "ثلاث جمل تبدأ كل منها بفعل، مثل: «اقرأ كل يوم صفحة. تفتح القراءةُ عقلك لعوالم جديدة. اجعل الكتاب رفيقك الدائم».",
+   "rubric": [
+    "ثلاث جمل",
+    "كل جملة تبدأ بفعل",
+    "الموضوع فضل القراءة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "قراءة"
+    },
+    {
+     "kind": "contains",
+     "value": "القراءة"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_a=__model_raw_answer__.strip()\n_s=[x for x in _re.split(r\"[.!؟?\\n]+\",_a) if x.strip()]\nassert 3<=len(_s)<=4, \"عدد الجمل خارج المطلوب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "اكتب ثلاث جمل عن فضل القراءة، "
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد قراءة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه قراءة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا قراءة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد القراءة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه القراءة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا القراءة"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0015",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "حوّل هذا الحوار العامي إلى فصحى سليمة: «شلونك؟ عساك طيب. ودني أشوفك باجر.»"
+    }
+   ],
+   "reference": "«كيف حالك؟ أتمنى أن تكون بخير. أود أن أراك غدًا» — بلا عامية.",
+   "rubric": [
+    "فصحى سليمة",
+    "غدًا بدل باجر",
+    "لا تبقى الكلمات العامية"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "كيف"
+    },
+    {
+     "kind": "contains",
+     "value": "غدًا"
+    },
+    {
+     "kind": "excludes",
+     "value": "شلون"
+    },
+    {
+     "kind": "excludes",
+     "value": "باجر"
+    },
+    {
+     "kind": "excludes",
+     "value": "حوّل هذا الحوار العامي إلى فصح"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد كيف"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه كيف"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا كيف"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد غدًا"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه غدًا"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا غدًا"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "aed_0016",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "صحّح التاء المربوطة والهاء في الجملة التالية واكتبها مصححة فقط: «كانت حديقه المدرسه جميله والجو معتدله.»"
+    }
+   ],
+   "reference": "«كانت حديقة المدرسة جميلة والجو معتدل» — ثلاث تاءات مربوطة، والجو معتدل بلا تاء (مذكر).",
+   "rubric": [
+    "حديقة والمدرسة وجميلة بتاء",
+    "معتدل بلا تاء (مذكر)"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "حديقة"
+    },
+    {
+     "kind": "contains",
+     "value": "جميلة"
+    },
+    {
+     "kind": "contains",
+     "value": "معتدل"
+    },
+    {
+     "kind": "excludes",
+     "value": "حديقه"
+    },
+    {
+     "kind": "excludes",
+     "value": "معتدله"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحّح التاء المربوطة والهاء في "
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد حديقة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه حديقة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا حديقة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد جميلة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه جميلة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا جميلة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد معتدل"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه معتدل"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا معتدل"
+    }
+   ],
+   "critical": true
+  },
+  {
+   "case_id": "aed_0017",
+   "capability": "arabic_editing_and_writing",
+   "messages": [
+    {
+     "role": "user",
+     "content": "اكتب دعوة من سطرين كحد أقصى تدعو فيها جارك لمجلس عشاء يوم الجمعة القادم، بلغة مهذبة."
+    }
+   ],
+   "reference": "دعوة مهذبة من سطرين أو أقل تتضمن العشاء والجمعة، مثل: «جاري الكريم، يشرفني حضورك لمجلس عشاء يوم الجمعة القادم.».",
+   "rubric": [
+    "سطران أو أقل",
+    "العشاء والجمعة حاضران",
+    "نبرة مهذبة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "الجمعة"
+    },
+    {
+     "kind": "contains",
+     "value": "عشاء"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "_a=__model_raw_answer__.strip()\n_l=[x for x in _a.splitlines() if x.strip()]\nassert 1<=len(_l)<=3, \"عدد الأسطر خارج المطلوب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "اكتب دعوة من سطرين كحد أقصى تد"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الجمعة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الجمعة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الجمعة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد عشاء"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه عشاء"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا عشاء"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "trf_0001",
+   "capability": "translation_fidelity",
+   "messages": [
+    {
+     "role": "user",
+     "content": "ترجم الجملة التالية إلى العربية ترجمة أمينة: «The meeting will not be held on Friday.»"
+    }
+   ],
+   "reference": "«لن يُعقد الاجتماع يوم الجمعة» — النفي (will not) واجب الحفظ، واليوم الجمعة.",
+   "rubric": [
+    "النفي محفوظ (لن)",
+    "الجمعة محفوظة",
+    "لا قلب للمعنى"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "لن"
+    },
+    {
+     "kind": "contains",
+     "value": "الجمعة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ترجم الجملة التالية إلى العربي"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد لن"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه لن"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا لن"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الجمعة"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الجمعة"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الجمعة"
+    }
+   ],
+   "critical": true
+  },
+  {
+   "case_id": "trf_0002",
+   "capability": "translation_fidelity",
+   "messages": [
+    {
+     "role": "user",
+     "content": "ترجم إلى العربية: «All students passed the exam except two.»"
+    }
+   ],
+   "reference": "«اجتاز جميع الطلاب الاختبار إلا اثنين» — الاستثناء (except two) واجب الظهور.",
+   "rubric": [
+    "الاستثناء محفوظ",
+    "العدد اثنان محفوظ"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "إلا"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_a=_n(__model_raw_answer__)\nassert any(_n(x) in _a for x in ['اثنين', 'طالبان', '2']), \"يفتقد عنصرًا جوهريًّا في الجواب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "ترجم إلى العربية: «All student"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد إلا"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه إلا"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا إلا"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "trf_0003",
+   "capability": "translation_fidelity",
+   "messages": [
+    {
+     "role": "user",
+     "content": "ترجم إلى العربية: «You must submit the report before Thursday.»"
+    }
+   ],
+   "reference": "«يجب أن تسلّم التقرير قبل يوم الخميس» — الإلزام (must) لا يتحول إلى «يمكنك».",
+   "rubric": [
+    "الإلزام محفوظ (يجب/عليك)",
+    "قبل الخميس محفوظة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "الخميس"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_a=_n(__model_raw_answer__)\nassert any(_n(x) in _a for x in ['يجب', 'عليك', 'يلزم', 'لزاما']), \"يفتقد عنصرًا جوهريًّا في الجواب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "ترجم إلى العربية: «You must su"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد الخميس"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه الخميس"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا الخميس"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "trf_0004",
+   "capability": "translation_fidelity",
+   "messages": [
+    {
+     "role": "user",
+     "content": "ترجم إلى العربية: «The price increased by 15%, not 50%.»"
+    }
+   ],
+   "reference": "«زاد السعر بنسبة 15% لا 50%» — الرقمان محفوظان واتجاه التصحيح (ليس 50) ظاهر.",
+   "rubric": [
+    "الرقم 15 محفوظ",
+    "التصحيح «لا 50%» محفوظ"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "15"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_a=_n(__model_raw_answer__)\nassert any(_n(x) in _a for x in ['ليس', 'لا 50', 'وليس']), \"يفتقد عنصرًا جوهريًّا في الجواب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "ترجم إلى العربية: «The price i"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد 15"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه 15"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا 15"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "trf_0005",
+   "capability": "translation_fidelity",
+   "messages": [
+    {
+     "role": "user",
+     "content": "ترجم إلى الإنجليزية: «لا يُسمح بالتدخين إلا في المنطقة المخصصة.»"
+    }
+   ],
+   "reference": "«Smoking is not allowed except in the designated area» أو «Smoking is only allowed in the designated area» — النفي/الاستثناء واجب.",
+   "rubric": [
+    "الاستثناء محفوظ (except/only)",
+    "المعنى غير مقلوب"
+   ],
+   "checks": [
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\n_a=__model_raw_answer__\nassert _re.search(r\"(?i)smok\",_a), \"التدخين غير مترجم\"\nassert _re.search(r\"(?i)(only|except|designated)\",_a), \"الاستثناء أو المخصصة غير مترجم\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "ترجم إلى الإنجليزية: «لا يُسمح"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "trf_0006",
+   "capability": "translation_fidelity",
+   "messages": [
+    {
+     "role": "user",
+     "content": "ترجم إلى العربية: «No one is allowed to leave the hall early.»"
+    }
+   ],
+   "reference": "«لا يُسمح لأحد بمغادرة القاعة مبكرًا» — النفي العام (No one) واجب الحفظ.",
+   "rubric": [
+    "النفي العام محفوظ",
+    "المغادرة المبكرة محفوظة"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "مبكر"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_a=_n(__model_raw_answer__)\nassert any(_n(x) in _a for x in ['لا يسمح', 'لا يحق', 'ممنوع', 'لا احد']), \"يفتقد عنصرًا جوهريًّا في الجواب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "ترجم إلى العربية: «No one is a"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد مبكر"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه مبكر"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا مبكر"
+    }
+   ],
+   "critical": false
+  },
+  {
+   "case_id": "trf_0007",
+   "capability": "translation_fidelity",
+   "messages": [
+    {
+     "role": "user",
+     "content": "ترجم إلى العربية: «The project was completed two weeks ahead of schedule.»"
+    }
+   ],
+   "reference": "«أُنجز المشروع قبل الموعد المقرر بأسبوعين» — «قبل الموعد» لا تُقلب إلى «متأخرًا».",
+   "rubric": [
+    "أسبوعان محفوظان",
+    "الاتجاه: قبل الموعد لا بعده"
+   ],
+   "checks": [
+    {
+     "kind": "contains",
+     "value": "أسبوعين"
+    },
+    {
+     "kind": "python_sandbox",
+     "value": "import re as _re\ndef _n(s):\n    s=_re.sub(r\"[\\u0640\\u064B-\\u0652\\u0670\\u06D6-\\u06ED]\",\"\",s)\n    return s.replace(\"أ\",\"ا\").replace(\"إ\",\"ا\").replace(\"آ\",\"ا\").replace(\"ى\",\"ي\").replace(\"ة\",\"ه\")\n_a=_n(__model_raw_answer__)\nassert any(_n(x) in _a for x in ['قبل الموعد', 'قبل المجدول', 'مبكرا', 'قبل الوقت']), \"يفتقد عنصرًا جوهريًّا في الجواب\"\n"
+    },
+    {
+     "kind": "excludes",
+     "value": "ترجم إلى العربية: «The project"
+    },
+    {
+     "kind": "excludes",
+     "value": "صحيح وخاطئ"
+    },
+    {
+     "kind": "excludes",
+     "value": "ولا يوجد خطأ"
+    },
+    {
+     "kind": "excludes",
+     "value": "موجود وغير موجود"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا يوجد أسبوعين"
+    },
+    {
+     "kind": "excludes",
+     "value": "ليس فيه أسبوعين"
+    },
+    {
+     "kind": "excludes",
+     "value": "لا أسبوعين"
+    }
+   ],
+   "critical": false
+  }
+ ]
+}
