@@ -164,7 +164,7 @@ class FakeAdapter(Adapter):
     def review_argv(self, worktree: Path, base_branch: str) -> list[str]:
         return ["fake-review", "--base", base_branch]
 
-    def start(self, argv, stdin_text, cwd, stdout_path, stderr_path):
+    def start(self, argv, stdin_text, cwd, stdout_path, stderr_path, exit_path=None):
         assert_no_bypass(argv)
         self.seen.append({"argv": argv, "brief": stdin_text, "cwd": str(cwd)})
         stdout_path.parent.mkdir(parents=True, exist_ok=True)

@@ -54,13 +54,15 @@ class ClaudeAdapter(Adapter):
                 "--max-budget-usd", f"{budget_usd:.2f}", "--settings", SANDBOX_SETTINGS]
 
     def parse_work(self, returncode: int, stdout: str, stderr: str, out_dir: Path) -> WorkerResult:
-        unavailable = unavailable_code(returncode, f"{stdout}\n{stderr}") if returncode != 0 else None
         try:
             payload = json.loads(stdout.strip().splitlines()[-1]) if stdout.strip() else {}
         except (json.JSONDecodeError, IndexError):
             payload = {}
         if not isinstance(payload, dict):
             payload = {}
+        # خطأُ الدخول يأتي بخروجٍ صفر و`is_error` (دخان ٦ أكتوبر)؛ فالتعذّرُ يُقرأ من النصّ عند الفشل المعلَن أيضًا
+        failed = returncode != 0 or bool(payload.get("is_error"))
+        unavailable = unavailable_code(returncode, f"{stdout}\n{stderr}") if failed else None
         return WorkerResult(ok=returncode == 0 and not payload.get("is_error") and unavailable is None,
                             text=str(payload.get("result") or ""), session_id=payload.get("session_id"),
                             cost_estimate_usd=payload.get("total_cost_usd"), returncode=returncode, unavailable=unavailable)

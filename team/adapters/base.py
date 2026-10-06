@@ -131,14 +131,20 @@ class Adapter:
                             text=stdout, returncode=returncode, unavailable=unavailable)
 
     # — التشغيل (يُبدَّل في الاختبارات) —
-    def start(self, argv: list[str], stdin_text: str, cwd: Path, stdout_path: Path, stderr_path: Path):
-        """يطلق العمليةَ ويعيد مقبضَها (له pid وwait وpoll)؛ المدخلُ عبر stdin لا عبر الأمر."""
+    def start(self, argv: list[str], stdin_text: str, cwd: Path, stdout_path: Path, stderr_path: Path, exit_path: Path | None = None):
+        """يطلق العمليةَ ويعيد مقبضَها (له pid وwait وpoll)؛ المدخلُ عبر stdin لا عبر الأمر.
+
+        مع `exit_path` يُلفّ الأمرُ بغلاف shell يكتب رمزَ الخروج في الملف عند انتهاء العامل، فلا يعتمد الدليلُ على بقاء المرسِل حيًّا
+        حتى النهاية (مهلةٌ أو انقطاع؛ ملاحظة Codex على #344)."""
         assert_no_bypass(argv)
         stdout_path.parent.mkdir(parents=True, exist_ok=True)
         out = stdout_path.open("w", encoding="utf-8")
         err = stderr_path.open("w", encoding="utf-8")
-        proc = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=out, stderr=err, cwd=str(cwd),
-                                env=worker_env(), text=True)
+        env = worker_env()
+        if exit_path is not None:
+            env["DIWAN_TEAM_EXIT_FILE"] = str(exit_path)
+            argv = ["/bin/sh", "-c", '"$@"; rc=$?; printf %s "$rc" > "$DIWAN_TEAM_EXIT_FILE"; exit $rc', "team-worker", *argv]
+        proc = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=out, stderr=err, cwd=str(cwd), env=env, text=True)
         assert proc.stdin is not None
         proc.stdin.write(stdin_text)
         proc.stdin.close()

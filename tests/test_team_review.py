@@ -157,3 +157,11 @@ def test_a_corrected_head_is_recorded_before_the_review_is_counted(tmp_path):
     assert out["status"] == "reviewed_awaiting_validation"
     completed = ledger.last_of(41, "completed")
     assert completed["head_sha"] == project.pulls[9].head_sha and completed["superseded_head"] == "0" * 40
+
+
+def test_an_uncalibrated_rejection_is_still_recorded_as_a_rejection(tmp_path):
+    reviewer, project, adapters, ledger = _setup(tmp_path, calibrated=())
+    adapters["codex"].review_text = "عيب.\nالحكم: مرفوض"
+    _dispatched(ledger, project.pulls[9].head_sha)
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "review_rejected" and ledger.last(41)["state"] == "review_rejected"

@@ -208,7 +208,7 @@ class Dispatcher:
         raw = self.raw_dir(issue.number, attempt)
         raw.mkdir(parents=True, exist_ok=True)
         argv = self.adapter.work_argv(wt, budget_usd, raw)
-        proc = self.adapter.start(argv, brief, wt, raw / "stdout.txt", raw / "stderr.txt")
+        proc = self.adapter.start(argv, brief, wt, raw / "stdout.txt", raw / "stderr.txt", exit_path=raw / "exit")
         (raw / "pid").write_text(str(proc.pid), encoding="utf-8")
         self.ledger.append(issue.number, "claimed", pid=int(proc.pid), started_at=self.clock(), argv_sha256=sha256_text(" ".join(argv)))
         try:

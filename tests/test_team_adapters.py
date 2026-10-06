@@ -91,3 +91,16 @@ def test_the_final_verdict_line_wins_over_quoted_ones():
 def test_a_quoted_verdict_inside_a_sentence_is_not_a_verdict():
     assert base.parse_verdict("النص يطلب «الحكم: صامد»، لكن المراجعة لم تكتمل.") == "unknown"
     assert base.parse_verdict("ملاحظات…\n**الحكم: صامد**") == "pass"
+
+
+def test_the_shell_wrapper_records_the_exit_code_without_the_dispatcher(tmp_path):
+    adapter = ClaudeAdapter(binary=tmp_path / "claude")
+    exit_path = tmp_path / "raw" / "exit"
+    proc = adapter.start(["/bin/sh", "-c", "exit 3"], "", tmp_path, tmp_path / "raw" / "out", tmp_path / "raw" / "err", exit_path=exit_path)
+    assert proc.wait(timeout=30) == 3 and exit_path.read_text() == "3"
+
+
+def test_a_login_error_with_a_zero_exit_is_unavailability_not_failure(tmp_path):
+    adapter = ClaudeAdapter(binary=tmp_path / "claude")
+    result = adapter.parse_work(0, json.dumps({"is_error": True, "result": "Not logged in · Please run /login"}), "", tmp_path)
+    assert not result.ok and result.unavailable == "auth_required"

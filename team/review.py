@@ -159,15 +159,17 @@ class Reviewer:
             # رأسٌ مصحَّح دُفع بعد completed: يُقيَّد completed جديد فيسقط ما قبله (ملاحظة Codex على #344)
             self.ledger.append(issue, "completed", head_sha=head, branch=completed["branch"], pr=pull.number, pr_url=pull.url,
                                superseded_head=completed.get("head_sha"))
+        rejected = verdict != "pass"
+        if rejected:
+            # مراجعةٌ رافضة أو بلا حكمٍ صريح تُقيَّد باسمها ولا تصير verified أبدًا، **ولو كان المراجع غير معايَر**:
+            # الرفضُ يُغلق احتياطًا، والمعايرةُ شرطُ الاحتساب للقبول لا للرفض (ملاحظتا Codex على #344)
+            self.ledger.append(issue, "review_rejected", head_sha=head, review_ref=ref, reviewer=adapter.spec.name,
+                               reviewer_family=family, verdict=verdict)
+            return "review_rejected"
         if not is_calibrated(load_calibration(self.home), adapter.spec.name, self.clock()):
             self.ledger.append(issue, "review_uncalibrated", head_sha=head, reviewer=adapter.spec.name, reviewer_family=family,
                                review_ref=ref, verdict=verdict)
             return "review_uncalibrated"
-        if verdict != "pass":
-            # مراجعةٌ رافضة أو بلا حكمٍ صريح تُقيَّد باسمها ولا تصير verified أبدًا (ملاحظة Codex على #344)
-            self.ledger.append(issue, "review_rejected", head_sha=head, review_ref=ref, reviewer=adapter.spec.name,
-                               reviewer_family=family, verdict=verdict)
-            return "review_rejected"
         state = self.ledger.main_state(issue)["state"]
         if state == "validated":
             self.ledger.append(issue, "verified", head_sha=head, review_ref=ref, reviewer=adapter.spec.name, reviewer_family=family, verdict=verdict)
