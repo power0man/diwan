@@ -25,7 +25,7 @@ import re
 import shutil
 import subprocess
 import sys
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -752,7 +752,15 @@ class Dispatcher:
         return {**plan, "status": "completed", "head_sha": head, "superseded_head": old_head}
 
     def _revision_open(self, issue_number: int, attempt: int) -> bool:
-        """آخرُ جولةِ إعادة عملٍ للمحاولة لم تُختم (لا `completed`/`validation_failed`/`worker_unavailable` برقمها) أو عاملُها حيّ."""
+        """آخرُ جولةِ إعادة عملٍ للمحاولة لم تُختم (لا `completed`/`validation_failed`/`worker_unavailable` برقمها) أو عاملُها حيّ؛
+        ومعها مجلّداتُ جولاتٍ على القرص بلا قيد (انقطاعٌ بين الإطلاق والقيد): علامةُ `launching` بلا `exit`، أو معرّفٌ حيّ
+        (ملاحظة Codex العاشرة على #349)."""
+        base = self.raw_dir(issue_number, attempt)
+        for raw in sorted(base.glob("revision-*")) if base.exists() else []:
+            if (raw / "launching").exists() and not (raw / "exit").exists():
+                return True
+            if self._round_alive({}, raw):
+                return True
         rounds = self.revision_rounds(issue_number, attempt)
         if not rounds:
             return False
@@ -820,12 +828,15 @@ class Dispatcher:
             row = {"worktree": str(path), "branch": branch, "pull": pull.number if pull else None, "merged": merged, "removed": False,
                    "skipped": None, "ignored": []}
             if merged:
-                blockers, row["ignored"] = self.gc_blockers(path, branch)
-                if blockers:
-                    row["skipped"] = blockers
-                elif yes:
-                    self._git("worktree", "remove", "--force", str(path))   # القوّةُ لملفِّ التكليف غير المتتبَّع ومخابئ التشغيل وحدها
-                    row["removed"] = True
+                match = re.match(r"^team/(\d+)-", branch)
+                lock = self._launch_lock(int(match.group(1))) if match else nullcontext()
+                with lock:                                  # لا إطلاقَ جولةٍ بين فحص الموانع والحذف (ملاحظة Codex العاشرة على #349)
+                    blockers, row["ignored"] = self.gc_blockers(path, branch)
+                    if blockers:
+                        row["skipped"] = blockers
+                    elif yes:
+                        self._git("worktree", "remove", "--force", str(path))   # القوّةُ لملفِّ التكليف غير المتتبَّع ومخابئ التشغيل وحدها
+                        row["removed"] = True
             found.append(row)
         return found
 

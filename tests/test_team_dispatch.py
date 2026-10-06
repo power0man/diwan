@@ -1003,3 +1003,39 @@ def test_a_launch_that_fails_before_the_wrapper_starts_is_named_and_not_a_perman
     adapter.seen = list(adapter.seen)
     dispatcher.adapter = adapter                                          # الثنائيُّ عاد: الجولةُ التالية تُطلق لا تُرفض
     assert dispatcher.revise(41, execute=True)["status"] == "completed"
+
+
+def test_gc_sees_an_unrecorded_live_revision_worker(tmp_path):
+    """جولةٌ أُطلقت ولم تُقيَّد (مجلّدٌ بمعرّفٍ حيّ بلا قيد revision_started): gc لا يحذف نسخةَ العمل تحت قدمَي عاملها."""
+    dispatcher, project, _adapter, _ledger, repo = _setup(tmp_path)
+    worktree, _out = _merged_for_real(dispatcher, project, repo)
+    assert dispatcher.gc(yes=False)[0]["skipped"] is None
+    raw = dispatcher.raw_dir(41, 1) / "revision-1"
+    raw.mkdir(parents=True)
+    (raw / "launching").write_text("2026-10-06T10:00:00+00:00", encoding="utf-8")
+    (raw / "child_pid").write_text(str(os.getpid()), encoding="utf-8")
+    rows = dispatcher.gc(yes=True)
+    assert rows[0]["removed"] is False and rows[0]["skipped"] == ["revision_open"] and worktree.exists()
+
+
+def test_gc_waits_for_the_launch_lock_of_the_issue(tmp_path):
+    import threading
+
+    from core.filelock import lock as file_lock, unlock as file_unlock
+
+    dispatcher, project, _adapter, _ledger, repo = _setup(tmp_path)
+    _worktree, _out = _merged_for_real(dispatcher, project, repo)
+    lock_path = dispatcher.home / "locks" / "launch-41.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    holder = lock_path.open("a", encoding="utf-8")
+    file_lock(holder)
+    done, result = threading.Event(), {}
+    thread = threading.Thread(target=lambda: (result.update(rows=dispatcher.gc(yes=False)), done.set()), daemon=True)
+    thread.start()
+    try:
+        assert not done.wait(0.4), "gc مضى والقفلُ محجوز"
+    finally:
+        file_unlock(holder)
+        holder.close()
+    assert done.wait(30) and result["rows"][0]["merged"] is True
+    thread.join(5)
