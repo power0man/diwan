@@ -57,11 +57,10 @@ def run_component(component: str, provider, *, model: str, model_version: str, b
         raise AblationError("seeds_invalid", "يلزم تسلسل 0..N-1 بعدد فردي لا يقل عن 3")
     # مخبأُ الاستئناف لطريق الحلقة وحده: مُشغِّلُ البحث يقيس بنكَه دفعةً واحدة (ثلاثون سؤالًا) فلا يحتاجه
     cache = RunCache(checkpoint) if checkpoint is not None and spec["runner"] != "research" else None
+    rows_in_file = len(cache.rows) if cache is not None else 0
     config = {"runner_version": RUNNER_VERSION, "component": component, "model": model,
               "model_version": model_version, "arms": spec["arms"], "options": dict(options),
-              "seeds": list(seeds), "seed_aggregation": protocol()["seed_aggregation"],
-              "checkpoint": {"path": str(checkpoint), "measured_rows_reused": len(cache.rows)}
-              if cache is not None else None}
+              "seeds": list(seeds), "seed_aggregation": protocol()["seed_aggregation"], "checkpoint": None}
     if spec["runner"] == "research":
         from evaluation.research_runner import RUNNER_VERSION as RESEARCH_RUNNER_VERSION, run_bank
         config["research_runner_version"] = RESEARCH_RUNNER_VERSION
@@ -82,6 +81,11 @@ def run_component(component: str, provider, *, model: str, model_version: str, b
                             "sandbox_cases_included": sandbox, "cases": len(cases)})
         rows = {side: run_seeded_arm(cases, provider, arm(spec["arms"][side]), seeds, cache, model=model,
                                      model_version=model_version, **options) for side in ("on", "off")}
+    if cache is not None:
+        # يُعدّ ما استُعمل من الملف فعلًا بعد القياس، لا مفاتيحُه قبله: فصفوفُ بصمةٍ أو حالاتٍ أخرى ليست استعادة (ملاحظة Codex على #192)
+        config["checkpoint"] = {"path": str(checkpoint), "rows_in_file_at_start": rows_in_file,
+                                "measured_rows_reused": cache.reused,
+                                "partial_tail_dropped": cache.dropped_partial_tail}
     return {"schema_version": 2, "kind": "ablation_report", "config": config, "arms": rows,
             "judgment": judge(component, rows["on"], rows["off"]),
             "measurement_limits": protocol()["limits"] + [GREEDY_SEED_LIMIT] + spec["limits"]}
@@ -115,19 +119,29 @@ def main(argv=None) -> int:
     except ModelDigestError as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 1
+    failure: BaseException | None = None
     try:
         report = run_component(args.component, OllamaProvider(args.model), model=args.model,
                                model_version=model_version, bank_open=args.bank_open,
                                sample_target=args.sample_target, salt=args.salt, sandbox=not args.no_sandbox,
                                seeds=seeds, checkpoint=args.checkpoint)
-    except AblationError as exc:
-        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
-        return 2
+    except BaseException as exc:          # يُعاد التحقّقُ من البصمة على كلِّ خروجٍ بعد بدء القياس، ولو مقاطعةً (ملاحظة Codex على #192)
+        failure = exc
     try:
         verify_model_digest(args.model, model_version)
     except ModelDigestError as exc:
-        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        # صفوفُ المخبأ كُتبت قبل هذا التحقّق منسوبةً إلى البصمة المثبّتة؛ فإن انحرف الوسمُ أثناء الليلة فهي لا تصلح استئنافًا
+        # ولو عاد الوسمُ إلى بصمته: يُنقل الملفُّ إلى اسمٍ لا يُقرأ منه، ويُعلَن (ملاحظة Codex الأولى على #192)
+        quarantined = RunCache.quarantine_file(args.checkpoint) if args.checkpoint is not None else None
+        print(json.dumps({"status": "refused", "code": exc.code,
+                          "checkpoint_quarantined": str(quarantined) if quarantined is not None else None},
+                         ensure_ascii=False))
         return 1
+    if isinstance(failure, AblationError):
+        print(json.dumps({"status": "refused", "code": failure.code}, ensure_ascii=False))
+        return 2
+    if failure is not None:
+        raise failure
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     verdict = report["judgment"]

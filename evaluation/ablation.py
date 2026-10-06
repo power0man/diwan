@@ -18,9 +18,11 @@ from collections import Counter
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import shutil
 import tempfile
+import time
 
 from agent.actions import ActionStore
 from agent.builtin_tools import DEFAULT_TOOLS
@@ -126,16 +128,44 @@ class RunCache:
       فصفٌّ من محرّكٍ أو بصمةٍ أو ذراعٍ أخرى لا يُعاد استعماله.
     - **المقيسُ وحده يُخبّأ.** العطبُ (مهلة، نفادُ حصّة، حلقةٌ لم تكتمل) يُعاد عند الاستئناف لا يُنسخ، فلا يتحوّل انقطاعُ ليلةٍ إلى
       «خطأ» دائمٍ يُخرج الحالةَ من الأزواج.
+    - **الذيلُ المبتور يُسقَط لا يُفشِل** (ملاحظة Codex الثانية على #192): انقطاعُ العملية في منتصف كتابة صفٍّ يترك آخرَ سطرٍ
+      JSON ناقصًا بلا سطرٍ جديد؛ فيُقتطع من الملف ويُعاد قياسُ صفّه، وتبقى الصفوفُ السليمة قبله. أمّا سطرٌ فاسدٌ في الوسط
+      فليس انقطاعًا بل عطبُ ملفٍّ، ويُرفض باسمه (`checkpoint_corrupt`).
+    - **المستعادُ يُعدّ عند استعماله** (ملاحظة Codex الثالثة): `reused` عددُ الصفوف التي أُخذت من الملف فعلًا في هذا التشغيل، لا
+      عددُ مفاتيح الملف؛ فصفوفُ بصمةٍ أو حالاتٍ أخرى في الملف لا تُعلَن مستعادة.
+    - **والبصمةُ المرفوضة تُحجَر** (ملاحظة Codex الأولى): الصفوفُ تُكتب قبل إعادة التحقّق من بصمة المحرّك في آخر التشغيل، فإن
+      انحرف الوسمُ أثناء القياس رُفض التقريرُ وبقيت صفوفٌ منسوبةٌ إلى البصمة الأولى؛ فيُنقل الملفُّ كلُّه بـ`quarantine` إلى
+      اسمٍ لا يُستأنف منه، كما تُحجَر تشغيلاتُ `evaluate_capabilities` (`tools/model_digest.py::quarantine_runs_since`).
     """
+
+    QUARANTINE_SUFFIX = ".drift-quarantine"
 
     def __init__(self, path: Path):
         self.path = Path(path)
         self.rows: dict[str, dict] = {}
+        self.reused = 0
+        self.dropped_partial_tail = False
         if self.path.exists():
-            for line in self.path.read_text(encoding="utf-8").splitlines():
-                if line.strip():
-                    entry = json.loads(line)
+            self._load()
+
+    def _load(self) -> None:
+        raw = self.path.read_bytes()
+        offset = 0
+        for number, line in enumerate(raw.splitlines(keepends=True), start=1):
+            text = line.strip()
+            if text:
+                try:
+                    entry = json.loads(text)
                     self.rows[entry["key"]] = entry["row"]
+                except (ValueError, KeyError, TypeError):
+                    # الصفُّ يُكتب بسطرٍ واحد يختم بـ"\n"؛ فآخرُ سطرٍ بلا خاتمةٍ انقطاعُ كتابةٍ يُقتطع، وما سواه عطبُ ملفّ
+                    if offset + len(line) == len(raw) and not line.endswith(b"\n"):
+                        with self.path.open("r+b") as handle:
+                            handle.truncate(offset)
+                        self.dropped_partial_tail = True
+                        return
+                    raise AblationError("checkpoint_corrupt", f"{self.path.name}:{number}")
+            offset += len(line)
 
     @staticmethod
     def key(case: dict, arm_config: dict, seed: int, *, model: str, model_version: str, **options) -> str:
@@ -143,7 +173,25 @@ class RunCache:
                      "arm": arm_config, "seed": seed, "case": case, "options": options})
 
     def get(self, key: str) -> dict | None:
-        return self.rows.get(key)
+        row = self.rows.get(key)
+        if row is not None:
+            self.reused += 1
+        return row
+
+    @classmethod
+    def quarantine_file(cls, path: Path) -> Path | None:
+        """انقل الملفَّ إلى اسمٍ لا يُستأنف منه بعد رفض بصمة المحرّك، بلا قراءته (فقد يكون مبتورًا)؛ None إن لم يكن ملفًّا."""
+        path = Path(path)
+        if path.is_symlink() or not path.is_file():
+            return None
+        target = path.with_name(f"{path.name}{cls.QUARANTINE_SUFFIX}-{time.time_ns()}")
+        os.replace(path, target)
+        return target
+
+    def quarantine(self) -> Path | None:
+        target = self.quarantine_file(self.path)
+        self.rows = {}
+        return target
 
     def put(self, key: str, row: dict) -> None:
         if row.get("status") != "measured":

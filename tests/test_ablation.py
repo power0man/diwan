@@ -405,6 +405,87 @@ def test_a_resumed_night_reuses_measured_rows_and_retries_errors(tmp_path):
     assert len(state["calls"]) == 6
 
 
+def test_a_partially_written_checkpoint_row_is_dropped_and_the_night_resumes(tmp_path):
+    """ملاحظة Codex الثانية على #192: انقطاعُ العملية في منتصف كتابة صفٍّ كان يُفشل الاستئنافَ كلَّه بـJSONDecodeError قبل
+    استعادة الصفوف السليمة. فالذيلُ بلا سطرٍ جديد يُقتطع ويُعاد قياسُه؛ وسطرٌ فاسد في الوسط عطبُ ملفٍّ يُرفض باسمه."""
+    from evaluation.ablation import RunCache
+    path = tmp_path / "night.jsonl"
+    good = json.dumps({"key": "k0", "row": {"id": "c0", "status": "measured", "passed": True}}) + "\n"
+    partial = '{"key": "k1", "row": {"id": "c1", "status": "meas'
+    path.write_text(good + partial, encoding="utf-8")
+    cache = RunCache(path)
+    assert cache.rows == {"k0": {"id": "c0", "status": "measured", "passed": True}} and cache.dropped_partial_tail
+    assert path.read_text(encoding="utf-8") == good                     # اقتُطع الذيلُ من الملف نفسِه
+    cache.put("k1", {"id": "c1", "status": "measured", "passed": False})
+    again = RunCache(path)                                              # والسطرُ التالي يُلحَق سليمًا بعد الاقتطاع
+    assert set(again.rows) == {"k0", "k1"} and not again.dropped_partial_tail
+    path.write_text(good + "{broken\n" + good, encoding="utf-8")
+    with pytest.raises(AblationError, match="checkpoint_corrupt"):
+        RunCache(path)
+
+
+def test_the_report_counts_only_the_checkpoint_rows_it_actually_reused(tmp_path):
+    """ملاحظة Codex الثالثة على #192: كان `measured_rows_reused` عددَ مفاتيح الملف قبل القياس، فتشغيلٌ ببصمة محرّكٍ أخرى يعيد
+    القياسَ كاملًا ويعلن استعادةَ الصفوف القديمة. يُعدّ الآن ما أُخذ من الملف فعلًا."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from tools.evaluate_ablation import run_component
+    bank = tmp_path / "open" / "tier_a"
+    bank.mkdir(parents=True)
+    case = _case("c", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])
+    (bank / "s.json").write_text(json.dumps({"schema_version": 1, "suite_id": "s", "split": "development",
+                                             "description": "d", "cases": [case]}, ensure_ascii=False))
+    path = tmp_path / "night.jsonl"
+
+    def night(model_version):
+        seen = []
+        report = run_component("tool_announcement", Replay(lambda user, request: "الرباط", requests=seen),
+                               model="replay", model_version=model_version, bank_open=tmp_path / "open",
+                               checkpoint=path)
+        return report["config"]["checkpoint"], len(seen)
+
+    assert night("v1") == ({"path": str(path), "rows_in_file_at_start": 0, "measured_rows_reused": 0,
+                            "partial_tail_dropped": False}, 6)
+    assert night("v1") == ({"path": str(path), "rows_in_file_at_start": 6, "measured_rows_reused": 6,
+                            "partial_tail_dropped": False}, 0)
+    checkpoint, calls = night("v2")                                     # بصمةٌ أخرى: الملفُ مليء ولا شيءَ منه استُعمل
+    assert (checkpoint["rows_in_file_at_start"], checkpoint["measured_rows_reused"], calls) == (6, 0, 6)
+
+
+def test_a_drifted_digest_quarantines_the_checkpoint_so_its_rows_are_not_resumed(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex الأولى على #192: الصفوفُ تُكتب قبل إعادة التحقّق من البصمة؛ فإن انحرف الوسمُ أثناء الليلة رُفض التقريرُ وبقيت
+    صفوفٌ منسوبةٌ إلى البصمة الأولى تُستأنف بها إن عاد الوسم. فالملفُّ يُحجَر إلى اسمٍ لا يُقرأ منه، ويُعلَن ذلك."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    import providers.ollama as ollama
+    from tools import evaluate_ablation
+    from tools.model_digest import ModelDigestError
+    bank = tmp_path / "open" / "tier_a"
+    bank.mkdir(parents=True)
+    case = _case("c", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])
+    (bank / "s.json").write_text(json.dumps({"schema_version": 1, "suite_id": "s", "split": "development",
+                                             "description": "d", "cases": [case]}, ensure_ascii=False))
+    path, out = tmp_path / "var" / "night.jsonl", tmp_path / "report.json"
+    monkeypatch.setattr(ollama, "OllamaProvider", lambda model: Replay(lambda user, request: "الرباط"))
+    monkeypatch.setattr(evaluate_ablation, "pin_model_digest", lambda model, expected=None: "sha256:before")
+
+    def drifted(model, pinned):
+        raise ModelDigestError("model_digest_drifted")
+
+    monkeypatch.setattr(evaluate_ablation, "verify_model_digest", drifted)
+    argv = ["--component", "tool_announcement", "--model", "fixture", "--bank-open", str(tmp_path / "open"),
+            "--checkpoint", str(path), "--out", str(out)]
+    assert evaluate_ablation.main(argv) == 1 and not out.exists()
+    printed = json.loads(capsys.readouterr().out)
+    moved = sorted(path.parent.glob("night.jsonl.drift-quarantine-*"))
+    assert printed["code"] == "model_digest_drifted" and len(moved) == 1
+    assert printed["checkpoint_quarantined"] == str(moved[0]) and not path.exists()
+    assert len(moved[0].read_text(encoding="utf-8").splitlines()) == 6     # الصفوفُ المرفوضة محفوظةٌ حيث لا تُستأنف
+    monkeypatch.setattr(evaluate_ablation, "verify_model_digest", lambda model, pinned: None)
+    assert evaluate_ablation.main(argv) == 0                               # وعودةُ الوسم إلى بصمته تبدأ من الصفر
+    assert json.loads(out.read_text(encoding="utf-8"))["config"]["checkpoint"]["measured_rows_reused"] == 0
+
+
 def test_seed_count_cannot_collapse_to_one_or_tie():
     assert seed_values() == (0, 1, 2)
     for count in (0, 1, 2, 4):
