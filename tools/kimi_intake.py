@@ -226,8 +226,11 @@ _CORRECTION_LEAD = re.compile(r"^\s*المقدم[ةه][^:\n]{0,40}:\s*")
 _OTHER_LEAD = re.compile(r"^[^:\n]{0,40}:")
 # جملةٌ تحكي الادعاءَ أو تقتبسه («يُقال إن…»، «…»)، أو فيها بادئةٌ أخرى، لا يقرّها المرجع: نفيُها قد يكون الجوابَ الصحيح
 # فلا تُنفى. أما النفيُ والإنكارُ فيها فمن الحقيقة المصحَّحة («الحركةُ لا اللون»)، ونفيُها ينقض المرجعَ فيبقى جوابًا خاطئًا
+# علاماتُ الاقتباس كلُّها من موضعٍ واحد، يقرؤه المُقسِّمُ وكاشفُ الحكاية معًا: المزدوجةُ والمفردة والفرنسية والسفلى
+# (ملاحظة Codex على #342: ‘…’ كانت غائبةً عنهما، فيُنفى أوسطُ اقتباسٍ بادعاءاتٍ عدّة)
+QUOTE_OPEN, QUOTE_CLOSE, QUOTE_BOTH = "«“‘‹„‚", "»”’›", "\""
 _REPORTED = re.compile(r"(^|[\s(])و?(يُ?قال|قيل|يُ?عتقد|اُ?عتُ?قد|يُ?ظن|ظُ?ن|شاع|يُ?شاع|الشائع|يزعم|زعم|زُعم|مزعوم|المزعوم|يروى|يُروى)"
-                       r"|[«»\"“”:]")
+                       "|[" + re.escape(QUOTE_OPEN + QUOTE_CLOSE + QUOTE_BOTH) + ":]")
 _SENTENCE_ENDS, _CLAUSE_ENDS = ".؛;!?؟\n", "،,"
 
 
@@ -236,11 +239,11 @@ def _split_outside_quotes(text: str, delimiters: str) -> list[str]:
     فلا يفقد جزؤه الأوسط علامةَ الاقتباس فيُنفى كأنه حقيقةٌ يقرّها المرجع (ملاحظة Codex على #342)."""
     parts, buffer, depth, straight = [], [], 0, False
     for char in text:
-        if char in "«“":
+        if char in QUOTE_OPEN:
             depth += 1
-        elif char in "»”":
+        elif char in QUOTE_CLOSE:
             depth = max(depth - 1, 0)
-        elif char == '"':
+        elif char in QUOTE_BOTH:
             straight = not straight
         if char in delimiters and not depth and not straight:
             parts.append("".join(buffer))
