@@ -569,23 +569,24 @@ class Dispatcher:
         """رأسُ الطلب الحالي وسببُ إعادة العمل عليه: مراجعةٌ رافضة أو فحوصٌ ساقطة، وإلا `nothing_to_revise`."""
         head = self.sync_head(issue_number, record=record)       # المعاينةُ لا تقيّد رأسًا متقدّمًا (ملاحظة Codex على #349)
         latest = self.latest_review(issue_number, head)
-        failed = self.ledger.last_of(issue_number, "validation_failed", attempt) or {}
         if latest is not None and latest.get("state") == "review_rejected":   # سببُ الجولة: مراجعةٌ رافضة
             return head, "review_rejected", latest["review_ref"]
-        if failed.get("head_sha") == head and failed.get("reason") == "checks_failed" and not self._passed_after(issue_number, attempt, head, failed):
+        if self._checks_failure_open(issue_number, attempt, head):
             return head, "checks_failed", f"checks:{head}"
         raise Refusal("nothing_to_revise", "لا مراجعةَ رافضة ولا فحوصَ ساقطة على رأس الطلب الحالي")
 
-    def _passed_after(self, issue_number: int, attempt: int, head: str, failed: dict) -> bool:
-        """فشلٌ تاريخيّ للفحوص أعقبه `validated` على الرأس نفسِه ليس سببًا لإعادة العمل (ملاحظة Codex الرابعة على #349)."""
-        seen_failed = False
-        for record in self.ledger.records(issue_number):
-            if record is failed or (record["state"] == "validation_failed" and record.get("at") == failed.get("at") and record.get("head_sha") == head):
-                seen_failed = True
-                continue
-            if seen_failed and record.get("attempt") == attempt and record["state"] == "validated" and record.get("head_sha") == head:
-                return True
-        return False
+    def _checks_failure_open(self, issue_number: int, attempt: int, head: str) -> bool:
+        """آخرُ `validation_failed:checks_failed` على الرأس لم يعقبه `validated` عليه. يُقرأ بترتيب القيود لا بالطوابع (ساعةُ السجلّ
+        بدقّة الثانية)، ولا تحجبه إخفاقاتُ جولاتٍ لاحقة (`revision_no_commits`، `worker_reported_failure`) فهي ليست فحوصًا
+        (ملاحظتا Codex السادستان على #349)."""
+        last_failed_index = None
+        records = [r for r in self.ledger.records(issue_number) if r.get("attempt") == attempt]
+        for i, record in enumerate(records):
+            if record["state"] == "validation_failed" and record.get("reason") == "checks_failed" and record.get("head_sha") == head:
+                last_failed_index = i
+        if last_failed_index is None:
+            return False
+        return not any(r["state"] == "validated" and r.get("head_sha") == head for r in records[last_failed_index + 1:])
 
     def _revise_plan(self, issue_number: int, attempt: int, head: str, reason_kind: str, reason_ref: str, max_rounds: int) -> dict:
         rounds = self.revision_rounds(issue_number, attempt)

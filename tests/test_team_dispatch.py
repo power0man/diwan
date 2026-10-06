@@ -854,3 +854,35 @@ def _catch(fn):
         return fn()
     except Exception as exc:  # noqa: BLE001
         return exc
+
+
+def test_a_failed_revision_round_does_not_hide_an_open_checks_failure(tmp_path):
+    """بدأت الجولةُ بسبب فحوصٍ ساقطة وانتهت بلا إيداع: الإخفاقُ الأخير `revision_no_commits` لا يحجب الفحوصَ الساقطة، فالجولةُ
+    التالية تُطلق لا تُرفض nothing_to_revise (ملاحظة Codex السادسة على #349)."""
+    dispatcher, project, adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    project.checks_by_head[out["head_sha"]] = "failure"
+    assert dispatcher.validate(41)["status"] == "validation_failed"
+    adapter.behaviour = "nothing"
+    first = dispatcher.revise(41, execute=True)
+    assert first["status"] == "validation_failed" and first["reason"] == "revision_no_commits"
+    adapter.behaviour = "commit"
+    second = dispatcher.revise(41, execute=True)
+    assert second["status"] == "completed" and second["round"] == 2 and second["trigger"] == "checks_failed"
+    # وبالعكس: إخفاقُ جولةٍ بعد نجاح الفحوص ليس فشلَ فحوصٍ مفتوحًا
+    head2 = second["head_sha"]
+    ledger.append(41, "validated", head_sha=head2, checks_ref=f"checks:{head2}")
+    ledger.append(41, "validation_failed", reason="revision_no_commits", head_sha=head2, round=3)
+    assert dispatcher._checks_failure_open(41, 1, head2) is False
+
+
+def test_checks_failures_are_ordered_by_record_not_by_timestamp(tmp_path):
+    """«فشل، نجاح، فشلٌ جديد» في الثانية نفسِها على الرأس نفسِه: الفشلُ الأخير مفتوح، فالتصحيحُ مباح."""
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    head = out["head_sha"]
+    ledger.append(41, "validation_failed", reason="checks_failed", head_sha=head)
+    ledger.append(41, "validated", head_sha=head, checks_ref=f"checks:{head}")
+    ledger.append(41, "completed", head_sha=head, branch=out["branch"], pr=out["pr"], reason="checks_failed_after_validation")
+    ledger.append(41, "validation_failed", reason="checks_failed", head_sha=head)
+    assert dispatcher._revision_trigger(41, 1, record=False) == (head, "checks_failed", f"checks:{head}")
