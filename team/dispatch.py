@@ -474,14 +474,16 @@ class Dispatcher:
         raw = self.raw_dir(issue_number, state["attempt"])
         raw.mkdir(parents=True, exist_ok=True)
         marker = raw / "taken_over"
-        # العلامةُ **قبل** فحص الغياب لا بعده: غلافٌ يبلغ فحصَ العلامة بعد هذه اللحظة يراها فلا يأذن؛ ومن بلغه قبلها كان قد كتب
-        # معرّفاته فيراها فحصُ الغياب أدناه ويُرفض الاستحواذ وتُزال العلامة (ملاحظة Codex الثانية على #347)
-        write_atomic(marker, now)
-        try:
-            return self._takeover_checked(issue_number, state, dispatched, raw, head_now, last_head, now, owner_authorization)
-        except Refusal:
-            marker.unlink(missing_ok=True)
-            raise
+        with self._launch_lock(issue_number):
+            # تحت قفل الإطلاق نفسِه الذي يأخذه `revise`: لا يُطلق عاملُ جولةٍ بين فحص الغياب وقيد الاستحواذ (ملاحظة Codex الرابعة على #349).
+            # والعلامةُ **قبل** فحص الغياب لا بعده: غلافٌ يبلغ فحصَ العلامة بعد هذه اللحظة يراها فلا يأذن؛ ومن بلغه قبلها كان قد كتب
+            # معرّفاته فيراها فحصُ الغياب أدناه ويُرفض الاستحواذ وتُزال العلامة (ملاحظة Codex الثانية على #347)
+            write_atomic(marker, now)
+            try:
+                return self._takeover_checked(issue_number, state, dispatched, raw, head_now, last_head, now, owner_authorization)
+            except Refusal:
+                marker.unlink(missing_ok=True)
+                raise
 
     def _takeover_checked(self, issue_number: int, state: dict, dispatched: dict, raw: Path, head_now, last_head, now: str,
                           owner_authorization: str) -> dict:
@@ -542,6 +544,8 @@ class Dispatcher:
             # معرّفاتها؛ (٢) جولةٌ غيرُ مختومة تُختم من رمز خروجها برأسها المسجَّل عند بدئها أو تُرفض `revision_running` — **قبل** قراءة
             # الرأس والسبب، فتصحيحٌ دفعه العاملُ ثم انقطع المرسِل يُختم لا يُرفض nothing_to_revise؛ (٣) الرأسُ والسببُ يُقرآن الآن لا قبل
             # القفل، فأمرٌ ثانٍ متزامن يرى الرأسَ الجديد ولا يطلق جولةً بسببٍ قديم؛ (٤) الإطلاقُ وقيدُه.
+            if self.ledger.open_attempt(issue_number) is None:
+                raise Refusal("nothing_to_revise", "استُحوذ على المحاولة")
             rounds = self._recover_unrecorded_round(issue_number, attempt, self.revision_rounds(issue_number, attempt))
             pending = self._unfinished_round(issue_number, attempt, rounds)
             if pending is not None:
@@ -556,9 +560,20 @@ class Dispatcher:
         failed = self.ledger.last_of(issue_number, "validation_failed", attempt) or {}
         if latest is not None and latest.get("state") == "review_rejected":   # سببُ الجولة: مراجعةٌ رافضة
             return head, "review_rejected", latest["review_ref"]
-        if failed.get("head_sha") == head and failed.get("reason") == "checks_failed":
+        if failed.get("head_sha") == head and failed.get("reason") == "checks_failed" and not self._passed_after(issue_number, attempt, head, failed):
             return head, "checks_failed", f"checks:{head}"
         raise Refusal("nothing_to_revise", "لا مراجعةَ رافضة ولا فحوصَ ساقطة على رأس الطلب الحالي")
+
+    def _passed_after(self, issue_number: int, attempt: int, head: str, failed: dict) -> bool:
+        """فشلٌ تاريخيّ للفحوص أعقبه `validated` على الرأس نفسِه ليس سببًا لإعادة العمل (ملاحظة Codex الرابعة على #349)."""
+        seen_failed = False
+        for record in self.ledger.records(issue_number):
+            if record is failed or (record["state"] == "validation_failed" and record.get("at") == failed.get("at") and record.get("head_sha") == head):
+                seen_failed = True
+                continue
+            if seen_failed and record.get("attempt") == attempt and record["state"] == "validated" and record.get("head_sha") == head:
+                return True
+        return False
 
     def _revise_plan(self, issue_number: int, attempt: int, head: str, reason_kind: str, reason_ref: str, max_rounds: int) -> dict:
         rounds = self.revision_rounds(issue_number, attempt)
@@ -596,6 +611,7 @@ class Dispatcher:
             self.ledger.append(issue_number, "refused", code="doctor_refused", findings=report.get("findings") or [])
             raise Refusal("doctor_refused", ", ".join(report.get("findings") or []))
         raw.mkdir(parents=True, exist_ok=True)
+        write_atomic(raw / "head", head)                      # رأسُ البداية على القرص قبل الإطلاق: تقرؤه استعادةُ جولةٍ لم تُقيَّد
         kept = self.home / "briefs" / f"{issue_number}-a{attempt}-r{round_no}.md"
         kept.parent.mkdir(parents=True, exist_ok=True)
         kept.write_text(brief, encoding="utf-8")
@@ -623,8 +639,10 @@ class Dispatcher:
             return rounds
         kept = self.home / "briefs" / f"{issue_number}-a{attempt}-r{round_no}.md"
         brief_sha = sha256_text(kept.read_text(encoding="utf-8")) if kept.exists() else "unrecorded"
+        start_head = (raw / "head").read_text(encoding="utf-8").strip() if (raw / "head").exists() else None
         self.ledger.append(issue_number, "revision_started", round=round_no, pid=int(pids.get("pid") or pids.get("child_pid") or pids.get("wrapper_pid")),
-                           started_at=self.clock(), brief_sha256=brief_sha, reason_ref="unrecorded", recovered_by="revise", child_pid=pids.get("child_pid"))
+                           started_at=self.clock(), brief_sha256=brief_sha, reason_ref="unrecorded", recovered_by="revise", child_pid=pids.get("child_pid"),
+                           head_sha=start_head)
         return self.revision_rounds(issue_number, attempt)
 
     def _round_alive(self, last: dict, raw: Path) -> bool:

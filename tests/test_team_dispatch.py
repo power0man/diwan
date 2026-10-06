@@ -744,3 +744,63 @@ def test_an_interrupted_revision_whose_worker_pushed_is_closed_not_refused(tmp_p
     done = dispatcher.revise(41, execute=True)
     assert done["status"] == "completed" and done["resumed"] is True and done["superseded_head"] == out["head_sha"] and done["head_sha"] == new_head
     assert ledger.main_state(41)["head_sha"] == new_head and ledger.last_of(41, "validation_failed") is None
+
+
+def test_takeover_waits_for_the_same_launch_lock_as_revise(tmp_path):
+    import threading
+
+    from core.filelock import lock as file_lock, unlock as file_unlock
+
+    dispatcher, _project, _adapter, ledger, repo = _setup(tmp_path)
+    _worktree, raw = _lost_launch(tmp_path, dispatcher, ledger, repo)
+    assert dispatcher.resume(41)["reason"] == "launch_unconfirmed"
+    dispatcher.clock = lambda: "2026-10-09T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    lock_path = dispatcher.home / "locks" / "launch-41.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    holder = lock_path.open("a", encoding="utf-8")
+    file_lock(holder)
+    done, result = threading.Event(), {}
+    thread = threading.Thread(target=lambda: (result.update(out=dispatcher.takeover(41, owner_authorization="نفّذ")), done.set()), daemon=True)
+    thread.start()
+    try:
+        assert not done.wait(0.4), "takeover مضى والقفلُ محجوز"
+        assert not (raw / "taken_over").exists()
+    finally:
+        file_unlock(holder)
+        holder.close()
+    assert done.wait(30) and result["out"]["status"] == "takeover"
+    thread.join(5)
+
+
+def test_a_historic_checks_failure_passed_later_is_not_a_revision_trigger(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    head = out["head_sha"]
+    project.checks_by_head[head] = "failure"
+    assert dispatcher.validate(41)["status"] == "validation_failed"
+    project.checks_by_head[head] = "success"
+    assert dispatcher.validate(41)["status"] == "validated"
+    with pytest.raises(Refusal) as exc:
+        dispatcher.revise(41, execute=True)
+    assert exc.value.code == "nothing_to_revise"
+
+
+def test_an_unrecorded_round_is_recovered_with_its_starting_head(tmp_path):
+    """انقطع المرسِل قبل القيد، ثم دفع العاملُ تصحيحَه وسجّل validate الرأسَ الجديد: الاستعادةُ تقرأ رأسَ البداية من القرص فتُختم
+    الجولةُ تصحيحًا لا revision_no_commits."""
+    dispatcher, project, adapter, ledger, _repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    wt = Path(out["worktree"])
+    raw = dispatcher.raw_dir(41, 1) / "revision-1"
+    raw.mkdir(parents=True)
+    (raw / "head").write_text(out["head_sha"], encoding="utf-8")
+    adapter.start(["fake-worker"], "", wt, raw / "stdout.txt", raw / "stderr.txt", exit_path=raw / "exit")
+    (raw / "pid").write_text("4194297", encoding="utf-8")
+    git("push", "-q", "origin", out["branch"], cwd=wt)
+    new_head = git("rev-parse", "HEAD", cwd=wt)
+    project.pulls[out["pr"]] = PullRequest(out["pr"], new_head, "main", out["branch"], 41, url=project.pulls[out["pr"]].url)
+    assert dispatcher.sync_head(41) == new_head
+    done = dispatcher.revise(41, execute=True)
+    assert done["status"] == "completed" and done["superseded_head"] == out["head_sha"] and done["head_sha"] == new_head
+    assert ledger.last_of(41, "revision_started")["head_sha"] == out["head_sha"]
