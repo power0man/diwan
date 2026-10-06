@@ -180,6 +180,40 @@ def payload_event(payload: dict) -> list[dict]:
     return [{"event": payload["action"], "label": label, "actor": payload.get("sender") or {}}]
 
 
+def merge_payload_event(events: list[dict], payload: dict) -> list[dict]:
+    """يُلحق حدثَ الحمولة بخطّ الأحداث إلا إن حمل الخطُّ حدثًا **أحدث** منه على الوسم نفسِه (بطابع `created_at` مقابل
+    `issue.updated_at` في الحمولة): فحمولةُ نزعٍ قديمة وصلت بعد أن أعاد المالك الإذن لا تطغى على الإعادة. وبلا طوابع
+    يُلحق كما هو (الاتجاهُ الآمن: نزعٌ يُحتسب). (ملاحظة Codex على #346)"""
+    extra = payload_event(payload)
+    if not extra:
+        return events
+    name = _fold((extra[0].get("label") or {}).get("name"))
+    stamp = str((payload.get("issue") or {}).get("updated_at") or "")
+    newer = [e for e in events if e.get("event") in ("labeled", "unlabeled")
+             and _fold((e.get("label") or {}).get("name")) == name and str(e.get("created_at") or "") > stamp]
+    if stamp and newer:
+        return events
+    return events + extra
+
+
+def refresh_labels(issue: dict, events: list[dict]) -> dict:
+    """لقطةُ وسوم الحمولة قد تسبق أحداثًا أحدثَ منها في الخطّ الزمني (طابعُ `created_at` بعد `issue.updated_at`): وسمٌ له
+    حدثٌ أحدثُ يؤخذ من آخر حدثٍ له، فلا تحجب لقطةٌ قديمة إذنًا أعاده المالك بعدها. وبلا طابعٍ تبقى اللقطةُ كما هي."""
+    stamp = str(issue.get("updated_at") or "")
+    if not stamp:
+        return issue
+    names = {_fold(label.get("name")): label for label in issue.get("labels") or []}
+    for event in events:
+        if event.get("event") not in ("labeled", "unlabeled") or str(event.get("created_at") or "") <= stamp:
+            continue
+        name = _fold((event.get("label") or {}).get("name"))
+        if event["event"] == "labeled":
+            names[name] = event.get("label") or {"name": name}
+        else:
+            names.pop(name, None)
+    return dict(issue, labels=list(names.values()))
+
+
 class GitHub:
     """واجهةُ REST بالقدر اللازم: أحداثُ المسألة، ونزعُ وسم، وتعليق. والاختباراتُ تبدّلها بمزيَّف."""
 
@@ -220,7 +254,9 @@ def apply_launch_gate(payload: dict, client, owner: str = OWNER) -> int:
         print(json.dumps({"status": "passed", "blocked": []}))
         return 0
     number = int(issue["number"])
-    blocked = launch_decision(issue, client.events(number) + payload_event(payload), owner)
+    events = merge_payload_event(client.events(number), payload)
+    issue = refresh_labels(issue, events)
+    blocked = launch_decision(issue, events, owner)
     for item in blocked:
         client.remove_label(number, item["label"])
     if blocked:
