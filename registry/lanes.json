@@ -44,7 +44,9 @@
       "tools/family_review.py",
       "tools/issue_ledger.py",
       "tools/lane_handoff.py",
-      "tools/context_budget.py"
+      "tools/context_budget.py",
+      "team/",
+      "docs/team/"
     ],
     "openai": [
       "conversation/",
