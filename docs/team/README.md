@@ -1,0 +1,53 @@
+# `team/` — حاضنةُ نظام تعاون الوكلاء (ق٧٦)
+
+**ما هذا:** مرسِلٌ تسلسليّ صغير يُخرج المالكَ من دور الناقل بين الوكلاء: مسألةٌ أذن بها المالك ← تكليفٌ مودَع ببصمة ← نسخةُ عملٍ
+وفرع ← عاملٌ واحد ← طلبُ دمج ← فحوص ← مراجعٌ مستقلّ من عائلةٍ أخرى ← المالك يدمج بيده. كلُّ تحوّلٍ قيدٌ في سجلٍّ مسلسل بالبصمة.
+
+**ما ليس:** ليس جزءًا من منتج ديوان ولا من حلقته الوكيلة ولا عقدةً معرفية. **حاضنةٌ تجريبية قابلةٌ للاستخراج:** ديوان مختبرُها
+الأول لا حدودُها، وبعد إثباتها تُستخرج منصّةً مستقلة يصير ديوان أول محوِّل مشروعٍ فيها. حدُّها الأضعف في `docs/TEAM-BOUNDARY.md`.
+
+## الملفات
+
+| الملف | ما يفعل | عامٌّ أم خاصٌّ بديوان |
+|---|---|---|
+| `team/ledger.py` | سجلُّ التحوّلات؛ يرث `core/ledger.py`؛ ستُّ حالات ورأسٌ واحد لكل دليل | عام |
+| `team/dispatch.py` | `run` / `validate` / `accept` / `resume` / `takeover` / `gc` / `status` | عام |
+| `team/review.py` | دورُ المراجع المستقل، والمعايرة، وتعليقُ ق٧٥(ب) | عام |
+| `team/doctor.py` | تثبيتُ إصدارات الأدوات وبصمات ثنائيّاتها | عام |
+| `team/adapters/` | عقدُ محوِّل الوكيل وتنفيذا Claude وCodex؛ لا أعلامَ تجاوز | عام |
+| `team/projects/base.py` | واجهةُ محوِّل المشروع (حدُّ الاستخراج) | عام |
+| `team/projects/diwan.py` | التنفيذُ الوحيد اليوم: مسائلُ GitHub، و`ready:`، والتجميد، والمسارات، وجدولُ ق٧٥، وإثباتُ الدمج | **خاصٌّ بديوان** |
+
+القاعدةُ المحروسة: لا يستورد العامُّ شيئًا من ديوان مباشرةً إلا `core.ledger` و`core.quoted` و`core.canonical`؛ وكلُّ ما يخصّ ديوان في
+`team/projects/diwan.py` (`tests/test_team_boundary.py`).
+
+## الحالات
+
+`dispatched` (تكليفٌ مودَع ببصمة) ← `claimed` (معرّفُ العملية وبدؤها) ← `completed` (رأسُ إيداعٍ وطلبٌ مفتوح) ← `validated`
+(الفحوصُ خضراء على ذلك الرأس) ← `verified` (مراجعٌ مستقلّ على الرأس نفسه) ← `accepted` (إيداعُ الدمج على `main` من git).
+الشرط: `validated_head_sha == reviewed_head_sha == merge_candidate_head_sha`؛ وإيداعٌ جديد يُسقط ما قبله إلى `completed`.
+الجانبية: `outcome_unknown` (**لا يُعاد التشغيل**)، `validation_failed`، `expired`، `worker_unavailable:<code>`،
+`reviewer_unavailable:<code>`، `brief_stale`، `frozen_by_launch_plan`، `already_dispatched`، `review_uncalibrated`،
+`reviewed_awaiting_validation`، `external_review`، `takeover`.
+
+## التشغيل
+
+```
+python3 -m team.doctor --pin                                    # مرّةً بعد دخانٍ ناجح
+python3 -m team.dispatch run <issue> --worker claude            # خطةٌ بلا أثر
+python3 -m team.dispatch run <issue> --worker claude --execute  # إرسالٌ فعلي
+python3 -m team.review <pr> --execute                           # مراجعةٌ مستقلّة وتعليق
+python3 -m team.dispatch validate <issue>; python3 -m team.dispatch accept <issue>
+```
+الموطن: `~/.diwan-team/` (السجلّ، والتثبيتات، والمعايرة، والمخرجات الخام). نسخُ العمل تحت `~/diwan-work/wt/team-<issue>-<family>`.
+
+## المراحل والبوّابة
+
+٠ خطُّ أساس (`docs/probe/team-baseline-20261006.json`) ← **١ هذا الطلب** ← ٢ عشر مهامّ حقيقية ثم بوّابةُ سلامةٍ صفرية (لا كتابةَ
+غيرَ مأذونة، لا دمجَ غيرَ مأذون، لا تنفيذَ مكرَّرًا بعد نتيجةٍ مجهولة، لا كسرَ لسلسلة الأدلة، لا مراجعَ من عائلة المؤلّف) وبوّابةُ أداء
+(تدخّلُ المالك أقلّ، والزمنُ لا يزيد، والقبولُ بلا إعادة عمل لا يقلّ، والعيوبُ الهاربة لا تزيد) ← ٣ سجلُّ الوكلاء وGemini/OpenCode
+← ٤ ثلاثون إلى خمسين مهمة؛ ولا يدخل ناقلُ رسائل ولا صندوقٌ أقوى إلا بنمط فشلٍ مقاس ← ٥ الاستخراج ← ٦ التعميم.
+
+## ما يُؤجَّل صراحةً
+
+`plan.py`، `report.py`، محوِّلا Gemini وOpenCode، التوازي داخل المهمة، أيُّ ناقل رسائل (CCCC، hcom، ACP)، أيُّ لوحة، أيُّ مكتبة بحث.
