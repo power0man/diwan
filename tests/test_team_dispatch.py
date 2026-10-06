@@ -160,3 +160,58 @@ def test_a_waiting_review_without_a_pass_verdict_is_not_promoted(tmp_path):
     project.checks_by_head[head] = "success"
     assert dispatcher.validate(41)["status"] == "validated"
     assert ledger.main_state(41)["state"] == "validated"
+
+
+def test_a_later_rejection_overrides_a_pending_acceptance(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    head = out["head_sha"]
+    ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1", reviewer="codex", reviewer_family="openai", verdict="pass")
+    ledger.append(41, "review_rejected", head_sha=head, review_ref="c-2", reviewer="codex", reviewer_family="openai", verdict="reject")
+    project.checks_by_head[head] = "success"
+    assert dispatcher.validate(41)["status"] == "validated"
+    assert ledger.main_state(41)["state"] == "validated"
+
+
+def test_a_rejection_after_verified_blocks_accept(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    head = out["head_sha"]
+    ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1", reviewer="codex", reviewer_family="openai", verdict="pass")
+    project.checks_by_head[head] = "success"
+    dispatcher.validate(41)
+    assert ledger.main_state(41)["state"] == "verified"
+    ledger.append(41, "review_rejected", head_sha=head, review_ref="c-2", reviewer="codex", reviewer_family="openai", verdict="reject")
+    pull = project.pulls[out["pr"]]
+    project.pulls[out["pr"]] = PullRequest(pull.number, head, "main", pull.branch, 41, state="merged", merge_sha="m" * 40)
+    with pytest.raises(Refusal) as exc:
+        dispatcher.accept(41)
+    assert exc.value.code == "review_rejected_after_verified"
+
+
+def test_resume_without_a_saved_exit_code_is_outcome_unknown(tmp_path):
+    dispatcher, _project, _adapter, ledger, _repo = _setup(tmp_path)
+    worktree = tmp_path / "wt" / "team-41-anthropic"
+    worktree.mkdir(parents=True)
+    ledger.append(41, "dispatched", brief_sha256="b" * 64, worker="claude", family="anthropic", branch="team/41-anthropic",
+                  worktree=str(worktree), base_sha="0" * 40)
+    ledger.append(41, "claimed", pid=4194297, started_at="2026-10-06T10:00:00+00:00")
+    out = dispatcher.resume(41)
+    assert out["status"] == "outcome_unknown" and ledger.last(41)["reason"] == "worker_gone_without_exit_code"
+
+
+def test_a_worker_that_reports_failure_is_not_completed(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path, behaviour="commit_fail")
+    out = dispatcher.run(41, execute=True)
+    assert out["status"] == "validation_failed" and ledger.last(41)["reason"] == "worker_reported_failure"
+    assert project.pulls == {}
+
+
+def test_validate_picks_up_a_corrected_head(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    pull = project.pulls[out["pr"]]
+    project.pulls[out["pr"]] = PullRequest(pull.number, "b" * 40, "main", pull.branch, 41)
+    project.checks_by_head["b" * 40] = "success"
+    assert dispatcher.validate(41) == {"status": "validated", "head_sha": "b" * 40}
+    assert ledger.last_of(41, "completed")["superseded_head"] == out["head_sha"]

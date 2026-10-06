@@ -38,7 +38,7 @@ def _setup(tmp_path, *, issue=41, families=("anthropic",), codex_rc=0, claude_rc
     for name in calibrated:
         rv.record_calibration(home, name, caught=7, of=8, false_alarms=0, clock=clock)
     reviewer = rv.Reviewer(project=project, adapters=adapters, ledger=ledger, repo_root=repo, home=home, clock=clock,
-                           doctor_check=lambda: {"status": "passed", "findings": []})
+                           doctor_check=lambda names: {"status": "passed", "findings": []})
     return reviewer, project, adapters, ledger
 
 
@@ -136,7 +136,24 @@ def test_a_rejecting_review_is_recorded_but_never_verified(tmp_path):
 def test_the_reviewer_refuses_when_the_doctor_refuses(tmp_path):
     reviewer, project, adapters, ledger = _setup(tmp_path)
     _dispatched(ledger, project.pulls[9].head_sha)
-    reviewer.doctor_check = lambda: {"status": "refused", "findings": ["binary_changed:codex"]}
-    with pytest.raises(rv.Refusal) as exc:
-        reviewer.review(9, execute=True)
-    assert exc.value.code == "doctor_refused" and project.comments == []
+    reviewer.doctor_check = lambda names: {"status": "refused", "findings": ["binary_changed:codex"]}
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "reviewer_unavailable" and out["tried"] == [{"reviewer": "codex", "code": "doctor_refused"}]
+    assert project.comments == [] and ledger.last(41)["code"] == "doctor_refused"
+
+
+def test_a_doctor_refusal_of_one_candidate_falls_to_the_next(tmp_path):
+    reviewer, project, adapters, ledger = _setup(tmp_path, families=("google",), calibrated=("codex", "claude"))
+    _dispatched(ledger, project.pulls[9].head_sha)
+    reviewer.doctor_check = lambda names: {"status": "refused" if names == ["claude"] else "passed", "findings": []}
+    out = reviewer.review(9, execute=True)
+    assert out["reviewer"] == "codex" and out["tried"] == [{"reviewer": "claude", "code": "doctor_refused"}]
+
+
+def test_a_corrected_head_is_recorded_before_the_review_is_counted(tmp_path):
+    reviewer, project, adapters, ledger = _setup(tmp_path)
+    _dispatched(ledger, "0" * 40)
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "reviewed_awaiting_validation"
+    completed = ledger.last_of(41, "completed")
+    assert completed["head_sha"] == project.pulls[9].head_sha and completed["superseded_head"] == "0" * 40

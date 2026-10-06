@@ -216,6 +216,7 @@ class Dispatcher:
         except subprocess.TimeoutExpired:
             self.ledger.append(issue.number, "outcome_unknown", reason="timeout_worker_still_running", pid=int(proc.pid))
             return {"status": "outcome_unknown", "reason": "timeout", **plan}
+        (raw / "exit").write_text(str(rc), encoding="utf-8")     # رمزُ الخروج دليلٌ محفوظ؛ الاستئنافُ لا يختلقه
         return self._finish(issue, attempt, rc, raw, wt, branch, plan)
 
     def _finish(self, issue: Issue, attempt: int, rc: int | None, raw: Path, wt: Path, branch: str, plan: dict) -> dict:
@@ -229,8 +230,13 @@ class Dispatcher:
         if result.unavailable:
             self.ledger.append(issue.number, "worker_unavailable", code=result.unavailable, returncode=rc)
             return {"status": "worker_unavailable", "code": result.unavailable, **plan}
-        base_sha = (self.ledger.last_of(issue.number, "dispatched", attempt) or {}).get("base_sha")
         head = self._git("rev-parse", "HEAD", cwd=wt)
+        if not result.ok:
+            # فشلٌ معلَن من العامل (خروجٌ غير صفر أو is_error) ليس إنجازًا ولو ترك إيداعات (ملاحظة Codex على #344)
+            self.ledger.append(issue.number, "validation_failed", reason="worker_reported_failure", head_sha=head, returncode=rc,
+                               quarantine_codes=sorted({f.code for f in summary.findings}))
+            return {"status": "validation_failed", "reason": "worker_reported_failure", **plan}
+        base_sha = (self.ledger.last_of(issue.number, "dispatched", attempt) or {}).get("base_sha")
         new_commits = int(self._git("rev-list", "--count", f"{base_sha}..HEAD", cwd=wt) or 0) if base_sha else 0
         if new_commits == 0:
             self.ledger.append(issue.number, "validation_failed", reason="no_commits", head_sha=head, worker_ok=result.ok,
@@ -252,17 +258,34 @@ class Dispatcher:
                            quarantine_codes=sorted({f.code for f in summary.findings}))
         return {"status": "completed", "head_sha": head, "pr": pull.number, "new_commits": new_commits, **plan}
 
-    def validate(self, issue_number: int) -> dict:
-        completed = self.ledger.last_of(issue_number, "completed")
-        if completed is None or self.ledger.main_state(issue_number)["state"] not in ("completed", "validated", "verified"):
+    def sync_head(self, issue_number: int) -> str:
+        """رأسُ الطلب الحالي؛ إن تقدّم عن رأس `completed` (تصحيحٌ دُفع) قُيّد `completed` جديد فيسقط ما قبله ويُعاد التحقق والمراجعة."""
+        state = self.ledger.main_state(issue_number)
+        if state is None or state["state"] not in ("completed", "validated", "verified"):
             raise Refusal("nothing_to_validate")
-        head = completed["head_sha"]
+        completed = self.ledger.last_of(issue_number, "completed", state["attempt"])
+        pull = self.project.pull(int(completed["pr"]))
+        if pull.head_sha and pull.head_sha != completed["head_sha"]:
+            self.ledger.append(issue_number, "completed", head_sha=pull.head_sha, branch=completed["branch"], pr=pull.number,
+                               pr_url=pull.url, superseded_head=completed["head_sha"])
+            return pull.head_sha
+        return completed["head_sha"]
+
+    def latest_review(self, issue_number: int, head: str) -> dict | None:
+        """آخرُ قيدِ مراجعةٍ على هذا الرأس أيًّا كان نوعه؛ فالرفضُ الأحدث يطغى على قبولٍ أقدم (ملاحظة Codex على #344)."""
+        for record in reversed(self.ledger.records(issue_number)):
+            if record["state"] in ("reviewed_awaiting_validation", "review_rejected", "verified") and record.get("head_sha") == head:
+                return record
+        return None
+
+    def validate(self, issue_number: int) -> dict:
+        head = self.sync_head(issue_number)
         status = self.project.checks(head)
         if status == "success":
             if self.ledger.main_state(issue_number)["state"] == "completed":
                 self.ledger.append(issue_number, "validated", head_sha=head, checks_ref=f"checks:{head}")
-                pending = self.ledger.last_of(issue_number, "reviewed_awaiting_validation")
-                if pending and pending.get("head_sha") == head and pending.get("verdict") == "pass":
+                pending = self.latest_review(issue_number, head)
+                if pending and pending["state"] == "reviewed_awaiting_validation" and pending.get("verdict") == "pass":
                     self.ledger.append(issue_number, "verified", head_sha=head, review_ref=pending["review_ref"],
                                        reviewer=pending["reviewer"], reviewer_family=pending["reviewer_family"], verdict=pending.get("verdict"))
             return {"status": "validated", "head_sha": head}
@@ -282,6 +305,9 @@ class Dispatcher:
             raise Refusal("not_merged_on_main")
         if pull.head_sha != state["head_sha"]:
             raise Refusal("head_mismatch", f"رأس الطلب {pull.head_sha[:7]} ≠ الرأس المراجَع {state['head_sha'][:7]}")
+        latest = self.latest_review(issue_number, state["head_sha"])
+        if latest is not None and latest["state"] == "review_rejected":
+            raise Refusal("review_rejected_after_verified", latest.get("review_ref", ""))
         self.ledger.append(issue_number, "accepted", head_sha=state["head_sha"], merge_sha=merge)
         return {"status": "accepted", "merge_sha": merge}
 
@@ -300,9 +326,14 @@ class Dispatcher:
             self.ledger.append(issue_number, "outcome_unknown", reason="worker_gone_and_worktree_missing")
             return {"status": "outcome_unknown"}
         raw = self.raw_dir(issue_number, state["attempt"])
+        exit_file = raw / "exit"
+        if not exit_file.exists():
+            # العاملُ غاب ولم يُحفظ رمزُ خروجه: وجودُ إيداعاتٍ لا يثبت نجاحَه (ملاحظة Codex على #344)
+            self.ledger.append(issue_number, "outcome_unknown", reason="worker_gone_without_exit_code")
+            return {"status": "outcome_unknown", "reason": "worker_gone_without_exit_code"}
         branch = dispatched.get("branch") or self.branch_for(issue_number, state["attempt"])
         plan = {"issue": issue_number, "branch": branch, "brief_sha256": dispatched.get("brief_sha256", ""), "worktree": str(wt)}
-        return self._finish(self.project.issue(issue_number), state["attempt"], 0, raw, wt, branch, plan)
+        return self._finish(self.project.issue(issue_number), state["attempt"], int(exit_file.read_text().strip() or 0), raw, wt, branch, plan)
 
     def takeover(self, issue_number: int, *, owner_authorization: str) -> dict:
         state = self.ledger.main_state(issue_number)

@@ -108,7 +108,7 @@ class Reviewer:
 
     def _doctor(self, names: list[str]) -> dict:
         if self.doctor_check is not None:
-            return self.doctor_check()
+            return self.doctor_check(names)
         from team.doctor import PINS_FILE, check
         return check([self.adapters[n] for n in names], self.home / PINS_FILE)
 
@@ -153,6 +153,12 @@ class Reviewer:
             self.ledger.append(issue or 0, "external_review", pr=pull.number, head_sha=head, review_ref=ref,
                                reviewer=adapter.spec.name, reviewer_family=family, verdict=verdict, attempt=0)
             return "external_review"
+        state = self.ledger.main_state(issue)
+        completed = self.ledger.last_of(issue, "completed", state["attempt"])
+        if state["state"] in ("completed", "validated", "verified") and completed and completed.get("head_sha") != head:
+            # رأسٌ مصحَّح دُفع بعد completed: يُقيَّد completed جديد فيسقط ما قبله (ملاحظة Codex على #344)
+            self.ledger.append(issue, "completed", head_sha=head, branch=completed["branch"], pr=pull.number, pr_url=pull.url,
+                               superseded_head=completed.get("head_sha"))
         if not is_calibrated(load_calibration(self.home), adapter.spec.name, self.clock()):
             self.ledger.append(issue, "review_uncalibrated", head_sha=head, reviewer=adapter.spec.name, reviewer_family=family,
                                review_ref=ref, verdict=verdict)
@@ -181,9 +187,6 @@ class Reviewer:
             return {"status": "reviewer_unavailable", "code": "no_eligible_reviewer", "owner_queue": True, **plan}
         if not execute:
             return {"status": "dry_run", **plan}
-        report = self._doctor(names)
-        if report.get("status") != "passed":
-            raise Refusal("doctor_refused", ", ".join(report.get("findings") or []))
         tried = []
         with tempfile.TemporaryDirectory(prefix="team-review-") as tmpdir:
             tmp = Path(tmpdir) / "wt"
@@ -192,6 +195,14 @@ class Reviewer:
             try:
                 for name in names:
                     adapter = self.adapters[name]
+                    report = self._doctor([name])
+                    if report.get("status") != "passed":
+                        # مراجعٌ تغيّر ثنائيُّه أو غاب لا يحجب البديلَ المتاح (ملاحظة Codex على #344)
+                        tried.append({"reviewer": name, "code": "doctor_refused"})
+                        if pull.issue is not None and self.ledger.main_state(pull.issue) is not None:
+                            self.ledger.append(pull.issue, "reviewer_unavailable", code="doctor_refused", reviewer=name, pr=pull.number,
+                                               findings=report.get("findings") or [])
+                        continue
                     argv = adapter.review_argv(tmp, pull.base_branch)
                     prompt = REVIEW_PROMPT.format(base=base_sha[:12], head=pull.head_sha[:12])
                     rc, out, err = adapter.run_review(argv, prompt, tmp, timeout)
