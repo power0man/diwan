@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -77,13 +78,28 @@ def is_calibrated(calibration: dict, reviewer: str, now_iso: str, days: int = CA
         return False
 
 
+def path_spellings(paths: tuple[str, ...]) -> set[str]:
+    """صِيَغُ المسار الواحد على macOS: كما أُعطي، وحقيقتُه بعد الروابط الرمزية، وبـ`/private` وبدونها (`/var` ↔ `/private/var`)؛
+    فالمراجعُ قد يكتب أيَّ صيغةٍ منها (ملاحظة Codex الثالثة على #347)."""
+    out: set[str] = set()
+    for raw in paths:
+        if not raw:
+            continue
+        for base in {raw.rstrip("/"), os.path.realpath(raw).rstrip("/")}:
+            out.add(base)
+            if base.startswith("/private/"):
+                out.add(base[len("/private"):])
+            elif base.startswith(("/var/", "/tmp/", "/etc/")):
+                out.add("/private" + base)
+    return out
+
+
 def q75_comment(adapter: Adapter, head_sha: str, verdict: str, text: str, codes: list[str], agent_id: str, base_sha: str = "",
                 strip_paths: tuple[str, ...] = ()) -> str:
     quarantined = quarantine(text or "")
     body = quarantined.text.strip()
-    for prefix in strip_paths:                      # مسارُ النسخة المؤقتة على الجهاز لا يُنشر في التعليق
-        if prefix:
-            body = body.replace(prefix.rstrip("/") + "/", "").replace(prefix, "")
+    for prefix in sorted(path_spellings(strip_paths), key=len, reverse=True):   # مسارُ النسخة المؤقتة لا يُنشر، بكل صِيَغه
+        body = body.replace(prefix + "/", "").replace(prefix, "")
     if len(body) > MAX_COMMENT_CHARS:
         body = body[:MAX_COMMENT_CHARS] + "\n…(اقتُطع)"
     marks = sorted({f.code for f in quarantined.findings} | set(codes))

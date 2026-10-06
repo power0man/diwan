@@ -290,6 +290,12 @@ def test_the_temporary_worktree_path_is_not_published_in_the_comment(tmp_path):
     body = rv.q75_comment(adapters["codex"], "a" * 40, "pass", adapters["codex"].review_text, [], "openai/codex",
                           strip_paths=("/private/tmp/team-review-abc/wt",))
     assert "/private/tmp/team-review-abc" not in body and "[x.txt:1](x.txt:1)" in body and "y.py" in body
+    # صيغتا macOS: البادئةُ بـ/var والرابطُ بـ/private/var وبالعكس (ملاحظة Codex الثالثة على #347)
+    text = "[x.py:1](/private/var/folders/ex/team-review-abc/wt/x.py:1) و /var/folders/ex/team-review-abc/wt/y.py\nالحكم: صامد"
+    body = rv.q75_comment(adapters["codex"], "a" * 40, "pass", text, [], "openai/codex", strip_paths=("/var/folders/ex/team-review-abc/wt",))
+    assert "[x.py:1](x.py:1)" in body and " y.py" in body and "/private" not in body and "/var/" not in body
+    body = rv.q75_comment(adapters["codex"], "a" * 40, "pass", text, [], "openai/codex", strip_paths=("/private/var/folders/ex/team-review-abc/wt",))
+    assert "[x.py:1](x.py:1)" in body and " y.py" in body and "/var/" not in body
 
 
 def test_a_platform_failure_in_the_cli_is_a_named_unavailability_not_a_traceback(tmp_path, monkeypatch, capsys):
