@@ -29,7 +29,8 @@ def test_claude_and_codex_argv_are_clean_and_sandboxed(tmp_path):
     for argv in (claude, codex, ClaudeAdapter(binary=tmp_path / "claude").review_argv(tmp_path, "main"),
                  CodexAdapter(binary=tmp_path / "codex").review_argv(tmp_path, "main")):
         base.assert_no_bypass(argv)
-    assert "--bare" in claude and claude[claude.index("--permission-mode") + 1] == "acceptEdits"
+    assert "--bare" not in claude and claude[claude.index("--setting-sources") + 1] == "project" and "--strict-mcp-config" in claude
+    assert claude[claude.index("--permission-mode") + 1] == "acceptEdits"
     assert "sandbox" in claude[claude.index("--settings") + 1]
     assert codex[codex.index("-s") + 1] == "workspace-write" and codex[-1] == "-"
 
@@ -70,3 +71,13 @@ def test_verdict_is_parsed_from_the_final_line():
     assert base.parse_verdict("…\nالحكم: يحتاج تصحيحًا") == "revise"
     assert base.parse_verdict("Verdict: reject\nالحكم: reject") == "reject"
     assert base.parse_verdict("لا سطر حكم") == "unknown"
+
+
+def test_codex_review_runs_read_only_and_reads_the_last_agent_message(tmp_path):
+    adapter = CodexAdapter(binary=tmp_path / "codex")
+    argv = adapter.review_argv(tmp_path, "main")
+    assert argv[1] == "exec" and argv[argv.index("-s") + 1] == "read-only" and argv[-1] == "-" and "review" not in argv
+    stdout = "\n".join([json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": "ملاحظة أولى"}}),
+                        json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": "عيب في السطر ٢.\nالحكم: يحتاج تصحيحًا"}})])
+    result = adapter.parse_review(0, stdout, "")
+    assert result.ok and result.verdict == "revise" and result.text.startswith("عيب")

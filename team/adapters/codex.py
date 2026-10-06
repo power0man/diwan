@@ -1,4 +1,7 @@
-"""محوِّل Codex CLI (0.160.x): كاتبٌ بـ`codex exec --json -s workspace-write`، والمراجعُ الافتراضي بـ`codex review --base`.
+"""محوِّل Codex CLI (0.160.x): كاتبٌ بـ`codex exec --json -s workspace-write`، والمراجعُ الافتراضي بـ`codex exec -s read-only` بتعليمات المراجعة.
+
+`codex review --base <فرع>` لا يقبل تعليماتٍ مخصّصة في هذا الإصدار (دخان ٦ أكتوبر: «cannot be used with [PROMPT]»)، فالمراجعةُ تجري
+بـ`exec` في صندوق `read-only` على نسخةِ عملٍ منفصلة عند رأس الطلب، والتعليماتُ عبر stdin، والحكمُ من آخر رسالةٍ للوكيل في JSONL.
 
 `codex exec` غيرُ تفاعليّ بطبيعته في هذا الإصدار (لا راية `-a`)، وأعلامُ التجاوز فيه `--approve-for-me`
 و`--dangerously-bypass-approvals-and-sandbox` ممنوعةٌ بالعقد. الصندوقُ `workspace-write` (Seatbelt على macOS) يحصر الكتابةَ في
@@ -13,7 +16,7 @@ import os
 import shutil
 from pathlib import Path
 
-from .base import Adapter, AgentSpec, WorkerResult, unavailable_code
+from .base import Adapter, AgentSpec, ReviewResult, WorkerResult, parse_verdict, unavailable_code
 
 SPEC = AgentSpec(
     name="codex", family="openai",
@@ -69,4 +72,25 @@ class CodexAdapter(Adapter):
                             cost_estimate_usd=None, returncode=returncode, unavailable=unavailable)
 
     def review_argv(self, worktree: Path, base_branch: str) -> list[str]:
-        return [str(self.binary), "review", "--base", base_branch, "-"]
+        return [str(self.binary), "exec", "--json", "-s", "read-only", "-C", str(worktree), "-"]
+
+    def parse_review(self, returncode: int, stdout: str, stderr: str) -> ReviewResult:
+        """آخرُ رسالةٍ للوكيل من أحداث JSONL (`item.completed` من نوع `agent_message`)؛ وإلا النصُّ كما هو."""
+        messages, failed = [], False
+        for line in stdout.splitlines():
+            line = line.strip()
+            if not line.startswith("{"):
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if event.get("type") in ("turn.failed", "error"):
+                failed = True
+            item = event.get("item") or {}
+            if event.get("type") == "item.completed" and item.get("type") == "agent_message" and item.get("text"):
+                messages.append(str(item["text"]))
+        text = messages[-1] if messages else stdout
+        unavailable = unavailable_code(returncode, f"{stdout}\n{stderr}") if (returncode != 0 or failed) else None
+        return ReviewResult(ok=returncode == 0 and not failed and unavailable is None, verdict=parse_verdict(text), text=text,
+                            returncode=returncode, unavailable=unavailable)

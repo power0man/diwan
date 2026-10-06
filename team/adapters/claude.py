@@ -1,6 +1,8 @@
-"""محوِّل Claude Code (2.1.x): كاتبٌ بـ`-p --bare` ومخرجٍ JSON، ومراجعٌ للقراءة فقط في جلسةٍ جديدة.
+"""محوِّل Claude Code (2.1.x): كاتبٌ بـ`-p` ومخرجٍ JSON، ومراجعٌ للقراءة فقط في جلسةٍ جديدة.
 
-الثنائيُّ المباشر `~/.local/bin/claude` لا وسيطُ `rorolee` على PATH. و`--bare` يعزل عن الخطّافات وخوادم MCP والذاكرة،
+الثنائيُّ المباشر `~/.local/bin/claude` لا وسيطُ `rorolee` على PATH. **لا `--bare`:** وثيقتُه تقول إنه يتخطّى قراءة سلسلة المفاتيح
+وإن المصادقة فيه «مفتاح API فقط»، فهو غير متوافق مع دخول المالك بالاشتراك (دخان ٦ أكتوبر). العزلُ عن خطّافات المستخدم وخوادمه بـ
+`--setting-sources project` (إعدادُ المستودع وحده) و`--strict-mcp-config` (لا خوادم MCP من إعداد المستخدم) و`--disable-slash-commands`،
 و`--settings` يفعّل صندوقَ Bash المدمج ويرفض العملَ إن تعذّر (`failIfUnavailable`)، و`--max-budget-usd` سقفُ الكلفة
 المعلَنة (تقديرٌ من جهة العميل لا فاتورة). **الحدُّ المعلَن:** `acceptEdits` حدُّ أذونٍ لا حدُّ نظام تشغيل، وأدواتُ القراءة
 والكتابة تعمل خارج صندوق Bash؛ فاختبارُ العزل بملفٍّ شاهد (A3) هو ما يُحتجّ به لا هذه الرايات.
@@ -25,6 +27,8 @@ SPEC = AgentSpec(
     trust={"reviewer_eligible": True},
 )
 SANDBOX_SETTINGS = json.dumps({"sandbox": {"enabled": True, "failIfUnavailable": True}})
+# عزلٌ عن إعداد المستخدم بلا --bare: مصادرُ الإعداد المستودعُ وحده، ولا خوادم MCP من المستخدم، ولا مهارات
+ISOLATION_FLAGS = ("--setting-sources", "project", "--strict-mcp-config", "--disable-slash-commands")
 REVIEW_TOOLS = ("Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)")
 
 
@@ -46,7 +50,7 @@ class ClaudeAdapter(Adapter):
         self.binary = Path(binary) if binary else default_binary()
 
     def work_argv(self, worktree: Path, budget_usd: float, out_dir: Path) -> list[str]:
-        return [str(self.binary), "-p", "--bare", "--output-format", "json", "--permission-mode", "acceptEdits",
+        return [str(self.binary), "-p", *ISOLATION_FLAGS, "--output-format", "json", "--permission-mode", "acceptEdits",
                 "--max-budget-usd", f"{budget_usd:.2f}", "--settings", SANDBOX_SETTINGS]
 
     def parse_work(self, returncode: int, stdout: str, stderr: str, out_dir: Path) -> WorkerResult:
@@ -62,7 +66,7 @@ class ClaudeAdapter(Adapter):
                             cost_estimate_usd=payload.get("total_cost_usd"), returncode=returncode, unavailable=unavailable)
 
     def review_argv(self, worktree: Path, base_branch: str) -> list[str]:
-        return [str(self.binary), "-p", "--bare", "--output-format", "json", "--permission-mode", "plan",
+        return [str(self.binary), "-p", *ISOLATION_FLAGS, "--output-format", "json", "--permission-mode", "plan",
                 "--allowedTools", *REVIEW_TOOLS]
 
     def parse_review(self, returncode: int, stdout: str, stderr: str) -> ReviewResult:
