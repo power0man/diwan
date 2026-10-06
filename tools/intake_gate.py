@@ -173,13 +173,14 @@ def payload_event(payload: dict) -> list[dict]:
     return [{"event": payload["action"], "label": label, "actor": payload.get("sender") or {}}]
 
 
-def merge_payload_event(events: list[dict], payload: dict) -> tuple[list[dict], bool]:
+def merge_payload_event(events: list[dict], payload: dict, owner: str = OWNER) -> tuple[list[dict], bool]:
     """يعيد (خطَّ الأحداث، هل لقطةُ الحمولة قديمة).
 
     القاعدةُ الوحيدةُ التي لا تخمّن: طوابعُ GitHub بدقّة الثانية، فحدثٌ على الوسم نفسِه طابعُه **بعد** ثانيةِ الحمولة
     (`created_at` > `issue.updated_at`) أحدثُ منها قطعًا؛ عندها اللقطةُ قديمة، فلا يُلحق حدثُها وتُقرأ المسألةُ من المصدر.
-    وفي الثانية نفسِها لا هويّةَ للحدث، فالاتجاهُ الآمن غيرُ متناظر: حمولةُ **نزعٍ** تُلحق (نزعٌ يُحتسب ولو كان قديمًا)، وحمولةُ
-    **إذنٍ** لا تُلحق (إذنٌ قديم لا يُعاد اعتمادُه فوق نزعٍ أو إذنِ غيرِ المالك في الثانية نفسِها) وتُقرأ المسألةُ من المصدر.
+    وفي الثانية نفسِها لا هويّةَ للحدث، فالاتجاهُ الآمن غيرُ متناظر: يُلحق كلُّ ما لا يمنح إذنًا (نزعٌ، أو وسمٌ وضعه غيرُ المالك
+    فينقض إذنَ المالك)، ولا يُلحق **إذنُ المالك** وحده (إذنٌ قديم لا يُعاد اعتمادُه فوق نزعٍ أو إذنِ غيرِ المالك في الثانية نفسِها)
+    وتُقرأ المسألةُ من المصدر.
     وبلا طوابع أو بخطٍّ متأخّر يُلحق حدثُ الحمولة كما هو. لا مطابقةَ لهويّة الحدث داخل الثانية ولا استدلالَ من لقطة الوسوم:
     كلاهما خمّن فأخطأ في اتجاهٍ مفتوح (ملاحظاتُ Codex على #346؛ فُرزت في #345)."""
     extra = payload_event(payload)
@@ -192,8 +193,9 @@ def merge_payload_event(events: list[dict], payload: dict) -> tuple[list[dict], 
     if stamp and newer:
         return events, True
     same_second = [e for e in same_label if str(e.get("created_at") or "") == stamp]
-    if stamp and same_second and extra[0]["event"] == "labeled":
-        return events, True                     # إذنٌ قديم في ثانيةٍ مزدحمة لا يُعاد اعتمادُه (ملاحظة Codex الثامنة على #346)
+    grants = extra[0]["event"] == "labeled" and str((extra[0].get("actor") or {}).get("login") or "") == owner
+    if stamp and same_second and grants:
+        return events, True                     # إذنُ المالك القديم في ثانيةٍ مزدحمة لا يُعاد اعتمادُه (ملاحظتا Codex ٨ و١٠ على #346)
     return events + extra, False
 
 

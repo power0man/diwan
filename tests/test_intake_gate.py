@@ -237,6 +237,14 @@ def test_a_stale_revocation_payload_is_outranked_by_a_newer_regrant_in_the_timel
     assert ig.merge_payload_event(busy, old_grant) == (busy, True)
     github = FakeGitHub(busy, fresh_issue=_payload(CLEAN)["issue"])
     assert ig.apply_launch_gate(old_grant, github) == 1 and github.removed == [(7, "jules")]
+    # وسمٌ وضعه غيرُ المالك في الثانية نفسِها وخطٌّ متأخّر يحمل إذنَ المالك فقط: يُلحق (ينقض الإذن) فيُنزع `jules` (ملاحظة Codex ١٠)
+    foreign_grant = _payload(CLEAN, action="labeled", label="ready:google", sender="stranger")
+    foreign_grant["issue"]["updated_at"] = "2026-10-06T10:00:00Z"
+    lagging_owner = [dict(_event("labeled", "ready:google"), created_at="2026-10-06T10:00:00Z"), _event("labeled", "jules")]
+    merged, is_stale = ig.merge_payload_event(lagging_owner, foreign_grant)
+    assert is_stale is False and merged[-1]["actor"] == {"login": "stranger"}
+    github = FakeGitHub(lagging_owner)
+    assert ig.apply_launch_gate(foreign_grant, github) == 1 and github.removed == [(7, "jules")]
     # نزعٌ وخطٌّ متأخّر يحمل إذنَ المالك القديم فقط، واللقطةُ تحمل الوسم (أعاده غيرُ المالك): النزعُ يُحتسب لا اللقطة
     lagging = _payload(CLEAN, action="unlabeled", label="ready:google")
     github = FakeGitHub(GRANTED)
