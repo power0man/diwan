@@ -224,11 +224,12 @@ def test_the_generated_pull_closes_its_issue(tmp_path):
 
 
 def test_takeover_without_a_known_pid_cannot_prove_absence(tmp_path):
-    dispatcher, _project, _adapter, ledger, _repo = _setup(tmp_path)
+    dispatcher, _project, _adapter, ledger, repo = _setup(tmp_path)
     worktree = tmp_path / "wt" / "team-41-anthropic"
-    worktree.mkdir(parents=True)
+    worktree.parent.mkdir(parents=True)
+    git("worktree", "add", str(worktree), "-b", "team/41-anthropic", "origin/main", cwd=repo)   # نسخةٌ حقيقية بلا إيداعٍ جديد
     ledger.append(41, "dispatched", brief_sha256="b" * 64, worker="claude", family="anthropic", branch="team/41-anthropic",
-                  worktree=str(worktree), base_sha="0" * 40)
+                  worktree=str(worktree), base_sha=git("rev-parse", "origin/main", cwd=repo))
     dispatcher.clock = lambda: "2026-10-08T11:00:00+00:00"
     ledger.clock = dispatcher.clock
     with pytest.raises(Refusal) as exc:
