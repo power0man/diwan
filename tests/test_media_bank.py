@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from datetime import datetime, timezone
 
 import pytest
 
@@ -26,8 +27,6 @@ TEXTS = {t["text_id"]: t["text"] for t in _load("ocr_texts.json")["texts"]}
 def _answer(value):
     return f"أرى في الصورة ما يلي.\nالجواب: {value}"
 
-
-from datetime import datetime, timezone
 
 BANK_FREEZE_TIME = datetime(2026, 10, 6, 0, 0, 0, tzinfo=timezone.utc)
 
@@ -241,3 +240,21 @@ def test_vision_runner_is_not_blocked_when_speech_pending_fetch_expires(tmp_path
         vision_runner._load(root)
     assert err.value.code == "bank_invalid"
 
+
+def test_ocr_runner_is_not_blocked_when_speech_pending_fetch_expires(tmp_path):
+    from evaluation import ocr_runner
+    root = tmp_path / "media_v1"
+    shutil.copytree(BANK, root)
+    speech = json.loads((root / "speech.json").read_text(encoding="utf-8"))
+    speech["asr"]["deadline"] = "2020-01-01T00:00:00Z"
+    (root / "speech.json").write_text(json.dumps(speech, ensure_ascii=False), encoding="utf-8")
+    # البنك يسقط في validate_media_bank العام بسبب انتهاء أجل الكلام
+    assert any(p.startswith("pending_fetch_expired") for p in validate_media_bank(root))
+    # لكن ocr_runner لا يُمنع من العمل
+    bank, texts = ocr_runner._load(root)
+    assert bank["items"] == OCR["items"]
+    # ولا زال أي خلل حقيقي آخر يمنعه
+    (root / "ocr.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(ocr_runner.OCRRefused) as err:
+        ocr_runner._load(root)
+    assert err.value.code == "bank_invalid"
