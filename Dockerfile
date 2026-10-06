@@ -22,7 +22,9 @@ RUN printf '%s\n' 'uv==0.8.17 \
       --hash=sha256:3941cecd9a6a46d3d4505753912c9cf3e8ae5eea30b9d0813f3656210f8c5d01' > /tmp/uv-requirements.txt \
     && pip install --no-cache-dir --require-hashes -r /tmp/uv-requirements.txt \
     && rm /tmp/uv-requirements.txt
-RUN apt-get update && apt-get install -y --no-install-recommends git \
+# poppler-utils (pdftoppm) وtesseract مع بيانات العربية: أداةُ ocr_image تقرأ بهما الصورَ وصفحاتِ PDF بلا نموذج رؤية
+# (غ٨، ملاحظتا Codex على #311)؛ ومحرّكُ الرؤية المحليّ إن ضُبط يتقدّمهما
+RUN apt-get update && apt-get install -y --no-install-recommends git poppler-utils tesseract-ocr tesseract-ocr-ara \
     && rm -rf /var/lib/apt/lists/* \
     && git config --system --add safe.directory /app
 COPY --from=node:24-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6 /usr/local/bin/node /usr/local/bin/node

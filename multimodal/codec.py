@@ -179,6 +179,18 @@ def _wav(raw):
 
 
 def _jpeg(raw: bytes) -> dict:
+    metadata, end = _jpeg_scan(raw)
+    # نهايةُ الصورة نهايةُ البايتات: ما بعد EOI يُرفض، فلا يعبر ملفٌّ ملصقٌ بغيره حدَّ الوسائط (ملاحظة Codex على #311)
+    _need(end == len(raw), "jpeg_invalid", "JPEG خارج العقد المحدود أو تالف")
+    return metadata
+
+
+def jpeg_without_trailer(raw: bytes) -> bytes:
+    """بايتاتُ JPEG حتى EOI وحدها: صورُ الهواتف تُلحق بياناتٍ بعده (`SEFT`)، فتُقرأ الصورةُ ولا يعبر الملحق."""
+    return raw[:_jpeg_scan(raw)[1]]
+
+
+def _jpeg_scan(raw: bytes) -> tuple[dict, int]:
     def need(condition):
         _need(condition, "jpeg_invalid", "JPEG خارج العقد المحدود أو تالف")
 
@@ -237,7 +249,7 @@ def _jpeg(raw: bytes) -> dict:
             continue
         offset += length
     need(header is not None and seen_eoi)
-    return {"width": header[0], "height": header[1]}
+    return {"width": header[0], "height": header[1]}, offset
 
 
 def find_pdf_renderer() -> str | None:
@@ -346,6 +358,8 @@ def read_selected(path: Path, page: int = 1) -> dict:
         if is_pdf or raw.startswith(b"%PDF-"):
             clipped = clip_pdf_page(raw, page=page)
             return pack_media(clipped, f"{name}.p{page}.png")
+        if raw.startswith(b"\xff\xd8\xff"):
+            raw = jpeg_without_trailer(raw)
     except WorkspaceError as exc:
         code = "media_too_large" if exc.code == "file_too_large" else exc.code
         raise MediaError(code, exc.reason) from None

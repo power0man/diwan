@@ -1,7 +1,7 @@
 """أداة استخراج النص من الصور والمستندات (غ٨ #48): ocr_image.
 
 تستخرج النصوص من الصور (PNG وJPEG) ومستندات PDF عبر المحرّك المتاح محليًا
-(LocalMediaProvider/Ollama أو EasyOCR كبديل محلي مباشر)، وتحجر النصوص المستخرجة
+(LocalMediaProvider/Ollama، ثم Tesseract المثبَّت في صورة الحاوية، ثم EasyOCR)، وتحجر النصوص المستخرجة
 عبر core.quoted.quarantine حمايةً من أي حقن للأوامر (Prompt Injection)،
 وتتيح حفظ النص المستخرج في مساحة العمل عبر دفتر الرجوع (Journal).
 """
@@ -46,9 +46,16 @@ OCR_IMAGE_SPEC = ToolSpec(
         },
         "required": ["path"],
     },
-    consent="auto",
+    # تكتب ملفًّا في مساحة العمل حين يُعطى output_path، فدرجتُها درجةُ أدوات الكتابة (ملاحظة Codex على #311)
+    consent="logged",
     reversible=True,
 )
+
+# Tesseract بإعداداته الافتراضية وبيانات العربية، كما قيس في غ٨ (#92)؛ ومهلتُه مهلةُ مُشغِّل القياس
+TESSERACT_TIMEOUT_S = 120
+# ما يلزم تثبيتُه حين لا يتاح محرّك: صورةُ الحاوية تحمل Tesseract وpoppler (docs/INSTALL.md)
+OCR_INSTALL_HINT = ("لا محرّكَ OCR متاح: ثبّت tesseract-ocr مع tesseract-ocr-ara (وpoppler-utils لصفحات PDF)، "
+                    "أو اضبط DIWAN_MEDIA_MODEL وDIWAN_MEDIA_DIGEST لنموذج رؤيةٍ محلي")
 
 
 def _inside_workspace(context: ToolContext, relative: str, *, writing: bool = False) -> Path:
@@ -77,6 +84,30 @@ def _extract_text_via_easyocr(image_bytes: bytes) -> str:
             raise
         except Exception:
             raise ToolRefused("ocr_engine_unavailable", "أوزان easyocr غير متوفرة محليًا") from None
+
+
+def _extract_text_via_tesseract(image_bytes: bytes, suffix: str = ".png", executable: str | None = None,
+                                language: str = "ara") -> str:
+    """Tesseract على ملفٍّ مؤقّت بإعداداته الافتراضية (لا --psm ولا --oem)، كما في `evaluation/ocr_runner.py`."""
+    import shutil
+    import subprocess
+    import tempfile
+
+    executable = executable or shutil.which("tesseract")
+    if not executable:
+        raise ToolRefused("ocr_engine_unavailable", "tesseract غائب؛ ثبّته مع بيانات العربية (tesseract-ocr-ara)")
+    with tempfile.NamedTemporaryFile(suffix=suffix) as tmp:
+        tmp.write(image_bytes)
+        tmp.flush()
+        try:
+            done = subprocess.run([executable, tmp.name, "-", "-l", language], capture_output=True, text=True,
+                                  timeout=TESSERACT_TIMEOUT_S, check=False)
+        except (OSError, subprocess.SubprocessError):
+            raise ToolRefused("ocr_engine_unavailable", "تعذّر تشغيل tesseract") from None
+    if done.returncode != 0:
+        raise ToolRefused("ocr_engine_unavailable",
+                          f"أخفق tesseract (رمز الخروج {done.returncode})؛ بياناتُ «{language}» غائبةٌ أو الصورة غير مقروءة")
+    return done.stdout.strip()
 
 
 def _get_media_provider(model: str | None = None, version: str | None = None, base_url: str | None = None):
@@ -128,16 +159,28 @@ def perform_ocr(image_dict: dict, engine: str = "auto", provider=None) -> str:
     """استخراج النص من الوسيط المجهز عبر المحرك المحدد أو التبديل التلقائي."""
     import base64
     raw_bytes = base64.b64decode(image_dict["data_base64"])
+    suffix = ".jpg" if image_dict.get("mime") == "image/jpeg" else ".png"
     if engine == "easyocr":
         return _extract_text_via_easyocr(raw_bytes)
+    elif engine == "tesseract":
+        return _extract_text_via_tesseract(raw_bytes, suffix)
     elif engine in ("media_provider", "ollama"):
         return _extract_text_via_media_provider(image_dict, provider=provider)
     else:
-        # auto: تجربة مزوّد الوسائط إن وُجد، وإلا التراجع إلى EasyOCR
+        # auto: مزوّد الوسائط إن ضُبط، ثم Tesseract (في صورة الحاوية)، ثم EasyOCR؛ فإن غابت كلُّها سُمّي ما يُثبَّت
+        # (ملاحظة Codex على #311)
         try:
             return _extract_text_via_media_provider(image_dict, provider=provider)
         except Exception:
+            pass
+        try:
+            return _extract_text_via_tesseract(raw_bytes, suffix)
+        except ToolRefused:
+            pass
+        try:
             return _extract_text_via_easyocr(raw_bytes)
+        except ToolRefused:
+            raise ToolRefused("ocr_engine_unavailable", OCR_INSTALL_HINT) from None
 
 
 def ocr_image_handler(arguments: dict, context: ToolContext) -> dict:

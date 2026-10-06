@@ -46,7 +46,8 @@ def workspace(tmp_path):
 
 def test_ocr_spec_properties():
     assert OCR_IMAGE_SPEC.name == "ocr_image"
-    assert OCR_IMAGE_SPEC.consent == "auto"
+    # تكتب ملفًّا حين يُعطى output_path، فدرجتُها درجةُ أدوات الكتابة (ملاحظة Codex على #311)
+    assert OCR_IMAGE_SPEC.consent == "logged"
     assert OCR_IMAGE_SPEC.reversible is True
     assert "path" in OCR_IMAGE_SPEC.parameters["properties"]
     assert "page" in OCR_IMAGE_SPEC.parameters["properties"]
@@ -220,11 +221,23 @@ def test_progressive_jpeg_sof2_parsed_to_eoi(workspace, monkeypatch):
     assert res["text"] == "نص صورة تدريجية"
 
 
+def _fake_pdftoppm(cmd, **kw):
+    """pdftoppm بسلوكه المعلن: الصفحةُ بالدقّة المطلوبة، و`-scale-to` يحدّ ضلعها الأطول. فلا يتوقّف الاختبار
+    على وجود poppler في بيئة CI، ويسقط إن أُسقط خيارُ التحجيم."""
+    import subprocess
+    dpi = int(cmd[cmd.index("-r") + 1])
+    width, height = round(595.28 / 72 * dpi), round(841.89 / 72 * dpi)
+    if "-scale-to" in cmd:
+        side = int(cmd[cmd.index("-scale-to") + 1])
+        width, height = round(width * side / height), side
+    Path(f"{cmd[-1]}-1.png").write_bytes(make_valid_png(width, height))
+    return subprocess.CompletedProcess(cmd, 0, b"", b"")
+
+
 def test_a4_pdf_scaled_and_read_selected_within_image_limits(workspace, monkeypatch):
-    import shutil
-    if not shutil.which("pdftoppm"):
-        pytest.skip("pdftoppm غير متوفر محليًا")
     ws, ctx = workspace
+    monkeypatch.setattr("multimodal.codec.find_pdf_renderer", lambda: "fake-pdftoppm")
+    monkeypatch.setattr("subprocess.run", _fake_pdftoppm)
 
     # مستند PDF بصفحة قياس A4 (595.28 × 841.89 pt)
     a4_pdf = (
@@ -247,6 +260,82 @@ def test_a4_pdf_scaled_and_read_selected_within_image_limits(workspace, monkeypa
     res = ocr_image_handler({"path": "doc_a4.pdf", "page": 1}, ctx)
     assert res["clean"]
     assert res["text"] == "نص صفحة A4"
+
+
+def _fake_tesseract(monkeypatch, stdout="نص تيسراكت", returncode=0, seen=None):
+    import shutil
+    import subprocess
+    real_which = shutil.which
+    monkeypatch.setattr("shutil.which", lambda name, *a, **k: "fake-tesseract" if name == "tesseract"
+                        else real_which(name, *a, **k))
+
+    def run(cmd, **kw):
+        if seen is not None:
+            seen.append(cmd)
+        return subprocess.CompletedProcess(cmd, returncode, stdout, "")
+    monkeypatch.setattr("subprocess.run", run)
+
+
+def test_auto_reads_with_tesseract_when_no_vision_model_is_configured(workspace, monkeypatch):
+    """ملاحظة Codex على #311: بلا نموذج رؤيةٍ مضبوط كان `auto` يقفز إلى EasyOCR غير المثبَّت فيرفض دائمًا. فTesseract
+    (في صورة الحاوية) يقرأ قبله، بالعربية وعلى بايتات الصورة نفسها."""
+    ws, ctx = workspace
+    (ws / "page.png").write_bytes(SAMPLE_PNG)
+    monkeypatch.setattr("multimodal.ocr._get_media_provider", lambda **kw: None)
+    easy = []
+    monkeypatch.setattr("multimodal.ocr._extract_text_via_easyocr", lambda b: easy.append(b) or "easy")
+    seen = []
+    _fake_tesseract(monkeypatch, seen=seen)
+    res = ocr_image_handler({"path": "page.png"}, ctx)
+    assert res["text"] == "نص تيسراكت" and easy == []
+    assert seen[0][0] == "fake-tesseract" and seen[0][-2:] == ["-l", "ara"]
+
+
+@pytest.mark.parametrize("returncode, found", [
+    pytest.param(None, "tesseract غائب", id="missing"),
+    pytest.param(1, "رمز الخروج 1", id="failed"),
+])
+def test_tesseract_refuses_by_name(workspace, monkeypatch, returncode, found):
+    ws, ctx = workspace
+    (ws / "page.png").write_bytes(SAMPLE_PNG)
+    if returncode is None:
+        monkeypatch.setattr("shutil.which", lambda name, *a, **k: None)
+    else:
+        _fake_tesseract(monkeypatch, stdout="", returncode=returncode)
+    with pytest.raises(ToolRefused) as exc:
+        ocr_image_handler({"path": "page.png", "engine": "tesseract"}, ctx)
+    assert exc.value.code == "ocr_engine_unavailable" and found in exc.value.reason
+
+
+def test_auto_without_any_engine_names_what_to_install(workspace, monkeypatch):
+    """ملاحظة Codex على #311: غيابُ كلّ محرّك رفضٌ مسمّى يذكر ما يُثبَّت، لا رفضُ EasyOCR وحده."""
+    import sys
+    ws, ctx = workspace
+    (ws / "page.png").write_bytes(SAMPLE_PNG)
+    monkeypatch.setattr("multimodal.ocr._get_media_provider", lambda **kw: None)
+    monkeypatch.setattr("shutil.which", lambda name, *a, **k: None)
+    monkeypatch.setitem(sys.modules, "easyocr", None)
+    with pytest.raises(ToolRefused) as exc:
+        ocr_image_handler({"path": "page.png"}, ctx)
+    assert exc.value.code == "ocr_engine_unavailable"
+    assert "tesseract-ocr-ara" in exc.value.reason and "poppler-utils" in exc.value.reason
+
+
+def test_bytes_after_the_jpeg_end_never_cross_the_media_boundary(workspace, monkeypatch):
+    """ملاحظة Codex على #311: ما بعد EOI كان يُقبل فيُبصم ويُرسل إلى محرّك OCR. فالوسيطُ المحزوم يُرفض به، وقراءةُ
+    الملفّ تأخذ الصورة حتى EOI وحدها، فتُقرأ صورُ الهواتف (`SEFT`) ولا يعبر ملحقها."""
+    import hashlib
+    ws, ctx = workspace
+    raw = (Path(__file__).resolve().parents[1] / "evaluation/media_v1/ocr/o01.jpg").read_bytes()
+    with pytest.raises(MediaError) as exc:
+        pack_media(raw + b"%PDF-1.4", "o01.jpg")
+    assert exc.value.code == "jpeg_invalid"
+    (ws / "phone.jpg").write_bytes(raw + b"%PDF-1.4 SEFT")
+    sent = []
+    monkeypatch.setattr("multimodal.ocr.perform_ocr", lambda d, engine="auto", **kw: sent.append(d) or "نص")
+    res = ocr_image_handler({"path": "phone.jpg"}, ctx)
+    assert res["media_sha256"] == hashlib.sha256(raw).hexdigest()
+    assert base64.b64decode(sent[0]["data_base64"]) == raw
 
 
 def test_easyocr_missing_weights_refuses_without_network_download(workspace, monkeypatch):
@@ -345,6 +434,8 @@ def test_ocr_tool_action_reversal_via_prepared_revert(workspace, monkeypatch):
     store = ActionStore(ws.parent / "actions", ws)
     reg = ToolRegistry(OCR_IMAGE)
     monkeypatch.setattr("multimodal.ocr.perform_ocr", lambda d, engine="auto", **kw: "نص قابل للتراجع")
+    # الكتابةُ درجتُها logged، فميثاقُ auto وحده يُبقيها بانتظار المالك (ملاحظة Codex على #311)
+    ctx = ToolContext(root=ws, journal=ctx.journal, allowed_consents=frozenset({"auto", "logged"}))
 
     # إعداد وتجهيز فعل الحفظ
     call = ToolCall("call-ocr-rev", "ocr_image", {"path": "sample.png", "output_path": "saved.txt"})
