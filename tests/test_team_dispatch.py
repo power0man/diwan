@@ -671,3 +671,56 @@ def test_the_doctor_checks_the_recorded_worker_before_a_revision(tmp_path, monke
     dispatcher.doctor_check = None
     dispatcher.revise(41, execute=True)
     assert seen == ["codex"], seen
+
+
+def test_revise_waits_for_the_per_issue_launch_lock(tmp_path):
+    """أمرا `revise --execute` متزامنان: الثاني ينتظر قفلَ الإطلاق حتى يفرغ الأول، فلا عاملان في نسخة العمل نفسِها."""
+    import threading
+
+    from core.filelock import lock as file_lock, unlock as file_unlock
+
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    _rejected(dispatcher, project, ledger)
+    lock_path = dispatcher.home / "locks" / "launch-41.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    holder = lock_path.open("a", encoding="utf-8")
+    file_lock(holder)
+    done, result = threading.Event(), {}
+
+    def go():
+        result["out"] = dispatcher.revise(41, execute=True)
+        done.set()
+
+    thread = threading.Thread(target=go, daemon=True)
+    thread.start()
+    try:
+        assert not done.wait(0.4), "revise مضى والقفلُ محجوز"
+        assert ledger.last_of(41, "revision_started") is None
+    finally:
+        file_unlock(holder)
+        holder.close()
+    assert done.wait(60) and result["out"]["status"] == "completed"
+    thread.join(5)
+
+
+def test_a_checks_failure_on_the_old_head_does_not_close_a_live_revision(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    ledger.append(41, "revision_started", round=1, pid=os.getpid(), started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1")
+    ledger.append(41, "outcome_unknown", reason="timeout_revision_still_running", pid=os.getpid(), round=1)
+    ledger.append(41, "validation_failed", reason="checks_failed", head_sha=out["head_sha"])          # من validate، بلا رقم جولة
+    with pytest.raises(Refusal) as exc:
+        dispatcher.revise(41, execute=True)
+    assert exc.value.code == "revision_running"
+
+
+def test_a_dry_run_revise_does_not_record_a_moved_head(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out, ref = _rejected(dispatcher, project, ledger)
+    pull = project.pulls[out["pr"]]
+    project.pulls[out["pr"]] = PullRequest(pull.number, "f" * 40, "main", pull.branch, 41, url=pull.url)     # الرأسُ البعيد تقدّم
+    before = len(ledger.records(41))
+    with pytest.raises(Refusal) as exc:
+        dispatcher.revise(41)                                   # المراجعةُ الرافضة كانت على الرأس القديم؛ الجديدُ بلا مراجعة
+    assert exc.value.code == "nothing_to_revise" and len(ledger.records(41)) == before
+    assert ledger.main_state(41)["head_sha"] == out["head_sha"]
