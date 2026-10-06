@@ -41,6 +41,10 @@ ENFORCED_FROM = "2026-09-26T00:00:00Z"
 LABEL = "proof-missing"
 EXEMPT_LABELS = frozenset({"owner-action", "owner-decision"})
 OWNER_PREFIX = "ح"
+# مسألةُ الترحيل لصقُ نصٍّ في تطبيقٍ آخر، لا شيفرةَ فيها فلا طلبَ يُثبتها؛ وكانت تُعاد فتحُها فيُخشى لصقُها مرّتين (#326).
+# والإعفاءُ يشترط الوسمَ والبادئةَ معًا، فلا يُعفي وسمُ «relay» وحده مهمّةَ شيفرة.
+RELAY_LABEL = "relay"
+RELAY_PREFIX = "جديد-relay-"
 # معرّفاتُ الخطة «جديد-…» تبلغ ٢٨ حرفًا؛ وحدُّ ١٦ القديم كان يُعفي ٢٨ مسألةً من ٦٦ «بلا معرّف» صامتةً (ق٧٣).
 TASK_TITLE = re.compile(r"\A\s*\[([^\]\s]{1,64})\]")
 # كلماتُ الإغلاق كما يقرؤها GitHub؛ و«Refs #N» ليست منها عمدًا.
@@ -150,6 +154,9 @@ def evaluate(issues: list[dict], pulls: list[dict], git, registry: dict,
         base["task"] = task
         if task.startswith(OWNER_PREFIX) or EXEMPT_LABELS & set(issue["labels"]):
             verdicts.append({**base, "status": "exempt", "code": "owner_task"})
+            continue
+        if task.startswith(RELAY_PREFIX) and RELAY_LABEL in issue["labels"]:
+            verdicts.append({**base, "status": "exempt", "code": "relay_task"})
             continue
         code = "no_merged_pull_request"
         proven = None
