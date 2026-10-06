@@ -15,7 +15,8 @@ def _spend(basis, calls=1, prompt=10, completion=5, cost=0.0):
 
 
 EVIDENCE = {
-    "a-20261001.json": {"date": "2026-10-01", "spend": _spend("estimated_from_prices", 3, 1000, 200, 0.25)},
+    "a-20261001.json": {"date": "2026-10-01", "spend": _spend("estimated_from_prices", 2, 600, 150, 0.15)},
+    "a2-20261001.json": {"date": "2026-10-01", "spend": _spend("estimated_from_prices", 1, 400, 50, 0.1)},
     "b-20261002.json": {"date": "2026-10-02T10:00:00Z", "spend": _spend("reported_by_provider", 2, 400, 100, 0.5)},
     "c-20261003.json": {"date": "2026-10-03", "spend": _spend("subscription_flat", 4, 50, 50, 0.0)},
     "d-20261004.json": {"date": "2026-10-04", "spend": _spend("unpriced", 1, 7, 3, None)},
@@ -30,7 +31,7 @@ HF = {"cost_usd": 1.0, "read_on": "2026-11-01", "source": "https://huggingface.c
 def test_the_month_sums_its_valid_spend_blocks_by_basis():
     totals = sr.evidence_totals(EVIDENCE, "2026-10")
     assert totals["by_basis"] == {
-        "estimated_from_prices": {"files": 1, "cloud_calls": 3, "prompt_tokens": 1000, "completion_tokens": 200, "cost_usd": 0.25},
+        "estimated_from_prices": {"files": 2, "cloud_calls": 3, "prompt_tokens": 1000, "completion_tokens": 200, "cost_usd": 0.25},
         "reported_by_provider": {"files": 1, "cloud_calls": 2, "prompt_tokens": 400, "completion_tokens": 100, "cost_usd": 0.5},
         "subscription_flat": {"files": 1, "cloud_calls": 4, "prompt_tokens": 50, "completion_tokens": 50, "cost_usd": 0.0},
         "unpriced": {"files": 1, "cloud_calls": 1, "prompt_tokens": 7, "completion_tokens": 3, "cost_usd": None},
@@ -98,7 +99,7 @@ def test_the_build_command_writes_a_report_that_its_check_passes(tmp_path):
 
 
 def test_the_report_carries_no_field_the_privacy_guard_withholds():
-    report = sr.build(EVIDENCE, "2026-10", HF, "2026-11-01")
+    report = sr.build(EVIDENCE, "2026-10", sr.invoice(1.0, "2026-11-01", HF["source"], "2026-10"), "2026-11-01")
 
     def keys(value):
         if isinstance(value, dict):
