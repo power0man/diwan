@@ -26,7 +26,9 @@ UNAVAILABLE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("quota_exhausted", re.compile(r"(?i)usage limit|rate limit|quota|too many requests|\b429\b|couldn't complete this request|try again later")),
     ("auth_required", re.compile(r"(?i)not logged in|unauthorized|\b401\b|please (?:log|sign) in|authentication")),
 )
-VERDICT = re.compile(r"الحكم\s*[:：]\s*(صامد|يحتاج تصحيحًا|يحتاج تصحيحا|مرفوض|pass|revise|reject)", re.IGNORECASE)
+# سطرُ حكمٍ قائمٌ بذاته (أوّلُ السطر وآخرُه)؛ العبارةُ المقتبسة وسط سطرٍ لا تُحتسب (ملاحظة Codex على #344)
+VERDICT = re.compile(r"^[ \t*_>-]*الحكم\s*[:：]\s*(صامد|يحتاج تصحيحًا|يحتاج تصحيحا|مرفوض|pass|revise|reject)[ \t.*_]*$",
+                     re.IGNORECASE | re.MULTILINE)
 VERDICT_MAP = {"صامد": "pass", "pass": "pass", "يحتاج تصحيحًا": "revise", "يحتاج تصحيحا": "revise", "revise": "revise",
                "مرفوض": "reject", "reject": "reject"}
 

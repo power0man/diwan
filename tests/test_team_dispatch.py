@@ -235,3 +235,17 @@ def test_takeover_without_a_known_pid_cannot_prove_absence(tmp_path):
     with pytest.raises(Refusal) as exc:
         dispatcher.takeover(41, owner_authorization="نفّذ")
     assert exc.value.code == "absence_not_proven"
+
+
+def test_checks_failing_after_validation_drop_the_state_back_to_completed(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    head = out["head_sha"]
+    project.checks_by_head[head] = "success"
+    dispatcher.validate(41)
+    assert ledger.main_state(41)["state"] == "validated"
+    project.checks_by_head[head] = "failure"
+    assert dispatcher.validate(41)["status"] == "validation_failed"
+    assert ledger.main_state(41)["state"] == "completed"
+    ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1", reviewer="codex", reviewer_family="openai", verdict="pass")
+    assert ledger.main_state(41)["state"] == "completed"

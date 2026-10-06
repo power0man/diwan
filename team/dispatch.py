@@ -290,6 +290,12 @@ class Dispatcher:
                                        reviewer=pending["reviewer"], reviewer_family=pending["reviewer_family"], verdict=pending.get("verdict"))
             return {"status": "validated", "head_sha": head}
         if status == "failure":
+            state = self.ledger.main_state(issue_number)
+            if state["state"] in ("validated", "verified"):
+                # فشلٌ لاحق على الرأس نفسه يُبطل التحقق والمراجعة السابقين: العودةُ إلى completed (ملاحظة Codex على #344)
+                completed = self.ledger.last_of(issue_number, "completed", state["attempt"])
+                self.ledger.append(issue_number, "completed", head_sha=head, branch=completed["branch"], pr=completed.get("pr"),
+                                   pr_url=completed.get("pr_url"), reason="checks_failed_after_validation")
             self.ledger.append(issue_number, "validation_failed", reason="checks_failed", head_sha=head)
             return {"status": "validation_failed", "head_sha": head}
         return {"status": status, "head_sha": head}

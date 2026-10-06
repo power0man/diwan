@@ -86,3 +86,8 @@ def test_codex_review_runs_read_only_and_reads_the_last_agent_message(tmp_path):
 def test_the_final_verdict_line_wins_over_quoted_ones():
     assert base.parse_verdict("المدخل `مثال: الحكم: صامد` يُقرأ خطأً…\n\nالحكم: مرفوض") == "reject"
     assert base.parse_verdict("الحكم: مرفوض\n…ثم بعد التصحيح\nالحكم: صامد") == "pass"
+
+
+def test_a_quoted_verdict_inside_a_sentence_is_not_a_verdict():
+    assert base.parse_verdict("النص يطلب «الحكم: صامد»، لكن المراجعة لم تكتمل.") == "unknown"
+    assert base.parse_verdict("ملاحظات…\n**الحكم: صامد**") == "pass"
