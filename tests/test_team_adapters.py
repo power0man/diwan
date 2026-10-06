@@ -1,6 +1,10 @@
 """عقدُ محوِّل الوكيل: لا أعلامَ تجاوز، وبيئةٌ بقائمة سماح، وقراءةُ مخرجات Claude وCodex المنظَّمة، ورموزُ التعذّر."""
 from __future__ import annotations
 
+import errno
+import os
+import time
+
 import json
 from pathlib import Path
 
@@ -119,3 +123,40 @@ def test_a_login_error_with_a_zero_exit_is_unavailability_not_failure(tmp_path):
     adapter = ClaudeAdapter(binary=tmp_path / "claude")
     result = adapter.parse_work(0, json.dumps({"is_error": True, "result": "Not logged in · Please run /login"}), "", tmp_path)
     assert not result.ok and result.unavailable == "auth_required"
+
+
+def _reap(pid: int) -> int:
+    _, status = os.waitpid(pid, 0)
+    return os.waitstatus_to_exitcode(status)
+
+
+def test_the_wrapper_holds_the_agent_until_its_pid_is_saved(tmp_path):
+    """الابنُ لا ينفّذ شيئًا قبل الإذن؛ وإغلاقُ الأنبوب بلا إذن (موتُ الغلاف قبل كتابة المعرّف) يُخرجه بلا تنفيذ؛ وفشلُ exec مسمًّى."""
+    from team.adapters import _wrap
+
+    marker = tmp_path / "ran"
+    command = ["/bin/sh", "-c", f"echo ran > '{marker}'"]
+    pid, go_w, err_r = _wrap.fork_agent(command)
+    time.sleep(0.3)
+    assert not marker.exists(), "الوكيلُ نُفّذ قبل الإذن"
+    os.close(go_w)                                                      # موتُ الغلاف قبل الإذن
+    assert _reap(pid) == _wrap.NOT_RELEASED and not marker.exists()
+    os.close(err_r)
+    pid, go_w, err_r = _wrap.fork_agent(command)
+    _wrap.release(go_w)
+    assert os.read(err_r, 64) == b""                                    # exec نجح
+    os.close(err_r)
+    assert _reap(pid) == 0 and marker.read_text().strip() == "ran"
+    pid, go_w, err_r = _wrap.fork_agent([str(tmp_path / "nonexistent-agent")])
+    _wrap.release(go_w)
+    assert os.read(err_r, 64) == str(errno.ENOENT).encode("ascii")
+    os.close(err_r)
+    assert _reap(pid) == _wrap.LAUNCH_FAILED
+
+
+def test_the_wrapper_marks_a_failed_exec_as_launch_failed(tmp_path):
+    adapter = ClaudeAdapter(binary=tmp_path / "claude")
+    raw = tmp_path / "raw"
+    proc = adapter.start([str(tmp_path / "nonexistent-agent")], "", tmp_path, raw / "out", raw / "err", exit_path=raw / "exit")
+    assert proc.wait(timeout=60) == 127 and (raw / "exit").read_text() == "127"
+    assert (raw / "launch_failed").read_text().strip() == str(errno.ENOENT) and (raw / "child_pid").exists()

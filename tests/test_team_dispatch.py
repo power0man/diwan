@@ -458,3 +458,16 @@ def test_validate_promotes_a_pending_pass_review_when_already_validated(tmp_path
     ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1", reviewer="codex", reviewer_family="openai", verdict="pass")
     dispatcher.validate(41)
     assert ledger.main_state(41)["state"] == "verified"
+
+
+def test_the_documented_commands_parse_with_worker_after_the_subcommand():
+    """الصيغةُ المنشورة `run 341 --worker claude` كانت تُرفض لأن الراية على المحلّل الرئيس وحده (ملاحظة Codex التاسعة)."""
+    from team.dispatch import build_parser
+
+    parser = build_parser()
+    assert parser.parse_args(["run", "341", "--worker", "codex"]).worker == "codex"
+    assert parser.parse_args(["--worker", "codex", "run", "341"]).worker == "codex"
+    assert parser.parse_args(["run", "341"]).worker == "claude"
+    args = parser.parse_args(["gc", "--repo-root", "/x", "--yes"])
+    assert args.repo_root == "/x" and args.yes is True
+    assert parser.parse_args(["resume", "7", "--worker", "codex"]).worker == "codex"
