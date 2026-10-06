@@ -32,7 +32,7 @@ from core.quoted import quarantine
 from team import team_home, worktrees_root
 from team.adapters.base import Adapter
 from team.ledger import LEASE_SECONDS, TeamLedger, TransitionError, lease_expired, now_utc
-from team.projects.base import Issue, ProjectAdapter
+from team.projects.base import Issue, ProjectAdapter, ProjectError
 
 LEDGER_FILE = "dispatch.jsonl"
 HERE = Path(__file__).resolve().parent
@@ -382,7 +382,7 @@ class Dispatcher:
                     pids[name] = int(path.read_text(encoding="utf-8").strip() or 0)
                 except ValueError:
                     pids[name] = 0
-        if read_exit(raw / "exit") == 127 and "child_pid" not in pids:
+        if (raw / "launch_failed").exists() or (read_exit(raw / "exit") == 127 and "child_pid" not in pids):
             # الغلافُ لم يستطع إطلاق الوكيل (team/adapters/_wrap.py): لا عاملَ هنا أصلًا
             self.ledger.append(issue_number, "worker_unavailable", code="launch_failed", returncode=127)
             return {"status": "worker_unavailable", "code": "launch_failed"}
@@ -450,8 +450,21 @@ class Dispatcher:
         if self.ledger.last_of(issue_number, "expired", state["attempt"]) is None:
             self.ledger.append(issue_number, "expired", last_activity_at=last_activity)
         raw = self.raw_dir(issue_number, state["attempt"])
+        raw.mkdir(parents=True, exist_ok=True)
+        marker = raw / "taken_over"
+        # العلامةُ **قبل** فحص الغياب لا بعده: غلافٌ يبلغ فحصَ العلامة بعد هذه اللحظة يراها فلا يأذن؛ ومن بلغه قبلها كان قد كتب
+        # معرّفاته فيراها فحصُ الغياب أدناه ويُرفض الاستحواذ وتُزال العلامة (ملاحظة Codex الثانية على #347)
+        write_atomic(marker, now)
+        try:
+            return self._takeover_checked(issue_number, state, dispatched, raw, head_now, last_head, now, owner_authorization)
+        except Refusal:
+            marker.unlink(missing_ok=True)
+            raise
+
+    def _takeover_checked(self, issue_number: int, state: dict, dispatched: dict, raw: Path, head_now, last_head, now: str,
+                          owner_authorization: str) -> dict:
         pids = [int(state.get("pid") or 0)]
-        for name in ("pid", "child_pid"):                 # معرّفُ الغلاف ومعرّفُ الوكيل نفسِه (ملاحظة Codex على #344)
+        for name in ("pid", "child_pid", "wrapper_pid"):  # معرّفُ الغلاف (من المرسِل ومن الغلاف نفسِه) ومعرّفُ الوكيل (ملاحظة Codex على #344 و#347)
             path = raw / name
             if path.exists():
                 pids.append(int(path.read_text(encoding="utf-8").strip() or 0))
@@ -471,11 +484,14 @@ class Dispatcher:
         return {"status": "takeover", "proof": proof}
 
     def _never_launched(self, issue_number: int, state: dict, raw: Path, known: list[int], child_known: bool) -> bool:
-        """إطلاقٌ لم يقع: التكليفُ لم يُدَّعَ قطّ، ولا معرّفَ غلافٍ ولا وكيل (الغلافُ يكتب معرّفَ الوكيل فور إطلاقه)، ولا بايتَ
-        في مخرجه، وقد فحصه `resume` فقيّد `launch_unconfirmed` أو `launch_failed`. هذا غيرُ «معرّفٍ مجهول» لعاملٍ ادُّعي
-        (دحض ٦ أكتوبر: مأزقٌ بلا مخرج)."""
-        if state["state"] != "dispatched" or known or child_known:
+        """إطلاقٌ لم يقع: التكليفُ لم يُدَّعَ قطّ، ولا معرّفَ غلافٍ ولا وكيل، ولا بايتَ في مخرجه، وقد فحصه `resume` فقيّد
+        `launch_unconfirmed` أو `launch_failed`. وغيابُ ملفِّ المعرّف إثباتٌ لا مجرّدُ غياب دليل، لأن الغلافَ (`team/adapters/_wrap.py`)
+        يحفظ معرّفَ الوكيل **قبل** أن يأذن له بالتنفيذ، ومن مات غلافُه قبل الكتابة خرج بلا تنفيذ. هذا غيرُ «معرّفٍ مجهول»
+        لعاملٍ ادُّعي (دحض ٦ أكتوبر: مأزقٌ بلا مخرج؛ وملاحظة Codex التاسعة)."""
+        if state["state"] != "dispatched" or child_known:
             return False
+        if known and any(pid_alive(p) for p in known):
+            return False                                # غلافٌ حيّ أو موقوف لم يكتب معرّفَ وكيله بعد: ليس غيابًا
         stdout = raw / "stdout.txt"
         if stdout.exists() and stdout.stat().st_size > 0:
             return False
@@ -563,19 +579,31 @@ def build(args) -> Dispatcher:
                       repo_root=repo_root, home=home, adapters=adapters)
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--repo-root")
-    parser.add_argument("--worker", default="claude", choices=("claude", "codex"))
+def build_parser() -> argparse.ArgumentParser:
+    """`--worker` و`--repo-root` مقبولان قبل الأمر الفرعي وبعده (الصيغةُ المنشورة `run 341 --worker claude` كانت تُرفض:
+    ملاحظة Codex التاسعة على #344). على الفرعيّ بلا قيمةٍ افتراضية حتى لا يطمس ما أُعطي قبله."""
+    def common(defaults: bool) -> argparse.ArgumentParser:
+        shared = argparse.ArgumentParser(add_help=False)
+        shared.add_argument("--repo-root", default=None if defaults else argparse.SUPPRESS)
+        shared.add_argument("--worker", choices=("claude", "codex"), default="claude" if defaults else argparse.SUPPRESS)
+        return shared
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0], parents=[common(True)])
+    sub_common = common(False)
     sub = parser.add_subparsers(dest="command", required=True)
-    run = sub.add_parser("run"); run.add_argument("issue", type=int); run.add_argument("--execute", action="store_true")
+    run = sub.add_parser("run", parents=[sub_common])
+    run.add_argument("issue", type=int); run.add_argument("--execute", action="store_true")
     run.add_argument("--owner-order", default=None); run.add_argument("--budget-usd", type=float, default=5.0)
     run.add_argument("--timeout", type=int, default=1800)
     for name in ("validate", "accept", "resume", "status"):
-        sub.add_parser(name).add_argument("issue", type=int)
-    take = sub.add_parser("takeover"); take.add_argument("issue", type=int); take.add_argument("--owner-authorization", required=True)
-    gc = sub.add_parser("gc"); gc.add_argument("--yes", action="store_true")
-    args = parser.parse_args(argv)
+        sub.add_parser(name, parents=[sub_common]).add_argument("issue", type=int)
+    take = sub.add_parser("takeover", parents=[sub_common]); take.add_argument("issue", type=int)
+    take.add_argument("--owner-authorization", required=True)
+    gc = sub.add_parser("gc", parents=[sub_common]); gc.add_argument("--yes", action="store_true")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
     dispatcher = build(args)
     try:
         if args.command == "run":
@@ -592,6 +620,9 @@ def main(argv: list[str] | None = None) -> int:
     except GitError as exc:
         print(json.dumps({"status": "refused", "code": "git_error", "detail": str(exc)}, ensure_ascii=False))
         return 2
+    except ProjectError as exc:
+        print(json.dumps({"status": "project_unavailable", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
+        return 3
     print(json.dumps(out, ensure_ascii=False, indent=1, default=str))
     return 0
 

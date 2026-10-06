@@ -1,6 +1,8 @@
 """المرسِل الأدنى على مستودعٍ مؤقت ومحوِّلٍ مصطنع: لا أثرَ في الخطة، ورفضٌ مسمًّى، وحَجرٌ، ودورةٌ كاملة، ونتيجةٌ مجهولة لا تُعاد."""
 from __future__ import annotations
 
+import json
+import os
 from pathlib import Path
 
 import pytest
@@ -458,3 +460,73 @@ def test_validate_promotes_a_pending_pass_review_when_already_validated(tmp_path
     ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1", reviewer="codex", reviewer_family="openai", verdict="pass")
     dispatcher.validate(41)
     assert ledger.main_state(41)["state"] == "verified"
+
+
+def test_the_documented_commands_parse_with_worker_after_the_subcommand():
+    """الصيغةُ المنشورة `run 341 --worker claude` كانت تُرفض لأن الراية على المحلّل الرئيس وحده (ملاحظة Codex التاسعة)."""
+    from team.dispatch import build_parser
+
+    parser = build_parser()
+    assert parser.parse_args(["run", "341", "--worker", "codex"]).worker == "codex"
+    assert parser.parse_args(["--worker", "codex", "run", "341"]).worker == "codex"
+    assert parser.parse_args(["run", "341"]).worker == "claude"
+    args = parser.parse_args(["gc", "--repo-root", "/x", "--yes"])
+    assert args.repo_root == "/x" and args.yes is True
+    assert parser.parse_args(["resume", "7", "--worker", "codex"]).worker == "codex"
+
+
+def test_a_live_wrapper_without_a_child_pid_is_not_absence_and_takeover_leaves_a_marker(tmp_path):
+    """غلافٌ حيّ (أو موقوف) كتب معرّفَه ولم يكتب معرّفَ وكيله بعد: ليس «إطلاقًا لم يقع»؛ وبعد موته يُستحوذ وتُكتب علامةُ
+    `taken_over` التي يفحصها الغلافُ قبل الإذن (ملاحظة Codex على #347)."""
+    dispatcher, _project, _adapter, ledger, repo = _setup(tmp_path)
+    _worktree, raw = _lost_launch(tmp_path, dispatcher, ledger, repo)
+    assert dispatcher.resume(41)["reason"] == "launch_unconfirmed"
+    dispatcher.clock = lambda: "2026-10-09T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    (raw / "wrapper_pid").write_text(str(os.getpid()), encoding="utf-8")          # غلافٌ حيّ: عمليةُ الاختبار نفسُها
+    with pytest.raises(Refusal) as exc:
+        dispatcher.takeover(41, owner_authorization="نفّذ")
+    assert exc.value.code == "absence_not_proven" and not (raw / "taken_over").exists()
+    (raw / "wrapper_pid").write_text("4194297", encoding="utf-8")                 # الغلافُ مات قبل أن يشطر
+    out = dispatcher.takeover(41, owner_authorization="نفّذ")
+    assert out["status"] == "takeover" and out["proof"]["never_launched"] is True
+    assert (raw / "taken_over").read_text(encoding="utf-8") == "2026-10-09T11:00:00+00:00"
+
+
+def test_a_platform_failure_in_the_dispatch_cli_is_a_named_unavailability(tmp_path, monkeypatch, capsys):
+    from team import dispatch as dm
+    from team.projects import diwan as dp
+
+    _origin, repo = make_repo(tmp_path)
+    monkeypatch.setenv("DIWAN_TEAM_HOME", str(tmp_path / "home"))
+
+    def boom(self, number):
+        raise dp.GhError("gh_failed", "TLS handshake timeout")
+
+    monkeypatch.setattr(dp.DiwanProject, "issue", boom)
+    rc = dm.main(["run", "345", "--repo-root", str(repo)])
+    out = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert rc == 3 and out["status"] == "project_unavailable" and out["code"] == "gh_failed"
+
+
+def test_takeover_writes_its_marker_before_checking_absence_and_removes_it_when_refused(tmp_path, monkeypatch):
+    """سباقُ الغلاف المتأخّر: العلامةُ تُكتب قبل فحص الغياب فيراها غلافٌ يبلغ فحصَها بعد ذلك، ومن سبقها ترك معرّفاته فيُرفض
+    الاستحواذ وتُزال العلامة (ملاحظة Codex الثانية على #347)."""
+    from team import dispatch as dm
+
+    dispatcher, _project, _adapter, ledger, repo = _setup(tmp_path)
+    _worktree, raw = _lost_launch(tmp_path, dispatcher, ledger, repo)
+    assert dispatcher.resume(41)["reason"] == "launch_unconfirmed"
+    dispatcher.clock = lambda: "2026-10-09T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    seen = []
+    real = dm.pid_alive
+    monkeypatch.setattr(dm, "pid_alive", lambda pid: (seen.append((raw / "taken_over").exists()), real(pid))[1])
+    (raw / "wrapper_pid").write_text(str(os.getpid()), encoding="utf-8")          # غلافٌ حيّ كتب معرّفَه قبل الفحص
+    with pytest.raises(Refusal) as exc:
+        dispatcher.takeover(41, owner_authorization="نفّذ")
+    assert exc.value.code == "absence_not_proven"
+    assert seen and all(seen), "العلامةُ لم تكن موجودةً وقت فحص الغياب"
+    assert not (raw / "taken_over").exists(), "الرفضُ يزيل العلامة"
+    (raw / "wrapper_pid").write_text("4194297", encoding="utf-8")
+    assert dispatcher.takeover(41, owner_authorization="نفّذ")["status"] == "takeover" and (raw / "taken_over").exists()

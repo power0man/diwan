@@ -37,6 +37,15 @@ class ReviewPolicy:
     never: tuple[str, ...] = ()
 
 
+class ProjectError(RuntimeError):
+    """عطبٌ في الوصول إلى منصّة المشروع (شبكةٌ، مصادقة، حصّة): رفضٌ مسمًّى برمزه يقرؤه سطرُ الأوامر، لا انفجارٌ خام."""
+
+    def __init__(self, code: str, detail: str = ""):
+        self.code = code
+        self.detail = detail
+        super().__init__(code if not detail else f"{code}: {detail}")
+
+
 class ProjectAdapter:
     name = "abstract"
     default_base_branch = "main"
