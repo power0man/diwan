@@ -50,7 +50,7 @@
         "tokens_estimate": 8230
       },
       "docs/INDEX.md": {
-        "bytes": 19403,
+        "bytes": 19402,
         "tokens_estimate": 5122
       },
       "docs/VISION.md": {
@@ -59,7 +59,7 @@
       }
     },
     "reading_set_total": {
-      "bytes": 60704,
+      "bytes": 60703,
       "tokens_estimate": 15835
     },
     "archived_rows": 43,
@@ -73,20 +73,20 @@
       "tokens_estimate": 8230
     },
     "docs/STATUS.md": {
-      "bytes": 42056,
-      "tokens_estimate": 11124
+      "bytes": 40217,
+      "tokens_estimate": 10649
     },
     "docs/REVIEW-20261005.md": {
-      "bytes": 29582,
-      "tokens_estimate": 7963
+      "bytes": 29160,
+      "tokens_estimate": 7862
     },
     "docs/VISION.md": {
       "bytes": 10397,
       "tokens_estimate": 2483
     },
     "docs/DECISIONS.md": {
-      "bytes": 188624,
-      "tokens_estimate": 47340
+      "bytes": 183781,
+      "tokens_estimate": 46089
     },
     "docs/PLAN-20260926.md": {
       "bytes": 218447,
@@ -125,8 +125,8 @@
       "tokens_estimate": 451
     },
     "docs/HANDOFF-PROMPT.md": {
-      "bytes": 58790,
-      "tokens_estimate": 15207
+      "bytes": 58567,
+      "tokens_estimate": 15151
     }
   },
   "measurement_limits": [

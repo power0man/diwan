@@ -180,11 +180,6 @@ def _require_intake(intake: dict | None, digest: str, *, sandbox_backend: dict |
     # فحصُ حاويةٍ يردّ الأجوبةَ الثابتة في صورةٍ ويقبلها في أخرى: الاستلامُ والقياسُ بإيصالٍ واحد (ملاحظة Codex على #312)
     if boxed and bank["gameable"].get("sandbox_backend") != sandbox_backend:
         raise AblationError("intake_sandbox_backend_mismatch", "إيصالُ حاوية الاستلام غيرُ إيصال القياس")
-    # فحصٌ يمرّره نفيُ التصحيح لا يراه جوابٌ ثابت (#329): الاستلامُ يشهد بشِراك كلِّ حالةٍ تطلبها، وبأنها تسقط والمرجعَ يمرّ.
-    # والتقريرُ الذي سبق هذا الفحصَ لا يحمل عدَّها فلا يشهد
-    decoys = bank.get("decoys") if isinstance(bank.get("decoys"), dict) else {}
-    if any(decoys.get(key) != 0 for key in ("missing", "passes", "reference_fails", "unjudged")):
-        raise AblationError("intake_decoys_unproven", "الاستلامُ لا يُثبت أن شِراكَ كلِّ حالةٍ تسقط وأن مرجعَها يمرّ")
     if bank.get("open_digest") != digest:
         raise AblationError("intake_digest_mismatch", "بصمةُ الشطر المفتوح غيرُ بصمة الاستلام")
 

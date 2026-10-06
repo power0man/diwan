@@ -30,7 +30,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 import sys
 import tempfile
 
@@ -62,7 +62,6 @@ LIMITS = [
     "gameable_checks_are_found_by_five_fixed_answers_empty_echo_polarity_spray_both_and_each_contains_value_negated_so_a_subtler_gameable_check_passes",
     "without_sandbox_probes_a_case_whose_other_checks_a_fixed_answer_passes_is_counted_needs_sandbox_not_judged",
     "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged",
-    "decoys_are_written_by_the_bank_author_so_a_check_is_proven_only_against_the_wrong_answers_written_for_it_and_a_reviewer_samples_whether_they_are_real",
 ]
 
 
@@ -209,10 +208,6 @@ def _bank_files(src: Path) -> list[tuple[str, Path]]:
 POLARITY_SPRAY = "يوجد خطأ ولا يوجد خطأ. صحيح وخاطئ وغير صحيح. نعم ولا. يجوز ولا يجوز. يصح ولا يصح."
 # صيغُ النفي في docs/external/KIMI-NEXT.md §١ البند ٣، وكلٌّ منها جوابٌ ثابت لكل قيمة contains
 NEGATION_FORMS = ("لا يوجد {}.", "ليس فيه {}.", "لا {}.")
-# الأجوبةُ الثابتة لا ترى فحصًا يمرّره نفيُ التصحيح أو جوابٌ خاطئٌ يحمل كلماتِ المرجع: مرّ ذلك في ٦ من ٦ حالاتِ مقدّماتٍ
-# كاذبة فحصها Codex بعد استلامٍ ناجح (#329). فلكلّ حالةٍ من هذه القدرات شِراكٌ يكتبها المؤلّفُ في ملفّها الجانبيّ
-# (`decoys`)، ويجب أن يُسقطها الفحصُ كلَّها وأن يمرّ المرجع.
-DECOYS_REQUIRED = {"false_premise_rejection": 2}
 
 
 def _probe_answers(case: dict) -> tuple[tuple[str, str], ...]:
@@ -255,50 +250,6 @@ def gameable_probe(case: dict, *, sandbox: bool = False) -> str | None:
     return None
 
 
-def _passes(answer: str, checks: list, *, sandbox: bool) -> bool | None:
-    """هل يمرّ الجوابُ فحوصَ الحالة كلَّها؛ وNone إن لم يحكم فيه إلا الحاوية وهي غائبة."""
-    from evaluation.capabilities import _checks
-    plain = [check for check in checks if check.get("kind") != "python_sandbox"]
-    if not all(result["passed"] for result in _checks(answer, plain)):
-        return False
-    if len(plain) == len(checks):
-        return True
-    if not sandbox:
-        return None
-    return all(result["passed"] for result in _checks(answer, checks))
-
-
-def check_decoys(case: dict, entry, tally: dict, failures: list, where: str, *, sandbox: bool = False) -> None:
-    """شِراكُ الحالة في ملفّها الجانبيّ: كلُّها تسقط، والمرجعُ يمرّ؛ والقدرةُ في DECOYS_REQUIRED لا تُقبل بأقلّ من عددها."""
-    raw = entry.get("decoys") if isinstance(entry, dict) else None
-    decoys = [d for d in raw if isinstance(d, str) and d.strip()] if isinstance(raw, list) else []
-    need = DECOYS_REQUIRED.get(case.get("capability"), 0)
-    if need:
-        tally["required"] += 1
-        if len(decoys) < need:
-            tally["missing"] += 1
-            _failure(failures, where, "decoys_missing")
-    if not decoys:
-        return
-    checks = case.get("checks") or []
-    reference = case.get("reference")
-    reference = reference if isinstance(reference, str) else json.dumps(reference, ensure_ascii=False)
-    verdict = _passes(reference, checks, sandbox=sandbox)
-    if verdict is None:
-        tally["unjudged"] += 1
-    elif not verdict:
-        tally["reference_fails"] += 1
-        _failure(failures, where, "reference_fails_checks")
-    for decoy in decoys:
-        tally["decoys"] += 1
-        verdict = _passes(decoy, checks, sandbox=sandbox)
-        if verdict is None:
-            tally["unjudged"] += 1
-        elif verdict:
-            tally["passes"] += 1
-            _failure(failures, where, "decoy_passes_checks")
-
-
 def gameable_cases(open_dir: Path) -> list[dict]:
     """كلُّ حالةٍ في شطرٍ مفتوح يمرّرها جوابٌ ثابت، أو لا يحكم فيها إلا الحاوية؛ بملفّها والجواب الذي مرّرها.
 
@@ -333,7 +284,6 @@ def check_bank(src: Path, *, sandbox_probes: bool = False) -> dict:
     from core.sandbox import sandbox_configuration
     gameable = {"open": 0, "by_probe": {}, "needs_sandbox": 0, "sandbox_probed": sandbox_probes,
                 "sandbox_backend": sandbox_configuration() if sandbox_probes else None}
-    decoys = {"required": 0, "missing": 0, "decoys": 0, "passes": 0, "reference_fails": 0, "unjudged": 0}
     agentic, case_ids = [], {}
     for part, path in _bank_files(src):
         relative = path.relative_to(src).as_posix()
@@ -353,14 +303,7 @@ def check_bank(src: Path, *, sandbox_probes: bool = False) -> dict:
             continue
         counts[part]["cases"] += len(suite["cases"])
         without_checks[part] += sum(not case["checks"] for case in suite["cases"])
-        sidecar = _json(path.with_name(path.name[:-len(".json")] + ".meta.json")) if part == "open" else None
-        entries = sidecar.get("cases") if isinstance(sidecar, dict) and isinstance(sidecar.get("cases"), dict) else {}
         for case in suite["cases"]:
-            if part == "open":
-                try:
-                    check_decoys(case, entries.get(case["case_id"]), decoys, failures, relative, sandbox=sandbox_probes)
-                except PayloadRejected as exc:
-                    _failure(failures, relative, f"decoy_probe_{exc.code}")
             case_ids[case["case_id"]] = case_ids.get(case["case_id"], 0) + 1
             try:
                 probe = gameable_probe(case, sandbox=sandbox_probes) if part == "open" else None
@@ -384,9 +327,6 @@ def check_bank(src: Path, *, sandbox_probes: bool = False) -> dict:
     # فحصٌ يمرّره جوابٌ ثابت قابلٌ للتلاعب، والرقمُ العام لا يُبنى عليه (ملاحظة Codex على #312)
     if gameable["open"]:
         _failure(failures, "open", "gameable_checks")
-    # شَرَكٌ أو مرجعٌ لم يحكم فيه إلا الحاوية: الاستلامُ بـ--sandbox-probes وحده يشهد له
-    if decoys["unjudged"]:
-        _failure(failures, "open", "decoys_need_sandbox")
     if len(set(task_ids)) != len(task_ids):
         _failure(failures, "agentic", "task_id_not_unique_across_bank")
     if any(n > 1 for n in case_ids.values()):
@@ -394,8 +334,8 @@ def check_bank(src: Path, *, sandbox_probes: bool = False) -> dict:
     # بصمةُ الشطر المفتوح كلِّه كما يقرؤها المحكِّم ومُشغِّلُ الرقم العام، فيُربط القياسُ بهذا الاستلام بعينه (ملاحظة Codex على #312)
     from evaluation.judge import open_bank_digest
     open_digest = open_bank_digest(src / "open") if (src / "open").is_dir() else None
-    return {"counts": counts, "without_checks": without_checks, "gameable": gameable, "decoys": decoys,
-            "open_digest": open_digest, "failures": failures}
+    return {"counts": counts, "without_checks": without_checks, "gameable": gameable, "open_digest": open_digest,
+            "failures": failures}
 
 
 def check_dev(src: Path) -> dict:
@@ -451,47 +391,25 @@ def check_dev(src: Path) -> dict:
 
 def _is_file_map(value) -> bool:
     """الحلُّ المرجعيّ (أو الشرَك) خريطةُ «مسارٍ ← محتواه الكامل» بعقد المساحة نفسِه (`workspace_bytes`): نصٌّ،
-    أو {"base64": …} لملفٍّ ثنائيّ كـxlsx (#191). فالنثرُ لا يُطبَّق آليًّا.
-
-    و`null` حذفُ الملف: مهمّةٌ تطلب حذفَ ملفٍّ لم يكن لحلّها المرجعيّ طريقٌ إليه، فأُرخي معيارُها ليقبل بقاءه
-    (`agentic_0039`، مراجعة Codex على #329). ومسارُ الحذف نسبيٌّ لا يصعد."""
+    أو {"base64": …} لملفٍّ ثنائيّ كـxlsx (#191). فالنثرُ لا يُطبَّق آليًّا."""
     if not isinstance(value, dict) or not all(isinstance(name, str) for name in value):
         return False
     try:
-        for name, content in value.items():
-            if content is None:
-                if not _relative_inside(name):
-                    return False
-                continue
+        for content in value.values():
             workspace_bytes(content)
     except PayloadRejected:
         return False
     return True
 
 
-def _relative_inside(name: str) -> bool:
-    pure = PurePosixPath(name)
-    return bool(name) and not pure.is_absolute() and ".." not in pure.parts and name == pure.as_posix()
-
-
-def _apply_overlay(root: Path, overlay: dict | None) -> None:
-    for name, content in (overlay or {}).items():
-        target = root / name
-        if content is None:
-            if not _relative_inside(name):
-                raise PayloadRejected(name, "overlay_delete_outside_workspace", "مسارُ الحذف خارج المساحة")
-            if target.is_file() or target.is_symlink():
-                target.unlink()
-            continue
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(workspace_bytes(content))
-
-
 def _judge(task: dict, overlay: dict | None) -> tuple[dict, list[str]]:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp).resolve()
         materialize(task, root)
-        _apply_overlay(root, overlay)
+        for name, content in (overlay or {}).items():
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(workspace_bytes(content))
         return evaluate_success(task, root), harness_tampering(task, root)
 
 

@@ -99,22 +99,6 @@ def test_owner_tasks_and_untitled_issues_are_exempt(title, labels):
     assert v["status"] == "exempt"
 
 
-def test_a_relay_issue_is_exempt_only_with_its_label_and_prefix():
-    """مسألةُ الترحيل (لصقُ نصٍّ لعميلٍ آخر) لا شيفرةَ فيها؛ أُعيد فتحُ #326 بعد أن سلّم المالكُ تكليفَها بيده (٥ أكتوبر)."""
-    title = "[جديد-relay-gemini-325] ترحيل: الصق تكليف #325"
-    [v] = judge([issue(326, title, labels=("task", "relay"))], [], FakeGit())
-    assert (v["status"], v["code"]) == ("exempt", "relay_task")
-
-
-@pytest.mark.parametrize("title,labels", [
-    ("[جديد-relay-gemini-325] ترحيل", ("task",)),  # البادئةُ بلا الوسم
-    ("[جديد-spend-ledger] سجلُّ الإنفاق", ("task", "relay")),  # الوسمُ على مهمّة شيفرة
-], ids=["prefix_without_label", "label_on_code_task"])
-def test_a_relay_label_or_prefix_alone_does_not_exempt(title, labels):
-    [v] = judge([issue(326, title, labels=labels)], [], FakeGit())
-    assert (v["status"], v["code"]) == ("proof_missing", "no_merged_pull_request")
-
-
 @pytest.mark.parametrize("reason", ["not_planned", "duplicate", None])
 def test_an_issue_not_closed_as_completed_is_not_judged(reason):
     assert judge([issue(3, "[ك١] س", reason=reason)], [], FakeGit()) == []

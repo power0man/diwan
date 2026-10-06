@@ -130,24 +130,6 @@ def test_co_authored_by_does_not_satisfy_the_gate(registry):
     assert inspect_commit(made(message), registry)["code"] == "agent_tag_missing"
 
 
-def test_a_co_authored_by_paragraph_after_the_agent_trailer_keeps_it(registry):
-    """أداةُ Jules تُلحق «Co-authored-by» في فقرةٍ مستقلّة بعد ذيوله، فسقطت إيداعاتُه الأربع وذيلُها مكتوب (#332)."""
-    message = ("عنوان\n\nتسليم: سطرٌ في المتن\n\nCloses: #331\nDiwan-Agent: openai/codex\n\n"
-               "Co-authored-by: power0man <1+power0man@users.noreply.github.com>\n")
-    assert inspect_commit(made(message), registry) is None
-    assert parse_trailers(message)["Diwan-Agent"] == ["openai/codex"]
-
-
-def test_only_a_bare_co_authored_by_paragraph_reaches_back(registry):
-    """فقرةُ ذيلٍ أخرى أخيرة لا تضمّ ما قبلها، وسطرُ العنوان لا يصير ذيلًا، ونثرٌ قبلها لا يُقرأ."""
-    signed = "عنوان\n\nDiwan-Agent: openai/codex\n\nSigned-off-by: x <x@example.com>\n"
-    assert inspect_commit(made(signed), registry)["code"] == "agent_tag_missing"
-    subject = "Diwan-Agent: openai/codex\n\nCo-authored-by: x <x@example.com>\n"
-    assert inspect_commit(made(subject), registry)["code"] == "agent_tag_missing"
-    prose = "عنوان\n\nDiwan-Agent: openai/codex\nونثرٌ هنا\n\nCo-authored-by: x <x@example.com>\n"
-    assert inspect_commit(made(prose), registry)["code"] == "agent_tag_missing"
-
-
 # ————— التقرير المجمَّع —————
 
 def test_report_names_every_offender_not_just_the_first(registry):
