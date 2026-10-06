@@ -1,6 +1,7 @@
 """المراجعُ المستقلّ: دورٌ لا بائع، وقاعدةُ العائلة، والتعذّرُ ثم المالك، وتعليقُ ق٧٥(ب) محجورًا، والمعايرةُ شرطُ الاحتساب."""
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -183,3 +184,22 @@ def test_a_review_of_a_previous_attempt_s_pull_does_not_touch_the_current_attemp
     assert (current["attempt"], current["state"], current["head_sha"], current["pr"]) == (2, "completed", "2" * 40, 10)
     stale = ledger.last_of(41, "external_review")
     assert stale["pr"] == 9 and stale["attempt"] == 1 and stale["stale_attempt"] is True and stale["current_attempt"] == 2
+
+
+def test_a_failed_fetch_of_the_base_branch_refuses_the_review(tmp_path):
+    """جلبٌ فاشل للفرع الرئيس البعيد لا يُكمَل بمرجعٍ محليّ قديم: رفضٌ مسمًّى، ولا تعليقَ ولا قيدَ مراجعة ولا نسخةَ عملٍ معلّقة."""
+    reviewer, project, _adapters, ledger = _setup(tmp_path)
+    _dispatched(ledger, project.pulls[9].head_sha)
+    real = reviewer.runner
+
+    def runner(argv, **kwargs):
+        if "fetch" in argv and argv[-1] == "main":
+            return subprocess.CompletedProcess(argv, 128, "", "fatal: unable to access origin")
+        return real(argv, **kwargs)
+
+    reviewer.runner = runner
+    with pytest.raises(rv.Refusal) as exc:
+        reviewer.review(9, execute=True)
+    assert exc.value.code == "fetch_failed" and "origin/main" in exc.value.detail
+    assert project.comments == [] and ledger.main_state(41)["state"] == "validated" and ledger.last(41)["state"] == "validated"
+    assert "team-review-" not in git("worktree", "list", cwd=reviewer.repo_root)

@@ -130,7 +130,10 @@ class Reviewer:
 
     def merge_base(self, pull: PullRequest) -> str:
         """نقطةُ تفرّع الطلب عن الفرع الرئيس **البعيد**؛ فـ`main` المحلي قد يتأخّر فيدخل في الفرق ما دُمج أصلًا (دخان ٦ أكتوبر)."""
-        self.runner(["git", "-C", str(self.repo_root), "fetch", self.remote, pull.base_branch], capture_output=True, text=True)
+        done = self.runner(["git", "-C", str(self.repo_root), "fetch", self.remote, pull.base_branch], capture_output=True, text=True)
+        if done.returncode != 0:
+            # مرجعٌ قديم للفرع الرئيس يُدخل في المراجعة ما دُمج أصلًا وهي تُقدَّم مقارنةً بالبعيد (ملاحظة Codex الثامنة على #344)
+            raise Refusal("fetch_failed", f"{self.remote}/{pull.base_branch}: " + (done.stderr or "")[:200])
         done = self.runner(["git", "-C", str(self.repo_root), "merge-base", f"{self.remote}/{pull.base_branch}", pull.head_sha],
                            capture_output=True, text=True)
         if done.returncode != 0 or not (done.stdout or "").strip():
@@ -203,8 +206,8 @@ class Reviewer:
         tried = []
         with tempfile.TemporaryDirectory(prefix="team-review-") as tmpdir:
             tmp = Path(tmpdir) / "wt"
+            base_sha = self.merge_base(pull)              # قبل نسخة العمل: رفضُ الجلب لا يترك نسخةً معلّقة
             self._detached_worktree(pull, tmp)
-            base_sha = self.merge_base(pull)
             try:
                 for name in names:
                     adapter = self.adapters[name]

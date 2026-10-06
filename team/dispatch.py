@@ -4,7 +4,7 @@
 من القالب ونصِّ المسألة **محجورًا** ويحفظه ببصمته في موطن الفريق ويكتبه في نسخة العمل بلا إيداع (إيداعٌ بهويّة المرسِل يخلط العائلتين)، ثم يطلق العاملَ بوضعه غير التفاعلي والمدخلُ عبر stdin، ويقيّد
 `dispatched → claimed → completed` بالرأس وطلب الدمج. `validate` يقرأ فحوصَ الرأس، و`accept` يستنتج إيداعَ الدمج من git.
 `resume` يفحص عاملًا انقطع عنه المرسِل (ولو قبل قيد `claimed`، بشاهد معرّفِ العملية)، و`takeover` يحتاج انتهاءَ الإيجار **و**إثباتَ غياب العامل **و**إذنَ المالك، و`gc` يعرض
-نسخَ العمل المدموجة ولا يحذف إلا بتأكيد.
+نسخَ العمل المدموجة ولا يحذف إلا بتأكيد، ولا يحذف ما فيه تعديلٌ غير محفوظ أو إيداعٌ ليس على الفرع الرئيس البعيد.
 
 ما لا يفعله هذا الملف في أيّ حال: لا يدمج، ولا يوسم، ولا يُصدر، ولا يدفع قسرًا، ولا يضع `ready:`؛ وحارسٌ ثابت يفحص ذلك.
 **الحدُّ المعلَن:** العاملُ على المضيف بشبكةٍ واعتماد داخل نسخة عملٍ منفصلة، ونسخةُ العمل ليست حدًّا أمنيًّا (`docs/TEAM-BOUNDARY.md`).
@@ -20,6 +20,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -108,11 +109,22 @@ class Dispatcher:
     runner: object = subprocess.run
     clock: object = now_utc
     doctor_check: object = None      # يُستدعى قبل كل إطلاقٍ فعلي؛ None = team.doctor.check على تثبيتات الموطن
+    adapters: dict | None = None     # المحوِّلات المتاحة بأسمائها؛ منها يُستعاد محوِّلُ العامل المسجَّل عند الاستئناف
 
     # — مساعدات —
     @property
     def family(self) -> str:
         return self.adapter.spec.family
+
+    def adapter_for(self, worker: str | None) -> Adapter:
+        """محوِّلُ العامل المسجَّل في قيد `dispatched`، لا محوِّلُ سطر الأوامر الحالي: استئنافُ عامل Codex بمحوِّل Claude كان
+        يقرأ `turn.failed` بخروجٍ صفر إنجازًا (ملاحظة Codex الثامنة على #344)."""
+        if worker == self.adapter.spec.name:
+            return self.adapter
+        adapter = (self.adapters or {}).get(worker or "")
+        if adapter is None:
+            raise Refusal("worker_adapter_missing", f"العاملُ المسجَّل «{worker}» لا محوِّلَ له في هذا التشغيل")
+        return adapter
 
     def _suffix(self, attempt: int) -> str:
         return f"-a{attempt}" if attempt > 1 else ""
@@ -217,15 +229,15 @@ class Dispatcher:
             self.ledger.append(issue.number, "outcome_unknown", reason="timeout_worker_still_running", pid=int(proc.pid))
             return {"status": "outcome_unknown", "reason": "timeout", **plan}
         (raw / "exit").write_text(str(rc), encoding="utf-8")     # رمزُ الخروج دليلٌ محفوظ؛ الاستئنافُ لا يختلقه
-        return self._finish(issue, attempt, rc, raw, wt, branch, plan)
+        return self._finish(issue, attempt, rc, raw, wt, branch, plan, self.adapter)
 
-    def _finish(self, issue: Issue, attempt: int, rc: int | None, raw: Path, wt: Path, branch: str, plan: dict) -> dict:
+    def _finish(self, issue: Issue, attempt: int, rc: int | None, raw: Path, wt: Path, branch: str, plan: dict, adapter: Adapter) -> dict:
         if rc is None or rc < 0:
             self.ledger.append(issue.number, "outcome_unknown", reason=f"worker_terminated:{rc}")
             return {"status": "outcome_unknown", "reason": f"worker_terminated:{rc}", **plan}
         stdout = (raw / "stdout.txt").read_text(encoding="utf-8") if (raw / "stdout.txt").exists() else ""
         stderr = (raw / "stderr.txt").read_text(encoding="utf-8") if (raw / "stderr.txt").exists() else ""
-        result = self.adapter.parse_work(rc, stdout, stderr, raw)
+        result = adapter.parse_work(rc, stdout, stderr, raw)
         summary = quarantine(result.text or "")
         if result.unavailable:
             self.ledger.append(issue.number, "worker_unavailable", code=result.unavailable, returncode=rc)
@@ -246,7 +258,7 @@ class Dispatcher:
         pull = self.project.pull_for_branch(branch)
         if pull is None:
             title = f"[team #{issue.number}] {quarantine(issue.title).text.strip()[:80]}"
-            body = (f"تكليفٌ من المرسِل الأدنى (ق٧٦) للعامل {self.adapter.spec.name}.\n\n"
+            body = (f"تكليفٌ من المرسِل الأدنى (ق٧٦) للعامل {adapter.spec.name}.\n\n"
                     f"Closes #{issue.number}\n\nبصمة التكليف المودَع: `{plan['brief_sha256']}`\n\n"
                     f"المراجعة من عائلةٍ أخرى تطلبها `team/review.py`؛ الدمج بيد المالك.")
             pull = self.project.create_pull(branch, title, body)
@@ -364,7 +376,8 @@ class Dispatcher:
             return {"status": "outcome_unknown", "reason": "worker_gone_without_exit_code"}
         branch = dispatched.get("branch") or self.branch_for(issue_number, state["attempt"])
         plan = {"issue": issue_number, "branch": branch, "brief_sha256": dispatched.get("brief_sha256", ""), "worktree": str(wt)}
-        return self._finish(self.project.issue(issue_number), state["attempt"], int(exit_file.read_text().strip() or 0), raw, wt, branch, plan)
+        adapter = self.adapter_for(dispatched.get("worker"))
+        return self._finish(self.project.issue(issue_number), state["attempt"], int(exit_file.read_text().strip() or 0), raw, wt, branch, plan, adapter)
 
     def takeover(self, issue_number: int, *, owner_authorization: str) -> dict:
         state = self.ledger.main_state(issue_number)
@@ -402,20 +415,42 @@ class Dispatcher:
         self.ledger.append(issue_number, "takeover", lease_expired_at=now, absence_proof=proof, owner_authorization=owner_authorization)
         return {"status": "takeover", "proof": proof}
 
+    def gc_blockers(self, path: Path, branch: str) -> list[str]:
+        """ما يمنع حذفَ نسخة عملٍ طلبُها مدموج: تعديلٌ أو ملفٌّ غير محفوظ (سوى ملفِّ التكليف غير المتتبَّع)، أو إيداعٌ ليس على
+        الفرع الرئيس البعيد. دمجُ الطلب لا يثبت أن محتوى النسخة الحالي قابلٌ للحذف (ملاحظة Codex الثامنة على #344)."""
+        blockers = []
+        match = re.match(r"^team/(\d+)-", branch)
+        brief = f"docs/team/briefs/{match.group(1)}.md" if match else None
+        try:
+            status = self._git("status", "--porcelain", "--untracked-files=all", cwd=path)
+            dirty = [line for line in status.splitlines() if line.strip() and line[3:].strip() != brief]
+            if dirty:
+                blockers.append("uncommitted_changes")
+            self._git("merge-base", "--is-ancestor", "HEAD", f"{self.remote}/{self.base_branch}", cwd=path)
+        except GitError as exc:
+            blockers.append("commits_not_on_main" if "merge-base" in str(exc) else "status_unreadable")
+        return blockers
+
     def gc(self, *, yes: bool = False) -> list[dict]:
         found = []
         if not self.wt_root.exists():
             return found
+        self._git("fetch", self.remote, self.base_branch)
         for path in sorted(self.wt_root.iterdir()):
             if not path.is_dir() or not path.name.startswith(WORKTREE_PREFIX):
                 continue
             branch = "team/" + path.name[len(WORKTREE_PREFIX):]
             pull = self.project.pull_for_branch(branch)
             merged = bool(pull and pull.state == "merged")
-            row = {"worktree": str(path), "branch": branch, "pull": pull.number if pull else None, "merged": merged, "removed": False}
-            if merged and yes:
-                self._git("worktree", "remove", "--force", str(path))
-                row["removed"] = True
+            row = {"worktree": str(path), "branch": branch, "pull": pull.number if pull else None, "merged": merged, "removed": False,
+                   "skipped": None}
+            if merged:
+                blockers = self.gc_blockers(path, branch)
+                if blockers:
+                    row["skipped"] = blockers
+                elif yes:
+                    self._git("worktree", "remove", "--force", str(path))   # القوّةُ لملفِّ التكليف غير المتتبَّع وحده؛ ما سواه فُحص
+                    row["removed"] = True
             found.append(row)
         return found
 
@@ -433,7 +468,7 @@ def build(args) -> Dispatcher:
     home.mkdir(parents=True, exist_ok=True)
     adapters = registry()
     return Dispatcher(project=DiwanProject(root=repo_root), adapter=adapters[args.worker], ledger=TeamLedger(home / LEDGER_FILE),
-                      repo_root=repo_root, home=home)
+                      repo_root=repo_root, home=home, adapters=adapters)
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -119,7 +119,13 @@ def test_gc_lists_merged_worktrees_and_removes_nothing_without_yes(tmp_path):
     pull = project.pulls[out["pr"]]
     project.pulls[out["pr"]] = PullRequest(pull.number, out["head_sha"], "main", pull.branch, 41, state="merged", merge_sha="m" * 40)
     rows = dispatcher.gc()
-    assert rows == [{"worktree": out["worktree"], "branch": "team/41-anthropic", "pull": out["pr"], "merged": True, "removed": False}]
+    assert rows == [{"worktree": out["worktree"], "branch": "team/41-anthropic", "pull": out["pr"], "merged": True, "removed": False,
+                     "skipped": ["commits_not_on_main"]}]       # «مدموج» في المشروع لكن إيداعَه ليس على origin/main بعد
+    git("fetch", "-q", "origin", cwd=_repo)
+    git("merge", "-q", "--ff-only", f"origin/{pull.branch}", cwd=_repo)
+    git("push", "-q", "origin", "main", cwd=_repo)              # الآن لا مانعَ من الحذف سوى غياب --yes
+    rows = dispatcher.gc()
+    assert rows[0]["removed"] is False and rows[0]["skipped"] is None
     assert Path(out["worktree"]).exists()
 
 
@@ -304,3 +310,43 @@ def test_resume_of_an_unconfirmed_launch_is_outcome_unknown_and_blocks_a_second_
     with pytest.raises(Refusal) as exc:
         dispatcher.run(41, execute=True)
     assert exc.value.code == "already_dispatched"
+
+
+def test_resume_uses_the_dispatched_worker_s_adapter_not_the_command_line_one(tmp_path):
+    """عاملُ Codex مسجَّلٌ في `dispatched`؛ الاستئنافُ بمحوِّل Claude (الافتراضي) كان يقرأ فشلَه إنجازًا."""
+    dispatcher, project, adapter, ledger, repo = _setup(tmp_path)
+    worktree = tmp_path / "wt" / "team-41-openai"
+    worktree.parent.mkdir(parents=True)
+    git("worktree", "add", str(worktree), "-b", "team/41-openai", "origin/main", cwd=repo)
+    ledger.append(41, "dispatched", brief_sha256="b" * 64, worker="codex", family="openai", branch="team/41-openai",
+                  worktree=str(worktree), base_sha=git("rev-parse", "origin/main", cwd=repo))
+    raw = dispatcher.raw_dir(41, 1)
+    raw.mkdir(parents=True)
+    adapter.start(["fake-worker"], "", worktree, raw / "stdout.txt", raw / "stderr.txt", exit_path=raw / "exit")   # أثرٌ: إيداعٌ وخروجٌ صفر
+    (raw / "pid").write_text("4194297", encoding="utf-8")
+    ledger.append(41, "claimed", pid=4194297, started_at="2026-10-06T10:00:00+00:00")
+    with pytest.raises(Refusal) as exc:
+        dispatcher.resume(41)                                   # لا محوِّلَ لـcodex في هذا التشغيل: رفضٌ لا تخمين
+    assert exc.value.code == "worker_adapter_missing" and project.pulls == {}
+    dispatcher.adapters = {"codex": FakeAdapter(name="codex", family="openai", fail_parse=True)}
+    out = dispatcher.resume(41)
+    assert out["status"] == "validation_failed" and ledger.last(41)["reason"] == "worker_reported_failure"
+    assert project.pulls == {}
+
+
+def test_gc_refuses_to_delete_uncommitted_work_or_commits_not_on_main(tmp_path):
+    dispatcher, project, _adapter, _ledger, repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    worktree, pull = Path(out["worktree"]), project.pulls[out["pr"]]
+    project.pulls[out["pr"]] = PullRequest(pull.number, out["head_sha"], "main", pull.branch, 41, state="merged", merge_sha="m" * 40)
+    rows = dispatcher.gc(yes=True)                              # «مدموج» لكن الإيداعَ ليس على origin/main
+    assert rows[0]["removed"] is False and rows[0]["skipped"] == ["commits_not_on_main"] and worktree.exists()
+    git("fetch", "-q", "origin", cwd=repo)
+    git("merge", "-q", "--ff-only", f"origin/{pull.branch}", cwd=repo)
+    git("push", "-q", "origin", "main", cwd=repo)               # الآن الإيداعُ على main فعلًا
+    (worktree / "notes.txt").write_text("عملٌ لاحق للمالك\n", encoding="utf-8")
+    rows = dispatcher.gc(yes=True)
+    assert rows[0]["removed"] is False and rows[0]["skipped"] == ["uncommitted_changes"] and worktree.exists()
+    (worktree / "notes.txt").unlink()
+    rows = dispatcher.gc(yes=True)                              # ملفُّ التكليف غير المتتبَّع وحده لا يمنع
+    assert rows[0]["removed"] is True and rows[0]["skipped"] is None and not worktree.exists()

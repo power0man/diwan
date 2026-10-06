@@ -141,6 +141,7 @@ class FakeAdapter(Adapter):
     review_rc: int = 0
     review_stderr: str = ""
     binary: Path = Path("/nonexistent/fake")
+    fail_parse: bool = False                 # يقرأ أيَّ مخرجٍ فشلًا معلَنًا (كما يقرأ محوِّلُ Codex حدثَ turn.failed)
     seen: list = field(default_factory=list)
 
     def __post_init__(self):
@@ -152,6 +153,8 @@ class FakeAdapter(Adapter):
         return ["fake-worker", "--permission-mode", "acceptEdits"]
 
     def parse_work(self, returncode: int, stdout: str, stderr: str, out_dir: Path) -> WorkerResult:
+        if self.fail_parse:
+            return WorkerResult(ok=False, text="turn.failed", returncode=returncode)
         if self.behaviour == "unavailable":
             return WorkerResult(ok=False, text="", returncode=returncode, unavailable="quota_exhausted")
         try:
