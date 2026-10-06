@@ -91,6 +91,10 @@ def read_exit(path: Path) -> int | None:
         return None
 
 
+def round_hint(rounds: list[dict]) -> int:
+    return len(rounds) + 1
+
+
 def is_build_cache(rel: str) -> bool:
     """مخلّفاتُ تشغيلٍ لا قيمةَ لها: مخابئُ Python والاختبارات وحدها؛ ما سواها من المتجاهَل (مثل `.env` و`var/`) عملٌ قد يهمّ."""
     parts = rel.strip("/").split("/")
@@ -611,7 +615,14 @@ class Dispatcher:
             raise Refusal("worktree_missing", str(wt))
         adapter = self.adapter_for(dispatched.get("worker"))
         brief_path = Path(dispatched.get("brief_path") or "")
-        original = brief_path.read_text(encoding="utf-8") if dispatched.get("brief_path") and brief_path.exists() else ""
+        original = brief_path.read_text(encoding="utf-8") if dispatched.get("brief_path") and brief_path.exists() else None
+        if original is None or sha256_text(original) != dispatched.get("brief_sha256"):
+            # التكليفُ المأذون يُعاد كما سُجّلت بصمتُه؛ ملفٌّ مفقود أو معدَّل `brief_stale` لا تعليماتٌ أخرى باسم الإذن القديم
+            # (ملاحظة Codex الرابعة عشرة على #349)
+            found = None if original is None else sha256_text(original)
+            self.ledger.append(issue_number, "brief_stale", expected_sha256=dispatched.get("brief_sha256") or "?", found_sha256=found or "missing", round=round_hint(rounds))
+            raise Refusal("brief_stale", f"بصمةُ التكليف المسجَّلة {str(dispatched.get('brief_sha256'))[:12]} لا تطابق الملفّ")
+        self._sync_worktree_to(wt, dispatched.get("branch") or "", head)
         review = quarantine(self.project.review_text(reason_ref) if reason_kind == "review_rejected" else
                             f"سقطت فحوصُ CI على الرأس {head}؛ راجع سجلَّ الفحوص على الطلب.")
         brief = (original.rstrip() + f"\n\n{REVISION_SECTION}\n\n" + review.text.strip() +
@@ -678,6 +689,22 @@ class Dispatcher:
             if (raw / name).exists():
                 pids.append(int((raw / name).read_text(encoding="utf-8").strip() or 0))
         return any(pid_alive(p) for p in pids if p > 0)
+
+    def _sync_worktree_to(self, wt: Path, branch: str, head: str) -> None:
+        """نسخةُ العمل تُجلب إلى الرأس المرفوض نفسِه قبل إطلاق الجولة: تصحيحٌ خارجيّ دُفع ونسخةٌ أقدم يجعلان إيداعَ العامل يُبنى على
+        القديم فيفشل الدفعُ وتتعطّل الدورة (ملاحظة Codex الرابعة عشرة على #349). نسخةٌ غيرُ نظيفة أو على فرعٍ آخر رفضٌ مسمًّى."""
+        current = self._git("rev-parse", "HEAD", cwd=wt)
+        if current == head:
+            return
+        if self._git("status", "--porcelain", "--untracked-files=no", cwd=wt).strip():
+            raise Refusal("worktree_dirty", "نسخةُ العمل فيها تعديلاتٌ غير مودَعة فلا تُجلب إلى الرأس المرفوض")
+        if self._git("rev-parse", "--abbrev-ref", "HEAD", cwd=wt) != branch:
+            raise Refusal("worktree_not_on_branch", branch)
+        self._git("fetch", self.remote, branch, cwd=wt)
+        try:
+            self._git("merge", "--ff-only", head, cwd=wt)
+        except GitError as exc:
+            raise Refusal("worktree_behind_remote", f"تعذّر تقديمُ النسخة إلى {head[:12]}: {exc}") from exc
 
     def _unfinished_round(self, issue_number: int, attempt: int, rounds: list[dict]) -> dict | None:
         """جولةٌ بدأت ولم تُختم: الخاتمةُ `completed` أو `validation_failed` أو `worker_unavailable` **لا** `outcome_unknown`، فالمهلةُ
