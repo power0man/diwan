@@ -1054,3 +1054,22 @@ def test_gc_skips_a_live_revision_worker_even_after_acceptance(tmp_path):
     assert ledger.open_attempt(41) is None
     rows = dispatcher.gc(yes=True)
     assert rows[0]["removed"] is False and rows[0]["skipped"] == ["revision_open"] and worktree.exists()
+
+
+def test_gc_removes_a_worktree_whose_revision_worker_has_exited_after_acceptance(tmp_path):
+    """قُبل الطلب قبل ختم الجولة ثم خرج عاملُها (معرّفٌ ميّت و`exit` محفوظ): لا تُحجز النسخةُ للأبد، فـgc يحذفها."""
+    dispatcher, project, _adapter, ledger, repo = _setup(tmp_path)
+    worktree, out = _merged_for_real(dispatcher, project, repo)
+    head = out["head_sha"]
+    ledger.append(41, "revision_started", round=1, pid=4194297, started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1", head_sha=head)
+    ledger.append(41, "outcome_unknown", reason="timeout_revision_still_running", pid=4194297, round=1)
+    raw = dispatcher.raw_dir(41, 1) / "revision-1"
+    raw.mkdir(parents=True)
+    (raw / "launching").write_text("2026-10-06T10:00:00+00:00", encoding="utf-8")
+    (raw / "pid").write_text("4194297", encoding="utf-8")
+    (raw / "exit").write_text("0", encoding="utf-8")
+    ledger.append(41, "validated", head_sha=head, checks_ref=f"checks:{head}")
+    ledger.append(41, "verified", head_sha=head, review_ref="c-2", reviewer="codex", reviewer_family="openai")
+    ledger.append(41, "accepted", head_sha=head, merge_sha="m" * 40)
+    rows = dispatcher.gc(yes=True)
+    assert rows[0]["skipped"] is None and rows[0]["removed"] is True and not worktree.exists()

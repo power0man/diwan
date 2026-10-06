@@ -752,25 +752,22 @@ class Dispatcher:
         return {**plan, "status": "completed", "head_sha": head, "superseded_head": old_head}
 
     def _revision_open(self, issue_number: int, attempt: int) -> bool:
-        """آخرُ جولةِ إعادة عملٍ للمحاولة لم تُختم (لا `completed`/`validation_failed`/`worker_unavailable` برقمها) أو عاملُها حيّ؛
-        ومعها مجلّداتُ جولاتٍ على القرص بلا قيد (انقطاعٌ بين الإطلاق والقيد): علامةُ `launching` بلا `exit`، أو معرّفٌ حيّ
-        (ملاحظة Codex العاشرة على #349)."""
+        """هل يستعمل عاملُ جولةِ إعادة عملٍ نسخةَ العمل؟ المعيارُ الحياةُ لا القيد: معرّفٌ حيّ في مجلّد جولةٍ (مقيَّدةً كانت أو لا)،
+        أو إطلاقٌ مجهول (علامةُ `launching` بلا `exit` ولا معرّفات). أمّا جولةٌ عاملُها ميّت فلا تحجز النسخة ولو لم تُختم في السجلّ
+        (طلبٌ قُبل قبل ختمها لا يُختم عبر revise) (ملاحظاتُ Codex ١٠ و١١ و١٢ على #349)."""
         base = self.raw_dir(issue_number, attempt)
         for raw in sorted(base.glob("revision-*")) if base.exists() else []:
-            if (raw / "launching").exists() and not (raw / "exit").exists():
-                return True
             if self._round_alive({}, raw):
+                return True
+            has_pids = any((raw / name).exists() for name in ("pid", "child_pid", "wrapper_pid"))
+            if (raw / "launching").exists() and not (raw / "exit").exists() and not has_pids:
                 return True
         rounds = self.revision_rounds(issue_number, attempt)
         if not rounds:
             return False
         last = rounds[-1]
-        records = self.ledger.records(issue_number)
-        index = next(i for i, r in enumerate(records) if r["state"] == "revision_started" and r.get("round") == last["round"] and r.get("attempt") == attempt)
-        closed = any(r.get("attempt") == attempt and r["state"] in ("completed", "validation_failed", "worker_unavailable")
-                     and (r.get("round") == last["round"] or r.get("revision_round") == last["round"]) for r in records[index + 1:])
         raw = self.raw_dir(issue_number, attempt) / f"revision-{last['round']}"
-        return (not closed) or self._round_alive(last, raw)
+        return self._round_alive(last, raw)
 
     def gc_blockers(self, path: Path, branch: str) -> tuple[list[str], list[str]]:
         """ما يمنع حذفَ نسخة عملٍ طلبُها مدموج: محاولةٌ ما زالت جارية في السجلّ، أو تعديلٌ أو ملفٌّ غير محفوظ (سوى ملفِّ التكليف
