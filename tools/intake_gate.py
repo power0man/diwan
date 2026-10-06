@@ -180,38 +180,23 @@ def payload_event(payload: dict) -> list[dict]:
     return [{"event": payload["action"], "label": label, "actor": payload.get("sender") or {}}]
 
 
-def merge_payload_event(events: list[dict], payload: dict) -> list[dict]:
-    """يُلحق حدثَ الحمولة بخطّ الأحداث إلا إن حمل الخطُّ حدثًا **أحدث** منه على الوسم نفسِه (بطابع `created_at` مقابل
-    `issue.updated_at` في الحمولة): فحمولةُ نزعٍ قديمة وصلت بعد أن أعاد المالك الإذن لا تطغى على الإعادة. وبلا طوابع
-    يُلحق كما هو (الاتجاهُ الآمن: نزعٌ يُحتسب). (ملاحظة Codex على #346)"""
+def merge_payload_event(events: list[dict], payload: dict) -> tuple[list[dict], bool]:
+    """يعيد (خطَّ الأحداث، هل لقطةُ الحمولة قديمة). حدثُ الحمولة يُلحق فقط إن تأخّر الخطُّ عنه: أي لا حدثَ على الوسم نفسِه أحدثَ
+    منه (`created_at` بعد `issue.updated_at`) ولا نسخةَ منه هو (الفعلُ والوسمُ نفسُهما في الثانية نفسِها، فالطوابعُ بدقّة الثانية
+    وترتيبُ الخطّ هو الحكم). وإلا فاللقطةُ قديمة: الخطُّ يحمل الأحدث، ونصُّ المسألة ووسومُها يُقرآن من المصدر لا منها.
+    وبلا طوابع يُلحق كما هو (الاتجاهُ الآمن: نزعٌ يُحتسب). (ملاحظتا Codex على #346)"""
     extra = payload_event(payload)
     if not extra:
-        return events
+        return events, False
     name = _fold((extra[0].get("label") or {}).get("name"))
+    action = extra[0]["event"]
     stamp = str((payload.get("issue") or {}).get("updated_at") or "")
-    newer = [e for e in events if e.get("event") in ("labeled", "unlabeled")
-             and _fold((e.get("label") or {}).get("name")) == name and str(e.get("created_at") or "") > stamp]
-    if stamp and newer:
-        return events
-    return events + extra
-
-
-def refresh_labels(issue: dict, events: list[dict]) -> dict:
-    """لقطةُ وسوم الحمولة قد تسبق أحداثًا أحدثَ منها في الخطّ الزمني (طابعُ `created_at` بعد `issue.updated_at`): وسمٌ له
-    حدثٌ أحدثُ يؤخذ من آخر حدثٍ له، فلا تحجب لقطةٌ قديمة إذنًا أعاده المالك بعدها. وبلا طابعٍ تبقى اللقطةُ كما هي."""
-    stamp = str(issue.get("updated_at") or "")
-    if not stamp:
-        return issue
-    names = {_fold(label.get("name")): label for label in issue.get("labels") or []}
-    for event in events:
-        if event.get("event") not in ("labeled", "unlabeled") or str(event.get("created_at") or "") <= stamp:
-            continue
-        name = _fold((event.get("label") or {}).get("name"))
-        if event["event"] == "labeled":
-            names[name] = event.get("label") or {"name": name}
-        else:
-            names.pop(name, None)
-    return dict(issue, labels=list(names.values()))
+    same_label = [e for e in events if e.get("event") in ("labeled", "unlabeled") and _fold((e.get("label") or {}).get("name")) == name]
+    newer = [e for e in same_label if str(e.get("created_at") or "") > stamp]
+    own = [e for e in same_label if str(e.get("created_at") or "") == stamp and e.get("event") == action]
+    if stamp and (newer or own):
+        return events, True
+    return events + extra, False
 
 
 class GitHub:
@@ -228,6 +213,10 @@ class GitHub:
         with urllib.request.urlopen(request, timeout=30) as response:
             raw = response.read()
         return json.loads(raw) if raw else None
+
+    def issue(self, number: int) -> dict:
+        """المسألةُ الحاليةُ من المصدر (عنوانٌ ونصٌّ ووسوم) حين تكون لقطةُ الحمولة قديمة."""
+        return self._call("GET", f"{self.base}/{number}") or {}
 
     def events(self, number: int) -> list[dict]:
         found: list[dict] = []
@@ -254,8 +243,9 @@ def apply_launch_gate(payload: dict, client, owner: str = OWNER) -> int:
         print(json.dumps({"status": "passed", "blocked": []}))
         return 0
     number = int(issue["number"])
-    events = merge_payload_event(client.events(number), payload)
-    issue = refresh_labels(issue, events)
+    events, stale = merge_payload_event(client.events(number), payload)
+    if stale:
+        issue = client.issue(number)          # لقطةٌ قديمة: النصُّ والوسومُ معًا من المصدر، فلا يُفحص نصٌّ قديم بوسومٍ محدَّثة
     blocked = launch_decision(issue, events, owner)
     for item in blocked:
         client.remove_label(number, item["label"])
