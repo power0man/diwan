@@ -43,6 +43,10 @@ OSI = frozenset({"apache-2.0", "mit", "bsd-2-clause", "bsd-3-clause", "mpl-2.0"}
 PENDING_REASONS = frozenset({
     "read_with_ollama_show_license_on_the_mac",
     "read_from_the_upstream_license_file",
+    # ما قُرئ على الماك فلم يُخرج رخصة يبقى منتظِرًا بما حدث، لا بالسبب العام (قراءة ٦ أكتوبر ٢٠٢٦)
+    "ollama_show_license_returned_empty_text_on_the_mac",
+    "ollama_show_failed_tag_retired_upstream_on_the_mac",
+    "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word",
 })
 HTTPS_SOURCE = re.compile(r"^https://[^\s]+$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
