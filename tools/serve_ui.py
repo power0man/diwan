@@ -44,7 +44,7 @@ def _discover_ollama(
                     if "cloud" not in name and "embed" not in name:
                         chat_m, chat_v = name, digest
                         break
-            for pref in ("minicpm-v4.6:latest", "gemma4:latest"):
+            for pref in ("qwen2.5vl:7b", "gemma3:12b", "minicpm-v:8b", "minicpm-v4.6:latest", "gemma4:latest"):
                 if pref in models:
                     media_m, media_v = pref, models[pref]
                     break

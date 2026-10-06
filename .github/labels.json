@@ -42,6 +42,21 @@
       "description": "تكليفٌ لـ Jules (مسار google)"
     },
     {
+      "name": "ready:anthropic",
+      "color": "0e8a16",
+      "description": "إذنُ المالك لعائلة Claude بالبدء من المسألة (docs/AGENT-INTAKE.md)"
+    },
+    {
+      "name": "ready:openai",
+      "color": "0e8a16",
+      "description": "إذنُ المالك لعائلة Codex بالبدء من المسألة (docs/AGENT-INTAKE.md)"
+    },
+    {
+      "name": "ready:google",
+      "color": "5319e7",
+      "description": "إذنُ المالك لعائلة Jules بالبدء من المسألة؛ شرطٌ لبقاء وسم jules (docs/AGENT-INTAKE.md)"
+    },
+    {
       "name": "draft",
       "color": "cfd3d7",
       "description": "مسوّدةُ مهمّة تُفصَّل عند بدء مرحلتها"

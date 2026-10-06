@@ -28,6 +28,7 @@ LEAST = {
     "family-review-recheck.yml": {"actions": "write", "pull-requests": "read"},  # يعيد تشغيلَ family-review على الرأس
     "family-review.yml": {"contents": "read", "pull-requests": "read"},
     "free-llm-review.yml": {"contents": "read", "models": "read"},
+    "intake-gate.yml": {"contents": "read", "issues": "write"},              # ينزع وسمَ إطلاقٍ بلا إذن ويعلّق بالسبب
     "issue-ledger.yml": {"contents": "read", "issues": "write"},             # يعيد فتحَ المسألة بلا إثبات ويَسِمها
     "labels.yml": {"contents": "read", "issues": "write"},                   # يزامن الوسومَ والمراحل
     "mutation-check.yml": {"contents": "read"},

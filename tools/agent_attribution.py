@@ -79,8 +79,19 @@ def parse_trailers(message: str) -> dict[str, list[str]]:
     blocks = [b for b in re.split(r"\n[ \t]*\n", message.replace("\r\n", "\n")) if b.strip()]
     if not blocks:
         return {}
+    trailers = _trailer_block(blocks[-1])
+    # أداةُ Jules تُلحق «Co-authored-by» في فقرةٍ مستقلّة بعد ذيول العميل، فيسقط ذيلُه وهو مكتوب (#332). فالمقطعُ الأخير
+    # الذي لا يحمل إلا «Co-authored-by» يُضمّ إليه المقطعُ الذي قبله إن كان ذيولًا كلُّه؛ وسطرُ العنوان لا يُضمّ.
+    if trailers and {key.lower() for key in trailers} == {"co-authored-by"} and len(blocks) > 2:
+        previous = _trailer_block(blocks[-2])
+        for key, values in previous.items():
+            trailers.setdefault(key, []).extend(values)
+    return trailers
+
+
+def _trailer_block(block: str) -> dict[str, list[str]]:
     trailers: dict[str, list[str]] = {}
-    for line in blocks[-1].splitlines():
+    for line in block.splitlines():
         if not line.strip():
             continue
         match = _TRAILER_LINE.match(line)

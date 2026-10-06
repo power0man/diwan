@@ -19,6 +19,7 @@ from core.contracts import ToolSpec
 from core.execution import execute_candidate
 from documents.export import FORMATS, ExportRefused, export
 from agent.registry import Tool, ToolContext, ToolRefused
+from multimodal.ocr import OCR_IMAGE
 from workspace_tools.files import _relative
 
 MAX_MATCHES = 60
@@ -274,7 +275,7 @@ RUN_COMMAND = Tool(ToolSpec(
                                                "items": {"type": "string"}}},
      "required": ["argv"]}, consent="owner"), _run_command)
 
-DEFAULT_TOOLS = (READ_FILE, SEARCH_FILES, LIST_FILES, RUN_TESTS, WRITE_FILE, EDIT_FILE, EXPORT_DOCUMENT, RUN_COMMAND)
+DEFAULT_TOOLS = (READ_FILE, SEARCH_FILES, LIST_FILES, RUN_TESTS, WRITE_FILE, EDIT_FILE, EXPORT_DOCUMENT, OCR_IMAGE, RUN_COMMAND)
 
 
 def get_sovereign_tools() -> tuple[Tool, ...]:

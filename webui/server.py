@@ -735,7 +735,8 @@ class LocalApp:
         if memory is None and not historical:
             memory = self.memory_store(project)
         return AgentSession(root, session_id, workspace_root=workspace, project_id=project.name,
-                            registry=registry, memory=memory, storage_scope=self.storage_scope, **config)
+                            registry=registry, memory=memory, storage_scope=self.storage_scope,
+                            media_provider_factory=self.media_provider_factory, **config)
 
     @staticmethod
     def present_agent(turn, session=None, mode="agent"):
