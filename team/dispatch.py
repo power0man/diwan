@@ -719,11 +719,26 @@ class Dispatcher:
         if not result.ok:
             self.ledger.append(issue_number, "validation_failed", reason="worker_reported_failure", head_sha=head, returncode=rc, round=round_no)
             return {**plan, "status": "validation_failed", "reason": "worker_reported_failure"}
-        if head == old_head:
+        completed = self.ledger.last_of(issue_number, "completed", attempt) or {}
+        branch = completed.get("branch") or ""
+        # الرأسُ المحليّ يجب أن يكون على فرع التكليف نفسِه (لا فرعٍ آخر ولا رأسٍ منفصل) وأن يتقدّم على الرأس المرفوض بإيداعاتٍ
+        # فعلية؛ رأسٌ مختلفٌ لكنه خلف تصحيحٍ بعيد ليس تصحيحًا، ودفعُ الفرع بالاسم لا يحمل رأسًا على فرعٍ آخر (ملاحظتا Codex الثامنتان على #349)
+        on_branch = self._git("rev-parse", "--abbrev-ref", "HEAD", cwd=wt)
+        if on_branch != branch:
+            self.ledger.append(issue_number, "validation_failed", reason="worktree_not_on_branch", head_sha=head, round=round_no, on_branch=on_branch)
+            return {**plan, "status": "validation_failed", "reason": "worktree_not_on_branch", "on_branch": on_branch}
+        try:
+            new_commits = int(self._git("rev-list", "--count", f"{old_head}..HEAD", cwd=wt) or 0)
+        except GitError:
+            new_commits = 0                 # الرأسُ المرفوض ليس في المخزن المحلي: لا يُثبت تقدّمٌ عليه
+        if not new_commits:                 # الجولةُ لم تتقدّم على الرأس المرفوض
             self.ledger.append(issue_number, "validation_failed", reason="revision_no_commits", head_sha=head, round=round_no)
             return {**plan, "status": "validation_failed", "reason": "revision_no_commits"}
-        completed = self.ledger.last_of(issue_number, "completed", attempt) or {}
-        self._git("push", self.remote, completed.get("branch") or "HEAD", cwd=wt)
+        self._git("push", self.remote, branch, cwd=wt)
+        pushed = self._git("rev-parse", f"{self.remote}/{branch}", cwd=wt)
+        if pushed != head:
+            self.ledger.append(issue_number, "outcome_unknown", reason="pushed_head_mismatch", head_sha=head, pushed=pushed, round=round_no)
+            return {**plan, "status": "outcome_unknown", "reason": "pushed_head_mismatch"}
         cost_micros = None if result.cost_estimate_usd is None else int(round(float(result.cost_estimate_usd) * 1_000_000))
         self.ledger.append(issue_number, "completed", head_sha=head, branch=completed.get("branch"), pr=completed.get("pr"),
                            pr_url=completed.get("pr_url"), superseded_head=old_head, revision_round=round_no,

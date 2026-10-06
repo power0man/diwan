@@ -930,3 +930,46 @@ def test_revise_rereads_the_attempt_after_waiting_for_the_lock(tmp_path):
     done = result.get("out")
     assert isinstance(done, dict) and done["status"] == "completed", done
     assert done["attempt"] == 2 and adapter.seen[-1]["cwd"] == str(wt2) and done["superseded_head"] == head2
+
+
+def test_a_revision_behind_an_external_correction_is_not_a_completion(tmp_path):
+    """تقدّم الطلبُ بتصحيحٍ خارجيّ وبقيت نسخةُ العمل أقدم، وانتهى العامل بلا إيداع: الرأسُ المحليّ يختلف عن المرفوض لكنه لا
+    يتقدّم عليه، فالجولةُ `revision_no_commits` لا completed (ملاحظة Codex الثامنة على #349)."""
+    dispatcher, project, adapter, ledger, repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    other = tmp_path / "other"
+    import subprocess
+    subprocess.run(["git", "clone", "-q", str(tmp_path / "origin.git"), str(other)], check=True, capture_output=True)
+    git("checkout", "-q", out["branch"], cwd=other)
+    (other / "external.txt").write_text("تصحيحٌ خارجيّ\n", encoding="utf-8")
+    git("add", "external.txt", cwd=other)
+    git("commit", "-q", "-m", "تصحيحٌ خارجيّ\n\nDiwan-Agent: anthropic/x", cwd=other)
+    git("push", "-q", "origin", out["branch"], cwd=other)
+    remote_head = git("rev-parse", "HEAD", cwd=other)
+    project.pulls[out["pr"]] = PullRequest(out["pr"], remote_head, "main", out["branch"], 41, url=project.pulls[out["pr"]].url)
+    ledger.append(41, "review_rejected", head_sha=remote_head, review_ref=project.comment(out["pr"], "عيب\nالحكم: يحتاج تصحيحًا"),
+                  reviewer="codex", reviewer_family="openai", verdict="revise")
+    adapter.behaviour = "nothing"
+    done = dispatcher.revise(41, execute=True)
+    assert done["status"] == "validation_failed" and done["reason"] == "revision_no_commits"
+    assert ledger.main_state(41)["head_sha"] == remote_head
+
+
+def test_a_revision_left_on_another_branch_is_named_not_pushed(tmp_path):
+    dispatcher, project, _adapter, ledger, repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    wt = Path(out["worktree"])
+    remote_before = git("rev-parse", f"origin/{out['branch']}", cwd=repo)
+
+    class Detaching(FakeAdapter):
+        def start(self, argv, stdin_text, cwd, stdout_path, stderr_path, exit_path=None):
+            proc = super().start(argv, stdin_text, cwd, stdout_path, stderr_path, exit_path)
+            git("checkout", "-q", "--detach", cwd=Path(cwd))                      # العاملُ ترك النسخةَ على رأسٍ منفصل
+            return proc
+
+    detaching = Detaching()
+    detaching.seen = list(_adapter.seen)                                           # محتوًى جديد فيُودَع
+    dispatcher.adapter = detaching
+    done = dispatcher.revise(41, execute=True)
+    assert done["status"] == "validation_failed" and done["reason"] == "worktree_not_on_branch" and done["on_branch"] == "HEAD"
+    assert git("rev-parse", f"origin/{out['branch']}", cwd=repo) == remote_before
