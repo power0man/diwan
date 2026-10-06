@@ -221,6 +221,46 @@ def test_progressive_jpeg_sof2_parsed_to_eoi(workspace, monkeypatch):
     assert res["text"] == "نص صورة تدريجية"
 
 
+def test_a_jpeg_with_a_frame_header_but_no_scan_is_refused(workspace):
+    """SOI + SOF0 + EOI بلا SOS: إطارٌ بلا مسحٍ ملفٌّ تالف لا صورة، فيُرفض `jpeg_invalid` ولا يعبر بأبعاد ١×١ إلى
+    محرّك الوسائط (ملاحظة Codex على #340 و#343، #345)."""
+    from multimodal.codec import MediaError, _jpeg
+    ws, ctx = workspace
+    raw = b"\xff\xd8\xff" + b"\xc0\x00\x0b\x08\x00\x01\x00\x01\x01\x01\x11\x00" + b"\xff\xd9"
+    with pytest.raises(MediaError) as exc:
+        _jpeg(raw)
+    assert exc.value.code == "jpeg_invalid"
+    (ws / "noscan.jpg").write_bytes(raw)
+    with pytest.raises(ToolRefused) as exc:
+        ocr_image_handler({"path": "noscan.jpg"}, ctx)
+    assert exc.value.code == "jpeg_invalid"
+
+
+def test_a_media_provider_answer_cut_at_the_output_cap_is_refused_by_name(workspace, monkeypatch):
+    """`stop_reason` غيرُ `complete` نصٌّ مبتور عند سقف الإخراج: يُرفض `ocr_output_truncated` ولا يُحفظ، وفي `auto`
+    يُنتقل إلى المحرّك التالي (ملاحظة Codex على #340 و#343، #345)."""
+    from core.contracts import Response, Usage
+    from multimodal.ocr import OCR_MAX_OUTPUT_TOKENS
+    ws, ctx = workspace
+    (ws / "sample.png").write_bytes(SAMPLE_PNG)
+
+    class Truncating:
+        model = "custom-m"
+        model_version = "v" * 64
+
+        def complete(self, req):
+            assert req.max_output == OCR_MAX_OUTPUT_TOKENS
+            return Response(content="نصٌّ طويلٌ انقطع عند", usage=Usage(10, OCR_MAX_OUTPUT_TOKENS),
+                            stop_reason="max_output", cost_micros=0)
+
+    cut = ToolContext(root=ctx.root, journal=ctx.journal, media_provider_factory=lambda: Truncating())
+    with pytest.raises(ToolRefused) as exc:
+        ocr_image_handler({"path": "sample.png", "engine": "media_provider", "output_path": "out.txt"}, cut)
+    assert exc.value.code == "ocr_output_truncated" and not (ws / "out.txt").exists()
+    monkeypatch.setattr("multimodal.ocr._extract_text_via_tesseract", lambda *a, **k: "نصٌّ كامل")
+    assert ocr_image_handler({"path": "sample.png"}, cut)["text"] == "نصٌّ كامل"
+
+
 def _fake_pdftoppm(cmd, **kw):
     """pdftoppm بسلوكه المعلن: الصفحةُ بالدقّة المطلوبة، و`-scale-to` يحدّ ضلعها الأطول. فلا يتوقّف الاختبار
     على وجود poppler في بيئة CI، ويسقط إن أُسقط خيارُ التحجيم."""
