@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import hashlib
 import json
 import re
@@ -87,6 +88,21 @@ def cer(reference: str, hypothesis: str, *, keep_diacritics: bool = False) -> fl
     return previous[-1] / len(ref)
 
 
+def wer(reference: str, hypothesis: str, *, keep_diacritics: bool = False) -> float:
+    """نسبةُ خطأ الكلمات: مسافةُ تحرير الكلمات بعد التطبيع مقسومةً على عدد كلمات المرجع."""
+    ref = normalize(reference, keep_diacritics=keep_diacritics).split()
+    hyp = normalize(hypothesis, keep_diacritics=keep_diacritics).split()
+    if not ref:
+        return 0.0 if not hyp else 1.0
+    previous = list(range(len(hyp) + 1))
+    for i, a in enumerate(ref, 1):
+        current = [i]
+        for j, b in enumerate(hyp, 1):
+            current.append(min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (a != b)))
+        previous = current
+    return previous[-1] / len(ref)
+
+
 def vision_report(bank: dict, responses: dict[str, str]) -> dict:
     """الدقّةُ الكلية ولكل فئة، والحكمُ بالعتبة المسجَّلة. والغائبُ من الأجوبة خطأ."""
     by_category: dict[str, list[bool]] = {}
@@ -109,7 +125,27 @@ def ocr_report(bank: dict, texts: dict[str, str], hypotheses: dict[str, str]) ->
     return {"cer": means, "meets": all(means[level] <= limits[level] for level in limits)}
 
 
-def validate_media_bank(root: Path = BANK) -> list[str]:
+def _read_attribution(path: Path) -> dict[str, dict[str, str]]:
+    """يقرأ ATTRIBUTION.md ويعيد قاموسًا بالعناصر المنسوبة: {target: {"source": ..., "license": ..., "producer": ...}}"""
+    entries: dict[str, dict[str, str]] = {}
+    if not path.is_file():
+        return entries
+    header_seen = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line.startswith("|") or line.startswith("|---"):
+            continue
+        if not header_seen:
+            header_seen = True
+            continue
+        parts = [p.strip().strip("`") for p in line.strip("|").split("|")]
+        if len(parts) >= 4:
+            target, source, lic, producer = parts[0], parts[1], parts[2], parts[3]
+            entries[target] = {"source": source, "license": lic, "producer": producer}
+    return entries
+
+
+def validate_media_bank(root: Path = BANK, *, now: datetime | None = None) -> list[str]:
     """خللُ البنك مسمًّى، أو قائمةٌ فارغة."""
     problems: list[str] = []
     try:
@@ -118,10 +154,33 @@ def validate_media_bank(root: Path = BANK) -> list[str]:
         speech, manifest = _read(root / "speech.json"), _read(root / "manifest.json")
     except (OSError, json.JSONDecodeError) as exc:
         return [f"bank_unreadable: {exc}"]
+
+    # — الإسنادُ والرخص —
+    attr_path = root / "ATTRIBUTION.md"
+    if not attr_path.is_file():
+        problems.append("attribution_file_missing")
+        attributions: dict[str, dict[str, str]] = {}
+    else:
+        attributions = _read_attribution(attr_path)
+
     for name, part in (("image_gen", image_gen), ("vision", vision), ("ocr", ocr), ("ocr_texts", texts),
-                       ("manifest", manifest)):
+                       ("speech", speech), ("manifest", manifest)):
         if not part.get("license"):
             problems.append(f"license_missing: {name}")
+
+    for p in root.iterdir():
+        if p.name in ("ATTRIBUTION.md", ".DS_Store"):
+            continue
+        target_key = f"{p.name}/" if p.is_dir() else p.name
+        attr = attributions.get(target_key) or attributions.get(p.name)
+        if attr is None:
+            problems.append(f"attribution_missing: {target_key}")
+        else:
+            if not attr.get("source"):
+                problems.append(f"attribution_missing: {target_key}")
+            if not attr.get("license"):
+                problems.append(f"license_missing: {target_key}")
+
     # — المولّد —
     prompts = image_gen.get("prompts", [])
     if len(prompts) != COUNTS["image_gen"] or len({p["id"] for p in prompts}) != len(prompts):
@@ -161,7 +220,21 @@ def validate_media_bank(root: Path = BANK) -> list[str]:
     # — عيّنةُ التفريغ: تُجمَّد على الماك (tools/freeze_speech_sample.py)، وقبلها لا ملفَّ صوت —
     asr = speech.get("asr", {})
     clips = []
-    if asr.get("status") == "frozen":
+    if asr.get("status") == "pending_fetch":
+        deadline_str = asr.get("deadline")
+        if not deadline_str:
+            problems.append("speech_asr_deadline_missing")
+        else:
+            check_time = now or datetime.now(timezone.utc)
+            try:
+                dl = datetime.fromisoformat(deadline_str)
+                if dl.tzinfo is None:
+                    dl = dl.replace(tzinfo=timezone.utc)
+                if check_time > dl:
+                    problems.append(f"pending_fetch_expired: {deadline_str}")
+            except (ValueError, TypeError):
+                problems.append(f"speech_asr_deadline_invalid: {deadline_str}")
+    elif asr.get("status") == "frozen":
         try:
             sample = _read(root / "speech_sample.json")
         except (OSError, json.JSONDecodeError):

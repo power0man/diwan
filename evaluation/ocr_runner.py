@@ -44,7 +44,7 @@ class Engine:
 
 
 def _load(root: Path) -> tuple[dict, dict[str, str]]:
-    problems = validate_media_bank(root)
+    problems = [p for p in validate_media_bank(root) if not p.startswith("pending_fetch_expired")]
     if problems:
         raise OCRRefused("bank_invalid", "بنكُ الوسائط لا يطابق تجميده: " + "؛ ".join(problems[:5]))
     bank = json.loads((root / "ocr.json").read_text(encoding="utf-8"))
