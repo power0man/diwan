@@ -32,7 +32,7 @@ from core.quoted import quarantine
 from team import team_home, worktrees_root
 from team.adapters.base import Adapter
 from team.ledger import LEASE_SECONDS, TeamLedger, TransitionError, lease_expired, now_utc
-from team.projects.base import Issue, ProjectAdapter
+from team.projects.base import Issue, ProjectAdapter, ProjectError
 
 LEDGER_FILE = "dispatch.jsonl"
 HERE = Path(__file__).resolve().parent
@@ -609,6 +609,9 @@ def main(argv: list[str] | None = None) -> int:
     except GitError as exc:
         print(json.dumps({"status": "refused", "code": "git_error", "detail": str(exc)}, ensure_ascii=False))
         return 2
+    except ProjectError as exc:
+        print(json.dumps({"status": "project_unavailable", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
+        return 3
     print(json.dumps(out, ensure_ascii=False, indent=1, default=str))
     return 0
 

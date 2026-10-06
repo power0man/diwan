@@ -1,6 +1,7 @@
 """المراجعُ المستقلّ: دورٌ لا بائع، وقاعدةُ العائلة، والتعذّرُ ثم المالك، وتعليقُ ق٧٥(ب) محجورًا، والمعايرةُ شرطُ الاحتساب."""
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 
@@ -289,3 +290,20 @@ def test_the_temporary_worktree_path_is_not_published_in_the_comment(tmp_path):
     body = rv.q75_comment(adapters["codex"], "a" * 40, "pass", adapters["codex"].review_text, [], "openai/codex",
                           strip_paths=("/private/tmp/team-review-abc/wt",))
     assert "/private/tmp/team-review-abc" not in body and "[x.txt:1](x.txt:1)" in body and "y.py" in body
+
+
+def test_a_platform_failure_in_the_cli_is_a_named_unavailability_not_a_traceback(tmp_path, monkeypatch, capsys):
+    """انقطاعُ الشبكة إلى GitHub أسقط مراجعةَ #347 بانفجار `GhError` خام؛ صار `project_unavailable` برمزه وخروجٍ ٣ بلا قيدٍ في السجلّ."""
+    from team.projects import diwan as dp
+
+    _origin, repo = make_repo(tmp_path)
+    monkeypatch.setenv("DIWAN_TEAM_HOME", str(tmp_path / "home"))
+
+    def boom(self, number):
+        raise dp.GhError("gh_failed", "dial tcp: i/o timeout")
+
+    monkeypatch.setattr(dp.DiwanProject, "pull", boom)
+    rc = rv.main(["347", "--execute", "--repo-root", str(repo)])
+    out = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert rc == 3 and out == {"status": "project_unavailable", "code": "gh_failed", "detail": "dial tcp: i/o timeout"}
+    assert not (tmp_path / "home" / "dispatch.jsonl").read_text(encoding="utf-8").strip()

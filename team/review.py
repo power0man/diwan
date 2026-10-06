@@ -28,7 +28,7 @@ from core.quoted import Quarantined, quarantine  # noqa: F401  (Quarantined تُ
 from team import team_home
 from team.adapters.base import Adapter
 from team.ledger import TeamLedger, TransitionError, now_utc
-from team.projects.base import ProjectAdapter, PullRequest
+from team.projects.base import ProjectAdapter, ProjectError, PullRequest
 
 CALIBRATION_FILE = "calibration.json"
 CALIBRATION_DAYS = 30
@@ -294,6 +294,10 @@ def main(argv: list[str] | None = None) -> int:
     except (Refusal, TransitionError) as exc:
         print(json.dumps({"status": "refused", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
         return 2
+    except ProjectError as exc:
+        # عطبُ المنصّة (شبكةٌ، مصادقة) تعذّرٌ مسمًّى لا انفجار؛ ولا قيدَ في السجلّ لأن شيئًا لم يُراجَع (انقطاعُ ٦ أكتوبر)
+        print(json.dumps({"status": "project_unavailable", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
+        return 3
     print(json.dumps(out, ensure_ascii=False, indent=1, default=str))
     return 0 if out.get("status") not in ("reviewer_unavailable",) else 3
 

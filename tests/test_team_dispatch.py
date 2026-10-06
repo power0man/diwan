@@ -1,6 +1,7 @@
 """المرسِل الأدنى على مستودعٍ مؤقت ومحوِّلٍ مصطنع: لا أثرَ في الخطة، ورفضٌ مسمًّى، وحَجرٌ، ودورةٌ كاملة، ونتيجةٌ مجهولة لا تُعاد."""
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
@@ -490,3 +491,19 @@ def test_a_live_wrapper_without_a_child_pid_is_not_absence_and_takeover_leaves_a
     out = dispatcher.takeover(41, owner_authorization="نفّذ")
     assert out["status"] == "takeover" and out["proof"]["never_launched"] is True
     assert (raw / "taken_over").read_text(encoding="utf-8") == "2026-10-09T11:00:00+00:00"
+
+
+def test_a_platform_failure_in_the_dispatch_cli_is_a_named_unavailability(tmp_path, monkeypatch, capsys):
+    from team import dispatch as dm
+    from team.projects import diwan as dp
+
+    _origin, repo = make_repo(tmp_path)
+    monkeypatch.setenv("DIWAN_TEAM_HOME", str(tmp_path / "home"))
+
+    def boom(self, number):
+        raise dp.GhError("gh_failed", "TLS handshake timeout")
+
+    monkeypatch.setattr(dp.DiwanProject, "issue", boom)
+    rc = dm.main(["run", "345", "--repo-root", str(repo)])
+    out = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert rc == 3 and out["status"] == "project_unavailable" and out["code"] == "gh_failed"
