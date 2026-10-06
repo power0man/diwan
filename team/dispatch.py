@@ -534,25 +534,31 @@ class Dispatcher:
         if state is None or state["state"] not in ("completed", "validated", "verified") or self.ledger.open_attempt(issue_number) is None:
             raise Refusal("nothing_to_revise", f"الحالة {state['state'] if state else 'لا شيء'}")
         attempt = state["attempt"]
-        head = self.sync_head(issue_number, record=execute)      # المعاينةُ لا تقيّد رأسًا متقدّمًا (ملاحظة Codex على #349)
-        latest = self.latest_review(issue_number, head)
-        failed = self.ledger.last_of(issue_number, "validation_failed", attempt) or {}
-        if latest is not None and latest.get("state") == "review_rejected":   # سببُ الجولة: مراجعةٌ رافضة
-            reason_ref, reason_kind = latest["review_ref"], "review_rejected"
-        elif failed.get("head_sha") == head and failed.get("reason") == "checks_failed":
-            reason_ref, reason_kind = f"checks:{head}", "checks_failed"
-        else:
-            raise Refusal("nothing_to_revise", "لا مراجعةَ رافضة ولا فحوصَ ساقطة على رأس الطلب الحالي")
         if not execute:
+            head, reason_kind, reason_ref = self._revision_trigger(issue_number, attempt, record=False)
             return self._revise_plan(issue_number, attempt, head, reason_kind, reason_ref, max_rounds)
         with self._launch_lock(issue_number):
-            # تحت قفل الإطلاق: جولةٌ أُطلقت ولم تُقيَّد تُستعاد من ملفّات معرّفاتها، ثم جولةٌ غيرُ مختومة تُختم أو تُرفض `revision_running`،
-            # ثم الإطلاقُ وقيدُه؛ فلا يمرّ أمران متزامنان بالفحص معًا (ملاحظاتُ Codex على #349)
+            # تحت قفل الإطلاق وبهذا الترتيب (ملاحظاتُ Codex الثانية والثالثة على #349): (١) جولةٌ أُطلقت ولم تُقيَّد تُستعاد من ملفّات
+            # معرّفاتها؛ (٢) جولةٌ غيرُ مختومة تُختم من رمز خروجها برأسها المسجَّل عند بدئها أو تُرفض `revision_running` — **قبل** قراءة
+            # الرأس والسبب، فتصحيحٌ دفعه العاملُ ثم انقطع المرسِل يُختم لا يُرفض nothing_to_revise؛ (٣) الرأسُ والسببُ يُقرآن الآن لا قبل
+            # القفل، فأمرٌ ثانٍ متزامن يرى الرأسَ الجديد ولا يطلق جولةً بسببٍ قديم؛ (٤) الإطلاقُ وقيدُه.
             rounds = self._recover_unrecorded_round(issue_number, attempt, self.revision_rounds(issue_number, attempt))
             pending = self._unfinished_round(issue_number, attempt, rounds)
             if pending is not None:
                 return pending
+            head, reason_kind, reason_ref = self._revision_trigger(issue_number, attempt, record=True)
             return self._launch_revision(issue_number, attempt, head, reason_kind, reason_ref, rounds, max_rounds, budget_usd, timeout)
+
+    def _revision_trigger(self, issue_number: int, attempt: int, *, record: bool) -> tuple[str, str, str]:
+        """رأسُ الطلب الحالي وسببُ إعادة العمل عليه: مراجعةٌ رافضة أو فحوصٌ ساقطة، وإلا `nothing_to_revise`."""
+        head = self.sync_head(issue_number, record=record)       # المعاينةُ لا تقيّد رأسًا متقدّمًا (ملاحظة Codex على #349)
+        latest = self.latest_review(issue_number, head)
+        failed = self.ledger.last_of(issue_number, "validation_failed", attempt) or {}
+        if latest is not None and latest.get("state") == "review_rejected":   # سببُ الجولة: مراجعةٌ رافضة
+            return head, "review_rejected", latest["review_ref"]
+        if failed.get("head_sha") == head and failed.get("reason") == "checks_failed":
+            return head, "checks_failed", f"checks:{head}"
+        raise Refusal("nothing_to_revise", "لا مراجعةَ رافضة ولا فحوصَ ساقطة على رأس الطلب الحالي")
 
     def _revise_plan(self, issue_number: int, attempt: int, head: str, reason_kind: str, reason_ref: str, max_rounds: int) -> dict:
         rounds = self.revision_rounds(issue_number, attempt)
@@ -598,7 +604,7 @@ class Dispatcher:
         write_atomic(raw / "pid", str(proc.pid))
         self.ledger.append(issue_number, "revision_started", round=round_no, pid=int(proc.pid), started_at=self.clock(),
                            brief_sha256=brief_sha, reason_ref=reason_ref, reason=reason_kind, brief_path=str(kept),
-                           quarantine_codes=plan["quarantine_codes"])
+                           head_sha=head, quarantine_codes=plan["quarantine_codes"])
         try:
             rc = proc.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
@@ -653,7 +659,8 @@ class Dispatcher:
             self.ledger.append(issue_number, "outcome_unknown", reason="revision_gone_without_exit_code", round=last["round"])
             return {"status": "outcome_unknown", "reason": "revision_gone_without_exit_code", "round": last["round"]}
         dispatched = self.ledger.last_of(issue_number, "dispatched", attempt) or {}
-        head = (self.ledger.last_of(issue_number, "completed", attempt) or {}).get("head_sha", "")
+        # الرأسُ القديم هو المسجَّل عند بدء الجولة، لا رأسُ completed الحالي الذي قد يكون تصحيحَ العامل نفسَه (ملاحظة Codex الثالثة على #349)
+        head = str(last.get("head_sha") or (self.ledger.last_of(issue_number, "completed", attempt) or {}).get("head_sha", ""))
         adapter = self.adapter_for(dispatched.get("worker"))
         plan = {"issue": issue_number, "attempt": attempt, "round": last["round"], "resumed": True}
         return self._finish_revision(issue_number, attempt, last["round"], rc, raw, Path(dispatched.get("worktree", "")), head, adapter, plan)

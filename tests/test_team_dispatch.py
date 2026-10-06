@@ -724,3 +724,23 @@ def test_a_dry_run_revise_does_not_record_a_moved_head(tmp_path):
         dispatcher.revise(41)                                   # المراجعةُ الرافضة كانت على الرأس القديم؛ الجديدُ بلا مراجعة
     assert exc.value.code == "nothing_to_revise" and len(ledger.records(41)) == before
     assert ledger.main_state(41)["head_sha"] == out["head_sha"]
+
+
+def test_an_interrupted_revision_whose_worker_pushed_is_closed_not_refused(tmp_path):
+    """العاملُ دفع تصحيحَه ثم انقطع المرسِل قبل ختم الجولة: الرأسُ البعيد تقدّم ولا مراجعةَ عليه، ومع ذلك تُختم الجولةُ برأسها
+    المسجَّل عند بدئها (`completed` جديد يُسقط القديم) ولا تُرفض nothing_to_revise ولا تُقرأ revision_no_commits."""
+    dispatcher, project, adapter, ledger, repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    wt = Path(out["worktree"])
+    raw = dispatcher.raw_dir(41, 1) / "revision-1"
+    raw.mkdir(parents=True)
+    adapter.start(["fake-worker"], "", wt, raw / "stdout.txt", raw / "stderr.txt", exit_path=raw / "exit")     # تصحيحٌ أُودع وخروجٌ ٠
+    git("push", "-q", "origin", out["branch"], cwd=wt)
+    new_head = git("rev-parse", "HEAD", cwd=wt)
+    project.pulls[out["pr"]] = PullRequest(out["pr"], new_head, "main", out["branch"], 41, url=project.pulls[out["pr"]].url)
+    ledger.append(41, "revision_started", round=1, pid=4194297, started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64,
+                  reason_ref="comment-1", head_sha=out["head_sha"])
+    assert dispatcher.sync_head(41) == new_head                        # `validate` سابقٌ سجّل الرأسَ الجديد completed
+    done = dispatcher.revise(41, execute=True)
+    assert done["status"] == "completed" and done["resumed"] is True and done["superseded_head"] == out["head_sha"] and done["head_sha"] == new_head
+    assert ledger.main_state(41)["head_sha"] == new_head and ledger.last_of(41, "validation_failed") is None
