@@ -166,10 +166,18 @@ def launch_decision(issue: dict, events: list[dict], owner: str = OWNER) -> list
 
 
 def payload_event(payload: dict) -> list[dict]:
-    """حدثُ الوسم الذي أطلق هذا التشغيل من الحمولة نفسِها، فلا يفوت لتأخّر واجهة الأحداث عنه."""
-    if payload.get("action") in ("labeled", "unlabeled") and payload.get("label"):
-        return [{"event": payload["action"], "label": payload["label"], "actor": payload.get("sender") or {}}]
-    return []
+    """حدثُ الوسم الذي أطلق هذا التشغيل من الحمولة نفسِها، فلا يفوت لتأخّر واجهة الأحداث عنه.
+
+    ولا يُلحق إلا إن كان أثرُه باقيًا في لقطة وسوم المسألة في الحمولة نفسِها: فلقطةٌ تخالفه (نزعٌ والوسمُ فيها، أو وضعٌ
+    والوسمُ غائب) تعني أن حدثًا أحدثَ نسخه وأن خطَّ الأحداث يحمل الأحدث؛ وإلحاقُ القديم آخرًا كان يطغى على الأحدث
+    فيُنزع وسمُ الإطلاق بعد أن أعاد المالك إذنَه (ملاحظة Codex على #340 و#343، فُرزت في #345)."""
+    label = payload.get("label")
+    if payload.get("action") not in ("labeled", "unlabeled") or not label:
+        return []
+    present = {_fold(item.get("name")) for item in (payload.get("issue") or {}).get("labels") or []}
+    if (_fold(label.get("name")) in present) != (payload["action"] == "labeled"):
+        return []
+    return [{"event": payload["action"], "label": label, "actor": payload.get("sender") or {}}]
 
 
 class GitHub:
