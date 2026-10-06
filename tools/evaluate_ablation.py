@@ -23,8 +23,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from evaluation.ablation import (GREEDY_SEED_LIMIT, RUNNER_VERSION, AblationError, _sha, aggregate_seed_rows, arm,  # noqa: E402
-                                 auto_checked, judge, protocol, run_seeded_arm, seed_values)
+from evaluation.ablation import (GREEDY_SEED_LIMIT, RUNNER_VERSION, AblationError, RunCache, _sha,  # noqa: E402
+                                 aggregate_seed_rows, arm, auto_checked, judge, protocol, run_seeded_arm, seed_values)
 from tools.model_digest import ModelDigestError, pin_model_digest, verify_model_digest  # noqa: E402
 from tools.sample_bank import load_capability_suites, stratified  # noqa: E402
 
@@ -46,7 +46,7 @@ def bank_cases(bank_open: Path, *, sample_target: int | None, salt: str, sandbox
 
 def run_component(component: str, provider, *, model: str, model_version: str, bank_open: Path,
                   sample_target: int | None = None, salt: str = "k46", sandbox: bool = True,
-                  seeds: tuple[int, ...] | None = None, **options) -> dict:
+                  seeds: tuple[int, ...] | None = None, checkpoint: Path | None = None, **options) -> dict:
     spec = protocol()["components"].get(component)
     if spec is None:
         raise AblationError("component_unknown", component)
@@ -55,9 +55,13 @@ def run_component(component: str, provider, *, model: str, model_version: str, b
     seeds = seed_values() if seeds is None else tuple(seeds)
     if seeds != seed_values(len(seeds)):
         raise AblationError("seeds_invalid", "يلزم تسلسل 0..N-1 بعدد فردي لا يقل عن 3")
+    # مخبأُ الاستئناف لطريق الحلقة وحده: مُشغِّلُ البحث يقيس بنكَه دفعةً واحدة (ثلاثون سؤالًا) فلا يحتاجه
+    cache = RunCache(checkpoint) if checkpoint is not None and spec["runner"] != "research" else None
     config = {"runner_version": RUNNER_VERSION, "component": component, "model": model,
               "model_version": model_version, "arms": spec["arms"], "options": dict(options),
-              "seeds": list(seeds), "seed_aggregation": protocol()["seed_aggregation"]}
+              "seeds": list(seeds), "seed_aggregation": protocol()["seed_aggregation"],
+              "checkpoint": {"path": str(checkpoint), "measured_rows_reused": len(cache.rows)}
+              if cache is not None else None}
     if spec["runner"] == "research":
         from evaluation.research_runner import RUNNER_VERSION as RESEARCH_RUNNER_VERSION, run_bank
         config["research_runner_version"] = RESEARCH_RUNNER_VERSION
@@ -76,7 +80,7 @@ def run_component(component: str, provider, *, model: str, model_version: str, b
         cases, files = bank_cases(bank_open, sample_target=sample_target, salt=salt, sandbox=sandbox)
         config.update(bank={"files": files, "sample_target": sample_target, "salt": salt,
                             "sandbox_cases_included": sandbox, "cases": len(cases)})
-        rows = {side: run_seeded_arm(cases, provider, arm(spec["arms"][side]), seeds, model=model,
+        rows = {side: run_seeded_arm(cases, provider, arm(spec["arms"][side]), seeds, cache, model=model,
                                      model_version=model_version, **options) for side in ("on", "off")}
     return {"schema_version": 2, "kind": "ablation_report", "config": config, "arms": rows,
             "judgment": judge(component, rows["on"], rows["off"]),
@@ -94,6 +98,8 @@ def main(argv=None) -> int:
                         help="عددٌ فردي من البذور (الافتراضي 3؛ تُستخدم 0..N-1)")
     parser.add_argument("--salt", default="k46")
     parser.add_argument("--no-sandbox", action="store_true", help="تُستبعد حالاتُ python_sandbox حيث لا حاويةَ فحص")
+    parser.add_argument("--checkpoint", type=Path,
+                        help="ملفُّ JSONL خارج docs/ يُكتب إليه كلُّ صفٍّ مقيس فور قياسه؛ وإعادةُ الأمر نفسِه تستأنف منه")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.out.exists():
@@ -113,7 +119,7 @@ def main(argv=None) -> int:
         report = run_component(args.component, OllamaProvider(args.model), model=args.model,
                                model_version=model_version, bank_open=args.bank_open,
                                sample_target=args.sample_target, salt=args.salt, sandbox=not args.no_sandbox,
-                               seeds=seeds)
+                               seeds=seeds, checkpoint=args.checkpoint)
     except AblationError as exc:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 2

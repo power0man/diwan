@@ -118,8 +118,54 @@ def run_case(case: dict, provider, arm_config: dict, *, model: str, model_versio
         shutil.rmtree(scratch, ignore_errors=True)
 
 
-def run_arm(cases: list[dict], provider, arm_config: dict, **options) -> list[dict]:
-    return [run_case(case, provider, arm_config, **options) for case in cases]
+class RunCache:
+    """مخبأُ استئنافٍ لليلة الاستئصال (الخطة ك٤٦ البند ٤): ثلاثُ بذورٍ في ذراعين تطيل التشغيل ثلاثَ مرّات، فيُكتب كلُّ صفٍّ
+    مقيس فور قياسه إلى JSONL، ويُعاد التشغيلُ من حيث انقطع بالمفتاح نفسِه.
+
+    - **المفتاحُ** بصمةُ ما يغيّر الجواب: نسخةُ المُشغِّل، والمحرّكُ وبصمتُه، والذراعُ، والبذرةُ، والحالةُ نصًّا، وخياراتُ التشغيل؛
+      فصفٌّ من محرّكٍ أو بصمةٍ أو ذراعٍ أخرى لا يُعاد استعماله.
+    - **المقيسُ وحده يُخبّأ.** العطبُ (مهلة، نفادُ حصّة، حلقةٌ لم تكتمل) يُعاد عند الاستئناف لا يُنسخ، فلا يتحوّل انقطاعُ ليلةٍ إلى
+      «خطأ» دائمٍ يُخرج الحالةَ من الأزواج.
+    """
+
+    def __init__(self, path: Path):
+        self.path = Path(path)
+        self.rows: dict[str, dict] = {}
+        if self.path.exists():
+            for line in self.path.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    entry = json.loads(line)
+                    self.rows[entry["key"]] = entry["row"]
+
+    @staticmethod
+    def key(case: dict, arm_config: dict, seed: int, *, model: str, model_version: str, **options) -> str:
+        return _sha({"runner_version": RUNNER_VERSION, "model": model, "model_version": model_version,
+                     "arm": arm_config, "seed": seed, "case": case, "options": options})
+
+    def get(self, key: str) -> dict | None:
+        return self.rows.get(key)
+
+    def put(self, key: str, row: dict) -> None:
+        if row.get("status") != "measured":
+            return
+        self.rows[key] = row
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"key": key, "row": row}, ensure_ascii=False) + "\n")
+
+
+def run_arm(cases: list[dict], provider, arm_config: dict, *, cache: RunCache | None = None, seed: int | None = None,
+            **options) -> list[dict]:
+    rows = []
+    for case in cases:
+        key = cache.key(case, arm_config, seed, **options) if cache is not None else None
+        row = cache.get(key) if cache is not None else None
+        if row is None:
+            row = run_case(case, provider, arm_config, **options)
+            if cache is not None:
+                cache.put(key, row)
+        rows.append(row)
+    return rows
 
 
 def seed_values(count: int = DEFAULT_SEED_COUNT) -> tuple[int, ...]:
@@ -169,14 +215,15 @@ def aggregate_seed_rows(runs: list[tuple[int, list[dict]]]) -> list[dict]:
     return aggregated
 
 
-def run_seeded_arm(cases: list[dict], provider, arm_config: dict, seeds: tuple[int, ...], **options) -> list[dict]:
-    """يشغّل كل بذرة بمزوّد يثبتها فعلًا، ثم يطبّق تجميع البروتوكول."""
+def run_seeded_arm(cases: list[dict], provider, arm_config: dict, seeds: tuple[int, ...],
+                   cache: RunCache | None = None, **options) -> list[dict]:
+    """يشغّل كل بذرة بمزوّد يثبتها فعلًا، ثم يطبّق تجميع البروتوكول؛ وبمخبأٍ يستأنف من حيث انقطع."""
     runs = []
     for seed in seeds:
         if not hasattr(provider, "with_seed"):
             raise AblationError("provider_seed_unsupported", getattr(provider, "name", type(provider).__name__))
         seeded = provider.with_seed(seed)
-        runs.append((seed, run_arm(cases, seeded, arm_config, **options)))
+        runs.append((seed, run_arm(cases, seeded, arm_config, cache=cache, seed=seed, **options)))
     return aggregate_seed_rows(runs)
 
 

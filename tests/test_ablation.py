@@ -233,32 +233,40 @@ def test_the_protocol_is_registered_and_names_six_components():
             assert arm(spec["arms"]["on"]) != arm(spec["arms"]["off"]), name
 
 
-LEDGER = ROOT / "evaluation" / "protocols" / "ablation_v1.runs.json"
+LEDGERS = {HISTORICAL_PROTOCOL: ROOT / "evaluation" / "protocols" / "ablation_v1.runs.json",
+           PROTOCOL: ROOT / "evaluation" / "protocols" / "ablation_v2.runs.json"}
 
 
-def test_every_ablation_report_is_recorded_in_the_run_ledger():
-    """البروتوكولُ مبصومٌ فلا تتغيّر حالتُه داخله؛ فكلُّ تقريرِ استئصالٍ في docs/probe صفٌّ في دفتر التشغيل بقراره
-    وبصمةِ البروتوكول التي قيس بها، وحالةُ الدفتر تتبع ما شُغّل من المكوّنات (الخطة §٥٨٦ البند ٥)."""
-    ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
-    assert ledger["protocol_sha256"] == hashlib.sha256(HISTORICAL_PROTOCOL.read_bytes()).hexdigest()
+def test_every_ablation_report_is_recorded_in_the_run_ledger_of_its_protocol():
+    """البروتوكولُ مبصومٌ فلا تتغيّر حالتُه داخله؛ فكلُّ تقريرِ استئصالٍ في docs/probe صفٌّ في دفتر تشغيلِ البروتوكول الذي قيس
+    به (بصمتُه في الحكم) بقراره ونسخةِ مُشغِّله، وحالةُ كلِّ دفترٍ تتبع ما شُغّل من مكوّنات بروتوكوله (الخطة §٥٨٦ البند ٥).
+    ودفترُ v2 (#192) بجانب دفتر v1 لا بديلًا عنه: تقريرا v1 لا يصيران دليلَ v2، وما يُشغَّل اليوم يُقيَّد في دفتر v2."""
+    ledgers = {}
+    for protocol_path, ledger_path in LEDGERS.items():
+        ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+        assert ledger["protocol"] == protocol_path.relative_to(ROOT).as_posix(), ledger_path.name
+        assert ledger["protocol_sha256"] == hashlib.sha256(protocol_path.read_bytes()).hexdigest(), ledger_path.name
+        ledgers[ledger["protocol_sha256"]] = (ledger, json.loads(protocol_path.read_text(encoding="utf-8")))
+    assert ablation.judge("search", [], [])["protocol_sha256"] in ledgers    # ما يُشغَّل اليوم له دفترٌ يُقيَّد فيه
     reports = {}
     for path in sorted((ROOT / "docs" / "probe").glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(data, dict) and data.get("kind") == "ablation_report":
-            reports[path.relative_to(ROOT).as_posix()] = data["judgment"]
-    recorded = {run["evidence"]: run for run in ledger["runs"]}
-    assert set(recorded) == set(reports), "كلُّ تقرير استئصالٍ في docs/probe له صفٌّ في " + LEDGER.name
-    for evidence, judgment in reports.items():
-        run = recorded[evidence]
+            reports[path.relative_to(ROOT).as_posix()] = data
+    recorded = {run["evidence"]: (run, sha) for sha, (ledger, _) in ledgers.items() for run in ledger["runs"]}
+    assert set(recorded) == set(reports), "كلُّ تقرير استئصالٍ في docs/probe له صفٌّ في دفتر بروتوكوله"
+    for evidence, report in reports.items():
+        run, sha = recorded[evidence]
+        judgment = report["judgment"]
+        assert judgment["protocol_sha256"] == sha, evidence                 # قُيّد في دفتر البروتوكول الذي قيس به
         assert (run["component"], run["decision"]) == (judgment["component"], judgment["decision"]), evidence
-        report = json.loads((ROOT / evidence).read_text(encoding="utf-8"))
         assert run["runner_version"] == report["config"]["runner_version"], evidence
-        assert judgment["protocol_sha256"] == ledger["protocol_sha256"], evidence
-    ran = {run["component"] for run in ledger["runs"]}
-    assert ran <= set(HISTORICAL_DATA["components"])
-    expected = ("registered_not_run" if not ran else "run"
-                if ran == set(HISTORICAL_DATA["components"]) else "partially_run")
-    assert ledger["status"] == expected
+    for ledger, data in ledgers.values():
+        ran = {run["component"] for run in ledger["runs"]}
+        assert ran <= set(data["components"])
+        expected = ("registered_not_run" if not ran else "run"
+                    if ran == set(data["components"]) else "partially_run")
+        assert ledger["status"] == expected, ledger["protocol"]
 
 
 def test_the_sample_is_drawn_from_eligible_cases_so_it_reaches_its_target():
@@ -359,6 +367,42 @@ def test_three_seeds_reach_the_provider_and_each_case_uses_strict_majority(tmp_p
     assert [row["seed"] for row in on["seed_results"]] == [0, 1, 2]
     assert on["passed"] is True and on["passed_seeds"] == 2 and on["majority_threshold"] == 2
     assert off["passed"] is False and off["passed_seeds"] == 1 and off["majority_threshold"] == 2
+
+
+def test_a_resumed_night_reuses_measured_rows_and_retries_errors(tmp_path):
+    """الخطة ك٤٦ البند ٤: تشغيلٌ قابلٌ للاستئناف إن نفدت الحصّة. بثلاث بذور في ذراعين تطول الليلةُ ثلاثَ مرّات، فيُخبّأ كلُّ
+    صفٍّ مقيس فور قياسه، ويُعاد العاطبُ وحده عند الاستئناف؛ وصفٌّ من بصمة محرّكٍ أخرى لا يُستأنف به (#190)."""
+    from evaluation.ablation import RunCache, run_seeded_arm
+    cases = [_case("c0", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}]),
+             _case("c1", "ما عاصمة تونس؟", [{"kind": "contains", "value": "تونس"}])]
+    state, path = {"quota_exhausted": True, "calls": []}, tmp_path / "night.jsonl"
+
+    class Night(Replay):
+        def complete(self, request):
+            user = decode_input(request.messages[-1].content)["user_request"]
+            state["calls"].append((self.seed, user[-5:-1]))
+            if state["quota_exhausted"] and self.seed == 2 and "تونس" in user:
+                raise RuntimeError("quota")
+            return Response("الرباط" if "المغرب" in user else "تونس", Usage(1, 1), "complete", 0,
+                            provider="replay", model_version="v1")
+
+    def night(model_version="v1"):
+        state["calls"] = []
+        return run_seeded_arm(cases, Night(None), arm(), (0, 1, 2), RunCache(path), model="replay",
+                              model_version=model_version)
+
+    first = night()
+    assert len(state["calls"]) == 6 and first[0]["passed"] is True
+    assert first[1]["status"] == "error" and first[1]["error_seeds"] == [2]
+    cached = RunCache(path).rows
+    assert len(cached) == 5 and all(row["status"] == "measured" for row in cached.values())
+    state["quota_exhausted"] = False
+    second = night()                                            # الاستئنافُ يعيد العاطبَ وحده، من الملف لا من الذاكرة
+    assert state["calls"] == [(2, "تونس")]
+    assert [row["passed"] for row in second] == [True, True] and len(RunCache(path).rows) == 6
+    assert [r["seed"] for r in second[1]["seed_results"]] == [0, 1, 2]
+    night("v2")                                                 # بصمةُ محرّكٍ أخرى: لا صفَّ يُستأنف به
+    assert len(state["calls"]) == 6
 
 
 def test_seed_count_cannot_collapse_to_one_or_tie():
