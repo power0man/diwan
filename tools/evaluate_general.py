@@ -51,6 +51,7 @@ from providers.ollama import DEFAULT_MODEL  # noqa: E402
 from tools.evaluate_ablation import bank_cases  # noqa: E402
 from evaluation.ablation import auto_checked  # noqa: E402
 from tools import model_licenses as ml  # noqa: E402
+from tools.kimi_intake import DECOYS_REQUIRED, _premise_probes  # noqa: E402
 from tools.measure_engine import _trim_terminal_punctuation  # noqa: E402
 from tools.sample_bank import load_capability_suites  # noqa: E402
 
@@ -154,7 +155,8 @@ def exact_readings(rows: list[dict], cases: list[dict]) -> dict:
 
 
 def _require_intake(intake: dict | None, digest: str, *, sandbox_backend: dict | None = None,
-                    boxed: bool = False) -> None:
+                    boxed: bool = False, premise_cases: int = 0, premise_decoys: int = 0,
+                    premise_probes: int = 0) -> None:
     """البنكُ المقيس هو الذي نجح استلامُه: تقريرُ kimi_intake ناجح، وبلا حالةٍ بلا فحص، وبصمةُ مفتوحه بصمةُ هذا البنك."""
     if not isinstance(intake, dict):
         raise AblationError("intake_missing", "يلزم --intake بتقرير kimi_intake ناجح، أو --diagnostic")
@@ -183,7 +185,16 @@ def _require_intake(intake: dict | None, digest: str, *, sandbox_backend: dict |
     # فحصٌ يمرّره نفيُ التصحيح لا يراه جوابٌ ثابت (#329): الاستلامُ يشهد بشِراك كلِّ حالةٍ تطلبها، وبأنها تسقط والمرجعَ يمرّ.
     # والتقريرُ الذي سبق هذا الفحصَ لا يحمل عدَّها فلا يشهد
     decoys = bank.get("decoys") if isinstance(bank.get("decoys"), dict) else {}
-    if any(decoys.get(key) != 0 for key in ("missing", "passes", "reference_fails", "unjudged")):
+    # وشِراكُ الاستلام نفسِه تسقط كلُّها، فتقريرٌ سبقها لا يحمل `tool_passes` ولا يشهد (مراجعة Codex على #339).
+    # والعدُّ أعدادٌ صحيحة لا منطقيّة ولا نصوص (False == 0)، والمطلوبُ عددُ حالاتِ البنك نفسِه، وعلى كلٍّ منها شَرَكان
+    # من مؤلّفها، وشِراكُ الاستلام بعددها الذي يبنيه `_premise_probes` لحالات هذا البنك بعينها: فلا يشهد تقريرٌ لم يُشغّلها
+    # كلَّها بصفرٍ ناجح (ملاحظتا Codex على #342)
+    counts = {key: decoys.get(key) for key in ("required", "missing", "decoys", "passes", "reference_fails", "unjudged",
+                                              "tool_decoys", "tool_passes")}
+    if (any(type(value) is not int or value < 0 for value in counts.values())
+            or any(counts[key] for key in ("missing", "passes", "reference_fails", "unjudged", "tool_passes"))
+            or counts["required"] != premise_cases or counts["decoys"] < premise_decoys
+            or counts["tool_decoys"] != premise_probes):
         raise AblationError("intake_decoys_unproven", "الاستلامُ لا يُثبت أن شِراكَ كلِّ حالةٍ تسقط وأن مرجعَها يمرّ")
     if bank.get("open_digest") != digest:
         raise AblationError("intake_digest_mismatch", "بصمةُ الشطر المفتوح غيرُ بصمة الاستلام")
@@ -246,7 +257,10 @@ def run_general(provider, *, model: str, model_version: str, bank_open: Path, en
     digest = open_bank_digest(bank_open)
     if not diagnostic:
         boxed = any(check.get("kind") == "python_sandbox" for case in cases for check in case["checks"])
-        _require_intake(intake, digest, sandbox_backend=sandbox_configuration(), boxed=boxed)
+        premise = [case for case in every if case.get("capability") in DECOYS_REQUIRED]
+        _require_intake(intake, digest, sandbox_backend=sandbox_configuration(), boxed=boxed,
+                        premise_cases=len(premise), premise_decoys=sum(DECOYS_REQUIRED[c["capability"]] for c in premise),
+                        premise_probes=sum(len(_premise_probes(case)) for case in premise))
     tally = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
     rows = run_seeded_arm(cases, _Counted(provider, tally), arm(), seeds, model=model, model_version=model_version,
                           **options)
