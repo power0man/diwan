@@ -47,6 +47,9 @@ PENDING_REASONS = frozenset({
     "ollama_show_license_returned_empty_text_on_the_mac",
     "ollama_show_failed_tag_retired_upstream_on_the_mac",
     "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word",
+    # وما تقرؤه `tools/ollama_license_read.py` فيخفق عرضُه بغير تقاعد، أو يُطبع نصُّه فلا يُعرف من بصمة SPDX ولا من عنوانه
+    "ollama_show_failed_on_the_mac",
+    "ollama_show_license_text_read_on_the_mac_but_not_named_from_its_text",
 })
 HTTPS_SOURCE = re.compile(r"^https://[^\s]+$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
