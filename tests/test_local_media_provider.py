@@ -182,6 +182,14 @@ def test_runtime_mismatch_stops_before_model_metadata_and_media(monkeypatch,vers
     assert provider.chat_calls==0
 
 
+def test_runtime_version_0_34_4_is_accepted(monkeypatch):
+    transport = Transport(monkeypatch, [Reply({'version': '0.34.4'}), Reply(tags()), Reply(shown()), Reply(answer())])
+    provider = LocalMediaProvider(MODEL, VERSION)
+    resp = provider.complete(request())
+    assert resp.content == 'جواب مصطنع'
+    assert [call[1] for call in transport.calls] == ['/api/version', '/api/tags', '/api/show', '/api/chat']
+
+
 @pytest.mark.parametrize('kind,cap',[('image','vision'),('audio','audio')])
 def test_required_modality_absence_blocks_media(monkeypatch,kind,cap):
     caps=['completion','vision','audio'];caps.remove(cap)
