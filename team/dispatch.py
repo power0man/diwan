@@ -633,7 +633,13 @@ class Dispatcher:
         kept.parent.mkdir(parents=True, exist_ok=True)
         kept.write_text(brief, encoding="utf-8")
         argv = adapter.work_argv(wt, budget_usd, raw)
-        proc = adapter.start(argv, brief, wt, raw / "stdout.txt", raw / "stderr.txt", exit_path=raw / "exit")
+        try:
+            proc = adapter.start(argv, brief, wt, raw / "stdout.txt", raw / "stderr.txt", exit_path=raw / "exit")
+        except OSError as exc:
+            # لم تُنشأ العملية أصلًا: العلامةُ تُزال فلا يصير الفشلُ «إطلاقًا مجهولًا» دائمًا (ملاحظة Codex التاسعة على #349)
+            (raw / "launching").unlink(missing_ok=True)
+            self.ledger.append(issue_number, "worker_unavailable", code="launch_failed", round=round_no, detail=str(exc)[:200])
+            raise Refusal("launch_failed", str(exc)[:200]) from exc
         write_atomic(raw / "pid", str(proc.pid))
         self.ledger.append(issue_number, "revision_started", round=round_no, pid=int(proc.pid), started_at=self.clock(),
                            brief_sha256=brief_sha, reason_ref=reason_ref, reason=reason_kind, brief_path=str(kept),
@@ -745,6 +751,19 @@ class Dispatcher:
                            session_id=result.session_id, cost_estimate_micros=cost_micros, cost_basis="estimate")
         return {**plan, "status": "completed", "head_sha": head, "superseded_head": old_head}
 
+    def _revision_open(self, issue_number: int, attempt: int) -> bool:
+        """آخرُ جولةِ إعادة عملٍ للمحاولة لم تُختم (لا `completed`/`validation_failed`/`worker_unavailable` برقمها) أو عاملُها حيّ."""
+        rounds = self.revision_rounds(issue_number, attempt)
+        if not rounds:
+            return False
+        last = rounds[-1]
+        records = self.ledger.records(issue_number)
+        index = next(i for i, r in enumerate(records) if r["state"] == "revision_started" and r.get("round") == last["round"] and r.get("attempt") == attempt)
+        closed = any(r.get("attempt") == attempt and r["state"] in ("completed", "validation_failed", "worker_unavailable")
+                     and (r.get("round") == last["round"] or r.get("revision_round") == last["round"]) for r in records[index + 1:])
+        raw = self.raw_dir(issue_number, attempt) / f"revision-{last['round']}"
+        return (not closed) or self._round_alive(last, raw)
+
     def gc_blockers(self, path: Path, branch: str) -> tuple[list[str], list[str]]:
         """ما يمنع حذفَ نسخة عملٍ طلبُها مدموج: محاولةٌ ما زالت جارية في السجلّ، أو تعديلٌ أو ملفٌّ غير محفوظ (سوى ملفِّ التكليف
         غير المتتبَّع)، أو ملفٌّ متجاهَل في git ليس مخبأَ تشغيل (`.env`، `var/`، سجلّات… فـ`worktree remove --force` يمحوها
@@ -759,6 +778,8 @@ class Dispatcher:
             open_attempt = self.ledger.open_attempt(issue)
             if open_attempt is not None and open_attempt["state"] in ("dispatched", "claimed"):
                 blockers.append("attempt_open")
+            if open_attempt is not None and self._revision_open(issue, open_attempt["attempt"]):
+                blockers.append("revision_open")        # جولةُ إعادة عملٍ جارية: عاملُها يستعمل النسخة (ملاحظة Codex التاسعة على #349)
         done = self.runner(["git", "-C", str(path), "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored"],
                            capture_output=True, text=True)
         if done.returncode != 0:

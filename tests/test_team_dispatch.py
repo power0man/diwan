@@ -973,3 +973,33 @@ def test_a_revision_left_on_another_branch_is_named_not_pushed(tmp_path):
     done = dispatcher.revise(41, execute=True)
     assert done["status"] == "validation_failed" and done["reason"] == "worktree_not_on_branch" and done["on_branch"] == "HEAD"
     assert git("rev-parse", f"origin/{out['branch']}", cwd=repo) == remote_before
+
+
+def test_gc_skips_a_worktree_with_a_live_revision_round(tmp_path):
+    """الحالةُ الرئيسة completed والطلبُ مدموج والشجرةُ نظيفة، لكنّ جولةَ إعادة عملٍ جارية في النسخة: لا حذفَ تحت قدمَي عاملها."""
+    dispatcher, project, _adapter, ledger, repo = _setup(tmp_path)
+    worktree, out = _merged_for_real(dispatcher, project, repo)
+    assert dispatcher.gc(yes=False)[0]["skipped"] is None
+    ledger.append(41, "revision_started", round=1, pid=os.getpid(), started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1",
+                  head_sha=out["head_sha"])
+    rows = dispatcher.gc(yes=True)
+    assert rows[0]["removed"] is False and rows[0]["skipped"] == ["revision_open"] and worktree.exists()
+
+
+def test_a_launch_that_fails_before_the_wrapper_starts_is_named_and_not_a_permanent_unknown(tmp_path):
+    dispatcher, project, adapter, ledger, _repo = _setup(tmp_path)
+    _rejected(dispatcher, project, ledger)
+
+    class Broken(FakeAdapter):
+        def start(self, *args, **kwargs):
+            raise OSError(2, "no such binary")
+
+    broken = Broken()
+    dispatcher.adapter = broken
+    with pytest.raises(Refusal) as exc:
+        dispatcher.revise(41, execute=True)
+    assert exc.value.code == "launch_failed" and ledger.last(41)["code"] == "launch_failed"
+    assert not (dispatcher.raw_dir(41, 1) / "revision-1" / "launching").exists()
+    adapter.seen = list(adapter.seen)
+    dispatcher.adapter = adapter                                          # الثنائيُّ عاد: الجولةُ التالية تُطلق لا تُرفض
+    assert dispatcher.revise(41, execute=True)["status"] == "completed"
