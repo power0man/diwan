@@ -30,7 +30,7 @@ def _intake(open_dir, **changes):
               "bank": {"without_checks": {"open": 0, "sealed": 0}, "gameable": {"open": 0, "by_probe": {}, "needs_sandbox": 0,
                                                                                  "sandbox_probed": True},
                        "decoys": {"required": 0, "missing": 0, "decoys": 0, "passes": 0, "reference_fails": 0,
-                                  "unjudged": 0},
+                                  "unjudged": 0, "tool_decoys": 0, "tool_passes": 0},
                        "open_digest": open_bank_digest(open_dir)}}
     return {**report, **changes}
 
@@ -214,12 +214,39 @@ def test_the_run_is_bound_to_a_passed_intake_of_this_very_bank(tmp_path):
                           "intake_decoys_unproven"),
                          (_intake(bank, bank={**_intake(bank)["bank"], "decoys": {
                              **_intake(bank)["bank"]["decoys"], "passes": 1}}), "intake_decoys_unproven"),
+                         # شَرَكٌ بناه الاستلامُ يمرّ، وتقريرٌ سبق شِراكَ الاستلام (#339)
+                         (_intake(bank, bank={**_intake(bank)["bank"], "decoys": {
+                             **_intake(bank)["bank"]["decoys"], "tool_passes": 1}}), "intake_decoys_unproven"),
+                         (_intake(bank, bank={**_intake(bank)["bank"], "decoys": {
+                             k: v for k, v in _intake(bank)["bank"]["decoys"].items() if k != "tool_passes"}}),
+                          "intake_decoys_unproven"),
                          (_intake(other), "intake_digest_mismatch")):
         with pytest.raises(AblationError, match=code):
             run_general(replay, bank_open=bank, intake=intake, **RUN)
     assert seen == []
     report = run_general(replay, bank_open=bank, intake=_intake(bank), **RUN)
     assert report["kind"] == "general_number" and report["config"]["open_bank_digest"] == _intake(bank)["bank"]["open_digest"]
+
+
+def test_the_intake_decoy_counts_are_integers_and_cover_the_premise_cases_of_this_bank(tmp_path):
+    """صفرُ شَرَكٍ ناجح لا يشهد بلا شِراكٍ شُغّلت: العدُّ أعدادٌ صحيحة، والمطلوبُ حالاتُ البنك نفسِه (ملاحظة Codex على #342)."""
+    rabat = [{"kind": "contains", "value": "الرباط"}]
+    bank = _bank(tmp_path / "open", {"tier_c": [{**_case("p", "لماذا عاصمة المغرب الدار البيضاء؟", rabat),
+                                                 "capability": "false_premise_rejection",
+                                                 "reference": "المقدمة كاذبة: عاصمة المغرب الرباط."}]})
+    good = {"required": 1, "missing": 0, "decoys": 2, "passes": 0, "reference_fails": 0, "unjudged": 0,
+            "tool_decoys": 7, "tool_passes": 0}
+    replay = SeedReplay(lambda u, s: "الرباط")
+    # شِراكُ الاستلام سبعةٌ لهذه الحالة: تقريرٌ عدّ واحدًا منها، أو أكثرَ مما يُبنى، لا يشهد بها كلِّها
+    for decoys in ({**good, "required": 0}, {**good, "decoys": 1}, {**good, "tool_decoys": 0},
+                   {**good, "tool_decoys": 1}, {**good, "tool_decoys": 8},
+                   {k: v for k, v in good.items() if k != "tool_decoys"}, {**good, "tool_decoys": "7"},
+                   {**good, "passes": False}, {**good, "tool_passes": -1}):
+        with pytest.raises(AblationError, match="intake_decoys_unproven"):
+            run_general(replay, bank_open=bank, intake=_intake(bank, bank={**_intake(bank)["bank"], "decoys": decoys}),
+                        **RUN)
+    report = run_general(replay, bank_open=bank, intake=_intake(bank, bank={**_intake(bank)["bank"], "decoys": good}), **RUN)
+    assert report["kind"] == "general_number"
 
 
 def test_a_run_without_the_check_container_is_only_diagnostic(tmp_path):

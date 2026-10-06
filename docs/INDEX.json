@@ -70,7 +70,7 @@
    "tokens_estimate": 8230
   },
   {
-   "bytes": 42056,
+   "bytes": 45173,
    "headings": [
     {
      "level": 2,
@@ -84,37 +84,37 @@
     },
     {
      "level": 2,
-     "line": 152,
+     "line": 158,
      "title": "٣ — خريطةُ الوثائق: ما يحكم وما هو تاريخ"
     },
     {
      "level": 2,
-     "line": 174,
+     "line": 180,
      "title": "٤ — الأرقامُ التي يُعتدّ بها اليوم، وحدودُها"
     },
     {
      "level": 2,
-     "line": 205,
+     "line": 212,
      "title": "٥ — ما ينتظر المالك"
     },
     {
      "level": 3,
-     "line": 209,
+     "line": 216,
      "title": "بوابةُ م٠ بندًا بندًا (٥ أكتوبر؛ تُراجَع في ١١ أكتوبر، ق٧٣)"
     },
     {
      "level": 3,
-     "line": 232,
+     "line": 239,
      "title": "ما بيد المالك"
     }
    ],
-   "lines": 253,
+   "lines": 260,
    "path": "docs/STATUS.md",
    "purpose": "ما بُني، والعملُ الحالي بروايةٍ واحدة، وما يحكم وما هو تاريخ، وما ينتظر المالك",
    "read_when": "كل جلسة: §٢ و§٥؛ والبقيةُ عند الحاجة",
    "role": "حاكمة (الحالة)",
-   "sha256_12": "24cf4fadfa21",
-   "tokens_estimate": 11124
+   "sha256_12": "07f74a9fc691",
+   "tokens_estimate": 11932
   },
   {
    "bytes": 29582,
@@ -261,7 +261,7 @@
    "tokens_estimate": 2483
   },
   {
-   "bytes": 188624,
+   "bytes": 202269,
    "headings": [
     {
      "level": 2,
@@ -512,15 +512,20 @@
      "level": 2,
      "line": 1446,
      "title": "ق٧٥ — البندُ التاسع من بوابة م١: مراجعةٌ محتسبة من عائلةٍ أخرى مسجَّلةٌ على الطلب، لا خضرةُ `family-review` وحدها (٦ أكتوبر ٢٠٢٦)"
+    },
+    {
+     "level": 2,
+     "line": 1490,
+     "title": "ق٧٦ — `team/` حاضنةٌ تجريبية لنظام تعاون الوكلاء، قابلةٌ للاستخراج؛ وديوان مختبرُها الأول لا حدودُها (٦ أكتوبر ٢٠٢٦)"
     }
    ],
-   "lines": 1488,
+   "lines": 1531,
    "path": "docs/DECISIONS.md",
    "purpose": "القراراتُ المعتمدة بمصدرها وسببها وحدِّها المعلَن؛ يُقرأ بالعناوين لا بالترتيب",
    "read_when": "القرارَ الذي تسمّيه مهمّتُك فقط، من عنوانه",
    "role": "سجلُّ القرارات الحاكم",
-   "sha256_12": "c36f688b9f37",
-   "tokens_estimate": 47340
+   "sha256_12": "ba3675caf07f",
+   "tokens_estimate": 50774
   },
   {
    "bytes": 218447,
@@ -1469,7 +1474,7 @@
    "tokens_estimate": 451
   },
   {
-   "bytes": 58790,
+   "bytes": 59000,
    "headings": [
     {
      "level": 2,
@@ -1608,56 +1613,56 @@
     },
     {
      "level": 2,
-     "line": 530,
+     "line": 531,
      "title": "٧ — المراحل السبع: ما أثبتته كلٌّ منها"
     },
     {
      "level": 2,
-     "line": 549,
+     "line": 550,
      "title": "٨ — طقس العمل (سنّة المشروع — اتبعه حرفيًّا في كل مرحلة)"
     },
     {
      "level": 2,
-     "line": 571,
+     "line": 572,
      "title": "٩ — حدودك الستة (نصًّا، ولا اجتهاد فيها)"
     },
     {
      "level": 2,
-     "line": 593,
+     "line": 594,
      "title": "١٠ — البيئة التشغيلية"
     },
     {
      "level": 2,
-     "line": 617,
+     "line": 618,
      "title": "١١ — ألغام معروفة (كلُّها كلّفت وقتًا مرة على الأقل)"
     },
     {
      "level": 2,
-     "line": 654,
+     "line": 655,
      "title": "١٢ — ما بقي: الخارطة العامة والقرارات المستقلة"
     },
     {
      "level": 2,
-     "line": 687,
+     "line": 688,
      "title": "١٣ — كيف تتعامل مع المالك"
     },
     {
      "level": 2,
-     "line": 701,
+     "line": 702,
      "title": "١٤ — خلاصة في سطر"
     }
    ],
-   "lines": 705,
+   "lines": 706,
    "path": "docs/HANDOFF-PROMPT.md",
    "purpose": "برومبتُ تسليمٍ متنُه حتى ق٣٨ ورأسُه ق٤٩",
    "read_when": "لا يُقرأ؛ الحالةُ في docs/STATUS.md",
    "role": "تاريخ",
-   "sha256_12": "148ef66a1d94",
-   "tokens_estimate": 15207
+   "sha256_12": "a8eb77045797",
+   "tokens_estimate": 15257
   }
  ],
  "generator": "tools/context_index.py",
- "latest_decision": 75,
+ "latest_decision": 76,
  "measurement_limits": [
   "tokens_estimate_is_characters_divided_by_2_4_the_qwen3_5_9b_ratio_measured_in_docs_probe_context_budget_20260927_json_not_a_tokenizer_count",
   "agents_md_is_measured_from_its_replacement_text_with_the_new_block_and_digested_with_the_block_emptied_so_the_block_cannot_change_the_digest_it_reports",

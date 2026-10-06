@@ -1,0 +1,619 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-06",
+  "agent": "anthropic/claude-fable-5-1",
+  "run_id": "kimi-v12-round3-20261006T081458Z",
+  "kind": "kimi_v12_round3_intake_evidence",
+  "status": "intake_passed_not_placed",
+  "spend": {
+    "cloud_calls": null,
+    "prompt_tokens": null,
+    "completion_tokens": null,
+    "cost_usd": 0,
+    "cost_basis": "kimi_code_subscription_owner_account_no_marginal_charge_usage_not_recorded_intake_itself_local_no_charge"
+  },
+  "authorization": {
+    "decision": "ق٧٤",
+    "kimi_run_authorized_by": "owner_in_mac_session_explicit_word_«شغله»_2026-10-06",
+    "backend_choice": "kimi_code_subscription_as_in_round_2_per_KIMI-V12-FIX3_owner_note"
+  },
+  "verification_source_commit": "4503db724bef484dc648d273c0c735b87d4d3a31",
+  "assignment": "docs/external/KIMI-V12-FIX3.md",
+  "session_found": true,
+  "session_evidence": {
+    "driver": "tools/kimi_drive.sh run",
+    "kimi_work_outside_any_checkout": true,
+    "backend": "kimi",
+    "model_reported_by_driver": "kimi-code (default_model في config.toml)",
+    "bundle_file": "~/kimi-work/prompts/v12-fix3-20261006-111458.txt",
+    "bundle_sha256": "dace05f7c02efe97c448f6e448e8452aecccf940e805bbd61dbb30a6caf06796",
+    "bundle_bytes": 8452,
+    "bundle_lines": 95,
+    "bundle_composition": "KIMI-WORKSPACE-HEADER.md_after_first_rule_plus_newline_plus_KIMI-V12-FIX3.md_after_first_rule_at_verification_source_commit",
+    "start_utc": "2026-10-06T08:14:58Z",
+    "end_utc": "2026-10-06T08:52:05Z",
+    "exit_code": 0,
+    "run_log": "~/kimi-work/logs/run-20261006-111459.log",
+    "run_log_bytes": 5976,
+    "run_err_log": "~/kimi-work/logs/run-20261006-111459.err.log",
+    "run_err_log_bytes": 280710,
+    "logs_opened": false
+  },
+  "tree_identity_checks": {
+    "round2-delivery-before-round3-run": "8df23d724582411d811921cc14d28036c8097dd35c5f37af2cb94752217756b1",
+    "delivery-after-run": "7d75c5ff1c838fd1048bfcd9b5e0cd16793f97d653c86f14a436a7287a2ed478",
+    "delivery-after-open": "7d75c5ff1c838fd1048bfcd9b5e0cd16793f97d653c86f14a436a7287a2ed478",
+    "delivery-after-agentic": "7d75c5ff1c838fd1048bfcd9b5e0cd16793f97d653c86f14a436a7287a2ed478",
+    "delivery-before-open-with-receipt": "7d75c5ff1c838fd1048bfcd9b5e0cd16793f97d653c86f14a436a7287a2ed478",
+    "delivery-after-open-with-receipt": "7d75c5ff1c838fd1048bfcd9b5e0cd16793f97d653c86f14a436a7287a2ed478"
+  },
+  "tree_manifest_method": "entries_of_relative_path_bytes_sha256_sorted_by_relative_path_utf8_json_ensure_ascii_false_sort_keys_true_compact_separators_plus_newline_then_sha256",
+  "tree_manifest_script_same_as": "kimi-v12-intake-summary-20261005T200841Z.json",
+  "delivery_files": 76,
+  "change_scope_vs_round2": {
+    "method": "json_field_level_comparison_of_two_delivery_trees_names_only_no_content",
+    "old_files": 76,
+    "new_files": 76,
+    "files_changed": [
+      "REPORT.md",
+      "open/tier_c/kimi_honesty_c_002.json",
+      "open/tier_c/kimi_honesty_c_002.meta.json",
+      "open/tier_d/kimi_agentic_002.json",
+      "open/tier_d/kimi_agentic_002.meta.json"
+    ],
+    "files_added": [],
+    "files_removed": [],
+    "detail": {
+      "REPORT.md": {
+        "json": false
+      },
+      "open/tier_c/kimi_honesty_c_002.json": {
+        "container_key": "cases",
+        "ids_same": true,
+        "ids_added": [],
+        "ids_removed": [],
+        "changed_items": 34,
+        "changed_item_fields": {
+          "prem_c_0001": [
+            "checks"
+          ],
+          "prem_c_0002": [
+            "checks"
+          ],
+          "prem_c_0003": [
+            "checks"
+          ],
+          "prem_c_0006": [
+            "checks"
+          ],
+          "prem_c_0007": [
+            "checks"
+          ],
+          "prem_c_0008": [
+            "checks"
+          ],
+          "prem_c_0010": [
+            "checks"
+          ],
+          "prem_c_0011": [
+            "checks"
+          ],
+          "prem_c_0012": [
+            "checks"
+          ],
+          "prem_c_0013": [
+            "checks"
+          ],
+          "prem_c_0015": [
+            "checks"
+          ],
+          "prem_c_0016": [
+            "checks"
+          ],
+          "prem_c_0017": [
+            "checks"
+          ],
+          "prem_c_0019": [
+            "checks"
+          ],
+          "prem_c_0020": [
+            "checks"
+          ],
+          "prem_c_0021": [
+            "checks"
+          ],
+          "prem_c_0022": [
+            "checks"
+          ],
+          "prem_c_0023": [
+            "checks"
+          ],
+          "prem_c_0025": [
+            "checks"
+          ],
+          "prem_c_0026": [
+            "checks"
+          ],
+          "prem_c_0027": [
+            "checks"
+          ],
+          "prem_c_0028": [
+            "checks"
+          ],
+          "prem_c_0030": [
+            "checks"
+          ],
+          "prem_c_0031": [
+            "checks"
+          ],
+          "prem_c_0034": [
+            "checks"
+          ],
+          "prem_c_0035": [
+            "checks"
+          ],
+          "prem_c_0037": [
+            "checks"
+          ],
+          "prem_c_0038": [
+            "checks"
+          ],
+          "prem_c_0039": [
+            "checks"
+          ],
+          "prem_c_0042": [
+            "checks"
+          ],
+          "prem_c_0043": [
+            "checks"
+          ],
+          "prem_c_0044": [
+            "checks"
+          ],
+          "prem_c_0047": [
+            "checks"
+          ],
+          "prem_c_0048": [
+            "checks"
+          ]
+        },
+        "top_level_same": true
+      },
+      "open/tier_c/kimi_honesty_c_002.meta.json": {
+        "container_key": "cases",
+        "ids_same": true,
+        "ids_added": [],
+        "ids_removed": [],
+        "changed_items": 34,
+        "changed_item_fields": {
+          "prem_c_0001": [
+            "decoys"
+          ],
+          "prem_c_0002": [
+            "decoys"
+          ],
+          "prem_c_0003": [
+            "decoys"
+          ],
+          "prem_c_0006": [
+            "decoys"
+          ],
+          "prem_c_0007": [
+            "decoys"
+          ],
+          "prem_c_0008": [
+            "decoys"
+          ],
+          "prem_c_0010": [
+            "decoys"
+          ],
+          "prem_c_0011": [
+            "decoys"
+          ],
+          "prem_c_0012": [
+            "decoys"
+          ],
+          "prem_c_0013": [
+            "decoys"
+          ],
+          "prem_c_0015": [
+            "decoys"
+          ],
+          "prem_c_0016": [
+            "decoys"
+          ],
+          "prem_c_0017": [
+            "decoys"
+          ],
+          "prem_c_0019": [
+            "decoys"
+          ],
+          "prem_c_0020": [
+            "decoys"
+          ],
+          "prem_c_0021": [
+            "decoys"
+          ],
+          "prem_c_0022": [
+            "decoys"
+          ],
+          "prem_c_0023": [
+            "decoys"
+          ],
+          "prem_c_0025": [
+            "decoys"
+          ],
+          "prem_c_0026": [
+            "decoys"
+          ],
+          "prem_c_0027": [
+            "decoys"
+          ],
+          "prem_c_0028": [
+            "decoys"
+          ],
+          "prem_c_0030": [
+            "decoys"
+          ],
+          "prem_c_0031": [
+            "decoys"
+          ],
+          "prem_c_0034": [
+            "decoys"
+          ],
+          "prem_c_0035": [
+            "decoys"
+          ],
+          "prem_c_0037": [
+            "decoys"
+          ],
+          "prem_c_0038": [
+            "decoys"
+          ],
+          "prem_c_0039": [
+            "decoys"
+          ],
+          "prem_c_0042": [
+            "decoys"
+          ],
+          "prem_c_0043": [
+            "decoys"
+          ],
+          "prem_c_0044": [
+            "decoys"
+          ],
+          "prem_c_0047": [
+            "decoys"
+          ],
+          "prem_c_0048": [
+            "decoys"
+          ]
+        },
+        "top_level_same": true
+      },
+      "open/tier_d/kimi_agentic_002.json": {
+        "container_key": "tasks",
+        "ids_same": true,
+        "ids_added": [],
+        "ids_removed": [],
+        "changed_items": 1,
+        "changed_item_fields": {
+          "agentic_0039": [
+            "workspace"
+          ]
+        },
+        "top_level_same": true
+      },
+      "open/tier_d/kimi_agentic_002.meta.json": {
+        "container_key": "tasks",
+        "ids_same": true,
+        "ids_added": [],
+        "ids_removed": [],
+        "changed_items": 1,
+        "changed_item_fields": {
+          "agentic_0039": [
+            "decoy_solution",
+            "reference_solution"
+          ]
+        },
+        "top_level_same": true
+      }
+    }
+  },
+  "official_reports": {
+    "open": {
+      "exit_code": 0,
+      "raw_report_sha256": "367863a96651b0a2a881fc34854a0b3f3662c6e19cd3c343e5faa6cfda172921",
+      "started_utc": "2026-10-06T09:28:26Z",
+      "finished_utc": "2026-10-06T09:53:27Z",
+      "sandbox_probes": true,
+      "official_report": {
+        "schema_version": 1,
+        "kind": "kimi_intake",
+        "source": "kimi-benchmark",
+        "structure": {
+          "missing": [],
+          "dev_files": [
+            "agentic_v3.json",
+            "agentic_v3.meta.json",
+            "arabic_general_v3_1.json",
+            "arabic_general_v3_2.json"
+          ]
+        },
+        "open_only": true,
+        "manifest": {
+          "files": 0,
+          "failures": [],
+          "skipped": "open_only"
+        },
+        "replacement": {
+          "files": 70,
+          "baseline_digest": "bf3045e08b130836069b3f1a5af71fa89e3a2f848fc53db8c663c31cc726acfe",
+          "failures": []
+        },
+        "bank": {
+          "counts": {
+            "open": {
+              "files": 35,
+              "cases": 1902,
+              "tasks": 140
+            },
+            "sealed": {
+              "files": 0,
+              "cases": 0,
+              "tasks": 0
+            }
+          },
+          "without_checks": {
+            "open": 0,
+            "sealed": 0
+          },
+          "gameable": {
+            "open": 0,
+            "by_probe": {},
+            "needs_sandbox": 0,
+            "sandbox_probed": true,
+            "sandbox_backend": {
+              "backend": "docker",
+              "image_id": "sha256:213757d61bfbf6dababa7a010436c1f8f4b453f75b1b3da4abdaf49ffee53a49",
+              "lock_sha256": "139d58461c61f4b3eacf90cd08f7ed4247e4ae0cf54a287f5b90965451ebce14",
+              "python_version": "3.14.7",
+              "snapshot_files": []
+            }
+          },
+          "decoys": {
+            "required": 34,
+            "missing": 0,
+            "decoys": 68,
+            "passes": 0,
+            "reference_fails": 0,
+            "unjudged": 0
+          },
+          "open_digest": "6b56916927b7c3a6826c29a96c6031b2de77b7fca36822101726760288655979",
+          "failures": []
+        },
+        "dev": {
+          "general": {
+            "files": 2,
+            "cases": 150,
+            "without_checks": 0,
+            "capabilities_missing": []
+          },
+          "agentic": {
+            "tasks": 30,
+            "without_reference": 0,
+            "without_forbidden": 0
+          },
+          "failures": []
+        },
+        "passed": true,
+        "measurement_limits": [
+          "validators_check_schema_and_the_v1_2_conditions_not_whether_a_reference_answer_is_correct",
+          "gameable_checks_are_found_by_five_fixed_answers_empty_echo_polarity_spray_both_and_each_contains_value_negated_so_a_subtler_gameable_check_passes",
+          "without_sandbox_probes_a_case_whose_other_checks_a_fixed_answer_passes_is_counted_needs_sandbox_not_judged",
+          "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged",
+          "decoys_are_written_by_the_bank_author_so_a_check_is_proven_only_against_the_wrong_answers_written_for_it_and_a_reviewer_samples_whether_they_are_real"
+        ]
+      }
+    },
+    "agentic": {
+      "exit_code": 1,
+      "raw_report_sha256": "eb784994830c65a5deb144e5930e9802aef33b61186f9b379810e156194439de",
+      "started_utc": "2026-10-06T08:53:15Z",
+      "finished_utc": "2026-10-06T08:54:54Z",
+      "stderr_bytes": 0,
+      "official_report": {
+        "schema_version": 1,
+        "kind": "kimi_intake",
+        "source": "src",
+        "structure": {
+          "missing": [],
+          "dev_files": [
+            "agentic_v3.json",
+            "agentic_v3.meta.json",
+            "arabic_general_v3_1.json",
+            "arabic_general_v3_2.json"
+          ]
+        },
+        "open_only": true,
+        "manifest": {
+          "files": 0,
+          "failures": [],
+          "skipped": "open_only"
+        },
+        "replacement": {
+          "files": 70,
+          "baseline_digest": "bf3045e08b130836069b3f1a5af71fa89e3a2f848fc53db8c663c31cc726acfe",
+          "failures": []
+        },
+        "bank": {
+          "counts": {
+            "open": {
+              "files": 35,
+              "cases": 1902,
+              "tasks": 140
+            },
+            "sealed": {
+              "files": 0,
+              "cases": 0,
+              "tasks": 0
+            }
+          },
+          "without_checks": {
+            "open": 0,
+            "sealed": 0
+          },
+          "gameable": {
+            "open": 0,
+            "by_probe": {},
+            "needs_sandbox": 419,
+            "sandbox_probed": false,
+            "sandbox_backend": null
+          },
+          "decoys": {
+            "required": 34,
+            "missing": 0,
+            "decoys": 68,
+            "passes": 0,
+            "reference_fails": 0,
+            "unjudged": 102
+          },
+          "open_digest": "6b56916927b7c3a6826c29a96c6031b2de77b7fca36822101726760288655979",
+          "failures": [
+            {
+              "file": "open",
+              "code": "decoys_need_sandbox"
+            }
+          ]
+        },
+        "dev": {
+          "general": {
+            "files": 2,
+            "cases": 150,
+            "without_checks": 0,
+            "capabilities_missing": []
+          },
+          "agentic": {
+            "tasks": 30,
+            "without_reference": 0,
+            "without_forbidden": 0
+          },
+          "failures": []
+        },
+        "agentic": {
+          "counts": {
+            "tasks": 170,
+            "fail_before_fix": 170,
+            "pass_before_fix": 0,
+            "unjudged": 0,
+            "reference_passes": 170,
+            "reference_fails": 0,
+            "reference_not_a_file_map": 0,
+            "decoy_passes": 0
+          },
+          "failures": []
+        },
+        "passed": false,
+        "measurement_limits": [
+          "validators_check_schema_and_the_v1_2_conditions_not_whether_a_reference_answer_is_correct",
+          "gameable_checks_are_found_by_five_fixed_answers_empty_echo_polarity_spray_both_and_each_contains_value_negated_so_a_subtler_gameable_check_passes",
+          "without_sandbox_probes_a_case_whose_other_checks_a_fixed_answer_passes_is_counted_needs_sandbox_not_judged",
+          "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged",
+          "decoys_are_written_by_the_bank_author_so_a_check_is_proven_only_against_the_wrong_answers_written_for_it_and_a_reviewer_samples_whether_they_are_real"
+        ]
+      }
+    },
+    "open_without_receipt_superseded": {
+      "exit_code": 1,
+      "raw_report_sha256": "f17850babeb0bf9e802f7c476eba5b3af975ca1b663b84721b3f877d90d0465e",
+      "started_utc": "2026-10-06T08:53:14Z",
+      "finished_utc": "2026-10-06T08:53:15Z",
+      "sandbox_probes": false
+    }
+  },
+  "conditions": {
+    "without_checks_zero": true,
+    "gameable_open_zero": true,
+    "needs_sandbox_zero": true,
+    "sandbox_probed": true,
+    "decoys_required_all_present": true,
+    "decoys_none_pass": true,
+    "decoys_reference_fails_zero": true,
+    "decoys_unjudged_zero": true,
+    "replacement_failures_empty": true,
+    "bank_failures_empty": true,
+    "development_failures_empty": true,
+    "agentic_failures_empty": true,
+    "baseline_digest_matches_v11": true,
+    "all_tasks_fail_before_fix": true,
+    "all_references_pass": true,
+    "decoy_solution_passes_zero": true,
+    "unjudged_zero": true,
+    "delivery_unchanged_during_checks": true,
+    "round2_delivery_matched_before_run": true,
+    "open_intake_exit_zero": true,
+    "agentic_intake_exit_zero": false,
+    "sandbox_image_is_the_approved_one": true,
+    "open_digest_unchanged_since_first_open_intake": true,
+    "agentic_failure_codes_only_decoys_need_sandbox": true
+  },
+  "open_failure_codes": [],
+  "agentic_failure_codes": [
+    "decoys_need_sandbox"
+  ],
+  "measurement_limits": [
+    "intake_evidence_not_a_general_model_score",
+    "no_delivery_placement_no_project_bank_or_sealed_store_changes",
+    "authoring_model_is_the_kimi_code_subscription_default_not_kimi_k2_6_cloud_named_in_the_brief_header_per_owner_note_in_KIMI-V12-FIX3",
+    "kimi_run_logs_not_opened_so_the_final_counts_message_is_not_relayed_and_the_session_id_is_read_from_directory_names_only",
+    "decoys_are_written_by_the_bank_author_so_a_check_is_proven_only_against_the_wrong_answers_written_for_it_and_a_reviewer_samples_whether_they_are_real",
+    "whether_the_restored_deletion_criterion_of_agentic_0039_matches_its_instructions_is_not_judged_by_intake_and_not_judged_here",
+    "run_driven_by_anthropic_family_session_review_belongs_to_codex_or_owner",
+    "gameable_checks_are_found_by_five_fixed_answers_so_a_subtler_gameable_check_passes",
+    "tree_identity_is_relative_file_paths_and_file_bytes_only",
+    "no_pass_through_observer_this_round_so_per_task_agentic_results_are_the_official_report_counts_only",
+    "the_open_intake_was_repeated_with_the_approved_receipt_found_at_the_q73_step2_path_after_the_first_run_without_it_both_reports_are_kept_and_the_delivery_tree_did_not_change_between_them"
+  ],
+  "decoys_summary": {
+    "required": 34,
+    "missing": 0,
+    "decoys": 68,
+    "passes": 0,
+    "reference_fails": 0,
+    "unjudged": 0
+  },
+  "agentic_counts": {
+    "tasks": 170,
+    "fail_before_fix": 170,
+    "pass_before_fix": 0,
+    "unjudged": 0,
+    "reference_passes": 170,
+    "reference_fails": 0,
+    "reference_not_a_file_map": 0,
+    "decoy_passes": 0
+  },
+  "commands_redacted": {
+    "tree_manifest": "python3 tree_manifest.py \"$TREE_ROOT\" \"$MANIFEST_OUTPUT\"",
+    "open_intake": "DIWAN=\"$VERIFY_SOURCE\" KIMI_WORK=\"$KIMI_WORK\" PYTHON=\"$VERIFICATION_PYTHON\" OPEN_ONLY=1 bash \"$VERIFY_SOURCE/tools/kimi_drive.sh\" intake",
+    "agentic_intake": "docker run --rm --pull=never --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=512m,mode=1777 --cap-drop ALL --security-opt no-new-privileges --pids-limit 256 --memory 1g --memory-swap 1g --cpus 2 --env DIWAN_DISPOSABLE_HOST=intake --env PYTHONDONTWRITEBYTECODE=1 --mount type=bind,src=\"$DELIVERY\",dst=/src,readonly --mount type=bind,src=\"$VERIFY_SOURCE\",dst=/workspace,readonly --workdir /workspace diwan-intake python tools/kimi_intake.py /src --open-only --agentic --out -",
+    "open_intake_with_receipt": "DIWAN=\"$VERIFY_SOURCE\" KIMI_WORK=\"$KIMI_WORK\" PYTHON=\"$VERIFICATION_PYTHON\" OPEN_ONLY=1 SANDBOX_RECEIPT=\"$APPROVED_RECEIPT\" SANDBOX_WORKSPACE=\"$SANDBOX_WORKSPACE\" bash \"$VERIFY_SOURCE/tools/kimi_drive.sh\" intake"
+  },
+  "command_redaction_limits": "device_specific_paths_replaced_with_logical_aliases_exact_values_retained_in_the_private_run_record_under_kimi_archive",
+  "no_delivery_changes_by_intake": true,
+  "no_placement": true,
+  "receipt_identity": {
+    "schema_version": 1,
+    "image_id": "sha256:213757d61bfbf6dababa7a010436c1f8f4b453f75b1b3da4abdaf49ffee53a49",
+    "lock_sha256": "139d58461c61f4b3eacf90cd08f7ed4247e4ae0cf54a287f5b90965451ebce14",
+    "python_version": "3.14.7",
+    "receipt_sha256": "83402b41263b2ea2fbbe94579c9d25d39e3af997dff9d32eca582035d2eef72a",
+    "same_receipt_as_round2_and_q73": true,
+    "image_created": "2026-10-05T08:18:08Z"
+  },
+  "agentic_report_note": "the_agentic_container_report_still_carries_decoys_need_sandbox_because_the_container_cannot_run_the_sandbox_backend_its_agentic_verdicts_are_unchanged_and_the_decoys_are_judged_by_the_open_report_with_the_receipt",
+  "receipt_search": {
+    "found_by": "the_mac_session_that_ran_round2_used_this_path_in_its_own_commands",
+    "digest_matches": true
+  },
+  "status_rule": "all_conditions_except_agentic_intake_exit_zero_which_is_false_only_because_the_container_cannot_run_the_sandbox_backend_and_reports_decoys_need_sandbox_for_the_bank_section_the_decoys_are_judged_by_the_open_report_with_the_receipt"
+}

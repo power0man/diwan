@@ -1,0 +1,743 @@
+{
+ "schema_version": 1,
+ "probe": "team-baseline",
+ "agent": "anthropic/claude-fable-5-1",
+ "date": "2026-10-06",
+ "repository": "power0man/diwan",
+ "code_head_at_measurement": "9e83009",
+ "purpose": "خطُّ أساس المرحلة ٠ من ق٧٦: كيف تُنجَز مهامُّ ديوان اليوم «بالطريقة الحالية» (عميلٌ مفوَّض يفتح الطلب، ومراجعٌ من عائلةٍ أخرى عبر GitHub، والمالك يدمج بيده وينقل بين الوكلاء)، قبل بناء المرسِل الأدنى. يُقاس عليه لاحقًا بالمؤشّرات الأربعة نفسها.",
+ "method": "استرجاعيٌّ من سجلّ GitHub لآخر أربعين طلب دمجٍ مدموج (٢–٦ أكتوبر ٢٠٢٦) بأوامر قراءة فقط (gh api): زمنُ الفتح والدمج، والإيداعاتُ بأوقاتها، وتعليقاتُ ومراجعاتُ البوت chatgpt-codex-connector، وإحالاتُ الطلبات اللاحقة. ولا تشغيلَ ولا نداءَ نموذج.",
+ "indicators": {
+  "human_intervention": {
+   "measured": "merges_by_owner_hand=40_of_40; relay_signals=lower_bound (see owner_relay_signals)",
+   "not_measurable_retrospectively": "عدُّ اللصقات اليدوية الفعلي؛ تعليقاتُ الحساب power0man لا تميّز المالكَ من الوكلاء"
+  },
+  "completion_time": {
+   "median": 0.98,
+   "p75": 4.59,
+   "mean": 4.76,
+   "min": 0.16,
+   "max": 48.0
+  },
+  "accepted_without_rework": {
+   "pct_of_reviewed_prs": 46.2,
+   "definition": "طلبٌ له مراجعةٌ خارجية ولم يُدفع إليه إيداعٌ بعد أول تعليق مراجعة"
+  },
+  "escaped_defects": {
+   "prs_with_follow_up_fix_pr": 1,
+   "of": 40,
+   "definition": "طلبٌ لاحق مدموج يسمّي رقم هذا الطلب في عنوانه (إصلاحُ ملاحظةٍ بعد الدمج)؛ تقديرٌ أدنى"
+  }
+ },
+ "aggregates": {
+  "sample_size_merged_prs": 40,
+  "window_utc": {
+   "from": "2026-10-02T12:22:08Z",
+   "to": "2026-10-06T09:27:52Z"
+  },
+  "completion_time_hours": {
+   "median": 0.98,
+   "p75": 4.59,
+   "mean": 4.76,
+   "min": 0.16,
+   "max": 48.0
+  },
+  "commits_per_pr": {
+   "median": 3.5,
+   "mean": 11.6,
+   "max": 105
+  },
+  "external_review_present_pct": 97.5,
+  "accepted_without_rework_pct_of_reviewed": 46.2,
+  "prs_with_rework_after_review": 21,
+  "external_reviewer_unavailable_events_total": 1,
+  "prs_with_follow_up_fix_pr": 1,
+  "merged_by_owner_hand_pct": 100.0,
+  "owner_relay_signals": {
+   "coordination_issue_287_owner_comments_signalling_manual_relay": {
+    "2026-10-05": 4,
+    "2026-10-06": 3
+   },
+   "relay_labelled_issues": [
+    326,
+    330
+   ],
+   "q74_self_reported_pastes_2026_10_05": "at least 6",
+   "codex_unavailable_replies_in_issue_287": 6,
+   "basis": "lower_bound_from_textual_signals_not_a_count"
+  }
+ },
+ "rows": [
+  {
+   "pr": 337,
+   "created_utc": "2026-10-06T08:07:37Z",
+   "merged_utc": "2026-10-06T09:27:52Z",
+   "lead_time_hours": 1.34,
+   "commits": 3,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 2,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 6,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "301"
+   ]
+  },
+  {
+   "pr": 336,
+   "created_utc": "2026-10-06T07:48:40Z",
+   "merged_utc": "2026-10-06T08:15:08Z",
+   "lead_time_hours": 0.44,
+   "commits": 1,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 1,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "331"
+   ]
+  },
+  {
+   "pr": 335,
+   "created_utc": "2026-10-06T07:47:21Z",
+   "merged_utc": "2026-10-06T08:20:42Z",
+   "lead_time_hours": 0.56,
+   "commits": 4,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 1,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 4,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "295"
+   ]
+  },
+  {
+   "pr": 334,
+   "created_utc": "2026-10-06T07:35:31Z",
+   "merged_utc": "2026-10-06T07:45:08Z",
+   "lead_time_hours": 0.16,
+   "commits": 4,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 0,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "296"
+   ]
+  },
+  {
+   "pr": 333,
+   "created_utc": "2026-10-06T07:28:48Z",
+   "merged_utc": "2026-10-06T07:43:32Z",
+   "lead_time_hours": 0.25,
+   "commits": 3,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 0,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "27"
+   ]
+  },
+  {
+   "pr": 328,
+   "created_utc": "2026-10-05T23:02:29Z",
+   "merged_utc": "2026-10-05T23:30:20Z",
+   "lead_time_hours": 0.46,
+   "commits": 2,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 1,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "325"
+   ]
+  },
+  {
+   "pr": 327,
+   "created_utc": "2026-10-05T22:52:27Z",
+   "merged_utc": "2026-10-05T23:30:23Z",
+   "lead_time_hours": 0.63,
+   "commits": 1,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 0,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": []
+  },
+  {
+   "pr": 324,
+   "created_utc": "2026-10-05T21:30:07Z",
+   "merged_utc": "2026-10-05T22:35:36Z",
+   "lead_time_hours": 1.09,
+   "commits": 1,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 1,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "42"
+   ]
+  },
+  {
+   "pr": 323,
+   "created_utc": "2026-10-05T21:29:33Z",
+   "merged_utc": "2026-10-05T21:47:54Z",
+   "lead_time_hours": 0.31,
+   "commits": 2,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 0,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": []
+  },
+  {
+   "pr": 322,
+   "created_utc": "2026-10-05T21:05:03Z",
+   "merged_utc": "2026-10-05T21:29:12Z",
+   "lead_time_hours": 0.4,
+   "commits": 3,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 0,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "313"
+   ]
+  },
+  {
+   "pr": 321,
+   "created_utc": "2026-10-05T20:59:46Z",
+   "merged_utc": "2026-10-05T21:29:14Z",
+   "lead_time_hours": 0.49,
+   "commits": 2,
+   "external_review_present": false,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 0,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "313"
+   ]
+  },
+  {
+   "pr": 320,
+   "created_utc": "2026-10-05T19:01:51Z",
+   "merged_utc": "2026-10-05T19:34:07Z",
+   "lead_time_hours": 0.54,
+   "commits": 1,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 0,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": []
+  },
+  {
+   "pr": 319,
+   "created_utc": "2026-10-05T18:15:42Z",
+   "merged_utc": "2026-10-05T18:35:10Z",
+   "lead_time_hours": 0.32,
+   "commits": 1,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 0,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": []
+  },
+  {
+   "pr": 318,
+   "created_utc": "2026-10-05T17:27:14Z",
+   "merged_utc": "2026-10-05T17:58:56Z",
+   "lead_time_hours": 0.53,
+   "commits": 1,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 3,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "27"
+   ]
+  },
+  {
+   "pr": 317,
+   "created_utc": "2026-10-05T16:53:36Z",
+   "merged_utc": "2026-10-05T17:18:00Z",
+   "lead_time_hours": 0.41,
+   "commits": 2,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 1,
+   "account_comments_owner_or_agent_indistinguishable": 1,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "316"
+   ]
+  },
+  {
+   "pr": 315,
+   "created_utc": "2026-10-05T16:20:08Z",
+   "merged_utc": "2026-10-05T16:52:26Z",
+   "lead_time_hours": 0.54,
+   "commits": 5,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 1,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 3,
+   "account_comments_owner_or_agent_indistinguishable": 2,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "314"
+   ]
+  },
+  {
+   "pr": 312,
+   "created_utc": "2026-10-05T12:29:59Z",
+   "merged_utc": "2026-10-05T16:18:08Z",
+   "lead_time_hours": 3.8,
+   "commits": 22,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 20,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 30,
+   "account_comments_owner_or_agent_indistinguishable": 16,
+   "follow_up_prs_naming_this_pr": [
+    315
+   ],
+   "linked_issues": []
+  },
+  {
+   "pr": 311,
+   "created_utc": "2026-10-05T08:04:25Z",
+   "merged_utc": "2026-10-06T08:40:53Z",
+   "lead_time_hours": 24.61,
+   "commits": 13,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 1,
+   "commits_after_first_external_review": 11,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 14,
+   "account_comments_owner_or_agent_indistinguishable": 16,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": []
+  },
+  {
+   "pr": 310,
+   "created_utc": "2026-10-05T07:27:30Z",
+   "merged_utc": "2026-10-05T13:27:15Z",
+   "lead_time_hours": 6.0,
+   "commits": 41,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 39,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 27,
+   "account_comments_owner_or_agent_indistinguishable": 19,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "295",
+    "301"
+   ]
+  },
+  {
+   "pr": 308,
+   "created_utc": "2026-10-05T07:05:26Z",
+   "merged_utc": "2026-10-05T11:17:08Z",
+   "lead_time_hours": 4.2,
+   "commits": 18,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 16,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 11,
+   "account_comments_owner_or_agent_indistinguishable": 9,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "295"
+   ]
+  },
+  {
+   "pr": 307,
+   "created_utc": "2026-10-05T06:56:24Z",
+   "merged_utc": "2026-10-05T18:11:47Z",
+   "lead_time_hours": 11.26,
+   "commits": 93,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 92,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 48,
+   "account_comments_owner_or_agent_indistinguishable": 38,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "301"
+   ]
+  },
+  {
+   "pr": 306,
+   "created_utc": "2026-10-05T06:46:17Z",
+   "merged_utc": "2026-10-05T08:09:23Z",
+   "lead_time_hours": 1.39,
+   "commits": 10,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 5,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 2,
+   "account_comments_owner_or_agent_indistinguishable": 5,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "305"
+   ]
+  },
+  {
+   "pr": 304,
+   "created_utc": "2026-10-05T06:40:59Z",
+   "merged_utc": "2026-10-05T09:54:27Z",
+   "lead_time_hours": 3.22,
+   "commits": 20,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 18,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 8,
+   "account_comments_owner_or_agent_indistinguishable": 10,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "296"
+   ]
+  },
+  {
+   "pr": 303,
+   "created_utc": "2026-10-05T06:33:44Z",
+   "merged_utc": "2026-10-05T06:56:38Z",
+   "lead_time_hours": 0.38,
+   "commits": 3,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 1,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 3,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "295"
+   ]
+  },
+  {
+   "pr": 302,
+   "created_utc": "2026-10-05T05:39:46Z",
+   "merged_utc": "2026-10-05T06:20:13Z",
+   "lead_time_hours": 0.67,
+   "commits": 8,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 6,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 3,
+   "account_comments_owner_or_agent_indistinguishable": 4,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "301"
+   ]
+  },
+  {
+   "pr": 300,
+   "created_utc": "2026-10-05T04:46:06Z",
+   "merged_utc": "2026-10-05T05:26:11Z",
+   "lead_time_hours": 0.67,
+   "commits": 3,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 1,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 2,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "287"
+   ]
+  },
+  {
+   "pr": 299,
+   "created_utc": "2026-10-05T04:27:04Z",
+   "merged_utc": "2026-10-05T05:00:14Z",
+   "lead_time_hours": 0.55,
+   "commits": 3,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 1,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 2,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "295"
+   ]
+  },
+  {
+   "pr": 298,
+   "created_utc": "2026-10-04T22:59:01Z",
+   "merged_utc": "2026-10-05T03:34:30Z",
+   "lead_time_hours": 4.59,
+   "commits": 15,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 13,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 8,
+   "account_comments_owner_or_agent_indistinguishable": 7,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": []
+  },
+  {
+   "pr": 297,
+   "created_utc": "2026-10-04T22:55:31Z",
+   "merged_utc": "2026-10-05T04:38:35Z",
+   "lead_time_hours": 5.72,
+   "commits": 20,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 18,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 6,
+   "account_comments_owner_or_agent_indistinguishable": 11,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": []
+  },
+  {
+   "pr": 294,
+   "created_utc": "2026-10-04T21:41:47Z",
+   "merged_utc": "2026-10-05T03:01:12Z",
+   "lead_time_hours": 5.32,
+   "commits": 7,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 3,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 1,
+   "account_comments_owner_or_agent_indistinguishable": 2,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": []
+  },
+  {
+   "pr": 293,
+   "created_utc": "2026-10-04T21:31:54Z",
+   "merged_utc": "2026-10-05T02:26:13Z",
+   "lead_time_hours": 4.91,
+   "commits": 8,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 6,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 5,
+   "account_comments_owner_or_agent_indistinguishable": 4,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "292"
+   ]
+  },
+  {
+   "pr": 291,
+   "created_utc": "2026-10-04T18:36:08Z",
+   "merged_utc": "2026-10-04T19:17:30Z",
+   "lead_time_hours": 0.69,
+   "commits": 1,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 1,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "284"
+   ]
+  },
+  {
+   "pr": 290,
+   "created_utc": "2026-10-04T11:24:02Z",
+   "merged_utc": "2026-10-04T15:03:21Z",
+   "lead_time_hours": 3.66,
+   "commits": 9,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 5,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 4,
+   "account_comments_owner_or_agent_indistinguishable": 5,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "285"
+   ]
+  },
+  {
+   "pr": 289,
+   "created_utc": "2026-10-04T10:57:33Z",
+   "merged_utc": "2026-10-04T21:12:39Z",
+   "lead_time_hours": 10.25,
+   "commits": 105,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 101,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 53,
+   "account_comments_owner_or_agent_indistinguishable": 48,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "288"
+   ]
+  },
+  {
+   "pr": 286,
+   "created_utc": "2026-10-04T07:20:53Z",
+   "merged_utc": "2026-10-04T08:14:31Z",
+   "lead_time_hours": 0.89,
+   "commits": 13,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 2,
+   "accepted_without_rework": false,
+   "inline_review_comments_by_external_reviewer": 2,
+   "account_comments_owner_or_agent_indistinguishable": 3,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "285"
+   ]
+  },
+  {
+   "pr": 284,
+   "created_utc": "2026-10-04T00:17:49Z",
+   "merged_utc": "2026-10-04T17:52:27Z",
+   "lead_time_hours": 17.58,
+   "commits": 6,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 2,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "283"
+   ]
+  },
+  {
+   "pr": 282,
+   "created_utc": "2026-10-03T20:21:18Z",
+   "merged_utc": "2026-10-04T17:10:05Z",
+   "lead_time_hours": 20.81,
+   "commits": 5,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 1,
+   "account_comments_owner_or_agent_indistinguishable": 2,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": [
+    "281"
+   ]
+  },
+  {
+   "pr": 280,
+   "created_utc": "2026-10-02T15:49:52Z",
+   "merged_utc": "2026-10-04T15:49:43Z",
+   "lead_time_hours": 48.0,
+   "commits": 2,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 2,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": []
+  },
+  {
+   "pr": 279,
+   "created_utc": "2026-10-02T14:21:41Z",
+   "merged_utc": "2026-10-02T15:25:56Z",
+   "lead_time_hours": 1.07,
+   "commits": 1,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 1,
+   "account_comments_owner_or_agent_indistinguishable": 0,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": []
+  },
+  {
+   "pr": 278,
+   "created_utc": "2026-10-02T12:22:08Z",
+   "merged_utc": "2026-10-02T13:56:53Z",
+   "lead_time_hours": 1.58,
+   "commits": 1,
+   "external_review_present": true,
+   "external_reviewer_unavailable_events": 0,
+   "commits_after_first_external_review": 0,
+   "accepted_without_rework": true,
+   "inline_review_comments_by_external_reviewer": 0,
+   "account_comments_owner_or_agent_indistinguishable": 0,
+   "follow_up_prs_naming_this_pr": [],
+   "linked_issues": []
+  }
+ ],
+ "measurement_limits": [
+  "retrospective_not_prospective_the_owner_did_not_log_pastes_during_these_tasks",
+  "account_comments_by_power0man_do_not_distinguish_the_owner_from_agents_writing_under_his_account",
+  "relay_count_is_a_lower_bound_from_textual_signals_in_issue_287_and_relay_labelled_issues_not_a_count_of_pastes",
+  "merged_prs_only_abandoned_or_open_work_is_not_in_the_sample",
+  "lead_time_is_pr_open_to_merge_not_issue_ready_to_merge_because_most_linked_issues_carry_no_ready_label_event",
+  "escaped_defects_are_proxied_by_follow_up_prs_naming_the_pr_number_in_their_title_which_undercounts",
+  "external_review_presence_is_the_codex_bot_only_claude_reviews_under_the_owner_account_are_not_separable",
+  "window_2026_10_02_to_06_is_the_q67_q74_delegation_regime_and_may_not_represent_earlier_weeks",
+  "forty_prs_is_a_small_sample_for_defect_rates_the_gate_in_q76_splits_safety_from_performance_for_this_reason"
+ ],
+ "next": "المرحلة ١ من ق٧٦ (#341) تبدأ بوجود هذا الملف؛ وتُقاس المهامُّ العشر في المرحلة ٢ بالمؤشّرات نفسها وبسجلّ لصقٍ يدويٍّ آنيّ."
+}
