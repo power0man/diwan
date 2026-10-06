@@ -479,3 +479,84 @@ def test_the_gameable_listing_names_each_case_with_the_answer_that_passed_it(tmp
     assert main([str(src / "open"), "--list-gameable", "--out", "-"]) == 0
     listing = json.loads(capsys.readouterr().out)
     assert (listing["gameable"], listing["needs_sandbox"]) == (1, 0) and "negated_value_3" in listing["probes"]
+
+
+def _premise_delivery(tmp_path, decoys, *, checks=None, reference="r"):
+    """حالةُ مقدّمةٍ كاذبة في الشطر المفتوح، وشِراكُها في ملفّها الجانبيّ (#329)."""
+    src = delivery(tmp_path)
+    case = {**_case("prem_1", "false_premise_rejection"), "reference": reference}
+    if checks is not None:
+        case["checks"] = checks
+    _write(src / "open" / "tier_c" / "kimi_c_001.json", _suite("kimi_c_001", [case]))
+    if decoys is not None:
+        _write(src / "open" / "tier_c" / "kimi_c_001.meta.json", {"cases": {"prem_1": {"decoys": decoys}}})
+    return src
+
+
+def test_a_false_premise_case_needs_two_decoys_in_its_sidecar(tmp_path):
+    """نفيُ التصحيح مرّ في ٦ من ٦ حالاتٍ بعد استلامٍ ناجح (مراجعة Codex على #329): لا يراه جوابٌ ثابت، فيكتب المؤلّفُ شِراكَه."""
+    for decoys in (None, [], ["لا r"]):
+        report = intake(_premise_delivery(tmp_path / str(decoys), decoys))
+        assert not report["passed"] and "decoys_missing" in _codes(report, "bank")
+        assert report["bank"]["decoys"]["missing"] == 1
+    report = intake(_premise_delivery(tmp_path / "ok", ["لا r", "s"]))
+    assert report["passed"], report["bank"]["failures"]
+    assert report["bank"]["decoys"] == {"required": 1, "missing": 0, "decoys": 2, "passes": 0, "reference_fails": 0,
+                                        "unjudged": 0}
+
+
+def test_a_decoy_the_checks_accept_is_named_and_fails_the_intake(tmp_path):
+    report = intake(_premise_delivery(tmp_path, ["لا r", "r ولكن المقدمة صحيحة"]))
+    assert not report["passed"] and "decoy_passes_checks" in _codes(report, "bank")
+    assert report["bank"]["decoys"]["passes"] == 1
+
+
+def test_checks_that_reject_the_reference_too_do_not_pass_as_strict(tmp_path):
+    """فحصٌ يُسقط الشِّراكَ والمرجعَ معًا لا يميّز شيئًا."""
+    strict = [{"kind": "contains", "value": "غائبة"}]
+    report = intake(_premise_delivery(tmp_path, ["لا r", "s"], checks=strict))
+    assert not report["passed"] and "reference_fails_checks" in _codes(report, "bank")
+    assert report["bank"]["decoys"]["reference_fails"] == 1
+
+
+def test_decoys_of_a_sandbox_case_are_judged_only_in_the_container(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    import evaluation.capabilities as capabilities
+
+    def fake_sandbox(answer, harness, **_):
+        return SimpleNamespace(passed=answer.startswith("r"), error_code=None, witness_digest="w", exit_code=0,
+                               elapsed_ms=1, boundary="docker")
+    monkeypatch.setattr(capabilities, "run_in_sandbox", fake_sandbox)
+    boxed = [{"kind": "python_sandbox", "value": "harness"}]
+    report = intake(_premise_delivery(tmp_path / "a", ["لا r", "s"], checks=boxed))
+    assert not report["passed"] and "decoys_need_sandbox" in _codes(report, "bank")
+    assert report["bank"]["decoys"]["unjudged"] == 3
+    report = intake(_premise_delivery(tmp_path / "b", ["لا r", "s"], checks=boxed), sandbox_probes=True)
+    assert report["bank"]["decoys"]["unjudged"] == 0 and report["bank"]["decoys"]["passes"] == 0
+    report = intake(_premise_delivery(tmp_path / "c", ["لا r", "r: المقدمة صحيحة"], checks=boxed), sandbox_probes=True)
+    assert "decoy_passes_checks" in _codes(report, "bank")
+
+
+def test_a_case_outside_the_required_capabilities_needs_no_decoys(tmp_path):
+    report = intake(delivery(tmp_path))
+    assert report["passed"] and report["bank"]["decoys"]["required"] == 0
+
+
+def test_a_reference_solution_can_delete_a_file_with_null(tmp_path):
+    """مهمّةٌ تطلب حذفَ ملفٍّ لم يكن لحلّها المرجعيّ طريقٌ إليه، فأُرخي معيارُها ليقبل بقاءه (agentic_0039، #329)."""
+    from tools.kimi_intake import _apply_overlay, _is_file_map
+    (tmp_path / "legacy.py").write_text("def old(): pass", encoding="utf-8")
+    (tmp_path / "keep.py").write_text("k", encoding="utf-8")
+    assert _is_file_map({"new.py": "def old(): pass", "legacy.py": None})
+    _apply_overlay(tmp_path, {"new.py": "def old(): pass", "legacy.py": None, "absent.py": None})
+    assert not (tmp_path / "legacy.py").exists() and (tmp_path / "new.py").exists() and (tmp_path / "keep.py").exists()
+
+
+def test_a_delete_outside_the_workspace_is_not_a_file_map_and_is_refused(tmp_path):
+    import pytest
+    from core.canonical import PayloadRejected
+    from tools.kimi_intake import _apply_overlay, _is_file_map
+    for name in ("../escape.py", "/etc/passwd", "a/../../b", ""):
+        assert not _is_file_map({name: None}), name
+        with pytest.raises(PayloadRejected):
+            _apply_overlay(tmp_path / "ws", {name: None})
