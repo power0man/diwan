@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-06",
+  "agent": "anthropic/claude-fable-5-1",
+  "kind": "ollama_model_license_reading",
+  "tool": "ollama show --license <tag> on the mac, ollama 0.35.0",
+  "models": {
+    "qwen3.5:9b": {
+      "tag": "qwen3.5:9b",
+      "ollama_list_id": "6488c96fa5fa",
+      "command": "ollama show --license",
+      "exit_code": 0,
+      "license_text_bytes": 11356,
+      "read_on": "2026-10-06",
+      "license_provenance": {
+        "source": "https://ollama.com/library/qwen3.5:9b",
+        "license_text_sha256": "7382b1cf711e7a7c7af9816e0e07b49b91e7149b7c6d347225f98800fcb1f1c2",
+        "license": "apache-2.0",
+        "read_on": "2026-10-06"
+      },
+      "license_named_by": "spdx_body_digest_via_weight_provenance_identify_license"
+    },
+    "command-r7b-arabic:7b": {
+      "tag": "command-r7b-arabic:7b",
+      "ollama_list_id": "4bbe3353e56a",
+      "command": "ollama show --license",
+      "exit_code": 0,
+      "license_text_bytes": 13881,
+      "read_on": "2026-10-06",
+      "license_provenance": {
+        "source": "https://ollama.com/library/command-r7b-arabic:7b",
+        "license_text_sha256": "cbb1fc25a9846aaa0537833812e43a6d28561d1cfebb0045e8cd05f463f1c358",
+        "license": "cc-by-nc-4.0",
+        "read_on": "2026-10-06"
+      },
+      "license_named_by": "title_lines_as_printed",
+      "license_text_note": "cc_by_nc_4_0_text_printed_with_an_acceptable_use_addendum_the_addendum_is_in_the_hashed_text_and_is_not_interpreted"
+    },
+    "qwen3:14b": {
+      "tag": "qwen3:14b",
+      "ollama_list_id": "bdbd181c33f2",
+      "command": "ollama show --license",
+      "exit_code": 0,
+      "license_text_bytes": 11339,
+      "read_on": "2026-10-06",
+      "license_provenance": {
+        "source": "https://ollama.com/library/qwen3:14b",
+        "license_text_sha256": "b87250e4478f8f0673bc61cd397e402ac33ca3a6f23a7ad9512618ab33f18fbe",
+        "license": "apache-2.0",
+        "read_on": "2026-10-06"
+      },
+      "license_named_by": "title_lines_as_printed",
+      "license_text_note": "apache_2_0_body_with_the_appendix_copyright_line_filled_in_so_the_spdx_appendix_digest_does_not_match_named_from_the_title_lines"
+    },
+    "llama3.1:8b": {
+      "tag": "llama3.1:8b",
+      "ollama_list_id": "46e0c10c039e",
+      "command": "ollama show --license",
+      "exit_code": 0,
+      "license_text_bytes": 12321,
+      "read_on": "2026-10-06",
+      "license_provenance": {
+        "source": "https://ollama.com/library/llama3.1:8b",
+        "license_text_sha256": "f1cd752815fcf68c3c2e73b2b00b5396c5dffb9eebe49567573f275f9ec85fcd",
+        "license": "llama3.1",
+        "read_on": "2026-10-06"
+      },
+      "license_named_by": "title_lines_as_printed"
+    },
+    "gemma4:latest": {
+      "tag": "gemma4:latest",
+      "ollama_list_id": "c6eb396dbd59",
+      "command": "ollama show --license",
+      "exit_code": 0,
+      "license_text_bytes": 11356,
+      "read_on": "2026-10-06",
+      "license_provenance": {
+        "source": "https://ollama.com/library/gemma4:latest",
+        "license_text_sha256": "7382b1cf711e7a7c7af9816e0e07b49b91e7149b7c6d347225f98800fcb1f1c2",
+        "license": "apache-2.0",
+        "read_on": "2026-10-06"
+      },
+      "license_named_by": "spdx_body_digest_via_weight_provenance_identify_license"
+    }
+  },
+  "licenses": {
+    "qwen3.5:9b": "apache-2.0",
+    "command-r7b-arabic:7b": "cc-by-nc-4.0",
+    "qwen3:14b": "apache-2.0",
+    "llama3.1:8b": "llama3.1",
+    "gemma4:latest": "apache-2.0"
+  },
+  "unresolved_readings": [
+    {
+      "tag": "qwen3-embedding:0.6b",
+      "ollama_list_id": "ac6da0dfba84",
+      "command": "ollama show --license",
+      "exit_code": 0,
+      "license_text_bytes": 1,
+      "read_on": "2026-10-06",
+      "pending": "ollama_show_license_returned_empty_text_on_the_mac"
+    },
+    {
+      "tag": "mistral-large-3:675b-cloud",
+      "ollama_list_id": "951502e79e7f",
+      "command": "ollama show --license",
+      "exit_code": 0,
+      "license_text_bytes": 1,
+      "read_on": "2026-10-06",
+      "pending": "ollama_show_license_returned_empty_text_on_the_mac"
+    },
+    {
+      "tag": "deepseek-v4-flash:cloud",
+      "ollama_list_id": "d3f1c8744721",
+      "command": "ollama show --license",
+      "exit_code": 1,
+      "license_text_bytes": 0,
+      "read_on": "2026-10-06",
+      "pending": "ollama_show_failed_tag_retired_upstream_on_the_mac",
+      "stderr_first_line": "Error: deepseek-v4-flash:0731 was retired at 2026-09-25 00:00:00 -0700 PDT (ref: 77e779f5-9cb2-45c9-828d-a4660a9e38f1)"
+    },
+    {
+      "tag": "deepseek-v4.1-flash:cloud",
+      "ollama_list_id": "e04da138d31e",
+      "command": "ollama show --license",
+      "exit_code": 0,
+      "license_text_bytes": 1,
+      "read_on": "2026-10-06",
+      "pending": "ollama_show_license_returned_empty_text_on_the_mac"
+    },
+    {
+      "tag": "gemma3:12b",
+      "present_in_ollama_list": false,
+      "pending": "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word",
+      "read_on": "2026-10-06"
+    },
+    {
+      "tag": "minicpm-v:8b",
+      "present_in_ollama_list": false,
+      "pending": "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word",
+      "read_on": "2026-10-06"
+    },
+    {
+      "tag": "qwen2.5vl:7b",
+      "present_in_ollama_list": false,
+      "pending": "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word",
+      "read_on": "2026-10-06"
+    }
+  ],
+  "spend": {
+    "cloud_calls": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost_usd": 0,
+    "cost_basis": "local_no_charge"
+  },
+  "measurement_limits": [
+    "the_license_text_is_what_ollama_show_license_printed_for_the_tag_on_this_mac_on_the_read_day_and_the_source_url_is_the_library_page_not_the_place_the_text_was_read",
+    "apache_2_0_is_named_by_the_spdx_body_digest_where_the_appendix_is_standard_and_from_the_title_lines_where_the_appendix_copyright_is_filled_in_llama3_1_and_cc_by_nc_4_0_are_named_from_the_printed_title_lines_their_terms_are_not_interpreted",
+    "the_cc_by_nc_4_0_text_of_command_r7b_arabic_carries_an_acceptable_use_addendum_that_is_hashed_with_it_and_classified_mechanically_as_non_commercial",
+    "llama3_1_is_custom_terms_by_the_mechanical_class_and_its_interpretation_is_the_owners",
+    "an_empty_license_text_or_a_failed_show_leaves_the_entry_pending_with_the_named_reason_and_nothing_was_pulled_or_spent",
+    "tags_absent_from_ollama_list_were_not_pulled_and_stay_pending",
+    "unresolved_tags_are_listed_under_unresolved_readings_not_under_a_model_field_because_new_evidence_may_not_name_a_model_whose_license_is_still_pending"
+  ],
+  "spend_note": "ollama_show_reads_local_metadata_no_model_pulled_no_cloud_call"
+}
