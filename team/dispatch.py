@@ -786,8 +786,11 @@ class Dispatcher:
             open_attempt = self.ledger.open_attempt(issue)
             if open_attempt is not None and open_attempt["state"] in ("dispatched", "claimed"):
                 blockers.append("attempt_open")
-            if open_attempt is not None and self._revision_open(issue, open_attempt["attempt"]):
-                blockers.append("revision_open")        # جولةُ إعادة عملٍ جارية: عاملُها يستعمل النسخة (ملاحظة Codex التاسعة على #349)
+            state = self.ledger.main_state(issue)
+            # الجولةُ الجارية تُفحص لآخر محاولةٍ ولو قُبلت أو استُحوذ عليها: عاملٌ تأخّر بعد المهلة ثم دُمج الرأسُ وقُيّد accepted ما زال
+            # يستعمل النسخة (ملاحظتا Codex التاسعة والحادية عشرة على #349)
+            if state is not None and self._revision_open(issue, state["attempt"]):
+                blockers.append("revision_open")
         done = self.runner(["git", "-C", str(path), "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored"],
                            capture_output=True, text=True)
         if done.returncode != 0:

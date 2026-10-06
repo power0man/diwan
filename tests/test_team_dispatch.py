@@ -1039,3 +1039,18 @@ def test_gc_waits_for_the_launch_lock_of_the_issue(tmp_path):
         holder.close()
     assert done.wait(30) and result["rows"][0]["merged"] is True
     thread.join(5)
+
+
+def test_gc_skips_a_live_revision_worker_even_after_acceptance(tmp_path):
+    """انتهت مهلةُ الجولة وبقي عاملُها حيًّا، ثم اجتاز الرأسُ المراجعةَ ودُمج وقُيّد accepted: المحاولةُ مغلقة لكنّ العاملَ يستعمل النسخة."""
+    dispatcher, project, _adapter, ledger, repo = _setup(tmp_path)
+    worktree, out = _merged_for_real(dispatcher, project, repo)
+    head = out["head_sha"]
+    ledger.append(41, "revision_started", round=1, pid=os.getpid(), started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1", head_sha=head)
+    ledger.append(41, "outcome_unknown", reason="timeout_revision_still_running", pid=os.getpid(), round=1)
+    ledger.append(41, "validated", head_sha=head, checks_ref=f"checks:{head}")
+    ledger.append(41, "verified", head_sha=head, review_ref="c-2", reviewer="codex", reviewer_family="openai")
+    ledger.append(41, "accepted", head_sha=head, merge_sha="m" * 40)
+    assert ledger.open_attempt(41) is None
+    rows = dispatcher.gc(yes=True)
+    assert rows[0]["removed"] is False and rows[0]["skipped"] == ["revision_open"] and worktree.exists()
