@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .base import Issue, ProjectAdapter, PullRequest, ReviewPolicy
+from .base import Issue, ProjectAdapter, ProjectError, PullRequest, ReviewPolicy
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT / "tools") not in sys.path:
@@ -39,10 +39,8 @@ REQUIRED_CHECKS: tuple[str, ...] = ("verify-hosted",)
 FETCH_BEFORE_PROOF = True
 
 
-class GhError(RuntimeError):
-    def __init__(self, code: str, detail: str = ""):
-        self.code = code
-        super().__init__(code if not detail else f"{code}: {detail}")
+class GhError(ProjectError):
+    """فشلُ `gh`: رمزُه `gh_failed` وتفصيلُه أولُ مئتي حرفٍ من stderr."""
 
 
 class DiwanProject(ProjectAdapter):

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -28,7 +29,7 @@ from core.quoted import Quarantined, quarantine  # noqa: F401  (Quarantined تُ
 from team import team_home
 from team.adapters.base import Adapter
 from team.ledger import TeamLedger, TransitionError, now_utc
-from team.projects.base import ProjectAdapter, PullRequest
+from team.projects.base import ProjectAdapter, ProjectError, PullRequest
 
 CALIBRATION_FILE = "calibration.json"
 CALIBRATION_DAYS = 30
@@ -77,9 +78,28 @@ def is_calibrated(calibration: dict, reviewer: str, now_iso: str, days: int = CA
         return False
 
 
-def q75_comment(adapter: Adapter, head_sha: str, verdict: str, text: str, codes: list[str], agent_id: str, base_sha: str = "") -> str:
+def path_spellings(paths: tuple[str, ...]) -> set[str]:
+    """صِيَغُ المسار الواحد على macOS: كما أُعطي، وحقيقتُه بعد الروابط الرمزية، وبـ`/private` وبدونها (`/var` ↔ `/private/var`)؛
+    فالمراجعُ قد يكتب أيَّ صيغةٍ منها (ملاحظة Codex الثالثة على #347)."""
+    out: set[str] = set()
+    for raw in paths:
+        if not raw:
+            continue
+        for base in {raw.rstrip("/"), os.path.realpath(raw).rstrip("/")}:
+            out.add(base)
+            if base.startswith("/private/"):
+                out.add(base[len("/private"):])
+            elif base.startswith(("/var/", "/tmp/", "/etc/")):
+                out.add("/private" + base)
+    return out
+
+
+def q75_comment(adapter: Adapter, head_sha: str, verdict: str, text: str, codes: list[str], agent_id: str, base_sha: str = "",
+                strip_paths: tuple[str, ...] = ()) -> str:
     quarantined = quarantine(text or "")
     body = quarantined.text.strip()
+    for prefix in sorted(path_spellings(strip_paths), key=len, reverse=True):   # مسارُ النسخة المؤقتة لا يُنشر، بكل صِيَغه
+        body = body.replace(prefix + "/", "").replace(prefix, "")
     if len(body) > MAX_COMMENT_CHARS:
         body = body[:MAX_COMMENT_CHARS] + "\n…(اقتُطع)"
     marks = sorted({f.code for f in quarantined.findings} | set(codes))
@@ -129,23 +149,39 @@ class Reviewer:
         return families, [name for name in policy.candidates if name in self.adapters and name not in policy.never]
 
     def merge_base(self, pull: PullRequest) -> str:
-        """نقطةُ تفرّع الطلب عن الفرع الرئيس **البعيد**؛ فـ`main` المحلي قد يتأخّر فيدخل في الفرق ما دُمج أصلًا (دخان ٦ أكتوبر)."""
+        """نقطةُ تفرّع الطلب عن الفرع الرئيس **البعيد**؛ فـ`main` المحلي قد يتأخّر فيدخل في الفرق ما دُمج أصلًا (دخان ٦ أكتوبر).
+        والطلبُ المدموج (مراجعةٌ بأثرٍ رجعي) يُقاس على أوّل أبوَي إيداع دمجه، وإلا كان الفرقُ مع الفرع الرئيس فارغًا: الجولةُ العاشرة
+        على #344 قرأت رأسًا دُمج قبل بدئها فحكمت «صامد» على لا شيء. ورأسٌ على الفرع الرئيس أصلًا `nothing_to_review` لا حكمَ عليه."""
         done = self.runner(["git", "-C", str(self.repo_root), "fetch", self.remote, pull.base_branch], capture_output=True, text=True)
         if done.returncode != 0:
             # مرجعٌ قديم للفرع الرئيس يُدخل في المراجعة ما دُمج أصلًا وهي تُقدَّم مقارنةً بالبعيد (ملاحظة Codex الثامنة على #344)
             raise Refusal("fetch_failed", f"{self.remote}/{pull.base_branch}: " + (done.stderr or "")[:200])
-        done = self.runner(["git", "-C", str(self.repo_root), "merge-base", f"{self.remote}/{pull.base_branch}", pull.head_sha],
-                           capture_output=True, text=True)
+        if pull.state == "merged" and pull.merge_sha:
+            against = f"{pull.merge_sha}^1"
+        else:
+            against = f"{self.remote}/{pull.base_branch}"
+        done = self.runner(["git", "-C", str(self.repo_root), "merge-base", against, pull.head_sha], capture_output=True, text=True)
         if done.returncode != 0 or not (done.stdout or "").strip():
             raise Refusal("merge_base_failed", (done.stderr or "")[:200])
-        return done.stdout.strip()
+        base = done.stdout.strip()
+        if base == pull.head_sha:
+            raise Refusal("nothing_to_review", f"رأسُ الطلب {pull.head_sha[:12]} على {against} أصلًا: الفرقُ فارغ")
+        return base
 
     def _fetch_branch(self, pull: PullRequest) -> None:
         """جلبُ فرع الطلب أولًا: رأسٌ تقدّم بعيدًا (تصحيحٌ دُفع من جهازٍ آخر أو «تحديثُ الفرع») ليس في المخزن المحلي بعد،
         وحسابُ نقطة التفرّع عليه يفشل بلا هذا الجلب (دحض ٦ أكتوبر)."""
         done = self.runner(["git", "-C", str(self.repo_root), "fetch", self.remote, pull.branch], capture_output=True, text=True)
-        if done.returncode != 0:
-            raise Refusal("fetch_failed", (done.stderr or "")[:200])
+        if done.returncode == 0:
+            return
+        if pull.state == "merged":
+            # فرعٌ حُذف بعد الدمج: رأسُه يصل مع الفرع الرئيس (أبو الدمج الثاني)؛ وإن لم يصل (دمجٌ ضغطًا) رفضٌ مسمًّى (ملاحظة Codex على #347)
+            self.runner(["git", "-C", str(self.repo_root), "fetch", self.remote, pull.base_branch], capture_output=True, text=True)
+            have = self.runner(["git", "-C", str(self.repo_root), "cat-file", "-e", f"{pull.head_sha}^{{commit}}"], capture_output=True, text=True)
+            if have.returncode == 0:
+                return
+            raise Refusal("head_unreachable", f"فرعُ الطلب محذوف ورأسُه {pull.head_sha[:12]} ليس في المخزن ولا يصل مع {pull.base_branch}")
+        raise Refusal("fetch_failed", (done.stderr or "")[:200])
 
     def _detached_worktree(self, pull: PullRequest, tmp: Path) -> Path:
         done = self.runner(["git", "-C", str(self.repo_root), "worktree", "add", "--detach", str(tmp), pull.head_sha], capture_output=True, text=True)
@@ -237,7 +273,8 @@ class Reviewer:
                         if pull.issue is not None and self.ledger.main_state(pull.issue) is not None:
                             self.ledger.append(pull.issue, "reviewer_unavailable", code=code, reviewer=name, pr=pull.number)
                         continue
-                    body = q75_comment(adapter, pull.head_sha, result.verdict, result.text, [], self.agent_ids.get(name, name), base_sha=base_sha)
+                    body = q75_comment(adapter, pull.head_sha, result.verdict, result.text, [], self.agent_ids.get(name, name), base_sha=base_sha,
+                                       strip_paths=(str(tmp),))
                     ref = self.project.comment(pull.number, body)
                     recorded = self._record(pull, adapter, pull.head_sha, ref, result.verdict)
                     return {"status": recorded, "reviewer": name, "verdict": result.verdict, "review_ref": ref, "tried": tried, **plan}
@@ -273,6 +310,10 @@ def main(argv: list[str] | None = None) -> int:
     except (Refusal, TransitionError) as exc:
         print(json.dumps({"status": "refused", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
         return 2
+    except ProjectError as exc:
+        # عطبُ المنصّة (شبكةٌ، مصادقة) تعذّرٌ مسمًّى لا انفجار؛ ولا قيدَ في السجلّ لأن شيئًا لم يُراجَع (انقطاعُ ٦ أكتوبر)
+        print(json.dumps({"status": "project_unavailable", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
+        return 3
     print(json.dumps(out, ensure_ascii=False, indent=1, default=str))
     return 0 if out.get("status") not in ("reviewer_unavailable",) else 3
 

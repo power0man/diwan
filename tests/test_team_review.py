@@ -1,6 +1,7 @@
 """المراجعُ المستقلّ: دورٌ لا بائع، وقاعدةُ العائلة، والتعذّرُ ثم المالك، وتعليقُ ق٧٥(ب) محجورًا، والمعايرةُ شرطُ الاحتساب."""
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 
@@ -232,3 +233,83 @@ def test_a_review_of_the_current_attempt_s_pull_while_claimed_is_awaiting_valida
     assert out["status"] == "reviewed_awaiting_validation"
     record = ledger.last(41)
     assert record["state"] == "reviewed_awaiting_validation" and record["attempt"] == 1 and record["head_sha"] == project.pulls[9].head_sha
+
+
+def test_a_merged_pull_is_reviewed_against_the_base_before_its_merge(tmp_path):
+    """مراجعةٌ بأثرٍ رجعي لطلبٍ مدموج: الأصلُ أوّلُ أبوَي إيداع الدمج، وإلا كان الفرقُ مع origin/main فارغًا (الجولة العاشرة على #344)."""
+    reviewer, project, adapters, _ledger = _setup(tmp_path, issue=None)
+    repo, pull = reviewer.repo_root, project.pulls[9]
+    base_before = git("rev-parse", "origin/main", cwd=repo)
+    git("merge", "-q", "--no-ff", "-m", "دمج", pull.branch, cwd=repo)
+    git("push", "-q", "origin", "main", cwd=repo)
+    merge_sha = git("rev-parse", "HEAD", cwd=repo)
+    project.pulls[9] = PullRequest(9, pull.head_sha, "main", pull.branch, None, commit_messages=pull.commit_messages,
+                                   state="merged", merge_sha=merge_sha, url=pull.url)
+    assert reviewer.merge_base(project.pulls[9]) == base_before
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "external_review" and base_before[:12] in adapters["codex"].seen[-1]["prompt"]
+
+
+def test_a_pull_whose_head_is_already_on_main_is_nothing_to_review(tmp_path):
+    reviewer, project, _adapters, ledger = _setup(tmp_path, issue=None)
+    repo, pull = reviewer.repo_root, project.pulls[9]
+    git("merge", "-q", "--ff-only", pull.branch, cwd=repo)                  # الرأسُ صار على main والطلبُ «مفتوح» في المشروع
+    git("push", "-q", "origin", "main", cwd=repo)
+    with pytest.raises(rv.Refusal) as exc:
+        reviewer.review(9, execute=True)
+    assert exc.value.code == "nothing_to_review" and project.comments == [] and ledger.records() == []
+
+
+def test_a_merged_pull_whose_branch_was_deleted_is_still_reviewable(tmp_path):
+    """بعد الدمج يُحذف الفرعُ عادةً: رأسُ الطلب يصل مع الفرع الرئيس (أبو الدمج الثاني) فلا يرفض `fetch_failed` (ملاحظة Codex على #347)."""
+    reviewer, project, adapters, _ledger = _setup(tmp_path, issue=None)
+    other = tmp_path / "other"
+    subprocess.run(["git", "clone", "-q", str(tmp_path / "origin.git"), str(other)], check=True, capture_output=True)
+    git("checkout", "-q", "team/41-anthropic", cwd=other)
+    (other / "y.txt").write_text("y\n", encoding="utf-8")
+    git("add", "y.txt", cwd=other)
+    git("commit", "-q", "-m", "تصحيح\n\nDiwan-Agent: anthropic/claude-fable-5-1", cwd=other)
+    head = git("rev-parse", "HEAD", cwd=other)
+    git("checkout", "-q", "main", cwd=other)
+    base_before = git("rev-parse", "HEAD", cwd=other)
+    git("merge", "-q", "--no-ff", "-m", "دمج", "team/41-anthropic", cwd=other)
+    merge_sha = git("rev-parse", "HEAD", cwd=other)
+    git("push", "-q", "origin", "main", cwd=other)
+    git("push", "-q", "origin", "--delete", "team/41-anthropic", cwd=other)
+    old = project.pulls[9]
+    project.pulls[9] = PullRequest(9, head, "main", old.branch, None, commit_messages=old.commit_messages, state="merged",
+                                   merge_sha=merge_sha, url=old.url)
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "external_review" and out["head_sha"] == head
+    assert base_before[:12] in adapters["codex"].seen[-1]["prompt"]
+
+
+def test_the_temporary_worktree_path_is_not_published_in_the_comment(tmp_path):
+    reviewer, project, adapters, _ledger = _setup(tmp_path, issue=None)
+    adapters["codex"].review_text = "ملاحظة في [x.txt:1](/private/tmp/team-review-abc/wt/x.txt:1) و/private/tmp/team-review-abc/wt/y.py\nالحكم: صامد"
+    body = rv.q75_comment(adapters["codex"], "a" * 40, "pass", adapters["codex"].review_text, [], "openai/codex",
+                          strip_paths=("/private/tmp/team-review-abc/wt",))
+    assert "/private/tmp/team-review-abc" not in body and "[x.txt:1](x.txt:1)" in body and "y.py" in body
+    # صيغتا macOS: البادئةُ بـ/var والرابطُ بـ/private/var وبالعكس (ملاحظة Codex الثالثة على #347)
+    text = "[x.py:1](/private/var/folders/ex/team-review-abc/wt/x.py:1) و /var/folders/ex/team-review-abc/wt/y.py\nالحكم: صامد"
+    body = rv.q75_comment(adapters["codex"], "a" * 40, "pass", text, [], "openai/codex", strip_paths=("/var/folders/ex/team-review-abc/wt",))
+    assert "[x.py:1](x.py:1)" in body and " y.py" in body and "/private" not in body and "/var/" not in body
+    body = rv.q75_comment(adapters["codex"], "a" * 40, "pass", text, [], "openai/codex", strip_paths=("/private/var/folders/ex/team-review-abc/wt",))
+    assert "[x.py:1](x.py:1)" in body and " y.py" in body and "/var/" not in body
+
+
+def test_a_platform_failure_in_the_cli_is_a_named_unavailability_not_a_traceback(tmp_path, monkeypatch, capsys):
+    """انقطاعُ الشبكة إلى GitHub أسقط مراجعةَ #347 بانفجار `GhError` خام؛ صار `project_unavailable` برمزه وخروجٍ ٣ بلا قيدٍ في السجلّ."""
+    from team.projects import diwan as dp
+
+    _origin, repo = make_repo(tmp_path)
+    monkeypatch.setenv("DIWAN_TEAM_HOME", str(tmp_path / "home"))
+
+    def boom(self, number):
+        raise dp.GhError("gh_failed", "dial tcp: i/o timeout")
+
+    monkeypatch.setattr(dp.DiwanProject, "pull", boom)
+    rc = rv.main(["347", "--execute", "--repo-root", str(repo)])
+    out = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert rc == 3 and out == {"status": "project_unavailable", "code": "gh_failed", "detail": "dial tcp: i/o timeout"}
+    assert not (tmp_path / "home" / "dispatch.jsonl").read_text(encoding="utf-8").strip()
