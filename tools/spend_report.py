@@ -55,6 +55,7 @@ def _in_month(payload: dict, month: str) -> bool:
 def evidence_totals(evidence: dict[str, object], month: str) -> dict:
     """مجموعُ كتل الإنفاق لكل أساسٍ في أدلّة الشهر، والملفّاتُ غيرُ المسعَّرة والمعيبةُ بأسمائها."""
     by_basis: dict[str, dict] = {}
+    costs: dict[str, list[float]] = {}   # الكلفُ الخام لكل أساس: تُجمع بدقّةٍ ثم تُقرَّب مرّةً (ملاحظة Codex على #335)
     unpriced: list[str] = []
     rejected: list[str] = []
     undated: list[str] = []
@@ -79,12 +80,11 @@ def evidence_totals(evidence: dict[str, object], month: str) -> dict:
         if spend["cost_usd"] is None:
             unpriced.append(file)
         else:
-            row["cost_usd"] = _money(row["cost_usd"] + spend["cost_usd"])
-    for basis in by_basis:
-        if basis == "unpriced":
-            by_basis[basis]["cost_usd"] = None
-    known = _money(float(sum(row["cost_usd"] for row in by_basis.values() if row["cost_usd"] is not None)))
-    metered = _money(float(sum(by_basis[b]["cost_usd"] for b in METERED if b in by_basis)))
+            costs.setdefault(spend["cost_basis"], []).append(spend["cost_usd"])
+    for basis, row in by_basis.items():
+        row["cost_usd"] = None if basis == "unpriced" else _money(math.fsum(costs.get(basis, ())))
+    known = _money(math.fsum(cost for basis in costs if basis != "unpriced" for cost in costs[basis]))
+    metered = _money(math.fsum(cost for basis in METERED for cost in costs.get(basis, ())))
     return {"by_basis": dict(sorted(by_basis.items())), "known_cost_usd": known, "metered_cost_usd": metered,
             "unpriced_files": unpriced, "rejected_spend": rejected, "undated_spend": undated}
 
@@ -108,6 +108,8 @@ def invoice(amount: float | None, read_on: str | None, source: str | None, month
 def build(evidence: dict[str, object], month: str, hf: dict | None, today: str) -> dict:
     if not MONTH.match(month):
         raise ValueError("month_invalid")
+    if not ml._valid_day(today):
+        raise ValueError("date_invalid")   # تقريرٌ بلا تاريخٍ صالح لا يُكتب ولا يُقبل (ملاحظة Codex على #335)
     totals = evidence_totals(evidence, month)
     return {
         "schema_version": 1,
@@ -137,7 +139,10 @@ def check(report: dict, evidence: dict[str, object]) -> list[str]:
         return problems + [str(error) if isinstance(error, ValueError) else "hf_invoice_malformed"]
     if expected_hf != hf:
         problems.append("hf_invoice_malformed")
-    expected = build(evidence, month, expected_hf, report.get("date"))
+    try:
+        expected = build(evidence, month, expected_hf, report.get("date"))
+    except ValueError as error:
+        return problems + [str(error)]
     for key in ("hf_invoice_status", "hf_unaccounted_usd", "measurement_limits", "kind", "schema_version"):
         if report.get(key) != expected[key]:
             problems.append(f"{key}_differs")

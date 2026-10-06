@@ -113,3 +113,26 @@ def test_the_report_carries_no_field_the_privacy_guard_withholds():
     assert not set(keys(report)) & pe.OPERATIONAL_FIELDS
     assert not [key for key in keys(report) if pe.TIMING_FIELD.search(key)]
 
+
+
+def test_splitting_the_same_spend_across_files_does_not_change_the_totals():
+    """الكلفُ تُجمع بدقّةٍ ثم تُقرَّب مرّة: عشرةُ أدلّةٍ بـ0.0000004 تساوي دليلًا واحدًا بـ0.000004 (ملاحظة Codex على #335)."""
+    one = {"one.json": {"date": "2026-10-01", "spend": _spend("estimated_from_prices", 10, 10, 10, 0.000004)}}
+    ten = {f"part{i}.json": {"date": "2026-10-01", "spend": _spend("estimated_from_prices", 1, 1, 1, 0.0000004)}
+           for i in range(10)}
+    whole, split = sr.evidence_totals(one, "2026-10"), sr.evidence_totals(ten, "2026-10")
+    assert split["metered_cost_usd"] == whole["metered_cost_usd"] == 0.000004
+    assert split["known_cost_usd"] == whole["known_cost_usd"] == 0.000004
+    assert split["by_basis"]["estimated_from_prices"]["cost_usd"] == 0.000004
+
+
+@pytest.mark.parametrize("day", [None, "", "2026-10-6", "yesterday"], ids=["missing", "empty", "malformed", "word"])
+def test_a_report_without_a_valid_date_is_neither_built_nor_accepted(day):
+    with pytest.raises(ValueError, match="^date_invalid$"):
+        sr.build(EVIDENCE, "2026-10", None, day)
+    report = sr.build(EVIDENCE, "2026-10", None, "2026-10-06")
+    if day is None:
+        del report["date"]
+    else:
+        report["date"] = day
+    assert sr.check(report, EVIDENCE) == ["date_invalid"]
