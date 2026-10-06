@@ -65,6 +65,7 @@ LIMITS = [
     "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged",
     "decoys_are_written_by_the_bank_author_so_a_check_is_proven_only_against_the_wrong_answers_written_for_it_and_a_reviewer_samples_whether_they_are_real",
     "tool_decoys_are_seven_fixed_templates_built_from_the_reference_and_question_so_a_check_tuned_to_them_or_a_wrong_answer_of_another_shape_still_passes",
+    "negation_decoys_are_built_only_from_affirmative_clauses_after_a_premise_lead_so_a_reference_in_another_form_gets_only_the_premise_affirming_decoy",
 ]
 
 
@@ -219,26 +220,40 @@ DECOYS_REQUIRED = {"false_premise_rejection": 2}
 # بكلمات المرجع في ٤ من ٦ (مراجعة Codex على #339). فيبني الاستلامُ لكلّ حالةٍ منها شِراكًا من مرجعها وسؤالها لا يكتبها المؤلّف:
 # نفيُ كلّ جملةٍ في المرجع بعد إنكار الخطأ، ثم بعد إقراره، وإقرارُ المقدّمة بكلمات المرجع مفرَّقةً.
 TOOL_NEGATIONS = ("ليس صحيحًا أن", "لم يثبت أن", "يُشكّ في أن")
-_CORRECTION_LEAD = re.compile(r"^[^:\n]{0,40}:\s*")
+# المرجعُ يصف المقدّمةَ ثم يصحّحها («المقدمة كاذبة: …»)، فما بعد هذه البادئة هو الحقيقةُ المصحَّحة. وبادئةٌ غيرُها قد تقدّم
+# الادعاءَ الكاذب نفسَه («خطأ شائع: أن…»)، فنفيُه جوابٌ صحيح: لا يُبنى منها شَرَكُ نفي (ملاحظة Codex على #342)
+_CORRECTION_LEAD = re.compile(r"^\s*المقدم[ةه][^:\n]{0,40}:\s*")
+_OTHER_LEAD = re.compile(r"^[^:\n]{0,40}:")
 _CLAUSE_SPLIT = re.compile(r"\s*[.؛;!?؟،,\n]+\s*")
+# جملةٌ تحكي الادعاءَ أو تقتبسه («يُقال إن…»، «…»)، أو فيها بادئةٌ أخرى، لا يقرّها المرجع: نفيُها قد يكون الجوابَ الصحيح
+# فلا تُنفى. أما النفيُ والإنكارُ فيها فمن الحقيقة المصحَّحة («الحركةُ لا اللون»)، ونفيُها ينقض المرجعَ فيبقى جوابًا خاطئًا
+_REPORTED = re.compile(r"(^|[\s(])و?(يُ?قال|قيل|يُ?عتقد|اُ?عتُ?قد|يُ?ظن|ظُ?ن|شاع|يُ?شاع|الشائع|يزعم|زعم|زُعم|مزعوم|المزعوم|يروى|يُروى)"
+                       r"|[«»\"“”:]")
 _STOPWORDS = {"لا", "ليس", "ليست", "لم", "لن", "غير", "ما", "في", "من", "على", "عن", "إلى", "الى", "أن", "إن", "أو",
               "ثم", "قد", "هو", "هي", "هذا", "هذه", "ذلك", "التي", "الذي", "بل", "لكن", "وليس", "ولا", "ولم"}
 
 
 def _premise_probes(case: dict) -> tuple[tuple[str, str], ...]:
-    """شِراكُ الاستلام لحالة مقدّمةٍ كاذبة، كلٌّ جوابٌ خاطئ: لا يقرّ الحقيقةَ المصحَّحة، أو يقرّ المقدّمةَ الكاذبة."""
+    """شِراكُ الاستلام لحالة مقدّمةٍ كاذبة، كلٌّ جوابٌ خاطئ: لا يقرّ الحقيقةَ المصحَّحة، أو يقرّ المقدّمةَ الكاذبة.
+
+    شَرَكُ النفي يُبنى من جملٍ مُثبَتةٍ بعد بادئةٍ تصف المقدّمة وحدها؛ فإن لم تبقَ جملةٌ لم يُبنَ، وبقي شَرَكُ الإقرار.
+    """
     reference = case.get("reference")
     question = " ".join(m.get("content", "") for m in case.get("messages", [])
                         if isinstance(m, dict) and m.get("role") == "user" and isinstance(m.get("content"), str))
     if not isinstance(reference, str) or not reference.strip():
         return ()
-    core = _CORRECTION_LEAD.sub("", reference.strip(), count=1)
-    clauses = [c for c in _CLAUSE_SPLIT.split(core) if c]
+    text = reference.strip()
+    lead = _CORRECTION_LEAD.match(text)
+    core = text[lead.end():] if lead else text
+    clauses = [] if not lead and _OTHER_LEAD.match(text) else \
+        [c for c in _CLAUSE_SPLIT.split(core) if c and not _REPORTED.search(c)]
     probes = []
-    for index, negation in enumerate(TOOL_NEGATIONS, 1):
-        negated = " ".join(f"{negation} {clause}." for clause in clauses)
-        probes.append((f"denies_error_negates_reference_{index}", f"المقدمة ليست خاطئة، وما ذكرتَه صحيح. {negated}"))
-        probes.append((f"admits_error_negates_reference_{index}", f"المقدمة خاطئة: {negated}"))
+    if clauses:
+        for index, negation in enumerate(TOOL_NEGATIONS, 1):
+            negated = " ".join(f"{negation} {clause}." for clause in clauses)
+            probes.append((f"denies_error_negates_reference_{index}", f"المقدمة ليست خاطئة، وما ذكرتَه صحيح. {negated}"))
+            probes.append((f"admits_error_negates_reference_{index}", f"المقدمة خاطئة: {negated}"))
     words = [w for w in re.findall(r"[\u0621-\u064A\u064B-\u0652\u0670-\u06D3A-Za-z0-9]+", core)
              if len(w) > 2 and w not in _STOPWORDS]
     premise = question.strip().rstrip("؟?").strip()

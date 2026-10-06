@@ -228,6 +228,24 @@ def test_the_run_is_bound_to_a_passed_intake_of_this_very_bank(tmp_path):
     assert report["kind"] == "general_number" and report["config"]["open_bank_digest"] == _intake(bank)["bank"]["open_digest"]
 
 
+def test_the_intake_decoy_counts_are_integers_and_cover_the_premise_cases_of_this_bank(tmp_path):
+    """صفرُ شَرَكٍ ناجح لا يشهد بلا شِراكٍ شُغّلت: العدُّ أعدادٌ صحيحة، والمطلوبُ حالاتُ البنك نفسِه (ملاحظة Codex على #342)."""
+    rabat = [{"kind": "contains", "value": "الرباط"}]
+    bank = _bank(tmp_path / "open", {"tier_c": [{**_case("p", "لماذا عاصمة المغرب الدار البيضاء؟", rabat),
+                                                 "capability": "false_premise_rejection"}]})
+    good = {"required": 1, "missing": 0, "decoys": 2, "passes": 0, "reference_fails": 0, "unjudged": 0,
+            "tool_decoys": 7, "tool_passes": 0}
+    replay = SeedReplay(lambda u, s: "الرباط")
+    for decoys in ({**good, "required": 0}, {**good, "decoys": 1}, {**good, "tool_decoys": 0},
+                   {k: v for k, v in good.items() if k != "tool_decoys"}, {**good, "tool_decoys": "7"},
+                   {**good, "passes": False}, {**good, "tool_passes": -1}):
+        with pytest.raises(AblationError, match="intake_decoys_unproven"):
+            run_general(replay, bank_open=bank, intake=_intake(bank, bank={**_intake(bank)["bank"], "decoys": decoys}),
+                        **RUN)
+    report = run_general(replay, bank_open=bank, intake=_intake(bank, bank={**_intake(bank)["bank"], "decoys": good}), **RUN)
+    assert report["kind"] == "general_number"
+
+
 def test_a_run_without_the_check_container_is_only_diagnostic(tmp_path):
     """بلا حاويةٍ تخرج حالاتُ python_sandbox، فلا يُسمّى الرقمُ رقمَ البنك (ملاحظة Codex على #312)."""
     bank = _bank(tmp_path / "open", {"tier_a": [_case("a", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])]})

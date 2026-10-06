@@ -573,6 +573,26 @@ def test_the_intake_builds_wrong_answers_from_the_reference_and_question():
     assert _premise_probes({**case, "reference": ""}) == ()
 
 
+def test_a_tool_decoy_never_negates_a_claim_the_reference_only_reports():
+    """نفيُ ادعاءٍ يحكيه المرجع أو تقدّمه بادئةٌ غيرُ المقدّمة جوابٌ صحيح، فلا يُطلب إسقاطُه (ملاحظة Codex على #342)."""
+    from tools.kimi_intake import TOOL_NEGATIONS, _premise_probes
+    question = "لماذا يكره الثور اللون الأحمر؟"
+    claim = "الثور يكره اللون الأحمر"
+    for reference in ("خطأ شائع: الثور يكره اللون الأحمر؛ والحركة هي ما يثيره.",
+                      "المقدمة كاذبة: يُقال إن الثور يكره اللون الأحمر، والحركة هي ما يثيره.",
+                      "المقدمة كاذبة: «الثور يكره اللون الأحمر» قولٌ شائع؛ والحركة هي ما يثيره."):
+        probes = _premise_probes({**_case("p", "false_premise_rejection", text=question), "reference": reference})
+        assert probes and probes[-1][0] == "affirms_premise_with_reference_words", reference
+        for name, answer in probes:
+            assert claim not in answer, (reference, name, answer)
+    lead = _premise_probes({**_case("p", "false_premise_rejection", text=question),
+                            "reference": "خطأ شائع: الثور يكره اللون الأحمر؛ والحركة هي ما يثيره."})
+    assert [name for name, _ in lead] == ["affirms_premise_with_reference_words"], "بادئةٌ غيرُ المقدّمة: لا شَرَكَ نفي"
+    reported = dict(_premise_probes({**_case("p", "false_premise_rejection", text=question),
+                                     "reference": "المقدمة كاذبة: يُقال إن الثور يكره اللون الأحمر، والحركة هي ما يثيره."}))
+    assert f"{TOOL_NEGATIONS[0]} والحركة هي ما يثيره." in reported["admits_error_negates_reference_1"]
+
+
 def test_checks_that_pass_the_authors_decoys_but_a_tool_decoy_fail_the_intake(tmp_path):
     """فحوصٌ تُسقط شَرَكَي المؤلّف ويمرّ بها نفيُ التصحيح: ما رآه Codex في ٤ من ٦ (#339)، والاستلامُ يراه الآن بنفسه."""
     weak = [{"kind": "contains", "value": "خاطئة"}, {"kind": "contains", "value": "الحركة"},
