@@ -198,27 +198,12 @@ def test_the_ready_label_in_this_very_event_counts_before_the_timeline_shows_it(
     assert ig.apply_launch_gate(payload, github) == 0 and github.removed == []
 
 
-def test_a_stale_revocation_in_the_payload_does_not_outrank_the_regrant_the_timeline_shows():
-    """نُزع `ready:google` ثم أعاده المالك قبل أن يجري تشغيلُ النزع: لقطةُ الحمولة تحمل الوسم وخطُّ الأحداث يحمل الإعادة،
-    فلا يُلحق حدثُ النزع القديم آخرًا ولا يُنزع `jules` (ملاحظة Codex على #340 و#343، #345)."""
-    events = GRANTED + [_event("unlabeled", "ready:google"), _event("labeled", "ready:google")]
-    stale = _payload(CLEAN, action="unlabeled", label="ready:google")
-    assert ig.payload_event(stale) == []
-    github = FakeGitHub(events)
-    assert ig.apply_launch_gate(stale, github) == 0 and github.removed == []
-    # ولقطةٌ توافق النزع (الوسمُ غائبٌ منها) نزعٌ قائم يُحتسب كما كان
-    consistent = _payload(CLEAN, labels=("jules",), action="unlabeled", label="ready:google")
-    assert ig.payload_event(consistent) == [{"event": "unlabeled", "label": _label("ready:google"), "actor": {"login": OWNER}}]
-    github = FakeGitHub(events)
-    assert ig.apply_launch_gate(consistent, github) == 1 and github.removed == [(7, "jules")]
-
-
 def test_a_stale_revocation_payload_is_outranked_by_a_newer_regrant_in_the_timeline():
-    """لقطةُ الحمولة قديمة: خطُّ الأحداث يحمل النزعَ نفسَه ثم إعادةَ الإذن **في الثانية نفسِها** (الطوابعُ بدقّة الثانية)، فلا يُلحق
-    النزعُ ولا يُنزع `jules`؛ وتُقرأ المسألةُ الحاليةُ من المصدر فنصٌّ صار حقنًا بعد اللقطة يُحجب؛ وبلا طوابعَ يُلحق النزعُ احتياطًا
-    (ملاحظاتُ Codex على #346)."""
+    """حدثٌ على الوسم طابعُه بعد ثانية الحمولة أحدثُ منها قطعًا: اللقطةُ قديمة، فلا يُلحق نزعُها وتُقرأ المسألةُ من المصدر
+    (ونصٌّ صار حقنًا بعدها يُحجب). وفي الثانية نفسِها أو بلا طوابعَ يُلحق النزعُ احتياطًا: الاتجاهُ الآمن، معلَنٌ في
+    docs/AGENT-INTAKE.md (ملاحظاتُ Codex على #346)."""
     revoked = dict(_event("unlabeled", "ready:google"), created_at="2026-10-06T10:00:00Z")
-    regranted = dict(_event("labeled", "ready:google"), created_at="2026-10-06T10:00:00Z")
+    regranted = dict(_event("labeled", "ready:google"), created_at="2026-10-06T10:00:01Z")
     events = GRANTED + [revoked, regranted]
     stale = _payload(CLEAN, labels=("jules",), action="unlabeled", label="ready:google")
     stale["issue"]["updated_at"] = "2026-10-06T10:00:00Z"
@@ -227,19 +212,20 @@ def test_a_stale_revocation_payload_is_outranked_by_a_newer_regrant_in_the_timel
     assert ig.apply_launch_gate(stale, github) == 0 and github.removed == []
     github = FakeGitHub(events, fresh_issue=_payload(PLANTED)["issue"])          # النصُّ الحالي حقنٌ وإن كانت اللقطةُ نظيفة
     assert ig.apply_launch_gate(stale, github) == 1 and github.removed == [(7, "jules")]
-    # إذنٌ من غير المالك في الثانية نفسِها وخطٌّ متأخّر عنه: ليس حدثَ المالك نفسَه، فيُلحق ويُنزع `jules` (ملاحظة Codex الثالثة)
-    foreign = _payload(CLEAN, action="labeled", label="ready:google", sender="stranger")
-    foreign["issue"]["updated_at"] = "2026-10-06T10:00:00Z"
-    merged, is_stale = ig.merge_payload_event(events, foreign)
-    assert is_stale is False and merged[-1]["actor"] == {"login": "stranger"}
-    github = FakeGitHub(events)
-    assert ig.apply_launch_gate(foreign, github) == 1 and github.removed == [(7, "jules")]
+    # الثانيةُ نفسُها: لا هويّةَ للحدث فيُلحق النزعُ احتياطًا ويُنزع `jules` (حدٌّ معلَن)
+    same_second = GRANTED + [revoked, dict(regranted, created_at="2026-10-06T10:00:00Z")]
+    merged, is_stale = ig.merge_payload_event(same_second, stale)
+    assert is_stale is False and merged[-1]["event"] == "unlabeled"
+    github = FakeGitHub(same_second)
+    assert ig.apply_launch_gate(stale, github) == 1 and github.removed == [(7, "jules")]
+    # نزعٌ وخطٌّ متأخّر يحمل إذنَ المالك القديم فقط، واللقطةُ تحمل الوسم (أعاده غيرُ المالك): النزعُ يُحتسب لا اللقطة
+    lagging = _payload(CLEAN, action="unlabeled", label="ready:google")
+    github = FakeGitHub(GRANTED)
+    assert ig.apply_launch_gate(lagging, github) == 1 and github.removed == [(7, "jules")]
+    # بلا طوابع: النزعُ يُلحق كما هو
     undated = _payload(CLEAN, labels=("jules",), action="unlabeled", label="ready:google")
     merged, is_stale = ig.merge_payload_event(events, undated)
     assert merged[-1]["event"] == "unlabeled" and is_stale is False
-    github = FakeGitHub(events)
-    assert ig.apply_launch_gate(undated, github) == 1 and github.removed == [(7, "jules")]
-
 
 
 def test_unquoted_orders_are_data_when_a_stranger_wrote_the_issue():

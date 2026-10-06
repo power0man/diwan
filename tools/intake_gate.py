@@ -166,37 +166,29 @@ def launch_decision(issue: dict, events: list[dict], owner: str = OWNER) -> list
 
 
 def payload_event(payload: dict) -> list[dict]:
-    """حدثُ الوسم الذي أطلق هذا التشغيل من الحمولة نفسِها، فلا يفوت لتأخّر واجهة الأحداث عنه.
-
-    ولا يُلحق إلا إن كان أثرُه باقيًا في لقطة وسوم المسألة في الحمولة نفسِها: فلقطةٌ تخالفه (نزعٌ والوسمُ فيها، أو وضعٌ
-    والوسمُ غائب) تعني أن حدثًا أحدثَ نسخه وأن خطَّ الأحداث يحمل الأحدث؛ وإلحاقُ القديم آخرًا كان يطغى على الأحدث
-    فيُنزع وسمُ الإطلاق بعد أن أعاد المالك إذنَه (ملاحظة Codex على #340 و#343، فُرزت في #345)."""
+    """حدثُ الوسم الذي أطلق هذا التشغيل من الحمولة نفسِها، فلا يفوت لتأخّر واجهة الأحداث عنه."""
     label = payload.get("label")
     if payload.get("action") not in ("labeled", "unlabeled") or not label:
-        return []
-    present = {_fold(item.get("name")) for item in (payload.get("issue") or {}).get("labels") or []}
-    if (_fold(label.get("name")) in present) != (payload["action"] == "labeled"):
         return []
     return [{"event": payload["action"], "label": label, "actor": payload.get("sender") or {}}]
 
 
 def merge_payload_event(events: list[dict], payload: dict) -> tuple[list[dict], bool]:
-    """يعيد (خطَّ الأحداث، هل لقطةُ الحمولة قديمة). حدثُ الحمولة يُلحق فقط إن تأخّر الخطُّ عنه: أي لا حدثَ على الوسم نفسِه أحدثَ
-    منه (`created_at` بعد `issue.updated_at`) ولا نسخةَ منه هو (الفعلُ والوسمُ والفاعلُ أنفسُهم في الثانية نفسِها، فالطوابعُ بدقّة الثانية
-    وترتيبُ الخطّ هو الحكم). وإلا فاللقطةُ قديمة: الخطُّ يحمل الأحدث، ونصُّ المسألة ووسومُها يُقرآن من المصدر لا منها.
-    وبلا طوابع يُلحق كما هو (الاتجاهُ الآمن: نزعٌ يُحتسب). (ملاحظتا Codex على #346)"""
+    """يعيد (خطَّ الأحداث، هل لقطةُ الحمولة قديمة).
+
+    القاعدةُ الوحيدةُ التي لا تخمّن: طوابعُ GitHub بدقّة الثانية، فحدثٌ على الوسم نفسِه طابعُه **بعد** ثانيةِ الحمولة
+    (`created_at` > `issue.updated_at`) أحدثُ منها قطعًا؛ عندها اللقطةُ قديمة، فلا يُلحق حدثُها وتُقرأ المسألةُ من المصدر.
+    وما سوى ذلك (لا طوابع، أو الثانيةُ نفسُها، أو خطٌّ متأخّر) يُلحق حدثُ الحمولة كما هو: **الاتجاهُ الآمن**، فنزعٌ يُحتسب
+    ولو كان قديمًا، وإعادةُ إذنٍ في الثانية نفسِها قد تتطلّب من المالك إعادةَ وسم الإطلاق بيده. لا مطابقةَ لهويّة الحدث داخل
+    الثانية ولا استدلالَ من لقطة الوسوم: كلاهما خمّن فأخطأ في اتجاهٍ مفتوح (ملاحظاتُ Codex على #346؛ فُرزت في #345)."""
     extra = payload_event(payload)
     if not extra:
         return events, False
     name = _fold((extra[0].get("label") or {}).get("name"))
-    action = extra[0]["event"]
     stamp = str((payload.get("issue") or {}).get("updated_at") or "")
-    same_label = [e for e in events if e.get("event") in ("labeled", "unlabeled") and _fold((e.get("label") or {}).get("name")) == name]
-    newer = [e for e in same_label if str(e.get("created_at") or "") > stamp]
-    actor = str(((payload.get("sender") or {}).get("login")) or "")
-    own = [e for e in same_label if str(e.get("created_at") or "") == stamp and e.get("event") == action
-           and str((e.get("actor") or {}).get("login") or "") == actor]       # الفاعلُ أيضًا: حدثُ غيرِ المالك ليس حدثَ المالك
-    if stamp and (newer or own):
+    newer = [e for e in events if e.get("event") in ("labeled", "unlabeled")
+             and _fold((e.get("label") or {}).get("name")) == name and str(e.get("created_at") or "") > stamp]
+    if stamp and newer:
         return events, True
     return events + extra, False
 
