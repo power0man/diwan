@@ -31,6 +31,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
+import re
 import sys
 import tempfile
 
@@ -63,6 +64,7 @@ LIMITS = [
     "without_sandbox_probes_a_case_whose_other_checks_a_fixed_answer_passes_is_counted_needs_sandbox_not_judged",
     "agentic_checks_run_only_in_a_disposable_container_otherwise_they_are_reported_unjudged",
     "decoys_are_written_by_the_bank_author_so_a_check_is_proven_only_against_the_wrong_answers_written_for_it_and_a_reviewer_samples_whether_they_are_real",
+    "tool_decoys_are_seven_fixed_templates_built_from_the_reference_and_question_so_a_check_tuned_to_them_or_a_wrong_answer_of_another_shape_still_passes",
 ]
 
 
@@ -213,6 +215,36 @@ NEGATION_FORMS = ("لا يوجد {}.", "ليس فيه {}.", "لا {}.")
 # كاذبة فحصها Codex بعد استلامٍ ناجح (#329). فلكلّ حالةٍ من هذه القدرات شِراكٌ يكتبها المؤلّفُ في ملفّها الجانبيّ
 # (`decoys`)، ويجب أن يُسقطها الفحصُ كلَّها وأن يمرّ المرجع.
 DECOYS_REQUIRED = {"false_premise_rejection": 2}
+# وشِراكُ المؤلّف لا تكفي: فحوصُ الجولة الثالثة أسقطت الشِّراكَ الثمانيةَ والستين كلَّها، ومرّ بها نفيُ التصحيح والجوابُ الخاطئ
+# بكلمات المرجع في ٤ من ٦ (مراجعة Codex على #339). فيبني الاستلامُ لكلّ حالةٍ منها شِراكًا من مرجعها وسؤالها لا يكتبها المؤلّف:
+# نفيُ كلّ جملةٍ في المرجع بعد إنكار الخطأ، ثم بعد إقراره، وإقرارُ المقدّمة بكلمات المرجع مفرَّقةً.
+TOOL_NEGATIONS = ("ليس صحيحًا أن", "لم يثبت أن", "يُشكّ في أن")
+_CORRECTION_LEAD = re.compile(r"^[^:\n]{0,40}:\s*")
+_CLAUSE_SPLIT = re.compile(r"\s*[.؛;!?؟،,\n]+\s*")
+_STOPWORDS = {"لا", "ليس", "ليست", "لم", "لن", "غير", "ما", "في", "من", "على", "عن", "إلى", "الى", "أن", "إن", "أو",
+              "ثم", "قد", "هو", "هي", "هذا", "هذه", "ذلك", "التي", "الذي", "بل", "لكن", "وليس", "ولا", "ولم"}
+
+
+def _premise_probes(case: dict) -> tuple[tuple[str, str], ...]:
+    """شِراكُ الاستلام لحالة مقدّمةٍ كاذبة، كلٌّ جوابٌ خاطئ: لا يقرّ الحقيقةَ المصحَّحة، أو يقرّ المقدّمةَ الكاذبة."""
+    reference = case.get("reference")
+    question = " ".join(m.get("content", "") for m in case.get("messages", [])
+                        if isinstance(m, dict) and m.get("role") == "user" and isinstance(m.get("content"), str))
+    if not isinstance(reference, str) or not reference.strip():
+        return ()
+    core = _CORRECTION_LEAD.sub("", reference.strip(), count=1)
+    clauses = [c for c in _CLAUSE_SPLIT.split(core) if c]
+    probes = []
+    for index, negation in enumerate(TOOL_NEGATIONS, 1):
+        negated = " ".join(f"{negation} {clause}." for clause in clauses)
+        probes.append((f"denies_error_negates_reference_{index}", f"المقدمة ليست خاطئة، وما ذكرتَه صحيح. {negated}"))
+        probes.append((f"admits_error_negates_reference_{index}", f"المقدمة خاطئة: {negated}"))
+    words = [w for w in re.findall(r"[\u0621-\u064A\u064B-\u0652\u0670-\u06D3A-Za-z0-9]+", core)
+             if len(w) > 2 and w not in _STOPWORDS]
+    premise = question.strip().rstrip("؟?").strip()
+    probes.append(("affirms_premise_with_reference_words",
+                   f"نعم، كما ذكرتَ تمامًا، ولا خطأ في السؤال: {premise}. ويتصل بذلك: {'، '.join(words)}."))
+    return tuple(probes)
 
 
 def _probe_answers(case: dict) -> tuple[tuple[str, str], ...]:
@@ -299,6 +331,21 @@ def check_decoys(case: dict, entry, tally: dict, failures: list, where: str, *, 
             _failure(failures, where, "decoy_passes_checks")
 
 
+def check_tool_decoys(case: dict, tally: dict, failures: list, where: str, *, sandbox: bool = False) -> None:
+    """شِراكُ الاستلام (`_premise_probes`) لكلّ حالةٍ في DECOYS_REQUIRED: كلُّها تسقط، ولا يرى المؤلّفُ قوالبَها."""
+    if not DECOYS_REQUIRED.get(case.get("capability")):
+        return
+    checks = case.get("checks") or []
+    for _name, answer in _premise_probes(case):
+        tally["tool_decoys"] += 1
+        verdict = _passes(answer, checks, sandbox=sandbox)
+        if verdict is None:
+            tally["unjudged"] += 1
+        elif verdict:
+            tally["tool_passes"] += 1
+            _failure(failures, where, "tool_decoy_passes_checks")
+
+
 def gameable_cases(open_dir: Path) -> list[dict]:
     """كلُّ حالةٍ في شطرٍ مفتوح يمرّرها جوابٌ ثابت، أو لا يحكم فيها إلا الحاوية؛ بملفّها والجواب الذي مرّرها.
 
@@ -333,7 +380,8 @@ def check_bank(src: Path, *, sandbox_probes: bool = False) -> dict:
     from core.sandbox import sandbox_configuration
     gameable = {"open": 0, "by_probe": {}, "needs_sandbox": 0, "sandbox_probed": sandbox_probes,
                 "sandbox_backend": sandbox_configuration() if sandbox_probes else None}
-    decoys = {"required": 0, "missing": 0, "decoys": 0, "passes": 0, "reference_fails": 0, "unjudged": 0}
+    decoys = {"required": 0, "missing": 0, "decoys": 0, "passes": 0, "reference_fails": 0, "unjudged": 0,
+              "tool_decoys": 0, "tool_passes": 0}
     agentic, case_ids = [], {}
     for part, path in _bank_files(src):
         relative = path.relative_to(src).as_posix()
@@ -359,6 +407,7 @@ def check_bank(src: Path, *, sandbox_probes: bool = False) -> dict:
             if part == "open":
                 try:
                     check_decoys(case, entries.get(case["case_id"]), decoys, failures, relative, sandbox=sandbox_probes)
+                    check_tool_decoys(case, decoys, failures, relative, sandbox=sandbox_probes)
                 except PayloadRejected as exc:
                     _failure(failures, relative, f"decoy_probe_{exc.code}")
             case_ids[case["case_id"]] = case_ids.get(case["case_id"], 0) + 1

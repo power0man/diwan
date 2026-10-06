@@ -30,7 +30,7 @@ def _intake(open_dir, **changes):
               "bank": {"without_checks": {"open": 0, "sealed": 0}, "gameable": {"open": 0, "by_probe": {}, "needs_sandbox": 0,
                                                                                  "sandbox_probed": True},
                        "decoys": {"required": 0, "missing": 0, "decoys": 0, "passes": 0, "reference_fails": 0,
-                                  "unjudged": 0},
+                                  "unjudged": 0, "tool_decoys": 0, "tool_passes": 0},
                        "open_digest": open_bank_digest(open_dir)}}
     return {**report, **changes}
 
@@ -214,6 +214,12 @@ def test_the_run_is_bound_to_a_passed_intake_of_this_very_bank(tmp_path):
                           "intake_decoys_unproven"),
                          (_intake(bank, bank={**_intake(bank)["bank"], "decoys": {
                              **_intake(bank)["bank"]["decoys"], "passes": 1}}), "intake_decoys_unproven"),
+                         # شَرَكٌ بناه الاستلامُ يمرّ، وتقريرٌ سبق شِراكَ الاستلام (#339)
+                         (_intake(bank, bank={**_intake(bank)["bank"], "decoys": {
+                             **_intake(bank)["bank"]["decoys"], "tool_passes": 1}}), "intake_decoys_unproven"),
+                         (_intake(bank, bank={**_intake(bank)["bank"], "decoys": {
+                             k: v for k, v in _intake(bank)["bank"]["decoys"].items() if k != "tool_passes"}}),
+                          "intake_decoys_unproven"),
                          (_intake(other), "intake_digest_mismatch")):
         with pytest.raises(AblationError, match=code):
             run_general(replay, bank_open=bank, intake=intake, **RUN)

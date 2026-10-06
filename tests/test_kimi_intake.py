@@ -481,12 +481,15 @@ def test_the_gameable_listing_names_each_case_with_the_answer_that_passed_it(tmp
     assert (listing["gameable"], listing["needs_sandbox"]) == (1, 0) and "negated_value_3" in listing["probes"]
 
 
+# فحصٌ يمرّ به المرجعُ وحده، فتسقط شِراكُ المؤلّف وشِراكُ الاستلام معًا
+EXACT_R = [{"kind": "exact", "value": "r"}]
+
+
 def _premise_delivery(tmp_path, decoys, *, checks=None, reference="r"):
     """حالةُ مقدّمةٍ كاذبة في الشطر المفتوح، وشِراكُها في ملفّها الجانبيّ (#329)."""
     src = delivery(tmp_path)
-    case = {**_case("prem_1", "false_premise_rejection"), "reference": reference}
-    if checks is not None:
-        case["checks"] = checks
+    case = {**_case("prem_1", "false_premise_rejection"), "reference": reference,
+            "checks": EXACT_R if checks is None else checks}
     _write(src / "open" / "tier_c" / "kimi_c_001.json", _suite("kimi_c_001", [case]))
     if decoys is not None:
         _write(src / "open" / "tier_c" / "kimi_c_001.meta.json", {"cases": {"prem_1": {"decoys": decoys}}})
@@ -502,11 +505,11 @@ def test_a_false_premise_case_needs_two_decoys_in_its_sidecar(tmp_path):
     report = intake(_premise_delivery(tmp_path / "ok", ["لا r", "s"]))
     assert report["passed"], report["bank"]["failures"]
     assert report["bank"]["decoys"] == {"required": 1, "missing": 0, "decoys": 2, "passes": 0, "reference_fails": 0,
-                                        "unjudged": 0}
+                                        "unjudged": 0, "tool_decoys": 7, "tool_passes": 0}
 
 
 def test_a_decoy_the_checks_accept_is_named_and_fails_the_intake(tmp_path):
-    report = intake(_premise_delivery(tmp_path, ["لا r", "r ولكن المقدمة صحيحة"]))
+    report = intake(_premise_delivery(tmp_path, ["لا r", "r ولكن المقدمة صحيحة"], checks=_case("x")["checks"]))
     assert not report["passed"] and "decoy_passes_checks" in _codes(report, "bank")
     assert report["bank"]["decoys"]["passes"] == 1
 
@@ -530,7 +533,7 @@ def test_decoys_of_a_sandbox_case_are_judged_only_in_the_container(tmp_path, mon
     boxed = [{"kind": "python_sandbox", "value": "harness"}]
     report = intake(_premise_delivery(tmp_path / "a", ["لا r", "s"], checks=boxed))
     assert not report["passed"] and "decoys_need_sandbox" in _codes(report, "bank")
-    assert report["bank"]["decoys"]["unjudged"] == 3
+    assert report["bank"]["decoys"]["unjudged"] == 3 + 7, "المرجعُ وشَرَكا المؤلّف وشِراكُ الاستلام السبعة"
     report = intake(_premise_delivery(tmp_path / "b", ["لا r", "s"], checks=boxed), sandbox_probes=True)
     assert report["bank"]["decoys"]["unjudged"] == 0 and report["bank"]["decoys"]["passes"] == 0
     report = intake(_premise_delivery(tmp_path / "c", ["لا r", "r: المقدمة صحيحة"], checks=boxed), sandbox_probes=True)
@@ -540,6 +543,52 @@ def test_decoys_of_a_sandbox_case_are_judged_only_in_the_container(tmp_path, mon
 def test_a_case_outside_the_required_capabilities_needs_no_decoys(tmp_path):
     report = intake(delivery(tmp_path))
     assert report["passed"] and report["bank"]["decoys"]["required"] == 0
+    assert report["bank"]["decoys"]["tool_decoys"] == 0
+
+
+BULL = {"question": "لماذا يهاجم الثور القماش الأحمر تحديدًا؟",
+        "reference": "المقدمة خاطئة: الثيران لا تميز الأحمر؛ الحركة هي المثير لا اللون."}
+
+
+def test_the_intake_builds_wrong_answers_from_the_reference_and_question():
+    """شِراكُ الاستلام لا يكتبها المؤلّف: كلُّ جملةٍ في المرجع منفيّة، أو المقدّمةُ مُقرّةٌ بكلمات المرجع (مراجعة Codex على #339)."""
+    from tools.kimi_intake import TOOL_NEGATIONS, _premise_probes
+    case = {**_case("p", "false_premise_rejection", text=BULL["question"]), "reference": BULL["reference"]}
+    probes = dict(_premise_probes(case))
+    assert len(probes) == 2 * len(TOOL_NEGATIONS) + 1
+    for index, negation in enumerate(TOOL_NEGATIONS, 1):
+        for name in (f"denies_error_negates_reference_{index}", f"admits_error_negates_reference_{index}"):
+            answer = probes[name]
+            assert answer.count(negation) == 2, (name, answer)
+            for clause in ("الثيران لا تميز الأحمر", "الحركة هي المثير لا اللون"):
+                assert f"{negation} {clause}" in answer, (name, clause)
+    assert probes["denies_error_negates_reference_1"].startswith("المقدمة ليست خاطئة")
+    assert probes["admits_error_negates_reference_1"].startswith("المقدمة خاطئة: ")
+    affirms = probes["affirms_premise_with_reference_words"]
+    assert affirms.startswith("نعم") and "لماذا يهاجم الثور القماش الأحمر تحديدًا" in affirms
+    for word in ("الثيران", "تميز", "الأحمر", "الحركة", "المثير", "اللون"):
+        assert word in affirms, word
+    assert "الحركة هي المثير" not in affirms, "الكلماتُ مفرَّقة، فلا تقرّ الحقيقةَ المصحَّحة"
+    assert BULL["reference"] not in probes.values()
+    assert _premise_probes({**case, "reference": ""}) == ()
+
+
+def test_checks_that_pass_the_authors_decoys_but_a_tool_decoy_fail_the_intake(tmp_path):
+    """فحوصٌ تُسقط شَرَكَي المؤلّف ويمرّ بها نفيُ التصحيح: ما رآه Codex في ٤ من ٦ (#339)، والاستلامُ يراه الآن بنفسه."""
+    weak = [{"kind": "contains", "value": "خاطئة"}, {"kind": "contains", "value": "الحركة"},
+            {"kind": "excludes", "value": "اللون هو المثير"}]
+    decoys = ["اللون هو المثير لا الحركة، والمقدمة خاطئة.", "نعم، يهاجم الأحمر."]
+    src = _premise_delivery(tmp_path / "weak", decoys, checks=weak, reference=BULL["reference"])
+    report = intake(src)
+    assert report["bank"]["decoys"]["passes"] == 0 and report["bank"]["decoys"]["reference_fails"] == 0
+    assert not report["passed"] and "tool_decoy_passes_checks" in _codes(report, "bank")
+    assert report["bank"]["decoys"]["tool_passes"] == 6
+    strict = [{"kind": "contains", "value": "الحركة هي المثير"}, {"kind": "excludes", "value": "ليست خاطئة"},
+              {"kind": "excludes", "value": "أن الحركة"}, {"kind": "excludes", "value": "نعم"},
+              *NEGATION_EXCLUDED("الحركة هي المثير")]
+    report = intake(_premise_delivery(tmp_path / "strict", decoys, checks=strict, reference=BULL["reference"]))
+    assert report["passed"], report["bank"]["failures"]
+    assert (report["bank"]["decoys"]["tool_decoys"], report["bank"]["decoys"]["tool_passes"]) == (7, 0)
 
 
 def test_a_reference_solution_can_delete_a_file_with_null(tmp_path):

@@ -183,7 +183,8 @@ def _require_intake(intake: dict | None, digest: str, *, sandbox_backend: dict |
     # فحصٌ يمرّره نفيُ التصحيح لا يراه جوابٌ ثابت (#329): الاستلامُ يشهد بشِراك كلِّ حالةٍ تطلبها، وبأنها تسقط والمرجعَ يمرّ.
     # والتقريرُ الذي سبق هذا الفحصَ لا يحمل عدَّها فلا يشهد
     decoys = bank.get("decoys") if isinstance(bank.get("decoys"), dict) else {}
-    if any(decoys.get(key) != 0 for key in ("missing", "passes", "reference_fails", "unjudged")):
+    # وشِراكُ الاستلام نفسِه تسقط كلُّها، فتقريرٌ سبقها لا يحمل `tool_passes` ولا يشهد (مراجعة Codex على #339)
+    if any(decoys.get(key) != 0 for key in ("missing", "passes", "reference_fails", "unjudged", "tool_passes")):
         raise AblationError("intake_decoys_unproven", "الاستلامُ لا يُثبت أن شِراكَ كلِّ حالةٍ تسقط وأن مرجعَها يمرّ")
     if bank.get("open_digest") != digest:
         raise AblationError("intake_digest_mismatch", "بصمةُ الشطر المفتوح غيرُ بصمة الاستلام")
