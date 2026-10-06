@@ -34,6 +34,15 @@ uv tool install --python 3.12 --with 'torch==2.14.0+cpu' --find-links https://do
 قاعدة CAMeL والمحرّك متطلبان منفصلان. وPDF يحتاج **LibreOffice** محليًا؛ غيابه رفض مسمّى في أداة التصدير،
 ولا يُثبَّت تلقائيًا. Windows عبر **WSL2**؛ الحزمة تعتمد على أدوات Unix ولا تعد بتشغيل Windows الأصلي.
 
+أداة **OCR** (`ocr_image`) تقرأ الصور وصفحات PDF بأول محرّك متاح، بهذا الترتيب:
+1. نموذج رؤية محلي، إن ضُبط `DIWAN_MEDIA_MODEL` و`DIWAN_MEDIA_DIGEST`.
+2. **Tesseract** مع بيانات العربية.
+3. EasyOCR إن كانت أوزانه على القرص.
+
+صفحات PDF تحتاج **poppler-utils** (`pdftoppm`). الصورة تحمل Tesseract وpoppler، وفي التثبيت المستقلّ يُثبَّتان باليد:
+`brew install tesseract tesseract-lang poppler` على macOS، و`apt install tesseract-ocr tesseract-ocr-ara poppler-utils`
+على Linux وWSL2. فإن غاب كلّ محرّك رفضت الأداة برمز مسمّى يذكر ما يُثبَّت.
+
 ## الحاوية
 
 ```sh

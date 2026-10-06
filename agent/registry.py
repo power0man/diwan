@@ -50,6 +50,7 @@ class ToolContext:
     allowed_consents: frozenset = frozenset({"auto"})
     approved_call_ids: frozenset = frozenset()
     disposable_host: str | None = None
+    media_provider_factory: Callable[[], Any] | None = None
 
     def __post_init__(self):
         if "owner" in self.allowed_consents:

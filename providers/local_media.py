@@ -21,7 +21,8 @@ from providers.local_chat import (
     _count, _fail, _no_remote,
 )
 
-RUNTIME_VERSION = "0.34.2"
+SUPPORTED_RUNTIME_VERSIONS = ("0.34.2", "0.34.4")
+RUNTIME_VERSION = SUPPORTED_RUNTIME_VERSIONS[0]
 
 
 class LocalMediaProvider(LocalChatProvider):
@@ -84,7 +85,7 @@ class LocalMediaProvider(LocalChatProvider):
         deadline = time.monotonic() + request.deadline_s
         runtime = self._json("GET", "/api/version", None, deadline)
         _no_remote(runtime)
-        if runtime.get("version") != RUNTIME_VERSION:
+        if runtime.get("version") not in SUPPORTED_RUNTIME_VERSIONS:
             _fail("local_media_runtime_unsupported", "إصدار Ollama مختلف عن العقد المثبت")
         thinking = self._preflight(deadline, required_capabilities=required,
                                   context_tokens=POLICY["num_ctx"])

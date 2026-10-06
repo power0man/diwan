@@ -339,7 +339,8 @@ class AgentSession:
                  project_id: str, registry: ToolRegistry, model: str, model_version: str,
                  max_steps: int = 8, max_output: int = 1024, deadline_s: float = 120,
                  max_context_chars: int = 24000, max_turns: int = 128,
-                 system: str = SYSTEM, memory=None, storage_scope=None, observer=None):
+                 system: str = SYSTEM, memory=None, storage_scope=None, observer=None,
+                 media_provider_factory=None):
         if not _id(session_id) or not _id(project_id):
             _fail("session_identity_invalid", "هوية مشروع وجلسة صريحتان مطلوبتان")
         if not isinstance(registry, ToolRegistry) or not _text(model) or not _text(model_version):
@@ -357,6 +358,7 @@ class AgentSession:
         self.workspace = Path(workspace_root).absolute()
         self.storage_scope = storage_scope
         self.observer = observer
+        self.media_provider_factory = media_provider_factory
         storage_config = session_storage(storage_scope, self.root)
         if storage_scope is not None:
             storage_scope.binding(self.workspace)
@@ -437,7 +439,8 @@ class AgentSession:
                                             workspace_id=binding.get("workspace_id"))
             self._settle_stops(self._load())
             self.context = ToolContext(self.workspace, self.journal,
-                                       allowed_consents=frozenset({"auto", "logged"}))
+                                       allowed_consents=frozenset({"auto", "logged"}),
+                                       media_provider_factory=self.media_provider_factory)
 
     @staticmethod
     def _private_dir(fd):
