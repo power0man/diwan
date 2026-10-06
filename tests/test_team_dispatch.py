@@ -886,3 +886,47 @@ def test_checks_failures_are_ordered_by_record_not_by_timestamp(tmp_path):
     ledger.append(41, "completed", head_sha=head, branch=out["branch"], pr=out["pr"], reason="checks_failed_after_validation")
     ledger.append(41, "validation_failed", reason="checks_failed", head_sha=head)
     assert dispatcher._revision_trigger(41, 1, record=False) == (head, "checks_failed", f"checks:{head}")
+
+
+def test_revise_rereads_the_attempt_after_waiting_for_the_lock(tmp_path):
+    """أثناء انتظار القفل استُحوذ على المحاولة الأولى واكتملت ثانيةٌ ورُفضت مراجعتُها: الجولةُ تُطلق للمحاولة الثانية بعاملها
+    ونسخة عملها، لا بأدلة الأولى (ملاحظة Codex السابعة على #349)."""
+    import threading
+
+    from core.filelock import lock as file_lock, unlock as file_unlock
+
+    dispatcher, project, adapter, ledger, repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    lock_path = dispatcher.home / "locks" / "launch-41.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    holder = lock_path.open("a", encoding="utf-8")
+    file_lock(holder)
+    result = {}
+    thread = threading.Thread(target=lambda: result.update(out=_catch(lambda: dispatcher.revise(41, execute=True))), daemon=True)
+    thread.start()
+    import time
+    time.sleep(0.3)
+    # أثناء الانتظار: استحواذٌ على المحاولة ١ ثم محاولةٌ ٢ كاملة بطلبٍ جديد ومراجعةٍ رافضة عليها
+    ledger.append(41, "expired", last_activity_at="2026-10-06T10:00:00+00:00")
+    ledger.append(41, "takeover", lease_expired_at="2026-10-07T11:00:00+00:00", owner_authorization="نفّذ",
+                  absence_proof={"no_process": True, "no_session": True, "no_new_commits": True})
+    wt2 = tmp_path / "wt" / "team-41-anthropic-a2"
+    git("worktree", "add", str(wt2), "-b", "team/41-anthropic-a2", "origin/main", cwd=repo)
+    (dispatcher.home / "briefs").mkdir(parents=True, exist_ok=True)
+    (dispatcher.home / "briefs" / "41-a2.md").write_text("تكليفُ المحاولة الثانية\n", encoding="utf-8")
+    ledger.append(41, "dispatched", brief_sha256="c" * 64, worker="claude", family="anthropic", branch="team/41-anthropic-a2",
+                  worktree=str(wt2), base_sha=git("rev-parse", "origin/main", cwd=repo), brief_path=str(dispatcher.home / "briefs" / "41-a2.md"))
+    ledger.append(41, "claimed", pid=2, started_at="2026-10-07T12:00:00+00:00")
+    head2 = git("rev-parse", "HEAD", cwd=wt2)
+    git("push", "-q", "-u", "origin", "team/41-anthropic-a2", cwd=wt2)
+    pull2 = project.create_pull("team/41-anthropic-a2", "محاولة ٢", "Closes #41")
+    project.pulls[pull2.number] = PullRequest(pull2.number, head2, "main", "team/41-anthropic-a2", 41, url=pull2.url)
+    ledger.append(41, "completed", head_sha=head2, branch="team/41-anthropic-a2", pr=pull2.number)
+    ref2 = project.comment(pull2.number, "عيبٌ في المحاولة الثانية\nالحكم: يحتاج تصحيحًا")
+    ledger.append(41, "review_rejected", head_sha=head2, review_ref=ref2, reviewer="codex", reviewer_family="openai", verdict="revise")
+    file_unlock(holder)
+    holder.close()
+    thread.join(60)
+    done = result.get("out")
+    assert isinstance(done, dict) and done["status"] == "completed", done
+    assert done["attempt"] == 2 and adapter.seen[-1]["cwd"] == str(wt2) and done["superseded_head"] == head2

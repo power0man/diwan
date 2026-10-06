@@ -552,12 +552,15 @@ class Dispatcher:
             head, reason_kind, reason_ref = self._revision_trigger(issue_number, attempt, record=False)
             return self._revise_plan(issue_number, attempt, head, reason_kind, reason_ref, max_rounds)
         with self._launch_lock(issue_number):
-            # تحت قفل الإطلاق وبهذا الترتيب (ملاحظاتُ Codex الثانية والثالثة على #349): (١) جولةٌ أُطلقت ولم تُقيَّد تُستعاد من ملفّات
-            # معرّفاتها؛ (٢) جولةٌ غيرُ مختومة تُختم من رمز خروجها برأسها المسجَّل عند بدئها أو تُرفض `revision_running` — **قبل** قراءة
-            # الرأس والسبب، فتصحيحٌ دفعه العاملُ ثم انقطع المرسِل يُختم لا يُرفض nothing_to_revise؛ (٣) الرأسُ والسببُ يُقرآن الآن لا قبل
-            # القفل، فأمرٌ ثانٍ متزامن يرى الرأسَ الجديد ولا يطلق جولةً بسببٍ قديم؛ (٤) الإطلاقُ وقيدُه.
-            if self.ledger.open_attempt(issue_number) is None:
-                raise Refusal("nothing_to_revise", "استُحوذ على المحاولة")
+            # تحت قفل الإطلاق وبهذا الترتيب (ملاحظاتُ Codex الثانية والثالثة والسابعة على #349): (٠) الحالةُ ورقمُ المحاولة يُقرآن من جديد
+            # بعد القفل، فاستحواذٌ ومحاولةٌ ثانية اكتملت أثناء الانتظار لا يخلطان أدلةَ المحاولتين؛ (١) جولةٌ أُطلقت ولم تُقيَّد تُستعاد من
+            # ملفّات معرّفاتها؛ (٢) جولةٌ غيرُ مختومة تُختم من رمز خروجها برأسها المسجَّل عند بدئها أو تُرفض `revision_running` — **قبل**
+            # قراءة الرأس والسبب، فتصحيحٌ دفعه العاملُ ثم انقطع المرسِل يُختم لا يُرفض nothing_to_revise؛ (٣) الرأسُ والسببُ يُقرآن الآن
+            # لا قبل القفل، فأمرٌ ثانٍ متزامن يرى الرأسَ الجديد ولا يطلق جولةً بسببٍ قديم؛ (٤) الإطلاقُ وقيدُه.
+            state = self.ledger.main_state(issue_number)
+            if state is None or state["state"] not in ("completed", "validated", "verified") or self.ledger.open_attempt(issue_number) is None:
+                raise Refusal("nothing_to_revise", "استُحوذ على المحاولة أو تغيّرت حالتُها أثناء الانتظار")
+            attempt = state["attempt"]
             rounds = self._recover_unrecorded_round(issue_number, attempt, self.revision_rounds(issue_number, attempt))
             pending = self._unfinished_round(issue_number, attempt, rounds)
             if pending is not None:
