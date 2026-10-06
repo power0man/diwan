@@ -48,6 +48,7 @@ class FakeProject(ProjectAdapter):
     table: dict = field(default_factory=lambda: {"anthropic": ("codex",), "openai": ("claude",), "google": ("claude", "codex")})
     adapter_family: dict = field(default_factory=lambda: {"claude": "anthropic", "codex": "openai"})
     next_pull: int = 100
+    bodies: dict = field(default_factory=dict)
 
     def issue(self, number: int) -> Issue:
         return self.issues[number]
@@ -76,12 +77,13 @@ class FakeProject(ProjectAdapter):
         pull = PullRequest(number=number, head_sha="", base_branch="main", branch=branch, issue=self.issue_of(body, branch),
                            url=f"https://example.invalid/pull/{number}")
         self.pulls[number] = pull
+        self.bodies[number] = body
         return pull
 
     @staticmethod
     def issue_of(body: str, branch: str) -> int | None:
         import re
-        match = re.search(r"Refs #(\d+)", body or "")
+        match = re.search(r"(?:Refs|Closes) #(\d+)", body or "")
         if match:
             return int(match.group(1))
         match = re.match(r"^team/(\d+)-", branch or "")

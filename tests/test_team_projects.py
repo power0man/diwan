@@ -70,13 +70,33 @@ def test_author_families_come_from_diwan_agent_trailers():
     assert project.author_families(pull) == {"anthropic", "openai"}
 
 
+def _runs(*items, status="completed"):
+    return {"gh api repos/power0man/diwan/commits/h/check-runs": {"check_runs": [{"name": n, "status": status, "conclusion": c} for n, c in items]}}
+
+
 def test_checks_are_mapped_to_success_failure_pending_or_none():
-    def runs(*conclusions, status="completed"):
-        return {"gh api repos/power0man/diwan/commits/h/check-runs": {"check_runs": [{"status": status, "conclusion": c} for c in conclusions]}}
-    assert _project(runs("success", "skipped")).checks("h") == "success"
-    assert _project(runs("success", "failure")).checks("h") == "failure"
-    assert _project(runs(None, status="in_progress")).checks("h") == "pending"
-    assert _project(runs()).checks("h") == "none"
+    assert _project(_runs(("verify-hosted", "success"), ("container-smoke", "skipped"))).checks("h") == "success"
+    assert _project(_runs(("verify-hosted", "success"), ("x", "failure"))).checks("h") == "failure"
+    assert _project(_runs(("verify-hosted", None), status="in_progress")).checks("h") == "pending"
+    assert _project(_runs()).checks("h") == "none"
+
+
+def test_an_unrelated_or_skipped_check_does_not_validate_the_head():
+    assert _project(_runs(("unrelated", "success"))).checks("h") == "pending"
+    assert _project(_runs(("verify-hosted", "skipped"), ("other", "skipped"))).checks("h") == "pending"
+
+
+def test_proof_of_acceptance_fetches_main_before_checking_ancestry():
+    seen = []
+    class Done:
+        def __init__(self): self.returncode, self.stdout, self.stderr = 0, "", ""
+    def runner(argv, **kw):
+        seen.append(argv[3] if argv[0] == "git" else argv[0])
+        return Done()
+    project = DiwanProject(runner=runner, root=ROOT)
+    pull = PullRequest(1, "a" * 40, "main", "team/1-anthropic", 1, state="merged", merge_sha="m" * 40)
+    assert project.proof_of_acceptance(pull) == "m" * 40
+    assert seen[:2] == ["fetch", "merge-base"]
 
 
 def test_issue_is_read_from_the_body_then_the_branch():

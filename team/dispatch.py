@@ -247,7 +247,7 @@ class Dispatcher:
         if pull is None:
             title = f"[team #{issue.number}] {quarantine(issue.title).text.strip()[:80]}"
             body = (f"تكليفٌ من المرسِل الأدنى (ق٧٦) للعامل {self.adapter.spec.name}.\n\n"
-                    f"Refs #{issue.number}\n\nبصمة التكليف المودَع: `{plan['brief_sha256']}`\n\n"
+                    f"Closes #{issue.number}\n\nبصمة التكليف المودَع: `{plan['brief_sha256']}`\n\n"
                     f"المراجعة من عائلةٍ أخرى تطلبها `team/review.py`؛ الدمج بيد المالك.")
             pull = self.project.create_pull(branch, title, body)
         # المالُ ميكرو-دولار صحيح (ق٣): العشريُّ لا يُبصَم، والتقديرُ يبقى تقديرًا
@@ -342,7 +342,10 @@ class Dispatcher:
         dispatched = self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}
         wt = Path(dispatched.get("worktree", ""))
         last_head = state.get("head_sha") or dispatched.get("base_sha")
-        head_now = self._git("rev-parse", "HEAD", cwd=wt) if wt.exists() else last_head
+        try:
+            head_now = self._git("rev-parse", "HEAD", cwd=wt) if wt.exists() else last_head
+        except GitError:
+            head_now = None          # رأسٌ لا يُقرأ ليس إثباتًا لعدم وجود إيداعات جديدة
         last_activity = state.get("started_at") or state.get("at")
         now = self.clock()
         if not lease_expired(last_activity, now, LEASE_SECONDS):
@@ -350,7 +353,11 @@ class Dispatcher:
         if self.ledger.last_of(issue_number, "expired", state["attempt"]) is None:
             self.ledger.append(issue_number, "expired", last_activity_at=last_activity)
         pid = int(state.get("pid") or 0)
-        proof = {"no_process": not (pid and pid_alive(pid)),
+        if not pid:
+            pidfile = self.raw_dir(issue_number, state["attempt"]) / "pid"
+            pid = int(pidfile.read_text(encoding="utf-8").strip() or 0) if pidfile.exists() else 0
+        # معرّفٌ مجهول ليس إثباتَ غياب: لا يُثبت الغيابُ إلا لمعرّفٍ معلومٍ لم يعد حيًّا (ملاحظة Codex على #344)
+        proof = {"no_process": pid > 0 and not pid_alive(pid),
                  "no_session": tmux_session_present(f"team-{issue_number}-", self.runner) in (False, None),
                  "no_new_commits": head_now == last_head}
         if not all(proof.values()):

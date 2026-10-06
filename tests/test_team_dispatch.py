@@ -215,3 +215,22 @@ def test_validate_picks_up_a_corrected_head(tmp_path):
     project.checks_by_head["b" * 40] = "success"
     assert dispatcher.validate(41) == {"status": "validated", "head_sha": "b" * 40}
     assert ledger.last_of(41, "completed")["superseded_head"] == out["head_sha"]
+
+
+def test_the_generated_pull_closes_its_issue(tmp_path):
+    dispatcher, project, _adapter, _ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    assert "Closes #41" in project.bodies[out["pr"]] and project.pulls[out["pr"]].issue == 41
+
+
+def test_takeover_without_a_known_pid_cannot_prove_absence(tmp_path):
+    dispatcher, _project, _adapter, ledger, _repo = _setup(tmp_path)
+    worktree = tmp_path / "wt" / "team-41-anthropic"
+    worktree.mkdir(parents=True)
+    ledger.append(41, "dispatched", brief_sha256="b" * 64, worker="claude", family="anthropic", branch="team/41-anthropic",
+                  worktree=str(worktree), base_sha="0" * 40)
+    dispatcher.clock = lambda: "2026-10-08T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    with pytest.raises(Refusal) as exc:
+        dispatcher.takeover(41, owner_authorization="نفّذ")
+    assert exc.value.code == "absence_not_proven"

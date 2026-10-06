@@ -34,6 +34,9 @@ ADAPTER_FAMILY: dict[str, str] = {"claude": "anthropic", "codex": "openai"}
 NEVER_REVIEWS: tuple[str, ...] = ("gemini",)
 ISSUE_REF = re.compile(r"(?:Closes|Refs|Fixes|Resolves)\s+#(\d+)", re.IGNORECASE)
 BRANCH_ISSUE = re.compile(r"^team/(\d+)-")
+# الفحصُ المطلوب لاعتماد الرأس (حماية main)؛ نجاحُ فحصٍ غير متعلق أو تخطّي الكلّ لا يكفي (ملاحظة Codex على #344)
+REQUIRED_CHECKS: tuple[str, ...] = ("verify-hosted",)
+FETCH_BEFORE_PROOF = True
 
 
 class GhError(RuntimeError):
@@ -189,7 +192,10 @@ class DiwanProject(ProjectAdapter):
         conclusions = [run.get("conclusion") for run in runs]
         if any(c in ("failure", "cancelled", "timed_out", "action_required") for c in conclusions):
             return "failure"
-        if all(run.get("status") == "completed" and run.get("conclusion") in ("success", "skipped", "neutral") for run in runs):
+        by_name = {str(run.get("name") or ""): run for run in runs}
+        required_ok = all(by_name.get(name, {}).get("status") == "completed" and by_name.get(name, {}).get("conclusion") == "success"
+                          for name in REQUIRED_CHECKS)
+        if required_ok and all(run.get("status") == "completed" for run in runs):
             return "success"
         return "pending"
 
@@ -214,6 +220,9 @@ class DiwanProject(ProjectAdapter):
     def proof_of_acceptance(self, pull: PullRequest) -> str | None:
         if pull.state != "merged" or not pull.merge_sha:
             return None
+        if FETCH_BEFORE_PROOF:
+            # مرجعُ origin/main المحلي قد يسبق آخرَ دمجٍ على GitHub (ملاحظة Codex على #344)
+            self.runner(["git", "-C", str(self.root), "fetch", "origin", self.default_base_branch], capture_output=True, text=True)
         done = self.runner(["git", "-C", str(self.root), "merge-base", "--is-ancestor", pull.merge_sha,
                             f"origin/{self.default_base_branch}"], capture_output=True, text=True)
         return pull.merge_sha if done.returncode == 0 else None
