@@ -4,8 +4,9 @@
 ما كان يُقرأ باليد في `docs/probe/model-licenses-ollama-20261006.json` تقرؤه هذه الأداة وتكتبه بالصيغة نفسِها:
 - الوسومُ المقروءة: ما ينتظر في `registry/model_licenses.json` بسببٍ من أسباب Ollama، أو ما سُمّي بـ`--tag`.
 - لكلّ وسمٍ موجودٍ في `ollama list` يُشغَّل `ollama show --license`، ويُبصَم ما طُبع كما طُبع، ويُسمّى من نصّه وحده:
-  بصمةُ جسم SPDX (`tools/weight_provenance.identify_license`)، وإلّا فسطرُ العنوان الأوّل إن كان عنوانَ رخصةٍ معروفٍ
-  في `TITLES`. وما لم يُسمَّ بهذين لا يُسمّى: يبقى منتظِرًا بسببٍ يقول إنّ النصَّ قُرئ ولم يُعرَف.
+  بصمةُ جسم SPDX (`tools/weight_provenance.identify_license`)، وإلّا فأسطرُ العنوان الأولى إن كانت عنوانَ رخصةٍ معروفٍ
+  في `TITLES` (ومنها Apache-2.0 حين يُملأ ملحقُها فلا تطابق بصمتُها، كـ`qwen3:14b`). وما لم يُسمَّ بهذين لا يُسمّى: يبقى
+  منتظِرًا بسببٍ يقول إنّ النصَّ قُرئ ولم يُعرَف.
 - وما لم يُطبع له نصّ، أو أخفق عرضُه، أو ليس في القائمة، يُقيَّد تحت `unresolved_readings` بسببه المسمّى، فلا يسمّيه
   الدليلُ الجديد في حقل نموذجٍ (الحارسُ يرفض دليلًا جديدًا يسمّي نموذجًا منتظِرًا).
 - `--write` يكتب الدليل `docs/probe/model-licenses-ollama-<اليوم>.json` ويحلّ في السجلّ ما قُرئ. ولا سحبَ ولا إنفاق.
@@ -45,6 +46,9 @@ LIST_FAILED = "ollama_list_failed_on_the_mac_nothing_was_read_and_nothing_was_wr
 READ_FIELDS = ("license", "source", "read_on", "read_via", "license_text_sha256", "ollama_list_id")
 # عناوينُ رخصٍ تُسمّى من سطرها الأوّل كما طُبع، بعد التطبيع؛ ورخصُها المشروطة تفسيرُها قرارُ المالك (المسألة #301 §٥)
 TITLES = {
+    # عنوانُ Apache سطران كما يُطبع («Apache License» ثم «Version 2.0, January 2004»)، ويُحتاج إليه حين يُملأ سطرُ حقوق
+    # النشر في الملحق فلا تطابق بصمةُ SPDX؛ وهي حالةُ `qwen3:14b` في دليل ٦ أكتوبر (ملاحظة Codex الرابعة على #301)
+    "apache license version 2.0, january 2004": "apache-2.0",
     "llama 3.1 community license agreement": "llama3.1",
     "llama 3.2 community license agreement": "llama3.2",
     "llama 3.3 community license agreement": "llama3.3",
@@ -56,7 +60,7 @@ TITLES = {
 }
 LIMITS = [
     "the_license_text_is_what_ollama_show_license_printed_for_the_tag_on_this_mac_on_the_read_day_and_the_source_url_is_the_library_page_not_the_place_the_text_was_read",
-    "a_license_is_named_from_its_text_only_by_the_spdx_body_digest_or_by_a_known_title_line_and_text_named_by_neither_stays_pending",
+    "a_license_is_named_from_its_text_only_by_the_spdx_body_digest_or_by_known_title_lines_among_its_first_three_and_text_named_by_neither_stays_pending",
     "a_title_line_names_the_license_as_printed_and_its_terms_are_not_interpreted",
     "an_empty_license_text_or_a_failed_show_leaves_the_entry_pending_with_the_named_reason_and_nothing_was_pulled_or_spent",
     "tags_absent_from_ollama_list_were_not_pulled_and_stay_pending",
@@ -98,9 +102,11 @@ def name_license(data: bytes) -> tuple[str | None, str | None]:
     except UnicodeDecodeError:
         return None, None
     lines = [_normalized(line) for line in text.splitlines() if line.strip()]
-    for line in lines[:3]:
+    # العنوانُ يبدأ في أحد الأسطر الثلاثة الأولى غير الفارغة، وقد يمتدّ على سطرين (Apache)، فتُقابَل الأسطرُ المتتالية مجموعةً
+    for first in range(min(3, len(lines))):
+        head = " ".join(lines[first:first + 3])
         for title, name in TITLES.items():
-            if line.startswith(title) or line == title:
+            if head.startswith(title):
                 return name, "title_lines_as_printed"
     return None, None
 

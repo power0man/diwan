@@ -47,6 +47,23 @@ def test_a_tag_with_a_printed_license_is_resolved_and_named_from_its_text_alone(
     assert ml.findings(registry, {"model-licenses-ollama-20261007.json": evidence}, None) == []
 
 
+def test_apache_text_with_its_appendix_filled_in_is_named_from_its_title_lines():
+    # ملاحظة Codex الرابعة على #301: `TITLES` لم يكن فيه Apache، فنصُّ Apache-2.0 بملحقٍ مملوء (حالة `qwen3:14b` في دليل
+    # ٦ أكتوبر) لا تطابقه بصمةُ SPDX ولا عنوان، فيُقيَّد `UNNAMED` وهو رخصةٌ معروفة
+    unfilled = (olr.ROOT / "LICENSE").read_bytes()
+    assert olr.name_license(unfilled) == ("apache-2.0", "spdx_body_digest_via_weight_provenance_identify_license")
+    filled = unfilled.replace(b"Copyright [yyyy] [name of copyright owner]", b"Copyright 2024 Alibaba Cloud")
+    assert filled != unfilled
+    assert olr.name_license(filled) == ("apache-2.0", "title_lines_as_printed")
+    # والعنوانُ سطران فلا يُسمّى من «Apache License» وحدها، ولا من نسخةٍ أخرى
+    assert olr.name_license(b"Apache License\nVersion 1.1\n...") == (None, None)
+    assert olr.name_license(b"The Apache Software License, Version 1.1\n...") == (None, None)
+    evidence = olr.probe(["qwen3:14b"], "2026-10-07", _runner({"qwen3:14b": (0, filled, b"")},
+                                                               listing=(0, b"NAME ID SIZE\nqwen3:14b bdbd181c33f2 9.3 GB\n", b"")))
+    assert evidence["licenses"] == {"qwen3:14b": "apache-2.0"} and evidence["unresolved_readings"] == []
+    assert evidence["models"]["qwen3:14b"]["license_named_by"] == "title_lines_as_printed"
+
+
 def test_readings_that_yield_no_license_stay_pending_by_what_happened():
     tags = ["gemma3:12b", "dead:cloud", "broken:1b", "qwen3-embedding:0.6b", "odd:1b"]
     outputs = {"dead:cloud": (1, b"", b"Error: dead:0731 was retired at 2026-09-25 (ref: x)\n"),
