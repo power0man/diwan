@@ -1,0 +1,86 @@
+{
+ "schema_version": 1,
+ "probe": "team-review-calibration",
+ "agent": "anthropic/claude-fable-5-1",
+ "date": "2026-10-06",
+ "repository": "power0man/diwan",
+ "branch": "anthropic/team-dispatch",
+ "purpose": "معايرةُ المراجعَين المحتسبَين في حاضنة team/ (ق٧٦ البند ٨): ثمانية عيوب مزروعة وأربعة ملفات سليمة، كلٌّ فرعٌ في مستودعٍ مؤقت، والمراجعة بجلسةٍ جديدة في نسخةٍ منفصلة عند الرأس.",
+ "method": "team/review.py بمحوِّل حقيقي واحد في كل مرة (Codex: exec -s read-only؛ Claude: -p --permission-mode plan بأدوات قراءة) على مشروعٍ مصطنع؛ الحكمُ من سطر «الحكم:» الذي يطلبه البرومبت؛ الالتقاط = حكمٌ غير «صامد» على فرعٍ معيب، والإنذارُ الكاذب = حكمٌ غير «صامد» على فرعٍ سليم.",
+ "planted_defects": [
+  "جمعٌ يطرح",
+  "مجموعٌ إلى n بلا n",
+  "إشارةٌ معكوسة",
+  "إرجاعٌ مفقود",
+  "وسيطٌ افتراضي متغيّر",
+  "قسمةٌ على صفر لقائمة فارغة",
+  "مقارنةُ نصّ بـis",
+  "وسيطان متبادلان"
+ ],
+ "results": {
+  "codex": {
+   "planted": 8,
+   "caught": 8,
+   "clean": 4,
+   "false_alarms": 1,
+   "false_alarm_case": [
+    {
+     "case": "c2_sum_to_ok",
+     "excerpt": "مراجعةُ codex (openai/codex) على `98b35eef6159`: الحكم: يحتاج تصحيحًا  - **[P2] حساب غير محدود الكلفة** — [c2_sum_to_ok.py:3](/var/folders/z5/ddxglcs54jdblkw9xx29dx580000gn/T/team-review-acl9186b/wt/c2_sum_to_ok.py:3): تنفّذ `sum(range(1, n + 1))` عددًا من الخ"
+    }
+   ],
+   "elapsed_total_s": 255.3,
+   "verdicts": {
+    "d1_add_subtracts": "revise",
+    "d2_sum_to_n_off_by_one": "revise",
+    "d3_sign_inverted": "revise",
+    "d4_missing_return": "revise",
+    "d5_mutable_default": "revise",
+    "d6_average_div_zero": "revise",
+    "d7_string_is": "revise",
+    "d8_swapped_args": "revise",
+    "c1_add_ok": "pass",
+    "c2_sum_to_ok": "revise",
+    "c3_average_ok": "pass",
+    "c4_is_yes_ok": "pass"
+   }
+  },
+  "claude": {
+   "planted": 8,
+   "caught": 8,
+   "clean": 4,
+   "false_alarms": 1,
+   "false_alarm_case": [
+    {
+     "case": "c3_average_ok",
+     "excerpt": "مراجعةُ claude (anthropic/claude-fable-5-1) على `639ab16df0cf`: الحكم: يحتاج تصحيحًا  المراجعة اكتملت. الطلب يضيف ملفًا واحدًا هو `c3_average_ok.py` بدالّةٍ من خمسة أسطر، ولا يحوي المشروع قواعدَ مكتوبة ولا اختبارات.  **الملاحظات:**  - **حارس بلا إثبات بالطفرة*"
+    }
+   ],
+   "elapsed_total_s": 473.0,
+   "verdicts": {
+    "d1_add_subtracts": "revise",
+    "d2_sum_to_n_off_by_one": "revise",
+    "d3_sign_inverted": "revise",
+    "d4_missing_return": "revise",
+    "d5_mutable_default": "revise",
+    "d6_average_div_zero": "revise",
+    "d7_string_is": "revise",
+    "d8_swapped_args": "revise",
+    "c1_add_ok": "pass",
+    "c2_sum_to_ok": "pass",
+    "c3_average_ok": "revise",
+    "c4_is_yes_ok": "pass"
+   }
+  }
+ },
+ "calibration_recorded_in": "~/.diwan-team/calibration.json (calibrated_at 2026-10-06)",
+ "measurement_limits": [
+  "twelve_toy_python_files_prove_the_review_path_and_gross_discrimination_not_reviewer_quality_on_real_diwan_pull_requests",
+  "defects_are_syntactically_simple_and_documented_by_docstring_so_detection_is_easier_than_in_real_code",
+  "one_run_per_case_no_variance_estimate_and_no_position_swap_or_re_judgement_yet",
+  "one_false_alarm_each_on_four_clean_files_is_a_rate_too_coarse_to_compare_the_two_reviewers",
+  "claude_reviewed_openai_tagged_commits_and_codex_reviewed_anthropic_tagged_commits_to_satisfy_the_family_rule_in_the_fake_project",
+  "kappa_between_the_two_reviewers_is_not_computed_here_because_they_reviewed_the_same_cases_but_agreement_on_twelve_items_is_not_informative"
+ ],
+ "next": "معايرةٌ شهرية بالطريقة نفسها مع تبديل الترتيب وإعادة الحكم، وأول قياسٍ على طلب دمجٍ حقيقي في ديوان."
+}

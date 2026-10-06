@@ -156,7 +156,7 @@ sources/         المصادر
 | اختبارات مجموعة | تُحسب عند الطلب | `uv run python -m pytest --collect-only -q \| tail -1` (لا تُودَع: تتغيّر مع كل اختبار؛ والنجاح له دليله المنفصل) |
 | قرارات | **76** بلا فجوة | `grep -oE 'ق[٠-٩]+' docs/DECISIONS.md \| sort -u \| wc -l` |
 | وثائق قبول | **19** | `ls docs/M*-ACCEPTANCE.md` |
-| ملفات بايثون | **539** (والأسطرُ تُحسب عند الطلب) | `git ls-files '*.py' \| xargs wc -l` |
+| ملفات بايثون | **560** (والأسطرُ تُحسب عند الطلب) | `git ls-files '*.py' \| xargs wc -l` |
 | المخزن البحري النافذ | **117** وثيقة / **1279** صفحة | `docs/probe/project-status.json` |
 | أحدث نطاق موثق | **م١٦** | `docs/M16-ACCEPTANCE.md` |
 <!-- generated:study-numbers:end -->
