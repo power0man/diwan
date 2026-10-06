@@ -134,15 +134,20 @@ def _payload(body, labels=("jules", "ready:google"), author=OWNER, action="label
 
 
 class FakeGitHub:
-    def __init__(self, events, fresh_issue=None):
+    def __init__(self, events, fresh_issue=None, later_events=None):
         self._events, self.removed, self.comments = list(events), [], []
         self.fresh_issue = fresh_issue
+        self.later_events = later_events          # ما يعيده خطُّ الأحداث في قراءةٍ ثانية بعد جلب المسألة
+        self.events_calls = 0
 
     def issue(self, number):
         assert self.fresh_issue is not None, "لقطةٌ قديمة بلا مسألةٍ حالية في المحاكي"
         return dict(self.fresh_issue)
 
     def events(self, number):
+        self.events_calls += 1
+        if self.events_calls > 1 and self.later_events is not None:
+            return list(self.later_events)
         return list(self._events)
 
     def remove_label(self, number, name):
@@ -212,6 +217,11 @@ def test_a_stale_revocation_payload_is_outranked_by_a_newer_regrant_in_the_timel
     assert ig.apply_launch_gate(stale, github) == 0 and github.removed == []
     github = FakeGitHub(events, fresh_issue=_payload(PLANTED)["issue"])          # النصُّ الحالي حقنٌ وإن كانت اللقطةُ نظيفة
     assert ig.apply_launch_gate(stale, github) == 1 and github.removed == [(7, "jules")]
+    # بين قراءة الخطّ وجلب المسألة نُزع الإذن وأعاده غيرُ المالك: خطُّ الأحداث يُقرأ من جديد بعد المسألة فيُنزع `jules`
+    later = events + [dict(_event("unlabeled", "ready:google"), created_at="2026-10-06T10:00:02Z"),
+                      dict(_event("labeled", "ready:google", actor="stranger"), created_at="2026-10-06T10:00:03Z")]
+    github = FakeGitHub(events, fresh_issue=_payload(CLEAN)["issue"], later_events=later)
+    assert ig.apply_launch_gate(stale, github) == 1 and github.removed == [(7, "jules")] and github.events_calls == 2
     # الثانيةُ نفسُها: لا هويّةَ للحدث فيُلحق النزعُ احتياطًا ويُنزع `jules` (حدٌّ معلَن)
     same_second = GRANTED + [revoked, dict(regranted, created_at="2026-10-06T10:00:00Z")]
     merged, is_stale = ig.merge_payload_event(same_second, stale)

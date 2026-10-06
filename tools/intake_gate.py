@@ -239,7 +239,10 @@ def apply_launch_gate(payload: dict, client, owner: str = OWNER) -> int:
     number = int(issue["number"])
     events, stale = merge_payload_event(client.events(number), payload)
     if stale:
-        issue = client.issue(number)          # لقطةٌ قديمة: النصُّ والوسومُ معًا من المصدر، فلا يُفحص نصٌّ قديم بوسومٍ محدَّثة
+        # لقطةٌ قديمة: المسألةُ (نصًّا ووسومًا) من المصدر، **ثم** خطُّ الأحداث من جديد بعدها، فلا تُحكم وسومٌ حديثة بسجلٍّ قُرئ
+        # قبلها (إذنٌ أعاده غيرُ المالك بين القراءتين؛ ملاحظة Codex السادسة على #346). ما سبق خطَّ الأحداث من تغيّرٍ يظهر فيه.
+        issue = client.issue(number)
+        events = client.events(number)
     blocked = launch_decision(issue, events, owner)
     for item in blocked:
         client.remove_label(number, item["label"])
