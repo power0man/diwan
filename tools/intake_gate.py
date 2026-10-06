@@ -178,18 +178,22 @@ def merge_payload_event(events: list[dict], payload: dict) -> tuple[list[dict], 
 
     القاعدةُ الوحيدةُ التي لا تخمّن: طوابعُ GitHub بدقّة الثانية، فحدثٌ على الوسم نفسِه طابعُه **بعد** ثانيةِ الحمولة
     (`created_at` > `issue.updated_at`) أحدثُ منها قطعًا؛ عندها اللقطةُ قديمة، فلا يُلحق حدثُها وتُقرأ المسألةُ من المصدر.
-    وما سوى ذلك (لا طوابع، أو الثانيةُ نفسُها، أو خطٌّ متأخّر) يُلحق حدثُ الحمولة كما هو: **الاتجاهُ الآمن**، فنزعٌ يُحتسب
-    ولو كان قديمًا، وإعادةُ إذنٍ في الثانية نفسِها قد تتطلّب من المالك إعادةَ وسم الإطلاق بيده. لا مطابقةَ لهويّة الحدث داخل
-    الثانية ولا استدلالَ من لقطة الوسوم: كلاهما خمّن فأخطأ في اتجاهٍ مفتوح (ملاحظاتُ Codex على #346؛ فُرزت في #345)."""
+    وفي الثانية نفسِها لا هويّةَ للحدث، فالاتجاهُ الآمن غيرُ متناظر: حمولةُ **نزعٍ** تُلحق (نزعٌ يُحتسب ولو كان قديمًا)، وحمولةُ
+    **إذنٍ** لا تُلحق (إذنٌ قديم لا يُعاد اعتمادُه فوق نزعٍ أو إذنِ غيرِ المالك في الثانية نفسِها) وتُقرأ المسألةُ من المصدر.
+    وبلا طوابع أو بخطٍّ متأخّر يُلحق حدثُ الحمولة كما هو. لا مطابقةَ لهويّة الحدث داخل الثانية ولا استدلالَ من لقطة الوسوم:
+    كلاهما خمّن فأخطأ في اتجاهٍ مفتوح (ملاحظاتُ Codex على #346؛ فُرزت في #345)."""
     extra = payload_event(payload)
     if not extra:
         return events, False
     name = _fold((extra[0].get("label") or {}).get("name"))
     stamp = str((payload.get("issue") or {}).get("updated_at") or "")
-    newer = [e for e in events if e.get("event") in ("labeled", "unlabeled")
-             and _fold((e.get("label") or {}).get("name")) == name and str(e.get("created_at") or "") > stamp]
+    same_label = [e for e in events if e.get("event") in ("labeled", "unlabeled") and _fold((e.get("label") or {}).get("name")) == name]
+    newer = [e for e in same_label if str(e.get("created_at") or "") > stamp]
     if stamp and newer:
         return events, True
+    same_second = [e for e in same_label if str(e.get("created_at") or "") == stamp]
+    if stamp and same_second and extra[0]["event"] == "labeled":
+        return events, True                     # إذنٌ قديم في ثانيةٍ مزدحمة لا يُعاد اعتمادُه (ملاحظة Codex الثامنة على #346)
     return events + extra, False
 
 
