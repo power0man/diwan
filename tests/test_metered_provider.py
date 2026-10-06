@@ -2,6 +2,10 @@
 وردٌّ بلا توكناتٍ لا يُحسب، ونموذجٌ بلا سعرٍ يُرفض قبل الشبكة. **الحدُّ المعلَن:** لا نداءَ حيًّا؛ النقلُ معلَّب."""
 from __future__ import annotations
 
+import io
+import json
+from decimal import Decimal
+
 import pytest
 
 from core import prices
@@ -17,22 +21,29 @@ TABLE = {"schema_version": 1, "unit": prices.UNIT, "entries": {
 
 
 class FakeTransport:
-    def __init__(self, *replies):
+    def __init__(self, *replies, max_tokens=10):
         self.replies, self.provider_usage, self.calls = list(replies), [], 0
+        self.max_tokens = max_tokens      # الحدُّ الذي «يفرضه» النقلُ على السلك، وعليه يُحجز
 
     def __call__(self, model, system, user, schema):
         self.calls += 1
         reply = self.replies.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
         self.provider_usage.append({"provider": "fake", "model": model, "request_sent": True,
                                     "usage": reply.get("usage"), "cost_status": reply.get("cost_status", "not_reported"),
                                     "cost_usd": reply.get("cost_usd")})
         return reply["content"]
 
 
-def _metered(tmp_path, transport, cap_micros=10 ** 6):
+def _metered(tmp_path, transport, cap_micros=10 ** 6, **kw):
     budget = Budget(day_remaining_micros=cap_micros, month_remaining_micros=cap_micros)
     return MeteredTransport(transport, provider_key="fake", budget=budget, ledger=Ledger(tmp_path / "ledger.jsonl"),
-                            prices=TABLE, max_output=10)
+                            prices=TABLE, **kw)
+
+
+def _charged(metered, cap_micros=10 ** 6) -> int:
+    return cap_micros - metered.budget.day_remaining_micros
 
 
 def test_sum_of_tokens_and_cost_is_ledgered(tmp_path):
@@ -57,7 +68,8 @@ def test_budget_refuses_call_over_cap_before_network(tmp_path):
     with pytest.raises(AutomaticReviewError) as refused:
         metered("priced", "s", "u", {})
     assert refused.value.code == "spend_cap_reached" and transport.calls == 0
-    assert metered.refusals == [{"model": "priced", "code": "spend_cap_reached", "estimate_micros": estimate}]
+    assert metered.refusals == [{"model": "priced", "code": "spend_cap_reached", "estimate_micros": estimate,
+                                 "settled_micros": 0}]
     assert [e["record"]["kind"] for e in metered.ledger.entries()] == ["refused"]
     assert _metered(tmp_path / "ok", transport, cap_micros=estimate)("priced", "s", "u", {}) == "a"
 
@@ -70,6 +82,66 @@ def test_reply_without_tokens_is_settled_by_reservation_and_refused(tmp_path):
     assert refused.value.code == "usage_missing" and metered.calls == []
     (record,) = [e["record"] for e in metered.ledger.entries()]
     assert record["kind"] == "error" and record["settled_micros"] == metered.refusals[0]["estimate_micros"] > 0
+
+
+def test_the_report_counts_what_the_budget_charged_on_errors(tmp_path):
+    """ملاحظة Codex على #295: ردٌّ بلا توكناتٍ خُصم بالمحجوز (٥٣٤ ميكرو) والتقريرُ قال صفرًا. الجمعُ يساوي ما خصمته الميزانيةُ
+    ويطابق السجلَّ، على عطلٍ مصنَّف وعطلٍ غيرِ مصنَّف ونداءٍ ناجحٍ بعدهما."""
+    transport = FakeTransport({"content": "a", "usage": {"prompt_tokens": 7}}, RuntimeError("wire fell"),
+                              {"content": "b", "usage": {"prompt_tokens": 10, "completion_tokens": 5}})
+    metered = _metered(tmp_path, transport)
+    with pytest.raises(AutomaticReviewError) as refused:
+        metered("priced", "s", "u", {})
+    assert refused.value.code == "usage_missing"
+    with pytest.raises(RuntimeError):
+        metered("priced", "s", "u", {})
+    assert metered("priced", "s", "u", {}) == "b"
+    estimate = (2 + FRAMING_TOKENS) * 1000 // 1000 + 10 * 2000 // 1000
+    assert estimate == 534 and _charged(metered) == 534 + 534 + 20
+    assert [(r["code"], r["settled_micros"]) for r in metered.refusals] \
+        == [("usage_missing", 534), ("aborted_unclassified", 534)]
+    report = metered.spend_report()["core_run"]
+    assert report["settled_on_errors_micros"] == 1068 and report["outstanding_micros"] == 0
+    assert Decimal(report["settled_usd"]) * 10 ** 6 == _charged(metered)
+    assert sum(e["record"]["settled_micros"] for e in metered.ledger.entries()) == _charged(metered)
+
+
+def test_the_reservation_bound_is_the_limit_the_transport_enforces(tmp_path):
+    """ملاحظة Codex على #295: حجزٌ على `max_output` لا يمرّ إلى النقل يسمح للمخرج بتجاوز ما حُجز عليه. الحدُّ يُقرأ من
+    `max_tokens` النقل نفسِه، ونقلٌ بلا حدٍّ أو حدٌّ مطلوبٌ يخالفه لا يُغلَّف."""
+    transport = FakeTransport({"content": "a", "usage": {"prompt_tokens": 1, "completion_tokens": 1}}, max_tokens=25)
+    metered = _metered(tmp_path, transport)
+    assert metered.max_output == 25
+    metered("priced", "s", "u", {})
+    assert metered.refusals == [] and metered.calls[0]["estimate_micros"] == (2 + FRAMING_TOKENS) + 25 * 2
+    assert _metered(tmp_path, transport, max_output=25).max_output == 25
+    with pytest.raises(ValueError, match="max_output_mismatch"):
+        _metered(tmp_path, transport, max_output=10)
+    for unenforced in (None, 0, True, "25"):
+        transport.max_tokens = unenforced
+        with pytest.raises(ValueError, match="max_output_unenforced"):
+            _metered(tmp_path, transport)
+    del transport.max_tokens
+    with pytest.raises(ValueError, match="max_output_unenforced"):
+        _metered(tmp_path, transport)
+
+
+def test_the_cloud_ollama_transport_sends_its_limit_as_num_predict(tmp_path):
+    chat = cli.OllamaChat(cli.CLOUD_ENDPOINT, api_key="test-key-not-a-secret-0123456789", max_tokens=321)
+    sent = []
+
+    class _Opener:
+        def open(self, request, timeout=None):
+            sent.append(json.loads(request.data))
+            return io.BytesIO(json.dumps({"message": {"content": "{}"}, "prompt_eval_count": 3, "eval_count": 2})
+                              .encode("utf-8"))
+
+    chat.opener = _Opener()
+    metered = cli.metered_transport(chat, "ollama", tmp_path / "l.jsonl", cap_micros=0)
+    assert metered.max_output == 321
+    assert metered("x:cloud", "s", "u", {}) == "{}"
+    assert sent[0]["options"]["num_predict"] == 321
+    assert cli.OllamaChat().max_tokens == 4000
 
 
 def test_unpriced_model_is_refused_before_network(tmp_path):

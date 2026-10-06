@@ -3,12 +3,13 @@
 كانت نقولُ المراجعة الخارجية (`OllamaChat` على ollama.com، وموجّهُ HF) تنادي الشبكةَ خارج `core.run`، فلا حجزَ قبل النداء ولا
 قيدَ في سجلٍّ مبصوم. هنا يُغلَّف أيُّ نقلٍ `transport(model, system, user, schema) -> str` بمزوّدٍ يمرّ بـ`core.run.execute`:
 - **التقديرُ قبل النداء** من `registry/prices.json` (`core/prices.py`): بايتاتُ الرسالتين وحدُّ التأطير بسعر المدخل، و`max_output`
-  بسعر المخرج؛ والاشتراكُ الثابت صفرٌ بأساسه؛ وفهرسٌ حيٌّ يلزمه سعرٌ مثبَّت من النقل نفسِه (`_pin`). وبلا سعرٍ `price_unknown`
+  بسعر المخرج، و`max_output` هو حدُّ النقل نفسُه الذي يفرضه على السلك (`max_tokens`: `num_predict` في Ollama) لا رقمٌ مستقلّ؛ والاشتراكُ الثابت صفرٌ بأساسه؛ وفهرسٌ حيٌّ يلزمه سعرٌ مثبَّت من النقل نفسِه (`_pin`). وبلا سعرٍ `price_unknown`
   قبل الشبكة.
 - **الحجزُ والتسوية** بـ`core.budget.Budget`: ما فوق السقف `spend_cap_reached` ولا نداء. والتسويةُ بالكلفة التي أبلغها المزوّد
   إن أبلغها، وإلا بتوكنات الردّ بالسعر نفسِه. وردٌّ بلا توكناتٍ كاملة `usage_missing`: يُسوّى بالمحجوز كلِّه (المزوّدُ قد يكون
   نفّذ) ويُقيَّد خطأً، فلا يُحسب نداءٌ سحابيٌّ بلا توكنات.
-- **القيدُ** في `core.ledger.Ledger` المبصوم: كلُّ نداءٍ قيدٌ فيه التقديرُ والمسوّى والتوكنات.
+- **القيدُ** في `core.ledger.Ledger` المبصوم: كلُّ نداءٍ قيدٌ فيه التقديرُ والمسوّى والتوكنات. وتقريرُ الإنفاق يجمع ما سُوّي على
+  النداءات **وما سُوّي على الأعطال** (`settled_micros` في كل رفض)، فلا يقول «صفرًا» لما خصمته الميزانية.
 
 صفوفُ `provider_usage` للنقل تبقى كما يكتبها كاتبُها (حارسُ الختم يقرؤها بشكلها)؛ وما يضيفه هذا الغلاف يُكتب في `core_run`
 من تقرير الإنفاق. والحدُّ: الطلبُ هنا رسالتان نصّيتان بلا أدواتٍ ولا تفكير، لأن المراجعةَ الخارجية هكذا تُرسَل.
@@ -36,6 +37,18 @@ _REFUSAL_CODES = {"day_cap": "spend_cap_reached", "month_cap": "spend_cap_reache
 
 def _ceil_micros(value: Decimal) -> int:
     return int(value.to_integral_value(rounding=ROUND_CEILING))
+
+
+def _enforced_max_output(transport, requested: int | None) -> int:
+    """حدُّ المخرج الذي يُحجز عليه هو الحدُّ الذي يفرضه النقلُ على السلك (`max_tokens`: `num_predict` في Ollama، و`max_tokens` في
+    الواجهات المتوافقة)، لا رقمٌ مستقلّ عنه؛ فحجزٌ على حدٍّ لا يُفرض يسمح لنقلٍ مسعَّر بتجاوز السقف (ملاحظة Codex على #295).
+    نقلٌ بلا حدٍّ معلَن لا يُغلَّف، وحدٌّ مطلوبٌ يخالف حدَّ النقل يُرفض."""
+    enforced = getattr(transport, "max_tokens", None)
+    if type(enforced) is not int or enforced <= 0:
+        raise ValueError("max_output_unenforced: النقلُ لا يعلن max_tokens فلا يُحجز على حدٍّ لا يفرضه")
+    if requested is not None and requested != enforced:
+        raise ValueError(f"max_output_mismatch: المطلوب {requested} والنقلُ يفرض {enforced}")
+    return enforced
 
 
 class MeteredProvider:
@@ -102,11 +115,12 @@ class MeteredTransport:
     """نقلٌ بالتوقيع نفسِه `(model, system, user, schema) -> str`، كلُّ نداءٍ فيه يمرّ بـ`core.run.execute`."""
 
     def __init__(self, transport, *, provider_key: str, budget: Budget, ledger, prices: dict | None = None,
-                 max_output: int = 4000, deadline_s: float = 900.0, data_policy: str = "public"):
+                 max_output: int | None = None, deadline_s: float = 900.0, data_policy: str = "public"):
         self.transport, self.provider_key = transport, provider_key
         self.budget, self.ledger = budget, ledger
         self.prices = prices if prices is not None else price_table.load()
-        self.max_output, self.deadline_s, self.data_policy = max_output, deadline_s, data_policy
+        self.max_output = _enforced_max_output(transport, max_output)
+        self.deadline_s, self.data_policy = deadline_s, data_policy
         self.calls: list[dict] = []
         self.refusals: list[dict] = []
 
@@ -127,26 +141,36 @@ class MeteredTransport:
         request = Request(messages=(Message(role="system", content=system), Message(role="user", content=user)),
                           model=model, model_version=model, max_output=self.max_output, deadline_s=self.deadline_s,
                           data_policy=self.data_policy, idempotency_key=None)
+        before = self.budget.day_remaining_micros
         try:
             outcome = execute(request, provider, self.budget, self.ledger)
         except RouteRefused as exc:
-            code = _REFUSAL_CODES.get(exc.code, exc.code)
-            self.refusals.append({"model": model, "code": code, "estimate_micros": provider.estimate})
-            raise AutomaticReviewError(code, model) from exc
+            raise self._refused(model, _REFUSAL_CODES.get(exc.code, exc.code), provider, before) from exc
         except ProviderError as exc:
-            self.refusals.append({"model": model, "code": exc.code, "estimate_micros": provider.estimate})
-            raise AutomaticReviewError(exc.code, model) from exc
+            raise self._refused(model, exc.code, provider, before) from exc
+        except Exception:
+            # عطلٌ لم يصنّفه `core.run`: سوّاه بالمحجوز وقيّده `aborted_unclassified`؛ يُحسب هنا ثم يُرفع كما هو
+            self._refused(model, "aborted_unclassified", provider, before)
+            raise
         if outcome.response is None:
-            # عطلٌ قيّده `core.run` وسوّاه بالمحجوز: يُسمّى هنا كما يُسمّى الرفض، ولا يُحسب نداءً
-            code = outcome.error_code or "provider_error"
-            self.refusals.append({"model": model, "code": code, "estimate_micros": provider.estimate})
-            raise AutomaticReviewError(code, model)
+            # عطلٌ قيّده `core.run` وسوّاه بالمحجوز: يُسمّى هنا كما يُسمّى الرفض، ولا يُحسب نداءً، وما سُوّي عليه يُحسب
+            raise self._refused(model, outcome.error_code or "provider_error", provider, before)
         return outcome.response.content
+
+    def _refused(self, model: str, code: str, provider: MeteredProvider, before: int) -> AutomaticReviewError:
+        # ما خصمته الميزانيةُ على هذا النداء وإن لم يُحسب نداءً: ردٌّ بلا توكناتٍ يُسوّى بالمحجوز كلِّه، فلا يُعلن التقريرُ صفرًا
+        # لما خُصم (ملاحظة Codex على #295)؛ والرفضُ قبل الحجز صفرٌ لأن شيئًا لم يُحجز
+        settled = before - self.budget.day_remaining_micros
+        self.refusals.append({"model": model, "code": code, "estimate_micros": provider.estimate,
+                              "settled_micros": settled})
+        return AutomaticReviewError(code, model)
 
     def spend_report(self) -> dict:
         inner = self.transport.spend_report() if hasattr(self.transport, "spend_report") else {}
-        spent = sum(call["cost_micros"] for call in self.calls)
+        on_calls = sum(call["cost_micros"] for call in self.calls)
+        on_errors = sum(refusal["settled_micros"] for refusal in self.refusals)
         return {**inner, "core_run": {
             "ledger": str(getattr(self.ledger, "path", "")), "calls": self.calls, "refusals": self.refusals,
-            "settled_usd": str(Decimal(spent) / MICROS_PER_USD),
+            "settled_usd": str(Decimal(on_calls + on_errors) / MICROS_PER_USD),
+            "settled_on_errors_micros": on_errors,
             "outstanding_micros": self.budget.outstanding_micros}}

@@ -182,8 +182,8 @@ def test_a_refused_ollama_run_still_prints_the_calls_that_went_out(tmp_path, mon
     _wire(monkeypatch, _Opener(_reply(prompt_eval_count=1, eval_count=1)))
     real = cli.build_transport
 
-    def transport_then_refuse(base_url):
-        chat = real(base_url)
+    def transport_then_refuse(base_url, **kw):
+        chat = real(base_url, **kw)
         chat("deepseek-v4.1-flash:cloud", "s", "u", {})
         return chat
 

@@ -208,8 +208,10 @@ class OllamaChat:
     """
 
     def __init__(self, base_url: str = "http://127.0.0.1:11434", timeout: int = 900,
-                 api_key: str | None = None):
+                 api_key: str | None = None, max_tokens: int = 4000):
         base = base_url.rstrip("/")
+        # حدُّ المخرج يُرسل `num_predict` فيُفرض على النقل، وهو نفسُه حدُّ الحجز في `evaluation.metered` (ملاحظة Codex على #295)
+        self.max_tokens = max_tokens
         self._headers = {"Content-Type": "application/json"}
         if base_url.startswith(LOCAL_PREFIXES):
             self.cloud = False
@@ -232,7 +234,7 @@ class OllamaChat:
             payload = {"model": model, "stream": False, "format": schema,
                        "messages": [{"role": "system", "content": system},
                                     {"role": "user", "content": user}],
-                       "options": {"temperature": 0, "seed": 0, "num_ctx": 65536}}
+                       "options": {"temperature": 0, "seed": 0, "num_ctx": 65536, "num_predict": self.max_tokens}}
             request = urllib.request.Request(
                 self.url, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
                 headers=dict(self._headers))
