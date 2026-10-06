@@ -12,16 +12,18 @@
 - القفل: الفحصُ والإلحاقُ والمرساةُ عمليةٌ واحدة تحت قفلٍ حصريّ على ملفٍّ جانبيّ (`<السجلّ>.lock`)؛ فأمران متزامنان
   لمسألتين مستقلّتين لا يتنازعان البصمةَ السابقة ولا الرقمَ التسلسلي ولا ملفَ المرساة المؤقت.
 
-**الحدُّ المعلَن:** السجلُّ يشهد على ما قُيّد فيه بدليله المسمّى، لا على صحّة الدليل نفسِه؛ وبصماتُ الرؤوس تُقارَن نصًّا.
+**الحدود المعلَنة:** السجلُّ يشهد على ما قُيّد فيه بدليله المسمّى، لا على صحّة الدليل نفسِه؛ وبصماتُ الرؤوس تُقارَن نصًّا.
+والقفلُ يمنع تداخلَ الكتّاب لا الانهيار: عمليةٌ تموت بين القيد ومرساته تترك ذيلًا بلا مرساة يقبله الفتحُ التالي (وعلى سجلٍّ
+جديدٍ تمامًا يرفضه)؛ والقرّاءُ لا يأخذون قفلًا مشتركًا فقد يقرؤون سطرًا ممزَّقًا وسطَ كتابةٍ متزامنة فيرمون LedgerCorrupt.
 """
 from __future__ import annotations
 
-import fcntl
 import os
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
+from core.filelock import lock as file_lock, unlock as file_unlock   # قفلٌ واحد لكل المنصّات (ج٧، #37)؛ لا fcntl مباشرةً
 from core.ledger import Ledger, LedgerCorrupt
 
 MAIN_STATES: tuple[str, ...] = ("dispatched", "claimed", "completed", "validated", "verified", "accepted")
@@ -136,12 +138,12 @@ class TeamLedger:
         """قفلٌ حصريّ يحيط بالفحص والإلحاق والمرساة معًا؛ بدونه كان أمران متزامنان يكتبان قيدين بالبصمة السابقة والرقم
         التسلسلي نفسَيهما ويتنازعان ملفَ المرساة المؤقت (ملاحظة Codex السابعة على #344)."""
         self.lock_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.lock_path.open("a", encoding="utf-8") as handle:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        with self.lock_path.open("a", encoding="utf-8") as handle:   # واصفٌ جديد في كل مرّة: القفلُ لكل وصفِ ملفٍّ مفتوح
+            file_lock(handle)
             try:
                 yield
             finally:
-                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                file_unlock(handle)
 
     def append(self, issue: int, state: str, **evidence) -> str:
         with self._locked():
@@ -180,6 +182,8 @@ class TeamLedger:
         current = self.main_state(issue)
         if current is None or current.get("attempt") != attempt:
             raise TransitionError("out_of_order", f"{state} بلا تكليفٍ جارٍ في المحاولة {attempt}")
+        if self.last_of(issue, "takeover", attempt) is not None:
+            raise TransitionError("attempt_taken_over", f"{state} على محاولةٍ مستحوَذٍ عليها")
         if state == "completed":
             if current["state"] not in ("claimed", "completed", "validated", "verified"):
                 raise TransitionError("out_of_order", f"completed بعد {current['state']}")
@@ -197,6 +201,15 @@ class TeamLedger:
             heads = {evidence["head_sha"], validated and validated.get("head_sha"), verified and verified.get("head_sha")}
             if len(heads) != 1:
                 raise TransitionError("head_mismatch", "validated_head_sha == reviewed_head_sha == merge_candidate_head_sha شرطُ القبول")
+            if self._latest_review_kind(issue, attempt, evidence["head_sha"]) == "review_rejected":
+                # الرفضُ الأحدث على الرأس يطغى على قبولٍ أقدم، ويُفحص هنا تحت القفل لا في المرسِل وحده
+                raise TransitionError("review_rejected_after_verified", "مراجعةٌ رافضة أحدثُ من verified على الرأس نفسِه")
+
+    def _latest_review_kind(self, issue: int, attempt: int, head: str) -> str | None:
+        for record in reversed(self.records(issue)):
+            if record.get("attempt") == attempt and record.get("head_sha") == head and record["state"] in ("verified", "review_rejected"):
+                return record["state"]
+        return None
 
     def _check_takeover(self, issue: int, evidence: dict) -> None:
         proof = evidence.get("absence_proof")

@@ -120,7 +120,7 @@ def test_gc_lists_merged_worktrees_and_removes_nothing_without_yes(tmp_path):
     project.pulls[out["pr"]] = PullRequest(pull.number, out["head_sha"], "main", pull.branch, 41, state="merged", merge_sha="m" * 40)
     rows = dispatcher.gc()
     assert rows == [{"worktree": out["worktree"], "branch": "team/41-anthropic", "pull": out["pr"], "merged": True, "removed": False,
-                     "skipped": ["commits_not_on_main"]}]       # «مدموج» في المشروع لكن إيداعَه ليس على origin/main بعد
+                     "skipped": ["commits_not_on_main"], "ignored": []}]   # «مدموج» في المشروع لكن إيداعَه ليس على origin/main بعد
     git("fetch", "-q", "origin", cwd=_repo)
     git("merge", "-q", "--ff-only", f"origin/{pull.branch}", cwd=_repo)
     git("push", "-q", "origin", "main", cwd=_repo)              # الآن لا مانعَ من الحذف سوى غياب --yes
@@ -350,3 +350,111 @@ def test_gc_refuses_to_delete_uncommitted_work_or_commits_not_on_main(tmp_path):
     (worktree / "notes.txt").unlink()
     rows = dispatcher.gc(yes=True)                              # ملفُّ التكليف غير المتتبَّع وحده لا يمنع
     assert rows[0]["removed"] is True and rows[0]["skipped"] is None and not worktree.exists()
+
+
+def _merged_for_real(dispatcher, project, repo):
+    """تشغيلٌ كامل ثم دمجٌ فعليّ على origin/main؛ يعيد (نسخة العمل، الطلب)."""
+    out = dispatcher.run(41, execute=True)
+    worktree, pull = Path(out["worktree"]), project.pulls[out["pr"]]
+    project.pulls[out["pr"]] = PullRequest(pull.number, out["head_sha"], "main", pull.branch, 41, state="merged", merge_sha="m" * 40)
+    git("fetch", "-q", "origin", cwd=repo)
+    git("merge", "-q", "--ff-only", f"origin/{pull.branch}", cwd=repo)
+    git("push", "-q", "origin", "main", cwd=repo)
+    return worktree, out
+
+
+def test_gc_refuses_to_delete_ignored_files_except_build_caches(tmp_path):
+    """المتجاهَلُ في git (`.env`، `var/`) لا تراه `status` العادية ويمحوه `remove --force`: مانعٌ مسمًّى؛ ومخابئُ التشغيل وحدها لا تمنع."""
+    dispatcher, project, _adapter, _ledger, repo = _setup(tmp_path)
+    worktree, _out = _merged_for_real(dispatcher, project, repo)
+    (repo / ".git" / "info" / "exclude").write_text(".env\nvar/\n__pycache__/\n", encoding="utf-8")
+    (worktree / "team" / "__pycache__").mkdir(parents=True)
+    (worktree / "team" / "__pycache__" / "x.cpython-312.pyc").write_bytes(b"\x00")
+    rows = dispatcher.gc(yes=False)
+    assert rows[0]["skipped"] is None and rows[0]["ignored"] == []            # مخبأٌ وحده: لا مانع
+    (worktree / ".env").write_text("SECRET=1\n", encoding="utf-8")
+    (worktree / "var").mkdir()
+    (worktree / "var" / "ledger.jsonl").write_text("{}\n", encoding="utf-8")
+    rows = dispatcher.gc(yes=True)
+    assert rows[0]["removed"] is False and rows[0]["skipped"] == ["ignored_files"] and worktree.exists()
+    assert sorted(rows[0]["ignored"]) == [".env", "var/ledger.jsonl"]
+    assert (worktree / ".env").exists()
+
+
+def test_gc_skips_a_worktree_whose_attempt_is_still_open(tmp_path):
+    """طلبُ الفرع مدموج والشجرةُ نظيفة، لكن السجلَّ يقول إن المحاولة جارية (عاملٌ حيّ): لا حذفَ تحت قدمَي العامل."""
+    dispatcher, project, _adapter, ledger, repo = _setup(tmp_path)
+    worktree, _out = _merged_for_real(dispatcher, project, repo)
+    assert dispatcher.gc(yes=False)[0]["skipped"] is None
+    live = TeamLedger(tmp_path / "home2" / "dispatch.jsonl", clock=ledger.clock)
+    live.append(41, "dispatched", brief_sha256="b" * 64, worker="claude", family="anthropic", branch="team/41-anthropic", worktree=str(worktree))
+    live.append(41, "claimed", pid=4194297, started_at="2026-10-06T10:00:00+00:00")
+    dispatcher.ledger = live
+    rows = dispatcher.gc(yes=True)
+    assert rows[0]["removed"] is False and rows[0]["skipped"] == ["attempt_open"] and worktree.exists()
+
+
+def test_an_empty_exit_file_is_outcome_unknown_not_success(tmp_path):
+    dispatcher, project, adapter, ledger, repo = _setup(tmp_path)
+    worktree, raw = _lost_launch(tmp_path, dispatcher, ledger, repo)
+    adapter.start(["fake-worker"], "", worktree, raw / "stdout.txt", raw / "stderr.txt", exit_path=raw / "exit")
+    (raw / "pid").write_text("4194297", encoding="utf-8")
+    ledger.append(41, "claimed", pid=4194297, started_at="2026-10-06T10:00:00+00:00")
+    (raw / "exit").write_text("", encoding="utf-8")                        # غلافٌ قُتل بين الاقتطاع والكتابة
+    out = dispatcher.resume(41)
+    assert out == {"status": "outcome_unknown", "reason": "exit_code_unreadable"}
+    assert ledger.last(41)["reason"] == "exit_code_unreadable" and project.pulls == {}
+
+
+def test_takeover_after_a_worker_that_committed_then_reported_failure(tmp_path):
+    """العاملُ أودع ثم خرج بغير صفر: رأسُ الفشل مسجَّل، فالاستحواذُ بعد الإيجار لا يتعثّر على «إيداعاتٍ جديدة»."""
+    dispatcher, _project, _adapter, ledger, _repo = _setup(tmp_path, behaviour="commit_fail")
+    assert dispatcher.run(41, execute=True)["status"] == "validation_failed"
+    dispatcher.clock = lambda: "2026-10-09T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    raw = dispatcher.raw_dir(41, 1)
+    (raw / "child_pid").write_text("4194298", encoding="utf-8")
+    out = dispatcher.takeover(41, owner_authorization="نفّذ")
+    assert out["status"] == "takeover" and out["proof"]["no_new_commits"] is True
+    assert ledger.open_attempt(41) is None
+
+
+def test_takeover_of_an_unconfirmed_launch_is_proven_by_the_absence_of_any_trace(tmp_path):
+    """إطلاقٌ لم يقع (لا معرّفَ، لا مخرج، وفحصه resume): غيابُه مثبَت، فلا يبقى مأزقًا بلا مخرج؛ وبايتٌ واحد في المخرج يُبطل الإثبات."""
+    dispatcher, _project, _adapter, ledger, repo = _setup(tmp_path)
+    _worktree, raw = _lost_launch(tmp_path, dispatcher, ledger, repo)
+    dispatcher.clock = lambda: "2026-10-09T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    with pytest.raises(Refusal) as exc:
+        dispatcher.takeover(41, owner_authorization="نفّذ")                 # لم يفحصه resume بعد
+    assert exc.value.code == "absence_not_proven"
+    assert dispatcher.resume(41)["reason"] == "launch_unconfirmed"
+    (raw / "stdout.txt").write_text("…", encoding="utf-8")
+    with pytest.raises(Refusal):
+        dispatcher.takeover(41, owner_authorization="نفّذ")                 # أثرٌ في المخرج: عاملٌ ما كتب شيئًا
+    (raw / "stdout.txt").unlink()
+    out = dispatcher.takeover(41, owner_authorization="نفّذ")
+    assert out["status"] == "takeover" and out["proof"]["never_launched"] is True
+    assert dispatcher.resume(41) == {"status": "taken_over", "attempt": 1}
+
+
+def test_a_wrapper_launch_failure_is_worker_unavailable_on_resume(tmp_path):
+    dispatcher, _project, _adapter, ledger, repo = _setup(tmp_path)
+    _worktree, raw = _lost_launch(tmp_path, dispatcher, ledger, repo)
+    (raw / "exit").write_text("127", encoding="utf-8")                      # الغلافُ لم يجد الثنائي ولم يكتب معرّفَ وكيل
+    out = dispatcher.resume(41)
+    assert out == {"status": "worker_unavailable", "code": "launch_failed"}
+    assert ledger.last(41)["code"] == "launch_failed" and ledger.main_state(41)["state"] == "dispatched"
+
+
+def test_validate_promotes_a_pending_pass_review_when_already_validated(tmp_path):
+    """سباقُ المراجعة والتحقق: المراجعةُ قُيّدت معلّقةً بعد validated، فيرقّيها validate التالي بدل مراجعةٍ ثانية مدفوعة."""
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    head = out["head_sha"]
+    project.checks_by_head[head] = "success"
+    dispatcher.validate(41)
+    assert ledger.main_state(41)["state"] == "validated"
+    ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1", reviewer="codex", reviewer_family="openai", verdict="pass")
+    dispatcher.validate(41)
+    assert ledger.main_state(41)["state"] == "verified"

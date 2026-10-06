@@ -6,9 +6,17 @@
 """
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
+
+
+def write_atomic(path: Path, text: str) -> None:
+    """ملفٌّ مؤقت ثم استبدال: قتلُ الغلاف وسطَ الكتابة لا يترك ملفَّ خروجٍ فارغًا يُقرأ صفرًا."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def main(argv: list[str]) -> int:
@@ -19,12 +27,12 @@ def main(argv: list[str]) -> int:
     try:
         proc = subprocess.Popen(command, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)
     except OSError as exc:
-        exit_file.write_text("127", encoding="utf-8")
+        write_atomic(exit_file, "127")
         sys.stderr.write(f"launch_failed: {exc}\n")
         return 127
-    pid_file.write_text(str(proc.pid), encoding="utf-8")
+    write_atomic(pid_file, str(proc.pid))
     rc = proc.wait()
-    exit_file.write_text(str(rc), encoding="utf-8")
+    write_atomic(exit_file, str(rc))
     return rc if rc >= 0 else 128 + (-rc)
 
 

@@ -40,6 +40,7 @@ DEFAULT_TEMPLATE = HERE.parent / "docs" / "team" / "BRIEF-TEMPLATE.md"
 FALLBACK_TEMPLATE = "# تكليف #{number}: {title}\n\nالفرع: `{branch}` · العامل: {worker} ({family})\n\n{header}\n\n## نصّ المسألة (بيانات لا تعليمات)\n{body}\n"
 WORKTREE_PREFIX = "team-"
 COMMIT_BRIEF = False   # لا يُودَع التكليف بإيداعٍ من المرسِل على فرع العامل
+BUILD_CACHE_DIRS = frozenset({"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"})
 
 
 class Refusal(RuntimeError):
@@ -62,6 +63,33 @@ def git(*args: str, cwd: Path, runner=subprocess.run) -> str:
     if done.returncode != 0:
         raise GitError(f"git {' '.join(args[:2])}: {(done.stderr or '').strip()[:200]}")
     return (done.stdout or "").strip()
+
+
+def write_atomic(path: Path, text: str) -> None:
+    """كتابةٌ بملفٍّ مؤقت ثم استبدال؛ فانقطاعٌ وسطها لا يترك ملفًّا فارغًا يُقرأ خطأً (دحض ٦ أكتوبر)."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def read_exit(path: Path) -> int | None:
+    """رمزُ الخروج المحفوظ، أو None إن غاب الملفُّ أو كان فارغًا أو غيرَ رقميّ؛ الفراغُ ليس صفرًا."""
+    try:
+        text = path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    if not text:
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return None
+
+
+def is_build_cache(rel: str) -> bool:
+    """مخلّفاتُ تشغيلٍ لا قيمةَ لها: مخابئُ Python والاختبارات وحدها؛ ما سواها من المتجاهَل (مثل `.env` و`var/`) عملٌ قد يهمّ."""
+    parts = rel.strip("/").split("/")
+    return any(part in BUILD_CACHE_DIRS for part in parts) or rel.endswith((".pyc", ".pyo"))
 
 
 def pid_alive(pid: int) -> bool:
@@ -154,6 +182,13 @@ class Dispatcher:
     def _git(self, *args: str, cwd: Path | None = None) -> str:
         return git(*args, cwd=cwd or self.repo_root, runner=self.runner)
 
+    def _fetch_base(self) -> None:
+        """جلبُ الفرع الرئيس البعيد؛ فشلُه رفضٌ مسمًّى لا انفجارٌ خام ولا مضيٌّ بمرجعٍ قديم."""
+        try:
+            self._git("fetch", self.remote, self.base_branch)
+        except GitError as exc:
+            raise Refusal("fetch_failed", f"{self.remote}/{self.base_branch}: {exc}") from exc
+
     # — الإذن والقواعد —
     def authorize(self, issue: Issue, owner_order: str | None) -> str:
         if owner_order and owner_order.strip():
@@ -199,7 +234,7 @@ class Dispatcher:
             raise Refusal("doctor_refused", ", ".join(report.get("findings") or []))
         if wt.exists():
             raise Refusal("worktree_exists", str(wt))
-        self._git("fetch", self.remote, self.base_branch)
+        self._fetch_base()
         base_sha = self._git("rev-parse", f"{self.remote}/{self.base_branch}")
         self.wt_root.mkdir(parents=True, exist_ok=True)
         self._git("worktree", "add", str(wt), "-b", branch, f"{self.remote}/{self.base_branch}")
@@ -228,7 +263,7 @@ class Dispatcher:
         except subprocess.TimeoutExpired:
             self.ledger.append(issue.number, "outcome_unknown", reason="timeout_worker_still_running", pid=int(proc.pid))
             return {"status": "outcome_unknown", "reason": "timeout", **plan}
-        (raw / "exit").write_text(str(rc), encoding="utf-8")     # رمزُ الخروج دليلٌ محفوظ؛ الاستئنافُ لا يختلقه
+        write_atomic(raw / "exit", str(rc))                      # رمزُ الخروج دليلٌ محفوظ؛ الاستئنافُ لا يختلقه
         return self._finish(issue, attempt, rc, raw, wt, branch, plan, self.adapter)
 
     def _finish(self, issue: Issue, attempt: int, rc: int | None, raw: Path, wt: Path, branch: str, plan: dict, adapter: Adapter) -> dict:
@@ -275,6 +310,8 @@ class Dispatcher:
         state = self.ledger.main_state(issue_number)
         if state is None or state["state"] not in ("completed", "validated", "verified"):
             raise Refusal("nothing_to_validate")
+        if self.ledger.open_attempt(issue_number) is None:
+            raise Refusal("nothing_to_validate", "المحاولةُ مستحوَذٌ عليها")
         completed = self.ledger.last_of(issue_number, "completed", state["attempt"])
         pull = self.project.pull(int(completed["pr"]))
         if pull.head_sha and pull.head_sha != completed["head_sha"]:
@@ -294,8 +331,11 @@ class Dispatcher:
         head = self.sync_head(issue_number)
         status = self.project.checks(head)
         if status == "success":
-            if self.ledger.main_state(issue_number)["state"] == "completed":
+            state = self.ledger.main_state(issue_number)["state"]
+            if state == "completed":
                 self.ledger.append(issue_number, "validated", head_sha=head, checks_ref=f"checks:{head}")
+            # مراجعةٌ ناجحة سبقت الفحوصَ أو تزامنت معها (قُيّدت بعد validated) تُرقّى هنا لا بمراجعةٍ ثانية مدفوعة
+            if self.ledger.main_state(issue_number)["state"] == "validated":
                 pending = self.latest_review(issue_number, head)
                 if pending and pending["state"] == "reviewed_awaiting_validation" and pending.get("verdict") == "pass":
                     self.ledger.append(issue_number, "verified", head_sha=head, review_ref=pending["review_ref"],
@@ -329,7 +369,7 @@ class Dispatcher:
         self.ledger.append(issue_number, "accepted", head_sha=state["head_sha"], merge_sha=merge)
         return {"status": "accepted", "merge_sha": merge}
 
-    def _recover_claim(self, issue_number: int, dispatched: dict) -> dict | None:
+    def _recover_claim(self, issue_number: int, dispatched: dict) -> dict:
         """المرسِل انقطع بين إطلاق العامل وقيد `claimed`: ملفُّ معرّف الغلاف (يكتبه المرسِل) أو معرّف الوكيل (يكتبه الغلاف نفسه)
         يشهد أن الإطلاق وقع، فيُقيَّد `claimed` بأثرٍ رجعي ويُستكمل الاستئناف. وبلا شاهدٍ يبقى الإطلاق مجهولًا `launch_unconfirmed`
         فلا تنفيذَ ثانيًا (ملاحظة Codex السابعة على #344)."""
@@ -342,9 +382,13 @@ class Dispatcher:
                     pids[name] = int(path.read_text(encoding="utf-8").strip() or 0)
                 except ValueError:
                     pids[name] = 0
+        if read_exit(raw / "exit") == 127 and "child_pid" not in pids:
+            # الغلافُ لم يستطع إطلاق الوكيل (team/adapters/_wrap.py): لا عاملَ هنا أصلًا
+            self.ledger.append(issue_number, "worker_unavailable", code="launch_failed", returncode=127)
+            return {"status": "worker_unavailable", "code": "launch_failed"}
         if not any(pids.values()):
             self.ledger.append(issue_number, "outcome_unknown", reason="launch_unconfirmed")
-            return None
+            return {"status": "outcome_unknown", "reason": "launch_unconfirmed"}
         pid = pids.get("pid") or pids.get("child_pid")
         self.ledger.append(issue_number, "claimed", pid=int(pid), started_at=dispatched["at"], started_at_basis="dispatched_at",
                            child_pid=pids.get("child_pid"), recovered_by="resume")
@@ -354,10 +398,12 @@ class Dispatcher:
         state = self.ledger.main_state(issue_number)
         if state is None:
             raise Refusal("nothing_to_resume")
+        if state["state"] != "accepted" and self.ledger.open_attempt(issue_number) is None:
+            return {"status": "taken_over", "attempt": state["attempt"]}      # محاولةٌ مستحوَذٌ عليها لا تُستأنف
         if state["state"] == "dispatched":
             state = self._recover_claim(issue_number, state)
-            if state is None:
-                return {"status": "outcome_unknown", "reason": "launch_unconfirmed"}
+            if "state" not in state:
+                return state
         if state["state"] != "claimed":
             return {"status": state["state"], "attempt": state["attempt"]}
         pid = int(state.get("pid") or 0)
@@ -374,10 +420,15 @@ class Dispatcher:
             # العاملُ غاب ولم يُحفظ رمزُ خروجه: وجودُ إيداعاتٍ لا يثبت نجاحَه (ملاحظة Codex على #344)
             self.ledger.append(issue_number, "outcome_unknown", reason="worker_gone_without_exit_code")
             return {"status": "outcome_unknown", "reason": "worker_gone_without_exit_code"}
+        rc = read_exit(exit_file)
+        if rc is None:
+            # ملفٌّ فارغ أو غيرُ رقميّ ليس خروجًا صفرًا: انقطاعٌ وسطَ الكتابة لا يصنع إنجازًا (دحض ٦ أكتوبر)
+            self.ledger.append(issue_number, "outcome_unknown", reason="exit_code_unreadable")
+            return {"status": "outcome_unknown", "reason": "exit_code_unreadable"}
         branch = dispatched.get("branch") or self.branch_for(issue_number, state["attempt"])
         plan = {"issue": issue_number, "branch": branch, "brief_sha256": dispatched.get("brief_sha256", ""), "worktree": str(wt)}
         adapter = self.adapter_for(dispatched.get("worker"))
-        return self._finish(self.project.issue(issue_number), state["attempt"], int(exit_file.read_text().strip() or 0), raw, wt, branch, plan, adapter)
+        return self._finish(self.project.issue(issue_number), state["attempt"], rc, raw, wt, branch, plan, adapter)
 
     def takeover(self, issue_number: int, *, owner_authorization: str) -> dict:
         state = self.ledger.main_state(issue_number)
@@ -385,7 +436,9 @@ class Dispatcher:
             raise Refusal("nothing_to_take_over")
         dispatched = self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}
         wt = Path(dispatched.get("worktree", ""))
-        last_head = state.get("head_sha") or dispatched.get("base_sha")
+        failed = self.ledger.last_of(issue_number, "validation_failed", state["attempt"]) or {}
+        # آخرُ رأسٍ عرفناه: رأسُ الحالة الرئيسة، أو رأسُ فشلٍ مسجَّل (عاملٌ أودع ثم أعلن فشله)، أو قاعدةُ التكليف
+        last_head = state.get("head_sha") or failed.get("head_sha") or dispatched.get("base_sha")
         try:
             head_now = self._git("rev-parse", "HEAD", cwd=wt) if wt.exists() else last_head
         except GitError:
@@ -404,38 +457,77 @@ class Dispatcher:
                 pids.append(int(path.read_text(encoding="utf-8").strip() or 0))
         known = [p for p in pids if p > 0]
         child_known = (raw / "child_pid").exists()
-        # معرّفٌ مجهول ليس إثباتَ غياب: لا يُثبت الغيابُ إلا إن عُرف معرّفُ الوكيل نفسِه ولم يعد حيًّا هو ولا غلافُه
-        proof = {"no_process": bool(known) and child_known and not any(pid_alive(p) for p in known),
+        never_launched = self._never_launched(issue_number, state, raw, known, child_known)
+        # معرّفٌ مجهول ليس إثباتَ غياب: لا يُثبت الغيابُ إلا إن عُرف معرّفُ الوكيل نفسِه ولم يعد حيًّا هو ولا غلافُه؛
+        # أو ثبت أن الإطلاقَ لم يقع أصلًا (never_launched) فلا عاملَ يُسأل عنه
+        proof = {"no_process": never_launched or (bool(known) and child_known and not any(pid_alive(p) for p in known)),
                  "no_session": tmux_session_present(f"team-{issue_number}-", self.runner) in (False, None),
-                 "no_new_commits": head_now == last_head}
-        if not all(proof.values()):
+                 "no_new_commits": head_now == last_head, "never_launched": never_launched}
+        if not all(proof[key] for key in ("no_process", "no_session", "no_new_commits")):
             raise Refusal("absence_not_proven", json.dumps(proof))
         if not owner_authorization.strip():
             raise Refusal("owner_authorization_missing")
         self.ledger.append(issue_number, "takeover", lease_expired_at=now, absence_proof=proof, owner_authorization=owner_authorization)
         return {"status": "takeover", "proof": proof}
 
-    def gc_blockers(self, path: Path, branch: str) -> list[str]:
-        """ما يمنع حذفَ نسخة عملٍ طلبُها مدموج: تعديلٌ أو ملفٌّ غير محفوظ (سوى ملفِّ التكليف غير المتتبَّع)، أو إيداعٌ ليس على
-        الفرع الرئيس البعيد. دمجُ الطلب لا يثبت أن محتوى النسخة الحالي قابلٌ للحذف (ملاحظة Codex الثامنة على #344)."""
-        blockers = []
+    def _never_launched(self, issue_number: int, state: dict, raw: Path, known: list[int], child_known: bool) -> bool:
+        """إطلاقٌ لم يقع: التكليفُ لم يُدَّعَ قطّ، ولا معرّفَ غلافٍ ولا وكيل (الغلافُ يكتب معرّفَ الوكيل فور إطلاقه)، ولا بايتَ
+        في مخرجه، وقد فحصه `resume` فقيّد `launch_unconfirmed` أو `launch_failed`. هذا غيرُ «معرّفٍ مجهول» لعاملٍ ادُّعي
+        (دحض ٦ أكتوبر: مأزقٌ بلا مخرج)."""
+        if state["state"] != "dispatched" or known or child_known:
+            return False
+        stdout = raw / "stdout.txt"
+        if stdout.exists() and stdout.stat().st_size > 0:
+            return False
+        unknown = self.ledger.last_of(issue_number, "outcome_unknown", state["attempt"]) or {}
+        unavailable = self.ledger.last_of(issue_number, "worker_unavailable", state["attempt"]) or {}
+        return unknown.get("reason") == "launch_unconfirmed" or unavailable.get("code") == "launch_failed"
+
+    def gc_blockers(self, path: Path, branch: str) -> tuple[list[str], list[str]]:
+        """ما يمنع حذفَ نسخة عملٍ طلبُها مدموج: محاولةٌ ما زالت جارية في السجلّ، أو تعديلٌ أو ملفٌّ غير محفوظ (سوى ملفِّ التكليف
+        غير المتتبَّع)، أو ملفٌّ متجاهَل في git ليس مخبأَ تشغيل (`.env`، `var/`، سجلّات… فـ`worktree remove --force` يمحوها
+        وgit لا يعدّها عملًا)، أو إيداعٌ ليس على الفرع الرئيس البعيد. دمجُ الطلب لا يثبت أن محتوى النسخة قابلٌ للحذف
+        (ملاحظة Codex الثامنة على #344، ودحض ٦ أكتوبر). يعيد (الموانع، المتجاهَلُ المعنيّ)."""
+        blockers: list[str] = []
+        ignored: list[str] = []
         match = re.match(r"^team/(\d+)-", branch)
-        brief = f"docs/team/briefs/{match.group(1)}.md" if match else None
+        issue = int(match.group(1)) if match else None
+        brief = f"docs/team/briefs/{issue}.md" if issue is not None else None
+        if issue is not None:
+            open_attempt = self.ledger.open_attempt(issue)
+            if open_attempt is not None and open_attempt["state"] in ("dispatched", "claimed"):
+                blockers.append("attempt_open")
+        done = self.runner(["git", "-C", str(path), "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored"],
+                           capture_output=True, text=True)
+        if done.returncode != 0:
+            return ["status_unreadable"], ignored
+        dirty = False
+        for entry in (done.stdout or "").split("\0"):     # -z: لا اقتطاعَ لفراغٍ أوّل ولا التباسَ في الأسماء
+            if len(entry) < 4:
+                continue
+            code, rel = entry[:2], entry[3:]
+            if code == "??" and rel == brief:
+                continue                                 # ملفُّ التكليف غير المتتبَّع وحده مستثنًى، وبحالته تلك فقط
+            if code == "!!":
+                if not is_build_cache(rel):
+                    ignored.append(rel)
+                continue
+            dirty = True
+        if dirty:
+            blockers.append("uncommitted_changes")
+        if ignored:
+            blockers.append("ignored_files")
         try:
-            status = self._git("status", "--porcelain", "--untracked-files=all", cwd=path)
-            dirty = [line for line in status.splitlines() if line.strip() and line[3:].strip() != brief]
-            if dirty:
-                blockers.append("uncommitted_changes")
             self._git("merge-base", "--is-ancestor", "HEAD", f"{self.remote}/{self.base_branch}", cwd=path)
-        except GitError as exc:
-            blockers.append("commits_not_on_main" if "merge-base" in str(exc) else "status_unreadable")
-        return blockers
+        except GitError:
+            blockers.append("commits_not_on_main")
+        return blockers, ignored
 
     def gc(self, *, yes: bool = False) -> list[dict]:
         found = []
         if not self.wt_root.exists():
             return found
-        self._git("fetch", self.remote, self.base_branch)
+        self._fetch_base()
         for path in sorted(self.wt_root.iterdir()):
             if not path.is_dir() or not path.name.startswith(WORKTREE_PREFIX):
                 continue
@@ -443,13 +535,13 @@ class Dispatcher:
             pull = self.project.pull_for_branch(branch)
             merged = bool(pull and pull.state == "merged")
             row = {"worktree": str(path), "branch": branch, "pull": pull.number if pull else None, "merged": merged, "removed": False,
-                   "skipped": None}
+                   "skipped": None, "ignored": []}
             if merged:
-                blockers = self.gc_blockers(path, branch)
+                blockers, row["ignored"] = self.gc_blockers(path, branch)
                 if blockers:
                     row["skipped"] = blockers
                 elif yes:
-                    self._git("worktree", "remove", "--force", str(path))   # القوّةُ لملفِّ التكليف غير المتتبَّع وحده؛ ما سواه فُحص
+                    self._git("worktree", "remove", "--force", str(path))   # القوّةُ لملفِّ التكليف غير المتتبَّع ومخابئ التشغيل وحدها
                     row["removed"] = True
             found.append(row)
         return found
@@ -496,6 +588,9 @@ def main(argv: list[str] | None = None) -> int:
             out = getattr(dispatcher, args.command)(args.issue)
     except (Refusal, TransitionError) as exc:
         print(json.dumps({"status": "refused", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
+        return 2
+    except GitError as exc:
+        print(json.dumps({"status": "refused", "code": "git_error", "detail": str(exc)}, ensure_ascii=False))
         return 2
     print(json.dumps(out, ensure_ascii=False, indent=1, default=str))
     return 0

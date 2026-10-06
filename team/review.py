@@ -140,10 +140,14 @@ class Reviewer:
             raise Refusal("merge_base_failed", (done.stderr or "")[:200])
         return done.stdout.strip()
 
-    def _detached_worktree(self, pull: PullRequest, tmp: Path) -> Path:
+    def _fetch_branch(self, pull: PullRequest) -> None:
+        """جلبُ فرع الطلب أولًا: رأسٌ تقدّم بعيدًا (تصحيحٌ دُفع من جهازٍ آخر أو «تحديثُ الفرع») ليس في المخزن المحلي بعد،
+        وحسابُ نقطة التفرّع عليه يفشل بلا هذا الجلب (دحض ٦ أكتوبر)."""
         done = self.runner(["git", "-C", str(self.repo_root), "fetch", self.remote, pull.branch], capture_output=True, text=True)
         if done.returncode != 0:
             raise Refusal("fetch_failed", (done.stderr or "")[:200])
+
+    def _detached_worktree(self, pull: PullRequest, tmp: Path) -> Path:
         done = self.runner(["git", "-C", str(self.repo_root), "worktree", "add", "--detach", str(tmp), pull.head_sha], capture_output=True, text=True)
         if done.returncode != 0:
             raise Refusal("worktree_failed", (done.stderr or "")[:200])
@@ -161,8 +165,11 @@ class Reviewer:
         family = adapter.spec.family
         state = None if issue is None else self.ledger.main_state(issue)
         completed = None if state is None else self.ledger.last_of(issue, "completed", state["attempt"])
-        # الربطُ بالطلب لا برقم المسألة وحده: طلبُ محاولةٍ سابقة (بعد استحواذ) لا يمسّ المحاولةَ الجارية (ملاحظة Codex السابعة على #344)
+        dispatched = {} if state is None else (self.ledger.last_of(issue, "dispatched", state["attempt"]) or {})
+        # الربطُ بالطلب لا برقم المسألة وحده: طلبُ محاولةٍ سابقة (بعد استحواذ) لا يمسّ المحاولةَ الجارية (ملاحظة Codex السابعة على #344)؛
+        # ولا `completed` بعدُ (المرسِل انقطع بعد فتح الطلب) فالطلبُ على فرع التكليف نفسِه هو طلبُ المحاولة الجارية
         current = completed is not None and completed.get("pr") == pull.number
+        current = current or (completed is None and bool(pull.branch) and dispatched.get("branch") == pull.branch)
         if issue is None or state is None or not current:
             stale_attempt = 0 if (issue is None or state is None) else self.attempt_of_pull(issue, pull.number)
             self.ledger.append(issue or 0, "external_review", pr=pull.number, head_sha=head, review_ref=ref,
@@ -206,6 +213,7 @@ class Reviewer:
         tried = []
         with tempfile.TemporaryDirectory(prefix="team-review-") as tmpdir:
             tmp = Path(tmpdir) / "wt"
+            self._fetch_branch(pull)                      # رأسُ الطلب في المخزن المحلي قبل حساب نقطة التفرّع
             base_sha = self.merge_base(pull)              # قبل نسخة العمل: رفضُ الجلب لا يترك نسخةً معلّقة
             self._detached_worktree(pull, tmp)
             try:

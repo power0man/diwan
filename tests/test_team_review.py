@@ -203,3 +203,32 @@ def test_a_failed_fetch_of_the_base_branch_refuses_the_review(tmp_path):
     assert exc.value.code == "fetch_failed" and "origin/main" in exc.value.detail
     assert project.comments == [] and ledger.main_state(41)["state"] == "validated" and ledger.last(41)["state"] == "validated"
     assert "team-review-" not in git("worktree", "list", cwd=reviewer.repo_root)
+
+
+def test_the_review_fetches_the_pull_branch_before_the_merge_base(tmp_path):
+    """رأسُ الطلب موجودٌ في origin وحده (دُفع من نسخةٍ أخرى): المراجعةُ تجلبه قبل حساب نقطة التفرّع ولا ترفض `merge_base_failed`."""
+    reviewer, project, _adapters, _ledger = _setup(tmp_path, issue=None)
+    other = tmp_path / "other"
+    subprocess.run(["git", "clone", "-q", str(tmp_path / "origin.git"), str(other)], check=True, capture_output=True)
+    git("checkout", "-q", "team/41-anthropic", cwd=other)
+    (other / "y.txt").write_text("y\n", encoding="utf-8")
+    git("add", "y.txt", cwd=other)
+    git("commit", "-q", "-m", "تصحيح\n\nDiwan-Agent: anthropic/claude-fable-5-1", cwd=other)
+    git("push", "-q", "origin", "team/41-anthropic", cwd=other)
+    head = git("rev-parse", "HEAD", cwd=other)
+    old = project.pulls[9]
+    project.pulls[9] = PullRequest(9, head, "main", old.branch, None, commit_messages=old.commit_messages, url=old.url)
+    assert subprocess.run(["git", "cat-file", "-e", head], cwd=str(reviewer.repo_root), capture_output=True).returncode != 0
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "external_review" and out["head_sha"] == head and project.comments
+
+
+def test_a_review_of_the_current_attempt_s_pull_while_claimed_is_awaiting_validation(tmp_path):
+    """المرسِل انقطع بعد فتح الطلب وقبل `completed`: الطلبُ على فرع التكليف نفسِه طلبُ المحاولة الجارية، لا طلبٌ خارجيّ."""
+    reviewer, project, _adapters, ledger = _setup(tmp_path)
+    ledger.append(41, "dispatched", brief_sha256="b" * 64, worker="claude", family="anthropic", branch="team/41-anthropic")
+    ledger.append(41, "claimed", pid=1, started_at="2026-10-06T10:00:00+00:00")
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "reviewed_awaiting_validation"
+    record = ledger.last(41)
+    assert record["state"] == "reviewed_awaiting_validation" and record["attempt"] == 1 and record["head_sha"] == project.pulls[9].head_sha

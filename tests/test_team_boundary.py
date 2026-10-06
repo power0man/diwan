@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TEAM = ROOT / "team"
 DIWAN_SPECIFIC = TEAM / "projects" / "diwan.py"
 FORBIDDEN_ROOTS = ("tools", "registry", "evaluation", "agent", "conversation", "services", "webui", "providers", "nodes")
-ALLOWED_CORE = {"core.ledger", "core.quoted", "core.canonical"}
+ALLOWED_CORE = {"core.ledger", "core.quoted", "core.canonical", "core.filelock"}
 MERGE_WORDS = re.compile(r"pr merge|release create|push --force|push -f\b|merge --no-verify")
 
 
