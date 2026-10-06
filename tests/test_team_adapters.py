@@ -160,3 +160,16 @@ def test_the_wrapper_marks_a_failed_exec_as_launch_failed(tmp_path):
     proc = adapter.start([str(tmp_path / "nonexistent-agent")], "", tmp_path, raw / "out", raw / "err", exit_path=raw / "exit")
     assert proc.wait(timeout=60) == 127 and (raw / "exit").read_text() == "127"
     assert (raw / "launch_failed").read_text().strip() == str(errno.ENOENT) and (raw / "child_pid").exists()
+
+
+def test_the_wrapper_records_its_own_pid_first_and_refuses_to_release_after_a_takeover(tmp_path):
+    """غلافٌ تأخّر حتى استُحوذ على المحاولة لا يطلق وكيلًا: علامةُ `taken_over` قبل الإذن تُخرج الابنَ بلا تنفيذ (125)؛
+    ومعرّفُ الغلاف نفسِه يُكتب أوّلًا فيُفحص حيًّا عند الاستحواذ (ملاحظة Codex على #347)."""
+    adapter = ClaudeAdapter(binary=tmp_path / "claude")
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    (raw / "taken_over").write_text("2026-10-07T00:00:00+00:00", encoding="utf-8")
+    marker = tmp_path / "ran"
+    proc = adapter.start(["/bin/sh", "-c", f"echo ran > '{marker}'"], "", tmp_path, raw / "out", raw / "err", exit_path=raw / "exit")
+    assert proc.wait(timeout=60) == 125 and (raw / "exit").read_text() == "125" and not marker.exists()
+    assert (raw / "wrapper_pid").read_text().strip() == str(proc.pid) and (raw / "child_pid").exists()

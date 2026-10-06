@@ -1,6 +1,7 @@
 """المرسِل الأدنى على مستودعٍ مؤقت ومحوِّلٍ مصطنع: لا أثرَ في الخطة، ورفضٌ مسمًّى، وحَجرٌ، ودورةٌ كاملة، ونتيجةٌ مجهولة لا تُعاد."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -471,3 +472,21 @@ def test_the_documented_commands_parse_with_worker_after_the_subcommand():
     args = parser.parse_args(["gc", "--repo-root", "/x", "--yes"])
     assert args.repo_root == "/x" and args.yes is True
     assert parser.parse_args(["resume", "7", "--worker", "codex"]).worker == "codex"
+
+
+def test_a_live_wrapper_without_a_child_pid_is_not_absence_and_takeover_leaves_a_marker(tmp_path):
+    """غلافٌ حيّ (أو موقوف) كتب معرّفَه ولم يكتب معرّفَ وكيله بعد: ليس «إطلاقًا لم يقع»؛ وبعد موته يُستحوذ وتُكتب علامةُ
+    `taken_over` التي يفحصها الغلافُ قبل الإذن (ملاحظة Codex على #347)."""
+    dispatcher, _project, _adapter, ledger, repo = _setup(tmp_path)
+    _worktree, raw = _lost_launch(tmp_path, dispatcher, ledger, repo)
+    assert dispatcher.resume(41)["reason"] == "launch_unconfirmed"
+    dispatcher.clock = lambda: "2026-10-09T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    (raw / "wrapper_pid").write_text(str(os.getpid()), encoding="utf-8")          # غلافٌ حيّ: عمليةُ الاختبار نفسُها
+    with pytest.raises(Refusal) as exc:
+        dispatcher.takeover(41, owner_authorization="نفّذ")
+    assert exc.value.code == "absence_not_proven" and not (raw / "taken_over").exists()
+    (raw / "wrapper_pid").write_text("4194297", encoding="utf-8")                 # الغلافُ مات قبل أن يشطر
+    out = dispatcher.takeover(41, owner_authorization="نفّذ")
+    assert out["status"] == "takeover" and out["proof"]["never_launched"] is True
+    assert (raw / "taken_over").read_text(encoding="utf-8") == "2026-10-09T11:00:00+00:00"

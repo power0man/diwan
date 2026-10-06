@@ -257,3 +257,35 @@ def test_a_pull_whose_head_is_already_on_main_is_nothing_to_review(tmp_path):
     with pytest.raises(rv.Refusal) as exc:
         reviewer.review(9, execute=True)
     assert exc.value.code == "nothing_to_review" and project.comments == [] and ledger.records() == []
+
+
+def test_a_merged_pull_whose_branch_was_deleted_is_still_reviewable(tmp_path):
+    """بعد الدمج يُحذف الفرعُ عادةً: رأسُ الطلب يصل مع الفرع الرئيس (أبو الدمج الثاني) فلا يرفض `fetch_failed` (ملاحظة Codex على #347)."""
+    reviewer, project, adapters, _ledger = _setup(tmp_path, issue=None)
+    other = tmp_path / "other"
+    subprocess.run(["git", "clone", "-q", str(tmp_path / "origin.git"), str(other)], check=True, capture_output=True)
+    git("checkout", "-q", "team/41-anthropic", cwd=other)
+    (other / "y.txt").write_text("y\n", encoding="utf-8")
+    git("add", "y.txt", cwd=other)
+    git("commit", "-q", "-m", "تصحيح\n\nDiwan-Agent: anthropic/claude-fable-5-1", cwd=other)
+    head = git("rev-parse", "HEAD", cwd=other)
+    git("checkout", "-q", "main", cwd=other)
+    base_before = git("rev-parse", "HEAD", cwd=other)
+    git("merge", "-q", "--no-ff", "-m", "دمج", "team/41-anthropic", cwd=other)
+    merge_sha = git("rev-parse", "HEAD", cwd=other)
+    git("push", "-q", "origin", "main", cwd=other)
+    git("push", "-q", "origin", "--delete", "team/41-anthropic", cwd=other)
+    old = project.pulls[9]
+    project.pulls[9] = PullRequest(9, head, "main", old.branch, None, commit_messages=old.commit_messages, state="merged",
+                                   merge_sha=merge_sha, url=old.url)
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "external_review" and out["head_sha"] == head
+    assert base_before[:12] in adapters["codex"].seen[-1]["prompt"]
+
+
+def test_the_temporary_worktree_path_is_not_published_in_the_comment(tmp_path):
+    reviewer, project, adapters, _ledger = _setup(tmp_path, issue=None)
+    adapters["codex"].review_text = "ملاحظة في [x.txt:1](/private/tmp/team-review-abc/wt/x.txt:1) و/private/tmp/team-review-abc/wt/y.py\nالحكم: صامد"
+    body = rv.q75_comment(adapters["codex"], "a" * 40, "pass", adapters["codex"].review_text, [], "openai/codex",
+                          strip_paths=("/private/tmp/team-review-abc/wt",))
+    assert "/private/tmp/team-review-abc" not in body and "[x.txt:1](x.txt:1)" in body and "y.py" in body

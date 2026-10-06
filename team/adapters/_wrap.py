@@ -5,6 +5,8 @@
 البروتوكول: `fork` ثم ينتظر الابنُ بايتَ إذنٍ على أنبوبٍ قبل `exec`؛ والأبُ يكتب معرّفَ الابن ذرّيًّا ثم يرسل الإذن. فإن مات الأبُ قبل
 الكتابة أُغلق الأنبوبُ وخرج الابنُ بلا تنفيذ (125). ومن ثَمّ: **لا ملفَّ معرّفٍ ⇐ لا وكيلَ نُفّذ قطّ**، فغيابُ الأثر إثباتُ غيابٍ
 لا مجرّدُ غيابِ دليل (ملاحظة Codex التاسعة على #344). فشلُ `exec` (ثنائيٌّ غائب) يُكتب 127 مع علامة `launch_failed`.
+وقبل ذلك كلِّه يكتب الغلافُ معرّفَه هو (`wrapper_pid`) فيُفحص حيًّا أو موقوفًا عند الاستحواذ؛ وقبل الإذن مباشرةً يفحص علامةَ
+`taken_over` التي يكتبها `takeover`، فغلافٌ تأخّر أو أُوقف ثم عاد بعد الاستحواذ لا يطلق وكيلًا ثانيًا (ملاحظة Codex على #347).
 المدخلُ (stdin) يُورَّث إلى الوكيل كما هو. POSIX وحده (`os.fork`).
 """
 from __future__ import annotations
@@ -62,12 +64,20 @@ def main(argv: list[str]) -> int:
         sys.stderr.write("usage: _wrap <exit_file> <child_pid_file> -- <command...>\n")
         return 64
     exit_file, pid_file, command = Path(argv[0]), Path(argv[1]), argv[3:]
+    write_atomic(pid_file.with_name("wrapper_pid"), str(os.getpid()))
     pid, go_w, err_r = fork_agent(command)
     try:
         write_atomic(pid_file, str(pid))
     except BaseException:
         os.close(go_w)                             # لا إذن: يخرج الابنُ بلا تنفيذ
         raise
+    if pid_file.with_name("taken_over").exists():
+        os.close(go_w)                             # استُحوذ على المحاولة قبل أن نأذن: لا تنفيذَ ثانيًا
+        os.close(err_r)
+        _, status = os.waitpid(pid, 0)
+        write_atomic(exit_file, str(NOT_RELEASED))
+        sys.stderr.write("taken_over: الوكيلُ لم يُطلَق\n")
+        return NOT_RELEASED
     release(go_w)
     err = b""
     while True:

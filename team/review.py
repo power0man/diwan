@@ -77,9 +77,13 @@ def is_calibrated(calibration: dict, reviewer: str, now_iso: str, days: int = CA
         return False
 
 
-def q75_comment(adapter: Adapter, head_sha: str, verdict: str, text: str, codes: list[str], agent_id: str, base_sha: str = "") -> str:
+def q75_comment(adapter: Adapter, head_sha: str, verdict: str, text: str, codes: list[str], agent_id: str, base_sha: str = "",
+                strip_paths: tuple[str, ...] = ()) -> str:
     quarantined = quarantine(text or "")
     body = quarantined.text.strip()
+    for prefix in strip_paths:                      # مسارُ النسخة المؤقتة على الجهاز لا يُنشر في التعليق
+        if prefix:
+            body = body.replace(prefix.rstrip("/") + "/", "").replace(prefix, "")
     if len(body) > MAX_COMMENT_CHARS:
         body = body[:MAX_COMMENT_CHARS] + "\n…(اقتُطع)"
     marks = sorted({f.code for f in quarantined.findings} | set(codes))
@@ -152,8 +156,16 @@ class Reviewer:
         """جلبُ فرع الطلب أولًا: رأسٌ تقدّم بعيدًا (تصحيحٌ دُفع من جهازٍ آخر أو «تحديثُ الفرع») ليس في المخزن المحلي بعد،
         وحسابُ نقطة التفرّع عليه يفشل بلا هذا الجلب (دحض ٦ أكتوبر)."""
         done = self.runner(["git", "-C", str(self.repo_root), "fetch", self.remote, pull.branch], capture_output=True, text=True)
-        if done.returncode != 0:
-            raise Refusal("fetch_failed", (done.stderr or "")[:200])
+        if done.returncode == 0:
+            return
+        if pull.state == "merged":
+            # فرعٌ حُذف بعد الدمج: رأسُه يصل مع الفرع الرئيس (أبو الدمج الثاني)؛ وإن لم يصل (دمجٌ ضغطًا) رفضٌ مسمًّى (ملاحظة Codex على #347)
+            self.runner(["git", "-C", str(self.repo_root), "fetch", self.remote, pull.base_branch], capture_output=True, text=True)
+            have = self.runner(["git", "-C", str(self.repo_root), "cat-file", "-e", f"{pull.head_sha}^{{commit}}"], capture_output=True, text=True)
+            if have.returncode == 0:
+                return
+            raise Refusal("head_unreachable", f"فرعُ الطلب محذوف ورأسُه {pull.head_sha[:12]} ليس في المخزن ولا يصل مع {pull.base_branch}")
+        raise Refusal("fetch_failed", (done.stderr or "")[:200])
 
     def _detached_worktree(self, pull: PullRequest, tmp: Path) -> Path:
         done = self.runner(["git", "-C", str(self.repo_root), "worktree", "add", "--detach", str(tmp), pull.head_sha], capture_output=True, text=True)
@@ -245,7 +257,8 @@ class Reviewer:
                         if pull.issue is not None and self.ledger.main_state(pull.issue) is not None:
                             self.ledger.append(pull.issue, "reviewer_unavailable", code=code, reviewer=name, pr=pull.number)
                         continue
-                    body = q75_comment(adapter, pull.head_sha, result.verdict, result.text, [], self.agent_ids.get(name, name), base_sha=base_sha)
+                    body = q75_comment(adapter, pull.head_sha, result.verdict, result.text, [], self.agent_ids.get(name, name), base_sha=base_sha,
+                                       strip_paths=(str(tmp),))
                     ref = self.project.comment(pull.number, body)
                     recorded = self._record(pull, adapter, pull.head_sha, ref, result.verdict)
                     return {"status": recorded, "reviewer": name, "verdict": result.verdict, "review_ref": ref, "tried": tried, **plan}

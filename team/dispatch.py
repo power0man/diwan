@@ -451,7 +451,7 @@ class Dispatcher:
             self.ledger.append(issue_number, "expired", last_activity_at=last_activity)
         raw = self.raw_dir(issue_number, state["attempt"])
         pids = [int(state.get("pid") or 0)]
-        for name in ("pid", "child_pid"):                 # معرّفُ الغلاف ومعرّفُ الوكيل نفسِه (ملاحظة Codex على #344)
+        for name in ("pid", "child_pid", "wrapper_pid"):  # معرّفُ الغلاف (من المرسِل ومن الغلاف نفسِه) ومعرّفُ الوكيل (ملاحظة Codex على #344 و#347)
             path = raw / name
             if path.exists():
                 pids.append(int(path.read_text(encoding="utf-8").strip() or 0))
@@ -467,6 +467,8 @@ class Dispatcher:
             raise Refusal("absence_not_proven", json.dumps(proof))
         if not owner_authorization.strip():
             raise Refusal("owner_authorization_missing")
+        raw.mkdir(parents=True, exist_ok=True)
+        write_atomic(raw / "taken_over", now)          # غلافٌ متأخّر يراها قبل الإذن فلا يطلق وكيلًا (ملاحظة Codex على #347)
         self.ledger.append(issue_number, "takeover", lease_expired_at=now, absence_proof=proof, owner_authorization=owner_authorization)
         return {"status": "takeover", "proof": proof}
 
@@ -475,8 +477,10 @@ class Dispatcher:
         `launch_unconfirmed` أو `launch_failed`. وغيابُ ملفِّ المعرّف إثباتٌ لا مجرّدُ غياب دليل، لأن الغلافَ (`team/adapters/_wrap.py`)
         يحفظ معرّفَ الوكيل **قبل** أن يأذن له بالتنفيذ، ومن مات غلافُه قبل الكتابة خرج بلا تنفيذ. هذا غيرُ «معرّفٍ مجهول»
         لعاملٍ ادُّعي (دحض ٦ أكتوبر: مأزقٌ بلا مخرج؛ وملاحظة Codex التاسعة)."""
-        if state["state"] != "dispatched" or known or child_known:
+        if state["state"] != "dispatched" or child_known:
             return False
+        if known and any(pid_alive(p) for p in known):
+            return False                                # غلافٌ حيّ أو موقوف لم يكتب معرّفَ وكيله بعد: ليس غيابًا
         stdout = raw / "stdout.txt"
         if stdout.exists() and stdout.stat().st_size > 0:
             return False
