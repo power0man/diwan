@@ -93,25 +93,25 @@
 | النموذج | الرخصة | المصدر |
 |---|---|---|
 | `CohereLabs/c4ai-command-a-03-2025` | cc-by-nc-4.0 | https://huggingface.co/CohereLabs/c4ai-command-a-03-2025 (2026-10-05) |
-| `command-r7b-arabic:7b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
+| `command-r7b-arabic:7b` | cc-by-nc-4.0 | https://ollama.com/library/command-r7b-arabic:7b (2026-10-06) |
 | `deepseek-ai/DeepSeek-V3-0324` | mit | https://huggingface.co/deepseek-ai/DeepSeek-V3-0324 (2026-10-05) |
 | `deepseek-ai/DeepSeek-V4-Flash-0731` | mit | https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731 (2026-10-05) |
-| `deepseek-v4-flash:cloud` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
-| `deepseek-v4.1-flash:cloud` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
+| `deepseek-v4-flash:cloud` | تنتظر القراءة: `ollama_show_failed_tag_retired_upstream_on_the_mac` | — |
+| `deepseek-v4.1-flash:cloud` | تنتظر القراءة: `ollama_show_license_returned_empty_text_on_the_mac` | — |
 | `easyocr` | apache-2.0 | https://github.com/JaidedAI/EasyOCR/blob/v1.7.2/LICENSE (2026-10-05) |
-| `gemma3:12b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
-| `gemma4:latest` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
+| `gemma3:12b` | تنتظر القراءة: `ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word` | — |
+| `gemma4:latest` | apache-2.0 | https://ollama.com/library/gemma4:latest (2026-10-06) |
 | `inception42/Jais-2-8B-Chat-GGUF` | apache-2.0 | https://huggingface.co/inception42/Jais-2-8B-Chat-GGUF (2026-10-05) |
-| `llama3.1:8b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
+| `llama3.1:8b` | llama3.1 | https://ollama.com/library/llama3.1:8b (2026-10-06) |
 | `meta-llama/Llama-3.1-8B-Instruct` | llama3.1 | https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct (2026-10-05) |
 | `meta-llama/Llama-3.3-70B-Instruct` | llama3.3 | https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct (2026-10-05) |
 | `microsoft/phi-4` | mit | https://huggingface.co/microsoft/phi-4 (2026-10-05) |
-| `minicpm-v:8b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
-| `mistral-large-3:675b-cloud` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
-| `qwen2.5vl:7b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
-| `qwen3-embedding:0.6b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
-| `qwen3.5:9b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
-| `qwen3:14b` | تنتظر القراءة: `read_with_ollama_show_license_on_the_mac` | — |
+| `minicpm-v:8b` | تنتظر القراءة: `ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word` | — |
+| `mistral-large-3:675b-cloud` | تنتظر القراءة: `ollama_show_license_returned_empty_text_on_the_mac` | — |
+| `qwen2.5vl:7b` | تنتظر القراءة: `ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word` | — |
+| `qwen3-embedding:0.6b` | تنتظر القراءة: `ollama_show_license_returned_empty_text_on_the_mac` | — |
+| `qwen3.5:9b` | apache-2.0 | https://ollama.com/library/qwen3.5:9b (2026-10-06) |
+| `qwen3:14b` | apache-2.0 | https://ollama.com/library/qwen3:14b (2026-10-06) |
 | `tesseract` | apache-2.0 | https://github.com/tesseract-ocr/tesseract/blob/5.3.4/LICENSE (2026-10-05) |
 
 ## أوزانُ النماذج

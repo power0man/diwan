@@ -42,6 +42,17 @@ def test_a_pending_entry_names_its_reason_and_carries_nothing_else():
         "entry_not_an_object:d", "pending_without_a_named_reason:a", "pending_without_a_named_reason:b"]
 
 
+@pytest.mark.parametrize("reason", [
+    "ollama_show_license_returned_empty_text_on_the_mac",
+    "ollama_show_failed_tag_retired_upstream_on_the_mac",
+    "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word",
+])
+def test_a_mac_reading_that_yielded_no_license_stays_pending_by_what_happened(reason):
+    """قراءةُ ٦ أكتوبر على الماك: نصٌّ فارغ، أو وسمٌ متقاعد، أو وسمٌ لم يُسحب؛ كلٌّ سببٌ مسمًّى لا السببُ العام، وما سواه يُرفض."""
+    assert ml.findings(_registry(a={"pending": reason}), {}, None) == []
+    assert ml.findings(_registry(a={"pending": reason + "_x"}), {}, None) == ["pending_without_a_named_reason:a"]
+
+
 def test_new_evidence_cannot_name_a_model_whose_license_was_not_read():
     old = {"date": "2026-10-05", "engine": {"model": "qwen3.5:9b"}}
     new = {"date": "2026-10-06T08:00:00+00:00", "engine": {"model": "qwen3.5:9b"}}

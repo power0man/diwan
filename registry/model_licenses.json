@@ -9,7 +9,12 @@
       "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"
     },
     "command-r7b-arabic:7b": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "license": "cc-by-nc-4.0",
+      "source": "https://ollama.com/library/command-r7b-arabic:7b",
+      "read_on": "2026-10-06",
+      "read_via": "ollama_show_license_on_the_mac",
+      "license_text_sha256": "cbb1fc25a9846aaa0537833812e43a6d28561d1cfebb0045e8cd05f463f1c358",
+      "ollama_list_id": "4bbe3353e56a"
     },
     "deepseek-ai/DeepSeek-V3-0324": {
       "license": "mit",
@@ -24,10 +29,10 @@
       "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"
     },
     "deepseek-v4-flash:cloud": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "pending": "ollama_show_failed_tag_retired_upstream_on_the_mac"
     },
     "deepseek-v4.1-flash:cloud": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "pending": "ollama_show_license_returned_empty_text_on_the_mac"
     },
     "easyocr": {
       "license": "apache-2.0",
@@ -62,10 +67,15 @@
       ]
     },
     "gemma3:12b": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "pending": "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word"
     },
     "gemma4:latest": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "license": "apache-2.0",
+      "source": "https://ollama.com/library/gemma4:latest",
+      "read_on": "2026-10-06",
+      "read_via": "ollama_show_license_on_the_mac",
+      "license_text_sha256": "7382b1cf711e7a7c7af9816e0e07b49b91e7149b7c6d347225f98800fcb1f1c2",
+      "ollama_list_id": "c6eb396dbd59"
     },
     "inception42/Jais-2-8B-Chat-GGUF": {
       "license": "apache-2.0",
@@ -74,7 +84,12 @@
       "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"
     },
     "llama3.1:8b": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "license": "llama3.1",
+      "source": "https://ollama.com/library/llama3.1:8b",
+      "read_on": "2026-10-06",
+      "read_via": "ollama_show_license_on_the_mac",
+      "license_text_sha256": "f1cd752815fcf68c3c2e73b2b00b5396c5dffb9eebe49567573f275f9ec85fcd",
+      "ollama_list_id": "46e0c10c039e"
     },
     "meta-llama/Llama-3.1-8B-Instruct": {
       "license": "llama3.1",
@@ -95,22 +110,32 @@
       "read_via": "hugging_face_hub_model_metadata_via_the_session_connector"
     },
     "minicpm-v:8b": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "pending": "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word"
     },
     "mistral-large-3:675b-cloud": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "pending": "ollama_show_license_returned_empty_text_on_the_mac"
     },
     "qwen2.5vl:7b": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "pending": "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word"
     },
     "qwen3-embedding:0.6b": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "pending": "ollama_show_license_returned_empty_text_on_the_mac"
     },
     "qwen3.5:9b": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "license": "apache-2.0",
+      "source": "https://ollama.com/library/qwen3.5:9b",
+      "read_on": "2026-10-06",
+      "read_via": "ollama_show_license_on_the_mac",
+      "license_text_sha256": "7382b1cf711e7a7c7af9816e0e07b49b91e7149b7c6d347225f98800fcb1f1c2",
+      "ollama_list_id": "6488c96fa5fa"
     },
     "qwen3:14b": {
-      "pending": "read_with_ollama_show_license_on_the_mac"
+      "license": "apache-2.0",
+      "source": "https://ollama.com/library/qwen3:14b",
+      "read_on": "2026-10-06",
+      "read_via": "ollama_show_license_on_the_mac",
+      "license_text_sha256": "b87250e4478f8f0673bc61cd397e402ac33ca3a6f23a7ad9512618ab33f18fbe",
+      "ollama_list_id": "bdbd181c33f2"
     },
     "tesseract": {
       "license": "apache-2.0",
