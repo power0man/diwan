@@ -167,11 +167,12 @@ class Dispatcher:
     def worktree_for(self, issue: int, attempt: int = 1) -> Path:
         return self.wt_root / f"{WORKTREE_PREFIX}{issue}-{self.family}{self._suffix(attempt)}"
 
-    def _doctor(self) -> dict:
+    def _doctor(self, adapter: Adapter | None = None) -> dict:
+        """الطبيبُ يفحص العاملَ الذي سيُطلق فعلًا (محوِّلَ سطر الأوامر في `run`، والمحوِّلَ المسجَّل في `revise`)، لا غيرَه."""
         if self.doctor_check is not None:
             return self.doctor_check()
         from team.doctor import PINS_FILE, check
-        return check([self.adapter], self.home / PINS_FILE)
+        return check([adapter or self.adapter], self.home / PINS_FILE)
 
     def raw_dir(self, issue: int, attempt: int) -> Path:
         return self.home / "raw" / str(issue) / f"attempt-{attempt}"
@@ -525,9 +526,13 @@ class Dispatcher:
         else:
             raise Refusal("nothing_to_revise", "لا مراجعةَ رافضة ولا فحوصَ ساقطة على رأس الطلب الحالي")
         rounds = self.revision_rounds(issue_number, attempt)
-        pending = self._unfinished_round(issue_number, attempt, rounds)
-        if pending is not None:
-            return pending
+        if execute:
+            # قبل أيّ إطلاق: جولةٌ أُطلقت ولم تُقيَّد (انقطع المرسِل بين الإطلاق والقيد) تُستعاد من ملفّات معرّفاتها، ثم جولةٌ غيرُ مختومة
+            # تُختم أو تُرفض `revision_running`؛ ولا شيءَ من ذلك في خطةٍ بلا أثر (ملاحظاتُ Codex على #349)
+            rounds = self._recover_unrecorded_round(issue_number, attempt, rounds)
+            pending = self._unfinished_round(issue_number, attempt, rounds)
+            if pending is not None:
+                return pending
         if len(rounds) >= max_rounds:
             if execute:
                 self.ledger.append(issue_number, "refused", code="revision_rounds_exhausted", rounds=len(rounds), head_sha=head)
@@ -550,8 +555,8 @@ class Dispatcher:
                 "head_sha": head, "worker": adapter.spec.name, "brief_sha256": brief_sha,
                 "quarantine_codes": sorted({f.code for f in review.findings}), "worktree": str(wt)}
         if not execute:
-            return {"status": "dry_run", **plan}
-        report = self._doctor()             # الطبيبُ قبل كل جولة
+            return {"status": "dry_run", "rounds_so_far": len(rounds), **plan}
+        report = self._doctor(adapter)      # الطبيبُ قبل كل جولة، على العامل المسجَّل لا على محوِّل سطر الأوامر
         if report.get("status") != "passed":
             self.ledger.append(issue_number, "refused", code="doctor_refused", findings=report.get("findings") or [])
             raise Refusal("doctor_refused", ", ".join(report.get("findings") or []))
@@ -573,24 +578,47 @@ class Dispatcher:
         write_atomic(raw / "exit", str(rc))
         return self._finish_revision(issue_number, attempt, round_no, rc, raw, wt, head, adapter, plan)
 
+    def _recover_unrecorded_round(self, issue_number: int, attempt: int, rounds: list[dict]) -> list[dict]:
+        """مجلّدُ جولةٍ على القرص بلا قيدٍ لها: المرسِلُ انقطع بين الإطلاق والقيد. يُقيَّد `revision_started` بأثرٍ رجعي من ملفّات
+        المعرّفات (كما يستعيد `resume` قيدَ `claimed`)، فلا يُعاد استعمالُ المجلّد ولا يُطلق عاملٌ ثانٍ فوق عاملٍ قد يكون حيًّا."""
+        round_no = len(rounds) + 1
+        raw = self.raw_dir(issue_number, attempt) / f"revision-{round_no}"
+        pids = {name: int((raw / name).read_text(encoding="utf-8").strip() or 0) for name in ("pid", "child_pid", "wrapper_pid") if (raw / name).exists()}
+        if not any(pids.values()):
+            return rounds
+        kept = self.home / "briefs" / f"{issue_number}-a{attempt}-r{round_no}.md"
+        brief_sha = sha256_text(kept.read_text(encoding="utf-8")) if kept.exists() else "unrecorded"
+        self.ledger.append(issue_number, "revision_started", round=round_no, pid=int(pids.get("pid") or pids.get("child_pid") or pids.get("wrapper_pid")),
+                           started_at=self.clock(), brief_sha256=brief_sha, reason_ref="unrecorded", recovered_by="revise", child_pid=pids.get("child_pid"))
+        return self.revision_rounds(issue_number, attempt)
+
+    def _round_alive(self, last: dict, raw: Path) -> bool:
+        pids = [int(last.get("pid") or 0), int(last.get("child_pid") or 0)]
+        for name in ("pid", "child_pid", "wrapper_pid"):
+            if (raw / name).exists():
+                pids.append(int((raw / name).read_text(encoding="utf-8").strip() or 0))
+        return any(pid_alive(p) for p in pids if p > 0)
+
     def _unfinished_round(self, issue_number: int, attempt: int, rounds: list[dict]) -> dict | None:
-        """جولةٌ بدأت ولم تُختم (انقطع المرسِل): إن حُفظ خروجُها خُتمت الآن، وإن كان عاملُها حيًّا رُفض الإطلاقُ الثاني."""
+        """جولةٌ بدأت ولم تُختم: الخاتمةُ `completed` أو `validation_failed` أو `worker_unavailable` **لا** `outcome_unknown`، فالمهلةُ
+        تقيّد الأخيرةَ والعاملُ ما زال يعمل. عاملٌ حيّ ⇐ `revision_running`؛ خروجٌ محفوظ ⇐ تُختم الآن؛ وإلا نتيجةٌ مجهولة مرّةً واحدة."""
         if not rounds:
             return None
         last = rounds[-1]
         records = self.ledger.records(issue_number)
-        index = next(i for i, r in enumerate(records) if r is last or (r["state"] == "revision_started" and r.get("round") == last["round"] and r.get("attempt") == attempt))
-        after = [r for r in records[index + 1:] if r.get("attempt") == attempt
-                 and r["state"] in ("completed", "validation_failed", "outcome_unknown", "worker_unavailable")]
-        if after:
+        index = next(i for i, r in enumerate(records) if r["state"] == "revision_started" and r.get("round") == last["round"] and r.get("attempt") == attempt)
+        later = [r for r in records[index + 1:] if r.get("attempt") == attempt]
+        if any(r["state"] in ("completed", "validation_failed", "worker_unavailable") for r in later):
             return None
         raw = self.raw_dir(issue_number, attempt) / f"revision-{last['round']}"
-        if pid_alive(int(last.get("pid") or 0)):
+        if self._round_alive(last, raw):
             raise Refusal("revision_running", f"الجولة {last['round']} ما زالت تعمل (pid {last.get('pid')})")
         rc = read_exit(raw / "exit")
         if rc is None:
+            if any(r["state"] == "outcome_unknown" for r in later):
+                return {"status": "outcome_unknown", "reason": "revision_gone_without_exit_code", "round": last["round"]}
             self.ledger.append(issue_number, "outcome_unknown", reason="revision_gone_without_exit_code", round=last["round"])
-            return {"status": "outcome_unknown", "reason": "revision_gone_without_exit_code"}
+            return {"status": "outcome_unknown", "reason": "revision_gone_without_exit_code", "round": last["round"]}
         dispatched = self.ledger.last_of(issue_number, "dispatched", attempt) or {}
         head = (self.ledger.last_of(issue_number, "completed", attempt) or {}).get("head_sha", "")
         adapter = self.adapter_for(dispatched.get("worker"))

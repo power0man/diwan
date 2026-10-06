@@ -597,3 +597,77 @@ def test_a_revision_without_new_commits_is_a_named_failure(tmp_path):
     done = dispatcher.revise(41, execute=True)
     assert done["status"] == "validation_failed" and done["reason"] == "revision_no_commits"
     assert ledger.main_state(41)["head_sha"] == out["head_sha"] and ledger.last(41)["reason"] == "revision_no_commits"
+
+
+def test_a_timed_out_revision_whose_worker_still_runs_blocks_a_second_round(tmp_path):
+    """المهلةُ تقيّد outcome_unknown والعاملُ حيّ: ليست خاتمةً، فـrevise التالي يُرفض `revision_running` لا يطلق جولةً ثانية."""
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    ledger.append(41, "revision_started", round=1, pid=os.getpid(), started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1")
+    ledger.append(41, "outcome_unknown", reason="timeout_revision_still_running", pid=os.getpid(), round=1)
+    with pytest.raises(Refusal) as exc:
+        dispatcher.revise(41, execute=True)
+    assert exc.value.code == "revision_running"
+    raw = dispatcher.raw_dir(41, 1) / "revision-1"
+    raw.mkdir(parents=True, exist_ok=True)
+    (raw / "exit").write_text("0", encoding="utf-8")
+    ledger.append(41, "revision_started", round=1, pid=4194297, started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1") if False else None
+    # العاملُ انتهى لاحقًا (مات وحفظ خروجَه) بلا إيداعٍ جديد: تُختم الجولةُ باسمها لا تُعاد
+    records = [r for r in ledger.records(41) if r["state"] == "revision_started"]
+    assert len(records) == 1
+    dispatcher2 = Dispatcher(project=project, adapter=dispatcher.adapter, ledger=ledger, repo_root=dispatcher.repo_root, home=dispatcher.home,
+                             wt_root=dispatcher.wt_root, clock=dispatcher.clock, doctor_check=dispatcher.doctor_check)
+    import team.dispatch as dm
+    alive = dm.pid_alive
+    dm.pid_alive = lambda pid: False
+    try:
+        done = dispatcher2.revise(41, execute=True)
+    finally:
+        dm.pid_alive = alive
+    assert done["status"] == "validation_failed" and done["reason"] == "revision_no_commits" and done["round"] == 1
+
+
+def test_a_revision_launched_but_not_recorded_is_recovered_not_relaunched(tmp_path):
+    """انقطع المرسِل بين إطلاق الجولة وقيدها: مجلّدُ `revision-1` بمعرّفاته يُستعاد قيدًا، وعاملُه الحيّ يمنع إطلاقًا ثانيًا."""
+    dispatcher, project, adapter, ledger, _repo = _setup(tmp_path)
+    _out, _ref = _rejected(dispatcher, project, ledger)
+    raw = dispatcher.raw_dir(41, 1) / "revision-1"
+    raw.mkdir(parents=True)
+    (raw / "pid").write_text(str(os.getpid()), encoding="utf-8")
+    launched_before = len(adapter.seen)
+    with pytest.raises(Refusal) as exc:
+        dispatcher.revise(41, execute=True)
+    assert exc.value.code == "revision_running" and len(adapter.seen) == launched_before
+    started = ledger.last_of(41, "revision_started")
+    assert started["round"] == 1 and started["recovered_by"] == "revise" and started["pid"] == os.getpid()
+
+
+def test_a_dry_run_revise_never_pushes_or_writes(tmp_path):
+    dispatcher, project, _adapter, ledger, repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    ledger.append(41, "revision_started", round=1, pid=4194297, started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1")
+    raw = dispatcher.raw_dir(41, 1) / "revision-1"
+    raw.mkdir(parents=True, exist_ok=True)
+    (raw / "exit").write_text("0", encoding="utf-8")                  # جولةٌ انتهت ولم تُختم
+    before = len(ledger.records(41))
+    remote_before = git("rev-parse", f"origin/{out['branch']}", cwd=repo)
+    plan = dispatcher.revise(41)
+    assert plan["status"] == "dry_run" and plan["rounds_so_far"] == 1
+    assert len(ledger.records(41)) == before and git("rev-parse", f"origin/{out['branch']}", cwd=repo) == remote_before
+
+
+def test_the_doctor_checks_the_recorded_worker_before_a_revision(tmp_path, monkeypatch):
+    dispatcher, project, adapter, ledger, _repo = _setup(tmp_path)
+    _out, _ref = _rejected(dispatcher, project, ledger)
+    dispatched = ledger.last_of(41, "dispatched")
+    ledger.append(41, "refused", code="note", worker_override="codex")          # لا أثرَ له؛ نبدّل العاملَ المسجَّل عبر المحوِّلات
+    codex = FakeAdapter(name="codex", family="openai")
+    dispatcher.adapters = {"codex": codex}
+    # نجعل العاملَ المسجَّل codex بتبديل قيد dispatched في الذاكرة عبر محوِّلٍ يعيد الاسم المسجَّل
+    monkeypatch.setattr(dispatcher, "adapter_for", lambda worker: codex)
+    seen = []
+    import team.doctor as doctor
+    monkeypatch.setattr(doctor, "check", lambda adapters, pins: (seen.extend(a.spec.name for a in adapters), {"status": "passed", "findings": []})[1])
+    dispatcher.doctor_check = None
+    dispatcher.revise(41, execute=True)
+    assert seen == ["codex"], seen
