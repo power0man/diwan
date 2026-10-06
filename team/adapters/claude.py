@@ -74,9 +74,12 @@ class ClaudeAdapter(Adapter):
     def parse_review(self, returncode: int, stdout: str, stderr: str) -> ReviewResult:
         try:
             payload = json.loads(stdout.strip().splitlines()[-1]) if stdout.strip() else {}
-            text = str(payload.get("result") or "") if isinstance(payload, dict) else stdout
         except (json.JSONDecodeError, IndexError):
-            text = stdout
-        unavailable = unavailable_code(returncode, f"{stdout}\n{stderr}") if returncode != 0 else None
-        return ReviewResult(ok=returncode == 0 and unavailable is None, verdict=parse_verdict(text), text=text,
+            payload = {}
+        if not isinstance(payload, dict):
+            payload = {}
+        text = str(payload.get("result") or "") if payload else stdout
+        failed_review = returncode != 0 or bool(payload.get("is_error"))      # خطأُ الدخول بخروجٍ صفر تعذّرٌ لا مراجعة
+        unavailable = unavailable_code(returncode, f"{stdout}\n{stderr}") if failed_review else None
+        return ReviewResult(ok=not failed_review and unavailable is None, verdict=parse_verdict(text), text=text,
                             returncode=returncode, unavailable=unavailable)

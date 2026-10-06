@@ -12,6 +12,7 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -26,9 +27,10 @@ UNAVAILABLE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("quota_exhausted", re.compile(r"(?i)usage limit|rate limit|quota|too many requests|\b429\b|couldn't complete this request|try again later")),
     ("auth_required", re.compile(r"(?i)not logged in|unauthorized|\b401\b|please (?:log|sign) in|authentication")),
 )
-# سطرُ حكمٍ قائمٌ بذاته (أوّلُ السطر وآخرُه)؛ العبارةُ المقتبسة وسط سطرٍ لا تُحتسب (ملاحظة Codex على #344)
-VERDICT = re.compile(r"^[ \t*_>-]*الحكم\s*[:：]\s*(صامد|يحتاج تصحيحًا|يحتاج تصحيحا|مرفوض|pass|revise|reject)[ \t.*_]*$",
-                     re.IGNORECASE | re.MULTILINE)
+# سطرُ حكمٍ قائمٌ بذاته: هو **آخرُ** سطرٍ غير فارغ في النص، بلا بادئة اقتباس (>)؛ فلا عبارةٌ مقتبسة ولا مثالٌ منقول يُحتسب
+# (ملاحظات Codex على #344)
+VERDICT = re.compile(r"^[ \t*_]*الحكم\s*[:：]\s*(صامد|يحتاج تصحيحًا|يحتاج تصحيحا|مرفوض|pass|revise|reject)[ \t.*_]*$",
+                     re.IGNORECASE)
 VERDICT_MAP = {"صامد": "pass", "pass": "pass", "يحتاج تصحيحًا": "revise", "يحتاج تصحيحا": "revise", "revise": "revise",
                "مرفوض": "reject", "reject": "reject"}
 
@@ -68,11 +70,14 @@ def unavailable_code(returncode: int, text: str) -> str | None:
 
 
 def parse_verdict(text: str) -> str:
-    """الحكمُ من **آخر** سطر حكمٍ في النص؛ فالاقتباسُ («مثال: الحكم: صامد») لا يطغى على الحكم الختامي (ملاحظة Codex على #344)."""
-    matches = VERDICT.findall(text or "")
-    if not matches:
+    """الحكمُ من آخر سطرٍ غير فارغ **وحده**؛ ردٌّ لا يختم بسطر حكمٍ قائمٍ بذاته حكمُه «غير معروف» ولا يُحتسب قبولًا."""
+    tail = [line for line in (text or "").splitlines() if line.strip()]
+    if not tail:
         return "unknown"
-    last = matches[-1]
+    match = VERDICT.match(tail[-1])
+    if not match:
+        return "unknown"
+    last = match.group(1)
     return VERDICT_MAP[last.lower() if last.isascii() else last]
 
 
@@ -134,16 +139,17 @@ class Adapter:
     def start(self, argv: list[str], stdin_text: str, cwd: Path, stdout_path: Path, stderr_path: Path, exit_path: Path | None = None):
         """يطلق العمليةَ ويعيد مقبضَها (له pid وwait وpoll)؛ المدخلُ عبر stdin لا عبر الأمر.
 
-        مع `exit_path` يُلفّ الأمرُ بغلاف shell يكتب رمزَ الخروج في الملف عند انتهاء العامل، فلا يعتمد الدليلُ على بقاء المرسِل حيًّا
-        حتى النهاية (مهلةٌ أو انقطاع؛ ملاحظة Codex على #344)."""
+        مع `exit_path` يُلفّ الأمرُ بغلافٍ يكتب معرّفَ الوكيل في `child_pid` ورمزَ خروجه في `exit` عند انتهائه، فلا يعتمد
+        الدليلُ على بقاء المرسِل حيًّا حتى النهاية (مهلةٌ أو انقطاع؛ ملاحظتا Codex على #344)."""
         assert_no_bypass(argv)
         stdout_path.parent.mkdir(parents=True, exist_ok=True)
         out = stdout_path.open("w", encoding="utf-8")
         err = stderr_path.open("w", encoding="utf-8")
         env = worker_env()
         if exit_path is not None:
-            env["DIWAN_TEAM_EXIT_FILE"] = str(exit_path)
-            argv = ["/bin/sh", "-c", '"$@"; rc=$?; printf %s "$rc" > "$DIWAN_TEAM_EXIT_FILE"; exit $rc', "team-worker", *argv]
+            # غلافُ Python يسجّل معرّفَ الوكيل نفسِه (لا معرّفَ الغلاف) ورمزَ خروجه؛ انظر team/adapters/_wrap.py
+            argv = [sys.executable, "-m", "team.adapters._wrap", str(exit_path), str(exit_path.with_name("child_pid")), "--", *argv]
+            env["PYTHONPATH"] = str(Path(__file__).resolve().parents[2])
         proc = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=out, stderr=err, cwd=str(cwd), env=env, text=True)
         assert proc.stdin is not None
         proc.stdin.write(stdin_text)

@@ -93,11 +93,25 @@ def test_a_quoted_verdict_inside_a_sentence_is_not_a_verdict():
     assert base.parse_verdict("ملاحظات…\n**الحكم: صامد**") == "pass"
 
 
-def test_the_shell_wrapper_records_the_exit_code_without_the_dispatcher(tmp_path):
+def test_the_wrapper_records_the_child_pid_and_exit_code_without_the_dispatcher(tmp_path):
     adapter = ClaudeAdapter(binary=tmp_path / "claude")
     exit_path = tmp_path / "raw" / "exit"
-    proc = adapter.start(["/bin/sh", "-c", "exit 3"], "", tmp_path, tmp_path / "raw" / "out", tmp_path / "raw" / "err", exit_path=exit_path)
-    assert proc.wait(timeout=30) == 3 and exit_path.read_text() == "3"
+    proc = adapter.start(["/bin/sh", "-c", "echo $$ > \"$0\"; exit 3", str(tmp_path / "raw" / "self_pid")], "", tmp_path,
+                         tmp_path / "raw" / "out", tmp_path / "raw" / "err", exit_path=exit_path)
+    assert proc.wait(timeout=60) == 3 and exit_path.read_text() == "3"
+    child = (tmp_path / "raw" / "child_pid").read_text().strip()
+    assert child == (tmp_path / "raw" / "self_pid").read_text().strip() and child != str(proc.pid)
+
+
+def test_the_verdict_must_be_the_final_unquoted_line():
+    assert base.parse_verdict("الحكم: صامد\nلم أتمكن من إكمال المراجعة") == "unknown"
+    assert base.parse_verdict("> الحكم: صامد") == "unknown"
+
+
+def test_a_claude_review_with_a_login_error_is_unavailability(tmp_path):
+    adapter = ClaudeAdapter(binary=tmp_path / "claude")
+    result = adapter.parse_review(0, json.dumps({"is_error": True, "result": "Not logged in · Please run /login"}), "")
+    assert not result.ok and result.unavailable == "auth_required"
 
 
 def test_a_login_error_with_a_zero_exit_is_unavailability_not_failure(tmp_path):

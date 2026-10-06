@@ -358,12 +358,16 @@ class Dispatcher:
             raise Refusal("lease_active", f"آخر نشاط {last_activity}")
         if self.ledger.last_of(issue_number, "expired", state["attempt"]) is None:
             self.ledger.append(issue_number, "expired", last_activity_at=last_activity)
-        pid = int(state.get("pid") or 0)
-        if not pid:
-            pidfile = self.raw_dir(issue_number, state["attempt"]) / "pid"
-            pid = int(pidfile.read_text(encoding="utf-8").strip() or 0) if pidfile.exists() else 0
-        # معرّفٌ مجهول ليس إثباتَ غياب: لا يُثبت الغيابُ إلا لمعرّفٍ معلومٍ لم يعد حيًّا (ملاحظة Codex على #344)
-        proof = {"no_process": pid > 0 and not pid_alive(pid),
+        raw = self.raw_dir(issue_number, state["attempt"])
+        pids = [int(state.get("pid") or 0)]
+        for name in ("pid", "child_pid"):                 # معرّفُ الغلاف ومعرّفُ الوكيل نفسِه (ملاحظة Codex على #344)
+            path = raw / name
+            if path.exists():
+                pids.append(int(path.read_text(encoding="utf-8").strip() or 0))
+        known = [p for p in pids if p > 0]
+        child_known = (raw / "child_pid").exists()
+        # معرّفٌ مجهول ليس إثباتَ غياب: لا يُثبت الغيابُ إلا إن عُرف معرّفُ الوكيل نفسِه ولم يعد حيًّا هو ولا غلافُه
+        proof = {"no_process": bool(known) and child_known and not any(pid_alive(p) for p in known),
                  "no_session": tmux_session_present(f"team-{issue_number}-", self.runner) in (False, None),
                  "no_new_commits": head_now == last_head}
         if not all(proof.values()):

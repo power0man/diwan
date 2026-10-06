@@ -169,6 +169,10 @@ class FakeAdapter(Adapter):
         self.seen.append({"argv": argv, "brief": stdin_text, "cwd": str(cwd)})
         stdout_path.parent.mkdir(parents=True, exist_ok=True)
         stderr_path.write_text("", encoding="utf-8")
+        rc = -9 if self.behaviour == "killed" else (1 if self.behaviour == "commit_fail" else 0)
+        if exit_path is not None:                     # ما يكتبه الغلاف الحقيقي: معرّفُ الوكيل ثم رمزُ خروجه
+            exit_path.with_name("child_pid").write_text("4194298", encoding="utf-8")
+            exit_path.write_text(str(rc), encoding="utf-8")
         if self.behaviour == "killed":
             stdout_path.write_text("", encoding="utf-8")
             return FakeProc(pid=4242, returncode=-9)
