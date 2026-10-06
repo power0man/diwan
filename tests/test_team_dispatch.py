@@ -507,3 +507,26 @@ def test_a_platform_failure_in_the_dispatch_cli_is_a_named_unavailability(tmp_pa
     rc = dm.main(["run", "345", "--repo-root", str(repo)])
     out = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert rc == 3 and out["status"] == "project_unavailable" and out["code"] == "gh_failed"
+
+
+def test_takeover_writes_its_marker_before_checking_absence_and_removes_it_when_refused(tmp_path, monkeypatch):
+    """سباقُ الغلاف المتأخّر: العلامةُ تُكتب قبل فحص الغياب فيراها غلافٌ يبلغ فحصَها بعد ذلك، ومن سبقها ترك معرّفاته فيُرفض
+    الاستحواذ وتُزال العلامة (ملاحظة Codex الثانية على #347)."""
+    from team import dispatch as dm
+
+    dispatcher, _project, _adapter, ledger, repo = _setup(tmp_path)
+    _worktree, raw = _lost_launch(tmp_path, dispatcher, ledger, repo)
+    assert dispatcher.resume(41)["reason"] == "launch_unconfirmed"
+    dispatcher.clock = lambda: "2026-10-09T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    seen = []
+    real = dm.pid_alive
+    monkeypatch.setattr(dm, "pid_alive", lambda pid: (seen.append((raw / "taken_over").exists()), real(pid))[1])
+    (raw / "wrapper_pid").write_text(str(os.getpid()), encoding="utf-8")          # غلافٌ حيّ كتب معرّفَه قبل الفحص
+    with pytest.raises(Refusal) as exc:
+        dispatcher.takeover(41, owner_authorization="نفّذ")
+    assert exc.value.code == "absence_not_proven"
+    assert seen and all(seen), "العلامةُ لم تكن موجودةً وقت فحص الغياب"
+    assert not (raw / "taken_over").exists(), "الرفضُ يزيل العلامة"
+    (raw / "wrapper_pid").write_text("4194297", encoding="utf-8")
+    assert dispatcher.takeover(41, owner_authorization="نفّذ")["status"] == "takeover" and (raw / "taken_over").exists()

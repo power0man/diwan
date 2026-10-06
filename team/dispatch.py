@@ -450,6 +450,19 @@ class Dispatcher:
         if self.ledger.last_of(issue_number, "expired", state["attempt"]) is None:
             self.ledger.append(issue_number, "expired", last_activity_at=last_activity)
         raw = self.raw_dir(issue_number, state["attempt"])
+        raw.mkdir(parents=True, exist_ok=True)
+        marker = raw / "taken_over"
+        # العلامةُ **قبل** فحص الغياب لا بعده: غلافٌ يبلغ فحصَ العلامة بعد هذه اللحظة يراها فلا يأذن؛ ومن بلغه قبلها كان قد كتب
+        # معرّفاته فيراها فحصُ الغياب أدناه ويُرفض الاستحواذ وتُزال العلامة (ملاحظة Codex الثانية على #347)
+        write_atomic(marker, now)
+        try:
+            return self._takeover_checked(issue_number, state, dispatched, raw, head_now, last_head, now, owner_authorization)
+        except Refusal:
+            marker.unlink(missing_ok=True)
+            raise
+
+    def _takeover_checked(self, issue_number: int, state: dict, dispatched: dict, raw: Path, head_now, last_head, now: str,
+                          owner_authorization: str) -> dict:
         pids = [int(state.get("pid") or 0)]
         for name in ("pid", "child_pid", "wrapper_pid"):  # معرّفُ الغلاف (من المرسِل ومن الغلاف نفسِه) ومعرّفُ الوكيل (ملاحظة Codex على #344 و#347)
             path = raw / name
@@ -467,8 +480,6 @@ class Dispatcher:
             raise Refusal("absence_not_proven", json.dumps(proof))
         if not owner_authorization.strip():
             raise Refusal("owner_authorization_missing")
-        raw.mkdir(parents=True, exist_ok=True)
-        write_atomic(raw / "taken_over", now)          # غلافٌ متأخّر يراها قبل الإذن فلا يطلق وكيلًا (ملاحظة Codex على #347)
         self.ledger.append(issue_number, "takeover", lease_expired_at=now, absence_proof=proof, owner_authorization=owner_authorization)
         return {"status": "takeover", "proof": proof}
 
