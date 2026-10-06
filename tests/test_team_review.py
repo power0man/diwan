@@ -37,7 +37,8 @@ def _setup(tmp_path, *, issue=41, families=("anthropic",), codex_rc=0, claude_rc
     ledger = TeamLedger(home / "dispatch.jsonl", clock=clock)
     for name in calibrated:
         rv.record_calibration(home, name, caught=7, of=8, false_alarms=0, clock=clock)
-    reviewer = rv.Reviewer(project=project, adapters=adapters, ledger=ledger, repo_root=repo, home=home, clock=clock)
+    reviewer = rv.Reviewer(project=project, adapters=adapters, ledger=ledger, repo_root=repo, home=home, clock=clock,
+                           doctor_check=lambda: {"status": "passed", "findings": []})
     return reviewer, project, adapters, ledger
 
 
@@ -79,7 +80,8 @@ def test_the_comment_follows_q75_and_is_quarantined(tmp_path):
     out = reviewer.review(9, execute=True)
     assert out["status"] == "verified" and out["reviewer"] == "codex"
     number, body = project.comments[0]
-    assert number == 9 and body.startswith(f"مراجعةُ codex (openai/codex) على `{head[:12]}`: الحكم: صامد")
+    first_line = body.splitlines()[0]
+    assert number == 9 and first_line.startswith(f"مراجعةُ codex (openai/codex) على `{head[:12]}`") and first_line.endswith(": الحكم: صامد")
     assert INJECTION not in body and quarantine(INJECTION).findings
 
 
@@ -108,3 +110,33 @@ def test_calibration_expires_after_thirty_days():
     assert rv.is_calibrated(calibration, "codex", "2026-09-20T00:00:00+00:00")
     assert not rv.is_calibrated(calibration, "codex", "2026-10-06T00:00:00+00:00")
     assert not rv.is_calibrated({}, "codex", "2026-10-06T00:00:00+00:00")
+
+
+def test_the_reviewer_is_told_the_remote_merge_base_not_the_local_main(tmp_path):
+    reviewer, project, adapters, ledger = _setup(tmp_path)
+    head = project.pulls[9].head_sha
+    _dispatched(ledger, head)
+    base = git("merge-base", "origin/main", head, cwd=reviewer.repo_root)
+    git("commit", "-q", "--allow-empty", "-m", "يتقدّم main المحلي بلا دفع", cwd=reviewer.repo_root)  # main المحلي ≠ origin/main
+    reviewer.review(9, execute=True)
+    prompt = [s for s in adapters["codex"].seen if "prompt" in s][-1]["prompt"]
+    assert base[:12] in prompt and "`main`" not in prompt.split("لا تقارن")[0]
+    assert f"نقطة التفرّع `{base[:12]}`" in project.comments[0][1]
+
+
+def test_a_rejecting_review_is_recorded_but_never_verified(tmp_path):
+    reviewer, project, adapters, ledger = _setup(tmp_path)
+    adapters["codex"].review_text = "عيبٌ في السطر ٣.\nالحكم: مرفوض"
+    _dispatched(ledger, project.pulls[9].head_sha)
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "review_rejected" and out["verdict"] == "reject"
+    assert ledger.main_state(41)["state"] == "validated" and ledger.last(41)["state"] == "review_rejected"
+
+
+def test_the_reviewer_refuses_when_the_doctor_refuses(tmp_path):
+    reviewer, project, adapters, ledger = _setup(tmp_path)
+    _dispatched(ledger, project.pulls[9].head_sha)
+    reviewer.doctor_check = lambda: {"status": "refused", "findings": ["binary_changed:codex"]}
+    with pytest.raises(rv.Refusal) as exc:
+        reviewer.review(9, execute=True)
+    assert exc.value.code == "doctor_refused" and project.comments == []

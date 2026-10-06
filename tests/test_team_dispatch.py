@@ -21,7 +21,7 @@ def _setup(tmp_path, behaviour="commit", clock="2026-10-06T10:00:00+00:00"):
     adapter = FakeAdapter(behaviour=behaviour)
     ledger = TeamLedger(tmp_path / "home" / "dispatch.jsonl", clock=lambda: clock)
     dispatcher = Dispatcher(project=project, adapter=adapter, ledger=ledger, repo_root=repo, home=tmp_path / "home",
-                            wt_root=tmp_path / "wt", clock=lambda: clock)
+                            wt_root=tmp_path / "wt", clock=lambda: clock, doctor_check=lambda: {"status": "passed", "findings": []})
     return dispatcher, project, adapter, ledger, repo
 
 
@@ -57,6 +57,7 @@ def test_execute_commits_the_brief_runs_the_worker_and_completes_with_a_pull(tmp
     brief = (worktree / "docs" / "team" / "briefs" / "41.md").read_text(encoding="utf-8")
     assert INJECTION not in brief and "بيانات" in brief
     assert adapter.seen[0]["brief"] == brief
+    assert Path(ledger.last_of(41, "dispatched")["brief_path"]).read_text(encoding="utf-8") == brief
     states = [r["state"] for r in ledger.records(41)]
     assert states == ["dispatched", "claimed", "completed"]
     assert ledger.last(41)["head_sha"] == git("rev-parse", "HEAD", cwd=worktree)
@@ -84,7 +85,7 @@ def test_validate_promotes_a_waiting_review_and_accept_binds_the_heads(tmp_path)
     dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
     out = dispatcher.run(41, execute=True)
     head = out["head_sha"]
-    ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1", reviewer="codex", reviewer_family="openai")
+    ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1", reviewer="codex", reviewer_family="openai", verdict="pass")
     project.checks_by_head[head] = "pending"
     assert dispatcher.validate(41)["status"] == "pending"
     project.checks_by_head[head] = "success"
@@ -120,3 +121,42 @@ def test_gc_lists_merged_worktrees_and_removes_nothing_without_yes(tmp_path):
     rows = dispatcher.gc()
     assert rows == [{"worktree": out["worktree"], "branch": "team/41-anthropic", "pull": out["pr"], "merged": True, "removed": False}]
     assert Path(out["worktree"]).exists()
+
+
+def test_the_brief_is_written_but_not_committed_by_the_dispatcher(tmp_path):
+    dispatcher, _project, _adapter, _ledger, repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    worktree = Path(out["worktree"])
+    status = git("status", "--porcelain", cwd=worktree)
+    assert status.startswith("??") and "docs/" in status and (worktree / "docs" / "team" / "briefs" / "41.md").exists()
+    log = git("log", "--format=%s", "origin/main..HEAD", cwd=worktree).splitlines()
+    assert log == ["عمل"]
+
+
+def test_a_changed_tool_is_refused_before_launch(tmp_path):
+    dispatcher, _project, adapter, ledger, _repo = _setup(tmp_path)
+    dispatcher.doctor_check = lambda: {"status": "refused", "findings": ["version_changed:claude"]}
+    with pytest.raises(Refusal) as exc:
+        dispatcher.run(41, execute=True)
+    assert exc.value.code == "doctor_refused" and ledger.last(41)["state"] == "refused" and adapter.seen == []
+
+
+def test_after_takeover_a_new_attempt_gets_its_own_branch_and_worktree(tmp_path):
+    dispatcher, _project, _adapter, ledger, _repo = _setup(tmp_path, behaviour="killed")
+    first = dispatcher.run(41, execute=True)
+    dispatcher.clock = lambda: "2026-10-07T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    dispatcher.takeover(41, owner_authorization="نفّذ")
+    second = dispatcher.run(41, execute=True)
+    assert second["branch"] == "team/41-anthropic-a2" and second["worktree"] != first["worktree"]
+    assert Path(second["worktree"]).exists() and ledger.attempt_of(41) == 2
+
+
+def test_a_waiting_review_without_a_pass_verdict_is_not_promoted(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    head = out["head_sha"]
+    ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1", reviewer="codex", reviewer_family="openai", verdict="revise")
+    project.checks_by_head[head] = "success"
+    assert dispatcher.validate(41)["status"] == "validated"
+    assert ledger.main_state(41)["state"] == "validated"

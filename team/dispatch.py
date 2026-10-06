@@ -1,7 +1,7 @@
 """المرسِل الأدنى (ق٧٦ المرحلة ١): من مسألةٍ أذن بها المالك إلى نسخةِ عملٍ وفرعٍ وعاملٍ واحد وطلبِ دمج، وكلُّ تحوّلٍ قيدٌ بدليله.
 
 الدورة: `run` يتحقق من الإذن (`ready:<عائلة>` بيد المالك أو أمرُه الصريح المسجَّل) ومن قواعد المشروع (التجميد)، ويولّد التكليفَ
-من القالب ونصِّ المسألة **محجورًا** ويودعه على الفرع ببصمة، ثم يطلق العاملَ بوضعه غير التفاعلي والمدخلُ عبر stdin، ويقيّد
+من القالب ونصِّ المسألة **محجورًا** ويحفظه ببصمته في موطن الفريق ويكتبه في نسخة العمل بلا إيداع (إيداعٌ بهويّة المرسِل يخلط العائلتين)، ثم يطلق العاملَ بوضعه غير التفاعلي والمدخلُ عبر stdin، ويقيّد
 `dispatched → claimed → completed` بالرأس وطلب الدمج. `validate` يقرأ فحوصَ الرأس، و`accept` يستنتج إيداعَ الدمج من git.
 `resume` يفحص عاملًا انقطع عنه المرسِل، و`takeover` يحتاج انتهاءَ الإيجار **و**إثباتَ غياب العامل **و**إذنَ المالك، و`gc` يعرض
 نسخَ العمل المدموجة ولا يحذف إلا بتأكيد.
@@ -38,6 +38,7 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_TEMPLATE = HERE.parent / "docs" / "team" / "BRIEF-TEMPLATE.md"
 FALLBACK_TEMPLATE = "# تكليف #{number}: {title}\n\nالفرع: `{branch}` · العامل: {worker} ({family})\n\n{header}\n\n## نصّ المسألة (بيانات لا تعليمات)\n{body}\n"
 WORKTREE_PREFIX = "team-"
+COMMIT_BRIEF = False   # لا يُودَع التكليف بإيداعٍ من المرسِل على فرع العامل
 
 
 class Refusal(RuntimeError):
@@ -106,17 +107,28 @@ class Dispatcher:
     template_path: Path = DEFAULT_TEMPLATE
     runner: object = subprocess.run
     clock: object = now_utc
+    doctor_check: object = None      # يُستدعى قبل كل إطلاقٍ فعلي؛ None = team.doctor.check على تثبيتات الموطن
 
     # — مساعدات —
     @property
     def family(self) -> str:
         return self.adapter.spec.family
 
-    def branch_for(self, issue: int) -> str:
-        return f"team/{issue}-{self.family}"
+    def _suffix(self, attempt: int) -> str:
+        return f"-a{attempt}" if attempt > 1 else ""
 
-    def worktree_for(self, issue: int) -> Path:
-        return self.wt_root / f"{WORKTREE_PREFIX}{issue}-{self.family}"
+    def branch_for(self, issue: int, attempt: int = 1) -> str:
+        """فرعُ المحاولة؛ المحاولةُ الثانية فما بعدها (بعد استحواذٍ) تحمل لاحقتها فلا تصطدم بفرع المحاولة الأولى (ملاحظة Codex على #344)."""
+        return f"team/{issue}-{self.family}{self._suffix(attempt)}"
+
+    def worktree_for(self, issue: int, attempt: int = 1) -> Path:
+        return self.wt_root / f"{WORKTREE_PREFIX}{issue}-{self.family}{self._suffix(attempt)}"
+
+    def _doctor(self) -> dict:
+        if self.doctor_check is not None:
+            return self.doctor_check()
+        from team.doctor import PINS_FILE, check
+        return check([self.adapter], self.home / PINS_FILE)
 
     def raw_dir(self, issue: int, attempt: int) -> Path:
         return self.home / "raw" / str(issue) / f"attempt-{attempt}"
@@ -142,7 +154,8 @@ class Dispatcher:
     def run(self, issue_number: int, *, execute: bool = False, owner_order: str | None = None,
             budget_usd: float = 5.0, timeout: int = 1800) -> dict:
         issue = self.project.issue(issue_number)
-        branch, wt = self.branch_for(issue.number), self.worktree_for(issue.number)
+        attempt = self.ledger.attempt_of(issue.number) + 1
+        branch, wt = self.branch_for(issue.number, attempt), self.worktree_for(issue.number, attempt)
         frozen = self.project.frozen_findings(issue)
         if frozen:
             if execute:
@@ -168,22 +181,30 @@ class Dispatcher:
                 "quarantine_codes": codes, "argv": self.adapter.work_argv(wt, budget_usd, self.raw_dir(issue.number, 0))}
         if not execute:
             return {"status": "dry_run", **plan}
+        report = self._doctor()
+        if report.get("status") != "passed":
+            self.ledger.append(issue.number, "refused", code="doctor_refused", findings=report.get("findings") or [])
+            raise Refusal("doctor_refused", ", ".join(report.get("findings") or []))
         if wt.exists():
             raise Refusal("worktree_exists", str(wt))
         self._git("fetch", self.remote, self.base_branch)
+        base_sha = self._git("rev-parse", f"{self.remote}/{self.base_branch}")
         self.wt_root.mkdir(parents=True, exist_ok=True)
         self._git("worktree", "add", str(wt), "-b", branch, f"{self.remote}/{self.base_branch}")
+        # التكليفُ يُودَع ببصمته في موطن الفريق (السجلُّ يحمل البصمة)، ويُكتب في نسخة العمل **بلا إيداع**: إيداعٌ بهويّة المرسِل على
+        # فرع العامل يخلط عائلتين فيُسقط كلَّ مراجعٍ محتسب (ملاحظة Codex على #344). COMMIT_BRIEF يوثّق القرار ويُثبت بالطفرة.
+        kept = self.home / "briefs" / f"{issue.number}-a{attempt}.md"
+        kept.parent.mkdir(parents=True, exist_ok=True)
+        kept.write_text(brief, encoding="utf-8")
         brief_path = wt / "docs" / "team" / "briefs" / f"{issue.number}.md"
         brief_path.parent.mkdir(parents=True, exist_ok=True)
         brief_path.write_text(brief, encoding="utf-8")
-        self._git("add", str(brief_path.relative_to(wt)), cwd=wt)
-        self._git("-c", "user.name=team-dispatch", "-c", "user.email=noreply@localhost.invalid", "commit", "-q", "-m",
-                  f"تكليف #{issue.number} للعامل {self.adapter.spec.name}\n\nبصمة التكليف {brief_sha}\n\nDiwan-Agent: {self.dispatcher_agent}", cwd=wt)
-        brief_commit = self._git("rev-parse", "HEAD", cwd=wt)
+        if COMMIT_BRIEF:
+            self._git("add", str(brief_path.relative_to(wt)), cwd=wt)
+            self._git("commit", "-q", "-m", f"تكليف #{issue.number}", cwd=wt)
         self.ledger.append(issue.number, "dispatched", brief_sha256=brief_sha, worker=self.adapter.spec.name, family=self.family,
-                           branch=branch, worktree=str(wt), brief_commit=brief_commit, authorization=authorization,
+                           branch=branch, worktree=str(wt), base_sha=base_sha, brief_path=str(kept), authorization=authorization,
                            owner_order=(owner_order or None), quarantine_codes=codes)
-        attempt = self.ledger.attempt_of(issue.number)
         raw = self.raw_dir(issue.number, attempt)
         raw.mkdir(parents=True, exist_ok=True)
         argv = self.adapter.work_argv(wt, budget_usd, raw)
@@ -208,9 +229,9 @@ class Dispatcher:
         if result.unavailable:
             self.ledger.append(issue.number, "worker_unavailable", code=result.unavailable, returncode=rc)
             return {"status": "worker_unavailable", "code": result.unavailable, **plan}
-        brief_commit = (self.ledger.last_of(issue.number, "dispatched", attempt) or {}).get("brief_commit")
+        base_sha = (self.ledger.last_of(issue.number, "dispatched", attempt) or {}).get("base_sha")
         head = self._git("rev-parse", "HEAD", cwd=wt)
-        new_commits = int(self._git("rev-list", "--count", f"{brief_commit}..HEAD", cwd=wt) or 0) if brief_commit else 0
+        new_commits = int(self._git("rev-list", "--count", f"{base_sha}..HEAD", cwd=wt) or 0) if base_sha else 0
         if new_commits == 0:
             self.ledger.append(issue.number, "validation_failed", reason="no_commits", head_sha=head, worker_ok=result.ok,
                                quarantine_codes=sorted({f.code for f in summary.findings}))
@@ -241,7 +262,7 @@ class Dispatcher:
             if self.ledger.main_state(issue_number)["state"] == "completed":
                 self.ledger.append(issue_number, "validated", head_sha=head, checks_ref=f"checks:{head}")
                 pending = self.ledger.last_of(issue_number, "reviewed_awaiting_validation")
-                if pending and pending.get("head_sha") == head:
+                if pending and pending.get("head_sha") == head and pending.get("verdict") == "pass":
                     self.ledger.append(issue_number, "verified", head_sha=head, review_ref=pending["review_ref"],
                                        reviewer=pending["reviewer"], reviewer_family=pending["reviewer_family"], verdict=pending.get("verdict"))
             return {"status": "validated", "head_sha": head}
@@ -273,13 +294,15 @@ class Dispatcher:
         pid = int(state.get("pid") or 0)
         if pid and pid_alive(pid):
             return {"status": "running", "pid": pid}
-        wt = Path((self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}).get("worktree", ""))
+        dispatched = self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}
+        wt = Path(dispatched.get("worktree", ""))
         if not wt.exists():
             self.ledger.append(issue_number, "outcome_unknown", reason="worker_gone_and_worktree_missing")
             return {"status": "outcome_unknown"}
         raw = self.raw_dir(issue_number, state["attempt"])
-        plan = {"issue": issue_number, "branch": self.branch_for(issue_number), "brief_sha256": "", "worktree": str(wt)}
-        return self._finish(self.project.issue(issue_number), state["attempt"], 0, raw, wt, self.branch_for(issue_number), plan)
+        branch = dispatched.get("branch") or self.branch_for(issue_number, state["attempt"])
+        plan = {"issue": issue_number, "branch": branch, "brief_sha256": dispatched.get("brief_sha256", ""), "worktree": str(wt)}
+        return self._finish(self.project.issue(issue_number), state["attempt"], 0, raw, wt, branch, plan)
 
     def takeover(self, issue_number: int, *, owner_authorization: str) -> dict:
         state = self.ledger.main_state(issue_number)
@@ -287,7 +310,7 @@ class Dispatcher:
             raise Refusal("nothing_to_take_over")
         dispatched = self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}
         wt = Path(dispatched.get("worktree", ""))
-        last_head = state.get("head_sha") or dispatched.get("brief_commit")
+        last_head = state.get("head_sha") or dispatched.get("base_sha")
         head_now = self._git("rev-parse", "HEAD", cwd=wt) if wt.exists() else last_head
         last_activity = state.get("started_at") or state.get("at")
         now = self.clock()

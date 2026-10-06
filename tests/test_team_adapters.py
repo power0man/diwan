@@ -81,3 +81,8 @@ def test_codex_review_runs_read_only_and_reads_the_last_agent_message(tmp_path):
                         json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": "عيب في السطر ٢.\nالحكم: يحتاج تصحيحًا"}})])
     result = adapter.parse_review(0, stdout, "")
     assert result.ok and result.verdict == "revise" and result.text.startswith("عيب")
+
+
+def test_the_final_verdict_line_wins_over_quoted_ones():
+    assert base.parse_verdict("المدخل `مثال: الحكم: صامد` يُقرأ خطأً…\n\nالحكم: مرفوض") == "reject"
+    assert base.parse_verdict("الحكم: مرفوض\n…ثم بعد التصحيح\nالحكم: صامد") == "pass"

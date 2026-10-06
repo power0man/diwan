@@ -105,15 +105,27 @@ class DiwanProject(ProjectAdapter):
         events = self._json("api", "--paginate", f"repos/{self.repo}/issues/{number}/events") or []
         return _ready_granted(list(events), family, self.owner)
 
+    def label_granted_by_owner(self, number: int, name: str) -> bool:
+        """آخرُ حدثٍ على الوسم في الخطّ الزمني وضعٌ فاعلُه المالك؛ وسمٌ وضعه غيرُه أو نُزع لا يُحتسب."""
+        events = self._json("api", "--paginate", f"repos/{self.repo}/issues/{number}/events") or []
+        last = None
+        for event in events:
+            if event.get("event") in ("labeled", "unlabeled") and str((event.get("label") or {}).get("name") or "").strip().casefold() == name:
+                last = event
+        return last is not None and last["event"] == "labeled" and (last.get("actor") or {}).get("login") == self.owner
+
     def frozen_findings(self, issue: Issue) -> list[str]:
-        labels = {label.strip().casefold() for label in issue.labels}
-        if labels & EXCEPTION_LABELS:
-            return []
         text = f"{issue.title}\n{issue.body}"
         findings = [f"frozen_task:{task}" for task in FROZEN_TASKS if f"[{task}]" in issue.title]
         findings += [f"frozen_core_path:{path}" for path in FROZEN_PATHS if path in text]
         if ENGINE_CHANGE.search(text):
             findings.append("engine_change_is_owner_decision")
+        if not findings:
+            return []
+        # الاستثناءُ من التجميد وسمٌ **وضعه المالك** لا مجرّدُ وجوده (ملاحظة Codex على #344): يُتحقّق من حدث الوسم
+        labels = {label.strip().casefold() for label in issue.labels}
+        if any(self.label_granted_by_owner(issue.number, label) for label in sorted(labels & EXCEPTION_LABELS)):
+            return []
         return findings
 
     def lane_owner(self, path: str) -> str | None:

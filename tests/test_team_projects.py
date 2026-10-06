@@ -34,12 +34,24 @@ def test_ready_is_granted_only_by_the_owner_s_last_label_event():
     assert not _project({"gh api --paginate": events("someone-else")}).ready_granted(1, "anthropic")
 
 
+def _label_events(name, actor, last="labeled"):
+    return [{"event": "labeled", "label": {"name": name}, "actor": {"login": actor}},
+            {"event": last, "label": {"name": name}, "actor": {"login": actor}}]
+
+
 def test_frozen_tasks_and_core_paths_are_refused_unless_excepted():
-    project = _project({})
+    project = _project({"gh api --paginate": _label_events("measurement", "power0man")})
     assert project.frozen_findings(Issue(1, "[ك١٧] بنك v1.2", "", ("task",))) == ["frozen_task:ك١٧"]
     assert project.frozen_findings(Issue(2, "إصلاح", "يمسّ core/run.py", ("task",))) == ["frozen_core_path:core/run.py"]
     assert project.frozen_findings(Issue(3, "[ك١٧] بنك", "core/run.py", ("task", "measurement"))) == []
     assert project.frozen_findings(Issue(4, "عادية", "لا شيء", ("task",))) == []
+
+
+def test_a_frozen_exception_label_counts_only_when_the_owner_set_it():
+    frozen = Issue(3, "[ك١٧] بنك", "core/run.py", ("task", "measurement"))
+    assert _project({"gh api --paginate": _label_events("measurement", "someone-else")}).frozen_findings(frozen) != []
+    assert _project({"gh api --paginate": _label_events("measurement", "power0man", "unlabeled")}).frozen_findings(frozen) != []
+    assert _project({"gh api --paginate": _label_events("measurement", "power0man")}).frozen_findings(frozen) == []
 
 
 def test_review_policy_follows_q75():

@@ -34,7 +34,7 @@ CALIBRATION_FILE = "calibration.json"
 CALIBRATION_DAYS = 30
 MAX_COMMENT_CHARS = 6000
 VERDICT_AR = {"pass": "صامد", "revise": "يحتاج تصحيحًا", "reject": "مرفوض", "unknown": "بلا حكمٍ صريح"}
-REVIEW_PROMPT = """أنت مراجعٌ مستقلّ لطلب دمجٍ لم تكتبه ولم ترَ جلسةَ كاتبه. راجع التغييرات على الفرع الحالي مقابل الفرع `{base}` (مثلًا بـ`git diff {base}...HEAD`) على الرأس `{head}`.
+REVIEW_PROMPT = """أنت مراجعٌ مستقلّ لطلب دمجٍ لم تكتبه ولم ترَ جلسةَ كاتبه. راجع **ما غيّره هذا الطلب وحده**: الفرقُ بين نقطة تفرّعه عن الفرع الرئيس `{base}` ورأسه `{head}`، أي `git diff {base} {head}` (لا تقارن بفرع `main` المحلي فقد يكون متأخّرًا).
 - ابحث عن العيوب الفعلية: صحّة، وأمان، وحارسٌ بلا إثباتٍ بالطفرة، ورقمٌ بلا حدّ، وتجاوزٌ لقواعد المشروع.
 - اذكر كلَّ ملاحظةٍ بموضعها (الملف والسطر) وسببها؛ ولا تقترح إصلاحًا من عندك إن لم تكن متأكدًا.
 - لا تعدّل أيَّ ملف؛ عملُك قراءةٌ وحكم.
@@ -77,13 +77,16 @@ def is_calibrated(calibration: dict, reviewer: str, now_iso: str, days: int = CA
         return False
 
 
-def q75_comment(adapter: Adapter, head_sha: str, verdict: str, text: str, codes: list[str], agent_id: str) -> str:
+def q75_comment(adapter: Adapter, head_sha: str, verdict: str, text: str, codes: list[str], agent_id: str, base_sha: str = "") -> str:
     quarantined = quarantine(text or "")
     body = quarantined.text.strip()
     if len(body) > MAX_COMMENT_CHARS:
         body = body[:MAX_COMMENT_CHARS] + "\n…(اقتُطع)"
     marks = sorted({f.code for f in quarantined.findings} | set(codes))
-    lines = [f"مراجعةُ {adapter.spec.name} ({agent_id}) على `{head_sha[:12]}`: الحكم: {VERDICT_AR.get(verdict, verdict)}", "", body or "—", ""]
+    heading = f"مراجعةُ {adapter.spec.name} ({agent_id}) على `{head_sha[:12]}`"
+    if base_sha:
+        heading += f" (الفرقُ عن نقطة التفرّع `{base_sha[:12]}`)"
+    lines = [f"{heading}: الحكم: {VERDICT_AR.get(verdict, verdict)}", "", body or "—", ""]
     if marks:
         lines.append(f"_نصٌّ محجور برموز: {', '.join(marks)}_")
     lines.append("_team/review.py · جلسةٌ جديدة على الرأس المذكور · قاعدةُ العائلة (ق٧٥)_")
@@ -101,6 +104,13 @@ class Reviewer:
     agent_ids: dict[str, str] = field(default_factory=lambda: {"codex": "openai/codex", "claude": "anthropic/claude-fable-5-1"})
     runner: object = subprocess.run
     clock: object = now_utc
+    doctor_check: object = None      # يُستدعى قبل كل مراجعةٍ فعلية؛ None = team.doctor.check على تثبيتات الموطن
+
+    def _doctor(self, names: list[str]) -> dict:
+        if self.doctor_check is not None:
+            return self.doctor_check()
+        from team.doctor import PINS_FILE, check
+        return check([self.adapters[n] for n in names], self.home / PINS_FILE)
 
     def candidates(self, pull: PullRequest, reviewer: str | None) -> tuple[set[str], list[str]]:
         families = self.project.author_families(pull)
@@ -117,6 +127,15 @@ class Reviewer:
                 raise Refusal("reviewer_same_family", f"{reviewer} من عائلة {adapter.spec.family} وهي بين المؤلّفين")
             return families, [reviewer]
         return families, [name for name in policy.candidates if name in self.adapters and name not in policy.never]
+
+    def merge_base(self, pull: PullRequest) -> str:
+        """نقطةُ تفرّع الطلب عن الفرع الرئيس **البعيد**؛ فـ`main` المحلي قد يتأخّر فيدخل في الفرق ما دُمج أصلًا (دخان ٦ أكتوبر)."""
+        self.runner(["git", "-C", str(self.repo_root), "fetch", self.remote, pull.base_branch], capture_output=True, text=True)
+        done = self.runner(["git", "-C", str(self.repo_root), "merge-base", f"{self.remote}/{pull.base_branch}", pull.head_sha],
+                           capture_output=True, text=True)
+        if done.returncode != 0 or not (done.stdout or "").strip():
+            raise Refusal("merge_base_failed", (done.stderr or "")[:200])
+        return done.stdout.strip()
 
     def _detached_worktree(self, pull: PullRequest, tmp: Path) -> Path:
         done = self.runner(["git", "-C", str(self.repo_root), "fetch", self.remote, pull.branch], capture_output=True, text=True)
@@ -138,6 +157,11 @@ class Reviewer:
             self.ledger.append(issue, "review_uncalibrated", head_sha=head, reviewer=adapter.spec.name, reviewer_family=family,
                                review_ref=ref, verdict=verdict)
             return "review_uncalibrated"
+        if verdict != "pass":
+            # مراجعةٌ رافضة أو بلا حكمٍ صريح تُقيَّد باسمها ولا تصير verified أبدًا (ملاحظة Codex على #344)
+            self.ledger.append(issue, "review_rejected", head_sha=head, review_ref=ref, reviewer=adapter.spec.name,
+                               reviewer_family=family, verdict=verdict)
+            return "review_rejected"
         state = self.ledger.main_state(issue)["state"]
         if state == "validated":
             self.ledger.append(issue, "verified", head_sha=head, review_ref=ref, reviewer=adapter.spec.name, reviewer_family=family, verdict=verdict)
@@ -157,15 +181,19 @@ class Reviewer:
             return {"status": "reviewer_unavailable", "code": "no_eligible_reviewer", "owner_queue": True, **plan}
         if not execute:
             return {"status": "dry_run", **plan}
+        report = self._doctor(names)
+        if report.get("status") != "passed":
+            raise Refusal("doctor_refused", ", ".join(report.get("findings") or []))
         tried = []
         with tempfile.TemporaryDirectory(prefix="team-review-") as tmpdir:
             tmp = Path(tmpdir) / "wt"
             self._detached_worktree(pull, tmp)
+            base_sha = self.merge_base(pull)
             try:
                 for name in names:
                     adapter = self.adapters[name]
                     argv = adapter.review_argv(tmp, pull.base_branch)
-                    prompt = REVIEW_PROMPT.format(base=pull.base_branch, head=pull.head_sha[:12])
+                    prompt = REVIEW_PROMPT.format(base=base_sha[:12], head=pull.head_sha[:12])
                     rc, out, err = adapter.run_review(argv, prompt, tmp, timeout)
                     result = adapter.parse_review(rc, out, err)
                     if not result.ok:
@@ -174,7 +202,7 @@ class Reviewer:
                         if pull.issue is not None and self.ledger.main_state(pull.issue) is not None:
                             self.ledger.append(pull.issue, "reviewer_unavailable", code=code, reviewer=name, pr=pull.number)
                         continue
-                    body = q75_comment(adapter, pull.head_sha, result.verdict, result.text, [], self.agent_ids.get(name, name))
+                    body = q75_comment(adapter, pull.head_sha, result.verdict, result.text, [], self.agent_ids.get(name, name), base_sha=base_sha)
                     ref = self.project.comment(pull.number, body)
                     recorded = self._record(pull, adapter, pull.head_sha, ref, result.verdict)
                     return {"status": recorded, "reviewer": name, "verdict": result.verdict, "review_ref": ref, "tried": tried, **plan}

@@ -66,8 +66,12 @@ def unavailable_code(returncode: int, text: str) -> str | None:
 
 
 def parse_verdict(text: str) -> str:
-    match = VERDICT.search(text or "")
-    return VERDICT_MAP[match.group(1).lower() if match.group(1).isascii() else match.group(1)] if match else "unknown"
+    """الحكمُ من **آخر** سطر حكمٍ في النص؛ فالاقتباسُ («مثال: الحكم: صامد») لا يطغى على الحكم الختامي (ملاحظة Codex على #344)."""
+    matches = VERDICT.findall(text or "")
+    if not matches:
+        return "unknown"
+    last = matches[-1]
+    return VERDICT_MAP[last.lower() if last.isascii() else last]
 
 
 @dataclass(frozen=True)
