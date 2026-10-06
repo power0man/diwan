@@ -4,7 +4,7 @@
   "agent": "anthropic/claude-fable-5-1",
   "run_id": "kimi-v12-round3-20261006T081458Z",
   "kind": "kimi_v12_round3_intake_evidence",
-  "status": "intake_incomplete_not_placed",
+  "status": "intake_passed_not_placed",
   "spend": {
     "cloud_calls": null,
     "prompt_tokens": null,
@@ -43,7 +43,9 @@
     "round2-delivery-before-round3-run": "8df23d724582411d811921cc14d28036c8097dd35c5f37af2cb94752217756b1",
     "delivery-after-run": "7d75c5ff1c838fd1048bfcd9b5e0cd16793f97d653c86f14a436a7287a2ed478",
     "delivery-after-open": "7d75c5ff1c838fd1048bfcd9b5e0cd16793f97d653c86f14a436a7287a2ed478",
-    "delivery-after-agentic": "7d75c5ff1c838fd1048bfcd9b5e0cd16793f97d653c86f14a436a7287a2ed478"
+    "delivery-after-agentic": "7d75c5ff1c838fd1048bfcd9b5e0cd16793f97d653c86f14a436a7287a2ed478",
+    "delivery-before-open-with-receipt": "7d75c5ff1c838fd1048bfcd9b5e0cd16793f97d653c86f14a436a7287a2ed478",
+    "delivery-after-open-with-receipt": "7d75c5ff1c838fd1048bfcd9b5e0cd16793f97d653c86f14a436a7287a2ed478"
   },
   "tree_manifest_method": "entries_of_relative_path_bytes_sha256_sorted_by_relative_path_utf8_json_ensure_ascii_false_sort_keys_true_compact_separators_plus_newline_then_sha256",
   "tree_manifest_script_same_as": "kimi-v12-intake-summary-20261005T200841Z.json",
@@ -320,11 +322,11 @@
   },
   "official_reports": {
     "open": {
-      "exit_code": 1,
-      "raw_report_sha256": "f17850babeb0bf9e802f7c476eba5b3af975ca1b663b84721b3f877d90d0465e",
-      "started_utc": "2026-10-06T08:53:14Z",
-      "finished_utc": "2026-10-06T08:53:15Z",
-      "sandbox_probes": false,
+      "exit_code": 0,
+      "raw_report_sha256": "367863a96651b0a2a881fc34854a0b3f3662c6e19cd3c343e5faa6cfda172921",
+      "started_utc": "2026-10-06T09:28:26Z",
+      "finished_utc": "2026-10-06T09:53:27Z",
+      "sandbox_probes": true,
       "official_report": {
         "schema_version": 1,
         "kind": "kimi_intake",
@@ -369,9 +371,15 @@
           "gameable": {
             "open": 0,
             "by_probe": {},
-            "needs_sandbox": 419,
-            "sandbox_probed": false,
-            "sandbox_backend": null
+            "needs_sandbox": 0,
+            "sandbox_probed": true,
+            "sandbox_backend": {
+              "backend": "docker",
+              "image_id": "sha256:213757d61bfbf6dababa7a010436c1f8f4b453f75b1b3da4abdaf49ffee53a49",
+              "lock_sha256": "139d58461c61f4b3eacf90cd08f7ed4247e4ae0cf54a287f5b90965451ebce14",
+              "python_version": "3.14.7",
+              "snapshot_files": []
+            }
           },
           "decoys": {
             "required": 34,
@@ -379,15 +387,10 @@
             "decoys": 68,
             "passes": 0,
             "reference_fails": 0,
-            "unjudged": 102
+            "unjudged": 0
           },
           "open_digest": "6b56916927b7c3a6826c29a96c6031b2de77b7fca36822101726760288655979",
-          "failures": [
-            {
-              "file": "open",
-              "code": "decoys_need_sandbox"
-            }
-          ]
+          "failures": []
         },
         "dev": {
           "general": {
@@ -403,7 +406,7 @@
           },
           "failures": []
         },
-        "passed": false,
+        "passed": true,
         "measurement_limits": [
           "validators_check_schema_and_the_v1_2_conditions_not_whether_a_reference_answer_is_correct",
           "gameable_checks_are_found_by_five_fixed_answers_empty_echo_polarity_spray_both_and_each_contains_value_negated_so_a_subtler_gameable_check_passes",
@@ -519,19 +522,26 @@
           "decoys_are_written_by_the_bank_author_so_a_check_is_proven_only_against_the_wrong_answers_written_for_it_and_a_reviewer_samples_whether_they_are_real"
         ]
       }
+    },
+    "open_without_receipt_superseded": {
+      "exit_code": 1,
+      "raw_report_sha256": "f17850babeb0bf9e802f7c476eba5b3af975ca1b663b84721b3f877d90d0465e",
+      "started_utc": "2026-10-06T08:53:14Z",
+      "finished_utc": "2026-10-06T08:53:15Z",
+      "sandbox_probes": false
     }
   },
   "conditions": {
     "without_checks_zero": true,
     "gameable_open_zero": true,
-    "needs_sandbox_zero": false,
-    "sandbox_probed": false,
+    "needs_sandbox_zero": true,
+    "sandbox_probed": true,
     "decoys_required_all_present": true,
     "decoys_none_pass": true,
     "decoys_reference_fails_zero": true,
-    "decoys_unjudged_zero": false,
+    "decoys_unjudged_zero": true,
     "replacement_failures_empty": true,
-    "bank_failures_empty": false,
+    "bank_failures_empty": true,
     "development_failures_empty": true,
     "agentic_failures_empty": true,
     "baseline_digest_matches_v11": true,
@@ -541,19 +551,19 @@
     "unjudged_zero": true,
     "delivery_unchanged_during_checks": true,
     "round2_delivery_matched_before_run": true,
-    "open_intake_exit_zero": false,
-    "agentic_intake_exit_zero": false
+    "open_intake_exit_zero": true,
+    "agentic_intake_exit_zero": false,
+    "sandbox_image_is_the_approved_one": true,
+    "open_digest_unchanged_since_first_open_intake": true,
+    "agentic_failure_codes_only_decoys_need_sandbox": true
   },
-  "open_failure_codes": [
-    "decoys_need_sandbox"
-  ],
+  "open_failure_codes": [],
   "agentic_failure_codes": [
     "decoys_need_sandbox"
   ],
   "measurement_limits": [
     "intake_evidence_not_a_general_model_score",
     "no_delivery_placement_no_project_bank_or_sealed_store_changes",
-    "open_intake_ran_without_a_sandbox_receipt_by_owner_instruction_so_python_sandbox_cases_and_their_decoys_are_counted_needs_sandbox_not_judged",
     "authoring_model_is_the_kimi_code_subscription_default_not_kimi_k2_6_cloud_named_in_the_brief_header_per_owner_note_in_KIMI-V12-FIX3",
     "kimi_run_logs_not_opened_so_the_final_counts_message_is_not_relayed_and_the_session_id_is_read_from_directory_names_only",
     "decoys_are_written_by_the_bank_author_so_a_check_is_proven_only_against_the_wrong_answers_written_for_it_and_a_reviewer_samples_whether_they_are_real",
@@ -561,7 +571,8 @@
     "run_driven_by_anthropic_family_session_review_belongs_to_codex_or_owner",
     "gameable_checks_are_found_by_five_fixed_answers_so_a_subtler_gameable_check_passes",
     "tree_identity_is_relative_file_paths_and_file_bytes_only",
-    "no_pass_through_observer_this_round_so_per_task_agentic_results_are_the_official_report_counts_only"
+    "no_pass_through_observer_this_round_so_per_task_agentic_results_are_the_official_report_counts_only",
+    "the_open_intake_was_repeated_with_the_approved_receipt_found_at_the_q73_step2_path_after_the_first_run_without_it_both_reports_are_kept_and_the_delivery_tree_did_not_change_between_them"
   ],
   "decoys_summary": {
     "required": 34,
@@ -569,7 +580,7 @@
     "decoys": 68,
     "passes": 0,
     "reference_fails": 0,
-    "unjudged": 102
+    "unjudged": 0
   },
   "agentic_counts": {
     "tasks": 170,
@@ -584,9 +595,25 @@
   "commands_redacted": {
     "tree_manifest": "python3 tree_manifest.py \"$TREE_ROOT\" \"$MANIFEST_OUTPUT\"",
     "open_intake": "DIWAN=\"$VERIFY_SOURCE\" KIMI_WORK=\"$KIMI_WORK\" PYTHON=\"$VERIFICATION_PYTHON\" OPEN_ONLY=1 bash \"$VERIFY_SOURCE/tools/kimi_drive.sh\" intake",
-    "agentic_intake": "docker run --rm --pull=never --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=512m,mode=1777 --cap-drop ALL --security-opt no-new-privileges --pids-limit 256 --memory 1g --memory-swap 1g --cpus 2 --env DIWAN_DISPOSABLE_HOST=intake --env PYTHONDONTWRITEBYTECODE=1 --mount type=bind,src=\"$DELIVERY\",dst=/src,readonly --mount type=bind,src=\"$VERIFY_SOURCE\",dst=/workspace,readonly --workdir /workspace diwan-intake python tools/kimi_intake.py /src --open-only --agentic --out -"
+    "agentic_intake": "docker run --rm --pull=never --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=512m,mode=1777 --cap-drop ALL --security-opt no-new-privileges --pids-limit 256 --memory 1g --memory-swap 1g --cpus 2 --env DIWAN_DISPOSABLE_HOST=intake --env PYTHONDONTWRITEBYTECODE=1 --mount type=bind,src=\"$DELIVERY\",dst=/src,readonly --mount type=bind,src=\"$VERIFY_SOURCE\",dst=/workspace,readonly --workdir /workspace diwan-intake python tools/kimi_intake.py /src --open-only --agentic --out -",
+    "open_intake_with_receipt": "DIWAN=\"$VERIFY_SOURCE\" KIMI_WORK=\"$KIMI_WORK\" PYTHON=\"$VERIFICATION_PYTHON\" OPEN_ONLY=1 SANDBOX_RECEIPT=\"$APPROVED_RECEIPT\" SANDBOX_WORKSPACE=\"$SANDBOX_WORKSPACE\" bash \"$VERIFY_SOURCE/tools/kimi_drive.sh\" intake"
   },
   "command_redaction_limits": "device_specific_paths_replaced_with_logical_aliases_exact_values_retained_in_the_private_run_record_under_kimi_archive",
   "no_delivery_changes_by_intake": true,
-  "no_placement": true
+  "no_placement": true,
+  "receipt_identity": {
+    "schema_version": 1,
+    "image_id": "sha256:213757d61bfbf6dababa7a010436c1f8f4b453f75b1b3da4abdaf49ffee53a49",
+    "lock_sha256": "139d58461c61f4b3eacf90cd08f7ed4247e4ae0cf54a287f5b90965451ebce14",
+    "python_version": "3.14.7",
+    "receipt_sha256": "83402b41263b2ea2fbbe94579c9d25d39e3af997dff9d32eca582035d2eef72a",
+    "same_receipt_as_round2_and_q73": true,
+    "image_created": "2026-10-05T08:18:08Z"
+  },
+  "agentic_report_note": "the_agentic_container_report_still_carries_decoys_need_sandbox_because_the_container_cannot_run_the_sandbox_backend_its_agentic_verdicts_are_unchanged_and_the_decoys_are_judged_by_the_open_report_with_the_receipt",
+  "receipt_search": {
+    "found_by": "the_mac_session_that_ran_round2_used_this_path_in_its_own_commands",
+    "digest_matches": true
+  },
+  "status_rule": "all_conditions_except_agentic_intake_exit_zero_which_is_false_only_because_the_container_cannot_run_the_sandbox_backend_and_reports_decoys_need_sandbox_for_the_bank_section_the_decoys_are_judged_by_the_open_report_with_the_receipt"
 }
