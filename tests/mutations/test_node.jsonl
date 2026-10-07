@@ -1,0 +1,1 @@
+{"id": "local-estimate-without-request-crashes", "file": "providers/ollama.py", "old": "        if not isinstance(request, Request):\n            if not", "new": "        if False:\n            if not", "tests": ["tests/test_node.py::test_ollama_response_mapping"], "why": "تقديرُ المزوّد المحليّ بلا طلبٍ يسقط بـAttributeError بدل الصفر المعلَن", "task": "جديد-spend-ledger"}
