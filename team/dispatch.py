@@ -31,6 +31,7 @@ from pathlib import Path
 from core.quoted import quarantine
 from team import team_home, worktrees_root
 from team.adapters.base import Adapter
+from team.adapters.opencode import ModelUnconfigured
 from team.ledger import LEASE_SECONDS, TeamLedger, TransitionError, lease_expired, now_utc
 from team.projects.base import Issue, ProjectAdapter, ProjectError
 
@@ -575,6 +576,12 @@ def build(args) -> Dispatcher:
     home = team_home()
     home.mkdir(parents=True, exist_ok=True)
     adapters = registry()
+    if args.worker == "auto":
+        from team.catalog import discover, load_evidence, select
+        chosen = select(discover(home=home), "coding", load_evidence(home))["selected"]
+        if chosen is None or chosen not in adapters:
+            raise Refusal("task_evidence_missing", "لا وكيل برمجة مقاس؛ اختر عاملًا صراحةً للقياس الأول")
+        args.worker = chosen
     return Dispatcher(project=DiwanProject(root=repo_root), adapter=adapters[args.worker], ledger=TeamLedger(home / LEDGER_FILE),
                       repo_root=repo_root, home=home, adapters=adapters)
 
@@ -585,7 +592,7 @@ def build_parser() -> argparse.ArgumentParser:
     def common(defaults: bool) -> argparse.ArgumentParser:
         shared = argparse.ArgumentParser(add_help=False)
         shared.add_argument("--repo-root", default=None if defaults else argparse.SUPPRESS)
-        shared.add_argument("--worker", choices=("claude", "codex"), default="claude" if defaults else argparse.SUPPRESS)
+        shared.add_argument("--worker", choices=("claude", "codex", "gemini", "opencode", "antigravity", "auto"), default="claude" if defaults else argparse.SUPPRESS)
         return shared
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0], parents=[common(True)])
     sub_common = common(False)
@@ -604,8 +611,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    dispatcher = build(args)
     try:
+        dispatcher = build(args)
         if args.command == "run":
             out = dispatcher.run(args.issue, execute=args.execute, owner_order=args.owner_order, budget_usd=args.budget_usd, timeout=args.timeout)
         elif args.command == "takeover":
@@ -623,6 +630,9 @@ def main(argv: list[str] | None = None) -> int:
     except ProjectError as exc:
         print(json.dumps({"status": "project_unavailable", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
         return 3
+    except ModelUnconfigured as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        return 2
     print(json.dumps(out, ensure_ascii=False, indent=1, default=str))
     return 0
 

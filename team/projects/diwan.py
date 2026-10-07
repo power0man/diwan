@@ -31,7 +31,7 @@ EXCEPTION_LABELS = frozenset({"security", "privacy", "measurement", "allowed-und
 # ق٧٥: من يُحتسب مراجعًا لعائلة الطلب (أسماءُ محوِّلات لا بائعين؛ المالكُ احتياطُ الجميع خارج هذا الجدول)
 REVIEWERS_Q75: dict[str, tuple[str, ...]] = {"anthropic": ("codex",), "openai": ("claude",), "google": ("claude", "codex")}
 ADAPTER_FAMILY: dict[str, str] = {"claude": "anthropic", "codex": "openai"}
-NEVER_REVIEWS: tuple[str, ...] = ("gemini",)
+NEVER_REVIEWS: tuple[str, ...] = ("gemini", "opencode", "antigravity")  # توسعة العامل لا تمنحه حكمًا محتسبًا بق٧٥
 ISSUE_REF = re.compile(r"(?:Closes|Refs|Fixes|Resolves)\s+#(\d+)", re.IGNORECASE)
 BRANCH_ISSUE = re.compile(r"^team/(\d+)-")
 # الفحصُ المطلوب لاعتماد الرأس (حماية main)؛ نجاحُ فحصٍ غير متعلق أو تخطّي الكلّ لا يكفي (ملاحظة Codex على #344)
@@ -137,6 +137,8 @@ class DiwanProject(ProjectAdapter):
 
     def brief_header(self, issue: Issue, worker_family: str) -> str:
         ids = sorted(agent for agent in self.registry.get("agents", {}) if agent.startswith(f"{worker_family}/"))
+        if not ids:
+            raise ProjectError("worker_family_not_registered", worker_family)
         trailer = self.registry.get("trailer", "Diwan-Agent")
         return "\n".join([
             f"- كلُّ إيداعٍ يحمل الذيل `{trailer}: <معرّفك>` بمعرّفٍ مسجَّل من عائلة {worker_family}: {', '.join(ids) or '—'}.",

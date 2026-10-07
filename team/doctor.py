@@ -83,9 +83,8 @@ def check(adapters: list[Adapter], pins_path: Path, *, pin: bool = False, runner
 
 
 def default_adapters() -> list[Adapter]:
-    from team.adapters.claude import ClaudeAdapter
-    from team.adapters.codex import CodexAdapter
-    return [ClaudeAdapter(), CodexAdapter()]
+    from team.adapters import registry
+    return list(registry().values())
 
 
 def main(argv: list[str] | None = None) -> int:
