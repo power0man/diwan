@@ -11,6 +11,15 @@
       "source_kind": "search_excerpt",
       "note": "النماذجُ السحابية عبر ollama.com (أو الخادمِ المحليّ الممرِّر) تُحاسَب باشتراك الحساب (Free ثم Pro $20 شهريًّا) لا بالتوكن؛ فالكلفةُ الحدّيّة صفرٌ معلنٌ بأساسه، والاشتراكُ خارج هذا الجدول. المقتطفُ بتاريخ ٢٦ سبتمبر ٢٠٢٦ لا صفحةُ المزوّد، ويقرؤه المالك قبل الدفع."
     },
+    "ollama/*-cloud": {
+      "basis": "subscription_flat",
+      "input": 0,
+      "output": 0,
+      "read_at": "2026-09-26",
+      "source": "docs/PLAN-20260926.md#١١",
+      "source_kind": "search_excerpt",
+      "note": "الاشتراكُ نفسُه لوسومٍ سحابية لاحقتُها «-cloud» بعد الحجم، كالمراجِع الافتراضيّ `mistral-large-3:675b-cloud`؛ فنمطُ «:cloud» وحده كان يردّه `price_unknown` قبل الشبكة (#352)."
+    },
     "hf-router/*": {
       "basis": "live_catalog",
       "read_at": "2026-09-30",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+from argparse import Namespace
 from decimal import Decimal
 
 import pytest
@@ -160,9 +161,87 @@ def test_reported_cost_settles_over_the_price_estimate(tmp_path):
     assert (call["cost_micros"], call["cost_basis"]) == (500, "reported_by_provider")
 
 
-def test_cli_wraps_the_cloud_ollama_transport_only(tmp_path):
-    cloud = cli.build_transport(cli.CLOUD_ENDPOINT, {cli.CLOUD_KEY_ENV: "k"}, ledger_path=tmp_path / "l.jsonl")
+class _Server:
+    """خادمُ Ollama معلَّب: يجيب كلَّ نداءٍ بتوكناتٍ كاملة ويحفظ النموذجَ المطلوب."""
+
+    def __init__(self):
+        self.models = []
+
+    def open(self, request, timeout=None):
+        self.models.append(json.loads(request.data)["model"])
+        return io.BytesIO(json.dumps({"message": {"content": "{}"}, "prompt_eval_count": 3, "eval_count": 2}).encode())
+
+
+def test_cli_meters_every_cloud_model_call_and_only_those(tmp_path):
+    cloud = cli.build_transport(cli.CLOUD_ENDPOINT, {cli.CLOUD_KEY_ENV: "k"}, ledger_path=tmp_path / "cloud.jsonl")
     assert isinstance(cloud, MeteredTransport) and cloud.provider_key == "ollama" and cloud.cloud is True
-    assert cloud.budget.outstanding_micros == 0
-    local = cli.build_transport("http://127.0.0.1:11434", {}, ledger_path=tmp_path / "l.jsonl")
-    assert isinstance(local, cli.OllamaChat)
+    assert cloud.budget.outstanding_micros == 0 and cloud.meters is None
+    # ملاحظة Codex على #352: الخادمُ المحليّ الافتراضيّ يمرّر المراجِعين `:cloud` إلى الحساب السحابيّ، وكان نقلُه يخرج بلا
+    # `core.run`. فالآن يُغلَّف، ويُحاسَب منه نداءُ النموذج السحابيّ وحده؛ والمحليُّ يجيبه الخادمُ بلا حجزٍ ولا قيد
+    local = cli.build_transport("http://127.0.0.1:11434", {}, ledger_path=tmp_path / "local.jsonl")
+    assert isinstance(local, MeteredTransport) and local.cloud is False
+    local.transport.opener = server = _Server()
+    assert local("qwen3.5:9b", "s", "u", {}) == "{}"
+    assert local.calls == [] and list(local.ledger.entries()) == []
+    assert local("deepseek-v4.1-flash:cloud", "s", "u", {}) == "{}"
+    assert server.models == ["qwen3.5:9b", "deepseek-v4.1-flash:cloud"]
+    assert [(c["model"], c["cost_basis"], c["cost_micros"]) for c in local.calls] == [
+        ("deepseek-v4.1-flash:cloud", "subscription_flat", 0)]
+    assert [e["record"]["kind"] for e in local.ledger.entries()] == ["ok"]
+    assert [row["model"] for row in local.provider_usage] == ["qwen3.5:9b", "deepseek-v4.1-flash:cloud"]
+    assert isinstance(cli.build_transport("http://127.0.0.1:11434", {}), cli.OllamaChat)
+
+
+def test_a_reply_the_core_refuses_is_counted_once_as_a_refusal(tmp_path):
+    """ملاحظة Codex على #352: كان النداءُ يُضاف إلى `calls` قبل أن تقبل النواةُ ردَّه، فكلفةٌ مُبلَّغة سالبةٌ بميكرو واحد يرفضها
+    `core.run` ويسوّيها بالمحجوز (٥٣٤) كانت تُجمع مع المحجوز، فيعلن التقريرُ ٥٣٣ وما خُصم ٥٣٤."""
+    transport = FakeTransport({"content": "a", "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+                               "cost_status": "reported", "cost_usd": "-0.000001"})
+    metered = _metered(tmp_path, transport)
+    with pytest.raises(AutomaticReviewError) as refused:
+        metered("priced", "s", "u", {})
+    assert refused.value.code == "cost_negative" and transport.calls == 1
+    assert metered.calls == [] and [(r["code"], r["settled_micros"]) for r in metered.refusals] == [("cost_negative", 534)]
+    report = metered.spend_report()["core_run"]
+    assert Decimal(report["settled_usd"]) * 10 ** 6 == _charged(metered) == 534
+    assert sum(e["record"]["settled_micros"] for e in metered.ledger.entries()) == 534
+
+
+def test_the_core_run_ledger_lives_beside_reviews_and_the_artifact_stays_json(tmp_path):
+    """ملاحظة Codex على #352: كان السجلُّ في `reviews/`، و`check_artifact` يقرأ كلَّ ملفٍّ هناك وثيقةَ JSON واحدة، فيرفض سجلًّا
+    من سطرين (`artifact_not_json`). فصار بجانبه."""
+    bank = tmp_path / "bank"
+    (bank / "reviews").mkdir(parents=True)
+    (bank / "reviews" / "a.json").write_text(json.dumps({"file": "open/a.json"}))
+    path = cli._ledger_path(Namespace(bank=bank, smoke=None))
+    assert path == bank / "core-run-ledger.jsonl"
+    transport = FakeTransport(*({"content": "a", "usage": {"prompt_tokens": 1, "completion_tokens": 1}},) * 2)
+    metered = MeteredTransport(transport, provider_key="fake", budget=Budget(day_remaining_micros=10 ** 6, month_remaining_micros=10 ** 6),
+                               ledger=Ledger(path), prices=TABLE)
+    metered("priced", "s", "u", {})
+    metered("priced", "s", "u", {})
+    metered.ledger.anchor()
+    assert len(path.read_text().splitlines()) == 2
+    assert cli.check_artifact(bank / "reviews", environ={})["files"] == 1
+
+
+class _LedgerFullAfterSettlement(Ledger):
+    """سجلٌّ يمتلئ عند قيد الردّ المقبول، بعد أن سوّت الميزانيةُ كلفتَه."""
+
+    def append(self, record):
+        if record.get("kind") == "ok":
+            raise OSError(28, "No space left on device")
+        return super().append(record)
+
+
+def test_a_ledger_failure_after_settlement_is_counted_once(tmp_path):
+    """ملاحظة Codex على #352: كانت الكلفةُ تُضاف إلى `calls` قبل أن تكتمل `execute`؛ فإن سقطت كتابةُ القيد بعد التسوية أُضيفت
+    الكلفةُ نفسُها إلى `refusals` أيضًا، فخُصم ٢٠٠ ميكرو وأعلن التقريرُ ٤٠٠."""
+    transport = FakeTransport({"content": "a", "usage": {"prompt_tokens": 100, "completion_tokens": 50}})
+    budget = Budget(day_remaining_micros=10 ** 6, month_remaining_micros=10 ** 6)
+    metered = MeteredTransport(transport, provider_key="fake", budget=budget,
+                               ledger=_LedgerFullAfterSettlement(tmp_path / "ledger.jsonl"), prices=TABLE)
+    with pytest.raises(OSError):
+        metered("priced", "s", "u", {})
+    assert metered.calls == [] and [r["settled_micros"] for r in metered.refusals] == [200]
+    assert Decimal(metered.spend_report()["core_run"]["settled_usd"]) * 10 ** 6 == _charged(metered) == 200

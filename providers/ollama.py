@@ -70,10 +70,12 @@ class OllamaProvider:
                 return 0
             raise ProviderError("estimate_request_required",
                                 "تقديرُ كلفة مزوّدٍ غير محليّ يحتاج طلبًا مكتملًا (Request)", retryable=False)
-        if not is_cloud_model(request.model) and not is_cloud_model(self.model):
+        # والمسعَّرُ النموذجُ الذي يُرسل (`payload` يرسل `self.model` لا `request.model`): فلا يُقدَّر نموذجٌ سحابيٌّ بلا سعر
+        # بصفرٍ لأن الطلبَ حمل اسمًا مسعَّرًا، ولا يُرفض محليٌّ لأن الطلبَ حمل اسمًا سحابيًّا (ملاحظة Codex على #352)
+        if not is_cloud_model(self.model):
             return 0
         try:
-            entry = prices.lookup(prices.load(), "ollama", request.model)
+            entry = prices.lookup(prices.load(), "ollama", self.model)
             return prices.micros(entry, sum(len(m.content.encode("utf-8")) for m in request.messages),
                                  request.max_output)
         except (prices.PriceUnknown, prices.PricesMalformed) as e:

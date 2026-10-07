@@ -6,6 +6,7 @@ import pytest
 
 from core import prices
 from core.contracts import Message, Request
+from evaluation.external_review import DEFAULT_REVIEWERS
 from providers.base import ProviderError
 from providers.ollama import OllamaProvider
 
@@ -28,12 +29,21 @@ def test_repo_prices_registry_is_well_formed():
     table = prices.load()
     assert table["unit"] == prices.UNIT
     assert prices.lookup(table, "ollama", "deepseek-v4.1-flash:cloud")["basis"] == "subscription_flat"
+    # وكلُّ مراجِعٍ افتراضيّ مسعَّرٌ بالجدول، ومنه وسمُ «-cloud» (`mistral-large-3:675b-cloud`) الذي لا يطابقه نمطُ «:cloud» (#352)
+    assert {prices.lookup(table, "ollama", model)["basis"] for model in DEFAULT_REVIEWERS} == {"subscription_flat"}
 
 
 def test_priced_entry_requires_provider_page_source():
     assert prices.findings(_table(**{"p/m": _entry()})) == []
     assert "priced_source:p/m" in prices.findings(_table(**{"p/m": _entry(source_kind="search_excerpt")}))
     assert "priced_source:p/m" in prices.findings(_table(**{"p/m": _entry(source="http://example.test")}))
+
+
+def test_prices_are_non_negative_integers():
+    # ملاحظة Codex على #352: حارسُ `_valid_price` بلا إثباتٍ بالطفرة؛ فسعرٌ سالبٌ أو `True` أو كسرٌ يُردّ باسمه
+    assert prices.findings(_table(**{"p/m": _entry()})) == []
+    for bad in (-1, True, 1.5, "1", 2 ** 63):
+        assert f"price:p/m:input" in prices.findings(_table(**{"p/m": _entry(input=bad)})), bad
 
 
 def test_cloud_model_without_entry_is_price_unknown():
@@ -55,8 +65,14 @@ def test_ollama_provider_prices_cloud_model_from_registry():
     assert OllamaProvider("qwen3.5:9b").estimate_micros(_request("qwen3.5:9b")) == 0
     assert OllamaProvider("deepseek-v4.1-flash:cloud").estimate_micros(_request("deepseek-v4.1-flash:cloud")) == 0
     with pytest.raises(ProviderError) as refused:
-        OllamaProvider("unlisted-cloud").estimate_micros(_request("unlisted-cloud"))
+        OllamaProvider("cloud-unlisted:7b").estimate_micros(_request("cloud-unlisted:7b"))
     assert refused.value.code == "price_unknown"
+    # المسعَّرُ النموذجُ الذي يُرسل (`self.model`)، لا اسمُ الطلب الذي لا يُرسل: فمحليٌّ يبقى صفرًا ولو بلا طلب، وسحابيٌّ بلا سعرٍ
+    # يُرفض ولو حمل الطلبُ اسمًا مسعَّرًا (سقوطُ `test_node` على `estimate_micros(None)` في #352)
+    assert OllamaProvider("qwen3.5:9b").estimate_micros(_request("cloud-unlisted:7b")) == 0
+    with pytest.raises(ProviderError) as sent_model:
+        OllamaProvider("cloud-unlisted:7b").estimate_micros(_request("deepseek-v4.1-flash:cloud"))
+    assert sent_model.value.code == "price_unknown"
 
 
 def test_ollama_estimate_without_request_is_zero_only_for_a_local_provider():
@@ -75,6 +91,7 @@ def test_ollama_estimate_rejects_a_non_request_for_a_cloud_provider_before_netwo
     with pytest.raises(ProviderError) as refused:
         provider.estimate_micros({"model": "unlisted-cloud"})
     assert refused.value.code == "estimate_request_required"
+    # والطلبُ المكتمل يُسعَّر بالنموذج الذي يُرسل: سحابيٌّ بلا سعرٍ يُرفض ولو حمل الطلبُ اسمًا محليًّا (ملاحظة Codex على #352)
     with pytest.raises(ProviderError) as unpriced:
-        OllamaProvider("m").estimate_micros(_request("unlisted-cloud"))
+        OllamaProvider("cloud-unlisted:7b").estimate_micros(_request("m"))
     assert unpriced.value.code == "price_unknown"

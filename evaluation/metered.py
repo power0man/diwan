@@ -14,7 +14,7 @@
 صفوفُ `provider_usage` للنقل تبقى كما يكتبها كاتبُها (حارسُ الختم يقرؤها بشكلها)؛ وما يضيفه هذا الغلاف يُكتب في `core_run`
 من تقرير الإنفاق. والحدُّ: الطلبُ هنا رسالتان نصّيتان بلا أدواتٍ ولا تفكير، لأن المراجعةَ الخارجية هكذا تُرسَل.
 
-**حدودٌ معلَنة:** يُغلَّف اليوم نقلُ ollama.com وحده (`tools/external_review.py`). وموجّهُ HF يحجز ويسوّي بـ`Budget` بنفسه (#308)
+**حدودٌ معلَنة:** يُغلَّف اليوم نقلُ Ollama وحده (`tools/external_review.py`): ollama.com، والخادمُ المحليّ لنداءات نماذجه السحابية. وموجّهُ HF يحجز ويسوّي بـ`Budget` بنفسه (#308)
 فلا يُغلَّف مرّتين على السقف نفسِه. وKimi يُنادى بأداة سطر أوامرٍ خارج هذه العملية (`tools/kimi_drive.sh`) فلا يمرّ بـ`core.run`،
 والمحكِّمُ مسجَّلٌ لم يُشغَّل بعد (`evaluation/judge.py`)؛ وكلاهما يُغلَّف بهذا الغلاف حين يصير نداؤه في هذه العملية.
 """
@@ -63,6 +63,7 @@ class MeteredProvider:
         self.entry: dict | None = None
         self.pin: dict | None = None
         self.estimate = 0
+        self.call: dict | None = None
 
     def _price(self, model: str, bound: int) -> tuple[dict, dict | None]:
         try:
@@ -105,8 +106,10 @@ class MeteredProvider:
         else:
             cost = price_table.micros(self.entry, counts["prompt_tokens"], counts["completion_tokens"], pin=self.pin)
             basis = "subscription_flat" if self.entry["basis"] == "subscription_flat" else "estimated_from_prices"
-        self.metered.calls.append({"model": model, "price_key": self.entry["key"], "cost_basis": basis,
-                                   "estimate_micros": self.estimate, "cost_micros": cost, **counts})
+        # لا يُحسب نداءً حتى تقبل النواةُ الردّ: ردٌّ ترفضه (كلفةٌ سالبة مثلًا) يُسوّى بالمحجوز ويُعدّ رفضًا وحده، فلا يجمع التقريرُ
+        # كلفتَه المرفوضة فوق ما خُصم (ملاحظة Codex على #352)
+        self.call = {"model": model, "price_key": self.entry["key"], "cost_basis": basis,
+                     "estimate_micros": self.estimate, "cost_micros": cost, **counts}
         return Response(content=content, usage=Usage(counts["prompt_tokens"], counts["completion_tokens"]),
                         stop_reason="complete", cost_micros=cost, provider=self.name, model_version=model)
 
@@ -115,8 +118,12 @@ class MeteredTransport:
     """نقلٌ بالتوقيع نفسِه `(model, system, user, schema) -> str`، كلُّ نداءٍ فيه يمرّ بـ`core.run.execute`."""
 
     def __init__(self, transport, *, provider_key: str, budget: Budget, ledger, prices: dict | None = None,
-                 max_output: int | None = None, deadline_s: float = 900.0, data_policy: str = "public"):
+                 max_output: int | None = None, deadline_s: float = 900.0, data_policy: str = "public",
+                 meters=None):
         self.transport, self.provider_key = transport, provider_key
+        # `meters(model)`: هل يُحاسَب نداءُ هذا النموذج. فالخادمُ المحليُّ يمرّر `:cloud` إلى الحساب السحابيّ ويجيب المحليَّ بنفسه
+        # (ملاحظة Codex على #352)؛ وبلا `meters` يُحاسَب كلُّ نداء
+        self.meters = meters
         self.budget, self.ledger = budget, ledger
         self.prices = prices if prices is not None else price_table.load()
         self.max_output = _enforced_max_output(transport, max_output)
@@ -137,6 +144,9 @@ class MeteredTransport:
         return {side: price_table.usd_per_million_to_micros_per_1k(pin[side]) for side in ("input", "output")}
 
     def __call__(self, model: str, system: str, user: str, schema: dict) -> str:
+        if self.meters is not None and not self.meters(model):
+            # نموذجٌ يجيبه الخادمُ المحليّ بنفسه: لا فاتورة، فلا حجزَ ولا قيد، وصفُّه في `provider_usage` كما يكتبه النقل
+            return self.transport(model, system, user, schema)
         provider = MeteredProvider(self, schema)
         request = Request(messages=(Message(role="system", content=system), Message(role="user", content=user)),
                           model=model, model_version=model, max_output=self.max_output, deadline_s=self.deadline_s,
@@ -155,6 +165,7 @@ class MeteredTransport:
         if outcome.response is None:
             # عطلٌ قيّده `core.run` وسوّاه بالمحجوز: يُسمّى هنا كما يُسمّى الرفض، ولا يُحسب نداءً، وما سُوّي عليه يُحسب
             raise self._refused(model, outcome.error_code or "provider_error", provider, before)
+        self.calls.append(provider.call)
         return outcome.response.content
 
     def _refused(self, model: str, code: str, provider: MeteredProvider, before: int) -> AutomaticReviewError:

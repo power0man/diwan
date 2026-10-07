@@ -284,12 +284,14 @@ class OllamaChat:
 def build_transport(base_url: str, environ=os.environ, *, ledger_path: Path | None = None):
     """النقلُ من النقطة المطلوبة؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر).
 
-    ونقلُ ollama.com يمرّ بـ`core.run` بمزوّدٍ غير محليّ مسعَّرٍ من `registry/prices.json` وسجلٍّ مبصوم في `ledger_path`
-    (البند ٣ من #295). حدُّه: الخادمُ المحليُّ الممرِّر لنموذجٍ `:cloud` لا يُغلَّف هنا، لأن النموذجَ لا يُعرف عند البناء."""
+    ونداءُ النموذج السحابيّ يمرّ بـ`core.run` بمزوّدٍ غير محليّ مسعَّرٍ من `registry/prices.json` وسجلٍّ مبصوم في `ledger_path`
+    (البند ٣ من #295): كلُّ نداءٍ على ollama.com، ونداءُ `:cloud` على الخادم المحليّ الذي يمرّره إلى الحساب نفسِه، وهو الطريقُ
+    الافتراضيّ للمراجِعين السحابيين (ملاحظة Codex على #352). وما يجيبه الخادمُ المحليّ بنفسه لا يُحجز له ولا يُقيَّد."""
     transport = OllamaChat(base_url, api_key=environ.get(CLOUD_KEY_ENV) or None)
-    if transport.cloud and ledger_path is not None:
-        return metered_transport(transport, "ollama", ledger_path, cap_micros=0)
-    return transport
+    if ledger_path is None:
+        return transport
+    return metered_transport(transport, "ollama", ledger_path, cap_micros=0,
+                             meters=None if transport.cloud else is_cloud_model)
 
 
 def metered_transport(transport, provider_key: str, ledger_path: Path, *, cap_micros: int, **kw):
@@ -301,9 +303,11 @@ def metered_transport(transport, provider_key: str, ledger_path: Path, *, cap_mi
 
 
 def _ledger_path(args) -> Path:
+    """سجلُّ `core.run` بجانب `reviews/` لا فيه: `check_artifact` يقرأ كلَّ ملفٍّ هناك وثيقةَ JSON واحدة، والسجلُّ أسطرٌ ومعه مرساتُه
+    (ملاحظة Codex على #352)."""
     bank = getattr(args, "bank", None)
     if bank is not None and not getattr(args, "smoke", None):
-        return Path(bank) / "reviews" / "core-run-ledger.jsonl"
+        return Path(bank) / "core-run-ledger.jsonl"
     return Path(tempfile.mkdtemp(prefix="diwan-core-run-")) / "ledger.jsonl"
 
 
