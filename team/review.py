@@ -65,10 +65,12 @@ def calibration_counts_valid(entry: dict) -> bool:
             and planted > 0 and 0 <= caught <= planted and alarms >= 0)
 
 
-def record_calibration(home: Path, reviewer: str, *, caught: int, of: int, false_alarms: int, clock=now_utc) -> dict:
-    entry = {"calibrated_at": clock(), "defects_caught": caught, "defects_planted": of, "false_alarms": false_alarms}
+def record_calibration(home: Path, reviewer: str, *, caught: int, of: int, false_alarms: int, model: str = "", clock=now_utc) -> dict:
+    entry = {"calibrated_at": clock(), "defects_caught": caught, "defects_planted": of, "false_alarms": false_alarms, "model": model}
     if not calibration_counts_valid(entry):
         raise ValueError("invalid_calibration_counts")
+    if not isinstance(model, str) or not model.strip():
+        raise ValueError("calibration_model_missing")
     data = load_calibration(home)
     data[reviewer] = entry
     home.mkdir(parents=True, exist_ok=True)
@@ -76,10 +78,12 @@ def record_calibration(home: Path, reviewer: str, *, caught: int, of: int, false
     return data[reviewer]
 
 
-def is_calibrated(calibration: dict, reviewer: str, now_iso: str, days: int = CALIBRATION_DAYS) -> bool:
+def is_calibrated(calibration: dict, reviewer: str, now_iso: str, days: int = CALIBRATION_DAYS, *, model: str = "") -> bool:
     """Minimum eligibility: a caught planted defect and consistent recent counts, not a quality threshold."""
     entry = calibration.get(reviewer) or {}
     if not isinstance(entry, dict) or not calibration_counts_valid(entry) or entry["defects_caught"] == 0:
+        return False
+    if not model or entry.get("model") != model:
         return False
     stamp = entry.get("calibrated_at")
     if not stamp:
@@ -136,7 +140,6 @@ class Reviewer:
     repo_root: Path
     home: Path = field(default_factory=team_home)
     remote: str = "origin"
-    agent_ids: dict[str, str] = field(default_factory=lambda: {"codex": "openai/codex", "claude": "anthropic/claude-fable-5-1"})
     runner: object = subprocess.run
     clock: object = now_utc
     doctor_check: object = None      # يُستدعى قبل كل مراجعةٍ فعلية؛ None = team.doctor.check على تثبيتات الموطن
@@ -160,8 +163,11 @@ class Reviewer:
                 raise Refusal("reviewer_unknown", reviewer)
             if adapter.spec.family in families:
                 raise Refusal("reviewer_same_family", f"{reviewer} من عائلة {adapter.spec.family} وهي بين المؤلّفين")
+            if not self.project.reviewer_identity(reviewer, adapter.spec.family, getattr(adapter, "model", "")):
+                raise Refusal("reviewer_identity_not_registered", reviewer)
             return families, [reviewer]
-        return families, [name for name in policy.candidates if name in self.adapters and name not in policy.never]
+        return families, [name for name in policy.candidates if name in self.adapters and name not in policy.never
+                          and self.project.reviewer_identity(name, self.adapters[name].spec.family, getattr(self.adapters[name], "model", ""))]
 
     def merge_base(self, pull: PullRequest) -> str:
         """نقطةُ تفرّع الطلب عن الفرع الرئيس **البعيد**؛ فـ`main` المحلي قد يتأخّر فيدخل في الفرق ما دُمج أصلًا (دخان ٦ أكتوبر).
@@ -238,7 +244,7 @@ class Reviewer:
             self.ledger.append(issue, "review_rejected", head_sha=head, review_ref=ref, reviewer=adapter.spec.name,
                                reviewer_family=family, verdict=verdict)
             return "review_rejected"
-        if not is_calibrated(load_calibration(self.home), adapter.spec.name, self.clock()):
+        if not is_calibrated(load_calibration(self.home), adapter.spec.name, self.clock(), model=getattr(adapter, "model", "")):
             self.ledger.append(issue, "review_uncalibrated", head_sha=head, reviewer=adapter.spec.name, reviewer_family=family,
                                review_ref=ref, verdict=verdict)
             return "review_uncalibrated"
@@ -254,7 +260,7 @@ class Reviewer:
         pull = self.project.pull(pr_number)
         families, names = self.candidates(pull, reviewer)
         plan = {"pr": pull.number, "head_sha": pull.head_sha, "author_families": sorted(families), "candidates": names,
-                "calibrated": {n: is_calibrated(load_calibration(self.home), n, self.clock()) for n in names}}
+                "calibrated": {n: is_calibrated(load_calibration(self.home), n, self.clock(), model=getattr(self.adapters[n], "model", "")) for n in names}}
         if not names:
             if execute and pull.issue is not None and self.ledger.main_state(pull.issue) is not None:
                 self.ledger.append(pull.issue, "reviewer_unavailable", code="no_eligible_reviewer", pr=pull.number)
@@ -288,7 +294,8 @@ class Reviewer:
                         if pull.issue is not None and self.ledger.main_state(pull.issue) is not None:
                             self.ledger.append(pull.issue, "reviewer_unavailable", code=code, reviewer=name, pr=pull.number)
                         continue
-                    body = q75_comment(adapter, pull.head_sha, result.verdict, result.text, [], self.agent_ids.get(name, name), base_sha=base_sha,
+                    identity = self.project.reviewer_identity(name, adapter.spec.family, getattr(adapter, "model", ""))
+                    body = q75_comment(adapter, pull.head_sha, result.verdict, result.text, [], identity, base_sha=base_sha,
                                        strip_paths=(str(tmp),))
                     ref = self.project.comment(pull.number, body)
                     recorded = self._record(pull, adapter, pull.head_sha, ref, result.verdict)
@@ -312,7 +319,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.caught is None or args.of is None:
             parser.error("--calibrate يحتاج --caught و--of")
         try:
-            out = record_calibration(home, args.calibrate, caught=args.caught, of=args.of, false_alarms=args.false_alarms)
+            from team.adapters import registry
+            adapter = registry().get(args.calibrate)
+            out = record_calibration(home, args.calibrate, caught=args.caught, of=args.of, false_alarms=args.false_alarms,
+                                     model=getattr(adapter, "model", ""))
         except ValueError as exc:
             print(json.dumps({"status": "refused", "code": str(exc)}, ensure_ascii=False))
             return 2

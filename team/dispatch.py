@@ -651,6 +651,9 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"status": "refused", "code": "git_error", "detail": str(exc)}, ensure_ascii=False))
         return 2
     except ProjectError as exc:
+        if exc.code in ("worker_identity_not_registered", "worker_role_not_allowed"):
+            print(json.dumps({"status": "refused", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
+            return 2
         print(json.dumps({"status": "project_unavailable", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
         return 3
     except ModelUnconfigured as exc:

@@ -43,3 +43,18 @@ def test_missing_binary_is_named_and_never_pinned(tmp_path):
     pins = tmp_path / "doctor.json"
     report = doctor.check([adapter], pins, pin=True, runner=_runner_version("1.0"))
     assert report["findings"] == ["binary_missing:codex"] and not pins.exists()
+
+
+def test_missing_optional_tool_does_not_erase_or_block_other_pins(tmp_path):
+    import json
+    pins = tmp_path / "doctor.json"
+    preserved = {"version": "old", "sha256": "kept"}
+    pins.write_text(json.dumps({"opencode": preserved, "unselected": preserved}))
+    present = _adapter(tmp_path, "claude")
+    absent = FakeAdapter(name="opencode", binary=tmp_path / "absent")
+    report = doctor.check([present, absent], pins, pin=True, runner=_runner_version("1.0"))
+    assert report["findings"] == ["binary_missing:opencode"]
+    actual = json.loads(pins.read_text())
+    assert actual["opencode"] == actual["unselected"] == preserved
+    assert actual["claude"]["version"] == "1.0"
+    assert doctor.check([present], pins, runner=_runner_version("1.0"))["status"] == "passed"

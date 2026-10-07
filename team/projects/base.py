@@ -74,6 +74,10 @@ class ProjectAdapter:
         return ""
 
     # — طلباتُ الدمج والمراجعة —
+    def reviewer_identity(self, name: str, family: str, model: str) -> str | None:
+        """Registered identity for the actual counted reviewer, or None if not admitted."""
+        return None
+
     def pull(self, number: int) -> PullRequest:
         raise NotImplementedError("pull")
 

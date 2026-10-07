@@ -428,6 +428,17 @@ def test_diwan_dispatch_binds_the_exact_surface_and_role_before_launch(tmp_path)
     assert project.worker_findings("anthropic", worker_name="codex") == ["worker_identity_not_registered"]
 
 
+def test_dispatch_policy_refusals_are_not_reported_as_platform_outages(monkeypatch, capsys):
+    from team import dispatch
+    from team.projects.base import ProjectError
+    for code in ("worker_identity_not_registered", "worker_role_not_allowed"):
+        def denied(args):
+            raise ProjectError(code, "fixture")
+        monkeypatch.setattr(dispatch, "build", denied)
+        assert dispatch.main(["run", "356"]) == 2
+        assert json.loads(capsys.readouterr().out)["status"] == "refused"
+
+
 def test_implicit_cli_models_cannot_reuse_scores_and_explicit_models_reach_both_modes(tmp_path, monkeypatch):
     from team.adapters.claude import ClaudeAdapter
     from team.adapters.codex import CodexAdapter

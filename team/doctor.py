@@ -71,11 +71,13 @@ def check(adapters: list[Adapter], pins_path: Path, *, pin: bool = False, runner
                 if pinned.get("sha256") != current["sha256"]:
                     findings.append(f"binary_changed:{name}")
         tools.append(current)
-    if pin and not any(f.startswith("binary_missing") for f in findings):
+    pinnable = [t for t in tools if t["exists"] and t["version"] and t["sha256"]]
+    if pin and pinnable:
+        pins.update({t["name"]: {"version": t["version"], "sha256": t["sha256"]} for t in pinnable})
         pins_path.parent.mkdir(parents=True, exist_ok=True)
-        pins_path.write_text(json.dumps({t["name"]: {"version": t["version"], "sha256": t["sha256"]} for t in tools},
-                                        ensure_ascii=False, indent=1), encoding="utf-8")
-        findings = [f for f in findings if f.startswith("binary_missing")]
+        pins_path.write_text(json.dumps(pins, ensure_ascii=False, indent=1), encoding="utf-8")
+        pinned_names = {t["name"] for t in pinnable}
+        findings = [f for f in findings if f.split(":", 1)[-1] not in pinned_names]
     return {"schema_version": 1, "status": "passed" if not findings else "refused", "findings": findings, "tools": tools,
             "pins": str(pins_path),
             "measurement_limits": ["the_doctor_attests_the_binary_is_the_one_last_smoke_tested_not_that_it_behaves",

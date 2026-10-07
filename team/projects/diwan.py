@@ -174,6 +174,11 @@ class DiwanProject(ProjectAdapter):
         ])
 
     # — طلباتُ الدمج والمراجعة —
+    def reviewer_identity(self, name: str, family: str, model: str) -> str | None:
+        if name not in ("codex", "claude") or not model or self.worker_findings(family, worker_name=name, worker_model=model):
+            return None
+        return self.worker_identity(name, model)[0]
+
     def _pull_from(self, data: dict) -> PullRequest:
         branch = data.get("headRefName") or ""
         merge = data.get("mergeCommit") or {}

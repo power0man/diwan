@@ -62,6 +62,9 @@ class FakeProject(ProjectAdapter):
     def brief_header(self, issue: Issue, worker_family: str, *, worker_name: str = "", worker_model: str = "") -> str:
         return f"- ذيلُ العائلة {worker_family}."
 
+    def reviewer_identity(self, name: str, family: str, model: str) -> str | None:
+        return (f"anthropic/{model}" if name == "claude" else "openai/codex") if model else None
+
     def pull(self, number: int) -> PullRequest:
         return self.pulls[number]
 
@@ -136,6 +139,7 @@ class FakeAdapter(Adapter):
     """وكيلٌ مصطنع: `behaviour` يحدّد ما يفعله في نسخة العمل (commit | nothing | killed | unavailable)."""
     name: str = "claude"
     family: str = "anthropic"
+    model: str = "fixture-model"
     behaviour: str = "commit"
     review_text: str = "لا ملاحظات.\nالحكم: صامد"
     review_rc: int = 0
