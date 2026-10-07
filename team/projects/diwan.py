@@ -232,9 +232,33 @@ class DiwanProject(ProjectAdapter):
         trailer = self.registry.get("trailer", "Diwan-Agent")
         families = set()
         for message in pull.commit_messages:
-            for agent in parse_trailers(message).get(trailer, []):
+            tags = parse_trailers(message)
+            for agent in tags.get(trailer, []) + tags.get("Team-Source-Agent", []):
+                if agent not in self.registry["agents"]:
+                    raise ProjectError("author_not_in_trusted_registry")
                 families.add(agent.split("/", 1)[0])
         return families
+
+    def handoff_findings(self, files: dict[str, bytes], controller_agent: str) -> list[str]:
+        # Do not open owner stores to build a private-content fingerprint during handoff.
+        from export_public import Fingerprints, scan_path
+        findings = []
+        if controller_agent not in self.registry["agents"]:
+            findings.append("controller_identity_not_registered")
+        fingerprints = Fingerprints(frozenset(), (), ())
+        for rel, data in files.items():
+            if rel in FROZEN_PATHS or rel == "docs/DECISIONS.md":
+                findings.append("handoff_protected_path")
+            try:
+                text = data.decode("utf-8")
+            except UnicodeError:
+                findings.append("handoff_nontext_file")
+                continue
+            if "\0" in text:
+                findings.append("handoff_nontext_file")
+            if scan_path(rel, text, fingerprints):
+                findings.append("handoff_private_content")
+        return sorted(set(findings))
 
     def review_policy(self, families: set[str]) -> ReviewPolicy:
         ordered: list[str] = []

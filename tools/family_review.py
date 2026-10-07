@@ -88,12 +88,18 @@ def author_families(commits: list[dict], registry: dict) -> set[str]:
     بوتُ عائلة المؤلّف الذي سجّل نفسَه في الطلب باسمٍ جديد."""
     families = set()
     for commit in commits:
-        values = parse_trailers(commit["message"]).get(registry["trailer"], [])
+        trailers = parse_trailers(commit["message"])
+        values = trailers.get(registry["trailer"], [])
         if not values:
             continue
         if len(values) != 1 or values[0] not in registry["agents"]:
             raise ReviewError("author_not_in_trusted_registry", ", ".join(values)[:120])
         families.add(values[0].split("/", 1)[0])
+        sources = trailers.get("Team-Source-Agent", [])
+        if sources:
+            if len(sources) != 1 or sources[0] not in registry["agents"]:
+                raise ReviewError("author_not_in_trusted_registry", "invalid handoff source")
+            families.add(sources[0].split("/", 1)[0])
     if not families:
         raise ReviewError("no_attributed_author")
     return families

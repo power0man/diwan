@@ -32,7 +32,7 @@ from core.quoted import quarantine
 from team import team_home, worktrees_root
 from team.adapters.base import Adapter
 from team.adapters.opencode import ModelUnconfigured
-from team.ledger import LEASE_SECONDS, TeamLedger, TransitionError, lease_expired, now_utc
+from team.ledger import LEASE_SECONDS, LedgerCorrupt, TeamLedger, TransitionError, lease_expired, now_utc
 from team.projects.base import Issue, ProjectAdapter, ProjectError
 
 LEDGER_FILE = "dispatch.jsonl"
@@ -252,6 +252,7 @@ class Dispatcher:
             self._git("add", str(brief_path.relative_to(wt)), cwd=wt)
             self._git("commit", "-q", "-m", f"تكليف #{issue.number}", cwd=wt)
         self.ledger.append(issue.number, "dispatched", brief_sha256=brief_sha, worker=self.adapter.spec.name, family=self.family,
+                           project=self.project.name, repo_common_dir=self._git("rev-parse", "--path-format=absolute", "--git-common-dir"),
                            branch=branch, worktree=str(wt), base_sha=base_sha, brief_path=str(kept), authorization=authorization,
                            owner_order=(owner_order or None), quarantine_codes=codes)
         raw = self.raw_dir(issue.number, attempt)
@@ -400,6 +401,10 @@ class Dispatcher:
         state = self.ledger.main_state(issue_number)
         if state is None:
             raise Refusal("nothing_to_resume")
+        intent = self.ledger.last_of(issue_number, "controller_commit_started", state["attempt"])
+        receipt = self.ledger.last_of(issue_number, "controller_commit", state["attempt"])
+        if intent and (not receipt or intent["plan_sha256"] != receipt["plan_sha256"]):
+            return {"status": "outcome_unknown", "reason": "controller_commit_incomplete", "attempt": state["attempt"]}
         if state["state"] != "accepted" and self.ledger.open_attempt(issue_number) is None:
             return {"status": "taken_over", "attempt": state["attempt"]}      # محاولةٌ مستحوَذٌ عليها لا تُستأنف
         if state["state"] == "dispatched":
@@ -569,15 +574,30 @@ class Dispatcher:
         return {"issue": issue_number, "state": state["state"] if state else None, "attempt": state["attempt"] if state else 0,
                 "last": self.ledger.last(issue_number)}
 
+    def handoff(self, issue_number: int, *, files: list[str], controller_agent: str,
+                execute: bool = False, expected_plan_sha256: str | None = None, expected_diff_sha256: str | None = None) -> dict:
+        from team.handoff import Handoff
+        bounded = Handoff(self)
+        try:
+            if execute:
+                return bounded.execute(issue_number, files, controller_agent, expected_plan_sha256, expected_diff_sha256)
+            return bounded.plan(issue_number, files, controller_agent)
+        except (OSError, UnicodeError) as exc:
+            raise Refusal("handoff_evidence_unreadable") from exc
+
 
 def build(args) -> Dispatcher:
     from team.adapters import registry
     from team.projects.diwan import DiwanProject
     repo_root = Path(args.repo_root or git("rev-parse", "--show-toplevel", cwd=Path.cwd()))
     home = team_home()
-    home.mkdir(parents=True, exist_ok=True)
+    read_only = args.command == "handoff" and not args.execute
+    if not read_only:
+        home.mkdir(parents=True, exist_ok=True)
     adapters = registry()
     project = DiwanProject(root=repo_root)
+    if args.command == "handoff":
+        args.worker = "codex"
     if args.worker == "auto":
         from team.catalog import discover, load_evidence, select
         ranked = select(discover(home=home), "coding", load_evidence(home))["ranking"]
@@ -605,7 +625,7 @@ def build(args) -> Dispatcher:
         if chosen is None:
             raise Refusal("no_eligible_worker", json.dumps(blocked, ensure_ascii=False))
         args.worker = chosen
-    return Dispatcher(project=project, adapter=adapters[args.worker], ledger=TeamLedger(home / LEDGER_FILE),
+    return Dispatcher(project=project, adapter=adapters[args.worker], ledger=TeamLedger(home / LEDGER_FILE, read_only=read_only),
                       repo_root=repo_root, home=home, adapters=adapters)
 
 
@@ -628,6 +648,12 @@ def build_parser() -> argparse.ArgumentParser:
         sub.add_parser(name, parents=[sub_common]).add_argument("issue", type=int)
     take = sub.add_parser("takeover", parents=[sub_common]); take.add_argument("issue", type=int)
     take.add_argument("--owner-authorization", required=True)
+    hand = sub.add_parser("handoff", parents=[sub_common]); hand.add_argument("issue", type=int)
+    hand.add_argument("--file", dest="files", action="append", required=True)
+    hand.add_argument("--controller-agent", required=True)
+    hand.add_argument("--execute", action="store_true")
+    hand.add_argument("--expected-plan-sha256")
+    hand.add_argument("--expected-diff-sha256")
     gc = sub.add_parser("gc", parents=[sub_common]); gc.add_argument("--yes", action="store_true")
     return parser
 
@@ -640,6 +666,10 @@ def main(argv: list[str] | None = None) -> int:
             out = dispatcher.run(args.issue, execute=args.execute, owner_order=args.owner_order, budget_usd=args.budget_usd, timeout=args.timeout)
         elif args.command == "takeover":
             out = dispatcher.takeover(args.issue, owner_authorization=args.owner_authorization)
+        elif args.command == "handoff":
+            out = dispatcher.handoff(args.issue, files=args.files, controller_agent=args.controller_agent,
+                                     execute=args.execute, expected_plan_sha256=args.expected_plan_sha256,
+                                     expected_diff_sha256=args.expected_diff_sha256)
         elif args.command == "gc":
             out = dispatcher.gc(yes=args.yes)
         else:
@@ -649,6 +679,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     except GitError as exc:
         print(json.dumps({"status": "refused", "code": "git_error", "detail": str(exc)}, ensure_ascii=False))
+        return 2
+    except LedgerCorrupt:
+        print(json.dumps({"status": "refused", "code": "ledger_corrupt_or_missing"}))
         return 2
     except ProjectError as exc:
         if exc.code in ("worker_identity_not_registered", "worker_role_not_allowed"):
