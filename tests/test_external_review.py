@@ -1469,7 +1469,10 @@ def test_openrouter_mock_sends_no_paid_fallback_and_persists_zero_cost_usage(tmp
     assert cli.main(["--backend", "openrouter", "--smoke", str(out),
                      "--reviewer", OR_DS, "--reviewer", OR_MI]) == 0
     sent = [json.loads(request.data) for request in opener.requests if request.data is not None]
-    assert all(payload["provider"] == {"allow_fallbacks": False} for payload in sent)
+    # سقفُ السعر في الطلب نفسِه صفرٌ لكل بند (#285)، لا الفهرسُ وحده
+    assert all(payload["provider"] == {"allow_fallbacks": False,
+                                       "max_price": {"prompt": 0, "completion": 0, "request": 0, "image": 0}}
+               for payload in sent)
     assert all(payload["usage"] == {"include": True} and "models" not in payload for payload in sent)
     report = json.loads(out.read_text(encoding="utf-8"))
     # نداءُ الفهرس صفٌّ في سجلّ النداءات أيضًا، ودليلُ المجانية بنودُ السعر ولحظتُها لا عبارتُه وحدها (#285)
@@ -1517,6 +1520,26 @@ def test_an_openrouter_attempt_sent_without_a_confirmed_cost_is_counted_not_repo
         chat(OR_DS, "s", "u", {})
     assert chat.provider_usage[-1]["request_sent"] is True
     assert chat.spend_report()["cost_unconfirmed_attempts"] == 1
+
+
+def test_openrouter_request_carries_a_zero_price_cap_and_the_evidence_records_it_with_its_limit():
+    """تدقيقٌ لاحق (#285): لقطةُ الفهرس واحدة عند البدء، فيُلزَم الطلبُ نفسُه بـ`provider.max_price` صفرًا في كل بند،
+    ويُحفظ السقفُ في دليل المجانية، ويُعلن أنه لم يُجرَّب حيًّا وأن فحصَ `usage.cost` اللاحق هو الحارسُ المُلزم."""
+    chat = cli.OpenAICompatChat("openrouter", KEY)
+    chat.approve_zero_spend([_priced(OR_DS)], [OR_DS])
+    chat.opener = UsageOpener(replies={OR_DS: [_completion("{}")]})
+    assert chat(OR_DS, "s", "u", {}) == "{}"
+    payload = json.loads(chat.opener.requests[-1].data)
+    cap = payload["provider"]["max_price"]
+    assert set(cap) == {"prompt", "completion", "request", "image"} and set(cap.values()) == {0}
+    assert payload["provider"]["allow_fallbacks"] is False
+    assert chat.zero_spend_evidence[OR_DS]["request_price_cap"] == cap
+    # الدليلُ المحفوظ لا يشارك الحمولةَ كائنًا واحدًا: تغييرُ أحدهما لا يغيّر الآخر
+    assert chat.zero_spend_evidence[OR_DS]["request_price_cap"] is not cli.OPENROUTER_MAX_PRICE
+    assert chat.spend_report()["zero_spend_evidence"][OR_DS]["request_price_cap"] == cap
+    limits = cli.free_limits((), "openrouter")
+    assert any(limit.startswith("the_openrouter_request_price_cap_max_price_zero_was_not_exercised_live") for limit in limits)
+    assert all(not limit.startswith("the_openrouter_request_price_cap") for limit in cli.free_limits((), "groq"))
 
 
 def test_groq_mock_logs_tokens_but_never_invents_an_unreported_zero_cost():
