@@ -369,6 +369,14 @@ ZERO_SPEND_LIMITS = (
     "zero_spend_guard_is_provider_specific_and_not_a_general_price_attestation",
     "provider_usage_is_reported_when_available_and_missing_cost_is_never_assumed_zero",
 )
+# سقفُ السعر داخل طلب OpenRouter نفسِه (#285): `provider.max_price` بوحدات OpenRouter (دولار لكل مليون رمزٍ للمدخل والمخرج،
+# ودولار لكل طلبٍ وصورة)، وكلُّه صفر، فيُلزَم المزوّدَ بألّا يوجّه إلى نقطةٍ مدفوعة إن تغيّر السعرُ بعد لقطة الفهرس.
+# ليس بديلًا عن فحص `usage.cost` بعد النداء: لم يُجرَّب حيًّا، فالفحصُ اللاحق يبقى الحارسَ المُلزم (الحدُّ أدناه).
+OPENROUTER_MAX_PRICE = {"prompt": 0, "completion": 0, "request": 0, "image": 0}
+OPENROUTER_LIMITS = ZERO_SPEND_LIMITS + (
+    "the_openrouter_request_price_cap_max_price_zero_was_not_exercised_live_a_price_that_rises_between_the_catalog"
+    "_snapshot_and_the_call_is_still_detected_only_after_the_call_from_usage_cost",
+)
 # سقفُ الموجّه المدفوع حدٌّ على الحجز بسعر الفهرس، لا ضمانٌ لما يفوتره المزوّد (ملاحظة Codex على #308)
 HF_ROUTER_LIMITS = (
     "the_cap_bounds_reservations_at_the_catalog_price_read_at_run_time_a_charge_reported_above_its_reservation"
@@ -378,7 +386,8 @@ HF_ROUTER_LIMITS = (
 
 def free_limits(base, backend: str | None = None) -> list[str]:
     """حدودُ القياس على الواجهات المجانية من موضعٍ واحد، للتجربة وللبنك وللخلاصة المحفوظة (ملاحظة Codex على #174)."""
-    extra = ZERO_SPEND_LIMITS if backend in {"groq", "openrouter"} else HF_ROUTER_LIMITS if backend == "hf-router" else ()
+    extra = (OPENROUTER_LIMITS if backend == "openrouter" else ZERO_SPEND_LIMITS if backend == "groq"
+             else HF_ROUTER_LIMITS if backend == "hf-router" else ())
     return sorted(set(base) | set(FREE_LIMITS) | set(extra))
 
 
@@ -629,7 +638,7 @@ class OpenAICompatChat:
             # البنودُ بأسمائها الآمنة وقيمِها العشرية المطبَّعة وحدها، لا نصٌّ حرٌّ من الفهرس
             self.zero_spend_evidence[model] = {
                 "proof": self.zero_spend_proofs[model], "catalog": bare_url(self.catalog_url),
-                "observed_at": observed_at,
+                "observed_at": observed_at, "request_price_cap": dict(OPENROUTER_MAX_PRICE),
                 "pricing": {key: str(_decimal(value)) for key, value in sorted(by_id[model]["pricing"].items())
                             if isinstance(key, str) and _SAFE_TOKEN.fullmatch(key)}}
 
@@ -732,8 +741,10 @@ class OpenAICompatChat:
             payload = {"model": self._wire_model(model), "stream": False, "temperature": 0, "max_tokens": self.max_tokens,
                        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
             if self.backend == "openrouter":
-                # لا نماذجَ بديلة ولا انتقالَ مدفوعًا، واطلب الكلفة الفعلية في الردّ حتى لا تُخمَّن صفرًا.
-                payload.update(provider={"allow_fallbacks": False}, usage={"include": True})
+                # لا نماذجَ بديلة ولا انتقالَ مدفوعًا، وسقفُ السعر صفرٌ في الطلب نفسِه (#285)، واطلب الكلفة الفعلية في
+                # الردّ حتى لا تُخمَّن صفرًا.
+                payload.update(provider={"allow_fallbacks": False, "max_price": dict(OPENROUTER_MAX_PRICE)},
+                               usage={"include": True})
             raw, content_type, status = self._send(self.chat_url, payload, model)
             body, shape = response_shape(status, raw, content_type)
             if shape["top"] == "not_json":
