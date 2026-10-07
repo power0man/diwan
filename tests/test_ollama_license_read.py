@@ -18,6 +18,9 @@ LLAMA = b"LLAMA 3.1 COMMUNITY LICENSE AGREEMENT\nLlama 3.1 Version Release Date:
 ODD = b"Some Model Terms\nnobody has digested this text\n"
 
 
+RUNNER = "anthropic/claude-opus-5-5"   # مُنتِجُ الدليل في الاختبارات: عميلٌ مسجَّل غيرُ مؤلّف الأداة
+
+
 def _runner(outputs: dict[str, tuple[int, bytes, bytes]], listing: tuple[int, bytes, bytes] = (0, LIST.encode(), b"")):
     def run(command):
         if command == ["ollama", "--version"]:
@@ -144,7 +147,7 @@ def test_the_cli_writes_the_probe_and_the_registry_and_fails_while_a_tag_stays_p
     registry.write_text(json.dumps(_registry(**{"llama3.1:8b": {"pending": "read_with_ollama_show_license_on_the_mac"},
                                                 "gemma3:12b": {"pending": "read_with_ollama_show_license_on_the_mac"}})))
     monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
-    args = ["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07"]
+    args = ["--agent", RUNNER, "--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07"]
     assert olr.main(args) == 2
     assert not list(probes.glob("*.json"))
     assert olr.main([*args, "--write"]) == 2
@@ -152,7 +155,7 @@ def test_the_cli_writes_the_probe_and_the_registry_and_fails_while_a_tag_stays_p
     assert written["licenses"] == {"llama3.1:8b": "llama3.1"} and written["unresolved_readings"][0]["pending"] == olr.NOT_PULLED
     models = json.loads(registry.read_text())["models"]
     assert models["llama3.1:8b"]["license"] == "llama3.1" and models["gemma3:12b"] == {"pending": olr.NOT_PULLED}
-    assert olr.main(["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--tag", "llama3.1:8b"]) == 0
+    assert olr.main(["--agent", RUNNER, "--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--tag", "llama3.1:8b"]) == 0
     assert json.loads("{" + capsys.readouterr().out.rsplit("\n{", 1)[-1])["unresolved_readings"] == []
 
 
@@ -163,7 +166,7 @@ def test_a_second_run_on_the_same_day_keeps_the_evidence_the_first_run_resolved_
     probes.mkdir()
     registry.write_text(json.dumps(_registry(**{"llama3.1:8b": {"pending": "read_with_ollama_show_license_on_the_mac"},
                                                 "gemma3:12b": {"pending": "read_with_ollama_show_license_on_the_mac"}})))
-    args = ["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"]
+    args = ["--agent", RUNNER, "--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"]
     monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
     assert olr.main(args) == 2
     first = (probes / "model-licenses-ollama-20261007.json").read_bytes()
@@ -239,9 +242,9 @@ def test_rereading_a_resolved_tag_with_another_text_keeps_its_entry_and_records_
     probes.mkdir()
     path.write_text(json.dumps(_registry(**pending)))
     monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
-    assert olr.main(["--registry", str(path), "--probe-dir", str(probes), "--day", "2026-10-06", "--write"]) == 0
+    assert olr.main(["--agent", RUNNER, "--registry", str(path), "--probe-dir", str(probes), "--day", "2026-10-06", "--write"]) == 0
     monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, REFORMATTED, b"")}))
-    assert olr.main(["--registry", str(path), "--probe-dir", str(probes), "--day", "2026-10-07", "--tag", "llama3.1:8b", "--write"]) == 2
+    assert olr.main(["--agent", RUNNER, "--registry", str(path), "--probe-dir", str(probes), "--day", "2026-10-07", "--tag", "llama3.1:8b", "--write"]) == 2
     assert "license text differs from the registered digest" in capsys.readouterr().err
     written = json.loads((probes / "model-licenses-ollama-20261007.json").read_text())
     assert written["unresolved_readings"][0]["not_applied"] == olr.TEXT_CHANGED
@@ -266,7 +269,7 @@ def test_the_cli_writes_nothing_the_license_guard_would_refuse(tmp_path, monkeyp
     (probes / "earlier.json").write_text(json.dumps(earlier))
     assert ml.findings(before, {"earlier.json": earlier}, None) == []
     monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
-    args = ["--registry", str(path), "--probe-dir", str(probes), "--day", "2026-10-07", "--tag", "llama3.1:8b"]
+    args = ["--agent", RUNNER, "--registry", str(path), "--probe-dir", str(probes), "--day", "2026-10-07", "--tag", "llama3.1:8b"]
     assert olr.main([*args, "--write"]) == 4
     assert [p.name for p in probes.glob("*.json")] == ["earlier.json"] and json.loads(path.read_text()) == before
     err = capsys.readouterr().err
@@ -300,7 +303,7 @@ def test_a_failed_ollama_list_reads_no_tag_and_writes_nothing(tmp_path, monkeypa
     probes.mkdir()
     registry.write_text(json.dumps(before))
     monkeypatch.setattr(olr, "run", _runner({}, listing=down))
-    assert olr.main(["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"]) == 3
+    assert olr.main(["--agent", RUNNER, "--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"]) == 3
     assert not list(probes.glob("*.json")) and json.loads(registry.read_text()) == before
     assert "nothing read, nothing written" in capsys.readouterr().err
     # وغيابُ الأمر نفسِه إخفاقٌ مسمًّى لا انفجار
@@ -331,13 +334,13 @@ def test_the_evidence_and_the_registry_are_written_together_or_neither(tmp_path,
 
     monkeypatch.setattr(olr.os, "replace", replace)
     with pytest.raises(OSError):
-        olr.main(["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"])
+        olr.main(["--agent", RUNNER, "--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"])
     assert registry.read_text() == before
     assert sorted(p.name for p in probes.iterdir()) == []
     assert sorted(p.name for p in tmp_path.iterdir()) == ["probe", "registry.json", "registry.json.lock"]
     # وبلا إخفاقٍ يُكتبان كلاهما ولا يبقى ملفٌّ مؤقّت
     monkeypatch.setattr(olr.os, "replace", real)
-    assert olr.main(["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"]) == 0
+    assert olr.main(["--agent", RUNNER, "--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"]) == 0
     assert [p.name for p in probes.iterdir()] == ["model-licenses-ollama-20261007.json"]
     assert json.loads(registry.read_text())["models"]["llama3.1:8b"]["license"] == "llama3.1"
     assert sorted(p.name for p in tmp_path.iterdir()) == ["probe", "registry.json", "registry.json.lock"]
@@ -353,7 +356,7 @@ def test_a_writing_run_waits_for_the_registry_lock_and_reads_the_registry_after_
     monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
     codes = []
     worker = threading.Thread(target=lambda: codes.append(
-        olr.main(["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"])))
+        olr.main(["--agent", RUNNER, "--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"])))
     with olr.registry_lock(registry):
         worker.start()
         worker.join(0.5)
@@ -392,7 +395,7 @@ REFUSED = b"Error: Post \"http://127.0.0.1:11434/api/show\": dial tcp 127.0.0.1:
 def test_the_evidence_is_redacted_and_validated_before_it_is_written(tmp_path, monkeypatch, capsys):
     # ملاحظة Codex على #350: خطأُ `ollama show` بعنوان الخادم المحليّ كان يُكتب في الدليل كما طُبع، ولا يُفحص الدليلُ إلا
     # بحارس الرخص، فيُكتب دليلٌ عامّ يردّه `tools/probe_evidence.py` (`private_operational_metadata`)
-    evidence = olr.probe(["broken:1b"], "2026-10-07", _runner({"broken:1b": (1, b"", REFUSED)}))
+    evidence = olr.probe(["broken:1b"], "2026-10-07", _runner({"broken:1b": (1, b"", REFUSED)}), agent=RUNNER)
     [record] = evidence["unresolved_readings"]
     assert record["pending"] == olr.FAILED and record["stderr_first_line"] == probe_evidence.REDACTION_MARKER
     assert probe_evidence.validate_payload(evidence, current_name="x.json") == []
@@ -402,7 +405,7 @@ def test_the_evidence_is_redacted_and_validated_before_it_is_written(tmp_path, m
     probes.mkdir()
     before = json.dumps(_registry(**{"broken:1b": {"pending": "read_with_ollama_show_license_on_the_mac"}}))
     registry.write_text(before)
-    args = ["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"]
+    args = ["--agent", RUNNER, "--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"]
     monkeypatch.setattr(olr, "run", _runner({"broken:1b": (1, b"", REFUSED)}))
     assert olr.main(args) == 2
     [written] = probes.glob("*.json")
@@ -421,3 +424,24 @@ def test_the_evidence_is_redacted_and_validated_before_it_is_written(tmp_path, m
     assert olr.main(args) == 4
     assert list(probes.iterdir()) == [] and registry.read_text() == before
     assert "probe_evidence:private_operational_metadata" in capsys.readouterr().err
+
+
+def test_the_evidence_names_the_registered_agent_that_ran_the_reading(tmp_path, monkeypatch, capsys):
+    # ملاحظة Codex على #350: كان كلُّ دليلٍ يسمّي `anthropic/claude-fable-5-1` مؤلّفَ الأداة، ولو شغّلها المالكُ أو Codex
+    registry = tmp_path / "registry.json"
+    probes = tmp_path / "probe"
+    probes.mkdir()
+    before = json.dumps(_registry(**{"llama3.1:8b": {"pending": "read_with_ollama_show_license_on_the_mac"}}))
+    registry.write_text(before)
+    monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
+    rest = ["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"]
+    assert olr.main(["--agent", "openai/codex", *rest]) == 0
+    [written] = probes.glob("*.json")
+    assert json.loads(written.read_text())["agent"] == "openai/codex"
+    written.unlink()
+    registry.write_text(before)
+    assert olr.main(["--agent", "someone/unregistered", *rest]) == 5
+    assert list(probes.iterdir()) == [] and registry.read_text() == before
+    assert "agent_not_registered" in capsys.readouterr().err
+    with pytest.raises(SystemExit):
+        olr.main(rest)

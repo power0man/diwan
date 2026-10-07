@@ -13,6 +13,8 @@
   وما لم يُسمَّ بهذه لا يُسمّى: يبقى منتظِرًا بسببٍ يقول إنّ النصَّ قُرئ ولم يُعرَف.
 - وسطرُ الخطأ الذي يردّه `tools/probe_evidence.py` (عنوانُ الخادم المحليّ مثلًا) يُكتب علامةَ الحجب، والدليلُ كلُّه يمرّ بالمدقّق
   قبل الكتابة مع حارس الرخص، فما يُردّ لا يُكتب والرمزُ 4 (ملاحظة Codex على #350).
+- ومُنتِجُ الدليل `--agent` لازمٌ ومسجَّل، فلا يُنسب الدليلُ إلى مؤلّف الأداة إن شغّلها غيرُه، والرمزُ 5 لغير المسجَّل
+  (ملاحظة Codex على #350).
 - وما لم يُطبع له نصّ، أو أخفق عرضُه، أو ليس في القائمة، يُقيَّد تحت `unresolved_readings` بسببه المسمّى، فلا يسمّيه
   الدليلُ الجديد في حقل نموذجٍ (الحارسُ يرفض دليلًا جديدًا يسمّي نموذجًا منتظِرًا).
 - `--write` يكتب الدليل `docs/probe/model-licenses-ollama-<اليوم>.json` ويحلّ في السجلّ ما قُرئ. ولا سحبَ ولا إنفاق.
@@ -53,7 +55,8 @@ from tools import model_licenses as ml  # noqa: E402
 from tools import probe_evidence  # noqa: E402
 from tools.weight_provenance import identify_license, license_notices  # noqa: E402
 
-AGENT = "anthropic/claude-fable-5-1"
+# مُنتِجُ الدليل من يشغّل الأداةَ فعلًا (`--agent`، مسجَّلًا)، لا مؤلّفُها (ملاحظة Codex على #350)
+AGENTS_REGISTRY = ROOT / "registry" / "agents.json"
 OLLAMA_REASONS = frozenset(reason for reason in ml.PENDING_REASONS if "ollama" in reason)
 NOT_PULLED = "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word"
 EMPTY = "ollama_show_license_returned_empty_text_on_the_mac"
@@ -104,6 +107,12 @@ LIMITS = [
     "a_stderr_line_the_probe_evidence_validator_would_flag_is_written_as_its_redaction_marker_and_the_whole_evidence_is_validated_before_it_is_written",
 ]
 Runner = Callable[[list[str]], subprocess.CompletedProcess]
+
+
+def registered_agent(agent: str) -> bool:
+    """أمسجَّلٌ في `registry/agents.json`؟ فالدليلُ العامّ يسمّي من قرأ، لا مؤلّفَ الأداة (ملاحظة Codex على #350)."""
+    agents = json.loads(AGENTS_REGISTRY.read_text(encoding="utf-8"))["agents"]
+    return isinstance(agent, str) and agent in agents
 
 
 def run(command: list[str]) -> subprocess.CompletedProcess:
@@ -221,14 +230,15 @@ def registered_texts(registry: dict) -> dict[str, str]:
             if isinstance(entry, dict) and isinstance(entry.get("license_text_sha256"), str)}
 
 
-def probe(tags: list[str], day: str, runner: Runner | None = None, registered: dict[str, str] | None = None) -> dict:
+def probe(tags: list[str], day: str, runner: Runner | None = None, registered: dict[str, str] | None = None,
+          agent: str | None = None) -> dict:
     """الدليلُ: ما حُلّ تحت `models`، وما لم يُحلّ تحت `unresolved_readings`. و`registered` بصماتُ النصوص المقيَّدة
     (`registered_texts`): فما قُرئ لوسمٍ منها بنصٍّ آخر لا يُحلّ ثانيةً بل يُقيَّد بالبصمتين (ملاحظة Codex الخامسة على #301)."""
     runner = runner or run
     registered = registered or {}
     version = runner(["ollama", "--version"])
     evidence = {
-        "schema_version": 1, "date": day, "agent": AGENT, "kind": "ollama_model_license_reading",
+        "schema_version": 1, "date": day, "agent": agent, "kind": "ollama_model_license_reading",
         "tool": "tools/ollama_license_read.py: ollama show --license <tag> on the mac, "
                 + (version.stdout or b"").decode("utf-8", errors="replace").strip().replace("ollama version is ", "ollama "),
         "models": {}, "licenses": {}, "unresolved_readings": [],
@@ -346,7 +356,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--day", default=date.today().isoformat())
     parser.add_argument("--tag", action="append", default=[], help="وسمٌ يُقرأ بعينه؛ وإلّا فكلُّ منتظِرٍ بسببٍ من Ollama")
     parser.add_argument("--write", action="store_true", help="يكتب الدليلَ ويحلّ السجلّ")
+    parser.add_argument("--agent", required=True, help="مُنتِجُ الدليل: من يشغّل القراءة، بمعرّفه في registry/agents.json")
     args = parser.parse_args(argv)
+    if not registered_agent(args.agent):
+        print(f"agent_not_registered: {args.agent}; nothing read, nothing written", file=sys.stderr)
+        return 5
     if args.write:
         # التشغيلُ الكاتب يقرأ السجلَّ ويختار اسمَ دليله ويكتب تحت قفلٍ واحد (ملاحظة Codex السادسة على #301)
         with registry_lock(args.registry):
@@ -357,7 +371,7 @@ def main(argv: list[str] | None = None) -> int:
 def run_once(args: argparse.Namespace) -> int:
     registry = json.loads(args.registry.read_text(encoding="utf-8"))
     tags = args.tag or pending_tags(registry)
-    evidence = probe(tags, args.day, registered=registered_texts(registry))
+    evidence = probe(tags, args.day, registered=registered_texts(registry), agent=args.agent)
     print(json.dumps(evidence, ensure_ascii=False, indent=2))
     if "ollama_list_failed" in evidence:
         failed = evidence["ollama_list_failed"]
