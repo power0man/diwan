@@ -416,6 +416,7 @@ def test_a_partially_written_checkpoint_row_is_dropped_and_the_night_resumes(tmp
     cache = RunCache(path)
     assert cache.rows == {"k0": {"id": "c0", "status": "measured", "passed": True}} and cache.dropped_partial_tail
     assert path.read_text(encoding="utf-8") == good                     # اقتُطع الذيلُ من الملف نفسِه
+    assert cache.partial_tail_aside.read_text(encoding="utf-8") == partial  # وحُفظت بايتاتُه بجانبه (ملاحظة Codex على #351)
     cache.put("k1", {"id": "c1", "status": "measured", "passed": False})
     again = RunCache(path)                                              # والسطرُ التالي يُلحَق سليمًا بعد الاقتطاع
     assert set(again.rows) == {"k0", "k1"} and not again.dropped_partial_tail
@@ -435,6 +436,49 @@ def test_a_complete_last_row_without_its_newline_is_kept_and_terminated(tmp_path
     assert path.read_text(encoding="utf-8").endswith("\n")
     cache.put("k1", {"id": "c1", "status": "measured", "passed": False})
     assert set(RunCache(path).rows) == {"k0", "k1"}
+
+
+@pytest.mark.parametrize("content", [
+    pytest.param('{"foo": 1}', id="complete_json_of_another_shape"),
+    pytest.param("hello", id="text_that_is_not_a_checkpoint_row"),
+])
+def test_a_file_that_is_not_a_checkpoint_is_refused_and_left_untouched(tmp_path, content):
+    """ملاحظة Codex على #351: كان أيُّ آخرِ سطرٍ بلا خاتمة يُعدّ كتابةً منقطعة فيُقتطع، فملفٌّ سُمّي في `--checkpoint` خطأً
+    (`{"foo":1}` وحده) يصير صفرَ بايت. فالآن لا يُقتطع إلا ذيلٌ يبدأ كما يبدأ صفُّ المُشغِّل، وما سواه `checkpoint_corrupt`."""
+    from evaluation.ablation import RunCache
+    path = tmp_path / "other.json"
+    path.write_text(content, encoding="utf-8")
+    with pytest.raises(AblationError, match="checkpoint_corrupt"):
+        RunCache(path)
+    assert path.read_text(encoding="utf-8") == content and sorted(p.name for p in tmp_path.iterdir()) == ["other.json"]
+
+
+def test_a_research_component_refuses_a_checkpoint_and_never_quarantines_it(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #351: مُشغِّلُ البحث لا يفتح المخبأ، وكان انحرافُ البصمة في آخره ينقل ملفَّ `--checkpoint` إلى الحَجر
+    وإن لم يُقرأ ولم يُكتب. فالمخبأُ يُرفض لمُشغِّل البحث، ولا يُحجَر إلا ما فتحه التشغيلُ فعلًا."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    import providers.ollama as ollama
+    from tools import evaluate_ablation
+    from tools.model_digest import ModelDigestError
+    other = tmp_path / "another-component.jsonl"
+    other.write_text(json.dumps({"key": "k0", "row": {"id": "c0", "status": "measured"}}) + "\n", encoding="utf-8")
+    monkeypatch.setattr(ollama, "OllamaProvider", lambda model: Replay(lambda user, request: "الرباط"))
+    monkeypatch.setattr(evaluate_ablation, "pin_model_digest", lambda model, expected=None: "sha256:before")
+    argv = ["--component", "search", "--model", "fixture", "--bank-open", str(tmp_path / "open"),
+            "--checkpoint", str(other), "--out", str(tmp_path / "report.json")]
+    monkeypatch.setattr(evaluate_ablation, "verify_model_digest", lambda model, pinned: None)
+    assert evaluate_ablation.main(argv) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "checkpoint_unused_by_research_runner"
+
+    def drifted(model, pinned):
+        raise ModelDigestError("model_digest_drifted")
+
+    monkeypatch.setattr(evaluate_ablation, "verify_model_digest", drifted)
+    assert evaluate_ablation.main(argv) == 1
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["code"] == "model_digest_drifted" and printed["checkpoint_quarantined"] is None
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["another-component.jsonl"]
 
 
 def test_a_symlinked_checkpoint_is_refused_before_it_is_read(tmp_path):

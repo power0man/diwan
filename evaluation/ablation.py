@@ -120,6 +120,10 @@ def run_case(case: dict, provider, arm_config: dict, *, model: str, model_versio
         shutil.rmtree(scratch, ignore_errors=True)
 
 
+# كلُّ صفٍّ يكتبه `RunCache.put` يبدأ بهذه البايتات (`json.dumps({"key": …, "row": …})`)؛ فذيلٌ لا يبدأ بها ليس كتابتَه
+ROW_PREFIX = b'{"key": "'
+
+
 class RunCache:
     """مخبأُ استئنافٍ لليلة الاستئصال (الخطة ك٤٦ البند ٤): ثلاثُ بذورٍ في ذراعين تطيل التشغيل ثلاثَ مرّات، فيُكتب كلُّ صفٍّ
     مقيس فور قياسه إلى JSONL، ويُعاد التشغيلُ من حيث انقطع بالمفتاح نفسِه.
@@ -130,7 +134,8 @@ class RunCache:
       «خطأ» دائمٍ يُخرج الحالةَ من الأزواج.
     - **الذيلُ المبتور يُسقَط لا يُفشِل** (ملاحظة Codex الثانية على #192): انقطاعُ العملية في منتصف كتابة صفٍّ يترك آخرَ سطرٍ
       JSON ناقصًا بلا سطرٍ جديد؛ فيُقتطع من الملف ويُعاد قياسُ صفّه، وتبقى الصفوفُ السليمة قبله. أمّا سطرٌ فاسدٌ في الوسط
-      فليس انقطاعًا بل عطبُ ملفٍّ، ويُرفض باسمه (`checkpoint_corrupt`).
+      فليس انقطاعًا بل عطبُ ملفٍّ، ويُرفض باسمه (`checkpoint_corrupt`). ولا يُقتطع إلا ذيلٌ يبدأ كما يبدأ صفُّ المُشغِّل، وبايتاتُه
+      تُحفظ بجانب الملف قبل الاقتطاع؛ وJSON كاملٌ بغير شكل الصفّ ملفٌّ آخر يُرفض ولا يُمسّ (ملاحظة Codex على #351).
     - **المستعادُ يُعدّ عند استعماله** (ملاحظة Codex الثالثة): `reused` عددُ الصفوف التي أُخذت من الملف فعلًا في هذا التشغيل، لا
       عددُ مفاتيح الملف؛ فصفوفُ بصمةٍ أو حالاتٍ أخرى في الملف لا تُعلَن مستعادة.
     - **والبصمةُ المرفوضة تُحجَر** (ملاحظة Codex الأولى): الصفوفُ تُكتب قبل إعادة التحقّق من بصمة المحرّك في آخر التشغيل، فإن
@@ -143,6 +148,7 @@ class RunCache:
     """
 
     QUARANTINE_SUFFIX = ".drift-quarantine"
+    PARTIAL_TAIL_SUFFIX = ".partial-tail"
 
     def __init__(self, path: Path):
         self.path = Path(path)
@@ -151,6 +157,7 @@ class RunCache:
         self.rows: dict[str, dict] = {}
         self.reused = 0
         self.dropped_partial_tail = False
+        self.partial_tail_aside: Path | None = None
         if self.path.exists():
             self._load()
 
@@ -162,19 +169,33 @@ class RunCache:
             if text:
                 try:
                     entry = json.loads(text)
-                    self.rows[entry["key"]] = entry["row"]
-                except (ValueError, KeyError, TypeError):
-                    # الصفُّ يُكتب بسطرٍ واحد يختم بـ"\n"؛ فآخرُ سطرٍ بلا خاتمةٍ انقطاعُ كتابةٍ يُقتطع، وما سواه عطبُ ملفّ
+                except ValueError:
+                    # الصفُّ يُكتب بسطرٍ واحد يختم بـ"\n"؛ فآخرُ سطرٍ بلا خاتمةٍ يبدأ كما يبدأ صفُّ المُشغِّل انقطاعُ كتابةٍ يُقتطع،
+                    # وما سواه عطبُ ملفّ لا يُمسّ (ملاحظة Codex على #351)
                     if offset + len(line) == len(raw) and not line.endswith(b"\n"):
-                        with self.path.open("r+b") as handle:
-                            handle.truncate(offset)
-                        self.dropped_partial_tail = True
+                        if not line.startswith(ROW_PREFIX):
+                            raise AblationError("checkpoint_corrupt", f"{self.path.name}:{number}") from None
+                        self._set_aside_partial_tail(offset, line)
                         return
+                    raise AblationError("checkpoint_corrupt", f"{self.path.name}:{number}") from None
+                # وJSON كاملٌ بغير شكل الصفّ ليس كتابةً منقطعة بل ملفٌّ آخر: يُرفض ولا يُقتطع منه شيء (ملاحظة Codex على #351)
+                if not (isinstance(entry, dict) and isinstance(entry.get("key"), str) and isinstance(entry.get("row"), dict)):
                     raise AblationError("checkpoint_corrupt", f"{self.path.name}:{number}")
+                self.rows[entry["key"]] = entry["row"]
             offset += len(line)
         if raw and not raw.endswith(b"\n"):
             with self.path.open("ab") as handle:
                 handle.write(b"\n")
+
+    def _set_aside_partial_tail(self, offset: int, tail: bytes) -> None:
+        """بايتاتُ الذيل المبتور تُحفظ بجانب الملف قبل اقتطاعها، فلا يُفقد ما يُقتطع ولو لم يكن ما ظُنّ (ملاحظة Codex على #351)."""
+        aside = self.path.with_name(f"{self.path.name}{self.PARTIAL_TAIL_SUFFIX}-{time.time_ns()}")
+        with os.fdopen(os.open(aside, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as handle:
+            handle.write(tail)
+        with self.path.open("r+b") as handle:
+            handle.truncate(offset)
+        self.dropped_partial_tail = True
+        self.partial_tail_aside = aside
 
     @staticmethod
     def key(case: dict, arm_config: dict, seed: int, *, model: str, model_version: str, **options) -> str:

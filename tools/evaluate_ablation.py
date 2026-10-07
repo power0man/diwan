@@ -46,7 +46,8 @@ def bank_cases(bank_open: Path, *, sample_target: int | None, salt: str, sandbox
 
 def run_component(component: str, provider, *, model: str, model_version: str, bank_open: Path,
                   sample_target: int | None = None, salt: str = "k46", sandbox: bool = True,
-                  seeds: tuple[int, ...] | None = None, checkpoint: Path | None = None, **options) -> dict:
+                  seeds: tuple[int, ...] | None = None, checkpoint: Path | None = None,
+                  on_checkpoint_opened=None, **options) -> dict:
     spec = protocol()["components"].get(component)
     if spec is None:
         raise AblationError("component_unknown", component)
@@ -55,8 +56,13 @@ def run_component(component: str, provider, *, model: str, model_version: str, b
     seeds = seed_values() if seeds is None else tuple(seeds)
     if seeds != seed_values(len(seeds)):
         raise AblationError("seeds_invalid", "يلزم تسلسل 0..N-1 بعدد فردي لا يقل عن 3")
-    # مخبأُ الاستئناف لطريق الحلقة وحده: مُشغِّلُ البحث يقيس بنكَه دفعةً واحدة (ثلاثون سؤالًا) فلا يحتاجه
-    cache = RunCache(checkpoint) if checkpoint is not None and spec["runner"] != "research" else None
+    # مخبأُ الاستئناف لطريق الحلقة وحده: مُشغِّلُ البحث يقيس بنكَه دفعةً واحدة (ثلاثون سؤالًا) فلا يحتاجه، ولا يُقبل له مخبأٌ
+    # لا يستعمله، فلا يُحجَر ملفٌّ لم يُقرأ ولم يُكتب في هذا التشغيل (ملاحظة Codex على #351)
+    if checkpoint is not None and spec["runner"] == "research":
+        raise AblationError("checkpoint_unused_by_research_runner", component)
+    cache = RunCache(checkpoint) if checkpoint is not None else None
+    if cache is not None and on_checkpoint_opened is not None:
+        on_checkpoint_opened(cache)
     rows_in_file = len(cache.rows) if cache is not None else 0
     config = {"runner_version": RUNNER_VERSION, "component": component, "model": model,
               "model_version": model_version, "arms": spec["arms"], "options": dict(options),
@@ -120,11 +126,12 @@ def main(argv=None) -> int:
         print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
         return 1
     failure: BaseException | None = None
+    opened: list = []       # المخبأُ الذي فتحه هذا التشغيلُ فعلًا، وحده يُحجَر (ملاحظة Codex على #351)
     try:
         report = run_component(args.component, OllamaProvider(args.model), model=args.model,
                                model_version=model_version, bank_open=args.bank_open,
                                sample_target=args.sample_target, salt=args.salt, sandbox=not args.no_sandbox,
-                               seeds=seeds, checkpoint=args.checkpoint)
+                               seeds=seeds, checkpoint=args.checkpoint, on_checkpoint_opened=opened.append)
     except BaseException as exc:          # يُعاد التحقّقُ من البصمة على كلِّ خروجٍ بعد بدء القياس، ولو مقاطعةً (ملاحظة Codex على #192)
         failure = exc
     try:
@@ -132,7 +139,7 @@ def main(argv=None) -> int:
     except ModelDigestError as exc:
         # صفوفُ المخبأ كُتبت قبل هذا التحقّق منسوبةً إلى البصمة المثبّتة؛ فإن انحرف الوسمُ أثناء الليلة فهي لا تصلح استئنافًا
         # ولو عاد الوسمُ إلى بصمته: يُنقل الملفُّ إلى اسمٍ لا يُقرأ منه، ويُعلَن (ملاحظة Codex الأولى على #192)
-        quarantined = RunCache.quarantine_file(args.checkpoint) if args.checkpoint is not None else None
+        quarantined = RunCache.quarantine_file(args.checkpoint) if opened else None
         print(json.dumps({"status": "refused", "code": exc.code,
                           "checkpoint_quarantined": str(quarantined) if quarantined is not None else None},
                          ensure_ascii=False))
