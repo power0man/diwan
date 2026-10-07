@@ -1,0 +1,521 @@
+{
+  "schema_version": 1,
+  "agents": [
+    {
+      "id": "claude",
+      "transport": "cli",
+      "family": "anthropic",
+      "model": null,
+      "placement": "provider_configured",
+      "roles": [
+        "coding",
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "installed_unverified",
+      "binary": "~/.local/bin/claude",
+      "repository_access": true,
+      "route": "dispatch",
+      "identity": "claude"
+    },
+    {
+      "id": "codex",
+      "transport": "cli",
+      "family": "openai",
+      "model": null,
+      "placement": "provider_configured",
+      "roles": [
+        "coding",
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "installed_unverified",
+      "binary": "~/.local/bin/codex",
+      "repository_access": true,
+      "route": "dispatch",
+      "identity": "codex"
+    },
+    {
+      "id": "gemini",
+      "transport": "cli",
+      "family": "google",
+      "model": null,
+      "placement": "provider_configured",
+      "roles": [
+        "coding",
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "installed_unverified",
+      "binary": "~/.local/bin/gemini",
+      "repository_access": true,
+      "route": "dispatch",
+      "identity": "gemini"
+    },
+    {
+      "id": "antigravity",
+      "transport": "cli",
+      "family": "unknown",
+      "model": null,
+      "placement": "provider_configured",
+      "roles": [
+        "coding",
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "model_unconfigured",
+      "binary": "~/.local/bin/agy",
+      "repository_access": true,
+      "route": "dispatch",
+      "identity": "antigravity"
+    },
+    {
+      "id": "opencode",
+      "transport": "cli",
+      "family": "unknown",
+      "model": null,
+      "placement": "provider_configured",
+      "roles": [
+        "coding",
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "model_unconfigured",
+      "binary": "~/.opencode/bin/opencode",
+      "repository_access": true,
+      "route": "dispatch",
+      "identity": "opencode"
+    },
+    {
+      "id": "kimi",
+      "transport": "cli",
+      "family": "moonshot",
+      "model": null,
+      "placement": "provider_configured",
+      "roles": [
+        "benchmark_author"
+      ],
+      "status": "installed_unverified",
+      "binary": "~/.kimi-code/bin/kimi",
+      "repository_access": false,
+      "route": "external_kimi_driver",
+      "identity": "kimi"
+    },
+    {
+      "id": "hermes",
+      "transport": "cli",
+      "family": "unknown",
+      "model": null,
+      "placement": "provider_configured",
+      "roles": [
+        "planning",
+        "reasoning"
+      ],
+      "status": "installed_unverified",
+      "binary": "~/.local/bin/hermes",
+      "repository_access": false,
+      "route": "external_hermes_research",
+      "identity": "hermes"
+    },
+    {
+      "id": "ollama:minimax-m3:cloud",
+      "transport": "ollama",
+      "model": "minimax-m3:cloud",
+      "family": "minimax",
+      "placement": "cloud",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking",
+        "vision"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "6f927c9f5b085dba16863af475db4a6b34497be28b074b59d8906f91b38582db"
+    },
+    {
+      "id": "ollama:deepseek-v4.1-flash:cloud",
+      "transport": "ollama",
+      "model": "deepseek-v4.1-flash:cloud",
+      "family": "deepseek",
+      "placement": "cloud",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion",
+        "thinking",
+        "tools",
+        "vision"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "e04da138d31e0c9468e982e1ae9503d06cb7e170caa16a90c17d931c4aa140f8"
+    },
+    {
+      "id": "ollama:gpt-oss:20b",
+      "transport": "ollama",
+      "model": "gpt-oss:20b",
+      "family": "openai",
+      "placement": "local",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "17052f91a42e97930aa6e28a6c6c06a983e6a58dbb00434885a0cf5313e376f7"
+    },
+    {
+      "id": "ollama:kimi-k2.6:cloud",
+      "transport": "ollama",
+      "model": "kimi-k2.6:cloud",
+      "family": "moonshot",
+      "placement": "cloud",
+      "roles": [
+        "benchmark_author",
+        "drafting"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "vision",
+        "thinking",
+        "completion",
+        "tools"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "0d3854574c71904ea116a2de680f0d35d4bad047a5503b6eeb0601679c2c15c3"
+    },
+    {
+      "id": "ollama:huggingface.co/inception42/Jais-2-8B-Chat-GGUF:Q4_K_M",
+      "transport": "ollama",
+      "model": "huggingface.co/inception42/Jais-2-8B-Chat-GGUF:Q4_K_M",
+      "family": "inception",
+      "placement": "local",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "f0295e22075b86a2d386cf8bf36a18172e2c2c93a4fcb6bc61e69ae074bc6135"
+    },
+    {
+      "id": "ollama:qwen3.5:9b",
+      "transport": "ollama",
+      "model": "qwen3.5:9b",
+      "family": "qwen",
+      "placement": "local",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion",
+        "vision",
+        "tools",
+        "thinking"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7"
+    },
+    {
+      "id": "ollama:command-r7b-arabic:7b",
+      "transport": "ollama",
+      "model": "command-r7b-arabic:7b",
+      "family": "cohere",
+      "placement": "local",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion",
+        "tools"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "4bbe3353e56a7bad7512de135cf875f8cd31b10cd2310c257ce5d4f98a43fe9e"
+    },
+    {
+      "id": "ollama:mistral-large-3:675b-cloud",
+      "transport": "ollama",
+      "model": "mistral-large-3:675b-cloud",
+      "family": "mistral",
+      "placement": "cloud",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion",
+        "tools",
+        "vision"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "951502e79e7f517bb49c298b597959501406b965420feacfa9ccfbce2e40d35c"
+    },
+    {
+      "id": "ollama:minicpm-v4.6:latest",
+      "transport": "ollama",
+      "model": "minicpm-v4.6:latest",
+      "family": "openbmb",
+      "placement": "local",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "tools",
+        "thinking",
+        "completion",
+        "vision"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "e95583acac773b45d95469c069db44808c87295f924183f4c942d52616b2d132"
+    },
+    {
+      "id": "ollama:qwen3:14b",
+      "transport": "ollama",
+      "model": "qwen3:14b",
+      "family": "qwen",
+      "placement": "local",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8"
+    },
+    {
+      "id": "ollama:gpt-oss:120b-cloud",
+      "transport": "ollama",
+      "model": "gpt-oss:120b-cloud",
+      "family": "openai",
+      "placement": "cloud",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "ac7f7a1e778577c4418f6a25e46e0b45dced6746c75422d4b343aa1495a022ed"
+    },
+    {
+      "id": "ollama:llama3.1:8b",
+      "transport": "ollama",
+      "model": "llama3.1:8b",
+      "family": "meta",
+      "placement": "local",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion",
+        "tools"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e"
+    },
+    {
+      "id": "ollama:gemma4:latest",
+      "transport": "ollama",
+      "model": "gemma4:latest",
+      "family": "google",
+      "placement": "local",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion",
+        "vision",
+        "audio",
+        "tools",
+        "thinking"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb"
+    },
+    {
+      "id": "ollama:qwen2.5:3b",
+      "transport": "ollama",
+      "model": "qwen2.5:3b",
+      "family": "qwen",
+      "placement": "local",
+      "roles": [
+        "planning",
+        "reasoning",
+        "arabic",
+        "drafting",
+        "review"
+      ],
+      "status": "catalogued_unverified",
+      "capabilities": [
+        "completion",
+        "tools"
+      ],
+      "endpoint": "http://127.0.0.1:11434",
+      "repository_access": false,
+      "route": "text_only",
+      "identity": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b"
+    }
+  ],
+  "excluded": [
+    {
+      "model": "bge-m3:latest",
+      "reason": "not_a_completion_model"
+    },
+    {
+      "model": "qwen3-embedding:0.6b",
+      "reason": "not_a_completion_model"
+    },
+    {
+      "model": "deepseek-v4-flash:cloud",
+      "reason": "http_410"
+    },
+    {
+      "model": "nomic-embed-text:latest",
+      "reason": "not_a_completion_model"
+    }
+  ],
+  "findings": [],
+  "limits": [
+    "presence_is_not_connectivity_or_quota",
+    "roles_are_routes_not_quality_scores",
+    "cloud_placement_uses_ollama_remote_metadata_and_standard_cloud_tags",
+    "model_tool_capability_does_not_grant_repository_tools"
+  ],
+  "smoke": {
+    "agent": "ollama:qwen2.5:3b",
+    "status": "completed",
+    "run_id": "180eaac9-f06d-4e53-877f-b59459094368",
+    "prompt": "أجب بالرقم فقط: ٢ + ٢",
+    "response": "４",
+    "scope": "synthetic_local_arithmetic_not_a_quality_benchmark"
+  },
+  "main_sha": "fe48a60097ccd6068b16e117c3f54fd272c8830b",
+  "cli_generation": "not_run",
+  "cloud_generation": "not_run",
+  "antigravity": {
+    "binary_version": "1.3.1",
+    "models_listing": "google,anthropic,openai",
+    "generation": "not_run",
+    "binary_version_at_followup_doctor": "1.3.1",
+    "binary_version_at_initial_check": "1.3.0"
+  },
+  "doctor_findings": [
+    "unpinned:gemini",
+    "unpinned:opencode",
+    "unpinned:antigravity"
+  ],
+  "at": "2026-10-07T07:23:50.280319+00:00",
+  "hermes_version": "0.21.4 (2026.9.21)"
+}

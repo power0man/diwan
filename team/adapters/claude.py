@@ -46,11 +46,15 @@ def default_binary() -> Path:
 class ClaudeAdapter(Adapter):
     spec = SPEC
 
-    def __init__(self, binary: Path | None = None):
+    def __init__(self, binary: Path | None = None, model: str | None = None):
         self.binary = Path(binary) if binary else default_binary()
+        self.model = model if model is not None else os.environ.get("DIWAN_TEAM_CLAUDE_MODEL", "")
+
+    def model_flags(self) -> list[str]:
+        return ["--model", self.model] if self.model else []
 
     def work_argv(self, worktree: Path, budget_usd: float, out_dir: Path) -> list[str]:
-        return [str(self.binary), "-p", *ISOLATION_FLAGS, "--output-format", "json", "--permission-mode", "acceptEdits",
+        return [str(self.binary), "-p", *self.model_flags(), *ISOLATION_FLAGS, "--output-format", "json", "--permission-mode", "acceptEdits",
                 "--max-budget-usd", f"{budget_usd:.2f}", "--settings", SANDBOX_SETTINGS]
 
     def parse_work(self, returncode: int, stdout: str, stderr: str, out_dir: Path) -> WorkerResult:
@@ -68,7 +72,7 @@ class ClaudeAdapter(Adapter):
                             cost_estimate_usd=payload.get("total_cost_usd"), returncode=returncode, unavailable=unavailable)
 
     def review_argv(self, worktree: Path, base_branch: str) -> list[str]:
-        return [str(self.binary), "-p", *ISOLATION_FLAGS, "--output-format", "json", "--permission-mode", "plan",
+        return [str(self.binary), "-p", *self.model_flags(), *ISOLATION_FLAGS, "--output-format", "json", "--permission-mode", "plan",
                 "--allowedTools", *REVIEW_TOOLS]
 
     def parse_review(self, returncode: int, stdout: str, stderr: str) -> ReviewResult:

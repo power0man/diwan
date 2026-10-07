@@ -42,11 +42,15 @@ def default_binary() -> Path:
 class CodexAdapter(Adapter):
     spec = SPEC
 
-    def __init__(self, binary: Path | None = None):
+    def __init__(self, binary: Path | None = None, model: str | None = None):
         self.binary = Path(binary) if binary else default_binary()
+        self.model = model if model is not None else os.environ.get("DIWAN_TEAM_CODEX_MODEL", "")
+
+    def model_flags(self) -> list[str]:
+        return ["--model", self.model] if self.model else []
 
     def work_argv(self, worktree: Path, budget_usd: float, out_dir: Path) -> list[str]:
-        return [str(self.binary), "exec", "--json", "-s", "workspace-write", "-C", str(worktree),
+        return [str(self.binary), "exec", *self.model_flags(), "--json", "-s", "workspace-write", "-C", str(worktree),
                 "-o", str(out_dir / LAST_MESSAGE), "-"]
 
     def parse_work(self, returncode: int, stdout: str, stderr: str, out_dir: Path) -> WorkerResult:
@@ -72,7 +76,7 @@ class CodexAdapter(Adapter):
                             cost_estimate_usd=None, returncode=returncode, unavailable=unavailable)
 
     def review_argv(self, worktree: Path, base_branch: str) -> list[str]:
-        return [str(self.binary), "exec", "--json", "-s", "read-only", "-C", str(worktree), "-"]
+        return [str(self.binary), "exec", *self.model_flags(), "--json", "-s", "read-only", "-C", str(worktree), "-"]
 
     def parse_review(self, returncode: int, stdout: str, stderr: str) -> ReviewResult:
         """آخرُ رسالةٍ للوكيل من أحداث JSONL (`item.completed` من نوع `agent_message`)؛ وإلا النصُّ كما هو."""
