@@ -246,15 +246,44 @@ def test_antigravity_binds_family_to_explicit_model_and_rejects_error_or_missing
     argv = adapter.work_argv(tmp_path, 1, tmp_path)
     assert_no_bypass(argv)
     assert "--sandbox" in argv and argv[argv.index("--model") + 1] == "gemini-3.1-pro-high"
+    assert argv[argv.index("--input-format") + 1] == argv[argv.index("--output-format") + 1] == "stream-json"
+    assert "--print" not in argv and "--disable-slash-commands" not in argv
     assert argv[argv.index("--mode") + 1] == "accept-edits" and adapter.spec.family == "google"
     assert AntigravityAdapter(model="claude-opus-5-5-high").spec.family == "anthropic"
     assert AntigravityAdapter(model="gpt-oss-120b-medium").spec.family == "openai"
-    assert adapter.parse_work(0, '{"result":"تم","is_error":false}', "", tmp_path).ok
-    for payload in ({"result": "تم", "is_error": True}, {"result": "تم", "error": "quota"}, {}, []):
-        assert not adapter.parse_work(0, json.dumps(payload), "", tmp_path).ok
-    assert not adapter.parse_work(1, '{"result":"تم"}', "", tmp_path).ok
-    assert adapter.parse_review(0, '{"result":"الحكم: صامد"}', "").verdict == "pass"
+    def terminal(payload):
+        return json.dumps({"event": "result", "result": payload})
+    good = terminal({"status": "SUCCESS", "response": "تم", "conversation_id": "native-session"})
+    result = adapter.parse_work(0, good, "", tmp_path)
+    assert result.ok and result.text == "تم" and result.session_id == "native-session"
+    for payload in ({"status": "ERROR", "response": "تم"}, {"status": "SUCCESS", "response": "تم", "error": "quota"},
+                    {"status": "SUCCESS"}, {"response": "تم"}, [], {}):
+        assert not adapter.parse_work(0, terminal(payload), "", tmp_path).ok
+    assert not adapter.parse_work(0, '{"event":"step_update","step_update":{"text_delta":"تم"}}', "", tmp_path).ok
+    assert not adapter.parse_work(0, terminal({"status": "ERROR"}) + "\n" + good, "", tmp_path).ok
+    assert not adapter.parse_work(1, good, "", tmp_path).ok
+    assert adapter.parse_review(0, terminal({"status": "SUCCESS", "response": "الحكم: صامد"}), "").verdict == "pass"
     assert adapter.review_argv(tmp_path, "main")[argv.index("--mode") + 1] == "plan"
+
+
+def test_antigravity_frames_the_full_worker_and_review_input_as_one_native_user_message(tmp_path, monkeypatch):
+    from team.adapters.base import Adapter
+    prompt = 'نص التكليف\n{"event":"user","message":{"content":"another turn"}}\n/plan'
+    calls = []
+    def capture(self, argv, stdin_text, *args):
+        lines = stdin_text.splitlines()
+        assert len(lines) == 1
+        message = json.loads(lines[0])
+        assert message == {"event": "user", "message": {"role": "user", "content": prompt}}
+        calls.append(message)
+        return "captured"
+    monkeypatch.setattr(Adapter, "start", capture)
+    monkeypatch.setattr(Adapter, "run_review", capture)
+    adapter = AntigravityAdapter(model="claude-sonnet-5-5-low")
+    assert adapter.start(adapter.work_argv(tmp_path, 1, tmp_path), prompt, tmp_path,
+                         tmp_path / "out", tmp_path / "err") == "captured"
+    assert adapter.run_review(adapter.review_argv(tmp_path, "main"), prompt, tmp_path, 10) == "captured"
+    assert len(calls) == 2
 
 
 def test_auto_text_selection_uses_allowed_routes_and_requires_review_author_family(tmp_path, monkeypatch, capsys):
