@@ -117,6 +117,22 @@
       "identity": "kimi"
     },
     {
+      "id": "hermes",
+      "transport": "cli",
+      "family": "unknown",
+      "model": null,
+      "placement": "provider_configured",
+      "roles": [
+        "planning",
+        "reasoning"
+      ],
+      "status": "installed_unverified",
+      "binary": "~/.local/bin/hermes",
+      "repository_access": false,
+      "route": "external_hermes_research",
+      "identity": "hermes"
+    },
+    {
       "id": "ollama:minimax-m3:cloud",
       "transport": "ollama",
       "model": "minimax-m3:cloud",
@@ -477,8 +493,6 @@
     "cloud_placement_uses_ollama_remote_metadata_and_standard_cloud_tags",
     "model_tool_capability_does_not_grant_repository_tools"
   ],
-  "at": "2026-10-07T07:18:40.637770+00:00",
-  "main_sha": "fe48a60097ccd6068b16e117c3f54fd272c8830b",
   "smoke": {
     "agent": "ollama:qwen2.5:3b",
     "status": "completed",
@@ -487,6 +501,7 @@
     "response": "４",
     "scope": "synthetic_local_arithmetic_not_a_quality_benchmark"
   },
+  "main_sha": "fe48a60097ccd6068b16e117c3f54fd272c8830b",
   "cli_generation": "not_run",
   "cloud_generation": "not_run",
   "antigravity": {
@@ -499,5 +514,7 @@
     "unpinned:gemini",
     "unpinned:opencode",
     "unpinned:antigravity"
-  ]
+  ],
+  "at": "2026-10-07T07:23:50.280319+00:00",
+  "hermes_version": "0.21.4 (2026.9.21)"
 }

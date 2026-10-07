@@ -44,6 +44,8 @@ def test_discovery_distinguishes_models_families_routes_and_missing_metadata(tmp
     assert rows["ollama:minimax-m3:cloud"]["family"] == "minimax"
     assert rows["ollama:huggingface.co/inception42/Jais-2-8B-Chat-GGUF:Q4_K_M"]["family"] == "inception"
     assert not rows["kimi"]["repository_access"] and rows["kimi"]["route"] == "external_kimi_driver"
+    assert not rows["hermes"]["repository_access"] and rows["hermes"]["route"] == "external_hermes_research"
+    assert "coding" not in rows["hermes"]["roles"] and "review" not in rows["hermes"]["roles"]
     assert "review" not in rows["ollama:kimi-k2.6:cloud"]["roles"]
     assert "coding" not in rows["ollama:qwen3.5:9b"]["roles"]
     assert rows["opencode"]["status"] == "model_unconfigured"

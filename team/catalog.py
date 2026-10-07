@@ -16,7 +16,7 @@ from team.transport import TransportError, request_json
 
 ROLES = ("coding", "planning", "reasoning", "arabic", "drafting", "review", "benchmark_author")
 TEXT_ROLES = ("planning", "reasoning", "arabic", "drafting", "review")
-CLI_NAMES = ("claude", "codex", "gemini", "antigravity", "opencode", "kimi")
+CLI_NAMES = ("claude", "codex", "gemini", "antigravity", "opencode", "kimi", "hermes")
 FAMILY_PREFIXES = (
     ("qwen", "qwen"), ("deepseek", "deepseek"), ("kimi", "moonshot"),
     ("gemma", "google"), ("gemini", "google"), ("gpt-oss", "openai"),
@@ -50,14 +50,14 @@ def cli_path(name: str) -> Path | None:
 def discover(*, endpoint: str | None = None, request=request_json, which=cli_path, home: Path | None = None) -> dict:
     endpoint = endpoint or os.environ.get("DIWAN_TEAM_OLLAMA_URL", "http://127.0.0.1:11434")
     agents, excluded, findings = [], [], []
-    families = {"claude": "anthropic", "codex": "openai", "gemini": "google", "kimi": "moonshot"}
+    families = {"claude": "anthropic", "codex": "openai", "gemini": "google", "kimi": "moonshot", "hermes": "unknown"}
     for name in CLI_NAMES:
         binary = which(name)
         present = binary is not None and binary.is_file()
         explicit_model = name in ("opencode", "antigravity")
         model = os.environ.get(f"DIWAN_TEAM_{name.upper()}_MODEL", "") if explicit_model else ""
         family = model_family(model) if explicit_model else families[name]
-        roles = ROLES[:-1] if name != "kimi" else ("benchmark_author",)
+        roles = ("planning", "reasoning") if name == "hermes" else ROLES[:-1] if name != "kimi" else ("benchmark_author",)
         status = "installed_unverified" if present else "binary_missing"
         configured = (family in ("google", "anthropic", "openai") if name == "antigravity"
                       else "/" in model and family not in ("unknown", "moonshot"))
@@ -65,8 +65,8 @@ def discover(*, endpoint: str | None = None, request=request_json, which=cli_pat
             status = "model_unconfigured"
         agents.append({"id": name, "transport": "cli", "family": family, "model": model or None,
                        "placement": "provider_configured", "roles": list(roles), "status": status,
-                       "binary": str(binary) if binary else None, "repository_access": name != "kimi",
-                       "route": "external_kimi_driver" if name == "kimi" else "dispatch",
+                       "binary": str(binary) if binary else None, "repository_access": name not in ("kimi", "hermes"),
+                       "route": "external_hermes_research" if name == "hermes" else "external_kimi_driver" if name == "kimi" else "dispatch",
                        "identity": model or name})
     try:
         tags = request(endpoint, "/api/tags")

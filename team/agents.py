@@ -34,7 +34,8 @@ def text_plan(catalog: dict, agent_id: str, role: str, *, allow_cloud: bool = Fa
     if role not in agent["roles"]:
         raise AgentError("role_not_supported")
     if agent["transport"] != "ollama":
-        raise AgentError("use_dispatch_or_external_kimi_driver")
+        raise AgentError("use_dispatch_or_external_research_driver" if agent["id"] == "hermes"
+                         else "use_dispatch_or_external_kimi_driver")
     if agent["placement"] == "cloud" and not allow_cloud:
         raise AgentError("cloud_egress_not_enabled")
     return {"status": "dry_run", "agent": agent["id"], "model": agent["model"], "role": role,
