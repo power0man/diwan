@@ -59,7 +59,7 @@ class InMemoryHTTP(Handler):
         self.result = status, value
 
 
-def post(app, action, **values):
+def post(app, action, *, _binary_headers=None, **values):
     raw = json.dumps({'action': action, **values}).encode()
     handler = object.__new__(InMemoryHTTP)
     handler.server = SimpleNamespace(app=app, origin='http://127.0.0.1:338', origin_host='127.0.0.1:338',
@@ -69,6 +69,8 @@ def post(app, action, **values):
                        'X-Diwan-CSRF': 'fixture', 'Content-Type': 'application/json',
                        'Content-Length': str(len(raw))}.items():
         handler.headers[key] = value
+    for value in (_binary_headers if _binary_headers is not None else ['1'] if action == 'upload_binary' else []):
+        handler.headers['X-Diwan-Binary-Upload'] = value
     handler.command, handler.path = 'POST', '/api'
     handler.rfile = io.BytesIO(raw)
     handler.do_POST()
@@ -199,8 +201,21 @@ def test_binary_materialization_rejects_symlink_and_traversal(app, tmp_path):
 
 def test_large_nonbinary_http_request_stays_bounded(app):
     status, error = post(app, 'upload', project=app.test_project, upload=uuid.uuid4().hex,
-                         name='text.txt', content='x' * MAX_BODY)
+                         name='text.txt', content='x' * MAX_BODY, _binary_headers=['1'])
     assert status == 409 and error['error_code'] == 'body_limit'
+
+
+@pytest.mark.parametrize('headers,code', [
+    pytest.param([], 'body_limit', id='missing'),
+    pytest.param(['yes'], 'http_refused', id='invalid'),
+    pytest.param(['1', '1'], 'http_refused', id='duplicate'),
+])
+def test_binary_body_extension_requires_opt_in(app, headers, code):
+    status, error = post(app, 'upload_binary', project=app.test_project, upload=uuid.uuid4().hex,
+                         name='valid.pdf', data_base64=base64.b64encode(pdf_bytes()).decode(),
+                         _binary_headers=headers)
+    assert status == (409 if code == 'body_limit' else 403) and error['error_code'] == code
+    assert not (app.project(app.test_project) / 'uploads').exists()
 
 
 def test_binary_cloud_ingress_remains_disabled(tmp_path):
@@ -234,7 +249,8 @@ def test_live_http_upload_preserves_bytes_and_limits(app, kind):
         connection = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=20)
         try:
             body = json.dumps({'action': action, 'project': app.test_project, **values}).encode()
-            connection.request('POST', '/api', body=body, headers=headers)
+            selected_headers = {**headers, **({'X-Diwan-Binary-Upload': '1'} if action == 'upload_binary' else {})}
+            connection.request('POST', '/api', body=body, headers=selected_headers)
             response = connection.getresponse()
             return response.status, json.loads(response.read())
         finally:

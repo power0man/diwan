@@ -1565,7 +1565,10 @@ class Handler(BaseHTTPRequestHandler):
             need(not self.headers.get_all("Content-Encoding"), "http_refused")
             length = self.header("Content-Length")
             need(re.fullmatch(r"[0-9]{1,7}", length), "http_refused")
-            need(0 < int(length) <= MAX_BINARY_BODY, "body_limit")
+            binary_headers = self.headers.get_all("X-Diwan-Binary-Upload", [])
+            need(binary_headers in ([], ["1"]), "http_refused")
+            body_limit = MAX_BINARY_BODY if binary_headers else MAX_BODY
+            need(0 < int(length) <= body_limit, "body_limit")
             raw = self.rfile.read(int(length))
             need(len(raw) == int(length), "body_incomplete")
             request = decode(raw)

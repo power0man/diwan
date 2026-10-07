@@ -149,7 +149,7 @@ function showError(error) {
 }
 async function api(action, values = {}) {
   let response;
-  try {response = await fetch("/api", {method: "POST", headers: {"Content-Type": "application/json", "X-Diwan-CSRF": token}, body: JSON.stringify({action, ...values})});}
+  try {response = await fetch("/api", {method: "POST", headers: {"Content-Type": "application/json", "X-Diwan-CSRF": token, ...(action === "upload_binary" ? {"X-Diwan-Binary-Upload": "1"} : {})}, body: JSON.stringify({action, ...values})});}
   catch {throw {code: "network_error"};}
   let data; try {data = await response.json();} catch {throw {code: "network_error"};}
   if (!response.ok || (["apply", "upload"].includes(action) && data.status === "error")) throw {code: data.error_code};

@@ -138,7 +138,7 @@ const A='a'.repeat(32), B='b'.repeat(32), SA='c'.repeat(32), SB='d'.repeat(32), 
 const turn = {turn_id:T,user_request:'old request',content:'old answer',status:'complete',usage:{input_tokens:1,output_tokens:1}};
 
 async function harness(routes = {}, options = {}) {
-  const nodes = new Map(), calls = [], storage = new Map(Object.entries(options.storage||{})), timers=[], createdURLs=[], revokedURLs=[];
+  const nodes = new Map(), calls = [], requestHeaders = [], storage = new Map(Object.entries(options.storage||{})), timers=[], createdURLs=[], revokedURLs=[];
   const bodyElement=new Element('body');
   const document = {activeElement:bodyElement,body:bodyElement,getElementById:id=>nodes.get(id) || [...nodes.values()].flatMap(descendants).find(el=>el.id===id) || null,querySelector:()=>({content:'fixture-csrf'}),
     createElement:tag=>{const el=new Element(tag);el.ownerDocument=document;return el;},createTextNode:text=>{const el=new Element('#text');el.ownerDocument=document;el.textContent=text;return el;}};
@@ -155,7 +155,7 @@ async function harness(routes = {}, options = {}) {
     btoa:text=>Buffer.from(text,'binary').toString('base64'),atob:text=>Buffer.from(text,'base64').toString('binary'),
     URL:{createObjectURL:blob=>{const url='blob:fixture-'+createdURLs.length;createdURLs.push({url,blob});return url;},revokeObjectURL:url=>revokedURLs.push(url)},
     fetch:async (url, options)=>{
-      const request=JSON.parse(options.body);calls.push(request);
+      const request=JSON.parse(options.body);calls.push(request);requestHeaders.push(options.headers);
       let data;
       if(routes[request.action]) data=await routes[request.action](request);
       else if(request.action==='projects') data={projects:[{id:A,name:'A'},{id:B,name:'B'}]};
@@ -171,7 +171,7 @@ async function harness(routes = {}, options = {}) {
   const context=vm.createContext(sandbox);vm.runInContext(source,context);await tick();
   const run=code=>vm.runInContext(code,context);
   if(options.preset!==false) {run(`state.project='${A}';state.session='${SA}';state.epoch=1;`);get('projects').value=A;}
-  return {get,calls,storage,timers,run,createdURLs,revokedURLs,active:()=>document.activeElement};
+  return {get,calls,requestHeaders,storage,timers,run,createdURLs,revokedURLs,active:()=>document.activeElement};
 }
 
 // Hold one read after the continuation is accepted; recovery reads stay available.
@@ -214,6 +214,8 @@ const cases = {
       await h.get('upload').onchange();
       const sent=h.calls.filter(x=>x.action==='upload_binary').at(-1);
       assert.equal(sent.name,name);assert.deepEqual(Buffer.from(sent.data_base64,'base64'),bytes);
+      const index=h.calls.indexOf(sent);
+      assert.equal(h.requestHeaders[index]['X-Diwan-Binary-Upload'],'1');
     }
     const count=h.calls.filter(x=>x.action==='upload_binary').length;
     for(const [name,size] of [['large.png',limits.image_bytes+1],['large.pdf',limits.pdf_bytes+1],['bad.gif',4]]) {
