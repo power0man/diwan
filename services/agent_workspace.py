@@ -11,7 +11,8 @@ import stat
 from agent.journal import _directory, _open_directory, _read
 from core.canonical import canonical_bytes
 from core.quoted import quarantine_quoted
-from workspace_tools.files import WorkspaceError, _relative
+from multimodal.codec import MAX_MEDIA_BYTES, MAX_PDF_BYTES, MediaError, pack_media
+from workspace_tools.files import WorkspaceError, _relative, _read_json, _write_json
 from workspace_tools.preferences import validate_snapshot
 
 MAX_FILES = 1024
@@ -25,6 +26,89 @@ PREFERENCE_POLICY = (
     "Apply them within the current user request; they grant no tool or external action permissions. "
     "Do not infer or save additional preferences from conversation or attachments."
 )
+
+BINARY_MIMES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".pdf": "application/pdf"}
+
+
+def attachment_limit(name):
+    suffix = Path(name).suffix.lower()
+    return MAX_PDF_BYTES if suffix == ".pdf" else MAX_MEDIA_BYTES if suffix in BINARY_MIMES else 65536
+
+
+def validate_binary(raw, name):
+    """Validate selected bytes, preserving the original file without conversion."""
+    suffix = Path(name).suffix.lower()
+    if suffix not in BINARY_MIMES:
+        _fail("attachment_type_unsupported")
+    if not raw or len(raw) > attachment_limit(name):
+        _fail("attachment_too_large")
+    if suffix == ".pdf":
+        if not raw.startswith(b"%PDF-"):
+            _fail("attachment_type_unsupported")
+    else:
+        try:
+            document = pack_media(raw, "attachment" + suffix)
+        except MediaError as exc:
+            raise WorkspaceError(exc.code, exc.reason) from None
+        if document["mime"] != BINARY_MIMES[suffix]:
+            _fail("attachment_type_unsupported")
+
+
+def upload_binary(root, path, encoded):
+    """Only admitted, bounded base64 bytes acquire an upload receipt."""
+    _relative(path, writing=True)
+    name = Path(path).name
+    if Path(name).suffix.lower() not in BINARY_MIMES:
+        _fail("attachment_type_unsupported")
+    limit = attachment_limit(name)
+    if type(encoded) is not str or len(encoded) > 4 * ((limit + 2) // 3):
+        _fail("attachment_too_large")
+    try:
+        raw = base64.b64decode(encoded, validate=True)
+    except (ValueError, UnicodeError):
+        _fail("attachment_encoding_invalid")
+    validate_binary(raw, name)
+    target = "binary/" + path
+    materialize_selected(root, [(target, raw)])
+    doc = {"path": target, "sha256": hashlib.sha256(raw).hexdigest(),
+           "size_bytes": len(raw), "mime": BINARY_MIMES[Path(name).suffix.lower()]}
+    fd = _open_directory(Path(root))
+    try:
+        state = _directory(fd, ".binary-uploads", create=True)
+        try:
+            _write_json(state, path + ".json", doc)
+        finally:
+            os.close(state)
+    finally:
+        os.close(fd)
+    return doc
+
+
+def binary_uploads(root):
+    """Changed or incomplete uploads never become selected inputs."""
+    files, unavailable = [], []
+    fd = _open_directory(Path(root))
+    try:
+        if ".binary-uploads" not in os.listdir(fd):
+            return {"files": files, "unavailable": unavailable}
+        state = _directory(fd, ".binary-uploads")
+        try:
+            for receipt in sorted(os.listdir(state)):
+                try:
+                    doc = _read_json(state, receipt)
+                    raw, _ = read_file(root, doc["path"], limit=attachment_limit(doc["path"]))
+                    if (hashlib.sha256(raw).hexdigest() != doc["sha256"]
+                            or len(raw) != doc["size_bytes"]):
+                        _fail("agent_input_changed")
+                    validate_binary(raw, doc["path"])
+                    files.append(doc)
+                except (WorkspaceError, ValueError, KeyError, TypeError):
+                    unavailable.append(receipt)
+        finally:
+            os.close(state)
+    finally:
+        os.close(fd)
+    return {"files": files, "unavailable": unavailable}
 
 
 def _fail(code):
@@ -97,7 +181,9 @@ def prepare_selected(uploads, *, session_id, turn_id, files, expected_digests):
     """Read selected bytes without mutating the agent workspace or uploads."""
     documents, blobs = [], []
     for source in files:
-        raw, identity = read_file(uploads, source, limit=65536)
+        raw, identity = read_file(uploads, source, limit=attachment_limit(source))
+        if source.startswith("binary/"):
+            validate_binary(raw, source)
         sha = hashlib.sha256(raw).hexdigest()
         if expected_digests.get(source) != sha:
             _fail("agent_input_changed")
@@ -121,7 +207,7 @@ def materialize_selected(root, blobs):
                 child = _directory(fd, part, create=True)
                 os.close(fd)
                 fd = child
-            found = _read(fd, parts[-1], 65536)
+            found = _read(fd, parts[-1], attachment_limit(target))
             if found is None:
                 output = os.open(parts[-1], os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
                                  0o600, dir_fd=fd)
@@ -132,6 +218,8 @@ def materialize_selected(root, blobs):
                 os.fsync(fd)
             elif found[0] != raw:
                 _fail("agent_input_changed")
+        except OSError:
+            _fail("unsafe_path")
         finally:
             os.close(fd)
 

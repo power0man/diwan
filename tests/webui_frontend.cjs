@@ -203,6 +203,30 @@ async function continuationRead(action) {
 }
 
 const cases = {
+  async binary_upload_preserves_bytes_and_uses_server_limits() {
+    const limits={image_bytes:100000,pdf_bytes:500000,text_bytes:65536};
+    const h=await harness({files:()=>({files:[],limits}),upload_binary:()=>({status:'applied'}),upload:()=>({status:'applied'})});
+    const accept=h.get('upload').attributes.accept;
+    for(const suffix of ['.png','.jpg','.jpeg','.pdf']) assert.ok(accept.includes(suffix));
+    for(const [name,size] of [['page.png',70000],['phone.JPEG',70000],['book.pdf',300000]]) {
+      const bytes=Buffer.alloc(size);for(let i=0;i<size;i++) bytes[i]=i%256;
+      h.get('upload').files=[{name,size,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)}];
+      await h.get('upload').onchange();
+      const sent=h.calls.filter(x=>x.action==='upload_binary').at(-1);
+      assert.equal(sent.name,name);assert.deepEqual(Buffer.from(sent.data_base64,'base64'),bytes);
+    }
+    const count=h.calls.filter(x=>x.action==='upload_binary').length;
+    for(const [name,size] of [['large.png',limits.image_bytes+1],['large.pdf',limits.pdf_bytes+1],['bad.gif',4]]) {
+      h.get('upload').files=[{name,size,arrayBuffer:async()=>{throw Error('should reject before reading');}}];
+      await h.get('upload').onchange();
+      assert.equal(h.calls.filter(x=>x.action==='upload_binary').length,count);
+      assert.ok(h.get('notice').className.includes('error'));
+    }
+    const bytes=Buffer.from('نص UTF-8');
+    h.get('upload').files=[{name:'source.txt',size:bytes.length,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)}];
+    await h.get('upload').onchange();
+    assert.equal(h.calls.filter(x=>x.action==='upload').at(-1).content,'نص UTF-8');
+  },
   async unified_continuation_recovers_agent_unavailable_in_returned_text_mode() {
     const h=await harness({
       agent_capabilities:()=>({__httpStatus:409,body:{error_code:'agent_unavailable'}}),

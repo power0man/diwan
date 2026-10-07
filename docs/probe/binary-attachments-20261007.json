@@ -1,0 +1,152 @@
+{
+  "agent": "openai/codex",
+  "date": "2026-10-07",
+  "issue": 338,
+  "base_commit": "c3d9cfc",
+  "status": "implemented_uncommitted",
+  "measurement_limits": [
+    "HTTP Handler.do_POST exercised with full in-memory requests; live socket and browser rendering are not tested.",
+    "OCR extraction uses a synthetic fixture and does not measure recognition accuracy; PDF page rendering used installed Poppler in this run, with a synthetic renderer fallback when absent in CI.",
+    "Mutation checks use the official mutation_check._apply on uncommitted files after a passing baseline and restore each source; committed-head and range validation remain blocked.",
+    "Full suite was interrupted after socket binding refusals; partial counts are not suite success.",
+    "No push, pull update, commit, PR, merge, tag, or release occurred."
+  ],
+  "verification": {
+    "targeted_pytest": {
+      "passed": 202,
+      "failed": 0,
+      "includes_new_cases": 17
+    },
+    "frontend": {
+      "passed": 69,
+      "total": 69,
+      "environment": "node_fake_dom"
+    },
+    "mutations": {
+      "killed": 12,
+      "total": 12,
+      "named_cases": 17,
+      "baseline_exit": 0,
+      "results": [
+        {
+          "id": "copy-selected-bytes",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_ui_upload_reaches_ocr_and_session_fingerprint[png]",
+            "tests/test_binary_attachments.py::test_ui_upload_reaches_ocr_and_session_fingerprint[pdf]",
+            "tests/test_binary_attachments.py::test_ui_upload_reaches_ocr_and_session_fingerprint[jpeg]"
+          ]
+        },
+        {
+          "id": "binary-byte-ceilings",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_binary_upload_named_refusal[image-size]",
+            "tests/test_binary_attachments.py::test_binary_upload_named_refusal[pdf-size]"
+          ]
+        },
+        {
+          "id": "reject-other-extensions",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_binary_upload_named_refusal[extension]"
+          ]
+        },
+        {
+          "id": "pdf-signature",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_binary_upload_named_refusal[pdf-signature]"
+          ]
+        },
+        {
+          "id": "image-bytes-and-mime",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_binary_upload_named_refusal[image-mismatch]",
+            "tests/test_binary_attachments.py::test_binary_upload_named_refusal[image-signature]"
+          ]
+        },
+        {
+          "id": "strict-base64",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_base64_invalid_refuses"
+          ]
+        },
+        {
+          "id": "changed-receipt-digest",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_changed_binary_receipt_excluded"
+          ]
+        },
+        {
+          "id": "inclusive-byte-limits",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_binary_limit_is_inclusive_and_copy_idempotent[png]",
+            "tests/test_binary_attachments.py::test_binary_limit_is_inclusive_and_copy_idempotent[pdf]"
+          ]
+        },
+        {
+          "id": "no-follow-copy-parent",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_binary_materialization_rejects_symlink_and_traversal"
+          ]
+        },
+        {
+          "id": "nonbinary-http-bound",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_large_nonbinary_http_request_stays_bounded"
+          ]
+        },
+        {
+          "id": "cloud-binary-ingress",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_binary_cloud_ingress_remains_disabled"
+          ]
+        },
+        {
+          "id": "frontend-binary-routing",
+          "code": "killed",
+          "failed_tests": [
+            "tests/test_binary_attachments.py::test_frontend_binary_upload_preserves_bytes"
+          ]
+        }
+      ]
+    },
+    "full_suite": {
+      "status": "interrupted",
+      "passed_before_interruption": 871,
+      "failed_before_interruption": 4,
+      "errors_before_interruption": 27,
+      "skipped_before_interruption": 2,
+      "observed_blocker": "socket_bind_operation_not_permitted"
+    },
+    "signature_anchors": {
+      "verified": 2
+    },
+    "docs_checks": "passed",
+    "attribution_and_lanes": {
+      "checked_commits": 0,
+      "status": "empty_range_not_validation_of_pending_changes"
+    }
+  },
+  "blockers": [
+    "git_metadata_write_operation_not_permitted",
+    "socket_bind_operation_not_permitted"
+  ],
+  "sha256": {
+    "services/agent_workspace.py": "1df0b10bf099d0f1a5268d749fd337d0a3ac386aebfeeb6a86748d911433bb90",
+    "webui/server.py": "335c588ce722037ed5aba62cd0b93f2e3f498a0ba3dfaebdc1b2079986896495",
+    "webui/static/app.js": "977af7c245c7b0892808ed33eaf8446551fea50cbd9afb7cfcac4a32dd499888",
+    "webui/static/index.html": "7f3c4720c152ec1f256302c85c9092dc8730bf0ad820a54697696a543bbc381c",
+    "tests/test_binary_attachments.py": "f3081c9255fcc5adb013d46dd76ac17a709179f65bdb76dc23292ca6fdcf0d80",
+    "tests/webui_frontend.cjs": "dc281ddcb0ede72e75def384e453481229f98633042a3d37734f5a59a948da09",
+    "tests/mutations/test_binary_attachments.jsonl": "577ad0d3584d3cd3af9d4f36ea1775cfd141e3c0eb6d0ce7ee78aa81ec1c21be"
+  }
+}

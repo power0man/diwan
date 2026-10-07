@@ -60,6 +60,7 @@ from workspace_tools.storage_scope import read_storage_scope
 STATIC = Path(__file__).parent / "static"
 IDENTIFIER = re.compile(r"[a-f0-9]{32}\Z")
 MAX_BODY = 512 * 1024
+MAX_BINARY_BODY = 4 * ((agent_workspace.MAX_PDF_BYTES + 2) // 3) + 4096
 MEMORY_FORGET_TRANSACTION = ".memory-forget.json"
 MAX_MEMORY_FORGET_PAYLOAD = 64 * 1024 * 1024
 MAX_MEMORY_FORGET_TRANSACTION = 96 * 1024 * 1024
@@ -1028,7 +1029,7 @@ class LocalApp:
                 finally:
                     self.generation.release()
         action = request["action"]
-        need(self.storage_scope is None or action not in ("upload", "agent_import", "ask_media"),
+        need(self.storage_scope is None or action not in ("upload", "upload_binary", "agent_import", "ask_media"),
              "cloud_file_ingress_disabled")
         need(self.storage_scope is None or request.get("data_policy", "internal") == "internal",
              "cloud_input_policy_refused")
@@ -1042,6 +1043,7 @@ class LocalApp:
             "inspect": {"project", "session", "turn"},
             "replay": {"project", "session", "turn"},
             "files": {"project"}, "upload": {"project", "upload", "name", "content"},
+            "upload_binary": {"project", "upload", "name", "data_base64"},
             "preferences": {"project"},
             "set_preference": {"project", "key", "value", "revision"},
             "delete_preference": {"project", "key", "revision"},
@@ -1167,23 +1169,31 @@ class LocalApp:
             if action == "delete_preference":
                 return preferences.delete(request["key"], expected_revision=request["revision"])
             return preferences.snapshot()
-        if action in ("upload", "files"):
+        if action in ("upload", "upload_binary", "files"):
             with self.directory(project / "uploads", create=True):
                 pass
             uploads = TextWorkspace(project / "uploads", project / "uploads")
-            if action == "upload":
+            if action in ("upload", "upload_binary"):
                 name = _relative(request["name"], writing=True)
                 need("/" not in name and len(name.encode("utf-8")) <= 180, "name_invalid")
                 upload = identifier(request["upload"])
                 path = upload + "--" + name
+                if action == "upload_binary":
+                    doc = agent_workspace.upload_binary(project / "uploads", path, request["data_base64"])
+                    return {"status": "applied", "name": name, **doc}
                 proposal = uploads.propose_write(path, request["content"], upload)
                 applied = uploads.apply(proposal["proposal_id"], proposal["sha256"])
                 if applied["status"] != "applied":
                     return {"status": "error", "error_code": applied["error_code"], "path": path}
                 return {"status": "applied", "path": path, "name": name, "sha256": proposal["sha256"], "size_bytes": proposal["size_bytes"]}
             catalog = uploads.verified_outputs()
+            binary = agent_workspace.binary_uploads(project / "uploads")
+            catalog["files"].extend(binary["files"])
+            catalog["unavailable"].extend(binary["unavailable"])
             result = [{**doc, "name": doc["path"].split("--", 1)[-1]} for doc in catalog["files"]]
-            return {"files": sorted(result, key=lambda doc: doc["path"]), "unavailable": catalog["unavailable"]}
+            return {"files": sorted(result, key=lambda doc: doc["path"]), "unavailable": catalog["unavailable"],
+                    "limits": {"image_bytes": agent_workspace.MAX_MEDIA_BYTES,
+                               "pdf_bytes": agent_workspace.MAX_PDF_BYTES, "text_bytes": 65536}}
         if action == "review":
             return TextWorkspace(None, project / "outputs").review(request["proposal"])
         if action == "apply":
@@ -1555,10 +1565,11 @@ class Handler(BaseHTTPRequestHandler):
             need(not self.headers.get_all("Content-Encoding"), "http_refused")
             length = self.header("Content-Length")
             need(re.fullmatch(r"[0-9]{1,7}", length), "http_refused")
-            need(0 < int(length) <= MAX_BODY, "body_limit")
+            need(0 < int(length) <= MAX_BINARY_BODY, "body_limit")
             raw = self.rfile.read(int(length))
             need(len(raw) == int(length), "body_incomplete")
             request = decode(raw)
+            need(len(raw) <= MAX_BODY or request.get("action") == "upload_binary", "body_limit")
             self.stop_receive()
             result = self.server.app.dispatch(request)
             failed_write = request["action"] in ("apply", "upload") and result.get("status") == "error"
