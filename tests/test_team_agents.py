@@ -253,3 +253,25 @@ def test_antigravity_binds_family_to_explicit_model_and_rejects_error_or_missing
     assert not adapter.parse_work(1, '{"result":"تم"}', "", tmp_path).ok
     assert adapter.parse_review(0, '{"result":"الحكم: صامد"}', "").verdict == "pass"
     assert adapter.review_argv(tmp_path, "main")[argv.index("--mode") + 1] == "plan"
+
+
+def test_auto_text_selection_uses_allowed_routes_and_requires_review_author_family(tmp_path, monkeypatch, capsys):
+    inv = inventory(tmp_path)
+    rows = {a["id"]: a for a in inv["agents"]}
+    local, cloud = "ollama:qwen3.5:9b", "ollama:deepseek-v4.1-flash:cloud"
+    evidence = [{"agent": key, "identity": rows[key]["identity"], "role": "review", "score": score,
+                 "at": datetime.now(timezone.utc).isoformat(), "status": "passed", "source": "fixture"}
+                for key, score in ((local, 70), (cloud, 90))]
+    monkeypatch.setattr(agents, "discover", lambda **kw: inv)
+    monkeypatch.setattr(agents, "load_evidence", lambda home: evidence)
+    monkeypatch.setattr(agents, "team_home", lambda: tmp_path / "unused-state")
+    args = ["ask", "--agent", "auto", "--role", "review"]
+    assert agents.main(args) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "review_author_family_missing"
+    assert agents.main(args + ["--author-family", "openai"]) == 0
+    assert json.loads(capsys.readouterr().out)["agent"] == local
+    assert agents.main(args + ["--author-family", "openai", "--allow-cloud"]) == 0
+    assert json.loads(capsys.readouterr().out)["agent"] == cloud
+    assert agents.main(args + ["--author-family", "deepseek", "--allow-cloud"]) == 0
+    assert json.loads(capsys.readouterr().out)["agent"] == local
+    assert not (tmp_path / "unused-state").exists()

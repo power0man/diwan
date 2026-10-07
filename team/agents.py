@@ -99,6 +99,7 @@ def main(argv=None) -> int:
     run.add_argument("--role", choices=ROLES, required=True)
     run.add_argument("--execute", action="store_true")
     run.add_argument("--allow-cloud", action="store_true")
+    run.add_argument("--author-family", action="append", default=[])
     run.add_argument("--timeout", type=int, default=120)
     args = parser.parse_args(argv)
     home = team_home()
@@ -116,8 +117,12 @@ def main(argv=None) -> int:
         else:
             agent_id = args.agent
             if agent_id == "auto":
-                text_catalog = {"agents": [a for a in catalog["agents"] if a["route"] == "text_only"]}
-                agent_id = select(text_catalog, args.role, load_evidence(home))["selected"]
+                if args.role == "review" and not args.author_family:
+                    raise AgentError("review_author_family_missing")
+                text_catalog = {"agents": [a for a in catalog["agents"] if a["route"] == "text_only"
+                                and (args.allow_cloud or a["placement"] != "cloud")]}
+                agent_id = select(text_catalog, args.role, load_evidence(home),
+                                  author_families=args.author_family)["selected"]
                 if agent_id is None:
                     raise AgentError("task_evidence_missing")
             if args.execute:
@@ -128,7 +133,7 @@ def main(argv=None) -> int:
             out = ask(catalog, agent_id, args.role, prompt, home=home, execute=args.execute,
                       allow_cloud=args.allow_cloud, timeout=args.timeout)
     except (AgentError, ValueError, UnicodeError) as exc:
-        out = {"status": "refused", "code": getattr(exc, "code", "input_not_utf8")}
+        out = {"status": "refused", "code": getattr(exc, "code", "invalid_input")}
     print(json.dumps(out, ensure_ascii=False, indent=1))
     return 2 if out.get("status") in ("refused", "outcome_unknown") else 0
 

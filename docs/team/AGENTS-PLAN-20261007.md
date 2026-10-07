@@ -46,6 +46,7 @@
 - لا يُقبل دليل أقدم من ٣٠ يومًا أو مؤرخ في المستقبل أو بلا مرجع أو حالة نجاح، ولا أرقام NaN أو خارج النطاق.
 - لا يُختار مراجع مجهول العائلة أو من عائلة مؤلف المادة. وهذه مراجعة استشارية؛ سياسة مشروع ديوان ق٧٥ مستقلة عنها.
 - تسجيل الدرجة فعل المقيم؛ النظام لا يستنتجها من مديح الوكيل لنفسه. المرجع إقرار تشغيلي، وليس شهادة تحقق من محتواه.
+- المسار النصي الآلي يرشّح الطرق المسموحة أولًا؛ بلا `--allow-cloud` يختار أفضل محلي مقاس، ومراجعة `auto` تشترط `--author-family`.
 - قبل التقييم لا اختيار آلي: النتيجة `no_measured_candidate`، وللتجربة الأولى يُختار الوكيل صراحةً.
 - «الأفضل» هو الأفضل بين الأدلة المسجلة لذلك النوع، ولا يثبت الأفضلية العامة أو توافر حصة سحابية الآن.
 - آخر عطب للمشارك النصي خلال ٣٠ دقيقة يحجبه من الاختيار الآلي؛ تغيّر هوية النموذج يمنع نقل العطب إليه. نجاح سابق لا يثبت الحصة الآن.
@@ -73,6 +74,7 @@ python -m team.agents ask --agent ollama:deepseek-v4.1-flash:cloud --role reason
 # بعد تقييم خارجي فعلي: source مرجعه، والدرجة نتيجة ذلك التقييم
 python -m team.agents record --agent ollama:qwen3.5:9b --role arabic --score 80 --source 'تقييم-المالك-مثال'
 python -m team.agents ask --agent auto --role arabic
+python -m team.agents ask --agent auto --role review --author-family openai
 
 DIWAN_TEAM_ANTIGRAVITY_MODEL=gemini-3.1-pro-high python -m team.dispatch run 356 --worker antigravity
 python -m team.dispatch run 356 --worker gemini
@@ -104,4 +106,6 @@ Gemini وOpenCode وAntigravity الجديدة لا يصبحان مراجعين 
 - OpenCode V2: [الأوامر](https://opencode.ai/v2/docs/cli/commands/) و[الأذون](https://opencode.ai/v2/docs/permissions/)
   و`opencode run --help`؛ لا تُستخدم أسماء إعدادات V1 مع V2.
 
-- Antigravity: `agy --help` و`agy models` من الأداة المثبتة 1.3.0؛ القائمة الحية أظهرت عائلات google وanthropic وopenai. لا تُعتبر قائمة النماذج إثبات توليد أو حصة.
+- Antigravity: `agy --help` و`agy models` من الأداة المثبتة؛ فحص `team.doctor` اللاحق أظهر 1.3.1؛ القائمة الحية أظهرت عائلات google وanthropic وopenai. لا تُعتبر قائمة النماذج إثبات توليد أو حصة.
+
+فحص الطبيب بلا `--pin` أظهر Claude وCodex مطابقين لتثبيتهما، وGemini وOpenCode وAntigravity غير مثبتة؛ لم يُعدّل ملف الطبيب.
