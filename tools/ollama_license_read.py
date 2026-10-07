@@ -4,8 +4,10 @@
 ما كان يُقرأ باليد في `docs/probe/model-licenses-ollama-20261006.json` تقرؤه هذه الأداة وتكتبه بالصيغة نفسِها:
 - الوسومُ المقروءة: ما ينتظر في `registry/model_licenses.json` بسببٍ من أسباب Ollama، أو ما سُمّي بـ`--tag`.
 - لكلّ وسمٍ موجودٍ في `ollama list` يُشغَّل `ollama show --license`، ويُبصَم ما طُبع كما طُبع، ويُسمّى من نصّه وحده:
-  بصمةُ جسم SPDX (`tools/weight_provenance.identify_license`)، أو هي بعد أن يُعاد سطرُ حقوق النشر الواحد في ملحق Apache إلى
-  قالبه (حين يُملأ فلا تطابق بصمتُه، كـ`qwen3:14b`)، وإلّا فأسطرُ العنوان الأولى إن كانت عنوانَ رخصةٍ معروفٍ في `TITLES`.
+  بصمةُ جسم SPDX (`tools/weight_provenance.identify_license`)، وإلّا فأسطرُ العنوان الأولى إن كانت عنوانَ رخصةٍ معروفٍ في `TITLES`.
+  ونصُّ Apache الذي مُلئ سطرُ حقوق النشر الواحد في ملحقه (كـ`qwen3:14b`) لا يُسمّى: فما كُتب في ذلك السطر قد يكون اسمَ صاحب
+  الحقّ وقد يكون شرطًا («Copyright 2024 X. All commercial use is forbidden.»)، ولا قاعدةَ تفرّق بينهما بلا تخمين؛ فيبقى
+  منتظِرًا بسببه المسمّى `FILLED` الذي يقول إنّ الجسمَ والملحقَ نصُّ SPDX إلّا ذلك السطرَ غيرَ المقروء (المراجعةُ المرفوضة على #350).
   وعنوانٌ وحده لا يسمّي رخصةً من قائمة OSI: فنصٌّ بعنوان Apache يتبعه شرطٌ يمنع لا يُصنَّف `osi` (ملاحظة Codex السادسة على #301).
   وما لم يُسمَّ بهذه لا يُسمّى: يبقى منتظِرًا بسببٍ يقول إنّ النصَّ قُرئ ولم يُعرَف.
 - وما لم يُطبع له نصّ، أو أخفق عرضُه، أو ليس في القائمة، يُقيَّد تحت `unresolved_readings` بسببه المسمّى، فلا يسمّيه
@@ -53,6 +55,7 @@ NOT_PULLED = "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word"
 EMPTY = "ollama_show_license_returned_empty_text_on_the_mac"
 RETIRED = "ollama_show_failed_tag_retired_upstream_on_the_mac"
 FAILED = "ollama_show_failed_on_the_mac"
+FILLED = "ollama_show_license_text_is_apache_2_0_but_its_filled_appendix_copyright_line_is_not_read_naming_it_needs_an_owner_word"
 UNNAMED = "ollama_show_license_text_read_on_the_mac_but_not_named_from_its_text"
 LIST_FAILED = "ollama_list_failed_on_the_mac_nothing_was_read_and_nothing_was_written"
 TEXT_CHANGED = "ollama_show_license_text_differs_from_the_registered_text_on_the_mac_replacing_it_needs_an_owner_word"
@@ -60,7 +63,7 @@ TEXT_CHANGED = "ollama_show_license_text_differs_from_the_registered_text_on_the
 READ_FIELDS = ("license", "source", "read_on", "read_via", "license_text_sha256", "ollama_list_id")
 # عناوينُ رخصٍ تُسمّى من سطرها الأوّل كما طُبع، بعد التطبيع؛ ورخصُها المشروطة تفسيرُها قرارُ المالك (المسألة #301 §٥).
 # ولا يُسمّى من عنوانه وحده ما في قائمة OSI: شرطٌ يُضاف بعد عنوان Apache يمنع ما تبيحه، فيُصنَّف `osi` ما ليس منها
-# (ملاحظة Codex السادسة على #301)؛ فـApache تُسمّى بجسمها وملحقها (`apache_with_its_appendix_filled`)
+# (ملاحظة Codex السادسة على #301)؛ فـApache تُسمّى ببصمة SPDX لنصّها كلِّه، وملحقُها المملوء ينتظر (`FILLED`)
 TITLES = {
     "llama 3.1 community license agreement": "llama3.1",
     "llama 3.2 community license agreement": "llama3.2",
@@ -71,7 +74,8 @@ TITLES = {
     "attribution 4.0 international": "cc-by-4.0",
     "creative commons attribution 4.0 international": "cc-by-4.0",
 }
-# ملحقُ Apache بعد «END OF TERMS AND CONDITIONS»: سطرُ حقوق النشر فيه قالبٌ يملؤه صاحبُ العمل، وما سواه نصُّ SPDX بعينه
+# ملحقُ Apache بعد «END OF TERMS AND CONDITIONS»: سطرُ حقوق النشر فيه قالبٌ يملؤه صاحبُ العمل، وما سواه نصُّ SPDX بعينه؛
+# والسطرُ يُعاد إلى قالبه كلُّه ليُعرف سببُ الانتظار وحده، لا ليُسمّى النصّ، إذ قد يحمل بعد الاسم شرطًا (المراجعةُ المرفوضة على #350)
 END_OF_TERMS = re.compile(r"end\s+of\s+terms\s+and\s+conditions", re.IGNORECASE)
 COPYRIGHT_LINE = re.compile(r"^([ \t]*)copyright\b.*$", re.IGNORECASE | re.MULTILINE)
 APPENDIX_COPYRIGHT_TEMPLATE = "Copyright [yyyy] [name of copyright owner]"
@@ -86,8 +90,9 @@ LIMITS = [
     "a_failed_ollama_list_reads_no_tag_and_writes_nothing_because_an_empty_list_from_a_failure_is_not_evidence_that_a_tag_was_not_pulled",
     "a_resolved_tag_whose_text_now_differs_from_its_registered_digest_is_not_rewritten_because_the_evidence_that_resolved_it_would_then_conflict_and_replacing_it_is_the_owners_word",
     "nothing_is_written_that_the_license_guard_would_refuse_over_the_registry_and_every_probe_file_together",
-    "a_license_on_the_osi_list_is_never_named_from_its_title_lines_and_apache_2_0_is_named_only_when_its_body_and_appendix_match_spdx_with_the_one_appendix_copyright_line_reset_to_its_template",
-    "the_holder_text_on_the_filled_apache_appendix_copyright_line_is_not_read",
+    "a_license_on_the_osi_list_is_never_named_from_its_title_lines_and_apache_2_0_is_named_only_when_the_whole_printed_text_matches_the_spdx_digest",
+    "an_apache_text_whose_one_appendix_copyright_line_is_filled_stays_pending_under_its_own_reason_because_that_line_may_carry_terms_after_the_holder_and_no_rule_tells_them_apart_without_guessing",
+    "so_a_tag_like_qwen3_14b_that_prints_a_filled_apache_appendix_is_not_resolved_by_this_tool_and_its_existing_registry_entry_is_not_rewritten",
     "a_writing_run_holds_an_exclusive_lock_beside_the_registry_from_reading_it_to_writing_it_and_writes_the_evidence_and_the_registry_together_or_neither",
     "a_run_killed_between_its_two_replacements_can_still_leave_the_new_evidence_file_and_the_license_guard_then_names_it",
 ]
@@ -115,10 +120,14 @@ def _normalized(text: str) -> str:
     return " ".join(text.lower().split())
 
 
-def apache_with_its_appendix_filled(text: str) -> bool:
-    """نصُّ Apache-2.0 مُلئ سطرُ حقوق النشر الواحد في ملحقه: يُعاد ذلك السطرُ إلى قالبه فتسمّيه بصمةُ SPDX لجسمه وملحقه.
-    فلا يُسمّى بهذا نصٌّ زيد في جسمه أو ملحقه شرط، ولا ملحقٌ فيه سطرا حقوق إذ يصيران سطرين من القالب لا يطابقان ملحقَ SPDX
-    (ملاحظة Codex السادسة على #301)."""
+def apache_with_its_appendix_filled(data: bytes) -> bool:
+    """أهو نصُّ Apache-2.0 إلّا سطرَ حقوق النشر الواحد في ملحقه؟ يُعاد ذلك السطرُ كلُّه إلى قالبه فتُقابَل بصمةُ SPDX.
+    وهذا سببُ انتظارٍ لا تسمية: فالسطرُ المملوء قد يحمل بعد اسم صاحب الحقّ شرطًا يمحوه إرجاعُه إلى القالب، فلا يُسمّى به
+    النصّ (المراجعةُ المرفوضة على #350). ولا يطابق نصٌّ زيد في جسمه أو ملحقه شرط، ولا ملحقٌ فيه سطرا حقوق."""
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        return False
     end = END_OF_TERMS.search(text)
     if end is None:
         return False
@@ -127,7 +136,7 @@ def apache_with_its_appendix_filled(text: str) -> bool:
 
 
 def name_license(data: bytes) -> tuple[str | None, str | None]:
-    """الرخصةُ المسمّاة من نصّها وطريقةُ تسميتها، أو لا شيء."""
+    """الرخصةُ المسمّاة من نصّها وطريقةُ تسميتها، أو لا شيء: ببصمة SPDX للنصّ كلِّه كما طُبع، أو بعنوانٍ في `TITLES`."""
     named = identify_license(data)
     if named is not None:
         return named, "spdx_body_digest_via_weight_provenance_identify_license"
@@ -135,8 +144,6 @@ def name_license(data: bytes) -> tuple[str | None, str | None]:
         text = data.decode("utf-8")
     except UnicodeDecodeError:
         return None, None
-    if apache_with_its_appendix_filled(text):
-        return "apache-2.0", "spdx_body_digest_with_the_apache_appendix_copyright_line_reset_to_its_template"
     lines = [_normalized(line) for line in text.splitlines() if line.strip()]
     # العنوانُ يبدأ في أحد الأسطر الثلاثة الأولى غير الفارغة، وقد يمتدّ على سطرين (Apache)، فتُقابَل الأسطرُ المتتالية مجموعةً
     for first in range(min(3, len(lines))):
@@ -167,7 +174,8 @@ def read_tag(tag: str, listed: dict[str, str], day: str, runner: Runner | None =
         return record, False
     license_name, named_by = name_license(data)
     if license_name is None:
-        record["pending"] = UNNAMED
+        # نصُّ Apache بملحقٍ مملوء ينتظر بسببه، لا بالسبب العام، ولا يُسمّى (المراجعةُ المرفوضة على #350)
+        record["pending"] = FILLED if apache_with_its_appendix_filled(data) else UNNAMED
         record["license_text_sha256"] = hashlib.sha256(data).hexdigest()
         return record, False
     record["license_provenance"] = {"source": f"https://ollama.com/library/{tag}",

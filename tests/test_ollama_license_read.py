@@ -50,27 +50,45 @@ def test_a_tag_with_a_printed_license_is_resolved_and_named_from_its_text_alone(
     assert ml.findings(registry, {"model-licenses-ollama-20261007.json": evidence}, None) == []
 
 
-FILLED_BY = "spdx_body_digest_with_the_apache_appendix_copyright_line_reset_to_its_template"
+RESTRICTION = b"All commercial use is forbidden."
+QWEN_LIST = (0, b"NAME ID SIZE\nqwen3:14b bdbd181c33f2 9.3 GB\n", b"")
 
 
-def test_apache_text_with_its_appendix_filled_in_is_named_by_its_body_and_appendix():
-    # ملاحظة Codex الرابعة على #301: نصُّ Apache-2.0 بملحقٍ مملوء (حالة `qwen3:14b` في دليل ٦ أكتوبر) لا تطابقه بصمةُ SPDX،
-    # فكان يُقيَّد `UNNAMED` وهو رخصةٌ معروفة
+@pytest.mark.parametrize("holder", [
+    pytest.param(b"Copyright 2024 Alibaba Cloud", id="a_holder_name"),
+    pytest.param(b"Copyright 2024 Example. " + RESTRICTION, id="a_restriction_on_the_copyright_line"),
+])
+def test_apache_text_with_its_appendix_copyright_line_filled_is_not_named_and_stays_pending_by_its_own_reason(holder):
+    # المراجعةُ المرفوضة على #350: إرجاعُ سطر الحقوق المملوء كلِّه إلى قالبه كان يمحو ما بعد الاسم، فسُمّي `apache-2.0`
+    # نصٌّ سطرُ حقوقه «Copyright 2024 Example. All commercial use is forbidden.». ولا قاعدةَ تفرّق الاسمَ من الشرط بلا تخمين،
+    # فلا يُسمّى ملحقٌ مملوء، ويبقى منتظِرًا بسببٍ يقول إنّ الجسمَ والملحقَ نصُّ SPDX إلّا ذلك السطر
     unfilled = (olr.ROOT / "LICENSE").read_bytes()
     assert olr.name_license(unfilled) == ("apache-2.0", "spdx_body_digest_via_weight_provenance_identify_license")
-    filled = unfilled.replace(b"Copyright [yyyy] [name of copyright owner]", b"Copyright 2024 Alibaba Cloud")
-    assert filled != unfilled
-    assert olr.name_license(filled) == ("apache-2.0", FILLED_BY)
+    filled = unfilled.replace(b"Copyright [yyyy] [name of copyright owner]", holder)
+    assert filled != unfilled and olr.name_license(filled) == (None, None)
     # والعنوانُ لا يسمّيها، فلا يُسمّى «Apache License» وحدها، ولا نسخةٌ أخرى
     assert olr.name_license(b"Apache License\nVersion 1.1\n...") == (None, None)
     assert olr.name_license(b"The Apache Software License, Version 1.1\n...") == (None, None)
-    evidence = olr.probe(["qwen3:14b"], "2026-10-07", _runner({"qwen3:14b": (0, filled, b"")},
-                                                               listing=(0, b"NAME ID SIZE\nqwen3:14b bdbd181c33f2 9.3 GB\n", b"")))
-    assert evidence["licenses"] == {"qwen3:14b": "apache-2.0"} and evidence["unresolved_readings"] == []
-    assert evidence["models"]["qwen3:14b"]["license_named_by"] == FILLED_BY
+    evidence = olr.probe(["qwen3:14b"], "2026-10-07", _runner({"qwen3:14b": (0, filled, b"")}, listing=QWEN_LIST))
+    assert evidence["models"] == {} and evidence["licenses"] == {}
+    [record] = evidence["unresolved_readings"]
+    assert record["pending"] == olr.FILLED and record["license_text_sha256"] == hashlib.sha256(filled).hexdigest()
+    registry = olr.apply(_registry(**{"qwen3:14b": {"pending": "read_with_ollama_show_license_on_the_mac"}}), evidence)
+    assert registry["models"]["qwen3:14b"] == {"pending": olr.FILLED}
+    assert ml.findings(registry, {"model-licenses-ollama-20261007.json": evidence}, None) == []
 
 
-RESTRICTION = b"All commercial use is forbidden."
+def test_a_resolved_tag_whose_text_is_a_filled_apache_appendix_keeps_its_registry_entry():
+    # ووسمٌ محلولٌ من قبل (كـ`qwen3:14b` في السجلّ) لا يُعاد كتابةُ قيده حين لا تسمّيه الأداة
+    filled = (olr.ROOT / "LICENSE").read_bytes().replace(b"Copyright [yyyy] [name of copyright owner]", b"Copyright 2024 Alibaba Cloud")
+    entry = {"license": "apache-2.0", "source": "https://ollama.com/library/qwen3:14b", "read_on": "2026-10-06",
+             "read_via": "ollama_show_license_on_the_mac", "license_text_sha256": hashlib.sha256(filled).hexdigest()}
+    evidence = olr.probe(["qwen3:14b"], "2026-10-07", _runner({"qwen3:14b": (0, filled, b"")}, listing=QWEN_LIST),
+                         registered={"qwen3:14b": entry["license_text_sha256"]})
+    assert [r["pending"] for r in evidence["unresolved_readings"]] == [olr.FILLED]
+    assert olr.apply(_registry(**{"qwen3:14b": dict(entry)}), evidence)["models"]["qwen3:14b"] == entry
+
+
 
 
 @pytest.mark.parametrize("text", [
