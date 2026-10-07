@@ -1162,3 +1162,35 @@ def test_a_round_lost_to_quota_does_not_count_toward_the_cap(tmp_path):
     adapter.behaviour = "commit"
     done = dispatcher.revise(41, execute=True)
     assert done["status"] == "completed" and done["round"] == 4
+
+
+def test_revise_refuses_a_dirty_or_foreign_worktree_even_on_the_rejected_head(tmp_path):
+    dispatcher, project, adapter, ledger, _repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    wt = Path(out["worktree"])
+    (wt / "work.txt").write_text("تعديلٌ سابقٌ غيرُ مودَع\n", encoding="utf-8")
+    launched = len(adapter.seen)
+    with pytest.raises(Refusal) as exc:
+        dispatcher.revise(41, execute=True)
+    assert exc.value.code == "worktree_dirty" and len(adapter.seen) == launched
+    git("checkout", "-q", "--", "work.txt", cwd=wt)
+    git("checkout", "-q", "-b", "other", cwd=wt)                                  # فرعٌ آخر على الرأس نفسِه
+    with pytest.raises(Refusal) as exc:
+        dispatcher.revise(41, execute=True)
+    assert exc.value.code == "worktree_not_on_branch" and len(adapter.seen) == launched
+
+
+def test_a_launch_failure_does_not_discount_a_later_successful_round(tmp_path):
+    dispatcher, project, adapter, ledger, _repo = _setup(tmp_path)
+    _rejected(dispatcher, project, ledger)
+
+    class Broken(FakeAdapter):
+        def start(self, *args, **kwargs):
+            raise OSError(2, "no such binary")
+
+    dispatcher.adapter = Broken()
+    with pytest.raises(Refusal):
+        dispatcher.revise(41, execute=True)
+    dispatcher.adapter = adapter
+    assert dispatcher.revise(41, execute=True)["status"] == "completed"
+    assert dispatcher.counted_rounds(41, 1) == 1

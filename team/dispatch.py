@@ -547,9 +547,18 @@ class Dispatcher:
         """الجولاتُ المحتسبة من السقف: كلُّ جولةٍ إلا ما خُتم بـ`worker_unavailable` (حصّةٌ نافدة أو دخول)، فالعاملُ لم يُعطَ فرصتَه
         ولا يُحمَّل المالكُ طابورًا بسبب حصّة (ليلةُ ٧ أكتوبر). رقمُ الجولة ومجلّدُها يبقيان بالعدّ الكلّي."""
         rounds = self.revision_rounds(issue_number, attempt) if rounds is None else rounds
-        lost = {r.get("round") for r in self.ledger.records(issue_number)
-                if r.get("attempt") == attempt and r["state"] == "worker_unavailable" and r.get("round") is not None}
-        return sum(1 for r in rounds if r.get("round") not in lost)
+        records = self.ledger.records(issue_number)
+        counted = 0
+        for started in rounds:
+            # خاتمةُ هذه الجولة بعينها: أوّلُ قيدٍ خاتم بعد بدئها يحمل رقمَها؛ لا قيدُ فشلِ إطلاقٍ قبلها ولا جولةٌ أخرى بالرقم نفسِه
+            # (ملاحظة Codex على c266dbc)
+            index = next(i for i, r in enumerate(records) if r is started or (r["state"] == "revision_started" and r.get("attempt") == attempt
+                                                                                 and r.get("round") == started.get("round") and r.get("at") == started.get("at")))
+            closing = next((r for r in records[index + 1:] if r.get("attempt") == attempt and r.get("round", r.get("revision_round")) == started.get("round")
+                            and r["state"] in ("completed", "validation_failed", "worker_unavailable", "outcome_unknown")), None)
+            if closing is None or closing["state"] != "worker_unavailable":
+                counted += 1
+        return counted
 
     def revise(self, issue_number: int, *, execute: bool = False, budget_usd: float = 5.0, timeout: int = 1800,
                max_rounds: int = MAX_REVISION_ROUNDS) -> dict:
@@ -659,7 +668,7 @@ class Dispatcher:
         except OSError as exc:
             # لم تُنشأ العملية أصلًا: العلامةُ تُزال فلا يصير الفشلُ «إطلاقًا مجهولًا» دائمًا (ملاحظة Codex التاسعة على #349)
             (raw / "launching").unlink(missing_ok=True)
-            self.ledger.append(issue_number, "worker_unavailable", code="launch_failed", round=round_no, detail=str(exc)[:200])
+            self.ledger.append(issue_number, "worker_unavailable", code="launch_failed", launch_round=round_no, detail=str(exc)[:200])
             raise Refusal("launch_failed", str(exc)[:200]) from exc
         write_atomic(raw / "pid", str(proc.pid))
         self.ledger.append(issue_number, "revision_started", round=round_no, pid=int(proc.pid), started_at=self.clock(),
@@ -703,13 +712,16 @@ class Dispatcher:
     def _sync_worktree_to(self, wt: Path, branch: str, head: str) -> None:
         """نسخةُ العمل تُجلب إلى الرأس المرفوض نفسِه قبل إطلاق الجولة: تصحيحٌ خارجيّ دُفع ونسخةٌ أقدم يجعلان إيداعَ العامل يُبنى على
         القديم فيفشل الدفعُ وتتعطّل الدورة (ملاحظة Codex الرابعة عشرة على #349). نسخةٌ غيرُ نظيفة أو على فرعٍ آخر رفضٌ مسمًّى."""
+        # الفرعُ والنظافةُ يُفحصان **قبل** مقارنة الرأس: نسخةٌ على الرأس المرفوض نفسِه لكن فيها تعديلاتٌ سابقة أو على فرعٍ آخر
+        # كانت تُطلق العاملَ فوقها فيضمّها إلى إيداعه (ملاحظة Codex على c266dbc). التعديلاتُ الجزئية من جولةٍ ضاعت بالحصّة تُودَع
+        # أو تُخبَّأ بيد المنسِّق أوّلًا.
+        if self._git("rev-parse", "--abbrev-ref", "HEAD", cwd=wt) != branch:
+            raise Refusal("worktree_not_on_branch", branch)
+        if self._git("status", "--porcelain", "--untracked-files=no", cwd=wt).strip():
+            raise Refusal("worktree_dirty", "نسخةُ العمل فيها تعديلاتٌ غير مودَعة؛ تُودَع أو تُخبَّأ قبل الجولة")
         current = self._git("rev-parse", "HEAD", cwd=wt)
         if current == head:
             return
-        if self._git("status", "--porcelain", "--untracked-files=no", cwd=wt).strip():
-            raise Refusal("worktree_dirty", "نسخةُ العمل فيها تعديلاتٌ غير مودَعة فلا تُجلب إلى الرأس المرفوض")
-        if self._git("rev-parse", "--abbrev-ref", "HEAD", cwd=wt) != branch:
-            raise Refusal("worktree_not_on_branch", branch)
         self._git("fetch", self.remote, branch, cwd=wt)
         try:
             self._git("merge", "--ff-only", head, cwd=wt)
