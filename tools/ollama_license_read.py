@@ -9,7 +9,10 @@
   الحقّ وقد يكون شرطًا («Copyright 2024 X. All commercial use is forbidden.»)، ولا قاعدةَ تفرّق بينهما بلا تخمين؛ فيبقى
   منتظِرًا بسببه المسمّى `FILLED` الذي يقول إنّ الجسمَ والملحقَ نصُّ SPDX إلّا ذلك السطرَ غيرَ المقروء (المراجعةُ المرفوضة على #350).
   وعنوانٌ وحده لا يسمّي رخصةً من قائمة OSI: فنصٌّ بعنوان Apache يتبعه شرطٌ يمنع لا يُصنَّف `osi` (ملاحظة Codex السادسة على #301).
+  ونصُّ MIT الذي يسبق جسمَه سطرُ حقوقٍ لا يُسمّى كذلك ولمثل ذلك، وينتظر بسببه `MIT_NOTICE` (ملاحظة Codex على #350).
   وما لم يُسمَّ بهذه لا يُسمّى: يبقى منتظِرًا بسببٍ يقول إنّ النصَّ قُرئ ولم يُعرَف.
+- وسطرُ الخطأ الذي يردّه `tools/probe_evidence.py` (عنوانُ الخادم المحليّ مثلًا) يُكتب علامةَ الحجب، والدليلُ كلُّه يمرّ بالمدقّق
+  قبل الكتابة مع حارس الرخص، فما يُردّ لا يُكتب والرمزُ 4 (ملاحظة Codex على #350).
 - وما لم يُطبع له نصّ، أو أخفق عرضُه، أو ليس في القائمة، يُقيَّد تحت `unresolved_readings` بسببه المسمّى، فلا يسمّيه
   الدليلُ الجديد في حقل نموذجٍ (الحارسُ يرفض دليلًا جديدًا يسمّي نموذجًا منتظِرًا).
 - `--write` يكتب الدليل `docs/probe/model-licenses-ollama-<اليوم>.json` ويحلّ في السجلّ ما قُرئ. ولا سحبَ ولا إنفاق.
@@ -47,7 +50,8 @@ if str(ROOT) not in sys.path:
 
 from core import filelock  # noqa: E402
 from tools import model_licenses as ml  # noqa: E402
-from tools.weight_provenance import identify_license  # noqa: E402
+from tools import probe_evidence  # noqa: E402
+from tools.weight_provenance import identify_license, license_notices  # noqa: E402
 
 AGENT = "anthropic/claude-fable-5-1"
 OLLAMA_REASONS = frozenset(reason for reason in ml.PENDING_REASONS if "ollama" in reason)
@@ -56,6 +60,7 @@ EMPTY = "ollama_show_license_returned_empty_text_on_the_mac"
 RETIRED = "ollama_show_failed_tag_retired_upstream_on_the_mac"
 FAILED = "ollama_show_failed_on_the_mac"
 FILLED = "ollama_show_license_text_is_apache_2_0_but_its_filled_appendix_copyright_line_is_not_read_naming_it_needs_an_owner_word"
+MIT_NOTICE = "ollama_show_license_text_is_mit_but_its_copyright_notice_lines_are_not_read_naming_it_needs_an_owner_word"
 UNNAMED = "ollama_show_license_text_read_on_the_mac_but_not_named_from_its_text"
 LIST_FAILED = "ollama_list_failed_on_the_mac_nothing_was_read_and_nothing_was_written"
 TEXT_CHANGED = "ollama_show_license_text_differs_from_the_registered_text_on_the_mac_replacing_it_needs_an_owner_word"
@@ -95,6 +100,8 @@ LIMITS = [
     "so_a_tag_like_qwen3_14b_that_prints_a_filled_apache_appendix_is_not_resolved_by_this_tool_and_its_existing_registry_entry_is_not_rewritten",
     "a_writing_run_holds_an_exclusive_lock_beside_the_registry_from_reading_it_to_writing_it_and_writes_the_evidence_and_the_registry_together_or_neither",
     "a_run_killed_between_its_two_replacements_can_still_leave_the_new_evidence_file_and_the_license_guard_then_names_it",
+    "an_mit_text_with_a_copyright_line_before_its_body_stays_pending_under_its_own_reason_for_the_same_reason_as_a_filled_apache_appendix",
+    "a_stderr_line_the_probe_evidence_validator_would_flag_is_written_as_its_redaction_marker_and_the_whole_evidence_is_validated_before_it_is_written",
 ]
 Runner = Callable[[list[str]], subprocess.CompletedProcess]
 
@@ -135,9 +142,24 @@ def apache_with_its_appendix_filled(data: bytes) -> bool:
     return identify_license((text[:end.end()] + appendix).encode("utf-8")) == "apache-2.0"
 
 
+def mit_with_its_notice(data: bytes) -> bool:
+    """نصُّ MIT بسطر حقوقٍ قبل جسمه: يقبله `identify_license` كلَّه («copyright…» حتى آخر السطر)، فقد يحمل بعد اسم صاحب الحقّ
+    شرطًا («Copyright 2024 X. All commercial use is forbidden.») يُصنَّف معه `osi`. فلا يُسمّى كما لا يُسمّى ملحقُ Apache المملوء،
+    وينتظر بسببه (ملاحظة Codex على #350)."""
+    return identify_license(data) == "mit" and bool(license_notices(data))
+
+
+def public_line(line: str) -> str:
+    """سطرُ خطأٍ يُكتب في الدليل العامّ كما طُبع، إلا ما يردّه مدقّقُ الأدلّة (`tools/probe_evidence.py`) لأنه يكشف التشغيل،
+    كعنوان الخادم المحليّ في خطأ اتصال: فيُكتب علامةَ الحجب مكانه (ملاحظة Codex على #350)."""
+    return probe_evidence.REDACTION_MARKER if probe_evidence.privacy_findings(line) else line
+
+
 def name_license(data: bytes) -> tuple[str | None, str | None]:
     """الرخصةُ المسمّاة من نصّها وطريقةُ تسميتها، أو لا شيء: ببصمة SPDX للنصّ كلِّه كما طُبع، أو بعنوانٍ في `TITLES`."""
     named = identify_license(data)
+    if named == "mit" and mit_with_its_notice(data):
+        return None, None
     if named is not None:
         return named, "spdx_body_digest_via_weight_provenance_identify_license"
     try:
@@ -167,7 +189,7 @@ def read_tag(tag: str, listed: dict[str, str], day: str, runner: Runner | None =
     if result.returncode != 0:
         record["pending"] = RETIRED if any("retired" in line for line in stderr) else FAILED
         if stderr:
-            record["stderr_first_line"] = stderr[0]
+            record["stderr_first_line"] = public_line(stderr[0])
         return record, False
     if not data.strip():
         record["pending"] = EMPTY
@@ -175,7 +197,8 @@ def read_tag(tag: str, listed: dict[str, str], day: str, runner: Runner | None =
     license_name, named_by = name_license(data)
     if license_name is None:
         # نصُّ Apache بملحقٍ مملوء ينتظر بسببه، لا بالسبب العام، ولا يُسمّى (المراجعةُ المرفوضة على #350)
-        record["pending"] = FILLED if apache_with_its_appendix_filled(data) else UNNAMED
+        record["pending"] = (FILLED if apache_with_its_appendix_filled(data)
+                             else MIT_NOTICE if mit_with_its_notice(data) else UNNAMED)
         record["license_text_sha256"] = hashlib.sha256(data).hexdigest()
         return record, False
     record["license_provenance"] = {"source": f"https://ollama.com/library/{tag}",
@@ -217,7 +240,7 @@ def probe(tags: list[str], day: str, runner: Runner | None = None, registered: d
     if listing.returncode != 0:
         # قائمةٌ أخفقت ليست قائمةً فارغة: لا يُقرأ وسم، ولا يُنسب إلى وسمٍ أنّه لم يُسحب (ملاحظة Codex الثالثة على #301)
         stderr = (listing.stderr or b"").decode("utf-8", errors="replace").strip().splitlines()
-        evidence["ollama_list_failed"] = {"exit_code": listing.returncode, "stderr_first_line": stderr[0] if stderr else "",
+        evidence["ollama_list_failed"] = {"exit_code": listing.returncode, "stderr_first_line": public_line(stderr[0]) if stderr else "",
                                           "read_on": day}
         evidence["unresolved_readings"] = [{"tag": tag, "not_read": LIST_FAILED, "read_on": day} for tag in tags]
         return evidence
@@ -349,9 +372,11 @@ def run_once(args: argparse.Namespace) -> int:
         out = evidence_path(args.probe_dir, args.day)
         applied = apply(json.loads(json.dumps(registry)), evidence)
         introduced = introduced_findings(registry, applied, args.probe_dir, out, evidence, ml.default_engine())
+        # والدليلُ كلُّه يمرّ بمدقّق الأدلّة العامة قبل الكتابة، كما يمرّ به في CI (ملاحظة Codex على #350)
+        introduced += [f"probe_evidence:{code}" for code in probe_evidence.validate_payload(evidence, current_name=out.name)]
         if introduced:
-            print("the license guard would refuse what this run resolves; nothing written:\n  " + "\n  ".join(introduced),
-                  file=sys.stderr)
+            print("the license guard or the probe evidence validator would refuse what this run resolves; nothing written:\n  "
+                  + "\n  ".join(introduced), file=sys.stderr)
             return 4
         write_together(out, evidence, args.registry, applied)
         print(f"wrote {out} and {args.registry}", file=sys.stderr)

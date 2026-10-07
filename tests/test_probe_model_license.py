@@ -49,6 +49,7 @@ def test_a_pending_entry_names_its_reason_and_carries_nothing_else():
     "ollama_show_failed_on_the_mac",
     "ollama_show_license_text_read_on_the_mac_but_not_named_from_its_text",
     "ollama_show_license_text_is_apache_2_0_but_its_filled_appendix_copyright_line_is_not_read_naming_it_needs_an_owner_word",
+    "ollama_show_license_text_is_mit_but_its_copyright_notice_lines_are_not_read_naming_it_needs_an_owner_word",
 ])
 def test_a_mac_reading_that_yielded_no_license_stays_pending_by_what_happened(reason):
     """قراءةُ ٦ أكتوبر على الماك: نصٌّ فارغ، أو وسمٌ متقاعد، أو وسمٌ لم يُسحب؛ كلٌّ سببٌ مسمًّى لا السببُ العام، وما سواه يُرفض."""

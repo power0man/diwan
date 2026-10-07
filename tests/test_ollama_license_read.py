@@ -10,6 +10,8 @@ import pytest
 
 from tools import model_licenses as ml
 from tools import ollama_license_read as olr
+from tools import probe_evidence
+from tests.test_weight_provenance import MIT_BODY
 
 LIST = "NAME                 ID              SIZE      MODIFIED\nllama3.1:8b          46e0c10c039e    4.9 GB    2 days ago\nqwen3-embedding:0.6b ac6da0dfba84    639 MB    3 days ago\ndead:cloud           d3f1c8744721    -         1 day ago\nbroken:1b            000000000000    1 GB      1 day ago\nodd:1b               111111111111    1 GB      1 day ago\n"
 LLAMA = b"LLAMA 3.1 COMMUNITY LICENSE AGREEMENT\nLlama 3.1 Version Release Date: July 23, 2024\n..."
@@ -365,3 +367,57 @@ def test_a_writing_run_waits_for_the_registry_lock_and_reads_the_registry_after_
     assert sorted(p.name for p in probes.iterdir()) == ["model-licenses-ollama-20261007.json", "model-licenses-ollama-20261007b.json"]
     models = json.loads(registry.read_text())["models"]
     assert models["other:1b"] == other and models["llama3.1:8b"]["license"] == "llama3.1"
+
+
+@pytest.mark.parametrize("notice", [
+    pytest.param("Copyright 2024 Example. All commercial use is forbidden.\n\n", id="a_restriction_on_the_copyright_line"),
+    pytest.param("MIT License\n\nCopyright (c) Microsoft Corporation.\n\n", id="a_title_and_a_holder"),
+])
+def test_mit_text_with_a_copyright_line_is_not_named_and_stays_pending_by_its_own_reason(notice):
+    # ملاحظة Codex على #350: `identify_license` يقبل سطرَ الحقوق قبل جسم MIT كلَّه، فسُمّي `mit` (و`osi`) نصٌّ سطرُ حقوقه
+    # «Copyright 2024 Example. All commercial use is forbidden.»؛ وهي مسألةُ ملحق Apache المملوء نفسُها، فتُعالَج بمثل علاجها
+    data = (notice + MIT_BODY).encode()
+    assert olr.name_license(data) == (None, None)
+    evidence = olr.probe(["phi:3b"], "2026-10-07", _runner({"phi:3b": (0, data, b"")}, listing=(0, b"NAME ID\nphi:3b 0123\n", b"")))
+    assert evidence["licenses"] == {} and [r["pending"] for r in evidence["unresolved_readings"]] == [olr.MIT_NOTICE]
+    registry = olr.apply(_registry(**{"phi:3b": {"pending": "read_with_ollama_show_license_on_the_mac"}}), evidence)
+    assert registry["models"]["phi:3b"] == {"pending": olr.MIT_NOTICE}
+    assert ml.findings(registry, {"model-licenses-ollama-20261007.json": evidence}, None) == []
+    # وجسمُ MIT بلا سطر حقوقٍ قبله يُسمّى ببصمته كما كان
+    assert olr.name_license(MIT_BODY.encode()) == ("mit", "spdx_body_digest_via_weight_provenance_identify_license")
+
+REFUSED = b"Error: Post \"http://127.0.0.1:11434/api/show\": dial tcp 127.0.0.1:11434: connect: connection refused\n"
+
+
+def test_the_evidence_is_redacted_and_validated_before_it_is_written(tmp_path, monkeypatch, capsys):
+    # ملاحظة Codex على #350: خطأُ `ollama show` بعنوان الخادم المحليّ كان يُكتب في الدليل كما طُبع، ولا يُفحص الدليلُ إلا
+    # بحارس الرخص، فيُكتب دليلٌ عامّ يردّه `tools/probe_evidence.py` (`private_operational_metadata`)
+    evidence = olr.probe(["broken:1b"], "2026-10-07", _runner({"broken:1b": (1, b"", REFUSED)}))
+    [record] = evidence["unresolved_readings"]
+    assert record["pending"] == olr.FAILED and record["stderr_first_line"] == probe_evidence.REDACTION_MARKER
+    assert probe_evidence.validate_payload(evidence, current_name="x.json") == []
+    assert olr.public_line("Error: dead:0731 was retired") == "Error: dead:0731 was retired"
+    registry = tmp_path / "registry.json"
+    probes = tmp_path / "probe"
+    probes.mkdir()
+    before = json.dumps(_registry(**{"broken:1b": {"pending": "read_with_ollama_show_license_on_the_mac"}}))
+    registry.write_text(before)
+    args = ["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"]
+    monkeypatch.setattr(olr, "run", _runner({"broken:1b": (1, b"", REFUSED)}))
+    assert olr.main(args) == 2
+    [written] = probes.glob("*.json")
+    assert probe_evidence.validate_payload(json.loads(written.read_text()), current_name=written.name) == []
+    written.unlink()
+    registry.write_text(before)
+    # وما يردّه المدقّقُ ولا يحجبه الحجبُ (هنا سطرُ الإصدار يكشف الخادم) لا يُكتب، والرمزُ 4
+    leaky = _runner({"broken:1b": (1, b"", b"Error: something else\n")})
+
+    def run(command):
+        if command == ["ollama", "--version"]:
+            return CompletedProcess(command, 0, b"Warning: could not connect to 127.0.0.1:11434\n", b"")
+        return leaky(command)
+
+    monkeypatch.setattr(olr, "run", run)
+    assert olr.main(args) == 4
+    assert list(probes.iterdir()) == [] and registry.read_text() == before
+    assert "probe_evidence:private_operational_metadata" in capsys.readouterr().err
