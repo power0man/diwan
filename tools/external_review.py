@@ -304,9 +304,13 @@ def metered_transport(transport, provider_key: str, ledger_path: Path, *, cap_mi
 
 def _ledger_path(args) -> Path:
     """سجلُّ `core.run` بجانب `reviews/` لا فيه: `check_artifact` يقرأ كلَّ ملفٍّ هناك وثيقةَ JSON واحدة، والسجلُّ أسطرٌ ومعه مرساتُه
-    (ملاحظة Codex على #352)."""
+    (ملاحظة Codex على #352). وسجلُّ الدخان بجانب تقريره (`out.json` ← `out.core-run-ledger.jsonl`)، يُلحَق بما قبله، لا في مجلّدٍ
+    مؤقّت يزول ويبقى اسمُه في الدليل المنشور (ملاحظة Codex على #352)."""
+    smoke_out = getattr(args, "smoke", None)
+    if smoke_out:
+        return Path(smoke_out).with_name(Path(smoke_out).stem + ".core-run-ledger.jsonl")
     bank = getattr(args, "bank", None)
-    if bank is not None and not getattr(args, "smoke", None):
+    if bank is not None:
         return Path(bank) / "core-run-ledger.jsonl"
     return Path(tempfile.mkdtemp(prefix="diwan-core-run-")) / "ledger.jsonl"
 

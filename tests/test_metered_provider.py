@@ -11,7 +11,7 @@ import pytest
 
 from core import prices
 from core.budget import Budget
-from core.ledger import Ledger
+from core.ledger import Ledger, LedgerCorrupt
 from evaluation.metered import FRAMING_TOKENS, MeteredTransport
 from evaluation.multi_system_review import AutomaticReviewError
 from tools import external_review as cli
@@ -220,8 +220,7 @@ def test_the_core_run_ledger_lives_beside_reviews_and_the_artifact_stays_json(tm
                                ledger=Ledger(path), prices=TABLE)
     metered("priced", "s", "u", {})
     metered("priced", "s", "u", {})
-    metered.ledger.anchor()
-    assert len(path.read_text().splitlines()) == 2
+    assert len(path.read_text().splitlines()) == 2 and metered.ledger.verify_chain(strict=True)
     assert cli.check_artifact(bank / "reviews", environ={})["files"] == 1
 
 
@@ -245,3 +244,21 @@ def test_a_ledger_failure_after_settlement_is_counted_once(tmp_path):
         metered("priced", "s", "u", {})
     assert metered.calls == [] and [r["settled_micros"] for r in metered.refusals] == [200]
     assert Decimal(metered.spend_report()["core_run"]["settled_usd"]) * 10 ** 6 == _charged(metered) == 200
+
+
+def test_every_core_run_record_is_anchored_so_a_cut_tail_is_detected(tmp_path):
+    """ملاحظة Codex على #352: لم يكن أحدٌ يرسّي سجلَّ الإنفاق بعد النداء إلا الاختبار، فلا يتحقّق `verify_chain(strict=True)`
+    ولا يُكشف قصُّ آخر القيود. فالآن يُرسّى بعد كل ما قيّده `core.run`، نداءً مقبولًا ورفضًا فوق السقف."""
+    transport = FakeTransport({"content": "a", "usage": {"prompt_tokens": 100, "completion_tokens": 50}})
+    metered = _metered(tmp_path, transport, cap_micros=600)
+    assert metered("priced", "s", "u", {}) == "a"
+    assert metered.ledger.read_anchor() == {"head": metered.ledger.head(), "count": 1}
+    with pytest.raises(AutomaticReviewError) as refused:
+        metered("priced", "s", "u", {})
+    assert refused.value.code == "spend_cap_reached" and transport.calls == 1
+    assert metered.ledger.verify_chain(strict=True)
+    assert metered.ledger.read_anchor() == {"head": metered.ledger.head(), "count": 2}
+    path = metered.ledger.path
+    path.write_text("".join(path.read_text(encoding="utf-8").splitlines(keepends=True)[:-1]), encoding="utf-8")
+    with pytest.raises(LedgerCorrupt):
+        metered.ledger.verify_chain(strict=True)

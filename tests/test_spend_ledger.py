@@ -13,6 +13,7 @@ import urllib.request
 
 import pytest
 
+from core.ledger import Ledger
 from evaluation.external_review import DEFAULT_REVIEWERS, _slug, smoke_bank
 from evaluation.multi_system_review import AutomaticReviewError
 from tools import external_review as cli
@@ -137,6 +138,18 @@ def test_the_ollama_smoke_evidence_carries_every_call_and_the_totals(tmp_path, m
     assert len(report["provider_usage"]) == len(opener.requests) == len(DEFAULT_REVIEWERS)
     assert {model: totals["total_tokens"] for model, totals in report["token_totals"].items()} == {
         model: 120 for model in DEFAULT_REVIEWERS}
+
+
+def test_the_smoke_core_run_ledger_is_kept_beside_its_report(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #352: كان سجلُّ `core.run` لتشغيل الدخان في مجلّدٍ مؤقّت يزول، والدليلُ المنشور يسمّيه. فصار بجانب
+    التقرير، مُرسًّى، وفيه نداءاتُ التقرير نفسُها."""
+    _wire(monkeypatch, _Opener(_reply(prompt_eval_count=100, eval_count=20)))
+    out = tmp_path / "probe" / "smoke.json"
+    assert cli.main(["--smoke", str(out)]) == 0
+    ledger = Ledger(out.with_name("smoke.core-run-ledger.jsonl"), create=False)
+    core_run = json.loads(out.read_text(encoding="utf-8"))["core_run"]
+    assert core_run["ledger"] == str(ledger.path) and ledger.verify_chain(strict=True)
+    assert [e["record"]["kind"] for e in ledger.entries()] == ["ok"] * len(core_run["calls"]) == ["ok"] * len(DEFAULT_REVIEWERS)
 
 
 def test_the_ollama_bank_summary_carries_every_call_and_the_totals(tmp_path, monkeypatch, capsys):
