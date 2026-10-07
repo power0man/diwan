@@ -253,7 +253,12 @@ def test_every_ablation_report_is_recorded_in_the_run_ledger_of_its_protocol():
         data = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(data, dict) and data.get("kind") == "ablation_report":
             reports[path.relative_to(ROOT).as_posix()] = data
-    recorded = {run["evidence"]: (run, sha) for sha, (ledger, _) in ledgers.items() for run in ledger["runs"]}
+    rows = [(run["evidence"], run, sha) for sha, (ledger, _) in ledgers.items() for run in ledger["runs"]]
+    # كلُّ تقريرٍ صفٌّ واحدٌ في دفترٍ واحد: القاموسُ كان يطوي التكرارَ في دفترٍ أو بين دفترين فيُفحص آخرُ صفٍّ وحده
+    # (ملاحظة Codex على #351)
+    evidence = [entry for entry, _, _ in rows]
+    assert sorted({entry for entry in evidence if evidence.count(entry) > 1}) == [], "تقريرٌ مقيَّدٌ أكثرَ من مرّة"
+    recorded = {entry: (run, sha) for entry, run, sha in rows}
     assert set(recorded) == set(reports), "كلُّ تقرير استئصالٍ في docs/probe له صفٌّ في دفتر بروتوكوله"
     for evidence, report in reports.items():
         run, sha = recorded[evidence]
