@@ -135,9 +135,13 @@ class DiwanProject(ProjectAdapter):
                 return family
         return None
 
+    def worker_findings(self, worker_family: str) -> list[str]:
+        registered = any(agent.startswith(f"{worker_family}/") for agent in self.registry.get("agents", {}))
+        return [] if registered else ["worker_family_not_registered"]
+
     def brief_header(self, issue: Issue, worker_family: str) -> str:
         ids = sorted(agent for agent in self.registry.get("agents", {}) if agent.startswith(f"{worker_family}/"))
-        if not ids:
+        if self.worker_findings(worker_family):
             raise ProjectError("worker_family_not_registered", worker_family)
         trailer = self.registry.get("trailer", "Diwan-Agent")
         return "\n".join([

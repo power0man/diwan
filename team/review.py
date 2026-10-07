@@ -53,28 +53,43 @@ class Refusal(RuntimeError):
 
 def load_calibration(home: Path) -> dict:
     try:
-        return json.loads((home / CALIBRATION_FILE).read_text(encoding="utf-8"))
+        data = json.loads((home / CALIBRATION_FILE).read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
     except (OSError, json.JSONDecodeError):
         return {}
 
 
+def calibration_counts_valid(entry: dict) -> bool:
+    planted, caught, alarms = (entry.get(key) for key in ("defects_planted", "defects_caught", "false_alarms"))
+    return (all(type(value) is int for value in (planted, caught, alarms))
+            and planted > 0 and 0 <= caught <= planted and alarms >= 0)
+
+
 def record_calibration(home: Path, reviewer: str, *, caught: int, of: int, false_alarms: int, clock=now_utc) -> dict:
+    entry = {"calibrated_at": clock(), "defects_caught": caught, "defects_planted": of, "false_alarms": false_alarms}
+    if not calibration_counts_valid(entry):
+        raise ValueError("invalid_calibration_counts")
     data = load_calibration(home)
-    data[reviewer] = {"calibrated_at": clock(), "defects_caught": int(caught), "defects_planted": int(of),
-                      "false_alarms": int(false_alarms)}
+    data[reviewer] = entry
     home.mkdir(parents=True, exist_ok=True)
     (home / CALIBRATION_FILE).write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
     return data[reviewer]
 
 
 def is_calibrated(calibration: dict, reviewer: str, now_iso: str, days: int = CALIBRATION_DAYS) -> bool:
+    """Minimum eligibility: a caught planted defect and consistent recent counts, not a quality threshold."""
     entry = calibration.get(reviewer) or {}
+    if not isinstance(entry, dict) or not calibration_counts_valid(entry) or entry["defects_caught"] == 0:
+        return False
     stamp = entry.get("calibrated_at")
-    if not stamp or not entry.get("defects_planted"):
+    if not stamp:
         return False
     try:
-        return datetime.fromisoformat(now_iso) - datetime.fromisoformat(stamp) <= timedelta(days=days)
-    except ValueError:
+        now, calibrated = datetime.fromisoformat(now_iso), datetime.fromisoformat(stamp)
+        if now.utcoffset() is None or calibrated.utcoffset() is None:
+            return False
+        return timedelta(0) <= now - calibrated <= timedelta(days=days)
+    except (TypeError, ValueError):
         return False
 
 
@@ -296,7 +311,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.calibrate:
         if args.caught is None or args.of is None:
             parser.error("--calibrate يحتاج --caught و--of")
-        print(json.dumps(record_calibration(home, args.calibrate, caught=args.caught, of=args.of, false_alarms=args.false_alarms), ensure_ascii=False))
+        try:
+            out = record_calibration(home, args.calibrate, caught=args.caught, of=args.of, false_alarms=args.false_alarms)
+        except ValueError as exc:
+            print(json.dumps({"status": "refused", "code": str(exc)}, ensure_ascii=False))
+            return 2
+        print(json.dumps(out, ensure_ascii=False))
         return 0
     if args.pr is None:
         parser.error("رقم الطلب لازم")

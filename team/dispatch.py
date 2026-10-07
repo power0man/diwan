@@ -576,13 +576,33 @@ def build(args) -> Dispatcher:
     home = team_home()
     home.mkdir(parents=True, exist_ok=True)
     adapters = registry()
+    project = DiwanProject(root=repo_root)
     if args.worker == "auto":
         from team.catalog import discover, load_evidence, select
-        chosen = select(discover(home=home), "coding", load_evidence(home))["selected"]
-        if chosen is None or chosen not in adapters:
+        ranked = select(discover(home=home), "coding", load_evidence(home))["ranking"]
+        if not ranked:
             raise Refusal("task_evidence_missing", "لا وكيل برمجة مقاس؛ اختر عاملًا صراحةً للقياس الأول")
+        issue = project.issue(args.issue) if args.command == "run" else None
+        ready, blocked, chosen = {}, [], None
+        for candidate in ranked:
+            name = candidate["id"]
+            adapter = adapters.get(name)
+            findings = ["worker_adapter_missing"] if adapter is None else project.worker_findings(adapter.spec.family)
+            if adapter is not None and not findings and issue is not None and not (args.owner_order or "").strip():
+                family = adapter.spec.family
+                if family not in ready:
+                    ready[family] = project.ready_granted(issue.number, family)
+                if not ready[family]:
+                    findings = ["ready_not_granted"]
+            if findings:
+                blocked.append({"worker": name, "codes": findings})
+                continue
+            chosen = name
+            break
+        if chosen is None:
+            raise Refusal("no_eligible_worker", json.dumps(blocked, ensure_ascii=False))
         args.worker = chosen
-    return Dispatcher(project=DiwanProject(root=repo_root), adapter=adapters[args.worker], ledger=TeamLedger(home / LEDGER_FILE),
+    return Dispatcher(project=project, adapter=adapters[args.worker], ledger=TeamLedger(home / LEDGER_FILE),
                       repo_root=repo_root, home=home, adapters=adapters)
 
 

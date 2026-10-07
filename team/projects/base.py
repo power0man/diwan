@@ -65,6 +65,10 @@ class ProjectAdapter:
     def lane_owner(self, path: str) -> str | None:
         return None
 
+    def worker_findings(self, worker_family: str) -> list[str]:
+        """Project-specific reasons a worker family cannot receive repository access."""
+        return []
+
     def brief_header(self, issue: Issue, worker_family: str) -> str:
         """ما يُقال للعامل عن قواعد المشروع (الذيل، التسليم، ما لا يُمسّ)."""
         return ""

@@ -27,7 +27,13 @@ class AgentError(RuntimeError):
         super().__init__(code)
 
 
-def text_plan(catalog: dict, agent_id: str, role: str, *, allow_cloud: bool = False) -> dict:
+def review_author_known(author_families) -> bool:
+    return (isinstance(author_families, (tuple, list, set, frozenset)) and bool(author_families)
+            and all(isinstance(family, str) and family and family == family.strip().casefold()
+                    and family != "unknown" for family in author_families))
+
+
+def text_plan(catalog: dict, agent_id: str, role: str, *, allow_cloud: bool = False, author_families=()) -> dict:
     agent = next((a for a in catalog["agents"] if a["id"] == agent_id), None)
     if agent is None:
         raise AgentError("agent_not_found")
@@ -36,6 +42,11 @@ def text_plan(catalog: dict, agent_id: str, role: str, *, allow_cloud: bool = Fa
     if agent["transport"] != "ollama":
         raise AgentError("use_dispatch_or_external_research_driver" if agent["id"] == "hermes"
                          else "use_dispatch_or_external_kimi_driver")
+    if role == "review":
+        if not review_author_known(author_families):
+            raise AgentError("review_author_family_missing")
+        if agent["family"] == "unknown" or agent["family"] in author_families:
+            raise AgentError("reviewer_not_independent")
     if agent["placement"] == "cloud" and not allow_cloud:
         raise AgentError("cloud_egress_not_enabled")
     return {"status": "dry_run", "agent": agent["id"], "model": agent["model"], "role": role,
@@ -43,8 +54,8 @@ def text_plan(catalog: dict, agent_id: str, role: str, *, allow_cloud: bool = Fa
 
 
 def ask(catalog: dict, agent_id: str, role: str, prompt: str, *, home: Path, execute: bool = False,
-        allow_cloud: bool = False, timeout: int = 120, request=request_json) -> dict:
-    plan = text_plan(catalog, agent_id, role, allow_cloud=allow_cloud)
+        allow_cloud: bool = False, author_families=(), timeout: int = 120, request=request_json) -> dict:
+    plan = text_plan(catalog, agent_id, role, allow_cloud=allow_cloud, author_families=author_families)
     if len(prompt.encode("utf-8")) > MAX_PROMPT_BYTES or not prompt.strip():
         raise AgentError("prompt_empty_or_too_large")
     if not execute:
@@ -103,12 +114,16 @@ def main(argv=None) -> int:
     run.add_argument("--author-family", action="append", default=[])
     run.add_argument("--timeout", type=int, default=120)
     args = parser.parse_args(argv)
+    if hasattr(args, "author_family"):
+        args.author_family = [family.strip().casefold() for family in args.author_family]
     home = team_home()
     catalog = discover(endpoint=args.ollama_url, home=home)
     try:
         if args.command == "list":
             out = catalog
         elif args.command == "select":
+            if args.role == "review" and not review_author_known(args.author_family):
+                raise AgentError("review_author_family_missing")
             out = select(catalog, args.role, load_evidence(home), author_families=args.author_family)
         elif args.command == "record":
             agent = next((a for a in catalog["agents"] if a["id"] == args.agent), None)
@@ -118,7 +133,7 @@ def main(argv=None) -> int:
         else:
             agent_id = args.agent
             if agent_id == "auto":
-                if args.role == "review" and not args.author_family:
+                if args.role == "review" and not review_author_known(args.author_family):
                     raise AgentError("review_author_family_missing")
                 text_catalog = {"agents": [a for a in catalog["agents"] if a["route"] == "text_only"
                                 and (args.allow_cloud or a["placement"] != "cloud")]}
@@ -132,7 +147,7 @@ def main(argv=None) -> int:
             else:
                 prompt = "dry-run"
             out = ask(catalog, agent_id, args.role, prompt, home=home, execute=args.execute,
-                      allow_cloud=args.allow_cloud, timeout=args.timeout)
+                      allow_cloud=args.allow_cloud, author_families=args.author_family, timeout=args.timeout)
     except (AgentError, ValueError, UnicodeError) as exc:
         out = {"status": "refused", "code": getattr(exc, "code", "invalid_input")}
     print(json.dumps(out, ensure_ascii=False, indent=1))

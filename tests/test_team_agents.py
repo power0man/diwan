@@ -277,3 +277,78 @@ def test_auto_text_selection_uses_allowed_routes_and_requires_review_author_fami
     assert agents.main(args + ["--author-family", "deepseek", "--allow-cloud"]) == 0
     assert json.loads(capsys.readouterr().out)["agent"] == local
     assert not (tmp_path / "unused-state").exists()
+    monkeypatch.setattr(agents, "load_evidence", lambda home: [])
+    assert agents.main(args) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "review_author_family_missing"
+
+
+def test_explicit_text_review_checks_all_author_families_before_any_effect(tmp_path):
+    inv = inventory(tmp_path)
+    calls = []
+    def request(*args, **kwargs):
+        calls.append(args)
+        return {"done": True, "message": {"content": "مراجعة استشارية"}}
+    home = tmp_path / "unused"
+    for families, code in (((), "review_author_family_missing"), (("unknown",), "review_author_family_missing"),
+                           ((" Qwen ",), "review_author_family_missing"),
+                           (("openai", "qwen"), "reviewer_not_independent")):
+        for execute in (False, True):
+            with pytest.raises(agents.AgentError, match=code):
+                agents.ask(inv, "ollama:qwen3.5:9b", "review", "test", home=home, execute=execute,
+                           author_families=families, request=request)
+        assert not calls and not home.exists()
+    unknown = next(a for a in inv["agents"] if a["id"] == "ollama:qwen3.5:9b") | {"family": "unknown"}
+    with pytest.raises(agents.AgentError, match="reviewer_not_independent"):
+        agents.ask({"agents": [unknown]}, unknown["id"], "review", "test", home=home,
+                   execute=True, author_families=("openai",), request=request)
+    assert not calls and not home.exists()
+    out = agents.ask(inv, "ollama:qwen3.5:9b", "review", "test", home=home, execute=True,
+                     author_families=("openai", "google"), request=request)
+    assert out["status"] == "completed" and len(calls) == 1
+
+
+def test_explicit_review_cli_and_selection_cannot_ignore_author_provenance(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(agents, "discover", lambda **kwargs: inventory(tmp_path))
+    monkeypatch.setattr(agents, "team_home", lambda: tmp_path / "unused")
+    for command in (["ask", "--agent", "ollama:qwen3.5:9b", "--role", "review"],
+                    ["select", "--role", "review"]):
+        assert agents.main(command) == 2
+        assert json.loads(capsys.readouterr().out)["code"] == "review_author_family_missing"
+    args = ["ask", "--agent", "ollama:qwen3.5:9b", "--role", "review"]
+    assert agents.main(args + ["--author-family", " QWEN "]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "reviewer_not_independent"
+    assert agents.main(args + ["--author-family", " OpenAI "]) == 0
+    assert json.loads(capsys.readouterr().out)["status"] == "dry_run"
+    assert not (tmp_path / "unused").exists()
+
+
+def test_auto_coding_skips_unregistered_families_and_unauthorized_workers(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from team.dispatch import Refusal, build
+    from team.projects.base import Issue
+    from team.projects.diwan import DiwanProject
+    monkeypatch.setenv("DIWAN_TEAM_OPENCODE_MODEL", "ollama/qwen3.5:9b")
+    monkeypatch.setenv("DIWAN_TEAM_HOME", str(tmp_path / "state"))
+    inv = inventory(tmp_path)
+    rows = {a["id"]: a for a in inv["agents"]}
+    evidence = [{"agent": key, "identity": rows[key]["identity"], "role": "coding", "score": score,
+                 "at": datetime.now(timezone.utc).isoformat(), "status": "passed", "source": "fixture"}
+                for key, score in (("opencode", 99), ("claude", 95), ("codex", 90))]
+    project = DiwanProject(root=tmp_path)
+    project._registry = {"agents": {"openai/codex": {}, "anthropic/claude-fable-5-1": {}}}
+    monkeypatch.setattr(project, "issue", lambda number: Issue(number, "fixture", ""))
+    monkeypatch.setattr(project, "ready_granted", lambda number, family: family == "openai")
+    monkeypatch.setattr("team.projects.diwan.DiwanProject", lambda **kwargs: project)
+    monkeypatch.setattr(catalog, "discover", lambda **kwargs: inv)
+    monkeypatch.setattr(catalog, "load_evidence", lambda home: evidence)
+    def args(owner_order=None):
+        return SimpleNamespace(repo_root=str(tmp_path), worker="auto", command="run", issue=356, owner_order=owner_order)
+    chosen = build(args())
+    assert chosen.adapter.spec.name == "codex"
+    assert build(args("explicit owner order")).adapter.spec.name == "claude"
+    before = (tmp_path / "state" / "dispatch.jsonl").read_bytes()
+    monkeypatch.setattr(project, "ready_granted", lambda *args: False)
+    with pytest.raises(Refusal, match="no_eligible_worker") as exc:
+        build(args())
+    assert "worker_family_not_registered" in exc.value.detail and "ready_not_granted" in exc.value.detail
+    assert (tmp_path / "state" / "dispatch.jsonl").read_bytes() == before

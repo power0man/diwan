@@ -108,10 +108,58 @@ def test_a_pull_the_team_did_not_dispatch_is_an_external_review(tmp_path):
 
 
 def test_calibration_expires_after_thirty_days():
-    calibration = {"codex": {"calibrated_at": "2026-09-01T00:00:00+00:00", "defects_planted": 8}}
+    calibration = {"codex": {"calibrated_at": "2026-09-01T00:00:00+00:00", "defects_planted": 8,
+                             "defects_caught": 7, "false_alarms": 0}}
     assert rv.is_calibrated(calibration, "codex", "2026-09-20T00:00:00+00:00")
     assert not rv.is_calibrated(calibration, "codex", "2026-10-06T00:00:00+00:00")
     assert not rv.is_calibrated({}, "codex", "2026-10-06T00:00:00+00:00")
+
+
+def test_zero_detection_calibration_does_not_verify_a_passing_review(tmp_path):
+    reviewer, project, adapters, ledger = _setup(tmp_path)
+    head = project.pulls[9].head_sha
+    _dispatched(ledger, head)
+    rv.record_calibration(reviewer.home, "codex", caught=0, of=8, false_alarms=4, clock=reviewer.clock)
+    state = reviewer._record(project.pulls[9], adapters["codex"], head, "fixture-review", "pass")
+    assert state == "review_uncalibrated"
+    assert ledger.main_state(41)["state"] == "validated"
+
+
+def test_calibration_rejects_future_naive_and_malformed_dates():
+    entry = {"defects_planted": 8, "defects_caught": 7, "false_alarms": 0}
+    now = "2026-10-06T10:00:00+00:00"
+    for stamp in ("2099-01-01T00:00:00+00:00", "2026-10-06T10:00:00", "bad-date", 42, None):
+        assert not rv.is_calibrated({"codex": entry | {"calibrated_at": stamp}}, "codex", now)
+    assert not rv.is_calibrated({"codex": entry | {"calibrated_at": now}}, "codex", "2026-10-06T10:00:00")
+    assert not rv.is_calibrated({"codex": entry | {"calibrated_at": "2026-10-06T10:00:00"}},
+                                "codex", "2026-10-06T10:00:00")
+
+
+def test_inconsistent_calibration_counts_are_not_recorded_or_accepted(tmp_path):
+    now = "2026-10-06T10:00:00+00:00"
+    for caught, planted, alarms in ((9, 8, 0), (-1, 8, 0), (1, 0, 0), (1, 8, -1),
+                                    (True, 8, 0), (1.5, 8, 0)):
+        home = tmp_path / "unchanged"
+        with pytest.raises(ValueError, match="invalid_calibration_counts"):
+            rv.record_calibration(home, "codex", caught=caught, of=planted, false_alarms=alarms)
+        assert not home.exists()
+        entry = {"calibrated_at": now, "defects_caught": caught, "defects_planted": planted, "false_alarms": alarms}
+        assert not rv.is_calibrated({"codex": entry}, "codex", now)
+    for entry in ("bad", {}, {"calibrated_at": now, "defects_planted": 8}):
+        assert not rv.is_calibrated({"codex": entry}, "codex", now)
+
+
+def test_invalid_calibration_cli_returns_named_refusal_without_writing(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(rv, "team_home", lambda: tmp_path)
+    args = ["--calibrate", "codex", "--caught", "9", "--of", "8"]
+    assert rv.main(args) == 2
+    assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "invalid_calibration_counts"}
+    assert not (tmp_path / rv.CALIBRATION_FILE).exists()
+
+
+def test_nonobject_calibration_file_is_unavailable(tmp_path):
+    (tmp_path / rv.CALIBRATION_FILE).write_text('["invalid"]')
+    assert rv.load_calibration(tmp_path) == {}
 
 
 def test_the_reviewer_is_told_the_remote_merge_base_not_the_local_main(tmp_path):
