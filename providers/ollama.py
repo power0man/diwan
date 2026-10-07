@@ -60,10 +60,16 @@ class OllamaProvider:
         """نسخةٌ من المزوّد ببذرة قياسٍ معلنة، مع حفظ بقية إعداد الاتصال."""
         return type(self)(self.model, self.base_url, self.allow_thinking, seed)
 
-    def estimate_micros(self, request: Request) -> int:
+    def estimate_micros(self, request: Request | None) -> int:
         # محليّ: لا فاتورة مالية (انظر توثيق الوحدة). والسحابيُّ (`:cloud`، ولو عبر الخادم المحليّ الممرِّر) يُسعَّر من
         # `registry/prices.json`: الاشتراكُ الثابت صفرٌ بأساسه، وما لا مدخلَ له `price_unknown` قبل الشبكة لا صفرٌ مفترض
-        # (جديد-spend-ledger، #295)
+        # (جديد-spend-ledger، #295). وتقديرٌ بلا `Request` صفرٌ للمزوّد المحليّ وحده (نموذجٌ غيرُ سحابيّ على loopback)؛
+        # وغيرُه `estimate_request_required` قبل أي شبكة، فلا سعرَ يُقرأ لطلبٍ لا نموذجَ له ولا حدَّ مخرَج
+        if not isinstance(request, Request):
+            if not is_cloud_model(self.model) and is_loopback_url(self.base_url):
+                return 0
+            raise ProviderError("estimate_request_required",
+                                "تقديرُ كلفة مزوّدٍ غير محليّ يحتاج طلبًا مكتملًا (Request)", retryable=False)
         if not is_cloud_model(request.model) and not is_cloud_model(self.model):
             return 0
         try:

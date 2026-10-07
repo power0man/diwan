@@ -57,3 +57,24 @@ def test_ollama_provider_prices_cloud_model_from_registry():
     with pytest.raises(ProviderError) as refused:
         OllamaProvider("unlisted-cloud").estimate_micros(_request("unlisted-cloud"))
     assert refused.value.code == "price_unknown"
+
+
+def test_ollama_estimate_without_request_is_zero_only_for_a_local_provider():
+    assert OllamaProvider("m").estimate_micros(None) == 0
+    assert OllamaProvider("m", "http://localhost:11434").estimate_micros(None) == 0
+    for provider in (OllamaProvider("deepseek-v4.1-flash:cloud"), OllamaProvider("unlisted-cloud"),
+                     OllamaProvider("m", "https://ollama.com")):
+        with pytest.raises(ProviderError) as refused:
+            provider.estimate_micros(None)
+        assert refused.value.code == "estimate_request_required" and refused.value.retryable is False
+
+
+def test_ollama_estimate_rejects_a_non_request_for_a_cloud_provider_before_network(monkeypatch):
+    provider = OllamaProvider("unlisted-cloud")
+    monkeypatch.setattr(provider, "_post", lambda *a, **k: pytest.fail("network reached"))
+    with pytest.raises(ProviderError) as refused:
+        provider.estimate_micros({"model": "unlisted-cloud"})
+    assert refused.value.code == "estimate_request_required"
+    with pytest.raises(ProviderError) as unpriced:
+        OllamaProvider("m").estimate_micros(_request("unlisted-cloud"))
+    assert unpriced.value.code == "price_unknown"
