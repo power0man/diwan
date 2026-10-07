@@ -73,6 +73,12 @@ def test_ollama_provider_prices_cloud_model_from_registry():
     with pytest.raises(ProviderError) as sent_model:
         OllamaProvider("cloud-unlisted:7b").estimate_micros(_request("deepseek-v4.1-flash:cloud"))
     assert sent_model.value.code == "price_unknown"
+    # ونقطةٌ بعيدةٌ بنموذجٍ عاديّ ليست محليّة: تُسعَّر من الجدول أو تُرفض، لا صفرٌ مفترض (ملاحظة Codex الثانية على #352)
+    for remote in ("https://ollama.com", "http://192.168.1.5:11434"):
+        with pytest.raises(ProviderError) as unpriced_route:
+            OllamaProvider("qwen3.5:9b", remote).estimate_micros(_request("qwen3.5:9b"))
+        assert unpriced_route.value.code == "price_unknown", remote
+    assert OllamaProvider("qwen3.5:9b", "http://localhost:11434").estimate_micros(_request("qwen3.5:9b")) == 0
 
 
 def test_ollama_estimate_without_request_is_zero_only_for_a_local_provider():
