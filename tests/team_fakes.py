@@ -59,7 +59,7 @@ class FakeProject(ProjectAdapter):
     def frozen_findings(self, issue: Issue) -> list[str]:
         return list(self.frozen.get(issue.number, []))
 
-    def brief_header(self, issue: Issue, worker_family: str) -> str:
+    def brief_header(self, issue: Issue, worker_family: str, *, worker_name: str = "", worker_model: str = "") -> str:
         return f"- ذيلُ العائلة {worker_family}."
 
     def pull(self, number: int) -> PullRequest:

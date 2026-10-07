@@ -20,7 +20,8 @@ def inventory(tmp_path):
     binary.write_text("installed")
     names = ("qwen3.5:9b", "deepseek-v4.1-flash:cloud", "kimi-k2.6:cloud", "minimax-m3:cloud",
              "gemma4:latest", "gpt-oss:120b-cloud", "llama3.1:8b", "mistral-large-3:675b-cloud",
-             "huggingface.co/inception42/Jais-2-8B-Chat-GGUF:Q4_K_M", "qwen3-embedding:0.6b", "gone:cloud")
+             "huggingface.co/inception42/Jais-2-8B-Chat-GGUF:Q4_K_M", "lfm2.5:1.2b-instruct-hf-q4",
+             "smollm3:3b-hf-q4", "ministral-3:3b-instruct-hf-q4", "qwen3-embedding:0.6b", "gone:cloud")
     def request(endpoint, path, body=None):
         if path == "/api/tags":
             return {"models": [{"name": name, "digest": "digest:" + name} for name in names]}
@@ -43,6 +44,9 @@ def test_discovery_distinguishes_models_families_routes_and_missing_metadata(tmp
     assert rows["ollama:gemma4:latest"]["family"] == "google"
     assert rows["ollama:minimax-m3:cloud"]["family"] == "minimax"
     assert rows["ollama:huggingface.co/inception42/Jais-2-8B-Chat-GGUF:Q4_K_M"]["family"] == "inception"
+    assert rows["ollama:lfm2.5:1.2b-instruct-hf-q4"]["family"] == "liquid"
+    assert rows["ollama:smollm3:3b-hf-q4"]["family"] == "huggingfacetb"
+    assert rows["ollama:ministral-3:3b-instruct-hf-q4"]["family"] == "mistral"
     assert not rows["kimi"]["repository_access"] and rows["kimi"]["route"] == "external_kimi_driver"
     assert not rows["hermes"]["repository_access"] and rows["hermes"]["route"] == "external_hermes_research"
     assert "coding" not in rows["hermes"]["roles"] and "review" not in rows["hermes"]["roles"]
@@ -135,12 +139,15 @@ def test_text_execution_has_no_tools_stores_only_bounded_result_and_never_retrie
     assert stored["spend_basis"] == "local_no_charge"
     assert len(calls) == 1
     for reply in ({"done": False, "message": {"content": "partial"}},
+                  {"done": True, "done_reason": "length", "eval_count": 1024, "message": {"content": "partial"}},
                   {"done": True, "message": {"content": "", "thinking": "not the answer"}},
                   {"done": True, "message": {"content": "done", "tool_calls": [{"function": {"name": "write"}}]}},
                   {"done": True, "error": "broken", "message": {"content": "done"}}):
         out = agents.ask(inv, "ollama:qwen3.5:9b", "reasoning", "test", home=home, execute=True,
                          request=lambda *a, **kw: reply)
         assert out["status"] == "outcome_unknown"
+        stored = json.loads(Path(out["result_path"]).read_text())
+        assert stored["tokens"]["eval_count"] == reply.get("eval_count")
     with pytest.raises(agents.AgentError, match="prompt_empty_or_too_large"):
         agents.ask(inv, "ollama:qwen3.5:9b", "reasoning", "x" * (agents.MAX_PROMPT_BYTES + 1), home=home, execute=True)
 
@@ -193,12 +200,14 @@ def test_new_workers_do_not_gain_counted_reviews_or_unregistered_commit_identiti
     from team.projects.base import Issue, ProjectError
     from team.projects.diwan import DiwanProject
     project = DiwanProject(root=tmp_path)
-    project._registry = {"agents": {"openai/codex": {}, "google/gemini-jules": {}}}
+    project._registry = {"agents": {"openai/codex": {"surface": "ChatGPT Codex"},
+                                    "google/gemini-antigravity": {"surface": "Antigravity"}}}
     policy = project.review_policy({"anthropic"})
     assert {"gemini", "opencode", "antigravity"} <= set(policy.never) and policy.candidates == ["codex"]
-    assert "google/gemini-jules" in project.brief_header(Issue(356, "test", ""), "google")
-    with pytest.raises(ProjectError, match="worker_family_not_registered"):
-        project.brief_header(Issue(356, "test", ""), "qwen")
+    header = project.brief_header(Issue(356, "test", ""), "google", worker_name="antigravity", worker_model="gemini-3.1-pro-low")
+    assert "google/gemini-antigravity" in header and "google/gemini-jules" not in header
+    with pytest.raises(ProjectError, match="worker_identity_not_registered"):
+        project.brief_header(Issue(356, "test", ""), "qwen", worker_name="opencode", worker_model="ollama/qwen3.5:9b")
 
 
 def test_auto_dispatch_cannot_invent_a_best_worker(tmp_path, monkeypatch):
@@ -356,15 +365,18 @@ def test_auto_coding_skips_unregistered_families_and_unauthorized_workers(tmp_pa
     from team.dispatch import Refusal, build
     from team.projects.base import Issue
     from team.projects.diwan import DiwanProject
-    monkeypatch.setenv("DIWAN_TEAM_OPENCODE_MODEL", "ollama/qwen3.5:9b")
+    monkeypatch.setenv("DIWAN_TEAM_ANTIGRAVITY_MODEL", "claude-sonnet-5-5-low")
+    monkeypatch.setenv("DIWAN_TEAM_CLAUDE_MODEL", "claude-fable-5-1")
+    monkeypatch.setenv("DIWAN_TEAM_CODEX_MODEL", "gpt-6.1-sol")
     monkeypatch.setenv("DIWAN_TEAM_HOME", str(tmp_path / "state"))
     inv = inventory(tmp_path)
     rows = {a["id"]: a for a in inv["agents"]}
     evidence = [{"agent": key, "identity": rows[key]["identity"], "role": "coding", "score": score,
                  "at": datetime.now(timezone.utc).isoformat(), "status": "passed", "source": "fixture"}
-                for key, score in (("opencode", 99), ("claude", 95), ("codex", 90))]
+                for key, score in (("antigravity", 99), ("claude", 95), ("codex", 90))]
     project = DiwanProject(root=tmp_path)
-    project._registry = {"agents": {"openai/codex": {}, "anthropic/claude-fable-5-1": {}}}
+    project._registry = {"agents": {"openai/codex": {"surface": "ChatGPT Codex"},
+                                    "anthropic/claude-fable-5-1": {"surface": "Claude Code"}}}
     monkeypatch.setattr(project, "issue", lambda number: Issue(number, "fixture", ""))
     monkeypatch.setattr(project, "ready_granted", lambda number, family: family == "openai")
     monkeypatch.setattr("team.projects.diwan.DiwanProject", lambda **kwargs: project)
@@ -379,5 +391,133 @@ def test_auto_coding_skips_unregistered_families_and_unauthorized_workers(tmp_pa
     monkeypatch.setattr(project, "ready_granted", lambda *args: False)
     with pytest.raises(Refusal, match="no_eligible_worker") as exc:
         build(args())
-    assert "worker_family_not_registered" in exc.value.detail and "ready_not_granted" in exc.value.detail
+    assert "worker_identity_not_registered" in exc.value.detail and "ready_not_granted" in exc.value.detail
     assert (tmp_path / "state" / "dispatch.jsonl").read_bytes() == before
+
+
+def test_diwan_dispatch_binds_the_exact_surface_and_role_before_launch(tmp_path):
+    from team.dispatch import Dispatcher
+    from team.ledger import TeamLedger
+    from team.projects.base import Issue, ProjectError
+    from team.projects.diwan import DiwanProject
+    project = DiwanProject()
+    issue = Issue(356, "ordinary development", "")
+    project.issue = lambda number: issue
+    allowed = (("codex", "gpt-6.1-sol", "openai", "openai/codex"),
+               ("claude", "claude-opus-5-5", "anthropic", "anthropic/claude-opus-5-5"),
+               ("antigravity", "gemini-3.1-pro-low", "google", "google/gemini-antigravity"))
+    for name, model, family, identity in allowed:
+        header = project.brief_header(issue, family, worker_name=name, worker_model=model)
+        assert f"Diwan-Agent: {identity}" in header
+        assert all(f"Diwan-Agent: {other}`" not in header for other in project.registry["agents"] if other != identity)
+    blocked = (AntigravityAdapter(model="claude-opus-5-5-high"),
+               AntigravityAdapter(model="gpt-oss-120b-medium"), GeminiAdapter(),
+               OpenCodeAdapter(model="ollama/qwen3.5:9b"), OpenCodeAdapter(model="ollama/gpt-oss:20b"))
+    calls = []
+    ledger = TeamLedger(tmp_path / "state" / "dispatch.jsonl")
+    for adapter in blocked:
+        dispatcher = Dispatcher(project, adapter, ledger, tmp_path, home=tmp_path / "state",
+                                doctor_check=lambda: calls.append("doctor"))
+        with pytest.raises(ProjectError, match="worker_identity_not_registered|worker_role_not_allowed"):
+            dispatcher.run(356, execute=True, owner_order="authorized fixture")
+        assert not calls and ledger.records() == []
+    with pytest.raises(ProjectError, match="worker_identity_not_registered"):
+        project.brief_header(issue, "anthropic", worker_name="claude", worker_model="")
+    project._registry = {"agents": {"openai/codex": {"surface": "Other surface"}}}
+    assert project.worker_findings("openai", worker_name="codex") == ["worker_identity_not_registered"]
+    assert project.worker_findings("anthropic", worker_name="codex") == ["worker_identity_not_registered"]
+
+
+def test_implicit_cli_models_cannot_reuse_scores_and_explicit_models_reach_both_modes(tmp_path, monkeypatch):
+    from team.adapters.claude import ClaudeAdapter
+    from team.adapters.codex import CodexAdapter
+    now = datetime.now(timezone.utc)
+    for name, cls, model, replacement in (("claude", ClaudeAdapter, "claude-opus-5", "claude-opus-5-5"),
+                                         ("codex", CodexAdapter, "gpt-6-sol", "gpt-6.1-sol"),
+                                         ("gemini", GeminiAdapter, "gemini-3-pro", "gemini-3.1-pro")):
+        key = f"DIWAN_TEAM_{name.upper()}_MODEL"
+        monkeypatch.delenv(key, raising=False)
+        cli = next(a for a in inventory(tmp_path)["agents"] if a["id"] == name)
+        stale = {"agent": name, "identity": cli["identity"], "role": "coding", "score": 99,
+                 "at": now.isoformat(), "status": "passed", "source": "old-default"}
+        result = catalog.select({"agents": [cli]}, "coding", [stale], now=now)
+        assert result["selected"] is None and result["blocked"][0]["reason"] == "model_identity_missing"
+        monkeypatch.setenv(key, model)
+        cli = next(a for a in inventory(tmp_path)["agents"] if a["id"] == name)
+        fresh = stale | {"identity": cli["identity"]}
+        assert catalog.select({"agents": [cli]}, "coding", [fresh], now=now)["selected"] == name
+        for argv in (cls().work_argv(tmp_path, 1, tmp_path), cls().review_argv(tmp_path, "main")):
+            assert argv[argv.index("--model") + 1] == model
+        monkeypatch.setenv(key, replacement)
+        changed = next(a for a in inventory(tmp_path)["agents"] if a["id"] == name)
+        assert catalog.select({"agents": [changed]}, "coding", [fresh, stale], now=now)["selected"] is None
+
+
+def test_opencode_never_enters_arbitrary_coding_selection_even_with_high_scores(tmp_path, monkeypatch):
+    monkeypatch.setenv("DIWAN_TEAM_OPENCODE_MODEL", "ollama/gpt-oss:20b")
+    cli = next(a for a in inventory(tmp_path)["agents"] if a["id"] == "opencode")
+    assert "coding" not in cli["roles"] and OpenCodeAdapter().spec.capabilities["coding"] is False
+    row = {"agent": "opencode", "identity": cli["identity"], "role": "coding", "score": 100,
+           "at": datetime.now(timezone.utc).isoformat(), "status": "passed", "source": "fixture"}
+    assert catalog.select({"agents": [cli]}, "coding", [row])["selected"] is None
+
+
+def test_local_json_mode_is_requested_validated_and_never_sent_to_cloud(tmp_path, monkeypatch, capsys):
+    inv = inventory(tmp_path)
+    calls = []
+    def request(endpoint, path, body, **kwargs):
+        calls.append(body)
+        return {"done": True, "message": {"content": '{"answer": 42}'}}
+    for execute in (False, True):
+        with pytest.raises(agents.AgentError, match="structured_cloud_unsupported"):
+            agents.ask(inv, "ollama:deepseek-v4.1-flash:cloud", "reasoning", "JSON", home=tmp_path / "cloud",
+                       execute=execute, allow_cloud=True, json_output=True, request=request)
+    assert not calls and not (tmp_path / "cloud").exists()
+    good = agents.ask(inv, "ollama:qwen3.5:9b", "reasoning", "JSON", home=tmp_path / "local", execute=True,
+                      json_output=True, request=request)
+    assert good["status"] == "completed" and calls[-1]["format"] == "json"
+    bad = agents.ask(inv, "ollama:qwen3.5:9b", "reasoning", "JSON", home=tmp_path / "local", execute=True,
+                     json_output=True, request=lambda *a, **kw: {"done": True, "message": {"content": '```json\n{}\n```'}})
+    assert bad["status"] == "outcome_unknown" and bad["code"] == "invalid_json_response"
+    rows = {a["id"]: a for a in inv["agents"]}
+    now = datetime.now(timezone.utc).isoformat()
+    evidence = [{"agent": key, "identity": rows[key]["identity"], "role": "reasoning", "score": score,
+                 "at": now, "status": "passed", "source": "fixture"}
+                for key, score in (("ollama:deepseek-v4.1-flash:cloud", 99), ("ollama:qwen3.5:9b", 80))]
+    monkeypatch.setattr(agents, "discover", lambda **kwargs: inv)
+    monkeypatch.setattr(agents, "load_evidence", lambda home: evidence)
+    assert agents.main(["ask", "--agent", "auto", "--role", "reasoning", "--allow-cloud", "--json"]) == 0
+    plan = json.loads(capsys.readouterr().out)
+    assert plan["agent"] == "ollama:qwen3.5:9b" and plan["json_output"] is True
+
+
+def test_text_thinking_and_output_budget_require_advertised_controls_before_effects(tmp_path, monkeypatch, capsys):
+    inv = inventory(tmp_path)
+    qwen = next(a for a in inv["agents"] if a["id"] == "ollama:qwen3.5:9b")
+    qwen["thinking"] = {"values": [False, True], "default": True}
+    calls = []
+    def request(endpoint, path, body, **kw):
+        calls.append(body)
+        return {"done": True, "done_reason": "stop", "message": {"content": "نتيجة"}}
+    out = agents.ask(inv, qwen["id"], "reasoning", "fixture", home=tmp_path / "state", execute=True,
+                     thinking=False, max_output_tokens=2048, request=request)
+    assert out["status"] == "completed" and calls[-1]["think"] is False and calls[-1]["options"]["num_predict"] == 2048
+    home = tmp_path / "unused"
+    for thinking in (0, "off", "high"):
+        with pytest.raises(agents.AgentError, match="thinking_control_unsupported"):
+            agents.ask(inv, qwen["id"], "reasoning", "fixture", home=home, execute=True, thinking=thinking, request=request)
+    for tokens in (True, 0, -1, 4097, 1.5):
+        with pytest.raises(agents.AgentError, match="invalid_output_token_budget"):
+            agents.ask(inv, qwen["id"], "reasoning", "fixture", home=home, execute=True, max_output_tokens=tokens, request=request)
+    assert len(calls) == 1 and not home.exists()
+    monkeypatch.setattr(agents, "discover", lambda **kwargs: inv)
+    assert agents.main(["ask", "--agent", qwen["id"], "--role", "reasoning", "--think", "off", "--max-output-tokens", "2048"]) == 0
+    plan = json.loads(capsys.readouterr().out)
+    assert plan["thinking"] is False and plan["max_output_tokens"] == 2048
+    rows = {a["id"]: a for a in inv["agents"]}
+    evidence = [{"agent": key, "identity": rows[key]["identity"], "role": "reasoning", "score": score,
+                 "at": datetime.now(timezone.utc).isoformat(), "status": "passed", "source": "fixture"}
+                for key, score in (("ollama:deepseek-v4.1-flash:cloud", 99), (qwen["id"], 80))]
+    monkeypatch.setattr(agents, "load_evidence", lambda home: evidence)
+    assert agents.main(["ask", "--agent", "auto", "--role", "reasoning", "--think", "off", "--allow-cloud"]) == 0
+    assert json.loads(capsys.readouterr().out)["agent"] == qwen["id"]

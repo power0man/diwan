@@ -33,7 +33,16 @@ def review_author_known(author_families) -> bool:
                     and family != "unknown" for family in author_families))
 
 
-def text_plan(catalog: dict, agent_id: str, role: str, *, allow_cloud: bool = False, author_families=()) -> dict:
+def thinking_supported(agent: dict, thinking) -> bool:
+    if thinking is None:
+        return True
+    metadata = agent.get("thinking")
+    values = metadata.get("values") if isinstance(metadata, dict) else None
+    return isinstance(values, list) and any(type(v) is type(thinking) and v == thinking for v in values)
+
+
+def text_plan(catalog: dict, agent_id: str, role: str, *, allow_cloud: bool = False, author_families=(), json_output: bool = False,
+              thinking=None) -> dict:
     agent = next((a for a in catalog["agents"] if a["id"] == agent_id), None)
     if agent is None:
         raise AgentError("agent_not_found")
@@ -49,13 +58,23 @@ def text_plan(catalog: dict, agent_id: str, role: str, *, allow_cloud: bool = Fa
             raise AgentError("reviewer_not_independent")
     if agent["placement"] == "cloud" and not allow_cloud:
         raise AgentError("cloud_egress_not_enabled")
+    if json_output and agent["placement"] == "cloud":
+        raise AgentError("structured_cloud_unsupported")
+    if not thinking_supported(agent, thinking):
+        raise AgentError("thinking_control_unsupported")
     return {"status": "dry_run", "agent": agent["id"], "model": agent["model"], "role": role,
-            "family": agent["family"], "placement": agent["placement"], "tools": [], "repository_access": False}
+            "family": agent["family"], "placement": agent["placement"], "tools": [], "repository_access": False,
+            "json_output": json_output, "thinking": thinking}
 
 
 def ask(catalog: dict, agent_id: str, role: str, prompt: str, *, home: Path, execute: bool = False,
-        allow_cloud: bool = False, author_families=(), timeout: int = 120, request=request_json) -> dict:
-    plan = text_plan(catalog, agent_id, role, allow_cloud=allow_cloud, author_families=author_families)
+        allow_cloud: bool = False, author_families=(), timeout: int = 120, request=request_json,
+        json_output: bool = False, thinking=None, max_output_tokens: int = 1024) -> dict:
+    plan = text_plan(catalog, agent_id, role, allow_cloud=allow_cloud, author_families=author_families,
+                     json_output=json_output, thinking=thinking)
+    if type(max_output_tokens) is not int or not 1 <= max_output_tokens <= 4096:
+        raise AgentError("invalid_output_token_budget")
+    plan["max_output_tokens"] = max_output_tokens
     if len(prompt.encode("utf-8")) > MAX_PROMPT_BYTES or not prompt.strip():
         raise AgentError("prompt_empty_or_too_large")
     if not execute:
@@ -68,24 +87,38 @@ def ask(catalog: dict, agent_id: str, role: str, prompt: str, *, home: Path, exe
               "identity": agent["identity"], "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest()}
     path.write_text(json.dumps(record, ensure_ascii=False, indent=1), encoding="utf-8")
     try:
-        reply = request(agent["endpoint"], "/api/chat", {
+        body = {
             "model": agent["model"], "stream": False, "keep_alive": 0,
             "messages": [{"role": "system", "content": "You are a text participant. No tools or filesystem access. "
                           "Produce only the requested answer; do not claim actions or external research."},
                          {"role": "user", "content": prompt}],
-            "options": {"temperature": 0, "num_predict": 1024},
-        }, timeout=timeout)
+            "options": {"temperature": 0, "num_predict": max_output_tokens},
+        }
+        if json_output:
+            body["format"] = "json"
+        if thinking is not None:
+            body["think"] = thinking
+        reply = request(agent["endpoint"], "/api/chat", body, timeout=timeout)
+        record.update(provider_done=reply.get("done"), done_reason=reply.get("done_reason"),
+                      tokens={k: reply.get(k) for k in ("prompt_eval_count", "eval_count")},
+                      spend_basis="local_no_charge" if agent["placement"] == "local" else "provider_usage_not_a_bill")
         message = reply.get("message") or {}
-        if reply.get("error") or reply.get("done") is not True or not isinstance(message, dict) or message.get("tool_calls"):
+        if (reply.get("error") or reply.get("done") is not True or reply.get("done_reason") in ("length", "error")
+                or not isinstance(message, dict) or message.get("tool_calls")):
             raise TransportError("incomplete_or_tool_response")
         text = message.get("content")
         if not isinstance(text, str) or not text.strip():
             raise TransportError("empty_response")
+        if json_output:
+            try:
+                valid_json = isinstance(json.loads(text), dict)
+            except ValueError:
+                valid_json = False
+            if not valid_json:
+                raise TransportError("invalid_json_response")
         result = quarantine(text)
         record.update(status="completed", response=result.text,
-                      quarantine_codes=sorted({finding.code for finding in result.findings}),
-                      tokens={k: reply.get(k) for k in ("prompt_eval_count", "eval_count")},
-                      spend_basis="local_no_charge" if agent["placement"] == "local" else "provider_usage_not_a_bill")
+                      quarantine_codes=sorted({finding.code for finding in result.findings}))
     except TransportError as exc:
         record.update(status="outcome_unknown", code=exc.code)
     path.write_text(json.dumps(record, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -113,6 +146,9 @@ def main(argv=None) -> int:
     run.add_argument("--allow-cloud", action="store_true")
     run.add_argument("--author-family", action="append", default=[])
     run.add_argument("--timeout", type=int, default=120)
+    run.add_argument("--json", action="store_true", help="request a JSON object from a local Ollama model; cloud is unsupported")
+    run.add_argument("--think", help="on/off or an exact level advertised by /api/show; omitted uses the model default")
+    run.add_argument("--max-output-tokens", type=int, default=1024, help="maximum generated tokens, including thinking (1–4096)")
     args = parser.parse_args(argv)
     if hasattr(args, "author_family"):
         args.author_family = [family.strip().casefold() for family in args.author_family]
@@ -132,11 +168,14 @@ def main(argv=None) -> int:
             out = record_evidence(home, agent, args.role, args.score, args.source)
         else:
             agent_id = args.agent
+            thinking = {"on": True, "off": False}.get(args.think, args.think)
             if agent_id == "auto":
                 if args.role == "review" and not review_author_known(args.author_family):
                     raise AgentError("review_author_family_missing")
                 text_catalog = {"agents": [a for a in catalog["agents"] if a["route"] == "text_only"
-                                and (args.allow_cloud or a["placement"] != "cloud")]}
+                                and (args.allow_cloud or a["placement"] != "cloud")
+                                and (not args.json or a["placement"] == "local")
+                                and thinking_supported(a, thinking)]}
                 agent_id = select(text_catalog, args.role, load_evidence(home),
                                   author_families=args.author_family)["selected"]
                 if agent_id is None:
@@ -147,7 +186,8 @@ def main(argv=None) -> int:
             else:
                 prompt = "dry-run"
             out = ask(catalog, agent_id, args.role, prompt, home=home, execute=args.execute,
-                      allow_cloud=args.allow_cloud, author_families=args.author_family, timeout=args.timeout)
+                      allow_cloud=args.allow_cloud, author_families=args.author_family, timeout=args.timeout, json_output=args.json,
+                      thinking=thinking, max_output_tokens=args.max_output_tokens)
     except (AgentError, ValueError, UnicodeError) as exc:
         out = {"status": "refused", "code": getattr(exc, "code", "invalid_input")}
     print(json.dumps(out, ensure_ascii=False, indent=1))

@@ -23,7 +23,7 @@ class OpenCodeAdapter(Adapter):
         self.model = model if model is not None else os.environ.get("DIWAN_TEAM_OPENCODE_MODEL", "")
         family = model_family(self.model)
         self.spec = AgentSpec(name="opencode", family=family,
-                              capabilities={"coding": True, "planning": True, "review": True},
+                              capabilities={"coding": False, "planning": True, "review": True},
                               isolation={"level": "none", "mechanism": "native_tool_permissions_only"},
                               execution={"interactive": False, "structured_output": "jsonl"},
                               availability={"type": "provider_configured", "dynamic": True},

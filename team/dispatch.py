@@ -220,7 +220,8 @@ class Dispatcher:
             if execute:
                 self.ledger.append(issue.number, "already_dispatched", blocking_state=blocking["state"], attempt=blocking["attempt"])
             raise Refusal("already_dispatched", f"المحاولة {blocking['attempt']} في حالة {blocking['state']}؛ takeover يحتاج إثباتًا وإذنًا")
-        header = self.project.brief_header(issue, self.family)
+        header = self.project.brief_header(issue, self.family, worker_name=self.adapter.spec.name,
+                                           worker_model=getattr(self.adapter, "model", ""))
         brief, codes = render_brief(issue, header=header, worker=self.adapter.spec.name, family=self.family,
                                     branch=branch, template=self.template())
         brief_sha = sha256_text(brief)
@@ -587,7 +588,9 @@ def build(args) -> Dispatcher:
         for candidate in ranked:
             name = candidate["id"]
             adapter = adapters.get(name)
-            findings = ["worker_adapter_missing"] if adapter is None else project.worker_findings(adapter.spec.family)
+            findings = (["worker_adapter_missing"] if adapter is None else
+                        project.worker_findings(adapter.spec.family, worker_name=adapter.spec.name,
+                                                worker_model=getattr(adapter, "model", "")))
             if adapter is not None and not findings and issue is not None and not (args.owner_order or "").strip():
                 family = adapter.spec.family
                 if family not in ready:

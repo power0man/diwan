@@ -23,6 +23,7 @@ FAMILY_PREFIXES = (
     ("llama", "meta"), ("mistral", "mistral"), ("minimax", "minimax"),
     ("minicpm", "openbmb"), ("command-r", "cohere"), ("jais", "inception"),
     ("claude", "anthropic"), ("gpt-", "openai"),
+    ("lfm", "liquid"), ("smollm", "huggingfacetb"), ("ministral", "mistral"),
 )
 MAX_EVIDENCE_DAYS = 30
 
@@ -54,14 +55,15 @@ def discover(*, endpoint: str | None = None, request=request_json, which=cli_pat
     for name in CLI_NAMES:
         binary = which(name)
         present = binary is not None and binary.is_file()
-        explicit_model = name in ("opencode", "antigravity")
+        explicit_model = name in ("claude", "codex", "gemini", "opencode", "antigravity")
         model = os.environ.get(f"DIWAN_TEAM_{name.upper()}_MODEL", "") if explicit_model else ""
-        family = model_family(model) if explicit_model else families[name]
-        roles = ("planning", "reasoning") if name == "hermes" else ROLES[:-1] if name != "kimi" else ("benchmark_author",)
+        family = model_family(model) if name in ("opencode", "antigravity") else families[name]
+        roles = (("planning", "reasoning") if name in ("hermes", "opencode")
+                 else ROLES[:-1] if name != "kimi" else ("benchmark_author",))
         status = "installed_unverified" if present else "binary_missing"
         configured = (family in ("google", "anthropic", "openai") if name == "antigravity"
                       else "/" in model and family not in ("unknown", "moonshot"))
-        if explicit_model and not configured and present:
+        if name in ("opencode", "antigravity") and not configured and present:
             status = "model_unconfigured"
         agents.append({"id": name, "transport": "cli", "family": family, "model": model or None,
                        "placement": "provider_configured", "roles": list(roles), "status": status,
@@ -102,6 +104,7 @@ def discover(*, endpoint: str | None = None, request=request_json, which=cli_pat
         agents.append({"id": f"ollama:{name}", "transport": "ollama", "model": name, "family": family,
                        "placement": "cloud" if cloud else "local", "roles": list(roles), "status": status,
                        "capabilities": capabilities, "endpoint": endpoint, "repository_access": False,
+                       "thinking": info.get("thinking"),
                        "route": "text_only", "identity": tag.get("digest") or name})
     if home is not None:
         apply_health(agents, home)
@@ -150,6 +153,8 @@ def select(catalog: dict, role: str, evidence: list[dict], *, author_families=()
             reason = "role_not_supported"
         elif agent["status"] in ("binary_missing", "model_unconfigured", "recently_unavailable"):
             reason = agent["status"]
+        elif agent["transport"] == "cli" and not agent.get("model"):
+            reason = "model_identity_missing"
         elif role == "review" and (agent["family"] == "unknown" or agent["family"] in author_families):
             reason = "reviewer_not_independent"
         if reason:
