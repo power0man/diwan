@@ -62,16 +62,20 @@ class OpenCodeAdapter(Adapter):
             out, err = proc.communicate(stdin_text, timeout=timeout)
             return proc.returncode, out, err
         except subprocess.TimeoutExpired:
-            for sig in (signal.SIGTERM, signal.SIGKILL):
-                try:
-                    os.killpg(proc.pid, sig)
-                except ProcessLookupError:
-                    pass
-                try:
-                    proc.communicate(timeout=6)
-                    break
-                except subprocess.TimeoutExpired:
-                    continue
+            try:
+                os.killpg(proc.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                proc.communicate(timeout=6)
+            except subprocess.TimeoutExpired:
+                pass
+            # The bridge may already have exited while its server ignored SIGTERM.
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.communicate()
             return 124, "", "timeout"
 
     def parse_work(self, returncode: int, stdout: str, stderr: str, out_dir: Path) -> WorkerResult:
@@ -110,7 +114,7 @@ class OpenCodeAdapter(Adapter):
                         and proof.get("text_sha256") == text_digest("".join(text)))
         unavailable = unavailable_code(returncode, stdout + "\n" + stderr) if returncode or failed else None
         return WorkerResult(ok=returncode == 0 and finished and bool(text) and not failed and unavailable is None,
-                            text="\n".join(text), session_id=session, returncode=returncode, unavailable=unavailable)
+                            text="".join(text) if proof is not None else "\n".join(text), session_id=session, returncode=returncode, unavailable=unavailable)
 
     def parse_review(self, returncode: int, stdout: str, stderr: str) -> ReviewResult:
         result = self.parse_work(returncode, stdout, stderr, Path("."))
