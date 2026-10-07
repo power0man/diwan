@@ -6,4 +6,8 @@ def registry() -> dict:
     """المحوِّلات المتاحة بأسمائها؛ تُبنى عند الطلب لأن استيرادها يقرأ مسارات الثنائيات."""
     from .claude import ClaudeAdapter
     from .codex import CodexAdapter
-    return {"claude": ClaudeAdapter(), "codex": CodexAdapter()}
+    from .gemini import GeminiAdapter
+    from .opencode import OpenCodeAdapter
+    from .antigravity import AntigravityAdapter
+    return {"claude": ClaudeAdapter(), "codex": CodexAdapter(),
+            "gemini": GeminiAdapter(), "opencode": OpenCodeAdapter(), "antigravity": AntigravityAdapter()}
