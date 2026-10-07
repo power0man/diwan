@@ -424,6 +424,37 @@ def test_a_partially_written_checkpoint_row_is_dropped_and_the_night_resumes(tmp
         RunCache(path)
 
 
+def test_a_complete_last_row_without_its_newline_is_kept_and_terminated(tmp_path):
+    """ملاحظة Codex على #351: انقطاعٌ بعد إغلاق JSON وقبل السطر الجديد كان يُبقي الصفَّ بلا خاتمة، فيلتصق به الصفُّ التالي
+    ويفسد الملفّ فيُرفض الاستئنافُ بعده بـ`checkpoint_corrupt`."""
+    from evaluation.ablation import RunCache
+    path = tmp_path / "night.jsonl"
+    path.write_text(json.dumps({"key": "k0", "row": {"id": "c0", "status": "measured", "passed": True}}), encoding="utf-8")
+    cache = RunCache(path)
+    assert set(cache.rows) == {"k0"} and not cache.dropped_partial_tail
+    assert path.read_text(encoding="utf-8").endswith("\n")
+    cache.put("k1", {"id": "c1", "status": "measured", "passed": False})
+    assert set(RunCache(path).rows) == {"k0", "k1"}
+
+
+def test_a_symlinked_checkpoint_is_refused_before_it_is_read(tmp_path):
+    """ملاحظة Codex على #351: الحَجرُ لا يتبع الرابطَ والتحميلُ يتبعه، فرابطٌ في `--checkpoint` كان يُبقي صفوفَ بصمةٍ مرفوضة
+    في هدفه تُستأنف إن عاد الوسم. فالرابطُ يُرفض مسارًا للمخبأ، ولا يُقرأ هدفُه ولا يُكتب."""
+    from evaluation.ablation import RunCache
+    target = tmp_path / "real.jsonl"
+    row = json.dumps({"key": "k0", "row": {"id": "c0", "status": "measured", "passed": True}}) + "\n"
+    target.write_text(row, encoding="utf-8")
+    link = tmp_path / "night.jsonl"
+    link.symlink_to(target)
+    with pytest.raises(AblationError, match="checkpoint_symlink_refused"):
+        RunCache(link)
+    dangling = tmp_path / "dangling.jsonl"
+    dangling.symlink_to(tmp_path / "absent.jsonl")
+    with pytest.raises(AblationError, match="checkpoint_symlink_refused"):
+        RunCache(dangling)
+    assert target.read_text(encoding="utf-8") == row and not (tmp_path / "absent.jsonl").exists()
+
+
 def test_the_report_counts_only_the_checkpoint_rows_it_actually_reused(tmp_path):
     """ملاحظة Codex الثالثة على #192: كان `measured_rows_reused` عددَ مفاتيح الملف قبل القياس، فتشغيلٌ ببصمة محرّكٍ أخرى يعيد
     القياسَ كاملًا ويعلن استعادةَ الصفوف القديمة. يُعدّ الآن ما أُخذ من الملف فعلًا."""

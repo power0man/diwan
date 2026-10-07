@@ -136,12 +136,18 @@ class RunCache:
     - **والبصمةُ المرفوضة تُحجَر** (ملاحظة Codex الأولى): الصفوفُ تُكتب قبل إعادة التحقّق من بصمة المحرّك في آخر التشغيل، فإن
       انحرف الوسمُ أثناء القياس رُفض التقريرُ وبقيت صفوفٌ منسوبةٌ إلى البصمة الأولى؛ فيُنقل الملفُّ كلُّه بـ`quarantine` إلى
       اسمٍ لا يُستأنف منه، كما تُحجَر تشغيلاتُ `evaluate_capabilities` (`tools/model_digest.py::quarantine_runs_since`).
+    - **ولا مخبأَ عبر رابطٍ رمزيّ** (ملاحظة Codex على #351): الحَجرُ ينقل الملفَّ نفسَه ولا يتبع رابطًا، والتحميلُ والكتابةُ يتبعانه؛
+      فلو قُبل رابطٌ لبقي هدفُه بعد رفض البصمة يُستأنف منه. فيُرفض الرابطُ مسارًا للمخبأ قبل أن يُقرأ (`checkpoint_symlink_refused`).
+    - **وسطرٌ أخيرٌ مكتملٌ بلا سطرٍ جديد يُختم** (ملاحظة Codex على #351): انقطاعٌ بعد إغلاق JSON وقبل `\n` يترك صفًّا سليمًا يلتصق
+      به الصفُّ التالي فيفسد الملف؛ فيُكتب السطرُ الجديد الناقص عند التحميل، ويبقى الصفّ.
     """
 
     QUARANTINE_SUFFIX = ".drift-quarantine"
 
     def __init__(self, path: Path):
         self.path = Path(path)
+        if self.path.is_symlink():
+            raise AblationError("checkpoint_symlink_refused", self.path.name)
         self.rows: dict[str, dict] = {}
         self.reused = 0
         self.dropped_partial_tail = False
@@ -166,6 +172,9 @@ class RunCache:
                         return
                     raise AblationError("checkpoint_corrupt", f"{self.path.name}:{number}")
             offset += len(line)
+        if raw and not raw.endswith(b"\n"):
+            with self.path.open("ab") as handle:
+                handle.write(b"\n")
 
     @staticmethod
     def key(case: dict, arm_config: dict, seed: int, *, model: str, model_version: str, **options) -> str:
