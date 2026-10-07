@@ -42,6 +42,9 @@ backend_model() {
 # شرطُ المزوّد قبل التشغيل، فيُرى الرفضُ لا يُدفن في سجلّ الأخطاء
 backend_ready() {
   if [ "$KIMI_BACKEND" = hf ]; then
+    # نداءاتُ Kimi Code إلى موجّه HF مدفوعةٌ وتخرج من عمليته هو، فلا يحجزها `Budget` ولا يقيّدها سجلُّ `core.run`؛ فلا تُشغَّل
+    # حتى يُعدّ إنفاقُها (ملاحظة Codex على #352، والمتابعة #366). و`ollama` بديلٌ باشتراكٍ ثابت
+    die "KIMI_BACKEND=hf مرفوضٌ حتى يمرّ إنفاقُه بسجلّ core.run (#366): نداءاتُه مدفوعةٌ ولا تُحجز ولا تُقيَّد — استعمل KIMI_BACKEND=ollama"
     [ -s "${HF_TOKEN_PATH:-$HOME/.cache/huggingface/token}" ] \
       || die "لا توكن hf في ${HF_TOKEN_PATH:-$HOME/.cache/huggingface/token} — hf auth login بيد المالك"
   fi

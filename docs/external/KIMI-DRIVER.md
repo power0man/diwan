@@ -110,7 +110,7 @@ cd "$KIMI_WORK" && kimi --prompt "$(cat "$bundle")" --output-format text \
 |---|---|---|---|
 | `kimi` (الافتراضيّ) | `default_model` في `config.toml` | حسابُ Kimi Code | الاشتراك |
 | `ollama` | `kimi-k2.6:cloud` | Ollama المحلي (`http://localhost:11434/v1`) ← ollama.com بتسجيل الدخول القائم | خطّةُ Ollama |
-| `hf` | `moonshotai/Kimi-K2.6` | Hugging Face Inference Providers (`https://router.huggingface.co/v1`) | **على حساب المالك**: لا تشغيلةَ كاملة قبل موافقته |
+| `hf` | `moonshotai/Kimi-K2.6` | Hugging Face Inference Providers (`https://router.huggingface.co/v1`) | **مرفوضٌ في الأداة** حتى يمرّ إنفاقُه بسجلّ `core.run` (#366): نداءاتُه مدفوعةٌ وتخرج من عملية Kimi Code فلا تُحجز ولا تُقيَّد |
 
 - **كيف:** البديلُ يُعرَّف بمتغيّرات `KIMI_MODEL_*` الموثّقة في Kimi Code، في بيئة عملية Kimi وحدها. فلا يُمسّ
   `~/.kimi-code/config.toml`، ولا يُكتب سرٌّ في ملفّ.
