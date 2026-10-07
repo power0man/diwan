@@ -147,9 +147,14 @@ def test_the_cloud_ollama_transport_sends_its_limit_as_num_predict(tmp_path):
 
 def test_unpriced_model_is_refused_before_network(tmp_path):
     transport = FakeTransport({"content": "a", "usage": {"prompt_tokens": 1, "completion_tokens": 1}})
+    metered = _metered(tmp_path, transport)
     with pytest.raises(AutomaticReviewError) as refused:
-        _metered(tmp_path, transport)("unlisted", "s", "u", {})
+        metered("unlisted", "s", "u", {})
     assert refused.value.code == "price_unknown" and transport.calls == 0
+    # ملاحظة Codex على #352: كان رفضُ التقدير يسبق كلَّ قيدٍ في `core.run`، فلا يبقى منه في السجلّ الدائم شيء؛ والآن يُقيَّد رفضًا
+    (record,) = [e["record"] for e in metered.ledger.entries()]
+    assert (record["kind"], record["error_code"], record["model"]) == ("refused", "price_unknown", "unlisted")
+    assert metered.ledger.verify_chain(strict=True) and _charged(metered) == 0
 
 
 def test_reported_cost_settles_over_the_price_estimate(tmp_path):
@@ -262,3 +267,24 @@ def test_every_core_run_record_is_anchored_so_a_cut_tail_is_detected(tmp_path):
     path.write_text("".join(path.read_text(encoding="utf-8").splitlines(keepends=True)[:-1]), encoding="utf-8")
     with pytest.raises(LedgerCorrupt):
         metered.ledger.verify_chain(strict=True)
+
+
+class _AnchorFails(Ledger):
+    """سجلٌّ تُرفض مرساتُه بعد أن قُيِّد النداءُ وسُوّيت كلفتُه (قرصٌ صار للقراءة وحدها)."""
+
+    def anchor(self):
+        raise OSError(30, "Read-only file system")
+
+
+def test_an_anchor_failure_after_settlement_keeps_the_call_in_the_report(tmp_path):
+    """ملاحظة Codex على #352: كانت المرساةُ في `finally` تسبق حسابَ النداء، فإن سقطت بعد التسوية خُصم ٢٠٠ ميكرو وقُيِّد `ok`
+    وأعلن التقريرُ صفرًا."""
+    transport = FakeTransport({"content": "a", "usage": {"prompt_tokens": 100, "completion_tokens": 50}})
+    budget = Budget(day_remaining_micros=10 ** 6, month_remaining_micros=10 ** 6)
+    metered = MeteredTransport(transport, provider_key="fake", budget=budget,
+                               ledger=_AnchorFails(tmp_path / "ledger.jsonl"), prices=TABLE)
+    with pytest.raises(OSError):
+        metered("priced", "s", "u", {})
+    assert [call["cost_micros"] for call in metered.calls] == [200] and metered.refusals == []
+    assert Decimal(metered.spend_report()["core_run"]["settled_usd"]) * 10 ** 6 == _charged(metered) == 200
+    assert [e["record"]["kind"] for e in metered.ledger.entries()] == ["ok"]

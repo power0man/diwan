@@ -155,6 +155,13 @@ class MeteredTransport:
         before = self.budget.day_remaining_micros
         try:
             outcome = execute(request, provider, self.budget, self.ledger)
+            if outcome.response is None:
+                # عطلٌ قيّده `core.run` وسوّاه بالمحجوز: يُسمّى هنا كما يُسمّى الرفض، ولا يُحسب نداءً، وما سُوّي عليه يُحسب
+                raise self._refused(model, outcome.error_code or "provider_error", provider, before)
+            # يُحسب النداءُ قبل المرساة: مرساةٌ تسقط بعد التسوية (قرصٌ ممتلئ) لا تُسقط كلفتَه من التقرير (ملاحظة Codex على #352)
+            self.calls.append(provider.call)
+        except AutomaticReviewError:
+            raise
         except RouteRefused as exc:
             raise self._refused(model, _REFUSAL_CODES.get(exc.code, exc.code), provider, before) from exc
         except ProviderError as exc:
@@ -167,10 +174,6 @@ class MeteredTransport:
             # المرساةُ بعد كل ما قيّده `core.run` نجاحًا أو رفضًا أو عطلًا: بلا مرساةٍ لا يُكشف قصُّ آخر قيود الإنفاق (ملاحظة Codex
             # على #352)
             self.ledger.anchor()
-        if outcome.response is None:
-            # عطلٌ قيّده `core.run` وسوّاه بالمحجوز: يُسمّى هنا كما يُسمّى الرفض، ولا يُحسب نداءً، وما سُوّي عليه يُحسب
-            raise self._refused(model, outcome.error_code or "provider_error", provider, before)
-        self.calls.append(provider.call)
         return outcome.response.content
 
     def _refused(self, model: str, code: str, provider: MeteredProvider, before: int) -> AutomaticReviewError:
