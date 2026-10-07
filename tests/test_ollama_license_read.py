@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 from subprocess import CompletedProcess
+
+import pytest
 
 from tools import model_licenses as ml
 from tools import ollama_license_read as olr
@@ -47,21 +50,49 @@ def test_a_tag_with_a_printed_license_is_resolved_and_named_from_its_text_alone(
     assert ml.findings(registry, {"model-licenses-ollama-20261007.json": evidence}, None) == []
 
 
-def test_apache_text_with_its_appendix_filled_in_is_named_from_its_title_lines():
-    # ملاحظة Codex الرابعة على #301: `TITLES` لم يكن فيه Apache، فنصُّ Apache-2.0 بملحقٍ مملوء (حالة `qwen3:14b` في دليل
-    # ٦ أكتوبر) لا تطابقه بصمةُ SPDX ولا عنوان، فيُقيَّد `UNNAMED` وهو رخصةٌ معروفة
+FILLED_BY = "spdx_body_digest_with_the_apache_appendix_copyright_line_reset_to_its_template"
+
+
+def test_apache_text_with_its_appendix_filled_in_is_named_by_its_body_and_appendix():
+    # ملاحظة Codex الرابعة على #301: نصُّ Apache-2.0 بملحقٍ مملوء (حالة `qwen3:14b` في دليل ٦ أكتوبر) لا تطابقه بصمةُ SPDX،
+    # فكان يُقيَّد `UNNAMED` وهو رخصةٌ معروفة
     unfilled = (olr.ROOT / "LICENSE").read_bytes()
     assert olr.name_license(unfilled) == ("apache-2.0", "spdx_body_digest_via_weight_provenance_identify_license")
     filled = unfilled.replace(b"Copyright [yyyy] [name of copyright owner]", b"Copyright 2024 Alibaba Cloud")
     assert filled != unfilled
-    assert olr.name_license(filled) == ("apache-2.0", "title_lines_as_printed")
-    # والعنوانُ سطران فلا يُسمّى من «Apache License» وحدها، ولا من نسخةٍ أخرى
+    assert olr.name_license(filled) == ("apache-2.0", FILLED_BY)
+    # والعنوانُ لا يسمّيها، فلا يُسمّى «Apache License» وحدها، ولا نسخةٌ أخرى
     assert olr.name_license(b"Apache License\nVersion 1.1\n...") == (None, None)
     assert olr.name_license(b"The Apache Software License, Version 1.1\n...") == (None, None)
     evidence = olr.probe(["qwen3:14b"], "2026-10-07", _runner({"qwen3:14b": (0, filled, b"")},
                                                                listing=(0, b"NAME ID SIZE\nqwen3:14b bdbd181c33f2 9.3 GB\n", b"")))
     assert evidence["licenses"] == {"qwen3:14b": "apache-2.0"} and evidence["unresolved_readings"] == []
-    assert evidence["models"]["qwen3:14b"]["license_named_by"] == "title_lines_as_printed"
+    assert evidence["models"]["qwen3:14b"]["license_named_by"] == FILLED_BY
+
+
+RESTRICTION = b"All commercial use is forbidden."
+
+
+@pytest.mark.parametrize("text", [
+    pytest.param(b"Apache License\nVersion 2.0, January 2004\n\n" + RESTRICTION + b"\n", id="title_then_a_restriction"),
+    pytest.param("filled_then_a_restriction", id="a_restriction_after_the_appendix"),
+    pytest.param("a_restriction_in_the_body", id="a_restriction_before_the_end_of_terms"),
+    pytest.param("two_copyright_lines", id="two_appendix_copyright_lines"),
+])
+def test_text_under_an_apache_title_that_adds_terms_is_not_named_and_stays_pending(text):
+    # ملاحظة Codex السادسة على #301: العنوانُ وحده كان يسمّي `apache-2.0` نصًّا يتبعه منعُ الاستخدام التجاري، فيُصنَّف `osi`
+    # ويمرّ الحارس. فالآن لا يُسمّى من عنوانه ما في قائمة OSI، وApache تُسمّى بجسمها وملحقها وحدهما
+    filled = (olr.ROOT / "LICENSE").read_bytes().replace(b"Copyright [yyyy] [name of copyright owner]", b"Copyright 2024 Alibaba Cloud")
+    data = text if isinstance(text, bytes) else {
+        "filled_then_a_restriction": filled + b"\n   " + RESTRICTION + b"\n",
+        "a_restriction_in_the_body": filled.replace(b"   END OF TERMS AND CONDITIONS", b"   " + RESTRICTION + b"\n\n   END OF TERMS AND CONDITIONS"),
+        "two_copyright_lines": filled.replace(b"Copyright 2024 Alibaba Cloud", b"Copyright 2024 Alibaba Cloud\n   Copyright 2025 Someone Else"),
+    }[text]
+    assert data != filled and olr.name_license(data) == (None, None)
+    evidence = olr.probe(["x:1b"], "2026-10-07", _runner({"x:1b": (0, data, b"")}, listing=(0, b"NAME ID\nx:1b 0123\n", b"")))
+    assert evidence["licenses"] == {} and [r["pending"] for r in evidence["unresolved_readings"]] == [olr.UNNAMED]
+    # ولا عنوانَ في `TITLES` يسمّي رخصةً من قائمة OSI
+    assert [name for name in olr.TITLES.values() if ml.license_class(name) == "osi"] == []
 
 
 def test_readings_that_yield_no_license_stay_pending_by_what_happened():
@@ -257,3 +288,62 @@ def test_a_failed_ollama_list_reads_no_tag_and_writes_nothing(tmp_path, monkeypa
     monkeypatch.setattr(olr.subprocess, "run", lambda *a, **k: (_ for _ in ()).throw(FileNotFoundError("ollama")))
     missing = olr.run(["ollama", "list"])
     assert missing.returncode == 127 and missing.stderr == b"FileNotFoundError: ollama"
+
+
+PENDING = {"pending": "read_with_ollama_show_license_on_the_mac"}
+
+
+def test_the_evidence_and_the_registry_are_written_together_or_neither(tmp_path, monkeypatch):
+    # ملاحظة Codex السابعة على #301: كان الدليلُ يُكتب ثم السجلّ، فإن أخفق السجلُّ بقي دليلٌ يسمّي وسمًا ما زال منتظِرًا
+    # فيرفضه الحارس (`license_not_read_before_new_evidence`)
+    registry = tmp_path / "registry.json"
+    probes = tmp_path / "probe"
+    probes.mkdir()
+    before = json.dumps(_registry(**{"llama3.1:8b": PENDING}))
+    registry.write_text(before)
+    monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
+    real = olr.os.replace
+
+    def replace(source, target):
+        if str(target) == str(registry):
+            raise OSError(28, "No space left on device")
+        return real(source, target)
+
+    monkeypatch.setattr(olr.os, "replace", replace)
+    with pytest.raises(OSError):
+        olr.main(["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"])
+    assert registry.read_text() == before
+    assert sorted(p.name for p in probes.iterdir()) == []
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["probe", "registry.json", "registry.json.lock"]
+    # وبلا إخفاقٍ يُكتبان كلاهما ولا يبقى ملفٌّ مؤقّت
+    monkeypatch.setattr(olr.os, "replace", real)
+    assert olr.main(["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"]) == 0
+    assert [p.name for p in probes.iterdir()] == ["model-licenses-ollama-20261007.json"]
+    assert json.loads(registry.read_text())["models"]["llama3.1:8b"]["license"] == "llama3.1"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["probe", "registry.json", "registry.json.lock"]
+
+
+def test_a_writing_run_waits_for_the_registry_lock_and_reads_the_registry_after_it(tmp_path, monkeypatch):
+    # ملاحظة Codex السادسة على #301: تشغيلان متزامنان كانا يختاران اسمَ الدليل نفسَه ويقرآن السجلَّ القديم، فيستبدل آخرُهما
+    # دليلَ الأوّل ويفقد تحديثاتِه. فالتشغيلُ الكاتب لا يقرأ السجلَّ ولا يكتب حتى يأخذ القفل
+    registry = tmp_path / "registry.json"
+    probes = tmp_path / "probe"
+    probes.mkdir()
+    registry.write_text(json.dumps(_registry(**{"llama3.1:8b": PENDING})))
+    monkeypatch.setattr(olr, "run", _runner({"llama3.1:8b": (0, LLAMA, b"")}))
+    codes = []
+    worker = threading.Thread(target=lambda: codes.append(
+        olr.main(["--registry", str(registry), "--probe-dir", str(probes), "--day", "2026-10-07", "--write"])))
+    with olr.registry_lock(registry):
+        worker.start()
+        worker.join(0.5)
+        assert worker.is_alive() and list(probes.iterdir()) == []
+        # تشغيلٌ آخر يكتب تحت القفل: دليلُه في اسم اليوم الأوّل، وقيدٌ جديد في السجلّ
+        (probes / "model-licenses-ollama-20261007.json").write_text(json.dumps({"date": "2026-10-07", "licenses": {}}))
+        other = {"license": "mit", "source": "https://x.y/z", "read_on": "2026-10-01"}
+        registry.write_text(json.dumps(_registry(**{"llama3.1:8b": PENDING, "other:1b": other})))
+    worker.join(10)
+    assert codes == [0]
+    assert sorted(p.name for p in probes.iterdir()) == ["model-licenses-ollama-20261007.json", "model-licenses-ollama-20261007b.json"]
+    models = json.loads(registry.read_text())["models"]
+    assert models["other:1b"] == other and models["llama3.1:8b"]["license"] == "llama3.1"

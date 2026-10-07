@@ -4,9 +4,10 @@
 ما كان يُقرأ باليد في `docs/probe/model-licenses-ollama-20261006.json` تقرؤه هذه الأداة وتكتبه بالصيغة نفسِها:
 - الوسومُ المقروءة: ما ينتظر في `registry/model_licenses.json` بسببٍ من أسباب Ollama، أو ما سُمّي بـ`--tag`.
 - لكلّ وسمٍ موجودٍ في `ollama list` يُشغَّل `ollama show --license`، ويُبصَم ما طُبع كما طُبع، ويُسمّى من نصّه وحده:
-  بصمةُ جسم SPDX (`tools/weight_provenance.identify_license`)، وإلّا فأسطرُ العنوان الأولى إن كانت عنوانَ رخصةٍ معروفٍ
-  في `TITLES` (ومنها Apache-2.0 حين يُملأ ملحقُها فلا تطابق بصمتُها، كـ`qwen3:14b`). وما لم يُسمَّ بهذين لا يُسمّى: يبقى
-  منتظِرًا بسببٍ يقول إنّ النصَّ قُرئ ولم يُعرَف.
+  بصمةُ جسم SPDX (`tools/weight_provenance.identify_license`)، أو هي بعد أن يُعاد سطرُ حقوق النشر الواحد في ملحق Apache إلى
+  قالبه (حين يُملأ فلا تطابق بصمتُه، كـ`qwen3:14b`)، وإلّا فأسطرُ العنوان الأولى إن كانت عنوانَ رخصةٍ معروفٍ في `TITLES`.
+  وعنوانٌ وحده لا يسمّي رخصةً من قائمة OSI: فنصٌّ بعنوان Apache يتبعه شرطٌ يمنع لا يُصنَّف `osi` (ملاحظة Codex السادسة على #301).
+  وما لم يُسمَّ بهذه لا يُسمّى: يبقى منتظِرًا بسببٍ يقول إنّ النصَّ قُرئ ولم يُعرَف.
 - وما لم يُطبع له نصّ، أو أخفق عرضُه، أو ليس في القائمة، يُقيَّد تحت `unresolved_readings` بسببه المسمّى، فلا يسمّيه
   الدليلُ الجديد في حقل نموذجٍ (الحارسُ يرفض دليلًا جديدًا يسمّي نموذجًا منتظِرًا).
 - `--write` يكتب الدليل `docs/probe/model-licenses-ollama-<اليوم>.json` ويحلّ في السجلّ ما قُرئ. ولا سحبَ ولا إنفاق.
@@ -19,15 +20,21 @@
   وسببٍ يقول إنّ استبدالَها كلمةُ المالك، ويبقى القيدُ كما كان (ملاحظتُه الخامسة).
 - وقبل الكتابة يُفحص السجلُّ بعد الحلّ مع كلِّ أدلّة `docs/probe` والدليلِ الجديد بحارس `tools/model_licenses.py`: فما أحدث
   مخالفةً لم تكن لا يُكتب، وتُطبع مخالفاتُه، والرمزُ 4. فالأداةُ لا تكتب حالةً يرفضها الحارس (ملاحظتُه الخامسة).
+- والتشغيلُ الكاتب يأخذ قفلًا حصريًّا بجانب السجلّ قبل أن يقرأه ولا يفكّه حتى يكتب، فلا يختار تشغيلان متزامنان اسمَ الدليل
+  نفسَه ولا يقرآن السجلَّ القديم فيفقد آخرُهما تحديثاتِ الأوّل (ملاحظتُه السادسة). والدليلُ والسجلُّ يُكتبان معًا أو لا يُكتب
+  أيٌّ منهما: فإن أخفق استبدالُ السجلّ حُذف الدليلُ الجديد، فلا يبقى دليلٌ يسمّي ما لم يحلّه السجلّ (ملاحظتُه السابعة).
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
+import tempfile
+from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 from typing import Callable
@@ -36,6 +43,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from core import filelock  # noqa: E402
 from tools import model_licenses as ml  # noqa: E402
 from tools.weight_provenance import identify_license  # noqa: E402
 
@@ -50,11 +58,10 @@ LIST_FAILED = "ollama_list_failed_on_the_mac_nothing_was_read_and_nothing_was_wr
 TEXT_CHANGED = "ollama_show_license_text_differs_from_the_registered_text_on_the_mac_replacing_it_needs_an_owner_word"
 # ما يكتبه قيدٌ محلول من قراءةٍ على الماك؛ وما سواه في القيد السابق (كالأوزان) يبقى كما كان
 READ_FIELDS = ("license", "source", "read_on", "read_via", "license_text_sha256", "ollama_list_id")
-# عناوينُ رخصٍ تُسمّى من سطرها الأوّل كما طُبع، بعد التطبيع؛ ورخصُها المشروطة تفسيرُها قرارُ المالك (المسألة #301 §٥)
+# عناوينُ رخصٍ تُسمّى من سطرها الأوّل كما طُبع، بعد التطبيع؛ ورخصُها المشروطة تفسيرُها قرارُ المالك (المسألة #301 §٥).
+# ولا يُسمّى من عنوانه وحده ما في قائمة OSI: شرطٌ يُضاف بعد عنوان Apache يمنع ما تبيحه، فيُصنَّف `osi` ما ليس منها
+# (ملاحظة Codex السادسة على #301)؛ فـApache تُسمّى بجسمها وملحقها (`apache_with_its_appendix_filled`)
 TITLES = {
-    # عنوانُ Apache سطران كما يُطبع («Apache License» ثم «Version 2.0, January 2004»)، ويُحتاج إليه حين يُملأ سطرُ حقوق
-    # النشر في الملحق فلا تطابق بصمةُ SPDX؛ وهي حالةُ `qwen3:14b` في دليل ٦ أكتوبر (ملاحظة Codex الرابعة على #301)
-    "apache license version 2.0, january 2004": "apache-2.0",
     "llama 3.1 community license agreement": "llama3.1",
     "llama 3.2 community license agreement": "llama3.2",
     "llama 3.3 community license agreement": "llama3.3",
@@ -64,6 +71,10 @@ TITLES = {
     "attribution 4.0 international": "cc-by-4.0",
     "creative commons attribution 4.0 international": "cc-by-4.0",
 }
+# ملحقُ Apache بعد «END OF TERMS AND CONDITIONS»: سطرُ حقوق النشر فيه قالبٌ يملؤه صاحبُ العمل، وما سواه نصُّ SPDX بعينه
+END_OF_TERMS = re.compile(r"end\s+of\s+terms\s+and\s+conditions", re.IGNORECASE)
+COPYRIGHT_LINE = re.compile(r"^([ \t]*)copyright\b.*$", re.IGNORECASE | re.MULTILINE)
+APPENDIX_COPYRIGHT_TEMPLATE = "Copyright [yyyy] [name of copyright owner]"
 LIMITS = [
     "the_license_text_is_what_ollama_show_license_printed_for_the_tag_on_this_mac_on_the_read_day_and_the_source_url_is_the_library_page_not_the_place_the_text_was_read",
     "a_license_is_named_from_its_text_only_by_the_spdx_body_digest_or_by_known_title_lines_among_its_first_three_and_text_named_by_neither_stays_pending",
@@ -75,6 +86,10 @@ LIMITS = [
     "a_failed_ollama_list_reads_no_tag_and_writes_nothing_because_an_empty_list_from_a_failure_is_not_evidence_that_a_tag_was_not_pulled",
     "a_resolved_tag_whose_text_now_differs_from_its_registered_digest_is_not_rewritten_because_the_evidence_that_resolved_it_would_then_conflict_and_replacing_it_is_the_owners_word",
     "nothing_is_written_that_the_license_guard_would_refuse_over_the_registry_and_every_probe_file_together",
+    "a_license_on_the_osi_list_is_never_named_from_its_title_lines_and_apache_2_0_is_named_only_when_its_body_and_appendix_match_spdx_with_the_one_appendix_copyright_line_reset_to_its_template",
+    "the_holder_text_on_the_filled_apache_appendix_copyright_line_is_not_read",
+    "a_writing_run_holds_an_exclusive_lock_beside_the_registry_from_reading_it_to_writing_it_and_writes_the_evidence_and_the_registry_together_or_neither",
+    "a_run_killed_between_its_two_replacements_can_still_leave_the_new_evidence_file_and_the_license_guard_then_names_it",
 ]
 Runner = Callable[[list[str]], subprocess.CompletedProcess]
 
@@ -100,6 +115,17 @@ def _normalized(text: str) -> str:
     return " ".join(text.lower().split())
 
 
+def apache_with_its_appendix_filled(text: str) -> bool:
+    """نصُّ Apache-2.0 مُلئ سطرُ حقوق النشر الواحد في ملحقه: يُعاد ذلك السطرُ إلى قالبه فتسمّيه بصمةُ SPDX لجسمه وملحقه.
+    فلا يُسمّى بهذا نصٌّ زيد في جسمه أو ملحقه شرط، ولا ملحقٌ فيه سطرا حقوق إذ يصيران سطرين من القالب لا يطابقان ملحقَ SPDX
+    (ملاحظة Codex السادسة على #301)."""
+    end = END_OF_TERMS.search(text)
+    if end is None:
+        return False
+    appendix = COPYRIGHT_LINE.sub(lambda line: line.group(1) + APPENDIX_COPYRIGHT_TEMPLATE, text[end.end():])
+    return identify_license((text[:end.end()] + appendix).encode("utf-8")) == "apache-2.0"
+
+
 def name_license(data: bytes) -> tuple[str | None, str | None]:
     """الرخصةُ المسمّاة من نصّها وطريقةُ تسميتها، أو لا شيء."""
     named = identify_license(data)
@@ -109,6 +135,8 @@ def name_license(data: bytes) -> tuple[str | None, str | None]:
         text = data.decode("utf-8")
     except UnicodeDecodeError:
         return None, None
+    if apache_with_its_appendix_filled(text):
+        return "apache-2.0", "spdx_body_digest_with_the_apache_appendix_copyright_line_reset_to_its_template"
     lines = [_normalized(line) for line in text.splitlines() if line.strip()]
     # العنوانُ يبدأ في أحد الأسطر الثلاثة الأولى غير الفارغة، وقد يمتدّ على سطرين (Apache)، فتُقابَل الأسطرُ المتتالية مجموعةً
     for first in range(min(3, len(lines))):
@@ -234,6 +262,41 @@ def introduced_findings(before: dict, after: dict, probe_dir: Path, out: Path, e
     return sorted(now - was)
 
 
+@contextmanager
+def registry_lock(registry: Path):
+    """قفلٌ حصريّ في ملفٍّ ثابتٍ بجانب السجلّ (`<السجلّ>.lock`)، لا على السجلّ نفسِه لأنّ استبدالَه يغيّر ملفَّه: يأخذه
+    التشغيلُ الكاتب قبل قراءة السجلّ ويفكّه بعد الكتابة، فينتظره تشغيلٌ متزامن (ملاحظة Codex السادسة على #301)."""
+    fd = os.open(registry.with_name(registry.name + ".lock"), os.O_RDWR | os.O_CREAT, 0o600)
+    with os.fdopen(fd, "r+") as stream:
+        filelock.lock(stream)
+        try:
+            yield
+        finally:
+            filelock.unlock(stream)
+
+
+def write_together(out: Path, evidence: dict, registry_path: Path, registry: dict) -> None:
+    """الدليلُ والسجلُّ معًا أو لا شيء: يُجهَّز كلٌّ في ملفٍّ مؤقّت بجانبه، ثم يُستبدل الدليلُ (وهو ملفٌّ جديد) ثم السجلّ؛
+    فإن أخفق استبدالُ السجلّ حُذف الدليلُ الجديد فلا يبقى دليلٌ يسمّي ما بقي في السجلّ منتظِرًا (ملاحظة Codex السابعة على #301)."""
+    staged: list[Path] = []
+    try:
+        for path, payload in ((out, evidence), (registry_path, registry)):
+            fd, name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+            staged.append(Path(name))
+            os.chmod(name, 0o644)
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                stream.write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+        os.replace(staged[0], out)
+        try:
+            os.replace(staged[1], registry_path)
+        except BaseException:
+            out.unlink(missing_ok=True)
+            raise
+    finally:
+        for path in staged:
+            path.unlink(missing_ok=True)
+
+
 def evidence_path(probe_dir: Path, day: str) -> Path:
     """ملفٌّ لكلّ تشغيل: الأوّلُ في اليوم بلا لاحقة، ثمّ `b`، `c`… كما تُسمّى أدلّةُ اليوم الواحد في `docs/probe`؛
     فلا يُستبدل دليلٌ سابق بقيت بصماتُه في السجلّ (ملاحظة Codex الأولى على #301)."""
@@ -253,6 +316,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tag", action="append", default=[], help="وسمٌ يُقرأ بعينه؛ وإلّا فكلُّ منتظِرٍ بسببٍ من Ollama")
     parser.add_argument("--write", action="store_true", help="يكتب الدليلَ ويحلّ السجلّ")
     args = parser.parse_args(argv)
+    if args.write:
+        # التشغيلُ الكاتب يقرأ السجلَّ ويختار اسمَ دليله ويكتب تحت قفلٍ واحد (ملاحظة Codex السادسة على #301)
+        with registry_lock(args.registry):
+            return run_once(args)
+    return run_once(args)
+
+
+def run_once(args: argparse.Namespace) -> int:
     registry = json.loads(args.registry.read_text(encoding="utf-8"))
     tags = args.tag or pending_tags(registry)
     evidence = probe(tags, args.day, registered=registered_texts(registry))
@@ -274,8 +345,7 @@ def main(argv: list[str] | None = None) -> int:
             print("the license guard would refuse what this run resolves; nothing written:\n  " + "\n  ".join(introduced),
                   file=sys.stderr)
             return 4
-        out.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        args.registry.write_text(json.dumps(applied, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        write_together(out, evidence, args.registry, applied)
         print(f"wrote {out} and {args.registry}", file=sys.stderr)
     return 0 if not evidence["unresolved_readings"] else 2
 
