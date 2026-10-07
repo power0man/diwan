@@ -121,7 +121,7 @@ class Reviewer:
     repo_root: Path
     home: Path = field(default_factory=team_home)
     remote: str = "origin"
-    agent_ids: dict[str, str] = field(default_factory=lambda: {"codex": "openai/codex", "claude": "anthropic/claude-fable-5-1"})
+    agent_ids: dict[str, str] = field(default_factory=dict)   # يُكمَل من المحوِّل نفسِه (`agent_id`) فيتبع النموذجَ الفعلي
     runner: object = subprocess.run
     clock: object = now_utc
     doctor_check: object = None      # يُستدعى قبل كل مراجعةٍ فعلية؛ None = team.doctor.check على تثبيتات الموطن
@@ -273,7 +273,8 @@ class Reviewer:
                         if pull.issue is not None and self.ledger.main_state(pull.issue) is not None:
                             self.ledger.append(pull.issue, "reviewer_unavailable", code=code, reviewer=name, pr=pull.number)
                         continue
-                    body = q75_comment(adapter, pull.head_sha, result.verdict, result.text, [], self.agent_ids.get(name, name), base_sha=base_sha,
+                    agent = self.agent_ids.get(name) or getattr(adapter, "agent_id", None) or {"codex": "openai/codex"}.get(name, name)
+                    body = q75_comment(adapter, pull.head_sha, result.verdict, result.text, [], agent, base_sha=base_sha,
                                        strip_paths=(str(tmp),))
                     ref = self.project.comment(pull.number, body)
                     recorded = self._record(pull, adapter, pull.head_sha, ref, result.verdict)

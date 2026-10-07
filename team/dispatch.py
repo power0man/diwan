@@ -543,6 +543,14 @@ class Dispatcher:
     def revision_rounds(self, issue_number: int, attempt: int) -> list[dict]:
         return [r for r in self.ledger.records(issue_number) if r["state"] == "revision_started" and r.get("attempt") == attempt]
 
+    def counted_rounds(self, issue_number: int, attempt: int, rounds: list[dict] | None = None) -> int:
+        """الجولاتُ المحتسبة من السقف: كلُّ جولةٍ إلا ما خُتم بـ`worker_unavailable` (حصّةٌ نافدة أو دخول)، فالعاملُ لم يُعطَ فرصتَه
+        ولا يُحمَّل المالكُ طابورًا بسبب حصّة (ليلةُ ٧ أكتوبر). رقمُ الجولة ومجلّدُها يبقيان بالعدّ الكلّي."""
+        rounds = self.revision_rounds(issue_number, attempt) if rounds is None else rounds
+        lost = {r.get("round") for r in self.ledger.records(issue_number)
+                if r.get("attempt") == attempt and r["state"] == "worker_unavailable" and r.get("round") is not None}
+        return sum(1 for r in rounds if r.get("round") not in lost)
+
     def revise(self, issue_number: int, *, execute: bool = False, budget_usd: float = 5.0, timeout: int = 1800,
                max_rounds: int = MAX_REVISION_ROUNDS) -> dict:
         """مراجعةٌ رافضة (أو فحوصٌ ساقطة) تعود إلى **العامل نفسِه** في نسخة العمل نفسِها بتكليفٍ = الأصلُ + نصُّ المراجعة محجورًا؛
@@ -598,17 +606,19 @@ class Dispatcher:
     def _revise_plan(self, issue_number: int, attempt: int, head: str, reason_kind: str, reason_ref: str, max_rounds: int) -> dict:
         rounds = self.revision_rounds(issue_number, attempt)
         dispatched = self.ledger.last_of(issue_number, "dispatched", attempt) or {}
+        counted = self.counted_rounds(issue_number, attempt, rounds)
         return {"status": "dry_run", "issue": issue_number, "attempt": attempt, "round": len(rounds) + 1, "rounds_so_far": len(rounds),
-                "trigger": reason_kind, "reason_ref": reason_ref, "head_sha": head, "worker": dispatched.get("worker"),
-                "max_rounds": max_rounds, "exhausted": len(rounds) >= max_rounds}
+                "counted_rounds": counted, "trigger": reason_kind, "reason_ref": reason_ref, "head_sha": head,
+                "worker": dispatched.get("worker"), "max_rounds": max_rounds, "exhausted": counted >= max_rounds}
 
     def _launch_revision(self, issue_number: int, attempt: int, head: str, reason_kind: str, reason_ref: str, rounds: list[dict],
                          max_rounds: int, budget_usd: float, timeout: int) -> dict:
         execute = True
-        if len(rounds) >= max_rounds:
+        counted = self.counted_rounds(issue_number, attempt, rounds)
+        if counted >= max_rounds:
             if execute:
-                self.ledger.append(issue_number, "refused", code="revision_rounds_exhausted", rounds=len(rounds), head_sha=head)
-            raise Refusal("revision_rounds_exhausted", f"{len(rounds)} جولات؛ طابورُ المالك")
+                self.ledger.append(issue_number, "refused", code="revision_rounds_exhausted", rounds=counted, head_sha=head)
+            raise Refusal("revision_rounds_exhausted", f"{counted} جولات؛ طابورُ المالك")
         dispatched = self.ledger.last_of(issue_number, "dispatched", attempt) or {}
         wt = Path(dispatched.get("worktree", ""))
         if not wt.exists():

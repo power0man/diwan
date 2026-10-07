@@ -24,7 +24,8 @@ FORBIDDEN_VALUES: tuple[tuple[str, str], ...] = (("--permission-mode", "bypassPe
                                                  ("-s", "danger-full-access"), ("--sandbox", "danger-full-access"))
 ENV_ALLOWLIST: tuple[str, ...] = ("PATH", "HOME", "LANG", "LC_ALL", "TERM", "TMPDIR", "SHELL", "USER")
 UNAVAILABLE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
-    ("quota_exhausted", re.compile(r"(?i)usage limit|rate limit|quota|too many requests|\b429\b|couldn't complete this request|try again later")),
+    ("quota_exhausted", re.compile(r"(?i)usage limit|rate limit|quota|too many requests|\b429\b|couldn't complete this request|try again later"
+                                   r"|reached your [\w .\-]{1,40} limit")),
     ("auth_required", re.compile(r"(?i)not logged in|unauthorized|\b401\b|please (?:log|sign) in|authentication")),
 )
 # سطرُ حكمٍ قائمٌ بذاته: هو **آخرُ** سطرٍ غير فارغ في النص، بلا بادئة اقتباس (>)؛ فلا عبارةٌ مقتبسة ولا مثالٌ منقول يُحتسب

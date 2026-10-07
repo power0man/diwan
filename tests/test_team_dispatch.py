@@ -1149,3 +1149,16 @@ def test_a_revision_that_moves_the_head_backwards_is_not_a_completion(tmp_path):
     done = dispatcher.revise(41, execute=True)
     assert done["status"] == "validation_failed" and done["reason"] == "revision_no_commits"
     assert git("rev-parse", f"origin/{out['branch']}", cwd=repo) == remote_before
+
+
+def test_a_round_lost_to_quota_does_not_count_toward_the_cap(tmp_path):
+    """ثلاثُ جولاتٍ ضاعت بنفاد الحصّة لا تُحيل المهمّةَ إلى طابور المالك؛ الرابعةُ تُطلق برقمها الكلّي."""
+    dispatcher, project, adapter, ledger, _repo = _setup(tmp_path)
+    out, _ref = _rejected(dispatcher, project, ledger)
+    adapter.behaviour = "unavailable"
+    for n in range(1, 4):
+        assert dispatcher.revise(41, execute=True)["status"] == "worker_unavailable"
+    assert dispatcher.counted_rounds(41, 1) == 0
+    adapter.behaviour = "commit"
+    done = dispatcher.revise(41, execute=True)
+    assert done["status"] == "completed" and done["round"] == 4

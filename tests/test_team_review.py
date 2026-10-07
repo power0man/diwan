@@ -313,3 +313,10 @@ def test_a_platform_failure_in_the_cli_is_a_named_unavailability_not_a_traceback
     out = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert rc == 3 and out == {"status": "project_unavailable", "code": "gh_failed", "detail": "dial tcp: i/o timeout"}
     assert not (tmp_path / "home" / "dispatch.jsonl").read_text(encoding="utf-8").strip()
+
+
+def test_the_published_reviewer_identity_follows_the_adapter(tmp_path):
+    reviewer, project, adapters, _ledger = _setup(tmp_path, issue=None, families=("openai",), calibrated=("claude",))
+    adapters["claude"].agent_id = "anthropic/claude-opus-5-5"
+    reviewer.review(9, execute=True, reviewer="claude")
+    assert "(anthropic/claude-opus-5-5)" in project.comments[-1][1]

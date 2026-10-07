@@ -32,6 +32,25 @@ ISOLATION_FLAGS = ("--setting-sources", "project", "--strict-mcp-config", "--dis
 REVIEW_TOOLS = ("Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)")
 
 
+# نموذجُ العامل صراحةً: بلا `--model` يرث العاملُ النموذجَ الافتراضي لحساب المالك، فنفادُ حصّته يُسقط كلَّ العمّال معًا
+# (ليلةُ ٧ أكتوبر: «You've reached your Fable limit» على أربعة عمّال). المعرّفُ في سجلّ العملاء لكل نموذج.
+MODEL_ENV = "DIWAN_TEAM_CLAUDE_MODEL"
+AGENT_IDS = {"claude-opus-5-5": "anthropic/claude-opus-5-5", "opus": "anthropic/claude-opus-5-5",
+             "claude-fable-5-1": "anthropic/claude-fable-5-1", "fable": "anthropic/claude-fable-5-1"}
+DEFAULT_AGENT_ID = "anthropic/claude-fable-5-1"
+
+
+def default_model() -> str | None:
+    return os.environ.get(MODEL_ENV) or None
+
+
+def agent_id_for(model: str | None) -> str:
+    """معرّفُ العميل المسجَّل للنموذج الذي يعمل فعلًا؛ نموذجٌ لا معرّفَ له يبقى باسمه فلا يُنسب إلى غيره."""
+    if not model:
+        return DEFAULT_AGENT_ID
+    return AGENT_IDS.get(model, f"anthropic/{model}")
+
+
 def default_binary() -> Path:
     env = os.environ.get("DIWAN_TEAM_CLAUDE_BIN")
     if env:
@@ -46,11 +65,19 @@ def default_binary() -> Path:
 class ClaudeAdapter(Adapter):
     spec = SPEC
 
-    def __init__(self, binary: Path | None = None):
+    def __init__(self, binary: Path | None = None, model: str | None = None):
         self.binary = Path(binary) if binary else default_binary()
+        self.model = model if model is not None else default_model()
+
+    @property
+    def agent_id(self) -> str:
+        return agent_id_for(self.model)
+
+    def _model_flags(self) -> list[str]:
+        return ["--model", self.model] if self.model else []
 
     def work_argv(self, worktree: Path, budget_usd: float, out_dir: Path) -> list[str]:
-        return [str(self.binary), "-p", *ISOLATION_FLAGS, "--output-format", "json", "--permission-mode", "acceptEdits",
+        return [str(self.binary), "-p", *self._model_flags(), *ISOLATION_FLAGS, "--output-format", "json", "--permission-mode", "acceptEdits",
                 "--max-budget-usd", f"{budget_usd:.2f}", "--settings", SANDBOX_SETTINGS]
 
     def parse_work(self, returncode: int, stdout: str, stderr: str, out_dir: Path) -> WorkerResult:
@@ -68,7 +95,7 @@ class ClaudeAdapter(Adapter):
                             cost_estimate_usd=payload.get("total_cost_usd"), returncode=returncode, unavailable=unavailable)
 
     def review_argv(self, worktree: Path, base_branch: str) -> list[str]:
-        return [str(self.binary), "-p", *ISOLATION_FLAGS, "--output-format", "json", "--permission-mode", "plan",
+        return [str(self.binary), "-p", *self._model_flags(), *ISOLATION_FLAGS, "--output-format", "json", "--permission-mode", "plan",
                 "--allowedTools", *REVIEW_TOOLS]
 
     def parse_review(self, returncode: int, stdout: str, stderr: str) -> ReviewResult:
