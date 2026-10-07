@@ -591,19 +591,20 @@ def build(args) -> Dispatcher:
     from team.projects.diwan import DiwanProject
     repo_root = Path(args.repo_root or git("rev-parse", "--show-toplevel", cwd=Path.cwd()))
     home = team_home()
-    read_only = args.command == "handoff" and not args.execute
+    command = getattr(args, "command", None)
+    read_only = command == "handoff" and not getattr(args, "execute", False)
     if not read_only:
         home.mkdir(parents=True, exist_ok=True)
     adapters = registry()
     project = DiwanProject(root=repo_root)
-    if args.command == "handoff":
+    if command == "handoff":
         args.worker = "codex"
     if args.worker == "auto":
         from team.catalog import discover, load_evidence, select
         ranked = select(discover(home=home), "coding", load_evidence(home))["ranking"]
         if not ranked:
             raise Refusal("task_evidence_missing", "لا وكيل برمجة مقاس؛ اختر عاملًا صراحةً للقياس الأول")
-        issue = project.issue(args.issue) if args.command == "run" else None
+        issue = project.issue(args.issue) if command == "run" else None
         ready, blocked, chosen = {}, [], None
         for candidate in ranked:
             name = candidate["id"]
