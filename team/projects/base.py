@@ -65,11 +65,19 @@ class ProjectAdapter:
     def lane_owner(self, path: str) -> str | None:
         return None
 
-    def brief_header(self, issue: Issue, worker_family: str) -> str:
+    def worker_findings(self, worker_family: str, *, worker_name: str = "", worker_model: str = "") -> list[str]:
+        """Project-specific registration and role checks for the actual worker surface/model."""
+        return []
+
+    def brief_header(self, issue: Issue, worker_family: str, *, worker_name: str = "", worker_model: str = "") -> str:
         """ما يُقال للعامل عن قواعد المشروع (الذيل، التسليم، ما لا يُمسّ)."""
         return ""
 
     # — طلباتُ الدمج والمراجعة —
+    def reviewer_identity(self, name: str, family: str, model: str) -> str | None:
+        """Registered identity for the actual counted reviewer, or None if not admitted."""
+        return None
+
     def pull(self, number: int) -> PullRequest:
         raise NotImplementedError("pull")
 

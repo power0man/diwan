@@ -31,6 +31,7 @@ from pathlib import Path
 from core.quoted import quarantine
 from team import team_home, worktrees_root
 from team.adapters.base import Adapter
+from team.adapters.opencode import ModelUnconfigured
 from team.ledger import LEASE_SECONDS, TeamLedger, TransitionError, lease_expired, now_utc
 from team.projects.base import Issue, ProjectAdapter, ProjectError
 
@@ -219,7 +220,8 @@ class Dispatcher:
             if execute:
                 self.ledger.append(issue.number, "already_dispatched", blocking_state=blocking["state"], attempt=blocking["attempt"])
             raise Refusal("already_dispatched", f"المحاولة {blocking['attempt']} في حالة {blocking['state']}؛ takeover يحتاج إثباتًا وإذنًا")
-        header = self.project.brief_header(issue, self.family)
+        header = self.project.brief_header(issue, self.family, worker_name=self.adapter.spec.name,
+                                           worker_model=getattr(self.adapter, "model", ""))
         brief, codes = render_brief(issue, header=header, worker=self.adapter.spec.name, family=self.family,
                                     branch=branch, template=self.template())
         brief_sha = sha256_text(brief)
@@ -575,7 +577,35 @@ def build(args) -> Dispatcher:
     home = team_home()
     home.mkdir(parents=True, exist_ok=True)
     adapters = registry()
-    return Dispatcher(project=DiwanProject(root=repo_root), adapter=adapters[args.worker], ledger=TeamLedger(home / LEDGER_FILE),
+    project = DiwanProject(root=repo_root)
+    if args.worker == "auto":
+        from team.catalog import discover, load_evidence, select
+        ranked = select(discover(home=home), "coding", load_evidence(home))["ranking"]
+        if not ranked:
+            raise Refusal("task_evidence_missing", "لا وكيل برمجة مقاس؛ اختر عاملًا صراحةً للقياس الأول")
+        issue = project.issue(args.issue) if args.command == "run" else None
+        ready, blocked, chosen = {}, [], None
+        for candidate in ranked:
+            name = candidate["id"]
+            adapter = adapters.get(name)
+            findings = (["worker_adapter_missing"] if adapter is None else
+                        project.worker_findings(adapter.spec.family, worker_name=adapter.spec.name,
+                                                worker_model=getattr(adapter, "model", "")))
+            if adapter is not None and not findings and issue is not None and not (args.owner_order or "").strip():
+                family = adapter.spec.family
+                if family not in ready:
+                    ready[family] = project.ready_granted(issue.number, family)
+                if not ready[family]:
+                    findings = ["ready_not_granted"]
+            if findings:
+                blocked.append({"worker": name, "codes": findings})
+                continue
+            chosen = name
+            break
+        if chosen is None:
+            raise Refusal("no_eligible_worker", json.dumps(blocked, ensure_ascii=False))
+        args.worker = chosen
+    return Dispatcher(project=project, adapter=adapters[args.worker], ledger=TeamLedger(home / LEDGER_FILE),
                       repo_root=repo_root, home=home, adapters=adapters)
 
 
@@ -585,7 +615,7 @@ def build_parser() -> argparse.ArgumentParser:
     def common(defaults: bool) -> argparse.ArgumentParser:
         shared = argparse.ArgumentParser(add_help=False)
         shared.add_argument("--repo-root", default=None if defaults else argparse.SUPPRESS)
-        shared.add_argument("--worker", choices=("claude", "codex"), default="claude" if defaults else argparse.SUPPRESS)
+        shared.add_argument("--worker", choices=("claude", "codex", "gemini", "opencode", "antigravity", "auto"), default="claude" if defaults else argparse.SUPPRESS)
         return shared
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0], parents=[common(True)])
     sub_common = common(False)
@@ -604,8 +634,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    dispatcher = build(args)
     try:
+        dispatcher = build(args)
         if args.command == "run":
             out = dispatcher.run(args.issue, execute=args.execute, owner_order=args.owner_order, budget_usd=args.budget_usd, timeout=args.timeout)
         elif args.command == "takeover":
@@ -621,8 +651,14 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"status": "refused", "code": "git_error", "detail": str(exc)}, ensure_ascii=False))
         return 2
     except ProjectError as exc:
+        if exc.code in ("worker_identity_not_registered", "worker_role_not_allowed"):
+            print(json.dumps({"status": "refused", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
+            return 2
         print(json.dumps({"status": "project_unavailable", "code": exc.code, "detail": exc.detail}, ensure_ascii=False))
         return 3
+    except ModelUnconfigured as exc:
+        print(json.dumps({"status": "refused", "code": exc.code}, ensure_ascii=False))
+        return 2
     print(json.dumps(out, ensure_ascii=False, indent=1, default=str))
     return 0
 
