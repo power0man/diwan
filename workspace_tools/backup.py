@@ -462,8 +462,32 @@ def _shape(dirs, data):
                 allowed_dirs.update({internal, internal + "/writes"})
                 allowed_files.update(internal_files)
                 stores.append(artifact)
+            receipts = artifact + "/.binary-uploads"
+            if category == "uploads" and receipts in dirs:
+                allowed_dirs.add(receipts)
+                from services.agent_workspace import BINARY_MIMES, validate_binary
+                for p in data:
+                    if not p.startswith(receipts + "/"):
+                        continue
+                    leaf = p[len(receipts) + 1:]
+                    _need("/" not in leaf and leaf.endswith(".json") and _ordinary(leaf),
+                          "backup_tree_invalid")
+                    doc = _json(data[p])
+                    target = "binary/" + leaf[:-5]
+                    _need(type(doc) is dict and set(doc) == {"path", "sha256", "size_bytes", "mime"}
+                          and doc["path"] == target and artifact + "/" + target in data,
+                          "backup_invalid")
+                    raw = data[artifact + "/" + target]
+                    _need(type(doc["size_bytes"]) is int and doc["size_bytes"] == len(raw)
+                          and doc["sha256"] == hashlib.sha256(raw).hexdigest()
+                          and doc["mime"] == BINARY_MIMES.get(Path(target).suffix.lower()),
+                          "backup_invalid")
+                    validate_binary(raw, target)
+                    allowed_files.add(p)
             for p in set(dirs) | set(data):
                 if not p.startswith(artifact + "/") or p.startswith(internal + "/") or p == internal:
+                    continue
+                if category == "uploads" and (p == receipts or p in allowed_files and p.startswith(receipts + "/")):
                     continue
                 _relative(p[len(artifact) + 1:], writing=True)
                 (allowed_dirs if p in dirs else allowed_files).add(p)

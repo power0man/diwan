@@ -12,7 +12,7 @@ from agent.journal import _directory, _open_directory, _read
 from core.canonical import canonical_bytes
 from core.quoted import quarantine_quoted
 from multimodal.codec import MAX_MEDIA_BYTES, MAX_PDF_BYTES, MediaError, pack_media
-from workspace_tools.files import WorkspaceError, _relative, _read_json, _write_json
+from workspace_tools.files import WorkspaceError, _relative, _read_json, _write_json, _io_error
 from workspace_tools.preferences import validate_snapshot
 
 MAX_FILES = 1024
@@ -49,6 +49,8 @@ def validate_binary(raw, name):
         try:
             document = pack_media(raw, "attachment" + suffix)
         except MediaError as exc:
+            if exc.code == "media_type_unsupported":
+                _fail("attachment_type_unsupported")
             raise WorkspaceError(exc.code, exc.reason) from None
         if document["mime"] != BINARY_MIMES[suffix]:
             _fail("attachment_type_unsupported")
@@ -102,8 +104,11 @@ def binary_uploads(root):
                         _fail("agent_input_changed")
                     validate_binary(raw, doc["path"])
                     files.append(doc)
-                except (WorkspaceError, ValueError, KeyError, TypeError):
-                    unavailable.append(receipt)
+                except (WorkspaceError, ValueError, KeyError, TypeError) as exc:
+                    unavailable.append({"path": "binary/" + receipt.removesuffix(".json"),
+                                        "status": "unavailable",
+                                        "error_code": exc.code if isinstance(exc, WorkspaceError)
+                                        else "attachment_receipt_invalid"})
         finally:
             os.close(state)
     finally:
@@ -218,8 +223,8 @@ def materialize_selected(root, blobs):
                 os.fsync(fd)
             elif found[0] != raw:
                 _fail("agent_input_changed")
-        except OSError:
-            _fail("unsafe_path")
+        except OSError as exc:
+            _io_error(exc)
         finally:
             os.close(fd)
 

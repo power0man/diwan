@@ -85,7 +85,8 @@ def app(tmp_path):
     app.test_provider = provider
     app.test_project = app.dispatch({'action': 'create_project', 'name': 'مرفقات'})['id']
     yield app
-    app.close()
+    if not getattr(app, "test_closed", False):
+        app.close()
 
 
 def upload(app, name, raw):
@@ -142,7 +143,7 @@ def test_ui_upload_reaches_ocr_and_session_fingerprint(app, monkeypatch, kind):
     pytest.param('file.gif', png_bytes(), 'attachment_type_unsupported', id='extension'),
     pytest.param('file.pdf', png_bytes(), 'attachment_type_unsupported', id='pdf-signature'),
     pytest.param('file.jpg', png_bytes(), 'attachment_type_unsupported', id='image-mismatch'),
-    pytest.param('file.png', b'not an image', 'media_type_unsupported', id='image-signature'),
+    pytest.param('file.png', b'not an image', 'attachment_type_unsupported', id='image-signature'),
 ])
 def test_binary_upload_named_refusal(app, name, raw, code):
     status, error = upload(app, name, raw)
@@ -160,7 +161,9 @@ def test_changed_binary_receipt_excluded(app):
     _, doc = upload(app, 'page.png', png_bytes())
     (app.project(app.test_project) / 'uploads' / doc['path']).write_bytes(png_bytes(seed=339))
     status, catalog = post(app, 'files', project=app.test_project)
-    assert status == 200 and catalog['files'] == [] and len(catalog['unavailable']) == 1
+    assert status == 200 and catalog['files'] == []
+    assert catalog['unavailable'] == [{'path': doc['path'], 'status': 'unavailable',
+                                       'error_code': 'agent_input_changed'}]
 
 
 @pytest.mark.parametrize('kind', ['png', 'pdf'])
@@ -275,3 +278,66 @@ def test_live_http_upload_preserves_bytes_and_limits(app, kind):
         server.shutdown()
         server.server_close()
         thread.join(3)
+
+
+@pytest.mark.parametrize('kind', ['png', 'pdf', 'jpeg'])
+def test_binary_backup_restore_preserves_receipts_and_selection(app, tmp_path, kind):
+    from workspace_tools import backup
+    raw = (png_bytes() if kind == 'png' else pdf_bytes(2048) if kind == 'pdf' else
+           (Path(__file__).resolve().parents[1] / 'evaluation/media_v1/ocr/o01.jpg').read_bytes())
+    status, doc = upload(app, 'copied.' + ('jpg' if kind == 'jpeg' else kind), raw)
+    assert status == 200, doc
+    app.close()
+    app.test_closed = True
+    archive = tmp_path.resolve() / 'binary-backup.json'
+    result = backup.export_workspace(app.root, archive)
+    assert backup.inspect_archive(archive, result['sha256'])['status'] == 'verified'
+    restored = tmp_path.resolve() / 'restored'
+    assert backup.restore_workspace(archive, restored, result['sha256'])['status'] == 'restored'
+    uploads = restored / 'projects' / app.test_project / 'uploads'
+    assert agent_workspace.binary_uploads(uploads) == {'files': [{k: doc[k] for k in
+           ('path', 'sha256', 'size_bytes', 'mime')}], 'unavailable': []}
+    docs, blobs = agent_workspace.prepare_selected(uploads, session_id='s', turn_id='t',
+                                                   files=[doc['path']], expected_digests={doc['path']: doc['sha256']})
+    assert blobs[0][1] == raw and docs[0]['sha256'] == doc['sha256']
+
+
+@pytest.mark.parametrize('bad', ['digest', 'size', 'mime', 'path', 'extra', 'signature'])
+def test_binary_backup_refuses_changed_or_foreign_receipts(app, tmp_path, bad):
+    from workspace_tools import backup
+    status, doc = upload(app, 'page.pdf', pdf_bytes(2048))
+    assert status == 200
+    receipts = app.project(app.test_project) / 'uploads/.binary-uploads'
+    receipt = next(receipts.iterdir())
+    stored = json.loads(receipt.read_bytes())
+    if bad == 'signature':
+        raw = b'not a PDF'
+        (app.project(app.test_project) / 'uploads' / doc['path']).write_bytes(raw)
+        stored['sha256'], stored['size_bytes'] = hashlib.sha256(raw).hexdigest(), len(raw)
+        receipt.write_text(json.dumps(stored))
+    else:
+        if bad == 'digest': stored['sha256'] = '0' * 64
+        elif bad == 'size': stored['size_bytes'] += 1
+        elif bad == 'mime': stored['mime'] = 'image/png'
+        elif bad == 'path': stored['path'] = 'binary/foreign.pdf'
+        else: stored['unknown'] = True
+        receipt.write_text(json.dumps(stored))
+    app.close()
+    app.test_closed = True
+    with pytest.raises(backup.BackupError):
+        backup.export_workspace(app.root, tmp_path.resolve() / 'invalid-backup.json')
+    assert not (tmp_path / 'invalid-backup.json').exists()
+
+
+def test_binary_copy_reports_filesystem_failure_by_name(app, monkeypatch):
+    import errno
+    workspace = app.agent_workspace(app.project(app.test_project))
+    original = agent_workspace.os.open
+    def full_disk(path, flags, *args, **kwargs):
+        if path == 'full.pdf' and flags & agent_workspace.os.O_CREAT:
+            raise OSError(errno.ENOSPC, 'synthetic full disk')
+        return original(path, flags, *args, **kwargs)
+    monkeypatch.setattr(agent_workspace.os, 'open', full_disk)
+    with pytest.raises(WorkspaceError) as exc:
+        agent_workspace.materialize_selected(workspace, [('inputs/full.pdf', b'%PDF-1.4')])
+    assert exc.value.code == 'filesystem_error'
