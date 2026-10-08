@@ -58,6 +58,25 @@ def _first_user(case: dict) -> str:
     return (first.get("content") or "").strip()
 
 
+def _earlier_cases(data) -> list[dict] | None:
+    """حالاتُ بنكٍ سابق إن صلح شكلُها لاستخراج المعرّف والرسالة الأولى، وإلا `None`.
+
+    لا يُرشَّح عضوٌ مشوَّه صامتًا: `cases` غائبةٌ أو ليست قائمة، أو عضوٌ ليس كائنًا بمعرّفٍ نصّيّ ورسالةٍ أولى نصّية،
+    يجعل البنكَ كلَّه غيرَ مقروء؛ فما لا يُقرأ لا يشهد بالاستقلال.
+    """
+    cases = data.get("cases") if isinstance(data, dict) else None
+    if not isinstance(cases, list):
+        return None
+    for case in cases:
+        if not isinstance(case, dict) or not isinstance(case.get("case_id"), str) or not case["case_id"]:
+            return None
+        messages = case.get("messages")
+        if (not isinstance(messages, list) or not messages or not isinstance(messages[0], dict)
+                or not isinstance(messages[0].get("content"), str)):
+            return None
+    return cases
+
+
 def _bank_identity(bank: Path) -> tuple[set[str], set[str]]:
     ids: set[str] = set()
     firsts: set[str] = set()
@@ -77,8 +96,9 @@ def _bank_identity(bank: Path) -> tuple[set[str], set[str]]:
     return ids, firsts
 
 
-def profile(suites_dir: Path = SUITES_DIR, *, measurement_bank: Path = MEASUREMENT_BANK) -> dict:
+def profile(suites_dir: Path | None = None, *, measurement_bank: Path = MEASUREMENT_BANK) -> dict:
     """وصفُ البنك بالأعداد والبصمات، وما خالف الشروطَ في `findings`. لا محتوى حالةٍ فيه."""
+    suites_dir = SUITES_DIR if suites_dir is None else suites_dir
     files, cases, findings = [], [], []
     for name in SUITES:
         path = suites_dir / name
@@ -128,8 +148,10 @@ def profile(suites_dir: Path = SUITES_DIR, *, measurement_bank: Path = MEASUREME
         if earlier.is_file():
             try:
                 data = json.loads(earlier.read_text(encoding="utf-8"))
-                earlier_cases = [c for c in data.get("cases", []) if isinstance(c, dict)]
-            except (OSError, ValueError, AttributeError):
+            except (OSError, ValueError):
+                data = None
+            earlier_cases = _earlier_cases(data)
+            if earlier_cases is None:
                 findings.append(f"earlier_suite_unreadable:{name}")
                 continue
             e_ids = {str(c.get("case_id")) for c in earlier_cases}

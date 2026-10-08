@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import copy
 import json
+import subprocess
+import sys
 
 from tools import general_bank_freeze as gbf
 
@@ -97,3 +99,71 @@ def test_unrelated_or_unreadable_earlier_suites(tmp_path):
     (suites / gbf.EARLIER_SUITES[1]).write_text("{not json", encoding="utf-8")
     assert gbf.profile(suites, measurement_bank=tmp_path / "none")["findings"] == [
         f"earlier_suite_unreadable:{gbf.EARLIER_SUITES[1]}"]
+
+
+def _with_current(tmp_path):
+    suites = tmp_path / "suites"
+    suites.mkdir()
+    for name in gbf.SUITES:
+        (suites / name).write_bytes((gbf.SUITES_DIR / name).read_bytes())
+    return suites, json.loads((suites / gbf.SUITES[0]).read_text(encoding="utf-8"))["cases"][0]
+
+
+def _malformed_shapes(case):
+    """أشكالٌ لا تشهد بالاستقلال: كلٌّ منها كان يُرشَّح صامتًا إلى صفر حالات أو يُسقط الأداة."""
+    return {
+        "cases_dict": {"cases": {case["case_id"]: case}},
+        "cases_string": {"cases": case["case_id"]},
+        "cases_null": {"cases": None},
+        "cases_missing": {"suite": "x"},
+        "top_level_list": [case],
+        "non_object_member": {"cases": [case["case_id"]]},
+        "object_beside_non_object": {"cases": [case, 7]},
+        "member_without_id": {"cases": [{"messages": case["messages"]}]},
+        "member_without_first_message": {"cases": [{"case_id": case["case_id"], "messages": []}]},
+        "member_with_non_text_first_message": {"cases": [{"case_id": "x", "messages": [{"role": "user", "content": 1}]}]},
+    }
+
+
+def test_a_malformed_earlier_suite_is_unreadable_not_independent(tmp_path):
+    """شكلٌ مشوَّه لا يُرشَّح صامتًا إلى «لا تداخل»: يُسمّى `earlier_suite_unreadable` ولا يُحسب استقلاله."""
+    suites, case = _with_current(tmp_path)
+    name = gbf.EARLIER_SUITES[0]
+    for label, data in _malformed_shapes(case).items():
+        (suites / name).write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        result = gbf.profile(suites, measurement_bank=tmp_path / "none")
+        assert result["findings"] == [f"earlier_suite_unreadable:{name}"], label
+        assert name not in result["independence"], label
+
+
+def test_valid_earlier_suite_controls_keep_their_verdict(tmp_path):
+    """الضابط: قائمةٌ فارغة سليمة، وقائمةٌ بالحالة نفسها تُسمّى تداخلًا لا شكلًا مشوَّهًا."""
+    suites, case = _with_current(tmp_path)
+    name = gbf.EARLIER_SUITES[0]
+    _earlier(suites, name, [])
+    assert gbf.profile(suites, measurement_bank=tmp_path / "none")["findings"] == []
+    _earlier(suites, name, [case])
+    assert gbf.profile(suites, measurement_bank=tmp_path / "none")["findings"] == [
+        f"overlaps_earlier_suite:{name}:{case['case_id']}"]
+
+
+def _cli_check(suites):
+    """`main(["--check"])` في عمليّةٍ مستقلّة على دليل التجميد الفعليّ، والبنوكُ من `suites`."""
+    script = ("import sys; from pathlib import Path; from tools import general_bank_freeze as g; "
+              "g.SUITES_DIR = Path(sys.argv[1]); raise SystemExit(g.main(['--check']))")
+    return subprocess.run([sys.executable, "-c", script, str(suites)], cwd=gbf.ROOT,
+                          capture_output=True, text=True, timeout=120)
+
+
+def test_the_cli_refuses_a_malformed_earlier_suite_against_the_actual_freeze(tmp_path):
+    suites, case = _with_current(tmp_path)
+    name = gbf.EARLIER_SUITES[0]
+    _earlier(suites, name, [])
+    control = _cli_check(suites)
+    assert control.returncode == 0, control.stdout + control.stderr
+    assert json.loads(control.stdout)["freeze"] == []
+    (suites / name).write_text(json.dumps({"cases": {case["case_id"]: case}}, ensure_ascii=False), encoding="utf-8")
+    refused = _cli_check(suites)
+    assert refused.returncode == 1, refused.stdout + refused.stderr
+    report = json.loads(refused.stdout)
+    assert report["findings"] == [f"earlier_suite_unreadable:{name}"] and report["freeze"] == []
