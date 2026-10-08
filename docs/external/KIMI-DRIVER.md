@@ -108,14 +108,14 @@ cd "$KIMI_WORK" && kimi --prompt "$(cat "$bundle")" --output-format text \
 
 | `KIMI_BACKEND` | النموذج | المزوّد | الكلفة |
 |---|---|---|---|
-| `kimi` (الافتراضيّ) | `default_model` في `config.toml` | حسابُ Kimi Code | الاشتراك |
-| `ollama` | `kimi-k2.6:cloud` | Ollama المحلي (`http://localhost:11434/v1`) ← ollama.com بتسجيل الدخول القائم | خطّةُ Ollama |
-| `hf` | `moonshotai/Kimi-K2.6` | Hugging Face Inference Providers (`https://router.huggingface.co/v1`) | **على حساب المالك**: لا تشغيلةَ كاملة قبل موافقته |
+| `kimi` (الافتراضيّ) | `default_model` في `config.toml` | حسابُ Kimi Code | الاشتراك؛ خارج `core.run` فلا تُعدّ توكناتُه (#366) |
+| `ollama` | `kimi-k2.6:cloud` | Ollama المحلي (`http://localhost:11434/v1`) ← ollama.com بتسجيل الدخول القائم | خطّةُ Ollama؛ خارج `core.run` فلا تُعدّ توكناتُه (#366) |
+| `hf` | `moonshotai/Kimi-K2.6` | Hugging Face Inference Providers (`https://router.huggingface.co/v1`) | **مرفوضٌ في الأداة** حتى يمرّ إنفاقُه بسجلّ `core.run` (#366): نداءاتُه مدفوعةٌ وتخرج من عملية Kimi Code فلا تُحجز ولا تُقيَّد |
 
 - **كيف:** البديلُ يُعرَّف بمتغيّرات `KIMI_MODEL_*` الموثّقة في Kimi Code، في بيئة عملية Kimi وحدها. فلا يُمسّ
   `~/.kimi-code/config.toml`، ولا يُكتب سرٌّ في ملفّ.
 - **مفتاح `hf`:** يُقرأ وقتَ التشغيل من ملفّ توكن `hf` المحلي (`~/.cache/huggingface/token`) إلى تلك البيئة، ولا يُطبع.
-- **سطرُ نهاية التشغيل** يسمّي المزوّدَ والنموذج. ويُكتب اسمُ النموذج الذي ألّف في تقرير الاستلام ودليله، فـ`kimi-k2.6:cloud`
+- **سطرُ نهاية التشغيل** يسمّي المزوّدَ والنموذج، ويعلن أن الإنفاق اشتراكٌ ثابت خارج `core.run` لا تُعدّ توكناتُه (#366). ويُكتب اسمُ النموذج الذي ألّف في تقرير الاستلام ودليله، فـ`kimi-k2.6:cloud`
   غيرُ نموذج Kimi Code.
 - **وقيمةٌ مجهولة تُرفض** قبل أي تشغيل (`tests/test_kimi_driver_carries_only_repo_text.py`، وطفرتان قُتلتا).
 
