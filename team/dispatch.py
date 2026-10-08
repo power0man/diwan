@@ -269,7 +269,8 @@ class Dispatcher:
         write_atomic(raw / "exit", str(rc))                      # رمزُ الخروج دليلٌ محفوظ؛ الاستئنافُ لا يختلقه
         return self._finish(issue, attempt, rc, raw, wt, branch, plan, self.adapter)
 
-    def _finish(self, issue: Issue, attempt: int, rc: int | None, raw: Path, wt: Path, branch: str, plan: dict, adapter: Adapter) -> dict:
+    def _finish(self, issue: Issue, attempt: int, rc: int | None, raw: Path, wt: Path, branch: str, plan: dict, adapter: Adapter,
+                since: int | None = None) -> dict:
         if rc is None or rc < 0:
             self.ledger.append(issue.number, "outcome_unknown", reason=f"worker_terminated:{rc}")
             return {"status": "outcome_unknown", "reason": f"worker_terminated:{rc}", **plan}
@@ -295,7 +296,7 @@ class Dispatcher:
         # الدفعُ تحت قفل السجلّ نفسِه الذي يحرّك به handoff الفرعَ: نيّةُ تسليمٍ بلا إيصال، أو رأسٌ تحرّك بعد ما تحقّقنا منه، لا يُدفع
         # ولا يُفتح له طلب؛ فاستئنافٌ قرأ غيابَ النيّة قبل أن يبدأ handoff لا ينشر إيداعَ المنسّق (ملاحظة Codex على #368)
         with self.ledger._locked():
-            blocked = self._handoff_interlock(issue.number, attempt, wt, head)
+            blocked = self._handoff_interlock(issue.number, attempt, wt, head, since)
             if blocked:
                 self.ledger._append(issue.number, "outcome_unknown", reason=blocked)
                 return {"status": "outcome_unknown", "reason": blocked, **plan}
@@ -315,8 +316,13 @@ class Dispatcher:
                            quarantine_codes=sorted({f.code for f in summary.findings}))
         return {"status": "completed", "head_sha": head, "pr": pull.number, "new_commits": new_commits, **plan}
 
-    def _handoff_interlock(self, issue_number: int, attempt: int, wt: Path, head: str) -> str | None:
-        """يُستدعى تحت قفل السجلّ قبل الدفع: سببُ المنع أو None."""
+    def _handoff_interlock(self, issue_number: int, attempt: int, wt: Path, head: str, since: int | None = None) -> str | None:
+        """يُستدعى تحت قفل السجلّ قبل الدفع: سببُ المنع أو None. و`since` عددُ قيود المسألة حين بدأ الاستئناف: تسليمٌ قُيّد بعده
+        (ولو اكتمل بإيصاله) سبق فحوصَ المضيف التي يشترطها `docs/team/README.md` قبل الاستئناف، فلا ينشره استئنافٌ بدأ قبله
+        (ملاحظة Codex الثانية على #368)."""
+        if since is not None and any(record["state"] in ("controller_commit_started", "controller_commit")
+                                     for record in self.ledger.records(issue_number)[since:]):
+            return "handoff_after_resume_started"
         intent = self.ledger.last_of(issue_number, "controller_commit_started", attempt)
         receipt = self.ledger.last_of(issue_number, "controller_commit", attempt)
         if intent and (not receipt or intent["plan_sha256"] != receipt["plan_sha256"]):
@@ -415,6 +421,7 @@ class Dispatcher:
         return self.ledger.main_state(issue_number)
 
     def resume(self, issue_number: int) -> dict:
+        since = len(self.ledger.records(issue_number))
         state = self.ledger.main_state(issue_number)
         if state is None:
             raise Refusal("nothing_to_resume")
@@ -452,7 +459,7 @@ class Dispatcher:
         branch = dispatched.get("branch") or self.branch_for(issue_number, state["attempt"])
         plan = {"issue": issue_number, "branch": branch, "brief_sha256": dispatched.get("brief_sha256", ""), "worktree": str(wt)}
         adapter = self.adapter_for(dispatched.get("worker"))
-        return self._finish(self.project.issue(issue_number), state["attempt"], rc, raw, wt, branch, plan, adapter)
+        return self._finish(self.project.issue(issue_number), state["attempt"], rc, raw, wt, branch, plan, adapter, since)
 
     def takeover(self, issue_number: int, *, owner_authorization: str) -> dict:
         # الحالةُ والرأسُ يُقرآن تحت قفل السجلّ: handoff يحرّك الفرعَ تحته، فقراءةُ الرأس خارجه تُعيد رأسًا قديمًا

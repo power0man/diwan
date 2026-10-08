@@ -593,3 +593,30 @@ def test_a_branch_moved_during_finish_is_not_pushed(tmp_path):
     out = dispatcher.run(41, execute=True)
     assert out["status"] == "outcome_unknown" and out["reason"] == "branch_moved_before_push"
     assert project.pulls == {} and not git("ls-remote", "--heads", "origin", "team/41-anthropic", cwd=repo)
+
+
+def test_a_resume_that_began_before_a_completed_handoff_does_not_publish_it(tmp_path):
+    """ملاحظة Codex الثانية على #368: استئنافٌ قرأ الحالة ثم سبقه handoff اكتمل بإيصاله المطابق كان يقرأ إيداعَ المنسّق رأسًا ويدفعه
+    قبل فحوص المضيف. فتسليمٌ قُيّد بعد بدء الاستئناف يمنع دفعَه ولو اكتمل."""
+    dispatcher, project, adapter, ledger, repo = _setup(tmp_path)
+    worktree, raw = _lost_launch(tmp_path, dispatcher, ledger, repo)
+    adapter.start(["fake-worker"], "", worktree, raw / "stdout.txt", raw / "stderr.txt", exit_path=raw / "exit")
+    (raw / "pid").write_text("4194297", encoding="utf-8")
+    original, raced = dispatcher._git, []
+    def git_hook(*args, **kwargs):
+        if args[:2] == ("rev-parse", "HEAD") and not raced:
+            raced.append(True)
+            (worktree / "handoff.txt").write_text("controller commit", encoding="utf-8")
+            git("add", "handoff.txt", cwd=worktree)
+            git("commit", "-qm", "controller-assisted local handoff", cwd=worktree)
+            evidence = dict(head_sha="1" * 40, plan_sha256="2" * 64, controller_agent="openai/codex",
+                            source_agent="anthropic/claude-opus-5")
+            ledger.append(41, "controller_commit_started", **evidence)
+            ledger.append(41, "controller_commit", **evidence, parent_sha="3" * 40, diff_sha256="4" * 64, files={},
+                          source_identity_authenticated=False, controller_identity_authenticated=False,
+                          intervention="controller-assisted-local-commit")
+        return original(*args, **kwargs)
+    dispatcher._git = git_hook
+    out = dispatcher.resume(41)
+    assert raced and out["status"] == "outcome_unknown" and out["reason"] == "handoff_after_resume_started"
+    assert project.pulls == {} and not git("ls-remote", "--heads", "origin", "team/41-anthropic", cwd=repo)
