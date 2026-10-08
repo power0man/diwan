@@ -283,6 +283,15 @@ def test_hf_is_refused_until_its_spend_is_metered_even_with_a_token(tmp_path):
     assert seen is None and "hf_fake_for_test" not in done.stdout + done.stderr
 
 
+@pytest.mark.parametrize("backend", ["kimi", "ollama"])
+def test_every_flat_rate_run_declares_it_is_outside_the_spend_ledger(tmp_path, backend):
+    """ملاحظة Codex على #352: المزوّدان المسموحان يُناديان من عملية Kimi Code لا من `core.run`، فلا تُعدّ توكناتُهما ولا تُقيَّد.
+    فيعلن كلُّ تشغيلٍ ذلك في سطر نهايته حتى يمرّ بوسيطٍ يحجز ويقيّد (#366)، ولا يبدو تشغيلًا محسوبًا."""
+    done, _ = _run_backend(tmp_path, backend)
+    assert done.returncode == 0, done.stderr
+    assert "الإنفاق: اشتراكٌ ثابت خارج core.run" in done.stdout and "#366" in done.stdout
+
+
 def test_the_intake_forwards_the_sandbox_receipt_so_its_report_can_witness_the_general_number(tmp_path):
     """ملاحظةُ Codex على #312: الأمرُ الموثّق كان يستدعي kimi_intake بـ--open-only وحده، فيُردّ كلُّ استلامٍ
     عند الرقم العام (needs_sandbox). فـSANDBOX_RECEIPT يمرّر خيارات الحاوية، وغيابُه يُنبَّه عليه."""
