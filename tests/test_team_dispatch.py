@@ -1194,3 +1194,14 @@ def test_a_launch_failure_does_not_discount_a_later_successful_round(tmp_path):
     dispatcher.adapter = adapter
     assert dispatcher.revise(41, execute=True)["status"] == "completed"
     assert dispatcher.counted_rounds(41, 1) == 1
+
+
+def test_a_timed_out_round_later_lost_to_quota_does_not_count_toward_the_cap(tmp_path):
+    """المهلةُ قيّدت outcome_unknown والعاملُ حيّ، ثم خُتمت الجولةُ بنفاد الحصّة: لا تُحتسب، فثلاثٌ مثلها لا تستنفد السقف (Codex P2 على #349)."""
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    _rejected(dispatcher, project, ledger)
+    ledger.append(41, "revision_started", round=1, pid=os.getpid(), started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1")
+    ledger.append(41, "outcome_unknown", reason="timeout_revision_still_running", pid=os.getpid(), round=1)
+    assert dispatcher.counted_rounds(41, 1) == 1          # جولةٌ معلّقة تُحتسب حتى تُختم
+    ledger.append(41, "worker_unavailable", code="quota_exhausted", round=1)
+    assert dispatcher.counted_rounds(41, 1) == 0

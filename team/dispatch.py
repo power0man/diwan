@@ -132,6 +132,11 @@ def render_brief(issue: Issue, *, header: str, worker: str, family: str, branch:
     return text, codes
 
 
+# خاتمةُ جولة التصحيح. و`outcome_unknown` ليست خاتمةً: المهلةُ تقيّدها والعاملُ حيّ، ثم قد يُختم بـ`worker_unavailable`
+# فلا يُحتسب (ملاحظة Codex P2 على 376699d8، #349)
+ROUND_CLOSING_STATES = ("completed", "validation_failed", "worker_unavailable")
+
+
 @dataclass
 class Dispatcher:
     project: ProjectAdapter
@@ -557,7 +562,7 @@ class Dispatcher:
             index = next(i for i, r in enumerate(records) if r is started or (r["state"] == "revision_started" and r.get("attempt") == attempt
                                                                                  and r.get("round") == started.get("round") and r.get("at") == started.get("at")))
             closing = next((r for r in records[index + 1:] if r.get("attempt") == attempt and r.get("round", r.get("revision_round")) == started.get("round")
-                            and r["state"] in ("completed", "validation_failed", "worker_unavailable", "outcome_unknown")), None)
+                            and r["state"] in ROUND_CLOSING_STATES), None)
             if closing is None or closing["state"] != "worker_unavailable":
                 counted += 1
         return counted
