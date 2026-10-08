@@ -300,7 +300,8 @@ class Dispatcher:
             if blocked:
                 self.ledger._append(issue.number, "outcome_unknown", reason=blocked)
                 return {"status": "outcome_unknown", "reason": blocked, **plan}
-            self._git("push", "-u", self.remote, branch, cwd=wt)
+            # الكائنُ المفحوص لا الفرعُ المتحرّك: فرعٌ تقدّم بين التعشيق وحلِّ الدفع لمرجعه لا يُنشر طرفُه الجديد (ملاحظة Codex الخامسة على #368)
+            self._git("push", self.remote, f"{head}:refs/heads/{branch}", cwd=wt)
         pull = self.project.pull_for_branch(branch)
         if pull is None:
             title = f"[team #{issue.number}] {quarantine(issue.title).text.strip()[:80]}"

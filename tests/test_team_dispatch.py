@@ -620,3 +620,24 @@ def test_a_resume_that_began_before_a_completed_handoff_does_not_publish_it(tmp_
     out = dispatcher.resume(41)
     assert raced and out["status"] == "outcome_unknown" and out["reason"] == "handoff_after_resume_started"
     assert project.pulls == {} and not git("ls-remote", "--heads", "origin", "team/41-anthropic", cwd=repo)
+
+
+def test_the_push_publishes_the_checked_head_not_a_branch_that_moved(tmp_path):
+    """ملاحظة Codex الخامسة على #368: الدفعُ بالفرع اسمًا ينشر طرفَه حين يحلّه git، فإيداعٌ دخل بعد التعشيق يُنشر بلا فحصٍ
+    وقيدُ `completed` يسمّي الرأسَ القديم. فالدفعُ بالكائن المفحوص نفسِه."""
+    dispatcher, project, _adapter, ledger, repo = _setup(tmp_path)
+    worktree = tmp_path / "wt" / "team-41-anthropic"
+    original, moved = dispatcher._git, []
+    def git_hook(*args, **kwargs):
+        if args and args[0] == "push" and not moved:
+            moved.append(True)
+            (worktree / "late.txt").write_text("committed between the interlock and the push", encoding="utf-8")
+            git("add", "late.txt", cwd=worktree)
+            git("commit", "-qm", "unchecked tip", cwd=worktree)
+        return original(*args, **kwargs)
+    dispatcher._git = git_hook
+    out = dispatcher.run(41, execute=True)
+    assert moved and out["status"] == "completed"
+    published = git("ls-remote", "--heads", "origin", "team/41-anthropic", cwd=repo).split()[0]
+    assert published == out["head_sha"] == ledger.last_of(41, "completed")["head_sha"]
+    assert published != git("rev-parse", "HEAD", cwd=worktree)
