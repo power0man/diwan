@@ -438,35 +438,37 @@ class Dispatcher:
         return self._finish(self.project.issue(issue_number), state["attempt"], rc, raw, wt, branch, plan, adapter)
 
     def takeover(self, issue_number: int, *, owner_authorization: str) -> dict:
-        state = self.ledger.main_state(issue_number)
-        if state is None or state["state"] in ("accepted",):
-            raise Refusal("nothing_to_take_over")
-        dispatched = self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}
-        wt = Path(dispatched.get("worktree", ""))
-        failed = self.ledger.last_of(issue_number, "validation_failed", state["attempt"]) or {}
-        # آخرُ رأسٍ عرفناه: رأسُ الحالة الرئيسة، أو رأسُ فشلٍ مسجَّل (عاملٌ أودع ثم أعلن فشله)، أو قاعدةُ التكليف
-        last_head = state.get("head_sha") or failed.get("head_sha") or dispatched.get("base_sha")
-        try:
-            head_now = self._git("rev-parse", "HEAD", cwd=wt) if wt.exists() else last_head
-        except GitError:
-            head_now = None          # رأسٌ لا يُقرأ ليس إثباتًا لعدم وجود إيداعات جديدة
-        last_activity = state.get("started_at") or state.get("at")
-        now = self.clock()
-        if not lease_expired(last_activity, now, LEASE_SECONDS):
-            raise Refusal("lease_active", f"آخر نشاط {last_activity}")
-        if self.ledger.last_of(issue_number, "expired", state["attempt"]) is None:
-            self.ledger.append(issue_number, "expired", last_activity_at=last_activity)
-        raw = self.raw_dir(issue_number, state["attempt"])
-        raw.mkdir(parents=True, exist_ok=True)
-        marker = raw / "taken_over"
-        # العلامةُ **قبل** فحص الغياب لا بعده: غلافٌ يبلغ فحصَ العلامة بعد هذه اللحظة يراها فلا يأذن؛ ومن بلغه قبلها كان قد كتب
-        # معرّفاته فيراها فحصُ الغياب أدناه ويُرفض الاستحواذ وتُزال العلامة (ملاحظة Codex الثانية على #347)
-        write_atomic(marker, now)
-        try:
-            return self._takeover_checked(issue_number, state, dispatched, raw, head_now, last_head, now, owner_authorization)
-        except Refusal:
-            marker.unlink(missing_ok=True)
-            raise
+        # الحالةُ والرأسُ يُقرآن تحت قفل السجلّ: handoff يحرّك الفرعَ تحته، فقراءةُ الرأس خارجه تُعيد رأسًا قديمًا
+        with self.ledger._locked():
+            state = self.ledger.main_state(issue_number)
+            if state is None or state["state"] in ("accepted",):
+                raise Refusal("nothing_to_take_over")
+            dispatched = self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}
+            wt = Path(dispatched.get("worktree", ""))
+            failed = self.ledger.last_of(issue_number, "validation_failed", state["attempt"]) or {}
+            # آخرُ رأسٍ عرفناه: رأسُ الحالة الرئيسة، أو رأسُ فشلٍ مسجَّل (عاملٌ أودع ثم أعلن فشله)، أو قاعدةُ التكليف
+            last_head = state.get("head_sha") or failed.get("head_sha") or dispatched.get("base_sha")
+            try:
+                head_now = self._git("rev-parse", "HEAD", cwd=wt) if wt.exists() else last_head
+            except GitError:
+                head_now = None          # رأسٌ لا يُقرأ ليس إثباتًا لعدم وجود إيداعات جديدة
+            last_activity = state.get("started_at") or state.get("at")
+            now = self.clock()
+            if not lease_expired(last_activity, now, LEASE_SECONDS):
+                raise Refusal("lease_active", f"آخر نشاط {last_activity}")
+            if self.ledger.last_of(issue_number, "expired", state["attempt"]) is None:
+                self.ledger._append(issue_number, "expired", last_activity_at=last_activity)
+            raw = self.raw_dir(issue_number, state["attempt"])
+            raw.mkdir(parents=True, exist_ok=True)
+            marker = raw / "taken_over"
+            # العلامةُ **قبل** فحص الغياب لا بعده: غلافٌ يبلغ فحصَ العلامة بعد هذه اللحظة يراها فلا يأذن؛ ومن بلغه قبلها كان قد كتب
+            # معرّفاته فيراها فحصُ الغياب أدناه ويُرفض الاستحواذ وتُزال العلامة (ملاحظة Codex الثانية على #347)
+            write_atomic(marker, now)
+            try:
+                return self._takeover_checked(issue_number, state, dispatched, raw, head_now, last_head, now, owner_authorization)
+            except Refusal:
+                marker.unlink(missing_ok=True)
+                raise
 
     def _takeover_checked(self, issue_number: int, state: dict, dispatched: dict, raw: Path, head_now, last_head, now: str,
                           owner_authorization: str) -> dict:
@@ -487,7 +489,7 @@ class Dispatcher:
             raise Refusal("absence_not_proven", json.dumps(proof))
         if not owner_authorization.strip():
             raise Refusal("owner_authorization_missing")
-        self.ledger.append(issue_number, "takeover", lease_expired_at=now, absence_proof=proof, owner_authorization=owner_authorization)
+        self.ledger._append(issue_number, "takeover", lease_expired_at=now, absence_proof=proof, owner_authorization=owner_authorization)
         return {"status": "takeover", "proof": proof}
 
     def _never_launched(self, issue_number: int, state: dict, raw: Path, known: list[int], child_known: bool) -> bool:
@@ -698,4 +700,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    from team.dispatch import main as _canonical_main   # وحدةُ __main__ نسخةٌ ثانية من الصفوف: Refusal فيها غيرُ Refusal الذي يرفعه handoff
+    sys.exit(_canonical_main())

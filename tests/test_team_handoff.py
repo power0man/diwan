@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -318,3 +319,21 @@ def test_ref_update_cannot_follow_a_racing_symbolic_branch_to_main(tmp_path, mon
     out = execute(d, p)
     assert git("rev-parse", "refs/heads/main", cwd=wt) == main
     assert git("rev-parse", "refs/heads/team/41-openai", cwd=wt) == out["head_sha"] != main
+
+
+def test_controller_must_be_independent_of_the_source_family(tmp_path, monkeypatch):
+    d, _, _ = setup(tmp_path, monkeypatch)
+    for controller in (SOURCE, "human/hussain-alrabighi"):
+        with pytest.raises(Refusal) as exc:
+            d.handoff(41, files=["work.txt"], controller_agent=controller)
+        assert exc.value.code == "handoff_controller_not_independent"
+    assert plan(d)["controller_identity_authenticated"] is False
+
+
+def test_cli_refusal_keeps_its_exit_code_under_python_m(tmp_path):
+    env = {**os.environ, "DIWAN_TEAM_HOME": str(tmp_path / "home"), "RORO_DISABLE": "1", "PYTHONPATH": str(ROOT)}
+    out = subprocess.run([sys.executable, "-m", "team.dispatch", "handoff", "41", "--execute", "--file", "work.txt",
+                          "--controller-agent", CONTROLLER, "--repo-root", str(ROOT)],
+                         cwd=ROOT, env=env, capture_output=True, text=True)
+    assert out.returncode == 2, out.stderr
+    assert json.loads(out.stdout)["code"] == "handoff_expected_plan_required"

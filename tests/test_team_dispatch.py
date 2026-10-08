@@ -530,3 +530,30 @@ def test_takeover_writes_its_marker_before_checking_absence_and_removes_it_when_
     assert not (raw / "taken_over").exists(), "الرفضُ يزيل العلامة"
     (raw / "wrapper_pid").write_text("4194297", encoding="utf-8")
     assert dispatcher.takeover(41, owner_authorization="نفّذ")["status"] == "takeover" and (raw / "taken_over").exists()
+
+
+def test_takeover_reads_head_under_the_ledger_lock(tmp_path):
+    from contextlib import contextmanager
+    dispatcher, _project, _adapter, ledger, _repo = _setup(tmp_path, behaviour="killed")
+    dispatcher.run(41, execute=True)
+    dispatcher.clock = lambda: "2026-10-07T11:00:00+00:00"
+    ledger.clock = dispatcher.clock
+    real_locked, real_git, held_now, depth = ledger._locked, dispatcher._git, [], []
+
+    @contextmanager
+    def watched_lock():
+        depth.append(1)
+        try:
+            with real_locked():
+                yield
+        finally:
+            depth.pop()
+
+    def watched_git(*args, **kwargs):
+        if args[:1] == ("rev-parse",):
+            held_now.append(bool(depth))
+        return real_git(*args, **kwargs)
+
+    ledger._locked, dispatcher._git = watched_lock, watched_git
+    assert dispatcher.takeover(41, owner_authorization="نفّذ")["status"] == "takeover"
+    assert held_now and all(held_now)

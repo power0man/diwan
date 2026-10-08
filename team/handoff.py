@@ -122,6 +122,8 @@ class Handoff:
         return sorted(files)
 
     def capture(self, issue: int, files: list[str], controller_agent: str):
+        if controller_agent.startswith("human/") or controller_agent.split("/", 1)[0] == SOURCE_AGENT.split("/", 1)[0]:
+            raise Refusal("handoff_controller_not_independent")
         files = self.paths(files)
         ledger = self.d.ledger
         attempt = ledger.attempt_of(issue)
@@ -248,6 +250,7 @@ class Handoff:
         plan = {"issue": issue, "attempt": attempt, "project": self.d.project.name, "repo_common_dir": common,
                 "worktree": str(wt), "branch": branch, "head_sha": head, "brief_sha256": dispatched["brief_sha256"],
                 "source_agent": SOURCE_AGENT, "source_identity_authenticated": False, "controller_agent": controller_agent,
+                "controller_identity_authenticated": False,
                 "files": entries, "evidence": evidence, "ledger_sha256": digest(ledger.records(issue)),
                 "index_sha256": hashlib.sha256(index_path.read_bytes()).hexdigest()}
         plan["diff_sha256"] = digest({"head": head, "files": entries})
@@ -305,7 +308,8 @@ class Handoff:
                     self.d.ledger._append(issue, "controller_commit", head_sha=head, parent_sha=plan["head_sha"],
                                           plan_sha256=expected_plan_sha256, diff_sha256=plan["diff_sha256"], files=plan["files"],
                                           controller_agent=controller_agent, source_agent=SOURCE_AGENT,
-                                          source_identity_authenticated=False, intervention="controller-assisted-local-commit")
+                                          source_identity_authenticated=False, controller_identity_authenticated=False,
+                                          intervention="controller-assisted-local-commit")
                     return {"status": "controller_commit", "head_sha": head, "parent_sha": plan["head_sha"],
                             "plan_sha256": expected_plan_sha256, "intervention": "controller-assisted-local-commit"}
             finally:
