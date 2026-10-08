@@ -461,8 +461,8 @@ def test_the_ci_path_reads_threads_and_counts_inline_findings(tmp_path, monkeypa
 
 
 @pytest.mark.parametrize("failure,code", [
-    (OSError("down"), "threads_unreachable"),
-    (b'{"errors": [{"message": "nope"}]}', "threads_malformed"),
+    pytest.param(OSError("down"), "threads_unreachable", id="unreachable"),
+    pytest.param(b'{"errors": [{"message": "nope"}]}', "threads_malformed", id="malformed"),
 ])
 def test_unreadable_threads_fail_closed(monkeypatch, failure, code):
     class Response:
