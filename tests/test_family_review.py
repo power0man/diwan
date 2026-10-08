@@ -372,3 +372,132 @@ def test_the_workflow_runs_the_tool_and_its_registries_from_the_default_branch()
     assert "path: trusted" in trusted.group(1) and "persist-credentials: false" in trusted.group(1)
     assert "run: python3 trusted/tools/family_review.py --repo pr " in workflow
     assert workflow.count("run: ") == 1 and "path: pr\n" in workflow
+
+
+# — الحكمُ النظيف لا مجرّدُ المراجعة (تقييم المرحلة ٢ من ق٧٦: دُمج #353 وفيه ملاحظاتٌ وعشرةُ خيوطٍ مفتوحة) —
+
+CODEX = "chatgpt-codex-connector[bot]"
+
+
+def findings(count=3, commit=HEAD):
+    return dict(review(CODEX, "COMMENTED", commit), inline_comments=count)
+
+
+def thread(author=CODEX, resolved=False):
+    return {"resolved": resolved, "author": author}
+
+
+def test_a_commented_review_with_inline_findings_on_the_head_blocks():
+    report = fr.evaluate({"anthropic"}, [findings()], HEAD, REVIEWERS, [])
+    assert report["status"] == "failed" and report["code"] == "findings_from_another_family_on_head"
+    assert report["blocking"] == [CODEX] and report["counted"] == []
+
+
+def test_a_later_clean_comment_on_the_head_outweighs_earlier_findings():
+    early = dict(findings(), submitted_at="2026-10-08T10:00:00Z")
+    late = fr.clean_comment_reviews([dict(clean(CODEX, HEAD[:10]), created_at="2026-10-08T11:00:00Z")], HEAD)
+    report = fr.evaluate({"anthropic"}, fr.chronological([early] + late), HEAD, REVIEWERS, [])
+    assert report["status"] == "passed"
+
+
+def test_an_unresolved_thread_from_another_family_blocks_a_clean_head_until_resolved():
+    reviews = fr.clean_comment_reviews([clean(CODEX, HEAD[:10])], HEAD)
+    report = fr.evaluate({"anthropic"}, reviews, HEAD, REVIEWERS, [thread(), thread(resolved=True)])
+    assert report["status"] == "failed" and report["code"] == "unresolved_threads_from_another_family"
+    assert report["unresolved_threads"] == 1
+    assert fr.evaluate({"anthropic"}, reviews, HEAD, REVIEWERS, [thread(resolved=True)])["status"] == "passed"
+
+
+@pytest.mark.parametrize("author", ["claude[bot]", "power0man", "someone[bot]", ""])
+def test_threads_that_do_not_block(author):
+    reviews = fr.clean_comment_reviews([clean(CODEX, HEAD[:10])], HEAD)
+    report = fr.evaluate({"anthropic"}, reviews, HEAD, REVIEWERS, [thread(author)])
+    assert report["status"] == "passed" and report["unresolved_threads"] == 0
+
+
+def test_the_report_says_whether_threads_were_read():
+    reviews = fr.clean_comment_reviews([clean(CODEX, HEAD[:10])], HEAD)
+    assert fr.evaluate({"anthropic"}, reviews, HEAD, REVIEWERS)["threads_checked"] is False
+    assert fr.evaluate({"anthropic"}, reviews, HEAD, REVIEWERS, [])["threads_checked"] is True
+
+
+def test_inline_findings_attach_to_their_review_by_id():
+    reviews = fr.with_inline_counts([{"id": 1}, {"id": 2}],
+                                    [{"pull_request_review_id": 1}, {"pull_request_review_id": 1}, {"pull_request_review_id": 9}])
+    assert [r["inline_comments"] for r in reviews] == [2, 0]
+
+
+def test_graphql_bot_logins_regain_their_suffix():
+    nodes = [{"isResolved": False, "comments": {"nodes": [{"author": {"__typename": "Bot", "login": "chatgpt-codex-connector"}}]}},
+             {"isResolved": True, "comments": {"nodes": [{"author": {"__typename": "User", "login": "power0man"}}]}},
+             {"isResolved": False, "comments": {"nodes": []}}]
+    assert fr.thread_rows(nodes[:2]) == [thread(CODEX), thread("power0man", True)]
+
+
+def test_the_cli_reads_findings_and_threads_from_a_reviews_file(tmp_path):
+    repo, base, head = _pr_repo(tmp_path)
+    clean_head = [clean(CODEX, head[:10])]
+    code, report = _judge(tmp_path, repo, base, head, {"reviews": [], "comments": clean_head, "threads": [thread()]})
+    assert code == 1 and report["code"] == "unresolved_threads_from_another_family"
+    code, report = _judge(tmp_path, repo, base, head, {
+        "reviews": [dict(review(CODEX, "COMMENTED", head), id=7)], "comments": [],
+        "review_comments": [{"pull_request_review_id": 7}], "threads": []})
+    assert code == 1 and report["code"] == "findings_from_another_family_on_head"
+
+
+def test_the_ci_path_reads_threads_and_counts_inline_findings(tmp_path, monkeypatch, capsys):
+    repo, base, head = _pr_repo(tmp_path)
+    pages = {"/reviews": [{"id": 7, "user": {"login": CODEX}, "state": "COMMENTED", "commit_id": head}],
+             "/pulls/1/comments": [{"pull_request_review_id": 7}], "/issues/1/comments": []}
+    monkeypatch.setattr(fr, "_get_all", lambda url, token: next(v for k, v in pages.items() if url.endswith(k)))
+    monkeypatch.setattr(fr, "fetch_threads", lambda slug, pr, token: [])
+    argv = ["--repo", str(repo), "--range", f"{base}..{head}", "--head", head, "--pr", "1", "--repo-slug", "o/n"]
+    assert fr.main(argv) == 1
+    assert json.loads(capsys.readouterr().out)["code"] == "findings_from_another_family_on_head"
+    pages["/pulls/1/comments"] = []
+    monkeypatch.setattr(fr, "fetch_threads", lambda slug, pr, token: [thread()])
+    assert fr.main(argv) == 1
+    assert json.loads(capsys.readouterr().out)["code"] == "unresolved_threads_from_another_family"
+
+
+PARTIAL = json.dumps({"data": {"repository": {"pullRequest": {"reviewThreads": {
+    "pageInfo": {"hasNextPage": False, "endCursor": None}, "nodes": []}}}}, "errors": [{"message": "resource limit"}]}).encode()
+
+
+@pytest.mark.parametrize("failure,code", [
+    pytest.param(OSError("down"), "threads_unreachable", id="unreachable"),
+    pytest.param(b'{"data": {"repository": null}}', "threads_malformed", id="malformed"),
+    pytest.param(PARTIAL, "threads_partial", id="partial"),
+    pytest.param(b"<html>bad gateway</html>", "threads_malformed", id="not-json"),
+    pytest.param(b"\xff\xfe", "threads_malformed", id="not-utf8"),
+])
+def test_unreadable_threads_fail_closed(monkeypatch, failure, code):
+    class Response:
+        def __enter__(self): return self
+        def __exit__(self, *exc): return False
+        def read(self): return failure
+
+    def urlopen(request, timeout):
+        if isinstance(failure, Exception):
+            raise failure
+        return Response()
+    monkeypatch.setattr(fr.urllib.request, "urlopen", urlopen)
+    with pytest.raises(fr.ReviewError) as caught:
+        fr.fetch_threads("o/n", 1, None)
+    assert caught.value.code == code
+
+
+@pytest.mark.parametrize("node", [
+    pytest.param({"isResolved": False, "comments": {"nodes": [{"author": None}]}}, id="open-without-author"),
+    pytest.param({"isResolved": False, "comments": {"nodes": []}}, id="open-without-comments"),
+    pytest.param({"comments": {"nodes": [{"author": {"__typename": "Bot", "login": "chatgpt-codex-connector"}}]}}, id="no-resolution"),
+])
+def test_an_incomplete_thread_fails_closed(node):
+    """خيطٌ مفتوح لا يُقرأ كاتبُه، أو خيطٌ بلا حالة حلّ، لا يُفترض أنه لا يحجب (ملاحظة Codex P1 على #372)."""
+    with pytest.raises(fr.ReviewError) as caught:
+        fr.thread_rows([node])
+    assert caught.value.code == "thread_incomplete"
+
+
+def test_a_resolved_thread_without_a_readable_author_does_not_block():
+    assert fr.thread_rows([{"isResolved": True, "comments": {"nodes": [{"author": None}]}}]) == [thread("", True)]
