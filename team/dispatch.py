@@ -319,7 +319,7 @@ class Dispatcher:
     def _handoff_interlock(self, issue_number: int, attempt: int, wt: Path, head: str, since: int | None = None) -> str | None:
         """يُستدعى تحت قفل السجلّ قبل الدفع: سببُ المنع أو None. و`since` عددُ قيود المسألة حين بدأ الاستئناف: تسليمٌ قُيّد بعده
         (ولو اكتمل بإيصاله) سبق فحوصَ المضيف التي يشترطها `docs/team/README.md` قبل الاستئناف، فلا ينشره استئنافٌ بدأ قبله
-        (ملاحظة Codex الثانية على #368)."""
+        (ملاحظة Codex الثانية على #368). وإيداعُ منسّقٍ مكتمل لا يُدفع إلا بإعلان فحوص المضيف على الرأس الذي يُدفع نفسِه."""
         if since is not None and any(record["state"] in ("controller_commit_started", "controller_commit")
                                      for record in self.ledger.records(issue_number)[since:]):
             return "handoff_after_resume_started"
@@ -327,9 +327,24 @@ class Dispatcher:
         receipt = self.ledger.last_of(issue_number, "controller_commit", attempt)
         if intent and (not receipt or intent["plan_sha256"] != receipt["plan_sha256"]):
             return "controller_commit_incomplete"
+        receipt, declared = self._host_checks_after(issue_number, attempt)
+        if receipt and (declared is None or declared["head_sha"] != head):
+            return "host_checks_not_declared"
         if self._git("rev-parse", "HEAD", cwd=wt) != head:
             return "branch_moved_before_push"
         return None
+
+    def _host_checks_after(self, issue_number: int, attempt: int) -> tuple[dict | None, dict | None]:
+        """إيصالُ آخر تسليمٍ في المحاولة، وإعلانُ فحوص المضيف المقيَّدُ بعده على رأسه نفسِه إن وُجد. إيداعُ المنسّق لا يُنشر إلا
+        بهذا الإعلان على الرأس الذي يُدفع (ملاحظة Codex الثالثة على #368)."""
+        records = self.ledger.records(issue_number)
+        for index in range(len(records) - 1, -1, -1):
+            receipt = records[index]
+            if receipt["state"] == "controller_commit" and receipt.get("attempt") == attempt:
+                declared = [record for record in records[index + 1:] if record["state"] == "host_checks_declared"
+                            and record.get("attempt") == attempt and record.get("head_sha") == receipt["head_sha"]]
+                return receipt, (declared[-1] if declared else None)
+        return None, None
 
     def sync_head(self, issue_number: int) -> str:
         """رأسُ الطلب الحالي؛ إن تقدّم عن رأس `completed` (تصحيحٌ دُفع) قُيّد `completed` جديد فيسقط ما قبله ويُعاد التحقق والمراجعة."""
@@ -420,7 +435,7 @@ class Dispatcher:
                            child_pid=pids.get("child_pid"), recovered_by="resume")
         return self.ledger.main_state(issue_number)
 
-    def resume(self, issue_number: int) -> dict:
+    def resume(self, issue_number: int, host_checks_passed: str | None = None) -> dict:
         since = len(self.ledger.records(issue_number))
         state = self.ledger.main_state(issue_number)
         if state is None:
@@ -431,6 +446,19 @@ class Dispatcher:
             return {"status": "outcome_unknown", "reason": "controller_commit_incomplete", "attempt": state["attempt"]}
         if state["state"] != "accepted" and self.ledger.open_attempt(issue_number) is None:
             return {"status": "taken_over", "attempt": state["attempt"]}      # محاولةٌ مستحوَذٌ عليها لا تُستأنف
+        # إيداعُ المنسّق ينتظر فحوصَ المضيف (`docs/team/README.md`): المشغّلُ يعلن نجاحها على رأس الإيصال نفسِه، والإعلانُ يُقيَّد
+        # إقرارًا غيرَ مصادَق؛ وبلا إعلانٍ لا دفعَ ولا طلب (ملاحظة Codex الثالثة على #368)
+        receipt, declared = self._host_checks_after(issue_number, state["attempt"])
+        if host_checks_passed is not None and receipt is None:
+            raise Refusal("host_checks_without_controller_commit")
+        if host_checks_passed is not None and host_checks_passed != receipt["head_sha"]:
+            raise Refusal("host_checks_head_mismatch", f"المعلَن {host_checks_passed[:12]} ≠ رأس الإيصال {receipt['head_sha'][:12]}")
+        if receipt and declared is None:
+            if host_checks_passed is None:
+                return {"status": "awaiting_host_checks", "head_sha": receipt["head_sha"], "attempt": state["attempt"]}
+            self.ledger.append(issue_number, "host_checks_declared", attempt=state["attempt"], head_sha=receipt["head_sha"],
+                               plan_sha256=receipt["plan_sha256"], controller_agent=receipt["controller_agent"],
+                               declaration_authenticated=False)
         if state["state"] == "dispatched":
             state = self._recover_claim(issue_number, state)
             if "state" not in state:
@@ -671,8 +699,10 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("issue", type=int); run.add_argument("--execute", action="store_true")
     run.add_argument("--owner-order", default=None); run.add_argument("--budget-usd", type=float, default=5.0)
     run.add_argument("--timeout", type=int, default=1800)
-    for name in ("validate", "accept", "resume", "status"):
+    for name in ("validate", "accept", "status"):
         sub.add_parser(name, parents=[sub_common]).add_argument("issue", type=int)
+    res = sub.add_parser("resume", parents=[sub_common]); res.add_argument("issue", type=int)
+    res.add_argument("--host-checks-passed", metavar="HEAD_SHA", default=None)
     take = sub.add_parser("takeover", parents=[sub_common]); take.add_argument("issue", type=int)
     take.add_argument("--owner-authorization", required=True)
     hand = sub.add_parser("handoff", parents=[sub_common]); hand.add_argument("issue", type=int)
@@ -697,6 +727,8 @@ def main(argv: list[str] | None = None) -> int:
             out = dispatcher.handoff(args.issue, files=args.files, controller_agent=args.controller_agent,
                                      execute=args.execute, expected_plan_sha256=args.expected_plan_sha256,
                                      expected_diff_sha256=args.expected_diff_sha256)
+        elif args.command == "resume":
+            out = dispatcher.resume(args.issue, host_checks_passed=args.host_checks_passed)
         elif args.command == "gc":
             out = dispatcher.gc(yes=args.yes)
         else:

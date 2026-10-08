@@ -31,7 +31,7 @@ SIDE_STATES: frozenset[str] = frozenset({
     "outcome_unknown", "validation_failed", "expired", "worker_unavailable", "reviewer_unavailable",
     "brief_stale", "frozen_by_launch_plan", "already_dispatched", "review_uncalibrated", "takeover", "refused",
     "reviewed_awaiting_validation", "external_review", "review_rejected",
-    "controller_commit_started", "controller_commit",
+    "controller_commit_started", "controller_commit", "host_checks_declared",
 })
 TERMINAL_STATES: frozenset[str] = frozenset({"accepted"})
 # مفاتيحُ الدليل اللازمة لكل حالة؛ غيابُ واحدٍ منها يُرفض قبل الكتابة.
@@ -58,6 +58,7 @@ EVIDENCE: dict[str, tuple[str, ...]] = {
     "review_rejected": ("head_sha", "review_ref", "reviewer", "reviewer_family", "verdict"),
     "controller_commit_started": ("head_sha", "plan_sha256", "controller_agent", "source_agent"),
     "controller_commit": ("head_sha", "parent_sha", "plan_sha256", "controller_agent", "source_agent", "files"),
+    "host_checks_declared": ("head_sha", "plan_sha256", "controller_agent"),
 }
 PREDECESSOR: dict[str, str] = {"claimed": "dispatched", "validated": "completed", "verified": "validated", "accepted": "verified"}
 LEASE_SECONDS = 24 * 3600

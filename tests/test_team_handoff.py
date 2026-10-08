@@ -337,3 +337,59 @@ def test_cli_refusal_keeps_its_exit_code_under_python_m(tmp_path):
                          cwd=ROOT, env=env, capture_output=True, text=True)
     assert out.returncode == 2, out.stderr
     assert json.loads(out.stdout)["code"] == "handoff_expected_plan_required"
+
+
+def _publishable(d):
+    from team.projects.base import Issue
+    d.project.issues[41] = Issue(41, "[جديد-x] تسليمٌ اصطناعي", "المطلوب كذا.", ("task",))
+
+
+def test_a_completed_handoff_is_published_only_after_host_checks_are_declared_on_its_head(tmp_path, monkeypatch):
+    """ملاحظة Codex الثالثة على #368: استئنافٌ جديد بعد تسليمٍ مكتمل كان يدفع إيداعَ المنسّق ويفتح طلبَه قبل فحوص المضيف. فبلا
+    إعلانٍ على رأس الإيصال نفسِه ينتظر ولا يقيّد شيئًا، والإعلانُ على رأسٍ آخر يُرفض، وعلى رأسه يُقيَّد ثم يُنشر."""
+    d, wt, _ = setup(tmp_path, monkeypatch); _publishable(d)
+    head = execute(d, plan(d))["head_sha"]
+    before = d.ledger.records(41)
+    assert d.resume(41) == {"status": "awaiting_host_checks", "head_sha": head, "attempt": 1}
+    assert d.ledger.records(41) == before and not d.project.pulls
+    with pytest.raises(Refusal, match="host_checks_head_mismatch"):
+        d.resume(41, host_checks_passed="0" * 40)
+    assert d.ledger.records(41) == before
+    out = d.resume(41, host_checks_passed=head)
+    assert out["status"] == "completed" and out["head_sha"] == head and d.project.pulls
+    declared = d.ledger.last_of(41, "host_checks_declared", 1)
+    assert declared["head_sha"] == head and declared["declaration_authenticated"] is False
+    assert git("ls-remote", "origin", "refs/heads/team/41-openai", cwd=wt).split()[0] == head
+
+
+def test_a_head_moved_after_the_declared_checks_is_not_published(tmp_path, monkeypatch):
+    """الإعلانُ يشهد لرأس الإيصال وحده: إيداعٌ لاحق في نسخة العمل لم تُفحص فحوصُه، فلا يدفعه الاستئناف."""
+    d, wt, _ = setup(tmp_path, monkeypatch); _publishable(d)
+    head = execute(d, plan(d))["head_sha"]
+    (wt / "late.txt").write_text("written after the host checks\n")
+    git("add", "late.txt", cwd=wt)
+    git("commit", "-qm", "unchecked follow-up", cwd=wt)
+    out = d.resume(41, host_checks_passed=head)
+    assert out["status"] == "outcome_unknown" and out["reason"] == "host_checks_not_declared"
+    assert d.ledger.last(41)["reason"] == "host_checks_not_declared" and not d.project.pulls
+    assert git("ls-remote", "origin", "refs/heads/team/41-openai", cwd=wt) == ""
+
+
+def test_host_checks_cannot_be_declared_without_a_controller_commit(tmp_path, monkeypatch):
+    d, _, _ = setup(tmp_path, monkeypatch)
+    before = d.ledger.records(41)
+    with pytest.raises(Refusal, match="host_checks_without_controller_commit"):
+        d.resume(41, host_checks_passed="0" * 40)
+    assert d.ledger.records(41) == before
+
+
+def test_resume_cli_carries_the_declared_host_checks_head(monkeypatch, capsys):
+    seen = []
+    class Recorder:
+        def resume(self, issue, host_checks_passed=None):
+            seen.append((issue, host_checks_passed))
+            return {"status": "awaiting_host_checks"}
+    monkeypatch.setattr("team.dispatch.build", lambda args: Recorder())
+    from team.dispatch import main
+    assert main(["resume", "41", "--host-checks-passed", "a" * 40]) == 0 and main(["resume", "41"]) == 0
+    assert seen == [(41, "a" * 40), (41, None)]

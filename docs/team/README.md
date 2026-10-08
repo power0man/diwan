@@ -89,7 +89,12 @@ Git مع مستودع المنسق. السجلات الجديدة تضيف اس�
 والمنسق ضمن المؤلفين؛ لا تضاف أهلية لمراجع. إذا جمع الإيداع anthropic وopenai بقي المالك طريق المراجعة المحتسبة وفق السياسة القائمة.
 
 بعد الإيداع يشغّل المنسق قائمة فحوص المضيف الكاملة في `AGENTS.md` على الرأس المعاد، ويثبت أن الرأس لم يتغير أثناءها،
-ثم ينفذ `resume` المعتاد منفصلًا. الإيداع نفسه لا يشغل push أو PR أو validate أو merge، ولا يسجل accepted أو calibration.
+ثم ينفذ `resume <issue> --host-checks-passed <head_sha>` منفصلًا. `resume` بلا هذا الإعلان بعد إيصال `controller_commit` يعيد
+`awaiting_host_checks` برأس الإيصال ولا يدفع؛ وإعلانٌ على رأسٍ غيره `host_checks_head_mismatch`، وبلا إيصال
+`host_checks_without_controller_commit`. يُقيَّد الإعلان `host_checks_declared` إقرارًا من المشغّل غير مصادق
+(`declaration_authenticated: false`)، ولا يثبت أن الفحوص جرت. والدفع تحت قفل السجل يشترطه على الرأس الذي يُدفع نفسه؛
+فإيداعٌ لاحق في نسخة العمل يعطي `outcome_unknown:host_checks_not_declared`.
+الإيداع نفسه لا يشغل push أو PR أو validate أو merge، ولا يسجل accepted أو calibration.
 الفحوص المحلية لا تصير قبولًا أو تجربة تسليم مستقلة؛ تُحسب هذه الحالة `controller-assisted` وتدخلها تدخل فعلي.
 
 إذا انقطع التنفيذ بعد قيد النية، يمنع `handoff` التكرار ويعيد `resume` الحالة `outcome_unknown:controller_commit_incomplete`؛
