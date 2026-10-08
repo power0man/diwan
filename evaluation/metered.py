@@ -108,6 +108,10 @@ class MeteredProvider:
         else:
             cost = price_table.micros(self.entry, counts["prompt_tokens"], counts["completion_tokens"], pin=self.pin)
             basis = "subscription_flat" if self.entry["basis"] == "subscription_flat" else "estimated_from_prices"
+        if cost > self.estimate:
+            # كلفةٌ فوق محجوزها (إعادةُ تسعيرٍ أو رسمٌ إضافيّ) فوترها المزوّدُ فعلًا: تُسوّى كما هي فلا يعلن التقريرُ أقلَّ مما دُفع،
+            # ويقف النقلُ فلا يخرج نداءٌ بعدها، كوقف موجّه HF في #308 (ملاحظة Codex على #352). فالسقفُ حدٌّ على الحجز بسعر الجدول
+            self.metered.exceeded = {"model": model, "estimate_micros": self.estimate, "cost_micros": cost}
         # لا يُحسب نداءً حتى تقبل النواةُ الردّ: ردٌّ ترفضه (كلفةٌ سالبة مثلًا) يُسوّى بالمحجوز ويُعدّ رفضًا وحده، فلا يجمع التقريرُ
         # كلفتَه المرفوضة فوق ما خُصم (ملاحظة Codex على #352)
         self.call = {"model": model, "price_key": self.entry["key"], "cost_basis": basis,
@@ -132,6 +136,7 @@ class MeteredTransport:
         self.deadline_s, self.data_policy = deadline_s, data_policy
         self.calls: list[dict] = []
         self.refusals: list[dict] = []
+        self.exceeded: dict | None = None
 
     def __getattr__(self, name):
         # ما سوى النداء (الفهرسُ، والوصفُ، وسجلُّ المحاولات) للنقل المغلَّف نفسِه
@@ -149,6 +154,9 @@ class MeteredTransport:
         if self.meters is not None and not self.meters(model):
             # نموذجٌ يجيبه الخادمُ المحليّ بنفسه: لا فاتورة، فلا حجزَ ولا قيد، وصفُّه في `provider_usage` كما يكتبه النقل
             return self.transport(model, system, user, schema)
+        if self.exceeded is not None:
+            # كلفةٌ سابقةٌ فوق محجوزها تعني أن سعرَ الجدول لم يعد حدًّا أعلى، فلا نداءَ بعدها (ملاحظة Codex على #352)
+            raise AutomaticReviewError("price_exceeded_reservation", model)
         self._verify_ledger()
         provider = MeteredProvider(self, schema)
         request = Request(messages=(Message(role="system", content=system), Message(role="user", content=user)),
@@ -209,4 +217,5 @@ class MeteredTransport:
             "ledger": str(getattr(self.ledger, "path", "")), "calls": self.calls, "refusals": self.refusals,
             "settled_usd": str(Decimal(on_calls + on_errors) / MICROS_PER_USD),
             "settled_on_errors_micros": on_errors,
-            "outstanding_micros": self.budget.outstanding_micros}}
+            "outstanding_micros": self.budget.outstanding_micros,
+            **({"exceeded_reservation": self.exceeded} if self.exceeded else {})}}

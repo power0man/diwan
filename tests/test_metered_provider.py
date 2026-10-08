@@ -350,3 +350,19 @@ def test_a_ledger_edited_in_the_middle_is_refused_before_the_next_call(tmp_path)
     with pytest.raises(AutomaticReviewError) as refused:
         metered("priced", "s", "u", {})
     assert refused.value.code == "spend_ledger_corrupt" and transport.calls == 2
+
+
+def test_a_cost_above_the_reservation_is_settled_as_paid_and_stops_the_transport(tmp_path):
+    """ملاحظة Codex على #352: كلفةٌ مبلَّغةٌ فوق محجوزها (٥٣٤ حُجز و١٠٠٠ أُبلغ) كانت تُقبل ويمضي النقلُ فيتجاوز السقفَ نداءً بعد نداء.
+    والكلفةُ فوترها المزوّدُ فعلًا فتُسوّى كما هي، ثم يقف النقلُ قبل أي نداءٍ آخر ويُسمّى التجاوزُ في التقرير."""
+    transport = FakeTransport({"content": "a", "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+                               "cost_status": "reported", "cost_usd": "0.001"},
+                              {"content": "b", "usage": {"prompt_tokens": 1, "completion_tokens": 1}})
+    metered = _metered(tmp_path, transport)
+    assert metered("priced", "s", "u", {}) == "a"
+    assert _charged(metered) == 1000 and [c["cost_micros"] for c in metered.calls] == [1000]
+    with pytest.raises(AutomaticReviewError) as stopped:
+        metered("priced", "s", "u", {})
+    assert stopped.value.code == "price_exceeded_reservation" and transport.calls == 1 and _charged(metered) == 1000
+    assert metered.spend_report()["core_run"]["exceeded_reservation"] == {
+        "model": "priced", "estimate_micros": 534, "cost_micros": 1000}
