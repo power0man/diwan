@@ -21,6 +21,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -217,9 +218,14 @@ class Reviewer:
                 return int(record.get("attempt") or 0)
         return 0
 
-    def _record(self, pull: PullRequest, adapter: Adapter, head: str, ref: str, verdict: str) -> str:
+    def _record(self, pull: PullRequest, adapter: Adapter, head: str, ref: str, verdict: str, *, execution_id: str = "") -> str:
         issue = pull.issue
         family = adapter.spec.family
+        model = getattr(adapter, "model", "")
+        calibration = load_calibration(self.home).get(adapter.spec.name) or {}
+        evidence = {"pr": pull.number, "reviewer_model": model,
+                    "reviewer_identity": self.project.reviewer_identity(adapter.spec.name, family, model) or "",
+                    "reviewer_calibration": calibration, "review_execution_id": execution_id}
         state = None if issue is None else self.ledger.main_state(issue)
         completed = None if state is None else self.ledger.last_of(issue, "completed", state["attempt"])
         dispatched = {} if state is None else (self.ledger.last_of(issue, "dispatched", state["attempt"]) or {})
@@ -231,7 +237,8 @@ class Reviewer:
             stale_attempt = 0 if (issue is None or state is None) else self.attempt_of_pull(issue, pull.number)
             self.ledger.append(issue or 0, "external_review", pr=pull.number, head_sha=head, review_ref=ref,
                                reviewer=adapter.spec.name, reviewer_family=family, verdict=verdict, attempt=stale_attempt,
-                               stale_attempt=bool(stale_attempt), current_attempt=(state or {}).get("attempt"))
+                               stale_attempt=bool(stale_attempt), current_attempt=(state or {}).get("attempt"),
+                               **{k: v for k, v in evidence.items() if k != "pr"})
             return "external_review"
         if state["state"] in ("completed", "validated", "verified") and completed.get("head_sha") != head:
             # رأسٌ مصحَّح دُفع بعد completed: يُقيَّد completed جديد فيسقط ما قبله (ملاحظة Codex على #344)
@@ -242,18 +249,18 @@ class Reviewer:
             # مراجعةٌ رافضة أو بلا حكمٍ صريح تُقيَّد باسمها ولا تصير verified أبدًا، **ولو كان المراجع غير معايَر**:
             # الرفضُ يُغلق احتياطًا، والمعايرةُ شرطُ الاحتساب للقبول لا للرفض (ملاحظتا Codex على #344)
             self.ledger.append(issue, "review_rejected", head_sha=head, review_ref=ref, reviewer=adapter.spec.name,
-                               reviewer_family=family, verdict=verdict)
+                               reviewer_family=family, verdict=verdict, **evidence)
             return "review_rejected"
         if not is_calibrated(load_calibration(self.home), adapter.spec.name, self.clock(), model=getattr(adapter, "model", "")):
             self.ledger.append(issue, "review_uncalibrated", head_sha=head, reviewer=adapter.spec.name, reviewer_family=family,
-                               review_ref=ref, verdict=verdict)
+                               review_ref=ref, verdict=verdict, **evidence)
             return "review_uncalibrated"
         state = self.ledger.main_state(issue)["state"]
         if state == "validated":
-            self.ledger.append(issue, "verified", head_sha=head, review_ref=ref, reviewer=adapter.spec.name, reviewer_family=family, verdict=verdict)
+            self.ledger.append(issue, "verified", head_sha=head, review_ref=ref, reviewer=adapter.spec.name, reviewer_family=family, verdict=verdict, **evidence)
             return "verified"
         self.ledger.append(issue, "reviewed_awaiting_validation", head_sha=head, review_ref=ref, reviewer=adapter.spec.name,
-                           reviewer_family=family, verdict=verdict)
+                           reviewer_family=family, verdict=verdict, **evidence)
         return "reviewed_awaiting_validation"
 
     def review(self, pr_number: int, *, execute: bool = False, reviewer: str | None = None, timeout: int = 1200) -> dict:
@@ -294,11 +301,16 @@ class Reviewer:
                         if pull.issue is not None and self.ledger.main_state(pull.issue) is not None:
                             self.ledger.append(pull.issue, "reviewer_unavailable", code=code, reviewer=name, pr=pull.number)
                         continue
+                    observed = self.runner(["git", "-C", str(tmp), "rev-parse", "HEAD"], capture_output=True, text=True)
+                    clean = self.runner(["git", "-C", str(tmp), "status", "--porcelain"], capture_output=True, text=True)
+                    if (observed.returncode != 0 or (observed.stdout or "").strip() != pull.head_sha
+                            or clean.returncode != 0 or (clean.stdout or "").strip()):
+                        raise Refusal("review_worktree_changed")
                     identity = self.project.reviewer_identity(name, adapter.spec.family, getattr(adapter, "model", ""))
                     body = q75_comment(adapter, pull.head_sha, result.verdict, result.text, [], identity, base_sha=base_sha,
                                        strip_paths=(str(tmp),))
                     ref = self.project.comment(pull.number, body)
-                    recorded = self._record(pull, adapter, pull.head_sha, ref, result.verdict)
+                    recorded = self._record(pull, adapter, pull.head_sha, ref, result.verdict, execution_id=uuid.uuid4().hex)
                     return {"status": recorded, "reviewer": name, "verdict": result.verdict, "review_ref": ref, "tried": tried, **plan}
             finally:
                 self.runner(["git", "-C", str(self.repo_root), "worktree", "remove", "--force", str(tmp)], capture_output=True, text=True)
