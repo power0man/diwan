@@ -147,19 +147,141 @@ def test_an_existing_development_suite_stops_before_anything_is_copied(tmp_path)
     assert not (tmp_path / "diwan-sealed").exists()
 
 
-def test_the_requested_development_suites_do_not_collide_with_committed_banks():
-    """ما يطلبه التكليفُ الحاليّ لا يسمّي بنكًا مودَعًا، وإلّا توقّف التوزيعُ عند «موجود من قبل».
-
-    كان الجزءُ ٣ يطلب agentic_v2.json وهو بنكُ ك٤٤ المودَع (#101). وحين يُسلَّم التكليفُ ويُودَع ما فيه،
-    يُستبدل التكليفُ نفسُه بالتالي، فيُحدَّث هذا السطرُ معه.
-    """
-    block = (ROOT / "docs" / "external" / "PLACE-KIMI-FILES.md").read_text(encoding="utf-8")
+def _inventory() -> tuple[list[str], dict[str, str], str]:
+    block = _script()
     names = re.search(r'^DEV="([^"]+)"', block, re.M).group(1).split()
-    assert tuple(names) == DEV
+    delivered = dict(line.split("=", 1) for line in
+                     re.search(r'^DELIVERED="([^"]+)"', block, re.M).group(1).split())
+    receipt = re.search(r'^RECEIPT="([^"]+)"', block, re.M).group(1)
+    return names, delivered, receipt
+
+
+def _sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_the_requested_development_suites_do_not_collide_with_committed_banks():
+    """ما يطلبه التكليفُ ولم يُسلَّم لا يسمّي بنكًا مودَعًا، وإلّا توقّف التوزيعُ عند «موجود من قبل».
+
+    كان الجزءُ ٣ يطلب agentic_v2.json وهو بنكُ ك٤٤ المودَع (#101). والجزءُ ٢ سُلّم في ٦ أكتوبر وأُودع وجُمّد (ك٤٣ #28)،
+    فصار في جردِ المسلَّم `DELIVERED` ببصمته؛ والتكليفُ باقٍ بنصّه مرجعًا. فالمسلَّمُ مودَعٌ بالبصمة نفسِها التي في الأمر
+    وفي إيصال التجميد، وما بقي معلَّقًا لا يوجد في المستودع.
+    """
+    names, delivered, receipt = _inventory()
+    assert tuple(names) == DEV and set(delivered) < set(names)
     request = (ROOT / "docs" / "external" / "KIMI-NEXT.md").read_text(encoding="utf-8").split("\n---\n", 1)[1]
+    frozen = json.loads((ROOT / receipt).read_text(encoding="utf-8"))
+    assert frozen["kind"] == "k43_general_bank_freeze" and frozen["source"]["placed_byte_for_byte"] is True
+    frozen_digests = {Path(f["path"]).name: f["sha256"] for f in frozen["files"]}
     for name in names:
         assert f"`{name}`" in request, f"التكليفُ لا يطلب {name}"
-        assert not (ROOT / "evaluation" / "suites" / name).exists(), f"{name} مودَعٌ من قبل"
+        target = ROOT / "evaluation" / "suites" / name
+        if name in delivered:
+            assert target.is_file() and _sha(target) == delivered[name] == frozen_digests[name], f"{name} لا يطابق جردَه"
+        else:
+            assert not target.exists(), f"{name} مودَعٌ من قبل وليس في جرد المسلَّم"
+
+
+def _fulfilled(tmp: Path, *, commit_target=True, commit_receipt=True) -> tuple[Path, Path]:
+    """تسليمُ Kimi نفسُه بعد أن أُودع جزؤه ٢: المصدرُ والهدفُ بايتاتُ المستودع، والإيصالُ العامّ بجانبهما."""
+    _, delivered, receipt = _inventory()
+    src = _kimi(tmp)
+    diwan = tmp / "diwan"
+    _public_repo(diwan)
+    suites = diwan / "evaluation" / "suites"
+    suites.mkdir(parents=True)
+    for name in delivered:
+        raw = (ROOT / "evaluation" / "suites" / name).read_bytes()
+        (src / name).write_bytes(raw)
+        (suites / name).write_bytes(raw)
+    (diwan / receipt).parent.mkdir(parents=True)
+    (diwan / receipt).write_bytes((ROOT / receipt).read_bytes())
+    git = ["git", "-C", str(diwan), "-c", "user.name=t", "-c", "user.email=t@t"]
+    staged = [*([f"evaluation/suites/{n}" for n in delivered] if commit_target else []),
+              *([receipt] if commit_receipt else [])]
+    if staged:
+        subprocess.run([*git, "add", *staged], check=True)
+        subprocess.run([*git, "commit", "-qm", "k43"], check=True)
+    return src, suites
+
+
+def test_a_fulfilled_delivery_is_skipped_untouched_while_pending_suites_are_placed(tmp_path):
+    _, delivered, _ = _inventory()
+    src, suites = _fulfilled(tmp_path)
+    before = {n: (suites / n).read_bytes() for n in delivered}
+    for name in set(DEV) - set(delivered):
+        (src / name).write_text("{}")
+    result = _run(tmp_path, src)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert {n: (suites / n).read_bytes() for n in delivered} == before
+    assert sorted(p.name for p in suites.iterdir()) == sorted(DEV)
+    assert all(f"لم يُمسّ: {n}" in result.stdout for n in delivered)
+
+
+def _bad_receipt(case: str, data: dict) -> str:
+    """إيصالاتٌ تحمل البصمتين نصًّا ولا تُثبت التجميد: كان `grep` يقبلها كلَّها."""
+    files = data["files"]
+    if case == "receipt_unrelated_kind":
+        data["kind"] = "unrelated_record"
+    elif case == "receipt_wrong_status":
+        data["status"] = "measured"
+    elif case == "receipt_unrelated_paths":
+        for i, entry in enumerate(files):
+            entry["path"] = f"unrelated/{i}.json"
+    elif case == "receipt_swapped_digests":
+        files[0]["sha256"], files[1]["sha256"] = files[1]["sha256"], files[0]["sha256"]
+    elif case == "receipt_duplicate_path":
+        files += [{"path": "unrelated/0.json", "sha256": "0" * 64}, {"path": "unrelated/0.json", "sha256": "1" * 64}]
+    elif case == "receipt_digest_also_elsewhere":
+        files.append({"path": "unrelated/0.json", "sha256": files[0]["sha256"]})
+    elif case == "receipt_entry_not_object":
+        files.append("evaluation/suites/agentic_v3.json")
+    text = json.dumps(data, ensure_ascii=False, indent=1)
+    return "{not json\n" + text if case == "receipt_malformed" else text
+
+
+BAD_RECEIPTS = ["receipt_unrelated_kind", "receipt_wrong_status", "receipt_unrelated_paths", "receipt_swapped_digests",
+                "receipt_duplicate_path", "receipt_digest_also_elsewhere", "receipt_entry_not_object", "receipt_malformed"]
+
+
+def _commit_receipt(diwan: Path, receipt: str, case: str) -> None:
+    data = json.loads((diwan / receipt).read_text(encoding="utf-8"))
+    (diwan / receipt).write_text(_bad_receipt(case, data), encoding="utf-8")
+    git = ["git", "-C", str(diwan), "-c", "user.name=t", "-c", "user.email=t@t"]
+    subprocess.run([*git, "commit", "-qam", "receipt"], check=True)
+
+
+@pytest.mark.parametrize("case", ["untracked_target", "ignored_target", "changed_target", "other_source", "receipt_uncommitted",
+                                  "receipt_without_digest", *BAD_RECEIPTS])
+def test_a_fulfilled_name_that_does_not_match_its_receipt_stops_before_anything_is_copied(tmp_path, case):
+    """التخطّي للمسلَّم بعينه لا لكلّ موجود: هدفٌ غيرُ مودَع أو معدَّل، أو مصدرٌ آخر، أو إيصالٌ لا يُعتمد، يُرفض كما كان."""
+    _, delivered, receipt = _inventory()
+    first = sorted(delivered)[0]
+    src, suites = _fulfilled(tmp_path, commit_target=case not in ("untracked_target", "ignored_target"),
+                             commit_receipt=case != "receipt_uncommitted")
+    diwan = tmp_path / "diwan"
+    if case in BAD_RECEIPTS:
+        _commit_receipt(diwan, receipt, case)
+    if case == "ignored_target":
+        # المتجاهَلُ لا يظهر في `git status`، فالإيداعُ يُثبَت بـ`ls-files` لا بنظافة الحالة وحدها
+        (diwan / ".gitignore").write_text(f"evaluation/suites/{first}\n")
+    if case == "changed_target":
+        (suites / first).write_bytes((suites / first).read_bytes() + b"\n")
+    if case == "other_source":
+        (src / first).write_bytes((src / first).read_bytes() + b"\n")
+    if case == "receipt_without_digest":
+        text = (diwan / receipt).read_text(encoding="utf-8").replace(delivered[first], "0" * 64)
+        (diwan / receipt).write_text(text, encoding="utf-8")
+        git = ["git", "-C", str(diwan), "-c", "user.name=t", "-c", "user.email=t@t"]
+        subprocess.run([*git, "commit", "-qam", "receipt"], check=True)
+    before = {n: (suites / n).read_bytes() for n in delivered}
+    (src / "agentic_v3.json").write_text("{}")
+    result = _run(tmp_path, src)
+    assert result.returncode != 0 and f"suites/{first} موجود من قبل" in result.stdout
+    assert {n: (suites / n).read_bytes() for n in delivered} == before
+    assert not (suites / "agentic_v3.json").exists()
+    assert not (diwan / "evaluation" / "banks").exists()
+    assert not (tmp_path / "diwan-sealed").exists()
 
 
 def test_the_private_copy_is_refused_before_anything_is_copied(tmp_path):
@@ -238,3 +360,41 @@ def test_an_open_only_delivery_with_a_sealed_folder_or_without_update_is_refused
     no_update = _run(tmp_path, _open_only(tmp_path / "y"), OPEN_ONLY="1")
     assert no_update.returncode != 0 and "UPDATE=1" in no_update.stdout
     assert (bank / "open" / "tier_a" / "kimi_a_001.json").read_text() == kept
+
+
+@pytest.mark.parametrize("case", ["receipt_unrelated_kind", "receipt_unrelated_paths"])
+def test_an_open_only_update_with_an_unrelated_receipt_copies_nothing(tmp_path, case):
+    """دورةُ الشطر المفتوح على بنكٍ قائم: إيصالٌ مودَعٌ نظيف يحمل البصمتين لسجلٍّ آخر لا يجيز نسخَ المعلَّق."""
+    _, delivered, receipt = _inventory()
+    src, suites = _fulfilled(tmp_path)
+    assert _run(tmp_path, _kimi(tmp_path / "v1.1")).returncode == 0
+    diwan = tmp_path / "diwan"
+    _commit_all(diwan)
+    bank = diwan / "evaluation" / "banks" / "kimi_v1"
+    kept = (bank / "open" / "tier_a" / "kimi_a_001.json").read_text()
+    _commit_receipt(diwan, receipt, case)
+    subprocess.run(["rm", "-rf", str(src / "sealed")], check=True)
+    (src / "agentic_v3.json").write_text("{}")
+    before = {n: (suites / n).read_bytes() for n in delivered}
+    result = _run(tmp_path, src, UPDATE="1", OPEN_ONLY="1")
+    assert result.returncode != 0 and "موجود من قبل" in result.stdout
+    assert "لم يُمسّ" not in result.stdout
+    assert not (suites / "agentic_v3.json").exists()
+    assert {n: (suites / n).read_bytes() for n in delivered} == before
+    assert (bank / "open" / "tier_a" / "kimi_a_001.json").read_text() == kept
+
+
+def test_an_open_only_update_with_the_committed_receipt_skips_the_delivered_suites(tmp_path):
+    """الضابط: الإيصالُ المودَع كما هو يُتخطّى به المسلَّم في دورة الشطر المفتوح، ويُنسخ المعلَّق وحده."""
+    _, delivered, _ = _inventory()
+    src, suites = _fulfilled(tmp_path)
+    assert _run(tmp_path, _kimi(tmp_path / "v1.1")).returncode == 0
+    _commit_all(tmp_path / "diwan")
+    subprocess.run(["rm", "-rf", str(src / "sealed")], check=True)
+    (src / "agentic_v3.json").write_text("{}")
+    before = {n: (suites / n).read_bytes() for n in delivered}
+    result = _run(tmp_path, src, UPDATE="1", OPEN_ONLY="1")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert {n: (suites / n).read_bytes() for n in delivered} == before
+    assert (suites / "agentic_v3.json").read_text() == "{}"
+    assert all(f"لم يُمسّ: {n}" in result.stdout for n in delivered)
