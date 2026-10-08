@@ -173,3 +173,16 @@ def test_the_wrapper_records_its_own_pid_first_and_refuses_to_release_after_a_ta
     proc = adapter.start(["/bin/sh", "-c", f"echo ran > '{marker}'"], "", tmp_path, raw / "out", raw / "err", exit_path=raw / "exit")
     assert proc.wait(timeout=60) == 125 and (raw / "exit").read_text() == "125" and not marker.exists()
     assert (raw / "wrapper_pid").read_text().strip() == str(proc.pid) and (raw / "child_pid").exists()
+
+
+def test_live_failures_of_the_new_adapters_are_named_not_generic():
+    """تجربةُ ٨ أكتوبر الحيّة: Gemini CLI رُفض لأن عميله لم يعد مدعومًا، وAntigravity رفض أوامرَه بلا قاعدة إذن.
+    كلاهما كان «worker_reported_failure» عامًّا؛ صار تعذُّرًا مسمًّى لا جولةً محتسبة."""
+    gemini = ("Error authenticating: IneligibleTierError: This client is no longer supported for Gemini Code Assist for individuals.\n"
+              "  reasonCode: 'UNSUPPORTED_CLIENT',")
+    assert base.unavailable_code(1, gemini) == "client_unsupported"
+    agy = ('{"event":"result","result":{"status":"SUCCESS","response":"","denied_actions":[{"action":"command"}]}}\n'
+           'jetski: no output produced — a tool required the "command" permission that headless mode cannot prompt for, so it was auto-denied.')
+    assert base.unavailable_code(0, agy) == "permissions_unconfigured"
+    assert base.unavailable_code(1, "Error authenticating with the server") == "auth_required"
+    assert base.unavailable_code(0, '{"denied_actions":[]}') is None

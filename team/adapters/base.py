@@ -25,7 +25,11 @@ FORBIDDEN_VALUES: tuple[tuple[str, str], ...] = (("--permission-mode", "bypassPe
 ENV_ALLOWLIST: tuple[str, ...] = ("PATH", "HOME", "LANG", "LC_ALL", "TERM", "TMPDIR", "SHELL", "USER")
 UNAVAILABLE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("quota_exhausted", re.compile(r"(?i)usage limit|rate limit|quota|too many requests|\b429\b|couldn't complete this request|try again later")),
-    ("auth_required", re.compile(r"(?i)not logged in|unauthorized|\b401\b|please (?:log|sign) in|authentication")),
+    # الأداةُ نفسُها لم تعد مدعومةً لحساب المالك (Gemini CLI بعد انتقال Google إلى Antigravity؛ تجربةُ ٨ أكتوبر الحيّة)
+    ("client_unsupported", re.compile(r"IneligibleTierError|UNSUPPORTED_CLIENT|client is no longer supported")),
+    ("auth_required", re.compile(r"(?i)not logged in|unauthorized|\b401\b|please (?:log|sign) in|authentication|error authenticating")),
+    # الوضعُ غيرُ التفاعليّ رفض أداةً لا قاعدةَ إذنٍ لها؛ والعلاجُ قاعدةُ إذنٍ محدّدة، لا تجاوزُ الموافقات (Antigravity)
+    ("permissions_unconfigured", re.compile(r"(?i)headless mode cannot prompt|was auto-denied|\"denied_actions\":\s*\[\s*\{")),
 )
 # سطرُ حكمٍ قائمٌ بذاته: هو **آخرُ** سطرٍ غير فارغ في النص، بلا بادئة اقتباس (>)؛ فلا عبارةٌ مقتبسة ولا مثالٌ منقول يُحتسب
 # (ملاحظات Codex على #344)

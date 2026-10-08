@@ -1,0 +1,85 @@
+{
+ "schema_version": 1,
+ "probe": "team-adapters-live",
+ "agent": "anthropic/claude-opus-5-5",
+ "date": "2026-10-08",
+ "repository": "power0man/diwan",
+ "code_head_at_measurement": "dda800da",
+ "purpose": "قبولٌ حيّ لمحوِّلات العمّال التي أضافتها توسعةُ المرحلة ٣ (AGENTS-PLAN-20261007، #356)؛ فالربطُ وحده لا يثبت أن العامل يعمل.",
+ "method": "مستودعٌ مؤقّت بأصلٍ عارٍ ومشروعٌ مصطنع (tests/team_fakes.FakeProject)، ومهمّةٌ واحدة: أنشئ hello.txt بسطرٍ واحد وأودعه. وملفٌّ شاهد خارج نسخة العمل تُقارن بصمتُه قبل التشغيل وبعده. Dispatcher.run بالمحوِّل الحقيقي و--execute، وطبيبُ الإصدارات متجاوزٌ في التجربة وحدها، وسجلٌّ مؤقّت لا سجلُّ الفريق.",
+ "environment": {
+  "tools": {
+   "gemini": "0.62.0",
+   "agy": "1.3.1",
+   "codex": "codex-cli 0.160.1",
+   "opencode": "v2.0.14"
+  },
+  "python": "3.12.9 (.venv)"
+ },
+ "results": {
+  "gemini": {
+   "model": "tool_default",
+   "status": "worker_unavailable",
+   "code": "client_unsupported",
+   "elapsed_s": 2.0,
+   "evidence": "Gemini CLI ردّ IneligibleTierError/UNSUPPORTED_CLIENT: العميلُ لم يعد مدعومًا لحساب الأفراد، وGoogle تحيل إلى Antigravity",
+   "before_fix": "worker_reported_failure عامّ، فكانت المحاولةُ تُقرأ فشلَ عامل",
+   "file_created": false,
+   "sentinel_unchanged": true,
+   "accepted": false
+  },
+  "antigravity": {
+   "model": "gemini-3.8-flash-medium",
+   "status": "worker_unavailable",
+   "code": "permissions_unconfigured",
+   "elapsed_s": 13.5,
+   "evidence": "الوضعُ غيرُ التفاعليّ رفض أداةَ الأوامر حتى git status لأن لا قاعدةَ إذنٍ لها (denied_actions)، فلم يكتب شيئًا",
+   "before_fix": "worker_reported_failure عامّ",
+   "file_created": false,
+   "sentinel_unchanged": true,
+   "accepted": false,
+   "remedy_not_applied": "قاعدةُ إذنٍ محدّدة في إعداد Antigravity؛ وموضعُ الإعداد لم يُقرأ (ملفّاتُ إعداد أدوات الذكاء لا تُقرأ). والتجاوزُ الشامل --dangerously-skip-permissions محظورٌ في المحوِّلات بحارسٍ قائم"
+  },
+  "codex_as_worker": {
+   "model": "tool_default",
+   "status": "validation_failed",
+   "code": "no_commits",
+   "elapsed_s": 37.5,
+   "evidence": "أنشأ hello.txt بالمحتوى المطلوب، وتعذّر الإيداع: صندوقُ workspace-write منع الكتابة إلى بيانات git المشتركة خارج نسخة العمل (index.lock)",
+   "file_created": true,
+   "sentinel_unchanged": true,
+   "accepted": false,
+   "covered_by": "المسألة #361 (تسليمُ تغييرات Codex غير المودعة بإيداعٍ محلّيّ محدود) والطلبان #363 و#368؛ والمسألةُ محجوزةٌ لـCodex"
+  },
+  "claude_as_worker": {
+   "status": "not_rerun",
+   "prior_evidence": "docs/probe/team-phase1-smoke-20261006.json: dispatched ← claimed ← completed مع الملف الشاهد سليمًا"
+  },
+  "opencode": {
+   "status": "not_measured",
+   "why": "سجلُّه coding=false، فلا يُرسَل عاملَ كتابة؛ وقبولُه مراجعًا يحتاج طلبًا حيًّا لم يُجرَّب"
+  }
+ },
+ "a3_isolation": "الملفُّ الشاهد خارج نسخة العمل لم يتغيّر في التجارب الثلاث. ولا يثبت ذلك عزلًا في Gemini وAntigravity لأنهما لم يكتبا شيئًا؛ ويثبته في Codex جزئيًّا، فقد كتب داخل النسخة ومُنع خارجها",
+ "adapter_changes": "team/adapters/base.py: client_unsupported وpermissions_unconfigured تعذُّران مسمّيان، و«error authenticating» تعذّرُ دخول. والتعذُّر لا يُحتسب جولة",
+ "verdict": {
+  "accepted_live": [],
+  "not_accepted": [
+   "gemini",
+   "antigravity",
+   "codex_as_worker"
+  ],
+  "not_measured": [
+   "opencode"
+  ],
+  "phase3_gate": "لم تُقبل حيًّا أيُّ محوِّلٍ جديدٍ عاملًا. وبقي Claude العاملَ الوحيد المقبول حيًّا، وCodex المراجعَ المقبول"
+ },
+ "measurement_limits": [
+  "one_toy_task_per_adapter_in_a_temporary_repository_proves_the_launch_path_not_worker_quality",
+  "the_doctor_version_pins_were_bypassed_inside_the_trial_only",
+  "antigravity_was_tried_with_one_model_and_no_permission_rule_because_its_settings_file_was_not_read",
+  "codex_failure_is_its_sandbox_refusing_shared_git_metadata_which_issue_361_owns",
+  "gemini_cli_refusal_reflects_the_owner_account_tier_on_2026_10_08_and_may_differ_for_other_accounts"
+ ],
+ "next": "Antigravity: قاعدةُ إذنٍ محدّدة لأوامر git بقرار المالك أو صاحب المسار ثم إعادةُ التجربة. وGemini CLI: يُستبدل بـAntigravity أو يُسحب من الجرد. وCodex عاملًا: بعد #361."
+}
