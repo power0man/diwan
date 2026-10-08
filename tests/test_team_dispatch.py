@@ -557,3 +557,39 @@ def test_takeover_reads_head_under_the_ledger_lock(tmp_path):
     ledger._locked, dispatcher._git = watched_lock, watched_git
     assert dispatcher.takeover(41, owner_authorization="نفّذ")["status"] == "takeover"
     assert held_now and all(held_now)
+
+
+def _racing_finish(dispatcher, race):
+    """يُجري `race` بعد أن قرأ `_finish` الرأسَ وتحقّق من الإيداعات، وقبل الدفع: نافذةُ handoff متزامن."""
+    original = dispatcher._git
+    def git_hook(*args, **kwargs):
+        if args and args[0] == "rev-list":
+            race()
+        return original(*args, **kwargs)
+    dispatcher._git = git_hook
+
+
+def test_a_handoff_intent_recorded_during_finish_blocks_the_push(tmp_path):
+    """ملاحظة Codex على #368: استئنافٌ قرأ غيابَ نيّة التسليم ثم بدأ handoff قبل الدفع كان يدفع إيداعَ المنسّق ويفتح له طلبًا قبل
+    إيصاله. فالدفعُ تحت قفل السجلّ يعيد الفحص: نيّةٌ بلا إيصال تمنعه."""
+    dispatcher, project, _adapter, ledger, repo = _setup(tmp_path)
+    _racing_finish(dispatcher, lambda: ledger.append(41, "controller_commit_started", head_sha="1" * 40, plan_sha256="2" * 64,
+                                                     controller_agent="openai/codex", source_agent="anthropic/claude-opus-5"))
+    out = dispatcher.run(41, execute=True)
+    assert out["status"] == "outcome_unknown" and out["reason"] == "controller_commit_incomplete"
+    assert ledger.last(41)["reason"] == "controller_commit_incomplete" and project.pulls == {}
+    assert not git("ls-remote", "--heads", "origin", "team/41-anthropic", cwd=repo)
+
+
+def test_a_branch_moved_during_finish_is_not_pushed(tmp_path):
+    """ملاحظة Codex على #368: رأسٌ حرّكه handoff بعد تحقّق `_finish` لا يُدفع بتحقّقٍ قديم."""
+    dispatcher, project, _adapter, ledger, repo = _setup(tmp_path)
+    worktree = tmp_path / "wt" / "team-41-anthropic"
+    def move():
+        (worktree / "moved.txt").write_text("controller commit", encoding="utf-8")
+        git("add", "moved.txt", cwd=worktree)
+        git("commit", "-qm", "moved under the dispatcher", cwd=worktree)
+    _racing_finish(dispatcher, move)
+    out = dispatcher.run(41, execute=True)
+    assert out["status"] == "outcome_unknown" and out["reason"] == "branch_moved_before_push"
+    assert project.pulls == {} and not git("ls-remote", "--heads", "origin", "team/41-anthropic", cwd=repo)

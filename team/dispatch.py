@@ -292,7 +292,14 @@ class Dispatcher:
             self.ledger.append(issue.number, "validation_failed", reason="no_commits", head_sha=head, worker_ok=result.ok,
                                quarantine_codes=sorted({f.code for f in summary.findings}))
             return {"status": "validation_failed", "reason": "no_commits", **plan}
-        self._git("push", "-u", self.remote, branch, cwd=wt)
+        # الدفعُ تحت قفل السجلّ نفسِه الذي يحرّك به handoff الفرعَ: نيّةُ تسليمٍ بلا إيصال، أو رأسٌ تحرّك بعد ما تحقّقنا منه، لا يُدفع
+        # ولا يُفتح له طلب؛ فاستئنافٌ قرأ غيابَ النيّة قبل أن يبدأ handoff لا ينشر إيداعَ المنسّق (ملاحظة Codex على #368)
+        with self.ledger._locked():
+            blocked = self._handoff_interlock(issue.number, attempt, wt, head)
+            if blocked:
+                self.ledger._append(issue.number, "outcome_unknown", reason=blocked)
+                return {"status": "outcome_unknown", "reason": blocked, **plan}
+            self._git("push", "-u", self.remote, branch, cwd=wt)
         pull = self.project.pull_for_branch(branch)
         if pull is None:
             title = f"[team #{issue.number}] {quarantine(issue.title).text.strip()[:80]}"
@@ -307,6 +314,16 @@ class Dispatcher:
                            new_commits=new_commits,
                            quarantine_codes=sorted({f.code for f in summary.findings}))
         return {"status": "completed", "head_sha": head, "pr": pull.number, "new_commits": new_commits, **plan}
+
+    def _handoff_interlock(self, issue_number: int, attempt: int, wt: Path, head: str) -> str | None:
+        """يُستدعى تحت قفل السجلّ قبل الدفع: سببُ المنع أو None."""
+        intent = self.ledger.last_of(issue_number, "controller_commit_started", attempt)
+        receipt = self.ledger.last_of(issue_number, "controller_commit", attempt)
+        if intent and (not receipt or intent["plan_sha256"] != receipt["plan_sha256"]):
+            return "controller_commit_incomplete"
+        if self._git("rev-parse", "HEAD", cwd=wt) != head:
+            return "branch_moved_before_push"
+        return None
 
     def sync_head(self, issue_number: int) -> str:
         """رأسُ الطلب الحالي؛ إن تقدّم عن رأس `completed` (تصحيحٌ دُفع) قُيّد `completed` جديد فيسقط ما قبله ويُعاد التحقق والمراجعة."""
