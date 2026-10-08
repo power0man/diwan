@@ -47,8 +47,9 @@ jobs:
           docker build --tag diwan:ci-test --file - . <<'DOCKERFILE'
           FROM diwan:ci
           USER root
+          # procps يوفّر ps لشاهد انتهاء العملية؛ هذه طبقة اختبارات فقط.
           RUN apt-get update \
-              && apt-get install -y --no-install-recommends git \
+              && apt-get install -y --no-install-recommends git procps \
               && rm -rf /var/lib/apt/lists/* \
               && git config --system --add safe.directory /app
           RUN uv export --frozen --extra dev --no-emit-project --output-file /tmp/dev-requirements.txt >/dev/null \
