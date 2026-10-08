@@ -221,6 +221,9 @@ def fetch_threads(repo_slug: str, pr: int, token: str | None) -> list[dict]:
                 data = json.loads(response.read().decode("utf-8"))
         except OSError as exc:
             raise ReviewError("threads_unreachable", type(exc).__name__) from exc
+        if not isinstance(data, dict) or data.get("errors"):
+            # GraphQL قد يعيد بياناتٍ جزئية مع أخطاء؛ والجزئيُّ قد يُسقط خيطًا مفتوحًا، فيُرفض كلُّه (ملاحظة Codex P1 على #372)
+            raise ReviewError("threads_partial" if isinstance(data, dict) and data.get("data") else "threads_malformed")
         try:
             page = data["data"]["repository"]["pullRequest"]["reviewThreads"]
         except (KeyError, TypeError) as exc:
@@ -235,9 +238,14 @@ def thread_rows(nodes: list[dict]) -> list[dict]:
     """صفُّ الخيط: محلولٌ أم لا، وكاتبُ أول تعليقٍ فيه. وGraphQL يسمّي البوتَ بلا «[bot]» فيُعاد إليه."""
     rows = []
     for node in nodes:
+        if not isinstance(node, dict) or not isinstance(node.get("isResolved"), bool):
+            raise ReviewError("thread_incomplete")
         first = ((node.get("comments") or {}).get("nodes") or [{}])[0]
         author = first.get("author") or {}
         login = author.get("login", "")
+        if not node["isResolved"] and not login:
+            # خيطٌ مفتوح بلا كاتبٍ مقروء لا يُعرف أمِن عائلةٍ أخرى هو، فلا يُفترض أنه لا يحجب
+            raise ReviewError("thread_incomplete")
         if author.get("__typename") == "Bot" and not login.endswith("[bot]"):
             login += "[bot]"
         rows.append({"resolved": bool(node.get("isResolved")), "author": login})

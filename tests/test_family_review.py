@@ -431,7 +431,7 @@ def test_graphql_bot_logins_regain_their_suffix():
     nodes = [{"isResolved": False, "comments": {"nodes": [{"author": {"__typename": "Bot", "login": "chatgpt-codex-connector"}}]}},
              {"isResolved": True, "comments": {"nodes": [{"author": {"__typename": "User", "login": "power0man"}}]}},
              {"isResolved": False, "comments": {"nodes": []}}]
-    assert fr.thread_rows(nodes) == [thread(CODEX), thread("power0man", True), thread("")]
+    assert fr.thread_rows(nodes[:2]) == [thread(CODEX), thread("power0man", True)]
 
 
 def test_the_cli_reads_findings_and_threads_from_a_reviews_file(tmp_path):
@@ -460,9 +460,14 @@ def test_the_ci_path_reads_threads_and_counts_inline_findings(tmp_path, monkeypa
     assert json.loads(capsys.readouterr().out)["code"] == "unresolved_threads_from_another_family"
 
 
+PARTIAL = json.dumps({"data": {"repository": {"pullRequest": {"reviewThreads": {
+    "pageInfo": {"hasNextPage": False, "endCursor": None}, "nodes": []}}}}, "errors": [{"message": "resource limit"}]}).encode()
+
+
 @pytest.mark.parametrize("failure,code", [
     pytest.param(OSError("down"), "threads_unreachable", id="unreachable"),
     pytest.param(b'{"errors": [{"message": "nope"}]}', "threads_malformed", id="malformed"),
+    pytest.param(PARTIAL, "threads_partial", id="partial"),
 ])
 def test_unreadable_threads_fail_closed(monkeypatch, failure, code):
     class Response:
@@ -478,3 +483,19 @@ def test_unreadable_threads_fail_closed(monkeypatch, failure, code):
     with pytest.raises(fr.ReviewError) as caught:
         fr.fetch_threads("o/n", 1, None)
     assert caught.value.code == code
+
+
+@pytest.mark.parametrize("node", [
+    pytest.param({"isResolved": False, "comments": {"nodes": [{"author": None}]}}, id="open-without-author"),
+    pytest.param({"isResolved": False, "comments": {"nodes": []}}, id="open-without-comments"),
+    pytest.param({"comments": {"nodes": [{"author": {"__typename": "Bot", "login": "chatgpt-codex-connector"}}]}}, id="no-resolution"),
+])
+def test_an_incomplete_thread_fails_closed(node):
+    """خيطٌ مفتوح لا يُقرأ كاتبُه، أو خيطٌ بلا حالة حلّ، لا يُفترض أنه لا يحجب (ملاحظة Codex P1 على #372)."""
+    with pytest.raises(fr.ReviewError) as caught:
+        fr.thread_rows([node])
+    assert caught.value.code == "thread_incomplete"
+
+
+def test_a_resolved_thread_without_a_readable_author_does_not_block():
+    assert fr.thread_rows([{"isResolved": True, "comments": {"nodes": [{"author": None}]}}]) == [thread("", True)]
