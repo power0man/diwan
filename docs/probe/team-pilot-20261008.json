@@ -9,8 +9,91 @@
  "purpose": "إغلاقُ المرحلة ٢ من ق٧٦ (التجربة الموجَّهة بعشر مهامّ) بحكمٍ على بوّابتَي السلامة والأداء، بالمؤشّرات وتعريفاتها نفسِها التي قيس بها خطُّ الأساس. وهذا الحكمُ مُدخلٌ لقرار المالك: تكرارٌ أو تجميدٌ أو إيقاف.",
  "method": "قراءةٌ فقط: سجلُّ المرسِل المحلي (١٤٠ سطرًا بسلسلة بصماته)، والسجلُّ اليدوي للتجربة، وGitHub (الطلبات، والإيداعات وذيولها، والمراجعات وتعليقاتها، والخيوط، والفحوص على الرأس المدموج) عبر gh api. لا تشغيلَ عامل، ولا نداءَ نموذج، ولا كتابةَ في السجلّ.",
  "tasks": {
-  "planned": 10,
-  "retroactive_reviews": [
+  "definition": "المهامُّ العشر هي المسائلُ العشر التي لها قيدُ dispatched في السجلّ (ملاحظة Codex P1 على #371). والمراجعاتُ الرجعية الثلاث خارجها",
+  "dispatched": 10,
+  "dispatched_rows": [
+   {
+    "issue": 345,
+    "pr": 346,
+    "ledger_main_state": "accepted",
+    "ledger_last_event": "accepted",
+    "pr_state": "merged",
+    "accepted_in_ledger": true
+   },
+   {
+    "issue": 301,
+    "pr": 350,
+    "ledger_main_state": "completed",
+    "ledger_last_event": "review_rejected",
+    "pr_state": "merged",
+    "accepted_in_ledger": false
+   },
+   {
+    "issue": 192,
+    "pr": 351,
+    "ledger_main_state": "completed",
+    "ledger_last_event": "review_rejected",
+    "pr_state": "merged",
+    "accepted_in_ledger": false
+   },
+   {
+    "issue": 295,
+    "pr": 352,
+    "ledger_main_state": "completed",
+    "ledger_last_event": "review_rejected",
+    "pr_state": "merged",
+    "accepted_in_ledger": false
+   },
+   {
+    "issue": 28,
+    "pr": 353,
+    "ledger_main_state": "completed",
+    "ledger_last_event": "worker_unavailable",
+    "pr_state": "merged",
+    "accepted_in_ledger": false
+   },
+   {
+    "issue": 285,
+    "pr": 354,
+    "ledger_main_state": "accepted",
+    "ledger_last_event": "accepted",
+    "pr_state": "merged",
+    "accepted_in_ledger": true
+   },
+   {
+    "issue": 296,
+    "pr": null,
+    "ledger_main_state": "claimed",
+    "ledger_last_event": "worker_unavailable",
+    "pr_state": "none",
+    "accepted_in_ledger": false
+   },
+   {
+    "issue": 348,
+    "pr": null,
+    "ledger_main_state": "claimed",
+    "ledger_last_event": "worker_unavailable",
+    "pr_state": "none",
+    "accepted_in_ledger": false
+   },
+   {
+    "issue": 338,
+    "pr": 362,
+    "ledger_main_state": "completed",
+    "ledger_last_event": "completed",
+    "pr_state": "open",
+    "accepted_in_ledger": false
+   },
+   {
+    "issue": 361,
+    "pr": 363,
+    "ledger_main_state": "completed",
+    "ledger_last_event": "completed",
+    "pr_state": "open",
+    "accepted_in_ledger": false
+   }
+  ],
+  "retroactive_reviews_outside_the_ten": [
    {
     "pr": 320,
     "verdict": "revise",
@@ -26,17 +109,10 @@
     "verdict": "pass"
    }
   ],
-  "implementation_tasks": 7,
   "merged": 6,
-  "accepted_in_ledger": 2,
-  "no_pull_request": [
-   {
-    "issue": 296,
-    "ledger_final_state": "worker_unavailable",
-    "note": "توقّف العاملُ بنفاد الحصّة ولم يُعَد إطلاقُه"
-   }
-  ],
-  "rows": [
+  "accepted_in_ledger": "2/10",
+  "merged_subset_note": "أزمنةُ التجربة ومقارنتُها عيّنةٌ فرعية مشروطةٌ بالدمج: الطلباتُ الستة المدموجة وحدها",
+  "merged_rows": [
    {
     "issue": 345,
     "pr": 346,
@@ -47,11 +123,13 @@
     "merged_head": "baa2332ac946",
     "merge_commit": "63ca29dc769b",
     "merged_head_recorded_in_ledger": true,
-    "ledger_final_state": "accepted",
+    "ledger_main_state": "accepted",
+    "ledger_last_event": "accepted",
     "ledger_accepted": true,
     "commits_total": 12,
     "commits_after_last_ledger_head": 0,
-    "writers_after_last_ledger_head": {},
+    "declared_trailer_labels_after_last_ledger_head": {},
+    "merge_commits_after_last_ledger_head": 0,
     "commits_after_first_external_review": 10,
     "accepted_without_rework": false,
     "other_family_pass_on_merged_head": [
@@ -78,13 +156,15 @@
     "merged_head": "14de9cead583",
     "merge_commit": "d79cdc795e4b",
     "merged_head_recorded_in_ledger": false,
-    "ledger_final_state": "review_rejected",
+    "ledger_main_state": "completed",
+    "ledger_last_event": "review_rejected",
     "ledger_accepted": false,
     "commits_total": 13,
     "commits_after_last_ledger_head": 2,
-    "writers_after_last_ledger_head": {
+    "declared_trailer_labels_after_last_ledger_head": {
      "anthropic/claude-opus-5-5 / session_014PCBoGzwwXtMZsYo5TALiw": 2
     },
+    "merge_commits_after_last_ledger_head": 0,
     "commits_after_first_external_review": 12,
     "accepted_without_rework": false,
     "other_family_pass_on_merged_head": [
@@ -111,13 +191,15 @@
     "merged_head": "5af673af6f38",
     "merge_commit": "93b201f970a0",
     "merged_head_recorded_in_ledger": false,
-    "ledger_final_state": "review_rejected",
+    "ledger_main_state": "completed",
+    "ledger_last_event": "review_rejected",
     "ledger_accepted": false,
     "commits_total": 7,
     "commits_after_last_ledger_head": 5,
-    "writers_after_last_ledger_head": {
+    "declared_trailer_labels_after_last_ledger_head": {
      "anthropic/claude-opus-5-5 / session_014PCBoGzwwXtMZsYo5TALiw": 5
     },
+    "merge_commits_after_last_ledger_head": 2,
     "commits_after_first_external_review": 6,
     "accepted_without_rework": false,
     "other_family_pass_on_merged_head": [
@@ -144,13 +226,15 @@
     "merged_head": "3f23e38d4c7d",
     "merge_commit": "f3b754a4f105",
     "merged_head_recorded_in_ledger": false,
-    "ledger_final_state": "review_rejected",
+    "ledger_main_state": "completed",
+    "ledger_last_event": "review_rejected",
     "ledger_accepted": false,
     "commits_total": 21,
     "commits_after_last_ledger_head": 2,
-    "writers_after_last_ledger_head": {
+    "declared_trailer_labels_after_last_ledger_head": {
      "anthropic/claude-opus-5-5 / session_014PCBoGzwwXtMZsYo5TALiw": 2
     },
+    "merge_commits_after_last_ledger_head": 1,
     "commits_after_first_external_review": 20,
     "accepted_without_rework": false,
     "other_family_pass_on_merged_head": [
@@ -177,15 +261,17 @@
     "merged_head": "9b0a6c307de3",
     "merge_commit": "dda800da3d4c",
     "merged_head_recorded_in_ledger": false,
-    "ledger_final_state": "worker_unavailable",
+    "ledger_main_state": "completed",
+    "ledger_last_event": "worker_unavailable",
     "ledger_accepted": false,
     "commits_total": 11,
     "commits_after_last_ledger_head": 10,
-    "writers_after_last_ledger_head": {
+    "declared_trailer_labels_after_last_ledger_head": {
      "anthropic/claude-opus-5-5 / session_014PCBoGzwwXtMZsYo5TALiw": 2,
      "no_agent_trailer / no_session_trailer": 3,
      "anthropic/claude-opus-5-5 / no_session_trailer": 5
     },
+    "merge_commits_after_last_ledger_head": 5,
     "commits_after_first_external_review": 10,
     "accepted_without_rework": false,
     "other_family_pass_on_merged_head": [],
@@ -212,11 +298,13 @@
     "merged_head": "168af3319ac0",
     "merge_commit": "fe48a60097cc",
     "merged_head_recorded_in_ledger": true,
-    "ledger_final_state": "accepted",
+    "ledger_main_state": "accepted",
+    "ledger_last_event": "accepted",
     "ledger_accepted": true,
     "commits_total": 2,
     "commits_after_last_ledger_head": 0,
-    "writers_after_last_ledger_head": {},
+    "declared_trailer_labels_after_last_ledger_head": {},
+    "merge_commits_after_last_ledger_head": 0,
     "commits_after_first_external_review": 1,
     "accepted_without_rework": false,
     "other_family_pass_on_merged_head": [
@@ -259,15 +347,20 @@
    ]
   },
   "duplicate_execution_after_outcome_unknown": {
-   "failures": 0,
-   "status": "passed",
-   "note": "لا سطرَ outcome_unknown في السجلّ"
+   "failures_observed_in_ledger": 0,
+   "status": "no_failure_observed_coverage_not_demonstrated",
+   "note": "لا سطرَ outcome_unknown في السجلّ (١٤٠ قيدًا). لكن السجلّ لا يرى الكتّابَ من خارجه، فلا يُثبت غيابُه أنّ أحدًا منهم لم يكرّر تنفيذًا (ملاحظة Codex P2 على #371)"
   },
   "evidence_chain_break": {
-   "failures": 4,
+   "ledger_linkage_gaps": 4,
    "status": "failed",
-   "definition_applied": "تعريفُ ق٧٦: الرأسُ المراجَع يختلف عن الرأس المختبَر. وطُبّق هنا على سجلّ المرسِل نفسه: الرأسُ المدموج غائبٌ عن السجلّ، فآخرُ رأسٍ راجعه السجلّ ليس ما دُمج",
-   "note": "في ٤ من ٦ دمجات، صُنع الرأسُ المدموج خارج المرسِل. وعلى GitHub في #350 و#351 و#352، الرأسُ المراجَع هو المختبَر هو المدموج، فالدليلُ موجودٌ هناك، لكن السجلَّ لا يملكه"
+   "definition_applied": "فجوةُ ربط: الرأسُ المدموج غائبٌ عن سجلّ المرسِل، فلا يربط السجلُّ ما دُمج بآخر ما تحقّق منه وراجعه. وسلامةُ سلسلة البصمات نفسِها لا تحسمها",
+   "separate_github_evidence": "على GitHub في #350 و#351 و#352 الرأسُ المراجَع هو المختبَر هو المدموج، وverify ناجح. لكن container-smoke ساقطٌ تاريخيًّا على #350 و#351. وهذا دليلٌ منفصلٌ عن الفجوة لا يسدّها",
+   "outside_commits": {
+    "count": 19,
+    "merge_commits": 8,
+    "labels": "declared_trailer_labels: إقرارٌ من ذيول الإيداع لا يثبت هويّةَ المنفّذ ولا كلَّ كتابةٍ خارجية ولا عددَ الجولات"
+   }
   },
   "counted_reviewer_from_author_family": {
    "failures": 0,
@@ -368,7 +461,7 @@
   "owner_decides": true
  },
  "measurement_limits": [
-  "six_merged_tasks_and_three_retroactive_reviews_against_forty_baseline_prs_is_too_small_for_a_rate_claim",
+  "ten_dispatched_tasks_of_which_six_merged_against_forty_baseline_prs_is_too_small_for_a_rate_claim_and_lead_times_are_a_merge_conditioned_subset",
   "owner_intervention_is_not_measurable_because_one_github_identity_serves_the_owner_and_every_agent",
   "the_worker_model_changed_mid_pilot_after_quota_exhaustion_and_the_coordinator_changed_twice",
   "lead_time_includes_hours_when_workers_were_stopped_by_quota_and_the_handoff_so_it_is_not_a_pure_system_speed",
