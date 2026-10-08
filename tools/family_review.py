@@ -21,7 +21,13 @@
 فيها هذه الأداة (`ROOT`)، و`--repo` يُقرأ منه تاريخُ git وحده. والمهمّةُ تشغّل الأداةَ من نسخة `main` وتعطيها نسخةَ الطلب
 `--repo`؛ فطلبٌ يُدرج بوتًا في `reviewers.json` أو يُخرج عميلَه من `agents.json` لا يغيّر حكمَه على نفسه.
 
-**الحدُّ المعلَن:** يشهد الفحصُ أن عائلةً أخرى راجعت، لا أن ملاحظاتِها عولجت؛ ومعالجتُها واجبُ من يقود الطلب (الخطة §٦).
+**الحكمُ النظيف لا مجرّدُ المراجعة (تقييم المرحلة ٢ من ق٧٦، ‎docs/probe/team-pilot-20261008.json):** دُمج #353 والفحصُ ناجح،
+لأن الأداة احتسبت مراجعةَ Codex بحالة COMMENTED على الرأس، وفيها ملاحظاتٌ P1/P2، وكانت عشرةُ خيوطٍ مفتوحة. فصار يُشترط أمران:
+- مراجعةُ COMMENTED التي تحمل ملاحظاتٍ سطرية حكمُ «يحتاج تصحيحًا» يحجب كطلب التغييرات، ولا يُحتسب.
+- كلُّ خيطٍ غير محلول فتحه بوتٌ مدرَج من عائلةٍ أخرى يُسقط الفحص، ولو صار قديمًا (outdated). فالرأسُ النظيف وحده لا يكفي ما دامت ملاحظةٌ سابقة لم تُغلق.
+
+**الحدُّ المعلَن:** حلُّ الخيط فعلٌ معلَنٌ بحساب المالك الذي يكتب به كلُّ عميل، لا إثباتٌ أن الملاحظة عولجت. وحلُّ خيطٍ لا يُطلق
+الفحصَ من جديد، فيُعاد تشغيلُه بعده يدويًّا أو بدفعٍ جديد.
 وملفُّ المهمّة نفسُه يأتي من الطلب (حدثُ `pull_request`)، فطلبٌ يعدّل `.github/workflows/family-review.yml` يعدّل ما يشغّله؛
 وسدُّ ذلك قاعدةٌ في حماية الفرع على `.github/` أو مراجعةُ المالك، لا هذه الأداة.
 """
@@ -45,6 +51,9 @@ ROOT = Path(__file__).resolve().parent.parent
 REVIEWERS_PATH = "registry/reviewers.json"
 ALLOWED_STATES = frozenset({"APPROVED", "COMMENTED"})
 BLOCKING_STATE = "CHANGES_REQUESTED"
+# مراجعةُ COMMENTED بملاحظاتٍ سطرية: هكذا يقول Codex «يحتاج تصحيحًا»
+FINDINGS_STATE = "COMMENTED_WITH_FINDINGS"
+BLOCKING_STATES = frozenset({BLOCKING_STATE, FINDINGS_STATE})
 API = "https://api.github.com"
 # بوتٌ ← عبارةُ «لا ملاحظات» في تعليقه (Codex لا ينشر مراجعةً حين تنظف، ق٦٥)
 CLEAN_REVIEW_COMMENTS = {"chatgpt-codex-connector[bot]": "Didn't find any major issues"}
@@ -99,8 +108,11 @@ def author_families(commits: list[dict], registry: dict) -> set[str]:
     return families
 
 
-def evaluate(families: set[str], reviews: list[dict], head: str, reviewers: dict) -> dict:
-    """الحكم: مراجِعٌ محتسَبٌ من عائلةٍ أخرى على الرأس، ولا مراجِعَ محتسَبًا يطلب تغييرات."""
+def evaluate(families: set[str], reviews: list[dict], head: str, reviewers: dict,
+             threads: list[dict] | None = None) -> dict:
+    """الحكم: مراجِعٌ محتسَبٌ من عائلةٍ أخرى على الرأس بلا ملاحظات، ولا مراجِعَ محتسَبًا يحجب، ولا خيطَ مفتوحًا من عائلةٍ أخرى.
+
+    `threads` خيوطُ المراجعة بالشكل {"resolved": bool, "author": login}؛ و`None` يعني أنها لم تُقرأ، ويُعلَن ذلك في التقرير."""
     mapping = reviewers["reviewers"]
     counted_states = set(reviewers["counted_states"])
     latest: dict[str, str] = {}
@@ -113,14 +125,24 @@ def evaluate(families: set[str], reviews: list[dict], head: str, reviewers: dict
         if review.get("commit_id") != head:
             ignored.append({"login": login, "reason": "stale_head"})
             continue
-        latest[login] = review.get("state", "")
+        state = review.get("state", "")
+        if state == "COMMENTED" and review.get("inline_comments", 0) > 0:
+            state = FINDINGS_STATE
+        latest[login] = state
     blocking = sorted(login for login, state in latest.items()
-                      if state == BLOCKING_STATE and mapping[login] not in families)
+                      if state in BLOCKING_STATES and mapping[login] not in families)
+    unresolved = sum(1 for thread in threads or ()
+                     if not thread.get("resolved")
+                     and mapping.get(thread.get("author", "")) not in (None, *families))
     counted = sorted(login for login, state in latest.items()
                      if state in counted_states and mapping[login] not in families)
     same_family = sorted(login for login in latest if mapping[login] in families)
     if blocking:
-        status, code = "failed", "changes_requested_by_another_family"
+        status, code = "failed", ("changes_requested_by_another_family"
+                                  if any(latest[login] == BLOCKING_STATE for login in blocking)
+                                  else "findings_from_another_family_on_head")
+    elif unresolved:
+        status, code = "failed", "unresolved_threads_from_another_family"
     elif counted:
         status, code = "passed", "reviewed_by_another_family"
     elif same_family:
@@ -129,7 +151,8 @@ def evaluate(families: set[str], reviews: list[dict], head: str, reviewers: dict
         status, code = "failed", "no_review_from_another_family"
     return {"schema_version": 1, "status": status, "code": code, "head": head,
             "author_families": sorted(families), "counted": counted, "blocking": blocking,
-            "same_family": same_family, "ignored": ignored, "limits": reviewers["limits"]}
+            "same_family": same_family, "unresolved_threads": unresolved, "threads_checked": threads is not None,
+            "ignored": ignored, "limits": reviewers["limits"]}
 
 
 def clean_comment_reviews(comments: list[dict], head: str) -> list[dict]:
@@ -168,9 +191,63 @@ def _get_all(url: str, token: str | None) -> list[dict]:
         page += 1
 
 
+def with_inline_counts(reviews: list[dict], review_comments: list[dict]) -> list[dict]:
+    """يضع على كل مراجعةٍ عددَ ملاحظاتها السطرية (من تعليقات المراجعة بمعرّفها)."""
+    counts: dict[object, int] = {}
+    for comment in review_comments:
+        key = comment.get("pull_request_review_id")
+        counts[key] = counts.get(key, 0) + 1
+    return [dict(review, inline_comments=counts.get(review.get("id"), 0)) for review in reviews]
+
+
+THREADS_QUERY = """query($owner:String!,$name:String!,$pr:Int!,$after:String){repository(owner:$owner,name:$name){
+pullRequest(number:$pr){reviewThreads(first:100,after:$after){pageInfo{hasNextPage endCursor}
+nodes{isResolved comments(first:1){nodes{author{__typename login}}}}}}}}"""
+
+
+def fetch_threads(repo_slug: str, pr: int, token: str | None) -> list[dict]:
+    """خيوطُ المراجعة وحالةُ حلّها من GraphQL (لا تعطيها REST). والإخفاقُ مغلق: خطأٌ مسمًّى لا قائمةٌ فارغة."""
+    owner, name = repo_slug.split("/", 1)
+    threads: list[dict] = []
+    after = None
+    while True:
+        body = json.dumps({"query": THREADS_QUERY,
+                           "variables": {"owner": owner, "name": name, "pr": pr, "after": after}}).encode()
+        request = urllib.request.Request(f"{API}/graphql", data=body, method="POST",
+                                         headers={"Accept": "application/vnd.github+json",
+                                                  **({"Authorization": f"Bearer {token}"} if token else {})})
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 — واجهةُ GitHub المعلنة
+                data = json.loads(response.read().decode("utf-8"))
+        except OSError as exc:
+            raise ReviewError("threads_unreachable", type(exc).__name__) from exc
+        try:
+            page = data["data"]["repository"]["pullRequest"]["reviewThreads"]
+        except (KeyError, TypeError) as exc:
+            raise ReviewError("threads_malformed") from exc
+        threads.extend(thread_rows(page["nodes"]))
+        if not page["pageInfo"]["hasNextPage"]:
+            return threads
+        after = page["pageInfo"]["endCursor"]
+
+
+def thread_rows(nodes: list[dict]) -> list[dict]:
+    """صفُّ الخيط: محلولٌ أم لا، وكاتبُ أول تعليقٍ فيه. وGraphQL يسمّي البوتَ بلا «[bot]» فيُعاد إليه."""
+    rows = []
+    for node in nodes:
+        first = ((node.get("comments") or {}).get("nodes") or [{}])[0]
+        author = first.get("author") or {}
+        login = author.get("login", "")
+        if author.get("__typename") == "Bot" and not login.endswith("[bot]"):
+            login += "[bot]"
+        rows.append({"resolved": bool(node.get("isResolved")), "author": login})
+    return rows
+
+
 def fetch_reviews(repo_slug: str, pr: int, token: str | None, head: str = "") -> list[dict]:
-    """مراجعاتُ الطلب وتعليقاتُ المراجعة النظيفة من واجهة GitHub، بالرمز الذي يعطيه Actions (قراءةٌ فقط)."""
-    reviews = _get_all(f"{API}/repos/{repo_slug}/pulls/{pr}/reviews", token)
+    """مراجعاتُ الطلب بعدد ملاحظاتها السطرية، وتعليقاتُ المراجعة النظيفة، من واجهة GitHub بالرمز الذي يعطيه Actions (قراءةٌ فقط)."""
+    reviews = with_inline_counts(_get_all(f"{API}/repos/{repo_slug}/pulls/{pr}/reviews", token),
+                                 _get_all(f"{API}/repos/{repo_slug}/pulls/{pr}/comments", token))
     comments = _get_all(f"{API}/repos/{repo_slug}/issues/{pr}/comments", token)
     return chronological(reviews + clean_comment_reviews(comments, head))
 
@@ -196,22 +273,30 @@ def main(argv: list[str] | None = None) -> int:
         registry = load_registry((ROOT / REGISTRY_PATH).read_bytes())
         reviewers = load_reviewers((ROOT / REVIEWERS_PATH).read_bytes())
         families = author_families(read_commits(args.repo, args.range), registry)
+        threads = None
         if args.reviews_json is not None:
             raw = json.loads(args.reviews_json.read_text(encoding="utf-8"))
-            reviews = chronological(raw["reviews"] + clean_comment_reviews(raw["comments"], args.head)) if isinstance(raw, dict) else raw
+            if isinstance(raw, dict):
+                reviews = chronological(with_inline_counts(raw["reviews"], raw.get("review_comments", []))
+                                        + clean_comment_reviews(raw["comments"], args.head))
+                threads = raw.get("threads")
+            else:
+                reviews = raw
         else:
             if not args.repo_slug:
                 raise ReviewError("repo_slug_missing")
             token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
             deadline = time.monotonic() + max(0, args.wait_seconds)
             while True:
-                report = evaluate(families, fetch_reviews(args.repo_slug, args.pr, token, args.head), args.head, reviewers)
-                if report["status"] == "passed" or report["blocking"] or time.monotonic() >= deadline:
+                report = evaluate(families, fetch_reviews(args.repo_slug, args.pr, token, args.head), args.head, reviewers,
+                                  fetch_threads(args.repo_slug, args.pr, token))
+                if report["status"] == "passed" or report["blocking"] or report["unresolved_threads"] \
+                        or time.monotonic() >= deadline:
                     break
                 time.sleep(30)
             reviews = None
         if reviews is not None:
-            report = evaluate(families, reviews, args.head, reviewers)
+            report = evaluate(families, reviews, args.head, reviewers, threads)
     except (ReviewError, AttributionError, OSError, ValueError) as exc:
         print(json.dumps({"status": "error", "code": getattr(exc, "code", type(exc).__name__),
                           "detail": str(exc)[:200]}, ensure_ascii=False))
