@@ -31,6 +31,7 @@ SIDE_STATES: frozenset[str] = frozenset({
     "outcome_unknown", "validation_failed", "expired", "worker_unavailable", "reviewer_unavailable",
     "brief_stale", "frozen_by_launch_plan", "already_dispatched", "review_uncalibrated", "takeover", "refused",
     "reviewed_awaiting_validation", "external_review", "review_rejected",
+    "controller_commit_started", "controller_commit",
 })
 TERMINAL_STATES: frozenset[str] = frozenset({"accepted"})
 # مفاتيحُ الدليل اللازمة لكل حالة؛ غيابُ واحدٍ منها يُرفض قبل الكتابة.
@@ -55,6 +56,8 @@ EVIDENCE: dict[str, tuple[str, ...]] = {
     "reviewed_awaiting_validation": ("head_sha", "review_ref", "reviewer", "reviewer_family"),
     "external_review": ("pr", "head_sha", "review_ref", "reviewer", "reviewer_family"),
     "review_rejected": ("head_sha", "review_ref", "reviewer", "reviewer_family", "verdict"),
+    "controller_commit_started": ("head_sha", "plan_sha256", "controller_agent", "source_agent"),
+    "controller_commit": ("head_sha", "parent_sha", "plan_sha256", "controller_agent", "source_agent", "files"),
 }
 PREDECESSOR: dict[str, str] = {"claimed": "dispatched", "validated": "completed", "verified": "validated", "accepted": "verified"}
 LEASE_SECONDS = 24 * 3600
@@ -74,10 +77,16 @@ class TransitionError(RuntimeError):
 class TeamLedger:
     """سجلُّ التكليفات؛ قيدٌ لكل تحوّل، والمرساةُ تُكتب بعد كل قيد."""
 
-    def __init__(self, path: str | os.PathLike, *, clock=now_utc):
+    def __init__(self, path: str | os.PathLike, *, clock=now_utc, read_only=False):
         self.path = Path(path)
-        self.ledger = Ledger(self.path, create=True)
+        self.read_only = read_only
+        self.ledger = Ledger(self.path, create=not read_only)
         self.clock = clock
+        if read_only:
+            if not self.path.is_file() or not self.ledger.anchor_path.is_file():
+                raise LedgerCorrupt("read_only_ledger_missing")
+            self.ledger.verify_chain(strict=True)
+            return
         with self._locked():                           # فتحٌ أثناء إلحاقِ عمليةٍ أخرى (قيدٌ كُتب والمرساةُ بعدُ) ليس عبثًا
             if self.ledger.anchor_path.exists():
                 self.ledger.verify_chain(strict=True)      # يرمي LedgerCorrupt عند قصّ الذيل أو كسر السلسلة
@@ -137,6 +146,8 @@ class TeamLedger:
     def _locked(self):
         """قفلٌ حصريّ يحيط بالفحص والإلحاق والمرساة معًا؛ بدونه كان أمران متزامنان يكتبان قيدين بالبصمة السابقة والرقم
         التسلسلي نفسَيهما ويتنازعان ملفَ المرساة المؤقت (ملاحظة Codex السابعة على #344)."""
+        if self.read_only:
+            raise TransitionError("read_only_ledger")
         self.lock_path.parent.mkdir(parents=True, exist_ok=True)
         with self.lock_path.open("a", encoding="utf-8") as handle:   # واصفٌ جديد في كل مرّة: القفلُ لكل وصفِ ملفٍّ مفتوح
             file_lock(handle)

@@ -69,6 +69,10 @@ class ProjectAdapter:
         """Project-specific registration and role checks for the actual worker surface/model."""
         return []
 
+    def handoff_findings(self, files: dict[str, bytes], controller_agent: str) -> list[str]:
+        """Fail closed until the project supplies private-data and controller-identity policy."""
+        return ["handoff_policy_missing"]
+
     def brief_header(self, issue: Issue, worker_family: str, *, worker_name: str = "", worker_model: str = "") -> str:
         """ما يُقال للعامل عن قواعد المشروع (الذيل، التسليم، ما لا يُمسّ)."""
         return ""

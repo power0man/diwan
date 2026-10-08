@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "task": 361,
+  "status": "controller_build_compatibility_correction",
+  "controller_agent": "openai/codex",
+  "at": "2026-10-07T15:56:15.096881+00:00",
+  "parent_head": "372f835c67482aee63afea2aae2a1ddb6dffd77c",
+  "observed_parent_full_suite": {
+    "passed": 6846,
+    "failed": 1,
+    "skipped": 36,
+    "failed_test": "tests/test_team_agents.py::test_auto_dispatch_cannot_invent_a_best_worker"
+  },
+  "correction": "Optional command/execute arguments preserve existing programmatic evidence refusal; normal CLI semantics unchanged. Existing refusal assertion remains intact.",
+  "controller_focused_tests": {
+    "passed": 212,
+    "failed": 0,
+    "duration_s": 47.63
+  },
+  "source_files": [
+    {
+      "source_file": "team/dispatch.py",
+      "source_sha256": "927cc8ea1d4334417139d116eae11a634502fdfff219bb02d79442ddb6eed669"
+    }
+  ],
+  "limits": [
+    "Historical native and controller bootstrap receipts remain unchanged and apply to the parent head.",
+    "New immutable-head mutations/static/full verification required before push; current focus does not claim acceptance.",
+    "The new handoff implementation has not been used to commit itself."
+  ]
+}
