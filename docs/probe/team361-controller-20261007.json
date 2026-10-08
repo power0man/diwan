@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "task": 361,
+  "status": "controller_bootstrap_after_known_worker_exit",
+  "controller_agent": "openai/codex",
+  "native_exit": 0,
+  "worker_and_wrapper_absence_verified": true,
+  "native_source_hashes_matched": true,
+  "controller_focused_tests": {
+    "passed": 160,
+    "failed": 0,
+    "duration_s": 38.01
+  },
+  "source_files": [
+    {
+      "source_file": "team/handoff.py",
+      "source_sha256": "059c2dcd147d0dc676edcd406698dcc279ece456b12892d4ecd44eeb2d923ccf"
+    },
+    {
+      "source_file": "team/dispatch.py",
+      "source_sha256": "15b103f4eff7ad0f402e262b8ba93a48cda44879261fe5056190d52fa7be81e5"
+    },
+    {
+      "source_file": "team/ledger.py",
+      "source_sha256": "768cca671128630410fd21e7f6429a317e73614c29861b3c383e91bab48f0fef"
+    },
+    {
+      "source_file": "team/projects/base.py",
+      "source_sha256": "4949d8e906e86284a8197df430a7bfcb706acb31f83da6f9a8d7f36622d633c5"
+    },
+    {
+      "source_file": "team/projects/diwan.py",
+      "source_sha256": "248d54cd72fb878d4f4a471c43aaddbe12c57c8fdaf7ff0e93ca454a3513dbac"
+    },
+    {
+      "source_file": "tools/family_review.py",
+      "source_sha256": "9beabd024ceb3fec3fa99684c05ffdc3b95a20f78407a99954d0882dfa988d1e"
+    },
+    {
+      "source_file": "tests/test_team_handoff.py",
+      "source_sha256": "883b5461a0bec9b6ab5ef49a2ae79e1c3e55c706b94da2df6b80ff7ef467dd82"
+    },
+    {
+      "source_file": "tests/mutations/test_team_handoff.jsonl",
+      "source_sha256": "82577ebac451ee41221c5017907c09492d8e985e1f83125e46686bbec2fbb671"
+    },
+    {
+      "source_file": "docs/team/README.md",
+      "source_sha256": "eec5bdb1da41b45a28f52f20d96c4fad3c4029e6be578c7a53440678c8682221"
+    },
+    {
+      "source_file": "docs/probe/refute-20261007-openai-team361.json",
+      "source_sha256": "333aafacc4c7a414455b3e9317bc565b9459240ac8a16bea48da86097d188c4b"
+    },
+    {
+      "source_file": "docs/STUDY-PROMPT.md",
+      "source_sha256": "5f34ce9e3ace4de7613c50ac0542fcbc3793245467b05eafcb10468d756671f0"
+    },
+    {
+      "source_file": "docs/probe/project-status.json",
+      "source_sha256": "71a08b7b7ee6536def630bae01f5cd44b8b5e8fa6e0fba60d98b4046defff8eb"
+    }
+  ],
+  "limits": [
+    "The worker did not commit; the controller makes a bounded explicit local commit.",
+    "The new handoff implementation has not been used to commit itself.",
+    "The native mutation/full-suite evidence remains historical with its declared sandbox limits.",
+    "Host immutable-head mutations and full-suite validation are still required before pushing.",
+    "Controller intervention is not autonomous worker completion or counted acceptance."
+  ]
+}

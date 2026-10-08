@@ -1,0 +1,33 @@
+{
+  "agent": "openai/codex",
+  "date": "2026-10-07",
+  "claims": [
+    {
+      "decision": "ق٧٤",
+      "claim": "التوجيه لا يفتح النواة المجمدة",
+      "how_i_tried": "frozen_findings for core/run.py",
+      "result": "held",
+      "evidence": [
+        "frozen_core_path:core/run.py"
+      ]
+    },
+    {
+      "decision": "ق٧٥",
+      "claim": "لا مراجعة آلية من عائلة المؤلف",
+      "how_i_tried": "review_policy with both writer families",
+      "result": "held",
+      "evidence": []
+    },
+    {
+      "decision": "ق٧٦",
+      "claim": "لا accepted بلا سلسلة الأدلة",
+      "how_i_tried": "append accepted to empty synthetic ledger",
+      "result": "held",
+      "evidence": "out_of_order"
+    }
+  ],
+  "measurement_limits": [
+    "synthetic_local_checks_only",
+    "not_live_acceptance_or_security_proof"
+  ]
+}

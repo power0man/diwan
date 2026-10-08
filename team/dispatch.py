@@ -32,7 +32,7 @@ from core.quoted import quarantine
 from team import team_home, worktrees_root
 from team.adapters.base import Adapter
 from team.adapters.opencode import ModelUnconfigured
-from team.ledger import LEASE_SECONDS, TeamLedger, TransitionError, lease_expired, now_utc
+from team.ledger import LEASE_SECONDS, LedgerCorrupt, TeamLedger, TransitionError, lease_expired, now_utc
 from team.projects.base import Issue, ProjectAdapter, ProjectError
 
 LEDGER_FILE = "dispatch.jsonl"
@@ -252,6 +252,7 @@ class Dispatcher:
             self._git("add", str(brief_path.relative_to(wt)), cwd=wt)
             self._git("commit", "-q", "-m", f"تكليف #{issue.number}", cwd=wt)
         self.ledger.append(issue.number, "dispatched", brief_sha256=brief_sha, worker=self.adapter.spec.name, family=self.family,
+                           project=self.project.name, repo_common_dir=self._git("rev-parse", "--path-format=absolute", "--git-common-dir"),
                            branch=branch, worktree=str(wt), base_sha=base_sha, brief_path=str(kept), authorization=authorization,
                            owner_order=(owner_order or None), quarantine_codes=codes)
         raw = self.raw_dir(issue.number, attempt)
@@ -268,7 +269,8 @@ class Dispatcher:
         write_atomic(raw / "exit", str(rc))                      # رمزُ الخروج دليلٌ محفوظ؛ الاستئنافُ لا يختلقه
         return self._finish(issue, attempt, rc, raw, wt, branch, plan, self.adapter)
 
-    def _finish(self, issue: Issue, attempt: int, rc: int | None, raw: Path, wt: Path, branch: str, plan: dict, adapter: Adapter) -> dict:
+    def _finish(self, issue: Issue, attempt: int, rc: int | None, raw: Path, wt: Path, branch: str, plan: dict, adapter: Adapter,
+                since: int | None = None) -> dict:
         if rc is None or rc < 0:
             self.ledger.append(issue.number, "outcome_unknown", reason=f"worker_terminated:{rc}")
             return {"status": "outcome_unknown", "reason": f"worker_terminated:{rc}", **plan}
@@ -291,7 +293,15 @@ class Dispatcher:
             self.ledger.append(issue.number, "validation_failed", reason="no_commits", head_sha=head, worker_ok=result.ok,
                                quarantine_codes=sorted({f.code for f in summary.findings}))
             return {"status": "validation_failed", "reason": "no_commits", **plan}
-        self._git("push", "-u", self.remote, branch, cwd=wt)
+        # الدفعُ تحت قفل السجلّ نفسِه الذي يحرّك به handoff الفرعَ: نيّةُ تسليمٍ بلا إيصال، أو رأسٌ تحرّك بعد ما تحقّقنا منه، لا يُدفع
+        # ولا يُفتح له طلب؛ فاستئنافٌ قرأ غيابَ النيّة قبل أن يبدأ handoff لا ينشر إيداعَ المنسّق (ملاحظة Codex على #368)
+        with self.ledger._locked():
+            blocked = self._handoff_interlock(issue.number, attempt, wt, head, since)
+            if blocked:
+                self.ledger._append(issue.number, "outcome_unknown", reason=blocked)
+                return {"status": "outcome_unknown", "reason": blocked, **plan}
+            # الكائنُ المفحوص لا الفرعُ المتحرّك: فرعٌ تقدّم بين التعشيق وحلِّ الدفع لمرجعه لا يُنشر طرفُه الجديد (ملاحظة Codex الخامسة على #368)
+            self._git("push", self.remote, f"{head}:refs/heads/{branch}", cwd=wt)
         pull = self.project.pull_for_branch(branch)
         if pull is None:
             title = f"[team #{issue.number}] {quarantine(issue.title).text.strip()[:80]}"
@@ -306,6 +316,56 @@ class Dispatcher:
                            new_commits=new_commits,
                            quarantine_codes=sorted({f.code for f in summary.findings}))
         return {"status": "completed", "head_sha": head, "pr": pull.number, "new_commits": new_commits, **plan}
+
+    def _handoff_interlock(self, issue_number: int, attempt: int, wt: Path, head: str, since: int | None = None) -> str | None:
+        """يُستدعى تحت قفل السجلّ قبل الدفع: سببُ المنع أو None. و`since` عددُ قيود المسألة حين بدأ الاستئناف: تسليمٌ قُيّد بعده
+        (ولو اكتمل بإيصاله) سبق فحوصَ المضيف التي يشترطها `docs/team/README.md` قبل الاستئناف، فلا ينشره استئنافٌ بدأ قبله
+        (ملاحظة Codex الثانية على #368). وإيداعُ منسّقٍ مكتمل لا يُدفع إلا بإعلان فحوص المضيف على الرأس الذي يُدفع نفسِه."""
+        if since is not None and any(record["state"] in ("controller_commit_started", "controller_commit")
+                                     for record in self.ledger.records(issue_number)[since:]):
+            return "handoff_after_resume_started"
+        intent = self.ledger.last_of(issue_number, "controller_commit_started", attempt)
+        receipt = self.ledger.last_of(issue_number, "controller_commit", attempt)
+        if intent and (not receipt or intent["plan_sha256"] != receipt["plan_sha256"]):
+            return "controller_commit_incomplete"
+        receipt, declared = self._host_checks_after(issue_number, attempt)
+        if receipt and (declared is None or declared["head_sha"] != head):
+            return "host_checks_not_declared"
+        if receipt and self._unclean_paths(wt, issue_number) != []:
+            return "worktree_dirty_after_host_checks"
+        if self._git("rev-parse", "HEAD", cwd=wt) != head:
+            return "branch_moved_before_push"
+        return None
+
+    def _host_checks_after(self, issue_number: int, attempt: int) -> tuple[dict | None, dict | None]:
+        """إيصالُ آخر تسليمٍ في المحاولة، وآخرُ إعلانٍ لفحوص المضيف قُيّد بعده إن وُجد. إيداعُ المنسّق لا يُنشر إلا بإعلانٍ على
+        الرأس الذي يُدفع نفسِه (ملاحظة Codex الثالثة على #368)."""
+        records = self.ledger.records(issue_number)
+        for index in range(len(records) - 1, -1, -1):
+            receipt = records[index]
+            if receipt["state"] == "controller_commit" and receipt.get("attempt") == attempt:
+                declared = [record for record in records[index + 1:] if record["state"] == "host_checks_declared"
+                            and record.get("attempt") == attempt]
+                return receipt, (declared[-1] if declared else None)
+        return None, None
+
+    def _unclean_paths(self, wt: Path, issue_number: int) -> list[str] | None:
+        """ما في نسخة العمل خارج الرأس: تعديلٌ متتبَّع أو مُدرَج، أو ملفٌّ غير متتبَّع سوى ملفّ التكليف؛ وNone إن تعذّرت القراءة.
+        فحوصٌ تكتب (`--write`) فغيّرت ملفًّا لم تُجرِ على الرأس المعلَن، فلا يُقبل إعلانُها ولا يُدفع بعدها (ملاحظة Codex الرابعة على #368)."""
+        done = self.runner(["git", "-C", str(wt), "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+                           capture_output=True, text=True)
+        if done.returncode != 0:
+            return None
+        brief = f"docs/team/briefs/{issue_number}.md"
+        paths: list[str] = []
+        for entry in (done.stdout or "").split("\0"):     # -z بلا strip: الفراغُ الأوّل جزءٌ من رمز الحالة
+            if len(entry) < 4:
+                continue
+            code, rel = entry[:2], entry[3:]
+            if code == "??" and rel == brief:
+                continue
+            paths.append(rel)
+        return paths
 
     def sync_head(self, issue_number: int) -> str:
         """رأسُ الطلب الحالي؛ إن تقدّم عن رأس `completed` (تصحيحٌ دُفع) قُيّد `completed` جديد فيسقط ما قبله ويُعاد التحقق والمراجعة."""
@@ -396,12 +456,45 @@ class Dispatcher:
                            child_pid=pids.get("child_pid"), recovered_by="resume")
         return self.ledger.main_state(issue_number)
 
-    def resume(self, issue_number: int) -> dict:
+    def resume(self, issue_number: int, host_checks_passed: str | None = None) -> dict:
+        since = len(self.ledger.records(issue_number))
         state = self.ledger.main_state(issue_number)
         if state is None:
             raise Refusal("nothing_to_resume")
+        intent = self.ledger.last_of(issue_number, "controller_commit_started", state["attempt"])
+        receipt = self.ledger.last_of(issue_number, "controller_commit", state["attempt"])
+        if intent and (not receipt or intent["plan_sha256"] != receipt["plan_sha256"]):
+            return {"status": "outcome_unknown", "reason": "controller_commit_incomplete", "attempt": state["attempt"]}
         if state["state"] != "accepted" and self.ledger.open_attempt(issue_number) is None:
             return {"status": "taken_over", "attempt": state["attempt"]}      # محاولةٌ مستحوَذٌ عليها لا تُستأنف
+        # إيداعُ المنسّق ينتظر فحوصَ المضيف (`docs/team/README.md`): المشغّلُ يعلن نجاحها على رأس نسخة العمل الحالي، وهو رأسُ
+        # الإيصال أو إيداعٌ بعده (ما ولّدته فحوصٌ تكتب)، ونسخةُ العمل نظيفة؛ والإعلانُ يُقيَّد إقرارًا غيرَ مصادَق، وبلا إعلانٍ لا دفعَ
+        # ولا طلب (ملاحظتا Codex الثالثة والرابعة على #368)
+        receipt, declared = self._host_checks_after(issue_number, state["attempt"])
+        if host_checks_passed is not None:
+            if receipt is None:
+                raise Refusal("host_checks_without_controller_commit")
+            worktree = Path((self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}).get("worktree") or "/nonexistent")
+            try:
+                current = self._git("rev-parse", "HEAD", cwd=worktree)
+            except GitError as exc:
+                raise Refusal("host_checks_worktree_unreadable") from exc
+            if host_checks_passed != current:
+                raise Refusal("host_checks_head_mismatch", f"المعلَن {host_checks_passed[:12]} ≠ رأس نسخة العمل {current[:12]}")
+            try:
+                self._git("merge-base", "--is-ancestor", receipt["head_sha"], current, cwd=worktree)
+            except GitError as exc:
+                raise Refusal("host_checks_head_not_after_handoff", f"رأس الإيصال {receipt['head_sha'][:12]}") from exc
+            unclean = self._unclean_paths(worktree, issue_number)
+            if unclean is None:
+                raise Refusal("host_checks_worktree_unreadable")
+            if unclean:
+                raise Refusal("host_checks_worktree_dirty", ", ".join(sorted(unclean)[:10]))
+            self.ledger.append(issue_number, "host_checks_declared", attempt=state["attempt"], head_sha=current,
+                               plan_sha256=receipt["plan_sha256"], controller_agent=receipt["controller_agent"],
+                               receipt_head_sha=receipt["head_sha"], declaration_authenticated=False)
+        elif receipt and declared is None:
+            return {"status": "awaiting_host_checks", "head_sha": receipt["head_sha"], "attempt": state["attempt"]}
         if state["state"] == "dispatched":
             state = self._recover_claim(issue_number, state)
             if "state" not in state:
@@ -430,38 +523,40 @@ class Dispatcher:
         branch = dispatched.get("branch") or self.branch_for(issue_number, state["attempt"])
         plan = {"issue": issue_number, "branch": branch, "brief_sha256": dispatched.get("brief_sha256", ""), "worktree": str(wt)}
         adapter = self.adapter_for(dispatched.get("worker"))
-        return self._finish(self.project.issue(issue_number), state["attempt"], rc, raw, wt, branch, plan, adapter)
+        return self._finish(self.project.issue(issue_number), state["attempt"], rc, raw, wt, branch, plan, adapter, since)
 
     def takeover(self, issue_number: int, *, owner_authorization: str) -> dict:
-        state = self.ledger.main_state(issue_number)
-        if state is None or state["state"] in ("accepted",):
-            raise Refusal("nothing_to_take_over")
-        dispatched = self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}
-        wt = Path(dispatched.get("worktree", ""))
-        failed = self.ledger.last_of(issue_number, "validation_failed", state["attempt"]) or {}
-        # آخرُ رأسٍ عرفناه: رأسُ الحالة الرئيسة، أو رأسُ فشلٍ مسجَّل (عاملٌ أودع ثم أعلن فشله)، أو قاعدةُ التكليف
-        last_head = state.get("head_sha") or failed.get("head_sha") or dispatched.get("base_sha")
-        try:
-            head_now = self._git("rev-parse", "HEAD", cwd=wt) if wt.exists() else last_head
-        except GitError:
-            head_now = None          # رأسٌ لا يُقرأ ليس إثباتًا لعدم وجود إيداعات جديدة
-        last_activity = state.get("started_at") or state.get("at")
-        now = self.clock()
-        if not lease_expired(last_activity, now, LEASE_SECONDS):
-            raise Refusal("lease_active", f"آخر نشاط {last_activity}")
-        if self.ledger.last_of(issue_number, "expired", state["attempt"]) is None:
-            self.ledger.append(issue_number, "expired", last_activity_at=last_activity)
-        raw = self.raw_dir(issue_number, state["attempt"])
-        raw.mkdir(parents=True, exist_ok=True)
-        marker = raw / "taken_over"
-        # العلامةُ **قبل** فحص الغياب لا بعده: غلافٌ يبلغ فحصَ العلامة بعد هذه اللحظة يراها فلا يأذن؛ ومن بلغه قبلها كان قد كتب
-        # معرّفاته فيراها فحصُ الغياب أدناه ويُرفض الاستحواذ وتُزال العلامة (ملاحظة Codex الثانية على #347)
-        write_atomic(marker, now)
-        try:
-            return self._takeover_checked(issue_number, state, dispatched, raw, head_now, last_head, now, owner_authorization)
-        except Refusal:
-            marker.unlink(missing_ok=True)
-            raise
+        # الحالةُ والرأسُ يُقرآن تحت قفل السجلّ: handoff يحرّك الفرعَ تحته، فقراءةُ الرأس خارجه تُعيد رأسًا قديمًا
+        with self.ledger._locked():
+            state = self.ledger.main_state(issue_number)
+            if state is None or state["state"] in ("accepted",):
+                raise Refusal("nothing_to_take_over")
+            dispatched = self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}
+            wt = Path(dispatched.get("worktree", ""))
+            failed = self.ledger.last_of(issue_number, "validation_failed", state["attempt"]) or {}
+            # آخرُ رأسٍ عرفناه: رأسُ الحالة الرئيسة، أو رأسُ فشلٍ مسجَّل (عاملٌ أودع ثم أعلن فشله)، أو قاعدةُ التكليف
+            last_head = state.get("head_sha") or failed.get("head_sha") or dispatched.get("base_sha")
+            try:
+                head_now = self._git("rev-parse", "HEAD", cwd=wt) if wt.exists() else last_head
+            except GitError:
+                head_now = None          # رأسٌ لا يُقرأ ليس إثباتًا لعدم وجود إيداعات جديدة
+            last_activity = state.get("started_at") or state.get("at")
+            now = self.clock()
+            if not lease_expired(last_activity, now, LEASE_SECONDS):
+                raise Refusal("lease_active", f"آخر نشاط {last_activity}")
+            if self.ledger.last_of(issue_number, "expired", state["attempt"]) is None:
+                self.ledger._append(issue_number, "expired", last_activity_at=last_activity)
+            raw = self.raw_dir(issue_number, state["attempt"])
+            raw.mkdir(parents=True, exist_ok=True)
+            marker = raw / "taken_over"
+            # العلامةُ **قبل** فحص الغياب لا بعده: غلافٌ يبلغ فحصَ العلامة بعد هذه اللحظة يراها فلا يأذن؛ ومن بلغه قبلها كان قد كتب
+            # معرّفاته فيراها فحصُ الغياب أدناه ويُرفض الاستحواذ وتُزال العلامة (ملاحظة Codex الثانية على #347)
+            write_atomic(marker, now)
+            try:
+                return self._takeover_checked(issue_number, state, dispatched, raw, head_now, last_head, now, owner_authorization)
+            except Refusal:
+                marker.unlink(missing_ok=True)
+                raise
 
     def _takeover_checked(self, issue_number: int, state: dict, dispatched: dict, raw: Path, head_now, last_head, now: str,
                           owner_authorization: str) -> dict:
@@ -482,7 +577,7 @@ class Dispatcher:
             raise Refusal("absence_not_proven", json.dumps(proof))
         if not owner_authorization.strip():
             raise Refusal("owner_authorization_missing")
-        self.ledger.append(issue_number, "takeover", lease_expired_at=now, absence_proof=proof, owner_authorization=owner_authorization)
+        self.ledger._append(issue_number, "takeover", lease_expired_at=now, absence_proof=proof, owner_authorization=owner_authorization)
         return {"status": "takeover", "proof": proof}
 
     def _never_launched(self, issue_number: int, state: dict, raw: Path, known: list[int], child_known: bool) -> bool:
@@ -569,21 +664,37 @@ class Dispatcher:
         return {"issue": issue_number, "state": state["state"] if state else None, "attempt": state["attempt"] if state else 0,
                 "last": self.ledger.last(issue_number)}
 
+    def handoff(self, issue_number: int, *, files: list[str], controller_agent: str,
+                execute: bool = False, expected_plan_sha256: str | None = None, expected_diff_sha256: str | None = None) -> dict:
+        from team.handoff import Handoff
+        bounded = Handoff(self)
+        try:
+            if execute:
+                return bounded.execute(issue_number, files, controller_agent, expected_plan_sha256, expected_diff_sha256)
+            return bounded.plan(issue_number, files, controller_agent)
+        except (OSError, UnicodeError) as exc:
+            raise Refusal("handoff_evidence_unreadable") from exc
+
 
 def build(args) -> Dispatcher:
     from team.adapters import registry
     from team.projects.diwan import DiwanProject
     repo_root = Path(args.repo_root or git("rev-parse", "--show-toplevel", cwd=Path.cwd()))
     home = team_home()
-    home.mkdir(parents=True, exist_ok=True)
+    command = getattr(args, "command", None)
+    read_only = command == "handoff" and not getattr(args, "execute", False)
+    if not read_only:
+        home.mkdir(parents=True, exist_ok=True)
     adapters = registry()
     project = DiwanProject(root=repo_root)
+    if command == "handoff":
+        args.worker = "codex"
     if args.worker == "auto":
         from team.catalog import discover, load_evidence, select
         ranked = select(discover(home=home), "coding", load_evidence(home))["ranking"]
         if not ranked:
             raise Refusal("task_evidence_missing", "لا وكيل برمجة مقاس؛ اختر عاملًا صراحةً للقياس الأول")
-        issue = project.issue(args.issue) if args.command == "run" else None
+        issue = project.issue(args.issue) if command == "run" else None
         ready, blocked, chosen = {}, [], None
         for candidate in ranked:
             name = candidate["id"]
@@ -605,7 +716,7 @@ def build(args) -> Dispatcher:
         if chosen is None:
             raise Refusal("no_eligible_worker", json.dumps(blocked, ensure_ascii=False))
         args.worker = chosen
-    return Dispatcher(project=project, adapter=adapters[args.worker], ledger=TeamLedger(home / LEDGER_FILE),
+    return Dispatcher(project=project, adapter=adapters[args.worker], ledger=TeamLedger(home / LEDGER_FILE, read_only=read_only),
                       repo_root=repo_root, home=home, adapters=adapters)
 
 
@@ -624,10 +735,18 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("issue", type=int); run.add_argument("--execute", action="store_true")
     run.add_argument("--owner-order", default=None); run.add_argument("--budget-usd", type=float, default=5.0)
     run.add_argument("--timeout", type=int, default=1800)
-    for name in ("validate", "accept", "resume", "status"):
+    for name in ("validate", "accept", "status"):
         sub.add_parser(name, parents=[sub_common]).add_argument("issue", type=int)
+    res = sub.add_parser("resume", parents=[sub_common]); res.add_argument("issue", type=int)
+    res.add_argument("--host-checks-passed", metavar="HEAD_SHA", default=None)
     take = sub.add_parser("takeover", parents=[sub_common]); take.add_argument("issue", type=int)
     take.add_argument("--owner-authorization", required=True)
+    hand = sub.add_parser("handoff", parents=[sub_common]); hand.add_argument("issue", type=int)
+    hand.add_argument("--file", dest="files", action="append", required=True)
+    hand.add_argument("--controller-agent", required=True)
+    hand.add_argument("--execute", action="store_true")
+    hand.add_argument("--expected-plan-sha256")
+    hand.add_argument("--expected-diff-sha256")
     gc = sub.add_parser("gc", parents=[sub_common]); gc.add_argument("--yes", action="store_true")
     return parser
 
@@ -640,6 +759,12 @@ def main(argv: list[str] | None = None) -> int:
             out = dispatcher.run(args.issue, execute=args.execute, owner_order=args.owner_order, budget_usd=args.budget_usd, timeout=args.timeout)
         elif args.command == "takeover":
             out = dispatcher.takeover(args.issue, owner_authorization=args.owner_authorization)
+        elif args.command == "handoff":
+            out = dispatcher.handoff(args.issue, files=args.files, controller_agent=args.controller_agent,
+                                     execute=args.execute, expected_plan_sha256=args.expected_plan_sha256,
+                                     expected_diff_sha256=args.expected_diff_sha256)
+        elif args.command == "resume":
+            out = dispatcher.resume(args.issue, host_checks_passed=args.host_checks_passed)
         elif args.command == "gc":
             out = dispatcher.gc(yes=args.yes)
         else:
@@ -649,6 +774,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     except GitError as exc:
         print(json.dumps({"status": "refused", "code": "git_error", "detail": str(exc)}, ensure_ascii=False))
+        return 2
+    except LedgerCorrupt:
+        print(json.dumps({"status": "refused", "code": "ledger_corrupt_or_missing"}))
         return 2
     except ProjectError as exc:
         if exc.code in ("worker_identity_not_registered", "worker_role_not_allowed"):
@@ -664,4 +792,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    from team.dispatch import main as _canonical_main   # وحدةُ __main__ نسخةٌ ثانية من الصفوف: Refusal فيها غيرُ Refusal الذي يرفعه handoff
+    sys.exit(_canonical_main())
