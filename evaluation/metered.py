@@ -26,6 +26,7 @@ from decimal import ROUND_CEILING, Decimal
 from core import prices as price_table
 from core.budget import Budget
 from core.contracts import Message, Request, Response, Usage
+from core.ledger import LedgerCorrupt
 from core.run import RouteRefused, execute
 from evaluation.multi_system_review import AutomaticReviewError
 from providers.base import ProviderError
@@ -148,6 +149,7 @@ class MeteredTransport:
         if self.meters is not None and not self.meters(model):
             # نموذجٌ يجيبه الخادمُ المحليّ بنفسه: لا فاتورة، فلا حجزَ ولا قيد، وصفُّه في `provider_usage` كما يكتبه النقل
             return self.transport(model, system, user, schema)
+        self._verify_ledger()
         provider = MeteredProvider(self, schema)
         request = Request(messages=(Message(role="system", content=system), Message(role="user", content=user)),
                           model=model, model_version=model, max_output=self.max_output, deadline_s=self.deadline_s,
@@ -175,6 +177,15 @@ class MeteredTransport:
             # على #352)
             self.ledger.anchor()
         return outcome.response.content
+
+    def _verify_ledger(self) -> None:
+        """يُتحقَّق من السجلّ بمرساته قبل أي قيدٍ جديد: كان قيدٌ جديدٌ ومرساتُه بعده يمحوان قصَّ ذيلٍ سابق، فيمرّ التحقّقُ الصارم
+        بعدهما ويختفي قيدُ إنفاقٍ محذوف (ملاحظة Codex على #352). وسجلٌّ فيه قيودٌ بلا مرساة يُرفض كذلك؛ والفارغُ بلا مرساةٍ بدايةٌ."""
+        if self.ledger.anchor_path.exists() or self.ledger.count():
+            try:
+                self.ledger.verify_chain(strict=True)
+            except LedgerCorrupt as exc:
+                raise AutomaticReviewError("spend_ledger_corrupt", str(exc)) from exc
 
     def _refused(self, model: str, code: str, provider: MeteredProvider, before: int) -> AutomaticReviewError:
         # ما خصمته الميزانيةُ على هذا النداء وإن لم يُحسب نداءً: ردٌّ بلا توكناتٍ يُسوّى بالمحجوز كلِّه، فلا يُعلن التقريرُ صفرًا

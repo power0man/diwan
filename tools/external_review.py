@@ -1563,6 +1563,13 @@ def _spend_report(transport) -> dict:
     return report() if callable(report) else {}
 
 
+def _core_run(transport) -> dict:
+    """تقريرُ `core.run` لهذا التشغيل (النداءات، والرفض، وما سُوّي، ومسارُ السجلّ) من نقلٍ مغلَّف؛ يُكتب في خلاصة البنك وما يُطبع
+    كما يُكتب في دليل الدخان، فصفوفُ Ollama تُبقي `cost_usd` فارغًا ولا يبقى غيرُه دليلًا على الإنفاق (ملاحظة Codex على #352)."""
+    core_run = _spend_report(transport).get("core_run") if transport is not None else None
+    return {"core_run": core_run} if core_run else {}
+
+
 def _persist_provider_usage(bank: Path, usage: list[dict], spend: dict | None = None) -> None:
     """سجلُّ النداءات في خلاصة التشغيل نفسها؛ لا يُكتب صفرٌ لكلفة لم يبلغها المزوّد. ومعه دليلُ المجانية (#285)."""
     path = bank / "reviews" / "SUMMARY.json"
@@ -1797,14 +1804,15 @@ def main(argv: list[str] | None = None) -> int:
     except AutomaticReviewError as exc:
         usage = getattr(transport, "provider_usage", None) or []
         print(json.dumps({"status": "refused", "code": exc.code, "detail": str(exc),
-                          **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
+                          **({"provider_usage": usage} if usage else {}), **_core_run(transport)}, ensure_ascii=False))
         return 2
     # السجلُّ يُلحَق بما كتبته التشغيلاتُ السابقة ولا يستبدله، والمجموعُ من السجلّ كلِّه (ملاحظة Codex على #298). وعدُّ نداءات
     # OpenRouter التي لم تثبت كلفتُها من السجلّ كلِّه كذلك، فلا تُسقط خلاصةُ Ollama عددًا كتبته الواجهاتُ المجانية (#295)
     ledger = prior + list(getattr(transport, "provider_usage", []))
     _persist_provider_usage(args.bank, ledger, {"token_totals": token_totals(ledger),
                                                 "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger),
-                                                **({"zero_spend_evidence": prior_evidence} if prior_evidence else {})})
+                                                **({"zero_spend_evidence": prior_evidence} if prior_evidence else {}),
+                                                **_core_run(transport)})
     print(json.dumps({
         "status": "failed" if counts["failed"] else "reviewed",
         **counts,
@@ -1812,6 +1820,7 @@ def main(argv: list[str] | None = None) -> int:
         "errors": len(summary["errors"]),
         "owner_queue": len(summary["owner_queue"]),
         "summary": str(args.bank / "reviews" / "SUMMARY.json"),
+        **_core_run(transport),
     }, ensure_ascii=False, indent=2))
     return 1 if counts["failed"] else 0
 

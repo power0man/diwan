@@ -162,6 +162,21 @@ def test_the_ollama_bank_summary_carries_every_call_and_the_totals(tmp_path, mon
                      "total_tokens": 60} for t in summary["token_totals"].values())
 
 
+def test_the_ollama_bank_summary_and_result_carry_the_core_run_spend(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #352: كان تقريرُ `core.run` يُكتب في دليل الدخان وحده، فخلاصةُ البنك وما يُطبع بلا ما سُوّي ولا الرفضِ
+    ولا مسارِ السجلّ، وصفوفُ Ollama تُبقي `cost_usd` فارغًا."""
+    bank = smoke_bank(tmp_path)
+    _wire(monkeypatch, _Opener(_reply(prompt_eval_count=50, eval_count=10)))
+    assert cli.main([str(bank)]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    ledger = Ledger(bank / "core-run-ledger.jsonl", create=False)
+    assert ledger.verify_chain(strict=True) and len(ledger.entries()) == len(summary["provider_usage"])
+    for core_run in (summary["core_run"], printed["core_run"]):
+        assert core_run["ledger"] == str(ledger.path) and core_run["settled_usd"] == "0"
+        assert len(core_run["calls"]) == len(summary["provider_usage"]) and core_run["refusals"] == []
+
+
 def test_a_rerun_on_a_reviewed_bank_keeps_the_earlier_ledger(tmp_path, monkeypatch, capsys):
     """ملاحظة Codex على #298: إعادةُ التشغيل تتخطّى السجلّات فلا ترسل نداءً، ولا تمحو أدلّةَ إنفاق المراجعات القائمة."""
     bank = smoke_bank(tmp_path)

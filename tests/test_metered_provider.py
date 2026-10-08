@@ -288,3 +288,22 @@ def test_an_anchor_failure_after_settlement_keeps_the_call_in_the_report(tmp_pat
     assert [call["cost_micros"] for call in metered.calls] == [200] and metered.refusals == []
     assert Decimal(metered.spend_report()["core_run"]["settled_usd"]) * 10 ** 6 == _charged(metered) == 200
     assert [e["record"]["kind"] for e in metered.ledger.entries()] == ["ok"]
+
+
+def test_a_ledger_cut_between_runs_is_refused_before_the_next_call(tmp_path):
+    """ملاحظة Codex على #352: كان النداءُ التالي يقيّد فوق سلسلةٍ قُصّ ذيلُها ثم يستبدل المرساة، فيمرّ التحقّقُ الصارم ويختفي القيدُ
+    المحذوف. فالآن يُتحقَّق من السجلّ بمرساته قبل أي قيد، ويُرفض بلا نداءٍ ولا خصم؛ وسجلٌّ بقيودٍ بلا مرساةٍ كذلك."""
+    transport = FakeTransport(*({"content": "a", "usage": {"prompt_tokens": 100, "completion_tokens": 50}},) * 3)
+    metered = _metered(tmp_path, transport)
+    assert [metered("priced", "s", "u", {}) for _ in (1, 2)] == ["a", "a"]
+    path = metered.ledger.path
+    path.write_text("".join(path.read_text(encoding="utf-8").splitlines(keepends=True)[:-1]), encoding="utf-8")
+    again = _metered(tmp_path, transport)
+    with pytest.raises(AutomaticReviewError) as refused:
+        again("priced", "s", "u", {})
+    assert refused.value.code == "spend_ledger_corrupt" and transport.calls == 2 and _charged(again) == 0
+    assert len(again.ledger.entries()) == 1 and again.ledger.read_anchor()["count"] == 2
+    again.ledger.anchor_path.unlink()
+    with pytest.raises(AutomaticReviewError) as unanchored:
+        again("priced", "s", "u", {})
+    assert unanchored.value.code == "spend_ledger_corrupt" and transport.calls == 2 and _charged(again) == 0
